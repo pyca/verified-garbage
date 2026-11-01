@@ -82,16 +82,6 @@ theorem saved_otFrame {sp : Addr} (hk : StkOk c st w sp) {o : Nat} (ho : o = 0 �
   · exact saved_w (by decide) (.inr (by decide))
   · exact saved_below hk
 
-/-- The slot of the data's address is apart from what `crypt` writes. -/
-theorem slot_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) :
-    ∀ r ∈ crFrame st w D n, (⟨w + BitVec.ofNat 64 dataO, 8⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
-  · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-
 end
 
 theorem seal_wp {s₀ : State} (h : sealRISCV64.pre s₀) :

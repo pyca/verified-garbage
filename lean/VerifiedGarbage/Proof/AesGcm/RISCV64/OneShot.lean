@@ -121,6 +121,28 @@ theorem slot_j0 (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ 
   · exact Lay.w_w (by omega) (by omega) (by decide)
   · exact hk.w.sub_left (Lay.wSub (by omega))
 
+theorem slot_abs (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ d ∧ d + 8 ≤ 248) :
+    ∀ r ∈ absFrame (V .s1) (V .s0) 16 sp, (⟨V .s0 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
+  fun r hr => by
+    obtain ⟨r', hr', hs⟩ := abs16_j0 r hr
+    exact (slot_j0 L hk hd r' hr').sub_right hs
+
+theorem slot_t (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ d ∧ d + 8 ≤ 248) :
+    ∀ r ∈ tFrame (V .s1) (V .s0) 16 sp, (⟨V .s0 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
+  fun r hr => by
+    obtain ⟨r', hr', hs⟩ := t16_j0 r hr
+    exact (slot_j0 L hk hd r' hr').sub_right hs
+
+/-- The slot of the data's address is apart from what `crypt` writes. -/
+theorem slot_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW (V .s2) (V .s1) (V .s0) s D n) :
+    ∀ r ∈ crFrame (V .s1) (V .s0) D n, (⟨V .s0 + BitVec.ofNat 64 dataO, 8⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
+  · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
+  · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
+
 /-- `oneAad`: `J₀` of the `n`-byte nonce at `Np`, then the additional data
 (`aad_len`, `s10`, bytes at `A`, in `W + aadO`) absorbed and padded. -/
 theorem oneAad_ok {H : Block} {Np A : Addr} {n : Nat} {s : State} (he : Env V sp s)
