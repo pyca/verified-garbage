@@ -25,7 +25,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand Keeps)
+open VG.Proof.Rsa.Mont (numAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem montMixedProduct_ok (s : State) {base : BitVec 32} {len w o a b M x y : Nat}
@@ -60,7 +60,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem crt_timesInverse_ok (s : State) {base src : BitVec 32} {len w k M : Nat} {bs : List Byte}
@@ -71,7 +71,7 @@ theorem crt_timesInverse_ok (s : State) {base src : BitVec 32} {len w k M : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
   have op (q : Nat) (hq : q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5) : Operand q := by
-    rcases hq with rfl | rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases hq with rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   rw [timesInverse, WP.seq_iff]
   refine WP.mono (savedOperand_ok s h.ready h.source (by decide : 1 < 8) (by decide) h.positive h.fits) ?_
   rintro u ⟨readyU, inverse, keepsU, frameU, restU⟩
@@ -97,7 +97,7 @@ end
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure CrtCoefficientInput (base src : BitVec 32) (len w k M : Nat) (bs : List Byte) (s : State) : Prop where

@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Mont.Words
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 
 theorem keeps_header_word {m m' : Mem} {base : Addr} {len w o d : Nat}
     (keep : Keeps base len w o m m') (size : 256 ≤ 8 * len) (hd : d + 8 ≤ 256) :
@@ -25,7 +25,7 @@ theorem keeps_header_word {m m' : Mem} {base : Addr} {len w o d : Nat}
   apply keep (d + j) (by omega)
   intro a _
   left
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
   omega
 
 theorem keeps_header_readW {m m' : Mem} {base : Addr} {len w o d bits : Nat}
@@ -38,7 +38,7 @@ theorem keeps_header_readW {m m' : Mem} {base : Addr} {len w o d bits : Nat}
   apply keep (d + j) (by omega)
   intro a _
   left
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
   omega
 
 theorem keeps_layout {m m' : Mem} {base : Addr} {len o : Nat}
@@ -46,7 +46,7 @@ theorem keeps_layout {m m' : Mem} {base : Addr} {len o : Nat}
     wOf m' base = wOf m base ∧ Layout m' base len := by
   have size : 256 ≤ 8 * len := by
     have := layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega
   have width : wOf m' base = wOf m base :=
     congrArg BitVec.toNat (keeps_header_word keep size (d := 48) (by decide))

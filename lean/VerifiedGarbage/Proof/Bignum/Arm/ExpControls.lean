@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest wp_str)
 
 theorem expControls_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -23,7 +23,7 @@ theorem expControls_ok (s : State) {base : BitVec 32} {len w : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest [] s t := by
   have size : 256 ≤ 8 * len := by
     have := h.layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega
   have addr (d : Nat) (hd : d ≤ 252) :
       State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by

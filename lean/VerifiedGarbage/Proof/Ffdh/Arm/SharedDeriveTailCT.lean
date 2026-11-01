@@ -29,7 +29,7 @@ registers; or the zero mask and 2. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.SharedDerive
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 /-- The prepared modulus with x, the output and the call area. -/
 structure Prepared (p : Inputs) (slots : List Nat) (xb : List Byte) (s : State) : Prop where
@@ -135,7 +135,7 @@ theorem tail_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {xb1 xb2
       (VG.Impl.Ffdh.Arm.SharedDerive.tail (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))
       (fun _ _ => True) := by
   have ranges := (inRange_ct (base := p.base) (len := p.len) (w := p.w)
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
     (P' := fun (s t : State) => ExchangePowered p slots s ∧ ExchangePowered p slots t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.ready, h.2.1.ready, h.2.2⟩) (fun _ _ h => h)
   unfold VG.Impl.Ffdh.Arm.SharedDerive.tail VG.Impl.Ffdh.Arm.SharedExchange.finish

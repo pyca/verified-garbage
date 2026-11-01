@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Bignum.WorkFrame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -16,12 +16,12 @@ namespace VG.Proof.MillerRabin
 
 open VG VG.Proof.Bignum
 
-theorem keeps_word {L : Spec.MillerRabin.Workspace} {B : Addr} {n w d : Nat} {m m' : Mem}
-    (h : Spec.MillerRabin.Keeps L B n w m m') (hd : d + 8 ≤ 8 * n)
+theorem keeps_word {L : Proof.MillerRabin.Round.Workspace} {B : Addr} {n w d : Nat} {m m' : Mem}
+    (h : Proof.MillerRabin.Round.Keeps L B n w m m') (hd : d + 8 ≤ 8 * n)
     (hh : ∀ k ∈ [L.flag, L.value, L.words, L.windows, L.digit], d + 8 ≤ 8 * k ∨ 8 * k + 8 ≤ d)
     (ha : ∀ j ∈ [2, 3, 5, 6, L.base],
-      d + 8 ≤ Spec.Rsa.Mont.arrAt w j ∨ Spec.Rsa.Mont.arrAt w j + 8 * (w + 2) ≤ d)
-    (ht : d + 8 ≤ Spec.Rsa.Mont.arrAt w L.table ∨ Spec.Rsa.Mont.arrAt w (L.table + 16) ≤ d) :
+      d + 8 ≤ Proof.Rsa.Mont.arrAt w j ∨ Proof.Rsa.Mont.arrAt w j + 8 * (w + 2) ≤ d)
+    (ht : d + 8 ≤ Proof.Rsa.Mont.arrAt w L.table ∨ Proof.Rsa.Mont.arrAt w (L.table + 16) ≤ d) :
     word m' B d = word m B d := by
   apply Mem.readW_congr
   intro i hi
@@ -35,12 +35,12 @@ theorem keeps_word {L : Spec.MillerRabin.Workspace} {B : Addr} {n w d : Nat} {m 
     omega_arith
   · omega_arith
 
-theorem keeps_wv {L : Spec.MillerRabin.Workspace} {B : Addr} {n w d k : Nat} {m m' : Mem}
-    (h : Spec.MillerRabin.Keeps L B n w m m') (hd : d + 8 * k ≤ 8 * n)
+theorem keeps_wv {L : Proof.MillerRabin.Round.Workspace} {B : Addr} {n w d k : Nat} {m m' : Mem}
+    (h : Proof.MillerRabin.Round.Keeps L B n w m m') (hd : d + 8 * k ≤ 8 * n)
     (hh : ∀ j ∈ [L.flag, L.value, L.words, L.windows, L.digit], d + 8 * k ≤ 8 * j ∨ 8 * j + 8 ≤ d)
     (ha : ∀ j ∈ [2, 3, 5, 6, L.base],
-      d + 8 * k ≤ Spec.Rsa.Mont.arrAt w j ∨ Spec.Rsa.Mont.arrAt w j + 8 * (w + 2) ≤ d)
-    (ht : d + 8 * k ≤ Spec.Rsa.Mont.arrAt w L.table ∨ Spec.Rsa.Mont.arrAt w (L.table + 16) ≤ d) :
+      d + 8 * k ≤ Proof.Rsa.Mont.arrAt w j ∨ Proof.Rsa.Mont.arrAt w j + 8 * (w + 2) ≤ d)
+    (ht : d + 8 * k ≤ Proof.Rsa.Mont.arrAt w L.table ∨ Proof.Rsa.Mont.arrAt w (L.table + 16) ≤ d) :
     wv m' B d k = wv m B d k := by
   induction k with
   | zero => rfl
@@ -51,13 +51,13 @@ theorem keeps_wv {L : Spec.MillerRabin.Workspace} {B : Addr} {n w d k : Nat} {m 
       (fun j hj => by have := hh j hj; omega_arith)
       (fun j hj => by have := ha j hj; omega_arith) (by omega_arith)]
 
-def mutRanges (L : Spec.MillerRabin.Workspace) (w : Nat) : List (Nat × Nat) :=
+def mutRanges (L : Proof.MillerRabin.Round.Workspace) (w : Nat) : List (Nat × Nat) :=
   [L.flag, L.value, L.words, L.windows, L.digit].map (fun k => (8 * k, 8)) ++
-    ([2, 3, 5, 6, L.base].map (fun j => (Spec.Rsa.Mont.arrAt w j, 8 * (w + 2))) ++
-      [(Spec.Rsa.Mont.arrAt w L.table, 16 * (8 * (w + 2)))])
+    ([2, 3, 5, 6, L.base].map (fun j => (Proof.Rsa.Mont.arrAt w j, 8 * (w + 2))) ++
+      [(Proof.Rsa.Mont.arrAt w L.table, 16 * (8 * (w + 2)))])
 
-theorem keeps_to_frm {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat} {m m' : Mem}
-    (h : Spec.MillerRabin.Keeps L B n w m m') (hf : Frame [⟨B, 8 * n⟩] m m') :
+theorem keeps_to_frm {L : Proof.MillerRabin.Round.Workspace} {B : Addr} {n w : Nat} {m m' : Mem}
+    (h : Proof.MillerRabin.Round.Keeps L B n w m m') (hf : Frame [⟨B, 8 * n⟩] m m') :
     Frm B (mutRanges L w) m m' := by
   intro x hx
   by_cases hd : ofs B x < 8 * n
@@ -69,11 +69,11 @@ theorem keeps_to_frm {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat} {m 
     · intro k hk
       exact hx (8 * k, 8) (List.mem_append_left _ (List.mem_map_of_mem hk))
     · intro j hj
-      exact hx (Spec.Rsa.Mont.arrAt w j, 8 * (w + 2))
+      exact hx (Proof.Rsa.Mont.arrAt w j, 8 * (w + 2))
         (List.mem_append_right _ (List.mem_append_left _ (List.mem_map_of_mem hj)))
-    · have ht := hx (Spec.Rsa.Mont.arrAt w L.table, 16 * (8 * (w + 2)))
+    · have ht := hx (Proof.Rsa.Mont.arrAt w L.table, 16 * (8 * (w + 2)))
         (List.mem_append_right _ (List.mem_append_right _ (List.mem_singleton_self _)))
-      simpa only [Spec.Rsa.Mont.arrAt, Nat.add_mul, Nat.add_assoc] using ht
+      simpa only [Proof.Rsa.Mont.arrAt, Nat.add_mul, Nat.add_assoc] using ht
   · apply hf x
     intro r hr hc
     simp only [List.mem_singleton] at hr
@@ -82,9 +82,9 @@ theorem keeps_to_frm {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat} {m 
     simp only [ofs] at hd
     omega_arith
 
-theorem keeps_to_work {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat}
+theorem keeps_to_work {L : Proof.MillerRabin.Round.Workspace} {B : Addr} {n w : Nat}
     {extra : List Region} {m m' : Mem}
-    (h : Spec.MillerRabin.Keeps L B n w m m')
+    (h : Proof.MillerRabin.Round.Keeps L B n w m m')
     (hf : Frame ([⟨B, 8 * n⟩] ++ extra) m m') :
     WorkFrame B (mutRanges L w) extra m m' := by
   intro x he hx
@@ -97,11 +97,11 @@ theorem keeps_to_work {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat}
     · intro k hk
       exact hx (8 * k, 8) (List.mem_append_left _ (List.mem_map_of_mem hk))
     · intro j hj
-      exact hx (Spec.Rsa.Mont.arrAt w j, 8 * (w + 2))
+      exact hx (Proof.Rsa.Mont.arrAt w j, 8 * (w + 2))
         (List.mem_append_right _ (List.mem_append_left _ (List.mem_map_of_mem hj)))
-    · have ht := hx (Spec.Rsa.Mont.arrAt w L.table, 16 * (8 * (w + 2)))
+    · have ht := hx (Proof.Rsa.Mont.arrAt w L.table, 16 * (8 * (w + 2)))
         (List.mem_append_right _ (List.mem_append_right _ (List.mem_singleton_self _)))
-      simpa only [Spec.Rsa.Mont.arrAt, Nat.add_mul, Nat.add_assoc] using ht
+      simpa only [Proof.Rsa.Mont.arrAt, Nat.add_mul, Nat.add_assoc] using ht
   · apply hf x
     intro r hr hc
     rcases List.mem_append.mp hr with hw | ha
@@ -112,10 +112,10 @@ theorem keeps_to_work {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat}
       omega_arith
     · exact he r ha hc
 
-theorem keeps_write_flag {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat} {m m' : Mem}
-    (h : Spec.MillerRabin.Keeps L B n w m m') (hn : 8 * n ≤ 2 ^ 64)
+theorem keeps_write_flag {L : Proof.MillerRabin.Round.Workspace} {B : Addr} {n w : Nat} {m m' : Mem}
+    (h : Proof.MillerRabin.Round.Keeps L B n w m m') (hn : 8 * n ≤ 2 ^ 64)
     (hl : 8 * L.flag + 8 ≤ 2 ^ 64) (v : BitVec 64) :
-    Spec.MillerRabin.Keeps L B n w m (m'.writeW (off B (8 * L.flag)) v) := by
+    Proof.MillerRabin.Round.Keeps L B n w m (m'.writeW (off B (8 * L.flag)) v) := by
   intro i hi hh ha ht
   have hx : ofs B (B + BitVec.ofNat 64 i) < 8 * L.flag ∨
       8 * L.flag + 8 ≤ ofs B (B + BitVec.ofNat 64 i) := by

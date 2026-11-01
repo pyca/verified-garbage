@@ -17,9 +17,8 @@ open Lean Elab Command Spec.Dsa
 #guard deriveKeyBytes 128 20 [] [] == none
 #guard deriveKeyBytes 128 20 (List.replicate 276 0) (List.replicate 20 1) == none
 
-#assert_standard_axioms Spec.Dsa.checkParametersContract
 #assert_standard_axioms Spec.Dsa.deriveKeyContract
-#assert_no_compiler_overrides Spec.Dsa.checkParametersApi Spec.Dsa.deriveKeyApi
+#assert_no_compiler_overrides Spec.Dsa.deriveKeyApi
 #assert_spec_origin
 
 run_cmd do

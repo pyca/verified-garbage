@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.Arm.RvStage
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! # A candidate on ARMv7: tools for Montgomery multiplication's stages
 
@@ -25,7 +26,7 @@ writes only the two words above the number of `[j]`.
 namespace VG.Proof.Dsa.Arm.Prime
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 open VG.Proof.Rsa.Arm.Recover (VP)
 
 /-- Loads, stores and arithmetic relative to the stack pointer. -/

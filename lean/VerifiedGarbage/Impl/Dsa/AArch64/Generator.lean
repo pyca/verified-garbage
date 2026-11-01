@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedSearch
-public import VerifiedGarbage.Spec.Dsa.GeneratorStage
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-! # DSA's generator search and domain check as a function of its own (AArch64)
 
@@ -65,7 +65,7 @@ def restore : List Instr :=
     gprSlots.map fun (r, d) => .ldr .x r .x9 d
 
 /-- The stage's place in the generation's scratch space. -/
-def layout (pLen : Nat) : Spec.Dsa.GeneratorStage.Layout where
+def layout (pLen : Nat) : Impl.Dsa.GeneratorStage.Layout where
   pLen := pLen
   qLen := qLen pLen
   p := Generation.Layout.p

@@ -19,7 +19,7 @@ multiplied by `T[digit]` and the digit starts again. -/
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 structure WinState (base : BitVec 32) (len w M x A p q : Nat) (s : State) : Prop where
@@ -49,7 +49,7 @@ theorem windowSquare_ok (s : State) {base : BitVec 32} {len w M x A p q V : Nat}
       u.mem.readW (off (State.addr base) 200) 32 = BitVec.ofNat 32 V ∧
       KeepsExp base s.mem u.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem u.mem ∧ Rest roundClobbers s u := by
   have fits := h.fits
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
   refine WP.mono (exp_square_ok s h.power) ?_
   rintro u ⟨powerU, keepsU, frameU, restU⟩
   have hdrU (d : Nat) (hd : d + 4 ≤ 256) :=

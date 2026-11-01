@@ -13,10 +13,10 @@ meta import VerifiedGarbage.Impl.Bignum.Arm.CombExp
 namespace VG.Proof.Bignum.Arm.CombExp
 open VG VG.Arm
 open VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 private theorem op (q : Nat) (h : q=4 ∨ q=6 ∨ q=7) : Operand q := by
-  rcases h with rfl|rfl|rfl <;> simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]
+  rcases h with rfl|rfl|rfl <;> simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
 
 theorem initial_ct {base source table : BitVec 32} {len w bytes N M g x1 x2 : Nat}
     {P1 P2 : State→Prop} {regions1 regions2 : List Region}

@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Dsa.GeneratorStageContract
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorCall
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorPlanCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
@@ -23,6 +24,7 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.GeneratorStageContract
 
 /-! # Calling the generator stage in constant time
 
@@ -92,7 +94,7 @@ theorem generatorCall_ct (G : GeneratorStage) (pLen qLen : Nat) (sizes : Generat
       obtain ⟨_, s₂, _, h0₂, h1₂, h2₂, h3₂, _, hsp₂, _, _⟩ := h₂
       subst hp
       refine ⟨_, _, _, _, E₁.pre, E₂.pre, ?_, E₁.reads, E₁.writes, E₂.reads, E₂.writes⟩
-      sig_pub [Generator.contract, Spec.Dsa.GeneratorStage.contract, Spec.Dsa.GeneratorStage.sig, abi, argRegs]
+      sig_pub [Generator.contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
       rw [hsp₁, hsp₂, h0₁, h0₂, h1₁, h1₂, h2₁, h2₂, h3₁, h3₂]
       have hl : (BitVec.ofNat 64 a.seed.context.hs.bytes.length).toNat = a.seed.context.hs.bytes.length := by
         rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt a.seed.context.hs.size]

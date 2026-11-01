@@ -23,10 +23,10 @@ private theorem round_constant (w j : Nat) (hj : j = aOne ∨ j = aR2) :
     ∀ r ∈ Caller.callRanges w, slot w j + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w j := by
   rcases hj with rfl | rfl
   all_goals
-    simp only [Caller.callRanges, mutRanges, Spec.MillerRabin.extended, List.map_cons, List.map_nil,
+    simp only [Caller.callRanges, mutRanges, Proof.MillerRabin.Round.extended, List.map_cons, List.map_nil,
       List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, aR1, aOne, aR2,
-      Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+      Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
     and_intros <;> omega
 
 theorem sharedRound_ok (K : Kernel) {s : State} {B : Addr} {Z w N a : Nat} {mi : BitVec 64}
@@ -34,7 +34,7 @@ theorem sharedRound_ok (K : Kernel) {s : State} {B : Addr} {Z w N a : Nat} {mi :
     (ho : N % 2 = 1) (hN : 3 ≤ N)
     (ha : wv s.mem B (slot w aXm) w = a % N * 2 ^ (64 * w) % N) :
     WP isa K.run s fun t => ModulusReady t B Z w mi N ∧
-      word t.mem B (8 * kFlag) = mask (Spec.MillerRabin.round N a) ∧
+      word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round N a) ∧
       WorkFrame B (Caller.callRanges w) [below (s.gpr .rsp) 128] s.mem t.mem ∧ Keep mmRegs s t := by
   have hc : MrCtx s B Z w mi N (wv s.mem B (slot w aB) w) := ⟨h.good, h.inv, h.n, rfl, h.r1, h.rm1⟩
   refine WP.mono (K.ok hc h.exponent hd hZ hr ho hN ha) fun t ⟨⟨bm, hc'⟩, he, hf, hfrm, k⟩ => ?_
@@ -70,6 +70,6 @@ theorem witnessRound_ok (M : Mont) (K : Kernel) {s : State} {B : Addr} {Z w N a 
   rw [hsp] at hf'
   refine ⟨ht, ?_, (hf.work.mono (fun r hr => List.mem_append_left _ hr)).trans
     (hf'.mono (fun r hr => List.mem_append_right _ hr)), (k.trans k').mono (by decide)⟩
-  simpa only [Spec.MillerRabin.round, VG.Proof.Ffdh.rsa_round_eq a hN ho] using hflag
+  simpa only [Proof.MillerRabin.Round.round, VG.Proof.Ffdh.rsa_round_eq a hN ho] using hflag
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

@@ -12,12 +12,12 @@ import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt wordAt)
+open VG.Proof.Rsa.Mont (numAt arrAt wordAt)
 
 structure CrtPoweredState (base : BitVec 32) (len w M value : Nat) (mem : Mem) : Prop where
   layout : CrtLayoutState base len w mem
   inverse : ((word mem (State.addr base) (arrAt w 0)).toNat *
-    (wordAt mem (State.addr base) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
+    (wordAt mem (State.addr base) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
   positive : 1 < M
   modulus : numAt mem (State.addr base) w 0 = M
   result : numAt mem (State.addr base) w 6 = value

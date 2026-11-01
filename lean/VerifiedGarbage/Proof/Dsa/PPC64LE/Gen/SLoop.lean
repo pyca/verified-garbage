@@ -22,7 +22,7 @@ open VG.Impl.Dsa.PPC64LE.Generation
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 
 /-- What a geometry's code and the tapes give the search. -/
-structure GenOk (G : GP) (g : Geo) (HO : HashOk g.G) (Lq Lp : Spec.Dsa.ProbablePrime.Layout) : Prop where
+structure GenOk (G : GP) (g : Geo) (HO : HashOk g.G) (Lq Lp : Impl.Dsa.ProbablePrime.Layout) : Prop where
   okq : PrimeOk Lq g.qCode
   qlay : QLay G g Lq
   okp : PrimeOk Lp g.pCode
@@ -46,7 +46,7 @@ structure GenOk (G : GP) (g : Geo) (HO : HashOk g.G) (Lq Lp : Spec.Dsa.ProbableP
 section
 variable {G : GP} {X : State → Prop} {Gh : Hash}
 
-theorem GenOk.attempt_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Spec.Dsa.ProbablePrime.Layout}
+theorem GenOk.attempt_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Layout}
     (O : GenOk G g HO Lq Lp) {k u : Nat} (hk : k + G.qLen ≤ G.seedsLen) (hu : u ≤ G.witLen) :
     VP (St G ((aBase G HO k).setV fUsed (BitVec.ofNat 64 u)) X) g.attempt
       (St G (aOut G HO k (VG.Proof.Dsa.Generation.seedResult (8 * G.pLen) (8 * G.qLen) (seedAt G k) (hsL G)
@@ -143,7 +143,7 @@ theorem sSpec_step {G : GP} {u0 i : Nat} (hq0 : 0 < G.qLen) (hsb : G.seedsB.leng
     show (i + 1) * G.qLen = i * G.qLen + G.qLen from Nat.succ_mul _ _]
   rfl
 
-theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Spec.Dsa.ProbablePrime.Layout} (O : GenOk G g HO Lq Lp) {u0 N : Nat} (r : Nat) :
+theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Layout} (O : GenOk G g HO Lq Lp) {u0 N : Nat} (r : Nat) :
     VP (sInv G HO u0 N X (r + 1)) (seqs [.block (cmpF fSeedLeft 0),
         .ite (.zero .d .r0) (.block (stImm fStatus 2))
           (seqs [g.attempt, .block [ld .r3 fSeed, .addi .r3 .r3 g.qLen, st .r3 fSeed, ld .r3 fSeedLeft,
@@ -284,7 +284,7 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Spec.Dsa.ProbablePrime.Lay
     exact ⟨by simp, by simp [sFin, upd]⟩
 
 /-- The seeds, from the first with `u0` witnesses read. -/
-theorem sLoop_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Spec.Dsa.ProbablePrime.Layout} (O : GenOk G g HO Lq Lp) {u0 : Nat} (hu0 : u0 ≤ G.witLen) :
+theorem sLoop_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Layout} (O : GenOk G g HO Lq Lp) {u0 : Nat} (hu0 : u0 ≤ G.witLen) :
     VP (St G ((aBase G HO 0).setV fUsed (BitVec.ofNat 64 u0)) X)
       (.loop (seqs [.block (cmpF fSeedLeft 0),
         .ite (.zero .d .r0) (.block (stImm fStatus 2))

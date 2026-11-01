@@ -148,7 +148,7 @@ theorem mid_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch k n : Na
     have K := hi.toLKeep.draw hd
     by_cases hp : Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
         (wit c (8 * w) r (8 * w * (k + 1))).1 = true
-    · have hr : Spec.MillerRabin.round c (wit c (8 * w) r (8 * w * (k + 1))).1 = true := by rw [round_eq]; exact hp
+    · have hr : Proof.MillerRabin.Round.round c (wit c (8 * w) r (8 * w * (k + 1))).1 = true := by rw [round_eq]; exact hp
       simp only [hr, ↓reduceIte] at hst hid
       rw [statOf_eq] at hst
       by_cases hg : goS ch (mrS c (8 * w) r (k + 1))
@@ -169,7 +169,7 @@ theorem mid_ok (R : RoundImpl) {s t : State} {B Ra : Addr} {L w c rl ch k n : Na
         congr 1; omega
     · have hp' : Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
           (wit c (8 * w) r (8 * w * (k + 1))).1 = false := by simpa using hp
-      have hr : Spec.MillerRabin.round c (wit c (8 * w) r (8 * w * (k + 1))).1 = false := by
+      have hr : Proof.MillerRabin.Round.round c (wit c (8 * w) r (8 * w * (k + 1))).1 = false := by
         rw [round_eq]; exact hp'
       obtain ⟨_, hpt⟩ := VG.Proof.RsaKeyGen.mrAt_fail ha hwb hL hav hp'
       simp only [hr, Bool.false_eq_true, ↓reduceIte] at hst

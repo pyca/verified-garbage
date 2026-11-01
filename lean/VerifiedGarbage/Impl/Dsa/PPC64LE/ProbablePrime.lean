@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Blinded
 public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Trial
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-!
 # DSA's probable-prime test on PPC64LE
@@ -13,8 +13,8 @@ the `bits / 8` big-endian bytes at byte 0 of `ws`. From byte `saveOff`,
 `ws` holds our caller's return address, `r14`–`r31`, `used` and `r2`
 (which the round's loop does not track); from byte `keyOff`,
 the Montgomery working space of RSA's functions (a header of 32 words, then
-arrays of `w + 2` words, `Spec.Rsa.Mont.Layout`), as the shared
-Miller–Rabin round takes it (`Spec.MillerRabin.compact`, whose arrays reach
+arrays of `w + 2` words, `Proof.Rsa.Mont.Layout`), as the shared
+Miller–Rabin round takes it (`Proof.MillerRabin.Round.compact`, whose arrays reach
 27), with the prime search's state in its header (`Impl/MillerRabin/PPC64LE/
 Search.lean`). Those are the only bytes of `ws` the test changes.
 
@@ -80,7 +80,7 @@ def keyWords (bits : Nat) : Nat := 32 + 28 * (words bits + 2)
 
 /-- The candidate at byte 0 of `ws`, and the saved registers and the
 working space the only bytes the test changes. -/
-def layout (bits : Nat) : Spec.Dsa.ProbablePrime.Layout where
+def layout (bits : Nat) : Impl.Dsa.ProbablePrime.Layout where
   bits := bits
   candidate := 0
   scratch := [(saveOff, keyOff - saveOff + 8 * keyWords bits)]

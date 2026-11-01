@@ -74,8 +74,7 @@ theorem verified (v : RoundImpl) : Verified target (testCode v) contract :=
 /-- The test with the round implementation `v`, as parameter generation
 calls it. -/
 def primeTest (v : RoundImpl) : VG.Proof.Dsa.X86_64.Generation.PrimeTest where
-  name := (Spec.Dsa.ProbablePrime.sizedApi Impl.Dsa.X86_64.ProbablePrime.layout
-    Impl.Dsa.X86_64.ProbablePrime.sizes).name ++ v.suffix
+  name := "vg_dsa_probable_prime" ++ v.suffix
   code := testCode v
   verified := verified v
   safe := testCode_safe v

@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand)
 
 def DoubleFnReady (base : BitVec 32) (len w o a b : Nat) (s : State) : Prop :=
   FnBodyReady base len w o a b s ∧ w32 s.mem (State.addr base) (arrAt w a) = 2
@@ -40,7 +40,7 @@ theorem doubleBases_ready {base : BitVec 32} {len w o a b : Nat}
   rw [h.width] at header
   obtain ⟨ctx, _⟩ := layout_context h.workspace hw fits ho ha hb
   have bound : 128 ≤ 8 * len := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   refine WP.mono (bases_ok s h.workspace bound header ho.1 ha.1 hb.1 h.ptr h.outIndex h.aIndex h.bIndex) ?_
   rintro t ⟨regs, mem, keep⟩

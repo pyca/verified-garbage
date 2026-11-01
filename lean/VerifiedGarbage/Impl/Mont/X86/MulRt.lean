@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86
-public import VerifiedGarbage.Spec.Rsa.MontMul
 
 /-! # Montgomery multiplication at a width given at run time (32-bit x86)
 
-`vg_rsa_mont_mul_at` (`Spec/Rsa/MontMul.lean`) takes the width and every
+`vg_rsa_mont_mul_at` (`Proof/Rsa/MontMulContract.lean`) takes the width and every
 offset as arguments, so its code depends on none of them: it reaches the
 numbers through pointers, the working space's address plus an offset, which
 move by a word, and each loop ends when a pointer reaches an end it keeps in

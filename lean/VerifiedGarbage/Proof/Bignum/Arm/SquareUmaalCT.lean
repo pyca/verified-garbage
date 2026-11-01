@@ -12,7 +12,7 @@ meta import VerifiedGarbage.Impl.Bignum.Arm.SquareUmaal
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt Operand)
+open VG.Proof.Rsa.Mont (arrAt Operand)
 
 
 section

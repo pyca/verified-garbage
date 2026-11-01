@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckPre
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Call
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 /-! # The wrapper's initial domain-checking call -/
 
@@ -15,7 +16,7 @@ open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.KeyRandom
 structure CheckFn where
   name : String
   code : Prog isa
-  verified : Verified X86.target code (Spec.Dsa.checkParametersContract X86.abi 108)
+  verified : Verified X86.target code (Proof.Dsa.checkParametersContract X86.abi 108)
   noSp : NoSp code
   depth : stackUse code ≤ 108
 
@@ -76,7 +77,7 @@ theorem call_ok (F : CheckFn) {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀
       have := Offset.sub_base (rCall s₀) (d := 0) (n := 112) (k := 232) (by decide)
       rwa [BitVec.add_zero] at this
   refine ⟨hu, hf', hcs, ?_⟩
-  sig_post [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argSlots, argVal, argBytes, stackBelow] at hpost
+  sig_post [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argSlots, argVal, argBytes, stackBelow] at hpost
   simp only [ce_arg A h C (callRd s₀) (callWr s₀) (show 0 < 6 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 1 < 6 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 2 < 6 by decide),

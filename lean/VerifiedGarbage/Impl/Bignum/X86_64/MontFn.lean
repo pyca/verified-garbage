@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.BaseSquare
 /-!
 # Montgomery multiplication as a function (x86-64)
 
-`vg_rsa_mont_mul(ws, ws_len, o, a, b)` (`Spec/Rsa/Mont.lean`): the arrays
+`vg_rsa_mont_mul(ws, ws_len, o, a, b)` (`Proof/Rsa/MontContract.lean`): the arrays
 are given by their indices, in `edx`, `ecx` and `r8d`, and the working space
 by `rdi`, as the code that calls it has them. It uses no stack, so that
 calls of it run as their code inlined would (`Proof/Framework/X86_64/CallInline.lean`):

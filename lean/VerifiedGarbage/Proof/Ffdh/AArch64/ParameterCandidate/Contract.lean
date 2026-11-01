@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -8,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 /-!
 # An FFDH parameter candidate on AArch64: the contract the proofs use
 
-`pcContract` states `Spec.Ffdh.parameterCandidateContract` (with no stack of
+`pcContract` states `Proof.Ffdh.parameterCandidateContract` (with no stack of
 its own) on the registers and the stack:
 `vg_ffdh_parameter_candidate(out = x0, out_len = x1, used = x2, bits = x3,
 generator = w4, rand = x5, rand_len = x6, scratch = x7, scratch_len = [sp])`;

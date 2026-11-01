@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 
 `vg_ffdh_parameter_candidate(out = x0, out_len = x1, used = x2, bits = x3,
 generator = x4, rand = x5, rand_len = x6, scratch = x7, scratch_len = [sp])`
-(`Spec.Ffdh.parameterCandidateContract`), in the working space of RSA's key
+(`Proof.Ffdh.parameterCandidateContract`), in the working space of RSA's key
 routines (`Impl/Rsa/AArch64/Keys.lean`, as the RSA candidate's,
 `Impl/RsaKeyGen/AArch64/Candidate.lean`): a header of 32 words, then arrays
 of `w + 2` words, `w` set for each modulus by `Keys.head` from the length

@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 structure PdImportInput (base pp : BitVec 32) (len w : Nat) (s : State) : Prop where
@@ -37,7 +37,7 @@ theorem pdImport_ok (s : State) {base pp : BitVec 32} {len w : Nat}
       numAt t.mem (State.addr base) w 4 = (s.mem.read (off (State.addr pp) (8 * w)) (8 * w)).toNat ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have hw : 2 ≤ w := h.ready.width ▸ h.ready.layout.1
   have nowrap := h.ready.workspace.nowrap
   let pp2 := pp + BitVec.ofNat 32 (8 * w)
@@ -84,7 +84,7 @@ theorem pdImport_ok (s : State) {base pp : BitVec 32} {len w : Nat}
   have unchanged := publicEq.read (8 * w) (8 * w) (by omega)
   rw [unchanged] at second
   have firstT := keeps_array_num keepsT fits
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 0) (by decide : 0 ≠ 4)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 0) (by decide : 0 ≠ 4)
   rw [memZ] at firstT
   exact ⟨readyT, firstT.trans first, second, frameV.trans frameT,
     rv.trans ((restZ.mono (by decide)).trans restT)⟩

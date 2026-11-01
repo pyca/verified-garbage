@@ -49,7 +49,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 
 /-- A prepared full-width factor workspace, with its constants, for some factor. -/
 def CrtReduceReady (base : BitVec 32) (len w : Nat) (one : Bool) (s : State) : Prop :=
@@ -60,10 +60,10 @@ theorem crt_narrowReduce_ct {base xp ep : BitVec 32} {len w k eLen slot : Nat} {
     (countFits : 128 * w < 2 ^ 32) (fit : arrAt w 3 + 32 ≤ 8 * len) :
     RelCT isa (fun s t => CrtPrimePowerInput base xp ep len w k eLen slot xb1 eb1 s ∧
       CrtPrimePowerInput base xp ep len w k eLen slot xb2 eb2 t ∧ s.sp = t.sp) reducePrime (fun _ _ => True) := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega
   let Prepared := fun (xb eb : List Byte) (s : State) =>
     ∃ M, CrtPreparedPower base xp ep len w k eLen slot M xb eb s
   have prepare : RelCT isa (fun s t => CrtPrimePowerInput base xp ep len w k eLen slot xb1 eb1 s ∧
@@ -179,7 +179,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem crt_narrowExp_ct {base ep : BitVec 32} {len v M1 M2 x1 x2 eLen es : Nat} {eb1 eb2 : List Byte}
     (fit : arrAt v 3 + 32 ≤ 8 * len) (fits : arrAt v 16 ≤ 8 * len) (kernel : WindowKernel := baselineWindowKernel) :
@@ -218,7 +218,7 @@ end
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- The safe factor that the acceptance bit saved in `s` selects. -/
@@ -331,8 +331,8 @@ theorem crt_narrowCopied_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → Lis
   obtain ⟨_, ws, _, sepCN, slotFit, hs, link⟩ := shared.child kind
   obtain ⟨_, le, _, _, _, _⟩ := shared.narrow_fits j primeJ
   have hi := i.isLt
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine WP.mono (crt_narrowInput_ok s shared ready ws sepCN slotFit hs link reduced modulus le) ?_
   rintro t ⟨readyT, inputT, keepsT, frameT, restT⟩
   have fitsN := ready.width ▸ ready.layout.2.2.1

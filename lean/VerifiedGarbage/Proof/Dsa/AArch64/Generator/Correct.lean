@@ -18,7 +18,7 @@ variable {pLen : Nat}
 /-- No byte of `ws` but those of the stage's scratch ranges is in a region the stage changes. -/
 theorem keeps_of_frame (hb : Supported pLen) {s : State} (A : StageABI pLen s) {m : Mem}
     (hf : Frame (stageChanged pLen s ++ [⟨frameBase s, 272⟩, spillRegion s]) s.mem m) :
-    Spec.Dsa.ModPow.Keeps (s.gpr .x0) (s.gpr .x1).toNat (Impl.Dsa.AArch64.Generator.layout pLen).scratch s.mem m := by
+    Proof.Dsa.ModPow.Keeps (s.gpr .x0) (s.gpr .x1).toNat (Impl.Dsa.AArch64.Generator.layout pLen).scratch s.mem m := by
   intro i hi hout
   have hw := A.wsBound
   have qn := hb.q_le
@@ -59,7 +59,7 @@ theorem correct (M : Mont) (hb : Supported pLen) (s : State) (pre : (contract pL
         change t.sp + BitVec.ofNat 64 272 = s.sp
         rw [P.sp]; exact BitVec.sub_add_cancel .., P.vectors⟩, P.status, P.packed, P.frame⟩)
   refine ⟨trace, t, he, hpre, ?_⟩
-  sig_post [contract, Spec.Dsa.GeneratorStage.contract, Spec.Dsa.GeneratorStage.sig, abi, argRegs]
+  sig_post [contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
   refine ⟨?_, keeps_of_frame hb A hf, fun a ha => hpk a ha⟩
   rw [hst]
   cases (result pLen s).isSome <;> rfl

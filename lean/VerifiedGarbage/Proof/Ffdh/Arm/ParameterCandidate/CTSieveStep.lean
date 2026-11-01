@@ -30,7 +30,7 @@ structure SieveData where
 structure SieveStepStart (p : SieveData × Nat) (s : State) : Prop where
   context : SieveContext p.1.dst p.1.base p.1.bytes.length s
   index : p.2 < trialCount p.1.bytes.length
-  cursor : s.gpr .r10 = p.1.base + BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt ((p.1.bytes.length + 7) / 8) 34 + 4 * p.2)
+  cursor : s.gpr .r10 = p.1.base + BitVec.ofNat 32 (Proof.Rsa.Mont.arrAt ((p.1.bytes.length + 7) / 8) 34 + 4 * p.2)
   bytes : Spec.Rsa.bytesAt s.mem (State.addr p.1.dst) p.1.bytes.length = p.1.bytes
   bad : s.mem.readW (State.addr (s.sp + 64#32)) 32 = if sieveAny (Spec.Rsa.os2ip p.1.bytes) p.2 then 1 else 0
 

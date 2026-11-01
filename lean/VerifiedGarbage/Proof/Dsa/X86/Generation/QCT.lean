@@ -92,7 +92,7 @@ theorem qPart_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
       exact WP.mono (q3_ok G v Q H) fun u h' => ⟨s, hs, h'⟩) ?_
   -- Into the test's working space.
   refine RelCT.seq (both_post (Ψ := fun a t => ∃ s, QIn E a s ∧ QAt E g s t ∧
-      Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)) t.mem
+      Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)) t.mem
         (off E.base sPP) = Spec.Dsa.qCandidate (8 * g.qLen) (chunk E a.1))
     (both_agree [.esp, .edi] (fun _ => baseVal E) (fun a t h => by obtain ⟨s, _, Q, _⟩ := h; exact qAt_pins Q)
       (tcheckE _ _ (copyS 0 0 1) (copyS_erase _ _ _) (by decide +kernel) (by decide +kernel)))

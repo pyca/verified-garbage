@@ -37,11 +37,6 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.X86.CrtValues.verified
     spSafe := Proof.Rsa.X86.RtShape.crtValues_spSafe
     stack := 52 },
-  Spec.Rsa.privateCrtApi.artifact X86.target {
-    code := Impl.Bignum.X86.CrtRt.code
-    verified := Proof.Bignum.X86.CrtRt.verified
-    spSafe := Proof.Rsa.X86.RtShape.privateCrt_spSafe
-    stack := 96 },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
     code := Impl.Bignum.X86.PrecomputedRt.code
     verified := Proof.Bignum.X86.PrecomputedRt.verified
@@ -50,11 +45,6 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
     code := Impl.Bignum.X86.PrecomputeFn.code
     verified := Proof.Bignum.X86.precompute_verified
-    stack := 96 },
-  Spec.Rsa.publicCheckedApi.artifact X86.target {
-    code := Impl.Bignum.X86.PublicRt.code
-    verified := Proof.Bignum.X86.PublicRt.verified
-    spSafe := Proof.Rsa.X86.RtShape.public_spSafe
     stack := 96 }]
 
 end VG.Artifacts.Rsa.X86

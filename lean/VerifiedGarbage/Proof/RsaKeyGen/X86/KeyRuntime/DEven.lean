@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionLoad
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # A modulus-width fallback for public even exponents -/
 

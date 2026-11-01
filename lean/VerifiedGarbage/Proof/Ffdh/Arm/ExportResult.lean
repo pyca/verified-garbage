@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem exportResultArgs_ok (s : State) {p : Inputs} {slots : List Nat}

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheckCT
@@ -57,9 +58,9 @@ def deriveSat : State where
   wr := [⟨0x1000, 424⟩, ⟨0x8000, 16384⟩]
 
 theorem check_verified :
-    Verified Arm.target Generate.checkParameters (Spec.Dsa.checkParametersContract Arm.abi 0) :=
+    Verified Arm.target Generate.checkParameters (Proof.Dsa.checkParametersContract Arm.abi 0) :=
   Verified.of_correct (fun _ hs => check_correct hs) check_constantTime (by
-    sig_implies [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, checkArm, checkPre, checkRes,
+    sig_implies [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, checkArm, checkPre, checkRes,
       checkParams, arg, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr,
       BitVec.add_zero] [checkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using checkSat)
 

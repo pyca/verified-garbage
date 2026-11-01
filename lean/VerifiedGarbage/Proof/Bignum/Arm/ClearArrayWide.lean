@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem outside_array_prefix_keeps {m m' : Mem} {base : Addr} {len w o n : Nat}
@@ -33,7 +33,7 @@ theorem clearArrayWide_ok (s : State) {base : BitVec 32} {len w o : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have bound := Nat.le_trans (array_end_le ho) fits
-  have small : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have small : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have nowrap := h.workspace.nowrap
   have header := nativeHeader_of_layout s.mem base nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header

@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.Params
 public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
-public import VerifiedGarbage.Spec.RsaPss.Encoding
+public import VerifiedGarbage.Proof.RsaPss.EncodingContract
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
@@ -33,7 +33,7 @@ theorem emLength_z {b : Nat} : 8 * Spec.RsaPss.emLength b - b < 8 ∧ b ≤ 8 * 
 theorem maskBits_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {r : Reg} (hra : r ≠ .rax) {b : Nat}
     (hk : W 17 = BitVec.ofNat 64 (Spec.RsaPss.emLength b)) (hb : u.gpr r = BitVec.ofNat 64 b)
-    (hb2 : b ≤ Spec.RsaPss.maxEmBits) :
+    (hb2 : b ≤ Proof.RsaPss.maxEmBits) :
     WP isa (.block (maskBits r)) u fun u' => Lay u' F S ∧ Keep [.rax, .rcx] u u' ∧
       Rep u'.mem F S V (upd (upd W 25 (BitVec.setWidth 64 ((0xFF : Byte) >>> (8 * Spec.RsaPss.emLength b - b))))
         26 0) ∧
@@ -41,7 +41,7 @@ theorem maskBits_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
         (off F sLo) (0 : BitVec 64) := by
   have G := L.geo
   obtain ⟨hz, hle⟩ := emLength_z (b := b)
-  have hE : Spec.RsaPss.emLength b ≤ 1024 := by unfold Spec.RsaPss.emLength Spec.RsaPss.maxEmBits at *; omega
+  have hE : Spec.RsaPss.emLength b ≤ 1024 := by unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega
   have R1 := R.wf G (k := 25) (by decide) (BitVec.setWidth 64 ((0xFF : Byte) >>> (8 * Spec.RsaPss.emLength b - b)))
   have R2 := R1.wf G (k := 26) (by decide) 0
   rw [show off F (8 * 25) = off F sC from rfl] at R1 R2
@@ -51,7 +51,7 @@ theorem maskBits_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
     rw [BitVec.shiftLeft_eq_mul_twoPow]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_twoPow]
-    have : b < 2 ^ 64 := by unfold Spec.RsaPss.maxEmBits at hb2; omega
+    have : b < 2 ^ 64 := by unfold Proof.RsaPss.maxEmBits at hb2; omega
     rw [Nat.mod_eq_of_lt (show Spec.RsaPss.emLength b < 2 ^ 64 by omega), Nat.mod_eq_of_lt this]
     omega
   have hzt : (BitVec.ofNat 64 (8 * Spec.RsaPss.emLength b - b)).toNat % 64 = 8 * Spec.RsaPss.emLength b - b := by

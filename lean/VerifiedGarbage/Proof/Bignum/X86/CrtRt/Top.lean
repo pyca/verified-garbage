@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtResources
 import VerifiedGarbage.Proof.Bignum.X86.CrtSave
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Functional correctness and cdecl preservation of private CRT RSA at a run-time width
 
@@ -222,13 +223,13 @@ theorem operation_ok {s : State} (A : CrtABI s) :
   rw [Specs] at V
   exact V
 
-theorem correct (s : State) (h : (Spec.Rsa.privateCrtContract abi 96).pre s) :
+theorem correct (s : State) (h : (Proof.Rsa.privateCrtContract abi 96).pre s) :
     ∃ trace t, Exec isa CrtRt.code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.privateCrtContract abi 96).post s t := by
+      (Proof.Rsa.privateCrtContract abi 96).post s t := by
   have A := crtABI_of h
   obtain ⟨trace, t, E, V, P⟩ := operation_ok A
   refine ⟨trace, t, E, P, ?_⟩
-  sig_post [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes]
+  sig_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes]
   rw [BitVec.setWidth_append_eq_right]
   unfold specResult at V
   rw [A.inLength, A.dpLength, A.dqLength, A.qiLength] at V

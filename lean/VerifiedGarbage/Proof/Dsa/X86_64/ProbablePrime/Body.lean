@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 /-! # The probable-prime test's body, between its frame's push and pop -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/ProbablePrime/Save.lean`, which only this module imported.
@@ -191,7 +192,7 @@ def changed (bits : Nat) (s : State) : List Region :=
 def BodyPost (bits : Nat) (s t : State) : Prop :=
   let res := Spec.Dsa.probablePrime (candidateOf bits s)
     (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-  t.gpr .rax = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status res) ∧
+  t.gpr .rax = BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status res) ∧
   (∀ b rest, res = some (b, rest) →
     t.mem.readW (s.gpr .r8) 64 = BitVec.ofNat 64 ((s.gpr .rcx).toNat - rest.length)) ∧
   Frame (changed bits s) s.mem t.mem ∧
@@ -539,13 +540,13 @@ theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State}
     ?_, ?_, ?_, g7⟩
   · rw [k7 _ (by decide), rax6]
     change returned (word u5.mem (params hb A).B (8 * kStat)) = BitVec.ofNat 64
-      (Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime (params hb A).N (List.drop 0 (params hb A).rand)))
+      (Proof.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime (params hb A).N (List.drop 0 (params hb A).rand)))
     cases h : Spec.Dsa.probablePrime (params hb A).N (List.drop 0 (params hb A).rand) with
     | none => rw [hnone h]; decide
     | some r =>
       obtain ⟨b, rest⟩ := r
       rw [(hsome b rest h).1]
-      cases b <;> simp only [Spec.Dsa.ProbablePrime.status] <;> decide
+      cases b <;> simp only [Proof.Dsa.ProbablePrime.status] <;> decide
   · intro b rest h
     have h' : Spec.Dsa.probablePrime (params hb A).N (List.drop 0 (params hb A).rand) = some (b, rest) := h
     rw [m7, m6, Mem.readW_writeW_self64]

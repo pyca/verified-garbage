@@ -22,7 +22,7 @@ namespace VG.Proof.MillerRabin.Arm
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.MillerRabin.Arm VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 
 /-- Word `i` of the exponent's array, in `σ`. -/
 abbrev ew (P : MP) (σ : State) (i : Nat) : Nat := w32 σ.mem (State.addr P.B) (arr P.W aE + 4 * i)
@@ -31,7 +31,7 @@ abbrev ew (P : MP) (σ : State) (i : Nat) : Nat := w32 σ.mem (State.addr P.B) (
 abbrev tOf (P : MP) (σ : State) : Nat := (Spec.Rsa.splitTwos (cOf P σ.mem - 1)).1
 
 /-- The exponent. -/
-abbrev eOf (P : MP) (σ : State) : Nat := Spec.MillerRabin.exponent (cOf P σ.mem)
+abbrev eOf (P : MP) (σ : State) : Nat := Proof.MillerRabin.Round.exponent (cOf P σ.mem)
 
 /-- Word `i` of a number of `k` words. -/
 theorem val32_word' (m : Mem) (base : Addr) {d k i : Nat} (hi : i < k) :

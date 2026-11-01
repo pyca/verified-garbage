@@ -14,7 +14,7 @@ namespace VG.Proof.Dsa.X86.Comb
 open VG VG.X86 VG.Impl.Dsa.X86.Comb
 
 theorem private_verified {n e : Nat} (h : Supported n e) :
-    Verified target (body false n e) (Spec.Dsa.FixedBaseComb.powerContract (layout n e) abi 20) :=
+    Verified target (body false n e) (Proof.Dsa.FixedBaseComb.powerContract (layout n e) abi 20) :=
   ⟨correct h false,private_constantTime h,satisfiable h false⟩
 
 end VG.Proof.Dsa.X86.Comb

@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.TCB.Arm.Isa
 
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt Keeps)
 
 theorem keeps_of_native {mem mem' : Mem} {base : BitVec 32} {len w o : Nat}
     (nowrap : base.toNat + 8 * len ≤ 2 ^ 32) (hw : 2 ≤ w)
@@ -22,8 +22,8 @@ theorem keeps_of_native {mem mem' : Mem} {base : BitVec 32} {len w o : Nat}
        (arrAt w 3, 4 * (2 * w)), (arrAt w o, 4 * (2 * w))] mem mem') :
     Keeps (State.addr base) len w o mem mem' := by
   intro i hi separate
-  have h2 := separate 2 (by simp [Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-  have h3 := separate 3 (by simp [Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
+  have h2 := separate 2 (by simp [Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+  have h3 := separate 3 (by simp [Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
   have ho := separate o (by simp)
   apply outside
   intro r hr

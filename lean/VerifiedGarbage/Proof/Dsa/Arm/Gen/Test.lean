@@ -249,7 +249,7 @@ theorem primeCall_vp {L u bits : Nat} {name : String} {code : Prog isa} {cb : Li
     (hcl : ∀ x ∈ cl', x ∈ c.cl ∧ Apart sA (wa L) x) :
     VP (fun σ s => St G c X σ s ∧ TArgs G L u bits s) (callWith name code)
       (fun σ t => St G (callCfg c cl' G.witLen u (Spec.Dsa.probablePrime (Spec.Dsa.decodeBE cb) (G.witB.drop u))) X σ t ∧
-        (t.gpr .r0).toNat = Spec.Dsa.ProbablePrime.status
+        (t.gpr .r0).toNat = Proof.Dsa.ProbablePrime.status
           (Spec.Dsa.probablePrime (Spec.Dsa.decodeBE cb) (G.witB.drop u))) := by
   have bytes : ∀ σ s, SS G σ c s → Spec.Rsa.bytesAt s.mem (G.sa sA) (bits / 8) = cb := fun σ s h => by
     have := h.sb _ hcb; rwa [hcbl] at this
@@ -271,20 +271,20 @@ theorem primeCall_vp {L u bits : Nat} {name : String} {code : Prog isa} {cb : Li
     rw [Mem.readW_lo32 this]
     apply BitVec.eq_of_toNat_eq; simp
 
-theorem status_lt (res : Option (Bool × Spec.RsaKeyGen.Rand)) : Spec.Dsa.ProbablePrime.status res < 3 := by
-  unfold Spec.Dsa.ProbablePrime.status; split <;> decide
+theorem status_lt (res : Option (Bool × Spec.RsaKeyGen.Rand)) : Proof.Dsa.ProbablePrime.status res < 3 := by
+  unfold Proof.Dsa.ProbablePrime.status; split <;> decide
 
 /-- The test's result into `fRes`, then Z iff the tape ran out. -/
 theorem testRes_vp {c' : Cfg} {res : Option (Bool × Spec.RsaKeyGen.Rand)} :
-    VP (fun σ t => St G c' X σ t ∧ (t.gpr .r0).toNat = Spec.Dsa.ProbablePrime.status res)
+    VP (fun σ t => St G c' X σ t ∧ (t.gpr .r0).toNat = Proof.Dsa.ProbablePrime.status res)
       (.seq (.block (st .r0 fRes)) (.block [.cmp .r0 (.imm 0)]))
-      (fun σ t => St G (c'.setV fRes (BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res))) X σ t ∧
+      (fun σ t => St G (c'.setV fRes (BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status res))) X σ t ∧
         isa.eval .eq t = some (decide (res = none))) := by
-  have e0 : ∀ t : State, (t.gpr .r0).toNat = Spec.Dsa.ProbablePrime.status res →
-      t.gpr .r0 = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res) := fun t h =>
+  have e0 : ∀ t : State, (t.gpr .r0).toNat = Proof.Dsa.ProbablePrime.status res →
+      t.gpr .r0 = BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status res) := fun t h =>
     BitVec.eq_of_toNat_eq (by rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := status_lt res; omega_arith)])
-  refine VP.seq (G := fun σ t => St G (c'.setV fRes (BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res))) X σ t ∧
-      t.gpr .r0 = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res))
+  refine VP.seq (G := fun σ t => St G (c'.setV fRes (BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status res))) X σ t ∧
+      t.gpr .r0 = BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status res))
     (st_vp (c := fun _ => c') (fun σ t h => h.1.1) (by decide) varOk_fRes fun σ s t ⟨⟨_, x⟩, r0⟩ h R => ?_) ?_
   · rw [e0 s r0] at h
     exact ⟨⟨h, x⟩, by rw [R.gpr _ (by decide), e0 s r0]⟩
@@ -295,7 +295,7 @@ theorem testRes_vp {c' : Cfg} {res : Option (Bool × Spec.RsaKeyGen.Rand)} :
   have e00 : ∀ x : BitVec 32, x - 0 = x := fun x => by simp
   rw [eval_eq, z, r0, e00, ofNat_beq_zero (by have := status_lt res; omega_arith)]
   congr 1
-  unfold Spec.Dsa.ProbablePrime.status
+  unfold Proof.Dsa.ProbablePrime.status
   split <;> simp
 
 /-- A piece no state reaches. -/
@@ -311,7 +311,7 @@ theorem rest_le {w : Nat} {r rest : Spec.RsaKeyGen.Rand} {b : Bool} (h : Spec.Ds
 theorem testTail_vp {cl' : Claims} {u cand : Nat} (hU : fUsed ∈ c.LS) (hUv : c.V fUsed = BitVec.ofNat 32 u)
     (h88 : fUsedOut ∉ c.LS) (hwl : G.witB.length = G.witLen) (hu : u ≤ G.witLen) :
     VP (fun σ t => St G ((callCfg c cl' G.witLen u (Spec.Dsa.probablePrime cand (G.witB.drop u))).setV fRes
-        (BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime cand (G.witB.drop u))))) X σ t ∧
+        (BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime cand (G.witB.drop u))))) X σ t ∧
         isa.eval .eq t = some (decide (Spec.Dsa.probablePrime cand (G.witB.drop u) = none)))
       (.ite .eq (.block []) (VG.Impl.Rsa.Arm.Keys.seqs [.block [ld .r1 fUsedOut, ld .r2 fUsed],
         .block [.dp .add .r2 .r2 (.reg .r1)], .block (st .r2 fUsed)]))
@@ -329,7 +329,7 @@ theorem testTail_vp {cl' : Claims} {u cand : Nat} (hU : fUsed ∈ c.LS) (hUv : c
   have rl := rest_le hres
   rw [List.length_drop, hwl] at rl
   let x : BitVec 32 := BitVec.ofNat 32 (G.witLen - u - rest.length)
-  let st0 : BitVec 32 := BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status (some (b, rest)))
+  let st0 : BitVec 32 := BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status (some (b, rest)))
   let c6 : Cfg := ({ c with cl := cl' }.setV fUsedOut x).setV fRes st0
   have v88 : c6.V fUsedOut = x := by
     show upd (upd c.V fUsedOut x) fRes st0 fUsedOut = x; rw [upd_ne _ _ (by decide), upd_self]

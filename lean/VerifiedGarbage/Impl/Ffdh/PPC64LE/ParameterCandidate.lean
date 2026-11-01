@@ -8,8 +8,8 @@ public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
 
 `vg_ffdh_parameter_candidate(out = r3, out_len = r4, used = r5, bits = r6,
 generator = r7, rand = r8, rand_len = r9, scratch = r10, scratch_len)`, the
-last on the stack (`Spec.Ffdh.parameterCandidateContract`), in RSA's
-Montgomery working space at `scratch` (`Spec.Rsa.Mont.Layout`, as the shared
+last on the stack (`Proof.Ffdh.parameterCandidateContract`), in RSA's
+Montgomery working space at `scratch` (`Proof.Rsa.Mont.Layout`, as the shared
 Miller–Rabin round takes it): a header of 32 words, then arrays of `w + 2`
 words, `w` set for each modulus. The arguments and the candidate's state are
 in header words that neither the working space nor the round changes; the

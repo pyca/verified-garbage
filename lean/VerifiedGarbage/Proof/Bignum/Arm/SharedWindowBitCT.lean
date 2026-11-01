@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.SharedWindow
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.Bignum.Arm.TwoExp (Montgomery MontgomeryTiming OpInput)
 
 section
@@ -45,7 +45,7 @@ theorem bit_ct {M1 M2 x1 x2 A1 A2 p1 p2 q V1 V2 : Nat} (fits : arrAt w 16 ≤ 8 
     refine WP.mono (sharedWindowSquare_ok K s h.1.1 h.2 h.1.2.2) ?_
     rintro u ⟨state, byte, _, pu, _, _⟩
     exact ⟨⟨state, h.1.2.1, byte⟩, pu⟩
-  have op6 : Operand 6 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op6 : Operand 6 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   unfold VG.Impl.Bignum.Arm.SharedWindow.bit
   refine relCT_chain ((ct.op_ct 6 6 6 op6 op6 op6).mono
     (fun _ _ h => ⟨⟨h.1.1.1.power.ready, h.1.2, by rw [h.1.1.1.power.modulus]; exact h.1.1.1.power.powerBound⟩,
@@ -71,7 +71,7 @@ theorem round_ct {M1 M2 x1 x2 A1 A2 p1 p2 q V1 V2 : Nat} (fits : arrAt w 16 ≤ 
       WP isa (.block expShift) s fun t => t.gpr .r0 = base := by
     have size : 204 ≤ 8 * len := by
       have := h.layout.2.2.1
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+      simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
       omega
     exact WP.mono (expShift_ok s h.workspace size h.ptr (V := (s.mem.readW
       (VG.Proof.Mont.off (State.addr base) 200) 32).toNat) (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]))

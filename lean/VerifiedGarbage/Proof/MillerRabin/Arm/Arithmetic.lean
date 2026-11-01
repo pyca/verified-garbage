@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.Block
 namespace VG.Proof.MillerRabin.Arm.Arithmetic
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 open VG.Impl.MillerRabin.Arm.Arithmetic
-open VG.Spec.Rsa.Mont (Operand numAt Keeps)
+open VG.Proof.Rsa.Mont (Operand numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 private theorem product_fios_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
@@ -31,7 +31,7 @@ private theorem product_fios_ok (s : State) {base : BitVec 32} {len w o a b : Na
       numAt t.mem (State.addr base) w o < numAt s.mem (State.addr base) w 0 ∧
       numAt t.mem (State.addr base) w o * 2 ^ (64 * w) % numAt s.mem (State.addr base) w 0 =
         numAt s.mem (State.addr base) w a * numAt s.mem (State.addr base) w b % numAt s.mem (State.addr base) w 0 ∧
-      Keeps (State.addr base) len w o s.mem t.mem ∧
+      Proof.Rsa.Mont.Keeps (State.addr base) len w o s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   simp only [product, ↓reduceIte]
   rw [WP.seq_iff]
@@ -62,7 +62,7 @@ theorem product_ok (fios : Bool) (s : State) {base : BitVec 32} {len w o a b : N
       numAt t.mem (State.addr base) w o < numAt s.mem (State.addr base) w 0 ∧
       numAt t.mem (State.addr base) w o * 2 ^ (64 * w) % numAt s.mem (State.addr base) w 0 =
         numAt s.mem (State.addr base) w a * numAt s.mem (State.addr base) w b % numAt s.mem (State.addr base) w 0 ∧
-      Keeps (State.addr base) len w o s.mem t.mem ∧
+      Proof.Rsa.Mont.Keeps (State.addr base) len w o s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   cases fios with
   | false => exact montOp_ok s h ho ha hb ho0 operand
@@ -76,7 +76,7 @@ theorem square_ok (fios : Bool) (s : State) {base : BitVec 32} {len w o a : Nat}
       numAt t.mem (State.addr base) w o < numAt s.mem (State.addr base) w 0 ∧
       numAt t.mem (State.addr base) w o * 2 ^ (64 * w) % numAt s.mem (State.addr base) w 0 =
         numAt s.mem (State.addr base) w a * numAt s.mem (State.addr base) w a % numAt s.mem (State.addr base) w 0 ∧
-      Keeps (State.addr base) len w o s.mem t.mem ∧
+      Proof.Rsa.Mont.Keeps (State.addr base) len w o s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   cases fios with
   | false => exact squareOp_ok s h ho ha ho0 operand

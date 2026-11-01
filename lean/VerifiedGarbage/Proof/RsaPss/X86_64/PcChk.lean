@@ -167,7 +167,7 @@ theorem ck_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s) {lo eb el 
     (h1 : word t.mem (fb s) (8 * 1) = stackArg s 4 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat))
     (hdi : t.gpr .rdi = s.gpr .r8) (hsi : t.gpr .rsi = off (stackArg s 3) lo)
     (hdx : t.gpr .rdx = BitVec.ofNat 64 el) (hcx : t.gpr .rcx = BitVec.ofNat 64 eb)
-    (hlo : lo + el ≤ (s.gpr .rsi).toNat) (heb1 : 1 ≤ eb) (heb2 : eb ≤ Spec.RsaPss.maxEmBits)
+    (hlo : lo + el ≤ (s.gpr .rsi).toNat) (heb1 : 1 ≤ eb) (heb2 : eb ≤ Proof.RsaPss.maxEmBits)
     (hel : el = Spec.RsaPss.emLength eb) :
     (chkK G).pre (t.callEntry.withRegions (kRd G s lo el) (kWr s)) := by
   have hE0 := (vstackArg_call hp.toVPre hsp (kRd G s lo el) (kWr s) (i := 0) (by decide)).trans h0
@@ -195,7 +195,7 @@ theorem ck_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s) {lo eb el 
     simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [h]
   have hel' : (BitVec.ofNat 64 el).toNat = el := by rw [BitVec.toNat_ofNat]; omega
   have heb' : (BitVec.ofNat 64 eb).toNat = eb := by
-    rw [BitVec.toNat_ofNat]; unfold Spec.RsaPss.maxEmBits at heb2; omega
+    rw [BitVec.toNat_ofNat]; unfold Proof.RsaPss.maxEmBits at heb2; omega
   rw [hel', heb']
   have hsk : (kw (s.gpr .rsi).toNat) * 8 ≤ (stackArg s 4).toNat * 8 := by unfold kw at *; omega
   -- What lies in what.
@@ -223,7 +223,7 @@ theorem ck_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s) {lo eb el 
     hp.dKdg.sub_left sRet, (hp.dKs.sub_left sRet).sub_right sI, (hp.dKs.sub_left sRet).sub_right sR, dRA,
     hp.dKdg.sub_left sStk, (hp.dKs.sub_left sStk).sub_right sI, (hp.dKs.sub_left sStk).sub_right sR, dKA,
     hp.wDg, by rw [toNat_off (by omega)]; omega, by rw [toNat_off (by omega), hsc]; unfold kw at *; omega,
-    heb1, heb2, hel, by rw [hsc]; unfold Spec.RsaPss.encodingScratchWords kw at *; omega⟩
+    heb1, heb2, hel, by rw [hsc]; unfold Proof.RsaPss.encodingScratchWords kw at *; omega⟩
 
 theorem ck_covers {s t : State} (hp : Pre G s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr) {lo el : Nat}
     (hlo : lo + el ≤ (s.gpr .rsi).toNat) :
@@ -265,7 +265,7 @@ theorem ck_call {chkN : String} {chkC : Prog isa}
     (hdi : t.gpr .rdi = s.gpr .r8) (hsi : t.gpr .rsi = off (stackArg s 3) lo)
     (hdx : t.gpr .rdx = BitVec.ofNat 64 el) (hcx : t.gpr .rcx = BitVec.ofNat 64 eb)
     (h8 : t.gpr .r8 = stackArg s 1) (h9 : t.gpr .r9 = stackArg s 2)
-    (hlo : lo + el ≤ (s.gpr .rsi).toNat) (heb1 : 1 ≤ eb) (heb2 : eb ≤ Spec.RsaPss.maxEmBits)
+    (hlo : lo + el ≤ (s.gpr .rsi).toNat) (heb1 : 1 ≤ eb) (heb2 : eb ≤ Proof.RsaPss.maxEmBits)
     (hel : el = Spec.RsaPss.emLength eb) :
     WP isa (.call chkN chkC) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 ∧
@@ -334,7 +334,7 @@ theorem ck_call {chkN : String} {chkC : Prog isa}
       rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., vret_sub s⟩)
     have hel' : (BitVec.ofNat 64 el).toNat = el := by rw [BitVec.toNat_ofNat]; omega
     have heb' : (BitVec.ofNat 64 eb).toNat = eb := by
-      rw [BitVec.toNat_ofNat]; unfold Spec.RsaPss.maxEmBits at heb2; omega
+      rw [BitVec.toNat_ofNat]; unfold Proof.RsaPss.maxEmBits at heb2; omega
     simp only [chkK, State.withRegions_gpr, State.withRegions_mem,
       State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),

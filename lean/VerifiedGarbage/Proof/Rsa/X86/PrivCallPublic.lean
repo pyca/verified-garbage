@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivCallInput
 import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Public nested-call observations agree for the same public RSA key -/
 
@@ -17,9 +18,9 @@ open VG VG.X86 VG.Impl.Rsa.X86.PrivChecked VG.Proof.Bignum.X86
 theorem crtCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     (hs : PrivContext g bs1 s) (ht : PrivContext g bs2 t) (argsS : CrtArgs g s) (argsT : CrtArgs g t)
     (nb : bs1 0 = bs2 0) :
-    (Spec.Rsa.privateCrtContract abi 96).pub
+    (Proof.Rsa.privateCrtContract abi 96).pub
       (s.callEntry.withRegions (crtRd g) (crtWr g)) (t.callEntry.withRegions (crtRd g) (crtWr g)) := by
-  sig_pub [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes]
+  sig_pub [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes]
   have sa := fun {j} (hj : j < 18) => crtArgs_values hs argsS hj
   have ta := fun {j} (hj : j < 18) => crtArgs_values ht argsT hj
   simp only [hs.sp, ht.sp, sa (by decide : 0 < 18), ta (by decide : 0 < 18),

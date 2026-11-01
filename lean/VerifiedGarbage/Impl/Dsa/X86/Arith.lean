@@ -3,11 +3,11 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
 public import VerifiedGarbage.Impl.Dsa.X86.Arithmetic
 public import VerifiedGarbage.Impl.Dsa.X86.Stream
-public import VerifiedGarbage.Spec.Dsa.ModArith
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-! # DSA's reductions and products as functions on IA-32
 
-`vg_dsa_reduce_{n}` and `vg_dsa_mulmod_{n}` (`Spec/Dsa/ModArith.lean`)
+`vg_dsa_reduce_{n}` and `vg_dsa_mulmod_{n}` (`Proof/Dsa/ModArithContract.lean`)
 reduce the `data_len` bytes at `data` (`reduceStream`) or multiply the
 ordinary integers in slots 5 and 8 (`ordinaryMul`), modulo the one in
 slot 0, into slot 6, with the register saves of `Pow.lean`. The product sets
@@ -41,14 +41,14 @@ def reducePrefix (n : Nat) : Prog isa :=
 def reduceBody (n : Nat) : Prog isa :=
   .seq (reducePrefix n) (.seq (reduceStream n (.mem (sc lenAt))) (.block Pow.restore))
 
-def reduceLayout (n : Nat) : Spec.Dsa.ModArith.ReduceLayout where
+def reduceLayout (n : Nat) : Impl.Dsa.ModArith.ReduceLayout where
   n := n
   modulus := slot n 0
   result := slot n 6
   scratch := Pow.scratch n
   size := contextBytes n
 
-def reduceName (n : Nat) : String := (Spec.Dsa.ModArith.reduceApi (reduceLayout n)).name
+def reduceName (n : Nat) : String := s!"vg_dsa_reduce_{(reduceLayout n).n}"
 
 /-- Reduce the `ebx` bytes at `esi`: cdecl's four stack arguments, the
 workspace, its length, and the bytes. -/
@@ -59,7 +59,7 @@ def reduceCall (n : Nat) : Prog isa :=
 def mulBody (n : Nat) : Prog isa :=
   .seq (.block Pow.save) (.seq (contextSetup n) (.seq (ordinaryMul n) (.block Pow.restore)))
 
-def mulLayout (n : Nat) : Spec.Dsa.ModArith.MulLayout where
+def mulLayout (n : Nat) : Impl.Dsa.ModArith.MulLayout where
   n := n
   modulus := slot n 0
   a := slot n 5
@@ -68,7 +68,7 @@ def mulLayout (n : Nat) : Spec.Dsa.ModArith.MulLayout where
   scratch := Pow.scratch n
   size := contextBytes n
 
-def mulName (n : Nat) : String := (Spec.Dsa.ModArith.mulApi (mulLayout n)).name
+def mulName (n : Nat) : String := s!"vg_dsa_mulmod_{(mulLayout n).n}"
 
 /-- Pass the workspace and its length using cdecl's two stack arguments. -/
 def mulCall (n : Nat) : Prog isa :=

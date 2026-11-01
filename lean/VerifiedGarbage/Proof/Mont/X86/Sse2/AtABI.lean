@@ -18,7 +18,7 @@ stack (`Entry`), the layout (`Lay`) and the parameters `atParams` computes
 namespace VG.Proof.Mont.X86.Sse2
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont.X86.Sse2 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Mont.X86.Rt
-open VG.Spec.Rsa.MontMul (Apart numAt scratchBytes)
+open VG.Proof.Rsa.MontMul (Apart numAt scratchBytes)
 open VG.Proof.Mont.X86.Dynamic (ofs_far)
 
 structure AtABI (s : State) : Prop where
@@ -51,8 +51,8 @@ structure AtABI (s : State) : Prop where
   bLt : numAt s.mem (wsOf s) (arg s 8).toNat (8 * (arg s 2).toNat) <
     numAt s.mem (wsOf s) (arg s 3).toNat (8 * (arg s 2).toNat)
 
-theorem atAbi_of {s : State} (h : (Spec.Rsa.MontMul.mulContract abi 56).pre s) : AtABI s := by
-  sig_pre [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow] at h
+theorem atAbi_of {s : State} (h : (Proof.Rsa.MontMul.mulContract abi 56).pre s) : AtABI s := by
+  sig_pre [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
 

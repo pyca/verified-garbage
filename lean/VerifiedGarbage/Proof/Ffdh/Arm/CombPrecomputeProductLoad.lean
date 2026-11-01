@@ -57,7 +57,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 theorem productLoad_ok (s : State) {p : Inputs} {sp : BitVec 32} {count low exponent : Nat}
@@ -77,7 +77,7 @@ theorem productLoad_ok (s : State) {p : Inputs} {sp : BitVec 32} {count low expo
   have fit : 52 ≤ 8*p.len := by
     have := h.memory.ready.layout.2.2.1
     rw [h.memory.ready.width] at this
-    simp only [Spec.Rsa.Mont.arrAt,Spec.Rsa.Mont.hdrBytes] at this
+    simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes] at this
     omega
   rw [VG.Impl.Ffdh.Arm.CombPrecompute.productLoad,WP.seq_iff,WP.block_append_iff,WP.block_append_iff]
   refine WP.mono (localLoad_ok s .r3 h.memory.context.locals (d := 40) (by decide)) ?_
@@ -108,7 +108,7 @@ theorem productLoad_ok (s : State) {p : Inputs} {sp : BitVec 32} {count low expo
   have memoryT := coreZ.memory.after_arithmetic readyT frameWide rest
   have coreT := coreZ.after_array memoryT keeps (by decide) (by decide) (by decide)
   have arrayFit := coreZ.memory.ready.width ▸ coreZ.memory.ready.layout.2.2.1
-  have op5 : Operand 5 := by simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]
+  have op5 : Operand 5 := by simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
   have powerT : Power5 p exponent t :=
     (keeps_array_num keeps arrayFit op5 (by decide)).trans (power.of_mem mz)
   rw [mz,address] at value

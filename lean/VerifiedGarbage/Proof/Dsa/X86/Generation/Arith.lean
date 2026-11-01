@@ -15,6 +15,9 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # p from `X` and q (A.1.1.2 steps 11.4–11.5)
 

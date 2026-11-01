@@ -1686,8 +1686,8 @@ jmp 22f
 22:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa_mont::vg_rsa_mont_mul_adx,
-        vg_miller_rabin_round_adx = sym super::miller_rabin::vg_miller_rabin_round_adx,
+        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_miller_rabin_round_adx = sym super::dsa::vg_miller_rabin_round_adx::vg_miller_rabin_round_adx,
     )
 }
 
@@ -2473,6 +2473,6 @@ jmp 22f
 22:
 .base64 "ww=="
 .p2align 6"#,
-        vg_miller_rabin_round = sym super::miller_rabin::vg_miller_rabin_round,
+        vg_miller_rabin_round = sym super::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
     )
 }

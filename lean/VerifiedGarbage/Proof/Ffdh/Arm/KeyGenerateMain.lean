@@ -26,7 +26,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 theorem keyGenerateMain_ok (prepare tail : Prog isa) (prep : KeyPrepareLaw prepare) (law : KeyTailLaw tail) (s : State) {p : Inputs} {slots : List Nat} {rb : List Byte}
     (h : Context p slots s) (calls : KeyCallMemory p s) (stable : stableSlots slots = true)
@@ -46,8 +46,8 @@ theorem keyGenerateMain_ok (prepare tail : Prog isa) (prep : KeyPrepareLaw prepa
       Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k =
         (if keySuccess p rb then Spec.Rsa.i2osp (keyPower p (scalarOctets p rb)) p.k else List.replicate p.k 0) ∧
       Frame (keyCallWrites p s) s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (keyCallWrites p s) m m' :=
     f.mono (by simp [keyCallWrites, keyWrites])
   rw [VG.Impl.Ffdh.Arm.KeyGenerate.main, WP.seq_iff]

@@ -17621,7 +17621,7 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_miller_rabin_round = sym super::miller_rabin::vg_miller_rabin_round,
+        vg_miller_rabin_round = sym super::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
     )
 }
 
@@ -25375,6 +25375,6 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_miller_rabin_round_umaal = sym super::miller_rabin::vg_miller_rabin_round_umaal,
+        vg_miller_rabin_round_umaal = sym super::dsa::vg_miller_rabin_round_umaal::vg_miller_rabin_round_umaal,
     )
 }

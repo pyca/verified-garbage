@@ -91,7 +91,7 @@ theorem round_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions 
       WP isa (.block expShift) s fun t => t.gpr .r0 = base := by
     have size : 204 ≤ 8 * len := by
       have fits := h.layout.2.2.1
-      simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+      simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at fits
       omega
     exact WP.mono (expShift_ok s h.workspace size h.ptr (V := (s.mem.readW
       (off (State.addr base) 200) 32).toNat) (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]))

@@ -32,7 +32,7 @@ def PrimeIterationPublic.nextUniform (p : PrimeIterationPublic) : Nat := p.uni +
 
 def PrimeIterationPublic.continues (p : PrimeIterationPublic) : Bool :=
   decide (p.draw.used + p.draw.prime.drawBytes ≤ p.draw.prime.rand.length) &&
-    Spec.MillerRabin.round p.draw.prime.N p.witness.1 &&
+    Proof.MillerRabin.Round.round p.draw.prime.N p.witness.1 &&
     decide (p.i + 1 < 17 ∨ p.nextUniform < p.draw.prime.checks)
 
 theorem iteration_public (M : Mont) (K : Kernel) {p : PrimeIterationPublic} 
@@ -59,16 +59,16 @@ theorem iteration_public (M : Mont) (K : Kernel) {p : PrimeIterationPublic}
     refine WP.seq (WP.mono (drawRound_ok M K hu.state hr hu.ki hu.kuni
       hu.counter_bound.1 hu.counter_bound.2) fun v ⟨hv, hstat, hcount, _, _⟩ => ?_)
     change word v.mem p.draw.prime.B (8 * kStat) = BitVec.ofNat 64
-      (if Spec.MillerRabin.round p.draw.prime.N p.witness.1 then
+      (if Proof.MillerRabin.Round.round p.draw.prime.N p.witness.1 then
         (if p.i + 1 < 17 ∨ p.nextUniform < p.draw.prime.checks then 4 else 1) else 3) at hstat
     refine WP.mono (statCmp_ok hv.ready.ws
       (by split <;> (try split) <;> decide) hstat) fun t ⟨hz, hmem, _⟩ => ?_
     constructor
-    · by_cases hp : Spec.MillerRabin.round p.draw.prime.N p.witness.1 = true <;>
+    · by_cases hp : Proof.MillerRabin.Round.round p.draw.prime.N p.witness.1 = true <;>
         by_cases hg : p.i + 1 < 17 ∨ p.nextUniform < p.draw.prime.checks <;>
         simpa [PrimeIterationPublic.continues, hr, hp, hg] using hz
     · intro hg
-      have hp : Spec.MillerRabin.round p.draw.prime.N p.witness.1 = true := by
+      have hp : Proof.MillerRabin.Round.round p.draw.prime.N p.witness.1 = true := by
         have hh := hg
         simp only [PrimeIterationPublic.continues, Bool.and_eq_true] at hh
         exact hh.1.2

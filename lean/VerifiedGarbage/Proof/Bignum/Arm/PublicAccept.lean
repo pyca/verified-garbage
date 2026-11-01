@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem publicCompare_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen : Nat} {nb eb xb : List Byte}
@@ -26,7 +26,7 @@ theorem publicCompare_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen
   rintro t ⟨ready, flag, keeps, frame, rest⟩
   have arithmetic := h.toPublicArithmetic.after_array ready keeps frame rest (by decide) (by decide)
   have fits : arrAt (Spec.Rsa.modulusWords k) 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have input := (keeps_array_num keeps fits op1 (by decide : 1 ≠ 3)).trans h.input
   rw [h.input, h.modulus] at flag
   refine ⟨⟨arithmetic, input⟩, ?_, frame, rest⟩

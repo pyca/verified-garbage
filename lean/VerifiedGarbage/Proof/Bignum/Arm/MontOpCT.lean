@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand numAt arrAt)
+open VG.Proof.Rsa.Mont (Operand numAt arrAt)
 
 theorem montOp_ct {base : BitVec 32} {len w o a b : Nat}
     (ho : Operand o) (ha : Operand a) (hb : Operand b) (fit : arrAt w 3 + 32 ≤ 8 * len) :

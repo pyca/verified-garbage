@@ -20,7 +20,7 @@ export and `3 − 2 flag`; or zeros and 2. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.SharedDerive
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- The generator's octets. -/
@@ -52,7 +52,7 @@ theorem tail_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
           (if sharedAccepted p (gOctets p) xb then Spec.Rsa.i2osp (sharedValue p (gOctets p) xb) p.k
             else List.replicate p.k 0) ∧
         Frame (SharedExchange.writes p s) s.mem t.mem := by
-  have op6 : Operand 6 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op6 : Operand 6 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   rw [VG.Impl.Ffdh.Arm.SharedDerive.tail, WP.seq_iff]
   refine WP.mono (sharedCheckPublicPower_ok backend s 56 40 44 h calls.toDomainCallMemory stable h56 h40 h44 h32
     ready modulus odd r2 h.gBytes p.gLength scalar positive scalarFit scalarCount calls.scalarBelow) ?_

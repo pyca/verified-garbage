@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # The private CRT call satisfies the shared buffer contract -/
 
@@ -28,13 +29,13 @@ theorem crtArgs_stack {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
 
 theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : CrtArgs g s) :
-    (Spec.Rsa.privateCrtContract abi 56).pre (s.callEntry.withRegions (crtRd g) (crtWr g)) := by
+    (Proof.Rsa.privateCrtContract abi 56).pre (s.callEntry.withRegions (crtRd g) (crtWr g)) := by
   have sa := fun {j} (hj : j < 14) => crtArgs_stack h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega
   have qfit : g.qLength < 2 ^ 32 := by have := h.valid.qFits; omega
   have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega
-  sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   simp only [
     h.sp, a.output, a.outputLength, a.modulus, a.length,
     sa (by decide : 0 < 14), sa (by decide : 1 < 14), sa (by decide : 2 < 14),

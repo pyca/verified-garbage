@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- A prepared narrow workspace holding the reduced input, and the exponent's saved argument. -/
@@ -42,7 +42,7 @@ structure NarrowExpInput (base ep : BitVec 32) (len v M x eLen es : Nat) (eb : L
 
 /-- A narrow workspace of a width at most the modulus's has room for the table. -/
 theorem table_fits {v W : Nat} (h : v ≤ W) : arrAt v 16 ≤ 8 * workspaceWords W := by
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes, workspaceWords]
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes, workspaceWords]
   omega
 
 theorem crt_exponentArgs_ok (s : State) {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generator
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Dsa.GeneratorStageContract
 
 /-! # The generator stage's arguments, from its contract's precondition
 
@@ -26,14 +27,14 @@ abbrev stack : Nat := 288
 
 /-- The stage's contract on AArch64. -/
 abbrev contract (pLen : Nat) : Contract isa :=
-  Spec.Dsa.GeneratorStage.contract (Impl.Dsa.AArch64.Generator.layout pLen) abi stack
+  Proof.Dsa.GeneratorStage.contract (Impl.Dsa.AArch64.Generator.layout pLen) abi stack
 
 /-- p, q and the exponent, in memory `m` of the working space `ws`. -/
 abbrev pOf (pLen : Nat) (m : Mem) (ws : Addr) : Nat :=
-  Spec.Dsa.GeneratorStage.pAt (Impl.Dsa.AArch64.Generator.layout pLen) m ws
+  Proof.Dsa.GeneratorStage.pAt (Impl.Dsa.AArch64.Generator.layout pLen) m ws
 
 abbrev qOf (pLen : Nat) (m : Mem) (ws : Addr) : Nat :=
-  Spec.Dsa.GeneratorStage.qAt (Impl.Dsa.AArch64.Generator.layout pLen) m ws
+  Proof.Dsa.GeneratorStage.qAt (Impl.Dsa.AArch64.Generator.layout pLen) m ws
 
 structure StageABI (pLen : Nat) (s : State) : Prop where
   stackLower : stack ≤ s.sp.toNat
@@ -53,7 +54,7 @@ structure StageABI (pLen : Nat) (s : State) : Prop where
     Spec.Dsa.encodeBE pLen ((pOf pLen s.mem (s.gpr .x0) - 1) / qOf pLen s.mem (s.gpr .x0))
 
 theorem stageABI_of {pLen : Nat} {s : State} (h : (contract pLen).pre s) : StageABI pLen s := by
-  sig_pre [contract, Spec.Dsa.GeneratorStage.contract, Spec.Dsa.GeneratorStage.sig, abi, argRegs] at h
+  sig_pre [contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs] at h
   sig_split h
   constructor <;> with_reducible assumption
 

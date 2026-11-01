@@ -14,11 +14,11 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CombExp
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombExp
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_str)
 
 private theorem operand (q : Nat) (h : q=4 ∨ q=6 ∨ q=7) : Operand q := by
-  rcases h with rfl | rfl | rfl <;> simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]
+  rcases h with rfl | rfl | rfl <;> simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
 
 theorem startCount_ok {base source table : BitVec 32} {len w bytes N M g E : Nat}
     {P : State→Prop} {regions : List Region}
@@ -30,7 +30,7 @@ theorem startCount_ok {base source table : BitVec 32} {len w bytes N M g E : Nat
       Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have size : 256≤8*len := by
     have fits := h.ready.width ▸ h.ready.layout.2.2.1
-    simp only [arrAt,Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt,Proof.Rsa.Mont.hdrBytes] at fits
     omega
   have address (d : Nat) (hd : d<256) : State.addr (s.gpr .r0+BitVec.ofNat 32 d)=off (State.addr base) d := by
     rw [h.ready.ptr]

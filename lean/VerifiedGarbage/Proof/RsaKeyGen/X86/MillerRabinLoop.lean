@@ -17,9 +17,9 @@ open VG.Impl.RsaKeyGen.X86.MillerRabinLoop
 def ranges (g : Geometry) : List (Nat × Nat) := WitnessChecks.ranges ++ WitnessStep.ranges g
 
 theorem loop_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s) :
     WP isa (.loop (stepAt P.bytes P.words P.g.w montName mont roundName round) .e) s fun t =>
@@ -39,9 +39,9 @@ theorem loop_ok {mont round : Prog isa} {montName roundName : String}
   · exact Or.inr ⟨again, j, by omega, i + 1, j - 1, by omega, next, Wa.trans Wt, Fa.trans Ft, Ka.trans Kt⟩
 
 theorem code_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {s : State}
     (S : Prepare.Data P.g P.candidate P.capacity P.p s)

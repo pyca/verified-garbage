@@ -21,11 +21,11 @@ theorem witnessRoundRanges_bounds (p : WitnessParams) :
     have hr : 256 + (256 + 28 * (8 * (p.w + 2))) ≤ p.Z := p.room
     unfold WitnessParams.IZ
     omega_using [hr]
-  simp only [witnessRoundRanges, Caller.callRanges, mutRanges, Spec.MillerRabin.extended,
+  simp only [witnessRoundRanges, Caller.callRanges, mutRanges, Proof.MillerRabin.Round.extended,
     List.map_cons, List.map_nil, List.cons_append, List.nil_append,
     List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true,
     Caller.pad, slot, VG.Impl.Bignum.hdrBytes, aAcc, aTmp, aXm, VG.Impl.RsaKeyGen.X86_64.Candidate.aR1,
-    Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+    Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
   and_intros <;> omega_using [hz]
 
 theorem witnessRound_state_ok (M : Mont) (K : Kernel)

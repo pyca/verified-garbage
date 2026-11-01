@@ -18,7 +18,7 @@ theorem ranges_apart32 {g : Geometry} {d : Nat} (safe : safeHeader d) :
   simp only [ranges, WitnessMont.ranges, montWrites, roundWrites, List.mem_append,
     List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with (((rfl | rfl | rfl) | rfl) | (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl)) | rfl <;>
-    simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes,
+    simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
       VG.Impl.RsaKeyGen.X86.WitnessRound.uniformOffset] <;> unfold safeHeader at safe <;> omega
 
 theorem header32 {g : Geometry} (v : g.Valid) {s t : Mem} (F : WorkspaceFrame g (ranges g) s t)

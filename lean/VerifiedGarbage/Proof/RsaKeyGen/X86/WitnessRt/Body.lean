@@ -21,9 +21,9 @@ namespace VG.Proof.RsaKeyGen.X86.WitnessRt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 
 theorem body_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity used randLen : Nat} {p rand : BitVec 32}
     (length : g.L = 8 * capacity) (S : Prepare.Data g c capacity p s)
@@ -42,7 +42,7 @@ theorem body_ok {mont round : Prog isa} {montName roundName : String}
       Prepare.Data g c capacity p t ∧ w32 t.mem g.W 152 = used + 8 * g.w ∧
       w32 t.mem g.W 176 = w32 s.mem g.W 176 + 1 ∧
       w32 t.mem g.W 192 = w32 s.mem g.W 192 + sampled.2.toNat ∧
-      w32 t.mem g.W 168 = WitnessStatus.status (Spec.MillerRabin.round c sampled.1)
+      w32 t.mem g.W 168 = WitnessStatus.status (Proof.MillerRabin.Round.round c sampled.1)
         (w32 s.mem g.W 176 + 1) (w32 s.mem g.W 192 + sampled.2.toNat) (w32 s.mem g.W 200) ∧
       WorkspaceFrame g (WitnessStep.ranges g) s.mem t.mem ∧
       Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
@@ -80,7 +80,7 @@ theorem body_ok {mont round : Prog isa} {montName roundName : String}
   have checksB : w32 b.mem g.W 200 = w32 s.mem g.W 200 :=
     (WitnessRound.header32 v Wb (by unfold WitnessRound.safeHeader; decide)).trans
       (Oa.w32 (by decide) (by decide))
-  have flagB : b.gpr .eax = BitVec.ofNat 32 (Spec.MillerRabin.round c
+  have flagB : b.gpr .eax = BitVec.ofNat 32 (Proof.MillerRabin.Round.round c
       (Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip
         (Spec.Rsa.bytesAt s.mem (off (rand.setWidth 64) used) (8 * g.w)))).1).toNat := by
     exact WitnessStep.flag_value resultB

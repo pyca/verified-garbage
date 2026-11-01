@@ -17,7 +17,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 def sharedValue (p : Inputs) (yb xb : List Byte) : Nat :=
   Spec.Rsa.powMod (Spec.Rsa.os2ip yb) (Spec.Rsa.os2ip xb) p.P
@@ -51,8 +51,8 @@ theorem exchangeMain_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : Lis
       Spec.Rsa.bytesAt t.mem (State.addr p.output) p.k =
         (if sharedAccepted p yb xb then Spec.Rsa.i2osp (sharedValue p yb xb) p.k else List.replicate p.k 0) ∧
       Frame (exchangeWrites p s) s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op6 : Operand 6 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op6 : Operand 6 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (exchangeWrites p s) m m' :=
     f.mono (by intro r hr; rw [List.mem_singleton] at hr; subst r; simp [exchangeWrites])
   have pStack : Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=

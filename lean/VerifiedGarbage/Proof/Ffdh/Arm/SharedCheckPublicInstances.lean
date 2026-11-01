@@ -61,7 +61,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 theorem sharedCheckPublicSubgroup_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     {slot : Nat} {bb : List Byte} (stable : stableSlots slots = true)
@@ -115,7 +115,7 @@ theorem sharedCheckPublicSubgroup_ct (backend : MontBackend) {p : Inputs} {slots
           h.1.2.1.stack,h.1.2.2⟩,
         ⟨⟨h.2.1.1.context,h.2.1.1.ready,h.2.1.1.modulus,h.2.1.1.r2,h.2.1.1.source,h.2.1.1.context.qBytes hasQ⟩,
           h.2.1.2.1.stack,h.2.1.2.2⟩,h.2.2⟩) (fun _ _ h => h)) wp wp
-      (isOne_ct (by simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp] : Operand 6)))
+      (isOne_ct (by simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp] : Operand 6)))
       s t tr1 tr2 u v initial run1 run2
   intro s t tr1 tr2 u v h e1 e2
   exact family s.sp s t tr1 tr2 u v
@@ -231,7 +231,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 theorem sharedCheckPublicMain_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb : List Byte}
     (stable : stableSlots slots = true) (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots)
@@ -239,9 +239,9 @@ theorem sharedCheckPublicMain_ct (backend : MontBackend) {p : Inputs} {slots : L
     (length : yb.length = p.k) (large : 1 < p.P) (odd : p.P % 2 = 1) :
     RelCT isa (fun s t => SharedPublicMainInput p slots yb s ∧ SharedPublicMainInput p slots yb t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (fun _ _ => True) := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have prep := (domainSharedPrepareAt24_ct backend stable h0 h24 h32 large odd).mono
     (P' := fun (s t : State) => SharedPublicMainInput p slots yb s ∧ SharedPublicMainInput p slots yb t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.context,h.1.calls⟩,⟨h.2.1.context,h.2.1.calls⟩,h.2.2⟩) (fun _ _ h => h)

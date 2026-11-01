@@ -83,21 +83,21 @@ theorem rcPre_ct : RelCT isa (Two RC)
 
 /-- The round's precondition on its entry, from `RCm`. -/
 theorem rc_pre {d : RcD} {s : State} (h : RCm d s) :
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176).pre
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 176).pre
       (s.callEntry.withRegions [] [⟨d.B, 8 * d.L⟩]) := by
   obtain ⟨p₂, h5, r3₂, r4₂, hsp, hstk⟩ := h
   have e := p₂.env
   have hnw := e.hs.nowrap
   have hL64 : d.L < 2 ^ 64 := by omega_arith
-  sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs]
+  sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, PPC64LE.abi, PPC64LE.argRegs]
   simp only [r3₂, r4₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64, Nat.mul_comm d.L 8]
   exact ⟨hsp, trivial, hstk, by omega_arith, p₂.layout, p₂.prepared (by
     show val32 s.mem d.B (slot d.w 5) (2 * d.w) < d.c; rw [h5]; exact Nat.mod_lt _ (by have := p₂.c3; omega_arith))⟩
 
 theorem rc_pub {d : RcD} {s₁ s₂ : State} (h₁ : RCm d s₁) (h₂ : RCm d s₂) (hsp : s₁.sp = s₂.sp) :
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176).pub
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 176).pub
       (s₁.callEntry.withRegions [] [⟨d.B, 8 * d.L⟩]) (s₂.callEntry.withRegions [] [⟨d.B, 8 * d.L⟩]) := by
-  sig_reduce [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs]
+  sig_reduce [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, PPC64LE.abi, PPC64LE.argRegs]
   obtain ⟨p₁, -, a3, a4, -⟩ := h₁
   obtain ⟨p₂, -, b3, b4, -⟩ := h₂
   rw [a3, a4, b3, b4, p₁.width, p₂.width]
@@ -123,7 +123,7 @@ theorem rcCall_ct (R : RoundImpl) : RelCT isa (Two RCm) (.call R.name R.code) (T
         exact ⟨rc_pre h₁, rc_pre h₂, rc_pub h₁ h₂ hsp, (cov h₁).1, (cov h₁).2, (cov h₂).1, (cov h₂).2⟩)
       _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
   · have h31 := h.1.env.h31
-    exact WP.callAny (k := Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176) R.verified.1
+    exact WP.callAny (k := Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 176) R.verified.1
       (rd := []) (wr := [⟨d.B, 8 * d.L⟩]) (rc_pre h) (rc_covers h.1) (fun _ _ => scr_covers h.1.env.hs)
       (fun s' _ _ _ _ hcs _ => (hcs .r31 (by decide)).trans h31) (by have := R.stack; omega_arith)
 

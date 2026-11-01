@@ -21,7 +21,7 @@ header word 28 (`strideW_vp`).
 namespace VG.Proof.Dsa.Arm.Prime
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 open VG.Proof.Rsa.Arm.Recover (VP)
 
 section
@@ -61,7 +61,7 @@ theorem strideW_vp {E : State → Prop} :
   have zl := pre.Z_le
   have e1 := pre.oM_arrAt 1
   have fit1 := Nat.le_trans (arr_mono (w := P.W) (show mBase + 1 ≤ nArr by decide)) pre.fits
-  have a1 : 256 ≤ arrAt P.w 1 := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+  have a1 : 256 ≤ arrAt P.w 1 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
   unfold strideW
   refine wp_mov (op2_imm (by decide)) fun u1 v1 => ?_
   have hw1 := hw.of_upd v1 (by decide) (by decide) (by decide)
@@ -98,7 +98,7 @@ theorem strideW_vp {E : State → Prop} :
         rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp [mBase, aCm1, aTwo, aOne, aC] at hj' <;> omega)
         (by simp)) (h.sl_keep kp (by simp) (by simp)) h.live_lt h.ls_ok
   have sp : t.sp = s.sp := by rw [rt.sp, v1.sp]
-  have a0 : 256 ≤ arrAt P.w 0 := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+  have a0 : 256 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
   have sv : t.mem.readW (State.addr t.sp) 32 = s.mem.readW (State.addr s.sp) 32 := by
     rw [sp, h.sp, pre.sp]
     refine fH.readW (r := P.rW0) (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide)
@@ -107,7 +107,7 @@ theorem strideW_vp {E : State → Prop} :
     refine pre.rW0_rM.sub_right ?_
     have := Offset.sub_base (State.addr P.M0) (d := 0) (n := 256) (k := 8 * P.lenM) (by simp only [CP.lenM]; omega)
     simpa only [BitVec.add_zero] using this
-  refine ⟨⟨e, ht, hw1.rest rt⟩, ⟨m.of_outside pre out (fun d k hd => ?_) (.inr (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega))
+  refine ⟨⟨e, ht, hw1.rest rt⟩, ⟨m.of_outside pre out (fun d k hd => ?_) (.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega))
     (by have := pre.oM_arrAt 5; have := Nat.le_trans (arr_mono (w := P.W) (show mBase + 5 ≤ nArr by decide)) pre.fits
         omega) sv sp (by rw [rt.rd, v1.rd]) (by rw [rt.wr, v1.wr]), ?_⟩⟩
   · rcases hd with h1 | ⟨h1, _⟩

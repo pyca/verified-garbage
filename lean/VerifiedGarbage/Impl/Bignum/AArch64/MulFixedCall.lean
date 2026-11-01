@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.AArch64.ProductDispatch
 
 /-! Share repeated Montgomery products by fixed-index helpers
-(`vg_rsa_mul_{o}_{a}_{b}`, `Spec.Rsa.MontMulFixed`), as `SquareCall` shares
+(`vg_rsa_mul_{o}_{a}_{b}`, `Proof.Rsa.MontMulFixed`), as `SquareCall` shares
 the in-place squares. Each helper is the eight-limb product
 (`ProductDispatch.mm`), whose fallback for other widths is inline, so it
 cannot overwrite the saved link. -/

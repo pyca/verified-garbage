@@ -25,7 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (wp_ldr)
 
 theorem pdOdd_ct {base : BitVec 32} {len w : Nat} :
@@ -44,7 +44,7 @@ theorem pdOdd_ct {base : BitVec 32} {len w : Nat} :
   have wpPointer (s : State) (h : LayoutFrameReady base len w s) :
       WP isa (.block [.ldr .r1 .r0 64]) s Q := by
     have fits := h.layout.2.2.1
-    have size : 68 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 68 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
     refine wp_ldr (a := off (State.addr base) 64) (by decide)

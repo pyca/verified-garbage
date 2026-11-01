@@ -38,7 +38,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem keyCallTail_ok {power : Prog isa} (law : KeyPowerLaw power) (s : State) {p : Inputs} {slots : List Nat} {xb eb : List Byte}
@@ -60,18 +60,18 @@ theorem keyCallTail_ok {power : Prog isa} (law : KeyPowerLaw power) (s : State) 
       Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k =
         (if keyAccepted p xb then Spec.Rsa.i2osp (keyPower p xb) p.k else List.replicate p.k 0) ∧
       Frame (keyCallWrites p s) s.mem t.mem := by
-  have fits : Spec.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
+  have fits : Proof.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
   rw [VG.Impl.Ffdh.Arm.KeyGenerate.tail, WP.seq_iff]
   refine WP.mono (law.correct s h calls stable h56 h16 h20 h32 ready modulus odd r2 significant significantSize) ?_
   rintro u ⟨contextU, readyU, powerU, modU, _, _, frameU, restU⟩
   rw [significantValue] at powerU
   change numAt u.mem (State.addr p.base) p.w 6 = keyPower p xb at powerU
   rw [WP.seq_iff]
-  refine WP.mono (inRange_ok u readyU (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6)
+  refine WP.mono (inRange_ok u readyU (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6)
     (by decide) (by rw [modU]; exact odd)) ?_
   rintro v ⟨readyV, flag, arraysV, frameV, restV⟩
   have contextV := contextU.after_workspace frameV restV readyV.ptr (fun d hd => (stableSlots_at stable hd).1)
-  have powerV := (arraysV 6 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerU
+  have powerV := (arraysV 6 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerU
   have flagV : v.gpr .r11 = if keyAccepted p xb then 1 else 0 := by
     rw [powerU, modU] at flag
     simpa only [keyAccepted, decide_eq_true_eq] using flag
@@ -143,7 +143,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 theorem keyCallPower_next {power : Prog isa} (law : KeyPowerLaw power) (s : State)
     {p : Inputs} {slots : List Nat} {eb : List Byte}
@@ -170,7 +170,7 @@ theorem keyCallTail_ct {power : Prog isa} (law : KeyPowerLaw power)
     RelCT isa (fun s t => (KeyPowerInput p slots eb1 s ∧ KeyCallMemory p s) ∧
       (KeyPowerInput p slots eb2 t ∧ KeyCallMemory p t) ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.KeyGenerate.tail power) (fun _ _ => True) := by
-  have range := (inRange_ct (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
+  have range := (inRange_ct (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
     (P' := fun (s t : State) => KeyRangeInput p slots s ∧ KeyRangeInput p slots t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.ready, h.2.1.ready, h.2.2⟩) (fun _ _ h => h)
   unfold VG.Impl.Ffdh.Arm.KeyGenerate.tail
@@ -198,7 +198,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm.KeyPower
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem powerAt_ct {p : Inputs} {slots : List Nat} {bs es ec M : Nat}
     {P : State → Prop} {regions : List Region} {bb eb1 eb2 : List Byte}
@@ -213,7 +213,7 @@ theorem powerAt_ct {p : Inputs} {slots : List Nat} {bs es ec M : Nat}
       (VG.Impl.Ffdh.Arm.KeyPower.powerAt A.phase fallback.code bs es ec) (fun _ _ => True) := by
   have tableFit : arrAt p.w 3 + 32 ≤ 8 * p.len := by
     have f := p.width.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at *
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at *
     omega
   have positiveW : 0 < 2 * p.w := by have := p.width.1; omega
   unfold VG.Impl.Ffdh.Arm.KeyPower.powerAt
@@ -233,7 +233,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeyGenerate
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 def arithmetic (b : MontBackend) (base sp : BitVec 32) (len w : Nat) :=
   TwoExp.sharedMontgomery base sp len w b.name b.mul

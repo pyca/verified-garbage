@@ -28,7 +28,7 @@ theorem crt_checkProduct_ok (s : State) {base : BitVec 32} {size len o a d w : N
     (h : CrtCheckProductInput base size len o a d w s) :
     WP isa checkProduct s fun t =>
       t.gpr .r11 = (if val32 s.mem (State.addr base) a (4 * w + 2) =
-        Spec.Rsa.Mont.numAt s.mem (State.addr base) w 0 then 1 else 0) ∧
+        Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0 then 1 else 0) ∧
       Outs (State.addr base) [(d, 4 * (4 * w + 2)), (o, 4 * (4 * w + 2))] s.mem t.mem ∧
       Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ t.gpr .r0 = base ∧ Rest roundClobbers s t := by
   rw [checkProduct, WP.seq_iff]
@@ -54,7 +54,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem CrtCheckProductInput.after_product {s t : State} {base : BitVec 32} {size len o a d w : Nat}
@@ -102,7 +102,7 @@ theorem CrtCheckProductInput.after_product {s t : State} {base : BitVec 32} {siz
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+    · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
     · left; simp only; omega
   · have := h.padding.main.nowrap; omega
 
@@ -127,7 +127,7 @@ theorem crt_validationProduct_ready (s : State) {base : BitVec 32} {size len pro
     WP isa factorProduct s fun t => CrtCheckProductInput base size len cmp product pad w t ∧
       val32 t.mem (State.addr base) product (4 * w + 2) =
         val32 s.mem (State.addr base) a (2 * w) * val32 s.mem (State.addr base) b (2 * w) ∧
-      Spec.Rsa.Mont.numAt t.mem (State.addr base) w 0 = Spec.Rsa.Mont.numAt s.mem (State.addr base) w 0 ∧
+      Proof.Rsa.Mont.numAt t.mem (State.addr base) w 0 = Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0 ∧
       Outs (State.addr base) [(128, 20), (product, 4 * (4 * w + 2))] s.mem t.mem ∧
       Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   refine WP.mono (crt_factorProduct_ok s h.multiplication) ?_
@@ -140,7 +140,7 @@ theorem crt_validateProduct_ok (s : State) {base : BitVec 32} {size len product 
     (h : CrtValidateInput base size len product cmp pad a b cp cq w s) :
     WP isa validateProduct s fun t =>
       t.gpr .r11 = (if val32 s.mem (State.addr base) a (2 * w) * val32 s.mem (State.addr base) b (2 * w) =
-        Spec.Rsa.Mont.numAt s.mem (State.addr base) w 0 then 1 else 0) ∧
+        Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0 then 1 else 0) ∧
       Outs (State.addr base) [(128, 20), (product, 4 * (4 * w + 2)),
         (pad, 4 * (4 * w + 2)), (cmp, 4 * (4 * w + 2))] s.mem t.mem ∧
       Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ t.gpr .r0 = base ∧ Rest roundClobbers s t := by

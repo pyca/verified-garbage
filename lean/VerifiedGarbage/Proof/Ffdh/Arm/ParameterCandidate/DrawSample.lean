@@ -28,7 +28,7 @@ bit width, while preserving the shared-round constants. -/
 section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (numAt Keeps)
+open VG.Proof.Rsa.Mont (numAt Keeps)
 
 theorem sampleWitness_ok {s : State} {base src : BitVec 32} {capacity w n bits : Nat}
     (ready : ArithmeticReady base capacity w s) (data : RoundData base capacity w n s.mem)
@@ -81,7 +81,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 def witnessValue (p : WitnessParams) (used : Nat) : Nat :=
   Spec.Rsa.os2ip ((p.bytes.drop used).take ((p.bits + 7) / 8)) % 2 ^ p.bits

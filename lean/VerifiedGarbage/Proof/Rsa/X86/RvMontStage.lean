@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvFrameStep
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Rsa.X86.RvViews
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Spec.Rsa.MontMul
+public import VerifiedGarbage.Proof.Rsa.MontMulContract
 public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # A Montgomery multiplication advances the tracked recovery stage
@@ -29,10 +29,10 @@ open VG.Impl.Rsa.X86.Recover
 open VG.Impl.Rsa.X86.RecoverRt (mmul mulArgs narF)
 open VG.Proof.Rsa.X86.Keys
 open VG.Proof.Bignum.X86.PublicRt (argAt_alloc)
-open VG.Spec.Rsa.MontMul (Apart scratchBytes)
+open VG.Proof.Rsa.MontMul (Apart scratchBytes)
 
 theorem mulBody_noSp (o a b : Nat) :
-    NoSp (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody) : Prog isa) := by
+    NoSp (.seq (.block (mulArgs o a b)) (.call "vg_rsa_mont_mul_at" Sse2.atBody) : Prog isa) := by
   apply NoSp.of_all
   have e : (!Taint.clobbers (Instr.alu AluOp.add Reg.eax (Src.reg Reg.edx)) Reg.esp) = true := rfl
   rw [Code.allInstrs_eq]
@@ -86,7 +86,7 @@ variable {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
 /-- A call of `vg_rsa_mont_mul_at` for `mmul o a b`, its arguments pushed: the callee's precondition,
 its arguments, and the regions it is given. -/
 def CallOk (g : Geo) (o a b : Nat) (x : State) : Prop :=
-  (Spec.Rsa.MontMul.mulContract abi 56).pre (VG.Proof.Bignum.X86.PublicRt.calleeOf x g.B g.Z) ∧
+  (Proof.Rsa.MontMul.mulContract abi 56).pre (VG.Proof.Bignum.X86.PublicRt.calleeOf x g.B g.Z) ∧
     x.gpr .esp = g.sp - BitVec.ofNat 32 36 ∧
     (∀ i < 9, arg (VG.Proof.Bignum.X86.PublicRt.calleeOf x g.B g.Z) i =
       callArg (BitVec.ofNat 32 g.B.toNat) (BitVec.ofNat 32 (g.Z / 8)) g.n (arr g.w mBase) sInv

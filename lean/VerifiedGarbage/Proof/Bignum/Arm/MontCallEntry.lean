@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 structure CallInput (base : BitVec 32) (len w o a b : Nat) (s : State) : Prop where
@@ -27,7 +27,7 @@ structure CallInput (base : BitVec 32) (len w o a b : Nat) (s : State) : Prop wh
   aIndex : s.gpr .r3 = BitVec.ofNat 32 a
   bArg : s.mem.readW (State.addr s.sp) 32 = BitVec.ofNat 32 b
   inverse : ((word s.mem (State.addr base) (arrAt w 0)).toNat *
-    (wordAt s.mem (State.addr base) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
+    (wordAt s.mem (State.addr base) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
   operand : numAt s.mem (State.addr base) w b < numAt s.mem (State.addr base) w 0
   stackFit : 40 ≤ s.sp.toNat
   argRead : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4
@@ -58,7 +58,7 @@ theorem call_entry_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have eq := h.pushed_eq
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have small : 64 ≤ 8 * len := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   have mFits := array_end_le (w := w) (j := 0) (k := 8) (by decide)
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ut.gpr.trans arg, ?_, ?_⟩, ut.mem, ut.rest (by simp)⟩
@@ -75,8 +75,8 @@ theorem call_entry_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
         word s.mem (State.addr base) (arrAt w 0) := eq.word (d := arrAt w 0) (bits := 64) (by omega)
     rw [modulus]
     have inv := eq.word (d := 56) (bits := 64) (by omega)
-    change wordAt (callPushed s).mem (State.addr base) Spec.Rsa.Mont.minvWord =
-      wordAt s.mem (State.addr base) Spec.Rsa.Mont.minvWord at inv
+    change wordAt (callPushed s).mem (State.addr base) Proof.Rsa.Mont.minvWord =
+      wordAt s.mem (State.addr base) Proof.Rsa.Mont.minvWord at inv
     rw [inv]; exact h.inverse
   · rw [ut.mem, eq.number fits hb, eq.number fits (by decide : 0 < 8)]
     exact h.operand

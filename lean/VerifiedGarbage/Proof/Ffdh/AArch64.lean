@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.Ffdh.Choose
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.Ffdh.AArch64
@@ -46,8 +47,8 @@ def sat : State where
   rd := []
   wr := []
 
-theorem verified : Verified target Impl.Ffdh.AArch64.choose (Spec.Ffdh.chooseContract abi) :=
+theorem verified : Verified target Impl.Ffdh.AArch64.choose (Proof.Ffdh.chooseContract abi) :=
   Verified.of_correct correct ct (by
-    sig_implies [Spec.Ffdh.chooseContract, Spec.Ffdh.chooseSig, contract, abi, argRegs] [sat] using sat)
+    sig_implies [Proof.Ffdh.chooseContract, Proof.Ffdh.chooseSig, contract, abi, argRegs] [sat] using sat)
 
 end VG.Proof.Ffdh.AArch64

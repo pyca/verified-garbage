@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 
 theorem numAt_byte_parity (m : Mem) (base : Addr) {w o : Nat} (positive : 0 < w) :
     (m (base + BitVec.ofNat 64 (arrAt w o))).toNat % 2 = numAt m base w o % 2 := by

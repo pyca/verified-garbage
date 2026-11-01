@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportArray
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Proof.Framework.CallLay
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt wOf Layout)
 
 structure ExportState (base dst : BitVec 32) (len w capacity : Nat) (s : State) : Prop where
   workspace : Workspace s base (8 * len)
@@ -49,7 +49,7 @@ theorem exportArray_state (s : State) {base dst : BitVec 32} {len w o capacity :
   rintro t ⟨_, frame, ptr, out, rest⟩
   have nowrap := h.workspace.nowrap
   have fits := h.layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have eq := WorkspaceEq.of_frame (by omega : 8 * len < 2 ^ 64) frame
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep)
   exact ⟨h.workspace.congr rest.wr, eq.layout h.layout, (eq.width (by omega)).trans h.width,

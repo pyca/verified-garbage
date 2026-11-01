@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.St
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # DSA parameter generation on PPC64LE: the power in the P space

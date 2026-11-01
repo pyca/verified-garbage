@@ -51,7 +51,7 @@ theorem far_of_apart {g : Geometry} (v : g.Valid) {q : BitVec 32}
   intro i hi r mem
   obtain ⟨fit6, -, -, -⟩ := WitnessRt.fits v
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
   have fit : r.1 + r.2 ≤ g.L := by
     simp only [doubleRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl <;> dsimp only <;> omega
@@ -210,7 +210,7 @@ theorem doubles_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {
   have fitR : ∀ r ∈ doubleRanges g, r.1 + r.2 ≤ g.L := fun r mem => by
     obtain ⟨fit6, -, -, -⟩ := WitnessRt.fits v
     have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-      unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+      unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
     simp only [doubleRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl <;> dsimp only <;> omega
   have W : WorkspaceFrame g (phaseRanges g) s.mem (freed 20 t).mem := by

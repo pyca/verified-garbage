@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 namespace VG.Proof.MillerRabin.X86
-open VG VG.X86 VG.Spec.Rsa.Mont
+open VG VG.X86 VG.Proof.Rsa.Mont
 
 abbrev wsOf (s : State) : Addr := (arg s 0).setWidth 64
 abbrev lenOf (s : State) : Nat := (arg s 1).toNat * 8
@@ -27,15 +27,15 @@ structure Entry (s : State) : Prop where
   stackArgsSeparate : (⟨(s.gpr .esp).setWidth 64 - 96#64, 96⟩ : Region).Disjoint ⟨argAddr s 0, 8⟩
   argSeparate : (⟨wsOf s, lenOf s⟩ : Region).Disjoint ⟨argAddr s 0, 8⟩
   returnSeparate : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨wsOf s, lenOf s⟩
-  layout : Spec.MillerRabin.Layout Spec.MillerRabin.compact s.mem (wsOf s) (arg s 1).toNat
-  prepared : Spec.MillerRabin.Prepared Spec.MillerRabin.compact s.mem (wsOf s)
+  layout : Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact s.mem (wsOf s) (arg s 1).toNat
+  prepared : Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact s.mem (wsOf s)
 
-theorem entry_of {s : State} (h : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pre s) : Entry s := by
-  sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+theorem entry_of {s : State} (h : (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pre s) : Entry s := by
+  sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> first
     | with_reducible assumption
-    | (unfold Spec.MillerRabin.Prepared; sig_and_intros <;> with_reducible assumption)
+    | (unfold Proof.MillerRabin.Round.Prepared; sig_and_intros <;> with_reducible assumption)
 
 theorem Entry.valid {s : State} (E : Entry s) : (geometry s).Valid := by
   obtain ⟨_, _, lo, hi, fit, _⟩ := E.layout

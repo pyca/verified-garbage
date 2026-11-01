@@ -99,8 +99,8 @@ theorem MrFix.of_frm {p : PP} {w N mb K : Nat} {s t : State} (h : MrFix p w N mb
   · rw [hf.word_eq dM (by simp only [Public.sMask, sFn]; omega_using [hn, h256])]; exact h.msk
 
 theorem mr_round_eq {N : Nat} (a : Nat) (hN : 3 ≤ N) (ho : N % 2 = 1) :
-    Spec.MillerRabin.round N a = Spec.Ffdh.mrRound N a := by
-  simpa only [Spec.MillerRabin.round] using VG.Proof.Ffdh.rsa_round_eq a hN ho
+    Proof.MillerRabin.Round.round N a = Spec.Ffdh.mrRound N a := by
+  simpa only [Proof.MillerRabin.Round.round] using VG.Proof.Ffdh.rsa_round_eq a hN ho
 
 /-- The draw before its test. -/
 def drawHead : List (Prog isa) := (draw (fun _ _ _ => .block []) []).take 9

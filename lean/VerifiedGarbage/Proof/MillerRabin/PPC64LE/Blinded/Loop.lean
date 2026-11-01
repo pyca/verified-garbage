@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Load
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Witness
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Blinded.Round
 public import VerifiedGarbage.Proof.RsaKeyGen.MrLoopAt
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.GeFlag
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -311,7 +311,7 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
   have hav' : 0 + 8 * (t + 1) * k + 8 * (t + 1) ≤ r.length := by rw [hrl]; omega_arith
   have hD : 0 + 8 * (t + 1) * k + 8 * (t + 1) = 8 * (t + 1) * (k + 1) := by
     rw [Nat.zero_add]; exact (Nat.mul_succ (8 * (t + 1)) k).symm
-  have hround : Spec.MillerRabin.round c (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1 =
+  have hround : Proof.MillerRabin.Round.round c (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1 =
       Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
         (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1 := rfl
   -- A store to `hStat` or `hIdx` keeps everything else.
@@ -342,7 +342,7 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
         (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1 = false := by
       rw [← hround]
       rw [r3v] at hz
-      cases hr : Spec.MillerRabin.round c (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1
+      cases hr : Proof.MillerRabin.Round.round c (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1
       · rfl
       · rw [hr] at hz; exact absurd hz (by decide)
     obtain ⟨hn0, hl⟩ := VG.Proof.RsaKeyGen.mrLoopAt_fail h.mr hwb (by omega_arith) hav' hp
@@ -359,7 +359,7 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
         (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1 = true := by
       rw [← hround]
       rw [r3v] at hz
-      cases hr : Spec.MillerRabin.round c (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1
+      cases hr : Proof.MillerRabin.Round.round c (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1
       · rw [hr] at hz; exact absurd hz (by decide)
       · rfl
     have hk63 : k + 1 < 2 ^ 63 := by
@@ -394,7 +394,7 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
 `hStat`, and the octets read in `hUsed` unless the tape ran out. -/
 def MOut (σ s : State) (B : Addr) (L w c rl ch : Nat) (r : Rand) : Prop :=
   LKeep σ s B L w c ∧
-    word s.mem B (8 * hStat) = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status
+    word s.mem B (8 * hStat) = BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status
       (loop (mrStep c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2) (1, 0) r)) ∧
     ∀ b rest, loop (mrStep c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2) (1, 0) r =
       some (b, rest) → word s.mem B (8 * hUsed) = BitVec.ofNat 64 (rl - rest.length)

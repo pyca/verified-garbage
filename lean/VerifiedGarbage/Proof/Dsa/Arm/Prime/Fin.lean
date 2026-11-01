@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr8
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint8
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.Generation.Primality
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -37,7 +37,7 @@ open VG.Proof.Rsa (b2n)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 /-- The test's status and the octets it read. -/
-def statD (P : CP) (σ : State) : Nat := Spec.Dsa.ProbablePrime.status (res P σ)
+def statD (P : CP) (σ : State) : Nat := Proof.Dsa.ProbablePrime.status (res P σ)
 def usedD (P : CP) (σ : State) : Nat :=
   match res P σ with
   | some (_, rest) => P.rl - rest.length
@@ -175,7 +175,7 @@ theorem qsFinish_vp {r : Nat} {u : State → Nat} {X : State → State → Prop}
 /-- Miller–Rabin's result. -/
 theorem mrResult_vp (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
     VP (QS P E) Impl.Dsa.Arm.ProbablePrime.mrResult (RF P E (statD P) (usedD P)) := by
-  have hs : ∀ σ, E σ → statD P σ = Spec.Dsa.ProbablePrime.status (resQ P) := fun σ e => by
+  have hs : ∀ σ, E σ → statD P σ = Proof.Dsa.ProbablePrime.status (resQ P) := fun σ e => by
     unfold statD; rw [res_eq hE e]
   have hu : ∀ σ, E σ → usedD P σ = match resQ P with | some (_, rest) => P.rl - rest.length | none => 0 :=
     fun σ e => by unfold usedD; rw [res_eq hE e]

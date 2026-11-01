@@ -46,7 +46,7 @@ theorem selectEntry_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s
     have sep := g.arraysApart aX (aTable + j)
     have neq : g.array aX ≠ g.array (aTable + j) := by
       have step := Nat.mul_le_mul_right (8 * (g.w + 2)) (show 6 ≤ 11 + j by omega)
-      unfold Geometry.array VG.Spec.Rsa.Mont.arrAt VG.Spec.Rsa.Mont.hdrBytes aX aTable
+      unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes aX aTable
       omega
     exact sep.resolve_left neq
   refine WP.mono (selectLoop_ok (C.ws.of_keeps keep)

@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-public import VerifiedGarbage.Spec.RsaPss.Encoding
+public import VerifiedGarbage.Proof.RsaPss.EncodingContract
 public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCtx
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # EMSA-PSS's check of an encoding on x86-64: the contract on the registers
 
-`chkK G` states `Spec.RsaPss.checkEncodingContract G G` (with the stack the
+`chkK G` states `Proof.RsaPss.checkEncodingContract G G` (with the stack the
 frame and the calls use, `chkStack`) on the registers and the stack
 (`chk_implies`).
 -/
@@ -43,9 +43,9 @@ def chkK : Contract isa where
       stk.Disjoint dg ∧ stk.Disjoint em ∧ stk.Disjoint scr ∧ stk.Disjoint args ∧
       (s.gpr .rdi).toNat + G.len ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64 ∧
       (stackArg s 0).toNat + (stackArg s 1).toNat * 8 ≤ 2 ^ 64 ∧
-      1 ≤ (s.gpr .rcx).toNat ∧ (s.gpr .rcx).toNat ≤ Spec.RsaPss.maxEmBits ∧
+      1 ≤ (s.gpr .rcx).toNat ∧ (s.gpr .rcx).toNat ≤ Proof.RsaPss.maxEmBits ∧
       (s.gpr .rdx).toNat = Spec.RsaPss.emLength (s.gpr .rcx).toNat ∧
-      Spec.RsaPss.encodingScratchWords ≤ (stackArg s 1).toNat
+      Proof.RsaPss.encodingScratchWords ≤ (stackArg s 1).toNat
   post s s' :=
     (s'.gpr .rax).setWidth 32 = if Spec.RsaPss.verifyEncoding G G (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) G.len)
         (Spec.Rsa.bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat) (s.gpr .rcx).toNat
@@ -70,33 +70,33 @@ def chkSatState : State where
   wr := [⟨0x20000, 1024 * 8⟩]
 
 theorem chk_sat (hG : G ∈ Pbkdf2.Md.X86_64.mdHashes) :
-    ∃ s, (Spec.RsaPss.checkEncodingContract G G abi chkStack).pre s := by
+    ∃ s, (Proof.RsaPss.checkEncodingContract G G abi chkStack).pre s := by
   simp only [Pbkdf2.Md.X86_64.mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hG
   rcases hG with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.md5
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha1
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha224
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha256
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha384
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha512
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha512_224
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha512_256
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.md5
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha1
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha224
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha256
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha384
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha512
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha512_224
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState Spec.Mgf1.sha512_256
 
-theorem chk_implies (hsat : ∃ s, (Spec.RsaPss.checkEncodingContract G G abi chkStack).pre s) :
-    (chkK G).Implies (Spec.RsaPss.checkEncodingContract G G abi chkStack) where
+theorem chk_implies (hsat : ∃ s, (Proof.RsaPss.checkEncodingContract G G abi chkStack).pre s) :
+    (chkK G).Implies (Proof.RsaPss.checkEncodingContract G G abi chkStack) where
   pre := by
     intro s h
-    sig_pre [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] at h
-    sig_pre [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] at h
+    sig_pre [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] at h
+    sig_pre [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq]
+    sig_reduce [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq]
+  post := by sig_implies_post [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] at h
+    sig_pub [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkK, chkStack, stackArgs_two, List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hdi, hsi, hdx, hcx, h8, h9, a0, a1⟩ := h
     refine ⟨?_, h9, a0, a1⟩

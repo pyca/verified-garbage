@@ -14,7 +14,7 @@ FFDH's shared contract.
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 def keyPrepareWrites (p : Inputs) (s : State) : List Region :=

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TablePointer
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TableWrites
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 def TableData (base : BitVec 32) (n : Nat) (m : Mem) : Prop :=
   ∀ i < 1024, w32 m (State.addr base) (arrAt ((n + 7) / 8) 34 + 4 * i) = VG.Impl.RsaKeyGen.tabEntry i

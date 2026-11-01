@@ -14,7 +14,7 @@ frame and constant-time obligations. Operand indices are program constants. -/
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand numAt Keeps)
+open VG.Proof.Rsa.Mont (Operand numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem selectedMontOp_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
@@ -36,7 +36,7 @@ theorem selectedMontOp_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
 
 theorem selectedMontOp_ct {base : BitVec 32} {len w o a b : Nat}
     (ho : Operand o) (ha : Operand a) (hb : Operand b)
-    (fit : Spec.Rsa.Mont.arrAt w 3 + 32 ≤ 8 * len) :
+    (fit : Proof.Rsa.Mont.arrAt w 3 + 32 ≤ 8 * len) :
     RelCT isa (fun s t =>
       (ArithmeticReady base len w s ∧ numAt s.mem (State.addr base) w b < numAt s.mem (State.addr base) w 0) ∧
       (ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w b < numAt t.mem (State.addr base) w 0) ∧

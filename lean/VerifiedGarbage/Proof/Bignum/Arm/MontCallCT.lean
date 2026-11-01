@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt Operand)
+open VG.Proof.Rsa.Mont (arrAt Operand)
 open VG.Proof.X25519.Arm (wp_cmp op2_reg)
 
 theorem callCompare_ready (s : State) {base : BitVec 32} {len w o a b : Nat}

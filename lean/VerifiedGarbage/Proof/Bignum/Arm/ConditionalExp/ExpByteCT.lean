@@ -29,7 +29,7 @@ namespace VG.Proof.Bignum.Arm.ConditionalExp
 
 variable {ok : Prop}
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 structure ExpByteInput (ok : Prop) (base ep : BitVec 32) (len w M x E : Nat) (b : Byte) (s : State) : Prop where
   power : ExpState ok base len w M x E s

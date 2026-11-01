@@ -57,7 +57,7 @@ structure Pre (s : State) : Prop where
   wSa : (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
   wS : (stackArg s 0).toNat + (stackArg s 1).toNat * 8 ≤ 2 ^ 64
   b1 : 1 ≤ (s.gpr .r9).toNat
-  b2 : (s.gpr .r9).toNat ≤ Spec.RsaPss.maxEmBits
+  b2 : (s.gpr .r9).toNat ≤ Proof.RsaPss.maxEmBits
   hel : (s.gpr .rsi).toNat = Spec.RsaPss.emLength (s.gpr .r9).toNat
   hsl : 1024 ≤ (stackArg s 1).toNat
 
@@ -71,7 +71,7 @@ theorem Pre.of {s : State} (h : (encK G).pre s) : Pre G s := by
 variable {G}
 
 theorem Pre.k2 {s : State} (hp : Pre G s) : (s.gpr .rsi).toNat ≤ 1024 := by
-  have := hp.hel; have := hp.b2; unfold Spec.RsaPss.emLength Spec.RsaPss.maxEmBits at *; omega
+  have := hp.hel; have := hp.b2; unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega
 
 /-! ## The frame -/
 

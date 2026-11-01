@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.Ffdh.Arm.KeySearch (Two two_post)
 
 structure MontMathData where
@@ -32,8 +32,8 @@ theorem smallOne_ready (p : MontMathData) (s : State) (h : MontR2 p s) :
   refine WP.mono (smallConst_ok s 1 h.1 (o := 1) (by decide) (by decide) (by decide) (by decide)) ?_
   rintro t ⟨ready, _, _, keeps, _, _⟩
   have fits : arrAt p.words 8 ≤ 8 * p.capacity := h.1.width ▸ h.1.layout.2.2.1
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine ⟨ready, ?_⟩
   rw [keeps_array_num keeps fits op4 (by decide), keeps_array_num keeps fits op0 (by decide)]
   exact h.2
@@ -44,9 +44,9 @@ theorem montOne_ready (p : MontMathData) (s : State) (h : MontR2 p s) :
   refine WP.seq (WP.mono (smallOne_ready p s h) ?_)
   intro u ready
   refine WP.mono (montOp_ok u ready.1 (o := 1) (a := 1) (b := 4)
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide) ready.2) ?_
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide) ready.2) ?_
   rintro t ⟨result, _, _, _, _, _, _⟩
   exact result
 
@@ -63,12 +63,12 @@ theorem montOne_ct : RelCT isa (Two MontR2)
     obtain ⟨p, left, right, sp⟩ := h
     have fit : arrAt p.words 3 + 32 ≤ 8 * p.capacity := by
       have fits : arrAt p.words 8 ≤ 8 * p.capacity := left.1.width ▸ left.1.layout.2.2.1
-      dsimp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits ⊢
+      dsimp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits ⊢
       omega
     exact montOp_ct (o := 1) (a := 1) (b := 4)
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) fit _ _ _ _ _ _ ⟨left, right, sp⟩ runS runT
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) fit _ _ _ _ _ _ ⟨left, right, sp⟩ runS runT
   exact small.seq encode
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

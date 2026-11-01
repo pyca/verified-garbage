@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MillerRabin.X86.Scale
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.MillerRabin.X86
 open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
-open VG.Spec.Rsa.Mont (arrAt hdrBytes)
+open VG.Proof.Rsa.Mont (arrAt hdrBytes)
 
 theorem ptr_ok {s : State} {W : Addr} {L w j : Nat} (hw : Ws s W L)
     (base : PtrAt s W .edi 0) (index : j < 32) (arrayFit : arrAt w j < L)

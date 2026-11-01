@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABI
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ConstantTime
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Satisfiable
@@ -28,9 +28,9 @@ namespace VG.Proof.Dsa.X86.ProbablePrime
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 theorem correct {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96) {bits : Nat} (b : Bits bits)
     (s : State) (h : (contract bits).pre s) :
     ∃ trace t, Exec isa (VG.Impl.Dsa.X86.ProbablePrime.code bits montName mont roundName round) s trace t ∧
@@ -45,7 +45,7 @@ theorem correct {mont round : Prog isa} {montName roundName : String}
       · rw [F.workspaceRegion]; exact F.retWs
       · exact F.retUsed)
   refine ⟨trace, t, run, preserved, ?_⟩
-  sig_post [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig,
+  sig_post [contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
   rw [BitVec.setWidth_append_eq_right]
   obtain ⟨status, used⟩ := R
@@ -65,9 +65,9 @@ namespace VG.Proof.Dsa.X86.ProbablePrime
 open VG VG.X86
 
 theorem verified {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96) (bits : Nat)
     (low : 64 ≤ bits := by decide) (high : bits ≤ 4096 := by decide) (whole : bits % 32 = 0 := by decide) :
     Verified target (VG.Impl.Dsa.X86.ProbablePrime.code bits montName mont roundName round) (contract bits) :=

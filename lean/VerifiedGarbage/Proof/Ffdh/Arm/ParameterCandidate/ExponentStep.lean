@@ -126,7 +126,7 @@ theorem exponentHalfStep_ok {s : State} {base : BitVec 32} {capacity w count : N
       keepV.num (j := j) (by simpa using different.symm) (by simp) (readyU.fit64 bound), memU]
   · intro d bound
     have fits := readyV.arrayFit (j := 0) (by decide)
-    simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fits
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fits
     rw [equal.word (bits := 64) (by omega), key_keep_header workspaceU readyU (by simp) bound keepV, memU]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

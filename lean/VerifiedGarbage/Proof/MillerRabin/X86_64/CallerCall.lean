@@ -22,7 +22,7 @@ open VG.Proof.RsaKeyGen.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Publi
 open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Impl.MillerRabin.X86_64.Caller
 open VG.Proof.MlKem.X86_64
 
-def callRanges (w : Nat) : List (Nat × Nat) := [(pad w, 8)] ++ mutRanges Spec.MillerRabin.extended w
+def callRanges (w : Nat) : List (Nat × Nat) := [(pad w, 8)] ++ mutRanges Proof.MillerRabin.Round.extended w
 
 private theorem outside_mm (r : Reg) (hr : r ∉ mmRegs) : r = .rdi ∨ r = .rsp := by
   cases r <;> simp_all [mmRegs]
@@ -37,7 +37,7 @@ theorem call_ok (v : RoundImpl) {s : State} {B : Addr} {Z w c bm b : Nat} {mi : 
     (ho : c % 2 = 1) (h3 : 3 ≤ c)
     (hx : wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c) :
     WP isa (call v.name v.code) s fun t =>
-      t.gpr .rdi = B ∧ word t.mem B (8 * kFlag) = mask (Spec.MillerRabin.round c b) ∧
+      t.gpr .rdi = B ∧ word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
       WorkFrame B (callRanges w) [below (s.gpr .rsp) 128] s.mem t.mem ∧ Keep mmRegs s t ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) := by
   have hn := hc.good.scr.nowrap
@@ -67,14 +67,14 @@ theorem call_ok (v : RoundImpl) {s : State} {B : Addr} {Z w c bm b : Nat} {mi : 
     rw [kept_padding hk hpZ, hm, saved_rbx]
   refine WP.mono (restore_ok htScr hZ ((hcs .rbx (by simp [calleeSaved])).trans hb) htw htbx hv) ?_
   rintro f ⟨hfm, hB, hOld, hfkeep⟩
-  have hflag : word f.mem B (8 * kFlag) = mask (Spec.MillerRabin.round c b) := by
+  have hflag : word f.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) := by
     rw [hfm, word_writeW_self]
   have hfFinal : Frame ([⟨B, 8 * callWords w⟩] ++ [below (s.gpr .rsp) 128]) u.mem f.mem := by
     rw [hsp] at hf
     rw [hfm]
     exact hf.writeW (r := ⟨B, 8 * callWords w⟩) (by simp) _
       (Offset.contains_base B (by simp only [kFlag, kPlen, sFn]; unfold callWords; omega_arith) (by decide))
-  have hkFinal : Spec.MillerRabin.Keeps Spec.MillerRabin.extended B (callWords w) w u.mem f.mem := by
+  have hkFinal : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.extended B (callWords w) w u.mem f.mem := by
     rw [hfm]
     exact keeps_write_flag hk hN (by decide) _
   have hSave : Frm B [(pad w, 8)] s.mem u.mem := by

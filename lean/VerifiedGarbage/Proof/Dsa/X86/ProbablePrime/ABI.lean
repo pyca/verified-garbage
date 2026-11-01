@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # The shared probable-prime contract on the i686 cdecl ABI -/
 
@@ -22,7 +23,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Dsa.X86.ProbablePrime
 
 def contract (bits : Nat) : Contract isa :=
-  Spec.Dsa.ProbablePrime.contract (layout bits) (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 152
+  Proof.Dsa.ProbablePrime.contract (layout bits) (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 152
 
 def callEnvironment (bits : Nat) (s : State) : Environment where
   bits := bits
@@ -73,11 +74,11 @@ structure CallFacts (bits : Nat) (s : State) : Prop where
   randFit : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
   usedFit : (arg s 4).toNat + 8 ≤ 2 ^ 32
   room : scratchBytes (width bits) + bits / 8 ≤ 8 * (arg s 1).toNat
-  odd : Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem ((arg s 0).setWidth 64) % 2 = 1
-  length : Spec.Dsa.bitLength (Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem ((arg s 0).setWidth 64)) = bits
+  odd : Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem ((arg s 0).setWidth 64) % 2 = 1
+  length : Spec.Dsa.bitLength (Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem ((arg s 0).setWidth 64)) = bits
 
 theorem call_facts {bits : Nat} {s : State} (h : (contract bits).pre s) : CallFacts bits s := by
-  sig_pre [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig,
+  sig_pre [contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow] at h
   sig_split h
   constructor <;> try with_reducible assumption

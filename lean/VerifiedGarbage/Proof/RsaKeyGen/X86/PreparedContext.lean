@@ -14,7 +14,7 @@ open VG.Proof.MillerRabin.X86
 open VG.Impl.Bignum.X86.PublicContext
 
 theorem slot_eq (g : Geometry) (j : Nat) : slot g.w j = g.array j := by
-  unfold slot stride Geometry.array Spec.Rsa.Mont.arrAt VG.Impl.Bignum.hdrBytes Spec.Rsa.Mont.hdrBytes
+  unfold slot stride Geometry.array Proof.Rsa.Mont.arrAt VG.Impl.Bignum.hdrBytes Proof.Rsa.Mont.hdrBytes
   congr 1
 
 theorem layout {g : Geometry} (v : g.Valid) :
@@ -22,7 +22,7 @@ theorem layout {g : Geometry} (v : g.Valid) :
   rw [← slot_eq g 2, ← slot_eq g 6]
   apply VG.Proof.Bignum.X86.PublicContext.operation_layout
   · have fit := v.arraysFit
-    simp only [size, slot, stride, Spec.Rsa.Mont.arrAt, VG.Impl.Bignum.hdrBytes, Spec.Rsa.Mont.hdrBytes] at *
+    simp only [size, slot, stride, Proof.Rsa.Mont.arrAt, VG.Impl.Bignum.hdrBytes, Proof.Rsa.Mont.hdrBytes] at *
     omega
   all_goals first | (unfold operand; decide) | decide
 

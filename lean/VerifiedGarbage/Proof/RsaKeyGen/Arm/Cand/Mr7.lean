@@ -23,7 +23,7 @@ the round (`round_vp`), the context, and its result into `sF`.
 namespace VG.Proof.RsaKeyGen.Arm.Cand
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Operand)
 open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Proof.Rsa (b2n)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
@@ -119,14 +119,14 @@ theorem mrCall_vp (v : RoundImpl) {k : Nat} :
   · simp (config := {decide := true}) only [upd, ↓reduceIte, AW, AB2]
   · rfl
   have pS : VP (fun σ s => St P E (fun σ => upd (AF P k σ) (mBase + 1) (AF P k σ aH1)) LF (VF P k) LSF σ s ∧
-      (MS P σ s ∧ (s.gpr .r0).toNat = if Spec.MillerRabin.round (cv P σ) (wf P σ k).1 then 1 else 0))
+      (MS P σ s ∧ (s.gpr .r0).toNat = if Proof.MillerRabin.Round.round (cv P σ) (wf P σ k).1 then 1 else 0))
       (.block [.str .r0 .r8 sF])
       (fun σ s => St P E (fun σ => upd (AF P k σ) (mBase + 1) (AF P k σ aH1)) LF
         (fun σ => upd (VF P k σ) sF (rv P σ k)) (sF :: LSF) σ s ∧ MS P σ s) :=
     VP.kv strF_taint (fun _ _ h => h.1.2.2) fun σ s ⟨⟨e, h, hw⟩, m, r⟩ =>
       h.strM m hw (d := sF) (by decide) fun t ht hwt mt _ => WP.block_nil ⟨⟨e, by rw [r] at ht; exact ht, hwt⟩, mt⟩
   refine (VP.block_append (VP.ctx (X := fun σ s => MS P σ s ∧
-      (s.gpr .r0).toNat = if Spec.MillerRabin.round (cv P σ) (wf P σ k).1 then 1 else 0)
+      (s.gpr .r0).toNat = if Proof.MillerRabin.Round.round (cv P σ) (wf P σ k).1 then 1 else 0)
       fun σ s t ⟨m, r⟩ mem rest => ⟨m.of_rest rest mem, by rw [rest.gpr _ (by decide)]; exact r⟩) pS).mono
     (fun _ _ h => h)
     fun σ s ⟨h, m⟩ => ⟨h.mono (fun j hj => ⟨hj, upd_ne _ _ (by intro e; rw [e] at hj; revert hj; decide)⟩)

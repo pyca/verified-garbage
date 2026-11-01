@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # The attempt's precondition (x86)
 
@@ -196,7 +197,7 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
       simp only [List.mem_singleton] at hr; subst hr
       intro q hq; simp only [List.mem_singleton] at hq; subst hq
       exact (TF.2.1 _ (List.mem_append_right _ (List.mem_singleton_self _))).sub_right Rs
-  sig_pre [Cand.contract, Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig, abi,
+  sig_pre [Cand.contract, Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts,
     VG.Proof.RsaKeyGen.X86.Candidate.packed_length, stackBelow]
   simp only [ce_arg A he ha _ _ (show 0 < 9 by decide), ce_arg A he ha _ _ (show 1 < 9 by decide),

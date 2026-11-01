@@ -16,7 +16,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem subgroup_ok (s : State) {p : Inputs} {slots : List Nat} (slot : Nat) {bb : List Byte}
@@ -37,14 +37,14 @@ theorem subgroup_ok (s : State) {p : Inputs} {slots : List Nat} (slot : Nat) {bb
     (h.qBytes hasQ) (by rw [p.qLength hasQ]; have := p.minLength; omega)
     (by rw [p.qLength hasQ]; have := p.maxLength; omega) (by change BitVec.ofNat 32 p.k = _; rw [p.qLength hasQ])) ?_
   rintro u ⟨contextU, readyU, power, modU, r2U, _, frameU, restU⟩
-  refine WP.mono (isOne_ok u readyU (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6) (by decide)) ?_
+  refine WP.mono (isOne_ok u readyU (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)) ?_
   rintro t ⟨readyT, flag, arraysT, frameT, restT⟩
   rw [power] at flag
   have frame := frameU.trans frameT
   have rest := restU.trans restT
   exact ⟨h.after_workspace frame rest readyT.ptr (fun d hd => (stableSlots_at stable hd).1), readyT,
-    flag, (arraysT 0 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans modU,
-    (arraysT 4 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans r2U,
+    flag, (arraysT 0 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans modU,
+    (arraysT 4 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans r2U,
     frame, rest⟩
 
 end VG.Proof.Ffdh.Arm

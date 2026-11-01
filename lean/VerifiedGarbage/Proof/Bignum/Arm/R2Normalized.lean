@@ -10,7 +10,7 @@ The existing modular doubling loop and six squarings are shared unchanged. -/
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- Starting at `R/2` needs only `w+1` doublings to reach `2^(65*w)`. -/

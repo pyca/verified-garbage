@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Bignum.Arm.Csub
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt Operand)
+open VG.Proof.Rsa.Mont (arrAt Operand)
 
 theorem array_sep {w j k : Nat} (h : j ≠ k) :
     arrAt w j + 8 * (w + 2) ≤ arrAt w k ∨ arrAt w k + 8 * (w + 2) ≤ arrAt w j := by
@@ -52,7 +52,7 @@ theorem layout_context {s : State} {base : BitVec 32} {size w o a b : Nat}
     by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith⟩,
     ⟨⟨ws.nowrap, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, ws.writable⟩,
       by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith⟩⟩
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
   omega_arith
 
 end VG.Proof.Bignum.Arm

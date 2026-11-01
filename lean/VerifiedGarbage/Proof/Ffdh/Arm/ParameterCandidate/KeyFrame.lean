@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyView
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Bignum.OutsFrame
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 
 def keyArrayRegions (base : BitVec 32) (w : Nat) (js : List Nat) : List Region :=
   js.map fun j => ⟨off (State.addr base) (arrAt w j), 8 * (w + 2)⟩
@@ -32,7 +32,7 @@ theorem KeyReady.arraysFit {s : State} {base : BitVec 32} {capacity w j : Nat}
     (h : KeyReady base capacity w s) (bound : j < 30) : arrAt w (j + 1) ≤ 8 * capacity := by
   have fit := h.arrayFit bound
   have next : arrAt w (j + 1) = arrAt w j + 8 * (w + 2) := by
-    simp only [arrAt, VG.Spec.Rsa.Mont.hdrBytes, Nat.add_mul, Nat.one_mul, Nat.add_assoc]
+    simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes, Nat.add_mul, Nat.one_mul, Nat.add_assoc]
   rw [next]
   exact fit
 
@@ -41,7 +41,7 @@ theorem KeyReady.baseShiftFits {s : State} {base : BitVec 32} {capacity w : Nat}
     base.toNat + 96 < 2 ^ 32 := by
   have fit := h.arrayFit (j := 0) (by decide)
   have nowrap := workspace.nowrap
-  simp only [arrAt, VG.Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
+  simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
   omega
 
 theorem key_keep_number {s : State} {base : BitVec 32} {capacity w j : Nat}
@@ -62,7 +62,7 @@ theorem key_keep_frame {s : State} {base : BitVec 32} {capacity w : Nat} {js : L
   have zeroFit := h.arrayFit (j := 0) (by decide)
   have shiftFits : base.toNat + 96 < 2 ^ 32 := by
     have := workspace.nowrap
-    simp only [arrAt, VG.Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at zeroFit
+    simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at zeroFit
     omega
   change Outs (State.addr (base + 96#32)) (VG.Proof.Rsa.KeyWorkspace.ranges (2 * w + 2) js []) m m' at keep
   have native := VG.Proof.Bignum.outs_frame keep (by
@@ -97,7 +97,7 @@ theorem keyArrayRegions.header {s : State} {base : BitVec 32} {capacity w : Nat}
   have nowrap := workspace.nowrap
   apply Region.Disjoint.symm
   apply Offset.disjoint_base
-  · simp only [arrAt, VG.Spec.Rsa.Mont.hdrBytes]
+  · simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes]
     omega
   · omega
 
@@ -125,7 +125,7 @@ theorem key_keep_header {s : State} {base : BitVec 32} {capacity w d : Nat}
   have nowrap := workspace.nowrap
   apply Region.Disjoint.symm
   apply Offset.disjoint_base
-  · simp only [arrAt, VG.Spec.Rsa.Mont.hdrBytes]
+  · simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes]
     omega
   · omega
 
@@ -143,7 +143,7 @@ theorem keyArrayRegions.modulus {s : State} {base : BitVec 32} {capacity w : Nat
   have positive : 1 ≤ j := by have := nonzero j hj; omega
   have scale := Nat.mul_le_mul_right (8 * (w + 2)) positive
   simp only [Nat.one_mul] at scale
-  simp only [arrAt, VG.Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero]
+  simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero]
   omega
 
 theorem MontData.after_key_keep {s : State} {base : BitVec 32} {capacity w : Nat}

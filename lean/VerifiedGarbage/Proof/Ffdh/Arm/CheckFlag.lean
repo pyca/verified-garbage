@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest wp_str)
 
 theorem saveFlag_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -23,7 +23,7 @@ theorem saveFlag_ok (s : State) {base : BitVec 32} {len w : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest [] s t := by
   have size : 256 ≤ 8 * len := by
     have := h.layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega
   unfold VG.Impl.Ffdh.Arm.saveFlag
   refine wp_str (a := off (State.addr base) 136) (by decide)

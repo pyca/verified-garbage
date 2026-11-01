@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Bignum.Arm.Setup
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Impl.Bignum.Arm.Setup
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Workspace setup changes only bytes within the caller's scratch buffer -/
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem outs_workspace {m m' : Mem} {base : Addr} {size : Nat} {ranges : List (Nat × Nat)}
@@ -35,7 +35,7 @@ theorem setup_frame_ok (s : State) {base : BitVec 32} {len w : Nat}
     WP isa setup s fun t => Layout t.mem (State.addr base) len ∧
       wOf t.mem (State.addr base) = w ∧ t.gpr .r0 = base ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   refine WP.mono (setup_ok s ws hw hw' fits ptr count zero) ?_
   rintro t ⟨layout, width, ptr, outside, rest⟩
   refine ⟨layout, width, ptr, outs_workspace outside ?_, rest.mono (by decide)⟩

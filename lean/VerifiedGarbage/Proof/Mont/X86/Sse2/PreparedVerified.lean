@@ -25,7 +25,7 @@ bytes run on into array 3), the operands and the result at their arrays.
 namespace VG.Proof.Mont.X86.Sse2
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Sse2 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Mont.X86.Rt
-open VG.Spec.Rsa.Mont (Layout Operand wOf arrAt aM)
+open VG.Proof.Rsa.Mont (Layout Operand wOf arrAt aM)
 open VG.Proof.Mont.X86.Dynamic (ofs_far)
 
 /-- What `body preparedParams` takes of a state meeting the contract's precondition. -/
@@ -43,8 +43,8 @@ theorem prReady {s : State} (A : PrABI s) :
 theorem preparedBody_noSp : NoSp (seqs [.block preparedParams, withParams, .block restoreRegs]) :=
   NoSp.of_all (by decide +kernel)
 
-theorem prepared_correct (s : State) (h : (Spec.Rsa.Mont.mulContract abi 56).pre s) :
-    ∃ tr t, Exec isa preparedBody s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.Mont.mulContract abi 56).post s t := by
+theorem prepared_correct (s : State) (h : (Proof.Rsa.Mont.mulContract abi 56).pre s) :
+    ∃ tr t, Exec isa preparedBody s tr t ∧ abiPreserved s t ∧ (Proof.Rsa.Mont.mulContract abi 56).post s t := by
   have A := prAbi_of h
   have R := prReady A
   obtain ⟨tr, t, E, lt, cong, mem, cs, -, -⟩ := body_ok R.entry R.ly preparedBody_noSp R.par R.inv R.bLt
@@ -55,9 +55,9 @@ theorem prepared_correct (s : State) (h : (Spec.Rsa.Mont.mulContract abi 56).pre
   have hb := A.bound
   have po := Compact.operand_apart (w := wOf s.mem (wsOf s)) A.output
   have e2 : arrAt (wOf s.mem (wsOf s)) 2 + 16 * (wOf s.mem (wsOf s) + 2) = arrAt (wOf s.mem (wsOf s)) 4 := by
-    unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
+    unfold arrAt Proof.Rsa.Mont.hdrBytes; omega_arith
   have e3 : arrAt (wOf s.mem (wsOf s)) 3 = arrAt (wOf s.mem (wsOf s)) 2 + 8 * (wOf s.mem (wsOf s) + 2) := by
-    unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
+    unfold arrAt Proof.Rsa.Mont.hdrBytes; omega_arith
   refine ⟨tr, t, E, ⟨cs, ?_⟩, ?_⟩
   · refine Mem.readW_congr fun i hi => mem _ (fun r hr => ?_) (fun hc => ?_)
     · have := ofs_far (base := wsOf s) (size := lenOf s) (x := (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i)
@@ -68,7 +68,7 @@ theorem prepared_correct (s : State) (h : (Spec.Rsa.Mont.mulContract abi 56).pre
       simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
         at hc
       omega_arith
-  · sig_post [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argSlots, argVal, argBytes]
+  · sig_post [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argSlots, argVal, argBytes]
     refine ⟨?_, ?_, ?_⟩
     · rw [Compact.numAt_val32, Compact.numAt_val32]; exact lt
     · rw [Compact.numAt_val32, Compact.numAt_val32, Compact.numAt_val32, Compact.numAt_val32,
@@ -79,13 +79,13 @@ theorem prepared_correct (s : State) (h : (Spec.Rsa.Mont.mulContract abi 56).pre
       · rw [show ofs (wsOf s) (wsOf s + BitVec.ofNat 64 i) = i by
           simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by simp only [lenOf] at hb; omega_arith)]]
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        have h2 := hj Spec.Rsa.Mont.aAcc (by simp)
-        have h3 := hj Spec.Rsa.Mont.aTmp (by simp)
+        have h2 := hj Proof.Rsa.Mont.aAcc (by simp)
+        have h3 := hj Proof.Rsa.Mont.aTmp (by simp)
         have ho := hj (arg s 2).toNat (by simp)
-        simp only [Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] at h2 h3
+        simp only [Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] at h2 h3
         generalize wOf s.mem (wsOf s) = w at *
-        have e2' : arrAt w 2 + 16 * (w + 2) = arrAt w 4 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
-        have e3' : arrAt w 3 = arrAt w 2 + 8 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
+        have e2' : arrAt w 2 + 16 * (w + 2) = arrAt w 4 := by unfold arrAt Proof.Rsa.Mont.hdrBytes; omega_arith
+        have e3' : arrAt w 3 = arrAt w 2 + 8 * (w + 2) := by unfold arrAt Proof.Rsa.Mont.hdrBytes; omega_arith
         rcases hr with rfl | rfl <;> simp only <;> omega_arith
       · have := (s.gpr .esp).isLt
         have := (arg s 0).isLt
@@ -98,9 +98,9 @@ theorem prepared_correct (s : State) (h : (Spec.Rsa.Mont.mulContract abi 56).pre
             BitVec.toNat_ofNat]
           omega_arith
 
-theorem prepared_publicArgs {s t : State} (H : (Spec.Rsa.Mont.mulContract abi 56).pub s t) :
+theorem prepared_publicArgs {s t : State} (H : (Proof.Rsa.Mont.mulContract abi 56).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ (∀ i < 5, arg s i = arg t i) ∧ wOf s.mem (wsOf s) = wOf t.mem (wsOf t) := by
-  sig_pub [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argSlots, argVal, argBytes] at H
+  sig_pub [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argSlots, argVal, argBytes] at H
   sig_split H
   refine ⟨by with_reducible assumption, fun i hi => ?_, List.singleton_inj.mp (by with_reducible assumption)⟩
   match i, hi with
@@ -195,7 +195,7 @@ def PrPair (W : Addr) (L N S mo inv o a b : Nat) (s₁ s₂ : State) : Prop :=
   BPair preparedParams W L N S mo inv o a b s₁ s₂ ∧ PrABI s₁ ∧ PrABI s₂ ∧ ∀ i < 5, arg s₁ i = arg s₂ i
 
 theorem prepared_constantTime :
-    ConstantTime isa (Spec.Rsa.Mont.mulContract abi 56).pre (Spec.Rsa.Mont.mulContract abi 56).pub
+    ConstantTime isa (Proof.Rsa.Mont.mulContract abi 56).pre (Proof.Rsa.Mont.mulContract abi 56).pub
       preparedBody := by
   apply RelCT.constantTime
   refine RelCT.mono (P := fun s₁ s₂ => ∃ W L N S mo inv o a b, PrPair W L N S mo inv o a b s₁ s₂)
@@ -212,11 +212,11 @@ theorem prepared_constantTime :
   rw [← hw] at R
   exact ⟨_, _, _, _, _, _, _, _, _, ⟨prReady (prAbi_of h₁), R, sp⟩, prAbi_of h₁, prAbi_of h₂, args⟩
 
-theorem prepared_satisfiable : ∃ s, (Spec.Rsa.Mont.mulContract abi 56).pre s := by
-  sig_implies_sat [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argSlots, argVal, argBytes, stackBelow]
+theorem prepared_satisfiable : ∃ s, (Proof.Rsa.Mont.mulContract abi 56).pre s := by
+  sig_implies_sat [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argSlots, argVal, argBytes, stackBelow]
     [Compact.satState, arg, argAddr, Mem.readW, Mem.read] using Compact.satState
 
-theorem prepared_verified : Verified target preparedBody (Spec.Rsa.Mont.mulContract abi 56) :=
+theorem prepared_verified : Verified target preparedBody (Proof.Rsa.Mont.mulContract abi 56) :=
   ⟨prepared_correct, prepared_constantTime, prepared_satisfiable⟩
 
 end VG.Proof.Mont.X86.Sse2

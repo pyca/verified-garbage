@@ -287,7 +287,7 @@ namespace VG.Proof.Variants.RsaPrivateCrt.X86_64.Adx
 open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : CrtImpl where
-  name := Spec.Rsa.privateCrtApi.name ++ "_adx"
+  name := "vg_rsa_private_crt" ++ "_adx"
   code := Impl.Rsa.X86_64.Crt.code CallMont.adx.mm
     (Impl.Rsa.X86_64.Crt.expLoop5S CallMont.lazyAdx CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV)
   depth := by decide +kernel

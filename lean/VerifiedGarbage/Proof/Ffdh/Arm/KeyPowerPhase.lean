@@ -17,7 +17,7 @@ Both paths use the original imported exponent bytes without shortening.
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeyPower
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 structure PhaseInput (base ep : BitVec 32) (len w M x : Nat) (P : State → Prop)

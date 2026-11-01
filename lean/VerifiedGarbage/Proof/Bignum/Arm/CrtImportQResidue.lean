@@ -21,7 +21,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Operand Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem CrtPoweredState.after_transfer {s t : State} {base : BitVec 32} {len w M value : Nat}
@@ -32,7 +32,7 @@ theorem CrtPoweredState.after_transfer {s t : State} {base : BitVec 32} {len w M
   have fit : arrAt w 8 ≤ 8 * len := h.layout.width ▸ h.layout.layout.2.2.1
   obtain ⟨ready, modulus⟩ := (h.ready selected).after_array (by decide : 1 ≠ 0) keeps frame rest ptr
   have op (j : Nat) (hj : j = 4 ∨ j = 6 ∨ j = 7) : Operand j := by
-    rcases hj with rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases hj with rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   exact CrtPoweredState.of_ready ready (modulus.trans h.modulus)
     ((keeps_array_num keeps fit (op 6 (by simp)) (by decide)).trans h.result)
     ((keeps_array_num keeps fit (op 4 (by simp)) (by decide)).trans h.r2)
@@ -47,7 +47,7 @@ end
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem crt_importQResidue_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {P v : Nat}

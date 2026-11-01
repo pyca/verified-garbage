@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.RvMont4
 namespace VG.Proof.Dsa.Arm.Prime
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 open VG.Proof.Rsa.Arm.Recover (VP)
 
 /-- The stage of the exponent, as a stage of the key working space alone. -/
@@ -100,7 +100,7 @@ theorem setup_vp {E : State → Prop} : VP (SB P E) VG.Impl.Bignum.Arm.setup (SC
   have pre := h.pre
   have hw := pre.w4
   refine WP.mono (setup_ok s (pre.workspaceM h.wr) (by omega) (by omega)
-    (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes, CP.lenM]; omega) r0 r7 r3)
+    (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega) r0 r7 r3)
     fun t ⟨lay, wd, t0, outs, rest⟩ => ⟨⟨e, ?_⟩, lay, wd, t0, ?_⟩
   · have f := frame_of_outs (n := 256) outs (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl) <;> decide)

@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- The scan has gone over the first `j` entries for the digit `d`. -/
@@ -57,7 +57,7 @@ theorem scanBody_ok (s : State) {base : BitVec 32} {len w M x A d j : Nat}
   have powerY := h.power.after_other readyY keeps (by decide) (by decide) (by decide) (by decide) (by decide)
   have tableY := h.table.of_keeps keeps fits (by decide) (by decide)
   have sepHdr (e : Nat) (he : e + 4 ≤ 256) : e + 4 ≤ arrAt w 1 := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
   have hdr (e : Nat) (he : e + 4 ≤ 256) := outside_read32 outside (d := e) (Or.inl (sepHdr e he)) (by omega)
   have entryY := (hdr 220 (by decide)).trans h.entry
   have indexY := (hdr 228 (by decide)).trans h.index
@@ -85,7 +85,7 @@ theorem scanBody_ok (s : State) {base : BitVec 32} {len w M x A d j : Nat}
     · subst e; simp only [ite_true, show (1 : BitVec 32).toNat = 1 from rfl, Nat.one_ne_zero, ite_false]
     · simp only [e, ite_false, show (0 : BitVec 32).toNat = 0 from rfl, ite_true]
       exact h.selected (by omega)
-  · refine (KeepsExp.of_outside outside (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)).trans ?_
+  · refine (KeepsExp.of_outside outside (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega)).trans ?_
     rw [memT]
     exact KeepsExp.of_writes _ _ _ _ (Or.inl (by decide)) (by decide) (Or.inl (by decide)) (by decide)
 
@@ -157,7 +157,7 @@ theorem windowApply_ok (s : State) {base : BitVec 32} {len w M x A d : Nat}
       t.mem.readW (off (State.addr base) 204) 32 = BitVec.ofNat 32 0 ∧
       KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have nowrap := h.ready.workspace.nowrap
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
   rw [windowApply, WP.seq_iff]
   refine WP.mono (scan_ok s h table fits hd digit) ?_
   rintro u ⟨powerU, tableU, selected, _, keepsU, frameU, restU⟩
@@ -165,9 +165,9 @@ theorem windowApply_ok (s : State) {base : BitVec 32} {len w M x A d : Nat}
   rw [← selected] at entry
   rw [WP.seq_iff]
   refine WP.mono (montOp_ok u powerU.ready (o := 6) (a := 6) (b := 1)
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
     (by rw [powerU.modulus]; exact entry.1)) ?_
   rintro v ⟨ready, modulus, bound, value, keeps, frameV, restV⟩
   rw [powerU.modulus] at modulus bound value

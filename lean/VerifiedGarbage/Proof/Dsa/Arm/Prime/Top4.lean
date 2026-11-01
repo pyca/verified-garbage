@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top1
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # DSA's probable-prime test on ARMv7: the body's start (`in_c`) -/
 
@@ -63,7 +64,7 @@ theorem in_c (hb : Bits bits) (h : CIn bits s) (o : PreOut bits s t) : In (mkP b
     show Impl.Dsa.Arm.ProbablePrime.len bits ≤ _; omega_arith)
   have bR := bytesT h o (R := cR s) h.FR (by have := h.fr; show (s.gpr .r3).toNat ≤ _; omega_arith)
   have hcv : cv (mkP bits s) (sx bits s t) =
-      Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0)) := by
+      Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0)) := by
     show Spec.Rsa.os2ip (Spec.Rsa.bytesAt (pcPushed t).mem (mkP bits s).rCd.base (mkP bits s).rCd.len) = _
     rw [bCd]
     show _ = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 0) (bits / 8))

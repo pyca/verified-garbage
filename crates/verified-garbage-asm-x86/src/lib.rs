@@ -429,10 +429,6 @@ pub mod md5;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod miller_rabin;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod mldsa44;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
@@ -502,10 +498,6 @@ pub mod rsa;
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
 pub mod rsa_keygen;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod rsa_mont;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]

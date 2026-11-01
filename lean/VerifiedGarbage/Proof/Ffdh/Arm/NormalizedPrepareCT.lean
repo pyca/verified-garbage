@@ -32,14 +32,14 @@ theorem normalizedPrecompute_ct {base src : BitVec 32} {len w k : Nat}
       (PrecomputeInput base src len w k t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (State.addr src) k)) ∧ s.sp = t.sp)
       (NormalizedPrecompute.precompute K.op) (fun _ _ => True) := by
   have imported (s : State) (h : PrecomputeInput base src len w k s ∧ P s ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) :
-      WP isa importModulus s fun t => PrecomputeModulus base len w t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.Mont.numAt t.mem (State.addr base) w 0 := by
+      WP isa importModulus s fun t => PrecomputeModulus base len w t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt t.mem (State.addr base) w 0 := by
     refine (importModulus_ready s h.1).and ?_
     refine WP.mono (importModulus_ok s h.1.workspace h.1.layout h.1.width h.1.positive h.1.fits h.1.sourceFits
       h.1.readable h.1.separate h.1.ptr h.1.source h.1.count h.1.stackRead h.1.stackSep h.1.saved) ?_
     rintro t ⟨_, _, _, modulus, frame, rest⟩
     exact ⟨K.stable frame rest h.2.1, by rw [modulus]; exact h.2.2⟩
-  have inverse (s : State) (h : PrecomputeModulus base len w s ∧ P s ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.Mont.numAt s.mem (State.addr base) w 0) :
-      WP isa precomputeInverse s fun t => ArithmeticReady base len w t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.Mont.numAt t.mem (State.addr base) w 0 := by
+  have inverse (s : State) (h : PrecomputeModulus base len w s ∧ P s ∧ 2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0) :
+      WP isa precomputeInverse s fun t => ArithmeticReady base len w t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt t.mem (State.addr base) w 0 := by
     refine (precomputeInverse_ready s h.1).and ?_
     refine WP.mono (precomputeInverse_ok s h.1.workspace h.1.layout h.1.width h.1.ptr h.1.odd h.1.large
       h.1.stackRead h.1.stackSep h.1.saved) ?_

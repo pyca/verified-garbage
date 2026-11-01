@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
@@ -24,7 +25,7 @@ namespace VG.Proof.Bignum.PPC64LE.Crt
 open VG VG.PPC64LE VG.Impl.Bignum.PPC64LE.Crt
 
 /-- `vg_rsa_private_crt`. -/
-theorem crt_verified : Verified target crt (Spec.Rsa.privateCrtContract abi) :=
+theorem crt_verified : Verified target crt (Proof.Rsa.privateCrtContract abi) :=
   Verified.of_correct fn_correct fn_ct crt_implies
 
 end VG.Proof.Bignum.PPC64LE.Crt

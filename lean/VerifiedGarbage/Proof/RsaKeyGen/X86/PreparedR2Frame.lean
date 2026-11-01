@@ -17,7 +17,7 @@ theorem preserve {g : Geometry} (v : g.Valid) {s t : Mem} (F : WorkspaceFrame g 
     List.not_mem_nil, or_false] at mem
   rcases index with rfl | rfl <;>
     rcases mem with ((rfl | rfl | rfl) | (rfl | rfl | rfl)) | rfl <;>
-    simp only [Geometry.array, Geometry.words, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes,
+    simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
       VG.Proof.Mont.X86.accLen, VG.Impl.Bignum.X86.PublicContext.modulus, VG.Impl.Mont.X86.words] <;> omega
 
 end VG.Proof.RsaKeyGen.X86.PreparedR2

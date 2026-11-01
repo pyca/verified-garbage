@@ -14,11 +14,11 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Impl.MillerRabin.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 theorem mulY_ok {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     {capacity b c : Nat} (length : g.L = 8 * capacity) (M : Modulus g c s.mem)
-    (right : Spec.Rsa.Mont.Operand b) (odd : c % 2 = 1)
+    (right : Proof.Rsa.Mont.Operand b) (odd : c % 2 = 1)
     (rightLt : val32 s.mem g.W (g.array b) g.words < c)
     (readLen : readSrc s (.mem (at_ .esp 24)) = some (BitVec.ofNat 32 capacity))
     (fit : 80 ≤ (s.gpr .esp).toNat)

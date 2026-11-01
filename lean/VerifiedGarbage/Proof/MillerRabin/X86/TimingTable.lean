@@ -41,7 +41,7 @@ theorem tableInit_relCT {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVe
   exact WP.mono (tableInit_ok v S) fun _ R => ⟨R.1, odd, lt⟩
 
 theorem tableStep_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity k : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (index : k < 14) :
@@ -61,7 +61,7 @@ theorem tableStep_relCT {code : Prog isa} {name : String}
     exact WP.mono (tableStep_ok verified noSp stack v S length odd lt index) fun _ R => ⟨R.1, odd, lt⟩
 
 theorem table_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (Two g (TableStart g capacity p)) (table name code) (Two g (TableStage g capacity p 14)) := by

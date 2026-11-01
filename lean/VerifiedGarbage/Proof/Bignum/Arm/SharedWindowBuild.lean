@@ -17,7 +17,7 @@ Only the multiplication is supplied by the caller's arithmetic interface.
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 section
@@ -30,12 +30,12 @@ theorem sharedTableBody_ok (s : State) {M x j : Nat}
       BuildInv base len w M x (j + 1) t ∧ t.z = decide (j + 1 = 8) ∧
       KeepsExp base s.mem t.mem ∧ P t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.fits
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
   rw [SharedWindow.tableBody, WP.seq_iff]
   refine WP.mono (A.op_ok s 1 1 5 h.power.ready hp
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
     (by rw [h.power.modulus]; exact h.power.inputBound)) ?_
   rintro u ⟨ready, modulus, bound, value, keeps, pu, frameU, restU⟩
   rw [h.power.modulus] at bound value

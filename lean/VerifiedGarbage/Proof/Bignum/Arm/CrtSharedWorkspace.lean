@@ -56,7 +56,7 @@ theorem CrtShared.after_main {s t : State} {g : CrtGeometry} {bs : Fin 7 → Lis
     (frame : Frame [⟨State.addr g.base, 8 * workspaceWords g.words⟩,
       ⟨off (State.addr s.sp) 48, 4⟩] s.mem t.mem) (rest : Rest rs s t)
     (main : CrtMainState g.base (workspaceWords g.words) g.words t.mem)
-    (modulus : Spec.Rsa.Mont.numAt t.mem (State.addr g.base) g.words 0 = Spec.Rsa.Mont.numAt s.mem (State.addr g.base) g.words 0) :
+    (modulus : Proof.Rsa.Mont.numAt t.mem (State.addr g.base) g.words 0 = Proof.Rsa.Mont.numAt s.mem (State.addr g.base) g.words 0) :
     CrtShared g bs t := by
   have pEq := h.workspace_eq_after h.buffers.context.p (by simp [crtRegions]) h.buffers.context.sepMP.symm frame
   have qEq := h.workspace_eq_after h.buffers.context.q (by simp [crtRegions]) h.buffers.context.sepMQ.symm frame

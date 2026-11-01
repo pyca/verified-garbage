@@ -58,7 +58,7 @@ theorem Data.mono {g : Geometry} {A A' : Nat → Nat} {Js Js' : List Nat}
 theorem Geometry.array_ne (g : Geometry) {i j : Nat} (different : i ≠ j) : g.array i ≠ g.array j := by
   have increasing {a b : Nat} (order : a < b) : g.array a < g.array b := by
     have step := Nat.mul_lt_mul_of_pos_right order (by omega : 0 < 8 * (g.w + 2))
-    unfold Geometry.array VG.Spec.Rsa.Mont.arrAt VG.Spec.Rsa.Mont.hdrBytes
+    unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes
     omega
   rcases Nat.lt_or_gt_of_ne different with before | after
   · exact Nat.ne_of_lt (increasing before)
@@ -67,7 +67,7 @@ theorem Geometry.array_ne (g : Geometry) {i j : Nat} (different : i ≠ j) : g.a
 theorem Geometry.strideBefore (g : Geometry) {i j : Nat} (index : i < j) :
     g.array i + 8 * (g.w + 2) ≤ g.array j := by
   have step := Nat.mul_le_mul_right (8 * (g.w + 2)) index
-  unfold Geometry.array VG.Spec.Rsa.Mont.arrAt VG.Spec.Rsa.Mont.hdrBytes
+  unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes
   rw [Nat.succ_mul] at step
   omega
 

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
 
 /-! # Resources for the shared IA-32 modular-exponentiation contract -/
 
@@ -33,12 +34,12 @@ structure ABI (n e : Nat) (s : State) (k : Nat := 20) : Prop where
   belowScratch : (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 k, k⟩ : Region).Disjoint ⟨ws s, bytes s⟩
   bound : (arg s 0).toNat + bytes s ≤ 2 ^ 32
   size : contextBytes n ≤ bytes s
-  odd : Spec.Dsa.ModPow.numAt s.mem (ws s) (slot n 0) (8 * n) % 2 = 1
-  gt_one : 1 < Spec.Dsa.ModPow.numAt s.mem (ws s) (slot n 0) (8 * n)
+  odd : Proof.Dsa.ModPow.numAt s.mem (ws s) (slot n 0) (8 * n) % 2 = 1
+  gt_one : 1 < Proof.Dsa.ModPow.numAt s.mem (ws s) (slot n 0) (8 * n)
 
 theorem abi_of {n e : Nat} {s : State}
-    (h : (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pre s) : ABI n e s 96 := by
-  sig_pre [Spec.Dsa.ModPow.powContract, Spec.Dsa.ModPow.sig, layout, abi, argSlots, argVal, argBytes, stackBelow] at h
+    (h : (Proof.Dsa.ModPow.powContract (layout n e) abi 96).pre s) : ABI n e s 96 := by
+  sig_pre [Proof.Dsa.ModPow.powContract, Proof.Dsa.ModPow.sig, layout, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> try with_reducible assumption
   dsimp only [bytes]
@@ -77,9 +78,9 @@ theorem read_eq_val32 (m : Mem) (base : Addr) : ∀ (k d : Nat),
     congr 1
 
 theorem numAt_eq8 (m : Mem) (base : Addr) (d n : Nat) :
-    Spec.Dsa.ModPow.numAt m base d (8 * n) = wordsVal m base d n := read_eq_wordsVal m base n d
+    Proof.Dsa.ModPow.numAt m base d (8 * n) = wordsVal m base d n := read_eq_wordsVal m base n d
 
 theorem numAt_eq4 (m : Mem) (base : Addr) (d e : Nat) :
-    Spec.Dsa.ModPow.numAt m base d (4 * e) = val32 m base d e := read_eq_val32 m base e d
+    Proof.Dsa.ModPow.numAt m base d (4 * e) = val32 m base d e := read_eq_val32 m base e d
 
 end VG.Proof.Dsa.X86.Pow

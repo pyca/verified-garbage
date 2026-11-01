@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
@@ -190,7 +190,7 @@ theorem mrA_le {c : Nat} (hc3 : 3 ≤ c) : mrA c ≤ bitLength c - 1 := by
 theorem final_eq {c w b X O M : Nat} (hc : c % 2 = 1) (hc3 : 3 ≤ c) (hcR : c < 2 ^ (64 * w))
     (hX : X = b % c * 2 ^ (64 * w) % c) (hO : O = 2 ^ (64 * w) % c) (hM : M = c - 2 ^ (64 * w) % c) :
     (msqs c w M (4 - sigOf (mrA c)) 3 (mrun c w M (tp c w X O) (mrE c) (16 * w) (16 * w)) 3).2 =
-      Spec.MillerRabin.round c b := by
+      Proof.MillerRabin.Round.round c b := by
   have hT : ∀ k < 16, tp c w X O k = powMod b k c * 2 ^ (64 * w) % c := fun k _ => tp_val hc hc3 hX hO k
   obtain ⟨hr, lt⟩ := mrun_rel (b := b) hc hc3 hM hT (mrE c) (16 * w) (16 * w)
   rw [hr]

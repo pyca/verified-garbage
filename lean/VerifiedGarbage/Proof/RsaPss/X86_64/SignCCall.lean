@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
-public import VerifiedGarbage.Spec.RsaPss.Encoding
+public import VerifiedGarbage.Proof.RsaPss.EncodingContract
 
 /-!
 # RSASSA-PSS signing on x86-64, around the encoding: the call of `encode`
@@ -112,12 +112,12 @@ theorem enc_pre {s t : State} (hp : SPre G s) (hsp : t.gpr .rsp = fb s) {lo eb e
     (h1 : word t.mem (fb s) (8 * 1) = stackArg s 14 - BitVec.ofNat 64 (oEnc / 8))
     (hdi : t.gpr .rdi = off (stackArg s 13) (oEm + lo)) (hsi : t.gpr .rsi = BitVec.ofNat 64 el)
     (hdx : t.gpr .rdx = stackArg s 10) (hcx : t.gpr .rcx = stackArg s 11) (h8 : t.gpr .r8 = stackArg s 12)
-    (h9 : t.gpr .r9 = BitVec.ofNat 64 eb) (hlo : lo ≤ 1) (heb1 : 1 ≤ eb) (heb2 : eb ≤ Spec.RsaPss.maxEmBits)
+    (h9 : t.gpr .r9 = BitVec.ofNat 64 eb) (hlo : lo ≤ 1) (heb1 : 1 ≤ eb) (heb2 : eb ≤ Proof.RsaPss.maxEmBits)
     (hel : el = Spec.RsaPss.emLength eb) :
     (encK G).pre (t.callEntry.withRegions (eRd G s) (eWr s lo el)) := by
   have hE0 := (stackArg_call hp hsp (eRd G s) (eWr s lo el) (i := 0) (by decide)).trans h0
   have hE1 := (stackArg_call hp hsp (eRd G s) (eWr s lo el) (i := 1) (by decide)).trans h1
-  have hel2 : el ≤ 1024 := by rw [hel]; unfold Spec.RsaPss.emLength Spec.RsaPss.maxEmBits at *; omega
+  have hel2 : el ≤ 1024 := by rw [hel]; unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega
   simp only [encK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.callEntry_rsp,
     State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
@@ -138,7 +138,7 @@ theorem enc_pre {s t : State} (hp : SPre G s) (hsp : t.gpr .rsp = fb s) {lo eb e
     simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [h]
   have hel' : (BitVec.ofNat 64 el).toNat = el := by rw [BitVec.toNat_ofNat]; omega
   have heb' : (BitVec.ofNat 64 eb).toNat = eb := by
-    rw [BitVec.toNat_ofNat]; unfold Spec.RsaPss.maxEmBits at heb2; omega
+    rw [BitVec.toNat_ofNat]; unfold Proof.RsaPss.maxEmBits at heb2; omega
   rw [hel', heb']
   -- What lies in what.
   have sI : Region.Sub ⟨off (stackArg s 13) (oEm + lo), el⟩ ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩ :=
@@ -170,7 +170,7 @@ theorem enc_pre {s t : State} (hp : SPre G s) (hsp : t.gpr .rsp = fb s) {lo eb e
     (hp.dKs.sub_left sStk).sub_right sR, dKA,
     by rw [toNat_off (by omega_using [hsl, wS, c1, hlo, hel2])]; omega_using [hsl, wS, c1, hlo, hel2],
     hp.wDg, hp.wSa, by rw [toNat_off (by omega_using [hsl, wS, c3]), hsc]; omega_using [hsl, wS, c3],
-    heb1, heb2, hel, by rw [hsc]; unfold Spec.RsaPss.encodingScratchWords; have := hp.k1; omega_using [hsl, this]⟩
+    heb1, heb2, hel, by rw [hsc]; unfold Proof.RsaPss.encodingScratchWords; have := hp.k1; omega_using [hsl, this]⟩
 
 theorem enc_covers {s t : State} (hp : SPre G s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr) {lo el : Nat}
     (hlo : lo ≤ 1) (hel2 : el ≤ 1024) :
@@ -231,7 +231,7 @@ theorem enc_call {encN : String} {encC : Prog isa}
     (h1 : word t.mem (fb s) (8 * 1) = stackArg s 14 - BitVec.ofNat 64 (oEnc / 8))
     (hdi : t.gpr .rdi = off (stackArg s 13) (oEm + lo)) (hsi : t.gpr .rsi = BitVec.ofNat 64 el)
     (hdx : t.gpr .rdx = stackArg s 10) (hcx : t.gpr .rcx = stackArg s 11) (h8 : t.gpr .r8 = stackArg s 12)
-    (h9 : t.gpr .r9 = BitVec.ofNat 64 eb) (hlo : lo ≤ 1) (heb1 : 1 ≤ eb) (heb2 : eb ≤ Spec.RsaPss.maxEmBits)
+    (h9 : t.gpr .r9 = BitVec.ofNat 64 eb) (hlo : lo ≤ 1) (heb1 : 1 ≤ eb) (heb2 : eb ≤ Proof.RsaPss.maxEmBits)
     (hel : el = Spec.RsaPss.emLength eb) :
     WP isa (.call encN encC) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 ∧
@@ -242,7 +242,7 @@ theorem enc_call {encN : String} {encC : Prog isa}
           (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 12).toNat) eb with
       | some e => (t'.gpr .rax).setWidth 32 = 1 ∧ Spec.Rsa.bytesAt t'.mem (off (stackArg s 13) (oEm + lo)) el = e
       | none => (t'.gpr .rax).setWidth 32 = 0 := by
-  have hel2 : el ≤ 1024 := by rw [hel]; unfold Spec.RsaPss.emLength Spec.RsaPss.maxEmBits at *; omega
+  have hel2 : el ≤ 1024 := by rw [hel]; unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega
   obtain ⟨hc, hw⟩ := enc_covers hp hrd hwr hlo hel2
   refine X86_64.WP.callF hv hspC (by unfold encStack at hd; omega)
     (enc_pre hp hst h0 h1 hdi hsi hdx hcx h8 h9 hlo heb1 heb2 hel) hc hw ?_
@@ -306,7 +306,7 @@ theorem enc_call {encN : String} {encC : Prog isa}
       fun hK hO hS hl => bytesAt_frame fSE (in_apart hK hO hS) hl
     have hel' : (BitVec.ofNat 64 el).toNat = el := by rw [BitVec.toNat_ofNat]; omega
     have heb' : (BitVec.ofNat 64 eb).toNat = eb := by
-      rw [BitVec.toNat_ofNat]; unfold Spec.RsaPss.maxEmBits at heb2; omega
+      rw [BitVec.toNat_ofNat]; unfold Proof.RsaPss.maxEmBits at heb2; omega
     simp only [encK, State.withRegions_gpr, State.withRegions_mem,
       State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),

@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Mont.X86.Compact.EntryMemory
 @[expose] public section
 namespace VG.Proof.Mont.X86.Compact
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
-open VG.Spec.Rsa.Mont hiding Keeps
+open VG.Proof.Rsa.Mont hiding Keeps
 open VG.Impl.Mont.X86
 
 def Result (s : State) (m : Mem) : Prop :=
@@ -23,7 +23,7 @@ def Result (s : State) (m : Mem) : Prop :=
   numAt m W w (arg s 2).toNat < M ∧
     numAt m W w (arg s 2).toNat * 2 ^ (64 * w) % M =
       numAt s.mem W w (arg s 3).toNat * numAt s.mem W w (arg s 4).toNat % M ∧
-    Spec.Rsa.Mont.Keeps W (arg s 1).toNat w (arg s 2).toNat s.mem m
+    Proof.Rsa.Mont.Keeps W (arg s 1).toNat w (arg s 2).toNat s.mem m
 
 theorem correct (s : State) (h : (mulContract abi 16).pre s) :
     ∃ tr t, Exec isa Compact.body s tr t ∧ abiPreserved s t ∧ (mulContract abi 16).post s t := by

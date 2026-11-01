@@ -79,7 +79,7 @@ end
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombScan
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem val32_rebase (m : Mem) (base : Addr) (a b k : Nat) :

@@ -4,9 +4,11 @@ import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationABI
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Dsa.PublicValidationContract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCorrect
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
+public import VerifiedGarbage.Proof.Dsa.PublicValidationContract
 
 /-! # The callable public-key validator satisfies its shared contract -/
 
@@ -38,29 +40,29 @@ def satState (pLen qLen : Nat) : State where
   wr := [⟨0x1000, 16384⟩]
 
 theorem implies {pLen qLen : Nat}
-    (sat : (Spec.Dsa.PublicValidation.contract (layout pLen qLen) Arm.abi).pre (satState pLen qLen)) :
-    (armContract pLen qLen).Implies (Spec.Dsa.PublicValidation.contract (layout pLen qLen) Arm.abi) where
+    (sat : (Proof.Dsa.PublicValidation.contract (layout pLen qLen) Arm.abi).pre (satState pLen qLen)) :
+    (armContract pLen qLen).Implies (Proof.Dsa.PublicValidation.contract (layout pLen qLen) Arm.abi) where
   pre := by
-    sig_implies_pre [Spec.Dsa.PublicValidation.pre, layout, Spec.Dsa.PublicValidation.contract, Spec.Dsa.PublicValidation.sig, armContract,
+    sig_implies_pre [Proof.Dsa.PublicValidation.pre, layout, Proof.Dsa.PublicValidation.contract, Proof.Dsa.PublicValidation.sig, armContract,
       ws, key, size, keyLen, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     all_goals exact (VG.Proof.X25519.Arm.addr_toNat _).symm
   post := by
-    sig_implies_post [Spec.Dsa.PublicValidation.contract, Spec.Dsa.PublicValidation.sig, armContract,
+    sig_implies_post [Proof.Dsa.PublicValidation.contract, Proof.Dsa.PublicValidation.sig, armContract,
       ws, key, size, keyLen, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   pub := by
-    sig_implies_pub [Spec.Dsa.PublicValidation.contract, Spec.Dsa.PublicValidation.sig, armContract,
+    sig_implies_pub [Proof.Dsa.PublicValidation.contract, Proof.Dsa.PublicValidation.sig, armContract,
       ws, key, size, keyLen, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   sat := ⟨satState pLen qLen, sat⟩
 
 theorem verified (pLen qLen nP nQ : Nat)
     (wp : Width pLen nP := by constructor <;> decide) (wq : Width qLen nQ := by constructor <;> decide)
     (qp : qLen ≤ pLen := by decide) (q32 : qLen ≤ 32 := by decide)
-    (sat : (Spec.Dsa.PublicValidation.contract (layout pLen qLen) Arm.abi).pre (satState pLen qLen) := by
-      sig_pre [Spec.Dsa.PublicValidation.contract, Spec.Dsa.PublicValidation.sig, layout, satState,
+    (sat : (Proof.Dsa.PublicValidation.contract (layout pLen qLen) Arm.abi).pre (satState pLen qLen) := by
+      sig_pre [Proof.Dsa.PublicValidation.contract, Proof.Dsa.PublicValidation.sig, layout, satState,
         Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
       sig_and_intros
-      all_goals first | exact Region.disjoint_of_sep (by decide +kernel) | (unfold Spec.Dsa.PublicValidation.pre; decide +kernel) | decide +kernel) :
-    Verified Arm.target (body pLen qLen) (Spec.Dsa.PublicValidation.contract (layout pLen qLen) Arm.abi) :=
+      all_goals first | exact Region.disjoint_of_sep (by decide +kernel) | (unfold Proof.Dsa.PublicValidation.pre; decide +kernel) | decide +kernel) :
+    Verified Arm.target (body pLen qLen) (Proof.Dsa.PublicValidation.contract (layout pLen qLen) Arm.abi) :=
   Verified.of_correct (correct wp wq qp q32) (ct wp wq qp q32) (implies sat)
 
 end VG.Proof.Dsa.Arm.PublicValidation

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
 public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCtx
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx
-public import VerifiedGarbage.Spec.RsaPss.Encoding
+public import VerifiedGarbage.Proof.RsaPss.EncodingContract
 public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCorrect
 public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCt
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCorrect
@@ -48,7 +48,7 @@ structure ChkImpl (G : Spec.Mgf1.Hash) where
 
 /-- `encode` made with `v`'s compression function. -/
 def encOf (v : Pbkdf2.Md.X86_64.MdHash) : EncImpl v.mgf.G where
-  name := (Spec.RsaPss.encodeApi v.mgf.G v.mgf.G).name ++ v.suffix
+  name := s!"vg_rsa_pss_{v.mgf.G.rust}_mgf1_{v.mgf.G.rust}_encode" ++ v.suffix
   code := Impl.RsaPss.X86_64.encode v.H
   ok := Enc.enc_correct v.ok v.K v.mgf
   ct := Enc.enc_ct v.ok v.K v.mgf v.pss
@@ -57,7 +57,7 @@ def encOf (v : Pbkdf2.Md.X86_64.MdHash) : EncImpl v.mgf.G where
 
 /-- `checkEncoding` made with `v`'s compression function. -/
 def chkOf (v : Pbkdf2.Md.X86_64.MdHash) : ChkImpl v.mgf.G where
-  name := (Spec.RsaPss.checkEncodingApi v.mgf.G v.mgf.G).name ++ v.suffix
+  name := s!"vg_rsa_pss_{v.mgf.G.rust}_mgf1_{v.mgf.G.rust}_check_encoding" ++ v.suffix
   code := Impl.RsaPss.X86_64.checkEncoding v.H
   ok := Chk.chk_correct v.ok v.K v.mgf
   ct := Chk.chk_ct v.ok v.K v.mgf v.pss

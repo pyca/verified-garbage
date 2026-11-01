@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem keeps_of_square {mem mem' : Mem} {base : BitVec 32} {len w o : Nat}
@@ -27,8 +27,8 @@ theorem keeps_of_square {mem mem' : Mem} {base : BitVec 32} {len w o : Nat}
       [(arrAt w 2, 4 * (2 * (2 * w) + 8)), (arrAt w o, 4 * (2 * w))] mem mem') :
     Keeps (State.addr base) len w o mem mem' := by
   intro i hi separate
-  have h2 := separate 2 (by simp [Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-  have h3 := separate 3 (by simp [Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
+  have h2 := separate 2 (by simp [Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+  have h3 := separate 3 (by simp [Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
   have ho := separate o (by simp)
   have e3 : arrAt w 3 = arrAt w 2 + 8 * (w + 2) := by simp only [arrAt]; rw [Nat.add_assoc, ← Nat.succ_mul]
   apply outside
@@ -86,10 +86,10 @@ theorem sqEnv_of_layout (s u : State) {base : BitVec 32} {len o a : Nat} {inv : 
     · have := array_end_le (w := w) (j := j) (k := 2) h; right; omega_arith
     · have : 4 ≤ j := by omega_arith
       have := Nat.mul_le_mul_right (8 * (w + 2)) this
-      left; simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at *; omega_arith
+      left; simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at *; omega_arith
   have fits (j : Nat) (hj : j < 8) : arrAt w j + 4 * (2 * w) ≤ 8 * len := by
     have := array_end_le (w := w) (j := j) (k := 8) (by omega_arith); omega_arith
-  refine ⟨ws.congr rest.wr, by omega_arith, by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith, by omega_arith,
+  refine ⟨ws.congr rest.wr, by omega_arith, by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith, by omega_arith,
     fits a ha8, fits 0 (by decide), fits o ho8, region a ha8 ha2 ha3, region 0 (by decide) (by decide) (by decide),
     region o ho8 ho2 ho3, Outs.refl _ _ _, by rw [rest.rd, rest.wr, rest.sp]; exact stackRead,
     by rw [rest.sp]; exact stackSep, by rw [rest.sp, mem]; exact saved, by rw [mem]; exact header.array 2 (by decide),
@@ -102,7 +102,7 @@ theorem squareBody_ok (s : State) {base : BitVec 32} {len o a : Nat}
     (ptr : s.gpr .r0 = base) (po : s.gpr .r2 = BitVec.ofNat 32 o)
     (pa : s.gpr .r3 = BitVec.ofNat 32 a) (pb : s.gpr .r12 = BitVec.ofNat 32 a)
     (inverse : ((word s.mem (State.addr base) (arrAt (wOf s.mem (State.addr base)) 0)).toNat *
-      (wordAt s.mem (State.addr base) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0)
+      (wordAt s.mem (State.addr base) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0)
     (operand : numAt s.mem (State.addr base) (wOf s.mem (State.addr base)) a <
       numAt s.mem (State.addr base) (wOf s.mem (State.addr base)) 0)
     (stackRead : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4)
@@ -121,7 +121,7 @@ theorem squareBody_ok (s : State) {base : BitVec 32} {len o a : Nat}
   have fits : arrAt w 8 ≤ 8 * len := layout.2.2.1
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   have bound : 128 ≤ 8 * len := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega_arith
   rw [squareBody, WP.seq_iff]
   refine WP.mono (bases_ok s ws bound header ho.1 ha.1 ha.1 ptr po pa pb) ?_

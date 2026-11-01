@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtPre
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPre
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPre
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 
 /-! # Public call arguments agree when the key and buffer geometry agree -/
@@ -13,9 +14,9 @@ open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 theorem crtCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     (hs : PrivContext g bs1 s) (ht : PrivContext g bs2 t) (as : CrtArgs g s) (argT : CrtArgs g t)
     (nb : bs1 0 = bs2 0) :
-    (Spec.Rsa.privateCrtContract abi 56).pub
+    (Proof.Rsa.privateCrtContract abi 56).pub
       (s.callEntry.withRegions (crtRd g) (crtWr g)) (t.callEntry.withRegions (crtRd g) (crtWr g)) := by
-  sig_pub [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  sig_pub [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   have sa := fun {j} (hj : j < 14) => crtArgs_stack hs as hj
   have ta := fun {j} (hj : j < 14) => crtArgs_stack ht argT hj
   simp only [hs.sp, ht.sp, as.output, argT.output, as.outputLength, argT.outputLength, as.modulus, argT.modulus, as.length, argT.length,

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! # Fixed-index Montgomery operations over a proved scanning round -/
 
@@ -17,7 +17,7 @@ public import VerifiedGarbage.Spec.Rsa.Mont
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand numAt Keeps)
+open VG.Proof.Rsa.Mont (Operand numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem montPipelineOp_ok (round : Prog isa) (law : MontPipeline.LoopLaw round) (s : State) {base : BitVec 32} {len w o a b : Nat}

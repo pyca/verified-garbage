@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wOf numAt Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt wOf numAt Operand Keeps)
 
 theorem montCallFn_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
     (h : CallInput base len w o a b s) (ho : Operand o) (ha : Operand a) (hb : Operand b) :

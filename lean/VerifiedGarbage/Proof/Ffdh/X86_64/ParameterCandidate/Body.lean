@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Start
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CandidateTest
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Group.Nat.Defs
@@ -84,7 +85,7 @@ open VG.Proof.Ffdh.ParameterCandidate
 
 def NativeResult (p : CandidateP) (used : Nat) (m : Mem) : Prop :=
   let r := Spec.Ffdh.parameterCandidate p.bits p.gen p.rand
-  word m p.B (8 * oStatus) = BitVec.ofNat 64 (Spec.Ffdh.candidateStatus r) ∧
+  word m p.B (8 * oStatus) = BitVec.ofNat 64 (Proof.Ffdh.candidateStatus r) ∧
     (match r with | none => True | some (_, rest) => rest = p.rand.drop used) ∧
     (∀ n rest, r = some (some n, rest) → n = p.P)
 
@@ -95,14 +96,14 @@ theorem CandidateBase.nativeResult {p : CandidateP} {s : VG.X86_64.State} {n : N
   unfold NativeResult
   rw [h.candidate_result havail]
   cases he : candidateTail p (p.rand.drop p.k) with
-  | none => simpa [he, TapeOutcome, Spec.Ffdh.candidateStatus] using hr
+  | none => simpa [he, TapeOutcome, Proof.Ffdh.candidateStatus] using hr
   | some ar =>
     obtain ⟨pass, rest⟩ := ar
     cases pass
     · simp only [he, TapeOutcome] at hr
-      simp [Spec.Ffdh.candidateStatus, hr]
+      simp [Proof.Ffdh.candidateStatus, hr]
     · simp only [he, TapeOutcome] at hr
-      simp [Spec.Ffdh.candidateStatus, hr]
+      simp [Proof.Ffdh.candidateStatus, hr]
 
 theorem CandidateBase.short_result {p : CandidateP} {s : VG.X86_64.State}
     (h : CandidateBase p s) (hshort : p.rand.length < p.k) :
@@ -166,7 +167,7 @@ theorem body_ok (M : Mont) (R : R2Impl M) (K : Kernel) {s : State} (c : PcCtx s)
     have hr := hv.base.short_result (of_decide_eq_true hshort)
     have hstat : word v.mem p.B (8 * oStatus) = 0 := by rw [hm]; exact hstatus
     refine WP.block_nil ⟨0, hv, hdv, ?_, ?_, hsavedv, kk⟩
-    · simp [NativeResult, hr, Spec.Ffdh.candidateStatus, hstat]
+    · simp [NativeResult, hr, Proof.Ffdh.candidateStatus, hstat]
     · intro he; rw [hstat] at he; contradiction
   · intro havail
     refine WP.mono (testCandidate_ok M R K hv hdv (by omega_using [of_decide_eq_false havail]))

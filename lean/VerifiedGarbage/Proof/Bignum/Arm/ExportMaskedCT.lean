@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure ExportMaskedInput (base dst : BitVec 32) (len w o k : Nat) (s : State) : Prop where
   ready : SmallFnReady base len w o s

@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (Layout wOf arrAt)
+open VG.Proof.Rsa.Mont (Layout wOf arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem crt_links_layout {m m' : Mem} {base : BitVec 32} {len w : Nat}

@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.X25519.Arm (Rest wp_str)
 
 abbrev DetectControls (base : BitVec 32) (s t : State) : Prop :=
@@ -29,7 +29,7 @@ theorem detectSave_ok (s : State) {base : BitVec 32} {len w : Nat}
       (∀ q < 8, numAt t.mem (State.addr base) w q = numAt s.mem (State.addr base) w q) ∧
       DetectControls base s t ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest [] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   unfold VG.Impl.Ffdh.Arm.saveFlag
   refine wp_str (a := off (State.addr base) 136) (by decide)
     (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega))
@@ -50,7 +50,7 @@ theorem equal_controls_ok (s : State) {base : BitVec 32} {len w a b : Nat}
       (∀ q, Operand q → numAt t.mem (State.addr base) w q = numAt s.mem (State.addr base) w q) ∧
       DetectControls base s t ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   rw [VG.Impl.Ffdh.Arm.equal, WP.seq_iff]
   refine WP.mono (compare_ok s h ha.1 hb.1 ha.2.2 hb.2.2) ?_
   rintro u ⟨readyU, less, keepsU, frameU, restU⟩
@@ -85,12 +85,12 @@ theorem detectTwo_ok (s : State) {base : BitVec 32} {len w : Nat}
       (∀ q, Operand q → q ≠ 5 → numAt t.mem (State.addr base) w q = numAt s.mem (State.addr base) w q) ∧
       DetectControls base s t ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   rw [VG.Impl.Ffdh.Arm.detectTwo, WP.seq_iff]
   refine WP.mono (smallConst_ok s 2 h (o := 5) (by decide) (by decide) (by decide) (by decide)) ?_
   rintro u ⟨readyU, two, _, keepsU, frameU, restU⟩
-  have oa : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have ob : Operand 5 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have oa : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have ob : Operand 5 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine WP.mono (equal_controls_ok u readyU oa ob) ?_
   rintro t ⟨ready, result, arrays, controls, frame, rest⟩
   rw [two, keeps_array_num keepsU fits oa (by decide)] at result
@@ -108,7 +108,7 @@ theorem detectTwo_phase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {
   refine WP.mono (detectTwo_ok s h.ready) ?_
   rintro t ⟨ready, result, arrays, controls, frame, rest⟩
   have op (i : Nat) (hi : i = 0 ∨ i = 1 ∨ i = 4) : Operand i := by
-    rcases hi with rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases hi with rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   rw [h.input] at result
   refine ⟨⟨ready, (arrays 0 (op 0 (by simp)) (by decide)).trans h.modulus, h.odd,
     (arrays 1 (op 1 (by simp)) (by decide)).trans h.input,

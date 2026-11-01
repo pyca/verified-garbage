@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
@@ -17,7 +17,7 @@ import VerifiedGarbage.TCB.Arm.Isa
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 structure DoubleLoopReady (base : BitVec 32) (len w c : Nat) (s : State) : Prop where
@@ -26,7 +26,7 @@ structure DoubleLoopReady (base : BitVec 32) (len w c : Nat) (s : State) : Prop 
   width : wOf s.mem (State.addr base) = w
   ptr : s.gpr .r0 = base
   inverse : ((word s.mem (State.addr base) (arrAt w 0)).toNat *
-    (wordAt s.mem (State.addr base) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
+    (wordAt s.mem (State.addr base) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
   operand : numAt s.mem (State.addr base) w 4 < numAt s.mem (State.addr base) w 0
   two : w32 s.mem (State.addr base) (arrAt w 7) = 2
   counter : s.mem.readW (off (State.addr base) 208) 32 = BitVec.ofNat 32 c
@@ -43,11 +43,11 @@ theorem DoubleLoopReady.after_double {s t : State} {base : BitVec 32} {len w c :
     DoubleLoopReady base len w c t := by
   have hw : 2 ≤ w := h.width ▸ h.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have kl := keeps_layout h.layout (by rw [h.width]; exact keeps)
-  have oldM := keeps_array_num keeps fits (show Operand 0 by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
-  have oldLow := keeps_array_word (d := 0) (bits := 64) keeps fits (show Operand 0 by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide) (by omega)
-  have oldTwo := keeps_array_word (d := 0) (bits := 32) keeps fits (show Operand 7 by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide) (by omega)
+  have oldM := keeps_array_num keeps fits (show Operand 0 by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
+  have oldLow := keeps_array_word (d := 0) (bits := 64) keeps fits (show Operand 0 by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide) (by omega)
+  have oldTwo := keeps_array_word (d := 0) (bits := 32) keeps fits (show Operand 7 by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide) (by omega)
   simp only [Nat.add_zero] at oldLow oldTwo
   refine ⟨h.workspace.congr rest.wr, kl.2, kl.1.trans h.width, ptr, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · change ((t.mem.readW (off (State.addr base) (arrAt w 0)) 64).toNat *

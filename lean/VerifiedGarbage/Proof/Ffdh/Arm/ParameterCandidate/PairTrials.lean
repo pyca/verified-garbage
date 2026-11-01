@@ -17,7 +17,7 @@ open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
 
 theorem pairTrials_ok {s : State} {dst base : BitVec 32} {n value i : Nat}
     (ctx : SieveContext dst base n s) (more : i<trialCount n)
-    (cursor : s.gpr .r10=base+BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*i))
+    (cursor : s.gpr .r10=base+BitVec.ofNat 32 (Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*i))
     (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)=value) :
     WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.pairTrials s fun t =>
       t.z=(value%VG.Impl.RsaKeyGen.tabEntry i==0 ||

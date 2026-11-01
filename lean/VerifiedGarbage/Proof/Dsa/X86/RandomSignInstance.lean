@@ -71,7 +71,7 @@ open VG VG.X86 VG.Impl.Dsa.X86
 
 /-- The supplied-nonce signer, as registered. -/
 def signFn : SignFn where
-  name := Spec.Dsa.signApi.name
+  name := "vg_dsa_sign"
   code := Entry.operation true
   verified := signing_verified
   noSp := NoSp.of_all (by decide +kernel)

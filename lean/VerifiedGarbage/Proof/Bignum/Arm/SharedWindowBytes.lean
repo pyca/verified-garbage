@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.CallLay
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem sharedWindowByteStep_ok {base ep : BitVec 32} {len w M x j : Nat} {eb : List Byte}

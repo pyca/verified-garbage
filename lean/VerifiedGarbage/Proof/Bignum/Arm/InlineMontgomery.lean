@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 def inlineMontgomery (base : BitVec 32) (len w : Nat) :
     TwoExp.Montgomery base len w (fun _ => True) [⟨State.addr base, 8 * len⟩] where

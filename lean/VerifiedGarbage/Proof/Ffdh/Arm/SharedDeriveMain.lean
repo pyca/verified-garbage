@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.SharedDerive
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 /-- The scalar is in range and its public value is accepted. -/
 def accepted (p : Inputs) (xb : List Byte) : Prop :=
@@ -46,8 +46,8 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.output, p.k⟩) :
     WP isa (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s
       fun t => result p xb t ∧ Frame (SharedExchange.writes p s) s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') :
       Frame (SharedExchange.writes p s) m m' :=
     f.mono (by simp [SharedExchange.writes, exchangeWrites])

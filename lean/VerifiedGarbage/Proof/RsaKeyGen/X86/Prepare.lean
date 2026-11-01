@@ -25,7 +25,7 @@ def ranges (g : Geometry) : List (Nat × Nat) :=
   PrepareHeader.ranges ++ PreparedR2.ranges g ++ Constants.ranges g ++ Exponent.preparedRanges g
 
 theorem code_full_okAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) {e : Nat} (I : Input g c capacity p s e) (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
@@ -51,7 +51,7 @@ theorem code_full_okAt {mont : Prog isa} {name : String}
       simp only [PreparedR2.ranges, PreparedR2.coreRanges, PreparedR2.phaseRanges, montWrites, List.mem_append,
         List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with ((rfl | rfl | rfl) | (rfl | rfl | rfl)) | rfl <;>
-        exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]; omega))]
+        exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega))]
     exact strideA
   have minusB := (PreparedR2.preserve v Wb (j := 5) (Or.inl rfl)).trans minusA
   refine WP.seq (WP.mono (Constants.code_ok verified noSp stack v length B I.odd (by have := I.large; omega) r2B)
@@ -60,7 +60,7 @@ theorem code_full_okAt {mont : Prog isa} {name : String}
     change d.mem.readW (off g.W 224) 64 = _
     rw [Wd.read64 (by have := v.headerFit; omega) (fun r mem => by
       simp only [Constants.ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
-      rcases mem with (rfl | rfl | rfl) | (rfl | rfl) <;> exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]; omega))]
+      rcases mem with (rfl | rfl | rfl) | (rfl | rfl) <;> exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega))]
     exact strideB
   have minusSaved := (Constants.preserve v Wd (j := 5) (Or.inr (Or.inl rfl))).trans minusB
   have r2D := (Constants.preserve v Wd (j := 4) (Or.inl rfl)).trans r2B
@@ -100,7 +100,7 @@ theorem code_full_okAt {mont : Prog isa} {name : String}
   · exact (((Ka.mono (by unfold clob PrepareHeader.clob; decide)).widen Kb).widen Kd).widen Kt
 
 theorem code_full_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (I : Input g c capacity p s) :
@@ -111,7 +111,7 @@ theorem code_full_ok {mont : Prog isa} {name : String}
     (by have := v.minWidth; omega) (by have := v.minWidth; omega)
 
 theorem code_okAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) {e : Nat} (I : Input g c capacity p s e) (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
@@ -120,7 +120,7 @@ theorem code_okAt {mont : Prog isa} {name : String}
   WP.mono (code_full_okAt verified noSp stack v bound length I positive eLt) fun _ ⟨D, F, K, _⟩ => ⟨D, F, K⟩
 
 theorem code_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (I : Input g c capacity p s) :

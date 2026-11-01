@@ -4,14 +4,14 @@ import VerifiedGarbage.Proof.MillerRabin.X86.Pointer
 public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! # Runtime geometry and read-only metadata of a prepared i686 round -/
 
 @[expose] public section
 namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
-open VG.Spec.Rsa.Mont (arrAt hdrBytes)
+open VG.Proof.Rsa.Mont (arrAt hdrBytes)
 
 structure Geometry where
   W : Addr

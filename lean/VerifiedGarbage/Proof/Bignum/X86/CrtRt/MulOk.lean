@@ -18,7 +18,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.RtCall
 open VG.Proof.Bignum.X86.PublicRt (argAt_alloc)
 open VG.Impl.Bignum.X86.PublicRt (argAt)
-open VG.Spec.Rsa.MontMul (scratchBytes)
+open VG.Proof.Rsa.MontMul (scratchBytes)
 
 /-- The words of a number of the context. -/
 abbrev cwc (len : Nat) (c : Ctx) : Nat := bc len c / 4
@@ -30,7 +30,7 @@ theorem bc_eq_cwc (len : Nat) (c : Ctx) : bc len c = 4 * cwc len c := by
   have := bc_dvd len c; simp only [cwc]; omega
 
 theorem mulBody_noSp (c : Ctx) (o a b : Nat) :
-    NoSp (.seq (.block (mulArgs c o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody) : Prog isa) := by
+    NoSp (.seq (.block (mulArgs c o a b)) (.call "vg_rsa_mont_mul_at" Sse2.atBody) : Prog isa) := by
   apply NoSp.of_all
   have e : (!Taint.clobbers (Instr.alu AluOp.add Reg.eax (Src.reg Reg.edx)) Reg.esp) = true := rfl
   rw [Code.allInstrs_eq]
@@ -62,7 +62,7 @@ theorem In.offs {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
   have nb : numBase = 3336 := rfl
   simp only [lo] at f8 o1 o2 a1 a2 b1 b2
   refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [lo, scratchBytes, VG.Spec.Rsa.MontMul.Apart, invOff, hb8] <;> omega
+    simp only [lo, scratchBytes, VG.Proof.Rsa.MontMul.Apart, invOff, hb8] <;> omega
 
 theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : In Ex base bytes len args s) (c : Ctx) {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a) (ha : a ≤ 8)

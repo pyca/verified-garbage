@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateResultTiming
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
-import VerifiedGarbage.Spec.MillerRabin
+import VerifiedGarbage.Proof.MillerRabin.Contract
 /-! # Publicly released coprimality decisions select equally timed candidate continuations -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/CandidateIterationLeak.lean`, which only this module imported.
@@ -93,9 +93,9 @@ namespace VG.Proof.RsaKeyGen.X86.Candidate
 open VG VG.X86 VG.Proof.Mont.X86 VG.Proof.RsaKeyGen VG.Proof.MillerRabin.X86 VG.Proof.Dsa.X86
 
 theorem test_status_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (length : rBytes.length = sBytes.length) (enough : E.length ≤ E.randLength)
@@ -118,9 +118,9 @@ theorem test_status_trace {mont round : Prog isa} {montName roundName : String}
     H.left.input.stack, H.right.input.stack]
 
 theorem prepared_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (length : rBytes.length = sBytes.length) (enough : E.length ≤ E.randLength)
@@ -171,9 +171,9 @@ theorem TestPair.keepMem {E : Environment} (v : E.Valid) {eBytes pBytes qBytes r
   · rw [MZ]; exact P.savedRight
 
 theorem tested_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (length : rBytes.length = sBytes.length) (enough : E.length ≤ E.randLength)
@@ -184,9 +184,9 @@ theorem tested_trace {mont round : Prog isa} {montName roundName : String}
   exact prepared_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v length enough shape
 
 theorem exponent_stage_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (length : rBytes.length = sBytes.length) (enough : E.length ≤ E.randLength)

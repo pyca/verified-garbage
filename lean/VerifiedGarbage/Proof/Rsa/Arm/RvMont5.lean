@@ -21,7 +21,7 @@ Montgomery forms of 1 and -1), with the retained exponent state.
 namespace VG.Proof.Rsa.Arm.Recover
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.Recover VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf Layout)
 
 /-- `R = 2^(64 w6)`, and `R mod n`. -/
 abbrev Rm (P : RP) : Nat := 2 ^ (64 * P.w6)

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Framed
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 
 /-! # `vg_rsa_keygen_inverse` meets its contract -/
 
@@ -12,7 +13,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Rsa.X86.KeyRt (kw)
 
 theorem done_frame {s t : State} (A : Entry s) (D : Done s t) {i : Nat} (hi : i < size s)
-    (hw : ¬ Spec.RsaKeyGen.inverseWrites (len s) i) :
+    (hw : ¬ Proof.RsaKeyGen.inverseWrites (len s) i) :
     t.mem (base s + BitVec.ofNat 64 i) = s.mem (base s + BitVec.ofNat 64 i) := by
   have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
   have wsFit := A.wsFit
@@ -26,7 +27,7 @@ theorem done_frame {s t : State} (A : Entry s) (D : Done s t) {i : Nat} (hi : i 
     by_contra c
     apply hw
     simp only [VG.Proof.Rsa.X86.Keys.ranges, List.mem_append, List.mem_map] at hr
-    unfold Spec.RsaKeyGen.inverseWrites Spec.RsaKeyGen.inverseBytes
+    unfold Proof.RsaKeyGen.inverseWrites Proof.RsaKeyGen.inverseBytes
     rcases hr with ⟨j, hj, rfl⟩ | ⟨d, hd, rfl⟩
     · right
       refine ⟨j, ?_, ?_⟩
@@ -58,16 +59,16 @@ theorem correct (s : State) (h : contract.pre s) :
   have A := entry h
   obtain ⟨trace, t, run, preserved, D⟩ := framed_ok h
   refine ⟨trace, t, run, preserved, ?_⟩
-  sig_post [contract, inverseStack, Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig,
+  sig_post [contract, inverseStack, Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig,
     abi, argSlots, argVal, argBytes]
-  change (∀ i, i < size s → ¬ Spec.RsaKeyGen.inverseWrites (len s) i →
+  change (∀ i, i < size s → ¬ Proof.RsaKeyGen.inverseWrites (len s) i →
       t.mem (base s + BitVec.ofNat 64 i) = s.mem (base s + BitVec.ofNat 64 i)) ∧
-    Spec.RsaKeyGen.inverseNum t.mem (base s) (len s) 1 =
-      Nat.gcd (Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 0) (Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 8) ∧
-    (Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 8 : Int) ∣
-      (Spec.RsaKeyGen.inverseNum t.mem (base s) (len s) 3 : Int) * Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 0 -
-        Spec.RsaKeyGen.inverseNum t.mem (base s) (len s) 1 ∧
-    Spec.RsaKeyGen.inverseNum t.mem (base s) (len s) 3 < Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 8
+    Proof.RsaKeyGen.inverseNum t.mem (base s) (len s) 1 =
+      Nat.gcd (Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 0) (Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 8) ∧
+    (Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 8 : Int) ∣
+      (Proof.RsaKeyGen.inverseNum t.mem (base s) (len s) 3 : Int) * Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 0 -
+        Proof.RsaKeyGen.inverseNum t.mem (base s) (len s) 1 ∧
+    Proof.RsaKeyGen.inverseNum t.mem (base s) (len s) 3 < Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 8
   simp only [inverseNum_num]
   exact ⟨fun i hi hw => done_frame A D hi hw, D.gcd, D.bezout, D.lt⟩
 

@@ -63,7 +63,7 @@ theorem Context.keepRound {g : Geometry} (v : g.Valid) {s t : State} (C : Contex
     intro r mem
     simp only [roundWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] <;> omega
+      simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega
   refine ⟨C.ws.of_keeps K, ?_, ?_, ?_, ?_⟩
   · rw [VG.Proof.Mont.X86.Rt.PtrAt, K.1 .edi (by decide)]; exact C.base
   · rw [read (by have := v.headerFit; omega) (by decide)]; exact C.width
@@ -82,17 +82,17 @@ theorem data_keep {g : Geometry} (v : g.Valid) {s t : State} {c capacity : Nat} 
     simp only [roundWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases index with rfl | rfl | rfl | rfl | rfl <;>
       rcases mem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [Geometry.array, Geometry.words, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] <;> omega
+      simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega
   have header {d : Nat} (lo : 16 ≤ d) (hi : d + 8 ≤ 184) :
       ∀ r ∈ roundWrites g, d + 8 ≤ r.1 ∨ r.1 + r.2 ≤ d := by
     intro r mem
     simp only [roundWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] <;> omega
+      simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega
   have M := S.ready.modulus.keep v F (fun r mem => by
     simp only [roundWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] <;> omega)
+      simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega)
     (arrays (Or.inl rfl))
   refine ⟨⟨Context.keepRound v S.ready.context K F, M, VG.Proof.RsaKeyGen.X86.Caller.keepSizedFrame S.ready.caller K (by decide) lengthFar G,
     S.ready.scratch.of_keeps K (by decide)⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -104,13 +104,13 @@ theorem data_keep {g : Geometry} (v : g.Valid) {s t : State} {c capacity : Nat} 
     rw [F.read64 (by have := Prepared.paddedFit v (j := 27) (by decide); omega) (fun r mem => by
       simp only [roundWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] <;> omega)]
+        simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega)]
     exact S.marker
   · change t.mem.readW (off g.W 224) 64 = _
     rw [F.read64 (by have := v.headerFit; omega) (fun r mem => by
       simp only [roundWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] <;> omega)]
+        simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega)]
     exact S.stride
 
 end VG.Proof.RsaKeyGen.X86.RoundCall

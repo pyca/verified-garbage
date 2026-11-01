@@ -44,7 +44,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm.SharedDerive
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 structure MainInput (p : Inputs) (slots : List Nat) (xb : List Byte) (s : State) : Prop where
   context : Context p slots s
@@ -87,8 +87,8 @@ theorem import_ready (s : State) {p : Inputs} {slots : List Nat} {xb : List Byte
     (h : Prepared p slots xb s) (stable : stableSlots slots = true) (h40 : 40 ∈ slots) (h44 : 44 ∈ slots)
     (positive : 0 < xb.length) (length : xb.length ≤ p.k) (count : p.slotValue 44 = BitVec.ofNat 32 xb.length) :
     WP isa (VG.Impl.Ffdh.Arm.Domain.importAt 1 40 44) s (Imported p slots xb) := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine WP.mono (importAt_ok s 1 40 44 h.context stable h40 h44 h.ready (by decide) (by decide) h.scalar
     positive (Nat.le_trans length p.width.2.2.2.1) count) ?_
   rintro u ⟨context, ready, value, keeps, frame, rest⟩

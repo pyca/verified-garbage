@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CombExp
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombExp
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure Kernel (base source table : BitVec 32) (len w bytes N M g x : Nat)

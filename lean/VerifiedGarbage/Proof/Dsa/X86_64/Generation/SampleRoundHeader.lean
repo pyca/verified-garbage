@@ -38,10 +38,10 @@ open VG.Proof.Ffdh.X86_64.ParameterCandidate
 
 theorem sampleRoundRanges_le (w : Nat) : ∀ r ∈ sampleRoundRanges w, r.1 + r.2 ≤ slot w 28 := by
   simp only [sampleRoundRanges, testRanges, witnessRoundRanges, Caller.callRanges,
-    mutRanges, Spec.MillerRabin.extended, List.map_cons, List.map_nil, List.cons_append,
+    mutRanges, Proof.MillerRabin.Round.extended, List.map_cons, List.map_nil, List.cons_append,
     List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
     Caller.pad, slot, hdrBytes, aR1, aAcc, aTmp, aXm, kU, kI, kUni, kStat,
-    kElen, kP, sFn, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+    kElen, kP, sFn, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
   and_intros <;> omega
 
 end VG.Proof.Dsa.X86_64.Generation

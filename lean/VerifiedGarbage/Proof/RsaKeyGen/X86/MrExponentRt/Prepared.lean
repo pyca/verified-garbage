@@ -25,7 +25,7 @@ open VG.Proof.RsaKeyGen.X86.PreparedR2 (Ready)
 /-- R² and the constants at width `g.w`, after the header (from `s` to `a`):
 `Prepare.code_full_okAt` but for the exponent. -/
 theorem head_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {s a : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (I : Prepare.Input g c capacity p s) (A : Ready g c capacity p a)
@@ -54,7 +54,7 @@ theorem head_ok {mont : Prog isa} {name : String}
       simp only [PreparedR2.ranges, PreparedR2.coreRanges, PreparedR2.phaseRanges, montWrites, List.mem_append,
         List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with ((rfl | rfl | rfl) | (rfl | rfl | rfl)) | rfl <;>
-        exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]; omega))]
+        exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega))]
     exact strideA
   have minusB := (PreparedR2.preserve v Wb (j := 5) (Or.inl rfl)).trans minusA
   refine WP.mono (PrepareRt.constants_ok verified noSp stack v length B I.odd (by have := I.large; omega) r2B)
@@ -63,7 +63,7 @@ theorem head_ok {mont : Prog isa} {name : String}
     change d.mem.readW (off g.W 224) 64 = _
     rw [Wd.read64 (by have := v.headerFit; omega) (fun r mem => by
       simp only [Constants.ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
-      rcases mem with (rfl | rfl | rfl) | (rfl | rfl) <;> exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]; omega))]
+      rcases mem with (rfl | rfl | rfl) | (rfl | rfl) <;> exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega))]
     exact strideB
   have minusSaved := (Constants.preserve v Wd (j := 5) (Or.inr (Or.inl rfl))).trans minusB
   have r2D := (Constants.preserve v Wd (j := 4) (Or.inl rfl)).trans r2B
@@ -82,7 +82,7 @@ theorem head_ok {mont : Prog isa} {name : String}
 /-- Preparation at the run-time width, the exponent included:
 what `CandidatePrepare.code_ok` gives. -/
 theorem prepared_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (width : 4 ≤ P.g.w) (bound : P.g.w ≤ 64)
     (seed : P.seed = 64 * P.g.w - 1) {s : State} (I : CandidatePrepare.Input P s)
@@ -108,7 +108,7 @@ theorem prepared_ok {mont : Prog isa} {name : String}
     intro r mem
     simp only [Exponent.preparedRanges, Exponent.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases index with rfl | rfl | rfl <;> rcases mem with rfl | rfl | rfl <;>
-      simp only [Geometry.array, Geometry.words, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes,
+      simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
         VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega
   have strideT : word t.mem P.g.W 224 = BitVec.ofNat 64 (8 * (P.g.w + 2)) := by
     change t.mem.readW (off P.g.W 224) 64 = _

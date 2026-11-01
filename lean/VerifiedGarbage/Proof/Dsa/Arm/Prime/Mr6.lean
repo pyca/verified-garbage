@@ -26,7 +26,7 @@ public parameters), the context, and its result into the header word `sF`.
 namespace VG.Proof.Dsa.Arm.Prime
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Operand)
 open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Proof.Rsa (b2n)
 open VG.Proof.MillerRabin.Arm (KeepsLite roundPost roundPub RoundImpl)
@@ -38,7 +38,7 @@ abbrev LF : List Nat := aH1 :: aX :: LB2
 abbrev LSF : List Nat := sU :: LSW
 
 /-- The round's result on the witness of iteration `k`. -/
-abbrev rv (P : CP) (σ : State) (k : Nat) : Nat := b2n (Spec.MillerRabin.round (cv P σ) (wf P σ k).1)
+abbrev rv (P : CP) (σ : State) (k : Nat) : Nat := b2n (Proof.MillerRabin.Round.round (cv P σ) (wf P σ k).1)
 
 /-- The witness in Montgomery form from its product with `R² mod c`. -/
 theorem x5_val {c R n a : Nat} (hR : Nat.Coprime R c) (hn : n < c) (hc : 0 < c)
@@ -121,7 +121,7 @@ theorem round_vp (v : RoundImpl) {b : State → Nat} (h9 : mBase + 9 ∈ L) (h10
         s.gpr .r0 = P.M0 ∧ s.gpr .r1 = BitVec.ofNat 32 P.lenR)
       (.call v.name v.code)
       (fun σ s => (E σ ∧ KS P σ (A σ) L (V σ) LS s) ∧ MS P σ s ∧
-        (s.gpr .r0).toNat = if Spec.MillerRabin.round (cv P σ) (b σ) then 1 else 0) := by
+        (s.gpr .r0).toNat = if Proof.MillerRabin.Round.round (cv P σ) (b σ) then 1 else 0) := by
   have nums : ∀ σ s, E σ → KS P σ (A σ) L (V σ) LS s →
       numAt s.mem (State.addr P.M0) P.w 9 = Rm P σ ∧
         numAt s.mem (State.addr P.M0) P.w 10 = cv P σ - Rm P σ := by

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTMain
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Code
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-!
 # An FFDH parameter candidate on AArch64: constant time, and `Verified`
@@ -179,7 +181,7 @@ theorem code_constantTime (M : Mont) (R : Kernel) :
 /-- `vg_ffdh_parameter_candidate`, against its contract. -/
 theorem pc_verified (M : Mont) (R : Kernel) :
     Verified target (VG.Impl.Ffdh.AArch64.ParameterCandidate.code M.mm R.run)
-      (Spec.Ffdh.parameterCandidateContract abi) :=
+      (Proof.Ffdh.parameterCandidateContract abi) :=
   Verified.of_correct (code_correct M R) (code_constantTime M R) pc_implies
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate

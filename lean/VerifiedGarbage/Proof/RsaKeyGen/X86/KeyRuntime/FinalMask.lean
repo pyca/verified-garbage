@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFinalMask
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Constant
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
+public import VerifiedGarbage.Spec.Rsa.Contract
 /-! # The final native mask is exactly the RSA key shape check -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/MaskFlag.lean`, which only this module imported.

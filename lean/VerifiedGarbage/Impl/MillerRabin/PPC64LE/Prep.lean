@@ -10,7 +10,7 @@ size in `r29`, `2 w` in `r11`): for the odd candidate `c` in array 0 and
 `c − 1 = m 2^a` (`m` odd), the exponent `E = (c − 1) / 2^σ` into array 27,
 `σ ∈ [1, 4]` with `σ ≡ a (mod 4)`, and after its `w` words the lowest set
 bit `l = 2^(a mod 64)` of `c − 1`'s lowest nonzero word, as
-`Spec.MillerRabin.Prepared` requires (the algorithm of AArch64's,
+`Proof.MillerRabin.Round.Prepared` requires (the algorithm of AArch64's,
 `Impl/MillerRabin/AArch64/Core.lean`):
 
 * `lowWord`: `v |= x & mask (v = 0)` over the words `x` of `c − 1` (`c`'s,

@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -10,7 +11,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.St
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # DSA parameter generation on PPC64LE: calling the domain check
 
@@ -28,11 +29,11 @@ open VG.Impl.Dsa.PPC64LE.Generation
 
 /-- A verified domain check, with the stack it uses. -/
 structure CheckOk (code : Prog isa) : Prop where
-  verified : Verified target code (Spec.Dsa.checkParametersContract abi)
+  verified : Verified target code (Proof.Dsa.checkParametersContract abi)
   stack : sdepth code ≤ 176
 
 /-- The check's contract. -/
-abbrev checkK : Contract isa := Spec.Dsa.checkParametersContract abi
+abbrev checkK : Contract isa := Proof.Dsa.checkParametersContract abi
 
 /-- The precondition, as facts. -/
 structure CkIn (s : State) : Prop where
@@ -49,7 +50,7 @@ structure CkIn (s : State) : Prop where
   words : Spec.Dsa.scratchWords (s.gpr .r5).toNat ≤ (s.gpr .r8).toNat
 
 theorem pre_of_ckin {s : State} (h : CkIn s) : checkK.pre s := by
-  sig_pre [checkK, Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs]
+  sig_pre [checkK, Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs]
   exact ⟨h.rd, h.wr, h.rW, h.fr, h.fw, h.lens, h.len, h.words⟩
 
 /-- The verdict on the parameters at `r3`. -/
@@ -59,7 +60,7 @@ abbrev ckRes (s : State) : Bool :=
 
 theorem cpost_of_post {s t : State} (h : checkK.post s t) :
     ((t.gpr .r3).setWidth 32).toNat = if ckRes s = true then 1 else 0 := by
-  sig_post [checkK, Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs] at h
+  sig_post [checkK, Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs] at h
   exact h
 
 /-- Two calls with the same arguments and parameters. -/
@@ -68,7 +69,7 @@ theorem cpub_of {s t : State} (sp : s.sp = t.sp) (p3 : s.gpr .r3 = t.gpr .r3) (p
     (p8 : s.gpr .r8 = t.gpr .r8)
     (hb : Spec.Rsa.bytesAt s.mem (s.gpr .r3) (s.gpr .r4).toNat = Spec.Rsa.bytesAt t.mem (t.gpr .r3) (t.gpr .r4).toNat) :
     checkK.pub s t := by
-  sig_pub [checkK, Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs]
+  sig_pub [checkK, Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs]
   exact ⟨sp, by rw [hb], p3, p4, p5, p6, p7, p8⟩
 
 /-! ## The call -/

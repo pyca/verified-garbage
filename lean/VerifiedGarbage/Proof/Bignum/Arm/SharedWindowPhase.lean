@@ -20,7 +20,7 @@ including the callee's saved-register stack, throughout the fixed schedule.
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 section
@@ -93,11 +93,11 @@ theorem sharedWindowExpPhase_ok (s : State) {M x : Nat} {eb : List Byte}
   rintro t ⟨final, value, keeps, pt, frameT, restT⟩
   have fits8 : arrAt w 8 ≤ 8 * len := powerR.ready.width ▸ powerR.ready.layout.2.2.1
   have modulus := (keeps_array_num keeps fits8 (q := 0)
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerR.modulus
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerR.modulus
   have r2 := (keeps_array_num keeps fits8 (q := 4)
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerR.r2
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerR.r2
   have one := (keeps_array_num keeps fits8 (q := 7)
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerR.one
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerR.one
   exact ⟨final, value, modulus, r2, one, pt,
     frameU.trans (frameV.trans ((frameZ.mono (by simpa using K.workspace)).trans
       (frameY.trans (frameR.trans frameT)))),

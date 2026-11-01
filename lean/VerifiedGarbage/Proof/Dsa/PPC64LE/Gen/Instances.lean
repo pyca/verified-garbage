@@ -33,12 +33,12 @@ def geo (pLen qLen : Nat) (G : Hash) (v : RoundImpl) (ck : Prog isa) : Geo where
   qLen := qLen
   G := G
   qCand := 0
-  qName := (Spec.Dsa.ProbablePrime.api (Impl.Dsa.PPC64LE.ProbablePrime.layout (8 * qLen))).name ++ v.suffix
+  qName := s!"vg_dsa_probable_prime_{(Impl.Dsa.PPC64LE.ProbablePrime.layout (8 * qLen)).bits}" ++ v.suffix
   qCode := Impl.Dsa.PPC64LE.ProbablePrime.code (8 * qLen) v.name v.code
   pCand := 0
-  pName := (Spec.Dsa.ProbablePrime.api (Impl.Dsa.PPC64LE.ProbablePrime.layout (8 * pLen))).name ++ v.suffix
+  pName := s!"vg_dsa_probable_prime_{(Impl.Dsa.PPC64LE.ProbablePrime.layout (8 * pLen)).bits}" ++ v.suffix
   pCode := Impl.Dsa.PPC64LE.ProbablePrime.code (8 * pLen) v.name v.code
-  checkName := Spec.Dsa.checkParametersApi.name
+  checkName := "vg_dsa_check_parameters"
   checkCode := ck
 
 /-- The test uses the stack of the round it calls. -/

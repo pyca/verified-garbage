@@ -21,7 +21,7 @@ frame, and persistent calling conditions are needed by the exponent loop.
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 def twice : Prog isa := VG.Impl.Bignum.Arm.TwoExp.candidate
@@ -40,7 +40,7 @@ theorem header_of_keeps {base : BitVec 32} {len w o : Nat} {s t : State}
     (ready : ArithmeticReady base len w s) (keeps : Keeps (State.addr base) len w o s.mem t.mem) :
     HeaderKept base s t := by
   have fit : arrAt w 8 ≤ 8 * len := ready.width ▸ ready.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega
   intro d hd
   exact keeps_header_readW keeps size (d := d) (bits := 32) (by omega)
 
@@ -70,24 +70,24 @@ theorem twice_ok (s : State) {base : BitVec 32} {len w M E : Nat}
     · rw [memU, h.modulus]; exact h.bound
     · rw [memU]; exact h.two_low
   refine WP.mono (doubleFnRestore_ok u doubleReady
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
     ready.stackRead ready.stackSep ready.saved) ?_
   rintro t ⟨bound, value, keeps, frame, restT, ptr⟩
   rw [memU] at bound value keeps frame
   have rest : Rest roundClobbers s t := (restU.mono (by decide)).trans restT
   obtain ⟨readyT, modulusT⟩ := h.ready.after_array (by decide : 1 ≠ 0) keeps frame rest ptr
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have unchanged (i : Nat) (hi : Spec.Rsa.Mont.Operand i) (hne : i ≠ 1) :=
+  have unchanged (i : Nat) (hi : Proof.Rsa.Mont.Operand i) (hne : i ≠ 1) :=
     keeps_array_num keeps fits hi hne
   have powerT : Power base len w M E t := by
     refine ⟨readyT, modulusT.trans h.modulus, h.coprime, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [unchanged 6 (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)]; exact h.bound
-    · rw [unchanged 6 (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)]; exact h.value
-    · rw [unchanged 5 (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)]; exact h.two
-    · rw [unchanged 7 (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)]; exact h.one
-    · rw [unchanged 4 (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)]; exact h.r2
+    · rw [unchanged 6 (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]; exact h.bound
+    · rw [unchanged 6 (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]; exact h.value
+    · rw [unchanged 5 (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]; exact h.two
+    · rw [unchanged 7 (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]; exact h.one
+    · rw [unchanged 4 (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]; exact h.r2
   rw [h.modulus] at bound value
   have candidate : numAt t.mem (State.addr base) w 1 % M = 2 ^ (E + 1) * 2 ^ (64 * w) % M := by
     rw [value, Nat.mod_mod, Nat.mul_mod, h.value, ← Nat.mul_mod,
@@ -103,8 +103,8 @@ def inlineKernel (base : BitVec 32) (len w : Nat) :
   square_ok := by
     intro s E M h _
     refine WP.mono (squareOp_ok s h.ready
-      (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+      (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
       (by rw [h.modulus]; exact h.bound)) ?_
     rintro t ⟨ready, modulus, bound, value, keeps, frame, rest⟩
     rw [h.modulus] at modulus bound value

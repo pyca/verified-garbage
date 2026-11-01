@@ -324,7 +324,7 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa_mont::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
@@ -563,7 +563,7 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa_mont::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
@@ -865,7 +865,7 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa_mont::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
@@ -1163,7 +1163,7 @@ jmp 22f
 22:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa_mont::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
@@ -1488,7 +1488,7 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa_mont::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
@@ -2124,7 +2124,7 @@ jmp 281f
 281:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa_mont::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
         VG_FFDH_VETTED_GROUPS_X64 = sym super::consts::VG_FFDH_VETTED_GROUPS_X64,
     )
 }
@@ -3787,7 +3787,7 @@ jne 2486b
 je 20b
 .base64 "SYtUJDhJi0wkYEmLRCRwTYtkJCBIiQrD"
 .p2align 6"#,
-        vg_miller_rabin_round_adx = sym super::miller_rabin::vg_miller_rabin_round_adx,
+        vg_miller_rabin_round_adx = sym super::dsa::vg_miller_rabin_round_adx::vg_miller_rabin_round_adx,
     )
 }
 
@@ -10975,7 +10975,7 @@ jne 2278b
 je 20b
 .base64 "SYtUJDhJi0wkYEmLRCRwTYtkJCBIiQrD"
 .p2align 6"#,
-        vg_miller_rabin_round = sym super::miller_rabin::vg_miller_rabin_round,
+        vg_miller_rabin_round = sym super::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
     )
 }
 

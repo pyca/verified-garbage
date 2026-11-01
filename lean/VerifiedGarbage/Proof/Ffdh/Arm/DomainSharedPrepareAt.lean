@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Block
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 def domainPrepareWrites (p : Inputs) (s : State) : List Region :=
   prepareAtWrites p s ++ [FrameStack.belowA s.sp 48]

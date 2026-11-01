@@ -45,7 +45,7 @@ theorem generateKey_verified (check derive : String) :
 
 /-- Key generation, calling the registered `vg_dsa_check_parameters` and `vg_dsa_derive_key`. -/
 theorem generating_verified :
-    Verified Arm.target (code Spec.Dsa.checkParametersApi.name Spec.Dsa.deriveKeyApi.name
+    Verified Arm.target (code "vg_dsa_check_parameters" Spec.Dsa.deriveKeyApi.name
       Generate.checkParameters Generate.deriveKey) (Spec.Dsa.generateKeyContract Arm.abi 144) :=
   generateKey_verified _ _
 

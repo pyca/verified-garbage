@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem exportArray_ct {base dst : BitVec 32} {len w o : Nat} (ho : o < 8) :
     RelCT isa (fun s t => SmallFnReady base len w o s ∧ SmallFnReady base len w o t ∧
@@ -42,7 +42,7 @@ theorem exportArray_ct {base dst : BitVec 32} {len w o : Nat} (ho : o < 8) :
     · exact h.1.1.index.trans h.2.1.index.symm
   have wp (s : State) (h : P s) : WP isa (.block exportArrayArgs) s Q := by
     have fits := h.1.layout.2.2.1
-    have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
     have header := nativeHeader_of_layout s.mem base h.1.workspace.nowrap (Nat.le_refl _) h.1.layout
     rw [h.1.width] at header
     exact WP.mono (exportArrayArgs_ok s h.1.workspace size header ho h.1.ptr h.1.index)

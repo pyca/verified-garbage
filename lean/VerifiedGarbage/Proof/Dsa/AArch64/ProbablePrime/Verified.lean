@@ -34,7 +34,7 @@ theorem testCode_depth (v : RoundImpl) (bits : Nat) : 16 * (testCode v bits).aar
 /-- The tests with the round implementation `v`, as parameter generation
 calls them. -/
 def primeTest (v : RoundImpl) : VG.Proof.Dsa.AArch64.Generation.PrimeTest where
-  name bits := (Spec.Dsa.ProbablePrime.api (Impl.Dsa.AArch64.ProbablePrime.layout bits)).name ++ v.suffix
+  name bits := s!"vg_dsa_probable_prime_{(Impl.Dsa.AArch64.ProbablePrime.layout bits).bits}" ++ v.suffix
   code := testCode v
   verified _ hb := verified v hb
   depth := testCode_depth v

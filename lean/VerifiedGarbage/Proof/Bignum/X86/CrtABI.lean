@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Private CRT RSA resources supplied by the shared cdecl contract -/
 
@@ -55,8 +56,8 @@ structure CrtABI (s : State) : Prop where
   dqLength : (arg s 13).toNat = (arg s 9).toNat
   scratchLength : Spec.Rsa.scratchWords (arg s 3).toNat ≤ (arg s 17).toNat
 
-theorem crtABI_of {s : State} (h : (Spec.Rsa.privateCrtContract abi 96).pre s) : CrtABI s := by
-  sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+theorem crtABI_of {s : State} (h : (Proof.Rsa.privateCrtContract abi 96).pre s) : CrtABI s := by
+  sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
 

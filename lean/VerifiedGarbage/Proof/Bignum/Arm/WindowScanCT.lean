@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- The registers of the selection of entry `j` into array 1, from a ready
@@ -120,16 +120,16 @@ theorem windowApply_ct {base : BitVec 32} {len w M1 M2 x1 x2 A1 A2 d1 d2 : Nat}
       numAt s.mem (State.addr base) w 1 < numAt s.mem (State.addr base) w 0) :
       WP isa (montOp 6 6 1) s fun t => t.gpr .r0 = base :=
     WP.mono (montOp_ok s h.1 (o := 6) (a := 6) (b := 1)
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide) h.2) fun _ k => k.1.ptr
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide) h.2) fun _ k => k.1.ptr
   unfold windowApply
   refine relCT_chain (scan_ct fits) (fun s h => mulReady s h) (fun s h => mulReady s h) ?_
   exact relCT_chain (Q₁ := fun s => s.gpr .r0 = base) (Q₂ := fun s => s.gpr .r0 = base)
     (montOp_ct (base := base) (o := 6) (a := 6) (b := 1)
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) fit)
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) fit)
     (fun s h => ptr s h) (fun s h => ptr s h)
     (windowReset_ct.mono (fun _ _ h => h.1.trans h.2.1.symm) (fun _ _ h => h))
 

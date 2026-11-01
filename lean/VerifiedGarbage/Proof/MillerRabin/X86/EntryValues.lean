@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
 @[expose] public section
 namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
-open VG.Spec.Rsa.Mont
+open VG.Proof.Rsa.Mont
 
 def initialValues (s : State) (j : Nat) : Nat := numAt s.mem (wsOf s) (geometry s).w j
 

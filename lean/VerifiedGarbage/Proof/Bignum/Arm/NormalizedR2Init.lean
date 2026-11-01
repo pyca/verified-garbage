@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.NormalizedR2
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
@@ -29,7 +29,7 @@ section
 section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 
 theorem val32_zero_parts {m : Mem} {base : Addr} {d j k : Nat}
     (zero : val32 m base d (j + k) = 0) :
@@ -75,7 +75,7 @@ end
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem normalizedR2Constants_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -90,8 +90,8 @@ theorem normalizedR2Constants_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (smallConst_ok u (o := 7) 2 ready (by decide) (by decide) (by decide) (by decide)) ?_
   rintro t ⟨next, _, two, keeps2, frame2, rest2⟩
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   exact ⟨next, (keeps_array_num keeps2 fits op4 (by decide)).trans zero, two,
     (keeps_array_num keeps2 fits op0 (by decide)).trans (keeps_array_num keeps1 fits op0 (by decide)),
     frame1.trans frame2, rest1.trans rest2⟩
@@ -114,7 +114,7 @@ theorem normalizedR2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have fit4 := Nat.le_trans (array_end_le (w := w) (j := 4) (k := 8) (by decide)) fits
   have fit4 : arrAt w 4 + 8 * w ≤ 8 * len := by omega
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have odd := numAt_odd_of_inverse s.mem (State.addr base) (by omega : 0 < w) h.inverse
   have strict := normalizedSeed_lt hw odd normalized
   rw [NormalizedR2.init, WP.seq_iff]
@@ -137,7 +137,7 @@ theorem normalizedR2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
   have value : numAt v.mem (State.addr base) w 4 = 2 ^ (64 * (w - 1)) := by
     rw [memV]; exact normalizedSeed_value u.mem (State.addr base) hw (by have hn := ready.workspace.nowrap; simp only [State.addr, BitVec.toNat_setWidth] ; omega) zero
   have twoV := keeps_array_word (d := 0) (bits := 32) keeps fits
-    (show Operand 7 by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide) (by omega)
+    (show Operand 7 by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide) (by omega)
   have twoV := congrArg BitVec.toNat twoV
   simp only [Nat.add_zero] at twoV
   let c := (v.mem.readW (off (State.addr base) 208) 32).toNat

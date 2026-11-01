@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 def keyCallWrites (p : Inputs) (s : State) : List Region :=
   keyWrites p s ++ [FrameStack.belowA s.sp 48]

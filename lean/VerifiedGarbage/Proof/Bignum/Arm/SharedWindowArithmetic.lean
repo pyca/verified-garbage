@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Block
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Operand Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 theorem sharedWindowInit_ok {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len w P regions) (s : State) {M x : Nat}
@@ -26,9 +26,9 @@ theorem sharedWindowInit_ok {base : BitVec 32} {len w : Nat} {P : State → Prop
         s.mem.readW (VG.Proof.Mont.off (State.addr base) d) 32) ∧
       P t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have op (q : Nat) (hq : q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7) : Operand q := by
-    rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have coprime := coprime_pow2 odd (64 * w)
   rw [SharedWindow.init, WP.seq_iff]
   refine WP.mono (smallConst_ok s (1 : BitVec 32) h (o := 7) (by decide) (by decide) (by decide) (by decide)) ?_
@@ -80,9 +80,9 @@ theorem sharedExpSquare_ok {base : BitVec 32} {len w : Nat} {P : State → Prop}
       Keeps (State.addr base) len w 6 s.mem t.mem ∧
       P t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   refine WP.mono (K.op_ok s 6 6 6 h.ready hp
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
     (by rw [h.modulus]; exact h.powerBound)) ?_
   rintro t ⟨ready, modulus, bound, value, keeps, pt, frame, rest⟩
   rw [h.modulus] at modulus bound value
@@ -97,9 +97,9 @@ theorem sharedExpFinish_ok {base : BitVec 32} {len w : Nat} {P : State → Prop}
       Keeps (State.addr base) len w 6 s.mem t.mem ∧
       P t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   refine WP.mono (K.op_ok s 6 6 7 h.ready hp
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
     (by rw [h.one]; exact h.ready.modulus)) ?_
   rintro t ⟨ready, _, bound, value, keeps, pt, frame, rest⟩
   rw [h.modulus] at bound value

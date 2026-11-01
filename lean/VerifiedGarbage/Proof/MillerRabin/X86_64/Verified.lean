@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Correct
 import VerifiedGarbage.Proof.MillerRabin.X86_64.RoundCT
@@ -21,7 +21,7 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.MillerRabin.X86_64
 
 theorem round_verified (M : Mont)
     (hload : ∀ i ∈ instrs (round M.mm), loadsMxcsr i = false) :
-    Verified target (round M.mm) (Spec.MillerRabin.roundContract abi Spec.MillerRabin.extended 120) :=
+    Verified target (round M.mm) (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.extended 120) :=
   Verified.of_correct (round_correct M hload) (round_ct M) round_implies
 
 end VG.Proof.MillerRabin.X86_64

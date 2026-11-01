@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem inputCompareLayout_ct {base : BitVec 32} {len w : Nat} :
     RelCT isa (fun s t => LayoutFrameReady base len w s ∧ LayoutFrameReady base len w t ∧ s.sp = t.sp)
@@ -46,7 +46,7 @@ theorem inputCompareLayout_ct {base : BitVec 32} {len w : Nat} :
     exact h.1.ptr.trans h.2.ptr.symm
   have wp (s : State) (h : P s) : WP isa (.block inputCompareArgs) s Q := by
     have fits := h.layout.2.2.1
-    have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
     exact WP.mono (inputCompareArgs_ok s h.workspace size header h.ptr)

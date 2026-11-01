@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -13,10 +13,10 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem crt_workspace_end (w : Nat) : arrAt w 8 ≤ stride w := by
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes, stride, workspaceWords]
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes, stride, workspaceWords]
   omega
 
 theorem crt_buffer_sizes (w : Nat) :

@@ -24,6 +24,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrime
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeArguments
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 /-! # The probable-prime test's body, between its frame's push and pop
 
 The entry stores the arguments in the generation's frame slots, the test is
@@ -213,7 +214,7 @@ def changed (bits : Nat) (s : State) : List Region :=
 def BodyPost (bits : Nat) (s t : State) : Prop :=
   let res := Spec.Dsa.probablePrime (candidateOf bits s)
     (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
-  t.gpr .x0 = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status res) ∧
+  t.gpr .x0 = BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status res) ∧
   (∀ b rest, res = some (b, rest) →
     t.mem.readW (s.gpr .x4) 64 = BitVec.ofNat 64 ((s.gpr .x3).toNat - rest.length)) ∧
   Frame (changed bits s) s.mem t.mem ∧
@@ -500,7 +501,7 @@ theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI b
   refine ⟨sp4, wr4, rd4, ?_, ?_, ?_, fun r hr => ?_, fun r hr => (k4.vcs r hr).trans (v3 r hr)⟩
   · rw [x04]
     change word u3.mem (params hb A).B (8 * kStat) - word u3.mem (params hb A).B (8 * kStat) >>> 1 =
-      BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime (params hb A).N (params hb A).rand))
+      BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime (params hb A).N (params hb A).rand))
     rw [show Spec.Dsa.probablePrime (params hb A).N (params hb A).rand =
       Spec.Dsa.probablePrime (params hb A).N (List.drop 0 (params hb A).rand) from rfl]
     cases h : Spec.Dsa.probablePrime (params hb A).N (List.drop 0 (params hb A).rand) with
@@ -508,7 +509,7 @@ theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI b
     | some r =>
       obtain ⟨b, rest⟩ := r
       rw [(hsome b rest h).1]
-      cases b <;> simp only [Spec.Dsa.ProbablePrime.status] <;> decide
+      cases b <;> simp only [Proof.Dsa.ProbablePrime.status] <;> decide
   · intro b rest h
     have h' : Spec.Dsa.probablePrime (params hb A).N (List.drop 0 (params hb A).rand) = some (b, rest) := h
     rw [m4, Mem.readW_writeW_self64, (hsome b rest h').2]

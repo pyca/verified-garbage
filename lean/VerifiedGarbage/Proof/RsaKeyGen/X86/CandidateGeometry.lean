@@ -28,8 +28,8 @@ theorem geometry_valid {workspace : Addr} {length capacity : Nat}
   have hi := (width_bounds valid).2
   have len := length_eq valid
   refine ⟨lo, by change length / 8 ≤ 128; omega, ?_⟩
-  change Spec.Rsa.Mont.arrAt (length / 8) 28 ≤ 8 * capacity
-  unfold Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes
+  change Proof.Rsa.Mont.arrAt (length / 8) 28 ≤ 8 * capacity
+  unfold Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes
   unfold Spec.Rsa.scratchWords at space
   omega
 

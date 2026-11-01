@@ -30,7 +30,7 @@ theorem test_ranges_before (g : Geometry) : ∀ r ∈ CandidateTest.ranges g, r.
     VG.Impl.RsaKeyGen.X86.WitnessCount.uniformOffset, VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset,
     VG.Impl.RsaKeyGen.X86.WitnessRound.uniformOffset,
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
-    Geometry.array, Geometry.words, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, VG.Proof.Mont.X86.accLen,
+    Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, VG.Proof.Mont.X86.accLen,
     VG.Impl.Mont.X86.words, VG.Impl.Bignum.X86.PublicContext.modulus]
   omega
 
@@ -43,7 +43,7 @@ theorem test_ranges_header (g : Geometry) : ∀ r ∈ CandidateTest.ranges g, r.
     VG.Impl.RsaKeyGen.X86.WitnessCount.uniformOffset, VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset,
     VG.Impl.RsaKeyGen.X86.WitnessRound.uniformOffset,
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
-    Geometry.array, Geometry.words, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, VG.Proof.Mont.X86.accLen,
+    Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, VG.Proof.Mont.X86.accLen,
     VG.Impl.Mont.X86.words, VG.Impl.Bignum.X86.PublicContext.modulus]
   omega
 

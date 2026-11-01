@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # What the pieces of public RSA at a run-time width need of their inputs
 

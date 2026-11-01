@@ -60,7 +60,7 @@ theorem sampleRound_ok (M : Mont) (K : Kernel) {B p : Addr} {Z w N i uni ch : Na
     (hi : i < 2 ^ 62) (huni : uni < 2 ^ 62) (hch : ch < 2 ^ 62) :
     WP isa (Impl.Dsa.X86_64.Generation.sampleRound M.mm K.run) s fun t =>
       let wt := Spec.RsaKeyGen.witness (N - 1) (Spec.Rsa.os2ip bs)
-      let f := Spec.MillerRabin.round N wt.1
+      let f := Proof.MillerRabin.Round.round N wt.1
       ModulusReady t B Z w mi N ∧
       word t.mem B (8 * kStat) = BitVec.ofNat 64 (if f then (if i + 1 < 17 ∨ uni + wt.2.toNat < ch then 4 else 1) else 3) ∧
       (f = true → word t.mem B (8 * kI) = BitVec.ofNat 64 (i + 1) ∧

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Keeps)
 
 /-- Array 5 holds the Montgomery input, array 6 the running power, and array 7 ordinary one. -/
 structure ExpState (base : BitVec 32) (len w M x E : Nat) (s : State) : Prop where
@@ -33,12 +33,12 @@ theorem ExpState.after_y {s t : State} {base : BitVec 32} {len w M x E F : Nat}
     (value : numAt t.mem (State.addr base) w 6 % M = x ^ F * 2 ^ (64 * w) % M) :
     ExpState base len w M x F t := by
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have input := keeps_array_num keeps fits (q := 5) (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
-  have one := keeps_array_num keeps fits (q := 7) (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+  have input := keeps_array_num keeps fits (q := 5) (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
+  have one := keeps_array_num keeps fits (q := 7) (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
   exact ⟨ready, modulus, h.coprime, by rw [input]; exact h.inputBound,
     by rw [input]; exact h.inputValue, bound, value, one.trans h.one,
     (keeps_array_num keeps fits (q := 4)
-      (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans h.r2⟩
+      (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans h.r2⟩
 
 theorem ExpState.of_mem {s t : State} {base : BitVec 32} {len w M x E : Nat} {rs : List Reg}
     (h : ExpState base len w M x E s) (mem : t.mem = s.mem)

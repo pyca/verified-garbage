@@ -23,7 +23,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 
 structure ExchangeFinishInput (p : Inputs) (slots : List Nat) (s : State) : Prop where
   context : Context p slots s

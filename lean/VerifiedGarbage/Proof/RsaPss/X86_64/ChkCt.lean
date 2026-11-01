@@ -16,7 +16,7 @@ branch on `any_salt_len`, which the runs' entry states agree on), the checks
 of the lengths (on public values), verification's checks
 (`ChkCtMid`, `ChkCtBack`, `ChkSaltBackCT`) and the epilogue, in two runs
 whose entry states agree on the public data (`chk_ct`). With `chk_correct`,
-`checkEncoding` meets `Spec.RsaPss.checkEncodingContract` (`chk_verified`).
+`checkEncoding` meets `Proof.RsaPss.checkEncodingContract` (`chk_verified`).
 -/
 
 @[expose] public section
@@ -243,9 +243,9 @@ theorem chk_ct : ConstantTime isa (chkK lk.G).pre (chkK lk.G).pub (checkEncoding
       ⟨s₂, ⟨Pre.of lk.G h₁, hpub, Pre.of lk.G h₂⟩, e₂⟩⟩) fun _ _ h => h))
 
 include K hc in
-/-- `checkEncoding` meets `Spec.RsaPss.checkEncodingContract`. -/
+/-- `checkEncoding` meets `Proof.RsaPss.checkEncodingContract`. -/
 theorem chk_verified :
-    Verified X86_64.target (checkEncoding H) (Spec.RsaPss.checkEncodingContract lk.G lk.G abi chkStack) :=
+    Verified X86_64.target (checkEncoding H) (Proof.RsaPss.checkEncodingContract lk.G lk.G abi chkStack) :=
   Verified.of_correct (k := chkK lk.G) (chk_correct hH K lk) (chk_ct hH K lk hc) (chk_implies lk.G (chk_sat lk.G lk.mem))
 
 end VG.Proof.RsaPss.X86_64.Chk

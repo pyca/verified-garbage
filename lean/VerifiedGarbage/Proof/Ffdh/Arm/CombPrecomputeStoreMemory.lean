@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.Locals
 import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeArgs
 import VerifiedGarbage.Proof.Bignum.Arm.ExportArray
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
@@ -23,7 +23,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Impl.Ffdh.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt Layout wOf)
+open VG.Proof.Rsa.Mont (arrAt Layout wOf)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 theorem combStore_ok (s : State) {base ctx : BitVec 32} {len w digit o : Nat}
@@ -44,7 +44,7 @@ theorem combStore_ok (s : State) {base ctx : BitVec 32} {len w digit o : Nat}
       t.gpr .r0 = base ∧ Rest roundClobbers s t := by
   have fit := layout.2.2.1
   rw [width] at fit
-  have size : 52 ≤ 8*len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega
+  have size : 52 ≤ 8*len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega
   rw [CombPrecompute.store, WP.seq_iff, WP.block_append_iff]
   refine WP.mono (combTableArgs_raw_ok s ws locals size ptr count saved index) ?_
   rintro u ⟨⟨output, pu, memU⟩, restU⟩
@@ -72,7 +72,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem combStoreMemory_ok (s : State) {p : Inputs} {sp : BitVec 32} {digit o : Nat}

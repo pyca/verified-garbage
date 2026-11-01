@@ -24,18 +24,18 @@ theorem sharedKernel_hdr (w j : Nat) (hj : j ∈ [0, 16, 17, 18, 19, 20, 21, 23,
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
-    simp only [Caller.callRanges, mutRanges, Spec.MillerRabin.extended, List.map_cons, List.map_nil,
+    simp only [Caller.callRanges, mutRanges, Proof.MillerRabin.Round.extended, List.map_cons, List.map_nil,
       List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, aR1,
-      Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+      Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
     and_intros <;> omega_arith
 
 private theorem kernel_r2 (w : Nat) :
     ∀ r ∈ Caller.callRanges w, slot w aR2 + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aR2 := by
-  simp only [Caller.callRanges, mutRanges, Spec.MillerRabin.extended, List.map_cons, List.map_nil,
+  simp only [Caller.callRanges, mutRanges, Proof.MillerRabin.Round.extended, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, aR1, aR2,
-    Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+    Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
   and_intros <;> omega_arith
 
 private theorem witness_exp (w : Nat) : ∀ r ∈ witnessRanges w, r.1 + r.2 ≤ slot w aE := by
@@ -89,7 +89,7 @@ theorem sharedMid_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : M
     (hfrm.mono (fun r hr => List.mem_append_left _ hr)).trans
       (hfr.mono (fun r hr => List.mem_append_right _ hr))
   refine ⟨hct, het, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hfm, (hk.trans kt).mono (by decide)⟩
-  · simpa only [Spec.MillerRabin.round, passOf] using hf
+  · simpa only [Proof.MillerRabin.Round.round, passOf] using hf
   · rw [SharedFrame.word hfm henv (d := 8 * kI) ?_ (by have := hdr_lt_slot w 28 (show kI < 32 by decide); omega_arith) hn]
     · exact hI
     · intro r hr

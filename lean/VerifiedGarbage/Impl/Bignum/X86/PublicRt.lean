@@ -134,7 +134,7 @@ def mulArgs (o a b : Nat) (wl : Nat := 9) : List Instr :=
 `vg_rsa_mont_mul_at` with its arguments in a frame of 36 bytes, which keeps
 `ebx`, `esi`, `ebp` and `edi`. -/
 def mul (o a b : Nat) (wl : Nat := 9) : Prog isa :=
-  .frame (.alloc 36) (.seq (.block (mulArgs o a b wl)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) (.free 36)
+  .frame (.alloc 36) (.seq (.block (mulArgs o a b wl)) (.call "vg_rsa_mont_mul_at" Sse2.atBody)) (.free 36)
 
 /-- A round of the exponent's public schedule: the result times the base
 where its low bit is set, the exponent shifted, and the base squared only

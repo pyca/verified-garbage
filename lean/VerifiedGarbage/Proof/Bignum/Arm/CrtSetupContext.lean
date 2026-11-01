@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 def crtP (base : BitVec 32) (w : Nat) : BitVec 32 := base + BitVec.ofNat 32 (pOffset w)
 def crtQ (base : BitVec 32) (w : Nat) : BitVec 32 := base + BitVec.ofNat 32 (qOffset w)
@@ -45,7 +45,7 @@ theorem CrtSetupContext.congr {s t : State} {base : BitVec 32} {len w : Nat}
 theorem CrtSetupContext.size {s : State} {base : BitVec 32} {len w : Nat}
     (h : CrtSetupContext base len w s) : 256 ≤ 8 * len := by
   have := h.arraysFit
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
   omega
 
 theorem Workspace.eq_of_frame {s : State} {base other : BitVec 32} {size otherSize : Nat} {m m' : Mem}

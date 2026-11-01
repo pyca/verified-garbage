@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Dsa.RandomSign
 /-!
 # DSA operations on previously checked, immutable domain parameters (trusted)
 
-An owner may check p||q||g once with `vg_dsa_check_parameters`, then reuse
+An owner may check p||q||g once (`checkParametersBytes`), then reuse
 that result across keys and operations while the exact parameter bytes
 remain immutable. These contracts bind that assumption to the actual input
 bytes, rather than to a boolean, pointer identity, or previous scratch contents.
@@ -123,17 +123,23 @@ def deriveKeyDomainCheckedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Co
       pb.map (·.toNat) ++
         [signStatus (deriveKeyBytes pLen.toNat qLen.toNat pb (bytesAt m x qLen.toNat))])
 
-def signDomainCheckedApi : Api := { signApi with
+def signDomainCheckedApi : Api where
+  module := "dsa"
   name := "vg_dsa_sign_domain_checked"
+  sig := signSig
+  writeArgs := true
   contracts := some fun A stack => signDomainCheckedContract A stack
   summary := "One DSA signing attempt on a prehashed digest, with a previously checked domain. \
     Returns exactly the fully checked API's result, with the same failure zeroing, \
     sampling and timing guarantees. Contract: `VG.Spec.Dsa.signDomainCheckedContract`."
-  safety := signApi.safety ++ ["The exact p||q||g bytes supplied to this operation must satisfy \
+  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
+    "key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.",
+    "scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.",
+    "The exact p||q||g bytes supplied to this operation must satisfy \
     checkParametersBytes p_len q_len params = true. For a packed key these are its first \
-    2*p_len+q_len bytes. A successful vg_dsa_check_parameters call establishes this only \
-    while those bytes remain unchanged. A cached flag or old scratch contents alone do \
-    not establish the precondition. Primality remains the caller's responsibility."] }
+    2*p_len+q_len bytes. A successful check of those bytes establishes this only \
+    while they remain unchanged. A cached flag or old scratch contents alone do \
+    not establish the precondition. Primality remains the caller's responsibility."]
 
 def verifyDomainCheckedApi : Api := { verifyApi with
   name := "vg_dsa_verify_domain_checked"
@@ -143,8 +149,8 @@ def verifyDomainCheckedApi : Api := { verifyApi with
     sampling and timing guarantees. Contract: `VG.Spec.Dsa.verifyDomainCheckedContract`."
   safety := verifyApi.safety ++ ["The exact p||q||g bytes supplied to this operation must satisfy \
     checkParametersBytes p_len q_len params = true. For a packed key these are its first \
-    2*p_len+q_len bytes. A successful vg_dsa_check_parameters call establishes this only \
-    while those bytes remain unchanged. A cached flag or old scratch contents alone do \
+    2*p_len+q_len bytes. A successful check of those bytes establishes this only \
+    while they remain unchanged. A cached flag or old scratch contents alone do \
     not establish the precondition. Primality remains the caller's responsibility."] }
 
 def randomSignDomainCheckedApi : Api := { randomSignApi with
@@ -155,8 +161,8 @@ def randomSignDomainCheckedApi : Api := { randomSignApi with
     sampling and timing guarantees. Contract: `VG.Spec.Dsa.randomSignDomainCheckedContract`."
   safety := randomSignApi.safety ++ ["The exact p||q||g bytes supplied to this operation must satisfy \
     checkParametersBytes p_len q_len params = true. For a packed key these are its first \
-    2*p_len+q_len bytes. A successful vg_dsa_check_parameters call establishes this only \
-    while those bytes remain unchanged. A cached flag or old scratch contents alone do \
+    2*p_len+q_len bytes. A successful check of those bytes establishes this only \
+    while they remain unchanged. A cached flag or old scratch contents alone do \
     not establish the precondition. Primality remains the caller's responsibility."] }
 
 def generateKeyDomainCheckedApi : Api := { generateKeyApi with
@@ -167,8 +173,8 @@ def generateKeyDomainCheckedApi : Api := { generateKeyApi with
     sampling and timing guarantees. Contract: `VG.Spec.Dsa.generateKeyDomainCheckedContract`."
   safety := generateKeyApi.safety ++ ["The exact p||q||g bytes supplied to this operation must satisfy \
     checkParametersBytes p_len q_len params = true. For a packed key these are its first \
-    2*p_len+q_len bytes. A successful vg_dsa_check_parameters call establishes this only \
-    while those bytes remain unchanged. A cached flag or old scratch contents alone do \
+    2*p_len+q_len bytes. A successful check of those bytes establishes this only \
+    while they remain unchanged. A cached flag or old scratch contents alone do \
     not establish the precondition. Primality remains the caller's responsibility."] }
 
 def deriveKeyDomainCheckedApi : Api := { deriveKeyApi with
@@ -179,8 +185,8 @@ def deriveKeyDomainCheckedApi : Api := { deriveKeyApi with
     sampling and timing guarantees. Contract: `VG.Spec.Dsa.deriveKeyDomainCheckedContract`."
   safety := deriveKeyApi.safety ++ ["The exact p||q||g bytes supplied to this operation must satisfy \
     checkParametersBytes p_len q_len params = true. For a packed key these are its first \
-    2*p_len+q_len bytes. A successful vg_dsa_check_parameters call establishes this only \
-    while those bytes remain unchanged. A cached flag or old scratch contents alone do \
+    2*p_len+q_len bytes. A successful check of those bytes establishes this only \
+    while they remain unchanged. A cached flag or old scratch contents alone do \
     not establish the precondition. Primality remains the caller's responsibility."] }
 
 end VG.Spec.Dsa

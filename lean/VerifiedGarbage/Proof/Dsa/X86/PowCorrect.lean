@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.PowTiming
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Dsa.X86.PowBody
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
 
 /-! # Correctness and secrecy of callable IA-32 exponentiation -/
 
@@ -22,12 +23,12 @@ theorem scratch_fits {n size : Nat} (h : contextBytes n ≤ size) :
   rcases hr with rfl | rfl <;> simp only [contextBytes, slot, stride] at * <;> omega
 
 theorem correct {n e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
-    (s : State) (h : (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pre s) :
+    (s : State) (h : (Proof.Dsa.ModPow.powContract (layout n e) abi 96).pre s) :
     ∃ tr t, Exec isa (body n e) s tr t ∧ abiPreserved s t ∧
-      (Spec.Dsa.ModPow.powContract (layout n e) abi 96).post s t := by
+      (Proof.Dsa.ModPow.powContract (layout n e) abi 96).post s t := by
   have A := abi_of h
   have M : wordsVal s.mem (ws s) (slot n 0) n =
-      Spec.Dsa.ModPow.numAt s.mem (ws s) (slot n 0) (8 * n) := (numAt_eq8 ..).symm
+      Proof.Dsa.ModPow.numAt s.mem (ws s) (slot n 0) (8 * n) := (numAt_eq8 ..).symm
   have Rm := A.room
   obtain ⟨tr, t, E, V, O, R, _, _⟩ := body_ok (A.entry (by decide)) Rm A.size hn hn48 he hen M A.gt_one A.odd
   have F : Frame [⟨ws s, bytes s⟩, below (s.gpr .esp) 96] s.mem t.mem := by
@@ -48,7 +49,7 @@ theorem correct {n e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen :
         · simp only [below]
           rw [VG.X86.Taint.sub_setWidth A.stackLow]
           exact Offset.base_disjoint_below _ (by decide)) (by decide)
-  · sig_post [Spec.Dsa.ModPow.powContract, Spec.Dsa.ModPow.sig, layout, abi, argSlots, argVal, argBytes]
+  · sig_post [Proof.Dsa.ModPow.powContract, Proof.Dsa.ModPow.sig, layout, abi, argSlots, argVal, argBytes]
     refine ⟨?_, ?_⟩
     · simpa only [numAt_eq8, numAt_eq4] using V
     · intro i hi hj
@@ -62,9 +63,9 @@ theorem correct {n e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen :
       omega
 
 theorem publicArgs {n e : Nat} {s t : State}
-    (H : (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pub s t) :
+    (H : (Proof.Dsa.ModPow.powContract (layout n e) abi 96).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 := by
-  sig_pub [Spec.Dsa.ModPow.powContract, Spec.Dsa.ModPow.sig, abi, argSlots, argVal, argBytes] at H
+  sig_pub [Proof.Dsa.ModPow.powContract, Proof.Dsa.ModPow.sig, abi, argSlots, argVal, argBytes] at H
   sig_split H
   constructor <;> with_reducible assumption
 
@@ -75,13 +76,13 @@ theorem ABI.readArg {n e k : Nat} {s : State} (A : ABI n e s k) (hk : 20 ≤ k :
   rfl
 
 theorem ABI.bodyIn {n e : Nat} {s : State} (A : ABI n e s 96) : BodyIn n s := by
-  have M : wordsVal s.mem (ws s) (slot n 0) n = Spec.Dsa.ModPow.numAt s.mem (ws s) (slot n 0) (8 * n) :=
+  have M : wordsVal s.mem (ws s) (slot n 0) n = Proof.Dsa.ModPow.numAt s.mem (ws s) (slot n 0) (8 * n) :=
     (numAt_eq8 ..).symm
   exact ⟨bytes s, (A.entry (by decide)), A.room, A.size, M ▸ A.gt_one, M ▸ A.odd⟩
 
 theorem constantTime {n e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
-    ConstantTime isa (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pre
-      (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pub (body n e) := by
+    ConstantTime isa (Proof.Dsa.ModPow.powContract (layout n e) abi 96).pre
+      (Proof.Dsa.ModPow.powContract (layout n e) abi 96).pub (body n e) := by
   intro s t tr ur sf tf hs ht hp E F
   have A := publicArgs hp
   exact ((body_relCT n e hn hn48 he hen) s t tr ur sf tf

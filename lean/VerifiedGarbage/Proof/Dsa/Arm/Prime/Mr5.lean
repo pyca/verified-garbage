@@ -24,7 +24,7 @@ only those of Montgomery multiplication's header and of its own arrays
 namespace VG.Proof.Dsa.Arm.Prime
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout)
 open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Proof.MillerRabin.Arm (KeepsLite LayoutLite PreparedLite roundPre roundPost roundPub RoundImpl)
 
@@ -159,11 +159,11 @@ theorem MS.of_round (pre : In P σ) (h : MS P σ s) (spw : s.sp = P.sp)
     intro i hi hr
     refine keeps i hi (fun k hk => ?_) (fun j hj => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at hr
+      simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at hr
       rcases hk with rfl | rfl | rfl | rfl <;> omega_arith
     · obtain ⟨j2, -⟩ := VG.Proof.MillerRabin.Arm.wJs_lt j hj
       have j4 := wJs_ne4 j hj
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at hr ⊢
+      simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at hr ⊢
       rcases (by omega_arith : j ≤ 3 ∨ 5 ≤ j) with c | c
       · have a := Nat.mul_le_mul_right (8 * (P.w + 2)) (show 2 ≤ j by omega_arith)
         have b := Nat.mul_le_mul_right (8 * (P.w + 2)) (show j + 1 ≤ 4 by omega_arith)
@@ -175,12 +175,12 @@ theorem MS.of_round (pre : In P σ) (h : MS P σ s) (spw : s.sp = P.sp)
   refine h.of_read (fun d n hd => ?_) ?_ ?_ sp rd wr
   · refine Mem.read_congr fun i hi => ?_
     simp only [off]; rw [Offset.add_add]
-    simp only [MRd, mHd, arrAt, Spec.Rsa.Mont.hdrBytes] at hd
-    exact kb _ (by omega_arith) (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith)
+    simp only [MRd, mHd, arrAt, Proof.Rsa.Mont.hdrBytes] at hd
+    exact kb _ (by omega_arith) (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith)
   · unfold numAt
     exact congrArg BitVec.toNat (Mem.read_congr fun i hi => by
       rw [Offset.add_add]
-      exact kb _ (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith) (.inr (.inr (.inr ⟨by omega_arith, by omega_arith⟩))))
+      exact kb _ (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith) (.inr (.inr (.inr ⟨by omega_arith, by omega_arith⟩))))
   · rw [sp]
     have hc : (⟨State.addr s.sp, 4⟩ : Region).Contains (State.addr s.sp) (32 / 8) := by
       simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
@@ -211,12 +211,12 @@ theorem round_after (h : KS P σ A live V ls s) (m : MS P σ s) (hl : ∀ j ∈ 
 
 /-- The round's exponent and the word `2^(t mod 64)` after it, from the key array `mBase + 27`. -/
 theorem exp_facts (pre : In P σ) {m : Mem} (e27 : num m P.B P.W (mBase + 27) = EX P σ) :
-    numAt m (State.addr P.M0) P.w 27 = Spec.MillerRabin.exponent (cv P σ) ∧
+    numAt m (State.addr P.M0) P.w 27 = Proof.MillerRabin.Round.exponent (cv P σ) ∧
       m.readW (State.addr P.M0 + BitVec.ofNat 64 (arrAt P.w 27 + 8 * P.w)) 64 =
         BitVec.twoPow 64 ((Spec.Rsa.splitTwos (cv P σ - 1)).1 % 64) := by
   have hW := pre.W_eq
   have eL : 32 * (P.W - 2) = 64 * P.w := by omega_arith
-  have eLt : Spec.MillerRabin.exponent (cv P σ) < 2 ^ (32 * (P.W - 2)) := by
+  have eLt : Proof.MillerRabin.Round.exponent (cv P σ) < 2 ^ (32 * (P.W - 2)) := by
     rw [eL]; exact Nat.lt_of_le_of_lt (exponent_le _) (cv_lt pre)
   have k64 : (Spec.Rsa.splitTwos (cv P σ - 1)).1 % 64 < 64 := Nat.mod_lt _ (by decide)
   have kLt : 2 ^ ((Spec.Rsa.splitTwos (cv P σ - 1)).1 % 64) < 2 ^ 64 := Nat.pow_lt_pow_right (by decide) k64
@@ -249,7 +249,7 @@ theorem exp_facts (pre : In P σ) {m : Mem} (e27 : num m P.B P.W (mBase + 27) = 
   generalize (m.readW (State.addr P.M0 + BitVec.ofNat 64 (arrAt P.w 27 + 8 * P.w)) 64) = y at e2 ⊢
   generalize 2 ^ (32 * (P.W - 2)) = R at e2 eLt lo
   have hR : 0 < R := by omega_arith
-  have ex : x = Spec.MillerRabin.exponent (cv P σ) := by
+  have ex : x = Proof.MillerRabin.Round.exponent (cv P σ) := by
     have := congrArg (· % R) e2
     simp only [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt lo, Nat.mod_eq_of_lt eLt] at this
     exact this.symm
@@ -290,7 +290,7 @@ theorem round_pre (h : KS P σ A live V ls s) (m : MS P σ s) (r0 : s.gpr .r0 = 
     unfold LayoutLite Layout
     rw [wd]
     refine ⟨⟨l1, l2, ?_, l4⟩, by omega_arith, by omega_arith, ?_⟩ <;>
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes, VG.Proof.MillerRabin.Arm.nArr] at l3 ⊢ <;> omega_arith
+      simp only [arrAt, Proof.Rsa.Mont.hdrBytes, VG.Proof.MillerRabin.Arm.nArr] at l3 ⊢ <;> omega_arith
   · show PreparedLite s.mem (State.addr P.M0)
     have hodd := (cv_shape (σ := σ) pre).1
     have hg := cv_gt pre

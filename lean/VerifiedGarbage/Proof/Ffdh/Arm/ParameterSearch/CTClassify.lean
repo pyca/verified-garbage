@@ -9,8 +9,10 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LiveGuards
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CandidateFacts
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CompareResult
+public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! Candidate classification and entropy exhaustion branch only on the public tape and policy. -/
 
@@ -40,16 +42,16 @@ theorem short_ct : RelCT isa (Two LiveCT) VG.Impl.Ffdh.Arm.ParameterSearch.short
 def PostCT (q : SearchPoint) (s : State) : Prop := LiveCT q s ∧ CandidatePost q.inputs q.used s
 
 def ComparisonCT (test : Nat) (q : SearchPoint) (s : State) : Prop := PostCT q s ∧
-  isa.eval .eq s = some (decide (Spec.Ffdh.candidateStatus (candidateResult q.inputs q.used) = test))
+  isa.eval .eq s = some (decide (Proof.Ffdh.candidateStatus (candidateResult q.inputs q.used) = test))
 
 private theorem compare_ready (test : Nat) (which : test = 1 ∨ test = 2)
     (q : SearchPoint) (s : State) (h : PostCT q s) :
     WP isa (.block [.cmp .r0 (.imm (BitVec.ofNat 32 test))]) s (ComparisonCT test q) := by
-  have small : Spec.Ffdh.candidateStatus (candidateResult q.inputs q.used) < 3 := by
+  have small : Proof.Ffdh.candidateStatus (candidateResult q.inputs q.used) < 3 := by
     cases candidateResult q.inputs q.used with
     | none => decide
-    | some pair => obtain ⟨prime, rand⟩ := pair; cases prime <;> simp only [Spec.Ffdh.candidateStatus] <;> decide
-  have value : s.gpr .r0 = BitVec.ofNat 32 (Spec.Ffdh.candidateStatus (candidateResult q.inputs q.used)) := by
+    | some pair => obtain ⟨prime, rand⟩ := pair; cases prime <;> simp only [Proof.Ffdh.candidateStatus] <;> decide
+  have value : s.gpr .r0 = BitVec.ofNat 32 (Proof.Ffdh.candidateStatus (candidateResult q.inputs q.used)) := by
     rw [← h.2.status, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine WP.mono (compareResult_ok s small which value) ?_
   rintro t ⟨⟨flag, mem⟩, rest⟩

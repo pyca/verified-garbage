@@ -13,7 +13,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombExp
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 structure Power (base : BitVec 32) (len w M g E : Nat) (s : State) : Prop where
@@ -53,9 +53,9 @@ theorem Power.after_y {s t : State} {base : BitVec 32} {len w M g E F : Nat}
   have fits : arrAt w 8 ≤ 8*len := h.ready.width ▸ h.ready.layout.2.2.1
   refine ⟨ready,modulus,h.coprime,bound,value,?_,?_⟩
   · exact (keeps_array_num keeps fits (q:=7)
-      (by simp [Spec.Rsa.Mont.Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]) (by decide)).trans h.one
+      (by simp [Proof.Rsa.Mont.Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]) (by decide)).trans h.one
   · exact (keeps_array_num keeps fits (q:=4)
-      (by simp [Spec.Rsa.Mont.Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]) (by decide)).trans h.r2
+      (by simp [Proof.Rsa.Mont.Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]) (by decide)).trans h.r2
 
 theorem Power.of_mem {s t : State} {base : BitVec 32} {len w M g E : Nat} {rs : List Reg}
     (h : Power base len w M g E s) (mem : t.mem=s.mem) (rest : Rest rs s t)

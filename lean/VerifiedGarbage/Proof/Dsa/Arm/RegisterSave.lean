@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
 
 /-! # Workspace register saves and byte/word conversions shared by DSA helpers -/
 
@@ -16,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 namespace VG.Proof.Dsa.Arm.Pow
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm.Pow
-open VG.Spec.Dsa.ModPow (numAt)
+open VG.Proof.Dsa.ModPow (numAt)
 open VG.Proof.X25519.Arm (Rest Upd Mupd wp_mov wp_str wp_ldr op2_reg)
 
 /-- Words at the offsets `l` of the working space, four bytes apart. -/

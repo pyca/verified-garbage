@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Live
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # One candidate of the parameter search (PPC64LE)
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrLoop
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
@@ -36,7 +36,7 @@ theorem core_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {
     (hX : wv s.mem B (slot w VG.Impl.Bignum.Public.aXm) w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * w) % c) :
     WP isa (seqs (preparedRound M.mm)) s fun t =>
       MrCtx t B Z w mi c (Spec.Rsa.powMod b 1 c * 2 ^ (64 * w) % c) ∧ ECtx t.mem B w c ∧
-      word t.mem B (8 * kFlag) = mask (Spec.MillerRabin.round c b) ∧
+      word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
       Frm B (coreRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have hc1 : 1 < c := by omega_arith
   have hEn : B.toNat + slot w aE + 8 * (w + 1) ≤ 2 ^ 64 := by

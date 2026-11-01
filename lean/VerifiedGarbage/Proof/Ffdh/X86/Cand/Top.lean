@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
+meta import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 import VerifiedGarbage.Proof.Framework.Sig
@@ -24,6 +25,7 @@ public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # `vg_ffdh_parameter_candidate_sieved` on i686 against its contract -/
 
@@ -40,7 +42,7 @@ open VG.Impl.Bignum.X86.PublicRt (argAt)
 
 /-- The contract, with RSA's table of primes as the constants. -/
 abbrev contract : Contract isa :=
-  Spec.Ffdh.sievedParameterCandidateContract (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) stack
+  Proof.Ffdh.sievedParameterCandidateContract (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) stack
 
 /-- The table's region. -/
 abbrev tableR (s : State) : Region := ⟨(s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64, 8192⟩
@@ -98,7 +100,7 @@ structure CandABI (s : State) : Prop where
   scratchLength : Spec.Rsa.scratchWords (arg s 1).toNat ≤ (arg s 8).toNat
 
 theorem candABI_of {s : State} (h : contract.pre s) : CandABI s := by
-  sig_pre [contract, Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig, abi, argSlots,
+  sig_pre [contract, Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argSlots,
     argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts,
     VG.Proof.RsaKeyGen.X86.Candidate.packed_length, stackBelow] at h
   sig_split h
@@ -166,7 +168,7 @@ abbrev entryRand (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (argumentPoin
 
 /-- What the contract asks of the status, `out` and `used`. -/
 abbrev spec (s : State) (m : Mem) (r : BitVec 32) : Prop :=
-  r.toNat = Spec.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate (arg s 3).toNat (arg s 4).toNat
+  r.toNat = Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate (arg s 3).toNat (arg s 4).toNat
       (entryRand s)) ∧
     Spec.Rsa.bytesAt m (argumentPointer s 0) (arg s 1).toNat =
       (match Spec.Ffdh.sievedParameterCandidate (arg s 3).toNat (arg s 4).toNat (entryRand s) with
@@ -328,9 +330,9 @@ theorem frame_ok {s : State} (A : CandABI s) (f : State)
   have Tlen : (entryRand s).length = (arg s 6).toNat := VG.Proof.Bignum.bytesAt_length _ _ _
   rw [← espf] at F
   have ef := F.esp
-  have hst : ∀ x : Option (Option Nat × Spec.RsaKeyGen.Rand), Spec.Ffdh.candidateStatus x < 2 ^ 32 := by
+  have hst : ∀ x : Option (Option Nat × Spec.RsaKeyGen.Rand), Proof.Ffdh.candidateStatus x < 2 ^ 32 := by
     intro x
-    have : Spec.Ffdh.candidateStatus x ≤ 2 := by unfold Spec.Ffdh.candidateStatus; split <;> omega
+    have : Proof.Ffdh.candidateStatus x ≤ 2 := by unfold Proof.Ffdh.candidateStatus; split <;> omega
     omega
   refine WP.mono (body_ok I F.G F.hT F.Ox F.U F.h3 F.rb F.rg F.ru F.dws F.d40
     A.outLen A.bitsLow A.bitsHigh A.gen F.TT F.TA) fun t R => ⟨⟨?_, ?_, ?_⟩, R.frame, R.keeps⟩
@@ -370,7 +372,7 @@ theorem correct (s : State) (h : contract.pre s) :
     ∃ trace t, Exec isa Impl.Ffdh.X86.Candidate.code s trace t ∧ abiPreserved s t ∧ contract.post s t := by
   obtain ⟨trace, t, E, V, P⟩ := operation_ok (candABI_of h)
   refine ⟨trace, t, E, P, ?_⟩
-  sig_post [contract, Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig, abi, argSlots,
+  sig_post [contract, Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argSlots,
     argVal, argBytes, Abi.withConsts]
   rw [BitVec.setWidth_append_eq_right]
   exact V

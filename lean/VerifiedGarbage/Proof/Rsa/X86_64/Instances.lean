@@ -11,6 +11,7 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Main
@@ -51,7 +52,7 @@ theorem crt_verified :
     Verified target (Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.base.mm
       (Impl.Rsa.X86_64.Crt.expLoopS Proof.Rsa.X86_64.CallMont.lazyBase Proof.Rsa.X86_64.CallMont.base.mm
         Impl.Rsa.X86_64.Crt.tabSelect))
-      (Spec.Rsa.privateCrtContract abi 8) :=
+      (Proof.Rsa.privateCrtContract abi 8) :=
   crt_call_verified (by decide +kernel)
     (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnBase
       (Proof.Bignum.X86_64.CrtExpL.w4S Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)
@@ -64,7 +65,7 @@ theorem crtAdx_verified :
     Verified target (Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.adx.mm
       (Impl.Rsa.X86_64.Crt.expLoop5S Proof.Rsa.X86_64.CallMont.lazyAdx Proof.Rsa.X86_64.CallMont.adx.mm
         Impl.Rsa.X86_64.Crt.tabSelectV))
-      (Spec.Rsa.privateCrtContract abi 8) :=
+      (Proof.Rsa.privateCrtContract abi 8) :=
   crt_call_verified (by decide +kernel)
     (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx
       (Proof.Bignum.X86_64.CrtExpL.w5S Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx)
@@ -75,7 +76,7 @@ theorem crtAdx_verified :
 
 theorem crtIfma_verified :
     Verified target (Impl.Rsa.X86_64.CrtIfma.code Proof.Rsa.X86_64.CallMont.adx.mm)
-      (Spec.Rsa.privateCrtContract abi 8) :=
+      (Proof.Rsa.privateCrtContract abi 8) :=
   crt_call_verified (by lit_decide)
     (Proof.Bignum.X86_64.Ifma.code_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) (by decide +kernel)
       (by decide +kernel) (by decide +kernel))

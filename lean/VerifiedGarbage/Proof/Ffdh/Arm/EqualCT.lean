@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.Checks
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 theorem saveFlag_ct : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0)
     (.block VG.Impl.Ffdh.Arm.saveFlag) (fun _ _ => True) := by

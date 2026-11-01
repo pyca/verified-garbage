@@ -22,6 +22,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Advance
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CompareResult
+public import VerifiedGarbage.Proof.Ffdh.Contract
 /-! One native search step calls a candidate only when the entropy suffix can hold its modulus. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterSearch/AcceptHead.lean`, which only this module imported.
@@ -273,13 +274,13 @@ theorem SearchLive.classify {p : SearchParams} {used remaining : Nat} {s : State
     (h : SearchLive p used remaining s) (positive : 0 < remaining) (post : CandidatePost p used s) :
     WP isa VG.Impl.Ffdh.Arm.ParameterSearch.classify s fun t =>
       Classified p used remaining t ∧ Rest searchClobbers s t := by
-  have small : Spec.Ffdh.candidateStatus (candidateResult p used) < 3 := by
+  have small : Proof.Ffdh.candidateStatus (candidateResult p used) < 3 := by
     cases candidateResult p used with
     | none => decide
     | some pair =>
       obtain ⟨prime, rand⟩ := pair
-      cases prime <;> simp only [Spec.Ffdh.candidateStatus] <;> decide
-  have native : s.gpr .r0 = BitVec.ofNat 32 (Spec.Ffdh.candidateStatus (candidateResult p used)) := by
+      cases prime <;> simp only [Proof.Ffdh.candidateStatus] <;> decide
+  have native : s.gpr .r0 = BitVec.ofNat 32 (Proof.Ffdh.candidateStatus (candidateResult p used)) := by
     rw [← post.status, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.classify
   refine WP.seq (WP.mono (compareResult_ok s small (Or.inl rfl) native) fun u ⟨⟨flag, mem⟩, rest⟩ => ?_)
@@ -288,13 +289,13 @@ theorem SearchLive.classify {p : SearchParams} {used remaining : Nat} {s : State
   have nativeU := (rest.gpr .r0 (by simp)).trans native
   cases result : candidateResult p used with
   | none =>
-    simp only [result, Spec.Ffdh.candidateStatus] at flag
+    simp only [result, Proof.Ffdh.candidateStatus] at flag
     refine WP.ite false (by change some u.z = _; rw [flag]; rfl) (by intro bad; cases bad) ?_
     intro _
     refine WP.seq (WP.mono (compareResult_ok u small (Or.inr rfl) nativeU) fun v ⟨⟨flagV, memV⟩, restV⟩ => ?_)
     have liveV := liveU.after_read (by decide) memV restV
     have postV := postU.after_read memV restV (by decide)
-    simp only [result, Spec.Ffdh.candidateStatus] at flagV
+    simp only [result, Proof.Ffdh.candidateStatus] at flagV
     refine WP.ite false (by change some v.z = _; rw [flagV]; rfl) (by intro bad; cases bad) ?_
     intro _
     have zero := postV.output
@@ -307,13 +308,13 @@ theorem SearchLive.classify {p : SearchParams} {used remaining : Nat} {s : State
     obtain ⟨prime, rand⟩ := pair
     cases prime with
     | none =>
-      simp only [result, Spec.Ffdh.candidateStatus] at flag
+      simp only [result, Proof.Ffdh.candidateStatus] at flag
       refine WP.ite false (by change some u.z = _; rw [flag]; rfl) (by intro bad; cases bad) ?_
       intro _
       refine WP.seq (WP.mono (compareResult_ok u small (Or.inr rfl) nativeU) fun v ⟨⟨flagV, memV⟩, restV⟩ => ?_)
       have liveV := liveU.after_read (by decide) memV restV
       have postV := postU.after_read memV restV (by decide)
-      simp only [result, Spec.Ffdh.candidateStatus] at flagV
+      simp only [result, Proof.Ffdh.candidateStatus] at flagV
       refine WP.ite true (by change some v.z = _; rw [flagV]; rfl) ?_ (by intro bad; cases bad)
       intro _
       refine WP.mono (liveV.reject positive postV) ?_
@@ -321,7 +322,7 @@ theorem SearchLive.classify {p : SearchParams} {used remaining : Nat} {s : State
       exact ⟨by simpa only [Classified, result] using data,
         ((rest.trans restV).mono (by simp)).trans (restT.mono (by simp [searchClobbers]))⟩
     | some prime =>
-      simp only [result, Spec.Ffdh.candidateStatus] at flag
+      simp only [result, Proof.Ffdh.candidateStatus] at flag
       refine WP.ite true (by change some u.z = _; rw [flag]; rfl) ?_ (by intro bad; cases bad)
       intro _
       refine WP.mono (liveU.accept postU result) ?_

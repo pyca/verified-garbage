@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
  def publicTailFlag (p : Inputs) (y : Nat) : BitVec 32 :=
   if p.hasQ = true then (if Spec.Rsa.powMod y p.Q p.P = 1 then 1 else 0) else 1

@@ -109,7 +109,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (wOf Layout)
+open VG.Proof.Rsa.Mont (wOf Layout)
 
 structure PcComputed (base dst src : BitVec 32) (len k : Nat) (s : State) : Prop where
   buffers : PcBuffers base dst src len k s

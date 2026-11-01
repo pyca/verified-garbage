@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
@@ -14,6 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 
 /-! # `vg_rsa_keygen_inverse` reads only its arguments as addresses and counts -/
 
@@ -111,11 +113,11 @@ theorem frame_trace : RelCT isa (fun s t => contract.pre s ∧ contract.pre t �
   unfold VG.Impl.RsaKeyGen.X86.Inverse.code
   apply VG.X86.RelCT.frame (rs := Compact.savedRegisters) (R := fun _ _ => True) (fun _ _ P => by
     have H := P.2.2
-    sig_pub [contract, inverseStack, Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig,
+    sig_pub [contract, inverseStack, Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig,
       abi, argSlots, argVal, argBytes] at H
     exact H.1)
   rintro _ _ tr ur u v ⟨s, t, ⟨HS, HT, HP⟩, rfl, rfl⟩ E F
-  sig_pub [contract, inverseStack, Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig,
+  sig_pub [contract, inverseStack, Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig,
     abi, argSlots, argVal, argBytes] at HP
   obtain ⟨sp, a0, a1, a2⟩ := HP
   obtain ⟨out, checked⟩ := Option.isSome_iff_exists.mp inner_checked

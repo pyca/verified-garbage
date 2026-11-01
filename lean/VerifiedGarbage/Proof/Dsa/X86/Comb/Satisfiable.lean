@@ -17,7 +17,7 @@ namespace VG.Proof.Dsa.X86.Comb
 open VG VG.X86 VG.Impl.Dsa.X86.Comb VG.Impl.Mont.X86.Dynamic
 
 /-- The context words for modulus 3 and base 1. -/
-def satContext (n e : Nat) : List (BitVec 64) := Spec.Dsa.FixedBaseComb.context (layout n e) 3 1
+def satContext (n e : Nat) : List (BitVec 64) := Proof.Dsa.FixedBaseComb.context (layout n e) 3 1
 
 def satMem (n e : Nat) (a : Addr) : Byte :=
   let p := a.toNat
@@ -80,24 +80,24 @@ theorem toNat_off {o j : Nat} (_h : 0x10000+o+j<2^64) :
   rw [BitVec.add_assoc,BitVec.ofNat_add]
 
 theorem sat_modulus {n e : Nat} (supported : Supported n e) :
-    Spec.Dsa.ModPow.numAt (satMem n e) 0x10000 (slot n 0) (8*n)=3 := by
+    Proof.Dsa.ModPow.numAt (satMem n e) 0x10000 (slot n 0) (8*n)=3 := by
   obtain ⟨n1,s0,s5,c1,c2⟩ := sat_bounds supported
-  unfold Spec.Dsa.ModPow.numAt
+  unfold Proof.Dsa.ModPow.numAt
   rw [read_bytes _ _ _ 3 (fun j hj => ?_)]
   · exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (show _<256^1 by decide) (Nat.pow_le_pow_right (by decide) (by omega)))
   · rw [toNat_off (by omega),satMem_at (by omega),ite_eq_left (by omega),Nat.add_sub_cancel_left]
 
 theorem sat_base {n e : Nat} (supported : Supported n e) :
-    Spec.Dsa.ModPow.numAt (satMem n e) 0x10000 (slot n 5) (8*n)=1 := by
+    Proof.Dsa.ModPow.numAt (satMem n e) 0x10000 (slot n 5) (8*n)=1 := by
   obtain ⟨n1,s0,s5,c1,c2⟩ := sat_bounds supported
-  unfold Spec.Dsa.ModPow.numAt
+  unfold Proof.Dsa.ModPow.numAt
   rw [read_bytes _ _ _ 1 (fun j hj => ?_)]
   · exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (show _<256^1 by decide) (Nat.pow_le_pow_right (by decide) (by omega)))
   · rw [toNat_off (by omega),satMem_at (by omega),ite_eq_right (by omega),ite_eq_left (by omega),
       Nat.add_sub_cancel_left]
 
 theorem satContext_length {n e : Nat} : (satContext n e).length=34*n := by
-  simp only [satContext,Spec.Dsa.FixedBaseComb.context,List.length_append,
+  simp only [satContext,Proof.Dsa.FixedBaseComb.context,List.length_append,
     Proof.Rsa.FixedBaseComb.toWords_length,Proof.Rsa.FixedBaseComb.table_length,layout,VG.Impl.Dsa.X86.Pow.layout]
   omega
 
@@ -133,13 +133,13 @@ theorem satisfiable {n e : Nat} (supported : Supported n e) (prepare : Bool) :
   have hw := sat_ws supported
   rcases supported with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> cases prepare
   all_goals
-    sig_pre [contract,Spec.Dsa.FixedBaseComb.prepareContract,Spec.Dsa.FixedBaseComb.powerContract,
-      Spec.Dsa.FixedBaseComb.arithmeticPre,Spec.Dsa.ModPow.sig,layout,VG.Impl.Dsa.X86.Pow.layout,
+    sig_pre [contract,Proof.Dsa.FixedBaseComb.prepareContract,Proof.Dsa.FixedBaseComb.powerContract,
+      Proof.Dsa.FixedBaseComb.arithmeticPre,Proof.Dsa.ModPow.sig,layout,VG.Impl.Dsa.X86.Pow.layout,
       abi,argSlots,argVal,argBytes,stackBelow]
     sig_and_intros
   all_goals try exact Region.disjoint_of_sep (by decide)
   all_goals try exact valid
-  all_goals try unfold Spec.Dsa.FixedBaseComb.contextAt
+  all_goals try unfold Proof.Dsa.FixedBaseComb.contextAt
   all_goals try rw [hw]
   all_goals simp only [Nat.reduceMul] at hm hb hc
   all_goals try rw [hm]

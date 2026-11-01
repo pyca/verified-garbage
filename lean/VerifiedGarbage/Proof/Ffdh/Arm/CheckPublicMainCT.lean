@@ -64,7 +64,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 structure PublicMainInput (p : Inputs) (slots : List Nat) (yb : List Byte) (s : State) : Prop where
   context : Context p slots s
@@ -85,9 +85,9 @@ theorem checkPublicMain_ct {p : Inputs} {slots : List Nat} {yb : List Byte}
     (length : yb.length = p.k) (large : 1 < p.P) (odd : p.P % 2 = 1) :
     RelCT isa (fun s t => PublicMainInput p slots yb s ∧ PublicMainInput p slots yb t ∧ s.sp = t.sp)
       VG.Impl.Ffdh.Arm.Domain.CheckPublic.main (fun _ _ => True) := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have pStack (s : State) (h : PublicMainInput p slots yb s) :
       Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
     h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))

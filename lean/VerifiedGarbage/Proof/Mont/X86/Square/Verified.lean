@@ -6,11 +6,13 @@ meta import VerifiedGarbage.Proof.Mont.X86.Square.Dispatch
 import VerifiedGarbage.Proof.Mont.X86.Square.Time
 import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 meta import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
+meta import VerifiedGarbage.Proof.Rsa.MontMulContract
 public import Init.Core
 public import VerifiedGarbage.Impl.Mont.X86.MulRt
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Rsa.MontMulContract
 
 /-! The runtime-width Montgomery contract, including the public alias dispatch.
 
@@ -23,10 +25,10 @@ subtraction and ABI; `Dispatch` retains the scalar multiplication proof.
 @[expose] public section
 namespace VG.Proof.Mont.X86.Square
 open VG VG.X86 VG.Impl.Mont.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
-open VG.Spec.Rsa.MontMul
+open VG.Proof.Rsa.MontMul
 
-theorem correct (s : State) (h : (Spec.Rsa.MontMul.mulContract abi 0).pre s) :
-    ∃ tr t, Exec isa Impl.Mont.X86.Rt.Square.dispatch s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.MontMul.mulContract abi 0).post s t := by
+theorem correct (s : State) (h : (Proof.Rsa.MontMul.mulContract abi 0).pre s) :
+    ∃ tr t, Exec isa Impl.Mont.X86.Rt.Square.dispatch s tr t ∧ abiPreserved s t ∧ (Proof.Rsa.MontMul.mulContract abi 0).post s t := by
   have A := rtAbi_of h
   have hso := A.so
   have hol := A.o_le
@@ -50,7 +52,7 @@ theorem correct (s : State) (h : (Spec.Rsa.MontMul.mulContract abi 0).pre s) :
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · exact Mem.readW_congr fun i hi => far _ fun hc =>
       A.retScratch _ (Offset.contains_base _ (by omega) (by omega)) hc
-  · sig_post [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes]
+  · sig_post [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes]
     refine ⟨?_, ?_, ?_⟩
     · rw [numAt_val32, numAt_val32]; exact lt
     · rw [numAt_val32, numAt_val32, numAt_val32, numAt_val32,
@@ -67,7 +69,7 @@ theorem correct (s : State) (h : (Spec.Rsa.MontMul.mulContract abi 0).pre s) :
       rcases hr with rfl | rfl <;> simp only [nOf] <;> omega
 
 
-theorem verified : Verified target Impl.Mont.X86.Rt.Square.dispatch (Spec.Rsa.MontMul.mulContract abi 0) :=
+theorem verified : Verified target Impl.Mont.X86.Rt.Square.dispatch (Proof.Rsa.MontMul.mulContract abi 0) :=
   ⟨correct,constantTime,rt_satisfiable⟩
 
 end VG.Proof.Mont.X86.Square

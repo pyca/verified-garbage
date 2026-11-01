@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Tape
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.TCB.Code
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! The selected shared Miller–Rabin candidate is called under its complete public timing contract. -/
 
@@ -20,7 +21,7 @@ open VG VG.Arm
 open VG.Proof.Ffdh.Arm.KeySearch (Two two_post)
 
 private theorem call_ready {q : SearchPoint} {s : State} (h : CallCT q s) :
-    (Spec.Ffdh.sievedParameterCandidateContract abi 184).pre (callState q.inputs q.used s) ∧
+    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre (callState q.inputs q.used s) ∧
       Covers (callRd q.inputs q.used s.sp ++ callWr q.inputs) (s.rd ++ s.wr) ∧ Covers (callWr q.inputs) s.wr := by
   obtain ⟨original, live, room, args, mem, rest⟩ := h
   have sp : s.sp = original.sp - 24#32 := rest.sp

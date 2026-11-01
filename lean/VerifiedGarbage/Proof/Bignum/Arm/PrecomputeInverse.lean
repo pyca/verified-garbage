@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wOf numAt Layout)
+open VG.Proof.Rsa.Mont (arrAt wOf numAt Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem precomputeInverse_r2_ok (s : State) {base : BitVec 32} {len w : Nat}

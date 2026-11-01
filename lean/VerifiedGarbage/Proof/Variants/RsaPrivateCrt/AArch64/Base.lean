@@ -312,7 +312,7 @@ namespace VG.Proof.Variants.RsaPrivateCrt.AArch64.Base
 open VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 
 def variant : Proof.Rsa.AArch64.CrtImpl where
-  name := Spec.Rsa.privateCrtApi.name
+  name := "vg_rsa_private_crt"
   code := WindowFive.code
   verified := WindowFive.base_verified
   noFrames := by decide +kernel

@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Context
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Copy
 import VerifiedGarbage.Proof.Framework.Offset
@@ -71,7 +72,7 @@ theorem low_sub (s₀ : State) : Region.Sub ⟨rLow s₀, 20⟩ (rStack s₀) :=
   rw [rLow_eq]; exact Offset.sub_base _ (by decide)
 
 theorem call_pre {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) (C : CallSlots s₀ t) :
-    (Spec.Dsa.checkParametersContract abi 108).pre (t.callEntry.withRegions (callRd s₀) (callWr s₀)) := by
+    (Proof.Dsa.checkParametersContract abi 108).pre (t.callEntry.withRegions (callRd s₀) (callWr s₀)) := by
   have he := esp_toNat A h
   have hfit := rLow_fit A (d := 192) (by decide)
   have hql := rQBytes_le A
@@ -116,7 +117,7 @@ theorem call_pre {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) (C : Call
     omega
   have w_hi : (t.gpr .esp - 4).toNat + 4 + 24 ≤ 2 ^ 32 := by
     rw [BitVec.toNat_sub, he]; show (2 ^ 32 - 4 + _) % 2 ^ 32 + 4 + 24 ≤ 2 ^ 32; omega
-  sig_pre [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [ce_arg A h C (callRd s₀) (callWr s₀) (show 0 < 6 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 1 < 6 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 2 < 6 by decide),

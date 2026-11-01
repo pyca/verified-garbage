@@ -35,7 +35,7 @@ theorem samplerFrame {s₀ : State} {m m' : Mem} {rs : List (Nat × Nat)}
 
 theorem sampler_context_kept {s₀ : State} {n e p g : Nat} {m m' : Mem}
     (A : KeyABI s₀) (F : Frame [rStack s₀] m m')
-    (fits : context n+8*Spec.Dsa.FixedBaseComb.contextWords (layout n e)≤(arg s₀ 10).toNat*8)
+    (fits : context n+8*Proof.Dsa.FixedBaseComb.contextWords (layout n e)≤(arg s₀ 10).toNat*8)
     (C : canonical n e p g (argumentPointer s₀ 9) m) :
     canonical n e p g (argumentPointer s₀ 9) m' := by
   unfold canonical
@@ -43,7 +43,7 @@ theorem sampler_context_kept {s₀ : State} {n e p g : Nat} {m m' : Mem}
     intro r hr
     obtain rfl := List.mem_singleton.mp hr
     exact A.stackScratchWide.symm.sub_left (Offset.sub_base (argumentPointer s₀ 9)
-      (d := context n) (n := 8*Spec.Dsa.FixedBaseComb.contextWords (layout n e))
+      (d := context n) (n := 8*Proof.Dsa.FixedBaseComb.contextWords (layout n e))
       (k := (arg s₀ 10).toNat*8) fits))]
   exact C
 
@@ -70,7 +70,7 @@ theorem keyInvariant_stable : StableScratch keyInvariant := by
   have Gen := A.scratchLength
   unfold Spec.Dsa.generationScratchWords at Gen
   unfold Spec.Dsa.scratchWords at S
-  have layoutSize : context (((arg s 5).toNat+7)/8)+8*Spec.Dsa.FixedBaseComb.contextWords
+  have layoutSize : context (((arg s 5).toNat+7)/8)+8*Proof.Dsa.FixedBaseComb.contextWords
       (layout (((arg s 5).toNat+7)/8) (((arg s 6).toNat+3)/4))=
       (layout (((arg s 5).toNat+7)/8) (((arg s 6).toNat+3)/4)).size := by
     have sup := supported_widths A.lengths

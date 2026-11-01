@@ -104,7 +104,7 @@ end
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem r2TopBitReady_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -116,7 +116,7 @@ theorem r2TopBitReady_ok (s : State) {base : BitVec 32} {len w : Nat}
   have hw : 2 ≤ w := h.width ▸ h.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have arrayFits := Nat.le_trans (array_end_le (w := w) (by decide : 4 < 8)) fits
-  have size : 100 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 100 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   refine WP.mono (r2TopBit_ok s h.workspace size (by omega) (by omega) h.ptr header.count
@@ -153,8 +153,8 @@ theorem r2NormalizedConstants_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (smallConst_ok v (o := 7) 2 readyV (by decide) (by decide) (by decide) (by decide)) ?_
   rintro t ⟨next, _, two, keeps2, frame2, rest2⟩
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   exact ⟨next, (keeps_array_num keeps2 fits op4 (by decide)).trans top, two,
     (keeps_array_num keeps2 fits op0 (by decide)).trans
       (modV.trans (keeps_array_num keeps1 fits op0 (by decide))),

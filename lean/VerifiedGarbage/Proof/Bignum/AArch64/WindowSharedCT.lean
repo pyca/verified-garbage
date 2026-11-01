@@ -76,12 +76,12 @@ theorem code_ct : RelCT isa (Two RawWindowPre) code (fun _ _ => True) := by
 theorem fn_ct : ConstantTime isa WindowHelper.fnContract.pre WindowHelper.fnContract.pub code := by
   apply RelCT.constantTime (code_ct.mono ?_ (fun _ _ h => h))
   rintro s t ⟨hs,ht,hsp,h0,h1,hw⟩
-  refine ⟨⟨s.gpr .x0,(s.gpr .x1).toNat*8,0,0,Spec.Rsa.Mont.wOf s.mem (s.gpr .x0)⟩,
+  refine ⟨⟨s.gpr .x0,(s.gpr .x1).toNat*8,0,0,Proof.Rsa.Mont.wOf s.mem (s.gpr .x0)⟩,
     WindowHelper.fn_context hs,?_,hsp⟩
   rw [hw,h0,h1]
   exact WindowHelper.fn_context ht
 
-theorem verified : Verified target code (Spec.Rsa.MontWindow.windowContract abi) :=
+theorem verified : Verified target code (Proof.Rsa.MontWindow.windowContract abi) :=
   Verified.of_correct fn_correct fn_ct WindowHelper.fn_implies
 
 end VG.Proof.Bignum.AArch64.WindowShared

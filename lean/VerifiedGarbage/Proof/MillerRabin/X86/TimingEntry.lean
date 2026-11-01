@@ -49,7 +49,7 @@ theorem Entry.base {s : State} (E : Entry s) :
     rcases known with rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem geometry_eq {s t : State} (a0 : arg s 0 = arg t 0) (a1 : arg s 1 = arg t 1)
-    (width : Spec.Rsa.Mont.wOf s.mem (wsOf s) = Spec.Rsa.Mont.wOf t.mem (wsOf t)) : geometry s = geometry t := by
+    (width : Proof.Rsa.Mont.wOf s.mem (wsOf s) = Proof.Rsa.Mont.wOf t.mem (wsOf t)) : geometry s = geometry t := by
   unfold geometry
   rw [width, wsOf, wsOf, lenOf, lenOf, a0, a1]
 

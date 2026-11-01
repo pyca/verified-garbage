@@ -206,7 +206,7 @@ theorem finishedState_eq {A : Nat → Nat} {c w b : Nat}
     (witness : A aX = b % c * 2 ^ (64 * w) % c)
     (one : A aOne = 2 ^ (64 * w) % c) (minus : A aMinusOne = c - 2 ^ (64 * w) % c)
     (exponent : A aExponent = mrE c) :
-    (finishedState A c w (2 * w) (mrA c % 64)).2 = Spec.MillerRabin.round c b := by
+    (finishedState A c w (2 * w) (mrA c % 64)).2 = Proof.MillerRabin.Round.round c b := by
   change (Word32.msqs c w (runValues A c w aMinusOne) (4 - sigOf (mrA c % 64)) 3
     (exponentState (runValues A c w) c w (2 * w) false (2 * w)) 3).2 = _
   rw [runValues_minus, sigOf_mod, exponentState_mrun (runValues A c w) c w (2 * w)
@@ -229,7 +229,7 @@ open VG.Impl.MillerRabin.X86
 
 def Result (s : State) (t : State) : Prop :=
   (∀ b, initialValues s aX = b % initialValues s 0 * 2 ^ (64 * (geometry s).w) % initialValues s 0 →
-    (t.gpr .eax).toNat = if Spec.MillerRabin.round (initialValues s 0) b then 1 else 0) ∧
+    (t.gpr .eax).toNat = if Proof.MillerRabin.Round.round (initialValues s 0) b then 1 else 0) ∧
   WorkspaceFrame (geometry s) (roundWrites (geometry s)) (entered s).mem t.mem
 
 theorem Entry.narrowed_body {s : State} (E : Entry s) :
@@ -256,14 +256,14 @@ theorem Entry.narrowed_body {s : State} (E : Entry s) :
   · intro b witness
     have fits : initialValues s 0 < 2 ^ (64 * (geometry s).w) := by
       rw [initialValues, Compact.numAt_val32]
-      have := val32_lt s.mem (wsOf s) (Spec.Rsa.Mont.arrAt (geometry s).w 0) (2 * (geometry s).w)
+      have := val32_lt s.mem (wsOf s) (Proof.Rsa.Mont.arrAt (geometry s).w 0) (2 * (geometry s).w)
       simpa only [show 32 * (2 * (geometry s).w) = 64 * (geometry s).w by omega] using this
     have final := finishedState_eq odd minimum fits witness one minus exponent
     change u.gpr .eax = BitVec.ofNat 32
       (finishedState (initialValues s) (initialValues s 0) (geometry s).w (2 * (geometry s).w)
         (mrA (initialValues s 0) % 64)).2.toNat at value
     rw [value, final]
-    cases Spec.MillerRabin.round (initialValues s 0) b <;> rfl
+    cases Proof.MillerRabin.Round.round (initialValues s 0) b <;> rfl
   · rw [mem] at frame
     exact frame
 

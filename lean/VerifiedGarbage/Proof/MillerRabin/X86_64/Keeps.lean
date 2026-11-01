@@ -23,7 +23,7 @@ private theorem slot_keys : restoreSlots.map (·.1) = bookkeeping.map (·.1) := 
 theorem restored_core_keeps {B S : Addr} {n w : Nat} {m m' : Mem}
     (hn : 8 * n ≤ 2 ^ 64) (hf : Frm B (coreRanges w) (normalizedMem m B w) m')
     (hs : ∀ p ∈ restoreSlots, m'.readW (S + BitVec.ofNat 64 p.2) 64 = word m B (8 * p.1)) :
-    Spec.MillerRabin.Keeps Spec.MillerRabin.extended B n w m (restoredMem m' B S) := by
+    Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.extended B n w m (restoredMem m' B S) := by
   classical
   intro i hi hh ha ht
   by_cases hb : ∃ p ∈ restoreSlots, 8 * p.1 ≤ i ∧ i < 8 * p.1 + 8

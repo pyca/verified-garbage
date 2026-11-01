@@ -20,7 +20,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 
 def scalarBound (p : Inputs) : Nat := if p.hasQ = true then p.Q else p.P - 1
 
@@ -35,11 +35,11 @@ theorem scalarUpper_ok (s : State) {p : Inputs} {slots : List Nat}
       (∀ a ∈ [0, 1, 4], numAt t.mem (State.addr p.base) p.w a = numAt s.mem (State.addr p.base) p.w a) ∧
       t.mem.readW (off (State.addr p.base) 136) 32 = s.mem.readW (off (State.addr p.base) 136) 32 ∧
       Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem ∧ VG.Proof.X25519.Arm.Rest roundClobbers s t := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have fits : arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
-  have size : 256 ≤ 8 * p.len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * p.len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   rw [VG.Impl.Ffdh.Arm.Domain.withQ, WP.seq_iff]
   refine WP.mono (qTest_ok s h h28 h32) ?_
   rintro u ⟨⟨zero, memU⟩, restU⟩

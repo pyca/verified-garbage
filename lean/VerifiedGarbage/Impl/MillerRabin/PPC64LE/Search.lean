@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
 # A prime search's Miller–Rabin tests on PPC64LE
 
 The pieces FFDH's and DSA's parameter generation and RSA's key generation
-share, in RSA's Montgomery working space at `r31` (`Spec.Rsa.Mont.Layout`,
+share, in RSA's Montgomery working space at `r31` (`Proof.Rsa.Mont.Layout`,
 as the shared round takes it: a header of 32 words, then arrays of `w + 2`
 words). The search's state is in header words that neither the layout (`w`
 in word 6, `−N⁻¹` in word 7, the arrays' addresses in words 8–15, their

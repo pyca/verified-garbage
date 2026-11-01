@@ -34,7 +34,7 @@ def SquarePair (g : Geometry) (capacity : Nat) (p : BitVec 32) (s t : State) : P
   Pair g [.edi] s t ∧ SquareInput g capacity p s ∧ SquareInput g capacity p t
 
 theorem square_pair {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (SquarePair g capacity p) (VG.Impl.MillerRabin.X86.mulY name mont 6)
@@ -50,11 +50,11 @@ theorem square_pair {mont : Prog isa} {name : String}
       fun b ⟨Cb, Mb, caller, bound, _, _, K, _⟩ => ?_
     exact ⟨c, ⟨Cb, Mb, caller, A.scratch.of_keeps K (by decide)⟩, odd, bound⟩
   obtain ⟨trace, pair⟩ := mulY_relCT (p := p) verified noSp stack v length
-    (by unfold Spec.Rsa.Mont.Operand; decide) _ _ _ _ _ _ ⟨H, input S, input T⟩ E G
+    (by unfold Proof.Rsa.Mont.Operand; decide) _ _ _ _ _ _ ⟨H, input S, input T⟩ E G
   exact ⟨trace, pair, wp_result (post S) E, wp_result (post T) G⟩
 
 theorem squares_pair {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity)
     (n : Nat) :
@@ -152,7 +152,7 @@ theorem doublesAt_pair {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec
   exact ⟨trace, ⟨Cu.context, Cz.context, A⟩, ⟨cu, Cu, ou, lu⟩, ⟨cz, Cz, oz, lz⟩⟩
 
 theorem code_traceAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) {e : Nat} (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
@@ -164,7 +164,7 @@ theorem code_traceAt {mont : Prog isa} {name : String}
   exact (copy_relCT v 4 6 (by decide) (by decide)).mono (fun _ _ H => H.1) (fun _ _ H => H)
 
 theorem code_trace {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :

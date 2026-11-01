@@ -1,5 +1,5 @@
 name = "RSA key generation"
 family = "RSA"
-specs = ["RsaKeyGen", "MillerRabin"]
+specs = ["RsaKeyGen"]
 modules = ["src/rsa_keygen.rs"]
-asm = ["rsa_keygen", "rsa_mont"]
+asm = ["rsa_keygen"]

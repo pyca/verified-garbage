@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 
 /-! # `vg_rsa_keygen_inverse` runs `KeyRt.inverse` in its frame and restores the caller's registers -/
 
@@ -95,7 +96,7 @@ theorem framed_ok {s : State} (h : contract.pre s) :
       rw [mu, A.entered_num (j := aNM) (by decide), memM, ← inverseNum_num, ← inverseNum_num]
       unfold aNM aM
       rw [A.negated]
-      simp only [kw, Spec.Rsa.modulusWords, Spec.RsaKeyGen.inverseBytes]
+      simp only [kw, Spec.Rsa.modulusWords, Proof.RsaKeyGen.inverseBytes]
       congr 1; omega)
     (by rw [mu, A.entered_num (j := aZero) (by decide), ← inverseNum_num]; exact A.zero)
     (by rw [mu, memM, ← inverseNum_num]; exact A.odd)

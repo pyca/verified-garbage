@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSA with the CRT on x86-64: the shared contract
@@ -44,23 +45,23 @@ def crtSatState : State where
     ⟨0x6008, 96⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x8000, 8448⟩]
 
-theorem crt_implies : crtContract.Implies (Spec.Rsa.privateCrtContract abi) where
+theorem crt_implies : crtContract.Implies (Proof.Rsa.privateCrtContract abi) where
   pre := by
     intro s h
-    sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
+    sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     sig_split h
-    sig_reduce [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
+    sig_reduce [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
-  post := by sig_implies_post [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
+  post := by sig_implies_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
+    sig_pub [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h
     refine ⟨?_, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
       (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq] [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using crtSatState
+  sat := by sig_implies_sat [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq] [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using crtSatState
 
 end VG.Proof.Bignum.X86_64

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationABI
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.PublicValidationContract
 
 /-! # The validator's constant-time ABI contract -/
 
@@ -11,7 +12,7 @@ namespace VG.Proof.Dsa.Arm.PublicValidation
 open VG VG.Arm VG.Proof.Mont VG.Proof.Mont.Arm
 open VG.Impl.Dsa.Arm.PublicValidation
 open VG.Impl.Dsa.Layout
-open VG.Spec.Dsa.PublicValidation (component)
+open VG.Proof.Dsa.PublicValidation (component)
 
 def values (s : State) (pLen qLen : Nat) : Pointer → Nat
   | .input .p => component s.mem (key s) 0 pLen

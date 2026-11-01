@@ -21,7 +21,7 @@ stride in the header (`stride_vp`): the stage of the exponent, with `MS`.
 namespace VG.Proof.Dsa.Arm.Prime
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 open VG.Proof.Rsa.Arm.Recover (VP)
 
 section
@@ -49,7 +49,7 @@ theorem MSp.of_outside {σ s t : State} (pre : In P σ) (h : MSp P σ s) {o n : 
     have := ho d k hd
     have hdk : d + k ≤ mHd P := by
       rcases hd with h1 | ⟨_, h1⟩
-      · have : 128 ≤ mHd P := by simp only [mHd, arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+      · have : 128 ≤ mHd P := by simp only [mHd, arrAt, Proof.Rsa.Mont.hdrBytes]; omega
         omega
       · exact h1
     rw [ofs_off _ (by omega)]
@@ -134,7 +134,7 @@ theorem ctxClr_vp {E : State → Prop} :
         exact out
       refine (MSp.of_ar ar n0 n4).of_outside pre out' (fun d k hd => ?_) ?_ ?_ ?_ rest.sp rest.rd rest.wr
       · rcases hd with h1 | ⟨_, h1⟩
-        · left; have : 128 ≤ arrAt P.w 0 := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+        · left; have : 128 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
           omega
         · left; simp only [mHd] at h1; omega
       · right; simp only [arrAt]; omega

@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 def scalarValidFlag (p : Inputs) (x : Nat) : BitVec 32 := if 0 < x ∧ x < scalarBound p then 1 else 0
 
@@ -28,9 +28,9 @@ theorem scalarRange_ok (s : State) {p : Inputs} {slots : List Nat}
       t.gpr .r11 = scalarValidFlag p (numAt s.mem (State.addr p.base) p.w 1) ∧
       (∀ a ∈ [0, 1, 4], numAt t.mem (State.addr p.base) p.w a = numAt s.mem (State.addr p.base) p.w a) ∧
       Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem ∧ VG.Proof.X25519.Arm.Rest roundClobbers s t := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   rw [VG.Impl.Ffdh.Arm.Domain.CheckPrivate.scalarRange, WP.seq_iff]
   refine WP.mono (nonzero_ok s ready op1 (by decide)) ?_
   rintro u ⟨readyU, nonzero, arraysU, frameU, restU⟩

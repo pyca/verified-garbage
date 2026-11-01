@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Block
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 theorem sharedR2Square_ok {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len w P regions) (s : State) {m k : Nat} (h : R2Sq base len w m k s) (hp : P s) :
@@ -19,9 +19,9 @@ theorem sharedR2Square_ok {base : BitVec 32} {len w : Nat} {P : State → Prop} 
       P t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have hw : 2 ≤ w := h.ready.width ▸ h.ready.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op7 : Operand 7 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have odd : m % 2 = 1 := h.modulus ▸ numAt_odd_of_inverse s.mem _ (by omega) h.ready.inverse
   refine WP.mono (K.op_ok s 4 4 4 h.ready hp op4 op4 op4 (by decide) (by rw [h.modulus]; exact h.operand)) ?_
   rintro t ⟨ready, modulus, bound, value, keeps, pt, frame, rest⟩

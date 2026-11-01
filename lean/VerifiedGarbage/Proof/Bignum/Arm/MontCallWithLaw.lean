@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.CallF
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 structure CallArithmeticLaw (arithmetic : Prog isa) : Prop where

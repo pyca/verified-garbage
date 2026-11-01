@@ -174,7 +174,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont CombBuilder
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem combPrecomputeEntered_ok (backend : MontBackend) (s : State) {p : Inputs}
     (h : CombPrecomputeFnInput p s) :

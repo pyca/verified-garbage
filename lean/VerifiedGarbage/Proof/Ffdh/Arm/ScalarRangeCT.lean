@@ -73,7 +73,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 structure ScalarReady (p : Inputs) (slots : List Nat) (s : State) : Prop where
   context : Context p slots s
@@ -85,8 +85,8 @@ theorem scalarRange_ct {p : Inputs} {slots : List Nat}
     RelCT isa (fun s t => ScalarReady p slots s ∧ ScalarReady p slots t ∧ s.sp = t.sp)
       VG.Impl.Ffdh.Arm.Domain.CheckPrivate.scalarRange (fun _ _ => True) := by
   let P := ScalarReady p slots
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have nonzero := (nonzero_ct (base := p.base) (len := p.len) (w := p.w) op1).mono
     (P' := fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.ready, h.2.1.ready, h.2.2⟩) (fun _ _ h => h)

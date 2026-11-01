@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
 meta import VerifiedGarbage.Proof.Dsa.Arm.RegisterSave
 meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
@@ -20,6 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.ModPowContract
 
 /-! # Correctness and contract of shared ARMv7 Montgomery setup -/
 
@@ -27,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 namespace VG.Proof.Dsa.Arm.Context
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm.Context
-open VG.Spec.Dsa.ModPow (numAt Keeps)
+open VG.Proof.Dsa.ModPow (numAt Keeps)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_reg)
 
 theorem slots_eq (n : Nat) : slots n =

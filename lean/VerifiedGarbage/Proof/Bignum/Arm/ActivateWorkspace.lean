@@ -40,7 +40,7 @@ theorem activateWorkspace_ready (s : State) {base : BitVec 32} {len w : Nat}
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep.symm)
   have size : 56 ≤ 8 * len := by
     have := h.layout.2.2.1
-    simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega
   refine ⟨⟨⟨h.workspace.congr rest.wr, eq.layout h.layout, (eq.width size).trans h.width,
     (rest.gpr .r0 (by simp)).trans h.ptr⟩, ?_, ?_, ?_⟩, eq, frame, rest⟩

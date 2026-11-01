@@ -7,9 +7,11 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Bignum.Words
 
@@ -49,12 +51,12 @@ def crtSatState : State where
     ⟨0x3300, 32⟩, ⟨0x3400, 32⟩, ⟨0x3500, 32⟩, ⟨0x8000, 56⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x4000, 8448⟩]
 
-theorem crt_contract_sat : ∃ s, (Spec.Rsa.privateCrtContract abi 56).pre s := by
-  sig_implies_sat [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+theorem crt_contract_sat : ∃ s, (Proof.Rsa.privateCrtContract abi 56).pre s := by
+  sig_implies_sat [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.scratchWords] using crtSatState
 
-theorem crt_verified (kernel : WindowKernel := baselineWindowKernel) : Verified target (CrtFn.codeWith kernel.code) (Spec.Rsa.privateCrtContract abi 56) :=
+theorem crt_verified (kernel : WindowKernel := baselineWindowKernel) : Verified target (CrtFn.codeWith kernel.code) (Proof.Rsa.privateCrtContract abi 56) :=
   ⟨(crt_contract_correct (kernel := kernel)), (crt_contract_ct (kernel := kernel)), crt_contract_sat⟩
 
 end VG.Proof.Bignum.Arm

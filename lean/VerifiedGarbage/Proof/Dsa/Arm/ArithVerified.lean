@@ -5,13 +5,17 @@ public import VerifiedGarbage.Proof.Dsa.Arm.PowVerified
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Dsa.ModPowContract
+meta import VerifiedGarbage.Proof.Dsa.ModArithContract
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
+public import VerifiedGarbage.Proof.Dsa.ModArithContract
 
 /-!
 # DSA's reductions and products as functions on 32-bit ARM: `Verified`
 
 `vg_dsa_mulmod_{n}` and `vg_dsa_reduce_{n}` against their contracts
-(`Spec/Dsa/ModArith.lean`), from `mulK` and `reduceK`, as `PowVerified.lean`
+(`Proof/Dsa/ModArithContract.lean`), from `mulK` and `reduceK`, as `PowVerified.lean`
 does for `vg_dsa_pow_{n}_{e}`.
 -/
 
@@ -21,7 +25,7 @@ namespace VG.Proof.Dsa.Arm.Pow
 
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm.Pow VG.Impl.Dsa.Arm.Arith
-open VG.Spec.Dsa.ModPow (numAt Keeps)
+open VG.Proof.Dsa.ModPow (numAt Keeps)
 
 /-! ## Products -/
 
@@ -52,19 +56,19 @@ theorem mulArm_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) : ConstantTime isa (m
   fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => mulK_ct n hn hn48 _ _ _ _ _ _ (powArm_pre (e := 1) h₁) (powArm_pre (e := 1) h₂) hp.2.1 e₁ e₂
 
 theorem mulArm_implies {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
-    (mulArm n).Implies (Spec.Dsa.ModArith.mulContract (mulLayout n) Arm.abi) where
+    (mulArm n).Implies (Proof.Dsa.ModArith.mulContract (mulLayout n) Arm.abi) where
   pre := by
-    sig_implies_pre [Spec.Dsa.ModArith.mulContract, Spec.Dsa.ModPow.sig, mulArm, powArm, mulLayout, Arm.abi,
+    sig_implies_pre [Proof.Dsa.ModArith.mulContract, Proof.Dsa.ModPow.sig, mulArm, powArm, mulLayout, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   post := by
-    sig_implies_post [Spec.Dsa.ModArith.mulContract, Spec.Dsa.ModPow.sig, mulArm, powArm, mulLayout, Arm.abi,
+    sig_implies_post [Proof.Dsa.ModArith.mulContract, Proof.Dsa.ModPow.sig, mulArm, powArm, mulLayout, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   pub := by
-    sig_implies_pub [Spec.Dsa.ModArith.mulContract, Spec.Dsa.ModPow.sig, mulArm, powArm, mulLayout, Arm.abi,
+    sig_implies_pub [Proof.Dsa.ModArith.mulContract, Proof.Dsa.ModPow.sig, mulArm, powArm, mulLayout, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   sat := by
     refine ⟨satState, ?_⟩
-    sig_pre [Spec.Dsa.ModArith.mulContract, Spec.Dsa.ModPow.sig, mulLayout, Arm.abi, Arm.argRegs,
+    sig_pre [Proof.Dsa.ModArith.mulContract, Proof.Dsa.ModPow.sig, mulLayout, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
     sig_and_intros
     · decide
@@ -80,7 +84,7 @@ theorem mulArm_implies {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
     · exact Nat.lt_of_lt_of_le (by decide) (read_ones _ k).2
 
 theorem mulVerified (n : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) :
-    Verified Arm.target (mulBody n) (Spec.Dsa.ModArith.mulContract (mulLayout n) Arm.abi) :=
+    Verified Arm.target (mulBody n) (Proof.Dsa.ModArith.mulContract (mulLayout n) Arm.abi) :=
   Verified.of_correct (mulArm_correct hn hn48) (mulArm_ct n hn hn48) (mulArm_implies hn hn48)
 
 /-! ## Reductions -/
@@ -125,19 +129,19 @@ def satReduce : State := { satState with
   rd := [⟨0x3000, 0⟩] }
 
 theorem reduceArm_implies {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
-    (reduceArm n).Implies (Spec.Dsa.ModArith.reduceContract (reduceLayout n) Arm.abi) where
+    (reduceArm n).Implies (Proof.Dsa.ModArith.reduceContract (reduceLayout n) Arm.abi) where
   pre := by
-    sig_implies_pre [Spec.Dsa.ModArith.reduceContract, Spec.Dsa.ModArith.reduceSig, reduceArm, reduceLayout,
+    sig_implies_pre [Proof.Dsa.ModArith.reduceContract, Proof.Dsa.ModArith.reduceSig, reduceArm, reduceLayout,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   post := by
-    sig_implies_post [Spec.Dsa.ModArith.reduceContract, Spec.Dsa.ModArith.reduceSig, reduceArm, reduceLayout,
+    sig_implies_post [Proof.Dsa.ModArith.reduceContract, Proof.Dsa.ModArith.reduceSig, reduceArm, reduceLayout,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   pub := by
-    sig_implies_pub [Spec.Dsa.ModArith.reduceContract, Spec.Dsa.ModArith.reduceSig, reduceArm, reduceLayout,
+    sig_implies_pub [Proof.Dsa.ModArith.reduceContract, Proof.Dsa.ModArith.reduceSig, reduceArm, reduceLayout,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   sat := by
     refine ⟨satReduce, ?_⟩
-    sig_pre [Spec.Dsa.ModArith.reduceContract, Spec.Dsa.ModArith.reduceSig, reduceLayout, Arm.abi, Arm.argRegs,
+    sig_pre [Proof.Dsa.ModArith.reduceContract, Proof.Dsa.ModArith.reduceSig, reduceLayout, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
     sig_and_intros
     · decide
@@ -156,7 +160,7 @@ theorem reduceArm_implies {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
     · exact (read_ones _ k).2
 
 theorem reduceVerified (n : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) :
-    Verified Arm.target (reduceBody n) (Spec.Dsa.ModArith.reduceContract (reduceLayout n) Arm.abi) :=
+    Verified Arm.target (reduceBody n) (Proof.Dsa.ModArith.reduceContract (reduceLayout n) Arm.abi) :=
   Verified.of_correct (reduceArm_correct hn hn48) (reduceArm_ct hn hn48) (reduceArm_implies hn hn48)
 
 end VG.Proof.Dsa.Arm.Pow

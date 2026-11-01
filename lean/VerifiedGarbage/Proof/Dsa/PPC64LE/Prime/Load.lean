@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Entry
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -78,7 +78,7 @@ theorem cand_keep {bits : Nat} {σ s : State} (ep : EntryPost bits σ s) {n : Na
 /-- The candidate into array 0. -/
 theorem loadC_ok {bits : Nat} (hs : Shape bits) {σ s : State} (h : CIn bits σ) (ep : EntryPost bits σ s) :
     WP isa (loadC bits) s fun t =>
-      (arr t.mem (wsB σ) (words bits) 0 = Spec.Dsa.ProbablePrime.candidateAt (layout bits) σ.mem (σ.gpr .r3) ∧
+      (arr t.mem (wsB σ) (words bits) 0 = Proof.Dsa.ProbablePrime.candidateAt (layout bits) σ.mem (σ.gpr .r3) ∧
         Outside (wsB σ) (slot (words bits) 0) (8 * words bits) s.mem t.mem) ∧
       Keep [.r0, .r6, .r12, .r14, .r15, .r16, .r17] s t := by
   have e := env_of hs h ep
@@ -102,7 +102,7 @@ theorem loadC_ok {bits : Nat} (hs : Shape bits) {σ s : State} (h : CIn bits σ)
   refine ⟨⟨?_, by rw [← um]; exact to⟩, (ku.trans kt).mono (by decide)⟩
   show VG.Proof.Mont.val32 t.mem (wsB σ) (slot (words bits) 0) (2 * words bits) = _
   rw [tv, um, cand_keep ep hl384]
-  simp only [Spec.Dsa.ProbablePrime.candidateAt, layout, BitVec.add_zero, ← hs.hlen]
+  simp only [Proof.Dsa.ProbablePrime.candidateAt, layout, BitVec.add_zero, ← hs.hlen]
   rfl
 
 end VG.Proof.Dsa.PPC64LE.Prime

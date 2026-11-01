@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem crt_primeAcceptance_ready (s : State) {base : BitVec 32} {len w : Nat}
@@ -28,7 +28,7 @@ theorem crt_primeAcceptance_ready (s : State) {base : BitVec 32} {len w : Nat}
       (t.mem.readW (off (State.addr base) 212) 32) = s.mem.readW (off (State.addr s.sp) 48) 32 ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest [.r11, .r12] s t := by
   have fit : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have small : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega
+  have small : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega
   have nowrap := h.workspace.nowrap
   refine WP.mono (crt_installAcceptance_ok s h.workspace (by omega) h.ptr stackFit read) ?_
   rintro t ⟨mem, outside, rest⟩
@@ -38,7 +38,7 @@ theorem crt_primeAcceptance_ready (s : State) {base : BitVec 32} {len w : Nat}
     have bound := Nat.le_trans (array_end_le (w := w) (j := 0) (by decide : 0 < 8)) fit
     rw [numAt_native, numAt_native]
     apply outside.val32
-    · right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+    · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
     · omega
   have value : t.mem.readW (off (State.addr base) 212) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 := by
     rw [mem, Mem.readW_writeW_self32]

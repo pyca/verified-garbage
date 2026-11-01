@@ -21,7 +21,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm.CachedPower
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest wp_str)
 
 theorem save_ok (s : State) {base source table : BitVec 32} {len w bytes N : Nat}
@@ -37,7 +37,7 @@ theorem save_ok (s : State) {base source table : BitVec 32} {len w bytes N : Nat
       Frame [⟨State.addr base,8*len⟩] s.mem t.mem ∧ Rest [] s t := by
   have size : 256≤8*len := by
     have fits := h.width ▸ h.layout.2.2.1
-    simp only [arrAt,Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt,Proof.Rsa.Mont.hdrBytes] at fits
     omega
   have addr (d : Nat) (hd : d≤252) : State.addr (s.gpr .r0+BitVec.ofNat 32 d)=off (State.addr base) d := by
     rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
@@ -87,7 +87,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.CachedPower
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem args_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat}

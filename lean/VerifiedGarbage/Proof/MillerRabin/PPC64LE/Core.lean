@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Last
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Exp
 # The Miller–Rabin round on PPC64LE: the round
 
 `core_ok`: the table, the windows and the three squarings leave the mask of
-`Spec.MillerRabin.round c b` in `r23` (`Proof.Ffdh.window_round_eq`).
+`Proof.MillerRabin.Round.round c b` in `r23` (`Proof.Ffdh.window_round_eq`).
 -/
 
 @[expose] public section
@@ -28,7 +28,7 @@ abbrev coreRegs : List Reg := expRegs
 
 theorem core_ok {s : State} {B : Addr} {Z w c b : Nat} (h : MCtx s B Z w) (hc : Consts s.mem B w c)
     (hc3 : 3 ≤ c) (hodd : c % 2 = 1) (h5 : arr s.mem B w 5 = b % c * 2 ^ (64 * w) % c) :
-    WP isa core s fun t => MCtx t B Z w ∧ t.gpr .r23 = mask (Spec.MillerRabin.round c b) ∧
+    WP isa core s fun t => MCtx t B Z w ∧ t.gpr .r23 = mask (Proof.MillerRabin.Round.round c b) ∧
       Mut B w s.mem t.mem ∧ Keep coreRegs s t := by
   have hcw : c < 16 ^ (16 * w) := by
     rw [← hc.cand, show (16 : Nat) ^ (16 * w) = 2 ^ (32 * (2 * w)) by

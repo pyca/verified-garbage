@@ -95,7 +95,7 @@ def rcOf (d : DrawD) : RcD := ⟨d.q.B, d.q.n, wOf d.mb, d.N, wA d.mb d.q.r d.u�
 
 /-- After the round. -/
 def DR (d : DrawD) (t : State) : Prop :=
-  t.gpr .r3 = BitVec.ofNat 64 (if Spec.MillerRabin.round d.N (wA d.mb d.q.r d.u) then 1 else 0) ∧ t.gpr .r31 = d.q.B
+  t.gpr .r3 = BitVec.ofNat 64 (if Proof.MillerRabin.Round.round d.N (wA d.mb d.q.r d.u) then 1 else 0) ∧ t.gpr .r31 = d.q.B
 
 theorem pins_DR : Pins DR [.r31] := by
   rintro d s₁ s₂ ⟨-, h₁⟩ ⟨-, h₂⟩ r hr
@@ -114,11 +114,11 @@ theorem round_ct (R : RoundImpl) : RelCT isa (Two fun d s => (DMd d s ∧ decide
   refine RelCT.seq (two_post (two_map rcOf hrc (roundCall_ct R)) (Ψ := DR) fun d s h => ?_) ?_
   · obtain ⟨hp, ha, hac, hsp, hstk⟩ := hrc d s h
     exact WP.mono (roundCall_ok R hp ha hac hsp hstk) fun t ht => ⟨ht.r3, ht.prep.env.h31⟩
-  refine two_ite' (fun d => !Spec.MillerRabin.round d.N (wA d.mb d.q.r d.u)) (fun d s h => ?_)
+  refine two_ite' (fun d => !Proof.MillerRabin.Round.round d.N (wA d.mb d.q.r d.u)) (fun d s h => ?_)
     (two_taint _ (fun d s₁ s₂ h₁ h₂ => pins_DR d s₁ s₂ h₁.1 h₂.1) (by taint_decide))
     (two_taint _ (fun d s₁ s₂ h₁ h₂ => pins_DR d s₁ s₂ h₁.1 h₂.1) (by taint_decide))
   rw [eval_zero, h.1]
-  cases Spec.MillerRabin.round d.N (wA d.mb d.q.r d.u) <;> rfl
+  cases Proof.MillerRabin.Round.round d.N (wA d.mb d.q.r d.u) <;> rfl
 
 theorem drawBranch_ct (R : RoundImpl) : RelCT isa (Two DMd) (drawBranch R.name R.code) fun _ _ => True := by
   unfold drawBranch

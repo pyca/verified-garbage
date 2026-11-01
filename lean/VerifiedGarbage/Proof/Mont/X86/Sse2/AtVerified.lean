@@ -16,11 +16,11 @@ space, meets this one's too.
 namespace VG.Proof.Mont.X86.Sse2
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Sse2 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Mont.X86.Rt
-open VG.Spec.Rsa.MontMul (Apart numAt scratchBytes)
+open VG.Proof.Rsa.MontMul (Apart numAt scratchBytes)
 
-theorem at_publicArgs {s t : State} (H : (Spec.Rsa.MontMul.mulContract abi 56).pub s t) :
+theorem at_publicArgs {s t : State} (H : (Proof.Rsa.MontMul.mulContract abi 56).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ ∀ i < 9, arg s i = arg t i := by
-  sig_pub [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes] at H
+  sig_pub [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes] at H
   sig_split H
   refine ⟨by with_reducible assumption, fun i hi => ?_⟩
   match i, hi with
@@ -35,7 +35,7 @@ theorem at_publicArgs {s t : State} (H : (Spec.Rsa.MontMul.mulContract abi 56).p
   | 8, _ => with_reducible assumption
 
 theorem at_constantTime :
-    ConstantTime isa (Spec.Rsa.MontMul.mulContract abi 56).pre (Spec.Rsa.MontMul.mulContract abi 56).pub atBody := by
+    ConstantTime isa (Proof.Rsa.MontMul.mulContract abi 56).pre (Proof.Rsa.MontMul.mulContract abi 56).pub atBody := by
   apply RelCT.constantTime
   refine RelCT.mono (P := fun s₁ s₂ => ∃ W L N S mo inv o a b, BPair atParams W L N S mo inv o a b s₁ s₂)
     (RelCT.exists_ fun _ => RelCT.exists_ fun _ => RelCT.exists_ fun _ => RelCT.exists_ fun _ =>
@@ -50,7 +50,7 @@ theorem at_constantTime :
     ← args 7 (by decide), ← args 8 (by decide)] at R
   exact ⟨_, _, _, _, _, _, _, _, _, atReady (atAbi_of h₁), R, sp⟩
 
-theorem at_satisfiable : ∃ s, (Spec.Rsa.MontMul.mulContract abi 56).pre s := by
+theorem at_satisfiable : ∃ s, (Proof.Rsa.MontMul.mulContract abi 56).pre s := by
   refine ⟨satState, ?_⟩
   have a : ∀ i, i < 9 → arg satState i = satArg i := satArg_eq
   have a0 := a 0 (by decide); have a1 := a 1 (by decide); have a2 := a 2 (by decide)
@@ -60,7 +60,7 @@ theorem at_satisfiable : ∃ s, (Spec.Rsa.MontMul.mulContract abi 56).pre s := b
   have e0 : argAddr satState 0 = 0xf0000004 := by decide
   have hw : BitVec.setWidth 64 (4096 : BitVec 32) = 4096 := by decide
   have hsp : BitVec.setWidth 64 (0xf0000000 : BitVec 32) = 0xf0000000 := by decide
-  sig_pre [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [a0, a1, a2, a3, a4, a5, a6, a7, a8, e0, hw, hsp]
   sig_and_intros
   all_goals try decide
@@ -69,7 +69,7 @@ theorem at_satisfiable : ∃ s, (Spec.Rsa.MontMul.mulContract abi 56).pre s := b
   all_goals try (rw [show (4096 : Addr) = 0x1000 from rfl, satModulus, satInv]; decide)
   all_goals try (rw [show (4096 : Addr) = 0x1000 from rfl, satModulus, satB]; decide)
 
-theorem at_verified : Verified target atBody (Spec.Rsa.MontMul.mulContract abi 56) :=
+theorem at_verified : Verified target atBody (Proof.Rsa.MontMul.mulContract abi 56) :=
   ⟨at_correct, at_constantTime, at_satisfiable⟩
 
 end VG.Proof.Mont.X86.Sse2

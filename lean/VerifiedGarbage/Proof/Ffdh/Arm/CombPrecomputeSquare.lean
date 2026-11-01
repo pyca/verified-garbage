@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Rsa.FixedBaseCombMont
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Keeps Operand)
+open VG.Proof.Rsa.Mont (numAt Keeps Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem square5_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 32} {exponent : Nat}
@@ -24,7 +24,7 @@ theorem square5_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec
   let K := TwoExp.sharedMontgomery p.base sp p.len p.w backend.name backend.mul
     (fun _ _ _ ho ha hb v input => backend.correct v input ho ha hb) backend.stackOk
   have persistent : TwoExp.CallReady p.base sp p.len s := ⟨h.memory.calls.stack,h.memory.fixed⟩
-  have operand : Operand 5 := by simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]
+  have operand : Operand 5 := by simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
   have positive : 0 < p.P := by have := h.memory.ready.modulus; rw [h.modulus] at this; omega
   have bound : numAt s.mem (State.addr p.base) p.w 5 < numAt s.mem (State.addr p.base) p.w 0 := by
     rw [h.modulus,power]

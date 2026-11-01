@@ -50,12 +50,12 @@ def drWords : List Nat := [23, 26, 29, 30, 1, 20, 22, 19, 2]
 structure DrPost (s : State) (B R : Addr) (L w c u I U ch : Nat) (t : State) : Prop where
   prep : Prep t B L w c
   stat : word t.mem B (8 * hStat) = BitVec.ofNat 64
-    (if Spec.MillerRabin.round c (Spec.RsaKeyGen.witness (c - 1)
+    (if Proof.MillerRabin.Round.round c (Spec.RsaKeyGen.witness (c - 1)
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off R u) (8 * w)))).1 then
       statOf I (U + if (Spec.RsaKeyGen.witness (c - 1)
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off R u) (8 * w)))).2 then 1 else 0) ch else 2)
   idx : word t.mem B (8 * hIdx) = BitVec.ofNat 64
-    (if Spec.MillerRabin.round c (Spec.RsaKeyGen.witness (c - 1)
+    (if Proof.MillerRabin.Round.round c (Spec.RsaKeyGen.witness (c - 1)
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off R u) (8 * w)))).1 then I + 1 else I)
   uni : word t.mem B (8 * hUni) = BitVec.ofNat 64 (U + if (Spec.RsaKeyGen.witness (c - 1)
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off R u) (8 * w)))).2 then 1 else 0)

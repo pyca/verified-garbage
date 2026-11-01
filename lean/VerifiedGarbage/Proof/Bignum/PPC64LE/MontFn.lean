@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCore
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontSave
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Bignum.Minv32
@@ -22,7 +22,7 @@ runs the arithmetic (`core_ok`) and restores them (`fn_correct`).
 namespace VG.Proof.Bignum.PPC64LE
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Impl.Bignum.PPC64LE VG.Impl.Bignum
-open VG.Spec.Rsa.Mont (numAt wOf wordAt Layout Operand Keeps arrAt aM minvWord)
+open VG.Proof.Rsa.Mont (numAt wOf wordAt Layout Operand Keeps arrAt aM minvWord)
 
 /-- The index in the low half of `r`. -/
 abbrev idx (s : State) (r : Reg) : Nat := ((s.gpr r).setWidth 32).toNat
@@ -180,7 +180,7 @@ theorem pre_saved {s₀ s₁ : State} (h : fnContract.pre s₀) (hS : Saved s₀
   · have := hdr_lt_slot w 0 (i := 6) (by decide)
     refine (rd₁ (k := 8) (by omega_arith)).trans ?_
     rw [← hwd, ← hBd]
-    simp only [wOf, wordAt, Spec.Rsa.Mont.wWord, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    simp only [wOf, wordAt, Proof.Rsa.Mont.wWord, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [w₁ (d := slot w 0) (by omega_arith), w₁ (d := 56) (by omega_arith), w32_eq_mod, w32_eq_mod]
     exact Minv32.minv_low hinv
   · rw [v₁ hb, v₁ (by decide)]; rw [numAt_eq, numAt_eq] at hB; exact hB
@@ -269,8 +269,8 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [hofs]
       rcases hr with rfl | rfl | rfl
-      · exact hj Spec.Rsa.Mont.aAcc (by simp)
-      · exact hj Spec.Rsa.Mont.aTmp (by simp)
+      · exact hj Proof.Rsa.Mont.aAcc (by simp)
+      · exact hj Proof.Rsa.Mont.aTmp (by simp)
       · exact hj (idx s .r5) (by simp)
   refine ⟨⟨fun r hr => ?_, by rw [usp, kt'.sp, hS.keep.sp], by rw [ulr, kt'.lr, hS.keep.lr]⟩, ?_⟩
   · by_cases hs' : ∃ i < 9, r = saved i

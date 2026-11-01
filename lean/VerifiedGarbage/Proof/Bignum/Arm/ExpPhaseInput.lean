@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExpBytes
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure ExpPhaseInput (base ep : BitVec 32) (len w M x : Nat) (eb : List Byte) (s : State) : Prop where
   ready : ArithmeticReady base len w s

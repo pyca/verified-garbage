@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure PrivateReady (p : Inputs) (slots : List Nat) (yb xb : List Byte) (s : State) : Prop where
   context : Context p slots s

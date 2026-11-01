@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Weierstrass.MontContract
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
+public import VerifiedGarbage.Proof.Dsa.PublicValidationContract
 
 /-! # Resources of the shared public-key validation contract -/
 
@@ -14,8 +16,8 @@ public import VerifiedGarbage.Proof.Weierstrass.MontContract
 namespace VG.Proof.Dsa.Arm.PublicValidation
 open VG VG.Arm VG.Proof.Mont VG.Proof.Mont.Arm
 open VG.Impl.Dsa.Arm.PublicValidation
-open VG.Spec.Dsa.PublicValidation (component)
-open VG.Spec.Dsa.ModPow (numAt)
+open VG.Proof.Dsa.PublicValidation (component)
+open VG.Proof.Dsa.ModPow (numAt)
 
 abbrev ws (s : State) : Addr := State.addr (s.gpr .r0)
 abbrev key (s : State) : Addr := State.addr (s.gpr .r2)
@@ -27,8 +29,8 @@ def armContract (pLen qLen : Nat) : Contract isa where
   pre s := s.rd = [⟨key s, keyLen s⟩] ∧ s.wr = [⟨ws s, size s⟩] ∧
     (s.gpr .r0).toNat + size s ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + keyLen s ≤ 2 ^ 32 ∧
     (⟨key s, keyLen s⟩ : Region).Disjoint ⟨ws s, size s⟩ ∧
-    Spec.Dsa.PublicValidation.pre (layout pLen qLen) 4 (ws s) (s.gpr .r1).toNat (key s) (keyLen s) s.mem
-  post s t := Spec.Dsa.PublicValidation.post (layout pLen qLen) (ws s) (s.gpr .r1).toNat (key s) s.mem t.mem
+    Proof.Dsa.PublicValidation.pre (layout pLen qLen) 4 (ws s) (s.gpr .r1).toNat (key s) (keyLen s) s.mem
+  post s t := Proof.Dsa.PublicValidation.post (layout pLen qLen) (ws s) (s.gpr .r1).toNat (key s) s.mem t.mem
   pub s t := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧
     s.gpr .r2 = t.gpr .r2 ∧ s.gpr .r3 = t.gpr .r3
 

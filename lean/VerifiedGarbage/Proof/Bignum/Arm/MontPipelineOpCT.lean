@@ -10,7 +10,7 @@ meta import VerifiedGarbage.Impl.Bignum.Arm.MontPipelineOp
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! # Fixed-index Montgomery operations have public traces -/
 
@@ -18,7 +18,7 @@ public import VerifiedGarbage.Spec.Rsa.Mont
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand numAt arrAt)
+open VG.Proof.Rsa.Mont (Operand numAt arrAt)
 
 theorem montPipelineOp_ct (round : Prog isa) (law : MontPipeline.LoopLaw round) (ctLaw : MontPipeline.LoopCTLaw round) {base : BitVec 32} {len w o a b : Nat}
     (ho : Operand o) (ha : Operand a) (hb : Operand b) (fit : arrAt w 3 + 32 ≤ 8 * len) :

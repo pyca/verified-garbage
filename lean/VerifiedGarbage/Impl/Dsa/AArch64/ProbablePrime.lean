@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-! # DSA's probable-prime test as a function of its own (AArch64)
 
@@ -42,7 +42,7 @@ def candidate (bits : Nat) : Nat :=
   if bits ≤ 256 then Generation.Layout.q else Generation.Layout.p
 
 /-- The test's place in the generation's scratch space. -/
-def layout (bits : Nat) : Spec.Dsa.ProbablePrime.Layout where
+def layout (bits : Nat) : Impl.Dsa.ProbablePrime.Layout where
   bits := bits
   candidate := candidate bits
   scratch := [(Generation.Layout.witness, len bits), (Generation.Layout.arithmetic, Generation.Layout.arithmeticBytes)]

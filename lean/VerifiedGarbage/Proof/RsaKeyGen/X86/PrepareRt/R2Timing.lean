@@ -76,7 +76,7 @@ def Seeded (g : Geometry) (capacity : Nat) (p : BitVec 32) (s : State) : Prop :=
     val32 s.mem g.W (g.array 6) g.words = 2 ^ (64 * g.w - 1)
 
 theorem r2_trace {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56) (v : g.Valid) (length : g.L = 8 * capacity) :
     RelCT isa (fun s t => PreparedR2.Input g capacity p s ∧ PreparedR2.Input g capacity p t) (r2 name mont)
       (fun u z => Constants.Input g capacity p u ∧ Constants.Input g capacity p z) := by

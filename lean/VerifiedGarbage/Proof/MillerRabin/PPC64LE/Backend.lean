@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-! # Prepared PPC64LE Miller–Rabin implementations for generic callers
@@ -17,12 +17,12 @@ open VG VG.PPC64LE
 
 structure RoundImpl where
   code : Prog isa
-  verified : Verified target code (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176)
+  verified : Verified target code (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 176)
   stack : sdepth code ≤ 176
   suffix : String
   features : List String
 
 def RoundImpl.name (v : RoundImpl) : String :=
-  (Spec.MillerRabin.roundApi Spec.MillerRabin.compact).name ++ v.suffix
+  "vg_miller_rabin_round" ++ v.suffix
 
 end VG.Proof.MillerRabin.PPC64LE

@@ -27,7 +27,7 @@ section
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure ProductBodyInput (p : Inputs) (sp : BitVec 32) (j low : Nat) (s : State) : Prop where
   core : Core p sp s
@@ -63,8 +63,8 @@ theorem productBody_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} {j 
     rintro t ⟨core,_,_,_,frame,_⟩
     have count := h.count.after_frame h.core.memory (product_body_arithmetic h.core.memory frame)
     exact ⟨core.memory,by rw [core.memory.fixed]; exact count.1,by rw [core.memory.fixed]; exact count.2⟩
-  have operand (a : Nat) (ha : a=1 ∨ a=5 ∨ a=6) : Spec.Rsa.Mont.Operand a := by
-    rcases ha with rfl|rfl|rfl <;> simp [Spec.Rsa.Mont.Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]
+  have operand (a : Nat) (ha : a=1 ∨ a=5 ∨ a=6) : Proof.Rsa.Mont.Operand a := by
+    rcases ha with rfl|rfl|rfl <;> simp [Proof.Rsa.Mont.Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
   have op := montCallOp_ct backend.name backend.mul (base:=p.base) (len:=p.len) (w:=p.w)
     (backend.rawCT (operand 6 (by simp)) (operand 1 (by simp)) (operand 5 (by simp)))
     (operand 6 (by simp)) (operand 1 (by simp)) (operand 5 (by simp))

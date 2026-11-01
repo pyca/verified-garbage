@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 def domainQFlag (p : Inputs) : BitVec 32 :=
   if 2 < p.Q ∧ p.Q < p.P - 1 ∧ p.Q % 2 = 1 then

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 
@@ -72,7 +72,7 @@ end
 namespace VG.Proof.Bignum.Arm.MontPipeline
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 
 theorem fnBody_ok (round : Prog isa) (law : LoopLaw round) (s : State) {base : BitVec 32} {len o a b : Nat}
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
@@ -80,7 +80,7 @@ theorem fnBody_ok (round : Prog isa) (law : LoopLaw round) (s : State) {base : B
     (ptr : s.gpr .r0 = base) (po : s.gpr .r2 = BitVec.ofNat 32 o)
     (pa : s.gpr .r3 = BitVec.ofNat 32 a) (pb : s.gpr .r12 = BitVec.ofNat 32 b)
     (inverse : ((word s.mem (State.addr base) (arrAt (wOf s.mem (State.addr base)) 0)).toNat *
-      (wordAt s.mem (State.addr base) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0)
+      (wordAt s.mem (State.addr base) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0)
     (operand : numAt s.mem (State.addr base) (wOf s.mem (State.addr base)) b <
       numAt s.mem (State.addr base) (wOf s.mem (State.addr base)) 0) :
     WP isa (VG.Impl.Bignum.Arm.MontPipeline.fnBody round) s fun t =>
@@ -97,7 +97,7 @@ theorem fnBody_ok (round : Prog isa) (law : LoopLaw round) (s : State) {base : B
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   obtain ⟨ctx, finish⟩ := layout_context ws hw fits ho ha hb
   have bound : 128 ≤ 8 * len := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   rw [VG.Impl.Bignum.Arm.MontPipeline.fnBody, WP.seq_iff]
   refine WP.mono (bases_ok s ws bound header ho.1 ha.1 hb.1 ptr po pa pb) ?_

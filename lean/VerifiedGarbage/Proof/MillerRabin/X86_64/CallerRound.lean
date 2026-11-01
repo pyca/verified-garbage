@@ -27,8 +27,8 @@ theorem round_call_ok (v : RoundImpl) {s : State} {B : Addr} {Z w c bm b : Nat} 
     WP isa (.call v.name v.code) s fun t =>
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       Frame ([⟨B, 8 * callWords w⟩] ++ [below (s.gpr .rsp) 128]) s.mem t.mem ∧
-      ((t.gpr .rax).setWidth 32).toNat = (if Spec.MillerRabin.round c b then 1 else 0) ∧
-      Spec.MillerRabin.Keeps Spec.MillerRabin.extended B (callWords w) w s.mem t.mem ∧
+      ((t.gpr .rax).setWidth 32).toNat = (if Proof.MillerRabin.Round.round c b then 1 else 0) ∧
+      Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.extended B (callWords w) w s.mem t.mem ∧
       t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
   have hvDepth : v.code.x86_64Depth ≤ 120 := v.depth
   have hn := hc.good.scr.nowrap
@@ -39,7 +39,7 @@ theorem round_call_ok (v : RoundImpl) {s : State} {B : Addr} {Z w c bm b : Nat} 
     exact Nat.mod_lt _ (by omega_arith)
   obtain ⟨hc₁, _⟩ := entry_context hc he hd hr.disjoint
   have hw := ctx_width hc₁ hd.w128
-  have heX : Spec.Rsa.Mont.numAt s.callEntry.mem B w 5 = b % c * 2 ^ (64 * w) % c := by
+  have heX : Proof.Rsa.Mont.numAt s.callEntry.mem B w 5 = b % c * 2 ^ (64 * w) % c := by
     rw [VG.Proof.Bignum.X86_64.MontFn.numAt_eq, entry_wv s hn (by
       have hz := hd.x
       simp only [slot, hdrBytes, aRm1] at hz ⊢
@@ -59,8 +59,8 @@ theorem round_call_ok (v : RoundImpl) {s : State} {B : Addr} {Z w c bm b : Nat} 
   have hLen : ((narrowed s B w).gpr .rsi).toNat = callWords w := by
     change (s.callEntry.gpr .rsi).toNat = callWords w
     rw [State.callEntry_gpr _ (by decide), hsi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hN]
-  have hWidth : Spec.Rsa.Mont.wOf (narrowed s B w).mem B = w := hw
-  have hMod : Spec.Rsa.Mont.numAt (narrowed s B w).mem B w 0 = c :=
+  have hWidth : Proof.Rsa.Mont.wOf (narrowed s B w).mem B = w := hw
+  have hMod : Proof.Rsa.Mont.numAt (narrowed s B w).mem B w 0 = c :=
     (VG.Proof.Bignum.X86_64.MontFn.numAt_eq _ _ _ _).trans hc₁.n
   change roundPost (narrowed s B w) u at hp
   dsimp only [roundPost] at hp

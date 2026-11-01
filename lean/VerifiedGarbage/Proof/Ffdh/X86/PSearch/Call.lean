@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.CallPre
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
+meta import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Entry
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Covers
@@ -16,6 +17,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # The attempt's call (x86)
 
@@ -161,7 +163,7 @@ theorem word_sub {o : State} (A : PSearchABI o) {d : Nat} (hd : d + 4 ≤ 128) :
 
 theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
     (h : Fr o liveDs (liveF (ofState o) e used n) t) (hu : used < (arg o 6).toNat) (ha : ArgsAt o used 9 t.mem) :
-    WP isa (.call Spec.Ffdh.sievedParameterCandidateApi.name Impl.Ffdh.X86.Candidate.code) t fun u =>
+    WP isa (.call "vg_ffdh_parameter_candidate_sieved" Impl.Ffdh.X86.Candidate.code) t fun u =>
       Fr o liveDs (liveF (ofState o) e used n) u ∧
       u.gpr .eax = BitVec.ofNat 32 (candidateStatus (candOf o used)) ∧ AttemptOut o used u.mem ∧
       u.mem.readW (addr (arg o 9) candOff) 32 =
@@ -175,7 +177,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
   refine WP.of_syms (WP.call Cand.verified.1 callee_noSp (by rw [callee_stack, hn]; omega_arith)
     (call_pre A hu h.esp ha h.syms h.frame) hc hcw fun u hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ sy => ?_)
   have hp := hpost
-  sig_post [Cand.contract, Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig, abi,
+  sig_post [Cand.contract, Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at hp
   simp only [ce_arg A h.esp ha _ _ (show 0 < 9 by decide), ce_arg A h.esp ha _ _ (show 1 < 9 by decide),
     ce_arg A h.esp ha _ _ (show 2 < 9 by decide), ce_arg A h.esp ha _ _ (show 3 < 9 by decide),
@@ -231,7 +233,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
 
 theorem body_noSp :
     NoSp (Code.seq (.block arguments)
-      (.call Spec.Ffdh.sievedParameterCandidateApi.name Impl.Ffdh.X86.Candidate.code) : Prog isa) :=
+      (.call "vg_ffdh_parameter_candidate_sieved" Impl.Ffdh.X86.Candidate.code) : Prog isa) :=
   NoSp.of_all (by rsa_stack_shape)
 
 /-- Back from the frame. -/

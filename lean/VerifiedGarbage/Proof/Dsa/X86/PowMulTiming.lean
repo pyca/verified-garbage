@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 public import VerifiedGarbage.Proof.Mont.X86.OutsZ
+public import VerifiedGarbage.Proof.Rsa.MontMulContract
 
 /-! # The trace of a multiplication of DSA's exponentiation, by a call
 
@@ -49,7 +50,7 @@ def MulIn (n : Nat) (base : Addr) (sp : BitVec 32) (b : Nat) (s : State) : Prop 
 
 /-- The state of the call: the callee's precondition, its arguments and the regions it is given. -/
 private def CallOk (n : Nat) (base : Addr) (sp : BitVec 32) (o a b : Nat) (g : State) : Prop :=
-  (Spec.Rsa.MontMul.mulContract abi 56).pre (calleeOf g base (contextBytes n)) ∧
+  (Proof.Rsa.MontMul.mulContract abi 56).pre (calleeOf g base (contextBytes n)) ∧
     g.gpr .esp = sp - BitVec.ofNat 32 36 ∧
     (∀ i < 9, arg (calleeOf g base (contextBytes n)) i =
       callArg (BitVec.ofNat 32 base.toNat) (BitVec.ofNat 32 (contextBytes n / 8)) n (slot n 0) 0
@@ -112,11 +113,11 @@ private theorem mulArgs_call {n : Nat} {base : Addr} {sp : BitVec 32} {o a b : N
 
 /-- The callee's public data from its stack pointer and its arguments. -/
 private theorem rtPub_of {s t : State} (sp : s.gpr .esp = t.gpr .esp) (args : ∀ i < 9, arg s i = arg t i) :
-    (Spec.Rsa.MontMul.mulContract abi 56).pub s t := by
+    (Proof.Rsa.MontMul.mulContract abi 56).pub s t := by
   have a0 := args 0 (by decide); have a1 := args 1 (by decide); have a2 := args 2 (by decide)
   have a3 := args 3 (by decide); have a4 := args 4 (by decide); have a5 := args 5 (by decide)
   have a6 := args 6 (by decide); have a7 := args 7 (by decide); have a8 := args 8 (by decide)
-  sig_pub [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes]
+  sig_pub [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes]
   sig_and_intros
   all_goals with_reducible assumption
 
@@ -151,7 +152,7 @@ theorem mul_relCT {n : Nat} {base : Addr} (sp : BitVec 32) {o a b : Nat} (hn : 2
       subst q₁ q₂
       exact ⟨mulArgs_call hn ho ho7 ha ha7 hb hb7 I₁, mulArgs_call hn ho ho7 ha ha7 hb hb7 I₂⟩)
   refine VG.RelCT.seq blk ?_
-  refine RelCT.call (k := Spec.Rsa.MontMul.mulContract abi 56) VG.Proof.Mont.X86.Sse2.at_correct
+  refine RelCT.call (k := Proof.Rsa.MontMul.mulContract abi 56) VG.Proof.Mont.X86.Sse2.at_correct
     VG.Proof.Mont.X86.Sse2.at_constantTime
     [⟨(sp - BitVec.ofNat 32 36).setWidth 64, 36⟩] [⟨base, contextBytes n⟩] ?_
   rintro g₁ g₂ ⟨-, ⟨A₁, sp₁, arg₁, fr₁, sc₁⟩, ⟨A₂, sp₂, arg₂, fr₂, sc₂⟩⟩
