@@ -13,17 +13,26 @@ open VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 
 def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     (module label : String) (prepared : Bool) : Artifact :=
-  (if prepared then preparedVerifyMessageApi p module label else verifyMessageCachedApi p module label).artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
-    consts := selectedConsts v
-    code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
-      ((if prepared then preparedVerifyApi p module label else verifyApi p module label).name ++ v.callee.suffix)
-      (verifyCode v p ((verifyWithCacheApi p module label).name ++ v.callee.suffix) prepared) p
-    stack := 64
-    verified := message_verify_verified v hp (message_verify_fn v hp _ prepared)
-    ofSig := by cases prepared <;> of_sig
-    ofApi := by cases prepared <;> rfl }
+  if prepared then
+    (preparedVerifyMessageApi p module label).artifact AArch64.target {
+      suffix := v.callee.suffix
+      features := v.features
+      consts := selectedConsts v
+      code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
+        ((preparedVerifyApi p module label).name ++ v.callee.suffix)
+        (verifyCode v p ((verifyWithCacheApi p module label).name ++ v.callee.suffix) true) p
+      stack := 64
+      verified := message_verify_verified v hp (message_verify_fn v hp _ true) }
+  else
+    (verifyMessageCachedApi p module label).artifact AArch64.target {
+      suffix := v.callee.suffix
+      features := v.features
+      consts := selectedConsts v
+      code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
+        ((verifyApi p module label).name ++ v.callee.suffix)
+        (verifyCode v p ((verifyWithCacheApi p module label).name ++ v.callee.suffix) false) p
+      stack := 64
+      verified := message_verify_verified v hp (message_verify_fn v hp _ false) }
 
 def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     (module label : String) : List Artifact := [entry v p hp module label false,entry v p hp module label true]

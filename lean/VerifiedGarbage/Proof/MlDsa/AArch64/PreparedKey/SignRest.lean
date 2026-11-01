@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Copy
 
+-- separate module: the matrix-expansion and bounded signing-loop refinements cost several seconds independently; keeping them separate spares rechecking them when the entry timing proof changes.
+
 @[expose] public section
 
 /-! ## SignCopy -/

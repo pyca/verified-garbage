@@ -12,17 +12,26 @@ open VG.Proof.MlDsa.AArch64.Sign
 
 def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     (module label : String) (prepared : Bool) : Artifact :=
-  (if prepared then preparedSignMessageApi p module label else signMessageApi p module label).artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
-    consts := pairedSignRootConsts
-    code := Impl.MlDsa.AArch64.Message.signMessage v.callee
-      ((if prepared then preparedSignApi p module label else signApi p module label).name ++ v.callee.suffix)
-      (signCode v p ((signWithCacheApi p module label).name ++ v.callee.suffix) prepared) p
-    stack := 64
-    verified := message_sign_verified v hp (message_sign_fn v hp _ prepared)
-    ofSig := by cases prepared <;> of_sig
-    ofApi := by cases prepared <;> rfl }
+  if prepared then
+    (preparedSignMessageApi p module label).artifact AArch64.target {
+      suffix := v.callee.suffix
+      features := v.features
+      consts := pairedSignRootConsts
+      code := Impl.MlDsa.AArch64.Message.signMessage v.callee
+        ((preparedSignApi p module label).name ++ v.callee.suffix)
+        (signCode v p ((signWithCacheApi p module label).name ++ v.callee.suffix) true) p
+      stack := 64
+      verified := message_sign_verified v hp (message_sign_fn v hp _ true) }
+  else
+    (signMessageApi p module label).artifact AArch64.target {
+      suffix := v.callee.suffix
+      features := v.features
+      consts := pairedSignRootConsts
+      code := Impl.MlDsa.AArch64.Message.signMessage v.callee
+        ((signApi p module label).name ++ v.callee.suffix)
+        (signCode v p ((signWithCacheApi p module label).name ++ v.callee.suffix) false) p
+      stack := 64
+      verified := message_sign_verified v hp (message_sign_fn v hp _ false) }
 
 def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     (module label : String) : List Artifact := [entry v p hp module label false,entry v p hp module label true]

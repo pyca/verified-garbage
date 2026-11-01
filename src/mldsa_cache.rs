@@ -10,8 +10,6 @@ use core::{
     sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
 };
 
-const AFTER: usize = 2;
-
 #[repr(C, align(64))]
 pub(crate) struct Prepared<const N: usize, const SECRET: bool> {
     pub(crate) bytes: [u8; N],
@@ -27,6 +25,7 @@ impl<const N: usize, const SECRET: bool> Prepared<N, SECRET> {
         if p.is_null() {
             None
         } else {
+            // SAFETY: p is the unique allocation returned for this layout.
             Some(unsafe { Box::from_raw(p) })
         }
     }
@@ -65,24 +64,20 @@ impl<T> Cache<T> {
             // freed only by Drop, excluded by our shared borrow of self.
             return Some(unsafe { &*p });
         }
-        let mut uses = self.uses.load(Ordering::Relaxed);
-        loop {
-            // Reaching AFTER also claims initialization. Other callers do
-            // not wait, allocate, or retry a failed/panicking preparation.
-            if uses >= AFTER {
-                return None;
-            }
-            match self.uses.compare_exchange_weak(
-                uses,
-                uses + 1,
-                Ordering::Relaxed,
-                Ordering::Relaxed,
-            ) {
-                Ok(_) => break,
-                Err(current) => uses = current,
-            }
+        // First use stays compact. Exactly one later caller can claim
+        // preparation; a busy, failed, or panicking builder is never retried.
+        if self
+            .uses
+            .compare_exchange(0, 1, Ordering::Relaxed, Ordering::Relaxed)
+            .is_ok()
+        {
+            return None;
         }
-        if uses + 1 < AFTER {
+        if self
+            .uses
+            .compare_exchange(1, 2, Ordering::Relaxed, Ordering::Relaxed)
+            .is_err()
+        {
             return None;
         }
         let p = Box::into_raw(build()?);
@@ -162,7 +157,6 @@ mod tests {
     }
     #[test]
     fn mldsa_cache_promotes_once_and_clone_starts_cold() {
-        assert_eq!(AFTER, 2, "protocol tests use second-use policy");
         let cache = Cache::new();
         assert!(
             cache
