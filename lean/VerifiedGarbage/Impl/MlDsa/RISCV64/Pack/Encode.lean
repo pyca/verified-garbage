@@ -35,7 +35,7 @@ open VG.RISCV64
 
 /-- `p` if the low 32 bits of `r` are `v`, else `e` (`a6` a temporary). -/
 def sel (r : Reg) (v : Nat) (p e : Prog isa) : Prog isa :=
-  .seq (.block (loadB .a6 v ++ ([.sub .a6 r .a6] : List Instr))) (.ite (.zero .a6) p e)
+  .seq (.block (loadB .a6 v ++ ([.subw .a6 r .a6] : List Instr))) (.ite (.zero .a6) p e)
 
 /-! ## `vg_mldsa_simple_bit_pack` -/
 

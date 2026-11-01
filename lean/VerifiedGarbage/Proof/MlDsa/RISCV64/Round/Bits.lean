@@ -58,7 +58,7 @@ open VG.Spec.MlDsa
 open VG.Proof.MlDsa.Round (coeffAddr pR coeff_contains coeffAt_writeW polyAt_val polyIs_of_toNat natPolyIs_of_toNat
   map_get coeffAt_frame highBits_eq lowBits_val mem_gamma2s hbF hbM hbF_le hbM_mul reduced_zero)
 open VG.Proof.MlDsa.RISCV64.Round
-open VG.Proof.MlDsa.RISCV64.Arith (loadImm_val loadImm_imm)
+open VG.Proof.MlDsa.RISCV64.Arith (loadImm_val loadImm_imm sext32_beq_zero)
 open VG.Proof.MlKem.RISCV64 (wp_loop_nz count_sub count_nz ptr_succ align4_add)
 
 /-! ## The loop bodies -/
@@ -184,19 +184,6 @@ theorem loop_ok {g : Nat} {k4 k7 : BitVec 64} {out : Nat → BitVec 32} {s₀ : 
     (fun i hi s h => inv_step hp hi h (hb i hi s h) (hv i hi)) (fun _ h => h) h0
 
 /-! ## The selection of `γ₂` -/
-
-/-- A word sign-extended and cut back. -/
-theorem setWidth_sext32 (v : BitVec 32) : (sext32 v).setWidth 32 = v := by
-  apply BitVec.eq_of_getElem_eq; intro i hi
-  simp only [sext32, BitVec.getElem_setWidth, BitVec.getLsbD_signExtend]
-  simp [hi]; omega
-
-/-- A word sign-extended is zero exactly when it is. -/
-theorem sext32_beq_zero (v : BitVec 32) : (sext32 v == 0) = (v == 0) := by
-  by_cases h : v = 0
-  · subst h; simp [sext32]
-  · have : sext32 v ≠ 0 := fun e => h (by rw [← setWidth_sext32 v, e]; rfl)
-    rw [beq_false_of_ne this, beq_false_of_ne h]
 
 /-- `t0` after `subw` of `γ₂`'s low half and `(q - 1)/32`. -/
 def selV (x : BitVec 64) : BitVec 64 := sext32 (x.setWidth 32 - (261888 : BitVec 32))
