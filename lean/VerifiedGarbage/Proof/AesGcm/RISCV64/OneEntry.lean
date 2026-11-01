@@ -15,7 +15,7 @@ working space `W`, the stack argument at `sp + off`, saves our caller's
 registers there, keeps the arguments in callee-saved registers and the
 addresses of the additional data and the data in `W` (at `aadO` and
 `dataO`), and loads the tag's address `T`, the stack argument at `sp`, into
-`s9` (`one1_wp`).
+`s9` (`one1_wp`), keeping `sp` in `t1`.
 -/
 
 @[expose] public section
@@ -57,6 +57,7 @@ structure SO1 (W T : Addr) (s₀ s₁ : State) : Prop where
   s10 : s₁.gpr .s10 = s₀.gpr .a5
   s11 : s₁.gpr .s11 = s₀.gpr .a7
   s9 : s₁.gpr .s9 = T
+  t1 : s₁.gpr .t1 = s₀.sp
 
 theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 8 ∨ off = 16)
     (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWa : W.toNat % 8 = 0) (hsa : s₀.sp.toNat % 16 = 0)
@@ -124,7 +125,7 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 8 ∨ off 
   refine Steps.wp_ld (off := 0) (a := s₀.sp + BitVec.ofNat 64 0) (by decide) (by rw [u₁₃.gpr, u₁₂.sp, m₁₁.sp, u₁₀.sp, m₉.sp, k₈.2.2.1, add_ofNat_zero])
     (Spill.al8 (by omega) (by decide)) (by rw [rd₁₃, wr₁₃]; exact hTi) fun s₁₄ u₁₄ => WP.block_nil ?_
   refine ⟨⟨by rw [u₁₄.rd, rd₁₃], by rw [u₁₄.wr, wr₁₃], by rw [u₁₄.sp, sp₁₃]⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₁₄.mem, m₁₃, ← hM]
     exact (sv₂.frame ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dS (by decide) (by decide))).frame
@@ -141,6 +142,7 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 8 ∨ off 
     | exact h31
     | (rw [h31])
     | exact e _ (by decide) (by decide)
+    | (rw [u₁₂.sp, m₁₁.sp, u₁₀.sp, m₉.sp, k₈.2.2.1, add_ofNat_zero])
     | (rw [m₁₃, ← hTv]; exact fM.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hTd) (by decide))
 end VG.Proof.AesGcm.RISCV64
