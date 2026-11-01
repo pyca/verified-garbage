@@ -3124,6 +3124,8 @@ beq %cr0, 20f",
         // vsldoi %v16, %v16, %v16, 8
         // lxvd2x 32, %r4, %r0
         // vperm %v0, %v0, %v0, %v18
+        // rldicl %r10, %r6, 60, 4
+        // cmpldi %cr0, %r10, 0
         r".long 0x38000000,0x12739cc4,0x3d00c200,0x61080000,0x790807c6,0x65080000,0x61080000,0x7c280167
 .long 0x7ce80167,0x10330a2c,0x10213a2c,0x3d000f0e,0x61080d0c,0x790807c6,0x65080b0a,0x61080908
 .long 0x3d200706,0x61290504,0x792907c6,0x65290302,0x61290100,0x7e480167,0x7ce90167,0x1253922c
@@ -3131,7 +3133,279 @@ beq %cr0, 20f",
 .long 0x7ce90167,0x1213822c,0x12103a2c,0x7cc30699,0x10c634ab,0x10469a2c,0x10a284c8,0x1053322c
 .long 0x106284c8,0x108684c8,0x10e39a2c,0x10e70cc8,0x10631a2c,0x10841cc4,0x10843cc4,0x10e49a2c
 .long 0x10e70cc8,0x10a52a2c,0x10a524c4,0x10e73a2c,0x12053cc4,0x1210822c,0x7c040699,0x100004ab
-22:",
+.long 0x78cae102,0x282a0000
+beq %cr0, 22f",
+        // vsldoi %v6, %v16, %v16, 8
+        // vsldoi %v2, %v6, %v19, 8
+        // vpmsumd %v5, %v2, %v16
+        // vsldoi %v2, %v19, %v6, 8
+        // vpmsumd %v3, %v2, %v16
+        // vpmsumd %v4, %v6, %v16
+        // vsldoi %v7, %v3, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v3, %v3, %v3, 8
+        // vxor %v4, %v4, %v3
+        // vxor %v4, %v4, %v7
+        // vsldoi %v7, %v4, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v5, %v5, %v5, 8
+        // vxor %v5, %v5, %v4
+        // vsldoi %v7, %v7, %v7, 8
+        // vxor %v8, %v5, %v7
+        // vsldoi %v8, %v8, %v8, 8
+        // vsldoi %v6, %v8, %v8, 8
+        // vsldoi %v2, %v6, %v19, 8
+        // vpmsumd %v5, %v2, %v16
+        // vsldoi %v2, %v19, %v6, 8
+        // vpmsumd %v3, %v2, %v16
+        // vpmsumd %v4, %v6, %v16
+        // vsldoi %v7, %v3, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v3, %v3, %v3, 8
+        // vxor %v4, %v4, %v3
+        // vxor %v4, %v4, %v7
+        // vsldoi %v7, %v4, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v5, %v5, %v5, 8
+        // vxor %v5, %v5, %v4
+        // vsldoi %v7, %v7, %v7, 8
+        // vxor %v9, %v5, %v7
+        // vsldoi %v9, %v9, %v9, 8
+        // vsldoi %v6, %v9, %v9, 8
+        // vsldoi %v2, %v6, %v19, 8
+        // vpmsumd %v5, %v2, %v16
+        // vsldoi %v2, %v19, %v6, 8
+        // vpmsumd %v3, %v2, %v16
+        // vpmsumd %v4, %v6, %v16
+        // vsldoi %v7, %v3, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v3, %v3, %v3, 8
+        // vxor %v4, %v4, %v3
+        // vxor %v4, %v4, %v7
+        // vsldoi %v7, %v4, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v5, %v5, %v5, 8
+        // vxor %v5, %v5, %v4
+        // vsldoi %v7, %v7, %v7, 8
+        // vxor %v10, %v5, %v7
+        // vsldoi %v10, %v10, %v10, 8
+        // vsldoi %v6, %v10, %v10, 8
+        // vsldoi %v2, %v6, %v19, 8
+        // vpmsumd %v5, %v2, %v16
+        // vsldoi %v2, %v19, %v6, 8
+        // vpmsumd %v3, %v2, %v16
+        // vpmsumd %v4, %v6, %v16
+        // vsldoi %v7, %v3, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v3, %v3, %v3, 8
+        // vxor %v4, %v4, %v3
+        // vxor %v4, %v4, %v7
+        // vsldoi %v7, %v4, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v5, %v5, %v5, 8
+        // vxor %v5, %v5, %v4
+        // vsldoi %v7, %v7, %v7, 8
+        // vxor %v11, %v5, %v7
+        // vsldoi %v11, %v11, %v11, 8
+        // vsldoi %v6, %v11, %v11, 8
+        // vsldoi %v2, %v6, %v19, 8
+        // vpmsumd %v5, %v2, %v16
+        // vsldoi %v2, %v19, %v6, 8
+        // vpmsumd %v3, %v2, %v16
+        // vpmsumd %v4, %v6, %v16
+        // vsldoi %v7, %v3, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v3, %v3, %v3, 8
+        // vxor %v4, %v4, %v3
+        // vxor %v4, %v4, %v7
+        // vsldoi %v7, %v4, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v5, %v5, %v5, 8
+        // vxor %v5, %v5, %v4
+        // vsldoi %v7, %v7, %v7, 8
+        // vxor %v12, %v5, %v7
+        // vsldoi %v12, %v12, %v12, 8
+        // vsldoi %v6, %v12, %v12, 8
+        // vsldoi %v2, %v6, %v19, 8
+        // vpmsumd %v5, %v2, %v16
+        // vsldoi %v2, %v19, %v6, 8
+        // vpmsumd %v3, %v2, %v16
+        // vpmsumd %v4, %v6, %v16
+        // vsldoi %v7, %v3, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v3, %v3, %v3, 8
+        // vxor %v4, %v4, %v3
+        // vxor %v4, %v4, %v7
+        // vsldoi %v7, %v4, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v5, %v5, %v5, 8
+        // vxor %v5, %v5, %v4
+        // vsldoi %v7, %v7, %v7, 8
+        // vxor %v13, %v5, %v7
+        // vsldoi %v13, %v13, %v13, 8
+        // vsldoi %v6, %v13, %v13, 8
+        // vsldoi %v2, %v6, %v19, 8
+        // vpmsumd %v5, %v2, %v16
+        // vsldoi %v2, %v19, %v6, 8
+        // vpmsumd %v3, %v2, %v16
+        // vpmsumd %v4, %v6, %v16
+        // vsldoi %v7, %v3, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v3, %v3, %v3, 8
+        // vxor %v4, %v4, %v3
+        // vxor %v4, %v4, %v7
+        // vsldoi %v7, %v4, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v5, %v5, %v5, 8
+        // vxor %v5, %v5, %v4
+        // vsldoi %v7, %v7, %v7, 8
+        // vxor %v14, %v5, %v7
+        // vsldoi %v14, %v14, %v14, 8
+        // vsldoi %v6, %v13, %v13, 8
+        // vsldoi %v7, %v6, %v14, 8
+        // vsldoi %v7, %v7, %v7, 8
+        // vsldoi %v14, %v14, %v6, 8
+        // vor %v13, %v7, %v7
+        // vsldoi %v6, %v11, %v11, 8
+        // vsldoi %v7, %v6, %v12, 8
+        // vsldoi %v7, %v7, %v7, 8
+        // vsldoi %v12, %v12, %v6, 8
+        // vor %v11, %v7, %v7
+        // vsldoi %v6, %v9, %v9, 8
+        // vsldoi %v7, %v6, %v10, 8
+        // vsldoi %v7, %v7, %v7, 8
+        // vsldoi %v10, %v10, %v6, 8
+        // vor %v9, %v7, %v7
+        // vsldoi %v6, %v16, %v16, 8
+        // vsldoi %v7, %v6, %v8, 8
+        // vsldoi %v7, %v7, %v7, 8
+        // vsldoi %v8, %v8, %v6, 8
+        // vor %v15, %v7, %v7
+        r".long 0x10d0822c,0x10469a2c,0x10a284c8,0x1053322c,0x106284c8,0x108684c8,0x10e39a2c,0x10e70cc8
+.long 0x10631a2c,0x10841cc4,0x10843cc4,0x10e49a2c,0x10e70cc8,0x10a52a2c,0x10a524c4,0x10e73a2c
+.long 0x11053cc4,0x1108422c,0x10c8422c,0x10469a2c,0x10a284c8,0x1053322c,0x106284c8,0x108684c8
+.long 0x10e39a2c,0x10e70cc8,0x10631a2c,0x10841cc4,0x10843cc4,0x10e49a2c,0x10e70cc8,0x10a52a2c
+.long 0x10a524c4,0x10e73a2c,0x11253cc4,0x11294a2c,0x10c94a2c,0x10469a2c,0x10a284c8,0x1053322c
+.long 0x106284c8,0x108684c8,0x10e39a2c,0x10e70cc8,0x10631a2c,0x10841cc4,0x10843cc4,0x10e49a2c
+.long 0x10e70cc8,0x10a52a2c,0x10a524c4,0x10e73a2c,0x11453cc4,0x114a522c,0x10ca522c,0x10469a2c
+.long 0x10a284c8,0x1053322c,0x106284c8,0x108684c8,0x10e39a2c,0x10e70cc8,0x10631a2c,0x10841cc4
+.long 0x10843cc4,0x10e49a2c,0x10e70cc8,0x10a52a2c,0x10a524c4,0x10e73a2c,0x11653cc4,0x116b5a2c
+.long 0x10cb5a2c,0x10469a2c,0x10a284c8,0x1053322c,0x106284c8,0x108684c8,0x10e39a2c,0x10e70cc8
+.long 0x10631a2c,0x10841cc4,0x10843cc4,0x10e49a2c,0x10e70cc8,0x10a52a2c,0x10a524c4,0x10e73a2c
+.long 0x11853cc4,0x118c622c,0x10cc622c,0x10469a2c,0x10a284c8,0x1053322c,0x106284c8,0x108684c8
+.long 0x10e39a2c,0x10e70cc8,0x10631a2c,0x10841cc4,0x10843cc4,0x10e49a2c,0x10e70cc8,0x10a52a2c
+.long 0x10a524c4,0x10e73a2c,0x11a53cc4,0x11ad6a2c,0x10cd6a2c,0x10469a2c,0x10a284c8,0x1053322c
+.long 0x106284c8,0x108684c8,0x10e39a2c,0x10e70cc8,0x10631a2c,0x10841cc4,0x10843cc4,0x10e49a2c
+.long 0x10e70cc8,0x10a52a2c,0x10a524c4,0x10e73a2c,0x11c53cc4,0x11ce722c,0x10cd6a2c,0x10e6722c
+.long 0x10e73a2c,0x11ce322c,0x11a73c84,0x10cb5a2c,0x10e6622c,0x10e73a2c,0x118c322c,0x11673c84
+.long 0x10c94a2c,0x10e6522c,0x10e73a2c,0x114a322c,0x11273c84,0x10d0822c,0x10e6422c,0x10e73a2c
+.long 0x1108322c,0x11e73c84
+24:",
+        // lxvd2x 38, %r5, %r0
+        // vperm %v6, %v6, %v6, %v18
+        // addi %r5, %r5, 16
+        // vxor %v6, %v6, %v0
+        // lxvd2x 37, %r5, %r0
+        // vperm %v5, %v5, %v5, %v18
+        // addi %r5, %r5, 16
+        // vsldoi %v5, %v5, %v5, 8
+        // vsldoi %v2, %v6, %v5, 8
+        // vsldoi %v7, %v5, %v6, 8
+        // vsldoi %v7, %v7, %v7, 8
+        // vpmsumd %v5, %v2, %v13
+        // vpmsumd %v3, %v7, %v14
+        // vpmsumd %v4, %v2, %v14
+        // vpmsumd %v2, %v7, %v13
+        // vxor %v4, %v4, %v2
+        // vor %v0, %v3, %v3
+        // vor %v16, %v4, %v4
+        // vor %v17, %v5, %v5
+        // lxvd2x 38, %r5, %r0
+        // vperm %v6, %v6, %v6, %v18
+        // addi %r5, %r5, 16
+        // lxvd2x 37, %r5, %r0
+        // vperm %v5, %v5, %v5, %v18
+        // addi %r5, %r5, 16
+        // vsldoi %v5, %v5, %v5, 8
+        // vsldoi %v2, %v6, %v5, 8
+        // vsldoi %v7, %v5, %v6, 8
+        // vsldoi %v7, %v7, %v7, 8
+        // vpmsumd %v5, %v2, %v11
+        // vpmsumd %v3, %v7, %v12
+        // vpmsumd %v4, %v2, %v12
+        // vpmsumd %v2, %v7, %v11
+        // vxor %v4, %v4, %v2
+        // vxor %v0, %v0, %v3
+        // vxor %v16, %v16, %v4
+        // vxor %v17, %v17, %v5
+        // lxvd2x 38, %r5, %r0
+        // vperm %v6, %v6, %v6, %v18
+        // addi %r5, %r5, 16
+        // lxvd2x 37, %r5, %r0
+        // vperm %v5, %v5, %v5, %v18
+        // addi %r5, %r5, 16
+        // vsldoi %v5, %v5, %v5, 8
+        // vsldoi %v2, %v6, %v5, 8
+        // vsldoi %v7, %v5, %v6, 8
+        // vsldoi %v7, %v7, %v7, 8
+        // vpmsumd %v5, %v2, %v9
+        // vpmsumd %v3, %v7, %v10
+        // vpmsumd %v4, %v2, %v10
+        // vpmsumd %v2, %v7, %v9
+        // vxor %v4, %v4, %v2
+        // vxor %v0, %v0, %v3
+        // vxor %v16, %v16, %v4
+        // vxor %v17, %v17, %v5
+        // lxvd2x 38, %r5, %r0
+        // vperm %v6, %v6, %v6, %v18
+        // addi %r5, %r5, 16
+        // lxvd2x 37, %r5, %r0
+        // vperm %v5, %v5, %v5, %v18
+        // addi %r5, %r5, 16
+        // vsldoi %v5, %v5, %v5, 8
+        // vsldoi %v2, %v6, %v5, 8
+        // vsldoi %v7, %v5, %v6, 8
+        // vsldoi %v7, %v7, %v7, 8
+        // vpmsumd %v5, %v2, %v15
+        // vpmsumd %v3, %v7, %v8
+        // vpmsumd %v4, %v2, %v8
+        // vpmsumd %v2, %v7, %v15
+        // vxor %v4, %v4, %v2
+        // vxor %v3, %v3, %v0
+        // vxor %v4, %v4, %v16
+        // vxor %v5, %v5, %v17
+        // vsldoi %v7, %v3, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v3, %v3, %v3, 8
+        // vxor %v4, %v4, %v3
+        // vxor %v4, %v4, %v7
+        // vsldoi %v7, %v4, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v5, %v5, %v5, 8
+        // vxor %v5, %v5, %v4
+        // vsldoi %v7, %v7, %v7, 8
+        // vxor %v0, %v5, %v7
+        // addi %r6, %r6, -8
+        // rldicl %r10, %r6, 61, 3
+        // cmpldi %cr0, %r10, 0
+        r".long 0x7cc50699,0x10c634ab,0x38a50010,0x10c604c4,0x7ca50699,0x10a52cab,0x38a50010,0x10a52a2c
+.long 0x10462a2c,0x10e5322c,0x10e73a2c,0x10a26cc8,0x106774c8,0x108274c8,0x10476cc8,0x108414c4
+.long 0x10031c84,0x12042484,0x12252c84,0x7cc50699,0x10c634ab,0x38a50010,0x7ca50699,0x10a52cab
+.long 0x38a50010,0x10a52a2c,0x10462a2c,0x10e5322c,0x10e73a2c,0x10a25cc8,0x106764c8,0x108264c8
+.long 0x10475cc8,0x108414c4,0x10001cc4,0x121024c4,0x12312cc4,0x7cc50699,0x10c634ab,0x38a50010
+.long 0x7ca50699,0x10a52cab,0x38a50010,0x10a52a2c,0x10462a2c,0x10e5322c,0x10e73a2c,0x10a24cc8
+.long 0x106754c8,0x108254c8,0x10474cc8,0x108414c4,0x10001cc4,0x121024c4,0x12312cc4,0x7cc50699
+.long 0x10c634ab,0x38a50010,0x7ca50699,0x10a52cab,0x38a50010,0x10a52a2c,0x10462a2c,0x10e5322c
+.long 0x10e73a2c,0x10a27cc8,0x106744c8,0x108244c8,0x10477cc8,0x108414c4,0x106304c4,0x108484c4
+.long 0x10a58cc4,0x10e39a2c,0x10e70cc8,0x10631a2c,0x10841cc4,0x10843cc4,0x10e49a2c,0x10e70cc8
+.long 0x10a52a2c,0x10a524c4,0x10e73a2c,0x10053cc4,0x38c6fff8,0x78cae8c2,0x282a0000
+bne %cr0, 24b",
+        // vsldoi %v6, %v8, %v8, 8
+        // vsldoi %v16, %v15, %v6, 8
+        // cmpldi %cr0, %r6, 0
+        r".long 0x10c8422c,0x120f322c,0x28260000
+beq %cr0, 25f
+27:",
         // lxvd2x 38, %r5, %r0
         // vperm %v6, %v6, %v6, %v18
         // vxor %v6, %v6, %v0
@@ -3157,10 +3431,46 @@ beq %cr0, 20f",
         r".long 0x7cc50699,0x10c634ab,0x10c604c4,0x10469a2c,0x10a284c8,0x1053322c,0x106284c8,0x108684c8
 .long 0x10e39a2c,0x10e70cc8,0x10631a2c,0x10841cc4,0x10843cc4,0x10e49a2c,0x10e70cc8,0x10a52a2c
 .long 0x10a524c4,0x10e73a2c,0x10053cc4,0x38a50010,0x38c6ffff,0x28260000
-bne %cr0, 22b",
+bne %cr0, 27b
+b 26f
+25:
+26:",
         // vperm %v7, %v0, %v0, %v18
         // stxvd2x 39, %r4, %r0
         r".long 0x10e004ab,0x7ce40799
+b 23f
+22:
+28:",
+        // lxvd2x 38, %r5, %r0
+        // vperm %v6, %v6, %v6, %v18
+        // vxor %v6, %v6, %v0
+        // vsldoi %v2, %v6, %v19, 8
+        // vpmsumd %v5, %v2, %v16
+        // vsldoi %v2, %v19, %v6, 8
+        // vpmsumd %v3, %v2, %v16
+        // vpmsumd %v4, %v6, %v16
+        // vsldoi %v7, %v3, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v3, %v3, %v3, 8
+        // vxor %v4, %v4, %v3
+        // vxor %v4, %v4, %v7
+        // vsldoi %v7, %v4, %v19, 8
+        // vpmsumd %v7, %v7, %v1
+        // vsldoi %v5, %v5, %v5, 8
+        // vxor %v5, %v5, %v4
+        // vsldoi %v7, %v7, %v7, 8
+        // vxor %v0, %v5, %v7
+        // addi %r5, %r5, 16
+        // addi %r6, %r6, -1
+        // cmpldi %cr0, %r6, 0
+        r".long 0x7cc50699,0x10c634ab,0x10c604c4,0x10469a2c,0x10a284c8,0x1053322c,0x106284c8,0x108684c8
+.long 0x10e39a2c,0x10e70cc8,0x10631a2c,0x10841cc4,0x10843cc4,0x10e49a2c,0x10e70cc8,0x10a52a2c
+.long 0x10a524c4,0x10e73a2c,0x10053cc4,0x38a50010,0x38c6ffff,0x28260000
+bne %cr0, 28b",
+        // vperm %v7, %v0, %v0, %v18
+        // stxvd2x 39, %r4, %r0
+        r".long 0x10e004ab,0x7ce40799
+23:
 b 21f
 20:
 21:",

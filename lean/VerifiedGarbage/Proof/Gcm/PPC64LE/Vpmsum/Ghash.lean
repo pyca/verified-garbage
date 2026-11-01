@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Fold
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Base
 public import VerifiedGarbage.Proof.Gcm.Clmul.Arith
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -21,7 +22,7 @@ meta import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
 @[expose] public section
 namespace VG.Proof.Gcm.PPC64LE.Vpmsum
 open VG VG.PPC64LE
-open VG.Impl.Gcm.PPC64LE.Vpmsum (Y C U LO MID HI A T H MASK Z)
+open VG.Impl.Gcm.PPC64LE.Vpmsum (Y C U LO MID HI A T H MASK Z keyLow keyHigh)
 open VG.Proof.Gcm.Clmul VG.Proof.Gcm.Poly
 open VG.Spec.Gcm (blockAt blocksAt ghashFrom)
 
@@ -166,7 +167,74 @@ theorem epilogue_ok {s₀ s : State} (hp : Pre s₀) (h : Inv s₀ (nb s₀) s) 
   apply φ_inj
   rw [φ_ext8_self, h.y]
 
-theorem loop_ok {s₀ s : State} (hp : Pre s₀) (hpos : 0 < nb s₀) (h : Inv s₀ 0 s) :
+structure BulkInv (h : BitVec 128) (s₀ : State) (i : Nat) (s : State) : Prop where
+  cfg : Config s
+  stable : Buffers s₀ s
+  r5 : s.gpr .r5 = blkAddr s₀ i
+  r6 : s.gpr .r6 = BitVec.ofNat 64 (nb s₀-i)
+  keys : PackedKeys h 4 s
+  y : ρ (s.vpr Y) = φ (ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) i))
+
+theorem prepare_bulk_ok {s₀ s : State} {i : Nat} (hi : Inv s₀ i s) :
+    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.preparePowers 8 ++ Impl.Gcm.PPC64LE.Vpmsum.packedKeys)) s
+      (BulkInv (s.vpr H) s₀ i) := by
+  rw [WP.block_append_iff]
+  refine WP.mono (powers_ok 8 (by decide) (by decide) s hi.cfg.c hi.cfg.z) fun u ⟨hp,hu⟩ => ?_
+  refine WP.mono (packedKeys_ok (s.vpr H) u hp) fun v ⟨hk,hv⟩ => ?_
+  have hf := hu.trans hv
+  exact ⟨(hi.cfg.keep hu (by decide) (by decide) (by decide)).keep hv
+      (by decide) (by decide) (by decide),
+    hi.stable.keep hf, (congrFun hf.gpr .r5).trans hi.r5,
+    (congrFun hf.gpr .r6).trans hi.r6, hk, (congrArg ρ (hf.v Y (by decide))).trans hi.y⟩
+
+theorem bulk_body_ok {s₀ s : State} (hp : Pre s₀) {h : BitVec 128} {i : Nat}
+    (hkey : x * φ h = φ (H₀ s₀)) (hi : i+8 ≤ nb s₀) (hs : BulkInv h s₀ i s) :
+    WP isa (.block Impl.Gcm.PPC64LE.Vpmsum.packedBody) s (BulkInv h s₀ (i+8)) := by
+  have hr : ∀ k < 8, InRegions (s.rd ++ s.wr) (s.gpr .r5+BitVec.ofNat 64 (16*k)) 16 := by
+    intro k hk
+    rw [hs.stable.rd, hs.stable.wr, hs.r5, blkAddr, Offset.add_add]
+    refine ⟨dR s₀, by simp [hp.rd], contains_offset (by omega) (by have := hp.nb_lt; omega)⟩
+  refine WP.mono (packedBody_ok h s hs.cfg hs.keys hr) fun t ⟨hy,hf⟩ => ?_
+  have hy' : ρ (t.vpr Y) = φ (ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) (i+8))) := by
+    rw [hkey, hs.y] at hy
+    have hld : ∀ j, ρ (loadedAt s (16*j)) =
+        φ (Spec.Gcm.blockAt s₀.mem (dp s₀+BitVec.ofNat 64 (16*(i+j)))) := by
+      intro j
+      rw [loadedAt, ρ_ext8_self, hs.stable.mem, hs.r5, blkAddr, Offset.add_add, ← Nat.mul_add]
+    simp_rw [hld] at hy
+    rw [← hashField_ghash] at hy
+    exact hy
+  have hc : Config ((s.write .r5 (s.gpr .r5+128)).write .r6 (s.gpr .r6-8)) := by
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using hs.cfg.zero
+    · simpa only [vpr_write] using hs.cfg.c
+    · simpa only [vpr_write] using hs.cfg.mask
+    · simpa only [vpr_write] using hs.cfg.z
+  refine ⟨hc.keep hf (by decide) (by decide) (by decide), ⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, hy'⟩
+  · rw [hf.gpr]
+    simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using hs.stable.yptr
+  · rw [hf.mem]
+    simpa only [RegUpd.mem_write] using hs.stable.mem
+  · rw [hf.rd]
+    simpa only [RegUpd.rd_write] using hs.stable.rd
+  · rw [hf.wr]
+    simpa only [RegUpd.wr_write] using hs.stable.wr
+  · rw [hf.gpr]
+    simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, hs.r5, blkAddr]
+    change dp s₀+BitVec.ofNat 64 (16*i)+BitVec.ofNat 64 128 = _
+    rw [Offset.add_add, show 16*i+128=16*(i+8) by omega]
+  · rw [hf.gpr]
+    simp only [RegUpd.gpr_write_self, hs.r6]
+    change BitVec.ofNat 64 (nb s₀-i)-BitVec.ofNat 64 8 = _
+    rw [Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+  · intro j hj
+    have f : keyLow j ∉ bulkWritten ∧ keyHigh j ∉ bulkWritten := by
+      have f : ∀ j : Fin 4, keyLow j ∉ bulkWritten ∧ keyHigh j ∉ bulkWritten := by decide
+      exact f ⟨j,hj⟩
+    rw [hf.v (keyLow j) f.1, hf.v (keyHigh j) f.2]
+    simpa only [vpr_write] using hs.keys j hj
+
+theorem loop_ok {s₀ s : State} (hp : Pre s₀) {start : Nat} (hpos : start < nb s₀) (h : Inv s₀ start s) :
     WP isa (.loop (.block Impl.Gcm.PPC64LE.Vpmsum.body) (.nonzero .d .r6)) s
       (Inv s₀ (nb s₀)) := by
   let I : Nat → State → Prop := fun m t => ∃ i, m = nb s₀-i ∧ i < nb s₀ ∧ Inv s₀ i t
@@ -191,7 +259,128 @@ theorem loop_ok {s₀ s : State} (hp : Pre s₀) (hpos : 0 < nb s₀) (h : Inv s
         omega
       exact ⟨he.trans (by simpa using hne),
         nb s₀-(i+1), by omega, i+1, rfl, by omega, hu⟩
-  exact WP.loop (M := isa) I step (nb s₀) s ⟨0, by omega, hpos, h⟩
+  exact WP.loop (M := isa) I step (nb s₀-start) s ⟨start, rfl, hpos, h⟩
+
+theorem Config.write10 {s : State} (h : Config s) (v : BitVec 64) : Config (s.write .r10 v) := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using h.zero
+  · simpa only [vpr_write] using h.c
+  · simpa only [vpr_write] using h.mask
+  · simpa only [vpr_write] using h.z
+
+theorem Buffers.write10 {s₀ s : State} (h : Buffers s₀ s) (v : BitVec 64) : Buffers s₀ (s.write .r10 v) := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using h.yptr
+  · simpa only [RegUpd.mem_write] using h.mem
+  · simpa only [RegUpd.rd_write] using h.rd
+  · simpa only [RegUpd.wr_write] using h.wr
+
+theorem Inv.write10 {s₀ s : State} {i : Nat} (h : Inv s₀ i s) (v : BitVec 64) : Inv s₀ i (s.write .r10 v) := by
+  refine ⟨h.cfg.write10 v, h.stable.write10 v, ?_, ?_, ?_, ?_⟩
+  · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using h.r5
+  · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using h.r6
+  · simpa only [vpr_write] using h.key
+  · simpa only [vpr_write] using h.y
+
+theorem BulkInv.write10 {h : BitVec 128} {s₀ s : State} {i : Nat} (hs : BulkInv h s₀ i s)
+    (v : BitVec 64) : BulkInv h s₀ i (s.write .r10 v) := by
+  refine ⟨hs.cfg.write10 v, hs.stable.write10 v, ?_, ?_, ?_, ?_⟩
+  · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using hs.r5
+  · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using hs.r6
+  · simpa only [PackedKeys, vpr_write] using hs.keys
+  · simpa only [vpr_write] using hs.y
+
+theorem probe_ok (sh : Nat) (hsh : sh < 64) (s : State) :
+    WP isa (.block [.lsr .d .r10 .r6 sh]) s (· = s.write .r10 (s.gpr .r6 >>> sh)) := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_lsr_d hsh,
+    Option.some.injEq, exists_eq_left']
+
+theorem quotient_zero {j : Nat} (hj : j < 2^64) (sh : Nat) :
+    (BitVec.ofNat 64 j >>> sh) = 0 ↔ j < 2^sh := by
+  constructor
+  · intro he
+    have hh := congrArg BitVec.toNat he
+    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj,
+      Nat.shiftRight_eq_div_pow] at hh
+    change j / 2^sh = 0 at hh
+    exact Nat.lt_of_div_eq_zero (Nat.two_pow_pos sh) hh
+  · intro he
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj,
+      Nat.shiftRight_eq_div_pow]
+    change j / 2^sh = 0
+    exact Nat.div_eq_of_lt he
+
+theorem bulk_loop_ok {s₀ s : State} (hp : Pre s₀) {h : BitVec 128} {start : Nat}
+    (hkey : x * φ h = φ (H₀ s₀)) (hpos : start+8 ≤ nb s₀) (hs : BulkInv h s₀ start s) :
+    WP isa (.loop (.block (Impl.Gcm.PPC64LE.Vpmsum.packedBody ++ ([.lsr .d .r10 .r6 3] : List Instr)))
+      (.nonzero .d .r10)) s fun t => ∃ j, j ≤ nb s₀ ∧ nb s₀-j < 8 ∧ BulkInv h s₀ j t := by
+  let I : Nat → State → Prop := fun j t => BulkInv h s₀ j t ∧ t.gpr .r10 = BitVec.ofNat 64 (nb s₀-j) >>> 3
+  have step : ∀ j t, j+8 ≤ nb s₀ → BulkInv h s₀ j t →
+      WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.packedBody ++ ([.lsr .d .r10 .r6 3] : List Instr))) t (I (j+8)) := by
+    intro j t hj ht
+    rw [WP.block_append_iff]
+    refine WP.mono (bulk_body_ok hp hkey hj ht) fun u hu => ?_
+    refine WP.mono (probe_ok 3 (by decide) u) fun v hv => ?_
+    subst v
+    exact ⟨hu.write10 _, by rw [RegUpd.gpr_write_self, hu.r6]⟩
+  refine WP.loop (M := isa)
+    (fun m t => ∃ j, m = nb s₀-j ∧ j+8 ≤ nb s₀ ∧ BulkInv h s₀ j t)
+    (fun m t ht => ?_) (nb s₀-start) s ⟨start,rfl,hpos,hs⟩
+  obtain ⟨j,rfl,hj,ht⟩ := ht
+  refine WP.mono (step j t hj ht) fun u hu => ?_
+  have hz : u.gpr .r10 = 0 ↔ nb s₀-(j+8) < 8 := by
+    rw [hu.2]
+    exact quotient_zero (by have := hp.nb_lt; omega) 3
+  have hev : eval (.nonzero .d .r10) u = some (u.gpr .r10 != 0) := by
+    simp only [eval, State.read, Size.bits, BitVec.setWidth_eq]
+  by_cases hlast : nb s₀-(j+8) < 8
+  · left
+    rw [hz.mpr hlast] at hev
+    exact ⟨hev.trans (by decide), j+8, hj, hlast, hu.1⟩
+  · right
+    have hne : u.gpr .r10 ≠ 0 := fun he => hlast (hz.mp he)
+    exact ⟨hev.trans (by simpa using hne), nb s₀-(j+8), by omega,
+      j+8,rfl,by omega,hu.1⟩
+
+theorem bulk_ok {s₀ s : State} (hp : Pre s₀) {start : Nat}
+    (hpos : start+8 ≤ nb s₀) (hs : Inv s₀ start s) :
+    WP isa Impl.Gcm.PPC64LE.Vpmsum.bulk s fun t => ∃ j, j ≤ nb s₀ ∧ Inv s₀ j t := by
+  unfold Impl.Gcm.PPC64LE.Vpmsum.bulk
+  refine WP.seq (WP.mono (prepare_bulk_ok hs) fun u hu => ?_)
+  refine WP.seq (WP.mono (bulk_loop_ok hp hs.key hpos hu) fun v ⟨j,hj,_,hv⟩ => ?_)
+  refine WP.mono (recoverKey_ok (s.vpr H) v hv.keys) fun t ⟨hh,ht⟩ => ?_
+  refine ⟨j,hj,hv.cfg.keep ht (by decide) (by decide) (by decide),
+    hv.stable.keep ht, (congrFun ht.gpr .r5).trans hv.r5,
+    (congrFun ht.gpr .r6).trans hv.r6, ?_, ?_⟩
+  · rw [hh]
+    exact hs.key
+  · rw [ht.v Y (by decide)]
+    exact hv.y
+
+theorem finish_ok {s₀ s : State} (hp : Pre s₀) {i : Nat} (hi : i ≤ nb s₀) (hs : Inv s₀ i s) :
+    WP isa Impl.Gcm.PPC64LE.Vpmsum.finish s (Proof.Gcm.ghashPPC64LE.post s₀) := by
+  unfold Impl.Gcm.PPC64LE.Vpmsum.finish
+  have hev : eval (.zero .d .r6) s = some (s.gpr .r6 == 0) := by
+    simp only [eval, State.read, Size.bits, BitVec.setWidth_eq]
+  refine WP.seq (WP.ite (s.gpr .r6 == 0) hev (fun he => ?_) (fun he => ?_))
+  · have hz : BitVec.ofNat 64 (nb s₀-i) = 0 := hs.r6.symm.trans (by simpa only [beq_iff_eq] using he)
+    have hz' := congrArg BitVec.toNat hz
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hp.nb_lt; omega)] at hz'
+    change nb s₀-i = 0 at hz'
+    have heq : i = nb s₀ := by omega
+    subst i
+    apply WP.of_runBlock
+    simp only [runBlock_nil, Option.some.injEq, exists_eq_left']
+    exact epilogue_ok hp hs
+  · have hipos : i < nb s₀ := by
+      have hne : s.gpr .r6 ≠ 0 := by simpa only [beq_eq_false_iff_ne] using he
+      by_contra hn
+      have heq : i = nb s₀ := by omega
+      rw [hs.r6,heq,Nat.sub_self] at hne
+      exact hne rfl
+    exact WP.mono (loop_ok hp hipos hs) fun t ht => epilogue_ok hp ht
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa Impl.Gcm.PPC64LE.Vpmsum.ghash s₀ (Proof.Gcm.ghashPPC64LE.post s₀) := by
@@ -207,14 +396,30 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     simp only [runBlock_nil, Option.some.injEq, exists_eq_left']
     change Y₀ s₀ = ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) (nb s₀))
     rw [hz, Proof.Gcm.ghashFrom_blocksAt_zero]
-  · have hpos : 0 < nb s₀ := by
-      have hn : s₀.gpr .r6 ≠ 0 := by simpa only [beq_eq_false_iff_ne] using he
-      exact Nat.pos_of_ne_zero fun hz => hn (BitVec.eq_of_toNat_eq (by simpa using hz))
-    refine WP.seq (WP.mono (init_ok s₀ hp) fun t ht => ?_)
-    exact WP.seq (WP.mono (loop_ok hp hpos ht) fun u hu => epilogue_ok hp hu)
+  · refine WP.seq ?_
+    rw [WP.block_append_iff]
+    refine WP.mono (init_ok s₀ hp) fun u hu => ?_
+    refine WP.mono (probe_ok 4 (by decide) u) fun v hv => ?_
+    subst v
+    have hinv := hu.write10 (u.gpr .r6 >>> 4)
+    have hev' : eval (.zero .d .r10) (u.write .r10 (u.gpr .r6 >>> 4)) =
+        some ((u.gpr .r6 >>> 4) == 0) := by
+      simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, RegUpd.gpr_write_self]
+    refine WP.ite ((u.gpr .r6 >>> 4) == 0) hev' (fun _ => ?_) (fun hn => ?_)
+    · have hpos : 0 < nb s₀ := by
+        have hn : s₀.gpr .r6 ≠ 0 := by simpa only [beq_eq_false_iff_ne] using he
+        exact Nat.pos_of_ne_zero fun hz => hn (BitVec.eq_of_toNat_eq (by simpa using hz))
+      unfold Impl.Gcm.PPC64LE.Vpmsum.serial
+      exact WP.seq (WP.mono (loop_ok hp hpos hinv) fun t ht => epilogue_ok hp ht)
+    · have hne : u.gpr .r6 >>> 4 ≠ 0 := by simpa only [beq_eq_false_iff_ne] using hn
+      rw [hu.r6] at hne
+      have h16 : ¬ nb s₀ < 16 := by
+        intro hlt
+        exact hne ((quotient_zero (by have := hp.nb_lt; omega) 4).mpr hlt)
+      exact WP.seq (WP.mono (bulk_ok hp (by omega) hinv) fun t ⟨j,hj,ht⟩ => finish_ok hp hj ht)
 
 
-def written : List Reg := [.r0, .r5, .r6, .r8, .r9]
+def written : List Reg := [.r0, .r5, .r6, .r8, .r9, .r10]
 
 theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashPPC64LE.pre s) :
     ∃ t s', Exec isa Impl.Gcm.PPC64LE.Vpmsum.ghash s t s' ∧ abiPreserved s s' ∧
