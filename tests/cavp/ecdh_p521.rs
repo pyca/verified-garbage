@@ -24,7 +24,7 @@ type Vector = ([u8; 133], [u8; 66], [u8; 133], [u8; 66]);
 fn int(hex: &str) -> [u8; 66] {
     let bytes = unhex(hex);
     let (zeros, value) = bytes.split_at(bytes.len() - 66);
-    assert!(zeros.iter().all(|&b| b == 0));
+    assert!(crate::bytes::all_equal(zeros, 0));
     value.try_into().unwrap()
 }
 

@@ -28,6 +28,7 @@ use crate::json_struct;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Hex, TestFile};
+use crate::bytes::trim_zeros as trim;
 use crate::require_vectors;
 
 json_struct! {
@@ -57,12 +58,6 @@ json_struct! {
 
 json_struct! {
     struct Case {}
-}
-
-/// `x` without its leading zero bytes (the vectors write numbers in DER's
-/// form, with a zero byte before a top bit that is set).
-fn trim(x: &[u8]) -> &[u8] {
-    &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
 
 /// `key`'s operation on `x`, which must succeed.

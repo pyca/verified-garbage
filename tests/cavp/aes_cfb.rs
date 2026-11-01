@@ -10,8 +10,6 @@
     target_arch = "riscv64"
 ))]
 
-use std::collections::BTreeMap;
-
 use verified_garbage::aes_cfb::{AesCfb128, InvalidKeyLength};
 
 use super::unhex;
@@ -85,14 +83,7 @@ fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool
 /// Checks every vector of a response file, and returns how many there were.
 fn check_file(text: &str, split: bool) -> usize {
     let mut count = 0;
-    for record in text.replace('\r', "").split("\n\n") {
-        let fields: BTreeMap<_, _> = record
-            .lines()
-            .filter_map(|line| line.trim().split_once(" = "))
-            .collect();
-        if !fields.contains_key("COUNT") {
-            continue;
-        }
+    for fields in super::records(text) {
         check(
             &unhex(fields["KEY"]),
             &unhex(fields["IV"]),
@@ -224,8 +215,8 @@ fn limits_and_lengths() {
             guarded[offset..offset + n].copy_from_slice(&buffer);
             ctx.decrypt(&mut iv, &mut guarded[offset..offset + n]);
             assert_eq!(guarded[offset..offset + n], message[..n]);
-            assert!(guarded[..offset].iter().all(|&b| b == 0xa5));
-            assert!(guarded[offset + n..].iter().all(|&b| b == 0xa5));
+            assert!(crate::bytes::all_equal(&guarded[..offset], 0xa5));
+            assert!(crate::bytes::all_equal(&guarded[offset + n..], 0xa5));
         }
     }
 }

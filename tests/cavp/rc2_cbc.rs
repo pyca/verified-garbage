@@ -9,11 +9,10 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use std::collections::BTreeMap;
-
 use verified_garbage::rc2_cbc::{Error, Rc2CbcDecryptor, Rc2CbcEncryptor};
 
 use super::unhex;
+use crate::text::fields;
 
 /// What [`Rc2CbcEncryptor`] and [`Rc2CbcDecryptor`] both have, so that
 /// each test runs in both directions.
@@ -63,20 +62,14 @@ fn feed<C: Cbc>(ctx: &mut C, input: &[u8], extra: usize) -> Vec<u8> {
     if len > 0 {
         let mut short = vec![UNWRITTEN; len - 1];
         assert_eq!(ctx.update(input, &mut short), Err(Error::OutputTooSmall));
-        assert!(short.iter().all(|&b| b == UNWRITTEN));
+        assert!(crate::bytes::all_equal(&short, UNWRITTEN));
         assert_eq!(ctx.output_len(input.len()), len);
     }
     let mut output = vec![UNWRITTEN; len + extra];
     assert_eq!(ctx.update(input, &mut output), Ok(len));
-    assert!(output[len..].iter().all(|&b| b == UNWRITTEN));
+    assert!(crate::bytes::all_equal(&output[len..], UNWRITTEN));
     output.truncate(len);
     output
-}
-
-fn fields(text: &str) -> BTreeMap<&str, &str> {
-    text.lines()
-        .filter_map(|line| line.trim().split_once(" = "))
-        .collect()
 }
 
 /// `C` turns `input` into `expected`, split at every point and in chunks
@@ -222,7 +215,7 @@ fn output_too_small_of<C: Cbc>(key: &[u8], iv: &[u8], input: &[u8], expected: &[
             Err(Error::OutputTooSmall)
         );
     }
-    assert!(output.iter().all(|&b| b == UNWRITTEN));
+    assert!(crate::bytes::all_equal(&output, UNWRITTEN));
     assert_eq!(ctx.update(&input[5..8], &mut output[..8]), Ok(8));
     assert_eq!(
         ctx.update(&input[8..], &mut output[8..]),

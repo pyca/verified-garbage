@@ -10,8 +10,6 @@
     target_arch = "riscv64"
 ))]
 
-use std::collections::BTreeMap;
-
 use verified_garbage::aes_ecb::{AesEcb, Error};
 
 use super::unhex;
@@ -50,14 +48,7 @@ fn check(key: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool) {
 /// Checks every vector of a response file, and returns how many there were.
 fn check_file(text: &str, split: bool) -> usize {
     let mut count = 0;
-    for record in text.replace('\r', "").split("\n\n") {
-        let fields: BTreeMap<_, _> = record
-            .lines()
-            .filter_map(|line| line.trim().split_once(" = "))
-            .collect();
-        if !fields.contains_key("COUNT") {
-            continue;
-        }
+    for fields in super::records(text) {
         check(
             &unhex(fields["KEY"]),
             &unhex(fields["PLAINTEXT"]),
@@ -192,10 +183,7 @@ fn nist_ecb_runs() {
                 "[DECRYPT]" => encrypt = false,
                 _ => {}
             }
-            let fields: BTreeMap<_, _> = record
-                .lines()
-                .filter_map(|line| line.trim().split_once(" = "))
-                .collect();
+            let fields = crate::text::fields(record);
             if !fields.contains_key("COUNT") {
                 continue;
             }

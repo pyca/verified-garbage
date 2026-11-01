@@ -188,8 +188,8 @@ fn unaligned_batch_boundaries() {
                 let mut buffer = vec![0xa5; offset + len + 16];
                 let mut ctr = start.to_be_bytes();
                 ctx.apply_keystream(&mut ctr, &mut buffer[offset..offset + len]);
-                assert!(buffer[..offset].iter().all(|&b| b == 0xa5));
-                assert!(buffer[offset + len..].iter().all(|&b| b == 0xa5));
+                assert!(crate::bytes::all_equal(&buffer[..offset], 0xa5));
+                assert!(crate::bytes::all_equal(&buffer[offset + len..], 0xa5));
                 let expected: Vec<_> = stream[..len].iter().map(|b| b ^ 0xa5).collect();
                 assert_eq!(&buffer[offset..offset + len], expected);
                 assert_eq!(ctr, add(&start.to_be_bytes(), len.div_ceil(16)));

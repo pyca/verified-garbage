@@ -12,10 +12,9 @@
     target_arch = "riscv64"
 ))]
 
-use std::collections::BTreeMap;
-
 use verified_garbage::seed_ecb::{Error, SeedEcb};
 
+use super::records;
 use super::unhex;
 use crate::bytes::xor;
 
@@ -76,18 +75,6 @@ fn rfc4269() {
         count += 1;
     }
     assert_eq!(count, 4);
-}
-
-fn records(text: &str) -> Vec<BTreeMap<&str, &str>> {
-    text.split("\n\n")
-        .map(|record| {
-            record
-                .lines()
-                .filter_map(|line| line.trim().split_once(" = "))
-                .collect::<BTreeMap<_, _>>()
-        })
-        .filter(|fields| fields.contains_key("COUNT"))
-        .collect()
 }
 
 #[test]
@@ -181,6 +168,6 @@ fn incomplete() {
         let mut buffer = vec![0x5a; length];
         assert_eq!(ctx.encrypt(&mut buffer), Err(Error::IncompleteBlock));
         assert_eq!(ctx.decrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert!(buffer.iter().all(|&b| b == 0x5a));
+        assert!(crate::bytes::all_equal(&buffer, 0x5a));
     }
 }
