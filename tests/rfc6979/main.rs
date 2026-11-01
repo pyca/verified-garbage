@@ -51,6 +51,23 @@ fn value<const N: usize>(lines: &[&str], i: &mut usize, label: &str) -> [u8; N] 
         .unwrap()
 }
 
+/// A value continued over several lines, read on every architecture (only
+/// parsed, not signed with): P-521's order, `q` of §A.2.7, which is `2^521`
+/// less a number below `2^260`.
+#[test]
+fn multiline_value() {
+    let rfc = crate::vectors::text("vectors/rfc6979/rfc6979.txt");
+    let text = rfc
+        .split_once("\nA.2.7.  ECDSA, 521 Bits (Prime Field)\n")
+        .unwrap()
+        .1;
+    let lines: Vec<&str> = text.lines().map(str::trim).collect();
+    let mut i = 0;
+    let q: [u8; 66] = value(&lines, &mut i, "q = ");
+    assert_eq!(q[0], 1);
+    assert!(q[1..=32].iter().all(|&b| b == 0xff));
+}
+
 /// Each hash function, message and the `r ‖ s` of its signature.
 type Signatures<const S: usize> = Vec<(&'static str, String, [u8; S])>;
 
