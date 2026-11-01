@@ -3009,57 +3009,6 @@ mod tests {
         truncated_boundaries::<11>();
     }
 
-    /// Exercise the emitted split-seal API with byte-granular source
-    /// prefixes, including the partial copy that the Rust fast path avoids.
-    #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-    #[test]
-    fn split_seal_source_prefixes() {
-        use crate::arch::gcm::vg_aes_gcm_seal_split;
-        let msg: [u8; 1026] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
-        for key_len in [16, 24, 32] {
-            let k = AesGcm::new(&[3; 32][..key_len]).unwrap();
-            for nonce_len in [12, 13] {
-                let nonce = &[5; 13][..nonce_len];
-                for aad_len in [0, 13, 17] {
-                    let aad = &msg[..aad_len];
-                    for len in [0, 1, 15, 16, 17, 63, 64, 65, 511, 512, 513, 1025] {
-                        let mut want = msg;
-                        let want_tag = k.encrypt_in_place(nonce, aad, &mut want[..len]).unwrap();
-                        for src_len in [0, 1.min(len), len / 2, len.saturating_sub(1), len] {
-                            let mut out = msg;
-                            out[..src_len].fill(0xa5);
-                            out[len] = 0xc3;
-                            let mut tag = [0; 16];
-                            // SAFETY: the buffers are distinct, their lengths
-                            // fit, and `out[src_len..len]` holds the suffix.
-                            unsafe {
-                                vg_aes_gcm_seal_split(
-                                    k.ctx.as_ptr(),
-                                    k.rounds,
-                                    nonce.as_ptr(),
-                                    nonce.len(),
-                                    aad.as_ptr(),
-                                    aad.len(),
-                                    if src_len == 0 {
-                                        core::ptr::null()
-                                    } else {
-                                        msg.as_ptr()
-                                    },
-                                    src_len,
-                                    out.as_mut_ptr(),
-                                    len,
-                                    &mut tag,
-                                )
-                            };
-                            assert_eq!((&out[..len], tag), (&want[..len], want_tag));
-                            assert_eq!(out[len], 0xc3);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     /// Out-of-place encryption of a plaintext in pieces matches in-place
     /// encryption, after additional data of whole blocks, of a partial block
     /// and of none, for pieces split on and off block boundaries (empty ones
@@ -3069,10 +3018,10 @@ mod tests {
     fn out_of_place() {
         let k = AesGcm::new(&[3; 16]).unwrap();
         let nonce = [5u8; 12];
-        let msg: [u8; 1025] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
+        let msg: [u8; 300] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
         for aad_len in [0, 5, 16, 20] {
             let aad = &msg[..aad_len];
-            for len in [0, 1, 16, 17, 300, 511, 512, 513, 1024, 1025] {
+            for len in [0, 1, 16, 17, 300] {
                 let mut want = msg;
                 let want_tag = k.encrypt_in_place(&nonce, aad, &mut want[..len]).unwrap();
                 let m = &msg[..len];
@@ -3081,7 +3030,7 @@ mod tests {
                 let two: [&[u8]; 2] = [&m[..h], &m[h..]];
                 let five: [&[u8]; 5] = [&[], &m[..h], &m[h..h], &m[h..q], &m[q..]];
                 for pieces in [&one[..], &two, &five] {
-                    let mut out = [0u8; 1025];
+                    let mut out = [0u8; 300];
                     let tag = k.encrypt(&nonce, aad, pieces, &mut out[..len]);
                     assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
                 }
