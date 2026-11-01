@@ -365,6 +365,8 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
     pattern = f"/{library}/"
     if groups is not None:
         pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
+    # Run-only corpus: short records, boundaries and bulk payloads.
+    pattern += r"(?:15|31|47|63|64|111|127|128|192|256|384|1024|16384)$"
     proc = subprocess.run(
         [
             binary,
@@ -502,6 +504,13 @@ def main():
     groups = None
     if shards > 1:
         groups = shard_groups(listed, shard, shards)
+    # Run-only scope: representative public GCM APIs.
+    focused = {"aes-128-gcm-encrypt", "aes-128-gcm-encrypt-out-of-place",
+               "aes-128-gcm-encrypt-two-pieces", "aes-128-gcm-tls-seal", "aes-256-gcm-tls-seal"}
+    groups = sorted(set(listed) & focused)
+    if set(groups) != focused:
+        raise RuntimeError("focused GCM groups missing from the benchmark registry")
+    print("Focused GCM groups: " + ", ".join(groups), file=sys.stderr)
     # Interleaved, every group is named (base's runs of a benchmark it lacks
     # measure nothing); otherwise, unsharded, each side runs all of its own.
     selected = groups if groups is not None or owner is None else sorted(listed)
