@@ -84,7 +84,7 @@ def hbRaw (g : Nat) (d : Reg) : List Instr :=
   [.addi d d 127, .shift .srl .d d d 7, .mul d d .a7, .add d d .t1, .shift .srl .d d d (dShift g)]
 
 /-- `d ← r₁ = f mod m` for `a = d`, with `t` a temporary. -/
-def hb (g : Nat) (d t : Reg) : List Instr := hbRaw g d ++ [.addi d d (-(dMod g : Int))] ++ fixup d t .t2
+def hb (g : Nat) (d t : Reg) : List Instr := hbRaw g d ++ [.sub d d .t2] ++ fixup d t .t2
 
 /-- `t0 ← γ₂ - (q - 1)/32` on the low halves, sign-extended, for `γ₂` in `r`,
 through `a4`: zero exactly when `γ₂ = (q - 1)/32`. -/
@@ -154,7 +154,7 @@ def uhBody (g : Nat) : List Instr :=
     .load .w .a5 .a0 0, .addi .a5 .a5 (-1), .shift .srl .d .a5 .a5 63,
     .add .a6 .a6 .t0, .mul .t0 .t0 .a5, .sub .a6 .a6 .t0, .add .a6 .a6 .a5, .addi .a6 .a6 (-1)] ++
     fixup .a6 .a5 .t2 ++
-  [.addi .a6 .a6 (-(dMod g : Int))] ++ fixup .a6 .a5 .t2 ++
+  [.sub .a6 .a6 .t2] ++ fixup .a6 .a5 .t2 ++
   [.store .w .a6 .a3 0, .addi .a0 .a0 4, .addi .a1 .a1 4, .addi .a3 .a3 4, .addi .t3 .t3 (-1)]
 
 def uhLoop (g : Nat) : Prog isa :=
