@@ -32,7 +32,7 @@ Only the pointers, `rounds` and `len` can affect timing.
 namespace VG.Impl.AesCfb8.RISCV64
 
 open VG.RISCV64 VG.Impl.Words.RISCV64
-open VG.Impl.AesCbc.RISCV64 (mov savePtr copy whole encCall)
+open VG.Impl.AesCbc.RISCV64 (mov savePtr copy whole encCall chainWrapped)
 
 /-- The input block copied to `sv` (in `t0`), and the arguments of the block
 function for it: the schedule, the rounds, the block, `n = 1`, and the
@@ -64,8 +64,10 @@ def decPost : List Instr :=
 /-- One byte: the input block enciphered in the scratch buffer, and `post`. -/
 def body (post : List Instr) : Prog isa := .seq (.block pre) (.seq encCall (.block post))
 
-def encrypt : Prog isa := whole (body encPost)
+/-- Each byte, by the CFB8 chain (`Impl.Aes.RISCV64.cfb8Chain`), which
+bitslices the round keys once for all the bytes. -/
+def encrypt : Prog isa := chainWrapped Impl.Aes.RISCV64.cfb8EncChainCall
 
-def decrypt : Prog isa := whole (body decPost)
+def decrypt : Prog isa := chainWrapped Impl.Aes.RISCV64.cfb8DecChainCall
 
 end VG.Impl.AesCfb8.RISCV64

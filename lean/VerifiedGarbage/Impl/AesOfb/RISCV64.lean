@@ -25,7 +25,7 @@ Only the pointers, `rounds` and `n` can affect timing.
 namespace VG.Impl.AesOfb.RISCV64
 
 open VG.RISCV64
-open VG.Impl.AesCbc.RISCV64 (mov whole xorInto advance encCall)
+open VG.Impl.AesCbc.RISCV64 (mov whole xorInto advance encCall chainWrapped)
 
 /-- The arguments of the block function for the block at `s3`: the
 schedule, the rounds, the block, `n = 1`, and the working space. -/
@@ -35,6 +35,9 @@ def ivArgs : List Instr := [mov .a0 .s1, mov .a1 .s2, mov .a2 .s3, .li .a3 1, mo
 data block. -/
 def body : Prog isa := .seq (.block ivArgs) (.seq encCall (.block (xorInto .s4 .s3 ++ advance)))
 
-def crypt : Prog isa := whole body
+/-- Each output block `Oⱼ = CIPH_K(Oⱼ₋₁)` XORed into the data, by the OFB
+chain (`Impl.Aes.RISCV64.ofbChain`), which bitslices the round keys once
+for all the blocks. -/
+def crypt : Prog isa := chainWrapped Impl.Aes.RISCV64.ofbChainCall
 
 end VG.Impl.AesOfb.RISCV64

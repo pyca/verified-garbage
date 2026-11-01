@@ -26,7 +26,7 @@ Only the pointers, `rounds` and `n` can affect timing.
 namespace VG.Impl.AesCfb.RISCV64
 
 open VG.RISCV64
-open VG.Impl.AesCbc.RISCV64 (whole xorInto copy advance encCall)
+open VG.Impl.AesCbc.RISCV64 (whole xorInto copy advance encCall chainWrapped)
 open VG.Impl.AesOfb.RISCV64 (ivArgs)
 
 /-- One block: the block at `iv` enciphered in place, and `post`. -/
@@ -38,7 +38,10 @@ def encPost : List Instr := xorInto .s4 .s3 ++ copy .s3 .s4 ++ advance
 /-- `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, and `Cⱼ` the block to continue from. -/
 def decPost : List Instr := xorInto .s4 .s3 ++ xorInto .s3 .s4 ++ advance
 
-def encrypt : Prog isa := whole (body encPost)
+/-- Each block `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, by the CFB128 chain
+(`Impl.Aes.RISCV64.cfbChain`), which bitslices the round keys once for all
+the blocks. -/
+def encrypt : Prog isa := chainWrapped Impl.Aes.RISCV64.cfbChainCall
 
 def decrypt : Prog isa := whole (body decPost)
 
