@@ -233,7 +233,7 @@ def line (call : String) : Line → String
 /-- The text of a comment line of a printer (`// <text>` on one line: the
 text of an instruction that the printer emits as its machine code, in the
 directive after it), which is not a line of the assembly: `template` leaves
-it out, and the listing has it (`listing`). -/
+it out, and the assembly file has it (`assembly`). -/
 def commentOf : Line → Option String
   | .text l =>
     if l.startsWith "// " && !l.contains '\n' && !l.contains '\r' then some l else none
@@ -327,7 +327,7 @@ those lines separated by newlines, the others as arguments of their own
 as with one argument per line. A function's template is then a few tokens
 for rustc to parse and expand, not one per line.
 A comment line (`commentOf`) is not part of the template, nor of the Rust
-code: the listing has it (`listing`), so that neither rustc nor the
+code: the assembly file has it (`assembly`), so that neither rustc nor the
 assembler reads it. Consecutive lines of an encoded instruction's directive
 are joined (`pushLine`), and encoded bytes packed into `.octa`s
 (`packLine`). -/
@@ -345,10 +345,10 @@ where
     | [] => ""
     | run => "        " ++ literal ("\n".intercalate (run.reverse.flatMap packLine)) ++ ",\n"
 
-/-- A line of a function's listing (`listing`): a line of text as it is, a
+/-- A line of a function's assembly file (`assembly`): a line of text as it is, a
 call or the address of a static as `lineText` writes it, the static's name
 an operand of `naked_asm!` (`{NAME}`). -/
-def listingLine (call : String) : Line → String
+def assemblyLine (call : String) : Line → String
   | .text l => l
   | .sym s _ n => s ++ "{" ++ n ++ "}"
   | l => (lineText call l).getD ""
@@ -359,14 +359,14 @@ def isDirective : Line → Bool
   | .text l => l.startsWith "."
   | _ => false
 
-/-- The listing of the printed lines `ls` of a function: each line of its
-assembly as text (`listingLine`), but for an instruction a printer emits as
+/-- The assembly file of the printed lines `ls` of a function: each line of its
+assembly as text (`assemblyLine`), but for an instruction a printer emits as
 its machine code, whose comment (`commentOf`) is its text, in place of the
 directive after it. -/
-def listing (call : String) (ls : List Line) : List String :=
+def assembly (call : String) (ls : List Line) : List String :=
   go ls false
 where
-  /-- The listing of `ls`, after a comment if `after`, whose directive the
+  /-- The assembly file of `ls`, after a comment if `after`, whose directive the
   first line of `ls` then is if it is one. -/
   go : List Line → Bool → List String
     | [], _ => []
@@ -374,7 +374,7 @@ where
       if after && isDirective l then go ls false
       else match commentOf l with
         | some c => (c.drop 3).toString :: go ls true
-        | none => listingLine call l :: go ls false
+        | none => assemblyLine call l :: go ls false
 
 /-- `fs` as an English list of code spans: "`a`, `b` and `c`". -/
 def codeList : List String → String
@@ -771,14 +771,14 @@ def moduleText (items : List (Prepared × String × String)) : String :=
   String.join (items.map fun (p, code, c) =>
     "\n" ++ if c == p.art.name then function.withCode p.art code else alias p.art c)
 
-/-- The listing of the functions of a module (`moduleItems`), which the
+/-- The assembly file of the functions of a module (`moduleItems`), which the
 crate does not compile: each function emitted as itself as its name, then
-its lines (`listing`), each indented but its labels; each other as a line
+its lines (`assembly`), each indented but its labels; each other as a line
 naming the function it is. -/
-def moduleListing (items : List (Prepared × String × String)) : String :=
+def moduleAssembly (items : List (Prepared × String × String)) : String :=
   String.join (items.map fun (p, _, c) =>
     if c == p.art.name then
-      s!"\n{p.art.name}:\n" ++ String.join ((listing p.art.target.printer.call
+      s!"\n{p.art.name}:\n" ++ String.join ((assembly p.art.target.printer.call
         (bodyOf p.art p.lines)).map fun l =>
           if l.endsWith ":" && !l.contains ' ' then l ++ "\n" else "\t" ++ l ++ "\n")
     else s!"\n// {p.art.name}: the function `{c}`\n")
@@ -1003,14 +1003,14 @@ crate's (`crateDir`) `src/`, which the crate compiles. -/
 def codeDir (t : String) : String := crateDir t ++ "/src"
 
 /-- The directories of the target `t`'s generated files, under `crates/`: its
-code (`codeDir`) and its listings (`listingFile`). -/
-def generatedDirs (t : String) : List String := [codeDir t, crateDir t ++ "/listing"]
+code (`codeDir`) and its assembly files (`assemblyFile`). -/
+def generatedDirs (t : String) : List String := [codeDir t, crateDir t ++ "/assembly"]
 
-/-- The listing of a module `m` (`moduleListing`), in its crate: `listing/<m>.s`. -/
-def listingFile (m : String) : String := s!"listing/{m}.s"
+/-- The assembly file of a module `m` (`moduleAssembly`), in its crate: `assembly/<m>.s`. -/
+def assemblyFile (m : String) : String := s!"assembly/{m}.s"
 
-/-- The first lines of the listing of the module `m` of the target `t`. -/
-def listingHeader (t m : String) : String :=
+/-- The first lines of the assembly file of the module `m` of the target `t`. -/
+def assemblyHeader (t m : String) : String :=
   s!"// The functions of `src/{m}.rs` of `{crateDir t}`, as text: generated from\n" ++
   "// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.\n" ++
   "// Each instruction the printer encodes is here as its text, and in\n" ++
@@ -1059,10 +1059,10 @@ def render (ps : List Prepared) (moduleOf : Artifact → String → String) : Li
       let items := moduleItems moduleOf (arts.filter (·.art.module == m))
       [(s!"{src}/{m}.rs",
         header ++ s!"//! Verified `{m}` functions for `{t}`, whose text is in\n" ++
-        s!"//! `{listingFile m}`.\n" ++
+        s!"//! `{assemblyFile m}`.\n" ++
         "#![allow(dead_code)]\n" ++
         moduleText items),
-       (s!"{crateDir t}/{listingFile m}", listingHeader t m ++ moduleListing items)]).map
+       (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++ moduleAssembly items)]).map
       Task.get).flatten
   -- Each target's files on a task of their own.
   ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten

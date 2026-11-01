@@ -110,7 +110,7 @@ never import proofs.
    (`TCB/<ISA>/Encode.lean`), so that the assembler only copies those bytes;
    ARM's crate, one for both A32 and Thumb, is assembled from its text. The
    text of every function's code is in its crate's
-   `listing/<module>.s`, which the emitter writes with it and the crate does
+   `assembly/<module>.s`, which the emitter writes with it and the crate does
    not compile (nor publish).
 
 A function can call another (`Code.call name body`): the model runs the

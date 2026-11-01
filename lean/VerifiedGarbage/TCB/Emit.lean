@@ -287,7 +287,7 @@ def sync (dir : FilePath) (check : Bool) (files : List (String × String))
       IO.FS.writeFile path text
       IO.println s!"wrote {path}"
   -- Any other `.rs` file there would be unverified code, and another `.s` a
-  -- listing of none.
+  -- assembly file of none.
   let expectedPaths := files.map fun (n, _) => (dir / n).normalize
   let otherDirs := others.map fun (o : String) => (dir / o).normalize.toString ++ "/"
   for u in under do

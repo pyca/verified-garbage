@@ -11,8 +11,8 @@ public import VerifiedGarbage.TCB.Print
 
 Each straight-line instruction, and the return, is printed as its machine
 code (`Encode.lean`), `.inst <word>`, after a line `// <the instruction's
-text>`, which the emitter writes in the module's listing, not in its code
-(`Rust.listing`): the
+text>`, which the emitter writes in the module's assembly file, not in its code
+(`Rust.assembly`): the
 assembler only copies the words. The branches (`cbz`, `cbnz`, `b`), the call
 (`bl`), the address of a static (`adrp` and `add`, `symLines`) and
 alignment (`.p2align`) are printed as text, for the assembler and linker to

@@ -701,16 +701,16 @@ def sampleRV : Prog RISCV64.isa :=
 #guard RISCV64.Instr.asm (.lla .a5 "VG_TABLE") == ["lla a5, VG_TABLE"]
 -- A template with an `lla` between text lines: the `lla` is a line of the
 -- same string literal, and the instructions' comments are not in it, nor in
--- the Rust code, but in the listing, in place of their machine code.
+-- the Rust code, but in the assembly file, in place of their machine code.
 #guard Rust.template RISCV64.printer.call
     (RISCV64.printer.function (.block [.li .a0 1, .lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) ==
   "        r\".insn 2, 0x4505\nlla a5, {VG_TABLE}\n.insn 2, 0x8082\",\n"
-#guard Rust.listing RISCV64.printer.call
+#guard Rust.assembly RISCV64.printer.call
     (RISCV64.printer.function (.block [.li .a0 1, .lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) ==
   ["addi a0, zero, 1", "lla a5, {VG_TABLE}", "ret"]
 -- A comment not followed by a directive, its machine code, is only the text:
--- the line after it is in the listing too.
-#guard Rust.listing "call" [.text "// a", .text "b", .text "// c", .text ".byte 0x00", .text ".p2align 6"] ==
+-- the line after it is in the assembly file too.
+#guard Rust.assembly "call" [.text "// a", .text "b", .text "// c", .text ".byte 0x00", .text ".p2align 6"] ==
   ["a", "b", "c", ".p2align 6"]
 
 -- Every RISC-V function's text enables the M and C extensions for itself alone
