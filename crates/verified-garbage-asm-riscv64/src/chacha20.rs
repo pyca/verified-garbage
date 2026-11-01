@@ -9,8 +9,8 @@
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads of 64 bytes.
-/// * `buf` must be valid for reads and writes of 256 bytes.
+/// * `state` must be valid for reads of 64 bytes, and aligned for `u32`.
+/// * `buf` must be valid for reads and writes of 256 bytes, and aligned for `u32`.
 /// * On return the first 64 bytes of `buf` hold the result and the rest is unspecified.
 /// * `buf` must not overlap `state` (distinct Rust objects never do).
 /// * Neither `state` nor `buf` may wrap around the end of the address space (no Rust object does).
@@ -656,9 +656,9 @@ bnez s4, 20b
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 64 bytes.
+/// * `state` must be valid for reads and writes of 64 bytes, and aligned for `u32`.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `buf` must be valid for reads and writes of 320 bytes.
+/// * `buf` must be valid for reads and writes of 320 bytes, and aligned for `u32`.
 /// * The contents of `state` on return are unspecified.
 /// * The contents of `buf` on return are unspecified.
 /// * `state`, `data` and `buf` must not overlap each other (distinct Rust objects never do).
