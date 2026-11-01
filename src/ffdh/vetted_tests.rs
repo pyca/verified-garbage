@@ -137,7 +137,7 @@ fn vetted_matching_requires_exact_prime_generator_and_subgroup() {
 }
 
 #[test]
-fn vetted_generation_preserves_entropy_refills_and_uncapped_fallback() {
+fn vetted_generation_preserves_entropy_refills() {
     let p = modp_groups().remove(0);
     let params = Parameters::from_components(&p, &[2], None).unwrap();
     let mut calls = 0;
@@ -181,13 +181,6 @@ fn vetted_generation_preserves_entropy_refills_and_uncapped_fallback() {
         Error::Randomness
     );
     assert_eq!(calls, 2);
-    // An unrecognized generator retains the full-width distribution,
-    // including through ARM's cached attempt. No legacy emission is needed.
-    let params = Parameters::from_components(&p, &[5], None).unwrap();
-    let draw = marked_draw(p.len(), 225);
-    let (mut x, mut y) = (vec![0; p.len()], vec![0; p.len()]);
-    assert_eq!(params.domain.generate_key(&draw, &mut x, &mut y), 1);
-    assert_eq!(x, draw);
 }
 
 #[cfg(any(

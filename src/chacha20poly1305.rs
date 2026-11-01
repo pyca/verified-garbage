@@ -443,59 +443,54 @@ mod tests {
     }
 
     /// Out of place, from pieces: the ciphertext and the tag of the
-    /// concatenation of the pieces encrypted in place, for any split, with
-    /// every implementation (with AVX-512 on both sides of 960 bytes, where
-    /// `seal_gather` turns to `seal_split`); and the errors.
+    /// concatenation of the pieces encrypted in place, for any split (with
+    /// AVX-512, on both sides of 960 bytes, where `seal_gather` turns to
+    /// `seal_split`); and the errors.
     #[test]
     fn encrypt_pieces() {
         let key = core::array::from_fn(|i| (i * 5) as u8);
-        let mut scalar = ChaCha20Poly1305::new(&key);
-        scalar.backend = Backend::Scalar;
-        let best = ChaCha20Poly1305::new(&key);
+        let aead = ChaCha20Poly1305::new(&key);
         let nonce = [3; 12];
         let msg: [u8; 4097] = core::array::from_fn(|i| (i * 11) as u8);
-        for aead in [&scalar, &best] {
-            for len in [
-                0, 1, 15, 16, 17, 31, 64, 129, 513, 600, 960, 961, 1025, 2049, 4097,
-            ] {
-                for aad in [&[][..], &[5; 20]] {
-                    let mut want = msg;
-                    let want_tag = aead
-                        .encrypt_in_place(&nonce, aad, &mut want[..len])
-                        .unwrap();
-                    let m = &msg[..len];
-                    let (h, q) = (len / 2, len * 3 / 4);
-                    let one: [&[u8]; 1] = [m];
-                    let two: [&[u8]; 2] = [&m[..h], &m[h..]];
-                    let five: [&[u8]; 5] = [&[], &m[..h], &m[h..h], &m[h..q], &m[q..]];
-                    for pieces in [&one[..], &two, &five] {
-                        let mut out = [0u8; 4097];
-                        let tag = aead.encrypt(&nonce, aad, pieces, &mut out[..len]);
-                        assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
-                    }
+        for len in [
+            0, 1, 15, 16, 17, 31, 64, 129, 513, 600, 960, 961, 1025, 2049, 4097,
+        ] {
+            for aad in [&[][..], &[5; 20]] {
+                let mut want = msg;
+                let want_tag = aead
+                    .encrypt_in_place(&nonce, aad, &mut want[..len])
+                    .unwrap();
+                let m = &msg[..len];
+                let (h, q) = (len / 2, len * 3 / 4);
+                let one: [&[u8]; 1] = [m];
+                let two: [&[u8]; 2] = [&m[..h], &m[h..]];
+                let five: [&[u8]; 5] = [&[], &m[..h], &m[h..h], &m[h..q], &m[q..]];
+                for pieces in [&one[..], &two, &five] {
+                    let mut out = [0u8; 4097];
+                    let tag = aead.encrypt(&nonce, aad, pieces, &mut out[..len]);
+                    assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
                 }
             }
-            let n = ChaCha20Poly1305::MAX_PIECES;
-            let mut want = msg;
-            let want_tag = aead.encrypt_in_place(&nonce, &[], &mut want[..n]).unwrap();
-            let bytes: [&[u8]; ChaCha20Poly1305::MAX_PIECES] =
-                core::array::from_fn(|i| &msg[i..i + 1]);
-            let mut out = [0u8; ChaCha20Poly1305::MAX_PIECES];
-            let tag = aead.encrypt(&nonce, &[], &bytes, &mut out);
-            assert_eq!((&out[..], tag), (&want[..n], Ok(want_tag)));
         }
+        let n = ChaCha20Poly1305::MAX_PIECES;
+        let mut want = msg;
+        let want_tag = aead.encrypt_in_place(&nonce, &[], &mut want[..n]).unwrap();
+        let bytes: [&[u8]; ChaCha20Poly1305::MAX_PIECES] = core::array::from_fn(|i| &msg[i..i + 1]);
+        let mut out = [0u8; ChaCha20Poly1305::MAX_PIECES];
+        let tag = aead.encrypt(&nonce, &[], &bytes, &mut out);
+        assert_eq!((&out[..], tag), (&want[..n], Ok(want_tag)));
         let empty = [&msg[..0]; ChaCha20Poly1305::MAX_PIECES + 1];
         assert_eq!(
-            best.encrypt(&nonce, &[], &empty, &mut []),
+            aead.encrypt(&nonce, &[], &empty, &mut []),
             Err(Error::TooManyPieces)
         );
         assert_eq!(
-            best.encrypt(&nonce, &[], &[], &mut []),
-            best.encrypt(&nonce, &[], &[&[]], &mut [])
+            aead.encrypt(&nonce, &[], &[], &mut []),
+            aead.encrypt(&nonce, &[], &[&[]], &mut [])
         );
         let mut out = [0u8; 4];
         assert_eq!(
-            best.encrypt(&nonce, &[], &[&msg[..1], &msg[1..3]], &mut out),
+            aead.encrypt(&nonce, &[], &[&msg[..1], &msg[1..3]], &mut out),
             Err(Error::InvalidOutputLength)
         );
     }

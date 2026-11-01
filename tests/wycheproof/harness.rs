@@ -170,25 +170,31 @@ pub enum Expectation {
 }
 
 impl FromJson for Expectation {
-    fn from_json(v: &Value) -> Result<Self, String> {
+    fn from_json(v: &Value, key: &str) -> Self {
         match v.as_str() {
-            Some("valid") => Ok(Expectation::Valid),
-            Some("invalid") => Ok(Expectation::Invalid),
-            Some("acceptable") => Ok(Expectation::Acceptable),
-            _ => Err(format!("expected a test result, found {v}")),
+            Some("valid") => Expectation::Valid,
+            Some("invalid") => Expectation::Invalid,
+            Some("acceptable") => Expectation::Acceptable,
+            _ => panic!("{key}: expected a test result, found {v}"),
         }
     }
 }
 
-/// Every test result is read, and anything else refused: so that every
-/// architecture runs every arm, whichever results its vector files have.
+/// Every test result is read (and anything else refused, below): so that
+/// every architecture runs every arm, whichever results its vector files
+/// have.
 #[test]
 fn expectation_from_json() {
-    let read = |json: &str| Expectation::from_json(&json.parse().unwrap());
-    assert_eq!(read(r#""valid""#), Ok(Expectation::Valid));
-    assert_eq!(read(r#""invalid""#), Ok(Expectation::Invalid));
-    assert_eq!(read(r#""acceptable""#), Ok(Expectation::Acceptable));
-    assert_eq!(read("1"), Err("expected a test result, found 1".into()));
+    let read = |json: &str| Expectation::from_json(&json.parse().unwrap(), "result");
+    assert_eq!(read(r#""valid""#), Expectation::Valid);
+    assert_eq!(read(r#""invalid""#), Expectation::Invalid);
+    assert_eq!(read(r#""acceptable""#), Expectation::Acceptable);
+}
+
+#[test]
+#[should_panic(expected = "result: expected a test result, found 1")]
+fn expectation_from_json_refuses() {
+    Expectation::from_json(&Value::from(1), "result");
 }
 
 crate::json_struct! {
@@ -218,16 +224,15 @@ pub struct Test<T> {
 }
 
 impl<T: FromJson> FromJson for Test<T> {
-    fn from_json(v: &Value) -> Result<Self, String> {
-        let o = json::object(v)?;
-        let tc_id = json::field(o, "tcId")?;
-        Ok(Test {
-            tc_id,
-            comment: json::field_or_default(o, "comment")?,
-            flags: json::field_or_default(o, "flags")?,
-            result: json::field(o, "result")?,
-            case: T::from_json(v).map_err(|e| format!("tcId {tc_id}: {e}"))?,
-        })
+    fn from_json(v: &Value, key: &str) -> Self {
+        let o = json::object(v, key);
+        Test {
+            tc_id: json::field(o, "tcId"),
+            comment: json::field_or_default(o, "comment"),
+            flags: json::field_or_default(o, "flags"),
+            result: json::field(o, "result"),
+            case: T::from_json(v, key),
+        }
     }
 }
 
@@ -241,12 +246,12 @@ pub struct TestGroup<P, T> {
 }
 
 impl<P: FromJson, T: FromJson> FromJson for TestGroup<P, T> {
-    fn from_json(v: &Value) -> Result<Self, String> {
-        let tests = json::field(json::object(v)?, "tests")?;
-        Ok(TestGroup {
-            params: P::from_json(v)?,
+    fn from_json(v: &Value, key: &str) -> Self {
+        let tests = json::field(json::object(v, key), "tests");
+        TestGroup {
+            params: P::from_json(v, key),
             tests,
-        })
+        }
     }
 }
 
@@ -287,8 +292,9 @@ pub struct Fields;
     target_arch = "riscv64"
 ))]
 impl FromJson for Fields {
-    fn from_json(v: &Value) -> Result<Self, String> {
-        json::object(v).map(|_| Fields)
+    fn from_json(v: &Value, key: &str) -> Self {
+        json::object(v, key);
+        Fields
     }
 }
 
@@ -313,14 +319,12 @@ pub struct Hex(pub Vec<u8>);
     target_arch = "riscv64"
 ))]
 impl FromJson for Hex {
-    fn from_json(v: &Value) -> Result<Self, String> {
-        let s = String::from_json(v)?;
-        let bytes = (0..s.len())
-            .step_by(2)
-            .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
-            .collect::<Result<Vec<u8>, _>>()
-            .map_err(|e| format!("{v}: {e}"))?;
-        Ok(Hex(bytes))
+    fn from_json(v: &Value, key: &str) -> Self {
+        let s = v.as_str();
+        let s = s.unwrap_or_else(|| panic!("{key}: expected a string, found {v}"));
+        let byte = |i| u8::from_str_radix(&s[i..i + 2], 16);
+        let byte = |i| byte(i).unwrap_or_else(|e| panic!("{key}: {s}: {e}"));
+        Hex((0..s.len()).step_by(2).map(byte).collect())
     }
 }
 
@@ -477,7 +481,9 @@ pub fn parse<P: FromJson, T: FromJson>(name: &str, json: &str) -> TestFile<P, T>
     let file: TestFile<P, T> = json::parse(name, json);
     let mut ids = Vec::new();
     for group in &file.test_groups {
-        ids.extend(group.tests.iter().map(|t| t.tc_id));
+        for test in &group.tests {
+            ids.push(test.tc_id);
+        }
     }
     check(name, &ids, file.number_of_tests);
     file
