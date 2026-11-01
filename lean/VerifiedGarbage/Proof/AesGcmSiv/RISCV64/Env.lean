@@ -82,6 +82,9 @@ theorem Perm.of_eq {c : Cx} {s s' : State} (h : Perm c s) (hrd : s'.rd = s.rd) (
   ⟨by rw [hrd, hwr]; exact h.k, by rw [hwr]; exact h.w, by rw [hrd, hwr]; exact h.nc,
     by rw [hrd, hwr]; exact h.a, by rw [hwr]; exact h.d, by rw [hrd, hwr]; exact h.t⟩
 
+/-- Where the nonce's copy is. -/
+def nP (W : Addr) : Addr := W + BitVec.ofNat 64 1520
+
 /-! ## What the pieces keep -/
 
 /-- The registers the pieces keep: those holding the public values. -/
@@ -181,6 +184,10 @@ theorem wrapW {d : Nat} (hd : d < 3840) : (c.W + BitVec.ofNat 64 d).toNat = c.W.
 
 /-- `W + d` is aligned for a multiple `d` of 8. -/
 theorem wal8 {d : Nat} (hd : d < 3840) (h8 : d % 8 = 0) : (c.W + BitVec.ofNat 64 d).toNat % 8 = 0 := by
+  rw [L.wrapW hd]; have := L.wal; omega
+
+/-- `W + d` is aligned for a multiple `d` of 4. -/
+theorem wal4 {d : Nat} (hd : d < 3840) (h4 : d % 4 = 0) : (c.W + BitVec.ofNat 64 d).toNat % 4 = 0 := by
   rw [L.wrapW hd]; have := L.wal; omega
 
 theorem rb : 16 * (c.R + 1) ≤ 240 := by rcases L.rounds with h | h <;> rw [h] <;> decide

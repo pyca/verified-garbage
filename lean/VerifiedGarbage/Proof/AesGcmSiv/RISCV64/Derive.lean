@@ -35,19 +35,12 @@ open VG.RISCV64.Steps (Upd Mupd wp_addi wp_li wp_ld wp_sd wp_lwu wp_sw wp_sll wp
 open VG.Proof.AesGcm.RISCV64 (CtrCall CtrPost ctr_call)
 open VG.Spec.Aes (bytesAt)
 
-/-- Where the nonce's copy is. -/
-def nP (W : Addr) : Addr := W + BitVec.ofNat 64 1520
-
 /-- The memory after a step's block: the counter block and a zero block. -/
 def derMem (m : Mem) (W : Addr) (i : Nat) : Mem :=
   Proof.Cmac.zero2 (Proof.Cmac.store4 m (W + BitVec.ofNat 64 112) ((BitVec.ofNat 64 i).setWidth 32)
     (m.readW (nP W + BitVec.ofNat 64 0) 32) (m.readW (nP W + BitVec.ofNat 64 4) 32)
     (m.readW (nP W + BitVec.ofNat 64 8) 32))
     (W + BitVec.ofNat 64 240)
-
-theorem Lay.wal4 {c : Cx} (L : Lay c) {d : Nat} (hd : d < 3840) (h4 : d % 4 = 0) :
-    (c.W + BitVec.ofNat 64 d).toNat % 4 = 0 := by
-  rw [L.wrapW hd]; have := L.wal; omega
 
 /-- The block of a step: the counter block, a zero block, and the arguments of
 `vg_aes_ctr32` with the key-generating key's schedule. -/
