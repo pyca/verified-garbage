@@ -151,8 +151,11 @@ runs:
       shell: bash
       working-directory: lean
       run: lake env lean --run Emit.lean --check
-    # Last, after the build is saved: it edits two files of the self-test,
-    # restores them, and leaves their modules built from the edited files.
-    - name: Check that the axiom audit sees through modules
+    # Last, after the build is saved: it plants an axiom, an axiom behind a
+    # private import, an `@[implemented_by]` and an `initialize` in the
+    # self-test (editing two files and adding a module), checks that the
+    # audits reject each, restores the files, and leaves the self-test's
+    # modules built from the edited ones.
+    - name: Check that the audits reject what is planted in modules
       shell: bash
       run: python3 ci/audit_negative.py

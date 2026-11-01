@@ -1,6 +1,7 @@
 module
 
 public meta import Lean
+public meta import VerifiedGarbage.TCB.AuditRecords
 
 /-!
 # Environment audit
@@ -32,9 +33,16 @@ imports, besides the axiom audit (`TCB/Axioms.lean`):
   Theorems (e.g. the equation lemmas Lean generates for a `Spec/` definition
   in the module that first unfolds it) carry no data and are exempt.
 
-Both refuse to run in a module, which sees what it imports from other
-modules without their proofs, and without the values of definitions they
-do not expose: the emitter's driver is not a module.
+Both walk the constants of the file they run in, and take what an imported
+constant or module holds from the audit records its module wrote when it was
+built (`TCB/AuditRecords.lean`), which saw its proofs and the values of its
+definitions: so they run in a module too, which sees what it imports from other
+modules without their proofs, and without the values of definitions they do not
+expose. A module of this project built without the records fails both. The
+records' own `initialize` (`TCB/AuditRecords.lean`, which registers them) is the one
+this project declares: its module and `TCB/AuditBase.lean` write no records
+(`AuditRecords.unrecorded`), so it reaches no audit, and no name is exempt (a
+module may declare a constant in any namespace, `VG.AuditRecords` too).
 -/
 
 public meta section
@@ -43,65 +51,22 @@ namespace VG
 
 open Lean Elab Command
 
-/-- The modules of this project, `VerifiedGarbage` and those under it, with
-their indices in `env`. -/
-def projectModules (env : Environment) : List (ModuleIdx × Name) :=
-  -- `moduleNames` builds a new array of every module on each call: read it once.
-  let names := env.header.moduleNames
-  (List.range names.size).filterMap fun i =>
-    let m := names[i]!
-    if (`VerifiedGarbage).isPrefixOf m then some (i, m) else none
-
-/-- Whether `env`, whose modules are `names` (`env.header.moduleNames`, which
-callers read once), declares `n` in the module being elaborated or in a
-module of this project, rather than in Lean or a dependency (whose constants
-never depend on this project's). -/
-def isProjectConst (env : Environment) (names : Array Name) (n : Name) : Bool :=
-  match env.getModuleIdxFor? n with
-  | none => true
-  | some i => (`VerifiedGarbage).isPrefixOf names[i.toNat]!
-
-/-- The constants of this project (`isProjectConst`) that the compiled code
-of the constants `roots` may run in `env`: those their values use,
-transitively (including `roots`). Types and proofs are erased from compiled
-code, so it follows neither the types of constants nor the values of
-theorems (whose names it still includes). -/
-def dependencies (env : Environment) (roots : List Name) : NameSet := Id.run do
-  let names := env.header.moduleNames
-  let mut seen : NameSet := {}
-  let mut todo := roots
-  -- Visits each constant once, so it ends.
-  while !todo.isEmpty do
-    let n := todo.head!
-    todo := todo.tail
-    if seen.contains n || !isProjectConst env names n then continue
-    seen := seen.insert n
-    if let some ci := env.find? n then
-      unless ci matches .thmInfo _ do
-        if let some v := ci.value? (allowOpaque := true) then
-          todo := v.getUsedConstants.toList ++ todo
-  return seen
-
 /-- What makes the compiled code of the constants `roots` depend on in `env`
 differ from what the kernel checked (see the module docs): one line each. -/
 def compilerOverrides (env : Environment) (roots : List Name) : List String :=
-  let deps := (dependencies env roots).toList.mergeSort (·.toString ≤ ·.toString)
-  deps.flatMap (fun n =>
-    (if (Compiler.getImplementedBy? env n).isSome then [s!"@[implemented_by] on {n}"] else []) ++
-    (if isExtern env n then [s!"@[extern] on {n}"] else []) ++
-    (if (getExportNameFor? env n).isSome then [s!"@[export] on {n}"] else [])) ++
-  (projectModules env).flatMap fun (i, m) =>
-    let param {α} (attr : ParametricAttribute α) (what : String) : List String :=
-      (attr.ext.getModuleEntries env i).toList.map fun (d, _) => s!"{m}: {what} {d}"
-    param regularInitAttr "@[init] on" ++ param builtinInitAttr "@[builtin_init] on" ++
-    (Compiler.CSimp.ext.ext.getModuleEntries env i).toList.map fun
-      | .global e | .scoped _ e => s!"{m}: @[csimp] {e.thmName}"
+  let (_, inits, csimps, _) := AuditRecords.moduleRecordIn env
+  ((AuditRecords.overridesIn env roots).map fun (_, n) =>
+    -- The attribute, if `env` has the constant's (an imported record of a module it
+    -- did not load names it alone).
+    if (Compiler.getImplementedBy? env n).isSome then s!"@[implemented_by] on {n}"
+    else if isExtern env n then s!"@[extern] on {n}"
+    else if (getExportNameFor? env n).isSome then s!"@[export] on {n}"
+    else s!"@[implemented_by], @[extern] or @[export] on {n}") ++
+  (inits.toList.map fun n => s!"@[init] on {n}") ++
+  (csimps.toList.map fun n => s!"@[csimp] {n}") ++
+  AuditRecords.unrecordedIn env
 
 elab "#assert_no_compiler_overrides " ids:ident* : command => do
-  -- In a module, a definition imported from another module may be opaque,
-  -- without its value: `dependencies` would not follow what it runs.
-  if (← getEnv).header.isModule then
-    throwError "#assert_no_compiler_overrides must run in a file that is not a module"
   let roots ← ids.toList.mapM fun id => liftCoreM <| realizeGlobalConstNoOverloadWithInfo id.raw
   let bad := compilerOverrides (← getEnv) roots
   unless bad.isEmpty do
@@ -109,27 +74,22 @@ elab "#assert_no_compiler_overrides " ids:ident* : command => do
       {"\n".intercalate bad}"
   logInfo m!"the compiled code of {roots} is what the kernel checked"
 
-/-- The constants named `VG.Spec.…` in `env` that are not theorems and are
-declared outside the modules under `VerifiedGarbage.Spec` (in another
-module, or in the one being elaborated), with their modules. -/
-def specOutsideSpec (env : Environment) : List (Name × Name) :=
+/-- The constants named `VG.Spec.…` that are not theorems and are declared outside
+`Spec/`, in `env` or a module of this project it loaded or what they import: one
+line each, with the modules built without the records. -/
+def specOutsideSpec (env : Environment) : List String :=
+  let (specs, _, _, _) := AuditRecords.moduleRecordIn env
   let names := env.header.moduleNames
-  env.constants.fold (init := []) fun acc n c =>
-    if !(`VG.Spec).isPrefixOf n || c matches .thmInfo _ then acc else
-      let m := match env.getModuleIdxFor? n with
-        | none => env.mainModule
-        | some i => names[i.toNat]!
-      if (`VerifiedGarbage.Spec).isPrefixOf m then acc else (n, m) :: acc
+  (specs.toList.map fun n =>
+    let m := match env.getModuleIdxFor? n with
+      | none => if (env.find? n).isSome then env.mainModule else `«a module not loaded»
+      | some i => names[i.toNat]!
+    s!"{n} (in {m})") ++ AuditRecords.unrecordedIn env
 
 elab "#assert_spec_origin" : command => do
-  -- In a module, a theorem imported from another module is an axiom, which
-  -- the check would not exempt as one.
-  if (← getEnv).header.isModule then
-    throwError "#assert_spec_origin must run in a file that is not a module"
   let bad := specOutsideSpec (← getEnv)
   unless bad.isEmpty do
-    throwError m!"these `VG.Spec` names are not declared in `Spec/`:\n\
-      {"\n".intercalate (bad.map fun (n, m) => s!"{n} (in {m})")}"
+    throwError m!"these `VG.Spec` names are not declared in `Spec/`:\n{"\n".intercalate bad}"
   logInfo m!"every `VG.Spec` definition is declared in `Spec/`"
 
 end VG

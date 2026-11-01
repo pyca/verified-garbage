@@ -2,9 +2,9 @@ name = "VerifiedGarbage"
 # Resolve the compiled libraries before the broad library glob. Otherwise
 # Lake can first assign one of these modules to VerifiedGarbage, then try to
 # load a native library (which includes that same module) while compiling it.
-defaultTargets = ["NativeTCB", "NativeTCBX86_64", "NativeTCBX86", "NativeTCBAArch64", "NativeTCBArm",
+defaultTargets = ["NativeAuditRecords", "NativeTCB", "NativeTCBX86_64", "NativeTCBX86", "NativeTCBAArch64", "NativeTCBArm",
   "NativeTCBPPC64LE", "NativeTCBRISCV64", "NativeSpec", "NativeForward", "NativeHintSearch",
-  "VerifiedGarbage", "VerifiedGarbageTest"]
+  "VerifiedGarbage", "VerifiedGarbageTest", "AuditBase"]
 # Lake already checks several files concurrently. Limit each compiler to
 # two threads so declaration tasks do not contend across all of those files.
 #
@@ -87,12 +87,19 @@ globs = ["VerifiedGarbage.+"]
 # shared library out of the trace (it is still loaded), so a module is
 # rebuilt only when something it imports changes.
 platformIndependent = true
+# Writes the audit records of each module (`NativeAuditRecords`). Lake leaves
+# the plugin out of the trace too (`platformIndependent`), but not `needs`: a
+# module is rebuilt when the plugin changes, which changes its records.
+plugins = ["NativeAuditRecords:shared"]
+needs = ["NativeAuditRecords:shared"]
 
 [[lean_lib]]
 name = "VerifiedGarbageTest"
 globs = ["VerifiedGarbageTest.+"]
 # See `VerifiedGarbage`.
 platformIndependent = true
+plugins = ["NativeAuditRecords:shared"]
+needs = ["NativeAuditRecords:shared"]
 
 # The known-answer tests (`VerifiedGarbageTest`) evaluate the specifications,
 # which is an order of magnitude faster in compiled code than in the
@@ -101,6 +108,8 @@ platformIndependent = true
 # that it, and not `VerifiedGarbage`, is these modules' library.
 [[lean_lib]]
 name = "NativeSpec"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 # Exactly these modules (as `globs`: `roots` would also take their submodules,
 # such as `Spec.MlKem.Contract`, and with them the rest of the library).
 roots = []
@@ -139,6 +148,8 @@ precompileModules = true
 # (`ci/check_lean_speed.py` checks that every such module is here).
 [[lean_lib]]
 name = "NativeTactics"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Framework.Lit",
   "VerifiedGarbage.Proof.Framework.LitShare", "VerifiedGarbage.Proof.Framework.LitAlias",
@@ -170,8 +181,25 @@ precompileModules = true
 # target gets a library of its own, `NativeTCB<Target>`, whose `libName`
 # (`VerifiedGarbage_NativeTCB<Target>`, the name the emitter loads) Lake
 # would otherwise mangle (`X86_64` to `X86__64`).
+# The audit records (`TCB/AuditRecords.lean`, with the list it reads,
+# `TCB/AuditBase.lean`): a library of their own, compiled to a shared library
+# that every other library of this project loads as a plugin (`plugins`), so that
+# Lean writes the records of every module it builds, without the module importing
+# them. Lean calls a plugin's `initialize_<library name>`, which is its module's
+# initializer only under this `libName`. First in `defaultTargets`, so that these
+# modules are this library's, not `VerifiedGarbage`'s (which loads it).
+[[lean_lib]]
+name = "NativeAuditRecords"
+libName = "VerifiedGarbage_VerifiedGarbage_TCB_AuditRecords"
+roots = []
+globs = ["VerifiedGarbage.TCB.AuditBase", "VerifiedGarbage.TCB.AuditRecords"]
+precompileModules = true
+defaultFacets = ["shared"]
+
 [[lean_lib]]
 name = "NativeTCB"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 roots = []
 globs = ["VerifiedGarbage.TCB.Artifact", "VerifiedGarbage.TCB.Audit",
   "VerifiedGarbage.TCB.Axioms", "VerifiedGarbage.TCB.Code", "VerifiedGarbage.TCB.Emit",
@@ -182,6 +210,8 @@ defaultFacets = ["shared"]
 
 [[lean_lib]]
 name = "NativeTCBX86_64"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBX86_64"
 roots = []
 globs = ["VerifiedGarbage.TCB.X86_64.+"]
@@ -190,6 +220,8 @@ defaultFacets = ["shared"]
 
 [[lean_lib]]
 name = "NativeTCBX86"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBX86"
 roots = []
 globs = ["VerifiedGarbage.TCB.X86.+"]
@@ -198,6 +230,8 @@ defaultFacets = ["shared"]
 
 [[lean_lib]]
 name = "NativeTCBAArch64"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBAArch64"
 roots = []
 globs = ["VerifiedGarbage.TCB.AArch64.+"]
@@ -206,6 +240,8 @@ defaultFacets = ["shared"]
 
 [[lean_lib]]
 name = "NativeTCBArm"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBArm"
 roots = []
 globs = ["VerifiedGarbage.TCB.Arm.+"]
@@ -214,6 +250,8 @@ defaultFacets = ["shared"]
 
 [[lean_lib]]
 name = "NativeTCBPPC64LE"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBPPC64LE"
 roots = []
 globs = ["VerifiedGarbage.TCB.PPC64LE.+"]
@@ -222,6 +260,8 @@ defaultFacets = ["shared"]
 
 [[lean_lib]]
 name = "NativeTCBRISCV64"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 libName = "VerifiedGarbage_NativeTCBRISCV64"
 roots = []
 globs = ["VerifiedGarbage.TCB.RISCV64.+"]
@@ -231,6 +271,8 @@ defaultFacets = ["shared"]
 # Untrusted certificate generation runs natively; proofs check its output.
 [[lean_lib]]
 name = "NativeForward"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data"]
 precompileModules = true
@@ -238,6 +280,17 @@ precompileModules = true
 # Opt-in hint search; the original taint checker still validates every hint.
 [[lean_lib]]
 name = "NativeHintSearch"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.RegSet", "VerifiedGarbage.Proof.Framework.Slots", "VerifiedGarbage.Proof.Framework.NativeHintOps", "VerifiedGarbage.Proof.Framework.X86.NativeHintData", "VerifiedGarbage.Proof.Framework.Arm.NativeHintData"]
 precompileModules = true
+
+# The check of `VerifiedGarbage/TCB/AuditBase.lean`, which `ci/audit_base.py`
+# generates: what Lean and this project's dependencies depend on, from their
+# private data. Not a module, to see every proof; it imports only Lean and the
+# dependencies, so Lake rebuilds it only when they (or the list) change.
+[[lean_lib]]
+name = "AuditBase"
+roots = ["VerifiedGarbageAuditBase"]
+allowNonModules = true

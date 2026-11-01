@@ -25,7 +25,9 @@ proofs. Exits non-zero on violations.
     (ci/lean_shards.py's traces). A native module depends on the whole
     shared library of each other library it imports from, so with one
     library for TCB/, adding an instruction to one ISA rebuilt every
-    native spec, tactic and target.
+    native spec, tactic and target. The audit records' modules
+    (`AUDIT_RECORDS`) are the exception: they are `NativeAuditRecords`, which
+    every other library loads as a plugin.
 """
 
 import pathlib
@@ -88,10 +90,10 @@ def native_tcb(
         libs = sorted(n for n, members in libraries.items() if m in members)
         if len(libs) != 1:
             out.append(f"{m}: in {len(libs)} precompiled libraries ({', '.join(libs) or 'none'}); "
-                       f"list it in exactly one, {native_tcb_name(tcb[m])}, in lean/lakefile.toml")
+                       f"list it in exactly one, {native_tcb_name(tcb[m], m)}, in lean/lakefile.toml")
             continue
-        if libs[0] != native_tcb_name(tcb[m]):
-            out.append(f"{m}: in {libs[0]}; it belongs in {native_tcb_name(tcb[m])} (lean/lakefile.toml)")
+        if libs[0] != native_tcb_name(tcb[m], m):
+            out.append(f"{m}: in {libs[0]}; it belongs in {native_tcb_name(tcb[m], m)} (lean/lakefile.toml)")
     for t in sorted(targets):
         lib = native_tcb_name(t)
         if lib in libraries and lib_names.get(lib) != f"VerifiedGarbage_{lib}":
@@ -111,8 +113,16 @@ def native_tcb(
     return out
 
 
-def native_tcb_name(target: str | None) -> str:
-    """The precompiled library of TCB/'s modules of `target`."""
+# The modules of the audit records, and their library (lean/lakefile.toml), a
+# plugin of every other one.
+AUDIT_RECORDS = frozenset({"VerifiedGarbage.TCB.AuditBase", "VerifiedGarbage.TCB.AuditRecords"})
+
+
+def native_tcb_name(target: str | None, module: str | None = None) -> str:
+    """The precompiled library of TCB/'s modules of `target` (of `module`, if
+    given: the audit records' modules have their own)."""
+    if module in AUDIT_RECORDS:
+        return "NativeAuditRecords"
     return f"NativeTCB{target or ''}"
 
 

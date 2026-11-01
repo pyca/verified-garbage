@@ -76,6 +76,19 @@ class NativeTcb(unittest.TestCase):
             "VG.Spec.X: a module of NativeSpec, rebuilt by a change to B's TCB/ "
             "(imports from TCB/ only what no target owns)"])
 
+    def test_the_audit_records(self):
+        # Their own library, not NativeTCB.
+        tcb = dict(self.TCB, **{"VerifiedGarbage.TCB.AuditRecords": None})
+        traces = {m: frozenset() for m in tcb}
+        for lib, problem in (("NativeAuditRecords", []), ("NativeTCB", [
+                "VerifiedGarbage.TCB.AuditRecords: in NativeTCB; it belongs in NativeAuditRecords "
+                "(lean/lakefile.toml)"])):
+            libraries = {k: set(v) for k, v in self.SPLIT.items()}
+            libraries.setdefault(lib, set()).add("VerifiedGarbage.TCB.AuditRecords")
+            libraries = {k: frozenset(v) for k, v in libraries.items()}
+            self.assertEqual(check_lean_imports.native_tcb(tcb, libraries, self.NAMES, traces, {"A", "B"}),
+                             problem)
+
     def test_unlisted_and_unnamed(self):
         libraries = dict(self.SPLIT, NativeTCB=frozenset())
         traces = dict.fromkeys([*self.TCB, "VG.Spec.X"], frozenset())

@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
-"""Checks that the axiom audit rejects an axiom hidden in a Lean module, and
-that the audits refuse to run in one.
+"""Checks that the emitter's audits reject an axiom and a compiler override hidden
+in Lean modules.
 
-A module sees the theorems it imports from other modules as axioms, without
-their proofs, so the audits run in the emitter's driver, a file that is not
-a module, which sees every proof (`TCB/Axioms.lean`). This test proves that
-they still see through modules, and through a private import, which hides a
-module from the modules that import the importer, but not from a file that is
-not a module. It adds `axiom vg_bad : False` and a theorem proven from it to a
-module that an artifact depends on (`Spec/Selftest.lean`), and adds a module
-with another such axiom, `Proof/Selftest/AuditPrivate.lean`, which the
-self-test's proof imports with a plain `import`. It proves `add_correct` from
-both theorems, and checks that `EmitOne.lean --check Selftest.X86_64` fails
-with the audit's `depends on non-standard axioms: [...]`, listing both
-`VG.Spec.Selftest.vg_bad` and `VG.Proof.Selftest.AuditPrivate.vg_bad`: the
-audit lists every axiom it finds, so one build checks both ways of hiding one.
+The audits read what each constant depends on from the records every module of
+this project writes when it is built (`TCB/AuditRecords.lean`), not from the
+proofs, which a module importing another does not see. This test proves that the
+records carry them across modules, and through a private import, which hides a
+module from the modules that import the importer. It adds to a module that an
+artifact depends on (`Spec/Selftest.lean`) `axiom vg_bad : False`, a theorem proven
+from it, and `vg_bad_id`, the identity, with `@[implemented_by]` of a function that
+is not, which `add` (that the artifact's contract uses) applies, and an `initialize`
+in the namespace of the records' own (`VG.AuditRecords`); and adds a module
+with another such axiom, `Proof/Selftest/AuditPrivate.lean`, which the self-test's
+proof imports with a plain `import`. It proves `add_correct` from both theorems, and
+checks that `EmitOne.lean --check Selftest.X86_64` fails with the axiom audit's
+`depends on non-standard axioms: [...]`, listing both `VG.Spec.Selftest.vg_bad` and
+`VG.Proof.Selftest.AuditPrivate.vg_bad`, and with the override audit's
+`@[implemented_by] on VG.Spec.Selftest.vg_bad_id` and `@[init] on
+VG.AuditRecords.vg_bad_init` (Lean reports each command's error and goes on to the
+next, so one build checks all four).
 
 It edits the files in place, after copying them to a temporary directory,
 and restores them from there (and deletes the module it added) whatever
 happens, then checks with `git diff` and `git status` that the tree is as it
 was: the axiom never reaches the tree that is committed.
-
-It also runs every audit command in a scratch module, outside the tree,
-while the self-test builds, and checks that each refuses to run there (Lean
-reports each command's error and goes on to the next).
 
 Run it from the repository root after a full build (CI runs it
 last in the job that assembles the build, after that build is saved): it
@@ -52,7 +52,31 @@ INJECTED = """
 axiom vg_bad : False
 
 theorem vg_bad_thm : False := vg_bad
+
+def vg_bad_impl (x : BitVec 64) : BitVec 64 := x + 1
+
+/-- Not in the tree: compiled code runs `vg_bad_impl` in its place. -/
+@[implemented_by vg_bad_impl] def vg_bad_id (x : BitVec 64) : BitVec 64 := x
+
+end VG.Spec.Selftest
+
+namespace VG.AuditRecords
+
+/-- Not in the tree: an initializer, which runs when the emitter imports the module,
+in the namespace of the records' own. -/
+initialize vg_bad_init : Nat ← pure 0
+
+end VG.AuditRecords
+
+namespace VG.Spec.Selftest
 """
+
+# `add`'s definition, and what the test makes it.
+ADD = "def add (a b : BitVec 64) : BitVec 64 := a + b"
+ADD_BAD = "def add (a b : BitVec 64) : BitVec 64 := vg_bad_id (a + b)"
+OVERRIDE = "@[implemented_by] on VG.Spec.Selftest.vg_bad_id"
+# An initializer, though in `TCB/AuditRecords.lean`'s namespace.
+INIT = "@[init] on VG.AuditRecords.vg_bad_init"
 
 # The self-test's proof: its first theorem, proven from the axiom instead.
 CORRECT = "theorem add_correct "
@@ -82,11 +106,13 @@ def is_module(text: str) -> bool:
 
 
 def inject_module(text: str) -> str:
-    """`text` with the axiom and its theorem at the end of its namespace."""
-    end = "end VG.Spec.Selftest"
-    if end not in text:
-        raise SystemExit(f"{MODULE}: no `{end}` to add the axiom before")
-    return text.replace(end, INJECTED.lstrip("\n") + "\n" + end, 1)
+    """`text` with the axiom, its theorem and `vg_bad_id` before `add` (with its
+    documentation), which applies `vg_bad_id`."""
+    at = text.find(ADD)
+    doc = text.rfind("/--", 0, at)
+    if at < 0 or doc < 0:
+        raise SystemExit(f"{MODULE}: no `{ADD}` after a documentation comment")
+    return text[:doc] + INJECTED.lstrip("\n") + "\n" + text[doc:].replace(ADD, ADD_BAD, 1)
 
 
 def inject_proof(text: str, proof: str) -> str:
@@ -114,36 +140,6 @@ def inject_private_import(text: str) -> str:
 
 
 IMPORT_LINE = re.compile(r"^(public\s+)?(meta\s+)?import\s")
-
-
-# Each audit command, and an argument to give it in the scratch module.
-AUDITS = [("#assert_standard_axioms", "VG.standardAxioms"),
-          ("#assert_no_compiler_overrides", "VG.standardAxioms"),
-          ("#assert_spec_origin", "")]
-
-
-def start_audits_in_module(tmp: str) -> subprocess.Popen:
-    """Starts elaborating a scratch module (in `tmp`) that runs every audit
-    command; `audits_refused` reads the result."""
-    f = pathlib.Path(tmp) / "Audit.lean"
-    f.write_text("module\n\nimport VerifiedGarbage.TCB.Audit\nimport VerifiedGarbage.TCB.Axioms\n\n"
-                 + "".join(f"{cmd} {arg}\n".replace(" \n", "\n") for cmd, arg in AUDITS))
-    return subprocess.Popen(["lake", "env", "lean", str(f)], cwd=LEAN, text=True,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-
-def audits_refused(proc: subprocess.Popen) -> bool:
-    """Whether each audit command failed in the module `proc` elaborated,
-    saying why."""
-    out = proc.communicate()[0]
-    ok = True
-    for cmd, _ in AUDITS:
-        if proc.returncode == 0 or f"{cmd} must run in a file that is not a module" not in out:
-            print(f"{cmd} ran in a module", file=sys.stderr)
-            ok = False
-    if not ok:
-        print(out, file=sys.stderr)
-    return ok
 
 
 def emit_check(edits: dict, added: pathlib.Path | None = None) -> str | None:
@@ -179,7 +175,8 @@ REJECTED = re.compile(r"depends on non-standard axioms: \[([^\]]*)\]")
 
 
 def rejected(out: str | None) -> bool:
-    """Whether the audit rejected both axioms (`out`, from `emit_check`)."""
+    """Whether the audits rejected both axioms, the override and the initializer
+    (`out`, from `emit_check`)."""
     found = REJECTED.search(out or "")
     axioms = {a.strip() for a in found.group(1).split(",")} if found else set()
     ok = True
@@ -190,6 +187,18 @@ def rejected(out: str | None) -> bool:
             print(f"EmitOne.lean --check {TARGET} did not reject `{axiom}`: "
                   f"the axiom audit no longer sees an axiom {how}", file=sys.stderr)
             ok = False
+    if OVERRIDE in (out or ""):
+        print(f"the audit rejects a compiler override in a module: `{OVERRIDE}`")
+    else:
+        print(f"EmitOne.lean --check {TARGET} did not report `{OVERRIDE}`: the override "
+              "audit no longer sees an override in a module", file=sys.stderr)
+        ok = False
+    if INIT in (out or ""):
+        print(f"the audit rejects an initializer in the records' namespace: `{INIT}`")
+    else:
+        print(f"EmitOne.lean --check {TARGET} did not report `{INIT}`: the override audit "
+              "exempts an initializer by its name", file=sys.stderr)
+        ok = False
     if not ok:
         print(out or "", file=sys.stderr)
     return ok
@@ -201,20 +210,13 @@ def main() -> int:
             raise SystemExit(f"{f} is not a module: the test needs one")
     if PRIVATE.exists():
         raise SystemExit(f"{PRIVATE} exists: the test adds it")
-    with tempfile.TemporaryDirectory() as tmp:
-        audits = start_audits_in_module(tmp)
-        try:
-            out = emit_check({MODULE: inject_module(MODULE.read_text()),
-                              PROOF: inject_private_import(PROOF.read_text())}, PRIVATE)
-        finally:
-            refused = audits_refused(audits)
-    if refused:
-        print("the audits refuse to run in a module")
+    out = emit_check({MODULE: inject_module(MODULE.read_text()),
+                      PROOF: inject_private_import(PROOF.read_text())}, PRIVATE)
     if (subprocess.run(["git", "diff", "--quiet", "--", str(MODULE), str(PROOF)]).returncode != 0
             or PRIVATE.exists()):
         print(f"{MODULE} or {PROOF} was not restored, or {PRIVATE} not deleted", file=sys.stderr)
         return 1
-    return 0 if rejected(out) and refused else 1
+    return 0 if rejected(out) else 1
 
 
 if __name__ == "__main__":
