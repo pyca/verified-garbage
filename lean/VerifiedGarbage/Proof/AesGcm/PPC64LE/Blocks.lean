@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
 import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.CtrFinish
 public import VerifiedGarbage.Proof.Aes.Memory
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
@@ -3468,6 +3470,495 @@ theorem core_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
   · obtain ⟨p,hp,rfl⟩ := List.mem_map.mp hs
     exact ht.restored p hp
   · exact hk.gpr (by simpa only [List.mem_append,not_or] using And.intro hr hs)
+
+
+def wrapperConfigState (s : State) : State :=
+  (((((((s.write .r29 (s.gpr .r3)).write .r28 (s.gpr .r4)).write .r27 (s.gpr .r5)).write
+    .r26 (s.gpr .r6)).write .r30 (s.gpr .r7)).write .r25 (s.gpr .r8)).write
+    .r31 (s.gpr .r9)).write .r12 (s.gpr .r8 >>> 5)
+
+theorem wrapperConfig_ok (s : State) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.wrapperConfig) s (· = wrapperConfigState s) := by
+  apply WP.of_runBlock
+  simp only [Impl.AesGcm.PPC64LE.Blocks.wrapperConfig,Impl.Aes.PPC64LE.Crypto.mov,
+    runBlock_cons,runStep_some,runBlock_nil,exec_logic,BitVec.or_self,exec_lsr_d (sh := 5) (by decide),
+    RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,Option.some.injEq,exists_eq_left']
+  rfl
+
+
+theorem wrapperSaveLR_ok (s : State) (hw : InRegions s.wr (s.gpr .r9+56) 8) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.wrapperSaveLR) s
+      (· = {s.write .r0 s.lr with mem := s.mem.writeW (s.gpr .r9+56) s.lr}) := by
+  have hw' : InRegions (s.write .r0 s.lr).wr ((s.write .r0 s.lr).gpr .r9+56) 8 := hw
+  apply WP.of_runBlock
+  simp only [Impl.AesGcm.PPC64LE.Blocks.wrapperSaveLR,runBlock_cons,runStep_some,runBlock_nil,exec_mflr,
+    exec_store_d (by decide) ⟨by decide,by decide⟩ hw',RegUpd.gpr_write,
+    reduceCtorEq,ite_true,ite_false,RegUpd.mem_write,Option.some.injEq,exists_eq_left']
+  rfl
+
+
+def wrapperHeaderMem (s : State) : Mem :=
+  (Spill.saveMem s.mem (s.gpr .r9) s.gpr Impl.AesGcm.PPC64LE.Blocks.wrapperSaved).writeW (s.gpr .r9+56) s.lr
+
+def wrapperEntryState (s : State) : State :=
+  wrapperConfigState {s.write .r0 s.lr with mem := wrapperHeaderMem s}
+
+theorem wrapperEntry_ok (s : State)
+    (hw : ∀ off, off+8≤64 → InRegions s.wr (s.gpr .r9+BitVec.ofNat 64 off) 8) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.wrapperEntry) s (· = wrapperEntryState s) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.wrapperEntry,WP.block_append_iff,WP.block_append_iff]
+  have hs : WP isa (.block (Spill.saveCode .r9 Impl.AesGcm.PPC64LE.Blocks.wrapperSaved)) s
+      (· = {s with mem := Spill.saveMem s.mem (s.gpr .r9) s.gpr Impl.AesGcm.PPC64LE.Blocks.wrapperSaved}) := by
+    rw [← List.append_nil (Spill.saveCode .r9 Impl.AesGcm.PPC64LE.Blocks.wrapperSaved)]
+    apply Spill.save_ok (by decide)
+      (show ∀ p ∈ Impl.AesGcm.PPC64LE.Blocks.wrapperSaved, p.2%8=0 ∧ p.2<32768 from by decide)
+    · intro p hp
+      have hh : ∀ p ∈ Impl.AesGcm.PPC64LE.Blocks.wrapperSaved, p.2+8≤64 := by decide
+      exact hw _ (hh p hp)
+    · exact WP.block_nil rfl
+  refine WP.mono hs fun saved hs => ?_
+  subst saved
+  refine WP.mono (wrapperSaveLR_ok _ (hw 56 (by decide))) fun linked hl => ?_
+  subst linked
+  exact wrapperConfig_ok _
+
+
+def bulkArgsState (s : State) : State :=
+  (((((((((s.write .r3 (s.gpr .r29)).write .r4 (s.gpr .r28)).write .r5 (s.gpr .r27)).write
+    .r6 (s.gpr .r30)).write .r0 7).write .r11 (s.gpr .r25 &&& 7)).write
+    .r7 (s.gpr .r25-(s.gpr .r25 &&& 7))).write .r8 (s.gpr .r29+240)).write
+    .r9 (s.gpr .r26)).write .r10 (s.gpr .r31+64)
+
+theorem bulkArgs_ok (s : State) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.bulkArgs) s (· = bulkArgsState s) := by
+  apply WP.of_runBlock
+  simp only [Impl.AesGcm.PPC64LE.Blocks.bulkArgs,Impl.Aes.PPC64LE.Crypto.mov,
+    runBlock_cons,runStep_some,runBlock_nil,exec_logic,BitVec.or_self,exec_li (imm := 7) (by decide),exec_sub,
+    exec_addi (n := .r29) (imm := 240) (by decide) (by decide),
+    exec_addi (n := .r31) (imm := 64) (by decide) (by decide),
+    RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,Option.some.injEq,exists_eq_left']
+  rfl
+
+
+theorem mask_tail (n : Nat) : BitVec.ofNat 64 n &&& 7=BitVec.ofNat 64 (n%8) := by
+  change BitVec.ofNat 64 n &&& BitVec.ofNat 64 (2^3-1)=_
+  rw [← BitVec.ofNat_and,Nat.and_two_pow_sub_one_eq_mod]
+
+
+def bulkRestState (s : State) : State :=
+  (((((s.write .r0 7).write .r11 (s.gpr .r25 &&& 7)).write
+    .r12 (s.gpr .r25-(s.gpr .r25 &&& 7))).write
+    .r12 ((s.gpr .r25-(s.gpr .r25 &&& 7)) <<< 4)).write
+    .r30 (s.gpr .r30+((s.gpr .r25-(s.gpr .r25 &&& 7)) <<< 4))).write .r25 (s.gpr .r25 &&& 7)
+
+theorem bulkRest_ok (s : State) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.bulkRest) s (· = bulkRestState s) := by
+  apply WP.of_runBlock
+  simp only [Impl.AesGcm.PPC64LE.Blocks.bulkRest,Impl.Aes.PPC64LE.Crypto.mov,
+    runBlock_cons,runStep_some,runBlock_nil,exec_logic,BitVec.or_self,exec_li (imm := 7) (by decide),
+    exec_sub,exec_lsl (sh := 4) (by decide),exec_add,
+    RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,Option.some.injEq,exists_eq_left']
+  rfl
+
+
+theorem wrapperHeader_frame (s : State) :
+    Frame [⟨s.gpr .r9,64⟩] s.mem (wrapperHeaderMem s) := by
+  have hf := Spill.saveMem_frame_base
+    (show ∀ p ∈ Impl.AesGcm.PPC64LE.Blocks.wrapperSaved, p.2+8≤64 from by decide)
+    (by decide) s.mem (s.gpr .r9) s.gpr
+  exact hf.writeW (List.mem_singleton_self _) s.lr
+    (Offset.contains_base _ (d := 56) (n := 8) (k := 64) (by decide) (by decide))
+
+
+theorem wrapperHeader_saved (s : State) :
+    Spill.Saved (s.gpr .r9) s.gpr Impl.AesGcm.PPC64LE.Blocks.wrapperSaved (wrapperHeaderMem s) := by
+  have hs := Spill.saveMem_saved (show Spill.Fits Impl.AesGcm.PPC64LE.Blocks.wrapperSaved from by decide)
+    s.mem (s.gpr .r9) s.gpr
+  have hf : Frame [⟨s.gpr .r9+56,8⟩]
+      (Spill.saveMem s.mem (s.gpr .r9) s.gpr Impl.AesGcm.PPC64LE.Blocks.wrapperSaved) (wrapperHeaderMem s) :=
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) s.lr (Region.contains_self _ _)
+  refine hs.frame hf fun p hp r hr => ?_
+  rw [List.mem_singleton] at hr
+  subst r
+  have ho : ∀ p ∈ Impl.AesGcm.PPC64LE.Blocks.wrapperSaved, p.2+8≤56 := by decide
+  exact Offset.disjoint _ (Or.inl (ho p hp)) (by have := ho p hp; omega) (by decide)
+
+
+theorem wrapperHeader_lr (s : State) : (wrapperHeaderMem s).readW (s.gpr .r9+56) 64=s.lr :=
+  Mem.readW_writeW_self64 ..
+
+
+structure WrapperFixed (base s : State) : Prop where
+  rd : s.rd=base.rd
+  wr : s.wr=base.wr
+  ctx : s.gpr .r29=base.gpr .r3
+  rounds : s.gpr .r28=base.gpr .r4
+  counter : s.gpr .r27=base.gpr .r5
+  y : s.gpr .r26=base.gpr .r6
+  work : s.gpr .r31=base.gpr .r9
+
+
+theorem wrapperEntry_fixed (s : State) : WrapperFixed s (wrapperEntryState s) := by
+  constructor <;>
+    simp only [wrapperEntryState,wrapperConfigState,RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false,
+      RegUpd.rd_write,RegUpd.wr_write]
+
+
+theorem WrapperFixed.keep {base s t : State} (hf : WrapperFixed base s)
+    (hk : Keep coreVolatile s t) : WrapperFixed base t :=
+  ⟨hk.2.1.trans hf.rd,hk.2.2.trans hf.wr,
+    (hk.gpr (by decide)).trans hf.ctx,(hk.gpr (by decide)).trans hf.rounds,
+    (hk.gpr (by decide)).trans hf.counter,(hk.gpr (by decide)).trans hf.y,(hk.gpr (by decide)).trans hf.work⟩
+
+
+theorem bulkArgs_keep (s : State) : Keep coreVolatile s (bulkArgsState s) := by
+  refine ⟨?_,rfl,rfl⟩
+  intro r hr
+  have hnot : ∀ q ∈ coreVolatile, r≠q := fun q hq he => hr (he ▸ hq)
+  simp only [bulkArgsState,RegUpd.gpr_write,hnot .r3 (by decide),hnot .r4 (by decide),
+    hnot .r5 (by decide),hnot .r6 (by decide),hnot .r0 (by decide),hnot .r11 (by decide),
+    hnot .r7 (by decide),hnot .r8 (by decide),hnot .r9 (by decide),hnot .r10 (by decide),ite_false]
+
+
+
+structure BulkArgsResult (base start s : State) (n : Nat) : Prop where
+  fixed : WrapperFixed base s
+  mem : s.mem=start.mem
+  ctx : s.gpr .r3=base.gpr .r3
+  rounds : s.gpr .r4=base.gpr .r4
+  counter : s.gpr .r5=base.gpr .r5
+  data : s.gpr .r6=start.gpr .r30
+  left : s.gpr .r7=BitVec.ofNat 64 (n-n%8)
+  h : s.gpr .r8=base.gpr .r3+240
+  y : s.gpr .r9=base.gpr .r6
+  work : s.gpr .r10=base.gpr .r9+64
+
+
+theorem bulkArgs_result {base s : State} {n : Nat} (hf : WrapperFixed base s)
+    (hn : s.gpr .r25=BitVec.ofNat 64 n) :
+    BulkArgsResult base s (bulkArgsState s) n := by
+  refine ⟨hf.keep (bulkArgs_keep s),rfl,?_,?_,?_,?_,?_,?_,?_,?_⟩
+  all_goals simp only [bulkArgsState,RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false]
+  · exact hf.ctx
+  · exact hf.rounds
+  · exact hf.counter
+  · rw [hn,mask_tail,Offset.ofNat_sub_ofNat (Nat.mod_le _ _)]
+  · rw [hf.ctx]
+  · exact hf.y
+  · rw [hf.work]
+
+
+def wrapperExitState (s : State) : State :=
+  {s.write .r0 (s.mem.readW (s.gpr .r31+56) 64) with lr := s.mem.readW (s.gpr .r31+56) 64}.write
+    .r12 (s.gpr .r31)
+
+theorem wrapperExitRead_ok (s : State) (hr : InRegions (s.rd++s.wr) (s.gpr .r31+56) 8) :
+    WP isa (.block [.load .d .r0 .r31 56,.mtlr .r0,Impl.Aes.PPC64LE.Crypto.mov .r12 .r31]) s
+      (· = wrapperExitState s) := by
+  apply WP.of_runBlock
+  simp only [Impl.Aes.PPC64LE.Crypto.mov,runBlock_cons,runStep_some,runBlock_nil,
+    exec_load_d (by decide) ⟨by decide,by decide⟩ hr,exec_mtlr,exec_logic,BitVec.or_self,
+    RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false,Option.some.injEq,exists_eq_left']
+  rfl
+
+
+structure WrapperExitResult (base start s : State) : Prop where
+  restored : ∀ p ∈ Impl.AesGcm.PPC64LE.Blocks.wrapperSaved, s.gpr p.1=base.gpr p.1
+  other : ∀ r, r ∉ (.r0 :: .r12 :: Impl.AesGcm.PPC64LE.Blocks.wrapperSaved.map Prod.fst) → s.gpr r=start.gpr r
+  mem : s.mem=start.mem
+  rd : s.rd=start.rd
+  wr : s.wr=start.wr
+  lr : s.lr=base.lr
+  sp : s.sp=start.sp
+
+
+theorem wrapperExit_ok (base s : State) (hwork : s.gpr .r31=base.gpr .r9)
+    (hsv : Spill.Saved (base.gpr .r9) base.gpr Impl.AesGcm.PPC64LE.Blocks.wrapperSaved s.mem)
+    (hlr : s.mem.readW (base.gpr .r9+56) 64=base.lr)
+    (hr : ∀ off, off+8≤64 → InRegions (s.rd++s.wr) (base.gpr .r9+BitVec.ofNat 64 off) 8) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.wrapperExit) s (WrapperExitResult base s) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.wrapperExit,WP.block_append_iff]
+  refine WP.mono (wrapperExitRead_ok s (by rw [hwork]; exact hr 56 (by decide))) fun u hu => ?_
+  subst u
+  have hb : (wrapperExitState s).gpr .r12=base.gpr .r9 := (RegUpd.gpr_write_self ..).trans hwork
+  have hslots : ∀ p ∈ Impl.AesGcm.PPC64LE.Blocks.wrapperSaved,
+      InRegions ((wrapperExitState s).rd++(wrapperExitState s).wr) (base.gpr .r9+BitVec.ofNat 64 p.2) 8 := by
+    intro p hp
+    have ho : ∀ p ∈ Impl.AesGcm.PPC64LE.Blocks.wrapperSaved, p.2+8≤64 := by decide
+    exact hr _ (ho p hp)
+  change WP isa (.block (Spill.restoreCode .r12 Impl.AesGcm.PPC64LE.Blocks.wrapperSaved)) _ _
+  refine WP.mono (Spill.restore_wp (by decide) hb
+    (show ∀ p ∈ Impl.AesGcm.PPC64LE.Blocks.wrapperSaved, p.2%8=0 ∧ p.2<32768 from by decide)
+    (by decide) hslots hsv) fun t ht => ?_
+  refine ⟨ht.gpr,?_,ht.mem,ht.rd,ht.wr,?_,ht.sp⟩
+  · intro r hn
+    have h0 : r≠.r0 := fun he => hn (by simp [he])
+    have h12 : r≠.r12 := fun he => hn (by simp [he])
+    have hsave : r ∉ Impl.AesGcm.PPC64LE.Blocks.wrapperSaved.map Prod.fst := fun he => hn (by simp [he])
+    rw [ht.other r hsave]
+    simp only [wrapperExitState,RegUpd.gpr_write,h12,h0,ite_false]
+  · rw [ht.lr]
+    simpa only [wrapperExitState,RegUpd.lr_write,hwork] using hlr
+
+
+def tailCtrState (s : State) : State :=
+  (((((s.write .r3 (s.gpr .r29)).write .r4 (s.gpr .r28)).write .r5 (s.gpr .r27)).write
+    .r6 (s.gpr .r30)).write .r7 (s.gpr .r25)).write .r8 (s.gpr .r31+64)
+
+theorem tailCtrArgs_ok (s : State) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.tailCtrArgs) s (· = tailCtrState s) := by
+  apply WP.of_runBlock
+  simp only [Impl.AesGcm.PPC64LE.Blocks.tailCtrArgs,Impl.Aes.PPC64LE.Crypto.mov,
+    runBlock_cons,runStep_some,runBlock_nil,exec_logic,BitVec.or_self,
+    exec_addi (n := .r31) (imm := 64) (by decide) (by decide),
+    RegUpd.gpr_write,reduceCtorEq,ite_false,Option.some.injEq,exists_eq_left']
+  rfl
+
+
+def tailGhState (s : State) : State :=
+  ((((s.write .r3 (s.gpr .r29+240)).write .r4 (s.gpr .r26)).write
+    .r5 (s.gpr .r30)).write .r6 (s.gpr .r25)).write .r7 (s.gpr .r31+64)
+
+theorem tailGhArgs_ok (s : State) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.tailGhArgs) s (· = tailGhState s) := by
+  apply WP.of_runBlock
+  simp only [Impl.AesGcm.PPC64LE.Blocks.tailGhArgs,Impl.Aes.PPC64LE.Crypto.mov,
+    runBlock_cons,runStep_some,runBlock_nil,exec_logic,BitVec.or_self,
+    exec_addi (n := .r29) (imm := 240) (by decide) (by decide),
+    exec_addi (n := .r31) (imm := 64) (by decide) (by decide),
+    RegUpd.gpr_write,reduceCtorEq,ite_false,Option.some.injEq,exists_eq_left']
+  rfl
+
+
+def tailBase (s : State) : State := (bulkArgsState s).write .r7 (s.gpr .r25)
+
+structure TailConfig (s : State) (n nr : Nat) : Prop where
+  layout : CoreLayout (tailBase s) n
+  count : s.gpr .r25=BitVec.ofNat 64 n
+  rounds : s.gpr .r28=BitVec.ofNat 64 nr
+  valid : nr=10 ∨ nr=12 ∨ nr=14
+  fit : (s.gpr .r30).toNat+16*n≤2^64
+
+
+theorem tailCtr_keep (s : State) : Keep coreVolatile s (tailCtrState s) := by
+  obtain ⟨_,_,_,he,hk⟩ := WP.keep coreVolatile (tailCtrArgs_ok s) (by lit_decide) (by lit_decide)
+  subst he
+  exact hk
+
+
+theorem tailGh_keep (s : State) : Keep coreVolatile s (tailGhState s) := by
+  obtain ⟨_,_,_,he,hk⟩ := WP.keep coreVolatile (tailGhArgs_ok s) (by lit_decide) (by lit_decide)
+  subst he
+  exact hk
+
+
+private theorem TailConfig.ctr {s : State} {n nr : Nat} (hc : TailConfig s n nr) :
+    VG.Proof.AesGcm.PPC64LE.CtrCall (tailCtrState s) (s.gpr .r29) (s.gpr .r27)
+      (s.gpr .r30) (s.gpr .r31+64) nr n := by
+  have lay := hc.layout
+  have hkey : Region.Sub (⟨s.gpr .r29,240⟩ : Region) (coreKey (tailBase s)) :=
+    Region.sub_prefix (by decide)
+  have hread : Covers ([⟨s.gpr .r29,240⟩] ++
+      [⟨s.gpr .r27,16⟩,⟨s.gpr .r30,16*n⟩,⟨s.gpr .r31+64,2048⟩]) (s.rd++s.wr) := by
+    intro p len hp
+    obtain ⟨r,hr,hpr⟩ := hp
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · apply lay.reads p len
+      refine ⟨coreKey (tailBase s),by simp,?_⟩
+      change (p-s.gpr .r29).toNat+len≤256
+      change (p-s.gpr .r29).toNat+len≤240 at hpr
+      omega
+    all_goals
+      obtain ⟨r,hr,hpr⟩ := lay.writes p len (by
+        first | exact ⟨coreCounter (tailBase s),by simp,hpr⟩
+              | exact ⟨coreData (tailBase s) n,by simp,hpr⟩
+              | exact ⟨coreWork (tailBase s),by simp,hpr⟩)
+      exact ⟨r,List.mem_append_right _ hr,hpr⟩
+  have hwrite : Covers [⟨s.gpr .r27,16⟩,⟨s.gpr .r30,16*n⟩,⟨s.gpr .r31+64,2048⟩] s.wr := by
+    intro p len ⟨r,hr,hp⟩
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    all_goals apply lay.writes p len
+    · exact ⟨coreCounter (tailBase s),by simp,hp⟩
+    · exact ⟨coreData (tailBase s) n,by simp,hp⟩
+    · exact ⟨coreWork (tailBase s),by simp,hp⟩
+  refine ⟨?_,?_,?_,?_,?_,?_,hc.valid,by have := lay.size; omega,
+    lay.counterKey.sub_left hkey,(lay.data (coreKey (tailBase s)) (by simp)).sub_left hkey,
+    (lay.scratch (coreKey (tailBase s)) (by simp)).sub_left hkey,
+    lay.data (coreCounter (tailBase s)) (by simp),lay.scratch (coreCounter (tailBase s)) (by simp),
+    lay.scratch (coreData (tailBase s) n) (by simp),hc.fit,hread,hwrite⟩
+  all_goals simp only [tailCtrState,RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false]
+  · exact hc.rounds
+  · exact hc.count
+
+
+private theorem TailConfig.gh {s u : State} {n nr : Nat} (hc : TailConfig s n nr)
+    (hu : VG.Proof.AesGcm.PPC64LE.CtrPost (tailCtrState s) (s.gpr .r29) (s.gpr .r27)
+      (s.gpr .r30) (s.gpr .r31+64) nr n u) :
+    VG.Proof.AesGcm.PPC64LE.GhCall (tailGhState u) (s.gpr .r29+240) (s.gpr .r26)
+      (s.gpr .r30) (s.gpr .r31+64) n := by
+  have lay := hc.layout
+  have hp : ∀ r ∈ preserved, u.gpr r=s.gpr r := fun r hr =>
+    (hu.saved r hr).trans ((tailCtr_keep s).gpr (by
+      have hdis : ∀ r ∈ preserved, r ∉ coreVolatile := by decide
+      exact hdis r hr))
+  have hr : (tailGhState u).rd++(tailGhState u).wr=s.rd++s.wr := by
+    rw [(tailGh_keep u).2.1,(tailGh_keep u).2.2,hu.rd,hu.wr]
+    rfl
+  have hw : (tailGhState u).wr=s.wr := by
+    rw [(tailGh_keep u).2.2,hu.wr]
+    rfl
+  have hwrites : Covers [⟨s.gpr .r26,16⟩,⟨s.gpr .r31+64,256⟩] (tailGhState u).wr := by
+    rw [hw]
+    apply Covers.trans ?_ lay.writes
+    apply Covers.of_sub
+    intro r h
+    rcases List.mem_cons.mp h with rfl | h
+    · exact ⟨coreY (tailBase s),by simp,0,by exact (BitVec.add_zero _).symm,by change 0+16≤16; decide⟩
+    · rw [List.mem_singleton] at h
+      subst r
+      exact ⟨coreWork (tailBase s),by simp,0,by exact (BitVec.add_zero _).symm,by change 0+256≤2048; decide⟩
+  have hreads : Covers ([⟨s.gpr .r29+240,16⟩,⟨s.gpr .r30,16*n⟩] ++
+      [⟨s.gpr .r26,16⟩,⟨s.gpr .r31+64,256⟩]) ((tailGhState u).rd++(tailGhState u).wr) := by
+    rw [hr]
+    have hall := Covers.append_left lay.reads (Covers.right lay.writes)
+    apply Covers.trans ?_ hall
+    apply Covers.of_sub
+    intro r h
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at h
+    rcases h with (rfl | rfl) | rfl | rfl
+    · exact ⟨coreKey (tailBase s),by simp,240,rfl,by change 240+16≤256; decide⟩
+    · exact ⟨coreData (tailBase s) n,by simp,0,by exact (BitVec.add_zero _).symm,by change 0+16*n≤16*n; omega⟩
+    · exact ⟨coreY (tailBase s),by simp,0,by exact (BitVec.add_zero _).symm,by change 0+16≤16; decide⟩
+    · exact ⟨coreWork (tailBase s),by simp,0,by exact (BitVec.add_zero _).symm,by change 0+256≤2048; decide⟩
+  have hh : Region.Sub (⟨s.gpr .r29+240,16⟩ : Region) (coreKey (tailBase s)) :=
+    Offset.sub_base _ (d := 240) (n := 16) (k := 256) (by decide)
+  have hs : Region.Sub (⟨s.gpr .r31+64,256⟩ : Region) (coreWork (tailBase s)) := Region.sub_prefix (by decide)
+  refine ⟨?_,?_,?_,?_,?_,by have := lay.size; omega,
+    lay.yKey.sub_left hh,(lay.scratch (coreKey (tailBase s)) (by simp)).sub_left hh |>.sub_right hs,
+    lay.data (coreY (tailBase s)) (by simp),(lay.scratch (coreY (tailBase s)) (by simp)).sub_right hs,
+    (lay.scratch (coreData (tailBase s) n) (by simp)).sub_right hs,hreads,hwrites⟩
+  all_goals simp only [tailGhState,RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false]
+  · rw [hp .r29 (by decide)]
+  · exact hp .r26 (by decide)
+  · exact hp .r30 (by decide)
+  · rw [hp .r25 (by decide),hc.count]
+  · rw [hp .r31 (by decide)]
+
+
+theorem block_frame {m m' : Mem} {rs : List Region} {p : Addr} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (⟨p,16⟩ : Region).Disjoint r) : Spec.Gcm.blockAt m' p=Spec.Gcm.blockAt m p := by
+  rw [← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt,← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt,
+    hf.read (Region.contains_self _ _) hd (by decide)]
+
+
+theorem blocks_frame {m m' : Mem} {rs : List Region} {p : Addr} {n : Nat} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (⟨p,16*n⟩ : Region).Disjoint r) :
+    Spec.Gcm.blocksAt m' p n=Spec.Gcm.blocksAt m p n := by
+  apply List.map_congr_left
+  intro i hi
+  exact block_frame hf fun r hr => (hd r hr).sub_left
+    (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*n) (by have := List.mem_range.mp hi; omega))
+
+
+structure TailResult (base : State) (n nr : Nat) (s : State) : Prop where
+  rd : s.rd=base.rd
+  wr : s.wr=base.wr
+  sp : s.sp=base.sp
+  saved : ∀ r ∈ preserved, s.gpr r=base.gpr r
+  frame : Frame [coreCounter (tailBase base),coreY (tailBase base),coreData (tailBase base) n,
+    coreWork (tailBase base)] base.mem s.mem
+  ciphertext : Spec.Gcm.blocksAt s.mem (base.gpr .r30) n=Spec.Gcm.ctr32
+    (Spec.Gcm.ctxCiph base.mem (base.gpr .r29) nr) (Spec.Gcm.blockAt base.mem (base.gpr .r27))
+    (Spec.Gcm.blocksAt base.mem (base.gpr .r30) n)
+  counter : Spec.Gcm.blockAt s.mem (base.gpr .r27)=
+    Nat.repeat Spec.Gcm.inc32 n (Spec.Gcm.blockAt base.mem (base.gpr .r27))
+  y : Spec.Gcm.blockAt s.mem (base.gpr .r26)=Spec.Gcm.ghashFrom
+    (Spec.Gcm.ctxH base.mem (base.gpr .r29)) (Spec.Gcm.blockAt base.mem (base.gpr .r26))
+    (Spec.Gcm.blocksAt s.mem (base.gpr .r30) n)
+
+
+theorem tail_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (n nr : Nat) (hc : TailConfig s n nr) :
+    WP isa Impl.AesGcm.PPC64LE.Blocks.tail s (TailResult s n nr) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.tail]
+  by_cases hz : n=0
+  · subst n
+    refine WP.ite true (by simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hc.count]; rfl)
+      (fun _ => WP.block_nil ?_) (by simp)
+    refine ⟨rfl,rfl,rfl,fun _ _ => rfl,Frame.refl _ _,?_,rfl,?_⟩
+    · simp only [Spec.Gcm.blocksAt,List.range_zero,List.map_nil,Spec.Gcm.ctr32,Spec.Gcm.keystream,
+        List.length_nil,List.zipWith_nil_left]
+    · rfl
+  · have hne : s.gpr .r25≠0 := by
+      intro he
+      have hh := congrArg BitVec.toNat he
+      rw [hc.count,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := hc.layout.size; omega)] at hh
+      exact hz hh
+    refine WP.ite false (by simpa only [eval,State.read,Size.bits,BitVec.setWidth_eq,
+      Option.some.injEq,beq_eq_false_iff_ne] using hne) (by simp) (fun _ => ?_)
+    apply WP.seq
+    refine WP.mono (tailCtrArgs_ok s) fun ctr hcargs => ?_
+    subst ctr
+    apply WP.seq
+    refine WP.mono (VG.Proof.AesGcm.PPC64LE.ctr_call hc.ctr) fun u hu => ?_
+    apply WP.seq
+    refine WP.mono (tailGhArgs_ok u) fun gh hgargs => ?_
+    subst gh
+    refine WP.mono (VG.Proof.AesGcm.PPC64LE.gh_call (hc.gh hu)) fun t ht => ?_
+    have lay := hc.layout
+    have hsp : ∀ r ∈ preserved, r ∉ coreVolatile := by decide
+    have hp : ∀ r ∈ preserved, t.gpr r=s.gpr r := fun r hr =>
+      (ht.saved r hr).trans (((tailGh_keep u).gpr (hsp r hr)).trans
+        ((hu.saved r hr).trans ((tailCtr_keep s).gpr (hsp r hr))))
+    have hfc : Frame [coreCounter (tailBase s),coreData (tailBase s) n,coreWork (tailBase s)] s.mem u.mem := hu.frame
+    have hdata : Spec.Gcm.blocksAt t.mem (s.gpr .r30) n=Spec.Gcm.blocksAt u.mem (s.gpr .r30) n := by
+      apply blocks_frame ht.frame
+      intro r hr
+      rcases List.mem_cons.mp hr with rfl | hr
+      · exact (lay.data (coreY (tailBase s)) (by simp)).symm
+      · rw [List.mem_singleton] at hr
+        subst r
+        exact (lay.scratch (coreData (tailBase s) n) (by simp)).sub_right (Region.sub_prefix (by decide))
+    have hcounter : Spec.Gcm.blockAt t.mem (s.gpr .r27)=Spec.Gcm.blockAt u.mem (s.gpr .r27) := by
+      apply block_frame ht.frame
+      intro r hr
+      rcases List.mem_cons.mp hr with rfl | hr
+      · exact lay.counterY
+      · rw [List.mem_singleton] at hr
+        subst r
+        exact (lay.scratch (coreCounter (tailBase s)) (by simp)).sub_right (Region.sub_prefix (by decide))
+    have hy : Spec.Gcm.blockAt u.mem (s.gpr .r26)=Spec.Gcm.blockAt s.mem (s.gpr .r26) := by
+      apply block_frame hfc
+      intro r hr
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact lay.counterY.symm
+      · exact lay.data (coreY (tailBase s)) (by simp)
+      · exact lay.scratch (coreY (tailBase s)) (by simp)
+    have hh : Spec.Gcm.blockAt u.mem (s.gpr .r29+240)=Spec.Gcm.ctxH s.mem (s.gpr .r29) := by
+      apply block_frame hfc
+      intro r hr
+      have hsub : Region.Sub (⟨s.gpr .r29+240,16⟩ : Region) (coreKey (tailBase s)) :=
+        Offset.sub_base _ (d := 240) (n := 16) (k := 256) (by decide)
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact lay.counterKey.sub_left hsub
+      · exact (lay.data (coreKey (tailBase s)) (by simp)).sub_left hsub
+      · exact (lay.scratch (coreKey (tailBase s)) (by simp)).sub_left hsub
+    have hfg : Frame [coreCounter (tailBase s),coreY (tailBase s),coreData (tailBase s) n,
+        coreWork (tailBase s)] u.mem t.mem := ht.frame.sub (fun r hr => by
+      rcases List.mem_cons.mp hr with rfl | hr
+      · exact ⟨coreY (tailBase s),by simp,fun _ h => h⟩
+      · rw [List.mem_singleton] at hr
+        subst r
+        exact ⟨coreWork (tailBase s),by simp,Region.sub_prefix (by decide)⟩)
+    refine ⟨ht.rd.trans hu.rd,ht.wr.trans hu.wr,ht.sp.trans hu.sp,hp,
+      (hfc.mono (by simp)).trans hfg,hdata.trans hu.out,hcounter.trans hu.ctr,?_⟩
+    have hout : Spec.Gcm.blockAt t.mem (s.gpr .r26)=Spec.Gcm.ghashFrom
+        (Spec.Gcm.blockAt u.mem (s.gpr .r29+240)) (Spec.Gcm.blockAt u.mem (s.gpr .r26))
+        (Spec.Gcm.blocksAt u.mem (s.gpr .r30) n) := ht.out
+    simpa only [hdata,hh,hy] using hout
 
 
 theorem code_taint : ∃ h, (VG.Taint.check vectorTaint
