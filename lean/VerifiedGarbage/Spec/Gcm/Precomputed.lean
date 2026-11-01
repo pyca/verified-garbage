@@ -15,8 +15,7 @@ functions hashing many blocks at a time need not compute them on every call:
   (`PowersRepr`), each a block as GCM writes one (`blockAt`, as `H` is in
   bytes 240–255).
 * `vg_aes_gcm_seal_precomputed`, `_open_precomputed`,
-  `_stream_encrypt_precomputed`, `_stream_decrypt_precomputed`,
-  `_encrypt_blocks_precomputed` and `_decrypt_blocks_precomputed` are
+  `_stream_encrypt_precomputed` and `_stream_decrypt_precomputed` are
   `vg_aes_gcm_seal`, … with such a key context, which they need to hold the
   powers of its hash subkey (`PowersRepr`, a precondition, as the number of
   rounds is): they compute exactly what those compute (the same
@@ -87,72 +86,6 @@ def initPrecomputedApi : Api where
 def powersSafety : String :=
   "`*ctx` must hold the powers of its hash subkey, as `vg_aes_gcm_init_precomputed` writes them."
 
-/-! ## Whole blocks -/
-
-/-- `vg_aes_gcm_encrypt_blocks_precomputed(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264])`,
-and `vg_aes_gcm_decrypt_blocks_precomputed` with the same signature:
-`cryptBlocksSig` with the larger key context. -/
-def cryptBlocksPrecomputedSig : Sig where
-  params := [("ctx", .array false .u64 128), ("rounds", .int .usize true),
-    ("counter", .array true .u8 16), ("y", .array true .u8 16),
-    ("data", .slice true (.array .u8 16) "n"), ("scratch", .array true .u64 264)]
-
-/-- `rounds` is 10, 12 or 14, and the key context at `ctx` holds the powers
-of its hash subkey. -/
-def cryptBlocksPrecomputedPre (pb : Nat) :
-    Curry (cryptBlocksPrecomputedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _counter _y _data _n _scratch m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧ PowersRepr m ctx
-
-/-- `encryptBlocksContract`'s postcondition, with the larger key context. -/
-def encryptBlocksPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cryptBlocksPrecomputedSig.contract A (pre := cryptBlocksPrecomputedPre A.ptrBits)
-    (post := fun ctx rounds counter y data n _scratch m m' _ =>
-      let c := ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) (blocksAt m data n.toNat)
-      blocksAt m' data n.toNat = c ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
-        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
-    (stack := stack)
-
-/-- `decryptBlocksContract`'s postcondition, with the larger key context. -/
-def decryptBlocksPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cryptBlocksPrecomputedSig.contract A (pre := cryptBlocksPrecomputedPre A.ptrBits)
-    (post := fun ctx rounds counter y data n _scratch m m' _ =>
-      let c := blocksAt m data n.toNat
-      blocksAt m' data n.toNat = ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) c ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
-        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
-    (stack := stack)
-
-/-- `vg_aes_gcm_encrypt_blocks_precomputed` on every target. -/
-def encryptBlocksPrecomputedApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_encrypt_blocks_precomputed"
-  sig := cryptBlocksPrecomputedSig
-  contracts := some fun A stack => encryptBlocksPrecomputedContract A stack
-  summary := "`vg_aes_gcm_encrypt_blocks` with a key context of `vg_aes_gcm_init_precomputed`: \
-    with the key context `*ctx` that `vg_aes_gcm_init_precomputed` wrote for `rounds` rounds, \
-    does exactly  what `vg_aes_gcm_encrypt_blocks` does with its first 256 bytes (see \
-    `vg_aes_gcm_encrypt_blocks`), and may read the powers of  the hash subkey that it holds \
-    instead of computing them. Its constant-time guarantee is  `vg_aes_gcm_encrypt_blocks`'s, \
-    the powers being as secret as the rest of the key context.\n\n\
-    Contract: `VG.Spec.Gcm.encryptBlocksPrecomputedContract`."
-  safety := encryptBlocksApi.safety ++ [powersSafety]
-
-/-- `vg_aes_gcm_decrypt_blocks_precomputed` on every target. -/
-def decryptBlocksPrecomputedApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_decrypt_blocks_precomputed"
-  sig := cryptBlocksPrecomputedSig
-  contracts := some fun A stack => decryptBlocksPrecomputedContract A stack
-  summary := "`vg_aes_gcm_decrypt_blocks` with a key context of `vg_aes_gcm_init_precomputed`: \
-    with the key context `*ctx` that `vg_aes_gcm_init_precomputed` wrote for `rounds` rounds, \
-    does exactly  what `vg_aes_gcm_decrypt_blocks` does with its first 256 bytes (see \
-    `vg_aes_gcm_decrypt_blocks`), and may read the powers of  the hash subkey that it holds \
-    instead of computing them. Its constant-time guarantee is  `vg_aes_gcm_decrypt_blocks`'s, \
-    the powers being as secret as the rest of the key context.\n\n\
-    Contract: `VG.Spec.Gcm.decryptBlocksPrecomputedContract`."
-  safety := decryptBlocksApi.safety ++ [powersSafety]
 
 /-! ## One-shot -/
 

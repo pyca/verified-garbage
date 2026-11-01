@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
@@ -203,18 +204,18 @@ def blocksSat : State where
 
 theorem encryptBlocks_verified (v : GcmImpl) (st : Option StitchImpl) :
     Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full)))
-      (Spec.Gcm.encryptBlocksContract X86_64.abi 8) :=
+      (Proof.Gcm.encryptBlocksContract X86_64.abi 8) :=
   Verified.of_correct (encryptBlocks_correct v st) (Blocks.encrypt_ctB v st) (by
-    sig_implies [Spec.Gcm.encryptBlocksContract, Spec.Gcm.cryptBlocksSig, Proof.AesGcm.encryptBlocksX86_64,
+    sig_implies [Proof.Gcm.encryptBlocksContract, Proof.Gcm.cryptBlocksSig, Proof.AesGcm.encryptBlocksX86_64,
       Proof.AesGcm.blocksPre, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] [blocksSat] using blocksSat)
 
 theorem decryptBlocks_verified (v : GcmImpl) (st : Option StitchImpl) :
     Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)))
-      (Spec.Gcm.decryptBlocksContract X86_64.abi 8) :=
+      (Proof.Gcm.decryptBlocksContract X86_64.abi 8) :=
   Verified.of_correct (decryptBlocks_correct v st) (Blocks.decrypt_ctB v st) (by
-    sig_implies [Spec.Gcm.decryptBlocksContract, Spec.Gcm.cryptBlocksSig, Proof.AesGcm.decryptBlocksX86_64,
+    sig_implies [Proof.Gcm.decryptBlocksContract, Proof.Gcm.cryptBlocksSig, Proof.AesGcm.decryptBlocksX86_64,
       Proof.AesGcm.blocksPre, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] [blocksSat] using blocksSat)

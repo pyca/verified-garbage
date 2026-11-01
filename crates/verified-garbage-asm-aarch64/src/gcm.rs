@@ -155,116 +155,6 @@ b 210f
     )
 }
 
-/// The CPU features `vg_ghash_with_powers_aes` requires (`Artifact.features`).
-pub const VG_GHASH_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// `vg_ghash` with the 8 prepared powers of the hash subkey `H` at `h` at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (NIST SP 800-38D §6.4). The hash subkey, its powers, `Y` and the data are secret.
-///
-/// Contract: `VG.Spec.Gcm.ghashWithPowersContract`. Constant time: only the pointers and `n` may affect timing.
-///
-/// # Safety
-///
-/// * `h` must be valid for reads of 16 bytes.
-/// * `y` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 256 bytes.
-/// * `pw` must be valid for reads of 128 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `*pw` must be what a `*_store_powers` function wrote for the hash subkey at `h` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and that subkey).
-/// * `y` and `scratch` must not overlap each other, `h`, `data` or `pw` (distinct Rust objects never do).
-/// * None of `h`, `y`, `data`, `scratch` and `pw` may wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ghash_with_powers_aes(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32], pw: *const [u64; 16]) {
-    core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x3dc004b0,0x6e104218,0x3dc000b1,0x6e114239,0x3dc00cb2,0x6e12425a,0x3dc008b3,0x6e13427b
-.inst 0x3dc014b4,0x6e14429c,0x3dc010b5,0x6e1542bd,0x3dc01cb6,0x6e1642de,0x3dc018b7,0x6e1742ff
-.inst 0xd2f84005,0x4e080ca1,0x3dc00020,0x4e200800,0xd343fc65
-cbz x5, 20f
-22:
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00446,0x4e2008c6,0x0efee0c7,0x6e271ca5,0x4efee0c7
-.inst 0x6e271c63,0x0ef6e0c7,0x6e271c84,0x4ef6e0c7,0x6e271c84,0x3dc00846,0x4e2008c6,0x0efde0c7
-.inst 0x6e271ca5,0x4efde0c7,0x6e271c63,0x0ef5e0c7,0x6e271c84,0x4ef5e0c7,0x6e271c84,0x3dc00c46
-.inst 0x4e2008c6,0x0efce0c7,0x6e271ca5,0x4efce0c7,0x6e271c63,0x0ef4e0c7,0x6e271c84,0x4ef4e0c7
-.inst 0x6e271c84,0x3dc01046,0x4e2008c6,0x0efbe0c7,0x6e271ca5,0x4efbe0c7,0x6e271c63,0x0ef3e0c7
-.inst 0x6e271c84,0x4ef3e0c7,0x6e271c84,0x3dc01446,0x4e2008c6,0x0efae0c7,0x6e271ca5,0x4efae0c7
-.inst 0x6e271c63,0x0ef2e0c7,0x6e271c84,0x4ef2e0c7,0x6e271c84,0x3dc01846,0x4e2008c6,0x0ef9e0c7
-.inst 0x6e271ca5,0x4ef9e0c7,0x6e271c63,0x0ef1e0c7,0x6e271c84,0x4ef1e0c7,0x6e271c84,0x3dc01c46
-.inst 0x4e2008c6,0x0ef8e0c7,0x6e271ca5,0x4ef8e0c7,0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7
-.inst 0x6e271c84,0x3dc00046,0x4e2008c6,0x6e201cc6,0x0effe0c7,0x6e271ca5,0x4effe0c7,0x6e271c63
-.inst 0x0ef7e0c7,0x6e271c84,0x4ef7e0c7,0x6e271c84,0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84
-.inst 0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271ca0,0x91020042,0xd1002063,0xd343fc65
-cbnz x5, 22b
-.inst 0xd342fc66
-cbz x6, 23f
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00446,0x4e2008c6,0x0efae0c7,0x6e271ca5,0x4efae0c7
-.inst 0x6e271c63,0x0ef2e0c7,0x6e271c84,0x4ef2e0c7,0x6e271c84,0x3dc00846,0x4e2008c6,0x0ef9e0c7
-.inst 0x6e271ca5,0x4ef9e0c7,0x6e271c63,0x0ef1e0c7,0x6e271c84,0x4ef1e0c7,0x6e271c84,0x3dc00c46
-.inst 0x4e2008c6,0x0ef8e0c7,0x6e271ca5,0x4ef8e0c7,0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7
-.inst 0x6e271c84,0x3dc00046,0x4e2008c6,0x6e201cc6,0x0efbe0c7,0x6e271ca5,0x4efbe0c7,0x6e271c63
-.inst 0x0ef3e0c7,0x6e271c84,0x4ef3e0c7,0x6e271c84,0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84
-.inst 0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271ca0,0x91010042,0xd1001063,0xd343fc65
-b 24f
-23:
-24:
-.inst 0xd341fc66
-cbz x6, 25f
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00446,0x4e2008c6,0x0ef8e0c7,0x6e271ca5,0x4ef8e0c7
-.inst 0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7,0x6e271c84,0x3dc00046,0x4e2008c6,0x6e201cc6
-.inst 0x0ef9e0c7,0x6e271ca5,0x4ef9e0c7,0x6e271c63,0x0ef1e0c7,0x6e271c84,0x4ef1e0c7,0x6e271c84
-.inst 0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7
-.inst 0x6e271ca0,0x91008042,0xd1000863,0xd343fc65
-b 26f
-25:
-26:
-cbz x3, 27f
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00046,0x4e2008c6,0x6e201cc6,0x0ef8e0c7,0x6e271ca5
-.inst 0x4ef8e0c7,0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7,0x6e271c84,0x0ee1e067,0x6e034063
-.inst 0x6e231c84,0x6e271c84,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271ca0,0x91004042
-.inst 0xd1000463,0xd343fc65
-b 28f
-27:
-28:
-b 21f
-20:
-.inst 0xd342fc66
-cbz x6, 29f
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00446,0x4e2008c6,0x0efae0c7,0x6e271ca5,0x4efae0c7
-.inst 0x6e271c63,0x0ef2e0c7,0x6e271c84,0x4ef2e0c7,0x6e271c84,0x3dc00846,0x4e2008c6,0x0ef9e0c7
-.inst 0x6e271ca5,0x4ef9e0c7,0x6e271c63,0x0ef1e0c7,0x6e271c84,0x4ef1e0c7,0x6e271c84,0x3dc00c46
-.inst 0x4e2008c6,0x0ef8e0c7,0x6e271ca5,0x4ef8e0c7,0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7
-.inst 0x6e271c84,0x3dc00046,0x4e2008c6,0x6e201cc6,0x0efbe0c7,0x6e271ca5,0x4efbe0c7,0x6e271c63
-.inst 0x0ef3e0c7,0x6e271c84,0x4ef3e0c7,0x6e271c84,0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84
-.inst 0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271ca0,0x91010042,0xd1001063,0xd343fc65
-b 210f
-29:
-210:
-.inst 0xd341fc66
-cbz x6, 211f
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00446,0x4e2008c6,0x0ef8e0c7,0x6e271ca5,0x4ef8e0c7
-.inst 0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7,0x6e271c84,0x3dc00046,0x4e2008c6,0x6e201cc6
-.inst 0x0ef9e0c7,0x6e271ca5,0x4ef9e0c7,0x6e271c63,0x0ef1e0c7,0x6e271c84,0x4ef1e0c7,0x6e271c84
-.inst 0x0ee1e067,0x6e034063,0x6e231c84,0x6e271c84,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7
-.inst 0x6e271ca0,0x91008042,0xd1000863,0xd343fc65
-b 212f
-211:
-212:
-cbz x3, 213f
-.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x3dc00046,0x4e2008c6,0x6e201cc6,0x0ef8e0c7,0x6e271ca5
-.inst 0x4ef8e0c7,0x6e271c63,0x0ef0e0c7,0x6e271c84,0x4ef0e0c7,0x6e271c84,0x0ee1e067,0x6e034063
-.inst 0x6e231c84,0x6e271c84,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271ca0,0x91004042
-.inst 0xd1000463,0xd343fc65
-b 214f
-213:
-214:
-21:
-.inst 0x4e200800,0x3d800020,0xd65f03c0
-.arch_extension noaes
-.p2align 6",
-    )
-}
-
 /// The CPU features `vg_ghash_store_powers_aes` requires (`Artifact.features`).
 pub const VG_GHASH_STORE_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
@@ -3179,7 +3069,7 @@ bl {vg_aes_ctr32_aes}
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
-        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes,
+        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
 }
@@ -3840,7 +3730,7 @@ b 2131f
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
-        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes,
+        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
 }
@@ -5645,7 +5535,7 @@ bl {vg_aes_ctr32_aes}
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
-        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes,
+        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
 }
@@ -7315,7 +7205,7 @@ b 2378f
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
-        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes,
+        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
 }
@@ -9020,3 +8910,7 @@ bl {vg_aes_gcm_seal}
         vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_ghash_with_powers_aes.rs"]
+pub(crate) mod vg_ghash_with_powers_aes;

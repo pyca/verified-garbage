@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.End
+public import VerifiedGarbage.Proof.Gcm.PreparedContract
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchSplit
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
@@ -159,32 +161,32 @@ def splitSatP : State := { splitSat with rd := [⟨0x1000, 1024⟩, ⟨0x2000, 0
 
 theorem split_implies : (Proof.AesGcm.sealSplitX86_64M CtxMode.base).Implies
     (Proof.AesGcm.sealSplitScratchContract X86_64.abi 56) := by
-  sig_implies [Proof.AesGcm.sealSplitScratchContract, Proof.AesGcm.sealSplitScratchSig, Spec.Gcm.sealSplitPre,
-      Spec.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+  sig_implies [Proof.AesGcm.sealSplitScratchContract, Proof.AesGcm.sealSplitScratchSig, Proof.Gcm.sealSplitPre,
+      Proof.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
       VG.X86_64.below, X86_64.argRegs, CtxMode.base] [splitSat] using splitSat
 
 theorem splitP_implies : (Proof.AesGcm.sealSplitX86_64M CtxMode.powers).Implies
     (Proof.AesGcm.sealSplitPrecomputedScratchContract X86_64.abi 56) := by
-  exact { pre := by sig_implies_pre [Proof.AesGcm.sealSplitPrecomputedScratchContract, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPrecomputedPre,
-      Spec.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+  exact { pre := by sig_implies_pre [Proof.AesGcm.sealSplitPrecomputedScratchContract, Proof.AesGcm.sealSplitPrecomputedScratchSig, Proof.Gcm.sealSplitPrecomputedPre,
+      Proof.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
       VG.X86_64.below, X86_64.argRegs, CtxMode.powers]
-          post := by sig_implies_post [Proof.AesGcm.sealSplitPrecomputedScratchContract, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPrecomputedPre,
-      Spec.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+          post := by sig_implies_post [Proof.AesGcm.sealSplitPrecomputedScratchContract, Proof.AesGcm.sealSplitPrecomputedScratchSig, Proof.Gcm.sealSplitPrecomputedPre,
+      Proof.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
       VG.X86_64.below, X86_64.argRegs, CtxMode.powers]
-          pub := by sig_implies_pub [Proof.AesGcm.sealSplitPrecomputedScratchContract, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPrecomputedPre,
-      Spec.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+          pub := by sig_implies_pub [Proof.AesGcm.sealSplitPrecomputedScratchContract, Proof.AesGcm.sealSplitPrecomputedScratchSig, Proof.Gcm.sealSplitPrecomputedPre,
+      Proof.Gcm.sealSplitPost, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
       VG.X86_64.below, X86_64.argRegs, CtxMode.powers]
           sat := ⟨splitSatP, by
             sig_pre [Proof.AesGcm.sealSplitPrecomputedScratchContract, Proof.AesGcm.sealSplitPrecomputedScratchSig,
-              Spec.Gcm.sealSplitPrecomputedPre, X86_64.abi, X86_64.argRegs, splitSatP, splitSat]
+              Proof.Gcm.sealSplitPrecomputedPre, X86_64.abi, X86_64.argRegs, splitSatP, splitSat]
             sig_and_intros
             all_goals first
               | rfl
@@ -197,24 +199,24 @@ theorem splitP_implies : (Proof.AesGcm.sealSplitX86_64M CtxMode.powers).Implies
 
 theorem splitPrepared_implies : (Proof.AesGcm.sealSplitX86_64M CtxMode.prepared).Implies
     (Proof.AesGcm.sealSplitPreparedScratchContract X86_64.abi 56) := by
-  exact { pre := by sig_implies_pre [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPreparedPre,
-      Spec.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+  exact { pre := by sig_implies_pre [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Proof.Gcm.sealSplitPreparedPre,
+      Proof.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
       VG.X86_64.below, X86_64.argRegs, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
-          post := by sig_implies_post [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPreparedPre,
-      Spec.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+          post := by sig_implies_post [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Proof.Gcm.sealSplitPreparedPre,
+      Proof.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
       VG.X86_64.below, X86_64.argRegs, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
-          pub := by sig_implies_pub [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPreparedPre,
-      Spec.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
+          pub := by sig_implies_pub [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig, Proof.AesGcm.sealSplitPrecomputedScratchSig, Proof.Gcm.sealSplitPreparedPre,
+      Proof.Gcm.sealSplitPost, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.splitPre, Proof.AesGcm.onePub,
       X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk56, Proof.AesGcm.ret,
       Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
       VG.X86_64.below, X86_64.argRegs, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr]
           sat := ⟨splitSatP, by
             sig_pre [Proof.AesGcm.sealSplitPreparedScratchContract, Proof.AesGcm.sealSplitPreparedScratchSig,
-              Proof.AesGcm.sealSplitPrecomputedScratchSig, Spec.Gcm.sealSplitPreparedPre, X86_64.abi,
+              Proof.AesGcm.sealSplitPrecomputedScratchSig, Proof.Gcm.sealSplitPreparedPre, X86_64.abi,
               X86_64.argRegs, splitSatP, splitSat]
             sig_and_intros
             all_goals first
@@ -255,14 +257,14 @@ def splitFrameSat : State :=
 def splitFrameSatP : State :=
   { splitFrameSat with rd := [⟨0x1000, 1024⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 40⟩] }
 
-theorem splitFrameSat_pre : ∃ s, (Spec.Gcm.sealSplitContract X86_64.abi 2672).pre s := by
-  implies_sat [Spec.Gcm.sealSplitContract, Spec.Gcm.sealSplitSig, Spec.Gcm.sealSplitPre, Spec.Gcm.sealSplitPost,
+theorem splitFrameSat_pre : ∃ s, (Proof.Gcm.sealSplitContract X86_64.abi 2672).pre s := by
+  implies_sat [Proof.Gcm.sealSplitContract, Proof.Gcm.sealSplitSig, Proof.Gcm.sealSplitPre, Proof.Gcm.sealSplitPost,
     X86_64.abi, X86_64.argRegs] [splitFrameSat, splitSat] using splitFrameSat
 
-theorem splitFrameSatP_pre : ∃ s, (Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2672).pre s := by
+theorem splitFrameSatP_pre : ∃ s, (Proof.Gcm.sealSplitPrecomputedContract X86_64.abi 2672).pre s := by
   refine ⟨splitFrameSatP, ?_⟩
-  sig_pre [Spec.Gcm.sealSplitPrecomputedContract, Spec.Gcm.sealSplitPrecomputedSig, Spec.Gcm.sealSplitPrecomputedPre,
-    Spec.Gcm.sealSplitPost, X86_64.abi, X86_64.argRegs, splitFrameSatP, splitFrameSat, splitSat]
+  sig_pre [Proof.Gcm.sealSplitPrecomputedContract, Proof.Gcm.sealSplitPrecomputedSig, Proof.Gcm.sealSplitPrecomputedPre,
+    Proof.Gcm.sealSplitPost, X86_64.abi, X86_64.argRegs, splitFrameSatP, splitFrameSat, splitSat]
   sig_and_intros
   all_goals first
     | rfl
@@ -273,10 +275,10 @@ theorem splitFrameSatP_pre : ∃ s, (Spec.Gcm.sealSplitPrecomputedContract X86_6
        · next h => exfalso; bv_omega
        · rfl)
 
-theorem splitFrameSatPrepared_pre : ∃ s, (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672).pre s := by
+theorem splitFrameSatPrepared_pre : ∃ s, (Proof.Gcm.sealSplitPreparedContract X86_64.abi 2672).pre s := by
   refine ⟨splitFrameSatP, ?_⟩
-  sig_pre [Spec.Gcm.sealSplitPreparedContract, Spec.Gcm.sealSplitPreparedSig, Spec.Gcm.sealSplitPrecomputedSig,
-    Spec.Gcm.sealSplitPreparedPre, Spec.Gcm.sealSplitPost, X86_64.abi, X86_64.argRegs, splitFrameSatP,
+  sig_pre [Proof.Gcm.sealSplitPreparedContract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
+    Proof.Gcm.sealSplitPreparedPre, Proof.Gcm.sealSplitPost, X86_64.abi, X86_64.argRegs, splitFrameSatP,
     splitFrameSat, splitSat]
   sig_and_intros
   all_goals first
@@ -294,20 +296,20 @@ include hF
 
 theorem sealSplit_framed (B : BlkFn CtxMode.base) (T : BlkToFn CtxMode.base) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMid (v.withBlk B) T.fn)))
-      (Spec.Gcm.sealSplitContract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealSplitSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.sealSplitPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
+      (Proof.Gcm.sealSplitContract X86_64.abi 2672) :=
+  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.sealSplitSig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.sealSplitPre X86_64.abi.ptrBits)
+    (post := Proof.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (bytes := 2616) (sealSplit_core v hF B T) (by decide) (by decide) (by decide)
     (sealSplit_spSafe v B T) (sealSplit_xdepth v B T) (Proof.AesGcm.sealSplitPre_local _)
     (Proof.AesGcm.sealSplitPost_local _) splitFrameSat_pre
 
 theorem sealSplitP_framed (B : BlkFn CtxMode.powers) (T : BlkToFn CtxMode.powers) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMid (v.withBlk B) T.fn)))
-      (Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealSplitPrecomputedSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.sealSplitPrecomputedPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
+      (Proof.Gcm.sealSplitPrecomputedContract X86_64.abi 2672) :=
+  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.sealSplitPrecomputedSig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.sealSplitPrecomputedPre X86_64.abi.ptrBits)
+    (post := Proof.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (bytes := 2616) (sealSplitP_core v hF B T) (by decide) (by decide) (by decide)
     (sealSplit_spSafe v B T) (sealSplit_xdepth v B T) (Proof.AesGcm.sealSplitPrecomputedPre_local _)
     (Proof.AesGcm.sealSplitPrecomputedPost_local _) splitFrameSatP_pre

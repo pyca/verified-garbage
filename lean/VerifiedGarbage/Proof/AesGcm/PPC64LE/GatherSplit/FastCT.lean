@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.TailCT
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.CT
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 meta import VerifiedGarbage.Impl.AesGcm.PPC64LE.GatherSplit
 meta import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
@@ -17,8 +18,8 @@ open VG.Proof.Gather.PPC64LE (Eq2 TT rel_seq rel_taint)
 
 
 theorem fast_rel (hv : SplitOk)
-    (hct : ConstantTime isa (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pre
-      (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode)
+    (hct : ConstantTime isa (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre
+      (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode)
     {s₁ s₂ e₁ e₂ : State} (h₁ : Layout s₁) (h₂ : Layout s₂) (hq : gatherPub s₁ s₂)
     (he₁ : Gather.Entered s₁ e₁) (he₂ : Gather.Entered s₂ e₂)
     (hn₁ : e₁.gpr .r10=s₁.gpr .r10) (hn₂ : e₂.gpr .r10=s₂.gpr .r10) (hc : 0<Cnt s₁) :
@@ -45,7 +46,7 @@ theorem fast_rel (hv : SplitOk)
     simp only [Src,Cnt,q9,q10]
   refine rel_seq (rel_taint [.r7,.r10,.r12] pt (by simp [sr,nr,pr]) (by taint_decide))
     (prepare_ok h₁.base he₁ hn₁ hc ht₁) (prepare_ok h₂.base he₂ hn₂ hc₂ ht₂) fun c₁ c₂ hp₁ hp₂ => ?_
-  have pub : (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pub (callView s₁ e₁ c₁) (callView s₂ e₂ c₂) := by
+  have pub : (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pub (callView s₁ e₁ c₁) (callView s₂ e₂ c₂) := by
     apply call_pub
     refine ⟨?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
     · rw [hp₁.view_gpr (r := .r3) (by decide),hp₂.view_gpr (r := .r3) (by decide)]; exact q3

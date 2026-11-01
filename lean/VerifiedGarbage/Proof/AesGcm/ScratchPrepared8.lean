@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Gcm.Prepared8
+public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import VerifiedGarbage.Proof.Framework.Mem
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 @[expose] public section
 
 namespace VG.Proof.AesGcm
-open VG.Spec.Gcm
+open VG.Spec.Gcm Proof.Gcm
 
 /-- The 1024-byte prepared powers hold the 384-byte context's. -/
 theorem preparedPowers8Repr_of {m : Mem} {p : Addr} (h : PreparedPowersRepr m p) :

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Compose
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 import VerifiedGarbage.Proof.Framework.Sig
@@ -51,8 +52,8 @@ theorem scratch_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
     simp only [prepared_gpr s .r3 (by decide),prepared_gpr s .r4 (by decide),prepared_gpr s .r5 (by decide),
       prepared_gpr s .r6 (by decide),prepared_gpr s .r7 (by decide),prepared_gpr s .r8 (by decide),
       prepared_destination s hs,prepared_length s hs,prepared_tag s hs,hc,hh,hnonce,haad,plaintext] at hp
-    sig_eval [scratchContract,Sig.scratchContract,Sig.withScratch,Curry.withScratch,Curry.app,Spec.Gcm.sealSplitSig,
-      Spec.Gcm.sealSplitPost,PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
+    sig_eval [scratchContract,Sig.scratchContract,Sig.withScratch,Curry.withScratch,Curry.app,Proof.Gcm.sealSplitSig,
+      Proof.Gcm.sealSplitPost,PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
     intro _ _
     exact hp
 

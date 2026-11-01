@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Contract
+public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.CT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
@@ -20,13 +21,13 @@ open Contract (prepared scratch)
 
 
 theorem encrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
-    (s : State) (hs : (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre s) :
+    (s : State) (hs : (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre s) :
     ∃ tr t, Exec isa Impl.AesGcm.PPC64LE.SplitBlocks.encrypt s tr t ∧ abiPreserved s t ∧
-      (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).post s t := by
+      (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).post s t := by
   obtain ⟨lay,hv,hread,hwork⟩ := Contract.shared_pre s hs
   have hfunc : WP isa Impl.AesGcm.PPC64LE.SplitBlocks.encrypt s fun t =>
       (∀ r ∈ preserved, t.gpr r=s.gpr r) ∧ t.lr=s.lr ∧
-      (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).post s t := by
+      (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).post s t := by
     rw [Impl.AesGcm.PPC64LE.SplitBlocks.encrypt]
     by_cases hz : s.gpr .r10=0
     · have hn0 : (s.gpr .r10).toNat=0 := by rw [hz]; rfl
@@ -37,7 +38,7 @@ theorem encrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vp
         exact Nat.eq_zero_of_le_zero hb
       refine WP.ite true (by simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hz]; rfl)
         (fun _ => WP.block_nil ⟨fun _ _ => rfl,rfl,?_⟩) (by simp)
-      sig_eval [Spec.Gcm.encryptBlocksSplitContract,Spec.Gcm.encryptBlocksSplitSig,Spec.Gcm.encryptBlocksSplitPost,
+      sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPost,
         PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
       simp only [hn0,hcount,Spec.Gcm.blocksAt,List.range_zero,List.map_nil,List.drop_nil,List.nil_append,
         Spec.Gcm.ctr32,Spec.Gcm.keystream,List.length_nil,List.zipWith_nil_left,Spec.Gcm.ghashFrom,List.foldl_nil]
@@ -59,7 +60,7 @@ theorem encrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vp
         (by change s.gpr .r10=BitVec.ofNat 64 (s.gpr .r10).toNat; simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq])
         (by change s.gpr .r4=BitVec.ofNat 64 (s.gpr .r4).toNat; simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq]) hv s.gpr (Contract.prepared_saved s)) fun t ht => ?_
       refine ⟨fun r hr => (ht.saved r hr).trans (Contract.prepared_preserved s r hr),ht.lr,?_⟩
-      sig_eval [Spec.Gcm.encryptBlocksSplitContract,Spec.Gcm.encryptBlocksSplitSig,Spec.Gcm.encryptBlocksSplitPost,
+      sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPost,
         PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
       have hc := ht.ciphertext
       have hctr := ht.counter
@@ -90,8 +91,8 @@ def encryptSat : State where
   wr := [⟨0x2000,16⟩,⟨0x3000,16⟩,⟨0x5000,0⟩,⟨0x6000,2112⟩]
 
 
-theorem encrypt_sat : (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre encryptSat := by
-  sig_eval [Spec.Gcm.encryptBlocksSplitContract,Spec.Gcm.encryptBlocksSplitSig,Spec.Gcm.encryptBlocksSplitPre,
+theorem encrypt_sat : (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre encryptSat := by
+  sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPre,
     PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop,encryptSat]
   refine ⟨by decide,rfl,rfl,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,
     by decide,by decide,by decide,by decide,by decide,by decide,by decide,by decide⟩
@@ -99,7 +100,7 @@ theorem encrypt_sat : (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre encr
 
 
 theorem encrypt_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
-    Verified PPC64LE.target Impl.AesGcm.PPC64LE.SplitBlocks.encrypt (Spec.Gcm.encryptBlocksSplitContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.AesGcm.PPC64LE.SplitBlocks.encrypt (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi) :=
   ⟨encrypt_correct,encrypt_ct,⟨encryptSat,encrypt_sat⟩⟩
 
 end VG.Proof.AesGcm.PPC64LE.SplitBlocks

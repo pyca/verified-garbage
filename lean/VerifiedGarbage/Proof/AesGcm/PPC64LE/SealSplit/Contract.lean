@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Prelude
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.Offset
@@ -19,8 +20,8 @@ open VG VG.PPC64LE
 
 
 def scratchContract : Contract isa :=
-  Sig.scratchContract PPC64LE.abi Spec.Gcm.sealSplitSig "work" .u64 320
-    (Spec.Gcm.sealSplitPre PPC64LE.abi.ptrBits) (Spec.Gcm.sealSplitPost PPC64LE.abi.ptrBits) true 112
+  Sig.scratchContract PPC64LE.abi Proof.Gcm.sealSplitSig "work" .u64 320
+    (Proof.Gcm.sealSplitPre PPC64LE.abi.ptrBits) (Proof.Gcm.sealSplitPost PPC64LE.abi.ptrBits) true 112
 
 
 
@@ -70,8 +71,8 @@ structure Layout (s : State) : Prop where
 
 
 theorem layout_pre (s : State) (hs : scratchContract.pre s) : Layout s := by
-  sig_eval [scratchContract,Sig.scratchContract,Sig.withScratch,Curry.withScratch,Curry.app,Spec.Gcm.sealSplitSig,
-    Spec.Gcm.sealSplitPre,PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop,stackBelow] at hs
+  sig_eval [scratchContract,Sig.scratchContract,Sig.withScratch,Curry.withScratch,Curry.app,Proof.Gcm.sealSplitSig,
+    Proof.Gcm.sealSplitPre,PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop,stackBelow] at hs
   obtain ⟨hsp,hcap,hrd,hwr,hkd,hkt,hkw,hnd,hnt,hnw,had,hat,haw,hsd,hst,hsw,hdt,hdw,hda,htw,hta,hwa,
     hfctx,hfn,hfa,hfs,hfd,hft,hfw,hfargs,fc,fn,fa,fs,fd,ft,fw,hnr,hbound⟩ := hs
   refine ⟨⟨hsp,hcap⟩,hrd,hwr,?_,?_,?_,?_,?_,?_,hnr,hbound⟩

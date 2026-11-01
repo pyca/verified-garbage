@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.FastCT
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 meta import VerifiedGarbage.Impl.AesGcm.PPC64LE.GatherSplit
 meta import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
@@ -19,8 +20,8 @@ theorem body_rel (hv : Gather.SealOk)
     (hct : ConstantTime isa (Spec.Gcm.sealContract PPC64LE.abi 2672).pre
       (Spec.Gcm.sealContract PPC64LE.abi 2672).pub Impl.AesGcm.PPC64LE.SealGather.sealCode)
     (hs : SplitOk)
-    (hsct : ConstantTime isa (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pre
-      (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode)
+    (hsct : ConstantTime isa (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre
+      (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode)
     {s₁ s₂ e₁ e₂ : State} (h₁ : Layout s₁) (h₂ : Layout s₂) (hq : gatherPub s₁ s₂)
     (he₁ : Gather.Entered s₁ e₁) (he₂ : Gather.Entered s₂ e₂)
     (hn₁ : e₁.gpr .r10=s₁.gpr .r10) (hn₂ : e₂.gpr .r10=s₂.gpr .r10) :
@@ -46,8 +47,8 @@ theorem sealGather_ct (hv : Gather.SealOk)
     (hct : ConstantTime isa (Spec.Gcm.sealContract PPC64LE.abi 2672).pre
       (Spec.Gcm.sealContract PPC64LE.abi 2672).pub Impl.AesGcm.PPC64LE.SealGather.sealCode)
     (hs : SplitOk)
-    (hsct : ConstantTime isa (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pre
-      (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode) :
+    (hsct : ConstantTime isa (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre
+      (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode) :
     ConstantTime isa (fun s => Layout s) gatherPub Impl.AesGcm.PPC64LE.GatherSplit.sealGather := by
   refine ct_of fun s₁ s₂ h₁ h₂ hq => ?_
   have pub := hq

@@ -253,3 +253,15 @@ b 21f
 .base64 "IACATg==""#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_split.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_split;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_split.rs"]
+pub(crate) mod vg_aes_gcm_seal_split;

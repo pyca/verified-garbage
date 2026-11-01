@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.ScratchP
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.AesGcm.Scratch
 
 /-!
@@ -19,7 +20,7 @@ within their buffers: the key context, the streaming state (through
 
 namespace VG.Proof.AesGcm
 
-open VG.Spec.Gcm
+open VG.Spec.Gcm Proof.Gcm
 
 variable (pb : Nat)
 

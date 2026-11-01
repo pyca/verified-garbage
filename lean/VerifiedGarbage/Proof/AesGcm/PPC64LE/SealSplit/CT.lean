@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.CTStages
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
@@ -17,7 +18,7 @@ open CTPrelude
 theorem scratch_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     ConstantTime isa scratchContract.pre scratchContract.pub Impl.AesGcm.PPC64LE.SealSplit.seal := by
   refine ct_of fun a b ha hb hp => ?_
-  sig_pub [scratchContract,Sig.scratchContract,Sig.withScratch,Curry.withScratch,Curry.app,Spec.Gcm.sealSplitSig,
+  sig_pub [scratchContract,Sig.scratchContract,Sig.withScratch,Curry.withScratch,Curry.app,Proof.Gcm.sealSplitSig,
     PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop] at hp
   obtain ⟨hsp,h3,h4,h5,h6,h7,h8,h9,h10,a0,a1,a2,a3⟩ := hp
   have ib : Initial a b := by

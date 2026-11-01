@@ -246,35 +246,4 @@ def ghashStorePowersApi : Api where
     " Only the pointers and `n` may affect timing."
   safety := ghashApi.safety
 
-/-- `vg_ghash_with_powers(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32], pw: *const [u64; 16])`:
-`ghashSig` and the powers' buffer. `scratch` is working space. -/
-def ghashWithPowersSig : Sig where
-  params := ghashSig.params ++ [withPowersParam]
-
-/-- `ghashContract`'s postcondition, given the powers of the hash subkey at
-`h` at `pw`. -/
-def ghashWithPowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  ghashWithPowersSig.contract A
-    (pre := fun h _y _data _n _scratch pw m => Powers8Repr m pw (blockAt m h))
-    (post := fun h y data n _scratch _pw m m' _ =>
-      blockAt m' y = ghashFrom (blockAt m h) (blockAt m y) (blocksAt m data n.toNat))
-    (stack := stack)
-
-/-- `vg_ghash_with_powers` on every target. -/
-def ghashWithPowersApi : Api where
-  module := "gcm"
-  name := "vg_ghash_with_powers"
-  sig := ghashWithPowersSig
-  contracts := some fun A stack => ghashWithPowersContract A stack
-  summary := "`vg_ghash` with the 8 prepared powers of the hash subkey `H` at `h` at `*pw` \
-    (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Replaces the \
-    block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` \
-    16-byte blocks `X₁ … Xₙ` starting at `data` (NIST SP 800-38D §6.4). The hash subkey, its \
-    powers, `Y` and the data are secret.\n\n\
-    Contract: `VG.Spec.Gcm.ghashWithPowersContract`. Constant time: only the pointers and `n` \
-    may affect timing."
-  safety := ghashApi.safety ++ ["`*pw` must be what a `*_store_powers` function wrote for the \
-      hash subkey at `h` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and \
-      that subkey)."]
-
 end VG.Spec.Gcm

@@ -22,6 +22,7 @@ meta import VerifiedGarbage.TCB.PPC64LE.Isa
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Rounds
+public import VerifiedGarbage.Proof.Gcm.Contract
 
 /-! # Component proofs for the fused POWER8 AES-GCM bulk loop -/
 
@@ -5182,10 +5183,10 @@ theorem wrapper_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
     exact wrapper_finish lay hd
 
 
-theorem shared_pre (s : State) (hs : (Spec.Gcm.encryptBlocksContract PPC64LE.abi).pre s) :
+theorem shared_pre (s : State) (hs : (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pre s) :
     WrapperLayout s (s.gpr .r8).toNat ∧
       ((s.gpr .r4).toNat=10 ∨ (s.gpr .r4).toNat=12 ∨ (s.gpr .r4).toNat=14) := by
-  sig_eval [Spec.Gcm.encryptBlocksContract,Spec.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hs
+  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hs
   obtain ⟨hrd,hwr,hkc,hky,hkd,hks,hcy,hcd,hcs,hyd,hys,hds,hK,hC,hY,hD,hS,hnr⟩ := hs
   rw [Nat.mul_comm (s.gpr .r8).toNat 16] at hwr hkd hcd hyd hds hD
   have hsub : Region.Sub (coreWork (wrapperView s)) (⟨s.gpr .r9,2112⟩ : Region) :=
@@ -5238,24 +5239,24 @@ theorem encrypt_taint : ∃ h, (VG.Taint.check vectorTaint
     Impl.AesGcm.PPC64LE.Blocks.encrypt h).isSome = true := ⟨_, by taint_decide⟩
 
 theorem encrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
-    (s : State) (hs : (Spec.Gcm.encryptBlocksContract PPC64LE.abi).pre s) :
+    (s : State) (hs : (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pre s) :
     ∃ tr t, Exec isa Impl.AesGcm.PPC64LE.Blocks.encrypt s tr t ∧ abiPreserved s t ∧
-      (Spec.Gcm.encryptBlocksContract PPC64LE.abi).post s t := by
+      (Proof.Gcm.encryptBlocksContract PPC64LE.abi).post s t := by
   have hp := shared_pre s hs
   obtain ⟨tr,t,he,ht⟩ := wrapper_ok s (s.gpr .r8).toNat (s.gpr .r4).toNat hp.1
     (by simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq])
     (by simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq]) hp.2
   refine ⟨tr,t,he,⟨ht.saved,Exec.sp he,ht.lr⟩,?_⟩
-  sig_eval [Spec.Gcm.encryptBlocksContract,Spec.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs]
+  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs]
   exact ⟨ht.ciphertext,ht.counter,ht.y⟩
 
 
-theorem encrypt_ct : ConstantTime isa (Spec.Gcm.encryptBlocksContract PPC64LE.abi).pre
-    (Spec.Gcm.encryptBlocksContract PPC64LE.abi).pub Impl.AesGcm.PPC64LE.Blocks.encrypt := by
+theorem encrypt_ct : ConstantTime isa (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pre
+    (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pub Impl.AesGcm.PPC64LE.Blocks.encrypt := by
   refine VG.Taint.constantTime_of_exists (A := vectorTaint) (Taint.ofRegs [.r3,.r4,.r5,.r6,.r7,.r8,.r9])
     ?_ encrypt_taint
   intro s t _ _ hp
-  sig_pub [Spec.Gcm.encryptBlocksContract,Spec.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hp
+  sig_pub [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hp
   obtain ⟨hsp,h3,h4,h5,h6,h7,h8,h9⟩ := hp
   refine ⟨hsp,fun r hr => ?_⟩
   simp only [VG.PPC64LE.Taint.mem_ofRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -5272,14 +5273,14 @@ def encryptSat : State where
   wr := [⟨0x2000,16⟩,⟨0x3000,16⟩,⟨0x4000,0⟩,⟨0x5000,2112⟩]
 
 
-theorem encrypt_sat : (Spec.Gcm.encryptBlocksContract PPC64LE.abi).pre encryptSat := by
-  sig_eval [Spec.Gcm.encryptBlocksContract,Spec.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs,encryptSat]
+theorem encrypt_sat : (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pre encryptSat := by
+  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs,encryptSat]
   refine ⟨rfl,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,by decide,by decide,by decide,by decide,by decide,by decide⟩
   all_goals exact Offset.disjoint_of_le (by decide) (by decide)
 
 
 theorem encrypt_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
-    Verified PPC64LE.target Impl.AesGcm.PPC64LE.Blocks.encrypt (Spec.Gcm.encryptBlocksContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.AesGcm.PPC64LE.Blocks.encrypt (Proof.Gcm.encryptBlocksContract PPC64LE.abi) :=
   ⟨encrypt_correct,encrypt_ct,⟨encryptSat,encrypt_sat⟩⟩
 
 

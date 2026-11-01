@@ -89,15 +89,6 @@ def preparedSummary (name contract : String) : String :=
   contract ++ "`."
 
 /-- The existing signature with a prepared 1024-byte context. -/
-abbrev cryptBlocksPreparedSig := cryptBlocksPrecomputedSig
-
-/-- The existing round-count and length requirements, plus the prepared powers. -/
-def cryptBlocksPreparedPre (pb : Nat) : Curry (cryptBlocksPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _counter _y _data _n _scratch m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      PreparedPowersRepr m ctx
-
-/-- The existing signature with a prepared 1024-byte context. -/
 abbrev sealPreparedSig := sealPrecomputedSig
 
 /-- The existing round-count and length requirements, plus the prepared powers. -/
@@ -125,24 +116,6 @@ def streamCryptPreparedPre (pb : Nat) : Curry (streamCryptPreparedSig.words pb) 
       PreparedPowersRepr m ctx
 
 /-- The existing signature with a prepared 1024-byte context. -/
-abbrev encryptBlocksToPreparedSig := encryptBlocksToPrecomputedSig
-
-/-- The existing round-count and length requirements, plus the prepared powers. -/
-def encryptBlocksToPreparedPre (pb : Nat) : Curry (encryptBlocksToPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _counter _y _src n _dst dstN _scratch m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      dstN = n ∧ PreparedPowersRepr m ctx
-
-/-- The existing signature with a prepared 1024-byte context. -/
-abbrev streamEncryptToPreparedSig := streamEncryptToPrecomputedSig
-
-/-- The existing round-count and length requirements, plus the prepared powers. -/
-def streamEncryptToPreparedPre (pb : Nat) : Curry (streamEncryptToPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _state _aadLen _textLen _src len _dst dstLen m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      dstLen = len ∧ PreparedPowersRepr m ctx
-
-/-- The existing signature with a prepared 1024-byte context. -/
 abbrev sealGatherPreparedSig := sealGatherPrecomputedSig
 
 /-- The existing round-count and length requirements, plus the prepared powers. -/
@@ -150,53 +123,6 @@ def sealGatherPreparedPre (pb : Nat) : Curry (sealGatherPreparedSig.words pb) (M
   fun ctx rounds _nonce _nonceLen _aad _aadLen src srcCount _dst len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       gatheredLen pb m src srcCount.toNat = len.toNat ∧ PreparedPowersRepr m ctx
-
-/-- The existing signature with a prepared 1024-byte context. -/
-abbrev sealSplitPreparedSig := sealSplitPrecomputedSig
-
-/-- The existing round-count and length requirements, plus the prepared powers. -/
-def sealSplitPreparedPre (pb : Nat) : Curry (sealSplitPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _nonce _nonceLen _aad _aadLen _src srcLen _dst len _tag m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧ srcLen.toNat ≤ len.toNat ∧
-      PreparedPowersRepr m ctx
-
-/-- The unchanged `encryptBlocksContract` postcondition with prepared powers. -/
-def encryptBlocksPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cryptBlocksPreparedSig.contract A (pre := cryptBlocksPreparedPre A.ptrBits)
-    (post := fun ctx rounds counter y data n _scratch m m' _ =>
-      let c := ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) (blocksAt m data n.toNat)
-      blocksAt m' data n.toNat = c ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
-        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
-    (stack := stack)
-
-/-- `vg_aes_gcm_encrypt_blocks_prepared` on every target. -/
-def encryptBlocksPreparedApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_encrypt_blocks_prepared"
-  sig := cryptBlocksPreparedSig
-  contracts := some fun A stack => encryptBlocksPreparedContract A stack
-  summary := preparedSummary "vg_aes_gcm_encrypt_blocks" "encryptBlocksPreparedContract"
-  safety := encryptBlocksApi.safety ++ [preparedSafety]
-
-/-- The unchanged `decryptBlocksContract` postcondition with prepared powers. -/
-def decryptBlocksPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cryptBlocksPreparedSig.contract A (pre := cryptBlocksPreparedPre A.ptrBits)
-    (post := fun ctx rounds counter y data n _scratch m m' _ =>
-      let c := blocksAt m data n.toNat
-      blocksAt m' data n.toNat = ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) c ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
-        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
-    (stack := stack)
-
-/-- `vg_aes_gcm_decrypt_blocks_prepared` on every target. -/
-def decryptBlocksPreparedApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_decrypt_blocks_prepared"
-  sig := cryptBlocksPreparedSig
-  contracts := some fun A stack => decryptBlocksPreparedContract A stack
-  summary := preparedSummary "vg_aes_gcm_decrypt_blocks" "decryptBlocksPreparedContract"
-  safety := decryptBlocksApi.safety ++ [preparedSafety]
 
 /-- The unchanged `sealContract` postcondition with prepared powers. -/
 def sealPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -262,37 +188,6 @@ def streamDecryptPreparedApi : Api where
   summary := preparedSummary "vg_aes_gcm_stream_decrypt" "streamDecryptPreparedContract"
   safety := streamDecryptApi.safety ++ [preparedSafety]
 
-/-- The unchanged `encryptBlocksToContract` postcondition with prepared powers. -/
-def encryptBlocksToPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  encryptBlocksToPreparedSig.contract A (pre := encryptBlocksToPreparedPre A.ptrBits)
-    (post := encryptBlocksToPost A.ptrBits)
-    (stack := stack)
-
-/-- `vg_aes_gcm_encrypt_blocks_to_prepared` on every target. -/
-def encryptBlocksToPreparedApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_encrypt_blocks_to_prepared"
-  sig := encryptBlocksToPreparedSig
-  contracts := some fun A stack => encryptBlocksToPreparedContract A stack
-  summary := preparedSummary "vg_aes_gcm_encrypt_blocks_to" "encryptBlocksToPreparedContract"
-  safety := encryptBlocksToApi.safety ++ [preparedSafety]
-
-/-- The unchanged `streamEncryptToContract` postcondition with prepared powers. -/
-def streamEncryptToPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamEncryptToPreparedSig.contract A (pre := streamEncryptToPreparedPre A.ptrBits)
-    (post := streamEncryptToPost A.ptrBits)
-    (writeArgs := true) (stack := stack)
-
-/-- `vg_aes_gcm_stream_encrypt_to_prepared` on every target. -/
-def streamEncryptToPreparedApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_stream_encrypt_to_prepared"
-  sig := streamEncryptToPreparedSig
-  writeArgs := true
-  contracts := some fun A stack => streamEncryptToPreparedContract A stack
-  summary := preparedSummary "vg_aes_gcm_stream_encrypt_to" "streamEncryptToPreparedContract"
-  safety := streamEncryptToApi.safety ++ [preparedSafety]
-
 /-- The unchanged `sealGatherContract` postcondition with prepared powers. -/
 def sealGatherPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealGatherPreparedSig.contract A (pre := sealGatherPreparedPre A.ptrBits)
@@ -308,21 +203,5 @@ def sealGatherPreparedApi : Api where
   contracts := some fun A stack => sealGatherPreparedContract A stack
   summary := preparedSummary "vg_aes_gcm_seal_gather" "sealGatherPreparedContract"
   safety := sealGatherApi.safety ++ [preparedSafety]
-
-/-- The unchanged `sealSplitContract` postcondition with prepared powers. -/
-def sealSplitPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealSplitPreparedSig.contract A (pre := sealSplitPreparedPre A.ptrBits)
-    (post := sealSplitPost A.ptrBits)
-    (writeArgs := true) (stack := stack)
-
-/-- `vg_aes_gcm_seal_split_prepared` on every target. -/
-def sealSplitPreparedApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_seal_split_prepared"
-  sig := sealSplitPreparedSig
-  writeArgs := true
-  contracts := some fun A stack => sealSplitPreparedContract A stack
-  summary := preparedSummary "vg_aes_gcm_seal_split" "sealSplitPreparedContract"
-  safety := sealSplitApi.safety ++ [preparedSafety]
 
 end VG.Spec.Gcm

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Prepare
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Frame
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
 
@@ -40,7 +41,7 @@ structure CallLayout (s : State) : Prop where
 
 
 theorem call_pre {s : State} (h : CallLayout s) :
-    (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pre s := by
+    (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre s := by
   have cd := h.dataApart (callContext s) (by simp)
   have nd := h.dataApart (callNonce s) (by simp)
   have ad := h.dataApart (callAad s) (by simp)
@@ -65,13 +66,13 @@ theorem call_pre {s : State} (h : CallLayout s) :
   have fs := h.fits (callSource s) (by simp)
   have fd := h.fits (callData s) (by simp)
   have ft := h.fits (callTag s) (by simp)
-  sig_eval [Spec.Gcm.sealSplitContract,Spec.Gcm.sealSplitSig,Spec.Gcm.sealSplitPre,PPC64LE.abi,PPC64LE.argRegs,
+  sig_eval [Proof.Gcm.sealSplitContract,Proof.Gcm.sealSplitSig,Proof.Gcm.sealSplitPre,PPC64LE.abi,PPC64LE.argRegs,
     stackArg,stackArgAddr,List.getD,List.range,List.range.loop,stackBelow]
   exact ⟨h.space,h.capacity,h.rd,h.wr,cd,ct,nd,nt,ad,at_,sd,st,dt,da,ta,
     bc,bn,ba,bs,bd,bt,bargs,fc,fn,fa,fs,fd,ft,h.rounds,h.bound⟩
 
 
-theorem call_post {s z : State} (h : (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).post s z)
+theorem call_post {s z : State} (h : (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).post s z)
     (hR : (s.gpr .r4).toNat=10 ∨ (s.gpr .r4).toNat=12 ∨ (s.gpr .r4).toNat=14)
     (hb : (s.gpr .r10).toNat≤(stackArg s 1).toNat) :
     Spec.Gcm.encryptWith (Spec.Gcm.ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat)
@@ -80,7 +81,7 @@ theorem call_post {s z : State} (h : (Spec.Gcm.sealSplitContract PPC64LE.abi 280
           (Spec.Aes.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat).drop (s.gpr .r10).toNat)
         (Spec.Aes.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat) =
       (Spec.Aes.bytesAt z.mem (stackArg s 0) (stackArg s 1).toNat,Spec.Aes.bytesAt z.mem (stackArg s 2) 16) := by
-  sig_post [Spec.Gcm.sealSplitContract,Spec.Gcm.sealSplitSig,Spec.Gcm.sealSplitPost,PPC64LE.abi,PPC64LE.argRegs,
+  sig_post [Proof.Gcm.sealSplitContract,Proof.Gcm.sealSplitSig,Proof.Gcm.sealSplitPost,PPC64LE.abi,PPC64LE.argRegs,
     stackArg,stackArgAddr,List.getD,List.range,List.range.loop] at h
   exact h hR hb
 
@@ -89,11 +90,11 @@ theorem call_pub {s t : State}
     (hp : s.gpr .r3=t.gpr .r3 ∧ s.gpr .r4=t.gpr .r4 ∧ s.gpr .r5=t.gpr .r5 ∧ s.gpr .r6=t.gpr .r6 ∧
       s.gpr .r7=t.gpr .r7 ∧ s.gpr .r8=t.gpr .r8 ∧ s.gpr .r9=t.gpr .r9 ∧ s.gpr .r10=t.gpr .r10 ∧
       s.sp=t.sp ∧ stackArg s 0=stackArg t 0 ∧ stackArg s 1=stackArg t 1 ∧ stackArg s 2=stackArg t 2) :
-    (Spec.Gcm.sealSplitContract PPC64LE.abi 2800).pub s t := by
+    (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pub s t := by
   obtain ⟨g3,g4,g5,g6,g7,g8,g9,g10,hsp,a0,a1,a2⟩ := hp
-  sig_pub [Spec.Gcm.sealSplitContract,Spec.Gcm.sealSplitSig,PPC64LE.abi,PPC64LE.argRegs,
+  sig_pub [Proof.Gcm.sealSplitContract,Proof.Gcm.sealSplitSig,PPC64LE.abi,PPC64LE.argRegs,
     List.range,List.range.loop]
-  sig_reduce [Spec.Gcm.sealSplitContract,Spec.Gcm.sealSplitSig,PPC64LE.abi,PPC64LE.argRegs,
+  sig_reduce [Proof.Gcm.sealSplitContract,Proof.Gcm.sealSplitSig,PPC64LE.abi,PPC64LE.argRegs,
     List.getD,List.range,List.range.loop]
   sig_and_intros
   all_goals first | with_reducible assumption | trivial

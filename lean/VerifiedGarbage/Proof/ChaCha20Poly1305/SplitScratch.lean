@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 
 /-!
 # `vg_chacha20_poly1305_seal_split` with its working space as an argument

@@ -18,11 +18,6 @@ def artifacts : List Artifact := [
     code := Impl.Gcm.AArch64.Pmull.ghash
     verified := Proof.Gcm.AArch64.Pmull.ghash_verified
     features := ["aes"] },
-  Spec.Gcm.ghashWithPowersApi.artifact AArch64.target {
-    suffix := "_aes"
-    code := Impl.Gcm.AArch64.Pmull.ghashW
-    verified := Proof.Gcm.AArch64.Pmull.ghashW_verified
-    features := ["aes"] },
   Spec.Gcm.ghashStorePowersApi.artifact AArch64.target {
     suffix := "_aes"
     written := [("scratch", 0)]

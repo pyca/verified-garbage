@@ -9,7 +9,7 @@ public import VerifiedGarbage.Spec.Gcm.Powers8
 import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Spec.Gcm.Prepared8
+public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -24,7 +24,7 @@ meta import VerifiedGarbage.Spec.Gcm.Powers8
 meta import VerifiedGarbage.Proof.Gcm.Bits
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Spec.Gcm.Prepared8
+meta import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 meta import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -305,7 +305,7 @@ def ghashAArch64 : Contract AArch64.isa where
 
 /-- `vg_ghash_prepared(h = x0, y = x1, data = x2, n = x3, scratch = x4)`:
 `ghashAArch64`, with `h` the 144 bytes from byte 240 of a 384-byte key
-context with the eight prepared powers (`Spec.Gcm.PreparedPowers8Repr`). -/
+context with the eight prepared powers (`Proof.Gcm.PreparedPowers8Repr`). -/
 def ghashPreparedAArch64 : Contract AArch64.isa where
   pre s :=
     let h : Region := ⟨s.gpr .x0, 144⟩
@@ -314,7 +314,7 @@ def ghashPreparedAArch64 : Contract AArch64.isa where
     let scratch : Region := ⟨s.gpr .x4, 256⟩
     s.rd = [h, data] ∧ s.wr = [y, scratch] ∧
     h.Disjoint y ∧ h.Disjoint scratch ∧ y.Disjoint data ∧ y.Disjoint scratch ∧
-    data.Disjoint scratch ∧ Spec.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0 - 240)
+    data.Disjoint scratch ∧ Proof.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0 - 240)
   post := ghashAArch64.post
   pub := ghashAArch64.pub
 

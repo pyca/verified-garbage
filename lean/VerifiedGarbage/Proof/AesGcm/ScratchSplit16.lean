@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
+public import VerifiedGarbage.Proof.Gcm.PreparedContract
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 public import VerifiedGarbage.Proof.AesGcm.ScratchSplit
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16
 import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -20,7 +23,7 @@ its locality (`sealSplitPrepared16Pre_local`).
 
 namespace VG.Proof.AesGcm
 
-open VG.Spec.Gcm
+open VG.Spec.Gcm Proof.Gcm
 
 
 /-- `sealSplitPrepared16Contract`, whatever `work` is. -/

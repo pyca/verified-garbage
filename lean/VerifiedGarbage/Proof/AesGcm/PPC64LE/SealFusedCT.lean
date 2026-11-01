@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
+public import VerifiedGarbage.Proof.Gcm.Contract
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 meta import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
 meta import VerifiedGarbage.Impl.AesGcm.PPC64LE.SealFused
@@ -80,7 +81,7 @@ theorem block_call_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpms
   refine ⟨blockReads (argsState s),blockWrites (argsState s),
     blockReads (argsState t),blockWrites (argsState t),hcs.pre,hct.pre,?_,
     hcs.reads,hcs.writes,hct.reads,hct.writes⟩
-  sig_eval [Spec.Gcm.encryptBlocksContract,Spec.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs]
+  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs]
   simp only [he.r29,he'.r29,he.r30,he'.r30,he.r31,he'.r31,he.r28,he'.r28,
     he.fr .r27 (by decide),he'.fr .r27 (by decide),he.fr .r23 (by decide),he'.fr .r23 (by decide),
     hc,hc',hst,hst',hw,hw',hR,hR',hd,hd',hn,hn',he.sp,he'.sp]

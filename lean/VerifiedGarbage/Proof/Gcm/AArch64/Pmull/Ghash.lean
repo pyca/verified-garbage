@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Arith
+public import VerifiedGarbage.Proof.Gcm.Powers8Contract
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
 import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Range
@@ -1015,7 +1017,7 @@ theorem ghashP_ct : ConstantTime isa Proof.Gcm.ghashPreparedAArch64.pre Proof.Gc
   · exact h5
 
 /-- Zero memory has the eight prepared powers of the zero subkey. -/
-theorem preparedPowersRepr_zero (p : Addr) : Spec.Gcm.PreparedPowers8Repr (fun _ => 0) p := by
+theorem preparedPowersRepr_zero (p : Addr) : Proof.Gcm.PreparedPowers8Repr (fun _ => 0) p := by
   intro k hk
   have z : ∀ q : Addr, Spec.Gcm.blockAt (fun _ => 0) q = 0 := fun q => by
     simp [Spec.Gcm.blockAt, Spec.Aes.bytesAt, Spec.Gcm.ofBytes]
@@ -1030,19 +1032,19 @@ theorem preparedPowersRepr_zero (p : Addr) : Spec.Gcm.PreparedPowers8Repr (fun _
 def satStateP : State := { Proof.Gcm.AArch64.satState with rd := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩] }
 
 theorem ghashP_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashP (Spec.Gcm.ghashPrepared8Contract AArch64.abi) :=
+    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashP (Proof.Gcm.ghashPrepared8Contract AArch64.abi) :=
   Verified.of_correct ghashP_correct ghashP_ct
     { pre := by
-        sig_implies_pre [Spec.Gcm.ghashPrepared8Contract, Spec.Gcm.ghashPrepared8Sig,
+        sig_implies_pre [Proof.Gcm.ghashPrepared8Contract, Proof.Gcm.ghashPrepared8Sig,
           Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       post := by
-        sig_implies_post [Spec.Gcm.ghashPrepared8Contract, Spec.Gcm.ghashPrepared8Sig,
+        sig_implies_post [Proof.Gcm.ghashPrepared8Contract, Proof.Gcm.ghashPrepared8Sig,
           Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       pub := by
-        sig_implies_pub [Spec.Gcm.ghashPrepared8Contract, Spec.Gcm.ghashPrepared8Sig,
+        sig_implies_pub [Proof.Gcm.ghashPrepared8Contract, Proof.Gcm.ghashPrepared8Sig,
           Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       sat := ⟨satStateP, by
-        sig_pre [Spec.Gcm.ghashPrepared8Contract, Spec.Gcm.ghashPrepared8Sig, AArch64.abi, AArch64.argRegs,
+        sig_pre [Proof.Gcm.ghashPrepared8Contract, Proof.Gcm.ghashPrepared8Sig, AArch64.abi, AArch64.argRegs,
           satStateP, Proof.Gcm.AArch64.satState]
         sig_and_intros
         all_goals first
@@ -1298,22 +1300,22 @@ def satStateW : State :=
     rd := [⟨0x1000, 16⟩, ⟨0x3000, 0⟩, ⟨0x6000, 128⟩] }
 
 theorem ghashW_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashW (Spec.Gcm.ghashWithPowersContract AArch64.abi) :=
+    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashW (Proof.Gcm.ghashWithPowersContract AArch64.abi) :=
   Verified.of_correct ghashW_correct ghashW_ct
     { pre := by
-        sig_implies_pre [Spec.Gcm.ghashWithPowersContract, Spec.Gcm.ghashWithPowersSig,
+        sig_implies_pre [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig,
           Spec.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
           Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       post := by
-        sig_implies_post [Spec.Gcm.ghashWithPowersContract, Spec.Gcm.ghashWithPowersSig,
+        sig_implies_post [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig,
           Spec.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
           Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       pub := by
-        sig_implies_pub [Spec.Gcm.ghashWithPowersContract, Spec.Gcm.ghashWithPowersSig,
+        sig_implies_pub [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig,
           Spec.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
           Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       sat := ⟨satStateW, by
-        sig_pre [Spec.Gcm.ghashWithPowersContract, Spec.Gcm.ghashWithPowersSig, Spec.Gcm.ghashSig,
+        sig_pre [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig, Spec.Gcm.ghashSig,
           Spec.Gcm.withPowersParam, AArch64.abi, AArch64.argRegs, satStateW,
           Proof.Gcm.AArch64.satState]
         sig_and_intros

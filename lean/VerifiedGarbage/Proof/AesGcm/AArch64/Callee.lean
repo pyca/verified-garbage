@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Cmac.Frame
@@ -227,7 +228,7 @@ structure GhPCall (s : State) (Ctx Y S : Addr) : Prop where
   reads : Covers [⟨Ctx + BitVec.ofNat 64 240, 144⟩] (s.rd ++ s.wr)
   hy : (⟨Ctx + BitVec.ofNat 64 240, 144⟩ : Region).Disjoint ⟨Y, 16⟩
   hs : (⟨Ctx + BitVec.ofNat 64 240, 144⟩ : Region).Disjoint ⟨S, 256⟩
-  repr : Spec.Gcm.PreparedPowers8Repr s.mem Ctx
+  repr : Proof.Gcm.PreparedPowers8Repr s.mem Ctx
 
 section
 variable {s : State} {Ctx Y D S : Addr} {n : Nat} (h : GhCall s (Ctx + BitVec.ofNat 64 240) Y D S n)
