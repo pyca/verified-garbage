@@ -443,4 +443,127 @@ theorem dsetup_ok {s : State} (hs : DPre s) :
     rw [U₈₁₀.wordsVal (by decide) (by decide), e₈]
     decide
 
+/-! ### `rhs = x³ + a x + b` -/
+
+/-- The slots of `rhs`'s operations after the first. -/
+abbrev rhsSlots : List Nat := [p256.sl CXM, p256.sl RHS, p256.sl TT, p256.sl AP, p256.sl BP]
+
+theorem rhsLay : Lay p256.MP' (own 4) (· ∈ rhsSlots) :=
+  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ rhsSlots, ∀ y ∈ rhsSlots,
+      x ≠ y → x + 8 * p256.MP'.n ≤ y ∨ y + 8 * p256.MP'.n ≤ x) x hx y hy, by decide, by decide⟩
+
+theorem rhsShort : Short (· ∈ rhsSlots) := by decide
+
+theorem rhs_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
+    runOps (Cfg.rhsOps p256).tail e (p256.sl RHS) =
+      e (p256.sl CXM) * e (p256.sl CXM) * e (p256.sl CXM) + e (p256.sl AP) * e (p256.sl CXM) + e (p256.sl BP) := by
+  simp only [Cfg.rhsOps, List.tail, runOps_cons, runOps_nil, FOp.run, Function.update_apply, sl_eq]
+  simp only [RHS, TT, CXM, AP, BP, T0, T1, Nat.reduceMul, Nat.reduceAdd, Nat.reduceEqDiff, ↓reduceIte]
+
+/-- `x R` to `CXM` and `rhs` (in Montgomery's form) to `RHS`. -/
+theorem rhs_ok {s : State} {base : Addr} (hw : WsReg s base) (hr2 : sv base s R2P = 2 ^ 256 * 2 ^ 256 % W.p)
+    (hap : sv base s AP = W.a * 2 ^ 256 % W.p) (hbp : sv base s BP = W.b * 2 ^ 256 % W.p) :
+    WP isa (fprog p256Field (Cfg.rhsOps p256)) s fun s' =>
+      Kp s s' ∧ Unch base ([(p256.sl CXM, 8 * 4), (own 4, 64 * 4)] ++
+        (((Cfg.rhsOps p256).tail.map FOp.out).map (fun w => (w, 8 * 4)) ++ [(own 4, 64 * 4)])) s.mem s'.mem ∧
+      sv base s' RHS < W.p ∧
+      toM W.p (2 ^ 256) (sv base s' RHS) =
+        Fin.ofNat W.p (sv base s CX) * Fin.ofNat W.p (sv base s CX) * Fin.ofNat W.p (sv base s CX) +
+          Fin.ofNat W.p W.a * Fin.ofNat W.p (sv base s CX) + Fin.ofNat W.p W.b := by
+  have hp0 : 0 < W.p := by decide
+  show WP isa (.seq (mulCall p256Field (p256.sl CXM) (p256.sl CX) (p256.sl R2P))
+    (fprog p256Field (Cfg.rhsOps p256).tail)) s _
+  refine WP.seq (WP.mono (mulCall_ok field_ok hw (o := p256.sl CXM) (a := p256.sl CX) (b := p256.sl R2P)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by show sv base s R2P < _; rw [hr2]; exact Nat.mod_lt _ hp0)) fun s₁ ⟨C₁, lt₁, e₁⟩ => ?_)
+  have hw₁ := hw.of_kp C₁.kp
+  have U₁ : Unch base [(p256.sl CXM, 8 * 4), (own 4, 64 * 4)] s.mem s₁.mem := C₁.mem
+  have xm₁ : sv base s₁ CXM = sv base s CX * 2 ^ 256 % W.p :=
+    mont_eq lt₁ (e₁.trans (by show sv base s CX * sv base s R2P % W.p = _; rw [hr2]))
+  have ap₁ : sv base s₁ AP = W.a * 2 ^ 256 % W.p := by
+    show wordsVal _ _ _ _ = _; rw [sv_unch U₁ AP (by decide)]; exact hap
+  have bp₁ : sv base s₁ BP = W.b * 2 ^ 256 % W.p := by
+    show wordsVal _ _ _ _ = _; rw [sv_unch U₁ BP (by decide)]; exact hbp
+  refine WP.mono (fprog_ok (M := p256.MP') (F := p256Field) field_ok rfl rhsLay rhsShort unit
+    (Cfg.rhsOps p256).tail (V := [p256.sl CXM, p256.sl AP, p256.sl BP])
+    (E := fun x => toM W.p (2 ^ 256) (wordsVal s₁.mem base x 4)) ⟨hw₁, by decide, fun x hx => ?_, fun _ _ => rfl⟩
+    (by decide) (by decide)) fun s' ⟨K, I⟩ => ⟨C₁.kp.trans K.kp, U₁.trans K.mem, I.lt _ (by decide), ?_⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl
+    · exact lt₁
+    · show sv base s₁ AP < _; rw [ap₁]; exact Nat.mod_lt _ hp0
+    · show sv base s₁ BP < _; rw [bp₁]; exact Nat.mod_lt _ hp0
+  · have v := I.val (p256.sl RHS) (by decide)
+    refine v.trans ((rhs_run (F := Fe W) _).trans ?_)
+    show toM W.p (2 ^ 256) (sv base s₁ CXM) * toM W.p (2 ^ 256) (sv base s₁ CXM) *
+        toM W.p (2 ^ 256) (sv base s₁ CXM) + toM W.p (2 ^ 256) (sv base s₁ AP) * toM W.p (2 ^ 256) (sv base s₁ CXM) +
+        toM W.p (2 ^ 256) (sv base s₁ BP) = _
+    rw [xm₁, ap₁, bp₁, toM_mont unit, toM_mont unit, toM_mont unit]
+
+/-! ### The root's checks -/
+
+/-- `y²` and `y² - rhs` (in Montgomery's form), `y` out of it, and `p - y`. -/
+theorem root_ok {s : State} {base : Addr} (hw : WsReg s base) (hacc : sv base s ACC < W.p)
+    (hrhs : sv base s RHS < W.p) (hone : sv base s ONE = 1) (hzero : sv base s ZERO = 0) :
+    WP isa (fprog p256Field (Cfg.rootOps p256)) s fun s' =>
+      Kp s s' ∧ Unch base ([(p256.sl YSQ, 8 * 4), (own 4, 64 * 4)] ++ [(p256.sl DIF, 8 * 4), (own 4, 64 * 4)] ++
+        [(p256.sl Y1, 8 * 4), (own 4, 64 * 4)] ++ [(p256.sl Y2, 8 * 4), (own 4, 64 * 4)]) s.mem s'.mem ∧
+      sv base s' DIF < W.p ∧
+      toM W.p (2 ^ 256) (sv base s' DIF) =
+        toM W.p (2 ^ 256) (sv base s ACC) * toM W.p (2 ^ 256) (sv base s ACC) - toM W.p (2 ^ 256) (sv base s RHS) ∧
+      sv base s' Y1 < W.p ∧ Fin.ofNat W.p (sv base s' Y1) = toM W.p (2 ^ 256) (sv base s ACC) ∧
+      sv base s' Y2 = (W.p - sv base s' Y1) % W.p := by
+  have hp0 : 0 < W.p := by decide
+  show WP isa (.seq (mulCall p256Field (p256.sl YSQ) (p256.sl ACC) (p256.sl ACC)) <|
+    .seq (subCall p256Field (p256.sl DIF) (p256.sl YSQ) (p256.sl RHS)) <|
+    .seq (mulCall p256Field (p256.sl Y1) (p256.sl ACC) (p256.sl ONE))
+      (subCall p256Field (p256.sl Y2) (p256.sl ZERO) (p256.sl Y1))) s _
+  refine WP.seq (WP.mono (mulCall_ok field_ok hw (o := p256.sl YSQ) (a := p256.sl ACC) (b := p256.sl ACC)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hacc) fun s₁ ⟨C₁, lt₁, e₁⟩ => ?_)
+  have hw₁ := hw.of_kp C₁.kp
+  have U₁ : Unch base [(p256.sl YSQ, 8 * 4), (own 4, 64 * 4)] s.mem s₁.mem := C₁.mem
+  have e₁' : ∀ i, i ∈ [ACC, RHS, ONE, ZERO] → sv base s₁ i = sv base s i := fun i hi => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl | rfl <;> exact sv_unch U₁ _ (by decide)
+  refine WP.seq (WP.mono (subCall_ok field_ok hw₁ (o := p256.sl DIF) (a := p256.sl YSQ) (b := p256.sl RHS)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) lt₁
+    (by show sv base s₁ RHS < _; rw [e₁' RHS (by simp)]; exact hrhs)) fun s₂ ⟨C₂, e₂⟩ => ?_)
+  have hw₂ := hw₁.of_kp C₂.kp
+  have U₂ : Unch base [(p256.sl DIF, 8 * 4), (own 4, 64 * 4)] s₁.mem s₂.mem := C₂.mem
+  have e₂' : ∀ i, i ∈ [ACC, ONE, ZERO] → sv base s₂ i = sv base s i := fun i hi => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl <;> (rw [← e₁' _ (by simp)]; exact sv_unch U₂ _ (by decide))
+  refine WP.seq (WP.mono (mulCall_ok field_ok hw₂ (o := p256.sl Y1) (a := p256.sl ACC) (b := p256.sl ONE)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by show sv base s₂ ONE < _; rw [e₂' ONE (by simp), hone]; decide)) fun s₃ ⟨C₃, lt₃, e₃⟩ => ?_)
+  have hw₃ := hw₂.of_kp C₃.kp
+  have U₃ : Unch base [(p256.sl Y1, 8 * 4), (own 4, 64 * 4)] s₂.mem s₃.mem := C₃.mem
+  have z₃ : sv base s₃ ZERO = 0 := by
+    show wordsVal _ _ _ _ = _; rw [sv_unch U₃ ZERO (by decide)]; rw [← hzero]; exact e₂' ZERO (by simp)
+  refine WP.mono (subCall_ok field_ok hw₃ (o := p256.sl Y2) (a := p256.sl ZERO) (b := p256.sl Y1)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by show sv base s₃ ZERO < _; rw [z₃]; exact hp0) lt₃) fun s₄ ⟨C₄, e₄⟩ => ?_
+  have U₄ : Unch base [(p256.sl Y2, 8 * 4), (own 4, 64 * 4)] s₃.mem s₄.mem := C₄.mem
+  have dif₄ : sv base s₄ DIF = sv base s₂ DIF := by
+    show wordsVal _ _ _ _ = _; rw [sv_unch U₄ DIF (by decide)]; exact sv_unch U₃ DIF (by decide)
+  have y1₄ : sv base s₄ Y1 = sv base s₃ Y1 := sv_unch U₄ Y1 (by decide)
+  have ysq₂ : sv base s₂ YSQ = sv base s₁ YSQ := sv_unch U₂ YSQ (by decide)
+  have h2 : sv base s₂ DIF = (sv base s₁ YSQ + W.p - sv base s₁ RHS) % W.p := e₂
+  have lt₂ : sv base s₂ DIF < W.p := by rw [h2]; exact Nat.mod_lt _ hp0
+  refine ⟨C₁.kp.trans (C₂.kp.trans (C₃.kp.trans C₄.kp)), ((U₁.trans U₂).trans U₃).trans U₄, by rw [dif₄]; exact lt₂,
+    ?_, by rw [y1₄]; exact lt₃, ?_, ?_⟩
+  · rw [dif₄]
+    have hr1 : sv base s₁ RHS < W.p := by rw [e₁' RHS (by simp)]; exact hrhs
+    have hm : toM W.p (2 ^ 256) (sv base s₁ YSQ) = toM W.p (2 ^ 256) (sv base s ACC) *
+        toM W.p (2 ^ 256) (sv base s ACC) := toM_mul unit e₁
+    rw [h2, toM_sub (by omega), hm, e₁' RHS (by simp)]
+  · rw [y1₄]
+    refine toM_one_mul unit ?_
+    have h := e₃
+    rw [show wordsVal s₂.mem base (p256.sl ONE) p256Field.S.k = 1 from (e₂' ONE (by simp)).trans hone,
+      show wordsVal s₂.mem base (p256.sl ACC) p256Field.S.k = sv base s ACC from e₂' ACC (by simp)] at h
+    exact h
+  · have h4 : sv base s₄ Y2 = (sv base s₃ ZERO + W.p - sv base s₃ Y1) % W.p := e₄
+    rw [h4, z₃, Nat.zero_add, y1₄]
+
 end VG.Proof.EcKey.Compressed.RISCV64.P256
