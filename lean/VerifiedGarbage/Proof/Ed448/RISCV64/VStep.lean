@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Ed448.RISCV64.BaseStep
 public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 import VerifiedGarbage.Proof.Ed448.RISCV64.BaseSel
 import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+public import VerifiedGarbage.Proof.X448.RISCV64.R64.Ladder
 
 /-!
 # Ed448's verification on RISCV64: one iteration of the loop
@@ -68,9 +69,9 @@ theorem bit1_shift (x : Nat) (hx : x < 2 ^ 64) :
   rw [this, toNat_imm (by omega_arith)]
 
 theorem vhead_ok (hP : PtsOk b sL.mem a r) {c : Nat} (hc1 : 1 ≤ c) (hc2 : c ≤ 1832) {q : Point}
-    {a0 : BitVec 64} {s : State} (h : Cur b sL a0 (BitVec.ofNat 64 c) RQ (ptV q q) s) :
+    {a0 : BitVec 64} {s : State} (h : R64.Cur b sL a0 (BitVec.ofNat 64 c) RQ (ptV q q) s) :
     WP isa (.block (([.addi .t1 .t1 (-1)] : List Instr) ++ vSelect)) s
-      (Cur b sL a0 (BitVec.ofNat 64 (c - 1)) SQ (ptV q (selP (c - 1) a r q))) := by
+      (R64.Cur b sL a0 (BitVec.ofNat 64 (c - 1)) SQ (ptV q (selP (c - 1) a r q))) := by
   have hc := h.ctx
   have hA := X448.RISCV64.ACC_eq
   have hb0 : (c - 1) % 2 ≤ 1 := by omega_arith
@@ -145,7 +146,7 @@ theorem vhead_ok (hP : PtsOk b sL.mem a r) {c : Nat} (hc1 : 1 ≤ c) (hc2 : c �
   refine WP.mono (selG (o := PZ) (q := ONE) (r := TZ) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) hc16 hb1 (by rw [hr16.gpr _ (by decide), hr15.gpr _ (by decide), e11b]) hS16 hP16.one
     (hS16 TZ (by decide))) fun t ⟨hrt, hft, hSt⟩ => ?_
-  have hrw : Rest work s t := by
+  have hrw : Rest R64.work s t := by
     refine (hr5.mono (by decide)).trans ((hr10'.mono (by decide)).trans ((hr14.mono (by decide)).trans ?_))
     exact (hr15.mono (by decide)).trans ((hr16.mono (by decide)).trans (hrt.mono (by decide)))
   have hrt' : Rest [.a1, .a2, .a4, .t0] s1 t := by
@@ -176,8 +177,8 @@ theorem byte_hi {m m' : Mem} (hf : Frame [FA b] m m') {d : Nat} (hd : ACC + 112 
       _ (Region.contains_self _ _) h
 
 theorem vswap_ok (hL : VCtx b sL) {S K : Nat} (hT : TabIs b sL.mem (tabV S K)) {h : Nat} (hh : h < 1832) {q p : Point}
-    {a0 : BitVec 64} {s : State} (hcur : Cur b sL a0 (BitVec.ofNat 64 h) FQ (addV q p) s) :
-    WP isa (.block vSwap) s (Cur b sL a0 (BitVec.ofNat 64 h) FQ
+    {a0 : BitVec 64} {s : State} (hcur : R64.Cur b sL a0 (BitVec.ofNat 64 h) FQ (addV q p) s) :
+    WP isa (.block vSwap) s (R64.Cur b sL a0 (BitVec.ofNat 64 h) FQ
       (swapV RZ TZ (tabV S K h) (swapV RY TY (tabV S K h) (swapV RX TX (tabV S K h) (addV q p))))) := by
   have hc := hcur.ctx
   have hv : VCtx b s := hL.of_rest hcur.stp.rest (by decide) (by decide)
@@ -200,13 +201,13 @@ theorem vswap_ok (hL : VCtx b sL) {S K : Nat} (hT : TabIs b sL.mem (tabV S K)) {
   have hm4 : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
   have hc4 : Ctx b s4 := hc.of_rest hr4 (by decide)
   have hS4 : SlotsOk s4.mem b FQ (addV q p) := by rw [hm4]; exact hcur.slots
-  refine WP.append (cswapS (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine WP.append (R64.cswapS (by decide) (by decide) (by decide) (by decide) (by decide)
     hc4 hsw e11 hS4) fun s5 ⟨hr5, hf5, hS5⟩ => ?_
   have hc5 : Ctx b s5 := hc4.of_rest hr5 (by decide)
-  refine WP.append (cswapS (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine WP.append (R64.cswapS (by decide) (by decide) (by decide) (by decide) (by decide)
     hc5 hsw (by rw [hr5.gpr _ (by decide), e11]) hS5) fun s6 ⟨hr6, hf6, hS6⟩ => ?_
   have hc6 : Ctx b s6 := hc5.of_rest hr6 (by decide)
-  refine WP.mono (cswapS (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (R64.cswapS (by decide) (by decide) (by decide) (by decide) (by decide)
     hc6 hsw (by rw [hr6.gpr _ (by decide), hr5.gpr _ (by decide), e11]) hS6) fun s7 ⟨hr7, hf7, hS7⟩ => ?_
   have hr7' : Rest [.a1, .a2, .a4, .a5, .t0] s s7 :=
     (hr4.mono (by decide)).trans ((hr5.mono (by decide)).trans ((hr6.mono (by decide)).trans
@@ -217,12 +218,12 @@ theorem vswap_ok (hL : VCtx b sL) {S K : Nat} (hT : TabIs b sL.mem (tabV S K)) {
 
 /-- The loop invariant from `sL` with the counter `c`. -/
 structure VInv (b : Addr) (S K : Nat) (a r : Point) (sL : State) (c : Nat) (s : State) : Prop where
-  cur : Cur b sL (s.gpr .t2) (BitVec.ofNat 64 c) RQ
+  cur : R64.Cur b sL (s.gpr .t2) (BitVec.ofNat 64 c) RQ
     (ptV (Qv (4 * S) (4 * K) a r c) (Qv (4 * S) (4 * K) a r c)) s
 
 theorem vStep_eq : vStep =
     .seq (.block (([.addi .t1 .t1 (-1)] : List Instr) ++ vSelect))
-      (.seq (opsCode addOps (FOp.mul TZ TF TG).code) (.block vSwap)) := rfl
+      (.seq (R64.opsCode addOps (R64.fcode (FOp.mul TZ TF TG))) (.block vSwap)) := rfl
 
 theorem vstep_ok (hL : VCtx b sL) {S K : Nat} (hT : TabIs b sL.mem (tabV S K)) (hP : PtsOk b sL.mem a r) {c : Nat}
     (hc1 : 1 ≤ c) (hc2 : c ≤ 1832) {s : State} (h : VInv b S K a r sL c s) :
@@ -230,7 +231,7 @@ theorem vstep_ok (hL : VCtx b sL) {S K : Nat} (hT : TabIs b sL.mem (tabV S K)) (
   rw [vStep_eq]
   obtain ⟨o1, o2, o3, o4⟩ := last_ok
   refine WP.seq (WP.mono (vhead_ok hP hc1 hc2 h.cur) fun s1 h1 => WP.seq
-    (ops_ok addOps SQ _ s1 addOps_ok h1 fun s2 h2 => WP.mono (op_ok (.mul TZ TF TG) o1 o2 o3 o4 h2)
+    (R64.ops_ok addOps SQ _ s1 addOps_ok h1 fun s2 h2 => WP.mono (R64.op_ok (.mul TZ TF TG) o1 o2 o3 o4 h2)
       fun s3 h3 => WP.mono (vswap_ok hL (S := S) (K := K) (q := Qv (4 * S) (4 * K) a r c)
         (p := selP (c - 1) a r (Qv (4 * S) (4 * K) a r c)) hT (by omega_arith) h3) fun s4 h4 => ?_))
   refine ⟨⟨⟨h4.ctx, h4.stp, rfl, h4.t1, ?_⟩⟩, ?_⟩
@@ -248,7 +249,7 @@ theorem vstep_ok (hL : VCtx b sL) {S K : Nat} (hT : TabIs b sL.mem (tabV S K)) (
 /-- The loop, from `Q` the neutral point: `Q = [4S]B + [4K]a + [4]r`. -/
 theorem vloop_ok {S K : Nat} {s : State} (hv : VCtx b s) (hT : TabIs b s.mem (tabV S K)) (hP : PtsOk b s.mem a r)
     (hd : FS s.mem b DK = Spec.Ed448.d) :
-    WP isa vLoop s fun s' => Stp b s s' ∧ Ctx b s' ∧
+    WP isa vLoop s fun s' => R64.Stp b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b RQ (ptV (VG.Proof.Ed448.vladder4 (4 * S) (4 * K) 4 a r 458)
         (VG.Proof.Ed448.vladder4 (4 * S) (4 * K) 4 a r 458)) := by
   have hc := hv.ctx
@@ -269,7 +270,7 @@ theorem vloop_ok {S K : Nat} {s : State} (hv : VCtx b s) (hT : TabIs b s.mem (ta
     rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)⟩
   have f4 : Frame [FA b] s.mem s4.mem := by
     rw [u4.mem]; exact (fFA (by decide) f1).trans ((fFA (by decide) f2).trans (fFA (by decide) f3))
-  have hst : Stp b s s4 := ⟨hr4.mono (by decide), f4⟩
+  have hst : R64.Stp b s s4 := ⟨hr4.mono (by decide), f4⟩
   have hT4 : TabIs b s4.mem (tabV S K) := fun h hh => by
     rw [byte_hi f4 (by omega_arith) (by omega_arith)]; exact hT h hh
   have hP4 := hP.frame f4
@@ -287,7 +288,7 @@ theorem vloop_ok {S K : Nat} {s : State} (hv : VCtx b s) (hT : TabIs b s.mem (ta
     · rw [FS, slot_keep f3 (by decide) (by decide) (by decide), slot_keep f2 (by decide) (by decide) (by decide),
         slot_keep f1 (by decide) (by decide) (by decide), ← FS, hd]
       rfl
-  have h1832 : VInv b S K a r s4 1832 s4 := ⟨⟨hc4, Stp.refl _ _, rfl, by rw [u4.gpr], hS4⟩⟩
+  have h1832 : VInv b S K a r s4 1832 s4 := ⟨⟨hc4, R64.Stp.refl _ _, rfl, by rw [u4.gpr], hS4⟩⟩
   refine WP.mono (Q := VInv b S K a r s4 0) (WP.loop (M := isa)
     (fun m s' => 1 ≤ m ∧ m ≤ 1832 ∧ VInv b S K a r s4 m s') ?_ 1832 s4 ⟨by decide, Nat.le_refl _, h1832⟩)
     fun s' ⟨h'⟩ => ⟨hst.trans h'.stp, h'.ctx, by rw [← qv_0]; exact h'.slots⟩

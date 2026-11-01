@@ -63,7 +63,8 @@ address is a pointer plus a constant or a counter.
 namespace VG.Impl.Ed448.RISCV64
 
 open VG.RISCV64
-open VG.Impl.X448.RISCV64 (mul add sub cswap freeze one align R X2 Z2 Y)
+open VG.Impl.X448.RISCV64 (freeze one align R X2 Z2 Y)
+open VG.Impl.X448.RISCV64.R64 (mul add sub cswap)
 
 /-! ## The working space -/
 

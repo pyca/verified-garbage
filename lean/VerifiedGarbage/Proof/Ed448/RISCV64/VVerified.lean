@@ -49,7 +49,7 @@ theorem verifyEquation_ok (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyE
     (hs : verifyRISCV64.pre s) :
     ∃ t s', Exec isa Impl.Ed448.RISCV64.verifyEquation s t s' ∧ abiPreserved s s' ∧ verifyRISCV64.post s s' := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := hs
-  obtain ⟨t, s', he, h, hk⟩ := WP.keep [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2]
+  obtain ⟨t, s', he, h, hk⟩ := WP.keep [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6]
     (verifyEquation_correct hR hV ⟨h1, h2, h3, h4, h5⟩) (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), h⟩
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.X448.RISCV64
+public import VerifiedGarbage.Impl.X448.RISCV64.R64
 public import VerifiedGarbage.Spec.Ed448
 
 /-!
@@ -44,7 +44,8 @@ so only the pointers can affect timing.
 namespace VG.Impl.Ed448.RISCV64
 
 open VG.RISCV64 VG.Impl.Words.RISCV64
-open VG.Impl.X448.RISCV64 (mul add sub cswap invert freeze bitsBody BITS R X2 Z2 align)
+open VG.Impl.X448.RISCV64 (freeze bitsBody BITS R X2 Z2 align)
+open VG.Impl.X448.RISCV64.R64 (mul add sub cswap invert)
 
 /-! ## The slots -/
 

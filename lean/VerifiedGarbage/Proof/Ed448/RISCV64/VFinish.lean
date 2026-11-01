@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ed448.RISCV64.BaseStep
 public import VerifiedGarbage.Proof.Ed448.RISCV64.VChecks
 import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 
 /-!
 # Ed448's verification on RISCV64: the result
@@ -75,7 +76,7 @@ theorem vFinish_ok {s : State} (hc : VCtx b s) {Q : Point} (hS : SlotsOk s.mem b
     rw [List.mem_singleton.mp hr]; exact disj_hi (by omega) (by omega)) (slots_freeze hf1 hdo hS (by decide))
     (by decide)
   -- `Y - Z`.
-  refine WP.append (subS (o := TA) (x := RY) (y := RZ) (by decide) (by decide) (by decide) (by decide) hc3.ctx hS3)
+  refine WP.append (R64.subS (o := TA) (x := RY) (y := RZ) (by decide) (by decide) (by decide) (by decide) hc3.ctx hS3)
     fun s4 ⟨hr4, hf4, hS4⟩ => ?_
   have hc4 : VCtx b s4 := hc3.of_rest hr4 (by decide) (by decide)
   refine wp_li (by decide) fun s5 u5 => ?_
