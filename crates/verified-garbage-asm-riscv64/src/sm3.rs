@@ -9,7 +9,7 @@
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must be valid for reads and writes of 32 bytes, and aligned for `u32`.
 /// * `blocks` must be valid for reads of `64 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 576 bytes, and aligned for `u64`.
 /// * The contents of `scratch` on return are unspecified.

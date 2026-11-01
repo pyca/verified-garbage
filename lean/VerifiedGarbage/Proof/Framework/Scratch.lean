@@ -151,37 +151,37 @@ theorem Sig.bufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x :
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
 
-/-- The `u64` buffers of the parameters followed by one more array, given
-values for the others and its address `x`: `x` too if the array's elements
-are `u64`. -/
-theorem Sig.u64Bufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x : BitVec 64) :
+/-- The aligned buffers of the parameters followed by one more array, given
+values for the others and its address `x`: `x` too, with its element's
+alignment, if that is more than 1. -/
+theorem Sig.alignedBufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x : BitVec 64) :
     ∀ (ps : List (String × Param)) (vs : List (BitVec 64)),
       vs.length = (ps.flatMap fun p => p.2.words pb).length →
-      Sig.u64Bufs (ps ++ [((nm, .array true e n) : String × Param)]) (vs ++ [x]) =
-        Sig.u64Bufs ps vs ++ (if e.isU64 then [x] else [])
+      Sig.alignedBufs (ps ++ [((nm, .array true e n) : String × Param)]) (vs ++ [x]) =
+        Sig.alignedBufs ps vs ++ (if 1 < e.align then [(x, e.align)] else [])
   | [], [], _ => rfl
   | (_, .int ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.u64Bufs]
-    exact Sig.u64Bufs_append_array pb nm e n x ps vs (by omega)
+    simp only [List.cons_append, Sig.alignedBufs]
+    exact Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)
   | (_, .array _ e' _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.u64Bufs]
-    rw [Sig.u64Bufs_append_array pb nm e n x ps vs (by omega)]
+    simp only [List.cons_append, Sig.alignedBufs]
+    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)]
     split <;> rfl
   | (_, .slice _ e' _) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.u64Bufs]
-    rw [Sig.u64Bufs_append_array pb nm e n x ps vs (by omega)]
+    simp only [List.cons_append, Sig.alignedBufs]
+    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)]
     split <;> rfl
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.u64Bufs]
-    exact Sig.u64Bufs_append_array pb nm e n x ps vs (by omega)
+    simp only [List.cons_append, Sig.alignedBufs]
+    exact Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h

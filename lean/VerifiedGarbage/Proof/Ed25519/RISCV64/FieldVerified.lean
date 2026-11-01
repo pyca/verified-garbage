@@ -20,7 +20,7 @@ public import VerifiedGarbage.TCB.RISCV64.Isa
 
 Each function meets a contract of its facts by register (`mulRV`, `powRV`,
 `addRV`), with no stack, from a working space aligned to 8 bytes, as an
-`[u64]` is (`RISCV64.abi`'s `alignsU64`): the callers in this library call
+`[u64]` is (`RISCV64.abi`'s `alignsBufs`): the callers in this library call
 them through these, and the shared contracts of `Spec/X25519/Field32.lean` and
 `Spec/Ed25519/Point32.lean` imply them, with no stack (`mulFn_verified`,
 `pow250Fn_verified`, `addFn_verified`). None calls another function or writes

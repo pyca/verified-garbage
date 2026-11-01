@@ -129,7 +129,7 @@ theorem pre_stk {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
       (∀ r ∈ stackBelow s.sp stack, ∀ a ∈ allStk sig m s, r.Disjoint a.1) ∧
       (∀ a ∈ Sig.bufs sig.params (stkArgs m s), a.1.base.toNat + a.1.len ≤ 2 ^ 64) ∧
       Curry.apply (sig.words abi.ptrBits) pre (stkArgs m s) s.mem ∧
-      ∀ p ∈ Sig.u64Bufs sig.params (stkArgs m s), p.toNat % 8 = 0 := by
+      ∀ p ∈ Sig.alignedBufs sig.params (stkArgs m s), p.1.toNat % p.2 = 0 := by
   simp only [Sig.contract]
   rw [args_stk hk]
   simp only [argArea_stk hk, Sig.lists_of_noLists _ _ _ _ hl, List.map_nil, List.append_nil]
@@ -635,17 +635,18 @@ theorem narrowA_pre (hk : (sig.words abi.ptrBits).length = 8 + m)
       rw [hscr, toNat_sub_ofNat' (by omega_using [hsb])]
       omega_using [hb0, hsb]
   · -- The precondition, which reads only the buffers, and the alignment of
-    -- the `u64` buffers.
+    -- the `u16`, `u32` and `u64` buffers.
     refine ⟨Eq.mpr (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params pre _ _ hlen) _) ?_, ?_⟩
     · exact hpre _ _ _ hlen (fun b hb x hx => (hagB b hb x hx).symm) hpr
     · intro p hp
       rw [show (sig.withScratch nm e n).params = sig.params ++ [(nm, .array true e n)] from rfl,
-        Sig.u64Bufs_append_array abi.ptrBits nm e n _ sig.params _ hlen] at hp
+        Sig.alignedBufs_append_array abi.ptrBits nm e n _ sig.params _ hlen] at hp
       rcases List.mem_append.mp hp with hp | hp
       · exact hu64 p hp
       · split at hp
         · simp only [List.mem_singleton] at hp; subst hp
-          exact Spill.al8 (by omega_using [hEal]) (by omega_using [])
+          exact Nat.mod_eq_zero_of_dvd (Nat.dvd_trans (Elem.align_dvd_eight e)
+            (Nat.dvd_of_mod_eq_zero (Spill.al8 (by omega_using [hEal]) (by omega_using []))))
         · simp at hp
 
 /-- The public data of the contract without the buffer is public in

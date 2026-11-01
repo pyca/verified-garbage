@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 The function meets its contract of `Spec/Ed25519/Contract.lean`, with no
 stack: the proof against the contract's facts by register (`baseRV`), which
 it implies, from a `scratch` aligned to 8 bytes as an `[u64]` is
-(`RISCV64.abi`'s `alignsU64`), and a state satisfying it. Only the pointers
+(`RISCV64.abi`'s `alignsBufs`), and a state satisfying it. Only the pointers
 are public (`scalarBase_ct`).
 -/
 

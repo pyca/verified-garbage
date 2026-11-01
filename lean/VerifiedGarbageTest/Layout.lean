@@ -154,17 +154,17 @@ def wide : Sig where
 
 #guard Sig.validDoc X86_64.abi none' == []
 
--- On RISC-V, whose contracts require it (`Abi.alignsU64`), a buffer of `u64`
--- (or of arrays of them) is also aligned.
+-- On RISC-V, whose contracts require it (`Abi.alignsBufs`), a buffer of `u16`,
+-- `u32` or `u64` (or of arrays of them) is also aligned for its element.
 #guard Sig.validDoc RISCV64.abi sample == [
     "`w` must be valid for reads and writes of 16 bytes.",
     "`r` must be valid for reads of `len` bytes.",
     "`x` must be valid for reads and writes of 32 bytes, and aligned for `u64`.",
-    "`y` must be valid for reads of 8 bytes."]
+    "`y` must be valid for reads of 8 bytes, and aligned for `u32`."]
 
 #guard Sig.validDoc RISCV64.abi wide == [
     "`blocks` must be valid for reads of `64 * n` bytes.",
-    "`out` must be valid for reads and writes of `4 * len` bytes.",
+    "`out` must be valid for reads and writes of `4 * len` bytes, and aligned for `u32`.",
     "`state` must be valid for reads and writes of 200 bytes, and aligned for `u64`."]
 
 /-- A list of slices, between a writable buffer and a read-only one. -/

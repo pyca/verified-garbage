@@ -28,15 +28,17 @@ by hand for each target:
   slot);
 * that no buffer wraps around the end of the address space (no Rust
   allocation does);
-* on a target that asks for it (`Abi.alignsU64`: RISC-V, whose loads and
-  stores of doublewords fault unless aligned), that a buffer of `u64` (or of
-  arrays of them) is at a multiple of 8 (`Sig.u64Bufs`): a reference "must be
+* on a target that asks for it (`Abi.alignsBufs`: RISC-V, whose loads and
+  stores of halfwords, words and doublewords fault unless aligned), that a
+  buffer of `u16`, `u32` or `u64` (or of arrays of them) is at a multiple of
+  2, 4 or 8 (`Sig.alignedBufs`, `Elem.align`): a reference "must be
   aligned" (the Rust Reference, "Behavior considered undefined"), here to
-  `u64`'s alignment, which "is platform-specific" ("Type layout", "Primitive
-  data layout") and is 8 on RISC-V (`long long` and `long` in the RISC-V
-  ELF psABI's "C/C++ type details", as Rust's `u64` is laid out); an array's
-  alignment is its element's ("Array layout"), and a slice's pointer is
-  aligned for its element even when the slice is empty;
+  its element's alignment, which "is platform-specific" ("Type layout",
+  "Primitive data layout") and is 2, 4 and 8 on RISC-V (`short`, `int`, and
+  `long long` and `long`, in the RISC-V ELF psABI's "C/C++ type details",
+  as Rust's `u16`, `u32` and `u64` are laid out); an array's alignment is
+  its element's ("Array layout"), and a slice's pointer is aligned for its
+  element even when the slice is empty;
 * that no buffer overlaps the stack below the stack pointer that the
   function's calls and frames use (for return addresses, arguments and saved
   registers; no Rust object lies below the stack pointer);
@@ -69,6 +71,20 @@ def Elem.size : Elem → Nat
   | .u32 => 4
   | .u64 => 8
   | .array e n => n * e.size
+
+/-- The alignment in bytes on a target whose contracts state it
+(`Abi.alignsBufs`): a scalar's size, an array's element's. -/
+def Elem.align : Elem → Nat
+  | .u8 => 1
+  | .u16 => 2
+  | .u32 => 4
+  | .u64 => 8
+  | .array e _ => e.align
+
+/-- The scalar of an element: itself, or an array's element's. -/
+def Elem.scalar : Elem → Elem
+  | .array e _ => e.scalar
+  | e => e
 
 def Elem.rust : Elem → String
   | .u8 => "u8"
@@ -193,12 +209,13 @@ structure Abi (M : ISA) where
   (`Artifact.consts`), on a target whose code can name one; `none` on the
   others. -/
   sym : Option (M.State → String → BitVec 64) := none
-  /-- Whether the contracts require the address of every buffer of `u64` (or
-  of arrays of them) to be a multiple of 8 (`Sig.u64Bufs`, `Sig.contract`):
-  set on a target whose doublewords loads and stores fault unless aligned
-  (RISC-V), where `u64`'s alignment is 8, and on no other, whose contracts it
-  leaves as they are. -/
-  alignsU64 : Bool := false
+  /-- Whether the contracts require the address of every buffer of `u16`,
+  `u32` or `u64` (or of arrays of them) to be a multiple of its element's
+  alignment, 2, 4 or 8 (`Sig.alignedBufs`, `Elem.align`, `Sig.contract`):
+  set on a target whose loads and stores of halfwords, words and
+  doublewords fault unless aligned (RISC-V), where those are the types'
+  alignments, and on no other, whose contracts it leaves as they are. -/
+  alignsBufs : Bool := false
 
 /-! ## Tables of constants
 
@@ -264,22 +281,18 @@ def Sig.bufs : List (String × Param) → List (BitVec 64) → List (Region × B
   | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.bufs ps vs
   | _, _ => []
 
-/-- Whether `e` is `u64`, or an array of them (of arrays of them, …). -/
-def Elem.isU64 : Elem → Bool
-  | .u64 => true
-  | .array e _ => e.isU64
-  | _ => false
-
-/-- The addresses of the buffers of `u64` (or of arrays of them) that the
-arrays and slices among the parameters refer to, given the arguments' values,
-in the order of `Sig.bufs`. -/
-def Sig.u64Bufs : List (String × Param) → List (BitVec 64) → List Addr
+/-- The addresses of the buffers of `u16`, `u32` or `u64` (or of arrays of
+them) that the arrays and slices among the parameters refer to, given the
+arguments' values, each with its element's alignment, in the order of
+`Sig.bufs`. -/
+def Sig.alignedBufs : List (String × Param) → List (BitVec 64) → List (Addr × Nat)
   | [], _ => []
-  | (_, .int ..) :: ps, _ :: vs => Sig.u64Bufs ps vs
-  | (_, .array _ e _) :: ps, p :: vs => if e.isU64 then p :: Sig.u64Bufs ps vs else Sig.u64Bufs ps vs
+  | (_, .int ..) :: ps, _ :: vs => Sig.alignedBufs ps vs
+  | (_, .array _ e _) :: ps, p :: vs =>
+    if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs
   | (_, .slice _ e _) :: ps, p :: _ :: vs =>
-    if e.isU64 then p :: Sig.u64Bufs ps vs else Sig.u64Bufs ps vs
-  | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.u64Bufs ps vs
+    if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs
+  | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.alignedBufs ps vs
   | _, _ => []
 
 /-- The buffers of the arrays among the parameters, given the arguments'
