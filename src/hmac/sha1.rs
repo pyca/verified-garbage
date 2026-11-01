@@ -4,16 +4,11 @@
 //! `VG.Spec.Sha1.updateContract` and `VG.Spec.Hmac.Instance.finalizeContract`)
 //! compute HMAC with a key of any length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖
 //! text))` (`VG.Spec.Hmac.hmac`), keeping the two SHA-1 streaming states.
-//! `init` and `finalize` are the one HMAC implementation for every streaming
-//! hash function, calling SHA-1's verified functions.
 //!
-//! They follow the implementation of SHA-1 that `Sha1` runs on this CPU: on
-//! x86 and x86-64 with the SHA extensions, `vg_hmac_sha1_init_shani` and
-//! `vg_hmac_sha1_finalize_shani`, the same verified code calling
-//! `vg_sha1_update_shani`, `vg_sha1_finalize_shani` and
-//! `vg_sha1_compress_shani`, with the same contracts.
-//!
-//! On AArch64, the `_sha2` variants follow SHA-1 hardware dispatch.
+//! Their variants, with the same contracts, run with the hash function's
+//! backend of the same name, which `Sha1` chooses (see `crate::hashes::sha1`):
+//! on x86 and x86-64, `vg_hmac_sha1_init_shani` and
+//! `vg_hmac_sha1_finalize_shani`; on AArch64, the `_sha2` ones.
 
 #![cfg(any(
     target_arch = "x86_64",

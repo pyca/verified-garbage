@@ -11,19 +11,15 @@
 //! value is their digest (see `super::sha384`, `super::sha512_224` and
 //! `super::sha512_256`).
 //!
-//! On x86-64, CPUs with the SHA512 extension (and AVX2) run
-//! `vg_sha512_update_shani` and `vg_sha512_finalize_shani` instead, which have
-//! the same contracts and call `vg_sha512_compress_shani`; CPUs without it but
-//! with AVX2, BMI1 and BMI2 run `vg_sha512_update_avx2` and
-//! `vg_sha512_finalize_avx2`, which call `vg_sha512_compress_avx2`.
+//! Their variants, with the same contracts, are chosen on CPUs with the
+//! features their `_FEATURES` constants name, in this order: on x86-64,
+//! `vg_sha512_update_shani` and `vg_sha512_finalize_shani`, then the `_avx2`
+//! ones; on AArch64, the `_sha3` ones.
 //!
-//! On AArch64, Rust's `sha3` feature enables the FEAT_SHA512 backend.
-//! Dispatch follows the generated feature requirements. On AArch64 and
-//! x86-64, `digest` calls `vg_sha512_digest` (or its variant for the
-//! backend: `_sha3`, `_shani` or `_avx2`; contract
-//! `VG.Spec.Sha512.digestContract`), which runs the same initialization,
-//! update and finalization in one call, as do SHA-384's, SHA-512/224's and
-//! SHA-512/256's.
+//! On AArch64 and x86-64, `digest` calls `vg_sha512_digest`, or its variant
+//! with the suffix of the streaming functions chosen (contract
+//! `VG.Spec.Sha512.digestContract`), which hashes the whole message in one
+//! call, as do SHA-384's, SHA-512/224's and SHA-512/256's.
 
 #![cfg(any(
     target_arch = "x86_64",

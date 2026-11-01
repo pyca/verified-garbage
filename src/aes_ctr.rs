@@ -11,22 +11,18 @@
 //! its timing may depend on the last four bytes of the counter block (the
 //! 32-bit counter, public in OpenSSL, BoringSSL and aws-lc, which split the
 //! blocks where it wraps), but not on the rest of it, the key or the data.
-//! On x86-64, AArch64, PPC64LE and RISC-V it calls `vg_aes_ctr32` (which
-//! increments only the last 32 bits) on as many blocks at once as the last 32
-//! bits of the counter block allow, carrying into the first 96 when they wrap
-//! around, as OpenSSL's `CRYPTO_ctr128_encrypt_ctr32` does; elsewhere it calls
-//! `vg_aes_encrypt_blocks` on one block at a time. This module holds
-//! the key schedule and handles a partial last block (§6.5,
+//! This module holds the key schedule and handles a partial last block (§6.5,
 //! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes padded to a block XORs
 //! them with the first bytes of the next output block.
 //!
 //! The caller chooses the initial counter block, and must never use a
 //! counter block twice with the same key (Appendix B.2).
 //!
-//! On x86-64, CPUs with VAES and AVX2 run the `_vaes` function, and other
-//! CPUs with AES-NI the `_aesni` one (`crate::aes::Backend`), as on x86; on
-//! AArch64, CPUs with the AES instructions run the `_aes` one. Elsewhere, and on other CPUs, the constant-time
-//! bitsliced implementation runs.
+//! The variants of `vg_aes_ctr`, with the same contract, are chosen with
+//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
+//! constants name (and the key expansion's): on x86-64, `vg_aes_ctr_vaes`,
+//! then `vg_aes_ctr_aesni` (both with `vg_aes_expand_key_aesni`); on x86,
+//! `vg_aes_ctr_aesni`; on AArch64, `vg_aes_ctr_aes`.
 
 #![cfg(any(
     target_arch = "x86_64",

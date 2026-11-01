@@ -9,23 +9,14 @@
 //! module only keeps that state together with the message length (modulo
 //! 2⁶⁴), which the contracts take as an argument.
 //!
-//! `vg_poly1305_update` absorbs the whole blocks of the data with an
-//! implementation of `vg_poly1305_blocks`, and is emitted once for each
-//! (`Backend`): on x86-64, CPUs with AVX512_IFMA, AVX-512F and AVX2 run
-//! `vg_poly1305_update_ifma`, which absorbs them with
-//! `vg_poly1305_blocks_ifma`, eight at a time in 44-bit limbs with 52-bit
-//! multiply-adds once there are at least 28 of them (and fewer with
-//! `vg_poly1305_blocks_avx2`), other CPUs with AVX-512F and AVX2
-//! `vg_poly1305_update_avx512`, which absorbs them with
-//! `vg_poly1305_blocks_avx512`, eight at a time once there are at least 40 of
-//! them (and fewer with `vg_poly1305_blocks_avx2`), and other CPUs with AVX2
-//! `vg_poly1305_update_avx2`, which absorbs them with
-//! `vg_poly1305_blocks_avx2`, four at a time once there are at least 32 of
-//! them. On AArch64, `vg_poly1305_update_neon` absorbs the whole blocks of
-//! data of at least 128 bytes four at a time in NEON (AdvSIMD), which every
+//! The variants of `vg_poly1305_update`, with the same contract, are chosen
+//! by `Backend::select`: on x86-64, on CPUs with the features their
+//! `_FEATURES` constants name, `vg_poly1305_update_ifma`,
+//! `vg_poly1305_update_avx512` and `vg_poly1305_update_avx2`, in this order.
+//! On AArch64, `vg_poly1305_update_neon` needs only AdvSIMD, which every
 //! AArch64 CPU has; it is chosen only on Apple's cores (`target_vendor =
-//! "apple"`), because on others, such as Arm's Neoverse N2, the scalar code
-//! is faster.
+//! "apple"`), because on others, such as Arm's Neoverse N2, the baseline
+//! implementation is faster.
 //!
 //! A key must be used to authenticate only one message: the tags of two
 //! messages under the same key reveal enough to forge others.
@@ -54,22 +45,21 @@ use verified_garbage_cpu::Features;
 
 pub use crate::hmac::InvalidMac;
 
-/// The implementations of `vg_poly1305_update`, one for each implementation
-/// of `vg_poly1305_blocks`.
+/// The implementations of `vg_poly1305_update`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
     /// The baseline ISA.
     Scalar,
-    /// `vg_poly1305_update_avx2`, with `vg_poly1305_blocks_avx2`.
+    /// `vg_poly1305_update_avx2`.
     #[cfg(target_arch = "x86_64")]
     Avx2,
-    /// `vg_poly1305_update_avx512`, with `vg_poly1305_blocks_avx512`.
+    /// `vg_poly1305_update_avx512`.
     #[cfg(target_arch = "x86_64")]
     Avx512,
-    /// `vg_poly1305_update_ifma`, with `vg_poly1305_blocks_ifma`.
+    /// `vg_poly1305_update_ifma`.
     #[cfg(target_arch = "x86_64")]
     Ifma,
-    /// `vg_poly1305_update_neon`, four blocks at a time in NEON.
+    /// `vg_poly1305_update_neon`.
     #[cfg(target_arch = "aarch64")]
     Neon,
 }
@@ -97,10 +87,9 @@ impl Backend {
     }
 
     /// The best implementation a CPU with the features `f` can run, on
-    /// Apple's cores if `apple`: no CPU feature tells which run the NEON code
-    /// faster than the scalar code (Apple's, about twice as fast) or slower
-    /// (Arm's Neoverse N2, whose two vector pipelines its multiplications
-    /// saturate).
+    /// Apple's cores if `apple`: no CPU feature tells which run
+    /// `vg_poly1305_update_neon` faster than the baseline implementation
+    /// (Apple's, about twice as fast) or slower (Arm's Neoverse N2).
     #[cfg(target_arch = "aarch64")]
     fn select_for(f: Features, apple: bool) -> Backend {
         if apple && f.contains(const { Features(verified_garbage_cpu::feature::NEON) }) {

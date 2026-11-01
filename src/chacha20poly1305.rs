@@ -2,54 +2,27 @@
 //!
 //! Encryption and decryption are the verified assembly functions
 //! `vg_chacha20_poly1305_seal` and `vg_chacha20_poly1305_open` (contracts
-//! `VG.Spec.ChaCha20Poly1305.sealContract` and `openContract`), which compose
-//! the verified ChaCha20 and Poly1305 functions themselves; this module only
-//! chooses the implementation and checks the length limit. They take the key,
-//! the nonce and the tag by pointer, and keep their working space (which holds
-//! the one-time Poly1305 key and keystream) on their own stack, zeroing it
-//! before they return.
+//! `VG.Spec.ChaCha20Poly1305.sealContract` and `openContract`); this module
+//! only chooses the implementation and checks the length limit. They take the
+//! key, the nonce and the tag by pointer, and keep their working space (which
+//! holds the one-time Poly1305 key and keystream) on their own stack, zeroing
+//! it before they return.
 //!
-//! They are emitted once for each implementation of `vg_chacha20_xor`
-//! (`crate::chacha20::Backend`), each calling it and the implementation of
-//! `vg_poly1305_blocks` for the same CPUs: on x86-64, CPUs with AVX512_IFMA,
-//! AVX-512F and AVX2 run `vg_chacha20_poly1305_seal_ifma` and
-//! `vg_chacha20_poly1305_open_ifma` (with `vg_chacha20_xor_avx512` and
-//! `vg_poly1305_blocks_ifma`; from 449 to 639 bytes, `open_ifma` runs the
-//! code `vg_chacha20_poly1305_open_avx512vl` runs for short data, so these
-//! CPUs need AVX-512VL too), other CPUs with AVX-512F, AVX-512VL and AVX2
-//! `vg_chacha20_poly1305_seal_avx512vl` and `vg_chacha20_poly1305_open_avx512vl`
-//! (with `vg_chacha20_xor_avx512vl`, which keeps short data in `ymm` registers,
-//! and `vg_poly1305_blocks_avx512`), other CPUs with AVX-512F and AVX2
-//! `vg_chacha20_poly1305_seal_avx512` and `vg_chacha20_poly1305_open_avx512`
-//! (with `vg_chacha20_xor_avx512` and `vg_poly1305_blocks_avx512`), and other
-//! CPUs with AVX2
-//! `vg_chacha20_poly1305_seal_avx2` and `vg_chacha20_poly1305_open_avx2`.
-//! On x86, CPUs with SSSE3 run `vg_chacha20_poly1305_seal_ssse3` and
-//! `vg_chacha20_poly1305_open_ssse3` (with `vg_chacha20_xor_ssse3`).
-//! On AArch64, CPUs with AdvSIMD (the baseline) run
-//! `vg_chacha20_poly1305_seal_neon` and `vg_chacha20_poly1305_open_neon`,
-//! which absorb each whole 512 bytes into Poly1305 in the integer registers
-//! while the eight-block ChaCha20 kernel computes the keystream, and XOR the
-//! rest with `vg_chacha20_xor_neon`; CPUs with SVE2 run
-//! `vg_chacha20_poly1305_seal_sve2` and `vg_chacha20_poly1305_open_sve2`, the
-//! same with that kernel's SVE2 form (`vg_chacha20_xor_sve2`). On x86-64
-//! the one-time Poly1305 key comes from the same call of `vg_chacha20_xor` as
-//! the keystream of short data (up to 960 bytes with AVX-512, 192 with AVX2),
-//! which then takes no second call; every other variant computes it with the
-//! scalar `vg_chacha20_block`.
+//! Their variants, with the same contracts, are those of ChaCha20's
+//! `crate::chacha20::Backend`, each with its suffix. On x86-64, `select`
+//! chooses among `_ifma`, `_avx512vl`, `_avx512` and `_avx2`, in this order,
+//! on CPUs with the features their `_FEATURES` constants name (`_ifma`'s of
+//! both `seal` and `open`); elsewhere it chooses as `Backend::select` does
+//! for ChaCha20: on x86, `_ssse3`; on AArch64, `_sve2`, then `_neon`. The
+//! tests check that each variant needs no feature that this choice does not
+//! check.
 //!
 //! [`ChaCha20Poly1305::encrypt`] encrypts out of place, from a plaintext in
 //! pieces (a list of slices, such as a record's payload and TLS 1.3's
 //! content type, or a single one) into one output buffer: one call of
 //! `vg_chacha20_poly1305_seal_gather`
-//! (`VG.Spec.ChaCha20Poly1305.sealGatherContract`), which copies the pieces
-//! to the output and encrypts them there with the same implementation's
-//! `vg_chacha20_poly1305_seal`. On x86-64, the AVX-512 instances, for more
-//! than 960 bytes, copy the pieces but the first, after the first's length,
-//! and encrypt with the same implementation's `seal_split`
-//! (`vg_chacha20_poly1305_seal_split_avx512`, …), which reads the first
-//! piece from where it is and copies only the bytes of it that its first
-//! keystream covers; only the AVX-512 implementations have one.
+//! (`VG.Spec.ChaCha20Poly1305.sealGatherContract`), or its variant of the
+//! same suffix.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -94,8 +67,8 @@ use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
 /// The best implementation a CPU with the features `f` can run (`open`'s
-/// instances need the same features as `seal`'s, see the tests, but for
-/// `open_ifma`'s, which also need `vg_chacha20_xor_avx512vl`'s).
+/// variants need the same features as `seal`'s, see the tests, but for
+/// `open_ifma`, which also needs `vg_chacha20_apply_avx512vl`'s).
 #[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Backend {
     Backend::select_for(
@@ -162,8 +135,7 @@ crate::error::impl_error! {
 #[derive(Clone)]
 pub struct ChaCha20Poly1305 {
     key: [u8; 32],
-    /// The implementations of `vg_chacha20_xor` and `vg_poly1305_blocks` to
-    /// call.
+    /// The variants of `seal`, `open` and `seal_gather` to call.
     backend: Backend,
 }
 
@@ -555,12 +527,10 @@ mod tests {
         }
     }
 
-    /// The functions called for each implementation need the features of
-    /// both ChaCha20's and Poly1305's for the same CPUs (those of
-    /// `vg_chacha20_apply` and `vg_poly1305_update`, which call the same
-    /// implementations of `vg_chacha20_xor` and `vg_poly1305_blocks`),
-    /// `open`'s and `seal_gather`'s the same as `seal`'s, and `select`
-    /// chooses by them.
+    /// The variants for each implementation need the features of both
+    /// `vg_chacha20_apply`'s and `vg_poly1305_update`'s variants for the
+    /// same CPUs, `open`'s and `seal_gather`'s the same as `seal`'s (but for
+    /// `open_ifma`), and `select` chooses by them.
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn features() {
@@ -609,8 +579,7 @@ mod tests {
             VG_POLY1305_UPDATE_IFMA_FEATURES,
         ]);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, ifma);
-        // `open_ifma` runs `vg_chacha20_xor_avx512vl`'s rounds from 449 to
-        // 639 bytes, as `vg_chacha20_apply_avx512vl` does.
+        // `open_ifma` also needs `vg_chacha20_apply_avx512vl`'s features.
         let ifma_open = Features::all(&[ifma, VG_CHACHA20_APPLY_AVX512VL_FEATURES]);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, ifma_open);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES, ifma);
@@ -620,8 +589,8 @@ mod tests {
         assert_eq!(select(ifma_open), Backend::Ifma);
         assert_eq!(select(Features::all(&[avx512vl, ifma])), Backend::Ifma);
         assert_ne!(select(ifma), Backend::Ifma);
-        // AVX-512F alone is not enough: the AVX-512 instances' Poly1305
-        // calls its AVX2 implementation.
+        // AVX-512F alone is not enough: the `_avx512` variants also need
+        // `VG_POLY1305_UPDATE_AVX512_FEATURES`.
         assert_eq!(select(VG_CHACHA20_APPLY_AVX512_FEATURES), Backend::Scalar);
         assert_eq!(
             select(Features(verified_garbage_cpu::feature::AVX)),
@@ -629,10 +598,9 @@ mod tests {
         );
     }
 
-    /// On x86, the SSSE3 instances (`seal`, `open` and `seal_gather`) need
-    /// the features of `vg_chacha20_apply_ssse3` (which calls the same
-    /// `vg_chacha20_xor_ssse3`, and which `select` checks), and `select`
-    /// chooses them with SSSE3.
+    /// On x86, the SSSE3 variants (`seal`, `open` and `seal_gather`) need
+    /// the features of `vg_chacha20_apply_ssse3` (which `select` checks),
+    /// and `select` chooses them with SSSE3.
     #[cfg(target_arch = "x86")]
     #[test]
     fn features() {
@@ -651,9 +619,8 @@ mod tests {
         assert_eq!(select(Features(0)), Backend::Scalar);
     }
 
-    /// On AArch64, the SVE2 instances need the features of
-    /// `vg_chacha20_apply_sve2` (which calls the same `vg_chacha20_xor_sve2`),
-    /// `open`'s and `seal_gather`'s the same as
+    /// On AArch64, the SVE2 variants need the features of
+    /// `vg_chacha20_apply_sve2`, `open`'s and `seal_gather`'s the same as
     /// `seal`'s, and `select` chooses them with SVE2 (and the NEON ones
     /// without).
     #[cfg(target_arch = "aarch64")]

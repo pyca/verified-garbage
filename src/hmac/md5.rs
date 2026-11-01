@@ -3,9 +3,7 @@
 //! `VG.Spec.Hmac.md5I`, `VG.Spec.Md5.updateContract` and
 //! `VG.Spec.Hmac.Instance.finalizeContract`) compute HMAC with a key of any
 //! length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`),
-//! keeping the two MD5 streaming states. `init` and `finalize` are the one HMAC
-//! implementation for every streaming hash function, calling MD5's verified
-//! functions.
+//! keeping the two MD5 streaming states.
 
 #![cfg(any(
     target_arch = "x86_64",

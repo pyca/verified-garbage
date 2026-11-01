@@ -1,13 +1,11 @@
-//! The implementations of AES, which everything built on it follows:
-//! AES-GCM (`crate::aes_gcm`) and AES-CMAC (`crate::cmac::aes`) each choose
-//! one [`Backend`], and run its key expansion directly and its counter mode
-//! through their own functions for it (e.g. `vg_cmac_aes_update_aesni`
-//! calls `vg_aes_ctr32_aesni`, an internal function of the verified code).
-//! Those functions need the features of the counter mode they call, and may
-//! need more (GCM's `vg_ghash_pclmul` needs PCLMULQDQ), so on targets with
-//! more than one implementation each caller selects with
-//! `Backend::select_for`, passing theirs: a CPU without them runs the scalar
-//! implementation.
+//! The implementations of AES, which everything built on it follows: each
+//! mode (AES-GCM in `crate::aes_gcm`, AES-CMAC in `crate::cmac::aes`, …)
+//! chooses one [`Backend`], and runs `vg_aes_expand_key`'s variant for it
+//! and its own functions' variants for it. Those functions may need more
+//! features than the key expansion (GCM's need PCLMULQDQ too, for GHASH), so
+//! on targets with more than one implementation each mode selects with
+//! `Backend::select_for`, passing the features its own variants need: a CPU
+//! without them runs the baseline implementation.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -24,7 +22,8 @@ use crate::arch::aes::VG_AES_EXPAND_KEY_AES_FEATURES;
 use crate::arch::aes::VG_AES_EXPAND_KEY_AESNI_FEATURES;
 use verified_garbage_cpu::Features;
 
-/// The implementations of `vg_aes_expand_key` and `vg_aes_ctr32`.
+/// The implementations of AES: those of `vg_aes_expand_key`, and of the
+/// functions built on it, by suffix.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// Constant-time scalar code, for the target's baseline ISA.
@@ -32,8 +31,7 @@ pub(crate) enum Backend {
     /// AES-NI: the `_aesni` functions.
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     AesNi,
-    /// VAES: the `_vaes` functions, whose counter mode is
-    /// `vg_aes_ctr32_vaes` and whose key expansion is
+    /// VAES: the `_vaes` functions, with the key expansion
     /// `vg_aes_expand_key_aesni`.
     #[cfg(target_arch = "x86_64")]
     Vaes,

@@ -33,41 +33,34 @@ crate::error::impl_error! {
     }
 }
 
-/// The implementations key generation, encapsulation and decapsulation
-/// follow: each has an instance calling each of them.
+/// The implementations of key generation, encapsulation and decapsulation:
+/// each but `Scalar` is their instances with its suffix.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
-    /// The target's baseline ISA (on x86-64, `SampleNTT` on one seed at a
-    /// time; elsewhere, one entry of the matrix at a time), with scalar
-    /// Keccak.
+    /// The target's baseline ISA.
     Scalar,
-    /// AArch64 with the SHA-3 extension: paired SHAKE with
-    /// `vg_keccak_f1600_x2_sha3`, and arithmetic with NEON, hashing one
-    /// state at a time with the scalar permutation `vg_keccak_f1600` (the
-    /// `_x2_sha3` instances): faster on Arm's cores, such as Neoverse N2.
+    /// The `_x2_sha3` instances.
     #[cfg(target_arch = "aarch64")]
     X2Sha3,
-    /// The same, hashing one state at a time with the SHA-3 extension's
-    /// permutation `vg_keccak_f1600_sha3` (the `_x2_sha3_keccak_sha3`
-    /// instances): faster on Apple's cores.
+    /// The `_x2_sha3_keccak_sha3` instances.
     #[cfg(target_arch = "aarch64")]
     X2Sha3KeccakSha3,
-    /// AVX2: four instances of SHAKE128 at once.
+    /// The `_avx2` instances.
     #[cfg(target_arch = "x86_64")]
     Avx2,
-    /// Four-way SHAKE with AVX-512VL quadword rotates.
+    /// The `_avx512` instances.
     #[cfg(target_arch = "x86_64")]
     Avx512,
 }
 
 impl Backend {
-    /// Select the best implementation supported by all three KEM operations,
-    /// on a CPU with the features `f`, which is one of Apple's if `apple`.
-    /// On x86-64, prefer the AVX-512VL sampler, then AVX2. On AArch64, with
-    /// the SHA-3 extension, paired SHAKE, with the single-state permutation
-    /// that is faster on the CPU: no CPU feature tells which, so the SHA-3
-    /// extension's on Apple's cores, and the scalar one elsewhere (1.79
-    /// times as fast as the SHA-3 extension's on Arm's Neoverse N2).
+    /// Select the best implementation whose instances of all three KEM
+    /// operations a CPU with the features `f` can run (`avx2`, `avx512` and
+    /// `sha3`: theirs), which is one of Apple's if `apple`. On x86-64,
+    /// `_avx512`, then `_avx2`. On AArch64, with the features of both
+    /// `_x2_sha3` and `_x2_sha3_keccak_sha3`, the faster on the CPU: no CPU
+    /// feature tells which, so `_x2_sha3_keccak_sha3` on Apple's cores and
+    /// `_x2_sha3` elsewhere (faster on Arm's cores, such as Neoverse N2).
     // Each target uses only some of the arguments.
     #[allow(unused_variables)]
     pub(crate) fn select(
@@ -99,9 +92,8 @@ impl Backend {
 
 /// Defines the API of one ML-KEM parameter set: its `EncapsulationKey` and
 /// `DecapsulationKey`, over its verified `check_ek`, `keygen`, `encaps` and
-/// `decaps` functions (and their instances on AArch64 with the SHA-3
-/// extension and on x86-64 with AVX2 and AVX-512, with the features they
-/// need), its sizes, and the number of `SampleNTT` calls in
+/// `decaps` functions (and their instances for each `Backend`, with the
+/// features they need), its sizes, and the number of `SampleNTT` calls in
 /// each operation with the bound on the probability that one reaches its
 /// loop's bound (for the comments). On x86-64, encapsulation with a key that
 /// keeps the hash `H(ek)` (one from key generation) is `encaps_h` (and its
@@ -662,8 +654,7 @@ mod aarch64_tests {
     fn selects_complete_feature_sets() {
         let empty = Features(0);
         let required = Features(feature::NEON | feature::SHA3);
-        // The SHA-3 extension's single-state permutation on Apple's cores,
-        // the scalar one elsewhere.
+        // `_x2_sha3_keccak_sha3` on Apple's cores, `_x2_sha3` elsewhere.
         assert_eq!(
             Backend::select(required, empty, empty, required, true),
             Backend::X2Sha3KeccakSha3

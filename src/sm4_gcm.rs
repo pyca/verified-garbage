@@ -10,8 +10,7 @@
 //! `vg_sm4_gcm_stream_init`, `_aad`, `_encrypt`, `_decrypt`, `_finish` and
 //! `_verify` keep a streaming state (`VG.Spec.Gcm.StreamRepr`). `open` and
 //! `verify` check the tag, in constant time, and `open` decrypts only if it
-//! matches. They encrypt with `vg_sm4_ctr32`, bitsliced SM4 with no table
-//! lookups. This module checks the lengths of §5.2.1.1, which the assembly
+//! matches. This module checks the lengths of §5.2.1.1, which the assembly
 //! does not, and holds the key context and the state.
 //!
 //! An [`Sm4Gcm`] is a key: it encrypts and decrypts whole messages at once,
@@ -22,15 +21,11 @@
 //! fits in memory, [`Sm4Gcm::decrypt_in_place`] checks the tag before it
 //! decrypts.
 //!
-//! The functions but `init` are emitted once for each implementation of
-//! `vg_ghash` they call, which have the same contract: CPUs with PCLMULQDQ
-//! and SSSE3 run the `_pclmul` instances (with `vg_ghash_pclmul`), and, on
-//! x86-64, CPUs with VPCLMULQDQ and AVX2 too the `_vpclmul` ones (with
-//! `vg_ghash_vpclmul`, eight blocks at a time in 256-bit registers). Which
-//! one a key calls depends only on the CPU. AArch64 CPUs with PMULL run the
-//! `_aes` instances (with `vg_ghash_aes`). On ARMv7 and RISC-V there is one
-//! implementation, calling the baseline `vg_ghash`, and on PPC64LE one, with
-//! GHASH inline.
+//! The functions but `init` have variants, with the same contracts, one for
+//! each of GHASH's (`vg_ghash`'s), chosen on CPUs with the features of `seal`'s
+//! `_FEATURES` constants (which are every other function's): on x86-64, the
+//! `_vpclmul` ones, then the `_pclmul` ones; on x86, the `_pclmul` ones; on
+//! AArch64, the `_aes` ones. Which one a key calls depends only on the CPU.
 //!
 //! # Tags
 //!
@@ -90,19 +85,17 @@ const MAX_TEXT: u64 = (1 << 36) - 32;
 /// to whole bytes (§5.2.1.1).
 const MAX_AAD: u64 = (1 << 61) - 1;
 
-/// The implementations of GHASH the functions call (`vg_ghash` and its
-/// variants): each is an instance of every `vg_sm4_gcm_*` function but
+/// The implementations of SM4-GCM, one for each of GHASH's (`vg_ghash`'s):
+/// each is the instance with its suffix of every `vg_sm4_gcm_*` function but
 /// `init`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Ghash {
-    /// The baseline ISA: `vg_ghash`.
+    /// The baseline ISA.
     Scalar,
-    /// PCLMULQDQ, one block at a time (and SSSE3's byte reversal): the
-    /// `_pclmul` instances (x86 and x86-64).
+    /// PCLMULQDQ: the `_pclmul` instances (x86 and x86-64).
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     Pclmul,
-    /// VPCLMULQDQ, eight blocks at a time in 256-bit registers: the
-    /// `_vpclmul` instances (x86-64 only).
+    /// VPCLMULQDQ: the `_vpclmul` instances (x86-64 only).
     #[cfg(target_arch = "x86_64")]
     Vpclmul,
     /// PMULL (FEAT_PMULL, which Rust and `src/cpu.rs` call `aes`): the
@@ -134,7 +127,7 @@ macro_rules! instance {
 impl Ghash {
     /// The best implementation a CPU with the features `f` can run: the
     /// features of its instances are `seal`'s, which are every other
-    /// function's (those of the implementation of `vg_ghash`).
+    /// function's.
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     fn select(f: Features) -> Ghash {
         #[cfg(target_arch = "x86_64")]

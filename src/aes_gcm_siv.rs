@@ -10,10 +10,9 @@
 //! This module checks the lengths of §6, which the assembly does not, and
 //! holds the key schedule.
 //!
-//! The functions are emitted once for each combination of the
-//! implementations of AES (`vg_aes_ctr32`, `vg_aes_expand_key`) and of GHASH
-//! (`vg_ghash`, with which POLYVAL is computed) that AES-GCM has, and are
-//! chosen as AES-GCM's are (`crate::aes_gcm`'s backends). x86-64, x86,
+//! Their variants, with the same contracts, are one for each of AES-GCM's
+//! backends, with its suffix, and are chosen as AES-GCM's are
+//! (`crate::aes_gcm`). x86-64, x86,
 //! AArch64, 32-bit ARM, PPC64LE and RISC-V (the baseline ISA's
 //! implementations alone on the last three) have implementations so far.
 
@@ -89,7 +88,7 @@ pub struct AesGcmSiv {
     schedule: [u8; 240],
     /// The number of rounds of AES: 10 or 14.
     rounds: usize,
-    /// The implementations of AES and GHASH the functions called call.
+    /// The variants of the functions to call.
     backend: Backend,
 }
 
