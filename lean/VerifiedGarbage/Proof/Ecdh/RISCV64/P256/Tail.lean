@@ -235,7 +235,9 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
         sv base s' RX < W.p ∧ sv base s' RY < W.p ∧ sv base s' RZ < W.p) ∧
       sv base s' XO < W.p ∧
       Fin.ofNat W.p (sv base s' XO) =
-        toM W.p (2 ^ 256) (sv base s' RX) * toM W.p (2 ^ 256) (sv base s' RZ) ^ (W.p - 2) := by
+        toM W.p (2 ^ 256) (sv base s' RX) * toM W.p (2 ^ 256) (sv base s' RZ) ^ (W.p - 2) ∧
+      sv base s' ACC < W.p ∧
+      toM W.p (2 ^ 256) (sv base s' ACC) = toM W.p (2 ^ 256) (sv base s' RZ) ^ (W.p - 2) := by
   have hp0 : 0 < W.p := by decide
   rw [tail]
   -- The range.
@@ -293,7 +295,12 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
     fl_unch ((U₂.trans U₃).trans U₄) (by decide)
   have k₁ : MC.scalar base s₁.mem = sv base s K := by
     rw [← e₁ K (by decide)]; exact coord_sv _ _ K
-  refine ⟨K₁.kc.trans (K₂.kc.trans (K₃.trans K₄.kc)), ((U₁.trans U₂).trans U₃).trans U₄, by rw [fl₄, f₁], ?_, lt₄, ?_⟩
+  have acc₄ : sv base s₄ ACC = sv base s₃ ACC := sv_unch U₄ ACC (by decide)
+  have he : wordsVal s₂.mem base (powP p256).bits p256Field.S.k = W.p - 2 := hc₂.expp
+  rw [he] at v₃
+  have v₃' : toM W.p (2 ^ 256) (sv base s₃ ACC) = toM W.p (2 ^ 256) (sv base s₂ RZ) ^ (W.p - 2) := v₃
+  refine ⟨K₁.kc.trans (K₂.kc.trans (K₃.trans K₄.kc)), ((U₁.trans U₂).trans U₃).trans U₄, by rw [fl₄, f₁], ?_, lt₄,
+    ?_, by rw [acc₄]; exact lt₃, by rw [acc₄, v₃', e₄ RZ (by simp)]⟩
   · intro h1 hn
     rw [k₁, point_eq hL] at hR
     obtain ⟨⟨bx, by', bz⟩, hrep⟩ := hR h1 hn
@@ -308,10 +315,7 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
     rw [dq hL, dq hL, dq hL] at hrep
     rw [e₄ RX (by simp), e₄ RY (by simp), e₄ RZ (by simp), ← e₁ RX (by decide), ← e₁ RY (by decide)]
     exact ⟨rep_of_represents hrep, bx, by', bz⟩
-  · have he : wordsVal s₂.mem base (powP p256).bits p256Field.S.k = W.p - 2 := hc₂.expp
-    rw [he] at v₃
-    have v₃' : toM W.p (2 ^ 256) (sv base s₃ ACC) = toM W.p (2 ^ 256) (sv base s₂ RZ) ^ (W.p - 2) := v₃
-    rw [v₄, v₃', e₄ RX (by simp), e₄ RZ (by simp),
+  · rw [v₄, v₃', e₄ RX (by simp), e₄ RZ (by simp),
       show sv base s₃ RX = sv base s₂ RX from sv_unch U₃ RX (by decide)]
 
 end VG.Proof.Ecdh.RISCV64.P256

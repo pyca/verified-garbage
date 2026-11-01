@@ -452,7 +452,7 @@ theorem ecdh_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : EPre s) :
       exact (hval h0).2.2
   have h3₄ : s₄.gpr .s3 = base := by
     rw [r₄.gpr _ (by decide), r₃.gpr _ (by decide), K₂.gpr _ (by decide), S3]
-  refine WP.seq (WP.mono (tail_ok hL hw₄ h3₄ tc₄ lt_rx lt_ry hon) fun s₅ ⟨Kc₅, U₅, f₅, rep₅, xolt, xoeq⟩ => ?_)
+  refine WP.seq (WP.mono (tail_ok hL hw₄ h3₄ tc₄ lt_rx lt_ry hon) fun s₅ ⟨Kc₅, U₅, f₅, rep₅, xolt, xoeq, _, _⟩ => ?_)
   have hw₅ := hw₄.of_kc Kc₅
   have h2 : s₅.gpr .s2 = s.gpr .a0 := by
     rw [Kc₅.gpr _ (by decide) (by decide), r₄.gpr _ (by decide), r₃.gpr _ (by decide), K₂.gpr _ (by decide), S2]
