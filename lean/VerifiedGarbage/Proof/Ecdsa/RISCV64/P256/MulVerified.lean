@@ -86,15 +86,6 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (saves ++ mulBW) m 
     MC, Spec.Weierstrass.Mul.p256, true_and] at hown hp
   omega
 
-/-- `sd t, d(a0)` at the working space's base. -/
-theorem sd_a0 {s : State} {base : Addr} {is : List Instr} {Q : State → Prop} (h0 : s.gpr .a0 = base)
-    (hwr : (⟨base, 8192⟩ : Region) ∈ s.wr) (hal : base.toNat % 8 = 0)
-    {t : Reg} {d : Nat} (hd : d + 8 ≤ 2048) (hd8 : d % 8 = 0)
-    (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) (s.gpr t)) → WP isa (.block is) s' Q) :
-    WP isa (.block (.store .d t .a0 d :: is)) s Q :=
-  wp_sd (by omega) (by rw [h0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
-    ⟨_, hwr, Offset.contains_base base (by omega) (by omega)⟩ k
-
 /-- `vg_p256_mul` meets `mulRVc`, given the group law. -/
 theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s) :
     ∃ t s', Exec isa mulP256 s t s' ∧ abiPreserved s s' ∧ mulRVc.post s s' := by

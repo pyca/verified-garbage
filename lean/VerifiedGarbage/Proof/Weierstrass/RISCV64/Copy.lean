@@ -53,6 +53,15 @@ theorem sd_ws (hw : WsReg s base) {t : Reg} {d : Nat} (hd : d < 2048) (hd8 : d %
   exact wp_sd hd (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega)
     ⟨_, hw.wr, Offset.contains_base base (by omega) (by omega)⟩ k
 
+/-- `sd t, d(a0)` at the working space's base. -/
+theorem sd_a0 (h0 : s.gpr .a0 = base)
+    (hwr : (⟨base, 8192⟩ : Region) ∈ s.wr) (hal : base.toNat % 8 = 0)
+    {t : Reg} {d : Nat} (hd : d + 8 ≤ 2048) (hd8 : d % 8 = 0)
+    (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) (s.gpr t)) → WP isa (.block is) s' Q) :
+    WP isa (.block (.store .d t .a0 d :: is)) s Q :=
+  wp_sd (by omega) (by rw [h0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
+    ⟨_, hwr, Offset.contains_base base (by omega) (by omega)⟩ k
+
 end
 
 /-- A word of `[a]` to `[o]`. -/

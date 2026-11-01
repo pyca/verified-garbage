@@ -34,6 +34,8 @@ theorem field_ok : FieldOk p256Field :=
   ⟨P256Field.mul_rv, P256Field.add_rv, P256Field.sub_rv, Impl.Weierstrass.RISCV64.P256Field.mulFn_noFrames,
     Impl.Weierstrass.RISCV64.P256Field.addFn_noFrames, Impl.Weierstrass.RISCV64.P256Field.subFn_noFrames⟩
 
+instance : NeZero p256Field.S.m := ⟨by decide⟩
+
 theorem p_odd : W.p % 2 = 1 := by decide
 
 theorem unit : UnitMod W.p (2 ^ (64 * 4)) := unitMod_pow_two p_odd _
