@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Mont.X86.Ops
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Rsa.KeyBits32
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # The branchless odd-input mask -/
 

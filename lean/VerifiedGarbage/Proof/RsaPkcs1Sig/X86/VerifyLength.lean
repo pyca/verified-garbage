@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackWord
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeDispatch
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! # Reject signatures whose public byte count differs from the modulus width -/
 

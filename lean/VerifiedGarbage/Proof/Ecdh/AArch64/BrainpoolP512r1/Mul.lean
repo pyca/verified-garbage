@@ -71,7 +71,7 @@ theorem qMul_ok (hc : BaseCfgOk brainpoolp512r1) (hC : Law brainpoolp512r1.C)
     show P = .affine (tmv brainpoolp512r1.C brainpoolp512r1.n base s₁ (brainpoolp512r1.sl PX)) (tmv brainpoolp512r1.C brainpoolp512r1.n base s₁ (brainpoolp512r1.sl PY))
     rw [eP (i := PX) (by decide) (by decide), eP (i := PY) (by decide) (by decide)]; exact hPe
   refine WP.mono (mulAt_ok hc (.inr (.inr rfl)) (.inl (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
-    (name := Spec.Weierstrass.Mul.brainpoolp512r1.mulApi.name) (px := PX) (py := PY) (by decide) (by decide)
+    (name := "vg_brainpoolp512r1_mul") (px := PX) (py := PY) (by decide) (by decide)
     (by decide) (by decide) (by decide) hs₁ F₁ (by rw [e₁ (by decide) (by decide)]; exact hpx)
     (by rw [e₁ (by decide) (by decide)]; exact hpy) (by rw [← hPe₁]; exact hP))
     fun s' ⟨K, U, F', M, L, R⟩ => ⟨(K₁.mono (by decide)).trans K, U₁.trans U, F', M, L, ?_, ?_⟩

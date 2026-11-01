@@ -29,7 +29,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE.P224Sha224
 open VG VG.PPC64LE VG.Impl.Ecdsa.Rfc6979.PPC64LE
 
 /-- The code's configuration. -/
-def cfg : Cfg := ⟨sha224K.hm, 28, Spec.P224.curve.n, 8, Spec.Ecdsa.P224.signApi.name, Impl.Ecdsa.PPC64LE.signP224⟩
+def cfg : Cfg := ⟨sha224K.hm, 28, Spec.P224.curve.n, 8, "vg_ecdsa_p224_sign", Impl.Ecdsa.PPC64LE.signP224⟩
 
 /-- The instance, for P-224's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.P224.curve) : Rfc where

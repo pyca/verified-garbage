@@ -119,7 +119,7 @@ namespace VG.Proof.Weierstrass.X86.JWin
 open VG VG.X86 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86 VG.Impl.Mont
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem choose_point_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
+theorem choose_point_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
     {size wk m : Nat} [NeZero m] {Sl : Nat → Prop}
     (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {o a : Pt} (ho : (jacCoords o).Nodup)

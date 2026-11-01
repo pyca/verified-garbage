@@ -8,7 +8,7 @@ import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 meta import VerifiedGarbage.Proof.P256.Linear.FortyOneReference
 meta import VerifiedGarbage.Impl.P256.Linear
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Impl.NatPairs
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Spec.Weierstrass.Point
+meta import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 
 @[expose] public section

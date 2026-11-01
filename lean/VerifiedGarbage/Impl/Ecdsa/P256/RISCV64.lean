@@ -15,12 +15,12 @@ open VG.RISCV64
 
 /-- The functions of P-256's `p`. -/
 def p256Field : Weierstrass.RISCV64.Field :=
-  ⟨Spec.Weierstrass.Mont.p256p, Weierstrass.RISCV64.P256Field.mulFn, Weierstrass.RISCV64.P256Field.addFn,
+  ⟨Impl.Weierstrass.Mont.p256p, Weierstrass.RISCV64.P256Field.mulFn, Weierstrass.RISCV64.P256Field.addFn,
     Weierstrass.RISCV64.P256Field.subFn⟩
 
 /-- The functions of P-256's `n`. -/
 def p256Order : Weierstrass.RISCV64.Field :=
-  ⟨Spec.Weierstrass.Mont.p256n, Weierstrass.RISCV64.P256Order.mulFn, Weierstrass.RISCV64.P256Order.addFn,
+  ⟨Impl.Weierstrass.Mont.p256n, Weierstrass.RISCV64.P256Order.mulFn, Weierstrass.RISCV64.P256Order.addFn,
     Weierstrass.RISCV64.P256Order.subFn⟩
 
 /-- P-256 as the code has it. -/

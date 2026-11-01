@@ -44,7 +44,7 @@ materialize_shared baseline := code
 theorem sp : SpOk code 28 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 taint_summary mulCodecSum : taint ({ codecMulT (Spec.P521.curve.len + 1) with regs := .ofList [.esp, .edi] })
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
 
 theorem ct : ConstantTime isa (compressContract Spec.P521.curve).pre
     (compressContract Spec.P521.curve).pub code := by

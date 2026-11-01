@@ -54,7 +54,7 @@ theorem step_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
     rw [rv _ (by simp),rv _ (by simp),rv _ (by simp),ku.mem]
     exact acc.rep
   have hlt : ∀ x ∈ [K.L.R.x,K.L.R.y,K.L.R.z,K.Q.x,K.Q.y,K.Q.z,
-      Spec.Weierstrass.Point.aAt K.L.M.n,Spec.Weierstrass.Point.b3At K.L.M.n],
+      Impl.Weierstrass.Point.aAt K.L.M.n,Impl.Weierstrass.Point.b3At K.L.M.n],
       wordsVal v.mem base x K.L.M.n<C.p := by
     simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
     exact ⟨rlt _ (by simp),rlt _ (by simp),rlt _ (by simp),lv _ (by simp),lv _ (by simp),lv _ (by simp),

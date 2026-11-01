@@ -743,7 +743,7 @@ bx lr",
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
-        vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign,
+        vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign::vg_ecdsa_p256_sign,
     )
 }
 
@@ -1493,6 +1493,10 @@ bx lr",
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
-        vg_ecdsa_p256_sign_umaal = sym super::ecdsa_p256::vg_ecdsa_p256_sign_umaal,
+        vg_ecdsa_p256_sign_umaal = sym super::ecdsa_p256::vg_ecdsa_p256_sign_umaal::vg_ecdsa_p256_sign_umaal,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_add_mod_n.rs"]
+pub(crate) mod vg_p256_add_mod_n;

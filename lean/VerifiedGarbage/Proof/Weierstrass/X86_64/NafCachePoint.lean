@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCache
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! A public cache lookup preserves the point and its Z²/Z³ relationships. -/
 

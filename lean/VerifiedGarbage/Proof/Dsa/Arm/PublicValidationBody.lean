@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.Accepted
 public import VerifiedGarbage.Proof.Dsa.Arm.Session
 import VerifiedGarbage.Proof.Dsa.Arm.PublicKey
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # Register saves around shared ARM public-key validation -/
 

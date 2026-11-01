@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 
 /-! Exceptional branches on public Jacobian coordinates preserve a shared,
 exact field environment, including the infinity and point-copy branches. -/

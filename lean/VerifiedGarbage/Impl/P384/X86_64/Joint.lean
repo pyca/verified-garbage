@@ -37,7 +37,7 @@ each at `6400`, from the table `p384GTab`. -/
 def publicJoint : Joint.Cfg :=
   { K := p384v.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
     gBits := 6400, tsym := "VG_P384_GTAB", cache := 5392, selected := 6160,
-    pts := some Spec.Weierstrass.PointOps.p384, coZ := true, gw := 9 }
+    pts := some Impl.Weierstrass.PointOps.p384, coZ := true, gw := 9 }
 
 /-- `publicJoint` with BMI2 and ADX. -/
 def publicJointAdx : Joint.Cfg :=

@@ -21,8 +21,8 @@ structure Cfg where
   cache : Nat
   selected : Nat
   /-- The curve whose functions run the digits' additions
-  (`Spec/Weierstrass/PointOps.lean`), if they are calls, else inline. -/
-  pts : Option Spec.Weierstrass.PointOps.Curve := none
+  (`Proof/Weierstrass/PointOpsContract.lean`), if they are calls, else inline. -/
+  pts : Option Impl.Weierstrass.PointOps.Curve := none
   /-- Whether the top digit's additions are a copy before the loop, rather
   than its first iteration (`guardDouble`): faster on some CPUs for some
   curves (P-256 on Intel). -/
@@ -106,7 +106,7 @@ def cacheE (c : Cfg) : List FOp :=
 
 /-- A step of `tableCall`: `R = R + E` (a call of `C`'s `jac_add_cached`),
 stored in entry `rbx`. -/
-def tableCallStep (c : Cfg) (C : Spec.Weierstrass.PointOps.Curve) : Prog isa :=
+def tableCallStep (c : Cfg) (C : Impl.Weierstrass.PointOps.Curve) : Prog isa :=
   .seq (PointOps.addCachedCall C c.K c.selected c.dbl)
     (.block (Naf.tableStore c.K ++ [.alu .add .rbx (.imm 1),.alu .cmp .rbx (.imm 8)]))
 
@@ -114,7 +114,7 @@ def tableCallStep (c : Cfg) (C : Spec.Weierstrass.PointOps.Curve) : Prog isa :=
 functions: `R = 2Q` (a call of `jac_double`), copied to `E`, with its `Z²`
 and `Z³` (`cacheE`), and to the table's ninth entry; then `Q` in the first
 entry and `R`, and seven steps `R = R + E` (`tableCallStep`). -/
-def tableCall (c : Cfg) (C : Spec.Weierstrass.PointOps.Curve) : Prog isa :=
+def tableCall (c : Cfg) (C : Impl.Weierstrass.PointOps.Curve) : Prog isa :=
   .seq (.block (copyPt c.K.M.n c.K.R c.K.P)) <|
   .seq (PointOps.doubleCall C c.K c.dbl) <|
   .seq (.block (copyPt c.K.M.n c.K.E c.K.R ++ copyPt c.K.M.n (Naf.twice c.K) c.K.R)) <|

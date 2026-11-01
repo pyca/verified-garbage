@@ -50,7 +50,7 @@ the stack pointer, `ws` and the offsets' low halves are public, `o` kept in
 namespace VG.Proof.Weierstrass.X86_64.Mont
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64.Mont VG.Proof.Mont VG.Proof.Mont.X86_64
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus p384n)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus p384n)
 
 theorem p384n_m : p384n.m = n384 := by decide +kernel
 
@@ -62,7 +62,7 @@ theorem mulFnN6_x64 (adx : Bool) (s : State) (hs : (mulX64 p384n).pre s) :
     ∃ t s', Exec isa (mulFnN6 adx) s t s' ∧ abiPreserved s s' ∧ (mulX64 p384n).post s s' := by
   obtain ⟨⟨hrd, hwr, hret, hnw, ho, ha, hb⟩, hB⟩ := hs
   have hscr : Scr s (s.gpr .rdi) 8192 := ⟨rfl, by rw [hwr]; simp, hnw⟩
-  simp only [Spec.Weierstrass.Mont.Fits, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes,
+  simp only [Impl.Weierstrass.Mont.Fits, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes,
     p384n] at ho ha hb
   suffices hwp : WP isa (mulFnN6 adx) s fun s' => gprPreserved s s' ∧ (mulX64 p384n).post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
@@ -84,8 +84,8 @@ theorem mulFnN6_x64 (adx : Bool) (s : State) (hs : (mulX64 p384n).pre s) :
       simp only [Region.Contains, Nat.not_le] at hx
       simp only [ofs, argOf]; omega
   · intro i hi hown ho'
-    have e1 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
-    have e2 : Spec.Weierstrass.Mont.ownAt p384n.k = 3712 := rfl
+    have e1 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
+    have e2 : Impl.Weierstrass.Mont.ownAt p384n.k = 3712 := rfl
     have e4 : p384n.k = 6 := rfl
     rw [e1] at hi
     rw [e2] at hown

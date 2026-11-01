@@ -78,7 +78,7 @@ bl {vg_p224_check_point}
 .inst 0xf9400013,0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e
 .inst 0xd2800021,0x8a010060,0xd65f03c0
 .p2align 6",
-        vg_p224_check_point = sym super::p224_check_point::vg_p224_check_point,
+        vg_p224_check_point = sym super::ec_p224_compressed::vg_p224_check_point::vg_p224_check_point,
     )
 }
 
@@ -2639,3 +2639,7 @@ cbnz x19, 232b
 .p2align 6",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_check_point.rs"]
+pub(crate) mod vg_p224_check_point;

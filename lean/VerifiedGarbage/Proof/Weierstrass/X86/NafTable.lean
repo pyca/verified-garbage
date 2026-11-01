@@ -111,7 +111,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass
 
-theorem nafCopyStore_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size m wk : Nat}
+theorem nafCopyStore_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size m wk : Nat}
     (hL : NafLay K size) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K)) (hm : m<8) 
     {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base size C.p (·∈nafSlots K) V E s)
@@ -184,7 +184,7 @@ theorem nafTable_initCounter_ok (s : State) :
     Option.map_some,RegUpd.gpr_setReg,ite_true,Option.some.injEq,exists_eq_left']
   exact ⟨trivial,fun r hr => by simp only [List.mem_singleton] at hr; simp only [RegUpd.gpr_setReg,hr,ite_false],rfl,rfl,rfl⟩
 
-theorem nafTable_init_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat}
+theorem nafTable_init_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat}
     (hL : NafLay K size) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K)) (hJ : K.J=65) (hm : UnitMod C.p (2^(64*K.M.n)))
     (hC : Law C) (ha : AM3 C) {P : Point C} (hP : onCurve C P=true) {s : State}
     (hI : Inv K.M base size C.p (·∈nafSlots K) (winRo K) (tmv C K.M.n base s) s)
@@ -301,7 +301,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass
 
-theorem nafTable_step_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size m wk : Nat}
+theorem nafTable_step_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size m wk : Nat}
     (hL : NafLay K size) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K)) (hJ : K.J=65)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
      (hOne : K.one<C.p) {P : Point C} (hP : onCurve C P=true)
@@ -417,7 +417,7 @@ open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass VG.Impl.Weierst
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
 /-- Build `P, 3P, …, 15P`, retaining the double in the ninth point. -/
-theorem nafTable_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat}
+theorem nafTable_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat}
     (hL : NafLay K size) (hAcc : WkOk F K.M C.p size wk (·∈nafSlots K)) (hJ : K.J=65)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
      (hOne : K.one<C.p) {P : Point C} (hP : onCurve C P=true)

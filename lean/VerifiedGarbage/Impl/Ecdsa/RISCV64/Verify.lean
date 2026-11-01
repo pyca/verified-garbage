@@ -114,6 +114,6 @@ end Cfg
 
 /-- `vg_ecdsa_p256_verify`. -/
 def verifyP256 : Prog isa :=
-  Cfg.verify p256 p256Order Spec.Weierstrass.CheckPoint.p256.checkApi.name Ecdh.RISCV64.checkP256
+  Cfg.verify p256 p256Order "vg_p256_check_point" Ecdh.RISCV64.checkP256
 
 end VG.Impl.Ecdsa.RISCV64.Verify

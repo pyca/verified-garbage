@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
 public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # Applying both matrix rows to the signed divstep values -/
 

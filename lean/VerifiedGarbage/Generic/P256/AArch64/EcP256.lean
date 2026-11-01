@@ -46,7 +46,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.EcKey.AArch64.Verified
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
@@ -74,7 +74,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
 import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # P-256 public keys (FIPS 186-5 §A.2) on AArch64 -/
 

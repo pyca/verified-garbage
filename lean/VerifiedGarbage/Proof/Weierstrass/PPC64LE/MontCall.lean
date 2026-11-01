@@ -104,7 +104,7 @@ theorem callOp_ok {f : String} {body : Prog isa} (hn : body.noFrames = true) {n 
   rw [G r hr, State.callEntry_gpr _ hl, K₃.gpr r hr]
 
 theorem own_lt (n : Nat) : own n < 2 ^ 15 := by
-  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega
 
 /-- The arguments of a call, as the functions' precondition has them. -/
 theorem pre_of_call {n : Nat} {base : Addr} (hn : base.toNat + 8192 ≤ 2 ^ 64) {o a b : Nat}
@@ -114,7 +114,7 @@ theorem pre_of_call {n : Nat} {base : Addr} (hn : base.toNat + 8192 ≤ 2 ^ 64) 
   ⟨by rw [h2, h3], by rw [h3]; exact hn, by rw [h4]; exact ho, by rw [h5]; exact ha, by rw [h6]; exact hb⟩
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
-theorem mulCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
+theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
     (hw : WsReg s base) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)
     (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k) (hB : wordsVal s.mem base b S.k < S.m) :
     WP isa (mulCall S o a b) s fun s' => CallKeep S.k base o s s' ∧
@@ -131,7 +131,7 @@ theorem mulCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s :
       exact ⟨tr, t', he, A, G, K, V, C⟩
 
 /-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`. -/
-theorem addCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
+theorem addCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
     (hw : WsReg s base) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)
     (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
     (hAB : wordsVal s.mem base a S.k + wordsVal s.mem base b S.k < 2 * S.m) :
@@ -146,7 +146,7 @@ theorem addCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s :
       exact ⟨tr, t', he, A, G, K, V⟩
 
 /-- `[o] = [a] - [b] mod m` by a call of `vg_<curve>_sub_mod_<p|n>`. -/
-theorem subCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
+theorem subCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
     (hw : WsReg s base) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)
     (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
     (hA : wordsVal s.mem base a S.k < S.m) (hB : wordsVal s.mem base b S.k < S.m) :

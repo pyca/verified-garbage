@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Weierstrass.JacAdd
 # Jacobian doubling for `a = 0`
 
 `dbl0F` is dbl-2009-l, in the order of `dblJ0` (and of
-`Spec.Weierstrass.PointOps.jacDouble0`). On a curve with `a = 0` (`A0`),
+`Impl.Weierstrass.PointOps.jacDouble0`). On a curve with `a = 0` (`A0`),
 the projective triple `(XZ : Y : Z³)` of its result is proportional to
 Algorithm 1's double of `(XZ : Y : Z³)` (`dbl0F_cross`), so it doubles a
 Jacobian triple of a point of the curve (`InvJ.dbl0`), the point at infinity

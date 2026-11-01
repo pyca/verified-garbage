@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86.InvBatchRt
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # Pointers and counts of the run-time-width batch
 

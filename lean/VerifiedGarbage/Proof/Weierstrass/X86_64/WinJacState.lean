@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 

@@ -34,7 +34,7 @@ that adding them rebuilds none of their proofs.
 
 namespace VG.Proof.Weierstrass.Arm.Mont
 
-open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Spec.Weierstrass.Mont
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Impl.Weierstrass.Mont
 
 theorem p224p_mulU_ct : ConstantTime isa (mulArm p224p).pre (mulArm p224p).pub (mulFnU p224p.k p224p.m) :=
   VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0, .r1, .r2, .r3])

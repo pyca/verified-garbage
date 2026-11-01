@@ -17,19 +17,19 @@ inductive PowerOp where
   deriving Repr
 
 /-- Repeat squaring with a public counter, retaining the saved power. -/
-def squareRun (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) : Nat → Prog isa
+def squareRun (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) : Nat → Prog isa
   | 0 => .block []
   | n + 1 => .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (n + 1)))])
       (.loop (.seq (.block [decCounter])
         (.seq (Mont.mulCall F P.acc P.acc P.acc) (.block [testCounter]))) .ne)
 
-def powerOp (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) : PowerOp → Prog isa
+def powerOp (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) : PowerOp → Prog isa
   | .save => .block (copy (2 * P.M.n) P.tmp P.acc)
   | .squares n => squareRun P F n
   | .mulBase => Mont.mulCall F P.acc P.acc P.base
   | .mulSaved => Mont.mulCall F P.acc P.acc P.tmp
 
-def powerChain (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) : List PowerOp → Prog isa
+def powerChain (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) : List PowerOp → Prog isa
   | [] => .block []
   | op :: ops => .seq (powerOp P F op) (powerChain P F ops)
 
@@ -46,12 +46,12 @@ def p256PowerOps : List PowerOp :=
    .squares 1, .mulBase, .squares 1, .mulBase, .squares 1, .mulBase, .squares 1, .mulBase,
    .squares 2, .mulBase]
 
-def p256Power (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+def p256Power (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block (copy (2 * P.M.n) P.acc P.base ++ copy (2 * P.M.n) P.tmp P.base))
     (powerChain P F p256PowerOps)
 
 /-- Fixed field exponent for P-256, with the generic exponentiation fallback. -/
-def powField (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) (m : Nat) : Prog isa :=
+def powField (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (m : Nat) : Prog isa :=
   if m = p256Prime then p256Power P F else pow P F
 
 end VG.Impl.Weierstrass.X86

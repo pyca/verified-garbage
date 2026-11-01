@@ -22,7 +22,7 @@ pub unsafe extern "sysv64" fn vg_ec_p384_compress_public_key(out: *mut [u8; 49],
 call {vg_p384_check_point}
 .base64 "SIuPgAgAAEiLlwAHAABIg+IBSIPCAkghyogWSIuHcAYAAEghyEgPyEiJRilIi4d4BgAASCHISA/ISIlGIUiLh4AGAABIIchID8hIiUYZSIuHiAYAAEghyEgPyEiJRhFIi4eQBgAASCHISA/ISIlGCUiLh5gGAABIIchID8hIiUYBSInISIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oww=="
 .p2align 6"#,
-        vg_p384_check_point = sym super::p384_check_point::vg_p384_check_point,
+        vg_p384_check_point = sym super::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
     )
 }
 
@@ -65,7 +65,7 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_mul_mod_p}
 .base64 "TInmTIuH8AcAAEyLj/gHAABMi5cACAAATIufCAgAAEyLpxAIAABMi68YCAAATCuHIAgAAEwbjygIAABMG5cwCAAATBufOAgAAEwbp0AIAABMG69ICAAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHYAcAAEyJj2gHAABMiZdwBwAATImfeAcAAEyJp4AHAABMia+IBwAASIuXYAcAAEgLl2gHAABIC5dwBwAASAuXeAcAAEgLl4AHAABIC5eIBwAASIP6AUgZ0kiLh4AIAABIIdBIiYeACAAASIuXAAcAAEgzl0AGAABIg+IBuQAAAABIKdFIicpIg/L/SIuHgAgAAEgh0EiJh4AIAABIi4+ACAAAuAQAAABIIciIBkiLh3AGAABIIchID8hIiUYpSIuHeAYAAEghyEgPyEiJRiFIi4eABgAASCHISA/ISIlGGUiLh4gGAABIIchID8hIiUYRSIuHkAYAAEghyEgPyEiJRglIi4eYBgAASCHISA/ISIlGAUiLhwAHAABIIchID8hIiUZZSIuHCAcAAEghyEgPyEiJRlFIi4cQBwAASCHISA/ISIlGSUiLhxgHAABIIchID8hIiUZBSIuHIAcAAEghyEgPyEiJRjlIi4coBwAASCHISA/ISIlGMUiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
+        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
     )
 }
 
@@ -92,7 +92,7 @@ pub unsafe extern "sysv64" fn vg_ec_p384_compress_public_key_adx(out: *mut [u8; 
 call {vg_p384_check_point_adx}
 .base64 "SIuPgAgAAEiLlwAHAABIg+IBSIPCAkghyogWSIuHcAYAAEghyEgPyEiJRilIi4d4BgAASCHISA/ISIlGIUiLh4AGAABIIchID8hIiUYZSIuHiAYAAEghyEgPyEiJRhFIi4eQBgAASCHISA/ISIlGCUiLh5gGAABIIchID8hIiUYBSInISIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oww=="
 .p2align 6"#,
-        vg_p384_check_point_adx = sym super::p384_check_point::vg_p384_check_point_adx,
+        vg_p384_check_point_adx = sym super::ec_p384_compressed::vg_p384_check_point_adx::vg_p384_check_point_adx,
     )
 }
 
@@ -139,6 +139,14 @@ call {vg_p384_mul_mod_p_adx}
 call {vg_p384_mul_mod_p_adx}
 .base64 "TInmTIuH8AcAAEyLj/gHAABMi5cACAAATIufCAgAAEyLpxAIAABMi68YCAAATCuHIAgAAEwbjygIAABMG5cwCAAATBufOAgAAEwbp0AIAABMG69ICAAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHYAcAAEyJj2gHAABMiZdwBwAATImfeAcAAEyJp4AHAABMia+IBwAASIuXYAcAAEgLl2gHAABIC5dwBwAASAuXeAcAAEgLl4AHAABIC5eIBwAASIP6AUgZ0kiLh4AIAABIIdBIiYeACAAASIuXAAcAAEgzl0AGAABIg+IBuQAAAABIKdFIicpIg/L/SIuHgAgAAEgh0EiJh4AIAABIi4+ACAAAuAQAAABIIciIBkiLh3AGAABIIchID8hIiUYpSIuHeAYAAEghyEgPyEiJRiFIi4eABgAASCHISA/ISIlGGUiLh4gGAABIIchID8hIiUYRSIuHkAYAAEghyEgPyEiJRglIi4eYBgAASCHISA/ISIlGAUiLhwAHAABIIchID8hIiUZZSIuHCAcAAEghyEgPyEiJRlFIi4cQBwAASCHISA/ISIlGSUiLhxgHAABIIchID8hIiUZBSIuHIAcAAEghyEgPyEiJRjlIi4coBwAASCHISA/ISIlGMUiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p384_mul_mod_p_adx = sym super::p384_mont::vg_p384_mul_mod_p_adx,
+        vg_p384_mul_mod_p_adx = sym super::ec_p384::vg_p384_mul_mod_p_adx::vg_p384_mul_mod_p_adx,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_check_point.rs"]
+pub(crate) mod vg_p384_check_point;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_check_point_adx.rs"]
+pub(crate) mod vg_p384_check_point_adx;

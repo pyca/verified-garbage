@@ -2052,9 +2052,9 @@ bl {vg_p521_mul_mod_p}
 .inst 0x8a030021,0xd348fc22,0x39000282,0x39000681,0xf9400013,0xf9400414,0xf9400815,0xf9400c16
 .inst 0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021,0x8a010060,0xd65f03c0
 .p2align 6",
-        vg_p521_check_point = sym super::p521_check_point::vg_p521_check_point,
-        vg_p521_mul_mod_p = sym super::p521_mont::vg_p521_mul_mod_p,
-        vg_p521_inv_mod_p = sym super::p521_inverse::vg_p521_inv_mod_p,
-        vg_p521_sqr_mod_p = sym super::p521_mont::vg_p521_sqr_mod_p,
+        vg_p521_check_point = sym super::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
+        vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
+        vg_p521_inv_mod_p = sym super::ec_p521::vg_p521_inv_mod_p::vg_p521_inv_mod_p,
+        vg_p521_sqr_mod_p = sym super::ec_p521_compressed::vg_p521_sqr_mod_p::vg_p521_sqr_mod_p,
     )
 }

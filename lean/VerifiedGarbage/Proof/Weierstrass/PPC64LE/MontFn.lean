@@ -59,7 +59,7 @@ def Kept (n : Nat) (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
   Outs base [(o, 8 * n), (own n, 64 * n)] m m'
 
 theorem own_le (n : Nat) (h : n ≤ 9) : own n + 64 * n = 4096 := by
-  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega
 
 theorem ext_lo (x : BitVec 64) : ((x.setWidth 32).rotateRight 0).setWidth 64 = BitVec.ofNat 64 (x.setWidth 32).toNat := by
   rw [rotr0]
@@ -76,9 +76,9 @@ theorem lay {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
   have := hp.o
   have := hp.a
   have := hp.b
-  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes] at *
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes] at *
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    (try dsimp only [mod, tmpAt, moAt, own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]) <;> omega
+    (try dsimp only [mod, tmpAt, moAt, own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]) <;> omega
 
 /-- The state after the zero-extension of the offsets. -/
 def zextState (s : State) : State :=

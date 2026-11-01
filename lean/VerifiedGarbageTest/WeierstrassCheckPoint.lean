@@ -1,10 +1,10 @@
 module
 
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
-meta import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+meta import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 
 /-!
-# The contract of `Spec/Weierstrass/CheckPoint.lean`
+# The contract of `Proof/Weierstrass/CheckPointContract.lean`
 
 * For every curve, `G` passes the check, and points with a coordinate changed
   by one, with `x = p` or with `y = p` (`G`'s coordinates plus `p`) fail it;
@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 namespace VG.Test.WeierstrassCheckPoint
 
-open Spec.Weierstrass Spec.Weierstrass.CheckPoint
+open Spec.Weierstrass Impl.Weierstrass.CheckPoint Impl.Weierstrass
 
 /-- `G` passes, and its neighbours and lifts by `p` fail. -/
 def checkValid (C : CheckPoint.Curve) : Bool :=

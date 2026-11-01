@@ -61,7 +61,7 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.InvSou
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.AArch64.P192.p192_sh
-  coreN := Spec.Ecdsa.P192.signApi.name
+  coreN := "vg_ecdsa_p192_sign"
   coreC := Impl.Ecdsa.AArch64.signP192
   coreX := by rw [coreK_p192]; exact Proof.Ecdsa.AArch64.P192.sign_a64 hL hI
   coreCT := by rw [coreK_p192]; exact Proof.Ecdsa.AArch64.P192.sign_ct

@@ -26,6 +26,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+meta import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 
 /-!
 # Point operations as functions on x86-64: the registers they keep

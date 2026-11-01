@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86
 public import VerifiedGarbage.Impl.Weierstrass.Rcb0
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Point
 
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit)
 
 `vg_<curve>_point_add(ws)` and `vg_<curve>_point_double(ws)`
-(`Spec/Weierstrass/Point.lean`; cdecl: `ws` at `[esp + 4]`) for a curve whose
+(`Proof/Weierstrass/PointContract.lean`; cdecl: `ws` at `[esp + 4]`) for a curve whose
 coordinates are `k` 64-bit words: the complete addition `rcb`
 (`Impl/Weierstrass/Slots.lean`) of the points at fixed offsets, as calls of
 the Montgomery functions of the curve's prime
@@ -32,7 +32,7 @@ whose working space is in `edi` loads it again from its own arguments
 frame and return address use 20 bytes of stack.
 
 For a curve with `a = 0`, `vg_<curve>_point_a0_double` and
-`vg_<curve>_point_a0_add_affine` (`Spec/Weierstrass/Point0.lean`) are the
+`vg_<curve>_point_a0_add_affine` (`Proof/Weierstrass/Point0Contract.lean`) are the
 same function with Algorithm 9 (`dbl0`) or Algorithm 8 (`rcb0m`) in place
 of `rcb` (`fnOps`).
 -/
@@ -42,7 +42,7 @@ of `rcb` (`fnOps`).
 namespace VG.Impl.Weierstrass.X86.Point
 
 open VG.X86 VG.Impl.Mont.X86 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
-open Spec.Weierstrass.Point (elemBytes ownAt aAt b3At oAt pAt qAt)
+open Impl.Weierstrass.Point (elemBytes ownAt aAt b3At oAt pAt qAt)
 
 /-- A call of the function `f`, whose code is `body`, on the working space at
 `edi` and the offsets of the slots `o`, `a` and `b` (`enc`): `callOp`. -/
@@ -50,13 +50,13 @@ def callB (enc : Nat → Nat) (f : String) (body : Prog isa) (o a b : Nat) : Pro
   Mont.callOp f body (enc o) (enc a) (enc b)
 
 /-- The code of a field operation modulo `S` on the slots `enc` gives. -/
-def opCodeB (enc : Nat → Nat) (S : Spec.Weierstrass.Mont.Modulus) : FOp → Prog isa
+def opCodeB (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) : FOp → Prog isa
   | .mul o a b => callB enc (S.fn "mul") (Mont.mulFn S.k S.m) o a b
   | .add o a b => callB enc (S.fn "add") (Mont.addFn S.k S.m) o a b
   | .sub o a b => callB enc (S.fn "sub") (Mont.subFn S.k S.m) o a b
 
 /-- A straight-line sequence of field operations on the slots `enc` gives. -/
-def fprogB (enc : Nat → Nat) (S : Spec.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa :=
+def fprogB (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa :=
   progs (ops.map (opCodeB enc S))
 
 /-! ## The slots, by number -/
@@ -95,35 +95,35 @@ def restore (k : Nat) : List Instr := [.mov .edi (.mem (at_ .edi (saveAt k)))]
 
 /-- A function computing the field operations `ops` on the slots, calling the
 Montgomery functions of `S` (the second operand's slots `P`'s if `dbl`). -/
-def fnOps (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : List FOp) : Prog isa :=
+def fnOps (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : List FOp) : Prog isa :=
   .seq (.block (entry S.k)) <| .seq (fprogB (enc S.k dbl) S ops) <| .block (restore S.k)
 
 /-- The function's code, calling the Montgomery functions of `S`: `O = P + Q`,
 or `P + P` if `dbl`. -/
-def fn (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa :=
+def fn (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa :=
   fnOps S dbl (rcb sId pId qId oId)
 
-/-- The curve's prime as a modulus of `Spec/Weierstrass/Mont.lean`, whose
+/-- The curve's prime as a modulus of `Proof/Weierstrass/MontContract.lean`, whose
 functions (`vg_<curve>_<op>_mod_p`) the point functions call. -/
-abbrev modP (C : Spec.Weierstrass.Point.Curve) : Spec.Weierstrass.Mont.Modulus :=
+abbrev modP (C : Impl.Weierstrass.Point.Curve) : Impl.Weierstrass.Mont.Modulus :=
   { curve := C.curve, which := "p", m := C.p, k := C.k, desc := C.desc }
 
 /-- `vg_<curve>_point_add`. -/
-def pointAdd (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn (modP C) false
+def pointAdd (C : Impl.Weierstrass.Point.Curve) : Prog isa := fn (modP C) false
 
 /-- `vg_<curve>_point_double`. -/
-def pointDouble (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn (modP C) true
+def pointDouble (C : Impl.Weierstrass.Point.Curve) : Prog isa := fn (modP C) true
 
 /-- The formulas for `a = 0`: Algorithm 9 doubles (`dbl`), Algorithm 8 adds. -/
 def ops0 (dbl : Bool) : List FOp := if dbl then dbl0 sId pId oId else rcb0m sId pId qId oId
 
 /-- `O = P + P` (`dbl`) or `P + Q` by the formulas for `a = 0`. -/
-def fn0 (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa := fnOps S dbl (ops0 dbl)
+def fn0 (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa := fnOps S dbl (ops0 dbl)
 
 /-- `vg_<curve>_point_a0_double`: `O = P + P` by Algorithm 9. -/
-def pointDouble0 (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) true
+def pointDouble0 (C : Impl.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) true
 
 /-- `vg_<curve>_point_a0_add_affine`: `O = P + Q` by Algorithm 8. -/
-def pointAdd0m (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) false
+def pointAdd0m (C : Impl.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) false
 
 end VG.Impl.Weierstrass.X86.Point

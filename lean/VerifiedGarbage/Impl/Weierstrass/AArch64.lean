@@ -57,14 +57,14 @@ def mulCall (f : String) (n m o a b : Nat) : Prog isa := callProg f (Mont.mulFn 
 
 /-- `[o] = [a]^2 R⁻¹ mod p` by a call of `vg_p384_sqr_mod_p`. -/
 def sqrCall (o a : Nat) : Prog isa :=
-  callProg (Spec.Weierstrass.Mont.p384p.fn "sqr") Mont.sqrFn384 o a a
+  callProg (Impl.Weierstrass.Mont.p384p.fn "sqr") Mont.sqrFn384 o a a
 
 /-- `[o] = [a]^2 R⁻¹ mod p` by the dedicated P-521 square. -/
 def sqrCall521 (o a : Nat) : Prog isa :=
-  callProg (Spec.Weierstrass.Mont.p521p.fn "sqr") Mont.sqrFn521 o a a
+  callProg (Impl.Weierstrass.Mont.p521p.fn "sqr") Mont.sqrFn521 o a a
 
 /-- Recognize the nine-word field modulus, excluding P-521's scalar order. -/
-def sqr521Ok (n m : Nat) : Bool := n == 9 && m == Spec.Weierstrass.Mont.p521p.m
+def sqr521Ok (n m : Nat) : Bool := n == 9 && m == Impl.Weierstrass.Mont.p521p.m
 
 /-- The code of a field operation: a call for a product modulo a modulus
 whose products are functions (`Mont.callOf`), using the dedicated square for

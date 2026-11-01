@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Points
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # p192 signature verification -/
 

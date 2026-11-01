@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Session
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # Resources of the shared public-key validation contract -/
 

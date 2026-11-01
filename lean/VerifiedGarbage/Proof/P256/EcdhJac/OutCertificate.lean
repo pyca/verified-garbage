@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+meta import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 
 @[expose] public section
 

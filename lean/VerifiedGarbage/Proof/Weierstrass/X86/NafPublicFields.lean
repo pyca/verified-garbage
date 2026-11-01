@@ -9,7 +9,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem nafPublicFields_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {base : Addr} {size a wk : Nat} {C : Curve}
+theorem nafPublicFields_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {base : Addr} {size a wk : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAcc : WkOk F K.M C.p size wk Sl) (hn : K.M.n=4)
     (hy : K.E.y=K.E.x+32) (hz : K.E.z=K.E.x+64)
     {V : List Nat} {E : Nat → Fe C} {s : State}

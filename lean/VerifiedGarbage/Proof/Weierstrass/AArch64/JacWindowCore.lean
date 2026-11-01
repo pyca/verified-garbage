@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFive
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-! The public Jacobian loop's arithmetic steps. -/
 

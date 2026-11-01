@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # The fixed twenty-batch inversion loop -/
 

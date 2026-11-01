@@ -46,7 +46,7 @@ meanwhile, for a product), and a state satisfying it (`mul_implies`).
 namespace VG.Proof.Weierstrass.X86_64.Mont
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64.Mont VG.Proof.Mont VG.Proof.Mont.X86_64
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus p384p)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus p384p)
 
 theorem p384p_m : p384p.m = p384 := by decide +kernel
 
@@ -58,7 +58,7 @@ theorem mulFn6_x64 (adx : Bool) (s : State) (hs : (mulX64 p384p).pre s) :
     ∃ t s', Exec isa (mulFn6 adx) s t s' ∧ abiPreserved s s' ∧ (mulX64 p384p).post s s' := by
   obtain ⟨⟨hrd, hwr, hret, hnw, ho, ha, hb⟩, hB⟩ := hs
   have hscr : Scr s (s.gpr .rdi) 8192 := ⟨rfl, by rw [hwr]; simp, hnw⟩
-  simp only [Spec.Weierstrass.Mont.Fits, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes,
+  simp only [Impl.Weierstrass.Mont.Fits, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes,
     p384p] at ho ha hb
   suffices hwp : WP isa (mulFn6 adx) s fun s' => gprPreserved s s' ∧ (mulX64 p384p).post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
@@ -78,8 +78,8 @@ theorem mulFn6_x64 (adx : Bool) (s : State) (hs : (mulX64 p384p).pre s) :
       simp only [Region.Contains, Nat.not_le] at hx
       simp only [ofs, argOf]; omega
   · intro i hi hown ho'
-    have e1 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
-    have e2 : Spec.Weierstrass.Mont.ownAt p384p.k = 3712 := rfl
+    have e1 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
+    have e2 : Impl.Weierstrass.Mont.ownAt p384p.k = 3712 := rfl
     have e4 : p384p.k = 6 := rfl
     rw [e1] at hi
     rw [e2] at hown

@@ -13,7 +13,7 @@ open VG.Arm
 /-- P-224 as the code has it, its field multiplications by
 `vg_p224_mul_mod_<p|n>_umaal` if `u`. -/
 def p224With (u : Bool) : Cfg :=
-  ⟨4, Spec.P224.curve, Spec.Weierstrass.Mont.p224p, Spec.Weierstrass.Mont.p224n, some Spec.Weierstrass.Mul.p224, u⟩
+  ⟨4, Spec.P224.curve, Impl.Weierstrass.Mont.p224p, Impl.Weierstrass.Mont.p224n, some Impl.Weierstrass.Mul.p224, u⟩
 
 /-- P-224 as the code has it. -/
 def p224 : Cfg := p224With false

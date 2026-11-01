@@ -14,9 +14,9 @@ open VG.X86
 def p384 : Cfg where
   n := 6
   C := Spec.P384.curve
-  SP := Spec.Weierstrass.Mont.p384p
-  SN := Spec.Weierstrass.Mont.p384n
-  mul := some Spec.Weierstrass.Mul.p384
+  SP := Impl.Weierstrass.Mont.p384p
+  SN := Impl.Weierstrass.Mont.p384n
+  mul := some Impl.Weierstrass.Mul.p384
 
 /-- `vg_ecdsa_p384_sign`. -/
 def signP384 : Prog isa := p384.sign

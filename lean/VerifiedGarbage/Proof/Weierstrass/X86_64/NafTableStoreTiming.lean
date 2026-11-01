@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointTransfer
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 @[expose] public section
 

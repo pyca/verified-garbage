@@ -14,9 +14,9 @@ open VG.X86
 def p521 : Cfg where
   n := 9
   C := Spec.P521.curve
-  SP := Spec.Weierstrass.Mont.p521p
-  SN := Spec.Weierstrass.Mont.p521n
-  mul := some Spec.Weierstrass.Mul.p521
+  SP := Impl.Weierstrass.Mont.p521p
+  SN := Impl.Weierstrass.Mont.p521n
+  mul := some Impl.Weierstrass.Mul.p521
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign

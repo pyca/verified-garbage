@@ -44,7 +44,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.P256.curve = 0; rw [p256_nBits]
-  coreN := Spec.Ecdsa.P256.signApi.name
+  coreN := "vg_ecdsa_p256_sign"
   coreC := Impl.Ecdsa.Arm.signP256
   coreConsts := []
   coreX := by

@@ -39,7 +39,7 @@ namespace VG.Proof.Weierstrass.X86_64.Mont.Wide8
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64.Mont
 open VG.Impl.Weierstrass.X86_64.Mont.Wide8 VG.Proof.Mont VG.Proof.Mont.X86_64
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus)
 
 theorem fn8_x64 (M : Modulus) (hk : M.k = 8) (hR : M.R = (2 ^ 64) ^ 8) {code : Prog isa}
     (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true)
@@ -57,7 +57,7 @@ theorem fn8_x64 (M : Modulus) (hk : M.k = 8) (hR : M.R = (2 ^ 64) ^ 8) {code : P
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (mulX64 M).post s s' := by
   obtain ⟨⟨hrd, hwr, hret, hnw, ho, ha, hb⟩, hB⟩ := hs
   have hscr : Scr s (s.gpr .rdi) 8192 := ⟨rfl, by rw [hwr]; simp, hnw⟩
-  simp only [Spec.Weierstrass.Mont.Fits, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes,
+  simp only [Impl.Weierstrass.Mont.Fits, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes,
     hk] at ho ha hb
   suffices hwp : WP isa code s fun s' => gprPreserved s s' ∧ (mulX64 M).post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
@@ -74,8 +74,8 @@ theorem fn8_x64 (M : Modulus) (hk : M.k = 8) (hR : M.R = (2 ^ 64) ^ 8) {code : P
       simp only [Region.Contains, Nat.not_le] at hx
       simp only [ofs, argOf]; omega
   · intro i hi hown ho'
-    have e1 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
-    have e2 : Spec.Weierstrass.Mont.ownAt M.k = 3584 := by rw [hk]; rfl
+    have e1 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
+    have e2 : Impl.Weierstrass.Mont.ownAt M.k = 3584 := by rw [hk]; rfl
     have e3 : tmp = 4032 := rfl
     rw [e1] at hi
     rw [e2] at hown
@@ -87,7 +87,7 @@ theorem fn8_x64 (M : Modulus) (hk : M.k = 8) (hR : M.R = (2 ^ 64) ^ 8) {code : P
 
 
 def curve (order : Bool) : Modulus :=
-  if order then Spec.Weierstrass.Mont.brainpoolp512r1n else Spec.Weierstrass.Mont.brainpoolp512r1p
+  if order then Impl.Weierstrass.Mont.brainpoolp512r1n else Impl.Weierstrass.Mont.brainpoolp512r1p
 
 theorem curve_k (order : Bool) : (curve order).k = 8 := by cases order <;> rfl
 

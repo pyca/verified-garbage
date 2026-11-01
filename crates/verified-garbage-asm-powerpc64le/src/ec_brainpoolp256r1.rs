@@ -55,8 +55,28 @@ bl {vg_brainpoolp256r1_mul_mod_p}
 .base64 "oAWAOAAFoDjAAMA4"
 bl {vg_brainpoolp256r1_mul_mod_p}
 .base64 "AAAAOP//AGD//wBkAQDAOEAE44BgAAOBFALnfFA46HwUMud8IgDmeEQE44BkAAOBFALnfFA46HwUMud8IgDmeEgE44BoAAOBFALnfFA46HwUMud8IgDmeEwE44BsAAOBFALnfFA46HwUMud8IgDmeFAE44BwAAOBFALnfFA46HwUMud8IgDmeFQE44B0AAOBFALnfFA46HwUMud8IgDmeFgE44B4AAOBFALnfFA46HwUMud8IgDmeFwE44B8AAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QASj6EgEg+h4I6V8UASD6HgjpXxYBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfDhIpXzABYPoOCiEfMAFg/hAAqPoSAKD6HgjpXxQAoPoeCOlfFgCg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8wAWD6DgohHzABYP4wAVD6QQAgDg4UIR8AACOmKAEg+g4UIR8GQDAOCg1jnyoBIPoOFCEfBEAwDgoNY58sASD6DhQhHwJAMA4KDWOfLgEg+g4UIR8AQDAOCg1jnygBYPoOFCEfDkAwDgoNY58qAWD6DhQhHwxAMA4KDWOfLAFg+g4UIR8KQDAOCg1jny4BYPoOFCEfCEAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4=""#,
-        vg_brainpoolp256r1_point_double = sym super::brainpoolp256r1_point::vg_brainpoolp256r1_point_double,
-        vg_brainpoolp256r1_point_add = sym super::brainpoolp256r1_point::vg_brainpoolp256r1_point_add,
-        vg_brainpoolp256r1_mul_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_mul_mod_p,
+        vg_brainpoolp256r1_point_double = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_point_double::vg_brainpoolp256r1_point_double,
+        vg_brainpoolp256r1_point_add = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_point_add::vg_brainpoolp256r1_point_add,
+        vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_add_mod_p.rs"]
+pub(crate) mod vg_brainpoolp256r1_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_mul_mod_p.rs"]
+pub(crate) mod vg_brainpoolp256r1_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_point_add.rs"]
+pub(crate) mod vg_brainpoolp256r1_point_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_point_double.rs"]
+pub(crate) mod vg_brainpoolp256r1_point_double;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_sub_mod_p.rs"]
+pub(crate) mod vg_brainpoolp256r1_sub_mod_p;

@@ -4,13 +4,14 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.P192
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDSA over P-192 on x86 (32-bit): the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P192.inst.signContract` for x86, by name:
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst` for x86, by name:
 `vg_ecdsa_p192_sign(out, d, digest, k, scratch)`, whose arguments are on
 the stack (cdecl), the result in `eax`.
 -/

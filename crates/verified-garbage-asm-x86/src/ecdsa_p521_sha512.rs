@@ -86,6 +86,10 @@ jne 20b
         vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch,
-        vg_ecdsa_p521_sign = sym super::ecdsa_p521::vg_ecdsa_p521_sign,
+        vg_ecdsa_p521_sign = sym super::ecdsa_p521::vg_ecdsa_p521_sign::vg_ecdsa_p521_sign,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_add_mod_n.rs"]
+pub(crate) mod vg_p521_add_mod_n;

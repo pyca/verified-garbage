@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulFn
-public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.Impl.Ecdh.P256.RISCV64
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.Offset
@@ -150,8 +150,8 @@ theorem mont_eq {r x : Nat} (hr : r < W.p) (h : r * 2 ^ 256 % W.p = x * (2 ^ 256
     r = x * 2 ^ 256 % W.p :=
   toM_inj unit hr (Nat.mod_lt _ (by decide)) ((toM_r2 unit h).trans (toM_mont unit).symm)
 
-/-- P-256's check of `Spec/Weierstrass/CheckPoint.lean`. -/
-abbrev CC : Spec.Weierstrass.CheckPoint.Curve := Spec.Weierstrass.CheckPoint.p256
+/-- P-256's check of `Proof/Weierstrass/CheckPointContract.lean`. -/
+abbrev CC : Impl.Weierstrass.CheckPoint.Curve := Impl.Weierstrass.CheckPoint.p256
 
 /-- `vg_p256_check_point(ws = a0)`. -/
 def checkRVc : Contract isa where
@@ -162,13 +162,13 @@ def checkRVc : Contract isa where
 
 theorem num_eq (m : Mem) (ws : Addr) (i : Nat) (hi : i < 100 := by decide) :
     CC.num ws m (CC.slot i) = wordsVal m ws (p256.sl i) 4 := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.num
-  rw [Spec.Weierstrass.Mont.numAt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
-    simp only [Spec.Weierstrass.CheckPoint.Curve.slot, CC, Spec.Weierstrass.CheckPoint.p256]; omega)]
+  unfold Impl.Weierstrass.CheckPoint.Curve.num
+  rw [Impl.Weierstrass.Mont.numAt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
+    simp only [Impl.Weierstrass.CheckPoint.Curve.slot, CC, Impl.Weierstrass.CheckPoint.p256]; omega)]
   exact read_eq_wordsVal m ws 4 _
 
 theorem flag_eq (m : Mem) (ws : Addr) : CC.flag ws m = word m ws FL := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.flag
+  unfold Impl.Weierstrass.CheckPoint.Curve.flag
   simp only [word, off, Mem.readW]
   rfl
 
@@ -180,14 +180,14 @@ abbrev chkW : List (Nat × Nat) :=
 
 theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws chkW m m') : CC.Keeps ws m m' := by
   intro i hi hown hout
-  have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
+  have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega)]
   have hw' := (by decide : ∀ w ∈ chkW, (128 ≤ w.1 ∧ w.1 + w.2 ≤ 160) ∨ (w.1 = FL ∧ w.2 = 8) ∨
     (∃ j ∈ [34, 35, 37, 38, 41, 42, 43], w.1 = 64 + 32 * j ∧ w.2 = 32) ∨ (3840 ≤ w.1 ∧ w.1 + w.2 ≤ 4096)) w hw
-  simp only [FL, Spec.Weierstrass.CheckPoint.Curve.Own, Spec.Weierstrass.CheckPoint.Curve.Out,
-    Spec.Weierstrass.CheckPoint.Curve.slot, Spec.Weierstrass.CheckPoint.Curve.flagAt, CC,
-    Spec.Weierstrass.CheckPoint.p256, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes,
+  simp only [FL, Impl.Weierstrass.CheckPoint.Curve.Own, Impl.Weierstrass.CheckPoint.Curve.Out,
+    Impl.Weierstrass.CheckPoint.Curve.slot, Impl.Weierstrass.CheckPoint.Curve.flagAt, CC,
+    Impl.Weierstrass.CheckPoint.p256, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes,
     List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left, not_or] at hown hout hw'
   omega
 
@@ -198,9 +198,9 @@ theorem masks_valid {x y w1 xm ym : Nat} (hw1 : w1 < W.p)
       ((toM W.p (2 ^ 256) xm * toM W.p (2 ^ 256) xm * toM W.p (2 ^ 256) xm +
         Fin.ofNat W.p W.a * toM W.p (2 ^ 256) xm) + Fin.ofNat W.p W.b)) :
     maskOf (decide (x < W.p)) &&& maskOf (decide (y < W.p)) &&& maskOf (decide (w1 = 0)) =
-      Spec.Weierstrass.CheckPoint.Curve.mask (CC.Valid x y) := by
+      Impl.Weierstrass.CheckPoint.Curve.mask (CC.Valid x y) := by
   rw [hxm, hym, toM_mont unit, toM_mont unit] at hv
-  unfold Spec.Weierstrass.CheckPoint.Curve.mask Spec.Weierstrass.CheckPoint.Curve.Valid
+  unfold Impl.Weierstrass.CheckPoint.Curve.mask Impl.Weierstrass.CheckPoint.Curve.Valid
   show _ = if x < W.p ∧ y < W.p ∧ Spec.Weierstrass.onCurve W (.affine (Fin.ofNat W.p x) (Fin.ofNat W.p y)) = true
     then BitVec.allOnes 64 else 0
   by_cases hx : x < W.p
@@ -317,12 +317,12 @@ theorem check_rv (s : State) (hs : checkRVc.pre s) :
   have hv := masks_valid lt₇ xm₆ ym₆ (by rw [v₇, ap₆, bp₆, toM_mont unit, toM_mont unit])
   generalize hx : CC.num base s.mem CC.xAt = x at *
   generalize hy : CC.num base s.mem CC.yAt = y at *
-  have hF : word s₉.mem base FL = CC.flag base s.mem &&& Spec.Weierstrass.CheckPoint.Curve.mask (CC.Valid x y) := by
+  have hF : word s₉.mem base FL = CC.flag base s.mem &&& Impl.Weierstrass.CheckPoint.Curve.mask (CC.Valid x y) := by
     rw [f₉, m₈, g₈, fl₇, f₄, flag_eq, ← hv]; simp only [BitVec.and_assoc]
-  generalize hFv : CC.flag base s.mem &&& Spec.Weierstrass.CheckPoint.Curve.mask (CC.Valid x y) = F at hF
+  generalize hFv : CC.flag base s.mem &&& Impl.Weierstrass.CheckPoint.Curve.mask (CC.Valid x y) = F at hF
   have hFm : F = if decide (F ≠ 0) then BitVec.allOnes 64 else 0 := by
     rw [← hFv]
-    unfold Spec.Weierstrass.CheckPoint.Curve.mask
+    unfold Impl.Weierstrass.CheckPoint.Curve.mask
     rcases hf with h | h <;> rw [h] <;> split <;> decide
   have a₁₀ : s₁₀.gpr .a7 = if decide (F ≠ 0) then BitVec.allOnes 64 else 0 := by
     rw [u₁₀.gpr]; exact hF.trans hFm

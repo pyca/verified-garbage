@@ -29,7 +29,7 @@ open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdh.X86_6
 open VG.Proof.Weierstrass.X86_64
 open VG.Proof.Ecdsa.X86_64.P521.Inverse (cfg cfg_ok)
 
-abbrev C : CP := Spec.Weierstrass.CheckPoint.p521
+abbrev C : CP := Impl.Weierstrass.CheckPoint.p521
 
 /-- `vg_p521_check_point` (`_adx` with BMI2 and ADX). -/
 abbrev code (adx : Bool) : Prog isa := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx))
@@ -56,7 +56,7 @@ theorem ct (adx : Bool) : ConstantTime isa (checkK C).pre (checkK C).pub (code a
     exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) (agreeK C) (by taint_decide)
 
 theorem sat : C.pre 0x1000 (satMem C) := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.pre; decide +kernel
+  unfold Impl.Weierstrass.CheckPoint.Curve.pre; decide +kernel
 
 theorem verified (hI : InvSounds) (adx : Bool) :
     Verified X86_64.target (code adx) (C.checkContract X86_64.abi) :=

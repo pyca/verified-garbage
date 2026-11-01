@@ -10,6 +10,7 @@ import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Algebra.Order.Group.Nat
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 @[expose] public section
 

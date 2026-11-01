@@ -3,87 +3,6 @@
 //! `assembly/ecdsa_p224.s`.
 #![allow(dead_code)]
 
-/// ECDSA signature generation over P-224 (FIPS 186-5 §6.4.1): with the private key `d` and the per-message secret number `k` (each 28 bytes, most significant first), signs the hash at `digest`: its leftmost 28 bytes, or, for a shorter hash, the hash padded on the left with zeros to 28 bytes. Returns 1 and writes `r` then `s` (28 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` or `k` is not in `[1, n-1]`, or if `r` or `s` is 0, in which case the caller signs again with another `k`.
-///
-/// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 56 bytes.
-/// * `d` must be valid for reads of 28 bytes.
-/// * `digest` must be valid for reads of 28 bytes.
-/// * `k` must be valid for reads of 28 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `k` must be secret, and never be used to sign two different hashes: it must be chosen uniformly at random in `[1, n-1]` (FIPS 186-5 §A.3) or derived as RFC 6979 does.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `k` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `k` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_p224_sign(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], k: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkFIkYiXAEiXgIiWgMiceLXCQQi0MYD8iJhyAEAACLQxQPyImHJAQAAItDEA/IiYcoBAAAi0MMD8iJhywEAACLQwgPyImHMAQAAItDBA/IiYc0BAAAiwMPyImHOAQAALgAAAAAiYc8BAAAi1wkCItDGA/IiYdABAAAi0MUD8iJh0QEAACLQxAPyImHSAQAAItDDA/IiYdMBAAAi0MID8iJh1AEAACLQwQPyImHVAQAAIsDD8iJh1gEAAC4AAAAAImHXAQAAItcJAyLQxgPyImHYAQAAItDFA/IiYdkBAAAi0MQD8iJh2gEAACLQwwPyImHbAQAAItDCA/IiYdwBAAAi0MED8iJh3QEAACLAw/IiYd4BAAAuAAAAACJh3wEAAC4AQAAAIlHQLgAAAAAiUdEuAAAAACJR0i4/////4lHTLj/////iUdQuP////+JR1S4/////4lHWLgAAAAAiUdcuD0qXFyJR2C4RSndE4lHZLg+8LjgiUdouKIW//+JR2y4/////4lHcLj/////iUd0uP////+JR3i4AAAAAIlHfLgAAAAAiYegAAAAuAAAAACJh6QAAAC4AAAAAImHqAAAALgAAAAAiYesAAAAuAAAAACJh7AAAAC4AAAAAImHtAAAALgAAAAAiYe4AAAAuAAAAACJh7wAAAC4AQAAAImHwAAAALgAAAAAiYfEAAAAuAAAAACJh8gAAAC4AAAAAImHzAAAALgAAAAAiYfQAAAAuAAAAACJh9QAAAC4AAAAAImH2AAAALgAAAAAiYfcAAAAuAAAAACJh+AAAAC4/////4mH5AAAALj/////iYfoAAAAuP////+Jh+wAAAC4AAAAAImH8AAAALgAAAAAiYf0AAAAuAAAAACJh/gAAAC4AAAAAImH/AAAALgBAAAAiYcAAQAAuAMAAACJhwQBAAC4AAAAAImHCAEAALj/////iYcMAQAAuPz///+JhxABAAC4/////4mHFAEAALj/////iYcYAQAAuAAAAACJhxwBAAC4Zg1BK4mHIAEAALjjaTq2iYckAQAAuDI50GaJhygBAAC43EhwMYmHLAEAALjzg/dYiYcwAQAAuMovbLmJhzQBAAC4uY5Af4mHOAEAALgAAAAAiYc8AQAAuOpKCm2Jh0ABAAC4JlKQvImHRAEAALiqvxhgiYdIAQAAuDaXJYWJh0wBAAC4Bexr+YmHUAEAALibr9NtiYdUAQAAuGBeG6KJh1gBAAC4AAAAAImHXAEAALjo7fPviYdgAQAAuOWh3C6Jh2QBAAC4a1ozBYmHaAEAALgrZ834iYdsAQAAuHjo3wOJh3ABAAC4rsWpromHdAEAALjxhkdhiYd4AQAAuAAAAACJh3wBAAC4FX1RX4mHgAEAALhpepQpiYeEAQAAuEs/1jGJh4gBAAC4Wf/Iq4mHjAEAALhWSHHZiYeQAQAAuHxf0WqJh5QBAAC4YXnpsYmHmAEAALgAAAAAiYecAQAAuAAAAACJh6ABAAC4w9Wjo4mHpAEAALi61iLsiYeoAQAAuMEPRx+Jh6wBAAC4XekAAImHsAEAALgAAAAAiYe0AQAAuAAAAACJh7gBAAC4AAAAAImHvAEAALj/////iYfAAQAAuP////+Jh8QBAAC4/////4mHyAEAALj+////iYfMAQAAuP////+Jh9ABAAC4/////4mH1AEAALj/////iYfYAQAAuAAAAACJh9wBAAC4OypcXImH4AEAALhFKd0TiYfkAQAAuD7wuOCJh+gBAAC4ohb//4mH7AEAALj/////iYfwAQAAuP////+Jh/QBAAC4/////4mH+AEAALgAAAAAiYf8AQAAuAAAAACJhwACAAC4AAAAAImHBAIAALgAAAAAiYcIAgAAuAAAAACJhwwCAAC4AAAAAImHEAIAALgAAAAAiYcUAgAAuAAAAACJhxgCAAC4AAAAAImHHAIAALgAAAAAiYcgAgAAuP////+JhyQCAAC4/////4mHKAIAALj/////iYcsAgAAuAAAAACJhzACAAC4AAAAAImHNAIAALgAAAAAiYc4AgAAuAAAAACJhzwCAAC4AAAAAImHQAIAALgAAAAAiYdEAgAAuAAAAACJh0gCAAC4AAAAAImHTAIAALgAAAAAiYdQAgAAuAAAAACJh1QCAAC4AAAAAImHWAIAALgAAAAAiYdcAgAAuP////+Jh8AFAAC+IAAAAA=="
-20:
-.base64 "g+4BifgB8A+2gCAEAACJ8wHbAdsB2wH7icKD4gGIkwAQAACJwtHqg+IBiJMBEAAAicLB6gKD4gGIkwIQAACJwsHqA4PiAYiTAxAAAInCweoEg+IBiJMEEAAAicLB6gWD4gGIkwUQAACJwsHqBoPiAYiTBhAAAInCweoHg+IBiJMHEAAAhfY="
-jne 20b
-.base64 "viAAAAA="
-21:
-.base64 "g+4BifgB8A+2gMABAACJ8wHbAdsB2wH7icKD4gGIkwQRAACJwtHqg+IBiJMFEQAAicLB6gKD4gGIkwYRAACJwsHqA4PiAYiTBxEAAInCweoEg+IBiJMIEQAAicLB6gWD4gGIkwkRAACJwsHqBoPiAYiTChEAAInCweoHg+IBiJMLEQAAhfY="
-jne 21b
-.base64 "viAAAAA="
-22:
-.base64 "g+4BifgB8A+2gOABAACJ8wHbAdsB2wH7icKD4gGIkwgSAACJwtHqg+IBiJMJEgAAicLB6gKD4gGIkwoSAACJwsHqA4PiAYiTCxIAAInCweoEg+IBiJMMEgAAicLB6gWD4gGIkw0SAACJwsHqBoPiAYiTDhIAAInCweoHg+IBiJMPEgAAhfY="
-jne 22b
-.base64 "i4dAAQAAiYcAAgAAi4dEAQAAiYcEAgAAi4dIAQAAiYcIAgAAi4dMAQAAiYcMAgAAi4dQAQAAiYcQAgAAi4dUAQAAiYcUAgAAi4dYAQAAiYcYAgAAi4dcAQAAiYccAgAAi4dgAQAAiYcgAgAAi4dkAQAAiYckAgAAi4doAQAAiYcoAgAAi4dsAQAAiYcsAgAAi4dwAQAAiYcwAgAAi4d0AQAAiYc0AgAAi4d4AQAAiYc4AgAAi4d8AQAAiYc8AgAAVw=="
-call {vg_p224_mul}
-.base64 "WIt8JBSLh+AAAACJh+ADAACLh+QAAACJh+QDAACLh+gAAACJh+gDAACLh+wAAACJh+wDAACLh/AAAACJh/ADAACLh/QAAACJh/QDAACLh/gAAACJh/gDAACLh/wAAACJh/wDAAC+AAEAAA=="
-23:
-.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
-call {vg_p224_mul_mod_p}
-.base64 "WFhYWLhAAgAAueADAAC6AAQAAFBRUlc="
-call {vg_p224_mul_mod_p}
-.base64 "WFhYWIn4AfAPtoAEEQAAuQAAAAApwYuH4AMAAIuXAAQAADHCIcox0ImH4AMAAIuH5AMAAIuXBAQAADHCIcox0ImH5AMAAIuH6AMAAIuXCAQAADHCIcox0ImH6AMAAIuH7AMAAIuXDAQAADHCIcox0ImH7AMAAIuH8AMAAIuXEAQAADHCIcox0ImH8AMAAIuH9AMAAIuXFAQAADHCIcox0ImH9AMAAIuH+AMAAIuXGAQAADHCIcox0ImH+AMAAIuH/AMAAIuXHAQAADHCIcox0ImH/AMAAIX2"
-jne 23b
-.base64 "uOADAAC5AAIAALqABAAAUFFSVw=="
-call {vg_p224_mul_mod_p}
-.base64 "WFhYWLjAAAAAuYAEAAC6oAQAAFBRUlc="
-call {vg_p224_mul_mod_p}
-.base64 "WFhYWLigAAAAuaAEAAC6wAQAAFBRUlc="
-call {vg_p224_add_mod_n}
-.base64 "WFhYWLiAAQAAuSAEAAC64AQAAFBRUlc="
-call {vg_p224_mul_mod_n}
-.base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5cgBAAAK1dgi5ckBAAAG1dki5coBAAAG1doi5csBAAAG1dsi5cwBAAAG1dwi5c0BAAAG1d0i5c4BAAAG1d4i5c8BAAAG1d8GcCJw4uXIAQAAAuXJAQAAAuXKAQAAAuXLAQAAAuXMAQAAAuXNAQAAAuXOAQAAAuXPAQAALkAAAAAKdEZ0iHai4fABQAAIdCJh8AFAACLl8AEAAALl8QEAAALl8gEAAALl8wEAAALl9AEAAALl9QEAAALl9gEAAALl9wEAAC5AAAAACnRGdKLh8AFAAAh0ImHwAUAAIuHoAEAAImH4AMAAIuHpAEAAImH5AMAAIuHqAEAAImH6AMAAIuHrAEAAImH7AMAAIuHsAEAAImH8AMAAIuHtAEAAImH9AMAAIuHuAEAAImH+AMAAIuHvAEAAImH/AMAAL4AAQAA"
-24:
-.base64 "g+4BuOADAAC54AMAALrgAwAAUFFSVw=="
-call {vg_p224_mul_mod_n}
-.base64 "WFhYWLjgBAAAueADAAC6AAQAAFBRUlc="
-call {vg_p224_mul_mod_n}
-.base64 "WFhYWIn4AfAPtoAIEgAAuQAAAAApwYuH4AMAAIuXAAQAADHCIcox0ImH4AMAAIuH5AMAAIuXBAQAADHCIcox0ImH5AMAAIuH6AMAAIuXCAQAADHCIcox0ImH6AMAAIuH7AMAAIuXDAQAADHCIcox0ImH7AMAAIuH8AMAAIuXEAQAADHCIcox0ImH8AMAAIuH9AMAAIuXFAQAADHCIcox0ImH9AMAAIuH+AMAAIuXGAQAADHCIcox0ImH+AMAAIuH/AMAAIuXHAQAADHCIcox0ImH/AMAAIX2"
-jne 24b
-.base64 "uIABAAC5wAQAALoABQAAUFFSVw=="
-call {vg_p224_mul_mod_n}
-.base64 "WFhYWLiAAQAAuUAEAAC6IAUAAFBRUlc="
-call {vg_p224_mul_mod_n}
-.base64 "WFhYWLiAAQAAuWAEAAC6QAUAAFBRUlc="
-call {vg_p224_mul_mod_n}
-.base64 "WFhYWLggBQAAuQAFAAC6YAUAAFBRUlc="
-call {vg_p224_mul_mod_n}
-.base64 "WFhYWLhABQAAuWAFAAC6YAUAAFBRUlc="
-call {vg_p224_add_mod_n}
-.base64 "WFhYWLhgBQAAueADAAC6gAUAAFBRUlc="
-call {vg_p224_mul_mod_n}
-.base64 "WFhYWLjAAAAAuYAFAAC6oAUAAFBRUlc="
-call {vg_p224_mul_mod_n}
-.base64 "WFhYWIuXoAUAAAuXpAUAAAuXqAUAAAuXrAUAAAuXsAUAAAuXtAUAAAuXuAUAAAuXvAUAALkAAAAAKdEZ0ouHwAUAACHQiYfABQAAi4/ABQAAi1wkBIuHwAQAACHID8iJQxiLh8QEAAAhyA/IiUMUi4fIBAAAIcgPyIlDEIuHzAQAACHID8iJQwyLh9AEAAAhyA/IiUMIi4fUBAAAIcgPyIlDBIuH2AQAACHID8iJA4uHoAUAACHID8iJQzSLh6QFAAAhyA/IiUMwi4eoBQAAIcgPyIlDLIuHrAUAACHID8iJQyiLh7AFAAAhyA/IiUMki4e0BQAAIcgPyIlDIIuHuAUAACHID8iJQxyJyIPgAYn6ixqLcgSLagyLegjD"
-.p2align 6"#,
-        vg_p224_mul = sym super::p224_mul::vg_p224_mul,
-        vg_p224_mul_mod_p = sym super::p224_mont::vg_p224_mul_mod_p,
-        vg_p224_add_mod_n = sym super::p224_mont::vg_p224_add_mod_n,
-        vg_p224_mul_mod_n = sym super::p224_mont::vg_p224_mul_mod_n,
-    )
-}
-
 /// ECDSA signature verification over P-224 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 28 bytes each, most significant first) of the hash at `digest` (its leftmost 28 bytes, or, for a shorter hash, the hash padded on the left with zeros to 28 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 28 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
@@ -256,11 +175,23 @@ call {vg_p224_mul_mod_n}
 call {vg_p224_sub_mod_n}
 .base64 "WFhYWIuXQAIAAAuXRAIAAAuXSAIAAAuXTAIAAAuXUAIAAAuXVAIAAAuXWAIAAAuXXAIAALkAAAAAKdEZ0ouHwAUAACHQiYfABQAAi5dABQAAC5dEBQAAC5dIBQAAC5dMBQAAC5dQBQAAC5dUBQAAC5dYBQAAC5dcBQAAuQAAAAAp0RnSg/L/i4fABQAAIdCJh8AFAACLj8AFAACJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_p224_mul_mod_p = sym super::p224_mont::vg_p224_mul_mod_p,
-        vg_p224_add_mod_p = sym super::p224_mont::vg_p224_add_mod_p,
-        vg_p224_sub_mod_p = sym super::p224_mont::vg_p224_sub_mod_p,
-        vg_p224_mul_mod_n = sym super::p224_mont::vg_p224_mul_mod_n,
-        vg_p224_mul = sym super::p224_mul::vg_p224_mul,
-        vg_p224_sub_mod_n = sym super::p224_mont::vg_p224_sub_mod_n,
+        vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
+        vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
+        vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
+        vg_p224_mul_mod_n = sym super::ecdsa_p224::vg_p224_mul_mod_n::vg_p224_mul_mod_n,
+        vg_p224_mul = sym super::ec_p224::vg_p224_mul::vg_p224_mul,
+        vg_p224_sub_mod_n = sym super::ecdsa_p224::vg_p224_sub_mod_n::vg_p224_sub_mod_n,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_ecdsa_p224_sign.rs"]
+pub(crate) mod vg_ecdsa_p224_sign;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_mul_mod_n.rs"]
+pub(crate) mod vg_p224_mul_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_sub_mod_n.rs"]
+pub(crate) mod vg_p224_sub_mod_n;

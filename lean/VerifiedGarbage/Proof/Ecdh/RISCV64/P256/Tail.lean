@@ -166,11 +166,11 @@ theorem unch_of_mulKeeps {base : Addr} {m m' : Mem} (h : MC.Keeps base m m') : U
     simp only [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rw [BitVec.add_comm, BitVec.sub_add_cancel]
   rw [ex]
   refine h _ (by show _ < 8192; omega) ?_ ?_
-  · simp only [Spec.Weierstrass.Mul.Curve.Own, Spec.Weierstrass.Mul.Curve.slot, Spec.Weierstrass.Mul.Curve.tmpAt,
-      Spec.Weierstrass.Mul.Curve.bitsAt, MC, Spec.Weierstrass.Mul.p256, true_and]
+  · simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot, Impl.Weierstrass.Mul.Curve.tmpAt,
+      Impl.Weierstrass.Mul.Curve.bitsAt, MC, Impl.Weierstrass.Mul.p256, true_and]
     omega
-  · simp only [Spec.Weierstrass.Mul.Curve.pAt, Spec.Weierstrass.Mul.Curve.ptBytes, Spec.Weierstrass.Mul.Curve.slot,
-      MC, Spec.Weierstrass.Mul.p256]
+  · simp only [Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes, Impl.Weierstrass.Mul.Curve.slot,
+      MC, Impl.Weierstrass.Mul.p256]
     omega
 
 /-- What `vg_p256_check_point` may write, as ranges of offsets. -/
@@ -188,12 +188,12 @@ theorem unch_of_checkKeeps {base : Addr} {m m' : Mem} (h : CC.Keeps base m m') :
     simp only [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rw [BitVec.add_comm, BitVec.sub_add_cancel]
   rw [ex]
   refine h _ hlt ?_ ?_
-  · simp only [Spec.Weierstrass.CheckPoint.Curve.Own, Spec.Weierstrass.CheckPoint.Curve.slot, CC,
-      Spec.Weierstrass.CheckPoint.p256, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes,
+  · simp only [Impl.Weierstrass.CheckPoint.Curve.Own, Impl.Weierstrass.CheckPoint.Curve.slot, CC,
+      Impl.Weierstrass.CheckPoint.p256, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes,
       List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left, not_or]
     omega
-  · simp only [Spec.Weierstrass.CheckPoint.Curve.Out, Spec.Weierstrass.CheckPoint.Curve.slot,
-      Spec.Weierstrass.CheckPoint.Curve.flagAt, CC, Spec.Weierstrass.CheckPoint.p256,
+  · simp only [Impl.Weierstrass.CheckPoint.Curve.Out, Impl.Weierstrass.CheckPoint.Curve.slot,
+      Impl.Weierstrass.CheckPoint.Curve.flagAt, CC, Impl.Weierstrass.CheckPoint.p256,
       List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left, not_or]
     omega
 
@@ -341,14 +341,14 @@ theorem coord_sv (m : Mem) (base : Addr) (i : Nat) (hi : i < 100 := by decide) :
 theorem point_eq (hL : VG.Proof.Weierstrass.Law W) (m : Mem) (base : Addr) :
     MC.point base m = .affine (toM W.p (2 ^ 256) (wordsVal m base (p256.sl RX) 4))
       (toM W.p (2 ^ 256) (wordsVal m base (p256.sl RY) 4)) := by
-  unfold Spec.Weierstrass.Mul.Curve.point
+  unfold Impl.Weierstrass.Mul.Curve.point
   rw [dq hL, dq hL]
   show Point.affine (toM W.p (2 ^ 256) (MC.toPoint.coordAt m base (p256.sl RX)))
     (toM W.p (2 ^ 256) (MC.toPoint.coordAt m base (p256.sl RY))) = _
   rw [coord_sv _ _ RX, coord_sv _ _ RY]
   rfl
 
-theorem rep_of_represents {X Y Z : Fe W} {P : Point W} (h : Spec.Weierstrass.MulBase.Represents X Y Z P) :
+theorem rep_of_represents {X Y Z : Fe W} {P : Point W} (h : Impl.Weierstrass.MulBase.Represents X Y Z P) :
     Rep W X Y Z P := by
   cases P <;> exact h
 
@@ -429,11 +429,11 @@ theorem tailWith_ok (hL : VG.Proof.Weierstrass.Law W) {mulName : String} {mulCod
   · intro h1 hn
     rw [k₁, point_eq hL] at hR
     obtain ⟨⟨bx, by', bz⟩, hrep⟩ := hR h1 hn
-    simp only [Spec.Weierstrass.Point.Curve.pointAt] at bx by' bz hrep
+    simp only [Impl.Weierstrass.Point.Curve.pointAt] at bx by' bz hrep
     have c0 : MC.toPoint.coordAt s₂.mem base MC.pAt = sv base s₂ RX := coord_sv _ _ RX
-    have c1 : MC.toPoint.coordAt s₂.mem base (MC.pAt + Spec.Weierstrass.Point.elemBytes MC.toPoint.k) =
+    have c1 : MC.toPoint.coordAt s₂.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
       sv base s₂ RY := coord_sv _ _ RY
-    have c2 : MC.toPoint.coordAt s₂.mem base (MC.pAt + 2 * Spec.Weierstrass.Point.elemBytes MC.toPoint.k) =
+    have c2 : MC.toPoint.coordAt s₂.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
       sv base s₂ RZ := coord_sv _ _ RZ
     rw [c0, c1, c2] at hrep
     rw [c0] at bx; rw [c1] at by'; rw [c2] at bz
@@ -499,7 +499,7 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
     (h3 : s.gpr .s3 = base) (hc : TailConsts base s) (hx : sv base s RX < W.p) (hy : sv base s RY < W.p)
     (hon : Spec.Weierstrass.onCurve W (.affine (toM W.p (2 ^ 256) (sv base s RX))
       (toM W.p (2 ^ 256) (sv base s RY))) = true) :
-    WP isa (tail p256 Spec.Weierstrass.Mul.p256.mulApi.name mulP256) s fun s' =>
+    WP isa (tail p256 "vg_p256_mul" mulP256) s fun s' =>
       Kc s s' ∧ Unch base tailW s.mem s'.mem ∧
       word s'.mem base FL = word s.mem base FL &&& maskOf (decide (sv base s K < W.n)) &&&
         maskOf (!decide (sv base s K = 0)) ∧

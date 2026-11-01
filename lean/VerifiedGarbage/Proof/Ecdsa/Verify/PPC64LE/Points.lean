@@ -125,7 +125,7 @@ theorem sumLay (h7 : c.n < 10) : LayR c.n 17 wIds (sumσ c) where
     simp only [wIds, List.mem_cons, List.not_mem_nil, or_false] at hw; omega_arith) h)
 
 /-- The sum over any modulus `S` of `c.n` words, `m`. -/
-theorem sum_core {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} [NeZero m] (hkS : S.k = c.n) (hmS : S.m = m)
+theorem sum_core {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} [NeZero m] (hkS : S.k = c.n) (hmS : S.m = m)
     (hM : ModOk c.n m) (h7 : c.n < 10) (hm : UnitMod m (2 ^ (64 * c.n))) {base : Addr} {s : State}
     (hw : WsReg s base) (hlt : ∀ x ∈ rIds, wordsVal s.mem base (sumσ c x) c.n < m) :
     WP isa (fprogR (sumσ c) S (rcb sId pId qId oId)) s fun s' =>

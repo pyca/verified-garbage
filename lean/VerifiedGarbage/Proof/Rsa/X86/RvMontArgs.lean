@@ -9,6 +9,7 @@ public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # The arguments of recovery's calls of `vg_rsa_mont_mul_at`
 

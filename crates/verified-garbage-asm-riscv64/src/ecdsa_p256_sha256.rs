@@ -542,10 +542,10 @@ bnez t6, 20b
 .insn 2, 0x612d
 .insn 2, 0x8082
 .option pop",
-        vg_p256_add_mod_n = sym super::p256_mont::vg_p256_add_mod_n,
+        vg_p256_add_mod_n = sym super::ecdsa_p256::vg_p256_add_mod_n::vg_p256_add_mod_n,
         vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
         vg_hmac_sha256_finalize = sym super::hmac_sha256::vg_hmac_sha256_finalize,
-        vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign,
+        vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign::vg_ecdsa_p256_sign,
     )
 }

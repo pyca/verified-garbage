@@ -113,7 +113,7 @@ cbnz x12, 20b
         vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
-        vg_ecdsa_brainpoolp384r1_sign = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign,
+        vg_ecdsa_brainpoolp384r1_sign = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign::vg_ecdsa_brainpoolp384r1_sign,
     )
 }
 
@@ -233,6 +233,6 @@ cbnz x12, 20b
         vg_hmac_sha384_init_scratch_sha3 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_sha3::vg_hmac_sha384_init_scratch_sha3,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3::vg_sha512_update_scratch_sha3,
         vg_hmac_sha384_finalize_scratch_sha3 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_sha3::vg_hmac_sha384_finalize_scratch_sha3,
-        vg_ecdsa_brainpoolp384r1_sign = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign,
+        vg_ecdsa_brainpoolp384r1_sign = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign::vg_ecdsa_brainpoolp384r1_sign,
     )
 }

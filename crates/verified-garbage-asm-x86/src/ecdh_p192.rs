@@ -73,10 +73,10 @@ call {vg_p192_mul_mod_p}
 call {vg_p192_mul_mod_p}
 .base64 "WFhYWIuXQAMAACtXWIuXRAMAABtXXIuXSAMAABtXYIuXTAMAABtXZIuXUAMAABtXaIuXVAMAABtXbBnAicOLl0ADAAALl0QDAAALl0gDAAALl0wDAAALl1ADAAALl1QDAAC5AAAAACnRGdIh2ouHYAQAACHQiYdgBAAAi5fAAQAAC5fEAQAAC5fIAQAAC5fMAQAAC5fQAQAAC5fUAQAAuQAAAAAp0RnSi4dgBAAAIdCJh2AEAACLj2AEAACLXCQEi4eIAwAAIcgPyIlDFIuHjAMAACHID8iJQxCLh5ADAAAhyA/IiUMMi4eUAwAAIcgPyIlDCIuHmAMAACHID8iJQwSLh5wDAAAhyA/IiQOJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_p192_mul_mod_p = sym super::p192_mont::vg_p192_mul_mod_p,
-        vg_p192_add_mod_p = sym super::p192_mont::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::p192_mont::vg_p192_sub_mod_p,
-        vg_p192_point_double = sym super::p192_point::vg_p192_point_double,
-        vg_p192_point_add = sym super::p192_point::vg_p192_point_add,
+        vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
+        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
+        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        vg_p192_point_double = sym super::ec_p192::vg_p192_point_double::vg_p192_point_double,
+        vg_p192_point_add = sym super::ec_p192::vg_p192_point_add::vg_p192_point_add,
     )
 }

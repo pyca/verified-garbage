@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 
 @[expose] public section
 

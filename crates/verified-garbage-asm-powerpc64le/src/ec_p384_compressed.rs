@@ -37,9 +37,9 @@ bl {vg_p384_add_mod_p}
 .base64 "8AeAODAHoDggCMA4"
 bl {vg_p384_sub_mod_p}
 .base64 "8Aej6PgHg+h4I6V8AAiD6HgjpXwICIPoeCOlfBAIg+h4I6V8GAiD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTiACIPoOCiEfIAIg/iACEPpwAGD6KAGo+h4IqV8OFClfHgqhHxgB4P4yAGD6KgGo+h4IqV8OFClfHgqhHxoB4P40AGD6LAGo+h4IqV8OFClfHgqhHxwB4P42AGD6LgGo+h4IqV8OFClfHgqhHx4B4P44AGD6MAGo+h4IqV8OFClfHgqhHyAB4P46AGD6MgGo+h4IqV8OFClfHgqhHyIB4P48AGD6NAGo+h4IqV8OFClfHgqhHxQCIP4+AGD6NgGo+h4IqV8OFClfHgqhHxYCIP4AAKD6OAGo+h4IqV8OFClfHgqhHxgCIP4CAKD6OgGo+h4IqV8OFClfHgqhHxoCIP4EAKD6PAGo+h4IqV8OFClfHgqhHxwCIP4GAKD6PgGo+h4IqV8OFClfHgqhHx4CIP4gAhD6QAHg+gBAKA4OCiEfAIAhDg4UIR8AACOmHAGg+g4UIR8KQDAOCg1jnx4BoPoOFCEfCEAwDgoNY58gAaD6DhQhHwZAMA4KDWOfIgGg+g4UIR8EQDAOCg1jnyQBoPoOFCEfAkAwDgoNY58mAaD6DhQhHwBAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
-        vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
-        vg_p384_add_mod_p = sym super::p384_mont::vg_p384_add_mod_p,
-        vg_p384_sub_mod_p = sym super::p384_mont::vg_p384_sub_mod_p,
+        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
+        vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
+        vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
     )
 }
 
@@ -93,8 +93,8 @@ bl {vg_p384_mul_mod_p}
 .base64 "YAeAOPAHoDggCMA4"
 bl {vg_p384_sub_mod_p}
 .base64 "YAej6GgHg+h4I6V8cAeD6HgjpXx4B4PoeCOlfIAHg+h4I6V8iAeD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTiACIPoOCiEfIAIg/gAB4PoQAaj6HgipXwBAIA4OCClfAAAgDhQIEV9AQCqOAAAgDhQIKV8gAiD6DgohHyACIP4gAhD6QQAgDg4UIR8AACOmHAGg+g4UIR8KQDAOCg1jnx4BoPoOFCEfCEAwDgoNY58gAaD6DhQhHwZAMA4KDWOfIgGg+g4UIR8EQDAOCg1jnyQBoPoOFCEfAkAwDgoNY58mAaD6DhQhHwBAMA4KDWOfAAHg+g4UIR8WQDAOCg1jnwIB4PoOFCEfFEAwDgoNY58EAeD6DhQhHxJAMA4KDWOfBgHg+g4UIR8QQDAOCg1jnwgB4PoOFCEfDkAwDgoNY58KAeD6DhQhHwxAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
-        vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
-        vg_p384_add_mod_p = sym super::p384_mont::vg_p384_add_mod_p,
-        vg_p384_sub_mod_p = sym super::p384_mont::vg_p384_sub_mod_p,
+        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
+        vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
+        vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
     )
 }

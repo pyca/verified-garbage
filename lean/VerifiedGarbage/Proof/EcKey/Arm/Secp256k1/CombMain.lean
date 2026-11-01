@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombGenerator
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! Public-key generation reuses the signing pipeline's fixed-base comb. -/
 

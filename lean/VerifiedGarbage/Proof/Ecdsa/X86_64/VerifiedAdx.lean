@@ -24,6 +24,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-!
 # ECDSA over P-256 on x86-64 with BMI2 and ADX: `Verified`
@@ -95,7 +96,7 @@ theorem sign_verified_adx (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP256Adx
-      (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts) 8) :=
   Verified.of_inline_ct (by lit_decide) (sign_x86_adx hL hT hI) sign_ct_adx implies8
     (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 

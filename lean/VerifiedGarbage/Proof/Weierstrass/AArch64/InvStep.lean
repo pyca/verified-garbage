@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Inversion by divsteps on AArch64: the word divstep

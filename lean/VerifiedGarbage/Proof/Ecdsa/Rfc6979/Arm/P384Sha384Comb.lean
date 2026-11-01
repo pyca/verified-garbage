@@ -79,7 +79,7 @@ def p384CombCurve (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve :=
 /-- `p384CombCurve`, calling `vg_ecdsa_p384_sign_umaal`. -/
 def p384CombCurveU (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve :=
   {p384CombCurve hL with
-    coreN := Spec.Ecdsa.P384.signApi.name ++ "_umaal"
+    coreN := "vg_ecdsa_p384_sign" ++ "_umaal"
     coreC := Impl.Ecdsa.Arm.signP384CombU
     coreX := by
       intro s hs

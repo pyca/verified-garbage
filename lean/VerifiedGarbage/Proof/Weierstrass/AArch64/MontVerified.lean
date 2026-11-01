@@ -27,7 +27,7 @@ satisfying it (`sat`).
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 
-open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Spec.Weierstrass.Mont
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Impl.Weierstrass.Mont
 
 theorem read_zero : ∀ (n : Nat) (a : Addr), (Mem.read (fun _ => 0) a n).toNat = 0
   | 0, _ => rfl

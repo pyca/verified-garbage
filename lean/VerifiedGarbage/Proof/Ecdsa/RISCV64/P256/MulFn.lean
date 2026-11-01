@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.P256.RISCV64
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Field.Verified
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Field.Lit
 import VerifiedGarbage.Proof.Framework.Omega

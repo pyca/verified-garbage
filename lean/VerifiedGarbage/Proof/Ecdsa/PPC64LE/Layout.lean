@@ -151,7 +151,7 @@ structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State
 theorem sl_eq (c : Cfg) (i : Nat) : c.sl i = 64 + 8 * c.n * i := rfl
 
 theorem own_eq (n : Nat) : own n = 4096 - 64 * n := by
-  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]
 
 theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 4096 + 64 * c.n * j := rfl
 

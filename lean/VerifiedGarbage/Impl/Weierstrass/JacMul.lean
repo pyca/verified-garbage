@@ -31,7 +31,7 @@ def dblJS (S : RcbSlots) (p o : Pt) : List FOp :=
    .sub o.x o.x S.t2, .sub o.y S.t2 o.x, .mul o.y S.t3 o.y, .sub o.y o.y S.t1]
 
 /-- Jacobian doubling for `a = 0` (dbl-2009-l, with `Z' = 2YZ` as a product),
-in the order of `Spec.Weierstrass.PointOps.jacDouble0`: `A = X²`, `B = Y²`,
+in the order of `Impl.Weierstrass.PointOps.jacDouble0`: `A = X²`, `B = Y²`,
 `C = B²`, `D = 2 ((X + B)² - A - C)`, `E = 3A`, `Z' = 2YZ`, `X' = E² - 2D`,
 `Y' = E (D - X') - 8C`, 2 products and 5 squares. It reads each coordinate
 of `p` for the last time before it writes `o`'s, so `o` may be `p`. -/

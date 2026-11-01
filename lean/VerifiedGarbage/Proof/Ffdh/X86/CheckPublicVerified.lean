@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 public import VerifiedGarbage.Proof.Ffdh.X86.ABI
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! # `vg_ffdh_check_public` on i686 against its contract -/
 

@@ -14,9 +14,9 @@ open VG.X86
 def p224 : Cfg where
   n := 4
   C := Spec.P224.curve
-  SP := Spec.Weierstrass.Mont.p224p
-  SN := Spec.Weierstrass.Mont.p224n
-  mul := some Spec.Weierstrass.Mul.p224
+  SP := Impl.Weierstrass.Mont.p224p
+  SN := Impl.Weierstrass.Mont.p224n
+  mul := some Impl.Weierstrass.Mul.p224
 
 /-- `vg_ecdsa_p224_sign`. -/
 def signP224 : Prog isa := p224.sign

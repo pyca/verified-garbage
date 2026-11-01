@@ -85,8 +85,8 @@ theorem sl_own_fn (c : Cfg) (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hT : i ≠ 
     c.sl i + 8 * c.n ≤ VG.Proof.Weierstrass.AArch64.Mont.own c.n := by
   rw [sl_eq c i hT]
   have := Nat.mul_le_mul_left (8 * c.n) (show i ≤ 44 by omega)
-  simp only [VG.Proof.Weierstrass.AArch64.Mont.own, Spec.Weierstrass.Mont.ownAt,
-    Spec.Weierstrass.Mont.ownBytes]
+  simp only [VG.Proof.Weierstrass.AArch64.Mont.own, Impl.Weierstrass.Mont.ownAt,
+    Impl.Weierstrass.Mont.ownBytes]
   omega
 
 /-- `[o] = [a] [b] R⁻¹ mod n`, on slots, by a call or inline (`Cfg.mulNP`). -/

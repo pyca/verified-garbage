@@ -22,7 +22,7 @@ pub unsafe extern "sysv64" fn vg_ec_p256_compress_public_key(out: *mut [u8; 33],
 call {vg_p256_check_point}
 .base64 "SIuPwAUAAEiLl8AEAABIg+IBSIPCAkghyogWSIuHYAQAAEghyEgPyEiJRhlIi4doBAAASCHISA/ISIlGEUiLh3AEAABIIchID8hIiUYJSIuHeAQAAEghyEgPyEiJRgFIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_p256_check_point = sym super::p256_check_point::vg_p256_check_point,
+        vg_p256_check_point = sym super::ec_p256_compressed::vg_p256_check_point::vg_p256_check_point,
     )
 }
 
@@ -77,7 +77,7 @@ pub unsafe extern "sysv64" fn vg_ec_p256_compress_public_key_adx(out: *mut [u8; 
 call {vg_p256_check_point_adx}
 .base64 "SIuPwAUAAEiLl8AEAABIg+IBSIPCAkghyogWSIuHYAQAAEghyEgPyEiJRhlIi4doBAAASCHISA/ISIlGEUiLh3AEAABIIchID8hIiUYJSIuHeAQAAEghyEgPyEiJRgFIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_p256_check_point_adx = sym super::p256_check_point::vg_p256_check_point_adx,
+        vg_p256_check_point_adx = sym super::ec_p256_compressed::vg_p256_check_point_adx::vg_p256_check_point_adx,
     )
 }
 
@@ -112,3 +112,11 @@ jne 21b
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_check_point.rs"]
+pub(crate) mod vg_p256_check_point;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_check_point_adx.rs"]
+pub(crate) mod vg_p256_check_point_adx;

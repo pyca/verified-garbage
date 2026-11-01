@@ -1764,11 +1764,11 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
-        vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
-        vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
-        vg_secp256k1_point_a0_double = sym super::secp256k1_point::vg_secp256k1_point_a0_double,
-        vg_secp256k1_point_a0_add_affine = sym super::secp256k1_point::vg_secp256k1_point_a0_add_affine,
+        vg_secp256k1_mul_mod_p = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
+        vg_secp256k1_add_mod_p = sym super::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
+        vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,
+        vg_secp256k1_point_a0_double = sym super::ecdh_secp256k1::vg_secp256k1_point_a0_double::vg_secp256k1_point_a0_double,
+        vg_secp256k1_point_a0_add_affine = sym super::ecdh_secp256k1::vg_secp256k1_point_a0_add_affine::vg_secp256k1_point_a0_add_affine,
     )
 }
 
@@ -3539,10 +3539,26 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_secp256k1_mul_mod_p_umaal = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p_umaal,
-        vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
-        vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
-        vg_secp256k1_point_a0_double_umaal = sym super::secp256k1_point::vg_secp256k1_point_a0_double_umaal,
-        vg_secp256k1_point_a0_add_affine_umaal = sym super::secp256k1_point::vg_secp256k1_point_a0_add_affine_umaal,
+        vg_secp256k1_mul_mod_p_umaal = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p_umaal::vg_secp256k1_mul_mod_p_umaal,
+        vg_secp256k1_add_mod_p = sym super::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
+        vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,
+        vg_secp256k1_point_a0_double_umaal = sym super::ecdh_secp256k1::vg_secp256k1_point_a0_double_umaal::vg_secp256k1_point_a0_double_umaal,
+        vg_secp256k1_point_a0_add_affine_umaal = sym super::ecdh_secp256k1::vg_secp256k1_point_a0_add_affine_umaal::vg_secp256k1_point_a0_add_affine_umaal,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_point_a0_add_affine.rs"]
+pub(crate) mod vg_secp256k1_point_a0_add_affine;
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_point_a0_add_affine_umaal.rs"]
+pub(crate) mod vg_secp256k1_point_a0_add_affine_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_point_a0_double.rs"]
+pub(crate) mod vg_secp256k1_point_a0_double;
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_point_a0_double_umaal.rs"]
+pub(crate) mod vg_secp256k1_point_a0_double_umaal;

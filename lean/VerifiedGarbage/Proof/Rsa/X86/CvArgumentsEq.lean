@@ -1,7 +1,7 @@
 module
 import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Rsa.X86.CvBuffers
 public import Init.Prelude
 public import VerifiedGarbage.TCB.X86.State

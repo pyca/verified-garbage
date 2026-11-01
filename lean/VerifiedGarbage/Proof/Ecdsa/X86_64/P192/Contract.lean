@@ -3,11 +3,12 @@ module
 public import VerifiedGarbage.Spec.Ecdsa.P192
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-!
 # ECDSA over p192 on x86-64: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P192.inst.signContract` for x86-64, by name:
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst` for x86-64, by name:
 `vg_ecdsa_p192_sign(out = rdi, d = rsi, digest = rdx, k = rcx, scratch = r8)`,
 the result in `eax`.
 -/
@@ -56,8 +57,8 @@ def satState : State where
   rd := [⟨0x2000, 24⟩, ⟨0x3000, 24⟩, ⟨0x4000, 24⟩]
   wr := [⟨0x1000, 48⟩, ⟨0x8000, 8192⟩]
 
-theorem implies : signX86_64.Implies (Spec.Ecdsa.P192.inst.signContract X86_64.abi) := by
-  sig_implies [Spec.Ecdsa.P192.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+theorem implies : signX86_64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst X86_64.abi) := by
+  sig_implies [Spec.Ecdsa.P192.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.P192.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, signX86_64, sig]
     [satState] using satState
 

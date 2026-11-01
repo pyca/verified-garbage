@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
 import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
@@ -131,7 +132,7 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP521 :=
 theorem sign_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     Verified AArch64.target signP521
-      (Spec.Ecdsa.P521.inst.signContract (AArch64.abi.withConsts p521.combConsts)) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P521.inst (AArch64.abi.withConsts p521.combConsts)) :=
   Verified.of_correct (sign_a64 hL hI hT) sign_ct implies
 
 end VG.Proof.Ecdsa.AArch64.P521

@@ -48,7 +48,7 @@ public), and a state satisfying it (`mul_implies`).
 namespace VG.Proof.Weierstrass.X86_64.Mont
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64.Mont VG.Proof.Mont VG.Proof.Mont.X86_64
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus p521n)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus p521n)
 
 theorem p521n_m : p521n.m = n521 := by decide +kernel
 

@@ -4,13 +4,14 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.P521
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDSA over P-521 on 32-bit ARM: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P521.inst.signContract` for 32-bit ARM, by name:
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P521.inst` for 32-bit ARM, by name:
 `vg_ecdsa_p521_sign(out, d, digest, k, scratch)`, with `out`, `d`, `digest`
 and `k` in `r0`–`r3` and `scratch` on the stack (AAPCS), the result in `r0`
 (the low word of `r1:r0`).

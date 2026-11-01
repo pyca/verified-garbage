@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 @[expose] public section
 

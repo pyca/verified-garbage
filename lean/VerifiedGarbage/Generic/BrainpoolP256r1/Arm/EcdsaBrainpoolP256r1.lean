@@ -12,20 +12,10 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Generic.BrainpoolP256r1.Arm.EcdsaBrainpoolP256r1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List Artifact := [
-  Spec.Ecdsa.BrainpoolP256r1.signApi.artifact Arm.target {
-    consts := Impl.Weierstrass.Arm.brainpoolp256r1CombConsts
-    code := Impl.Ecdsa.Arm.signBrainpoolP256r1Comb
-    verified := Proof.Ecdsa.Arm.BrainpoolP256r1.combSign_verified h.law },
   Spec.Ecdsa.BrainpoolP256r1.verifyApi.artifact Arm.target {
     consts := Impl.Weierstrass.Arm.brainpoolp256r1CombConsts
     code := Impl.Ecdsa.Arm.verifyBrainpoolP256r1Comb
     verified := Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.combVerify_verified h.law },
-  Spec.Ecdsa.BrainpoolP256r1.signApi.artifact Arm.target {
-    suffix := "_umaal"
-    consts := Impl.Weierstrass.Arm.brainpoolp256r1CombConsts
-    code := Impl.Ecdsa.Arm.signBrainpoolP256r1CombU
-    verified := Proof.Ecdsa.Arm.BrainpoolP256r1.combSignU_verified h.law
-    features := ["umaal"] },
   Spec.Ecdsa.BrainpoolP256r1.verifyApi.artifact Arm.target {
     suffix := "_umaal"
     consts := Impl.Weierstrass.Arm.brainpoolp256r1CombConsts

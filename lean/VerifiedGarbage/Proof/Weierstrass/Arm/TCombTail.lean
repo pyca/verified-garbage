@@ -41,7 +41,7 @@ theorem selectTail_ok (K : TCombCfg) {s : State} {base : Addr} {size a : Nat}
       Rest [.r4,.r5,.r10] s t ∧ Outside base K.Q.x (24*K.L.M.n) s.mem t.mem := by
   have hy : K.Q.y=K.Q.x+8*K.L.M.n := rfl
   have hzz : K.Q.z=K.Q.x+16*K.L.M.n := by
-    simp only [TCombCfg.Q, VG.Impl.Weierstrass.Arm.Point.ptAt, Spec.Weierstrass.Point.elemBytes]
+    simp only [TCombCfg.Q, VG.Impl.Weierstrass.Arm.Point.ptAt, Impl.Weierstrass.Point.elemBytes]
     omega
   have hn := hs.nowrap
   unfold TCombCfg.selectTail

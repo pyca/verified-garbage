@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.CTExits
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Classify
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Data
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! # The parameter search in constant time (x86)
 

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): tables of bits, and masks of bits

@@ -317,9 +317,9 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_mul_mod_p}
 .base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAASIuH0AYAAEghyEgPyEiJRihIi4fYBgAASCHISA/ISIlGIEiLh+AGAABIIchID8hIiUYYSIuH6AYAAEghyEgPyEiJRhBIi4fwBgAASCHISA/ISIlGCEiLh/gGAABIIchID8hIiQZIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_p384_check_point = sym super::p384_check_point::vg_p384_check_point,
-        vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
-        vg_p384_inv_mod_p = sym super::p384_inverse::vg_p384_inv_mod_p,
+        vg_p384_check_point = sym super::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
+        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
+        vg_p384_inv_mod_p = sym super::ec_p384::vg_p384_inv_mod_p::vg_p384_inv_mod_p,
     )
 }
 
@@ -641,8 +641,8 @@ call {vg_p384_mul_mod_p_adx}
 call {vg_p384_mul_mod_p_adx}
 .base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAASIuH0AYAAEghyEgPyEiJRihIi4fYBgAASCHISA/ISIlGIEiLh+AGAABIIchID8hIiUYYSIuH6AYAAEghyEgPyEiJRhBIi4fwBgAASCHISA/ISIlGCEiLh/gGAABIIchID8hIiQZIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_p384_check_point_adx = sym super::p384_check_point::vg_p384_check_point_adx,
-        vg_p384_mul_mod_p_adx = sym super::p384_mont::vg_p384_mul_mod_p_adx,
-        vg_p384_inv_mod_p_adx = sym super::p384_inverse::vg_p384_inv_mod_p_adx,
+        vg_p384_check_point_adx = sym super::ec_p384_compressed::vg_p384_check_point_adx::vg_p384_check_point_adx,
+        vg_p384_mul_mod_p_adx = sym super::ec_p384::vg_p384_mul_mod_p_adx::vg_p384_mul_mod_p_adx,
+        vg_p384_inv_mod_p_adx = sym super::ec_p384::vg_p384_inv_mod_p_adx::vg_p384_inv_mod_p_adx,
     )
 }

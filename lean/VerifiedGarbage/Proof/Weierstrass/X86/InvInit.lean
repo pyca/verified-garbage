@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # Initial state of the 256-bit divstep inversion -/
 

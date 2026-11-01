@@ -228,7 +228,7 @@ theorem sqrCall_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       wordsVal s'.mem base o M.n < p384 ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % p384 =
         wordsVal s.mem base a M.n * wordsVal s.mem base a M.n % p384 := by
-  have := callProg_ok (f := Spec.Weierstrass.Mont.p384p.fn "sqr") hs hM (.inl hn) htmp ho ha ha
+  have := callProg_ok (f := Impl.Weierstrass.Mont.p384p.fn "sqr") hs hM (.inl hn) htmp ho ha ha
     (code := sqrFn384) rfl (fun A _ => A < p384) (fun A _ => A * A) hA
     (fun {W t} hp ha' => by rw [hn] at hp ha' ⊢; exact sqrFn384_ok hp ha')
   exact this

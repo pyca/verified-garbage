@@ -152,8 +152,8 @@ bl {vg_brainpoolp256r1_inv_mod_p}
 .inst 0xdac00c21,0xf9000281,0xf9400013,0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418
 .inst 0xf9401819,0xf9401c1e,0xd2800021,0x8a010060,0xd65f03c0
 .p2align 6",
-        vg_brainpoolp256r1_check_point = sym super::brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
-        vg_brainpoolp256r1_mul = sym super::brainpoolp256r1_mul::vg_brainpoolp256r1_mul,
-        vg_brainpoolp256r1_inv_mod_p = sym super::brainpoolp256r1_inverse::vg_brainpoolp256r1_inv_mod_p,
+        vg_brainpoolp256r1_check_point = sym super::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
+        vg_brainpoolp256r1_mul = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul::vg_brainpoolp256r1_mul,
+        vg_brainpoolp256r1_inv_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_inv_mod_p::vg_brainpoolp256r1_inv_mod_p,
     )
 }

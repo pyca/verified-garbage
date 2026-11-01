@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! # Resources supplied by the shared CRT-values cdecl contract -/
 

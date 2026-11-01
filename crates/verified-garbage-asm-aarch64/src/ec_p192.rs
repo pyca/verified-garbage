@@ -165,7 +165,15 @@ bl {vg_p192_inv_mod_p}
 .inst 0xf9400013,0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e
 .inst 0xd2800021,0x8a010060,0xd65f03c0
 .p2align 6",
-        vg_p192_mul = sym super::p192_mul::vg_p192_mul,
-        vg_p192_inv_mod_p = sym super::p192_inverse::vg_p192_inv_mod_p,
+        vg_p192_mul = sym super::ec_p192::vg_p192_mul::vg_p192_mul,
+        vg_p192_inv_mod_p = sym super::ec_p192::vg_p192_inv_mod_p::vg_p192_inv_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_inv_mod_p.rs"]
+pub(crate) mod vg_p192_inv_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_mul.rs"]
+pub(crate) mod vg_p192_mul;

@@ -129,22 +129,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 
 namespace VG.Generic.P521.X86_64.EcdsaP521
 
-/-- The function of `Spec.Ecdsa.P521.signApi`, multiplying modulo `p` with BMI2
-and ADX and selecting the comb's entries with AVX2 (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction
-writing `rsp` (`hsp`). -/
-def sign (adx : Bool) (code : Prog X86_64.isa)
-    (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.Ecdsa.P521.signApi.artifact X86_64.target {
-    suffix := (if adx then "_adx" else "")
-    consts := Impl.Ecdsa.X86_64.p521.combConsts
-    code
-    stack := 8
-    verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
-
 /-- The function of `Spec.Ecdsa.P521.verifyApi`, multiplying modulo `p` with
 BMI2 and ADX (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
 instruction writing `rsp` (`hsp`). -/
@@ -162,12 +146,8 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     features := if adx then ["bmi2", "adx"] else [] }
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
-  sign false Impl.Ecdsa.X86_64.signP521
-    (Proof.Ecdsa.X86_64.P521.sign_verified h.law (Proof.P521.combOk7 h.law) h.inv),
   verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP521
     (Proof.Ecdsa.Verify.X86_64.P521.jointVerify_verified h.law (Proof.P521.combOk7 h.law) h.inv),
-  sign true Impl.Ecdsa.X86_64.signP521Adx
-    (Proof.Ecdsa.X86_64.P521.sign_verified_adx h.law (Proof.P521.combOk7 h.law) h.inv),
   verify true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx
     (Proof.Ecdsa.Verify.X86_64.P521.jointVerify_verified_adx h.law (Proof.P521.combOk7 h.law) h.inv)]
 

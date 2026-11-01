@@ -174,7 +174,7 @@ theorem callOp_ok {f : String} {body : Prog isa} (hsp : NoSp body) (hst : stackU
 
 /-- What the calls need of a modulus: the product's facts (`MulOk`), at
 most nine 64-bit words, and code that never writes `esp`. -/
-structure FnOk (S : Spec.Weierstrass.Mont.Modulus) : Prop where
+structure FnOk (S : Impl.Weierstrass.Mont.Modulus) : Prop where
   mul : MulOk S.k S.m
   k9 : S.k ≤ 9
   nsMul : NoSp (mulFn S.k S.m)
@@ -182,7 +182,7 @@ structure FnOk (S : Spec.Weierstrass.Mont.Modulus) : Prop where
   nsSub : NoSp (subFn S.k S.m)
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
-theorem mulCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s base 8192) {o a b : Nat}
+theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s base 8192) {o a b : Nat}
     (ho : o + 8 * S.k ≤ own S.k) (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
     (hB : wordsVal s.mem base b S.k < S.m) :
     WP isa (mulCall S o a b) s fun s' => CallKeep S.k base o s s' ∧
@@ -209,7 +209,7 @@ theorem mulCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
     · rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V₂
 
 /-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`. -/
-theorem addCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s base 8192) {o a b : Nat}
+theorem addCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s base 8192) {o a b : Nat}
     (ho : o + 8 * S.k ≤ own S.k) (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
     (hAB : wordsVal s.mem base a S.k + wordsVal s.mem base b S.k < 2 * S.m) :
     WP isa (addCall S o a b) s fun s' => CallKeep S.k base o s s' ∧
@@ -229,7 +229,7 @@ theorem addCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
     rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V
 
 /-- `[o] = [a] - [b] mod m` by a call of `vg_<curve>_sub_mod_<p|n>`. -/
-theorem subCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s base 8192) {o a b : Nat}
+theorem subCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s base 8192) {o a b : Nat}
     (ho : o + 8 * S.k ≤ own S.k) (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
     (hA : wordsVal s.mem base a S.k < S.m) (hB : wordsVal s.mem base b S.k < S.m) :
     WP isa (subCall S o a b) s fun s' => CallKeep S.k base o s s' ∧

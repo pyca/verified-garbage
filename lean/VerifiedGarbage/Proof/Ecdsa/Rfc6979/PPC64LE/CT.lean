@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Correct
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
@@ -575,7 +576,7 @@ abbrev coreWr (P : Rfc) (L : Lay P.I.hashLen) : List Region :=
 
 theorem coreAt {L : Lay P.I.hashLen} (hL : L.Ok) (hq : L.q = P.c.len) {u : State} (hc : Ctx L g lr m₀ u)
     (ha : CoreRegs L u) :
-    (P.R.E.signContract PPC64LE.abi).pre (u.callEntry.withRegions (coreRd P L) (coreWr P L)) ∧
+    (Proof.Ecdsa.Instance.signContract P.R.E PPC64LE.abi).pre (u.callEntry.withRegions (coreRd P L) (coreWr P L)) ∧
       Covers (coreRd P L ++ coreWr P L) (u.rd ++ u.wr) ∧ Covers (coreWr P L) u.wr := by
   obtain ⟨h3, h4, h5, h6, h7⟩ := ha
   have hQ : P.R.E.curve.len = L.q := by rw [← P.hcl, hq]
@@ -600,7 +601,7 @@ theorem core_ct {i : Nat} :
     fun _ _ _ _ _ _ _ u₁ u₂ h => by
       obtain ⟨-, a3, a4, a5, a6, a7⟩ := h.f₁
       obtain ⟨-, b3, b4, b5, b6, b7⟩ := h.f₂
-      sig_pub [Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig, Spec.Ecdsa.scratchWords,
+      sig_pub [Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig, Spec.Ecdsa.scratchWords,
         PPC64LE.abi, PPC64LE.argRegs, stackBelow]
       exact ⟨by rw [h.c₁.sp, h.c₂.sp], by rw [a3, b3], by rw [a4, b4], by rw [a5, b5], by rw [a6, b6],
         by rw [a7, b7]⟩

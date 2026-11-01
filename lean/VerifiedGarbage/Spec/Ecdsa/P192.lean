@@ -4,10 +4,10 @@ public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.P192
 
 /-!
-# ECDSA over P-192: the contracts, on every target
+# ECDSA over P-192: its instance
 
 **Trusted** (as every file in `Spec/`). The `Instance` of P-192
-(`Spec/P192.lean`): `vg_ecdsa_p192_sign`, in the module `ecdsa_p192`.
+(`Spec/P192.lean`), for the functions of the module `ecdsa_p192`.
 -/
 
 @[expose] public section
@@ -19,8 +19,5 @@ def inst : Instance where
   curve := Spec.P192.curve
   name := "p192"
   title := "P-192"
-
-/-- `vg_ecdsa_p192_sign` on every target. -/
-def signApi : Api := inst.signApi
 
 end VG.Spec.Ecdsa.P192

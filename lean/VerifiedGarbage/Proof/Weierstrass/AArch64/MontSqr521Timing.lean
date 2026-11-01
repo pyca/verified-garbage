@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.RegSet
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 
-open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Spec.Weierstrass.Mont
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Impl.Weierstrass.Mont
 open VG.Impl.Mont.AArch64.P521Square
 
 private theorem entry_split : VG.Impl.Mont.AArch64.P521Square.entry =

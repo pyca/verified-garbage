@@ -57,7 +57,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSou
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.P256.curve = 0; rw [p256_nBits]
-  coreN := Spec.Ecdsa.P256.signApi.name
+  coreN := "vg_ecdsa_p256_sign"
   coreC := Impl.P256.Booth.sign
   coreX := Proof.Ecdsa.AArch64.booth_sign_a64 hL hI (Proof.Ecdsa.AArch64.booth_comb_correct hL hI hT)
   coreCT := Proof.Ecdsa.AArch64.booth_sign_ct

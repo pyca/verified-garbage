@@ -167,11 +167,11 @@ def τCall : VG.X86.Taint.T :=
     argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 20 }
 
 taint_summary mulSum : sseTaint τCall
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p256p.k Impl.Weierstrass.Mont.p256p.m)
 taint_summary addSum : sseTaint τCall
-  (Impl.Weierstrass.X86.Mont.addFn Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p256p.k Impl.Weierstrass.Mont.p256p.m)
 taint_summary subSum : sseTaint τCall
-  (Impl.Weierstrass.X86.Mont.subFn Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p256p.k Impl.Weierstrass.Mont.p256p.m)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP256 := by
   obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check τ₀ exchangeP256 h).isSome = true := by

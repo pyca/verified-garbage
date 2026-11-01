@@ -21,9 +21,9 @@ def p384 : Cfg where
   comb := some ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", true, true⟩
   fastN := true
   hot := true
-  mulBase := some Spec.Weierstrass.MulBase.p384
-  inverse := some Spec.Weierstrass.Inverse.p384
-  checkPoint := some Spec.Weierstrass.CheckPoint.p384
+  mulBase := some Impl.Weierstrass.MulBase.p384
+  inverse := some Impl.Weierstrass.Inverse.p384
+  checkPoint := some Impl.Weierstrass.CheckPoint.p384
 
 /-- `vg_ecdsa_p384_sign`. -/
 def signP384 : Prog isa := p384.sign

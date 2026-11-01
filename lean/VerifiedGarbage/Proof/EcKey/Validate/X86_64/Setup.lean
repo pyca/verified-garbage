@@ -6,6 +6,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.X25519.X86_64.Step
 public import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # Standalone point validation: reuse the existing setup and checks -/
 

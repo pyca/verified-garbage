@@ -80,6 +80,10 @@ jne 20b
         vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
-        vg_ecdsa_p384_sign = sym super::ecdsa_p384::vg_ecdsa_p384_sign,
+        vg_ecdsa_p384_sign = sym super::ecdsa_p384::vg_ecdsa_p384_sign::vg_ecdsa_p384_sign,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_add_mod_n.rs"]
+pub(crate) mod vg_p384_add_mod_n;

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.Slots
-public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 public import VerifiedGarbage.TCB.RISCV64.Isa
 
 /-!
@@ -9,7 +9,7 @@ public import VerifiedGarbage.TCB.RISCV64.Isa
 
 Code for curves whose field elements are numbers of 64-bit words in slots
 of the working space, in Montgomery form, and whose arithmetic modulo `p`
-or `n` is calls of the functions of `Spec/Weierstrass/Mont.lean` (`Field`:
+or `n` is calls of the functions of `Proof/Weierstrass/MontContract.lean` (`Field`:
 their names and code), which use the bytes of the working space from
 `ownAt k` to 4096 for themselves. The working space's base is in `s0`,
 which the callees keep (a callee-saved register); a point is three slots,
@@ -48,7 +48,7 @@ abbrev ctr : Reg := .s1
 
 /-- The functions of a modulus: its contract's names (`S`), and their code. -/
 structure Field where
-  S : Spec.Weierstrass.Mont.Modulus
+  S : Impl.Weierstrass.Mont.Modulus
   mul : Prog isa
   add : Prog isa
   sub : Prog isa

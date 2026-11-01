@@ -22,7 +22,7 @@ pub unsafe extern "sysv64" fn vg_ec_brainpoolp384r1_compress_public_key(out: *mu
 call {vg_brainpoolp384r1_check_point}
 .base64 "SIuPgAgAAEiLlwAHAABIg+IBSIPCAkghyogWSIuHcAYAAEghyEgPyEiJRilIi4d4BgAASCHISA/ISIlGIUiLh4AGAABIIchID8hIiUYZSIuHiAYAAEghyEgPyEiJRhFIi4eQBgAASCHISA/ISIlGCUiLh5gGAABIIchID8hIiUYBSInISIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oww=="
 .p2align 6"#,
-        vg_brainpoolp384r1_check_point = sym super::brainpoolp384r1_check_point::vg_brainpoolp384r1_check_point,
+        vg_brainpoolp384r1_check_point = sym super::ec_brainpoolp384r1_compressed::vg_brainpoolp384r1_check_point::vg_brainpoolp384r1_check_point,
     )
 }
 
@@ -53,3 +53,7 @@ jne 21b
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_check_point.rs"]
+pub(crate) mod vg_brainpoolp384r1_check_point;

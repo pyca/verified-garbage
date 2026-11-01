@@ -16,7 +16,7 @@ open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass VG.Impl.Weierst
   VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass.X86.Inv
 variable {c : Cfg}
 
-theorem invW_pwW {M : Mod} {F : Spec.Weierstrass.Mont.Modulus} (h4 : c.n = 4) (htmp : M.tmp = c.sl TMP)
+theorem invW_pwW {M : Mod} {F : Impl.Weierstrass.Mont.Modulus} (h4 : c.n = 4) (htmp : M.tmp = c.sl TMP)
     {base m : Nat} :
     ∀ w ∈ invW (InvCfg.ofMod M F (c.sl ACC) (c.sl base) (invAt c.n) m),
       ∃ w' ∈ pwW c, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by

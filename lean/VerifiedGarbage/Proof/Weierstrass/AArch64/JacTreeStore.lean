@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-! Store the new table multiple and advance the public loop counters. -/
 

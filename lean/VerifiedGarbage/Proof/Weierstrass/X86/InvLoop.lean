@@ -16,6 +16,7 @@ public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! ## `InvStep` -/
 

@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.PPC64LE
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 public import VerifiedGarbage.Spec.Hmac.Generic
 public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
@@ -207,9 +209,9 @@ structure Core where
   E : Spec.Ecdsa.Instance
   C : Prog isa
   N : String
-  V : ∀ s, (E.signContract PPC64LE.abi).pre s → ∃ t s', Exec isa C s t s' ∧ abiPreserved s s' ∧
-    (E.signContract PPC64LE.abi).post s s'
-  ct : ConstantTime isa (E.signContract PPC64LE.abi).pre (E.signContract PPC64LE.abi).pub C
+  V : ∀ s, (Proof.Ecdsa.Instance.signContract E PPC64LE.abi).pre s → ∃ t s', Exec isa C s t s' ∧ abiPreserved s s' ∧
+    (Proof.Ecdsa.Instance.signContract E PPC64LE.abi).post s s'
+  ct : ConstantTime isa (Proof.Ecdsa.Instance.signContract E PPC64LE.abi).pre (Proof.Ecdsa.Instance.signContract E PPC64LE.abi).pub C
   d : sdepth C ≤ 96
 
 theorem corePre (R : Core) {s : State} {out d dg k scr : Addr}
@@ -224,9 +226,9 @@ theorem corePre (R : Core) {s : State} {out d dg k scr : Addr}
     (n₁ : out.toNat + 2 * R.E.curve.len ≤ 2 ^ 64) (n₂ : d.toNat + R.E.curve.len ≤ 2 ^ 64)
     (n₃ : dg.toNat + R.E.curve.len ≤ 2 ^ 64) (n₄ : k.toNat + R.E.curve.len ≤ 2 ^ 64)
     (n₅ : scr.toNat + 8192 ≤ 2 ^ 64)
-    : (R.E.signContract PPC64LE.abi).pre (s.callEntry.withRegions
+    : (Proof.Ecdsa.Instance.signContract R.E PPC64LE.abi).pre (s.callEntry.withRegions
       [⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] [⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩]) := by
-  sig_pre [Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig, Spec.Ecdsa.scratchWords,
+  sig_pre [Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig, Spec.Ecdsa.scratchWords,
     PPC64LE.abi, PPC64LE.argRegs, stackBelow]
   simp only [h3, h4, h5, h6, h7]
   exact ⟨trivial, trivial, o₁, o₂, o₃, o₄, c₁, c₂, c₃, n₁, n₂, n₃, n₄, n₅⟩
@@ -260,12 +262,12 @@ theorem coreCall (R : Core) {s : State} {out d dg k scr : Addr}
             Spec.Ecdsa.bytesAt s'.mem out (2 * R.E.curve.len) = List.replicate (2 * R.E.curve.len) 0) →
       Q s') :
     WP isa (.call R.N R.C) s Q := by
-  refine WP.callAny (k := R.E.signContract PPC64LE.abi) R.V
+  refine WP.callAny (k := Proof.Ecdsa.Instance.signContract R.E PPC64LE.abi) R.V
     (rd := [⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩])
     (wr := [⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩])
     (corePre R h3 h4 h5 h6 h7 o₁ o₂ o₃ o₄ c₁ c₂ c₃ n₁ n₂ n₃ n₄ n₅) hc hw ?_ (by have := R.d; omega_arith)
   · intro s' h₁ h₂ h₃ h₄ hcs hpost
-    sig_post [Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig, Spec.Ecdsa.scratchWords,
+    sig_post [Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig, Spec.Ecdsa.scratchWords,
       PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost
     simp only [h3, h4, h5, h6] at hpost
     exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := R.d; omega_arith) (by omega_arith)) hcs hpost

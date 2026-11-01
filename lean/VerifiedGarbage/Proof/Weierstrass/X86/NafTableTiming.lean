@@ -18,7 +18,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86
 
-theorem nafTableStore_relCT {FM : Spec.Weierstrass.Mont.Modulus} {wk : Nat}
+theorem nafTableStore_relCT {FM : Impl.Weierstrass.Mont.Modulus} {wk : Nat}
     {K : WinCfg} {base : Addr} {size j m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hW : WkOk FM K.M m size wk Sl) (hn : K.M.n=4)
     (hy : K.R.y=K.R.x+32) (hz : K.R.z=K.R.x+64)
@@ -55,7 +55,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.X86 VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-structure NafTableChecks (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prop where
+structure NafTableChecks (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prop where
   double : ScratchCT (fprog F (dblJMul K.S K.P (Naf.twice K)))
   copyFirst : ScratchCT (.block (copyPt K.M.n (K.tblPt 1) K.P))
   copyInit : ScratchCT (.block (copyPt K.M.n K.R K.P))
@@ -68,7 +68,7 @@ structure NafTableChecks (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prop
 def NafTablePair (K : WinCfg) (C : Curve) (base : Addr) (size m : Nat) (s t : State) : Prop :=
   ∃ E, FieldPair K.M base size C.p (·∈nafSlots K) (nafTableLive K m) E (BitVec.ofNat 32 m) s t
 
-theorem nafTable_init_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
+theorem nafTable_init_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : NafLay K size) (hW : WkOk F K.M C.p size wk (·∈nafSlots K)) (hm : UnitMod C.p (2^(64*K.M.n)))
     (hc : NafTableChecks K F) {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (·∈nafSlots K) (winRo K) E counter)
@@ -134,7 +134,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.X86 VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem nafTable_step_relCT {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
+theorem nafTable_step_relCT {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     (hL : NafLay K size) (hW : WkOk F K.M C.p size wk (·∈nafSlots K)) (hJ : K.J=65) (hm : UnitMod C.p (2^(64*K.M.n)))
     (hOne : K.one<C.p) (hm8 : m<8) (hc : NafTableChecks K F) :
     RelCT isa (NafTablePair K C base size m) (Naf.tableStep K F)
@@ -206,7 +206,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem nafTable_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
+theorem nafTable_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : NafLay K size) (hW : WkOk F K.M C.p size wk (·∈nafSlots K)) (hJ : K.J=65) (hm : UnitMod C.p (2^(64*K.M.n)))
     (hOne : K.one<C.p) (hc : NafTableChecks K F) {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (·∈nafSlots K) (winRo K) E counter)

@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-! The generator's digit `j` of width nine as the joint loop reads it, from its two bytes alone,
 for any number of digits (`jointFixedRead_ok` and `jointSignRead_ok` assume P-256's 257). -/

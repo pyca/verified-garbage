@@ -38,8 +38,8 @@ namespace VG.Proof.Ecdsa.X86.P521.Mul
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Ecdsa.X86 VG.Proof
 open VG.Proof.Weierstrass.X86 (SpOk)
 
-/-- P-521's curve of `Spec/Weierstrass/Mul.lean`: the one its code has. -/
-abbrev C : Spec.Weierstrass.Mul.Curve := Spec.Weierstrass.Mul.p521
+/-- P-521's curve of `Proof/Weierstrass/MulContract.lean`: the one its code has. -/
+abbrev C : Impl.Weierstrass.Mul.Curve := Impl.Weierstrass.Mul.p521
 
 theorem C_eq : C = mulCurve p521 "p521" "P-521" := rfl
 
@@ -51,7 +51,7 @@ theorem mul_ct : ConstantTime isa (mulX86 C).pre (mulX86 C).pub mulP521 :=
     (by native_taint_decide)
 
 theorem sat_consts : C.ConstsOk 0 (mulSatMem p521) := by
-  unfold Spec.Weierstrass.Mul.Curve.ConstsOk
+  unfold Impl.Weierstrass.Mul.Curve.ConstsOk
   exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
 
 theorem sat_x : (mulCurve p521 "p521" "P-521").toPoint.coordAt (mulSatMem p521) 0 (p521.sl RX) =
@@ -66,7 +66,7 @@ theorem sat_point (hL : Weierstrass.Law Spec.P521.curve) :
 
 theorem sat_pre (hL : Weierstrass.Law Spec.P521.curve) : (C.mulInRangeContract X86.abi 20).pre (mulSatState p521) :=
   Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.Weierstrass.MulBase.sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
+    sig_reduce [Sig.wfPre, Impl.Weierstrass.MulBase.sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
       mulSatState]
     exact ⟨by decide, sat_consts, sat_point hL⟩)
 

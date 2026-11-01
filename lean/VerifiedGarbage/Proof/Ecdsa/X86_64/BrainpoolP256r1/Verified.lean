@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
@@ -151,10 +152,10 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signBrainpoolP2
       · exact h0) rfl (by taint_decide)
 
 /-- The contract with 8 bytes of stack, for the calls' return address. -/
-theorem implies8 : signX86_64.Implies (Spec.Ecdsa.BrainpoolP256r1.inst.signContract X86_64.abi 8) :=
+theorem implies8 : signX86_64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP256r1.inst X86_64.abi 8) :=
   implies.stack8_abi (by
-    sig_implies_sat [Spec.Ecdsa.BrainpoolP256r1.inst, Spec.Ecdsa.Instance.signContract,
-      Spec.Ecdsa.Instance.signSig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
+    sig_implies_sat [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.Instance.signContract,
+      Proof.Ecdsa.Instance.signSig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
       X86_64.argRegs, satState] [satState] using satState)
 
 /-- The output is apart from the calls' return address. -/
@@ -173,7 +174,7 @@ theorem sign_call_x86 (hL : Law Spec.BrainpoolP256r1.curve) (hI : InvSounds) (s 
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
-    (hs : (Spec.Ecdsa.BrainpoolP256r1.inst.signContract X86_64.abi 8).pre s)
+    (hs : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP256r1.inst X86_64.abi 8).pre s)
     (hp : signX86_64.post s b) : signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -⟩ := implies8.pre s hs
   have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 64)
@@ -183,7 +184,7 @@ theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
 theorem sign_verified (hL : Law Spec.BrainpoolP256r1.curve)
     (hI : InvSounds) :
     Verified X86_64.target signBrainpoolP256r1
-      (Spec.Ecdsa.BrainpoolP256r1.inst.signContract X86_64.abi 8) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP256r1.inst X86_64.abi 8) :=
   Verified.of_inline_ct (by lit_decide) (sign_x86 hL hI) sign_ct implies8
     (fun _ h => Sig.clear_of_pre h) sign_patch
 

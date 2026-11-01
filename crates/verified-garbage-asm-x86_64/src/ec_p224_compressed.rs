@@ -22,7 +22,7 @@ pub unsafe extern "sysv64" fn vg_ec_p224_compress_public_key(out: *mut [u8; 29],
 call {vg_p224_check_point}
 .base64 "SIuPwAUAAEiLl8AEAABIg+IBSIPCAkghyogWSIuHYAQAAEghyEgPyEiJRhVIi4doBAAASCHISA/ISIlGDUiLh3AEAABIIchID8hIiUYFSIuHeAQAAEghyEiJwkjB6hiIVgFIicJIweoQiFYCSInCSMHqCIhWA0iJwohWBEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p224_check_point = sym super::p224_check_point::vg_p224_check_point,
+        vg_p224_check_point = sym super::ec_p224_compressed::vg_p224_check_point::vg_p224_check_point,
     )
 }
 
@@ -73,3 +73,7 @@ jne 24b
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_check_point.rs"]
+pub(crate) mod vg_p224_check_point;

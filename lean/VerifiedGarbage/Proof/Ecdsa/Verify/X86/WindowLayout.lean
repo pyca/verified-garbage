@@ -35,8 +35,8 @@ tactic_template "window_layout" h:term : tactic => `(tactic|
                      Impl.Ecdsa.X86.Cfg.rcbSlots, Impl.Ecdsa.X86.Cfg.pt, Impl.Ecdsa.X86.Cfg.sl,
                      slot, ($h), winSlots, winRo, winOther, winWs, winTblSlots, rcbW,
                      List.map_append, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
-                     winW, Impl.Ecdh.X86.Cfg.windowBits, Mont.outW, Mont.own, Spec.Weierstrass.Mont.ownAt,
-                     Spec.Weierstrass.Mont.ownBytes, words, List.forall_mem_cons, List.forall_mem_nil, List.forall_mem_append,
+                     winW, Impl.Ecdh.X86.Cfg.windowBits, Mont.outW, Mont.own, Impl.Weierstrass.Mont.ownAt,
+                     Impl.Weierstrass.Mont.ownBytes, words, List.forall_mem_cons, List.forall_mem_nil, List.forall_mem_append,
                      List.forall_mem_map]; decide +kernel))
 
 /-- The variable-base table is disjoint from all original slots. -/

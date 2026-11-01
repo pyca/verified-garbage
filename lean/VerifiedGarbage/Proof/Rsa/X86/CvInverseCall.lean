@@ -23,6 +23,7 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # The general inverse of CRT parameter calculation: a call of `vg_rsa_keygen_inverse`
 

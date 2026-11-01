@@ -27,7 +27,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJLoop
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
@@ -39,7 +39,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # ECDH over P-384 (SP 800-56A) on AArch64 -/
 

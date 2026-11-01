@@ -127,11 +127,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 namespace VG.Generic.P224.X86_64.EcdsaP224
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Artifact := [
-  Spec.Ecdsa.P224.signApi.artifact X86_64.target {
-    consts := Impl.Ecdsa.X86_64.p224.combConsts
-    code := Impl.Ecdsa.X86_64.signP224
-    stack := 8
-    verified := Proof.Ecdsa.X86_64.P224.sign_verified h.law (Proof.P224.combOk7 h.law) h.inv },
   Spec.Ecdsa.P224.verifyApi.artifact X86_64.target {
     consts := Impl.Ecdsa.X86_64.p224.combConsts
     code := Impl.Ecdsa.Verify.X86_64.jointVerifyP224

@@ -28,7 +28,7 @@ namespace VG.Proof.Weierstrass.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Weierstrass.RISCV64
 open VG.Proof.Mont
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus ownAt ownBytes)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus ownAt ownBytes)
 
 /-- The working space: its base in `s0`, aligned, its `8192` bytes writable,
 not wrapping around. -/
@@ -147,9 +147,9 @@ theorem callOp_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFram
   have e3 : offArg e .a3 = (BitVec.ofNat 64 b).setWidth 32 := by
     simp only [e, offArg, State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), g3]
   have em : e.mem = s.mem := by simp only [e, State.withRegions_mem, State.callEntry_mem, m₄]
-  have fit : ∀ x, x + 8 * S.k ≤ own S.k → Spec.Weierstrass.Mont.Fits S.k ((BitVec.ofNat 64 x).setWidth 32) :=
+  have fit : ∀ x, x + 8 * S.k ≤ own S.k → Impl.Weierstrass.Mont.Fits S.k ((BitVec.ofNat 64 x).setWidth 32) :=
     fun x hx => by
-      simp only [Spec.Weierstrass.Mont.Fits]
+      simp only [Impl.Weierstrass.Mont.Fits]
       rw [toNat_lo (by simp only [own, ownAt, ownBytes] at hx; omega)]
       exact hx
   have hpe : rvPre S e := ⟨rfl, by simp only [e, State.withRegions_wr, e0], by rw [e0]; exact hw.nowrap,

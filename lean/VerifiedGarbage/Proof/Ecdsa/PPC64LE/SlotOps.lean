@@ -25,12 +25,12 @@ variable {c : Cfg}
 /-- What a call writing slot `o` changes. -/
 abbrev callW (c : Cfg) (o : Nat) : List (Nat × Nat) := [(c.sl o, 8 * c.n), (own c.n, 64 * c.n)]
 
-theorem callW_unch {S : Spec.Weierstrass.Mont.Modulus} (hk : S.k = c.n) {base : Addr} {o : Nat} {s s' : State}
+theorem callW_unch {S : Impl.Weierstrass.Mont.Modulus} (hk : S.k = c.n) {base : Addr} {o : Nat} {s s' : State}
     (h : CallKeep S.k base (c.sl o) s s') : Unch base (callW c o) s.mem s'.mem := by
   have h' := h.mem; rw [Kept, hk] at h'; exact h'
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
-theorem slMul_ok {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hM : ModOk S.k S.m) (hk : S.k = c.n)
+theorem slMul_ok {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hM : ModOk S.k S.m) (hk : S.k = c.n)
     (hm : S.m = m) (h7 : c.n < 10) {s : State} {base : Addr} (hw : WsReg s base) {o a b : Nat}
     (ho : o < 45) (ha : a < 45) (hb : b < 45) (hB : sv c base s b < m) :
     WP isa (mulCall S (c.sl o) (c.sl a) (c.sl b)) s fun s' => Rk fnClob s s' ∧
@@ -44,7 +44,7 @@ theorem slMul_ok {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hM : ModOk S.k S
   · rw [hk, hm] at e; exact e
 
 /-- `[o] = [a] + [b] mod m`. -/
-theorem slAdd_ok {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hM : ModOk S.k S.m) (hk : S.k = c.n)
+theorem slAdd_ok {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hM : ModOk S.k S.m) (hk : S.k = c.n)
     (hm : S.m = m) (h7 : c.n < 10) {s : State} {base : Addr} (hw : WsReg s base) {o a b : Nat}
     (ho : o < 45) (ha : a < 45) (hb : b < 45) (hAB : sv c base s a + sv c base s b < 2 * m) :
     WP isa (addCall S (c.sl o) (c.sl a) (c.sl b)) s fun s' => Rk fnClob s s' ∧
@@ -56,7 +56,7 @@ theorem slAdd_ok {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hM : ModOk S.k S
   rw [hk, hm] at e; exact e
 
 /-- `[o] = [a] - [b] mod m`. -/
-theorem slSub_ok {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hM : ModOk S.k S.m) (hk : S.k = c.n)
+theorem slSub_ok {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hM : ModOk S.k S.m) (hk : S.k = c.n)
     (hm : S.m = m) (h7 : c.n < 10) {s : State} {base : Addr} (hw : WsReg s base) {o a b : Nat}
     (ho : o < 45) (ha : a < 45) (hb : b < 45) (hA : sv c base s a < m) (hB : sv c base s b < m) :
     WP isa (subCall S (c.sl o) (c.sl a) (c.sl b)) s fun s' => Rk fnClob s s' ∧

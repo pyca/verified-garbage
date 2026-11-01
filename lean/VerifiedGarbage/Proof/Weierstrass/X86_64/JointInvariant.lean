@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 
 /-! Stable tables and public digits around the shared Jacobian accumulator. -/
 

@@ -13,7 +13,7 @@ open VG.Arm
 /-- brainpoolP512r1 as the code has it, its field multiplications by
 `vg_brainpoolp512r1_mul_mod_<p|n>_umaal` if `u`. -/
 def brainpoolp512r1With (u : Bool) : Cfg :=
-  ⟨8, Spec.BrainpoolP512r1.curve, Spec.Weierstrass.Mont.brainpoolp512r1p, Spec.Weierstrass.Mont.brainpoolp512r1n, none, u⟩
+  ⟨8, Spec.BrainpoolP512r1.curve, Impl.Weierstrass.Mont.brainpoolp512r1p, Impl.Weierstrass.Mont.brainpoolp512r1n, none, u⟩
 
 /-- brainpoolP512r1 as the code has it. -/
 def brainpoolp512r1 : Cfg := brainpoolp512r1With false

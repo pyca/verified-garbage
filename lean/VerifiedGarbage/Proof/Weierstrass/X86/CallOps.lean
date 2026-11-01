@@ -46,14 +46,14 @@ theorem stkOk_of {sp : BitVec 32} {base : Addr} {size z : Nat} (hz : 20 ≤ z) (
 
 /-- The functions of `F` compute modulo `m` on numbers of `M.n` words, in a
 working space of 8192 bytes, with their own working space at `wk`. -/
-structure CallCfg (F : Spec.Weierstrass.Mont.Modulus) (M : Mod) (m size wk : Nat) : Prop where
+structure CallCfg (F : Impl.Weierstrass.Mont.Modulus) (M : Mod) (m size wk : Nat) : Prop where
   fn : Mont.FnOk F
   k : F.k = M.n
   fm : F.m = m
   size : size = 8192
   own : wk = Mont.own M.n
 
-theorem CallCfg.own_le {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {m size wk : Nat}
+theorem CallCfg.own_le {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {m size wk : Nat}
     (h : CallCfg F M m size wk) : wk + 64 * M.n = 4096 := by
   have := (Mont.saveAt_le (k := M.n) (by rw [← h.k]; exact h.fn.mul.k0) (by rw [← h.k]; exact h.fn.k9)).2
   rw [h.own]; exact this
@@ -78,7 +78,7 @@ theorem CKeep.unch {M : Mod} {base : Addr} {wk o : Nat} {s s' : State} (h : CKee
 theorem CKeep.keeps {M : Mod} {base : Addr} {wk o : Nat} {s s' : State} (h : CKeep M base wk o s s') :
     Keeps clob s s' := ⟨h.gpr, h.rd, h.wr⟩
 
-theorem CKeep.of_call {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {wk o : Nat}
+theorem CKeep.of_call {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {wk o : Nat}
     {s s' : State} (hk : F.k = M.n) (hwk : wk = Mont.own M.n) (h : Mont.CallKeep F.k base o s s') :
     CKeep M base wk o s s' :=
   ⟨fun r hr => h.gpr r fun h' => hr (by
@@ -89,7 +89,7 @@ theorem CKeep.of_call {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr
     rcases hr with rfl | rfl | rfl <;> simp [hk, hwk])⟩
 
 section
-variable {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {m size wk : Nat} (hC : CallCfg F M m size wk)
+variable {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {m size wk : Nat} (hC : CallCfg F M m size wk)
   {s : State} {base : Addr} (hs : Scr s base size) {o a b : Nat} (ho : o + 8 * M.n ≤ wk)
   (ha : a + 8 * M.n ≤ wk) (hb : b + 8 * M.n ≤ wk)
 include hC hs ho ha hb

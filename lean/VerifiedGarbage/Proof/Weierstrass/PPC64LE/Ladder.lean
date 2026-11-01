@@ -74,7 +74,7 @@ structure LadLayI (L : LadderCfg) : Prop where
   nbits : L.nbits < 2 ^ 15
 
 theorem own_add (n : Nat) (h : 8 * n ≤ own n) : own n + 64 * n = 4096 := by
-  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes] at h ⊢; omega
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes] at h ⊢; omega
 
 /-- A slot the ladder does not write is apart from what it writes. -/
 theorem LadLayI.apart_wx {L : LadderCfg} (hL : LadLayI L) {x : Nat} (hx : x ∈ ladSlots L)
@@ -136,7 +136,7 @@ theorem keep_unch {L : LadderCfg} {base : Addr} {W : List Nat} {s s' : State}
 
 /-- The two additions, from a state holding `E` in the slots `ladR`. -/
 theorem ladAdds_ok {L : LadderCfg} {C : Curve} {base : Addr} (hL : LadLayI L)
-    {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) (hkS : S.k = L.M.n) (hmS : S.m = C.p)
+    {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) (hkS : S.k = L.M.n) (hmS : S.m = C.p)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) {E : Nat → Fe C} {s : State}
     (hI : Inv L.M.n base C.p (· ∈ ladSlots L) (ladR L) E s) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s', AddsPost L C base E s s' → WP isa rest s' Q) :
@@ -214,7 +214,7 @@ section body
 variable {L : LadderCfg} {C : Curve} {base : Addr}
 
 /-- An iteration. -/
-theorem ladderBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Spec.Weierstrass.Mont.Modulus}
+theorem ladderBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Impl.Weierstrass.Mont.Modulus}
     (hM : ModOk S.k S.m) (hkS : S.k = L.M.n) (hmS : S.m = C.p) (hp : UnitMod C.p (2 ^ (64 * L.M.n)))
     (hL : LadLayI L) {s₀ : State} (hlt₀ : ∀ x ∈ ladRo L, wordsVal s₀.mem base x L.M.n < C.p)
     (hstep : Step L C base s₀ k Q)
@@ -300,7 +300,7 @@ theorem ladderBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S
 /-- `Q 0` accepts what `R` holds at the end, if `Q L.nbits` accepts what it
 holds at the start and an iteration keeps `Q` (`Step`), for the scalar `k`
 whose bits are the table at `L.bits`; only `powClob` and `ladWx` change. -/
-theorem ladder_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Spec.Weierstrass.Mont.Modulus}
+theorem ladder_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : Impl.Weierstrass.Mont.Modulus}
     (hM : ModOk S.k S.m) (hkS : S.k = L.M.n) (hmS : S.m = C.p) (hp : UnitMod C.p (2 ^ (64 * L.M.n)))
     (hL : LadLayI L) {s : State} (hs : WsReg s base)
     (hlt : ∀ x ∈ ladR L, wordsVal s.mem base x L.M.n < C.p) (hstep : Step L C base s k Q)

@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddStep
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddBuild
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild

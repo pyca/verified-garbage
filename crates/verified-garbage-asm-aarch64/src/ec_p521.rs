@@ -688,8 +688,16 @@ bl {vg_p521_mul_mod_p}
 .inst 0xf9464c01,0x8a030021,0xd348fc22,0x390108c2,0x39010cc1,0xf9400013,0xf9400414,0xf9400815
 .inst 0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021,0x8a010060,0xd65f03c0
 .p2align 6",
-        vg_p521_mul_mod_p = sym super::p521_mont::vg_p521_mul_mod_p,
-        vg_p521_inv_mod_p = sym super::p521_inverse::vg_p521_inv_mod_p,
+        vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
+        vg_p521_inv_mod_p = sym super::ec_p521::vg_p521_inv_mod_p::vg_p521_inv_mod_p,
         VG_P521_COMB = sym super::consts::VG_P521_COMB,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_inv_mod_p.rs"]
+pub(crate) mod vg_p521_inv_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_mul_mod_p.rs"]
+pub(crate) mod vg_p521_mul_mod_p;

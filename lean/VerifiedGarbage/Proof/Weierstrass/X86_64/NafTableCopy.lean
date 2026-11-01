@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPoint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.Ecdsa.X86
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # The DSA digest-prefix length from validated subgroup masks -/
 

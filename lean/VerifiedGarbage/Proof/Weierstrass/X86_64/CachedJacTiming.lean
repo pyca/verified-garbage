@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
 
 /-! Cached public addition: fixed-address pieces and equal public branch conditions. -/

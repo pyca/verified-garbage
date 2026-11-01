@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Mont.X86.OutsZ
 import VerifiedGarbage.Proof.Framework.Offset
 

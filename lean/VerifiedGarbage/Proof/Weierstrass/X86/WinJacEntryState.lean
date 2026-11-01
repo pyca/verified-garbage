@@ -668,7 +668,7 @@ namespace VG.Proof.Weierstrass.X86.JWin
 open VG VG.X86 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86 VG.Impl.Mont
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem choose_field_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
+theorem choose_field_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
     {size wk m : Nat} [NeZero m] {Sl : Nat → Prop}
     (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {o a b : Nat} (ho : Sl o) (ha : a∈V) (hb : b∈V)
@@ -698,7 +698,7 @@ theorem keep_of_ckeeps {M : Mod} {base : Addr} {wk : Nat} {s t : State}
     (hk : CKeeps clob s t) : ProgKeep M base wk [] s t :=
   ⟨hk.1,hk.2.2.1,hk.2.2.2,fun _ _ => congrFun hk.2.1 _⟩
 
-theorem value_after {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
+theorem value_after {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
     {size wk m : Nat} [NeZero m] {Sl : Nat → Prop}
     (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl)
     {V V' W : List Nat} {E E' : Nat → Fin m} {s t : State}

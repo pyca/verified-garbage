@@ -15,6 +15,8 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.AArch64.Joint
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
+meta import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! Frames and live point representations for the joint verification loop. -/
 

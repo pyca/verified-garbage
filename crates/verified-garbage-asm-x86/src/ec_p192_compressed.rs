@@ -40,9 +40,9 @@ call {vg_p192_add_mod_p}
 call {vg_p192_sub_mod_p}
 .base64 "WFhYWIuXGAQAAAuXHAQAAAuXIAQAAAuXJAQAAAuXKAQAAAuXLAQAALkAAAAAKdEZ0oPy/4uHYAQAACHQiYdgBAAAi49gBAAAi4cAAQAAi5dwAwAAMcIhyjHQiYfQAwAAi4cEAQAAi5d0AwAAMcIhyjHQiYfUAwAAi4cIAQAAi5d4AwAAMcIhyjHQiYfYAwAAi4cMAQAAi5d8AwAAMcIhyjHQiYfcAwAAi4cQAQAAi5eAAwAAMcIhyjHQiYfgAwAAi4cUAQAAi5eEAwAAMcIhyjHQiYfkAwAAi4cYAQAAi5eIAwAAMcIhyjHQiYdIBAAAi4ccAQAAi5eMAwAAMcIhyjHQiYdMBAAAi4cgAQAAi5eQAwAAMcIhyjHQiYdQBAAAi4ckAQAAi5eUAwAAMcIhyjHQiYdUBAAAi4coAQAAi5eYAwAAMcIhyjHQiYdYBAAAi4csAQAAi5ecAwAAMcIhyjHQiYdcBAAAi49gBAAAi1wkBIuHoAMAAIPgAYPIAiHIiAOLh1gDAAAhyA/IiUMVi4dcAwAAIcgPyIlDEYuHYAMAACHID8iJQw2Lh2QDAAAhyA/IiUMJi4doAwAAIcgPyIlDBYuHbAMAACHID8iJQwGJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_p192_mul_mod_p = sym super::p192_mont::vg_p192_mul_mod_p,
-        vg_p192_add_mod_p = sym super::p192_mont::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::p192_mont::vg_p192_sub_mod_p,
+        vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
+        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
+        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
     )
 }
 
@@ -99,8 +99,8 @@ call {vg_p192_mul_mod_p}
 call {vg_p192_sub_mod_p}
 .base64 "WFhYWIuX0AMAAAuX1AMAAAuX2AMAAAuX3AMAAAuX4AMAAAuX5AMAALkAAAAAKdEZ0oPy/4uHYAQAACHQiYdgBAAAi4egAwAAi49AAwAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHYAQAACHQiYdgBAAAi49gBAAAi1wkBLgEAAAAIciIA4uHWAMAACHID8iJQxWLh1wDAAAhyA/IiUMRi4dgAwAAIcgPyIlDDYuHZAMAACHID8iJQwmLh2gDAAAhyA/IiUMFi4dsAwAAIcgPyIlDAYuHoAMAACHID8iJQy2Lh6QDAAAhyA/IiUMpi4eoAwAAIcgPyIlDJYuHrAMAACHID8iJQyGLh7ADAAAhyA/IiUMdi4e0AwAAIcgPyIlDGYnIg+ABifqLGotyBItqDIt6CMM="
 .p2align 6"#,
-        vg_p192_mul_mod_p = sym super::p192_mont::vg_p192_mul_mod_p,
-        vg_p192_add_mod_p = sym super::p192_mont::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::p192_mont::vg_p192_sub_mod_p,
+        vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
+        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
+        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
     )
 }

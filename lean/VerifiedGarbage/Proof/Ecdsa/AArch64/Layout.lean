@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 
 /-!
 # ECDSA on AArch64: the curve, the arguments and the working space
@@ -113,7 +114,7 @@ structure BaseCfgOk (c : Cfg) : Prop where
     (c.invFn c.pPowI).noFrames = true ∧ (c.invFn c.nPowI).noFrames = true
   padd : c.pointOps ≠ none → PaddOk c
   /-- The check of the peer's point as a function (`Impl.Ecdh.AArch64.Cfg.checkFn`), for a
-  curve of `Spec/Weierstrass/CheckPoint.lean`: it writes neither `v28`, where its caller keeps
+  curve of `Proof/Weierstrass/CheckPointContract.lean`: it writes neither `v28`, where its caller keeps
   `x30`, nor the low halves of the callee-saved vector registers, its body writes none of the
   lanes it keeps registers in, and it has no frames. -/
   check_fn : Impl.Ecdh.AArch64.Cfg.checkCurve c ≠ none →

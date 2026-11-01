@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
-public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.Impl.Weierstrass.Layout.CheckPoint
 
 /-!
 # ECDH on AArch64
@@ -137,7 +137,7 @@ def onCurve : Prog isa :=
     (curveOps c).map (opCode c.MP') ++ [checkZero c (c.sl W1) ++ select c])
 
 /-- The checks of `x < p` and `y < p`, then `onCurve`: what
-`vg_<curve>_check_point` runs (`Spec/Weierstrass/CheckPoint.lean`). -/
+`vg_<curve>_check_point` runs (`Proof/Weierstrass/CheckPointContract.lean`). -/
 def checkBody : Prog isa :=
   .seq (.block (checkLtP c (c.sl E) ++ checkLtP c (c.sl QY))) (onCurve c)
 
@@ -155,18 +155,18 @@ def checkFn : Prog isa :=
   .seq (.block ((checkKept c).zipIdx.map fun (r, i) => .vop (.ins .d2 (checkLane i).1 (checkLane i).2 r))) <|
   .seq (checkBody c) (.block ((checkKept c).zipIdx.map fun (r, i) => .umov .x r (checkLane i).1 (checkLane i).2))
 
-/-- The curve of `Spec/Weierstrass/CheckPoint.lean` with the code's prime. -/
-def checkCurve : Option Spec.Weierstrass.CheckPoint.Curve :=
-  Spec.Weierstrass.CheckPoint.curves.find? fun C => C.W.p == c.C.p && C.k == c.n
+/-- The curve of `Proof/Weierstrass/CheckPointContract.lean` with the code's prime. -/
+def checkCurve : Option Impl.Weierstrass.CheckPoint.Curve :=
+  Impl.Weierstrass.CheckPoint.curves.find? fun C => C.W.p == c.C.p && C.k == c.n
 
 /-- The checks of `x < p` and `y < p` and `onCurve`: a call of
 `vg_<curve>_check_point` (`checkFn`), keeping `x30` in `v28` (the products it
-calls keep theirs in `v29`), for a curve of `Spec/Weierstrass/CheckPoint.lean`,
+calls keep theirs in `v29`), for a curve of `Proof/Weierstrass/CheckPointContract.lean`,
 else inline. -/
 def validate : Prog isa :=
   match checkCurve c with
   | some C => .seq (.block [.vop (.ins .d2 .v28 0 .x30)]) <|
-      .seq (.call C.checkApi.name (checkFn c)) (.block [.umov .x .x30 .v28 0])
+      .seq (.call s!"vg_{C.curve}_check_point" (checkFn c)) (.block [.umov .x .x30 .v28 0])
   | none => checkBody c
 
 /-- `x` (or zeros, `len` bytes) to `out`, `x19`–`x25` restored, and the

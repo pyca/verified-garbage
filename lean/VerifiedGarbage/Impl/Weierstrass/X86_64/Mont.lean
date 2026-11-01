@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86_64
-public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
 /-!
 # Shared Montgomery products on x86-64
 
 `vg_p521_mul_mod_p(ws, o, a, b)` and `vg_p521_mul_mod_p_adx`
-(`Spec/Weierstrass/Mont.lean`; System V: `ws` in `rdi`, the offsets `o`,
+(`Proof/Weierstrass/MontContract.lean`; System V: `ws` in `rdi`, the offsets `o`,
 `a` and `b` in `esi`, `edx` and `ecx`): the inline products of
 `Impl/Mont/X86_64.lean` with their operands read through registers.
 -/
@@ -363,8 +363,8 @@ def tmp : Nat := 4032
 def mo : Nat := 3968
 
 def modulus (order : Bool) : Nat :=
-  if order then Spec.Weierstrass.Mont.brainpoolp512r1n.m
-  else Spec.Weierstrass.Mont.brainpoolp512r1p.m
+  if order then Impl.Weierstrass.Mont.brainpoolp512r1n.m
+  else Impl.Weierstrass.Mont.brainpoolp512r1p.m
 
 def mod (order : Bool) : Mod where
   n := 8
@@ -400,21 +400,21 @@ with the temporary area `fnTmp6`, with or without BMI2 and ADX; BrainpoolP512r1'
 field prime or group order, identified by `fnMod`, with `Wide8.tmp`; none otherwise. -/
 def callOf (M : Mod) : Option (String × Prog isa) :=
   if M.n = 9 ∧ M.red = .friendly p521Ws ∧ M.tmp = fnTmp then
-    some (if M.adx then (Spec.Weierstrass.Mont.p521p.mulApi.name ++ "_adx", mulFnX)
-      else (Spec.Weierstrass.Mont.p521p.mulApi.name, mulFn))
+    some (if M.adx then ("vg_p521_mul_mod_p" ++ "_adx", mulFnX)
+      else ("vg_p521_mul_mod_p", mulFn))
   else if M.n = 6 ∧ M.sparse ∧ M.tmp = fnTmp6 ∧ M.inl = false then
-    some (if M.adx then (Spec.Weierstrass.Mont.p384p.mulApi.name ++ "_adx", mulFn6 true)
-      else (Spec.Weierstrass.Mont.p384p.mulApi.name, mulFn6 false))
+    some (if M.adx then ("vg_p384_mul_mod_p" ++ "_adx", mulFn6 true)
+      else ("vg_p384_mul_mod_p", mulFn6 false))
   else if M.n = 9 ∧ M.fnN ∧ M.tmp = fnTmp then
-    some (Spec.Weierstrass.Mont.p521n.mulApi.name, mulFnN)
+    some ("vg_p521_mul_mod_n", mulFnN)
   else if M.n = 6 ∧ M.fnN ∧ M.tmp = fnTmp6 then
-    some (if M.adx then (Spec.Weierstrass.Mont.p384n.mulApi.name ++ "_adx", mulFnN6 true)
-      else (Spec.Weierstrass.Mont.p384n.mulApi.name, mulFnN6 false))
+    some (if M.adx then ("vg_p384_mul_mod_n" ++ "_adx", mulFnN6 true)
+      else ("vg_p384_mul_mod_n", mulFnN6 false))
   else if M.n = 8 ∧ M.tmp = Wide8.tmp then
     if M.fnMod = some (Wide8.modulus false) then
-      some (Spec.Weierstrass.Mont.brainpoolp512r1p.mulApi.name, Wide8.fn false)
+      some ("vg_brainpoolp512r1_mul_mod_p", Wide8.fn false)
     else if M.fnMod = some (Wide8.modulus true) then
-      some (Spec.Weierstrass.Mont.brainpoolp512r1n.mulApi.name, Wide8.fn true)
+      some ("vg_brainpoolp512r1_mul_mod_n", Wide8.fn true)
     else none
   else none
 

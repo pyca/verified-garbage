@@ -73,8 +73,8 @@ def Eb (k m : Nat) [NeZero m] (dbl : Bool) (mem : Mem) (base : Addr) (x : Nat) :
 the slots: Algorithm 9 or 8 for `a0`, else Algorithm 1. -/
 def ptVal {m : Nat} [NeZero m] (a0 dbl : Bool) (E : Nat → Fin m) : Fin m × Fin m × Fin m :=
   if a0 then
-    (if dbl then Spec.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
-    else Spec.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7))
+    (if dbl then Impl.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
+    else Impl.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7))
   else VG.Proof.Weierstrass.rcbAdd (E 9) (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) (E 8)
 
 theorem ptOps_opsOk (a0 dbl : Bool) : OpsOk (ptOps a0 dbl) := by
@@ -92,12 +92,12 @@ theorem ptOps_run {m : Nat} [NeZero m] (E : Nat → Fin m) (a0 dbl : Bool) :
 /-- A call of a point function, from the working space at `r3`: only
 `fnClob`, `O` and the own working space change, and `O` holds `rcbAdd` of
 what the constants and the operands stood for. -/
-theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
+theorem ptCall_ok {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
     (hk3 : 3 ≤ S.k) (hk6 : S.k ≤ 6) (dbl : Bool) {a0 : Bool} {s : State} {base : Addr} (hw : WsReg s base)
     (hlt : ∀ x ∈ rIds, wordsVal s.mem base (enc S.k dbl x) S.k < S.m) :
     WP isa (ptCall S dbl a0) s fun s' => Rk fnClob s s' ∧
-      Outs base [(Spec.Weierstrass.Point.oAt S.k, 3 * Spec.Weierstrass.Point.elemBytes S.k),
-        (Spec.Weierstrass.Point.ownAt S.k, 4096 - Spec.Weierstrass.Point.ownAt S.k)] s.mem s'.mem ∧
+      Outs base [(Impl.Weierstrass.Point.oAt S.k, 3 * Impl.Weierstrass.Point.elemBytes S.k),
+        (Impl.Weierstrass.Point.ownAt S.k, 4096 - Impl.Weierstrass.Point.ownAt S.k)] s.mem s'.mem ∧
       (∀ j < 3, wordsVal s'.mem base (enc S.k dbl j) S.k < S.m) ∧
       (Eb S.k S.m dbl s'.mem base 0, Eb S.k S.m dbl s'.mem base 1, Eb S.k S.m dbl s'.mem base 2) =
         ptVal a0 dbl (Eb S.k S.m dbl s.mem base) := by
@@ -108,8 +108,8 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S
   rw [ptCall]
   refine WP.call (k := ⟨fun t => PrePt S.k S.m dbl t ∧ t.gpr .r3 = base ∧ t.mem = s.mem,
       fun t t' => (∀ r, r ∉ fnClob → t'.gpr r = t.gpr r) ∧
-        Outs (t.gpr .r3) [(Spec.Weierstrass.Point.oAt S.k, 3 * Spec.Weierstrass.Point.elemBytes S.k),
-          (Spec.Weierstrass.Point.ownAt S.k, 4096 - Spec.Weierstrass.Point.ownAt S.k)] t.mem t'.mem ∧
+        Outs (t.gpr .r3) [(Impl.Weierstrass.Point.oAt S.k, 3 * Impl.Weierstrass.Point.elemBytes S.k),
+          (Impl.Weierstrass.Point.ownAt S.k, 4096 - Impl.Weierstrass.Point.ownAt S.k)] t.mem t'.mem ∧
         (∀ j < 3, wordsVal t'.mem (t.gpr .r3) (enc S.k dbl j) S.k < S.m) ∧
         (toM S.m (2 ^ (64 * S.k)) (wordsVal t'.mem (t.gpr .r3) (enc S.k dbl 0) S.k),
           toM S.m (2 ^ (64 * S.k)) (wordsVal t'.mem (t.gpr .r3) (enc S.k dbl 1) S.k),

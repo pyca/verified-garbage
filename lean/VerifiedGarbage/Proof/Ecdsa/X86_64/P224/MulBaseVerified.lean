@@ -30,7 +30,7 @@ meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 /-!
 # `vg_p224_mul_base` on x86-64: `Verified`
 
-The facts of `Spec.Weierstrass.MulBase.p224.mulBaseContract` for x86-64,
+The facts of `Impl.Weierstrass.MulBase.p224.mulBaseContract` for x86-64,
 with the comb's tables (`Abi.withConsts p224.combConsts`), by name (`mbK`):
 `ws` in `rdi`, the static `VG_P224_COMB` readable and holding the tables,
 `p` and zero at their slots. `mulBaseFn_ok` gives `[k]G` in `R`'s slots,
@@ -51,8 +51,8 @@ open VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.P224
 
-/-- P-224's curve of `Spec/Weierstrass/MulBase.lean`. -/
-abbrev C : Spec.Weierstrass.MulBase.Curve := Spec.Weierstrass.MulBase.p224
+/-- P-224's curve of `Proof/Weierstrass/MulBaseContract.lean`. -/
+abbrev C : Impl.Weierstrass.MulBase.Curve := Impl.Weierstrass.MulBase.p224
 
 /-- The configuration of `vg_p224_mul_base`: the signature's. -/
 abbrev cfg : Cfg := p224
@@ -69,20 +69,20 @@ def mbK : Contract isa where
     s₁.syms "VG_P224_COMB" = s₂.syms "VG_P224_COMB"
 
 /-- The coordinate at an offset below `2³²` is the number `wordsVal` reads. -/
-theorem coordAt_eq (P : Spec.Weierstrass.Point.Curve) (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) :
+theorem coordAt_eq (P : Impl.Weierstrass.Point.Curve) (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) :
     P.coordAt m ws o = wordsVal m ws o P.k := by
-  unfold Spec.Weierstrass.Point.Curve.coordAt Spec.Weierstrass.Mont.numAt
+  unfold Impl.Weierstrass.Point.Curve.coordAt Impl.Weierstrass.Mont.numAt
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ho]
   exact read_eq_wordsVal m ws P.k o
 
 /-- `Represents` is the proofs' `Rep`. -/
 theorem represents_of_rep {W : Spec.Weierstrass.Curve} {X Y Z : Fe W} {P : Point W}
-    (h : Rep W X Y Z P) : Spec.Weierstrass.MulBase.Represents X Y Z P := by
+    (h : Rep W X Y Z P) : Impl.Weierstrass.MulBase.Represents X Y Z P := by
   cases P <;> exact h
 
 /-- The result, for any curve, from the proofs' facts about the slots of
 `P`: their numbers below `p` and representing `P` (`Rep`), and `Keeps`. -/
-theorem result_of {M : Spec.Weierstrass.MulBase.Curve} (hFe : Point.Fermat M.toPoint.p)
+theorem result_of {M : Impl.Weierstrass.MulBase.Curve} (hFe : Point.Fermat M.toPoint.p)
     (h1 : (1 : Fin M.toPoint.p) ≠ 0) (hu : UnitMod M.toPoint.p (2 ^ (64 * M.k))) {m m' : Mem} {ws : Addr}
     {P : Point M.W} {n : Nat} (hn : n = M.k) (ho : M.pAt + 16 * M.k < 2 ^ 32)
     (hx : wordsVal m' ws M.pAt n < M.W.p) (hy : wordsVal m' ws (M.pAt + 8 * M.k) n < M.W.p)
@@ -94,13 +94,13 @@ theorem result_of {M : Spec.Weierstrass.MulBase.Curve} (hFe : Point.Fermat M.toP
   subst hn
   have dq := Point.dec_eq M.toPoint h1 hFe hu
   have hk : M.toPoint.k = M.k := rfl
-  have e8 : Spec.Weierstrass.Point.elemBytes M.k = 8 * M.k := rfl
+  have e8 : Impl.Weierstrass.Point.elemBytes M.k = 8 * M.k := rfl
   have e16 : 2 * (8 * M.k) = 16 * M.k := by omega
   refine ⟨?_, ?_, hK⟩
-  · simp only [Spec.Weierstrass.Point.Curve.Below, Spec.Weierstrass.Point.Curve.pointAt, hk, e8, e16]
+  · simp only [Impl.Weierstrass.Point.Curve.Below, Impl.Weierstrass.Point.Curve.pointAt, hk, e8, e16]
     rw [coordAt_eq _ _ _ (by omega), coordAt_eq _ _ _ (by omega), coordAt_eq _ _ _ (by omega), hk]
     exact ⟨hx, hy, hz⟩
-  · simp only [Spec.Weierstrass.Point.Curve.pointAt, hk, e8, e16]
+  · simp only [Impl.Weierstrass.Point.Curve.pointAt, hk, e8, e16]
     rw [dq, dq, dq, coordAt_eq _ _ _ (by omega), coordAt_eq _ _ _ (by omega), coordAt_eq _ _ _ (by omega), hk]
     exact represents_of_rep hR
 
@@ -129,14 +129,14 @@ theorem gWA_eq : gWA cfg = [(512, 32), (544, 32), (576, 32), (704, 32),
 theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (gWA cfg) m m') :
     C.Keeps ws m m' := by
   intro i hi hown hp
-  have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
+  have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   show (ws + BitVec.ofNat 64 i - ws).toNat < _ ∨ _ ≤ (ws + BitVec.ofNat 64 i - ws).toNat
   rw [Mem.sub_ofNat_toNat ws (by omega)]
-  simp only [Spec.Weierstrass.MulBase.Curve.Own, Spec.Weierstrass.MulBase.Curve.slot,
-    Spec.Weierstrass.MulBase.Curve.tmpAt, Spec.Weierstrass.MulBase.Curve.bitsAt,
-    Spec.Weierstrass.MulBase.Curve.pAt, Spec.Weierstrass.MulBase.Curve.ptBytes, C,
-    Spec.Weierstrass.MulBase.p224] at hown hp
+  simp only [Impl.Weierstrass.MulBase.Curve.Own, Impl.Weierstrass.MulBase.Curve.slot,
+    Impl.Weierstrass.MulBase.Curve.tmpAt, Impl.Weierstrass.MulBase.Curve.bitsAt,
+    Impl.Weierstrass.MulBase.Curve.pAt, Impl.Weierstrass.MulBase.Curve.ptBytes, C,
+    Impl.Weierstrass.MulBase.p224] at hown hp
   rw [gWA_eq] at hw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
@@ -168,7 +168,7 @@ theorem cfg_comb : cfg.comb = some comb7 := rfl
 /-- P-224's prime, as `C`'s points and the group law have it: equal without
 evaluating it, which unifying the two would. -/
 theorem toPoint_p : C.toPoint.p = Spec.P224.curve.p := by
-  simp only [Spec.Weierstrass.MulBase.Curve.toPoint]; rfl
+  simp only [Impl.Weierstrass.MulBase.Curve.toPoint]; rfl
 
 theorem fermat_congr {p q : Nat} [NeZero p] [NeZero q] (h : p = q) (hf : Point.Fermat q) :
     Point.Fermat p := by
@@ -271,13 +271,13 @@ theorem satMb_held : ∀ i < p224W.length,
   rfl
 
 theorem sat_consts : C.ConstsOk 0x1000 satMbMem := by
-  unfold Spec.Weierstrass.MulBase.Curve.ConstsOk
+  unfold Impl.Weierstrass.MulBase.Curve.ConstsOk
   exact ⟨by decide +kernel, by decide +kernel⟩
 
 theorem sat_pre : (C.mulBaseContract (X86_64.abi.withConsts p224.combConsts)).pre satState := by
   have held : ∀ i < p224W.length, satState.mem.readW (satState.syms "VG_P224_COMB" +
       BitVec.ofNat 64 (8 * i)) 64 = p224W.getD i 0 := satMb_held
-  sig_pre [Spec.Weierstrass.MulBase.Curve.mulBaseContract, Spec.Weierstrass.MulBase.sig,
+  sig_pre [Impl.Weierstrass.MulBase.Curve.mulBaseContract, Impl.Weierstrass.MulBase.sig,
     X86_64.abi, X86_64.argRegs, p224_combConsts, Abi.withConsts, p224_constRegions, Abi.constsHeld,
     stackBelow]
   sig_and_intros
@@ -286,7 +286,7 @@ theorem sat_pre : (C.mulBaseContract (X86_64.abi.withConsts p224.combConsts)).pr
 
 theorem implies : mbK.Implies (C.mulBaseContract (X86_64.abi.withConsts p224.combConsts)) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.MulBase.Curve.mulBaseContract, Spec.Weierstrass.MulBase.sig,
+    sig_pre [Impl.Weierstrass.MulBase.Curve.mulBaseContract, Impl.Weierstrass.MulBase.sig,
       X86_64.abi, X86_64.argRegs, p224_combConsts, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, hdr, -, ht, hw, hret, hws, hco⟩ := h
@@ -297,10 +297,10 @@ theorem implies : mbK.Implies (C.mulBaseContract (X86_64.abi.withConsts p224.com
       · exact hdw _ (by rw [hw]; simp)
       · exact hdr
   post := by
-    sig_implies_post [Spec.Weierstrass.MulBase.Curve.mulBaseContract, Spec.Weierstrass.MulBase.sig,
+    sig_implies_post [Impl.Weierstrass.MulBase.Curve.mulBaseContract, Impl.Weierstrass.MulBase.sig,
       X86_64.abi, X86_64.argRegs, p224_combConsts, Abi.withConsts, mbK]
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.MulBase.Curve.mulBaseContract, Spec.Weierstrass.MulBase.sig,
+    sig_pub [Impl.Weierstrass.MulBase.Curve.mulBaseContract, Impl.Weierstrass.MulBase.sig,
       X86_64.abi, X86_64.argRegs, p224_combConsts, Abi.withConsts] at h
     exact ⟨h.1, h.2.2, h.2.1⟩
   sat := ⟨satState, sat_pre⟩

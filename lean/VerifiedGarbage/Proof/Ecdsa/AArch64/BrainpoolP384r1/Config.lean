@@ -61,14 +61,14 @@ theorem brainpoolp384r1_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk brai
   call_p := by
     intro f m h
     have e : Mont.callOf brainpoolp384r1.MP' = some
-        (Spec.Weierstrass.Mont.brainpoolp384r1p.fn "mul", Spec.BrainpoolP384r1.p) := by decide +kernel
+        (Impl.Weierstrass.Mont.brainpoolp384r1p.fn "mul", Spec.BrainpoolP384r1.p) := by decide +kernel
     rw [e] at h
     cases h
     exact ⟨rfl, Mont.brainpoolp384r1p_ok⟩
   call_n := by
     intro f m h
     have e : Mont.callOf brainpoolp384r1.MN' = some
-        (Spec.Weierstrass.Mont.brainpoolp384r1n.fn "mul", Spec.BrainpoolP384r1.n) := by decide +kernel
+        (Impl.Weierstrass.Mont.brainpoolp384r1n.fn "mul", Spec.BrainpoolP384r1.n) := by decide +kernel
     rw [e] at h
     cases h
     exact ⟨rfl, Mont.brainpoolp384r1n_ok⟩

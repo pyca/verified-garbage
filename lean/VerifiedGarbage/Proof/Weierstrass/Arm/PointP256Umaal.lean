@@ -35,7 +35,7 @@ so that adding them rebuilds none of their proofs.
 
 namespace VG.Proof.Weierstrass.Arm.Point
 
-open VG VG.Arm VG.Impl.Weierstrass.Arm.Point Spec.Weierstrass.Point
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Point Spec.Weierstrass.Point Impl.Weierstrass.Point
 
 theorem p256_addU_ct : ConstantTime isa (sumArm p256 false).pre (sumArm p256 false).pub (fn (modP p256) false true) :=
   VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0])

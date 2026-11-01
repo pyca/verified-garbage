@@ -18,6 +18,12 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+meta import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+meta import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+meta import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 @[expose] public section
 

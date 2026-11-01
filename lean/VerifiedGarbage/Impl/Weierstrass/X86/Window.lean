@@ -20,7 +20,7 @@ open VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass
 
 namespace WinCfg
 
-variable (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus)
+variable (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus)
 
 /--`8 Σ_{j<J} 16^j`, the recoding's offset. -/
 def offset (J : Nat) : Nat := 8 * ((16 ^ J - 1) / 15)

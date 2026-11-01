@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.Jac
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Framework.Block
 
 /-! Field environments and point preservation for public Jacobian loops. -/

@@ -12,7 +12,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass
 
-theorem Inv.transferPoint {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk : Nat} {C : Curve}
+theorem Inv.transferPoint {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAcc : WkOk F M C.p size wk Sl) (hn : M.n=4)
     {o q : Pt} (hy : o.y=o.x+32) (hz : o.z=o.x+64)
     {V : List Nat} {E : Nat → Fe C} {s t : State}
@@ -50,7 +50,7 @@ theorem Inv.transferPoint {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : 
     hI.val _ (hQ _ (by simp [jacCoords])),hI.val _ (hQ _ (by simp [jacCoords]))]
   exact hJ
 
-theorem nafPublicPoint_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {base : Addr} {size a wk : Nat} {C : Curve}
+theorem nafPublicPoint_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {base : Addr} {size a wk : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAcc : WkOk F K.M C.p size wk Sl) (hn : K.M.n=4)
     (hy : K.E.y=K.E.x+32) (hz : K.E.z=K.E.x+64)
     {V : List Nat} {E : Nat → Fe C} {s : State}
@@ -78,7 +78,7 @@ theorem nafPublicPoint_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {base
   · simpa only [hn,hz,WinCfg.tblPt,Nat.add_sub_cancel,
       show 24*4=96 from rfl,show 16*4=64 from rfl,show 32*2=64 from rfl] using hv 2 (by decide)
 
-theorem nafTablePoint_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {base : Addr} {size j wk : Nat} {C : Curve}
+theorem nafTablePoint_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {base : Addr} {size j wk : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAcc : WkOk F K.M C.p size wk Sl) (hn : K.M.n=4)
     (hy : K.R.y=K.R.x+32) (hz : K.R.z=K.R.x+64)
     {V : List Nat} {E : Nat → Fe C} {s : State}

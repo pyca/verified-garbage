@@ -79,7 +79,7 @@ def p224CombCurve (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve :=
 /-- `p224CombCurve`, calling `vg_ecdsa_p224_sign_umaal`. -/
 def p224CombCurveU (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve :=
   {p224CombCurve hL with
-    coreN := Spec.Ecdsa.P224.signApi.name ++ "_umaal"
+    coreN := "vg_ecdsa_p224_sign" ++ "_umaal"
     coreC := Impl.Ecdsa.Arm.signP224CombU
     coreX := by
       intro s hs

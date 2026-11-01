@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 /-! # Calling checked public RSA retains every immutable verification input -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/RecoverCall.lean`, which only this module imported.

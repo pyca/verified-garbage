@@ -17,7 +17,9 @@ use crate::arch::ec_p521::{VG_EC_P521_PUBLIC_KEY_ADX_FEATURES, vg_ec_p521_public
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdh_p521::VG_ECDH_P521_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p521::{VG_ECDSA_P521_SIGN_ADX_FEATURES, VG_ECDSA_P521_VERIFY_ADX_FEATURES};
+use crate::arch::ecdsa_p521::VG_ECDSA_P521_VERIFY_ADX_FEATURES;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ecdsa_p521_sha512::VG_ECDSA_P521_SHA512_SIGN_ADX_FEATURES;
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
@@ -41,7 +43,7 @@ impl Mul {
                 Features::all(&[
                     VG_EC_P521_PUBLIC_KEY_ADX_FEATURES,
                     VG_ECDH_P521_ADX_FEATURES,
-                    VG_ECDSA_P521_SIGN_ADX_FEATURES,
+                    VG_ECDSA_P521_SHA512_SIGN_ADX_FEATURES,
                     VG_ECDSA_P521_VERIFY_ADX_FEATURES,
                 ])
             },

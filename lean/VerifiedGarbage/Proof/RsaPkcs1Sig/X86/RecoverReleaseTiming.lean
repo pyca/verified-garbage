@@ -3,7 +3,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
 public import VerifiedGarbage.Proof.Rsa.X86.PrivLoopTiming
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigest
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 

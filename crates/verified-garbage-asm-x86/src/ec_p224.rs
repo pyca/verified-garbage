@@ -52,7 +52,23 @@ call {vg_p224_mul_mod_p}
 call {vg_p224_mul_mod_p}
 .base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5dAAgAAC5dEAgAAC5dIAgAAC5dMAgAAC5dQAgAAC5dUAgAAC5dYAgAAC5dcAgAAuQAAAAAp0RnSi4fABQAAIdCJh8AFAACLj8AFAACLXCQEuAQAAAAhyIgDi4egBAAAIcgPyIlDGYuHpAQAACHID8iJQxWLh6gEAAAhyA/IiUMRi4esBAAAIcgPyIlDDYuHsAQAACHID8iJQwmLh7QEAAAhyA/IiUMFi4e4BAAAIcgPyIlDAYuHoAUAACHID8iJQzWLh6QFAAAhyA/IiUMxi4eoBQAAIcgPyIlDLYuHrAUAACHID8iJQymLh7AFAAAhyA/IiUMli4e0BQAAIcgPyIlDIYuHuAUAACHID8iJQx2JyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_p224_mul = sym super::p224_mul::vg_p224_mul,
-        vg_p224_mul_mod_p = sym super::p224_mont::vg_p224_mul_mod_p,
+        vg_p224_mul = sym super::ec_p224::vg_p224_mul::vg_p224_mul,
+        vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_add_mod_p.rs"]
+pub(crate) mod vg_p224_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_mul.rs"]
+pub(crate) mod vg_p224_mul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_mul_mod_p.rs"]
+pub(crate) mod vg_p224_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_sub_mod_p.rs"]
+pub(crate) mod vg_p224_sub_mod_p;

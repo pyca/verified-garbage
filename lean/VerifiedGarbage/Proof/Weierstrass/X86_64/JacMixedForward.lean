@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDoubleForward
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState

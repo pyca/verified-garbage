@@ -886,8 +886,12 @@ call {vg_p256_mul_mod_p}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_p256_check_point = sym super::p256_check_point::vg_p256_check_point,
-        vg_p256_mul = sym super::p256_mul::vg_p256_mul,
-        vg_p256_mul_mod_p = sym super::p256_mont::vg_p256_mul_mod_p,
+        vg_p256_check_point = sym super::ec_p256_compressed::vg_p256_check_point::vg_p256_check_point,
+        vg_p256_mul = sym super::ecdh_p256::vg_p256_mul::vg_p256_mul,
+        vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_mul.rs"]
+pub(crate) mod vg_p256_mul;

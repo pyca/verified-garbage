@@ -26,7 +26,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Weierstrass.MulContract
 meta import VerifiedGarbage.Impl.Ecdh.P521.AArch64
 meta import VerifiedGarbage.Proof.EcKey.PublicKey
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
@@ -112,7 +112,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 meta import VerifiedGarbage.Proof.Weierstrass.CoZTable
 meta import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-meta import VerifiedGarbage.Spec.Weierstrass.Mul
+meta import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PackedNaf
 
@@ -142,15 +142,15 @@ pointer `x0` and the offsets `x1`–`x3` public, and keep public `x0` and the
 counters `x19` and `x20` that they do not write. -/
 
 taint_summary mulPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-  (.call (Spec.Weierstrass.Mont.p521p.fn "mul")
-    (Impl.Weierstrass.AArch64.Mont.mulFn 9 Spec.Weierstrass.Mont.p521p.m))
+  (.call (Impl.Weierstrass.Mont.p521p.fn "mul")
+    (Impl.Weierstrass.AArch64.Mont.mulFn 9 Impl.Weierstrass.Mont.p521p.m))
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
 taint_summary mulNSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-  (.call (Spec.Weierstrass.Mont.p521n.fn "mul")
-    (Impl.Weierstrass.AArch64.Mont.mulFn 9 Spec.Weierstrass.Mont.p521n.m))
+  (.call (Impl.Weierstrass.Mont.p521n.fn "mul")
+    (Impl.Weierstrass.AArch64.Mont.mulFn 9 Impl.Weierstrass.Mont.p521n.m))
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
 taint_summary sqrPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-  (.call (Spec.Weierstrass.Mont.p521p.fn "sqr") Impl.Weierstrass.AArch64.Mont.sqrFn521)
+  (.call (Impl.Weierstrass.Mont.p521p.fn "sqr") Impl.Weierstrass.AArch64.Mont.sqrFn521)
   keeping (VectorTaint.ofRegs [.x0])
 
 taint_summary validateSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])

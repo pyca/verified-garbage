@@ -60,8 +60,28 @@ call {vg_brainpoolp256r1_mul_mod_p}
 call {vg_brainpoolp256r1_mul_mod_p}
 .base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5dAAgAAC5dEAgAAC5dIAgAAC5dMAgAAC5dQAgAAC5dUAgAAC5dYAgAAC5dcAgAAuQAAAAAp0RnSi4fABQAAIdCJh8AFAACLj8AFAACLXCQEuAQAAAAhyIgDi4egBAAAIcgPyIlDHYuHpAQAACHID8iJQxmLh6gEAAAhyA/IiUMVi4esBAAAIcgPyIlDEYuHsAQAACHID8iJQw2Lh7QEAAAhyA/IiUMJi4e4BAAAIcgPyIlDBYuHvAQAACHID8iJQwGLh6AFAAAhyA/IiUM9i4ekBQAAIcgPyIlDOYuHqAUAACHID8iJQzWLh6wFAAAhyA/IiUMxi4ewBQAAIcgPyIlDLYuHtAUAACHID8iJQymLh7gFAAAhyA/IiUMli4e8BQAAIcgPyIlDIYnIg+ABifqLGotyBItqDIt6CMM="
 .p2align 6"#,
-        vg_brainpoolp256r1_point_double = sym super::brainpoolp256r1_point::vg_brainpoolp256r1_point_double,
-        vg_brainpoolp256r1_point_add = sym super::brainpoolp256r1_point::vg_brainpoolp256r1_point_add,
-        vg_brainpoolp256r1_mul_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_mul_mod_p,
+        vg_brainpoolp256r1_point_double = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_point_double::vg_brainpoolp256r1_point_double,
+        vg_brainpoolp256r1_point_add = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_point_add::vg_brainpoolp256r1_point_add,
+        vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_add_mod_p.rs"]
+pub(crate) mod vg_brainpoolp256r1_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_mul_mod_p.rs"]
+pub(crate) mod vg_brainpoolp256r1_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_point_add.rs"]
+pub(crate) mod vg_brainpoolp256r1_point_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_point_double.rs"]
+pub(crate) mod vg_brainpoolp256r1_point_double;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_sub_mod_p.rs"]
+pub(crate) mod vg_brainpoolp256r1_sub_mod_p;

@@ -2,11 +2,11 @@ module
 
 import Lean.Elab.Command
 meta import Lean.Elab.Command
-import VerifiedGarbage.Spec.Weierstrass.PointOps
-meta import VerifiedGarbage.Spec.Weierstrass.PointOps
+import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+meta import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 
 /-!
-# The point formulas of `Spec/Weierstrass/PointOps.lean`
+# The point formulas of `Proof/Weierstrass/PointOpsContract.lean`
 
 Each formula gives the point SEC 1's group law (`Spec.Weierstrass.add`)
 does, on P-224, P-256, P-384 and P-521 (`a = -3`, with `jacDouble`) and
@@ -25,7 +25,7 @@ scaled by factors other than one, so that `Z ≠ 1`:
 namespace VG.Test.WeierstrassPointOps
 
 open Lean Elab Command Spec.Weierstrass
-open Spec.Weierstrass.PointOps (jacDouble jacDouble0 jacAddCached jacAddAffine rcbAddAffine rcbAdd)
+open Impl.Weierstrass.PointOps (jacDouble jacDouble0 jacAddCached jacAddAffine rcbAddAffine rcbAdd)
 
 variable {C : Spec.Weierstrass.Curve}
 

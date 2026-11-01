@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Window5
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop

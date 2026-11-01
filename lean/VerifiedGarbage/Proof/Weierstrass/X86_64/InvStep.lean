@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
 public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
 public import VerifiedGarbage.Proof.Mont.X86_64.Sub384
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Inversion by divsteps on x86-64: running blocks

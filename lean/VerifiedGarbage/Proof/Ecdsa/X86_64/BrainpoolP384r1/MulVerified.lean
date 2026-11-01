@@ -36,7 +36,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
 /-!
 # `vg_brainpoolp384r1_mul` on x86-64: `Verified`
 
-The facts of `Spec.Weierstrass.Mul.brainpoolp384r1.mulContract` for x86-64, by name
+The facts of `Impl.Weierstrass.Mul.brainpoolp384r1.mulContract` for x86-64, by name
 (`mK`): `ws` in `rdi`, `p`, zero and the constants at their slots, and the
 point `Q` in `R`'s first two. `mulFn_ok` gives `[k]Q` in `R`'s slots, which
 are `P`'s, and every byte of `ws` kept but those of its slots (`mulW`),
@@ -56,8 +56,8 @@ open VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.BrainpoolP384r1
 
-/-- brainpoolP384r1's curve of `Spec/Weierstrass/Mul.lean`. -/
-abbrev C : Spec.Weierstrass.Mul.Curve := Spec.Weierstrass.Mul.brainpoolp384r1
+/-- brainpoolP384r1's curve of `Proof/Weierstrass/MulContract.lean`. -/
+abbrev C : Impl.Weierstrass.Mul.Curve := Impl.Weierstrass.Mul.brainpoolp384r1
 
 /-- The function's contract on x86-64. -/
 def mK : Contract isa where
@@ -70,9 +70,9 @@ def mK : Contract isa where
   pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi
 
 /-- The coordinate at an offset below `2³²` is the number `wordsVal` reads. -/
-theorem coordAt_eq (P : Spec.Weierstrass.Point.Curve) (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) :
+theorem coordAt_eq (P : Impl.Weierstrass.Point.Curve) (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) :
     P.coordAt m ws o = wordsVal m ws o P.k := by
-  unfold Spec.Weierstrass.Point.Curve.coordAt Spec.Weierstrass.Mont.numAt
+  unfold Impl.Weierstrass.Point.Curve.coordAt Impl.Weierstrass.Mont.numAt
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ho]
   exact read_eq_wordsVal m ws P.k o
 
@@ -85,14 +85,14 @@ theorem mulW_eq : mulW brainpoolp384r1 = [(736, 48), (784, 48), (832, 48), (1456
 theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (mulW brainpoolp384r1) m m') :
     C.Keeps ws m m' := by
   intro i hi hown hp
-  have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
+  have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   show (ws + BitVec.ofNat 64 i - ws).toNat < _ ∨ _ ≤ (ws + BitVec.ofNat 64 i - ws).toNat
   rw [Mem.sub_ofNat_toNat ws (by omega)]
-  simp only [Spec.Weierstrass.Mul.Curve.Own, Spec.Weierstrass.Mul.Curve.slot,
-    Spec.Weierstrass.Mul.Curve.tmpAt, Spec.Weierstrass.Mul.Curve.bitsAt,
-    Spec.Weierstrass.Mul.Curve.pAt, Spec.Weierstrass.Mul.Curve.ptBytes, C,
-    Spec.Weierstrass.Mul.brainpoolp384r1] at hown hp
+  simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot,
+    Impl.Weierstrass.Mul.Curve.tmpAt, Impl.Weierstrass.Mul.Curve.bitsAt,
+    Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes, C,
+    Impl.Weierstrass.Mul.brainpoolp384r1] at hown hp
   rw [mulW_eq] at hw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
@@ -101,7 +101,7 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (mulW brainpoolp384
 /-- The prime, as `C`'s points and the group law have it: equal without
 evaluating it, which unifying the two would. -/
 theorem toPoint_p : C.toPoint.p = Spec.BrainpoolP384r1.curve.p := by
-  simp only [Spec.Weierstrass.Mul.Curve.toPoint]; rfl
+  simp only [Impl.Weierstrass.Mul.Curve.toPoint]; rfl
 
 theorem fermat_congr {p q : Nat} [NeZero p] [NeZero q] (h : p = q) (hf : Point.Fermat q) :
     Point.Fermat p := by
@@ -109,7 +109,7 @@ theorem fermat_congr {p q : Nat} [NeZero p] [NeZero q] (h : p = q) (hf : Point.F
 
 /-- `Represents` is the proofs' `Rep`. -/
 theorem represents_of_rep {W : Spec.Weierstrass.Curve} {X Y Z : Fe W} {P : Point W}
-    (h : Rep W X Y Z P) : Spec.Weierstrass.MulBase.Represents X Y Z P := by
+    (h : Rep W X Y Z P) : Impl.Weierstrass.MulBase.Represents X Y Z P := by
   cases P <;> exact h
 
 theorem hv : brainpoolp384r1.mulBody.allInstrs (fun i => !KeepReg.writesVec i) = true := by
@@ -150,11 +150,11 @@ theorem mul_correct (hL : Law Spec.BrainpoolP384r1.curve) (hI : InvSounds) (s : 
   have hone' : sv brainpoolp384r1 (s.gpr .rdi) s ONEP = 2 ^ (64 * brainpoolp384r1.n) % brainpoolp384r1.C.p := by
     have h := (ca s.mem (s.gpr .rdi) (o := 304) (by decide)).symm.trans hone
     refine h.trans ?_
-    unfold Spec.Weierstrass.Mul.Curve.mont
+    unfold Impl.Weierstrass.Mul.Curve.mont
     rw [Nat.one_mul]
     rw [show brainpoolp384r1.n = C.k from rfl, show brainpoolp384r1.C.p = C.W.p from rfl]
   have em : ∀ x, C.mont x = brainpoolp384r1.mont x := fun x => by
-    unfold Spec.Weierstrass.Mul.Curve.mont Cfg.mont Cfg.R
+    unfold Impl.Weierstrass.Mul.Curve.mont Cfg.mont Cfg.R
     rw [show brainpoolp384r1.n = C.k from rfl, show brainpoolp384r1.C.p = C.W.p from rfl]
   have ha' : sv brainpoolp384r1 (s.gpr .rdi) s AP = brainpoolp384r1.mont brainpoolp384r1.C.a :=
     (ca s.mem (s.gpr .rdi) (o := 352) (by decide)).symm.trans (ha.trans (em _))
@@ -167,9 +167,9 @@ theorem mul_correct (hL : Law Spec.BrainpoolP384r1.curve) (hI : InvSounds) (s : 
   have hx' : sv brainpoolp384r1 (s.gpr .rdi) s RX < brainpoolp384r1.C.p := qx ▸ hx
   have hy' : sv brainpoolp384r1 (s.gpr .rdi) s RY < brainpoolp384r1.C.p := qy ▸ hy
   have eP : C.point (s.gpr .rdi) s.mem = ptQ brainpoolp384r1 (s.gpr .rdi) s := by
-    unfold Spec.Weierstrass.Mul.Curve.point
+    unfold Impl.Weierstrass.Mul.Curve.point
     rw [qx, qy, dq hL, dq hL]
-    unfold Spec.Weierstrass.Point.Curve.R
+    unfold Impl.Weierstrass.Point.Curve.R
     rw [show C.toPoint.k = brainpoolp384r1.n from rfl]
     rfl
   have hQ : onCurve brainpoolp384r1.C (ptQ brainpoolp384r1 (s.gpr .rdi) s) = true := by rw [← eP]; exact hon
@@ -199,10 +199,10 @@ theorem mul_correct (hL : Law Spec.BrainpoolP384r1.curve) (hI : InvSounds) (s : 
         C.toPoint.coordAt s'.mem _ 832 < _
       rw [ca _ _ (by decide), ca _ _ (by decide), ca _ _ (by decide)]
       exact ⟨L' _ (by decide), L' _ (by decide), L' _ (by decide)⟩
-    · show Spec.Weierstrass.MulBase.Represents (C.toPoint.dec (C.toPoint.coordAt s'.mem _ 736))
+    · show Impl.Weierstrass.MulBase.Represents (C.toPoint.dec (C.toPoint.coordAt s'.mem _ 736))
         (C.toPoint.dec (C.toPoint.coordAt s'.mem _ 784)) (C.toPoint.dec (C.toPoint.coordAt s'.mem _ 832)) _
       rw [dq hL, dq hL, dq hL, ca _ _ (by decide), ca _ _ (by decide), ca _ _ (by decide)]
-      unfold Spec.Weierstrass.Point.Curve.R
+      unfold Impl.Weierstrass.Point.Curve.R
       rw [show C.toPoint.k = brainpoolp384r1.n from rfl]
       exact represents_of_rep R'
 
@@ -245,44 +245,44 @@ def satState : State where
   wr := [⟨0x1000, 8192⟩]
 
 theorem sat_consts : C.ConstsOk 0x1000 satMem := by
-  unfold Spec.Weierstrass.Mul.Curve.ConstsOk
+  unfold Impl.Weierstrass.Mul.Curve.ConstsOk
   exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
 
 theorem sat_point (hL : Law Spec.BrainpoolP384r1.curve) : C.PointOk 0x1000 satMem := by
   have ex' : C.toPoint.coordAt satMem 0x1000 736 = C.mont C.W.gx := by decide +kernel
   have ey' : C.toPoint.coordAt satMem 0x1000 784 = C.mont C.W.gy := by decide +kernel
   have ex : (C.qCoords 0x1000 satMem).1 = C.mont C.W.gx := by
-    dsimp only [Spec.Weierstrass.Mul.Curve.qCoords]
+    dsimp only [Impl.Weierstrass.Mul.Curve.qCoords]
     rw [show C.qAt = 736 from rfl]; exact ex'
   have ey : (C.qCoords 0x1000 satMem).2 = C.mont C.W.gy := by
-    dsimp only [Spec.Weierstrass.Mul.Curve.qCoords]
+    dsimp only [Impl.Weierstrass.Mul.Curve.qCoords]
     rw [show C.qAt + 8 * C.k = 784 from rfl]; exact ey'
   have hodd : C.toPoint.p % 2 = 1 := by rw [toPoint_p]; decide +kernel
   have hu : UnitMod C.toPoint.p (2 ^ (64 * C.k)) := unitMod_pow_two hodd (64 * C.k)
   refine ⟨by rw [ex]; decide +kernel, by rw [ey]; decide +kernel, ?_⟩
   have eG : C.point 0x1000 satMem = G C.W := by
-    unfold Spec.Weierstrass.Mul.Curve.point
+    unfold Impl.Weierstrass.Mul.Curve.point
     rw [ex, ey, dq hL, dq hL]
-    unfold Spec.Weierstrass.Mul.Curve.mont Spec.Weierstrass.Point.Curve.R
+    unfold Impl.Weierstrass.Mul.Curve.mont Impl.Weierstrass.Point.Curve.R
     rw [show C.toPoint.k = C.k from rfl, show C.W.p = C.toPoint.p from rfl]
     exact congrArg₂ Point.affine (toM_mont hu) (toM_mont hu)
   rw [eG]; exact Proof.BrainpoolP384r1.onCurve_G
 
 theorem implies (hL : Law Spec.BrainpoolP384r1.curve) : mK.Implies (C.mulContract X86_64.abi) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.Mul.Curve.mulContract, Spec.Weierstrass.MulBase.sig, X86_64.abi,
+    sig_pre [Impl.Weierstrass.Mul.Curve.mulContract, Impl.Weierstrass.MulBase.sig, X86_64.abi,
       X86_64.argRegs, stackBelow] at h
     exact h
   post s s' _ h := by
-    sig_post [Spec.Weierstrass.Mul.Curve.mulContract, Spec.Weierstrass.MulBase.sig, X86_64.abi,
+    sig_post [Impl.Weierstrass.Mul.Curve.mulContract, Impl.Weierstrass.MulBase.sig, X86_64.abi,
       X86_64.argRegs]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.Mul.Curve.mulContract, Spec.Weierstrass.MulBase.sig, X86_64.abi,
+    sig_pub [Impl.Weierstrass.Mul.Curve.mulContract, Impl.Weierstrass.MulBase.sig, X86_64.abi,
       X86_64.argRegs] at h
     exact h
   sat := ⟨satState, by
-    sig_pre [Spec.Weierstrass.Mul.Curve.mulContract, Spec.Weierstrass.MulBase.sig, X86_64.abi,
+    sig_pre [Impl.Weierstrass.Mul.Curve.mulContract, Impl.Weierstrass.MulBase.sig, X86_64.abi,
       X86_64.argRegs, stackBelow]
     exact ⟨Region.disjoint_of_sep (by decide), by decide, sat_consts, sat_point hL⟩⟩
 

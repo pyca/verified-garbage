@@ -57,12 +57,12 @@ theorem _root_.VG.Proof.Mont.ModOkW.keepX86 {M M' : Mod} {m : Nat} {base : Addr}
     rw [hmo, hMn, this, ← hMn, ← hmo]; exact hM.val, hM.inv, hM.red⟩
 
 /-- The calls' facts on numbered slots. -/
-theorem slCall {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {m : Nat} (hMn : M.n = c.n)
+theorem slCall {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {m : Nat} (hMn : M.n = c.n)
     (hF : F.k = c.n ∧ F.m = m ∧ Mont.FnOk F) : CallCfg F M m size c.wk :=
   ⟨hF.2.2, hF.1.trans hMn.symm, hF.2.1, rfl, by rw [hMn]⟩
 
 /-- `[o] = [a] [b] R⁻¹ mod m`, on slots. -/
-theorem slMul_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {m : Nat} (hMn : M.n = c.n)
+theorem slMul_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {m : Nat} (hMn : M.n = c.n)
     (hF : F.k = c.n ∧ F.m = m ∧ Mont.FnOk F) (h7 : c.n < 10) {base : Addr} {s : State}
     (hs : Scr s base size) {o a b : Nat} (ho : o < 45)
     (ha : a < 45) (hb : b < 45) (hB : sv c base s b < m) :
@@ -74,7 +74,7 @@ theorem slMul_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {m : Nat} (hMn : 
   exact this
 
 /-- `[o] = ([a] + [b]) mod m`, on slots. -/
-theorem slAdd_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {m : Nat} (hMn : M.n = c.n)
+theorem slAdd_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {m : Nat} (hMn : M.n = c.n)
     (hF : F.k = c.n ∧ F.m = m ∧ Mont.FnOk F) (h7 : c.n < 10) {base : Addr} {s : State}
     (hs : Scr s base size) {o a b : Nat} (ho : o < 45)
     (ha : a < 45) (hb : b < 45) (hAB : sv c base s a + sv c base s b < 2 * m) :

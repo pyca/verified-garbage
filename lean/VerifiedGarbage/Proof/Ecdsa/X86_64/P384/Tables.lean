@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.TCB.Sig
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.P384.Comb7Shape
 

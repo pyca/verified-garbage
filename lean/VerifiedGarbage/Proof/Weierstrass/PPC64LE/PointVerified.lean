@@ -20,10 +20,10 @@ namespace VG.Proof.Weierstrass.PPC64LE.Point
 open VG VG.PPC64LE VG.Impl.Weierstrass.PPC64LE.Point VG.Proof.Weierstrass.PPC64LE.Mont
 
 /-- `addContract` (`dbl` false) or `doubleContract`. -/
-def sumC (C : Spec.Weierstrass.Point.Curve) (dbl : Bool) : Contract PPC64LE.isa :=
-  Spec.Weierstrass.Point.sig.contract PPC64LE.abi
-    (pre := fun ws m => C.sumPre (Spec.Weierstrass.Point.pAt C.k) (qOf C.k dbl) ws m)
-    (post := fun ws m m' _ => C.sumPost (Spec.Weierstrass.Point.pAt C.k) (qOf C.k dbl) ws m m')
+def sumC (C : Impl.Weierstrass.Point.Curve) (dbl : Bool) : Contract PPC64LE.isa :=
+  Impl.Weierstrass.Point.sig.contract PPC64LE.abi
+    (pre := fun ws m => C.sumPre (Impl.Weierstrass.Point.pAt C.k) (qOf C.k dbl) ws m)
+    (post := fun ws m m' _ => C.sumPost (Impl.Weierstrass.Point.pAt C.k) (qOf C.k dbl) ws m m')
 
 /-- A state satisfying the preconditions. -/
 def satPt : State where
@@ -36,29 +36,29 @@ def satPt : State where
   wr := [⟨0x1000, 8192⟩]
 
 /-- Zero memory satisfies the precondition. -/
-theorem pre_zero (C : Spec.Weierstrass.Point.Curve) (hp : 0 < C.p) (ws : Addr) (q : Nat) :
-    C.Below (C.pointAt (fun _ => 0) ws (Spec.Weierstrass.Point.pAt C.k)) ∧ C.Below (C.pointAt (fun _ => 0) ws q) ∧
+theorem pre_zero (C : Impl.Weierstrass.Point.Curve) (hp : 0 < C.p) (ws : Addr) (q : Nat) :
+    C.Below (C.pointAt (fun _ => 0) ws (Impl.Weierstrass.Point.pAt C.k)) ∧ C.Below (C.pointAt (fun _ => 0) ws q) ∧
       C.ConstsBelow ws (fun _ => 0) := by
   have hz : ∀ o, C.coordAt (fun _ => 0) ws o = 0 := fun o => numAt_zero _ _ _
-  simp only [Spec.Weierstrass.Point.Curve.Below, Spec.Weierstrass.Point.Curve.pointAt,
-    Spec.Weierstrass.Point.Curve.ConstsBelow, hz]
+  simp only [Impl.Weierstrass.Point.Curve.Below, Impl.Weierstrass.Point.Curve.pointAt,
+    Impl.Weierstrass.Point.Curve.ConstsBelow, hz]
   omega
 
 /-- `vg_<curve>_point_add` (`dbl` false) or `vg_<curve>_point_double` meets
 its contract, given its constant time. -/
-theorem sum_verified (C : Spec.Weierstrass.Point.Curve) (hM : ModOk C.k C.p) (hk3 : 3 ≤ C.k) (hk6 : C.k ≤ 6)
+theorem sum_verified (C : Impl.Weierstrass.Point.Curve) (hM : ModOk C.k C.p) (hk3 : 3 ≤ C.k) (hk6 : C.k ≤ 6)
     (hodd : C.p % 2 = 1) (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool)
     (hct : ConstantTime isa (sumPPC C dbl).pre (sumPPC C dbl).pub (VG.Impl.Weierstrass.PPC64LE.Point.fn (modP C) dbl)) :
     Verified PPC64LE.target (VG.Impl.Weierstrass.PPC64LE.Point.fn (modP C) dbl) (sumC C dbl) :=
   Verified.of_correct (sum_ppc hM hk3 hk6 hodd h1 hF dbl) hct
-    { pre := by sig_implies_pre [sumC, Spec.Weierstrass.Point.Curve.sumPre, Spec.Weierstrass.Point.Curve.sumPost,
-        Spec.Weierstrass.Point.sig, sumPPC, Spec.Weierstrass.Point.Curve.ConstsBelow, PPC64LE.abi, PPC64LE.argRegs]
-      post := by sig_implies_post [sumC, Spec.Weierstrass.Point.Curve.sumPre, Spec.Weierstrass.Point.Curve.sumPost,
-        Spec.Weierstrass.Point.sig, sumPPC, Spec.Weierstrass.Point.Curve.ConstsBelow, PPC64LE.abi, PPC64LE.argRegs]
-      pub := by sig_implies_pub [sumC, Spec.Weierstrass.Point.Curve.sumPre, Spec.Weierstrass.Point.Curve.sumPost,
-        Spec.Weierstrass.Point.sig, sumPPC, Spec.Weierstrass.Point.Curve.ConstsBelow, PPC64LE.abi, PPC64LE.argRegs]
+    { pre := by sig_implies_pre [sumC, Impl.Weierstrass.Point.Curve.sumPre, Impl.Weierstrass.Point.Curve.sumPost,
+        Impl.Weierstrass.Point.sig, sumPPC, Impl.Weierstrass.Point.Curve.ConstsBelow, PPC64LE.abi, PPC64LE.argRegs]
+      post := by sig_implies_post [sumC, Impl.Weierstrass.Point.Curve.sumPre, Impl.Weierstrass.Point.Curve.sumPost,
+        Impl.Weierstrass.Point.sig, sumPPC, Impl.Weierstrass.Point.Curve.ConstsBelow, PPC64LE.abi, PPC64LE.argRegs]
+      pub := by sig_implies_pub [sumC, Impl.Weierstrass.Point.Curve.sumPre, Impl.Weierstrass.Point.Curve.sumPost,
+        Impl.Weierstrass.Point.sig, sumPPC, Impl.Weierstrass.Point.Curve.ConstsBelow, PPC64LE.abi, PPC64LE.argRegs]
       sat := ⟨satPt, by
-        sig_reduce [Sig.wfPre, sumC, Spec.Weierstrass.Point.sig, PPC64LE.abi, PPC64LE.argRegs, satPt]
+        sig_reduce [Sig.wfPre, sumC, Impl.Weierstrass.Point.sig, PPC64LE.abi, PPC64LE.argRegs, satPt]
         refine ⟨trivial, rfl, rfl, by simp, by simp, by simp, ?_⟩
         exact pre_zero C (by omega) _ _⟩ }
 

@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 @[expose] public section
 

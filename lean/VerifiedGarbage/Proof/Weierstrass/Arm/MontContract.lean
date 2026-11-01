@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
 import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Montgomery arithmetic as functions on 32-bit ARM: the contracts
 
-The facts of the contracts of `Spec/Weierstrass/Mont.lean` on 32-bit ARM, by
+The facts of the contracts of `Proof/Weierstrass/MontContract.lean` on 32-bit ARM, by
 name (`armPre`, `mulArm`, `addArm`, `subArm`: `ws`, `o`, `a` and `b` in
 `r0`–`r3`), and the functions meet them (`mul_arm`, `add_arm`, `sub_arm`)
 for a modulus the functions support (`ModOk`): `numAt` reads what
@@ -19,7 +20,7 @@ contracts say (`keeps_of_kept`).
 namespace VG.Proof.Weierstrass.Arm.Mont
 
 open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont VG.Proof.Mont
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus)
 
 /-- What the three functions' preconditions share, by register. -/
 def armPre (M : Modulus) (s : State) : Prop :=
@@ -76,7 +77,7 @@ theorem pre_of {M : Modulus} {s : State} (h : armPre M s) : Pre M.k M.m s := by
 theorem keeps_of_kept {k : Nat} (hk : k ≤ 9) {ws : Addr} {o : BitVec 32} {m m' : Mem}
     (h : Kept k ws o.toNat m m') : Keeps k ws o m m' := by
   intro i hi hown ho
-  simp only [Spec.Weierstrass.Mont.wsBytes] at hi
+  simp only [Impl.Weierstrass.Mont.wsBytes] at hi
   have hown' := own_le k hk
   refine h _ fun r hr => ?_
   rw [ofs_off0 ws (by omega)]

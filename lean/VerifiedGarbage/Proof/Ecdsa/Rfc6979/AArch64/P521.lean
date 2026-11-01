@@ -33,7 +33,7 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSou
   n_lt := by decide +kernel
   sh := 7
   sh_eq := Proof.Ecdsa.AArch64.P521.p521_sh
-  coreN := Spec.Ecdsa.P521.signApi.name
+  coreN := "vg_ecdsa_p521_sign"
   coreC := Impl.Ecdsa.AArch64.signP521
   coreX := Proof.Ecdsa.AArch64.P521.sign_a64 hL hI hT
   coreCT := Proof.Ecdsa.AArch64.P521.sign_ct

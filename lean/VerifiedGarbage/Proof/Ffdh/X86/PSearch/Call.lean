@@ -15,7 +15,7 @@ public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! # The attempt's call (x86)
 

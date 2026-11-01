@@ -52,10 +52,10 @@ materialize_shared baseline := code
 theorem sp : SpOk code 28 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 taint_summary mulSum : taint ({ codecMulT (2 * Spec.P224.curve.len + 1) with regs := .ofList [.esp, .edi, .esi], argLen := 0, argBases := [] })
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p224p.k Impl.Weierstrass.Mont.p224p.m)
 
 taint_summary mulSumW : taint ({ codecMulT (2 * Spec.P224.curve.len + 1) with regs := .ofList [.esp, .edi], argLen := 0, argBases := [] })
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p224p.k Spec.Weierstrass.Mont.p224p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p224p.k Impl.Weierstrass.Mont.p224p.m)
 
 theorem ct : ConstantTime isa (decompressContract Spec.P224.curve (fun a : Spec.Weierstrass.Fe Spec.P224.curve => Impl.EcKey.Compressed.rootTonelli a ((Spec.P224.curve.p - 1) / 2 ^ 96) 96 (Fin.ofNat Spec.P224.curve.p 11))).pre
     (decompressContract Spec.P224.curve (fun a : Spec.Weierstrass.Fe Spec.P224.curve => Impl.EcKey.Compressed.rootTonelli a ((Spec.P224.curve.p - 1) / 2 ^ 96) 96 (Fin.ofNat Spec.P224.curve.p 11))).pub code := by

@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsFn
 public import VerifiedGarbage.Impl.P384.X86_64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsMixed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsVal
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # P-384's point functions on x86-64: where their slots are
@@ -42,9 +45,9 @@ theorem lay (adx : Bool) : Lay (K adx).M 8192 (Sl adx) := by
   exact ⟨by cases adx <;> decide +kernel, fun x y hx hy => h x hx y hy, by cases adx <;> decide +kernel,
     by cases adx <;> decide +kernel⟩
 
-theorem p_odd : Spec.Weierstrass.PointOps.p384.p % 2 = 1 := by decide +kernel
+theorem p_odd : Impl.Weierstrass.PointOps.p384.p % 2 = 1 := by decide +kernel
 
-theorem fnCfg (adx : Bool) : FnCfg (K adx) Spec.Weierstrass.PointOps.p384 (Sl adx) where
+theorem fnCfg (adx : Bool) : FnCfg (K adx) Impl.Weierstrass.PointOps.p384 (Sl adx) where
   n := by cases adx <;> rfl
   rx := by cases adx <;> rfl
   ry := by cases adx <;> rfl
@@ -59,10 +62,10 @@ theorem fnCfg (adx : Bool) : FnCfg (K adx) Spec.Weierstrass.PointOps.p384 (Sl ad
       by cases adx <;> decide, h, by cases adx <;> decide +kernel, by cases adx <;> decide +kernel⟩
   keep := by
     intro i hi hown hp
-    simp only [Spec.Weierstrass.PointOps.Curve.Own, Spec.Weierstrass.PointOps.Curve.slot,
-      Spec.Weierstrass.PointOps.Curve.tmpAt, Spec.Weierstrass.PointOps.Curve.pAt,
-      Spec.Weierstrass.PointOps.Curve.ptBytes, Spec.Weierstrass.PointOps.p384,
-      Spec.Weierstrass.Point.p384] at hown hp
+    simp only [Impl.Weierstrass.PointOps.Curve.Own, Impl.Weierstrass.PointOps.Curve.slot,
+      Impl.Weierstrass.PointOps.Curve.tmpAt, Impl.Weierstrass.PointOps.Curve.pAt,
+      Impl.Weierstrass.PointOps.Curve.ptBytes, Impl.Weierstrass.PointOps.p384,
+      Impl.Weierstrass.Point.p384] at hown hp
     refine ⟨fun w hw => ?_, ?_⟩
     · have hw' : w ∈ [1168, 1216, 1264, 1312, 1360, 1408, 880, 928, 976, 736, 784, 832] := by
         cases adx <;> revert w <;> decide +kernel
@@ -94,17 +97,17 @@ theorem doubleLay (adx : Bool) : DoubleLay (K adx) 8192 (Sl adx) where
   accum := by cases adx <;> decide +kernel
   copy := by cases adx <;> decide +kernel
 
-theorem one_lt (adx : Bool) : (K adx).one < Spec.Weierstrass.PointOps.p384.p := by
+theorem one_lt (adx : Bool) : (K adx).one < Impl.Weierstrass.PointOps.p384.p := by
   cases adx <;> decide +kernel
 
 theorem one_val (adx : Bool) :
-    toM Spec.Weierstrass.PointOps.p384.p (2 ^ (64 * (K adx).M.n)) (K adx).one = 1 := by
-  have h : (K adx).one = 1 * 2 ^ (64 * (K adx).M.n) % Spec.Weierstrass.PointOps.p384.p := by
+    toM Impl.Weierstrass.PointOps.p384.p (2 ^ (64 * (K adx).M.n)) (K adx).one = 1 := by
+  have h : (K adx).one = 1 * 2 ^ (64 * (K adx).M.n) % Impl.Weierstrass.PointOps.p384.p := by
     cases adx <;> decide +kernel
   rw [h, toM_mont (unitMod_pow_two p_odd _)]
   decide +kernel
 
-theorem cachedPts (adx : Bool) : CachedPts (m := Spec.Weierstrass.PointOps.p384.p) (K adx) sel 8192 (Sl adx) where
+theorem cachedPts (adx : Bool) : CachedPts (m := Impl.Weierstrass.PointOps.p384.p) (K adx) sel 8192 (Sl adx) where
   lay := {
     lay := lay adx
     apart := by cases adx <;> exact ⟨by decide +kernel, by decide +kernel⟩

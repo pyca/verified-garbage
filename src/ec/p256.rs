@@ -23,11 +23,17 @@ use crate::arch::ecdh_p256::VG_ECDH_P256_ADX_FEATURES;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdh_p256::VG_ECDH_P256_UMAAL_FEATURES;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p256::{VG_ECDSA_P256_SIGN_ADX_FEATURES, VG_ECDSA_P256_VERIFY_ADX_FEATURES};
+use crate::arch::ecdsa_p256::VG_ECDSA_P256_VERIFY_ADX_FEATURES;
 #[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_p256::{
-    VG_ECDSA_P256_SIGN_UMAAL_FEATURES, VG_ECDSA_P256_VERIFY_UMAAL_FEATURES,
-};
+use crate::arch::ecdsa_p256::VG_ECDSA_P256_VERIFY_UMAAL_FEATURES;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ecdsa_p256_sha256::VG_ECDSA_P256_SHA256_SIGN_ADX_FEATURES;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p256_sha256::VG_ECDSA_P256_SHA256_SIGN_UMAAL_FEATURES;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ecdsa_p256_sha384::VG_ECDSA_P256_SHA384_SIGN_ADX_FEATURES;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p256_sha384::VG_ECDSA_P256_SHA384_SIGN_UMAAL_FEATURES;
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
@@ -54,7 +60,8 @@ impl Mul {
                 Features::all(&[
                     VG_EC_P256_PUBLIC_KEY_ADX_FEATURES,
                     VG_ECDH_P256_ADX_FEATURES,
-                    VG_ECDSA_P256_SIGN_ADX_FEATURES,
+                    VG_ECDSA_P256_SHA256_SIGN_ADX_FEATURES,
+                    VG_ECDSA_P256_SHA384_SIGN_ADX_FEATURES,
                     VG_ECDSA_P256_VERIFY_ADX_FEATURES,
                 ])
             },
@@ -70,7 +77,8 @@ impl Mul {
                 Features::all(&[
                     VG_EC_P256_PUBLIC_KEY_UMAAL_FEATURES,
                     VG_ECDH_P256_UMAAL_FEATURES,
-                    VG_ECDSA_P256_SIGN_UMAAL_FEATURES,
+                    VG_ECDSA_P256_SHA256_SIGN_UMAAL_FEATURES,
+                    VG_ECDSA_P256_SHA384_SIGN_UMAAL_FEATURES,
                     VG_ECDSA_P256_VERIFY_UMAAL_FEATURES,
                 ])
             },

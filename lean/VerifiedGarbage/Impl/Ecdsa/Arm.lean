@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
 
 /-!
 # ECDSA signing on 32-bit ARM
@@ -32,7 +32,7 @@ words; `n = 4` for the 256-bit curves), from the code of
    selects `r ‖ s` or zeros for `out` (big-endian), and is returned as 0 or 1.
 
 The field arithmetic is calls of the functions of `p` and `n`
-(`Spec/Weierstrass/Mont.lean`), which use the `64 n` bytes below byte 4096
+(`Proof/Weierstrass/MontContract.lean`), which use the `64 n` bytes below byte 4096
 for themselves (`wk`); every offset of a slot is below them, which `ldr`
 and `str` reach from `r12`, and the tables of bits are past byte 4096.
 `R = O` (impossible for `k` in `[1, n-1]`) gives `Z = 0`, so `x = 0` and
@@ -108,7 +108,7 @@ def FLAG := 44
 /-- The number of slots. -/
 def nslots := 45
 
-/-- The field arithmetic's own working space (`Spec.Weierstrass.Mont.ownAt`):
+/-- The field arithmetic's own working space (`Impl.Weierstrass.Mont.ownAt`):
 the `64 n` bytes below byte 4096, after the slots. -/
 def wkAt (n : Nat) : Nat := Mont.own n
 
@@ -136,12 +136,12 @@ functions of its arithmetic modulo `p` and `n` (`SP`, `SN`). -/
 structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
-  SP : Spec.Weierstrass.Mont.Modulus
-  SN : Spec.Weierstrass.Mont.Modulus
-  /-- The curve whose `vg_<curve>_mul` (`Spec/Weierstrass/Mul.lean`) computes
+  SP : Impl.Weierstrass.Mont.Modulus
+  SN : Impl.Weierstrass.Mont.Modulus
+  /-- The curve whose `vg_<curve>_mul` (`Proof/Weierstrass/MulContract.lean`) computes
   `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
   verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
-  mul : Option Spec.Weierstrass.Mul.Curve
+  mul : Option Impl.Weierstrass.Mul.Curve
   /-- Whether the field multiplications are calls of the `_umaal` variants
   of `vg_<curve>_mul_mod_<p|n>` (`Impl/Weierstrass/Arm/Mont.lean`), and so
   the point functions and `vg_<curve>_mul` called too. -/
@@ -306,7 +306,7 @@ def signWith (generator : Prog isa) : Prog isa :=
 
 /-! ## `vg_<curve>_mul`
 
-`[k]Q` (`Spec/Weierstrass/Mul.lean`) as a function, which the signature,
+`[k]Q` (`Proof/Weierstrass/MulContract.lean`) as a function, which the signature,
 the public key, ECDH and verification call: the ladder of `ladderP`, its
 point at `ACC`, `PT`, `ONEP` (a copy of `Q`, which the contract has in
 `R`'s first two slots), over the bits of `k` at `K`'s slot; it keeps the
@@ -346,10 +346,10 @@ def mulFn : Prog isa :=
 /-- A call of `vg_<curve>_mul` (`C`'s) on the point at `px`, `py`: the point
 copied to `R`'s first two slots, `lr` kept in `r10` across the call, as the
 calls of the point and Montgomery functions do. -/
-def mulAt (C : Spec.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
+def mulAt (C : Impl.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
   .seq (.block (copy (2 * c.n) (c.sl RX) (c.sl px) ++ copy (2 * c.n) (c.sl RY) (c.sl py) ++
     [.mov .r10 (.reg .lr), .mov .r0 (.reg wb)])) <|
-  .seq (.call (C.mulApi.name ++ if c.umaal then "_umaal" else "") c.mulFn) (.block [.mov .lr (.reg .r10)])
+  .seq (.call (s!"vg_{C.curve}_mul" ++ if c.umaal then "_umaal" else "") c.mulFn) (.block [.mov .lr (.reg .r10)])
 
 /-- Whether `qMul`'s inline ladder doubles and adds by the point functions
 for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`):

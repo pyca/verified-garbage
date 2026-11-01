@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableInit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableStep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! Construction of the eight odd multiples used by the public verifier. -/
 

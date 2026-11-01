@@ -32,8 +32,8 @@ tactic_template "naf_layout" h:term : tactic => `(tactic|
                      Impl.Ecdsa.X86.Cfg.rcbSlots, Impl.Ecdsa.X86.Cfg.pt, Impl.Ecdsa.X86.Cfg.sl,
                      slot, ($h), nafSlots, nafWrites, nafTblSlots, winRo, winOther, rcbW,
                      List.map_append, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
-                     Impl.Ecdh.X86.Cfg.windowBits, Mont.outW, Mont.own, Spec.Weierstrass.Mont.ownAt,
-                     Spec.Weierstrass.Mont.ownBytes, words, List.forall_mem_cons, List.forall_mem_nil,
+                     Impl.Ecdh.X86.Cfg.windowBits, Mont.outW, Mont.own, Impl.Weierstrass.Mont.ownAt,
+                     Impl.Weierstrass.Mont.ownBytes, words, List.forall_mem_cons, List.forall_mem_nil,
                      List.forall_mem_append, List.forall_mem_map] <;> decide +kernel))
 
 theorem nafQLay (h4 : c.n=4) : NafLay (Impl.Ecdsa.Verify.X86.Cfg.nafQ c) size := by

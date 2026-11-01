@@ -75,13 +75,13 @@ abbrev savesG : List (Nat × Nat) := [(1504, 8), (1512, 8), (1520, 8), (1528, 8)
 /-- What the function writes is its own working space or the result's. -/
 theorem keepsG_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (savesG ++ bodyW) m m') : MC.Keeps ws m m' := by
   intro i hi hown hp
-  have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
+  have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega)]
   have hw' := (by decide : ∀ w ∈ savesG ++ bodyW, (w.1 = 512 ∧ w.2 = 544) ∨ 1504 ≤ w.1) w hw
-  simp only [Spec.Weierstrass.Mul.Curve.Own, Spec.Weierstrass.Mul.Curve.slot, Spec.Weierstrass.Mul.Curve.tmpAt,
-    Spec.Weierstrass.Mul.Curve.bitsAt, Spec.Weierstrass.Mul.Curve.pAt, Spec.Weierstrass.Mul.Curve.ptBytes,
-    MC, Spec.Weierstrass.Mul.p256, true_and] at hown hp
+  simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot, Impl.Weierstrass.Mul.Curve.tmpAt,
+    Impl.Weierstrass.Mul.Curve.bitsAt, Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes,
+    MC, Impl.Weierstrass.Mul.p256, true_and] at hown hp
   omega
 
 
@@ -134,7 +134,7 @@ theorem mulG_rv (hL : Law W) (s : State) (hs : mulGRVc.pre s) :
   have h1₆ : wordsVal s₆.mem base 224 4 = oneM := by
     rw [e₆ 224 (by omega), ← cs 224 (by omega)]
     refine hone.trans ?_
-    simp only [Spec.Weierstrass.Mul.Curve.mont, Nat.one_mul]; rfl
+    simp only [Impl.Weierstrass.Mul.Curve.mont, Nat.one_mul]; rfl
   have ha₆ : wordsVal s₆.mem base 256 4 = W.a * 2 ^ (64 * 4) % W.p := by
     rw [e₆ 256 (by omega), ← cs 256 (by omega)]; exact ha
   have hb₆ : wordsVal s₆.mem base 288 4 = (3 * W.b) * 2 ^ (64 * 4) % W.p := by
@@ -190,17 +190,17 @@ theorem mulG_rv (hL : Law W) (s : State) (hs : mulGRVc.pre s) :
     have c7 : ∀ d, d < 4096 → MC.toPoint.coordAt s₇.mem base d = wordsVal s₇.mem base d 4 := fun d hd =>
       coordAt_eq s₇.mem base (by omega)
     have x0 : MC.toPoint.coordAt s₇.mem base MC.pAt = wordsVal s₇.mem base 512 4 := c7 512 (by omega)
-    have x1 : MC.toPoint.coordAt s₇.mem base (MC.pAt + Spec.Weierstrass.Point.elemBytes MC.toPoint.k) =
+    have x1 : MC.toPoint.coordAt s₇.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
         wordsVal s₇.mem base 544 4 := c7 544 (by omega)
-    have x2 : MC.toPoint.coordAt s₇.mem base (MC.pAt + 2 * Spec.Weierstrass.Point.elemBytes MC.toPoint.k) =
+    have x2 : MC.toPoint.coordAt s₇.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
         wordsVal s₇.mem base 576 4 := c7 576 (by omega)
     rw [e]
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at lt₇
     refine ⟨⟨?_, ?_, ?_⟩, ?_⟩
-    · show _ < W.p; rw [Spec.Weierstrass.Point.Curve.pointAt, x0]; exact lt₇.1
-    · show _ < W.p; rw [Spec.Weierstrass.Point.Curve.pointAt, x1]; exact lt₇.2.1
-    · show _ < W.p; rw [Spec.Weierstrass.Point.Curve.pointAt, x2]; exact lt₇.2.2
-    · rw [Spec.Weierstrass.Point.Curve.pointAt, x0, x1, x2, dq, dq, dq]
+    · show _ < W.p; rw [Impl.Weierstrass.Point.Curve.pointAt, x0]; exact lt₇.1
+    · show _ < W.p; rw [Impl.Weierstrass.Point.Curve.pointAt, x1]; exact lt₇.2.1
+    · show _ < W.p; rw [Impl.Weierstrass.Point.Curve.pointAt, x2]; exact lt₇.2.2
+    · rw [Impl.Weierstrass.Point.Curve.pointAt, x0, x1, x2, dq, dq, dq]
       exact represents_of_rep R₇
 
 /-! ## Constant time -/

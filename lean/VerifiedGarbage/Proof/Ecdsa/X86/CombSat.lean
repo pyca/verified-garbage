@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombContract
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -60,8 +61,8 @@ theorem combSat_spec : combSignSpec.pre combSatState := by
       ((combSatState.syms "VG_P256_COMB").setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 :=
     combSatMem_held
   generalize e : combSatState = s
-  sig_pre [combSignSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract,
-    Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+  sig_pre [combSignSpec, Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract,
+    Proof.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s

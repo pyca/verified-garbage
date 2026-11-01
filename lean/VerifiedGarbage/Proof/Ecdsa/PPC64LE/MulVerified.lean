@@ -2,19 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointContract
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Rep
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # `vg_<curve>_mul` on PPC64LE: the contract
 
-The facts of `Spec.Weierstrass.Mul.Curve.mulInRangeContract` on PPC64LE, by
+The facts of `Impl.Weierstrass.Mul.Curve.mulInRangeContract` on PPC64LE, by
 register (`mulPPC`: `ws` in `r3`), for the curve of
-`Spec/Weierstrass/Mul.lean` that a configuration's code has (`mulCurve`: its
+`Proof/Weierstrass/MulContract.lean` that a configuration's code has (`mulCurve`: its
 words, temporary slot `TMP`, `tail` and `inRange`), and `mulFn` meets them
 (`mul_ppc`), given the group law: `mulFn_ok` for the invariant that `R`
 represents `[k >>> j]Q` when `k` is below `2^(8 len)` (every `k` below `n`
@@ -39,13 +40,13 @@ open VG.Proof.Mont VG.Proof.Mont.PPC64LE VG.Proof.Weierstrass VG.Proof.Weierstra
 
 variable {c : Cfg}
 
-/-- The curve of `Spec/Weierstrass/Mul.lean` that `c`'s code has: its words,
+/-- The curve of `Proof/Weierstrass/MulContract.lean` that `c`'s code has: its words,
 its temporary slot, with `tail` and `inRange`. -/
-def mulCurve (c : Cfg) (curve desc : String) : Spec.Weierstrass.Mul.Curve :=
+def mulCurve (c : Cfg) (curve desc : String) : Impl.Weierstrass.Mul.Curve :=
   { W := c.C, curve := curve, k := c.n, desc := desc, tmp := TMP, tail := true, inRange := true }
 
 /-- `vg_<curve>_mul(ws = r3)`. -/
-def mulPPC (C : Spec.Weierstrass.Mul.Curve) : Contract PPC64LE.isa where
+def mulPPC (C : Impl.Weierstrass.Mul.Curve) : Contract PPC64LE.isa where
   pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .r3, 8192⟩] ∧ (s.gpr .r3).toNat + 8192 ≤ 2 ^ 64 ∧
     C.ConstsOk (s.gpr .r3) s.mem ∧ C.PointOk (s.gpr .r3) s.mem
   post s s' := C.ResultInRange (C.scalar (s.gpr .r3) s.mem) (C.point (s.gpr .r3) s.mem) (s.gpr .r3) s.mem s'.mem
@@ -53,7 +54,7 @@ def mulPPC (C : Spec.Weierstrass.Mul.Curve) : Contract PPC64LE.isa where
 
 /-- `Represents` is the proofs' `Rep`. -/
 theorem represents_of_rep {W : Spec.Weierstrass.Curve} {X Y Z : Fe W} {P : Point W}
-    (h : Rep W X Y Z P) : Spec.Weierstrass.MulBase.Represents X Y Z P := by
+    (h : Rep W X Y Z P) : Impl.Weierstrass.MulBase.Represents X Y Z P := by
   cases P <;> exact h
 
 section curve
@@ -64,13 +65,13 @@ variable {curve desc : String}
 theorem keeps_of_unch (h3 : 3 ≤ c.n) (h7 : c.n < 10) {ws : Addr} {m m' : Mem} (hu : Unch ws (mulFW c) m m') :
     (mulCurve c curve desc).Keeps ws m m' := by
   intro i hi hown hp
-  have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
+  have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega)]
   have hown' := own_eq c.n
-  simp only [Spec.Weierstrass.Mul.Curve.Own, Spec.Weierstrass.Mul.Curve.slot,
-    Spec.Weierstrass.Mul.Curve.tmpAt, Spec.Weierstrass.Mul.Curve.bitsAt,
-    Spec.Weierstrass.Mul.Curve.pAt, Spec.Weierstrass.Mul.Curve.ptBytes, mulCurve, TMP, true_and] at hown hp
+  simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot,
+    Impl.Weierstrass.Mul.Curve.tmpAt, Impl.Weierstrass.Mul.Curve.bitsAt,
+    Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes, mulCurve, TMP, true_and] at hown hp
   simp only [mulFW, mulBW, mulBX, List.mem_append, ladWp_eq, slW, List.mem_map, List.mem_cons,
     List.not_mem_nil, or_false] at hw
   rcases hw with ((((⟨j, hj, rfl⟩ | hw) | hw) | (⟨j, hj, rfl⟩ | hw)) | hw)
@@ -90,7 +91,7 @@ theorem keeps_of_unch (h3 : 3 ≤ c.n) (h7 : c.n < 10) {ws : Addr} {m m' : Mem} 
   · rw [hw]; simp only [sl_eq, nslots]; omega
 
 /-- The number at a slot is the coordinate the specification reads there. -/
-theorem coord_sl (c : Cfg) (C : Spec.Weierstrass.Mul.Curve) (hk : C.k = c.n) (m : Mem) (ws : Addr)
+theorem coord_sl (c : Cfg) (C : Impl.Weierstrass.Mul.Curve) (hk : C.k = c.n) (m : Mem) (ws : Addr)
     {i : Nat} (h7 : c.n < 10) (hi : i < 45) :
     C.toPoint.coordAt m ws (c.sl i) = wordsVal m ws (c.sl i) c.n := by
   rw [VG.Proof.Weierstrass.PPC64LE.Point.coordAt_eq C.toPoint m ws
@@ -111,7 +112,7 @@ theorem mul_ppc (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : Law c.C) (s : State) (hs :
   have hz' : sv c base s ZERO = 0 := (ca (i := ZERO) (by decide)).symm.trans hz
   have hone' : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p := by
     have h := (ca (i := ONEP) (by decide)).symm.trans hone
-    simp only [Spec.Weierstrass.Mul.Curve.mont, Nat.one_mul] at h
+    simp only [Impl.Weierstrass.Mul.Curve.mont, Nat.one_mul] at h
     exact h
   have ha' : sv c base s AP = c.mont c.C.a := (ca (i := AP) (by decide)).symm.trans ha
   have hb3' : sv c base s B3P = c.mont (3 * c.C.b) := (ca (i := B3P) (by decide)).symm.trans hb3
@@ -119,14 +120,14 @@ theorem mul_ppc (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : Law c.C) (s : State) (hs :
   have qx : ((mulCurve c curve desc).qCoords base s.mem).1 = sv c base s RX := ca (i := RX) (by decide)
   have qy : ((mulCurve c curve desc).qCoords base s.mem).2 = sv c base s RY := by
     rw [← ca (i := RY) (by decide)]
-    show Spec.Weierstrass.Point.Curve.coordAt _ _ _ (64 + 8 * c.n * 14 + 8 * c.n) = _
+    show Impl.Weierstrass.Point.Curve.coordAt _ _ _ (64 + 8 * c.n * 14 + 8 * c.n) = _
     rw [show 64 + 8 * c.n * 14 + 8 * c.n = c.sl RY by rw [sl_eq]; simp only [RY]; omega]
   have dq : ∀ x, (mulCurve c curve desc).toPoint.dec x = toM c.C.p (2 ^ (64 * c.n)) x :=
     VG.Proof.Weierstrass.Point.dec_eq _ hL.one_ne_zero (VG.Proof.Weierstrass.Point.fermat_of_law hL) hpR
   -- The point, and the invariant of the ladder.
   have eP : (mulCurve c curve desc).point base s.mem =
       .affine (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) := by
-    unfold Spec.Weierstrass.Mul.Curve.point
+    unfold Impl.Weierstrass.Mul.Curve.point
     rw [qx, qy, dq, dq]
   have hQ : onCurve c.C (.affine (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))) = true := by
     have h := hon; rw [eP] at h; exact h
@@ -159,30 +160,30 @@ theorem mul_ppc (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : Law c.C) (s : State) (hs :
     rw [e, show (mulCurve c curve desc).W.n = c.C.n from rfl] at hn; omega
   have cs : ∀ {i}, i < 45 → (mulCurve c curve desc).toPoint.coordAt s'.mem base (c.sl i) = sv c base s' i :=
     fun hi => coord_sl c _ rfl s'.mem base h7 hi
-  have p1 : (mulCurve c curve desc).pAt + Spec.Weierstrass.Point.elemBytes (mulCurve c curve desc).toPoint.k
+  have p1 : (mulCurve c curve desc).pAt + Impl.Weierstrass.Point.elemBytes (mulCurve c curve desc).toPoint.k
       = c.sl RY := by
-    show 64 + 8 * c.n * 14 + Spec.Weierstrass.Point.elemBytes c.n = _
-    rw [sl_eq]; simp only [RY, Spec.Weierstrass.Point.elemBytes]; omega
-  have p2 : (mulCurve c curve desc).pAt + 2 * Spec.Weierstrass.Point.elemBytes (mulCurve c curve desc).toPoint.k
+    show 64 + 8 * c.n * 14 + Impl.Weierstrass.Point.elemBytes c.n = _
+    rw [sl_eq]; simp only [RY, Impl.Weierstrass.Point.elemBytes]; omega
+  have p2 : (mulCurve c curve desc).pAt + 2 * Impl.Weierstrass.Point.elemBytes (mulCurve c curve desc).toPoint.k
       = c.sl RZ := by
-    show 64 + 8 * c.n * 14 + 2 * Spec.Weierstrass.Point.elemBytes c.n = _
-    rw [sl_eq]; simp only [RZ, Spec.Weierstrass.Point.elemBytes]; omega
+    show 64 + 8 * c.n * 14 + 2 * Impl.Weierstrass.Point.elemBytes c.n = _
+    rw [sl_eq]; simp only [RZ, Impl.Weierstrass.Point.elemBytes]; omega
   have x0 : (mulCurve c curve desc).toPoint.coordAt s'.mem base (mulCurve c curve desc).pAt =
       sv c base s' RX := cs (i := RX) (by decide)
   have x1 : (mulCurve c curve desc).toPoint.coordAt s'.mem base
-      ((mulCurve c curve desc).pAt + Spec.Weierstrass.Point.elemBytes (mulCurve c curve desc).toPoint.k) =
+      ((mulCurve c curve desc).pAt + Impl.Weierstrass.Point.elemBytes (mulCurve c curve desc).toPoint.k) =
       sv c base s' RY := by rw [p1]; exact cs (by decide)
   have x2 : (mulCurve c curve desc).toPoint.coordAt s'.mem base
-      ((mulCurve c curve desc).pAt + 2 * Spec.Weierstrass.Point.elemBytes (mulCurve c curve desc).toPoint.k) =
+      ((mulCurve c curve desc).pAt + 2 * Impl.Weierstrass.Point.elemBytes (mulCurve c curve desc).toPoint.k) =
       sv c base s' RZ := by rw [p2]; exact cs (by decide)
   have hR := R hk
   rw [Nat.shiftRight_zero] at hR
   rw [e]
   refine ⟨⟨?_, ?_, ?_⟩, ?_⟩
-  · show _ < c.C.p; rw [Spec.Weierstrass.Point.Curve.pointAt, x0]; exact L _ (by simp)
-  · show _ < c.C.p; rw [Spec.Weierstrass.Point.Curve.pointAt, x1]; exact L _ (by simp)
-  · show _ < c.C.p; rw [Spec.Weierstrass.Point.Curve.pointAt, x2]; exact L _ (by simp)
-  · rw [Spec.Weierstrass.Point.Curve.pointAt, x0, x1, x2, dq, dq, dq]
+  · show _ < c.C.p; rw [Impl.Weierstrass.Point.Curve.pointAt, x0]; exact L _ (by simp)
+  · show _ < c.C.p; rw [Impl.Weierstrass.Point.Curve.pointAt, x1]; exact L _ (by simp)
+  · show _ < c.C.p; rw [Impl.Weierstrass.Point.Curve.pointAt, x2]; exact L _ (by simp)
+  · rw [Impl.Weierstrass.Point.Curve.pointAt, x0, x1, x2, dq, dq, dq]
     exact represents_of_rep hR
 
 /-- `vg_<curve>_mul` meets its contract, given the group law, its constant
@@ -193,15 +194,15 @@ theorem mul_verified (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : Law c.C)
     Verified PPC64LE.target c.mulFn ((mulCurve c curve desc).mulInRangeContract PPC64LE.abi) :=
   Verified.of_correct (mul_ppc hc h3 hL) hct
     { pre := fun s h => by
-        sig_pre [Spec.Weierstrass.Mul.Curve.mulInRangeContract, Spec.Weierstrass.MulBase.sig, PPC64LE.abi,
+        sig_pre [Impl.Weierstrass.Mul.Curve.mulInRangeContract, Impl.Weierstrass.MulBase.sig, PPC64LE.abi,
           PPC64LE.argRegs] at h
         exact ⟨h.1, h.2⟩
       post := fun s s' _ h => by
-        sig_post [Spec.Weierstrass.Mul.Curve.mulInRangeContract, Spec.Weierstrass.MulBase.sig, PPC64LE.abi,
+        sig_post [Impl.Weierstrass.Mul.Curve.mulInRangeContract, Impl.Weierstrass.MulBase.sig, PPC64LE.abi,
           PPC64LE.argRegs]
         exact h
       pub := fun s₁ s₂ _ _ h => by
-        sig_pub [Spec.Weierstrass.Mul.Curve.mulInRangeContract, Spec.Weierstrass.MulBase.sig, PPC64LE.abi,
+        sig_pub [Impl.Weierstrass.Mul.Curve.mulInRangeContract, Impl.Weierstrass.MulBase.sig, PPC64LE.abi,
           PPC64LE.argRegs] at h
         exact h
       sat := hsat }
@@ -242,14 +243,14 @@ theorem mulSat_point (hc : CfgOk c) (hL : Law c.C)
   have hp3 := hc.p_ge
   have ey : ((mulCurve c curve desc).qCoords 0x1000 (mulSatMem c)).2 = c.mont c.C.gy := by
     rw [← hy]
-    show Spec.Weierstrass.Point.Curve.coordAt _ _ _ (64 + 8 * c.n * 14 + 8 * c.n) = _
+    show Impl.Weierstrass.Point.Curve.coordAt _ _ _ (64 + 8 * c.n * 14 + 8 * c.n) = _
     rw [show 64 + 8 * c.n * 14 + 8 * c.n = c.sl RY by rw [sl_eq]; simp only [RY]; omega]
   have ex : ((mulCurve c curve desc).qCoords 0x1000 (mulSatMem c)).1 = c.mont c.C.gx := hx
   have dq : ∀ x, (mulCurve c curve desc).toPoint.dec x = toM c.C.p (2 ^ (64 * c.n)) x :=
     VG.Proof.Weierstrass.Point.dec_eq _ hL.one_ne_zero (VG.Proof.Weierstrass.Point.fermat_of_law hL) hpR
   refine ⟨by rw [ex]; exact Nat.mod_lt _ (by omega), by rw [ey]; exact Nat.mod_lt _ (by omega), ?_⟩
   have eG : (mulCurve c curve desc).point 0x1000 (mulSatMem c) = G c.C := by
-    unfold Spec.Weierstrass.Mul.Curve.point
+    unfold Impl.Weierstrass.Mul.Curve.point
     rw [ex, ey, dq, dq]
     exact congrArg₂ Point.affine (toM_cmont hc _) (toM_cmont hc _)
   have h := hc.onG

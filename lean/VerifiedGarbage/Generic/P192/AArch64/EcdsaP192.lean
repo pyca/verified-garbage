@@ -64,9 +64,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 namespace VG.Generic.P192.AArch64.EcdsaP192
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P192.curve) : List Artifact := [
-  Spec.Ecdsa.P192.signApi.artifact AArch64.target {
-    code := Impl.Ecdsa.AArch64.signP192
-    verified := Proof.Ecdsa.AArch64.P192.sign_verified h.law h.inv },
   Spec.Ecdsa.P192.verifyApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.P192.Joint.verify
     verified := Proof.Ecdsa.Verify.AArch64.P192.Joint.verify_verified h.law h.inv }]

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryFields
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheNeg
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! The cached peer lookup represents a nonzero width-five digit of the joint sum. -/
 

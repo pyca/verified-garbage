@@ -12,7 +12,7 @@ namespace VG.Impl.EcKey.Compressed.RISCV64
 open VG.RISCV64 VG.Impl.Ecdsa.RISCV64 VG.Impl.Ecdh.RISCV64
 
 /-- `vg_ec_p256_compress_public_key`. -/
-def compressP256 : Prog isa := Cfg.compressFn p256 Spec.Weierstrass.CheckPoint.p256.checkApi.name checkP256
+def compressP256 : Prog isa := Cfg.compressFn p256 "vg_p256_check_point" checkP256
 
 /-- `vg_ec_p256_decompress_public_key`. -/
 def decompressP256 : Prog isa := Cfg.decompressFn p256

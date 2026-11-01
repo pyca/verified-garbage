@@ -85,7 +85,7 @@ theorem Outside.frame {base : Addr} {size o n : Nat} {m m' : Mem} (h : Outside b
     rw [List.mem_singleton.mp hr]; exact hon
 
 theorem saveAt_le {k : Nat} (h0 : 0 < k) (h9 : k ≤ 9) : saveAt k + 16 ≤ 4096 ∧ own k + 64 * k = 4096 := by
-  simp only [saveAt, tmpAt, own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega_arith
+  simp only [saveAt, tmpAt, own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega_arith
 
 /-- A store through `r` holding the working space's base. -/
 theorem ea_base {t : State} {r : Reg} {W : BitVec 32} (hr : t.gpr r = W) (hW : W.toNat + 8192 ≤ 2 ^ 32)

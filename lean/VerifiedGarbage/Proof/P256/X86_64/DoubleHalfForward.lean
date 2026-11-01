@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Forward
 import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfWP
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
 

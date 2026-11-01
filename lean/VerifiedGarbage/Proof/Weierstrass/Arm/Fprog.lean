@@ -38,7 +38,7 @@ open VG.Proof.X25519.Arm (Rest)
 
 /-- The functions of `S` compute modulo `m` on numbers of `M.n` words, with
 their own working space at `wk`. -/
-structure FnOk (M : Mod) (wk : Nat) (S : Spec.Weierstrass.Mont.Modulus) (m : Nat) : Prop where
+structure FnOk (M : Mod) (wk : Nat) (S : Impl.Weierstrass.Mont.Modulus) (m : Nat) : Prop where
   k : S.k = M.n
   m : S.m = m
   ok : Mont.ModOk S.k S.m
@@ -110,7 +110,7 @@ theorem ProgKeep.unch {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s' : 
     (h : ProgKeep M base wk W s s') : VG.Proof.Weierstrass.Unch base (progW M wk W) s.mem s'.mem := h.mem
 
 /-- A call's frame, as a program's. -/
-theorem ProgKeep.of_call {M : Mod} {base : Addr} {wk o : Nat} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat}
+theorem ProgKeep.of_call {M : Mod} {base : Addr} {wk o : Nat} {S : Impl.Weierstrass.Mont.Modulus} {m : Nat}
     (hF : FnOk M wk S m) {s s' : State} (h : Mont.CallKeep S.k base o s s') : ProgKeep M base wk [o] s s' :=
   ⟨h.rest, h.mem.mono (by
     intro r hr
@@ -176,19 +176,19 @@ theorem ProgKeep.unchOne {M : Mod} {base : Addr} {wk o : Nat} {s s' : State} (h 
     VG.Proof.Weierstrass.Unch base [(o, 8 * M.n), (M.tmp, 8 * M.n), (wk, 64 * M.n)] s.mem s'.mem := h.mem
 
 /-- A number below the functions' own working space, in their terms. -/
-theorem FnOk.fits {M : Mod} {wk : Nat} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M wk S m)
+theorem FnOk.fits {M : Mod} {wk : Nat} {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M wk S m)
     {x : Nat} (hx : x + 8 * M.n ≤ wk) : x + 8 * S.k ≤ Impl.Weierstrass.Arm.Mont.own S.k := by
   rw [hF.k, ← hF.wk]; exact hx
 
 /-- The slots of an operation, in the functions' terms. -/
 theorem fnSl {M : Mod} {size wk : Nat} {Sl : Nat → Prop} (hW : WkOk M size wk Sl)
-    {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M wk S m) {x : Nat} (hx : Sl x) :
+    {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M wk S m) {x : Nat} (hx : Sl x) :
     x + 8 * S.k ≤ Impl.Weierstrass.Arm.Mont.own S.k :=
   hF.fits (hW.sl x hx)
 
 /-- One operation. -/
 theorem fop_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
-    (hW : WkOk M size wk Sl) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk M wk S m)
+    (hW : WkOk M size wk Sl) {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk M wk S m)
     (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
     (hR : ∀ x ∈ op.ins, x ∈ V) {u : Bool} :
@@ -239,7 +239,7 @@ theorem progs_wp (p : Prog isa) (ps : List (Prog isa)) {s : State} {Q : State �
 
 /-- A field program. -/
 theorem fprog_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
-    (hW : WkOk M size wk Sl) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk M wk S m)
+    (hW : WkOk M size wk Sl) {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk M wk S m)
     (hm : UnitMod m (2 ^ (64 * M.n))) {u : Bool} :
     ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State},
       Inv M base size m Sl V E s → (∀ op ∈ ops, ∀ x ∈ op.out :: op.ins, Sl x) →
@@ -264,7 +264,7 @@ be `q`), from a state holding `E`, in particular `p`, `q`, `a` and `3b`
 (`rcbR`): `o` holds `rcbAdd` of their values, and the slots but those `rcb`
 writes (`rcbW`) keep theirs. -/
 theorem rcb_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
-    (hW : WkOk M size wk Sl) {S' : Spec.Weierstrass.Mont.Modulus} (hF : FnOk M wk S' m)
+    (hW : WkOk M size wk Sl) {S' : Impl.Weierstrass.Mont.Modulus} (hF : FnOk M wk S' m)
     (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o)
     (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m} {s : State}

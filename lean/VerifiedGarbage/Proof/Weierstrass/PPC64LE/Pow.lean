@@ -73,7 +73,7 @@ structure PowInv (P : PowCfg) (k : Nat) (base : Addr) (m e : Nat) [NeZero m] (s�
     toM m (2 ^ (64 * k)) (wordsVal s₀.mem base P.base k) ^ (e >>> j)
 
 /-- An iteration. -/
-theorem powBody_ok {P : PowCfg} {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m)
+theorem powBody_ok {P : PowCfg} {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m)
     (hk : P.M.n = S.k) (hL : PowLayP P S.k) (hm : UnitMod S.m (2 ^ (64 * S.k))) {base : Addr} {e : Nat}
     {s₀ : State} (hB : wordsVal s₀.mem base P.base S.k < S.m)
     (hbits : ∀ t < P.nbits, s₀.mem (off base (P.bits + t)) = if e.testBit t then 1 else 0)
@@ -158,7 +158,7 @@ theorem powBody_ok {P : PowCfg} {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m]
     · rw [hA₃, v₂, Lean.Grind.Semiring.mul_one]
 
 /-- `pow_ok`, for the modulus's own numbers. -/
-theorem pow_ok' {P : PowCfg} {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m)
+theorem pow_ok' {P : PowCfg} {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m)
     (hk : P.M.n = S.k) (hL : PowLayP P S.k) (hm : UnitMod S.m (2 ^ (64 * S.k))) {base : Addr} {e : Nat}
     {s : State} (hs : WsReg s base) (hB : wordsVal s.mem base P.base S.k < S.m)
     (hO : wordsVal s.mem base P.one S.k = 2 ^ (64 * S.k) % S.m)
@@ -194,7 +194,7 @@ theorem pow_ok' {P : PowCfg} {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (h
 /-- `[acc] = [base]^e` in Montgomery form, for the exponent `e < 2^nbits`
 whose bits are the table at `P.bits`, modulo `m` on numbers of `k` words
 (the functions' `S.m` and `S.k`); only `powClob` and `powWx` change. -/
-theorem pow_ok {P : PowCfg} {S : Spec.Weierstrass.Mont.Modulus} {k m : Nat} [NeZero m] (hkS : S.k = k)
+theorem pow_ok {P : PowCfg} {S : Impl.Weierstrass.Mont.Modulus} {k m : Nat} [NeZero m] (hkS : S.k = k)
     (hmS : S.m = m) (hM : ModOk k m) (hk : P.M.n = k) (hL : PowLayP P k) (hm : UnitMod m (2 ^ (64 * k)))
     {base : Addr} {e : Nat} {s : State} (hs : WsReg s base) (hB : wordsVal s.mem base P.base k < m)
     (hO : wordsVal s.mem base P.one k = 2 ^ (64 * k) % m)

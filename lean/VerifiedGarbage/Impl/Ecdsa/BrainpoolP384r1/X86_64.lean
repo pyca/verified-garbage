@@ -15,9 +15,9 @@ def brainpoolp384r1 : Cfg where
   C := Spec.BrainpoolP384r1.curve
   fastN := true
   windows := false
-  mul := some Spec.Weierstrass.Mul.brainpoolp384r1
-  inverse := some Spec.Weierstrass.Inverse.brainpoolp384r1
-  checkPoint := some Spec.Weierstrass.CheckPoint.brainpoolp384r1
+  mul := some Impl.Weierstrass.Mul.brainpoolp384r1
+  inverse := some Impl.Weierstrass.Inverse.brainpoolp384r1
+  checkPoint := some Impl.Weierstrass.CheckPoint.brainpoolp384r1
 
 def signBrainpoolP384r1 : Prog isa := brainpoolp384r1.sign
 

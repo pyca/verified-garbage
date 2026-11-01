@@ -32,7 +32,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.Law3
 public import VerifiedGarbage.Spec.Weierstrass
-public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 public import VerifiedGarbage.Proof.Weierstrass.Env

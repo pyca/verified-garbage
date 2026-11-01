@@ -24,7 +24,7 @@ def one8 (dst : Nat) : List Instr := zeros dst 8 ++ setWord dst 1
 
 structure InvCfg where
   M : Mod
-  F : Spec.Weierstrass.Mont.Modulus
+  F : Impl.Weierstrass.Mont.Modulus
   out : Nat
   base : Nat
   tbl : Nat
@@ -75,7 +75,7 @@ def finish : Prog isa :=
 
 def inv : Prog isa := .seq (.block P.init) (.seq (.loop P.batch .ne) P.finish)
 
-def ofMod (M : Mod) (F : Spec.Weierstrass.Mont.Modulus) (out base tbl modulus : Nat) : InvCfg :=
+def ofMod (M : Mod) (F : Impl.Weierstrass.Mont.Modulus) (out base tbl modulus : Nat) : InvCfg :=
   let C := 2 ^ 40 * (2 ^ 256) ^ 3 % modulus
   { M, F, out, base, tbl, C, Cn := modulus - C }
 

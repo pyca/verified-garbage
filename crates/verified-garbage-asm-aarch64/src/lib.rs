@@ -113,50 +113,6 @@ pub mod blowfish_ofb;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
-pub mod brainpoolp256r1_check_point;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod brainpoolp256r1_inverse;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod brainpoolp256r1_mul;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod brainpoolp384r1_check_point;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod brainpoolp384r1_inverse;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod brainpoolp384r1_mont;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod brainpoolp384r1_mul;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod brainpoolp512r1_check_point;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod brainpoolp512r1_inverse;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod brainpoolp512r1_mont;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod brainpoolp512r1_mul;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
 pub mod camellia;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
@@ -497,58 +453,6 @@ pub mod mlkem768;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
-pub mod p192_check_point;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p192_inverse;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p192_mul;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p224_check_point;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p224_inverse;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p224_point_ops;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p256_check_point;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p384_check_point;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p384_inverse;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p384_mont;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p521_check_point;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p521_inverse;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod p521_mont;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
 pub mod pbkdf2_md5;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
@@ -698,18 +602,6 @@ pub mod rsa_pss_sha512_mgf1_sha512;
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
 pub mod scrypt;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod secp256k1_check_point;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod secp256k1_inverse;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod secp256k1_mul;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]

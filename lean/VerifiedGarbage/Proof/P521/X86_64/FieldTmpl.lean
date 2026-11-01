@@ -42,7 +42,7 @@ theorem p521_sub (o a b : Nat) : Impl.Mont.X86_64.sub p521.MP' o a b = Impl.Mont
   rw [ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel),
     ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_left_of_eq_true _ _ (by decide +kernel)]
 
-theorem p521_callOf : Mont.callOf p521.MP' = some (Spec.Weierstrass.Mont.p521p.mulApi.name, Mont.mulFn) := by
+theorem p521_callOf : Mont.callOf p521.MP' = some ("vg_p521_mul_mod_p", Mont.mulFn) := by
   unfold Mont.callOf
   rw [ite_eq_left_of_eq_true _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel)]
 
@@ -79,7 +79,7 @@ theorem p521x_sub (o a b : Nat) : Impl.Mont.X86_64.sub p521x.MP' o a b = Impl.Mo
     ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_left_of_eq_true _ _ (by decide +kernel)]
 
 theorem p521x_callOf :
-    Mont.callOf p521x.MP' = some (Spec.Weierstrass.Mont.p521p.mulApi.name ++ "_adx", Mont.mulFnX) := by
+    Mont.callOf p521x.MP' = some ("vg_p521_mul_mod_p" ++ "_adx", Mont.mulFnX) := by
   unfold Mont.callOf
   rw [ite_eq_left_of_eq_true _ _ (by decide +kernel), ite_eq_left_of_eq_true _ _ (by decide +kernel)]
 

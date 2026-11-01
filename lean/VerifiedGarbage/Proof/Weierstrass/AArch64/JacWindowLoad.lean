@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Mont.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-! Public Jacobian table loads within the scratch allocation. -/
 

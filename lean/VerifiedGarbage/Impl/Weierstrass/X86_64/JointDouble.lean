@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Weierstrass.JacMul
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Point
 
 
 /-! A doubler for the joint loop's accumulator, for any number of words. -/

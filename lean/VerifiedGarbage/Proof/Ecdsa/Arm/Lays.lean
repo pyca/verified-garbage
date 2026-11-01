@@ -169,18 +169,18 @@ theorem powWkN (hc : CfgOk c) : PowWk c.powN size c.wk :=
 /-! ### The point functions' slots -/
 
 theorem sl_below_pt (h6 : c.n ≤ 6) {i : Nat} (hi : i < 45) :
-    c.sl i + 8 * c.n ≤ Spec.Weierstrass.Point.oAt c.n := by
+    c.sl i + 8 * c.n ≤ Impl.Weierstrass.Point.oAt c.n := by
   have := sl_lt c hi
   rw [sl_eq c 45] at this
-  simp only [Spec.Weierstrass.Point.oAt, Spec.Weierstrass.Point.pAt, Spec.Weierstrass.Point.qAt,
-    Spec.Weierstrass.Point.aAt, Spec.Weierstrass.Point.b3At, Spec.Weierstrass.Point.ownAt,
-    Spec.Weierstrass.Point.elemBytes, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]
+  simp only [Impl.Weierstrass.Point.oAt, Impl.Weierstrass.Point.pAt, Impl.Weierstrass.Point.qAt,
+    Impl.Weierstrass.Point.aAt, Impl.Weierstrass.Point.b3At, Impl.Weierstrass.Point.ownAt,
+    Impl.Weierstrass.Point.elemBytes, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]
   omega_arith
 
-theorem oAt_le (c : Cfg) : Spec.Weierstrass.Point.oAt c.n ≤ 4096 := by
-  simp only [Spec.Weierstrass.Point.oAt, Spec.Weierstrass.Point.pAt, Spec.Weierstrass.Point.qAt,
-    Spec.Weierstrass.Point.aAt, Spec.Weierstrass.Point.b3At, Spec.Weierstrass.Point.ownAt,
-    Spec.Weierstrass.Point.elemBytes, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]
+theorem oAt_le (c : Cfg) : Impl.Weierstrass.Point.oAt c.n ≤ 4096 := by
+  simp only [Impl.Weierstrass.Point.oAt, Impl.Weierstrass.Point.pAt, Impl.Weierstrass.Point.qAt,
+    Impl.Weierstrass.Point.aAt, Impl.Weierstrass.Point.b3At, Impl.Weierstrass.Point.ownAt,
+    Impl.Weierstrass.Point.elemBytes, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]
   omega_arith
 
 end VG.Proof.Ecdsa.Arm

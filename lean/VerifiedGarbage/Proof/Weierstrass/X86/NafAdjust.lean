@@ -255,7 +255,7 @@ open VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass
 
 /-- A multiple-slot update can reconstruct its environment from the resulting
 memory. Bounds on changed slots and the frame preserve every initialized slot. -/
-theorem Inv.of_progKeep {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem Inv.of_progKeep {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAcc : WkOk F M m size wk Sl) {V W : List Nat}
     {E : Nat → Fin m} {s t : State} (hI : Inv M base size m Sl V E s)
     (hk : ProgKeep M base wk W s t) (hW : ∀ x ∈ W, Sl x)
@@ -284,7 +284,7 @@ theorem Inv.of_progKeep {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Ad
 
 def jacCoords (p : Pt) : List Nat := [p.x,p.y,p.z]
 
-theorem ProgKeep.slot {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk m : Nat} {Sl : Nat → Prop}
+theorem ProgKeep.slot {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk m : Nat} {Sl : Nat → Prop}
     {s t : State} {W : List Nat} (hL : Lay M size Sl) (hAcc : WkOk F M m size wk Sl) (hs : Scr s base size)
     (hk : ProgKeep M base wk W s t) (hW : ∀ x∈W, Sl x) {x : Nat}
     (hx : Sl x) (hn : x∉W) : VG.Proof.Mont.wordsVal t.mem base x M.n=VG.Proof.Mont.wordsVal s.mem base x M.n := by
@@ -309,7 +309,7 @@ theorem Inv.point_tmv {M : Mod} {base : Addr} {size : Nat} {C : Curve}
   exact hJ
 
 
-theorem copyPointFields_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+theorem copyPointFields_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAcc : WkOk F M m size wk Sl)
     {q o : Pt} (hN : (jacCoords o).Nodup)
     (hqa : ∀ x∈jacCoords q, ∀ y∈jacCoords o, x≠y)
@@ -347,7 +347,7 @@ theorem copyPointFields_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base :
       Function.update_of_ne (hqa q.z (by simp [jacCoords]) o.x (by simp [jacCoords])),
       Function.update_of_ne (hqa q.z (by simp [jacCoords]) o.y (by simp [jacCoords]))]
 
-theorem ProgKeep.invJ {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk : Nat} {C : Curve}
+theorem ProgKeep.invJ {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk : Nat} {C : Curve}
     {Sl : Nat → Prop} {s t : State} {W : List Nat} (hL : Lay M size Sl) (hAcc : WkOk F M C.p size wk Sl) (hs : Scr s base size)
     (hk : ProgKeep M base wk W s t) (hW : ∀ x∈W, Sl x) {p : Pt}
     (hp : ∀ x∈jacCoords p, Sl x) (hDisj : ∀ x∈jacCoords p, x∉W) {P : Point C}

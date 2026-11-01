@@ -24,9 +24,9 @@ namespace VG.Proof.Weierstrass.Arm.Point
 open VG VG.Arm VG.Impl.Weierstrass.Arm.Point VG.Proof.Weierstrass.Arm.Mont
 
 /-- `addContract` (`dbl` false) or `doubleContract`. -/
-def sumC (C : Spec.Weierstrass.Point.Curve) (dbl : Bool) : Contract Arm.isa :=
-  Spec.Weierstrass.Point.sig.contract Arm.abi (pre := fun ws m => C.sumPre (Spec.Weierstrass.Point.pAt C.k) (qOf C.k dbl) ws m)
-    (post := fun ws m m' _ => C.sumPost (Spec.Weierstrass.Point.pAt C.k) (qOf C.k dbl) ws m m')
+def sumC (C : Impl.Weierstrass.Point.Curve) (dbl : Bool) : Contract Arm.isa :=
+  Impl.Weierstrass.Point.sig.contract Arm.abi (pre := fun ws m => C.sumPre (Impl.Weierstrass.Point.pAt C.k) (qOf C.k dbl) ws m)
+    (post := fun ws m m' _ => C.sumPost (Impl.Weierstrass.Point.pAt C.k) (qOf C.k dbl) ws m m')
 
 /-- A state satisfying the preconditions. -/
 def satPt : State where
@@ -42,31 +42,31 @@ def satPt : State where
   wr := [⟨0x1000, 8192⟩]
 
 /-- Zero memory satisfies the precondition. -/
-theorem pre_zero (C : Spec.Weierstrass.Point.Curve) (hp : 0 < C.p) (ws : Addr) (q : Nat) :
-    C.Below (C.pointAt (fun _ => 0) ws (Spec.Weierstrass.Point.pAt C.k)) ∧ C.Below (C.pointAt (fun _ => 0) ws q) ∧
+theorem pre_zero (C : Impl.Weierstrass.Point.Curve) (hp : 0 < C.p) (ws : Addr) (q : Nat) :
+    C.Below (C.pointAt (fun _ => 0) ws (Impl.Weierstrass.Point.pAt C.k)) ∧ C.Below (C.pointAt (fun _ => 0) ws q) ∧
       C.ConstsBelow ws (fun _ => 0) := by
   have hz : ∀ o, C.coordAt (fun _ => 0) ws o = 0 := fun o => numAt_zero _ _ _
-  simp only [Spec.Weierstrass.Point.Curve.Below, Spec.Weierstrass.Point.Curve.pointAt, Spec.Weierstrass.Point.Curve.ConstsBelow, hz]
+  simp only [Impl.Weierstrass.Point.Curve.Below, Impl.Weierstrass.Point.Curve.pointAt, Impl.Weierstrass.Point.Curve.ConstsBelow, hz]
   omega
 
-theorem sat_pre (C : Spec.Weierstrass.Point.Curve) (hp : 0 < C.p) (dbl : Bool) :
+theorem sat_pre (C : Impl.Weierstrass.Point.Curve) (hp : 0 < C.p) (dbl : Bool) :
     (sumC C dbl).pre satPt :=
   Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.Weierstrass.Point.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satPt]
+    sig_reduce [Sig.wfPre, Impl.Weierstrass.Point.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satPt]
     exact ⟨by decide, pre_zero C hp _ _⟩)
 
 /-- `vg_<curve>_point_add` (`dbl` false) or `vg_<curve>_point_double` meets
 its contract, given its constant time. -/
-theorem sum_verified (C : Spec.Weierstrass.Point.Curve) (hM : Mont.ModOk C.k C.p) (hk6 : C.k ≤ 6)
+theorem sum_verified (C : Impl.Weierstrass.Point.Curve) (hM : Mont.ModOk C.k C.p) (hk6 : C.k ≤ 6)
     (hodd : C.p % 2 = 1) (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool) {u : Bool}
     (hct : ConstantTime isa (sumArm C dbl).pre (sumArm C dbl).pub (fn (modP C) dbl u)) :
     Verified Arm.target (fn (modP C) dbl u) (sumC C dbl) :=
   Verified.of_correct (sum_arm hM hk6 hodd h1 hF dbl (u := u)) hct
-    { pre := by sig_implies_pre [sumC, Spec.Weierstrass.Point.Curve.sumPre, Spec.Weierstrass.Point.Curve.sumPost, Spec.Weierstrass.Point.sig, sumArm, Spec.Weierstrass.Point.Curve.ConstsBelow, Arm.abi, Arm.argRegs,
+    { pre := by sig_implies_pre [sumC, Impl.Weierstrass.Point.Curve.sumPre, Impl.Weierstrass.Point.Curve.sumPost, Impl.Weierstrass.Point.sig, sumArm, Impl.Weierstrass.Point.Curve.ConstsBelow, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      post := by sig_implies_post [sumC, Spec.Weierstrass.Point.Curve.sumPre, Spec.Weierstrass.Point.Curve.sumPost, Spec.Weierstrass.Point.sig, sumArm, Spec.Weierstrass.Point.Curve.ConstsBelow, Arm.abi, Arm.argRegs,
+      post := by sig_implies_post [sumC, Impl.Weierstrass.Point.Curve.sumPre, Impl.Weierstrass.Point.Curve.sumPost, Impl.Weierstrass.Point.sig, sumArm, Impl.Weierstrass.Point.Curve.ConstsBelow, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      pub := by sig_implies_pub [sumC, Spec.Weierstrass.Point.Curve.sumPre, Spec.Weierstrass.Point.Curve.sumPost, Spec.Weierstrass.Point.sig, sumArm, Spec.Weierstrass.Point.Curve.ConstsBelow, Arm.abi, Arm.argRegs,
+      pub := by sig_implies_pub [sumC, Impl.Weierstrass.Point.Curve.sumPre, Impl.Weierstrass.Point.Curve.sumPost, Impl.Weierstrass.Point.sig, sumArm, Impl.Weierstrass.Point.Curve.ConstsBelow, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := ⟨satPt, sat_pre C (by omega) dbl⟩ }
 

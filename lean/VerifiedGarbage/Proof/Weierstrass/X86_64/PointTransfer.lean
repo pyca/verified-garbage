@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! An exact field environment for point transfers through public addresses. -/
 

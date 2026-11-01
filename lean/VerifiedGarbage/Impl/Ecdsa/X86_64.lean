@@ -5,9 +5,9 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
-public import VerifiedGarbage.Spec.Weierstrass.Mul
-public import VerifiedGarbage.Spec.Weierstrass.Inverse
-public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Inverse
+public import VerifiedGarbage.Impl.Weierstrass.Layout.CheckPoint
 
 /-!
 # ECDSA signing on x86-64
@@ -169,24 +169,24 @@ structure Cfg where
   others call the function computing them. -/
   hot : Bool := false
   /-- The curve whose function `vg_<curve>_mul_base`
-  (`Spec/Weierstrass/MulBase.lean`) computes `[k]G` (`mulBaseFn`), which the
+  (`Proof/Weierstrass/MulBaseContract.lean`) computes `[k]G` (`mulBaseFn`), which the
   signature and public key derivation call, with the table of `k`'s bits it
   makes; else they run them inline. -/
-  mulBase : Option Spec.Weierstrass.MulBase.Curve := none
+  mulBase : Option Impl.Weierstrass.MulBase.Curve := none
   /-- For a curve without a comb, the curve whose `vg_<curve>_mul`
-  (`Spec/Weierstrass/Mul.lean`) computes `[k]Q` by the ladder (`mulFn`),
+  (`Proof/Weierstrass/MulContract.lean`) computes `[k]Q` by the ladder (`mulFn`),
   which the signature, the public key, ECDH and verification call, if any. -/
-  mul : Option Spec.Weierstrass.Mul.Curve := none
+  mul : Option Impl.Weierstrass.Mul.Curve := none
   /-- The curve whose functions `vg_<curve>_inv_mod_p` and
-  `vg_<curve>_inv_mod_n` (`Spec/Weierstrass/Inverse.lean`) compute `Z^(p-2)`
+  `vg_<curve>_inv_mod_n` (`Proof/Weierstrass/InverseContract.lean`) compute `Z^(p-2)`
   and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
   else they run them inline. -/
-  inverse : Option Spec.Weierstrass.Inverse.Curve := none
+  inverse : Option Impl.Weierstrass.Inverse.Curve := none
   /-- The curve whose function `vg_<curve>_check_point`
-  (`Spec/Weierstrass/CheckPoint.lean`) checks the public point and selects
+  (`Proof/Weierstrass/CheckPointContract.lean`) checks the public point and selects
   the point ECDH and verification multiply (`Ecdh.X86_64.Cfg.check`); else
   they run it inline. -/
-  checkPoint : Option Spec.Weierstrass.CheckPoint.Curve := none
+  checkPoint : Option Impl.Weierstrass.CheckPoint.Curve := none
   /-- The bits the window method's scalars have: `8 len`, but for a curve
   whose `n` has fewer bits than its `len` bytes (P-521's `n < 2⁵²¹`, in 66
   bytes), as many as `n` has. ECDH reduces its `d` below `2^nbits` before
@@ -406,11 +406,11 @@ def nSuffix : String := if c.n = 9 then "" else c.fnSuffix
 `_n` (`invFn`), else inline (`pPowI`, `nPowI`). -/
 def pPow : Prog isa :=
   match c.inverse with
-  | some C => .call (C.invPApi.name ++ c.fnSuffix) (c.invFn c.pPowI)
+  | some C => .call (s!"vg_{C.curve}_inv_mod_p" ++ c.fnSuffix) (c.invFn c.pPowI)
   | none => c.pPowI
 def nPow : Prog isa :=
   match c.inverse with
-  | some C => .call (C.invNApi.name ++ c.nSuffix) (c.invFn c.nPowI)
+  | some C => .call (s!"vg_{C.curve}_inv_mod_n" ++ c.nSuffix) (c.invFn c.nPowI)
   | none => c.nPowI
 
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/
@@ -555,9 +555,9 @@ copied to `R`'s slots), which make the table themselves, else inline
 (`gMulK`). -/
 def gMulKC : Prog isa :=
   match c.mulBase, c.mul with
-  | some C, _ => .call (C.mulBaseApi.name ++ if c.adx then "_adx" else "") c.mulBaseFn
+  | some C, _ => .call (s!"vg_{C.curve}_mul_base" ++ if c.adx then "_adx" else "") c.mulBaseFn
   | none, some C => .seq (.block (copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY)))
-      (.call C.mulApi.name c.mulFn)
+      (.call s!"vg_{C.curve}_mul" c.mulFn)
   | none, none => c.gMulK
 
 /-- `vg_ecdsa_<curve>_sign`. -/

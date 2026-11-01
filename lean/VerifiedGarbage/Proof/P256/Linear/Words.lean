@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Mont.AArch64.Csub
 import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 @[expose] public section
 

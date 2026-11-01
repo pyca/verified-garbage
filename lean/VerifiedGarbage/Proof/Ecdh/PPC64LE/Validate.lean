@@ -94,7 +94,7 @@ theorem curveLay (h7 : c.n < 10) : Point.LayR c.n 45 [W0, W1, W2, W3] c.sl where
   apart := fun _ _ _ _ hxw => sl_apart c hxw
 
 /-- `curveN` over any modulus `S` of `c.n` words, `m`. -/
-theorem curve_core {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} [NeZero m] (hkS : S.k = c.n) (hmS : S.m = m)
+theorem curve_core {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} [NeZero m] (hkS : S.k = c.n) (hmS : S.m = m)
     (hM : ModOk c.n m) (h7 : c.n < 10) (hm : UnitMod m (2 ^ (64 * c.n))) {base : Addr} {s : State}
     (hw : WsReg s base) (hlt : ∀ x ∈ [QXM, QYM, AP, BP], sv c base s x < m) :
     WP isa (Point.fprogR c.sl S curveN) s fun s' =>

@@ -46,7 +46,7 @@ def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurve
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.BrainpoolP384r1.curve = 0; rw [brainpoolp384r1_nBits]
-  coreN := Spec.Ecdsa.BrainpoolP384r1.signApi.name
+  coreN := "vg_ecdsa_brainpoolp384r1_sign"
   coreC := Impl.Ecdsa.Arm.signBrainpoolP384r1
   coreConsts := []
   coreX := by
@@ -75,7 +75,7 @@ def brainpoolp384r1U (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurv
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.BrainpoolP384r1.curve = 0; rw [brainpoolp384r1_nBits]
-  coreN := Spec.Ecdsa.BrainpoolP384r1.signApi.name ++ "_umaal"
+  coreN := "vg_ecdsa_brainpoolp384r1_sign" ++ "_umaal"
   coreC := Impl.Ecdsa.Arm.signBrainpoolP384r1U
   coreConsts := []
   coreX := by

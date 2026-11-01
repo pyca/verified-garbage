@@ -19,9 +19,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Secp256k1.Lit
 namespace VG.Generic.Secp256k1.PPC64LE.EcdsaSecp256k1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
-  Spec.Ecdsa.Secp256k1.signApi.artifact PPC64LE.target {
-    code := Impl.Ecdsa.PPC64LE.signSecp256k1
-    verified := Proof.Ecdsa.PPC64LE.Secp256k1.sign_verified h.law },
   Spec.Ecdsa.Secp256k1.verifyApi.artifact PPC64LE.target {
     code := Impl.Ecdsa.Verify.PPC64LE.verifySecp256k1
     verified := Proof.Ecdsa.Verify.PPC64LE.Secp256k1.verify_verified h.law }]

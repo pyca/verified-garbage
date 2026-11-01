@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 namespace VG.Proof.Weierstrass.AArch64.Mont
-open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Spec.Weierstrass.Mont
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Impl.Weierstrass.Mont
 
 theorem brainpoolp512r1p_ok : ModOk brainpoolp512r1p.k brainpoolp512r1p.m := .inr {
   hn := by decide

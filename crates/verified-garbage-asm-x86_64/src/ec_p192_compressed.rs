@@ -22,7 +22,7 @@ pub unsafe extern "sysv64" fn vg_ec_p192_compress_public_key(out: *mut [u8; 25],
 call {vg_p192_check_point}
 .base64 "SIuPwAUAAEiLl8AEAABIg+IBSIPCAkghyogWSIuHYAQAAEghyEgPyEiJRhFIi4doBAAASCHISA/ISIlGCUiLh3AEAABIIchID8hIiUYBSIuHeAQAAEghyEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p192_check_point = sym super::p192_check_point::vg_p192_check_point,
+        vg_p192_check_point = sym super::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
     )
 }
 
@@ -53,3 +53,7 @@ jne 21b
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_check_point.rs"]
+pub(crate) mod vg_p192_check_point;

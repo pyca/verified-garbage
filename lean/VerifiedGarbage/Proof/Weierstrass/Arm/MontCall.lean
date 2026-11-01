@@ -122,7 +122,7 @@ theorem pre_of_call {n m : Nat} (hM : ModOk n m) {s : State} {base : Addr} {size
   rw [h3, hs.wb_toNat]; exact hf.nowrap
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
-theorem mulCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr} {size : Nat}
+theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr} {size : Nat}
     (hs : Scr s base size) (hf : Far s base 8192) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)
     (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k) (hB : wordsVal s.mem base b S.k < S.m)
     {u : Bool} :
@@ -140,7 +140,7 @@ theorem mulCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s :
       exact ⟨A, K, ⟨V, C⟩, R⟩
 
 /-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`. -/
-theorem addCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr} {size : Nat}
+theorem addCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr} {size : Nat}
     (hs : Scr s base size) (hf : Far s base 8192) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)
     (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
     (hAB : wordsVal s.mem base a S.k + wordsVal s.mem base b S.k < 2 * S.m) :
@@ -154,7 +154,7 @@ theorem addCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s :
       exact ⟨A, K, V, R⟩
 
 /-- `[o] = [a] - [b] mod m` by a call of `vg_<curve>_sub_mod_<p|n>`. -/
-theorem subCall_ok {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr} {size : Nat}
+theorem subCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr} {size : Nat}
     (hs : Scr s base size) (hf : Far s base 8192) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)
     (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
     (hA : wordsVal s.mem base a S.k < S.m) (hB : wordsVal s.mem base b S.k < S.m) :

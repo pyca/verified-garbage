@@ -29,7 +29,7 @@ namespace VG.Proof.Weierstrass.X86.PointLit.P384
 
 open VG VG.Impl.Weierstrass.X86.Point
 
-materialize_code add := fn (modP Spec.Weierstrass.Point.p384) false
-materialize_code double := fn (modP Spec.Weierstrass.Point.p384) true
+materialize_code add := fn (modP Impl.Weierstrass.Point.p384) false
+materialize_code double := fn (modP Impl.Weierstrass.Point.p384) true
 
 end VG.Proof.Weierstrass.X86.PointLit.P384

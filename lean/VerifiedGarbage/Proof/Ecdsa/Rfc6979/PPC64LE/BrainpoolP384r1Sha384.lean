@@ -29,7 +29,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP384r1Sha384
 open VG VG.PPC64LE VG.Impl.Ecdsa.Rfc6979.PPC64LE
 
 /-- The code's configuration. -/
-def cfg : Cfg := ⟨sha384K.hm, 48, Spec.BrainpoolP384r1.curve.n, 128, Spec.Ecdsa.BrainpoolP384r1.signApi.name, Impl.Ecdsa.PPC64LE.signBrainpoolP384r1⟩
+def cfg : Cfg := ⟨sha384K.hm, 48, Spec.BrainpoolP384r1.curve.n, 128, "vg_ecdsa_brainpoolp384r1_sign", Impl.Ecdsa.PPC64LE.signBrainpoolP384r1⟩
 
 /-- The instance, for brainpoolP384r1's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : Rfc where

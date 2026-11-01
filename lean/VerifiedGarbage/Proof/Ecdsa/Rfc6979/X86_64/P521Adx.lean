@@ -44,7 +44,7 @@ def p521x (hL : Weierstrass.Law Spec.P521.curve)
   n_lt := by decide +kernel
   sh := 7
   sh_eq := Proof.Ecdsa.X86_64.P521.p521x_sh
-  coreN := Spec.Ecdsa.P521.signApi.name ++ "_adx"
+  coreN := "vg_ecdsa_p521_sign" ++ "_adx"
   coreC := Impl.Ecdsa.X86_64.signP521Adx
   coreX := by rw [coreK_p521x]; exact Proof.Ecdsa.X86_64.P521.sign_call_x86_adx hL hT hI
   coreCT := by rw [coreK_p521x]; exact Proof.Ecdsa.X86_64.P521.sign_ct_adx

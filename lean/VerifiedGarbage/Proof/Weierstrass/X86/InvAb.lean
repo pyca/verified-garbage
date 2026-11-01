@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
 public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! # Applying both matrix rows to the reduced inverse coefficients -/
 

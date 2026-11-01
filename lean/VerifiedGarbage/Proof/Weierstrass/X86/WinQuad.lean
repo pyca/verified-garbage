@@ -25,7 +25,7 @@ open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
 open Spec.Weierstrass
 
-variable {F : Spec.Weierstrass.Mont.Modulus}
+variable {F : Impl.Weierstrass.Mont.Modulus}
 
 /-! ## The loop -/
 

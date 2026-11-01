@@ -45,7 +45,7 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 7
   sh_eq := Proof.Ecdsa.X86.P521.p521_sh
-  coreN := Spec.Ecdsa.P521.signApi.name
+  coreN := "vg_ecdsa_p521_sign"
   coreC := Impl.Ecdsa.X86.signP521
   coreX := fun s h => Proof.Ecdsa.X86.P521.sign_x86 hL s (core_pre_521 h)
   coreCT := by

@@ -37,9 +37,9 @@ bl {vg_p224_add_mod_p}
 .base64 "YAWAOOAEoDiABcA4"
 bl {vg_p224_sub_mod_p}
 .base64 "YAWj6GgFg+h4I6V8cAWD6HgjpXx4BYPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfAAAgDhQIKV8//+lOMAFg+g4KIR8wAWD+MAFQ+lAAYPogASj6HgipXw4UKV8eCqEfAAFg/hIAYPoiASj6HgipXw4UKV8eCqEfAgFg/hQAYPokASj6HgipXw4UKV8eCqEfBAFg/hYAYPomASj6HgipXw4UKV8eCqEfBgFg/hgAYPooASj6HgipXw4UKV8eCqEfKAFg/hoAYPoqASj6HgipXw4UKV8eCqEfKgFg/hwAYPosASj6HgipXw4UKV8eCqEfLAFg/h4AYPouASj6HgipXw4UKV8eCqEfLgFg/jABUPpwASD6AEAoDg4KIR8AgCEODhQhHwAAI6YYASD6DhQhHwVAMA4KDWOfGgEg+g4UIR8DQDAOCg1jnxwBIPoOFCEfAUAwDgoNY58eASD6DhQhHwCRoV4AQCumAKEhXgCAK6YAsKFeAMArpgEAI6YAQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4=""#,
-        vg_p224_mul_mod_p = sym super::p224_mont::vg_p224_mul_mod_p,
-        vg_p224_add_mod_p = sym super::p224_mont::vg_p224_add_mod_p,
-        vg_p224_sub_mod_p = sym super::p224_mont::vg_p224_sub_mod_p,
+        vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
+        vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
+        vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
     )
 }
 
@@ -129,8 +129,8 @@ bl {vg_p224_mul_mod_p}
 .base64 "AAWAOGAFoDiABcA4"
 bl {vg_p224_sub_mod_p}
 .base64 "AAWj6AgFg+h4I6V8EAWD6HgjpXwYBYPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfAAAgDhQIKV8//+lOMAFg+g4KIR8wAWD+MAEg+hABKPoeCKlfAEAgDg4IKV8AACAOFAgRX0BAKo4AACAOFAgpXzABYPoOCiEfMAFg/jABUPpBACAODhQhHwAAI6YYASD6DhQhHwVAMA4KDWOfGgEg+g4UIR8DQDAOCg1jnxwBIPoOFCEfAUAwDgoNY58eASD6DhQhHwCRoV4AQCumAKEhXgCAK6YAsKFeAMArpgEAI6YwASD6DhQhHwxAMA4KDWOfMgEg+g4UIR8KQDAOCg1jnzQBIPoOFCEfCEAwDgoNY582ASD6DhQhHwCRoV4HQCumAKEhXgeAK6YAsKFeB8ArpggAI6YAQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4=""#,
-        vg_p224_mul_mod_p = sym super::p224_mont::vg_p224_mul_mod_p,
-        vg_p224_add_mod_p = sym super::p224_mont::vg_p224_add_mod_p,
-        vg_p224_sub_mod_p = sym super::p224_mont::vg_p224_sub_mod_p,
+        vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
+        vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
+        vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
     )
 }

@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 /-!
 # Montgomery arithmetic modulo the curves' `p` and `n`, as functions, on 32-bit ARM: verified
 
-Each modulus of `Spec.Weierstrass.Mont.moduli` is one the functions support
+Each modulus of `Impl.Weierstrass.Mont.moduli` is one the functions support
 (`ModOk`), so each of its functions meets the contract of its `Api`: the
 proof against `mulArm`, `addArm` or `subArm`, which it implies, constant
 time by taint tracking (only the pointer and the offsets, in `r0`–`r3`, are
@@ -34,7 +34,7 @@ public), and a state satisfying it (`sat`).
 
 namespace VG.Proof.Weierstrass.Arm.Mont
 
-open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Spec.Weierstrass.Mont
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Impl.Weierstrass.Mont
 
 theorem armPub_agree {s₁ s₂ : State} (h : armPub s₁ s₂) : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], s₁.gpr r = s₂.gpr r := by
   obtain ⟨_, h0, h1, h2, h3⟩ := h

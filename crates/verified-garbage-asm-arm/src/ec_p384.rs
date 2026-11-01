@@ -2257,9 +2257,9 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p384_sub_mod_p = sym super::p384_mont::vg_p384_sub_mod_p,
-        vg_p384_point_add = sym super::p384_point::vg_p384_point_add,
-        vg_p384_mul_mod_p = sym super::p384_mont::vg_p384_mul_mod_p,
+        vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
+        vg_p384_point_add = sym super::ec_p384::vg_p384_point_add::vg_p384_point_add,
+        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
         VG_P384_COMB = sym super::consts::VG_P384_COMB,
     )
 }
@@ -4524,9 +4524,33 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p384_sub_mod_p = sym super::p384_mont::vg_p384_sub_mod_p,
-        vg_p384_point_add_umaal = sym super::p384_point::vg_p384_point_add_umaal,
-        vg_p384_mul_mod_p_umaal = sym super::p384_mont::vg_p384_mul_mod_p_umaal,
+        vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
+        vg_p384_point_add_umaal = sym super::ec_p384::vg_p384_point_add_umaal::vg_p384_point_add_umaal,
+        vg_p384_mul_mod_p_umaal = sym super::ec_p384::vg_p384_mul_mod_p_umaal::vg_p384_mul_mod_p_umaal,
         VG_P384_COMB = sym super::consts::VG_P384_COMB,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_add_mod_p.rs"]
+pub(crate) mod vg_p384_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_mul_mod_p.rs"]
+pub(crate) mod vg_p384_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_mul_mod_p_umaal.rs"]
+pub(crate) mod vg_p384_mul_mod_p_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_point_add.rs"]
+pub(crate) mod vg_p384_point_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_point_add_umaal.rs"]
+pub(crate) mod vg_p384_point_add_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_sub_mod_p.rs"]
+pub(crate) mod vg_p384_sub_mod_p;

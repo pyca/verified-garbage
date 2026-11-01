@@ -52,7 +52,23 @@ call {vg_p521_mul_mod_p}
 call {vg_p521_mul_mod_p}
 .base64 "WFhYWIuXQAkAACuXiAAAAIuXRAkAABuXjAAAAIuXSAkAABuXkAAAAIuXTAkAABuXlAAAAIuXUAkAABuXmAAAAIuXVAkAABuXnAAAAIuXWAkAABuXoAAAAIuXXAkAABuXpAAAAIuXYAkAABuXqAAAAIuXZAkAABuXrAAAAIuXaAkAABuXsAAAAIuXbAkAABuXtAAAAIuXcAkAABuXuAAAAIuXdAkAABuXvAAAAIuXeAkAABuXwAAAAIuXfAkAABuXxAAAAIuXgAkAABuXyAAAAIuXhAkAABuXzAAAABnAicOLl0AJAAALl0QJAAALl0gJAAALl0wJAAALl1AJAAALl1QJAAALl1gJAAALl1wJAAALl2AJAAALl2QJAAALl2gJAAALl2wJAAALl3AJAAALl3QJAAALl3gJAAALl3wJAAALl4AJAAALl4QJAAC5AAAAACnRGdIh2ouHoAwAACHQiYegDAAAi5fABAAAC5fEBAAAC5fIBAAAC5fMBAAAC5fQBAAAC5fUBAAAC5fYBAAAC5fcBAAAC5fgBAAAC5fkBAAAC5foBAAAC5fsBAAAC5fwBAAAC5f0BAAAC5f4BAAAC5f8BAAAC5cABQAAC5cEBQAAuQAAAAAp0RnSi4egDAAAIdCJh6AMAACLj6AMAACLXCQEuAQAAAAhyIgDi4cYCgAAIcgPyIlDP4uHHAoAACHID8iJQzuLhyAKAAAhyA/IiUM3i4ckCgAAIcgPyIlDM4uHKAoAACHID8iJQy+LhywKAAAhyA/IiUMri4cwCgAAIcgPyIlDJ4uHNAoAACHID8iJQyOLhzgKAAAhyA/IiUMfi4c8CgAAIcgPyIlDG4uHQAoAACHID8iJQxeLh0QKAAAhyA/IiUMTi4dICgAAIcgPyIlDD4uHTAoAACHID8iJQwuLh1AKAAAhyA/IiUMHi4dUCgAAIcgPyIlDA4uHWAoAACHIicLB6giIUwGJwohTAouHWAwAACHID8iJg4EAAACLh1wMAAAhyA/IiUN9i4dgDAAAIcgPyIlDeYuHZAwAACHID8iJQ3WLh2gMAAAhyA/IiUNxi4dsDAAAIcgPyIlDbYuHcAwAACHID8iJQ2mLh3QMAAAhyA/IiUNli4d4DAAAIcgPyIlDYYuHfAwAACHID8iJQ12Lh4AMAAAhyA/IiUNZi4eEDAAAIcgPyIlDVYuHiAwAACHID8iJQ1GLh4wMAAAhyA/IiUNNi4eQDAAAIcgPyIlDSYuHlAwAACHID8iJQ0WLh5gMAAAhyInCweoIiFNDicKIU0SJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_p521_mul = sym super::p521_mul::vg_p521_mul,
-        vg_p521_mul_mod_p = sym super::p521_mont::vg_p521_mul_mod_p,
+        vg_p521_mul = sym super::ec_p521::vg_p521_mul::vg_p521_mul,
+        vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_add_mod_p.rs"]
+pub(crate) mod vg_p521_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_mul.rs"]
+pub(crate) mod vg_p521_mul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_mul_mod_p.rs"]
+pub(crate) mod vg_p521_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_sub_mod_p.rs"]
+pub(crate) mod vg_p521_sub_mod_p;

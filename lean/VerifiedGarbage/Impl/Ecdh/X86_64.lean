@@ -135,7 +135,7 @@ def validate : Prog isa :=
     (curveOps c).map (opCode c.MP') ++ [checkZero c (c.sl W1) ++ select c])
 
 /-- The checks of `x < p` and `y < p`, and `validate`: the body of
-`vg_<curve>_check_point` (`Spec/Weierstrass/CheckPoint.lean`). -/
+`vg_<curve>_check_point` (`Proof/Weierstrass/CheckPointContract.lean`). -/
 def checkBody : Prog isa :=
   .seq (.block (checkLtP c (c.sl E) ++ checkLtP c (c.sl QY))) (validate c)
 
@@ -144,7 +144,7 @@ ADX), which keeps the callee-saved registers in `xmm0`–`xmm5` (`invFnX`),
 if the curve has it (`Cfg.checkPoint`), else inline. -/
 def check : Prog isa :=
   match c.checkPoint with
-  | some C => .call (C.checkApi.name ++ c.fnSuffix) (Impl.Ecdsa.X86_64.Cfg.invFnX (checkBody c))
+  | some C => .call (s!"vg_{C.curve}_check_point" ++ c.fnSuffix) (Impl.Ecdsa.X86_64.Cfg.invFnX (checkBody c))
   | none => checkBody c
 
 /-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
@@ -167,7 +167,7 @@ def mulQ : Prog isa :=
   if c.n ≤ 9 ∧ c.windows = true then .seq (.block (maskK c)) (.seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)))
   else match c.mul with
     | some C => .seq (.block (copy c.n (c.sl RX) (c.sl PX) ++ copy c.n (c.sl RY) (c.sl PY)))
-        (.call C.mulApi.name c.mulFn)
+        (.call s!"vg_{C.curve}_mul" c.mulFn)
     | none => ladder (ladderQ c)
 
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the

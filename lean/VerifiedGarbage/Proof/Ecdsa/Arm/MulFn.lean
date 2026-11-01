@@ -314,11 +314,11 @@ arithmetic's own working space and the point functions' slots. -/
 theorem save_le_wk (h7 : c.n < 10) : c.sl 45 + 36 ≤ c.wk := by
   rw [sl_eq, wk_eq]; omega_arith
 
-theorem save_le_oAt (h6 : c.n ≤ 6) : c.sl 45 + 36 ≤ Spec.Weierstrass.Point.oAt c.n := by
+theorem save_le_oAt (h6 : c.n ≤ 6) : c.sl 45 + 36 ≤ Impl.Weierstrass.Point.oAt c.n := by
   rw [sl_eq]
-  simp only [Spec.Weierstrass.Point.oAt, Spec.Weierstrass.Point.pAt, Spec.Weierstrass.Point.qAt,
-    Spec.Weierstrass.Point.aAt, Spec.Weierstrass.Point.b3At, Spec.Weierstrass.Point.ownAt,
-    Spec.Weierstrass.Point.elemBytes, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]
+  simp only [Impl.Weierstrass.Point.oAt, Impl.Weierstrass.Point.pAt, Impl.Weierstrass.Point.qAt,
+    Impl.Weierstrass.Point.aAt, Impl.Weierstrass.Point.b3At, Impl.Weierstrass.Point.ownAt,
+    Impl.Weierstrass.Point.elemBytes, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]
   omega_arith
 
 /-- The registers' words are apart from what the body writes. -/
@@ -494,7 +494,7 @@ structure MulIn (c : Cfg) (base : Addr) (Q' : Nat → Fe c.C → Fe c.C → Fe c
 space at `r12`: for any invariant `Q` of the ladder from that point that
 accepts `O`, `Q 0` accepts what `R` holds after it; only `r0`–`r4`, `r10`,
 `R`'s first two slots and `mulFW` change. -/
-theorem mulAt_ok (hc : CfgOk c) (C : Spec.Weierstrass.Mul.Curve) (hnf : c.mulFn.noFrames = true)
+theorem mulAt_ok (hc : CfgOk c) (C : Impl.Weierstrass.Mul.Curve) (hnf : c.mulFn.noFrames = true)
     {s : State} {base : Addr} (hs : Scr s base size) (hf : Far s base 8192)
     {px py : Nat} (hpx : px < 45) (hpy : py < 45) (hpxr : px ∉ [RX, RY]) (hpyr : py ∉ [RX, RY])
     (hmp : sv c base s MP = c.C.p)

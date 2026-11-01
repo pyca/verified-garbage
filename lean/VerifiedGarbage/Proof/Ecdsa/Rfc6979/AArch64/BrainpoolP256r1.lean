@@ -56,7 +56,7 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weie
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.AArch64.BrainpoolP256r1.brainpoolp256r1_sh
-  coreN := Spec.Ecdsa.BrainpoolP256r1.signApi.name
+  coreN := "vg_ecdsa_brainpoolp256r1_sign"
   coreC := Impl.Ecdsa.AArch64.BrainpoolP256r1.signComb
   coreX := by rw [coreK_brainpoolp256r1]; exact Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.sign_a64 hL hI
   coreCT := by rw [coreK_brainpoolp256r1]; exact Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.sign_ct

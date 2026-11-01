@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
 # ECDSA on x86-64: the masks of the checks, and the flag

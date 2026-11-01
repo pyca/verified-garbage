@@ -22,7 +22,7 @@ pub unsafe extern "sysv64" fn vg_ec_secp256k1_compress_public_key(out: *mut [u8;
 call {vg_secp256k1_check_point}
 .base64 "SIuPwAUAAEiLl8AEAABIg+IBSIPCAkghyogWSIuHYAQAAEghyEgPyEiJRhlIi4doBAAASCHISA/ISIlGEUiLh3AEAABIIchID8hIiUYJSIuHeAQAAEghyEgPyEiJRgFIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_secp256k1_check_point = sym super::secp256k1_check_point::vg_secp256k1_check_point,
+        vg_secp256k1_check_point = sym super::ec_secp256k1_compressed::vg_secp256k1_check_point::vg_secp256k1_check_point,
     )
 }
 
@@ -53,3 +53,7 @@ jne 21b
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_check_point.rs"]
+pub(crate) mod vg_secp256k1_check_point;

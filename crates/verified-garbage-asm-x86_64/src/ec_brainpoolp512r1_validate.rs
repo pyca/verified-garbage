@@ -21,6 +21,6 @@ pub unsafe extern "sysv64" fn vg_ec_brainpoolp512r1_validate_public_key(public: 
 call {vg_brainpoolp512r1_check_point}
 .base64 "SIuPQAsAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_brainpoolp512r1_check_point = sym super::brainpoolp512r1_check_point::vg_brainpoolp512r1_check_point,
+        vg_brainpoolp512r1_check_point = sym super::ec_brainpoolp512r1_compressed::vg_brainpoolp512r1_check_point::vg_brainpoolp512r1_check_point,
     )
 }

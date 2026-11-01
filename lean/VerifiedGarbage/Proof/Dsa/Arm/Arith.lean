@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-!
 # DSA's reductions and products as functions on 32-bit ARM: their code

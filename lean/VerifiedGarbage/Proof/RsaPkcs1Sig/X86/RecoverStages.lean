@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCmpArgs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigestArgs
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! # Intermediate verifier states used to compose independent executions -/
 

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-!
 # Doubling a Jacobian point in place, on x86-64

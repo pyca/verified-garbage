@@ -73,10 +73,10 @@ call {vg_brainpoolp384r1_mul_mod_p}
 call {vg_brainpoolp384r1_mul_mod_p}
 .base64 "WFhYWIuXQAYAACtXcIuXRAYAABtXdIuXSAYAABtXeIuXTAYAABtXfIuXUAYAABuXgAAAAIuXVAYAABuXhAAAAIuXWAYAABuXiAAAAIuXXAYAABuXjAAAAIuXYAYAABuXkAAAAIuXZAYAABuXlAAAAIuXaAYAABuXmAAAAIuXbAYAABuXnAAAABnAicOLl0AGAAALl0QGAAALl0gGAAALl0wGAAALl1AGAAALl1QGAAALl1gGAAALl1wGAAALl2AGAAALl2QGAAALl2gGAAALl2wGAAC5AAAAACnRGdIh2ouHgAgAACHQiYeACAAAi5dAAwAAC5dEAwAAC5dIAwAAC5dMAwAAC5dQAwAAC5dUAwAAC5dYAwAAC5dcAwAAC5dgAwAAC5dkAwAAC5doAwAAC5dsAwAAuQAAAAAp0RnSi4eACAAAIdCJh4AIAACLj4AIAACLXCQEi4fQBgAAIcgPyIlDLIuH1AYAACHID8iJQyiLh9gGAAAhyA/IiUMki4fcBgAAIcgPyIlDIIuH4AYAACHID8iJQxyLh+QGAAAhyA/IiUMYi4foBgAAIcgPyIlDFIuH7AYAACHID8iJQxCLh/AGAAAhyA/IiUMMi4f0BgAAIcgPyIlDCIuH+AYAACHID8iJQwSLh/wGAAAhyA/IiQOJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_brainpoolp384r1_mul_mod_p = sym super::brainpoolp384r1_mont::vg_brainpoolp384r1_mul_mod_p,
-        vg_brainpoolp384r1_add_mod_p = sym super::brainpoolp384r1_mont::vg_brainpoolp384r1_add_mod_p,
-        vg_brainpoolp384r1_sub_mod_p = sym super::brainpoolp384r1_mont::vg_brainpoolp384r1_sub_mod_p,
-        vg_brainpoolp384r1_point_double = sym super::brainpoolp384r1_point::vg_brainpoolp384r1_point_double,
-        vg_brainpoolp384r1_point_add = sym super::brainpoolp384r1_point::vg_brainpoolp384r1_point_add,
+        vg_brainpoolp384r1_mul_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
+        vg_brainpoolp384r1_add_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p::vg_brainpoolp384r1_add_mod_p,
+        vg_brainpoolp384r1_sub_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p::vg_brainpoolp384r1_sub_mod_p,
+        vg_brainpoolp384r1_point_double = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_double::vg_brainpoolp384r1_point_double,
+        vg_brainpoolp384r1_point_add = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_add::vg_brainpoolp384r1_point_add,
     )
 }

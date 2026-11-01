@@ -4,11 +4,12 @@ public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Tables
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-!
 # ECDSA over P-384 on x86-64: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P384.inst.signContract` for x86-64, under the
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst` for x86-64, under the
 calling convention with the comb's tables (`Abi.withConsts p384.combConsts`),
 by name: `vg_ecdsa_p384_sign(out = rdi, d = rsi, digest = rdx, k = rcx,
 scratch = r8)`, the result in `eax`, and the tables at the address of the
@@ -81,8 +82,8 @@ theorem spec_pre {s : State}
     (f4 : (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64)
     (ht : TblHeld s [⟨s.gpr .rdi, 96⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .rsp, 8⟩])
     (hal : (s.syms "VG_P384_COMB").toNat % 64 = 0) :
-    (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts)).pre s := by
-  sig_pre [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+    (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384.combConsts)).pre s := by
+  sig_pre [Spec.Ecdsa.P384.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.P384.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p384_combConsts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
@@ -90,7 +91,7 @@ theorem spec_pre {s : State}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]),
     hdw _ (by simp), hal, by rw [hrd]; rfl, hw, h1, h2, h3, h4, h5, h6, h7, r1, r2, r3, r4, r5, f0, f1, f2, f3, f4⟩
 
-theorem sat_spec : (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts)).pre
+theorem sat_spec : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384.combConsts)).pre
     satState := by
   have hl := p384W_length
   have held : ∀ i < p384W.length, satState.mem.readW (satState.syms "VG_P384_COMB" +
@@ -109,9 +110,9 @@ theorem sat_spec : (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p38
     rintro r (rfl | rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
 
 theorem implies :
-    signX86_64.Implies (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts)) where
+    signX86_64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384.combConsts)) where
   pre s h := by
-    sig_pre [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+    sig_pre [Spec.Ecdsa.P384.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
       Spec.P384.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p384_combConsts,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, hdr, -, ht, hw, h1, h2, h3, h4, h5, h6, h7, r1, -, -, -, r5, h8, -, -, -, h9⟩ := h
@@ -123,11 +124,11 @@ theorem implies :
       · exact hdw _ (by rw [hw]; simp)
       · exact hdr
   post := by
-    sig_implies_post [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.signContract,
-      Spec.Ecdsa.Instance.signSig, Spec.P384.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
+    sig_implies_post [Spec.Ecdsa.P384.inst, Proof.Ecdsa.Instance.signContract,
+      Proof.Ecdsa.Instance.signSig, Spec.P384.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
       X86_64.argRegs, p384_combConsts, Abi.withConsts, signX86_64, sig]
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+    sig_pub [Spec.Ecdsa.P384.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
       Spec.P384.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p384_combConsts,
       Abi.withConsts] at h
     obtain ⟨h0, hs, h1, h2, h3, h4, h5⟩ := h

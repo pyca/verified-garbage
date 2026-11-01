@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombContract
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
 import Mathlib.Data.Finset.Card
@@ -18,8 +19,8 @@ theorem combSign_regions {s : State} (h : combSignSpec.pre s) :
     s.rd = [dR p256Comb s, digestR p256Comb s, kR p256Comb s] ++
       Abi.constRegions (fun n => (s.syms n).setWidth 64) p256Comb.combConsts ∧
     s.wr = [outR p256Comb s, scR s, argsR s] := by
-  sig_pre [combSignSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract,
-    Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+  sig_pre [combSignSpec, Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract,
+    Proof.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
   obtain ⟨_, _, hd, _, _, _, _, _, _, ht, hw, _⟩ := h
@@ -60,8 +61,8 @@ theorem signComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstra
     · exact List.mem_cons_self ..
     · exact List.mem_cons_of_mem _ (List.mem_cons_self ..)
   · intro s t _ h
-    sig_post [combSignSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract,
-      Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+    sig_post [combSignSpec, Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract,
+      Proof.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, Abi.withConsts]
     have er : (t.gpr .edx ++ t.gpr .eax).setWidth 32 = t.gpr .eax := BitVec.setWidth_append_eq_right
     rw [er]
@@ -71,8 +72,8 @@ theorem signComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstra
     split at h <;> rename_i he
     all_goals simp only [he]; exact h
   · intro s t _ _ h
-    sig_pub [combSignSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract,
-      Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+    sig_pub [combSignSpec, Spec.Ecdsa.P256.inst, Proof.Ecdsa.Instance.signContract,
+      Proof.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts, Abi.withConsts] at h
     obtain ⟨he, hy, a0, a1, a2, a3, a4⟩ := h
     refine ⟨he, ?_, ?_⟩

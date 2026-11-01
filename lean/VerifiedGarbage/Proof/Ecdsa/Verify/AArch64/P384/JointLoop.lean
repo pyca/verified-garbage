@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 
 -- Formerly `VerifiedGarbage/Proof/Weierstrass/AArch64/PubNaf/JointDoubleD.lean`, which only this module imported.
 section

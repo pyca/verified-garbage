@@ -29,7 +29,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE.P192Sha256
 open VG VG.PPC64LE VG.Impl.Ecdsa.Rfc6979.PPC64LE
 
 /-- The code's configuration. -/
-def cfg : Cfg := ⟨sha256K.hm, 24, Spec.P192.curve.n, 8, Spec.Ecdsa.P192.signApi.name, Impl.Ecdsa.PPC64LE.signP192⟩
+def cfg : Cfg := ⟨sha256K.hm, 24, Spec.P192.curve.n, 8, "vg_ecdsa_p192_sign", Impl.Ecdsa.PPC64LE.signP192⟩
 
 /-- The instance, for P-192's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.P192.curve) : Rfc where

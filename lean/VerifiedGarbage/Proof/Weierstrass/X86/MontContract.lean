@@ -21,13 +21,13 @@ section
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): the moduli
 
-Each modulus of `Spec.Weierstrass.Mont.moduli` is one the functions support
+Each modulus of `Impl.Weierstrass.Mont.moduli` is one the functions support
 (`FnOk`): its product's facts (`MulOk`), and code that never writes `esp`.
 -/
 
 namespace VG.Proof.Weierstrass.X86.Mont
 
-open VG VG.X86 Spec.Weierstrass.Mont
+open VG VG.X86 Impl.Weierstrass.Mont
 
 theorem p224p_ok : FnOk p224p where
   mul := ⟨by decide, by decide +kernel, by decide +kernel⟩
@@ -96,7 +96,7 @@ section
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): the contracts
 
-The facts of the contracts of `Spec/Weierstrass/Mont.lean` on x86, by name
+The facts of the contracts of `Proof/Weierstrass/MontContract.lean` on x86, by name
 (`x86Pre`, `mulX86`, `addX86`, `subX86`: `ws`, `o`, `a` and `b` on the stack),
 and the functions meet them (`mul_x86`, `add_x86`, `sub_x86`) for a modulus
 the functions support (`FnOk`): `numAt` reads what `val32` does
@@ -107,7 +107,7 @@ the functions support (`FnOk`): `numAt` reads what `val32` does
 namespace VG.Proof.Weierstrass.X86.Mont
 
 open VG VG.X86 VG.Impl.Weierstrass.X86.Mont VG.Proof.Mont VG.Proof.Mont.X86
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus)
 
 /-- What the three functions' preconditions share, by argument. -/
 def x86Pre (M : Modulus) (s : State) : Prop :=
@@ -161,9 +161,9 @@ theorem pre_of {M : Modulus} (hF : FnOk M) {s : State} (h : x86Pre M s) : Pre M.
 theorem keeps_of_outs {k : Nat} (hk : k ≤ 9) {s : State} {m m' : Mem}
     (h : Outs (wsOf s) (outs k s) m m') : Keeps k ((arg s 0).setWidth 64) (arg s 1) m m' := by
   intro i hi hown ho
-  simp only [Spec.Weierstrass.Mont.wsBytes] at hi
+  simp only [Impl.Weierstrass.Mont.wsBytes] at hi
   have hown' : own k + 64 * k = 4096 := by
-    simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega
+    simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega
   refine h _ fun r hr => ?_
   rw [ofs_off0 _ (by omega)]
   simp only [outs, List.mem_cons, List.not_mem_nil, or_false] at hr

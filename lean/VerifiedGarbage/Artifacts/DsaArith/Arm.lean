@@ -6,7 +6,7 @@ public import Mathlib.Logic.Function.Basic
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.Arm.Arith
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Impl.Dsa.Arm.Core
 public import VerifiedGarbage.Proof.Dsa.Arm.ArithVerified
@@ -60,6 +60,7 @@ import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
 import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # DSA's reductions and products on ARMv7 -/
 

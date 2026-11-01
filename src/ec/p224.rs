@@ -17,9 +17,9 @@ use crate::arch::ec_p224::{VG_EC_P224_PUBLIC_KEY_UMAAL_FEATURES, vg_ec_p224_publ
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdh_p224::VG_ECDH_P224_UMAAL_FEATURES;
 #[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_p224::{
-    VG_ECDSA_P224_SIGN_UMAAL_FEATURES, VG_ECDSA_P224_VERIFY_UMAAL_FEATURES,
-};
+use crate::arch::ecdsa_p224::VG_ECDSA_P224_VERIFY_UMAAL_FEATURES;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p224_sha224::VG_ECDSA_P224_SHA224_SIGN_UMAAL_FEATURES;
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
@@ -43,7 +43,7 @@ impl Mul {
                 Features::all(&[
                     VG_EC_P224_PUBLIC_KEY_UMAAL_FEATURES,
                     VG_ECDH_P224_UMAAL_FEATURES,
-                    VG_ECDSA_P224_SIGN_UMAAL_FEATURES,
+                    VG_ECDSA_P224_SHA224_SIGN_UMAAL_FEATURES,
                     VG_ECDSA_P224_VERIFY_UMAAL_FEATURES,
                 ])
             },

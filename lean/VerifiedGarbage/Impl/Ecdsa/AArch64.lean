@@ -6,8 +6,8 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
-public import VerifiedGarbage.Spec.Weierstrass.Inverse
-public import VerifiedGarbage.Spec.Weierstrass.PointOps
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Inverse
+public import VerifiedGarbage.Impl.Weierstrass.Layout.PointOps
 
 /-!
 # ECDSA signing on AArch64
@@ -140,14 +140,14 @@ structure Cfg where
   /-- Whether `k⁻¹ mod n` is by divsteps (the proofs need `n` prime), else by a chain. -/
   fastN : Bool
   /-- The curve whose functions `vg_<curve>_inv_mod_p` and
-  `vg_<curve>_inv_mod_n` (`Spec/Weierstrass/Inverse.lean`) compute `Z^(p-2)`
+  `vg_<curve>_inv_mod_n` (`Proof/Weierstrass/InverseContract.lean`) compute `Z^(p-2)`
   and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
   else they run them inline. -/
-  inverse : Option Spec.Weierstrass.Inverse.Curve := none
+  inverse : Option Impl.Weierstrass.Inverse.Curve := none
   /-- The curve whose function `vg_<curve>_proj_add`
-  (`Spec/Weierstrass/PointOps.lean`) the complete additions call (`padd`);
+  (`Proof/Weierstrass/PointOpsContract.lean`) the complete additions call (`padd`);
   else they run inline. -/
-  pointOps : Option Spec.Weierstrass.PointOps.Curve := none
+  pointOps : Option Impl.Weierstrass.PointOps.Curve := none
 
 namespace Cfg
 
@@ -193,7 +193,7 @@ def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl BM, c.sl T0, c.sl T1, c.sl T2, c.sl 
 copy `b` there once, before the comb (`combP`): `EM` is free until the
 signature computes `e mod n` there, after the comb. ECDH's constant `b`
 (`BP`) is already there. -/
-def padd : Option (String × Nat) := c.pointOps.map fun C => (C.projAddApi.name, c.sl EM)
+def padd : Option (String × Nat) := c.pointOps.map fun C => (s!"vg_{C.curve}_proj_add", c.sl EM)
 
 /-- `vg_<curve>_proj_add`: `D = R + T` by Algorithm 4, `b` at `EM`'s slot. -/
 def projAddFn : Prog isa :=
@@ -308,14 +308,14 @@ def invCall (name : String) (fn : Prog isa) : Prog isa :=
 `_n` (`invFn`), else inline (`pPowI`, `nPowI`). -/
 def pPow : Prog isa :=
   match c.inverse with
-  | some C => invCall C.invPApi.name (c.invFn c.pPowI)
+  | some C => invCall s!"vg_{C.curve}_inv_mod_p" (c.invFn c.pPowI)
   | none => c.pPowI
 def nPow : Prog isa :=
   match c.inverse with
-  | some C => invCall C.invNApi.name (c.invFn c.nPowI)
+  | some C => invCall s!"vg_{C.curve}_inv_mod_n" (c.invFn c.nPowI)
   | none => c.nPowI
 
-/-- The ladder of `vg_<curve>_mul` (`Spec/Weierstrass/Mul.lean`): its point
+/-- The ladder of `vg_<curve>_mul` (`Proof/Weierstrass/MulContract.lean`): its point
 at `ACC`, `PT` (its copy of `Q`) and `ONEP`, `a` and `3 b` at `AP`'s and
 `BM`'s slots (where the contract has them), over the `64 n` bits of the table
 at `bitsAt n 0`. Its products' temporary area is the inversions' (`invTmp`),

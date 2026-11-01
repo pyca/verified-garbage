@@ -30,6 +30,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.P384.Prime
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 public import VerifiedGarbage.Impl.P384.CombArithmetic
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 meta import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 
 /-!
@@ -142,7 +143,7 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP384 :=
 theorem sign_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     Verified AArch64.target signP384
-      (Spec.Ecdsa.P384.inst.signContract (AArch64.abi.withConsts p384.combConsts)) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (AArch64.abi.withConsts p384.combConsts)) :=
   Verified.of_correct (sign_a64 hL hI hT) sign_ct implies
 
 end VG.Proof.Ecdsa.AArch64.P384

@@ -14,7 +14,7 @@ set_option exponentiation.threshold 1024
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 
-open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Spec.Weierstrass.Mont
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Impl.Weierstrass.Mont
 open VG.Proof.Mont
 open VG.Proof.Mont.AArch64.P521Square
 

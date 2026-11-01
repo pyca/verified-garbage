@@ -50,7 +50,7 @@ structure HasLawInv (C : Spec.Weierstrass.Curve) : Type where
   law : Law C
   inv : InvSounds
 
-theorem InvOk.ofMod {M : VG.Impl.Mont.Mod} {F : Spec.Weierstrass.Mont.Modulus} {out base tbl p : Nat}
+theorem InvOk.ofMod {M : VG.Impl.Mont.Mod} {F : Impl.Weierstrass.Mont.Modulus} {out base tbl p : Nat}
     (hC : 0 < (InvCfg.ofMod M F out base tbl p).C) (hF : Mont.FnOk F) (hk : F.k = 4) (hm : F.m = p) :
     InvOk (InvCfg.ofMod M F out base tbl p) p :=
   ⟨rfl, hC, rfl, hF, hk, hm⟩

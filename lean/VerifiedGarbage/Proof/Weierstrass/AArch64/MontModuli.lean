@@ -13,7 +13,7 @@ functions support (`ModOk`).
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 
-open Spec.Weierstrass.Mont VG.Impl.Weierstrass.AArch64.Mont
+open Impl.Weierstrass.Mont VG.Impl.Weierstrass.AArch64.Mont
 
 theorem p384p_okS : ModOkS p384p.k p384p.m where
   hn := by decide

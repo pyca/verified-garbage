@@ -43,7 +43,7 @@ macro "jwin_layout" h:term : tactic => `(tactic|
                      Impl.Ecdsa.X86.Cfg.rcbSlots,Impl.Ecdsa.X86.Cfg.pt,Impl.Ecdsa.X86.Cfg.sl,
                      slot,($h),JWin.slots,JWin.ro,JWin.work,JWin.temps,JacWinCfg.E,JacWinCfg.z2,JacWinCfg.z3,
                      List.cons_append,List.nil_append,Impl.Ecdh.X86.Cfg.windowBits,
-                     Mont.own,Spec.Weierstrass.Mont.ownAt,Spec.Weierstrass.Mont.ownBytes,VG.Impl.Mont.X86.words,
+                     Mont.own,Impl.Weierstrass.Mont.ownAt,Impl.Weierstrass.Mont.ownBytes,VG.Impl.Mont.X86.words,
                      List.forall_mem_cons,List.forall_mem_nil,List.forall_mem_append] <;> decide))
 
 theorem jwinLay (h4 : c.n=4) :

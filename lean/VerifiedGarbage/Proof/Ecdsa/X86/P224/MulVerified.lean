@@ -38,8 +38,8 @@ namespace VG.Proof.Ecdsa.X86.P224.Mul
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Ecdsa.X86 VG.Proof
 open VG.Proof.Weierstrass.X86 (SpOk)
 
-/-- P-224's curve of `Spec/Weierstrass/Mul.lean`: the one its code has. -/
-abbrev C : Spec.Weierstrass.Mul.Curve := Spec.Weierstrass.Mul.p224
+/-- P-224's curve of `Proof/Weierstrass/MulContract.lean`: the one its code has. -/
+abbrev C : Impl.Weierstrass.Mul.Curve := Impl.Weierstrass.Mul.p224
 
 theorem C_eq : C = mulCurve p224 "p224" "P-224" := rfl
 
@@ -51,7 +51,7 @@ theorem mul_ct : ConstantTime isa (mulX86 C).pre (mulX86 C).pub mulP224 :=
     (by native_taint_decide)
 
 theorem sat_consts : C.ConstsOk 0 (mulSatMem p224) := by
-  unfold Spec.Weierstrass.Mul.Curve.ConstsOk
+  unfold Impl.Weierstrass.Mul.Curve.ConstsOk
   exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
 
 theorem sat_x : (mulCurve p224 "p224" "P-224").toPoint.coordAt (mulSatMem p224) 0 (p224.sl RX) =
@@ -66,7 +66,7 @@ theorem sat_point (hL : Weierstrass.Law Spec.P224.curve) :
 
 theorem sat_pre (hL : Weierstrass.Law Spec.P224.curve) : (C.mulInRangeContract X86.abi 20).pre (mulSatState p224) :=
   Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.Weierstrass.MulBase.sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
+    sig_reduce [Sig.wfPre, Impl.Weierstrass.MulBase.sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
       mulSatState]
     exact ⟨by decide, sat_consts, sat_point hL⟩)
 

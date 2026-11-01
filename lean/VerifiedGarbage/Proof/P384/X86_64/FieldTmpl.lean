@@ -58,13 +58,13 @@ theorem sub_eq {M : Impl.Mont.Mod} (hn : M.n = 6) (hs : M.sparse = true)
   simp only [hn, hs, and_self, ite_true]
 
 theorem p384_callOf :
-    Mont.callOf p384.MP' = some (Spec.Weierstrass.Mont.p384p.mulApi.name, Mont.mulFn6 false) := by
+    Mont.callOf p384.MP' = some ("vg_p384_mul_mod_p", Mont.mulFn6 false) := by
   unfold Mont.callOf
   rw [ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_left_of_eq_true _ _ (by decide +kernel),
     ite_eq_right_of_eq_false _ _ (by decide +kernel)]
 
 theorem p384x_callOf :
-    Mont.callOf p384x.MP' = some (Spec.Weierstrass.Mont.p384p.mulApi.name ++ "_adx", Mont.mulFn6 true) := by
+    Mont.callOf p384x.MP' = some ("vg_p384_mul_mod_p" ++ "_adx", Mont.mulFn6 true) := by
   unfold Mont.callOf
   rw [ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_left_of_eq_true _ _ (by decide +kernel),
     ite_eq_left_of_eq_true _ _ (by decide +kernel)]

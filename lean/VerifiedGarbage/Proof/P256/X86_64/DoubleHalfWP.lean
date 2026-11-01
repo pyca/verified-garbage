@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 

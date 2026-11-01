@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryFields
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! A signed peer lookup has shared field results when its public digit agrees. -/
 

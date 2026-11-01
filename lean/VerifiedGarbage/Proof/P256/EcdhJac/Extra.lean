@@ -5,6 +5,9 @@ public import VerifiedGarbage.Impl.P256.EcdhJac
 public import VerifiedGarbage.Proof.P256.EcdhJac.State
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 @[expose] public section
 

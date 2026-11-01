@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 public import VerifiedGarbage.Proof.Dsa.X86.StageFrame
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Impl.Dsa.X86.Validate
 
 import VerifiedGarbage.Proof.Dsa.X86.ValidateMinus

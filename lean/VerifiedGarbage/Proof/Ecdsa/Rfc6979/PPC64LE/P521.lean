@@ -18,7 +18,7 @@ open VG VG.PPC64LE
 def p521Core (hL : Weierstrass.Law Spec.P521.curve) : Core where
   E := Spec.Ecdsa.P521.inst
   C := Impl.Ecdsa.PPC64LE.signP521
-  N := Spec.Ecdsa.P521.signApi.name
+  N := "vg_ecdsa_p521_sign"
   V := (Proof.Ecdsa.PPC64LE.P521.sign_verified hL).1
   ct := (Proof.Ecdsa.PPC64LE.P521.sign_verified hL).2.1
   d := by decide +kernel

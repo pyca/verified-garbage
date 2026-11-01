@@ -25,6 +25,9 @@ public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! Select a cached odd multiple while retaining the accumulator and both scalar streams. -/
 

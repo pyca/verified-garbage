@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontFn
 /-!
 # Montgomery arithmetic modulo the curves' `p` and `n`, as functions, on PPC64LE: verified
 
-Each modulus of `Spec.Weierstrass.Mont.moduli` is one the functions support
+Each modulus of `Impl.Weierstrass.Mont.moduli` is one the functions support
 (`ModOk`), so each of its functions meets the contract of its `Api`: the
 proof against `mulPPC`, `addPPC` or `subPPC`, which it implies, constant
 time by taint tracking (only the pointer and the offsets, in `r3`–`r6`, are
@@ -27,7 +27,7 @@ public), and a state satisfying it (`sat`).
 
 namespace VG.Proof.Weierstrass.PPC64LE.Mont
 
-open VG VG.PPC64LE VG.Impl.Weierstrass.PPC64LE.Mont Spec.Weierstrass.Mont
+open VG VG.PPC64LE VG.Impl.Weierstrass.PPC64LE.Mont Impl.Weierstrass.Mont
 
 /-- The zero-extension, then code that is constant time for states agreeing
 on `r3`–`r6`: constant time for states agreeing on `r3` and the offsets' low

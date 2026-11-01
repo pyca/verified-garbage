@@ -29,7 +29,7 @@ structure PowerState (P : PowCfg) (base : Addr) (size m : Nat) [NeZero m]
   tmp_lt : wordsVal s.mem base P.tmp P.M.n < m
   tmp_val : toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.tmp P.M.n) = B ^ t
 
-theorem powWx_mo {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {m size wk : Nat} (hL : PowLay P size)
+theorem powWx_mo {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {m size wk : Nat} (hL : PowLay P size)
     (hW : PowWk P F m size wk) :
     ∀ w ∈ powWx P wk, P.M.mo + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.M.mo := by
   intro w hw
@@ -40,7 +40,7 @@ theorem powWx_mo {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {m size wk : N
   · have := hW.mo; have := hW.toCallCfg.own_le
     exact .inl (by simp only; omega)
 
-theorem powWx_base {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {m size wk : Nat} (hL : PowLay P size)
+theorem powWx_base {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {m size wk : Nat} (hL : PowLay P size)
     (hW : PowWk P F m size wk) :
     ∀ w ∈ powWx P wk, P.base + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.base := by
   intro w hw
@@ -51,7 +51,7 @@ theorem powWx_base {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {m size wk :
   · have := hW.base; have := hW.toCallCfg.own_le
     exact .inl (by simp only; omega)
 
-theorem PowerState.rebuild {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr}
+theorem PowerState.rebuild {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr}
     {size wk m a t a' t' : Nat} [NeZero m]
     {B : Fin m} {s u : State} (I : PowerState P base size m B a t s)
     (hL : PowLay P size) (hW : PowWk P F m size wk)
@@ -96,7 +96,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
-theorem powerMul_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m a t b e : Nat}
+theorem powerMul_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m a t b e : Nat}
     [NeZero m] {B : Fin m} {s : State} (I : PowerState P base size m B a t s)
     (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
     (hbw : b + 8 * P.M.n ≤ wk)
@@ -124,7 +124,7 @@ theorem powerMul_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Add
   · rw [toM_mul hm V, I.acc_val, hbval, Lean.Grind.Semiring.pow_add]
   · rw [et]; exact I.tmp_val
 
-theorem powerSave_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m a t : Nat}
+theorem powerSave_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m a t : Nat}
     [NeZero m] {B : Fin m} {s : State} (I : PowerState P base size m B a t s)
     (hL : PowLay P size) (hW : PowWk P F m size wk) :
     WP isa (.block (copy (2 * P.M.n) P.tmp P.acc)) s fun u =>
@@ -160,7 +160,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
-theorem squareRun_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m a t : Nat} [NeZero m]
+theorem squareRun_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m a t : Nat} [NeZero m]
     {B : Fin m} {s : State} (I : PowerState P base size m B a t s)
     (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n))) :
     ∀ n, n < 2 ^ 32 → WP isa (squareRun P F n) s fun u =>
@@ -227,7 +227,7 @@ def powerOpBound : PowerOp → Prop
   | .squares n => n < 2 ^ 32
   | _ => True
 
-theorem powerOp_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m a t : Nat} [NeZero m]
+theorem powerOp_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m a t : Nat} [NeZero m]
     {B : Fin m} {s : State} (I : PowerState P base size m B a t s)
     (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
     (op : PowerOp) (h : powerOpBound op) :
@@ -246,7 +246,7 @@ theorem powerOp_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr
     exact WP.mono (powerMul_ok I hL hW hm hW.tmp I.tmp_lt I.tmp_val)
       fun u ⟨Iu, K, U⟩ => ⟨Iu, K.mono (by decide), U⟩
 
-theorem powerChain_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
+theorem powerChain_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
     (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
     (ops : List PowerOp) (h : ∀ op ∈ ops, powerOpBound op) {B : Fin m} {s : State} {v : Nat × Nat}
     (I : PowerState P base size m B v.1 v.2 s) :

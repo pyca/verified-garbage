@@ -14,7 +14,7 @@ a call of `vg_brainpoolp384r1_mul`, with `3 b R mod p` at `EXPP`'s slot for the 
 addition that may follow. -/
 def qMul : Prog isa :=
   .seq (.block (setConst 6 (brainpoolp384r1.sl EXPP) (brainpoolp384r1.mont (3 * brainpoolp384r1.C.b))))
-    (brainpoolp384r1.mulAt Spec.Weierstrass.Mul.brainpoolp384r1.mulApi.name PX PY)
+    (brainpoolp384r1.mulAt "vg_brainpoolp384r1_mul" PX PY)
 
 /-- ECDH with a validated peer and the general complete ladder. -/
 def exchange : Prog isa :=

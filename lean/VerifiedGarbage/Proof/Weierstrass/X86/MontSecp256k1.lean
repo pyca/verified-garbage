@@ -33,7 +33,7 @@ that adding them rebuilds none of their proofs.
 
 namespace VG.Proof.Weierstrass.X86.Mont
 
-open VG VG.X86 VG.Impl.Weierstrass.X86.Mont Spec.Weierstrass.Mont
+open VG VG.X86 VG.Impl.Weierstrass.X86.Mont Impl.Weierstrass.Mont
 
 theorem secp256k1p_ok : FnOk secp256k1p where
   mul := ⟨by decide, by decide +kernel, by decide +kernel⟩

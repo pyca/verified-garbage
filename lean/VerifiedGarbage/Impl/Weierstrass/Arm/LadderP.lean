@@ -28,7 +28,7 @@ address is still `r12` plus a constant or a counter.
 namespace VG.Impl.Weierstrass.Arm.Point
 
 open VG.Arm VG.Impl.Mont.Arm VG.Impl.Weierstrass VG.Impl.Weierstrass.Arm
-open Spec.Weierstrass.Point (elemBytes aAt b3At oAt pAt qAt)
+open Impl.Weierstrass.Point (elemBytes aAt b3At oAt pAt qAt)
 
 /-- The point of the fixed slots at `o`, for coordinates of `k` words. -/
 def ptAt (k o : Nat) : Pt := ⟨o, o + elemBytes k, o + 2 * elemBytes k⟩
@@ -40,7 +40,7 @@ def copyPt (n : Nat) (o a : Pt) : List Instr :=
 /-- The point function a call doubles (`dbl`) or adds with: for `a0`, the
 one for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`),
 else `vg_<curve>_point_double` or `vg_<curve>_point_add`. -/
-def ptName (S : Spec.Weierstrass.Mont.Modulus) (a0 dbl : Bool) (u : Bool := false) : String :=
+def ptName (S : Impl.Weierstrass.Mont.Modulus) (a0 dbl : Bool) (u : Bool := false) : String :=
   s!"vg_{S.curve}_point_{if a0 then "a0_" else ""}{if dbl then "double" else "add"}{if a0 && !dbl then "_affine" else ""}{if u then "_umaal" else ""}"
 
 /-- Its field operations. -/
@@ -48,7 +48,7 @@ def ptOps (a0 dbl : Bool) : List FOp := if a0 then ops0 dbl else rcb sId pId qId
 
 /-- A call of the point function `ptName S a0 dbl` on the working space at
 `r12`, keeping `lr` in `r10`. -/
-def ptCall (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (a0 : Bool := false) (u : Bool := false) :
+def ptCall (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (a0 : Bool := false) (u : Bool := false) :
     Prog isa :=
   .seq (.block [.mov .r10 (.reg .lr), .mov .r0 (.reg wb)]) <|
     .seq (.call (ptName S a0 dbl u) (fnOps S dbl (ptOps a0 dbl) u))
@@ -61,7 +61,7 @@ def ladderSetup (L : LadderCfg) : List Instr :=
 
 /-- One iteration, for the bit `t = r11 - 1`: `P = R`, `O = P + P`, `P = O`,
 `O = P + Q`, then `R = O` if bit `t` is set, else `P`. -/
-def ladderPBody (L : LadderCfg) (S : Spec.Weierstrass.Mont.Modulus) (a0 : Bool := false) (u : Bool := false) :
+def ladderPBody (L : LadderCfg) (S : Impl.Weierstrass.Mont.Modulus) (a0 : Bool := false) (u : Bool := false) :
     Prog isa :=
   .seq (.block [decCounter]) <| .seq (.block (copyPt L.M.n (ptAt L.M.n (pAt L.M.n)) L.R)) <|
     .seq (ptCall S true a0 u) <|
@@ -73,7 +73,7 @@ def ladderPBody (L : LadderCfg) (S : Spec.Weierstrass.Mont.Modulus) (a0 : Bool :
 /-- The ladder over the bits `nbits - 1` down to 0, from `R` as set up by the
 caller, by calls of the point functions if the coordinates fit their slots
 (for `a0`, those for `a = 0`; `G` must be affine), else `ladder`. -/
-def ladderP (L : LadderCfg) (S : Spec.Weierstrass.Mont.Modulus) (a0 : Bool := false) (u : Bool := false) :
+def ladderP (L : LadderCfg) (S : Impl.Weierstrass.Mont.Modulus) (a0 : Bool := false) (u : Bool := false) :
     Prog isa :=
   if L.M.n ≤ 6 then
     .seq (.block (ladderSetup L ++ [.mov .r11 (.imm (BitVec.ofNat 32 L.nbits))]))

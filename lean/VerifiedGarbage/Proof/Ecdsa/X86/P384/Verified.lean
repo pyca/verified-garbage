@@ -21,6 +21,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 meta import VerifiedGarbage.Spec.Ecdsa.P384
+meta import VerifiedGarbage.Proof.Ecdsa.Contract
 meta import VerifiedGarbage.Proof.P384.Point
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -30,6 +31,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-!
 # ECDSA over P-384 on x86 (32-bit): `Verified`
@@ -219,7 +221,7 @@ def satState : State where
   rd := [⟨0x2000, 48⟩, ⟨0x3000, 48⟩, ⟨0x4000, 48⟩]
   wr := [⟨0x1000, 96⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 20⟩]
 
-theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P384.inst.signContract X86.abi 28) := by
+theorem signWide_implies : signWide.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst X86.abi 28) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
@@ -227,12 +229,12 @@ theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P384.inst.signContract X
   have a4 : arg satState 4 = 0x8000 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+  sig_implies [Spec.Ecdsa.P384.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.P384.curve, Spec.Ecdsa.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, signWide,
     signX86, sig] [a0, a1, a2, a3, a4, e, esp] using satState
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P384.curve) :
-    Verified X86.target signP384 (Spec.Ecdsa.P384.inst.signContract X86.abi 28) := by
+    Verified X86.target signP384 (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst X86.abi 28) := by
   have hsat := signWide_implies.sat_left
   have satLocal : ∃ s, signX86.pre s := hsat.elim fun s h => ⟨_, signWide_pre s h⟩
   have verifiedLocal : Verified X86.target signP384 signX86 :=

@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
-# The functions of `Spec/Weierstrass/Mont.lean` on RISC-V, by register
+# The functions of `Proof/Weierstrass/MontContract.lean` on RISC-V, by register
 
 The contracts of `vg_<curve>_{mul,add,sub}_mod_<p|n>` stated on the
 registers the code reads (`mulRV`, `addRV`, `subRV`): `ws` in `a0`, aligned,
@@ -20,7 +20,7 @@ use them at their calls.
 namespace VG.Proof.Weierstrass.RISCV64
 
 open VG VG.RISCV64
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus)
 
 /-- An offset argument, the low word of its register. -/
 abbrev offArg (s : State) (r : Reg) : BitVec 32 := (s.gpr r).setWidth 32

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Weierstrass.Slots
 
 Code for any curve `y² = x³ + ax + b` over a prime field of `n` 64-bit
 words (`2n` 32-bit words), whose Montgomery arithmetic is calls of the
-functions of a modulus (`Spec/Weierstrass/Mont.lean`,
+functions of a modulus (`Proof/Weierstrass/MontContract.lean`,
 `Impl/Weierstrass/Arm/Mont.lean`), which use the `64 n` bytes of the working
 space below byte 4096 for themselves. Field elements are in
 Montgomery form (`x R mod p`, `R = 2^(64 n)`) in slots of the working space,
@@ -39,7 +39,7 @@ open VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Weierstrass
 
 /-- The code of a field operation modulo `S`: a call of its function (with
 `u`, of the multiplication's `_umaal` variant). -/
-def opCode (S : Spec.Weierstrass.Mont.Modulus) (u : Bool := false) : FOp → Prog isa
+def opCode (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) : FOp → Prog isa
   | .mul o a b => Mont.mulCall S o a b u
   | .add o a b => Mont.addCall S o a b
   | .sub o a b => Mont.subCall S o a b
@@ -51,7 +51,7 @@ def progs : List (Prog isa) → Prog isa
   | p :: ps => .seq p (progs ps)
 
 /-- A straight-line sequence of field operations. -/
-def fprog (S : Spec.Weierstrass.Mont.Modulus) (ops : List FOp) (u : Bool := false) : Prog isa :=
+def fprog (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) (u : Bool := false) : Prog isa :=
   progs (ops.map (opCode S u))
 
 /-- `[o] = [a]` if the mask `r10` is zero, `[b]` if it is all ones, `k`
@@ -88,25 +88,25 @@ def testCounter : Instr := .cmp .r11 (.imm 0)
 
 /-- One iteration of the ladder, for the bit `t = r11 - 1`: `D = R + R`,
 `T = D + G`, then `R = T` if bit `t` is set, else `D`, modulo `S`. -/
-def ladderBody (L : LadderCfg) (S : Spec.Weierstrass.Mont.Modulus) (u : Bool := false) : Prog isa :=
+def ladderBody (L : LadderCfg) (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) : Prog isa :=
   .seq (.block [decCounter]) <| .seq (fprog S (rcb L.S L.R L.R L.D) u) <|
     .seq (fprog S (rcb L.S L.D L.G L.T) u) <|
     .block (bitMask L.bits ++ selPt L.M.n L.R L.D L.T ++ [testCounter])
 
 /-- The ladder over the bits `nbits - 1` down to 0, from `R` as set up by the
 caller (the point at infinity). -/
-def ladder (L : LadderCfg) (S : Spec.Weierstrass.Mont.Modulus) (u : Bool := false) : Prog isa :=
+def ladder (L : LadderCfg) (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) : Prog isa :=
   .seq (.block [.mov .r11 (.imm (BitVec.ofNat 32 L.nbits))]) (.loop (ladderBody L S u) .ne)
 
 /-- One iteration: `acc = acc²`, `tmp = acc · base`, and `acc = tmp` if the
 exponent's bit `r11 - 1` is set, modulo `S`. -/
-def powBody (P : PowCfg) (S : Spec.Weierstrass.Mont.Modulus) (u : Bool := false) : Prog isa :=
+def powBody (P : PowCfg) (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) : Prog isa :=
   .seq (.block [decCounter]) <| .seq (Mont.mulCall S P.acc P.acc P.acc u) <|
   .seq (Mont.mulCall S P.tmp P.acc P.base u) <|
     .block (bitMask P.bits ++ sel (2 * P.M.n) P.acc P.acc P.tmp ++ [testCounter])
 
 /-- `[acc] = [base]^e` (in Montgomery form), from the top bit of `e`. -/
-def pow (P : PowCfg) (S : Spec.Weierstrass.Mont.Modulus) (u : Bool := false) : Prog isa :=
+def pow (P : PowCfg) (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) : Prog isa :=
   .seq (.block (copy (2 * P.M.n) P.acc P.one ++ [.mov .r11 (.imm (BitVec.ofNat 32 P.nbits))]))
     (.loop (powBody P S u) .ne)
 

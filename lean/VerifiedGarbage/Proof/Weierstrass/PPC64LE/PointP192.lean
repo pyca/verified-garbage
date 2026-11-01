@@ -14,26 +14,26 @@ namespace VG.Proof.Weierstrass.PPC64LE.Point
 
 open VG VG.PPC64LE VG.Impl.Weierstrass.PPC64LE.Point VG.Proof.Weierstrass.PPC64LE.Mont
 
-theorem p192_add_ct : ConstantTime isa (sumPPC Spec.Weierstrass.Point.p192 false).pre (sumPPC Spec.Weierstrass.Point.p192 false).pub
-    (VG.Impl.Weierstrass.PPC64LE.Point.fn (modP Spec.Weierstrass.Point.p192) false) :=
+theorem p192_add_ct : ConstantTime isa (sumPPC Impl.Weierstrass.Point.p192 false).pre (sumPPC Impl.Weierstrass.Point.p192 false).pub
+    (VG.Impl.Weierstrass.PPC64LE.Point.fn (modP Impl.Weierstrass.Point.p192) false) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3])
     (fun _ _ _ _ hp => ⟨hp.1, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr; exact hp.2⟩) (by taint_decide)
 
-theorem p192_double_ct : ConstantTime isa (sumPPC Spec.Weierstrass.Point.p192 true).pre (sumPPC Spec.Weierstrass.Point.p192 true).pub
-    (VG.Impl.Weierstrass.PPC64LE.Point.fn (modP Spec.Weierstrass.Point.p192) true) :=
+theorem p192_double_ct : ConstantTime isa (sumPPC Impl.Weierstrass.Point.p192 true).pre (sumPPC Impl.Weierstrass.Point.p192 true).pub
+    (VG.Impl.Weierstrass.PPC64LE.Point.fn (modP Impl.Weierstrass.Point.p192) true) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3])
     (fun _ _ _ _ hp => ⟨hp.1, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr; exact hp.2⟩) (by taint_decide)
 
-theorem p192_add_verified (hF : Fermat Spec.Weierstrass.Point.p192.p) :
-    Verified PPC64LE.target (pointAdd Spec.Weierstrass.Point.p192) (Spec.Weierstrass.Point.p192.addContract PPC64LE.abi) :=
-  sum_verified Spec.Weierstrass.Point.p192 p192p_ok (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF false
+theorem p192_add_verified (hF : Fermat Impl.Weierstrass.Point.p192.p) :
+    Verified PPC64LE.target (pointAdd Impl.Weierstrass.Point.p192) (Impl.Weierstrass.Point.p192.addContract PPC64LE.abi) :=
+  sum_verified Impl.Weierstrass.Point.p192 p192p_ok (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF false
     p192_add_ct
 
-theorem p192_double_verified (hF : Fermat Spec.Weierstrass.Point.p192.p) :
-    Verified PPC64LE.target (pointDouble Spec.Weierstrass.Point.p192) (Spec.Weierstrass.Point.p192.doubleContract PPC64LE.abi) :=
-  sum_verified Spec.Weierstrass.Point.p192 p192p_ok (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF true
+theorem p192_double_verified (hF : Fermat Impl.Weierstrass.Point.p192.p) :
+    Verified PPC64LE.target (pointDouble Impl.Weierstrass.Point.p192) (Impl.Weierstrass.Point.p192.doubleContract PPC64LE.abi) :=
+  sum_verified Impl.Weierstrass.Point.p192 p192p_ok (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF true
     p192_double_ct
 
 end VG.Proof.Weierstrass.PPC64LE.Point

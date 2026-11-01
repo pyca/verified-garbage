@@ -20,7 +20,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem nafPublic_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafPublic_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {base : Addr} {size wk a : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hW : WkOk F K.M C.p size wk Sl) (hn : K.M.n=4)
     (hy : K.E.y=K.E.x+32) (hz : K.E.z=K.E.x+64)
@@ -60,13 +60,13 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86
 
-structure NafEntryChecks (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prop where
+structure NafEntryChecks (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prop where
   lookup : RegCT [.edi,.ebx] (.block (Naf.publicEntry K))
   sign : RegCT [.ebx] (.block [.alu .cmp .ebx (.imm 128)])
   abs : RegCT [.ebx] (.block [.mov .eax (.imm 256),.alu .sub .eax (.reg .ebx),.mov .ebx (.reg .eax)])
   neg : ScratchCT (opCode F (.sub K.E.y K.zero K.E.y))
 
-theorem nafSigned_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafSigned_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {base : Addr} {size m wk : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hW : WkOk F K.M m size wk Sl)
     (hm : UnitMod m (2^(64*K.M.n))) {V : List Nat} {E E' : Nat → Fin m} {b : BitVec 8}
@@ -148,7 +148,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem nafEntry_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafEntry_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} {E : Nat → Fe C} {b : BitVec 8}
     (hL : NafLay K size) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n)))
@@ -185,13 +185,13 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-structure NafDigitChecks (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prop where
+structure NafDigitChecks (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prop where
   read : RegCT [.edi,.esi] (.block (Naf.digitRead K))
   entry : NafEntryChecks K F
   add : JacAddChecks K F K.R K.E K.D
   copy : ScratchCT (.block (copyPt K.M.n K.R K.D))
 
-theorem nafDigit_fields_relCT {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafDigit_fields_relCT {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk k j : Nat} {E : Nat → Fe C}
     (hL : NafLay K size) (hJ : K.J=65) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n))) (hOne : K.one<C.p) (hj : j<257)
@@ -252,7 +252,7 @@ def NafRunPair (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C)
   (∃ E,FieldPair K.M base size C.p (·∈nafSlots K) (nafLive K) E counter s t) ∧
     NafCore K C base size P β e s ∧ NafCore K C base size P β e t
 
-theorem nafDigit_relCT {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafDigit_relCT {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk k j : Nat} {P : Point C}
     (hL : NafLay K size) (hJ : K.J=65) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk) (hm : UnitMod C.p (2^(64*K.M.n)))
@@ -271,7 +271,7 @@ theorem nafDigit_relCT {F : Spec.Weierstrass.Mont.Modulus}
     ⟨WP.mono (nafDigit_ok hL hJ hW hBitsWk hm hC ha hOne hj hP cs h.count₁) (fun _ h => h.2),
      WP.mono (nafDigit_ok hL hJ hW hBitsWk hm hC ha hOne hj hP ct h.count₂) (fun _ h => h.2)⟩)
 
-theorem nafDoubleCore_relCT {counter : BitVec 32} {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafDoubleCore_relCT {counter : BitVec 32} {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk e : Nat} {P : Point C} {β : Nat → BitVec 8}
     (hL : NafLay K size) (hJ : K.J=65) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk) (hm : UnitMod C.p (2^(64*K.M.n)))
@@ -335,13 +335,13 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-structure NafStepChecks (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prop where
+structure NafStepChecks (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prop where
   digit : NafDigitChecks K F
   double : ScratchCT (fprog F (dblJMul K.S K.R K.D))
   dec : RegCT [.esi] (.block [.alu .sub .esi (.imm 1)])
   test : RegCT [.esi] (.block [.alu .test .esi (.reg .esi)])
 
-theorem nafStep_relCT {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafStep_relCT {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk k j : Nat} {P : Point C}
     (hL : NafLay K size) (hJ : K.J=65) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk) (hm : UnitMod C.p (2^(64*K.M.n)))
@@ -377,7 +377,7 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
-theorem nafLoop_relCT {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafLoop_relCT {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} {P : Point C}
     (hL : NafLay K size) (hJ : K.J=65) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk) (hm : UnitMod C.p (2^(64*K.M.n)))
@@ -414,7 +414,7 @@ theorem nafLoop_relCT {F : Spec.Weierstrass.Mont.Modulus}
     · exact RelCT.of_false (fun _ _ h => hj h.1)
   exact (RelCT.loop I step 256).mono (fun _ _ h => ⟨by decide,by decide,h⟩) (fun _ _ h => h)
 
-theorem nafRun_relCT {F : Spec.Weierstrass.Mont.Modulus}
+theorem nafRun_relCT {F : Impl.Weierstrass.Mont.Modulus}
     {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} {P : Point C}
     (hL : NafLay K size) (hJ : K.J=65) (hW : WkOk F K.M C.p size wk (·∈nafSlots K))
     (hBitsWk : K.bits+260≤wk) (hm : UnitMod C.p (2^(64*K.M.n)))

@@ -1,23 +1,22 @@
 module
 
-import VerifiedGarbage.Spec.Weierstrass.Inverse
-meta import VerifiedGarbage.Spec.Weierstrass.Inverse
+import VerifiedGarbage.Proof.Weierstrass.InverseContract
+meta import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-!
-# The contracts of `Spec/Weierstrass/Inverse.lean`
+# The contracts of `Proof/Weierstrass/InverseContract.lean`
 
 * For every curve's prime `p` and order `n` and a few numbers `x` in Montgomery's
   form (`x R mod m`), the power the contracts state, `dec(x)^(m-2)`, is the
   inverse of `dec(x)` (`dec(x) · dec(x)^(m-2) = 1`), and the Montgomery form
   of `x⁻¹` decodes to it;
-* the functions' own working space is where the documentation says, and
-  apart from what the caller provides (`p`, `n`, `Z`, `x`) and from the
+* the functions' own working space is apart from what the caller provides (`p`, `n`, `Z`, `x`) and from the
   result.
 -/
 
 namespace VG.Test.WeierstrassInverse
 
-open Spec.Weierstrass Spec.Weierstrass.Inverse
+open Spec.Weierstrass Impl.Weierstrass.Inverse Impl.Weierstrass
 
 /-- `x R mod m`. -/
 def mont (C : Inverse.Curve) (m x : Nat) : Nat := x * 2 ^ (64 * C.k) % m
@@ -61,12 +60,9 @@ def checkApart (C : Inverse.Curve) : Bool :=
 
 #guard curves.all checkApart
 
-#guard p384.ownDoc = "Bytes 1504 to 1551, 4048 to 4095 and 3400 to 3847 of `ws`"
 #guard p384.zAt = 832 ∧ p384.xAt = 1840 ∧ p384.outAt = 1456 ∧ p384.pAt = 64 ∧ p384.nAt = 112
-#guard p521.ownDoc = "Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5767 of `ws`"
 #guard [p192, p224, p256, secp256k1].all fun C =>
-  C.ownDoc = "Bytes 1024 to 1055, 128 to 159 and 2296 to 2615 of `ws`" &&
-    C.zAt == 576 && C.xAt == 1248 && C.outAt == 992 && C.pAt == 64 && C.nAt == 96
+  C.zAt == 576 && C.xAt == 1248 && C.outAt == 992 && C.pAt == 64 && C.nAt == 96
 #guard p521.zAt = 1216 ∧ p521.xAt = 2728 ∧ p521.outAt = 2152 ∧ p521.pAt = 64 ∧ p521.nAt = 136
 
 end VG.Test.WeierstrassInverse

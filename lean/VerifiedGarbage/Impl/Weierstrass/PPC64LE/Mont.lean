@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.PPC64LE
-public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, as functions, on PPC64LE
 
-`vg_<curve>_{mul,add,sub}_mod_<p|n>(ws, o, a, b)` (`Spec/Weierstrass/Mont.lean`;
+`vg_<curve>_{mul,add,sub}_mod_<p|n>(ws, o, a, b)` (`Proof/Weierstrass/MontContract.lean`;
 ELFv2: `ws`, `o`, `a` and `b` in `r3`–`r6`) for a modulus `m` of `n` 64-bit
 words, with the operations of `Impl/Mont/PPC64LE.lean` on the working space
 `ws`:
@@ -41,7 +41,7 @@ def minv (m : Nat) : Nat :=
   (2 ^ 64 - inv) % 2 ^ 64
 
 /-- The start of the own working space: the accumulator. -/
-def own (n : Nat) : Nat := Spec.Weierstrass.Mont.ownAt n
+def own (n : Nat) : Nat := Impl.Weierstrass.Mont.ownAt n
 
 /-- The temporary area. -/
 def tmpAt (n : Nat) : Nat := own n + (16 * n + 8)

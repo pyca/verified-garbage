@@ -16,6 +16,7 @@ import Mathlib.Tactic.NormNum.Ineq
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Inversion by divsteps on AArch64: packed divsteps

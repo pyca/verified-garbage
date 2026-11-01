@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 /-!
 # Montgomery products as functions on AArch64: the contracts
 
-The facts of `mulContract` of `Spec/Weierstrass/Mont.lean` on AArch64, by
+The facts of `mulContract` of `Proof/Weierstrass/MontContract.lean` on AArch64, by
 register (`mulA`: `ws` in `x0`, the offsets in `w1`–`w3`), and the functions
 meet them (`mul_a`) for a modulus they support (`ModOk`): `numAt` reads what
 `wordsVal` does (`numAt_eq`), and what the functions keep is what the
@@ -22,7 +22,7 @@ by taint tracking.
 namespace VG.Proof.Weierstrass.AArch64.Mont
 
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont VG.Proof.Mont
-open VG.Spec.Weierstrass.Mont (numAt Keeps Modulus)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus)
 
 /-- What the functions' precondition says of the registers. -/
 def aPre (M : Modulus) (s : State) : Prop :=
@@ -60,12 +60,12 @@ theorem pre_of {M : Modulus} (hk : M.k ≤ 9) {s : State} (h : aPre M s) : Pre M
 theorem keeps_of_kept {k : Nat} (hk : k ≤ 9) {ws : Addr} {o : BitVec 32} {m m' : Mem}
     (h : Kept k ws o.toNat m m') : Keeps k ws o m m' := by
   intro i hi hown ho
-  simp only [Spec.Weierstrass.Mont.wsBytes] at hi
+  simp only [Impl.Weierstrass.Mont.wsBytes] at hi
   have hown' := own_eq hk
   refine h _ ?_ ?_
   · rw [ofs_off0 ws (by omega)]; exact ho
   · rw [ofs_off0 ws (by omega)]
-    simp only [own, moAt, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes] at hown hown' ⊢
+    simp only [own, moAt, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes] at hown hown' ⊢
     omega
 
 theorem mul_a {M : Modulus} (hM : ModOk M.k M.m) (s : State) (hs : (mulA M).pre s) :

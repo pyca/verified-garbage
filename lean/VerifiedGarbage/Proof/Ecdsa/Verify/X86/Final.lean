@@ -55,7 +55,7 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
       ⟨by rw [hm, u₁.mem], eax, saved, by rw [others _ (by decide), u₁.other _ (by decide)]⟩
 
 /-- `[o] = ([a] - [b]) mod m`, on slots, by a call of `F`'s subtraction. -/
-theorem slSub_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {m : Nat} (hMn : M.n = c.n)
+theorem slSub_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {m : Nat} (hMn : M.n = c.n)
     (hF : F.k = c.n ∧ F.m = m ∧ Mont.FnOk F) (h7 : c.n < 10) {base : Addr} {s : State}
     (hs : Scr s base size) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
     (hA : sv c base s a < m) (hB : sv c base s b < m) :

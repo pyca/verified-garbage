@@ -108,7 +108,7 @@ cbnz x12, 20b
         vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch::vg_hmac_sha224_finalize_scratch,
-        vg_ecdsa_p224_sign = sym super::ecdsa_p224::vg_ecdsa_p224_sign,
+        vg_ecdsa_p224_sign = sym super::ecdsa_p224::vg_ecdsa_p224_sign::vg_ecdsa_p224_sign,
     )
 }
 
@@ -223,6 +223,6 @@ cbnz x12, 20b
         vg_hmac_sha224_init_scratch_sha2 = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_sha2::vg_hmac_sha224_init_scratch_sha2,
         vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,
         vg_hmac_sha224_finalize_scratch_sha2 = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_sha2::vg_hmac_sha224_finalize_scratch_sha2,
-        vg_ecdsa_p224_sign = sym super::ecdsa_p224::vg_ecdsa_p224_sign,
+        vg_ecdsa_p224_sign = sym super::ecdsa_p224::vg_ecdsa_p224_sign::vg_ecdsa_p224_sign,
     )
 }

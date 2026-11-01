@@ -234,10 +234,6 @@ import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 namespace VG.Generic.P521.AArch64.EcdsaP521
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
-  Spec.Ecdsa.P521.signApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.AArch64.p521.combConsts
-    code := Impl.Ecdsa.AArch64.signP521
-    verified := Proof.Ecdsa.AArch64.P521.sign_verified h.law h.inv (Proof.P521.combOk7 h.law) },
   Spec.Ecdsa.P521.verifyApi.artifact AArch64.target {
     consts := Impl.Ecdsa.AArch64.p521.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP521

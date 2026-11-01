@@ -32,9 +32,9 @@ multiples double equal points for `a = 0` (`dblJ0`). -/
 def publicJoint : Joint.Cfg :=
   { K := secp256k1v.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
     gBits := 6000, tsym := "VG_SECP256K1_GTAB", cache := 4000, selected := 5408,
-    pts := some Spec.Weierstrass.PointOps.secp256k1, gw := 9, dbl := dblJ0 }
+    pts := some Impl.Weierstrass.PointOps.secp256k1, gw := 9, dbl := dblJ0 }
 
 /-- The joint loop's doubler: a call of `vg_secp256k1_jac_double`. -/
-def jointDouble (K : WinCfg) : Prog isa := PointOps.doubleCall Spec.Weierstrass.PointOps.secp256k1 K dblJ0
+def jointDouble (K : WinCfg) : Prog isa := PointOps.doubleCall Impl.Weierstrass.PointOps.secp256k1 K dblJ0
 
 end VG.Impl.Secp256k1.X86_64

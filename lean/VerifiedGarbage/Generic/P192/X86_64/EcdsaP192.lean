@@ -124,10 +124,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 namespace VG.Generic.P192.X86_64.EcdsaP192
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P192.curve) : List Artifact := [
-  Spec.Ecdsa.P192.signApi.artifact X86_64.target {
-    code := Impl.Ecdsa.X86_64.signP192
-    stack := 8
-    verified := Proof.Ecdsa.X86_64.P192.sign_verified h.law h.inv },
   Spec.Ecdsa.P192.verifyApi.artifact X86_64.target {
     code := Impl.Ecdsa.Verify.X86_64.verifyP192
     stack := 8

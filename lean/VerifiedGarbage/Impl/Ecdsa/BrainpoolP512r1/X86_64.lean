@@ -15,9 +15,9 @@ def brainpoolp512r1 : Cfg where
   C := Spec.BrainpoolP512r1.curve
   fastN := true
   windows := false
-  mul := some Spec.Weierstrass.Mul.brainpoolp512r1
-  inverse := some Spec.Weierstrass.Inverse.brainpoolp512r1
-  checkPoint := some Spec.Weierstrass.CheckPoint.brainpoolp512r1
+  mul := some Impl.Weierstrass.Mul.brainpoolp512r1
+  inverse := some Impl.Weierstrass.Inverse.brainpoolp512r1
+  checkPoint := some Impl.Weierstrass.CheckPoint.brainpoolp512r1
 
 def signBrainpoolP512r1 : Prog isa := brainpoolp512r1.sign
 

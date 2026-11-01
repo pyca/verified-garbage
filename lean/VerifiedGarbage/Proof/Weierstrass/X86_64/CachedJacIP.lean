@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Weierstrass.Env
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-!
 # The cached Jacobian addition in place

@@ -14,7 +14,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86
 def pointTransferEnv {F : Type _} (E : Nat → F) (o q : Pt) (x : Nat) : F :=
   if x=o.x then E q.x else if x=o.y then E q.y else if x=o.z then E q.z else E x
 
-theorem Inv.transferPointFields {FM : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
+theorem Inv.transferPointFields {FM : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk FM M m size wk Sl)
     {o q : Pt} (hy : o.y=o.x+8*M.n) (hz : o.z=o.x+16*M.n)
     {V : List Nat} {E : Nat → Fin m} {s t : State}

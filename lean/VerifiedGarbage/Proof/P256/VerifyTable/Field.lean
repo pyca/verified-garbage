@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 
 /-! ECDH's allocated DBLU and ZADDU blocks on any slot predicate holding their
 slots: the raw field programs' contract, carried to the allocated code through

@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
-public import VerifiedGarbage.Spec.Weierstrass.PointOps
+public import VerifiedGarbage.Impl.Weierstrass.Layout.PointOps
 
 /-!
 # Short Weierstrass curves on x86-64: point operations as functions
 
 `vg_<curve>_jac_double`, `vg_<curve>_jac_add_cached` and
-`vg_<curve>_jac_add_affine` (`Spec/Weierstrass/PointOps.lean`), and their
+`vg_<curve>_jac_add_affine` (`Proof/Weierstrass/PointOpsContract.lean`), and their
 `_adx` forms for products with BMI2 and ADX: `ws` in `rdi`, where the
 curve's code keeps it. Each keeps the callee-saved registers the field
 arithmetic writes (`rbp`, `r12`–`r15`) in `xmm0`–`xmm4`, which are
@@ -55,17 +55,17 @@ def addAffineBody (K : WinCfg) (dbl : RcbSlots → Pt → Pt → List FOp := dbl
 def suffix (K : WinCfg) : String := if K.M.adx then "_adx" else ""
 
 /-- A call of `vg_<curve>_jac_double`. -/
-def doubleCall (C : Spec.Weierstrass.PointOps.Curve) (K : WinCfg) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
-  .call (C.doubleApi.name ++ suffix K) (wrap (doubleBody K dbl))
+def doubleCall (C : Impl.Weierstrass.PointOps.Curve) (K : WinCfg) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
+  .call (s!"vg_{C.curve}_jac_double" ++ suffix K) (wrap (doubleBody K dbl))
 
 /-- A call of `vg_<curve>_jac_add_cached`. -/
-def addCachedCall (C : Spec.Weierstrass.PointOps.Curve) (K : WinCfg) (sel : Nat)
+def addCachedCall (C : Impl.Weierstrass.PointOps.Curve) (K : WinCfg) (sel : Nat)
     (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
-  .call (C.addCachedApi.name ++ suffix K) (wrap (addCachedBody K sel dbl))
+  .call (s!"vg_{C.curve}_jac_add_cached" ++ suffix K) (wrap (addCachedBody K sel dbl))
 
 /-- A call of `vg_<curve>_jac_add_affine`. -/
-def addAffineCall (C : Spec.Weierstrass.PointOps.Curve) (K : WinCfg)
+def addAffineCall (C : Impl.Weierstrass.PointOps.Curve) (K : WinCfg)
     (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
-  .call (C.addAffineApi.name ++ suffix K) (wrap (addAffineBody K dbl))
+  .call (s!"vg_{C.curve}_jac_add_affine" ++ suffix K) (wrap (addAffineBody K dbl))
 
 end VG.Impl.Weierstrass.X86_64.PointOps

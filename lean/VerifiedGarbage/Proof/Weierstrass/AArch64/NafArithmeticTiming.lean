@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
-public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.TCB.Mem

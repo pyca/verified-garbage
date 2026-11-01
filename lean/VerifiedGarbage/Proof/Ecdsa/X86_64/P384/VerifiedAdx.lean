@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.P384.Order
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.P384.Prime
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
@@ -167,7 +168,7 @@ theorem sign_verified_adx (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP384Adx
-      (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts) 8) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384.combConsts) 8) :=
   Verified.of_inline_ct sign_inlineOk_adx (sign_x86_adx hL hT hI) sign_ct_adx implies8
     (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 

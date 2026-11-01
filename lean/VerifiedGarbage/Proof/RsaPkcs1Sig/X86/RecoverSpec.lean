@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRelease
 public import VerifiedGarbage.Spec.Weierstrass
 

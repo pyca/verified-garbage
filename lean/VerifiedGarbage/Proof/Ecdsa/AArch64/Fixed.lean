@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 
 /-!
 # ECDSA on AArch64: what every phase keeps

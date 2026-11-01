@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuild
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 /-! Exact cache environments relate the two public executions of table setup. -/
 

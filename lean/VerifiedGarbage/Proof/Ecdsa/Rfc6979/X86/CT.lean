@@ -539,7 +539,7 @@ theorem loop_ct :
 
 /-- One count's initial store, from which every count's follows. -/
 abbrev initCnt₀ : List Instr := (cfgC
-    { n := 4, C := Spec.P256.curve, SP := Spec.Weierstrass.Mont.p256p, SN := Spec.Weierstrass.Mont.p256n }).initCnt
+    { n := 4, C := Spec.P256.curve, SP := Impl.Weierstrass.Mont.p256p, SN := Impl.Weierstrass.Mont.p256n }).initCnt
 
 /-- The analysis' hint for `initCnt₀`. -/
 abbrev initCntHint : VG.Taint.Hint taint.T := taint.hintOfSize Taint.chunk (τr [.esp]) (.block initCnt₀)

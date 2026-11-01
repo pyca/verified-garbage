@@ -18,7 +18,7 @@ theorem add_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} [NeZero m]
     (h : Layout K) (hs : Scr s base 4096) (hf : Far s base 8192)
     (hm : K.F.m=m) (hn : K.F.k=K.L.M.n) (hM : Mont.ModOk K.L.M.n m)
     (hlt : ∀ x ∈ [K.L.R.x,K.L.R.y,K.L.R.z,K.Q.x,K.Q.y,K.Q.z,
-      Spec.Weierstrass.Point.aAt K.L.M.n,Spec.Weierstrass.Point.b3At K.L.M.n],
+      Impl.Weierstrass.Point.aAt K.L.M.n,Impl.Weierstrass.Point.b3At K.L.M.n],
       wordsVal s.mem base x K.L.M.n<m) :
     WP isa K.add s fun t =>
       Rest [.r4,.r10,.r0,.r1,.r2,.r3] s t ∧ Unch base (loopWrites K) s.mem t.mem ∧
@@ -44,8 +44,8 @@ theorem add_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} [NeZero m]
   simp only [TCombCfg.P,ptAt] at px py pz outs
   have hsu := hs.of_rest keep (by decide)
   have hfu := hf.of_rest keep
-  have other : ∀ x ∈ [K.Q.x,K.Q.y,K.Q.z,Spec.Weierstrass.Point.aAt K.L.M.n,
-      Spec.Weierstrass.Point.b3At K.L.M.n],
+  have other : ∀ x ∈ [K.Q.x,K.Q.y,K.Q.z,Impl.Weierstrass.Point.aAt K.L.M.n,
+      Impl.Weierstrass.Point.b3At K.L.M.n],
       wordsVal u.mem base x K.L.M.n=wordsVal s.mem base x K.L.M.n := by
     intro x hx
     apply (Outs.unch outs).wordsVal
@@ -82,10 +82,10 @@ theorem add_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} [NeZero m]
   have backApart : ∀ d ∈ [K.L.R.x,K.L.R.y,K.L.R.z],∀ e ∈ [K.O.x,K.O.y,K.O.z],
       d+8*K.L.M.n≤e ∨ e+8*K.L.M.n≤d := by
     intro d hd e he
-    have dl : d+8*K.L.M.n≤Spec.Weierstrass.Point.oAt K.L.M.n := by
+    have dl : d+8*K.L.M.n≤Impl.Weierstrass.Point.oAt K.L.M.n := by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hd
       rcases hd with rfl|rfl|rfl <;> with_reducible assumption
-    have el : Spec.Weierstrass.Point.oAt K.L.M.n≤e := by
+    have el : Impl.Weierstrass.Point.oAt K.L.M.n≤e := by
       simp only [TCombCfg.O,ptAt] at he
       exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide) e he
     exact .inl (Nat.le_trans dl el)
@@ -100,10 +100,10 @@ theorem add_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} [NeZero m]
       | exact ⟨_,Or.inl rfl,Nat.le_refl _,Nat.le_refl _⟩
       | exact ⟨_,Or.inr (Or.inl rfl),Nat.le_refl _,Nat.le_refl _⟩
       | exact ⟨_,Or.inr (Or.inr (Or.inl rfl)),Nat.le_refl _,Nat.le_refl _⟩
-      | exact ⟨(Spec.Weierstrass.Point.oAt K.L.M.n,72*K.L.M.n),
+      | exact ⟨(Impl.Weierstrass.Point.oAt K.L.M.n,72*K.L.M.n),
           Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))),
           lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide)⟩
-      | exact ⟨(Spec.Weierstrass.Point.ownAt K.L.M.n,4096-Spec.Weierstrass.Point.ownAt K.L.M.n),
+      | exact ⟨(Impl.Weierstrass.Point.ownAt K.L.M.n,4096-Impl.Weierstrass.Point.ownAt K.L.M.n),
           Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl)))),Nat.le_refl _,Nat.le_refl _⟩
   · simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
     rw [tx,ty,tz]
@@ -115,8 +115,8 @@ theorem add_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} [NeZero m]
     rw [ev]
     simp only [ptVal,Eb,enc_3,enc_4,enc_5,enc_6,enc_7,enc_8,enc_9,enc_10,Bool.false_eq_true,↓reduceIte]
     rw [px,py,pz]
-    have oa := other (Spec.Weierstrass.Point.aAt K.L.M.n) (by simp)
-    have ob := other (Spec.Weierstrass.Point.b3At K.L.M.n) (by simp)
+    have oa := other (Impl.Weierstrass.Point.aAt K.L.M.n) (by simp)
+    have ob := other (Impl.Weierstrass.Point.b3At K.L.M.n) (by simp)
     have ox := other K.Q.x (by simp)
     have oy := other K.Q.y (by simp)
     have oz := other K.Q.z (by simp)

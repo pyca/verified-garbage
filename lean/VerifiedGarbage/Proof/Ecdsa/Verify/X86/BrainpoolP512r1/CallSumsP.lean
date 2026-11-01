@@ -26,10 +26,10 @@ namespace VG.Proof.Ecdsa.Verify.X86.BrainpoolP512r1
 open VG VG.X86
 
 taint_summary mulPSum : taint τV
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.brainpoolp512r1p.k Spec.Weierstrass.Mont.brainpoolp512r1p.m)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
 taint_summary addPSum : taint τV
-  (Impl.Weierstrass.X86.Mont.addFn Spec.Weierstrass.Mont.brainpoolp512r1p.k Spec.Weierstrass.Mont.brainpoolp512r1p.m)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
 taint_summary subPSum : taint τV
-  (Impl.Weierstrass.X86.Mont.subFn Spec.Weierstrass.Mont.brainpoolp512r1p.k Spec.Weierstrass.Mont.brainpoolp512r1p.m)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
 
 end VG.Proof.Ecdsa.Verify.X86.BrainpoolP512r1

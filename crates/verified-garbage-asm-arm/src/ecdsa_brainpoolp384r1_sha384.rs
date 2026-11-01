@@ -911,7 +911,7 @@ bx lr",
         vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
-        vg_ecdsa_brainpoolp384r1_sign = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign,
+        vg_ecdsa_brainpoolp384r1_sign = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign::vg_ecdsa_brainpoolp384r1_sign,
     )
 }
 
@@ -1829,6 +1829,10 @@ bx lr",
         vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
-        vg_ecdsa_brainpoolp384r1_sign_umaal = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign_umaal,
+        vg_ecdsa_brainpoolp384r1_sign_umaal = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign_umaal::vg_ecdsa_brainpoolp384r1_sign_umaal,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_add_mod_n.rs"]
+pub(crate) mod vg_brainpoolp384r1_add_mod_n;

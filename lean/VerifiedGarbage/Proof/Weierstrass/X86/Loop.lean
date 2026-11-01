@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): loops counted down in `esi`

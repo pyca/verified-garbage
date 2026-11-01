@@ -21,7 +21,7 @@ pub unsafe extern "sysv64" fn vg_ec_p384_validate_public_key(public: *const [u8;
 call {vg_p384_check_point}
 .base64 "SIuPgAgAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p384_check_point = sym super::p384_check_point::vg_p384_check_point,
+        vg_p384_check_point = sym super::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
     )
 }
 
@@ -47,6 +47,6 @@ pub unsafe extern "sysv64" fn vg_ec_p384_validate_public_key_adx(public: *const 
 call {vg_p384_check_point_adx}
 .base64 "SIuPgAgAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p384_check_point_adx = sym super::p384_check_point::vg_p384_check_point_adx,
+        vg_p384_check_point_adx = sym super::ec_p384_compressed::vg_p384_check_point_adx::vg_p384_check_point_adx,
     )
 }

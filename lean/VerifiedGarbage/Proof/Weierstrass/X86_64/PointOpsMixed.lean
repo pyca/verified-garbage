@@ -31,7 +31,7 @@ theorem mixedN_spec {m : Nat} [NeZero m] (e : Nat → Fin m) :
     (runOps (jacMixedHeadN ++ jacMixedTailN) (jacMixedEnv e) 6,
       runOps (jacMixedHeadN ++ jacMixedTailN) (jacMixedEnv e) 7,
       runOps (jacMixedHeadN ++ jacMixedTailN) (jacMixedEnv e) 8) =
-      Spec.Weierstrass.PointOps.jacTail (e 11) (e 12) (e 14 * (e 13 * e 13) - e 11)
+      Impl.Weierstrass.PointOps.jacTail (e 11) (e 12) (e 14 * (e 13 * e 13) - e 11)
         (e 15 * e 13 * (e 13 * e 13) - e 12) (e 13) := by
   simp only [jacMixedHeadN, jacMixedTailN, jacMixedHead, jacMixedTail, jacTail, jacMixedEnv,
     List.take, List.cons_append, List.nil_append, runOps, List.foldl_cons, List.foldl_nil, FOp.run,
@@ -102,7 +102,7 @@ theorem mixedTail_val (hC : MixedLay K size Sl dbl) (hm : UnitMod m (2 ^ (64 * K
       (runOps (jacMixedHead K.S K.R K.E) (jacMixedInit K.S K.R E)) s) :
     WP isa (ForwardField.programB K.M (jacMixedTail K.S K.R K.E K.D)).inline s
       (Val K.M base size m Sl (rcbW K.S K.D) (mV K) K.D
-        (Spec.Weierstrass.PointOps.jacTail (E K.R.x) (E K.R.y) (E K.E.x * (E K.R.z * E K.R.z) - E K.R.x)
+        (Impl.Weierstrass.PointOps.jacTail (E K.R.x) (E K.R.y) (E K.E.x * (E K.R.z * E K.R.z) - E K.R.x)
           (E K.E.y * E K.R.z * (E K.R.z * E K.R.z) - E K.R.y) (E K.R.z)) s) := by
   let N := jacMixedHeadN ++ jacMixedTailN
   have he : jacMixedHead K.S K.R K.E ++ jacMixedTail K.S K.R K.E K.D = ofN N K.S K.R K.E K.D := by
@@ -148,7 +148,7 @@ theorem mixedAdd_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fin
     {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (mV K) E s) (hds : JDblSpec dbl sdbl) :
     WP isa (Jacobian.jacMixedForward K K.R K.E K.D dbl).inline s
       (Val K.M base size m Sl (rcbW K.S K.D) (mV K) K.D
-        (Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+        (Impl.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
           (E K.E.z) sdbl) s) := by
   have dW : ∀ w ∈ jacCoords K.D, w ∈ rcbW K.S K.D := by
     intro w hw; simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -161,7 +161,7 @@ theorem mixedAdd_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fin
   apply fieldBranch_ok hC.lay hm hI (rV _ (by simp [jacCoords]))
   · intro a ia ka hz
     refine WP.mono (copy_val hC.lay hC.dN hC.eD dSl ia eV) fun t ht => ?_
-    simp only [Spec.Weierstrass.PointOps.jacAddAffine, hz, ↓reduceIte]
+    simp only [Impl.Weierstrass.PointOps.jacAddAffine, hz, ↓reduceIte]
     exact (ht.mono dW).prefix ka (by simp)
   intro a ia ka hpz
   apply WP.seq
@@ -191,35 +191,35 @@ theorem mixedAdd_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fin
         · exact hC.sl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
       have hR' := readsOk_mono hC.dbl fun x hx => oldV x (rV x hx)
       refine WP.mono (dblB_val hC.lay hm hdA hdSl hR' ie hds) fun t ht => ?_
-      have hs : Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+      have hs : Impl.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
           (E K.E.z) sdbl = sdbl (EH K.R.x) (EH K.R.y) (EH K.R.z) := by
         rw [eh] at hH
         rw [er] at hr
         rw [hro _ (by simp [jacCoords]), hro _ (by simp [jacCoords]), hro _ (by simp [jacCoords])]
-        simp only [Spec.Weierstrass.PointOps.jacAddAffine, Spec.Weierstrass.PointOps.jacEqual, hpz,
+        simp only [Impl.Weierstrass.PointOps.jacAddAffine, Impl.Weierstrass.PointOps.jacEqual, hpz,
           ↓reduceIte]
         simp only [hH, hr, ↓reduceIte]
       rw [hs]
       exact (((ht.sub oldV).prefix ke (by simp)).prefix kd (by simp)).prefix pre (fun _ h => h)
     · intro e ie ke hr
       refine WP.mono (infinity_val hC.lay dSl dW hC.dN ie hOne hOneVal) fun t ht => ?_
-      have hs : Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+      have hs : Impl.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
           (E K.E.z) sdbl = (0, 1, 0) := by
         rw [eh] at hH
         rw [er] at hr
-        simp only [Spec.Weierstrass.PointOps.jacAddAffine, Spec.Weierstrass.PointOps.jacEqual,
-          Spec.Weierstrass.PointOps.infinity, hpz, ↓reduceIte]
+        simp only [Impl.Weierstrass.PointOps.jacAddAffine, Impl.Weierstrass.PointOps.jacEqual,
+          Impl.Weierstrass.PointOps.infinity, hpz, ↓reduceIte]
         simp only [hH, hr, ↓reduceIte]
       rw [hs]
       exact (((ht.sub oldV).prefix ke (by simp)).prefix kd (by simp)).prefix pre (fun _ h => h)
   · intro d id kd hH
     refine WP.mono (mixedTail_val hC hm id) fun t ht => ?_
-    have hs : Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-        (E K.E.z) sdbl = Spec.Weierstrass.PointOps.jacTail (E K.R.x) (E K.R.y)
+    have hs : Impl.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+        (E K.E.z) sdbl = Impl.Weierstrass.PointOps.jacTail (E K.R.x) (E K.R.y)
           (E K.E.x * (E K.R.z * E K.R.z) - E K.R.x) (E K.E.y * E K.R.z * (E K.R.z * E K.R.z) - E K.R.y)
           (E K.R.z) := by
       rw [eh] at hH
-      simp only [Spec.Weierstrass.PointOps.jacAddAffine, hpz, hH, ↓reduceIte]
+      simp only [Impl.Weierstrass.PointOps.jacAddAffine, hpz, hH, ↓reduceIte]
     rw [hs]
     exact (ht.prefix kd (by simp)).prefix pre (fun _ h => h)
 
@@ -232,7 +232,7 @@ theorem addAffineBody_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m �
     WP isa (PointOps.addAffineBody K dbl).inline s fun t =>
       ProgKeep K.M base (rcbW K.S K.D ++ jacCoords K.R) s t ∧ ∃ E',
         Inv K.M base size m Sl (jacCoords K.R) E' t ∧ (E' K.R.x, E' K.R.y, E' K.R.z) =
-          Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+          Impl.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
             (E K.E.z) sdbl := by
   rw [PointOps.addAffineBody]
   simp only [Code.inline]

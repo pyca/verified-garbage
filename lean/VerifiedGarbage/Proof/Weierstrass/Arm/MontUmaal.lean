@@ -26,7 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Weierstrass.Arm.Mont
 
-open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Spec.Weierstrass.Mont
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Impl.Weierstrass.Mont
 
 theorem mulU_arm {M : Modulus} (hM : ModOk M.k M.m) (s : State) (hs : (mulArm M).pre s) :
     ∃ t s', Exec isa (mulFnU M.k M.m) s t s' ∧ abiPreserved s s' ∧ (mulArm M).post s s' := by

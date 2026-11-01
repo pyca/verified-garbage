@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Ecdh.Exchange
 /-!
 # `vg_<curve>_check_point` on x86-64: correctness
 
-The facts of a curve's contract (`Spec/Weierstrass/CheckPoint.lean`) for
+The facts of a curve's contract (`Proof/Weierstrass/CheckPointContract.lean`) for
 x86-64, by name (`checkK`), for a configuration whose slots and numbers are
 the curve's (`Agree`): `checkFn_ok` gives the flag `&=` the mask of the
 point's validity, `x R` and `y R`, and the point for the scalar
@@ -28,8 +28,8 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64
 open VG.Impl.Ecdh.X86_64 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY)
 
-/-- A curve of `Spec/Weierstrass/CheckPoint.lean`. -/
-abbrev CP := Spec.Weierstrass.CheckPoint.Curve
+/-- A curve of `Proof/Weierstrass/CheckPointContract.lean`. -/
+abbrev CP := Impl.Weierstrass.CheckPoint.Curve
 
 /-- `vg_<curve>_check_point`'s contract on x86-64, by name. -/
 def checkK (C : CP) : Contract isa where
@@ -55,15 +55,15 @@ structure Agree (c : Cfg) (C : CP) : Prop where
 /-- The number at an offset below `2³²` is the one `wordsVal` reads. -/
 theorem num_eq (C : CP) (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) :
     C.num ws m o = wordsVal m ws o C.k := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.num Spec.Weierstrass.Mont.numAt
+  unfold Impl.Weierstrass.CheckPoint.Curve.num Impl.Weierstrass.Mont.numAt
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ho]
   exact read_eq_wordsVal m ws C.k o
 
 instance (C : CP) (i : Nat) : Decidable (C.Own i) := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.Own; infer_instance
+  unfold Impl.Weierstrass.CheckPoint.Curve.Own; infer_instance
 
 instance (C : CP) (i : Nat) : Decidable (C.Out i) := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.Out; infer_instance
+  unfold Impl.Weierstrass.CheckPoint.Curve.Out; infer_instance
 
 /-- `Keeps` from the ranges the code writes, each byte of which is in the own
 working space or a result's. -/
@@ -71,7 +71,7 @@ theorem keeps_of {C : CP} {W : List (Nat × Nat)}
     (hW : ∀ w ∈ W, ∀ j < w.2, C.Own (w.1 + j) ∨ C.Out (w.1 + j)) (ws : Addr) (m m' : Mem)
     (_hfit : ws.toNat + 8192 ≤ 2 ^ 64) (hu : Unch ws W m m') : C.Keeps ws m m' := by
   intro i hi hown hout
-  have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
+  have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   show (ws + BitVec.ofNat 64 i - ws).toNat < _ ∨ _ ≤ (ws + BitVec.ofNat 64 i - ws).toNat
   rw [Mem.sub_ofNat_toNat ws (by omega)]
@@ -86,14 +86,14 @@ for the kernel to decide once per range rather than once per byte. -/
 def covers (C : CP) (a l : Nat) : Bool :=
   [2, 37, 41, 42].any (fun j => Nat.ble (C.slot j) a && Nat.ble (a + l) (C.slot j + 8 * C.k)) ||
     [34, 35, 38, 43].any (fun j => Nat.ble (C.slot j) a && Nat.ble (a + l) (C.slot j + 8 * C.k)) ||
-    (Nat.ble (Spec.Weierstrass.Mont.ownAt C.k) a && Nat.ble (a + l) 4096) ||
+    (Nat.ble (Impl.Weierstrass.Mont.ownAt C.k) a && Nat.ble (a + l) 4096) ||
     (Nat.ble C.flagAt a && Nat.ble (a + l) (C.flagAt + 8))
 
 theorem own_or_out_of_covers {C : CP} {a l : Nat} (h : covers C a l = true) :
     ∀ j < l, C.Own (a + j) ∨ C.Out (a + j) := by
   intro j hj
   simp only [covers, Bool.or_eq_true, List.any_eq_true, Bool.and_eq_true, Nat.ble_eq] at h
-  unfold Spec.Weierstrass.CheckPoint.Curve.Own Spec.Weierstrass.CheckPoint.Curve.Out
+  unfold Impl.Weierstrass.CheckPoint.Curve.Own Impl.Weierstrass.CheckPoint.Curve.Out
   rcases h with ((⟨i, hi, h1, h2⟩ | ⟨i, hi, h1, h2⟩) | ⟨h1, h2⟩) | ⟨h1, h2⟩
   · exact .inl (.inl ⟨i, hi, by omega, by omega⟩)
   · exact .inr (.inl ⟨i, hi, by omega, by omega⟩)
@@ -110,7 +110,7 @@ variable {c : Cfg} {C : CP}
 theorem slot_lt (hc : BaseCfgOk c) (A : Agree c C) {i : Nat} (hi : i < 45) : C.slot i < 2 ^ 32 := by
   have hk : C.k ≤ 9 := by have := hc.n10; rw [A.k] at this; omega
   have : 8 * C.k * i ≤ 8 * 9 * 45 := Nat.mul_le_mul (Nat.mul_le_mul_left 8 hk) (Nat.le_of_lt hi)
-  unfold Spec.Weierstrass.CheckPoint.Curve.slot; omega
+  unfold Impl.Weierstrass.CheckPoint.Curve.slot; omega
 
 /-- A slot's number is the curve's. -/
 theorem sv_eq (hc : BaseCfgOk c) (A : Agree c C) {i : Nat} (hi : i < 45) (ht : i ≠ TMP) (base : Addr)
@@ -139,7 +139,7 @@ theorem valid_iff (W : Spec.Weierstrass.Curve) (C : CP) (h : W = C.W) (x y : Nat
     (x < W.p ∧ y < W.p ∧ Fin.ofNat W.p y * Fin.ofNat W.p y - ((Fin.ofNat W.p x * Fin.ofNat W.p x *
       Fin.ofNat W.p x + Fin.ofNat W.p W.a * Fin.ofNat W.p x) + Fin.ofNat W.p W.b) = 0) ↔ C.Valid x y := by
   subst h
-  unfold Spec.Weierstrass.CheckPoint.Curve.Valid
+  unfold Impl.Weierstrass.CheckPoint.Curve.Valid
   rw [onCurve_iff']
 
 /-- `correct`'s `hv` and `hmx` from one walk of the body: the instructions
@@ -168,7 +168,7 @@ theorem correct (hc : BaseCfgOk c) (A : Agree c C)
   obtain ⟨-, hwr, hret, hfit, hp, hr2, ha, hb, hfl⟩ := hs
   have hS : Scr s (s.gpr .rdi) size := ⟨rfl, by rw [hwr]; simp, hfit⟩
   have hR : c.R = C.R := by
-    unfold Cfg.R Spec.Weierstrass.CheckPoint.Curve.R; rw [A.k]
+    unfold Cfg.R Impl.Weierstrass.CheckPoint.Curve.R; rw [A.k]
   have hmp : sv c (s.gpr .rdi) s MP = c.C.p := by
     rw [sv, sv_eq hc A (by decide) (by decide), A.W]; exact hp
   have hap : sv c (s.gpr .rdi) s AP = c.mont c.C.a := by
@@ -212,10 +212,10 @@ theorem correct (hc : BaseCfgOk c) (A : Agree c C)
     · rintro ⟨⟨⟨h₁, h₂⟩, h₃⟩, h₄⟩; exact ⟨h₁, h₂, h₃, h₄⟩
     · rintro ⟨h₁, h₂, h₃, h₄⟩; exact ⟨⟨⟨h₁, h₂⟩, h₃⟩, h₄⟩
   have hF : C.flag (s.gpr .rdi) s'.mem = C.flag (s.gpr .rdi) s.mem &&&
-      Spec.Weierstrass.CheckPoint.Curve.mask
+      Impl.Weierstrass.CheckPoint.Curve.mask
         (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) := by
     rw [← flag_eq A, P.flag]
-    have hm : Spec.Weierstrass.CheckPoint.Curve.mask
+    have hm : Impl.Weierstrass.CheckPoint.Curve.mask
         (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) =
         mask (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) := rfl
     rw [hm]
@@ -225,7 +225,7 @@ theorem correct (hc : BaseCfgOk c) (A : Agree c C)
     rw [mask_and]
     simp only [mask, hP]
   have hok : CheckOk c (s.gpr .rdi) s (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64) ↔
-      ¬ (C.flag (s.gpr .rdi) s.mem &&& Spec.Weierstrass.CheckPoint.Curve.mask
+      ¬ (C.flag (s.gpr .rdi) s.mem &&& Impl.Weierstrass.CheckPoint.Curve.mask
         (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) = 0) := by
     rw [← hF, ← flag_eq A (s.gpr .rdi) s'.mem, P.flag, mask_eq_zero, not_not]
   have hRp : 2 ^ (64 * c.n) = C.R := by rw [← hR]; rfl
@@ -298,19 +298,19 @@ theorem sat_of (C : CP) (h : C.pre 0x1000 (satMem C)) : (checkK C).pre (satState
 
 theorem implies (C : CP) (hsat : C.pre 0x1000 (satMem C)) : (checkK C).Implies (C.checkContract X86_64.abi) where
   pre s h := by
-    sig_pre [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+    sig_pre [Impl.Weierstrass.CheckPoint.Curve.checkContract, Impl.Weierstrass.CheckPoint.sig,
       X86_64.abi, X86_64.argRegs, stackBelow] at h
     exact h
   post s s' _ h := by
-    sig_post [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+    sig_post [Impl.Weierstrass.CheckPoint.Curve.checkContract, Impl.Weierstrass.CheckPoint.sig,
       X86_64.abi, X86_64.argRegs]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+    sig_pub [Impl.Weierstrass.CheckPoint.Curve.checkContract, Impl.Weierstrass.CheckPoint.sig,
       X86_64.abi, X86_64.argRegs] at h
     exact h
   sat := ⟨satState C, by
-    sig_pre [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+    sig_pre [Impl.Weierstrass.CheckPoint.Curve.checkContract, Impl.Weierstrass.CheckPoint.sig,
       X86_64.abi, X86_64.argRegs, stackBelow]
     exact ⟨Region.disjoint_of_sep (by decide), by decide, hsat⟩⟩
 

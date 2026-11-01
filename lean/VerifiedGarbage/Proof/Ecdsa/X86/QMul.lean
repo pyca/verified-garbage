@@ -166,7 +166,7 @@ theorem mulK_ok (hc : CfgOk c) (hsp : SpOk c.mulFn 20) {s₀ : State} {base : Ad
 /-- The call of `vg_<curve>_mul` on `Q` at `R`'s first two slots, from the
 working space at `edi`, which is then loaded again from the caller's
 argument at `[esp + ao]`. -/
-theorem mulCall_ok (hc : CfgOk c) (hsp : SpOk c.mulFn 20) {C : Spec.Weierstrass.Mul.Curve} {ao : Nat}
+theorem mulCall_ok (hc : CfgOk c) (hsp : SpOk c.mulFn 20) {C : Impl.Weierstrass.Mul.Curve} {ao : Nat}
     {s : State} {base : Addr} (hs : Scr s base size) (hA : Point.LadArg s base ao)
     (hmp : sv c base s MP = c.C.p)
     (hap : sv c base s AP < c.C.p) (hb3 : sv c base s B3P < c.C.p) (hone : sv c base s ONEP < c.C.p)
@@ -175,7 +175,7 @@ theorem mulCall_ok (hc : CfgOk c) (hsp : SpOk c.mulFn 20) {C : Spec.Weierstrass.
     (hstep : Step (ladAt c RX RY) c.C base s (sv c base s K) Q)
     (hO : Q c.ladderCfg.nbits (tmv c.C c.n base s (c.sl ZERO)) (tmv c.C c.n base s (c.sl ONEP))
       (tmv c.C c.n base s (c.sl ZERO))) :
-    WP isa (.seq (.frame (.push [.edi]) (.call C.mulApi.name c.mulFn) (.pop .eax 1))
+    WP isa (.seq (.frame (.push [.edi]) (.call s!"vg_{C.curve}_mul" c.mulFn) (.pop .eax 1))
       (.block [.mov .edi (.mem (at_ .esp ao))])) s fun s' => Keeps powClob s s' ∧
       Unch base (Mont.outW :: mulFW c) s.mem s'.mem ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
@@ -250,7 +250,7 @@ theorem mulCall_ok (hc : CfgOk c) (hsp : SpOk c.mulFn 20) {C : Spec.Weierstrass.
 
 /-- The call's stack: what `vg_<curve>_mul`'s own calls use, below the push
 and the return address. -/
-theorem mulFn_spOk {gx gy ao : Nat} {C : Spec.Weierstrass.Mul.Curve} (hC : c.mul = some C)
+theorem mulFn_spOk {gx gy ao : Nat} {C : Impl.Weierstrass.Mul.Curve} (hC : c.mul = some C)
     (h : SpOk (c.qMul gx gy ao) 28) : SpOk c.mulFn 20 := by
   unfold Cfg.qMul at h
   simp only [hC] at h

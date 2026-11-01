@@ -49,11 +49,11 @@ namespace VG.Proof.Weierstrass.X86.Point
 
 open VG.Impl.Secp256k1 (point)
 
-open VG VG.X86 VG.Impl.Weierstrass.X86.Point VG.Proof.Weierstrass.X86.Mont Spec.Weierstrass.Point
+open VG VG.X86 VG.Impl.Weierstrass.X86.Point VG.Proof.Weierstrass.X86.Mont Spec.Weierstrass.Point Impl.Weierstrass.Point
 open VG.Proof.Weierstrass.Point (Fermat)
 
 theorem secp256k1_fn : FnOk (modP point) :=
-  FnOk.of_eq secp256k1p_ok rfl (by simp only [Spec.Weierstrass.Mont.secp256k1p, point])
+  FnOk.of_eq secp256k1p_ok rfl (by simp only [Impl.Weierstrass.Mont.secp256k1p, point])
 
 theorem secp256k1_double0_ct :
     ConstantTime isa (pt0X86 point true).pre (pt0X86 point true).pub (fn0 (modP point) true) :=

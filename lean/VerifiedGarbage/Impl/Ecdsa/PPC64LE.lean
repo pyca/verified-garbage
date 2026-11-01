@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.LadderP
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
-public import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
 
 /-!
 # ECDSA signing on PPC64LE
@@ -30,7 +30,7 @@ ARM (`Impl/Ecdsa/Arm.lean`):
    selects `r ‖ s` or zeros for `out` (big-endian), and is returned as 0 or 1.
 
 The field arithmetic is calls of the functions of `p` and `n`
-(`Spec/Weierstrass/Mont.lean`), which use the `64 n` bytes below byte 4096
+(`Proof/Weierstrass/MontContract.lean`), which use the `64 n` bytes below byte 4096
 for themselves; every slot is below them, and the tables of bits are past
 byte 4096. `R = O` (impossible for `k` in `[1, n-1]`) gives `Z = 0`, so
 `x = 0` and `r = 0`, as the specification says. Everything is computed
@@ -127,12 +127,12 @@ functions of its arithmetic modulo `p` and `n` (`SP`, `SN`). -/
 structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
-  SP : Spec.Weierstrass.Mont.Modulus
-  SN : Spec.Weierstrass.Mont.Modulus
-  /-- The curve whose `vg_<curve>_mul` (`Spec/Weierstrass/Mul.lean`) computes
+  SP : Impl.Weierstrass.Mont.Modulus
+  SN : Impl.Weierstrass.Mont.Modulus
+  /-- The curve whose `vg_<curve>_mul` (`Proof/Weierstrass/MulContract.lean`) computes
   `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
   verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
-  mul : Option Spec.Weierstrass.Mul.Curve
+  mul : Option Impl.Weierstrass.Mul.Curve
 
 namespace Cfg
 
@@ -284,7 +284,7 @@ def signWith (generator : Prog isa) : Prog isa :=
 
 /-! ## `vg_<curve>_mul`
 
-`[k]Q` (`Spec/Weierstrass/Mul.lean`) as a function, which the signature,
+`[k]Q` (`Proof/Weierstrass/MulContract.lean`) as a function, which the signature,
 the public key, ECDH and verification call: the ladder of `ladderP`, its
 point at `ACC`, `PT`, `ONEP` (a copy of `Q`, which the contract has in
 `R`'s first two slots), over the bits of `k` at `K`'s slot. It keeps `r31`
@@ -319,9 +319,9 @@ def mulFn : Prog isa :=
 /-- A call of `vg_<curve>_mul` (`C`'s) on the point at `px`, `py`: the point
 copied to `R`'s first two slots, then the call, on the working space in
 `r3`. -/
-def mulAt (C : Spec.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
+def mulAt (C : Impl.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
   .seq (.block (copy c.n (c.sl RX) (c.sl px) ++ copy c.n (c.sl RY) (c.sl py)))
-    (.call C.mulApi.name c.mulFn)
+    (.call s!"vg_{C.curve}_mul" c.mulFn)
 
 /-- Whether `qMul`'s inline ladder doubles and adds by the point functions
 for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`):

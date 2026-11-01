@@ -31,8 +31,8 @@ namespace VG.Proof.Ecdh.AArch64.P192.Check
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 VG.Proof.Ecdh.AArch64.CheckPoint
 open VG.Proof.Ecdsa.AArch64.P192
 
-/-- P-192's curve of `Spec/Weierstrass/CheckPoint.lean`. -/
-abbrev C : Spec.Weierstrass.CheckPoint.Curve := Spec.Weierstrass.CheckPoint.p192
+/-- P-192's curve of `Proof/Weierstrass/CheckPointContract.lean`. -/
+abbrev C : Impl.Weierstrass.CheckPoint.Curve := Impl.Weierstrass.CheckPoint.p192
 
 theorem check_curve : Impl.Ecdh.AArch64.Cfg.checkCurve p192 = some C := rfl
 
@@ -45,7 +45,7 @@ theorem ct : ConstantTime isa (ptK C).pre (ptK C).pub (Impl.Ecdh.AArch64.Cfg.che
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0]) (agree C) (by taint_decide)
 
 theorem sat : C.pre 0x1000 (satMem C) := by
-  unfold Spec.Weierstrass.CheckPoint.Curve.pre
+  unfold Impl.Weierstrass.CheckPoint.Curve.pre
   exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, .inl (by decide +kernel)⟩
 
 /-- `vg_p192_check_point` on AArch64. -/

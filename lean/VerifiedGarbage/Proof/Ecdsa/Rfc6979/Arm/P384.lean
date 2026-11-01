@@ -44,7 +44,7 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.P384.curve = 0; rw [p384_nBits]
-  coreN := Spec.Ecdsa.P384.signApi.name
+  coreN := "vg_ecdsa_p384_sign"
   coreC := Impl.Ecdsa.Arm.signP384
   coreConsts := []
   coreX := by

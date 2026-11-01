@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
 import VerifiedGarbage.Proof.P224.Point
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
@@ -123,7 +124,7 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP224 :=
 theorem sign_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
     Verified AArch64.target signP224
-      (Spec.Ecdsa.P224.inst.signContract (AArch64.abi.withConsts p224.combConsts)) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (AArch64.abi.withConsts p224.combConsts)) :=
   Verified.of_correct (sign_a64 hL hI hT) sign_ct implies
 
 end VG.Proof.Ecdsa.AArch64.P224

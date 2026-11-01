@@ -27,6 +27,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 
 /-! ## `AllocatedMixedTiming` -/
 

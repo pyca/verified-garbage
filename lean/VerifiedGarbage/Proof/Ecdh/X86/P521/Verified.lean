@@ -148,7 +148,7 @@ def τMul : VG.X86.Taint.T :=
     slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 20,
     argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 28 }
 
-taint_summary mulSum : taint τMul (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m)
+taint_summary mulSum : taint τMul (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP521 := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeP521 h).isSome = true := by native_taint_decide_sum [mulSum]
