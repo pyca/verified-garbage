@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Divstep.Alg
 `mredRaw p m t` (`Proof/Divstep/Alg.lean`) as code computes it on `t`, a
 signed number of `L` words: sign-extended to `L + 1` words, `k p` added for
 `k = t₀ m mod 2^64` modulo `2^(64 (L + 1))`, and the words above the lowest
-kept (`mred_words`). Signed numbers modulo `2^(64 L)` (`sgn_emod`,
+kept (`mredSext_words`). Signed numbers modulo `2^(64 L)` (`sgn_emod`,
 `sgn_of_emod`).
 -/
 
@@ -65,7 +65,7 @@ theorem sext_emod {L S : Nat} (hL : 1 ≤ L) :
 /-- One word of Montgomery reduction of the signed `L`-word `S` as the code
 computes it: `W₁` the sign extension, `k = S₀ m mod 2^64`, `W₂ = W₁ + k p`
 modulo `2^(64 (L + 1))`, and `O` its words above the lowest. -/
-theorem mred_words {L S W₂ O : Nat} {k p m : Int} (hL : 1 ≤ L)
+theorem mredSext_words {L S W₂ O : Nat} {k p m : Int} (hL : 1 ≤ L)
     (hm : (p * m + 1) % 2 ^ 64 = 0) (hk : k = (S % 2 ^ 64 : Nat) * m % 2 ^ 64)
     (hW₂ : (W₂ : Int) = ((S + 2 ^ (64 * L) * (if S < 2 ^ (64 * L - 1) then 0 else 2 ^ 64 - 1) : Nat) + k * p) %
       2 ^ (64 * (L + 1)))
@@ -109,5 +109,32 @@ theorem mred_words {L S W₂ O : Nat} {k p m : Int} (hL : 1 ≤ L)
   have : (W₂ : Int) = 2 ^ 64 * O := by rw [hO]; push_cast; rfl
   rw [hW] at this
   exact (Int.eq_of_mul_eq_mul_left (by decide) this).symm
+
+/-- A linear combination's words, from unsigned words and a carry, as a
+signed number, if it fits. -/
+theorem lin_sgn {L W F G : Nat} {u v c : Int} (hL : 1 ≤ L) (hW : W < 2 ^ (64 * L)) (hF : F < 2 ^ (64 * L))
+    (hG : G < 2 ^ (64 * L)) (h : (W : Int) + 2 ^ (64 * L) * c = u * F + v * G)
+    (r₀ : -2 ^ (64 * L - 1) ≤ u * sgn L F + v * sgn L G) (r₁ : u * sgn L F + v * sgn L G < 2 ^ (64 * L - 1)) :
+    sgn L W = u * sgn L F + v * sgn L G := by
+  refine sgn_of_emod hL r₀ r₁ ?_
+  have eF := Int.emod_add_mul_ediv (sgn L F) (2 ^ (64 * L))
+  have eG := Int.emod_add_mul_ediv (sgn L G) (2 ^ (64 * L))
+  rw [sgn_emod hL hF] at eF; rw [sgn_emod hL hG] at eG
+  have hP : (0 : Int) < 2 ^ (64 * L) := Int.pow_pos (by decide)
+  rw [show u * sgn L F + v * sgn L G = W + (2 ^ (64 * L)) * (c + u * (sgn L F / 2 ^ (64 * L)) +
+    v * (sgn L G / 2 ^ (64 * L))) by rw [← eF, ← eG] at *; grind, Int.add_mul_emod_self_left,
+    Int.emod_eq_of_lt (by omega) (by exact_mod_cast hW)]
+
+/-- A signed number's low word. -/
+theorem sgn_mod64 {L F : Nat} (hL : 1 ≤ L) (hF : F < 2 ^ (64 * L)) : sgn L F % 2 ^ 64 = ((F % 2 ^ 64 : Nat) : Int) := by
+  have e := Int.emod_add_mul_ediv (sgn L F) (2 ^ (64 * L))
+  rw [sgn_emod hL hF] at e
+  have hd : (2 : Int) ^ 64 ∣ 2 ^ (64 * L) := ⟨2 ^ (64 * L - 64), by rw [← Int.pow_add]; congr 1; omega⟩
+  rw [← e, Int.add_emod, Int.emod_eq_zero_of_dvd (Int.dvd_mul_of_dvd_left hd), Int.add_zero, Int.emod_emod]
+  rfl
+
+/-- A word's signed value is a small integer's. -/
+theorem toInt_ofInt64 {u : Int} (h0 : -2 ^ 63 ≤ u) (h1 : u < 2 ^ 63) : (BitVec.ofInt 64 u).toInt = u := by
+  rw [BitVec.toInt_ofInt]; exact Int.bmod_eq_of_le (by omega) (by omega)
 
 end VG.Proof.Divstep

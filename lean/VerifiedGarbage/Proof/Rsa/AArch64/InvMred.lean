@@ -264,7 +264,7 @@ theorem mredP_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.g
     rw [hW₁, hM₄, show n + 2 = n + 1 + 1 from rfl] at hv₅
     have hsplit := wv_add s₅.mem B (slot w iA) 1 (n + 1)
     rw [show 1 + (n + 1) = n + 2 by omega] at hsplit
-    refine Divstep.mred_words (L := n + 1) (W₂ := wv s₅.mem B (slot w iA) (n + 2)) (by omega) hm
+    refine Divstep.mredSext_words (L := n + 1) (W₂ := wv s₅.mem B (slot w iA) (n + 2)) (by omega) hm
       (k := ((s₄.gpr .x1).toNat : Int)) ?_ ?_ ?_
     · exact_mod_cast hk
     · exact_mod_cast hv₅
