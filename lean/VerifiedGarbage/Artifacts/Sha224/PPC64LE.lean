@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
+
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Sha224
 public import VerifiedGarbage.Proof.Framework.Registration

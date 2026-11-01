@@ -12,8 +12,6 @@ meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
 import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.IntervalCases
-meta import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -148,7 +146,7 @@ theorem blk_contains {i t : Nat} (hi : i < nb s₀) (ht : t < 16) :
     (blR s₀).Contains (blkAddr s₀ i + BitVec.ofNat 64 (4 * t)) 4 := by
   have := h.nb_lt
   rw [show blkAddr s₀ i + BitVec.ofNat 64 (4 * t) =
-    bp s₀ + BitVec.ofNat 64 (64 * i + 4 * t) by simp only [blkAddr]; bv_omega]
+    bp s₀ + BitVec.ofNat 64 (64 * i + 4 * t) by simp only [blkAddr, Offset.add_add]]
   exact contains_offset (by omega) (by omega)
 
 theorem in_sav {i : Nat} (hi : i < 5) (rs : List Region) :
@@ -184,19 +182,16 @@ theorem saved_ne {i : Nat} (hi : i < 5) : saved i ≠ .r3 ∧ saved i ≠ .r6 �
   exact key i hi
 
 theorem sav_sep (p : Addr) {i j : Nat} (hi : i < 5) (hj : j < 5) (h : i ≠ j) :
-    Mem.Sep (p + BitVec.ofNat 64 (64 + 8 * i)) 8 (p + BitVec.ofNat 64 (64 + 8 * j)) 8 := by
-  intro x hx hy
-  bv_omega
+    Mem.Sep (p + BitVec.ofNat 64 (64 + 8*i)) 8 (p + BitVec.ofNat 64 (64 + 8*j)) 8 :=
+  Offset.sep p (by omega) (by omega) (by omega)
 
 theorem savR_sub (s₀ : State) : Region.Sub (savR s₀) (scrR s₀) := sub_offset (by omega) (by omega)
 
-theorem win_sav (s₀ : State) : (winRegion (scr s₀)).Disjoint (savR s₀) := by
-  intro a h₁ h₂
-  simp only [Region.Contains] at h₁ h₂
-  bv_omega
+theorem win_sav (s₀ : State) : (winRegion (scr s₀)).Disjoint (savR s₀) :=
+  Offset.base_disjoint (scr s₀) (by decide) (by decide)
 
-theorem sav_contains (s₀ : State) {i : Nat} (hi : i < 5) : (savR s₀).Contains (savAddr s₀ i) 8 := by
-  simp only [Region.Contains]; bv_omega
+theorem sav_contains (s₀ : State) {i : Nat} (hi : i < 5) : (savR s₀).Contains (savAddr s₀ i) 8 :=
+  Offset.contains (scr s₀) (by omega) (by omega) (by decide)
 
 /-- The first `n` registers are saved. -/
 structure SI (s₀ : State) (n : Nat) (s : State) : Prop where
@@ -246,12 +241,12 @@ theorem restore_step {s₀ sB : State} (hp : Pre s₀) (hr6 : sB.gpr .r6 = scr s
     exec_load_d (by decide) (show 64 + 8 * n < 2 ^ 15 ∧ (64 + 8 * n) % 4 = 0 by omega) hin,
     Option.some.injEq, exists_eq_left', hr6', hv]
   refine ⟨fun i hi => ?_, fun r hr => ?_, h.mem, h.rd, h.wr⟩
-  · simp only [State.write]
+  · simp only [RegUpd.gpr_write]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
     · have e : saved i ≠ saved n := fun e => absurd (saved_inj (by omega) hn e) (by omega)
       simp only [e, ite_false]; exact h.restored i hi
     · simp
-  · simp only [State.write, hr n hn, ite_false]; exact h.others r hr
+  · simp only [RegUpd.gpr_write, hr n hn, ite_false]; exact h.others r hr
 
 /-! ## The loop invariant -/
 
@@ -584,7 +579,7 @@ theorem core_correct {s₀ : State} (hp : Pre s₀) (hb : s₀.gpr .r18 = s₀.s
   have hs₀ : SI s₀ 0 s₀ := ⟨rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (by omega)⟩
   have hsave : WP isa (.block save) s₀ (SI s₀ 5) := by
     unfold save
-    exact wp_range_flatMap (M := isa) (SI s₀) (fun k s hk h => save_step hp hk h) 5 le_rfl s₀ hs₀
+    exact wp_range_flatMap (M := isa) (SI s₀) (fun k s hk h => save_step hp hk h) 5 (Nat.le_refl _) s₀ hs₀
   refine WP.seq (WP.mono_syms hsave fun s₁ h₁ hsy₁ => ?_)
   have hc₀ : Common s₀ 0 s₁ := by
     refine ⟨by rw [h₁.gpr], by rw [h₁.gpr], fun r _ => by rw [h₁.gpr], h₁.rd, h₁.wr,
@@ -602,7 +597,7 @@ theorem core_correct {s₀ : State} (hp : Pre s₀) (hb : s₀.gpr .r18 = s₀.s
   have hr₀ : RI s₀ s₂ 0 s₂ := ⟨fun _ h => absurd h (by omega), fun _ _ => rfl, rfl, h₂.rd, h₂.wr⟩
   unfold restore
   refine WP.mono (wp_range_flatMap (M := isa) (RI s₀ s₂)
-    (fun k s hk h => restore_step hp h₂.r6 h₂.sav hk h) 5 le_rfl s₂ hr₀) fun s' h => ⟨?_, ?_, ?_, ?_, h.rd, h.wr⟩
+    (fun k s hk h => restore_step hp h₂.r6 h₂.sav hk h) 5 (Nat.le_refl _) s₂ hr₀) fun s' h => ⟨?_, ?_, ?_, ?_, h.rd, h.wr⟩
   · intro r hr
     rcases preserved_cases r hr with ⟨i, hi, rfl⟩ | hk
     · exact h.restored i hi

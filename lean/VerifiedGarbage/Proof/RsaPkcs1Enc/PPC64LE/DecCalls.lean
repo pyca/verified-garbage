@@ -1,5 +1,10 @@
 module
 
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
+meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
+
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -39,24 +44,30 @@ theorem rel_of {rs : List Reg} {c : Prog isa} {hc : VG.Taint.Hint T}
   RelCT.taint (A := taint) (ofRegs rs) (fun a b hab => ⟨(hp a b hab).1, fun r hr =>
     (hp a b hab).2 r (RegSet.mem_ofList.mp hr)⟩) h
 
+private theorem rel_of_vector {rs : List Reg} {c : Prog isa} {hc : VG.Taint.Hint T}
+    (h : (vectorTaint.check (ofRegs rs) c hc).isSome = true) {P : State → State → Prop}
+    (hp : ∀ a b, P a b → AgreeOn rs a b) : RelCT isa P c fun _ _ => True :=
+  RelCT.taint (A := vectorTaint) (ofRegs rs) (fun a b hab => ⟨(hp a b hab).1, fun r hr =>
+    (hp a b hab).2 r (RegSet.mem_ofList.mp hr)⟩) h
+
 theorem init_rel {P : State → State → Prop} (hp : ∀ a b, P a b → AgreeOn [.r3] a b) :
     RelCT isa P initCall fun _ _ => True :=
   rel_of (by taint_decide) hp
 
 theorem upd_rel {P : State → State → Prop} (hp : ∀ a b, P a b → AgreeOn [.r3, .r4, .r5, .r6, .r7] a b) :
     RelCT isa P updCall fun _ _ => True :=
-  rel_of (by taint_decide) hp
+  rel_of_vector (by taint_decide) hp
 
 theorem fin_rel {P : State → State → Prop} (hp : ∀ a b, P a b → AgreeOn [.r3, .r4, .r5, .r6] a b) :
     RelCT isa P finCall fun _ _ => True :=
-  rel_of (by taint_decide) hp
+  rel_of_vector (by taint_decide) hp
 
 theorem macInit_rel {P : State → State → Prop} (hp : ∀ a b, P a b → AgreeOn [.r3, .r4, .r5, .r6, .r7] a b) :
     RelCT isa P macInitCall fun _ _ => True :=
-  rel_of (by taint_decide) hp
+  rel_of_vector (by taint_decide) hp
 
 theorem macFin_rel {P : State → State → Prop} (hp : ∀ a b, P a b → AgreeOn [.r3, .r4, .r5, .r6, .r7] a b) :
     RelCT isa P macFinCall fun _ _ => True :=
-  rel_of (by taint_decide) hp
+  rel_of_vector (by taint_decide) hp
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
