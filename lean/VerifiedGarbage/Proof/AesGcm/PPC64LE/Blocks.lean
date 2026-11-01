@@ -177,8 +177,8 @@ structure EarlyInv (base : State) (nr : Nat) (w : List Byte)
     VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) j
 
 theorem early_step (base : State) (nr : Nat) (w : List Byte) (input : Nat → Spec.Aes.State)
-    (keys : ∀ j < 9, VG.Proof.Aes.PPC64LE.Crypto.IsKey (base.vpr (keyReg j))
-      (Spec.Aes.roundKey w (j+1))) {j : Nat} (hj : j < 9) (s : State)
+    {j : Nat} (hj : j < 9)
+    (key : VG.Proof.Aes.PPC64LE.Crypto.IsKey (base.vpr (keyReg j)) (Spec.Aes.roundKey w (j+1))) (s : State)
     (hs : EarlyInv base nr w input j s) :
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.cipherRegs false false (keyReg j)
       (Impl.AesGcm.PPC64LE.Blocks.rs 8))) s (EarlyInv base nr w input (j+1)) := by
@@ -186,7 +186,7 @@ theorem early_step (base : State) (nr : Nat) (w : List Byte) (input : Nat → Sp
   have hk := facts ⟨j, hj⟩
   have hkey : VG.Proof.Aes.PPC64LE.Crypto.IsKey (s.vpr (keyReg j)) (Spec.Aes.roundKey w (j+1)) := by
     rw [hs.effects.v _ hk]
-    exact keys j hj
+    exact key
   refine WP.mono (cipherStates_ok false (keyReg j) _ s (by decide) hk _ hkey) fun t ⟨hv, hf⟩ => ?_
   refine ⟨(hs.effects.trans hf).weaken (by simp), ?_⟩
   intro i hi
@@ -198,15 +198,19 @@ theorem early_step (base : State) (nr : Nat) (w : List Byte) (input : Nat → Sp
   rw [hsi]
   exact VG.Proof.Aes.PPC64LE.Crypto.middle_succ false nr w (input i) j
 
-theorem keyRounds_ok (nr : Nat) (w : List Byte) (input : Nat → Spec.Aes.State) (s : State)
-    (keys : ∀ j < 9, VG.Proof.Aes.PPC64LE.Crypto.IsKey (s.vpr (keyReg j)) (Spec.Aes.roundKey w (j+1)))
-    (hval : ∀ i < 8, aesState (cipherAt s i) =
-      VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) 0) :
-    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.keyRounds) s (EarlyInv s nr w input 9) := by
-  have he : Impl.AesGcm.PPC64LE.Blocks.roundKeyRegs = (List.range 9).map keyReg := by decide
-  rw [Impl.AesGcm.PPC64LE.Blocks.keyRounds, he, List.flatMap_map]
-  exact wp_range_flatMap (M := isa) (EarlyInv s nr w input)
-    (fun j t hj ht => early_step s nr w input keys hj t ht) 9 (Nat.le_refl _) s ⟨VOnly.refl _ _, hval⟩
+theorem keyRoundsRange_ok (nr : Nat) (w : List Byte) (input : Nat → Spec.Aes.State) (s : State)
+    (start count : Nat) (hbound : start+count≤9)
+    (keys : ∀ j, start≤j → j<start+count →
+      VG.Proof.Aes.PPC64LE.Crypto.IsKey (s.vpr (keyReg j)) (Spec.Aes.roundKey w (j+1)))
+    (hval : ∀ i < 8, aesState (cipherAt s i)=
+      VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) start) :
+    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.keyRoundsRange start count)) s
+      (EarlyInv s nr w input (start+count)) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.keyRoundsRange]
+  apply wp_range_flatMap (M := isa) (N := count) (fun j => EarlyInv s nr w input (start+j))
+    (fun j t hj ht => ?_) count (Nat.le_refl _) s ⟨VOnly.refl _ _,hval⟩
+  simpa only [Nat.add_assoc,keyReg] using early_step s nr w input (j := start+j) (by omega)
+    (keys (start+j) (by omega) (by omega)) t ht
 
 theorem rawRound_ok (last : Bool) (s : State) (rk : List Byte)
     (h0 : s.gpr .r0 = 0) (hr : InRegions (s.rd ++ s.wr) (s.gpr .r9) 16)
@@ -237,6 +241,81 @@ structure RawCfg (base : State) (nr : Nat) (w : List Byte) : Prop where
   reads : ∀ j ≤ nr, InRegions (base.rd ++ base.wr) (base.gpr .r3 + BitVec.ofNat 64 (16*j)) 16
   keys : ∀ j ≤ nr, VG.Proof.Aes.PPC64LE.Crypto.IsKey
     (swapDwords (base.mem.read (base.gpr .r3 + BitVec.ofNat 64 (16*j)) 16)) (Spec.Aes.roundKey w j)
+
+theorem RawCfg.of_local {base s : State} {nr : Nat} {w : List Byte}
+    {gs : List Reg} {vs : List VReg} (cfg : RawCfg base nr w)
+    (hs : VG.Proof.Aes.PPC64LE.Crypto.Local gs vs base s)
+    (h0 : .r0 ∉ gs) (h3 : .r3 ∉ gs) : RawCfg s nr w := by
+  refine ⟨(hs.keep.gpr h0).trans cfg.zero,cfg.min,cfg.max,?_,?_⟩
+  · intro j hj
+    rw [hs.keep.2.1,hs.keep.2.2,hs.keep.gpr h3]; exact cfg.reads j hj
+  · intro j hj
+    rw [hs.mem,hs.keep.gpr h3]; exact cfg.keys j hj
+
+theorem finalKeyPrefetch_ok (s : State) (nr : Nat) (w : List Byte) (cfg : RawCfg s nr w)
+    (hr : s.gpr .r4=BitVec.ofNat 64 nr) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.finalKeyPrefetch) s fun t =>
+      VG.Proof.Aes.PPC64LE.Crypto.IsKey (t.vpr .v9) (Spec.Aes.roundKey w nr) ∧
+      VG.Proof.Aes.PPC64LE.Crypto.Local [.r12] [.v9] s t := by
+  have hshift : BitVec.ofNat 64 nr <<< 4=BitVec.ofNat 64 (16*nr) := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (show nr<2^64 by have := cfg.max; omega)]
+    simp only [Nat.shiftLeft_eq,Nat.reducePow,Nat.mul_comm]
+  change WP isa (.block ([.lsl .r12 .r4 4]++[.lxvd2x .v9 .r3 .r12])) s _
+  rw [WP.block_append_iff]
+  have hs : WP isa (.block [.lsl .r12 .r4 4]) s (· = s.write .r12 (s.gpr .r4 <<< 4)) := by
+    apply WP.of_runBlock
+    simp only [runBlock_cons,runStep_some,runBlock_nil,exec_lsl (sh := 4) (by decide),
+      Option.some.injEq,exists_eq_left']
+  refine WP.mono hs fun u hu => ?_
+  subst u
+  have hread : InRegions ((s.write .r12 (s.gpr .r4 <<< 4)).rd++(s.write .r12 (s.gpr .r4 <<< 4)).wr)
+      ((s.write .r12 (s.gpr .r4 <<< 4)).gpr .r3+(s.write .r12 (s.gpr .r4 <<< 4)).gpr .r12) 16 := by
+    simp only [RegUpd.rd_write,RegUpd.wr_write,RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,hr,hshift]
+    exact cfg.reads nr (Nat.le_refl _)
+  refine WP.mono (rawLoad_ok .v9 .r3 .r12 _ (by decide) hread) fun t ⟨hv,hf⟩ => ?_
+  refine ⟨?_,?_⟩
+  · rw [hv]
+    simpa only [RegUpd.mem_write,RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,hr,hshift]
+      using cfg.keys nr (Nat.le_refl _)
+  · exact ((VG.Proof.Aes.PPC64LE.Crypto.Local.write s .r12 (s.gpr .r4 <<< 4)).trans
+      (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector hf)).weaken (by simp) (by simp)
+
+theorem keyRoundsPrefetched_ok (nr : Nat) (w : List Byte) (input : Nat → Spec.Aes.State) (s : State)
+    (cfg : RawCfg s nr w) (hr : s.gpr .r4=BitVec.ofNat 64 nr)
+    (keys : ∀ j < 9, VG.Proof.Aes.PPC64LE.Crypto.IsKey (s.vpr (keyReg j)) (Spec.Aes.roundKey w (j+1)))
+    (values : ∀ i < 8, aesState (cipherAt s i)=
+      VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) 0) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.keyRoundsPrefetched) s fun t =>
+      (∀ i < 8, aesState (cipherAt t i)=VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) 9) ∧
+      VG.Proof.Aes.PPC64LE.Crypto.Local [.r12] (.v9 :: Impl.AesGcm.PPC64LE.Blocks.rs 8) s t ∧
+      VG.Proof.Aes.PPC64LE.Crypto.IsKey (t.vpr .v9) (Spec.Aes.roundKey w nr) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.keyRoundsPrefetched,WP.block_append_iff,WP.block_append_iff]
+  refine WP.mono (keyRoundsRange_ok nr w input s 0 2 (by decide)
+    (fun j _ hj => keys j (by omega)) values) fun u hu => ?_
+  have cfgu := cfg.of_local (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector hu.effects) (by simp) (by simp)
+  have hru := (congrFun hu.effects.gpr .r4).trans hr
+  refine WP.mono (finalKeyPrefetch_ok u nr w cfgu hru) fun v ⟨hfinal,hpref⟩ => ?_
+  have keyFree : ∀ j : Fin 9, keyReg j.val ∉ Impl.AesGcm.PPC64LE.Blocks.rs 8 := by decide
+  have keyNine : ∀ j : Fin 9, 2≤j.val → keyReg j.val≠.v9 := by decide
+  have keys' : ∀ j, 2≤j → j<2+7 →
+      VG.Proof.Aes.PPC64LE.Crypto.IsKey (v.vpr (keyReg j)) (Spec.Aes.roundKey w (j+1)) := by
+    intro j hj hlt
+    rw [hpref.v _ (by simpa only [List.mem_singleton] using keyNine ⟨j,by omega⟩ hj),
+      hu.effects.v _ (keyFree ⟨j,by omega⟩)]
+    exact keys j (by omega)
+  have values' : ∀ i < 8, aesState (cipherAt v i)=
+      VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) 2 := by
+    intro i hi
+    have hfree : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.reg i.val≠.v9 := by decide
+    rw [cipherAt,hpref.v _ (by simpa only [List.mem_singleton] using hfree ⟨i,hi⟩)]
+    exact hu.val i hi
+  refine WP.mono (keyRoundsRange_ok nr w input v 2 7 (by decide) keys' values') fun t ht => ?_
+  refine ⟨ht.val,?_,?_⟩
+  · exact (((VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector hu.effects).trans hpref).trans
+      (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector ht.effects)).weaken (by simp) (by simp [or_left_comm])
+  · rw [ht.effects.v .v9 (by decide)]; exact hfinal
 
 structure RawInv (base : State) (nr : Nat) (w : List Byte)
     (input : Nat → Spec.Aes.State) (j : Nat) (s : State) : Prop where
@@ -331,29 +410,24 @@ theorem remaining_ok {base : State} {nr : Nat} {w : List Byte} {input : Nat → 
       h.left, Option.some.injEq, beq_eq_false_iff_ne] using hne) (by simp) (fun _ => ?_)
     exact rawLoop_ok cfg (by omega) h
 
-theorem raw_last_ok {base : State} {nr : Nat} {w : List Byte} {input : Nat → Spec.Aes.State}
-    (cfg : RawCfg base nr w) {s : State} (h : RawInv base nr w input (nr-1) s) :
-    WP isa (.block (Impl.AesGcm.PPC64LE.Blocks.roundRaw 8 true)) s fun t =>
+theorem prefetched_last_ok {base : State} {nr : Nat} {w : List Byte} {input : Nat → Spec.Aes.State}
+    {s : State} (h : RawInv base nr w input (nr-1) s)
+    (hk : VG.Proof.Aes.PPC64LE.Crypto.IsKey (s.vpr .v9) (Spec.Aes.roundKey w nr)) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.finalRound) s fun t =>
       (∀ i < 8, aesState (cipherAt t i) = Spec.Aes.cipher nr w (input i)) ∧
-      VG.Proof.Aes.PPC64LE.Crypto.Local [.r9, .r10]
+      VG.Proof.Aes.PPC64LE.Crypto.Local [.r9,.r10]
         (.v8 :: Impl.AesGcm.PPC64LE.Blocks.rs 8) base t := by
-  have hz : s.gpr .r0 = 0 := (h.effects.keep.gpr (by decide)).trans cfg.zero
-  have he : nr-1+1 = nr := by have := cfg.min; omega
-  have hptr : s.gpr .r9 = base.gpr .r3 + BitVec.ofNat 64 (16*nr) := by
-    simpa only [he] using h.ptr
-  have hr : InRegions (s.rd ++ s.wr) (s.gpr .r9) 16 := by
-    rw [h.effects.keep.2.1, h.effects.keep.2.2, hptr]
-    exact cfg.reads _ (Nat.le_refl _)
-  have hk : VG.Proof.Aes.PPC64LE.Crypto.IsKey (swapDwords (s.mem.read (s.gpr .r9) 16))
-      (Spec.Aes.roundKey w nr) := by
-    rw [h.effects.mem, hptr]
-    exact cfg.keys _ (Nat.le_refl _)
-  refine WP.mono (rawRound_ok true s _ hz hr hk) fun t ⟨hv, ho⟩ => ⟨?_, ?_⟩
+  refine WP.mono (cipherStates_ok true .v9 (Impl.AesGcm.PPC64LE.Blocks.rs 8) s
+    (by decide) (by decide) _ hk) fun t ⟨hv,hf⟩ => ⟨?_,?_⟩
   · intro i hi
-    rw [hv i hi, h.val i hi]
+    have hm : Impl.AesGcm.PPC64LE.Blocks.reg i ∈ Impl.AesGcm.PPC64LE.Blocks.rs 8 :=
+      List.mem_map.mpr ⟨i,List.mem_range.mpr hi,rfl⟩
+    rw [cipherAt,hv _ hm]
+    rw [show aesState (s.vpr (Impl.AesGcm.PPC64LE.Blocks.reg i)) =
+      VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) (nr-1) from h.val i hi]
     exact VG.Proof.Aes.PPC64LE.Crypto.middle_last false nr w (input i)
-  · exact (h.effects.trans (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector ho)).weaken
-      (by simp) (by simp [or_left_comm])
+  · exact (h.effects.trans (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector hf)).weaken
+      (by simp) (by simp)
 
 theorem packEven_ok (s : State) :
     WP isa (.block Impl.AesGcm.PPC64LE.Blocks.packEven) s fun t =>
@@ -1501,7 +1575,7 @@ theorem keyReads_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base
 
 
 theorem firstNine_ok (base : State) (nr : Nat) (w : List Byte) (input : Nat → Spec.Aes.State)
-    (cfg : RawCfg base nr w)
+    (cfg : RawCfg base nr w) (hr : base.gpr .r4=BitVec.ofNat 64 nr)
     (known : ∀ i < 8, Impl.AesGcm.PPC64LE.Blocks.keyOffset i ∉ Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs →
       base.gpr (Impl.AesGcm.PPC64LE.Blocks.keyOffset i)=BitVec.ofNat 64 (16*(i+1)))
     (values : ∀ i < 8, aesState (cipherAt base i)=
@@ -1509,7 +1583,8 @@ theorem firstNine_ok (base : State) (nr : Nat) (w : List Byte) (input : Nat → 
     WP isa (.block Impl.AesGcm.PPC64LE.Blocks.firstNine) base fun t =>
       (∀ i < 8, aesState (cipherAt t i)=VG.Proof.Aes.PPC64LE.Crypto.middle false nr w (input i) 9) ∧
       VG.Proof.Aes.PPC64LE.Crypto.Local (.r9 :: Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs)
-        (Impl.AesGcm.PPC64LE.Blocks.dataRegs++[T]++Impl.AesGcm.PPC64LE.Blocks.rs 8) base t ∧ DataOffsets t := by
+        (Impl.AesGcm.PPC64LE.Blocks.dataRegs++[T]++Impl.AesGcm.PPC64LE.Blocks.rs 8) base t ∧ DataOffsets t ∧
+      VG.Proof.Aes.PPC64LE.Crypto.IsKey (t.vpr .v9) (Spec.Aes.roundKey w nr) := by
   rw [Impl.AesGcm.PPC64LE.Blocks.firstNine,WP.block_append_iff]
   refine WP.mono (keyReads_ok base nr w cfg known) fun s ⟨hk,hf,hoff⟩ => ?_
   have hv : ∀ i < 8, aesState (cipherAt s i)=
@@ -1519,9 +1594,16 @@ theorem firstNine_ok (base : State) (nr : Nat) (w : List Byte) (input : Nat → 
         Impl.AesGcm.PPC64LE.Blocks.dataRegs++[T] := by decide
     rw [cipherAt,hf.v _ (free ⟨i,hi⟩)]
     exact values i hi
-  refine WP.mono (keyRounds_ok nr w input s hk hv) fun t ht => ?_
-  exact ⟨ht.val,(hf.trans (VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector ht.effects)).weaken
-    (by simp) (by simp),by intro i hi; rw [ht.effects.gpr]; exact hoff i hi⟩
+  have cfgs := cfg.of_local hf (by decide) (by decide)
+  have hrs := (hf.keep.gpr (by decide)).trans hr
+  refine WP.mono (keyRoundsPrefetched_ok nr w input s cfgs hrs hk hv) fun t ⟨ht,hg,hfinal⟩ => ?_
+  refine ⟨ht,(hf.trans hg).weaken
+    (by simp [Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs])
+    (by simp [Impl.AesGcm.PPC64LE.Blocks.dataRegs]; intro a ha; simp [ha]),?_,hfinal⟩
+  intro i hi
+  have hfree : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.dataOffset i≠.r12 := by decide
+  rw [hg.keep.gpr (by simpa only [List.mem_singleton] using hfree ⟨i,hi⟩)]
+  exact hoff i hi
 
 
 theorem aesInitial_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base nr w) :
@@ -1548,16 +1630,6 @@ theorem aesInitial_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg ba
   rw [cipherAt,ht _ hm,VG.Proof.Aes.PPC64LE.Crypto.xor_state hkey,
     hf.v _ (by simpa only [List.mem_singleton] using hn)]
   exact (VG.Proof.Aes.PPC64LE.Crypto.middle_zero false nr w (aesState (cipherAt base i))).symm
-
-theorem RawCfg.of_local {base s : State} {nr : Nat} {w : List Byte}
-    {gs : List Reg} {vs : List VReg} (cfg : RawCfg base nr w)
-    (hs : VG.Proof.Aes.PPC64LE.Crypto.Local gs vs base s)
-    (h0 : .r0 ∉ gs) (h3 : .r3 ∉ gs) : RawCfg s nr w := by
-  refine ⟨(hs.keep.gpr h0).trans cfg.zero,cfg.min,cfg.max,?_,?_⟩
-  · intro j hj
-    rw [hs.keep.2.1,hs.keep.2.2,hs.keep.gpr h3]; exact cfg.reads j hj
-  · intro j hj
-    rw [hs.mem,hs.keep.gpr h3]; exact cfg.keys j hj
 
 theorem aesRemaining_ok (base : State) (nr : Nat) (w : List Byte)
     (input : Nat → Spec.Aes.State) (cfg : RawCfg base nr w)
@@ -1604,8 +1676,8 @@ theorem aes8_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base nr 
       s.gpr (Impl.AesGcm.PPC64LE.Blocks.keyOffset i)=BitVec.ofNat 64 (16*(i+1)) := by
     intro i hi hn
     rw [hf.gpr]; exact known i hi hn
-  refine WP.mono (firstNine_ok s nr w (fun i => aesState (cipherAt base i)) cfgs knowns hv)
-    fun u ⟨hu,hg,hoff⟩ => ?_
+  refine WP.mono (firstNine_ok s nr w (fun i => aesState (cipherAt base i)) cfgs ((congrFun hf.gpr .r4).trans hr) knowns hv)
+    fun u ⟨hu,hg,hoff,hfinal⟩ => ?_
   have cfgu : RawCfg u nr w := cfgs.of_local hg (by decide) (by decide)
   have hru : u.gpr .r4=BitVec.ofNat 64 nr :=
     (hg.keep.gpr (by decide)).trans ((congrFun hf.gpr .r4).trans hr)
@@ -1613,7 +1685,10 @@ theorem aes8_ok (base : State) (nr : Nat) (w : List Byte) (cfg : RawCfg base nr 
     fun v hv => ?_
   apply WP.seq
   refine WP.mono (remaining_ok cfgu (show 9 ≤ nr-1 by have := cfg.min; omega) hv) fun z hz => ?_
-  refine WP.mono (raw_last_ok cfgu hz) fun t ⟨ht,he⟩ => ?_
+  have hfinalz : VG.Proof.Aes.PPC64LE.Crypto.IsKey (z.vpr .v9) (Spec.Aes.roundKey w nr) := by
+    rw [hz.effects.v .v9 (by decide)]
+    exact hfinal
+  refine WP.mono (prefetched_last_ok hz hfinalz) fun t ⟨ht,he⟩ => ?_
   refine ⟨ht, ?_, ?_⟩
   · exact (((VG.Proof.Aes.PPC64LE.Crypto.Local.of_vector hf).trans hg).trans he).weaken
       (by simp [or_left_comm,or_comm,or_assoc]) (by simp [or_left_comm,or_comm,or_assoc])

@@ -170,9 +170,20 @@ def keyRead (i : Nat) : List Instr :=
 def keyReads : List Instr := (List.range 8).flatMap keyRead ++
  [.addi .r9 .r3 144, .lxvd2x T .r9 .r0]
 
-def keyRounds : List Instr := roundKeyRegs.flatMap (fun k => cipherRegs false false k (rs 8))
+def keyRoundsRange (start count : Nat) : List Instr :=
+ (List.range count).flatMap (fun j =>
+  cipherRegs false false (roundKeyRegs.getD (start+j) .v8) (rs 8))
 
-def firstNine : List Instr := keyReads ++ keyRounds
+-- Round two has consumed v9. Keep the final key there while the remaining
+-- middle rounds use v8, avoiding a dependent load at the final round.
+def finalKeyPrefetch : List Instr := [.lsl .r12 .r4 4,.lxvd2x .v9 .r3 .r12]
+
+def finalRound : List Instr := cipherRegs false true .v9 (rs 8)
+
+def keyRoundsPrefetched : List Instr :=
+ keyRoundsRange 0 2 ++ finalKeyPrefetch ++ keyRoundsRange 2 7
+
+def firstNine : List Instr := keyReads ++ keyRoundsPrefetched
 
 def aesInitial : List Instr := [.lxvd2x .v8 .r3 .r0] ++ xorKey (rs 8)
 
@@ -180,7 +191,7 @@ def aesRemaining : List Instr := [.addi .r9 .r3 160, .subi .r10 .r4 10]
 
 def aes8 : Prog isa := .seq (.block (aesInitial ++ firstNine ++ aesRemaining))
  (.seq (.ite (.zero .d .r10) (.block []) (.loop (.block (middle 8)) (.nonzero .d .r10)))
- (.block (roundRaw 8 true)))
+ (.block finalRound))
 
 def ghStart : List Instr := [.li .r21 128,.li .r22 144]
 
