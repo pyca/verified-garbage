@@ -89,18 +89,18 @@ def sample : Prog isa :=
       (.block [.store { base := .rsi, disp := 16 } .rax, .mov .rdx (.imm (-1))]))
 
 #guard text (printer.function sample) == [
-  "xor rax, rax",
+  "// xor rax, rax", ".byte 0x48,0x31,0xc0",
   "jne 20f",
-  "mov QWORD PTR [rsi+16], rax",
-  "mov rdx, -1",
+  "// mov QWORD PTR [rsi+16], rax", ".byte 0x48,0x89,0x46,0x10",
+  "// mov rdx, -1", ".byte 0x48,0xc7,0xc2,0xff,0xff,0xff,0xff",
   "jmp 21f",
   "20:",
   "22:",
-  "add rax, QWORD PTR [rdi+rcx*8-8]",
-  "sub rcx, 1",
+  "// add rax, QWORD PTR [rdi+rcx*8-8]", ".byte 0x48,0x03,0x44,0xcf,0xf8",
+  "// sub rcx, 1", ".byte 0x48,0x83,0xe9,0x01",
   "jne 22b",
   "21:",
-  "ret"
+  "// ret", ".byte 0xc3"
 ]
 
 /-! `Rust.badCall`: the first call that is not of the code it runs. -/
@@ -147,17 +147,17 @@ def sample32 : Prog isa := .block [
 ]
 
 #guard text (printer.function sample32) == [
-  "mov eax, r8d",
-  "mov r15d, -2",
-  "mov ecx, DWORD PTR [rsi+60]",
-  "mov DWORD PTR [rdi+rdx*4], r11d",
-  "add ebp, 1116352408",
-  "xor r12d, esp",
-  "and r13d, DWORD PTR [rcx-4]",
-  "ror ebx, 25",
-  "shr r9d, 3",
-  "bswap r10d",
-  "ret"
+  "// mov eax, r8d", ".byte 0x44,0x89,0xc0",
+  "// mov r15d, -2", ".byte 0x41,0xbf,0xfe,0xff,0xff,0xff",
+  "// mov ecx, DWORD PTR [rsi+60]", ".byte 0x8b,0x4e,0x3c",
+  "// mov DWORD PTR [rdi+rdx*4], r11d", ".byte 0x44,0x89,0x1c,0x97",
+  "// add ebp, 1116352408", ".byte 0x81,0xc5,0x98,0x2f,0x8a,0x42",
+  "// xor r12d, esp", ".byte 0x41,0x31,0xe4",
+  "// and r13d, DWORD PTR [rcx-4]", ".byte 0x44,0x23,0x69,0xfc",
+  "// ror ebx, 25", ".byte 0xc1,0xcb,0x19",
+  "// shr r9d, 3", ".byte 0x41,0xc1,0xe9,0x03",
+  "// bswap r10d", ".byte 0x41,0x0f,0xca",
+  "// ret", ".byte 0xc3"
 ]
 
 /-- The byte instructions, every 8-bit register name, and 64-bit `bswap`. -/
@@ -170,27 +170,27 @@ def sample8 : Prog isa := .block ([
    .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15].map (.store8 { base := .rdi, disp := -3 }))
 
 #guard text (printer.function sample8) == [
-  "movzx eax, BYTE PTR [rsi+rcx*1+32]",
-  "movzx r15d, BYTE PTR [r12]",
-  "bswap rax",
-  "bswap r9",
-  "mov BYTE PTR [rdi-3], al",
-  "mov BYTE PTR [rdi-3], cl",
-  "mov BYTE PTR [rdi-3], dl",
-  "mov BYTE PTR [rdi-3], bl",
-  "mov BYTE PTR [rdi-3], spl",
-  "mov BYTE PTR [rdi-3], bpl",
-  "mov BYTE PTR [rdi-3], sil",
-  "mov BYTE PTR [rdi-3], dil",
-  "mov BYTE PTR [rdi-3], r8b",
-  "mov BYTE PTR [rdi-3], r9b",
-  "mov BYTE PTR [rdi-3], r10b",
-  "mov BYTE PTR [rdi-3], r11b",
-  "mov BYTE PTR [rdi-3], r12b",
-  "mov BYTE PTR [rdi-3], r13b",
-  "mov BYTE PTR [rdi-3], r14b",
-  "mov BYTE PTR [rdi-3], r15b",
-  "ret"
+  "// movzx eax, BYTE PTR [rsi+rcx*1+32]", ".byte 0x0f,0xb6,0x44,0x0e,0x20",
+  "// movzx r15d, BYTE PTR [r12]", ".byte 0x45,0x0f,0xb6,0x3c,0x24",
+  "// bswap rax", ".byte 0x48,0x0f,0xc8",
+  "// bswap r9", ".byte 0x49,0x0f,0xc9",
+  "// mov BYTE PTR [rdi-3], al", ".byte 0x88,0x47,0xfd",
+  "// mov BYTE PTR [rdi-3], cl", ".byte 0x88,0x4f,0xfd",
+  "// mov BYTE PTR [rdi-3], dl", ".byte 0x88,0x57,0xfd",
+  "// mov BYTE PTR [rdi-3], bl", ".byte 0x88,0x5f,0xfd",
+  "// mov BYTE PTR [rdi-3], spl", ".byte 0x40,0x88,0x67,0xfd",
+  "// mov BYTE PTR [rdi-3], bpl", ".byte 0x40,0x88,0x6f,0xfd",
+  "// mov BYTE PTR [rdi-3], sil", ".byte 0x40,0x88,0x77,0xfd",
+  "// mov BYTE PTR [rdi-3], dil", ".byte 0x40,0x88,0x7f,0xfd",
+  "// mov BYTE PTR [rdi-3], r8b", ".byte 0x44,0x88,0x47,0xfd",
+  "// mov BYTE PTR [rdi-3], r9b", ".byte 0x44,0x88,0x4f,0xfd",
+  "// mov BYTE PTR [rdi-3], r10b", ".byte 0x44,0x88,0x57,0xfd",
+  "// mov BYTE PTR [rdi-3], r11b", ".byte 0x44,0x88,0x5f,0xfd",
+  "// mov BYTE PTR [rdi-3], r12b", ".byte 0x44,0x88,0x67,0xfd",
+  "// mov BYTE PTR [rdi-3], r13b", ".byte 0x44,0x88,0x6f,0xfd",
+  "// mov BYTE PTR [rdi-3], r14b", ".byte 0x44,0x88,0x77,0xfd",
+  "// mov BYTE PTR [rdi-3], r15b", ".byte 0x44,0x88,0x7f,0xfd",
+  "// ret", ".byte 0xc3"
 ]
 
 -- A displacement is encoded in 32 bits, sign-extended: the printer refuses
@@ -213,7 +213,7 @@ def sample8 : Prog isa := .block ([
 #guard text (printer.function
     (.seq (Code.iteCold .e (.block [.mov .rax (.imm 1)]) (.block [.mov .rax (.imm 2)]))
       (.block [.mov .rcx (.imm 3)]) : Prog isa)) ==
-  ["je 20f", "mov rax, 2", "21:", "mov rcx, 3", "ret", "20:", "mov rax, 1", "jmp 21b"]
+  ["je 20f", "// mov rax, 2", ".byte 0x48,0xc7,0xc0,0x02,0x00,0x00,0x00", "21:", "// mov rcx, 3", ".byte 0x48,0xc7,0xc1,0x03,0x00,0x00,0x00", "// ret", ".byte 0xc3", "20:", "// mov rax, 1", ".byte 0x48,0xc7,0xc0,0x01,0x00,0x00,0x00", "jmp 21b"]
 
 -- In a loop, and nested: each cold branch's code follows the return, in the
 -- order of the branches, the inner one's after the outer one's jump back.
@@ -221,8 +221,8 @@ def sample8 : Prog isa := .block ([
     (.loop (Code.iteCold .ne
       (Code.iteCold .b (.block [.mov .rax (.imm 1)]) (.block [.mov .rax (.imm 2)]))
       (.block [.mov .rax (.imm 3)])) .ae : Prog isa)) ==
-  ["20:", "jne 21f", "mov rax, 3", "22:", "jae 20b", "ret",
-    "21:", "jb 23f", "mov rax, 2", "24:", "jmp 22b", "23:", "mov rax, 1", "jmp 24b"]
+  ["20:", "jne 21f", "// mov rax, 3", ".byte 0x48,0xc7,0xc0,0x03,0x00,0x00,0x00", "22:", "jae 20b", "// ret", ".byte 0xc3",
+    "21:", "jb 23f", "// mov rax, 2", ".byte 0x48,0xc7,0xc0,0x02,0x00,0x00,0x00", "24:", "jmp 22b", "23:", "// mov rax, 1", ".byte 0x48,0xc7,0xc0,0x01,0x00,0x00,0x00", "jmp 24b"]
 
 -- An ordinary `ite` and a cold branch in one loop body: the numbers stay
 -- distinct (the loop's 20, the `ite`'s 21 and 22, the cold branch's 23 and
@@ -231,13 +231,13 @@ def sample8 : Prog isa := .block ([
 #guard text (printer.function
     (.loop (.seq (.ite .e (.block [.mov .rax (.imm 1)]) (.block [.mov .rax (.imm 2)]))
       (Code.iteCold .ne (.block [.mov .rcx (.imm 3)]) (.block [.mov .rcx (.imm 4)]))) .ae : Prog isa)) ==
-  ["20:", "je 21f", "mov rax, 2", "jmp 22f", "21:", "mov rax, 1", "22:",
-    "jne 23f", "mov rcx, 4", "24:", "jae 20b", "ret", "23:", "mov rcx, 3", "jmp 24b"]
+  ["20:", "je 21f", "// mov rax, 2", ".byte 0x48,0xc7,0xc0,0x02,0x00,0x00,0x00", "jmp 22f", "21:", "// mov rax, 1", ".byte 0x48,0xc7,0xc0,0x01,0x00,0x00,0x00", "22:",
+    "jne 23f", "// mov rcx, 4", ".byte 0x48,0xc7,0xc1,0x04,0x00,0x00,0x00", "24:", "jae 20b", "// ret", ".byte 0xc3", "23:", "// mov rcx, 3", ".byte 0x48,0xc7,0xc1,0x03,0x00,0x00,0x00", "jmp 24b"]
 
 -- An `ite` whose `then` branch merely starts with one empty block is not cold.
 #guard text (printer.function
     (.ite .e (.seq (.block []) (.block [.mov .rax (.imm 1)])) (.block [.mov .rax (.imm 2)]) : Prog isa)) ==
-  ["je 20f", "mov rax, 2", "jmp 21f", "20:", "mov rax, 1", "21:", "ret"]
+  ["je 20f", "// mov rax, 2", ".byte 0x48,0xc7,0xc0,0x02,0x00,0x00,0x00", "jmp 21f", "20:", "// mov rax, 1", ".byte 0x48,0xc7,0xc0,0x01,0x00,0x00,0x00", "21:", "// ret", ".byte 0xc3"]
 
 /-- The 64-bit shifts and `movabs`, including an immediate ≥ 2⁶³. -/
 def sample64 : Prog isa := .block [
@@ -251,14 +251,14 @@ def sample64 : Prog isa := .block [
 ]
 
 #guard text (printer.function sample64) == [
-  "ror rax, 28",
-  "ror r15, 1",
-  "shr rbx, 63",
-  "shr r9, 7",
-  "movabs rcx, 4794697086780616226",
-  "movabs r13, -5349999486874862801",
-  "movabs rsi, 1",
-  "ret"
+  "// ror rax, 28", ".byte 0x48,0xc1,0xc8,0x1c",
+  "// ror r15, 1", ".byte 0x49,0xd1,0xcf",
+  "// shr rbx, 63", ".byte 0x48,0xc1,0xeb,0x3f",
+  "// shr r9, 7", ".byte 0x49,0xc1,0xe9,0x07",
+  "// movabs rcx, 4794697086780616226", ".byte 0x48,0xb9,0x22,0xae,0x28,0xd7,0x98,0x2f,0x8a,0x42",
+  "// movabs r13, -5349999486874862801", ".byte 0x49,0xbd,0x2f,0x3b,0x4d,0xec,0xcf,0xfb,0xc0,0xb5",
+  "// movabs rsi, 1", ".byte 0x48,0xbe,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00",
+  "// ret", ".byte 0xc3"
 ]
 
 /-- Every AArch64 instruction form, and both branch conditions. -/
@@ -780,7 +780,8 @@ def callSample : Prog X86_64.isa :=
     (.block [.mov .rax (.reg .rdx)]))
 
 #guard printer.function callSample == [
-  .text "mov rdi, rbx", .call "vg_f", .text "mov rax, rdx", .text "ret"]
+  .text "// mov rdi, rbx", .text ".byte 0x48,0x89,0xdf", .call "vg_f",
+  .text "// mov rax, rdx", .text ".byte 0x48,0x89,0xd0", .text "// ret", .text ".byte 0xc3"]
 #guard AArch64.printer.function (.call "vg_f" (.block []) : Prog AArch64.isa) ==
   [.call "vg_f", .text "// ret", .text ".inst 0xd65f03c0"]
 #guard X86.printer.function (.call "vg_f" (.block []) : Prog X86.isa) ==
@@ -888,7 +889,7 @@ instructions. -/
     (.frame (.push [.rbx])
       (.frame (.push [.rcx, .rax]) (.call "vg_f" (.block [])) (.pop .rdx 2)) (.pop .rbx 1) :
       Prog X86_64.isa)) == [
-  "push rbx", "push rcx", "push rax", "<call vg_f>", "pop rdx", "pop rdx", "pop rbx", "ret"]
+  "// push rbx", ".byte 0x53", "// push rcx", ".byte 0x51", "// push rax", ".byte 0x50", "<call vg_f>", "// pop rdx", ".byte 0x5a", "// pop rdx", ".byte 0x5a", "// pop rbx", ".byte 0x5b", "// ret", ".byte 0xc3"]
 
 -- Save the link register around a call (PPC64LE): through `r0`, in a frame
 -- with a back chain.
