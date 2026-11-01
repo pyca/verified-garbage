@@ -126,7 +126,7 @@ def linTop : List Instr :=
 /-- `[o] = c₁ [a] + c₂ [b]`, the coefficients the window's words at `c₁` and
 `c₂`: `n` digits, the top digit and the sign, `n + 2` digits. -/
 def lin (c1 c2 o a b : Nat) : Prog isa := seqs [
-  .block (ldW .r11 c1 ++ ldW .r12 c2 ++ ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b ++ cntN ++ [.li .r9 0]),
+  .block (ptr .r5 o ++ ptr .r6 a ++ ptr .r7 b ++ ldW .r11 c1 ++ ldW .r12 c2 ++ cntN ++ [.li .r9 0]),
   countLoop .r8 linBody, .block linTop]
 
 /-- One digit of `[a] >> 30`: the digit's top two bits and the next's low 30. -/
