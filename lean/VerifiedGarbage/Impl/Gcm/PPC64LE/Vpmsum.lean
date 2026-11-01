@@ -6,10 +6,10 @@ public import VerifiedGarbage.Impl.Vector.PPC64LE
 
 /-! # GHASH using POWER8 polynomial multiply
 
-Three `vpmsumd` instructions form the three parts of a 128-bit product;
-two more fold it modulo the reflected GHASH polynomial. The block loop
-keeps Y and the adjusted hash key in volatile vector registers. No scratch
-space, saved GPRs, or scalar bit-at-a-time multiplication is needed.
+Long inputs use an eight-block loop with powers of H. Adjacent blocks
+share both lanes of each polynomial multiply, and all products are XORed
+before one reduction. Inputs shorter than sixteen blocks, and the tail,
+use the single-block loop. All vector registers are volatile.
 -/
 
 @[expose] public section
@@ -69,7 +69,75 @@ def body : List Instr := loadRev A .r5 ++ [.vop (.logic .xor A A Y)] ++ mul Y A 
 
 def epilogue : List Instr := [.vop (.perm T Y Y MASK), .stxvd2x T .r4 .r0]
 
-def ghash : Prog isa := .ite (.zero .d .r6) (.block [])
-  (.seq (.block prologue) (.seq (.loop (.block body) (.nonzero .d .r6)) (.block epilogue)))
+-- H^j / x is stored in the same adjusted layout as the baseline H.
+def powerReg : Nat → VReg
+ | 1 => H | 2 => .v8 | 3 => .v9 | 4 => .v10
+ | 5 => .v11 | 6 => .v12 | 7 => .v13 | _ => .v14
+
+def powerStep (i : Nat) : List Instr :=
+  [.vop (.sldoi A (powerReg (i+1)) (powerReg (i+1)) 8)] ++
+  mul (powerReg (i+2)) A H ++
+  [.vop (.sldoi (powerReg (i+2)) (powerReg (i+2)) (powerReg (i+2)) 8)]
+
+def preparePowers (n : Nat) : List Instr := (List.range (n-1)).flatMap powerStep
+
+-- Pack adjacent blocks' corresponding doublewords so both lanes of each
+-- polynomial multiply contribute useful products.
+def keyLow : Nat → VReg
+ | 0 => .v14 | 1 => .v12 | 2 => .v10 | _ => .v8
+
+def keyHigh : Nat → VReg
+ | 0 => .v13 | 1 => .v11 | 2 => .v9 | _ => .v15
+
+def packKeyStep (j : Nat) : List Instr :=
+  let a := powerReg (8-2*j)
+  let b := powerReg (7-2*j)
+  [.vop (.sldoi A b b 8),
+   .vop (.sldoi T A a 8), .vop (.sldoi T T T 8),
+   .vop (.sldoi (keyLow j) a A 8), .vop (.logic .or (keyHigh j) T T)]
+
+def packedKeys : List Instr := (List.range 4).flatMap packKeyStep
+
+def packedAccs : List (VReg × VReg) := [(Y,LO),(.v16,MID),(.v17,HI)]
+def packedProducts (loKey hiKey : VReg) : List Instr :=
+  [.vop (.sldoi HI HI HI 8),
+   .vop (.sldoi U A HI 8),
+   .vop (.sldoi T HI A 8), .vop (.sldoi T T T 8),
+   .vop (.pmsumd HI U hiKey), .vop (.pmsumd LO T loKey),
+   .vop (.pmsumd MID U loKey), .vop (.pmsumd U T hiKey),
+   .vop (.logic .xor MID MID U)]
+
+def packedSave (j : Nat) : List Instr :=
+  if j=0 then packedAccs.map (fun (acc,p) => .vop (.logic .or acc p p))
+  else if j=3 then packedAccs.map (fun (acc,p) => .vop (.logic .xor p p acc))
+  else packedAccs.map (fun (acc,p) => .vop (.logic .xor acc acc p))
+
+def packedRead (j : Nat) : List Instr :=
+  loadRev A .r5 ++ [.addi .r5 .r5 16] ++
+  (if j=0 then [.vop (.logic .xor A A Y)] else []) ++
+  loadRev HI .r5 ++ [.addi .r5 .r5 16]
+
+def packedPair (j : Nat) : List Instr :=
+  packedRead j ++ packedProducts (keyLow j) (keyHigh j) ++ packedSave j
+
+def packedBody : List Instr := (List.range 4).flatMap packedPair ++
+  reduce Y ++ [.subi .r6 .r6 8]
+
+def bulk : Prog isa :=
+  .seq (.block (preparePowers 8 ++ packedKeys))
+    (.seq (.loop (.block (packedBody ++ [.lsr .d .r10 .r6 3])) (.nonzero .d .r10))
+      (.block [.vop (.sldoi A (keyLow 3) (keyLow 3) 8), .vop (.sldoi H (keyHigh 3) A 8)]))
+
+def finish : Prog isa :=
+  .seq (.ite (.zero .d .r6) (.block []) (.loop (.block body) (.nonzero .d .r6))) (.block epilogue)
+
+/-- Nonempty short messages go directly to the hardware loop. -/
+def serial : Prog isa :=
+  .seq (.loop (.block body) (.nonzero .d .r6)) (.block epilogue)
+
+def ghash : Prog isa :=
+  .ite (.zero .d .r6) (.block [])
+    (.seq (.block (prologue ++ [.lsr .d .r10 .r6 4]))
+      (.ite (.zero .d .r10) serial (.seq bulk finish)))
 
 end VG.Impl.Gcm.PPC64LE.Vpmsum

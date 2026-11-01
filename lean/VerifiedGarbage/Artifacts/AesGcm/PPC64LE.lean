@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
+import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
+
 /-! # AES-GCM (NIST SP 800-38D) on PPC64LE -/
 
 @[expose] public section

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Verified
 public import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Registration
 
+import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
+
 /-! # AES-GCM-SIV (RFC 8452) on PPC64LE -/
 
 @[expose] public section

@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 
+import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
+
 /-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on PPC64LE -/
 
 @[expose] public section
