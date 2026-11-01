@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
+public import VerifiedGarbage.Impl.AesGcm.PPC64LE.SealFused
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Init
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
@@ -69,6 +71,12 @@ theorem streamVerify_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : s
 theorem seal_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : sealPPC64LE.pre s) :
     ∃ t s', Exec isa «seal» s t s' ∧ abiPreserved s s' ∧ sealPPC64LE.post s s' :=
   seal_wp hs
+
+theorem sealFused_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+    (s : State) (hs : sealPPC64LE.pre s) :
+    ∃ t s', Exec isa Impl.AesGcm.PPC64LE.SealFused.seal s t s' ∧
+      abiPreserved s s' ∧ sealPPC64LE.post s s' :=
+  sealFused_wp hs
 
 theorem open_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : openPPC64LE.pre s) :
     ∃ t s', Exec isa «open» s t s' ∧ abiPreserved s s' ∧ openPPC64LE.post s s' :=
@@ -193,6 +201,15 @@ def sealSat : State where
 theorem seal_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target «seal» (Proof.AesGcm.sealScratchContract PPC64LE.abi) :=
   Verified.of_correct seal_correct seal_ct (by
+    sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
+      Spec.Gcm.sealPost, sealPPC64LE, sealPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
+      stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
+
+theorem sealFused_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
+    Verified PPC64LE.target Impl.AesGcm.PPC64LE.SealFused.seal
+      (Proof.AesGcm.sealScratchContract PPC64LE.abi) :=
+  Verified.of_correct sealFused_correct sealFused_ct (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
       Spec.Gcm.sealPost, sealPPC64LE, sealPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
       stackArg, stackArgAddr, List.getD, List.range, List.range.loop]

@@ -50,7 +50,7 @@ def artifacts : List Artifact := [
     stack := 2592
     verified := streamVerify_framed },
   Spec.Gcm.sealApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.seal
+    code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal
     stack := 2672
     verified := seal_framed },
   Spec.Gcm.openApi.artifact PPC64LE.target {

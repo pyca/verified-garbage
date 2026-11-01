@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
@@ -209,10 +208,8 @@ theorem sealBody_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
 
 theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.pre s₀) :
     WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealPPC64LE.post s₀ s' := by
-  have hp := sealBody_wp (sealBody := .seq oneCrypt (oneTag 0))
+  exact sealBody_wp (sealBody := .seq oneCrypt (oneTag 0))
     (fun L he hd hR hv ha hab => SealFused.smallBody_ok L he hd hR hv ha hab) h
-  exact WP.seq (WP.mono (WP.seq_iff.mp hp) fun _ h₁ =>
-    WP.seq (WP.mono (WP.seq_iff.mp h₁) fun _ h₂ => WP.assoc h₂))
 
 theorem sealFused_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {s₀ : State} (h : sealPPC64LE.pre s₀) :

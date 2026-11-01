@@ -1839,6 +1839,51 @@ mod tests {
         }
     }
 
+    #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+    #[test]
+    fn fused_seal_matches_streaming() {
+        let input: [u8; 16_385] = core::array::from_fn(|i| (29 * i + 13) as u8);
+        let nonce: [u8; 13] = core::array::from_fn(|i| (7 * i + 11) as u8);
+        let aad: [u8; 17] = core::array::from_fn(|i| (17 * i + 37) as u8);
+        for key_len in [16, 24, 32] {
+            let cipher = AesGcm::new(&[0x24; 32][..key_len]).unwrap();
+            for nonce_len in [12, 13] {
+                for aad_len in [0, 13, 17] {
+                    for n in [0, 15, 511, 512, 513, 1024, 16_384, 16_385] {
+                        let mut sealed = input;
+                        let tag = cipher
+                            .encrypt_in_place(
+                                &nonce[..nonce_len],
+                                &aad[..aad_len],
+                                &mut sealed[..n],
+                            )
+                            .unwrap();
+                        // Streaming uses the separate CTR and GHASH routines.
+                        let mut streamed = input;
+                        let mut enc = cipher.encryptor(&nonce[..nonce_len]).unwrap();
+                        for part in aad[..aad_len].chunks(7) {
+                            enc.update_aad(part).unwrap();
+                        }
+                        for part in streamed[..n].chunks_mut(257) {
+                            enc.update(part).unwrap();
+                        }
+                        assert_eq!(tag, enc.finalize());
+                        assert_eq!(sealed, streamed);
+                        cipher
+                            .decrypt_in_place(
+                                &nonce[..nonce_len],
+                                &aad[..aad_len],
+                                &mut sealed[..n],
+                                &tag,
+                            )
+                            .unwrap();
+                        assert_eq!(sealed, input);
+                    }
+                }
+            }
+        }
+    }
+
     /// The implementation chosen for each set of features: AES's and
     /// GHASH's, independently.
     #[test]
