@@ -222,6 +222,13 @@ def zCode : List Instr :=
 /-- The flag's low bit to `a0`, and the registers restored. -/
 def retCode : List Instr := [.load .d .a0 wb (c.sl FLAG), .logicImm .and .a0 .a0 1] ++ restoreCode
 
+/-- `04 ‖ x ‖ y` (or zeros, by the mask `a7`) to `out` (in `s2`), from the
+slots `xo` and `yo`, the flag's low bit returned and the registers
+restored. -/
+def pointOut (xo yo : Nat) : List Instr :=
+  [.li .t0 4, .logic .and .t0 .t0 .a7, .store .b .t0 .s2 0] ++ storeNum c.n (c.sl xo) .s2 1 ++
+    storeNum c.n (c.sl yo) .s2 (1 + 8 * c.n) ++ retCode c
+
 /-- `vg_ecdh_<curve>(out = a0, d = a1, peer = a2, scratch = a3)`. -/
 def ecdhFn (checkName mulName : String) (checkCode mulCode : Prog isa) : Prog isa :=
   .seq (.block (saveCode .a3 ++ loadNum c.n (c.sl K) .a1 0 ++ loadNum c.n (c.sl CX) .a2 1 ++
@@ -238,8 +245,7 @@ def publicKeyFn (mulName : String) (mulCode : Prog isa) : Prog isa :=
     copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY))) <|
   .seq (tail c mulName mulCode) <|
   .seq (affineCoord c YM YO RY) <|
-  .block (zCode c ++ [.li .t0 4, .logic .and .t0 .t0 .a7, .store .b .t0 .s2 0] ++
-    storeNum c.n (c.sl XO) .s2 1 ++ storeNum c.n (c.sl YO) .s2 (1 + 8 * c.n) ++ retCode c)
+  .block (zCode c ++ pointOut c XO YO)
 
 end Cfg
 
