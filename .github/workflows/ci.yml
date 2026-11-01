@@ -843,7 +843,7 @@ jobs:
           lists=$RUNNER_TEMP/lists
           mkdir -p "$lists"
           cargo test --locked --features cpu-features-env --lib -- --list --format terse > "$lists/lib"
-          cargo test --locked --features cpu-features-env --test tests -- --list --format terse > "$lists/tests"
+          cargo test --locked --features cpu-features-env --test tests --test cavp -- --list --format terse > "$lists/tests"
           python3 ci/cpu_tests.py record "$CPU" "$RUNS" "$lists/lib" "$lists/tests" > "cpu-tests-$JOB.json"
           # A line's tests: every test for `all`, otherwise those its groups
           # select, by exact name, in each binary that has any.
@@ -853,10 +853,10 @@ jobs:
               cargo test --locked --features cpu-features-env -- -Z unstable-options --report-time
               return
             fi
-            for binary in lib tests; do
+            for binary in lib tests cavp; do
               selected=$(python3 ci/cpu_tests.py select "$binary" "$lists/lib" "$lists/tests" $tests) || return
               [ -n "$selected" ] || continue
-              if [ "$binary" = lib ]; then target=(--lib); else target=(--test tests); fi
+              if [ "$binary" = lib ]; then target=(--lib); else target=(--test "$binary"); fi
               cargo test --locked --features cpu-features-env "${target[@]}" -- -Z unstable-options --report-time --exact $selected || status=$?
             done
             return "$status"

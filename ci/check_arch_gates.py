@@ -15,15 +15,17 @@ a curve's file) needs that file's.
 Only `target_arch` is compared; other conditions (`feature = "alloc"`) are
 allowed alongside.
 
-Every test directory (`tests/<dir>/main.rs`) must be a module of the one
-test binary, declared in `tests/main.rs` as `#[path = "<dir>/main.rs"] mod
-<dir>;`: Cargo builds no other test (`autotests = false`), so a directory
-missing there would never run.
+Every test directory (`tests/<dir>/main.rs`) must be a module of exactly
+one test binary, a `[[test]]` of Cargo.toml (`tests/main.rs`, and
+`tests/cavp.rs` for `cavp/`), declared in its root as `#[path =
+"<dir>/main.rs"] mod <dir>;`: Cargo builds no other test (`autotests =
+false`), so a directory missing there would never run.
 """
 
 import pathlib
 import re
 import sys
+import tomllib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ARCHES = frozenset({"x86_64", "aarch64", "arm", "x86", "powerpc64", "riscv64"})
@@ -120,20 +122,32 @@ def show(archs):
     return ", ".join(sorted(archs))
 
 
-def test_dirs():
-    """The errors of `tests/main.rs`'s list of the test directories."""
-    declared = TEST_DIR.findall((ROOT / "tests" / "main.rs").read_text())
+def test_roots():
+    """The roots of the test binaries, Cargo.toml's `[[test]]`s."""
+    cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())
+    return [t["path"] for t in cargo.get("test", [])]
+
+
+def test_dirs(roots):
+    """The errors of the test binaries' lists of the test directories."""
     dirs = sorted(p.parent.name for p in (ROOT / "tests").glob("*/main.rs"))
-    errors = [f"tests/main.rs: mod {m} is declared from {d}/main.rs" for d, m in declared if d != m]
-    errors += [f"tests/{d}/main.rs: not declared in tests/main.rs, so it never runs"
-               for d in dirs if d not in {d for d, _ in declared}]
-    errors += [f"tests/main.rs: {d}/main.rs does not exist" for d, _ in declared if d not in dirs]
+    errors, where = [], {}
+    for root in roots:
+        declared = TEST_DIR.findall((ROOT / root).read_text())
+        errors += [f"{root}: mod {m} is declared from {d}/main.rs" for d, m in declared if d != m]
+        errors += [f"{root}: {d}/main.rs does not exist" for d, _ in declared if d not in dirs]
+        for d, _ in declared:
+            where.setdefault(d, []).append(root)
+    errors += [f"tests/{d}/main.rs: not declared in a test binary ({', '.join(roots)}), so it never runs"
+               for d in dirs if d not in where]
+    errors += [f"tests/{d}/main.rs: declared in {' and '.join(r)}, so it runs twice"
+               for d, r in where.items() if len(r) > 1]
     return errors
 
 
 def main() -> int:
     mods = library()
-    errors = test_dirs()
+    errors = test_dirs(test_roots())
     for path in sorted((ROOT / "tests").rglob("*.rs")):
         text = path.read_text()
         archs, used = required(text, mods)

@@ -6,7 +6,9 @@ ci/rust_matrix.toml):
 `all` for every test, or the names of groups in `GROUPS`, each the tests of
 one primitive, or of what is built on it, whose implementation the CPU's
 features choose. A group names its tests by their paths in the library's
-unit tests (`lib`) and in the test binary `tests/main.rs` (`tests`): a path
+unit tests (`lib`) and in the integration tests (`tests`), which two
+binaries hold (`cavp`, `tests/cavp.rs`, those under `cavp::`, and `tests`,
+`tests/main.rs`, the rest): a path
 selects the test of that name and every test in the module of that name,
 and nothing else, so a test runs on a line only if a group of it names the
 test or a module around it. A new test of a primitive that varies by CPU
@@ -25,9 +27,9 @@ built there too.
       of the runs on stdin, focused RSA groups for ICX/DMR; use only after
       detecting SDE on a host without AVX512_IFMA
   cpu_tests.py select BINARY LIB TESTS GROUP...
-      the tests of the groups in BINARY (`lib` or `tests`), one per line,
-      of the tests listed (`--list --format terse`) in the files LIB and
-      TESTS
+      the tests of the groups in BINARY (`lib`, `tests` or `cavp`), one per
+      line, of the tests listed (`--list --format terse`) in the files LIB
+      and TESTS (the integration tests of both binaries)
   cpu_tests.py record CPU RUNS LIB TESTS
       as JSON: the groups the CPU's `runs` use and the tests it has, for
       `check`
@@ -46,6 +48,15 @@ import sys
 import tomllib
 
 BINARIES = ("lib", "tests")
+
+# The binaries that run the tests, and the list (of `BINARIES`) that has
+# theirs: `cavp` runs the integration tests under `cavp::`, `tests` the rest.
+RUNNERS = {"lib": "lib", "tests": "tests", "cavp": "tests"}
+
+
+def runs_in(runner, test):
+    """Whether the binary `runner` holds the test named `test` of its list."""
+    return runner == "lib" or test.startswith("cavp::") == (runner == "cavp")
 
 GROUPS = {
     "aes_cbc": {
@@ -608,10 +619,11 @@ def read(path):
 
 
 def main(argv):
-    if argv[:1] == ["select"] and len(argv) >= 5 and argv[1] in BINARIES:
+    if argv[:1] == ["select"] and len(argv) >= 5 and argv[1] in RUNNERS:
         listed = {"lib": parse_list(read(argv[2])), "tests": parse_list(read(argv[3]))}
-        for t in select(argv[1], listed, argv[4:]):
-            print(t)
+        for t in select(RUNNERS[argv[1]], listed, argv[4:]):
+            if runs_in(argv[1], t):
+                print(t)
     elif argv[:1] == ["emulated-rsa"] and len(argv) == 2:
         print(emulated_rsa_runs(argv[1], sys.stdin.read()))
     elif argv[:1] == ["record"] and len(argv) == 5:

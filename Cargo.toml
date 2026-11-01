@@ -72,6 +72,10 @@ publish = false
 name = "tests"
 path = "tests/main.rs"
 
+[[test]]
+name = "cavp"
+path = "tests/cavp.rs"
+
 [dev-dependencies]
 # Parsing the JSON test vector files (`tests/json.rs` reads them into Rust
 # types, without serde's derive).
