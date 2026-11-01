@@ -25,7 +25,7 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 # An RSA key from its primes on x86-64: constant time, `d`
 
 `dPart` branches on `e`, which is public, and in each branch runs pieces of
-the key routines: `loadEv`, `lGe2`, `gcdIsOne`, `inverse` from `invFrom`,
+the key routines: `loadEv`, `lGe2`, `gcdIsOne`, `inverse` modulo an array,
 and `dOdd`'s blocks.
 -/
 
@@ -124,34 +124,19 @@ theorem gcdIsOne_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kOk
     obtain ⟨ht, f⟩ := h.hdrSome (by unfold kOk sFn; omega_arith) hm k (by decide)
     exact ⟨ht, hF I s t h.hZ hf (f.mono (by decide)) (k.mono (by decide))⟩
 
-/-! ## `inverse` from `invFrom` -/
+/-! ## `inverse` modulo `[j]` -/
 
-/-- What `invFrom j` and `inverse … j aT` change. -/
-abbrev csI : List Rc := [.arr aU, .arr aV, .arr aX₁, .arr aX₂, .arr aT, .hdr sMo]
+/-- What `inverse … j` changes. -/
+abbrev csI : List Rc := [.arr aV, .arr aX₂, .priv]
 
-theorem invFrom_ct {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hjU : j ≠ aU) (hjV : j ≠ aV) (hj1 : j ≠ aX₁)
-    (hj2 : j ≠ aX₂) (hjT : j ≠ aT) (hF : Stab F csI allR) {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht₁ : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base j .rsi ++ base aV .rbx))
-      Impl.Rsa.X86_64.copyWords) hc₁).isSome = true)
-    (ht₂ : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (([.mov .r11 (.reg .r12)] : List Instr) ++
-      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr))))
-      (.loop (VG.Impl.Rsa.X86_64.Keys.invStep aU aV aX₁ aX₂ j aT) .ne)) hc₂).isSome = true) :
-    RelCT isa (Two (KG fun I t => F I t ∧ TopZ aU I t)) (seqs (invFrom j ++ [inverse aU aV aX₁ aX₂ j aT]))
-      (Two (KG F)) := by
-  have sFT : ∀ (cs : List Rc), (∀ c ∈ cs, c ∈ csI) → cs.all Rc.ok = true → .arr aU ∉ cs →
-      Stab (fun I t => F I t ∧ TopZ aU I t) cs allR :=
-    fun cs h1 h2 h3 => stab_and (hF.mono h1 (by simp)) (stab_top _ (by decide) h2 h3)
-  show RelCT isa _ (seqs ([zeroA aV] ++ ([copyA aV j, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂] ++
-    [inverse aU aV aX₁ aX₂ j aT]))) _
-  refine rs_app (by simp) (by simp) (zeroA_ct (by decide) (sFT [.arr aV] (by simp) (by decide) (by decide)).sub
-    (by taint_decide)) ?_
-  refine rs_app (by simp) (by simp) (invStart_ct (o := aV) (a := j) (by decide) hj hjV.symm (by decide) (by decide)
-    hj1 hj2 (sFT [.arr aV, .arr aX₁, .arr aX₂] (by simp) (by decide) (by decide)) ht₁) ?_
-  refine (inverse_ct (F := F) (by decide) (by decide) (by decide) (by decide) hj (by decide) (by decide)
-    (by decide) (by decide) hjU.symm (by decide) (by decide) (by decide) hjV.symm (by decide) (by decide)
-    hj1.symm (by decide) hj2.symm (by decide) hjT hF.sub ht₂).mono
-    (fun s₁ s₂ h => two_bind (fun p t₁ t₂ h₁ h₂ => ⟨p, h₁.imp fun I ⟨⟨hf, tU⟩, he, h1, h2⟩ =>
-      ⟨hf, tU, he, h1, h2⟩, h₂.imp fun I ⟨⟨hf, tU⟩, he, h1, h2⟩ => ⟨hf, tU, he, h1, h2⟩⟩) h) fun _ _ h => h
+theorem invU_ct {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hF : Stab F csI allR)
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r13 (.reg .r12)] : List Instr))
+      (inverseN aU aV aX₂ j)) hc).isSome = true) :
+    RelCT isa (Two (KG fun I t => F I t ∧ TopZ aU I t)) (seqs [inverse aU aV aX₂ j]) (Two (KG F)) :=
+  (inverse_ct (F := F) (by decide) (by decide) (by decide) hj (by decide) hF ht).mono
+    (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ⟨p, h₁.imp fun _ ⟨hf, _⟩ => hf, h₂.imp fun _ ⟨hf, _⟩ => hf⟩) h)
+    fun _ _ h => h
 
 /-! ## `e = 0` and `e = 1` -/
 
@@ -298,7 +283,7 @@ theorem dBlk3_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hz : Zero 
     (k₁.trans kt).mono (by decide)⟩
 
 theorem dOdd_eq2 : dOdd = loadEv ++ ([zeroA aQt, copyA aQt aL, divmod aQt aR aE aT] ++ ([zeroA aU, copyA aU aR] ++
-    ((invFrom aE ++ [inverse aU aV aX₁ aX₂ aE aT]) ++ (lGe2 ++ (gcdIsOne ++
+    ([inverse aU aV aX₂ aE] ++ (lGe2 ++ (gcdIsOne ++
     ([.block (([.mov .rbx (.mem (hdr kEv))] : List Instr) ++ minv), .block (ws ++ dBlk2), zeroA aDd, .block (ws ++ dBlk3),
       mulAddRow] : List (Prog isa))))))) := by
   simp only [dOdd, dBlk2, dBlk3, List.append_assoc, List.cons_append, List.nil_append]
@@ -315,10 +300,10 @@ theorem dOdd_ct : RelCT isa (Two (KG fun I t => EvOK I t ∧ OddE I t)) (seqs dO
         (divmod_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
           (by decide) (by decide) (sF [.arr aQt, .arr aR, .arr aT] (by decide) (by decide)).sub
           (by taint_decide)))) ?_
-  refine rs_app (by simp) (by simp [invFrom]) (show RelCT isa _ (seqs [zeroA aU, copyA aU aR]) _ from
+  refine rs_app (by simp) (by simp) (show RelCT isa _ (seqs [zeroA aU, copyA aU aR]) _ from
     zc_ct (by decide) (by decide) (by decide) (sF _ (by decide) (by decide)) (by taint_decide) (by taint_decide)) ?_
-  refine rs_app (by simp [invFrom]) (by simp [lGe2]) (invFrom_ct (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (sF _ (by decide) (by decide)) (by taint_decide) (by taint_decide)) ?_
+  refine rs_app (by simp) (by simp [lGe2]) (invU_ct (by decide) (sF _ (by decide) (by decide))
+    (by taint_decide)) ?_
   refine rs_app (by simp [lGe2, constA]) (by simp [gcdIsOne, constA]) (lGe2_ct (sF _ (by decide) (by decide))) ?_
   refine rs_app (by simp [gcdIsOne, constA]) (by simp) (gcdIsOne_ct (sF _ (by decide) (by decide))) ?_
   simp only [seqs]
@@ -382,7 +367,7 @@ theorem dEven_eq2 : dEven = loadEv ++ ([zeroA aM, copyA aM aL] ++ (constA 0 ++ (
     (([.block [.mov .r15 (.reg .rbp)]] : List (Prog isa)) ++ (constA 1 ++ (([.block (ws ++ mBlk)] : List (Prog isa)) ++
     ([zeroA aQt, copyA aQt aE, divmod aQt aR aM aT] ++ ([zeroA aU, copyA aU aR] ++ (constA 3 ++ (ltA aL aC ++
     (([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ (ws ++ oBlk))] : List (Prog isa)) ++
-    ([zeroA aM, copyA aM aL] ++ (selC aM ++ ((invFrom aM ++ [inverse aU aV aX₁ aX₂ aM aT]) ++ (gcdIsOne ++
+    ([zeroA aM, copyA aM aL] ++ (selC aM ++ ([inverse aU aV aX₂ aM] ++ (gcdIsOne ++
     [zeroA aDd, copyA aDd aX₂]))))))))))))))) := by
   simp only [dEven, mBlk, oBlk, oddMask, List.append_assoc, List.cons_append, List.nil_append]
 
@@ -432,10 +417,10 @@ theorem dEven_ct : RelCT isa (Two (KG NF)) (seqs dEven) (Two (KG NF)) := by
       (by taint_decide))
       (copyA_ct (by decide) (by decide) (by decide) (stab_and (sT [.arr aM] (by decide) (by decide)).sub
         (stab_rbp (by decide))) (by taint_decide))) ?_
-  refine rs_app (by simp [selC]) (by simp [invFrom]) (selC_ct (by decide) (by decide)
+  refine rs_app (by simp [selC]) (by simp) (selC_ct (by decide) (by decide)
     (sT [.arr aM] (by decide) (by decide)).sub (by taint_decide)) ?_
-  refine rs_app (by simp [invFrom]) (by simp [gcdIsOne, constA]) (invFrom_ct (F := NF) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (sN _ _) (by taint_decide) (by taint_decide)) ?_
+  refine rs_app (by simp) (by simp [gcdIsOne, constA]) (invU_ct (F := NF) (by decide) (sN _ _)
+    (by taint_decide)) ?_
   refine rs_app (by simp [gcdIsOne, constA]) (by simp) (gcdIsOne_ct (sN _ _)) ?_
   exact RelCT.seq (zeroA_ct (by decide) (sN _ _) (by taint_decide))
     (copyA_ct (by decide) (by decide) (by decide) (sN _ _) (by taint_decide))

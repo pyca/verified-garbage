@@ -229,7 +229,7 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
   refine wp_seqs_append (by simp) (by simp [gcdIsOne, constA]) ?_
   simp only [seqs]
   refine WP.mono (inverse_k h₂₀ (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aM) (by decide) (by decide) (by decide)
-    (by decide) (by decide)) fun s₂₂ ⟨h₂₂, f₂₂, hinv⟩ => ?_
+    (by decide) (by decide)) fun s₂₂ ⟨h₂₂, f₂₂, _, hinv⟩ => ?_
   rw [v₂₀, pU] at hinv
   obtain ⟨hg₂₂, hdv₂₂, hx₂₂⟩ := hinv hMo.1
   generalize hx : av I s₂₂.mem aX₂ = x at hdv₂₂ hx₂₂

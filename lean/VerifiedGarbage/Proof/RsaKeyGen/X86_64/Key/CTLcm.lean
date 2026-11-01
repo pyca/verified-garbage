@@ -323,19 +323,6 @@ abbrev KokM : KIn → State → Prop := fun I t => ∃ c, word t.mem I.B (8 * kO
 theorem stab_kok {cs : List Rc} (rs : List Reg) (hok : cs.all Rc.ok = true) (hn : .hdr kOk ∉ cs) :
     Stab KokM cs rs := fun _ _ _ _ ⟨c, h⟩ f _ => ⟨c, (f.word hok (by decide) hn).trans h⟩
 
-/-- Array `j`'s value. -/
-abbrev AvIs (j v : Nat) : KIn → State → Prop := fun I t => av I t.mem j = v
-
-theorem stab_av {j v : Nat} {cs : List Rc} (rs : List Reg) (hj : j < 16) (hok : cs.all Rc.ok = true)
-    (hn : .arr j ∉ cs) : Stab (AvIs j v) cs rs := fun _ _ _ hZ h f _ => (f.av hok hj hn hZ).trans h
-
-/-- Arrays `a` and `b` equal. -/
-abbrev AvEq (a b : Nat) : KIn → State → Prop := fun I t => av I t.mem a = av I t.mem b
-
-theorem stab_aveq {a b : Nat} {cs : List Rc} (rs : List Reg) (ha : a < 16) (hb : b < 16) (hok : cs.all Rc.ok = true)
-    (hna : .arr a ∉ cs) (hnb : .arr b ∉ cs) : Stab (AvEq a b) cs rs := fun _ _ _ hZ h f _ => by
-  dsimp only [AvEq] at h ⊢; rw [f.av hok ha hna hZ, f.av hok hb hnb hZ]; exact h
-
 /-- `rbp`'s mask into `kOk`, and `rbp` negated. -/
 theorem kokPut_ok {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {c : Bool} (hbp : s.gpr .rbp = mask c) :
     WP isa (.block [.store (hdr kOk) .rbp, .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]) s fun t =>
@@ -412,53 +399,13 @@ theorem gcdSwap_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
 
 theorem gcdUV_eq2 : gcdUV = ([.block (ws ++ gcdBlk), wordLoop 0 cswapBody] : List (Prog isa)) ++ (constA 2 ++ (ltA aV aC ++
     (([.block [.store (hdr kOk) .rbp, .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++ (constA 3 ++ (selC aV ++
-    ([zeroA aM, copyA aM aV, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂, inverse aU aV aX₁ aX₂ aM aT] ++
+    ([zeroA aM, copyA aM aV, inverse aU aV aX₂ aM] ++
     (constA 1 ++ (([.block [.mov .rbp (.mem (hdr kOk)), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++
       selC aV)))))))) := by
   simp only [gcdUV, gcdBlk, oddMask, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- What `gcdUV` changes. -/
-abbrev csG : List Rc := [.arr aU, .arr aV, .arr aC, .arr aM, .arr aX₁, .arr aX₂, .arr aT, .hdr sMo, .hdr kOk]
-
-/-- `inverse`'s start from the copy into `[o]` of `[a]`: `x₁ := 1`,
-`x₂ := 0`. -/
-theorem invStart_ct {F : KIn → State → Prop} {o a : Nat} (ho : o < 16) (ha : a < 16) (hoa : o ≠ a)
-    (ho1 : o ≠ aX₁) (ho2 : o ≠ aX₂) (ha1 : a ≠ aX₁) (ha2 : a ≠ aX₂) (hF : Stab F [.arr o, .arr aX₁, .arr aX₂] allR)
-    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base a .rsi ++ base o .rbx))
-      Impl.Rsa.X86_64.copyWords) hc).isSome = true) :
-    RelCT isa (Two (KG F)) (seqs [copyA o a, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂])
-      (Two (KG fun I t => F I t ∧ AvEq o a I t ∧ AvIs aX₁ 1 I t ∧ AvIs aX₂ 0 I t)) := by
-  have e : copyA o a = .seq (.block (ws ++ (base a .rsi ++ base o .rbx))) Impl.Rsa.X86_64.copyWords := by
-    simp only [copyA, List.append_assoc]
-  have sE : ∀ (cs : List Rc), cs.all Rc.ok = true → .arr o ∉ cs → .arr a ∉ cs → Stab (AvEq o a) cs allR :=
-    fun _ hok h1 h2 => stab_aveq _ ho ha hok h1 h2
-  have ok1 : [Rc.arr aX₁].all Rc.ok = true := by decide
-  have ok2 : [Rc.arr aX₂].all Rc.ok = true := by decide
-  simp only [seqs]
-  refine RelCT.seq (R := Two (KG fun I t => F I t ∧ AvEq o a I t)) ?_ ?_
-  · rw [e]
-    exact kg_ws ht fun I _ s h _ hf => by
-      rw [← e]
-      exact WP.mono (copyA_k h ho ha hoa) fun t ⟨ht, f, v, _, k⟩ =>
-        ⟨ht, hF I s t h.hZ hf (f.mono (by simp)) (k.mono (by decide)),
-          by dsimp only [AvEq]; rw [v, f.av (by simp [Rc.ok, ho]) ha (by simp [hoa.symm]) h.hZ]⟩
-  refine RelCT.seq (R := Two (KG fun I t => (F I t ∧ AvEq o a I t) ∧ Zero aX₁ I t)) ?_ ?_
-  · exact kg_ws (by taint_decide) fun I _ s h _ ⟨hf, he⟩ => WP.mono (zeroA_k h (j := aX₁) (by decide))
-      fun t ⟨ht, f, hz, k⟩ => ⟨ht, ⟨hF I s t h.hZ hf (f.mono (by simp)) (k.mono (by decide)),
-        sE [.arr aX₁] ok1 (by simp [ho1]) (by simp [ha1]) I s t h.hZ he f (k.mono (by decide))⟩, hz⟩
-  refine RelCT.seq (R := Two (KG fun I t => F I t ∧ AvEq o a I t ∧ AvIs aX₁ 1 I t)) ?_ ?_
-  · rw [setOneA_eq]
-    exact kg_wsb (by taint_decide) fun I _ s h _ ⟨⟨hf, he⟩, hz⟩ => by
-      rw [← setOneA_eq]
-      exact WP.mono (setOne_k h (j := aX₁) (by decide) hz) fun t ⟨ht, f, v, k⟩ =>
-        ⟨ht, hF I s t h.hZ hf (f.mono (by simp)) (k.mono (by decide)),
-          sE [.arr aX₁] ok1 (by simp [ho1]) (by simp [ha1]) I s t h.hZ he f (k.mono (by decide)),
-          av_of_full v (Nat.one_lt_two_pow (by have := h.ws.w1; omega_arith))⟩
-  · exact kg_ws (by taint_decide) fun I _ s h _ ⟨hf, he, h1⟩ => WP.mono (zeroA_k h (j := aX₂) (by decide))
-      fun t ⟨ht, f, hz, k⟩ => ⟨ht, hF I s t h.hZ hf (f.mono (by simp)) (k.mono (by decide)),
-        sE [.arr aX₂] ok2 (by simp [ho2]) (by simp [ha2]) I s t h.hZ he f (k.mono (by decide)),
-        stab_av _ (by decide) (by decide) (by decide) I s t h.hZ h1 f k, av_of_full hz (Nat.two_pow_pos _)⟩
+abbrev csG : List Rc := [.arr aU, .arr aV, .arr aC, .arr aM, .arr aX₁, .arr aX₂, .arr aT, .hdr sMo, .hdr kOk, .priv]
 
 theorem gcdUV_ct {F : KIn → State → Prop} (hF : Stab F csG allR) :
     RelCT isa (Two (KG fun I t => F I t ∧ TopZ aU I t)) (seqs gcdUV) (Two (KG F)) := by
@@ -495,20 +442,15 @@ theorem gcdUV_ct {F : KIn → State → Prop} (hF : Stab F csG allR) :
     (sFTK [.arr aV] (by simp) (by decide) (by decide) (by decide)).sub (by taint_decide)) ?_
   refine rs_app (R := Two (KG fun I t => F I t ∧ KokM I t)) (by simp) (by simp [constA]) ?_ ?_
   · -- `inverse` modulo `[aM] = v`.
-    show RelCT isa _ (seqs ([zeroA aM] ++ ([copyA aM aV, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂] ++
-      [inverse aU aV aX₁ aX₂ aM aT]))) _
+    show RelCT isa _ (seqs ([zeroA aM] ++ ([copyA aM aV] ++ [inverse aU aV aX₂ aM]))) _
     refine rs_app (by simp) (by simp) (zeroA_ct (by decide) (sFTK [.arr aM] (by simp) (by decide) (by decide)
       (by decide)).sub (by taint_decide)) ?_
-    refine rs_app (by simp) (by simp) (invStart_ct (o := aM) (a := aV) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (sFTK [.arr aM, .arr aX₁, .arr aX₂] (by simp) (by decide)
-      (by decide) (by decide)) (by taint_decide)) ?_
+    refine rs_app (by simp) (by simp) (copyA_ct (o := aM) (a := aV) (by decide) (by decide) (by decide)
+      (sFTK [.arr aM] (by simp) (by decide) (by decide) (by decide)).sub (by taint_decide)) ?_
     refine (inverse_ct (F := fun I t => F I t ∧ KokM I t) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (sFK _ (by simp) (by decide) (by decide)).sub (by taint_decide)).mono
-      (fun s₁ s₂ h => two_bind (fun p t₁ t₂ h₁ h₂ => ⟨p, h₁.imp fun I ⟨⟨⟨hf, tU⟩, hk⟩, he, h1, h2⟩ =>
-        ⟨⟨hf, hk⟩, tU, he.symm, h1, h2⟩, h₂.imp fun I ⟨⟨⟨hf, tU⟩, hk⟩, he, h1, h2⟩ =>
-          ⟨⟨hf, hk⟩, tU, he.symm, h1, h2⟩⟩) h)
+      (by decide) (sFK _ (by simp) (by decide) (by decide)).sub (by taint_decide)).mono
+      (fun s₁ s₂ h => two_bind (fun p t₁ t₂ h₁ h₂ => ⟨p, h₁.imp fun I ⟨⟨hf, _⟩, hk⟩ => ⟨hf, hk⟩,
+        h₂.imp fun I ⟨⟨hf, _⟩, hk⟩ => ⟨hf, hk⟩⟩) h)
       fun _ _ h => h
   refine rs_app (by simp [constA]) (by simp) (constA_ct 1 (sFK [.arr aC] (by simp) (by decide) (by decide)).sub
     (by taint_decide) (by taint_decide)) ?_

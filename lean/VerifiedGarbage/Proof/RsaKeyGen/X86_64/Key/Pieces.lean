@@ -598,6 +598,7 @@ theorem inverse_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {iU iV iX
     (hU : iU < 16) (hV : iV < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (dVX₂ : iV ≠ iX₂) :
     WP isa (inverse iU iV iX₂ iM) s fun t => KS I m₀ t ∧
       KF I.B I.W [.arr iV, .arr iX₂, .priv] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t ∧
       (av I s.mem iM % 2 = 1 →
         av I t.mem iV = Nat.gcd (av I s.mem iU) (av I s.mem iM) ∧
         ((av I s.mem iM : Nat) : Int) ∣ (av I t.mem iX₂ : Int) * av I s.mem iU - av I t.mem iV ∧
@@ -610,7 +611,7 @@ theorem inverse_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {iU iV iX
       · exact ⟨.arr iV, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
       · exact ⟨.arr iX₂, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
       · exact ⟨.priv, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-  refine ⟨h.step f ?_ k (by decide), f, hv⟩
+  refine ⟨h.step f ?_ k (by decide), f, k, hv⟩
   simp only [List.all_cons, List.all_nil, Rc.mut, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
   omega_arith
 

@@ -502,50 +502,20 @@ theorem divmod_ct {F : KIn → State → Prop} {iQ iR iD iT : Nat} (hQ : iQ < 16
         ⟨hm, by simp [e]⟩), k.2⟩
     exact ⟨h.step f (all_mut_arrs (js := [iQ, iR, iT]) (by simp [hQ, hR, hT])) k' (by decide), hF I s t h.hZ hf f k'⟩
 
-/-- `inverse`'s start, for `u`, `v`, `x₁`, `x₂` and the modulus `m`. -/
-abbrev InvS (iU iV iX₁ iX₂ iM : Nat) : KIn → State → Prop := fun I t =>
-  atop I t.mem iU = 0 ∧ av I t.mem iV = av I t.mem iM ∧ av I t.mem iX₁ = 1 ∧ av I t.mem iX₂ = 0
+theorem inverse_eq (iU iV iX₂ iM : Nat) : inverse iU iV iX₂ iM =
+    .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr))) (inverseN iU iV iX₂ iM) := rfl
 
-theorem inverse_eq (iU iV iX₁ iX₂ iM iT : Nat) : inverse iU iV iX₁ iX₂ iM iT =
-    .seq (.block (ws ++ (([.mov .r11 (.reg .r12)] : List Instr) ++
-      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr)))))
-      (.loop (VG.Impl.Rsa.X86_64.Keys.invStep iU iV iX₁ iX₂ iM iT) .ne) := by
-  simp only [inverse, invInit, List.append_assoc]
-
-theorem inverse_ct {F : KIn → State → Prop} {iU iV iX₁ iX₂ iM iT : Nat}
-    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
-    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
-    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
-    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT)
-    (hF : Stab F [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT, .hdr sMo] dvRegs)
+theorem inverse_ct {F : KIn → State → Prop} {iU iV iX₂ iM : Nat}
+    (hU : iU < 16) (hV : iV < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (dVX₂ : iV ≠ iX₂)
+    (hF : Stab F [.arr iV, .arr iX₂, .priv] allR)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (([.mov .r11 (.reg .r12)] : List Instr) ++
-      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr))))
-      (.loop (VG.Impl.Rsa.X86_64.Keys.invStep iU iV iX₁ iX₂ iM iT) .ne)) hc).isSome = true) :
-    RelCT isa (Two (KG fun I t => F I t ∧ InvS iU iV iX₁ iX₂ iM I t)) (inverse iU iV iX₁ iX₂ iM iT)
-      (Two (KG F)) := by
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r13 (.reg .r12)] : List Instr))
+      (inverseN iU iV iX₂ iM)) hc).isSome = true) :
+    RelCT isa (Two (KG F)) (inverse iU iV iX₂ iM) (Two (KG F)) := by
   rw [inverse_eq]
-  exact kg_ws ht fun I _ s h _ ⟨hf, hU0, hVM, hX1, hX2⟩ => by
+  exact kg_ws ht fun I _ s h _ hf => by
     rw [← inverse_eq]
-    refine WP.mono (inverse_ok h.ws.scr h.ws.rdi h.ws.hw h.ws.hS (by have := h.ws.w1; omega_arith) h.ws.w2 h.ws.hZ hU hV
-      hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M dX₂T dMT hU0 hVM hX1 hX2)
-      fun t ⟨hdi, hf', k, _⟩ => ?_
-    have f : KF I.B I.W [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT, .hdr sMo] s.mem t.mem :=
-      KF.of_frm hf' fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-        · exact ⟨.arr iU, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
-        · exact ⟨.arr iV, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
-        · exact ⟨.arr iX₁, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
-        · exact ⟨.arr iX₂, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
-        · exact ⟨.arr iT, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-        · exact ⟨.hdr sMo, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-    have k' : Keep dvRegs s t :=
-      ⟨fun r hr => if e : r = .rdi then by rw [e, hdi, h.ws.rdi] else k.1 r fun hm => hr (List.mem_filter.mpr
-        ⟨hm, by simp [e]⟩), k.2⟩
-    refine ⟨h.step f ?_ k' (by decide), hF I s t h.hZ hf f k'⟩
-    simp only [List.all_cons, List.all_nil, Rc.mut, sMo, sFn, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
-    omega_arith
+    exact WP.mono (inverse_k h hU hV hX₂ hM dVX₂) fun t ⟨ht, f, k, _⟩ => ⟨ht, hF I s t h.hZ hf f (k.mono (by decide))⟩
 
 end VG.Proof.RsaKeyGen.X86_64.Key
 

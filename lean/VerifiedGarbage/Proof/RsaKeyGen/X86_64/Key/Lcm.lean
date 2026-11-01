@@ -194,7 +194,7 @@ theorem gcdUV_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop
       f₅.av hokO (by decide) (by decide) hZ, m₄, f₃.av hokC (by decide) (by decide) hZ]
   have vM₈' : av I s₈.mem aM = M := by rw [vM₈, vV₇]
   refine WP.mono (inverse_k h₈ (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aM) (by decide) (by decide) (by decide)
-    (by decide) (by decide)) fun s₁₂ ⟨h₁₂, f₁₂, hinv⟩ => ?_
+    (by decide) (by decide)) fun s₁₂ ⟨h₁₂, f₁₂, _, hinv⟩ => ?_
   rw [vM₈', vU₈] at hinv
   have hg := (hinv hMo.1).1
   -- The result 1 for `v ≤ 1`.

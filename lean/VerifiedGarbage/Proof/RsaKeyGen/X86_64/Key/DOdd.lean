@@ -207,7 +207,7 @@ theorem dOdd_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} 
   refine wp_seqs_append (by simp) (by simp [lGe2]) ?_
   simp only [seqs]
   refine WP.mono (inverse_k h₆ (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aE) (by decide) (by decide) (by decide)
-    (by decide) (by decide)) fun s₈ ⟨h₈, f₈, hinv⟩ => ?_
+    (by decide) (by decide)) fun s₈ ⟨h₈, f₈, _, hinv⟩ => ?_
   rw [vE₆, vU₆] at hinv
   obtain ⟨hg₈, hdv₈, hx₈⟩ := hinv heo
   generalize hx : av I s₈.mem aX₂ = x at hdv₈ hx₈
