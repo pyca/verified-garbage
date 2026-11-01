@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Contract
 
 /-!
 # ChaCha20-Poly1305 with the data's first bytes from `src`, x86-64: `Verified`
@@ -49,8 +50,8 @@ theorem stackArgs_four (s : State) : List.map (stackArg s) (List.range 4) =
     [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3] := rfl
 
 theorem fpre_of_spec {s : State} (h : (sealSplitScratchContract X86_64.abi 212 64).pre s) : FPre s := by
-  sig_pre [sealSplitScratchContract, Sig.scratchContract, Sig.withScratch, Spec.ChaCha20Poly1305.sealSplitSig,
-    Spec.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs, stackArgs_four, List.append_eq] at h
+  sig_pre [sealSplitScratchContract, Sig.scratchContract, Sig.withScratch, Proof.ChaCha20Poly1305.sealSplitSig,
+    Proof.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs, stackArgs_four, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
     List.filterMap_map, List.map_cons, List.map_nil, List.filter_cons, List.filter_nil, Function.comp_def,
@@ -64,13 +65,13 @@ theorem fpre_of_spec {s : State} (h : (sealSplitScratchContract X86_64.abi 212 6
     bn, ba, bs, bd, bt, bw, ok, on, oa, os, od, ot, ow, w₁, w₂, hle⟩
 
 theorem post_of {s s' : State} (h : splitPost s s') : (sealSplitScratchContract X86_64.abi 212 64).post s s' := by
-  sig_post [sealSplitScratchContract, Sig.scratchContract, Sig.withScratch, Spec.ChaCha20Poly1305.sealSplitSig,
-    Spec.ChaCha20Poly1305.sealSplitPost, X86_64.abi, X86_64.argRegs, stackArgs_four, List.append_eq]
+  sig_post [sealSplitScratchContract, Sig.scratchContract, Sig.withScratch, Proof.ChaCha20Poly1305.sealSplitSig,
+    Proof.ChaCha20Poly1305.sealSplitPost, X86_64.abi, X86_64.argRegs, stackArgs_four, List.append_eq]
   exact fun _ => h
 
 theorem pub_of {s₁ s₂ : State} (hp : (sealSplitScratchContract X86_64.abi 212 64).pub s₁ s₂) : splitPub s₁ s₂ := by
-  sig_pub [sealSplitScratchContract, Sig.scratchContract, Sig.withScratch, Spec.ChaCha20Poly1305.sealSplitSig,
-    Spec.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs, stackArgs_four, List.append_eq] at hp
+  sig_pub [sealSplitScratchContract, Sig.scratchContract, Sig.withScratch, Proof.ChaCha20Poly1305.sealSplitSig,
+    Proof.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs, stackArgs_four, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero] at hp
   obtain ⟨qsp, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃⟩ := hp
   exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃⟩
@@ -92,7 +93,7 @@ def splitSat : State where
 theorem splitSat_pre : ∃ s, (sealSplitScratchContract X86_64.abi 212 64).pre s := by
   refine ⟨splitSat, ?_⟩
   sig_pre [sealSplitScratchContract, Sig.scratchContract, Sig.withScratch,
-    Spec.ChaCha20Poly1305.sealSplitSig, Spec.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs,
+    Proof.ChaCha20Poly1305.sealSplitSig, Proof.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs,
     stackArgs_four, List.append_eq]
   sig_and_intros
   all_goals first
@@ -153,10 +154,10 @@ def splitFrameSat : State :=
 theorem stackArgs_three (s : State) : List.map (stackArg s) (List.range 3) =
     [stackArg s 0, stackArg s 1, stackArg s 2] := rfl
 
-theorem splitFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pre s := by
+theorem splitFrameSat_pre : ∃ s, (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pre s := by
   refine ⟨splitFrameSat, ?_⟩
-  sig_pre [Spec.ChaCha20Poly1305.sealSplitContract, Spec.ChaCha20Poly1305.sealSplitSig,
-    Spec.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs, stackArgs_three, List.append_eq]
+  sig_pre [Proof.ChaCha20Poly1305.sealSplitContract, Proof.ChaCha20Poly1305.sealSplitSig,
+    Proof.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs, stackArgs_three, List.append_eq]
   sig_and_intros
   all_goals first
     | rfl
@@ -170,10 +171,10 @@ of its own. -/
 theorem sealSplit_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratchWipedX 1736 3 42 (sealSplitFor v.callee v.poly))
-      (Spec.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800) :=
-  X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.sealSplitSig) (nm := "work") (e := .u64)
-    (n := 212) (pre := Spec.ChaCha20Poly1305.sealSplitPre X86_64.abi.ptrBits)
-    (post := Spec.ChaCha20Poly1305.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 64)
+      (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800) :=
+  X86_64.Verified.stackArgScratchWipedX (sig := Proof.ChaCha20Poly1305.sealSplitSig) (nm := "work") (e := .u64)
+    (n := 212) (pre := Proof.ChaCha20Poly1305.sealSplitPre X86_64.abi.ptrBits)
+    (post := Proof.ChaCha20Poly1305.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 64)
     (bytes := 1736) (k := 42) (sealSplit_verified v) (by decide) (by decide) (by decide)
     (sealSplitFor_spSafe v) (sealSplitFor_xdepth v) (by decide) (sealSplitPre_local _) (sealSplitPost_local _)
     (sealSplitPost_out _) splitFrameSat_pre

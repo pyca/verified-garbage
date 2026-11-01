@@ -22,6 +22,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
@@ -31,7 +32,7 @@ Untrusted: everything here is checked by Lean. The calls of
 `vg_sm4_ctr32` and `vg_sm4_expand_key`, as registered: with their working
 space in frames of their own on the stack, below the `stkN` bytes under the
 stack pointer they use with their return address (`WP.callF`), from their
-shared contracts (`Spec.Sm4.ctr32Contract`, `Spec.Sm4.expandKeyContract`):
+shared contracts (`Proof.Sm4.ctr32Contract`, `Spec.Sm4.expandKeyContract`):
 what a call needs (`CtrCall`, `KeyCall`) and leaves (`CtrPost`, `KeyPost`),
 and that it is constant time (`ctr_rel`, `key_rel`).
 -/
@@ -52,7 +53,7 @@ abbrev stkN : Nat := 3224
 theorem stkN_eq : stkN = 3224 := rfl
 
 /-- `vg_sm4_ctr32`'s contract, for its frames and calls. -/
-abbrev ctrK : Contract isa := Spec.Sm4.ctr32Contract X86_64.abi 3216
+abbrev ctrK : Contract isa := Proof.Sm4.ctr32Contract X86_64.abi 3216
 
 /-- `vg_sm4_expand_key`'s contract, for its frame. -/
 abbrev keyK : Contract isa := Spec.Sm4.expandKeyContract X86_64.abi 3144
@@ -133,7 +134,7 @@ theorem CtrCall.pre {s : State} {K C D : Addr} {n : Nat} (h : CtrCall s K C D n)
     ctrK.pre (s.callEntry.withRegions [⟨K, 128⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩]) := by
   have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
   have ⟨rR, rS⟩ := reserved_stk (s.gpr .rsp) (d := 3216) (by decide)
-  sig_pre [ctrK, Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, X86_64.abi, X86_64.argRegs]
+  sig_pre [ctrK, Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, X86_64.abi, X86_64.argRegs]
   simp only [h.rdi, h.rsi, h.rdx, h.rcx, hn, Nat.mul_comm n 16]
   have hsp := h.sp
   have := stkN_eq
@@ -148,7 +149,7 @@ theorem ctr_call {s : State} {K C D : Addr} {n : Nat} (h : CtrCall s K C D n) :
     (Nat.lt_of_le_of_lt (Nat.add_le_add_right ctr_depth 16) (by decide))
     (rd := [⟨K, 128⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf ⟨s₂, hm₂, _, hpost⟩ _
-  sig_post [ctrK, Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, X86_64.abi, X86_64.argRegs] at hpost
+  sig_post [ctrK, Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, X86_64.abi, X86_64.argRegs] at hpost
   rw [h.rdi, h.rsi, h.rdx, h.rcx, hn, hm₂] at hpost
   obtain ⟨hdata, hctr⟩ := hpost
   have fE : Frame [below (s.gpr .rsp) 8] s.mem (s.mem.writeW (s.gpr .rsp - 8) (s.unknowns 0)) :=
@@ -178,7 +179,7 @@ theorem ctr_rel {P : State → State → Prop}
   refine RelCT.callEx Proof.Sm4.X86_64.ctr32_framed.1 Proof.Sm4.X86_64.ctr32_framed.2.1 fun s₁ s₂ hp => ?_
   obtain ⟨K, C, D, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
-  sig_pub [ctrK, Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, X86_64.abi, X86_64.argRegs]
+  sig_pub [ctrK, Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, X86_64.abi, X86_64.argRegs]
   simp only [h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial⟩
 

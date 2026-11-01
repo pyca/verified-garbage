@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Spec.ChaCha20.Contract
+public import VerifiedGarbage.Proof.ChaCha20.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -36,9 +37,9 @@ structure XorImpl where
     (Impl.ChaCha20Poly1305.AArch64.openMainCode callee stitched) h).isSome = true
 
 theorem XorImpl.verified (v : XorImpl) :
-    Verified AArch64.target v.callee.code (Spec.ChaCha20.xorContract AArch64.abi) :=
+    Verified AArch64.target v.callee.code (Proof.ChaCha20.xorContract AArch64.abi) :=
   Verified.of_correct v.ok v.ct
-    (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, AArch64.abi, AArch64.argRegs,
+    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, AArch64.abi, AArch64.argRegs,
       xorAArch64] [Xor.sat] using Xor.sat)
 
 end VG.Proof.ChaCha20.AArch64

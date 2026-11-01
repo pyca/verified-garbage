@@ -101,6 +101,6 @@ def adx : Field where
 def pow223AdxFn : Prog isa := pow223FnWith adx
 
 def x448Adx : Prog isa := x448Of adx (ladder adx)
-  (invertCallWith adx (Spec.X448.Field64.pow223Api.name ++ "_adx"))
+  (invertCallWith adx ("vg_gf448_r64_pow223" ++ "_adx"))
 
 end VG.Impl.X448.X86_64

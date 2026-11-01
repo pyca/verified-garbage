@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # ML-KEM: polynomials and bytes in memory, for every target
 
-How the stored representation of `Spec/MlKem/Poly.lean` (a polynomial as
+How the stored representation of `Proof/MlKem/PolyContract.lean` (a polynomial as
 `[u32; 256]`, `coeffAt`, `polyAt`, `Reduced`, `PolyIs`) and `bytesAt` change
 when a program writes a coefficient or a byte, and how to conclude `PolyIs` or
 `bytesAt … = L` from what each word or byte holds.

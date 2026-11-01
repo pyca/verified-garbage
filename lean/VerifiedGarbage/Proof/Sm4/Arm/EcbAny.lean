@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.Arm.Ecb
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
@@ -30,6 +31,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+public import VerifiedGarbage.Proof.Sm4.Contract
 
 /-!
 # SM4 ECB on ARMv7 in either direction: `vg_sm4_ecb`
@@ -174,24 +176,24 @@ def ecbAnySat : State where
   wr := [⟨0x3000, 16⟩, ⟨0, 1456⟩]
 
 theorem ecbAny_verified :
-    Verified Arm.target ecbAny (Sig.scratchContract Arm.abi Spec.Sm4.ecbDirSig "scratch" .u64 182
+    Verified Arm.target ecbAny (Sig.scratchContract Arm.abi Proof.Sm4.ecbDirSig "scratch" .u64 182
       (Proof.Sm4.ecbDirPre Arm.abi.ptrBits) (Proof.Sm4.ecbDirPost Arm.abi.ptrBits) true 0) :=
   Verified.of_correct ecbAny_correct ecbAny_ct
     { pre := by
-        sig_implies_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Sm4.ecbDirSig,
+        sig_implies_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Proof.Sm4.ecbDirSig,
           Spec.Sm4.ecbSig, Proof.Sm4.ecbDirPre, Proof.Sm4.ecbDirPost, ecbAnyArm, Arm.abi, Arm.argRegs,
           Arm.reduceClassify, Arm.Loc.val, State.addr]
       post := by
-        sig_implies_post [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Sm4.ecbDirSig,
+        sig_implies_post [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Proof.Sm4.ecbDirSig,
           Spec.Sm4.ecbSig, Proof.Sm4.ecbDirPre, Proof.Sm4.ecbDirPost, ecbAnyArm, dirOf_eq, Arm.abi, Arm.argRegs,
           Arm.reduceClassify, Arm.Loc.val, State.addr]
       pub := by
-        sig_implies_pub [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Sm4.ecbDirSig,
+        sig_implies_pub [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Proof.Sm4.ecbDirSig,
           Spec.Sm4.ecbSig, Proof.Sm4.ecbDirPre, Proof.Sm4.ecbDirPost, ecbAnyArm, Arm.abi, Arm.argRegs,
           Arm.reduceClassify, Arm.Loc.val, State.addr]
       sat := by
         refine ⟨ecbAnySat, ?_⟩
-        sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Sm4.ecbDirSig,
+        sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Proof.Sm4.ecbDirSig,
           Spec.Sm4.ecbSig, Proof.Sm4.ecbDirPre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           State.addr]
         have hst : stackArg ecbAnySat 0 = 0 := by
@@ -215,9 +217,9 @@ def ecbDirFrameSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x3000, 16⟩]
 
-theorem ecbDirFrameSat_pre : ∃ s, (Spec.Sm4.ecbDirContract Arm.abi 1472).pre s := by
+theorem ecbDirFrameSat_pre : ∃ s, (Proof.Sm4.ecbDirContract Arm.abi 1472).pre s := by
   refine ⟨ecbDirFrameSat, ?_⟩
-  sig_pre [Spec.Sm4.ecbDirContract, Spec.Sm4.ecbDirSig, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs,
+  sig_pre [Proof.Sm4.ecbDirContract, Proof.Sm4.ecbDirSig, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, State.addr]
   sig_and_intros
   all_goals first | rfl | decide | (refine Region.disjoint_of_sep ?_; decide)
@@ -226,8 +228,8 @@ theorem ecbDirFrameSat_pre : ∃ s, (Spec.Sm4.ecbDirContract Arm.abi 1472).pre s
 space on the stack. -/
 theorem ecbAny_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 1472 0 364 ecbAny)
-      (Spec.Sm4.ecbDirContract Arm.abi 1472) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Sm4.ecbDirSig) (nm := "scratch") (e := .u64) (n := 182)
+      (Proof.Sm4.ecbDirContract Arm.abi 1472) :=
+  Arm.Verified.stackScratchWiped (sig := Proof.Sm4.ecbDirSig) (nm := "scratch") (e := .u64) (n := 182)
     (pre := Proof.Sm4.ecbDirPre Arm.abi.ptrBits) (post := Proof.Sm4.ecbDirPost Arm.abi.ptrBits) (wa := true)
     (stack := 0) (m := 0) (bytes := 1472) ecbAny_verified (by decide) (by decide) (by decide) (by decide)
     (by decide) (Proof.Sm4.ecbDirPre_local _) (Proof.Sm4.ecbDirPost_local _) (Proof.Sm4.ecbDirPostOut_local _)

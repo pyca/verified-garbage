@@ -26,7 +26,7 @@ structure Batch (σ : State) (n off count K : Nat) (s : State) : Prop where
   sq : SqT σ 3 n s
   j : ∀ k < 4, s.mem.readW (at' σ (oJ + 8 * k)) 64 =
     BitVec.ofNat 64 (Lt σ k (if k < K then 168 + off + count else 168 + off)).length
-  st : ∀ k < 4, Stored s.mem (Spec.MlKem.poly4 (aP σ) k)
+  st : ∀ k < 4, Stored s.mem (Proof.MlKem.poly4 (aP σ) k)
     (Lt σ k (if k < K then 168 + off + count else 168 + off))
 
 section

@@ -66,12 +66,12 @@ theorem crypt_noFrames {b : Impl.Aes.AArch64.Blocks} (h : b.code.noFrames = true
 /-- The functions calling the block functions of `v`, `vg_aes_xts_encrypt`
 and `vg_aes_xts_decrypt` with `v`'s suffix. -/
 def blocks (v : BlocksImpl) : XtsImpl where
-  enc := ⟨Spec.Xts.aesEncryptApi.name ++ v.suffix, Impl.AesXts.AArch64.encrypt v.enc⟩
+  enc := ⟨"vg_aes_xts_encrypt" ++ v.suffix, Impl.AesXts.AArch64.encrypt v.enc⟩
   encNoFrames := crypt_noFrames v.encNoFrames
   encOk := encrypt_correct v
   encCt := crypt_ct true v.encOk v.encCt v.encNoFrames fun R w m p => (aesWith_state R w m p).symm
   encKeepsV := encrypt_keepsV v
-  dec := ⟨Spec.Xts.aesDecryptApi.name ++ v.suffix, Impl.AesXts.AArch64.decrypt v.dec⟩
+  dec := ⟨"vg_aes_xts_decrypt" ++ v.suffix, Impl.AesXts.AArch64.decrypt v.dec⟩
   decNoFrames := crypt_noFrames v.decNoFrames
   decOk := decrypt_correct v
   decCt := crypt_ct false v.decOk v.decCt v.decNoFrames fun R w m p => (aesInvWith_state R w m p).symm
@@ -82,12 +82,12 @@ def blocks (v : BlocksImpl) : XtsImpl where
 /-- The one-pass functions with the AES instructions,
 `vg_aes_xts_encrypt_aes` and `vg_aes_xts_decrypt_aes`. -/
 def aes : XtsImpl where
-  enc := ⟨Spec.Xts.aesEncryptApi.name ++ "_aes", Impl.AesXts.AArch64Aes.encrypt⟩
+  enc := ⟨"vg_aes_xts_encrypt" ++ "_aes", Impl.AesXts.AArch64Aes.encrypt⟩
   encNoFrames := Aes.encrypt_noFrames
   encOk := Aes.encrypt_correct
   encCt := Aes.encrypt_ct true
   encKeepsV := Aes.encrypt_keepsV
-  dec := ⟨Spec.Xts.aesDecryptApi.name ++ "_aes", Impl.AesXts.AArch64Aes.decrypt⟩
+  dec := ⟨"vg_aes_xts_decrypt" ++ "_aes", Impl.AesXts.AArch64Aes.decrypt⟩
   decNoFrames := Aes.decrypt_noFrames
   decOk := Aes.decrypt_correct
   decCt := Aes.decrypt_ct false

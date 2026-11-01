@@ -2,11 +2,11 @@ module
 
 import Lean.Elab.Command
 meta import Lean.Elab.Command
-import VerifiedGarbage.Spec.Ed25519.Point64
-meta import VerifiedGarbage.Spec.Ed25519.Point64
+import VerifiedGarbage.Proof.Ed25519.Point64Contract
+meta import VerifiedGarbage.Proof.Ed25519.Point64Contract
 
 /-!
-# RFC 8032's doubling formula (`Spec/Ed25519/Point64.lean`)
+# RFC 8032's doubling formula (`Proof/Ed25519/Point64Contract.lean`)
 
 `pointDouble`, the doubling formula of RFC 8032 §5.1.4, gives the same point
 as the complete addition formula `pointAdd p p`: their projective
@@ -17,7 +17,7 @@ point, each also with its coordinates scaled by a factor, so that `Z ≠ 1`.
 
 namespace VG.Test.Ed25519Point64
 
-open Lean Elab Command Spec.Ed25519 Spec.Ed25519.Point64
+open Lean Elab Command Spec.Ed25519 Proof.Ed25519.Point64
 
 /-- The point with its coordinates multiplied by `k`. -/
 def scale (k : Spec.X25519.Fe) (p : Point) : Point := ⟨k * p.X, k * p.Y, k * p.Z, k * p.T⟩

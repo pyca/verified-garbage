@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Word
-public import VerifiedGarbage.Spec.X25519.Field16
+public import VerifiedGarbage.Spec.X25519
 
 /-!
 # `vg_gf25519_r16_mul` on ARMv7
 
-`vg_gf25519_r16_mul(ws, o, a, b)` (`Spec/X25519/Field16.lean`; AAPCS: `ws`
+`vg_gf25519_r16_mul(ws, o, a, b)` (`Proof/X25519/Field16Contract.lean`; AAPCS: `ws`
 in `r0`, the offsets in `r1`–`r3`) runs the product of the inlined code
 (`mul`, from X25519's ARMv7 product: row by row, with only the low 32-bit
 `mul`, then `lo + 38 hi` and the carry folded in twice), but with its
@@ -74,6 +74,6 @@ def mulFn : Prog isa :=
 /-- A call of `vg_gf25519_r16_mul`: `[o] = [a] · [b]`. -/
 def mulCall (o a b : Nat) : Prog isa :=
   .seq (.block [.movw .r1 (BitVec.ofNat 16 o), .movw .r2 (BitVec.ofNat 16 a),
-    .movw .r3 (BitVec.ofNat 16 b)]) (.call Spec.X25519.Field16.mulApi.name mulFn)
+    .movw .r3 (BitVec.ofNat 16 b)]) (.call "vg_gf25519_r16_mul" mulFn)
 
 end VG.Impl.Ed25519.Arm

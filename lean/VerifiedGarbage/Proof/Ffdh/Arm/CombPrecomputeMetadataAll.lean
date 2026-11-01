@@ -8,8 +8,13 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Ffdh.Arm.Locals
+public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
+public import VerifiedGarbage.Proof.Ffdh.Arm.Locals
 public import VerifiedGarbage.Proof.Ffdh.ScalarWidth
+public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
+public import VerifiedGarbage.Proof.Ffdh.Arm.Locals
 public import VerifiedGarbage.Spec.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Ffdh.ScalarWidth
 

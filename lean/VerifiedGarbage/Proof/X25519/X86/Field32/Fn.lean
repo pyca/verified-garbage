@@ -42,7 +42,7 @@ structure Saved (x : BitVec 32) (g : Reg → BitVec 32) (m : Mem) : Prop where
   ebp : wd m x (SAVE + 12) = g .ebp
 
 theorem below_AC : Below AC := by decide
-theorem below_aAt : Below Spec.X25519.Field32.aAt := by decide
+theorem below_aAt : Below Impl.X25519.X86.Field32.aAt := by decide
 
 theorem save_ok {s : State} {x : BitVec 32} (h : Entry s x) :
     WP isa (.block [.mov .eax (.mem (at_ .esp 4)), .store (at_ .eax SAVE) .ebx,
@@ -95,7 +95,7 @@ theorem entry_ok {s : State} {x : BitVec 32} (h : Entry s x) :
     WP isa (.block entry) s fun t =>
       Ctx 4096 x t ∧ t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       Frame [sub x SAVE 16, sub x AC 32] s.mem t.mem ∧ Saved x s.gpr t.mem ∧
-      F t.mem x AC = F s.mem x Spec.X25519.Field32.aAt := by
+      F t.mem x AC = F s.mem x Impl.X25519.X86.Field32.aAt := by
   have hfit := h.fit
   rw [entry, WP.block_append_iff]
   refine WP.mono (save_ok h) fun t ⟨hc, esp, rd, wr, hf, hsv⟩ => ?_
@@ -142,8 +142,8 @@ abbrev powW (x : BitVec 32) : List Region := [sub x 512 512]
 theorem pow250Fn_ok {s : State} {x : BitVec 32} (h : Entry s x) :
     WP isa pow250Fn s fun t => (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       Frame (powW x) s.mem t.mem ∧
-      F t.mem x E1 = pw (F s.mem x Spec.X25519.Field32.aAt) (2 ^ 250 - 1) ∧
-      F t.mem x E0 = pw (F s.mem x Spec.X25519.Field32.aAt) 11 := by
+      F t.mem x E1 = pw (F s.mem x Impl.X25519.X86.Field32.aAt) (2 ^ 250 - 1) ∧
+      F t.mem x E0 = pw (F s.mem x Impl.X25519.X86.Field32.aAt) 11 := by
   have hfit := h.fit
   refine WP.seq (WP.mono (entry_ok h) fun t ⟨hc, esp, rd, wr, hf, hsv, ha⟩ => ?_)
   refine WP.seq (WP.mono (chain_spec x t hc) fun u ⟨ku, eu⟩ => ?_)
@@ -156,7 +156,7 @@ theorem pow250Fn_ok {s : State} {x : BitVec 32} (h : Entry s x) :
   obtain ⟨v1, v0⟩ := chainEnv_eval (cenv t.mem x)
   have e1 := congrFun eu 1
   have e0 := congrFun eu 0
-  have hz : cenv t.mem x 4 = F s.mem x Spec.X25519.Field32.aAt := ha
+  have hz : cenv t.mem x 4 = F s.mem x Impl.X25519.X86.Field32.aAt := ha
   refine ⟨fun r hr => ?_, by rw [rr, ku.rd, rd], by rw [rw', ku.wr, wr], ?_, ?_, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl

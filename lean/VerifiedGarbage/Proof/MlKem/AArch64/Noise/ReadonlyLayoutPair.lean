@@ -24,7 +24,7 @@ section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon
-open VG.Spec.MlKem (PolyIsW)
+open VG.Proof.MlKem (PolyIsW)
 open VG.Proof.MlKem (cw)
 
 theorem readonly_noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p a f g w : Addr}
@@ -78,7 +78,7 @@ end
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
-open VG.Spec.MlKem (PolyIsW)
+open VG.Proof.MlKem (PolyIsW)
 open VG.Proof.MlKem (cw)
 open VG.Proof.Sha3.AArch64.Neon
 

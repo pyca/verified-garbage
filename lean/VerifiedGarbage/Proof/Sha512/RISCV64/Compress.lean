@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 meta import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RISCV64.Words64
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.Framework.Contract
 public meta import VerifiedGarbage.Proof.Framework.Contract

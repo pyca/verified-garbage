@@ -218,14 +218,14 @@ theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.addContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.addContract, Spec.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of {s : State} (h : (Proof.MlKem.addContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.addContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
-theorem pre_of_sub {s : State} (h : (Spec.MlKem.subContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.subContract, Spec.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of_sub {s : State} (h : (Proof.MlKem.subContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.subContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
@@ -269,21 +269,21 @@ theorem ctRegs {k : Contract isa} (rs : List Reg)
   VG.Taint.constantTime (A := VG.Arm.taint) (Taint.ofRegs rs)
     (fun s₁ s₂ _ _ hp => Taint.agree_ofRegs (hpub s₁ s₂ hp)) h
 
-theorem add_verified : Verified Arm.target Impl.MlKem.Arm.add (Spec.MlKem.addContract Arm.abi) := by
+theorem add_verified : Verified Arm.target Impl.MlKem.Arm.add (Proof.MlKem.addContract Arm.abi) := by
   refine ⟨fun s hs => ?_, ct (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (add_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp⟩, ?_⟩
-    sig_post [Spec.MlKem.addContract, Spec.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlKem.addContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Spec.MlKem.addContract, Spec.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlKem.addContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     exact ⟨h.2.1, h.2.2⟩
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.addContract, Spec.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlKem.addContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first
@@ -291,21 +291,21 @@ theorem add_verified : Verified Arm.target Impl.MlKem.Arm.add (Spec.MlKem.addCon
         | exact reduced_zero _
         | decide +kernel
 
-theorem sub_verified : Verified Arm.target Impl.MlKem.Arm.sub (Spec.MlKem.subContract Arm.abi) := by
+theorem sub_verified : Verified Arm.target Impl.MlKem.Arm.sub (Proof.MlKem.subContract Arm.abi) := by
   refine ⟨fun s hs => ?_, ct (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of_sub hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (sub_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp⟩, ?_⟩
-    sig_post [Spec.MlKem.subContract, Spec.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlKem.subContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Spec.MlKem.subContract, Spec.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlKem.subContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     exact ⟨h.2.1, h.2.2⟩
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.subContract, Spec.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlKem.subContract, Proof.MlKem.accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first

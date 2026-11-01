@@ -3,6 +3,8 @@ module
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Aes.AArch64.Group
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.Contract
+meta import VerifiedGarbage.Proof.Gcm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -624,9 +626,9 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AA
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32_verified :
-    Verified AArch64.target Impl.Aes.AArch64.ctr32 (Spec.Gcm.ctr32Contract AArch64.abi) :=
+    Verified AArch64.target Impl.Aes.AArch64.ctr32 (Proof.Gcm.ctr32Contract AArch64.abi) :=
   Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Spec.Gcm.ctr32Contract, Spec.Gcm.ctr32Sig, Proof.Aes.ctr32AArch64, AArch64.abi,
+    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.ctr32AArch64, AArch64.abi,
       AArch64.argRegs] [Proof.Aes.AArch64.satState] using Proof.Aes.AArch64.satState)
 
 end VG.Proof.Aes.AArch64

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecodeDecompress
 public import VerifiedGarbage.Impl.MlKem1024.PPC64LE.Poly
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.MlKem1024.Contract
 import VerifiedGarbage.Proof.MlKem.Encode1024
 import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
@@ -20,6 +21,7 @@ import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.DecodeDecompress
 meta import VerifiedGarbage.Impl.MlKem1024.PPC64LE.Poly
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Proof.MlKem1024.Contract
 meta import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
@@ -39,7 +41,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.MlKem
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
@@ -62,6 +64,7 @@ namespace VG.Proof.MlKem1024.PPC64LE.Decompress
 
 open VG VG.PPC64LE VG.Impl.MlKem.PPC64LE VG.Impl.MlKem1024.PPC64LE
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem VG.Proof.MlKem.PPC64LE
 open VG.Proof.MlKem.PPC64LE.DecodeDecompress (dec Keep byte64 ext_toNat toNat_add_shl)
@@ -172,7 +175,7 @@ end
 
 /-! ## The values -/
 
-theorem dec_val4 {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) {Y : BitVec 64} {y : Nat}
+theorem dec_val4 {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {Y : BitVec 64} {y : Nat}
     (hY : Y.toNat = y) (hy : y < 2 ^ d) :
     (dec d Y).setWidth 32 = BitVec.ofNat 32 (decompress d y).val := by
   obtain ⟨e, lt⟩ := decompress1024_val hd hy
@@ -273,7 +276,7 @@ structure Pre (s₀ : State) : Prop where
   disj : (inR s₀).Disjoint (polyRegion (F s₀))
   fitB : (B s₀).toNat + L s₀ ≤ 2 ^ 64
   fitF : (F s₀).toNat + 1024 ≤ 2 ^ 64
-  dw : dN s₀ ∈ Spec.MlKem1024.compressWidths
+  dw : dN s₀ ∈ Proof.MlKem1024.compressWidths
   len : L s₀ = 32 * dN s₀
 
 /-- After `i` iterations of the loop that reads `inS` bytes and writes 8
@@ -545,9 +548,9 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa decodeDecompress1024 s�
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem1024.decodeDecompressContract PPC64LE.abi).pre s) :
+theorem pre_of {s : State} (h : (Proof.MlKem1024.decodeDecompressContract PPC64LE.abi).pre s) :
     Pre s := by
-  sig_pre [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
+  sig_pre [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
     PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
@@ -563,11 +566,11 @@ def satState : State where
   wr := [⟨0x2000, 1024⟩]
 
 theorem verified : Verified PPC64LE.target decodeDecompress1024
-    (Spec.MlKem1024.decodeDecompressContract PPC64LE.abi) := by
+    (Proof.MlKem1024.decodeDecompressContract PPC64LE.abi) := by
   refine ⟨fun s hs => ?_, RelCT.constantTime (Q := fun _ _ => True) ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hlr, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp, hlr⟩, ?_⟩
-    sig_post [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
+    sig_post [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
       PPC64LE.abi, PPC64LE.argRegs]
     exact polyIs_of_coeffAt (p := F s) fun j hj => by
       rw [h j (by rw [n_eq] at hj; exact hj)]; rfl
@@ -575,7 +578,7 @@ theorem verified : Verified PPC64LE.target decodeDecompress1024
       (fun s₁ s₂ ⟨_, _, hp⟩ => ?_) fun _ _ h => h)
       (RelCT.taint (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
         (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (Taint.mem_ofRegs.mp h)⟩) (by taint_decide))
-    sig_pub [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
+    sig_pub [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
       PPC64LE.abi, PPC64LE.argRegs] at hp
     obtain ⟨hsp, h3, h4, h5, h6⟩ := hp
     refine ⟨hsp, fun r hr => ?_, h5⟩
@@ -587,7 +590,7 @@ theorem verified : Verified PPC64LE.target decodeDecompress1024
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
+    · sig_reduce [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
         PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first

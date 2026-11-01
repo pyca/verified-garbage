@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
@@ -294,7 +295,7 @@ theorem scalarMulAddWide_pre (s : State) (h : scalarMulAddWide.pre s) :
   exact ⟨True.intro, True.intro, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h20,
     by rw [be]; exact ks, by rw [be]; exact kr, by rw [be]; exact kk, by rw [be]; exact ka⟩
 
-theorem scalarMulAddWide_implies : scalarMulAddWide.Implies (Spec.Ed25519.scalarMulAddContract X86.abi 8) := by
+theorem scalarMulAddWide_implies : scalarMulAddWide.Implies (Proof.Ed25519.scalarMulAddContract X86.abi 8) := by
     have a0 : arg mulAddSatState 0 = 0x1000 := by decide
     have a1 : arg mulAddSatState 1 = 0x2000 := by decide
     have a2 : arg mulAddSatState 2 = 0x3000 := by decide
@@ -302,11 +303,11 @@ theorem scalarMulAddWide_implies : scalarMulAddWide.Implies (Spec.Ed25519.scalar
     have a4 : arg mulAddSatState 4 = 0x4000 := by decide
     have e : argAddr mulAddSatState 0 = 0x8004 := by decide
     have esp : mulAddSatState.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Ed25519.scalarMulAddContract, Spec.Ed25519.scalarMulAddSig,
+    sig_implies [Proof.Ed25519.scalarMulAddContract, Proof.Ed25519.scalarMulAddSig,
       Spec.Ed25519.scratchWords, scalarMulAddWide, scalarMulAddLocal, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
       stackBelow] [a0, a1, a2, a3, a4, e, esp] using mulAddSatState
 
-theorem scalarMulAdd_verified : Verified X86.target scalarMulAdd (Spec.Ed25519.scalarMulAddContract X86.abi 8) := by
+theorem scalarMulAdd_verified : Verified X86.target scalarMulAdd (Proof.Ed25519.scalarMulAddContract X86.abi 8) := by
   have hsat := scalarMulAddWide_implies.sat_left
   have satLocal : ∃ s, scalarMulAddLocal.pre s := hsat.elim fun s h => ⟨_, scalarMulAddWide_pre s h⟩
   have verifiedLocal : Verified X86.target scalarMulAdd scalarMulAddLocal :=

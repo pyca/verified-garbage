@@ -529,8 +529,8 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #3792
 bx lr",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -1098,8 +1098,8 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #3792
 bx lr",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }

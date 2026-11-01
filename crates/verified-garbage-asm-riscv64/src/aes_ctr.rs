@@ -188,6 +188,6 @@ j 21f
 .insn 4, 0x0402bb03
 .insn 2, 0x8082
 .option pop",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }

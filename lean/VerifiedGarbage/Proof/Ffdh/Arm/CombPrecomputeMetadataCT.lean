@@ -23,6 +23,7 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMetadata
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeRows
 meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeRows
 import VerifiedGarbage.Proof.Ffdh.ScalarWidth
+meta import VerifiedGarbage.Proof.Ffdh.ScalarWidth
 
 /-! Metadata loops branch only on the public scalar width and mask. -/
 @[expose] public section

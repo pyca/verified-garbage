@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecode
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyScalar
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyFinish
@@ -581,8 +582,8 @@ theorem verify_spec_pre {s : State} (lo : 8 ≤ (s.gpr .esp).toNat) (sp : (s.gpr
     (ka : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 8#64, 8⟩ ⟨argAddr s 0, 16⟩)
     (f0 : (arg s 0).toNat + 32 ≤ 2 ^ 32) (f1 : (arg s 1).toNat + 64 ≤ 2 ^ 32)
     (f2 : (arg s 2).toNat + 64 ≤ 2 ^ 32) (f3 : (arg s 3).toNat + 8192 ≤ 2 ^ 32) :
-    (Spec.Ed25519.verifyEquationContract (X86.abi.withConsts bConsts) 8).pre s := by
-  sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    (Proof.Ed25519.verifyEquationContract (X86.abi.withConsts bConsts) 8).pre s := by
+  sig_pre [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
     Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, bConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld]
   simp only [bWords_length, Nat.reduceMul]
@@ -593,7 +594,7 @@ theorem verify_spec_pre {s : State} (lo : 8 ≤ (s.gpr .esp).toNat) (sp : (s.gpr
   rcases hr with rfl | rfl
   exacts [ts, ta]
 
-theorem verify_sat : (Spec.Ed25519.verifyEquationContract (X86.abi.withConsts bConsts) 8).pre verifySatState := by
+theorem verify_sat : (Proof.Ed25519.verifyEquationContract (X86.abi.withConsts bConsts) 8).pre verifySatState := by
   have a0 : arg verifySatState 0 = 0x1000 := by decide
   have a1 : arg verifySatState 1 = 0x2000 := by decide
   have a2 : arg verifySatState 2 = 0x3000 := by decide
@@ -607,9 +608,9 @@ theorem verify_sat : (Spec.Ed25519.verifyEquationContract (X86.abi.withConsts bC
     first | rfl | decide | exact Region.disjoint_of_sep (by decide)
 
 theorem verifyWide_implies :
-    verifyWide.Implies (Spec.Ed25519.verifyEquationContract (X86.abi.withConsts bConsts) 8) where
+    verifyWide.Implies (Proof.Ed25519.verifyEquationContract (X86.abi.withConsts bConsts) 8) where
   pre s h := by
-    sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    sig_pre [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, bConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld] at h
     obtain ⟨lo, sp, hd, held, fit, dw, -, dstk, -, ht, hw, d0s, -, d1s, -, d2s, -, dsa, -, -, -, r3, -,
@@ -625,7 +626,7 @@ theorem verifyWide_implies :
       · exact dw _ (by rw [hw]; simp)
       · exact dstk
   post s t _ h := by
-    sig_post [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    sig_post [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, bConsts_eq, Abi.withConsts]
     change t.gpr .eax = signWord _ at h
     rw [h, BitVec.setWidth_append_eq_right]
@@ -634,7 +635,7 @@ theorem verifyWide_implies :
       (Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 64) = b
     cases b <;> rfl
   pub s t _ _ h := by
-    sig_pub [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    sig_pub [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, bConsts_eq,
       Abi.withConsts] at h
     obtain ⟨sp, hsy, bytes, pk, sig, challenge, base⟩ := h
@@ -687,7 +688,7 @@ open VG VG.X86 VG.Impl.Ed25519.X86
 theorem verify_verified_of_correct
     (correct : ∀ s, verifyLocal.pre s → WP isa verifyEquation s fun t => abiPreserved s t ∧ verifyLocal.post s t)
     (ct : ConstantTime isa verifyLocal.pre verifyLocal.pub verifyEquation) :
-    Verified X86.target verifyEquation (Spec.Ed25519.verifyEquationContract (X86.abi.withConsts bConsts) 8) := by
+    Verified X86.target verifyEquation (Proof.Ed25519.verifyEquationContract (X86.abi.withConsts bConsts) 8) := by
   have hsat := verifyWide_implies.sat_left
   have satLocal : ∃ s, verifyLocal.pre s := hsat.elim fun s h => ⟨_, verifyWide_pre s h⟩
   have verifiedLocal : Verified X86.target verifyEquation verifyLocal :=
@@ -701,7 +702,7 @@ theorem verify_verified_of_correct
       State.withRegions_syms] using h
 
 theorem verify_verified : Verified X86.target verifyEquation
-    (Spec.Ed25519.verifyEquationContract (X86.abi.withConsts bConsts) 8) :=
+    (Proof.Ed25519.verifyEquationContract (X86.abi.withConsts bConsts) 8) :=
   verify_verified_of_correct (fun _ h => verify_correct h) verify_ct
 
 end VG.Proof.Ed25519.X86

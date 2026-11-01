@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
@@ -272,9 +273,9 @@ theorem scalarMulAdd_ct : ConstantTime isa scalarMulAddLocal.pre scalarMulAddLoc
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
 
 theorem scalarMulAdd_verified : Verified AArch64.target scalarMulAdd
-    (Spec.Ed25519.scalarMulAddContract AArch64.abi) :=
+    (Proof.Ed25519.scalarMulAddContract AArch64.abi) :=
   Verified.of_correct scalarMulAdd_ok scalarMulAdd_ct (by
-    sig_implies [Spec.Ed25519.scalarMulAddContract, Spec.Ed25519.scalarMulAddSig,
+    sig_implies [Proof.Ed25519.scalarMulAddContract, Proof.Ed25519.scalarMulAddSig,
       Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, scalarMulAddLocal]
       [mulAddSatState] using mulAddSatState)
 

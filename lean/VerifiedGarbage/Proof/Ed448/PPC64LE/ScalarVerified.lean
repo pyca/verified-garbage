@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.Scalar
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Ed448.PPC64LE.ScalarReduce
 
@@ -59,11 +60,11 @@ def reduceSat : State where
   wr := [⟨0x1000, 57⟩, ⟨0x4000, 8192⟩]
 
 theorem scalarReduce_verified :
-    Verified PPC64LE.target Impl.Ed448.PPC64LE.scalarReduce (Spec.Ed448.scalarReduceContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Ed448.PPC64LE.scalarReduce (Proof.Ed448.scalarReduceContract PPC64LE.abi) :=
   Verified.of_correct reduce_ok' (scalarReduce_ct fun _ _ _ _ ⟨h3, h4, h5, hsp⟩ => ⟨hsp, fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Spec.Ed448.scalarReduceContract, Spec.Ed448.scalarReduceSig, reducePPC,
+    contract_implies [Proof.Ed448.scalarReduceContract, Proof.Ed448.scalarReduceSig, reducePPC,
       Spec.Ed448.scratchWords,
       PPC64LE.abi, PPC64LE.argRegs] [reduceSat] using reduceSat)
 
@@ -100,11 +101,11 @@ def mulAddSat : State where
   wr := [⟨0x1000, 57⟩, ⟨0x4000, 8192⟩]
 
 theorem scalarMulAdd_verified :
-    Verified PPC64LE.target Impl.Ed448.PPC64LE.scalarMulAdd (Spec.Ed448.scalarMulAddContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Ed448.PPC64LE.scalarMulAdd (Proof.Ed448.scalarMulAddContract PPC64LE.abi) :=
   Verified.of_correct mulAdd_ok' (scalarMulAdd_ct fun _ _ _ _ ⟨h3, h4, h5, h6, h7, hsp⟩ => ⟨hsp, fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Spec.Ed448.scalarMulAddContract, Spec.Ed448.scalarMulAddSig, mulAddPPC,
+    contract_implies [Proof.Ed448.scalarMulAddContract, Proof.Ed448.scalarMulAddSig, mulAddPPC,
       Spec.Ed448.scratchWords, PPC64LE.abi, PPC64LE.argRegs] [mulAddSat] using mulAddSat)
 
 end VG.Proof.Ed448.PPC64LE

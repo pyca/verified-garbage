@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgRow
-public import VerifiedGarbage.Spec.MlKem.KpkeKgRows
+public import VerifiedGarbage.Proof.MlKem.KpkeKgRowsContract
 import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KgRow
-meta import VerifiedGarbage.Spec.MlKem.KpkeKgRows
+meta import VerifiedGarbage.Proof.MlKem.KpkeKgRowsContract
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKgV
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 
 The proof of `KgRow.lean` with AVX2, its constant time (every address is
 the entry's pointers plus constants), and its contract implying the shared
-one of `Spec/MlKem/KpkeKgRows.lean`.
+one of `Proof/MlKem/KpkeKgRowsContract.lean`.
 -/
 
 @[expose] public section
@@ -61,7 +61,7 @@ def kgRowSat (k : Nat) : State where
   wr := [⟨0x1000, 384⟩, ⟨0x8000, 1024⟩, ⟨0x10000, 4096⟩]
 
 theorem kgRow768_verified :
-    Verified X86_64.target (KpkeKgRows.kgRow kem768 .avx2) (Spec.MlKem.kpkeKeyGenRowContract 3 X86_64.abi) :=
+    Verified X86_64.target (KpkeKgRows.kgRow kem768 .avx2) (Proof.MlKem.kpkeKeyGenRowContract 3 X86_64.abi) :=
   Verified.of_correct kgRow768_correct kgRow768_ct
     { pre := by sig_implies_pre [kpkeKeyGenRowContract, kpkeKeyGenRowSig, kgRowK, X86_64.abi,
         X86_64.argRegs, retR]

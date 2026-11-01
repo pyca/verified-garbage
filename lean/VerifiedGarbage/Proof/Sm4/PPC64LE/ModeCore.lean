@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Sm4.PPC64LE.Modes
 public import VerifiedGarbage.Spec.Sm4.Cbc
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Ecb
 import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedVerified
-import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedBody
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Core
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 import VerifiedGarbage.Proof.Sm4.CtrCipher
@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-!
 # SM4's core for the modes on PPC64LE
@@ -25,7 +27,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 (`Proof.Modes.PPC64LE.CoreSpec`), with the key a schedule, its cipher
 `Spec.Sm4.cipher` for encryption and `Spec.Sm4.invCipher` for decryption,
 and the key ready when the working space's table encodes the round keys in
-`d`'s order (`Spec.Sm4.Prepared.Holds`).
+`d`'s order (`Proof.Sm4.Prepared.Holds`).
 
 `prepare` and `crypt` call `vg_sm4_prepare_keys` and
 `vg_sm4_crypt_prepared` (`WP.call`, with their contracts on PPC64LE,
@@ -78,9 +80,9 @@ theorem table_off {r : Nat × Nat} (hr : r ∈ layout.table) {i : Nat} (hi : i <
 
 /-- The table survives what a mode writes: outside the core's slots or within its buffer. -/
 theorem holds_frame {d : Dir} {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {sd : Spec.Sm4.Direction}
-    {rs : List Region} (h : Spec.Sm4.Prepared.Holds layout m B k sd) (hf : Frame rs m m')
+    {rs : List Region} (h : Proof.Sm4.Prepared.Holds layout m B k sd) (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (blkRegion (dirCore d) B)) :
-    Spec.Sm4.Prepared.Holds layout m' B k sd := fun r hr i hi => by
+    Proof.Sm4.Prepared.Holds layout m' B k sd := fun r hr i hi => by
   obtain ⟨h1, h2⟩ := table_off hr hi
   rw [byte_frame hf fun q hq => ?_]
   · exact h r hr i hi
@@ -93,9 +95,9 @@ theorem holds_frame {d : Dir} {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {s
 
 /-- The table survives what a batch keeps. -/
 theorem holds_of_keeps {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {sd : Spec.Sm4.Direction}
-    (h : Spec.Sm4.Prepared.Holds layout m B k sd)
-    (hk : Spec.Sm4.Prepared.Keeps B slots layout.cryptScratch m m') :
-    Spec.Sm4.Prepared.Holds layout m' B k sd := fun r hr i hi => by
+    (h : Proof.Sm4.Prepared.Holds layout m B k sd)
+    (hk : Proof.Sm4.Prepared.Keeps B slots layout.cryptScratch m m') :
+    Proof.Sm4.Prepared.Holds layout m' B k sd := fun r hr i hi => by
   have hr' := hr
   rw [layout_table] at hr'
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -149,7 +151,7 @@ theorem slots_lt : slots < 2 ^ 15 := by rw [slots_eq]; decide
 
 theorem toNat_slots : (BitVec.ofNat 64 slots).toNat = slots := by rw [BitVec.toNat_ofNat, slots_eq]
 
-theorem directionOf_dirBit (d : Dir) : Spec.Sm4.directionOf (BitVec.ofNat 64 (dirBit d)).toNat = specDirA d := by
+theorem directionOf_dirBit (d : Dir) : Proof.Sm4.directionOf (BitVec.ofNat 64 (dirBit d)).toNat = specDirA d := by
   cases d <;> rfl
 
 /-- What the modes keep, kept through a head that writes `r4`, `r6` and `r7`
@@ -172,7 +174,7 @@ theorem kept_of {s s₁ s₂ s₃ : State} (h₁ : ∀ r, r ≠ .r3 → r ≠ .r
 
 theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
     (hs : ScrIn s B (dirCore d).total) (hR : (⟨B, 8 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa (dirCore d).prepare s fun s' => Spec.Sm4.Prepared.Holds layout s'.mem B k (specDirA d) ∧
+    WP isa (dirCore d).prepare s fun s' => Proof.Sm4.Prepared.Holds layout s'.mem B k (specDirA d) ∧
       s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
       Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨p, hp, rfl, hin, hfit, hdis⟩ := hk
@@ -218,7 +220,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
     · rw [c6, size_eq]
   · obtain ⟨hH, -⟩ := hpost
     have hm : (s'.withRegions [⟨p, 128⟩] [⟨B, 8 * slots⟩]).mem = s'.mem := rfl
-    change Spec.Sm4.Prepared.Holds layout _ _ _ _ at hH
+    change Proof.Sm4.Prepared.Holds layout _ _ _ _ at hH
     rw [hm, hm₀, c3, c4, c5, directionOf_dirBit] at hH
     have r5' : s'.gpr .r5 = B := by
       rw [hnw .r5 (by decide) fun i hi => (prep_keeps i hi).1, r5₃]
@@ -238,9 +240,9 @@ theorem blockAt_of_ecb {K : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction} {m m' : 
   simpa [Spec.Sm4.blocksAt, hj] using this
 
 theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
-    (hs : ScrIn s B (dirCore d).total) (hr : Spec.Sm4.Prepared.Holds layout s.mem B k (specDirA d)) :
+    (hs : ScrIn s B (dirCore d).total) (hr : Proof.Sm4.Prepared.Holds layout s.mem B k (specDirA d)) :
     WP isa (dirCore d).crypt s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      Spec.Sm4.Prepared.Holds layout s'.mem B k (specDirA d) ∧
+      Proof.Sm4.Prepared.Holds layout s'.mem B k (specDirA d) ∧
       Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
       (∀ j < (dirCore d).G, bytesAt s'.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw) =
         dirCipher d k (bytesAt s.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw))) ∧
@@ -296,7 +298,7 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   Key := Spec.Sm4.Schedule
   cipher := dirCipher d
   KeyArgs := KeyArgs
-  Ready s B _ k := Spec.Sm4.Prepared.Holds layout s.mem B k (specDirA d)
+  Ready s B _ k := Proof.Sm4.Prepared.Holds layout s.mem B k (specDirA d)
   cipher_len _ _ := by
     show _ = 16
     cases d <;> simp [dirCipher, Spec.Sm4.cipher, Spec.Sm4.invCipher]

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # Ed448 verification's equation on ARMv7: the contract the proof is written against
 
-The facts of `Spec.Ed448.verifyEquationContract` the proof uses, stated for
+The facts of `Proof.Ed448.verifyEquationContract` the proof uses, stated for
 ARMv7, in a module of their own: callers proven for any code meeting them
 need not import the proof.
 -/

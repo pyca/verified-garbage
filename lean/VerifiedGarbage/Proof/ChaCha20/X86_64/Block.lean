@@ -9,6 +9,8 @@ public import VerifiedGarbage.Proof.ChaCha20.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Spec.ChaCha20.Contract
+public import VerifiedGarbage.Proof.ChaCha20.Contract
+meta import VerifiedGarbage.Proof.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -832,9 +834,9 @@ theorem block_ct : ConstantTime isa Proof.ChaCha20.blockX86_64.pre Proof.ChaCha2
   rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem block_verified :
-    Verified X86_64.target Impl.ChaCha20.X86_64.block (Spec.ChaCha20.blockContract X86_64.abi) :=
+    Verified X86_64.target Impl.ChaCha20.X86_64.block (Proof.ChaCha20.blockContract X86_64.abi) :=
   Verified.of_correct block_correct block_ct (by
-    sig_implies [Spec.ChaCha20.blockContract, Spec.ChaCha20.blockSig, X86_64.abi, X86_64.argRegs,
+    sig_implies [Proof.ChaCha20.blockContract, Proof.ChaCha20.blockSig, X86_64.abi, X86_64.argRegs,
       Proof.ChaCha20.blockX86_64]
       [satState] using satState)
 

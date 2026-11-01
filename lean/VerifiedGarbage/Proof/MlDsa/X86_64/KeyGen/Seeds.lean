@@ -16,8 +16,8 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 meta import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
-meta import VerifiedGarbage.Spec.MlKem.Kpke16
-meta import VerifiedGarbage.Spec.MlKem.KpkeMul
+meta import VerifiedGarbage.Proof.MlKem.Kpke16Contract
+meta import VerifiedGarbage.Proof.MlKem.KpkeMulContract
 public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf

@@ -61,9 +61,9 @@ def sat : State where
   wr := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
 
 theorem ntt_verified :
-    Verified AArch64.target Impl.MlKem.AArch64.Ntt16.ntt (Spec.MlKem.nttContract AArch64.abi) :=
+    Verified AArch64.target Impl.MlKem.AArch64.Ntt16.ntt (Proof.MlKem.nttContract AArch64.abi) :=
   Verified.of_correct correct ct (by
-    mlkem_implies [Spec.MlKem.nttContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig,
+    mlkem_implies [Proof.MlKem.nttContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig,
       inPlaceAArch64, AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.MlKem.AArch64.Ntt16

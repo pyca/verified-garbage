@@ -14,12 +14,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.ChaCha20.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.ChaCha20.blockApi.artifact RISCV64.target {
-    code := Impl.ChaCha20.RISCV64.block
-    verified := Proof.ChaCha20.RISCV64.Shared.block },
-  Spec.ChaCha20.xorApi.artifact RISCV64.target {
-    code := Impl.ChaCha20.RISCV64.Xor.xor
-    verified := Proof.ChaCha20.RISCV64.Xor.xor_verified },
   Spec.ChaCha20.initApi.artifact RISCV64.target {
     code := Impl.ChaCha20.RISCV64.Stream.init
     verified := Proof.ChaCha20.RISCV64.Stream.init_verified },

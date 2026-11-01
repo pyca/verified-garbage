@@ -2962,9 +2962,13 @@ ldr r9, [r0, #20]
 ldr r10, [r0, #24]
 ldr r11, [r0, #28]
 bx lr",
-        vg_gf448_r16_add = sym super::gf448_r16::vg_gf448_r16_add,
-        vg_gf448_r16_mul = sym super::gf448_r16::vg_gf448_r16_mul,
-        vg_gf448_r16_sub = sym super::gf448_r16::vg_gf448_r16_sub,
-        vg_gf448_r16_mul_a24 = sym super::gf448_r16::vg_gf448_r16_mul_a24,
+        vg_gf448_r16_add = sym super::ed448::vg_gf448_r16_add::vg_gf448_r16_add,
+        vg_gf448_r16_mul = sym super::ed448::vg_gf448_r16_mul::vg_gf448_r16_mul,
+        vg_gf448_r16_sub = sym super::ed448::vg_gf448_r16_sub::vg_gf448_r16_sub,
+        vg_gf448_r16_mul_a24 = sym super::x448::vg_gf448_r16_mul_a24::vg_gf448_r16_mul_a24,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_gf448_r16_mul_a24.rs"]
+pub(crate) mod vg_gf448_r16_mul_a24;

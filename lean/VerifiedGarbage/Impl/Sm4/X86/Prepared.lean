@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.X86.Ecb
 public import VerifiedGarbage.Impl.Sm4.Planes
-public import VerifiedGarbage.Spec.Sm4.Prepared
+public import VerifiedGarbage.Spec.Sm4.Contract
 
 /-!
 # SM4's round keys prepared once, and batches under them, on x86 (32-bit)
 
 `vg_sm4_prepare_keys` and `vg_sm4_crypt_prepared`
-(`Spec/Sm4/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions of
+(`Proof/Sm4/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions of
 the working space, for the modes, which call them (`Modes.lean`). Both are
 cdecl, their arguments at `[esp + 4]` on.
 
@@ -58,16 +58,6 @@ def keyEntry (k : Spec.Sm4.Schedule) : Dir → Nat → Spec.Sm4.Word
 def preparedWord (k : Spec.Sm4.Schedule) (d : Dir) (w : Nat) : BitVec 32 :=
   Impl.Sm4.planeOf32 (keyEntry k d ((w - tableSlot) / 8)) ((w - tableSlot) % 8)
 
-/-- The table's slots, as bytes. -/
-def layout : Spec.Sm4.Prepared.Layout where
-  table := [(4 * tableSlot, 4 * (tableEnd - tableSlot))]
-  encode k d i := (preparedWord k (ofSpecDir d) (i / 4)).extractLsb' (8 * (i % 4)) 8
-  buf := 4 * tailSlot
-  blocks := 8
-  prepScratch := [(0, 4 * slots)]
-  cryptScratch := [(0, 4 * tableSlot), (4 * savedSlot, 4 * (slots - savedSlot))]
-  size := 4 * slots
-
 /-! ## The calls -/
 
 /-- The working space's length in 64-bit words, `ws_len`. -/
@@ -93,7 +83,7 @@ def prepareCall (d : Dir) : Prog isa :=
   .seq (.block [movI .eax (BitVec.ofNat 32 wsWords), movI .edx (BitVec.ofNat 32 (dirFlagOf d)),
       .mov .ecx (.mem (argOp 0))])
     (.seq (.frame (.push [.eax, .edi, .edx, .ecx])
-      (.call (Spec.Sm4.Prepared.prepareApi layout).name prepareKeys) (.pop .eax 4))
+      (.call "vg_sm4_prepare_keys" prepareKeys) (.pop .eax 4))
       (.block [.mov .edi (.mem (argOp 4))]))
 
 /-- A call of `vg_sm4_crypt_prepared` on the working space at `edi`. The
@@ -103,7 +93,7 @@ constant time forgets what the scratch buffer holds across the function's
 stores. -/
 def cryptCall : Prog isa :=
   .seq (.block [movS .esi modeDSlot, movS .ebp modeNSlot, movI .eax (BitVec.ofNat 32 wsWords)])
-    (.seq (.frame (.push [.eax, .edi]) (.call (Spec.Sm4.Prepared.cryptApi layout).name cryptPrepared) (.pop .eax 2))
+    (.seq (.frame (.push [.eax, .edi]) (.call "vg_sm4_crypt_prepared" cryptPrepared) (.pop .eax 2))
       (.block [st modeDSlot .esi, st modeNSlot .ebp]))
 
 end VG.Impl.Sm4.X86

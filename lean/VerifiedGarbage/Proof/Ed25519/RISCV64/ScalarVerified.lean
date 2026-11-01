@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Scalar
 public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarReduce
 
@@ -57,11 +58,11 @@ def reduceSat : State where
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
 
 theorem scalarReduce_verified :
-    Verified RISCV64.target Impl.Ed25519.RISCV64.scalarReduce (Spec.Ed25519.scalarReduceContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.Ed25519.RISCV64.scalarReduce (Proof.Ed25519.scalarReduceContract RISCV64.abi) :=
   Verified.of_correct reduce_ok' (scalarReduce_ct fun _ _ _ _ ⟨h3, h4, h5, hsp⟩ => ⟨hsp, fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig, reduceRISCV64,
+    contract_implies [Proof.Ed25519.scalarReduceContract, Proof.Ed25519.scalarReduceSig, reduceRISCV64,
       Spec.Ed25519.scratchWords, RISCV64.abi, RISCV64.argRegs] [reduceSat] using reduceSat)
 
 /-- `scalarMulAddContract` by register. -/
@@ -97,11 +98,11 @@ def mulAddSat : State where
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
 
 theorem scalarMulAdd_verified :
-    Verified RISCV64.target Impl.Ed25519.RISCV64.scalarMulAdd (Spec.Ed25519.scalarMulAddContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.Ed25519.RISCV64.scalarMulAdd (Proof.Ed25519.scalarMulAddContract RISCV64.abi) :=
   Verified.of_correct mulAdd_ok' (scalarMulAdd_ct fun _ _ _ _ ⟨h3, h4, h5, h6, h7, hsp⟩ => ⟨hsp, fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Spec.Ed25519.scalarMulAddContract, Spec.Ed25519.scalarMulAddSig, mulAddRISCV64,
+    contract_implies [Proof.Ed25519.scalarMulAddContract, Proof.Ed25519.scalarMulAddSig, mulAddRISCV64,
       Spec.Ed25519.scratchWords, RISCV64.abi, RISCV64.argRegs] [mulAddSat] using mulAddSat)
 
 end VG.Proof.Ed25519.RISCV64

@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 # ML-KEM on x86-64: `vg_mlkem768_kpke_decrypt`, verified
 
 The proof of `KpkeDec.lean` for each backend, its constant time, and its
-contract implying the shared one of `Spec/MlKem/Kpke16.lean`.
+contract implying the shared one of `Proof/MlKem/Kpke16Contract.lean`.
 -/
 
 @[expose] public section
@@ -76,7 +76,7 @@ def kpkeDecSat (L : Kem) : State where
 theorem kpkeDec768_of {c : Prog isa}
     (hc : ∀ s, (kpkeDecK kem768).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (kpkeDecK kem768).post s s')
     (hct : ConstantTime isa (kpkeDecK kem768).pre (kpkeDecK kem768).pub c) :
-    Verified X86_64.target c (Spec.MlKem.mlKem768.kpkeDecryptContract X86_64.abi) :=
+    Verified X86_64.target c (Proof.MlKem.Params.kpkeDecryptContract Spec.MlKem.mlKem768 X86_64.abi) :=
   Verified.of_correct hc hct
     { pre := by sig_implies_pre [Params.kpkeDecryptContract, Params.kpkeDecryptSig, kpkeDecK, X86_64.abi, X86_64.argRegs, kScr, Kem.k,
         Kem.ctLen, kem768, retR, Params.ctLen, mlKem768]
@@ -98,7 +98,7 @@ theorem kpkeDec768_of {c : Prog isa}
              bv_omega) }
 
 theorem kpkeDec768Y_verified :
-    Verified X86_64.target (kpkeDec kem768 .avx2 dmInnerY) (mlKem768.kpkeDecryptContract X86_64.abi) :=
+    Verified X86_64.target (kpkeDec kem768 .avx2 dmInnerY) (Proof.MlKem.Params.kpkeDecryptContract mlKem768 X86_64.abi) :=
   kpkeDec768_of kpkeDec768Y_correct kpkeDec768Y_ct
 
 end VG.Proof.MlKem.X86_64

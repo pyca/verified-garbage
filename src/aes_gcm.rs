@@ -20,18 +20,13 @@
 //!
 //! [`AesGcm::encrypt`] encrypts out of place, from a plaintext in pieces (a
 //! list of slices, such as a record's header and payload, or a single one)
-//! into one output buffer. Usually this is one call of `vg_aes_gcm_seal_gather`
-//! (`VG.Spec.Gcm.sealGatherContract`), which reads each piece where it is;
-//! with a prepared key, of `vg_aes_gcm_seal_gather_prepared`, which seals a
-//! TLS record (a 96-bit nonce, at most 16 bytes of AAD, and a piece and
-//! what ends at most 16 bytes after its whole blocks) from its first piece
-//! by `vg_aes_gcm_seal_split_prepared`
-//! (`VG.Spec.Gcm.sealSplitPreparedContract`). On 256-bit registers, a
-//! record of a multiple of 16 blocks from 2048 bytes on, whose last block
-//! the first piece starts and the second fills, is one call of
-//! `vg_aes_gcm_seal_split_prepared` for the first piece up to its last
-//! whole group of 16 blocks, the rest of it and the second piece copied to
-//! the end of the output first.
+//! into one output buffer: one call of `vg_aes_gcm_seal_gather`
+//! (`VG.Spec.Gcm.sealGatherContract`), which reads each piece where it is,
+//! or, with a prepared key on x86-64, of `vg_aes_gcm_seal_gather_prepared`
+//! (`VG.Spec.Gcm.sealGatherPreparedContract`, or
+//! `sealGatherPrepared16Contract`). On AArch64, it copies the
+//! pieces to its output and seals them there with `seal_with_powers`
+//! (below).
 //!
 //! # Tags
 //!
@@ -53,57 +48,33 @@
 //! one key. These application-level restrictions are the caller's responsibility.
 //! Shorter tags provide less protection against forgery.
 //!
-//! The functions are emitted once for each implementation of AES
-//! (`vg_aes_expand_key` and `vg_aes_ctr32`) and of `vg_ghash` they call,
-//! which have the same contracts: on x86-64, CPUs with AES-NI and SSSE3 run
-//! the `_aesni` instances (with `vg_aes_ctr32_aesni`), CPUs with PCLMULQDQ
-//! and SSSE3 the `_pclmul` ones (with `vg_ghash_pclmul`), and CPUs with all
-//! three the `_aesni_pclmul` ones; CPUs with VAES or VPCLMULQDQ (and AVX2)
-//! run, instead of AES-NI's or PCLMULQDQ's, the `_vaes` or `_vpclmul`
-//! instances (with `vg_aes_ctr32_vaes` and `vg_ghash_vpclmul`, sixteen and
-//! eight blocks at a time in 256-bit registers), or those of the pairs
-//! (`_vaes_vpclmul`, `_vaes_pclmul`, `_aesni_vpclmul`), and CPUs with VAES,
-//! VPCLMULQDQ, AVX512F and AVX512BW the `_vaes_vpclmul_avx512` ones, whose
-//! interleaved counter mode and GHASH work in 512-bit registers, and CPUs
-//! with AES-NI, PCLMULQDQ and AVX but neither VAES nor VPCLMULQDQ the
-//! `_aesni_pclmul_avx` ones, which interleave them in 128-bit registers
-//! (where the `_aesni_pclmul` ones make two passes); likewise on x86, where
-//! AES-NI needs no SSSE3 (and the 256-bit instances are not built); on AArch64, CPUs with the AES and PMULL extensions (which Rust's
-//! `aes` feature stands for together) run the `_aes` ones (with
-//! `vg_aes_ctr32_aes` and `vg_ghash_aes`).
+//! Their variants, with the same contracts, are those of `Backend`, each
+//! with its suffix: `select` chooses the first in `Backend::ALL` whose
+//! `seal`'s `_FEATURES` the CPU has (and the tests check that every other
+//! function of the variant needs no more). On x86-64 these are, in this
+//! order, `_vaes_vpclmul_avx512`, `_vaes_vpclmul`, `_vaes_pclmul`,
+//! `_aesni_vpclmul`, `_aesni_pclmul_avx`, `_aesni_pclmul`, `_vaes`,
+//! `_aesni`, `_vpclmul` and `_pclmul`; on x86, `_aesni_pclmul`, `_aesni`
+//! and `_pclmul`; on AArch64, `_aes_sha3` (whose `_FEATURES` are those of
+//! `seal_with_powers`) and `_aes`.
 //!
-//! On x86-64, the `_vaes_vpclmul_avx512` instances also have `_prepared`
-//! ones (`VG.Spec.Gcm.PreparedPowersRepr`), whose interleaved loops read
-//! encoded pairs of powers `H¹ … H⁴⁸` from a larger key context, which
-//! `vg_aes_gcm_prepare` writes from the key context of `vg_aes_gcm_init`,
-//! instead of computing them on every call; the `_vaes_vpclmul` and
-//! `_aesni_pclmul_avx` instances have `_prepared16` ones
-//! (`VG.Spec.Gcm.PreparedPowers16Repr`), which read only `H¹ … H¹⁶` (`H¹ …
-//! H¹⁵` on 128-bit registers), the first 512 bytes of the same context, which
-//! `vg_aes_gcm_prepare16` writes in a third of the time or less. The `_vaes_vpclmul_avx512` loops also
-//! load the AES round keys into `zmm16`–`zmm31` once per block call and
-//! reuse them across batches. `AesGcm::new` computes the prepared context,
-//! and every message and streaming update uses it, whatever its length: each
-//! `_prepared` instance chooses its path for every length itself (the
-//! `_vaes_vpclmul_avx512` short path copies its powers from the context; the
-//! others have a path for TLS records, a 12-byte nonce and at most 16 bytes
-//! of additional data, or loops that take two blocks or more).
+//! On x86-64, with the `alloc` feature, the `_vaes_vpclmul_avx512` variants
+//! also have `_prepared` ones (`VG.Spec.Gcm.PreparedPowersRepr`), and the
+//! `_vaes_vpclmul` and `_aesni_pclmul_avx` ones `_prepared16` ones
+//! (`VG.Spec.Gcm.PreparedPowers16Repr`), which read powers of the hash
+//! subkey from a larger key context that `vg_aes_gcm_prepare` (or
+//! `vg_aes_gcm_prepare16`) writes from the key context of `vg_aes_gcm_init`.
+//! On a CPU with the features of that function too, `AesGcm::new` computes
+//! the prepared context, and every message and streaming update calls the
+//! `_prepared` variants of `seal`, `open`, `seal_gather` and the streaming
+//! updates.
 //!
-//! On AArch64, the `_aes` instances of `seal` and `open` have
-//! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), whose one call of
-//! `vg_ghash_with_powers_aes` loads `H¹` to `H⁸` from a 128-byte buffer of
-//! the key's own, next to the key context of `vg_aes_gcm_init`, instead of
-//! computing them, which `AesGcm::new` fills with `vg_ghash_store_powers_aes`.
-//! Every message uses them (which hash a message of one block or less
-//! with `vg_ghash_aes`, needing no powers):
-//! `vg_ghash_with_powers_aes` loads `H · x⁻¹` rather than computing it, and
-//! `encrypt` copies its pieces to its output with `memcpy` and seals them
-//! there, rather than taking `vg_aes_gcm_seal_gather`'s 16-byte steps and
-//! single bytes. Streaming keeps the plain functions.
-//!
-//! On either, which instance a call takes depends only on public values: the
-//! lengths of its text (and, for `encrypt`, of its pieces, nonce and
-//! additional data), never on the key, the text or the tags.
+//! On AArch64, the `_aes` and `_aes_sha3` variants of `seal` and `open` have
+//! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), which read `H¹` to `H⁸`
+//! from a 128-byte buffer of the key's own, next to the key context of
+//! `vg_aes_gcm_init`, which `AesGcm::new` fills with
+//! `vg_ghash_store_powers_aes`. Every whole message uses them; streaming
+//! keeps the plain functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -254,14 +225,14 @@ const MAX_TEXT: u64 = (1 << 36) - 32;
 /// whole bytes (SP 800-38D §5.2.1.1).
 const MAX_AAD: u64 = (1 << 61) - 1;
 
-/// The implementations of AES and GHASH the functions called call: each
-/// combination is an instance of every `vg_aes_gcm_*` function. (A product
-/// of `crate::aes::Backend` and a GHASH backend would let a caller pair them
-/// any way; one enum of the instances keeps every `match` exhaustive over
-/// exactly the functions that exist.)
+/// The implementations of AES-GCM: each is a variant of every
+/// `vg_aes_gcm_*` function, by suffix. (A product of `crate::aes::Backend`
+/// and a GHASH backend would let a caller pair them any way; one enum of the
+/// variants keeps every `match` exhaustive over exactly the functions that
+/// exist.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Backend {
-    /// The baseline ISA: `vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`.
+    /// The baseline ISA's functions.
     Scalar,
     /// AES-NI for AES: the `_aesni` instances.
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -287,23 +258,17 @@ pub(crate) enum Backend {
     /// VAES and VPCLMULQDQ: the `_vaes_vpclmul` instances.
     #[cfg(target_arch = "x86_64")]
     VaesVpclmul,
-    /// VAES and VPCLMULQDQ, with counter mode and GHASH interleaved in
-    /// 512-bit registers (AVX512F and AVX512BW): the `_vaes_vpclmul_avx512`
-    /// instances.
+    /// VAES, VPCLMULQDQ and AVX-512: the `_vaes_vpclmul_avx512` instances.
     #[cfg(target_arch = "x86_64")]
     VaesVpclmulAvx512,
-    /// AES-NI and PCLMULQDQ, with counter mode and GHASH interleaved in
-    /// 128-bit registers (AVX): the `_aesni_pclmul_avx` instances.
+    /// AES-NI, PCLMULQDQ and AVX: the `_aesni_pclmul_avx` instances.
     #[cfg(target_arch = "x86_64")]
     AesNiPclmulAvx,
     /// The AES instructions for AES and PMULL for GHASH (Rust's `aes`
     /// feature stands for both): the `_aes` instances.
     #[cfg(target_arch = "aarch64")]
     Aes,
-    /// Both, with FEAT_SHA3's `eor3`: the `_aes_sha3` instances, whose
-    /// `_with_powers` and `_store_powers` functions interleave counter mode
-    /// and GHASH eight blocks at a time on the records of TLS (the others
-    /// are the `_aes` code).
+    /// Both, with FEAT_SHA3: the `_aes_sha3` instances.
     #[cfg(target_arch = "aarch64")]
     AesSha3,
 }
@@ -766,10 +731,9 @@ impl Backend {
 }
 
 /// The `_prepared` instances of a backend (`VG.Spec.Gcm.PreparedPowersRepr`),
-/// or its `_prepared16` ones (`VG.Spec.Gcm.PreparedPowers16Repr`), whose
-/// interleaved loops read the powers of the hash subkey from the key context
-/// instead of computing them on every call, and the CPU features their key
-/// setup needs; on AArch64, its `_with_powers` instances
+/// or its `_prepared16` ones (`VG.Spec.Gcm.PreparedPowers16Repr`), which
+/// read the powers of the hash subkey from the key context, and the CPU
+/// features their key setup needs; on AArch64, its `_with_powers` instances
 /// (`VG.Spec.Gcm.Powers8Repr`), which need the backend's features alone (see
 /// the tests).
 #[cfg(any(
@@ -1387,9 +1351,7 @@ impl AesGcm {
             d.write([p.as_ptr() as usize, p.len()]);
         }
         let src: *const [usize; 2] = descs.as_ptr().cast();
-        // The gathering seals every shape (on x86-64, a `_prepared` one a
-        // TLS record's by `vg_aes_gcm_seal_split_prepared` from the first
-        // piece, before anything else).
+        // The gathering seals every shape of pieces.
         let f = self.fns.seal_gather;
         let mut tag: Block = [0; 16];
         // SAFETY: as in `encrypt_in_place`, with `out` valid for reads and
@@ -1801,15 +1763,14 @@ mod tests {
                 Backend::Pclmul
             );
         }
-        // AES-NI needs SSSE3 too on x86-64 (`vg_aes_ctr32_aesni`'s byte
-        // shuffles), not on x86.
+        // The `_aesni` variants need SSSE3 too on x86-64, not on x86.
         #[cfg(target_arch = "x86_64")]
         assert_eq!(
             f(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ),
             Backend::Scalar
         );
         // VAES and VPCLMULQDQ, each with the other, the other's 128-bit
-        // instruction or neither; their 256-bit code needs AVX2 too.
+        // instruction or neither; their variants need AVX2 too.
         #[cfg(target_arch = "x86_64")]
         {
             let all = verified_garbage_cpu::feature::AES

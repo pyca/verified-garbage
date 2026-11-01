@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Fn
 public import VerifiedGarbage.Proof.Framework.X86.Call
 
@@ -187,7 +188,7 @@ on as they were. -/
 theorem doubleCall_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
     WP isa Point32.doubleCall s fun t =>
       CallKeep base s t ∧ point (env t.mem base) 0 1 2 3 =
-        Spec.Ed25519.Point64.pointDouble (point (env s.mem base) 0 1 2 3) ∧
+        Proof.Ed25519.Point64.pointDouble (point (env s.mem base) 0 1 2 3) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
   refine WP.mono (callOf_keep Point32.pointDoubleRfcOps_dests Point32.doubleFn_noSp _ hs)
     fun t ⟨hk, hv⟩ => ⟨hk, by rw [hv]; exact Point32.dbl_eval _, fun i hi => ?_⟩

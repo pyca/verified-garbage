@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.X448.X86_64
 public import VerifiedGarbage.Impl.Ed448.Formulas
-public import VerifiedGarbage.Spec.Ed448.Point64
+public import VerifiedGarbage.Spec.Ed448
 
 /-!
 # Ed448's point doubling and affine addition on x86-64, as functions
 
 `vg_ed448_r64_point_double(ws)` and `vg_ed448_r64_point_add_affine(ws)`
-(`Spec/Ed448/Point64.lean`; `ws` in `rdi`, where the Ed448 code keeps it)
+(`Proof/Ed448/Point64Contract.lean`; `ws` in `rdi`, where the Ed448 code keeps it)
 run the field programs that code inlined, with X448's field arithmetic on
 seven 64-bit words (`Impl/X448/X86_64.lean`, the baseline's
 multiplications): RFC 8032's doubling (`doubleOps`) of slots 0–2, and the
@@ -88,8 +88,8 @@ def doubleFn : Prog isa := fn doubleOps
 /-- `vg_ed448_r64_point_add_affine`: slots 0–2 plus `(x : y : 1)` from slots 8–9, into 3–5. -/
 def addFn : Prog isa := addFnWith Impl.X448.X86_64.baseline
 
-def doubleCall : Prog isa := .call Spec.Ed448.Point64.doubleApi.name doubleFn
-def addCall : Prog isa := .call Spec.Ed448.Point64.addAffineApi.name addFn
+def doubleCall : Prog isa := .call "vg_ed448_r64_point_double" doubleFn
+def addCall : Prog isa := .call "vg_ed448_r64_point_add_affine" addFn
 
 /-- The point operations a caller runs: the doubling and the affine addition. -/
 structure Ops where

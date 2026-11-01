@@ -14,26 +14,14 @@
 //! 126 besides the plaintext), which the assembly does not count, lists them
 //! for the assembly as `[address, length]` pairs, and holds the key context.
 //!
-//! The functions are emitted once for each implementation of AES they call
-//! (`vg_aes_expand_key` and `vg_aes_ctr32`, through the CMAC functions made
-//! with them, and directly for CTR), which have the same contracts: on
-//! x86-64, CPUs with AES-NI and SSSE3 run the `_aesni` instances, and CPUs
-//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`), and
-//! `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` follow the implementations
-//! of `vg_cmac_aes_update` too, as AES-CMAC does (`crate::cmac::aes`): when
-//! the associated-data components and the data total more than 32 bytes,
-//! both run the `_aesni_cbc` instances, whose CMAC chains whole blocks with
-//! the round keys and the chaining value kept in SSE registers, and which
-//! call the other CMAC functions and CTR made with `vg_aes_ctr32_aesni`
-//! (`chains_long`); on x86, CPUs with AES-NI run the `_aesni` instances. On
-//! AArch64, CPUs with the AES extension run `vg_aes_siv_init_aes`, and
-//! `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` follow the implementations
-//! of `vg_cmac_aes_update` too, as AES-CMAC does (`crate::cmac::aes`): when
-//! the associated-data components and the data total more than 32 bytes,
-//! the `_aes_cbc` instances, whose CMAC chains whole blocks with the round
-//! keys and the chaining value kept in vector registers, and otherwise the
-//! `_aes` ones (`chains_long`). On ARMv7, PPC64LE and RISC-V there is
-//! one implementation of AES, and so one instance of each function.
+//! Their variants, with the same contracts, are chosen with
+//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
+//! constants name: on x86-64, the `_vaes` ones, then the `_aesni` ones; on
+//! x86, the `_aesni` ones; on AArch64, the `_aes` ones. On x86-64 and
+//! AArch64, when the associated-data components and the data total more
+//! than 32 bytes (`chains_long`), `encrypt` and `decrypt` run their
+//! `_aesni_cbc` variants (with either x86-64 backend) or their `_aes_cbc`
+//! ones instead, whose features `select` checks too.
 
 #![cfg(any(
     target_arch = "x86",
@@ -119,10 +107,9 @@ macro_rules! instance {
 
 /// Whether `encrypt` and `decrypt` should run the `_aes_cbc` instances (on
 /// AArch64 with the AES extension) or the `_aesni_cbc` ones (on x86-64 with
-/// AES-NI), whose CMAC chains whole blocks with the round keys and the
-/// chaining value kept in vector registers, rather than the others: when
-/// the associated-data components `ads` and the `len` bytes of data total
-/// more than 32 bytes, as AES-CMAC's updates (`crate::cmac::aes`).
+/// AES-NI) rather than the others: when the associated-data components
+/// `ads` and the `len` bytes of data total more than 32 bytes, as AES-CMAC's
+/// updates (`crate::cmac::aes`).
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn chains_long(ads: &[&[u8]], len: usize) -> bool {
     ads.iter()

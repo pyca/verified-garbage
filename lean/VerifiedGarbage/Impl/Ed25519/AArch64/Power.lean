@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
-public import VerifiedGarbage.Spec.X25519.Field64
+public import VerifiedGarbage.Spec.X25519
 
 /-!
 # The shared addition chain for inversion and square-root recovery
 
 `power250` leaves `z^(2^250 - 1)` and `z^11` in `T1` and `T0`, for `z` in `Z2`:
-the offsets of `vg_gf25519_r64_pow250` (`Spec/X25519/Field64.lean`; AAPCS64:
+the offsets of `vg_gf25519_r64_pow250` (`Proof/X25519/Field64Contract.lean`; AAPCS64:
 `ws` in `x0`), which runs it as a function (`powFn`), keeping the callee-saved
 registers it writes (`x19`, the squarings' counter, and `x20`–`x24`) in lanes
 of `v16`–`v18`, which are not callee-saved, so that it needs no stack.
@@ -58,7 +58,7 @@ def powFn : Prog isa :=
 /-- A call of `vg_gf25519_r64_pow250` (`ws` in `x0`), with the return address kept in `v31`. -/
 def powCall : Prog isa :=
   .seq (.block [.vop (.ins .d2 .v31 0 .x30)]) <|
-    .seq (.call Spec.X25519.Field64.pow250Api.name powFn) (.block [.umov .x .x30 .v31 0])
+    .seq (.call "vg_gf25519_r64_pow250" powFn) (.block [.umov .x .x30 .v31 0])
 
 def invert : Prog isa := .seq powCall (.seq (sqn T1 T1 5) (.block (fieldMul T1 T1 T0)))
 

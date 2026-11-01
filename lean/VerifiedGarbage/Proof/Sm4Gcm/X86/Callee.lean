@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Impl.Sm4.X86.Ctr32
 public import VerifiedGarbage.Impl.Sm4.X86.ExpandKey
 public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Contract
 public import VerifiedGarbage.Spec.Sm4.Gcm
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -28,7 +29,7 @@ the regions it is given (`CtrCall`, `KeyCall`), and what it leaves
 (`CtrPost`, `KeyPost`), in terms of the memory before the call; and that it
 is constant time (`ctr_ct`, `key_ct`) by the callee's own proof, when the
 arguments are the same in both runs. They keep their working space on the
-stack, and are called by their shared contracts (`Spec.Sm4.ctr32Contract`
+stack, and are called by their shared contracts (`Proof.Sm4.ctr32Contract`
 with 1516 bytes of stack, `Spec.Sm4.expandKeyContract` with 1448), from the
 layout the call gives them. The calls of `vg_ghash` are AES-GCM's
 (`Proof/AesGcm/X86/Callee.lean`).
@@ -118,7 +119,7 @@ abbrev ctrWr (E C D : BitVec 32) (n : Nat) : List Region :=
   [⟨w64 C, 16⟩, ⟨w64 D, n * 16⟩, below E 16]
 
 /-- The contract `vg_sm4_ctr32` is called by. -/
-abbrev ctrK : Contract isa := Spec.Sm4.ctr32Contract X86.abi 1516
+abbrev ctrK : Contract isa := Proof.Sm4.ctr32Contract X86.abi 1516
 
 namespace CtrCall
 variable {s : State} {K C D : BitVec 32} {n : Nat} (h : CtrCall s K C D n)
@@ -164,7 +165,7 @@ theorem callPre : CallPre ctrK ctrRegs (ctrRd K) (ctrWr (s.gpr .esp) C D n) s :=
   have hfD := h.fD
   rw [Nat.mul_comm] at hkd hcd hbd hfD
   refine ⟨?_, ?_, ?_⟩
-  · sig_pre [ctrK, Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, X86.abi, argVal, ↓reduceIte,
+  · sig_pre [ctrK, Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, X86.abi, argVal, ↓reduceIte,
       Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd, Nat.reduceMul, sw32,
       toNat_w64]
     simp only [State.withRegions_rd, State.withRegions_wr, arg_withRegions, argAddr_withRegions, a0, a1, a2,
@@ -203,7 +204,7 @@ theorem ctrK_post {s s' : State} (h : ctrK.post s s') :
         ctr32 (Spec.Sm4.gcmCipher (Spec.Sm4.scheduleAt s.mem (w64 (arg s 0))))
           (blockAt s.mem (w64 (arg s 1))) (blocksAt s.mem (w64 (arg s 2)) (arg s 3).toNat) ∧
       blockAt s'.mem (w64 (arg s 1)) = Nat.repeat Spec.Gcm.inc32 (arg s 3).toNat (blockAt s.mem (w64 (arg s 1))) := by
-  sig_post [ctrK, Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, X86.abi, argVal, ↓reduceIte,
+  sig_post [ctrK, Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, X86.abi, argVal, ↓reduceIte,
     Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd, Nat.reduceMul, sw32,
     toNat_w64] at h
   exact h
@@ -212,7 +213,7 @@ theorem ctrK_post {s s' : State} (h : ctrK.post s s') :
 theorem ctrK_pub {s₁ s₂ : State} (h : s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 4, arg s₁ i = arg s₂ i) :
     ctrK.pub s₁ s₂ := by
   obtain ⟨a₁, a₂⟩ := h
-  sig_pub [ctrK, Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, X86.abi, argVal, ↓reduceIte, Nat.reduceEqDiff,
+  sig_pub [ctrK, Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, X86.abi, argVal, ↓reduceIte, Nat.reduceEqDiff,
     argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd, Nat.reduceMul, sw32, toNat_w64]
   exact ⟨a₁, a₂ 0 (by decide), a₂ 1 (by decide), a₂ 2 (by decide), a₂ 3 (by decide)⟩
 

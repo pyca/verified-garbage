@@ -18,6 +18,14 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Align
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Align
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
+import VerifiedGarbage.Proof.Framework.RISCV64.Align
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Align
 import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Framework.Offset

@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Poly1305.Contract
+meta import VerifiedGarbage.Proof.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Tactic.Set
@@ -3013,14 +3015,14 @@ theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksX86.pre Proof.Poly1305
     (by taint_decide)
 
 theorem blocks_verified :
-    Verified X86.target Impl.Poly1305.X86.blocks (Spec.Poly1305.blocksContract X86.abi) :=
+    Verified X86.target Impl.Poly1305.X86.blocks (Proof.Poly1305.blocksContract X86.abi) :=
   Verified.of_correct blocks_ok blocks_ct (by
     have a0 : arg blocksSat 0 = 0x1000 := by decide
     have a1 : arg blocksSat 1 = 0x2000 := by decide
     have a2 : arg blocksSat 2 = 0 := by decide
     have e : argAddr blocksSat 0 = 0x4004 := by decide
     have esp : blocksSat.gpr .esp = 0x4000 := rfl
-    sig_implies [Spec.Poly1305.blocksContract, Spec.Poly1305.blocksSig, Proof.Poly1305.blocksX86,
+    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, Proof.Poly1305.blocksX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, e, esp] using Proof.Poly1305.X86.blocksSat)
 

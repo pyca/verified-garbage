@@ -33,6 +33,7 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFrag16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFused16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFusedCT16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeOk
 public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeOk
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl

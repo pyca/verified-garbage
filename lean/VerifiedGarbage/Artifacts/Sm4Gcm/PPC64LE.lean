@@ -19,10 +19,6 @@ namespace VG.Artifacts.Sm4Gcm.PPC64LE
 open VG.Proof.Sm4Gcm.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Sm4.ctr32Api.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3296 .r7 408 Impl.Sm4.PPC64LE.ctr32
-    stack := 3296
-    verified := Proof.Sm4.PPC64LE.Modes.ctr32_framed },
   Spec.Sm4.Gcm.initApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r5
       (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r6 Impl.Sm4Gcm.PPC64LE.init)

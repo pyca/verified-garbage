@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # The CBC decryption prologue -/
 
@@ -18,7 +20,7 @@ open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchEntry VG.Proof.Sm4.Arm.BatchChain
 open VG.Proof.Sm4.Arm.BatchPrologue
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 structure Ready (s₀ : State) (s : State) : Prop where
   base : s.gpr sb = Sc s₀

@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Fill
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # The arbitrary-length batched loop of SM4's counter mode with `inc₃₂` on ARMv7
 
@@ -26,7 +28,7 @@ open VG.Proof.Sm4.Arm.BatchLoop (future_data)
 open VG.Proof.Sm4.Arm.Batch32Fill (next32 next32_add)
 open VG.Proof.Sm4.Arm.Batch32Group
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 /-- The intended block at index `j`, from the original data and counter. -/
 def outBlock (m : Mem) (D : BitVec 32) (K : Spec.Sm4.Schedule) (t : List Byte) (j : Nat) : List Byte :=

@@ -30,6 +30,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 meta import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Proof.Poly1305.Contract
 
 /-!
 # Poly1305 on x86-64 with AVX2: `vg_poly1305_blocks_avx2`
@@ -649,9 +650,9 @@ def sat : State where
   wr := [⟨0x1000, 128⟩]
 
 theorem blocksAvx2_verified :
-    Verified X86_64.target blocksAvx2 (Spec.Poly1305.blocksContract X86_64.abi 8) :=
+    Verified X86_64.target blocksAvx2 (Proof.Poly1305.blocksContract X86_64.abi 8) :=
   Verified.of_correct blocksAvx2_ok blocksAvx2_ct (by
-    sig_implies [Spec.Poly1305.blocksContract, Spec.Poly1305.blocksSig, blocksAvx2X86_64,
+    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, blocksAvx2X86_64,
       Proof.Poly1305.blocksX86_64, X86_64.abi, X86_64.argRegs] [sat] using sat)
 
 end VG.Proof.Poly1305.X86_64.Avx2

@@ -31,12 +31,6 @@ def artifacts : List Artifact := [
     verified := Proof.Camellia.AArch64.prepare_verified },
   (Spec.Camellia.Prepared.cryptApi Impl.Camellia.AArch64.layout).artifact AArch64.target {
     code := Impl.Camellia.AArch64.cryptPrepared
-    verified := Proof.Camellia.AArch64.crypt_verified },
-  (Spec.Camellia.Prepared.prepareEncryptApi Impl.Camellia.AArch64.Serial.layout).artifact AArch64.target {
-    code := Impl.Camellia.AArch64.Serial.prepareEncrypt
-    verified := Proof.Camellia.AArch64.Serial.prepare_verified },
-  (Spec.Camellia.Prepared.encryptPreparedApi Impl.Camellia.AArch64.Serial.layout).artifact AArch64.target {
-    code := Impl.Camellia.AArch64.Serial.encryptPrepared
-    verified := Proof.Camellia.AArch64.Serial.crypt_verified }]
+    verified := Proof.Camellia.AArch64.crypt_verified }]
 
 end VG.Artifacts.Camellia.AArch64

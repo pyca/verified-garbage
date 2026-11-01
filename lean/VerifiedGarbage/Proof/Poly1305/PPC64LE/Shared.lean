@@ -92,8 +92,8 @@ theorem finalizeScratch : Verified PPC64LE.target Impl.Poly1305.PPC64LE.finalize
 
 theorem blocks : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 160 .r6 Impl.Poly1305.PPC64LE.blocks)
-    (Spec.Poly1305.blocksContract PPC64LE.abi 160) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Poly1305.blocksSig) (nm := "scratch") (e := .u64)
+    (Proof.Poly1305.blocksContract PPC64LE.abi 160) :=
+  PPC64LE.Verified.stackScratch (sig := Proof.Poly1305.blocksSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Proof.Poly1305.blocksPost PPC64LE.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 160) blocksScratch (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Poly1305.blocksPost_local _)

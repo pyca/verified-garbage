@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.CmacTripleDes.X86.Round
 `vg_cmac_triple_des_init(key, key_len, out, scratch)`,
 `vg_cmac_triple_des_update(schedule, state, data, n, scratch)` and
 `vg_cmac_triple_des_finalize(key, state, last, last_len, scratch)` (see
-`VG.Spec.Cmac.tdesInitContract` and the others), every argument on the
+`VG.Proof.Cmac.tdesInitContract` and the others), every argument on the
 stack (cdecl). Each encrypts blocks with `block` (`X86/Round.lean`), inline:
 the block as a big-endian 64-bit integer in `eax:edx` (its high and low
 words), the key schedule at `esi` and the scratch buffer at `ebp`. The block

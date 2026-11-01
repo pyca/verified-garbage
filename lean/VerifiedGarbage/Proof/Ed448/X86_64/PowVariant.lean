@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Field64Contract
 import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
@@ -34,7 +35,7 @@ theorem powFn_eq (v : FieldVariant) : v.powFn = Impl.X448.X86_64.pow223FnWith v.
   cases v <;> rfl
 
 theorem pow_verified (v : FieldVariant) :
-    Verified X86_64.target v.powFn (Spec.X448.Field64.pow223Contract X86_64.abi) := by
+    Verified X86_64.target v.powFn (Proof.X448.Field64.pow223Contract X86_64.abi) := by
   rw [powFn_eq]
   refine pow223With_verified (field_ok v) (by cases v <;> lit_decide) ?_
   cases v

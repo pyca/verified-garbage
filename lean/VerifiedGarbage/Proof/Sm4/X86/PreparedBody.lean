@@ -12,11 +12,13 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Sm4.X86.LayersLit
+public import VerifiedGarbage.Proof.Sm4.Prepared
+public import VerifiedGarbage.Proof.Sm4.Contract
 
 /-!
 # SM4's prepared round keys and batches on x86 (32-bit): the code
 
-What `vg_sm4_prepare_keys` writes (`layout`, `Spec.Sm4.Prepared.Holds`) is
+What `vg_sm4_prepare_keys` writes (`layout`, `Proof.Sm4.Prepared.Holds`) is
 the table that ECB's rounds read (`ReadyAt`), word for word (`WordsAt`,
 `holds_of_words`, `words_of_holds`, `readyAt_of_words`,
 `words_of_readyAt`): each of the table's words is the plane of its round
@@ -35,6 +37,16 @@ namespace VG.Proof.Sm4.X86
 open VG VG.X86 VG.X86.Straight VG.Impl.Sm4.X86
 open VG.Impl.Aes.X86 (sb argOp)
 open VG.Proof.Sm4 (specDirX86)
+
+/-- The table's slots, as bytes. -/
+def layout : Prepared.Layout where
+  table := [(4 * tableSlot, 4 * (tableEnd - tableSlot))]
+  encode k d i := (preparedWord k (ofSpecDir d) (i / 4)).extractLsb' (8 * (i % 4)) 8
+  buf := 4 * tailSlot
+  blocks := 8
+  prepScratch := [(0, 4 * slots)]
+  cryptScratch := [(0, 4 * tableSlot), (4 * savedSlot, 4 * (slots - savedSlot))]
+  size := 4 * slots
 
 /-! ## The encoding -/
 
@@ -71,7 +83,7 @@ theorem table_byte {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) {o : 
   congr 2; omega
 
 theorem holds_of_words {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) {k : Spec.Sm4.Schedule}
-    {d : Spec.Sm4.Direction} (h : WordsAt m B k (ofSpecDir d)) : Spec.Sm4.Prepared.Holds layout m (B.setWidth 64) k d := by
+    {d : Spec.Sm4.Direction} (h : WordsAt m B k (ofSpecDir d)) : Proof.Sm4.Prepared.Holds layout m (B.setWidth 64) k d := by
   intro r hr i hi
   rw [layout_table, List.mem_singleton] at hr
   subst hr
@@ -81,7 +93,7 @@ theorem holds_of_words {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤
   rfl
 
 theorem words_of_holds {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) {k : Spec.Sm4.Schedule}
-    {d : Spec.Sm4.Direction} (h : Spec.Sm4.Prepared.Holds layout m (B.setWidth 64) k d) :
+    {d : Spec.Sm4.Direction} (h : Proof.Sm4.Prepared.Holds layout m (B.setWidth 64) k d) :
     WordsAt m B k (ofSpecDir d) := by
   intro w h1 h2
   simp only [Mem.readW]
@@ -120,8 +132,8 @@ theorem words_of_readyAt {m : Mem} {B : BitVec 32} {k : Spec.Sm4.Schedule} {d : 
 /-- The direction `decrypt` selects. -/
 def dirOf (decrypt : BitVec 32) : Dir := if decrypt = 0 then .encrypt else .decrypt
 
-theorem ofSpecDir_dirOf (decrypt : BitVec 32) : ofSpecDir (Spec.Sm4.directionOf decrypt.toNat) = dirOf decrypt := by
-  unfold dirOf Spec.Sm4.directionOf
+theorem ofSpecDir_dirOf (decrypt : BitVec 32) : ofSpecDir (Proof.Sm4.directionOf decrypt.toNat) = dirOf decrypt := by
+  unfold dirOf Proof.Sm4.directionOf
   by_cases h : decrypt = 0
   · subst h; rfl
   · have h' : decrypt.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')

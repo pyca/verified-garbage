@@ -53,29 +53,11 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.Aes.X86.expandKey
     stack := 532
     verified := Proof.Aes.X86.scalar_expandKey_framed },
-  Spec.Aes.expandKeyScratchApi.artifact X86.target {
-    code := Impl.Aes.X86.expandKey
-    verified := Proof.Aes.X86.expandKey_verified },
-  Spec.Gcm.ctr32Api.artifact X86.target {
-    code := Impl.Aes.X86.ctr32
-    verified := Proof.Aes.X86.ctr32_verified },
-  Spec.Gcm.ctr32Api.artifact X86.target {
-    suffix := "_aesni"
-    code := Impl.Aes.X86.AesNi.ctr32
-    verified := Proof.Aes.X86.AesNi.ctr32_verified
-    features := ["aes"] },
   Spec.Aes.expandKeyApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.Aes.X86.AesNi.expandKey
     stack := 532
     verified := Proof.Aes.X86.aesni_expandKey_framed
-    features := ["aes"] },
-  Spec.Aes.expandKeyScratchApi.artifact X86.target {
-    suffix := "_aesni"
-    code := Impl.Aes.X86.AesNi.expandKey
-    verified := Proof.Aes.X86.AesNi.expandKey_verified
-      ⟨Proof.Aes.X86.AesNi.expand128_ok, Proof.Aes.X86.AesNi.expand192_ok,
-        Proof.Aes.X86.AesNi.expand256_ok⟩
     features := ["aes"] },
   Spec.Aes.encryptBlocksApi.artifact X86.target {
     code := Impl.Aes.X86.encryptBlocks

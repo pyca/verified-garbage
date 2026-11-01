@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Contract
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract

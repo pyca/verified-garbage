@@ -23,7 +23,11 @@ public import VerifiedGarbage.Spec.Weierstrass.Mul
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
 import VerifiedGarbage.Spec.Weierstrass.Mul
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Mont.AArch64

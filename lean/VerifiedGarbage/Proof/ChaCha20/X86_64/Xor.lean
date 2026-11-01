@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.ChaCha20.Contract
 
 /-!
 # ChaCha20 keystream XOR on x86-64
@@ -720,9 +721,9 @@ theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorX86_64.pre Proof.ChaCha20.xo
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
 
 theorem xor_verified :
-    Verified X86_64.target Impl.ChaCha20.X86_64.Xor.xor (Spec.ChaCha20.xorContract X86_64.abi 8) :=
+    Verified X86_64.target Impl.ChaCha20.X86_64.Xor.xor (Proof.ChaCha20.xorContract X86_64.abi 8) :=
   Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
+    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
       Proof.ChaCha20.xorX86_64]
       [sat] using sat)
 

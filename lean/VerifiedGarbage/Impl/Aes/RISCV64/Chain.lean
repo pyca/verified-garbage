@@ -65,14 +65,18 @@ def chainBody (out : Bool) : Prog isa :=
 def chainStore : List Instr :=
   storeLE64 (q 0) t0 t1 .ra 0 ++ storeLE64 (q 4) t0 t1 .ra 8 ++ [ldS .ra raSlot]
 
-/-- The `n` blocks at `data` chained into the state, as above. -/
-def chain (out : Bool) : Prog isa :=
+/-- `chain`'s frame around a loop of `body`, with `pre` after the state is
+loaded and `post` before it is stored. -/
+def chainFrame (body : Prog isa) (pre post : List Instr) : Prog isa :=
   .ite (.zero .a4) (.block [])
     (.seq (.block (roundSb ++ saveRegs ++ maskInit ++ [stS raSlot .ra, movR .ra .a2] ++ keySetup))
       (.seq (.loop (.block keyBody) (.nonzero .a1))
-        (.seq (.block (keyDone ++ chainLoad))
-          (.seq (.loop (chainBody out) (.nonzero .a4))
-            (.block (chainStore ++ restoreRegs))))))
+        (.seq (.block (keyDone ++ chainLoad ++ pre))
+          (.seq (.loop body (.nonzero .a4))
+            (.block (post ++ chainStore ++ restoreRegs))))))
+
+/-- The `n` blocks at `data` chained into the state, as above. -/
+def chain (out : Bool) : Prog isa := chainFrame (chainBody out) [] []
 
 /-- A call of the CBC-MAC chain, `vg_cmac_aes_update`'s, an internal function. -/
 def macChainCall : Prog isa := .call "vg_aes_mac_chain" (chain false)
@@ -80,5 +84,64 @@ def macChainCall : Prog isa := .call "vg_aes_mac_chain" (chain false)
 /-- A call of the CBC encryption chain, `vg_aes_cbc_encrypt`'s, an internal
 function. -/
 def cbcChainCall : Prog isa := .call "vg_aes_cbc_chain" (chain true)
+
+/-! ## The other chaining modes
+
+The same frame as `chain` (`chainFrame`: the prologue, the key loop, the
+state loaded from `ra` into block 0's registers, a loop of `body` while
+blocks or bytes are left in `a4`, the state stored back) with other bodies: AES-CFB128
+encryption and AES-OFB per block, and AES-CFB8 per byte. -/
+
+/-- AES-CFB128 encryption, one block: `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, stored over
+`Pⱼ`, and the state. -/
+def cfbBody : Prog isa := .seq encrypt4 (.block (chainXor ++ chainOut ++ chainNext))
+
+/-- The data block at `a3` XORed with the state (through `t2`), in place. -/
+def ofbXor : List Instr :=
+  loadLE64 .t2 t0 t1 .a3 0 ++ [xorR .t2 .t2 (q 0)] ++ storeLE64 .t2 t0 t1 .a3 0 ++
+    loadLE64 .t2 t0 t1 .a3 8 ++ [xorR .t2 .t2 (q 4)] ++ storeLE64 .t2 t0 t1 .a3 8
+
+/-- AES-OFB, one block: `Oⱼ = CIPH_K(Oⱼ₋₁)`, the state, XORed into the data
+block. -/
+def ofbBody : Prog isa := .seq encrypt4 (.block (ofbXor ++ chainNext))
+
+def cfbChain : Prog isa := chainFrame cfbBody [] []
+def ofbChain : Prog isa := chainFrame ofbBody [] []
+
+/-- The slots of AES-CFB8's input block, bytes 0–7 and 8–15 (little-endian),
+which `encrypt4` would overwrite in the registers. -/
+def iLo : Nat := 58
+def iHi : Nat := 63
+
+/-- The input block shifted left by a byte, with the ciphertext byte in `t2`
+shifted in, in its slots; on to the next byte. -/
+def cfb8Shift : List Instr :=
+  [ldS t0 iLo, ldS t1 iHi, shrI t0 t0 8, shlI .t3 t1 56, .logic .or t0 t0 .t3,
+    shrI t1 t1 8, shlI .t3 .t2 56, .logic .or t1 t1 .t3, stS iLo t0, stS iHi t1,
+    .addi .a3 .a3 1, .addi .a4 .a4 (-1)]
+
+/-- `C#ⱼ = P#ⱼ ⊕ MSB₈(Oⱼ)` stored over `P#ⱼ`, and in `t2`. -/
+def cfb8Enc : List Instr :=
+  [.load .b .t2 .a3 0, .logicImm .and t1 (q 0) 255, xorR .t2 .t2 t1, .store .b .t2 .a3 0]
+
+/-- `P#ⱼ = C#ⱼ ⊕ MSB₈(Oⱼ)` stored over `C#ⱼ`, which stays in `t2`. -/
+def cfb8Dec : List Instr :=
+  [.load .b .t2 .a3 0, .logicImm .and t1 (q 0) 255, xorR t1 t1 .t2, .store .b t1 .a3 0]
+
+/-- AES-CFB8, one byte: the input block from its slots, enciphered, its
+first byte XORed with the data byte, and the input block shifted. -/
+def cfb8Body (enc : Bool) : Prog isa :=
+  .seq (.block [ldS (q 0) iLo, ldS (q 4) iHi])
+    (.seq encrypt4 (.block ((if enc then cfb8Enc else cfb8Dec) ++ cfb8Shift)))
+
+/-- AES-CFB8 over the `a4` bytes at `a3`, the input block kept in its
+slots and stored back to the state. -/
+def cfb8Chain (enc : Bool) : Prog isa :=
+  chainFrame (cfb8Body enc) [stS iLo (q 0), stS iHi (q 4)] [ldS (q 0) iLo, ldS (q 4) iHi]
+
+def cfbChainCall : Prog isa := .call "vg_aes_cfb_chain" cfbChain
+def ofbChainCall : Prog isa := .call "vg_aes_ofb_chain" ofbChain
+def cfb8EncChainCall : Prog isa := .call "vg_aes_cfb8_enc_chain" (cfb8Chain true)
+def cfb8DecChainCall : Prog isa := .call "vg_aes_cfb8_dec_chain" (cfb8Chain false)
 
 end VG.Impl.Aes.RISCV64

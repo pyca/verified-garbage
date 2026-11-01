@@ -3,38 +3,6 @@
 //! `assembly/sm4_gcm.s`.
 #![allow(dead_code)]
 
-/// SM4 counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks; draft-ribose-cfrg-sm4-10 §7.1): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, in place, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)` (§6.2: the rightmost 32 bits, read as a big-endian integer, incremented modulo 2³², the leftmost 96 bits unchanged), and leaves `inc₃₂ⁿ(CB₁)` in `*counter` (unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
-///
-/// Contract: `VG.Spec.Sm4.ctr32Contract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `counter` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `counter` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `counter` and `data` may overlap the 3296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ctr32(schedule: *const [u8; 128], counter: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "IfMh+CAA4TimAgh8qAwH+JAMp/uYDMf7oAzn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgbAMBZEEAB+BtAwFkQgAH4G4DAWRDAAfgbwMBZF4M998eBtnfAAAgDiSAcA4"
-bl {vg_sm4_prepare_keys}
-.base64 "eDvjfAAAPig="
-beq %cr0, 20f
-22:
-.base64 "sAwFgQADBZG0DAWBBAMFkbgMBYEIAwWRvAwFgQwDBZF4G2d8eCujfJIBgDg="
-bl {vg_sm4_crypt_prepared}
-.base64 "eDvjfAAAH4EAAyWBeEoIfQAAH5EEAB+BBAMlgXhKCH0EAB+RCAAfgQgDJYF4Sgh9CAAfkQwAH4EMAyWBeEoIfQwAH5G8DCA5LEwFfQEACDksTQV9EAD/O///3jsAAD4o"
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+UACbPlIAmz5UAJs+VgCbPlgAmz5aAJs+XACbPl4Amz5gAJs+YgCbPmQAmz5mAJs+aACbPmoAmz5sAJs+bgCbPnAAmz5yAJs+dACbPnYAmz54AJs+egCbPnwAmz5+AJs+QADbPkIA2z5EANs+RgDbPkgA2z5KANs+TADbPk4A2z5QANs+UgDbPlQA2z5WANs+WADbPloA2z5cANs+XgDbPmAA2z5iANs+ZADbPmYA2z5oANs+agDbPmwA2z5uANs+cADbPnIA2z50ANs+dgDbPngA2z56ANs+fADbPn4A2z5AARs+QgEbPkQBGz5GARs+SAEbPkoBGz5MARs+TgEbPlABGz5SARs+VAEbPlYBGz5YARs+WgEbPlwBGz5eARs+YAEbPmIBGz5kARs+ZgEbPmgBGz5qARs+bAEbPm4BGz5wARs+cgEbPnQBGz52ARs+eAEbPnoBGz58ARs+fgEbPkABWz5CAVs+RAFbPkYBWz5IAVs+SgFbPkwBWz5OAVs+UAFbPlIBWz5UAVs+VgFbPlgBWz5aAVs+XAFbPl4BWz5gAVs+YgFbPmQBWz5mAVs+aAFbPmoBWz5sAVs+bgFbPnABWz5yAVs+dAFbPnYBWz54AVs+egFbPnwBWz5+AVs+QAGbPkIBmz5EAZs+RgGbPkgBmz5KAZs+TAGbPk4Bmz5QAZs+UgGbPlQBmz5WAZs+WAGbPloBmz5cAZs+XgGbPmABmz5iAZs+ZAGbPmYBmz5oAZs+agGbPmwBmz5uAZs+cAGbPnIBmz50AZs+dgGbPngBmz56AZs+fAGbPn4Bmz5AAds+QgHbPkQB2z5GAds+SAHbPkoB2z5MAds+TgHbPlAB2z5SAds+VAHbPlYB2z5YAds+WgHbPlwB2z5eAds+YAHbPmIB2z5kAds+ZgHbPmgB2z5qAds+bAHbPm4B2z5wAds+cgHbPnQB2z52Ads+eAHbPnoB2z58Ads+fgHbPkACGz5CAhs+RAIbPkYCGz5IAhs+SgIbPkwCGz5OAhs+UAIbPlICGz5UAhs+VgIbPlgCGz5aAhs+XAIbPl4CGz5gAhs+YgIbPmQCGz5mAhs+aAIbPmoCGz5sAhs+bgIbPnACGz5yAhs+dAIbPnYCGz54Ahs+egIbPnwCGz5+Ahs+QAJbPkICWz5EAls+RgJbPkgCWz5KAls+TAJbPk4CWz5QAls+UgJbPlQCWz5WAls+WAJbPloCWz5cAls+XgJbPmACWz5iAls+ZAJbPmYCWz5oAls+agJbPmwCWz5uAls+cAJbPnICWz50Als+dgJbPngCWz56Als+fAJbPn4CWz5AAps+QgKbPkQCmz5GAps+SAKbPkoCmz5MAps+TgKbPlACmz5SAps+VAKbPlYCmz5YAps+WgKbPlwCmz5eAps+YAKbPmICmz5kAps+ZgKbPmgCmz5qAps+bAKbPm4Cmz5wAps+cgKbPnQCmz52Aps+eAKbPnoCmz58Aps+fgKbPkAC2z5CAts+RALbPkYC2z5IAts+SgLbPkwC2z5OAts+UALbPlIC2z5UAts+VgLbPlgC2z5aAts+XALbPl4C2z5gAts+YgLbPmQC2z5mAts+aALbPmoC2z5sAts+bgLbPnAC2z5yAts+dALbPnYC2z54Ats+egLbPnwC2z5+Ats+QAMbPkIDGz5EAxs+RgMbPkgDGz5KAxs+TAMbPk4DGz5QAxs+UgMbPlQDGz5WAxs+WAMbPloDGz5cAxs+XgMbPmADGz5iAxs+ZAMbPmYDGz5oAxs+agMbPmwDGz5uAxs+eAMITggAIBO""#,
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
-    )
-}
-
 /// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
@@ -65,8 +33,8 @@ b 22f
 21:
 22:
 .base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHx4++x/8AAM6KYDCHyAAEzqiABs6pAAjOqYAKzqoADM6qgA7OqwAAzruAAs68AATOvIAGzr0ACM69gArOvgAMzr6ADs6+AMITggCiE4IACATg==""#,
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
@@ -353,8 +321,8 @@ b 280f
 280:
 .base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHwAAH/oAAB0+AgAf+gIAHT4ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OswDSE4cAohOCAAgE4=""#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
@@ -678,8 +646,8 @@ b 27f
 27:
 .base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OtADSE4cAohOCAAgE4=""#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
@@ -988,8 +956,8 @@ b 221f
 220:
 221:
 .base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -1145,8 +1113,8 @@ b 224f
 224:
 .base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
@@ -1199,8 +1167,8 @@ b 26f
 26:
 .base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHwAAH/oAAB0+AgAf+gIAHT4ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
@@ -1285,7 +1253,7 @@ b 27f
 27:
 .base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }

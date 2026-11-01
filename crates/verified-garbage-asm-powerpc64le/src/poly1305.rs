@@ -20,31 +20,6 @@ pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8
     )
 }
 
-/// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
-///
-/// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `blocks` must be valid for reads of `16 * n` bytes.
-/// * `state` must not overlap `blocks` (distinct Rust objects never do).
-/// * Neither `state` nor `blocks` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "Yf8h+CAAwTgAAMb5CADm+RAABvoYACb6IABG+igAZvowAIb6OACm+gAApjr/A4A+//+UYhgAQ+ogAGPq/w8APPz/AGDGBwB4/w8AZP//AGA4AFJ+/w8APPz/AGDGBwB4/w8AZPz/AGA4AHN+OKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxemQXx3kUcud8ZBfoeRR6CH1kFwl6FIIpfWQXKnoUikp9SACDkUwAw5FQAOORVAADklgAI5JcAOOQYAADkWQAI5FoAEORAABD6ggAY+o4oEx+gjZOejigzn0gZU965GRgehQC7304oO99gpNwejigEH4gwnF6EAAD6OTBAHgAAOw4AAAOOQAALzkAAFA5FAJxfQAAJSg="
-beq %cr0, 20f
-22:
-.base64 "AABE6ggAZOo4oEx+gjZOejigzn0gZU965GRgehQC7304oO99gpNwejigEH4gwnF6FGLnfBRyCH0Ueil9FIJKfRSKa30AAQA8FAJrfUgAQ4LSkYd9aABDgtKRSH4Ukox9ZABDgtKRSX4Ukox9YABDgtKRSn4Ukox9XABDgtKRS34Ukox9TABDgtKRx31IAEOC0pFIfhSSzn1oAEOC0pFJfhSSzn1kAEOC0pFKfhSSzn1gAEOC0pFLfhSSzn1QAEOC0pHnfUwAQ4LSkUh+FJLvfUgAQ4LSkUl+FJLvfWgAQ4LSkUp+FJLvfWQAQ4LSkUt+FJLvfVQAQ4LSkQd+UABDgtKRSH4UkhB+TABDgtKRSX4UkhB+SABDgtKRSn4UkhB+aABDgtKRS34UkhB+WABDgtKRJ35UAEOC0pFIfhSSMX5QAEOC0pFJfhSSMX5MAEOC0pFKfhSSMX5IAEOC0pFLfhSSMX6CNpJ5OKCHfRSSzn2CNtJ5OKDIfRSS732CNvJ5OKDpfRSSEH6CNhJ6OKAKfhSSMX6CNjJ6OKArfmQXU3oUmlJ+FJLnfII28ng4oOd8FJIIfRAAhDj//6U4AAAlKA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9BQCHOYI2knk4oIx9FJLIfYI20nk4oM59FJLpfYI28nk4oO99FJIKfoI2Eno4oBB+FJIrfoI2Mno4oDF+//9SOnhi83w4kHN+eJqHfXhyE304kHN+eJrIfXh6M304kHN+eJrpfXiCU304kHN+eJoKfniKc304kHN+eJorfmTRDHkUYkd+xqIseRRiUn4CozN5ZHRMeRRic37GRWx5FGJzfgJGYHkAAEP6CABj+hAAA/gAANXpCAD16RAAFeoYADXqIABV6igAdeowAJXqOAC16qAAITggAIBO""#,
-    )
-}
-
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
@@ -136,6 +111,10 @@ b 21f
 .base64 "gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9BQCHOYI2knk4oIx9FJLIfYI20nk4oM59FJLpfYI28nk4oO99FJIKfoI2Eno4oBB+FJIrfoI2Mno4oDF+//9SOnhi83w4kHN+eJqHfXhyE304kHN+eJrIfXh6M304kHN+eJrpfXiCU304kHN+eJoKfniKc304kHN+eJorfigAQ+owAGPqOKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxehRi53wUcgh9FHopfRSCSn0Uimt9gjbyeDig53wUkgh9gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9ZNEMeRRiR37Goix5FGJSfgKjM3lkdEx5FGJzfsZFbHkUYnN+AkZgeQAARvoIAGb6AADV6QgA9ekQABXqGAA16iAAVeooAHXqMACV6jgAteqgACE4IACATg==""#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_blocks.rs"]
+pub(crate) mod vg_poly1305_blocks;
 
 #[rustfmt::skip]
 #[path = "internal/vg_poly1305_finalize_scratch.rs"]

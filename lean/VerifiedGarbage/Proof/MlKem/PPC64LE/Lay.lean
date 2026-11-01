@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
 

@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductStore
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductCounter
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
 
 /-! Shared memory boundaries for the public subset-product loop. -/
 

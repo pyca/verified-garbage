@@ -421,8 +421,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.nttContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.nttContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, Arm.abi, Arm.argRegs,
+theorem pre_of {s : State} (h : (Proof.MlKem.nttContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.nttContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6⟩
@@ -440,15 +440,15 @@ def satState : State where
   rd := []
   wr := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
 
-theorem verified : Verified Arm.target Impl.MlKem.Arm.ntt (Spec.MlKem.nttContract Arm.abi) := by
+theorem verified : Verified Arm.target Impl.MlKem.Arm.ntt (Proof.MlKem.nttContract Arm.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, hpres, hsp, h⟩ := correct hp
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlKem.nttContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, Arm.abi,
+    sig_post [Proof.MlKem.nttContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact h
-  · sig_pub [Spec.MlKem.nttContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, Arm.abi,
+  · sig_pub [Proof.MlKem.nttContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     obtain ⟨-, h0, h1⟩ := h
     intro r hr
@@ -457,7 +457,7 @@ theorem verified : Verified Arm.target Impl.MlKem.Arm.ntt (Spec.MlKem.nttContrac
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.nttContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, Arm.abi,
+    · sig_reduce [Proof.MlKem.nttContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi,
         Arm.argRegs, Arm.Loc.val]
       sig_and_intros
       all_goals first

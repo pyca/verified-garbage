@@ -38,19 +38,20 @@ open VG VG.RISCV64 VG.Impl.AesCbc.RISCV64
 /-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`. -/
 abbrev cbcRISCV64 (enc : Bool) : Contract isa := modeRISCV64 (cbcMode enc)
 
-/-- Encryption's precondition, the chain's (with the scratch buffer of 2176 bytes). -/
-theorem encrypt_wpre {s : State} (hs : (cbcRISCV64 true).pre s) : WPre true s :=
+/-- A mode's precondition, a chain's that writes the blocks (with the scratch buffer of 2176
+bytes). -/
+theorem encrypt_wpre {M : Mode} {s : State} (hs : (modeRISCV64 M).pre s) : WPre true (16 * ·) s :=
   let ⟨a, b, c, _, e, f, g, h, i, j, k, l⟩ := hs
   ⟨a, b, c, e, f.symm, h, g, i, j, k, l⟩
 
 theorem encrypt_correct (s : State) (hs : (cbcRISCV64 true).pre s) :
     ∃ t s', Exec isa encrypt s t s' ∧ abiPreserved s s' ∧ (cbcRISCV64 true).post s s' := by
-  obtain ⟨t, s', he, hg, hra, hsp, hc, ho⟩ := wrap_wp (name := "vg_aes_cbc_chain") (encrypt_wpre hs)
+  obtain ⟨t, s', he, hg, hra, hsp, hc, ho⟩ := wrap_wp (chain_k true) (name := "vg_aes_cbc_chain") (encrypt_wpre hs)
   exact ⟨t, s', he, ⟨hg, hsp, hra⟩, ho rfl, hc.trans (next_encrypt _ _ _).symm⟩
 
 theorem encrypt_ct : ConstantTime isa (cbcRISCV64 true).pre (cbcRISCV64 true).pub encrypt :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ =>
-    wrap_ct "vg_aes_cbc_chain" true _ _ _ _ _ _ (encrypt_wpre h₁) (encrypt_wpre h₂) hq e₁ e₂
+    wrap_ct (chain_k true) "vg_aes_cbc_chain" _ _ _ _ _ _ (encrypt_wpre h₁) (encrypt_wpre h₂) hq e₁ e₂
 
 theorem decrypt_correct (s : State) (hs : (cbcRISCV64 false).pre s) :
     ∃ t s', Exec isa decrypt s t s' ∧ abiPreserved s s' ∧ (cbcRISCV64 false).post s s' := by

@@ -2032,10 +2032,10 @@ bl {vg_poly1305_blocks}
 .inst 0x3d813ea0
 b 25b
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
-        vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon::vg_chacha20_xor_neon,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -4107,10 +4107,10 @@ bl {vg_poly1305_blocks}
 bl {vg_poly1305_finalize_scratch}
 b 25b
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
-        vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon::vg_chacha20_xor_neon,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -4766,10 +4766,10 @@ bl {vg_poly1305_finalize_scratch}
 .inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
 .inst 0xa90e4611,0xa90f4611,0x911403ff,0xd65f03c0
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -5558,10 +5558,10 @@ bl {vg_poly1305_finalize_scratch}
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
 .inst 0x911403ff,0xd65f03c0
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -7461,10 +7461,10 @@ bl {vg_poly1305_blocks}
 b 25b
 .arch_extension nosve2
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
-        vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2::vg_chacha20_xor_sve2,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -9427,10 +9427,10 @@ bl {vg_poly1305_finalize_scratch}
 b 25b
 .arch_extension nosve2
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
-        vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2::vg_chacha20_xor_sve2,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }

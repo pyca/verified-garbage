@@ -937,7 +937,7 @@ theorem compressEncode1024Y_ct :
 
 /-- `vg_mlkem1024_compress_encode_avx2`, for the calls of the top-level functions. -/
 theorem ceImpl1024Y : CEImpl "vg_mlkem1024_compress_encode_avx2" compressEncode1024Avx2
-    Spec.MlKem1024.compressWidths :=
+    Proof.MlKem1024.compressWidths :=
   ⟨fun _ hd => by rcases widths1024 hd with rfl | rfl <;> decide, CEW.correct, compressEncode1024Y_ct,
     nosp_of (by decide +kernel), by decide +kernel⟩
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Group
 public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Contract
 public import VerifiedGarbage.Proof.Sm4.Arm.Keys
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -184,8 +185,8 @@ theorem ecbWith_wp (sr : Reg) (kt : Prog isa) (dir : Dir) {s₀ : State}
 def dirOf (decrypt : BitVec 32) : Dir := if decrypt = 0 then .encrypt else .decrypt
 
 theorem dirOf_eq (decrypt : BitVec 32) :
-    specDirArm (dirOf decrypt) = Spec.Sm4.directionOf (decrypt.setWidth 64).toNat := by
-  unfold dirOf Spec.Sm4.directionOf
+    specDirArm (dirOf decrypt) = Proof.Sm4.directionOf (decrypt.setWidth 64).toNat := by
+  unfold dirOf Proof.Sm4.directionOf
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := decrypt.isLt; omega)]
   by_cases h : decrypt = 0
   · subst h; rfl

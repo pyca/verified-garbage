@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
 public import VerifiedGarbage.Proof.MlKem.X86_64.Lazy
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top

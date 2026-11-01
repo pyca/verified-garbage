@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.ChaCha20.RISCV64.Block
 public import VerifiedGarbage.Spec.ChaCha20.Contract
+public import VerifiedGarbage.Proof.ChaCha20.Contract
 public import VerifiedGarbage.Impl.ChaCha20.RISCV64
 public import VerifiedGarbage.TCB.RISCV64.Target
 
@@ -20,9 +21,9 @@ artifacts are emitted with.
 namespace VG.Proof.ChaCha20.RISCV64.Shared
 
 theorem block :
-    Verified RISCV64.target Impl.ChaCha20.RISCV64.block (Spec.ChaCha20.blockContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.ChaCha20.RISCV64.block (Proof.ChaCha20.blockContract RISCV64.abi) :=
   Proof.ChaCha20.RISCV64.block_verified.of_implies (by
-    contract_implies [Spec.ChaCha20.blockContract, Spec.ChaCha20.blockSig,
+    contract_implies [Proof.ChaCha20.blockContract, Proof.ChaCha20.blockSig,
       Proof.ChaCha20.blockRISCV64, RISCV64.abi, RISCV64.argRegs]
       [Proof.ChaCha20.RISCV64.satState] using Proof.ChaCha20.RISCV64.satState)
 

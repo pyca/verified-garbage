@@ -433,7 +433,7 @@ end
 K-PKE.KeyGen, K-PKE.Encrypt, K-PKE.Decrypt (Algorithms 13–15) and the internal
 algorithms (Algorithms 16–18) restated, for any parameter set `p` with
 `η₁ = η₂ = 2` (ML-KEM-768 and ML-KEM-1024), as the sequence of calls of the
-polynomial primitives (`Spec/MlKem/Poly.lean`) an implementation makes, so
+polynomial primitives (`Proof/MlKem/PolyContract.lean`) an implementation makes, so
 that a proof of the top-level functions chains the primitives' contracts:
 
 * `dotK a b k = (⋯(a₀ ×_T b₀ + a₁ ×_T b₁) + ⋯) + a_{k-1} ×_T b_{k-1}`,

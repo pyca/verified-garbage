@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPrefix
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
@@ -179,12 +180,12 @@ theorem verifyEquationFor_ctI (v : Impl.Ed448.X86_64.FieldVariant) (hR : Proof.E
   exact result.constantTime
 
 theorem verifyEquation_implies :
-    verifyEquationLocal.Implies (Spec.Ed448.verifyEquationContract X86_64.abi) where
+    verifyEquationLocal.Implies (Proof.Ed448.verifyEquationContract X86_64.abi) where
   pre := by
-    sig_implies_pre [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_implies_pre [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs, verifyEquationLocal]
   post s t _ h := by
-    sig_post [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_post [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs]
     have h' : t.gpr .rax = _ := h
     rw [h']
@@ -192,7 +193,7 @@ theorem verifyEquation_implies :
       (Spec.Ed448.bytesAt s.mem (s.gpr .rsi) 114) (Spec.Ed448.bytesAt s.mem (s.gpr .rdx) 57) = b
     cases b <;> rfl
   pub s t _ _ h := by
-    sig_pub [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_pub [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs] at h
     obtain ⟨sp, bytes, pk, sig, ch, base⟩ := h
     have hb := byteMap_inj bytes
@@ -203,19 +204,19 @@ theorem verifyEquation_implies :
     rw [bytesAt_drop57, bytesAt_drop57] at hd
     exact hd
   sat := by
-    sig_implies_sat [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_implies_sat [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs] [verifyEquationSat] using verifyEquationSat
 
 /-- The contract with 8 bytes of stack, for the call's return address. -/
 theorem verifyEquation_implies8 :
-    verifyEquationLocal.Implies (Spec.Ed448.verifyEquationContract X86_64.abi 8) :=
+    verifyEquationLocal.Implies (Proof.Ed448.verifyEquationContract X86_64.abi 8) :=
   verifyEquation_implies.stack8_abi (by
-    sig_implies_sat [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_implies_sat [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs, verifyEquationSat] [verifyEquationSat]
       using verifyEquationSat)
 
 theorem verifyEquation_verified (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) :
-    Verified X86_64.target verifyEquation (Spec.Ed448.verifyEquationContract X86_64.abi 8) :=
+    Verified X86_64.target verifyEquation (Proof.Ed448.verifyEquationContract X86_64.abi 8) :=
   Verified.of_inline verifyEquation_inlineOk (verifyEquation_okI hR hE) (verifyEquationFor_ctI .scalar hR)
     verifyEquation_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ _ hp => hp)
     (fun s t hs ht hp => (verifyEquation_implies8.pub s t hs ht hp).1)

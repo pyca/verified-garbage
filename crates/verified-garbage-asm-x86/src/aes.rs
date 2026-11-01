@@ -3,7 +3,7 @@
 //! `assembly/aes.s`.
 #![allow(dead_code)]
 
-/// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`, as `vg_aes_ctr32` reads it.
+/// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`.
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
@@ -54,176 +54,10 @@ jne 21b
     )
 }
 
-/// `vg_aes_expand_key`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Aes.expandKeyScratchContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `schedule` must be valid for reads and writes of 240 bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * The bytes of `schedule` after the key schedule are unspecified on return.
-/// * The contents of `scratch` on return are unspecified.
-/// * `schedule` and `scratch` must not overlap each other, `key` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `schedule` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_expand_key_scratch(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkEImYAAEAAImwBAEAAIm4CAEAAImoDAEAAInHi3QkBItsJAyLTCQI"
-20:
-.base64 "iwaJRQCDxgSDxQSD6QQ="
-jne 20b
-.base64 "ie6D7gS4AAAAAImHFAEAAItEJAiJhxgBAADB6AKJwwHAAdiDwByJhxwBAAC4AQAAAImHEAEAAA=="
-21:
-.base64 "iwaLjxQBAACFyQ=="
-je 22f
-.base64 "g/kQ"
-je 24f
-jmp 25f
-24:
-.base64 "i48YAQAAg/kg"
-je 26f
-jmp 27f
-26:
-.base64 "iQe4AAAAAIlHBIlHCIlHDIlHEIlHFIlHGIlHHIsHi18EicHR6THZgeFVVVVVMcvByR8xyIkHiV8Ei0cIi18MicHR6THZgeFVVVVVMcvByR8xyIlHCIlfDItHEItfFInB0ekx2YHhVVVVVTHLwckfMciJRxCJXxSLRxiLXxyJwdHpMdmB4VVVVVUxy8HJHzHIiUcYiV8ciweLXwiJwcHpAjHZgeEzMzMzMcvByR4xyIkHiV8Ii0cEi18MicHB6QIx2YHhMzMzMzHLwckeMciJRwSJXwyLRxCLXxiJwcHpAjHZgeEzMzMzMcvByR4xyIlHEIlfGItHFItfHInBwekCMdmB4TMzMzMxy8HJHjHIiUcUiV8ciweLXxCJwcHpBDHZgeEPDw8PMcvByRwxyIkHiV8Qi0cEi18UicHB6QQx2YHhDw8PDzHLwckcMciJRwSJXxSLRwiLXxiJwcHpBDHZgeEPDw8PMcvByRwxyIlHCIlfGItHDItfHInBwekEMdmB4Q8PDw8xy8HJHDHIiUcMiV8ci0cQM0cIi18cM18Ei08cM08Qi1ccM1cIi28YM28UiU8giekzD4lvJInNM28QiW8oid0xxYlHLInIM0cciUcwicgzRwSJTzSJwTHRiUc4i0cMMeiJTzyJwTNPCDNHGIlvQInNMy+Jb0SJzTNvJIlPSInBM08giUdMiwcxyIlHUInoMciJR1SJ6DHQiUdYi0ckMciJbySJ3THFiW9ci28cMcWJb2CLb0Ajb0iJV2SLVzwjV0Qx6olXaItXKCMXMeqJ3SHFiV9si184I180MeuJR3CLRzAjR1Ax6ItvICHNiU90i08sI09UMemJR3iLR2QjRyQx6ItvaDHNMcIxyzNHeDNvTDNXWDNfXDNHYInpMdEh3YlfYInDMeuJb1yJzSHdMdWJT1iLT2AxwTNXXCHKMcKLT2Ax0YlvYIndMdUh6DHBMcMjX2AzX1iJ2DHIi29gMdWJb1iLb2Ax3YlfXInTMcuJb0yLb1gxxYlHeInYI0dIiUdIicgjR0SJR0SJ0CMHiUdoi0dMI0dwiUdwi0dcI0c0iUc0i0dgI0dQiUdQi0dYI0d0iUd0iegjR1SJR1SLR3gjRyQjX0AjTzwjVyiJRyiLR0wjR2yJR2yLR1wjRziJXziLX2AjXzCJXzCLX1gjXyAjbyyJRyyLR3gjR2Qx6zHKiVdki1dQM1csM084iU84i09oM09siV8si19oM19QiV9Qi19UM18oiV8oi19IM19wiV9Ii190M19UMcWLR2wx0DNPSIlvbItvNDNvLDNfcIlXcItXLDHKM08wiVcwi1coMeozbziJRziLRzQx2DHRiU80i09EMekx6zNXOIPy/4tvcDNvMIP1/4lvMInFM280iVdwi1dIMcozT1CJT1CLT2QzTzQx0IPw/zNvbIP1/4lfHIlHGIlvFIlXEIlPCItHUIlHDItHcIlHBItHMIkHiweLXwSJwdHpMdmB4VVVVVUxy8HJHzHIiQeJXwSLRwiLXwyJwdHpMdmB4VVVVVUxy8HJHzHIiUcIiV8Mi0cQi18UicHR6THZgeFVVVVVMcvByR8xyIlHEIlfFItHGItfHInB0ekx2YHhVVVVVTHLwckfMciJRxiJXxyLB4tfCInBwekCMdmB4TMzMzMxy8HJHjHIiQeJXwiLRwSLXwyJwcHpAjHZgeEzMzMzMcvByR4xyIlHBIlfDItHEItfGInBwekCMdmB4TMzMzMxy8HJHjHIiUcQiV8Yi0cUi18cicHB6QIx2YHhMzMzMzHLwckeMciJRxSJXxyLB4tfEInBwekEMdmB4Q8PDw8xy8HJHDHIiQeJXxCLRwSLXxSJwcHpBDHZgeEPDw8PMcvByRwxyIlHBIlfFItHCItfGInBwekEMdmB4Q8PDw8xy8HJHDHIiUcIiV8Yi0cMi18cicHB6QQx2YHhDw8PDzHLwckcMciJRwyJXxyLBw=="
-27:
-25:
-jmp 23f
-22:
-.base64 "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"
-23:
-.base64 "i48YAQAAifODwwQpyzMDi48UAQAAi5ccAQAAi68YAQAAiUYEg8YEg8EEOek="
-je 28f
-jmp 29f
-28:
-.base64 "uQAAAAA="
-29:
-.base64 "iY8UAQAAia8YAQAAg+oBiZccAQAA"
-jne 21b
-.base64 "i58AAQAAi7cEAQAAi68MAQAAi78IAQAAww=="
-.p2align 6"#,
-    )
-}
-
-/// AES counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Gcm.ctr32Contract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the counter block or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `counter` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `counter`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `counter`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYAAEAAImwBAEAAIm4CAEAAImoDAEAAInHi0wkDIsBiYcQAQAAi0EEiYcUAQAAi0EIiYcYAQAAi0EMD8iJhxwBAAADRCQUD8iJQQyLdCQI"
-20:
-.base64 "ifABwAHAAcABwItcJAQB2IsYiR+JXwSLWASJXwiJXwyLWAiJXxCJXxSLWAyJXxiJXxyLB4tfBInB0ekx2YHhVVVVVTHLwckfMciJB4lfBItHCItfDInB0ekx2YHhVVVVVTHLwckfMciJRwiJXwyLRxCLXxSJwdHpMdmB4VVVVVUxy8HJHzHIiUcQiV8Ui0cYi18cicHR6THZgeFVVVVVMcvByR8xyIlHGIlfHIsHi18IicHB6QIx2YHhMzMzMzHLwckeMciJB4lfCItHBItfDInBwekCMdmB4TMzMzMxy8HJHjHIiUcEiV8Mi0cQi18YicHB6QIx2YHhMzMzMzHLwckeMciJRxCJXxiLRxSLXxyJwcHpAjHZgeEzMzMzMcvByR4xyIlHFIlfHIsHi18QicHB6QQx2YHhDw8PDzHLwckcMciJB4lfEItHBItfFInBwekEMdmB4Q8PDw8xy8HJHDHIiUcEiV8Ui0cIi18YicHB6QQx2YHhDw8PDzHLwckcMciJRwiJXxiLRwyLXxyJwcHpBDHZgeEPDw8PMcvByRwxyIlHDIlfHItEJAgp8AHAAcABwAHAAcCJ+4HDwAUAACnDiweJA4tHBIlDBItHCIlDCItHDIlDDItHEIlDEItHFIlDFItHGIlDGItHHIlDHIPuAQ=="
-jae 20b
-.base64 "i0QkEImHIAEAAItEJBSJhyQBAACFwA=="
-je 21f
-23:
-.base64 "i4cQAQAAiQeLhxQBAACJRwiLhxgBAACJRxCLhxwBAACDwAAPyIlHGIuHEAEAAIlHBIuHFAEAAIlHDIuHGAEAAIlHFIuHHAEAAIPAAQ/IiUcci4ccAQAAg8ACiYccAQAAiweLXwSJwdHpMdmB4VVVVVUxy8HJHzHIiQeJXwSLRwiLXwyJwdHpMdmB4VVVVVUxy8HJHzHIiUcIiV8Mi0cQi18UicHR6THZgeFVVVVVMcvByR8xyIlHEIlfFItHGItfHInB0ekx2YHhVVVVVTHLwckfMciJRxiJXxyLB4tfCInBwekCMdmB4TMzMzMxy8HJHjHIiQeJXwiLRwSLXwyJwcHpAjHZgeEzMzMzMcvByR4xyIlHBIlfDItHEItfGInBwekCMdmB4TMzMzMxy8HJHjHIiUcQiV8Yi0cUi18cicHB6QIx2YHhMzMzMzHLwckeMciJRxSJXxyLB4tfEInBwekEMdmB4Q8PDw8xy8HJHDHIiQeJXxCLRwSLXxSJwcHpBDHZgeEPDw8PMcvByRwxyIlHBIlfFItHCItfGInBwekEMdmB4Q8PDw8xy8HJHDHIiUcIiV8Yi0cMi18cicHB6QQx2YHhDw8PDzHLwckcMciJRwyJXxyLdCQIAfYB9gH2AfYB9on4BcAFAAAp8InGiwczBokHi0cEM0YEiUcEi0cIM0YIiUcIi0cMM0YMiUcMi0cQM0YQiUcQi0cUM0YUiUcUi0cYM0YYiUcYi0ccM0YciUcc"
-24:
-.base64 "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"
-jne 24b
-.base64 "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"
-jae 25f
-.base64 "iwYzB4kGi0YEM0cIiUYEi0YIM0cQiUYIi0YMM0cYiUYMKe0="
-jmp 26f
-25:
-.base64 "iwYzB4kGi0YEM0cIiUYEi0YIM0cQiUYIi0YMM0cYiUYMi0YQM0cEiUYQi0YUM0cMiUYUi0YYM0cUiUYYi0YcM0cciUYcg8Ygg+0C"
-26:
-.base64 "ibcgAQAAia8kAQAAhe0="
-jne 23b
-jmp 22f
-21:
-22:
-.base64 "i58AAQAAi7cEAQAAi68MAQAAi78IAQAAww=="
-.p2align 6"#,
-    )
-}
-
-/// The CPU features `vg_aes_ctr32_aesni` requires (`Artifact.features`).
-pub const VG_AES_CTR32_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Gcm.ctr32Contract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the counter block or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `counter` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `counter`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `counter`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ctr32_aesni(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGIkYiXAEiXgIiWgMicWLRCQEi0wkCItUJAyLdCQQi3wkFItaDA/L8w9vOmYPc/8EZg9z3wTzD399EIP/Bg=="
-jb 20f
-22:
-.base64 "8w9vfRCJ2A/IZg9uwGYPc/gMZg/rx4PDAYnYD8hmD27IZg9z+QxmD+vPg8MBidgPyGYPbtBmD3P6DGYP69eDwwGJ2A/IZg9u2GYPc/sMZg/r34PDAYnYD8hmD27gZg9z/AxmD+vng8MBidgPyGYPbuhmD3P9DGYP6++DwwGLRCQE8w9vMGYP78ZmD+/OZg/v1mYP795mD+/mZg/v7vMPb3AQZg843MZmDzjczmYPONzWZg843N5mDzjc5mYPONzu8w9vcCBmDzjcxmYPONzOZg843NZmDzjc3mYPONzmZg843O7zD29wMGYPONzGZg843M5mDzjc1mYPONzeZg843OZmDzjc7vMPb3BAZg843MZmDzjczmYPONzWZg843N5mDzjc5mYPONzu8w9vcFBmDzjcxmYPONzOZg843NZmDzjc3mYPONzmZg843O7zD29wYGYPONzGZg843M5mDzjc1mYPONzeZg843OZmDzjc7vMPb3BwZg843MZmDzjczmYPONzWZg843N5mDzjc5mYPONzu8w9vsIAAAABmDzjcxmYPONzOZg843NZmDzjc3mYPONzmZg843O7zD2+wkAAAAGYPONzGZg843M5mDzjc1mYPONzeZg843OZmDzjc7oP5Cg=="
-je 23f
-.base64 "8w9vsKAAAABmDzjcxmYPONzOZg843NZmDzjc3mYPONzmZg843O7zD2+wsAAAAGYPONzGZg843M5mDzjc1mYPONzeZg843OZmDzjc7oP5DA=="
-je 25f
-.base64 "8w9vsMAAAABmDzjcxmYPONzOZg843NZmDzjc3mYPONzmZg843O7zD2+w0AAAAGYPONzGZg843M5mDzjc1mYPONzeZg843OZmDzjc7vMPb7DgAAAAZg843cZmDzjdzmYPON3WZg843d5mDzjd5mYPON3u"
-jmp 26f
-25:
-.base64 "8w9vsMAAAABmDzjdxmYPON3OZg843dZmDzjd3mYPON3mZg843e4="
-26:
-jmp 24f
-23:
-.base64 "8w9vsKAAAABmDzjdxmYPON3OZg843dZmDzjd3mYPON3mZg843e4="
-24:
-.base64 "8w9vPmYP78fzD38G8w9vfhBmD+/P8w9/ThDzD29+IGYP79fzD39WIPMPb34wZg/v3/MPf14w8w9vfkBmD+/n8w9/ZkDzD29+UGYP7+/zD39uUIPGYIPvBoP/Bg=="
-jae 22b
-jmp 21f
-20:
-21:
-.base64 "hf8="
-je 27f
-29:
-.base64 "8w9vfRCJ2A/IZg9uwGYPc/gMZg/rx4PDAYtEJATzD28wZg/vxvMPb3AQZg843MbzD29wIGYPONzG8w9vcDBmDzjcxvMPb3BAZg843MbzD29wUGYPONzG8w9vcGBmDzjcxvMPb3BwZg843MbzD2+wgAAAAGYPONzG8w9vsJAAAABmDzjcxoP5Cg=="
-je 210f
-.base64 "8w9vsKAAAABmDzjcxvMPb7CwAAAAZg843MaD+Qw="
-je 212f
-.base64 "8w9vsMAAAABmDzjcxvMPb7DQAAAAZg843MbzD2+w4AAAAGYPON3G"
-jmp 213f
-212:
-.base64 "8w9vsMAAAABmDzjdxg=="
-213:
-jmp 211f
-210:
-.base64 "8w9vsKAAAABmDzjdxg=="
-211:
-.base64 "8w9vPmYP78fzD38Gg8YQg+8B"
-jne 29b
-jmp 28f
-27:
-28:
-.base64 "idgPyIlCDItdAIt1BIt9CIttDMM="
-.p2align 6"#,
-    )
-}
-
 /// The CPU features `vg_aes_expand_key_aesni` requires (`Artifact.features`).
 pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
-/// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`, as `vg_aes_ctr32` reads it.
+/// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`.
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
@@ -253,45 +87,6 @@ jmp 21f
 .base64 "8w9vCPMPb1AIZg9z2gjzD38K8w9/UhBmDzrf2gFmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/ShhmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UihmDzrf2gJmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SjBmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UkBmDzrf2gRmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SkhmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UlhmDzrf2ghmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SmBmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UnBmDzrf2hBmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SnhmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/kogAAABmDzrf2iBmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/ipAAAABmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/kqAAAABmDzrf2kBmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/iqgAAABmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/krgAAABmDzrf2oBmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/isAAAAA="
 21:
 .base64 "uQAAAACJTCQUiUwkGIlMJByJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQiUwkVIlMJFiJTCRciUwkYIlMJGSJTCRoiUwkbIlMJHCJTCR0iUwkeIlMJHyJjCSAAAAAiYwkhAAAAImMJIgAAACJjCSMAAAAiYwkkAAAAImMJJQAAACJjCSYAAAAiYwknAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAImMJKwAAACJjCSwAAAAiYwktAAAAImMJLgAAACJjCS8AAAAiYwkwAAAAImMJMQAAACJjCTIAAAAiYwkzAAAAImMJNAAAACJjCTUAAAAiYwk2AAAAImMJNwAAACJjCTgAAAAiYwk5AAAAImMJOgAAACJjCTsAAAAiYwk8AAAAImMJPQAAACJjCT4AAAAiYwk/AAAAImMJAABAACJjCQEAQAAiYwkCAEAAImMJAwBAACJjCQQAQAAiYwkFAEAAImMJBgBAACJjCQcAQAAiYwkIAEAAImMJCQBAACJjCQoAQAAiYwkLAEAAImMJDABAACJjCQ0AQAAiYwkOAEAAImMJDwBAACJjCRAAQAAiYwkRAEAAImMJEgBAACJjCRMAQAAiYwkUAEAAImMJFQBAACJjCRYAQAAiYwkXAEAAImMJGABAACJjCRkAQAAiYwkaAEAAImMJGwBAACJjCRwAQAAiYwkdAEAAImMJHgBAACJjCR8AQAAiYwkgAEAAImMJIQBAACJjCSIAQAAiYwkjAEAAImMJJABAACJjCSUAQAAiYwkmAEAAImMJJwBAACJjCSgAQAAiYwkpAEAAImMJKgBAACJjCSsAQAAiYwksAEAAImMJLQBAACJjCS4AQAAiYwkvAEAAImMJMABAACJjCTEAQAAiYwkyAEAAImMJMwBAACJjCTQAQAAiYwk1AEAAImMJNgBAACJjCTcAQAAiYwk4AEAAImMJOQBAACJjCToAQAAiYwk7AEAAImMJPABAACJjCT0AQAAiYwk+AEAAImMJPwBAACJjCQAAgAAiYwkBAIAAImMJAgCAACJjCQMAgAAiYwkEAIAAI2kJBQCAADD"
-.p2align 6"#,
-    )
-}
-
-/// The CPU features `vg_aes_expand_key_scratch_aesni` requires (`Artifact.features`).
-pub const VG_AES_EXPAND_KEY_SCRATCH_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// `vg_aes_expand_key`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Aes.expandKeyScratchContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `schedule` must be valid for reads and writes of 240 bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * The bytes of `schedule` after the key schedule are unspecified on return.
-/// * The contents of `scratch` on return are unspecified.
-/// * `schedule` and `scratch` must not overlap each other, `key` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `schedule` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_expand_key_scratch_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkBItMJAiLVCQMg/kY"
-je 20f
-.base64 "g/kg"
-je 22f
-.base64 "8w9vCPMPfwpmDzrf2QFmD3Db/2YPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/ShBmDzrf2QJmD3Db/2YPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SiBmDzrf2QRmD3Db/2YPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SjBmDzrf2QhmD3Db/2YPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SkBmDzrf2RBmD3Db/2YPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SlBmDzrf2SBmD3Db/2YPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SmBmDzrf2UBmD3Db/2YPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SnBmDzrf2YBmD3Db/2YPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/ioAAAABmDzrf2RtmD3Db/2YPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/ipAAAABmDzrf2TZmD3Db/2YPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/iqAAAAA="
-jmp 23f
-22:
-.base64 "8w9vCPMPb1AQ8w9/CvMPf1IQZg8639oBZg9w2/9mD2/hZg9z/ARmD+/MZg9z/ARmD+/MZg9z/ARmD+/MZg/vy/MPf0ogZg8639kAZg9w26pmD2/iZg9z/ARmD+/UZg9z/ARmD+/UZg9z/ARmD+/UZg/v0/MPf1IwZg8639oCZg9w2/9mD2/hZg9z/ARmD+/MZg9z/ARmD+/MZg9z/ARmD+/MZg/vy/MPf0pAZg8639kAZg9w26pmD2/iZg9z/ARmD+/UZg9z/ARmD+/UZg9z/ARmD+/UZg/v0/MPf1JQZg8639oEZg9w2/9mD2/hZg9z/ARmD+/MZg9z/ARmD+/MZg9z/ARmD+/MZg/vy/MPf0pgZg8639kAZg9w26pmD2/iZg9z/ARmD+/UZg9z/ARmD+/UZg9z/ARmD+/UZg/v0/MPf1JwZg8639oIZg9w2/9mD2/hZg9z/ARmD+/MZg9z/ARmD+/MZg9z/ARmD+/MZg/vy/MPf4qAAAAAZg8639kAZg9w26pmD2/iZg9z/ARmD+/UZg9z/ARmD+/UZg9z/ARmD+/UZg/v0/MPf5KQAAAAZg8639oQZg9w2/9mD2/hZg9z/ARmD+/MZg9z/ARmD+/MZg9z/ARmD+/MZg/vy/MPf4qgAAAAZg8639kAZg9w26pmD2/iZg9z/ARmD+/UZg9z/ARmD+/UZg9z/ARmD+/UZg/v0/MPf5KwAAAAZg8639ogZg9w2/9mD2/hZg9z/ARmD+/MZg9z/ARmD+/MZg9z/ARmD+/MZg/vy/MPf4rAAAAAZg8639kAZg9w26pmD2/iZg9z/ARmD+/UZg9z/ARmD+/UZg9z/ARmD+/UZg/v0/MPf5LQAAAAZg8639pAZg9w2/9mD2/hZg9z/ARmD+/MZg9z/ARmD+/MZg9z/ARmD+/MZg/vy/MPf4rgAAAA"
-23:
-jmp 21f
-20:
-.base64 "8w9vCPMPb1AIZg9z2gjzD38K8w9/UhBmDzrf2gFmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/ShhmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UihmDzrf2gJmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SjBmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UkBmDzrf2gRmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SkhmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UlhmDzrf2ghmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SmBmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UnBmDzrf2hBmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/SnhmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/kogAAABmDzrf2iBmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/ipAAAABmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/kqAAAABmDzrf2kBmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/iqgAAABmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/krgAAABmDzrf2oBmD3DbVWYPb+FmD3P8BGYP78xmD3P8BGYP78xmD3P8BGYP78xmD+/L8w9/isAAAAA="
-21:
-.base64 "ww=="
 .p2align 6"#,
     )
 }
@@ -542,3 +337,19 @@ jmp 212f
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32.rs"]
+pub(crate) mod vg_aes_ctr32;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_aesni.rs"]
+pub(crate) mod vg_aes_ctr32_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch.rs"]
+pub(crate) mod vg_aes_expand_key_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch_aesni.rs"]
+pub(crate) mod vg_aes_expand_key_scratch_aesni;

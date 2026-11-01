@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Core
-public import VerifiedGarbage.Spec.Camellia.PreparedEncrypt
+public import VerifiedGarbage.Spec.Camellia.Prepared
 
 /-!
 # The serial Camellia core as two functions, and the modes' calls of them
 
 `vg_camellia_prepare_encrypt_keys` and `vg_camellia_encrypt_prepared`
-(`Spec/Camellia/PreparedEncrypt.lean`): the serial core's two halves
+(`Proof/Camellia/PreparedEncrypt.lean`): the serial core's two halves
 (`Core.lean`) as functions of the working space, which the feedback modes
 and CBC encryption call (`Fb.lean`) rather than each inlining the core.
 
@@ -62,14 +62,14 @@ space at `sb`, of `core.total` words; `sb` stays in `x22`. -/
 def prepareCall : Prog isa :=
   .seq (.block [movR .x20 .x30, movR .x22 sb, movR .x26 .x1, movR .x2 sb,
       .movz .x .x3 (BitVec.ofNat 16 core.total) 0])
-    (.seq (.call (Spec.Camellia.Prepared.prepareEncryptApi layout).name prepareEncrypt)
+    (.seq (.call "vg_camellia_prepare_encrypt_keys" prepareEncrypt)
       (.block [movR sb .x22, movR .x30 .x20]))
 
 /-- A call of `vg_camellia_encrypt_prepared` for the number of rounds in
 `x26`, on the working space at `sb`. -/
 def cryptCall : Prog isa :=
   .seq (.block [movR .x20 .x30, movR .x0 .x26, movR .x1 sb, .movz .x .x2 (BitVec.ofNat 16 core.total) 0])
-    (.seq (.call (Spec.Camellia.Prepared.encryptPreparedApi layout).name encryptPrepared)
+    (.seq (.call "vg_camellia_encrypt_prepared" encryptPrepared)
       (.block [movR sb .x22, movR .x30 .x20]))
 
 /-- The serial core for the modes, calling the two functions. -/

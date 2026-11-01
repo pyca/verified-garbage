@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Narrow16
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass1
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 import VerifiedGarbage.Proof.MlKem.PolyW

@@ -1,20 +1,10 @@
-//! PBKDF2-HMAC-SHA-512/224. The whole derivation is
-//! `vg_pbkdf2_hmac_sha512_224` (contract `VG.Spec.Hmac.Instance.pbkdf2Contract` of
-//! `VG.Spec.Hmac.sha512_224I`). On x86-64 and AArch64, it is the one PBKDF2
-//! implementation for every Merkle–Damgård hash function, calling SHA-512/224's verified functions: its
-//! iteration calls SHA-512's verified compression function directly, twice per
-//! step. On x86-64, it follows the implementation of SHA-512 compression that
-//! `Sha512_224` runs on this CPU (`vg_pbkdf2_hmac_sha512_224_shani`,
-//! `vg_pbkdf2_hmac_sha512_224_avx2`: the same verified code calling
-//! `vg_sha512_compress_<suffix>`, with the same contract).
-//!
-//! On ARMv7, x86, PPC64LE and RISC-V, the whole derivation is the one for every
-//! streaming hash function, calling SHA-512/224's verified streaming functions, HMAC-SHA-512/224's
-//! `init` and `finalize` and `vg_pbkdf2_hmac_sha512_224_iterate` (contract
-//! `VG.Spec.Hmac.Instance.iterateContract`), the one PBKDF2 iteration for
-//! every streaming hash function.
-//!
-//! On AArch64, the `_sha3` variants follow SHA-512 hardware dispatch.
+//! PBKDF2-HMAC-SHA-512/224 (RFC 8018 §5.2): one call of the verified
+//! `vg_pbkdf2_hmac_sha512_224` (contract `VG.Spec.Hmac.Instance.pbkdf2Contract`
+//! of `VG.Spec.Hmac.sha512_224I`), which derives the whole key. Its variants,
+//! with the same contract, are chosen on CPUs with the features their
+//! `_FEATURES` constants name: on x86-64, `vg_pbkdf2_hmac_sha512_224_shani` and
+//! `vg_pbkdf2_hmac_sha512_224_avx2`; on AArch64,
+//! `vg_pbkdf2_hmac_sha512_224_sha3`.
 
 #![cfg(any(
     target_arch = "x86_64",

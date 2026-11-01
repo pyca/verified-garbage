@@ -31,9 +31,9 @@ theorem init :
       RISCV64.abi, RISCV64.argRegs] [initSat] using initSat)
 
 theorem blocks :
-    Verified RISCV64.target Impl.Poly1305.RISCV64.blocks (Spec.Poly1305.blocksContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.Poly1305.RISCV64.blocks (Proof.Poly1305.blocksContract RISCV64.abi) :=
   blocks_verified.of_implies (by
-    contract_implies [Spec.Poly1305.blocksContract, Spec.Poly1305.blocksSig,
+    contract_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig,
       Proof.Poly1305.blocksRISCV64, RISCV64.abi, RISCV64.argRegs] [blocksSat] using blocksSat)
 
 theorem update :

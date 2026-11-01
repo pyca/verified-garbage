@@ -3,50 +3,6 @@
 //! `assembly/sm4_gcm.s`.
 #![allow(dead_code)]
 
-/// SM4 counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks; draft-ribose-cfrg-sm4-10 §7.1): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, in place, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)` (§6.2: the rightmost 32 bits, read as a big-endian integer, incremented modulo 2³², the leftmost 96 bits unchanged), and leaves `inc₃₂ⁿ(CB₁)` in `*counter` (unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
-///
-/// Contract: `VG.Spec.Sm4.ctr32Contract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `counter` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `counter` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `counter` and `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sm4_ctr32(schedule: *const [u8; 128], counter: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJHjz//9JieBJg8AITYnBSYmZQAwAAEmJqUgMAABNiaFQDAAATYmpWAwAAE2JsWAMAABNibloDAAASIsGSA/ISIteCEgPy0mJgXAMAABJiZl4DAAAidgByEjB6yBIweMgSAHDSYuBcAwAAEgPyEgPy0iJXghIiQZIidJJichJvv8A/wD/AP8ATYmxgAEAAEm+AP8A/wD/AP9NibGIAQAASb7//wAA//8AAE2JsZABAABMic5IgcYABAAASb8QAAAAAAAAAA=="
-20:
-.base64 "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"
-jne 20b
-.base64 "TInPSIHHAAwAAE2FwA=="
-je 21f
-23:
-.base64 "SYuBcAwAAEmLmXgMAABIicFID8lJiYkAAwAASInZSA/JSYmJCAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYkQAwAASInZSA/JSYmJGAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYkgAwAASInZSA/JSYmJKAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYkwAwAASInZSA/JSYmJOAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYlAAwAASInZSA/JSYmJSAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYlQAwAASInZSA/JSYmJWAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYlgAwAASInZSA/JSYmJaAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYlwAwAASInZSA/JSYmJeAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYmAAwAASInZSA/JSYmJiAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYmQAwAASInZSA/JSYmJmAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYmgAwAASInZSA/JSYmJqAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYmwAwAASInZSA/JSYmJuAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYnAAwAASInZSA/JSYmJyAMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYnQAwAASInZSA/JSYmJ2AMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYngAwAASInZSA/JSYmJ6AMAAInZg8EBSMHrIEjB4yBIActIicFID8lJiYnwAwAASInZSA/JSYmJ+AMAAInZg8EBSMHrIEjB4yBIActJiYFwDAAASYmZeAwAAEyJz0i+iAEAAAAAAAA="
-call {vg_sm4_crypt_prepared}
-.base64 "SLkQAAAAAAAAAEmD+BA="
-jb 24f
-jmp 25f
-24:
-.base64 "TInB"
-25:
-.base64 "TInISAUAAwAASInTSYnK"
-26:
-.base64 "SIsoSDMrSIkrSItoCEgzawhIiWsISIPAEEiDwxBIg+kB"
-jne 26b
-.base64 "SInaTSnQ"
-jne 23b
-jmp 22f
-21:
-22:
-.base64 "SYuZQAwAAEmLqUgMAABNi6FQDAAATYupWAwAAE2LsWAMAABNi7loDAAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEyJnCRoBAAATImcJHAEAABMiZwkeAQAAEyJnCSABAAATImcJIgEAABMiZwkkAQAAEyJnCSYBAAATImcJKAEAABMiZwkqAQAAEyJnCSwBAAATImcJLgEAABMiZwkwAQAAEyJnCTIBAAATImcJNAEAABMiZwk2AQAAEyJnCTgBAAATImcJOgEAABMiZwk8AQAAEyJnCT4BAAATImcJAAFAABMiZwkCAUAAEyJnCQQBQAATImcJBgFAABMiZwkIAUAAEyJnCQoBQAATImcJDAFAABMiZwkOAUAAEyJnCRABQAATImcJEgFAABMiZwkUAUAAEyJnCRYBQAATImcJGAFAABMiZwkaAUAAEyJnCRwBQAATImcJHgFAABMiZwkgAUAAEyJnCSIBQAATImcJJAFAABMiZwkmAUAAEyJnCSgBQAATImcJKgFAABMiZwksAUAAEyJnCS4BQAATImcJMAFAABMiZwkyAUAAEyJnCTQBQAATImcJNgFAABMiZwk4AUAAEyJnCToBQAATImcJPAFAABMiZwk+AUAAEyJnCQABgAATImcJAgGAABMiZwkEAYAAEyJnCQYBgAATImcJCAGAABMiZwkKAYAAEyJnCQwBgAATImcJDgGAABMiZwkQAYAAEyJnCRIBgAATImcJFAGAABMiZwkWAYAAEyJnCRgBgAATImcJGgGAABMiZwkcAYAAEyJnCR4BgAATImcJIAGAABMiZwkiAYAAEyJnCSQBgAATImcJJgGAABMiZwkoAYAAEyJnCSoBgAATImcJLAGAABMiZwkuAYAAEyJnCTABgAATImcJMgGAABMiZwk0AYAAEyJnCTYBgAATImcJOAGAABMiZwk6AYAAEyJnCTwBgAATImcJPgGAABMiZwkAAcAAEyJnCQIBwAATImcJBAHAABMiZwkGAcAAEyJnCQgBwAATImcJCgHAABMiZwkMAcAAEyJnCQ4BwAATImcJEAHAABMiZwkSAcAAEyJnCRQBwAATImcJFgHAABMiZwkYAcAAEyJnCRoBwAATImcJHAHAABMiZwkeAcAAEyJnCSABwAATImcJIgHAABMiZwkkAcAAEyJnCSYBwAATImcJKAHAABMiZwkqAcAAEyJnCSwBwAATImcJLgHAABMiZwkwAcAAEyJnCTIBwAATImcJNAHAABMiZwk2AcAAEyJnCTgBwAATImcJOgHAABMiZwk8AcAAEyJnCT4BwAATImcJAAIAABMiZwkCAgAAEyJnCQQCAAATImcJBgIAABMiZwkIAgAAEyJnCQoCAAATImcJDAIAABMiZwkOAgAAEyJnCRACAAATImcJEgIAABMiZwkUAgAAEyJnCRYCAAATImcJGAIAABMiZwkaAgAAEyJnCRwCAAATImcJHgIAABMiZwkgAgAAEyJnCSICAAATImcJJAIAABMiZwkmAgAAEyJnCSgCAAATImcJKgIAABMiZwksAgAAEyJnCS4CAAATImcJMAIAABMiZwkyAgAAEyJnCTQCAAATImcJNgIAABMiZwk4AgAAEyJnCToCAAATImcJPAIAABMiZwk+AgAAEyJnCQACQAATImcJAgJAABMiZwkEAkAAEyJnCQYCQAATImcJCAJAABMiZwkKAkAAEyJnCQwCQAATImcJDgJAABMiZwkQAkAAEyJnCRICQAATImcJFAJAABMiZwkWAkAAEyJnCRgCQAATImcJGgJAABMiZwkcAkAAEyJnCR4CQAATImcJIAJAABMiZwkiAkAAEyJnCSQCQAATImcJJgJAABMiZwkoAkAAEyJnCSoCQAATImcJLAJAABMiZwkuAkAAEyJnCTACQAATImcJMgJAABMiZwk0AkAAEyJnCTYCQAATImcJOAJAABMiZwk6AkAAEyJnCTwCQAATImcJPgJAABMiZwkAAoAAEyJnCQICgAATImcJBAKAABMiZwkGAoAAEyJnCQgCgAATImcJCgKAABMiZwkMAoAAEyJnCQ4CgAATImcJEAKAABMiZwkSAoAAEyJnCRQCgAATImcJFgKAABMiZwkYAoAAEyJnCRoCgAATImcJHAKAABMiZwkeAoAAEyJnCSACgAATImcJIgKAABMiZwkkAoAAEyJnCSYCgAATImcJKAKAABMiZwkqAoAAEyJnCSwCgAATImcJLgKAABMiZwkwAoAAEyJnCTICgAATImcJNAKAABMiZwk2AoAAEyJnCTgCgAATImcJOgKAABMiZwk8AoAAEyJnCT4CgAATImcJAALAABMiZwkCAsAAEyJnCQQCwAATImcJBgLAABMiZwkIAsAAEyJnCQoCwAATImcJDALAABMiZwkOAsAAEyJnCRACwAATImcJEgLAABMiZwkUAsAAEyJnCRYCwAATImcJGALAABMiZwkaAsAAEyJnCRwCwAATImcJHgLAABMiZwkgAsAAEyJnCSICwAATImcJJALAABMiZwkmAsAAEyJnCSgCwAATImcJKgLAABMiZwksAsAAEyJnCS4CwAATImcJMALAABMiZwkyAsAAEyJnCTQCwAATImcJNgLAABMiZwk4AsAAEyJnCToCwAATImcJPALAABMiZwk+AsAAEyJnCQADAAATImcJAgMAABMiZwkEAwAAEyJnCQYDAAATImcJCAMAABMiZwkKAwAAEyJnCQwDAAATImcJDgMAABMiZwkQAwAAEyJnCRIDAAATImcJFAMAABMiZwkWAwAAEyJnCRgDAAATImcJGgMAABMiZwkcAwAAEyJnCR4DAAATImcJIAMAABIjaQkiAwAAMM="
-.p2align 6"#,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
-    )
-}
-
 /// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
@@ -67,7 +23,7 @@ call {vg_sm4_ctr32}
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
 .p2align 6"#,
         vg_sm4_expand_key = sym super::sm4::vg_sm4_expand_key,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -180,7 +136,7 @@ call {vg_sm4_ctr32}
 .base64 "SIt8JBBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQgCgAAww=="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -336,7 +292,7 @@ jmp 25f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgKAADD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -585,7 +541,7 @@ jmp 21f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -715,7 +671,7 @@ jmp 21f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -762,7 +718,7 @@ call {vg_sm4_ctr32}
 .base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -847,7 +803,7 @@ jmp 25f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -956,7 +912,7 @@ call {vg_sm4_ctr32}
 .base64 "SIt8JBBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQgCgAAww=="
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1108,7 +1064,7 @@ jmp 25f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgKAADD"
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1345,7 +1301,7 @@ jmp 21f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1471,7 +1427,7 @@ jmp 21f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1514,7 +1470,7 @@ call {vg_sm4_ctr32}
 .base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1595,7 +1551,7 @@ jmp 25f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1708,7 +1664,7 @@ call {vg_sm4_ctr32}
 .base64 "SIt8JBBJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQgCgAAww=="
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1864,7 +1820,7 @@ jmp 25f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgKAADD"
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -2113,7 +2069,7 @@ jmp 21f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -2243,7 +2199,7 @@ jmp 21f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -2290,7 +2246,7 @@ call {vg_sm4_ctr32}
 .base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -2375,6 +2331,6 @@ jmp 25f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }

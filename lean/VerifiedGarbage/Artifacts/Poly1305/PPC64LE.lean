@@ -13,10 +13,6 @@ def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact PPC64LE.target {
     code := Impl.Poly1305.PPC64LE.init
     verified := Proof.Poly1305.PPC64LE.Shared.init },
-  Spec.Poly1305.blocksApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r6 Impl.Poly1305.PPC64LE.blocks
-    stack := 160
-    verified := Proof.Poly1305.PPC64LE.Shared.blocks },
   Spec.Poly1305.updateApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r7 Impl.Poly1305.PPC64LE.update
     stack := 160

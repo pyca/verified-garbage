@@ -742,8 +742,8 @@ bl {vg_gf448_r56_mul}
 .inst 0xf945b079,0xf945b47a,0xf945b87b,0xf945bc7c,0x3dc4a068,0x3dc4a469,0x3dc4a86a,0x3dc4ac6b
 .inst 0x3dc4b06c,0x3dc4b46d,0x3dc4b86e,0x3dc4bc6f,0xd65f03c0
 .p2align 6",
-        vg_gf448_r56_pow_p34 = sym super::gf448_r56::vg_gf448_r56_pow_p34,
-        vg_gf448_r56_mul = sym super::gf448_r56::vg_gf448_r56_mul,
+        vg_gf448_r56_pow_p34 = sym super::ed448::vg_gf448_r56_pow_p34::vg_gf448_r56_pow_p34,
+        vg_gf448_r56_mul = sym super::ed448::vg_gf448_r56_mul::vg_gf448_r56_mul,
     )
 }
 
@@ -1040,9 +1040,9 @@ bl {vg_gf448_r56_mul}
 .inst 0xf945b079,0xf945b47a,0xf945b87b,0xf945bc7c,0x3dc4a068,0x3dc4a469,0x3dc4a86a,0x3dc4ac6b
 .inst 0x3dc4b06c,0x3dc4b46d,0x3dc4b86e,0x3dc4bc6f,0xd65f03c0
 .p2align 6",
-        vg_ed448_r56_comb_base = sym super::ed448_r56::vg_ed448_r56_comb_base,
-        vg_ed448_r56_point_add = sym super::ed448_r56::vg_ed448_r56_point_add,
-        vg_gf448_r56_pow_p34 = sym super::gf448_r56::vg_gf448_r56_pow_p34,
-        vg_gf448_r56_mul = sym super::gf448_r56::vg_gf448_r56_mul,
+        vg_ed448_r56_comb_base = sym super::ed448::vg_ed448_r56_comb_base::vg_ed448_r56_comb_base,
+        vg_ed448_r56_point_add = sym super::ed448::vg_ed448_r56_point_add::vg_ed448_r56_point_add,
+        vg_gf448_r56_pow_p34 = sym super::ed448::vg_gf448_r56_pow_p34::vg_gf448_r56_pow_p34,
+        vg_gf448_r56_mul = sym super::ed448::vg_gf448_r56_mul::vg_gf448_r56_mul,
     )
 }

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseMain
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -49,11 +50,11 @@ def baseSat : State where
   wr := [⟨0x1000, 57⟩, ⟨0x4000, 8192⟩]
 
 theorem scalarBase_verified (hl : Proof.Ed448.BaseLadder2Ok) :
-    Verified PPC64LE.target Impl.Ed448.PPC64LE.scalarBase (Spec.Ed448.scalarBaseContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Ed448.PPC64LE.scalarBase (Proof.Ed448.scalarBaseContract PPC64LE.abi) :=
   Verified.of_correct (scalarBase_ok hl) (scalarBase_ct fun _ _ _ _ ⟨h3, h4, h5, hsp⟩ => ⟨hsp, fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Spec.Ed448.scalarBaseContract, Spec.Ed448.scalarBaseSig, basePPC,
+    contract_implies [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig, basePPC,
       Spec.Ed448.scratchWords, PPC64LE.abi, PPC64LE.argRegs] [baseSat] using baseSat)
 
 end VG.Proof.Ed448.PPC64LE

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlKem.PPC64LE.Prims
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
+import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop

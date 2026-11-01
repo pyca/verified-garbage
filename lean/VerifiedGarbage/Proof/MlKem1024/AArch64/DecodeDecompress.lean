@@ -4,12 +4,14 @@ public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dd5Step
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dd11Step
 import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.MlKem1024.Contract
 import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dd5Step
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dd11Step
 meta import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Proof.MlKem1024.Contract
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
@@ -29,7 +31,7 @@ every address and branch depends only on the pointers and `len`.
 
 namespace VG.Proof.MlKem1024
 
-open VG VG.AArch64 VG.Spec.MlKem
+open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
 /-- AArch64 contract for `vg_mlkem1024_decode_decompress(b = x0, len = x1, d =
@@ -40,7 +42,7 @@ def decodeDecompressAArch64 : Contract AArch64.isa where
   pre s :=
     s.rd = [⟨s.gpr .x0, (s.gpr .x1).toNat⟩] ∧ s.wr = [⟨s.gpr .x3, 1024⟩] ∧
     Region.Disjoint ⟨s.gpr .x0, (s.gpr .x1).toNat⟩ ⟨s.gpr .x3, 1024⟩ ∧
-    ((s.gpr .x2).setWidth 32).toNat ∈ Spec.MlKem1024.compressWidths ∧
+    ((s.gpr .x2).setWidth 32).toNat ∈ Proof.MlKem1024.compressWidths ∧
     (s.gpr .x1).toNat = 32 * ((s.gpr .x2).setWidth 32).toNat
   post s s' := PolyIs s'.mem (s.gpr .x3)
     (decodeDecompress ((s.gpr .x2).setWidth 32).toNat (bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat))
@@ -56,6 +58,7 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem1024.AArch64 VG.Proof.MlKe
   VG.Proof.MlKem1024.AArch64.CodecV
 open VG.Proof.MlKem.AArch64.CE (GFr wp_dupW wp_bytesVec)
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
 /-- One width, from the state after the dispatch. -/
@@ -175,9 +178,9 @@ def sat : State where
 
 theorem decodeDecompress_verified :
     Verified AArch64.target Impl.MlKem1024.AArch64.decodeDecompress
-      (Spec.MlKem1024.decodeDecompressContract AArch64.abi) :=
+      (Proof.MlKem1024.decodeDecompressContract AArch64.abi) :=
   Verified.of_correct correct ct (by
-    mlkem_implies [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
+    mlkem_implies [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
       decodeDecompressAArch64, AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.MlKem1024.AArch64.DD

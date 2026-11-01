@@ -6,27 +6,13 @@ public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.ApplyCT
 
-/-! # The ChaCha20 block function (RFC 8439) on PPC64LE -/
+/-! # Streaming ChaCha20 (RFC 8439) on PPC64LE -/
 
 @[expose] public section
 
 namespace VG.Artifacts.ChaCha20.PPC64LE
 
 def artifacts : List Artifact := [
-  { Spec.ChaCha20.blockApi with
-    target := PPC64LE.target
-    doc := Spec.ChaCha20.blockApi.doc
-    code := Impl.ChaCha20.PPC64LE.block
-    contract := Spec.ChaCha20.blockContract PPC64LE.abi
-    verified := Proof.ChaCha20.PPC64LE.Shared.block
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20.xorApi with
-    target := PPC64LE.target
-    doc := Spec.ChaCha20.xorApi.doc
-    code := Impl.ChaCha20.PPC64LE.Xor.xor
-    contract := Spec.ChaCha20.xorContract PPC64LE.abi
-    verified := Proof.ChaCha20.PPC64LE.Xor.xor_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.ChaCha20.initApi with
     target := PPC64LE.target
     doc := Spec.ChaCha20.initApi.doc

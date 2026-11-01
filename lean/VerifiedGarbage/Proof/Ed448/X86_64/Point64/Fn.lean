@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Point56Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 public import VerifiedGarbage.Impl.Ed448.X86_64.Point64
 public import VerifiedGarbage.Proof.Ed448.Formulas
@@ -184,7 +185,7 @@ theorem addAffineOps_eval (e : Env) :
     pt (evalOps addAffineOps e) 3 4 5 = addWith (e 11) (pt e 0 1 2) ⟨e 8, e 9, 1⟩ := by
   rw [addWith_affine]; rfl
 
-theorem double_eq (p : Spec.Ed448.Point) : double p = Spec.Ed448.Point56.pointDouble p := rfl
+theorem double_eq (p : Spec.Ed448.Point) : double p = Proof.Ed448.Point56.pointDouble p := rfl
 
 end VG.Proof.Ed448.X86_64.Point64
 

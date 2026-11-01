@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Verify
 public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-!
@@ -87,9 +88,9 @@ def verifySat : State where
   wr := [⟨0x4000, 8192⟩]
 
 theorem verifyEquation_verified :
-    Verified RISCV64.target Impl.Ed25519.RISCV64.verifyEquation (Spec.Ed25519.verifyEquationContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.Ed25519.RISCV64.verifyEquation (Proof.Ed25519.verifyEquationContract RISCV64.abi) :=
   Verified.of_correct verify_ok' verify_ct (by
-    contract_implies [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig, verifyRV,
+    contract_implies [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig, verifyRV,
       Spec.Ed25519.scratchWords, RISCV64.abi, RISCV64.argRegs] [verifySat] using verifySat)
 
 end VG.Proof.Ed25519.RISCV64

@@ -16,14 +16,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.MlKem1024.X86
 
 def artifacts : List Artifact := [
-  Spec.MlKem1024.compressEncodeApi.artifact X86.target {
-    code := Impl.MlKem1024.X86.compressEncode
-    stack := 16
-    verified := Proof.MlKem1024.X86.CompressEncode.verified },
-  Spec.MlKem1024.decodeDecompressApi.artifact X86.target {
-    code := Impl.MlKem1024.X86.decodeDecompress
-    stack := 16
-    verified := Proof.MlKem1024.X86.DecodeDecompress.verified },
   Spec.MlKem1024.checkEkApi.artifact X86.target {
     code := Impl.MlKem1024.X86.checkEk
     stack := 16

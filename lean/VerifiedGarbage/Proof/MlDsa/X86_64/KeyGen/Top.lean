@@ -18,8 +18,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 import VerifiedGarbage.Spec.Sha3.Contract
 meta import VerifiedGarbage.Proof.MlKem.KPke
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
-meta import VerifiedGarbage.Spec.MlKem.Kpke16
-meta import VerifiedGarbage.Spec.MlKem.KpkeMul
+meta import VerifiedGarbage.Proof.MlKem.Kpke16Contract
+meta import VerifiedGarbage.Proof.MlKem.KpkeMulContract
 
 /-!
 # ML-DSA key generation on x86-64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Point32Contract
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Fn
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -24,7 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 # `vg_ed25519_r32_point_add` on x86 (32-bit): its `Verified`
 
 Correctness under `addX86`, the facts of the shared contract of
-`Spec/Ed25519/Point32.lean` stated for x86 (`fnPre`: the working space, and
+`Proof/Ed25519/Point32Contract.lean` stated for x86 (`fnPre`: the working space, and
 the argument on the stack), from `addFn_ok` (`elemAt` reads what `F` does,
 `elemAt_eq`); constant time by taint tracking (every address is `ws` or
 `esp` plus a constant: only the argument, which is public, and `esp` need
@@ -37,7 +39,7 @@ namespace VG.Proof.Ed25519.X86.Point32
 
 open VG VG.X86 VG.Impl.Ed25519.X86 VG.Impl.Ed25519.X86.Point32 VG.Proof.Ed25519.X86
 open VG.Impl.X25519.X86 (T)
-open VG.Spec.Ed25519.Point32 (elemAt pointAt)
+open VG.Proof.Ed25519.Point32 (elemAt pointAt)
 
 /-- The working space, the argument. -/
 abbrev wsOf (s : State) : Addr := (arg s 0).setWidth 64
@@ -50,12 +52,12 @@ def fnPre (s : State) : Prop :=
 
 /-- The contract the function is proven against. -/
 def addX86 : Contract isa where
-  pre s := fnPre s ∧ elemAt s.mem (wsOf s) Spec.Ed25519.Point32.dAt = Spec.Ed25519.d
+  pre s := fnPre s ∧ elemAt s.mem (wsOf s) Proof.Ed25519.Point32.dAt = Spec.Ed25519.d
   post s s' :=
-    pointAt s'.mem (wsOf s) Spec.Ed25519.Point32.pAt =
-      Spec.Ed25519.pointAdd (pointAt s.mem (wsOf s) Spec.Ed25519.Point32.pAt)
-        (pointAt s.mem (wsOf s) Spec.Ed25519.Point32.qAt) ∧
-    Spec.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem
+    pointAt s'.mem (wsOf s) Proof.Ed25519.Point32.pAt =
+      Spec.Ed25519.pointAdd (pointAt s.mem (wsOf s) Proof.Ed25519.Point32.pAt)
+        (pointAt s.mem (wsOf s) Proof.Ed25519.Point32.qAt) ∧
+    Proof.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0
 
 /-- The entry the contract's facts give. -/
@@ -86,15 +88,15 @@ theorem elemAt_eq (m : Mem) {x : BitVec 32} {o : Nat} (hx : x.toNat + o + 32 ≤
 theorem pointAt_eq (m : Mem) {x : BitVec 32} (hx : x.toNat + 8192 ≤ 2 ^ 32) (i : Nat) (hi : i + 3 < 22) :
     pointAt m (x.setWidth 64) (64 + 32 * i) =
       point (env m x) ⟨i, by omega⟩ ⟨i + 1, by omega⟩ ⟨i + 2, by omega⟩ ⟨i + 3, by omega⟩ := by
-  simp only [pointAt, point, env, offset, Spec.Ed25519.Point32.elemBytes]
+  simp only [pointAt, point, env, offset, Proof.Ed25519.Point32.elemBytes]
   rw [elemAt_eq m (by omega), elemAt_eq m (by omega), elemAt_eq m (by omega), elemAt_eq m (by omega)]
   congr 2 <;> omega
 
 /-- `Keeps` from the function's frame. -/
 theorem keeps_of_frame {x : BitVec 32} (hfit : x.toNat + 8192 ≤ 2 ^ 32) {m m' : Mem}
-    (h : Frame (addW x) m m') : Spec.Ed25519.Point32.Keeps (x.setWidth 64) m m' := by
+    (h : Frame (addW x) m m') : Proof.Ed25519.Point32.Keeps (x.setWidth 64) m m' := by
   intro i hi hp hown hown'
-  simp only [Spec.Ed25519.Point32.wsBytes, Spec.Ed25519.Point32.pAt, Spec.Ed25519.Point32.elemBytes] at hi hp
+  simp only [Proof.Ed25519.Point32.wsBytes, Proof.Ed25519.Point32.pAt, Proof.Ed25519.Point32.elemBytes] at hi hp
   refine h _ fun r hr hc => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -125,8 +127,8 @@ theorem add_correct (s : State) (hs : addX86.pre s) :
     · exact sub_sub hfit (Nat.zero_le _) (by decide) (by decide)
     · exact sub_sub hfit (Nat.zero_le _) (by simp only [T]; decide) (by simp only [T]; decide)
   · have hd' : env s.mem (arg s 0) 16 = Spec.Ed25519.d := by
-      rw [← hd, wsOf, elemAt_eq _ (by simp only [Spec.Ed25519.Point32.dAt]; omega)]; rfl
-    rw [show Spec.Ed25519.Point32.pAt = 64 + 32 * 0 from rfl, show Spec.Ed25519.Point32.qAt = 64 + 32 * 4 from rfl,
+      rw [← hd, wsOf, elemAt_eq _ (by simp only [Proof.Ed25519.Point32.dAt]; omega)]; rfl
+    rw [show Proof.Ed25519.Point32.pAt = 64 + 32 * 0 from rfl, show Proof.Ed25519.Point32.qAt = 64 + 32 * 4 from rfl,
       pointAt_eq _ hfit 0 (by decide), pointAt_eq _ hfit 0 (by decide), pointAt_eq _ hfit 4 (by decide)]
     exact hv hd'
 
@@ -135,7 +137,7 @@ convention kept, the slots' values `evalOps ops` of theirs, and `Keeps`. -/
 theorem fnOf_correct {ops : List FieldOp} (hd : DestsOk ops) (s : State) (hp : fnPre s) :
     ∃ t s', Exec isa (fnOf ops) s t s' ∧ abiPreserved s s' ∧
       env s'.mem (arg s 0) = evalOps ops (env s.mem (arg s 0)) ∧
-      Spec.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem := by
+      Proof.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem := by
   have he := entry_of_pre hp
   obtain ⟨t, s', ex, hk, hrd, hwr, hf, hv⟩ := fnOf_ok hd he
   have hfit := he.fit
@@ -154,21 +156,21 @@ theorem fnOf_correct {ops : List FieldOp} (hd : DestsOk ops) (s : State) (hp : f
 def affX86 : Contract isa where
   pre := fnPre
   post s s' := (∀ q : Spec.Ed25519.Point, q.Z = 1 →
-      elemAt s.mem (wsOf s) Spec.Ed25519.Point32.qAt = q.Y - q.X →
-      elemAt s.mem (wsOf s) (Spec.Ed25519.Point32.qAt + Spec.Ed25519.Point32.elemBytes) = q.Y + q.X →
-      elemAt s.mem (wsOf s) (Spec.Ed25519.Point32.qAt + 2 * Spec.Ed25519.Point32.elemBytes) =
+      elemAt s.mem (wsOf s) Proof.Ed25519.Point32.qAt = q.Y - q.X →
+      elemAt s.mem (wsOf s) (Proof.Ed25519.Point32.qAt + Proof.Ed25519.Point32.elemBytes) = q.Y + q.X →
+      elemAt s.mem (wsOf s) (Proof.Ed25519.Point32.qAt + 2 * Proof.Ed25519.Point32.elemBytes) =
         q.T * 2 * Spec.Ed25519.d →
-      pointAt s'.mem (wsOf s) Spec.Ed25519.Point32.pAt =
-        Spec.Ed25519.pointAdd (pointAt s.mem (wsOf s) Spec.Ed25519.Point32.pAt) q) ∧
-    Spec.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem
+      pointAt s'.mem (wsOf s) Proof.Ed25519.Point32.pAt =
+        Spec.Ed25519.pointAdd (pointAt s.mem (wsOf s) Proof.Ed25519.Point32.pAt) q) ∧
+    Proof.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0
 
 /-- The doubling's contract on x86. -/
 def doubleX86 : Contract isa where
   pre := fnPre
-  post s s' := pointAt s'.mem (wsOf s) Spec.Ed25519.Point32.pAt =
-      Spec.Ed25519.Point64.pointDouble (pointAt s.mem (wsOf s) Spec.Ed25519.Point32.pAt) ∧
-    Spec.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem
+  post s s' := pointAt s'.mem (wsOf s) Proof.Ed25519.Point32.pAt =
+      Proof.Ed25519.Point64.pointDouble (pointAt s.mem (wsOf s) Proof.Ed25519.Point32.pAt) ∧
+    Proof.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0
 
 theorem aff_correct (s : State) (hs : affX86.pre s) :
@@ -179,7 +181,7 @@ theorem aff_correct (s : State) (hs : affX86.pre s) :
   have el : ∀ o, o + 32 ≤ 8192 → elemAt s.mem (wsOf s) o = VG.Proof.X25519.X86.F s.mem (arg s 0) o :=
     fun o ho => elemAt_eq _ (by omega)
   rw [el _ (by decide)] at h4 h5 h6
-  rw [show Spec.Ed25519.Point32.pAt = 64 + 32 * 0 from rfl, pointAt_eq _ hfit 0 (by decide),
+  rw [show Proof.Ed25519.Point32.pAt = 64 + 32 * 0 from rfl, pointAt_eq _ hfit 0 (by decide),
     pointAt_eq _ hfit 0 (by decide), hv]
   refine (addAffine_formula _).trans ?_
   rw [show env s.mem (arg s 0) 4 = q.Y - q.X from h4, show env s.mem (arg s 0) 5 = q.Y + q.X from h5,
@@ -191,7 +193,7 @@ theorem double_correct (s : State) (hs : doubleX86.pre s) :
   obtain ⟨t, s', ex, ha, hv, hk⟩ := fnOf_correct pointDoubleRfcOps_dests s hs
   have hfit := (entry_of_pre hs).fit
   refine ⟨t, s', ex, ha, ?_, hk⟩
-  rw [show Spec.Ed25519.Point32.pAt = 64 + 32 * 0 from rfl, pointAt_eq _ hfit 0 (by decide),
+  rw [show Proof.Ed25519.Point32.pAt = 64 + 32 * 0 from rfl, pointAt_eq _ hfit 0 (by decide),
     pointAt_eq _ hfit 0 (by decide), hv]
   exact dbl_eval _
 
@@ -272,24 +274,24 @@ theorem fnMem_d : (fnMem.read ((0x1000 : Addr) + BitVec.ofNat 64 576) 32).toNat 
 
 theorem d_eq : Spec.Ed25519.d = Fin.ofNat Spec.X25519.P dLit := by decide +kernel
 
-theorem fnSat_d : elemAt fnSat.mem (0x1000 : Addr) Spec.Ed25519.Point32.dAt = Spec.Ed25519.d := by
+theorem fnSat_d : elemAt fnSat.mem (0x1000 : Addr) Proof.Ed25519.Point32.dAt = Spec.Ed25519.d := by
   rw [d_eq, elemAt]
   exact congrArg _ fnMem_d
 
-theorem addX86_implies : addX86.Implies (Spec.Ed25519.Point32.addContract X86.abi) := by
+theorem addX86_implies : addX86.Implies (Proof.Ed25519.Point32.addContract X86.abi) := by
   have a0 : arg fnSat 0 = 0x1000 := by decide
   have e : argAddr fnSat 0 = 0x8004 := by decide
   have esp : fnSat.gpr .esp = 0x8000 := rfl
   exact
-    { pre := by sig_implies_pre [Spec.Ed25519.Point32.addContract, Spec.Ed25519.Point32.sig, addX86, fnPre,
+    { pre := by sig_implies_pre [Proof.Ed25519.Point32.addContract, Proof.Ed25519.Point32.sig, addX86, fnPre,
         wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      post := by sig_implies_post [Spec.Ed25519.Point32.addContract, Spec.Ed25519.Point32.sig, addX86, fnPre,
+      post := by sig_implies_post [Proof.Ed25519.Point32.addContract, Proof.Ed25519.Point32.sig, addX86, fnPre,
         wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      pub := by sig_implies_pub [Spec.Ed25519.Point32.addContract, Spec.Ed25519.Point32.sig, addX86, fnPre,
+      pub := by sig_implies_pub [Proof.Ed25519.Point32.addContract, Proof.Ed25519.Point32.sig, addX86, fnPre,
         wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       sat := by
         refine ⟨fnSat, ?_⟩
-        sig_pre [Spec.Ed25519.Point32.addContract, Spec.Ed25519.Point32.sig, addX86, fnPre, wsOf, X86.abi,
+        sig_pre [Proof.Ed25519.Point32.addContract, Proof.Ed25519.Point32.sig, addX86, fnPre, wsOf, X86.abi,
           X86.argSlots, X86.argVal, X86.argBytes]
         sig_and_intros
         all_goals first
@@ -301,23 +303,23 @@ theorem addX86_implies : addX86.Implies (Spec.Ed25519.Point32.addContract X86.ab
              simp only [Region.Contains, a0, e, esp] at h₁ h₂
              bv_omega) }
 
-theorem addFn_verified : Verified X86.target addFn (Spec.Ed25519.Point32.addContract X86.abi) :=
+theorem addFn_verified : Verified X86.target addFn (Proof.Ed25519.Point32.addContract X86.abi) :=
   Verified.of_correct add_correct addFn_ct addX86_implies
 
-theorem affX86_implies : affX86.Implies (Spec.Ed25519.Point32.addAffineContract X86.abi) := by
+theorem affX86_implies : affX86.Implies (Proof.Ed25519.Point32.addAffineContract X86.abi) := by
   have a0 : arg fnSat 0 = 0x1000 := by decide
   have e : argAddr fnSat 0 = 0x8004 := by decide
   have esp : fnSat.gpr .esp = 0x8000 := rfl
   exact
-    { pre := by sig_implies_pre [Spec.Ed25519.Point32.addAffineContract, Spec.Ed25519.Point32.sig, affX86,
+    { pre := by sig_implies_pre [Proof.Ed25519.Point32.addAffineContract, Proof.Ed25519.Point32.sig, affX86,
         fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      post := by sig_implies_post [Spec.Ed25519.Point32.addAffineContract, Spec.Ed25519.Point32.sig, affX86,
+      post := by sig_implies_post [Proof.Ed25519.Point32.addAffineContract, Proof.Ed25519.Point32.sig, affX86,
         fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      pub := by sig_implies_pub [Spec.Ed25519.Point32.addAffineContract, Spec.Ed25519.Point32.sig, affX86,
+      pub := by sig_implies_pub [Proof.Ed25519.Point32.addAffineContract, Proof.Ed25519.Point32.sig, affX86,
         fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       sat := by
         refine ⟨fnSat, ?_⟩
-        sig_pre [Spec.Ed25519.Point32.addAffineContract, Spec.Ed25519.Point32.sig, affX86, fnPre, wsOf,
+        sig_pre [Proof.Ed25519.Point32.addAffineContract, Proof.Ed25519.Point32.sig, affX86, fnPre, wsOf,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
         sig_and_intros
         all_goals first
@@ -328,20 +330,20 @@ theorem affX86_implies : affX86.Implies (Spec.Ed25519.Point32.addAffineContract 
              simp only [Region.Contains, a0, e, esp] at h₁ h₂
              bv_omega) }
 
-theorem doubleX86_implies : doubleX86.Implies (Spec.Ed25519.Point32.doubleContract X86.abi) := by
+theorem doubleX86_implies : doubleX86.Implies (Proof.Ed25519.Point32.doubleContract X86.abi) := by
   have a0 : arg fnSat 0 = 0x1000 := by decide
   have e : argAddr fnSat 0 = 0x8004 := by decide
   have esp : fnSat.gpr .esp = 0x8000 := rfl
   exact
-    { pre := by sig_implies_pre [Spec.Ed25519.Point32.doubleContract, Spec.Ed25519.Point32.sig, doubleX86,
+    { pre := by sig_implies_pre [Proof.Ed25519.Point32.doubleContract, Proof.Ed25519.Point32.sig, doubleX86,
         fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      post := by sig_implies_post [Spec.Ed25519.Point32.doubleContract, Spec.Ed25519.Point32.sig, doubleX86,
+      post := by sig_implies_post [Proof.Ed25519.Point32.doubleContract, Proof.Ed25519.Point32.sig, doubleX86,
         fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      pub := by sig_implies_pub [Spec.Ed25519.Point32.doubleContract, Spec.Ed25519.Point32.sig, doubleX86,
+      pub := by sig_implies_pub [Proof.Ed25519.Point32.doubleContract, Proof.Ed25519.Point32.sig, doubleX86,
         fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       sat := by
         refine ⟨fnSat, ?_⟩
-        sig_pre [Spec.Ed25519.Point32.doubleContract, Spec.Ed25519.Point32.sig, doubleX86, fnPre, wsOf,
+        sig_pre [Proof.Ed25519.Point32.doubleContract, Proof.Ed25519.Point32.sig, doubleX86, fnPre, wsOf,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
         sig_and_intros
         all_goals first
@@ -352,10 +354,10 @@ theorem doubleX86_implies : doubleX86.Implies (Spec.Ed25519.Point32.doubleContra
              simp only [Region.Contains, a0, e, esp] at h₁ h₂
              bv_omega) }
 
-theorem affFn_verified : Verified X86.target affFn (Spec.Ed25519.Point32.addAffineContract X86.abi) :=
+theorem affFn_verified : Verified X86.target affFn (Proof.Ed25519.Point32.addAffineContract X86.abi) :=
   Verified.of_correct aff_correct affFn_ct affX86_implies
 
-theorem doubleFn_verified : Verified X86.target doubleFn (Spec.Ed25519.Point32.doubleContract X86.abi) :=
+theorem doubleFn_verified : Verified X86.target doubleFn (Proof.Ed25519.Point32.doubleContract X86.abi) :=
   Verified.of_correct double_correct doubleFn_ct doubleX86_implies
 
 end VG.Proof.Ed25519.X86.Point32

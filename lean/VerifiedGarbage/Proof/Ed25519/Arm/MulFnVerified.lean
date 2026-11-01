@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Field16Contract
 import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFn
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.TCB.Arm.Target
@@ -28,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 # `vg_gf25519_r16_mul` on ARMv7, verified
 
 The function (`mulFn_ok`) meets `mulContract` of
-`Spec/X25519/Field16.lean` (`mul_arm`, against `mulArm`, the contract's
+`Proof/X25519/Field16Contract.lean` (`mul_arm`, against `mulArm`, the contract's
 facts by register): its limbs and values are the proofs' (`limbAt_eq`,
 `valAt_eq`). Constant time by taint tracking: only the pointer and the
 offsets, in `r0`–`r3`, are public, and every address is `ws` plus a constant,
@@ -44,7 +45,7 @@ open VG.Spec.X25519 (P)
 
 namespace Mul
 
-open VG.Spec.X25519.Field16 (limbAt valN valAt Limbs Fits)
+open VG.Proof.X25519.Field16 (limbAt valN valAt Limbs Fits)
 
 /-- The facts of `mulContract` about the state, by register: `ws`, `o`, `a` and `b` in
 `r0`–`r3`. -/
@@ -66,7 +67,7 @@ def mulArm : Contract Arm.isa where
   pre := armPre
   post s s' := Limbs s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1) ∧
     argV s'.mem s .r1 % P = argV s.mem s .r2 * argV s.mem s .r3 % P ∧
-    Spec.X25519.Field16.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1) s.mem s'.mem
+    Proof.X25519.Field16.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1) s.mem s'.mem
   pub := armPub
 
 theorem valN_eq (m : Mem) (ws : Addr) (o : BitVec 32) :
@@ -85,13 +86,13 @@ theorem limbs_of_lim {m : Mem} {ws : Addr} {o : BitVec 32} (h : Lim m ws o.toNat
 
 theorem keeps_of_frame {B : Addr} {o : Nat} {m m' : Mem}
     (hf : Frame [⟨B + BitVec.ofNat 64 o, 64⟩, ⟨B + BitVec.ofNat 64 ACC, 160⟩] m m') (ho : o + 64 ≤ ACC) :
-    Spec.X25519.Field16.Keeps B (BitVec.ofNat 32 o) m m' := by
+    Proof.X25519.Field16.Keeps B (BitVec.ofNat 32 o) m m' := by
   intro i hi hown hoi
   have hA := ACC_eq
   have ho' : (BitVec.ofNat 32 o).toNat = o := toNat_imm (by omega)
   rw [ho'] at hoi
-  simp only [Spec.X25519.Field16.wsBytes, Spec.X25519.Field16.ownAt, Spec.X25519.Field16.ownEnd,
-    Spec.X25519.Field16.elemBytes, Spec.X25519.Field16.limbs] at hi hown hoi
+  simp only [Proof.X25519.Field16.wsBytes, Proof.X25519.Field16.ownAt, Proof.X25519.Field16.ownEnd,
+    Proof.X25519.Field16.elemBytes, Proof.X25519.Field16.limbs] at hi hown hoi
   have hc : (⟨B + BitVec.ofNat 64 i, 1⟩ : Region).Contains (B + BitVec.ofNat 64 i) 1 := by
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
   refine hf _ fun r hr => ?_
@@ -107,8 +108,8 @@ theorem mul_arm (s : State) (hs : mulArm.pre s) :
   have hc : CtxN 0 (s.gpr .r0) s := ⟨rfl, hfit, by rw [hwr]; exact List.mem_singleton_self _⟩
   have e : ∀ r, s.gpr r = BitVec.ofNat 32 (s.gpr r).toNat := fun r => by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  simp only [Fits, Spec.X25519.Field16.ownAt, Spec.X25519.Field16.elemBytes,
-    Spec.X25519.Field16.limbs] at f1 f2 f3
+  simp only [Fits, Proof.X25519.Field16.ownAt, Proof.X25519.Field16.elemBytes,
+    Proof.X25519.Field16.limbs] at f1 f2 f3
   obtain ⟨t, s', he, hR, hF, hL, hV⟩ := mulFn_ok (o := (s.gpr .r1).toNat) (x := (s.gpr .r2).toNat)
     (y := (s.gpr .r3).toNat) (by omega) (by omega) (by omega) hc (e .r1) (e .r2) (e .r3) (lim_of_limbs la) (lim_of_limbs lb)
   refine ⟨t, s', he, ⟨fun r hr => hR.gpr r (by revert hr; cases r <;> decide), hR.sp⟩,
@@ -152,19 +153,19 @@ theorem limbs_zero (ws : Addr) : Limbs (fun _ => 0) ws 0 := by
 
 theorem fits_zero : Fits 0 := by decide
 
-theorem mul_sat : (Spec.X25519.Field16.mulContract Arm.abi).pre satF := by
-  unfold Spec.X25519.Field16.mulContract
+theorem mul_sat : (Proof.X25519.Field16.mulContract Arm.abi).pre satF := by
+  unfold Proof.X25519.Field16.mulContract
   exact Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.X25519.Field16.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
+    sig_reduce [Sig.wfPre, Proof.X25519.Field16.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
     exact ⟨by decide, fits_zero, fits_zero, fits_zero, limbs_zero _, limbs_zero _⟩)
 
-theorem mulFn_verified : Verified Arm.target mulFn (Spec.X25519.Field16.mulContract Arm.abi) :=
+theorem mulFn_verified : Verified Arm.target mulFn (Proof.X25519.Field16.mulContract Arm.abi) :=
   Verified.of_correct mul_arm mul_ct
-    { pre := by sig_implies_pre [Spec.X25519.Field16.mulContract, Spec.X25519.Field16.sig, mulArm,
+    { pre := by sig_implies_pre [Proof.X25519.Field16.mulContract, Proof.X25519.Field16.sig, mulArm,
         armPre, armPub, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      post := by sig_implies_post [Spec.X25519.Field16.mulContract, Spec.X25519.Field16.sig, mulArm,
+      post := by sig_implies_post [Proof.X25519.Field16.mulContract, Proof.X25519.Field16.sig, mulArm,
         armPre, armPub, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      pub := by sig_implies_pub [Spec.X25519.Field16.mulContract, Spec.X25519.Field16.sig, mulArm,
+      pub := by sig_implies_pub [Proof.X25519.Field16.mulContract, Proof.X25519.Field16.sig, mulArm,
         armPre, armPub, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := ⟨satF, mul_sat⟩ }
 

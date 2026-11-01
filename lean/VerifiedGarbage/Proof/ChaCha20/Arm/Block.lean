@@ -7,6 +7,8 @@ public import VerifiedGarbage.Impl.ChaCha20.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Spec.ChaCha20.Contract
+public import VerifiedGarbage.Proof.ChaCha20.Contract
+meta import VerifiedGarbage.Proof.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -819,9 +821,9 @@ theorem block_ct :
   rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem block_verified :
-    Verified Arm.target Impl.ChaCha20.Arm.block (Spec.ChaCha20.blockContract Arm.abi) :=
+    Verified Arm.target Impl.ChaCha20.Arm.block (Proof.ChaCha20.blockContract Arm.abi) :=
   Verified.of_correct block_correct block_ct (by
-    sig_implies [Spec.ChaCha20.blockContract, Spec.ChaCha20.blockSig, Arm.abi, Arm.argRegs,
+    sig_implies [Proof.ChaCha20.blockContract, Proof.ChaCha20.blockSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Proof.ChaCha20.blockArm, State.addr]
       [satState] using satState)
 

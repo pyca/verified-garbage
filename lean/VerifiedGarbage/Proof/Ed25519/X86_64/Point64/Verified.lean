@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
 import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 /-!
 # Ed25519's point functions on x86-64: their `Verified`
 
-The facts of `Spec.Ed25519.Point64`'s contracts on x86-64 (`fnPre`: `ws` in
+The facts of `Proof.Ed25519.Point64`'s contracts on x86-64 (`fnPre`: `ws` in
 `rdi`), which the functions meet (`fn_correct`, from `fn_ok`): the callee-saved
 registers are restored, and every byte they write is in slots 0–3 or 8–15,
 which the return address is apart from; the spec's coordinates are the
@@ -25,7 +26,7 @@ namespace VG.Proof.Ed25519.X86_64.Point64
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Point64 VG.Proof.Ed25519.X86_64
 open VG.Proof.X25519.X86_64 (clob ofs F fe)
-open VG.Spec.Ed25519.Point64 (elemAt pointAt PointIs Keeps pAt qAt pointDouble)
+open VG.Proof.Ed25519.Point64 (elemAt pointAt PointIs Keeps pAt qAt pointDouble)
 
 variable {fld : Arith} [EdArith fld]
 
@@ -42,7 +43,7 @@ theorem elemAt_eq (m : Mem) (base : Addr) (o : Nat) : elemAt m base o = F m base
 theorem pointAt_eq (m : Mem) (base : Addr) (i : Nat) (hi : i + 3 < 22) :
     pointAt m base (64 + 32 * i) =
       point (env m base) ⟨i, by omega⟩ ⟨i + 1, by omega⟩ ⟨i + 2, by omega⟩ ⟨i + 3, by omega⟩ := by
-  simp only [pointAt, point, env, offset, elemAt_eq, Spec.Ed25519.Point64.elemBytes]
+  simp only [pointAt, point, env, offset, elemAt_eq, Proof.Ed25519.Point64.elemBytes]
   congr 2 <;> omega
 
 /-- `PointIs` from the slots' values. -/
@@ -80,7 +81,7 @@ def doubleK (ext : Bool) : Contract isa where
 /-- The cached addition's contract on x86-64. -/
 def addK (ext : Bool) : Contract isa where
   pre := fnPre
-  post s s' := (∀ q, pointAt s.mem (s.gpr .rdi) qAt = Spec.Ed25519.Point64.cache q →
+  post s s' := (∀ q, pointAt s.mem (s.gpr .rdi) qAt = Proof.Ed25519.Point64.cache q →
       PointIs ext s'.mem (s.gpr .rdi) pAt (Spec.Ed25519.pointAdd (pointAt s.mem (s.gpr .rdi) pAt) q)) ∧
     Keeps (s.gpr .rdi) s.mem s'.mem
   pub := fnPub
@@ -90,8 +91,8 @@ def addAffK : Contract isa where
   pre := fnPre
   post s s' := (∀ q : Spec.Ed25519.Point, q.Z = 1 →
       elemAt s.mem (s.gpr .rdi) qAt = q.Y - q.X →
-      elemAt s.mem (s.gpr .rdi) (qAt + Spec.Ed25519.Point64.elemBytes) = q.Y + q.X →
-      elemAt s.mem (s.gpr .rdi) (qAt + 2 * Spec.Ed25519.Point64.elemBytes) = q.T * 2 * Spec.Ed25519.d →
+      elemAt s.mem (s.gpr .rdi) (qAt + Proof.Ed25519.Point64.elemBytes) = q.Y + q.X →
+      elemAt s.mem (s.gpr .rdi) (qAt + 2 * Proof.Ed25519.Point64.elemBytes) = q.T * 2 * Spec.Ed25519.d →
       PointIs true s'.mem (s.gpr .rdi) pAt (Spec.Ed25519.pointAdd (pointAt s.mem (s.gpr .rdi) pAt) q)) ∧
     Keeps (s.gpr .rdi) s.mem s'.mem
   pub := fnPub
@@ -127,8 +128,8 @@ theorem fn_correct (ops : List FieldOp) (hk : ∀ r ∈ keptRegs, KeepReg.keeps 
     have := hout op hop
     simp only [ofs]; omega
   · intro i hi hp hown
-    simp only [Spec.Ed25519.Point64.wsBytes, Spec.Ed25519.Point64.pAt, Spec.Ed25519.Point64.elemBytes,
-      Spec.Ed25519.Point64.ownAt, Spec.Ed25519.Point64.ownEnd] at hi hp hown
+    simp only [Proof.Ed25519.Point64.wsBytes, Proof.Ed25519.Point64.pAt, Proof.Ed25519.Point64.elemBytes,
+      Proof.Ed25519.Point64.ownAt, Proof.Ed25519.Point64.ownEnd] at hi hp hown
     exact hm _ (outs i hi hp hown)
 
 theorem dblOps_outs (t : Bool) : OutsOk (dblOps t) := by cases t <;> decide
@@ -216,19 +217,19 @@ def fnSat : State where
   wr := [⟨0x1000, 8192⟩]
 
 theorem doubleK_implies (ext : Bool) :
-    (doubleK ext).Implies (Spec.Ed25519.Point64.doubleContract X86_64.abi ext) := by
+    (doubleK ext).Implies (Proof.Ed25519.Point64.doubleContract X86_64.abi ext) := by
   cases ext <;>
-  sig_implies [Spec.Ed25519.Point64.doubleContract, Spec.Ed25519.Point64.sig, X86_64.abi, X86_64.argRegs,
+  sig_implies [Proof.Ed25519.Point64.doubleContract, Proof.Ed25519.Point64.sig, X86_64.abi, X86_64.argRegs,
     doubleK, fnPre, fnPub] [fnSat] using fnSat
 
 theorem addK_implies (ext : Bool) :
-    (addK ext).Implies (Spec.Ed25519.Point64.addCachedContract X86_64.abi ext) := by
+    (addK ext).Implies (Proof.Ed25519.Point64.addCachedContract X86_64.abi ext) := by
   cases ext <;>
-  sig_implies [Spec.Ed25519.Point64.addCachedContract, Spec.Ed25519.Point64.sig, X86_64.abi, X86_64.argRegs,
+  sig_implies [Proof.Ed25519.Point64.addCachedContract, Proof.Ed25519.Point64.sig, X86_64.abi, X86_64.argRegs,
     addK, fnPre, fnPub] [fnSat] using fnSat
 
-theorem addAffK_implies : addAffK.Implies (Spec.Ed25519.Point64.addAffineContract X86_64.abi true) := by
-  sig_implies [Spec.Ed25519.Point64.addAffineContract, Spec.Ed25519.Point64.sig, X86_64.abi, X86_64.argRegs,
+theorem addAffK_implies : addAffK.Implies (Proof.Ed25519.Point64.addAffineContract X86_64.abi true) := by
+  sig_implies [Proof.Ed25519.Point64.addAffineContract, Proof.Ed25519.Point64.sig, X86_64.abi, X86_64.argRegs,
     addAffK, fnPre, fnPub] [fnSat] using fnSat
 
 end VG.Proof.Ed25519.X86_64.Point64

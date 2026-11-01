@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Field64Contract
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
 public import VerifiedGarbage.Proof.X25519.Chain250
 import VerifiedGarbage.Proof.Mont.Read
@@ -16,7 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # `vg_gf25519_r64_pow250` on AArch64, verified
 
-The function meets `pow250Contract` of `Spec/X25519/Field64.lean`, with no
+The function meets `pow250Contract` of `Proof/X25519/Field64Contract.lean`, with no
 stack: the proof against `powF`, the contract's facts by register, from
 `powFn_ok`. The chain's results are `a^(2^250 - 1)` in slot 15 (byte 544) and
 `a^11` in slot 14 (byte 512) (`power250Env_eval`, `chainF_eq`), as residues of
@@ -33,7 +34,7 @@ namespace VG.Proof.Ed25519.AArch64.Pow250
 
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519.AArch64
 open VG.Spec.X25519 (P)
-open VG.Spec.X25519.Field64 (valAt zAt p250At p11At PowKeeps)
+open VG.Proof.X25519.Field64 (valAt zAt p250At p11At PowKeeps)
 
 def powF : Contract isa where
   pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .x0, 4096⟩] ∧ (s.gpr .x0).toNat + 4096 ≤ 2 ^ 64
@@ -85,8 +86,8 @@ theorem pow_arm (s : State) (hs : powF.pre s) :
   · rw [valAt_fe, valAt_fe]
     exact v14
   · intro i hi hown
-    simp only [Spec.X25519.Field64.wsBytes, Spec.X25519.Field64.invOwnAt,
-      Spec.X25519.Field64.invOwnEnd] at hi hown
+    simp only [Proof.X25519.Field64.wsBytes, Proof.X25519.Field64.invOwnAt,
+      Proof.X25519.Field64.invOwnEnd] at hi hown
     exact hmem _ (by rw [ofs_off' _ (by omega)]; omega)
 
 theorem pow_ct : ConstantTime isa powF.pre powF.pub powFn :=
@@ -104,9 +105,9 @@ def satState : State where
   wr := [⟨0x1000, 4096⟩]
 
 theorem powFn_verified :
-    Verified AArch64.target powFn (Spec.X25519.Field64.pow250Contract AArch64.abi) :=
+    Verified AArch64.target powFn (Proof.X25519.Field64.pow250Contract AArch64.abi) :=
   Verified.of_correct pow_arm pow_ct (by
-    sig_implies [Spec.X25519.Field64.pow250Contract, Spec.X25519.Field64.invSig, AArch64.abi,
+    sig_implies [Proof.X25519.Field64.pow250Contract, Proof.X25519.Field64.invSig, AArch64.abi,
       AArch64.argRegs, powF] [satState] using satState)
 
 end VG.Proof.Ed25519.AArch64.Pow250

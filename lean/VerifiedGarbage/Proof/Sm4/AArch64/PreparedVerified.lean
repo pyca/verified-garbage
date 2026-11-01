@@ -25,12 +25,15 @@ meta import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Prepared
+meta import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-!
 # SM4's prepared round keys and batches on AArch64 meet their contracts
 
 `prepare_verified` and `crypt_verified`: `vg_sm4_prepare_keys` and
-`vg_sm4_crypt_prepared` against `Spec.Sm4.Prepared`, with `layout`. Each
+`vg_sm4_crypt_prepared` against `Proof.Sm4.Prepared`, with `layout`. Each
 body runs from the state narrowed to ECB's scratch buffer (`prepareBody_wp`,
 `cryptBody_wp`) and then from the whole working space (`Exec.widen`), which it
 changes only where the narrowed run may. A batch's blocks are ECB in the
@@ -46,7 +49,7 @@ namespace VG.Proof.Sm4.AArch64
 
 open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Sm4.AArch64
 open VG.Proof.Sm4 (specDirA)
-open VG.Spec.Sm4.Prepared (Holds Keeps)
+open VG.Proof.Sm4.Prepared (Holds Keeps)
 
 /-! ## Narrowing the working space -/
 
@@ -91,7 +94,7 @@ def prepAArch64 : Contract AArch64.isa where
       layout.size ≤ 8 * (s.gpr .x3).toNat
   post s s' :=
     Holds layout s'.mem (s.gpr .x2) (Spec.Sm4.scheduleAt s.mem (s.gpr .x0))
-        (Spec.Sm4.directionOf (s.gpr .x1).toNat) ∧
+        (Proof.Sm4.directionOf (s.gpr .x1).toNat) ∧
       Keeps (s.gpr .x2) (s.gpr .x3).toNat layout.prepScratch s.mem s'.mem
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
@@ -157,9 +160,9 @@ def prepSat : State where
   wr := [⟨0x2000, 396 * 8⟩]
 
 theorem prepare_verified :
-    Verified AArch64.target prepareKeys (Spec.Sm4.Prepared.prepareContract layout AArch64.abi) :=
+    Verified AArch64.target prepareKeys (Proof.Sm4.Prepared.prepareContract layout AArch64.abi) :=
   Verified.of_correct prep_correct prep_ct (by
-    sig_implies [Spec.Sm4.Prepared.prepareContract, Spec.Sm4.Prepared.prepareSig, prepAArch64, AArch64.abi,
+    sig_implies [Proof.Sm4.Prepared.prepareContract, Proof.Sm4.Prepared.prepareSig, prepAArch64, AArch64.abi,
       AArch64.argRegs, size_eq, slots] [prepSat] using prepSat)
 
 /-! ## A batch -/
@@ -275,19 +278,19 @@ def cryptSat : State where
   rd := []
   wr := [⟨0x2000, 396 * 8⟩]
 
-theorem crypt_implies : cryptAArch64.Implies (Spec.Sm4.Prepared.cryptContract layout AArch64.abi) where
+theorem crypt_implies : cryptAArch64.Implies (Proof.Sm4.Prepared.cryptContract layout AArch64.abi) where
   pre := by
-    sig_implies_pre [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptAArch64, AArch64.abi,
+    sig_implies_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptAArch64, AArch64.abi,
       AArch64.argRegs]
   post := by
-    sig_implies_post [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptAArch64, AArch64.abi,
+    sig_implies_post [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptAArch64, AArch64.abi,
       AArch64.argRegs]
   pub := by
-    sig_implies_pub [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptAArch64, AArch64.abi,
+    sig_implies_pub [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptAArch64, AArch64.abi,
       AArch64.argRegs]
   sat := by
     refine ⟨cryptSat, ?_⟩
-    sig_pre [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, AArch64.abi, AArch64.argRegs]
+    sig_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, AArch64.abi, AArch64.argRegs]
     sig_and_intros
     all_goals first
       | decide
@@ -295,7 +298,7 @@ theorem crypt_implies : cryptAArch64.Implies (Spec.Sm4.Prepared.cryptContract la
       | (rw [size_eq, slots_eq]; decide)
 
 theorem crypt_verified :
-    Verified AArch64.target cryptPrepared (Spec.Sm4.Prepared.cryptContract layout AArch64.abi) :=
+    Verified AArch64.target cryptPrepared (Proof.Sm4.Prepared.cryptContract layout AArch64.abi) :=
   Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Sm4.AArch64

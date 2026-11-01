@@ -3,12 +3,13 @@ module
 import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcFill
 import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
-import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc
 public import VerifiedGarbage.Proof.Sm4.Arm.CfbFill
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # Encrypting the CBC input under the prepared round keys -/
 
@@ -20,7 +21,7 @@ open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchXor
 open VG.Proof.Sm4.Arm.BatchGroup
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 structure Post (s : State) (B D : BitVec 32) (K : Spec.Sm4.Schedule) (s' : State) : Prop where
   regs : ∀ r ∈ [.r4, .r5, .r6, .r7, .r8, .r11], s'.gpr r = s.gpr r

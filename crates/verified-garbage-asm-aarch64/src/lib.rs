@@ -409,15 +409,7 @@ pub mod ed25519;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
-pub mod ed25519_r64;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
 pub mod ed448;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod ed448_r56;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
@@ -426,14 +418,6 @@ pub mod ffdh;
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
 pub mod gcm;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod gf25519_r64;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod gf448_r56;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
@@ -505,15 +489,7 @@ pub mod mldsa87;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
-pub mod mlkem;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
 pub mod mlkem1024;
-
-#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
-#[rustfmt::skip]
-pub mod mlkem16;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Codec
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
 import VerifiedGarbage.Proof.MlKem.Encode
@@ -16,7 +16,7 @@ import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Impl.MlKem.PPC64LE.Codec
-meta import VerifiedGarbage.Spec.MlKem.Poly
+meta import VerifiedGarbage.Proof.MlKem.PolyContract
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
 meta import VerifiedGarbage.Proof.MlKem.Encode
@@ -205,8 +205,8 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa decode12 s₀ (Inv s₀ 
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.decode12Contract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.decode12Contract, Spec.MlKem.decode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.decode12Contract PPC64LE.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.decode12Contract, Proof.MlKem.decode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
   exact ⟨h1, h2, h3, h4, h5⟩
 
@@ -221,25 +221,25 @@ def satState : State where
   wr := [⟨0x2000, 1024⟩]
 
 theorem verified :
-    Verified PPC64LE.target Impl.MlKem.PPC64LE.decode12 (Spec.MlKem.decode12Contract PPC64LE.abi) := by
+    Verified PPC64LE.target Impl.MlKem.PPC64LE.decode12 (Proof.MlKem.decode12Contract PPC64LE.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.r3, .r4] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · obtain ⟨t, s', he, h⟩ := loop_ok (pre_of hs)
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.lr⟩, ?_⟩
-    sig_post [Spec.MlKem.decode12Contract, Spec.MlKem.decode12Sig, PPC64LE.abi, PPC64LE.argRegs]
+    sig_post [Proof.MlKem.decode12Contract, Proof.MlKem.decode12Sig, PPC64LE.abi, PPC64LE.argRegs]
     exact polyIs_of_coeffAt (p := F s) fun j hj => by
       rw [h.coeff j (by rw [n_eq] at hj; exact hj), ite_eq_left (by rw [n_eq] at hj; omega_arith)]; rfl
-  · sig_pub [Spec.MlKem.decode12Contract, Spec.MlKem.decode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlKem.decode12Contract, Proof.MlKem.decode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.2.1
     · exact h.2.2
-  · sig_pub [Spec.MlKem.decode12Contract, Spec.MlKem.decode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlKem.decode12Contract, Proof.MlKem.decode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.decode12Contract, Spec.MlKem.decode12Sig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlKem.decode12Contract, Proof.MlKem.decode12Sig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial

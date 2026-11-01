@@ -27,7 +27,7 @@ call {vg_aes_expand_key_scratch_aesni}
 call {vg_cmac_aes_subkeys_aesni}
 .base64 "uAAAAABIiYMQAQAASImDGAEAAEiLnYAIAABMi6WQCAAASIutiAgAAEiNpCQICQAAww=="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,
     )
 }
@@ -84,7 +84,7 @@ call {vg_aes_expand_key_scratch}
 call {vg_cmac_aes_subkeys}
 .base64 "uAAAAABIiYMQAQAASImDGAEAAEiLnYAIAABMi6WQCAAASIutiAgAAEiNpCQICQAAww=="
 .p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
@@ -141,7 +141,7 @@ call {vg_aes_expand_key_scratch_aesni}
 call {vg_cmac_aes_subkeys_vaes}
 .base64 "uAAAAABIiYMQAQAASImDGAEAAEiLnYAIAABMi6WQCAAASIutiAgAAEiNpCQICQAAww=="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
     )
 }

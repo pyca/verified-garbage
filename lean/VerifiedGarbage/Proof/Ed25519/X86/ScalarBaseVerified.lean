@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
 import VerifiedGarbage.Proof.Ed25519.X86.CombCT
 import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
@@ -215,7 +216,7 @@ theorem below_eq {sp : BitVec 32} {n : Nat} (h : n ≤ sp.toNat) :
   simp only [below, Taint.sub_setWidth h]
 
 theorem scalarBase_sat :
-    (Spec.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8).pre baseSatState := by
+    (Proof.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8).pre baseSatState := by
   have hl := combWords_length
   have a0 : arg baseSatState 0 = 0x1000 := (baseSat_arg 0 (by decide)).trans (by decide)
   have a1 : arg baseSatState 1 = 0x2000 := (baseSat_arg 1 (by decide)).trans (by decide)
@@ -223,7 +224,7 @@ theorem scalarBase_sat :
   have held : TblWords ((baseSatState.syms combSym).setWidth 64) baseSatState.mem :=
     satMemWith_held baseSatMem
   generalize e : baseSatState = s
-  sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig,
+  sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig,
     Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
@@ -241,9 +242,9 @@ theorem scalarBase_sat :
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
 theorem scalarBaseWide_implies :
-    scalarBaseWide.Implies (Spec.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8) where
+    scalarBaseWide.Implies (Proof.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8) where
   pre s h := by
-    sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig,
+    sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨h4, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, -, o2, o3, i2, -, s3, r0, -, r2, -,
@@ -260,12 +261,12 @@ theorem scalarBaseWide_implies :
       · rw [be]; exact hstk
   post := by
     intro s t _ h
-    sig_post [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig,
+    sig_post [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts]
     exact h
   pub s t _ _ h := by
-    sig_pub [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig,
+    sig_pub [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
@@ -273,7 +274,7 @@ theorem scalarBaseWide_implies :
   sat := ⟨baseSatState, scalarBase_sat⟩
 
 theorem scalarBase_verified :
-    Verified X86.target scalarBase (Spec.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8) := by
+    Verified X86.target scalarBase (Proof.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8) := by
   have hsat := scalarBaseWide_implies.sat_left
   have satLocal : ∃ s, scalarBaseLocal.pre s := hsat.elim fun s h => ⟨_, scalarBaseWide_pre s h⟩
   have verifiedLocal : Verified X86.target scalarBase scalarBaseLocal :=

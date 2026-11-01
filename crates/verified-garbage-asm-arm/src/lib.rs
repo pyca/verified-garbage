@@ -385,10 +385,6 @@ pub mod ed25519;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
-pub mod ed25519_r16;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
 pub mod ed448;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
@@ -398,14 +394,6 @@ pub mod ffdh;
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
 pub mod gcm;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
-pub mod gf25519_r16;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
-pub mod gf448_r16;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
@@ -474,10 +462,6 @@ pub mod mldsa65;
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
 pub mod mldsa87;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
-pub mod mlkem;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]

@@ -2,9 +2,9 @@
 //! to 32 bytes, over 32-bit words (see `blake2` for how the verified
 //! functions are used).
 //!
-//! On x86-64, CPUs with AVX run `vg_blake2s_update_avx` and
-//! `vg_blake2s_finalize_avx` instead, which have the same contracts and call
-//! `vg_blake2s_compress_avx`: the work vector in four 128-bit registers.
+//! The variants of `vg_blake2s_update` and `vg_blake2s_finalize`, with the
+//! same contracts, are chosen on x86-64 CPUs with the features their
+//! `_FEATURES` constants name: the `_avx` ones.
 
 #![cfg(any(
     target_arch = "x86_64",

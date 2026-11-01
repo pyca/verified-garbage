@@ -20,12 +20,13 @@ namespace VG.Proof.MlKem1024.AArch64
 
 open VG VG.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
 /-- `vg_mlkem1024_compress_encode(f, d, out, 32 d)`. -/
 theorem compressEncode1024_call {s : State} {f o : Addr} {d : Nat} (h0 : s.gpr .x0 = f)
     (h1 : ((s.gpr .x1).setWidth 32).toNat = d) (h2 : s.gpr .x2 = o) (h3 : (s.gpr .x3).toNat = 32 * d)
-    (hdw : d ∈ Spec.MlKem1024.compressWidths) (hd : Region.Disjoint ⟨f, 1024⟩ ⟨o, 32 * d⟩)
+    (hdw : d ∈ Proof.MlKem1024.compressWidths) (hd : Region.Disjoint ⟨f, 1024⟩ ⟨o, 32 * d⟩)
     (hr : Reduced s.mem f) (hc : Covers [⟨f, 1024⟩, ⟨o, 32 * d⟩] (s.rd ++ s.wr))
     (hw : Covers [⟨o, 32 * d⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨o, 32 * d⟩] s s' → bytesAt s'.mem o (32 * d) = compressEncode d (polyAt s.mem f) →
@@ -48,7 +49,7 @@ theorem compressEncode1024_call {s : State} {f o : Addr} {d : Nat} (h0 : s.gpr .
 /-- `vg_mlkem1024_decode_decompress(b, 32 d, d, f)`. -/
 theorem decodeDecompress1024_call {s : State} {b f : Addr} {d : Nat} (h0 : s.gpr .x0 = b)
     (h1 : (s.gpr .x1).toNat = 32 * d) (h2 : ((s.gpr .x2).setWidth 32).toNat = d) (h3 : s.gpr .x3 = f)
-    (hdw : d ∈ Spec.MlKem1024.compressWidths) (hd : Region.Disjoint ⟨b, 32 * d⟩ ⟨f, 1024⟩)
+    (hdw : d ∈ Proof.MlKem1024.compressWidths) (hd : Region.Disjoint ⟨b, 32 * d⟩ ⟨f, 1024⟩)
     (hc : Covers [⟨b, 32 * d⟩, ⟨f, 1024⟩] (s.rd ++ s.wr)) (hw : Covers [⟨f, 1024⟩] s.wr)
     {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨f, 1024⟩] s s' →

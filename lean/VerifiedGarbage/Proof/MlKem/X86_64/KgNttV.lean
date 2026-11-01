@@ -4,12 +4,12 @@ import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgNtt
-public import VerifiedGarbage.Spec.MlKem.KpkeKgRows
+public import VerifiedGarbage.Proof.MlKem.KpkeKgRowsContract
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KgNtt
-meta import VerifiedGarbage.Spec.MlKem.KpkeKgRows
+meta import VerifiedGarbage.Proof.MlKem.KpkeKgRowsContract
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKgV
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 
 The proof of `KgNtt.lean` with AVX2, its constant time (every address is
 the entry's pointers plus constants), and its contract implying the shared
-one of `Spec/MlKem/KpkeKgRows.lean`.
+one of `Proof/MlKem/KpkeKgRowsContract.lean`.
 -/
 
 @[expose] public section
@@ -63,7 +63,7 @@ def kgNttSat (k : Nat) : State where
   wr := [⟨0x1000, 384 * k⟩, ⟨0x2000, 1024 * k⟩, ⟨0x4000, 1024 * k⟩, ⟨0x10000, 4096⟩]
 
 theorem kgNtt768_verified :
-    Verified X86_64.target (KpkeKgRows.kgNtt kem768 .avx2) (Spec.MlKem.kpkeKeyGenNttContract 3 X86_64.abi) :=
+    Verified X86_64.target (KpkeKgRows.kgNtt kem768 .avx2) (Proof.MlKem.kpkeKeyGenNttContract 3 X86_64.abi) :=
   Verified.of_correct kgNtt768_correct kgNtt768_ct
     { pre := by sig_implies_pre [kpkeKeyGenNttContract, kpkeKeyGenNttSig, kgNttK, X86_64.abi,
         X86_64.argRegs, retR]

@@ -3,70 +3,6 @@
 //! `assembly/aes_xts.s`.
 #![allow(dead_code)]
 
-/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.1, NIST SP 800-38E) of whole blocks, in place: replaces the `n` 16-byte blocks `Pⱼ` at `data` with `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `T₀` is the tweak at `*tweak` and `Tⱼ₊₁ = Tⱼ ⊗ α` (§5.2), and `*tweak` with `Tₙ` (leaving it unchanged if `n = 0`), so that a further call continues the data unit. `AES-enc(Key1, ·)` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. The caller computes the first tweak, `AES-enc(Key2, i)`, and steals ciphertext for a partial last block.
-///
-/// Contract: `VG.Spec.Xts.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `tweak` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `tweak`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `tweak`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
-beq %cr0, 20f
-22:
-.base64 "AAAx6QAAUOl4Uil9AAAx+QgAMekIAFDpeFIpfQgAMfl4c8N9eHvkfXiLJX4BAMA4eJtnfg=="
-bl {vg_aes_encrypt_blocks}
-.base64 "AAAx6QAAUOl4Uil9AAAx+QgAMekIAFDpeFIpfQgAMfkAADDpCABQ6eAPS3kAAIA5UGBrfYcAgDk4YGt94A8seaQPKXl4Wil9pA9KeXhjSn0AADD5CABQ+RAAMTr//1I6AAAyKA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-    )
-}
-
-/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.1, NIST SP 800-38E) of whole blocks, in place: replaces the `n` 16-byte blocks `Cⱼ` at `data` with `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `T₀` is the tweak at `*tweak` and `Tⱼ₊₁ = Tⱼ ⊗ α` (§5.2), and `*tweak` with `Tₙ` (leaving it unchanged if `n = 0`), so that a further call continues the data unit. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. The caller computes the first tweak, `AES-enc(Key2, i)`, and steals ciphertext for a partial last block.
-///
-/// Contract: `VG.Spec.Xts.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `tweak` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `tweak`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `tweak`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
-beq %cr0, 20f
-22:
-.base64 "AAAx6QAAUOl4Uil9AAAx+QgAMekIAFDpeFIpfQgAMfl4c8N9eHvkfXiLJX4BAMA4eJtnfg=="
-bl {vg_aes_decrypt_blocks}
-.base64 "AAAx6QAAUOl4Uil9AAAx+QgAMekIAFDpeFIpfQgAMfkAADDpCABQ6eAPS3kAAIA5UGBrfYcAgDk4YGt94A8seaQPKXl4Wil9pA9KeXhjSn0AADD5CABQ+RAAMTr//1I6AAAyKA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
-    )
-}
-
 /// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
@@ -102,7 +38,7 @@ b 21f
 20:
 21:
 .base64 "0AgT6KAI0+moCPPpsAgT6rgIM+rACFPqyAhz6qYDCHwgAIBO""#,
-        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
+        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
     )
 }
 
@@ -145,7 +81,15 @@ b 21f
 bl {vg_aes_xts_decrypt}
 21:
 .base64 "0AgT6KAI0+moCPPpsAgT6rgIM+rACFPqyAhz6qYDCHwgAIBO""#,
-        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
-        vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt,
+        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
+        vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt::vg_aes_xts_decrypt,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_decrypt.rs"]
+pub(crate) mod vg_aes_xts_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_encrypt.rs"]
+pub(crate) mod vg_aes_xts_encrypt;

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.X25519.X86_64.Setup
 public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
@@ -333,9 +334,9 @@ theorem scalarMulAdd_ct : ConstantTime isa scalarMulAddLocal.pre scalarMulAddLoc
     (fun _ _ h₁ h₂ hp => scalarMulAdd_agree h₁ h₂ hp) (by taint_decide)
 
 theorem scalarMulAdd_verified : Verified X86_64.target scalarMulAdd
-    (Spec.Ed25519.scalarMulAddContract X86_64.abi) :=
+    (Proof.Ed25519.scalarMulAddContract X86_64.abi) :=
   Verified.of_correct scalarMulAdd_ok scalarMulAdd_ct (by
-    sig_implies [Spec.Ed25519.scalarMulAddContract, Spec.Ed25519.scalarMulAddSig,
+    sig_implies [Proof.Ed25519.scalarMulAddContract, Proof.Ed25519.scalarMulAddSig,
       Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, scalarMulAddLocal]
       [mulAddSatState] using mulAddSatState)
 

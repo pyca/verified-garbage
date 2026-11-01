@@ -13,10 +13,6 @@ namespace VG.Artifacts.Sm4Gcm.Arm
 open VG.Proof.Sm4Gcm.Arm
 
 def artifacts : List Artifact := [
-  Spec.Sm4.ctr32Api.artifact Arm.target {
-    code := Impl.Sm4.Arm.BatchCtr32.ctr32Framed
-    stack := 1520
-    verified := Proof.Sm4.Arm.Batch32Verified.framed },
   Spec.Sm4.Gcm.initApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withRegScratch 768 .r2 Impl.Sm4Gcm.Arm.init
     stack := 2288

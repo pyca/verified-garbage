@@ -21,27 +21,6 @@ def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact X86_64.target {
     code := Impl.Poly1305.X86_64.init
     verified := Proof.Poly1305.X86_64.init_verified },
-  Spec.Poly1305.blocksApi.artifact X86_64.target {
-    code := Impl.Poly1305.X86_64.blocks
-    verified := Proof.Poly1305.X86_64.blocks_verified },
-  Spec.Poly1305.blocksApi.artifact X86_64.target {
-    suffix := "_avx2"
-    code := Impl.Poly1305.X86_64.Avx2.blocksAvx2
-    stack := 8
-    verified := Proof.Poly1305.X86_64.Avx2.blocksAvx2_verified
-    features := ["avx", "avx2"] },
-  Spec.Poly1305.blocksApi.artifact X86_64.target {
-    suffix := "_avx512"
-    code := Impl.Poly1305.X86_64.Avx512.blocksAvx512
-    stack := 16
-    verified := Proof.Poly1305.X86_64.Avx512.blocksAvx512_verified
-    features := ["avx", "avx512f", "avx2"] },
-  Spec.Poly1305.blocksApi.artifact X86_64.target {
-    suffix := "_ifma"
-    code := Impl.Poly1305.X86_64.Ifma.blocksIfma
-    stack := 16
-    verified := Proof.Poly1305.X86_64.Ifma.blocksIfma_verified
-    features := ["avx", "avx512f", "avx2", "avx512ifma"] },
   Spec.Poly1305.finalizeApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize
     stack := 136

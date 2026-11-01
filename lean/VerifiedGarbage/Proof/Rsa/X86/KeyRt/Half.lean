@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyRt.ShiftDown
 import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs

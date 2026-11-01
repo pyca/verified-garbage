@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 
 /-! # A number's words halved through a pointer
 

@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 
 The proof of `KpkeKg.lean` with AVX2, its constant time (`kpkeKg_mid`: the
 pointers after the products are those of the entry, as for `kpke_encrypt`),
-and its contract implying the shared one of `Spec/MlKem/Kpke16.lean`.
+and its contract implying the shared one of `Proof/MlKem/Kpke16Contract.lean`.
 -/
 
 @[expose] public section
@@ -87,7 +87,7 @@ def kpkeKgSat (L : Kem) : State where
 theorem kpkeKg768_of {c : Prog isa}
     (hc : ∀ s, (kpkeKgK kem768).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (kpkeKgK kem768).post s s')
     (hct : ConstantTime isa (kpkeKgK kem768).pre (kpkeKgK kem768).pub c) :
-    Verified X86_64.target c (Spec.MlKem.kpkeKeyGenContract 3 X86_64.abi) :=
+    Verified X86_64.target c (Proof.MlKem.kpkeKeyGenContract 3 X86_64.abi) :=
   Verified.of_correct hc hct
     { pre := by sig_implies_pre [kpkeKeyGenContract, kpkeKeyGenSig, kpkeKgK, X86_64.abi,
         X86_64.argRegs, kScrE, Kem.k, kem768, retR, mlKem768]
@@ -109,7 +109,7 @@ theorem kpkeKg768_of {c : Prog isa}
              bv_omega) }
 
 theorem kpkeKg768Y_verified :
-    Verified X86_64.target (kpkeKg kem768 .avx2 keygenMul16Y) (Spec.MlKem.kpkeKeyGenContract 3 X86_64.abi) :=
+    Verified X86_64.target (kpkeKg kem768 .avx2 keygenMul16Y) (Proof.MlKem.kpkeKeyGenContract 3 X86_64.abi) :=
   kpkeKg768_of kpkeKg768Y_correct kpkeKg768Y_ct
 
 end VG.Proof.MlKem.X86_64

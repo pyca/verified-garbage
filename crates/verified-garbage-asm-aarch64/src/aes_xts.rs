@@ -3,333 +3,6 @@
 //! `assembly/aes_xts.s`.
 #![allow(dead_code)]
 
-/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.1, NIST SP 800-38E) of whole blocks, in place: replaces the `n` 16-byte blocks `Pⱼ` at `data` with `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `T₀` is the tweak at `*tweak` and `Tⱼ₊₁ = Tⱼ ⊗ α` (§5.2), and `*tweak` with `Tₙ` (leaving it unchanged if `n = 0`), so that a further call continues the data unit. `AES-enc(Key1, ·)` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. The caller computes the first tweak, `AES-enc(Key2, i)`, and steals ciphertext for a partial last block.
-///
-/// Contract: `VG.Spec.Xts.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `tweak` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `tweak`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `tweak`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
-cbz x23, 20f
-.inst 0xf94002a9,0xf9040309,0xf94006a9,0xf9040709,0x910002ce,0x910002ef
-22:
-.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0xf94002a9,0xf94006aa,0xab090129,0xba0a014a,0xd28010eb,0xd280000c,0x9a8c216b,0xca0b0129
-.inst 0xf90002a9,0xf90006aa,0x910042d6,0xd10006f7
-cbnz x23, 22b
-.inst 0x910001d6,0x910001f7,0xf9440309,0xf90002a9,0xf9440709,0xf90006a9,0x91000260,0x91000281
-.inst 0x910002c2,0x910002e3,0x91000304
-bl {vg_aes_encrypt_blocks}
-23:
-.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0xf94002a9,0xf94006aa,0xab090129,0xba0a014a,0xd28010eb,0xd280000c,0x9a8c216b,0xca0b0129
-.inst 0xf90002a9,0xf90006aa,0x910042d6,0xd10006f7
-cbnz x23, 23b
-b 21f
-20:
-21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
-.p2align 6",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-    )
-}
-
-/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.1, NIST SP 800-38E) of whole blocks, in place: replaces the `n` 16-byte blocks `Cⱼ` at `data` with `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `T₀` is the tweak at `*tweak` and `Tⱼ₊₁ = Tⱼ ⊗ α` (§5.2), and `*tweak` with `Tₙ` (leaving it unchanged if `n = 0`), so that a further call continues the data unit. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. The caller computes the first tweak, `AES-enc(Key2, i)`, and steals ciphertext for a partial last block.
-///
-/// Contract: `VG.Spec.Xts.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `tweak` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `tweak`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `tweak`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
-cbz x23, 20f
-.inst 0xf94002a9,0xf9040309,0xf94006a9,0xf9040709,0x910002ce,0x910002ef
-22:
-.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0xf94002a9,0xf94006aa,0xab090129,0xba0a014a,0xd28010eb,0xd280000c,0x9a8c216b,0xca0b0129
-.inst 0xf90002a9,0xf90006aa,0x910042d6,0xd10006f7
-cbnz x23, 22b
-.inst 0x910001d6,0x910001f7,0xf9440309,0xf90002a9,0xf9440709,0xf90006a9,0x91000260,0x91000281
-.inst 0x910002c2,0x910002e3,0x91000304
-bl {vg_aes_decrypt_blocks}
-23:
-.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0xf94002a9,0xf94006aa,0xab090129,0xba0a014a,0xd28010eb,0xd280000c,0x9a8c216b,0xca0b0129
-.inst 0xf90002a9,0xf90006aa,0x910042d6,0xd10006f7
-cbnz x23, 23b
-b 21f
-20:
-21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
-.p2align 6",
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
-    )
-}
-
-/// The CPU features `vg_aes_xts_encrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_XTS_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.1, NIST SP 800-38E) of whole blocks, in place: replaces the `n` 16-byte blocks `Pⱼ` at `data` with `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `T₀` is the tweak at `*tweak` and `Tⱼ₊₁ = Tⱼ ⊗ α` (§5.2), and `*tweak` with `Tₙ` (leaving it unchanged if `n = 0`), so that a further call continues the data unit. `AES-enc(Key1, ·)` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. The caller computes the first tweak, `AES-enc(Key2, i)`, and steals ciphertext for a partial last block.
-///
-/// Contract: `VG.Spec.Xts.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `tweak` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `tweak`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `tweak`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_encrypt_aes(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x9100004b,0x91000062,0x91000083,0xf940016e,0xf940056f,0x3dc00010,0x3dc00411,0x3dc00812
-.inst 0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17,0x3dc02018,0x3dc02419,0x3dc0281a
-.inst 0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e,0xd1002826,0xd1003027,0xd343fc6d
-.inst 0xd1004129,0x3dc0013d
-cbz x13, 20f
-.inst 0x910000ac,0x910200a8,0xf900018e,0xf900058f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900098e,0xf9000d8f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900118e,0xf900158f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900198e,0xf9001d8f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900218e,0xf900258f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900298e,0xf9002d8f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900318e,0xf900358f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900398e,0xf9003d8f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce
-22:
-.inst 0x3dc00040,0x3dc0019f,0x6e3f1c00,0x3dc00441,0x3dc0059f,0x6e3f1c21,0x3dc00842,0x3dc0099f
-.inst 0x6e3f1c42,0x3dc00c43,0x3dc00d9f,0x6e3f1c63,0x3dc01044,0x3dc0119f,0x6e3f1c84,0x3dc01445
-.inst 0x3dc0159f,0x6e3f1ca5,0x3dc01846,0x3dc0199f,0x6e3f1cc6,0x3dc01c47,0x3dc01d9f,0x6e3f1ce7
-.inst 0xf900010e,0xf900050f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900090e,0xf9000d0f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900110e,0xf900150f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900190e,0xf9001d0f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900210e,0xf900250f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900290e,0xf9002d0f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900310e,0xf900350f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900390e,0xf9003d0f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0x4e284a00,0x4e286800,0x4e284a01,0x4e286821,0x4e284a02,0x4e286842,0x4e284a03,0x4e286863
-.inst 0x4e284a04,0x4e286884,0x4e284a05,0x4e2868a5,0x4e284a06,0x4e2868c6,0x4e284a07,0x4e2868e7
-.inst 0x4e284a20,0x4e286800,0x4e284a21,0x4e286821,0x4e284a22,0x4e286842,0x4e284a23,0x4e286863
-.inst 0x4e284a24,0x4e286884,0x4e284a25,0x4e2868a5,0x4e284a26,0x4e2868c6,0x4e284a27,0x4e2868e7
-.inst 0x4e284a40,0x4e286800,0x4e284a41,0x4e286821,0x4e284a42,0x4e286842,0x4e284a43,0x4e286863
-.inst 0x4e284a44,0x4e286884,0x4e284a45,0x4e2868a5,0x4e284a46,0x4e2868c6,0x4e284a47,0x4e2868e7
-.inst 0x4e284a60,0x4e286800,0x4e284a61,0x4e286821,0x4e284a62,0x4e286842,0x4e284a63,0x4e286863
-.inst 0x4e284a64,0x4e286884,0x4e284a65,0x4e2868a5,0x4e284a66,0x4e2868c6,0x4e284a67,0x4e2868e7
-.inst 0x4e284a80,0x4e286800,0x4e284a81,0x4e286821,0x4e284a82,0x4e286842,0x4e284a83,0x4e286863
-.inst 0x4e284a84,0x4e286884,0x4e284a85,0x4e2868a5,0x4e284a86,0x4e2868c6,0x4e284a87,0x4e2868e7
-.inst 0x4e284aa0,0x4e286800,0x4e284aa1,0x4e286821,0x4e284aa2,0x4e286842,0x4e284aa3,0x4e286863
-.inst 0x4e284aa4,0x4e286884,0x4e284aa5,0x4e2868a5,0x4e284aa6,0x4e2868c6,0x4e284aa7,0x4e2868e7
-.inst 0x4e284ac0,0x4e286800,0x4e284ac1,0x4e286821,0x4e284ac2,0x4e286842,0x4e284ac3,0x4e286863
-.inst 0x4e284ac4,0x4e286884,0x4e284ac5,0x4e2868a5,0x4e284ac6,0x4e2868c6,0x4e284ac7,0x4e2868e7
-.inst 0x4e284ae0,0x4e286800,0x4e284ae1,0x4e286821,0x4e284ae2,0x4e286842,0x4e284ae3,0x4e286863
-.inst 0x4e284ae4,0x4e286884,0x4e284ae5,0x4e2868a5,0x4e284ae6,0x4e2868c6,0x4e284ae7,0x4e2868e7
-.inst 0x4e284b00,0x4e286800,0x4e284b01,0x4e286821,0x4e284b02,0x4e286842,0x4e284b03,0x4e286863
-.inst 0x4e284b04,0x4e286884,0x4e284b05,0x4e2868a5,0x4e284b06,0x4e2868c6,0x4e284b07,0x4e2868e7
-cbz x6, 23f
-.inst 0x4e284b20,0x4e286800,0x4e284b21,0x4e286821,0x4e284b22,0x4e286842,0x4e284b23,0x4e286863
-.inst 0x4e284b24,0x4e286884,0x4e284b25,0x4e2868a5,0x4e284b26,0x4e2868c6,0x4e284b27,0x4e2868e7
-.inst 0x4e284b40,0x4e286800,0x4e284b41,0x4e286821,0x4e284b42,0x4e286842,0x4e284b43,0x4e286863
-.inst 0x4e284b44,0x4e286884,0x4e284b45,0x4e2868a5,0x4e284b46,0x4e2868c6,0x4e284b47,0x4e2868e7
-cbz x7, 25f
-.inst 0x4e284b60,0x4e286800,0x4e284b61,0x4e286821,0x4e284b62,0x4e286842,0x4e284b63,0x4e286863
-.inst 0x4e284b64,0x4e286884,0x4e284b65,0x4e2868a5,0x4e284b66,0x4e2868c6,0x4e284b67,0x4e2868e7
-.inst 0x4e284b80,0x4e286800,0x4e284b81,0x4e286821,0x4e284b82,0x4e286842,0x4e284b83,0x4e286863
-.inst 0x4e284b84,0x4e286884,0x4e284b85,0x4e2868a5,0x4e284b86,0x4e2868c6,0x4e284b87,0x4e2868e7
-b 26f
-25:
-26:
-b 24f
-23:
-24:
-.inst 0x4e284ba0,0x6e3e1c00,0x4e284ba1,0x6e3e1c21,0x4e284ba2,0x6e3e1c42,0x4e284ba3,0x6e3e1c63
-.inst 0x4e284ba4,0x6e3e1c84,0x4e284ba5,0x6e3e1ca5,0x4e284ba6,0x6e3e1cc6,0x4e284ba7,0x6e3e1ce7
-.inst 0x3dc0019f,0x6e3f1c00,0x3d800040,0x3dc0059f,0x6e3f1c21,0x3d800441,0x3dc0099f,0x6e3f1c42
-.inst 0x3d800842,0x3dc00d9f,0x6e3f1c63,0x3d800c43,0x3dc0119f,0x6e3f1c84,0x3d801044,0x3dc0159f
-.inst 0x6e3f1ca5,0x3d801445,0x3dc0199f,0x6e3f1cc6,0x3d801846,0x3dc01d9f,0x6e3f1ce7,0x3d801c47
-.inst 0x91020042,0xd1002063,0xd343fc6d,0x9100018a,0x9100010c,0x91000148
-cbnz x13, 22b
-.inst 0xf940018e,0xf940058f
-b 21f
-20:
-21:
-cbz x3, 27f
-29:
-.inst 0x3dc00040,0x4e080ddf,0x4e181dff,0x3d8000bf,0x6e3f1c00,0xab0e01ce,0xba0f01ef,0xd28010e9
-.inst 0xd280000a,0x9a8a2129,0xca0901ce,0x4e284a00,0x4e286800,0x4e284a20,0x4e286800,0x4e284a40
-.inst 0x4e286800,0x4e284a60,0x4e286800,0x4e284a80,0x4e286800,0x4e284aa0,0x4e286800,0x4e284ac0
-.inst 0x4e286800,0x4e284ae0,0x4e286800,0x4e284b00,0x4e286800
-cbz x6, 210f
-.inst 0x4e284b20,0x4e286800,0x4e284b40,0x4e286800
-cbz x7, 212f
-.inst 0x4e284b60,0x4e286800,0x4e284b80,0x4e286800
-b 213f
-212:
-213:
-b 211f
-210:
-211:
-.inst 0x4e284ba0,0x6e3e1c00,0x3dc000bf,0x6e3f1c00,0x3d800040,0x91004042,0xd1000463
-cbnz x3, 29b
-b 28f
-27:
-28:
-.inst 0xf900016e,0xf900056f,0xd65f03c0
-.arch_extension noaes
-.p2align 6",
-    )
-}
-
-/// The CPU features `vg_aes_xts_decrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_XTS_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.1, NIST SP 800-38E) of whole blocks, in place: replaces the `n` 16-byte blocks `Cⱼ` at `data` with `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `T₀` is the tweak at `*tweak` and `Tⱼ₊₁ = Tⱼ ⊗ α` (§5.2), and `*tweak` with `Tₙ` (leaving it unchanged if `n = 0`), so that a further call continues the data unit. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. The caller computes the first tweak, `AES-enc(Key2, i)`, and steals ciphertext for a partial last block.
-///
-/// Contract: `VG.Spec.Xts.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `tweak` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `tweak`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `tweak`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_decrypt_aes(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x9100004b,0x91000062,0x91000083,0xf940016e,0xf940056f,0x3dc00010,0x3dc00411,0x3dc00812
-.inst 0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17,0x3dc02018,0x3dc02419,0x3dc0281a
-.inst 0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e,0xd1002826,0xd1003027,0xd343fc6d
-.inst 0x3dc0341d,0x4e287a31,0x4e287a52,0x4e287a73,0x4e287a94,0x4e287ab5,0x4e287ad6,0x4e287af7
-.inst 0x4e287b18,0x4e287b39,0x4e287b5a,0x4e287b7b,0x4e287b9c,0x4e287bbd
-cbz x13, 20f
-.inst 0x910000ac,0x910200a8,0xf900018e,0xf900058f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900098e,0xf9000d8f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900118e,0xf900158f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900198e,0xf9001d8f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900218e,0xf900258f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900298e,0xf9002d8f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900318e,0xf900358f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce,0xf900398e,0xf9003d8f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a
-.inst 0x9a8a2129,0xca0901ce
-22:
-.inst 0x3dc00040,0x3dc0019f,0x6e3f1c00,0x3dc00441,0x3dc0059f,0x6e3f1c21,0x3dc00842,0x3dc0099f
-.inst 0x6e3f1c42,0x3dc00c43,0x3dc00d9f,0x6e3f1c63,0x3dc01044,0x3dc0119f,0x6e3f1c84,0x3dc01445
-.inst 0x3dc0159f,0x6e3f1ca5,0x3dc01846,0x3dc0199f,0x6e3f1cc6,0x3dc01c47,0x3dc01d9f,0x6e3f1ce7
-.inst 0xf900010e,0xf900050f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900090e,0xf9000d0f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900110e,0xf900150f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900190e,0xf9001d0f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900210e,0xf900250f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900290e,0xf9002d0f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900310e,0xf900350f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0xf900390e,0xf9003d0f,0xab0e01ce,0xba0f01ef,0xd28010e9,0xd280000a,0x9a8a2129,0xca0901ce
-.inst 0x4e285bc0,0x4e287800,0x4e285bc1,0x4e287821,0x4e285bc2,0x4e287842,0x4e285bc3,0x4e287863
-.inst 0x4e285bc4,0x4e287884,0x4e285bc5,0x4e2878a5,0x4e285bc6,0x4e2878c6,0x4e285bc7,0x4e2878e7
-cbz x6, 23f
-cbz x7, 25f
-.inst 0x4e285ba0,0x4e287800,0x4e285ba1,0x4e287821,0x4e285ba2,0x4e287842,0x4e285ba3,0x4e287863
-.inst 0x4e285ba4,0x4e287884,0x4e285ba5,0x4e2878a5,0x4e285ba6,0x4e2878c6,0x4e285ba7,0x4e2878e7
-.inst 0x4e285b80,0x4e287800,0x4e285b81,0x4e287821,0x4e285b82,0x4e287842,0x4e285b83,0x4e287863
-.inst 0x4e285b84,0x4e287884,0x4e285b85,0x4e2878a5,0x4e285b86,0x4e2878c6,0x4e285b87,0x4e2878e7
-b 26f
-25:
-26:
-.inst 0x4e285b60,0x4e287800,0x4e285b61,0x4e287821,0x4e285b62,0x4e287842,0x4e285b63,0x4e287863
-.inst 0x4e285b64,0x4e287884,0x4e285b65,0x4e2878a5,0x4e285b66,0x4e2878c6,0x4e285b67,0x4e2878e7
-.inst 0x4e285b40,0x4e287800,0x4e285b41,0x4e287821,0x4e285b42,0x4e287842,0x4e285b43,0x4e287863
-.inst 0x4e285b44,0x4e287884,0x4e285b45,0x4e2878a5,0x4e285b46,0x4e2878c6,0x4e285b47,0x4e2878e7
-b 24f
-23:
-24:
-.inst 0x4e285b20,0x4e287800,0x4e285b21,0x4e287821,0x4e285b22,0x4e287842,0x4e285b23,0x4e287863
-.inst 0x4e285b24,0x4e287884,0x4e285b25,0x4e2878a5,0x4e285b26,0x4e2878c6,0x4e285b27,0x4e2878e7
-.inst 0x4e285b00,0x4e287800,0x4e285b01,0x4e287821,0x4e285b02,0x4e287842,0x4e285b03,0x4e287863
-.inst 0x4e285b04,0x4e287884,0x4e285b05,0x4e2878a5,0x4e285b06,0x4e2878c6,0x4e285b07,0x4e2878e7
-.inst 0x4e285ae0,0x4e287800,0x4e285ae1,0x4e287821,0x4e285ae2,0x4e287842,0x4e285ae3,0x4e287863
-.inst 0x4e285ae4,0x4e287884,0x4e285ae5,0x4e2878a5,0x4e285ae6,0x4e2878c6,0x4e285ae7,0x4e2878e7
-.inst 0x4e285ac0,0x4e287800,0x4e285ac1,0x4e287821,0x4e285ac2,0x4e287842,0x4e285ac3,0x4e287863
-.inst 0x4e285ac4,0x4e287884,0x4e285ac5,0x4e2878a5,0x4e285ac6,0x4e2878c6,0x4e285ac7,0x4e2878e7
-.inst 0x4e285aa0,0x4e287800,0x4e285aa1,0x4e287821,0x4e285aa2,0x4e287842,0x4e285aa3,0x4e287863
-.inst 0x4e285aa4,0x4e287884,0x4e285aa5,0x4e2878a5,0x4e285aa6,0x4e2878c6,0x4e285aa7,0x4e2878e7
-.inst 0x4e285a80,0x4e287800,0x4e285a81,0x4e287821,0x4e285a82,0x4e287842,0x4e285a83,0x4e287863
-.inst 0x4e285a84,0x4e287884,0x4e285a85,0x4e2878a5,0x4e285a86,0x4e2878c6,0x4e285a87,0x4e2878e7
-.inst 0x4e285a60,0x4e287800,0x4e285a61,0x4e287821,0x4e285a62,0x4e287842,0x4e285a63,0x4e287863
-.inst 0x4e285a64,0x4e287884,0x4e285a65,0x4e2878a5,0x4e285a66,0x4e2878c6,0x4e285a67,0x4e2878e7
-.inst 0x4e285a40,0x4e287800,0x4e285a41,0x4e287821,0x4e285a42,0x4e287842,0x4e285a43,0x4e287863
-.inst 0x4e285a44,0x4e287884,0x4e285a45,0x4e2878a5,0x4e285a46,0x4e2878c6,0x4e285a47,0x4e2878e7
-.inst 0x4e285a20,0x6e301c00,0x4e285a21,0x6e301c21,0x4e285a22,0x6e301c42,0x4e285a23,0x6e301c63
-.inst 0x4e285a24,0x6e301c84,0x4e285a25,0x6e301ca5,0x4e285a26,0x6e301cc6,0x4e285a27,0x6e301ce7
-.inst 0x3dc0019f,0x6e3f1c00,0x3d800040,0x3dc0059f,0x6e3f1c21,0x3d800441,0x3dc0099f,0x6e3f1c42
-.inst 0x3d800842,0x3dc00d9f,0x6e3f1c63,0x3d800c43,0x3dc0119f,0x6e3f1c84,0x3d801044,0x3dc0159f
-.inst 0x6e3f1ca5,0x3d801445,0x3dc0199f,0x6e3f1cc6,0x3d801846,0x3dc01d9f,0x6e3f1ce7,0x3d801c47
-.inst 0x91020042,0xd1002063,0xd343fc6d,0x9100018a,0x9100010c,0x91000148
-cbnz x13, 22b
-.inst 0xf940018e,0xf940058f
-b 21f
-20:
-21:
-cbz x3, 27f
-29:
-.inst 0x3dc00040,0x4e080ddf,0x4e181dff,0x3d8000bf,0x6e3f1c00,0xab0e01ce,0xba0f01ef,0xd28010e9
-.inst 0xd280000a,0x9a8a2129,0xca0901ce,0x4e285bc0,0x4e287800
-cbz x6, 210f
-cbz x7, 212f
-.inst 0x4e285ba0,0x4e287800,0x4e285b80,0x4e287800
-b 213f
-212:
-213:
-.inst 0x4e285b60,0x4e287800,0x4e285b40,0x4e287800
-b 211f
-210:
-211:
-.inst 0x4e285b20,0x4e287800,0x4e285b00,0x4e287800,0x4e285ae0,0x4e287800,0x4e285ac0,0x4e287800
-.inst 0x4e285aa0,0x4e287800,0x4e285a80,0x4e287800,0x4e285a60,0x4e287800,0x4e285a40,0x4e287800
-.inst 0x4e285a20,0x6e301c00,0x3dc000bf,0x6e3f1c00,0x3d800040,0x91004042,0xd1000463
-cbnz x3, 29b
-b 28f
-27:
-28:
-.inst 0xf900016e,0xf900056f,0xd65f03c0
-.arch_extension noaes
-.p2align 6",
-    )
-}
-
 /// The CPU features `vg_aes_xts_encrypt_unit_aes` requires (`Artifact.features`).
 pub const VG_AES_XTS_ENCRYPT_UNIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
@@ -375,7 +48,7 @@ b 21f
 .inst 0xf9445313,0xf9445714,0xf9445b15,0xf9445f16,0xf9446317,0xf944671e,0xf9446b18,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_aes_xts_encrypt_aes = sym super::aes_xts::vg_aes_xts_encrypt_aes,
+        vg_aes_xts_encrypt_aes = sym super::aes_xts::vg_aes_xts_encrypt_aes::vg_aes_xts_encrypt_aes,
     )
 }
 
@@ -431,8 +104,8 @@ bl {vg_aes_xts_decrypt_aes}
 .inst 0xf9445313,0xf9445714,0xf9445b15,0xf9445f16,0xf9446317,0xf944671e,0xf9446b18,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_aes_xts_encrypt_aes = sym super::aes_xts::vg_aes_xts_encrypt_aes,
-        vg_aes_xts_decrypt_aes = sym super::aes_xts::vg_aes_xts_decrypt_aes,
+        vg_aes_xts_encrypt_aes = sym super::aes_xts::vg_aes_xts_encrypt_aes::vg_aes_xts_encrypt_aes,
+        vg_aes_xts_decrypt_aes = sym super::aes_xts::vg_aes_xts_decrypt_aes::vg_aes_xts_decrypt_aes,
     )
 }
 
@@ -475,7 +148,7 @@ b 21f
 21:
 .inst 0xf9445313,0xf9445714,0xf9445b15,0xf9445f16,0xf9446317,0xf944671e,0xf9446b18,0xd65f03c0
 .p2align 6",
-        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
+        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
     )
 }
 
@@ -525,7 +198,23 @@ bl {vg_aes_xts_decrypt}
 21:
 .inst 0xf9445313,0xf9445714,0xf9445b15,0xf9445f16,0xf9446317,0xf944671e,0xf9446b18,0xd65f03c0
 .p2align 6",
-        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
-        vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt,
+        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
+        vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt::vg_aes_xts_decrypt,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_decrypt.rs"]
+pub(crate) mod vg_aes_xts_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_decrypt_aes.rs"]
+pub(crate) mod vg_aes_xts_decrypt_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_encrypt.rs"]
+pub(crate) mod vg_aes_xts_encrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_encrypt_aes.rs"]
+pub(crate) mod vg_aes_xts_encrypt_aes;

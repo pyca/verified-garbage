@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -88,9 +89,9 @@ theorem scalarReduce_ct :
   · rw [(ReducePre.of hs).wr, (ReducePre.of ht).wr, h0, h2]
 
 theorem scalarReduce_verified : Verified Arm.target scalarReduce
-    (Spec.Ed448.scalarReduceContract Arm.abi) :=
+    (Proof.Ed448.scalarReduceContract Arm.abi) :=
   Verified.of_correct scalarReduce_ok scalarReduce_ct (by
-    sig_implies [Spec.Ed448.scalarReduceContract, Spec.Ed448.scalarReduceSig,
+    sig_implies [Proof.Ed448.scalarReduceContract, Proof.Ed448.scalarReduceSig,
       Spec.Ed448.scratchWords, scalarReduceLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [scalarReduceSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scalarReduceSat)
@@ -163,9 +164,9 @@ def scalarMulAddSat : State where
   wr := [⟨0x1000, 57⟩, ⟨0x5000, 8192⟩]
 
 theorem scalarMulAdd_verified : Verified Arm.target scalarMulAdd
-    (Spec.Ed448.scalarMulAddContract Arm.abi) :=
+    (Proof.Ed448.scalarMulAddContract Arm.abi) :=
   Verified.of_correct scalarMulAdd_ok scalarMulAdd_ct (by
-    sig_implies [Spec.Ed448.scalarMulAddContract, Spec.Ed448.scalarMulAddSig,
+    sig_implies [Proof.Ed448.scalarMulAddContract, Proof.Ed448.scalarMulAddSig,
       Spec.Ed448.scratchWords, scalarMulAddLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
       [scalarMulAddSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scalarMulAddSat)

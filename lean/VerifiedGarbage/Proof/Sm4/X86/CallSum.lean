@@ -38,7 +38,7 @@ def τPrep : VG.X86.Taint.T :=
     bases := [(.edi, 3, 0), (.esi, 2, 0), (.esp, 0, 0)], slots := ⟨[0xFFFF]⟩, wbases := [(0, 8, 3)],
     argLen := 24, argBases := [(12, 1), (8, 2), (20, 3)], stk := [some 16], room := 20 }
 
-taint_summary prepSum : taint τPrep (.call (Spec.Sm4.Prepared.prepareApi Impl.Sm4.X86.layout).name Impl.Sm4.X86.prepareKeys)
+taint_summary prepSum : taint τPrep (.call "vg_sm4_prepare_keys" Impl.Sm4.X86.prepareKeys)
 
 /-- What the modes have public at their calls of `vg_sm4_crypt_prepared`. -/
 def τCrypt : VG.X86.Taint.T :=
@@ -46,6 +46,6 @@ def τCrypt : VG.X86.Taint.T :=
     bases := [(.edi, 3, 0), (.esp, 0, 0)], slots := ⟨[0xFF, 0, 0, 0xFF <<< 1448]⟩, wbases := [(0, 0, 3)],
     argLen := 24, argBases := [(12, 1), (8, 2), (20, 3)], stk := [some 8], room := 20 }
 
-taint_summary cryptSum : taint τCrypt (.call (Spec.Sm4.Prepared.cryptApi Impl.Sm4.X86.layout).name Impl.Sm4.X86.cryptPrepared)
+taint_summary cryptSum : taint τCrypt (.call "vg_sm4_crypt_prepared" Impl.Sm4.X86.cryptPrepared)
 
 end VG.Proof.Sm4.X86

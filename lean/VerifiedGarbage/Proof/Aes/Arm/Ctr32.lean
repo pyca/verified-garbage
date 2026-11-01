@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Aes.Arm.Group
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.Contract
+meta import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.Proof.Aes.Arm.Keys
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -902,9 +904,9 @@ def sat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0, 2048⟩]
 
 theorem ctr32_verified :
-    Verified Arm.target Impl.Aes.Arm.ctr32 (Spec.Gcm.ctr32Contract Arm.abi) :=
+    Verified Arm.target Impl.Aes.Arm.ctr32 (Proof.Gcm.ctr32Contract Arm.abi) :=
   Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Spec.Gcm.ctr32Contract, Spec.Gcm.ctr32Sig, Proof.Aes.ctr32Arm, Arm.abi, Arm.argRegs,
+    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.ctr32Arm, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Aes.Arm.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Aes.Arm.sat)

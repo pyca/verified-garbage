@@ -187,6 +187,6 @@ theorem pow223Keep_ok (keep : List Nat) (hk : ∀ d ∈ keep, d + 8 ≤ 960 ∨ 
     WP isa (pow223Keep keep).inline s fun s' =>
       (∀ r, r ∉ powClob → r ≠ .r12 → r ≠ .r13 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ Outside base 960 688 s.mem s'.mem ∧ E s'.mem base = chainEnv 12 (E s.mem base) :=
-  pow223KeepWith_ok baseline_ok Spec.X448.Field64.pow223Api.name keep hk hs
+  pow223KeepWith_ok baseline_ok "vg_gf448_r64_pow223" keep hk hs
 
 end VG.Proof.X448.X86_64

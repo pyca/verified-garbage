@@ -29,7 +29,7 @@ call {vg_aes_expand_key_scratch_aesni}
 call {vg_aes_encrypt_blocks_aesni}
 .base64 "WFhYWFiB7QACAACLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQUCgAAww=="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -334,7 +334,7 @@ call {vg_aes_expand_key_scratch}
 call {vg_aes_encrypt_blocks}
 .base64 "WFhYWFiB7QACAACLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQUCgAAww=="
 .p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }

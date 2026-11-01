@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Sm4.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
+public import VerifiedGarbage.Proof.Sm4.X86_64.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-!
 # SM4's core for the modes on x86-64
@@ -41,7 +43,7 @@ open VG.Impl.Aes.X86_64 (sb t0 movR)
 open VG.Proof.Modes.X86_64 (ScrIn coreRegion bufRegion bufAddr Layout CoreSpec stkRegion stkList coreFrame)
 open VG.Proof.Sm4 (scheduleAt_congr bytesAt_eq_blockAt ofFn_toList crypt_eq specDir)
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 /-- The schedule at `rdi`, outside the regions `rs`, and the 8 bytes below
 `rsp`, where the core's call stores its return address, apart from `rs`. -/
@@ -123,7 +125,7 @@ theorem holds_frame {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {d : Spec.Sm
 
 /-- The table survives what a batch keeps. -/
 theorem holds_of_keeps {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction}
-    (h : Holds layout m B k d) (hk : Spec.Sm4.Prepared.Keeps B slots layout.cryptScratch m m') :
+    (h : Holds layout m B k d) (hk : Proof.Sm4.Prepared.Keeps B slots layout.cryptScratch m m') :
     Holds layout m' B k d := fun r hr i hi => by
   have hr' := hr
   rw [layout_table] at hr'

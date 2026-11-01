@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 # ML-KEM on x86-64: `vg_mlkem768_decrypt_mul` and `vg_mlkem1024_decrypt_mul`, verified
 
 The proof of `DecMul.lean` for each backend and rank, its constant time,
-and its contract implying the shared one of `Spec/MlKem/KpkeMul.lean`.
+and its contract implying the shared one of `Proof/MlKem/KpkeMulContract.lean`.
 -/
 
 @[expose] public section
@@ -60,17 +60,17 @@ theorem decMul3_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (DecMul.inner B) = true)
     (hctl : ctlOk (decryptMul B 3) = true)
     (hct : ConstantTime isa (decMulK 3).pre (decMulK 3).pub (decryptMul B 3)) :
-    Verified X86_64.target (decryptMul B 3) (Spec.MlKem.decryptMulContract 3 X86_64.abi) :=
+    Verified X86_64.target (decryptMul B 3) (Proof.MlKem.decryptMulContract 3 X86_64.abi) :=
   Verified.of_correct (decMul_correct hB (by decide) (by decide) hwo hctl) hct
-    { pre := by sig_implies_pre [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlKem.decryptMulContract, Proof.MlKem.decryptMulSig, decMulK, X86_64.abi,
         X86_64.argRegs]
-      post := by sig_implies_post [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
+      post := by sig_implies_post [Proof.MlKem.decryptMulContract, Proof.MlKem.decryptMulSig, decMulK, X86_64.abi,
         X86_64.argRegs]
-      pub := by sig_implies_pub [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
+      pub := by sig_implies_pub [Proof.MlKem.decryptMulContract, Proof.MlKem.decryptMulSig, decMulK, X86_64.abi,
         X86_64.argRegs]
       sat := by
         refine ⟨decMulSat 3, ?_⟩
-        sig_pre [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi, X86_64.argRegs]
+        sig_pre [Proof.MlKem.decryptMulContract, Proof.MlKem.decryptMulSig, decMulK, X86_64.abi, X86_64.argRegs]
         and_intros
         all_goals first
           | rfl
@@ -86,17 +86,17 @@ theorem decMul4_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (DecMul.inner B) = true)
     (hctl : ctlOk (decryptMul B 4) = true)
     (hct : ConstantTime isa (decMulK 4).pre (decMulK 4).pub (decryptMul B 4)) :
-    Verified X86_64.target (decryptMul B 4) (Spec.MlKem.decryptMulContract 4 X86_64.abi) :=
+    Verified X86_64.target (decryptMul B 4) (Proof.MlKem.decryptMulContract 4 X86_64.abi) :=
   Verified.of_correct (decMul_correct hB (by decide) (by decide) hwo hctl) hct
-    { pre := by sig_implies_pre [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlKem.decryptMulContract, Proof.MlKem.decryptMulSig, decMulK, X86_64.abi,
         X86_64.argRegs]
-      post := by sig_implies_post [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
+      post := by sig_implies_post [Proof.MlKem.decryptMulContract, Proof.MlKem.decryptMulSig, decMulK, X86_64.abi,
         X86_64.argRegs]
-      pub := by sig_implies_pub [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
+      pub := by sig_implies_pub [Proof.MlKem.decryptMulContract, Proof.MlKem.decryptMulSig, decMulK, X86_64.abi,
         X86_64.argRegs]
       sat := by
         refine ⟨decMulSat 4, ?_⟩
-        sig_pre [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi, X86_64.argRegs]
+        sig_pre [Proof.MlKem.decryptMulContract, Proof.MlKem.decryptMulSig, decMulK, X86_64.abi, X86_64.argRegs]
         and_intros
         all_goals first
           | rfl
@@ -132,10 +132,10 @@ theorem decMulSse4_correct : ∀ s, (decMulK 4).pre s →
     ∃ t s', Exec isa (decryptMul .sse 4) s t s' ∧ abiPreserved s s' ∧ (decMulK 4).post s s' :=
   decMul_correct BodiesOk.sse (by decide) (by decide) decMulSse_wo decMulSse4_ctl
 
-theorem decMulSse3_verified : Verified X86_64.target (decryptMul .sse 3) (Spec.MlKem.decryptMulContract 3 X86_64.abi) :=
+theorem decMulSse3_verified : Verified X86_64.target (decryptMul .sse 3) (Proof.MlKem.decryptMulContract 3 X86_64.abi) :=
   decMul3_verified _ BodiesOk.sse decMulSse_wo decMulSse3_ctl decMulSse3_ct
 
-theorem decMulSse4_verified : Verified X86_64.target (decryptMul .sse 4) (Spec.MlKem.decryptMulContract 4 X86_64.abi) :=
+theorem decMulSse4_verified : Verified X86_64.target (decryptMul .sse 4) (Proof.MlKem.decryptMulContract 4 X86_64.abi) :=
   decMul4_verified _ BodiesOk.sse decMulSse_wo decMulSse4_ctl decMulSse4_ct
 
 end VG.Proof.MlKem.X86_64

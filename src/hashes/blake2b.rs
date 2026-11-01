@@ -2,11 +2,10 @@
 //! to 64 bytes, over 64-bit words (see `blake2` for how the verified
 //! functions are used).
 //!
-//! On x86-64, CPUs with AVX2 run `vg_blake2b_update_avx2` and
-//! `vg_blake2b_finalize_avx2` instead, which have the same contracts and call
-//! `vg_blake2b_compress_avx2`: the work vector in four 256-bit registers.
-//! CPUs with AVX-512F and AVX512VL too run the `_avx512` ones, calling
-//! `vg_blake2b_compress_avx512`, which does each rotation with one `vprorq`.
+//! The variants of `vg_blake2b_update` and `vg_blake2b_finalize`, with the
+//! same contracts, are chosen on x86-64 CPUs with the features their
+//! `_FEATURES` constants name, in this order: the `_avx512` ones, then the
+//! `_avx2` ones.
 
 #![cfg(any(
     target_arch = "x86_64",

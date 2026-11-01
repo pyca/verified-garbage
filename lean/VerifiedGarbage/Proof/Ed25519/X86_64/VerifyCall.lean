@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Spec.Weierstrass
@@ -123,15 +124,15 @@ theorem verify_spec_pre8 {s : State}
     (tr : Region.Disjoint ⟨s.syms baseOddSym, 16384⟩ ⟨s.gpr .rsp, 8⟩)
     (tq : Region.Disjoint ⟨s.syms baseOddSym, 16384⟩ ⟨s.gpr .rsp - 8, 8⟩)
     (hal : (s.syms baseOddSym).toNat % 64 = 0) :
-    (Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts) 8).pre s := by
-  sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    (Proof.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts) 8).pre s := by
+  sig_pre [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
     Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq, Abi.withConsts,
     Abi.constRegions, Abi.constsHeld, stackBelow, baseOddWords_length]
   exact ⟨hsp, by rw [hrd]; rfl, held, fit, by rw [hw]; simp only [List.mem_singleton, forall_eq]; exact td, tr, tq, hal,
     by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, r4, q1, q2, q3, q4, f0, f1, f2, f3⟩
 
 theorem verify_sat8 :
-    (Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts) 8).pre verifySatState :=
+    (Proof.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts) 8).pre verifySatState :=
   verify_spec_pre8 rfl rfl (by decide) (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
@@ -147,12 +148,12 @@ theorem verify_verified8 {win' : Prog isa} (hinl : win'.inline = win)
     (hok : (verifyEquation fld win').InlineOk = true)
     (hmx : MxcsrOk (verifyEquationWith fld (Point64.bodies fld) win)) :
     Verified X86_64.target (verifyEquation fld win')
-      (Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts) 8) := by
+      (Proof.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts) 8) := by
   have e := verifyEquation_inline (fld := fld) hinl
   refine Verified.of_inline hok (k₀ := verifyLocal) (fun s hs => e ▸ verify_ok hmx s hs) (e ▸ verify_ct)
     (verify_implies.stack8 ⟨verifySatState, verify_sat8⟩) (fun _ h => Sig.clear_of_pre_consts h)
     (fun _ _ _ _ _ hp => hp) fun s₁ s₂ _ _ hp => ?_
-  sig_pub [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+  sig_pub [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
     Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq, Abi.withConsts] at hp
   exact hp.1
 

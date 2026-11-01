@@ -18,7 +18,7 @@ open VG.Impl.Modes.Arm (copyWord xorWord)
 
 def prepare : Prog isa :=
   .seq (.block [movR .r0 .r4, .mov .r1 (.imm 1), movR .r2 sb, .mov .r3 (.imm 182)])
-    (.call (Spec.Sm4.Prepared.prepareApi layout).name prepareKeys)
+    (.call "vg_sm4_prepare_keys" prepareKeys)
 
 def prologue : Prog isa :=
   .seq (.block BatchCtr.entry) (.seq prepare (.block (BatchCtr.copyCounterIn ++ [.cmp .r7 (.imm 0)])))

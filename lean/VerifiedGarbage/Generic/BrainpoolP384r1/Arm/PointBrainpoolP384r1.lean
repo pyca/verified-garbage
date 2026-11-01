@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP384r1
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP384r1Umaal
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Framework.Arm.Exec

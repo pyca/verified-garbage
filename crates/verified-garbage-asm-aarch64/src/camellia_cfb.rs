@@ -64,8 +64,8 @@ b 21f
 .inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0x913443ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_camellia_prepare_encrypt_keys = sym super::camellia::vg_camellia_prepare_encrypt_keys,
-        vg_camellia_encrypt_prepared = sym super::camellia::vg_camellia_encrypt_prepared,
+        vg_camellia_prepare_encrypt_keys = sym super::camellia::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
+        vg_camellia_encrypt_prepared = sym super::camellia::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
     )
 }
 
@@ -188,7 +188,7 @@ b 216f
 .p2align 6",
         vg_camellia_prepare_keys = sym super::camellia::vg_camellia_prepare_keys,
         vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared,
-        vg_camellia_prepare_encrypt_keys = sym super::camellia::vg_camellia_prepare_encrypt_keys,
-        vg_camellia_encrypt_prepared = sym super::camellia::vg_camellia_encrypt_prepared,
+        vg_camellia_prepare_encrypt_keys = sym super::camellia::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
+        vg_camellia_encrypt_prepared = sym super::camellia::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
     )
 }

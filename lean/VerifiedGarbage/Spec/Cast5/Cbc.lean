@@ -13,18 +13,12 @@ public import VerifiedGarbage.TCB.Artifact
 `CIPH⁻¹_K`, on 8-byte blocks, under the subkeys that `vg_cast5_expand_key`
 writes, with `rounds` rounds.
 
-`vg_cast5_cbc_encrypt` and `vg_cast5_cbc_decrypt` transform `n` whole blocks
-in place, from the chaining value at `iv`, which they only read. A caller may
-process a message in pieces of whole blocks: the chaining value of the next
-piece is the last ciphertext block of this one (`Cbc.next`), which the caller
-has (after encryption, the last block at `data`; before decryption, the last
-block it decrypts). Padding is the caller's.
-
-`vg_cast5_cbc_encrypt_chained` and `vg_cast5_cbc_decrypt_chained` are
-the same but for `iv`, which they replace with the chaining value to
-continue from (`Cbc.next`), as AES-CBC's functions do
-(`Spec/Cbc/Contract.lean`), so that the caller keeps no block of its own
-between pieces.
+`vg_cast5_cbc_encrypt_chained` and `vg_cast5_cbc_decrypt_chained` transform
+`n` whole blocks in place, from the chaining value at `iv`, which they
+replace with the chaining value to continue from (`Cbc.next`, the last
+ciphertext block), as AES-CBC's functions do (`Spec/Cbc/Contract.lean`):
+a caller may process a message in pieces of whole blocks, and keeps no
+block of its own between them. Padding is the caller's.
 
 Only the pointers, `rounds` and `n` are public: no part of the chaining value
 may affect timing.
@@ -48,42 +42,8 @@ def invCipher (k : Schedule) (n : Nat) : Cbc.Cipher := fun b =>
 def cbcBlocksAt (m : Mem) (p : Addr) (n : Nat) : List (List Byte) :=
   (blocksAt m p n).map Vector.toList
 
-/-- `vg_cast5_cbc_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize)`,
-and `vg_cast5_cbc_decrypt` with the same signature. `rounds` is public, 12
-or 16 (the precondition). -/
-def cbcSig : Sig where
-  params := [("schedule", .array false .u8 128), ("rounds", .int .usize true),
-    ("iv", .array false .u8 8), ("data", .slice true (.array .u8 8) "n")]
-
-/-- `rounds` is 12 or 16. -/
-def cbcPre (pb : Nat) : Curry (cbcSig.words pb) (Mem → Prop) :=
-  fun _schedule rounds _iv _data _n _ => rounds.toNat = 12 ∨ rounds.toNat = 16
-
-/-- For `rounds` of 12 or 16, with the subkeys at `schedule`: replaces the `n`
-blocks at `data` with their CBC encryption (§6.2) by CAST5, from the
-chaining value at `iv`. -/
-def cbcEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcSig.contract A (pre := cbcPre A.ptrBits)
-    (post := fun schedule rounds iv data n m m' _ =>
-      cbcBlocksAt m' data n.toNat =
-        Cbc.encrypt (cipher (scheduleAt m schedule) rounds.toNat) (Aes.bytesAt m iv 8) (cbcBlocksAt m data n.toNat))
-    (writeArgs := true) (stack := stack)
-
-/-- For `rounds` of 12 or 16, with the subkeys at `schedule`: replaces the `n`
-blocks at `data` with their CBC decryption (§6.2) by CAST5, from the
-chaining value at `iv`. -/
-def cbcDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcSig.contract A (pre := cbcPre A.ptrBits)
-    (post := fun schedule rounds iv data n m m' _ =>
-      cbcBlocksAt m' data n.toNat =
-        Cbc.decrypt (invCipher (scheduleAt m schedule) rounds.toNat) (Aes.bytesAt m iv 8) (cbcBlocksAt m data n.toNat))
-    (writeArgs := true) (stack := stack)
-
-/-! ## Updating the chaining value -/
-
 /-- `vg_cast5_cbc_encrypt_chained(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize)`,
-and `vg_cast5_cbc_decrypt_chained` with the same signature: `cbcSig`, but
-for `iv`, which they write. -/
+and `vg_cast5_cbc_decrypt_chained` with the same signature. -/
 def cbcChainedSig : Sig where
   params := [("schedule", .array false .u8 128), ("rounds", .int .usize true),
     ("iv", .array true .u8 8), ("data", .slice true (.array .u8 8) "n")]

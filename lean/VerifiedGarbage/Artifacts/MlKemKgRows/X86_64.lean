@@ -14,13 +14,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 namespace VG.Artifacts.MlKemKgRows.X86_64
 
 def artifacts : List Artifact := [
-  Spec.MlKem.kpkeKeyGenNttApi.artifact X86_64.target {
-    code := Impl.MlKem.X86_64.KpkeKgRows.kgNtt Impl.MlKem.X86_64.kem768 .avx2
-    verified := Proof.MlKem.X86_64.kgNtt768_verified
-    features := ["avx", "avx2"] },
-  Spec.MlKem.kpkeKeyGenRowApi.artifact X86_64.target {
-    code := Impl.MlKem.X86_64.KpkeKgRows.kgRow Impl.MlKem.X86_64.kem768 .avx2
-    verified := Proof.MlKem.X86_64.kgRow768_verified
-    features := ["avx", "avx2"] }]
+  ]
 
 end VG.Artifacts.MlKemKgRows.X86_64

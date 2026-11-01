@@ -46,9 +46,9 @@ theorem ctInv : ConstantTime isa (inPlaceAArch64 Spec.MlKem.nttInv).pre
     (fun _ _ _ _ ⟨h0, h1, hsp⟩ => agree_of hsp (by simp [h0, h1])) (by taint_decide)
 
 theorem ntt_inv_verified :
-    Verified AArch64.target Impl.MlKem.AArch64.Ntt16.nttInv (Spec.MlKem.nttInvContract AArch64.abi) :=
+    Verified AArch64.target Impl.MlKem.AArch64.Ntt16.nttInv (Proof.MlKem.nttInvContract AArch64.abi) :=
   Verified.of_correct correctInv ctInv (by
-    mlkem_implies [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig,
+    mlkem_implies [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig,
       inPlaceAArch64, AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.MlKem.AArch64.Ntt16

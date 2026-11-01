@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Compress
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
 public import VerifiedGarbage.Proof.MlKem.Encode
@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.MlKem.PPC64LE.Compress
-meta import VerifiedGarbage.Spec.MlKem.Poly
+meta import VerifiedGarbage.Proof.MlKem.PolyContract
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Reduce
@@ -549,8 +549,8 @@ theorem zext_rel : RelCT isa LoAgree (.block [.rotr .w .r5 .r5 0])
   · rw [k1, k2, Z, Z, hlo]
   · rw [g1 _ (by decide), g2 _ (by decide), hr _ (by decide)]
 
-theorem pre_of {s : State} (h : (Spec.MlKem.decodeDecompressContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.decodeDecompressContract PPC64LE.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
@@ -565,16 +565,16 @@ def satState : State where
   wr := [⟨0x2000, 1024⟩]
 
 theorem verified : Verified PPC64LE.target Impl.MlKem.PPC64LE.decodeDecompress
-    (Spec.MlKem.decodeDecompressContract PPC64LE.abi) := by
+    (Proof.MlKem.decodeDecompressContract PPC64LE.abi) := by
   refine ⟨fun s hs => ?_, RelCT.constantTime (Q := fun _ _ => True) ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hlr, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp, hlr⟩, ?_⟩
-    sig_post [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, PPC64LE.abi, PPC64LE.argRegs]
+    sig_post [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, PPC64LE.abi, PPC64LE.argRegs]
     exact polyIs_of_coeffAt (p := F s) fun j hj => by rw [h j (by rw [n_eq] at hj; exact hj)]; rfl
   · refine RelCT.seq (zext_rel.mono (fun s₁ s₂ ⟨_, _, hp⟩ => ?_) fun _ _ h => h)
       (RelCT.taint (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
         (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (Taint.mem_ofRegs.mp h)⟩) (by taint_decide))
-    sig_pub [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, PPC64LE.abi,
+    sig_pub [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, PPC64LE.abi,
       PPC64LE.argRegs] at hp
     obtain ⟨hsp, h3, h4, h5, h6⟩ := hp
     refine ⟨hsp, fun r hr => ?_, h5⟩
@@ -586,7 +586,7 @@ theorem verified : Verified PPC64LE.target Impl.MlKem.PPC64LE.decodeDecompress
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, PPC64LE.abi,
+    · sig_reduce [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, PPC64LE.abi,
         PPC64LE.argRegs]
       sig_and_intros
       all_goals first

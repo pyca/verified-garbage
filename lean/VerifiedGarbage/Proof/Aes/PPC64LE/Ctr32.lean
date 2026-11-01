@@ -11,6 +11,7 @@ meta import VerifiedGarbage.Proof.Aes.PPC64LE.CodeLit
 meta import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Ctr32
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+public import VerifiedGarbage.Proof.Gcm.Contract
 
 /-! # Baseline POWER8 AES CTR contract -/
 
@@ -46,9 +47,9 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32PPC64LE.pre Proof.Aes.ctr32PP
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32_verified :
-    Verified PPC64LE.target Impl.Aes.PPC64LE.ctr32 (Spec.Gcm.ctr32Contract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Aes.PPC64LE.ctr32 (Proof.Gcm.ctr32Contract PPC64LE.abi) :=
   Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Spec.Gcm.ctr32Contract, Spec.Gcm.ctr32Sig, Proof.Aes.ctr32PPC64LE, PPC64LE.abi,
+    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.ctr32PPC64LE, PPC64LE.abi,
       PPC64LE.argRegs] [Proof.Aes.PPC64LE.satState] using Proof.Aes.PPC64LE.satState)
 
 

@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.CombExpFinish
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Bignum.Arm.CombExpState
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
+public import VerifiedGarbage.Proof.Bignum.Arm.CombExpState
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 public import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernel
 
 /-! The public comb schedule computes the same full scalar power as direct exponentiation. -/

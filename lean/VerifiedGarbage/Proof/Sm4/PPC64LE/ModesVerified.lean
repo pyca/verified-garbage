@@ -15,6 +15,8 @@ meta import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 public import VerifiedGarbage.Impl.Modes.Ops
 public import VerifiedGarbage.Spec.Cfb
 public import VerifiedGarbage.Spec.Ofb
+public import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedBody
+meta import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedBody
 
 /-!
 # SM4's modes on PPC64LE meet their contracts

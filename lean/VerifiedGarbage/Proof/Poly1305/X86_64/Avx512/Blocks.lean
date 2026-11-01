@@ -26,6 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Poly1305.Contract
 
 /-!
 # Poly1305 on x86-64 with AVX-512: `vg_poly1305_blocks_avx512`
@@ -552,9 +553,9 @@ theorem blocksAvx512_ct : ConstantTime isa blocksAvx512X86_64.pre blocksAvx512X8
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem blocksAvx512_verified :
-    Verified X86_64.target blocksAvx512 (Spec.Poly1305.blocksContract X86_64.abi 16) :=
+    Verified X86_64.target blocksAvx512 (Proof.Poly1305.blocksContract X86_64.abi 16) :=
   Verified.of_correct blocksAvx512_ok blocksAvx512_ct (by
-    sig_implies [Spec.Poly1305.blocksContract, Spec.Poly1305.blocksSig, blocksAvx512X86_64,
+    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, blocksAvx512X86_64,
       Proof.Poly1305.blocksStack, Proof.Poly1305.blocksX86_64, X86_64.abi, X86_64.argRegs]
       [Avx2.sat] using Avx2.sat)
 

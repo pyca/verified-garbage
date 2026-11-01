@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
@@ -114,23 +115,23 @@ theorem scalarReduceWide_pre (s : State) (h : scalarReduceWide.pre s) :
     State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr]
   exact ⟨True.intro, True.intro, h.2.2⟩
 
-theorem scalarReduceWide_implies : scalarReduceWide.Implies (Spec.Ed25519.scalarReduceContract X86.abi 8) := by
+theorem scalarReduceWide_implies : scalarReduceWide.Implies (Proof.Ed25519.scalarReduceContract X86.abi 8) := by
     have a0 : arg scalarSatState 0 = 0x1000 := by decide
     have a1 : arg scalarSatState 1 = 0x2000 := by decide
     have a2 : arg scalarSatState 2 = 0x4000 := by decide
     have e : argAddr scalarSatState 0 = 0x8004 := by decide
     have esp : scalarSatState.gpr .esp = 0x8000 := rfl
     refine { pre := fun s h => ?_
-             post := by sig_implies_post [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
+             post := by sig_implies_post [Proof.Ed25519.scalarReduceContract, Proof.Ed25519.scalarReduceSig,
                Spec.Ed25519.scratchWords, scalarReduceWide, scalarReduceLocal, X86.abi, X86.argSlots,
                X86.argVal, X86.argBytes]
-             pub := by sig_implies_pub [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
+             pub := by sig_implies_pub [Proof.Ed25519.scalarReduceContract, Proof.Ed25519.scalarReduceSig,
                Spec.Ed25519.scratchWords, scalarReduceWide, scalarReduceLocal, X86.abi, X86.argSlots,
                X86.argVal, X86.argBytes]
-             sat := by sig_implies_sat [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
+             sat := by sig_implies_sat [Proof.Ed25519.scalarReduceContract, Proof.Ed25519.scalarReduceSig,
                Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow]
                [a0, a1, a2, e, esp] using scalarSatState }
-    sig_pre [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
+    sig_pre [Proof.Ed25519.scalarReduceContract, Proof.Ed25519.scalarReduceSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow] at h
     obtain ⟨h20, hsp, hrd, hwr, -, o2, o3, i2, -, s3, r0, -, r2, -, -, b1, b2, -, f0, f1, f2⟩ := h
     have be : callStk s = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩ := by
@@ -138,7 +139,7 @@ theorem scalarReduceWide_implies : scalarReduceWide.Implies (Spec.Ed25519.scalar
     exact ⟨hrd, hwr, o2, i2, o3.symm, s3.symm, r0, r2, f0, f1, f2, by omega, h20, by rw [be]; exact b2,
       by rw [be]; exact b1⟩
 
-theorem scalarReduce_verified : Verified X86.target scalarReduce (Spec.Ed25519.scalarReduceContract X86.abi 8) := by
+theorem scalarReduce_verified : Verified X86.target scalarReduce (Proof.Ed25519.scalarReduceContract X86.abi 8) := by
   have hsat := scalarReduceWide_implies.sat_left
   have satLocal : ∃ s, scalarReduceLocal.pre s := hsat.elim fun s h => ⟨_, scalarReduceWide_pre s h⟩
   have verifiedLocal : Verified X86.target scalarReduce scalarReduceLocal :=

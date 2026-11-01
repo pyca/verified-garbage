@@ -10,23 +10,14 @@
 //! This module keeps the number of rounds and the length of the message so
 //! far, which the state does not store, and compares MACs.
 //!
-//! It follows the implementation of AES (`crate::aes::Backend`): on x86-64,
-//! CPUs with AES-NI and SSSE3 run the `_aesni` functions instead, which have
-//! the same contracts: the same verified CMAC code, calling
-//! `vg_aes_expand_key_scratch_aesni` and `vg_aes_ctr32_aesni` rather than
-//! `vg_aes_expand_key_scratch` and `vg_aes_ctr32`, and CPUs with VAES and AVX2 too
-//! the `_vaes` functions, calling `vg_aes_ctr32_vaes` (which, for CMAC's
-//! single blocks, runs `vg_aes_ctr32_aesni`'s code). Updates longer than 32
-//! bytes use `vg_cmac_aes_absorb_aesni_cbc` on both, whose whole-block
-//! chaining (`vg_cmac_aes_update_aesni_cbc`) keeps the round keys and the
-//! chaining value in SSE registers rather than calling `vg_aes_ctr32_aesni`
-//! on each block (`chains_long`). On AArch64, CPUs with the AES
-//! extension run the `_aes` functions, calling `vg_aes_expand_key_scratch_aes` and
-//! `vg_aes_ctr32_aes`. Updates longer than 32 bytes use `_aes_cbc`, whose
-//! whole-block chaining keeps the round keys and chaining value in vector
-//! registers. On x86, CPUs with AES-NI run the `_aesni` functions; SSSE3
-//! is not required. ARMv7, PPC64LE and RISC-V have only the scalar
-//! implementation.
+//! Their variants, with the same contracts, are chosen with
+//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
+//! constants name: on x86-64, the `_vaes` ones, then the `_aesni` ones; on
+//! x86, the `_aesni` ones; on AArch64, the `_aes` ones. On x86-64 and
+//! AArch64, an update longer than 32 bytes (`chains_long`) calls
+//! `vg_cmac_aes_absorb_aesni_cbc` (with either x86-64 backend) or
+//! `vg_cmac_aes_absorb_aes_cbc` instead, whose features `select` checks
+//! too.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -109,11 +100,9 @@ fn select(f: Features) -> Backend {
     Backend::select_for(f, AES)
 }
 
-/// Whether an update of `len` bytes should chain its blocks with the round
-/// keys and the chaining value kept in registers (`_aes_cbc` on AArch64,
-/// `_aesni_cbc` on x86-64) rather than by a call of `vg_aes_ctr32` on each
-/// block: when it is longer than 32 bytes, where that pays for loading the
-/// round keys.
+/// Whether an update of `len` bytes calls the `_aes_cbc` absorb (on
+/// AArch64) or the `_aesni_cbc` one (on x86-64) rather than the backend's:
+/// when it is longer than 32 bytes, where the `_cbc` one is faster.
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn chains_long(len: usize) -> bool {
     len > 32

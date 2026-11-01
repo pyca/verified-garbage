@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.Mont.X86.Words
 import VerifiedGarbage.Impl.Mont.X86.Power
 
 public import VerifiedGarbage.Impl.Mont.X86.Power
+public import VerifiedGarbage.Impl.Mont.X86.Words
 
 /-! # Secret-exponent operations on 32-bit x86 -/
 

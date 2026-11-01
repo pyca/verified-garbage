@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbLoop
 import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
 import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
 import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
-import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Sm4.Arm.Keys
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # Public registers across SM4-CFB encryption's helper calls -/
 
@@ -25,7 +26,7 @@ open VG VG.Arm VG.Impl.Sm4.Arm VG.Proof.Sm4.Arm
 open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchGroup
 open VG.Proof.Sm4.Arm.BatchPrologue VG.Proof.Sm4.Arm.BatchEntry
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 def groupHead : Prog isa := .seq SerialCfb.count (.seq BatchCfb.fill BatchCtr.crypt)
 def groupTail : Prog isa := .seq BatchCtr.xorGroup

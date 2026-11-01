@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
+public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.Proof.Framework.Slots

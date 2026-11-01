@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 /-!
 # `vg_mlkem16_cbd2` on AArch64
 
-`Impl.MlKem.AArch64.Cbd16.code16` meets `Spec.MlKem.cbd2_16Contract`: the
+`Impl.MlKem.AArch64.Cbd16.code16` meets `Proof.MlKem.cbd2_16Contract`: the
 loop writes the two bytes of each coefficient (`Inv.out`), which are the
 coefficient stored with 16 bits (`polyIsW16_of_bytes`).
 -/
@@ -44,9 +44,9 @@ def sat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 512⟩]
 
-theorem verified : Verified AArch64.target code16 (Spec.MlKem.cbd2_16Contract AArch64.abi) :=
+theorem verified : Verified AArch64.target code16 (Proof.MlKem.cbd2_16Contract AArch64.abi) :=
   Verified.of_correct correct ct (by
-    mlkem_implies [Spec.MlKem.cbd2_16Contract, Spec.MlKem.cbd2_16Sig, cbd2_16AArch64, AArch64.abi,
+    mlkem_implies [Proof.MlKem.cbd2_16Contract, Proof.MlKem.cbd2_16Sig, cbd2_16AArch64, AArch64.abi,
       AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.MlKem.AArch64.Cbd16W

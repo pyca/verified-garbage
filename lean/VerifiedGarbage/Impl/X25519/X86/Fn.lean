@@ -22,7 +22,7 @@ open VG.X86
 
 /-- `[E1] = [Z2]^(p-2)`. -/
 def invert : Prog isa :=
-  .seq (.block (copy Spec.X25519.Field32.aAt Z2)) <| .seq Field32.pow250Call <|
+  .seq (.block (copy Field32.aAt Z2)) <| .seq Field32.pow250Call <|
     .seq (Field32.sqn Field32.E1 Field32.E1 5) (.block (mul Field32.E1 Field32.E1 Field32.E0))
 
 /-- `x2 · z2^(p-2)`, reduced fully, to `out` (`[esp + 4]`), and the saved

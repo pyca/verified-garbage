@@ -1,0 +1,154 @@
+module
+
+public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.TCB.Artifact
+
+/-!
+# Ed25519's point doubling and addition in radix `2^64`, as functions
+
+Not trusted: the contracts of internal functions (`Rust.Internal`), which
+only verified code calls, that their proofs are of and that the proofs of
+their callers compose. Only the callers' contracts, in `Spec/`, are trusted.
+
+The contracts of four functions on
+points of edwards25519 in extended coordinates (`Point`), each coordinate
+four 64-bit words, so that the Ed25519 code that keeps points this way (the
+x86-64 code) can call one copy of each operation instead of repeating it at
+every use:
+
+* `vg_ed25519_r64_double_ext`: the double `[2]p`, by RFC 8032's doubling
+  formula (§5.1.4, `pointDouble`);
+* `vg_ed25519_r64_double_proj`: the same, but for `T`, which it does not
+  compute: the projective coordinates `X, Y, Z` of the double;
+* `vg_ed25519_r64_add_cached_ext`: the sum `p + q`, by the specification's
+  complete addition formula (`pointAdd`), for `q` given in the cached form
+  `[Y - X, Y + X, 2dT, 2Z]` (`cache`), which a table of points to add keeps;
+* `vg_ed25519_r64_add_cached_proj`: the same, but for `T`;
+* `vg_ed25519_r64_add_affine_ext`: the sum `p + q`, as `_add_cached_ext`
+  computes it, for `q` with `Z = 1`, given by the first three coordinates of
+  its cached form, `[Y - X, Y + X, 2dT]`, which a table of affine points
+  keeps: its `2Z` is `2`.
+
+A doubling or an addition that only a doubling (or a comparison) follows need
+not compute `T`, which only an addition reads.
+
+They are not algorithms of a standard but the arithmetic Ed25519 is built
+from, in the representation that code keeps points in: what they compute is
+stated on the coordinates as elements of `GF(p)`, `p = 2^255 - 19`.
+
+A coordinate is 32 bytes, a little-endian number below `2^256`, standing for
+its residue modulo `p` (`elemAt`): any 32 bytes are a coordinate. A point is
+four coordinates, `X, Y, Z, T`, at consecutive offsets (`pointAt`). The
+points live in Ed25519's working space `ws` of 8192 bytes (`[u64; 1024]`),
+at fixed offsets, where that code keeps the operands: `p` at byte 64 (`pAt`),
+`q`'s cached form at byte 192 (`qAt`); the result replaces `p`. Bytes 320 to
+575 of `ws` are the functions' own working space. On return they are
+unspecified and may hold intermediate values; every other byte of `ws` keeps
+its value but the result's (`Keeps`).
+
+Everything is secret but the pointer, which is public, and the functions are
+constant time.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.Point64
+
+open VG.Spec VG.Spec.Ed25519
+
+open X25519 (P Fe)
+
+/-- The doubling formula of RFC 8032, §5.1.4, in its stated order: the
+double `[2]p` of a point in extended coordinates, which does not read `p.T`. -/
+def pointDouble (p : Point) : Point :=
+  let a := p.X * p.X
+  let b := p.Y * p.Y
+  let c := 2 * (p.Z * p.Z)
+  let h := a + b
+  let e := h - (p.X + p.Y) * (p.X + p.Y)
+  let g := a - b
+  let f := c + g
+  ⟨e * f, g * h, f * g, e * h⟩
+
+/-- The cached form of `q`, `[Y - X, Y + X, 2dT, 2Z]`: the factors of `q` in
+`pointAdd`'s products. -/
+def cache (q : Point) : Point := ⟨q.Y - q.X, q.Y + q.X, q.T * 2 * d, q.Z * 2⟩
+
+/-- The bytes of the working space. -/
+def wsBytes : Nat := 8192
+
+/-- The bytes of a coordinate. -/
+def elemBytes : Nat := 32
+
+/-- Where the first point, and the result, is. -/
+def pAt : Nat := 64
+
+/-- Where the second point's cached form is. -/
+def qAt : Nat := 192
+
+/-- Where the functions' own working space starts. -/
+def ownAt : Nat := 320
+
+/-- Where the functions' own working space ends. -/
+def ownEnd : Nat := 576
+
+/-- The coordinate at byte offset `o` of the working space `ws`: its 32
+bytes, little-endian, modulo `P`. -/
+def elemAt (m : Mem) (ws : Addr) (o : Nat) : Fe :=
+  Fin.ofNat P (m.read (ws + BitVec.ofNat 64 o) elemBytes).toNat
+
+/-- The point at byte offset `o`: its coordinates `X, Y, Z, T` at `o`,
+`o + 32`, `o + 64` and `o + 96`. -/
+def pointAt (m : Mem) (ws : Addr) (o : Nat) : Point :=
+  ⟨elemAt m ws o, elemAt m ws (o + elemBytes), elemAt m ws (o + 2 * elemBytes),
+    elemAt m ws (o + 3 * elemBytes)⟩
+
+/-- The point at `o` is `r`: all four coordinates if `ext`, else `X, Y, Z`. -/
+def PointIs (ext : Bool) (m : Mem) (ws : Addr) (o : Nat) (r : Point) : Prop :=
+  if ext then pointAt m ws o = r
+  else elemAt m ws o = r.X ∧ elemAt m ws (o + elemBytes) = r.Y ∧
+    elemAt m ws (o + 2 * elemBytes) = r.Z
+
+/-- Every byte of `ws` but those of the result (bytes 64 to 191) and of the
+functions' own working space (bytes 320 to 575) keeps its value. -/
+def Keeps (ws : Addr) (m m' : Mem) : Prop :=
+  ∀ i < wsBytes, (i < pAt ∨ pAt + 4 * elemBytes ≤ i) → (i < ownAt ∨ ownEnd ≤ i) →
+    m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
+
+/-- `ws: *mut [u64; 1024]`, the pointer public. -/
+def sig : Sig where
+  params := [("ws", .array true .u64 1024)]
+
+/-- `pointDouble`: the point at `pAt` becomes its double (but for `T`, unless
+`ext`). -/
+def doubleContract {I : ISA} (A : Abi I) (ext : Bool) (stack : Nat := 0) : Contract I :=
+  sig.contract A
+    (pre := fun _ _ => True)
+    (post := fun ws m m' _ =>
+      PointIs ext m' ws pAt (pointDouble (pointAt m ws pAt)) ∧ Keeps ws m m')
+    (stack := stack)
+
+/-- `pointAdd`: for every point `q` whose cached form is at `qAt`, the point at
+`pAt` becomes the sum of it and `q` (but for `T`, unless `ext`). -/
+def addCachedContract {I : ISA} (A : Abi I) (ext : Bool) (stack : Nat := 0) : Contract I :=
+  sig.contract A
+    (pre := fun _ _ => True)
+    (post := fun ws m m' _ =>
+      (∀ q, pointAt m ws qAt = cache q → PointIs ext m' ws pAt (pointAdd (pointAt m ws pAt) q)) ∧
+        Keeps ws m m')
+    (stack := stack)
+
+/-- `pointAdd` of an affine point: for every point `q` with `Z = 1` whose cached form's first
+three coordinates, `[Y - X, Y + X, 2dT]`, are at `qAt`, the point at `pAt` becomes the sum of it
+and `q` (but for `T`, unless `ext`). The cached form's fourth coordinate, `2Z = 2`, is not read. -/
+def addAffineContract {I : ISA} (A : Abi I) (ext : Bool) (stack : Nat := 0) : Contract I :=
+  sig.contract A
+    (pre := fun _ _ => True)
+    (post := fun ws m m' _ =>
+      (∀ q : Point, q.Z = 1 → elemAt m ws qAt = q.Y - q.X → elemAt m ws (qAt + elemBytes) = q.Y + q.X →
+        elemAt m ws (qAt + 2 * elemBytes) = q.T * 2 * d →
+        PointIs ext m' ws pAt (pointAdd (pointAt m ws pAt) q)) ∧
+        Keeps ws m m')
+    (stack := stack)
+
+end VG.Proof.Ed25519.Point64

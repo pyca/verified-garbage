@@ -12,8 +12,7 @@ explicitly and retains the complete `sign seed message` postcondition,
 including every SHA-512 invocation. It does not specify a signature for
 an independently chosen seed/public-key pair.
 
-The seed-only `signContract` remains available unchanged. This additional
-entry point lets `SigningKey`, which stores a seed and its derived public
+This entry point lets `SigningKey`, which stores a seed and its derived public
 key together, call one verified signing operation without repeating the
 public-key scalar multiplication. No buffer contents may affect timing,
 including the cached public key.
@@ -31,7 +30,7 @@ def signCachedSig : Sig where
     ("scratch", .array true .u64 scratchWords)]
 
 /-- Sign with the public key corresponding to the seed. The postcondition
-is the same complete signing algorithm as `signContract`. -/
+is the complete signing algorithm, `sign`. -/
 def signCachedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   signCachedSig.contract A
     (pre := fun _out seed pk _message _len _scratch m =>

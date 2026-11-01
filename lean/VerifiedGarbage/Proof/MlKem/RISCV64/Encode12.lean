@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Impl.MlKem.RISCV64.Codec
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 import VerifiedGarbage.Proof.MlKem.RISCV64.Add
 import VerifiedGarbage.Proof.MlKem.RISCV64.Bytes
 import VerifiedGarbage.Proof.MlKem.Encode
@@ -15,7 +15,7 @@ import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Impl.MlKem.RISCV64.Codec
-meta import VerifiedGarbage.Spec.MlKem.Poly
+meta import VerifiedGarbage.Proof.MlKem.PolyContract
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Add
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Bytes
 meta import VerifiedGarbage.Proof.MlKem.Encode
@@ -174,8 +174,8 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa encode12 s₀ (Inv s₀ 
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.encode12Contract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.encode12Contract RISCV64.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
@@ -189,25 +189,25 @@ def satState : State where
   wr := [⟨0x2000, 384⟩]
 
 theorem verified :
-    Verified RISCV64.target Impl.MlKem.RISCV64.encode12 (Spec.MlKem.encode12Contract RISCV64.abi) := by
+    Verified RISCV64.target Impl.MlKem.RISCV64.encode12 (Proof.MlKem.encode12Contract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.a0, .a1] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · obtain ⟨t, s', he, h⟩ := loop_ok (pre_of hs)
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.ra⟩, ?_⟩
-    sig_post [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs]
+    sig_post [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs]
     exact bytesAt_eq! (p := O s) (encode12_length _) fun k hk => by
       rw [h.bytes k hk, ite_eq_left (by omega_arith)]
-  · sig_pub [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.2.1
     · exact h.2.2
-  · sig_pub [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs]
+    · sig_reduce [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
         | trivial

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Arith16
 # ML-KEM on x86-64: K-PKE in one call, with 16-bit polynomials
 
 `vg_mlkem*_kpke_decrypt(m = rdi, s = rsi, ct = rdx, scratch = rcx)`
-(`Spec/MlKem/Kpke16.lean`): `K-PKE.Decrypt(dk_PKE, c)` (FIPS 203
+(`Proof/MlKem/Kpke16Contract.lean`): `K-PKE.Decrypt(dk_PKE, c)` (FIPS 203
 Algorithm 15) of the parameter set `L`, with the arithmetic of `A`, calling
 no function: it runs the code of the polynomial primitives inline, one
 after the other, on polynomials in `scratch`, and the code of

@@ -385,10 +385,6 @@ pub mod ed25519;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
-pub mod ed25519_r32;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
 pub mod ed448;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
@@ -398,10 +394,6 @@ pub mod ffdh;
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
 pub mod gcm;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
-pub mod gf25519_r32;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
@@ -470,10 +462,6 @@ pub mod mldsa65;
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
 pub mod mldsa87;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
-pub mod mlkem;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]

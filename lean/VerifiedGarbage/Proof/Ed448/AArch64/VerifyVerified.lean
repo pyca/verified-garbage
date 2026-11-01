@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Front
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Windows
@@ -77,8 +78,8 @@ theorem verifyEquation_spec_pre {s : State}
     (f2 : (s.gpr .x2).toNat + 57 ≤ 2 ^ 64) (f3 : (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64)
     (ht : CombHeld s [⟨s.gpr .x3, 8192⟩])
     (hal : (s.syms combSym).toNat % 64 = 0) :
-    (Spec.Ed448.verifyEquationContract (AArch64.abi.withConsts combConsts)).pre s := by
-  sig_pre [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig, Spec.Ed448.scratchWords,
+    (Proof.Ed448.verifyEquationContract (AArch64.abi.withConsts combConsts)).pre s := by
+  sig_pre [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig, Spec.Ed448.scratchWords,
     AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
@@ -86,7 +87,7 @@ theorem verifyEquation_spec_pre {s : State}
     f2, f3⟩
 
 theorem verifyEquation_sat :
-    (Spec.Ed448.verifyEquationContract (AArch64.abi.withConsts combConsts)).pre verifyEquationSat := by
+    (Proof.Ed448.verifyEquationContract (AArch64.abi.withConsts combConsts)).pre verifyEquationSat := by
   have hl := combWords_length
   have held : ∀ i < combWords.length, verifyEquationSat.mem.readW (verifyEquationSat.syms combSym +
       BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := satMem_held
@@ -99,16 +100,16 @@ theorem verifyEquation_sat :
     rintro r rfl; exact Region.disjoint_of_sep (by decide)
 
 theorem verifyEquation_implies :
-    verifyEquationLocal.Implies (Spec.Ed448.verifyEquationContract (AArch64.abi.withConsts combConsts)) where
+    verifyEquationLocal.Implies (Proof.Ed448.verifyEquationContract (AArch64.abi.withConsts combConsts)) where
   pre s h := by
-    sig_pre [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig, Spec.Ed448.scratchWords,
+    sig_pre [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig, Spec.Ed448.scratchWords,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, h1, h2, h3, -, -, -, h4⟩ := h
     refine ⟨?_, hw, h1, h2, h3, h4, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post s t _ h := by
-    sig_post [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_post [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts]
     have h' : t.gpr .x0 = _ := h
     rw [h']
@@ -116,7 +117,7 @@ theorem verifyEquation_implies :
       (Spec.Ed448.bytesAt s.mem (s.gpr .x1) 114) (Spec.Ed448.bytesAt s.mem (s.gpr .x2) 57) = b
     cases b <;> rfl
   pub s t _ _ h := by
-    sig_pub [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_pub [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts] at h
     obtain ⟨sp, hsy, -, pk, sig, ch, base⟩ := h
     exact ⟨sp, pk, sig, ch, base, hsy⟩
@@ -124,7 +125,7 @@ theorem verifyEquation_implies :
 
 theorem verifyEquation_verified (hR : Proof.Ed448.RecoverOk) :
     Verified AArch64.target verifyEquation
-      (Spec.Ed448.verifyEquationContract (AArch64.abi.withConsts combConsts)) :=
+      (Proof.Ed448.verifyEquationContract (AArch64.abi.withConsts combConsts)) :=
   Verified.of_correct (verifyEquation_ok hR) verifyEquation_ct verifyEquation_implies
 
 end VG.Proof.Ed448.AArch64

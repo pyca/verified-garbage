@@ -17,7 +17,11 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Impl.Ffdh.Arm.NormalizedPrepare
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
+public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! Native shared-secret exponentiation, range checking, export, and rejection masking. -/
 

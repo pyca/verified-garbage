@@ -11,6 +11,8 @@ meta import VerifiedGarbage.Impl.ChaCha20.RISCV64.Xor
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.ChaCha20.Contract
+public import VerifiedGarbage.Proof.ChaCha20.Contract
+meta import VerifiedGarbage.Proof.ChaCha20.Contract
 meta import VerifiedGarbage.Spec.ChaCha20.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -748,9 +750,9 @@ theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorRISCV64.pre Proof.ChaCha20.x
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
 
 theorem xor_verified :
-    Verified RISCV64.target Impl.ChaCha20.RISCV64.Xor.xor (Spec.ChaCha20.xorContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.ChaCha20.RISCV64.Xor.xor (Proof.ChaCha20.xorContract RISCV64.abi) :=
   Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, RISCV64.abi, RISCV64.argRegs,
+    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, RISCV64.abi, RISCV64.argRegs,
       Proof.ChaCha20.xorRISCV64]
       [sat] using sat)
 

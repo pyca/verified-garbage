@@ -8,7 +8,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
+public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcFill
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # One prepared-key CBC encryption block -/
 
@@ -20,7 +23,7 @@ open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchXor VG.Proof.Sm4.Arm.BatchChain
 open VG.Proof.Sm4.Arm.BatchGroup (batchRegions table_frame difference_zero)
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 structure GroupPost (s : State) (B D : BitVec 32) (K : Spec.Sm4.Schedule) (n : Nat) (s' : State) : Prop where
   regs : ∀ r ∈ [.r4, .r5, .r8], s'.gpr r = s.gpr r

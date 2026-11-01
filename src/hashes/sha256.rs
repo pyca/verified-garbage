@@ -7,18 +7,15 @@
 //! value of its whole blocks, and its remaining bytes), and pad it and output
 //! the digest.
 //!
-//! On x86 and x86-64, CPUs with the SHA extensions (and SSSE3) run
-//! `vg_sha256_update_shani` and `vg_sha256_finalize_shani` instead, which
-//! have the same contracts and call `vg_sha256_compress_shani`; CPUs without
-//! them on x86-64 but with AVX2, BMI1 and BMI2 run `vg_sha256_update_avx2` and
-//! `vg_sha256_finalize_avx2`, which call `vg_sha256_compress_avx2`.
-//! On AArch64, the `sha2` feature selects the `_sha2` streaming functions,
-//! whose compression uses SHA256H/SHA256H2 and SHA256SU0/SHA256SU1.
+//! Their variants, with the same contracts, are chosen on CPUs with the
+//! features their `_FEATURES` constants name, in this order: on x86 and
+//! x86-64, `vg_sha256_update_shani` and `vg_sha256_finalize_shani`, then on
+//! x86-64 the `_avx2` ones; on AArch64, the `_sha2` ones.
 //!
-//! On AArch64 and x86-64, `digest` calls `vg_sha256_digest` (or its variant
-//! for the backend: `_sha2`, `_shani` or `_avx2`; contract
-//! `VG.Spec.Sha256.digestContract`), which runs the same initialization,
-//! update and finalization in one call.
+//! On AArch64 and x86-64, `digest` calls `vg_sha256_digest`, or its variant
+//! with the suffix of the streaming functions chosen (contract
+//! `VG.Spec.Sha256.digestContract`), which hashes the whole message in one
+//! call.
 
 #![cfg(any(
     target_arch = "x86_64",

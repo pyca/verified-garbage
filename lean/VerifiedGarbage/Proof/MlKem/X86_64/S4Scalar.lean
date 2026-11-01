@@ -132,26 +132,26 @@ theorem sample4_scalar_ct : ConstantTime isa sample4K.pre sample4K.pub Impl.MlKe
   rw [sample4K_eq]; exact S4.ct_scalar (w16 := false)
 
 theorem sample4_scalar_verified : Verified X86_64.target Impl.MlKem.X86_64.Sample4.sampleNTT4
-    (Spec.MlKem.sampleNTT4Contract X86_64.abi 24) :=
+    (Proof.MlKem.sampleNTT4Contract X86_64.abi 24) :=
   Verified.of_correct sample4_scalar_correct sample4_scalar_ct
-    { pre := by sig_implies_pre [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlKem.sampleNTT4Contract, Proof.MlKem.sampleNTT4Sig, sample4K, X86_64.abi,
         X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs]
+        sig_post [Proof.MlKem.sampleNTT4Contract, Proof.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs]
         exact sample4_post h
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs] at h
+        sig_pub [Proof.MlKem.sampleNTT4Contract, Proof.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs] at h
         sig_split h
-        sig_reduce [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs]
-        sig_simp [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs]
+        sig_reduce [Proof.MlKem.sampleNTT4Contract, Proof.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs]
+        sig_simp [Proof.MlKem.sampleNTT4Contract, Proof.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs]
           [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
         sig_and_intros
         sig_close
         all_goals first | with_reducible assumption | exact map_toNat_inj ‹_›
       sat := by
-        sig_implies_sat [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi,
+        sig_implies_sat [Proof.MlKem.sampleNTT4Contract, Proof.MlKem.sampleNTT4Sig, sample4K, X86_64.abi,
           X86_64.argRegs] [sample4Sat] using sample4Sat }
 
 end VG.Proof.MlKem.X86_64

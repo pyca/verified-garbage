@@ -7,24 +7,17 @@
 //! `Key2`, and `vg_aes_xts_encrypt_unit` and `vg_aes_xts_decrypt_unit`
 //! (`VG.Spec.Xts.aesEncryptUnitContract`, `aesDecryptUnitContract`) replace
 //! a whole data unit with its XTS-AES encryption or decryption (§5.3.2,
-//! §5.4.2), in constant time: they encipher the tweak value with `Key2`,
-//! the blocks with `Key1` (by the whole-block functions
-//! `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt`, from a tweak they advance
-//! by `α` per block), and steal ciphertext for a partial last block. This
-//! module checks the lengths, which the assembly requires.
+//! §5.4.2), in constant time, ciphertext stealing for a partial last block
+//! included. This module checks the lengths, which the assembly requires.
 //!
-//! On x86-64, CPUs with VAES, VPCLMULQDQ and AVX2 run
+//! Their variants, with the same contracts, are chosen on CPUs with the
+//! features their `_FEATURES` constants name (and the key expansion's): on
+//! x86-64, `crate::aes::Backend` chooses `_vaes`, then `_aesni` (both with
+//! `vg_aes_expand_key_aesni`), and a CPU with the features of
 //! `vg_aes_xts_encrypt_unit_vaes_vpclmul` and
-//! `vg_aes_xts_decrypt_unit_vaes_vpclmul`, whose whole-block functions read
-//! each block once and call nothing, with the `_vaes` key expansion; CPUs
-//! with VAES and AVX2 alone run the `_vaes` functions; other CPUs with
-//! AES-NI, PCLMULQDQ and AVX run `vg_aes_xts_encrypt_unit_aesni_pclmul` and
-//! `vg_aes_xts_decrypt_unit_aesni_pclmul`, also in one pass, and those with
-//! AES-NI alone the `_aesni` ones (`crate::aes::Backend`), as on x86; on
-//! AArch64, CPUs with the AES instructions run the `_aes` ones, whose
-//! whole-block functions also read each block once and call nothing.
-//! Elsewhere, and on other CPUs, the constant-time bitsliced implementation
-//! runs.
+//! `vg_aes_xts_decrypt_unit_vaes_vpclmul` too runs those instead of the
+//! `_vaes` ones, and one with those of the `_aesni_pclmul` ones those instead
+//! of the `_aesni` ones; on x86, `_aesni`; on AArch64, `_aes`.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -89,9 +82,9 @@ macro_rules! instance {
     };
 }
 
-/// The XTS functions a key uses: those of an implementation of AES, whose
-/// whole-block functions call its block functions, or x86-64's in one
-/// pass, with VAES's or AES-NI's key expansion.
+/// The XTS functions a key uses: those of an implementation of AES, or
+/// x86-64's `_vaes_vpclmul` or `_aesni_pclmul` ones, with VAES's or
+/// AES-NI's key expansion.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Impl {
     /// The `vg_aes_xts_*_unit` functions of an implementation of AES.
@@ -119,8 +112,9 @@ impl Impl {
     }
 }
 
-/// The best XTS functions a CPU with the features `f` can run: in one pass
-/// if it has those of VAES's or AES-NI's and the one-pass functions' too.
+/// The best XTS functions a CPU with the features `f` can run: the
+/// `_vaes_vpclmul` or `_aesni_pclmul` ones if it has their features and
+/// those of the `_vaes` or `_aesni` ones.
 #[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Impl {
     const VAES: Features = Features::all(&[

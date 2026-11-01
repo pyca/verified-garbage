@@ -25,7 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 
 The proof of `Proof/MlKem/X86_64/KpkeEnc.lean` for ML-KEM-1024 with AVX2,
 its constant time, and its contract implying the shared one of
-`Spec/MlKem/Kpke16.lean`.
+`Proof/MlKem/Kpke16Contract.lean`.
 -/
 
 @[expose] public section
@@ -35,6 +35,7 @@ namespace VG.Proof.MlKem1024.X86_64
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Kpke16 VG.Impl.MlKem1024.X86_64
 open VG.Proof.MlKem.X86_64
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 
 theorem keWf1024 : KpkeEnc.KeWf kem1024 := ⟨.inr rfl, by decide, by decide, by decide⟩
 
@@ -62,7 +63,7 @@ theorem kpkeEnc1024_of {c : Prog isa}
     (hc : ∀ s, (kpkeEncK kem1024).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧
       (kpkeEncK kem1024).post s s')
     (hct : ConstantTime isa (kpkeEncK kem1024).pre (kpkeEncK kem1024).pub c) :
-    Verified X86_64.target c (mlKem1024.kpkeEncryptContract X86_64.abi) :=
+    Verified X86_64.target c (Proof.MlKem.Params.kpkeEncryptContract mlKem1024 X86_64.abi) :=
   Verified.of_correct hc hct
     { pre := by sig_implies_pre [Params.kpkeEncryptContract, Params.kpkeEncryptSig, kpkeEncK, X86_64.abi,
         X86_64.argRegs, kScrE, Kem.k, Kem.ctLen, kem1024, retR, Params.ctLen, mlKem1024]
@@ -84,7 +85,7 @@ theorem kpkeEnc1024_of {c : Prog isa}
              bv_omega) }
 
 theorem kpkeEnc1024Y_verified :
-    Verified X86_64.target (kpkeEnc kem1024 .avx2 encryptMul16Y) (mlKem1024.kpkeEncryptContract X86_64.abi) :=
+    Verified X86_64.target (kpkeEnc kem1024 .avx2 encryptMul16Y) (Proof.MlKem.Params.kpkeEncryptContract mlKem1024 X86_64.abi) :=
   kpkeEnc1024_of kpkeEnc1024Y_correct kpkeEnc1024Y_ct
 
 end VG.Proof.MlKem1024.X86_64

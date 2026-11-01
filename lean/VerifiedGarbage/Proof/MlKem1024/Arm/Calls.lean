@@ -43,6 +43,7 @@ namespace VG.Proof.MlKem1024.Arm
 
 open VG VG.Arm VG.Impl.MlKem.Arm VG.Impl.MlKem1024.Arm
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem VG.Proof.MlKem.Arm
 
@@ -61,14 +62,14 @@ def kDcm4 : Contract isa := mkK Decompress.Pre (fun s₀ s => PolyIs s.mem (Deco
 theorem kDcm4_ok : ∀ s, kDcm4.pre s → ∃ t s', Exec isa decodeDecompress1024 s t s' ∧
     abiPreserved s s' ∧ kDcm4.post s s' := mkK_ok fun _ hp => Decompress.correct hp
 
-theorem width_lt4 {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) : d < 2 ^ 32 ∧ 32 * d < 2 ^ 32 := by
+theorem width_lt4 {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) : d < 2 ^ 32 ∧ 32 * d < 2 ^ 32 := by
   rcases VG.Proof.MlKem.mem_compressWidths1024 hd with rfl | rfl <;> decide
 
 /-- `ByteEncode_d(Compress_d(f))` of the polynomial at `(i, o)` into the `32 d` bytes at `(j, o')`. -/
 theorem compressL4 {L : Lay} {s : State} (hL : L.Ok) {i o j o' d : Nat}
     (g0 : s.gpr .r0 = L.ptr i + BitVec.ofNat 32 o) (g1 : s.gpr .r1 = BitVec.ofNat 32 d)
     (g2 : s.gpr .r2 = L.ptr j + BitVec.ofNat 32 o') (g3 : s.gpr .r3 = BitVec.ofNat 32 (32 * d))
-    (hd : d ∈ Spec.MlKem1024.compressWidths) (hs : sepB L.sizes (i, o, 1024) (j, o', 32 * d) = true)
+    (hd : d ∈ Proof.MlKem1024.compressWidths) (hs : sepB L.sizes (i, o, 1024) (j, o', 32 * d) = true)
     (wi : L.buf i ∈ s.rd ++ s.wr) (wj : L.buf j ∈ s.wr) {f : Poly} (hf : PolyIs s.mem (L.A i o) f)
     {Q : State → Prop}
     (hQ : ∀ s', Kept (L.RL [(j, o', 32 * d)]) s s' → bytesAt s'.mem (L.A j o') (32 * d) = compressEncode d f →
@@ -102,7 +103,7 @@ theorem compressL4 {L : Lay} {s : State} (hL : L.Ok) {i o j o' d : Nat}
 theorem decompressL4 {L : Lay} {s : State} (hL : L.Ok) {i o j o' d : Nat}
     (g0 : s.gpr .r0 = L.ptr i + BitVec.ofNat 32 o) (g1 : s.gpr .r1 = BitVec.ofNat 32 (32 * d))
     (g2 : s.gpr .r2 = BitVec.ofNat 32 d) (g3 : s.gpr .r3 = L.ptr j + BitVec.ofNat 32 o')
-    (hd : d ∈ Spec.MlKem1024.compressWidths) (hs : sepB L.sizes (i, o, 32 * d) (j, o', 1024) = true)
+    (hd : d ∈ Proof.MlKem1024.compressWidths) (hs : sepB L.sizes (i, o, 32 * d) (j, o', 1024) = true)
     (wi : L.buf i ∈ s.rd ++ s.wr) (wj : L.buf j ∈ s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept (L.RL [(j, o', 1024)]) s s' →
       PolyIs s'.mem (L.A j o') (decodeDecompress d (bytesAt s.mem (L.A i o) (32 * d))) → Q s') :

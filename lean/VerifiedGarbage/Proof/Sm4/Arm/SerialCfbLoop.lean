@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Modes.Fb
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # The arbitrary-length prepared-key SM4-CFB encryption loop on ARMv7 -/
 
@@ -24,7 +26,7 @@ open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchXor VG.Proof.Sm4.Arm.SerialCfbGroup
 open VG.Proof.Sm4.Arm.BatchGroup (batchRegions)
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 /-- Blocks at and after `i` are outside a frame writing only earlier data
 blocks and the separate working space. -/

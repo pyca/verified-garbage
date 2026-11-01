@@ -32,12 +32,12 @@ open VG.Proof.MlKem VG.Proof.MlKem.X86_64
 open VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
-theorem widths1024 {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) : d = 5 ∨ d = 11 :=
+theorem widths1024 {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) : d = 5 ∨ d = 11 :=
   mem_compressWidths1024 hd
 
 /-- Bytes of a segment of group `i`: the number of its `c` values from `o`,
 shifted right by `s + p` bits, is byte `j` of the group. -/
-theorem ce_seg {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (F : Poly) {i o c s p j : Nat} (hi : i < 32)
+theorem ce_seg {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (F : Poly) {i o c s p j : Nat} (hi : i < 32)
     (hoc : o + c ≤ 8) (hp : s + p + 8 ≤ d * c) (hj : 8 * j = d * o + s + p) (hjd : j < d) :
     BitVec.ofNat 8 (digits d ((List.range c).map fun t => compress d F[8 * i + (o + t)]!) / 2 ^ s / 2 ^ p) =
       (compressEncode d F)[d * i + j]! := by
@@ -117,7 +117,7 @@ theorem grp11_ok (F : Poly) {i : Nat} (hi : i < 32) {s : State} (h : CE.GrpIn 26
       (by omega_arith) hk]
 
 /-- The loop for the width `d`, from a state with `f` in `rdi` and `out` in `r8`. -/
-theorem ceLoop_ok {s₀ : State} (hp : compressEncode1024K.pre s₀) {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths)
+theorem ceLoop_ok {s₀ : State} (hp : compressEncode1024K.pre s₀) {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths)
     (hdd : dArg s₀ .rsi = d) {grp : List Instr}
     (hgrp : ∀ i < 32, ∀ s, CE.GrpIn 261888 d 8 d (CE.F s₀) i s → WP isa (.block grp) s (CE.GrpOut d d (CE.F s₀) i s))
     {s : State} (hdi : s.gpr .rdi = CE.fP s₀) (h8 : s.gpr .r8 = CE.oP s₀) (hrd : s.rd = s₀.rd)
@@ -189,16 +189,16 @@ def compressEncode1024Sat : State where
   wr := [⟨0x2000, 160⟩]
 
 theorem compressEncode1024_verified :
-    Verified X86_64.target compressEncode1024 (Spec.MlKem1024.compressEncodeContract X86_64.abi) :=
+    Verified X86_64.target compressEncode1024 (Proof.MlKem1024.compressEncodeContract X86_64.abi) :=
   Verified.of_correct compressEncode1024_correct compressEncode1024_ct (by
-    mlkem_implies [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig, compressEncode1024K,
+    mlkem_implies [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, compressEncode1024K,
       X86_64.abi, X86_64.argRegs] [compressEncode1024Sat] using compressEncode1024Sat)
 
 theorem ce4_nosp : NoSp compressEncode1024 := nosp_of (by decide +kernel)
 theorem ce4_depth : compressEncode1024.depth = 0 := by decide +kernel
 
 /-- `vg_mlkem1024_compress_encode`, for the calls of the top-level functions. -/
-theorem ceImpl1024 : CEImpl "vg_mlkem1024_compress_encode" compressEncode1024 Spec.MlKem1024.compressWidths :=
+theorem ceImpl1024 : CEImpl "vg_mlkem1024_compress_encode" compressEncode1024 Proof.MlKem1024.compressWidths :=
   ⟨fun _ hd => by rcases widths1024 hd with rfl | rfl <;> decide, compressEncode1024_correct, compressEncode1024_ct, ce4_nosp,
     ce4_depth⟩
 

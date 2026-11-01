@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
@@ -192,19 +193,19 @@ theorem scalarReduceWide_pre (s : State) (h : scalarReduceWide.pre s) :
   exact ⟨True.intro, True.intro, h.2.2⟩
 
 theorem scalarReduceWide_implies :
-    scalarReduceWide.Implies (Spec.Ed448.scalarReduceContract X86.abi) := by
+    scalarReduceWide.Implies (Proof.Ed448.scalarReduceContract X86.abi) := by
   have a0 : arg scalarReduceSat 0 = 0x1000 := by decide
   have a1 : arg scalarReduceSat 1 = 0x2000 := by decide
   have a2 : arg scalarReduceSat 2 = 0x4000 := by decide
   have e : argAddr scalarReduceSat 0 = 0x8004 := by decide
   have esp : scalarReduceSat.gpr .esp = 0x8000 := rfl
-  sig_implies [Spec.Ed448.scalarReduceContract, Spec.Ed448.scalarReduceSig,
+  sig_implies [Proof.Ed448.scalarReduceContract, Proof.Ed448.scalarReduceSig,
     Spec.Ed448.scratchWords, scalarReduceWide, scalarReduceLocal, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, e, esp] using scalarReduceSat
 
 theorem scalarReduce_verified :
-    Verified X86.target scalarReduce (Spec.Ed448.scalarReduceContract X86.abi) := by
+    Verified X86.target scalarReduce (Proof.Ed448.scalarReduceContract X86.abi) := by
   have hsat := scalarReduceWide_implies.sat_left
   have satLocal : ∃ s, scalarReduceLocal.pre s := hsat.elim fun s h => ⟨_, scalarReduceWide_pre s h⟩
   have verifiedLocal : Verified X86.target scalarReduce scalarReduceLocal :=
@@ -298,7 +299,7 @@ theorem scalarMulAddWide_pre (s : State) (h : scalarMulAddWide.pre s) :
   exact ⟨True.intro, True.intro, h.2.2⟩
 
 theorem scalarMulAddWide_implies :
-    scalarMulAddWide.Implies (Spec.Ed448.scalarMulAddContract X86.abi) := by
+    scalarMulAddWide.Implies (Proof.Ed448.scalarMulAddContract X86.abi) := by
   have a0 : arg scalarMulAddSat 0 = 0x1000 := by decide
   have a1 : arg scalarMulAddSat 1 = 0x2000 := by decide
   have a2 : arg scalarMulAddSat 2 = 0x3000 := by decide
@@ -306,13 +307,13 @@ theorem scalarMulAddWide_implies :
   have a4 : arg scalarMulAddSat 4 = 0x6000 := by decide
   have e : argAddr scalarMulAddSat 0 = 0x8004 := by decide
   have esp : scalarMulAddSat.gpr .esp = 0x8000 := rfl
-  sig_implies [Spec.Ed448.scalarMulAddContract, Spec.Ed448.scalarMulAddSig,
+  sig_implies [Proof.Ed448.scalarMulAddContract, Proof.Ed448.scalarMulAddSig,
     Spec.Ed448.scratchWords, scalarMulAddWide, scalarMulAddLocal, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp] using scalarMulAddSat
 
 theorem scalarMulAdd_verified :
-    Verified X86.target scalarMulAdd (Spec.Ed448.scalarMulAddContract X86.abi) := by
+    Verified X86.target scalarMulAdd (Proof.Ed448.scalarMulAddContract X86.abi) := by
   have hsat := scalarMulAddWide_implies.sat_left
   have satLocal : ∃ s, scalarMulAddLocal.pre s := hsat.elim fun s h => ⟨_, scalarMulAddWide_pre s h⟩
   have verifiedLocal : Verified X86.target scalarMulAdd scalarMulAddLocal :=

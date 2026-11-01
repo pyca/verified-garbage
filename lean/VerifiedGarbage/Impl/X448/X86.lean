@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Isa
-public import VerifiedGarbage.Spec.X448.Field16
+public import VerifiedGarbage.Spec.X448
 
 /-!
 # X448: x86 (32-bit) implementation
 
 Field elements are twenty-eight 16-bit limbs in 32-bit words. The field
 arithmetic is the functions `vg_gf448_r16_mul`, `vg_gf448_r16_add`,
-`vg_gf448_r16_sub` and `vg_gf448_r16_mul_a24` (`Spec/X448/Field16.lean`),
+`vg_gf448_r16_sub` and `vg_gf448_r16_mul_a24` (`Proof/X448/Field16Contract.lean`),
 which X448 and Ed448 call rather than inlining it: a row of products
 propagates its carry before the next row, keeping each sum below 2^32, and
 reduction uses `2^448 = 2^224 + 1` modulo the field prime.
@@ -111,7 +111,7 @@ def subK (i : Nat) : BitVec 32 := if i = 14 then 131068 else 131070
 
 /-! ## The field functions
 
-`vg_gf448_r16_{mul,add,sub,mul_a24}(ws, o, a[, b])` (`Spec/X448/Field16.lean`),
+`vg_gf448_r16_{mul,add,sub,mul_a24}(ws, o, a[, b])` (`Proof/X448/Field16Contract.lean`),
 cdecl: the arguments at `[esp + 4]` to `[esp + 16]`. Each loads `ws` into
 `edi` and saves the callee-saved registers in the last 16 bytes of its own
 working space (`SAVE`), points `esi` (and `ebp`) at its operands, writes the
@@ -199,10 +199,10 @@ def call2 (name : String) (body : Prog isa) (o a : Nat) : Prog isa :=
   .seq (.block [.mov .eax (.imm (BitVec.ofNat 32 o)), .mov .ecx (.imm (BitVec.ofNat 32 a))])
     (.frame (.push [.ecx, .eax, .edi]) (.call name body) (.pop .eax 3))
 
-def mulCall (o a b : Nat) : Prog isa := call3 Spec.X448.Field16.mulApi.name mulFn o a b
-def addCall (o a b : Nat) : Prog isa := call3 Spec.X448.Field16.addApi.name addFn o a b
-def subCall (o a b : Nat) : Prog isa := call3 Spec.X448.Field16.subApi.name subFn o a b
-def a24Call (o a : Nat) : Prog isa := call2 Spec.X448.Field16.mulA24Api.name mulA24Fn o a
+def mulCall (o a b : Nat) : Prog isa := call3 "vg_gf448_r16_mul" mulFn o a b
+def addCall (o a b : Nat) : Prog isa := call3 "vg_gf448_r16_add" addFn o a b
+def subCall (o a b : Nat) : Prog isa := call3 "vg_gf448_r16_sub" subFn o a b
+def a24Call (o a : Nat) : Prog isa := call2 "vg_gf448_r16_mul_a24" mulA24Fn o a
 
 /-- Swap under the mask in `ebx`. -/
 def cswap (x y : Nat) : List Instr :=

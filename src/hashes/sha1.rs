@@ -9,15 +9,15 @@
 //! message absorbed so far (`VG.Spec.Sha1.Repr`: the hash value of its whole
 //! blocks, and its remaining bytes), and pad it and output the digest.
 //!
-//! On x86 and x86-64, CPUs with the SHA extensions (and SSSE3) run
-//! `vg_sha1_update_shani` and `vg_sha1_finalize_shani` instead, which have
-//! the same contracts and call `vg_sha1_compress_shani`. On AArch64, the
-//! `sha2` feature group enables the `_sha2` variants using SHA1C/P/M/H and
-//! SHA1SU0/SHA1SU1.
+//! Their variants, with the same contracts, are chosen on CPUs with the
+//! features their `_FEATURES` constants name: on x86 and x86-64,
+//! `vg_sha1_update_shani` and `vg_sha1_finalize_shani`; on AArch64, the
+//! `_sha2` ones.
 //!
-//! On AArch64 and x86-64, `digest` calls `vg_sha1_digest` (or its variant
-//! for the same features, contract `VG.Spec.Sha1.digestContract`), which
-//! hashes the whole message in one call.
+//! On AArch64 and x86-64, `digest` calls `vg_sha1_digest`, or its variant
+//! with the suffix of the streaming functions chosen (contract
+//! `VG.Spec.Sha1.digestContract`), which hashes the whole message in one
+//! call.
 
 #![cfg(any(
     target_arch = "x86_64",

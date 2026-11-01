@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Field16Contract
 public import VerifiedGarbage.Proof.X448.X86.FnContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
@@ -24,7 +25,7 @@ Correctness under `binX86` and `a24X86` (`FnContract.lean`), constant time
 by taint tracking (every branch is on the row pointer and every address is
 `ws`, an offset, the row pointer or `esp` plus a constant: only the
 arguments, which are public, and `esp` need be), satisfiability, and the
-shared contracts of `Spec/X448/Field16.lean`.
+shared contracts of `Proof/X448/Field16Contract.lean`.
 -/
 
 @[expose] public section
@@ -33,7 +34,7 @@ namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
 
-theorem slot_of_fits {o : BitVec 32} (h : Spec.X448.Field16.Fits o) : Slot o.toNat := h
+theorem slot_of_fits {o : BitVec 32} (h : Proof.X448.Field16.Fits o) : Slot o.toNat := h
 
 /-- A difference, as `Spec` states it. -/
 theorem toFe_sub_inv {a b c : Nat} (h : toFe c = toFe a - toFe b) : (c + b) % Spec.X448.P = a % Spec.X448.P := by
@@ -202,15 +203,15 @@ def fnSat (len : Nat) : State where
   wr := [⟨0x1000, 8192⟩]
 
 theorem sat_limbs (len i : Nat) (h0 : arg (fnSat len) 0 = 4096) (hi : arg (fnSat len) i = 0) :
-    ∀ a, a < Spec.X448.Field16.limbs → Spec.X448.Field16.limbAt (fnSat len).mem
+    ∀ a, a < Proof.X448.Field16.limbs → Proof.X448.Field16.limbAt (fnSat len).mem
       (BitVec.setWidth 64 (arg (fnSat len) 0)) (arg (fnSat len) i) a < 2 ^ 16 := by
   rw [h0, hi]
-  show ∀ a, a < 28 → Spec.X448.Field16.limbAt (fun a => if a = 32773 then 16 else 0)
+  show ∀ a, a < 28 → Proof.X448.Field16.limbAt (fun a => if a = 32773 then 16 else 0)
     (BitVec.setWidth 64 (4096 : BitVec 32)) 0 a < 2 ^ 16
   decide
 
 theorem binX86_implies {r : Nat → Nat → Nat → Prop} :
-    (binX86 r).Implies (Spec.X448.Field16.binContract X86.abi r) := by
+    (binX86 r).Implies (Proof.X448.Field16.binContract X86.abi r) := by
   have a0 : arg (fnSat 16) 0 = 0x1000 := by decide
   have a1 : arg (fnSat 16) 1 = 0 := by decide
   have a2 : arg (fnSat 16) 2 = 0 := by decide
@@ -218,15 +219,15 @@ theorem binX86_implies {r : Nat → Nat → Nat → Prop} :
   have e : argAddr (fnSat 16) 0 = 0x8004 := by decide
   have esp : (fnSat 16).gpr .esp = 0x8000 := rfl
   exact
-    { pre := by sig_implies_pre [Spec.X448.Field16.binContract, Spec.X448.Field16.sig, binX86, fnPre, wsOf,
+    { pre := by sig_implies_pre [Proof.X448.Field16.binContract, Proof.X448.Field16.sig, binX86, fnPre, wsOf,
         X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      post := by sig_implies_post [Spec.X448.Field16.binContract, Spec.X448.Field16.sig, binX86, fnPre, wsOf,
+      post := by sig_implies_post [Proof.X448.Field16.binContract, Proof.X448.Field16.sig, binX86, fnPre, wsOf,
         X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      pub := by sig_implies_pub [Spec.X448.Field16.binContract, Spec.X448.Field16.sig, binX86, fnPre, wsOf,
+      pub := by sig_implies_pub [Proof.X448.Field16.binContract, Proof.X448.Field16.sig, binX86, fnPre, wsOf,
         X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       sat := by
         refine ⟨fnSat 16, ?_⟩
-        sig_pre [Spec.X448.Field16.binContract, Spec.X448.Field16.sig, binX86, fnPre, wsOf, X86.abi,
+        sig_pre [Proof.X448.Field16.binContract, Proof.X448.Field16.sig, binX86, fnPre, wsOf, X86.abi,
           X86.argSlots, X86.argVal, X86.argBytes]
         sig_and_intros
         all_goals first
@@ -239,16 +240,16 @@ theorem binX86_implies {r : Nat → Nat → Nat → Prop} :
              simp only [Region.Contains, a0, a1, a2, a3, e, esp] at h₁ h₂
              bv_omega) }
 
-theorem mulFn_verified : Verified X86.target mulFn (Spec.X448.Field16.mulContract X86.abi) :=
+theorem mulFn_verified : Verified X86.target mulFn (Proof.X448.Field16.mulContract X86.abi) :=
   Verified.of_correct mulFn_correct (mulFn_ct bin_agree) binX86_implies
 
-theorem addFn_verified : Verified X86.target addFn (Spec.X448.Field16.addContract X86.abi) :=
+theorem addFn_verified : Verified X86.target addFn (Proof.X448.Field16.addContract X86.abi) :=
   Verified.of_correct addFn_correct (addFn_ct bin_agree) binX86_implies
 
-theorem subFn_verified : Verified X86.target subFn (Spec.X448.Field16.subContract X86.abi) :=
+theorem subFn_verified : Verified X86.target subFn (Proof.X448.Field16.subContract X86.abi) :=
   Verified.of_correct subFn_correct (subFn_ct bin_agree) binX86_implies
 
-theorem mulA24Fn_verified : Verified X86.target mulA24Fn (Spec.X448.Field16.mulA24Contract X86.abi) := by
+theorem mulA24Fn_verified : Verified X86.target mulA24Fn (Proof.X448.Field16.mulA24Contract X86.abi) := by
   have a0 : arg (fnSat 12) 0 = 0x1000 := by decide
   have a1 : arg (fnSat 12) 1 = 0 := by decide
   have a2 : arg (fnSat 12) 2 = 0 := by decide
@@ -256,15 +257,15 @@ theorem mulA24Fn_verified : Verified X86.target mulA24Fn (Spec.X448.Field16.mulA
   have esp : (fnSat 12).gpr .esp = 0x8000 := rfl
   exact Verified.of_correct mulA24Fn_correct (mulA24Fn_ct a24_agree) (by
     exact
-      { pre := by sig_implies_pre [Spec.X448.Field16.mulA24Contract, Spec.X448.Field16.sig1, a24X86, fnPre,
+      { pre := by sig_implies_pre [Proof.X448.Field16.mulA24Contract, Proof.X448.Field16.sig1, a24X86, fnPre,
           wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-        post := by sig_implies_post [Spec.X448.Field16.mulA24Contract, Spec.X448.Field16.sig1, a24X86, fnPre,
+        post := by sig_implies_post [Proof.X448.Field16.mulA24Contract, Proof.X448.Field16.sig1, a24X86, fnPre,
           wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-        pub := by sig_implies_pub [Spec.X448.Field16.mulA24Contract, Spec.X448.Field16.sig1, a24X86, fnPre,
+        pub := by sig_implies_pub [Proof.X448.Field16.mulA24Contract, Proof.X448.Field16.sig1, a24X86, fnPre,
           wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
         sat := by
           refine ⟨fnSat 12, ?_⟩
-          sig_pre [Spec.X448.Field16.mulA24Contract, Spec.X448.Field16.sig1, a24X86, fnPre, wsOf, X86.abi,
+          sig_pre [Proof.X448.Field16.mulA24Contract, Proof.X448.Field16.sig1, a24X86, fnPre, wsOf, X86.abi,
             X86.argSlots, X86.argVal, X86.argBytes]
           sig_and_intros
           all_goals first

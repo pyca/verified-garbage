@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86.Top
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Contract

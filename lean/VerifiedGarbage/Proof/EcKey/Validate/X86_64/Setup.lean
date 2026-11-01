@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Check
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
 
 /-! # Standalone point validation: reuse the existing setup and checks -/
 

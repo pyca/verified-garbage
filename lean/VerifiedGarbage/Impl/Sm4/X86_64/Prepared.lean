@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
 public import VerifiedGarbage.Impl.Sm4.Planes
-public import VerifiedGarbage.Spec.Sm4.Prepared
+public import VerifiedGarbage.Spec.Sm4.Contract
 
 /-!
 # SM4's batches under prepared round keys, on x86-64
 
-`vg_sm4_crypt_prepared` (`Spec/Sm4/Prepared.lean`): ECB's sixteen blocks
+`vg_sm4_crypt_prepared` (`Proof/Sm4/Prepared.lean`): ECB's sixteen blocks
 (`Ecb.lean`) as a function of the working space, for the modes, which call
 it (`Ctr.lean`).
 
@@ -58,23 +58,12 @@ def preparedWord (k : Spec.Sm4.Schedule) (d : Dir) (w : Nat) : BitVec 64 :=
   if w < tableSlot then (keyMasks.find? (·.1 = w)).elim 0 (·.2)
   else Impl.Sm4.planeOf (keyEntry k d ((w - tableSlot) / 8)) ((w - tableSlot) % 8)
 
-/-- The masks' slots and the table's, as byte ranges. -/
-def layout : Spec.Sm4.Prepared.Layout where
-  table := [(8 * evenSlot, 24), (8 * tableSlot, 8 * (tableEnd - tableSlot))]
-  encode k d i := (preparedWord k (ofSpecDir d) (i / 8)).extractLsb' (8 * (i % 8)) 8
-  buf := 8 * tailSlot
-  blocks := 16
-  prepScratch := [(0, 8 * slots)]
-  cryptScratch := [(0, 8 * evenSlot), (8 * (grpSlot + 1), 8 * (tableSlot - grpSlot - 1)),
-    (8 * savedSlot, 8 * (slots - savedSlot))]
-  size := 8 * slots
-
 /-! ## The call -/
 
 /-- A call of `vg_sm4_crypt_prepared` on the working space at `sb`, of
 `slots` words, which leaves `sb` as it was: the function moves `ws` there. -/
 def cryptCall : Prog isa :=
   .seq (.block [movR .rdi sb, .movImm64 .rsi (BitVec.ofNat 64 slots)])
-    (.call (Spec.Sm4.Prepared.cryptApi layout).name cryptPrepared)
+    (.call "vg_sm4_crypt_prepared" cryptPrepared)
 
 end VG.Impl.Sm4.X86_64

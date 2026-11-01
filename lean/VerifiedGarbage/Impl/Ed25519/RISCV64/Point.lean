@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.FieldMemory
-public import VerifiedGarbage.Spec.Ed25519.Point32
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # `vg_ed25519_r32_point_add` on RISC-V, and doubling
 
-`vg_ed25519_r32_point_add(ws)` (`Spec/Ed25519/Point32.lean`; `ws` in `a0`)
+`vg_ed25519_r32_point_add(ws)` (`Proof/Ed25519/Point32Contract.lean`; `ws` in `a0`)
 moves `ws` to `a3` and runs the complete addition formula inline
 (`pointAdd`). A double is the same call after the point is copied to the
 second operand's slots (`doubleCall`), which computes `p + p` with the
@@ -26,7 +26,7 @@ def addFn : Prog isa := .seq (.block [.addi .a3 .a0 0]) pointAdd
 and after (the callee keeps it in `a0`). -/
 def addCall : Prog isa :=
   .seq (.block [.addi .a0 .a3 0])
-    (.seq (.call Spec.Ed25519.Point32.addApi.name addFn) (.block [.addi .a3 .a0 0]))
+    (.seq (.call "vg_ed25519_r32_point_add" addFn) (.block [.addi .a3 .a0 0]))
 
 /-- The point in slots 0–3 doubled: copied to slots 4–7, and added. -/
 def doubleCall : Prog isa := .seq copyPointToQ addCall

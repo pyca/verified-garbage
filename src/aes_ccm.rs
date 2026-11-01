@@ -20,26 +20,14 @@
 //! Appendix A.1 allows, 4, 6, 8, 10, 12, 14 or 16 bytes, checked at compile
 //! time.
 //!
-//! The functions are emitted once for each implementation of AES they call
-//! (`vg_aes_ctr32`, directly for counter mode and through
-//! `vg_cmac_aes_update` for the CBC-MAC), which have the same contracts: on
-//! x86-64, CPUs with AES-NI and SSSE3 run the `_aesni` instances, and CPUs
-//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`), whose
-//! CBC-MAC calls `vg_aes_ctr32_aesni` (or `_vaes`) on one block at a time;
-//! when the associated data and the payload are longer than 32 bytes
-//! together, both run the `_aesni_cbc` ones instead, whose CBC-MAC keeps the
-//! round keys and the chaining value in SSE registers across blocks
-//! (`vg_cmac_aes_update_aesni_cbc`, as AES-CMAC chooses it in
-//! `crate::cmac::aes`), and which encrypt with `vg_aes_ctr32_aesni`. On x86,
-//! CPUs with AES-NI run the `_aesni` instances. On
-//! AArch64, CPUs with the AES extension run the `_aes` instances, whose
-//! CBC-MAC is `vg_cmac_aes_update_aes` (calling `vg_aes_ctr32_aes` on one
-//! block at a time), or, when the associated data and the payload are longer
-//! than 32 bytes together, the `_aes_cbc` ones, whose CBC-MAC keeps the
-//! round keys and the chaining value in vector registers across blocks
-//! (`vg_cmac_aes_update_aes_cbc`, as AES-CMAC chooses it in
-//! `crate::cmac::aes`); both encrypt with `vg_aes_ctr32_aes`. On ARMv7 and
-//! PPC64LE there is only the constant-time scalar implementation.
+//! Their variants, with the same contracts, are chosen with
+//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
+//! constants name: on x86-64, the `_vaes` ones, then the `_aesni` ones
+//! (both with `vg_aes_expand_key_aesni`); on x86, the `_aesni` ones; on
+//! AArch64, the `_aes` ones. On x86-64 and AArch64, when the associated data
+//! and the payload are longer than 32 bytes together (`chains_long`), the
+//! `_aesni_cbc` ones (with either x86-64 backend) or the `_aes_cbc` ones run
+//! instead, whose features `select` checks too.
 
 #![cfg(any(
     target_arch = "x86",
@@ -169,12 +157,10 @@ fn select(f: Features) -> Backend {
     Backend::select(f)
 }
 
-/// Whether to run the instances whose CBC-MAC keeps the round keys and the
-/// chaining value in registers (`_aes_cbc` on AArch64, `_aesni_cbc` on
-/// x86-64), for `aad_len` bytes of associated data and `len` bytes of
-/// payload: when they are longer than 32 bytes together (as
-/// `crate::cmac::aes` chooses for an update), where that pays for loading
-/// the round keys.
+/// Whether to run the `_aes_cbc` instances (on AArch64) or the
+/// `_aesni_cbc` ones (on x86-64), for `aad_len` bytes of associated data and
+/// `len` bytes of payload: when they are longer than 32 bytes together (as
+/// `crate::cmac::aes` chooses for an update), where those are faster.
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn cbc(aad_len: usize, len: usize) -> bool {
     aad_len.saturating_add(len) > 32
@@ -224,7 +210,7 @@ pub struct AesCcm {
     schedule: [u8; 240],
     /// The number of rounds of AES.
     rounds: usize,
-    /// The implementation of AES the functions called call.
+    /// The implementation of AES whose functions to call.
     backend: Backend,
 }
 
@@ -261,7 +247,7 @@ impl AesCcm {
             rounds: key.len() / 4 + 6,
             backend: select(detected()),
         };
-        // `_vaes` calls `vg_aes_expand_key_aesni`'s schedule.
+        // `_vaes` takes `vg_aes_expand_key_aesni`'s schedule.
         let expand = match k.backend {
             Backend::Scalar => vg_aes_expand_key,
             #[cfg(target_arch = "x86")]

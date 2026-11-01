@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Impl.MlKem.RISCV64.Poly
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.MlKem.Arith
@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Impl.MlKem.RISCV64.Poly
 meta import VerifiedGarbage.TCB.RISCV64.Target
-meta import VerifiedGarbage.Spec.MlKem.Poly
+meta import VerifiedGarbage.Proof.MlKem.PolyContract
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.MlKem.Arith
@@ -226,13 +226,13 @@ theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.addContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.addContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.addContract RISCV64.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.addContract, Proof.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
-theorem pre_of_sub {s : State} (h : (Spec.MlKem.subContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.subContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
+theorem pre_of_sub {s : State} (h : (Proof.MlKem.subContract RISCV64.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.subContract, Proof.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
@@ -261,50 +261,50 @@ theorem ctRegs {k : Contract isa} (rs : List Reg)
   VG.Taint.constantTime (A := VG.RISCV64.taint) (Taint.ofRegs rs)
     (fun s₁ s₂ _ _ hp => ⟨hsp s₁ s₂ hp, fun r hr => hpub s₁ s₂ hp r (Taint.mem_ofRegs.mp hr)⟩) h
 
-theorem add_verified : Verified RISCV64.target Impl.MlKem.RISCV64.add (Spec.MlKem.addContract RISCV64.abi) := by
+theorem add_verified : Verified RISCV64.target Impl.MlKem.RISCV64.add (Proof.MlKem.addContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, ctRegs [.a0, .a1] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (add_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.ra⟩, ?_⟩
-    sig_post [Spec.MlKem.addContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs]
+    sig_post [Proof.MlKem.addContract, Proof.MlKem.accSig, RISCV64.abi, RISCV64.argRegs]
     exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Spec.MlKem.addContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlKem.addContract, Proof.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.2.1
     · exact h.2.2
-  · sig_pub [Spec.MlKem.addContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlKem.addContract, Proof.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.addContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs]
+    · sig_reduce [Proof.MlKem.addContract, Proof.MlKem.accSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
         | trivial
         | exact reduced_zero _
         | decide +kernel
 
-theorem sub_verified : Verified RISCV64.target Impl.MlKem.RISCV64.sub (Spec.MlKem.subContract RISCV64.abi) := by
+theorem sub_verified : Verified RISCV64.target Impl.MlKem.RISCV64.sub (Proof.MlKem.subContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, ctRegs [.a0, .a1] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of_sub hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (sub_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.ra⟩, ?_⟩
-    sig_post [Spec.MlKem.subContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs]
+    sig_post [Proof.MlKem.subContract, Proof.MlKem.accSig, RISCV64.abi, RISCV64.argRegs]
     exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Spec.MlKem.subContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlKem.subContract, Proof.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.2.1
     · exact h.2.2
-  · sig_pub [Spec.MlKem.subContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlKem.subContract, Proof.MlKem.accSig, RISCV64.abi, RISCV64.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.subContract, Spec.MlKem.accSig, RISCV64.abi, RISCV64.argRegs]
+    · sig_reduce [Proof.MlKem.subContract, Proof.MlKem.accSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
         | trivial

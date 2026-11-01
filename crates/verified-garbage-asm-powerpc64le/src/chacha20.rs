@@ -3,71 +3,6 @@
 //! `assembly/chacha20.s`.
 #![allow(dead_code)]
 
-/// The ChaCha20 block function (RFC 8439 §2.3): writes the block function of the 16-word state `*state` (20 rounds, then the input state added word by word) to the first 16 words of `*buf`.
-///
-/// Contract: `VG.Spec.ChaCha20.blockContract`. Constant time: only the pointers may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads of 64 bytes.
-/// * `buf` must be valid for reads and writes of 256 bytes.
-/// * On return the first 64 bytes of `buf` hold the result and the rest is unspecified.
-/// * `buf` must not overlap `state` (distinct Rust objects never do).
-/// * Neither `state` nor `buf` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_block(state: *const [u32; 16], buf: *mut [u32; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "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""#,
-    )
-}
-
-/// XORs the first `len` bytes of the ChaCha20 keystream of the 16-word state `*state` (RFC 8439 §2.4: the block function of the state with its block counter, word 12, advanced by 0, 1, … modulo 2³²) into the `len` bytes at `data`.
-///
-/// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 64 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `buf` must be valid for reads and writes of 320 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `buf` on return are unspecified.
-/// * `state`, `data` and `buf` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `data` and `buf` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
-    core::arch::naked_asm!(
-        r#".base64 "AAHG+ggB5vqmAgh8EAEG+AAAxDoAAOU6AACGOAAANyg="
-beq %cr0, 20f
-22:
-bl {vg_chacha20_block}
-.base64 "gtHpegAAtzgAACko"
-beq %cr0, 23f
-.base64 "QACgOA=="
-b 24f
-23:
-24:
-.base64 "ULjlfgAA5DiC0al4AAApKA=="
-beq %cr0, 25f
-27:
-.base64 "AADW6AAAB+l4QsZ8AADW+AgA1joIAOc4+P+lOAAAJSg="
-bne %cr0, 27b
-b 26f
-25:
-28:
-.base64 "AADWiAAAB4l4QsZ8AADWmAEA1joBAOc4//+lOAAAJSg="
-bne %cr0, 28b
-26:
-.base64 "MAADgQEACDkwAAORAAA3KA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "EAEE6KYDCHwAAcTqCAHk6iAAgE4=""#,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
-    )
-}
-
 /// Starts a ChaCha20 keystream (RFC 8439 §2.4): makes the streaming state `*state` hold the 32-byte key `*key` and the whole keystream for the 16-byte nonce `*nonce`, the initial block counter `c` (4 bytes, little-endian) followed by the 12-byte RFC 8439 nonce: the blocks for the counters `c` to 2³² − 1, 64 × (2³² − `c`) bytes.
 ///
 /// Contract: `VG.Spec.ChaCha20.initContract`. The streaming state is opaque (`VG.Spec.ChaCha20.keyAt`, `VG.Spec.ChaCha20.restAt`). Constant time: only the pointers may affect timing, not the key or the nonce.
@@ -160,7 +95,15 @@ b 21f
 .base64 "AABgOA=="
 21:
 .base64 "IACATg==""#,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_block.rs"]
+pub(crate) mod vg_chacha20_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_xor.rs"]
+pub(crate) mod vg_chacha20_xor;

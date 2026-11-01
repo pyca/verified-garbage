@@ -20,7 +20,7 @@ theorem correct (s : State) (hs : decode12AArch64.pre s) :
     ∃ t s', Exec isa decode12 s t s' ∧ abiPreserved s s' ∧ decode12AArch64.post s s' :=
   Codec16.dec_correct s hs
 
-theorem decode12_verified : Verified AArch64.target decode12 (Spec.MlKem.decode12Contract AArch64.abi) :=
+theorem decode12_verified : Verified AArch64.target decode12 (Proof.MlKem.decode12Contract AArch64.abi) :=
   Codec16.dec_verified
 
 end VG.Proof.MlKem.AArch64.Decode12

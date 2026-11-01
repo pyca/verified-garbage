@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
 import VerifiedGarbage.Proof.MlKem.Bits
-import VerifiedGarbage.Spec.MlKem.Poly
+import VerifiedGarbage.Proof.MlKem.PolyContract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 

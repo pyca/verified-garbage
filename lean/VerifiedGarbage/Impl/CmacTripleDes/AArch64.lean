@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
 `vg_cmac_triple_des_init(key = x0, key_len = x1, out = x2, scratch = x3)`,
 `vg_cmac_triple_des_update(schedule = x0, state = x1, data = x2, n = x3, scratch = x4)`
 and `vg_cmac_triple_des_finalize(key = x0, state = x1, last = x2, last_len = x3, scratch = x4)`
-(see `VG.Spec.Cmac.tdesInitContract` and the others), as on x86-64
+(see `VG.Proof.Cmac.tdesInitContract` and the others), as on x86-64
 (`Impl/CmacTripleDes/X86_64.lean`). Each encrypts blocks with `block`
 (`AArch64/Round.lean`), inline: the block as a big-endian 64-bit integer in
 `x5`, the key schedule at `x14` and the scratch buffer at `x15`. They call

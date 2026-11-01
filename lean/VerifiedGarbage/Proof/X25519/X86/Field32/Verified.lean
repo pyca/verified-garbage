@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Field32Contract
 public import VerifiedGarbage.Proof.X25519.X86.Field32.Fn
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -21,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # `vg_gf25519_r32_pow250` on x86 (32-bit): its `Verified`
 
 Correctness under `powX86`, the facts of the shared contract of
-`Spec/X25519/Field32.lean` stated for x86 (`fnPre`: the working space, and
+`Proof/X25519/Field32Contract.lean` stated for x86 (`fnPre`: the working space, and
 the argument on the stack), from `pow250Fn_ok` (`valAt` reads what `fe`
 does, `valAt_eq`); constant time by taint tracking (every address is `ws`
 or `esp` plus a constant, and the only branches are on the counter: only the
@@ -49,11 +50,11 @@ def fnPre (s : State) : Prop :=
 def powX86 : Contract isa where
   pre s := fnPre s
   post s s' :=
-    Spec.X25519.Field32.valAt s'.mem (wsOf s) (BitVec.ofNat 32 Spec.X25519.Field32.oAt) % P =
-      Spec.X25519.Field32.valAt s.mem (wsOf s) (BitVec.ofNat 32 Spec.X25519.Field32.aAt) ^ (2 ^ 250 - 1) % P ∧
-    Spec.X25519.Field32.valAt s'.mem (wsOf s) (BitVec.ofNat 32 Spec.X25519.Field32.eAt) % P =
-      Spec.X25519.Field32.valAt s.mem (wsOf s) (BitVec.ofNat 32 Spec.X25519.Field32.aAt) ^ 11 % P ∧
-    Spec.X25519.Field32.Keeps₂ (wsOf s) s.mem s'.mem
+    Proof.X25519.Field32.valAt s'.mem (wsOf s) (BitVec.ofNat 32 Proof.X25519.Field32.oAt) % P =
+      Proof.X25519.Field32.valAt s.mem (wsOf s) (BitVec.ofNat 32 Proof.X25519.Field32.aAt) ^ (2 ^ 250 - 1) % P ∧
+    Proof.X25519.Field32.valAt s'.mem (wsOf s) (BitVec.ofNat 32 Proof.X25519.Field32.eAt) % P =
+      Proof.X25519.Field32.valAt s.mem (wsOf s) (BitVec.ofNat 32 Proof.X25519.Field32.aAt) ^ 11 % P ∧
+    Proof.X25519.Field32.Keeps₂ (wsOf s) s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0
 
 /-- The entry the contract's facts give. -/
@@ -74,8 +75,8 @@ theorem num_eq_val32 (m : Mem) {x : BitVec 32} {o : Nat} (hx : x.toNat + o + 32 
 
 /-- The value of an element, as `Spec` states it. -/
 theorem valAt_eq (m : Mem) {x : BitVec 32} {o : Nat} (ho : o < 2 ^ 32) (hx : x.toNat + o + 32 ≤ 2 ^ 32) :
-    Spec.X25519.Field32.valAt m (x.setWidth 64) (BitVec.ofNat 32 o) = fe m x o := by
-  rw [fe, num_eq_val32 m hx 8 (Nat.le_refl _), Spec.X25519.Field32.valAt, BitVec.toNat_ofNat,
+    Proof.X25519.Field32.valAt m (x.setWidth 64) (BitVec.ofNat 32 o) = fe m x o := by
+  rw [fe, num_eq_val32 m hx 8 (Nat.le_refl _), Proof.X25519.Field32.valAt, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt ho]
   show _ = Proof.Mont.val32 m _ _ (2 * 4)
   rw [← Proof.Mont.wordsVal_eq_val32, ← Proof.Mont.read_eq_wordsVal]
@@ -90,9 +91,9 @@ theorem val_of_F {m m' : Mem} {x : BitVec 32} {o a e : Nat} (h : F m' x o = pw (
 
 /-- `Keeps₂` from the function's frame. -/
 theorem keeps_of_frame {x : BitVec 32} (hfit : x.toNat + 4096 ≤ 2 ^ 32) {m m' : Mem}
-    (h : Frame (powW x) m m') : Spec.X25519.Field32.Keeps₂ (x.setWidth 64) m m' := by
+    (h : Frame (powW x) m m') : Proof.X25519.Field32.Keeps₂ (x.setWidth 64) m m' := by
   intro i hi hown
-  simp only [Spec.X25519.Field32.wsBytes, Spec.X25519.Field32.eAt, Spec.X25519.Field32.ownEnd] at hi hown
+  simp only [Proof.X25519.Field32.wsBytes, Proof.X25519.Field32.eAt, Proof.X25519.Field32.ownEnd] at hi hown
   refine h _ fun r hr hc => ?_
   rw [List.mem_singleton.mp hr, sub, addr_eq (by omega)] at hc
   exact Offset.disjoint (x.setWidth 64) (d := i) (n := 1) (e := 512) (k := 512) (by omega) (by omega)
@@ -102,8 +103,8 @@ theorem pow_correct (s : State) (hs : powX86.pre s) :
     ∃ t s', Exec isa pow250Fn s t s' ∧ abiPreserved s s' ∧ powX86.post s s' := by
   have he := entry_of_pre hs
   obtain ⟨t, s', ex, hk, hrd, hwr, hf, h1, h0⟩ := pow250Fn_ok he
-  replace h1 : F s'.mem (arg s 0) Spec.X25519.Field32.oAt = _ := h1
-  replace h0 : F s'.mem (arg s 0) Spec.X25519.Field32.eAt = _ := h0
+  replace h1 : F s'.mem (arg s 0) Proof.X25519.Field32.oAt = _ := h1
+  replace h0 : F s'.mem (arg s 0) Proof.X25519.Field32.eAt = _ := h0
   have hfit := he.fit
   have hret := hs.2.2.2.2.1
   refine ⟨t, s', ex, ⟨hk, ?_⟩, ?_, ?_, keeps_of_frame hfit hf⟩
@@ -112,13 +113,15 @@ theorem pow_correct (s : State) (hs : powX86.pre s) :
     show Region.Sub _ (scR 4096 (arg s 0))
     rw [scR_eq]
     exact sub_sub hfit (Nat.zero_le _) (by decide) (by decide)
-  · rw [valAt_eq _ (by decide) (by simp only [Spec.X25519.Field32.oAt]; omega),
-      valAt_eq _ (by decide) (by simp only [Spec.X25519.Field32.aAt]; omega)]
+  · rw [valAt_eq _ (by decide) (by simp only [Proof.X25519.Field32.oAt]; omega),
+      valAt_eq _ (by decide) (by simp only [Proof.X25519.Field32.aAt]; omega)]
     have hh := val_of_F h1
+    rw [show Proof.X25519.Field32.aAt = Impl.X25519.X86.Field32.aAt from rfl]
     exact hh
-  · rw [valAt_eq _ (by decide) (by simp only [Spec.X25519.Field32.eAt]; omega),
-      valAt_eq _ (by decide) (by simp only [Spec.X25519.Field32.aAt]; omega)]
+  · rw [valAt_eq _ (by decide) (by simp only [Proof.X25519.Field32.eAt]; omega),
+      valAt_eq _ (by decide) (by simp only [Proof.X25519.Field32.aAt]; omega)]
     have hh := val_of_F h0
+    rw [show Proof.X25519.Field32.aAt = Impl.X25519.X86.Field32.aAt from rfl]
     exact hh
 
 /-! ## Constant time -/
@@ -179,20 +182,20 @@ def fnSat : State where
   rd := [⟨0x8004, 4⟩]
   wr := [⟨0x1000, 4096⟩]
 
-theorem powX86_implies : powX86.Implies (Spec.X25519.Field32.pow250Contract X86.abi) := by
+theorem powX86_implies : powX86.Implies (Proof.X25519.Field32.pow250Contract X86.abi) := by
   have a0 : arg fnSat 0 = 0x1000 := by decide
   have e : argAddr fnSat 0 = 0x8004 := by decide
   have esp : fnSat.gpr .esp = 0x8000 := rfl
   exact
-    { pre := by sig_implies_pre [Spec.X25519.Field32.pow250Contract, Spec.X25519.Field32.pow250Sig, powX86,
+    { pre := by sig_implies_pre [Proof.X25519.Field32.pow250Contract, Proof.X25519.Field32.pow250Sig, powX86,
         fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      post := by sig_implies_post [Spec.X25519.Field32.pow250Contract, Spec.X25519.Field32.pow250Sig, powX86,
+      post := by sig_implies_post [Proof.X25519.Field32.pow250Contract, Proof.X25519.Field32.pow250Sig, powX86,
         fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      pub := by sig_implies_pub [Spec.X25519.Field32.pow250Contract, Spec.X25519.Field32.pow250Sig, powX86,
+      pub := by sig_implies_pub [Proof.X25519.Field32.pow250Contract, Proof.X25519.Field32.pow250Sig, powX86,
         fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       sat := by
         refine ⟨fnSat, ?_⟩
-        sig_pre [Spec.X25519.Field32.pow250Contract, Spec.X25519.Field32.pow250Sig, powX86, fnPre, wsOf,
+        sig_pre [Proof.X25519.Field32.pow250Contract, Proof.X25519.Field32.pow250Sig, powX86, fnPre, wsOf,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
         sig_and_intros
         all_goals first
@@ -203,7 +206,7 @@ theorem powX86_implies : powX86.Implies (Spec.X25519.Field32.pow250Contract X86.
              simp only [Region.Contains, a0, e, esp] at h₁ h₂
              bv_omega) }
 
-theorem pow250Fn_verified : Verified X86.target pow250Fn (Spec.X25519.Field32.pow250Contract X86.abi) :=
+theorem pow250Fn_verified : Verified X86.target pow250Fn (Proof.X25519.Field32.pow250Contract X86.abi) :=
   Verified.of_correct pow_correct pow250Fn_ct powX86_implies
 
 end VG.Proof.X25519.X86.Field32

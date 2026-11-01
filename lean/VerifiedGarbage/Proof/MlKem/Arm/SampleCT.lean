@@ -237,8 +237,8 @@ end
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.sampleNTTContract Arm.abi 8).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of {s : State} (h : (Proof.MlKem.sampleNTTContract Arm.abi 8).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h0, -, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
   exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
@@ -253,8 +253,8 @@ theorem polyAt_toPoly {m : Mem} {p : Addr} {L : List Zq} (hl : L.length = n)
 theorem post_of {s₀ s : State}
     (h0 : s.gpr .r0 = (if (Ls s₀ 280).length = 256 then 1 else 0))
     (hc : ∀ k < (Ls s₀ 280).length, coeffAt s.mem (A s₀) k = BitVec.ofNat 32 ((Ls s₀ 280).getD k 0).val) :
-    (Spec.MlKem.sampleNTTContract Arm.abi 8).post s₀ s := by
-  sig_post [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    (Proof.MlKem.sampleNTTContract Arm.abi 8).post s₀ s := by
+  sig_post [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   rw [setWidth_append32, h0]
   by_cases hl : (Ls s₀ 280).length = 256
@@ -281,21 +281,21 @@ def satState : State where
   rd := [⟨0x1000, 34⟩]
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
-theorem verified : Verified Arm.target Impl.MlKem.Arm.sampleNTT (Spec.MlKem.sampleNTTContract Arm.abi 8) := by
+theorem verified : Verified Arm.target Impl.MlKem.Arm.sampleNTT (Proof.MlKem.sampleNTTContract Arm.abi 8) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, hpres, hsp, h0, hc⟩ := correct hp
     exact ⟨t, s', he, ⟨hpres, hsp⟩, post_of h0 hc⟩
   · have hp₁ := pre_of h₁
     have hp₂ := pre_of h₂
-    sig_pub [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_pub [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at hpub
     obtain ⟨hsp, hb, h0, h1, h2⟩ := hpub
     have two : Two s₁ s₂ := ⟨hp₁, hp₂, hsp, h0, h1, h2,
       (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hb⟩
     exact (all_ct two s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   · refine ⟨satState, ?_⟩
-    sig_sat_check [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, Arm.abi, Arm.argRegs,
+    sig_sat_check [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
 
 end VG.Proof.MlKem.Arm.Sample

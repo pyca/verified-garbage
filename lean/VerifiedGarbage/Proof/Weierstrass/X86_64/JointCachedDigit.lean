@@ -22,6 +22,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 public import VerifiedGarbage.Impl.Mont.Mod
 public import VerifiedGarbage.Impl.Weierstrass.Slots
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac

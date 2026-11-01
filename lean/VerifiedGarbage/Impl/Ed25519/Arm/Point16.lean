@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Field
-public import VerifiedGarbage.Spec.Ed25519.Point16
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519's point addition and doubling on ARMv7, as functions
 
 `vg_ed25519_r16_point_add(ws)` and `vg_ed25519_r16_point_double(ws)`
-(`Spec/Ed25519/Point16.lean`; AAPCS: `ws` in `r0`) run the field code of the
+(`Proof/Ed25519/Point16Contract.lean`; AAPCS: `ws` in `r0`) run the field code of the
 inlined formulas (`pointAdd`, `pointDouble`) on the points where the callers
 keep them, between saving the callee-saved registers that code changes
 (`r4`–`r9`) at `SAVE` and restoring them (`asFn`), so that they need no
@@ -44,10 +44,10 @@ def addFn : Prog isa := asFn false pointAdd
 def doubleFn : Prog isa := asFn false pointDouble
 
 /-- A call of `vg_ed25519_r16_point_add`. -/
-def addCall : Prog isa := .call Spec.Ed25519.Point16.addApi.name addFn
+def addCall : Prog isa := .call "vg_ed25519_r16_point_add" addFn
 
 /-- A call of `vg_ed25519_r16_point_double`. -/
-def doubleCall : Prog isa := .call Spec.Ed25519.Point16.doubleApi.name doubleFn
+def doubleCall : Prog isa := .call "vg_ed25519_r16_point_double" doubleFn
 
 end Point16
 

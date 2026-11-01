@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.InvFI
 import VerifiedGarbage.Proof.MlKem.AArch64.NttR.AbiFI
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Spec.MlKem.Ntt16
+public import VerifiedGarbage.Proof.MlKem.Ntt16Contract
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Mem
@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.InvFI
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.AbiFI
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Spec.MlKem.Ntt16
+meta import VerifiedGarbage.Proof.MlKem.Ntt16Contract
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import Init.Data.List.BasicAux
 meta import Init.Data.List.BasicAux
@@ -27,6 +27,8 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.TCB.Artifact
 meta import VerifiedGarbage.TCB.Artifact
+public import Init.Data.List.BasicAux
+meta import Init.Data.List.BasicAux
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.FastInv
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.FastInv
 public import VerifiedGarbage.TCB.AArch64.Target

@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.MlKem.PolyW

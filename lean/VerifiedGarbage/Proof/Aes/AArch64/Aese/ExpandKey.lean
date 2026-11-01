@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Aes.Contract
+meta import VerifiedGarbage.Proof.Aes.Contract
 public import VerifiedGarbage.Proof.Aes.KeyWords -- shake: keep (exports the existing word-value proof interface)
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -363,9 +365,9 @@ theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyAArch64.pre
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem expandKey_verified :
-    Verified AArch64.target expandKey (Spec.Aes.expandKeyScratchContract AArch64.abi) :=
+    Verified AArch64.target expandKey (Proof.Aes.expandKeyScratchContract AArch64.abi) :=
   Verified.of_correct expandKey_correct expandKey_ct (by
-    sig_implies [Spec.Aes.expandKeyScratchContract, Spec.Aes.expandKeyScratchSig, Proof.Aes.expandKeyAArch64,
+    sig_implies [Proof.Aes.expandKeyScratchContract, Proof.Aes.expandKeyScratchSig, Proof.Aes.expandKeyAArch64,
       AArch64.abi, AArch64.argRegs] [Proof.Aes.AArch64.ekSatState] using
       Proof.Aes.AArch64.ekSatState)
 

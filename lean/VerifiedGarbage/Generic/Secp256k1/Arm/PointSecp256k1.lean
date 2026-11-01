@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointSecp256k1
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointSecp256k1Umaal
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
 public import VerifiedGarbage.Proof.Framework.AddrArith

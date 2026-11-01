@@ -18,10 +18,6 @@ namespace VG.Artifacts.Sm4Gcm.RISCV64
 open VG.Proof.Sm4Gcm.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Sm4.ctr32Api.artifact RISCV64.target {
-    code := Impl.Sm4.RISCV64.ctr32
-    stack := 3232
-    verified := Proof.Sm4.RISCV64.Modes.ctr32_verified },
   Spec.Sm4.Gcm.initApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a2 Impl.Sm4Gcm.RISCV64.init
     stack := 5792

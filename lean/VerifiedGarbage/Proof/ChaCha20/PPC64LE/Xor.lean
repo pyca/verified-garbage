@@ -11,6 +11,8 @@ meta import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.ChaCha20.Contract
+public import VerifiedGarbage.Proof.ChaCha20.Contract
+meta import VerifiedGarbage.Proof.ChaCha20.Contract
 meta import VerifiedGarbage.Spec.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
@@ -994,9 +996,9 @@ theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorPPC64LE.pre Proof.ChaCha20.x
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
 
 theorem xor_verified :
-    Verified PPC64LE.target Impl.ChaCha20.PPC64LE.Xor.xor (Spec.ChaCha20.xorContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.ChaCha20.PPC64LE.Xor.xor (Proof.ChaCha20.xorContract PPC64LE.abi) :=
   Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, PPC64LE.abi, PPC64LE.argRegs,
+    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, PPC64LE.abi, PPC64LE.argRegs,
       Proof.ChaCha20.xorPPC64LE]
       [sat] using sat)
 

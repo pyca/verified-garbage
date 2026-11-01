@@ -25,7 +25,7 @@ open VG.Impl.MlDsa.X86_64.Sample.Rej5 (flags fallback finish)
 structure Done (σ s : State) : Prop where
   env : EnvK σ s
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ 4)
-  st : ∀ k < 4, Stored s.mem (Spec.MlKem.poly4 (aP σ) k) (Lt σ k 336)
+  st : ∀ k < 4, Stored s.mem (Proof.MlKem.poly4 (aP σ) k) (Lt σ k 336)
 
 theorem Batch.restore {σ s s' : State} {n off count K : Nat} (h : Batch σ n off count K s)
     (hm : s'.mem = s.mem) (hk : Keep [.rax, .r14] s s') (hr : s'.gpr .r14 = 1) : Batch σ n off count K s' :=

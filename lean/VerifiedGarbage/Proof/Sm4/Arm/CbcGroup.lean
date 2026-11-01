@@ -4,11 +4,12 @@ public import VerifiedGarbage.Proof.Sm4.Arm.CbcFill
 public import VerifiedGarbage.Spec.Sm4.Cbc
 import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
 import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
-import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # One batch of CBC decryption -/
 
@@ -19,7 +20,7 @@ open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchXor VG.Proof.Sm4.Arm.BatchChain
 open VG.Proof.Sm4.Arm.BatchGroup (blockAt_of_ecb table_frame count_wp difference_zero)
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 def regions (B I D : BitVec 32) (g : Nat) : List Region :=
   [⟨State.addr B, 4 * slots⟩, ⟨counterAddr B, 16⟩, ⟨State.addr I, 16⟩, ⟨State.addr D, 16 * g⟩]

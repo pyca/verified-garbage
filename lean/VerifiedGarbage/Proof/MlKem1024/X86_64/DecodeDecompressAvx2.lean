@@ -36,6 +36,7 @@ namespace VG.Proof.MlKem1024.X86_64.DDW
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem1024.X86_64
 open VG.Proof.MlKem VG.Proof.MlKem.X86_64
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.Sha3.X86_64 (WP.cons)
 open VG.Proof.MlKem.X86_64.S4 (LUpd wp_vbin wp_vvar wp_vbcast128 wp_vst256 GUpd wp_addi' itT itF ext_app2
@@ -587,7 +588,7 @@ theorem decodeDecompress1024Y_ct :
 
 /-- `vg_mlkem1024_decode_decompress_avx2`, for the calls of the top-level functions. -/
 theorem ddImpl1024Y : DDImpl "vg_mlkem1024_decode_decompress_avx2" decodeDecompress1024Avx2
-    Spec.MlKem1024.compressWidths :=
+    Proof.MlKem1024.compressWidths :=
   ⟨fun _ hd => by rcases widths1024 hd with rfl | rfl <;> decide, DDW.correct, decodeDecompress1024Y_ct,
     nosp_of (by decide +kernel), by decide +kernel⟩
 

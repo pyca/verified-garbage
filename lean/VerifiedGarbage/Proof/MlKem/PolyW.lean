@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # ML-KEM: polynomials of `w`-bit words in memory, for every target
 
-The stored representation of `Spec/MlKem/Kpke16.lean` (`coeffAtW`,
+The stored representation of `Proof/MlKem/Kpke16Contract.lean` (`coeffAtW`,
 `polyAtW`, `ReducedW`, `PolyIsW`): a coefficient of a reduced polynomial is
 its stored word, and a polynomial of `u16`s is unchanged by writes outside
 its 512 bytes.

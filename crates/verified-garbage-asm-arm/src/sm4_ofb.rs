@@ -2509,6 +2509,6 @@ str r2, [r12, #1504]
 str r2, [r12, #1508]
 add sp, sp, #1520
 bx lr",
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
     )
 }

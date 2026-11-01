@@ -3,133 +3,6 @@
 //! `assembly/mlkem1024.s`.
 #![allow(dead_code)]
 
-/// `ByteEncode_d(Compress_d(f))` (FIPS 203 (4.7) and Algorithm 5) for the widths of ML-KEM-1024: writes the 256 coefficients of `*f` (each less than `q` = 3329), compressed to `d` bits, to `out` as `d`-bit little-endian fields.
-///
-/// Contract: `VG.Spec.MlKem1024.compressEncodeContract`. Constant time: only the pointers, `d` and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `f` must be valid for reads of 1024 bytes.
-/// * `out` must be valid for reads and writes of `len` bytes.
-/// * `d` must be 5 or 11, and `len` must be `32 * d`.
-/// * Each of the 256 `u32`s of `f` must be less than 3329.
-/// * `out` must not overlap `f` (distinct Rust objects never do).
-/// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem1024_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd1028069
-cbz x9, 20f
-.inst 0xd29d7dc9,0xf2a00089,0xf2c00009,0xf2e00009,0x4e040d30,0xd29fe009,0xf2a00069,0xf2c00009
-.inst 0xf2e00009,0x4e040d31,0xd280ffe9,0xf2a00009,0xf2c00009,0xf2e00009,0x4e040d32,0xd2802009
-.inst 0xf2a06049,0xf2c0a089,0xf2e0e0c9,0x4e080d34,0xd2812109,0xf2a20149,0xf2c24229,0xf2e28269
-.inst 0x4e181d34,0xd282c2a9,0xf2a302e9,0xf2c34329,0xf2e42409,0x4e080d35,0xd2846449,0xf2a4a489
-.inst 0xf2c4e4c9,0xf2e52509,0x4e181d35,0xd2860549,0xf2a64629,0xf2c68669,0xf2e6c6a9,0x4e080d36
-.inst 0xd28706e9,0xf2a74729,0xf2dfffe9,0xf2ffffe9,0x4e181d36,0xd280010b,0xf2a0000b,0xf2c0000b
-.inst 0xf2e0000b
-22:
-.inst 0x3dc00000,0x3dc00401,0x3dc00802,0x3dc00c03,0x3dc01004,0x3dc01405,0x3dc01806,0x3dc01c07
-.inst 0x4eb09c00,0x4eb18400,0x6f2d0400,0x4e321c00,0x4eb09c21,0x4eb18421,0x6f2d0421,0x4e321c21
-.inst 0x4eb09c42,0x4eb18442,0x6f2d0442,0x4e321c42,0x4eb09c63,0x4eb18463,0x6f2d0463,0x4e321c63
-.inst 0x4eb09c84,0x4eb18484,0x6f2d0484,0x4e321c84,0x4eb09ca5,0x4eb184a5,0x6f2d04a5,0x4e321ca5
-.inst 0x4eb09cc6,0x4eb184c6,0x6f2d04c6,0x4e321cc6,0x4eb09ce7,0x4eb184e7,0x6f2d04e7,0x4e321ce7
-.inst 0x4e815813,0x4e811800,0x4f2b5673,0x4eb31c00,0x4e835853,0x4e831841,0x4f2b5673,0x4eb31c21
-.inst 0x4e855893,0x4e851882,0x4f2b5673,0x4eb31c42,0x4e8758d3,0x4e8718c3,0x4f2b5673,0x4eb31c63
-.inst 0x6f600413,0x6f565660,0x6f600433,0x6f565661,0x6f600453,0x6f565662,0x6f600473,0x6f565663
-.inst 0x6f6c0417,0x4f6c5413,0x6e134273,0x4eb31c00,0x6e1846e0,0x6f6c0437,0x4f6c5433,0x6e134273
-.inst 0x4eb31c21,0x6e1846e1,0x6f6c0457,0x4f6c5453,0x6e134273,0x4eb31c42,0x6e1846e2,0x6f6c0477
-.inst 0x4f6c5473,0x6e134273,0x4eb31c63,0x6e1846e3,0x4e146004,0x4e156005,0x4e166006,0x3d800044
-.inst 0x3d800445,0x4e083cc9,0xf9001049,0x0e143cc9,0xb9002849,0x91020000,0x9100b042,0xd100056b
-cbnz x11, 22b
-b 21f
-20:
-.inst 0xd2827609,0xf2a00009,0xf2c00009,0xf2e00009,0x4e040d30,0xd29fe009,0xf2a00069,0xf2c00009
-.inst 0xf2e00009,0x4e040d31,0xd28003e9,0xf2a00009,0xf2c00009,0xf2e00009,0x4e040d32,0xd2802009
-.inst 0xf2a06049,0xf2c10089,0xf2e14129,0x4e080d34,0xd2818169,0xf2a22209,0xf2c26249,0xf2e30289
-.inst 0x4e181d34,0xd2834329,0xf2a38369,0xf2dfffe9,0xf2ffffe9,0x4e080d35,0xd29fffe9,0xf2bfffe9
-.inst 0xf2dfffe9,0xf2ffffe9,0x4e181d35,0xd280010b,0xf2a0000b,0xf2c0000b,0xf2e0000b
-23:
-.inst 0x3dc00000,0x3dc00401,0x3dc00802,0x3dc00c03,0x3dc01004,0x3dc01405,0x3dc01806,0x3dc01c07
-.inst 0x4eb09c00,0x4eb18400,0x6f2d0400,0x4e321c00,0x4eb09c21,0x4eb18421,0x6f2d0421,0x4e321c21
-.inst 0x4eb09c42,0x4eb18442,0x6f2d0442,0x4e321c42,0x4eb09c63,0x4eb18463,0x6f2d0463,0x4e321c63
-.inst 0x4eb09c84,0x4eb18484,0x6f2d0484,0x4e321c84,0x4eb09ca5,0x4eb184a5,0x6f2d04a5,0x4e321ca5
-.inst 0x4eb09cc6,0x4eb184c6,0x6f2d04c6,0x4e321cc6,0x4eb09ce7,0x4eb184e7,0x6f2d04e7,0x4e321ce7
-.inst 0x4e815813,0x4e811800,0x4f255673,0x4eb31c00,0x4e835853,0x4e831841,0x4f255673,0x4eb31c21
-.inst 0x4e855893,0x4e851882,0x4f255673,0x4eb31c42,0x4e8758d3,0x4e8718c3,0x4f255673,0x4eb31c63
-.inst 0x4e815813,0x4e811804,0x4f2a5673,0x4eb31c84,0x4e835853,0x4e831845,0x4f2a5673,0x4eb31ca5
-.inst 0x6f600493,0x6f545664,0x6f6004b3,0x6f545665,0x4e142086,0x4e152087,0x3d800046,0x0e043ce9
-.inst 0xb9001049,0x91020000,0x91005042,0xd100056b
-cbnz x11, 23b
-21:
-.inst 0xd65f03c0
-.p2align 6",
-    )
-}
-
-/// `Decompress_d(ByteDecode_d(b))` (FIPS 203 Algorithm 6 and (4.8)) for the widths of ML-KEM-1024: writes the 256 `d`-bit little-endian fields of the `len` bytes at `b`, decompressed, to `*f` (each less than `q` = 3329).
-///
-/// Contract: `VG.Spec.MlKem1024.decodeDecompressContract`. Constant time: only the pointers, `d` and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `b` must be valid for reads of `len` bytes.
-/// * `f` must be valid for reads and writes of 1024 bytes.
-/// * `d` must be 5 or 11, and `len` must be `32 * d`.
-/// * `f` must not overlap `b` (distinct Rust objects never do).
-/// * Neither `b` nor `f` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem1024_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
-    core::arch::naked_asm!(
-        r".inst 0xd1028029
-cbz x9, 20f
-.inst 0xd281a029,0xf2a00009,0xf2c00009,0xf2e00009,0x4e040d30,0xd2808009,0xf2a00009,0xf2c00009
-.inst 0xf2e00009,0x4e040d31,0xd29fffe9,0xf2a007e9,0xf2c00009,0xf2e00009,0x4e040d32,0xd280ffe9
-.inst 0xf2a00009,0xf2c00009,0xf2e00009,0x4e040d33,0xd2802009,0xf2a06049,0xf2c0a089,0xf2e0e0c9
-.inst 0x4e080d34,0xd2812109,0xf2bfe149,0xf2dfffe9,0xf2ffffe9,0x4e181d34,0xd2818169,0xf2a1c1a9
-.inst 0xf2c201e9,0xf2e24229,0x4e080d35,0xd2828269,0xf2bfe2a9,0xf2dfffe9,0xf2ffffe9,0x4e181d35
-.inst 0xd282e2c9,0xf2a32309,0xf2c36349,0xf2e3a389,0x4e080d36,0xd283e3c9,0xf2bfe409,0xf2dfffe9
-.inst 0xf2ffffe9,0x4e181d36,0xd2844429,0xf2a48469,0xf2c4c4a9,0xf2e504e9,0x4e080d37,0xd2854529
-.inst 0xf2bfe569,0xf2dfffe9,0xf2ffffe9,0x4e181d37,0xd280010b,0xf2a0000b,0xf2c0000b,0xf2e0000b
-22:
-.inst 0x3dc00004,0x3dc00405,0xf9401009,0x4e081d26,0xb9402809,0x4e141d26,0x4e144087,0x6f5404e1
-.inst 0x4f5454e2,0x6e024042,0x4ea21c21,0x4ec138e7,0x6f6a04e1,0x4e8128e7,0x4e321ce7,0x6f3504e1
-.inst 0x4e331ce7,0x4e8138e2,0x4e8178e3,0x4eb09c42,0x4eb18442,0x6f350442,0x4eb09c63,0x4eb18463
-.inst 0x6f350463,0x3d800062,0x3d800463,0x4e154087,0x6f5404e1,0x4f5454e2,0x6e024042,0x4ea21c21
-.inst 0x4ec138e7,0x6f6a04e1,0x4e8128e7,0x4e321ce7,0x6f3504e1,0x4e331ce7,0x4e8138e2,0x4e8178e3
-.inst 0x4eb09c42,0x4eb18442,0x6f350442,0x4eb09c63,0x4eb18463,0x6f350463,0x3d800862,0x3d800c63
-.inst 0x4e164087,0x6f5404e1,0x4f5454e2,0x6e024042,0x4ea21c21,0x4ec138e7,0x6f6a04e1,0x4e8128e7
-.inst 0x4e321ce7,0x6f3504e1,0x4e331ce7,0x4e8138e2,0x4e8178e3,0x4eb09c42,0x4eb18442,0x6f350442
-.inst 0x4eb09c63,0x4eb18463,0x6f350463,0x3d801062,0x3d801463,0x4e174087,0x6f5404e1,0x4f5454e2
-.inst 0x6e024042,0x4ea21c21,0x4ec138e7,0x6f6a04e1,0x4e8128e7,0x4e321ce7,0x6f3504e1,0x4e331ce7
-.inst 0x4e8138e2,0x4e8178e3,0x4eb09c42,0x4eb18442,0x6f350442,0x4eb09c63,0x4eb18463,0x6f350463
-.inst 0x3d801862,0x3d801c63,0x9100b000,0x91020063,0xd100056b
-cbnz x11, 22b
-b 21f
-20:
-.inst 0xd281a029,0xf2a00009,0xf2c00009,0xf2e00009,0x4e040d30,0xd2800209,0xf2a00009,0xf2c00009
-.inst 0xf2e00009,0x4e040d31,0xd29fffe9,0xf2a001e9,0xf2c00009,0xf2e00009,0x4e040d32,0xd2807fe9
-.inst 0xf2a00009,0xf2c00009,0xf2e00009,0x4e040d33,0xd2802009,0xf2a06049,0xf2dfe089,0xf2ffffe9
-.inst 0x4e080d34,0xd280c0a9,0xf2a100e9,0xf2dfe129,0xf2ffffe9,0x4e181d34,0xd2816149,0xf2a1a189
-.inst 0xf2dfe1c9,0xf2ffffe9,0x4e080d35,0xd28201e9,0xf2a24229,0xf2dfe269,0xf2ffffe9,0x4e181d35
-.inst 0xd28003e9,0xf2a00009,0xf2c00009,0xf2e00009,0x4e040d36,0xd280010b,0xf2a0000b,0xf2c0000b
-.inst 0xf2e0000b
-23:
-.inst 0x3dc00004,0xb9401009,0x4e041d25,0x4e142086,0x4e152087,0x6f6c04c1,0x4e8128c6,0x4e321cc6
-.inst 0x6f3604c1,0x4e331cc6,0x4e8138c2,0x4e8178c3,0x6f3b0441,0x4e361c42,0x4e813840,0x4e817842
-.inst 0x4eb09c00,0x4eb18400,0x6f3b0400,0x4eb09c42,0x4eb18442,0x6f3b0442,0x3d800060,0x3d800462
-.inst 0x6f3b0461,0x4e361c63,0x4e813860,0x4e817863,0x4eb09c00,0x4eb18400,0x6f3b0400,0x4eb09c63
-.inst 0x4eb18463,0x6f3b0463,0x3d800860,0x3d800c63,0x6f6c04e1,0x4e8128e7,0x4e321ce7,0x6f3604e1
-.inst 0x4e331ce7,0x4e8138e2,0x4e8178e3,0x6f3b0441,0x4e361c42,0x4e813840,0x4e817842,0x4eb09c00
-.inst 0x4eb18400,0x6f3b0400,0x4eb09c42,0x4eb18442,0x6f3b0442,0x3d801060,0x3d801462,0x6f3b0461
-.inst 0x4e361c63,0x4e813860,0x4e817863,0x4eb09c00,0x4eb18400,0x6f3b0400,0x4eb09c63,0x4eb18463
-.inst 0x6f3b0463,0x3d801860,0x3d801c63,0x91005000,0x91020063,0xd100056b
-cbnz x11, 23b
-21:
-.inst 0xd65f03c0
-.p2align 6",
-    )
-}
-
 /// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
 ///
 /// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
@@ -449,12 +322,12 @@ bl {vg_keccak_squeeze_scratch}
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
-        vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
-        vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
-        vg_mlkem_encode12 = sym super::mlkem::vg_mlkem_encode12,
-        vg_mlkem_multiply_ntts = sym super::mlkem::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_encode12 = sym super::mlkem1024::vg_mlkem_encode12::vg_mlkem_encode12,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
     )
 }
 
@@ -784,15 +657,15 @@ bl {vg_mlkem1024_compress_encode}
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
-        vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
-        vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
-        vg_mlkem_multiply_ntts = sym super::mlkem::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
-        vg_mlkem_inv_ntt = sym super::mlkem::vg_mlkem_inv_ntt,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
-        vg_mlkem_decode12 = sym super::mlkem::vg_mlkem_decode12,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
+        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
     )
 }
 
@@ -1172,21 +1045,21 @@ cbnz x2, 20b
 .inst 0xf9420b8d,0xca0d018c,0x8a0a018c,0xca0d018c,0xf9000f6c,0x91000300,0xf97b5f98,0xf97b639e
 .inst 0xf97b6799,0xf97b6b9a,0xf97b6f9b,0xf97b739c,0xd65f03c0
 .p2align 6",
-        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress,
-        vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
-        vg_mlkem_decode12 = sym super::mlkem::vg_mlkem_decode12,
-        vg_mlkem_multiply_ntts = sym super::mlkem::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
-        vg_mlkem_inv_ntt = sym super::mlkem::vg_mlkem_inv_ntt,
-        vg_mlkem_sub = sym super::mlkem::vg_mlkem_sub,
-        vg_mlkem_compress_encode = sym super::mlkem::vg_mlkem_compress_encode,
+        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress::vg_mlkem1024_decode_decompress,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
+        vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
+        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
-        vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
     )
 }
 
@@ -3651,8 +3524,8 @@ bl {vg_keccak_f1600}
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
         vg_keccak_f1600_x3_sha3 = sym super::mlkem1024::vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3,
         vg_keccak_f1600_x2_sha3 = sym super::mldsa44::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
-        vg_mlkem16_cbd2 = sym super::mlkem16::vg_mlkem16_cbd2,
-        vg_mlkem16_ntt = sym super::mlkem16::vg_mlkem16_ntt,
+        vg_mlkem16_cbd2 = sym super::mlkem1024::vg_mlkem16_cbd2::vg_mlkem16_cbd2,
+        vg_mlkem16_ntt = sym super::mlkem1024::vg_mlkem16_ntt::vg_mlkem16_ntt,
         VG_MLKEM_REJ_SHUFFLE = sym super::consts::VG_MLKEM_REJ_SHUFFLE,
         VG_MLKEM_GAMMA = sym super::consts::VG_MLKEM_GAMMA,
     )
@@ -6133,12 +6006,12 @@ bl {vg_mlkem1024_compress_encode}
         vg_keccak_f1600_x3_sha3 = sym super::mlkem1024::vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3,
         vg_keccak_f1600_x2_sha3 = sym super::mldsa44::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-        vg_mlkem16_cbd2 = sym super::mlkem16::vg_mlkem16_cbd2,
-        vg_mlkem16_ntt = sym super::mlkem16::vg_mlkem16_ntt,
-        vg_mlkem16_inv_ntt = sym super::mlkem16::vg_mlkem16_inv_ntt,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
+        vg_mlkem16_cbd2 = sym super::mlkem1024::vg_mlkem16_cbd2::vg_mlkem16_cbd2,
+        vg_mlkem16_ntt = sym super::mlkem1024::vg_mlkem16_ntt::vg_mlkem16_ntt,
+        vg_mlkem16_inv_ntt = sym super::mlkem1024::vg_mlkem16_inv_ntt::vg_mlkem16_inv_ntt,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
         VG_MLKEM_REJ_SHUFFLE = sym super::consts::VG_MLKEM_REJ_SHUFFLE,
         VG_MLKEM_GAMMA = sym super::consts::VG_MLKEM_GAMMA,
     )
@@ -8770,18 +8643,18 @@ cbnz x2, 2502b
 .inst 0xf97b6799,0xf97b6b9a,0xf97b6f9b,0xf97b739c,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress,
-        vg_mlkem16_ntt = sym super::mlkem16::vg_mlkem16_ntt,
-        vg_mlkem16_inv_ntt = sym super::mlkem16::vg_mlkem16_inv_ntt,
-        vg_mlkem_sub = sym super::mlkem::vg_mlkem_sub,
-        vg_mlkem_compress_encode = sym super::mlkem::vg_mlkem_compress_encode,
+        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress::vg_mlkem1024_decode_decompress,
+        vg_mlkem16_ntt = sym super::mlkem1024::vg_mlkem16_ntt::vg_mlkem16_ntt,
+        vg_mlkem16_inv_ntt = sym super::mlkem1024::vg_mlkem16_inv_ntt::vg_mlkem16_inv_ntt,
+        vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
+        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
         vg_keccak_f1600_x3_sha3 = sym super::mlkem1024::vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3,
         vg_keccak_f1600_x2_sha3 = sym super::mldsa44::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
-        vg_mlkem16_cbd2 = sym super::mlkem16::vg_mlkem16_cbd2,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
+        vg_mlkem16_cbd2 = sym super::mlkem1024::vg_mlkem16_cbd2::vg_mlkem16_cbd2,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
         VG_MLKEM_GAMMA = sym super::consts::VG_MLKEM_GAMMA,
         VG_MLKEM_REJ_SHUFFLE = sym super::consts::VG_MLKEM_REJ_SHUFFLE,
     )
@@ -11248,8 +11121,8 @@ bl {vg_keccak_f1600_sha3}
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
         vg_keccak_f1600_x3_sha3 = sym super::mlkem1024::vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3,
         vg_keccak_f1600_x2_sha3 = sym super::mldsa44::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
-        vg_mlkem16_cbd2 = sym super::mlkem16::vg_mlkem16_cbd2,
-        vg_mlkem16_ntt = sym super::mlkem16::vg_mlkem16_ntt,
+        vg_mlkem16_cbd2 = sym super::mlkem1024::vg_mlkem16_cbd2::vg_mlkem16_cbd2,
+        vg_mlkem16_ntt = sym super::mlkem1024::vg_mlkem16_ntt::vg_mlkem16_ntt,
         VG_MLKEM_REJ_SHUFFLE = sym super::consts::VG_MLKEM_REJ_SHUFFLE,
         VG_MLKEM_GAMMA = sym super::consts::VG_MLKEM_GAMMA,
     )
@@ -13730,12 +13603,12 @@ bl {vg_mlkem1024_compress_encode}
         vg_keccak_f1600_x3_sha3 = sym super::mlkem1024::vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3,
         vg_keccak_f1600_x2_sha3 = sym super::mldsa44::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
-        vg_mlkem16_cbd2 = sym super::mlkem16::vg_mlkem16_cbd2,
-        vg_mlkem16_ntt = sym super::mlkem16::vg_mlkem16_ntt,
-        vg_mlkem16_inv_ntt = sym super::mlkem16::vg_mlkem16_inv_ntt,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
+        vg_mlkem16_cbd2 = sym super::mlkem1024::vg_mlkem16_cbd2::vg_mlkem16_cbd2,
+        vg_mlkem16_ntt = sym super::mlkem1024::vg_mlkem16_ntt::vg_mlkem16_ntt,
+        vg_mlkem16_inv_ntt = sym super::mlkem1024::vg_mlkem16_inv_ntt::vg_mlkem16_inv_ntt,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
         VG_MLKEM_REJ_SHUFFLE = sym super::consts::VG_MLKEM_REJ_SHUFFLE,
         VG_MLKEM_GAMMA = sym super::consts::VG_MLKEM_GAMMA,
     )
@@ -16367,18 +16240,18 @@ cbnz x2, 2502b
 .inst 0xf97b6799,0xf97b6b9a,0xf97b6f9b,0xf97b739c,0xd65f03c0
 .arch_extension nosha3
 .p2align 6",
-        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress,
-        vg_mlkem16_ntt = sym super::mlkem16::vg_mlkem16_ntt,
-        vg_mlkem16_inv_ntt = sym super::mlkem16::vg_mlkem16_inv_ntt,
-        vg_mlkem_sub = sym super::mlkem::vg_mlkem_sub,
-        vg_mlkem_compress_encode = sym super::mlkem::vg_mlkem_compress_encode,
+        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress::vg_mlkem1024_decode_decompress,
+        vg_mlkem16_ntt = sym super::mlkem1024::vg_mlkem16_ntt::vg_mlkem16_ntt,
+        vg_mlkem16_inv_ntt = sym super::mlkem1024::vg_mlkem16_inv_ntt::vg_mlkem16_inv_ntt,
+        vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
+        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
         vg_keccak_f1600_x3_sha3 = sym super::mlkem1024::vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3,
         vg_keccak_f1600_x2_sha3 = sym super::mldsa44::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
-        vg_mlkem16_cbd2 = sym super::mlkem16::vg_mlkem16_cbd2,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
+        vg_mlkem16_cbd2 = sym super::mlkem1024::vg_mlkem16_cbd2::vg_mlkem16_cbd2,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
         VG_MLKEM_GAMMA = sym super::consts::VG_MLKEM_GAMMA,
         VG_MLKEM_REJ_SHUFFLE = sym super::consts::VG_MLKEM_REJ_SHUFFLE,
     )
@@ -16387,3 +16260,67 @@ cbnz x2, 2502b
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600_x3_sha3.rs"]
 pub(crate) mod vg_keccak_f1600_x3_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem1024_compress_encode.rs"]
+pub(crate) mod vg_mlkem1024_compress_encode;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem1024_decode_decompress.rs"]
+pub(crate) mod vg_mlkem1024_decode_decompress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem16_cbd2.rs"]
+pub(crate) mod vg_mlkem16_cbd2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem16_inv_ntt.rs"]
+pub(crate) mod vg_mlkem16_inv_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem16_ntt.rs"]
+pub(crate) mod vg_mlkem16_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_add.rs"]
+pub(crate) mod vg_mlkem_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_cbd2.rs"]
+pub(crate) mod vg_mlkem_cbd2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_compress_encode.rs"]
+pub(crate) mod vg_mlkem_compress_encode;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_decode12.rs"]
+pub(crate) mod vg_mlkem_decode12;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_decode_decompress.rs"]
+pub(crate) mod vg_mlkem_decode_decompress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_encode12.rs"]
+pub(crate) mod vg_mlkem_encode12;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_inv_ntt.rs"]
+pub(crate) mod vg_mlkem_inv_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_multiply_ntts.rs"]
+pub(crate) mod vg_mlkem_multiply_ntts;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_ntt.rs"]
+pub(crate) mod vg_mlkem_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_sample_ntt.rs"]
+pub(crate) mod vg_mlkem_sample_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_sub.rs"]
+pub(crate) mod vg_mlkem_sub;

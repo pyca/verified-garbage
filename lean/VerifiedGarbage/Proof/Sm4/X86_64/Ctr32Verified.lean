@@ -19,6 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Lit
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sm4.Contract
 
 /-!
 # SM4's counter mode with `inc₃₂` on x86-64 meets its contracts
@@ -200,8 +201,8 @@ theorem ctr32_verified :
 /-- `vg_sm4_ctr32` with its working space on the stack. -/
 theorem ctr32_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 ctr32)
-      (Spec.Sm4.ctr32Contract X86_64.abi 3216) :=
-  X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
+      (Proof.Sm4.ctr32Contract X86_64.abi 3216) :=
+  X86_64.Verified.stackScratchWiped (sig := Proof.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
     (n := 400) (post := Proof.Sm4.ctr32Post X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3208) ctr32_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)

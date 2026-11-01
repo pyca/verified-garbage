@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
@@ -22,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 `Verified` for the doubling and the additions with the baseline's and with
 BMI2 and ADX's multiplications, from their correctness (`Verified.lean`) and
-constant time, for `Artifacts/Ed25519R64/X86_64.lean`.
+constant time, for their callers.
 -/
 
 @[expose] public section
@@ -31,8 +32,7 @@ namespace VG.Proof.Ed25519.X86_64.Point64
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Point64 VG.Proof.Ed25519.X86_64.Point64
 open VG.Impl.X25519.X86_64 (baseline adx)
-open VG.Spec.Ed25519.Point64 (doubleExtApi addCachedExtApi addCachedProjApi addAffineExtApi doubleContract
-  addCachedContract addAffineContract)
+open VG.Proof.Ed25519.Point64 (doubleContract addCachedContract addAffineContract)
 
 theorem addAffine_verified : Verified X86_64.target (addAffineFn baseline)
     (addAffineContract X86_64.abi true) :=

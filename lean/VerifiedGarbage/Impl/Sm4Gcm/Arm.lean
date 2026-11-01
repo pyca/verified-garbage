@@ -75,7 +75,7 @@ def restore : List Instr := restored.map fun (r, d) => .ldr r .r11 d
 arguments moved to `r1`–`r3`. -/
 def ctrCall : Prog isa :=
   .seq (.block [.mov .r1 (.reg .r2), .mov .r2 (.reg .r3), .mov .r3 (.reg .r12)])
-    (.call Spec.Sm4.ctr32Api.name Impl.Sm4.Arm.BatchCtr32.ctr32Framed)
+    (.call "vg_sm4_ctr32" Impl.Sm4.Arm.BatchCtr32.ctr32Framed)
 
 /-- `vg_ghash`, with the working space in `r12` pushed as its stack argument. -/
 def ghFrame : Prog isa :=

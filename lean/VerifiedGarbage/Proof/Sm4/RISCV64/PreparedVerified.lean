@@ -33,12 +33,15 @@ meta import VerifiedGarbage.Proof.Sm4.RISCV64.LayersLit
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Prepared
+meta import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-!
 # SM4's prepared round keys and batches on RISCV64 meet their contracts
 
 `prepare_verified` and `crypt_verified`: `vg_sm4_prepare_keys` and
-`vg_sm4_crypt_prepared` against `Spec.Sm4.Prepared`, with `layout`. Each
+`vg_sm4_crypt_prepared` against `Proof.Sm4.Prepared`, with `layout`. Each
 body runs from the state narrowed to ECB's scratch buffer (`prepareBody_wp`,
 `cryptBody_wp`) and then from the whole working space (`Exec.widen`), which it
 changes only where the narrowed run may. A batch's blocks are ECB in the
@@ -56,7 +59,7 @@ namespace VG.Proof.Sm4.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Straight VG.Impl.Sm4.RISCV64
 open VG.Proof.Sm4 (specDirA)
-open VG.Spec.Sm4.Prepared (Holds Keeps)
+open VG.Proof.Sm4.Prepared (Holds Keeps)
 
 /-! ## Narrowing the working space -/
 
@@ -101,7 +104,7 @@ def prepRISCV64 : Contract RISCV64.isa where
       layout.size ≤ 8 * (s.gpr .a3).toNat ∧ (s.gpr .a2).toNat % 8 = 0
   post s s' :=
     Holds layout s'.mem (s.gpr .a2) (Spec.Sm4.scheduleAt s.mem (s.gpr .a0))
-        (Spec.Sm4.directionOf (s.gpr .a1).toNat) ∧
+        (Proof.Sm4.directionOf (s.gpr .a1).toNat) ∧
       Keeps (s.gpr .a2) (s.gpr .a3).toNat layout.prepScratch s.mem s'.mem
   pub s₁ s₂ :=
     s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
@@ -174,9 +177,9 @@ def prepSat : State where
   wr := [⟨0x2000, 396 * 8⟩]
 
 theorem prepare_verified :
-    Verified target prepareKeys (Spec.Sm4.Prepared.prepareContract layout abi) :=
+    Verified target prepareKeys (Proof.Sm4.Prepared.prepareContract layout abi) :=
   Verified.of_correct prep_correct prep_ct (by
-    sig_implies [Spec.Sm4.Prepared.prepareContract, Spec.Sm4.Prepared.prepareSig, prepRISCV64, abi,
+    sig_implies [Proof.Sm4.Prepared.prepareContract, Proof.Sm4.Prepared.prepareSig, prepRISCV64, abi,
       argRegs, size_eq, slots, savedSlot, tableEnd, tableSlot] [prepSat] using prepSat)
 
 /-! ## A batch -/
@@ -292,19 +295,19 @@ def cryptSat : State where
   rd := []
   wr := [⟨0x2000, 396 * 8⟩]
 
-theorem crypt_implies : cryptRISCV64.Implies (Spec.Sm4.Prepared.cryptContract layout abi) where
+theorem crypt_implies : cryptRISCV64.Implies (Proof.Sm4.Prepared.cryptContract layout abi) where
   pre := by
-    sig_implies_pre [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptRISCV64, abi,
+    sig_implies_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptRISCV64, abi,
       argRegs]
   post := by
-    sig_implies_post [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptRISCV64, abi,
+    sig_implies_post [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptRISCV64, abi,
       argRegs]
   pub := by
-    sig_implies_pub [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptRISCV64, abi,
+    sig_implies_pub [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptRISCV64, abi,
       argRegs]
   sat := by
     refine ⟨cryptSat, ?_⟩
-    sig_pre [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, abi, argRegs]
+    sig_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, abi, argRegs]
     sig_and_intros
     all_goals first
       | decide
@@ -312,7 +315,7 @@ theorem crypt_implies : cryptRISCV64.Implies (Spec.Sm4.Prepared.cryptContract la
       | (rw [size_eq, slots_eq]; decide)
 
 theorem crypt_verified :
-    Verified target cryptPrepared (Spec.Sm4.Prepared.cryptContract layout abi) :=
+    Verified target cryptPrepared (Proof.Sm4.Prepared.cryptContract layout abi) :=
   Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Sm4.RISCV64

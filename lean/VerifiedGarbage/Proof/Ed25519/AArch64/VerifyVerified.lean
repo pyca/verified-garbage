@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
@@ -445,8 +446,8 @@ theorem verify_spec_pre {s : State}
     (h3 : Region.Disjoint ⟨s.gpr .x2, 64⟩ ⟨s.gpr .x3, 8192⟩)
     (f0 : (s.gpr .x0).toNat + 32 ≤ 2 ^ 64) (f1 : (s.gpr .x1).toNat + 64 ≤ 2 ^ 64)
     (f2 : (s.gpr .x2).toNat + 64 ≤ 2 ^ 64) (f3 : (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64) :
-    (Spec.Ed25519.verifyEquationContract (AArch64.abi.withConsts bConsts)).pre s := by
-  sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    (Proof.Ed25519.verifyEquationContract (AArch64.abi.withConsts bConsts)).pre s := by
+  sig_pre [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
     Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts,
     Abi.constRegions, Abi.constsHeld, stackBelow]
   refine ⟨by rw [hrd]; rfl, held, fit, fun r hr => ?_, hal, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1, f2, f3⟩
@@ -454,9 +455,9 @@ theorem verify_spec_pre {s : State}
   rw [hr]; exact hdw
 
 theorem verify_implies :
-    verifyLocal.Implies (Spec.Ed25519.verifyEquationContract (AArch64.abi.withConsts bConsts)) where
+    verifyLocal.Implies (Proof.Ed25519.verifyEquationContract (AArch64.abi.withConsts bConsts)) where
   pre s h := by
-    sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    sig_pre [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts,
       Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨hd, held, fit, hdw, -, ht, hw, d1, d2, d3, -, -, -, f3⟩ := h
@@ -464,7 +465,7 @@ theorem verify_implies :
     refine ⟨?_, hw, d1, d2, d3, f3, held, fit, fun r hr => hdw r (by rw [hw]; exact hr)⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post s t _ h := by
-    sig_post [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    sig_post [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts]
     change t.gpr .x0 = signWord _ at h
     rw [h]
@@ -472,7 +473,7 @@ theorem verify_implies :
       (Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 64) (Spec.Ed25519.bytesAt s.mem (s.gpr .x2) 64) = b
     cases b <;> rfl
   pub s t _ _ h := by
-    sig_pub [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    sig_pub [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts] at h
     obtain ⟨sp, hsy, bytes, pk, sig, challenge, base⟩ := h
     have hb := byteMap_inj bytes
@@ -489,7 +490,7 @@ theorem verify_implies :
 
 theorem verify_verified :
     Verified AArch64.target verifyEquation
-      (Spec.Ed25519.verifyEquationContract (AArch64.abi.withConsts bConsts)) :=
+      (Proof.Ed25519.verifyEquationContract (AArch64.abi.withConsts bConsts)) :=
   Verified.of_correct verify_ok verify_ct verify_implies
 
 end VG.Proof.Ed25519.AArch64

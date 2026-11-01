@@ -3,7 +3,7 @@
 //! `assembly/aes.s`.
 #![allow(dead_code)]
 
-/// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`, as `vg_aes_ctr32` reads it.
+/// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`.
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
@@ -49,109 +49,6 @@ b 29f
 29:
 .base64 "//+EOAAAJCg="
 bne %cr0, 21b
-.base64 "IACATg==""#,
-    )
-}
-
-/// `vg_aes_expand_key`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Aes.expandKeyScratchContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `schedule` must be valid for reads and writes of 240 bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * The bytes of `schedule` after the key schedule are unspecified on return.
-/// * The contents of `scratch` on return are unspecified.
-/// * `schedule` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `schedule` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_expand_key_scratch(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "eCOHfA=="
-20:
-.base64 "AAAD6QAABfkIAGM4CAClOPj/hDgAACQo"
-bne %cr0, 20b
-.base64 "UChHffz/ZTkAAIA5gvDkeBQiBH0UQoR8HACEOAEAwDg="
-21:
-.base64 "AAArgQAALCg="
-beq %cr0, 22f
-.base64 "8P8MOAAAICg="
-beq %cr0, 24f
-b 25f
-24:
-.base64 "4P8HOAAAICg="
-beq %cr0, 26f
-b 27f
-26:
-.base64 "ZwEJfMgFABBnAAl8PgApVQ=="
-27:
-25:
-b 23f
-22:
-.base64 "ZwEJfMgFABBnAAl8PgApVT7AKVV4Mil9wsnAeAAAADlQQAB8GwAAOThAAHwUMsZ8eALGfP8AADk4QMZ8"
-23:
-.base64 "AAAKgXhCKX0EACuRBABrOQQASjkEAIw5UGAHfAAAICg="
-beq %cr0, 28f
-b 29f
-28:
-.base64 "AACAOQ=="
-29:
-.base64 "//+EOAAAJCg="
-bne %cr0, 21b
-.base64 "IACATg==""#,
-    )
-}
-
-/// AES counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Gcm.ctr32Contract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the counter block or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `counter` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `counter`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `counter`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    core::arch::naked_asm!(
-        r#".base64 "AAAnKA=="
-beq %cr0, 20f
-.base64 "AAAAOMQEABAGB2A9BAVrYcYHa3kCA2tlAAFrYQ4PgD0MDYxhxgeMeQoLjGUICYxhZwFrfmcBLHwsmmASLApzEgEAYD0DAmthxgdreQUEa2UHBmthCQiAPQsKjGHGB4x5FRSMZRcWjGFnAUt+ZwEsfCySQBIsClISDABgOSxcBX2ZBkV961RKEcLo7HgAACwo"
-beq %cr0, 22f
-24:
-.base64 "ZwFofatcChABAAg5ZwFofatcKhABAAg5ZwFofatcShABAAg5ZwFofatcahABAAg5ZwFofatcihABAAg5ZwFofatcqhABAAg5ZwFofatcyhABAAg5ZwFofatc6hABAAg5eBtpfJkGCX3rRAgRxEQAEMREIRDEREIQxERjEMREhBDERKUQxETGEMRE5xAQACk5//9EOQ=="
-25:
-.base64 "mQYJfetECBEIRQAQCEUhEAhFQhAIRWMQCEWEEAhFpRAIRcYQCEXnEBAAKTn//0o5AAAqKA=="
-bne %cr0, 25b
-.base64 "mQYJfetECBEJRQAQCUUhEAlFQhAJRWMQCUWEEAlFpRAJRcYQCUXnEJkGJn3rTCkRxEwAEOsEABCZBwZ8EADGOJkGJn3rTCkRxEwhEOsMIRCZByZ8EADGOJkGJn3rTCkRxExCEOsUQhCZB0Z8EADGOJkGJn3rTCkRxExjEOscYxCZB2Z8EADGOJkGJn3rTCkRxEyEEOskhBCZB4Z8EADGOJkGJn3rTCkRxEylEOsspRCZB6Z8EADGOJkGJn3rTCkRxEzGEOs0xhCZB8Z8EADGOJkGJn3rTCkRxEznEOs85xCZB+Z8EADGOPj/5zjC6Ox4AAAsKA=="
-bne %cr0, 24b
-b 23f
-22:
-23:
-.base64 "AAAnKA=="
-beq %cr0, 26f
-28:
-.base64 "ZwFofatcChABAAg5eBtpfJkGCX3rRAgRxEQAEBAAKTn//0Q5"
-29:
-.base64 "mQYJfetECBEIRQAQEAApOf//SjkAACoo"
-bne %cr0, 29b
-.base64 "mQYJfetECBEJRQAQmQYmfetMKRHETAAQ6wQAEJkHBnwQAMY4///nOAAAJyg="
-bne %cr0, 28b
-b 27f
-26:
-27:
-.base64 "LF0FfQ=="
-b 21f
-20:
-21:
 .base64 "IACATg==""#,
     )
 }
@@ -253,6 +150,14 @@ b 21f
 .base64 "IACATg==""#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32.rs"]
+pub(crate) mod vg_aes_ctr32;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch.rs"]
+pub(crate) mod vg_aes_expand_key_scratch;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_encrypt_blocks.rs"]

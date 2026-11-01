@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.RISCV64.BaseMain
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.RISCV64.BaseCT
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
@@ -40,11 +41,11 @@ def baseSat : State where
   wr := [⟨0x1000, 57⟩, ⟨0x4000, 8192⟩]
 
 theorem scalarBase_verified (hl : Proof.Ed448.BaseLadder2Ok) :
-    Verified RISCV64.target Impl.Ed448.RISCV64.scalarBase (Spec.Ed448.scalarBaseContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.Ed448.RISCV64.scalarBase (Proof.Ed448.scalarBaseContract RISCV64.abi) :=
   Verified.of_correct (scalarBase_ok hl) (scalarBase_ct fun _ _ _ _ ⟨h3, h4, h5, hsp⟩ => ⟨hsp, fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Spec.Ed448.scalarBaseContract, Spec.Ed448.scalarBaseSig, baseRISCV64,
+    contract_implies [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig, baseRISCV64,
       Spec.Ed448.scratchWords, RISCV64.abi, RISCV64.argRegs] [baseSat] using baseSat)
 
 end VG.Proof.Ed448.RISCV64

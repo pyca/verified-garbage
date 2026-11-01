@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!

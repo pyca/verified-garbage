@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr
-import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # Calls of the prepared-key SM4 helpers from ARMv7 modes -/
 
@@ -16,7 +17,7 @@ namespace VG.Proof.Sm4.Arm.BatchCalls
 
 open VG VG.Arm VG.Impl.Sm4.Arm VG.Proof.Sm4.Arm
 open VG.Impl.Aes.Arm (sb movR)
-open VG.Spec.Sm4.Prepared (Holds Keeps)
+open VG.Proof.Sm4.Prepared (Holds Keeps)
 
 /-- The permissions, ABI registers and memory outside the cipher's workspace
 survive a helper call. The caller's return address is kept separately. -/
@@ -34,7 +35,7 @@ theorem prepare_call_wp {s : State} {K B : BitVec 32}
     (sep : Region.Disjoint ⟨State.addr K, 128⟩ ⟨State.addr B, 4 * slots⟩)
     (rK : Covers [⟨State.addr K, 128⟩] (s.rd ++ s.wr))
     (wB : Covers [⟨State.addr B, 4 * slots⟩] s.wr) :
-    WP isa (.call (Spec.Sm4.Prepared.prepareApi layout).name prepareKeys) s fun s' =>
+    WP isa (.call "vg_sm4_prepare_keys" prepareKeys) s fun s' =>
       CallInv s B s' ∧ Holds layout s'.mem (State.addr B) (Spec.Sm4.scheduleAt s.mem (State.addr K)) .encrypt := by
   have hp : prepArm.pre (s.callEntry.withRegions [⟨State.addr K, 128⟩] [⟨State.addr B, 4 * slots⟩]) := by
     simp only [prepArm, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,

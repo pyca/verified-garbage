@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Field16Contract
 public import VerifiedGarbage.Proof.Ed25519.Arm.Point16Verified
 public import VerifiedGarbage.Proof.X25519.Chain250
 public import VerifiedGarbage.Proof.Ed25519.Arm.Power
@@ -27,7 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 /-!
 # `vg_gf25519_r16_pow250` on ARMv7, verified
 
-The function meets `pow250Contract` of `Spec/X25519/Field16.lean`, with no
+The function meets `pow250Contract` of `Proof/X25519/Field16Contract.lean`, with no
 stack: the proof against `powF`, the contract's facts by register, from
 `pow250Fn_ok` on slot 2's limbs, which the contract bounds; the chain's
 results are `a^(2^250 - 1)` in slot 15 and `a^11` in slot 14
@@ -44,7 +45,7 @@ namespace VG.Proof.Ed25519.Arm.Pow250
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.Ed25519.Arm VG.Proof.X25519.Arm
 open VG.Proof.Ed25519.Arm.Point16 (wsOf fPre fPub fPub_agree)
 open VG.Spec.X25519 (P)
-open VG.Spec.X25519.Field16 (Limbs valAt Keeps₂ aAt eAt oAt)
+open VG.Proof.X25519.Field16 (Limbs valAt Keeps₂ aAt eAt oAt)
 
 def powF : Contract Arm.isa where
   pre s := fPre s ∧ Limbs s.mem (wsOf s) (BitVec.ofNat 32 aAt)
@@ -72,8 +73,8 @@ theorem val_of_env {m m' : Mem} {b : BitVec 32} {i j : Slot} {e : Nat}
 theorem keeps₂_of_frame {b : BitVec 32} {m m' : Mem}
     (hf : Frame (wRegions b [14, 15, 16, 17] ++ [saveR b]) m m') : Keeps₂ (State.addr b) m m' := by
   intro i hi he ho
-  simp only [Spec.X25519.Field16.powWsBytes, eAt, Spec.X25519.Field16.tmpEnd,
-    Spec.X25519.Field16.ownAt, Spec.X25519.Field16.ownEnd] at hi he ho
+  simp only [Proof.X25519.Field16.powWsBytes, eAt, Proof.X25519.Field16.tmpEnd,
+    Proof.X25519.Field16.ownAt, Proof.X25519.Field16.ownEnd] at hi he ho
   have hc : (⟨State.addr b + BitVec.ofNat 64 i, 1⟩ : Region).Contains (State.addr b + BitVec.ofNat 64 i) 1 := by
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
   have hA := ACC_eq
@@ -129,22 +130,22 @@ def satF : State where
   rd := []
   wr := [⟨0x1000, 8192⟩]
 
-theorem sat_limbs : ∀ i < 16, Spec.X25519.Field16.limbAt (fun _ => 0) 0x1000 (BitVec.ofNat 32 aAt) i < 2 ^ 16 := by
+theorem sat_limbs : ∀ i < 16, Proof.X25519.Field16.limbAt (fun _ => 0) 0x1000 (BitVec.ofNat 32 aAt) i < 2 ^ 16 := by
   decide +kernel
 
-theorem pow_sat : (Spec.X25519.Field16.pow250Contract Arm.abi).pre satF := by
-  unfold Spec.X25519.Field16.pow250Contract
+theorem pow_sat : (Proof.X25519.Field16.pow250Contract Arm.abi).pre satF := by
+  unfold Proof.X25519.Field16.pow250Contract
   exact Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.X25519.Field16.pow250Sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
+    sig_reduce [Sig.wfPre, Proof.X25519.Field16.pow250Sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
     exact ⟨by decide, sat_limbs⟩)
 
-theorem pow250Fn_verified : Verified Arm.target pow250Fn (Spec.X25519.Field16.pow250Contract Arm.abi) :=
+theorem pow250Fn_verified : Verified Arm.target pow250Fn (Proof.X25519.Field16.pow250Contract Arm.abi) :=
   Verified.of_correct pow_arm pow_ct
-    { pre := by sig_implies_pre [Spec.X25519.Field16.pow250Contract, Spec.X25519.Field16.pow250Sig, powF, fPre,
+    { pre := by sig_implies_pre [Proof.X25519.Field16.pow250Contract, Proof.X25519.Field16.pow250Sig, powF, fPre,
         fPub, wsOf, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      post := by sig_implies_post [Spec.X25519.Field16.pow250Contract, Spec.X25519.Field16.pow250Sig, powF, fPre,
+      post := by sig_implies_post [Proof.X25519.Field16.pow250Contract, Proof.X25519.Field16.pow250Sig, powF, fPre,
         fPub, wsOf, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      pub := by sig_implies_pub [Spec.X25519.Field16.pow250Contract, Spec.X25519.Field16.pow250Sig, powF, fPre,
+      pub := by sig_implies_pub [Proof.X25519.Field16.pow250Contract, Proof.X25519.Field16.pow250Sig, powF, fPre,
         fPub, wsOf, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := ⟨satF, pow_sat⟩ }
 

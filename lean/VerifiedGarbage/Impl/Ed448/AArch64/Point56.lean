@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Base
-public import VerifiedGarbage.Spec.Ed448.Point56
+public import VerifiedGarbage.Spec.Ed448
 
 /-!
 # Ed448's point addition and doubling on AArch64, as functions
 
 `vg_ed448_r56_point_add(ws)` and `vg_ed448_r56_point_double(ws)`
-(`Spec/Ed448/Point56.lean`; AAPCS64: `ws` in `x0`) run the register-resident
+(`Proof/Ed448/Point56Contract.lean`; AAPCS64: `ws` in `x0`) run the register-resident
 field code that `vg_ed448_verify_equation` inlined (`Base.addOps`, `dblOps`)
 on the slots where it keeps their operands, as functions and calls of them
 built as `vg_gf448_r56_pow_p34` is (`asFn`, `fnCall`,
@@ -50,8 +50,8 @@ def addFn : Prog isa :=
 /-- `vg_ed448_r56_point_double`: slots 3–5 doubled. -/
 def doubleFn : Prog isa := asFn false (X448.AArch64.Fast.ops (dblOps (slot 3) (slot 4) (slot 5)))
 
-def addCall : Prog isa := fnCall Spec.Ed448.Point56.addApi.name addFn
-def doubleCall : Prog isa := fnCall Spec.Ed448.Point56.doubleApi.name doubleFn
+def addCall : Prog isa := fnCall "vg_ed448_r56_point_add" addFn
+def doubleCall : Prog isa := fnCall "vg_ed448_r56_point_double" doubleFn
 
 /-- The three slots from `a` copied to the three from `o`. -/
 def copy3 (o a : Nat) : List Instr :=

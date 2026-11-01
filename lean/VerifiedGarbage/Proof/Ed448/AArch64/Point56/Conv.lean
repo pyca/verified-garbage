@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 public import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
-public import VerifiedGarbage.Spec.X448.Field56
+public import VerifiedGarbage.Proof.X448.Field56Contract
 
 /-!
 # Ed448 on AArch64: the specification's elements and the proofs'
 
-Untrusted: everything here is checked by Lean. `Spec/X448/Field56.lean`
+Untrusted: everything here is checked by Lean. `Proof/X448/Field56Contract.lean`
 states the elements as the register-resident arithmetic's proofs keep them:
 the same limbs (`limbAt_eq`), values (`elemAt_eq`) and bounds (`bounded_iff`,
 `res_iff`). The bytes a function keeps (`Field56.Keeps`) follow from its stores
@@ -24,22 +24,22 @@ open VG.Proof.X448.AArch64 (limbs)
 open VG.Proof.X448.AArch64.Weak (Index)
 open VG.Proof.X448.AArch64.Fast (BEnv Bnd)
 open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
-open VG.Spec.X448.Field56 (limbAt valAt elemAt Bounded Res slotAt)
+open VG.Proof.X448.Field56 (limbAt valAt elemAt Bounded Res slotAt)
 
 theorem limbAt_eq (m : Mem) (ws : Addr) (o i : Nat) : limbAt m ws o i = limbs m ws o i := rfl
 
 theorem slotAt_eq (n : Nat) : slotAt n = slot n := rfl
 
 theorem valN_eq (m : Mem) (ws : Addr) (o : Nat) :
-    ∀ n, Spec.X448.Field56.valN m ws o n = VG.Proof.X448.Wide.valN (limbs m ws o) n
+    ∀ n, Proof.X448.Field56.valN m ws o n = VG.Proof.X448.Wide.valN (limbs m ws o) n
   | 0 => rfl
   | n + 1 => by
-    rw [Spec.X448.Field56.valN, VG.Proof.X448.Wide.valN, valN_eq m ws o n, limbAt_eq,
+    rw [Proof.X448.Field56.valN, VG.Proof.X448.Wide.valN, valN_eq m ws o n, limbAt_eq,
       VG.Proof.X448.Wide.radix, ← Nat.pow_mul]
 
 theorem elemAt_eq (m : Mem) (ws : Addr) (i : Index) :
     elemAt m ws (slotAt i.val) = VG.Proof.X448.AArch64.Weak.E m ws i := by
-  simp only [elemAt, valAt, Spec.X448.Field56.limbs, valN_eq, slotAt_eq]
+  simp only [elemAt, valAt, Proof.X448.Field56.limbs, valN_eq, slotAt_eq]
   rfl
 
 theorem bounded_iff (m : Mem) (ws : Addr) : Bounded m ws ↔ BEnv m ws := by
@@ -67,6 +67,6 @@ theorem unstored_of {ok : Nat → Bool} {rs : List (Nat × Nat)} (hok : ∀ d, o
 theorem keeps_of_unstored {ok : Nat → Bool} {rs : List (Nat × Nat)} (hok : ∀ d, ok d = true →
       d + 8 ≤ 8192 ∧ ∃ r ∈ rs, r.1 ≤ d ∧ d + 8 ≤ r.2)
     {ws : Addr} {m m' : Mem} (h : ∀ a, Unstored ok ws a → m' a = m a) :
-    Spec.X448.Field56.Keeps ws rs m m' := fun _ hi hr => h _ (unstored_of hok ws hi hr)
+    Proof.X448.Field56.Keeps ws rs m m' := fun _ hi hr => h _ (unstored_of hok ws hi hr)
 
 end VG.Proof.Ed448.AArch64.Point56

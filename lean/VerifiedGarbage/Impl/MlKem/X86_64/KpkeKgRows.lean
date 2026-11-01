@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Kpke16
 The two halves of `vg_mlkem*_kpke_keygen` (`Kpke16.lean`), from the code of
 `vg_mlkem*_keygen_mul` with AVX2 (`keygenMul16Y`), for a caller that
 encodes each row of `t̂` as soon as it has the row of `Â`
-(`Spec/MlKem/KpkeKgRows.lean`). Each saves its caller's callee-saved
+(`Proof/MlKem/KpkeKgRowsContract.lean`). Each saves its caller's callee-saved
 registers at `scratch + 3072` (`KpkeMul.slots`), as `keygen_mul` does, and
 keeps `scratch` in `rbx`; its products run in the MXCSR region at
 `scratch + 768` (`oMx`).
