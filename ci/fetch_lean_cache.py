@@ -16,6 +16,7 @@ Only the standard library: an agent restoring the cache needs nothing but
 `python3`, `zstd` and the Lean toolchain (whose `leantar` unpacks it).
 """
 
+import argparse
 import hashlib
 import http.client
 import json
@@ -97,5 +98,14 @@ def fetch(out, registry=REGISTRY, repository=REPOSITORY, tag=TAG, sleep=time.sle
     print(f"Downloaded {size} bytes, matching {digest}", file=log)
 
 
-if __name__ == "__main__":
+def main(argv=None):
+    # It takes no arguments, but answers --help (rather than starting a
+    # 1 GB download) and refuses anything else.
+    argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    ).parse_args(argv)
     fetch(sys.stdout.buffer)
+
+
+if __name__ == "__main__":
+    main()
