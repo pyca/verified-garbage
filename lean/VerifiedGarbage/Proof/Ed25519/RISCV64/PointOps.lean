@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointAdd
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Point
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Spec.Ed25519.Point32
+public import VerifiedGarbage.Proof.Ed25519.Point32Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
@@ -48,7 +48,7 @@ def Kept (i : Slot) : Prop := 4 ≤ i.val ∧ i.val < 8 ∨ 16 ≤ i.val
 
 instance (i : Slot) : Decidable (Kept i) := by unfold Kept; infer_instance
 
-theorem env_keeps {b : Addr} {m m' : Mem} (h : Spec.Ed25519.Point32.Keeps b m m') {i : Slot} (hi : Kept i) :
+theorem env_keeps {b : Addr} {m m' : Mem} (h : Proof.Ed25519.Point32.Keeps b m m') {i : Slot} (hi : Kept i) :
     env m' b i = env m b i := by
   have hs := slot_range i
   unfold env FS
@@ -58,19 +58,19 @@ theorem env_keeps {b : Addr} {m m' : Mem} (h : Spec.Ed25519.Point32.Keeps b m m'
   unfold Kept at hi'
   have ho : offset i = 64 + 32 * i.val := rfl
   rw [Offset.add_add]
-  refine (h (offset i + j) (by simp only [Spec.Ed25519.Point32.wsBytes]; omega)
-    (by simp only [Spec.Ed25519.Point32.pAt, Spec.Ed25519.Point32.elemBytes]; omega) (by omega) (by omega))
+  refine (h (offset i + j) (by simp only [Proof.Ed25519.Point32.wsBytes]; omega)
+    (by simp only [Proof.Ed25519.Point32.pAt, Proof.Ed25519.Point32.elemBytes]; omega) (by omega) (by omega))
 
 /-- What a call of `vg_ed25519_r32_point_add` asks of the function: its working space, aligned,
 with `d` at `dAt`. -/
 def addK (b : Addr) : Contract isa where
   pre t := t.wr = [⟨b, 8192⟩] ∧ t.gpr .a0 = b ∧ b.toNat % 8 = 0 ∧
-    Spec.Ed25519.Point32.elemAt t.mem b Spec.Ed25519.Point32.dAt = Spec.Ed25519.d
+    Proof.Ed25519.Point32.elemAt t.mem b Proof.Ed25519.Point32.dAt = Spec.Ed25519.d
   post t t' :=
-    Spec.Ed25519.Point32.pointAt t'.mem b Spec.Ed25519.Point32.pAt =
-        Spec.Ed25519.pointAdd (Spec.Ed25519.Point32.pointAt t.mem b Spec.Ed25519.Point32.pAt)
-          (Spec.Ed25519.Point32.pointAt t.mem b Spec.Ed25519.Point32.qAt) ∧
-      Spec.Ed25519.Point32.Keeps b t.mem t'.mem
+    Proof.Ed25519.Point32.pointAt t'.mem b Proof.Ed25519.Point32.pAt =
+        Spec.Ed25519.pointAdd (Proof.Ed25519.Point32.pointAt t.mem b Proof.Ed25519.Point32.pAt)
+          (Proof.Ed25519.Point32.pointAt t.mem b Proof.Ed25519.Point32.qAt) ∧
+      Proof.Ed25519.Point32.Keeps b t.mem t'.mem
   pub _ _ := True
 
 theorem addK_ok (b : Addr) :
@@ -93,8 +93,8 @@ theorem addCall_ok {b : Addr} {s : State} (hc : Ctx8 b s) (hd : env s.mem b 16 =
     fun q hq => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
   have hw1 : Covers [⟨b, 8192⟩] s1.wr := Covers.of_mem fun r hr => by
     rw [List.mem_singleton.mp hr, u1.wr]; exact hc.wr
-  have hd' : Spec.Ed25519.Point32.elemAt s1.mem b Spec.Ed25519.Point32.dAt = Spec.Ed25519.d := by
-    rw [u1.mem, show Spec.Ed25519.Point32.dAt = offset 16 from rfl, elemAt_eq]; exact hd
+  have hd' : Proof.Ed25519.Point32.elemAt s1.mem b Proof.Ed25519.Point32.dAt = Spec.Ed25519.d := by
+    rw [u1.mem, show Proof.Ed25519.Point32.dAt = offset 16 from rfl, elemAt_eq]; exact hd
   refine WP.seq (WP.call (k := addK b) (addK_ok b) (rd := []) (wr := [⟨b, 8192⟩])
     ⟨rfl, by rw [g _ (by decide), e0], hc.al, by
       rw [State.withRegions_mem, State.callEntry_mem]; exact hd'⟩
@@ -127,8 +127,8 @@ theorem addCall_ok {b : Addr} {s : State} (hc : Ctx8 b s) (hd : env s.mem b 16 =
         rw [hx']
         exact Offset.contains _ (by omega) (by omega) (by omega)
       rw [hx']
-      exact hks _ (by simp only [Spec.Ed25519.Point32.wsBytes]; omega)
-        (by simp only [Spec.Ed25519.Point32.pAt, Spec.Ed25519.Point32.elemBytes]; omega) (by omega) (by omega)
+      exact hks _ (by simp only [Proof.Ed25519.Point32.wsBytes]; omega)
+        (by simp only [Proof.Ed25519.Point32.pAt, Proof.Ed25519.Point32.elemBytes]; omega) (by omega) (by omega)
     · rw [← u1.mem]
       exact hfr x fun r hr => by rw [List.mem_singleton.mp hr]; exact hw
   · rw [v1.mem, ← pointAt_eq, hpt, pointAt_eq, pointAt_q]

@@ -22629,8 +22629,8 @@ ldr r9, [r0, #20]
 ldr r10, [r0, #24]
 ldr r11, [r0, #28]
 bx lr",
-        vg_gf25519_r16_pow250 = sym super::gf25519_r16::vg_gf25519_r16_pow250,
-        vg_gf25519_r16_mul = sym super::gf25519_r16::vg_gf25519_r16_mul,
+        vg_gf25519_r16_pow250 = sym super::ed25519::vg_gf25519_r16_pow250::vg_gf25519_r16_pow250,
+        vg_gf25519_r16_mul = sym super::ed25519::vg_gf25519_r16_mul::vg_gf25519_r16_mul,
         VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
     )
 }

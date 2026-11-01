@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.X25519.PPC64LE
 The field arithmetic of X25519's PPC64LE code (`Impl/X25519/PPC64LE.lean`:
 eight 32-bit limbs, one to a word, with the working space in `r6`), with the
 product's limbs at `ACC`, inside the own working space of the functions on
-points (`Spec/Ed25519/Point32.lean`, bytes 864 to 1023).
+points (`Proof/Ed25519/Point32Contract.lean`, bytes 864 to 1023).
 -/
 
 @[expose] public section

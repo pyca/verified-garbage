@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyMain
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
@@ -74,29 +75,29 @@ theorem verifyEquation_ct :
   exacts [h0, h1, h2, h3]
 
 theorem verifyEquation_implies :
-    verifyEquationLocal.Implies (Spec.Ed448.verifyEquationContract Arm.abi) where
+    verifyEquationLocal.Implies (Proof.Ed448.verifyEquationContract Arm.abi) where
   pre := by
-    sig_implies_pre [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_implies_pre [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, verifyEquationLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   post := by
     intro s t _ h
-    sig_post [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_post [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
     exact (e _ _).trans h
   pub := by
-    sig_implies_pub [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_implies_pub [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, verifyEquationLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   sat := by
-    sig_implies_sat [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_implies_sat [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, verifyEquationLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [verifyEquationSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using verifyEquationSat
 
 theorem verifyEquation_verified (hR : RecoverOk) (hE : VerifyEqOk) :
-    Verified Arm.target verifyEquation (Spec.Ed448.verifyEquationContract Arm.abi) :=
+    Verified Arm.target verifyEquation (Proof.Ed448.verifyEquationContract Arm.abi) :=
   Verified.of_correct (verifyEquation_ok hR hE) verifyEquation_ct verifyEquation_implies
 
 end VG.Proof.Ed448.Arm

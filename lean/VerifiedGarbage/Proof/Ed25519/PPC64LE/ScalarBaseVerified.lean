@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.ScalarBase
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
@@ -57,11 +58,11 @@ def baseSat : State where
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
 
 theorem scalarBase_verified :
-    Verified PPC64LE.target Impl.Ed25519.PPC64LE.scalarBase (Spec.Ed25519.scalarBaseContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Ed25519.PPC64LE.scalarBase (Proof.Ed25519.scalarBaseContract PPC64LE.abi) :=
   Verified.of_correct base_ok' (scalarBase_ct fun _ _ _ _ ⟨h3, h4, h5, hsp⟩ => ⟨hsp, fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, basePPC,
+    contract_implies [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, basePPC,
       Spec.Ed25519.scratchWords, PPC64LE.abi, PPC64LE.argRegs] [baseSat] using baseSat)
 
 end VG.Proof.Ed25519.PPC64LE

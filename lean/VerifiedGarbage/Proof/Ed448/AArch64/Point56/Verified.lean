@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Point56Contract
+public import VerifiedGarbage.Proof.X448.Field56Contract
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
@@ -79,8 +81,8 @@ meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
 /-!
 # `vg_ed448_r56_point_add`, `vg_ed448_r56_point_double` and `vg_gf448_r56_pow_p34` on AArch64, verified
 
-Each function meets its contract of `Spec/Ed448/Point56.lean` or
-`Spec/X448/Field56.lean`, with no stack: the proof against `addF` (`doubleF`,
+Each function meets its contract of `Proof/Ed448/Point56Contract.lean` or
+`Proof/X448/Field56Contract.lean`, with no stack: the proof against `addF` (`doubleF`,
 `powF`), the contract's facts by register, from `addFn_ok` (`doubleFn_ok`,
 `powFn_ok`). The elements as the contracts read them are the proofs'
 (`Conv.lean`); the results are `addPt` (`pointAdd`), `double` (`pointDouble`)
@@ -101,8 +103,8 @@ open VG.Proof.X448.AArch64.Fast (BEnv Bnd fclob)
 open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
 open VG.Proof.X448.AArch64.Base (pt genEnv genPt)
 open VG.Proof.Ed448.AArch64.Window (dblEnv dblEnv_345 dblPt_eq)
-open VG.Spec.X448.Field56 (slotAt elemAt Bounded Res)
-open VG.Spec.Ed448.Point56 (pointAt ResPoint pointDouble written)
+open VG.Proof.X448.Field56 (slotAt elemAt Bounded Res)
+open VG.Proof.Ed448.Point56 (pointAt ResPoint pointDouble written)
 
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
@@ -118,7 +120,7 @@ def addF : Contract AArch64.isa where
     elemAt s.mem (s.gpr .x0) (slotAt 19) = 0
   post s s' := Bounded s'.mem (s.gpr .x0) ∧ ResPoint s'.mem (s.gpr .x0) ∧
     pointAt s'.mem (s.gpr .x0) 3 = Spec.Ed448.pointAdd (pointAt s.mem (s.gpr .x0) 3) (pointAt s.mem (s.gpr .x0) 6) ∧
-    Spec.X448.Field56.Keeps (s.gpr .x0) written s.mem s'.mem
+    Proof.X448.Field56.Keeps (s.gpr .x0) written s.mem s'.mem
   pub := fPub
 
 def doubleF : Contract AArch64.isa where
@@ -126,14 +128,14 @@ def doubleF : Contract AArch64.isa where
     elemAt s.mem (s.gpr .x0) (slotAt 20) = 1
   post s s' := Bounded s'.mem (s.gpr .x0) ∧ ResPoint s'.mem (s.gpr .x0) ∧
     pointAt s'.mem (s.gpr .x0) 3 = pointDouble (pointAt s.mem (s.gpr .x0) 3) ∧
-    Spec.X448.Field56.Keeps (s.gpr .x0) written s.mem s'.mem
+    Proof.X448.Field56.Keeps (s.gpr .x0) written s.mem s'.mem
   pub := fPub
 
 def powF : Contract AArch64.isa where
   pre s := fPre s ∧ Bounded s.mem (s.gpr .x0)
   post s s' := Bounded s'.mem (s.gpr .x0) ∧
     elemAt s'.mem (s.gpr .x0) (slotAt 21) = Spec.X448.pow (elemAt s.mem (s.gpr .x0) (slotAt 12)) ((Spec.X448.P - 3) / 4) ∧
-    Spec.X448.Field56.Keeps (s.gpr .x0) (Spec.X448.Field56.powSlots :: Spec.X448.Field56.own) s.mem s'.mem
+    Proof.X448.Field56.Keeps (s.gpr .x0) (Proof.X448.Field56.powSlots :: Proof.X448.Field56.own) s.mem s'.mem
   pub := fPub
 
 theorem fnPre_of {s : State} (h : fPre s) (hb : Bounded s.mem (s.gpr .x0)) : FnPre s :=
@@ -152,22 +154,22 @@ theorem pointAt_eq6 (m : Mem) (ws : Addr) : pointAt m ws 6 = pt (EV m ws) 6 7 8 
 theorem dblOk_written : ∀ d, dblOk d = true → d + 8 ≤ 8192 ∧ ∃ r ∈ written, r.1 ≤ d ∧ d + 8 ≤ r.2 := by
   intro d hd
   simp only [dblOk, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hd
-  simp only [written, Spec.X448.Field56.own, List.mem_cons, List.not_mem_nil, or_false,
-    exists_eq_or_imp, exists_eq_left, slotAt, Spec.Ed448.Point56.pSlot, Spec.X448.Field56.accAt,
-    Spec.X448.Field56.accEnd]
+  simp only [written, Proof.X448.Field56.own, List.mem_cons, List.not_mem_nil, or_false,
+    exists_eq_or_imp, exists_eq_left, slotAt, Proof.Ed448.Point56.pSlot, Proof.X448.Field56.accAt,
+    Proof.X448.Field56.accEnd]
   omega
 
 /-- `Field56.Keeps` of the power's slots and the products' coefficients, from the bytes kept
 outside them. -/
 theorem keeps_of_outside2 {ws : Addr} {m m' : Mem}
     (h : VG.Proof.X448.AArch64.Outside2 ws 1856 1024 VG.Impl.X448.AArch64.ACC 1152 m m') :
-    Spec.X448.Field56.Keeps ws (Spec.X448.Field56.powSlots :: Spec.X448.Field56.own) m m' := by
+    Proof.X448.Field56.Keeps ws (Proof.X448.Field56.powSlots :: Proof.X448.Field56.own) m m' := by
   intro i hi hr
   have h1 := hr _ List.mem_cons_self
   have h2 := hr _ (List.mem_cons_of_mem _ List.mem_cons_self)
-  have hW : Spec.X448.Field56.wsBytes = 8192 := rfl
-  simp only [Spec.X448.Field56.powSlots, slotAt] at h1
-  simp only [Spec.X448.Field56.accAt, Spec.X448.Field56.accEnd] at h2
+  have hW : Proof.X448.Field56.wsBytes = 8192 := rfl
+  simp only [Proof.X448.Field56.powSlots, slotAt] at h1
+  simp only [Proof.X448.Field56.accAt, Proof.X448.Field56.accEnd] at h2
   rw [hW] at hi
   have ho : VG.Proof.X448.AArch64.ofs ws (ws + BitVec.ofNat 64 i) = i := by
     have := VG.Proof.X448.AArch64.ofs_off ws (d := 0) (i := i) (by omega)
@@ -262,62 +264,62 @@ theorem sat_zero : elemAt satMem 0x1000 (slotAt 19) = 0 := by decide +kernel
 theorem sat_one : elemAt satMem 0x1000 (slotAt 20) = 1 := by decide +kernel
 
 theorem addFn_verified :
-    Verified AArch64.target Point56.addFn (Spec.Ed448.Point56.addContract AArch64.abi) :=
+    Verified AArch64.target Point56.addFn (Proof.Ed448.Point56.addContract AArch64.abi) :=
   Verified.of_correct add_arm add_ct
-    { pre := by sig_implies_pre [Spec.Ed448.Point56.addContract, Spec.Ed448.Point56.sig, Spec.Ed448.Point56.zeroSlot, Spec.Ed448.Point56.oneSlot,
-        Spec.Ed448.Point56.pSlot, Spec.Ed448.Point56.qSlot, addF, fPre, fPub,
+    { pre := by sig_implies_pre [Proof.Ed448.Point56.addContract, Proof.Ed448.Point56.sig, Proof.Ed448.Point56.zeroSlot, Proof.Ed448.Point56.oneSlot,
+        Proof.Ed448.Point56.pSlot, Proof.Ed448.Point56.qSlot, addF, fPre, fPub,
         AArch64.abi, AArch64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ed448.Point56.addContract, Spec.Ed448.Point56.sig, Spec.Ed448.Point56.zeroSlot, Spec.Ed448.Point56.oneSlot,
-        Spec.Ed448.Point56.pSlot, Spec.Ed448.Point56.qSlot, addF, fPre, fPub, AArch64.abi,
+        sig_post [Proof.Ed448.Point56.addContract, Proof.Ed448.Point56.sig, Proof.Ed448.Point56.zeroSlot, Proof.Ed448.Point56.oneSlot,
+        Proof.Ed448.Point56.pSlot, Proof.Ed448.Point56.qSlot, addF, fPre, fPub, AArch64.abi,
           AArch64.argRegs]
         exact h
-      pub := by sig_implies_pub [Spec.Ed448.Point56.addContract, Spec.Ed448.Point56.sig, Spec.Ed448.Point56.zeroSlot, Spec.Ed448.Point56.oneSlot,
-        Spec.Ed448.Point56.pSlot, Spec.Ed448.Point56.qSlot, addF, fPre, fPub,
+      pub := by sig_implies_pub [Proof.Ed448.Point56.addContract, Proof.Ed448.Point56.sig, Proof.Ed448.Point56.zeroSlot, Proof.Ed448.Point56.oneSlot,
+        Proof.Ed448.Point56.pSlot, Proof.Ed448.Point56.qSlot, addF, fPre, fPub,
         AArch64.abi, AArch64.argRegs]
       sat := ⟨satState, by
-        unfold Spec.Ed448.Point56.addContract
+        unfold Proof.Ed448.Point56.addContract
         exact Sig.contract_pre_of_check (by decide +kernel) (by
-          sig_reduce [Sig.wfPre, Spec.Ed448.Point56.sig, Spec.Ed448.Point56.zeroSlot, Spec.Ed448.Point56.oneSlot,
-        Spec.Ed448.Point56.pSlot, Spec.Ed448.Point56.qSlot, AArch64.abi, AArch64.argRegs, satState]
+          sig_reduce [Sig.wfPre, Proof.Ed448.Point56.sig, Proof.Ed448.Point56.zeroSlot, Proof.Ed448.Point56.oneSlot,
+        Proof.Ed448.Point56.pSlot, Proof.Ed448.Point56.qSlot, AArch64.abi, AArch64.argRegs, satState]
           exact ⟨by decide, sat_bounded, sat_res 19 (by decide), sat_zero⟩)⟩ }
 
 theorem doubleFn_verified :
-    Verified AArch64.target Point56.doubleFn (Spec.Ed448.Point56.doubleContract AArch64.abi) :=
+    Verified AArch64.target Point56.doubleFn (Proof.Ed448.Point56.doubleContract AArch64.abi) :=
   Verified.of_correct double_arm double_ct
-    { pre := by sig_implies_pre [Spec.Ed448.Point56.doubleContract, Spec.Ed448.Point56.sig, Spec.Ed448.Point56.zeroSlot, Spec.Ed448.Point56.oneSlot,
-        Spec.Ed448.Point56.pSlot, Spec.Ed448.Point56.qSlot, doubleF, fPre,
+    { pre := by sig_implies_pre [Proof.Ed448.Point56.doubleContract, Proof.Ed448.Point56.sig, Proof.Ed448.Point56.zeroSlot, Proof.Ed448.Point56.oneSlot,
+        Proof.Ed448.Point56.pSlot, Proof.Ed448.Point56.qSlot, doubleF, fPre,
         fPub, AArch64.abi, AArch64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ed448.Point56.doubleContract, Spec.Ed448.Point56.sig, Spec.Ed448.Point56.zeroSlot, Spec.Ed448.Point56.oneSlot,
-        Spec.Ed448.Point56.pSlot, Spec.Ed448.Point56.qSlot, doubleF, fPre, fPub, AArch64.abi,
+        sig_post [Proof.Ed448.Point56.doubleContract, Proof.Ed448.Point56.sig, Proof.Ed448.Point56.zeroSlot, Proof.Ed448.Point56.oneSlot,
+        Proof.Ed448.Point56.pSlot, Proof.Ed448.Point56.qSlot, doubleF, fPre, fPub, AArch64.abi,
           AArch64.argRegs]
         exact h
-      pub := by sig_implies_pub [Spec.Ed448.Point56.doubleContract, Spec.Ed448.Point56.sig, Spec.Ed448.Point56.zeroSlot, Spec.Ed448.Point56.oneSlot,
-        Spec.Ed448.Point56.pSlot, Spec.Ed448.Point56.qSlot, doubleF, fPre,
+      pub := by sig_implies_pub [Proof.Ed448.Point56.doubleContract, Proof.Ed448.Point56.sig, Proof.Ed448.Point56.zeroSlot, Proof.Ed448.Point56.oneSlot,
+        Proof.Ed448.Point56.pSlot, Proof.Ed448.Point56.qSlot, doubleF, fPre,
         fPub, AArch64.abi, AArch64.argRegs]
       sat := ⟨satState, by
-        unfold Spec.Ed448.Point56.doubleContract
+        unfold Proof.Ed448.Point56.doubleContract
         exact Sig.contract_pre_of_check (by decide +kernel) (by
-          sig_reduce [Sig.wfPre, Spec.Ed448.Point56.sig, Spec.Ed448.Point56.zeroSlot, Spec.Ed448.Point56.oneSlot,
-        Spec.Ed448.Point56.pSlot, Spec.Ed448.Point56.qSlot, AArch64.abi, AArch64.argRegs, satState]
+          sig_reduce [Sig.wfPre, Proof.Ed448.Point56.sig, Proof.Ed448.Point56.zeroSlot, Proof.Ed448.Point56.oneSlot,
+        Proof.Ed448.Point56.pSlot, Proof.Ed448.Point56.qSlot, AArch64.abi, AArch64.argRegs, satState]
           exact ⟨by decide, sat_bounded, sat_res 5 (by decide), sat_one⟩)⟩ }
 
 theorem powFn_verified :
-    Verified AArch64.target Point56.powFn (Spec.X448.Field56.powContract AArch64.abi) :=
+    Verified AArch64.target Point56.powFn (Proof.X448.Field56.powContract AArch64.abi) :=
   Verified.of_correct pow_arm pow_ct
-    { pre := by sig_implies_pre [Spec.X448.Field56.powContract, Spec.X448.Field56.sig, powF, fPre, fPub,
+    { pre := by sig_implies_pre [Proof.X448.Field56.powContract, Proof.X448.Field56.sig, powF, fPre, fPub,
         AArch64.abi, AArch64.argRegs]
-      post := by sig_implies_post [Spec.X448.Field56.powContract, Spec.X448.Field56.sig, powF, fPre, fPub,
+      post := by sig_implies_post [Proof.X448.Field56.powContract, Proof.X448.Field56.sig, powF, fPre, fPub,
         AArch64.abi, AArch64.argRegs]
-      pub := by sig_implies_pub [Spec.X448.Field56.powContract, Spec.X448.Field56.sig, powF, fPre, fPub,
+      pub := by sig_implies_pub [Proof.X448.Field56.powContract, Proof.X448.Field56.sig, powF, fPre, fPub,
         AArch64.abi, AArch64.argRegs]
       sat := ⟨satState, by
-        unfold Spec.X448.Field56.powContract
+        unfold Proof.X448.Field56.powContract
         exact Sig.contract_pre_of_check (by decide +kernel) (by
-          sig_reduce [Sig.wfPre, Spec.X448.Field56.sig, AArch64.abi, AArch64.argRegs, satState]
+          sig_reduce [Sig.wfPre, Proof.X448.Field56.sig, AArch64.abi, AArch64.argRegs, satState]
           exact ⟨by decide, sat_bounded⟩)⟩ }
 
 end VG.Proof.Ed448.AArch64.Point56

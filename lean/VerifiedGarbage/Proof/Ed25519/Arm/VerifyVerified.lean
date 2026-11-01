@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTRhs
 import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
 import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTRoot
@@ -540,28 +541,28 @@ private theorem returnFlag_value (v : BitVec 32) (b : Bool)
   apply BitVec.eq_of_toNat_eq
   cases b <;> exact h
 
-theorem verify_implies : verifyLocal.Implies (Spec.Ed25519.verifyEquationContract Arm.abi) where
+theorem verify_implies : verifyLocal.Implies (Proof.Ed25519.verifyEquationContract Arm.abi) where
   pre := by
-    sig_implies_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    sig_implies_pre [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, verifyLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   post := by
     intro s t _ h
-    sig_post [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    sig_post [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
     exact (e _ _).trans (returnFlag_value _ _ h)
   pub := by
-    sig_implies_pub [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    sig_implies_pub [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, verifyLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   sat := by
-    sig_implies_sat [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
+    sig_implies_sat [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, verifyLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [verifySatState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using verifySatState
 
-theorem verify_verified : Verified Arm.target verifyEquation (Spec.Ed25519.verifyEquationContract Arm.abi) :=
+theorem verify_verified : Verified Arm.target verifyEquation (Proof.Ed25519.verifyEquationContract Arm.abi) :=
   Verified.of_correct verify_ok verify_ct verify_implies
 
 end VG.Proof.Ed25519.Arm

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldProg
-public import VerifiedGarbage.Spec.X25519.Field32
+public import VerifiedGarbage.Proof.X25519.Field32Contract
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Power
 import VerifiedGarbage.Proof.Ed25519.RISCV64.MulFn
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Field
@@ -24,14 +24,14 @@ open VG VG.RISCV64 VG.Impl.Ed25519.RISCV64 VG.Proof.X25519.RISCV64
 open VG.Spec.X25519 (P)
 
 theorem valAt_ofNat (m : Mem) (b : Addr) (i : Slot) :
-    Spec.X25519.Field32.valAt m b (BitVec.ofNat 32 (offset i)) = V m b (offset i) := by
+    Proof.X25519.Field32.valAt m b (BitVec.ofNat 32 (offset i)) = V m b (offset i) := by
   have := slot_range i
   rw [valAt_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), ← read_V, ← read_V, BitVec.add_zero]
 
 /-- `pow250`'s `Keeps₂`, from its frame. -/
-theorem keeps_pow {b : Addr} {m m' : Mem} (hf : Frame [PR b] m m') : Spec.X25519.Field32.Keeps₂ b m m' := by
+theorem keeps_pow {b : Addr} {m m' : Mem} (hf : Frame [PR b] m m') : Proof.X25519.Field32.Keeps₂ b m m' := by
   intro i hi hown
-  simp only [Spec.X25519.Field32.wsBytes, Spec.X25519.Field32.eAt, Spec.X25519.Field32.ownEnd] at hi hown
+  simp only [Proof.X25519.Field32.wsBytes, Proof.X25519.Field32.eAt, Proof.X25519.Field32.ownEnd] at hi hown
   exact hf _ fun r hr => by rw [List.mem_singleton.mp hr]; exact byte_out (by omega) (by omega) hown
 
 /-- A power, as the contract states it. -/

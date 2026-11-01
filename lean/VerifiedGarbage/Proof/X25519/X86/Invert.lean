@@ -76,10 +76,10 @@ theorem invert_ok {x : BitVec 32} {k : Nat} {s₀ s : State} (h : Base x k s₀ 
       F s'.mem x Field32.E1 = VG.Proof.X25519.invert (F s.mem x Z2) ∧ F s'.mem x X2 = F s.mem x X2 := by
   have hfit := h.ctx.fit
   -- `z2` to byte 128.
-  refine WP.seq (WP.mono (copy_ok h.ctx (o := Spec.X25519.Field32.aAt) (a := Z2) (by decide) (by decide)
+  refine WP.seq (WP.mono (copy_ok h.ctx (o := Impl.X25519.X86.Field32.aAt) (a := Z2) (by decide) (by decide)
     (by decide)) fun s₁ ⟨k₁, f₁, e₁⟩ => ?_)
   have a₁ := h.after.of_frame k₁.edi k₁.esp k₁.rd k₁.wr f₁ (by decide) (by decide) (by decide)
-  have z₁ : F s₁.mem x Spec.X25519.Field32.aAt = F s.mem x Z2 := congrArg toFe e₁
+  have z₁ : F s₁.mem x Impl.X25519.X86.Field32.aAt = F s.mem x Z2 := congrArg toFe e₁
   have x₁ : F s₁.mem x X2 = F s.mem x X2 := congrArg toFe (fe_frame1 f₁ hfit (by decide) (by decide) (by decide))
   -- The call.
   have cs₁ : callStk s₁ = callStk s₀ := by rw [callStk, callStk, a₁.esp]

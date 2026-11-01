@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Point56Contract
+public import VerifiedGarbage.Proof.Ed448.Point64Contract
+public import VerifiedGarbage.Proof.X448.Field64Contract
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -12,7 +15,7 @@ import VerifiedGarbage.Proof.X448.X86_64.Lit
 # Ed448's point functions on x86-64: their `Verified`
 
 Untrusted: everything here is checked by Lean. The facts of
-`Spec.Ed448.Point64`'s contracts on x86-64 (`fnPre`: `ws` in `rdi`), which
+`Proof.Ed448.Point64`'s contracts on x86-64 (`fnPre`: `ws` in `rdi`), which
 the functions meet (`fn_correct`, from `fn_regs`): the callee-saved
 registers are restored, and every byte they write is in the result's slots,
 slots 12–20 or the product's words, which the return address is apart from;
@@ -28,7 +31,7 @@ namespace VG.Proof.Ed448.X86_64.Point64
 open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Impl.Ed448.X86_64.Point64 VG.Proof.Ed448
 open VG.Proof.X448.X86_64 (Scr Index Env E clob ofs ofs_off' valAt_mod)
 open VG.Impl.X448.X86_64 (slot ACC)
-open VG.Spec.Ed448.Point64 (elemAt pointAt Keeps affine)
+open VG.Proof.Ed448.Point64 (elemAt pointAt Keeps affine)
 
 /-- The spec's coordinate at slot `i` is the slot's field element. -/
 theorem elemAt_eq (m : Mem) (base : Addr) (i : Index) : elemAt m base (slot i.val) = E m base i :=
@@ -38,9 +41,9 @@ theorem elemAt_eq (m : Mem) (base : Addr) (i : Index) : elemAt m base (slot i.va
 theorem pointAt_eq (m : Mem) (base : Addr) (i : Nat) (hi : i + 2 < 22) :
     pointAt m base i = pt (E m base) ⟨i, by omega⟩ ⟨i + 1, by omega⟩ ⟨i + 2, by omega⟩ := by
   simp only [pointAt, pt]
-  rw [show Spec.X448.Field64.slotAt i = slot (⟨i, by omega⟩ : Index).val from rfl,
-    show Spec.X448.Field64.slotAt (i + 1) = slot (⟨i + 1, by omega⟩ : Index).val from rfl,
-    show Spec.X448.Field64.slotAt (i + 2) = slot (⟨i + 2, by omega⟩ : Index).val from rfl,
+  rw [show Proof.X448.Field64.slotAt i = slot (⟨i, by omega⟩ : Index).val from rfl,
+    show Proof.X448.Field64.slotAt (i + 1) = slot (⟨i + 1, by omega⟩ : Index).val from rfl,
+    show Proof.X448.Field64.slotAt (i + 2) = slot (⟨i + 2, by omega⟩ : Index).val from rfl,
     elemAt_eq, elemAt_eq, elemAt_eq]
 
 /-- The facts of the shared contracts about the state: `ws` in `rdi`, writable for its 8192
@@ -55,16 +58,16 @@ def fnPub (s₁ s₂ : State) : Prop := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.g
 /-- The doubling's contract on x86-64. -/
 def doubleK : Contract isa where
   pre := fnPre
-  post s s' := pointAt s'.mem (s.gpr .rdi) 0 = Spec.Ed448.Point56.pointDouble (pointAt s.mem (s.gpr .rdi) 0) ∧
+  post s s' := pointAt s'.mem (s.gpr .rdi) 0 = Proof.Ed448.Point56.pointDouble (pointAt s.mem (s.gpr .rdi) 0) ∧
     Keeps 0 (s.gpr .rdi) s.mem s'.mem
   pub := fnPub
 
 /-- The affine addition's contract on x86-64. -/
 def addK : Contract isa where
-  pre s := fnPre s ∧ elemAt s.mem (s.gpr .rdi) (Spec.X448.Field64.slotAt 11) = Spec.Ed448.d
+  pre s := fnPre s ∧ elemAt s.mem (s.gpr .rdi) (Proof.X448.Field64.slotAt 11) = Spec.Ed448.d
   post s s' := pointAt s'.mem (s.gpr .rdi) 3 = Spec.Ed448.pointAdd (pointAt s.mem (s.gpr .rdi) 0)
-      (affine (elemAt s.mem (s.gpr .rdi) (Spec.X448.Field64.slotAt 8))
-        (elemAt s.mem (s.gpr .rdi) (Spec.X448.Field64.slotAt 9))) ∧
+      (affine (elemAt s.mem (s.gpr .rdi) (Proof.X448.Field64.slotAt 8))
+        (elemAt s.mem (s.gpr .rdi) (Proof.X448.Field64.slotAt 9))) ∧
     Keeps 3 (s.gpr .rdi) s.mem s'.mem
   pub := fnPub
 
@@ -106,8 +109,8 @@ theorem fn_correct (r : Nat) (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op)
       simp only [OutOf, ofs, slot]; omega
     · simp only [ofs, ACC]; omega
   · intro i hi hp hown
-    simp only [Spec.X448.Field64.wsBytes, Spec.X448.Field64.slotAt, Spec.Ed448.Point64.ownAt,
-      Spec.Ed448.Point64.ownEnd] at hi hp hown
+    simp only [Proof.X448.Field64.wsBytes, Proof.X448.Field64.slotAt, Proof.Ed448.Point64.ownAt,
+      Proof.Ed448.Point64.ownEnd] at hi hp hown
     refine hm _ (fun op hop => ?_) ?_
     · have := hout op hop
       simp only [OutOf, slot]
@@ -142,14 +145,14 @@ theorem addWith_correct {F : Impl.X448.X86_64.Field}
     (hmx : (addFnWith F).allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : addK.pre s) :
     ∃ tr s', Exec isa (addFnWith F) s tr s' ∧ abiPreserved s s' ∧ addK.post s s' := by
   have hd := hs.2
-  rw [show Spec.X448.Field64.slotAt 11 = slot (11 : Index).val from rfl, elemAt_eq] at hd
+  rw [show Proof.X448.Field64.slotAt 11 = slot (11 : Index).val from rfl, elemAt_eq] at hd
   obtain ⟨tr, s', he, ha, hv, hk'⟩ :=
     fn_correct 3 addAffineOps addAffineOps_valid hk hmx addAffineOps_outs s hs.1
       (fun hs => addFnWith_ok hf hs hd)
   refine ⟨tr, s', he, ha, ?_, hk'⟩
   rw [pointAt_eq _ _ 3 (by decide), pointAt_eq _ _ 0 (by decide), hv,
-    show Spec.X448.Field64.slotAt 8 = slot (8 : Index).val from rfl,
-    show Spec.X448.Field64.slotAt 9 = slot (9 : Index).val from rfl, elemAt_eq, elemAt_eq]
+    show Proof.X448.Field64.slotAt 8 = slot (8 : Index).val from rfl,
+    show Proof.X448.Field64.slotAt 9 = slot (9 : Index).val from rfl, elemAt_eq, elemAt_eq]
   refine (addAffineOps_eval _).trans ?_
   rw [hd, addWith_d]
   rfl
@@ -183,8 +186,8 @@ def fnSat : State where
   rd := []
   wr := [⟨0x1000, 8192⟩]
 
-theorem doubleK_implies : doubleK.Implies (Spec.Ed448.Point64.doubleContract X86_64.abi) := by
-  sig_implies [Spec.Ed448.Point64.doubleContract, Spec.Ed448.Point64.sig, X86_64.abi, X86_64.argRegs,
+theorem doubleK_implies : doubleK.Implies (Proof.Ed448.Point64.doubleContract X86_64.abi) := by
+  sig_implies [Proof.Ed448.Point64.doubleContract, Proof.Ed448.Point64.sig, X86_64.abi, X86_64.argRegs,
     doubleK, fnPre, fnPub] [fnSat] using fnSat
 
 end VG.Proof.Ed448.X86_64.Point64
@@ -210,26 +213,26 @@ def addSat : State where
   rd := []
   wr := [⟨0x1000, 8192⟩]
 
-theorem addSat_d : Spec.Ed448.Point64.elemAt addSatMem 0x1000 (Spec.X448.Field64.slotAt 11) = Spec.Ed448.d := by
+theorem addSat_d : Proof.Ed448.Point64.elemAt addSatMem 0x1000 (Proof.X448.Field64.slotAt 11) = Spec.Ed448.d := by
   decide +kernel
 
-theorem addK_implies : addK.Implies (Spec.Ed448.Point64.addAffineContract X86_64.abi) :=
-  { pre := by sig_implies_pre [Spec.Ed448.Point64.addAffineContract, Spec.Ed448.Point64.sig,
-      Spec.Ed448.Point64.dSlot, Spec.Ed448.Point64.sumSlot, Spec.Ed448.Point64.pSlot,
-      Spec.Ed448.Point64.qSlot, X86_64.abi, X86_64.argRegs, addK, fnPre, fnPub]
+theorem addK_implies : addK.Implies (Proof.Ed448.Point64.addAffineContract X86_64.abi) :=
+  { pre := by sig_implies_pre [Proof.Ed448.Point64.addAffineContract, Proof.Ed448.Point64.sig,
+      Proof.Ed448.Point64.dSlot, Proof.Ed448.Point64.sumSlot, Proof.Ed448.Point64.pSlot,
+      Proof.Ed448.Point64.qSlot, X86_64.abi, X86_64.argRegs, addK, fnPre, fnPub]
     post := by
       intro s s' _ h
-      sig_post [Spec.Ed448.Point64.addAffineContract, Spec.Ed448.Point64.sig, Spec.Ed448.Point64.dSlot,
-        Spec.Ed448.Point64.sumSlot, Spec.Ed448.Point64.pSlot, Spec.Ed448.Point64.qSlot, X86_64.abi,
+      sig_post [Proof.Ed448.Point64.addAffineContract, Proof.Ed448.Point64.sig, Proof.Ed448.Point64.dSlot,
+        Proof.Ed448.Point64.sumSlot, Proof.Ed448.Point64.pSlot, Proof.Ed448.Point64.qSlot, X86_64.abi,
         X86_64.argRegs, addK, fnPre, fnPub]
       exact h
-    pub := by sig_implies_pub [Spec.Ed448.Point64.addAffineContract, Spec.Ed448.Point64.sig,
-      Spec.Ed448.Point64.dSlot, Spec.Ed448.Point64.sumSlot, Spec.Ed448.Point64.pSlot,
-      Spec.Ed448.Point64.qSlot, X86_64.abi, X86_64.argRegs, addK, fnPre, fnPub]
+    pub := by sig_implies_pub [Proof.Ed448.Point64.addAffineContract, Proof.Ed448.Point64.sig,
+      Proof.Ed448.Point64.dSlot, Proof.Ed448.Point64.sumSlot, Proof.Ed448.Point64.pSlot,
+      Proof.Ed448.Point64.qSlot, X86_64.abi, X86_64.argRegs, addK, fnPre, fnPub]
     sat := ⟨addSat, by
-      unfold Spec.Ed448.Point64.addAffineContract
+      unfold Proof.Ed448.Point64.addAffineContract
       exact Sig.contract_pre_of_check (by decide +kernel) (by
-        sig_reduce [Sig.wfPre, Spec.Ed448.Point64.sig, Spec.Ed448.Point64.dSlot, X86_64.abi,
+        sig_reduce [Sig.wfPre, Proof.Ed448.Point64.sig, Proof.Ed448.Point64.dSlot, X86_64.abi,
           X86_64.argRegs, addSat]
         exact ⟨by decide, addSat_d⟩)⟩ }
 

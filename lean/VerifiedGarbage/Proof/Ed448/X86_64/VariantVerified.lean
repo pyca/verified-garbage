@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
@@ -76,7 +77,7 @@ theorem scalarBaseFor_ct (v : Impl.Ed448.X86_64.FieldVariant) :
     scalarBaseFor_ct0 v s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1 hp e₁ e₂
 
 theorem scalarBaseFor_verified (v : Impl.Ed448.X86_64.FieldVariant) (hL : Proof.Ed448.BaseLadderOk) :
-    Verified X86_64.target (scalarBaseFor v) (Spec.Ed448.scalarBaseContract X86_64.abi 8) :=
+    Verified X86_64.target (scalarBaseFor v) (Proof.Ed448.scalarBaseContract X86_64.abi 8) :=
   Verified.of_inline_ct (scalarBaseFor_inlineOk v) (scalarBaseFor_okI v hL) (scalarBaseFor_ct0 v)
     scalarBase_implies8 (fun _ h => Sig.clear_of_pre h)
     (fun s b hv u hs hp => scalarBase_patch s b hv u (scalarBase_implies8.pre s hs) (Sig.clear_of_pre hs) hp)
@@ -109,7 +110,7 @@ theorem verifyEquationFor_ct (v : Impl.Ed448.X86_64.FieldVariant)
 
 theorem verifyEquationFor_verified (v : Impl.Ed448.X86_64.FieldVariant)
     (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) :
-    Verified X86_64.target (verifyEquationFor v) (Spec.Ed448.verifyEquationContract X86_64.abi 8) :=
+    Verified X86_64.target (verifyEquationFor v) (Proof.Ed448.verifyEquationContract X86_64.abi 8) :=
   Verified.of_inline (verifyEquationFor_inlineOk v) (verifyEquationFor_okI v hR hE)
     (verifyEquationFor_ctI v hR) verifyEquation_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ _ hp => hp)
     (fun s t hs ht hp => (verifyEquation_implies8.pub s t hs ht hp).1)

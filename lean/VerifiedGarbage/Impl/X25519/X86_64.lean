@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Isa
-public import VerifiedGarbage.Spec.X25519.Field64
+public import VerifiedGarbage.Spec.X25519
 
 /-!
 # X25519: x86-64 implementation
@@ -662,7 +662,7 @@ def invertFn : Prog isa := .seq (.block invSaves) (.seq (invertDS baseline) (.bl
 
 /-- A call of `vg_gf25519_r64_invert`, which every inversion of the x86-64 code
 is (`ws` in `rdi`). -/
-def invertCall : Prog isa := .call Spec.X25519.Field64.invertApi.name invertFn
+def invertCall : Prog isa := .call "vg_gf25519_r64_invert" invertFn
 
 /-- The callee-saved registers we use, and where they are saved. -/
 def saved : List (Reg × Nat) :=

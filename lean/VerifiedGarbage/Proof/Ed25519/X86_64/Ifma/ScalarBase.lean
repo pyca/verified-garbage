@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
@@ -71,7 +72,7 @@ theorem scalarBase_ifma_ct [X25519.X86_64.DivstepInv] :
     (fun _ _ h => h.1) scalarBase_ifma_ctI
 
 theorem scalarBase_ifma_verified [X25519.X86_64.DivstepInv] : Verified X86_64.target scalarBase_ifma
-    (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8) :=
+    (Proof.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8) :=
   scalarBase_verified_of (by lit_decide) scalarBase_ifma_okI scalarBase_ifma_ctI
 
 end VG.Proof.Ed25519.X86_64.Ifma

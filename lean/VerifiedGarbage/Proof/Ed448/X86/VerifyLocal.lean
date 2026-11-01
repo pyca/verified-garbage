@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the contract the proof is written against
 
-`verifyEquationLocal`, the facts of `Spec.Ed448.verifyEquationContract` the
+`verifyEquationLocal`, the facts of `Proof.Ed448.verifyEquationContract` the
 proof is written against, in a module of their own: callers proven for any
 code meeting it need not import the proof. The arguments are only read; the
 inputs are public (`pub` includes their bytes).

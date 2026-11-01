@@ -7,8 +7,8 @@ public import VerifiedGarbage.Impl.Ed25519.PPC64LE.MulFn
 
 Extended Edwards formulas on eight-limb field elements, as ARMv7's
 (`Impl/Ed25519/Arm/Field.lean`). Slots 0–21 occupy bytes 64–767 of the
-eight-KiB working space, 32 bytes each, as `Spec/Ed25519/Point32.lean` and
-`Spec/X25519/Field32.lean` place their operands: the first point at slots
+eight-KiB working space, 32 bytes each, as `Proof/Ed25519/Point32Contract.lean` and
+`Proof/X25519/Field32Contract.lean` place their operands: the first point at slots
 0–3 (byte 64), the second at 4–7 (byte 192), the temporaries of an addition
 at 8–15 (bytes 320–575) and `d` at slot 16 (byte 576).
 -/

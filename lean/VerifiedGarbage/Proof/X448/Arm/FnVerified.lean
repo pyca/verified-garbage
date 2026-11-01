@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Field16Contract
 public import VerifiedGarbage.Proof.X448.Arm.FnContract
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -21,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 /-!
 # X448 on ARMv7: the field functions, verified
 
-Each function meets the contract of its `Api` (`Spec/X448/Field16.lean`):
+Each function meets the contract of its `Api` (`Proof/X448/Field16Contract.lean`):
 the proof against `mulArm`, `addArm`, `subArm` or `mulA24Arm`, which it
 implies; constant time by taint tracking (only the pointer and the offsets,
 in `r0`–`r3`, are public, and every address is `ws` plus a constant or an
@@ -67,17 +68,17 @@ def satF : State where
   rd := []
   wr := [⟨0x1000, 8192⟩]
 
-theorem limbs_zero (ws : Addr) : Spec.X448.Field16.Limbs (fun _ => 0) ws 0 := by
+theorem limbs_zero (ws : Addr) : Proof.X448.Field16.Limbs (fun _ => 0) ws 0 := by
   intro i _
-  simp only [Spec.X448.Field16.limbAt, Mem.readW, Mem.read]
+  simp only [Proof.X448.Field16.limbAt, Mem.readW, Mem.read]
   decide
 
-theorem fits_zero : Spec.X448.Field16.Fits 0 := by decide
+theorem fits_zero : Proof.X448.Field16.Fits 0 := by decide
 
-theorem bin_sat (r : Nat → Nat → Nat → Prop) : (Spec.X448.Field16.binContract Arm.abi r).pre satF := by
-  unfold Spec.X448.Field16.binContract
+theorem bin_sat (r : Nat → Nat → Nat → Prop) : (Proof.X448.Field16.binContract Arm.abi r).pre satF := by
+  unfold Proof.X448.Field16.binContract
   exact Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.X448.Field16.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
+    sig_reduce [Sig.wfPre, Proof.X448.Field16.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
     exact ⟨by decide, fits_zero, fits_zero, fits_zero, limbs_zero _, limbs_zero _⟩)
 
 theorem gf448_mul_ct : ConstantTime isa mulArm.pre mulArm.pub mulFn :=
@@ -96,58 +97,58 @@ theorem gf448_mulA24_ct : ConstantTime isa mulA24Arm.pre mulA24Arm.pub mulA24Fn 
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2])
     (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub1_agree hp)) (by native_taint_decide)
 
-theorem gf448_mul_verified : Verified Arm.target mulFn (Spec.X448.Field16.mulContract Arm.abi) :=
+theorem gf448_mul_verified : Verified Arm.target mulFn (Proof.X448.Field16.mulContract Arm.abi) :=
   Verified.of_correct mul_arm gf448_mul_ct
-    { pre := by sig_implies_pre [Spec.X448.Field16.mulContract, Spec.X448.Field16.binContract,
-        Spec.X448.Field16.sig, mulArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
+    { pre := by sig_implies_pre [Proof.X448.Field16.mulContract, Proof.X448.Field16.binContract,
+        Proof.X448.Field16.sig, mulArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      post := by sig_implies_post [Spec.X448.Field16.mulContract, Spec.X448.Field16.binContract,
-        Spec.X448.Field16.sig, mulArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
+      post := by sig_implies_post [Proof.X448.Field16.mulContract, Proof.X448.Field16.binContract,
+        Proof.X448.Field16.sig, mulArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      pub := by sig_implies_pub [Spec.X448.Field16.mulContract, Spec.X448.Field16.binContract,
-        Spec.X448.Field16.sig, mulArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
+      pub := by sig_implies_pub [Proof.X448.Field16.mulContract, Proof.X448.Field16.binContract,
+        Proof.X448.Field16.sig, mulArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := ⟨satF, bin_sat _⟩ }
 
-theorem gf448_add_verified : Verified Arm.target addFn (Spec.X448.Field16.addContract Arm.abi) :=
+theorem gf448_add_verified : Verified Arm.target addFn (Proof.X448.Field16.addContract Arm.abi) :=
   Verified.of_correct add_arm gf448_add_ct
-    { pre := by sig_implies_pre [Spec.X448.Field16.addContract, Spec.X448.Field16.binContract,
-        Spec.X448.Field16.sig, addArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
+    { pre := by sig_implies_pre [Proof.X448.Field16.addContract, Proof.X448.Field16.binContract,
+        Proof.X448.Field16.sig, addArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      post := by sig_implies_post [Spec.X448.Field16.addContract, Spec.X448.Field16.binContract,
-        Spec.X448.Field16.sig, addArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
+      post := by sig_implies_post [Proof.X448.Field16.addContract, Proof.X448.Field16.binContract,
+        Proof.X448.Field16.sig, addArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      pub := by sig_implies_pub [Spec.X448.Field16.addContract, Spec.X448.Field16.binContract,
-        Spec.X448.Field16.sig, addArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
+      pub := by sig_implies_pub [Proof.X448.Field16.addContract, Proof.X448.Field16.binContract,
+        Proof.X448.Field16.sig, addArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := ⟨satF, bin_sat _⟩ }
 
-theorem gf448_sub_verified : Verified Arm.target subFn (Spec.X448.Field16.subContract Arm.abi) :=
+theorem gf448_sub_verified : Verified Arm.target subFn (Proof.X448.Field16.subContract Arm.abi) :=
   Verified.of_correct sub_arm gf448_sub_ct
-    { pre := by sig_implies_pre [Spec.X448.Field16.subContract, Spec.X448.Field16.binContract,
-        Spec.X448.Field16.sig, subArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
+    { pre := by sig_implies_pre [Proof.X448.Field16.subContract, Proof.X448.Field16.binContract,
+        Proof.X448.Field16.sig, subArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      post := by sig_implies_post [Spec.X448.Field16.subContract, Spec.X448.Field16.binContract,
-        Spec.X448.Field16.sig, subArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
+      post := by sig_implies_post [Proof.X448.Field16.subContract, Proof.X448.Field16.binContract,
+        Proof.X448.Field16.sig, subArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      pub := by sig_implies_pub [Spec.X448.Field16.subContract, Spec.X448.Field16.binContract,
-        Spec.X448.Field16.sig, subArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
+      pub := by sig_implies_pub [Proof.X448.Field16.subContract, Proof.X448.Field16.binContract,
+        Proof.X448.Field16.sig, subArm, binArm, armPre, armPub, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := ⟨satF, bin_sat _⟩ }
 
-theorem a24_sat : (Spec.X448.Field16.mulA24Contract Arm.abi).pre satF := by
-  unfold Spec.X448.Field16.mulA24Contract
+theorem a24_sat : (Proof.X448.Field16.mulA24Contract Arm.abi).pre satF := by
+  unfold Proof.X448.Field16.mulA24Contract
   exact Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.X448.Field16.sig1, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
+    sig_reduce [Sig.wfPre, Proof.X448.Field16.sig1, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
     exact ⟨by decide, fits_zero, fits_zero, limbs_zero _⟩)
 
-theorem gf448_mulA24_verified : Verified Arm.target mulA24Fn (Spec.X448.Field16.mulA24Contract Arm.abi) :=
+theorem gf448_mulA24_verified : Verified Arm.target mulA24Fn (Proof.X448.Field16.mulA24Contract Arm.abi) :=
   Verified.of_correct mulA24_arm gf448_mulA24_ct
-    { pre := by sig_implies_pre [Spec.X448.Field16.mulA24Contract, Spec.X448.Field16.sig1, mulA24Arm,
+    { pre := by sig_implies_pre [Proof.X448.Field16.mulA24Contract, Proof.X448.Field16.sig1, mulA24Arm,
         armPre1, armPub1, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      post := by sig_implies_post [Spec.X448.Field16.mulA24Contract, Spec.X448.Field16.sig1, mulA24Arm,
+      post := by sig_implies_post [Proof.X448.Field16.mulA24Contract, Proof.X448.Field16.sig1, mulA24Arm,
         armPre1, armPub1, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      pub := by sig_implies_pub [Spec.X448.Field16.mulA24Contract, Spec.X448.Field16.sig1, mulA24Arm,
+      pub := by sig_implies_pub [Proof.X448.Field16.mulA24Contract, Proof.X448.Field16.sig1, mulA24Arm,
         armPre1, armPub1, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := ⟨satF, a24_sat⟩ }
 

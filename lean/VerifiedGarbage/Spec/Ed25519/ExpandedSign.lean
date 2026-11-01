@@ -20,8 +20,7 @@ of a seed.
 
 The seed itself is not a parameter: a signature depends on the seed only
 through its SHA-512 digest, which keeps the arguments in registers on
-every target. `signContract` and `signCachedContract` remain available
-unchanged. No buffer contents may affect timing, including the cached
+every target. `signCachedContract` remains available unchanged. No buffer contents may affect timing, including the cached
 digest and public key.
 -/
 
@@ -38,7 +37,7 @@ def signExpandedSig : Sig where
 
 /-- Sign with the SHA-512 digest of a seed and the public key
 corresponding to that seed. The postcondition is the same complete signing
-algorithm as `signContract`, for every seed with that digest. -/
+algorithm, `sign`, for every seed with that digest. -/
 def signExpandedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   signExpandedSig.contract A
     (pre := fun _out expanded pk _message _len _scratch m =>

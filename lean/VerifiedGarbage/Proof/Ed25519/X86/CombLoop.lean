@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 public import VerifiedGarbage.Proof.Ed25519.X86.CombSelect
 public import VerifiedGarbage.Proof.Ed25519.X86.CombDigit
 public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Fn
@@ -157,7 +158,7 @@ theorem doubleStep_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {n : Nat}
     WP isa (.seq Point32.doubleCall (.block [.alu .sub .esi (.imm 1)])) s fun t =>
       IKeep x s t ∧ t.gpr .esi = BitVec.ofNat 32 (n - 1) ∧
       isa.eval .ne t = some (!decide (n - 1 = 0)) ∧
-      point (env t.mem x) 0 1 2 3 = Spec.Ed25519.Point64.pointDouble (point (env s.mem x) 0 1 2 3) ∧
+      point (env t.mem x) 0 1 2 3 = Proof.Ed25519.Point64.pointDouble (point (env s.mem x) 0 1 2 3) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem x i = env s.mem x i := by
   refine WP.seq (WP.mono (doubleCall_ok hc) fun t ⟨ht, pt, high⟩ => ?_)
   refine Wp.wp_subi fun u hu _ hz => WP.block_nil ?_

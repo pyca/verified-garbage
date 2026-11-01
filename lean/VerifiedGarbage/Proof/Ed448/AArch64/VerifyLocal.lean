@@ -5,13 +5,14 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification's equation on AArch64: the contract its callers use
 
 Untrusted: everything here is checked by Lean. The contract the proof is
-written against (the facts of `Spec.Ed448.verifyEquationContract` it uses,
+written against (the facts of `Proof.Ed448.verifyEquationContract` it uses,
 stated for AArch64), that the function has no frames, and `EqOk`: that it
 meets the contract in constant time. `VerifyVerified.lean` proves `EqOk` with
 the group law and the field arithmetic; the proofs of the functions that call

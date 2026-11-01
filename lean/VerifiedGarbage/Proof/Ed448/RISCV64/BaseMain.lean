@@ -1,7 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed448.RISCV64.BaseStep
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.RISCV64.BaseInit
 import VerifiedGarbage.Proof.Ed448.RISCV64.BaseEncode
 import VerifiedGarbage.Proof.X448.Field

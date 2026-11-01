@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
 public import VerifiedGarbage.Proof.X448.X86_64.Basic
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
@@ -16,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Ed448 scalar reduction on x86-64: the whole function
 
 The contract the proof is written against (the facts of
-`Spec.Ed448.scalarReduceContract` it uses, stated for x86-64), and the
+`Proof.Ed448.scalarReduceContract` it uses, stated for x86-64), and the
 correctness of `vg_ed448_scalar_reduce` against it: every write is in the
 working space but the result's, so the input is read unchanged, the
 callee-saved registers are restored from the working space, and the return

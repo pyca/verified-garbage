@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Fn
 import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
@@ -22,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # Ed25519's point functions on AArch64: their `Verified`
 
-The facts of `Spec.Ed25519.Point64`'s contracts on AArch64 (`fnPre`: `ws` in
+The facts of `Proof.Ed25519.Point64`'s contracts on AArch64 (`fnPre`: `ws` in
 `x0`), which the functions meet (`fn_correct`, from `fn_ok`): the callee-saved
 registers are restored, no instruction writes `v8`–`v15`, and every byte they
 write is in slots 0–3 or 8–15; the spec's coordinates are the slots' field
@@ -36,7 +37,7 @@ satisfying the precondition.
 namespace VG.Proof.Ed25519.AArch64.Point64
 
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Impl.Ed25519.AArch64.Point64 VG.Proof.Ed25519.AArch64
-open VG.Spec.Ed25519.Point64 (elemAt pointAt PointIs pAt qAt elemBytes)
+open VG.Proof.Ed25519.Point64 (elemAt pointAt PointIs pAt qAt elemBytes)
 
 /-- The spec's coordinate at `o` is the field element there. -/
 theorem elemAt_eq (m : Mem) (base : Addr) (o : Nat) : elemAt m base o = F m base o := by
@@ -66,8 +67,8 @@ def fnPub (s₁ s₂ : State) : Prop := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.sp 
 def doubleK : Contract isa where
   pre := fnPre
   post s s' := PointIs true s'.mem (s.gpr .x0) pAt
-      (Spec.Ed25519.Point64.pointDouble (pointAt s.mem (s.gpr .x0) pAt)) ∧
-    Spec.Ed25519.Point64.Keeps (s.gpr .x0) s.mem s'.mem
+      (Proof.Ed25519.Point64.pointDouble (pointAt s.mem (s.gpr .x0) pAt)) ∧
+    Proof.Ed25519.Point64.Keeps (s.gpr .x0) s.mem s'.mem
   pub := fnPub
 
 /-- The affine addition's contract on AArch64. -/
@@ -77,7 +78,7 @@ def affK : Contract isa where
       elemAt s.mem (s.gpr .x0) (qAt + elemBytes) = q.Y + q.X →
       elemAt s.mem (s.gpr .x0) (qAt + 2 * elemBytes) = q.T * 2 * Spec.Ed25519.d →
       PointIs true s'.mem (s.gpr .x0) pAt (Spec.Ed25519.pointAdd (pointAt s.mem (s.gpr .x0) pAt) q)) ∧
-    Spec.Ed25519.Point64.Keeps (s.gpr .x0) s.mem s'.mem
+    Proof.Ed25519.Point64.Keeps (s.gpr .x0) s.mem s'.mem
   pub := fnPub
 
 /-- The program's results are in slots 0–3 or 8–15. -/
@@ -93,14 +94,14 @@ theorem fn_correct (ops : List FieldOp) (hv : ∀ r, ∀ i ∈ fieldCode ops, vd
     (hkv : (fn ops).allInstrs keepsV = true) (hout : OutsOk ops) (s : State) (hs : fnPre s) :
     ∃ t s', Exec isa (fn ops) s t s' ∧ abiPreserved s s' ∧
       env s'.mem (s.gpr .x0) = evalOps ops (env s.mem (s.gpr .x0)) ∧
-      Spec.Ed25519.Point64.Keeps (s.gpr .x0) s.mem s'.mem := by
+      Proof.Ed25519.Point64.Keeps (s.gpr .x0) s.mem s'.mem := by
   obtain ⟨_, hwr, hnw⟩ := hs
   obtain ⟨t, s', he, ⟨hg, _, _, hsp, hm, hev⟩, hpv⟩ :=
     WP.preservedV (fn_ok (s := s) (base := s.gpr .x0) ⟨rfl, by rw [hwr]; simp, hnw⟩ ops hv) hkv
   refine ⟨t, s', he, ⟨fun r hr => hg r (fn_preserved r hr), hsp, hpv⟩, hev, ?_⟩
   intro i hi hp hown
-  simp only [Spec.Ed25519.Point64.wsBytes, Spec.Ed25519.Point64.pAt, Spec.Ed25519.Point64.elemBytes,
-    Spec.Ed25519.Point64.ownAt, Spec.Ed25519.Point64.ownEnd] at hi hp hown
+  simp only [Proof.Ed25519.Point64.wsBytes, Proof.Ed25519.Point64.pAt, Proof.Ed25519.Point64.elemBytes,
+    Proof.Ed25519.Point64.ownAt, Proof.Ed25519.Point64.ownEnd] at hi hp hown
   refine hm _ fun op hop => ?_
   rw [ofs_off' _ (by omega)]
   have := hout op hop
@@ -177,15 +178,15 @@ def fnSat : State where
   wr := [⟨0x1000, 8192⟩]
 
 theorem doubleFn_verified :
-    Verified AArch64.target doubleFn (Spec.Ed25519.Point64.doubleContract AArch64.abi true) :=
+    Verified AArch64.target doubleFn (Proof.Ed25519.Point64.doubleContract AArch64.abi true) :=
   Verified.of_correct double_correct doubleFn_ct (by
-    sig_implies [Spec.Ed25519.Point64.doubleContract, Spec.Ed25519.Point64.sig, AArch64.abi,
+    sig_implies [Proof.Ed25519.Point64.doubleContract, Proof.Ed25519.Point64.sig, AArch64.abi,
       AArch64.argRegs, doubleK, fnPre, fnPub] [fnSat] using fnSat)
 
 theorem affFn_verified :
-    Verified AArch64.target affFn (Spec.Ed25519.Point64.addAffineContract AArch64.abi true) :=
+    Verified AArch64.target affFn (Proof.Ed25519.Point64.addAffineContract AArch64.abi true) :=
   Verified.of_correct aff_correct affFn_ct (by
-    sig_implies [Spec.Ed25519.Point64.addAffineContract, Spec.Ed25519.Point64.sig, AArch64.abi,
+    sig_implies [Proof.Ed25519.Point64.addAffineContract, Proof.Ed25519.Point64.sig, AArch64.abi,
       AArch64.argRegs, affK, fnPre, fnPub] [fnSat] using fnSat)
 
 end VG.Proof.Ed25519.AArch64.Point64

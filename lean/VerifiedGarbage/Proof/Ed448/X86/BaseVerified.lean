@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Ed448.Contract
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
@@ -80,19 +81,19 @@ theorem scalarBaseWide_pre (s : State) (h : scalarBaseWide.pre s) :
   exact ⟨True.intro, True.intro, h.2.2⟩
 
 theorem scalarBaseWide_implies :
-    scalarBaseWide.Implies (Spec.Ed448.scalarBaseContract X86.abi 20) := by
+    scalarBaseWide.Implies (Proof.Ed448.scalarBaseContract X86.abi 20) := by
   have a0 : arg scalarBaseSat 0 = 0x1000 := by decide
   have a1 : arg scalarBaseSat 1 = 0x2000 := by decide
   have a2 : arg scalarBaseSat 2 = 0x4000 := by decide
   have e : argAddr scalarBaseSat 0 = 0x8004 := by decide
   have esp : scalarBaseSat.gpr .esp = 0x8000 := rfl
-  sig_implies [Spec.Ed448.scalarBaseContract, Spec.Ed448.scalarBaseSig,
+  sig_implies [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig,
     Spec.Ed448.scratchWords, scalarBaseWide, scalarBaseLocal, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, e, esp] using scalarBaseSat
 
 theorem scalarBase_verified (hl : BaseLadderOk) :
-    Verified X86.target scalarBase (Spec.Ed448.scalarBaseContract X86.abi 20) := by
+    Verified X86.target scalarBase (Proof.Ed448.scalarBaseContract X86.abi 20) := by
   have hsat := scalarBaseWide_implies.sat_left
   have satLocal : ∃ s, scalarBaseLocal.pre s := hsat.elim fun s h => ⟨_, scalarBaseWide_pre s h⟩
   have verifiedLocal : Verified X86.target scalarBase scalarBaseLocal :=

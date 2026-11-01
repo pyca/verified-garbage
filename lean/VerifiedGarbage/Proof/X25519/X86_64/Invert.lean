@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Field64Contract
 import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
 import VerifiedGarbage.Proof.X25519.Invert
 import VerifiedGarbage.Proof.Mont.Read
@@ -36,7 +37,7 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 /-!
 # X25519 on x86-64: `vg_gf25519_r64_invert`, verified
 
-The facts of `Spec.X25519.Field64.invertContract` on x86-64 (`inv64`: `ws` in
+The facts of `Proof.X25519.Field64.invertContract` on x86-64 (`inv64`: `ws` in
 `rdi`), which `invertFn` meets: it keeps the callee-saved registers the
 divsteps write in `xmm0`–`xmm5` (`invSaves_ok`, `invRestores_ok`), the
 divsteps keep the vector registers and change only bytes 512 to 767 of `ws`,
@@ -50,7 +51,7 @@ public), and a state satisfying the precondition.
 namespace VG.Proof.X25519.X86_64
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Proof.X25519
-open VG.Spec.X25519.Field64 (valAt zAt invAt InvKeeps)
+open VG.Proof.X25519.Field64 (valAt zAt invAt InvKeeps)
 
 /-- `vg_gf25519_r64_invert(ws = rdi)`. -/
 def inv64 : Contract isa where
@@ -177,8 +178,8 @@ theorem invert_x64 [DivstepInv] (s : State) (hs : inv64.pre s) :
     simp only [pw, Fin.val_ofNat]
     rw [show (32 * (4 : Fin 128).val) = 128 from rfl, m₁, ← Nat.pow_mod]
   · intro i hi hown
-    simp only [Spec.X25519.Field64.wsBytes, Spec.X25519.Field64.invOwnAt,
-      Spec.X25519.Field64.invOwnEnd] at hi hown
+    simp only [Proof.X25519.Field64.wsBytes, Proof.X25519.Field64.invOwnAt,
+      Proof.X25519.Field64.invOwnEnd] at hi hown
     rw [hm, o₂ _ (by rw [ofs_off' _ (by omega)]; omega), m₁]
 
 theorem invert_ct : ConstantTime isa inv64.pre inv64.pub invertFn := by
@@ -203,9 +204,9 @@ def invSat : State where
   wr := [⟨0x1000, 4096⟩]
 
 theorem invert_verified [DivstepInv] :
-    Verified X86_64.target invertFn (Spec.X25519.Field64.invertContract X86_64.abi) :=
+    Verified X86_64.target invertFn (Proof.X25519.Field64.invertContract X86_64.abi) :=
   Verified.of_correct invert_x64 invert_ct (by
-    sig_implies [Spec.X25519.Field64.invertContract, Spec.X25519.Field64.invSig, X86_64.abi,
+    sig_implies [Proof.X25519.Field64.invertContract, Proof.X25519.Field64.invSig, X86_64.abi,
       X86_64.argRegs, inv64] [invSat] using invSat)
 
 end VG.Proof.X25519.X86_64

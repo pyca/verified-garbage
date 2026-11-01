@@ -1,7 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Field16Contract
 import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-public import VerifiedGarbage.Spec.Ed25519.Point16
+public import VerifiedGarbage.Proof.Ed25519.Point16Contract
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldOn
 import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 import VerifiedGarbage.Proof.Framework.Lit
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # Ed25519 on ARMv7: the elements as the specification of the functions reads them
 
-`Spec/X25519/Field16.lean` and `Spec/Ed25519/Point16.lean` read an element
+`Proof/X25519/Field16Contract.lean` and `Proof/Ed25519/Point16Contract.lean` read an element
 at a byte offset given as a 32-bit word; the proofs read it at an offset in
 `Nat` (`limb`, `V`, `env`). They agree (`limbAt_ofNat`, `valAt_ofNat`,
 `limbs_ofNat`, `elemAt_eq`, `pointAt_eq`).
@@ -21,7 +22,7 @@ at a byte offset given as a 32-bit word; the proofs read it at an offset in
 namespace VG.Proof.Ed25519.Arm
 
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
-open VG.Spec.X25519.Field16 (limbAt valN valAt Limbs)
+open VG.Proof.X25519.Field16 (limbAt valN valAt Limbs)
 
 theorem limbAt_ofNat (m : Mem) (B : Addr) {n : Nat} (hn : n < 2 ^ 32) (k : Nat) :
     limbAt m B (BitVec.ofNat 32 n) k = limb m B n k := by
@@ -29,7 +30,7 @@ theorem limbAt_ofNat (m : Mem) (B : Addr) {n : Nat} (hn : n < 2 ^ 32) (k : Nat) 
 
 theorem limbs_ofNat {m : Mem} {B : Addr} {n : Nat} (hn : n < 2 ^ 32) :
     Limbs m B (BitVec.ofNat 32 n) ↔ Lim m B n := by
-  simp only [Limbs, Lim, limbAt_ofNat m B hn, Spec.X25519.Field16.limbs]
+  simp only [Limbs, Lim, limbAt_ofNat m B hn, Proof.X25519.Field16.limbs]
 
 theorem valN_ofNat (m : Mem) (B : Addr) {n : Nat} (hn : n < 2 ^ 32) :
     ∀ k, valN m B (BitVec.ofNat 32 n) k = val16 (limb m B n) k
@@ -41,15 +42,15 @@ theorem valAt_ofNat (m : Mem) (B : Addr) {n : Nat} (hn : n < 2 ^ 32) :
   valN_ofNat m B hn 16
 
 theorem elemAt_eq (m : Mem) (b : BitVec 32) (i : Slot) :
-    Spec.Ed25519.Point16.elemAt m (State.addr b) (offset i) = env m b i := by
-  rw [Spec.Ed25519.Point16.elemAt, valAt_ofNat m _ (by have := slot_range i; rw [ACC_eq] at this; omega)]
+    Proof.Ed25519.Point16.elemAt m (State.addr b) (offset i) = env m b i := by
+  rw [Proof.Ed25519.Point16.elemAt, valAt_ofNat m _ (by have := slot_range i; rw [ACC_eq] at this; omega)]
   rfl
 
 theorem pointAt_eq (m : Mem) (b : BitVec 32) (i : Nat) (hi : i + 3 < 22) :
-    Spec.Ed25519.Point16.pointAt m (State.addr b) (64 + 64 * i) =
+    Proof.Ed25519.Point16.pointAt m (State.addr b) (64 + 64 * i) =
       point (env m b) ⟨i, by omega⟩ ⟨i + 1, by omega⟩ ⟨i + 2, by omega⟩ ⟨i + 3, by omega⟩ := by
   have e (j : Nat) (hj : j < 22) : 64 + 64 * j = offset ⟨j, hj⟩ := rfl
-  rw [Spec.Ed25519.Point16.pointAt, point, show Spec.Ed25519.Point16.elemBytes = 64 from rfl, e i (by omega),
+  rw [Proof.Ed25519.Point16.pointAt, point, show Proof.Ed25519.Point16.elemBytes = 64 from rfl, e i (by omega),
     show offset ⟨i, _⟩ + 64 = offset ⟨i + 1, by omega⟩ by simp only [offset]; omega,
     show offset ⟨i, _⟩ + 2 * 64 = offset ⟨i + 2, by omega⟩ by simp only [offset]; omega,
     show offset ⟨i, _⟩ + 3 * 64 = offset ⟨i + 3, by omega⟩ by simp only [offset]; omega,

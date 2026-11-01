@@ -46,8 +46,8 @@ from the 8 bytes of stack below `esp`. -/
 theorem pow250Call_ok' {W : Nat} {x : BitVec 32} {s : State} (hc : Ctx W x s) (hE : 8 ≤ (s.gpr .esp).toNat)
     (dis4 : (scR 4096 x).Disjoint (callStk s)) :
     WP isa pow250Call s fun t => Keep s t ∧ Frame [sub x 512 512, callStk s] s.mem t.mem ∧
-      F t.mem x E1 = pw (F s.mem x Spec.X25519.Field32.aAt) (2 ^ 250 - 1) ∧
-      F t.mem x E0 = pw (F s.mem x Spec.X25519.Field32.aAt) 11 := by
+      F t.mem x E1 = pw (F s.mem x Impl.X25519.X86.Field32.aAt) (2 ^ 250 - 1) ∧
+      F t.mem x E0 = pw (F s.mem x Impl.X25519.X86.Field32.aAt) 11 := by
   have hfit : x.toNat + 4096 ≤ 2 ^ 32 := hc.fit4
   have fit : 4 * [Reg.edi].length + 4 ≤ (s.gpr .esp).toNat := hE
   let rd : List Region := [below (s.gpr .esp) 4]
@@ -63,8 +63,8 @@ theorem pow250Call_ok' {W : Nat} {x : BitVec 32} {s : State} (hc : Ctx W x s) (h
   let K : Contract isa :=
     { pre := fun t => t = e
       post := fun t t' => Frame (powW x) t.mem t'.mem ∧
-        F t'.mem x E1 = pw (F t.mem x Spec.X25519.Field32.aAt) (2 ^ 250 - 1) ∧
-        F t'.mem x E0 = pw (F t.mem x Spec.X25519.Field32.aAt) 11
+        F t'.mem x E1 = pw (F t.mem x Impl.X25519.X86.Field32.aAt) (2 ^ 250 - 1) ∧
+        F t'.mem x E0 = pw (F t.mem x Impl.X25519.X86.Field32.aAt) 11
       pub := fun _ _ => True }
   have hret : (⟨(e.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (scR 4096 x) := by
     rw [esp_e]
@@ -107,8 +107,8 @@ theorem pow250Call_ok' {W : Nat} {x : BitVec 32} {s : State} (hc : Ctx W x s) (h
 
 theorem pow250Call_ok {x : BitVec 32} {s : State} (hc : Ctx 8192 x s) :
     WP isa pow250Call s fun t => Keep s t ∧ Frame [sub x 512 512, callStk s] s.mem t.mem ∧
-      F t.mem x E1 = pw (F s.mem x Spec.X25519.Field32.aAt) (2 ^ 250 - 1) ∧
-      F t.mem x E0 = pw (F s.mem x Spec.X25519.Field32.aAt) 11 :=
+      F t.mem x E1 = pw (F s.mem x Impl.X25519.X86.Field32.aAt) (2 ^ 250 - 1) ∧
+      F t.mem x E0 = pw (F s.mem x Impl.X25519.X86.Field32.aAt) 11 :=
   have h := hc.stk rfl (Nat.le_refl _)
   pow250Call_ok' hc h.1 (h.2.sub_left (Region.sub_prefix (by decide)))
 

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
@@ -210,9 +211,9 @@ theorem scalarReduce_ct : ConstantTime isa scalarReduceLocal.pre scalarReduceLoc
   · rw [(ScalarReducePre.of hs).wr, (ScalarReducePre.of ht).wr, h0, h2]
 
 theorem scalarReduce_verified : Verified Arm.target scalarReduce
-    (Spec.Ed25519.scalarReduceContract Arm.abi) :=
+    (Proof.Ed25519.scalarReduceContract Arm.abi) :=
   Verified.of_correct scalarReduce_ok scalarReduce_ct (by
-    sig_implies [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
+    sig_implies [Proof.Ed25519.scalarReduceContract, Proof.Ed25519.scalarReduceSig,
       Spec.Ed25519.scratchWords, scalarReduceLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [scalarSatState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scalarSatState)

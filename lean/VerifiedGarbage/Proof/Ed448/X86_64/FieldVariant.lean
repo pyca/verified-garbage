@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Point64Contract
 public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -100,7 +101,7 @@ theorem double_mxcsr (v : Impl.Ed448.X86_64.FieldVariant) :
   cases v <;> dsimp only [Impl.Ed448.X86_64.FieldVariant.doubleFn] <;> lit_decide
 
 theorem double_verified (v : Impl.Ed448.X86_64.FieldVariant) :
-    Verified X86_64.target v.doubleFn (Spec.Ed448.Point64.doubleContract X86_64.abi) := by
+    Verified X86_64.target v.doubleFn (Proof.Ed448.Point64.doubleContract X86_64.abi) := by
   refine Verified.of_correct (k := doubleK) ?_ ?_ doubleK_implies
   · rw [doubleFn_eq]
     exact doubleWith_correct (field_ok v) (by rw [← doubleFn_eq]; exact double_kept v)
@@ -120,7 +121,7 @@ theorem add_mxcsr (v : Impl.Ed448.X86_64.FieldVariant) :
   cases v <;> dsimp only [Impl.Ed448.X86_64.FieldVariant.addFn] <;> lit_decide
 
 theorem add_verified (v : Impl.Ed448.X86_64.FieldVariant) :
-    Verified X86_64.target v.addFn (Spec.Ed448.Point64.addAffineContract X86_64.abi) := by
+    Verified X86_64.target v.addFn (Proof.Ed448.Point64.addAffineContract X86_64.abi) := by
   refine Verified.of_correct (k := addK) ?_ ?_ addK_implies
   · rw [addFn_eq]
     exact addWith_correct (field_ok v) (by rw [← addFn_eq]; exact add_kept v)

@@ -33,14 +33,14 @@ def chain250 : Prog isa :=
   .seq (sqn 17 16 100) <| .seq (mulP 16 17 16) <|
   .seq (sqn 16 16 50) (mulP 15 16 15)
 
-/-- `vg_gf25519_r32_pow250` (`Spec/X25519/Field32.lean`): `ws` moved to
+/-- `vg_gf25519_r32_pow250` (`Proof/X25519/Field32Contract.lean`): `ws` moved to
 `r6`, and the chain. It uses only volatile registers. -/
 def pow250Fn : Prog isa := .seq (.block [.addi .r6 .r3 0]) chain250
 
 /-- A call of `vg_gf25519_r32_pow250`. -/
 def power250 : Prog isa :=
   .seq (.block [.addi .r3 .r6 0])
-    (.seq (.call Spec.X25519.Field32.pow250Api.name pow250Fn) (.block [.addi .r6 .r3 0]))
+    (.seq (.call "vg_gf25519_r32_pow250" pow250Fn) (.block [.addi .r6 .r3 0]))
 
 /-- `[o] = [a] · [b]`, by a call of `vg_gf25519_r32_mul`. -/
 def mulPc (o a b : Slot) : Prog isa := mulCall (offset o) (offset a) (offset b)

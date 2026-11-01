@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
@@ -40,9 +41,9 @@ theorem scalarReduce_ct : ConstantTime isa scalarReduceLocal.pre scalarReduceLoc
   rcases hr with rfl | rfl | rfl <;> assumption
 
 theorem scalarReduce_verified : Verified AArch64.target scalarReduce
-    (Spec.Ed25519.scalarReduceContract AArch64.abi) :=
+    (Proof.Ed25519.scalarReduceContract AArch64.abi) :=
   Verified.of_correct scalarReduce_ok scalarReduce_ct (by
-    sig_implies [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
+    sig_implies [Proof.Ed25519.scalarReduceContract, Proof.Ed25519.scalarReduceSig,
       Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, scalarReduceLocal]
       [scalarSatState] using scalarSatState)
 

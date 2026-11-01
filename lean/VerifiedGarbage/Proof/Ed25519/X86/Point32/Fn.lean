@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 public import VerifiedGarbage.Proof.Ed25519.X86.Points
 public import VerifiedGarbage.Impl.Ed25519.X86.Point32
 public import VerifiedGarbage.TCB.X86.Target
@@ -261,9 +262,9 @@ theorem dbl_formula (e : Env) : point (evalOps pointDoubleRfcOps e) 0 1 2 3 = db
 
 /-- `pointDoubleRfcOps` computes RFC 8032's doubling. -/
 theorem dbl_eval (e : Env) :
-    point (evalOps pointDoubleRfcOps e) 0 1 2 3 = Spec.Ed25519.Point64.pointDouble (point e 0 1 2 3) := by
+    point (evalOps pointDoubleRfcOps e) 0 1 2 3 = Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3) := by
   rw [dbl_formula]
-  simp only [dblResult, Spec.Ed25519.Point64.pointDouble, point]
+  simp only [dblResult, Proof.Ed25519.Point64.pointDouble, point]
   congr 1 <;> grind
 
 end VG.Proof.Ed25519.X86.Point32

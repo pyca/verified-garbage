@@ -327,7 +327,7 @@ structure VArgs (s t : State) : Prop where
 /-- The challenge into `136(F)`, and the arguments of `vg_ed448_verify_equation`. -/
 theorem verHash_ok {s t : State} (hp : VerPre s) (h : V1 s t) :
     WP isa (.seq (hash .s1 verPieces .s11 16) (.seq (.block [.addi .a0 .s11 136, .addi .a1 .s11 16, mov .a2 .s1])
-      (.seq (.call Spec.Ed448.scalarReduceApi.name Impl.Ed448.RISCV64.scalarReduce)
+      (.seq (.call "vg_ed448_scalar_reduce" Impl.Ed448.RISCV64.scalarReduce)
         (.block [.addi .a0 .s11 320, .addi .a1 .s11 200, .addi .a2 .s11 136, mov .a3 .s1])))) t (VArgs s) := by
   obtain ⟨ho, hb⟩ := h.hashOk hp
   have g1 : t.gpr .s1 = s.gpr .a6 := h.inv.regs _ (by decide)
@@ -416,7 +416,7 @@ theorem verHash_ok {s t : State} (hp : VerPre s) (h : V1 s t) :
 /-- The call of `vg_ed448_verify_equation`. -/
 theorem verCall_ok (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) {s t : State} (hp : VerPre s)
     (h : VArgs s t) :
-    WP isa (.call Spec.Ed448.verifyEquationApi.name Impl.Ed448.RISCV64.verifyEquation) t fun t' => VInv s t' ∧
+    WP isa (.call "vg_ed448_verify_equation" Impl.Ed448.RISCV64.verifyEquation) t fun t' => VInv s t' ∧
       (t'.gpr .a0).setWidth 32 = if Spec.Ed448.verifyEquation (vpkB s) (vsigB s) (vkB s) then 1 else 0 := by
   have hW : Covers [vscR s] t.wr := fun a n ⟨r, hr, hc⟩ => by
     rw [List.mem_singleton.mp hr] at hc; exact ⟨_, vC hp h.inv, hc⟩

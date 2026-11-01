@@ -441,15 +441,7 @@ pub mod ed25519;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod ed25519_r64;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod ed448;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod ed448_r64;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
@@ -458,14 +450,6 @@ pub mod ffdh;
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
 pub mod gcm;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod gf25519_r64;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod gf448_r64;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]

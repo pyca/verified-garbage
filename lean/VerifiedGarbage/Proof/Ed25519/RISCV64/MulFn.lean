@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.MulFn
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
-public import VerifiedGarbage.Spec.X25519.Field32
+public import VerifiedGarbage.Proof.X25519.Field32Contract
 import VerifiedGarbage.Proof.X25519.RISCV64.R64.Reduce
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
@@ -26,7 +26,7 @@ namespace VG.Proof.Ed25519.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64 VG.Proof.X25519.RISCV64
 open VG.Spec.X25519 (P)
-open VG.Spec.X25519.Field32 (valAt Fits Keeps)
+open VG.Proof.X25519.Field32 (valAt Fits Keeps)
 open VG.Proof.X25519 (val32_congr)
 
 /-- An offset argument, the low word of its register. -/
@@ -54,8 +54,8 @@ theorem byte_out {b : Addr} {i e k : Nat} (hi : i + 1 ≤ 4096) (he : e + k ≤ 
 theorem keeps_mul {ws : Addr} {o : BitVec 32} (ho : o.toNat + 32 ≤ 768) {m m' : Mem}
     (hf : Frame (mulW ws o.toNat) m m') : Keeps ws o m m' := by
   intro i hi hown hoi
-  simp only [Spec.X25519.Field32.wsBytes, Spec.X25519.Field32.ownAt, Spec.X25519.Field32.ownEnd,
-    Spec.X25519.Field32.elemBytes] at hi hown hoi
+  simp only [Proof.X25519.Field32.wsBytes, Proof.X25519.Field32.ownAt, Proof.X25519.Field32.ownEnd,
+    Proof.X25519.Field32.elemBytes] at hi hown hoi
   refine hf _ fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -69,7 +69,7 @@ theorem mulFn_ok {s : State} (hrd : s.rd = []) (hwr : s.wr = [⟨s.gpr .a0, 4096
       valAt t.mem (s.gpr .a0) (offArg s .a1) % P =
         valAt s.mem (s.gpr .a0) (offArg s .a2) * valAt s.mem (s.gpr .a0) (offArg s .a3) % P ∧
       Frame (mulW (s.gpr .a0) (offArg s .a1).toNat) s.mem t.mem := by
-  simp only [Fits, Spec.X25519.Field32.elemBytes, Spec.X25519.Field32.ownAt] at hO hA hB
+  simp only [Fits, Proof.X25519.Field32.elemBytes, Proof.X25519.Field32.ownAt] at hO hA hB
   obtain ⟨ws, hws⟩ : ∃ ws, ws = s.gpr .a0 := ⟨_, rfl⟩
   rw [← hws] at hal hwr ⊢
   obtain ⟨O, hO'⟩ : ∃ O, O = (offArg s .a1).toNat := ⟨_, rfl⟩

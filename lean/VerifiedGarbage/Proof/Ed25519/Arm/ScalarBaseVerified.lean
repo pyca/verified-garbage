@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
@@ -540,16 +541,16 @@ theorem combWords_length : combWords.length = 64 * 192 := by simp [combWords]
 theorem combWords_getD {j : Nat} (hj : j < 64 * 192) : combWords.getD j 0 = combWord j := by
   simp [combWords, List.getD_eq_getElem?_getD, hj]
 
-abbrev scalarBaseSpec : Contract isa := Spec.Ed25519.scalarBaseContract (Arm.abi.withConsts combConsts)
+abbrev scalarBaseSpec : Contract isa := Proof.Ed25519.scalarBaseContract (Arm.abi.withConsts combConsts)
 
-theorem scalarBase_abi_pre {s : State} (h : (Spec.Ed25519.scalarBaseContract Arm.abi).pre s) :
+theorem scalarBase_abi_pre {s : State} (h : (Proof.Ed25519.scalarBaseContract Arm.abi).pre s) :
     s.rd = [⟨State.addr (s.gpr .r1), 32⟩] ∧ s.wr = [⟨State.addr (s.gpr .r0), 32⟩, ⟨State.addr (s.gpr .r2), 8192⟩] ∧
       (⟨State.addr (s.gpr .r0), 32⟩ : Region).Disjoint ⟨State.addr (s.gpr .r1), 32⟩ ∧
       (⟨State.addr (s.gpr .r0), 32⟩ : Region).Disjoint ⟨State.addr (s.gpr .r2), 8192⟩ ∧
       (⟨State.addr (s.gpr .r1), 32⟩ : Region).Disjoint ⟨State.addr (s.gpr .r2), 8192⟩ ∧
       (s.gpr .r0).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 32 ≤ 2 ^ 32 ∧
       (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32 := by
-  sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig,
+  sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig,
     Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] at h
   exact h.2
 
@@ -560,7 +561,7 @@ theorem combConsts_regs (s : State) : constRegs combConsts s = [TBL (s.syms comb
   rfl
 
 theorem scalarBase_pre {s : State} (h : scalarBaseSpec.pre s) : scalarBaseLocal.pre s := by
-  have hp : (Spec.Ed25519.scalarBaseContract Arm.abi).pre (stripConsts combConsts s) ∧
+  have hp : (Proof.Ed25519.scalarBaseContract Arm.abi).pre (stripConsts combConsts s) ∧
       ConstsOk combConsts 0 s := pre_consts.mp h
   obtain ⟨rd, wr, d1, d2, d3, f0, f1, f2⟩ := scalarBase_abi_pre hp.1
   simp only [stripConsts, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr] at rd wr d1 d2 d3 f0 f1 f2
@@ -607,7 +608,7 @@ def baseSatState : State where
 theorem scalarBase_sat : scalarBaseSpec.pre baseSatState := by
   have held := baseSatMem_held
   generalize eqs : baseSatState = s
-  sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig,
+  sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig,
     Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
     combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
@@ -629,11 +630,11 @@ theorem scalarBase_implies : scalarBaseLocal.Implies scalarBaseSpec where
   pre _ h := scalarBase_pre h
   post := by
     intro s s' _ h
-    sig_post [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    sig_post [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, combConsts_eq, Abi.withConsts]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    sig_pub [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, combConsts_eq,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2⟩ := h

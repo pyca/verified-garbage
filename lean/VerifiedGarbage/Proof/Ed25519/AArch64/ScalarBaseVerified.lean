@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -156,8 +157,8 @@ theorem scalarBase_spec_pre {s : State}
     (f2 : (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64)
     (ht : CombHeld s [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩])
     (hal : (s.syms combSym).toNat % 64 = 0) :
-    (Spec.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)).pre s := by
-  sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    (Proof.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)).pre s := by
+  sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
     AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
@@ -173,7 +174,7 @@ def baseSatState : State where
   syms _ := 0x100000
 
 theorem scalarBase_sat :
-    (Spec.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)).pre baseSatState := by
+    (Proof.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)).pre baseSatState := by
   have hl := combWords_length
   have held : ∀ i < combWords.length, baseSatState.mem.readW (baseSatState.syms combSym +
       BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := satMem_held
@@ -186,9 +187,9 @@ theorem scalarBase_sat :
     rintro r (rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
 
 theorem scalarBase_implies : scalarBaseLocal.Implies
-    (Spec.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)) where
+    (Proof.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)) where
   pre s h := by
-    sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, -, -, h3, -, -, h5⟩ := h
@@ -196,18 +197,18 @@ theorem scalarBase_implies : scalarBaseLocal.Implies
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by
     intro s s' _ h
-    sig_post [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    sig_post [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    sig_pub [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
     exact ⟨hsp, h0, h1, h2, hsy⟩
   sat := ⟨baseSatState, scalarBase_sat⟩
 
 theorem scalarBase_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
-    Verified AArch64.target scalarBase (Spec.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)) :=
+    Verified AArch64.target scalarBase (Proof.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)) :=
   Verified.of_correct scalarBase_ok scalarBase_ct scalarBase_implies
 
 end VG.Proof.Ed25519.AArch64

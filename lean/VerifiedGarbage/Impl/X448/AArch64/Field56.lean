@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
-public import VerifiedGarbage.Spec.X448.Field56Mul
+public import VerifiedGarbage.Spec.X448
 
 /-!
 # Curve448's field on AArch64: the product and the square root's power as functions, and the inversion calling them
 
-`vg_gf448_r56_mul(ws, o, a, b)` (`Spec/X448/Field56Mul.lean`; AAPCS64: `ws` in `x0`, the byte
+`vg_gf448_r56_mul(ws, o, a, b)` (`Proof/X448/Field56MulContract.lean`; AAPCS64: `ws` in `x0`, the byte
 offsets in `x1`–`x3`) is `vg_x448`'s product (`Curve448.AArch64.Fast.mulAt`) with its operands
 addressed by pointers: `ws + a` in `x10`, `ws + b` in the return address's register `x30` and
 `ws + o` in `x1`, with `ws` in `x3` and the mask in `x12`. It keeps `x30` and `x21`–`x28` in
@@ -17,7 +17,7 @@ replaces the inlined product (`opsK` does so in a list of operations). The produ
 operands outside loops call it: in the power below, X448's inversion and output, Ed448's
 encoding of `[s]B`, and in verification the decoding of points and the final comparison.
 
-`vg_gf448_r56_pow_p34(ws)` (`Spec/X448/Field56.lean`; AAPCS64: `ws` in
+`vg_gf448_r56_pow_p34(ws)` (`Proof/X448/Field56Contract.lean`; AAPCS64: `ws` in
 `x0`) runs the register-resident addition chain `root` on slot 12 of the
 working space, as a function (`asFn`): it copies `ws` to `x3` and sets the
 products' mask in `x12`, as the field code expects, and keeps the callee-saved
@@ -81,7 +81,7 @@ which the call leaves in `x3`. `x1`, which holds a public pointer in some caller
 def mulCall (o a b : Nat) : Prog isa :=
   .seq (.block [.addImm .x .x19 .x1 0, .addImm .x .x0 .x3 0, .movz .x .x1 (BitVec.ofNat 16 o) 0,
       .movz .x .x2 (BitVec.ofNat 16 a) 0, .movz .x .x3 (BitVec.ofNat 16 b) 0]) <|
-    .seq (.call Spec.X448.Field56.mulApi.name mulFn) (.block [.addImm .x .x1 .x19 0])
+    .seq (.call "vg_gf448_r56_mul" mulFn) (.block [.addImm .x .x1 .x19 0])
 
 /-- `mulCall`, keeping `x19` and the return address in the lanes of `v26`, which the function
 does not write: in place of the inlined product, for code that keeps them. -/
@@ -147,7 +147,7 @@ namespace Point56
 /-- `vg_gf448_r56_pow_p34`: slot 12 to the power `(p - 3) / 4` into slot 21. -/
 def powFn : Prog isa := asFn true (root 12)
 
-def powCall : Prog isa := fnCall Spec.X448.Field56.powApi.name powFn
+def powCall : Prog isa := fnCall "vg_gf448_r56_pow_p34" powFn
 
 end Point56
 

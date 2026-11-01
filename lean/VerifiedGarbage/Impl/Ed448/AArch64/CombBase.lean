@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Ed448.Comb56
+public import VerifiedGarbage.Spec.Ed448
 public import VerifiedGarbage.Impl.X448.AArch64.Base
 
 /-!
@@ -66,7 +66,7 @@ def combBaseFn : Prog isa :=
 in a lane of `v8`, which the function keeps. -/
 def call (n : Nat) : Prog isa :=
   .seq (.block [.vop (.ins .d2 .v8 0 .x30), .movz .x .x1 n 0]) <|
-  .seq (fnCall Spec.Ed448.Comb56.combBaseApi.name combBaseFn)
+  .seq (fnCall "vg_ed448_r56_comb_base" combBaseFn)
     (.block [.umov .x .x30 .v8 0])
 
 end VG.Impl.Ed448.AArch64.CombBase

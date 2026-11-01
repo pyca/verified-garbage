@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Ed448.RISCV64.VMain
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.RISCV64.VCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
@@ -63,12 +64,12 @@ def verifySat : State where
   wr := [⟨0x4000, 8192⟩]
 
 theorem verifyEquation_verified (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) :
-    Verified RISCV64.target Impl.Ed448.RISCV64.verifyEquation (Spec.Ed448.verifyEquationContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.Ed448.RISCV64.verifyEquation (Proof.Ed448.verifyEquationContract RISCV64.abi) :=
   Verified.of_correct (verifyEquation_ok hR hV)
     (verifyEquation_ct fun _ _ _ _ ⟨h3, h4, h5, h6, hsp, _⟩ => ⟨hsp, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig, verifyRISCV64,
+    contract_implies [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig, verifyRISCV64,
       Spec.Ed448.scratchWords, RISCV64.abi, RISCV64.argRegs] [verifySat] using verifySat)
 
 end VG.Proof.Ed448.RISCV64

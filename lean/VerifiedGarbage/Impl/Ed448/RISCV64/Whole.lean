@@ -118,7 +118,7 @@ def publicKey : Prog isa :=
   .seq (.block (saveRegs .a3 120 pkRegs ++ [mov .s7 .a0, mov .s8 .a1, mov .s9 .a2, mov .s10 .a3])) <|
   .seq (hash .s9 [⟨.s8, 0, .imm 57⟩] .s10 0) <|
   .seq (.block (prune .s10 0 ++ [mov .a0 .s7, .addi .a1 .s10 0, mov .a2 .s9])) <|
-  .seq (.call Spec.Ed448.scalarBaseApi.name scalarBase) <|
+  .seq (.call "vg_ed448_scalar_base" scalarBase) <|
   .block (restoreRegs .s10 120 pkRegs)
 
 /-! ## `vg_ed448_sign_cached(out = a0, seed = a1, pk = a2, context = a3, ctxlen = a4, message = a5,
@@ -152,18 +152,18 @@ def signExpand : Prog isa :=
 def signNonce : Prog isa :=
   .seq (hash .s1 (dom4Pieces .s11 .s7 .s8 ++ [⟨.s11, 193, .imm 57⟩, ⟨.s9, 0, .reg .s10⟩]) .s11 16) <|
   .seq (.block [.addi .a0 .s11 256, .addi .a1 .s11 16, mov .a2 .s1]) <|
-  .seq (.call Spec.Ed448.scalarReduceApi.name scalarReduce) <|
+  .seq (.call "vg_ed448_scalar_reduce" scalarReduce) <|
   .seq (.block [mov .a0 .s0, .addi .a1 .s11 256, mov .a2 .s1]) <|
-  .call Spec.Ed448.scalarBaseApi.name scalarBase
+  .call "vg_ed448_scalar_base" scalarBase
 
 /-- The challenge, and `S` into the second half of `out`. -/
 def signChallenge : Prog isa :=
   .seq (hash .s1 (dom4Pieces .s11 .s7 .s8 ++ [⟨.s0, 0, .imm 57⟩, ⟨.s11, 384, .imm 57⟩, ⟨.s9, 0, .reg .s10⟩])
     .s11 16) <|
   .seq (.block [.addi .a0 .s11 320, .addi .a1 .s11 16, mov .a2 .s1]) <|
-  .seq (.call Spec.Ed448.scalarReduceApi.name scalarReduce) <|
+  .seq (.call "vg_ed448_scalar_reduce" scalarReduce) <|
   .seq (.block [.addi .a0 .s0 57, .addi .a1 .s11 256, .addi .a2 .s11 320, .addi .a3 .s11 136, mov .a4 .s1]) <|
-  .call Spec.Ed448.scalarMulAddApi.name scalarMulAdd
+  .call "vg_ed448_scalar_mul_add" scalarMulAdd
 
 def signCached : Prog isa :=
   .seq (.block signFrame) <| .seq (.block signSetup) <| .seq signExpand <| .seq signNonce <| .seq signChallenge <|
@@ -186,11 +186,11 @@ def verifyHash : Prog isa :=
   .seq (hash .s1 (dom4Pieces .s11 .s7 .s8 ++ [⟨.s11, 200, .imm 57⟩, ⟨.s11, 320, .imm 57⟩, ⟨.s9, 0, .reg .s10⟩])
     .s11 16) <|
   .seq (.block [.addi .a0 .s11 136, .addi .a1 .s11 16, mov .a2 .s1]) <|
-  .seq (.call Spec.Ed448.scalarReduceApi.name scalarReduce) <|
+  .seq (.call "vg_ed448_scalar_reduce" scalarReduce) <|
   .block [.addi .a0 .s11 320, .addi .a1 .s11 200, .addi .a2 .s11 136, mov .a3 .s1]
 
 def verifyMain : Prog isa :=
-  .seq verifyHash <| .seq (.call Spec.Ed448.verifyEquationApi.name verifyEquation) <|
+  .seq verifyHash <| .seq (.call "vg_ed448_verify_equation" verifyEquation) <|
   .block (restoreRegs .s11 384 verifyRegs)
 
 /-- `ctxlen < 256`: `ctxlen >> 8` is zero. -/

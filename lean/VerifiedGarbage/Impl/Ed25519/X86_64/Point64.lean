@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
-public import VerifiedGarbage.Spec.Ed25519.Point64
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519's point doubling and cached addition on x86-64, as functions
 
 `vg_ed25519_r64_double_ext`, `_double_proj`, `_add_cached_ext`,
-`_add_cached_proj` and `_add_affine_ext` (`Spec/Ed25519/Point64.lean`), each with the baseline's
+`_add_cached_proj` and `_add_affine_ext` (`Proof/Ed25519/Point64Contract.lean`), each with the baseline's
 field multiplications and with BMI2 and ADX's (`_adx`): `ws` is in `rdi`,
 where the Ed25519 code keeps it. Each keeps the callee-saved registers the
 field arithmetic writes (`rbp`, `r12`–`r15`) in `xmm0`–`xmm4`, which are
@@ -74,14 +74,14 @@ def addAffineFn (fld : Arith) : Prog isa := fn fld pointAddAffineOps
 
 /-- The doubling's name, with the field multiplications' suffix `fs`. -/
 def doubleName (t : Bool) (fs : String) : String :=
-  (if t then Spec.Ed25519.Point64.doubleExtApi.name else "vg_ed25519_r64_double_proj") ++ fs
+  (if t then "vg_ed25519_r64_double_ext" else "vg_ed25519_r64_double_proj") ++ fs
 
 /-- The cached addition's name, with the field multiplications' suffix `fs`. -/
 def addName (t : Bool) (fs : String) : String :=
-  (if t then Spec.Ed25519.Point64.addCachedExtApi.name else Spec.Ed25519.Point64.addCachedProjApi.name) ++ fs
+  (if t then "vg_ed25519_r64_add_cached_ext" else "vg_ed25519_r64_add_cached_proj") ++ fs
 
 /-- The affine addition's name, with the field multiplications' suffix `fs`. -/
-def addAffineName (fs : String) : String := Spec.Ed25519.Point64.addAffineExtApi.name ++ fs
+def addAffineName (fs : String) : String := "vg_ed25519_r64_add_affine_ext" ++ fs
 
 /-- A call of the doubling with the field multiplications `fld`. -/
 def doubleCall (fld : Arith) (t : Bool) : Prog isa := .call (doubleName t fld.suffix) (doubleFn fld t)
