@@ -25,10 +25,20 @@ open VG.Spec.Gcm (StreamRepr KeyRepr ctxCiph ctxH gctr inc32 j0 fullTag tagLenOk
 
 abbrev rounds (r : BitVec 64) : Prop := r.toNat = 10 ∨ r.toNat = 12 ∨ r.toNat = 14
 
+/-- The 2048 bytes below `sp` are apart from each of `rs`. -/
+def stkAll (sp : Addr) : List Region → Prop
+  | [] => True
+  | r :: rs => (below sp 2048).Disjoint r ∧ stkAll sp rs
+
+theorem stkAll_mem {sp : Addr} : ∀ {rs : List Region}, stkAll sp rs → ∀ {r : Region}, r ∈ rs →
+    (below sp 2048).Disjoint r
+  | _ :: _, h, _, .head _ => h.1
+  | _ :: _, h, _, .tail _ hr => stkAll_mem h.2 hr
+
 /-- The stack pointer is aligned, and the 2048 bytes below it, which
 `vg_ghash`'s frame uses, are apart from the buffers `rs`. -/
 def stkOk (s : State) (rs : List Region) : Prop :=
-  s.sp.toNat % 16 = 0 ∧ 2048 ≤ s.sp.toNat ∧ ∀ r ∈ rs, (below s.sp 2048).Disjoint r
+  s.sp.toNat % 16 = 0 ∧ 2048 ≤ s.sp.toNat ∧ stkAll s.sp rs
 
 /-- `vg_aes_gcm_init(key = a0, key_len = a1, ctx = a2, scratch = a3)`. -/
 def initRISCV64 : Contract isa where

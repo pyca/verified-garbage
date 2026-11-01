@@ -97,11 +97,11 @@ theorem Lay.of {c st w : Addr} (cw : c.toNat + 256 ≤ 2 ^ 64) (sw : st.toNat + 
 /-- `StkOk` from a precondition's `stkOk`. -/
 theorem stkOk.stk {s : State} {rs : List Region} (h : stkOk s rs) {c st w : Addr} (hc : ⟨c, 256⟩ ∈ rs)
     (hs : ⟨st, 80⟩ ∈ rs) (hw : ⟨w, 2560⟩ ∈ rs) : StkOk c st w s.sp :=
-  ⟨(h.2.2 _ hc).symm, (h.2.2 _ hs).symm, (h.2.2 _ hw).symm, h.1, h.2.1⟩
+  ⟨(stkAll_mem h.2.2 hc).symm, (stkAll_mem h.2.2 hs).symm, (stkAll_mem h.2.2 hw).symm, h.1, h.2.1⟩
 
 /-- A buffer of a precondition's `stkOk` is apart from the stack below `sp`. -/
 theorem stkOk.buf {s : State} {rs : List Region} (h : stkOk s rs) {r : Region} (hr : r ∈ rs) :
-    r.Disjoint (below s.sp 2048) := (h.2.2 _ hr).symm
+    r.Disjoint (below s.sp 2048) := (stkAll_mem h.2.2 hr).symm
 
 /-- A run that satisfies `R`, and for each `i` with `P i`, `Q i`. -/
 theorem WP.forall_det {c : Prog isa} {s : State} {ι : Sort _} {P : ι → Prop} {Q : ι → State → Prop}
