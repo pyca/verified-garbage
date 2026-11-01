@@ -182,24 +182,29 @@ def batch : Prog isa := seqs [
 /-- The digits `[j]` (`r8` of them, from `r5`) zeroed. -/
 def zeros : Prog isa := countLoop .r8 [.store .w .r0 .r5 0, .addi .r5 .r5 4]
 
+/-- Digit `n` of `[j]` := `v`. -/
+def setTop (j v : Nat) : List Instr :=
+  ptr .r6 j ++ cntN ++ [.lsl .r8 .r8 2, .add .r6 .r6 .r8, .li .r0 v, .store .w .r0 .r6 0]
+
 /-- `[2] = m`, its digit `n` zero, `r10 := n`; `b = 1`; `m` replaced by 3 where
 it is 1 (the modulus of the batches, `p`); `-p⁻¹ mod 2^32` to the window;
 `f = p`, `g = x + p` if `x` is even, else `x`; `a = 0`, `d = 1`; and
 `3 (n + 1)` batches to run. -/
 def init : Prog isa := seqs [
-  .block (ptr .r5 aMz ++ ptr .r6 aMin ++ [.addi .r10 .r11 0] ++ cntN), countLoop .r8 copyBody,
-  .block ([.li .r0 0, .store .w .r0 .r5 0] ++ ptr .r5 aB ++ cntN1), zeros,
-  .block (ptr .r5 aB ++ [.li .r0 1, .store .w .r0 .r5 0] ++ ptr .r6 aMz ++ ptr .r7 aB ++ cntN1 ++ [.li .r9 0]),
-  countLoop .r8 eqBody,
+  .seq (.block (ptr .r5 aMz ++ ptr .r6 aMin ++ [.addi .r10 .r11 0] ++ cntN)) (countLoop .r8 copyBody),
+  .seq (.block (setTop aMz 0 ++ ptr .r5 aB ++ cntN1)) zeros,
+  .seq (.block (ptr .r5 aB ++ [.li .r0 1, .store .w .r0 .r5 0] ++ ptr .r6 aMz ++ ptr .r7 aB ++ cntN1 ++
+    [.li .r9 0])) (countLoop .r8 eqBody),
   .block ([.li .r0 0, .sub .r0 .r0 .r9, .lsr .d .r0 .r0 63, .li .r3 1, .logic .xor .r0 .r0 .r3, .lsl .r0 .r0 1] ++
-    ptr .r5 aMz ++ [.load .w .r3 .r5 0, .logic .or .r3 .r3 .r0, .store .w .r3 .r5 0] ++
-    ptr .r10 aMz ++ VG.Impl.Bignum.PPC64LE.PublicChecked.minv ++ ptr .r5 aW ++
-    [.store .d .r12 .r5 wIv, .addi .r10 .r11 0] ++ ptr .r5 aF ++ ptr .r6 aMz ++ cntN1),
-  countLoop .r8 copyBody,
+    ptr .r5 aMz ++ [.load .w .r3 .r5 0, .logic .or .r3 .r3 .r0, .store .w .r3 .r5 0]),
+  .block (ptr .r10 aMz ++ VG.Impl.Bignum.PPC64LE.PublicChecked.minv),
+  .block (ptr .r5 aW ++ [.store .d .r12 .r5 wIv, .addi .r10 .r11 0]),
+  .seq (.block (ptr .r5 aF ++ ptr .r6 aMz ++ cntN1)) (countLoop .r8 copyBody),
   .block (ptr .r5 aX ++ [.load .w .r11 .r5 0, .lsl .r11 .r11 63, .lsr .d .r11 .r11 63, .li .r0 1,
     .logic .xor .r11 .r11 .r0]),
   mac aG aX aMz cntN,
-  .block ([.store .w .r9 .r5 0] ++ ptr .r5 aA ++ cntN1 ++ [.li .r0 0]), zeros,
+  .block [.store .w .r9 .r5 0],
+  .seq (.block (ptr .r5 aA ++ cntN1 ++ [.li .r0 0])) zeros,
   .block (ptr .r5 aW ++ [.li .r0 1, .store .d .r0 .r5 wD,
     .addi .r3 .r10 1, .add .r0 .r3 .r3, .add .r3 .r3 .r0, .lsl .r3 .r3 15, .add .r10 .r10 .r3])]
 
