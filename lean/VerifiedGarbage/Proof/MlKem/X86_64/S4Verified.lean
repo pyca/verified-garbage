@@ -30,18 +30,18 @@ def sample4Sat : State where
 
 theorem sample4_post {s s' : State} (h : sample4K.post s s') :
     let r := (s'.gpr .rax).setWidth 32
-    (r = 1 → ∀ k < 4, Spec.MlKem.Reduced s'.mem (Spec.MlKem.poly4 (s.gpr .rsi) k)) ∧
-      ((r = 1 ∧ ∀ k < 4, ∃ iters, Spec.MlKem.sampleNTT iters (Spec.MlKem.seed4 s.mem (s.gpr .rdi) k) =
-          some (Spec.MlKem.polyAt s'.mem (Spec.MlKem.poly4 (s.gpr .rsi) k))) ∨
+    (r = 1 → ∀ k < 4, Proof.MlKem.Reduced s'.mem (Proof.MlKem.poly4 (s.gpr .rsi) k)) ∧
+      ((r = 1 ∧ ∀ k < 4, ∃ iters, Spec.MlKem.sampleNTT iters (Proof.MlKem.seed4 s.mem (s.gpr .rdi) k) =
+          some (Proof.MlKem.polyAt s'.mem (Proof.MlKem.poly4 (s.gpr .rsi) k))) ∨
         (r = 0 ∧ ∃ k < 4, Spec.MlKem.sampleNTT Spec.MlKem.minIterations
-          (Spec.MlKem.seed4 s.mem (s.gpr .rdi) k) = none)) := by
+          (Proof.MlKem.seed4 s.mem (s.gpr .rdi) k) = none)) := by
   obtain ⟨hr, hp⟩ := h
   intro r
   by_cases hall : ((List.range 4).all fun k =>
-      (Spec.MlKem.sampleNTT Spec.MlKem.minIterations (Spec.MlKem.seed4 s.mem (s.gpr .rdi) k)).isSome) = true
+      (Spec.MlKem.sampleNTT Spec.MlKem.minIterations (Proof.MlKem.seed4 s.mem (s.gpr .rdi) k)).isSome) = true
   · rw [ite_eq_left hall] at hr
     have hs : ∀ k < 4, ∃ f, Spec.MlKem.sampleNTT Spec.MlKem.minIterations
-        (Spec.MlKem.seed4 s.mem (s.gpr .rdi) k) = some f := fun k hk => by
+        (Proof.MlKem.seed4 s.mem (s.gpr .rdi) k) = some f := fun k hk => by
       have := List.all_eq_true.mp hall k (List.mem_range.mpr hk)
       exact Option.isSome_iff_exists.mp this
     refine ⟨fun _ k hk => ?_, .inl ⟨hr, fun k hk => ?_⟩⟩

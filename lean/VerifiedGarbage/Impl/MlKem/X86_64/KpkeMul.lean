@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
 # ML-KEM on x86-64: the products of K-PKE in one call
 
 `vg_mlkem*_decrypt_mul(w = rdi, s = rsi, u = rdx, scratch = rcx)`
-(`Spec/MlKem/KpkeMul.lean`) computes `NTT⁻¹(ŝ^⊺ ∘ NTT(u'))` with the code
+(`Proof/MlKem/KpkeMulContract.lean`) computes `NTT⁻¹(ŝ^⊺ ∘ NTT(u'))` with the code
 of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, `vg_mlkem_add` and
 `vg_mlkem_inv_ntt` (or their AVX2 versions, `Bodies`) inlined, inside one
 MXCSR region (`withMxcsr`, at `scratch + 768`) rather than one per call,

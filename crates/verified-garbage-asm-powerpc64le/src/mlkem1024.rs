@@ -3,69 +3,6 @@
 //! `assembly/mlkem1024.s`.
 #![allow(dead_code)]
 
-/// `ByteEncode_d(Compress_d(f))` (FIPS 203 (4.7) and Algorithm 5) for the widths of ML-KEM-1024: writes the 256 coefficients of `*f` (each less than `q` = 3329), compressed to `d` bits, to `out` as `d`-bit little-endian fields.
-///
-/// Contract: `VG.Spec.MlKem1024.compressEncodeContract`. Constant time: only the pointers, `d` and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `f` must be valid for reads of 1024 bytes.
-/// * `out` must be valid for reads and writes of `len` bytes.
-/// * `d` must be 5 or 11, and `len` must be `32 * d`.
-/// * Each of the 256 `u32`s of `f` must be less than 3329.
-/// * `out` must not overlap `f` (distinct Rust objects never do).
-/// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem1024_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "PgCEVPv/5DgAAAco"
-beq %cr0, 20f
-.base64 "AwBAPQD/SmEEACA97uspYSAAYDk="
-22:
-.base64 "AAAAOQAAgDkAAOOA0knnfBRS53zCbOd4hqrneGBd53gUOgh9BADjgNJJ53wUUud8wmzneIaq53igsud4FDoIfQgA44DSSed8FFLnfMJs53iGqud4wg/neBQ6CH0MAOOA0knnfBRS53zCbOd4hqrneAJl53gUOgh9EADjgNJJ53wUUud8wmzneIaq53hgfOd4FDqMfRQA44DSSed8FFLnfMJs53iGqud4oNHneBQ6jH0YAOOA0knnfBRS53zCbOd4hqrneMIu53gUOox9HADjgNJJ53wUUud8wmzneIaq53gChOd4FDqMfQAABZkCwgd5AQDlmAKEB3kCAOWYAkYHeQMA5ZgiAAd5BADlmCDCCHkUYgh9BQAFmQLCB3kGAOWYAoQHeQcA5ZgCRgd5CADlmCIAB3kJAOWYIMIHeQoA5ZggAGM4CwClOP//azkAACso"
-bne %cr0, 22b
-b 21f
-20:
-.base64 "AwBAPQD/SmGwEyA5IABgOQ=="
-23:
-.base64 "AAAAOQAA44DSSed8FFLnfMJs53gG2ed44C7neBQ6CH0EAOOA0knnfBRS53zCbOd4BtnneKBV53gUOgh9CADjgNJJ53wUUud8wmzneAbZ53hgfOd4FDoIfQwA44DSSed8FFLnfMJs53gG2ed4IKPneBQ6CH0QAOOA0knnfBRS53zCbOd4BtnneODJ53gUOgh9FADjgNJJ53wUUud8wmzneAbZ53ig8Od4FDoIfRgA44DSSed8FFLnfMJs53gG2ed4Qh/neBQ6CH0cAOOA0knnfBRS53zCbOd4BtnneAJG53gUOgh9AAAFmQLCB3kBAOWYAoQHeQIA5ZgCRgd5AwDlmCIAB3kEAOWYIABjOAUApTj//2s5AAArKA=="
-bne %cr0, 23b
-21:
-.base64 "IACATg==""#,
-    )
-}
-
-/// `Decompress_d(ByteDecode_d(b))` (FIPS 203 Algorithm 6 and (4.8)) for the widths of ML-KEM-1024: writes the 256 `d`-bit little-endian fields of the `len` bytes at `b`, decompressed, to `*f` (each less than `q` = 3329).
-///
-/// Contract: `VG.Spec.MlKem1024.decodeDecompressContract`. Constant time: only the pointers, `d` and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `b` must be valid for reads of `len` bytes.
-/// * `f` must be valid for reads and writes of 1024 bytes.
-/// * `d` must be 5 or 11, and `len` must be `32 * d`.
-/// * `f` must not overlap `b` (distinct Rust objects never do).
-/// * Neither `b` nor `f` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem1024_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
-    core::arch::naked_asm!(
-        r#".base64 "PgClVAENIDn7/+U4AAAHKA=="
-beq %cr0, 20f
-.base64 "IABgOQ=="
-22:
-.base64 "AAADiQEA44jkRed4FDoIfQIA44jkg+d4FDoIfQMA44jkwed4FDoIfQQA44jGB+d4FDoIfQUA44jGRed4FDoIfQUAg4kGAOOI5EXneBQ6jH0HAOOI5IPneBQ6jH0IAOOI5MHneBQ6jH0JAOOIxgfneBQ6jH0KAOOIxkXneBQ6jH2Gqgd5YF3neNJJ53wABOc4wqrneAAA5pBGVQd5YF3neNJJ53wABOc4wqrneAQA5pAk+Ad5YF3neNJJ53wABOc4wqrneAgA5pDkogd5YF3neNJJ53wABOc4wqrneAwA5pCGi4d5YF3neNJJ53wABOc4wqrneBAA5pBGNod5YF3neNJJ53wABOc4wqrneBQA5pAk2Yd5YF3neNJJ53wABOc4wqrneBgA5pDkg4d5YF3neNJJ53wABOc4wqrneBwA5pALAGM4IADGOP//azkAACso"
-bne %cr0, 22b
-b 21f
-20:
-.base64 "IABgOQ=="
-23:
-.base64 "AAADiQEA44jkRed4FDoIfQIA44jkg+d4FDoIfQMA44jkwed4FDoIfQQA44jGB+d4FDoIfQbZB3ngLud40knnfBAA5zhC2ed4AADmkEayB3ngLud40knnfBAA5zhC2ed4BADmkIaLB3ngLud40knnfBAA5zhC2ed4CADmkMZkB3ngLud40knnfBAA5zhC2ed4DADmkAY+B3ngLud40knnfBAA5zhC2ed4EADmkEYXB3ngLud40knnfBAA5zhC2ed4FADmkKToB3ngLud40knnfBAA5zhC2ed4GADmkOTBB3ngLud40knnfBAA5zhC2ed4HADmkAUAYzggAMY4//9rOQAAKyg="
-bne %cr0, 23b
-21:
-.base64 "IACATg==""#,
-    )
-}
-
 /// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
 ///
 /// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
@@ -185,12 +122,12 @@ bne %cr0, 210b
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
-        vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
-        vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
-        vg_mlkem_multiply_ntts = sym super::mlkem::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
-        vg_mlkem_encode12 = sym super::mlkem::vg_mlkem_encode12,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_encode12 = sym super::mlkem1024::vg_mlkem_encode12::vg_mlkem_encode12,
     )
 }
 
@@ -328,15 +265,15 @@ bl {vg_mlkem1024_compress_encode}
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_decode12 = sym super::mlkem::vg_mlkem_decode12,
-        vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
-        vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
-        vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
-        vg_mlkem_multiply_ntts = sym super::mlkem::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
-        vg_mlkem_inv_ntt = sym super::mlkem::vg_mlkem_inv_ntt,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
+        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
     )
 }
 
@@ -509,20 +446,72 @@ bne %cr0, 216b
 .base64 "AADDiAAA5Ih4OsZ8OGDGfHg6xnwAAMWYAQBjOAEAhDgBAKU4//9aOwAAOig="
 bne %cr0, 217b
 .base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sgAIBO""#,
-        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress,
-        vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
-        vg_mlkem_decode12 = sym super::mlkem::vg_mlkem_decode12,
-        vg_mlkem_multiply_ntts = sym super::mlkem::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
-        vg_mlkem_inv_ntt = sym super::mlkem::vg_mlkem_inv_ntt,
-        vg_mlkem_sub = sym super::mlkem::vg_mlkem_sub,
-        vg_mlkem_compress_encode = sym super::mlkem::vg_mlkem_compress_encode,
+        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress::vg_mlkem1024_decode_decompress,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
+        vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
+        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
-        vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem1024_compress_encode.rs"]
+pub(crate) mod vg_mlkem1024_compress_encode;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem1024_decode_decompress.rs"]
+pub(crate) mod vg_mlkem1024_decode_decompress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_add.rs"]
+pub(crate) mod vg_mlkem_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_cbd2.rs"]
+pub(crate) mod vg_mlkem_cbd2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_compress_encode.rs"]
+pub(crate) mod vg_mlkem_compress_encode;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_decode12.rs"]
+pub(crate) mod vg_mlkem_decode12;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_decode_decompress.rs"]
+pub(crate) mod vg_mlkem_decode_decompress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_encode12.rs"]
+pub(crate) mod vg_mlkem_encode12;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_inv_ntt.rs"]
+pub(crate) mod vg_mlkem_inv_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_multiply_ntts.rs"]
+pub(crate) mod vg_mlkem_multiply_ntts;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_ntt.rs"]
+pub(crate) mod vg_mlkem_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_sample_ntt.rs"]
+pub(crate) mod vg_mlkem_sample_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_sub.rs"]
+pub(crate) mod vg_mlkem_sub;

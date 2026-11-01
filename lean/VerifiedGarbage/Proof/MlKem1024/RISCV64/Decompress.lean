@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.RISCV64.DecodeDecompress
 public import VerifiedGarbage.Impl.MlKem1024.RISCV64.Poly
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.MlKem1024.Contract
 import VerifiedGarbage.Proof.MlKem.Encode1024
 import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.RISCV64.Common
@@ -20,6 +21,7 @@ import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.DecodeDecompress
 meta import VerifiedGarbage.Impl.MlKem1024.RISCV64.Poly
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Proof.MlKem1024.Contract
 meta import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Common
@@ -39,7 +41,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.MlKem
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 
 /-!
 # ML-KEM-1024 on RISC-V: `vg_mlkem1024_decode_decompress`
@@ -60,6 +62,7 @@ namespace VG.Proof.MlKem1024.RISCV64.Decompress
 
 open VG VG.RISCV64 VG.Impl.MlKem.RISCV64 VG.Impl.MlKem1024.RISCV64
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem VG.Proof.MlKem.RISCV64
 open VG.Proof.MlKem.RISCV64.DecodeDecompress (dec Keep byte64 ext_toNat toNat_add_shl Z Z0 zhead_ok
@@ -189,7 +192,7 @@ end
 
 /-! ## The values -/
 
-theorem dec_val4 {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) {Y : BitVec 64} {y : Nat}
+theorem dec_val4 {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {Y : BitVec 64} {y : Nat}
     (hY : Y.toNat = y) (hy : y < 2 ^ d) :
     (dec d Y).setWidth 32 = BitVec.ofNat 32 (decompress d y).val := by
   obtain ⟨e, lt⟩ := decompress1024_val hd hy
@@ -290,7 +293,7 @@ structure Pre (s₀ : State) : Prop where
   disj : (inR s₀).Disjoint (polyRegion (F s₀))
   fitB : (B s₀).toNat + L s₀ ≤ 2 ^ 64
   fitF : (F s₀).toNat + 1024 ≤ 2 ^ 64
-  dw : dN s₀ ∈ Spec.MlKem1024.compressWidths
+  dw : dN s₀ ∈ Proof.MlKem1024.compressWidths
   len : L s₀ = 32 * dN s₀
   alF : (F s₀).toNat % 4 = 0
 
@@ -556,9 +559,9 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa decodeDecompress1024 s�
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem1024.decodeDecompressContract RISCV64.abi).pre s) :
+theorem pre_of {s : State} (h : (Proof.MlKem1024.decodeDecompressContract RISCV64.abi).pre s) :
     Pre s := by
-  sig_pre [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
+  sig_pre [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
     RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
@@ -573,18 +576,18 @@ def satState : State where
   wr := [⟨0x2000, 1024⟩]
 
 theorem verified : Verified RISCV64.target decodeDecompress1024
-    (Spec.MlKem1024.decodeDecompressContract RISCV64.abi) := by
+    (Proof.MlKem1024.decodeDecompressContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, RelCT.constantTime (Q := fun _ _ => True) ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hra, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp, hra⟩, ?_⟩
-    sig_post [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
+    sig_post [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
       RISCV64.abi, RISCV64.argRegs]
     exact polyIs_of_coeffAt (p := F s) fun j hj => by
       rw [h j (by rw [n_eq] at hj; exact hj)]; rfl
   · refine RelCT.seq (zext_rel.mono (fun s₁ s₂ ⟨_, _, hp⟩ => ?_) fun _ _ h => h)
       (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
         (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (Taint.mem_ofRegs.mp h)⟩) (by taint_decide))
-    sig_pub [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
+    sig_pub [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
       RISCV64.abi, RISCV64.argRegs] at hp
     obtain ⟨hsp, h3, h4, h5, h6⟩ := hp
     refine ⟨hsp, fun r hr => ?_, h5⟩
@@ -596,7 +599,7 @@ theorem verified : Verified RISCV64.target decodeDecompress1024
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
+    · sig_reduce [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
         RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first

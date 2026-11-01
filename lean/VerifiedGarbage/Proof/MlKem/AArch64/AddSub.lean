@@ -245,15 +245,15 @@ theorem sub_correct : ∀ s, (accAArch64 Spec.MlKem.sub).pre s →
   map_correct vsubOp_spec (fun P R i hi => by rw [sub_get _ _ hi, val_sub]) (by decide +kernel)
 
 theorem add_verified :
-    Verified AArch64.target Impl.MlKem.AArch64.add (Spec.MlKem.addContract AArch64.abi) :=
+    Verified AArch64.target Impl.MlKem.AArch64.add (Proof.MlKem.addContract AArch64.abi) :=
   Verified.of_correct add_correct (map_ct (by taint_decide)) (by
-    mlkem_implies [Spec.MlKem.addContract, Spec.MlKem.accSig, accAArch64, AArch64.abi,
+    mlkem_implies [Proof.MlKem.addContract, Proof.MlKem.accSig, accAArch64, AArch64.abi,
       AArch64.argRegs] [accSat] using accSat)
 
 theorem sub_verified :
-    Verified AArch64.target Impl.MlKem.AArch64.sub (Spec.MlKem.subContract AArch64.abi) :=
+    Verified AArch64.target Impl.MlKem.AArch64.sub (Proof.MlKem.subContract AArch64.abi) :=
   Verified.of_correct sub_correct (map_ct (by taint_decide)) (by
-    mlkem_implies [Spec.MlKem.subContract, Spec.MlKem.accSig, accAArch64, AArch64.abi,
+    mlkem_implies [Proof.MlKem.subContract, Proof.MlKem.accSig, accAArch64, AArch64.abi,
       AArch64.argRegs] [accSat] using accSat)
 
 end VG.Proof.MlKem.AArch64

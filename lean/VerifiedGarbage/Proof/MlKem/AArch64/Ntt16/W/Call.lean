@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
 public import VerifiedGarbage.Spec.MlKem
 

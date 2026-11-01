@@ -385,21 +385,21 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.nttInvContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, Arm.abi,
+theorem pre_of {s : State} (h : (Proof.MlKem.nttInvContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi,
     Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6⟩
 
-theorem verified : Verified Arm.target Impl.MlKem.Arm.nttInv (Spec.MlKem.nttInvContract Arm.abi) := by
+theorem verified : Verified Arm.target Impl.MlKem.Arm.nttInv (Proof.MlKem.nttInvContract Arm.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, hpres, hsp, h⟩ := correct hp
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, Arm.abi,
+    sig_post [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact h
-  · sig_pub [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, Arm.abi,
+  · sig_pub [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     obtain ⟨-, h0, h1⟩ := h
     intro r hr
@@ -408,7 +408,7 @@ theorem verified : Verified Arm.target Impl.MlKem.Arm.nttInv (Spec.MlKem.nttInvC
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, Arm.abi,
+    · sig_reduce [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, Arm.abi,
         Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
       sig_and_intros
       all_goals first

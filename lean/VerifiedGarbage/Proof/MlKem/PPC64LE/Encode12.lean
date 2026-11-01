@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Codec
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
 import VerifiedGarbage.Proof.MlKem.Encode
@@ -16,7 +16,7 @@ import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Impl.MlKem.PPC64LE.Codec
-meta import VerifiedGarbage.Spec.MlKem.Poly
+meta import VerifiedGarbage.Proof.MlKem.PolyContract
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
 meta import VerifiedGarbage.Proof.MlKem.Encode
@@ -170,8 +170,8 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa encode12 s₀ (Inv s₀ 
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.encode12Contract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.encode12Contract PPC64LE.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6⟩
 
@@ -186,25 +186,25 @@ def satState : State where
   wr := [⟨0x2000, 384⟩]
 
 theorem verified :
-    Verified PPC64LE.target Impl.MlKem.PPC64LE.encode12 (Spec.MlKem.encode12Contract PPC64LE.abi) := by
+    Verified PPC64LE.target Impl.MlKem.PPC64LE.encode12 (Proof.MlKem.encode12Contract PPC64LE.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.r3, .r4] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · obtain ⟨t, s', he, h⟩ := loop_ok (pre_of hs)
     refine ⟨t, s', he, ⟨h.pres, h.sp, h.lr⟩, ?_⟩
-    sig_post [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs]
+    sig_post [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs]
     exact bytesAt_eq! (p := O s) (encode12_length _) fun k hk => by
       rw [h.bytes k hk, ite_eq_left (by omega_arith)]
-  · sig_pub [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.2.1
     · exact h.2.2
-  · sig_pub [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial

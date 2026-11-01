@@ -35,9 +35,9 @@ theorem enc_ct : ConstantTime isa encode12AArch64.pre encode12AArch64.pub enc :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x0,.x1])
     (fun _ _ _ _ ⟨h0,h1,hsp⟩ => agree_of hsp (by simp [h0,h1])) (by taint_decide)
 
-theorem enc_verified : Verified AArch64.target enc (Spec.MlKem.encode12Contract AArch64.abi) :=
+theorem enc_verified : Verified AArch64.target enc (Proof.MlKem.encode12Contract AArch64.abi) :=
   Verified.of_correct enc_correct enc_ct (by
-    mlkem_implies [Spec.MlKem.encode12Contract,Spec.MlKem.encode12Sig,encode12AArch64,AArch64.abi,
+    mlkem_implies [Proof.MlKem.encode12Contract,Proof.MlKem.encode12Sig,encode12AArch64,AArch64.abi,
       AArch64.argRegs] [Encode12.sat] using Encode12.sat)
 
 end VG.Proof.MlKem.AArch64.Codec16

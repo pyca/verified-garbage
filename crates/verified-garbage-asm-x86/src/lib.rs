@@ -481,10 +481,6 @@ pub mod mldsa87;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod mlkem;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod mlkem1024;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]

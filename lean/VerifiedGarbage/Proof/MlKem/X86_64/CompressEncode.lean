@@ -289,9 +289,9 @@ def compressEncodeSat : State where
   wr := [⟨0x2000, 32⟩]
 
 theorem compressEncode_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.compressEncode (Spec.MlKem.compressEncodeContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlKem.X86_64.compressEncode (Proof.MlKem.compressEncodeContract X86_64.abi) :=
   Verified.of_correct compressEncode_correct compressEncode_ct (by
-    mlkem_implies [Spec.MlKem.compressEncodeContract, Spec.MlKem.compressEncodeSig, compressEncodeK,
+    mlkem_implies [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, compressEncodeK,
       X86_64.abi, X86_64.argRegs] [compressEncodeSat] using compressEncodeSat)
 
 end VG.Proof.MlKem.X86_64

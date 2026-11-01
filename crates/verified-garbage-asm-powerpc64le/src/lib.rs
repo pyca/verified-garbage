@@ -477,10 +477,6 @@ pub mod mldsa87;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
-pub mod mlkem;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
 pub mod mlkem1024;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]

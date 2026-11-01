@@ -3,444 +3,6 @@
 //! `assembly/mlkem1024.s`.
 #![allow(dead_code)]
 
-/// `ByteEncode_d(Compress_d(f))` (FIPS 203 (4.7) and Algorithm 5) for the widths of ML-KEM-1024: writes the 256 coefficients of `*f` (each less than `q` = 3329), compressed to `d` bits, to `out` as `d`-bit little-endian fields.
-///
-/// Contract: `VG.Spec.MlKem1024.compressEncodeContract`. Constant time: only the pointers, `d` and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `f` must be valid for reads of 1024 bytes.
-/// * `out` must be valid for reads and writes of `len` bytes.
-/// * `d` must be 5 or 11, and `len` must be `32 * d`.
-/// * Each of the 256 `u32`s of `f` must be less than 3329.
-/// * `out` must not overlap `f` (distinct Rust objects never do).
-/// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem1024_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r"cmp r1, #5
-mov r3, #32
-beq 20f
-22:
-ldr r1, [r0, #0]
-movw r12, #60398
-movt r12, #4
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-strb r1, [r2, #0]
-lsr r1, r1, #8
-strb r1, [r2, #1]
-ldr r1, [r0, #4]
-movw r12, #60398
-movt r12, #4
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-ldrb r12, [r2, #1]
-add r12, r12, r1, lsl #3
-strb r12, [r2, #1]
-lsr r1, r1, #5
-strb r1, [r2, #2]
-ldr r1, [r0, #8]
-movw r12, #60398
-movt r12, #4
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-ldrb r12, [r2, #2]
-add r12, r12, r1, lsl #6
-strb r12, [r2, #2]
-lsr r1, r1, #2
-strb r1, [r2, #3]
-lsr r1, r1, #8
-strb r1, [r2, #4]
-ldr r1, [r0, #12]
-movw r12, #60398
-movt r12, #4
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-ldrb r12, [r2, #4]
-add r12, r12, r1, lsl #1
-strb r12, [r2, #4]
-lsr r1, r1, #7
-strb r1, [r2, #5]
-ldr r1, [r0, #16]
-movw r12, #60398
-movt r12, #4
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-ldrb r12, [r2, #5]
-add r12, r12, r1, lsl #4
-strb r12, [r2, #5]
-lsr r1, r1, #4
-strb r1, [r2, #6]
-ldr r1, [r0, #20]
-movw r12, #60398
-movt r12, #4
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-ldrb r12, [r2, #6]
-add r12, r12, r1, lsl #7
-strb r12, [r2, #6]
-lsr r1, r1, #1
-strb r1, [r2, #7]
-lsr r1, r1, #8
-strb r1, [r2, #8]
-ldr r1, [r0, #24]
-movw r12, #60398
-movt r12, #4
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-ldrb r12, [r2, #8]
-add r12, r12, r1, lsl #2
-strb r12, [r2, #8]
-lsr r1, r1, #6
-strb r1, [r2, #9]
-ldr r1, [r0, #28]
-movw r12, #60398
-movt r12, #4
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-ldrb r12, [r2, #9]
-add r12, r12, r1, lsl #5
-strb r12, [r2, #9]
-lsr r1, r1, #3
-strb r1, [r2, #10]
-add r0, r0, #32
-add r2, r2, #11
-subs r3, r3, #1
-bne 22b
-b 21f
-20:
-23:
-ldr r1, [r0, #0]
-movw r12, #5040
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-and r1, r1, #31
-strb r1, [r2, #0]
-ldr r1, [r0, #4]
-movw r12, #5040
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-and r1, r1, #31
-ldrb r12, [r2, #0]
-add r12, r12, r1, lsl #5
-strb r12, [r2, #0]
-lsr r1, r1, #3
-strb r1, [r2, #1]
-ldr r1, [r0, #8]
-movw r12, #5040
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-and r1, r1, #31
-ldrb r12, [r2, #1]
-add r12, r12, r1, lsl #2
-strb r12, [r2, #1]
-ldr r1, [r0, #12]
-movw r12, #5040
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-and r1, r1, #31
-ldrb r12, [r2, #1]
-add r12, r12, r1, lsl #7
-strb r12, [r2, #1]
-lsr r1, r1, #1
-strb r1, [r2, #2]
-ldr r1, [r0, #16]
-movw r12, #5040
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-and r1, r1, #31
-ldrb r12, [r2, #2]
-add r12, r12, r1, lsl #4
-strb r12, [r2, #2]
-lsr r1, r1, #4
-strb r1, [r2, #3]
-ldr r1, [r0, #20]
-movw r12, #5040
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-and r1, r1, #31
-ldrb r12, [r2, #3]
-add r12, r12, r1, lsl #1
-strb r12, [r2, #3]
-ldr r1, [r0, #24]
-movw r12, #5040
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-and r1, r1, #31
-ldrb r12, [r2, #3]
-add r12, r12, r1, lsl #6
-strb r12, [r2, #3]
-lsr r1, r1, #2
-strb r1, [r2, #4]
-ldr r1, [r0, #28]
-movw r12, #5040
-mul r1, r1, r12
-add r1, r1, #262144
-sub r1, r1, #256
-lsr r1, r1, #19
-and r1, r1, #31
-ldrb r12, [r2, #4]
-add r12, r12, r1, lsl #3
-strb r12, [r2, #4]
-add r0, r0, #32
-add r2, r2, #5
-subs r3, r3, #1
-bne 23b
-21:
-bx lr",
-    )
-}
-
-/// `Decompress_d(ByteDecode_d(b))` (FIPS 203 Algorithm 6 and (4.8)) for the widths of ML-KEM-1024: writes the 256 `d`-bit little-endian fields of the `len` bytes at `b`, decompressed, to `*f` (each less than `q` = 3329).
-///
-/// Contract: `VG.Spec.MlKem1024.decodeDecompressContract`. Constant time: only the pointers, `d` and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `b` must be valid for reads of `len` bytes.
-/// * `f` must be valid for reads and writes of 1024 bytes.
-/// * `d` must be 5 or 11, and `len` must be `32 * d`.
-/// * `f` must not overlap `b` (distinct Rust objects never do).
-/// * Neither `b` nor `f` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem1024_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
-    core::arch::naked_asm!(
-        r"cmp r2, #5
-beq 20f
-22:
-ldrb r2, [r0, #0]
-ldrb r12, [r0, #1]
-add r2, r2, r12, lsl #8
-lsl r2, r2, #21
-lsr r2, r2, #21
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #1024
-lsr r12, r12, #11
-str r12, [r3, #0]
-ldrb r2, [r0, #1]
-lsr r2, r2, #3
-ldrb r12, [r0, #2]
-add r2, r2, r12, lsl #5
-lsl r2, r2, #21
-lsr r2, r2, #21
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #1024
-lsr r12, r12, #11
-str r12, [r3, #4]
-ldrb r2, [r0, #2]
-lsr r2, r2, #6
-ldrb r12, [r0, #3]
-add r2, r2, r12, lsl #2
-ldrb r12, [r0, #4]
-add r2, r2, r12, lsl #10
-lsl r2, r2, #21
-lsr r2, r2, #21
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #1024
-lsr r12, r12, #11
-str r12, [r3, #8]
-ldrb r2, [r0, #4]
-lsr r2, r2, #1
-ldrb r12, [r0, #5]
-add r2, r2, r12, lsl #7
-lsl r2, r2, #21
-lsr r2, r2, #21
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #1024
-lsr r12, r12, #11
-str r12, [r3, #12]
-ldrb r2, [r0, #5]
-lsr r2, r2, #4
-ldrb r12, [r0, #6]
-add r2, r2, r12, lsl #4
-lsl r2, r2, #21
-lsr r2, r2, #21
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #1024
-lsr r12, r12, #11
-str r12, [r3, #16]
-ldrb r2, [r0, #6]
-lsr r2, r2, #7
-ldrb r12, [r0, #7]
-add r2, r2, r12, lsl #1
-ldrb r12, [r0, #8]
-add r2, r2, r12, lsl #9
-lsl r2, r2, #21
-lsr r2, r2, #21
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #1024
-lsr r12, r12, #11
-str r12, [r3, #20]
-ldrb r2, [r0, #8]
-lsr r2, r2, #2
-ldrb r12, [r0, #9]
-add r2, r2, r12, lsl #6
-lsl r2, r2, #21
-lsr r2, r2, #21
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #1024
-lsr r12, r12, #11
-str r12, [r3, #24]
-ldrb r2, [r0, #9]
-lsr r2, r2, #5
-ldrb r12, [r0, #10]
-add r2, r2, r12, lsl #3
-lsl r2, r2, #21
-lsr r2, r2, #21
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #1024
-lsr r12, r12, #11
-str r12, [r3, #28]
-add r0, r0, #11
-add r3, r3, #32
-subs r1, r1, #11
-bne 22b
-b 21f
-20:
-23:
-ldrb r2, [r0, #0]
-lsl r2, r2, #27
-lsr r2, r2, #27
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #16
-lsr r12, r12, #5
-str r12, [r3, #0]
-ldrb r2, [r0, #0]
-lsr r2, r2, #5
-ldrb r12, [r0, #1]
-add r2, r2, r12, lsl #3
-lsl r2, r2, #27
-lsr r2, r2, #27
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #16
-lsr r12, r12, #5
-str r12, [r3, #4]
-ldrb r2, [r0, #1]
-lsr r2, r2, #2
-lsl r2, r2, #27
-lsr r2, r2, #27
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #16
-lsr r12, r12, #5
-str r12, [r3, #8]
-ldrb r2, [r0, #1]
-lsr r2, r2, #7
-ldrb r12, [r0, #2]
-add r2, r2, r12, lsl #1
-lsl r2, r2, #27
-lsr r2, r2, #27
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #16
-lsr r12, r12, #5
-str r12, [r3, #12]
-ldrb r2, [r0, #2]
-lsr r2, r2, #4
-ldrb r12, [r0, #3]
-add r2, r2, r12, lsl #4
-lsl r2, r2, #27
-lsr r2, r2, #27
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #16
-lsr r12, r12, #5
-str r12, [r3, #16]
-ldrb r2, [r0, #3]
-lsr r2, r2, #1
-lsl r2, r2, #27
-lsr r2, r2, #27
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #16
-lsr r12, r12, #5
-str r12, [r3, #20]
-ldrb r2, [r0, #3]
-lsr r2, r2, #6
-ldrb r12, [r0, #4]
-add r2, r2, r12, lsl #2
-lsl r2, r2, #27
-lsr r2, r2, #27
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #16
-lsr r12, r12, #5
-str r12, [r3, #24]
-ldrb r2, [r0, #4]
-lsr r2, r2, #3
-lsl r2, r2, #27
-lsr r2, r2, #27
-add r12, r2, r2, lsl #8
-add r12, r12, r2, lsl #10
-add r12, r12, r2, lsl #11
-add r12, r12, #16
-lsr r12, r12, #5
-str r12, [r3, #28]
-add r0, r0, #5
-add r3, r3, #32
-subs r1, r1, #5
-bne 23b
-21:
-bx lr",
-    )
-}
-
 /// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
 ///
 /// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
@@ -883,12 +445,12 @@ bx lr",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
-        vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
-        vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
-        vg_mlkem_multiply_ntts = sym super::mlkem::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
-        vg_mlkem_encode12 = sym super::mlkem::vg_mlkem_encode12,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_encode12 = sym super::mlkem1024::vg_mlkem_encode12::vg_mlkem_encode12,
     )
 }
 
@@ -1421,15 +983,15 @@ bx lr",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_decode12 = sym super::mlkem::vg_mlkem_decode12,
-        vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
-        vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
-        vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
-        vg_mlkem_multiply_ntts = sym super::mlkem::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
-        vg_mlkem_inv_ntt = sym super::mlkem::vg_mlkem_inv_ntt,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
+        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
     )
 }
 
@@ -2056,20 +1618,72 @@ ldr r10, [r3, #864]
 ldr r11, [r3, #868]
 ldr lr, [r3, #872]
 bx lr",
-        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress,
-        vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
-        vg_mlkem_decode12 = sym super::mlkem::vg_mlkem_decode12,
-        vg_mlkem_multiply_ntts = sym super::mlkem::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem::vg_mlkem_add,
-        vg_mlkem_inv_ntt = sym super::mlkem::vg_mlkem_inv_ntt,
-        vg_mlkem_sub = sym super::mlkem::vg_mlkem_sub,
-        vg_mlkem_compress_encode = sym super::mlkem::vg_mlkem_compress_encode,
+        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress::vg_mlkem1024_decode_decompress,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
+        vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
+        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
-        vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem1024_compress_encode.rs"]
+pub(crate) mod vg_mlkem1024_compress_encode;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem1024_decode_decompress.rs"]
+pub(crate) mod vg_mlkem1024_decode_decompress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_add.rs"]
+pub(crate) mod vg_mlkem_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_cbd2.rs"]
+pub(crate) mod vg_mlkem_cbd2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_compress_encode.rs"]
+pub(crate) mod vg_mlkem_compress_encode;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_decode12.rs"]
+pub(crate) mod vg_mlkem_decode12;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_decode_decompress.rs"]
+pub(crate) mod vg_mlkem_decode_decompress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_encode12.rs"]
+pub(crate) mod vg_mlkem_encode12;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_inv_ntt.rs"]
+pub(crate) mod vg_mlkem_inv_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_multiply_ntts.rs"]
+pub(crate) mod vg_mlkem_multiply_ntts;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_ntt.rs"]
+pub(crate) mod vg_mlkem_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_sample_ntt.rs"]
+pub(crate) mod vg_mlkem_sample_ntt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem_sub.rs"]
+pub(crate) mod vg_mlkem_sub;

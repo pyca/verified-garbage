@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeAcc
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-public import VerifiedGarbage.Spec.MlKem.KpkeMul
+public import VerifiedGarbage.Proof.MlKem.KpkeMulContract
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.Framework.Offset
 

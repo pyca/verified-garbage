@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Ce11Step
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.MlKem1024.Contract
 import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
 import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Ce5Step
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Ce11Step
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Proof.MlKem1024.Contract
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Ce5Step
@@ -29,7 +31,7 @@ every address and branch depends only on the pointers and `len`.
 
 namespace VG.Proof.MlKem1024
 
-open VG VG.AArch64 VG.Spec.MlKem
+open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
 /-- AArch64 contract for `vg_mlkem1024_compress_encode(f = x0, d = w1, out =
@@ -40,7 +42,7 @@ def compressEncodeAArch64 : Contract AArch64.isa where
   pre s :=
     s.rd = [⟨s.gpr .x0, 1024⟩] ∧ s.wr = [⟨s.gpr .x2, (s.gpr .x3).toNat⟩] ∧
     Region.Disjoint ⟨s.gpr .x0, 1024⟩ ⟨s.gpr .x2, (s.gpr .x3).toNat⟩ ∧
-    ((s.gpr .x1).setWidth 32).toNat ∈ Spec.MlKem1024.compressWidths ∧
+    ((s.gpr .x1).setWidth 32).toNat ∈ Proof.MlKem1024.compressWidths ∧
     (s.gpr .x3).toNat = 32 * ((s.gpr .x1).setWidth 32).toNat ∧ Reduced s.mem (s.gpr .x0)
   post s s' := bytesAt s'.mem (s.gpr .x2) (s.gpr .x3).toNat =
     compressEncode ((s.gpr .x1).setWidth 32).toNat (polyAt s.mem (s.gpr .x0))
@@ -55,6 +57,7 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem1024.AArch64 VG.Proof.MlKe
   VG.Proof.MlKem.AArch64.CodecV VG.Proof.MlKem.AArch64.CE VG.Proof.MlKem1024.AArch64
   VG.Proof.MlKem1024.AArch64.CodecV
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
 /-- One width, from the state after the dispatch. -/
@@ -160,9 +163,9 @@ def sat : State where
   wr := [⟨0x2000, 160⟩]
 
 theorem compressEncode_verified :
-    Verified AArch64.target Impl.MlKem1024.AArch64.compressEncode (Spec.MlKem1024.compressEncodeContract AArch64.abi) :=
+    Verified AArch64.target Impl.MlKem1024.AArch64.compressEncode (Proof.MlKem1024.compressEncodeContract AArch64.abi) :=
   Verified.of_correct correct ct (by
-    mlkem_implies [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig,
+    mlkem_implies [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig,
       compressEncodeAArch64, AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.MlKem1024.AArch64.CE

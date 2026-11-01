@@ -308,9 +308,9 @@ def mulSat : State where
   wr := [⟨0x1000, 1024⟩, ⟨0x4000, 1024⟩]
 
 theorem mul_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.multiplyNTTs (Spec.MlKem.mulContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlKem.X86_64.multiplyNTTs (Proof.MlKem.mulContract X86_64.abi) :=
   Verified.of_correct mul_correct mul_ct (by
-    mlkem_implies [Spec.MlKem.mulContract, Spec.MlKem.mulSig, mulK, X86_64.abi, X86_64.argRegs]
+    mlkem_implies [Proof.MlKem.mulContract, Proof.MlKem.mulSig, mulK, X86_64.abi, X86_64.argRegs]
       [mulSat] using mulSat)
 
 end VG.Proof.MlKem.X86_64

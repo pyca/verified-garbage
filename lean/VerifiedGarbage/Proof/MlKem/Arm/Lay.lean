@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 
 import VerifiedGarbage.Proof.MlKem.Arm.Reduce
 import VerifiedGarbage.Proof.Framework.Arm.Contract

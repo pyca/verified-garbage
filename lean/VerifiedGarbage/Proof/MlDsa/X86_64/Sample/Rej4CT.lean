@@ -66,7 +66,7 @@ open VG.Proof.MlKem.X86_64 (sample4K relInv taintRel relStart Rel2 ofNat64_pred 
 open VG.Proof.MlKem.X86_64.S4 (R4 Pre aP at' pre_of pub_scr pub_aP pub_B env_rbx start_ct)
 open VG.Proof.MlDsa.X86_64.Sample (nil_regs WP.all')
 open VG.Proof.MlDsa.X86_64.Sample.RejNttCT (BPre BRel body_ct)
-open VG.Spec.MlKem (poly4)
+open VG.Proof.MlKem (poly4)
 
 theorem pub_Lt4 {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) {K : Nat} (hK : K < 4) (t : Nat) :
     Lt σ₁ K t = Lt σ₂ K t := by simp only [Lt, Xb, pub_B hq hK]

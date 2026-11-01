@@ -158,9 +158,9 @@ def sat : State where
   wr := [⟨0x2000, 128⟩]
 
 theorem compressEncode_verified :
-    Verified AArch64.target compressEncode (Spec.MlKem.compressEncodeContract AArch64.abi) :=
+    Verified AArch64.target compressEncode (Proof.MlKem.compressEncodeContract AArch64.abi) :=
   Verified.of_correct correct ct (by
-    mlkem_implies [Spec.MlKem.compressEncodeContract, Spec.MlKem.compressEncodeSig,
+    mlkem_implies [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig,
       compressEncodeAArch64, AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.MlKem.AArch64.CE

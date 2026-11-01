@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.MlKem.RISCV64.Compress
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 import VerifiedGarbage.Proof.MlKem.RISCV64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.RISCV64.Bytes
 public import VerifiedGarbage.Proof.MlKem.Encode
@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.MlKem.RISCV64.Compress
-meta import VerifiedGarbage.Spec.MlKem.Poly
+meta import VerifiedGarbage.Proof.MlKem.PolyContract
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Add
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.CompressEncode
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Reduce
@@ -594,8 +594,8 @@ theorem zext_rel : RelCT isa LoAgree (.block (zext32 .a2))
   · rw [k1, k2, Z, Z, hlo]
   · rw [g1 _ (by decide), g2 _ (by decide), hr _ (by decide)]
 
-theorem pre_of {s : State} (h : (Spec.MlKem.decodeDecompressContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, RISCV64.abi, RISCV64.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.decodeDecompressContract RISCV64.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
 
@@ -609,16 +609,16 @@ def satState : State where
   wr := [⟨0x2000, 1024⟩]
 
 theorem verified : Verified RISCV64.target Impl.MlKem.RISCV64.decodeDecompress
-    (Spec.MlKem.decodeDecompressContract RISCV64.abi) := by
+    (Proof.MlKem.decodeDecompressContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, RelCT.constantTime (Q := fun _ _ => True) ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hra, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp, hra⟩, ?_⟩
-    sig_post [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, RISCV64.abi, RISCV64.argRegs]
+    sig_post [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, RISCV64.abi, RISCV64.argRegs]
     exact polyIs_of_coeffAt (p := F s) fun j hj => by rw [h j (by rw [n_eq] at hj; exact hj)]; rfl
   · refine RelCT.seq (zext_rel.mono (fun s₁ s₂ ⟨_, _, hp⟩ => ?_) fun _ _ h => h)
       (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
         (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (Taint.mem_ofRegs.mp h)⟩) (by taint_decide))
-    sig_pub [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, RISCV64.abi,
+    sig_pub [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, RISCV64.abi,
       RISCV64.argRegs] at hp
     obtain ⟨hsp, h3, h4, h5, h6⟩ := hp
     refine ⟨hsp, fun r hr => ?_, h5⟩
@@ -630,7 +630,7 @@ theorem verified : Verified RISCV64.target Impl.MlKem.RISCV64.decodeDecompress
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, RISCV64.abi,
+    · sig_reduce [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, RISCV64.abi,
         RISCV64.argRegs]
       sig_and_intros
       all_goals first

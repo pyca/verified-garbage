@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.X86.Unpack
 public import VerifiedGarbage.Impl.MlKem1024.X86.Compress
 public import VerifiedGarbage.Proof.MlKem.X86.Pack
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.MlKem1024.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -26,15 +27,15 @@ open VG.Proof.MlKem
 open VG.Proof.MlKem.X86
 open VG.Spec.MlKem
 
-theorem dv_lt' {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) {y : Nat} (hy : y < 2 ^ d) : dv d y < q :=
+theorem dv_lt' {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {y : Nat} (hy : y < 2 ^ d) : dv d y < q :=
   (decompress1024_val hd hy).2
 
-theorem dv_eq' {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) {y : Nat} (hy : y < 2 ^ d) :
+theorem dv_eq' {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {y : Nat} (hy : y < 2 ^ d) :
     dv d y = (decompress d y).val := (decompress1024_val hd hy).1.symm
 
 /-- `decompOp d` computes `dv d y` in `eax` from `eax = y < 2ᵈ`, changing only `eax`, `edx` and
 the flags. -/
-theorem decomp_spec' {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (is : List Instr) (s : State)
+theorem decomp_spec' {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (is : List Instr) (s : State)
     (P : State → Prop) {y : Nat} (hy : y < 2 ^ d) (h : (s.gpr .eax).toNat = y)
     (k : ∀ s', Only [.eax, .edx] s s' → (s'.gpr .eax).toNat = dv d y → WP isa (.block is) s' P) :
     WP isa (.block (decompOp d ++ is)) s P := by
@@ -57,7 +58,7 @@ theorem decomp_spec' {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (is : 
       Nat.mod_eq_of_lt (a := 2 ^ (d - 1)) (by omega), Nat.mod_eq_of_lt (by omega), dv, q_eq, Nat.mul_comm y]
 
 /-- `decSt d j` writes `dv d y` to `[edi + 4j]`, from `eax = y < 2ᵈ`. -/
-theorem decSt_spec {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (j : Nat) (is : List Instr)
+theorem decSt_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (j : Nat) (is : List Instr)
     (s : State) (P : State → Prop) {y : Nat} (hy : y < 2 ^ d) (h : (s.gpr .eax).toNat = y)
     (hin : InRegions s.wr (s.ea (at_ .edi (4 * j))) 4)
     (k : ∀ s', Regs [.eax, .edx] s s' →

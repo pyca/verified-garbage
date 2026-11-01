@@ -26,7 +26,7 @@ open VG.Proof.MlKem.X86_64 (Keep ea_at wp_countdown add_ofNat_zero pR WP.keep of
 open VG.Proof.MlKem.X86_64.S4
 open VG.Proof.MlDsa.Sample (rnFold rnStep rnFold_snoc rnFold_length_le Stored stored_nil stored_frame G_eq G_length)
 open VG.Proof.MlDsa.X86_64.Sample (rnBody_ok CoeffsWr)
-open VG.Spec.MlKem (poly4 seed4)
+open VG.Proof.MlKem (poly4 seed4)
 open VG.Spec.MlDsa (Zq)
 open VG.Proof.MlKem (xofByte xof_squeezeFrom_getElem)
 

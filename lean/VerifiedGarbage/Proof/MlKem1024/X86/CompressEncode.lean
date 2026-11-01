@@ -7,7 +7,9 @@ meta import VerifiedGarbage.Proof.MlKem1024.X86.Pack
 import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.Encode1024
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.MlKem1024.Contract
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Proof.MlKem1024.Contract
 public import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Sig
@@ -71,6 +73,7 @@ open VG.Proof.MlKem
 open VG.Proof.MlKem.X86
 open VG.Proof.MlKem1024.X86
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
 /-- `++`, grouping to the right. -/
@@ -112,12 +115,12 @@ structure Pre (s₀ : State) : Prop where
   stk_a : (stkR s₀).Disjoint (aR s₀)
   f_fit : (fP s₀).toNat + 1024 ≤ 2 ^ 32
   o_fit : (oP s₀).toNat + (lenV s₀).toNat ≤ 2 ^ 32
-  d_mem : dN s₀ ∈ Spec.MlKem1024.compressWidths
+  d_mem : dN s₀ ∈ Proof.MlKem1024.compressWidths
   len_eq : (lenV s₀).toNat = 32 * dN s₀
   f_red : Reduced s₀.mem (fA s₀)
 
-theorem Pre.of {s₀ : State} (h : (Spec.MlKem1024.compressEncodeContract X86.abi 16).pre s₀) : Pre s₀ := by
-  sig_pre [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+theorem Pre.of {s₀ : State} (h : (Proof.MlKem1024.compressEncodeContract X86.abi 16).pre s₀) : Pre s₀ := by
+  sig_pre [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩
 
@@ -305,7 +308,7 @@ end
 theorem step5 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 5) {t : Nat} (ht : t < 32) {s : State}
     (h : G s₀ 5 t 0 s) :
     WP isa (.block pack5Body) s fun s' => G s₀ 5 (t + 1) 0 s' ∧ eval .ne s' = some (decide (t + 1 < 32)) := by
-  have hdm : (5 : Nat) ∈ Spec.MlKem1024.compressWidths := hd ▸ hp.d_mem
+  have hdm : (5 : Nat) ∈ Proof.MlKem1024.compressWidths := hd ▸ hp.d_mem
   have hl := hp.len_eq
   rw [hd] at hl
   generalize ha : (fun i => (coeffAt s₀.mem (fA s₀) (8 * t + i)).toNat) = a
@@ -366,7 +369,7 @@ theorem step5 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 5) {t : Nat} (ht : 
 theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {t : Nat} (ht : t < 32) {s : State}
     (h : G s₀ 11 t 0 s) :
     WP isa (.block pack11Body) s fun s' => G s₀ 11 (t + 1) 0 s' ∧ eval .ne s' = some (decide (t + 1 < 32)) := by
-  have hdm : (11 : Nat) ∈ Spec.MlKem1024.compressWidths := hd ▸ hp.d_mem
+  have hdm : (11 : Nat) ∈ Proof.MlKem1024.compressWidths := hd ▸ hp.d_mem
   have hl := hp.len_eq
   rw [hd] at hl
   generalize ha : (fun i => (coeffAt s₀.mem (fA s₀) (8 * t + i)).toNat) = a
@@ -585,14 +588,14 @@ theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost 
 def satMem : Mem := fun a => if a = 0x5008 then 5 else if a = 0x500d then 4 else if a = 0x5010 then 160 else 0
 
 theorem verified : Verified X86.target Impl.MlKem1024.X86.compressEncode
-    (Spec.MlKem1024.compressEncodeContract X86.abi 16) := by
+    (Proof.MlKem1024.compressEncodeContract X86.abi 16) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of h) fun s s' _ _ h => by
-      sig_pub [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig, X86.abi, X86.argSlots,
+      sig_pub [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes] at h
       exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
-    sig_post [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig, X86.abi, X86.argSlots,
+    sig_post [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes]
     have hp := Pre.of h₀
     rw [hm, hp.len_eq]
@@ -604,7 +607,7 @@ theorem verified : Verified X86.target Impl.MlKem1024.X86.compressEncode
     have a3 : arg st 3 = 160 := by decide
     have e : argAddr st 0 = 0x5004 := by decide
     refine ⟨st, ?_⟩
-    sig_pre [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig, X86.abi, X86.argSlots,
+    sig_pre [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes]
     simp only [a0, a1, a2, a3, e]
     refine ⟨by decide, by decide, rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide,

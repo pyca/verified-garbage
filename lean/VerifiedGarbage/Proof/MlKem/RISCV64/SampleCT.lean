@@ -36,8 +36,8 @@ open VG.Spec.MlKem
 open VG.Spec.Sha3 (stateAt)
 open VG.Proof.Sha3.RISCV64.Stream (absorbCall_ct padCall_ct squeezeCall_ct)
 
-theorem pre_of {s : State} (h : (Spec.MlKem.sampleNTTContract RISCV64.abi 1168).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.sampleNTTContract RISCV64.abi 1168).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
   exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
 
@@ -48,8 +48,8 @@ theorem polyAt_toPoly {m : Mem} {p : Addr} {L : List Zq} (hl : L.length = n)
   rw [h i (by rw [hl]; exact hi), getElem!_eq _ hi]
   simp only [VG.Proof.MlKem.toPoly, Vector.getElem_ofFn]
 
-theorem post_of {s₀ s : State} (h : Done s₀ s) : (Spec.MlKem.sampleNTTContract RISCV64.abi 1168).post s₀ s := by
-  sig_post [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs]
+theorem post_of {s₀ s : State} (h : Done s₀ s) : (Proof.MlKem.sampleNTTContract RISCV64.abi 1168).post s₀ s := by
+  sig_post [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs]
   rw [h.a0]
   by_cases hl : (Ls s₀ 280).length = 256
   · rw [ite_eq_left hl]
@@ -305,13 +305,13 @@ def satState : State where
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
 theorem verified :
-    Verified RISCV64.target Impl.MlKem.RISCV64.sampleNTT (Spec.MlKem.sampleNTTContract RISCV64.abi 1168) := by
+    Verified RISCV64.target Impl.MlKem.RISCV64.sampleNTT (Proof.MlKem.sampleNTTContract RISCV64.abi 1168) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, hd⟩ := correct (pre_of hs)
     exact ⟨t, s', he, ⟨hd.pres, hd.sp, hd.ra⟩, post_of hd⟩
   · have hp₁ := pre_of h₁
     have hp₂ := pre_of h₂
-    sig_pub [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs] at hpub
+    sig_pub [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs] at hpub
     obtain ⟨hsp, hb, h3, h4, h5⟩ := hpub
     have two : Two s₁ s₂ := ⟨hp₁, hp₂, hsp, h3, h4, h5,
       (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hb⟩
@@ -319,7 +319,7 @@ theorem verified :
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs]
+    · sig_reduce [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
         | trivial

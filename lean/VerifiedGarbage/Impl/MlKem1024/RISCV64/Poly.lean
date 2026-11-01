@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.MlKem.RISCV64.Codec
 # ML-KEM-1024: the compression to 5 and 11 bits, and the key check, on RISC-V
 
 As on PPC64LE (`Impl/MlKem1024/PPC64LE/Poly.lean`): the primitives of
-`Spec/MlKem/Contract1024.lean` that go through the coefficients once, as
+`Proof/MlKem1024/Contract.lean` that go through the coefficients once, as
 `Impl/MlKem/RISCV64/Compress.lean` does for the widths of ML-KEM-768: the
 fields of a group are assembled in `a5` and stored a byte at a time, or
 loaded into `a5` and taken apart with pairs of shifts. Both functions

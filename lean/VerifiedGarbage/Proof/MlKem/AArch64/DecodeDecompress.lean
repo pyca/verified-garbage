@@ -211,9 +211,9 @@ def sat : State where
   wr := [⟨0x2000, 1024⟩]
 
 theorem decodeDecompress_verified :
-    Verified AArch64.target decodeDecompress (Spec.MlKem.decodeDecompressContract AArch64.abi) :=
+    Verified AArch64.target decodeDecompress (Proof.MlKem.decodeDecompressContract AArch64.abi) :=
   Verified.of_correct correct ct (by
-    mlkem_implies [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig,
+    mlkem_implies [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig,
       decodeDecompressAArch64, AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.MlKem.AArch64.DD

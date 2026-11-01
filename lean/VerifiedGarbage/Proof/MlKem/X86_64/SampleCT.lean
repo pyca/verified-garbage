@@ -443,13 +443,13 @@ def sampleSat : State where
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
 
 theorem sample_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.sampleNTT (Spec.MlKem.sampleNTTContract X86_64.abi 16) :=
+    Verified X86_64.target Impl.MlKem.X86_64.sampleNTT (Proof.MlKem.sampleNTTContract X86_64.abi 16) :=
   Verified.of_correct sample_correct sample_ct
-    { pre := by sig_implies_pre [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, sampleK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, sampleK, X86_64.abi,
         X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, sampleK, X86_64.abi, X86_64.argRegs]
+        sig_post [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, sampleK, X86_64.abi, X86_64.argRegs]
         dsimp only [sampleK] at h
         obtain ⟨hr, hp⟩ := h
         cases e : Spec.MlKem.sampleNTT Spec.MlKem.minIterations (Spec.Sha3.bytesAt s.mem (s.gpr .rdi) 34) with
@@ -466,11 +466,11 @@ theorem sample_verified :
             rw [e, hf]⟩⟩
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, sampleK, X86_64.abi,
+        sig_pub [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, sampleK, X86_64.abi,
           X86_64.argRegs] at h
         obtain ⟨hsp, hb, hdi, hsi, hdx⟩ := h
         exact ⟨hdi, hsi, hdx, hsp, map_toNat_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, sampleK, X86_64.abi,
+      sat := by sig_implies_sat [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, sampleK, X86_64.abi,
         X86_64.argRegs] [sampleSat] using sampleSat }
 
 end VG.Proof.MlKem.X86_64

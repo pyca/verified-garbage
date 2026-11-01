@@ -37,6 +37,7 @@ open VG.Proof.MlKem
 open VG.Proof.MlKem.X86
 open VG.Proof.MlKem1024.X86
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
 section
@@ -73,11 +74,11 @@ structure Pre (s₀ : State) : Prop where
   stk_a : (stkR s₀).Disjoint (aR s₀)
   b_fit : (bP s₀).toNat + (lenV s₀).toNat ≤ 2 ^ 32
   f_fit : (fP s₀).toNat + 1024 ≤ 2 ^ 32
-  d_mem : dN s₀ ∈ Spec.MlKem1024.compressWidths
+  d_mem : dN s₀ ∈ Proof.MlKem1024.compressWidths
   len_eq : (lenV s₀).toNat = 32 * dN s₀
 
-theorem Pre.of {s₀ : State} (h : (Spec.MlKem1024.decodeDecompressContract X86.abi 16).pre s₀) : Pre s₀ := by
-  sig_pre [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig, X86.abi, X86.argSlots,
+theorem Pre.of {s₀ : State} (h : (Proof.MlKem1024.decodeDecompressContract X86.abi 16).pre s₀) : Pre s₀ := by
+  sig_pre [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩
@@ -149,7 +150,7 @@ theorem D.st {s₀ s : State} (hp : Pre s₀) {d b t k : Nat} (hd : dN s₀ = d)
     (hv : (decodeDecompress d (B s₀))[8 * t + k]! = decompress d y) {is : List Instr} {Q : State → Prop}
     (kk : ∀ s', D s₀ b t (k + 1) s' → s'.gpr .ebx = s.gpr .ebx → WP isa (.block is) s' Q) :
     WP isa (.block (decSt d k ++ is)) s Q := by
-  have hdm : d ∈ Spec.MlKem1024.compressWidths := hd ▸ hp.d_mem
+  have hdm : d ∈ Proof.MlKem1024.compressWidths := hd ▸ hp.d_mem
   have ff := hp.f_fit
   have e : s.ea (at_ .edi (4 * k)) = coeffAddr (fA s₀) (8 * t + k) := by
     show (s.gpr .edi + BitVec.ofNat 32 (4 * k)).setWidth 64 = _
@@ -174,7 +175,7 @@ theorem D.field {s₀ s : State} (hp : Pre s₀) {d b t k : Nat} (hd : dN s₀ =
     (hv : (decodeDecompress d (B s₀))[8 * t + k]! = decompress d (W / 2 ^ sh % 2 ^ d)) {is : List Instr}
     {Q : State → Prop} (kk : ∀ s', D s₀ b t (k + 1) s' → s'.gpr .ebx = s.gpr .ebx → WP isa (.block is) s' Q) :
     WP isa (.block (fieldAt d sh k ++ is)) s Q := by
-  have hdm : d ∈ Spec.MlKem1024.compressWidths := hd ▸ hp.d_mem
+  have hdm : d ∈ Proof.MlKem1024.compressWidths := hd ▸ hp.d_mem
   have hd' : d < 32 := by rcases mem_compressWidths1024 hdm with rfl | rfl <;> decide
   rw [fieldAt, List.append_assoc, List.cons_append]
   refine shrFrom_spec sh hsh _ s Q fun s₁ o₁ v₁ => wp_and fun s₂ o₂ v₂ => ?_
@@ -457,20 +458,20 @@ theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost 
 def satMem : Mem := fun a => if a = 0x5008 then 160 else if a = 0x500c then 5 else if a = 0x5011 then 4 else 0
 
 theorem verified : Verified X86.target Impl.MlKem1024.X86.decodeDecompress
-    (Spec.MlKem1024.decodeDecompressContract X86.abi 16) := by
+    (Proof.MlKem1024.decodeDecompressContract X86.abi 16) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of h) fun s s' _ _ h => by
-      sig_pub [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig, X86.abi,
+      sig_pub [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, X86.abi,
         X86.argSlots, X86.argVal, X86.argBytes] at h
       exact h).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
-    sig_post [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig, X86.abi,
+    sig_post [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes]
     rw [hm]
     exact polyIs_of_coeffAt fun i hi => hinv.coef i (by rw [n_eq] at hi; exact hi)
   · let st := satState satMem [⟨0, 160⟩] [⟨0x400, 1024⟩, ⟨0x5004, 16⟩]
     refine ⟨st, ?_⟩
-    sig_sat_check [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig, X86.abi,
+    sig_sat_check [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes]
 
 end VG.Proof.MlKem1024.X86.DecodeDecompress

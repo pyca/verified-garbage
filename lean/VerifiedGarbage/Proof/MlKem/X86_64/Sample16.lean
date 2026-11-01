@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
@@ -33,13 +33,13 @@ def sample16Sat : State where
   wr := [⟨0x2000, 512⟩, ⟨0x3000, 2048⟩]
 
 theorem sample16_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.sampleNTT16 (Spec.MlKem.sampleNTT16Contract X86_64.abi 16) :=
+    Verified X86_64.target Impl.MlKem.X86_64.sampleNTT16 (Proof.MlKem.sampleNTT16Contract X86_64.abi 16) :=
   Verified.of_correct (sampleW_correct true) (sampleW_ct true)
-    { pre := by sig_implies_pre [Spec.MlKem.sampleNTT16Contract, Spec.MlKem.sampleNTT16Sig, sampleKW, cRegion, cw,
+    { pre := by sig_implies_pre [Proof.MlKem.sampleNTT16Contract, Proof.MlKem.sampleNTT16Sig, sampleKW, cRegion, cw,
         X86_64.abi, X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.MlKem.sampleNTT16Contract, Spec.MlKem.sampleNTT16Sig, sampleKW, X86_64.abi, X86_64.argRegs]
+        sig_post [Proof.MlKem.sampleNTT16Contract, Proof.MlKem.sampleNTT16Sig, sampleKW, X86_64.abi, X86_64.argRegs]
         dsimp only [sampleKW] at h
         obtain ⟨hr, hp⟩ := h
         cases e : Spec.MlKem.sampleNTT Spec.MlKem.minIterations (Spec.Sha3.bytesAt s.mem (s.gpr .rdi) 34) with
@@ -56,11 +56,11 @@ theorem sample16_verified :
             rw [e]; exact congrArg some hf.symm⟩⟩
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlKem.sampleNTT16Contract, Spec.MlKem.sampleNTT16Sig, sampleKW, X86_64.abi,
+        sig_pub [Proof.MlKem.sampleNTT16Contract, Proof.MlKem.sampleNTT16Sig, sampleKW, X86_64.abi,
           X86_64.argRegs] at h
         obtain ⟨hsp, hb, hdi, hsi, hdx⟩ := h
         exact ⟨hdi, hsi, hdx, hsp, map_toNat_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlKem.sampleNTT16Contract, Spec.MlKem.sampleNTT16Sig, sampleKW, cRegion, cw,
+      sat := by sig_implies_sat [Proof.MlKem.sampleNTT16Contract, Proof.MlKem.sampleNTT16Sig, sampleKW, cRegion, cw,
         X86_64.abi, X86_64.argRegs] [sample16Sat] using sample16Sat }
 
 end VG.Proof.MlKem.X86_64

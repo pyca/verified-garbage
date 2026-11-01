@@ -62,7 +62,7 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 # ML-KEM on x86-64: `vg_mlkem768_keygen_mul` and `vg_mlkem1024_keygen_mul`, verified
 
 The proof of `KgMul.lean` for each backend and rank, its constant time,
-and its contract implying the shared one of `Spec/MlKem/KpkeMul.lean`.
+and its contract implying the shared one of `Proof/MlKem/KpkeMulContract.lean`.
 -/
 
 @[expose] public section
@@ -110,17 +110,17 @@ theorem kgMul3_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T) (hrow : 
       (KgMul.inner B 3) = true)
     (hctl : ctlOk (keygenMul B 3) = true)
     (hct : ConstantTime isa (kgMulK 3).pre (kgMulK 3).pub (keygenMul B 3)) :
-    Verified X86_64.target (keygenMul B 3) (Spec.MlKem.keygenMulContract 3 X86_64.abi) :=
+    Verified X86_64.target (keygenMul B 3) (Proof.MlKem.keygenMulContract 3 X86_64.abi) :=
   Verified.of_correct (kgMul_correct hB hrow (by decide) (by decide) hwo hctl) hct
-    { pre := by sig_implies_pre [Spec.MlKem.keygenMulContract, Spec.MlKem.keygenMulSig, kgMulK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
         X86_64.argRegs]
-      post := by sig_implies_post [Spec.MlKem.keygenMulContract, Spec.MlKem.keygenMulSig, kgMulK, X86_64.abi,
+      post := by sig_implies_post [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
         X86_64.argRegs]
-      pub := by sig_implies_pub [Spec.MlKem.keygenMulContract, Spec.MlKem.keygenMulSig, kgMulK, X86_64.abi,
+      pub := by sig_implies_pub [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
         X86_64.argRegs]
       sat := by
         refine ⟨kgMulSat 3, ?_⟩
-        sig_pre [Spec.MlKem.keygenMulContract, Spec.MlKem.keygenMulSig, kgMulK, X86_64.abi, X86_64.argRegs]
+        sig_pre [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi, X86_64.argRegs]
         and_intros
         all_goals first
           | rfl
@@ -136,17 +136,17 @@ theorem kgMul4_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T) (hrow : 
       (KgMul.inner B 4) = true)
     (hctl : ctlOk (keygenMul B 4) = true)
     (hct : ConstantTime isa (kgMulK 4).pre (kgMulK 4).pub (keygenMul B 4)) :
-    Verified X86_64.target (keygenMul B 4) (Spec.MlKem.keygenMulContract 4 X86_64.abi) :=
+    Verified X86_64.target (keygenMul B 4) (Proof.MlKem.keygenMulContract 4 X86_64.abi) :=
   Verified.of_correct (kgMul_correct hB hrow (by decide) (by decide) hwo hctl) hct
-    { pre := by sig_implies_pre [Spec.MlKem.keygenMulContract, Spec.MlKem.keygenMulSig, kgMulK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
         X86_64.argRegs]
-      post := by sig_implies_post [Spec.MlKem.keygenMulContract, Spec.MlKem.keygenMulSig, kgMulK, X86_64.abi,
+      post := by sig_implies_post [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
         X86_64.argRegs]
-      pub := by sig_implies_pub [Spec.MlKem.keygenMulContract, Spec.MlKem.keygenMulSig, kgMulK, X86_64.abi,
+      pub := by sig_implies_pub [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi,
         X86_64.argRegs]
       sat := by
         refine ⟨kgMulSat 4, ?_⟩
-        sig_pre [Spec.MlKem.keygenMulContract, Spec.MlKem.keygenMulSig, kgMulK, X86_64.abi, X86_64.argRegs]
+        sig_pre [Proof.MlKem.keygenMulContract, Proof.MlKem.keygenMulSig, kgMulK, X86_64.abi, X86_64.argRegs]
         and_intros
         all_goals first
           | rfl
@@ -181,7 +181,7 @@ theorem kgMulSse3_correct : ∀ s, (kgMulK 3).pre s →
   kgMul_correct BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) (by decide) (by decide) kgMulSse3_wo kgMulSse3_ctl
 
 theorem kgMulSse3_verified :
-    Verified X86_64.target (keygenMul .sse 3) (Spec.MlKem.keygenMulContract 3 X86_64.abi) :=
+    Verified X86_64.target (keygenMul .sse 3) (Proof.MlKem.keygenMulContract 3 X86_64.abi) :=
   kgMul3_verified _ BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) kgMulSse3_wo kgMulSse3_ctl kgMulSse3_ct
 
 theorem kgMulSse4_ct : ConstantTime isa (kgMulK 4).pre (kgMulK 4).pub (keygenMul .sse 4) :=
@@ -192,7 +192,7 @@ theorem kgMulSse4_correct : ∀ s, (kgMulK 4).pre s →
   kgMul_correct BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) (by decide) (by decide) kgMulSse4_wo kgMulSse4_ctl
 
 theorem kgMulSse4_verified :
-    Verified X86_64.target (keygenMul .sse 4) (Spec.MlKem.keygenMulContract 4 X86_64.abi) :=
+    Verified X86_64.target (keygenMul .sse 4) (Proof.MlKem.keygenMulContract 4 X86_64.abi) :=
   kgMul4_verified _ BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) kgMulSse4_wo kgMulSse4_ctl kgMulSse4_ct
 
 end VG.Proof.MlKem.X86_64

@@ -65,7 +65,7 @@ theorem noiseAll_layout {s : State} {L : KemLay} (wf : L.Wf) (room : Room L) (kg
     {B : Addr} (hB : s.gpr .x28=B) (hc : Covers [⟨B,L.scl⟩] s.wr) :
     WP isa (Impl.MlKem.AArch64.Noise.noiseAll L kg) s fun t =>
       Kept (allWrites L kg B) s t ∧
-      ∀j<2*L.k, Spec.MlKem.PolyIs t.mem (B+BitVec.ofNat 64 (outOff L kg j))
+      ∀j<2*L.k, Proof.MlKem.PolyIs t.mem (B+BitVec.ofNat 64 (outOff L kg j))
         (sampled s.mem (B+BitVec.ofNat 64 (seedOff kg)) j (transformed L kg j)) := by
   refine all_loop_ok kg (by have := wf.facts; omega) (allWrites L kg B)
     (fun j => B+BitVec.ofNat 64 (outOff L kg j))

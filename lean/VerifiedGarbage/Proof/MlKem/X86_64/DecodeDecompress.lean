@@ -305,9 +305,9 @@ def decodeDecompressSat : State where
   wr := [⟨0x2000, 1024⟩]
 
 theorem decodeDecompress_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.decodeDecompress (Spec.MlKem.decodeDecompressContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlKem.X86_64.decodeDecompress (Proof.MlKem.decodeDecompressContract X86_64.abi) :=
   Verified.of_correct decodeDecompress_correct decodeDecompress_ct (by
-    mlkem_implies [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, decodeDecompressK,
+    mlkem_implies [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, decodeDecompressK,
       X86_64.abi, X86_64.argRegs] [decodeDecompressSat] using decodeDecompressSat)
 
 end VG.Proof.MlKem.X86_64

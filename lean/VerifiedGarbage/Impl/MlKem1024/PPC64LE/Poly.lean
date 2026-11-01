@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.MlKem.PPC64LE.Codec
 /-!
 # ML-KEM-1024: the compression to 5 and 11 bits, and the key check, on PPC64LE
 
-The primitives of `Spec/MlKem/Contract1024.lean` that go through the
+The primitives of `Proof/MlKem1024/Contract.lean` that go through the
 coefficients once, as `Impl/MlKem/PPC64LE/Compress.lean` does for the widths
 of ML-KEM-768: the fields of a group are assembled in `r8` and stored a byte
 at a time, or loaded into `r8` and taken apart with pairs of shifts. Both
