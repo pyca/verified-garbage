@@ -1,0 +1,329 @@
+// The functions of `src/pbkdf2_md5.rs` of `verified-garbage-asm-aarch64`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_pbkdf2_hmac_md5_iterate:
+	add w2, w2, #0
+	str x19, [x4, #64]
+	str x20, [x4, #72]
+	str x21, [x4, #80]
+	str x22, [x4, #88]
+	str x23, [x4, #96]
+	str x24, [x4, #104]
+	str x30, [x4, #112]
+	add x19, x4, #120
+	add x20, x4, #0
+	add x21, x4, #136
+	add x23, x3, #0
+	add x24, x2, #0
+	ldr w9, [x1, #0]
+	str w9, [x21, #0]
+	ldr w9, [x1, #4]
+	str w9, [x21, #4]
+	ldr w9, [x1, #8]
+	str w9, [x21, #8]
+	ldr w9, [x1, #12]
+	str w9, [x21, #12]
+	movz x9, #128, lsl #0
+	str w9, [x21, #16]
+	movz x9, #0, lsl #0
+	str w9, [x21, #20]
+	str w9, [x21, #24]
+	str w9, [x21, #28]
+	str w9, [x21, #32]
+	str w9, [x21, #36]
+	str w9, [x21, #40]
+	str w9, [x21, #44]
+	str w9, [x21, #48]
+	str w9, [x21, #52]
+	movz x22, #80, lsl #0
+	add x9, x22, x22
+	add x9, x9, x9
+	add x9, x9, x9
+	str x9, [x19, #72]
+	add x22, x0, #0
+	cbz x24, 20f
+22:
+	ldr w9, [x22, #0]
+	str w9, [x19, #0]
+	ldr w9, [x22, #4]
+	str w9, [x19, #4]
+	ldr w9, [x22, #8]
+	str w9, [x19, #8]
+	ldr w9, [x22, #12]
+	str w9, [x19, #12]
+	add x1, x21, #0
+	add x0, x19, #0
+	movz x2, #1, lsl #0
+	add x3, x20, #0
+	bl {vg_md5_compress}
+	ldr w9, [x19, #0]
+	str w9, [x21, #0]
+	ldr w9, [x19, #4]
+	str w9, [x21, #4]
+	ldr w9, [x19, #8]
+	str w9, [x21, #8]
+	ldr w9, [x19, #12]
+	str w9, [x21, #12]
+	ldr w9, [x22, #80]
+	str w9, [x19, #0]
+	ldr w9, [x22, #84]
+	str w9, [x19, #4]
+	ldr w9, [x22, #88]
+	str w9, [x19, #8]
+	ldr w9, [x22, #92]
+	str w9, [x19, #12]
+	add x1, x21, #0
+	add x0, x19, #0
+	movz x2, #1, lsl #0
+	add x3, x20, #0
+	bl {vg_md5_compress}
+	ldr w9, [x19, #0]
+	str w9, [x21, #0]
+	ldr w9, [x19, #4]
+	str w9, [x21, #4]
+	ldr w9, [x19, #8]
+	str w9, [x21, #8]
+	ldr w9, [x19, #12]
+	str w9, [x21, #12]
+	ldr w9, [x21, #0]
+	ldr w10, [x23, #0]
+	eor x9, x9, x10
+	str w9, [x23, #0]
+	ldr w9, [x21, #4]
+	ldr w10, [x23, #4]
+	eor x9, x9, x10
+	str w9, [x23, #4]
+	ldr w9, [x21, #8]
+	ldr w10, [x23, #8]
+	eor x9, x9, x10
+	str w9, [x23, #8]
+	ldr w9, [x21, #12]
+	ldr w10, [x23, #12]
+	eor x9, x9, x10
+	str w9, [x23, #12]
+	sub x24, x24, #1
+	cbnz x24, 22b
+	b 21f
+20:
+21:
+	ldr x30, [x20, #112]
+	ldr x19, [x20, #64]
+	ldr x21, [x20, #80]
+	ldr x22, [x20, #88]
+	ldr x23, [x20, #96]
+	ldr x24, [x20, #104]
+	ldr x20, [x20, #72]
+	ret
+	.p2align 6
+
+vg_pbkdf2_hmac_md5:
+	sub sp, sp, #1024
+	add x7, sp, #0
+	add x10, x4, #0
+	add x4, x7, #0
+	str x19, [x4, #384]
+	str x20, [x4, #392]
+	str x21, [x4, #400]
+	str x22, [x4, #408]
+	str x24, [x4, #416]
+	str x30, [x4, #424]
+	str x23, [x4, #432]
+	add x23, x4, #0
+	str x5, [x23, #440]
+	sub w9, w10, #1
+	str x9, [x23, #448]
+	str x6, [x23, #456]
+	add x19, x0, #0
+	add x20, x1, #0
+	add x21, x2, #0
+	add x22, x3, #0
+	lsr x9, x20, #6
+	cbz x9, 20f
+	sub x9, x20, #64
+	cbz x9, 22f
+	add x0, x23, #704
+	bl {vg_md5_init}
+	add x0, x23, #704
+	movz x1, #0, lsl #0
+	add x2, x19, #0
+	add x3, x20, #0
+	add x4, x23, #0
+	bl {vg_md5_update_scratch}
+	add x0, x23, #704
+	add x1, x20, #0
+	add x2, x23, #816
+	add x3, x23, #0
+	bl {vg_md5_finalize_scratch}
+	add x2, x23, #816
+	movz x3, #16, lsl #0
+	b 23f
+22:
+	add x2, x19, #0
+	add x3, x20, #0
+23:
+	b 21f
+20:
+	add x2, x19, #0
+	add x3, x20, #0
+21:
+	add x0, x23, #464
+	add x1, x23, #544
+	add x4, x23, #0
+	bl {vg_hmac_md5_init_scratch}
+	ldr w9, [x23, #464]
+	str w9, [x23, #624]
+	ldr w9, [x23, #468]
+	str w9, [x23, #628]
+	ldr w9, [x23, #472]
+	str w9, [x23, #632]
+	ldr w9, [x23, #476]
+	str w9, [x23, #636]
+	ldr w9, [x23, #480]
+	str w9, [x23, #640]
+	ldr w9, [x23, #484]
+	str w9, [x23, #644]
+	ldr w9, [x23, #488]
+	str w9, [x23, #648]
+	ldr w9, [x23, #492]
+	str w9, [x23, #652]
+	ldr w9, [x23, #496]
+	str w9, [x23, #656]
+	ldr w9, [x23, #500]
+	str w9, [x23, #660]
+	ldr w9, [x23, #504]
+	str w9, [x23, #664]
+	ldr w9, [x23, #508]
+	str w9, [x23, #668]
+	ldr w9, [x23, #512]
+	str w9, [x23, #672]
+	ldr w9, [x23, #516]
+	str w9, [x23, #676]
+	ldr w9, [x23, #520]
+	str w9, [x23, #680]
+	ldr w9, [x23, #524]
+	str w9, [x23, #684]
+	ldr w9, [x23, #528]
+	str w9, [x23, #688]
+	ldr w9, [x23, #532]
+	str w9, [x23, #692]
+	ldr w9, [x23, #536]
+	str w9, [x23, #696]
+	ldr w9, [x23, #540]
+	str w9, [x23, #700]
+	add x0, x23, #624
+	movz x1, #64, lsl #0
+	add x2, x21, #0
+	add x3, x22, #0
+	add x4, x23, #0
+	bl {vg_md5_update_scratch}
+	add x20, x22, #0
+	ldr x22, [x23, #440]
+	ldr x21, [x23, #456]
+	movz x19, #1, lsl #0
+	cbz x21, 24f
+26:
+	ldr w9, [x23, #624]
+	str w9, [x23, #704]
+	ldr w9, [x23, #628]
+	str w9, [x23, #708]
+	ldr w9, [x23, #632]
+	str w9, [x23, #712]
+	ldr w9, [x23, #636]
+	str w9, [x23, #716]
+	ldr w9, [x23, #640]
+	str w9, [x23, #720]
+	ldr w9, [x23, #644]
+	str w9, [x23, #724]
+	ldr w9, [x23, #648]
+	str w9, [x23, #728]
+	ldr w9, [x23, #652]
+	str w9, [x23, #732]
+	ldr w9, [x23, #656]
+	str w9, [x23, #736]
+	ldr w9, [x23, #660]
+	str w9, [x23, #740]
+	ldr w9, [x23, #664]
+	str w9, [x23, #744]
+	ldr w9, [x23, #668]
+	str w9, [x23, #748]
+	ldr w9, [x23, #672]
+	str w9, [x23, #752]
+	ldr w9, [x23, #676]
+	str w9, [x23, #756]
+	ldr w9, [x23, #680]
+	str w9, [x23, #760]
+	ldr w9, [x23, #684]
+	str w9, [x23, #764]
+	ldr w9, [x23, #688]
+	str w9, [x23, #768]
+	ldr w9, [x23, #692]
+	str w9, [x23, #772]
+	ldr w9, [x23, #696]
+	str w9, [x23, #776]
+	ldr w9, [x23, #700]
+	str w9, [x23, #780]
+	rev w9, w19
+	str w9, [x23, #832]
+	add x0, x23, #704
+	add x1, x20, #64
+	add x2, x23, #832
+	movz x3, #4, lsl #0
+	add x4, x23, #0
+	bl {vg_md5_update_scratch}
+	add x0, x23, #704
+	add x1, x23, #544
+	add x2, x20, #68
+	add x3, x23, #784
+	add x4, x23, #0
+	bl {vg_hmac_md5_finalize_scratch}
+	ldr w9, [x23, #784]
+	str w9, [x23, #800]
+	ldr w9, [x23, #788]
+	str w9, [x23, #804]
+	ldr w9, [x23, #792]
+	str w9, [x23, #808]
+	ldr w9, [x23, #796]
+	str w9, [x23, #812]
+	add x0, x23, #464
+	add x1, x23, #784
+	ldr x2, [x23, #448]
+	add x3, x23, #800
+	add x4, x23, #0
+	bl {vg_pbkdf2_hmac_md5_iterate}
+	movz x11, #16, lsl #0
+	sub x9, x21, #16
+	lsr x9, x9, #63
+	cbz x9, 27f
+	add x11, x21, #0
+	b 28f
+27:
+28:
+	movz x24, #0, lsl #0
+29:
+	add x12, x23, x24
+	ldrb w9, [x12, #800]
+	add x13, x22, x24
+	strb w9, [x13, #0]
+	add x24, x24, #1
+	sub x11, x11, #1
+	cbnz x11, 29b
+	add x22, x22, x24
+	add x19, x19, #1
+	sub x21, x21, x24
+	cbnz x21, 26b
+	b 25f
+24:
+25:
+	ldr x19, [x23, #384]
+	ldr x20, [x23, #392]
+	ldr x21, [x23, #400]
+	ldr x22, [x23, #408]
+	ldr x24, [x23, #416]
+	ldr x30, [x23, #424]
+	ldr x23, [x23, #432]
+	add sp, sp, #1024
+	ret
+	.p2align 6

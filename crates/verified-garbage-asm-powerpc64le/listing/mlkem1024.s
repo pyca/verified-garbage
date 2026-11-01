@@ -1,0 +1,1604 @@
+// The functions of `src/mlkem1024.rs` of `verified-garbage-asm-powerpc64le`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_mlkem1024_compress_encode:
+	rlwinm %r4, %r4, 0, 0, 31
+	addi %r7, %r4, -5
+	cmplwi %cr0, %r7, 0
+	beq %cr0, 20f
+	lis %r10, 3
+	ori %r10, %r10, 65280
+	lis %r9, 4
+	ori %r9, %r9, 60398
+	li %r11, 32
+22:
+	li %r8, 0
+	li %r12, 0
+	lwz %r7, 0(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 53, 10
+	rldicl %r7, %r7, 11, 53
+	add %r8, %r8, %r7
+	lwz %r7, 4(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 53, 10
+	rldicl %r7, %r7, 22, 42
+	add %r8, %r8, %r7
+	lwz %r7, 8(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 53, 10
+	rldicl %r7, %r7, 33, 31
+	add %r8, %r8, %r7
+	lwz %r7, 12(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 53, 10
+	rldicl %r7, %r7, 44, 20
+	add %r8, %r8, %r7
+	lwz %r7, 16(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 53, 10
+	rldicl %r7, %r7, 15, 49
+	add %r12, %r12, %r7
+	lwz %r7, 20(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 53, 10
+	rldicl %r7, %r7, 26, 38
+	add %r12, %r12, %r7
+	lwz %r7, 24(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 53, 10
+	rldicl %r7, %r7, 37, 27
+	add %r12, %r12, %r7
+	lwz %r7, 28(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 53, 10
+	rldicl %r7, %r7, 48, 16
+	add %r12, %r12, %r7
+	stb %r8, 0(%r5)
+	rldicl %r7, %r8, 56, 8
+	stb %r7, 1(%r5)
+	rldicl %r7, %r8, 48, 16
+	stb %r7, 2(%r5)
+	rldicl %r7, %r8, 40, 24
+	stb %r7, 3(%r5)
+	rldicl %r7, %r8, 32, 32
+	stb %r7, 4(%r5)
+	rldicl %r8, %r8, 24, 40
+	add %r8, %r8, %r12
+	stb %r8, 5(%r5)
+	rldicl %r7, %r8, 56, 8
+	stb %r7, 6(%r5)
+	rldicl %r7, %r8, 48, 16
+	stb %r7, 7(%r5)
+	rldicl %r7, %r8, 40, 24
+	stb %r7, 8(%r5)
+	rldicl %r7, %r8, 32, 32
+	stb %r7, 9(%r5)
+	rldicl %r7, %r8, 24, 40
+	stb %r7, 10(%r5)
+	addi %r3, %r3, 32
+	addi %r5, %r5, 11
+	addi %r11, %r11, -1
+	cmpldi %cr0, %r11, 0
+	bne %cr0, 22b
+	b 21f
+20:
+	lis %r10, 3
+	ori %r10, %r10, 65280
+	li %r9, 5040
+	li %r11, 32
+23:
+	li %r8, 0
+	lwz %r7, 0(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 59, 4
+	rldicl %r7, %r7, 5, 59
+	add %r8, %r8, %r7
+	lwz %r7, 4(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 59, 4
+	rldicl %r7, %r7, 10, 54
+	add %r8, %r8, %r7
+	lwz %r7, 8(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 59, 4
+	rldicl %r7, %r7, 15, 49
+	add %r8, %r8, %r7
+	lwz %r7, 12(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 59, 4
+	rldicl %r7, %r7, 20, 44
+	add %r8, %r8, %r7
+	lwz %r7, 16(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 59, 4
+	rldicl %r7, %r7, 25, 39
+	add %r8, %r8, %r7
+	lwz %r7, 20(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 59, 4
+	rldicl %r7, %r7, 30, 34
+	add %r8, %r8, %r7
+	lwz %r7, 24(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 59, 4
+	rldicl %r7, %r7, 35, 29
+	add %r8, %r8, %r7
+	lwz %r7, 28(%r3)
+	mulld %r7, %r7, %r9
+	add %r7, %r7, %r10
+	rldicl %r7, %r7, 45, 19
+	rldicr %r7, %r7, 59, 4
+	rldicl %r7, %r7, 40, 24
+	add %r8, %r8, %r7
+	stb %r8, 0(%r5)
+	rldicl %r7, %r8, 56, 8
+	stb %r7, 1(%r5)
+	rldicl %r7, %r8, 48, 16
+	stb %r7, 2(%r5)
+	rldicl %r7, %r8, 40, 24
+	stb %r7, 3(%r5)
+	rldicl %r7, %r8, 32, 32
+	stb %r7, 4(%r5)
+	addi %r3, %r3, 32
+	addi %r5, %r5, 5
+	addi %r11, %r11, -1
+	cmpldi %cr0, %r11, 0
+	bne %cr0, 23b
+21:
+	blr
+
+vg_mlkem1024_decode_decompress:
+	rlwinm %r5, %r5, 0, 0, 31
+	li %r9, 3329
+	addi %r7, %r5, -5
+	cmplwi %cr0, %r7, 0
+	beq %cr0, 20f
+	li %r11, 32
+22:
+	lbz %r8, 0(%r3)
+	lbz %r7, 1(%r3)
+	rldicr %r7, %r7, 8, 55
+	add %r8, %r8, %r7
+	lbz %r7, 2(%r3)
+	rldicr %r7, %r7, 16, 47
+	add %r8, %r8, %r7
+	lbz %r7, 3(%r3)
+	rldicr %r7, %r7, 24, 39
+	add %r8, %r8, %r7
+	lbz %r7, 4(%r3)
+	rldicr %r7, %r7, 32, 31
+	add %r8, %r8, %r7
+	lbz %r7, 5(%r3)
+	rldicr %r7, %r7, 40, 23
+	add %r8, %r8, %r7
+	lbz %r12, 5(%r3)
+	lbz %r7, 6(%r3)
+	rldicr %r7, %r7, 8, 55
+	add %r12, %r12, %r7
+	lbz %r7, 7(%r3)
+	rldicr %r7, %r7, 16, 47
+	add %r12, %r12, %r7
+	lbz %r7, 8(%r3)
+	rldicr %r7, %r7, 24, 39
+	add %r12, %r12, %r7
+	lbz %r7, 9(%r3)
+	rldicr %r7, %r7, 32, 31
+	add %r12, %r12, %r7
+	lbz %r7, 10(%r3)
+	rldicr %r7, %r7, 40, 23
+	add %r12, %r12, %r7
+	rldicr %r7, %r8, 53, 10
+	rldicl %r7, %r7, 11, 53
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 1024
+	rldicl %r7, %r7, 53, 11
+	stw %r7, 0(%r6)
+	rldicr %r7, %r8, 42, 21
+	rldicl %r7, %r7, 11, 53
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 1024
+	rldicl %r7, %r7, 53, 11
+	stw %r7, 4(%r6)
+	rldicr %r7, %r8, 31, 32
+	rldicl %r7, %r7, 11, 53
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 1024
+	rldicl %r7, %r7, 53, 11
+	stw %r7, 8(%r6)
+	rldicr %r7, %r8, 20, 43
+	rldicl %r7, %r7, 11, 53
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 1024
+	rldicl %r7, %r7, 53, 11
+	stw %r7, 12(%r6)
+	rldicr %r7, %r12, 49, 14
+	rldicl %r7, %r7, 11, 53
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 1024
+	rldicl %r7, %r7, 53, 11
+	stw %r7, 16(%r6)
+	rldicr %r7, %r12, 38, 25
+	rldicl %r7, %r7, 11, 53
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 1024
+	rldicl %r7, %r7, 53, 11
+	stw %r7, 20(%r6)
+	rldicr %r7, %r12, 27, 36
+	rldicl %r7, %r7, 11, 53
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 1024
+	rldicl %r7, %r7, 53, 11
+	stw %r7, 24(%r6)
+	rldicr %r7, %r12, 16, 47
+	rldicl %r7, %r7, 11, 53
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 1024
+	rldicl %r7, %r7, 53, 11
+	stw %r7, 28(%r6)
+	addi %r3, %r3, 11
+	addi %r6, %r6, 32
+	addi %r11, %r11, -1
+	cmpldi %cr0, %r11, 0
+	bne %cr0, 22b
+	b 21f
+20:
+	li %r11, 32
+23:
+	lbz %r8, 0(%r3)
+	lbz %r7, 1(%r3)
+	rldicr %r7, %r7, 8, 55
+	add %r8, %r8, %r7
+	lbz %r7, 2(%r3)
+	rldicr %r7, %r7, 16, 47
+	add %r8, %r8, %r7
+	lbz %r7, 3(%r3)
+	rldicr %r7, %r7, 24, 39
+	add %r8, %r8, %r7
+	lbz %r7, 4(%r3)
+	rldicr %r7, %r7, 32, 31
+	add %r8, %r8, %r7
+	rldicr %r7, %r8, 59, 4
+	rldicl %r7, %r7, 5, 59
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 16
+	rldicl %r7, %r7, 59, 5
+	stw %r7, 0(%r6)
+	rldicr %r7, %r8, 54, 9
+	rldicl %r7, %r7, 5, 59
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 16
+	rldicl %r7, %r7, 59, 5
+	stw %r7, 4(%r6)
+	rldicr %r7, %r8, 49, 14
+	rldicl %r7, %r7, 5, 59
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 16
+	rldicl %r7, %r7, 59, 5
+	stw %r7, 8(%r6)
+	rldicr %r7, %r8, 44, 19
+	rldicl %r7, %r7, 5, 59
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 16
+	rldicl %r7, %r7, 59, 5
+	stw %r7, 12(%r6)
+	rldicr %r7, %r8, 39, 24
+	rldicl %r7, %r7, 5, 59
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 16
+	rldicl %r7, %r7, 59, 5
+	stw %r7, 16(%r6)
+	rldicr %r7, %r8, 34, 29
+	rldicl %r7, %r7, 5, 59
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 16
+	rldicl %r7, %r7, 59, 5
+	stw %r7, 20(%r6)
+	rldicr %r7, %r8, 29, 34
+	rldicl %r7, %r7, 5, 59
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 16
+	rldicl %r7, %r7, 59, 5
+	stw %r7, 24(%r6)
+	rldicr %r7, %r8, 24, 39
+	rldicl %r7, %r7, 5, 59
+	mulld %r7, %r7, %r9
+	addi %r7, %r7, 16
+	rldicl %r7, %r7, 59, 5
+	stw %r7, 28(%r6)
+	addi %r3, %r3, 5
+	addi %r6, %r6, 32
+	addi %r11, %r11, -1
+	cmpldi %cr0, %r11, 0
+	bne %cr0, 23b
+21:
+	blr
+
+vg_mlkem1024_check_ek:
+	li %r4, 512
+	li %r5, 0
+20:
+	lbz %r6, 1(%r3)
+	rldicr %r6, %r6, 60, 3
+	rldicl %r6, %r6, 12, 52
+	lbz %r7, 0(%r3)
+	add %r6, %r6, %r7
+	li %r7, 3328
+	subf %r7, %r6, %r7
+	rldicl %r7, %r7, 1, 63
+	add %r5, %r5, %r7
+	lbz %r6, 1(%r3)
+	rldicl %r6, %r6, 60, 4
+	lbz %r7, 2(%r3)
+	rldicr %r7, %r7, 4, 59
+	add %r6, %r6, %r7
+	li %r7, 3328
+	subf %r7, %r6, %r7
+	rldicl %r7, %r7, 1, 63
+	add %r5, %r5, %r7
+	addi %r3, %r3, 3
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 20b
+	li %r6, 0
+	subf %r6, %r5, %r6
+	rldicl %r6, %r6, 1, 63
+	li %r3, 1
+	subf %r3, %r6, %r3
+	blr
+
+vg_mlkem1024_keygen:
+	mflr %r0
+	std %r24, 840(%r6)
+	std %r25, 848(%r6)
+	std %r26, 856(%r6)
+	std %r27, 864(%r6)
+	std %r28, 872(%r6)
+	std %r29, 880(%r6)
+	std %r30, 888(%r6)
+	std %r31, 896(%r6)
+	std %r0, 904(%r6)
+	addi %r30, %r3, 0
+	addi %r29, %r4, 0
+	addi %r28, %r5, 0
+	addi %r31, %r6, 0
+	li %r0, 4
+	stb %r0, 1184(%r31)
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	addi %r6, %r30, 0
+	li %r7, 32
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	addi %r6, %r31, 1184
+	li %r7, 1
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	li %r6, 6
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	addi %r6, %r31, 920
+	li %r7, 64
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	addi %r3, %r31, 920
+	addi %r4, %r31, 1248
+	li %r5, 32
+20:
+	lbz %r6, 0(%r3)
+	stb %r6, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 20b
+	li %r26, 0
+21:
+	stb %r26, 984(%r31)
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 952
+	li %r7, 33
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	li %r6, 31
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 1056
+	li %r7, 128
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	addi %r3, %r31, 1056
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 6144
+	bl {vg_mlkem_cbd2}
+	rldicr %r3, %r26, 10, 53
+	add %r3, %r31, %r3
+	addi %r3, %r3, 6144
+	addi %r4, %r31, 21504
+	bl {vg_mlkem_ntt}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -8
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 21b
+	li %r24, 1
+	li %r26, 0
+22:
+	addi %r3, %r31, 16384
+	li %r4, 0
+	li %r5, 256
+23:
+	stw %r4, 0(%r3)
+	addi %r3, %r3, 4
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 23b
+	li %r25, 0
+24:
+	stb %r25, 1280(%r31)
+	stb %r26, 1281(%r31)
+	addi %r3, %r31, 1248
+	addi %r4, %r31, 18432
+	addi %r5, %r31, 19456
+	bl {vg_mlkem_sample_ntt}
+	and %r24, %r24, %r3
+	cmpldi %cr0, %r3, 0
+	beq %cr0, 25f
+	addi %r4, %r31, 18432
+	b 26f
+25:
+	rldicr %r4, %r25, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 6144
+26:
+	addi %r3, %r31, 17408
+	rldicr %r5, %r25, 10, 53
+	add %r5, %r31, %r5
+	addi %r5, %r5, 6144
+	addi %r6, %r31, 21504
+	bl {vg_mlkem_multiply_ntts}
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 17408
+	bl {vg_mlkem_add}
+	addi %r25, %r25, 1
+	addi %r0, %r25, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 24b
+	addi %r3, %r31, 16384
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 10240
+	bl {vg_mlkem_add}
+	addi %r3, %r31, 16384
+	li %r0, 384
+	mulld %r0, %r26, %r0
+	add %r4, %r29, %r0
+	bl {vg_mlkem_encode12}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 22b
+	li %r26, 0
+27:
+	rldicr %r3, %r26, 10, 53
+	add %r3, %r31, %r3
+	addi %r3, %r3, 6144
+	li %r0, 384
+	mulld %r0, %r26, %r0
+	add %r4, %r28, %r0
+	bl {vg_mlkem_encode12}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 27b
+	addi %r3, %r31, 1248
+	addi %r4, %r29, 1536
+	li %r5, 32
+28:
+	lbz %r6, 0(%r3)
+	stb %r6, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 28b
+	addi %r3, %r29, 0
+	addi %r4, %r28, 1536
+	li %r5, 1568
+29:
+	lbz %r6, 0(%r3)
+	stb %r6, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 29b
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r29, 0
+	li %r7, 1568
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	li %r6, 6
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r28, 3104
+	li %r7, 32
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	addi %r3, %r30, 32
+	addi %r4, %r28, 3136
+	li %r5, 32
+210:
+	lbz %r6, 0(%r3)
+	stb %r6, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 210b
+	addi %r3, %r24, 0
+	ld %r0, 904(%r31)
+	mtlr %r0
+	ld %r24, 840(%r31)
+	ld %r25, 848(%r31)
+	ld %r26, 856(%r31)
+	ld %r27, 864(%r31)
+	ld %r28, 872(%r31)
+	ld %r29, 880(%r31)
+	ld %r30, 888(%r31)
+	ld %r31, 896(%r31)
+	blr
+
+vg_mlkem1024_encaps:
+	mflr %r0
+	std %r24, 840(%r7)
+	std %r25, 848(%r7)
+	std %r26, 856(%r7)
+	std %r27, 864(%r7)
+	std %r28, 872(%r7)
+	std %r29, 880(%r7)
+	std %r30, 888(%r7)
+	std %r31, 896(%r7)
+	std %r0, 904(%r7)
+	addi %r30, %r3, 0
+	addi %r29, %r4, 0
+	addi %r28, %r5, 0
+	addi %r27, %r6, 0
+	addi %r31, %r7, 0
+	addi %r3, %r29, 0
+	addi %r4, %r31, 1024
+	li %r5, 32
+20:
+	lbz %r6, 0(%r3)
+	stb %r6, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 20b
+	addi %r29, %r31, 1024
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r30, 0
+	li %r7, 1568
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	li %r6, 6
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 992
+	li %r7, 32
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	addi %r6, %r31, 1024
+	li %r7, 32
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	addi %r6, %r31, 992
+	li %r7, 32
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	li %r6, 6
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	addi %r6, %r31, 920
+	li %r7, 64
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	addi %r3, %r31, 920
+	addi %r4, %r28, 0
+	li %r5, 32
+21:
+	lbz %r6, 0(%r3)
+	stb %r6, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 21b
+	addi %r3, %r30, 1536
+	addi %r4, %r31, 1248
+	li %r5, 32
+22:
+	lbz %r6, 0(%r3)
+	stb %r6, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 22b
+	li %r26, 0
+23:
+	li %r0, 384
+	mulld %r0, %r26, %r0
+	add %r3, %r30, %r0
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 2048
+	bl {vg_mlkem_decode12}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 23b
+	li %r26, 0
+24:
+	stb %r26, 984(%r31)
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 952
+	li %r7, 33
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	li %r6, 31
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 1056
+	li %r7, 128
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	addi %r3, %r31, 1056
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 6144
+	bl {vg_mlkem_cbd2}
+	rldicr %r3, %r26, 10, 53
+	add %r3, %r31, %r3
+	addi %r3, %r3, 6144
+	addi %r4, %r31, 21504
+	bl {vg_mlkem_ntt}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 24b
+	li %r26, 4
+25:
+	stb %r26, 984(%r31)
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 952
+	li %r7, 33
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	li %r6, 31
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 1056
+	li %r7, 128
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	addi %r3, %r31, 1056
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 6144
+	bl {vg_mlkem_cbd2}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -9
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 25b
+	addi %r3, %r29, 0
+	li %r4, 32
+	li %r5, 1
+	addi %r6, %r31, 15360
+	bl {vg_mlkem_decode_decompress}
+	li %r24, 1
+	li %r26, 0
+26:
+	addi %r3, %r31, 16384
+	li %r4, 0
+	li %r5, 256
+27:
+	stw %r4, 0(%r3)
+	addi %r3, %r3, 4
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 27b
+	li %r25, 0
+28:
+	stb %r26, 1280(%r31)
+	stb %r25, 1281(%r31)
+	addi %r3, %r31, 1248
+	addi %r4, %r31, 18432
+	addi %r5, %r31, 19456
+	bl {vg_mlkem_sample_ntt}
+	and %r24, %r24, %r3
+	cmpldi %cr0, %r3, 0
+	beq %cr0, 29f
+	addi %r4, %r31, 18432
+	b 210f
+29:
+	rldicr %r4, %r25, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 6144
+210:
+	addi %r3, %r31, 17408
+	rldicr %r5, %r25, 10, 53
+	add %r5, %r31, %r5
+	addi %r5, %r5, 6144
+	addi %r6, %r31, 21504
+	bl {vg_mlkem_multiply_ntts}
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 17408
+	bl {vg_mlkem_add}
+	addi %r25, %r25, 1
+	addi %r0, %r25, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 28b
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 21504
+	bl {vg_mlkem_inv_ntt}
+	addi %r3, %r31, 16384
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 10240
+	bl {vg_mlkem_add}
+	li %r0, 352
+	mulld %r0, %r26, %r0
+	add %r5, %r27, %r0
+	addi %r3, %r31, 16384
+	li %r4, 11
+	li %r6, 352
+	bl {vg_mlkem1024_compress_encode}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 26b
+	addi %r3, %r31, 16384
+	li %r4, 0
+	li %r5, 256
+211:
+	stw %r4, 0(%r3)
+	addi %r3, %r3, 4
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 211b
+	li %r25, 0
+212:
+	addi %r3, %r31, 17408
+	rldicr %r4, %r25, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 2048
+	rldicr %r5, %r25, 10, 53
+	add %r5, %r31, %r5
+	addi %r5, %r5, 6144
+	addi %r6, %r31, 21504
+	bl {vg_mlkem_multiply_ntts}
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 17408
+	bl {vg_mlkem_add}
+	addi %r25, %r25, 1
+	addi %r0, %r25, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 212b
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 21504
+	bl {vg_mlkem_inv_ntt}
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 14336
+	bl {vg_mlkem_add}
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 15360
+	bl {vg_mlkem_add}
+	addi %r3, %r31, 16384
+	li %r4, 5
+	addi %r5, %r27, 1408
+	li %r6, 160
+	bl {vg_mlkem1024_compress_encode}
+	addi %r3, %r24, 0
+	ld %r0, 904(%r31)
+	mtlr %r0
+	ld %r24, 840(%r31)
+	ld %r25, 848(%r31)
+	ld %r26, 856(%r31)
+	ld %r27, 864(%r31)
+	ld %r28, 872(%r31)
+	ld %r29, 880(%r31)
+	ld %r30, 888(%r31)
+	ld %r31, 896(%r31)
+	blr
+
+vg_mlkem1024_decaps:
+	mflr %r0
+	std %r24, 840(%r6)
+	std %r25, 848(%r6)
+	std %r26, 856(%r6)
+	std %r27, 864(%r6)
+	std %r28, 872(%r6)
+	std %r29, 880(%r6)
+	std %r30, 888(%r6)
+	std %r31, 896(%r6)
+	std %r0, 904(%r6)
+	std %r5, 912(%r6)
+	addi %r30, %r3, 0
+	addi %r28, %r4, 0
+	addi %r31, %r6, 0
+	addi %r3, %r28, 0
+	addi %r4, %r31, 24576
+	li %r5, 1568
+20:
+	lbz %r6, 0(%r3)
+	stb %r6, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 20b
+	addi %r28, %r31, 24576
+	li %r26, 0
+21:
+	li %r0, 352
+	mulld %r0, %r26, %r0
+	add %r3, %r28, %r0
+	li %r4, 352
+	li %r5, 11
+	rldicr %r6, %r26, 10, 53
+	add %r6, %r31, %r6
+	addi %r6, %r6, 6144
+	bl {vg_mlkem1024_decode_decompress}
+	rldicr %r3, %r26, 10, 53
+	add %r3, %r31, %r3
+	addi %r3, %r3, 6144
+	addi %r4, %r31, 21504
+	bl {vg_mlkem_ntt}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 21b
+	li %r26, 0
+22:
+	li %r0, 384
+	mulld %r0, %r26, %r0
+	add %r3, %r30, %r0
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 2048
+	bl {vg_mlkem_decode12}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 22b
+	addi %r3, %r31, 16384
+	li %r4, 0
+	li %r5, 256
+23:
+	stw %r4, 0(%r3)
+	addi %r3, %r3, 4
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 23b
+	li %r25, 0
+24:
+	addi %r3, %r31, 17408
+	rldicr %r4, %r25, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 2048
+	rldicr %r5, %r25, 10, 53
+	add %r5, %r31, %r5
+	addi %r5, %r5, 6144
+	addi %r6, %r31, 21504
+	bl {vg_mlkem_multiply_ntts}
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 17408
+	bl {vg_mlkem_add}
+	addi %r25, %r25, 1
+	addi %r0, %r25, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 24b
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 21504
+	bl {vg_mlkem_inv_ntt}
+	addi %r3, %r28, 1408
+	li %r4, 160
+	li %r5, 5
+	addi %r6, %r31, 14336
+	bl {vg_mlkem1024_decode_decompress}
+	addi %r3, %r31, 14336
+	addi %r4, %r31, 16384
+	bl {vg_mlkem_sub}
+	addi %r3, %r31, 14336
+	li %r4, 1
+	addi %r5, %r31, 1024
+	li %r6, 32
+	bl {vg_mlkem_compress_encode}
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	addi %r6, %r31, 1024
+	li %r7, 32
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	addi %r6, %r30, 3104
+	li %r7, 32
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	li %r6, 6
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 72
+	addi %r6, %r31, 920
+	li %r7, 64
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r30, 3136
+	li %r7, 32
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 24576
+	li %r7, 1568
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	li %r6, 31
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 1216
+	li %r7, 32
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	addi %r30, %r30, 1536
+	addi %r29, %r31, 1024
+	addi %r27, %r31, 22528
+	addi %r3, %r30, 1536
+	addi %r4, %r31, 1248
+	li %r5, 32
+25:
+	lbz %r6, 0(%r3)
+	stb %r6, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 25b
+	li %r26, 0
+26:
+	li %r0, 384
+	mulld %r0, %r26, %r0
+	add %r3, %r30, %r0
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 2048
+	bl {vg_mlkem_decode12}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 26b
+	li %r26, 0
+27:
+	stb %r26, 984(%r31)
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 952
+	li %r7, 33
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	li %r6, 31
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 1056
+	li %r7, 128
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	addi %r3, %r31, 1056
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 6144
+	bl {vg_mlkem_cbd2}
+	rldicr %r3, %r26, 10, 53
+	add %r3, %r31, %r3
+	addi %r3, %r3, 6144
+	addi %r4, %r31, 21504
+	bl {vg_mlkem_ntt}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 27b
+	li %r26, 4
+28:
+	stb %r26, 984(%r31)
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 952
+	li %r7, 33
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	li %r6, 31
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r31, 1056
+	li %r7, 128
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	addi %r3, %r31, 1056
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 6144
+	bl {vg_mlkem_cbd2}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -9
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 28b
+	addi %r3, %r29, 0
+	li %r4, 32
+	li %r5, 1
+	addi %r6, %r31, 15360
+	bl {vg_mlkem_decode_decompress}
+	li %r24, 1
+	li %r26, 0
+29:
+	addi %r3, %r31, 16384
+	li %r4, 0
+	li %r5, 256
+210:
+	stw %r4, 0(%r3)
+	addi %r3, %r3, 4
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 210b
+	li %r25, 0
+211:
+	stb %r26, 1280(%r31)
+	stb %r25, 1281(%r31)
+	addi %r3, %r31, 1248
+	addi %r4, %r31, 18432
+	addi %r5, %r31, 19456
+	bl {vg_mlkem_sample_ntt}
+	and %r24, %r24, %r3
+	cmpldi %cr0, %r3, 0
+	beq %cr0, 212f
+	addi %r4, %r31, 18432
+	b 213f
+212:
+	rldicr %r4, %r25, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 6144
+213:
+	addi %r3, %r31, 17408
+	rldicr %r5, %r25, 10, 53
+	add %r5, %r31, %r5
+	addi %r5, %r5, 6144
+	addi %r6, %r31, 21504
+	bl {vg_mlkem_multiply_ntts}
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 17408
+	bl {vg_mlkem_add}
+	addi %r25, %r25, 1
+	addi %r0, %r25, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 211b
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 21504
+	bl {vg_mlkem_inv_ntt}
+	addi %r3, %r31, 16384
+	rldicr %r4, %r26, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 10240
+	bl {vg_mlkem_add}
+	li %r0, 352
+	mulld %r0, %r26, %r0
+	add %r5, %r27, %r0
+	addi %r3, %r31, 16384
+	li %r4, 11
+	li %r6, 352
+	bl {vg_mlkem1024_compress_encode}
+	addi %r26, %r26, 1
+	addi %r0, %r26, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 29b
+	addi %r3, %r31, 16384
+	li %r4, 0
+	li %r5, 256
+214:
+	stw %r4, 0(%r3)
+	addi %r3, %r3, 4
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 214b
+	li %r25, 0
+215:
+	addi %r3, %r31, 17408
+	rldicr %r4, %r25, 10, 53
+	add %r4, %r31, %r4
+	addi %r4, %r4, 2048
+	rldicr %r5, %r25, 10, 53
+	add %r5, %r31, %r5
+	addi %r5, %r5, 6144
+	addi %r6, %r31, 21504
+	bl {vg_mlkem_multiply_ntts}
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 17408
+	bl {vg_mlkem_add}
+	addi %r25, %r25, 1
+	addi %r0, %r25, -4
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 215b
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 21504
+	bl {vg_mlkem_inv_ntt}
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 14336
+	bl {vg_mlkem_add}
+	addi %r3, %r31, 16384
+	addi %r4, %r31, 15360
+	bl {vg_mlkem_add}
+	addi %r3, %r31, 16384
+	li %r4, 5
+	addi %r5, %r27, 1408
+	li %r6, 160
+	bl {vg_mlkem1024_compress_encode}
+	addi %r3, %r28, 0
+	addi %r4, %r31, 22528
+	li %r12, 0
+	li %r26, 1568
+216:
+	lbz %r5, 0(%r3)
+	lbz %r6, 0(%r4)
+	xor %r5, %r5, %r6
+	or %r12, %r12, %r5
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r26, %r26, -1
+	cmpldi %cr0, %r26, 0
+	bne %cr0, 216b
+	addi %r12, %r12, -1
+	rldicl %r12, %r12, 1, 63
+	li %r3, 0
+	subf %r12, %r12, %r3
+	addi %r3, %r31, 920
+	addi %r4, %r31, 1216
+	ld %r5, 912(%r31)
+	li %r26, 32
+217:
+	lbz %r6, 0(%r3)
+	lbz %r7, 0(%r4)
+	xor %r6, %r6, %r7
+	and %r6, %r6, %r12
+	xor %r6, %r6, %r7
+	stb %r6, 0(%r5)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, 1
+	addi %r26, %r26, -1
+	cmpldi %cr0, %r26, 0
+	bne %cr0, 217b
+	addi %r3, %r24, 0
+	ld %r0, 904(%r31)
+	mtlr %r0
+	ld %r24, 840(%r31)
+	ld %r25, 848(%r31)
+	ld %r26, 856(%r31)
+	ld %r27, 864(%r31)
+	ld %r28, 872(%r31)
+	ld %r29, 880(%r31)
+	ld %r30, 888(%r31)
+	ld %r31, 896(%r31)
+	blr

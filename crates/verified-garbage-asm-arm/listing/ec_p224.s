@@ -1,0 +1,3169 @@
+// The functions of `src/ec_p224.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_ec_p224_public_key:
+	mov r12, r2
+	str r4, [r12, #0]
+	str r5, [r12, #4]
+	str r6, [r12, #8]
+	str r7, [r12, #12]
+	str r8, [r12, #16]
+	str r9, [r12, #20]
+	str r10, [r12, #24]
+	str r11, [r12, #28]
+	str lr, [r12, #32]
+	mov lr, r0
+	ldr r4, [r1, #24]
+	rev r4, r4
+	str r4, [r12, #1056]
+	ldr r4, [r1, #20]
+	rev r4, r4
+	str r4, [r12, #1060]
+	ldr r4, [r1, #16]
+	rev r4, r4
+	str r4, [r12, #1064]
+	ldr r4, [r1, #12]
+	rev r4, r4
+	str r4, [r12, #1068]
+	ldr r4, [r1, #8]
+	rev r4, r4
+	str r4, [r12, #1072]
+	ldr r4, [r1, #4]
+	rev r4, r4
+	str r4, [r12, #1076]
+	ldr r4, [r1, #0]
+	rev r4, r4
+	str r4, [r12, #1080]
+	mov r4, #0
+	str r4, [r12, #1084]
+	ldr r4, [r1, #24]
+	rev r4, r4
+	str r4, [r12, #1088]
+	ldr r4, [r1, #20]
+	rev r4, r4
+	str r4, [r12, #1092]
+	ldr r4, [r1, #16]
+	rev r4, r4
+	str r4, [r12, #1096]
+	ldr r4, [r1, #12]
+	rev r4, r4
+	str r4, [r12, #1100]
+	ldr r4, [r1, #8]
+	rev r4, r4
+	str r4, [r12, #1104]
+	ldr r4, [r1, #4]
+	rev r4, r4
+	str r4, [r12, #1108]
+	ldr r4, [r1, #0]
+	rev r4, r4
+	str r4, [r12, #1112]
+	mov r4, #0
+	str r4, [r12, #1116]
+	ldr r4, [r1, #24]
+	rev r4, r4
+	str r4, [r12, #1120]
+	ldr r4, [r1, #20]
+	rev r4, r4
+	str r4, [r12, #1124]
+	ldr r4, [r1, #16]
+	rev r4, r4
+	str r4, [r12, #1128]
+	ldr r4, [r1, #12]
+	rev r4, r4
+	str r4, [r12, #1132]
+	ldr r4, [r1, #8]
+	rev r4, r4
+	str r4, [r12, #1136]
+	ldr r4, [r1, #4]
+	rev r4, r4
+	str r4, [r12, #1140]
+	ldr r4, [r1, #0]
+	rev r4, r4
+	str r4, [r12, #1144]
+	mov r4, #0
+	str r4, [r12, #1148]
+	movw r4, #1
+	movt r4, #0
+	str r4, [r12, #64]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #68]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #72]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #76]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #80]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #84]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #88]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #92]
+	movw r4, #10813
+	movt r4, #23644
+	str r4, [r12, #96]
+	movw r4, #10565
+	movt r4, #5085
+	str r4, [r12, #100]
+	movw r4, #61502
+	movt r4, #57528
+	str r4, [r12, #104]
+	movw r4, #5794
+	movt r4, #65535
+	str r4, [r12, #108]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #112]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #116]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #120]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #124]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #160]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #164]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #168]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #172]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #176]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #180]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #184]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #188]
+	movw r4, #1
+	movt r4, #0
+	str r4, [r12, #192]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #196]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #200]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #204]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #208]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #212]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #216]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #220]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #224]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #228]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #232]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #236]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #240]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #244]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #248]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #252]
+	movw r4, #1
+	movt r4, #0
+	str r4, [r12, #256]
+	movw r4, #3
+	movt r4, #0
+	str r4, [r12, #260]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #264]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #268]
+	movw r4, #65532
+	movt r4, #65535
+	str r4, [r12, #272]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #276]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #280]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #284]
+	movw r4, #3430
+	movt r4, #11073
+	str r4, [r12, #288]
+	movw r4, #27107
+	movt r4, #46650
+	str r4, [r12, #292]
+	movw r4, #14642
+	movt r4, #26320
+	str r4, [r12, #296]
+	movw r4, #18652
+	movt r4, #12656
+	str r4, [r12, #300]
+	movw r4, #33779
+	movt r4, #22775
+	str r4, [r12, #304]
+	movw r4, #12234
+	movt r4, #47468
+	str r4, [r12, #308]
+	movw r4, #36537
+	movt r4, #32576
+	str r4, [r12, #312]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #316]
+	movw r4, #19178
+	movt r4, #27914
+	str r4, [r12, #320]
+	movw r4, #21030
+	movt r4, #48272
+	str r4, [r12, #324]
+	movw r4, #49066
+	movt r4, #24600
+	str r4, [r12, #328]
+	movw r4, #38710
+	movt r4, #34085
+	str r4, [r12, #332]
+	movw r4, #60421
+	movt r4, #63851
+	str r4, [r12, #336]
+	movw r4, #44955
+	movt r4, #28115
+	str r4, [r12, #340]
+	movw r4, #24160
+	movt r4, #41499
+	str r4, [r12, #344]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #348]
+	movw r4, #60904
+	movt r4, #61427
+	str r4, [r12, #352]
+	movw r4, #41445
+	movt r4, #11996
+	str r4, [r12, #356]
+	movw r4, #23147
+	movt r4, #1331
+	str r4, [r12, #360]
+	movw r4, #26411
+	movt r4, #63693
+	str r4, [r12, #364]
+	movw r4, #59512
+	movt r4, #991
+	str r4, [r12, #368]
+	movw r4, #50606
+	movt r4, #44713
+	str r4, [r12, #372]
+	movw r4, #34545
+	movt r4, #24903
+	str r4, [r12, #376]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #380]
+	movw r4, #32021
+	movt r4, #24401
+	str r4, [r12, #384]
+	movw r4, #31337
+	movt r4, #10644
+	str r4, [r12, #388]
+	movw r4, #16203
+	movt r4, #12758
+	str r4, [r12, #392]
+	movw r4, #65369
+	movt r4, #43976
+	str r4, [r12, #396]
+	movw r4, #18518
+	movt r4, #55665
+	str r4, [r12, #400]
+	movw r4, #24444
+	movt r4, #27345
+	str r4, [r12, #404]
+	movw r4, #31073
+	movt r4, #45545
+	str r4, [r12, #408]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #412]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #416]
+	movw r4, #54723
+	movt r4, #41891
+	str r4, [r12, #420]
+	movw r4, #54970
+	movt r4, #60450
+	str r4, [r12, #424]
+	movw r4, #4033
+	movt r4, #8007
+	str r4, [r12, #428]
+	movw r4, #59741
+	movt r4, #0
+	str r4, [r12, #432]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #436]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #440]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #444]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #448]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #452]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #456]
+	movw r4, #65534
+	movt r4, #65535
+	str r4, [r12, #460]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #464]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #468]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #472]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #476]
+	movw r4, #10811
+	movt r4, #23644
+	str r4, [r12, #480]
+	movw r4, #10565
+	movt r4, #5085
+	str r4, [r12, #484]
+	movw r4, #61502
+	movt r4, #57528
+	str r4, [r12, #488]
+	movw r4, #5794
+	movt r4, #65535
+	str r4, [r12, #492]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #496]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #500]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #504]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #508]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #512]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #516]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #520]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #524]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #528]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #532]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #536]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #540]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #544]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #548]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #552]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #556]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #560]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #564]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #568]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #572]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #576]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #580]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #584]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #588]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #592]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #596]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #600]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #604]
+	mov r4, #0
+	sub r4, r4, #1
+	str r4, [r12, #1472]
+	mov r11, #32
+20:
+	sub r11, r11, #1
+	add r4, r12, r11
+	ldrb r4, [r4, #1056]
+	add r5, r12, r11, lsl #3
+	add r5, r5, #4096
+	and r7, r4, #1
+	strb r7, [r5, #0]
+	lsr r7, r4, #1
+	and r7, r7, #1
+	strb r7, [r5, #1]
+	lsr r7, r4, #2
+	and r7, r7, #1
+	strb r7, [r5, #2]
+	lsr r7, r4, #3
+	and r7, r7, #1
+	strb r7, [r5, #3]
+	lsr r7, r4, #4
+	and r7, r7, #1
+	strb r7, [r5, #4]
+	lsr r7, r4, #5
+	and r7, r7, #1
+	strb r7, [r5, #5]
+	lsr r7, r4, #6
+	and r7, r7, #1
+	strb r7, [r5, #6]
+	lsr r7, r4, #7
+	and r7, r7, #1
+	strb r7, [r5, #7]
+	cmp r11, #0
+	bne 20b
+	mov r11, #32
+21:
+	sub r11, r11, #1
+	add r4, r12, r11
+	ldrb r4, [r4, #448]
+	add r5, r12, r11, lsl #3
+	add r5, r5, #4096
+	and r7, r4, #1
+	strb r7, [r5, #256]
+	lsr r7, r4, #1
+	and r7, r7, #1
+	strb r7, [r5, #257]
+	lsr r7, r4, #2
+	and r7, r7, #1
+	strb r7, [r5, #258]
+	lsr r7, r4, #3
+	and r7, r7, #1
+	strb r7, [r5, #259]
+	lsr r7, r4, #4
+	and r7, r7, #1
+	strb r7, [r5, #260]
+	lsr r7, r4, #5
+	and r7, r7, #1
+	strb r7, [r5, #261]
+	lsr r7, r4, #6
+	and r7, r7, #1
+	strb r7, [r5, #262]
+	lsr r7, r4, #7
+	and r7, r7, #1
+	strb r7, [r5, #263]
+	cmp r11, #0
+	bne 21b
+	mov r11, #32
+22:
+	sub r11, r11, #1
+	add r4, r12, r11
+	ldrb r4, [r4, #480]
+	add r5, r12, r11, lsl #3
+	add r5, r5, #4096
+	and r7, r4, #1
+	strb r7, [r5, #512]
+	lsr r7, r4, #1
+	and r7, r7, #1
+	strb r7, [r5, #513]
+	lsr r7, r4, #2
+	and r7, r7, #1
+	strb r7, [r5, #514]
+	lsr r7, r4, #3
+	and r7, r7, #1
+	strb r7, [r5, #515]
+	lsr r7, r4, #4
+	and r7, r7, #1
+	strb r7, [r5, #516]
+	lsr r7, r4, #5
+	and r7, r7, #1
+	strb r7, [r5, #517]
+	lsr r7, r4, #6
+	and r7, r7, #1
+	strb r7, [r5, #518]
+	lsr r7, r4, #7
+	and r7, r7, #1
+	strb r7, [r5, #519]
+	cmp r11, #0
+	bne 22b
+	ldr r4, [r12, #320]
+	str r4, [r12, #3424]
+	ldr r4, [r12, #324]
+	str r4, [r12, #3428]
+	ldr r4, [r12, #328]
+	str r4, [r12, #3432]
+	ldr r4, [r12, #332]
+	str r4, [r12, #3436]
+	ldr r4, [r12, #336]
+	str r4, [r12, #3440]
+	ldr r4, [r12, #340]
+	str r4, [r12, #3444]
+	ldr r4, [r12, #344]
+	str r4, [r12, #3448]
+	ldr r4, [r12, #348]
+	str r4, [r12, #3452]
+	ldr r4, [r12, #352]
+	str r4, [r12, #3456]
+	ldr r4, [r12, #356]
+	str r4, [r12, #3460]
+	ldr r4, [r12, #360]
+	str r4, [r12, #3464]
+	ldr r4, [r12, #364]
+	str r4, [r12, #3468]
+	ldr r4, [r12, #368]
+	str r4, [r12, #3472]
+	ldr r4, [r12, #372]
+	str r4, [r12, #3476]
+	ldr r4, [r12, #376]
+	str r4, [r12, #3480]
+	ldr r4, [r12, #380]
+	str r4, [r12, #3484]
+	ldr r4, [r12, #224]
+	str r4, [r12, #3488]
+	ldr r4, [r12, #228]
+	str r4, [r12, #3492]
+	ldr r4, [r12, #232]
+	str r4, [r12, #3496]
+	ldr r4, [r12, #236]
+	str r4, [r12, #3500]
+	ldr r4, [r12, #240]
+	str r4, [r12, #3504]
+	ldr r4, [r12, #244]
+	str r4, [r12, #3508]
+	ldr r4, [r12, #248]
+	str r4, [r12, #3512]
+	ldr r4, [r12, #252]
+	str r4, [r12, #3516]
+	ldr r4, [r12, #256]
+	str r4, [r12, #3520]
+	ldr r4, [r12, #260]
+	str r4, [r12, #3524]
+	ldr r4, [r12, #264]
+	str r4, [r12, #3528]
+	ldr r4, [r12, #268]
+	str r4, [r12, #3532]
+	ldr r4, [r12, #272]
+	str r4, [r12, #3536]
+	ldr r4, [r12, #276]
+	str r4, [r12, #3540]
+	ldr r4, [r12, #280]
+	str r4, [r12, #3544]
+	ldr r4, [r12, #284]
+	str r4, [r12, #3548]
+	ldr r4, [r12, #288]
+	str r4, [r12, #3552]
+	ldr r4, [r12, #292]
+	str r4, [r12, #3556]
+	ldr r4, [r12, #296]
+	str r4, [r12, #3560]
+	ldr r4, [r12, #300]
+	str r4, [r12, #3564]
+	ldr r4, [r12, #304]
+	str r4, [r12, #3568]
+	ldr r4, [r12, #308]
+	str r4, [r12, #3572]
+	ldr r4, [r12, #312]
+	str r4, [r12, #3576]
+	ldr r4, [r12, #316]
+	str r4, [r12, #3580]
+	movw r4, #13033
+	movt r4, #5375
+	str r4, [r12, #512]
+	movw r4, #7832
+	movt r4, #9672
+	str r4, [r12, #516]
+	movw r4, #43436
+	movt r4, #44334
+	str r4, [r12, #520]
+	movw r4, #4319
+	movt r4, #5434
+	str r4, [r12, #524]
+	movw r4, #64408
+	movt r4, #46863
+	str r4, [r12, #528]
+	movw r4, #47493
+	movt r4, #24481
+	str r4, [r12, #532]
+	movw r4, #45676
+	movt r4, #56125
+	str r4, [r12, #536]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #540]
+	movw r4, #15012
+	movt r4, #58037
+	str r4, [r12, #544]
+	movw r4, #5272
+	movt r4, #1888
+	str r4, [r12, #548]
+	movw r4, #54321
+	movt r4, #21870
+	str r4, [r12, #552]
+	movw r4, #57524
+	movt r4, #62384
+	str r4, [r12, #556]
+	movw r4, #7600
+	movt r4, #40774
+	str r4, [r12, #560]
+	movw r4, #33467
+	movt r4, #49885
+	str r4, [r12, #564]
+	movw r4, #50641
+	movt r4, #23147
+	str r4, [r12, #568]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #572]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #576]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #580]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #584]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #588]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #592]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #596]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #600]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #604]
+	mov r11, #32
+23:
+	sub r11, r11, #1
+	mov r4, #7
+	mul r4, r4, r11
+	add r4, r12, r4
+	add r4, r4, #4096
+	cmp r11, #31
+	beq 24f
+	mov r9, #0
+	add r9, r9, r9
+	ldrb r5, [r4, #6]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #5]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #4]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #3]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #2]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #1]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #0]
+	add r9, r9, r5
+	b 25f
+24:
+	mov r9, #0
+	add r9, r9, r9
+	ldrb r5, [r4, #6]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #5]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #4]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #3]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #2]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #1]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #0]
+	add r9, r9, r5
+25:
+	sub r9, r9, #64
+	lsr r4, r9, #31
+	mov r5, #0
+	sub r4, r5, r4
+	eor r9, r9, r4
+	sub r9, r9, r4
+	movw r8, #:lower16:({VG_P224_COMB}
+	movt r8, #:upper16:({VG_P224_COMB}
+2:
+	add r8, pc
+3:
+	mov r4, #4096
+	mul r4, r4, r11
+	add r8, r8, r4
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3424]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3428]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3432]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3436]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3440]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3444]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3448]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3452]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3456]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3460]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3464]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3468]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3472]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3476]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3480]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3484]
+	mov r7, #1
+26:
+	eor r10, r9, r7
+	sub r10, r10, #1
+	lsr r10, r10, #31
+	mov r5, #0
+	sub r10, r5, r10
+	ldr r4, [r12, #3424]
+	ldr r5, [r8, #0]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3424]
+	ldr r4, [r12, #3428]
+	ldr r5, [r8, #4]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3428]
+	ldr r4, [r12, #3432]
+	ldr r5, [r8, #8]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3432]
+	ldr r4, [r12, #3436]
+	ldr r5, [r8, #12]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3436]
+	ldr r4, [r12, #3440]
+	ldr r5, [r8, #16]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3440]
+	ldr r4, [r12, #3444]
+	ldr r5, [r8, #20]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3444]
+	ldr r4, [r12, #3448]
+	ldr r5, [r8, #24]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3448]
+	ldr r4, [r12, #3452]
+	ldr r5, [r8, #28]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3452]
+	ldr r4, [r12, #3456]
+	ldr r5, [r8, #32]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3456]
+	ldr r4, [r12, #3460]
+	ldr r5, [r8, #36]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3460]
+	ldr r4, [r12, #3464]
+	ldr r5, [r8, #40]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3464]
+	ldr r4, [r12, #3468]
+	ldr r5, [r8, #44]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3468]
+	ldr r4, [r12, #3472]
+	ldr r5, [r8, #48]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3472]
+	ldr r4, [r12, #3476]
+	ldr r5, [r8, #52]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3476]
+	ldr r4, [r12, #3480]
+	ldr r5, [r8, #56]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3480]
+	ldr r4, [r12, #3484]
+	ldr r5, [r8, #60]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3484]
+	add r8, r8, #64
+	add r7, r7, #1
+	cmp r7, #65
+	bne 26b
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3488]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3492]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3496]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3500]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3504]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3508]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3512]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3516]
+	eor r10, r9, #0
+	sub r10, r10, #1
+	lsr r10, r10, #31
+	mov r5, #0
+	sub r10, r5, r10
+	ldr r4, [r12, #3456]
+	ldr r5, [r12, #3488]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3456]
+	ldr r4, [r12, #3460]
+	ldr r5, [r12, #3492]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3460]
+	ldr r4, [r12, #3464]
+	ldr r5, [r12, #3496]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3464]
+	ldr r4, [r12, #3468]
+	ldr r5, [r12, #3500]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3468]
+	ldr r4, [r12, #3472]
+	ldr r5, [r12, #3504]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3472]
+	ldr r4, [r12, #3476]
+	ldr r5, [r12, #3508]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3476]
+	ldr r4, [r12, #3480]
+	ldr r5, [r12, #3512]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3480]
+	ldr r4, [r12, #3484]
+	ldr r5, [r12, #3516]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3484]
+	ldr r4, [r12, #3488]
+	ldr r5, [r12, #160]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3488]
+	ldr r4, [r12, #3492]
+	ldr r5, [r12, #164]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3492]
+	ldr r4, [r12, #3496]
+	ldr r5, [r12, #168]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3496]
+	ldr r4, [r12, #3500]
+	ldr r5, [r12, #172]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3500]
+	ldr r4, [r12, #3504]
+	ldr r5, [r12, #176]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3504]
+	ldr r4, [r12, #3508]
+	ldr r5, [r12, #180]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3508]
+	ldr r4, [r12, #3512]
+	ldr r5, [r12, #184]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3512]
+	ldr r4, [r12, #3516]
+	ldr r5, [r12, #188]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3516]
+	mov r10, lr
+	mov r0, r12
+	movw r1, #704
+	movw r2, #160
+	movw r3, #3456
+	bl {vg_p224_sub_mod_p}
+	mov lr, r10
+	mov r4, #7
+	mul r4, r4, r11
+	add r4, r12, r4
+	add r4, r4, #4096
+	ldrb r4, [r4, #6]
+	sub r10, r4, #1
+	ldr r4, [r12, #3456]
+	ldr r5, [r12, #704]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3456]
+	ldr r4, [r12, #3460]
+	ldr r5, [r12, #708]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3460]
+	ldr r4, [r12, #3464]
+	ldr r5, [r12, #712]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3464]
+	ldr r4, [r12, #3468]
+	ldr r5, [r12, #716]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3468]
+	ldr r4, [r12, #3472]
+	ldr r5, [r12, #720]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3472]
+	ldr r4, [r12, #3476]
+	ldr r5, [r12, #724]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3476]
+	ldr r4, [r12, #3480]
+	ldr r5, [r12, #728]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3480]
+	ldr r4, [r12, #3484]
+	ldr r5, [r12, #732]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3484]
+	ldr r4, [r12, #512]
+	str r4, [r12, #3328]
+	ldr r4, [r12, #516]
+	str r4, [r12, #3332]
+	ldr r4, [r12, #520]
+	str r4, [r12, #3336]
+	ldr r4, [r12, #524]
+	str r4, [r12, #3340]
+	ldr r4, [r12, #528]
+	str r4, [r12, #3344]
+	ldr r4, [r12, #532]
+	str r4, [r12, #3348]
+	ldr r4, [r12, #536]
+	str r4, [r12, #3352]
+	ldr r4, [r12, #540]
+	str r4, [r12, #3356]
+	ldr r4, [r12, #544]
+	str r4, [r12, #3360]
+	ldr r4, [r12, #548]
+	str r4, [r12, #3364]
+	ldr r4, [r12, #552]
+	str r4, [r12, #3368]
+	ldr r4, [r12, #556]
+	str r4, [r12, #3372]
+	ldr r4, [r12, #560]
+	str r4, [r12, #3376]
+	ldr r4, [r12, #564]
+	str r4, [r12, #3380]
+	ldr r4, [r12, #568]
+	str r4, [r12, #3384]
+	ldr r4, [r12, #572]
+	str r4, [r12, #3388]
+	ldr r4, [r12, #576]
+	str r4, [r12, #3392]
+	ldr r4, [r12, #580]
+	str r4, [r12, #3396]
+	ldr r4, [r12, #584]
+	str r4, [r12, #3400]
+	ldr r4, [r12, #588]
+	str r4, [r12, #3404]
+	ldr r4, [r12, #592]
+	str r4, [r12, #3408]
+	ldr r4, [r12, #596]
+	str r4, [r12, #3412]
+	ldr r4, [r12, #600]
+	str r4, [r12, #3416]
+	ldr r4, [r12, #604]
+	str r4, [r12, #3420]
+	mov r10, lr
+	mov r0, r12
+	bl {vg_p224_point_add}
+	mov lr, r10
+	ldr r4, [r12, #3232]
+	str r4, [r12, #512]
+	ldr r4, [r12, #3236]
+	str r4, [r12, #516]
+	ldr r4, [r12, #3240]
+	str r4, [r12, #520]
+	ldr r4, [r12, #3244]
+	str r4, [r12, #524]
+	ldr r4, [r12, #3248]
+	str r4, [r12, #528]
+	ldr r4, [r12, #3252]
+	str r4, [r12, #532]
+	ldr r4, [r12, #3256]
+	str r4, [r12, #536]
+	ldr r4, [r12, #3260]
+	str r4, [r12, #540]
+	ldr r4, [r12, #3264]
+	str r4, [r12, #544]
+	ldr r4, [r12, #3268]
+	str r4, [r12, #548]
+	ldr r4, [r12, #3272]
+	str r4, [r12, #552]
+	ldr r4, [r12, #3276]
+	str r4, [r12, #556]
+	ldr r4, [r12, #3280]
+	str r4, [r12, #560]
+	ldr r4, [r12, #3284]
+	str r4, [r12, #564]
+	ldr r4, [r12, #3288]
+	str r4, [r12, #568]
+	ldr r4, [r12, #3292]
+	str r4, [r12, #572]
+	ldr r4, [r12, #3296]
+	str r4, [r12, #576]
+	ldr r4, [r12, #3300]
+	str r4, [r12, #580]
+	ldr r4, [r12, #3304]
+	str r4, [r12, #584]
+	ldr r4, [r12, #3308]
+	str r4, [r12, #588]
+	ldr r4, [r12, #3312]
+	str r4, [r12, #592]
+	ldr r4, [r12, #3316]
+	str r4, [r12, #596]
+	ldr r4, [r12, #3320]
+	str r4, [r12, #600]
+	ldr r4, [r12, #3324]
+	str r4, [r12, #604]
+	cmp r11, #0
+	bne 23b
+	ldr r4, [r12, #224]
+	str r4, [r12, #992]
+	ldr r4, [r12, #228]
+	str r4, [r12, #996]
+	ldr r4, [r12, #232]
+	str r4, [r12, #1000]
+	ldr r4, [r12, #236]
+	str r4, [r12, #1004]
+	ldr r4, [r12, #240]
+	str r4, [r12, #1008]
+	ldr r4, [r12, #244]
+	str r4, [r12, #1012]
+	ldr r4, [r12, #248]
+	str r4, [r12, #1016]
+	ldr r4, [r12, #252]
+	str r4, [r12, #1020]
+	mov r11, #256
+27:
+	sub r11, r11, #1
+	mov r10, lr
+	mov r0, r12
+	movw r1, #992
+	movw r2, #992
+	movw r3, #992
+	bl {vg_p224_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1024
+	movw r2, #992
+	movw r3, #576
+	bl {vg_p224_mul_mod_p}
+	mov lr, r10
+	add r4, r12, r11
+	add r4, r4, #4096
+	ldrb r4, [r4, #256]
+	mov r5, #0
+	sub r10, r5, r4
+	ldr r4, [r12, #992]
+	ldr r5, [r12, #1024]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #992]
+	ldr r4, [r12, #996]
+	ldr r5, [r12, #1028]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #996]
+	ldr r4, [r12, #1000]
+	ldr r5, [r12, #1032]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1000]
+	ldr r4, [r12, #1004]
+	ldr r5, [r12, #1036]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1004]
+	ldr r4, [r12, #1008]
+	ldr r5, [r12, #1040]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1008]
+	ldr r4, [r12, #1012]
+	ldr r5, [r12, #1044]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1012]
+	ldr r4, [r12, #1016]
+	ldr r5, [r12, #1048]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1016]
+	ldr r4, [r12, #1020]
+	ldr r5, [r12, #1052]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1020]
+	cmp r11, #0
+	bne 27b
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1152
+	movw r2, #512
+	movw r3, #992
+	bl {vg_p224_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1184
+	movw r2, #1152
+	movw r3, #192
+	bl {vg_p224_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1280
+	movw r2, #544
+	movw r3, #992
+	bl {vg_p224_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1440
+	movw r2, #1280
+	movw r3, #192
+	bl {vg_p224_mul_mod_p}
+	mov lr, r10
+	movw r6, #65535
+	mov r3, #1
+	ldr r7, [r12, #1088]
+	ldr r8, [r12, #96]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1092]
+	ldr r8, [r12, #100]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1096]
+	ldr r8, [r12, #104]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1100]
+	ldr r8, [r12, #108]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1104]
+	ldr r8, [r12, #112]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1108]
+	ldr r8, [r12, #116]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1112]
+	ldr r8, [r12, #120]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1116]
+	ldr r8, [r12, #124]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	sub r5, r3, #1
+	mov r9, r5
+	ldr r5, [r12, #1088]
+	ldr r4, [r12, #1092]
+	orr r5, r5, r4
+	ldr r4, [r12, #1096]
+	orr r5, r5, r4
+	ldr r4, [r12, #1100]
+	orr r5, r5, r4
+	ldr r4, [r12, #1104]
+	orr r5, r5, r4
+	ldr r4, [r12, #1108]
+	orr r5, r5, r4
+	ldr r4, [r12, #1112]
+	orr r5, r5, r4
+	ldr r4, [r12, #1116]
+	orr r5, r5, r4
+	mov r4, #0
+	sub r4, r4, r5
+	orr r4, r4, r5
+	lsr r4, r4, #31
+	mov r5, #0
+	sub r5, r5, r4
+	and r5, r5, r9
+	ldr r4, [r12, #1472]
+	and r4, r4, r5
+	str r4, [r12, #1472]
+	ldr r5, [r12, #576]
+	ldr r4, [r12, #580]
+	orr r5, r5, r4
+	ldr r4, [r12, #584]
+	orr r5, r5, r4
+	ldr r4, [r12, #588]
+	orr r5, r5, r4
+	ldr r4, [r12, #592]
+	orr r5, r5, r4
+	ldr r4, [r12, #596]
+	orr r5, r5, r4
+	ldr r4, [r12, #600]
+	orr r5, r5, r4
+	ldr r4, [r12, #604]
+	orr r5, r5, r4
+	mov r4, #0
+	sub r4, r4, r5
+	orr r4, r4, r5
+	lsr r4, r4, #31
+	mov r5, #0
+	sub r5, r5, r4
+	ldr r4, [r12, #1472]
+	and r4, r4, r5
+	str r4, [r12, #1472]
+	ldr r10, [r12, #1472]
+	mov r4, #4
+	and r4, r4, r10
+	strb r4, [lr, #0]
+	ldr r4, [r12, #1184]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #25]
+	ldr r4, [r12, #1188]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #21]
+	ldr r4, [r12, #1192]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #17]
+	ldr r4, [r12, #1196]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #13]
+	ldr r4, [r12, #1200]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #9]
+	ldr r4, [r12, #1204]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #5]
+	ldr r4, [r12, #1208]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #1]
+	ldr r4, [r12, #1440]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #53]
+	ldr r4, [r12, #1444]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #49]
+	ldr r4, [r12, #1448]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #45]
+	ldr r4, [r12, #1452]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #41]
+	ldr r4, [r12, #1456]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #37]
+	ldr r4, [r12, #1460]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #33]
+	ldr r4, [r12, #1464]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #29]
+	and r0, r10, #1
+	ldr r4, [r12, #0]
+	ldr r5, [r12, #4]
+	ldr r6, [r12, #8]
+	ldr r7, [r12, #12]
+	ldr r8, [r12, #16]
+	ldr r9, [r12, #20]
+	ldr r10, [r12, #24]
+	ldr r11, [r12, #28]
+	ldr lr, [r12, #32]
+	bx lr
+
+vg_ec_p224_public_key_umaal:
+	mov r12, r2
+	str r4, [r12, #0]
+	str r5, [r12, #4]
+	str r6, [r12, #8]
+	str r7, [r12, #12]
+	str r8, [r12, #16]
+	str r9, [r12, #20]
+	str r10, [r12, #24]
+	str r11, [r12, #28]
+	str lr, [r12, #32]
+	mov lr, r0
+	ldr r4, [r1, #24]
+	rev r4, r4
+	str r4, [r12, #1056]
+	ldr r4, [r1, #20]
+	rev r4, r4
+	str r4, [r12, #1060]
+	ldr r4, [r1, #16]
+	rev r4, r4
+	str r4, [r12, #1064]
+	ldr r4, [r1, #12]
+	rev r4, r4
+	str r4, [r12, #1068]
+	ldr r4, [r1, #8]
+	rev r4, r4
+	str r4, [r12, #1072]
+	ldr r4, [r1, #4]
+	rev r4, r4
+	str r4, [r12, #1076]
+	ldr r4, [r1, #0]
+	rev r4, r4
+	str r4, [r12, #1080]
+	mov r4, #0
+	str r4, [r12, #1084]
+	ldr r4, [r1, #24]
+	rev r4, r4
+	str r4, [r12, #1088]
+	ldr r4, [r1, #20]
+	rev r4, r4
+	str r4, [r12, #1092]
+	ldr r4, [r1, #16]
+	rev r4, r4
+	str r4, [r12, #1096]
+	ldr r4, [r1, #12]
+	rev r4, r4
+	str r4, [r12, #1100]
+	ldr r4, [r1, #8]
+	rev r4, r4
+	str r4, [r12, #1104]
+	ldr r4, [r1, #4]
+	rev r4, r4
+	str r4, [r12, #1108]
+	ldr r4, [r1, #0]
+	rev r4, r4
+	str r4, [r12, #1112]
+	mov r4, #0
+	str r4, [r12, #1116]
+	ldr r4, [r1, #24]
+	rev r4, r4
+	str r4, [r12, #1120]
+	ldr r4, [r1, #20]
+	rev r4, r4
+	str r4, [r12, #1124]
+	ldr r4, [r1, #16]
+	rev r4, r4
+	str r4, [r12, #1128]
+	ldr r4, [r1, #12]
+	rev r4, r4
+	str r4, [r12, #1132]
+	ldr r4, [r1, #8]
+	rev r4, r4
+	str r4, [r12, #1136]
+	ldr r4, [r1, #4]
+	rev r4, r4
+	str r4, [r12, #1140]
+	ldr r4, [r1, #0]
+	rev r4, r4
+	str r4, [r12, #1144]
+	mov r4, #0
+	str r4, [r12, #1148]
+	movw r4, #1
+	movt r4, #0
+	str r4, [r12, #64]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #68]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #72]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #76]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #80]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #84]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #88]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #92]
+	movw r4, #10813
+	movt r4, #23644
+	str r4, [r12, #96]
+	movw r4, #10565
+	movt r4, #5085
+	str r4, [r12, #100]
+	movw r4, #61502
+	movt r4, #57528
+	str r4, [r12, #104]
+	movw r4, #5794
+	movt r4, #65535
+	str r4, [r12, #108]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #112]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #116]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #120]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #124]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #160]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #164]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #168]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #172]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #176]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #180]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #184]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #188]
+	movw r4, #1
+	movt r4, #0
+	str r4, [r12, #192]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #196]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #200]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #204]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #208]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #212]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #216]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #220]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #224]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #228]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #232]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #236]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #240]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #244]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #248]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #252]
+	movw r4, #1
+	movt r4, #0
+	str r4, [r12, #256]
+	movw r4, #3
+	movt r4, #0
+	str r4, [r12, #260]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #264]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #268]
+	movw r4, #65532
+	movt r4, #65535
+	str r4, [r12, #272]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #276]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #280]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #284]
+	movw r4, #3430
+	movt r4, #11073
+	str r4, [r12, #288]
+	movw r4, #27107
+	movt r4, #46650
+	str r4, [r12, #292]
+	movw r4, #14642
+	movt r4, #26320
+	str r4, [r12, #296]
+	movw r4, #18652
+	movt r4, #12656
+	str r4, [r12, #300]
+	movw r4, #33779
+	movt r4, #22775
+	str r4, [r12, #304]
+	movw r4, #12234
+	movt r4, #47468
+	str r4, [r12, #308]
+	movw r4, #36537
+	movt r4, #32576
+	str r4, [r12, #312]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #316]
+	movw r4, #19178
+	movt r4, #27914
+	str r4, [r12, #320]
+	movw r4, #21030
+	movt r4, #48272
+	str r4, [r12, #324]
+	movw r4, #49066
+	movt r4, #24600
+	str r4, [r12, #328]
+	movw r4, #38710
+	movt r4, #34085
+	str r4, [r12, #332]
+	movw r4, #60421
+	movt r4, #63851
+	str r4, [r12, #336]
+	movw r4, #44955
+	movt r4, #28115
+	str r4, [r12, #340]
+	movw r4, #24160
+	movt r4, #41499
+	str r4, [r12, #344]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #348]
+	movw r4, #60904
+	movt r4, #61427
+	str r4, [r12, #352]
+	movw r4, #41445
+	movt r4, #11996
+	str r4, [r12, #356]
+	movw r4, #23147
+	movt r4, #1331
+	str r4, [r12, #360]
+	movw r4, #26411
+	movt r4, #63693
+	str r4, [r12, #364]
+	movw r4, #59512
+	movt r4, #991
+	str r4, [r12, #368]
+	movw r4, #50606
+	movt r4, #44713
+	str r4, [r12, #372]
+	movw r4, #34545
+	movt r4, #24903
+	str r4, [r12, #376]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #380]
+	movw r4, #32021
+	movt r4, #24401
+	str r4, [r12, #384]
+	movw r4, #31337
+	movt r4, #10644
+	str r4, [r12, #388]
+	movw r4, #16203
+	movt r4, #12758
+	str r4, [r12, #392]
+	movw r4, #65369
+	movt r4, #43976
+	str r4, [r12, #396]
+	movw r4, #18518
+	movt r4, #55665
+	str r4, [r12, #400]
+	movw r4, #24444
+	movt r4, #27345
+	str r4, [r12, #404]
+	movw r4, #31073
+	movt r4, #45545
+	str r4, [r12, #408]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #412]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #416]
+	movw r4, #54723
+	movt r4, #41891
+	str r4, [r12, #420]
+	movw r4, #54970
+	movt r4, #60450
+	str r4, [r12, #424]
+	movw r4, #4033
+	movt r4, #8007
+	str r4, [r12, #428]
+	movw r4, #59741
+	movt r4, #0
+	str r4, [r12, #432]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #436]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #440]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #444]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #448]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #452]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #456]
+	movw r4, #65534
+	movt r4, #65535
+	str r4, [r12, #460]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #464]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #468]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #472]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #476]
+	movw r4, #10811
+	movt r4, #23644
+	str r4, [r12, #480]
+	movw r4, #10565
+	movt r4, #5085
+	str r4, [r12, #484]
+	movw r4, #61502
+	movt r4, #57528
+	str r4, [r12, #488]
+	movw r4, #5794
+	movt r4, #65535
+	str r4, [r12, #492]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #496]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #500]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #504]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #508]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #512]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #516]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #520]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #524]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #528]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #532]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #536]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #540]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #544]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #548]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #552]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #556]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #560]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #564]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #568]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #572]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #576]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #580]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #584]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #588]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #592]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #596]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #600]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #604]
+	mov r4, #0
+	sub r4, r4, #1
+	str r4, [r12, #1472]
+	mov r11, #32
+20:
+	sub r11, r11, #1
+	add r4, r12, r11
+	ldrb r4, [r4, #1056]
+	add r5, r12, r11, lsl #3
+	add r5, r5, #4096
+	and r7, r4, #1
+	strb r7, [r5, #0]
+	lsr r7, r4, #1
+	and r7, r7, #1
+	strb r7, [r5, #1]
+	lsr r7, r4, #2
+	and r7, r7, #1
+	strb r7, [r5, #2]
+	lsr r7, r4, #3
+	and r7, r7, #1
+	strb r7, [r5, #3]
+	lsr r7, r4, #4
+	and r7, r7, #1
+	strb r7, [r5, #4]
+	lsr r7, r4, #5
+	and r7, r7, #1
+	strb r7, [r5, #5]
+	lsr r7, r4, #6
+	and r7, r7, #1
+	strb r7, [r5, #6]
+	lsr r7, r4, #7
+	and r7, r7, #1
+	strb r7, [r5, #7]
+	cmp r11, #0
+	bne 20b
+	mov r11, #32
+21:
+	sub r11, r11, #1
+	add r4, r12, r11
+	ldrb r4, [r4, #448]
+	add r5, r12, r11, lsl #3
+	add r5, r5, #4096
+	and r7, r4, #1
+	strb r7, [r5, #256]
+	lsr r7, r4, #1
+	and r7, r7, #1
+	strb r7, [r5, #257]
+	lsr r7, r4, #2
+	and r7, r7, #1
+	strb r7, [r5, #258]
+	lsr r7, r4, #3
+	and r7, r7, #1
+	strb r7, [r5, #259]
+	lsr r7, r4, #4
+	and r7, r7, #1
+	strb r7, [r5, #260]
+	lsr r7, r4, #5
+	and r7, r7, #1
+	strb r7, [r5, #261]
+	lsr r7, r4, #6
+	and r7, r7, #1
+	strb r7, [r5, #262]
+	lsr r7, r4, #7
+	and r7, r7, #1
+	strb r7, [r5, #263]
+	cmp r11, #0
+	bne 21b
+	mov r11, #32
+22:
+	sub r11, r11, #1
+	add r4, r12, r11
+	ldrb r4, [r4, #480]
+	add r5, r12, r11, lsl #3
+	add r5, r5, #4096
+	and r7, r4, #1
+	strb r7, [r5, #512]
+	lsr r7, r4, #1
+	and r7, r7, #1
+	strb r7, [r5, #513]
+	lsr r7, r4, #2
+	and r7, r7, #1
+	strb r7, [r5, #514]
+	lsr r7, r4, #3
+	and r7, r7, #1
+	strb r7, [r5, #515]
+	lsr r7, r4, #4
+	and r7, r7, #1
+	strb r7, [r5, #516]
+	lsr r7, r4, #5
+	and r7, r7, #1
+	strb r7, [r5, #517]
+	lsr r7, r4, #6
+	and r7, r7, #1
+	strb r7, [r5, #518]
+	lsr r7, r4, #7
+	and r7, r7, #1
+	strb r7, [r5, #519]
+	cmp r11, #0
+	bne 22b
+	ldr r4, [r12, #320]
+	str r4, [r12, #3424]
+	ldr r4, [r12, #324]
+	str r4, [r12, #3428]
+	ldr r4, [r12, #328]
+	str r4, [r12, #3432]
+	ldr r4, [r12, #332]
+	str r4, [r12, #3436]
+	ldr r4, [r12, #336]
+	str r4, [r12, #3440]
+	ldr r4, [r12, #340]
+	str r4, [r12, #3444]
+	ldr r4, [r12, #344]
+	str r4, [r12, #3448]
+	ldr r4, [r12, #348]
+	str r4, [r12, #3452]
+	ldr r4, [r12, #352]
+	str r4, [r12, #3456]
+	ldr r4, [r12, #356]
+	str r4, [r12, #3460]
+	ldr r4, [r12, #360]
+	str r4, [r12, #3464]
+	ldr r4, [r12, #364]
+	str r4, [r12, #3468]
+	ldr r4, [r12, #368]
+	str r4, [r12, #3472]
+	ldr r4, [r12, #372]
+	str r4, [r12, #3476]
+	ldr r4, [r12, #376]
+	str r4, [r12, #3480]
+	ldr r4, [r12, #380]
+	str r4, [r12, #3484]
+	ldr r4, [r12, #224]
+	str r4, [r12, #3488]
+	ldr r4, [r12, #228]
+	str r4, [r12, #3492]
+	ldr r4, [r12, #232]
+	str r4, [r12, #3496]
+	ldr r4, [r12, #236]
+	str r4, [r12, #3500]
+	ldr r4, [r12, #240]
+	str r4, [r12, #3504]
+	ldr r4, [r12, #244]
+	str r4, [r12, #3508]
+	ldr r4, [r12, #248]
+	str r4, [r12, #3512]
+	ldr r4, [r12, #252]
+	str r4, [r12, #3516]
+	ldr r4, [r12, #256]
+	str r4, [r12, #3520]
+	ldr r4, [r12, #260]
+	str r4, [r12, #3524]
+	ldr r4, [r12, #264]
+	str r4, [r12, #3528]
+	ldr r4, [r12, #268]
+	str r4, [r12, #3532]
+	ldr r4, [r12, #272]
+	str r4, [r12, #3536]
+	ldr r4, [r12, #276]
+	str r4, [r12, #3540]
+	ldr r4, [r12, #280]
+	str r4, [r12, #3544]
+	ldr r4, [r12, #284]
+	str r4, [r12, #3548]
+	ldr r4, [r12, #288]
+	str r4, [r12, #3552]
+	ldr r4, [r12, #292]
+	str r4, [r12, #3556]
+	ldr r4, [r12, #296]
+	str r4, [r12, #3560]
+	ldr r4, [r12, #300]
+	str r4, [r12, #3564]
+	ldr r4, [r12, #304]
+	str r4, [r12, #3568]
+	ldr r4, [r12, #308]
+	str r4, [r12, #3572]
+	ldr r4, [r12, #312]
+	str r4, [r12, #3576]
+	ldr r4, [r12, #316]
+	str r4, [r12, #3580]
+	movw r4, #13033
+	movt r4, #5375
+	str r4, [r12, #512]
+	movw r4, #7832
+	movt r4, #9672
+	str r4, [r12, #516]
+	movw r4, #43436
+	movt r4, #44334
+	str r4, [r12, #520]
+	movw r4, #4319
+	movt r4, #5434
+	str r4, [r12, #524]
+	movw r4, #64408
+	movt r4, #46863
+	str r4, [r12, #528]
+	movw r4, #47493
+	movt r4, #24481
+	str r4, [r12, #532]
+	movw r4, #45676
+	movt r4, #56125
+	str r4, [r12, #536]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #540]
+	movw r4, #15012
+	movt r4, #58037
+	str r4, [r12, #544]
+	movw r4, #5272
+	movt r4, #1888
+	str r4, [r12, #548]
+	movw r4, #54321
+	movt r4, #21870
+	str r4, [r12, #552]
+	movw r4, #57524
+	movt r4, #62384
+	str r4, [r12, #556]
+	movw r4, #7600
+	movt r4, #40774
+	str r4, [r12, #560]
+	movw r4, #33467
+	movt r4, #49885
+	str r4, [r12, #564]
+	movw r4, #50641
+	movt r4, #23147
+	str r4, [r12, #568]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #572]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #576]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #580]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #584]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #588]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #592]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #596]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #600]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #604]
+	mov r11, #32
+23:
+	sub r11, r11, #1
+	mov r4, #7
+	mul r4, r4, r11
+	add r4, r12, r4
+	add r4, r4, #4096
+	cmp r11, #31
+	beq 24f
+	mov r9, #0
+	add r9, r9, r9
+	ldrb r5, [r4, #6]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #5]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #4]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #3]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #2]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #1]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #0]
+	add r9, r9, r5
+	b 25f
+24:
+	mov r9, #0
+	add r9, r9, r9
+	ldrb r5, [r4, #6]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #5]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #4]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #3]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #2]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #1]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #0]
+	add r9, r9, r5
+25:
+	sub r9, r9, #64
+	lsr r4, r9, #31
+	mov r5, #0
+	sub r4, r5, r4
+	eor r9, r9, r4
+	sub r9, r9, r4
+	movw r8, #:lower16:({VG_P224_COMB}
+	movt r8, #:upper16:({VG_P224_COMB}
+2:
+	add r8, pc
+3:
+	mov r4, #4096
+	mul r4, r4, r11
+	add r8, r8, r4
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3424]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3428]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3432]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3436]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3440]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3444]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3448]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3452]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3456]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3460]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3464]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3468]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3472]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3476]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3480]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3484]
+	mov r7, #1
+26:
+	eor r10, r9, r7
+	sub r10, r10, #1
+	lsr r10, r10, #31
+	mov r5, #0
+	sub r10, r5, r10
+	ldr r4, [r12, #3424]
+	ldr r5, [r8, #0]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3424]
+	ldr r4, [r12, #3428]
+	ldr r5, [r8, #4]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3428]
+	ldr r4, [r12, #3432]
+	ldr r5, [r8, #8]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3432]
+	ldr r4, [r12, #3436]
+	ldr r5, [r8, #12]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3436]
+	ldr r4, [r12, #3440]
+	ldr r5, [r8, #16]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3440]
+	ldr r4, [r12, #3444]
+	ldr r5, [r8, #20]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3444]
+	ldr r4, [r12, #3448]
+	ldr r5, [r8, #24]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3448]
+	ldr r4, [r12, #3452]
+	ldr r5, [r8, #28]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3452]
+	ldr r4, [r12, #3456]
+	ldr r5, [r8, #32]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3456]
+	ldr r4, [r12, #3460]
+	ldr r5, [r8, #36]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3460]
+	ldr r4, [r12, #3464]
+	ldr r5, [r8, #40]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3464]
+	ldr r4, [r12, #3468]
+	ldr r5, [r8, #44]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3468]
+	ldr r4, [r12, #3472]
+	ldr r5, [r8, #48]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3472]
+	ldr r4, [r12, #3476]
+	ldr r5, [r8, #52]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3476]
+	ldr r4, [r12, #3480]
+	ldr r5, [r8, #56]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3480]
+	ldr r4, [r12, #3484]
+	ldr r5, [r8, #60]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3484]
+	add r8, r8, #64
+	add r7, r7, #1
+	cmp r7, #65
+	bne 26b
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3488]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3492]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3496]
+	movw r4, #65535
+	movt r4, #65535
+	str r4, [r12, #3500]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3504]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3508]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3512]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #3516]
+	eor r10, r9, #0
+	sub r10, r10, #1
+	lsr r10, r10, #31
+	mov r5, #0
+	sub r10, r5, r10
+	ldr r4, [r12, #3456]
+	ldr r5, [r12, #3488]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3456]
+	ldr r4, [r12, #3460]
+	ldr r5, [r12, #3492]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3460]
+	ldr r4, [r12, #3464]
+	ldr r5, [r12, #3496]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3464]
+	ldr r4, [r12, #3468]
+	ldr r5, [r12, #3500]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3468]
+	ldr r4, [r12, #3472]
+	ldr r5, [r12, #3504]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3472]
+	ldr r4, [r12, #3476]
+	ldr r5, [r12, #3508]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3476]
+	ldr r4, [r12, #3480]
+	ldr r5, [r12, #3512]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3480]
+	ldr r4, [r12, #3484]
+	ldr r5, [r12, #3516]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3484]
+	ldr r4, [r12, #3488]
+	ldr r5, [r12, #160]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3488]
+	ldr r4, [r12, #3492]
+	ldr r5, [r12, #164]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3492]
+	ldr r4, [r12, #3496]
+	ldr r5, [r12, #168]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3496]
+	ldr r4, [r12, #3500]
+	ldr r5, [r12, #172]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3500]
+	ldr r4, [r12, #3504]
+	ldr r5, [r12, #176]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3504]
+	ldr r4, [r12, #3508]
+	ldr r5, [r12, #180]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3508]
+	ldr r4, [r12, #3512]
+	ldr r5, [r12, #184]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3512]
+	ldr r4, [r12, #3516]
+	ldr r5, [r12, #188]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3516]
+	mov r10, lr
+	mov r0, r12
+	movw r1, #704
+	movw r2, #160
+	movw r3, #3456
+	bl {vg_p224_sub_mod_p}
+	mov lr, r10
+	mov r4, #7
+	mul r4, r4, r11
+	add r4, r12, r4
+	add r4, r4, #4096
+	ldrb r4, [r4, #6]
+	sub r10, r4, #1
+	ldr r4, [r12, #3456]
+	ldr r5, [r12, #704]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3456]
+	ldr r4, [r12, #3460]
+	ldr r5, [r12, #708]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3460]
+	ldr r4, [r12, #3464]
+	ldr r5, [r12, #712]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3464]
+	ldr r4, [r12, #3468]
+	ldr r5, [r12, #716]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3468]
+	ldr r4, [r12, #3472]
+	ldr r5, [r12, #720]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3472]
+	ldr r4, [r12, #3476]
+	ldr r5, [r12, #724]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3476]
+	ldr r4, [r12, #3480]
+	ldr r5, [r12, #728]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3480]
+	ldr r4, [r12, #3484]
+	ldr r5, [r12, #732]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #3484]
+	ldr r4, [r12, #512]
+	str r4, [r12, #3328]
+	ldr r4, [r12, #516]
+	str r4, [r12, #3332]
+	ldr r4, [r12, #520]
+	str r4, [r12, #3336]
+	ldr r4, [r12, #524]
+	str r4, [r12, #3340]
+	ldr r4, [r12, #528]
+	str r4, [r12, #3344]
+	ldr r4, [r12, #532]
+	str r4, [r12, #3348]
+	ldr r4, [r12, #536]
+	str r4, [r12, #3352]
+	ldr r4, [r12, #540]
+	str r4, [r12, #3356]
+	ldr r4, [r12, #544]
+	str r4, [r12, #3360]
+	ldr r4, [r12, #548]
+	str r4, [r12, #3364]
+	ldr r4, [r12, #552]
+	str r4, [r12, #3368]
+	ldr r4, [r12, #556]
+	str r4, [r12, #3372]
+	ldr r4, [r12, #560]
+	str r4, [r12, #3376]
+	ldr r4, [r12, #564]
+	str r4, [r12, #3380]
+	ldr r4, [r12, #568]
+	str r4, [r12, #3384]
+	ldr r4, [r12, #572]
+	str r4, [r12, #3388]
+	ldr r4, [r12, #576]
+	str r4, [r12, #3392]
+	ldr r4, [r12, #580]
+	str r4, [r12, #3396]
+	ldr r4, [r12, #584]
+	str r4, [r12, #3400]
+	ldr r4, [r12, #588]
+	str r4, [r12, #3404]
+	ldr r4, [r12, #592]
+	str r4, [r12, #3408]
+	ldr r4, [r12, #596]
+	str r4, [r12, #3412]
+	ldr r4, [r12, #600]
+	str r4, [r12, #3416]
+	ldr r4, [r12, #604]
+	str r4, [r12, #3420]
+	mov r10, lr
+	mov r0, r12
+	bl {vg_p224_point_add_umaal}
+	mov lr, r10
+	ldr r4, [r12, #3232]
+	str r4, [r12, #512]
+	ldr r4, [r12, #3236]
+	str r4, [r12, #516]
+	ldr r4, [r12, #3240]
+	str r4, [r12, #520]
+	ldr r4, [r12, #3244]
+	str r4, [r12, #524]
+	ldr r4, [r12, #3248]
+	str r4, [r12, #528]
+	ldr r4, [r12, #3252]
+	str r4, [r12, #532]
+	ldr r4, [r12, #3256]
+	str r4, [r12, #536]
+	ldr r4, [r12, #3260]
+	str r4, [r12, #540]
+	ldr r4, [r12, #3264]
+	str r4, [r12, #544]
+	ldr r4, [r12, #3268]
+	str r4, [r12, #548]
+	ldr r4, [r12, #3272]
+	str r4, [r12, #552]
+	ldr r4, [r12, #3276]
+	str r4, [r12, #556]
+	ldr r4, [r12, #3280]
+	str r4, [r12, #560]
+	ldr r4, [r12, #3284]
+	str r4, [r12, #564]
+	ldr r4, [r12, #3288]
+	str r4, [r12, #568]
+	ldr r4, [r12, #3292]
+	str r4, [r12, #572]
+	ldr r4, [r12, #3296]
+	str r4, [r12, #576]
+	ldr r4, [r12, #3300]
+	str r4, [r12, #580]
+	ldr r4, [r12, #3304]
+	str r4, [r12, #584]
+	ldr r4, [r12, #3308]
+	str r4, [r12, #588]
+	ldr r4, [r12, #3312]
+	str r4, [r12, #592]
+	ldr r4, [r12, #3316]
+	str r4, [r12, #596]
+	ldr r4, [r12, #3320]
+	str r4, [r12, #600]
+	ldr r4, [r12, #3324]
+	str r4, [r12, #604]
+	cmp r11, #0
+	bne 23b
+	ldr r4, [r12, #224]
+	str r4, [r12, #992]
+	ldr r4, [r12, #228]
+	str r4, [r12, #996]
+	ldr r4, [r12, #232]
+	str r4, [r12, #1000]
+	ldr r4, [r12, #236]
+	str r4, [r12, #1004]
+	ldr r4, [r12, #240]
+	str r4, [r12, #1008]
+	ldr r4, [r12, #244]
+	str r4, [r12, #1012]
+	ldr r4, [r12, #248]
+	str r4, [r12, #1016]
+	ldr r4, [r12, #252]
+	str r4, [r12, #1020]
+	mov r11, #256
+27:
+	sub r11, r11, #1
+	mov r10, lr
+	mov r0, r12
+	movw r1, #992
+	movw r2, #992
+	movw r3, #992
+	bl {vg_p224_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1024
+	movw r2, #992
+	movw r3, #576
+	bl {vg_p224_mul_mod_p_umaal}
+	mov lr, r10
+	add r4, r12, r11
+	add r4, r4, #4096
+	ldrb r4, [r4, #256]
+	mov r5, #0
+	sub r10, r5, r4
+	ldr r4, [r12, #992]
+	ldr r5, [r12, #1024]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #992]
+	ldr r4, [r12, #996]
+	ldr r5, [r12, #1028]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #996]
+	ldr r4, [r12, #1000]
+	ldr r5, [r12, #1032]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1000]
+	ldr r4, [r12, #1004]
+	ldr r5, [r12, #1036]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1004]
+	ldr r4, [r12, #1008]
+	ldr r5, [r12, #1040]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1008]
+	ldr r4, [r12, #1012]
+	ldr r5, [r12, #1044]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1012]
+	ldr r4, [r12, #1016]
+	ldr r5, [r12, #1048]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1016]
+	ldr r4, [r12, #1020]
+	ldr r5, [r12, #1052]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1020]
+	cmp r11, #0
+	bne 27b
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1152
+	movw r2, #512
+	movw r3, #992
+	bl {vg_p224_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1184
+	movw r2, #1152
+	movw r3, #192
+	bl {vg_p224_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1280
+	movw r2, #544
+	movw r3, #992
+	bl {vg_p224_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1440
+	movw r2, #1280
+	movw r3, #192
+	bl {vg_p224_mul_mod_p_umaal}
+	mov lr, r10
+	movw r6, #65535
+	mov r3, #1
+	ldr r7, [r12, #1088]
+	ldr r8, [r12, #96]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1092]
+	ldr r8, [r12, #100]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1096]
+	ldr r8, [r12, #104]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1100]
+	ldr r8, [r12, #108]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1104]
+	ldr r8, [r12, #112]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1108]
+	ldr r8, [r12, #116]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1112]
+	ldr r8, [r12, #120]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	ldr r7, [r12, #1116]
+	ldr r8, [r12, #124]
+	and r4, r7, r6
+	and r5, r8, r6
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	lsr r4, r7, #16
+	lsr r5, r8, #16
+	add r4, r4, r6
+	sub r4, r4, r5
+	add r4, r4, r3
+	lsr r3, r4, #16
+	sub r5, r3, #1
+	mov r9, r5
+	ldr r5, [r12, #1088]
+	ldr r4, [r12, #1092]
+	orr r5, r5, r4
+	ldr r4, [r12, #1096]
+	orr r5, r5, r4
+	ldr r4, [r12, #1100]
+	orr r5, r5, r4
+	ldr r4, [r12, #1104]
+	orr r5, r5, r4
+	ldr r4, [r12, #1108]
+	orr r5, r5, r4
+	ldr r4, [r12, #1112]
+	orr r5, r5, r4
+	ldr r4, [r12, #1116]
+	orr r5, r5, r4
+	mov r4, #0
+	sub r4, r4, r5
+	orr r4, r4, r5
+	lsr r4, r4, #31
+	mov r5, #0
+	sub r5, r5, r4
+	and r5, r5, r9
+	ldr r4, [r12, #1472]
+	and r4, r4, r5
+	str r4, [r12, #1472]
+	ldr r5, [r12, #576]
+	ldr r4, [r12, #580]
+	orr r5, r5, r4
+	ldr r4, [r12, #584]
+	orr r5, r5, r4
+	ldr r4, [r12, #588]
+	orr r5, r5, r4
+	ldr r4, [r12, #592]
+	orr r5, r5, r4
+	ldr r4, [r12, #596]
+	orr r5, r5, r4
+	ldr r4, [r12, #600]
+	orr r5, r5, r4
+	ldr r4, [r12, #604]
+	orr r5, r5, r4
+	mov r4, #0
+	sub r4, r4, r5
+	orr r4, r4, r5
+	lsr r4, r4, #31
+	mov r5, #0
+	sub r5, r5, r4
+	ldr r4, [r12, #1472]
+	and r4, r4, r5
+	str r4, [r12, #1472]
+	ldr r10, [r12, #1472]
+	mov r4, #4
+	and r4, r4, r10
+	strb r4, [lr, #0]
+	ldr r4, [r12, #1184]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #25]
+	ldr r4, [r12, #1188]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #21]
+	ldr r4, [r12, #1192]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #17]
+	ldr r4, [r12, #1196]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #13]
+	ldr r4, [r12, #1200]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #9]
+	ldr r4, [r12, #1204]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #5]
+	ldr r4, [r12, #1208]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #1]
+	ldr r4, [r12, #1440]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #53]
+	ldr r4, [r12, #1444]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #49]
+	ldr r4, [r12, #1448]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #45]
+	ldr r4, [r12, #1452]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #41]
+	ldr r4, [r12, #1456]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #37]
+	ldr r4, [r12, #1460]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #33]
+	ldr r4, [r12, #1464]
+	and r4, r4, r10
+	rev r4, r4
+	str r4, [lr, #29]
+	and r0, r10, #1
+	ldr r4, [r12, #0]
+	ldr r5, [r12, #4]
+	ldr r6, [r12, #8]
+	ldr r7, [r12, #12]
+	ldr r8, [r12, #16]
+	ldr r9, [r12, #20]
+	ldr r10, [r12, #24]
+	ldr r11, [r12, #28]
+	ldr lr, [r12, #32]
+	bx lr

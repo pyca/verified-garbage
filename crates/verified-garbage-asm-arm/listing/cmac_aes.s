@@ -1,0 +1,451 @@
+// The functions of `src/cmac_aes.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_cmac_aes_subkeys:
+	str r4, [r3, #2064]
+	str r5, [r3, #2068]
+	str r6, [r3, #2072]
+	str lr, [r3, #2076]
+	mov r6, r2
+	mov r5, r3
+	mov r12, #0
+	str r12, [r3, #2048]
+	str r12, [r3, #2052]
+	str r12, [r3, #2056]
+	str r12, [r3, #2060]
+	str r12, [r2, #0]
+	str r12, [r2, #4]
+	str r12, [r2, #8]
+	str r12, [r2, #12]
+	add r2, r5, #2048
+	mov r3, r6
+	mov r4, #1
+	push {r4, r5}
+	bl {vg_aes_ctr32}
+	ldr r4, [sp], #8
+	ldr r0, [r6, #0]
+	ldr r1, [r6, #4]
+	ldr r2, [r6, #8]
+	ldr r3, [r6, #12]
+	rev r0, r0
+	rev r1, r1
+	rev r2, r2
+	rev r3, r3
+	lsr r12, r0, #31
+	mov r4, #0
+	sub r12, r4, r12
+	and r12, r12, #135
+	lsl r0, r0, #1
+	orr r0, r0, r1, lsr #31
+	lsl r1, r1, #1
+	orr r1, r1, r2, lsr #31
+	lsl r2, r2, #1
+	orr r2, r2, r3, lsr #31
+	lsl r3, r3, #1
+	eor r3, r3, r12
+	rev r0, r0
+	rev r1, r1
+	rev r2, r2
+	rev r3, r3
+	str r0, [r6, #0]
+	str r1, [r6, #4]
+	str r2, [r6, #8]
+	str r3, [r6, #12]
+	ldr r0, [r6, #0]
+	ldr r1, [r6, #4]
+	ldr r2, [r6, #8]
+	ldr r3, [r6, #12]
+	rev r0, r0
+	rev r1, r1
+	rev r2, r2
+	rev r3, r3
+	lsr r12, r0, #31
+	mov r4, #0
+	sub r12, r4, r12
+	and r12, r12, #135
+	lsl r0, r0, #1
+	orr r0, r0, r1, lsr #31
+	lsl r1, r1, #1
+	orr r1, r1, r2, lsr #31
+	lsl r2, r2, #1
+	orr r2, r2, r3, lsr #31
+	lsl r3, r3, #1
+	eor r3, r3, r12
+	rev r0, r0
+	rev r1, r1
+	rev r2, r2
+	rev r3, r3
+	str r0, [r6, #16]
+	str r1, [r6, #20]
+	str r2, [r6, #24]
+	str r3, [r6, #28]
+	ldr r4, [r5, #2064]
+	ldr r6, [r5, #2072]
+	ldr lr, [r5, #2076]
+	ldr r5, [r5, #2068]
+	bx lr
+
+vg_cmac_aes_update:
+	ldr r12, [sp, #4]
+	str r4, [r12, #2064]
+	str r5, [r12, #2068]
+	str r6, [r12, #2072]
+	str r7, [r12, #2076]
+	str r8, [r12, #2080]
+	str r9, [r12, #2084]
+	str lr, [r12, #2092]
+	str r10, [r12, #2088]
+	mov r4, r0
+	mov r5, r1
+	mov r6, r2
+	mov r7, r3
+	ldr r8, [sp, #0]
+	mov r10, r12
+	cmp r8, #0
+	beq 20f
+22:
+	ldr r0, [r6, #0]
+	ldr r1, [r7, #0]
+	eor r0, r0, r1
+	str r0, [r10, #2048]
+	ldr r0, [r6, #4]
+	ldr r1, [r7, #4]
+	eor r0, r0, r1
+	str r0, [r10, #2052]
+	ldr r0, [r6, #8]
+	ldr r1, [r7, #8]
+	eor r0, r0, r1
+	str r0, [r10, #2056]
+	ldr r0, [r6, #12]
+	ldr r1, [r7, #12]
+	eor r0, r0, r1
+	str r0, [r10, #2060]
+	mov r0, #0
+	str r0, [r6, #0]
+	str r0, [r6, #4]
+	str r0, [r6, #8]
+	str r0, [r6, #12]
+	mov r0, r4
+	mov r1, r5
+	add r2, r10, #2048
+	mov r3, r6
+	mov r9, #1
+	push {r9, r10}
+	bl {vg_aes_ctr32}
+	ldr r9, [sp], #8
+	add r7, r7, #16
+	subs r8, r8, #1
+	bne 22b
+	b 21f
+20:
+21:
+	ldr r4, [r10, #2064]
+	ldr r5, [r10, #2068]
+	ldr r6, [r10, #2072]
+	ldr r7, [r10, #2076]
+	ldr r8, [r10, #2080]
+	ldr r9, [r10, #2084]
+	ldr lr, [r10, #2092]
+	ldr r10, [r10, #2088]
+	bx lr
+
+vg_cmac_aes_finalize:
+	ldr r12, [sp, #4]
+	str r4, [r12, #2064]
+	str r5, [r12, #2068]
+	str lr, [r12, #2072]
+	mov r5, r12
+	ldr r4, [sp, #0]
+	cmp r4, #16
+	beq 20f
+	mov r12, #0
+	str r12, [r5, #2048]
+	str r12, [r5, #2052]
+	str r12, [r5, #2056]
+	str r12, [r5, #2060]
+	add lr, r5, #2048
+	cmp r4, #0
+	beq 22f
+24:
+	ldrb r12, [r3, #0]
+	strb r12, [lr, #0]
+	add r3, r3, #1
+	add lr, lr, #1
+	subs r4, r4, #1
+	bne 24b
+	b 23f
+22:
+23:
+	mov r12, #128
+	strb r12, [lr, #0]
+	ldr r12, [r5, #2048]
+	ldr lr, [r0, #256]
+	eor r12, r12, lr
+	str r12, [r5, #2048]
+	ldr r12, [r5, #2052]
+	ldr lr, [r0, #260]
+	eor r12, r12, lr
+	str r12, [r5, #2052]
+	ldr r12, [r5, #2056]
+	ldr lr, [r0, #264]
+	eor r12, r12, lr
+	str r12, [r5, #2056]
+	ldr r12, [r5, #2060]
+	ldr lr, [r0, #268]
+	eor r12, r12, lr
+	str r12, [r5, #2060]
+	b 21f
+20:
+	ldr r12, [r3, #0]
+	ldr lr, [r0, #240]
+	eor r12, r12, lr
+	str r12, [r5, #2048]
+	ldr r12, [r3, #4]
+	ldr lr, [r0, #244]
+	eor r12, r12, lr
+	str r12, [r5, #2052]
+	ldr r12, [r3, #8]
+	ldr lr, [r0, #248]
+	eor r12, r12, lr
+	str r12, [r5, #2056]
+	ldr r12, [r3, #12]
+	ldr lr, [r0, #252]
+	eor r12, r12, lr
+	str r12, [r5, #2060]
+21:
+	ldr r12, [r5, #2048]
+	ldr lr, [r2, #0]
+	eor r12, r12, lr
+	str r12, [r5, #2048]
+	ldr r12, [r5, #2052]
+	ldr lr, [r2, #4]
+	eor r12, r12, lr
+	str r12, [r5, #2052]
+	ldr r12, [r5, #2056]
+	ldr lr, [r2, #8]
+	eor r12, r12, lr
+	str r12, [r5, #2056]
+	ldr r12, [r5, #2060]
+	ldr lr, [r2, #12]
+	eor r12, r12, lr
+	str r12, [r5, #2060]
+	mov r12, #0
+	str r12, [r2, #0]
+	str r12, [r2, #4]
+	str r12, [r2, #8]
+	str r12, [r2, #12]
+	mov r3, r2
+	add r2, r5, #2048
+	mov r4, #1
+	push {r4, r5}
+	bl {vg_aes_ctr32}
+	ldr r4, [sp], #8
+	ldr r4, [r5, #2064]
+	ldr lr, [r5, #2072]
+	ldr r5, [r5, #2068]
+	bx lr
+
+vg_cmac_aes_init:
+	sub sp, sp, #2304
+	add r3, sp, #0
+	str r4, [r3, #2176]
+	str r5, [r3, #2180]
+	str r6, [r3, #2184]
+	str lr, [r3, #2188]
+	mov r4, r0
+	mov r5, r3
+	lsr r6, r2, #2
+	add r6, r6, #6
+	mov r0, r1
+	mov r1, r2
+	mov r2, r4
+	bl {vg_aes_expand_key_scratch}
+	mov r0, r4
+	mov r1, r6
+	add r2, r4, #240
+	mov r3, r5
+	bl {vg_cmac_aes_subkeys}
+	mov r12, #0
+	str r12, [r4, #272]
+	str r12, [r4, #276]
+	str r12, [r4, #280]
+	str r12, [r4, #284]
+	ldr r4, [r5, #2176]
+	ldr r6, [r5, #2184]
+	ldr lr, [r5, #2188]
+	ldr r5, [r5, #2180]
+	add sp, sp, #2304
+	bx lr
+
+vg_cmac_aes_absorb:
+	sub sp, sp, #2320
+	add r12, sp, #0
+	str lr, [r12, #12]
+	ldr lr, [sp, #2320]
+	str lr, [r12, #0]
+	ldr lr, [sp, #2324]
+	str lr, [r12, #4]
+	add lr, sp, #16
+	str lr, [r12, #8]
+	ldr lr, [sp, #12]
+	ldr r12, [sp, #8]
+	str r4, [r12, #2176]
+	str r5, [r12, #2180]
+	str r6, [r12, #2184]
+	str r7, [r12, #2188]
+	str r8, [r12, #2192]
+	str r9, [r12, #2196]
+	str lr, [r12, #2204]
+	str r10, [r12, #2200]
+	mov r4, r0
+	mov r5, r1
+	ldr r6, [sp, #0]
+	ldr r7, [sp, #4]
+	mov r10, r12
+	sub r0, r2, #1
+	and r0, r0, #15
+	add r0, r0, #1
+	orr r12, r2, r3
+	cmp r12, #0
+	beq 20f
+	b 21f
+20:
+	mov r0, #0
+21:
+	mov r1, #16
+	sub r1, r1, r0
+	lsr r12, r7, #4
+	cmp r12, #0
+	beq 22f
+	b 23f
+22:
+	add r12, r7, r0
+	lsr r12, r12, #4
+	cmp r12, #0
+	beq 24f
+	b 25f
+24:
+	mov r1, r7
+25:
+23:
+	add r2, r4, r0
+	add r2, r2, #288
+	sub r7, r7, r1
+	cmp r1, #0
+	beq 26f
+28:
+	ldrb r12, [r6, #0]
+	strb r12, [r2, #0]
+	add r6, r6, #1
+	add r2, r2, #1
+	subs r1, r1, #1
+	bne 28b
+	b 27f
+26:
+27:
+	mov r9, #0
+	cmp r7, #0
+	beq 29f
+	mov r9, #1
+	b 210f
+29:
+210:
+	mov r0, r4
+	mov r1, r5
+	add r2, r4, #272
+	add r3, r4, #288
+	push {r9, r10}
+	bl {vg_cmac_aes_update}
+	ldr r9, [sp], #8
+	cmp r7, #0
+	beq 211f
+	sub r9, r7, #1
+	lsr r9, r9, #4
+	lsl r8, r9, #4
+	mov r3, r6
+	b 212f
+211:
+	mov r9, #0
+	mov r8, #0
+	mov r3, r4
+212:
+	mov r0, r4
+	mov r1, r5
+	add r2, r4, #272
+	push {r9, r10}
+	bl {vg_cmac_aes_update}
+	ldr r9, [sp], #8
+	add r6, r6, r8
+	sub r7, r7, r8
+	mov r1, r7
+	add r2, r4, #288
+	sub r7, r7, r1
+	cmp r1, #0
+	beq 213f
+215:
+	ldrb r12, [r6, #0]
+	strb r12, [r2, #0]
+	add r6, r6, #1
+	add r2, r2, #1
+	subs r1, r1, #1
+	bne 215b
+	b 214f
+213:
+214:
+	ldr r4, [r10, #2176]
+	ldr r5, [r10, #2180]
+	ldr r6, [r10, #2184]
+	ldr r7, [r10, #2188]
+	ldr r8, [r10, #2192]
+	ldr r9, [r10, #2196]
+	ldr lr, [r10, #2204]
+	ldr r10, [r10, #2200]
+	add sp, sp, #2320
+	bx lr
+
+vg_cmac_aes_finish:
+	sub sp, sp, #2320
+	add r12, sp, #0
+	str lr, [r12, #8]
+	ldr lr, [sp, #2320]
+	str lr, [r12, #0]
+	add lr, sp, #12
+	str lr, [r12, #4]
+	ldr lr, [sp, #8]
+	ldr r12, [sp, #4]
+	str r4, [r12, #2176]
+	str r5, [r12, #2180]
+	str lr, [r12, #2184]
+	mov r5, r12
+	ldr r12, [sp, #0]
+	ldr lr, [r0, #272]
+	str lr, [r12, #0]
+	ldr lr, [r0, #276]
+	str lr, [r12, #4]
+	ldr lr, [r0, #280]
+	str lr, [r12, #8]
+	ldr lr, [r0, #284]
+	str lr, [r12, #12]
+	sub r4, r2, #1
+	and r4, r4, #15
+	add r4, r4, #1
+	orr r2, r2, r3
+	cmp r2, #0
+	beq 20f
+	b 21f
+20:
+	mov r4, #0
+21:
+	mov r2, r12
+	add r3, r0, #288
+	push {r4, r5}
+	bl {vg_cmac_aes_finalize}
+	ldr r4, [sp], #8
+	ldr r4, [r5, #2176]
+	ldr lr, [r5, #2184]
+	ldr r5, [r5, #2180]
+	add sp, sp, #2320
+	bx lr
