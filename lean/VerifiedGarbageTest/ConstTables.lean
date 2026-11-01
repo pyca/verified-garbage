@@ -158,7 +158,7 @@ pub static VG_TEST_TABLE: Table<16> = Table(*b\"\\
 #guard Rust.wordBytes 0 == "\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00"
 #guard Rust.wordBytes 0xffffffffffffffff == "\\xff\\xff\\xff\\xff\\xff\\xff\\xff\\xff"
 
-#guard (Rust.checkConsts [.of artifact] (.of artifact)).isOk
+#guard (Rust.checkConsts [.of (.of artifact)] (.of (.of artifact))).isOk
 #guard Rust.consistent consts [("VG_TEST_TABLE", [7, 42]), ("VG_OTHER", [1])]
 #guard !Rust.consistent consts [("VG_OTHER", [1]), ("VG_TEST_TABLE", [7, 43])]
 #guard Rust.tableName "VG_P256_COMB7" && !Rust.tableName "vg_table" && !Rust.tableName "_A" &&
