@@ -564,8 +564,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       exact loop_of (N := 64) (by decide) (by rw [hp.len, e10]) hlen
         (fun i hi s h => step10 hp e10 hi h) rfl rfl (by rfl) (gp _ _ fun _ _ => rfl) rfl rfl rfl rfl
 
-theorem pre_of {s : State} (h : (Spec.MlKem.compressEncodeContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.compressEncodeContract, Spec.MlKem.compressEncodeSig, Arm.abi, Arm.argRegs,
+theorem pre_of {s : State} (h : (Proof.MlKem.compressEncodeContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
@@ -584,15 +584,15 @@ def satState : State where
   wr := [⟨0x2000, 32⟩]
 
 theorem verified : Verified Arm.target Impl.MlKem.Arm.compressEncode
-    (Spec.MlKem.compressEncodeContract Arm.abi) := by
+    (Proof.MlKem.compressEncodeContract Arm.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, hpres, hsp, h⟩ := correct hp
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlKem.compressEncodeContract, Spec.MlKem.compressEncodeSig, Arm.abi,
+    sig_post [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact h
-  · sig_pub [Spec.MlKem.compressEncodeContract, Spec.MlKem.compressEncodeSig, Arm.abi,
+  · sig_pub [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     obtain ⟨-, h0, h1, h2, h3⟩ := h
     intro r hr
@@ -601,7 +601,7 @@ theorem verified : Verified Arm.target Impl.MlKem.Arm.compressEncode
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.compressEncodeContract, Spec.MlKem.compressEncodeSig, Arm.abi,
+    · sig_reduce [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, Arm.abi,
         Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
       sig_and_intros
       all_goals first

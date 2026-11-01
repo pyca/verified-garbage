@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 import VerifiedGarbage.Proof.MlKem.Encode1024
 public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.MlKem1024.Contract
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.Arm.Add
@@ -16,6 +17,7 @@ meta import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 meta import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Proof.MlKem1024.Contract
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem.Arm.Add
@@ -44,6 +46,7 @@ namespace VG.Proof.MlKem1024.Arm.Decompress
 
 open VG VG.Arm VG.Impl.MlKem.Arm VG.Impl.MlKem1024.Arm
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem VG.Proof.MlKem.Arm
 open VG.Proof.MlKem.Arm.Add (ptr_succ)
@@ -51,10 +54,10 @@ open VG.Proof.MlKem.Arm.Decompress (dec)
 
 /-! ## The values -/
 
-theorem mem_widths {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) : d = 5 ∨ d = 11 :=
+theorem mem_widths {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) : d = 5 ∨ d = 11 :=
   mem_compressWidths1024 hd
 
-theorem dec_toNat4 {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) {y : BitVec 32} (hy : y.toNat < 2 ^ d) :
+theorem dec_toNat4 {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {y : BitVec 32} (hy : y.toNat < 2 ^ d) :
     (dec d y).toNat = (decompress d y.toNat).val := by
   rw [(decompress1024_val hd hy).1]
   unfold dec
@@ -62,7 +65,7 @@ theorem dec_toNat4 {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) {y : Bit
   rcases mem_widths hd with rfl | rfl <;> bv_omega
 
 /-- A decompressed field, as a stored word. -/
-theorem dec_eq4 {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) {y : BitVec 32} {n : Nat} (hy : y.toNat = n)
+theorem dec_eq4 {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {y : BitVec 32} {n : Nat} (hy : y.toNat = n)
     (hn : n < 2 ^ d) : dec d y = BitVec.ofNat 32 (decompress d n).val :=
   ofNat_val_eq (by rw [dec_toNat4 hd (hy ▸ hn), hy])
 
@@ -224,7 +227,7 @@ structure Pre (s₀ : State) : Prop where
   disj : (inR s₀).Disjoint (polyRegion (F s₀))
   fitB : (pb s₀).toNat + len s₀ ≤ 2 ^ 32
   fitF : (pf s₀).toNat + 1024 ≤ 2 ^ 32
-  d : dd s₀ ∈ Spec.MlKem1024.compressWidths
+  d : dd s₀ ∈ Proof.MlKem1024.compressWidths
   len : len s₀ = 32 * dd s₀
 
 /-- Within iteration `i` of the loop, after the first `e` fields of the group. -/
@@ -487,8 +490,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   · have e11 : dd s₀ = 11 := by have := of_decide_eq_false e; omega_arith
     rw [← e11]; exact loop_ok hp rfl rfl rfl rfl rfl
 
-theorem pre_of {s : State} (h : (Spec.MlKem1024.decodeDecompressContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig, Arm.abi,
+theorem pre_of {s : State} (h : (Proof.MlKem1024.decodeDecompressContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, Arm.abi,
     Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
@@ -507,22 +510,22 @@ def satState : State where
   wr := [⟨0x2000, 1024⟩]
 
 theorem verified : Verified Arm.target decodeDecompress1024
-    (Spec.MlKem1024.decodeDecompressContract Arm.abi) := by
+    (Proof.MlKem1024.decodeDecompressContract Arm.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, hpres, hsp, h⟩ := correct hp
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig, Arm.abi,
+    sig_post [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact h
-  · sig_pub [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig, Arm.abi,
+  · sig_pub [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     obtain ⟨-, h0, h1, h2, h3⟩ := h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · refine ⟨satState, ?_⟩
-    sig_sat_check [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig, Arm.abi,
+    sig_sat_check [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
 
 end VG.Proof.MlKem1024.Arm.Decompress

@@ -272,15 +272,15 @@ def accSat : State where
   wr := [⟨0x1000, 1024⟩]
 
 theorem add_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.add (Spec.MlKem.addContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlKem.X86_64.add (Proof.MlKem.addContract X86_64.abi) :=
   Verified.of_correct add_correct add_ct (by
-    mlkem_implies [Spec.MlKem.addContract, Spec.MlKem.accSig, accK, X86_64.abi, X86_64.argRegs]
+    mlkem_implies [Proof.MlKem.addContract, Proof.MlKem.accSig, accK, X86_64.abi, X86_64.argRegs]
       [accSat] using accSat)
 
 theorem sub_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.sub (Spec.MlKem.subContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlKem.X86_64.sub (Proof.MlKem.subContract X86_64.abi) :=
   Verified.of_correct sub_correct sub_ct (by
-    mlkem_implies [Spec.MlKem.subContract, Spec.MlKem.accSig, accK, X86_64.abi, X86_64.argRegs]
+    mlkem_implies [Proof.MlKem.subContract, Proof.MlKem.accSig, accK, X86_64.abi, X86_64.argRegs]
       [accSat] using accSat)
 
 end VG.Proof.MlKem.X86_64

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Saved
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Squeeze
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
 

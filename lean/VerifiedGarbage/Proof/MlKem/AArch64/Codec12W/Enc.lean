@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 public import VerifiedGarbage.Impl.MlKem.AArch64.Codec12W
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Lanes
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncMath
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Bytes
 import VerifiedGarbage.Proof.MlKem.Encode

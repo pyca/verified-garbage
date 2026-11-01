@@ -372,33 +372,33 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.nttInvContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, RISCV64.abi,
+theorem pre_of {s : State} (h : (Proof.MlKem.nttInvContract RISCV64.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, RISCV64.abi,
     RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
 
-theorem verified : Verified RISCV64.target Impl.MlKem.RISCV64.nttInv (Spec.MlKem.nttInvContract RISCV64.abi) := by
+theorem verified : Verified RISCV64.target Impl.MlKem.RISCV64.nttInv (Proof.MlKem.nttInvContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.a0, .a1] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hra, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp, hra⟩, ?_⟩
-    sig_post [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, RISCV64.abi,
+    sig_post [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, RISCV64.abi,
       RISCV64.argRegs]
     exact h
-  · sig_pub [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, RISCV64.abi,
+  · sig_pub [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, RISCV64.abi,
       RISCV64.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.2.1
     · exact h.2.2
-  · sig_pub [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, RISCV64.abi,
+  · sig_pub [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, RISCV64.abi,
       RISCV64.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, RISCV64.abi,
+    · sig_reduce [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, RISCV64.abi,
         RISCV64.argRegs]
       sig_and_intros
       all_goals first

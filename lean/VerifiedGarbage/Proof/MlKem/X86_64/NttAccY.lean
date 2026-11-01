@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc16
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunAccR101

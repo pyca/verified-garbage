@@ -38,8 +38,8 @@ theorem noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p a f g w :
     (hs : TailSetup s p f g w) :
     WP isa (Impl.MlKem.AArch64.Noise.noisePair L kg n) s fun t =>
       Kept (pairWrites p f g w) s t ∧
-      Spec.MlKem.PolyIs t.mem f (sampled s.mem a n (transformed L kg n)) ∧
-      Spec.MlKem.PolyIs t.mem g (sampled s.mem a (n+1) (transformed L kg (n+1))) := by
+      Proof.MlKem.PolyIs t.mem f (sampled s.mem a n (transformed L kg n)) ∧
+      Proof.MlKem.PolyIs t.mem g (sampled s.mem a (n+1) (transformed L kg (n+1))) := by
   change WP isa (.seq (.block (Impl.MlKem.AArch64.Noise.noiseInit L kg n))
     (seqs [Impl.MlKem.AArch64.Noise.squeezePair,
       outCode (outOff L kg n) (if kg then KG.NS else KEM.NS) 400 (transformed L kg n),

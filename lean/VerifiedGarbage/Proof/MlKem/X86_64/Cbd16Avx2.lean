@@ -387,9 +387,9 @@ theorem cbd2_16Y_ct : ConstantTime isa Cbd16.cbd2_16K.pre Cbd16.cbd2_16K.pub cbd
     (by taint_decide)
 
 theorem cbd2_16Y_verified :
-    Verified X86_64.target cbd2_16Avx2 (Spec.MlKem.cbd2_16Contract X86_64.abi) :=
+    Verified X86_64.target cbd2_16Avx2 (Proof.MlKem.cbd2_16Contract X86_64.abi) :=
   Verified.of_correct cbd2_16Y_correct cbd2_16Y_ct (by
-    mlkem_implies [Spec.MlKem.cbd2_16Contract, Spec.MlKem.cbd2_16Sig, Cbd16.cbd2_16K, X86_64.abi,
+    mlkem_implies [Proof.MlKem.cbd2_16Contract, Proof.MlKem.cbd2_16Sig, Cbd16.cbd2_16K, X86_64.abi,
       X86_64.argRegs] [cbd2_16Sat] using cbd2_16Sat)
 
 end VG.Proof.MlKem.X86_64

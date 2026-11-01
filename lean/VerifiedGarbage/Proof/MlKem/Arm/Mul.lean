@@ -304,8 +304,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.mulContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.mulContract, Spec.MlKem.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of {s : State} (h : (Proof.MlKem.mulContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.mulContract, Proof.MlKem.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
@@ -323,15 +323,15 @@ def satState : State where
   rd := [⟨0x2000, 1024⟩, ⟨0x3000, 1024⟩]
   wr := [⟨0x1000, 1024⟩, ⟨0x4000, 1024⟩]
 
-theorem verified : Verified Arm.target Impl.MlKem.Arm.multiplyNTTs (Spec.MlKem.mulContract Arm.abi) := by
+theorem verified : Verified Arm.target Impl.MlKem.Arm.multiplyNTTs (Proof.MlKem.mulContract Arm.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, hpres, hsp, h⟩ := correct hp
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlKem.mulContract, Spec.MlKem.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_post [Proof.MlKem.mulContract, Proof.MlKem.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact h
-  · sig_pub [Spec.MlKem.mulContract, Spec.MlKem.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlKem.mulContract, Proof.MlKem.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     obtain ⟨-, h0, h1, h2, h3⟩ := h
     intro r hr
@@ -340,7 +340,7 @@ theorem verified : Verified Arm.target Impl.MlKem.Arm.multiplyNTTs (Spec.MlKem.m
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.mulContract, Spec.MlKem.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    · sig_reduce [Proof.MlKem.mulContract, Proof.MlKem.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
         Arm.Loc.val]
       sig_and_intros
       all_goals first

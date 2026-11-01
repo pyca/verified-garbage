@@ -462,9 +462,9 @@ def sat : State where
   wr := [⟨0x1000, 1024⟩, ⟨0x4000, 1024⟩]
 
 theorem mul_verified :
-    Verified AArch64.target multiplyNTTs (Spec.MlKem.mulContract AArch64.abi) :=
+    Verified AArch64.target multiplyNTTs (Proof.MlKem.mulContract AArch64.abi) :=
   Verified.of_correct correct ct (by
-    mlkem_implies [Spec.MlKem.mulContract, Spec.MlKem.mulSig, mulAArch64, AArch64.abi,
+    mlkem_implies [Proof.MlKem.mulContract, Proof.MlKem.mulSig, mulAArch64, AArch64.abi,
       AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.MlKem.AArch64.Mul

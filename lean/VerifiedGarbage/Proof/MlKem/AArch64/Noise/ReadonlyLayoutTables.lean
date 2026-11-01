@@ -23,7 +23,7 @@ section
 section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
-open VG.Spec.MlKem (PolyIsW)
+open VG.Proof.MlKem (PolyIsW)
 open VG.Proof.MlKem (cw)
 open VG.Spec.MlKem
 
@@ -62,7 +62,7 @@ section
 section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
-open VG.Spec.MlKem (PolyIsW)
+open VG.Proof.MlKem (PolyIsW)
 open VG.Proof.MlKem (cw)
 
 theorem readonly_noiseAll_layout {s : State} {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool)
@@ -100,7 +100,7 @@ end
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
-open VG.Spec.MlKem (PolyIsW)
+open VG.Proof.MlKem (PolyIsW)
 open VG.Proof.MlKem (cw)
 
 theorem allWrites_tables_far {s : State} {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool)

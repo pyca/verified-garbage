@@ -15,12 +15,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.MlKem1024.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.MlKem1024.compressEncodeApi.artifact RISCV64.target {
-    code := Impl.MlKem1024.RISCV64.compressEncode1024
-    verified := Proof.MlKem1024.RISCV64.CompressEncode.verified },
-  Spec.MlKem1024.decodeDecompressApi.artifact RISCV64.target {
-    code := Impl.MlKem1024.RISCV64.decodeDecompress1024
-    verified := Proof.MlKem1024.RISCV64.Decompress.verified },
   Spec.MlKem1024.checkEkApi.artifact RISCV64.target {
     code := Impl.MlKem1024.RISCV64.checkEk1024
     verified := Proof.MlKem1024.RISCV64.CheckEk.verified },

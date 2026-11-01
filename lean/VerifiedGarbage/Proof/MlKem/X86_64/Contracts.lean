@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
@@ -10,7 +10,7 @@ public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 # ML-KEM on x86-64: the contracts the proofs are written against
 
 For each function, a contract with the facts of its shared contract
-(`Spec/MlKem/Poly.lean`, `Spec/MlKem/Contract.lean`) spelled out for x86-64:
+(`Proof/MlKem/PolyContract.lean`, `Spec/MlKem/Contract.lean`) spelled out for x86-64:
 the arguments in their registers, the permitted regions, their disjointness,
 and the postcondition. The proofs are written against these, and callers use
 them (`WP.call`); `Verified.of_correct` moves a proof to the shared contract,

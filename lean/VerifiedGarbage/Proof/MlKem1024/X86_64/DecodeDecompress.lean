@@ -30,6 +30,7 @@ open VG VG.X86_64 VG.Impl.MlKem1024.X86_64
 open VG.Impl.MlKem.X86_64 (ceAcc ceSt ceTail ceLoopW ddLd ddVals ddTail ddLoopW)
 open VG.Proof.MlKem VG.Proof.MlKem.X86_64
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
 /-- A group of 11 bytes: values 0–4 (55 bits) are the low 6 bytes 0–5; values
@@ -97,7 +98,7 @@ theorem dgrp11_ok (B : List Byte) (hB : B.length = 32 * 11) {i : Nat} (hi : i < 
 
 /-- The loop for the width `d`, from a state with `b` in `rdi` and `f` in `rsi`. -/
 theorem ddLoop_ok {s₀ : State} (hp : decodeDecompress1024K.pre s₀) {d : Nat}
-    (hd : d ∈ Spec.MlKem1024.compressWidths) (hdd : dArg s₀ .rdx = d) {grp : List Instr}
+    (hd : d ∈ Proof.MlKem1024.compressWidths) (hdd : dArg s₀ .rdx = d) {grp : List Instr}
     (hgrp : ∀ i < 32, ∀ s, DD.GrpIn 8 d (DD.B s₀ d) i s → WP isa (.block grp) s (DD.GrpOut d 8 (DD.B s₀ d) i s))
     {s : State} (hdi : s.gpr .rdi = DD.bP s₀) (hsi : s.gpr .rsi = DD.fP s₀) (hrd : s.rd = s₀.rd)
     (hwr : s.wr = s₀.wr) (hm : s.mem = s₀.mem) :
@@ -169,16 +170,16 @@ def decodeDecompress1024Sat : State where
   wr := [⟨0x2000, 1024⟩]
 
 theorem decodeDecompress1024_verified :
-    Verified X86_64.target decodeDecompress1024 (Spec.MlKem1024.decodeDecompressContract X86_64.abi) :=
+    Verified X86_64.target decodeDecompress1024 (Proof.MlKem1024.decodeDecompressContract X86_64.abi) :=
   Verified.of_correct decodeDecompress1024_correct decodeDecompress1024_ct (by
-    mlkem_implies [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
+    mlkem_implies [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
       decodeDecompress1024K, X86_64.abi, X86_64.argRegs] [decodeDecompress1024Sat] using decodeDecompress1024Sat)
 
 theorem dd4_nosp : NoSp decodeDecompress1024 := nosp_of (by decide +kernel)
 theorem dd4_depth : decodeDecompress1024.depth = 0 := by decide +kernel
 
 /-- `vg_mlkem1024_decode_decompress`, for the calls of the top-level functions. -/
-theorem ddImpl1024 : DDImpl "vg_mlkem1024_decode_decompress" decodeDecompress1024 Spec.MlKem1024.compressWidths :=
+theorem ddImpl1024 : DDImpl "vg_mlkem1024_decode_decompress" decodeDecompress1024 Proof.MlKem1024.compressWidths :=
   ⟨fun _ hd => by rcases widths1024 hd with rfl | rfl <;> decide, decodeDecompress1024_correct, decodeDecompress1024_ct, dd4_nosp,
     dd4_depth⟩
 

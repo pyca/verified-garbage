@@ -20,9 +20,9 @@ theorem noisePair_layout {s : State} {L : KemLay} (wf : L.Wf) (room : Room L) (k
       Kept (pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
         (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))
         (B+BitVec.ofNat 64 (nttOff kg))) s t ∧
-      Spec.MlKem.PolyIs t.mem (B+BitVec.ofNat 64 (outOff L kg n))
+      Proof.MlKem.PolyIs t.mem (B+BitVec.ofNat 64 (outOff L kg n))
         (sampled s.mem (B+BitVec.ofNat 64 (seedOff kg)) n (transformed L kg n)) ∧
-      Spec.MlKem.PolyIs t.mem (B+BitVec.ofNat 64 (outOff L kg (n+1)))
+      Proof.MlKem.PolyIs t.mem (B+BitVec.ofNat 64 (outOff L kg (n+1)))
         (sampled s.mem (B+BitVec.ofNat 64 (seedOff kg)) (n+1) (transformed L kg (n+1))) := by
   have lim := layout_limits wf kg
   have fit0 := outOff_fits wf room kg (by omega : n<2*L.k)

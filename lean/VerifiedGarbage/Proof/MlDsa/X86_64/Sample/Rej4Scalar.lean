@@ -45,7 +45,7 @@ open VG.Proof.MlKem.X86_64.S4 (R4 Pre aP at' sd scr aR scrR stkR sdR pre_of pub_
 open VG.Proof.MlDsa.X86_64.Sample (rnK nil_regs rejNTT_correct rejNTT_ct)
 open VG.Proof.MlDsa.Sample (rnFold toPoly)
 open VG.Proof.MlDsa.Arith (polyIs_frame)
-open VG.Spec.MlKem (poly4)
+open VG.Proof.MlKem (poly4)
 open VG.Spec.MlDsa (G PolyIs)
 
 theorem rn_nosp : NoSp Impl.MlDsa.X86_64.Sample.rejNTT := nosp_of (by decide +kernel)

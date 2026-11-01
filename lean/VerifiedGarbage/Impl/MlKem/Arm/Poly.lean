@@ -5,7 +5,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 /-!
 # ML-KEM: the coefficient-wise primitives on 32-bit ARM
 
-The primitives of `Spec/MlKem/Poly.lean` (and the encapsulation key check of
+The primitives of `Proof/MlKem/PolyContract.lean` (and the encapsulation key check of
 `Spec/MlKem/Contract.lean`) that go through the coefficients once, each a
 loop with a straight-line body. They take at most four arguments, in
 `r0`–`r3`, and use only those registers and `r12`, so they save nothing and

@@ -30,7 +30,7 @@ def cf (d a : Nat) : Nat := (a * compressMul1024 d + compressAdd1024) / 2 ^ 19 %
 
 theorem cf_lt (d a : Nat) : cf d a < 2 ^ d := Nat.mod_lt _ (Nat.two_pow_pos d)
 
-theorem cf_eq {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) {a : Nat} (ha : a < q) :
+theorem cf_eq {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {a : Nat} (ha : a < q) :
     cf d a = compress d (ofNat a) := by
   rw [compress1024_eq hd, ofNat_of_lt ha, cf]
 
@@ -38,7 +38,7 @@ theorem cmul_eq (d : Nat) : cmul1024 d = compressMul1024 d := rfl
 
 /-- `cOp d` computes `cf d a` in `eax` from `eax = a < q`, changing only `eax`, `edx` and the
 flags. -/
-theorem cOp_spec {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (is : List Instr) (s : State)
+theorem cOp_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (is : List Instr) (s : State)
     (P : State → Prop) {a : Nat} (ha : a < q) (h : (s.gpr .eax).toNat = a)
     (k : ∀ s', Only [.eax, .edx] s s' → (s'.gpr .eax).toNat = cf d a → WP isa (.block is) s' P) :
     WP isa (.block (cOp d ++ is)) s P := by
@@ -64,7 +64,7 @@ theorem cOp_spec {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (is : List
     rfl
 
 /-- `mov eax, [esi + 4j]`, then `cOp d`. -/
-theorem ldC_spec {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (j : Nat) (is : List Instr)
+theorem ldC_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (j : Nat) (is : List Instr)
     (s : State) (P : State → Prop) {a : Nat} (hc : Coef s j a)
     (k : ∀ s', Only [.eax, .edx] s s' → (s'.gpr .eax).toNat = cf d a → WP isa (.block is) s' P) :
     WP isa (.block (ldC d j ++ is)) s P :=
@@ -73,7 +73,7 @@ theorem ldC_spec {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (j : Nat) 
       rw [o.gpr r hr]; simp only [State.setReg]
       rw [ite_eq_right_iff.mpr fun (e : r = .eax) => absurd (e ▸ List.mem_cons_self ..) hr], o.mem, o.rd, o.wr⟩ v)
 
-theorem accS_spec {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (o j : Nat) (is : List Instr)
+theorem accS_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (o j : Nat) (is : List Instr)
     (s : State) (P : State → Prop) {a A : Nat} (hc : Coef s (o + j) a) (hA : (s.gpr .ebx).toNat = A)
     (hAl : A < 2 ^ (32 - d))
     (k : ∀ s', Only [.eax, .edx, .ebx] s s' → (s'.gpr .ebx).toNat = A * 2 ^ d + cf d a →
@@ -100,7 +100,7 @@ theorem accS_spec {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (o j : Na
       exact this
     rw [BitVec.toNat_add, ror_shl hd'.1 hd'.2 _ hb hAl, v₁, Nat.mod_eq_of_lt (by omega)]
 
-theorem accSs_spec {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) (o : Nat) (a : Nat → Nat) :
+theorem accSs_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (o : Nat) (a : Nat → Nat) :
     ∀ (j : Nat) (is : List Instr) (s : State) (P : State → Prop) (A : Nat),
       (∀ i < j, Coef s (o + i) (a i)) → (s.gpr .ebx).toNat = A → (A + 1) * 2 ^ (d * j) ≤ 2 ^ 32 →
       (∀ s', Only [.eax, .edx, .ebx] s s' →

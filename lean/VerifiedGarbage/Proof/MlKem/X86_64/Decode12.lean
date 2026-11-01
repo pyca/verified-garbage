@@ -195,9 +195,9 @@ def decode12Sat : State where
   wr := [⟨0x2000, 1024⟩]
 
 theorem decode12_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.decode12 (Spec.MlKem.decode12Contract X86_64.abi) :=
+    Verified X86_64.target Impl.MlKem.X86_64.decode12 (Proof.MlKem.decode12Contract X86_64.abi) :=
   Verified.of_correct decode12_correct decode12_ct (by
-    mlkem_implies [Spec.MlKem.decode12Contract, Spec.MlKem.decode12Sig, decode12K, X86_64.abi,
+    mlkem_implies [Proof.MlKem.decode12Contract, Proof.MlKem.decode12Sig, decode12K, X86_64.abi,
       X86_64.argRegs] [decode12Sat] using decode12Sat)
 
 end VG.Proof.MlKem.X86_64

@@ -481,10 +481,6 @@ pub mod mldsa87;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
-pub mod mlkem;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
 pub mod mlkem1024;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]

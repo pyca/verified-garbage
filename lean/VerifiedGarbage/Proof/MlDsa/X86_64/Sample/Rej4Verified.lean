@@ -25,8 +25,8 @@ open VG.Proof.MlDsa.X86_64.Sample (leakBytes_inj)
 open VG.Spec.MlDsa (G)
 open VG.Spec.Sha3 (bytesAt)
 
-theorem seed4_eq : Spec.MlDsa.seed4 = Spec.MlKem.seed4 := rfl
-theorem poly4_eq : Spec.MlDsa.poly4 = Spec.MlKem.poly4 := rfl
+theorem seed4_eq : Spec.MlDsa.seed4 = Proof.MlKem.seed4 := rfl
+theorem poly4_eq : Spec.MlDsa.poly4 = Proof.MlKem.poly4 := rfl
 
 theorem r4_post {s s' : State} (h : r4K.post s s') :
     let r := (s'.gpr .rax).setWidth 32
@@ -39,9 +39,9 @@ theorem r4_post {s s' : State} (h : r4K.post s s') :
   intro r
   simp only [seed4_eq, poly4_eq]
   by_cases hall : ((List.range 4).all fun k =>
-      (rnFold [] (G (Spec.MlKem.seed4 s.mem (s.gpr .rdi) k) 1008)).length == 256) = true
+      (rnFold [] (G (Proof.MlKem.seed4 s.mem (s.gpr .rdi) k) 1008)).length == 256) = true
   · rw [ite_eq_left hall] at hr
-    have hs : ∀ k < 4, (rnFold [] (G (Spec.MlKem.seed4 s.mem (s.gpr .rdi) k) 1008)).length = 256 := fun k hk => by
+    have hs : ∀ k < 4, (rnFold [] (G (Proof.MlKem.seed4 s.mem (s.gpr .rdi) k) 1008)).length = 256 := fun k hk => by
       simpa using List.all_eq_true.mp hall k (List.mem_range.mpr hk)
     refine ⟨fun _ k hk => (hp k hk (hs k hk)).1, .inl ⟨hr, fun k hk => ⟨{ Spec.MlDsa.minBounds with rejNTT := 1008 }, ?_⟩⟩⟩
     show Spec.MlDsa.rejNTTPoly 1008 _ = _

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Bounds
 public import VerifiedGarbage.Impl.MlKem.AArch64.Dot
-public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.MlKem.PolyContract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Arithmetic
 
 import VerifiedGarbage.Proof.Framework.Block

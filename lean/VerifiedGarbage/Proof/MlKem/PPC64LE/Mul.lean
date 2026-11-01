@@ -319,8 +319,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.mulContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem.mulContract, Spec.MlKem.mulSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.mulContract PPC64LE.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem.mulContract, Proof.MlKem.mulSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
 
@@ -334,14 +334,14 @@ def satState : State where
   rd := [⟨0x2000, 1024⟩, ⟨0x3000, 1024⟩]
   wr := [⟨0x1000, 1024⟩, ⟨0x4000, 1024⟩]
 
-theorem verified : Verified PPC64LE.target Impl.MlKem.PPC64LE.multiplyNTTs (Spec.MlKem.mulContract PPC64LE.abi) := by
+theorem verified : Verified PPC64LE.target Impl.MlKem.PPC64LE.multiplyNTTs (Proof.MlKem.mulContract PPC64LE.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.r3, .r4, .r5, .r6] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_)
     (by taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hlr, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp, hlr⟩, ?_⟩
-    sig_post [Spec.MlKem.mulContract, Spec.MlKem.mulSig, PPC64LE.abi, PPC64LE.argRegs]
+    sig_post [Proof.MlKem.mulContract, Proof.MlKem.mulSig, PPC64LE.abi, PPC64LE.argRegs]
     exact h
-  · sig_pub [Spec.MlKem.mulContract, Spec.MlKem.mulSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlKem.mulContract, Proof.MlKem.mulSig, PPC64LE.abi, PPC64LE.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -349,12 +349,12 @@ theorem verified : Verified PPC64LE.target Impl.MlKem.PPC64LE.multiplyNTTs (Spec
     · exact h.2.2.1
     · exact h.2.2.2.1
     · exact h.2.2.2.2
-  · sig_pub [Spec.MlKem.mulContract, Spec.MlKem.mulSig, PPC64LE.abi, PPC64LE.argRegs] at h
+  · sig_pub [Proof.MlKem.mulContract, Proof.MlKem.mulSig, PPC64LE.abi, PPC64LE.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.mulContract, Spec.MlKem.mulSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlKem.mulContract, Proof.MlKem.mulSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial

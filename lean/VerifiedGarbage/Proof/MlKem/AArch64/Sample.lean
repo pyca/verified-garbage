@@ -377,9 +377,9 @@ theorem sample_strongWith (v : Proof.Sha3.AArch64.Permutation) (s : State) (hs :
 theorem ct_strongWith (v : Proof.Sha3.AArch64.Permutation) : ConstantTime isa sampleStrong.pre sampleStrong.pub (sampleNTTWith v.callee) := (ct v)
 
 theorem sample_verifiedWith (v : Proof.Sha3.AArch64.Permutation) :
-    Verified AArch64.target (sampleNTTWith v.callee) (Spec.MlKem.sampleNTTContract AArch64.abi 16) :=
+    Verified AArch64.target (sampleNTTWith v.callee) (Proof.MlKem.sampleNTTContract AArch64.abi 16) :=
   Verified.of_correct (sample_correctWith v) (ct v) (by
-    mlkem_implies [Spec.MlKem.sampleNTTContract, Spec.MlKem.sampleNTTSig, sampleAArch64,
+    mlkem_implies [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, sampleAArch64,
       AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 theorem sample_correct (s : State) (hs : sampleAArch64.pre s) :
@@ -394,7 +394,7 @@ theorem ct_strong : ConstantTime isa sampleStrong.pre sampleStrong.pub sampleNTT
   ct_strongWith .scalar
 
 theorem sample_verified :
-    Verified AArch64.target sampleNTT (Spec.MlKem.sampleNTTContract AArch64.abi 16) :=
+    Verified AArch64.target sampleNTT (Proof.MlKem.sampleNTTContract AArch64.abi 16) :=
   sample_verifiedWith .scalar
 
 end VG.Proof.MlKem.AArch64.Sample

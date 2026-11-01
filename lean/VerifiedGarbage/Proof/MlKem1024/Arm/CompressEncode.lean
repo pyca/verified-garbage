@@ -49,6 +49,7 @@ namespace VG.Proof.MlKem1024.Arm.CompressEncode
 
 open VG VG.Arm VG.Impl.MlKem.Arm VG.Impl.MlKem1024.Arm
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem VG.Proof.MlKem.Arm
 open VG.Proof.MlKem.Arm.Add (ptr_succ reduced_zero)
@@ -66,10 +67,10 @@ def m11 : BitVec 32 := (0x4 : BitVec 16) ++ ((0xEBEE : BitVec 16).setWidth 32).e
 theorem m5_toNat : m5.toNat = compressMul1024 5 := by decide
 theorem m11_toNat : m11.toNat = compressMul1024 11 := by decide
 
-theorem mem_widths {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) : d = 5 ∨ d = 11 :=
+theorem mem_widths {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) : d = 5 ∨ d = 11 :=
   mem_compressWidths1024 hd
 
-theorem cmpV4_toNat {d : Nat} (hd : d ∈ Spec.MlKem1024.compressWidths) {M : BitVec 32}
+theorem cmpV4_toNat {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {M : BitVec 32}
     (hM : M.toNat = compressMul1024 d) (x : Zq) :
     (cmpV4 M (BitVec.ofNat 32 x.val)).toNat = (x.val * compressMul1024 d + compressAdd1024) / 2 ^ 19 := by
   have hx := val_lt x
@@ -253,7 +254,7 @@ structure Pre (s₀ : State) : Prop where
   disj : (polyRegion (F s₀)).Disjoint (outR s₀)
   fitF : (pf s₀).toNat + 1024 ≤ 2 ^ 32
   fitO : (po s₀).toNat + len s₀ ≤ 2 ^ 32
-  d : dd s₀ ∈ Spec.MlKem1024.compressWidths
+  d : dd s₀ ∈ Proof.MlKem1024.compressWidths
   len : len s₀ = 32 * dd s₀
   red : Reduced s₀.mem (F s₀)
 
@@ -568,8 +569,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       simp only [State.setReg, subFlags]; rw [ite_eq_right (by intro e; subst e; simp [preserved] at hr)])
       rfl rfl rfl rfl
 
-theorem pre_of {s : State} (h : (Spec.MlKem1024.compressEncodeContract Arm.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig, Arm.abi, Arm.argRegs,
+theorem pre_of {s : State} (h : (Proof.MlKem1024.compressEncodeContract Arm.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
@@ -587,15 +588,15 @@ def satState : State where
   rd := [⟨0x1000, 1024⟩]
   wr := [⟨0x2000, 160⟩]
 
-theorem verified : Verified Arm.target compressEncode1024 (Spec.MlKem1024.compressEncodeContract Arm.abi) := by
+theorem verified : Verified Arm.target compressEncode1024 (Proof.MlKem1024.compressEncodeContract Arm.abi) := by
   refine ⟨fun s hs => ?_, Add.ctRegs [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, hpres, hsp, h⟩ := correct hp
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
-    sig_post [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig, Arm.abi,
+    sig_post [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact h
-  · sig_pub [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig, Arm.abi,
+  · sig_pub [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     obtain ⟨-, h0, h1, h2, h3⟩ := h
     intro r hr
@@ -604,7 +605,7 @@ theorem verified : Verified Arm.target compressEncode1024 (Spec.MlKem1024.compre
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig, Arm.abi,
+    · sig_reduce [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, Arm.abi,
         Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
       sig_and_intros
       all_goals first

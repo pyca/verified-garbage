@@ -16,7 +16,7 @@ open VG.Impl.MlDsa.X86_64.Sample.Rej4 (oJ half first second zeroJ rejNTT4Avx2)
 open VG.Proof.MlKem.X86_64 (Keep ea_at add_ofNat_zero pR WP.keep ofNat64_pred sample4K)
 open VG.Proof.MlKem.X86_64.S4
 open VG.Proof.MlDsa.Sample (rnFold Stored stored_nil stored_frame stored_polyIs toPoly G_length)
-open VG.Spec.MlKem (poly4 seed4)
+open VG.Proof.MlKem (poly4 seed4)
 open VG.Spec.MlDsa (Zq G PolyIs)
 open VG.Proof.MlKem (xofByte)
 

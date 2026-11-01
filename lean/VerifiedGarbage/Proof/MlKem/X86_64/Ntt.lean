@@ -239,9 +239,9 @@ def inPlaceSat : State where
   wr := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
 
 theorem ntt_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.ntt (Spec.MlKem.nttContract X86_64.abi) :=
+    Verified X86_64.target Impl.MlKem.X86_64.ntt (Proof.MlKem.nttContract X86_64.abi) :=
   Verified.of_correct ntt_correct ntt_ct (by
-    mlkem_implies [Spec.MlKem.nttContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, inPlaceK,
+    mlkem_implies [Proof.MlKem.nttContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, inPlaceK,
       X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
 
 end VG.Proof.MlKem.X86_64

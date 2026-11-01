@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 # ML-KEM on x86-64: `vg_mlkem768_encrypt_mul` and `vg_mlkem1024_encrypt_mul`, verified
 
 The proof of `EncMul.lean` for each backend and rank, its constant time,
-and its contract implying the shared one of `Spec/MlKem/KpkeMul.lean`.
+and its contract implying the shared one of `Proof/MlKem/KpkeMulContract.lean`.
 -/
 
 @[expose] public section
@@ -64,17 +64,17 @@ theorem encMul3_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
       (EncMul.innerE B 3) = true)
     (hctl : ctlOk (encryptMul B 3) = true)
     (hct : ConstantTime isa (encMulK 3).pre (encMulK 3).pub (encryptMul B 3)) :
-    Verified X86_64.target (encryptMul B 3) (Spec.MlKem.encryptMulContract 3 X86_64.abi) :=
+    Verified X86_64.target (encryptMul B 3) (Proof.MlKem.encryptMulContract 3 X86_64.abi) :=
   Verified.of_correct (encMul_correct hB (by decide) (by decide) hwo hctl) hct
-    { pre := by sig_implies_pre [Spec.MlKem.encryptMulContract, Spec.MlKem.encryptMulSig, encMulK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlKem.encryptMulContract, Proof.MlKem.encryptMulSig, encMulK, X86_64.abi,
         X86_64.argRegs]
-      post := by sig_implies_post [Spec.MlKem.encryptMulContract, Spec.MlKem.encryptMulSig, encMulK, X86_64.abi,
+      post := by sig_implies_post [Proof.MlKem.encryptMulContract, Proof.MlKem.encryptMulSig, encMulK, X86_64.abi,
         X86_64.argRegs]
-      pub := by sig_implies_pub [Spec.MlKem.encryptMulContract, Spec.MlKem.encryptMulSig, encMulK, X86_64.abi,
+      pub := by sig_implies_pub [Proof.MlKem.encryptMulContract, Proof.MlKem.encryptMulSig, encMulK, X86_64.abi,
         X86_64.argRegs]
       sat := by
         refine ⟨encMulSat 3, ?_⟩
-        sig_pre [Spec.MlKem.encryptMulContract, Spec.MlKem.encryptMulSig, encMulK, X86_64.abi, X86_64.argRegs]
+        sig_pre [Proof.MlKem.encryptMulContract, Proof.MlKem.encryptMulSig, encMulK, X86_64.abi, X86_64.argRegs]
         and_intros
         all_goals first
           | rfl
@@ -91,17 +91,17 @@ theorem encMul4_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
       (EncMul.innerE B 4) = true)
     (hctl : ctlOk (encryptMul B 4) = true)
     (hct : ConstantTime isa (encMulK 4).pre (encMulK 4).pub (encryptMul B 4)) :
-    Verified X86_64.target (encryptMul B 4) (Spec.MlKem.encryptMulContract 4 X86_64.abi) :=
+    Verified X86_64.target (encryptMul B 4) (Proof.MlKem.encryptMulContract 4 X86_64.abi) :=
   Verified.of_correct (encMul_correct hB (by decide) (by decide) hwo hctl) hct
-    { pre := by sig_implies_pre [Spec.MlKem.encryptMulContract, Spec.MlKem.encryptMulSig, encMulK, X86_64.abi,
+    { pre := by sig_implies_pre [Proof.MlKem.encryptMulContract, Proof.MlKem.encryptMulSig, encMulK, X86_64.abi,
         X86_64.argRegs]
-      post := by sig_implies_post [Spec.MlKem.encryptMulContract, Spec.MlKem.encryptMulSig, encMulK, X86_64.abi,
+      post := by sig_implies_post [Proof.MlKem.encryptMulContract, Proof.MlKem.encryptMulSig, encMulK, X86_64.abi,
         X86_64.argRegs]
-      pub := by sig_implies_pub [Spec.MlKem.encryptMulContract, Spec.MlKem.encryptMulSig, encMulK, X86_64.abi,
+      pub := by sig_implies_pub [Proof.MlKem.encryptMulContract, Proof.MlKem.encryptMulSig, encMulK, X86_64.abi,
         X86_64.argRegs]
       sat := by
         refine ⟨encMulSat 4, ?_⟩
-        sig_pre [Spec.MlKem.encryptMulContract, Spec.MlKem.encryptMulSig, encMulK, X86_64.abi, X86_64.argRegs]
+        sig_pre [Proof.MlKem.encryptMulContract, Proof.MlKem.encryptMulSig, encMulK, X86_64.abi, X86_64.argRegs]
         and_intros
         all_goals first
           | rfl
@@ -136,7 +136,7 @@ theorem encMulSse3_correct : ∀ s, (encMulK 3).pre s →
   encMul_correct BodiesOk.sse (by decide) (by decide) encMulSse3_wo encMulSse3_ctl
 
 theorem encMulSse3_verified :
-    Verified X86_64.target (encryptMul .sse 3) (Spec.MlKem.encryptMulContract 3 X86_64.abi) :=
+    Verified X86_64.target (encryptMul .sse 3) (Proof.MlKem.encryptMulContract 3 X86_64.abi) :=
   encMul3_verified _ BodiesOk.sse encMulSse3_wo encMulSse3_ctl encMulSse3_ct
 
 theorem encMulSse4_ct : ConstantTime isa (encMulK 4).pre (encMulK 4).pub (encryptMul .sse 4) :=
@@ -147,7 +147,7 @@ theorem encMulSse4_correct : ∀ s, (encMulK 4).pre s →
   encMul_correct BodiesOk.sse (by decide) (by decide) encMulSse4_wo encMulSse4_ctl
 
 theorem encMulSse4_verified :
-    Verified X86_64.target (encryptMul .sse 4) (Spec.MlKem.encryptMulContract 4 X86_64.abi) :=
+    Verified X86_64.target (encryptMul .sse 4) (Proof.MlKem.encryptMulContract 4 X86_64.abi) :=
   encMul4_verified _ BodiesOk.sse encMulSse4_wo encMulSse4_ctl encMulSse4_ct
 
 end VG.Proof.MlKem.X86_64

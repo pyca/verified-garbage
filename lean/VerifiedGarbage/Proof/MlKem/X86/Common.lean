@@ -341,14 +341,14 @@ theorem sep_at {x : BitVec 32} {len a b n k : Nat} (ha : a + n ≤ len) (hb : b 
 
 /-- All-zero memory holds a reduced polynomial. -/
 theorem reduced_of_zero {m : Mem} {p : Addr} (h : ∀ k < 1024, m (p + BitVec.ofNat 64 k) = 0) :
-    VG.Spec.MlKem.Reduced m p := fun i hi => by
+    VG.Proof.MlKem.Reduced m p := fun i hi => by
   rw [VG.Proof.MlKem.coeffAt_congr (m' := m) (m := fun _ => 0) (fun k hk => h k hk) hi]
-  simp [VG.Spec.MlKem.coeffAt, Mem.readW, Mem.read]
+  simp [VG.Proof.MlKem.coeffAt, Mem.readW, Mem.read]
 
 /-- Memory that is zero but at the arguments above `0x5004`, which hold
 `ws`: polynomials below `0x5000` are all zero. -/
 theorem reduced_below {m : Mem} (hm : ∀ a : Addr, a.toNat < 0x5000 → m a = 0) (p : Nat)
-    (hp : p + 1024 ≤ 0x5000) : VG.Spec.MlKem.Reduced m (BitVec.ofNat 64 p) :=
+    (hp : p + 1024 ≤ 0x5000) : VG.Proof.MlKem.Reduced m (BitVec.ofNat 64 p) :=
   reduced_of_zero fun k hk => hm _ (by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega)
 end VG.Proof.MlKem.X86

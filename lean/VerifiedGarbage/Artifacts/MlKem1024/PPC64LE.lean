@@ -15,12 +15,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.MlKem1024.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.MlKem1024.compressEncodeApi.artifact PPC64LE.target {
-    code := Impl.MlKem1024.PPC64LE.compressEncode1024
-    verified := Proof.MlKem1024.PPC64LE.CompressEncode.verified },
-  Spec.MlKem1024.decodeDecompressApi.artifact PPC64LE.target {
-    code := Impl.MlKem1024.PPC64LE.decodeDecompress1024
-    verified := Proof.MlKem1024.PPC64LE.Decompress.verified },
   Spec.MlKem1024.checkEkApi.artifact PPC64LE.target {
     code := Impl.MlKem1024.PPC64LE.checkEk1024
     verified := Proof.MlKem1024.PPC64LE.CheckEk.verified },

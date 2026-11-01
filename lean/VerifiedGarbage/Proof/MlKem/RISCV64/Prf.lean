@@ -40,6 +40,7 @@ namespace VG.Proof.MlKem.RISCV64
 open VG VG.RISCV64 VG.Impl.MlKem.RISCV64
 open VG.RISCV64.Wp
 open VG.Spec.MlKem
+open VG.Proof.MlKem
 open VG.Spec.Sha3 (bytesAt squeezeFrom rates)
 
 /-! ## What changes, but for some callee-saved registers -/

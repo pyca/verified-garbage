@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Step
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Fast
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunF
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Model
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FwdW

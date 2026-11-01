@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.MlKem.Arm.Poly
 /-!
 # ML-KEM-1024: the compression to 5 and 11 bits, and the key check, on 32-bit ARM
 
-The primitives of `Spec/MlKem/Contract1024.lean` that go through the
+The primitives of `Proof/MlKem1024/Contract.lean` that go through the
 coefficients once, as `Impl/MlKem/Arm/Poly.lean` does for ML-KEM-768: they
 take their arguments in `r0`–`r3`, use only those registers and `r12`, so
 save nothing and use no stack, and every loop counts down to zero with

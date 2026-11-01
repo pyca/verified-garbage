@@ -3,14 +3,14 @@ module
 public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16
 public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 import VerifiedGarbage.Proof.MlKem.Mem16
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VMem
-meta import VerifiedGarbage.Spec.MlKem.Kpke16
+meta import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 meta import VerifiedGarbage.Proof.MlKem.Mem16
 meta import VerifiedGarbage.Proof.Framework.Offset
