@@ -89,7 +89,23 @@ def entryFinish : List Instr := [mov .r11 .r24,.addi .r12 .r4 1]
 def entryPrep : List Instr := saved.map (fun (r,o) => .store .d r .r10 o) ++
  entryConfig ++ initOne ++ entrySecrets
 
-def entry : List Instr := entryPrep ++ foldSetup ++ entryFinish
+def maskOffset : Nat → Nat
+ | 0 => 32 | 1 => 48 | 2 => 80 | _ => 96
+
+def maskValue : Nat → BitVec 128
+ | 0 => Impl.Gcm.PPC64LE.Vpmsum.pairLowMask
+ | 1 => Impl.Gcm.PPC64LE.Vpmsum.pairHighMask
+ | 2 => byteMask | _ => Impl.Gcm.Clmul.poly ++ Impl.Gcm.Clmul.poly
+
+def maskSource : Nat → VReg
+ | 0 | 1 => U | 2 => .v19 | _ => .v13
+
+def maskCacheStep (j : Nat) : List Instr :=
+ (if j<2 then setMask U (maskValue j) else []) ++ powerSave (maskSource j) (maskOffset j)
+
+def maskCache : List Instr := (List.range 4).flatMap maskCacheStep
+
+def entry : List Instr := entryPrep ++ foldSetup ++ maskCache ++ entryFinish
 
 def cacheLoad (v : VReg) (src dst offset : Reg) : List Instr :=
  load v src ++ [.stxvd2x v dst offset]
@@ -131,10 +147,13 @@ def ghRead : List Instr :=
 def ghInject (j : Nat) : List Instr :=
  if j=0 then [.vop (.logic .xor .v0 .v0 Y)] else []
 
+def maskLoads (lo hi : Reg) : List Instr := [.lxvd2x .v19 .r16 lo,.lxvd2x .v13 .r16 hi]
+def ghRestore : List Instr := maskLoads .r24 .r18
+
 def ghPair (j : Nat) : List Instr :=
  ghInject j ++
- ghRead ++ Impl.Gcm.PPC64LE.Vpmsum.packedProductsWith
-  (reg (2*j)) (reg (2*j+1)) U T LO MID HI .v8 .v9 true ++ ghAcc j
+ ghRead ++ Impl.Gcm.PPC64LE.Vpmsum.packedPermProductsWith
+  (reg (2*j)) (reg (2*j+1)) U T LO MID HI .v8 .v9 .v19 .v13 ++ ghAcc j
 
 def ghFinish : List Instr := [.vop (.logic .xor U U U)] ++ reduce Y U .v13 ++
  [.vop (.sldoi Y Y Y 8)]
@@ -193,9 +212,11 @@ def aes8 : Prog isa := .seq (.block (aesInitial ++ firstNine ++ aesRemaining))
  (.seq (.ite (.zero .d .r10) (.block []) (.loop (.block (middle 8)) (.nonzero .d .r10)))
  (.block finalRound))
 
-def ghStart : List Instr := [.li .r21 128,.li .r22 144]
+def ghOffsets : List Instr := [.li .r21 128,.li .r22 144]
 
-def ghCode : List Instr := (List.range 4).flatMap ghPair ++ ghFinish
+def ghStart : List Instr := maskLoads .r21 .r22 ++ ghOffsets
+
+def ghCode : List Instr := (List.range 4).flatMap ghPair ++ ghRestore ++ ghFinish
 
 def batch : Prog isa := .seq (.block (counters 8))
  (.seq aes8 (.block (stores ++ ghStart ++ ghCode)))
