@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFusedCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 public import VerifiedGarbage.Proof.Gcm.Stream
@@ -17,6 +19,8 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFusedCT
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 meta import VerifiedGarbage.Proof.Gcm.Stream
@@ -107,9 +111,11 @@ variable (L : Lay c (W + BitVec.ofNat 64 16) W) (hR : R = 10 ∨ R = 12 ∨ R = 
 include L hR hTW
 
 /-- `seal` after its entry. -/
-theorem sealBody_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : CT (fun s => OneT c W sp R Np n Ad A D Ln T s ∧ s.gpr .r24 = Np ∧
+theorem sealWithBody_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {textBody : Prog isa}
+    (bodyCorrect : SealFused.BodyCorrect textBody)
+    (bodyCT : CT (OneI c W sp R Np n Ad A D Ln) textBody) : CT (fun s => OneT c W sp R Np n Ad A D Ln T s ∧ s.gpr .r24 = Np ∧
     s.gpr .r25 = BitVec.ofNat 64 n)
-    (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore))))) := by
+    (.seq oneAad (.seq textBody (.seq (.block tagOut) (.block restore)))) := by
   -- `oneAad`
   refine CT.seq (J := fun s => OneT c W sp R Np n Ad A D Ln T s ∧ OneAbs c W A s)
     ((oneAad_ct L).mono fun s ⟨⟨hO, _⟩, h24, h25⟩ => ⟨hO, h24, h25⟩)
@@ -119,28 +125,18 @@ theorem sealBody_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : CT (fun s => OneT c W sp R
       (by rw [b, d, g, i]; exact hA))) fun s' ⟨oa, rd, wr, _⟩ => ⟨hT.keep (fun r hr => (he.fr r hr).symm) oa.env rd wr,
         blockAt s.mem (V .r29 + BitVec.ofNat 64 240), bytesAt s.mem (V .r21) (V .r22).toNat,
         by rw [← a]; exact oa.hH, by rw [i, length_bytesAt], by rw [← b]; exact oa.abs⟩
-  -- `oneCrypt`
-  refine CT.seq (J := fun s => OneT c W sp R Np n Ad A D Ln T s ∧ OneAbs c W A s)
-    ((oneCrypt_ct L hR).mono fun s ⟨hT, _⟩ => hT.1) (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
-  · obtain ⟨V, a, b, d, e, f, g, i, j, k, he, hN, hA, hD⟩ := hT.1
-    have L' := L.v a b d
-    have hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat := by rw [a, b, d, j, k]; exact hD
-    refine WP.mono (WP.with_rdwr (oneCrypt_ok L' he e hR hd rfl)) fun s' ⟨oc, rd, wr, _⟩ =>
-      ⟨hT.keep (fun r hr => (he.fr r hr).symm) oc.env rd wr, H, x, ?_, hl, ?_⟩
-    · rw [← a, blockAt_frame oc.frame (fun r hr => (ctx_crFrame L' hd r hr).sub_left (Lay.ctxSub (by decide)))]
-      rw [← a] at hH; exact hH
-    · have hx := Nat.mod_lt (x ++ zeros (padLen x.length)).length (show 16 > 0 by decide)
-      rw [← b] at hab ⊢
-      exact hab.congr (blockAt_frame oc.frame (stp_crFrame L' hd (by decide)))
-        (bytesAt_frame oc.frame (stp_crFrame L' hd (by omega)) (by omega))
-  -- `oneTag 0`
   refine CT.seq (J := fun s => ∃ V : Reg → BitVec 64, V .r31 = W ∧ V .r20 = T ∧ Env V sp s ∧
-    Covers [⟨T, 16⟩] s.wr) ((oneTag_ct L (.inl rfl) hR).mono fun s ⟨hT, _⟩ => hT.1)
-    (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
-  · obtain ⟨V, a, b, d, e, f, g, i, j, k, he, hN, hA, hD⟩ := hT.1
-    refine WP.mono (WP.with_rdwr (oneTag_ok (L.v a b d) (o := 0) (.inl rfl) (H := H) (a := x) he e hR (by rw [a]; exact hH)
-      (by rw [i]; exact hl) (by rw [b]; exact hab) (by rw [b, d, j, k]; exact hD.ok)))
-      fun s' ⟨ot, _, wr, _⟩ => ⟨V, d, (he.fr _ (by decide)).symm.trans hT.2.1, ot.env, by rw [wr]; exact hT.2.2⟩
+    Covers [⟨T,16⟩] s.wr) (bodyCT.mono fun _ hs => hs.1.1)
+    (fun s ⟨hT,H,x,hH,hl,hab⟩ => ?_) ?_
+  · obtain ⟨V,a,b,d,e,f,g,i,j,k,he,hN,hA,hD⟩ := hT.1
+    have hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat := by
+      rw [a,b,d,j,k]; exact hD
+    have hab' : Absorbed s.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH s.mem (V .r29))
+        (x++zeros (padLen x.length)) := by
+      rw [ctxH_eq,a,hH,b]; exact hab
+    exact WP.mono (WP.with_rdwr (bodyCorrect (L.v a b d) he hd e hR (by rw [i]; exact hl) hab'))
+      fun s' ⟨bo,_,wr,_⟩ => ⟨V,d,(he.fr _ (by decide)).symm.trans hT.2.1,bo.env,
+        by rw [wr]; exact hT.2.2⟩
   -- the tag copied out
   refine CT.seq (J := fun s => s.gpr .r31 = W ∧ s.sp = sp) ?_
     (fun s ⟨V, d, i, he, hT⟩ => WP.mono (tagOut_ok he (by rw [i]; exact hT) (by rw [i, d]; exact hTW))
@@ -157,7 +153,12 @@ theorem sealBody_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : CT (fun s => OneT c W sp R
 
 end
 
-theorem seal_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub «seal» := by
+theorem sealWith_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {textBody : Prog isa}
+    (bodyCorrect : SealFused.BodyCorrect textBody)
+    (bodyCT : ∀ {c W sp : Addr} {R : Nat} {Np : Addr} {n : Nat} {Ad A D Ln : BitVec 64},
+      Lay c (W+BitVec.ofNat 64 16) W → (R=10 ∨ R=12 ∨ R=14) →
+      CT (OneI c W sp R Np n Ad A D Ln) textBody) :
+    ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub (sealWith textBody) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp, qa⟩ := hq
   have h₁' : sealPre σ₁ := h₁
@@ -172,7 +173,8 @@ theorem seal_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa sealPPC64LE.p
     (σ₁.gpr .r6).toNat (σ₁.gpr .r7) (σ₁.gpr .r8) (σ₁.gpr .r9) (σ₁.gpr .r10) (stackArg σ₁ 0) s ∧
     s.gpr .r24 = σ₁.gpr .r5 ∧ s.gpr .r25 = BitVec.ofNat 64 (σ₁.gpr .r6).toNat) ?_
     (fun s ⟨hs, e3, e4, e5, e6, e7, e8, e9, e10, esp, ea0, ea1⟩ => ?_)
-    (sealBody_ct (oneLay fc fW dcW) hR (dtW.sub_right (Region.sub_prefix (by decide))))
+    (sealWithBody_ct (oneLay fc fW dcW) hR (dtW.sub_right (Region.sub_prefix (by decide)))
+      bodyCorrect (bodyCT (oneLay fc fW dcW) hR))
   · -- the entry: its head loads `W` from a public address, the rest saves through it
     let v : Reg → BitVec 64 := fun r => if r = .r12 then stackArg σ₁ 1 else σ₁.gpr r
     have hl : oneEntry 104 = [.addSp .r12 0, .load .d .r12 .r12 104] ++ (save .r12 ++
@@ -197,5 +199,15 @@ theorem seal_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa sealPPC64LE.p
   · have := sealEntry_wp hs
     rw [ea0, ea1, e3, e4, e5, e6, e7, e8, e9, e10, esp] at this
     exact WP.mono this fun s' ⟨hO, h24, h25, h20, hT⟩ => ⟨⟨hO, h20, hT⟩, h24, h25⟩
+
+theorem seal_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] :
+    ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub «seal» :=
+  sealWith_ct (fun L he hd hR hv ha hab => SealFused.smallBody_ok L he hd hR hv ha hab)
+    (fun L hv => SealFusedCT.smallBody_ct L hv)
+
+theorem sealFused_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
+    ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub Impl.AesGcm.PPC64LE.SealFused.seal :=
+  sealWith_ct (fun L he hd hR hv ha hab => SealFused.body_ok L he hd hR hv ha hab)
+    (fun L hv => SealFusedCT.body_ct L hv)
 
 end VG.Proof.AesGcm.PPC64LE

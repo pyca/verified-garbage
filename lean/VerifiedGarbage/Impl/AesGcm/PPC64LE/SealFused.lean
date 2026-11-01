@@ -3,12 +3,12 @@ module
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
 
-/-! # One-pass POWER8 AES-GCM seal prototype
+/-! # One-pass POWER8 AES-GCM seal
 
 The whole-block helper shares the existing 2560-byte workspace: its 64-byte
 header starts at W+448 and its 2048-byte kernel area at W+512. The final
-partial block and tag reuse the existing code. This caller is unregistered
-until its proof is complete.
+partial block and tag reuse the existing code. The entry and return are
+shared with the original one-shot implementation.
 -/
 
 @[expose] public section
@@ -32,8 +32,7 @@ def body : Prog isa :=
     (.ite (.zero .d .r12) (.seq oneCrypt (oneTag 0)) fastBody)
 
 def withBody (sealBody : Prog isa) : Prog isa :=
-  .seq (.block (oneEntry 104))
-    (.seq oneAad (.seq sealBody (.seq (.block tagOut) (.block restore))))
+  sealWith sealBody
 
 def «seal» : Prog isa := withBody body
 
