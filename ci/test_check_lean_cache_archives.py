@@ -11,6 +11,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+import unittest.mock
 
 import lean_cache
 
@@ -200,6 +201,45 @@ class LeanArchiveTests(unittest.TestCase):
             self.assertEqual(json.loads(gzip.decompress(tar.extractfile(".lake/ltar/logs.json.gz").read())),
                              {"build/A/B": {"depHash": "1", "log": log},
                               "packages/mathlib/.lake/build/Mathlib/Order": {"depHash": "1", "log": log}})
+
+    def test_unpack_empty_private(self):
+        module(self.lean / ".lake/build", "VerifiedGarbage/TCB/Mem")
+        data, _ = self.pack()
+        original = {p.relative_to(self.lean): p.read_bytes()
+                    for p in (self.lean / ".lake").rglob("*") if p.is_file()
+                    and ".lake/ltar" not in str(p)}
+        target = self.root / "restored"
+        target.mkdir()
+        with tempfile.TemporaryDirectory() as tmp:
+            # A tiny batch: each holds one archive, the trusted base's too.
+            lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data), empty_private=True)
+        restored = {p.relative_to(target): p.read_bytes()
+                    for p in (target / ".lake").rglob("*") if p.is_file()}
+        expected = as_restored(original)
+        for path in expected:
+            # The project's modules but the trusted base: a package's are its own.
+            if (path.name.endswith(".olean.private") and "build" == path.parts[1]
+                    and "TCB" not in path.parts):
+                expected[path] = b""
+        self.assertEqual(restored, expected)
+        lib = Path(".lake/build/lib/lean")
+        self.assertNotEqual(restored[lib / "VerifiedGarbage/TCB/Mem.olean.private"], b"")
+        self.assertEqual(restored[lib / "A/B.olean.private"], b"")
+
+    def test_unpack_empty_private_downloads_the_release(self):
+        fetched = []
+
+        def fetch():
+            fetched.append(True)
+            return self.stub
+
+        data, _ = self.pack()
+        target = self.root / "restored"
+        target.mkdir()
+        with tempfile.TemporaryDirectory() as tmp, \
+                unittest.mock.patch.object(lean_cache.leantar_release, "fetch", fetch):
+            lean_cache.unpack(target, 2, tmp, 1 << 30, None, io.BytesIO(data), empty_private=True)
+        self.assertEqual(fetched, [True])
 
     def test_unpack_fails_when_tar_does(self):
         data, _ = self.pack()

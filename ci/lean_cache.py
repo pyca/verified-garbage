@@ -35,11 +35,11 @@ libraries, Lake's checkouts of the dependencies, but not the dependencies'
 executables) to `.lake/ltar/files.tar.gz`, then, as `bundle` does, a tar
 of the archives with `files.tar` (decompressed) first, to stdout.
 
-It packs with `leantar-batch` (`--leantar`), leantar with digama0/leangz#13
-(`.github/actions/leantar`), which packs every module in one process at zstd
-level `--level` (default 5); the toolchain's own `leantar` takes half a
-CPU-second for each module. `restore` unpacks with it too: its unpacking
-(`ci/leantar/unpack.patch`) takes a third of the toolchain's CPU time.
+It packs with `leantar-batch` (`--leantar`), the release of reaperhulk/leangz
+that `ci/leantar_release.py` downloads (`.github/actions/leantar`), which
+packs every module in one process at zstd level `--level` (default 5); the
+toolchain's own `leantar` takes half a CPU-second for each module. `restore`
+unpacks with it too, in a third of the toolchain's CPU time.
 
 `store` does the same but for the tar to stdout, so that `.lake/ltar`
 alone holds the build: CI's Actions cache keeps it, and each job that
@@ -74,6 +74,15 @@ Lake writes only for people to read. The messages, with the profile
 `ci/lean_profile.py` reads, are written only with `--logs`: one file,
 `.lake/ltar/logs.json.gz`.
 
+`restore --empty-private` and `unpack --empty-private` write each module's
+`.olean.private` (but the trusted base's) as an empty file, half of what
+unpacking writes: nothing that imports a module as a module reads it. It
+needs the release's leantar (`ci/leantar_release.py`), which `unpack` then
+downloads (once) unless given `--leantar`. It is for a build that will not
+change Lean: `lake shake` (`check_lean_public_imports.py`), a file that is not
+a module and an `import all` of a module of this project read the private
+parts (`lean/README.md`, "Without the private parts").
+
 It stages `files.tar` and each batch in `--tmp` (default: `/dev/shm`, a
 tmpfs, when there is one), so they never reach the disk, and removes them.
 """
@@ -89,6 +98,8 @@ import sys
 import tarfile
 import tempfile
 from pathlib import Path
+
+import leantar_release
 
 # A module's outputs in its build directory's `lib/lean` (base 0) and `ir`
 # (base 1), in the order `leantar` wants them: the `.olean`'s parts first.
@@ -371,9 +382,10 @@ def store(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
                     "--null", "-T", "-"], input="\0".join(paths).encode(), check=True)
 
 
-# The modules whose private data (`.olean.private`) `restore --empty-private`
-# unpacks all the same: the trusted base, which `Emit.lean` and `EmitOne.lean`
-# load as files that are not modules.
+# The modules of this project whose private data (`.olean.private`)
+# `--empty-private` unpacks all the same: the trusted base, which `Emit.lean`
+# and `EmitOne.lean` load as files that are not modules. The packages' (Mathlib's)
+# are unpacked too: `VerifiedGarbageAuditBase.lean` reads them.
 KEEP_PRIVATE = ("VerifiedGarbage.TCB.",)
 
 
@@ -406,7 +418,7 @@ def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None, empty
             placeholder(lean, rel)
             records.append(({"file": str(ltar.relative_to(lean)),
                              "base": [str(build / "lib/lean"), str(build / "ir")]},
-                            empty_private and not (m or "").startswith(KEEP_PRIVATE)))
+                            empty_private and m is not None and not m.startswith(KEEP_PRIVATE)))
         for empty in (False, True):
             batch = [r for r, e in records if e == empty]
             if batch:
@@ -459,24 +471,35 @@ def build_of(rel):
     return Path(".lake", *parts[:end])
 
 
-def unpack(lean, jobs, tmp, batch, tool, stream, logs=False):
-    tool = tool or str(leantar(lean))
+def unpack(lean, jobs, tmp, batch, tool, stream, logs=False, empty_private=False):
+    """With `empty_private`, as `restore`'s: it needs a leantar with
+    `--empty-private` (`ci/leantar_release.py`, its default then)."""
+    if tool is None:
+        tool = str(leantar_release.fetch()) if empty_private else str(leantar(lean))
     stage = Path(tempfile.mkdtemp(prefix="lean-cache-", dir=tmp))
-    running = None
+    running = []
     count = 0
 
     def wait():
-        if running is not None and running.wait():
-            raise SystemExit(f"leantar failed ({running.returncode})")
+        for proc in running:
+            if proc.wait():
+                raise SystemExit(f"leantar failed ({proc.returncode})")
 
     def start(records):
-        # `-f`: a trace already there (from a build of other sources) would
-        # otherwise keep that build's outputs.
-        proc = subprocess.Popen([tool, "-f", "--jobs", str(jobs), "-x", "-j", "-"], cwd=lean,
-                                stdin=subprocess.PIPE)
-        proc.stdin.write(json.dumps(records).encode())
-        proc.stdin.close()
-        return proc
+        procs = []
+        for empty in (False, True):
+            part = [r for r, e in records if e == empty]
+            if not part:
+                continue
+            # `-f`: a trace already there (from a build of other sources) would
+            # otherwise keep that build's outputs.
+            proc = subprocess.Popen([tool, "-f", "--jobs", str(jobs), "-x"] +
+                                    (["--empty-private"] if empty else []) + ["-j", "-"],
+                                    cwd=lean, stdin=subprocess.PIPE)
+            proc.stdin.write(json.dumps(part).encode())
+            proc.stdin.close()
+            procs.append(proc)
+        return procs
 
     files = None
     try:
@@ -508,7 +531,9 @@ def unpack(lean, jobs, tmp, batch, tool, stream, logs=False):
                     shutil.copyfileobj(tar.extractfile(member), f)
                 build = build_of(rel.relative_to(LTAR))
                 placeholder(lean, rel.relative_to(LTAR))
-                records.append({"file": str(file), "base": [str(build / "lib/lean"), str(build / "ir")]})
+                m = module_of(rel.relative_to(LTAR))
+                records.append(({"file": str(file), "base": [str(build / "lib/lean"), str(build / "ir")]},
+                                empty_private and m is not None and not m.startswith(KEEP_PRIVATE)))
                 size += member.size
                 if size >= batch:
                     wait()
@@ -516,14 +541,14 @@ def unpack(lean, jobs, tmp, batch, tool, stream, logs=False):
                     count += len(records)
                     records, size = [], 0
         wait()
-        running = None
+        running = []
         if records:
             running = start(records)
             count += len(records)
             wait()
     finally:
-        if running is not None:
-            running.wait()
+        for proc in running:
+            proc.wait()
         try:
             finish(files)
         finally:
@@ -565,7 +590,11 @@ def main(argv=None):
     u.add_argument("lean", type=Path, help="the Lean project (lean/)")
     u.add_argument("--batch", type=int, default=256 << 20,
                    help="bytes of archives to stage before unpacking them (default: 256 MiB)")
-    u.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's)")
+    u.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's, or with "
+                   "--empty-private the release ci/leantar_release.py downloads)")
+    u.add_argument("--empty-private", action="store_true",
+                   help="as restore's, for a build that will not change Lean: lake shake "
+                   "(check_lean_public_imports.py) reads the private parts")
     u.add_argument("--logs", action="store_true",
                    help=f"also write the build's messages, with its profile, to {LTAR / LOGS} (`lean_profile.py`)")
     u.add_argument("--tmp", default=tmp_dir(),
@@ -591,7 +620,7 @@ def main(argv=None):
                 args.empty_private)
     else:
         unpack(args.lean.resolve(), args.jobs, args.tmp, args.batch, args.leantar, sys.stdin.buffer,
-               args.logs)
+               args.logs, args.empty_private)
 
 
 if __name__ == "__main__":

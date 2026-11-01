@@ -11,8 +11,11 @@ The README streams it straight from the registry API with
 toolchain's `leantar` (install the toolchain first); it needs `zstd` to
 decompress the stream; without the command, `pip install zstandard` and use
 the README's Python one-liner.
-Restoring takes the whole cache (about 1 GB to download, 13 GB unpacked),
-since optimizing a proof means rebuilding it.
+Restoring takes the whole cache (about 1 GB to download, 18 GB unpacked),
+since optimizing a proof means rebuilding it. Restore it with the modules'
+private parts (no `--empty-private`) whenever you will change Lean:
+`ci/check_lean_public_imports.py`, which every Lean change runs before it is
+pushed, reads them (the README's "Without the private parts").
 
 After every rebase onto `main` (or pull of it), check how much Lean
 changed upstream before building. Lake rebuilds each changed module and
