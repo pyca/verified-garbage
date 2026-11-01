@@ -192,12 +192,12 @@ def andn64 (a b : BitVec 64) : Option (BitVec 64 × Option Bool × Option Bool �
 
 /-! ## Printing -/
 
-#guard printer.instr (.rorx32 .r8 .rdx 6) == ["rorx r8d, edx, 6"]
-#guard printer.instr (.rorx32 .rax .r15 31) == ["rorx eax, r15d, 31"]
-#guard printer.instr (.andn32 .r8 .rdx .rcx) == ["andn r8d, edx, ecx"]
-#guard printer.instr (.rorx .r8 .rdx 14) == ["rorx r8, rdx, 14"]
-#guard printer.instr (.rorx .rax .r15 63) == ["rorx rax, r15, 63"]
-#guard printer.instr (.andn .r8 .rdx .rcx) == ["andn r8, rdx, rcx"]
+#guard Instr.asm (.rorx32 .r8 .rdx 6) == ["rorx r8d, edx, 6"]
+#guard Instr.asm (.rorx32 .rax .r15 31) == ["rorx eax, r15d, 31"]
+#guard Instr.asm (.andn32 .r8 .rdx .rcx) == ["andn r8d, edx, ecx"]
+#guard Instr.asm (.rorx .r8 .rdx 14) == ["rorx r8, rdx, 14"]
+#guard Instr.asm (.rorx .rax .r15 63) == ["rorx rax, r15, 63"]
+#guard Instr.asm (.andn .r8 .rdx .rcx) == ["andn r8, rdx, rcx"]
 
 -- Their CPU features (the SDM's "CPUID Feature Flag"); neither writes `rsp`
 -- unless it is the destination.

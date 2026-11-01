@@ -98,20 +98,19 @@ never import proofs.
    it runs (`implemented_by`, `extern`, `export`) or anywhere in the project
    (`csimp`, `initialize`), and any `VG.Spec` definition declared outside
    `Spec/`.
-5. **Emit** — `Emit.lean` renders the registry into `crates/verified-garbage-asm-<target>/asm/<module>.rs`,
+5. **Emit** — `Emit.lean` renders the registry into `crates/verified-garbage-asm-<target>/src/<module>.rs`
+   (ARM's `asm/`),
    adding to each function's `# Safety` section what its contract requires of
    the memory each buffer is valid for (`Sig.validDoc`) and of where its
    buffers are, which depends on the target's calling convention and the
    stack it uses (`Sig.layoutDoc`), from the same signature, `stack` and
    `writeArgs` as the contract, as `Artifact.ofSig` proves.
    CI fails if the checked-in files differ from what Lean generates, so the
-   Rust crate contains exactly the verified code. Each crate compiles the
-   same code with its machine code as data, `src/`, written by
-   `ci/preassemble.py` (but ARM's, which compiles `asm/`, and RISC-V's,
-   AArch64's, PPC64LE's and x86's, whose printers emit the machine code themselves,
-   `TCB/<ISA>/Encode.lean`, and whose emitter writes `src/`), and CI checks
-   that it compiles to the same sections, symbols and relocations as `asm/`
-   (`ci/check_preassembled.py`).
+   Rust crate contains exactly the verified code. Every printer but ARM's
+   emits each straight-line instruction as its machine code
+   (`TCB/<ISA>/Encode.lean`), after a comment of its text, so that the
+   assembler only copies those bytes; ARM's crate, one for both A32 and
+   Thumb, is assembled from its text.
 
 A function can call another (`Code.call name body`): the model runs the
 callee's code `body` between the call and return instructions, so the
@@ -138,15 +137,14 @@ constant.
 ## What you need to trust
 
 * `TCB/` — in particular the ISA models, which must match the vendor manuals
-  (including the CPU features each instruction requires), and the printers,
-  which must print what the models mean.
+  (including the CPU features each instruction requires), and the printers
+  and encoders, which must print what the models mean.
 * For each artifact: its contract in `Spec/` (and the algorithm spec it
   refers to), its `sig` and `doc` (its `Api` in `Spec/`), and
   `TCB/Emit.lean`, which decides what is emitted.
-* Lean's kernel, and the assembler in `rustc`/LLVM.
-* `ci/check_preassembled.py` (and `ci/objfile.py`, which reads object files
-  for it), which checks that each crate's pre-assembled `src/` is the code
-  of its `asm/`.
+* Lean's kernel, and the assembler in `rustc`/LLVM for what is printed as
+  text: ARM's code, and the branches, calls, addresses of statics and
+  directives of the others.
 
 Everything in `Impl/` and `Proof/` is checked by Lean and need not be read.
 
@@ -160,7 +158,6 @@ only proven against a spec and TCB that were reviewed and merged beforehand.
 lake exe cache get                  # download prebuilt Mathlib
 lake build --log-level=warning      # check every proof, run the axiom audit and golden tests
 lake env lean --run Emit.lean       # regenerate ../crates
-python3 ../ci/preassemble.py        # then pre-assemble them
 lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```

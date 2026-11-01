@@ -356,7 +356,8 @@ def inTwoParts (targets : List (List (String × String))) : Option String :=
 target is in two parts (so each part generated all of its targets' files,
 from all of their artifacts), and no other crate of generated code has a
 `.rs` file in its directory of generated files (a target's that no longer
-has artifacts, or RISC-V's `asm/`, which it no longer writes). Writes (deleting
+has artifacts, or the `asm/` of a target whose files are in `src/`, which it
+no longer writes). Writes (deleting
 those files) or checks, as `run`. -/
 def finish (targets : List (List (String × String))) (args : List String) : IO UInt32 := do
   let some (check, _, dir) := parseArgs args | do IO.eprintln usage; return 2

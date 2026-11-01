@@ -10,7 +10,7 @@ than building every module of the library as `Emit.lean` needs. Run it from
 
 * `lake env lean --run EmitOne.lean Rc2.AArch64 [More.Target …]` builds
   `VerifiedGarbage/Artifacts/Rc2/AArch64.lean`, and writes its files under
-  `../crates` (its target's crate's `asm/`, or RISC-V's `src/`).
+  `../crates` (its target's crate's `src/`, or ARM's `asm/`).
 * `lake env lean --run EmitOne.lean --check Rc2.AArch64 …` writes nothing and
   fails if those files on disk differ from what would be generated.
 

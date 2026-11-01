@@ -57,8 +57,8 @@ def imulRcx (a b p : BitVec 64) (c : Bool) : Bool :=
 
 /-! ## Printing -/
 
-#guard printer.instr (.imul .rax .rcx) == ["imul rax, rcx"]
-#guard printer.instr (.imul .r11 .rdx) == ["imul r11, rdx"]
+#guard Instr.asm (.imul .rax .rcx) == ["imul rax, rcx"]
+#guard Instr.asm (.imul .r11 .rdx) == ["imul r11, rdx"]
 
 -- `imul` is in the x86-64 baseline, and writes `rsp` only as its destination.
 #guard isa.requires (.imul .rax .rcx) == []

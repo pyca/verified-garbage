@@ -13,10 +13,58 @@
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x834805eac148f2894800000000c0c748,0x4810478948084789480789481b7400fa,0x4800ebe77501ea834820c78348184789,0xf7400fa834803e2834803eac148f289
-.octa 0x4800ebf37501ea834808c78348078948,0x834807880e7400fa834807e28348f289
-.byte 199,1,72,131,234,1,117,244,235,0,195",
-        r".p2align 6",
+        // mov rax, 0
+        // mov rdx, rsi
+        // shr rdx, 5
+        // cmp rdx, 0
+        r".octa 0x834805eac148f2894800000000c0c748
+.byte 0xfa,0x00
+je 20f
+22:",
+        // mov QWORD PTR [rdi], rax
+        // mov QWORD PTR [rdi+8], rax
+        // mov QWORD PTR [rdi+16], rax
+        // mov QWORD PTR [rdi+24], rax
+        // add rdi, 32
+        // sub rdx, 1
+        r".octa 0x48184789481047894808478948078948
+.byte 0x83,0xc7,0x20,0x48,0x83,0xea,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rdx, rsi
+        // shr rdx, 3
+        // and rdx, 3
+        // cmp rdx, 0
+        r".byte 0x48,0x89,0xf2,0x48,0xc1,0xea,0x03,0x48,0x83,0xe2,0x03,0x48,0x83,0xfa,0x00
+je 23f
+25:",
+        // mov QWORD PTR [rdi], rax
+        // add rdi, 8
+        // sub rdx, 1
+        r".byte 0x48,0x89,0x07,0x48,0x83,0xc7,0x08,0x48,0x83,0xea,0x01
+jne 25b
+jmp 24f
+23:
+24:",
+        // mov rdx, rsi
+        // and rdx, 7
+        // cmp rdx, 0
+        r".byte 0x48,0x89,0xf2,0x48,0x83,0xe2,0x07,0x48,0x83,0xfa,0x00
+je 26f
+28:",
+        // mov BYTE PTR [rdi], al
+        // add rdi, 1
+        // sub rdx, 1
+        r".byte 0x88,0x07,0x48,0x83,0xc7,0x01,0x48,0x83,0xea,0x01
+jne 28b
+jmp 27f
+26:
+27:",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }
 
@@ -35,9 +83,57 @@ pub const VG_ZEROIZE_AVX_FEATURES: verified_garbage_cpu::Features = verified_gar
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_zeroize_avx(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r".octa 0xc148f2894800000000c0c748c0eff9c5,0x477ffec5077ffec5157400fa834806ea,0xf2894800ebed7501ea834840c7834820,0x89480f7400fa834807e2834803eac148
-.octa 0xf2894800ebf37501ea834808c7834807,0x1c7834807880e7400fa834807e28348
-.byte 72,131,234,1,117,244,235,0,197,248,119,195",
-        r".p2align 6",
+        // vpxor xmm0, xmm0, xmm0
+        // mov rax, 0
+        // mov rdx, rsi
+        // shr rdx, 6
+        // cmp rdx, 0
+        r".octa 0xc148f2894800000000c0c748c0eff9c5
+.byte 0xea,0x06,0x48,0x83,0xfa,0x00
+je 20f
+22:",
+        // vmovdqu YMMWORD PTR [rdi], ymm0
+        // vmovdqu YMMWORD PTR [rdi+32], ymm0
+        // add rdi, 64
+        // sub rdx, 1
+        r".octa 0xea834840c7834820477ffec5077ffec5
+.byte 0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rdx, rsi
+        // shr rdx, 3
+        // and rdx, 7
+        // cmp rdx, 0
+        r".byte 0x48,0x89,0xf2,0x48,0xc1,0xea,0x03,0x48,0x83,0xe2,0x07,0x48,0x83,0xfa,0x00
+je 23f
+25:",
+        // mov QWORD PTR [rdi], rax
+        // add rdi, 8
+        // sub rdx, 1
+        r".byte 0x48,0x89,0x07,0x48,0x83,0xc7,0x08,0x48,0x83,0xea,0x01
+jne 25b
+jmp 24f
+23:
+24:",
+        // mov rdx, rsi
+        // and rdx, 7
+        // cmp rdx, 0
+        r".byte 0x48,0x89,0xf2,0x48,0x83,0xe2,0x07,0x48,0x83,0xfa,0x00
+je 26f
+28:",
+        // mov BYTE PTR [rdi], al
+        // add rdi, 1
+        // sub rdx, 1
+        r".byte 0x88,0x07,0x48,0x83,0xc7,0x01,0x48,0x83,0xea,0x01
+jne 28b
+jmp 27f
+26:
+27:",
+        // vzeroupper
+        // ret
+        r".byte 0xc5,0xf8,0x77,0xc3
+.p2align 6",
     )
 }

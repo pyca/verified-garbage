@@ -15,6 +15,248 @@
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_seed_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
+        // lea rsp, [rsp-1064]
+        // mov rdx, rsp
+        // add rdx, 8
+        // mov r9, rdx
+        // mov QWORD PTR [r9+1000], rbx
+        // mov QWORD PTR [r9+1008], rbp
+        // mov QWORD PTR [r9+1016], r12
+        // mov QWORD PTR [r9+1024], r13
+        // mov QWORD PTR [r9+1032], r14
+        // mov QWORD PTR [r9+1040], r15
+        // movabs r14, 6148914691236517205
+        // mov QWORD PTR [r9+384], r14
+        // movabs r14, 3689348814741910323
+        // mov QWORD PTR [r9+392], r14
+        // movabs r14, 1085102592571150095
+        // mov QWORD PTR [r9+400], r14
+        // movabs r14, 71777214294589695
+        // mov QWORD PTR [r9+408], r14
+        // movabs r14, -71777214294589696
+        // mov QWORD PTR [r9+416], r14
+        // movabs r14, -3459661728999223300
+        // mov QWORD PTR [r9+424], r14
+        // movabs r14, 68468732266233843
+        // mov QWORD PTR [r9+432], r14
+        // movabs r14, 4539628425446424576
+        // mov QWORD PTR [r9+440], r14
+        // movabs r14, 277965988494543
+        // mov QWORD PTR [r9+448], r14
+        // movabs r14, -229965051731181568
+        // mov QWORD PTR [r9+456], r14
+        // movabs r14, 270582939711
+        // mov QWORD PTR [r9+464], r14
+        // movabs r14, -918748613553687808
+        // mov QWORD PTR [r9+472], r14
+        // movabs r14, -1789082251201616085
+        // mov QWORD PTR [r9+480], r14
+        // mov eax, DWORD PTR [rdi]
+        // bswap eax
+        // shl rax, 32
+        // mov r10d, DWORD PTR [rdi+4]
+        // bswap r10d
+        // or r10, rax
+        // mov eax, DWORD PTR [rdi+8]
+        // bswap eax
+        // shl rax, 32
+        // mov r11d, DWORD PTR [rdi+12]
+        // bswap r11d
+        // or r11, rax
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, -1640531527
+        // mov DWORD PTR [r9+488], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, -1640531527
+        // mov DWORD PTR [r9+492], eax
+        // ror r10, 8
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, 1013904243
+        // mov DWORD PTR [r9+496], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, 1013904243
+        // mov DWORD PTR [r9+500], eax
+        // ror r11, 56
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, 2027808486
+        // mov DWORD PTR [r9+504], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, 2027808486
+        // mov DWORD PTR [r9+508], eax
+        // ror r10, 8
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, -239350324
+        // mov DWORD PTR [r9+512], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, -239350324
+        // mov DWORD PTR [r9+516], eax
+        // ror r11, 56
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, -478700647
+        // mov DWORD PTR [r9+520], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, -478700647
+        // mov DWORD PTR [r9+524], eax
+        // ror r10, 8
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, -957401293
+        // mov DWORD PTR [r9+528], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, -957401293
+        // mov DWORD PTR [r9+532], eax
+        // ror r11, 56
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, -1914802585
+        // mov DWORD PTR [r9+536], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, -1914802585
+        // mov DWORD PTR [r9+540], eax
+        // ror r10, 8
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, 465362127
+        // mov DWORD PTR [r9+544], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, 465362127
+        // mov DWORD PTR [r9+548], eax
+        // ror r11, 56
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, 930724254
+        // mov DWORD PTR [r9+552], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, 930724254
+        // mov DWORD PTR [r9+556], eax
+        // ror r10, 8
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, 1861448508
+        // mov DWORD PTR [r9+560], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, 1861448508
+        // mov DWORD PTR [r9+564], eax
+        // ror r11, 56
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, -572070280
+        // mov DWORD PTR [r9+568], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, -572070280
+        // mov DWORD PTR [r9+572], eax
+        // ror r10, 8
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, -1144140559
+        // mov DWORD PTR [r9+576], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, -1144140559
+        // mov DWORD PTR [r9+580], eax
+        // ror r11, 56
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, 2006686179
+        // mov DWORD PTR [r9+584], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, 2006686179
+        // mov DWORD PTR [r9+588], eax
+        // ror r10, 8
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, -281594938
+        // mov DWORD PTR [r9+592], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, -281594938
+        // mov DWORD PTR [r9+596], eax
+        // ror r11, 56
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, -563189875
+        // mov DWORD PTR [r9+600], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, -563189875
+        // mov DWORD PTR [r9+604], eax
+        // ror r10, 8
+        // mov rax, r10
+        // shr rax, 32
+        // mov rcx, r11
+        // shr rcx, 32
+        // add eax, ecx
+        // sub eax, -1126379749
+        // mov DWORD PTR [r9+608], eax
+        // mov rax, r10
+        // sub eax, r11d
+        // add eax, -1126379749
+        // mov DWORD PTR [r9+612], eax
+        // ror r11, 56
+        // mov rdx, rsi
+        // add rdx, 128
         r".octa 0x4908c28348e28948fffffbd824a48d48,0x3f0a98949000003e8998949d189,0x894d00000400a9894d000003f8a1894d,0x5555be4900000410b9894d00000408b1
 .octa 0x33be4900000180b1894d555555555555,0xbe4900000188b1894d33333333333333,0x4900000190b1894d0f0f0f0f0f0f0f0f,0x198b1894d00ff00ff00ff00ffbe
 .octa 0x1a0b1894dff00ff00ff00ff00be49,0x1a8b1894dcffccffccffccffcbe4900,0xb0b1894d00f33ff300f33ff3be490000,0xb1894d3f0000003f000000be49000001
@@ -32,79 +274,1030 @@ pub unsafe extern "sysv64" fn vg_seed_expand_key(key: *const [u8; 16], schedule:
 .octa 0x244818941bbcdccf105d82944d0894c,0xd9894c20e8c148d0894c38cbc1490000,0x248818941779b99e32dc80120e9c148,0x818941779b99e305d82944d0894c0000
 .octa 0x4c20e8c148d0894c08cac1490000024c,0x818941ef3733c62dc80120e9c148d989,0x41ef3733c605d82944d0894c00000250,0xe8c148d0894c38cbc149000002548189
 .octa 0x41de6e678d2dc80120e9c148d9894c20,0x6e678d05d82944d0894c000002588189,0x48d0894c08cac1490000025c818941de,0xdccf1b2dc80120e9c148d9894c20e8c1
-.octa 0x1b05d82944d0894c00000260818941bc,0x894838cbc14900000264818941bcdccf,0x49000001e8818b4900000080c28148f2,0xa98b49000001f8898b49000001f0998b
-.octa 0x210998b4d00000208918b4d00000200,0x220a98b4d00000218a18b4d0000,0x180b1234dde3149eed149c68949,0xeed149ce8949f0314c3fcec149f3314c
-.octa 0xcec149f5314c00000180b1234dee3149,0xb1234dde314deed149d6894df1314c3f,0x894df2314d3fcec149f3314d00000180,0x314d00000180b1234dee314deed149e6
-.octa 0x4902eec149c68949f4314d3fcec149f5,0x3ecec149f1314c00000188b1234dce31,0xb1234dee314902eec149de8949f0314c,0x894df3314c3ecec149f5314c00000188
-.octa 0x4d00000188b1234de6314d02eec149d6,0x2eec149de894df2314d3ecec149f431,0xcec149f5314d00000188b1234dee314d,0x234dd6314d04eec149c68949f3314d3e
-.octa 0x49f0314c3ccec149f2314d00000190b1,0x190b1234dde314d04eec149de89,0xeec149ce8949f3314c3ccec149f3314d,0xc149f4314d00000190b1234de6314d04
-.octa 0x4dee314d04eec149ee8949f1314c3cce,0xf5314c3ccec149f5314d00000190b123,0x20698949184989491059894908418949,0x4069894d3861894d3059894d2851894d
-.octa 0x18598b49204133491041334908418b49,0x28498b49405933493859334920593349,0x1869334910698b494049334930493349,0x1851334d10518b4d3069334920693349
-.octa 0x18618b4d2859334d20598b4d2851334d,0x28698b4d3061334d2861334d2061334d,0xffffffffffffbe493869334d3069334d,0x3149ef894dce3149d6894d31894dffff
-.octa 0x4c10698949d5314ced894c08698949df,0x49dc894d1861894de3314dcd3148ed89,0x4df2314dfa894d2051894de2314dc431,0x3071894de3314cee314de6894d287189
-.octa 0x314c08598b4938598949ee3149de8949,0x49cc89491861894d18593349d93148d3,0x4071894ddc314dcc89490861894dc431,0x314cc38948485989491071334dde8949
-.octa 0x4c58598949f3314ce3894c50598949f3,0x4cfb894c60598949f3314deb3148e389,0x4dcd2149d5894d6869894ddd314ddb31,0x8949ea314d0851234d40518b4d705189
-.octa 0x4dfd894de9314cc1214820498b497849,0x79234d38798b4d00000080b9894ddd21,0x4d30598b4d0000008899894def314d18,0xb1894df5214d10698b4deb314d505923
-.octa 0x49ee314d5871234d28718b4d00000090,0x4de8314ce0214ce88948000000988189,0x494851334dc33149f7314dc13148f231,0xcb3148d3894c6859334ddf3149604933
-.octa 0x49c62149de8949d0314cd8894cfa214d,0x314ce9214cd1314cdd314dfd894dce31,0xdf314deb214dcd3149c58949cf3149d9,0x4df8314cd88948c33148f0214cd8314c
-.octa 0x314dca8949dd3149f5894dcb3149f389,0x4c60418949c53148dd894c68698949fa,0x412349f8894c7841894978412349d089,0x4900000098812349c889480841894908
-.octa 0x88812349e8894c000000988189,0x894918412349d8894800000088818949,0xd8894c5041894950412349f0894c1841,0x89480000009081894900000090812349
-.octa 0x79234d7051234d6061234d58412349e8,0x3859234900000080a9234d2049234940,0x2871894d286923491059234d3071234d,0x3349f9314ceb31496871234d60718b4d
-.octa 0x49ef314d00000098b98b4dfa314d5059,0x31495049334900000098898b49684989,0x8889334978498b4950498949c4,0xcf3149dd3149f5314c00000090813349
-.octa 0x314d00000088813349de314d18718b4d,0x4918718b4df2314df4314d2879334dfb,0xd5314c08698b4918698949e7314dc631,0x4d193349db314c29334de5314dd0314c
-.octa 0x6879334d50693349e93148fb314df389,0x69894d19334d1859334d31334dce3149,0x598949f9894cca8949f4894dc5894918,0x5989490841894968418b4918598b4968
-.octa 0x59894d2851894d206989491849894910,0x41334918418b494069894d3861894d30,0x71334d10718b4d384133493041334928,0x4c000001a0b1234d0000019881234920
-.octa 0x8b4d3071334d10718b4d18598b49f031,0x1989923494079334d3879334d2879,0x8b49fb314cf3314c000001a0b1234d00,0x334d08798b4d2071334d18718b4d1049
-.octa 0xb1234d000001988923493879334d2879,0x334918698b49f9314cf1314c000001a0,0x334d08798b4d2071334d10718b4d4069,0x198a923493879334d3079334d2879
-.octa 0x8b4dfd314cf5314c000001a0b1234d00,0x8b4d40718b4d2851334d1851334d0851,0xb1234d0000019891234d3879334d2079,0x334d08598b4dfa314df2314d000001a0
-.octa 0x334d3079334d20798b4d28718b4d1059,0x1a0b1234d0000019899234d3879,0x334d2861334d08618b4dfb314df3314d,0x8b4d2071334d1871334d10718b4d3061
-.octa 0x1a0b1234d00000198a1234d3879,0x334d3869334d10698b4dfc314df4314d,0xc689492069334d00000198a9234d4069,0xf3314c00000180b1234dde3149eed149
-.octa 0xee3149eed149ce8949f0314c3fcec149,0x314c3fcec149f5314c00000180b1234d,0x180b1234dde314deed149d6894df1,0xd149e6894df2314d3fcec149f3314d00
-.octa 0xc149f5314d00000180b1234dee314dee,0x4dce314902eec149c68949f4314d3fce,0xf0314c3ecec149f1314c00000188b123,0x188b1234dee314902eec149de8949
-.octa 0xc149d6894df3314c3ecec149f5314c00,0x49f4314d00000188b1234de6314d02ee,0xee314d02eec149de894df2314d3ecec1,0x314d3ecec149f5314d00000188b1234d
-.octa 0x190b1234dd6314d04eec149c68949f3,0x49de8949f0314c3ccec149f2314d0000,0xf3314d00000190b1234dde314d04eec1,0x314d04eec149ce8949f3314c3ccec149
-.octa 0x4c3ccec149f4314d00000190b1234de6,0x90b1234dee314d04eec149ee8949f131,0xc78949f5314c3ccec149f5314d000001,0x234d08cec149c68949000001a8b9234d
-.octa 0x4d28cec149c68949f7314d000001b0b1,0x10cec149c68949f7314d000001b8b123,0xcec149c68949f7314d000001c0b1234d,0xc149c68949f7314d000001c8b1234d30
-.octa 0x49c68949f7314d000001d0b1234d18ce,0xb9334df7314d000001d8b1234d38cec1,0x234ddf8949000001e8b9894d000001e0,0xb0b1234d08cec149de8949000001a8b9
-.octa 0xb1234d28cec149de8949f7314d000001,0x234d10cec149de8949f7314d000001b8,0x4d30cec149de8949f7314d000001c0b1,0x18cec149de8949f7314d000001c8b123
-.octa 0xcec149de8949f7314d000001d0b1234d,0x1e0b9334df7314d000001d8b1234d38,0xa8b9234dcf8949000001f0b9894d0000,0x1b0b1234d08cec149ce8949000001
-.octa 0x1b8b1234d28cec149ce8949f7314d00,0xc0b1234d10cec149ce8949f7314d0000,0xb1234d30cec149ce8949f7314d000001,0x234d18cec149ce8949f7314d000001c8
-.octa 0x4d38cec149ce8949f7314d000001d0b1,0x1e0b9334df7314d000001d8b123,0x1a8b9234def8949000001f8b9894d,0x4d000001b0b1234d08cec149ee894900
-.octa 0x1b8b1234d28cec149ee8949f731,0x1c0b1234d10cec149ee8949f7314d,0x1c8b1234d30cec149ee8949f7314d00,0xd0b1234d18cec149ee8949f7314d0000
-.octa 0xb1234d38cec149ee8949f7314d000001,0x894d000001e0b9334df7314d000001d8,0x4d000001a8b9234dd7894d00000200b9,0xf7314d000001b0b1234d08cec149d689
-.octa 0x314d000001b8b1234d28cec149d6894d,0x4d000001c0b1234d10cec149d6894df7,0x1c8b1234d30cec149d6894df731,0x1d0b1234d18cec149d6894df7314d
-.octa 0x1d8b1234d38cec149d6894df7314d00,0x8b9894d000001e0b9334df7314d0000,0xde894d000001a8b9234ddf894d000002,0x894df7314d000001b0b1234d08cec149
-.octa 0x4df7314d000001b8b1234d28cec149de,0xf7314d000001c0b1234d10cec149de89,0x314d000001c8b1234d30cec149de894d,0x4d000001d0b1234d18cec149de894df7
-.octa 0x1d8b1234d38cec149de894df731,0x210b9894d000001e0b9334df7314d,0xc149e6894d000001a8b9234de7894d00,0x49e6894df7314d000001b0b1234d08ce
-.octa 0xe6894df7314d000001b8b1234d28cec1,0x894df7314d000001c0b1234d10cec149,0x4df7314d000001c8b1234d30cec149e6,0xf7314d000001d0b1234d18cec149e689
-.octa 0x314d000001d8b1234d38cec149e6894d,0x4d00000218b9894d000001e0b9334df7,0x8cec149ee894d000001a8b9234def89,0xcec149ee894df7314d000001b0b1234d
-.octa 0xc149ee894df7314d000001b8b1234d28,0x49ee894df7314d000001c0b1234d10ce,0xee894df7314d000001c8b1234d30cec1,0x894df7314d000001d0b1234d18cec149
-.octa 0x4df7314d000001d8b1234d38cec149ee,0x818b4100000220b9894d000001e0b933,0x44689000001ec818b410689000001e8,0x1f4818b41084689000001f0818b41
-.octa 0x8b41104689000001f8818b410c468900,0x8900000200818b41144689000001fc81,0x8818b411c468900000204818b411846,0x2446890000020c818b41204689000002
-.octa 0x214818b4128468900000210818b41,0x8b4130468900000218818b412c468900,0x8900000220818b413446890000021c81,0x40c683483c468900000224818b413846
-.octa 0x228818b41000000e3e90575d63948,0x410000022c818b41000001e881894100,0x81894100000230818b41000001ec8189,0x1f481894100000234818b41000001f0
-.octa 0x1f881894100000238818b410000,0x8b41000001fc8189410000023c818b41,0x44818b41000002008189410000024081,0x248818b4100000204818941000002
-.octa 0x410000024c818b410000020881894100,0x81894100000250818b410000020c8189,0x21481894100000254818b4100000210,0x21881894100000258818b410000
-.octa 0x8b410000021c8189410000025c818b41,0x64818b41000002208189410000026081,0xb5850fd6394800000224818941000002,0x3f0a98b49000003e8998b49fffff2
-.octa 0x4d00000400a98b4d000003f8a18b4d00,0xbb4100000410b98b4d00000408b18b,0x5c894c10245c894c08245c894c000000,0x245c894c28245c894c20245c894c1824
-.octa 0x48245c894c40245c894c38245c894c30,0x4c60245c894c58245c894c50245c894c,0x894c78245c894c70245c894c68245c89,0x894c00000088249c894c00000080249c
-.octa 0x894c00000098249c894c00000090249c,0x894c000000a8249c894c000000a0249c,0x894c000000b8249c894c000000b0249c,0x894c000000c8249c894c000000c0249c
-.octa 0x894c000000d8249c894c000000d0249c,0x894c000000e8249c894c000000e0249c,0x894c000000f8249c894c000000f0249c,0x894c00000108249c894c00000100249c
-.octa 0x894c00000118249c894c00000110249c,0x894c00000128249c894c00000120249c,0x894c00000138249c894c00000130249c,0x894c00000148249c894c00000140249c
-.octa 0x894c00000158249c894c00000150249c,0x894c00000168249c894c00000160249c,0x894c00000178249c894c00000170249c,0x894c00000188249c894c00000180249c
-.octa 0x894c00000198249c894c00000190249c,0x894c000001a8249c894c000001a0249c,0x894c000001b8249c894c000001b0249c,0x894c000001c8249c894c000001c0249c
-.octa 0x894c000001d8249c894c000001d0249c,0x894c000001e8249c894c000001e0249c,0x894c000001f8249c894c000001f0249c,0x894c00000208249c894c00000200249c
-.octa 0x894c00000218249c894c00000210249c,0x894c00000228249c894c00000220249c,0x894c00000238249c894c00000230249c,0x894c00000248249c894c00000240249c
-.octa 0x894c00000258249c894c00000250249c,0x894c00000268249c894c00000260249c,0x894c00000278249c894c00000270249c,0x894c00000288249c894c00000280249c
-.octa 0x894c00000298249c894c00000290249c,0x894c000002a8249c894c000002a0249c,0x894c000002b8249c894c000002b0249c,0x894c000002c8249c894c000002c0249c
-.octa 0x894c000002d8249c894c000002d0249c,0x894c000002e8249c894c000002e0249c,0x894c000002f8249c894c000002f0249c,0x894c00000308249c894c00000300249c
-.octa 0x894c00000318249c894c00000310249c,0x894c00000328249c894c00000320249c,0x894c00000338249c894c00000330249c,0x894c00000348249c894c00000340249c
-.octa 0x894c00000358249c894c00000350249c,0x894c00000368249c894c00000360249c,0x894c00000378249c894c00000370249c,0x894c00000388249c894c00000380249c
-.octa 0x894c00000398249c894c00000390249c,0x894c000003a8249c894c000003a0249c,0x894c000003b8249c894c000003b0249c,0x894c000003c8249c894c000003c0249c
-.octa 0x894c000003d8249c894c000003d0249c,0x894c000003e8249c894c000003e0249c,0x894c000003f8249c894c000003f0249c,0x894c00000408249c894c00000400249c
-.octa 0x894c00000418249c894c00000410249c
-.byte 156,36,32,4,0,0,72,141,164,36,40,4,0,0,195",
-        r".p2align 6",
+.octa 0x1b05d82944d0894c00000260818941bc,0x894838cbc14900000264818941bcdccf
+.byte 0xf2,0x48,0x81,0xc2,0x80,0x00,0x00,0x00
+20:",
+        // mov rax, QWORD PTR [r9+488]
+        // mov rbx, QWORD PTR [r9+496]
+        // mov rcx, QWORD PTR [r9+504]
+        // mov rbp, QWORD PTR [r9+512]
+        // mov r10, QWORD PTR [r9+520]
+        // mov r11, QWORD PTR [r9+528]
+        // mov r12, QWORD PTR [r9+536]
+        // mov r13, QWORD PTR [r9+544]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+8]
+        // xor rax, QWORD PTR [r9+16]
+        // xor rax, QWORD PTR [r9+32]
+        // mov rbx, QWORD PTR [r9+24]
+        // xor rbx, QWORD PTR [r9+32]
+        // xor rbx, QWORD PTR [r9+56]
+        // xor rbx, QWORD PTR [r9+64]
+        // mov rcx, QWORD PTR [r9+40]
+        // xor rcx, QWORD PTR [r9+48]
+        // xor rcx, QWORD PTR [r9+64]
+        // mov rbp, QWORD PTR [r9+16]
+        // xor rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+32]
+        // xor rbp, QWORD PTR [r9+48]
+        // mov r10, QWORD PTR [r9+16]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r11, QWORD PTR [r9+32]
+        // xor r11, QWORD PTR [r9+40]
+        // mov r12, QWORD PTR [r9+24]
+        // xor r12, QWORD PTR [r9+32]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r13, QWORD PTR [r9+40]
+        // xor r13, QWORD PTR [r9+48]
+        // xor r13, QWORD PTR [r9+56]
+        // movabs r14, -1
+        // mov QWORD PTR [r9], r14
+        // mov r14, r10
+        // xor r14, rcx
+        // mov r15, r13
+        // xor r15, rbx
+        // mov QWORD PTR [r9+8], rbp
+        // mov rbp, r13
+        // xor rbp, r10
+        // mov QWORD PTR [r9+16], rbp
+        // mov rbp, r13
+        // xor rbp, rcx
+        // xor r11, r12
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, r11
+        // xor r12, rax
+        // xor r10, r12
+        // mov QWORD PTR [r9+32], r10
+        // mov r10, r15
+        // xor r10, r14
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, r12
+        // xor r14, r13
+        // xor rbx, r12
+        // mov QWORD PTR [r9+48], r14
+        // mov r14, rbx
+        // xor r14, rbp
+        // mov QWORD PTR [r9+56], rbx
+        // mov rbx, QWORD PTR [r9+8]
+        // xor rbx, r10
+        // xor rcx, rbx
+        // xor rbx, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, rcx
+        // xor r12, rax
+        // mov QWORD PTR [r9+8], r12
+        // mov r12, rcx
+        // xor r12, r11
+        // mov QWORD PTR [r9+64], r14
+        // mov r14, rbx
+        // xor r14, QWORD PTR [r9+16]
+        // mov QWORD PTR [r9+72], rbx
+        // mov rbx, rax
+        // xor rbx, r14
+        // mov QWORD PTR [r9+80], rbx
+        // mov rbx, r12
+        // xor rbx, r14
+        // mov QWORD PTR [r9+88], rbx
+        // mov rbx, r12
+        // xor rbx, rbp
+        // xor r11, r14
+        // mov QWORD PTR [r9+96], rbx
+        // mov rbx, r15
+        // xor rbx, r11
+        // xor r13, r11
+        // mov QWORD PTR [r9+104], r13
+        // mov r13, r10
+        // and r13, rcx
+        // mov QWORD PTR [r9+112], r10
+        // mov r10, QWORD PTR [r9+64]
+        // and r10, QWORD PTR [r9+8]
+        // xor r10, r13
+        // mov QWORD PTR [r9+120], rcx
+        // mov rcx, QWORD PTR [r9+32]
+        // and rcx, rax
+        // xor rcx, r13
+        // mov r13, r15
+        // and r13, r11
+        // mov QWORD PTR [r9+128], r15
+        // mov r15, QWORD PTR [r9+56]
+        // and r15, QWORD PTR [r9+24]
+        // xor r15, r13
+        // mov QWORD PTR [r9+136], r11
+        // mov r11, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+80]
+        // xor r11, r13
+        // mov r13, QWORD PTR [r9+16]
+        // and r13, r14
+        // mov QWORD PTR [r9+144], r14
+        // mov r14, QWORD PTR [r9+40]
+        // and r14, QWORD PTR [r9+88]
+        // xor r14, r13
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, rbp
+        // and rax, r12
+        // xor rax, r13
+        // xor r10, r14
+        // xor rcx, rax
+        // xor r15, r14
+        // xor r11, rax
+        // xor r10, QWORD PTR [r9+72]
+        // xor rcx, QWORD PTR [r9+96]
+        // xor r15, rbx
+        // xor r11, QWORD PTR [r9+104]
+        // mov rbx, r10
+        // xor rbx, rcx
+        // and r10, r15
+        // mov rax, r11
+        // xor rax, r10
+        // mov r14, rbx
+        // and r14, rax
+        // xor r14, rcx
+        // mov r13, r15
+        // xor r13, r11
+        // xor rcx, r10
+        // and rcx, r13
+        // xor rcx, r11
+        // xor r15, rcx
+        // mov r13, rax
+        // xor r13, rcx
+        // and r11, r13
+        // xor r15, r11
+        // xor rax, r11
+        // and rax, r14
+        // xor rbx, rax
+        // mov rax, rbx
+        // xor rax, r15
+        // mov r11, r14
+        // xor r11, rcx
+        // mov r13, r14
+        // xor r13, rbx
+        // mov r10, rcx
+        // xor r10, r15
+        // mov QWORD PTR [r9+104], rbp
+        // mov rbp, r11
+        // xor rbp, rax
+        // mov QWORD PTR [r9+96], rax
+        // mov rax, r10
+        // and rax, QWORD PTR [r9+120]
+        // mov QWORD PTR [r9+120], rax
+        // mov rax, r15
+        // and rax, QWORD PTR [r9+8]
+        // mov QWORD PTR [r9+8], rax
+        // mov rax, rcx
+        // and rax, QWORD PTR [r9+152]
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, r13
+        // and rax, QWORD PTR [r9+136]
+        // mov QWORD PTR [r9+136], rax
+        // mov rax, rbx
+        // and rax, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], rax
+        // mov rax, r14
+        // and rax, QWORD PTR [r9+80]
+        // mov QWORD PTR [r9+80], rax
+        // mov rax, r11
+        // and rax, QWORD PTR [r9+144]
+        // mov QWORD PTR [r9+144], rax
+        // mov rax, rbp
+        // and rax, QWORD PTR [r9+88]
+        // and r12, QWORD PTR [r9+96]
+        // and r10, QWORD PTR [r9+112]
+        // and r15, QWORD PTR [r9+64]
+        // and rcx, QWORD PTR [r9+32]
+        // and r13, QWORD PTR [r9+128]
+        // and rbx, QWORD PTR [r9+56]
+        // and r14, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+16]
+        // and rbp, QWORD PTR [r9+40]
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, QWORD PTR [r9+96]
+        // and r14, QWORD PTR [r9+104]
+        // xor r11, rbp
+        // xor rcx, r15
+        // xor rbx, QWORD PTR [r9+80]
+        // xor r10, r15
+        // mov r15, QWORD PTR [r9+152]
+        // xor r15, r13
+        // mov QWORD PTR [r9+104], rcx
+        // mov rcx, QWORD PTR [r9+152]
+        // xor rcx, QWORD PTR [r9+80]
+        // xor r12, rax
+        // mov QWORD PTR [r9+80], rcx
+        // mov rcx, QWORD PTR [r9+120]
+        // xor rcx, QWORD PTR [r9+136]
+        // xor rax, QWORD PTR [r9+144]
+        // xor rbp, r14
+        // xor r13, rbx
+        // xor r15, rcx
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, r11
+        // xor rax, QWORD PTR [r9+136]
+        // xor r11, r15
+        // xor r15, QWORD PTR [r9+40]
+        // xor r12, r14
+        // xor r10, r14
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, rax
+        // xor r15, r12
+        // mov QWORD PTR [r9+24], rbp
+        // mov rbp, QWORD PTR [r9+8]
+        // xor rbp, r10
+        // xor rax, r10
+        // xor r13, r12
+        // xor r13, QWORD PTR [r9]
+        // xor rbx, r11
+        // xor rbx, QWORD PTR [r9]
+        // mov r11, r14
+        // xor r11, r15
+        // xor rcx, rbp
+        // xor rbp, QWORD PTR [r9+80]
+        // xor r15, QWORD PTR [r9+104]
+        // xor r14, rcx
+        // xor r14, QWORD PTR [r9]
+        // xor r11, QWORD PTR [r9+24]
+        // xor r11, QWORD PTR [r9]
+        // mov QWORD PTR [r9+24], r13
+        // mov r13, rax
+        // mov r12, r14
+        // mov r10, rcx
+        // mov rcx, r15
+        // mov QWORD PTR [r9+104], rbx
+        // mov rbx, QWORD PTR [r9+24]
+        // mov rax, QWORD PTR [r9+104]
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+24]
+        // xor rax, QWORD PTR [r9+40]
+        // xor rax, QWORD PTR [r9+48]
+        // xor rax, QWORD PTR [r9+56]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // and rax, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rax, r14
+        // mov rbx, QWORD PTR [r9+24]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+48]
+        // mov r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // xor r15, QWORD PTR [r9+64]
+        // and rbx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbx, r14
+        // xor rbx, r15
+        // mov rcx, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // and rcx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rcx, r14
+        // xor rcx, r15
+        // mov rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+64]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and rbp, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbp, r14
+        // xor rbp, r15
+        // mov r10, QWORD PTR [r9+8]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r14, QWORD PTR [r9+64]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+56]
+        // and r10, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r10, r14
+        // xor r10, r15
+        // mov r11, QWORD PTR [r9+8]
+        // xor r11, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+40]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and r11, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r11, r14
+        // xor r11, r15
+        // mov r12, QWORD PTR [r9+8]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+56]
+        // and r12, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r12, r14
+        // xor r12, r15
+        // mov r13, QWORD PTR [r9+16]
+        // xor r13, QWORD PTR [r9+56]
+        // xor r13, QWORD PTR [r9+64]
+        // and r13, QWORD PTR [r9+408]
+        // xor r13, QWORD PTR [r9+32]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov r15, rax
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rax
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+488], r15
+        // mov r15, rbx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+496], r15
+        // mov r15, rcx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rcx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+504], r15
+        // mov r15, rbp
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbp
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+512], r15
+        // mov r15, r10
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r10
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+520], r15
+        // mov r15, r11
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r11
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+528], r15
+        // mov r15, r12
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r12
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+536], r15
+        // mov r15, r13
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r13
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+544], r15
+        // mov eax, DWORD PTR [r9+488]
+        // mov DWORD PTR [rsi], eax
+        // mov eax, DWORD PTR [r9+492]
+        // mov DWORD PTR [rsi+4], eax
+        // mov eax, DWORD PTR [r9+496]
+        // mov DWORD PTR [rsi+8], eax
+        // mov eax, DWORD PTR [r9+500]
+        // mov DWORD PTR [rsi+12], eax
+        // mov eax, DWORD PTR [r9+504]
+        // mov DWORD PTR [rsi+16], eax
+        // mov eax, DWORD PTR [r9+508]
+        // mov DWORD PTR [rsi+20], eax
+        // mov eax, DWORD PTR [r9+512]
+        // mov DWORD PTR [rsi+24], eax
+        // mov eax, DWORD PTR [r9+516]
+        // mov DWORD PTR [rsi+28], eax
+        // mov eax, DWORD PTR [r9+520]
+        // mov DWORD PTR [rsi+32], eax
+        // mov eax, DWORD PTR [r9+524]
+        // mov DWORD PTR [rsi+36], eax
+        // mov eax, DWORD PTR [r9+528]
+        // mov DWORD PTR [rsi+40], eax
+        // mov eax, DWORD PTR [r9+532]
+        // mov DWORD PTR [rsi+44], eax
+        // mov eax, DWORD PTR [r9+536]
+        // mov DWORD PTR [rsi+48], eax
+        // mov eax, DWORD PTR [r9+540]
+        // mov DWORD PTR [rsi+52], eax
+        // mov eax, DWORD PTR [r9+544]
+        // mov DWORD PTR [rsi+56], eax
+        // mov eax, DWORD PTR [r9+548]
+        // mov DWORD PTR [rsi+60], eax
+        // add rsi, 64
+        // cmp rsi, rdx
+        r".octa 0x8b49000001f0998b49000001e8818b49,0x8918b4d00000200a98b49000001f889,0x218a18b4d00000210998b4d000002,0x3149eed149c6894900000220a98b4d00
+.octa 0x4c3fcec149f3314c00000180b1234dde,0x180b1234dee3149eed149ce8949f031,0x49d6894df1314c3fcec149f5314c0000,0x49f3314d00000180b1234dde314deed1
+.octa 0x4dee314deed149e6894df2314d3fcec1,0xf4314d3fcec149f5314d00000180b123,0x188b1234dce314902eec149c68949,0xc149de8949f0314c3ecec149f1314c00
+.octa 0x49f5314c00000188b1234dee314902ee,0xe6314d02eec149d6894df3314c3ecec1,0x314d3ecec149f4314d00000188b1234d,0x188b1234dee314d02eec149de894df2
+.octa 0x49c68949f3314d3ecec149f5314d0000,0xf2314d00000190b1234dd6314d04eec1,0x314d04eec149de8949f0314c3ccec149,0x4c3ccec149f3314d00000190b1234dde
+.octa 0x90b1234de6314d04eec149ce8949f331,0xee8949f1314c3ccec149f4314d000001,0x314d00000190b1234dee314d04eec149,0x1059894908418949f5314c3ccec149f5
+.octa 0x3059894d2851894d2069894918498949,0x1041334908418b494069894d3861894d,0x385933492059334918598b4920413349,0x404933493049334928498b4940593349
+.octa 0x30693349206933491869334910698b49,0x20598b4d2851334d1851334d10518b4d,0x2861334d2061334d18618b4d2859334d,0x3869334d3069334d28698b4d3061334d
+.octa 0xd6894d31894dffffffffffffffffbe49,0xed894c08698949df3149ef894dce3149,0xe3314dcd3148ed894c10698949d5314c,0x51894de2314dc43149dc894d1861894d
+.octa 0x314de6894d2871894df2314dfa894d20,0x8949ee3149de89493071894de3314cee,0x18593349d93148d3314c08598b493859,0x89490861894dc43149cc89491861894d
+.octa 0x491071334dde89494071894ddc314dcc,0xe3894c50598949f3314cc38948485989,0xf3314deb3148e3894c58598949f3314c,0x69894ddd314ddb314cfb894c60598949
+.octa 0x4d40518b4d7051894dcd2149d5894d68,0x214820498b4978498949ea314d085123,0x80b9894ddd214dfd894de9314cc1,0x8899894def314d1879234d38798b4d00
+.octa 0x8b4deb314d5059234d30598b4d000000,0x28718b4d00000090b1894df5214d1069,0x894800000098818949ee314d5871234d,0xf7314dc13148f2314de8314ce0214ce8
+.octa 0x334ddf3149604933494851334dc33149,0x314cd8894cfa214dcb3148d3894c6859,0xdd314dfd894dce3149c62149de8949d0,0x49c58949cf3149d9314ce9214cd1314c
+.octa 0x3148f0214cd8314cdf314deb214dcd31,0xf5894dcb3149f3894df8314cd88948c3,0xdd894c68698949fa314dca8949dd3149,0x894978412349d0894c60418949c53148
+.octa 0xc889480841894908412349f8894c7841,0x894c0000009881894900000098812349,0x480000008881894900000088812349e8,0x412349f0894c1841894918412349d889
+.octa 0x4900000090812349d8894c5041894950,0x61234d58412349e88948000000908189,0xa9234d204923494079234d7051234d60,0x1059234d3071234d3859234900000080
+.octa 0x6871234d60718b4d2871894d28692349,0xb98b4dfa314d50593349f9314ceb3149,0x98898b4968498949ef314d00000098,0x498b4950498949c43149504933490000
+.octa 0x4c000000908133490000008889334978,0x49de314d18718b4dcf3149dd3149f531,0xf4314d2879334dfb314d000000888133,0x698949e7314dc6314918718b4df2314d
+.octa 0x334de5314dd0314cd5314c08698b4918,0xe93148fb314df3894d193349db314c29,0x334d31334dce31496879334d50693349,0x49f4894dc589491869894d19334d1859
+.octa 0x418b4918598b4968598949f9894cca89,0x69894918498949105989490841894968,0x69894d3861894d3059894d2851894d20,0x413349304133492841334918418b4940
+.octa 0x1988123492071334d10718b4d38,0x8b4d18598b49f0314c000001a0b1234d,0x334d3879334d28798b4d3071334d1071,0x1a0b1234d000001989923494079
+.octa 0x334d18718b4d10498b49fb314cf3314c,0x23493879334d2879334d08798b4d2071,0x4cf1314c000001a0b1234d0000019889,0x334d10718b4d4069334918698b49f931
+.octa 0x334d3079334d2879334d08798b4d2071,0x1a0b1234d00000198a923493879,0x334d1851334d08518b4dfd314cf5314c,0x234d3879334d20798b4d40718b4d2851
+.octa 0x4df2314d000001a0b1234d0000019891,0x8b4d28718b4d1059334d08598b4dfa31,0x19899234d3879334d3079334d2079,0x8b4dfb314df3314d000001a0b1234d00
+.octa 0x334d10718b4d3061334d2861334d0861,0x198a1234d38798b4d2071334d1871,0x8b4dfc314df4314d000001a0b1234d00,0x198a9234d4069334d3869334d1069
+.octa 0x234dde3149eed149c689492069334d00,0x49f0314c3fcec149f3314c00000180b1,0x4c00000180b1234dee3149eed149ce89,0x4deed149d6894df1314c3fcec149f531
+.octa 0x3fcec149f3314d00000180b1234dde31,0x80b1234dee314deed149e6894df2314d,0xc68949f4314d3fcec149f5314d000001,0x314c00000188b1234dce314902eec149
+.octa 0x4902eec149de8949f0314c3ecec149f1,0x3ecec149f5314c00000188b1234dee31,0xb1234de6314d02eec149d6894df3314c,0x894df2314d3ecec149f4314d00000188
+.octa 0x4d00000188b1234dee314d02eec149de,0x4eec149c68949f3314d3ecec149f531,0xcec149f2314d00000190b1234dd6314d,0x234dde314d04eec149de8949f0314c3c
+.octa 0x49f3314c3ccec149f3314d00000190b1,0x190b1234de6314d04eec149ce89,0xeec149ee8949f1314c3ccec149f4314d,0xc149f5314d00000190b1234dee314d04
+.octa 0x49000001a8b9234dc78949f5314c3cce,0xf7314d000001b0b1234d08cec149c689,0x314d000001b8b1234d28cec149c68949,0x4d000001c0b1234d10cec149c68949f7
+.octa 0x1c8b1234d30cec149c68949f731,0x1d0b1234d18cec149c68949f7314d,0x1d8b1234d38cec149c68949f7314d00,0xe8b9894d000001e0b9334df7314d0000
+.octa 0xde8949000001a8b9234ddf8949000001,0x8949f7314d000001b0b1234d08cec149,0x49f7314d000001b8b1234d28cec149de,0xf7314d000001c0b1234d10cec149de89
+.octa 0x314d000001c8b1234d30cec149de8949,0x4d000001d0b1234d18cec149de8949f7,0x1d8b1234d38cec149de8949f731,0x1f0b9894d000001e0b9334df7314d
+.octa 0xc149ce8949000001a8b9234dcf894900,0x49ce8949f7314d000001b0b1234d08ce,0xce8949f7314d000001b8b1234d28cec1,0x8949f7314d000001c0b1234d10cec149
+.octa 0x49f7314d000001c8b1234d30cec149ce,0xf7314d000001d0b1234d18cec149ce89,0x314d000001d8b1234d38cec149ce8949,0x49000001f8b9894d000001e0b9334df7
+.octa 0x8cec149ee8949000001a8b9234def89,0xcec149ee8949f7314d000001b0b1234d,0xc149ee8949f7314d000001b8b1234d28,0x49ee8949f7314d000001c0b1234d10ce
+.octa 0xee8949f7314d000001c8b1234d30cec1,0x8949f7314d000001d0b1234d18cec149,0x4df7314d000001d8b1234d38cec149ee,0xd7894d00000200b9894d000001e0b933
+.octa 0x234d08cec149d6894d000001a8b9234d,0x4d28cec149d6894df7314d000001b0b1,0x10cec149d6894df7314d000001b8b123,0xcec149d6894df7314d000001c0b1234d
+.octa 0xc149d6894df7314d000001c8b1234d30,0x49d6894df7314d000001d0b1234d18ce,0xb9334df7314d000001d8b1234d38cec1,0x234ddf894d00000208b9894d000001e0
+.octa 0xb0b1234d08cec149de894d000001a8b9,0xb1234d28cec149de894df7314d000001,0x234d10cec149de894df7314d000001b8,0x4d30cec149de894df7314d000001c0b1
+.octa 0x18cec149de894df7314d000001c8b123,0xcec149de894df7314d000001d0b1234d,0x1e0b9334df7314d000001d8b1234d38,0xa8b9234de7894d00000210b9894d0000
+.octa 0x1b0b1234d08cec149e6894d000001,0x1b8b1234d28cec149e6894df7314d00,0xc0b1234d10cec149e6894df7314d0000,0xb1234d30cec149e6894df7314d000001
+.octa 0x234d18cec149e6894df7314d000001c8,0x4d38cec149e6894df7314d000001d0b1,0x1e0b9334df7314d000001d8b123,0x1a8b9234def894d00000218b9894d
+.octa 0x4d000001b0b1234d08cec149ee894d00,0x1b8b1234d28cec149ee894df731,0x1c0b1234d10cec149ee894df7314d,0x1c8b1234d30cec149ee894df7314d00
+.octa 0xd0b1234d18cec149ee894df7314d0000,0xb1234d38cec149ee894df7314d000001,0x894d000001e0b9334df7314d000001d8,0x8b410689000001e8818b4100000220b9
+.octa 0x89000001f0818b41044689000001ec81,0xf8818b410c4689000001f4818b410846,0x144689000001fc818b41104689000001,0x204818b4118468900000200818b41
+.octa 0x8b4120468900000208818b411c468900,0x8900000210818b412446890000020c81,0x18818b412c468900000214818b412846,0x3446890000021c818b41304689000002
+.octa 0x224818b4138468900000220818b41
+.byte 0x00,0x89,0x46,0x3c,0x48,0x83,0xc6,0x40,0x48,0x39,0xd6
+jne 21f
+jmp 22f
+21:",
+        // mov eax, DWORD PTR [r9+552]
+        // mov DWORD PTR [r9+488], eax
+        // mov eax, DWORD PTR [r9+556]
+        // mov DWORD PTR [r9+492], eax
+        // mov eax, DWORD PTR [r9+560]
+        // mov DWORD PTR [r9+496], eax
+        // mov eax, DWORD PTR [r9+564]
+        // mov DWORD PTR [r9+500], eax
+        // mov eax, DWORD PTR [r9+568]
+        // mov DWORD PTR [r9+504], eax
+        // mov eax, DWORD PTR [r9+572]
+        // mov DWORD PTR [r9+508], eax
+        // mov eax, DWORD PTR [r9+576]
+        // mov DWORD PTR [r9+512], eax
+        // mov eax, DWORD PTR [r9+580]
+        // mov DWORD PTR [r9+516], eax
+        // mov eax, DWORD PTR [r9+584]
+        // mov DWORD PTR [r9+520], eax
+        // mov eax, DWORD PTR [r9+588]
+        // mov DWORD PTR [r9+524], eax
+        // mov eax, DWORD PTR [r9+592]
+        // mov DWORD PTR [r9+528], eax
+        // mov eax, DWORD PTR [r9+596]
+        // mov DWORD PTR [r9+532], eax
+        // mov eax, DWORD PTR [r9+600]
+        // mov DWORD PTR [r9+536], eax
+        // mov eax, DWORD PTR [r9+604]
+        // mov DWORD PTR [r9+540], eax
+        // mov eax, DWORD PTR [r9+608]
+        // mov DWORD PTR [r9+544], eax
+        // mov eax, DWORD PTR [r9+612]
+        // mov DWORD PTR [r9+548], eax
+        // cmp rsi, rdx
+        r".octa 0x8b41000001e881894100000228818b41,0x30818b41000001ec8189410000022c81,0x234818b41000001f0818941000002,0x4100000238818b41000001f481894100
+.octa 0x8189410000023c818b41000001f88189,0x20081894100000240818b41000001fc,0x20481894100000244818b410000,0x8b410000020881894100000248818b41
+.octa 0x50818b410000020c8189410000024c81,0x254818b4100000210818941000002,0x4100000258818b410000021481894100,0x8189410000025c818b41000002188189
+.octa 0x22081894100000260818b410000021c,0x22481894100000264818b410000
+.byte 0x48,0x39,0xd6
+22:
+jne 20b",
+        // mov rbx, QWORD PTR [r9+1000]
+        // mov rbp, QWORD PTR [r9+1008]
+        // mov r12, QWORD PTR [r9+1016]
+        // mov r13, QWORD PTR [r9+1024]
+        // mov r14, QWORD PTR [r9+1032]
+        // mov r15, QWORD PTR [r9+1040]
+        // mov r11d, 0
+        // mov QWORD PTR [rsp+8], r11
+        // mov QWORD PTR [rsp+16], r11
+        // mov QWORD PTR [rsp+24], r11
+        // mov QWORD PTR [rsp+32], r11
+        // mov QWORD PTR [rsp+40], r11
+        // mov QWORD PTR [rsp+48], r11
+        // mov QWORD PTR [rsp+56], r11
+        // mov QWORD PTR [rsp+64], r11
+        // mov QWORD PTR [rsp+72], r11
+        // mov QWORD PTR [rsp+80], r11
+        // mov QWORD PTR [rsp+88], r11
+        // mov QWORD PTR [rsp+96], r11
+        // mov QWORD PTR [rsp+104], r11
+        // mov QWORD PTR [rsp+112], r11
+        // mov QWORD PTR [rsp+120], r11
+        // mov QWORD PTR [rsp+128], r11
+        // mov QWORD PTR [rsp+136], r11
+        // mov QWORD PTR [rsp+144], r11
+        // mov QWORD PTR [rsp+152], r11
+        // mov QWORD PTR [rsp+160], r11
+        // mov QWORD PTR [rsp+168], r11
+        // mov QWORD PTR [rsp+176], r11
+        // mov QWORD PTR [rsp+184], r11
+        // mov QWORD PTR [rsp+192], r11
+        // mov QWORD PTR [rsp+200], r11
+        // mov QWORD PTR [rsp+208], r11
+        // mov QWORD PTR [rsp+216], r11
+        // mov QWORD PTR [rsp+224], r11
+        // mov QWORD PTR [rsp+232], r11
+        // mov QWORD PTR [rsp+240], r11
+        // mov QWORD PTR [rsp+248], r11
+        // mov QWORD PTR [rsp+256], r11
+        // mov QWORD PTR [rsp+264], r11
+        // mov QWORD PTR [rsp+272], r11
+        // mov QWORD PTR [rsp+280], r11
+        // mov QWORD PTR [rsp+288], r11
+        // mov QWORD PTR [rsp+296], r11
+        // mov QWORD PTR [rsp+304], r11
+        // mov QWORD PTR [rsp+312], r11
+        // mov QWORD PTR [rsp+320], r11
+        // mov QWORD PTR [rsp+328], r11
+        // mov QWORD PTR [rsp+336], r11
+        // mov QWORD PTR [rsp+344], r11
+        // mov QWORD PTR [rsp+352], r11
+        // mov QWORD PTR [rsp+360], r11
+        // mov QWORD PTR [rsp+368], r11
+        // mov QWORD PTR [rsp+376], r11
+        // mov QWORD PTR [rsp+384], r11
+        // mov QWORD PTR [rsp+392], r11
+        // mov QWORD PTR [rsp+400], r11
+        // mov QWORD PTR [rsp+408], r11
+        // mov QWORD PTR [rsp+416], r11
+        // mov QWORD PTR [rsp+424], r11
+        // mov QWORD PTR [rsp+432], r11
+        // mov QWORD PTR [rsp+440], r11
+        // mov QWORD PTR [rsp+448], r11
+        // mov QWORD PTR [rsp+456], r11
+        // mov QWORD PTR [rsp+464], r11
+        // mov QWORD PTR [rsp+472], r11
+        // mov QWORD PTR [rsp+480], r11
+        // mov QWORD PTR [rsp+488], r11
+        // mov QWORD PTR [rsp+496], r11
+        // mov QWORD PTR [rsp+504], r11
+        // mov QWORD PTR [rsp+512], r11
+        // mov QWORD PTR [rsp+520], r11
+        // mov QWORD PTR [rsp+528], r11
+        // mov QWORD PTR [rsp+536], r11
+        // mov QWORD PTR [rsp+544], r11
+        // mov QWORD PTR [rsp+552], r11
+        // mov QWORD PTR [rsp+560], r11
+        // mov QWORD PTR [rsp+568], r11
+        // mov QWORD PTR [rsp+576], r11
+        // mov QWORD PTR [rsp+584], r11
+        // mov QWORD PTR [rsp+592], r11
+        // mov QWORD PTR [rsp+600], r11
+        // mov QWORD PTR [rsp+608], r11
+        // mov QWORD PTR [rsp+616], r11
+        // mov QWORD PTR [rsp+624], r11
+        // mov QWORD PTR [rsp+632], r11
+        // mov QWORD PTR [rsp+640], r11
+        // mov QWORD PTR [rsp+648], r11
+        // mov QWORD PTR [rsp+656], r11
+        // mov QWORD PTR [rsp+664], r11
+        // mov QWORD PTR [rsp+672], r11
+        // mov QWORD PTR [rsp+680], r11
+        // mov QWORD PTR [rsp+688], r11
+        // mov QWORD PTR [rsp+696], r11
+        // mov QWORD PTR [rsp+704], r11
+        // mov QWORD PTR [rsp+712], r11
+        // mov QWORD PTR [rsp+720], r11
+        // mov QWORD PTR [rsp+728], r11
+        // mov QWORD PTR [rsp+736], r11
+        // mov QWORD PTR [rsp+744], r11
+        // mov QWORD PTR [rsp+752], r11
+        // mov QWORD PTR [rsp+760], r11
+        // mov QWORD PTR [rsp+768], r11
+        // mov QWORD PTR [rsp+776], r11
+        // mov QWORD PTR [rsp+784], r11
+        // mov QWORD PTR [rsp+792], r11
+        // mov QWORD PTR [rsp+800], r11
+        // mov QWORD PTR [rsp+808], r11
+        // mov QWORD PTR [rsp+816], r11
+        // mov QWORD PTR [rsp+824], r11
+        // mov QWORD PTR [rsp+832], r11
+        // mov QWORD PTR [rsp+840], r11
+        // mov QWORD PTR [rsp+848], r11
+        // mov QWORD PTR [rsp+856], r11
+        // mov QWORD PTR [rsp+864], r11
+        // mov QWORD PTR [rsp+872], r11
+        // mov QWORD PTR [rsp+880], r11
+        // mov QWORD PTR [rsp+888], r11
+        // mov QWORD PTR [rsp+896], r11
+        // mov QWORD PTR [rsp+904], r11
+        // mov QWORD PTR [rsp+912], r11
+        // mov QWORD PTR [rsp+920], r11
+        // mov QWORD PTR [rsp+928], r11
+        // mov QWORD PTR [rsp+936], r11
+        // mov QWORD PTR [rsp+944], r11
+        // mov QWORD PTR [rsp+952], r11
+        // mov QWORD PTR [rsp+960], r11
+        // mov QWORD PTR [rsp+968], r11
+        // mov QWORD PTR [rsp+976], r11
+        // mov QWORD PTR [rsp+984], r11
+        // mov QWORD PTR [rsp+992], r11
+        // mov QWORD PTR [rsp+1000], r11
+        // mov QWORD PTR [rsp+1008], r11
+        // mov QWORD PTR [rsp+1016], r11
+        // mov QWORD PTR [rsp+1024], r11
+        // mov QWORD PTR [rsp+1032], r11
+        // mov QWORD PTR [rsp+1040], r11
+        // mov QWORD PTR [rsp+1048], r11
+        // mov QWORD PTR [rsp+1056], r11
+        // lea rsp, [rsp+1064]
+        // ret
+        r".octa 0x8b4d000003f0a98b49000003e8998b49,0x8b18b4d00000400a98b4d000003f8a1,0xbb4100000410b98b4d000004,0x4c18245c894c10245c894c08245c894c
+.octa 0x894c30245c894c28245c894c20245c89,0x5c894c48245c894c40245c894c38245c,0x245c894c60245c894c58245c894c5024,0x80249c894c78245c894c70245c894c68
+.octa 0x90249c894c00000088249c894c000000,0xa0249c894c00000098249c894c000000,0xb0249c894c000000a8249c894c000000,0xc0249c894c000000b8249c894c000000
+.octa 0xd0249c894c000000c8249c894c000000,0xe0249c894c000000d8249c894c000000,0xf0249c894c000000e8249c894c000000,0x249c894c000000f8249c894c000000
+.octa 0x10249c894c00000108249c894c000001,0x20249c894c00000118249c894c000001,0x30249c894c00000128249c894c000001,0x40249c894c00000138249c894c000001
+.octa 0x50249c894c00000148249c894c000001,0x60249c894c00000158249c894c000001,0x70249c894c00000168249c894c000001,0x80249c894c00000178249c894c000001
+.octa 0x90249c894c00000188249c894c000001,0xa0249c894c00000198249c894c000001,0xb0249c894c000001a8249c894c000001,0xc0249c894c000001b8249c894c000001
+.octa 0xd0249c894c000001c8249c894c000001,0xe0249c894c000001d8249c894c000001,0xf0249c894c000001e8249c894c000001,0x249c894c000001f8249c894c000001
+.octa 0x10249c894c00000208249c894c000002,0x20249c894c00000218249c894c000002,0x30249c894c00000228249c894c000002,0x40249c894c00000238249c894c000002
+.octa 0x50249c894c00000248249c894c000002,0x60249c894c00000258249c894c000002,0x70249c894c00000268249c894c000002,0x80249c894c00000278249c894c000002
+.octa 0x90249c894c00000288249c894c000002,0xa0249c894c00000298249c894c000002,0xb0249c894c000002a8249c894c000002,0xc0249c894c000002b8249c894c000002
+.octa 0xd0249c894c000002c8249c894c000002,0xe0249c894c000002d8249c894c000002,0xf0249c894c000002e8249c894c000002,0x249c894c000002f8249c894c000002
+.octa 0x10249c894c00000308249c894c000003,0x20249c894c00000318249c894c000003,0x30249c894c00000328249c894c000003,0x40249c894c00000338249c894c000003
+.octa 0x50249c894c00000348249c894c000003,0x60249c894c00000358249c894c000003,0x70249c894c00000368249c894c000003,0x80249c894c00000378249c894c000003
+.octa 0x90249c894c00000388249c894c000003,0xa0249c894c00000398249c894c000003,0xb0249c894c000003a8249c894c000003,0xc0249c894c000003b8249c894c000003
+.octa 0xd0249c894c000003c8249c894c000003,0xe0249c894c000003d8249c894c000003,0xf0249c894c000003e8249c894c000003,0x249c894c000003f8249c894c000003
+.octa 0x10249c894c00000408249c894c000004,0x20249c894c00000418249c894c000004
+.byte 0x04,0x00,0x00,0x48,0x8d,0xa4,0x24,0x28,0x04,0x00,0x00,0xc3
+.p2align 6",
     )
 }
 
@@ -121,8 +1314,150 @@ pub unsafe extern "sysv64" fn vg_seed_expand_key(key: *const [u8; 16], schedule:
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r".byte 72,141,164,36,184,251,255,255,72,137,225,72,131,193,8",
-        r"call {vg_seed_encrypt_blocks}",
+        // lea rsp, [rsp-1096]
+        // mov rcx, rsp
+        // add rcx, 8
+        r".byte 0x48,0x8d,0xa4,0x24,0xb8,0xfb,0xff,0xff,0x48,0x89,0xe1,0x48,0x83,0xc1,0x08
+call {vg_seed_encrypt_blocks}",
+        // mov r11d, 0
+        // mov QWORD PTR [rsp+8], r11
+        // mov QWORD PTR [rsp+16], r11
+        // mov QWORD PTR [rsp+24], r11
+        // mov QWORD PTR [rsp+32], r11
+        // mov QWORD PTR [rsp+40], r11
+        // mov QWORD PTR [rsp+48], r11
+        // mov QWORD PTR [rsp+56], r11
+        // mov QWORD PTR [rsp+64], r11
+        // mov QWORD PTR [rsp+72], r11
+        // mov QWORD PTR [rsp+80], r11
+        // mov QWORD PTR [rsp+88], r11
+        // mov QWORD PTR [rsp+96], r11
+        // mov QWORD PTR [rsp+104], r11
+        // mov QWORD PTR [rsp+112], r11
+        // mov QWORD PTR [rsp+120], r11
+        // mov QWORD PTR [rsp+128], r11
+        // mov QWORD PTR [rsp+136], r11
+        // mov QWORD PTR [rsp+144], r11
+        // mov QWORD PTR [rsp+152], r11
+        // mov QWORD PTR [rsp+160], r11
+        // mov QWORD PTR [rsp+168], r11
+        // mov QWORD PTR [rsp+176], r11
+        // mov QWORD PTR [rsp+184], r11
+        // mov QWORD PTR [rsp+192], r11
+        // mov QWORD PTR [rsp+200], r11
+        // mov QWORD PTR [rsp+208], r11
+        // mov QWORD PTR [rsp+216], r11
+        // mov QWORD PTR [rsp+224], r11
+        // mov QWORD PTR [rsp+232], r11
+        // mov QWORD PTR [rsp+240], r11
+        // mov QWORD PTR [rsp+248], r11
+        // mov QWORD PTR [rsp+256], r11
+        // mov QWORD PTR [rsp+264], r11
+        // mov QWORD PTR [rsp+272], r11
+        // mov QWORD PTR [rsp+280], r11
+        // mov QWORD PTR [rsp+288], r11
+        // mov QWORD PTR [rsp+296], r11
+        // mov QWORD PTR [rsp+304], r11
+        // mov QWORD PTR [rsp+312], r11
+        // mov QWORD PTR [rsp+320], r11
+        // mov QWORD PTR [rsp+328], r11
+        // mov QWORD PTR [rsp+336], r11
+        // mov QWORD PTR [rsp+344], r11
+        // mov QWORD PTR [rsp+352], r11
+        // mov QWORD PTR [rsp+360], r11
+        // mov QWORD PTR [rsp+368], r11
+        // mov QWORD PTR [rsp+376], r11
+        // mov QWORD PTR [rsp+384], r11
+        // mov QWORD PTR [rsp+392], r11
+        // mov QWORD PTR [rsp+400], r11
+        // mov QWORD PTR [rsp+408], r11
+        // mov QWORD PTR [rsp+416], r11
+        // mov QWORD PTR [rsp+424], r11
+        // mov QWORD PTR [rsp+432], r11
+        // mov QWORD PTR [rsp+440], r11
+        // mov QWORD PTR [rsp+448], r11
+        // mov QWORD PTR [rsp+456], r11
+        // mov QWORD PTR [rsp+464], r11
+        // mov QWORD PTR [rsp+472], r11
+        // mov QWORD PTR [rsp+480], r11
+        // mov QWORD PTR [rsp+488], r11
+        // mov QWORD PTR [rsp+496], r11
+        // mov QWORD PTR [rsp+504], r11
+        // mov QWORD PTR [rsp+512], r11
+        // mov QWORD PTR [rsp+520], r11
+        // mov QWORD PTR [rsp+528], r11
+        // mov QWORD PTR [rsp+536], r11
+        // mov QWORD PTR [rsp+544], r11
+        // mov QWORD PTR [rsp+552], r11
+        // mov QWORD PTR [rsp+560], r11
+        // mov QWORD PTR [rsp+568], r11
+        // mov QWORD PTR [rsp+576], r11
+        // mov QWORD PTR [rsp+584], r11
+        // mov QWORD PTR [rsp+592], r11
+        // mov QWORD PTR [rsp+600], r11
+        // mov QWORD PTR [rsp+608], r11
+        // mov QWORD PTR [rsp+616], r11
+        // mov QWORD PTR [rsp+624], r11
+        // mov QWORD PTR [rsp+632], r11
+        // mov QWORD PTR [rsp+640], r11
+        // mov QWORD PTR [rsp+648], r11
+        // mov QWORD PTR [rsp+656], r11
+        // mov QWORD PTR [rsp+664], r11
+        // mov QWORD PTR [rsp+672], r11
+        // mov QWORD PTR [rsp+680], r11
+        // mov QWORD PTR [rsp+688], r11
+        // mov QWORD PTR [rsp+696], r11
+        // mov QWORD PTR [rsp+704], r11
+        // mov QWORD PTR [rsp+712], r11
+        // mov QWORD PTR [rsp+720], r11
+        // mov QWORD PTR [rsp+728], r11
+        // mov QWORD PTR [rsp+736], r11
+        // mov QWORD PTR [rsp+744], r11
+        // mov QWORD PTR [rsp+752], r11
+        // mov QWORD PTR [rsp+760], r11
+        // mov QWORD PTR [rsp+768], r11
+        // mov QWORD PTR [rsp+776], r11
+        // mov QWORD PTR [rsp+784], r11
+        // mov QWORD PTR [rsp+792], r11
+        // mov QWORD PTR [rsp+800], r11
+        // mov QWORD PTR [rsp+808], r11
+        // mov QWORD PTR [rsp+816], r11
+        // mov QWORD PTR [rsp+824], r11
+        // mov QWORD PTR [rsp+832], r11
+        // mov QWORD PTR [rsp+840], r11
+        // mov QWORD PTR [rsp+848], r11
+        // mov QWORD PTR [rsp+856], r11
+        // mov QWORD PTR [rsp+864], r11
+        // mov QWORD PTR [rsp+872], r11
+        // mov QWORD PTR [rsp+880], r11
+        // mov QWORD PTR [rsp+888], r11
+        // mov QWORD PTR [rsp+896], r11
+        // mov QWORD PTR [rsp+904], r11
+        // mov QWORD PTR [rsp+912], r11
+        // mov QWORD PTR [rsp+920], r11
+        // mov QWORD PTR [rsp+928], r11
+        // mov QWORD PTR [rsp+936], r11
+        // mov QWORD PTR [rsp+944], r11
+        // mov QWORD PTR [rsp+952], r11
+        // mov QWORD PTR [rsp+960], r11
+        // mov QWORD PTR [rsp+968], r11
+        // mov QWORD PTR [rsp+976], r11
+        // mov QWORD PTR [rsp+984], r11
+        // mov QWORD PTR [rsp+992], r11
+        // mov QWORD PTR [rsp+1000], r11
+        // mov QWORD PTR [rsp+1008], r11
+        // mov QWORD PTR [rsp+1016], r11
+        // mov QWORD PTR [rsp+1024], r11
+        // mov QWORD PTR [rsp+1032], r11
+        // mov QWORD PTR [rsp+1040], r11
+        // mov QWORD PTR [rsp+1048], r11
+        // mov QWORD PTR [rsp+1056], r11
+        // mov QWORD PTR [rsp+1064], r11
+        // mov QWORD PTR [rsp+1072], r11
+        // mov QWORD PTR [rsp+1080], r11
+        // mov QWORD PTR [rsp+1088], r11
+        // lea rsp, [rsp+1096]
+        // ret
         r".octa 0x10245c894c08245c894c00000000bb41,0x4c28245c894c20245c894c18245c894c,0x894c40245c894c38245c894c30245c89,0x5c894c58245c894c50245c894c48245c
 .octa 0x245c894c70245c894c68245c894c6024,0x88249c894c00000080249c894c78,0x98249c894c00000090249c894c00,0xa8249c894c000000a0249c894c00
 .octa 0xb8249c894c000000b0249c894c00,0xc8249c894c000000c0249c894c00,0xd8249c894c000000d0249c894c00,0xe8249c894c000000e0249c894c00
@@ -140,8 +1475,8 @@ pub unsafe extern "sysv64" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], da
 .octa 0x3b8249c894c000003b0249c894c00,0x3c8249c894c000003c0249c894c00,0x3d8249c894c000003d0249c894c00,0x3e8249c894c000003e0249c894c00
 .octa 0x3f8249c894c000003f0249c894c00,0x408249c894c00000400249c894c00,0x418249c894c00000410249c894c00,0x428249c894c00000420249c894c00
 .octa 0x438249c894c00000430249c894c00,0x44824a48d4800000440249c894c00
-.byte 0,195",
-        r".p2align 6",
+.byte 0x00,0xc3
+.p2align 6",
         vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks,
     )
 }
@@ -159,8 +1494,150 @@ pub unsafe extern "sysv64" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], da
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r".byte 72,141,164,36,184,251,255,255,72,137,225,72,131,193,8",
-        r"call {vg_seed_decrypt_blocks}",
+        // lea rsp, [rsp-1096]
+        // mov rcx, rsp
+        // add rcx, 8
+        r".byte 0x48,0x8d,0xa4,0x24,0xb8,0xfb,0xff,0xff,0x48,0x89,0xe1,0x48,0x83,0xc1,0x08
+call {vg_seed_decrypt_blocks}",
+        // mov r11d, 0
+        // mov QWORD PTR [rsp+8], r11
+        // mov QWORD PTR [rsp+16], r11
+        // mov QWORD PTR [rsp+24], r11
+        // mov QWORD PTR [rsp+32], r11
+        // mov QWORD PTR [rsp+40], r11
+        // mov QWORD PTR [rsp+48], r11
+        // mov QWORD PTR [rsp+56], r11
+        // mov QWORD PTR [rsp+64], r11
+        // mov QWORD PTR [rsp+72], r11
+        // mov QWORD PTR [rsp+80], r11
+        // mov QWORD PTR [rsp+88], r11
+        // mov QWORD PTR [rsp+96], r11
+        // mov QWORD PTR [rsp+104], r11
+        // mov QWORD PTR [rsp+112], r11
+        // mov QWORD PTR [rsp+120], r11
+        // mov QWORD PTR [rsp+128], r11
+        // mov QWORD PTR [rsp+136], r11
+        // mov QWORD PTR [rsp+144], r11
+        // mov QWORD PTR [rsp+152], r11
+        // mov QWORD PTR [rsp+160], r11
+        // mov QWORD PTR [rsp+168], r11
+        // mov QWORD PTR [rsp+176], r11
+        // mov QWORD PTR [rsp+184], r11
+        // mov QWORD PTR [rsp+192], r11
+        // mov QWORD PTR [rsp+200], r11
+        // mov QWORD PTR [rsp+208], r11
+        // mov QWORD PTR [rsp+216], r11
+        // mov QWORD PTR [rsp+224], r11
+        // mov QWORD PTR [rsp+232], r11
+        // mov QWORD PTR [rsp+240], r11
+        // mov QWORD PTR [rsp+248], r11
+        // mov QWORD PTR [rsp+256], r11
+        // mov QWORD PTR [rsp+264], r11
+        // mov QWORD PTR [rsp+272], r11
+        // mov QWORD PTR [rsp+280], r11
+        // mov QWORD PTR [rsp+288], r11
+        // mov QWORD PTR [rsp+296], r11
+        // mov QWORD PTR [rsp+304], r11
+        // mov QWORD PTR [rsp+312], r11
+        // mov QWORD PTR [rsp+320], r11
+        // mov QWORD PTR [rsp+328], r11
+        // mov QWORD PTR [rsp+336], r11
+        // mov QWORD PTR [rsp+344], r11
+        // mov QWORD PTR [rsp+352], r11
+        // mov QWORD PTR [rsp+360], r11
+        // mov QWORD PTR [rsp+368], r11
+        // mov QWORD PTR [rsp+376], r11
+        // mov QWORD PTR [rsp+384], r11
+        // mov QWORD PTR [rsp+392], r11
+        // mov QWORD PTR [rsp+400], r11
+        // mov QWORD PTR [rsp+408], r11
+        // mov QWORD PTR [rsp+416], r11
+        // mov QWORD PTR [rsp+424], r11
+        // mov QWORD PTR [rsp+432], r11
+        // mov QWORD PTR [rsp+440], r11
+        // mov QWORD PTR [rsp+448], r11
+        // mov QWORD PTR [rsp+456], r11
+        // mov QWORD PTR [rsp+464], r11
+        // mov QWORD PTR [rsp+472], r11
+        // mov QWORD PTR [rsp+480], r11
+        // mov QWORD PTR [rsp+488], r11
+        // mov QWORD PTR [rsp+496], r11
+        // mov QWORD PTR [rsp+504], r11
+        // mov QWORD PTR [rsp+512], r11
+        // mov QWORD PTR [rsp+520], r11
+        // mov QWORD PTR [rsp+528], r11
+        // mov QWORD PTR [rsp+536], r11
+        // mov QWORD PTR [rsp+544], r11
+        // mov QWORD PTR [rsp+552], r11
+        // mov QWORD PTR [rsp+560], r11
+        // mov QWORD PTR [rsp+568], r11
+        // mov QWORD PTR [rsp+576], r11
+        // mov QWORD PTR [rsp+584], r11
+        // mov QWORD PTR [rsp+592], r11
+        // mov QWORD PTR [rsp+600], r11
+        // mov QWORD PTR [rsp+608], r11
+        // mov QWORD PTR [rsp+616], r11
+        // mov QWORD PTR [rsp+624], r11
+        // mov QWORD PTR [rsp+632], r11
+        // mov QWORD PTR [rsp+640], r11
+        // mov QWORD PTR [rsp+648], r11
+        // mov QWORD PTR [rsp+656], r11
+        // mov QWORD PTR [rsp+664], r11
+        // mov QWORD PTR [rsp+672], r11
+        // mov QWORD PTR [rsp+680], r11
+        // mov QWORD PTR [rsp+688], r11
+        // mov QWORD PTR [rsp+696], r11
+        // mov QWORD PTR [rsp+704], r11
+        // mov QWORD PTR [rsp+712], r11
+        // mov QWORD PTR [rsp+720], r11
+        // mov QWORD PTR [rsp+728], r11
+        // mov QWORD PTR [rsp+736], r11
+        // mov QWORD PTR [rsp+744], r11
+        // mov QWORD PTR [rsp+752], r11
+        // mov QWORD PTR [rsp+760], r11
+        // mov QWORD PTR [rsp+768], r11
+        // mov QWORD PTR [rsp+776], r11
+        // mov QWORD PTR [rsp+784], r11
+        // mov QWORD PTR [rsp+792], r11
+        // mov QWORD PTR [rsp+800], r11
+        // mov QWORD PTR [rsp+808], r11
+        // mov QWORD PTR [rsp+816], r11
+        // mov QWORD PTR [rsp+824], r11
+        // mov QWORD PTR [rsp+832], r11
+        // mov QWORD PTR [rsp+840], r11
+        // mov QWORD PTR [rsp+848], r11
+        // mov QWORD PTR [rsp+856], r11
+        // mov QWORD PTR [rsp+864], r11
+        // mov QWORD PTR [rsp+872], r11
+        // mov QWORD PTR [rsp+880], r11
+        // mov QWORD PTR [rsp+888], r11
+        // mov QWORD PTR [rsp+896], r11
+        // mov QWORD PTR [rsp+904], r11
+        // mov QWORD PTR [rsp+912], r11
+        // mov QWORD PTR [rsp+920], r11
+        // mov QWORD PTR [rsp+928], r11
+        // mov QWORD PTR [rsp+936], r11
+        // mov QWORD PTR [rsp+944], r11
+        // mov QWORD PTR [rsp+952], r11
+        // mov QWORD PTR [rsp+960], r11
+        // mov QWORD PTR [rsp+968], r11
+        // mov QWORD PTR [rsp+976], r11
+        // mov QWORD PTR [rsp+984], r11
+        // mov QWORD PTR [rsp+992], r11
+        // mov QWORD PTR [rsp+1000], r11
+        // mov QWORD PTR [rsp+1008], r11
+        // mov QWORD PTR [rsp+1016], r11
+        // mov QWORD PTR [rsp+1024], r11
+        // mov QWORD PTR [rsp+1032], r11
+        // mov QWORD PTR [rsp+1040], r11
+        // mov QWORD PTR [rsp+1048], r11
+        // mov QWORD PTR [rsp+1056], r11
+        // mov QWORD PTR [rsp+1064], r11
+        // mov QWORD PTR [rsp+1072], r11
+        // mov QWORD PTR [rsp+1080], r11
+        // mov QWORD PTR [rsp+1088], r11
+        // lea rsp, [rsp+1096]
+        // ret
         r".octa 0x10245c894c08245c894c00000000bb41,0x4c28245c894c20245c894c18245c894c,0x894c40245c894c38245c894c30245c89,0x5c894c58245c894c50245c894c48245c
 .octa 0x245c894c70245c894c68245c894c6024,0x88249c894c00000080249c894c78,0x98249c894c00000090249c894c00,0xa8249c894c000000a0249c894c00
 .octa 0xb8249c894c000000b0249c894c00,0xc8249c894c000000c0249c894c00,0xd8249c894c000000d0249c894c00,0xe8249c894c000000e0249c894c00
@@ -178,8 +1655,8 @@ pub unsafe extern "sysv64" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], da
 .octa 0x3b8249c894c000003b0249c894c00,0x3c8249c894c000003c0249c894c00,0x3d8249c894c000003d0249c894c00,0x3e8249c894c000003e0249c894c00
 .octa 0x3f8249c894c000003f0249c894c00,0x408249c894c00000400249c894c00,0x418249c894c00000410249c894c00,0x428249c894c00000420249c894c00
 .octa 0x438249c894c00000430249c894c00,0x44824a48d4800000440249c894c00
-.byte 0,195",
-        r".p2align 6",
+.byte 0x00,0xc3
+.p2align 6",
         vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks,
     )
 }
@@ -199,198 +1676,2927 @@ pub unsafe extern "sysv64" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], da
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_seed_encrypt_blocks(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 136]) {
     core::arch::naked_asm!(
+        // mov r9, rcx
+        // mov QWORD PTR [r9+1000], rbx
+        // mov QWORD PTR [r9+1008], rbp
+        // mov QWORD PTR [r9+1016], r12
+        // mov QWORD PTR [r9+1024], r13
+        // mov QWORD PTR [r9+1032], r14
+        // mov QWORD PTR [r9+1040], r15
+        // movabs r14, 6148914691236517205
+        // mov QWORD PTR [r9+384], r14
+        // movabs r14, 3689348814741910323
+        // mov QWORD PTR [r9+392], r14
+        // movabs r14, 1085102592571150095
+        // mov QWORD PTR [r9+400], r14
+        // movabs r14, 71777214294589695
+        // mov QWORD PTR [r9+408], r14
+        // movabs r14, -71777214294589696
+        // mov QWORD PTR [r9+416], r14
+        // movabs r14, -3459661728999223300
+        // mov QWORD PTR [r9+424], r14
+        // movabs r14, 68468732266233843
+        // mov QWORD PTR [r9+432], r14
+        // movabs r14, 4539628425446424576
+        // mov QWORD PTR [r9+440], r14
+        // movabs r14, 277965988494543
+        // mov QWORD PTR [r9+448], r14
+        // movabs r14, -229965051731181568
+        // mov QWORD PTR [r9+456], r14
+        // movabs r14, 270582939711
+        // mov QWORD PTR [r9+464], r14
+        // movabs r14, -918748613553687808
+        // mov QWORD PTR [r9+472], r14
+        // movabs r14, -1789082251201616085
+        // mov QWORD PTR [r9+480], r14
+        // add rdi, 0
+        // cmp rdx, 0
         r".octa 0x3f0a98949000003e8998949c98949,0x4d00000400a9894d000003f8a1894d00,0x55be4900000410b9894d00000408b189,0xbe4900000180b1894d55555555555555
 .octa 0x4900000188b1894d3333333333333333,0x190b1894d0f0f0f0f0f0f0f0fbe,0x198b1894d00ff00ff00ff00ffbe49,0x1a0b1894dff00ff00ff00ff00be4900
 .octa 0xa8b1894dcffccffccffccffcbe490000,0xb1894d00f33ff300f33ff3be49000001,0x894d3f0000003f000000be49000001b0,0x4d0000fccf0000fccfbe49000001b8b1
 .octa 0xfccf0000fccf0000be49000001c0b189,0x3f0000003fbe49000001c8b1894d,0xf300f33ff300be49000001d0b1894d00,0x2be72be72bbe49000001d8b1894df33f
-.octa 0x834800c78348000001e0b1894de72be7,0x7210f98348d1894800002e2c840f00fa,0xcb894cf2894900eb00000010c1c74809,0xf04428b41000002e88389c80f028b41
-.octa 0x688389c80f08428b41000003288389c8,0x49000003a88389c80f0c428b41000003,0xc0c749c37501e9834804c3834810c283,0x368818b4104678b441f8b4400000010
-.octa 0xa881334100000228818941d831440000,0x818b41000001e8818941e03144000003,0x33410000022c818941d831440000036c,0x41000001ec818941e03144000003ac81
-.octa 0x230818941d8314400000370818b,0x1f0818941e03144000003b0813341,0x234818941d8314400000374818b4100,0xf4818941e03144000003b48133410000
-.octa 0x818941d8314400000378818b41000001,0x8941e03144000003b881334100000238,0x41d831440000037c818b41000001f881,0xe03144000003bc8133410000023c8189
-.octa 0x314400000380818b41000001fc818941,0x44000003c081334100000240818941d8,0x384818b4100000200818941e031,0x3c481334100000244818941d83144
-.octa 0x388818b4100000204818941e0314400,0xc881334100000248818941d831440000,0x818b4100000208818941e03144000003,0x33410000024c818941d831440000038c
-.octa 0x410000020c818941e03144000003cc81,0x250818941d8314400000390818b,0x210818941e03144000003d0813341,0x254818941d8314400000394818b4100
-.octa 0x14818941e03144000003d48133410000,0x818941d8314400000398818b41000002,0x8941e03144000003d881334100000258,0x41d831440000039c818b410000021881
-.octa 0xe03144000003dc8133410000025c8189,0x3144000003a0818b410000021c818941,0x44000003e081334100000260818941d8,0x3a4818b4100000220818941e031
-.octa 0x3e481334100000264818941d83144,0x1e8818b4900000224818941e0314400,0x1f8898b49000001f0998b490000,0x8b4d00000208918b4d00000200a98b49
-.octa 0x20a98b4d00000218a18b4d0000021099,0x80b1234dde3149eed149c68949000002,0xce8949f0314c3fcec149f3314c000001,0xf5314c00000180b1234dee3149eed149
-.octa 0xde314deed149d6894df1314c3fcec149,0x314d3fcec149f3314d00000180b1234d,0x180b1234dee314deed149e6894df2,0xc149c68949f4314d3fcec149f5314d00
-.octa 0x49f1314c00000188b1234dce314902ee,0xee314902eec149de8949f0314c3ecec1,0x314c3ecec149f5314c00000188b1234d,0x188b1234de6314d02eec149d6894df3
-.octa 0x49de894df2314d3ecec149f4314d0000,0xf5314d00000188b1234dee314d02eec1,0x314d04eec149c68949f3314d3ecec149,0x4c3ccec149f2314d00000190b1234dd6
-.octa 0x90b1234dde314d04eec149de8949f031,0xce8949f3314c3ccec149f3314d000001,0x314d00000190b1234de6314d04eec149,0x4d04eec149ee8949f1314c3ccec149f4
-.octa 0x3ccec149f5314d00000190b1234dee31,0x49184989491059894908418949f5314c,0x4d3861894d3059894d2851894d206989,0x49204133491041334908418b49406989
-.octa 0x4940593349385933492059334918598b,0x4910698b49404933493049334928498b,0x4d10518b4d3069334920693349186933,0x4d2859334d20598b4d2851334d185133
-.octa 0x4d3061334d2861334d2061334d18618b,0xffffffbe493869334d3069334d28698b,0x894dce3149d6894d31894dffffffffff,0x8949d5314ced894c08698949df3149ef
-.octa 0x4d1861894de3314dcd3148ed894c1069,0x4dfa894d2051894de2314dc43149dc89,0x4de3314cee314de6894d2871894df231,0x598b4938598949ee3149de8949307189
-.octa 0x491861894d18593349d93148d3314c08,0x4ddc314dcc89490861894dc43149cc89,0x8948485989491071334dde8949407189,0x8949f3314ce3894c50598949f3314cc3
-.octa 0x4c60598949f3314deb3148e3894c5859,0x49d5894d6869894ddd314ddb314cfb89,0x314d0851234d40518b4d7051894dcd21,0x4de9314cc1214820498b4978498949ea
-.octa 0x38798b4d00000080b9894ddd214dfd89,0x8b4d0000008899894def314d1879234d,0xf5214d10698b4deb314d5059234d3059,0x4d5871234d28718b4d00000090b1894d
-.octa 0x4ce0214ce8894800000098818949ee31,0x334dc33149f7314dc13148f2314de831,0xd3894c6859334ddf3149604933494851,0x49de8949d0314cd8894cfa214dcb3148
-.octa 0x214cd1314cdd314dfd894dce3149c621,0xeb214dcd3149c58949cf3149d9314ce9,0x4cd88948c33148f0214cd8314cdf314d,0x8949dd3149f5894dcb3149f3894df831
-.octa 0x8949c53148dd894c68698949fa314dca,0xf8894c7841894978412349d0894c6041,0x98812349c889480841894908412349,0x88812349e8894c000000988189490000
-.octa 0x412349d8894800000088818949000000,0x5041894950412349f0894c1841894918,0x9081894900000090812349d8894c,0x7051234d6061234d58412349e8894800
-.octa 0x4900000080a9234d204923494079234d,0x4d286923491059234d3071234d385923,0x314ceb31496871234d60718b4d287189,0x4d00000098b98b4dfa314d50593349f9
-.octa 0x49334900000098898b4968498949ef31,0x8889334978498b4950498949c4314950,0xdd3149f5314c00000090813349000000,0x88813349de314d18718b4dcf3149
-.octa 0x8b4df2314df4314d2879334dfb314d00,0x8698b4918698949e7314dc631491871,0x49db314c29334de5314dd0314cd5314c,0x4d50693349e93148fb314df3894d1933
-.octa 0x19334d1859334d31334dce3149687933,0xf9894cca8949f4894dc589491869894d,0x841894968418b4918598b4968598949,0x2851894d206989491849894910598949
-.octa 0x18418b494069894d3861894d3059894d,0x10718b4d384133493041334928413349,0x1a0b1234d000001988123492071334d,0x71334d10718b4d18598b49f0314c0000
-.octa 0x9923494079334d3879334d28798b4d30,0x314cf3314c000001a0b1234d00000198,0x798b4d2071334d18718b4d10498b49fb,0x1988923493879334d2879334d08
-.octa 0x698b49f9314cf1314c000001a0b1234d,0x798b4d2071334d10718b4d4069334918,0xa923493879334d3079334d2879334d08,0x314cf5314c000001a0b1234d00000198
-.octa 0x718b4d2851334d1851334d08518b4dfd,0x19891234d3879334d20798b4d40,0x598b4dfa314df2314d000001a0b1234d,0x79334d20798b4d28718b4d1059334d08
-.octa 0xa0b1234d0000019899234d3879334d30,0x61334d08618b4dfb314df3314d000001,0x71334d1871334d10718b4d3061334d28,0xa0b1234d00000198a1234d38798b4d20
-.octa 0x69334d10698b4dfc314df4314d000001,0x2069334d00000198a9234d4069334d38,0x180b1234dde3149eed149c68949,0xeed149ce8949f0314c3fcec149f3314c
-.octa 0xcec149f5314c00000180b1234dee3149,0xb1234dde314deed149d6894df1314c3f,0x894df2314d3fcec149f3314d00000180,0x314d00000180b1234dee314deed149e6
-.octa 0x4902eec149c68949f4314d3fcec149f5,0x3ecec149f1314c00000188b1234dce31,0xb1234dee314902eec149de8949f0314c,0x894df3314c3ecec149f5314c00000188
-.octa 0x4d00000188b1234de6314d02eec149d6,0x2eec149de894df2314d3ecec149f431,0xcec149f5314d00000188b1234dee314d,0x234dd6314d04eec149c68949f3314d3e
-.octa 0x49f0314c3ccec149f2314d00000190b1,0x190b1234dde314d04eec149de89,0xeec149ce8949f3314c3ccec149f3314d,0xc149f4314d00000190b1234de6314d04
-.octa 0x4dee314d04eec149ee8949f1314c3cce,0xf5314c3ccec149f5314d00000190b123,0xcec149c68949000001a8b9234dc78949,0xc149c68949f7314d000001b0b1234d08
-.octa 0x49c68949f7314d000001b8b1234d28ce,0xc68949f7314d000001c0b1234d10cec1,0x8949f7314d000001c8b1234d30cec149,0x49f7314d000001d0b1234d18cec149c6
-.octa 0xf7314d000001d8b1234d38cec149c689,0x8949000001e8b9894d000001e0b9334d,0x4d08cec149de8949000001a8b9234ddf,0x28cec149de8949f7314d000001b0b123
-.octa 0xcec149de8949f7314d000001b8b1234d,0xc149de8949f7314d000001c0b1234d10,0x49de8949f7314d000001c8b1234d30ce,0xde8949f7314d000001d0b1234d18cec1
-.octa 0x334df7314d000001d8b1234d38cec149,0x4dcf8949000001f0b9894d000001e0b9,0xb1234d08cec149ce8949000001a8b923,0x234d28cec149ce8949f7314d000001b0
-.octa 0x4d10cec149ce8949f7314d000001b8b1,0x30cec149ce8949f7314d000001c0b123,0xcec149ce8949f7314d000001c8b1234d,0xc149ce8949f7314d000001d0b1234d18
-.octa 0xe0b9334df7314d000001d8b1234d38ce,0xb9234def8949000001f8b9894d000001,0x1b0b1234d08cec149ee8949000001a8,0xb8b1234d28cec149ee8949f7314d0000
-.octa 0xb1234d10cec149ee8949f7314d000001,0x234d30cec149ee8949f7314d000001c0,0x4d18cec149ee8949f7314d000001c8b1,0x38cec149ee8949f7314d000001d0b123
-.octa 0x1e0b9334df7314d000001d8b1234d,0x1a8b9234dd7894d00000200b9894d00,0x1b0b1234d08cec149d6894d0000,0x1b8b1234d28cec149d6894df7314d
-.octa 0x1c0b1234d10cec149d6894df7314d00,0xc8b1234d30cec149d6894df7314d0000,0xb1234d18cec149d6894df7314d000001,0x234d38cec149d6894df7314d000001d0
-.octa 0x4d000001e0b9334df7314d000001d8b1,0x1a8b9234ddf894d00000208b989,0x314d000001b0b1234d08cec149de894d,0x4d000001b8b1234d28cec149de894df7
-.octa 0x1c0b1234d10cec149de894df731,0x1c8b1234d30cec149de894df7314d,0x1d0b1234d18cec149de894df7314d00,0xd8b1234d38cec149de894df7314d0000
-.octa 0xb9894d000001e0b9334df7314d000001,0x894d000001a8b9234de7894d00000210,0x4df7314d000001b0b1234d08cec149e6,0xf7314d000001b8b1234d28cec149e689
-.octa 0x314d000001c0b1234d10cec149e6894d,0x4d000001c8b1234d30cec149e6894df7,0x1d0b1234d18cec149e6894df731,0x1d8b1234d38cec149e6894df7314d
-.octa 0x218b9894d000001e0b9334df7314d00,0x49ee894d000001a8b9234def894d0000,0xee894df7314d000001b0b1234d08cec1,0x894df7314d000001b8b1234d28cec149
-.octa 0x4df7314d000001c0b1234d10cec149ee,0xf7314d000001c8b1234d30cec149ee89,0x314d000001d0b1234d18cec149ee894d,0x4d000001d8b1234d38cec149ee894df7
-.octa 0x220b9894d000001e0b9334df731,0x34100000268818941000001e8818b41,0xec818b41000001e88189410000022881,0x22c8103410000026c818941000001
-.octa 0x41000001f0818b41000001ec81894100,0x81894100000230810341000002708189,0x274818941000001f4818b41000001f0,0x1f4818941000002348103410000
-.octa 0x34100000278818941000001f8818b41,0xfc818b41000001f88189410000023881,0x23c8103410000027c818941000001,0x4100000200818b41000001fc81894100
-.octa 0x81894100000240810341000002808189,0x28481894100000204818b4100000200,0x204818941000002448103410000,0x3410000028881894100000208818b41
-.octa 0xc818b41000002088189410000024881,0x24c8103410000028c818941000002,0x4100000210818b410000020c81894100,0x81894100000250810341000002908189
-.octa 0x29481894100000214818b4100000210,0x214818941000002548103410000,0x3410000029881894100000218818b41,0x1c818b41000002188189410000025881
-.octa 0x25c8103410000029c818941000002,0x4100000220818b410000021c81894100,0x81894100000260810341000002a08189,0x2a481894100000224818b4100000220
-.octa 0x224818941000002648103410000,0x8b49000001f0998b49000001e8818b49,0x8918b4d00000200a98b49000001f889,0x218a18b4d00000210998b4d000002
-.octa 0x3149eed149c6894900000220a98b4d00,0x4c3fcec149f3314c00000180b1234dde,0x180b1234dee3149eed149ce8949f031,0x49d6894df1314c3fcec149f5314c0000
-.octa 0x49f3314d00000180b1234dde314deed1,0x4dee314deed149e6894df2314d3fcec1,0xf4314d3fcec149f5314d00000180b123,0x188b1234dce314902eec149c68949
-.octa 0xc149de8949f0314c3ecec149f1314c00,0x49f5314c00000188b1234dee314902ee,0xe6314d02eec149d6894df3314c3ecec1,0x314d3ecec149f4314d00000188b1234d
-.octa 0x188b1234dee314d02eec149de894df2,0x49c68949f3314d3ecec149f5314d0000,0xf2314d00000190b1234dd6314d04eec1,0x314d04eec149de8949f0314c3ccec149
-.octa 0x4c3ccec149f3314d00000190b1234dde,0x90b1234de6314d04eec149ce8949f331,0xee8949f1314c3ccec149f4314d000001,0x314d00000190b1234dee314d04eec149
-.octa 0x1059894908418949f5314c3ccec149f5,0x3059894d2851894d2069894918498949,0x1041334908418b494069894d3861894d,0x385933492059334918598b4920413349
-.octa 0x404933493049334928498b4940593349,0x30693349206933491869334910698b49,0x20598b4d2851334d1851334d10518b4d,0x2861334d2061334d18618b4d2859334d
-.octa 0x3869334d3069334d28698b4d3061334d,0xd6894d31894dffffffffffffffffbe49,0xed894c08698949df3149ef894dce3149,0xe3314dcd3148ed894c10698949d5314c
-.octa 0x51894de2314dc43149dc894d1861894d,0x314de6894d2871894df2314dfa894d20,0x8949ee3149de89493071894de3314cee,0x18593349d93148d3314c08598b493859
-.octa 0x89490861894dc43149cc89491861894d,0x491071334dde89494071894ddc314dcc,0xe3894c50598949f3314cc38948485989,0xf3314deb3148e3894c58598949f3314c
-.octa 0x69894ddd314ddb314cfb894c60598949,0x4d40518b4d7051894dcd2149d5894d68,0x214820498b4978498949ea314d085123,0x80b9894ddd214dfd894de9314cc1
-.octa 0x8899894def314d1879234d38798b4d00,0x8b4deb314d5059234d30598b4d000000,0x28718b4d00000090b1894df5214d1069,0x894800000098818949ee314d5871234d
-.octa 0xf7314dc13148f2314de8314ce0214ce8,0x334ddf3149604933494851334dc33149,0x314cd8894cfa214dcb3148d3894c6859,0xdd314dfd894dce3149c62149de8949d0
-.octa 0x49c58949cf3149d9314ce9214cd1314c,0x3148f0214cd8314cdf314deb214dcd31,0xf5894dcb3149f3894df8314cd88948c3,0xdd894c68698949fa314dca8949dd3149
-.octa 0x894978412349d0894c60418949c53148,0xc889480841894908412349f8894c7841,0x894c0000009881894900000098812349,0x480000008881894900000088812349e8
-.octa 0x412349f0894c1841894918412349d889,0x4900000090812349d8894c5041894950,0x61234d58412349e88948000000908189,0xa9234d204923494079234d7051234d60
-.octa 0x1059234d3071234d3859234900000080,0x6871234d60718b4d2871894d28692349,0xb98b4dfa314d50593349f9314ceb3149,0x98898b4968498949ef314d00000098
-.octa 0x498b4950498949c43149504933490000,0x4c000000908133490000008889334978,0x49de314d18718b4dcf3149dd3149f531,0xf4314d2879334dfb314d000000888133
-.octa 0x698949e7314dc6314918718b4df2314d,0x334de5314dd0314cd5314c08698b4918,0xe93148fb314df3894d193349db314c29,0x334d31334dce31496879334d50693349
-.octa 0x49f4894dc589491869894d19334d1859,0x418b4918598b4968598949f9894cca89,0x69894918498949105989490841894968,0x69894d3861894d3059894d2851894d20
-.octa 0x413349304133492841334918418b4940,0x1988123492071334d10718b4d38,0x8b4d18598b49f0314c000001a0b1234d,0x334d3879334d28798b4d3071334d1071
-.octa 0x1a0b1234d000001989923494079,0x334d18718b4d10498b49fb314cf3314c,0x23493879334d2879334d08798b4d2071,0x4cf1314c000001a0b1234d0000019889
-.octa 0x334d10718b4d4069334918698b49f931,0x334d3079334d2879334d08798b4d2071,0x1a0b1234d00000198a923493879,0x334d1851334d08518b4dfd314cf5314c
-.octa 0x234d3879334d20798b4d40718b4d2851,0x4df2314d000001a0b1234d0000019891,0x8b4d28718b4d1059334d08598b4dfa31,0x19899234d3879334d3079334d2079
-.octa 0x8b4dfb314df3314d000001a0b1234d00,0x334d10718b4d3061334d2861334d0861,0x198a1234d38798b4d2071334d1871,0x8b4dfc314df4314d000001a0b1234d00
-.octa 0x198a9234d4069334d3869334d1069,0x234dde3149eed149c689492069334d00,0x49f0314c3fcec149f3314c00000180b1,0x4c00000180b1234dee3149eed149ce89
-.octa 0x4deed149d6894df1314c3fcec149f531,0x3fcec149f3314d00000180b1234dde31,0x80b1234dee314deed149e6894df2314d,0xc68949f4314d3fcec149f5314d000001
-.octa 0x314c00000188b1234dce314902eec149,0x4902eec149de8949f0314c3ecec149f1,0x3ecec149f5314c00000188b1234dee31,0xb1234de6314d02eec149d6894df3314c
-.octa 0x894df2314d3ecec149f4314d00000188,0x4d00000188b1234dee314d02eec149de,0x4eec149c68949f3314d3ecec149f531,0xcec149f2314d00000190b1234dd6314d
-.octa 0x234dde314d04eec149de8949f0314c3c,0x49f3314c3ccec149f3314d00000190b1,0x190b1234de6314d04eec149ce89,0xeec149ee8949f1314c3ccec149f4314d
-.octa 0xc149f5314d00000190b1234dee314d04,0x49000001a8b9234dc78949f5314c3cce,0xf7314d000001b0b1234d08cec149c689,0x314d000001b8b1234d28cec149c68949
-.octa 0x4d000001c0b1234d10cec149c68949f7,0x1c8b1234d30cec149c68949f731,0x1d0b1234d18cec149c68949f7314d,0x1d8b1234d38cec149c68949f7314d00
-.octa 0xe8b9894d000001e0b9334df7314d0000,0xde8949000001a8b9234ddf8949000001,0x8949f7314d000001b0b1234d08cec149,0x49f7314d000001b8b1234d28cec149de
-.octa 0xf7314d000001c0b1234d10cec149de89,0x314d000001c8b1234d30cec149de8949,0x4d000001d0b1234d18cec149de8949f7,0x1d8b1234d38cec149de8949f731
-.octa 0x1f0b9894d000001e0b9334df7314d,0xc149ce8949000001a8b9234dcf894900,0x49ce8949f7314d000001b0b1234d08ce,0xce8949f7314d000001b8b1234d28cec1
-.octa 0x8949f7314d000001c0b1234d10cec149,0x49f7314d000001c8b1234d30cec149ce,0xf7314d000001d0b1234d18cec149ce89,0x314d000001d8b1234d38cec149ce8949
-.octa 0x49000001f8b9894d000001e0b9334df7,0x8cec149ee8949000001a8b9234def89,0xcec149ee8949f7314d000001b0b1234d,0xc149ee8949f7314d000001b8b1234d28
-.octa 0x49ee8949f7314d000001c0b1234d10ce,0xee8949f7314d000001c8b1234d30cec1,0x8949f7314d000001d0b1234d18cec149,0x4df7314d000001d8b1234d38cec149ee
-.octa 0xd7894d00000200b9894d000001e0b933,0x234d08cec149d6894d000001a8b9234d,0x4d28cec149d6894df7314d000001b0b1,0x10cec149d6894df7314d000001b8b123
-.octa 0xcec149d6894df7314d000001c0b1234d,0xc149d6894df7314d000001c8b1234d30,0x49d6894df7314d000001d0b1234d18ce,0xb9334df7314d000001d8b1234d38cec1
-.octa 0x234ddf894d00000208b9894d000001e0,0xb0b1234d08cec149de894d000001a8b9,0xb1234d28cec149de894df7314d000001,0x234d10cec149de894df7314d000001b8
-.octa 0x4d30cec149de894df7314d000001c0b1,0x18cec149de894df7314d000001c8b123,0xcec149de894df7314d000001d0b1234d,0x1e0b9334df7314d000001d8b1234d38
-.octa 0xa8b9234de7894d00000210b9894d0000,0x1b0b1234d08cec149e6894d000001,0x1b8b1234d28cec149e6894df7314d00,0xc0b1234d10cec149e6894df7314d0000
-.octa 0xb1234d30cec149e6894df7314d000001,0x234d18cec149e6894df7314d000001c8,0x4d38cec149e6894df7314d000001d0b1,0x1e0b9334df7314d000001d8b123
-.octa 0x1a8b9234def894d00000218b9894d,0x4d000001b0b1234d08cec149ee894d00,0x1b8b1234d28cec149ee894df731,0x1c0b1234d10cec149ee894df7314d
-.octa 0x1c8b1234d30cec149ee894df7314d00,0xd0b1234d18cec149ee894df7314d0000,0xb1234d38cec149ee894df7314d000001,0x894d000001e0b9334df7314d000001d8
-.octa 0xa8818941000001e8818b4100000220b9,0x1e881894100000268810341000002,0x41000002ac818941000001ec818b4100,0x818b41000001ec8189410000026c8103
-.octa 0x270810341000002b0818941000001f0,0x1f4818b41000001f08189410000,0x894100000274810341000002b4818941,0xb8818941000001f8818b41000001f481
-.octa 0x1f881894100000278810341000002,0x41000002bc818941000001fc818b4100,0x818b41000001fc8189410000027c8103,0x280810341000002c081894100000200
-.octa 0x204818b41000002008189410000,0x894100000284810341000002c4818941,0xc881894100000208818b410000020481,0x20881894100000288810341000002
-.octa 0x41000002cc8189410000020c818b4100,0x818b410000020c8189410000028c8103,0x290810341000002d081894100000210,0x214818b41000002108189410000
-.octa 0x894100000294810341000002d4818941,0xd881894100000218818b410000021481,0x21881894100000298810341000002,0x41000002dc8189410000021c818b4100
-.octa 0x818b410000021c8189410000029c8103,0x2a0810341000002e081894100000220,0x224818b41000002208189410000,0x8941000002a4810341000002e4818941
-.octa 0xf0998b49000001e8818b490000022481,0x200a98b49000001f8898b49000001,0x4d00000210998b4d00000208918b4d00,0xc6894900000220a98b4d00000218a18b
-.octa 0xf3314c00000180b1234dde3149eed149,0xee3149eed149ce8949f0314c3fcec149,0x314c3fcec149f5314c00000180b1234d,0x180b1234dde314deed149d6894df1
-.octa 0xd149e6894df2314d3fcec149f3314d00,0xc149f5314d00000180b1234dee314dee,0x4dce314902eec149c68949f4314d3fce,0xf0314c3ecec149f1314c00000188b123
-.octa 0x188b1234dee314902eec149de8949,0xc149d6894df3314c3ecec149f5314c00,0x49f4314d00000188b1234de6314d02ee,0xee314d02eec149de894df2314d3ecec1
-.octa 0x314d3ecec149f5314d00000188b1234d,0x190b1234dd6314d04eec149c68949f3,0x49de8949f0314c3ccec149f2314d0000,0xf3314d00000190b1234dde314d04eec1
-.octa 0x314d04eec149ce8949f3314c3ccec149,0x4c3ccec149f4314d00000190b1234de6,0x90b1234dee314d04eec149ee8949f131,0x418949f5314c3ccec149f5314d000001
-.octa 0x51894d20698949184989491059894908,0x418b494069894d3861894d3059894d28,0x59334918598b49204133491041334908,0x49334928498b49405933493859334920
-.octa 0x6933491869334910698b494049334930,0x51334d1851334d10518b4d3069334920,0x61334d18618b4d2859334d20598b4d28,0x69334d28698b4d3061334d2861334d20
-.octa 0x4dffffffffffffffffbe493869334d30,0x8949df3149ef894dce3149d6894d3189,0x48ed894c10698949d5314ced894c0869,0x4dc43149dc894d1861894de3314dcd31
-.octa 0x2871894df2314dfa894d2051894de231,0xde89493071894de3314cee314de6894d,0x3148d3314c08598b4938598949ee3149,0x4dc43149cc89491861894d18593349d9
-.octa 0xde89494071894ddc314dcc8949086189,0x8949f3314cc38948485989491071334d,0x48e3894c58598949f3314ce3894c5059,0x4ddb314cfb894c60598949f3314deb31
-.octa 0x7051894dcd2149d5894d6869894ddd31,0x4978498949ea314d0851234d40518b4d,0x4ddd214dfd894de9314cc1214820498b,0x314d1879234d38798b4d00000080b989
-.octa 0x5059234d30598b4d0000008899894def,0x90b1894df5214d10698b4deb314d,0x98818949ee314d5871234d28718b4d00,0x48f2314de8314ce0214ce88948000000
-.octa 0x604933494851334dc33149f7314dc131,0xfa214dcb3148d3894c6859334ddf3149,0x4dce3149c62149de8949d0314cd8894c,0x3149d9314ce9214cd1314cdd314dfd89
-.octa 0xd8314cdf314deb214dcd3149c58949cf,0x49f3894df8314cd88948c33148f0214c,0x8949fa314dca8949dd3149f5894dcb31,0x49d0894c60418949c53148dd894c6869
-.octa 0x894908412349f8894c78418949784123,0x9881894900000098812349c889480841,0x81894900000088812349e8894c000000,0x4c1841894918412349d8894800000088
-.octa 0x812349d8894c5041894950412349f089,0x2349e889480000009081894900000090,0x23494079234d7051234d6061234d5841,0x71234d3859234900000080a9234d2049
-.octa 0x718b4d2871894d286923491059234d30,0x4d50593349f9314ceb31496871234d60,0x68498949ef314d00000098b98b4dfa31,0x8949c431495049334900000098898b49
-.octa 0x8133490000008889334978498b495049,0x718b4dcf3149dd3149f5314c00000090,0x334dfb314d00000088813349de314d18,0x4dc6314918718b4df2314df4314d2879
-.octa 0xd0314cd5314c08698b4918698949e731,0x4df3894d193349db314c29334de5314d,0xce31496879334d50693349e93148fb31,0x89491869894d19334d1859334d31334d
-.octa 0x8b4968598949f9894cca8949f4894dc5,0x8949105989490841894968418b491859,0x894d3059894d2851894d206989491849,0x33492841334918418b494069894d3861
-.octa 0x23492071334d10718b4d384133493041,0x49f0314c000001a0b1234d0000019881,0x4d28798b4d3071334d10718b4d18598b,0x234d000001989923494079334d387933
-.octa 0x4d10498b49fb314cf3314c000001a0b1,0x4d2879334d08798b4d2071334d18718b,0x1a0b1234d00000198892349387933,0x4d4069334918698b49f9314cf1314c00
-.octa 0x4d2879334d08798b4d2071334d10718b,0x234d00000198a923493879334d307933,0x4d08518b4dfd314cf5314c000001a0b1,0x4d20798b4d40718b4d2851334d185133
-.octa 0x1a0b1234d0000019891234d387933,0x4d1059334d08598b4dfa314df2314d00,0x4d3879334d3079334d20798b4d28718b,0xf3314d000001a0b1234d000001989923
-.octa 0x4d3061334d2861334d08618b4dfb314d,0x4d38798b4d2071334d1871334d10718b,0xf4314d000001a0b1234d00000198a123,0x4d4069334d3869334d10698b4dfc314d
-.octa 0xeed149c689492069334d00000198a923,0xcec149f3314c00000180b1234dde3149,0xb1234dee3149eed149ce8949f0314c3f,0x894df1314c3fcec149f5314c00000180
-.octa 0x314d00000180b1234dde314deed149d6,0x314deed149e6894df2314d3fcec149f3,0x4d3fcec149f5314d00000180b1234dee,0x88b1234dce314902eec149c68949f431
-.octa 0xde8949f0314c3ecec149f1314c000001,0x314c00000188b1234dee314902eec149,0x4d02eec149d6894df3314c3ecec149f5,0x3ecec149f4314d00000188b1234de631
-.octa 0xb1234dee314d02eec149de894df2314d,0x8949f3314d3ecec149f5314d00000188,0x4d00000190b1234dd6314d04eec149c6,0x4eec149de8949f0314c3ccec149f231
-.octa 0xcec149f3314d00000190b1234dde314d,0x234de6314d04eec149ce8949f3314c3c,0x49f1314c3ccec149f4314d00000190b1,0x190b1234dee314d04eec149ee89
-.octa 0xb9234dc78949f5314c3ccec149f5314d,0x1b0b1234d08cec149c68949000001a8,0xb8b1234d28cec149c68949f7314d0000,0xb1234d10cec149c68949f7314d000001
-.octa 0x234d30cec149c68949f7314d000001c0,0x4d18cec149c68949f7314d000001c8b1,0x38cec149c68949f7314d000001d0b123,0x1e0b9334df7314d000001d8b1234d
-.octa 0x1a8b9234ddf8949000001e8b9894d00,0x1b0b1234d08cec149de89490000,0x1b8b1234d28cec149de8949f7314d,0x1c0b1234d10cec149de8949f7314d00
-.octa 0xc8b1234d30cec149de8949f7314d0000,0xb1234d18cec149de8949f7314d000001,0x234d38cec149de8949f7314d000001d0,0x4d000001e0b9334df7314d000001d8b1
-.octa 0x1a8b9234dcf8949000001f0b989,0x314d000001b0b1234d08cec149ce8949,0x4d000001b8b1234d28cec149ce8949f7,0x1c0b1234d10cec149ce8949f731
-.octa 0x1c8b1234d30cec149ce8949f7314d,0x1d0b1234d18cec149ce8949f7314d00,0xd8b1234d38cec149ce8949f7314d0000,0xb9894d000001e0b9334df7314d000001
-.octa 0x8949000001a8b9234def8949000001f8,0x49f7314d000001b0b1234d08cec149ee,0xf7314d000001b8b1234d28cec149ee89,0x314d000001c0b1234d10cec149ee8949
-.octa 0x4d000001c8b1234d30cec149ee8949f7,0x1d0b1234d18cec149ee8949f731,0x1d8b1234d38cec149ee8949f7314d,0x200b9894d000001e0b9334df7314d00
-.octa 0x49d6894d000001a8b9234dd7894d0000,0xd6894df7314d000001b0b1234d08cec1,0x894df7314d000001b8b1234d28cec149,0x4df7314d000001c0b1234d10cec149d6
-.octa 0xf7314d000001c8b1234d30cec149d689,0x314d000001d0b1234d18cec149d6894d,0x4d000001d8b1234d38cec149d6894df7,0x208b9894d000001e0b9334df731
-.octa 0xcec149de894d000001a8b9234ddf894d,0xc149de894df7314d000001b0b1234d08,0x49de894df7314d000001b8b1234d28ce,0xde894df7314d000001c0b1234d10cec1
-.octa 0x894df7314d000001c8b1234d30cec149,0x4df7314d000001d0b1234d18cec149de,0xf7314d000001d8b1234d38cec149de89,0x894d00000210b9894d000001e0b9334d
-.octa 0x4d08cec149e6894d000001a8b9234de7,0x28cec149e6894df7314d000001b0b123,0xcec149e6894df7314d000001b8b1234d,0xc149e6894df7314d000001c0b1234d10
-.octa 0x49e6894df7314d000001c8b1234d30ce,0xe6894df7314d000001d0b1234d18cec1,0x334df7314d000001d8b1234d38cec149,0x4def894d00000218b9894d000001e0b9
-.octa 0xb1234d08cec149ee894d000001a8b923,0x234d28cec149ee894df7314d000001b0,0x4d10cec149ee894df7314d000001b8b1,0x30cec149ee894df7314d000001c0b123
-.octa 0xcec149ee894df7314d000001c8b1234d,0xc149ee894df7314d000001d0b1234d18,0xe0b9334df7314d000001d8b1234d38ce,0x1e8818b4100000220b9894d000001
-.octa 0x328898941c13100000328898b4100,0x41000002e8813341000002a881034100,0x898b41000001ec818b41000002e88189,0x8103410000032c898941c1310000032c
-.octa 0x2ec818941000002ec813341000002ac,0x330898b41000001f0818b410000,0x2b081034100000330898941c131,0x8b41000002f0818941000002f0813341
-.octa 0x8941c13100000334898b41000001f481,0xf4813341000002b48103410000033489,0x1f8818b41000002f4818941000002,0x338898941c13100000338898b4100
-.octa 0x41000002f8813341000002b881034100,0x898b41000001fc818b41000002f88189,0x8103410000033c898941c1310000033c,0x2fc818941000002fc813341000002bc
-.octa 0x340898b4100000200818b410000,0x2c081034100000340898941c131,0x8b410000030081894100000300813341,0x8941c13100000344898b410000020481
-.octa 0x4813341000002c48103410000034489,0x208818b4100000304818941000003,0x348898941c13100000348898b4100,0x4100000308813341000002c881034100
-.octa 0x898b410000020c818b41000003088189,0x8103410000034c898941c1310000034c,0x30c8189410000030c813341000002cc,0x350898b4100000210818b410000
-.octa 0x2d081034100000350898941c131,0x8b410000031081894100000310813341,0x8941c13100000354898b410000021481,0x14813341000002d48103410000035489
-.octa 0x218818b4100000314818941000003,0x358898941c13100000358898b4100,0x4100000318813341000002d881034100,0x898b410000021c818b41000003188189
-.octa 0x8103410000035c898941c1310000035c,0x31c8189410000031c813341000002dc,0x360898b4100000220818b410000,0x2e081034100000360898941c131
-.octa 0x8b410000032081894100000320813341,0x8941c13100000364898b410000022481,0x24813341000002e48103410000036489,0x2e8818b4900000324818941000003
-.octa 0x49000002e889894900000368898b4900,0x898b49000002f0818b49000003688189,0x370818949000002f089894900000370,0x378898b49000002f8818b490000
-.octa 0x8b4900000378818949000002f8898949,0x89894900000380898b490000030081,0x308818b4900000380818949000003,0x490000030889894900000388898b4900
-.octa 0x898b4900000310818b49000003888189,0x3908189490000031089894900000390,0x398898b4900000318818b490000,0x8b490000039881894900000318898949
-.octa 0x20898949000003a0898b490000032081,0x328818b49000003a0818949000003,0x4900000328898949000003a8898b4900,0x898b4900000330818b49000003a88189
-.octa 0x3b081894900000330898949000003b0,0x3b8898b4900000338818b490000,0x8b49000003b881894900000338898949,0x40898949000003c0898b490000034081
-.octa 0x348818b49000003c0818949000003,0x4900000348898949000003c8898b4900,0x898b4900000350818b49000003c88189,0x3d081894900000350898949000003d0
-.octa 0x3d8898b4900000358818b490000,0x8b49000003d881894900000358898949,0x60898949000003e0898b490000036081,0x834908c78348000003e0818949000003
-.octa 0x4800000080ef8148ffffd2ac850f01e8,0xeb00000010c1c748097210f98348d189,0x41c80f00000368838bcb894cf2894900,0x838b04428941c80f000003a8838b0289
-.octa 0x328838b08428941c80f000002e8,0x834804c3834810c283490c428941c80f,0xc1c748097210f98348d18948c37501e9,0xd1d6850fca2948d6894c00eb00000010
-.octa 0x3f0a98b49000003e8998b4900ebffff,0x400a98b4d000003f8a18b4d0000
-.byte 77,139,177,8,4,0,0,77,139,185,16,4,0,0,195",
-        r".p2align 6",
+.octa 0x834800c78348000001e0b1894de72be7
+.byte 0xfa,0x00
+je 20f
+22:",
+        // mov rcx, rdx
+        // cmp rcx, 16
+        r".byte 0x48,0x89,0xd1,0x48,0x83,0xf9,0x10
+jb 23f",
+        // mov rcx, 16
+        r".byte 0x48,0xc7,0xc1,0x10,0x00,0x00,0x00
+jmp 24f
+23:
+24:",
+        // mov r10, rsi
+        // mov rbx, r9
+        r".byte 0x49,0x89,0xf2,0x4c,0x89,0xcb
+25:",
+        // mov eax, DWORD PTR [r10]
+        // bswap eax
+        // mov DWORD PTR [rbx+744], eax
+        // mov eax, DWORD PTR [r10+4]
+        // bswap eax
+        // mov DWORD PTR [rbx+808], eax
+        // mov eax, DWORD PTR [r10+8]
+        // bswap eax
+        // mov DWORD PTR [rbx+872], eax
+        // mov eax, DWORD PTR [r10+12]
+        // bswap eax
+        // mov DWORD PTR [rbx+936], eax
+        // add r10, 16
+        // add rbx, 4
+        // sub rcx, 1
+        r".octa 0xf04428b41000002e88389c80f028b41,0x688389c80f08428b41000003288389c8,0x49000003a88389c80f0c428b41000003
+.byte 0x83,0xc2,0x10,0x48,0x83,0xc3,0x04,0x48,0x83,0xe9,0x01
+jne 25b",
+        // mov r8, 16
+        r".byte 0x49,0xc7,0xc0,0x10,0x00,0x00,0x00
+26:",
+        // mov r11d, DWORD PTR [rdi]
+        // mov r12d, DWORD PTR [rdi+4]
+        // mov eax, DWORD PTR [r9+872]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+552], eax
+        // xor eax, DWORD PTR [r9+936]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+488], eax
+        // mov eax, DWORD PTR [r9+876]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+556], eax
+        // xor eax, DWORD PTR [r9+940]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+492], eax
+        // mov eax, DWORD PTR [r9+880]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+560], eax
+        // xor eax, DWORD PTR [r9+944]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+496], eax
+        // mov eax, DWORD PTR [r9+884]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+564], eax
+        // xor eax, DWORD PTR [r9+948]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+500], eax
+        // mov eax, DWORD PTR [r9+888]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+568], eax
+        // xor eax, DWORD PTR [r9+952]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+504], eax
+        // mov eax, DWORD PTR [r9+892]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+572], eax
+        // xor eax, DWORD PTR [r9+956]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+508], eax
+        // mov eax, DWORD PTR [r9+896]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+576], eax
+        // xor eax, DWORD PTR [r9+960]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+512], eax
+        // mov eax, DWORD PTR [r9+900]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+580], eax
+        // xor eax, DWORD PTR [r9+964]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+516], eax
+        // mov eax, DWORD PTR [r9+904]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+584], eax
+        // xor eax, DWORD PTR [r9+968]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+520], eax
+        // mov eax, DWORD PTR [r9+908]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+588], eax
+        // xor eax, DWORD PTR [r9+972]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+524], eax
+        // mov eax, DWORD PTR [r9+912]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+592], eax
+        // xor eax, DWORD PTR [r9+976]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+528], eax
+        // mov eax, DWORD PTR [r9+916]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+596], eax
+        // xor eax, DWORD PTR [r9+980]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+532], eax
+        // mov eax, DWORD PTR [r9+920]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+600], eax
+        // xor eax, DWORD PTR [r9+984]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+536], eax
+        // mov eax, DWORD PTR [r9+924]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+604], eax
+        // xor eax, DWORD PTR [r9+988]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+540], eax
+        // mov eax, DWORD PTR [r9+928]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+608], eax
+        // xor eax, DWORD PTR [r9+992]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+544], eax
+        // mov eax, DWORD PTR [r9+932]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+612], eax
+        // xor eax, DWORD PTR [r9+996]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+548], eax
+        // mov rax, QWORD PTR [r9+488]
+        // mov rbx, QWORD PTR [r9+496]
+        // mov rcx, QWORD PTR [r9+504]
+        // mov rbp, QWORD PTR [r9+512]
+        // mov r10, QWORD PTR [r9+520]
+        // mov r11, QWORD PTR [r9+528]
+        // mov r12, QWORD PTR [r9+536]
+        // mov r13, QWORD PTR [r9+544]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+8]
+        // xor rax, QWORD PTR [r9+16]
+        // xor rax, QWORD PTR [r9+32]
+        // mov rbx, QWORD PTR [r9+24]
+        // xor rbx, QWORD PTR [r9+32]
+        // xor rbx, QWORD PTR [r9+56]
+        // xor rbx, QWORD PTR [r9+64]
+        // mov rcx, QWORD PTR [r9+40]
+        // xor rcx, QWORD PTR [r9+48]
+        // xor rcx, QWORD PTR [r9+64]
+        // mov rbp, QWORD PTR [r9+16]
+        // xor rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+32]
+        // xor rbp, QWORD PTR [r9+48]
+        // mov r10, QWORD PTR [r9+16]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r11, QWORD PTR [r9+32]
+        // xor r11, QWORD PTR [r9+40]
+        // mov r12, QWORD PTR [r9+24]
+        // xor r12, QWORD PTR [r9+32]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r13, QWORD PTR [r9+40]
+        // xor r13, QWORD PTR [r9+48]
+        // xor r13, QWORD PTR [r9+56]
+        // movabs r14, -1
+        // mov QWORD PTR [r9], r14
+        // mov r14, r10
+        // xor r14, rcx
+        // mov r15, r13
+        // xor r15, rbx
+        // mov QWORD PTR [r9+8], rbp
+        // mov rbp, r13
+        // xor rbp, r10
+        // mov QWORD PTR [r9+16], rbp
+        // mov rbp, r13
+        // xor rbp, rcx
+        // xor r11, r12
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, r11
+        // xor r12, rax
+        // xor r10, r12
+        // mov QWORD PTR [r9+32], r10
+        // mov r10, r15
+        // xor r10, r14
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, r12
+        // xor r14, r13
+        // xor rbx, r12
+        // mov QWORD PTR [r9+48], r14
+        // mov r14, rbx
+        // xor r14, rbp
+        // mov QWORD PTR [r9+56], rbx
+        // mov rbx, QWORD PTR [r9+8]
+        // xor rbx, r10
+        // xor rcx, rbx
+        // xor rbx, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, rcx
+        // xor r12, rax
+        // mov QWORD PTR [r9+8], r12
+        // mov r12, rcx
+        // xor r12, r11
+        // mov QWORD PTR [r9+64], r14
+        // mov r14, rbx
+        // xor r14, QWORD PTR [r9+16]
+        // mov QWORD PTR [r9+72], rbx
+        // mov rbx, rax
+        // xor rbx, r14
+        // mov QWORD PTR [r9+80], rbx
+        // mov rbx, r12
+        // xor rbx, r14
+        // mov QWORD PTR [r9+88], rbx
+        // mov rbx, r12
+        // xor rbx, rbp
+        // xor r11, r14
+        // mov QWORD PTR [r9+96], rbx
+        // mov rbx, r15
+        // xor rbx, r11
+        // xor r13, r11
+        // mov QWORD PTR [r9+104], r13
+        // mov r13, r10
+        // and r13, rcx
+        // mov QWORD PTR [r9+112], r10
+        // mov r10, QWORD PTR [r9+64]
+        // and r10, QWORD PTR [r9+8]
+        // xor r10, r13
+        // mov QWORD PTR [r9+120], rcx
+        // mov rcx, QWORD PTR [r9+32]
+        // and rcx, rax
+        // xor rcx, r13
+        // mov r13, r15
+        // and r13, r11
+        // mov QWORD PTR [r9+128], r15
+        // mov r15, QWORD PTR [r9+56]
+        // and r15, QWORD PTR [r9+24]
+        // xor r15, r13
+        // mov QWORD PTR [r9+136], r11
+        // mov r11, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+80]
+        // xor r11, r13
+        // mov r13, QWORD PTR [r9+16]
+        // and r13, r14
+        // mov QWORD PTR [r9+144], r14
+        // mov r14, QWORD PTR [r9+40]
+        // and r14, QWORD PTR [r9+88]
+        // xor r14, r13
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, rbp
+        // and rax, r12
+        // xor rax, r13
+        // xor r10, r14
+        // xor rcx, rax
+        // xor r15, r14
+        // xor r11, rax
+        // xor r10, QWORD PTR [r9+72]
+        // xor rcx, QWORD PTR [r9+96]
+        // xor r15, rbx
+        // xor r11, QWORD PTR [r9+104]
+        // mov rbx, r10
+        // xor rbx, rcx
+        // and r10, r15
+        // mov rax, r11
+        // xor rax, r10
+        // mov r14, rbx
+        // and r14, rax
+        // xor r14, rcx
+        // mov r13, r15
+        // xor r13, r11
+        // xor rcx, r10
+        // and rcx, r13
+        // xor rcx, r11
+        // xor r15, rcx
+        // mov r13, rax
+        // xor r13, rcx
+        // and r11, r13
+        // xor r15, r11
+        // xor rax, r11
+        // and rax, r14
+        // xor rbx, rax
+        // mov rax, rbx
+        // xor rax, r15
+        // mov r11, r14
+        // xor r11, rcx
+        // mov r13, r14
+        // xor r13, rbx
+        // mov r10, rcx
+        // xor r10, r15
+        // mov QWORD PTR [r9+104], rbp
+        // mov rbp, r11
+        // xor rbp, rax
+        // mov QWORD PTR [r9+96], rax
+        // mov rax, r10
+        // and rax, QWORD PTR [r9+120]
+        // mov QWORD PTR [r9+120], rax
+        // mov rax, r15
+        // and rax, QWORD PTR [r9+8]
+        // mov QWORD PTR [r9+8], rax
+        // mov rax, rcx
+        // and rax, QWORD PTR [r9+152]
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, r13
+        // and rax, QWORD PTR [r9+136]
+        // mov QWORD PTR [r9+136], rax
+        // mov rax, rbx
+        // and rax, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], rax
+        // mov rax, r14
+        // and rax, QWORD PTR [r9+80]
+        // mov QWORD PTR [r9+80], rax
+        // mov rax, r11
+        // and rax, QWORD PTR [r9+144]
+        // mov QWORD PTR [r9+144], rax
+        // mov rax, rbp
+        // and rax, QWORD PTR [r9+88]
+        // and r12, QWORD PTR [r9+96]
+        // and r10, QWORD PTR [r9+112]
+        // and r15, QWORD PTR [r9+64]
+        // and rcx, QWORD PTR [r9+32]
+        // and r13, QWORD PTR [r9+128]
+        // and rbx, QWORD PTR [r9+56]
+        // and r14, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+16]
+        // and rbp, QWORD PTR [r9+40]
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, QWORD PTR [r9+96]
+        // and r14, QWORD PTR [r9+104]
+        // xor r11, rbp
+        // xor rcx, r15
+        // xor rbx, QWORD PTR [r9+80]
+        // xor r10, r15
+        // mov r15, QWORD PTR [r9+152]
+        // xor r15, r13
+        // mov QWORD PTR [r9+104], rcx
+        // mov rcx, QWORD PTR [r9+152]
+        // xor rcx, QWORD PTR [r9+80]
+        // xor r12, rax
+        // mov QWORD PTR [r9+80], rcx
+        // mov rcx, QWORD PTR [r9+120]
+        // xor rcx, QWORD PTR [r9+136]
+        // xor rax, QWORD PTR [r9+144]
+        // xor rbp, r14
+        // xor r13, rbx
+        // xor r15, rcx
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, r11
+        // xor rax, QWORD PTR [r9+136]
+        // xor r11, r15
+        // xor r15, QWORD PTR [r9+40]
+        // xor r12, r14
+        // xor r10, r14
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, rax
+        // xor r15, r12
+        // mov QWORD PTR [r9+24], rbp
+        // mov rbp, QWORD PTR [r9+8]
+        // xor rbp, r10
+        // xor rax, r10
+        // xor r13, r12
+        // xor r13, QWORD PTR [r9]
+        // xor rbx, r11
+        // xor rbx, QWORD PTR [r9]
+        // mov r11, r14
+        // xor r11, r15
+        // xor rcx, rbp
+        // xor rbp, QWORD PTR [r9+80]
+        // xor r15, QWORD PTR [r9+104]
+        // xor r14, rcx
+        // xor r14, QWORD PTR [r9]
+        // xor r11, QWORD PTR [r9+24]
+        // xor r11, QWORD PTR [r9]
+        // mov QWORD PTR [r9+24], r13
+        // mov r13, rax
+        // mov r12, r14
+        // mov r10, rcx
+        // mov rcx, r15
+        // mov QWORD PTR [r9+104], rbx
+        // mov rbx, QWORD PTR [r9+24]
+        // mov rax, QWORD PTR [r9+104]
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+24]
+        // xor rax, QWORD PTR [r9+40]
+        // xor rax, QWORD PTR [r9+48]
+        // xor rax, QWORD PTR [r9+56]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // and rax, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rax, r14
+        // mov rbx, QWORD PTR [r9+24]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+48]
+        // mov r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // xor r15, QWORD PTR [r9+64]
+        // and rbx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbx, r14
+        // xor rbx, r15
+        // mov rcx, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // and rcx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rcx, r14
+        // xor rcx, r15
+        // mov rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+64]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and rbp, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbp, r14
+        // xor rbp, r15
+        // mov r10, QWORD PTR [r9+8]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r14, QWORD PTR [r9+64]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+56]
+        // and r10, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r10, r14
+        // xor r10, r15
+        // mov r11, QWORD PTR [r9+8]
+        // xor r11, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+40]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and r11, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r11, r14
+        // xor r11, r15
+        // mov r12, QWORD PTR [r9+8]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+56]
+        // and r12, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r12, r14
+        // xor r12, r15
+        // mov r13, QWORD PTR [r9+16]
+        // xor r13, QWORD PTR [r9+56]
+        // xor r13, QWORD PTR [r9+64]
+        // and r13, QWORD PTR [r9+408]
+        // xor r13, QWORD PTR [r9+32]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov r15, rax
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rax
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+488], r15
+        // mov r15, rbx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+496], r15
+        // mov r15, rcx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rcx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+504], r15
+        // mov r15, rbp
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbp
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+512], r15
+        // mov r15, r10
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r10
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+520], r15
+        // mov r15, r11
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r11
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+528], r15
+        // mov r15, r12
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r12
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+536], r15
+        // mov r15, r13
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r13
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+544], r15
+        // mov eax, DWORD PTR [r9+488]
+        // mov DWORD PTR [r9+616], eax
+        // add eax, DWORD PTR [r9+552]
+        // mov DWORD PTR [r9+488], eax
+        // mov eax, DWORD PTR [r9+492]
+        // mov DWORD PTR [r9+620], eax
+        // add eax, DWORD PTR [r9+556]
+        // mov DWORD PTR [r9+492], eax
+        // mov eax, DWORD PTR [r9+496]
+        // mov DWORD PTR [r9+624], eax
+        // add eax, DWORD PTR [r9+560]
+        // mov DWORD PTR [r9+496], eax
+        // mov eax, DWORD PTR [r9+500]
+        // mov DWORD PTR [r9+628], eax
+        // add eax, DWORD PTR [r9+564]
+        // mov DWORD PTR [r9+500], eax
+        // mov eax, DWORD PTR [r9+504]
+        // mov DWORD PTR [r9+632], eax
+        // add eax, DWORD PTR [r9+568]
+        // mov DWORD PTR [r9+504], eax
+        // mov eax, DWORD PTR [r9+508]
+        // mov DWORD PTR [r9+636], eax
+        // add eax, DWORD PTR [r9+572]
+        // mov DWORD PTR [r9+508], eax
+        // mov eax, DWORD PTR [r9+512]
+        // mov DWORD PTR [r9+640], eax
+        // add eax, DWORD PTR [r9+576]
+        // mov DWORD PTR [r9+512], eax
+        // mov eax, DWORD PTR [r9+516]
+        // mov DWORD PTR [r9+644], eax
+        // add eax, DWORD PTR [r9+580]
+        // mov DWORD PTR [r9+516], eax
+        // mov eax, DWORD PTR [r9+520]
+        // mov DWORD PTR [r9+648], eax
+        // add eax, DWORD PTR [r9+584]
+        // mov DWORD PTR [r9+520], eax
+        // mov eax, DWORD PTR [r9+524]
+        // mov DWORD PTR [r9+652], eax
+        // add eax, DWORD PTR [r9+588]
+        // mov DWORD PTR [r9+524], eax
+        // mov eax, DWORD PTR [r9+528]
+        // mov DWORD PTR [r9+656], eax
+        // add eax, DWORD PTR [r9+592]
+        // mov DWORD PTR [r9+528], eax
+        // mov eax, DWORD PTR [r9+532]
+        // mov DWORD PTR [r9+660], eax
+        // add eax, DWORD PTR [r9+596]
+        // mov DWORD PTR [r9+532], eax
+        // mov eax, DWORD PTR [r9+536]
+        // mov DWORD PTR [r9+664], eax
+        // add eax, DWORD PTR [r9+600]
+        // mov DWORD PTR [r9+536], eax
+        // mov eax, DWORD PTR [r9+540]
+        // mov DWORD PTR [r9+668], eax
+        // add eax, DWORD PTR [r9+604]
+        // mov DWORD PTR [r9+540], eax
+        // mov eax, DWORD PTR [r9+544]
+        // mov DWORD PTR [r9+672], eax
+        // add eax, DWORD PTR [r9+608]
+        // mov DWORD PTR [r9+544], eax
+        // mov eax, DWORD PTR [r9+548]
+        // mov DWORD PTR [r9+676], eax
+        // add eax, DWORD PTR [r9+612]
+        // mov DWORD PTR [r9+548], eax
+        // mov rax, QWORD PTR [r9+488]
+        // mov rbx, QWORD PTR [r9+496]
+        // mov rcx, QWORD PTR [r9+504]
+        // mov rbp, QWORD PTR [r9+512]
+        // mov r10, QWORD PTR [r9+520]
+        // mov r11, QWORD PTR [r9+528]
+        // mov r12, QWORD PTR [r9+536]
+        // mov r13, QWORD PTR [r9+544]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+8]
+        // xor rax, QWORD PTR [r9+16]
+        // xor rax, QWORD PTR [r9+32]
+        // mov rbx, QWORD PTR [r9+24]
+        // xor rbx, QWORD PTR [r9+32]
+        // xor rbx, QWORD PTR [r9+56]
+        // xor rbx, QWORD PTR [r9+64]
+        // mov rcx, QWORD PTR [r9+40]
+        // xor rcx, QWORD PTR [r9+48]
+        // xor rcx, QWORD PTR [r9+64]
+        // mov rbp, QWORD PTR [r9+16]
+        // xor rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+32]
+        // xor rbp, QWORD PTR [r9+48]
+        // mov r10, QWORD PTR [r9+16]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r11, QWORD PTR [r9+32]
+        // xor r11, QWORD PTR [r9+40]
+        // mov r12, QWORD PTR [r9+24]
+        // xor r12, QWORD PTR [r9+32]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r13, QWORD PTR [r9+40]
+        // xor r13, QWORD PTR [r9+48]
+        // xor r13, QWORD PTR [r9+56]
+        // movabs r14, -1
+        // mov QWORD PTR [r9], r14
+        // mov r14, r10
+        // xor r14, rcx
+        // mov r15, r13
+        // xor r15, rbx
+        // mov QWORD PTR [r9+8], rbp
+        // mov rbp, r13
+        // xor rbp, r10
+        // mov QWORD PTR [r9+16], rbp
+        // mov rbp, r13
+        // xor rbp, rcx
+        // xor r11, r12
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, r11
+        // xor r12, rax
+        // xor r10, r12
+        // mov QWORD PTR [r9+32], r10
+        // mov r10, r15
+        // xor r10, r14
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, r12
+        // xor r14, r13
+        // xor rbx, r12
+        // mov QWORD PTR [r9+48], r14
+        // mov r14, rbx
+        // xor r14, rbp
+        // mov QWORD PTR [r9+56], rbx
+        // mov rbx, QWORD PTR [r9+8]
+        // xor rbx, r10
+        // xor rcx, rbx
+        // xor rbx, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, rcx
+        // xor r12, rax
+        // mov QWORD PTR [r9+8], r12
+        // mov r12, rcx
+        // xor r12, r11
+        // mov QWORD PTR [r9+64], r14
+        // mov r14, rbx
+        // xor r14, QWORD PTR [r9+16]
+        // mov QWORD PTR [r9+72], rbx
+        // mov rbx, rax
+        // xor rbx, r14
+        // mov QWORD PTR [r9+80], rbx
+        // mov rbx, r12
+        // xor rbx, r14
+        // mov QWORD PTR [r9+88], rbx
+        // mov rbx, r12
+        // xor rbx, rbp
+        // xor r11, r14
+        // mov QWORD PTR [r9+96], rbx
+        // mov rbx, r15
+        // xor rbx, r11
+        // xor r13, r11
+        // mov QWORD PTR [r9+104], r13
+        // mov r13, r10
+        // and r13, rcx
+        // mov QWORD PTR [r9+112], r10
+        // mov r10, QWORD PTR [r9+64]
+        // and r10, QWORD PTR [r9+8]
+        // xor r10, r13
+        // mov QWORD PTR [r9+120], rcx
+        // mov rcx, QWORD PTR [r9+32]
+        // and rcx, rax
+        // xor rcx, r13
+        // mov r13, r15
+        // and r13, r11
+        // mov QWORD PTR [r9+128], r15
+        // mov r15, QWORD PTR [r9+56]
+        // and r15, QWORD PTR [r9+24]
+        // xor r15, r13
+        // mov QWORD PTR [r9+136], r11
+        // mov r11, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+80]
+        // xor r11, r13
+        // mov r13, QWORD PTR [r9+16]
+        // and r13, r14
+        // mov QWORD PTR [r9+144], r14
+        // mov r14, QWORD PTR [r9+40]
+        // and r14, QWORD PTR [r9+88]
+        // xor r14, r13
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, rbp
+        // and rax, r12
+        // xor rax, r13
+        // xor r10, r14
+        // xor rcx, rax
+        // xor r15, r14
+        // xor r11, rax
+        // xor r10, QWORD PTR [r9+72]
+        // xor rcx, QWORD PTR [r9+96]
+        // xor r15, rbx
+        // xor r11, QWORD PTR [r9+104]
+        // mov rbx, r10
+        // xor rbx, rcx
+        // and r10, r15
+        // mov rax, r11
+        // xor rax, r10
+        // mov r14, rbx
+        // and r14, rax
+        // xor r14, rcx
+        // mov r13, r15
+        // xor r13, r11
+        // xor rcx, r10
+        // and rcx, r13
+        // xor rcx, r11
+        // xor r15, rcx
+        // mov r13, rax
+        // xor r13, rcx
+        // and r11, r13
+        // xor r15, r11
+        // xor rax, r11
+        // and rax, r14
+        // xor rbx, rax
+        // mov rax, rbx
+        // xor rax, r15
+        // mov r11, r14
+        // xor r11, rcx
+        // mov r13, r14
+        // xor r13, rbx
+        // mov r10, rcx
+        // xor r10, r15
+        // mov QWORD PTR [r9+104], rbp
+        // mov rbp, r11
+        // xor rbp, rax
+        // mov QWORD PTR [r9+96], rax
+        // mov rax, r10
+        // and rax, QWORD PTR [r9+120]
+        // mov QWORD PTR [r9+120], rax
+        // mov rax, r15
+        // and rax, QWORD PTR [r9+8]
+        // mov QWORD PTR [r9+8], rax
+        // mov rax, rcx
+        // and rax, QWORD PTR [r9+152]
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, r13
+        // and rax, QWORD PTR [r9+136]
+        // mov QWORD PTR [r9+136], rax
+        // mov rax, rbx
+        // and rax, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], rax
+        // mov rax, r14
+        // and rax, QWORD PTR [r9+80]
+        // mov QWORD PTR [r9+80], rax
+        // mov rax, r11
+        // and rax, QWORD PTR [r9+144]
+        // mov QWORD PTR [r9+144], rax
+        // mov rax, rbp
+        // and rax, QWORD PTR [r9+88]
+        // and r12, QWORD PTR [r9+96]
+        // and r10, QWORD PTR [r9+112]
+        // and r15, QWORD PTR [r9+64]
+        // and rcx, QWORD PTR [r9+32]
+        // and r13, QWORD PTR [r9+128]
+        // and rbx, QWORD PTR [r9+56]
+        // and r14, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+16]
+        // and rbp, QWORD PTR [r9+40]
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, QWORD PTR [r9+96]
+        // and r14, QWORD PTR [r9+104]
+        // xor r11, rbp
+        // xor rcx, r15
+        // xor rbx, QWORD PTR [r9+80]
+        // xor r10, r15
+        // mov r15, QWORD PTR [r9+152]
+        // xor r15, r13
+        // mov QWORD PTR [r9+104], rcx
+        // mov rcx, QWORD PTR [r9+152]
+        // xor rcx, QWORD PTR [r9+80]
+        // xor r12, rax
+        // mov QWORD PTR [r9+80], rcx
+        // mov rcx, QWORD PTR [r9+120]
+        // xor rcx, QWORD PTR [r9+136]
+        // xor rax, QWORD PTR [r9+144]
+        // xor rbp, r14
+        // xor r13, rbx
+        // xor r15, rcx
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, r11
+        // xor rax, QWORD PTR [r9+136]
+        // xor r11, r15
+        // xor r15, QWORD PTR [r9+40]
+        // xor r12, r14
+        // xor r10, r14
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, rax
+        // xor r15, r12
+        // mov QWORD PTR [r9+24], rbp
+        // mov rbp, QWORD PTR [r9+8]
+        // xor rbp, r10
+        // xor rax, r10
+        // xor r13, r12
+        // xor r13, QWORD PTR [r9]
+        // xor rbx, r11
+        // xor rbx, QWORD PTR [r9]
+        // mov r11, r14
+        // xor r11, r15
+        // xor rcx, rbp
+        // xor rbp, QWORD PTR [r9+80]
+        // xor r15, QWORD PTR [r9+104]
+        // xor r14, rcx
+        // xor r14, QWORD PTR [r9]
+        // xor r11, QWORD PTR [r9+24]
+        // xor r11, QWORD PTR [r9]
+        // mov QWORD PTR [r9+24], r13
+        // mov r13, rax
+        // mov r12, r14
+        // mov r10, rcx
+        // mov rcx, r15
+        // mov QWORD PTR [r9+104], rbx
+        // mov rbx, QWORD PTR [r9+24]
+        // mov rax, QWORD PTR [r9+104]
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+24]
+        // xor rax, QWORD PTR [r9+40]
+        // xor rax, QWORD PTR [r9+48]
+        // xor rax, QWORD PTR [r9+56]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // and rax, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rax, r14
+        // mov rbx, QWORD PTR [r9+24]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+48]
+        // mov r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // xor r15, QWORD PTR [r9+64]
+        // and rbx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbx, r14
+        // xor rbx, r15
+        // mov rcx, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // and rcx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rcx, r14
+        // xor rcx, r15
+        // mov rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+64]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and rbp, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbp, r14
+        // xor rbp, r15
+        // mov r10, QWORD PTR [r9+8]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r14, QWORD PTR [r9+64]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+56]
+        // and r10, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r10, r14
+        // xor r10, r15
+        // mov r11, QWORD PTR [r9+8]
+        // xor r11, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+40]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and r11, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r11, r14
+        // xor r11, r15
+        // mov r12, QWORD PTR [r9+8]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+56]
+        // and r12, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r12, r14
+        // xor r12, r15
+        // mov r13, QWORD PTR [r9+16]
+        // xor r13, QWORD PTR [r9+56]
+        // xor r13, QWORD PTR [r9+64]
+        // and r13, QWORD PTR [r9+408]
+        // xor r13, QWORD PTR [r9+32]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov r15, rax
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rax
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+488], r15
+        // mov r15, rbx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+496], r15
+        // mov r15, rcx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rcx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+504], r15
+        // mov r15, rbp
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbp
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+512], r15
+        // mov r15, r10
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r10
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+520], r15
+        // mov r15, r11
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r11
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+528], r15
+        // mov r15, r12
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r12
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+536], r15
+        // mov r15, r13
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r13
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+544], r15
+        // mov eax, DWORD PTR [r9+488]
+        // mov DWORD PTR [r9+680], eax
+        // add eax, DWORD PTR [r9+616]
+        // mov DWORD PTR [r9+488], eax
+        // mov eax, DWORD PTR [r9+492]
+        // mov DWORD PTR [r9+684], eax
+        // add eax, DWORD PTR [r9+620]
+        // mov DWORD PTR [r9+492], eax
+        // mov eax, DWORD PTR [r9+496]
+        // mov DWORD PTR [r9+688], eax
+        // add eax, DWORD PTR [r9+624]
+        // mov DWORD PTR [r9+496], eax
+        // mov eax, DWORD PTR [r9+500]
+        // mov DWORD PTR [r9+692], eax
+        // add eax, DWORD PTR [r9+628]
+        // mov DWORD PTR [r9+500], eax
+        // mov eax, DWORD PTR [r9+504]
+        // mov DWORD PTR [r9+696], eax
+        // add eax, DWORD PTR [r9+632]
+        // mov DWORD PTR [r9+504], eax
+        // mov eax, DWORD PTR [r9+508]
+        // mov DWORD PTR [r9+700], eax
+        // add eax, DWORD PTR [r9+636]
+        // mov DWORD PTR [r9+508], eax
+        // mov eax, DWORD PTR [r9+512]
+        // mov DWORD PTR [r9+704], eax
+        // add eax, DWORD PTR [r9+640]
+        // mov DWORD PTR [r9+512], eax
+        // mov eax, DWORD PTR [r9+516]
+        // mov DWORD PTR [r9+708], eax
+        // add eax, DWORD PTR [r9+644]
+        // mov DWORD PTR [r9+516], eax
+        // mov eax, DWORD PTR [r9+520]
+        // mov DWORD PTR [r9+712], eax
+        // add eax, DWORD PTR [r9+648]
+        // mov DWORD PTR [r9+520], eax
+        // mov eax, DWORD PTR [r9+524]
+        // mov DWORD PTR [r9+716], eax
+        // add eax, DWORD PTR [r9+652]
+        // mov DWORD PTR [r9+524], eax
+        // mov eax, DWORD PTR [r9+528]
+        // mov DWORD PTR [r9+720], eax
+        // add eax, DWORD PTR [r9+656]
+        // mov DWORD PTR [r9+528], eax
+        // mov eax, DWORD PTR [r9+532]
+        // mov DWORD PTR [r9+724], eax
+        // add eax, DWORD PTR [r9+660]
+        // mov DWORD PTR [r9+532], eax
+        // mov eax, DWORD PTR [r9+536]
+        // mov DWORD PTR [r9+728], eax
+        // add eax, DWORD PTR [r9+664]
+        // mov DWORD PTR [r9+536], eax
+        // mov eax, DWORD PTR [r9+540]
+        // mov DWORD PTR [r9+732], eax
+        // add eax, DWORD PTR [r9+668]
+        // mov DWORD PTR [r9+540], eax
+        // mov eax, DWORD PTR [r9+544]
+        // mov DWORD PTR [r9+736], eax
+        // add eax, DWORD PTR [r9+672]
+        // mov DWORD PTR [r9+544], eax
+        // mov eax, DWORD PTR [r9+548]
+        // mov DWORD PTR [r9+740], eax
+        // add eax, DWORD PTR [r9+676]
+        // mov DWORD PTR [r9+548], eax
+        // mov rax, QWORD PTR [r9+488]
+        // mov rbx, QWORD PTR [r9+496]
+        // mov rcx, QWORD PTR [r9+504]
+        // mov rbp, QWORD PTR [r9+512]
+        // mov r10, QWORD PTR [r9+520]
+        // mov r11, QWORD PTR [r9+528]
+        // mov r12, QWORD PTR [r9+536]
+        // mov r13, QWORD PTR [r9+544]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+8]
+        // xor rax, QWORD PTR [r9+16]
+        // xor rax, QWORD PTR [r9+32]
+        // mov rbx, QWORD PTR [r9+24]
+        // xor rbx, QWORD PTR [r9+32]
+        // xor rbx, QWORD PTR [r9+56]
+        // xor rbx, QWORD PTR [r9+64]
+        // mov rcx, QWORD PTR [r9+40]
+        // xor rcx, QWORD PTR [r9+48]
+        // xor rcx, QWORD PTR [r9+64]
+        // mov rbp, QWORD PTR [r9+16]
+        // xor rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+32]
+        // xor rbp, QWORD PTR [r9+48]
+        // mov r10, QWORD PTR [r9+16]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r11, QWORD PTR [r9+32]
+        // xor r11, QWORD PTR [r9+40]
+        // mov r12, QWORD PTR [r9+24]
+        // xor r12, QWORD PTR [r9+32]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r13, QWORD PTR [r9+40]
+        // xor r13, QWORD PTR [r9+48]
+        // xor r13, QWORD PTR [r9+56]
+        // movabs r14, -1
+        // mov QWORD PTR [r9], r14
+        // mov r14, r10
+        // xor r14, rcx
+        // mov r15, r13
+        // xor r15, rbx
+        // mov QWORD PTR [r9+8], rbp
+        // mov rbp, r13
+        // xor rbp, r10
+        // mov QWORD PTR [r9+16], rbp
+        // mov rbp, r13
+        // xor rbp, rcx
+        // xor r11, r12
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, r11
+        // xor r12, rax
+        // xor r10, r12
+        // mov QWORD PTR [r9+32], r10
+        // mov r10, r15
+        // xor r10, r14
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, r12
+        // xor r14, r13
+        // xor rbx, r12
+        // mov QWORD PTR [r9+48], r14
+        // mov r14, rbx
+        // xor r14, rbp
+        // mov QWORD PTR [r9+56], rbx
+        // mov rbx, QWORD PTR [r9+8]
+        // xor rbx, r10
+        // xor rcx, rbx
+        // xor rbx, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, rcx
+        // xor r12, rax
+        // mov QWORD PTR [r9+8], r12
+        // mov r12, rcx
+        // xor r12, r11
+        // mov QWORD PTR [r9+64], r14
+        // mov r14, rbx
+        // xor r14, QWORD PTR [r9+16]
+        // mov QWORD PTR [r9+72], rbx
+        // mov rbx, rax
+        // xor rbx, r14
+        // mov QWORD PTR [r9+80], rbx
+        // mov rbx, r12
+        // xor rbx, r14
+        // mov QWORD PTR [r9+88], rbx
+        // mov rbx, r12
+        // xor rbx, rbp
+        // xor r11, r14
+        // mov QWORD PTR [r9+96], rbx
+        // mov rbx, r15
+        // xor rbx, r11
+        // xor r13, r11
+        // mov QWORD PTR [r9+104], r13
+        // mov r13, r10
+        // and r13, rcx
+        // mov QWORD PTR [r9+112], r10
+        // mov r10, QWORD PTR [r9+64]
+        // and r10, QWORD PTR [r9+8]
+        // xor r10, r13
+        // mov QWORD PTR [r9+120], rcx
+        // mov rcx, QWORD PTR [r9+32]
+        // and rcx, rax
+        // xor rcx, r13
+        // mov r13, r15
+        // and r13, r11
+        // mov QWORD PTR [r9+128], r15
+        // mov r15, QWORD PTR [r9+56]
+        // and r15, QWORD PTR [r9+24]
+        // xor r15, r13
+        // mov QWORD PTR [r9+136], r11
+        // mov r11, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+80]
+        // xor r11, r13
+        // mov r13, QWORD PTR [r9+16]
+        // and r13, r14
+        // mov QWORD PTR [r9+144], r14
+        // mov r14, QWORD PTR [r9+40]
+        // and r14, QWORD PTR [r9+88]
+        // xor r14, r13
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, rbp
+        // and rax, r12
+        // xor rax, r13
+        // xor r10, r14
+        // xor rcx, rax
+        // xor r15, r14
+        // xor r11, rax
+        // xor r10, QWORD PTR [r9+72]
+        // xor rcx, QWORD PTR [r9+96]
+        // xor r15, rbx
+        // xor r11, QWORD PTR [r9+104]
+        // mov rbx, r10
+        // xor rbx, rcx
+        // and r10, r15
+        // mov rax, r11
+        // xor rax, r10
+        // mov r14, rbx
+        // and r14, rax
+        // xor r14, rcx
+        // mov r13, r15
+        // xor r13, r11
+        // xor rcx, r10
+        // and rcx, r13
+        // xor rcx, r11
+        // xor r15, rcx
+        // mov r13, rax
+        // xor r13, rcx
+        // and r11, r13
+        // xor r15, r11
+        // xor rax, r11
+        // and rax, r14
+        // xor rbx, rax
+        // mov rax, rbx
+        // xor rax, r15
+        // mov r11, r14
+        // xor r11, rcx
+        // mov r13, r14
+        // xor r13, rbx
+        // mov r10, rcx
+        // xor r10, r15
+        // mov QWORD PTR [r9+104], rbp
+        // mov rbp, r11
+        // xor rbp, rax
+        // mov QWORD PTR [r9+96], rax
+        // mov rax, r10
+        // and rax, QWORD PTR [r9+120]
+        // mov QWORD PTR [r9+120], rax
+        // mov rax, r15
+        // and rax, QWORD PTR [r9+8]
+        // mov QWORD PTR [r9+8], rax
+        // mov rax, rcx
+        // and rax, QWORD PTR [r9+152]
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, r13
+        // and rax, QWORD PTR [r9+136]
+        // mov QWORD PTR [r9+136], rax
+        // mov rax, rbx
+        // and rax, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], rax
+        // mov rax, r14
+        // and rax, QWORD PTR [r9+80]
+        // mov QWORD PTR [r9+80], rax
+        // mov rax, r11
+        // and rax, QWORD PTR [r9+144]
+        // mov QWORD PTR [r9+144], rax
+        // mov rax, rbp
+        // and rax, QWORD PTR [r9+88]
+        // and r12, QWORD PTR [r9+96]
+        // and r10, QWORD PTR [r9+112]
+        // and r15, QWORD PTR [r9+64]
+        // and rcx, QWORD PTR [r9+32]
+        // and r13, QWORD PTR [r9+128]
+        // and rbx, QWORD PTR [r9+56]
+        // and r14, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+16]
+        // and rbp, QWORD PTR [r9+40]
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, QWORD PTR [r9+96]
+        // and r14, QWORD PTR [r9+104]
+        // xor r11, rbp
+        // xor rcx, r15
+        // xor rbx, QWORD PTR [r9+80]
+        // xor r10, r15
+        // mov r15, QWORD PTR [r9+152]
+        // xor r15, r13
+        // mov QWORD PTR [r9+104], rcx
+        // mov rcx, QWORD PTR [r9+152]
+        // xor rcx, QWORD PTR [r9+80]
+        // xor r12, rax
+        // mov QWORD PTR [r9+80], rcx
+        // mov rcx, QWORD PTR [r9+120]
+        // xor rcx, QWORD PTR [r9+136]
+        // xor rax, QWORD PTR [r9+144]
+        // xor rbp, r14
+        // xor r13, rbx
+        // xor r15, rcx
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, r11
+        // xor rax, QWORD PTR [r9+136]
+        // xor r11, r15
+        // xor r15, QWORD PTR [r9+40]
+        // xor r12, r14
+        // xor r10, r14
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, rax
+        // xor r15, r12
+        // mov QWORD PTR [r9+24], rbp
+        // mov rbp, QWORD PTR [r9+8]
+        // xor rbp, r10
+        // xor rax, r10
+        // xor r13, r12
+        // xor r13, QWORD PTR [r9]
+        // xor rbx, r11
+        // xor rbx, QWORD PTR [r9]
+        // mov r11, r14
+        // xor r11, r15
+        // xor rcx, rbp
+        // xor rbp, QWORD PTR [r9+80]
+        // xor r15, QWORD PTR [r9+104]
+        // xor r14, rcx
+        // xor r14, QWORD PTR [r9]
+        // xor r11, QWORD PTR [r9+24]
+        // xor r11, QWORD PTR [r9]
+        // mov QWORD PTR [r9+24], r13
+        // mov r13, rax
+        // mov r12, r14
+        // mov r10, rcx
+        // mov rcx, r15
+        // mov QWORD PTR [r9+104], rbx
+        // mov rbx, QWORD PTR [r9+24]
+        // mov rax, QWORD PTR [r9+104]
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+24]
+        // xor rax, QWORD PTR [r9+40]
+        // xor rax, QWORD PTR [r9+48]
+        // xor rax, QWORD PTR [r9+56]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // and rax, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rax, r14
+        // mov rbx, QWORD PTR [r9+24]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+48]
+        // mov r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // xor r15, QWORD PTR [r9+64]
+        // and rbx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbx, r14
+        // xor rbx, r15
+        // mov rcx, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // and rcx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rcx, r14
+        // xor rcx, r15
+        // mov rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+64]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and rbp, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbp, r14
+        // xor rbp, r15
+        // mov r10, QWORD PTR [r9+8]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r14, QWORD PTR [r9+64]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+56]
+        // and r10, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r10, r14
+        // xor r10, r15
+        // mov r11, QWORD PTR [r9+8]
+        // xor r11, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+40]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and r11, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r11, r14
+        // xor r11, r15
+        // mov r12, QWORD PTR [r9+8]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+56]
+        // and r12, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r12, r14
+        // xor r12, r15
+        // mov r13, QWORD PTR [r9+16]
+        // xor r13, QWORD PTR [r9+56]
+        // xor r13, QWORD PTR [r9+64]
+        // and r13, QWORD PTR [r9+408]
+        // xor r13, QWORD PTR [r9+32]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov r15, rax
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rax
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+488], r15
+        // mov r15, rbx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+496], r15
+        // mov r15, rcx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rcx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+504], r15
+        // mov r15, rbp
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbp
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+512], r15
+        // mov r15, r10
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r10
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+520], r15
+        // mov r15, r11
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r11
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+528], r15
+        // mov r15, r12
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r12
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+536], r15
+        // mov r15, r13
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r13
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+544], r15
+        // mov eax, DWORD PTR [r9+488]
+        // mov ecx, DWORD PTR [r9+808]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+808], ecx
+        // add eax, DWORD PTR [r9+680]
+        // xor eax, DWORD PTR [r9+744]
+        // mov DWORD PTR [r9+744], eax
+        // mov eax, DWORD PTR [r9+492]
+        // mov ecx, DWORD PTR [r9+812]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+812], ecx
+        // add eax, DWORD PTR [r9+684]
+        // xor eax, DWORD PTR [r9+748]
+        // mov DWORD PTR [r9+748], eax
+        // mov eax, DWORD PTR [r9+496]
+        // mov ecx, DWORD PTR [r9+816]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+816], ecx
+        // add eax, DWORD PTR [r9+688]
+        // xor eax, DWORD PTR [r9+752]
+        // mov DWORD PTR [r9+752], eax
+        // mov eax, DWORD PTR [r9+500]
+        // mov ecx, DWORD PTR [r9+820]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+820], ecx
+        // add eax, DWORD PTR [r9+692]
+        // xor eax, DWORD PTR [r9+756]
+        // mov DWORD PTR [r9+756], eax
+        // mov eax, DWORD PTR [r9+504]
+        // mov ecx, DWORD PTR [r9+824]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+824], ecx
+        // add eax, DWORD PTR [r9+696]
+        // xor eax, DWORD PTR [r9+760]
+        // mov DWORD PTR [r9+760], eax
+        // mov eax, DWORD PTR [r9+508]
+        // mov ecx, DWORD PTR [r9+828]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+828], ecx
+        // add eax, DWORD PTR [r9+700]
+        // xor eax, DWORD PTR [r9+764]
+        // mov DWORD PTR [r9+764], eax
+        // mov eax, DWORD PTR [r9+512]
+        // mov ecx, DWORD PTR [r9+832]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+832], ecx
+        // add eax, DWORD PTR [r9+704]
+        // xor eax, DWORD PTR [r9+768]
+        // mov DWORD PTR [r9+768], eax
+        // mov eax, DWORD PTR [r9+516]
+        // mov ecx, DWORD PTR [r9+836]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+836], ecx
+        // add eax, DWORD PTR [r9+708]
+        // xor eax, DWORD PTR [r9+772]
+        // mov DWORD PTR [r9+772], eax
+        // mov eax, DWORD PTR [r9+520]
+        // mov ecx, DWORD PTR [r9+840]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+840], ecx
+        // add eax, DWORD PTR [r9+712]
+        // xor eax, DWORD PTR [r9+776]
+        // mov DWORD PTR [r9+776], eax
+        // mov eax, DWORD PTR [r9+524]
+        // mov ecx, DWORD PTR [r9+844]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+844], ecx
+        // add eax, DWORD PTR [r9+716]
+        // xor eax, DWORD PTR [r9+780]
+        // mov DWORD PTR [r9+780], eax
+        // mov eax, DWORD PTR [r9+528]
+        // mov ecx, DWORD PTR [r9+848]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+848], ecx
+        // add eax, DWORD PTR [r9+720]
+        // xor eax, DWORD PTR [r9+784]
+        // mov DWORD PTR [r9+784], eax
+        // mov eax, DWORD PTR [r9+532]
+        // mov ecx, DWORD PTR [r9+852]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+852], ecx
+        // add eax, DWORD PTR [r9+724]
+        // xor eax, DWORD PTR [r9+788]
+        // mov DWORD PTR [r9+788], eax
+        // mov eax, DWORD PTR [r9+536]
+        // mov ecx, DWORD PTR [r9+856]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+856], ecx
+        // add eax, DWORD PTR [r9+728]
+        // xor eax, DWORD PTR [r9+792]
+        // mov DWORD PTR [r9+792], eax
+        // mov eax, DWORD PTR [r9+540]
+        // mov ecx, DWORD PTR [r9+860]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+860], ecx
+        // add eax, DWORD PTR [r9+732]
+        // xor eax, DWORD PTR [r9+796]
+        // mov DWORD PTR [r9+796], eax
+        // mov eax, DWORD PTR [r9+544]
+        // mov ecx, DWORD PTR [r9+864]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+864], ecx
+        // add eax, DWORD PTR [r9+736]
+        // xor eax, DWORD PTR [r9+800]
+        // mov DWORD PTR [r9+800], eax
+        // mov eax, DWORD PTR [r9+548]
+        // mov ecx, DWORD PTR [r9+868]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+868], ecx
+        // add eax, DWORD PTR [r9+740]
+        // xor eax, DWORD PTR [r9+804]
+        // mov DWORD PTR [r9+804], eax
+        // mov rax, QWORD PTR [r9+744]
+        // mov rcx, QWORD PTR [r9+872]
+        // mov QWORD PTR [r9+744], rcx
+        // mov QWORD PTR [r9+872], rax
+        // mov rax, QWORD PTR [r9+752]
+        // mov rcx, QWORD PTR [r9+880]
+        // mov QWORD PTR [r9+752], rcx
+        // mov QWORD PTR [r9+880], rax
+        // mov rax, QWORD PTR [r9+760]
+        // mov rcx, QWORD PTR [r9+888]
+        // mov QWORD PTR [r9+760], rcx
+        // mov QWORD PTR [r9+888], rax
+        // mov rax, QWORD PTR [r9+768]
+        // mov rcx, QWORD PTR [r9+896]
+        // mov QWORD PTR [r9+768], rcx
+        // mov QWORD PTR [r9+896], rax
+        // mov rax, QWORD PTR [r9+776]
+        // mov rcx, QWORD PTR [r9+904]
+        // mov QWORD PTR [r9+776], rcx
+        // mov QWORD PTR [r9+904], rax
+        // mov rax, QWORD PTR [r9+784]
+        // mov rcx, QWORD PTR [r9+912]
+        // mov QWORD PTR [r9+784], rcx
+        // mov QWORD PTR [r9+912], rax
+        // mov rax, QWORD PTR [r9+792]
+        // mov rcx, QWORD PTR [r9+920]
+        // mov QWORD PTR [r9+792], rcx
+        // mov QWORD PTR [r9+920], rax
+        // mov rax, QWORD PTR [r9+800]
+        // mov rcx, QWORD PTR [r9+928]
+        // mov QWORD PTR [r9+800], rcx
+        // mov QWORD PTR [r9+928], rax
+        // mov rax, QWORD PTR [r9+808]
+        // mov rcx, QWORD PTR [r9+936]
+        // mov QWORD PTR [r9+808], rcx
+        // mov QWORD PTR [r9+936], rax
+        // mov rax, QWORD PTR [r9+816]
+        // mov rcx, QWORD PTR [r9+944]
+        // mov QWORD PTR [r9+816], rcx
+        // mov QWORD PTR [r9+944], rax
+        // mov rax, QWORD PTR [r9+824]
+        // mov rcx, QWORD PTR [r9+952]
+        // mov QWORD PTR [r9+824], rcx
+        // mov QWORD PTR [r9+952], rax
+        // mov rax, QWORD PTR [r9+832]
+        // mov rcx, QWORD PTR [r9+960]
+        // mov QWORD PTR [r9+832], rcx
+        // mov QWORD PTR [r9+960], rax
+        // mov rax, QWORD PTR [r9+840]
+        // mov rcx, QWORD PTR [r9+968]
+        // mov QWORD PTR [r9+840], rcx
+        // mov QWORD PTR [r9+968], rax
+        // mov rax, QWORD PTR [r9+848]
+        // mov rcx, QWORD PTR [r9+976]
+        // mov QWORD PTR [r9+848], rcx
+        // mov QWORD PTR [r9+976], rax
+        // mov rax, QWORD PTR [r9+856]
+        // mov rcx, QWORD PTR [r9+984]
+        // mov QWORD PTR [r9+856], rcx
+        // mov QWORD PTR [r9+984], rax
+        // mov rax, QWORD PTR [r9+864]
+        // mov rcx, QWORD PTR [r9+992]
+        // mov QWORD PTR [r9+864], rcx
+        // mov QWORD PTR [r9+992], rax
+        // add rdi, 8
+        // sub r8, 1
+        r".octa 0x314400000368818b4104678b441f8b44,0x44000003a881334100000228818941d8,0x36c818b41000001e8818941e031,0x3ac8133410000022c818941d83144
+.octa 0x370818b41000001ec818941e0314400,0xb081334100000230818941d831440000,0x818b41000001f0818941e03144000003,0x334100000234818941d8314400000374
+.octa 0x41000001f4818941e03144000003b481,0x238818941d8314400000378818b,0x1f8818941e03144000003b8813341,0x23c818941d831440000037c818b4100
+.octa 0xfc818941e03144000003bc8133410000,0x818941d8314400000380818b41000001,0x8941e03144000003c081334100000240,0x41d8314400000384818b410000020081
+.octa 0xe03144000003c4813341000002448189,0x314400000388818b4100000204818941,0x44000003c881334100000248818941d8,0x38c818b4100000208818941e031
+.octa 0x3cc8133410000024c818941d83144,0x390818b410000020c818941e0314400,0xd081334100000250818941d831440000,0x818b4100000210818941e03144000003
+.octa 0x334100000254818941d8314400000394,0x4100000214818941e03144000003d481,0x258818941d8314400000398818b,0x218818941e03144000003d8813341
+.octa 0x25c818941d831440000039c818b4100,0x1c818941e03144000003dc8133410000,0x818941d83144000003a0818b41000002,0x8941e03144000003e081334100000260
+.octa 0x41d83144000003a4818b410000022081,0xe03144000003e4813341000002648189,0x8b49000001e8818b4900000224818941,0xa98b49000001f8898b49000001f099
+.octa 0x210998b4d00000208918b4d000002,0x4900000220a98b4d00000218a18b4d00,0x4c00000180b1234dde3149eed149c689,0x49eed149ce8949f0314c3fcec149f331
+.octa 0x3fcec149f5314c00000180b1234dee31,0x80b1234dde314deed149d6894df1314c,0xe6894df2314d3fcec149f3314d000001,0xf5314d00000180b1234dee314deed149
+.octa 0x314902eec149c68949f4314d3fcec149,0x4c3ecec149f1314c00000188b1234dce,0x88b1234dee314902eec149de8949f031,0xd6894df3314c3ecec149f5314c000001
+.octa 0x314d00000188b1234de6314d02eec149,0x4d02eec149de894df2314d3ecec149f4,0x3ecec149f5314d00000188b1234dee31,0xb1234dd6314d04eec149c68949f3314d
+.octa 0x8949f0314c3ccec149f2314d00000190,0x4d00000190b1234dde314d04eec149de,0x4eec149ce8949f3314c3ccec149f331,0xcec149f4314d00000190b1234de6314d
+.octa 0x234dee314d04eec149ee8949f1314c3c,0x49f5314c3ccec149f5314d00000190b1,0x4d206989491849894910598949084189,0x494069894d3861894d3059894d285189
+.octa 0x4918598b49204133491041334908418b,0x4928498b494059334938593349205933,0x491869334910698b4940493349304933,0x4d1851334d10518b4d30693349206933
+.octa 0x4d18618b4d2859334d20598b4d285133,0x4d28698b4d3061334d2861334d206133,0xffffffffffffffbe493869334d306933,0xdf3149ef894dce3149d6894d31894dff
+.octa 0x894c10698949d5314ced894c08698949,0x3149dc894d1861894de3314dcd3148ed,0x894df2314dfa894d2051894de2314dc4,0x493071894de3314cee314de6894d2871
+.octa 0xd3314c08598b4938598949ee3149de89,0x3149cc89491861894d18593349d93148,0x494071894ddc314dcc89490861894dc4,0xf3314cc38948485989491071334dde89
+.octa 0x894c58598949f3314ce3894c50598949,0x314cfb894c60598949f3314deb3148e3,0x894dcd2149d5894d6869894ddd314ddb,0x498949ea314d0851234d40518b4d7051
+.octa 0x214dfd894de9314cc1214820498b4978,0x1879234d38798b4d00000080b9894ddd,0x234d30598b4d0000008899894def314d,0x90b1894df5214d10698b4deb314d5059
+.octa 0x8949ee314d5871234d28718b4d000000,0x314de8314ce0214ce889480000009881,0x33494851334dc33149f7314dc13148f2,0x4dcb3148d3894c6859334ddf31496049
+.octa 0x3149c62149de8949d0314cd8894cfa21,0xd9314ce9214cd1314cdd314dfd894dce,0x4cdf314deb214dcd3149c58949cf3149,0x894df8314cd88948c33148f0214cd831
+.octa 0xfa314dca8949dd3149f5894dcb3149f3,0x894c60418949c53148dd894c68698949,0x8412349f8894c7841894978412349d0,0x894900000098812349c8894808418949
+.octa 0x4900000088812349e8894c0000009881,0x41894918412349d88948000000888189,0x49d8894c5041894950412349f0894c18,0xe8894800000090818949000000908123
+.octa 0x4079234d7051234d6061234d58412349,0x4d3859234900000080a9234d20492349,0x4d2871894d286923491059234d307123,0x593349f9314ceb31496871234d60718b
+.octa 0x8949ef314d00000098b98b4dfa314d50,0xc431495049334900000098898b496849,0x490000008889334978498b4950498949,0x4dcf3149dd3149f5314c000000908133
+.octa 0xfb314d00000088813349de314d18718b,0x314918718b4df2314df4314d2879334d,0x4cd5314c08698b4918698949e7314dc6,0x894d193349db314c29334de5314dd031
+.octa 0x496879334d50693349e93148fb314df3,0x1869894d19334d1859334d31334dce31,0x68598949f9894cca8949f4894dc58949,0x105989490841894968418b4918598b49
+.octa 0x3059894d2851894d2069894918498949,0x2841334918418b494069894d3861894d,0x2071334d10718b4d3841334930413349,0x314c000001a0b1234d00000198812349
+.octa 0x798b4d3071334d10718b4d18598b49f0,0x1989923494079334d3879334d28,0x498b49fb314cf3314c000001a0b1234d,0x79334d08798b4d2071334d18718b4d10
+.octa 0xa0b1234d000001988923493879334d28,0x69334918698b49f9314cf1314c000001,0x79334d08798b4d2071334d10718b4d40,0x198a923493879334d3079334d28
+.octa 0x518b4dfd314cf5314c000001a0b1234d,0x798b4d40718b4d2851334d1851334d08,0xa0b1234d0000019891234d3879334d20,0x59334d08598b4dfa314df2314d000001
+.octa 0x79334d3079334d20798b4d28718b4d10,0x4d000001a0b1234d0000019899234d38,0x61334d2861334d08618b4dfb314df331,0x798b4d2071334d1871334d10718b4d30
+.octa 0x4d000001a0b1234d00000198a1234d38,0x69334d3869334d10698b4dfc314df431,0x49c689492069334d00000198a9234d40,0x49f3314c00000180b1234dde3149eed1
+.octa 0x4dee3149eed149ce8949f0314c3fcec1,0xf1314c3fcec149f5314c00000180b123,0x180b1234dde314deed149d6894d,0xeed149e6894df2314d3fcec149f3314d
+.octa 0xcec149f5314d00000180b1234dee314d,0x234dce314902eec149c68949f4314d3f,0x49f0314c3ecec149f1314c00000188b1,0x188b1234dee314902eec149de89
+.octa 0xeec149d6894df3314c3ecec149f5314c,0xc149f4314d00000188b1234de6314d02,0x4dee314d02eec149de894df2314d3ece,0xf3314d3ecec149f5314d00000188b123
+.octa 0x190b1234dd6314d04eec149c68949,0xc149de8949f0314c3ccec149f2314d00,0x49f3314d00000190b1234dde314d04ee,0xe6314d04eec149ce8949f3314c3ccec1
+.octa 0x314c3ccec149f4314d00000190b1234d,0x190b1234dee314d04eec149ee8949f1,0x4dc78949f5314c3ccec149f5314d0000,0xb1234d08cec149c68949000001a8b923
+.octa 0x234d28cec149c68949f7314d000001b0,0x4d10cec149c68949f7314d000001b8b1,0x30cec149c68949f7314d000001c0b123,0xcec149c68949f7314d000001c8b1234d
+.octa 0xc149c68949f7314d000001d0b1234d18,0xe0b9334df7314d000001d8b1234d38ce,0xb9234ddf8949000001e8b9894d000001,0x1b0b1234d08cec149de8949000001a8
+.octa 0xb8b1234d28cec149de8949f7314d0000,0xb1234d10cec149de8949f7314d000001,0x234d30cec149de8949f7314d000001c0,0x4d18cec149de8949f7314d000001c8b1
+.octa 0x38cec149de8949f7314d000001d0b123,0x1e0b9334df7314d000001d8b1234d,0x1a8b9234dcf8949000001f0b9894d00,0x1b0b1234d08cec149ce89490000
+.octa 0x1b8b1234d28cec149ce8949f7314d,0x1c0b1234d10cec149ce8949f7314d00,0xc8b1234d30cec149ce8949f7314d0000,0xb1234d18cec149ce8949f7314d000001
+.octa 0x234d38cec149ce8949f7314d000001d0,0x4d000001e0b9334df7314d000001d8b1,0x1a8b9234def8949000001f8b989,0x314d000001b0b1234d08cec149ee8949
+.octa 0x4d000001b8b1234d28cec149ee8949f7,0x1c0b1234d10cec149ee8949f731,0x1c8b1234d30cec149ee8949f7314d,0x1d0b1234d18cec149ee8949f7314d00
+.octa 0xd8b1234d38cec149ee8949f7314d0000,0xb9894d000001e0b9334df7314d000001,0x894d000001a8b9234dd7894d00000200,0x4df7314d000001b0b1234d08cec149d6
+.octa 0xf7314d000001b8b1234d28cec149d689,0x314d000001c0b1234d10cec149d6894d,0x4d000001c8b1234d30cec149d6894df7,0x1d0b1234d18cec149d6894df731
+.octa 0x1d8b1234d38cec149d6894df7314d,0x208b9894d000001e0b9334df7314d00,0x49de894d000001a8b9234ddf894d0000,0xde894df7314d000001b0b1234d08cec1
+.octa 0x894df7314d000001b8b1234d28cec149,0x4df7314d000001c0b1234d10cec149de,0xf7314d000001c8b1234d30cec149de89,0x314d000001d0b1234d18cec149de894d
+.octa 0x4d000001d8b1234d38cec149de894df7,0x210b9894d000001e0b9334df731,0xcec149e6894d000001a8b9234de7894d,0xc149e6894df7314d000001b0b1234d08
+.octa 0x49e6894df7314d000001b8b1234d28ce,0xe6894df7314d000001c0b1234d10cec1,0x894df7314d000001c8b1234d30cec149,0x4df7314d000001d0b1234d18cec149e6
+.octa 0xf7314d000001d8b1234d38cec149e689,0x894d00000218b9894d000001e0b9334d,0x4d08cec149ee894d000001a8b9234def,0x28cec149ee894df7314d000001b0b123
+.octa 0xcec149ee894df7314d000001b8b1234d,0xc149ee894df7314d000001c0b1234d10,0x49ee894df7314d000001c8b1234d30ce,0xee894df7314d000001d0b1234d18cec1
+.octa 0x334df7314d000001d8b1234d38cec149,0xe8818b4100000220b9894d000001e0b9,0x22881034100000268818941000001,0x41000001ec818b41000001e881894100
+.octa 0x8189410000022c8103410000026c8189,0x270818941000001f0818b41000001ec,0x1f0818941000002308103410000,0x34100000274818941000001f4818b41
+.octa 0xf8818b41000001f48189410000023481,0x23881034100000278818941000001,0x41000001fc818b41000001f881894100,0x8189410000023c8103410000027c8189
+.octa 0x28081894100000200818b41000001fc,0x200818941000002408103410000,0x3410000028481894100000204818b41,0x8818b41000002048189410000024481
+.octa 0x24881034100000288818941000002,0x410000020c818b410000020881894100,0x8189410000024c8103410000028c8189,0x29081894100000210818b410000020c
+.octa 0x210818941000002508103410000,0x3410000029481894100000214818b41,0x18818b41000002148189410000025481,0x25881034100000298818941000002
+.octa 0x410000021c818b410000021881894100,0x8189410000025c8103410000029c8189,0x2a081894100000220818b410000021c,0x220818941000002608103410000
+.octa 0x341000002a481894100000224818b41,0xe8818b49000002248189410000026481,0x1f8898b49000001f0998b49000001,0x4d00000208918b4d00000200a98b4900
+.octa 0xa98b4d00000218a18b4d00000210998b,0xb1234dde3149eed149c6894900000220,0x8949f0314c3fcec149f3314c00000180,0x314c00000180b1234dee3149eed149ce
+.octa 0x314deed149d6894df1314c3fcec149f5,0x4d3fcec149f3314d00000180b1234dde,0x180b1234dee314deed149e6894df231,0x49c68949f4314d3fcec149f5314d0000
+.octa 0xf1314c00000188b1234dce314902eec1,0x314902eec149de8949f0314c3ecec149,0x4c3ecec149f5314c00000188b1234dee,0x88b1234de6314d02eec149d6894df331
+.octa 0xde894df2314d3ecec149f4314d000001,0x314d00000188b1234dee314d02eec149,0x4d04eec149c68949f3314d3ecec149f5,0x3ccec149f2314d00000190b1234dd631
+.octa 0xb1234dde314d04eec149de8949f0314c,0x8949f3314c3ccec149f3314d00000190,0x4d00000190b1234de6314d04eec149ce,0x4eec149ee8949f1314c3ccec149f431
+.octa 0xcec149f5314d00000190b1234dee314d,0x184989491059894908418949f5314c3c,0x3861894d3059894d2851894d20698949,0x204133491041334908418b494069894d
+.octa 0x40593349385933492059334918598b49,0x10698b49404933493049334928498b49,0x10518b4d306933492069334918693349,0x2859334d20598b4d2851334d1851334d
+.octa 0x3061334d2861334d2061334d18618b4d,0xffffbe493869334d3069334d28698b4d,0x4dce3149d6894d31894dffffffffffff,0x49d5314ced894c08698949df3149ef89
+.octa 0x1861894de3314dcd3148ed894c106989,0xfa894d2051894de2314dc43149dc894d,0xe3314cee314de6894d2871894df2314d,0x8b4938598949ee3149de89493071894d
+.octa 0x1861894d18593349d93148d3314c0859,0xdc314dcc89490861894dc43149cc8949,0x48485989491071334dde89494071894d,0x49f3314ce3894c50598949f3314cc389
+.octa 0x60598949f3314deb3148e3894c585989,0xd5894d6869894ddd314ddb314cfb894c,0x4d0851234d40518b4d7051894dcd2149,0xe9314cc1214820498b4978498949ea31
+.octa 0x798b4d00000080b9894ddd214dfd894d,0x4d0000008899894def314d1879234d38,0x214d10698b4deb314d5059234d30598b,0x5871234d28718b4d00000090b1894df5
+.octa 0xe0214ce8894800000098818949ee314d,0x4dc33149f7314dc13148f2314de8314c,0x894c6859334ddf314960493349485133,0xde8949d0314cd8894cfa214dcb3148d3
+.octa 0x4cd1314cdd314dfd894dce3149c62149,0x214dcd3149c58949cf3149d9314ce921,0xd88948c33148f0214cd8314cdf314deb,0x49dd3149f5894dcb3149f3894df8314c
+.octa 0x49c53148dd894c68698949fa314dca89,0x894c7841894978412349d0894c604189,0x98812349c889480841894908412349f8,0x812349e8894c00000098818949000000
+.octa 0x2349d889480000008881894900000088,0x41894950412349f0894c184189491841,0x9081894900000090812349d8894c50,0x51234d6061234d58412349e889480000
+.octa 0x80a9234d204923494079234d70,0x286923491059234d3071234d38592349,0x4ceb31496871234d60718b4d2871894d,0x98b98b4dfa314d50593349f931
+.octa 0x334900000098898b4968498949ef314d,0x89334978498b4950498949c431495049,0x3149f5314c0000009081334900000088,0x88813349de314d18718b4dcf3149dd
+.octa 0x4df2314df4314d2879334dfb314d0000,0x698b4918698949e7314dc6314918718b,0xdb314c29334de5314dd0314cd5314c08,0x50693349e93148fb314df3894d193349
+.octa 0x334d1859334d31334dce31496879334d,0x894cca8949f4894dc589491869894d19,0x41894968418b4918598b4968598949f9,0x51894d20698949184989491059894908
+.octa 0x418b494069894d3861894d3059894d28,0x718b4d38413349304133492841334918,0xa0b1234d000001988123492071334d10,0x334d10718b4d18598b49f0314c000001
+.octa 0x23494079334d3879334d28798b4d3071,0x4cf3314c000001a0b1234d0000019899,0x8b4d2071334d18718b4d10498b49fb31,0x1988923493879334d2879334d0879
+.octa 0x8b49f9314cf1314c000001a0b1234d00,0x8b4d2071334d10718b4d406933491869,0x23493879334d3079334d2879334d0879,0x4cf5314c000001a0b1234d00000198a9
+.octa 0x8b4d2851334d1851334d08518b4dfd31,0x19891234d3879334d20798b4d4071,0x8b4dfa314df2314d000001a0b1234d00,0x334d20798b4d28718b4d1059334d0859
+.octa 0xb1234d0000019899234d3879334d3079,0x334d08618b4dfb314df3314d000001a0,0x334d1871334d10718b4d3061334d2861,0xb1234d00000198a1234d38798b4d2071
+.octa 0x334d10698b4dfc314df4314d000001a0,0x69334d00000198a9234d4069334d3869,0x180b1234dde3149eed149c6894920,0xd149ce8949f0314c3fcec149f3314c00
+.octa 0xc149f5314c00000180b1234dee3149ee,0x234dde314deed149d6894df1314c3fce,0x4df2314d3fcec149f3314d00000180b1,0x4d00000180b1234dee314deed149e689
+.octa 0x2eec149c68949f4314d3fcec149f531,0xcec149f1314c00000188b1234dce3149,0x234dee314902eec149de8949f0314c3e,0x4df3314c3ecec149f5314c00000188b1
+.octa 0x188b1234de6314d02eec149d689,0xeec149de894df2314d3ecec149f4314d,0xc149f5314d00000188b1234dee314d02,0x4dd6314d04eec149c68949f3314d3ece
+.octa 0xf0314c3ccec149f2314d00000190b123,0x190b1234dde314d04eec149de8949,0xc149ce8949f3314c3ccec149f3314d00,0x49f4314d00000190b1234de6314d04ee
+.octa 0xee314d04eec149ee8949f1314c3ccec1,0x314c3ccec149f5314d00000190b1234d,0xc149c68949000001a8b9234dc78949f5,0x49c68949f7314d000001b0b1234d08ce
+.octa 0xc68949f7314d000001b8b1234d28cec1,0x8949f7314d000001c0b1234d10cec149,0x49f7314d000001c8b1234d30cec149c6,0xf7314d000001d0b1234d18cec149c689
+.octa 0x314d000001d8b1234d38cec149c68949,0x49000001e8b9894d000001e0b9334df7,0x8cec149de8949000001a8b9234ddf89,0xcec149de8949f7314d000001b0b1234d
+.octa 0xc149de8949f7314d000001b8b1234d28,0x49de8949f7314d000001c0b1234d10ce,0xde8949f7314d000001c8b1234d30cec1,0x8949f7314d000001d0b1234d18cec149
+.octa 0x4df7314d000001d8b1234d38cec149de,0xcf8949000001f0b9894d000001e0b933,0x234d08cec149ce8949000001a8b9234d,0x4d28cec149ce8949f7314d000001b0b1
+.octa 0x10cec149ce8949f7314d000001b8b123,0xcec149ce8949f7314d000001c0b1234d,0xc149ce8949f7314d000001c8b1234d30,0x49ce8949f7314d000001d0b1234d18ce
+.octa 0xb9334df7314d000001d8b1234d38cec1,0x234def8949000001f8b9894d000001e0,0xb0b1234d08cec149ee8949000001a8b9,0xb1234d28cec149ee8949f7314d000001
+.octa 0x234d10cec149ee8949f7314d000001b8,0x4d30cec149ee8949f7314d000001c0b1,0x18cec149ee8949f7314d000001c8b123,0xcec149ee8949f7314d000001d0b1234d
+.octa 0x1e0b9334df7314d000001d8b1234d38,0xa8b9234dd7894d00000200b9894d0000,0x1b0b1234d08cec149d6894d000001,0x1b8b1234d28cec149d6894df7314d00
+.octa 0xc0b1234d10cec149d6894df7314d0000,0xb1234d30cec149d6894df7314d000001,0x234d18cec149d6894df7314d000001c8,0x4d38cec149d6894df7314d000001d0b1
+.octa 0x1e0b9334df7314d000001d8b123,0x1a8b9234ddf894d00000208b9894d,0x4d000001b0b1234d08cec149de894d00,0x1b8b1234d28cec149de894df731
+.octa 0x1c0b1234d10cec149de894df7314d,0x1c8b1234d30cec149de894df7314d00,0xd0b1234d18cec149de894df7314d0000,0xb1234d38cec149de894df7314d000001
+.octa 0x894d000001e0b9334df7314d000001d8,0x4d000001a8b9234de7894d00000210b9,0xf7314d000001b0b1234d08cec149e689,0x314d000001b8b1234d28cec149e6894d
+.octa 0x4d000001c0b1234d10cec149e6894df7,0x1c8b1234d30cec149e6894df731,0x1d0b1234d18cec149e6894df7314d,0x1d8b1234d38cec149e6894df7314d00
+.octa 0x18b9894d000001e0b9334df7314d0000,0xee894d000001a8b9234def894d000002,0x894df7314d000001b0b1234d08cec149,0x4df7314d000001b8b1234d28cec149ee
+.octa 0xf7314d000001c0b1234d10cec149ee89,0x314d000001c8b1234d30cec149ee894d,0x4d000001d0b1234d18cec149ee894df7,0x1d8b1234d38cec149ee894df731
+.octa 0x220b9894d000001e0b9334df7314d,0x41000002a8818941000001e8818b4100,0x818b41000001e8818941000002688103,0x26c810341000002ac818941000001ec
+.octa 0x1f0818b41000001ec8189410000,0x894100000270810341000002b0818941,0xb4818941000001f4818b41000001f081,0x1f481894100000274810341000002
+.octa 0x41000002b8818941000001f8818b4100,0x818b41000001f8818941000002788103,0x27c810341000002bc818941000001fc,0x200818b41000001fc8189410000
+.octa 0x894100000280810341000002c0818941,0xc481894100000204818b410000020081,0x20481894100000284810341000002,0x41000002c881894100000208818b4100
+.octa 0x818b4100000208818941000002888103,0x28c810341000002cc8189410000020c,0x210818b410000020c8189410000,0x894100000290810341000002d0818941
+.octa 0xd481894100000214818b410000021081,0x21481894100000294810341000002,0x41000002d881894100000218818b4100,0x818b4100000218818941000002988103
+.octa 0x29c810341000002dc8189410000021c,0x220818b410000021c8189410000,0x8941000002a0810341000002e0818941,0xe481894100000224818b410000022081
+.octa 0x224818941000002a4810341000002,0x49000001f0998b49000001e8818b4900,0x918b4d00000200a98b49000001f8898b,0x218a18b4d00000210998b4d00000208
+.octa 0x49eed149c6894900000220a98b4d0000,0x3fcec149f3314c00000180b1234dde31,0x80b1234dee3149eed149ce8949f0314c,0xd6894df1314c3fcec149f5314c000001
+.octa 0xf3314d00000180b1234dde314deed149,0xee314deed149e6894df2314d3fcec149,0x314d3fcec149f5314d00000180b1234d,0x188b1234dce314902eec149c68949f4
+.octa 0x49de8949f0314c3ecec149f1314c0000,0xf5314c00000188b1234dee314902eec1,0x314d02eec149d6894df3314c3ecec149,0x4d3ecec149f4314d00000188b1234de6
+.octa 0x88b1234dee314d02eec149de894df231,0xc68949f3314d3ecec149f5314d000001,0x314d00000190b1234dd6314d04eec149,0x4d04eec149de8949f0314c3ccec149f2
+.octa 0x3ccec149f3314d00000190b1234dde31,0xb1234de6314d04eec149ce8949f3314c,0x8949f1314c3ccec149f4314d00000190,0x4d00000190b1234dee314d04eec149ee
+.octa 0x59894908418949f5314c3ccec149f531,0x59894d2851894d206989491849894910,0x41334908418b494069894d3861894d30,0x5933492059334918598b492041334910
+.octa 0x4933493049334928498b494059334938,0x693349206933491869334910698b4940,0x598b4d2851334d1851334d10518b4d30,0x61334d2061334d18618b4d2859334d20
+.octa 0x69334d3069334d28698b4d3061334d28,0x894d31894dffffffffffffffffbe4938,0x894c08698949df3149ef894dce3149d6,0x314dcd3148ed894c10698949d5314ced
+.octa 0x894de2314dc43149dc894d1861894de3,0x4de6894d2871894df2314dfa894d2051,0x49ee3149de89493071894de3314cee31,0x593349d93148d3314c08598b49385989
+.octa 0x490861894dc43149cc89491861894d18,0x1071334dde89494071894ddc314dcc89,0x894c50598949f3314cc3894848598949,0x314deb3148e3894c58598949f3314ce3
+.octa 0x894ddd314ddb314cfb894c60598949f3,0x40518b4d7051894dcd2149d5894d6869,0x4820498b4978498949ea314d0851234d,0x80b9894ddd214dfd894de9314cc121
+.octa 0x99894def314d1879234d38798b4d0000,0x4deb314d5059234d30598b4d00000088,0x718b4d00000090b1894df5214d10698b,0x4800000098818949ee314d5871234d28
+.octa 0x314dc13148f2314de8314ce0214ce889,0x4ddf3149604933494851334dc33149f7,0x4cd8894cfa214dcb3148d3894c685933,0x314dfd894dce3149c62149de8949d031
+.octa 0xc58949cf3149d9314ce9214cd1314cdd,0x48f0214cd8314cdf314deb214dcd3149,0x894dcb3149f3894df8314cd88948c331,0x894c68698949fa314dca8949dd3149f5
+.octa 0x4978412349d0894c60418949c53148dd,0x89480841894908412349f8894c784189,0x4c0000009881894900000098812349c8,0x8881894900000088812349e889
+.octa 0x2349f0894c1841894918412349d88948,0x90812349d8894c504189495041,0x234d58412349e8894800000090818949,0x234d204923494079234d7051234d6061
+.octa 0x59234d3071234d3859234900000080a9,0x71234d60718b4d2871894d2869234910,0x8b4dfa314d50593349f9314ceb314968,0x98898b4968498949ef314d00000098b9
+.octa 0x8b4950498949c4314950493349000000,0x90813349000000888933497849,0xde314d18718b4dcf3149dd3149f5314c,0x314d2879334dfb314d00000088813349
+.octa 0x8949e7314dc6314918718b4df2314df4,0x4de5314dd0314cd5314c08698b491869,0x3148fb314df3894d193349db314c2933,0x4d31334dce31496879334d50693349e9
+.octa 0xf4894dc589491869894d19334d185933,0x8b4918598b4968598949f9894cca8949,0x89491849894910598949084189496841,0x894d3861894d3059894d2851894d2069
+.octa 0x3349304133492841334918418b494069,0x1988123492071334d10718b4d3841,0x4d18598b49f0314c000001a0b1234d00,0x4d3879334d28798b4d3071334d10718b
+.octa 0x1a0b1234d00000198992349407933,0x4d18718b4d10498b49fb314cf3314c00,0x493879334d2879334d08798b4d207133,0xf1314c000001a0b1234d000001988923
+.octa 0x4d10718b4d4069334918698b49f9314c,0x4d3079334d2879334d08798b4d207133,0x1a0b1234d00000198a92349387933,0x4d1851334d08518b4dfd314cf5314c00
+.octa 0x4d3879334d20798b4d40718b4d285133,0xf2314d000001a0b1234d000001989123,0x4d28718b4d1059334d08598b4dfa314d,0x19899234d3879334d3079334d20798b
+.octa 0x4dfb314df3314d000001a0b1234d0000,0x4d10718b4d3061334d2861334d08618b,0x198a1234d38798b4d2071334d187133,0x4dfc314df4314d000001a0b1234d0000
+.octa 0x198a9234d4069334d3869334d10698b,0x4dde3149eed149c689492069334d0000,0xf0314c3fcec149f3314c00000180b123,0x180b1234dee3149eed149ce8949
+.octa 0xeed149d6894df1314c3fcec149f5314c,0xcec149f3314d00000180b1234dde314d,0xb1234dee314deed149e6894df2314d3f,0x8949f4314d3fcec149f5314d00000180
+.octa 0x4c00000188b1234dce314902eec149c6,0x2eec149de8949f0314c3ecec149f131,0xcec149f5314c00000188b1234dee3149,0x234de6314d02eec149d6894df3314c3e
+.octa 0x4df2314d3ecec149f4314d00000188b1,0x188b1234dee314d02eec149de89,0xeec149c68949f3314d3ecec149f5314d,0xc149f2314d00000190b1234dd6314d04
+.octa 0x4dde314d04eec149de8949f0314c3cce,0xf3314c3ccec149f3314d00000190b123,0x190b1234de6314d04eec149ce8949,0xc149ee8949f1314c3ccec149f4314d00
+.octa 0x49f5314d00000190b1234dee314d04ee,0x1a8b9234dc78949f5314c3ccec1,0x314d000001b0b1234d08cec149c68949,0x4d000001b8b1234d28cec149c68949f7
+.octa 0x1c0b1234d10cec149c68949f731,0x1c8b1234d30cec149c68949f7314d,0x1d0b1234d18cec149c68949f7314d00,0xd8b1234d38cec149c68949f7314d0000
+.octa 0xb9894d000001e0b9334df7314d000001,0x8949000001a8b9234ddf8949000001e8,0x49f7314d000001b0b1234d08cec149de,0xf7314d000001b8b1234d28cec149de89
+.octa 0x314d000001c0b1234d10cec149de8949,0x4d000001c8b1234d30cec149de8949f7,0x1d0b1234d18cec149de8949f731,0x1d8b1234d38cec149de8949f7314d
+.octa 0x1f0b9894d000001e0b9334df7314d00,0x49ce8949000001a8b9234dcf89490000,0xce8949f7314d000001b0b1234d08cec1,0x8949f7314d000001b8b1234d28cec149
+.octa 0x49f7314d000001c0b1234d10cec149ce,0xf7314d000001c8b1234d30cec149ce89,0x314d000001d0b1234d18cec149ce8949,0x4d000001d8b1234d38cec149ce8949f7
+.octa 0x1f8b9894d000001e0b9334df731,0xcec149ee8949000001a8b9234def8949,0xc149ee8949f7314d000001b0b1234d08,0x49ee8949f7314d000001b8b1234d28ce
+.octa 0xee8949f7314d000001c0b1234d10cec1,0x8949f7314d000001c8b1234d30cec149,0x49f7314d000001d0b1234d18cec149ee,0xf7314d000001d8b1234d38cec149ee89
+.octa 0x894d00000200b9894d000001e0b9334d,0x4d08cec149d6894d000001a8b9234dd7,0x28cec149d6894df7314d000001b0b123,0xcec149d6894df7314d000001b8b1234d
+.octa 0xc149d6894df7314d000001c0b1234d10,0x49d6894df7314d000001c8b1234d30ce,0xd6894df7314d000001d0b1234d18cec1,0x334df7314d000001d8b1234d38cec149
+.octa 0x4ddf894d00000208b9894d000001e0b9,0xb1234d08cec149de894d000001a8b923,0x234d28cec149de894df7314d000001b0,0x4d10cec149de894df7314d000001b8b1
+.octa 0x30cec149de894df7314d000001c0b123,0xcec149de894df7314d000001c8b1234d,0xc149de894df7314d000001d0b1234d18,0xe0b9334df7314d000001d8b1234d38ce
+.octa 0xb9234de7894d00000210b9894d000001,0x1b0b1234d08cec149e6894d000001a8,0xb8b1234d28cec149e6894df7314d0000,0xb1234d10cec149e6894df7314d000001
+.octa 0x234d30cec149e6894df7314d000001c0,0x4d18cec149e6894df7314d000001c8b1,0x38cec149e6894df7314d000001d0b123,0x1e0b9334df7314d000001d8b1234d
+.octa 0x1a8b9234def894d00000218b9894d00,0x1b0b1234d08cec149ee894d0000,0x1b8b1234d28cec149ee894df7314d,0x1c0b1234d10cec149ee894df7314d00
+.octa 0xc8b1234d30cec149ee894df7314d0000,0xb1234d18cec149ee894df7314d000001,0x234d38cec149ee894df7314d000001d0,0x4d000001e0b9334df7314d000001d8b1
+.octa 0x898b41000001e8818b4100000220b989,0x81034100000328898941c13100000328,0x2e8818941000002e8813341000002a8,0x32c898b41000001ec818b410000
+.octa 0x2ac8103410000032c898941c131,0x8b41000002ec818941000002ec813341,0x8941c13100000330898b41000001f081,0xf0813341000002b08103410000033089
+.octa 0x1f4818b41000002f0818941000002,0x334898941c13100000334898b4100,0x41000002f4813341000002b481034100,0x898b41000001f8818b41000002f48189
+.octa 0x81034100000338898941c13100000338,0x2f8818941000002f8813341000002b8,0x33c898b41000001fc818b410000,0x2bc8103410000033c898941c131
+.octa 0x8b41000002fc818941000002fc813341,0x8941c13100000340898b410000020081,0x813341000002c08103410000034089,0x204818b4100000300818941000003
+.octa 0x344898941c13100000344898b4100,0x4100000304813341000002c481034100,0x898b4100000208818b41000003048189,0x81034100000348898941c13100000348
+.octa 0x30881894100000308813341000002c8,0x34c898b410000020c818b410000,0x2cc8103410000034c898941c131,0x8b410000030c8189410000030c813341
+.octa 0x8941c13100000350898b410000021081,0x10813341000002d08103410000035089,0x214818b4100000310818941000003,0x354898941c13100000354898b4100
+.octa 0x4100000314813341000002d481034100,0x898b4100000218818b41000003148189,0x81034100000358898941c13100000358,0x31881894100000318813341000002d8
+.octa 0x35c898b410000021c818b410000,0x2dc8103410000035c898941c131,0x8b410000031c8189410000031c813341,0x8941c13100000360898b410000022081
+.octa 0x20813341000002e08103410000036089,0x224818b4100000320818941000003,0x364898941c13100000364898b4100,0x4100000324813341000002e481034100
+.octa 0x898b49000002e8818b49000003248189,0x368818949000002e889894900000368,0x370898b49000002f0818b490000,0x8b4900000370818949000002f0898949
+.octa 0xf889894900000378898b49000002f881,0x300818b4900000378818949000002,0x490000030089894900000380898b4900,0x898b4900000308818b49000003808189
+.octa 0x3888189490000030889894900000388,0x390898b4900000310818b490000,0x8b490000039081894900000310898949,0x1889894900000398898b490000031881
+.octa 0x320818b4900000398818949000003,0x4900000320898949000003a0898b4900,0x898b4900000328818b49000003a08189,0x3a881894900000328898949000003a8
+.octa 0x3b0898b4900000330818b490000,0x8b49000003b081894900000330898949,0x38898949000003b8898b490000033881,0x340818b49000003b8818949000003
+.octa 0x4900000340898949000003c0898b4900,0x898b4900000348818b49000003c08189,0x3c881894900000348898949000003c8,0x3d0898b4900000350818b490000
+.octa 0x8b49000003d081894900000350898949,0x58898949000003d8898b490000035881,0x360818b49000003d8818949000003,0x4900000360898949000003e0898b4900
+.byte 0x89,0x81,0xe0,0x03,0x00,0x00,0x48,0x83,0xc7,0x08,0x49,0x83,0xe8,0x01
+jne 26b",
+        // sub rdi, 128
+        // mov rcx, rdx
+        // cmp rcx, 16
+        r".byte 0x48,0x81,0xef,0x80,0x00,0x00,0x00,0x48,0x89,0xd1,0x48,0x83,0xf9,0x10
+jb 27f",
+        // mov rcx, 16
+        r".byte 0x48,0xc7,0xc1,0x10,0x00,0x00,0x00
+jmp 28f
+27:
+28:",
+        // mov r10, rsi
+        // mov rbx, r9
+        r".byte 0x49,0x89,0xf2,0x4c,0x89,0xcb
+29:",
+        // mov eax, DWORD PTR [rbx+872]
+        // bswap eax
+        // mov DWORD PTR [r10], eax
+        // mov eax, DWORD PTR [rbx+936]
+        // bswap eax
+        // mov DWORD PTR [r10+4], eax
+        // mov eax, DWORD PTR [rbx+744]
+        // bswap eax
+        // mov DWORD PTR [r10+8], eax
+        // mov eax, DWORD PTR [rbx+808]
+        // bswap eax
+        // mov DWORD PTR [r10+12], eax
+        // add r10, 16
+        // add rbx, 4
+        // sub rcx, 1
+        r".octa 0x3a8838b028941c80f00000368838b,0x41c80f000002e8838b04428941c80f00,0x490c428941c80f00000328838b084289
+.byte 0x83,0xc2,0x10,0x48,0x83,0xc3,0x04,0x48,0x83,0xe9,0x01
+jne 29b",
+        // mov rcx, rdx
+        // cmp rcx, 16
+        r".byte 0x48,0x89,0xd1,0x48,0x83,0xf9,0x10
+jb 210f",
+        // mov rcx, 16
+        r".byte 0x48,0xc7,0xc1,0x10,0x00,0x00,0x00
+jmp 211f
+210:
+211:",
+        // mov rsi, r10
+        // sub rdx, rcx
+        r".byte 0x4c,0x89,0xd6,0x48,0x29,0xca
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r9+1000]
+        // mov rbp, QWORD PTR [r9+1008]
+        // mov r12, QWORD PTR [r9+1016]
+        // mov r13, QWORD PTR [r9+1024]
+        // mov r14, QWORD PTR [r9+1032]
+        // mov r15, QWORD PTR [r9+1040]
+        // ret
+        r".octa 0x8b4d000003f0a98b49000003e8998b49,0x8b18b4d00000400a98b4d000003f8a1
+.byte 0x04,0x00,0x00,0x4d,0x8b,0xb9,0x10,0x04,0x00,0x00,0xc3
+.p2align 6",
     )
 }
 
@@ -409,197 +4615,2926 @@ pub unsafe extern "sysv64" fn vg_seed_encrypt_blocks(schedule: *const [u8; 128],
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_seed_decrypt_blocks(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 136]) {
     core::arch::naked_asm!(
+        // mov r9, rcx
+        // mov QWORD PTR [r9+1000], rbx
+        // mov QWORD PTR [r9+1008], rbp
+        // mov QWORD PTR [r9+1016], r12
+        // mov QWORD PTR [r9+1024], r13
+        // mov QWORD PTR [r9+1032], r14
+        // mov QWORD PTR [r9+1040], r15
+        // movabs r14, 6148914691236517205
+        // mov QWORD PTR [r9+384], r14
+        // movabs r14, 3689348814741910323
+        // mov QWORD PTR [r9+392], r14
+        // movabs r14, 1085102592571150095
+        // mov QWORD PTR [r9+400], r14
+        // movabs r14, 71777214294589695
+        // mov QWORD PTR [r9+408], r14
+        // movabs r14, -71777214294589696
+        // mov QWORD PTR [r9+416], r14
+        // movabs r14, -3459661728999223300
+        // mov QWORD PTR [r9+424], r14
+        // movabs r14, 68468732266233843
+        // mov QWORD PTR [r9+432], r14
+        // movabs r14, 4539628425446424576
+        // mov QWORD PTR [r9+440], r14
+        // movabs r14, 277965988494543
+        // mov QWORD PTR [r9+448], r14
+        // movabs r14, -229965051731181568
+        // mov QWORD PTR [r9+456], r14
+        // movabs r14, 270582939711
+        // mov QWORD PTR [r9+464], r14
+        // movabs r14, -918748613553687808
+        // mov QWORD PTR [r9+472], r14
+        // movabs r14, -1789082251201616085
+        // mov QWORD PTR [r9+480], r14
+        // add rdi, 120
+        // cmp rdx, 0
         r".octa 0x3f0a98949000003e8998949c98949,0x4d00000400a9894d000003f8a1894d00,0x55be4900000410b9894d00000408b189,0xbe4900000180b1894d55555555555555
 .octa 0x4900000188b1894d3333333333333333,0x190b1894d0f0f0f0f0f0f0f0fbe,0x198b1894d00ff00ff00ff00ffbe49,0x1a0b1894dff00ff00ff00ff00be4900
 .octa 0xa8b1894dcffccffccffccffcbe490000,0xb1894d00f33ff300f33ff3be49000001,0x894d3f0000003f000000be49000001b0,0x4d0000fccf0000fccfbe49000001b8b1
 .octa 0xfccf0000fccf0000be49000001c0b189,0x3f0000003fbe49000001c8b1894d,0xf300f33ff300be49000001d0b1894d00,0x2be72be72bbe49000001d8b1894df33f
-.octa 0x834878c78348000001e0b1894de72be7,0x7210f98348d1894800002e29840f00fa,0xcb894cf2894900eb00000010c1c74809,0xf04428b41000002e88389c80f028b41
-.octa 0x688389c80f08428b41000003288389c8,0x49000003a88389c80f0c428b41000003,0xc0c749c37501e9834804c3834810c283,0x368818b4104678b441f8b4400000010
-.octa 0xa881334100000228818941d831440000,0x818b41000001e8818941e03144000003,0x33410000022c818941d831440000036c,0x41000001ec818941e03144000003ac81
-.octa 0x230818941d8314400000370818b,0x1f0818941e03144000003b0813341,0x234818941d8314400000374818b4100,0xf4818941e03144000003b48133410000
-.octa 0x818941d8314400000378818b41000001,0x8941e03144000003b881334100000238,0x41d831440000037c818b41000001f881,0xe03144000003bc8133410000023c8189
-.octa 0x314400000380818b41000001fc818941,0x44000003c081334100000240818941d8,0x384818b4100000200818941e031,0x3c481334100000244818941d83144
-.octa 0x388818b4100000204818941e0314400,0xc881334100000248818941d831440000,0x818b4100000208818941e03144000003,0x33410000024c818941d831440000038c
-.octa 0x410000020c818941e03144000003cc81,0x250818941d8314400000390818b,0x210818941e03144000003d0813341,0x254818941d8314400000394818b4100
-.octa 0x14818941e03144000003d48133410000,0x818941d8314400000398818b41000002,0x8941e03144000003d881334100000258,0x41d831440000039c818b410000021881
-.octa 0xe03144000003dc8133410000025c8189,0x3144000003a0818b410000021c818941,0x44000003e081334100000260818941d8,0x3a4818b4100000220818941e031
-.octa 0x3e481334100000264818941d83144,0x1e8818b4900000224818941e0314400,0x1f8898b49000001f0998b490000,0x8b4d00000208918b4d00000200a98b49
-.octa 0x20a98b4d00000218a18b4d0000021099,0x80b1234dde3149eed149c68949000002,0xce8949f0314c3fcec149f3314c000001,0xf5314c00000180b1234dee3149eed149
-.octa 0xde314deed149d6894df1314c3fcec149,0x314d3fcec149f3314d00000180b1234d,0x180b1234dee314deed149e6894df2,0xc149c68949f4314d3fcec149f5314d00
-.octa 0x49f1314c00000188b1234dce314902ee,0xee314902eec149de8949f0314c3ecec1,0x314c3ecec149f5314c00000188b1234d,0x188b1234de6314d02eec149d6894df3
-.octa 0x49de894df2314d3ecec149f4314d0000,0xf5314d00000188b1234dee314d02eec1,0x314d04eec149c68949f3314d3ecec149,0x4c3ccec149f2314d00000190b1234dd6
-.octa 0x90b1234dde314d04eec149de8949f031,0xce8949f3314c3ccec149f3314d000001,0x314d00000190b1234de6314d04eec149,0x4d04eec149ee8949f1314c3ccec149f4
-.octa 0x3ccec149f5314d00000190b1234dee31,0x49184989491059894908418949f5314c,0x4d3861894d3059894d2851894d206989,0x49204133491041334908418b49406989
-.octa 0x4940593349385933492059334918598b,0x4910698b49404933493049334928498b,0x4d10518b4d3069334920693349186933,0x4d2859334d20598b4d2851334d185133
-.octa 0x4d3061334d2861334d2061334d18618b,0xffffffbe493869334d3069334d28698b,0x894dce3149d6894d31894dffffffffff,0x8949d5314ced894c08698949df3149ef
-.octa 0x4d1861894de3314dcd3148ed894c1069,0x4dfa894d2051894de2314dc43149dc89,0x4de3314cee314de6894d2871894df231,0x598b4938598949ee3149de8949307189
-.octa 0x491861894d18593349d93148d3314c08,0x4ddc314dcc89490861894dc43149cc89,0x8948485989491071334dde8949407189,0x8949f3314ce3894c50598949f3314cc3
-.octa 0x4c60598949f3314deb3148e3894c5859,0x49d5894d6869894ddd314ddb314cfb89,0x314d0851234d40518b4d7051894dcd21,0x4de9314cc1214820498b4978498949ea
-.octa 0x38798b4d00000080b9894ddd214dfd89,0x8b4d0000008899894def314d1879234d,0xf5214d10698b4deb314d5059234d3059,0x4d5871234d28718b4d00000090b1894d
-.octa 0x4ce0214ce8894800000098818949ee31,0x334dc33149f7314dc13148f2314de831,0xd3894c6859334ddf3149604933494851,0x49de8949d0314cd8894cfa214dcb3148
-.octa 0x214cd1314cdd314dfd894dce3149c621,0xeb214dcd3149c58949cf3149d9314ce9,0x4cd88948c33148f0214cd8314cdf314d,0x8949dd3149f5894dcb3149f3894df831
-.octa 0x8949c53148dd894c68698949fa314dca,0xf8894c7841894978412349d0894c6041,0x98812349c889480841894908412349,0x88812349e8894c000000988189490000
-.octa 0x412349d8894800000088818949000000,0x5041894950412349f0894c1841894918,0x9081894900000090812349d8894c,0x7051234d6061234d58412349e8894800
-.octa 0x4900000080a9234d204923494079234d,0x4d286923491059234d3071234d385923,0x314ceb31496871234d60718b4d287189,0x4d00000098b98b4dfa314d50593349f9
-.octa 0x49334900000098898b4968498949ef31,0x8889334978498b4950498949c4314950,0xdd3149f5314c00000090813349000000,0x88813349de314d18718b4dcf3149
-.octa 0x8b4df2314df4314d2879334dfb314d00,0x8698b4918698949e7314dc631491871,0x49db314c29334de5314dd0314cd5314c,0x4d50693349e93148fb314df3894d1933
-.octa 0x19334d1859334d31334dce3149687933,0xf9894cca8949f4894dc589491869894d,0x841894968418b4918598b4968598949,0x2851894d206989491849894910598949
-.octa 0x18418b494069894d3861894d3059894d,0x10718b4d384133493041334928413349,0x1a0b1234d000001988123492071334d,0x71334d10718b4d18598b49f0314c0000
-.octa 0x9923494079334d3879334d28798b4d30,0x314cf3314c000001a0b1234d00000198,0x798b4d2071334d18718b4d10498b49fb,0x1988923493879334d2879334d08
-.octa 0x698b49f9314cf1314c000001a0b1234d,0x798b4d2071334d10718b4d4069334918,0xa923493879334d3079334d2879334d08,0x314cf5314c000001a0b1234d00000198
-.octa 0x718b4d2851334d1851334d08518b4dfd,0x19891234d3879334d20798b4d40,0x598b4dfa314df2314d000001a0b1234d,0x79334d20798b4d28718b4d1059334d08
-.octa 0xa0b1234d0000019899234d3879334d30,0x61334d08618b4dfb314df3314d000001,0x71334d1871334d10718b4d3061334d28,0xa0b1234d00000198a1234d38798b4d20
-.octa 0x69334d10698b4dfc314df4314d000001,0x2069334d00000198a9234d4069334d38,0x180b1234dde3149eed149c68949,0xeed149ce8949f0314c3fcec149f3314c
-.octa 0xcec149f5314c00000180b1234dee3149,0xb1234dde314deed149d6894df1314c3f,0x894df2314d3fcec149f3314d00000180,0x314d00000180b1234dee314deed149e6
-.octa 0x4902eec149c68949f4314d3fcec149f5,0x3ecec149f1314c00000188b1234dce31,0xb1234dee314902eec149de8949f0314c,0x894df3314c3ecec149f5314c00000188
-.octa 0x4d00000188b1234de6314d02eec149d6,0x2eec149de894df2314d3ecec149f431,0xcec149f5314d00000188b1234dee314d,0x234dd6314d04eec149c68949f3314d3e
-.octa 0x49f0314c3ccec149f2314d00000190b1,0x190b1234dde314d04eec149de89,0xeec149ce8949f3314c3ccec149f3314d,0xc149f4314d00000190b1234de6314d04
-.octa 0x4dee314d04eec149ee8949f1314c3cce,0xf5314c3ccec149f5314d00000190b123,0xcec149c68949000001a8b9234dc78949,0xc149c68949f7314d000001b0b1234d08
-.octa 0x49c68949f7314d000001b8b1234d28ce,0xc68949f7314d000001c0b1234d10cec1,0x8949f7314d000001c8b1234d30cec149,0x49f7314d000001d0b1234d18cec149c6
-.octa 0xf7314d000001d8b1234d38cec149c689,0x8949000001e8b9894d000001e0b9334d,0x4d08cec149de8949000001a8b9234ddf,0x28cec149de8949f7314d000001b0b123
-.octa 0xcec149de8949f7314d000001b8b1234d,0xc149de8949f7314d000001c0b1234d10,0x49de8949f7314d000001c8b1234d30ce,0xde8949f7314d000001d0b1234d18cec1
-.octa 0x334df7314d000001d8b1234d38cec149,0x4dcf8949000001f0b9894d000001e0b9,0xb1234d08cec149ce8949000001a8b923,0x234d28cec149ce8949f7314d000001b0
-.octa 0x4d10cec149ce8949f7314d000001b8b1,0x30cec149ce8949f7314d000001c0b123,0xcec149ce8949f7314d000001c8b1234d,0xc149ce8949f7314d000001d0b1234d18
-.octa 0xe0b9334df7314d000001d8b1234d38ce,0xb9234def8949000001f8b9894d000001,0x1b0b1234d08cec149ee8949000001a8,0xb8b1234d28cec149ee8949f7314d0000
-.octa 0xb1234d10cec149ee8949f7314d000001,0x234d30cec149ee8949f7314d000001c0,0x4d18cec149ee8949f7314d000001c8b1,0x38cec149ee8949f7314d000001d0b123
-.octa 0x1e0b9334df7314d000001d8b1234d,0x1a8b9234dd7894d00000200b9894d00,0x1b0b1234d08cec149d6894d0000,0x1b8b1234d28cec149d6894df7314d
-.octa 0x1c0b1234d10cec149d6894df7314d00,0xc8b1234d30cec149d6894df7314d0000,0xb1234d18cec149d6894df7314d000001,0x234d38cec149d6894df7314d000001d0
-.octa 0x4d000001e0b9334df7314d000001d8b1,0x1a8b9234ddf894d00000208b989,0x314d000001b0b1234d08cec149de894d,0x4d000001b8b1234d28cec149de894df7
-.octa 0x1c0b1234d10cec149de894df731,0x1c8b1234d30cec149de894df7314d,0x1d0b1234d18cec149de894df7314d00,0xd8b1234d38cec149de894df7314d0000
-.octa 0xb9894d000001e0b9334df7314d000001,0x894d000001a8b9234de7894d00000210,0x4df7314d000001b0b1234d08cec149e6,0xf7314d000001b8b1234d28cec149e689
-.octa 0x314d000001c0b1234d10cec149e6894d,0x4d000001c8b1234d30cec149e6894df7,0x1d0b1234d18cec149e6894df731,0x1d8b1234d38cec149e6894df7314d
-.octa 0x218b9894d000001e0b9334df7314d00,0x49ee894d000001a8b9234def894d0000,0xee894df7314d000001b0b1234d08cec1,0x894df7314d000001b8b1234d28cec149
-.octa 0x4df7314d000001c0b1234d10cec149ee,0xf7314d000001c8b1234d30cec149ee89,0x314d000001d0b1234d18cec149ee894d,0x4d000001d8b1234d38cec149ee894df7
-.octa 0x220b9894d000001e0b9334df731,0x34100000268818941000001e8818b41,0xec818b41000001e88189410000022881,0x22c8103410000026c818941000001
-.octa 0x41000001f0818b41000001ec81894100,0x81894100000230810341000002708189,0x274818941000001f4818b41000001f0,0x1f4818941000002348103410000
-.octa 0x34100000278818941000001f8818b41,0xfc818b41000001f88189410000023881,0x23c8103410000027c818941000001,0x4100000200818b41000001fc81894100
-.octa 0x81894100000240810341000002808189,0x28481894100000204818b4100000200,0x204818941000002448103410000,0x3410000028881894100000208818b41
-.octa 0xc818b41000002088189410000024881,0x24c8103410000028c818941000002,0x4100000210818b410000020c81894100,0x81894100000250810341000002908189
-.octa 0x29481894100000214818b4100000210,0x214818941000002548103410000,0x3410000029881894100000218818b41,0x1c818b41000002188189410000025881
-.octa 0x25c8103410000029c818941000002,0x4100000220818b410000021c81894100,0x81894100000260810341000002a08189,0x2a481894100000224818b4100000220
-.octa 0x224818941000002648103410000,0x8b49000001f0998b49000001e8818b49,0x8918b4d00000200a98b49000001f889,0x218a18b4d00000210998b4d000002
-.octa 0x3149eed149c6894900000220a98b4d00,0x4c3fcec149f3314c00000180b1234dde,0x180b1234dee3149eed149ce8949f031,0x49d6894df1314c3fcec149f5314c0000
-.octa 0x49f3314d00000180b1234dde314deed1,0x4dee314deed149e6894df2314d3fcec1,0xf4314d3fcec149f5314d00000180b123,0x188b1234dce314902eec149c68949
-.octa 0xc149de8949f0314c3ecec149f1314c00,0x49f5314c00000188b1234dee314902ee,0xe6314d02eec149d6894df3314c3ecec1,0x314d3ecec149f4314d00000188b1234d
-.octa 0x188b1234dee314d02eec149de894df2,0x49c68949f3314d3ecec149f5314d0000,0xf2314d00000190b1234dd6314d04eec1,0x314d04eec149de8949f0314c3ccec149
-.octa 0x4c3ccec149f3314d00000190b1234dde,0x90b1234de6314d04eec149ce8949f331,0xee8949f1314c3ccec149f4314d000001,0x314d00000190b1234dee314d04eec149
-.octa 0x1059894908418949f5314c3ccec149f5,0x3059894d2851894d2069894918498949,0x1041334908418b494069894d3861894d,0x385933492059334918598b4920413349
-.octa 0x404933493049334928498b4940593349,0x30693349206933491869334910698b49,0x20598b4d2851334d1851334d10518b4d,0x2861334d2061334d18618b4d2859334d
-.octa 0x3869334d3069334d28698b4d3061334d,0xd6894d31894dffffffffffffffffbe49,0xed894c08698949df3149ef894dce3149,0xe3314dcd3148ed894c10698949d5314c
-.octa 0x51894de2314dc43149dc894d1861894d,0x314de6894d2871894df2314dfa894d20,0x8949ee3149de89493071894de3314cee,0x18593349d93148d3314c08598b493859
-.octa 0x89490861894dc43149cc89491861894d,0x491071334dde89494071894ddc314dcc,0xe3894c50598949f3314cc38948485989,0xf3314deb3148e3894c58598949f3314c
-.octa 0x69894ddd314ddb314cfb894c60598949,0x4d40518b4d7051894dcd2149d5894d68,0x214820498b4978498949ea314d085123,0x80b9894ddd214dfd894de9314cc1
-.octa 0x8899894def314d1879234d38798b4d00,0x8b4deb314d5059234d30598b4d000000,0x28718b4d00000090b1894df5214d1069,0x894800000098818949ee314d5871234d
-.octa 0xf7314dc13148f2314de8314ce0214ce8,0x334ddf3149604933494851334dc33149,0x314cd8894cfa214dcb3148d3894c6859,0xdd314dfd894dce3149c62149de8949d0
-.octa 0x49c58949cf3149d9314ce9214cd1314c,0x3148f0214cd8314cdf314deb214dcd31,0xf5894dcb3149f3894df8314cd88948c3,0xdd894c68698949fa314dca8949dd3149
-.octa 0x894978412349d0894c60418949c53148,0xc889480841894908412349f8894c7841,0x894c0000009881894900000098812349,0x480000008881894900000088812349e8
-.octa 0x412349f0894c1841894918412349d889,0x4900000090812349d8894c5041894950,0x61234d58412349e88948000000908189,0xa9234d204923494079234d7051234d60
-.octa 0x1059234d3071234d3859234900000080,0x6871234d60718b4d2871894d28692349,0xb98b4dfa314d50593349f9314ceb3149,0x98898b4968498949ef314d00000098
-.octa 0x498b4950498949c43149504933490000,0x4c000000908133490000008889334978,0x49de314d18718b4dcf3149dd3149f531,0xf4314d2879334dfb314d000000888133
-.octa 0x698949e7314dc6314918718b4df2314d,0x334de5314dd0314cd5314c08698b4918,0xe93148fb314df3894d193349db314c29,0x334d31334dce31496879334d50693349
-.octa 0x49f4894dc589491869894d19334d1859,0x418b4918598b4968598949f9894cca89,0x69894918498949105989490841894968,0x69894d3861894d3059894d2851894d20
-.octa 0x413349304133492841334918418b4940,0x1988123492071334d10718b4d38,0x8b4d18598b49f0314c000001a0b1234d,0x334d3879334d28798b4d3071334d1071
-.octa 0x1a0b1234d000001989923494079,0x334d18718b4d10498b49fb314cf3314c,0x23493879334d2879334d08798b4d2071,0x4cf1314c000001a0b1234d0000019889
-.octa 0x334d10718b4d4069334918698b49f931,0x334d3079334d2879334d08798b4d2071,0x1a0b1234d00000198a923493879,0x334d1851334d08518b4dfd314cf5314c
-.octa 0x234d3879334d20798b4d40718b4d2851,0x4df2314d000001a0b1234d0000019891,0x8b4d28718b4d1059334d08598b4dfa31,0x19899234d3879334d3079334d2079
-.octa 0x8b4dfb314df3314d000001a0b1234d00,0x334d10718b4d3061334d2861334d0861,0x198a1234d38798b4d2071334d1871,0x8b4dfc314df4314d000001a0b1234d00
-.octa 0x198a9234d4069334d3869334d1069,0x234dde3149eed149c689492069334d00,0x49f0314c3fcec149f3314c00000180b1,0x4c00000180b1234dee3149eed149ce89
-.octa 0x4deed149d6894df1314c3fcec149f531,0x3fcec149f3314d00000180b1234dde31,0x80b1234dee314deed149e6894df2314d,0xc68949f4314d3fcec149f5314d000001
-.octa 0x314c00000188b1234dce314902eec149,0x4902eec149de8949f0314c3ecec149f1,0x3ecec149f5314c00000188b1234dee31,0xb1234de6314d02eec149d6894df3314c
-.octa 0x894df2314d3ecec149f4314d00000188,0x4d00000188b1234dee314d02eec149de,0x4eec149c68949f3314d3ecec149f531,0xcec149f2314d00000190b1234dd6314d
-.octa 0x234dde314d04eec149de8949f0314c3c,0x49f3314c3ccec149f3314d00000190b1,0x190b1234de6314d04eec149ce89,0xeec149ee8949f1314c3ccec149f4314d
-.octa 0xc149f5314d00000190b1234dee314d04,0x49000001a8b9234dc78949f5314c3cce,0xf7314d000001b0b1234d08cec149c689,0x314d000001b8b1234d28cec149c68949
-.octa 0x4d000001c0b1234d10cec149c68949f7,0x1c8b1234d30cec149c68949f731,0x1d0b1234d18cec149c68949f7314d,0x1d8b1234d38cec149c68949f7314d00
-.octa 0xe8b9894d000001e0b9334df7314d0000,0xde8949000001a8b9234ddf8949000001,0x8949f7314d000001b0b1234d08cec149,0x49f7314d000001b8b1234d28cec149de
-.octa 0xf7314d000001c0b1234d10cec149de89,0x314d000001c8b1234d30cec149de8949,0x4d000001d0b1234d18cec149de8949f7,0x1d8b1234d38cec149de8949f731
-.octa 0x1f0b9894d000001e0b9334df7314d,0xc149ce8949000001a8b9234dcf894900,0x49ce8949f7314d000001b0b1234d08ce,0xce8949f7314d000001b8b1234d28cec1
-.octa 0x8949f7314d000001c0b1234d10cec149,0x49f7314d000001c8b1234d30cec149ce,0xf7314d000001d0b1234d18cec149ce89,0x314d000001d8b1234d38cec149ce8949
-.octa 0x49000001f8b9894d000001e0b9334df7,0x8cec149ee8949000001a8b9234def89,0xcec149ee8949f7314d000001b0b1234d,0xc149ee8949f7314d000001b8b1234d28
-.octa 0x49ee8949f7314d000001c0b1234d10ce,0xee8949f7314d000001c8b1234d30cec1,0x8949f7314d000001d0b1234d18cec149,0x4df7314d000001d8b1234d38cec149ee
-.octa 0xd7894d00000200b9894d000001e0b933,0x234d08cec149d6894d000001a8b9234d,0x4d28cec149d6894df7314d000001b0b1,0x10cec149d6894df7314d000001b8b123
-.octa 0xcec149d6894df7314d000001c0b1234d,0xc149d6894df7314d000001c8b1234d30,0x49d6894df7314d000001d0b1234d18ce,0xb9334df7314d000001d8b1234d38cec1
-.octa 0x234ddf894d00000208b9894d000001e0,0xb0b1234d08cec149de894d000001a8b9,0xb1234d28cec149de894df7314d000001,0x234d10cec149de894df7314d000001b8
-.octa 0x4d30cec149de894df7314d000001c0b1,0x18cec149de894df7314d000001c8b123,0xcec149de894df7314d000001d0b1234d,0x1e0b9334df7314d000001d8b1234d38
-.octa 0xa8b9234de7894d00000210b9894d0000,0x1b0b1234d08cec149e6894d000001,0x1b8b1234d28cec149e6894df7314d00,0xc0b1234d10cec149e6894df7314d0000
-.octa 0xb1234d30cec149e6894df7314d000001,0x234d18cec149e6894df7314d000001c8,0x4d38cec149e6894df7314d000001d0b1,0x1e0b9334df7314d000001d8b123
-.octa 0x1a8b9234def894d00000218b9894d,0x4d000001b0b1234d08cec149ee894d00,0x1b8b1234d28cec149ee894df731,0x1c0b1234d10cec149ee894df7314d
-.octa 0x1c8b1234d30cec149ee894df7314d00,0xd0b1234d18cec149ee894df7314d0000,0xb1234d38cec149ee894df7314d000001,0x894d000001e0b9334df7314d000001d8
-.octa 0xa8818941000001e8818b4100000220b9,0x1e881894100000268810341000002,0x41000002ac818941000001ec818b4100,0x818b41000001ec8189410000026c8103
-.octa 0x270810341000002b0818941000001f0,0x1f4818b41000001f08189410000,0x894100000274810341000002b4818941,0xb8818941000001f8818b41000001f481
-.octa 0x1f881894100000278810341000002,0x41000002bc818941000001fc818b4100,0x818b41000001fc8189410000027c8103,0x280810341000002c081894100000200
-.octa 0x204818b41000002008189410000,0x894100000284810341000002c4818941,0xc881894100000208818b410000020481,0x20881894100000288810341000002
-.octa 0x41000002cc8189410000020c818b4100,0x818b410000020c8189410000028c8103,0x290810341000002d081894100000210,0x214818b41000002108189410000
-.octa 0x894100000294810341000002d4818941,0xd881894100000218818b410000021481,0x21881894100000298810341000002,0x41000002dc8189410000021c818b4100
-.octa 0x818b410000021c8189410000029c8103,0x2a0810341000002e081894100000220,0x224818b41000002208189410000,0x8941000002a4810341000002e4818941
-.octa 0xf0998b49000001e8818b490000022481,0x200a98b49000001f8898b49000001,0x4d00000210998b4d00000208918b4d00,0xc6894900000220a98b4d00000218a18b
-.octa 0xf3314c00000180b1234dde3149eed149,0xee3149eed149ce8949f0314c3fcec149,0x314c3fcec149f5314c00000180b1234d,0x180b1234dde314deed149d6894df1
-.octa 0xd149e6894df2314d3fcec149f3314d00,0xc149f5314d00000180b1234dee314dee,0x4dce314902eec149c68949f4314d3fce,0xf0314c3ecec149f1314c00000188b123
-.octa 0x188b1234dee314902eec149de8949,0xc149d6894df3314c3ecec149f5314c00,0x49f4314d00000188b1234de6314d02ee,0xee314d02eec149de894df2314d3ecec1
-.octa 0x314d3ecec149f5314d00000188b1234d,0x190b1234dd6314d04eec149c68949f3,0x49de8949f0314c3ccec149f2314d0000,0xf3314d00000190b1234dde314d04eec1
-.octa 0x314d04eec149ce8949f3314c3ccec149,0x4c3ccec149f4314d00000190b1234de6,0x90b1234dee314d04eec149ee8949f131,0x418949f5314c3ccec149f5314d000001
-.octa 0x51894d20698949184989491059894908,0x418b494069894d3861894d3059894d28,0x59334918598b49204133491041334908,0x49334928498b49405933493859334920
-.octa 0x6933491869334910698b494049334930,0x51334d1851334d10518b4d3069334920,0x61334d18618b4d2859334d20598b4d28,0x69334d28698b4d3061334d2861334d20
-.octa 0x4dffffffffffffffffbe493869334d30,0x8949df3149ef894dce3149d6894d3189,0x48ed894c10698949d5314ced894c0869,0x4dc43149dc894d1861894de3314dcd31
-.octa 0x2871894df2314dfa894d2051894de231,0xde89493071894de3314cee314de6894d,0x3148d3314c08598b4938598949ee3149,0x4dc43149cc89491861894d18593349d9
-.octa 0xde89494071894ddc314dcc8949086189,0x8949f3314cc38948485989491071334d,0x48e3894c58598949f3314ce3894c5059,0x4ddb314cfb894c60598949f3314deb31
-.octa 0x7051894dcd2149d5894d6869894ddd31,0x4978498949ea314d0851234d40518b4d,0x4ddd214dfd894de9314cc1214820498b,0x314d1879234d38798b4d00000080b989
-.octa 0x5059234d30598b4d0000008899894def,0x90b1894df5214d10698b4deb314d,0x98818949ee314d5871234d28718b4d00,0x48f2314de8314ce0214ce88948000000
-.octa 0x604933494851334dc33149f7314dc131,0xfa214dcb3148d3894c6859334ddf3149,0x4dce3149c62149de8949d0314cd8894c,0x3149d9314ce9214cd1314cdd314dfd89
-.octa 0xd8314cdf314deb214dcd3149c58949cf,0x49f3894df8314cd88948c33148f0214c,0x8949fa314dca8949dd3149f5894dcb31,0x49d0894c60418949c53148dd894c6869
-.octa 0x894908412349f8894c78418949784123,0x9881894900000098812349c889480841,0x81894900000088812349e8894c000000,0x4c1841894918412349d8894800000088
-.octa 0x812349d8894c5041894950412349f089,0x2349e889480000009081894900000090,0x23494079234d7051234d6061234d5841,0x71234d3859234900000080a9234d2049
-.octa 0x718b4d2871894d286923491059234d30,0x4d50593349f9314ceb31496871234d60,0x68498949ef314d00000098b98b4dfa31,0x8949c431495049334900000098898b49
-.octa 0x8133490000008889334978498b495049,0x718b4dcf3149dd3149f5314c00000090,0x334dfb314d00000088813349de314d18,0x4dc6314918718b4df2314df4314d2879
-.octa 0xd0314cd5314c08698b4918698949e731,0x4df3894d193349db314c29334de5314d,0xce31496879334d50693349e93148fb31,0x89491869894d19334d1859334d31334d
-.octa 0x8b4968598949f9894cca8949f4894dc5,0x8949105989490841894968418b491859,0x894d3059894d2851894d206989491849,0x33492841334918418b494069894d3861
-.octa 0x23492071334d10718b4d384133493041,0x49f0314c000001a0b1234d0000019881,0x4d28798b4d3071334d10718b4d18598b,0x234d000001989923494079334d387933
-.octa 0x4d10498b49fb314cf3314c000001a0b1,0x4d2879334d08798b4d2071334d18718b,0x1a0b1234d00000198892349387933,0x4d4069334918698b49f9314cf1314c00
-.octa 0x4d2879334d08798b4d2071334d10718b,0x234d00000198a923493879334d307933,0x4d08518b4dfd314cf5314c000001a0b1,0x4d20798b4d40718b4d2851334d185133
-.octa 0x1a0b1234d0000019891234d387933,0x4d1059334d08598b4dfa314df2314d00,0x4d3879334d3079334d20798b4d28718b,0xf3314d000001a0b1234d000001989923
-.octa 0x4d3061334d2861334d08618b4dfb314d,0x4d38798b4d2071334d1871334d10718b,0xf4314d000001a0b1234d00000198a123,0x4d4069334d3869334d10698b4dfc314d
-.octa 0xeed149c689492069334d00000198a923,0xcec149f3314c00000180b1234dde3149,0xb1234dee3149eed149ce8949f0314c3f,0x894df1314c3fcec149f5314c00000180
-.octa 0x314d00000180b1234dde314deed149d6,0x314deed149e6894df2314d3fcec149f3,0x4d3fcec149f5314d00000180b1234dee,0x88b1234dce314902eec149c68949f431
-.octa 0xde8949f0314c3ecec149f1314c000001,0x314c00000188b1234dee314902eec149,0x4d02eec149d6894df3314c3ecec149f5,0x3ecec149f4314d00000188b1234de631
-.octa 0xb1234dee314d02eec149de894df2314d,0x8949f3314d3ecec149f5314d00000188,0x4d00000190b1234dd6314d04eec149c6,0x4eec149de8949f0314c3ccec149f231
-.octa 0xcec149f3314d00000190b1234dde314d,0x234de6314d04eec149ce8949f3314c3c,0x49f1314c3ccec149f4314d00000190b1,0x190b1234dee314d04eec149ee89
-.octa 0xb9234dc78949f5314c3ccec149f5314d,0x1b0b1234d08cec149c68949000001a8,0xb8b1234d28cec149c68949f7314d0000,0xb1234d10cec149c68949f7314d000001
-.octa 0x234d30cec149c68949f7314d000001c0,0x4d18cec149c68949f7314d000001c8b1,0x38cec149c68949f7314d000001d0b123,0x1e0b9334df7314d000001d8b1234d
-.octa 0x1a8b9234ddf8949000001e8b9894d00,0x1b0b1234d08cec149de89490000,0x1b8b1234d28cec149de8949f7314d,0x1c0b1234d10cec149de8949f7314d00
-.octa 0xc8b1234d30cec149de8949f7314d0000,0xb1234d18cec149de8949f7314d000001,0x234d38cec149de8949f7314d000001d0,0x4d000001e0b9334df7314d000001d8b1
-.octa 0x1a8b9234dcf8949000001f0b989,0x314d000001b0b1234d08cec149ce8949,0x4d000001b8b1234d28cec149ce8949f7,0x1c0b1234d10cec149ce8949f731
-.octa 0x1c8b1234d30cec149ce8949f7314d,0x1d0b1234d18cec149ce8949f7314d00,0xd8b1234d38cec149ce8949f7314d0000,0xb9894d000001e0b9334df7314d000001
-.octa 0x8949000001a8b9234def8949000001f8,0x49f7314d000001b0b1234d08cec149ee,0xf7314d000001b8b1234d28cec149ee89,0x314d000001c0b1234d10cec149ee8949
-.octa 0x4d000001c8b1234d30cec149ee8949f7,0x1d0b1234d18cec149ee8949f731,0x1d8b1234d38cec149ee8949f7314d,0x200b9894d000001e0b9334df7314d00
-.octa 0x49d6894d000001a8b9234dd7894d0000,0xd6894df7314d000001b0b1234d08cec1,0x894df7314d000001b8b1234d28cec149,0x4df7314d000001c0b1234d10cec149d6
-.octa 0xf7314d000001c8b1234d30cec149d689,0x314d000001d0b1234d18cec149d6894d,0x4d000001d8b1234d38cec149d6894df7,0x208b9894d000001e0b9334df731
-.octa 0xcec149de894d000001a8b9234ddf894d,0xc149de894df7314d000001b0b1234d08,0x49de894df7314d000001b8b1234d28ce,0xde894df7314d000001c0b1234d10cec1
-.octa 0x894df7314d000001c8b1234d30cec149,0x4df7314d000001d0b1234d18cec149de,0xf7314d000001d8b1234d38cec149de89,0x894d00000210b9894d000001e0b9334d
-.octa 0x4d08cec149e6894d000001a8b9234de7,0x28cec149e6894df7314d000001b0b123,0xcec149e6894df7314d000001b8b1234d,0xc149e6894df7314d000001c0b1234d10
-.octa 0x49e6894df7314d000001c8b1234d30ce,0xe6894df7314d000001d0b1234d18cec1,0x334df7314d000001d8b1234d38cec149,0x4def894d00000218b9894d000001e0b9
-.octa 0xb1234d08cec149ee894d000001a8b923,0x234d28cec149ee894df7314d000001b0,0x4d10cec149ee894df7314d000001b8b1,0x30cec149ee894df7314d000001c0b123
-.octa 0xcec149ee894df7314d000001c8b1234d,0xc149ee894df7314d000001d0b1234d18,0xe0b9334df7314d000001d8b1234d38ce,0x1e8818b4100000220b9894d000001
-.octa 0x328898941c13100000328898b4100,0x41000002e8813341000002a881034100,0x898b41000001ec818b41000002e88189,0x8103410000032c898941c1310000032c
-.octa 0x2ec818941000002ec813341000002ac,0x330898b41000001f0818b410000,0x2b081034100000330898941c131,0x8b41000002f0818941000002f0813341
-.octa 0x8941c13100000334898b41000001f481,0xf4813341000002b48103410000033489,0x1f8818b41000002f4818941000002,0x338898941c13100000338898b4100
-.octa 0x41000002f8813341000002b881034100,0x898b41000001fc818b41000002f88189,0x8103410000033c898941c1310000033c,0x2fc818941000002fc813341000002bc
-.octa 0x340898b4100000200818b410000,0x2c081034100000340898941c131,0x8b410000030081894100000300813341,0x8941c13100000344898b410000020481
-.octa 0x4813341000002c48103410000034489,0x208818b4100000304818941000003,0x348898941c13100000348898b4100,0x4100000308813341000002c881034100
-.octa 0x898b410000020c818b41000003088189,0x8103410000034c898941c1310000034c,0x30c8189410000030c813341000002cc,0x350898b4100000210818b410000
-.octa 0x2d081034100000350898941c131,0x8b410000031081894100000310813341,0x8941c13100000354898b410000021481,0x14813341000002d48103410000035489
-.octa 0x218818b4100000314818941000003,0x358898941c13100000358898b4100,0x4100000318813341000002d881034100,0x898b410000021c818b41000003188189
-.octa 0x8103410000035c898941c1310000035c,0x31c8189410000031c813341000002dc,0x360898b4100000220818b410000,0x2e081034100000360898941c131
-.octa 0x8b410000032081894100000320813341,0x8941c13100000364898b410000022481,0x24813341000002e48103410000036489,0x2e8818b4900000324818941000003
-.octa 0x49000002e889894900000368898b4900,0x898b49000002f0818b49000003688189,0x370818949000002f089894900000370,0x378898b49000002f8818b490000
-.octa 0x8b4900000378818949000002f8898949,0x89894900000380898b490000030081,0x308818b4900000380818949000003,0x490000030889894900000388898b4900
-.octa 0x898b4900000310818b49000003888189,0x3908189490000031089894900000390,0x398898b4900000318818b490000,0x8b490000039881894900000318898949
-.octa 0x20898949000003a0898b490000032081,0x328818b49000003a0818949000003,0x4900000328898949000003a8898b4900,0x898b4900000330818b49000003a88189
-.octa 0x3b081894900000330898949000003b0,0x3b8898b4900000338818b490000,0x8b49000003b881894900000338898949,0x40898949000003c0898b490000034081
-.octa 0x348818b49000003c0818949000003,0x4900000348898949000003c8898b4900,0x898b4900000350818b49000003c88189,0x3d081894900000350898949000003d0
-.octa 0x3d8898b4900000358818b490000,0x8b49000003d881894900000358898949,0x60898949000003e0898b490000036081,0x8349f8c78348000003e0818949000003
-.octa 0x48d1894880ef8348ffffd2ac850f01e8,0x894900eb00000010c1c748097210f983,0x8b028941c80f00000368838bcb894cf2,0x2e8838b04428941c80f000003a883
-.octa 0x41c80f00000328838b08428941c80f00,0x7501e9834804c3834810c283490c4289,0x10c1c748097210f98348d18948c3,0xebffffd1d9850fca2948d6894c00eb00
-.octa 0x4d000003f0a98b49000003e8998b4900,0xb18b4d00000400a98b4d000003f8a18b
-.byte 8,4,0,0,77,139,185,16,4,0,0,195",
-        r".p2align 6",
+.octa 0x834878c78348000001e0b1894de72be7
+.byte 0xfa,0x00
+je 20f
+22:",
+        // mov rcx, rdx
+        // cmp rcx, 16
+        r".byte 0x48,0x89,0xd1,0x48,0x83,0xf9,0x10
+jb 23f",
+        // mov rcx, 16
+        r".byte 0x48,0xc7,0xc1,0x10,0x00,0x00,0x00
+jmp 24f
+23:
+24:",
+        // mov r10, rsi
+        // mov rbx, r9
+        r".byte 0x49,0x89,0xf2,0x4c,0x89,0xcb
+25:",
+        // mov eax, DWORD PTR [r10]
+        // bswap eax
+        // mov DWORD PTR [rbx+744], eax
+        // mov eax, DWORD PTR [r10+4]
+        // bswap eax
+        // mov DWORD PTR [rbx+808], eax
+        // mov eax, DWORD PTR [r10+8]
+        // bswap eax
+        // mov DWORD PTR [rbx+872], eax
+        // mov eax, DWORD PTR [r10+12]
+        // bswap eax
+        // mov DWORD PTR [rbx+936], eax
+        // add r10, 16
+        // add rbx, 4
+        // sub rcx, 1
+        r".octa 0xf04428b41000002e88389c80f028b41,0x688389c80f08428b41000003288389c8,0x49000003a88389c80f0c428b41000003
+.byte 0x83,0xc2,0x10,0x48,0x83,0xc3,0x04,0x48,0x83,0xe9,0x01
+jne 25b",
+        // mov r8, 16
+        r".byte 0x49,0xc7,0xc0,0x10,0x00,0x00,0x00
+26:",
+        // mov r11d, DWORD PTR [rdi]
+        // mov r12d, DWORD PTR [rdi+4]
+        // mov eax, DWORD PTR [r9+872]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+552], eax
+        // xor eax, DWORD PTR [r9+936]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+488], eax
+        // mov eax, DWORD PTR [r9+876]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+556], eax
+        // xor eax, DWORD PTR [r9+940]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+492], eax
+        // mov eax, DWORD PTR [r9+880]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+560], eax
+        // xor eax, DWORD PTR [r9+944]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+496], eax
+        // mov eax, DWORD PTR [r9+884]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+564], eax
+        // xor eax, DWORD PTR [r9+948]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+500], eax
+        // mov eax, DWORD PTR [r9+888]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+568], eax
+        // xor eax, DWORD PTR [r9+952]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+504], eax
+        // mov eax, DWORD PTR [r9+892]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+572], eax
+        // xor eax, DWORD PTR [r9+956]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+508], eax
+        // mov eax, DWORD PTR [r9+896]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+576], eax
+        // xor eax, DWORD PTR [r9+960]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+512], eax
+        // mov eax, DWORD PTR [r9+900]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+580], eax
+        // xor eax, DWORD PTR [r9+964]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+516], eax
+        // mov eax, DWORD PTR [r9+904]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+584], eax
+        // xor eax, DWORD PTR [r9+968]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+520], eax
+        // mov eax, DWORD PTR [r9+908]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+588], eax
+        // xor eax, DWORD PTR [r9+972]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+524], eax
+        // mov eax, DWORD PTR [r9+912]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+592], eax
+        // xor eax, DWORD PTR [r9+976]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+528], eax
+        // mov eax, DWORD PTR [r9+916]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+596], eax
+        // xor eax, DWORD PTR [r9+980]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+532], eax
+        // mov eax, DWORD PTR [r9+920]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+600], eax
+        // xor eax, DWORD PTR [r9+984]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+536], eax
+        // mov eax, DWORD PTR [r9+924]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+604], eax
+        // xor eax, DWORD PTR [r9+988]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+540], eax
+        // mov eax, DWORD PTR [r9+928]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+608], eax
+        // xor eax, DWORD PTR [r9+992]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+544], eax
+        // mov eax, DWORD PTR [r9+932]
+        // xor eax, r11d
+        // mov DWORD PTR [r9+612], eax
+        // xor eax, DWORD PTR [r9+996]
+        // xor eax, r12d
+        // mov DWORD PTR [r9+548], eax
+        // mov rax, QWORD PTR [r9+488]
+        // mov rbx, QWORD PTR [r9+496]
+        // mov rcx, QWORD PTR [r9+504]
+        // mov rbp, QWORD PTR [r9+512]
+        // mov r10, QWORD PTR [r9+520]
+        // mov r11, QWORD PTR [r9+528]
+        // mov r12, QWORD PTR [r9+536]
+        // mov r13, QWORD PTR [r9+544]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+8]
+        // xor rax, QWORD PTR [r9+16]
+        // xor rax, QWORD PTR [r9+32]
+        // mov rbx, QWORD PTR [r9+24]
+        // xor rbx, QWORD PTR [r9+32]
+        // xor rbx, QWORD PTR [r9+56]
+        // xor rbx, QWORD PTR [r9+64]
+        // mov rcx, QWORD PTR [r9+40]
+        // xor rcx, QWORD PTR [r9+48]
+        // xor rcx, QWORD PTR [r9+64]
+        // mov rbp, QWORD PTR [r9+16]
+        // xor rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+32]
+        // xor rbp, QWORD PTR [r9+48]
+        // mov r10, QWORD PTR [r9+16]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r11, QWORD PTR [r9+32]
+        // xor r11, QWORD PTR [r9+40]
+        // mov r12, QWORD PTR [r9+24]
+        // xor r12, QWORD PTR [r9+32]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r13, QWORD PTR [r9+40]
+        // xor r13, QWORD PTR [r9+48]
+        // xor r13, QWORD PTR [r9+56]
+        // movabs r14, -1
+        // mov QWORD PTR [r9], r14
+        // mov r14, r10
+        // xor r14, rcx
+        // mov r15, r13
+        // xor r15, rbx
+        // mov QWORD PTR [r9+8], rbp
+        // mov rbp, r13
+        // xor rbp, r10
+        // mov QWORD PTR [r9+16], rbp
+        // mov rbp, r13
+        // xor rbp, rcx
+        // xor r11, r12
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, r11
+        // xor r12, rax
+        // xor r10, r12
+        // mov QWORD PTR [r9+32], r10
+        // mov r10, r15
+        // xor r10, r14
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, r12
+        // xor r14, r13
+        // xor rbx, r12
+        // mov QWORD PTR [r9+48], r14
+        // mov r14, rbx
+        // xor r14, rbp
+        // mov QWORD PTR [r9+56], rbx
+        // mov rbx, QWORD PTR [r9+8]
+        // xor rbx, r10
+        // xor rcx, rbx
+        // xor rbx, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, rcx
+        // xor r12, rax
+        // mov QWORD PTR [r9+8], r12
+        // mov r12, rcx
+        // xor r12, r11
+        // mov QWORD PTR [r9+64], r14
+        // mov r14, rbx
+        // xor r14, QWORD PTR [r9+16]
+        // mov QWORD PTR [r9+72], rbx
+        // mov rbx, rax
+        // xor rbx, r14
+        // mov QWORD PTR [r9+80], rbx
+        // mov rbx, r12
+        // xor rbx, r14
+        // mov QWORD PTR [r9+88], rbx
+        // mov rbx, r12
+        // xor rbx, rbp
+        // xor r11, r14
+        // mov QWORD PTR [r9+96], rbx
+        // mov rbx, r15
+        // xor rbx, r11
+        // xor r13, r11
+        // mov QWORD PTR [r9+104], r13
+        // mov r13, r10
+        // and r13, rcx
+        // mov QWORD PTR [r9+112], r10
+        // mov r10, QWORD PTR [r9+64]
+        // and r10, QWORD PTR [r9+8]
+        // xor r10, r13
+        // mov QWORD PTR [r9+120], rcx
+        // mov rcx, QWORD PTR [r9+32]
+        // and rcx, rax
+        // xor rcx, r13
+        // mov r13, r15
+        // and r13, r11
+        // mov QWORD PTR [r9+128], r15
+        // mov r15, QWORD PTR [r9+56]
+        // and r15, QWORD PTR [r9+24]
+        // xor r15, r13
+        // mov QWORD PTR [r9+136], r11
+        // mov r11, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+80]
+        // xor r11, r13
+        // mov r13, QWORD PTR [r9+16]
+        // and r13, r14
+        // mov QWORD PTR [r9+144], r14
+        // mov r14, QWORD PTR [r9+40]
+        // and r14, QWORD PTR [r9+88]
+        // xor r14, r13
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, rbp
+        // and rax, r12
+        // xor rax, r13
+        // xor r10, r14
+        // xor rcx, rax
+        // xor r15, r14
+        // xor r11, rax
+        // xor r10, QWORD PTR [r9+72]
+        // xor rcx, QWORD PTR [r9+96]
+        // xor r15, rbx
+        // xor r11, QWORD PTR [r9+104]
+        // mov rbx, r10
+        // xor rbx, rcx
+        // and r10, r15
+        // mov rax, r11
+        // xor rax, r10
+        // mov r14, rbx
+        // and r14, rax
+        // xor r14, rcx
+        // mov r13, r15
+        // xor r13, r11
+        // xor rcx, r10
+        // and rcx, r13
+        // xor rcx, r11
+        // xor r15, rcx
+        // mov r13, rax
+        // xor r13, rcx
+        // and r11, r13
+        // xor r15, r11
+        // xor rax, r11
+        // and rax, r14
+        // xor rbx, rax
+        // mov rax, rbx
+        // xor rax, r15
+        // mov r11, r14
+        // xor r11, rcx
+        // mov r13, r14
+        // xor r13, rbx
+        // mov r10, rcx
+        // xor r10, r15
+        // mov QWORD PTR [r9+104], rbp
+        // mov rbp, r11
+        // xor rbp, rax
+        // mov QWORD PTR [r9+96], rax
+        // mov rax, r10
+        // and rax, QWORD PTR [r9+120]
+        // mov QWORD PTR [r9+120], rax
+        // mov rax, r15
+        // and rax, QWORD PTR [r9+8]
+        // mov QWORD PTR [r9+8], rax
+        // mov rax, rcx
+        // and rax, QWORD PTR [r9+152]
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, r13
+        // and rax, QWORD PTR [r9+136]
+        // mov QWORD PTR [r9+136], rax
+        // mov rax, rbx
+        // and rax, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], rax
+        // mov rax, r14
+        // and rax, QWORD PTR [r9+80]
+        // mov QWORD PTR [r9+80], rax
+        // mov rax, r11
+        // and rax, QWORD PTR [r9+144]
+        // mov QWORD PTR [r9+144], rax
+        // mov rax, rbp
+        // and rax, QWORD PTR [r9+88]
+        // and r12, QWORD PTR [r9+96]
+        // and r10, QWORD PTR [r9+112]
+        // and r15, QWORD PTR [r9+64]
+        // and rcx, QWORD PTR [r9+32]
+        // and r13, QWORD PTR [r9+128]
+        // and rbx, QWORD PTR [r9+56]
+        // and r14, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+16]
+        // and rbp, QWORD PTR [r9+40]
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, QWORD PTR [r9+96]
+        // and r14, QWORD PTR [r9+104]
+        // xor r11, rbp
+        // xor rcx, r15
+        // xor rbx, QWORD PTR [r9+80]
+        // xor r10, r15
+        // mov r15, QWORD PTR [r9+152]
+        // xor r15, r13
+        // mov QWORD PTR [r9+104], rcx
+        // mov rcx, QWORD PTR [r9+152]
+        // xor rcx, QWORD PTR [r9+80]
+        // xor r12, rax
+        // mov QWORD PTR [r9+80], rcx
+        // mov rcx, QWORD PTR [r9+120]
+        // xor rcx, QWORD PTR [r9+136]
+        // xor rax, QWORD PTR [r9+144]
+        // xor rbp, r14
+        // xor r13, rbx
+        // xor r15, rcx
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, r11
+        // xor rax, QWORD PTR [r9+136]
+        // xor r11, r15
+        // xor r15, QWORD PTR [r9+40]
+        // xor r12, r14
+        // xor r10, r14
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, rax
+        // xor r15, r12
+        // mov QWORD PTR [r9+24], rbp
+        // mov rbp, QWORD PTR [r9+8]
+        // xor rbp, r10
+        // xor rax, r10
+        // xor r13, r12
+        // xor r13, QWORD PTR [r9]
+        // xor rbx, r11
+        // xor rbx, QWORD PTR [r9]
+        // mov r11, r14
+        // xor r11, r15
+        // xor rcx, rbp
+        // xor rbp, QWORD PTR [r9+80]
+        // xor r15, QWORD PTR [r9+104]
+        // xor r14, rcx
+        // xor r14, QWORD PTR [r9]
+        // xor r11, QWORD PTR [r9+24]
+        // xor r11, QWORD PTR [r9]
+        // mov QWORD PTR [r9+24], r13
+        // mov r13, rax
+        // mov r12, r14
+        // mov r10, rcx
+        // mov rcx, r15
+        // mov QWORD PTR [r9+104], rbx
+        // mov rbx, QWORD PTR [r9+24]
+        // mov rax, QWORD PTR [r9+104]
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+24]
+        // xor rax, QWORD PTR [r9+40]
+        // xor rax, QWORD PTR [r9+48]
+        // xor rax, QWORD PTR [r9+56]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // and rax, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rax, r14
+        // mov rbx, QWORD PTR [r9+24]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+48]
+        // mov r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // xor r15, QWORD PTR [r9+64]
+        // and rbx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbx, r14
+        // xor rbx, r15
+        // mov rcx, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // and rcx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rcx, r14
+        // xor rcx, r15
+        // mov rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+64]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and rbp, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbp, r14
+        // xor rbp, r15
+        // mov r10, QWORD PTR [r9+8]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r14, QWORD PTR [r9+64]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+56]
+        // and r10, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r10, r14
+        // xor r10, r15
+        // mov r11, QWORD PTR [r9+8]
+        // xor r11, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+40]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and r11, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r11, r14
+        // xor r11, r15
+        // mov r12, QWORD PTR [r9+8]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+56]
+        // and r12, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r12, r14
+        // xor r12, r15
+        // mov r13, QWORD PTR [r9+16]
+        // xor r13, QWORD PTR [r9+56]
+        // xor r13, QWORD PTR [r9+64]
+        // and r13, QWORD PTR [r9+408]
+        // xor r13, QWORD PTR [r9+32]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov r15, rax
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rax
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+488], r15
+        // mov r15, rbx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+496], r15
+        // mov r15, rcx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rcx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+504], r15
+        // mov r15, rbp
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbp
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+512], r15
+        // mov r15, r10
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r10
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+520], r15
+        // mov r15, r11
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r11
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+528], r15
+        // mov r15, r12
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r12
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+536], r15
+        // mov r15, r13
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r13
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+544], r15
+        // mov eax, DWORD PTR [r9+488]
+        // mov DWORD PTR [r9+616], eax
+        // add eax, DWORD PTR [r9+552]
+        // mov DWORD PTR [r9+488], eax
+        // mov eax, DWORD PTR [r9+492]
+        // mov DWORD PTR [r9+620], eax
+        // add eax, DWORD PTR [r9+556]
+        // mov DWORD PTR [r9+492], eax
+        // mov eax, DWORD PTR [r9+496]
+        // mov DWORD PTR [r9+624], eax
+        // add eax, DWORD PTR [r9+560]
+        // mov DWORD PTR [r9+496], eax
+        // mov eax, DWORD PTR [r9+500]
+        // mov DWORD PTR [r9+628], eax
+        // add eax, DWORD PTR [r9+564]
+        // mov DWORD PTR [r9+500], eax
+        // mov eax, DWORD PTR [r9+504]
+        // mov DWORD PTR [r9+632], eax
+        // add eax, DWORD PTR [r9+568]
+        // mov DWORD PTR [r9+504], eax
+        // mov eax, DWORD PTR [r9+508]
+        // mov DWORD PTR [r9+636], eax
+        // add eax, DWORD PTR [r9+572]
+        // mov DWORD PTR [r9+508], eax
+        // mov eax, DWORD PTR [r9+512]
+        // mov DWORD PTR [r9+640], eax
+        // add eax, DWORD PTR [r9+576]
+        // mov DWORD PTR [r9+512], eax
+        // mov eax, DWORD PTR [r9+516]
+        // mov DWORD PTR [r9+644], eax
+        // add eax, DWORD PTR [r9+580]
+        // mov DWORD PTR [r9+516], eax
+        // mov eax, DWORD PTR [r9+520]
+        // mov DWORD PTR [r9+648], eax
+        // add eax, DWORD PTR [r9+584]
+        // mov DWORD PTR [r9+520], eax
+        // mov eax, DWORD PTR [r9+524]
+        // mov DWORD PTR [r9+652], eax
+        // add eax, DWORD PTR [r9+588]
+        // mov DWORD PTR [r9+524], eax
+        // mov eax, DWORD PTR [r9+528]
+        // mov DWORD PTR [r9+656], eax
+        // add eax, DWORD PTR [r9+592]
+        // mov DWORD PTR [r9+528], eax
+        // mov eax, DWORD PTR [r9+532]
+        // mov DWORD PTR [r9+660], eax
+        // add eax, DWORD PTR [r9+596]
+        // mov DWORD PTR [r9+532], eax
+        // mov eax, DWORD PTR [r9+536]
+        // mov DWORD PTR [r9+664], eax
+        // add eax, DWORD PTR [r9+600]
+        // mov DWORD PTR [r9+536], eax
+        // mov eax, DWORD PTR [r9+540]
+        // mov DWORD PTR [r9+668], eax
+        // add eax, DWORD PTR [r9+604]
+        // mov DWORD PTR [r9+540], eax
+        // mov eax, DWORD PTR [r9+544]
+        // mov DWORD PTR [r9+672], eax
+        // add eax, DWORD PTR [r9+608]
+        // mov DWORD PTR [r9+544], eax
+        // mov eax, DWORD PTR [r9+548]
+        // mov DWORD PTR [r9+676], eax
+        // add eax, DWORD PTR [r9+612]
+        // mov DWORD PTR [r9+548], eax
+        // mov rax, QWORD PTR [r9+488]
+        // mov rbx, QWORD PTR [r9+496]
+        // mov rcx, QWORD PTR [r9+504]
+        // mov rbp, QWORD PTR [r9+512]
+        // mov r10, QWORD PTR [r9+520]
+        // mov r11, QWORD PTR [r9+528]
+        // mov r12, QWORD PTR [r9+536]
+        // mov r13, QWORD PTR [r9+544]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+8]
+        // xor rax, QWORD PTR [r9+16]
+        // xor rax, QWORD PTR [r9+32]
+        // mov rbx, QWORD PTR [r9+24]
+        // xor rbx, QWORD PTR [r9+32]
+        // xor rbx, QWORD PTR [r9+56]
+        // xor rbx, QWORD PTR [r9+64]
+        // mov rcx, QWORD PTR [r9+40]
+        // xor rcx, QWORD PTR [r9+48]
+        // xor rcx, QWORD PTR [r9+64]
+        // mov rbp, QWORD PTR [r9+16]
+        // xor rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+32]
+        // xor rbp, QWORD PTR [r9+48]
+        // mov r10, QWORD PTR [r9+16]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r11, QWORD PTR [r9+32]
+        // xor r11, QWORD PTR [r9+40]
+        // mov r12, QWORD PTR [r9+24]
+        // xor r12, QWORD PTR [r9+32]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r13, QWORD PTR [r9+40]
+        // xor r13, QWORD PTR [r9+48]
+        // xor r13, QWORD PTR [r9+56]
+        // movabs r14, -1
+        // mov QWORD PTR [r9], r14
+        // mov r14, r10
+        // xor r14, rcx
+        // mov r15, r13
+        // xor r15, rbx
+        // mov QWORD PTR [r9+8], rbp
+        // mov rbp, r13
+        // xor rbp, r10
+        // mov QWORD PTR [r9+16], rbp
+        // mov rbp, r13
+        // xor rbp, rcx
+        // xor r11, r12
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, r11
+        // xor r12, rax
+        // xor r10, r12
+        // mov QWORD PTR [r9+32], r10
+        // mov r10, r15
+        // xor r10, r14
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, r12
+        // xor r14, r13
+        // xor rbx, r12
+        // mov QWORD PTR [r9+48], r14
+        // mov r14, rbx
+        // xor r14, rbp
+        // mov QWORD PTR [r9+56], rbx
+        // mov rbx, QWORD PTR [r9+8]
+        // xor rbx, r10
+        // xor rcx, rbx
+        // xor rbx, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, rcx
+        // xor r12, rax
+        // mov QWORD PTR [r9+8], r12
+        // mov r12, rcx
+        // xor r12, r11
+        // mov QWORD PTR [r9+64], r14
+        // mov r14, rbx
+        // xor r14, QWORD PTR [r9+16]
+        // mov QWORD PTR [r9+72], rbx
+        // mov rbx, rax
+        // xor rbx, r14
+        // mov QWORD PTR [r9+80], rbx
+        // mov rbx, r12
+        // xor rbx, r14
+        // mov QWORD PTR [r9+88], rbx
+        // mov rbx, r12
+        // xor rbx, rbp
+        // xor r11, r14
+        // mov QWORD PTR [r9+96], rbx
+        // mov rbx, r15
+        // xor rbx, r11
+        // xor r13, r11
+        // mov QWORD PTR [r9+104], r13
+        // mov r13, r10
+        // and r13, rcx
+        // mov QWORD PTR [r9+112], r10
+        // mov r10, QWORD PTR [r9+64]
+        // and r10, QWORD PTR [r9+8]
+        // xor r10, r13
+        // mov QWORD PTR [r9+120], rcx
+        // mov rcx, QWORD PTR [r9+32]
+        // and rcx, rax
+        // xor rcx, r13
+        // mov r13, r15
+        // and r13, r11
+        // mov QWORD PTR [r9+128], r15
+        // mov r15, QWORD PTR [r9+56]
+        // and r15, QWORD PTR [r9+24]
+        // xor r15, r13
+        // mov QWORD PTR [r9+136], r11
+        // mov r11, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+80]
+        // xor r11, r13
+        // mov r13, QWORD PTR [r9+16]
+        // and r13, r14
+        // mov QWORD PTR [r9+144], r14
+        // mov r14, QWORD PTR [r9+40]
+        // and r14, QWORD PTR [r9+88]
+        // xor r14, r13
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, rbp
+        // and rax, r12
+        // xor rax, r13
+        // xor r10, r14
+        // xor rcx, rax
+        // xor r15, r14
+        // xor r11, rax
+        // xor r10, QWORD PTR [r9+72]
+        // xor rcx, QWORD PTR [r9+96]
+        // xor r15, rbx
+        // xor r11, QWORD PTR [r9+104]
+        // mov rbx, r10
+        // xor rbx, rcx
+        // and r10, r15
+        // mov rax, r11
+        // xor rax, r10
+        // mov r14, rbx
+        // and r14, rax
+        // xor r14, rcx
+        // mov r13, r15
+        // xor r13, r11
+        // xor rcx, r10
+        // and rcx, r13
+        // xor rcx, r11
+        // xor r15, rcx
+        // mov r13, rax
+        // xor r13, rcx
+        // and r11, r13
+        // xor r15, r11
+        // xor rax, r11
+        // and rax, r14
+        // xor rbx, rax
+        // mov rax, rbx
+        // xor rax, r15
+        // mov r11, r14
+        // xor r11, rcx
+        // mov r13, r14
+        // xor r13, rbx
+        // mov r10, rcx
+        // xor r10, r15
+        // mov QWORD PTR [r9+104], rbp
+        // mov rbp, r11
+        // xor rbp, rax
+        // mov QWORD PTR [r9+96], rax
+        // mov rax, r10
+        // and rax, QWORD PTR [r9+120]
+        // mov QWORD PTR [r9+120], rax
+        // mov rax, r15
+        // and rax, QWORD PTR [r9+8]
+        // mov QWORD PTR [r9+8], rax
+        // mov rax, rcx
+        // and rax, QWORD PTR [r9+152]
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, r13
+        // and rax, QWORD PTR [r9+136]
+        // mov QWORD PTR [r9+136], rax
+        // mov rax, rbx
+        // and rax, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], rax
+        // mov rax, r14
+        // and rax, QWORD PTR [r9+80]
+        // mov QWORD PTR [r9+80], rax
+        // mov rax, r11
+        // and rax, QWORD PTR [r9+144]
+        // mov QWORD PTR [r9+144], rax
+        // mov rax, rbp
+        // and rax, QWORD PTR [r9+88]
+        // and r12, QWORD PTR [r9+96]
+        // and r10, QWORD PTR [r9+112]
+        // and r15, QWORD PTR [r9+64]
+        // and rcx, QWORD PTR [r9+32]
+        // and r13, QWORD PTR [r9+128]
+        // and rbx, QWORD PTR [r9+56]
+        // and r14, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+16]
+        // and rbp, QWORD PTR [r9+40]
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, QWORD PTR [r9+96]
+        // and r14, QWORD PTR [r9+104]
+        // xor r11, rbp
+        // xor rcx, r15
+        // xor rbx, QWORD PTR [r9+80]
+        // xor r10, r15
+        // mov r15, QWORD PTR [r9+152]
+        // xor r15, r13
+        // mov QWORD PTR [r9+104], rcx
+        // mov rcx, QWORD PTR [r9+152]
+        // xor rcx, QWORD PTR [r9+80]
+        // xor r12, rax
+        // mov QWORD PTR [r9+80], rcx
+        // mov rcx, QWORD PTR [r9+120]
+        // xor rcx, QWORD PTR [r9+136]
+        // xor rax, QWORD PTR [r9+144]
+        // xor rbp, r14
+        // xor r13, rbx
+        // xor r15, rcx
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, r11
+        // xor rax, QWORD PTR [r9+136]
+        // xor r11, r15
+        // xor r15, QWORD PTR [r9+40]
+        // xor r12, r14
+        // xor r10, r14
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, rax
+        // xor r15, r12
+        // mov QWORD PTR [r9+24], rbp
+        // mov rbp, QWORD PTR [r9+8]
+        // xor rbp, r10
+        // xor rax, r10
+        // xor r13, r12
+        // xor r13, QWORD PTR [r9]
+        // xor rbx, r11
+        // xor rbx, QWORD PTR [r9]
+        // mov r11, r14
+        // xor r11, r15
+        // xor rcx, rbp
+        // xor rbp, QWORD PTR [r9+80]
+        // xor r15, QWORD PTR [r9+104]
+        // xor r14, rcx
+        // xor r14, QWORD PTR [r9]
+        // xor r11, QWORD PTR [r9+24]
+        // xor r11, QWORD PTR [r9]
+        // mov QWORD PTR [r9+24], r13
+        // mov r13, rax
+        // mov r12, r14
+        // mov r10, rcx
+        // mov rcx, r15
+        // mov QWORD PTR [r9+104], rbx
+        // mov rbx, QWORD PTR [r9+24]
+        // mov rax, QWORD PTR [r9+104]
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+24]
+        // xor rax, QWORD PTR [r9+40]
+        // xor rax, QWORD PTR [r9+48]
+        // xor rax, QWORD PTR [r9+56]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // and rax, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rax, r14
+        // mov rbx, QWORD PTR [r9+24]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+48]
+        // mov r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // xor r15, QWORD PTR [r9+64]
+        // and rbx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbx, r14
+        // xor rbx, r15
+        // mov rcx, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // and rcx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rcx, r14
+        // xor rcx, r15
+        // mov rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+64]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and rbp, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbp, r14
+        // xor rbp, r15
+        // mov r10, QWORD PTR [r9+8]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r14, QWORD PTR [r9+64]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+56]
+        // and r10, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r10, r14
+        // xor r10, r15
+        // mov r11, QWORD PTR [r9+8]
+        // xor r11, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+40]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and r11, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r11, r14
+        // xor r11, r15
+        // mov r12, QWORD PTR [r9+8]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+56]
+        // and r12, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r12, r14
+        // xor r12, r15
+        // mov r13, QWORD PTR [r9+16]
+        // xor r13, QWORD PTR [r9+56]
+        // xor r13, QWORD PTR [r9+64]
+        // and r13, QWORD PTR [r9+408]
+        // xor r13, QWORD PTR [r9+32]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov r15, rax
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rax
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+488], r15
+        // mov r15, rbx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+496], r15
+        // mov r15, rcx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rcx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+504], r15
+        // mov r15, rbp
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbp
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+512], r15
+        // mov r15, r10
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r10
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+520], r15
+        // mov r15, r11
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r11
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+528], r15
+        // mov r15, r12
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r12
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+536], r15
+        // mov r15, r13
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r13
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+544], r15
+        // mov eax, DWORD PTR [r9+488]
+        // mov DWORD PTR [r9+680], eax
+        // add eax, DWORD PTR [r9+616]
+        // mov DWORD PTR [r9+488], eax
+        // mov eax, DWORD PTR [r9+492]
+        // mov DWORD PTR [r9+684], eax
+        // add eax, DWORD PTR [r9+620]
+        // mov DWORD PTR [r9+492], eax
+        // mov eax, DWORD PTR [r9+496]
+        // mov DWORD PTR [r9+688], eax
+        // add eax, DWORD PTR [r9+624]
+        // mov DWORD PTR [r9+496], eax
+        // mov eax, DWORD PTR [r9+500]
+        // mov DWORD PTR [r9+692], eax
+        // add eax, DWORD PTR [r9+628]
+        // mov DWORD PTR [r9+500], eax
+        // mov eax, DWORD PTR [r9+504]
+        // mov DWORD PTR [r9+696], eax
+        // add eax, DWORD PTR [r9+632]
+        // mov DWORD PTR [r9+504], eax
+        // mov eax, DWORD PTR [r9+508]
+        // mov DWORD PTR [r9+700], eax
+        // add eax, DWORD PTR [r9+636]
+        // mov DWORD PTR [r9+508], eax
+        // mov eax, DWORD PTR [r9+512]
+        // mov DWORD PTR [r9+704], eax
+        // add eax, DWORD PTR [r9+640]
+        // mov DWORD PTR [r9+512], eax
+        // mov eax, DWORD PTR [r9+516]
+        // mov DWORD PTR [r9+708], eax
+        // add eax, DWORD PTR [r9+644]
+        // mov DWORD PTR [r9+516], eax
+        // mov eax, DWORD PTR [r9+520]
+        // mov DWORD PTR [r9+712], eax
+        // add eax, DWORD PTR [r9+648]
+        // mov DWORD PTR [r9+520], eax
+        // mov eax, DWORD PTR [r9+524]
+        // mov DWORD PTR [r9+716], eax
+        // add eax, DWORD PTR [r9+652]
+        // mov DWORD PTR [r9+524], eax
+        // mov eax, DWORD PTR [r9+528]
+        // mov DWORD PTR [r9+720], eax
+        // add eax, DWORD PTR [r9+656]
+        // mov DWORD PTR [r9+528], eax
+        // mov eax, DWORD PTR [r9+532]
+        // mov DWORD PTR [r9+724], eax
+        // add eax, DWORD PTR [r9+660]
+        // mov DWORD PTR [r9+532], eax
+        // mov eax, DWORD PTR [r9+536]
+        // mov DWORD PTR [r9+728], eax
+        // add eax, DWORD PTR [r9+664]
+        // mov DWORD PTR [r9+536], eax
+        // mov eax, DWORD PTR [r9+540]
+        // mov DWORD PTR [r9+732], eax
+        // add eax, DWORD PTR [r9+668]
+        // mov DWORD PTR [r9+540], eax
+        // mov eax, DWORD PTR [r9+544]
+        // mov DWORD PTR [r9+736], eax
+        // add eax, DWORD PTR [r9+672]
+        // mov DWORD PTR [r9+544], eax
+        // mov eax, DWORD PTR [r9+548]
+        // mov DWORD PTR [r9+740], eax
+        // add eax, DWORD PTR [r9+676]
+        // mov DWORD PTR [r9+548], eax
+        // mov rax, QWORD PTR [r9+488]
+        // mov rbx, QWORD PTR [r9+496]
+        // mov rcx, QWORD PTR [r9+504]
+        // mov rbp, QWORD PTR [r9+512]
+        // mov r10, QWORD PTR [r9+520]
+        // mov r11, QWORD PTR [r9+528]
+        // mov r12, QWORD PTR [r9+536]
+        // mov r13, QWORD PTR [r9+544]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+8]
+        // xor rax, QWORD PTR [r9+16]
+        // xor rax, QWORD PTR [r9+32]
+        // mov rbx, QWORD PTR [r9+24]
+        // xor rbx, QWORD PTR [r9+32]
+        // xor rbx, QWORD PTR [r9+56]
+        // xor rbx, QWORD PTR [r9+64]
+        // mov rcx, QWORD PTR [r9+40]
+        // xor rcx, QWORD PTR [r9+48]
+        // xor rcx, QWORD PTR [r9+64]
+        // mov rbp, QWORD PTR [r9+16]
+        // xor rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+32]
+        // xor rbp, QWORD PTR [r9+48]
+        // mov r10, QWORD PTR [r9+16]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r11, QWORD PTR [r9+32]
+        // xor r11, QWORD PTR [r9+40]
+        // mov r12, QWORD PTR [r9+24]
+        // xor r12, QWORD PTR [r9+32]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r13, QWORD PTR [r9+40]
+        // xor r13, QWORD PTR [r9+48]
+        // xor r13, QWORD PTR [r9+56]
+        // movabs r14, -1
+        // mov QWORD PTR [r9], r14
+        // mov r14, r10
+        // xor r14, rcx
+        // mov r15, r13
+        // xor r15, rbx
+        // mov QWORD PTR [r9+8], rbp
+        // mov rbp, r13
+        // xor rbp, r10
+        // mov QWORD PTR [r9+16], rbp
+        // mov rbp, r13
+        // xor rbp, rcx
+        // xor r11, r12
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, r11
+        // xor r12, rax
+        // xor r10, r12
+        // mov QWORD PTR [r9+32], r10
+        // mov r10, r15
+        // xor r10, r14
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, r12
+        // xor r14, r13
+        // xor rbx, r12
+        // mov QWORD PTR [r9+48], r14
+        // mov r14, rbx
+        // xor r14, rbp
+        // mov QWORD PTR [r9+56], rbx
+        // mov rbx, QWORD PTR [r9+8]
+        // xor rbx, r10
+        // xor rcx, rbx
+        // xor rbx, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], r12
+        // mov r12, rcx
+        // xor r12, rax
+        // mov QWORD PTR [r9+8], r12
+        // mov r12, rcx
+        // xor r12, r11
+        // mov QWORD PTR [r9+64], r14
+        // mov r14, rbx
+        // xor r14, QWORD PTR [r9+16]
+        // mov QWORD PTR [r9+72], rbx
+        // mov rbx, rax
+        // xor rbx, r14
+        // mov QWORD PTR [r9+80], rbx
+        // mov rbx, r12
+        // xor rbx, r14
+        // mov QWORD PTR [r9+88], rbx
+        // mov rbx, r12
+        // xor rbx, rbp
+        // xor r11, r14
+        // mov QWORD PTR [r9+96], rbx
+        // mov rbx, r15
+        // xor rbx, r11
+        // xor r13, r11
+        // mov QWORD PTR [r9+104], r13
+        // mov r13, r10
+        // and r13, rcx
+        // mov QWORD PTR [r9+112], r10
+        // mov r10, QWORD PTR [r9+64]
+        // and r10, QWORD PTR [r9+8]
+        // xor r10, r13
+        // mov QWORD PTR [r9+120], rcx
+        // mov rcx, QWORD PTR [r9+32]
+        // and rcx, rax
+        // xor rcx, r13
+        // mov r13, r15
+        // and r13, r11
+        // mov QWORD PTR [r9+128], r15
+        // mov r15, QWORD PTR [r9+56]
+        // and r15, QWORD PTR [r9+24]
+        // xor r15, r13
+        // mov QWORD PTR [r9+136], r11
+        // mov r11, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+80]
+        // xor r11, r13
+        // mov r13, QWORD PTR [r9+16]
+        // and r13, r14
+        // mov QWORD PTR [r9+144], r14
+        // mov r14, QWORD PTR [r9+40]
+        // and r14, QWORD PTR [r9+88]
+        // xor r14, r13
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, rbp
+        // and rax, r12
+        // xor rax, r13
+        // xor r10, r14
+        // xor rcx, rax
+        // xor r15, r14
+        // xor r11, rax
+        // xor r10, QWORD PTR [r9+72]
+        // xor rcx, QWORD PTR [r9+96]
+        // xor r15, rbx
+        // xor r11, QWORD PTR [r9+104]
+        // mov rbx, r10
+        // xor rbx, rcx
+        // and r10, r15
+        // mov rax, r11
+        // xor rax, r10
+        // mov r14, rbx
+        // and r14, rax
+        // xor r14, rcx
+        // mov r13, r15
+        // xor r13, r11
+        // xor rcx, r10
+        // and rcx, r13
+        // xor rcx, r11
+        // xor r15, rcx
+        // mov r13, rax
+        // xor r13, rcx
+        // and r11, r13
+        // xor r15, r11
+        // xor rax, r11
+        // and rax, r14
+        // xor rbx, rax
+        // mov rax, rbx
+        // xor rax, r15
+        // mov r11, r14
+        // xor r11, rcx
+        // mov r13, r14
+        // xor r13, rbx
+        // mov r10, rcx
+        // xor r10, r15
+        // mov QWORD PTR [r9+104], rbp
+        // mov rbp, r11
+        // xor rbp, rax
+        // mov QWORD PTR [r9+96], rax
+        // mov rax, r10
+        // and rax, QWORD PTR [r9+120]
+        // mov QWORD PTR [r9+120], rax
+        // mov rax, r15
+        // and rax, QWORD PTR [r9+8]
+        // mov QWORD PTR [r9+8], rax
+        // mov rax, rcx
+        // and rax, QWORD PTR [r9+152]
+        // mov QWORD PTR [r9+152], rax
+        // mov rax, r13
+        // and rax, QWORD PTR [r9+136]
+        // mov QWORD PTR [r9+136], rax
+        // mov rax, rbx
+        // and rax, QWORD PTR [r9+24]
+        // mov QWORD PTR [r9+24], rax
+        // mov rax, r14
+        // and rax, QWORD PTR [r9+80]
+        // mov QWORD PTR [r9+80], rax
+        // mov rax, r11
+        // and rax, QWORD PTR [r9+144]
+        // mov QWORD PTR [r9+144], rax
+        // mov rax, rbp
+        // and rax, QWORD PTR [r9+88]
+        // and r12, QWORD PTR [r9+96]
+        // and r10, QWORD PTR [r9+112]
+        // and r15, QWORD PTR [r9+64]
+        // and rcx, QWORD PTR [r9+32]
+        // and r13, QWORD PTR [r9+128]
+        // and rbx, QWORD PTR [r9+56]
+        // and r14, QWORD PTR [r9+48]
+        // and r11, QWORD PTR [r9+16]
+        // and rbp, QWORD PTR [r9+40]
+        // mov QWORD PTR [r9+40], r14
+        // mov r14, QWORD PTR [r9+96]
+        // and r14, QWORD PTR [r9+104]
+        // xor r11, rbp
+        // xor rcx, r15
+        // xor rbx, QWORD PTR [r9+80]
+        // xor r10, r15
+        // mov r15, QWORD PTR [r9+152]
+        // xor r15, r13
+        // mov QWORD PTR [r9+104], rcx
+        // mov rcx, QWORD PTR [r9+152]
+        // xor rcx, QWORD PTR [r9+80]
+        // xor r12, rax
+        // mov QWORD PTR [r9+80], rcx
+        // mov rcx, QWORD PTR [r9+120]
+        // xor rcx, QWORD PTR [r9+136]
+        // xor rax, QWORD PTR [r9+144]
+        // xor rbp, r14
+        // xor r13, rbx
+        // xor r15, rcx
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, r11
+        // xor rax, QWORD PTR [r9+136]
+        // xor r11, r15
+        // xor r15, QWORD PTR [r9+40]
+        // xor r12, r14
+        // xor r10, r14
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, rax
+        // xor r15, r12
+        // mov QWORD PTR [r9+24], rbp
+        // mov rbp, QWORD PTR [r9+8]
+        // xor rbp, r10
+        // xor rax, r10
+        // xor r13, r12
+        // xor r13, QWORD PTR [r9]
+        // xor rbx, r11
+        // xor rbx, QWORD PTR [r9]
+        // mov r11, r14
+        // xor r11, r15
+        // xor rcx, rbp
+        // xor rbp, QWORD PTR [r9+80]
+        // xor r15, QWORD PTR [r9+104]
+        // xor r14, rcx
+        // xor r14, QWORD PTR [r9]
+        // xor r11, QWORD PTR [r9+24]
+        // xor r11, QWORD PTR [r9]
+        // mov QWORD PTR [r9+24], r13
+        // mov r13, rax
+        // mov r12, r14
+        // mov r10, rcx
+        // mov rcx, r15
+        // mov QWORD PTR [r9+104], rbx
+        // mov rbx, QWORD PTR [r9+24]
+        // mov rax, QWORD PTR [r9+104]
+        // mov QWORD PTR [r9+8], rax
+        // mov QWORD PTR [r9+16], rbx
+        // mov QWORD PTR [r9+24], rcx
+        // mov QWORD PTR [r9+32], rbp
+        // mov QWORD PTR [r9+40], r10
+        // mov QWORD PTR [r9+48], r11
+        // mov QWORD PTR [r9+56], r12
+        // mov QWORD PTR [r9+64], r13
+        // mov rax, QWORD PTR [r9+24]
+        // xor rax, QWORD PTR [r9+40]
+        // xor rax, QWORD PTR [r9+48]
+        // xor rax, QWORD PTR [r9+56]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // and rax, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rax, r14
+        // mov rbx, QWORD PTR [r9+24]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+48]
+        // mov r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // xor r15, QWORD PTR [r9+64]
+        // and rbx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbx, r14
+        // xor rbx, r15
+        // mov rcx, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+56]
+        // and rcx, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rcx, r14
+        // xor rcx, r15
+        // mov rbp, QWORD PTR [r9+24]
+        // xor rbp, QWORD PTR [r9+64]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+8]
+        // xor r15, QWORD PTR [r9+40]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and rbp, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor rbp, r14
+        // xor rbp, r15
+        // mov r10, QWORD PTR [r9+8]
+        // xor r10, QWORD PTR [r9+24]
+        // xor r10, QWORD PTR [r9+40]
+        // mov r14, QWORD PTR [r9+64]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+56]
+        // and r10, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r10, r14
+        // xor r10, r15
+        // mov r11, QWORD PTR [r9+8]
+        // xor r11, QWORD PTR [r9+16]
+        // mov r14, QWORD PTR [r9+40]
+        // mov r15, QWORD PTR [r9+32]
+        // xor r15, QWORD PTR [r9+48]
+        // xor r15, QWORD PTR [r9+56]
+        // and r11, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r11, r14
+        // xor r11, r15
+        // mov r12, QWORD PTR [r9+8]
+        // xor r12, QWORD PTR [r9+40]
+        // xor r12, QWORD PTR [r9+48]
+        // mov r14, QWORD PTR [r9+16]
+        // xor r14, QWORD PTR [r9+24]
+        // xor r14, QWORD PTR [r9+32]
+        // mov r15, QWORD PTR [r9+56]
+        // and r12, QWORD PTR [r9+408]
+        // and r14, QWORD PTR [r9+416]
+        // xor r12, r14
+        // xor r12, r15
+        // mov r13, QWORD PTR [r9+16]
+        // xor r13, QWORD PTR [r9+56]
+        // xor r13, QWORD PTR [r9+64]
+        // and r13, QWORD PTR [r9+408]
+        // xor r13, QWORD PTR [r9+32]
+        // mov r14, rax
+        // shr r14, 1
+        // xor r14, rbx
+        // and r14, QWORD PTR [r9+384]
+        // xor rbx, r14
+        // ror r14, 63
+        // xor rax, r14
+        // mov r14, rcx
+        // shr r14, 1
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+384]
+        // xor rbp, r14
+        // ror r14, 63
+        // xor rcx, r14
+        // mov r14, r10
+        // shr r14, 1
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+384]
+        // xor r11, r14
+        // ror r14, 63
+        // xor r10, r14
+        // mov r14, r12
+        // shr r14, 1
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+384]
+        // xor r13, r14
+        // ror r14, 63
+        // xor r12, r14
+        // mov r14, rax
+        // shr r14, 2
+        // xor r14, rcx
+        // and r14, QWORD PTR [r9+392]
+        // xor rcx, r14
+        // ror r14, 62
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 2
+        // xor r14, rbp
+        // and r14, QWORD PTR [r9+392]
+        // xor rbp, r14
+        // ror r14, 62
+        // xor rbx, r14
+        // mov r14, r10
+        // shr r14, 2
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+392]
+        // xor r12, r14
+        // ror r14, 62
+        // xor r10, r14
+        // mov r14, r11
+        // shr r14, 2
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+392]
+        // xor r13, r14
+        // ror r14, 62
+        // xor r11, r14
+        // mov r14, rax
+        // shr r14, 4
+        // xor r14, r10
+        // and r14, QWORD PTR [r9+400]
+        // xor r10, r14
+        // ror r14, 60
+        // xor rax, r14
+        // mov r14, rbx
+        // shr r14, 4
+        // xor r14, r11
+        // and r14, QWORD PTR [r9+400]
+        // xor r11, r14
+        // ror r14, 60
+        // xor rbx, r14
+        // mov r14, rcx
+        // shr r14, 4
+        // xor r14, r12
+        // and r14, QWORD PTR [r9+400]
+        // xor r12, r14
+        // ror r14, 60
+        // xor rcx, r14
+        // mov r14, rbp
+        // shr r14, 4
+        // xor r14, r13
+        // and r14, QWORD PTR [r9+400]
+        // xor r13, r14
+        // ror r14, 60
+        // xor rbp, r14
+        // mov r15, rax
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rax
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rax
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+488], r15
+        // mov r15, rbx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+496], r15
+        // mov r15, rcx
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rcx
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rcx
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+504], r15
+        // mov r15, rbp
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, rbp
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, rbp
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+512], r15
+        // mov r15, r10
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r10
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r10
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+520], r15
+        // mov r15, r11
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r11
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r11
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+528], r15
+        // mov r15, r12
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r12
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r12
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+536], r15
+        // mov r15, r13
+        // and r15, QWORD PTR [r9+424]
+        // mov r14, r13
+        // ror r14, 8
+        // and r14, QWORD PTR [r9+432]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 40
+        // and r14, QWORD PTR [r9+440]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 16
+        // and r14, QWORD PTR [r9+448]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 48
+        // and r14, QWORD PTR [r9+456]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 24
+        // and r14, QWORD PTR [r9+464]
+        // xor r15, r14
+        // mov r14, r13
+        // ror r14, 56
+        // and r14, QWORD PTR [r9+472]
+        // xor r15, r14
+        // xor r15, QWORD PTR [r9+480]
+        // mov QWORD PTR [r9+544], r15
+        // mov eax, DWORD PTR [r9+488]
+        // mov ecx, DWORD PTR [r9+808]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+808], ecx
+        // add eax, DWORD PTR [r9+680]
+        // xor eax, DWORD PTR [r9+744]
+        // mov DWORD PTR [r9+744], eax
+        // mov eax, DWORD PTR [r9+492]
+        // mov ecx, DWORD PTR [r9+812]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+812], ecx
+        // add eax, DWORD PTR [r9+684]
+        // xor eax, DWORD PTR [r9+748]
+        // mov DWORD PTR [r9+748], eax
+        // mov eax, DWORD PTR [r9+496]
+        // mov ecx, DWORD PTR [r9+816]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+816], ecx
+        // add eax, DWORD PTR [r9+688]
+        // xor eax, DWORD PTR [r9+752]
+        // mov DWORD PTR [r9+752], eax
+        // mov eax, DWORD PTR [r9+500]
+        // mov ecx, DWORD PTR [r9+820]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+820], ecx
+        // add eax, DWORD PTR [r9+692]
+        // xor eax, DWORD PTR [r9+756]
+        // mov DWORD PTR [r9+756], eax
+        // mov eax, DWORD PTR [r9+504]
+        // mov ecx, DWORD PTR [r9+824]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+824], ecx
+        // add eax, DWORD PTR [r9+696]
+        // xor eax, DWORD PTR [r9+760]
+        // mov DWORD PTR [r9+760], eax
+        // mov eax, DWORD PTR [r9+508]
+        // mov ecx, DWORD PTR [r9+828]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+828], ecx
+        // add eax, DWORD PTR [r9+700]
+        // xor eax, DWORD PTR [r9+764]
+        // mov DWORD PTR [r9+764], eax
+        // mov eax, DWORD PTR [r9+512]
+        // mov ecx, DWORD PTR [r9+832]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+832], ecx
+        // add eax, DWORD PTR [r9+704]
+        // xor eax, DWORD PTR [r9+768]
+        // mov DWORD PTR [r9+768], eax
+        // mov eax, DWORD PTR [r9+516]
+        // mov ecx, DWORD PTR [r9+836]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+836], ecx
+        // add eax, DWORD PTR [r9+708]
+        // xor eax, DWORD PTR [r9+772]
+        // mov DWORD PTR [r9+772], eax
+        // mov eax, DWORD PTR [r9+520]
+        // mov ecx, DWORD PTR [r9+840]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+840], ecx
+        // add eax, DWORD PTR [r9+712]
+        // xor eax, DWORD PTR [r9+776]
+        // mov DWORD PTR [r9+776], eax
+        // mov eax, DWORD PTR [r9+524]
+        // mov ecx, DWORD PTR [r9+844]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+844], ecx
+        // add eax, DWORD PTR [r9+716]
+        // xor eax, DWORD PTR [r9+780]
+        // mov DWORD PTR [r9+780], eax
+        // mov eax, DWORD PTR [r9+528]
+        // mov ecx, DWORD PTR [r9+848]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+848], ecx
+        // add eax, DWORD PTR [r9+720]
+        // xor eax, DWORD PTR [r9+784]
+        // mov DWORD PTR [r9+784], eax
+        // mov eax, DWORD PTR [r9+532]
+        // mov ecx, DWORD PTR [r9+852]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+852], ecx
+        // add eax, DWORD PTR [r9+724]
+        // xor eax, DWORD PTR [r9+788]
+        // mov DWORD PTR [r9+788], eax
+        // mov eax, DWORD PTR [r9+536]
+        // mov ecx, DWORD PTR [r9+856]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+856], ecx
+        // add eax, DWORD PTR [r9+728]
+        // xor eax, DWORD PTR [r9+792]
+        // mov DWORD PTR [r9+792], eax
+        // mov eax, DWORD PTR [r9+540]
+        // mov ecx, DWORD PTR [r9+860]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+860], ecx
+        // add eax, DWORD PTR [r9+732]
+        // xor eax, DWORD PTR [r9+796]
+        // mov DWORD PTR [r9+796], eax
+        // mov eax, DWORD PTR [r9+544]
+        // mov ecx, DWORD PTR [r9+864]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+864], ecx
+        // add eax, DWORD PTR [r9+736]
+        // xor eax, DWORD PTR [r9+800]
+        // mov DWORD PTR [r9+800], eax
+        // mov eax, DWORD PTR [r9+548]
+        // mov ecx, DWORD PTR [r9+868]
+        // xor ecx, eax
+        // mov DWORD PTR [r9+868], ecx
+        // add eax, DWORD PTR [r9+740]
+        // xor eax, DWORD PTR [r9+804]
+        // mov DWORD PTR [r9+804], eax
+        // mov rax, QWORD PTR [r9+744]
+        // mov rcx, QWORD PTR [r9+872]
+        // mov QWORD PTR [r9+744], rcx
+        // mov QWORD PTR [r9+872], rax
+        // mov rax, QWORD PTR [r9+752]
+        // mov rcx, QWORD PTR [r9+880]
+        // mov QWORD PTR [r9+752], rcx
+        // mov QWORD PTR [r9+880], rax
+        // mov rax, QWORD PTR [r9+760]
+        // mov rcx, QWORD PTR [r9+888]
+        // mov QWORD PTR [r9+760], rcx
+        // mov QWORD PTR [r9+888], rax
+        // mov rax, QWORD PTR [r9+768]
+        // mov rcx, QWORD PTR [r9+896]
+        // mov QWORD PTR [r9+768], rcx
+        // mov QWORD PTR [r9+896], rax
+        // mov rax, QWORD PTR [r9+776]
+        // mov rcx, QWORD PTR [r9+904]
+        // mov QWORD PTR [r9+776], rcx
+        // mov QWORD PTR [r9+904], rax
+        // mov rax, QWORD PTR [r9+784]
+        // mov rcx, QWORD PTR [r9+912]
+        // mov QWORD PTR [r9+784], rcx
+        // mov QWORD PTR [r9+912], rax
+        // mov rax, QWORD PTR [r9+792]
+        // mov rcx, QWORD PTR [r9+920]
+        // mov QWORD PTR [r9+792], rcx
+        // mov QWORD PTR [r9+920], rax
+        // mov rax, QWORD PTR [r9+800]
+        // mov rcx, QWORD PTR [r9+928]
+        // mov QWORD PTR [r9+800], rcx
+        // mov QWORD PTR [r9+928], rax
+        // mov rax, QWORD PTR [r9+808]
+        // mov rcx, QWORD PTR [r9+936]
+        // mov QWORD PTR [r9+808], rcx
+        // mov QWORD PTR [r9+936], rax
+        // mov rax, QWORD PTR [r9+816]
+        // mov rcx, QWORD PTR [r9+944]
+        // mov QWORD PTR [r9+816], rcx
+        // mov QWORD PTR [r9+944], rax
+        // mov rax, QWORD PTR [r9+824]
+        // mov rcx, QWORD PTR [r9+952]
+        // mov QWORD PTR [r9+824], rcx
+        // mov QWORD PTR [r9+952], rax
+        // mov rax, QWORD PTR [r9+832]
+        // mov rcx, QWORD PTR [r9+960]
+        // mov QWORD PTR [r9+832], rcx
+        // mov QWORD PTR [r9+960], rax
+        // mov rax, QWORD PTR [r9+840]
+        // mov rcx, QWORD PTR [r9+968]
+        // mov QWORD PTR [r9+840], rcx
+        // mov QWORD PTR [r9+968], rax
+        // mov rax, QWORD PTR [r9+848]
+        // mov rcx, QWORD PTR [r9+976]
+        // mov QWORD PTR [r9+848], rcx
+        // mov QWORD PTR [r9+976], rax
+        // mov rax, QWORD PTR [r9+856]
+        // mov rcx, QWORD PTR [r9+984]
+        // mov QWORD PTR [r9+856], rcx
+        // mov QWORD PTR [r9+984], rax
+        // mov rax, QWORD PTR [r9+864]
+        // mov rcx, QWORD PTR [r9+992]
+        // mov QWORD PTR [r9+864], rcx
+        // mov QWORD PTR [r9+992], rax
+        // add rdi, -8
+        // sub r8, 1
+        r".octa 0x314400000368818b4104678b441f8b44,0x44000003a881334100000228818941d8,0x36c818b41000001e8818941e031,0x3ac8133410000022c818941d83144
+.octa 0x370818b41000001ec818941e0314400,0xb081334100000230818941d831440000,0x818b41000001f0818941e03144000003,0x334100000234818941d8314400000374
+.octa 0x41000001f4818941e03144000003b481,0x238818941d8314400000378818b,0x1f8818941e03144000003b8813341,0x23c818941d831440000037c818b4100
+.octa 0xfc818941e03144000003bc8133410000,0x818941d8314400000380818b41000001,0x8941e03144000003c081334100000240,0x41d8314400000384818b410000020081
+.octa 0xe03144000003c4813341000002448189,0x314400000388818b4100000204818941,0x44000003c881334100000248818941d8,0x38c818b4100000208818941e031
+.octa 0x3cc8133410000024c818941d83144,0x390818b410000020c818941e0314400,0xd081334100000250818941d831440000,0x818b4100000210818941e03144000003
+.octa 0x334100000254818941d8314400000394,0x4100000214818941e03144000003d481,0x258818941d8314400000398818b,0x218818941e03144000003d8813341
+.octa 0x25c818941d831440000039c818b4100,0x1c818941e03144000003dc8133410000,0x818941d83144000003a0818b41000002,0x8941e03144000003e081334100000260
+.octa 0x41d83144000003a4818b410000022081,0xe03144000003e4813341000002648189,0x8b49000001e8818b4900000224818941,0xa98b49000001f8898b49000001f099
+.octa 0x210998b4d00000208918b4d000002,0x4900000220a98b4d00000218a18b4d00,0x4c00000180b1234dde3149eed149c689,0x49eed149ce8949f0314c3fcec149f331
+.octa 0x3fcec149f5314c00000180b1234dee31,0x80b1234dde314deed149d6894df1314c,0xe6894df2314d3fcec149f3314d000001,0xf5314d00000180b1234dee314deed149
+.octa 0x314902eec149c68949f4314d3fcec149,0x4c3ecec149f1314c00000188b1234dce,0x88b1234dee314902eec149de8949f031,0xd6894df3314c3ecec149f5314c000001
+.octa 0x314d00000188b1234de6314d02eec149,0x4d02eec149de894df2314d3ecec149f4,0x3ecec149f5314d00000188b1234dee31,0xb1234dd6314d04eec149c68949f3314d
+.octa 0x8949f0314c3ccec149f2314d00000190,0x4d00000190b1234dde314d04eec149de,0x4eec149ce8949f3314c3ccec149f331,0xcec149f4314d00000190b1234de6314d
+.octa 0x234dee314d04eec149ee8949f1314c3c,0x49f5314c3ccec149f5314d00000190b1,0x4d206989491849894910598949084189,0x494069894d3861894d3059894d285189
+.octa 0x4918598b49204133491041334908418b,0x4928498b494059334938593349205933,0x491869334910698b4940493349304933,0x4d1851334d10518b4d30693349206933
+.octa 0x4d18618b4d2859334d20598b4d285133,0x4d28698b4d3061334d2861334d206133,0xffffffffffffffbe493869334d306933,0xdf3149ef894dce3149d6894d31894dff
+.octa 0x894c10698949d5314ced894c08698949,0x3149dc894d1861894de3314dcd3148ed,0x894df2314dfa894d2051894de2314dc4,0x493071894de3314cee314de6894d2871
+.octa 0xd3314c08598b4938598949ee3149de89,0x3149cc89491861894d18593349d93148,0x494071894ddc314dcc89490861894dc4,0xf3314cc38948485989491071334dde89
+.octa 0x894c58598949f3314ce3894c50598949,0x314cfb894c60598949f3314deb3148e3,0x894dcd2149d5894d6869894ddd314ddb,0x498949ea314d0851234d40518b4d7051
+.octa 0x214dfd894de9314cc1214820498b4978,0x1879234d38798b4d00000080b9894ddd,0x234d30598b4d0000008899894def314d,0x90b1894df5214d10698b4deb314d5059
+.octa 0x8949ee314d5871234d28718b4d000000,0x314de8314ce0214ce889480000009881,0x33494851334dc33149f7314dc13148f2,0x4dcb3148d3894c6859334ddf31496049
+.octa 0x3149c62149de8949d0314cd8894cfa21,0xd9314ce9214cd1314cdd314dfd894dce,0x4cdf314deb214dcd3149c58949cf3149,0x894df8314cd88948c33148f0214cd831
+.octa 0xfa314dca8949dd3149f5894dcb3149f3,0x894c60418949c53148dd894c68698949,0x8412349f8894c7841894978412349d0,0x894900000098812349c8894808418949
+.octa 0x4900000088812349e8894c0000009881,0x41894918412349d88948000000888189,0x49d8894c5041894950412349f0894c18,0xe8894800000090818949000000908123
+.octa 0x4079234d7051234d6061234d58412349,0x4d3859234900000080a9234d20492349,0x4d2871894d286923491059234d307123,0x593349f9314ceb31496871234d60718b
+.octa 0x8949ef314d00000098b98b4dfa314d50,0xc431495049334900000098898b496849,0x490000008889334978498b4950498949,0x4dcf3149dd3149f5314c000000908133
+.octa 0xfb314d00000088813349de314d18718b,0x314918718b4df2314df4314d2879334d,0x4cd5314c08698b4918698949e7314dc6,0x894d193349db314c29334de5314dd031
+.octa 0x496879334d50693349e93148fb314df3,0x1869894d19334d1859334d31334dce31,0x68598949f9894cca8949f4894dc58949,0x105989490841894968418b4918598b49
+.octa 0x3059894d2851894d2069894918498949,0x2841334918418b494069894d3861894d,0x2071334d10718b4d3841334930413349,0x314c000001a0b1234d00000198812349
+.octa 0x798b4d3071334d10718b4d18598b49f0,0x1989923494079334d3879334d28,0x498b49fb314cf3314c000001a0b1234d,0x79334d08798b4d2071334d18718b4d10
+.octa 0xa0b1234d000001988923493879334d28,0x69334918698b49f9314cf1314c000001,0x79334d08798b4d2071334d10718b4d40,0x198a923493879334d3079334d28
+.octa 0x518b4dfd314cf5314c000001a0b1234d,0x798b4d40718b4d2851334d1851334d08,0xa0b1234d0000019891234d3879334d20,0x59334d08598b4dfa314df2314d000001
+.octa 0x79334d3079334d20798b4d28718b4d10,0x4d000001a0b1234d0000019899234d38,0x61334d2861334d08618b4dfb314df331,0x798b4d2071334d1871334d10718b4d30
+.octa 0x4d000001a0b1234d00000198a1234d38,0x69334d3869334d10698b4dfc314df431,0x49c689492069334d00000198a9234d40,0x49f3314c00000180b1234dde3149eed1
+.octa 0x4dee3149eed149ce8949f0314c3fcec1,0xf1314c3fcec149f5314c00000180b123,0x180b1234dde314deed149d6894d,0xeed149e6894df2314d3fcec149f3314d
+.octa 0xcec149f5314d00000180b1234dee314d,0x234dce314902eec149c68949f4314d3f,0x49f0314c3ecec149f1314c00000188b1,0x188b1234dee314902eec149de89
+.octa 0xeec149d6894df3314c3ecec149f5314c,0xc149f4314d00000188b1234de6314d02,0x4dee314d02eec149de894df2314d3ece,0xf3314d3ecec149f5314d00000188b123
+.octa 0x190b1234dd6314d04eec149c68949,0xc149de8949f0314c3ccec149f2314d00,0x49f3314d00000190b1234dde314d04ee,0xe6314d04eec149ce8949f3314c3ccec1
+.octa 0x314c3ccec149f4314d00000190b1234d,0x190b1234dee314d04eec149ee8949f1,0x4dc78949f5314c3ccec149f5314d0000,0xb1234d08cec149c68949000001a8b923
+.octa 0x234d28cec149c68949f7314d000001b0,0x4d10cec149c68949f7314d000001b8b1,0x30cec149c68949f7314d000001c0b123,0xcec149c68949f7314d000001c8b1234d
+.octa 0xc149c68949f7314d000001d0b1234d18,0xe0b9334df7314d000001d8b1234d38ce,0xb9234ddf8949000001e8b9894d000001,0x1b0b1234d08cec149de8949000001a8
+.octa 0xb8b1234d28cec149de8949f7314d0000,0xb1234d10cec149de8949f7314d000001,0x234d30cec149de8949f7314d000001c0,0x4d18cec149de8949f7314d000001c8b1
+.octa 0x38cec149de8949f7314d000001d0b123,0x1e0b9334df7314d000001d8b1234d,0x1a8b9234dcf8949000001f0b9894d00,0x1b0b1234d08cec149ce89490000
+.octa 0x1b8b1234d28cec149ce8949f7314d,0x1c0b1234d10cec149ce8949f7314d00,0xc8b1234d30cec149ce8949f7314d0000,0xb1234d18cec149ce8949f7314d000001
+.octa 0x234d38cec149ce8949f7314d000001d0,0x4d000001e0b9334df7314d000001d8b1,0x1a8b9234def8949000001f8b989,0x314d000001b0b1234d08cec149ee8949
+.octa 0x4d000001b8b1234d28cec149ee8949f7,0x1c0b1234d10cec149ee8949f731,0x1c8b1234d30cec149ee8949f7314d,0x1d0b1234d18cec149ee8949f7314d00
+.octa 0xd8b1234d38cec149ee8949f7314d0000,0xb9894d000001e0b9334df7314d000001,0x894d000001a8b9234dd7894d00000200,0x4df7314d000001b0b1234d08cec149d6
+.octa 0xf7314d000001b8b1234d28cec149d689,0x314d000001c0b1234d10cec149d6894d,0x4d000001c8b1234d30cec149d6894df7,0x1d0b1234d18cec149d6894df731
+.octa 0x1d8b1234d38cec149d6894df7314d,0x208b9894d000001e0b9334df7314d00,0x49de894d000001a8b9234ddf894d0000,0xde894df7314d000001b0b1234d08cec1
+.octa 0x894df7314d000001b8b1234d28cec149,0x4df7314d000001c0b1234d10cec149de,0xf7314d000001c8b1234d30cec149de89,0x314d000001d0b1234d18cec149de894d
+.octa 0x4d000001d8b1234d38cec149de894df7,0x210b9894d000001e0b9334df731,0xcec149e6894d000001a8b9234de7894d,0xc149e6894df7314d000001b0b1234d08
+.octa 0x49e6894df7314d000001b8b1234d28ce,0xe6894df7314d000001c0b1234d10cec1,0x894df7314d000001c8b1234d30cec149,0x4df7314d000001d0b1234d18cec149e6
+.octa 0xf7314d000001d8b1234d38cec149e689,0x894d00000218b9894d000001e0b9334d,0x4d08cec149ee894d000001a8b9234def,0x28cec149ee894df7314d000001b0b123
+.octa 0xcec149ee894df7314d000001b8b1234d,0xc149ee894df7314d000001c0b1234d10,0x49ee894df7314d000001c8b1234d30ce,0xee894df7314d000001d0b1234d18cec1
+.octa 0x334df7314d000001d8b1234d38cec149,0xe8818b4100000220b9894d000001e0b9,0x22881034100000268818941000001,0x41000001ec818b41000001e881894100
+.octa 0x8189410000022c8103410000026c8189,0x270818941000001f0818b41000001ec,0x1f0818941000002308103410000,0x34100000274818941000001f4818b41
+.octa 0xf8818b41000001f48189410000023481,0x23881034100000278818941000001,0x41000001fc818b41000001f881894100,0x8189410000023c8103410000027c8189
+.octa 0x28081894100000200818b41000001fc,0x200818941000002408103410000,0x3410000028481894100000204818b41,0x8818b41000002048189410000024481
+.octa 0x24881034100000288818941000002,0x410000020c818b410000020881894100,0x8189410000024c8103410000028c8189,0x29081894100000210818b410000020c
+.octa 0x210818941000002508103410000,0x3410000029481894100000214818b41,0x18818b41000002148189410000025481,0x25881034100000298818941000002
+.octa 0x410000021c818b410000021881894100,0x8189410000025c8103410000029c8189,0x2a081894100000220818b410000021c,0x220818941000002608103410000
+.octa 0x341000002a481894100000224818b41,0xe8818b49000002248189410000026481,0x1f8898b49000001f0998b49000001,0x4d00000208918b4d00000200a98b4900
+.octa 0xa98b4d00000218a18b4d00000210998b,0xb1234dde3149eed149c6894900000220,0x8949f0314c3fcec149f3314c00000180,0x314c00000180b1234dee3149eed149ce
+.octa 0x314deed149d6894df1314c3fcec149f5,0x4d3fcec149f3314d00000180b1234dde,0x180b1234dee314deed149e6894df231,0x49c68949f4314d3fcec149f5314d0000
+.octa 0xf1314c00000188b1234dce314902eec1,0x314902eec149de8949f0314c3ecec149,0x4c3ecec149f5314c00000188b1234dee,0x88b1234de6314d02eec149d6894df331
+.octa 0xde894df2314d3ecec149f4314d000001,0x314d00000188b1234dee314d02eec149,0x4d04eec149c68949f3314d3ecec149f5,0x3ccec149f2314d00000190b1234dd631
+.octa 0xb1234dde314d04eec149de8949f0314c,0x8949f3314c3ccec149f3314d00000190,0x4d00000190b1234de6314d04eec149ce,0x4eec149ee8949f1314c3ccec149f431
+.octa 0xcec149f5314d00000190b1234dee314d,0x184989491059894908418949f5314c3c,0x3861894d3059894d2851894d20698949,0x204133491041334908418b494069894d
+.octa 0x40593349385933492059334918598b49,0x10698b49404933493049334928498b49,0x10518b4d306933492069334918693349,0x2859334d20598b4d2851334d1851334d
+.octa 0x3061334d2861334d2061334d18618b4d,0xffffbe493869334d3069334d28698b4d,0x4dce3149d6894d31894dffffffffffff,0x49d5314ced894c08698949df3149ef89
+.octa 0x1861894de3314dcd3148ed894c106989,0xfa894d2051894de2314dc43149dc894d,0xe3314cee314de6894d2871894df2314d,0x8b4938598949ee3149de89493071894d
+.octa 0x1861894d18593349d93148d3314c0859,0xdc314dcc89490861894dc43149cc8949,0x48485989491071334dde89494071894d,0x49f3314ce3894c50598949f3314cc389
+.octa 0x60598949f3314deb3148e3894c585989,0xd5894d6869894ddd314ddb314cfb894c,0x4d0851234d40518b4d7051894dcd2149,0xe9314cc1214820498b4978498949ea31
+.octa 0x798b4d00000080b9894ddd214dfd894d,0x4d0000008899894def314d1879234d38,0x214d10698b4deb314d5059234d30598b,0x5871234d28718b4d00000090b1894df5
+.octa 0xe0214ce8894800000098818949ee314d,0x4dc33149f7314dc13148f2314de8314c,0x894c6859334ddf314960493349485133,0xde8949d0314cd8894cfa214dcb3148d3
+.octa 0x4cd1314cdd314dfd894dce3149c62149,0x214dcd3149c58949cf3149d9314ce921,0xd88948c33148f0214cd8314cdf314deb,0x49dd3149f5894dcb3149f3894df8314c
+.octa 0x49c53148dd894c68698949fa314dca89,0x894c7841894978412349d0894c604189,0x98812349c889480841894908412349f8,0x812349e8894c00000098818949000000
+.octa 0x2349d889480000008881894900000088,0x41894950412349f0894c184189491841,0x9081894900000090812349d8894c50,0x51234d6061234d58412349e889480000
+.octa 0x80a9234d204923494079234d70,0x286923491059234d3071234d38592349,0x4ceb31496871234d60718b4d2871894d,0x98b98b4dfa314d50593349f931
+.octa 0x334900000098898b4968498949ef314d,0x89334978498b4950498949c431495049,0x3149f5314c0000009081334900000088,0x88813349de314d18718b4dcf3149dd
+.octa 0x4df2314df4314d2879334dfb314d0000,0x698b4918698949e7314dc6314918718b,0xdb314c29334de5314dd0314cd5314c08,0x50693349e93148fb314df3894d193349
+.octa 0x334d1859334d31334dce31496879334d,0x894cca8949f4894dc589491869894d19,0x41894968418b4918598b4968598949f9,0x51894d20698949184989491059894908
+.octa 0x418b494069894d3861894d3059894d28,0x718b4d38413349304133492841334918,0xa0b1234d000001988123492071334d10,0x334d10718b4d18598b49f0314c000001
+.octa 0x23494079334d3879334d28798b4d3071,0x4cf3314c000001a0b1234d0000019899,0x8b4d2071334d18718b4d10498b49fb31,0x1988923493879334d2879334d0879
+.octa 0x8b49f9314cf1314c000001a0b1234d00,0x8b4d2071334d10718b4d406933491869,0x23493879334d3079334d2879334d0879,0x4cf5314c000001a0b1234d00000198a9
+.octa 0x8b4d2851334d1851334d08518b4dfd31,0x19891234d3879334d20798b4d4071,0x8b4dfa314df2314d000001a0b1234d00,0x334d20798b4d28718b4d1059334d0859
+.octa 0xb1234d0000019899234d3879334d3079,0x334d08618b4dfb314df3314d000001a0,0x334d1871334d10718b4d3061334d2861,0xb1234d00000198a1234d38798b4d2071
+.octa 0x334d10698b4dfc314df4314d000001a0,0x69334d00000198a9234d4069334d3869,0x180b1234dde3149eed149c6894920,0xd149ce8949f0314c3fcec149f3314c00
+.octa 0xc149f5314c00000180b1234dee3149ee,0x234dde314deed149d6894df1314c3fce,0x4df2314d3fcec149f3314d00000180b1,0x4d00000180b1234dee314deed149e689
+.octa 0x2eec149c68949f4314d3fcec149f531,0xcec149f1314c00000188b1234dce3149,0x234dee314902eec149de8949f0314c3e,0x4df3314c3ecec149f5314c00000188b1
+.octa 0x188b1234de6314d02eec149d689,0xeec149de894df2314d3ecec149f4314d,0xc149f5314d00000188b1234dee314d02,0x4dd6314d04eec149c68949f3314d3ece
+.octa 0xf0314c3ccec149f2314d00000190b123,0x190b1234dde314d04eec149de8949,0xc149ce8949f3314c3ccec149f3314d00,0x49f4314d00000190b1234de6314d04ee
+.octa 0xee314d04eec149ee8949f1314c3ccec1,0x314c3ccec149f5314d00000190b1234d,0xc149c68949000001a8b9234dc78949f5,0x49c68949f7314d000001b0b1234d08ce
+.octa 0xc68949f7314d000001b8b1234d28cec1,0x8949f7314d000001c0b1234d10cec149,0x49f7314d000001c8b1234d30cec149c6,0xf7314d000001d0b1234d18cec149c689
+.octa 0x314d000001d8b1234d38cec149c68949,0x49000001e8b9894d000001e0b9334df7,0x8cec149de8949000001a8b9234ddf89,0xcec149de8949f7314d000001b0b1234d
+.octa 0xc149de8949f7314d000001b8b1234d28,0x49de8949f7314d000001c0b1234d10ce,0xde8949f7314d000001c8b1234d30cec1,0x8949f7314d000001d0b1234d18cec149
+.octa 0x4df7314d000001d8b1234d38cec149de,0xcf8949000001f0b9894d000001e0b933,0x234d08cec149ce8949000001a8b9234d,0x4d28cec149ce8949f7314d000001b0b1
+.octa 0x10cec149ce8949f7314d000001b8b123,0xcec149ce8949f7314d000001c0b1234d,0xc149ce8949f7314d000001c8b1234d30,0x49ce8949f7314d000001d0b1234d18ce
+.octa 0xb9334df7314d000001d8b1234d38cec1,0x234def8949000001f8b9894d000001e0,0xb0b1234d08cec149ee8949000001a8b9,0xb1234d28cec149ee8949f7314d000001
+.octa 0x234d10cec149ee8949f7314d000001b8,0x4d30cec149ee8949f7314d000001c0b1,0x18cec149ee8949f7314d000001c8b123,0xcec149ee8949f7314d000001d0b1234d
+.octa 0x1e0b9334df7314d000001d8b1234d38,0xa8b9234dd7894d00000200b9894d0000,0x1b0b1234d08cec149d6894d000001,0x1b8b1234d28cec149d6894df7314d00
+.octa 0xc0b1234d10cec149d6894df7314d0000,0xb1234d30cec149d6894df7314d000001,0x234d18cec149d6894df7314d000001c8,0x4d38cec149d6894df7314d000001d0b1
+.octa 0x1e0b9334df7314d000001d8b123,0x1a8b9234ddf894d00000208b9894d,0x4d000001b0b1234d08cec149de894d00,0x1b8b1234d28cec149de894df731
+.octa 0x1c0b1234d10cec149de894df7314d,0x1c8b1234d30cec149de894df7314d00,0xd0b1234d18cec149de894df7314d0000,0xb1234d38cec149de894df7314d000001
+.octa 0x894d000001e0b9334df7314d000001d8,0x4d000001a8b9234de7894d00000210b9,0xf7314d000001b0b1234d08cec149e689,0x314d000001b8b1234d28cec149e6894d
+.octa 0x4d000001c0b1234d10cec149e6894df7,0x1c8b1234d30cec149e6894df731,0x1d0b1234d18cec149e6894df7314d,0x1d8b1234d38cec149e6894df7314d00
+.octa 0x18b9894d000001e0b9334df7314d0000,0xee894d000001a8b9234def894d000002,0x894df7314d000001b0b1234d08cec149,0x4df7314d000001b8b1234d28cec149ee
+.octa 0xf7314d000001c0b1234d10cec149ee89,0x314d000001c8b1234d30cec149ee894d,0x4d000001d0b1234d18cec149ee894df7,0x1d8b1234d38cec149ee894df731
+.octa 0x220b9894d000001e0b9334df7314d,0x41000002a8818941000001e8818b4100,0x818b41000001e8818941000002688103,0x26c810341000002ac818941000001ec
+.octa 0x1f0818b41000001ec8189410000,0x894100000270810341000002b0818941,0xb4818941000001f4818b41000001f081,0x1f481894100000274810341000002
+.octa 0x41000002b8818941000001f8818b4100,0x818b41000001f8818941000002788103,0x27c810341000002bc818941000001fc,0x200818b41000001fc8189410000
+.octa 0x894100000280810341000002c0818941,0xc481894100000204818b410000020081,0x20481894100000284810341000002,0x41000002c881894100000208818b4100
+.octa 0x818b4100000208818941000002888103,0x28c810341000002cc8189410000020c,0x210818b410000020c8189410000,0x894100000290810341000002d0818941
+.octa 0xd481894100000214818b410000021081,0x21481894100000294810341000002,0x41000002d881894100000218818b4100,0x818b4100000218818941000002988103
+.octa 0x29c810341000002dc8189410000021c,0x220818b410000021c8189410000,0x8941000002a0810341000002e0818941,0xe481894100000224818b410000022081
+.octa 0x224818941000002a4810341000002,0x49000001f0998b49000001e8818b4900,0x918b4d00000200a98b49000001f8898b,0x218a18b4d00000210998b4d00000208
+.octa 0x49eed149c6894900000220a98b4d0000,0x3fcec149f3314c00000180b1234dde31,0x80b1234dee3149eed149ce8949f0314c,0xd6894df1314c3fcec149f5314c000001
+.octa 0xf3314d00000180b1234dde314deed149,0xee314deed149e6894df2314d3fcec149,0x314d3fcec149f5314d00000180b1234d,0x188b1234dce314902eec149c68949f4
+.octa 0x49de8949f0314c3ecec149f1314c0000,0xf5314c00000188b1234dee314902eec1,0x314d02eec149d6894df3314c3ecec149,0x4d3ecec149f4314d00000188b1234de6
+.octa 0x88b1234dee314d02eec149de894df231,0xc68949f3314d3ecec149f5314d000001,0x314d00000190b1234dd6314d04eec149,0x4d04eec149de8949f0314c3ccec149f2
+.octa 0x3ccec149f3314d00000190b1234dde31,0xb1234de6314d04eec149ce8949f3314c,0x8949f1314c3ccec149f4314d00000190,0x4d00000190b1234dee314d04eec149ee
+.octa 0x59894908418949f5314c3ccec149f531,0x59894d2851894d206989491849894910,0x41334908418b494069894d3861894d30,0x5933492059334918598b492041334910
+.octa 0x4933493049334928498b494059334938,0x693349206933491869334910698b4940,0x598b4d2851334d1851334d10518b4d30,0x61334d2061334d18618b4d2859334d20
+.octa 0x69334d3069334d28698b4d3061334d28,0x894d31894dffffffffffffffffbe4938,0x894c08698949df3149ef894dce3149d6,0x314dcd3148ed894c10698949d5314ced
+.octa 0x894de2314dc43149dc894d1861894de3,0x4de6894d2871894df2314dfa894d2051,0x49ee3149de89493071894de3314cee31,0x593349d93148d3314c08598b49385989
+.octa 0x490861894dc43149cc89491861894d18,0x1071334dde89494071894ddc314dcc89,0x894c50598949f3314cc3894848598949,0x314deb3148e3894c58598949f3314ce3
+.octa 0x894ddd314ddb314cfb894c60598949f3,0x40518b4d7051894dcd2149d5894d6869,0x4820498b4978498949ea314d0851234d,0x80b9894ddd214dfd894de9314cc121
+.octa 0x99894def314d1879234d38798b4d0000,0x4deb314d5059234d30598b4d00000088,0x718b4d00000090b1894df5214d10698b,0x4800000098818949ee314d5871234d28
+.octa 0x314dc13148f2314de8314ce0214ce889,0x4ddf3149604933494851334dc33149f7,0x4cd8894cfa214dcb3148d3894c685933,0x314dfd894dce3149c62149de8949d031
+.octa 0xc58949cf3149d9314ce9214cd1314cdd,0x48f0214cd8314cdf314deb214dcd3149,0x894dcb3149f3894df8314cd88948c331,0x894c68698949fa314dca8949dd3149f5
+.octa 0x4978412349d0894c60418949c53148dd,0x89480841894908412349f8894c784189,0x4c0000009881894900000098812349c8,0x8881894900000088812349e889
+.octa 0x2349f0894c1841894918412349d88948,0x90812349d8894c504189495041,0x234d58412349e8894800000090818949,0x234d204923494079234d7051234d6061
+.octa 0x59234d3071234d3859234900000080a9,0x71234d60718b4d2871894d2869234910,0x8b4dfa314d50593349f9314ceb314968,0x98898b4968498949ef314d00000098b9
+.octa 0x8b4950498949c4314950493349000000,0x90813349000000888933497849,0xde314d18718b4dcf3149dd3149f5314c,0x314d2879334dfb314d00000088813349
+.octa 0x8949e7314dc6314918718b4df2314df4,0x4de5314dd0314cd5314c08698b491869,0x3148fb314df3894d193349db314c2933,0x4d31334dce31496879334d50693349e9
+.octa 0xf4894dc589491869894d19334d185933,0x8b4918598b4968598949f9894cca8949,0x89491849894910598949084189496841,0x894d3861894d3059894d2851894d2069
+.octa 0x3349304133492841334918418b494069,0x1988123492071334d10718b4d3841,0x4d18598b49f0314c000001a0b1234d00,0x4d3879334d28798b4d3071334d10718b
+.octa 0x1a0b1234d00000198992349407933,0x4d18718b4d10498b49fb314cf3314c00,0x493879334d2879334d08798b4d207133,0xf1314c000001a0b1234d000001988923
+.octa 0x4d10718b4d4069334918698b49f9314c,0x4d3079334d2879334d08798b4d207133,0x1a0b1234d00000198a92349387933,0x4d1851334d08518b4dfd314cf5314c00
+.octa 0x4d3879334d20798b4d40718b4d285133,0xf2314d000001a0b1234d000001989123,0x4d28718b4d1059334d08598b4dfa314d,0x19899234d3879334d3079334d20798b
+.octa 0x4dfb314df3314d000001a0b1234d0000,0x4d10718b4d3061334d2861334d08618b,0x198a1234d38798b4d2071334d187133,0x4dfc314df4314d000001a0b1234d0000
+.octa 0x198a9234d4069334d3869334d10698b,0x4dde3149eed149c689492069334d0000,0xf0314c3fcec149f3314c00000180b123,0x180b1234dee3149eed149ce8949
+.octa 0xeed149d6894df1314c3fcec149f5314c,0xcec149f3314d00000180b1234dde314d,0xb1234dee314deed149e6894df2314d3f,0x8949f4314d3fcec149f5314d00000180
+.octa 0x4c00000188b1234dce314902eec149c6,0x2eec149de8949f0314c3ecec149f131,0xcec149f5314c00000188b1234dee3149,0x234de6314d02eec149d6894df3314c3e
+.octa 0x4df2314d3ecec149f4314d00000188b1,0x188b1234dee314d02eec149de89,0xeec149c68949f3314d3ecec149f5314d,0xc149f2314d00000190b1234dd6314d04
+.octa 0x4dde314d04eec149de8949f0314c3cce,0xf3314c3ccec149f3314d00000190b123,0x190b1234de6314d04eec149ce8949,0xc149ee8949f1314c3ccec149f4314d00
+.octa 0x49f5314d00000190b1234dee314d04ee,0x1a8b9234dc78949f5314c3ccec1,0x314d000001b0b1234d08cec149c68949,0x4d000001b8b1234d28cec149c68949f7
+.octa 0x1c0b1234d10cec149c68949f731,0x1c8b1234d30cec149c68949f7314d,0x1d0b1234d18cec149c68949f7314d00,0xd8b1234d38cec149c68949f7314d0000
+.octa 0xb9894d000001e0b9334df7314d000001,0x8949000001a8b9234ddf8949000001e8,0x49f7314d000001b0b1234d08cec149de,0xf7314d000001b8b1234d28cec149de89
+.octa 0x314d000001c0b1234d10cec149de8949,0x4d000001c8b1234d30cec149de8949f7,0x1d0b1234d18cec149de8949f731,0x1d8b1234d38cec149de8949f7314d
+.octa 0x1f0b9894d000001e0b9334df7314d00,0x49ce8949000001a8b9234dcf89490000,0xce8949f7314d000001b0b1234d08cec1,0x8949f7314d000001b8b1234d28cec149
+.octa 0x49f7314d000001c0b1234d10cec149ce,0xf7314d000001c8b1234d30cec149ce89,0x314d000001d0b1234d18cec149ce8949,0x4d000001d8b1234d38cec149ce8949f7
+.octa 0x1f8b9894d000001e0b9334df731,0xcec149ee8949000001a8b9234def8949,0xc149ee8949f7314d000001b0b1234d08,0x49ee8949f7314d000001b8b1234d28ce
+.octa 0xee8949f7314d000001c0b1234d10cec1,0x8949f7314d000001c8b1234d30cec149,0x49f7314d000001d0b1234d18cec149ee,0xf7314d000001d8b1234d38cec149ee89
+.octa 0x894d00000200b9894d000001e0b9334d,0x4d08cec149d6894d000001a8b9234dd7,0x28cec149d6894df7314d000001b0b123,0xcec149d6894df7314d000001b8b1234d
+.octa 0xc149d6894df7314d000001c0b1234d10,0x49d6894df7314d000001c8b1234d30ce,0xd6894df7314d000001d0b1234d18cec1,0x334df7314d000001d8b1234d38cec149
+.octa 0x4ddf894d00000208b9894d000001e0b9,0xb1234d08cec149de894d000001a8b923,0x234d28cec149de894df7314d000001b0,0x4d10cec149de894df7314d000001b8b1
+.octa 0x30cec149de894df7314d000001c0b123,0xcec149de894df7314d000001c8b1234d,0xc149de894df7314d000001d0b1234d18,0xe0b9334df7314d000001d8b1234d38ce
+.octa 0xb9234de7894d00000210b9894d000001,0x1b0b1234d08cec149e6894d000001a8,0xb8b1234d28cec149e6894df7314d0000,0xb1234d10cec149e6894df7314d000001
+.octa 0x234d30cec149e6894df7314d000001c0,0x4d18cec149e6894df7314d000001c8b1,0x38cec149e6894df7314d000001d0b123,0x1e0b9334df7314d000001d8b1234d
+.octa 0x1a8b9234def894d00000218b9894d00,0x1b0b1234d08cec149ee894d0000,0x1b8b1234d28cec149ee894df7314d,0x1c0b1234d10cec149ee894df7314d00
+.octa 0xc8b1234d30cec149ee894df7314d0000,0xb1234d18cec149ee894df7314d000001,0x234d38cec149ee894df7314d000001d0,0x4d000001e0b9334df7314d000001d8b1
+.octa 0x898b41000001e8818b4100000220b989,0x81034100000328898941c13100000328,0x2e8818941000002e8813341000002a8,0x32c898b41000001ec818b410000
+.octa 0x2ac8103410000032c898941c131,0x8b41000002ec818941000002ec813341,0x8941c13100000330898b41000001f081,0xf0813341000002b08103410000033089
+.octa 0x1f4818b41000002f0818941000002,0x334898941c13100000334898b4100,0x41000002f4813341000002b481034100,0x898b41000001f8818b41000002f48189
+.octa 0x81034100000338898941c13100000338,0x2f8818941000002f8813341000002b8,0x33c898b41000001fc818b410000,0x2bc8103410000033c898941c131
+.octa 0x8b41000002fc818941000002fc813341,0x8941c13100000340898b410000020081,0x813341000002c08103410000034089,0x204818b4100000300818941000003
+.octa 0x344898941c13100000344898b4100,0x4100000304813341000002c481034100,0x898b4100000208818b41000003048189,0x81034100000348898941c13100000348
+.octa 0x30881894100000308813341000002c8,0x34c898b410000020c818b410000,0x2cc8103410000034c898941c131,0x8b410000030c8189410000030c813341
+.octa 0x8941c13100000350898b410000021081,0x10813341000002d08103410000035089,0x214818b4100000310818941000003,0x354898941c13100000354898b4100
+.octa 0x4100000314813341000002d481034100,0x898b4100000218818b41000003148189,0x81034100000358898941c13100000358,0x31881894100000318813341000002d8
+.octa 0x35c898b410000021c818b410000,0x2dc8103410000035c898941c131,0x8b410000031c8189410000031c813341,0x8941c13100000360898b410000022081
+.octa 0x20813341000002e08103410000036089,0x224818b4100000320818941000003,0x364898941c13100000364898b4100,0x4100000324813341000002e481034100
+.octa 0x898b49000002e8818b49000003248189,0x368818949000002e889894900000368,0x370898b49000002f0818b490000,0x8b4900000370818949000002f0898949
+.octa 0xf889894900000378898b49000002f881,0x300818b4900000378818949000002,0x490000030089894900000380898b4900,0x898b4900000308818b49000003808189
+.octa 0x3888189490000030889894900000388,0x390898b4900000310818b490000,0x8b490000039081894900000310898949,0x1889894900000398898b490000031881
+.octa 0x320818b4900000398818949000003,0x4900000320898949000003a0898b4900,0x898b4900000328818b49000003a08189,0x3a881894900000328898949000003a8
+.octa 0x3b0898b4900000330818b490000,0x8b49000003b081894900000330898949,0x38898949000003b8898b490000033881,0x340818b49000003b8818949000003
+.octa 0x4900000340898949000003c0898b4900,0x898b4900000348818b49000003c08189,0x3c881894900000348898949000003c8,0x3d0898b4900000350818b490000
+.octa 0x8b49000003d081894900000350898949,0x58898949000003d8898b490000035881,0x360818b49000003d8818949000003,0x4900000360898949000003e0898b4900
+.byte 0x89,0x81,0xe0,0x03,0x00,0x00,0x48,0x83,0xc7,0xf8,0x49,0x83,0xe8,0x01
+jne 26b",
+        // sub rdi, -128
+        // mov rcx, rdx
+        // cmp rcx, 16
+        r".byte 0x48,0x83,0xef,0x80,0x48,0x89,0xd1,0x48,0x83,0xf9,0x10
+jb 27f",
+        // mov rcx, 16
+        r".byte 0x48,0xc7,0xc1,0x10,0x00,0x00,0x00
+jmp 28f
+27:
+28:",
+        // mov r10, rsi
+        // mov rbx, r9
+        r".byte 0x49,0x89,0xf2,0x4c,0x89,0xcb
+29:",
+        // mov eax, DWORD PTR [rbx+872]
+        // bswap eax
+        // mov DWORD PTR [r10], eax
+        // mov eax, DWORD PTR [rbx+936]
+        // bswap eax
+        // mov DWORD PTR [r10+4], eax
+        // mov eax, DWORD PTR [rbx+744]
+        // bswap eax
+        // mov DWORD PTR [r10+8], eax
+        // mov eax, DWORD PTR [rbx+808]
+        // bswap eax
+        // mov DWORD PTR [r10+12], eax
+        // add r10, 16
+        // add rbx, 4
+        // sub rcx, 1
+        r".octa 0x3a8838b028941c80f00000368838b,0x41c80f000002e8838b04428941c80f00,0x490c428941c80f00000328838b084289
+.byte 0x83,0xc2,0x10,0x48,0x83,0xc3,0x04,0x48,0x83,0xe9,0x01
+jne 29b",
+        // mov rcx, rdx
+        // cmp rcx, 16
+        r".byte 0x48,0x89,0xd1,0x48,0x83,0xf9,0x10
+jb 210f",
+        // mov rcx, 16
+        r".byte 0x48,0xc7,0xc1,0x10,0x00,0x00,0x00
+jmp 211f
+210:
+211:",
+        // mov rsi, r10
+        // sub rdx, rcx
+        r".byte 0x4c,0x89,0xd6,0x48,0x29,0xca
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r9+1000]
+        // mov rbp, QWORD PTR [r9+1008]
+        // mov r12, QWORD PTR [r9+1016]
+        // mov r13, QWORD PTR [r9+1024]
+        // mov r14, QWORD PTR [r9+1032]
+        // mov r15, QWORD PTR [r9+1040]
+        // ret
+        r".octa 0x8b4d000003f0a98b49000003e8998b49,0x8b18b4d00000400a98b4d000003f8a1
+.byte 0x04,0x00,0x00,0x4d,0x8b,0xb9,0x10,0x04,0x00,0x00,0xc3
+.p2align 6",
     )
 }

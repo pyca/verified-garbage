@@ -17,9 +17,31 @@
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_mlkem_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        r".octa 0xff700f4566f86e0f4c6600000d01b8,0xfe0f660e6f0ff3076f0ff300000040b9,0x661fe1720f66c86f0f66c7fa0f4166c1,0x10c78348077f0ff3c1fe0f66cfdb0f41
-.byte 72,131,198,16,72,131,233,1,117,203,195",
-        r".p2align 6",
+        // mov eax, 3329
+        // movq xmm15, rax
+        // pshufd xmm15, xmm15, 0
+        // mov ecx, 64
+        r".octa 0xff700f4566f86e0f4c6600000d01b8
+.byte 0xb9,0x40,0x00,0x00,0x00
+20:",
+        // movdqu xmm0, XMMWORD PTR [rdi]
+        // movdqu xmm1, XMMWORD PTR [rsi]
+        // paddd xmm0, xmm1
+        // psubd xmm0, xmm15
+        // movdqa xmm1, xmm0
+        // psrad xmm1, 31
+        // pand xmm1, xmm15
+        // paddd xmm0, xmm1
+        // movdqu XMMWORD PTR [rdi], xmm0
+        // add rdi, 16
+        // add rsi, 16
+        // sub rcx, 1
+        r".octa 0xfa0f4166c1fe0f660e6f0ff3076f0ff3,0x66cfdb0f41661fe1720f66c86f0f66c7,0x4810c6834810c78348077f0ff3c1fe0f
+.byte 0x83,0xe9,0x01
+jne 20b",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }
 
@@ -38,9 +60,30 @@ pub unsafe extern "sysv64" fn vg_mlkem_add(f: *mut [u32; 256], g: *const [u32; 2
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_mlkem_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        r".octa 0xff700f4566f86e0f4c6600000d01b8,0xfa0f660e6f0ff3076f0ff300000040b9,0x66cfdb0f41661fe1720f66c86f0f66c1,0x4810c6834810c78348077f0ff3c1fe0f
-.byte 131,233,1,117,208,195",
-        r".p2align 6",
+        // mov eax, 3329
+        // movq xmm15, rax
+        // pshufd xmm15, xmm15, 0
+        // mov ecx, 64
+        r".octa 0xff700f4566f86e0f4c6600000d01b8
+.byte 0xb9,0x40,0x00,0x00,0x00
+20:",
+        // movdqu xmm0, XMMWORD PTR [rdi]
+        // movdqu xmm1, XMMWORD PTR [rsi]
+        // psubd xmm0, xmm1
+        // movdqa xmm1, xmm0
+        // psrad xmm1, 31
+        // pand xmm1, xmm15
+        // paddd xmm0, xmm1
+        // movdqu XMMWORD PTR [rdi], xmm0
+        // add rdi, 16
+        // add rsi, 16
+        // sub rcx, 1
+        r".octa 0xc86f0f66c1fa0f660e6f0ff3076f0ff3,0xff3c1fe0f66cfdb0f41661fe1720f66
+.byte 0x7f,0x07,0x48,0x83,0xc7,0x10,0x48,0x83,0xc6,0x10,0x48,0x83,0xe9,0x01
+jne 20b",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }
 
@@ -59,34 +102,225 @@ pub unsafe extern "sysv64" fn vg_mlkem_sub(f: *mut [u32; 256], g: *const [u32; 2
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_mlkem_sample_ntt(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
+        // mov QWORD PTR [rdx+1680], rbx
+        // mov QWORD PTR [rdx+1688], rbp
+        // mov QWORD PTR [rdx+1696], rdi
+        // mov rbx, rdx
+        // mov rbp, rsi
+        // mov rcx, rdi
+        // mov eax, 0
+        // mov QWORD PTR [rbx], rax
+        // mov QWORD PTR [rbx+8], rax
+        // mov QWORD PTR [rbx+16], rax
+        // mov QWORD PTR [rbx+24], rax
+        // mov QWORD PTR [rbx+32], rax
+        // mov QWORD PTR [rbx+40], rax
+        // mov QWORD PTR [rbx+48], rax
+        // mov QWORD PTR [rbx+56], rax
+        // mov QWORD PTR [rbx+64], rax
+        // mov QWORD PTR [rbx+72], rax
+        // mov QWORD PTR [rbx+80], rax
+        // mov QWORD PTR [rbx+88], rax
+        // mov QWORD PTR [rbx+96], rax
+        // mov QWORD PTR [rbx+104], rax
+        // mov QWORD PTR [rbx+112], rax
+        // mov QWORD PTR [rbx+120], rax
+        // mov QWORD PTR [rbx+128], rax
+        // mov QWORD PTR [rbx+136], rax
+        // mov QWORD PTR [rbx+144], rax
+        // mov QWORD PTR [rbx+152], rax
+        // mov QWORD PTR [rbx+160], rax
+        // mov QWORD PTR [rbx+168], rax
+        // mov QWORD PTR [rbx+176], rax
+        // mov QWORD PTR [rbx+184], rax
+        // mov QWORD PTR [rbx+192], rax
+        // mov rdi, rbx
+        // mov esi, 168
+        // mov edx, 0
+        // mov r8d, 34
+        // mov r9, rbx
+        // add r9, 200
         r".octa 0x894800000698aa8948000006909a8948,0xb8f98948f58948d38948000006a0ba,0x89481043894808438948038948000000,0x89483043894828438948204389481843
 .octa 0x89485043894848438948404389483843,0x89487043894868438948604389485843,0x88838948000000808389487843,0x89480000009883894800000090838948
 .octa 0xb0838948000000a8838948000000a083,0xc0838948000000b8838948000000,0xb84100000000ba000000a8bedf894800
-.byte 34,0,0,0,73,137,217,73,129,193,200,0,0,0",
-        r"call {vg_keccak_absorb_scratch}",
+.byte 0x22,0x00,0x00,0x00,0x49,0x89,0xd9,0x49,0x81,0xc1,0xc8,0x00,0x00,0x00
+call {vg_keccak_absorb_scratch}",
+        // mov rdi, rbx
+        // mov esi, 168
+        // mov edx, 34
+        // mov ecx, 31
+        // mov r8, rbx
+        // add r8, 200
         r".octa 0x1fb900000022ba000000a8bedf8948
-.byte 0,0,73,137,216,73,129,192,200,0,0,0",
-        r"call {vg_keccak_pad_scratch}",
+.byte 0x00,0x00,0x49,0x89,0xd8,0x49,0x81,0xc0,0xc8,0x00,0x00,0x00
+call {vg_keccak_pad_scratch}",
+        // mov rdi, rbx
+        // mov esi, 168
+        // mov edx, 0
+        // mov rcx, rbx
+        // add rcx, 840
+        // mov r8d, 504
+        // mov r9, rbx
+        // add r9, 200
         r".octa 0xd9894800000000ba000000a8bedf8948,0xd98949000001f8b84100000348c18148
-.byte 73,129,193,200,0,0,0",
-        r"call {vg_keccak_squeeze_scratch}",
-        r".octa 0xb900000000bf00000348c68148de8948,0x246b60f440156b60f06b60f000000a8,0xeac1c1014118c9c1410fe18341d18941,0x7200000100ff8148d001411cc8c14104
-.octa 0x4800000d01f9814100bd4c89442beb02,0x894410eb027200000100ff814800d783,0x834800d7834800000d01f8814100bd44,0x7200000100ff81489c7501e9834803c6
-.octa 0xb8000006a08b8b4800000171e905,0x43894810438948084389480389480000,0x43894830438948284389482043894818,0x43894850438948484389484043894838
-.octa 0x43894870438948684389486043894858,0x48000000888389480000008083894878,0x83894800000098838948000000908389,0xb0838948000000a8838948000000a0
-.octa 0xc0838948000000b88389480000,0x22b84100000000ba000000a8bedf8948
-.byte 0,0,0,73,137,217,73,129,193,200,0,0,0",
-        r"call {vg_keccak_absorb_scratch}",
+.byte 0x49,0x81,0xc1,0xc8,0x00,0x00,0x00
+call {vg_keccak_squeeze_scratch}",
+        // mov rsi, rbx
+        // add rsi, 840
+        // mov edi, 0
+        // mov ecx, 168
+        r".octa 0xb900000000bf00000348c68148de8948
+.byte 0xa8,0x00,0x00,0x00
+20:",
+        // movzx eax, BYTE PTR [rsi]
+        // movzx edx, BYTE PTR [rsi+1]
+        // movzx r8d, BYTE PTR [rsi+2]
+        // mov r9d, edx
+        // and r9d, 15
+        // ror r9d, 24
+        // add r9d, eax
+        // shr edx, 4
+        // ror r8d, 28
+        // add r8d, edx
+        // cmp rdi, 256
+        r".octa 0x41d189410246b60f440156b60f06b60f,0xc8c14104eac1c1014118c9c1410fe183
+.byte 0x1c,0x41,0x01,0xd0,0x48,0x81,0xff,0x00,0x01,0x00,0x00
+jb 21f
+jmp 22f
+21:",
+        // mov DWORD PTR [rbp+rdi*4], r9d
+        // cmp r9d, 3329
+        // adc rdi, 0
+        // cmp rdi, 256
+        r".octa 0xd7834800000d01f9814100bd4c8944
+.byte 0x48,0x81,0xff,0x00,0x01,0x00,0x00
+jb 23f
+jmp 24f
+23:",
+        // mov DWORD PTR [rbp+rdi*4], r8d
+        // cmp r8d, 3329
+        // adc rdi, 0
+        r".octa 0xd7834800000d01f8814100bd448944
+24:
+22:",
+        // add rsi, 3
+        // sub rcx, 1
+        r".byte 0x48,0x83,0xc6,0x03,0x48,0x83,0xe9,0x01
+jne 20b",
+        // cmp rdi, 256
+        r".byte 0x48,0x81,0xff,0x00,0x01,0x00,0x00
+jb 25f
+jmp 26f
+25:",
+        // mov rcx, QWORD PTR [rbx+1696]
+        // mov eax, 0
+        // mov QWORD PTR [rbx], rax
+        // mov QWORD PTR [rbx+8], rax
+        // mov QWORD PTR [rbx+16], rax
+        // mov QWORD PTR [rbx+24], rax
+        // mov QWORD PTR [rbx+32], rax
+        // mov QWORD PTR [rbx+40], rax
+        // mov QWORD PTR [rbx+48], rax
+        // mov QWORD PTR [rbx+56], rax
+        // mov QWORD PTR [rbx+64], rax
+        // mov QWORD PTR [rbx+72], rax
+        // mov QWORD PTR [rbx+80], rax
+        // mov QWORD PTR [rbx+88], rax
+        // mov QWORD PTR [rbx+96], rax
+        // mov QWORD PTR [rbx+104], rax
+        // mov QWORD PTR [rbx+112], rax
+        // mov QWORD PTR [rbx+120], rax
+        // mov QWORD PTR [rbx+128], rax
+        // mov QWORD PTR [rbx+136], rax
+        // mov QWORD PTR [rbx+144], rax
+        // mov QWORD PTR [rbx+152], rax
+        // mov QWORD PTR [rbx+160], rax
+        // mov QWORD PTR [rbx+168], rax
+        // mov QWORD PTR [rbx+176], rax
+        // mov QWORD PTR [rbx+184], rax
+        // mov QWORD PTR [rbx+192], rax
+        // mov rdi, rbx
+        // mov esi, 168
+        // mov edx, 0
+        // mov r8d, 34
+        // mov r9, rbx
+        // add r9, 200
+        r".octa 0x4803894800000000b8000006a08b8b48,0x48204389481843894810438948084389,0x48404389483843894830438948284389,0x48604389485843894850438948484389
+.octa 0x808389487843894870438948684389,0x90838948000000888389480000,0x8948000000a083894800000098838948,0xb8838948000000b0838948000000a883
+.octa 0xa8bedf8948000000c0838948000000,0xd9894900000022b84100000000ba0000
+.byte 0x49,0x81,0xc1,0xc8,0x00,0x00,0x00
+call {vg_keccak_absorb_scratch}",
+        // mov rdi, rbx
+        // mov esi, 168
+        // mov edx, 34
+        // mov ecx, 31
+        // mov r8, rbx
+        // add r8, 200
         r".octa 0x1fb900000022ba000000a8bedf8948
-.byte 0,0,73,137,216,73,129,192,200,0,0,0",
-        r"call {vg_keccak_pad_scratch}",
+.byte 0x00,0x00,0x49,0x89,0xd8,0x49,0x81,0xc0,0xc8,0x00,0x00,0x00
+call {vg_keccak_pad_scratch}",
+        // mov rdi, rbx
+        // mov esi, 168
+        // mov edx, 0
+        // mov rcx, rbx
+        // add rcx, 840
+        // mov r8d, 840
+        // mov r9, rbx
+        // add r9, 200
         r".octa 0xd9894800000000ba000000a8bedf8948,0xd9894900000348b84100000348c18148
-.byte 73,129,193,200,0,0,0",
-        r"call {vg_keccak_squeeze_scratch}",
-        r".octa 0xb900000000bf00000348c68148de8948,0x246b60f440156b60f06b60f00000118,0xeac1c1014118c9c1410fe18341d18941,0x7200000100ff8148d001411cc8c14104
-.octa 0x4800000d01f9814100bd4c89442beb02,0x894410eb027200000100ff814800d783,0x834800d7834800000d01f8814100bd44,0x4808e8c148f889489c7501e9834803c6
-.byte 139,171,152,6,0,0,72,139,155,144,6,0,0,195",
-        r".p2align 6",
+.byte 0x49,0x81,0xc1,0xc8,0x00,0x00,0x00
+call {vg_keccak_squeeze_scratch}",
+        // mov rsi, rbx
+        // add rsi, 840
+        // mov edi, 0
+        // mov ecx, 280
+        r".octa 0xb900000000bf00000348c68148de8948
+.byte 0x18,0x01,0x00,0x00
+27:",
+        // movzx eax, BYTE PTR [rsi]
+        // movzx edx, BYTE PTR [rsi+1]
+        // movzx r8d, BYTE PTR [rsi+2]
+        // mov r9d, edx
+        // and r9d, 15
+        // ror r9d, 24
+        // add r9d, eax
+        // shr edx, 4
+        // ror r8d, 28
+        // add r8d, edx
+        // cmp rdi, 256
+        r".octa 0x41d189410246b60f440156b60f06b60f,0xc8c14104eac1c1014118c9c1410fe183
+.byte 0x1c,0x41,0x01,0xd0,0x48,0x81,0xff,0x00,0x01,0x00,0x00
+jb 28f
+jmp 29f
+28:",
+        // mov DWORD PTR [rbp+rdi*4], r9d
+        // cmp r9d, 3329
+        // adc rdi, 0
+        // cmp rdi, 256
+        r".octa 0xd7834800000d01f9814100bd4c8944
+.byte 0x48,0x81,0xff,0x00,0x01,0x00,0x00
+jb 210f
+jmp 211f
+210:",
+        // mov DWORD PTR [rbp+rdi*4], r8d
+        // cmp r8d, 3329
+        // adc rdi, 0
+        r".octa 0xd7834800000d01f8814100bd448944
+211:
+29:",
+        // add rsi, 3
+        // sub rcx, 1
+        r".byte 0x48,0x83,0xc6,0x03,0x48,0x83,0xe9,0x01
+jne 27b
+26:",
+        // mov rax, rdi
+        // shr rax, 8
+        // mov rbp, QWORD PTR [rbx+1688]
+        // mov rbx, QWORD PTR [rbx+1680]
+        // ret
+        r".octa 0x8b4800000698ab8b4808e8c148f88948
+.byte 0x9b,0x90,0x06,0x00,0x00,0xc3
+.p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -107,9 +341,27 @@ pub unsafe extern "sysv64" fn vg_mlkem_sample_ntt(seed: *const [u8; 34], a: *mut
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_mlkem_encode12(f: *const [u32; 256], out: *mut [u8; 384]) {
     core::arch::naked_asm!(
-        r".octa 0x88d00114cac104578b078b00000080b9,0xc7834802468808e8c101468808e8c106
-.byte 8,72,131,198,3,72,131,233,1,117,218,195",
-        r".p2align 6",
+        // mov ecx, 128
+        r".byte 0xb9,0x80,0x00,0x00,0x00
+20:",
+        // mov eax, DWORD PTR [rdi]
+        // mov edx, DWORD PTR [rdi+4]
+        // ror edx, 20
+        // add eax, edx
+        // mov BYTE PTR [rsi], al
+        // shr eax, 8
+        // mov BYTE PTR [rsi+1], al
+        // shr eax, 8
+        // mov BYTE PTR [rsi+2], al
+        // add rdi, 8
+        // add rsi, 3
+        // sub rcx, 1
+        r".octa 0x8808e8c10688d00114cac104578b078b,0x3c6834808c7834802468808e8c10146
+.byte 0x48,0x83,0xe9,0x01
+jne 20b",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }
 
@@ -126,10 +378,39 @@ pub unsafe extern "sysv64" fn vg_mlkem_encode12(f: *const [u32; 256], out: *mut 
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_mlkem_decode12(b: *const [u8; 384], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        r".octa 0x118cac10157b60f07b60f00000080b9,0xfff25c289d00110cac10257b60fd0,0x1e08141c0194500000d012d0ceac100,0x41c0194500000d01ea81c0014400000d
-.octa 0x83480456890689c2014400000d01e081
-.byte 199,3,72,131,198,8,72,131,233,1,117,169,195",
-        r".p2align 6",
+        // mov ecx, 128
+        r".byte 0xb9,0x80,0x00,0x00,0x00
+20:",
+        // movzx eax, BYTE PTR [rdi]
+        // movzx edx, BYTE PTR [rdi+1]
+        // ror edx, 24
+        // add eax, edx
+        // movzx edx, BYTE PTR [rdi+2]
+        // ror edx, 16
+        // add eax, edx
+        // mov edx, eax
+        // and eax, 4095
+        // shr edx, 12
+        // sub eax, 3329
+        // sbb r8d, r8d
+        // and r8d, 3329
+        // add eax, r8d
+        // sub edx, 3329
+        // sbb r8d, r8d
+        // and r8d, 3329
+        // add edx, r8d
+        // mov DWORD PTR [rsi], eax
+        // mov DWORD PTR [rsi+4], edx
+        // add rdi, 3
+        // add rsi, 8
+        // sub rcx, 1
+        r".octa 0x257b60fd00118cac10157b60f07b60f,0x2d0ceac100000fff25c289d00110cac1,0x14400000d01e08141c0194500000d01,0xd01e08141c0194500000d01ea81c0
+.octa 0xc6834803c783480456890689c2014400
+.byte 0x08,0x48,0x83,0xe9,0x01
+jne 20b",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }
 
@@ -146,18 +427,159 @@ pub unsafe extern "sysv64" fn vg_mlkem_decode12(b: *const [u8; 384], f: *mut [u3
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
+        // mov eax, 3329
+        // movq xmm15, rax
+        // pshufd xmm15, xmm15, 0
+        // mov eax, 16711935
+        // movq xmm8, rax
+        // pshufd xmm8, xmm8, 0
+        // mov eax, 5570645
+        // movq xmm9, rax
+        // pshufd xmm9, xmm9, 0
+        // mov eax, 3342387
+        // movq xmm10, rax
+        // pshufd xmm10, xmm10, 0
+        // mov eax, 2228258
+        // movq xmm11, rax
+        // pshufd xmm11, xmm11, 0
+        // mov eax, 983055
+        // movq xmm12, rax
+        // pshufd xmm12, xmm12, 0
+        // mov eax, 2
+        // movq xmm13, rax
+        // pshufd xmm13, xmm13, 0
+        // pxor xmm14, xmm14
+        // mov ecx, 8
         r".octa 0xff700f4566f86e0f4c6600000d01b8,0xc0700f4566c06e0f4c6600ff00ffb8,0xc9700f4566c86e0f4c6600550055b8,0xd2700f4566d06e0f4c6600330033b8
-.octa 0xdb700f4566d86e0f4c6600220022b8,0xe4700f4566e06e0f4c66000f000fb8,0xed700f4566e86e0f4c6600000002b8,0xf66076f0ff300000008b9f6ef0f4566
-.octa 0xd06f0f66c0db0f416608d1710f66c86f,0x66c1db0f4166d1db0f416601d2710f66,0xdb0f416602d2710f66d06f0f66c2fd0f,0x66c2f90f66c3fd0f4166c2db0f4166d2
-.octa 0x6f0f66c4db0f416604d2710f66d06f0f,0xc9db0f4166d9db0f416601d3710f66d9,0xf416602d3710f66d96f0f66cbfd0f66,0xcbf90f66cbfd0f4166cadb0f4166dadb
-.octa 0xf66ccdb0f416604d3710f66d96f0f66,0xf66d16f0f66c2690f66e2610f66e06f,0x66ee610f4166ec6f0f66cb690f66d361,0xfe6c0f66fd6f0f66f6610f4166f26f0f
-.octa 0x720f66f76f0f66fdfa0f4166ee6d0f66,0x663e7f0ff3fefe0f66f7db0f41661fe6,0xf41661fe6720f66f56f0f66edfa0f41,0xe6690f4166106e7f0ff3eefe0f66f7db
-.octa 0x6d0f66fa6c0f66fc6f0f66d6690f4166,0x661fe6720f66f76f0f66fdfa0f4166e2,0xf4166207e7f0ff3fefe0f66f7db0f41,0xf7db0f41661fe6720f66f46f0f66e5fa
-.octa 0xf4166e86f0f6630667f0ff3e6fe0f66,0x66fd6f0f66f6610f4166f16f0f66ee61,0xf76f0f66fdfa0f4166ee6d0f66fe6c0f,0xff3fefe0f66f7db0f41661fe6720f66
-.octa 0xe6720f66f56f0f66edfa0f4166407e7f,0x66506e7f0ff3eefe0f66f7db0f41661f,0x6c0f66f86f0f66ce690f4166c6690f41,0xf66f76f0f66fdfa0f4166c16d0f66f9
-.octa 0x7e7f0ff3fefe0f66f7db0f41661fe672,0x661fe6720f66f06f0f66c5fa0f416660,0xc7834870467f0ff3c6fe0f66f7db0f41,0xfdf8850f01e9834800000080c6814810
-.byte 255,255,195",
-        r".p2align 6",
+.octa 0xdb700f4566d86e0f4c6600220022b8,0xe4700f4566e06e0f4c66000f000fb8,0xed700f4566e86e0f4c6600000002b8
+.byte 0x66,0x45,0x0f,0xef,0xf6,0xb9,0x08,0x00,0x00,0x00
+20:",
+        // movdqu xmm0, XMMWORD PTR [rdi]
+        // movdqa xmm1, xmm0
+        // psrlw xmm1, 8
+        // pand xmm0, xmm8
+        // movdqa xmm2, xmm0
+        // psrlw xmm2, 1
+        // pand xmm2, xmm9
+        // pand xmm0, xmm9
+        // paddw xmm0, xmm2
+        // movdqa xmm2, xmm0
+        // psrlw xmm2, 2
+        // pand xmm2, xmm10
+        // pand xmm0, xmm10
+        // paddw xmm0, xmm11
+        // psubw xmm0, xmm2
+        // movdqa xmm2, xmm0
+        // psrlw xmm2, 4
+        // pand xmm0, xmm12
+        // movdqa xmm3, xmm1
+        // psrlw xmm3, 1
+        // pand xmm3, xmm9
+        // pand xmm1, xmm9
+        // paddw xmm1, xmm3
+        // movdqa xmm3, xmm1
+        // psrlw xmm3, 2
+        // pand xmm3, xmm10
+        // pand xmm1, xmm10
+        // paddw xmm1, xmm11
+        // psubw xmm1, xmm3
+        // movdqa xmm3, xmm1
+        // psrlw xmm3, 4
+        // pand xmm1, xmm12
+        // movdqa xmm4, xmm0
+        // punpcklwd xmm4, xmm2
+        // punpckhwd xmm0, xmm2
+        // movdqa xmm2, xmm1
+        // punpcklwd xmm2, xmm3
+        // punpckhwd xmm1, xmm3
+        // movdqa xmm5, xmm4
+        // punpcklwd xmm5, xmm14
+        // movdqa xmm6, xmm2
+        // punpcklwd xmm6, xmm14
+        // movdqa xmm7, xmm5
+        // punpcklqdq xmm7, xmm6
+        // punpckhqdq xmm5, xmm6
+        // psubd xmm7, xmm13
+        // movdqa xmm6, xmm7
+        // psrad xmm6, 31
+        // pand xmm6, xmm15
+        // paddd xmm7, xmm6
+        // movdqu XMMWORD PTR [rsi], xmm7
+        // psubd xmm5, xmm13
+        // movdqa xmm6, xmm5
+        // psrad xmm6, 31
+        // pand xmm6, xmm15
+        // paddd xmm5, xmm6
+        // movdqu XMMWORD PTR [rsi+16], xmm5
+        // punpckhwd xmm4, xmm14
+        // punpckhwd xmm2, xmm14
+        // movdqa xmm7, xmm4
+        // punpcklqdq xmm7, xmm2
+        // punpckhqdq xmm4, xmm2
+        // psubd xmm7, xmm13
+        // movdqa xmm6, xmm7
+        // psrad xmm6, 31
+        // pand xmm6, xmm15
+        // paddd xmm7, xmm6
+        // movdqu XMMWORD PTR [rsi+32], xmm7
+        // psubd xmm4, xmm13
+        // movdqa xmm6, xmm4
+        // psrad xmm6, 31
+        // pand xmm6, xmm15
+        // paddd xmm4, xmm6
+        // movdqu XMMWORD PTR [rsi+48], xmm4
+        // movdqa xmm5, xmm0
+        // punpcklwd xmm5, xmm14
+        // movdqa xmm6, xmm1
+        // punpcklwd xmm6, xmm14
+        // movdqa xmm7, xmm5
+        // punpcklqdq xmm7, xmm6
+        // punpckhqdq xmm5, xmm6
+        // psubd xmm7, xmm13
+        // movdqa xmm6, xmm7
+        // psrad xmm6, 31
+        // pand xmm6, xmm15
+        // paddd xmm7, xmm6
+        // movdqu XMMWORD PTR [rsi+64], xmm7
+        // psubd xmm5, xmm13
+        // movdqa xmm6, xmm5
+        // psrad xmm6, 31
+        // pand xmm6, xmm15
+        // paddd xmm5, xmm6
+        // movdqu XMMWORD PTR [rsi+80], xmm5
+        // punpckhwd xmm0, xmm14
+        // punpckhwd xmm1, xmm14
+        // movdqa xmm7, xmm0
+        // punpcklqdq xmm7, xmm1
+        // punpckhqdq xmm0, xmm1
+        // psubd xmm7, xmm13
+        // movdqa xmm6, xmm7
+        // psrad xmm6, 31
+        // pand xmm6, xmm15
+        // paddd xmm7, xmm6
+        // movdqu XMMWORD PTR [rsi+96], xmm7
+        // psubd xmm0, xmm13
+        // movdqa xmm6, xmm0
+        // psrad xmm6, 31
+        // pand xmm6, xmm15
+        // paddd xmm0, xmm6
+        // movdqu XMMWORD PTR [rsi+112], xmm0
+        // add rdi, 16
+        // add rsi, 128
+        // sub rcx, 1
+        r".octa 0xf416608d1710f66c86f0f66076f0ff3,0xd1db0f416601d2710f66d06f0f66c0db,0x710f66d06f0f66c2fd0f66c1db0f4166,0xfd0f4166c2db0f4166d2db0f416602d2
+.octa 0x416604d2710f66d06f0f66c2f90f66c3,0xdb0f416601d3710f66d96f0f66c4db0f,0xf66d96f0f66cbfd0f66c9db0f4166d9,0xf4166cadb0f4166dadb0f416602d371
+.octa 0x6604d3710f66d96f0f66cbf90f66cbfd,0xc2690f66e2610f66e06f0f66ccdb0f41,0xec6f0f66cb690f66d3610f66d16f0f66,0xf66f6610f4166f26f0f66ee610f4166
+.octa 0x66fdfa0f4166ee6d0f66fe6c0f66fd6f,0xfe0f66f7db0f41661fe6720f66f76f0f,0xf66f56f0f66edfa0f41663e7f0ff3fe,0x6e7f0ff3eefe0f66f7db0f41661fe672
+.octa 0x66fc6f0f66d6690f4166e6690f416610,0xf76f0f66fdfa0f4166e26d0f66fa6c0f,0xff3fefe0f66f7db0f41661fe6720f66,0xe6720f66f46f0f66e5fa0f4166207e7f
+.octa 0x6630667f0ff3e6fe0f66f7db0f41661f,0x610f4166f16f0f66ee610f4166e86f0f,0xf4166ee6d0f66fe6c0f66fd6f0f66f6,0xf7db0f41661fe6720f66f76f0f66fdfa
+.octa 0xf66edfa0f4166407e7f0ff3fefe0f66,0xeefe0f66f7db0f41661fe6720f66f56f,0x66ce690f4166c6690f4166506e7f0ff3,0xfdfa0f4166c16d0f66f96c0f66f86f0f
+.octa 0xf66f7db0f41661fe6720f66f76f0f66,0xf06f0f66c5fa0f4166607e7f0ff3fefe,0xff3c6fe0f66f7db0f41661fe6720f66,0x834800000080c6814810c7834870467f
+.byte 0xe9,0x01
+jne 20b",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }
 
@@ -176,17 +598,173 @@ pub unsafe extern "sysv64" fn vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32; 2
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_mlkem_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r".octa 0xfe8300000124840f01fe83d08949f689,0x40b9000275f7c1c749000000bc840f04,0x48e1f7490c478b00000000ba41000000,0xc149000003ff2513e8c1480003ffc005
-.octa 0x3ffc00548e1f74908478bc2014936ca,0x14936cac149000003ff2513e8c14800,0xe8c1480003ffc00548e1f74904478bc2,0x49078bc2014936cac149000003ff2513
-.octa 0x3ff2513e8c1480003ffc00548e1f7,0x4508eac149108845c2014936cac14900,0x4508eac1490250884508eac149015088,0x4808eac1490450884508eac149035088
-.octa 0xffff52850f01e9834805c0834910c783,0x4100000080b9000009d8c1c7495aebff,0x3ffc00548e1f74904478b00000000ba,0x8bc201493ccac1490fe08313e8c14800
-.octa 0xe08313e8c1480003ffc00548e1f74907,0x4808eac149108845c201493ccac1490f,0xfae9b27501e9834801c0834908c783,0xba4100000020b90000013bc1c7490000
-.octa 0x3ffc00548e1f7491c478b00000000,0x478bc201493fcac14901e08313e8c148,0xe08313e8c1480003ffc00548e1f74918,0x548e1f74914478bc201493fcac14901
-.octa 0x493fcac14901e08313e8c1480003ffc0,0xc1480003ffc00548e1f74910478bc201,0x490c478bc201493fcac14901e08313e8,0x4901e08313e8c1480003ffc00548e1f7
-.octa 0xffc00548e1f74908478bc201493fcac1,0xc201493fcac14901e08313e8c1480003,0x13e8c1480003ffc00548e1f74904478b,0x48e1f749078bc201493fcac14901e083
-.octa 0x3fcac14901e08313e8c1480003ffc005,0x834920c7834808eac149108845c20149
-.byte 192,1,72,131,233,1,15,133,18,255,255,255,195",
-        r".p2align 6",
+        // mov esi, esi
+        // mov r8, rdx
+        // cmp esi, 1
+        r".byte 0x89,0xf6,0x49,0x89,0xd0,0x83,0xfe,0x01
+je 20f",
+        // cmp esi, 4
+        r".byte 0x83,0xfe,0x04
+je 22f",
+        // mov r9, 161271
+        // mov ecx, 64
+        r".byte 0x49,0xc7,0xc1,0xf7,0x75,0x02,0x00,0xb9,0x40,0x00,0x00,0x00
+24:",
+        // mov r10d, 0
+        // mov eax, DWORD PTR [rdi+12]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1023
+        // ror r10, 54
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi+8]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1023
+        // ror r10, 54
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi+4]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1023
+        // ror r10, 54
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1023
+        // ror r10, 54
+        // add r10, rax
+        // mov BYTE PTR [r8], r10b
+        // shr r10, 8
+        // mov BYTE PTR [r8+1], r10b
+        // shr r10, 8
+        // mov BYTE PTR [r8+2], r10b
+        // shr r10, 8
+        // mov BYTE PTR [r8+3], r10b
+        // shr r10, 8
+        // mov BYTE PTR [r8+4], r10b
+        // shr r10, 8
+        // add rdi, 16
+        // add r8, 5
+        // sub rcx, 1
+        r".octa 0xffc00548e1f7490c478b00000000ba41,0x4936cac149000003ff2513e8c1480003,0xc1480003ffc00548e1f74908478bc201,0x478bc2014936cac149000003ff2513e8
+.octa 0xff2513e8c1480003ffc00548e1f74904,0x48e1f749078bc2014936cac149000003,0xc149000003ff2513e8c1480003ffc005,0x150884508eac149108845c2014936ca
+.octa 0x350884508eac1490250884508eac149,0x10c7834808eac1490450884508eac149
+.byte 0x49,0x83,0xc0,0x05,0x48,0x83,0xe9,0x01
+jne 24b
+jmp 23f
+22:",
+        // mov r9, 2520
+        // mov ecx, 128
+        r".byte 0x49,0xc7,0xc1,0xd8,0x09,0x00,0x00,0xb9,0x80,0x00,0x00,0x00
+25:",
+        // mov r10d, 0
+        // mov eax, DWORD PTR [rdi+4]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 15
+        // ror r10, 60
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 15
+        // ror r10, 60
+        // add r10, rax
+        // mov BYTE PTR [r8], r10b
+        // shr r10, 8
+        // add rdi, 8
+        // add r8, 1
+        // sub rcx, 1
+        r".octa 0xffc00548e1f74904478b00000000ba41,0xc201493ccac1490fe08313e8c1480003,0x8313e8c1480003ffc00548e1f749078b,0x8eac149108845c201493ccac1490fe0
+.byte 0x48,0x83,0xc7,0x08,0x49,0x83,0xc0,0x01,0x48,0x83,0xe9,0x01
+jne 25b
+23:
+jmp 21f
+20:",
+        // mov r9, 315
+        // mov ecx, 32
+        r".byte 0x49,0xc7,0xc1,0x3b,0x01,0x00,0x00,0xb9,0x20,0x00,0x00,0x00
+26:",
+        // mov r10d, 0
+        // mov eax, DWORD PTR [rdi+28]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1
+        // ror r10, 63
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi+24]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1
+        // ror r10, 63
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi+20]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1
+        // ror r10, 63
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi+16]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1
+        // ror r10, 63
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi+12]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1
+        // ror r10, 63
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi+8]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1
+        // ror r10, 63
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi+4]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1
+        // ror r10, 63
+        // add r10, rax
+        // mov eax, DWORD PTR [rdi]
+        // mul r9
+        // add rax, 262080
+        // shr rax, 19
+        // and eax, 1
+        // ror r10, 63
+        // add r10, rax
+        // mov BYTE PTR [r8], r10b
+        // shr r10, 8
+        // add rdi, 32
+        // add r8, 1
+        // sub rcx, 1
+        r".octa 0xffc00548e1f7491c478b00000000ba41,0xc201493fcac14901e08313e8c1480003,0x13e8c1480003ffc00548e1f74918478b,0xe1f74914478bc201493fcac14901e083
+.octa 0xcac14901e08313e8c1480003ffc00548,0x3ffc00548e1f74910478bc201493f,0x478bc201493fcac14901e08313e8c148,0xe08313e8c1480003ffc00548e1f7490c
+.octa 0x548e1f74908478bc201493fcac14901,0x493fcac14901e08313e8c1480003ffc0,0xc1480003ffc00548e1f74904478bc201,0xf749078bc201493fcac14901e08313e8
+.octa 0xc14901e08313e8c1480003ffc00548e1,0x20c7834808eac149108845c201493fca
+.byte 0x49,0x83,0xc0,0x01,0x48,0x83,0xe9,0x01
+jne 26b
+21:",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }
 
@@ -204,17 +782,179 @@ pub unsafe extern "sysv64" fn vg_mlkem_compress_encode(f: *const [u32; 256], d: 
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_mlkem_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        r".octa 0xfa8300000132840f01fa83ce8948d289,0x40b900000d01c1c749000000cb840f04,0xcac1490447b60f00000000ba41000000,0xfc2014938cac1490347b60fc2014938
-.octa 0xc1490147b60fc2014938cac1490247b6,0x4cc2014938cac14907b60fc2014938ca,0x2000548e1f749000003ff25d089,0x3ff25d0894c0aeac14906890ae8c148
-.octa 0x890ae8c148000002000548e1f7490000,0xf749000003ff25d0894c0aeac1490446,0xc1490846890ae8c148000002000548e1,0x548e1f749000003ff25d0894c0aea
-.octa 0x83480aeac1490c46890ae8c148000002,0xffffff43850f01e9834810c6834805c7,0xba4100000080b900000d01c1c74959eb,0x894cc2014938cac14907b60f00000000
-.octa 0x8904e8c14808c08348e1f7490fe083d0,0x8348e1f7490fe083d0894c04eac14906,0xc7834804eac14904468904e8c14808c0,0xdde9b37501e9834808c6834801
-.octa 0xba4100000020b900000d01c1c749,0x83d0894cc2014938cac14907b60f0000,0xd1490689e8d14801c08348e1f74901e0,0xd14801c08348e1f74901e083d0894cea
-.octa 0xe1f74901e083d0894cead149044689e8,0xd0894cead149084689e8d14801c08348,0xc4689e8d14801c08348e1f74901e083,0x1c08348e1f74901e083d0894cead149
-.octa 0x4901e083d0894cead149104689e8d148,0x4cead149144689e8d14801c08348e1f7,0x89e8d14801c08348e1f74901e083d089,0x8348e1f74901e083d0894cead1491846
-.octa 0x4801c78348ead1491c4689e8d14801c0
-.byte 131,198,32,72,131,233,1,15,133,47,255,255,255,195",
-        r".p2align 6",
+        // mov edx, edx
+        // mov rsi, rcx
+        // cmp edx, 1
+        r".byte 0x89,0xd2,0x48,0x89,0xce,0x83,0xfa,0x01
+je 20f",
+        // cmp edx, 4
+        r".byte 0x83,0xfa,0x04
+je 22f",
+        // mov r9, 3329
+        // mov ecx, 64
+        r".byte 0x49,0xc7,0xc1,0x01,0x0d,0x00,0x00,0xb9,0x40,0x00,0x00,0x00
+24:",
+        // mov r10d, 0
+        // movzx eax, BYTE PTR [rdi+4]
+        // ror r10, 56
+        // add r10, rax
+        // movzx eax, BYTE PTR [rdi+3]
+        // ror r10, 56
+        // add r10, rax
+        // movzx eax, BYTE PTR [rdi+2]
+        // ror r10, 56
+        // add r10, rax
+        // movzx eax, BYTE PTR [rdi+1]
+        // ror r10, 56
+        // add r10, rax
+        // movzx eax, BYTE PTR [rdi]
+        // ror r10, 56
+        // add r10, rax
+        // mov rax, r10
+        // and eax, 1023
+        // mul r9
+        // add rax, 512
+        // shr rax, 10
+        // mov DWORD PTR [rsi], eax
+        // shr r10, 10
+        // mov rax, r10
+        // and eax, 1023
+        // mul r9
+        // add rax, 512
+        // shr rax, 10
+        // mov DWORD PTR [rsi+4], eax
+        // shr r10, 10
+        // mov rax, r10
+        // and eax, 1023
+        // mul r9
+        // add rax, 512
+        // shr rax, 10
+        // mov DWORD PTR [rsi+8], eax
+        // shr r10, 10
+        // mov rax, r10
+        // and eax, 1023
+        // mul r9
+        // add rax, 512
+        // shr rax, 10
+        // mov DWORD PTR [rsi+12], eax
+        // shr r10, 10
+        // add rdi, 5
+        // add rsi, 16
+        // sub rcx, 1
+        r".octa 0x14938cac1490447b60f00000000ba41,0x247b60fc2014938cac1490347b60fc2,0x4938cac1490147b60fc2014938cac149,0x25d0894cc2014938cac14907b60fc201
+.octa 0xe8c148000002000548e1f749000003ff,0x49000003ff25d0894c0aeac14906890a,0x490446890ae8c148000002000548e1f7,0x548e1f749000003ff25d0894c0aeac1
+.octa 0x4c0aeac1490846890ae8c14800000200,0x2000548e1f749000003ff25d089,0x4805c783480aeac1490c46890ae8c148
+.byte 0x83,0xc6,0x10,0x48,0x83,0xe9,0x01
+jne 24b
+jmp 23f
+22:",
+        // mov r9, 3329
+        // mov ecx, 128
+        r".byte 0x49,0xc7,0xc1,0x01,0x0d,0x00,0x00,0xb9,0x80,0x00,0x00,0x00
+25:",
+        // mov r10d, 0
+        // movzx eax, BYTE PTR [rdi]
+        // ror r10, 56
+        // add r10, rax
+        // mov rax, r10
+        // and eax, 15
+        // mul r9
+        // add rax, 8
+        // shr rax, 4
+        // mov DWORD PTR [rsi], eax
+        // shr r10, 4
+        // mov rax, r10
+        // and eax, 15
+        // mul r9
+        // add rax, 8
+        // shr rax, 4
+        // mov DWORD PTR [rsi+4], eax
+        // shr r10, 4
+        // add rdi, 1
+        // add rsi, 8
+        // sub rcx, 1
+        r".octa 0xc2014938cac14907b60f00000000ba41,0xe8c14808c08348e1f7490fe083d0894c,0xe1f7490fe083d0894c04eac149068904,0x4804eac14904468904e8c14808c08348
+.byte 0x83,0xc7,0x01,0x48,0x83,0xc6,0x08,0x48,0x83,0xe9,0x01
+jne 25b
+23:
+jmp 21f
+20:",
+        // mov r9, 3329
+        // mov ecx, 32
+        r".byte 0x49,0xc7,0xc1,0x01,0x0d,0x00,0x00,0xb9,0x20,0x00,0x00,0x00
+26:",
+        // mov r10d, 0
+        // movzx eax, BYTE PTR [rdi]
+        // ror r10, 56
+        // add r10, rax
+        // mov rax, r10
+        // and eax, 1
+        // mul r9
+        // add rax, 1
+        // shr rax, 1
+        // mov DWORD PTR [rsi], eax
+        // shr r10, 1
+        // mov rax, r10
+        // and eax, 1
+        // mul r9
+        // add rax, 1
+        // shr rax, 1
+        // mov DWORD PTR [rsi+4], eax
+        // shr r10, 1
+        // mov rax, r10
+        // and eax, 1
+        // mul r9
+        // add rax, 1
+        // shr rax, 1
+        // mov DWORD PTR [rsi+8], eax
+        // shr r10, 1
+        // mov rax, r10
+        // and eax, 1
+        // mul r9
+        // add rax, 1
+        // shr rax, 1
+        // mov DWORD PTR [rsi+12], eax
+        // shr r10, 1
+        // mov rax, r10
+        // and eax, 1
+        // mul r9
+        // add rax, 1
+        // shr rax, 1
+        // mov DWORD PTR [rsi+16], eax
+        // shr r10, 1
+        // mov rax, r10
+        // and eax, 1
+        // mul r9
+        // add rax, 1
+        // shr rax, 1
+        // mov DWORD PTR [rsi+20], eax
+        // shr r10, 1
+        // mov rax, r10
+        // and eax, 1
+        // mul r9
+        // add rax, 1
+        // shr rax, 1
+        // mov DWORD PTR [rsi+24], eax
+        // shr r10, 1
+        // mov rax, r10
+        // and eax, 1
+        // mul r9
+        // add rax, 1
+        // shr rax, 1
+        // mov DWORD PTR [rsi+28], eax
+        // shr r10, 1
+        // add rdi, 1
+        // add rsi, 32
+        // sub rcx, 1
+        r".octa 0xc2014938cac14907b60f00000000ba41,0xe8d14801c08348e1f74901e083d0894c,0x8348e1f74901e083d0894cead1490689,0xe083d0894cead149044689e8d14801c0
+.octa 0xd149084689e8d14801c08348e1f74901,0xd14801c08348e1f74901e083d0894cea,0xe1f74901e083d0894cead1490c4689e8,0xd0894cead149104689e8d14801c08348
+.octa 0x144689e8d14801c08348e1f74901e083,0x1c08348e1f74901e083d0894cead149,0x4901e083d0894cead149184689e8d148,0x48ead1491c4689e8d14801c08348e1f7
+.byte 0x83,0xc7,0x01,0x48,0x83,0xc6,0x20,0x48,0x83,0xe9,0x01
+jne 26b
+21:",
+        // ret
+        r".byte 0xc3
+.p2align 6",
     )
 }
 
@@ -233,21 +973,65 @@ pub unsafe extern "sysv64" fn vg_mlkem_decode_decompress(b: *const u8, len: usiz
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_mlkem_sample_ntt4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
+        // mov QWORD PTR [rdx+4384], rbx
+        // mov QWORD PTR [rdx+4392], rbp
+        // mov QWORD PTR [rdx+4400], r12
+        // mov QWORD PTR [rdx+4408], r13
+        // mov QWORD PTR [rdx+4416], r14
+        // mov rbx, rdx
+        // mov r12, rdi
+        // mov r13, rsi
+        // mov r14d, 1
+        // mov rdi, r12
+        // add rdi, 0
+        // mov rsi, r13
+        // add rsi, 0
+        // mov rdx, rbx
+        // add rdx, 6144
         r".octa 0x894c00001128aa8948000011209a8948,0x40b2894c00001138aa894c00001130a2,0x1be41f58949fc8949d38948000011,0xc68348ee894c00c78348e7894c0000
-.byte 72,137,218,72,129,194,0,24,0,0",
-        r"call {vg_mlkem_sample_ntt}",
+.byte 0x48,0x89,0xda,0x48,0x81,0xc2,0x00,0x18,0x00,0x00
+call {vg_mlkem_sample_ntt}",
+        // and r14d, eax
+        // mov rdi, r12
+        // add rdi, 34
+        // mov rsi, r13
+        // add rsi, 1024
+        // mov rdx, rbx
+        // add rdx, 6144
         r".octa 0xc68148ee894c22c78348e7894cc62141
-.byte 0,4,0,0,72,137,218,72,129,194,0,24,0,0",
-        r"call {vg_mlkem_sample_ntt}",
+.byte 0x00,0x04,0x00,0x00,0x48,0x89,0xda,0x48,0x81,0xc2,0x00,0x18,0x00,0x00
+call {vg_mlkem_sample_ntt}",
+        // and r14d, eax
+        // mov rdi, r12
+        // add rdi, 68
+        // mov rsi, r13
+        // add rsi, 2048
+        // mov rdx, rbx
+        // add rdx, 6144
         r".octa 0xc68148ee894c44c78348e7894cc62141
-.byte 0,8,0,0,72,137,218,72,129,194,0,24,0,0",
-        r"call {vg_mlkem_sample_ntt}",
+.byte 0x00,0x08,0x00,0x00,0x48,0x89,0xda,0x48,0x81,0xc2,0x00,0x18,0x00,0x00
+call {vg_mlkem_sample_ntt}",
+        // and r14d, eax
+        // mov rdi, r12
+        // add rdi, 102
+        // mov rsi, r13
+        // add rsi, 3072
+        // mov rdx, rbx
+        // add rdx, 6144
         r".octa 0xc68148ee894c66c78348e7894cc62141
-.byte 0,12,0,0,72,137,218,72,129,194,0,24,0,0",
-        r"call {vg_mlkem_sample_ntt}",
+.byte 0x00,0x0c,0x00,0x00,0x48,0x89,0xda,0x48,0x81,0xc2,0x00,0x18,0x00,0x00
+call {vg_mlkem_sample_ntt}",
+        // and r14d, eax
+        // mov eax, r14d
+        // mov r14, QWORD PTR [rbx+4416]
+        // mov r13, QWORD PTR [rbx+4408]
+        // mov r12, QWORD PTR [rbx+4400]
+        // mov rbp, QWORD PTR [rbx+4392]
+        // mov rbx, QWORD PTR [rbx+4384]
+        // ret
         r".octa 0xab8b4c00001140b38b4cf08944c62141,0x1128ab8b4800001130a38b4c00001138
-.byte 0,0,72,139,155,32,17,0,0,195",
-        r".p2align 6",
+.byte 0x00,0x00,0x48,0x8b,0x9b,0x20,0x11,0x00,0x00,0xc3
+.p2align 6",
         vg_mlkem_sample_ntt = sym super::mlkem::vg_mlkem_sample_ntt,
     )
 }

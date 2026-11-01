@@ -23,14 +23,59 @@ pub const VG_AES_CFB128_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features =
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb128_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008,0x74f6854dcf894dc6894dcd8949d48949
-.octa 0x4d00000001b9e2894cee8948df89484c
-.byte 137,248",
-        r"call {vg_aes_encrypt_blocks_aesni}",
-        r".octa 0x8458b49004589492404334900458b49,0x4894900458b49084589490824443349,0x834910c58349082444894908458b4924,0xaf8b49000008109f8b4900ebb67501ee
-.octa 0x828af8b4d00000820a78b4d00000818,0x838bf8b4d00000830b78b4d0000
-.byte 195",
-        r".p2align 6",
+        // mov QWORD PTR [r9+2064], rbx
+        // mov QWORD PTR [r9+2072], rbp
+        // mov QWORD PTR [r9+2080], r12
+        // mov QWORD PTR [r9+2088], r13
+        // mov QWORD PTR [r9+2096], r14
+        // mov QWORD PTR [r9+2104], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r12, rdx
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test r14, r14
+        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
+.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+je 20f
+22:",
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, r12
+        // mov ecx, 1
+        // mov r8, r15
+        r".octa 0x894d00000001b9e2894cee8948df8948
+.byte 0xf8
+call {vg_aes_encrypt_blocks_aesni}",
+        // mov rax, QWORD PTR [r13]
+        // xor rax, QWORD PTR [r12]
+        // mov QWORD PTR [r13], rax
+        // mov rax, QWORD PTR [r13+8]
+        // xor rax, QWORD PTR [r12+8]
+        // mov QWORD PTR [r13+8], rax
+        // mov rax, QWORD PTR [r13]
+        // mov QWORD PTR [r12], rax
+        // mov rax, QWORD PTR [r13+8]
+        // mov QWORD PTR [r12+8], rax
+        // add r13, 16
+        // sub r14, 1
+        r".octa 0x8458b49004589492404334900458b49,0x4894900458b49084589490824443349,0x834910c58349082444894908458b4924
+.byte 0xee,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r15+2064]
+        // mov rbp, QWORD PTR [r15+2072]
+        // mov r12, QWORD PTR [r15+2080]
+        // mov r13, QWORD PTR [r15+2088]
+        // mov r14, QWORD PTR [r15+2096]
+        // mov r15, QWORD PTR [r15+2104]
+        // ret
+        r".octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
+.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -56,14 +101,61 @@ pub const VG_AES_CFB128_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features =
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb128_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008,0x74f6854dcf894dc6894dcd8949d48949
-.octa 0x4d00000001b9e2894cee8948df894855
-.byte 137,248",
-        r"call {vg_aes_encrypt_blocks_aesni}",
-        r".octa 0x8458b49004589492404334900458b49,0x45334924048b49084589490824443349,0x8949084533490824448b492404894900,0x4900ebad7501ee834910c58349082444
-.octa 0xa78b4d00000818af8b49000008109f8b,0x830b78b4d00000828af8b4d00000820
-.byte 0,0,77,139,191,56,8,0,0,195",
-        r".p2align 6",
+        // mov QWORD PTR [r9+2064], rbx
+        // mov QWORD PTR [r9+2072], rbp
+        // mov QWORD PTR [r9+2080], r12
+        // mov QWORD PTR [r9+2088], r13
+        // mov QWORD PTR [r9+2096], r14
+        // mov QWORD PTR [r9+2104], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r12, rdx
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test r14, r14
+        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
+.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+je 20f
+22:",
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, r12
+        // mov ecx, 1
+        // mov r8, r15
+        r".octa 0x894d00000001b9e2894cee8948df8948
+.byte 0xf8
+call {vg_aes_encrypt_blocks_aesni}",
+        // mov rax, QWORD PTR [r13]
+        // xor rax, QWORD PTR [r12]
+        // mov QWORD PTR [r13], rax
+        // mov rax, QWORD PTR [r13+8]
+        // xor rax, QWORD PTR [r12+8]
+        // mov QWORD PTR [r13+8], rax
+        // mov rax, QWORD PTR [r12]
+        // xor rax, QWORD PTR [r13]
+        // mov QWORD PTR [r12], rax
+        // mov rax, QWORD PTR [r12+8]
+        // xor rax, QWORD PTR [r13+8]
+        // mov QWORD PTR [r12+8], rax
+        // add r13, 16
+        // sub r14, 1
+        r".octa 0x8458b49004589492404334900458b49,0x45334924048b49084589490824443349,0x8949084533490824448b492404894900
+.byte 0x44,0x24,0x08,0x49,0x83,0xc5,0x10,0x49,0x83,0xee,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r15+2064]
+        // mov rbp, QWORD PTR [r15+2072]
+        // mov r12, QWORD PTR [r15+2080]
+        // mov r13, QWORD PTR [r15+2088]
+        // mov r14, QWORD PTR [r15+2096]
+        // mov r15, QWORD PTR [r15+2104]
+        // ret
+        r".octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
+.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -85,14 +177,59 @@ pub unsafe extern "sysv64" fn vg_aes_cfb128_decrypt_aesni(schedule: *const [u8; 
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008,0x74f6854dcf894dc6894dcd8949d48949
-.octa 0x4d00000001b9e2894cee8948df89484c
-.byte 137,248",
-        r"call {vg_aes_encrypt_blocks}",
-        r".octa 0x8458b49004589492404334900458b49,0x4894900458b49084589490824443349,0x834910c58349082444894908458b4924,0xaf8b49000008109f8b4900ebb67501ee
-.octa 0x828af8b4d00000820a78b4d00000818,0x838bf8b4d00000830b78b4d0000
-.byte 195",
-        r".p2align 6",
+        // mov QWORD PTR [r9+2064], rbx
+        // mov QWORD PTR [r9+2072], rbp
+        // mov QWORD PTR [r9+2080], r12
+        // mov QWORD PTR [r9+2088], r13
+        // mov QWORD PTR [r9+2096], r14
+        // mov QWORD PTR [r9+2104], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r12, rdx
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test r14, r14
+        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
+.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+je 20f
+22:",
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, r12
+        // mov ecx, 1
+        // mov r8, r15
+        r".octa 0x894d00000001b9e2894cee8948df8948
+.byte 0xf8
+call {vg_aes_encrypt_blocks}",
+        // mov rax, QWORD PTR [r13]
+        // xor rax, QWORD PTR [r12]
+        // mov QWORD PTR [r13], rax
+        // mov rax, QWORD PTR [r13+8]
+        // xor rax, QWORD PTR [r12+8]
+        // mov QWORD PTR [r13+8], rax
+        // mov rax, QWORD PTR [r13]
+        // mov QWORD PTR [r12], rax
+        // mov rax, QWORD PTR [r13+8]
+        // mov QWORD PTR [r12+8], rax
+        // add r13, 16
+        // sub r14, 1
+        r".octa 0x8458b49004589492404334900458b49,0x4894900458b49084589490824443349,0x834910c58349082444894908458b4924
+.byte 0xee,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r15+2064]
+        // mov rbp, QWORD PTR [r15+2072]
+        // mov r12, QWORD PTR [r15+2080]
+        // mov r13, QWORD PTR [r15+2088]
+        // mov r14, QWORD PTR [r15+2096]
+        // mov r15, QWORD PTR [r15+2104]
+        // ret
+        r".octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
+.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -114,14 +251,61 @@ pub unsafe extern "sysv64" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240], 
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb128_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008,0x74f6854dcf894dc6894dcd8949d48949
-.octa 0x4d00000001b9e2894cee8948df894855
-.byte 137,248",
-        r"call {vg_aes_encrypt_blocks}",
-        r".octa 0x8458b49004589492404334900458b49,0x45334924048b49084589490824443349,0x8949084533490824448b492404894900,0x4900ebad7501ee834910c58349082444
-.octa 0xa78b4d00000818af8b49000008109f8b,0x830b78b4d00000828af8b4d00000820
-.byte 0,0,77,139,191,56,8,0,0,195",
-        r".p2align 6",
+        // mov QWORD PTR [r9+2064], rbx
+        // mov QWORD PTR [r9+2072], rbp
+        // mov QWORD PTR [r9+2080], r12
+        // mov QWORD PTR [r9+2088], r13
+        // mov QWORD PTR [r9+2096], r14
+        // mov QWORD PTR [r9+2104], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r12, rdx
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test r14, r14
+        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
+.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+je 20f
+22:",
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, r12
+        // mov ecx, 1
+        // mov r8, r15
+        r".octa 0x894d00000001b9e2894cee8948df8948
+.byte 0xf8
+call {vg_aes_encrypt_blocks}",
+        // mov rax, QWORD PTR [r13]
+        // xor rax, QWORD PTR [r12]
+        // mov QWORD PTR [r13], rax
+        // mov rax, QWORD PTR [r13+8]
+        // xor rax, QWORD PTR [r12+8]
+        // mov QWORD PTR [r13+8], rax
+        // mov rax, QWORD PTR [r12]
+        // xor rax, QWORD PTR [r13]
+        // mov QWORD PTR [r12], rax
+        // mov rax, QWORD PTR [r12+8]
+        // xor rax, QWORD PTR [r13+8]
+        // mov QWORD PTR [r12+8], rax
+        // add r13, 16
+        // sub r14, 1
+        r".octa 0x8458b49004589492404334900458b49,0x45334924048b49084589490824443349,0x8949084533490824448b492404894900
+.byte 0x44,0x24,0x08,0x49,0x83,0xc5,0x10,0x49,0x83,0xee,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r15+2064]
+        // mov rbp, QWORD PTR [r15+2072]
+        // mov r12, QWORD PTR [r15+2080]
+        // mov r13, QWORD PTR [r15+2088]
+        // mov r14, QWORD PTR [r15+2096]
+        // mov r15, QWORD PTR [r15+2104]
+        // ret
+        r".octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
+.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -147,14 +331,59 @@ pub const VG_AES_CFB128_ENCRYPT_VAES_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb128_encrypt_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008,0x74f6854dcf894dc6894dcd8949d48949
-.octa 0x4d00000001b9e2894cee8948df89484c
-.byte 137,248",
-        r"call {vg_aes_encrypt_blocks_vaes}",
-        r".octa 0x8458b49004589492404334900458b49,0x4894900458b49084589490824443349,0x834910c58349082444894908458b4924,0xaf8b49000008109f8b4900ebb67501ee
-.octa 0x828af8b4d00000820a78b4d00000818,0x838bf8b4d00000830b78b4d0000
-.byte 195",
-        r".p2align 6",
+        // mov QWORD PTR [r9+2064], rbx
+        // mov QWORD PTR [r9+2072], rbp
+        // mov QWORD PTR [r9+2080], r12
+        // mov QWORD PTR [r9+2088], r13
+        // mov QWORD PTR [r9+2096], r14
+        // mov QWORD PTR [r9+2104], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r12, rdx
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test r14, r14
+        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
+.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+je 20f
+22:",
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, r12
+        // mov ecx, 1
+        // mov r8, r15
+        r".octa 0x894d00000001b9e2894cee8948df8948
+.byte 0xf8
+call {vg_aes_encrypt_blocks_vaes}",
+        // mov rax, QWORD PTR [r13]
+        // xor rax, QWORD PTR [r12]
+        // mov QWORD PTR [r13], rax
+        // mov rax, QWORD PTR [r13+8]
+        // xor rax, QWORD PTR [r12+8]
+        // mov QWORD PTR [r13+8], rax
+        // mov rax, QWORD PTR [r13]
+        // mov QWORD PTR [r12], rax
+        // mov rax, QWORD PTR [r13+8]
+        // mov QWORD PTR [r12+8], rax
+        // add r13, 16
+        // sub r14, 1
+        r".octa 0x8458b49004589492404334900458b49,0x4894900458b49084589490824443349,0x834910c58349082444894908458b4924
+.byte 0xee,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r15+2064]
+        // mov rbp, QWORD PTR [r15+2072]
+        // mov r12, QWORD PTR [r15+2080]
+        // mov r13, QWORD PTR [r15+2088]
+        // mov r14, QWORD PTR [r15+2096]
+        // mov r15, QWORD PTR [r15+2104]
+        // ret
+        r".octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
+.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
     )
 }
@@ -180,14 +409,61 @@ pub const VG_AES_CFB128_DECRYPT_VAES_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb128_decrypt_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008,0x74f6854dcf894dc6894dcd8949d48949
-.octa 0x4d00000001b9e2894cee8948df894855
-.byte 137,248",
-        r"call {vg_aes_encrypt_blocks_vaes}",
-        r".octa 0x8458b49004589492404334900458b49,0x45334924048b49084589490824443349,0x8949084533490824448b492404894900,0x4900ebad7501ee834910c58349082444
-.octa 0xa78b4d00000818af8b49000008109f8b,0x830b78b4d00000828af8b4d00000820
-.byte 0,0,77,139,191,56,8,0,0,195",
-        r".p2align 6",
+        // mov QWORD PTR [r9+2064], rbx
+        // mov QWORD PTR [r9+2072], rbp
+        // mov QWORD PTR [r9+2080], r12
+        // mov QWORD PTR [r9+2088], r13
+        // mov QWORD PTR [r9+2096], r14
+        // mov QWORD PTR [r9+2104], r15
+        // mov rbx, rdi
+        // mov rbp, rsi
+        // mov r12, rdx
+        // mov r13, rcx
+        // mov r14, r8
+        // mov r15, r9
+        // test r14, r14
+        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
+.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+je 20f
+22:",
+        // mov rdi, rbx
+        // mov rsi, rbp
+        // mov rdx, r12
+        // mov ecx, 1
+        // mov r8, r15
+        r".octa 0x894d00000001b9e2894cee8948df8948
+.byte 0xf8
+call {vg_aes_encrypt_blocks_vaes}",
+        // mov rax, QWORD PTR [r13]
+        // xor rax, QWORD PTR [r12]
+        // mov QWORD PTR [r13], rax
+        // mov rax, QWORD PTR [r13+8]
+        // xor rax, QWORD PTR [r12+8]
+        // mov QWORD PTR [r13+8], rax
+        // mov rax, QWORD PTR [r12]
+        // xor rax, QWORD PTR [r13]
+        // mov QWORD PTR [r12], rax
+        // mov rax, QWORD PTR [r12+8]
+        // xor rax, QWORD PTR [r13+8]
+        // mov QWORD PTR [r12+8], rax
+        // add r13, 16
+        // sub r14, 1
+        r".octa 0x8458b49004589492404334900458b49,0x45334924048b49084589490824443349,0x8949084533490824448b492404894900
+.byte 0x44,0x24,0x08,0x49,0x83,0xc5,0x10,0x49,0x83,0xee,0x01
+jne 22b
+jmp 21f
+20:
+21:",
+        // mov rbx, QWORD PTR [r15+2064]
+        // mov rbp, QWORD PTR [r15+2072]
+        // mov r12, QWORD PTR [r15+2080]
+        // mov r13, QWORD PTR [r15+2088]
+        // mov r14, QWORD PTR [r15+2096]
+        // mov r15, QWORD PTR [r15+2104]
+        // ret
+        r".octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
+.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
+.p2align 6",
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
     )
 }

@@ -324,49 +324,49 @@ def bcstAdd (disp : Int) : Option (BitVec 512) :=
 
 /-! ## Printing -/
 
-#guard printer.instr (.zop (.zbin .vpaddd .xmm1 .xmm2 .xmm15)) == ["vpaddd zmm1, zmm2, zmm15"]
-#guard printer.instr (.zop (.zbin .vpxord .xmm1 .xmm2 .xmm3)) == ["vpxord zmm1, zmm2, zmm3"]
-#guard printer.instr (.zop (.zbin .vpunpckhqdq .xmm4 .xmm5 .xmm6)) == ["vpunpckhqdq zmm4, zmm5, zmm6"]
-#guard printer.instr (.zop (.vprold .xmm7 .xmm8 12)) == ["vprold zmm7, zmm8, 12"]
-#guard printer.instr (.zop (.vpshufd .xmm9 .xmm10 147)) == ["vpshufd zmm9, zmm10, 147"]
-#guard printer.instr (.zop (.vshufi32x4 .xmm11 .xmm12 .xmm13 0x88)) ==
+#guard Instr.asm (.zop (.zbin .vpaddd .xmm1 .xmm2 .xmm15)) == ["vpaddd zmm1, zmm2, zmm15"]
+#guard Instr.asm (.zop (.zbin .vpxord .xmm1 .xmm2 .xmm3)) == ["vpxord zmm1, zmm2, zmm3"]
+#guard Instr.asm (.zop (.zbin .vpunpckhqdq .xmm4 .xmm5 .xmm6)) == ["vpunpckhqdq zmm4, zmm5, zmm6"]
+#guard Instr.asm (.zop (.vprold .xmm7 .xmm8 12)) == ["vprold zmm7, zmm8, 12"]
+#guard Instr.asm (.zop (.vpshufd .xmm9 .xmm10 147)) == ["vpshufd zmm9, zmm10, 147"]
+#guard Instr.asm (.zop (.vshufi32x4 .xmm11 .xmm12 .xmm13 0x88)) ==
   ["vshufi32x4 zmm11, zmm12, zmm13, 136"]
-#guard printer.instr (.zop (.zbin .vpaddq .xmm1 .xmm2 .xmm3)) == ["vpaddq zmm1, zmm2, zmm3"]
-#guard printer.instr (.zop (.zbin .vpmuludq .xmm4 .xmm5 .xmm15)) == ["vpmuludq zmm4, zmm5, zmm15"]
-#guard printer.instr (.zop (.zbin .vpandq .xmm0 .xmm1 .xmm2)) == ["vpandq zmm0, zmm1, zmm2"]
-#guard printer.instr (.zop (.zbin .vporq .xmm0 .xmm1 .xmm2)) == ["vporq zmm0, zmm1, zmm2"]
-#guard printer.instr (.zop (.zbin .vpandnq .xmm0 .xmm1 .xmm2)) == ["vpandnq zmm0, zmm1, zmm2"]
-#guard printer.instr (.zop (.vshift .vpsllq .xmm3 .xmm4 38)) == ["vpsllq zmm3, zmm4, 38"]
-#guard printer.instr (.zop (.vshift .vpsrlq .xmm10 .xmm11 26)) == ["vpsrlq zmm10, zmm11, 26"]
-#guard printer.instr (.zop (.vpbroadcastq .xmm12 .xmm13)) == ["vpbroadcastq zmm12, xmm13"]
-#guard printer.instr (.zop (.vmovdqa64 .xmm14 .xmm15)) == ["vmovdqa64 zmm14, zmm15"]
-#guard printer.instr (.zop (.vprorq .xmm1 .xmm14 63)) == ["vprorq zmm1, zmm14, 63"]
-#guard printer.instr (.vop (.vprorq .l256 .xmm1 .xmm14 63)) == ["vprorq ymm1, ymm14, 63"]
-#guard printer.instr (.vop (.vprorq .l128 .xmm15 .xmm2 24)) == ["vprorq xmm15, xmm2, 24"]
-#guard printer.instr (.zop (.vpermq .xmm15 .xmm2 0x93)) == ["vpermq zmm15, zmm2, 147"]
-#guard printer.instr (.vmovdqu32Load .xmm0 { base := .rsi, disp := 64 }) ==
+#guard Instr.asm (.zop (.zbin .vpaddq .xmm1 .xmm2 .xmm3)) == ["vpaddq zmm1, zmm2, zmm3"]
+#guard Instr.asm (.zop (.zbin .vpmuludq .xmm4 .xmm5 .xmm15)) == ["vpmuludq zmm4, zmm5, zmm15"]
+#guard Instr.asm (.zop (.zbin .vpandq .xmm0 .xmm1 .xmm2)) == ["vpandq zmm0, zmm1, zmm2"]
+#guard Instr.asm (.zop (.zbin .vporq .xmm0 .xmm1 .xmm2)) == ["vporq zmm0, zmm1, zmm2"]
+#guard Instr.asm (.zop (.zbin .vpandnq .xmm0 .xmm1 .xmm2)) == ["vpandnq zmm0, zmm1, zmm2"]
+#guard Instr.asm (.zop (.vshift .vpsllq .xmm3 .xmm4 38)) == ["vpsllq zmm3, zmm4, 38"]
+#guard Instr.asm (.zop (.vshift .vpsrlq .xmm10 .xmm11 26)) == ["vpsrlq zmm10, zmm11, 26"]
+#guard Instr.asm (.zop (.vpbroadcastq .xmm12 .xmm13)) == ["vpbroadcastq zmm12, xmm13"]
+#guard Instr.asm (.zop (.vmovdqa64 .xmm14 .xmm15)) == ["vmovdqa64 zmm14, zmm15"]
+#guard Instr.asm (.zop (.vprorq .xmm1 .xmm14 63)) == ["vprorq zmm1, zmm14, 63"]
+#guard Instr.asm (.vop (.vprorq .l256 .xmm1 .xmm14 63)) == ["vprorq ymm1, ymm14, 63"]
+#guard Instr.asm (.vop (.vprorq .l128 .xmm15 .xmm2 24)) == ["vprorq xmm15, xmm2, 24"]
+#guard Instr.asm (.zop (.vpermq .xmm15 .xmm2 0x93)) == ["vpermq zmm15, zmm2, 147"]
+#guard Instr.asm (.vmovdqu32Load .xmm0 { base := .rsi, disp := 64 }) ==
   ["vmovdqu32 zmm0, ZMMWORD PTR [rsi+64]"]
-#guard printer.instr (.vmovdqu32Store { base := .rcx } .xmm14) == ["vmovdqu32 ZMMWORD PTR [rcx], zmm14"]
-#guard printer.instr (.kLoad .rcx .xmm3 { base := .rdx, disp := 64 }) ==
+#guard Instr.asm (.vmovdqu32Store { base := .rcx } .xmm14) == ["vmovdqu32 ZMMWORD PTR [rcx], zmm14"]
+#guard Instr.asm (.kLoad .rcx .xmm3 { base := .rdx, disp := 64 }) ==
   ["kmovw k1, ecx", "vmovdqu64 zmm3 {k1}{z}, ZMMWORD PTR [rdx+64]"]
-#guard printer.instr (.kStore { base := .rdx, disp := 64 } .r10 .xmm15) ==
+#guard Instr.asm (.kStore { base := .rdx, disp := 64 } .r10 .xmm15) ==
   ["kmovw k1, r10d", "vmovdqu64 ZMMWORD PTR [rdx+64] {k1}, zmm15"]
-#guard printer.instr (.kLoad8 .rcx .xmm3 { base := .rdx, disp := 64 }) ==
+#guard Instr.asm (.kLoad8 .rcx .xmm3 { base := .rdx, disp := 64 }) ==
   ["kmovq k1, rcx", "vmovdqu8 zmm3 {k1}{z}, ZMMWORD PTR [rdx+64]"]
-#guard printer.instr (.kStore8 { base := .rdx, disp := 64 } .r10 .xmm15) ==
+#guard Instr.asm (.kStore8 { base := .rdx, disp := 64 } .r10 .xmm15) ==
   ["kmovq k1, r10", "vmovdqu8 ZMMWORD PTR [rdx+64] {k1}, zmm15"]
-#guard printer.instr (.vbroadcasti32x4 .xmm1 { base := .rdi, disp := 48 }) ==
+#guard Instr.asm (.vbroadcasti32x4 .xmm1 { base := .rdi, disp := 48 }) ==
   ["vbroadcasti32x4 zmm1, XMMWORD PTR [rdi+48]"]
-#guard printer.instr (.zbcst .vpmuludq .xmm5 .xmm1 { base := .rdi, disp := 13 }) ==
+#guard Instr.asm (.zbcst .vpmuludq .xmm5 .xmm1 { base := .rdi, disp := 13 }) ==
   ["vpmuludq zmm5, zmm1, QWORD PTR [rdi+13]{1to8}"]
-#guard printer.instr (.zbcst .vpandq .xmm0 .xmm9 { base := .rsp }) ==
+#guard Instr.asm (.zbcst .vpandq .xmm0 .xmm9 { base := .rsp }) ==
   ["vpandq zmm0, zmm9, QWORD PTR [rsp]{1to8}"]
-#guard printer.instr
+#guard Instr.asm
     (.zbcst .vporq .xmm15 .xmm14 { base := .rdi, index := some .rax, scale := 8, disp := -8 }) ==
   ["vporq zmm15, zmm14, QWORD PTR [rdi+rax*8-8]{1to8}"]
-#guard printer.instr (.vpbroadcastdZ .xmm3 { base := .rdi, disp := 52 }) ==
+#guard Instr.asm (.vpbroadcastdZ .xmm3 { base := .rdi, disp := 52 }) ==
   ["vpbroadcastd zmm3, DWORD PTR [rdi+52]"]
-#guard printer.instr (.zbcstd .vpaddd .xmm12 .xmm12 { base := .rdi, disp := 4 }) ==
+#guard Instr.asm (.zbcstd .vpaddd .xmm12 .xmm12 { base := .rdi, disp := 4 }) ==
   ["vpaddd zmm12, zmm12, DWORD PTR [rdi+4]{1to16}"]
 
 /-! ## Required features -/

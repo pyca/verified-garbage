@@ -67,9 +67,9 @@ def run (op : VOp) (d : XReg) : BitVec 256 := (op.exec s).ymm d
 
 /-! ## Printing and CPU features -/
 
-#guard printer.instr (.vop (.vsha512rnds2 .xmm1 .xmm2 .xmm3)) == ["vsha512rnds2 ymm1, ymm2, xmm3"]
-#guard printer.instr (.vop (.vsha512msg1 .xmm4 .xmm5)) == ["vsha512msg1 ymm4, xmm5"]
-#guard printer.instr (.vop (.vsha512msg2 .xmm14 .xmm15)) == ["vsha512msg2 ymm14, ymm15"]
+#guard Instr.asm (.vop (.vsha512rnds2 .xmm1 .xmm2 .xmm3)) == ["vsha512rnds2 ymm1, ymm2, xmm3"]
+#guard Instr.asm (.vop (.vsha512msg1 .xmm4 .xmm5)) == ["vsha512msg1 ymm4, xmm5"]
+#guard Instr.asm (.vop (.vsha512msg2 .xmm14 .xmm15)) == ["vsha512msg2 ymm14, ymm15"]
 
 -- The SDM's "CPUID Feature Flag" of each is SHA512.
 #guard isa.requires (.vop (.vsha512rnds2 .xmm1 .xmm2 .xmm3)) == ["sha512"]
