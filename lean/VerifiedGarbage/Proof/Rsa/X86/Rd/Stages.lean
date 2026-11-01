@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Rsa.RecoverExp
 public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
-import VerifiedGarbage.Proof.Rsa.X86.Rd.Product
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Product
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Gcd
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Appendix C.2 on i686: `d e - 1`, the GCD, the product and the first division
 
@@ -70,7 +71,7 @@ theorem deMinus_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {de : Nat}
   · simp [upd, hz', wX, wOne, wT, VG.Impl.Rsa.X86.Recover.wZ]
 
 /-- The GCD's inputs: `u` into narrow array 8 and the halved `x` into narrow array 0. -/
-theorem gcdSet_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {u x : Nat}
+theorem gcdSetD_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {u x : Nat}
     (h : KS g s0 A [aU, aX2, VG.Impl.Rsa.X86.Recover.aN] AW [wX3] V [sK, sOkDE] s)
     (hu : A aU = u) (hx : A aX2 = x) :
     WP isa gcdSet s fun t => ∃ A',
@@ -91,6 +92,26 @@ theorem gcdSet_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {u x : Nat}
   · simp [upd, aGx, aGm, aX2, hx']
   · simp [upd, aGx, aGm, VG.Impl.Rsa.X86.Recover.aN]
 
+/-- The product's set-up: its sum and zero (wide) zeroed. -/
+theorem aProductHead_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {g1 x3 : Nat}
+    (h : KS g s0 A [1, aZero, VG.Impl.Rsa.X86.Recover.aN] AW [wX3] V [sOkDE] s)
+    (hg : A 1 = g1) (hx : AW wX3 = x3) :
+    WP isa (.seq (VG.Impl.Rsa.X86.KeyRt.zeroWide wid wZ2) (VG.Impl.Rsa.X86.KeyRt.zeroWide wid wA)) s fun u =>
+      KS g s0 (upd A aG g1) [1, aZero, VG.Impl.Rsa.X86.Recover.aN]
+        (upd (upd (upd (upd AW wZ2 0) wA 0) wX3 x3) wA 0) [wA, wZ2, wX3] V [sOkDE] u := by
+  have hx' : AW 13 = x3 := hx
+  refine WP.seq (WP.mono (h.zeroWide_W (j := wZ2) (by decide) (by decide)) fun u1 ⟨h1, _⟩ => ?_)
+  refine WP.mono (h1.zeroWide_W (j := wA) (by decide) (by decide)) fun u2 ⟨h2, _⟩ => ?_
+  exact h2.mono (fun j hj => ⟨hj, by simp at hj; rcases hj with rfl | rfl | rfl <;> simp [upd, aG, hg, aZero,
+      VG.Impl.Rsa.X86.Recover.aN]⟩)
+    (fun j hj => ⟨hj, by simp at hj; rcases hj with rfl | rfl | rfl <;> simp [upd, wA, wZ2, wX3, hx']⟩)
+    (fun d hd => ⟨hd, rfl⟩)
+
+/-- The arrays the product of `aProduct` names. -/
+theorem aProductIdx : ProdIdx aG wX3 wA wT wZ2 [1, aZero, VG.Impl.Rsa.X86.Recover.aN] [wA, wZ2, wX3] [sOkDE] :=
+  ⟨by decide, by simp, by simp, by simp, by decide, by decide, by decide, by decide, by decide, by decide,
+    by decide, by decide, by decide, by decide, by decide⟩
+
 /-- `a`: the GCD times the doubled `x`. -/
 theorem aProduct_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {g1 x3 : Nat}
     (h : KS g s0 A [1, aZero, VG.Impl.Rsa.X86.Recover.aN] AW [wX3] V [sOkDE] s)
@@ -99,20 +120,10 @@ theorem aProduct_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {g1 x3 : Nat
       KS g s0 A' [aZero, VG.Impl.Rsa.X86.Recover.aN] AW' [wA, wZ2] V' [sOkDE] t ∧
       AW' wA = ((prodStep (32 * g.W))^[32 * g.w] (g1, x3, 0)).2.2 ∧ AW' wZ2 = 0 ∧ A' aZero = A aZero ∧
       A' VG.Impl.Rsa.X86.Recover.aN = A VG.Impl.Rsa.X86.Recover.aN ∧ V' sOkDE = V sOkDE := by
-  have hx' : AW 13 = x3 := hx
   unfold aProduct
   simp only [seqs]
-  refine WP.seq (WP.mono (h.zeroWide_W (j := wZ2) (by decide) (by decide)) fun u1 ⟨h1, _⟩ => ?_)
-  refine WP.seq (WP.mono (h1.zeroWide_W (j := wA) (by decide) (by decide)) fun u2 ⟨h2, _⟩ => ?_)
-  have h3 : KS g s0 (upd A aG g1) [1, aZero, VG.Impl.Rsa.X86.Recover.aN]
-      (upd (upd (upd (upd AW wZ2 0) wA 0) wX3 x3) wA 0) [wA, wZ2, wX3] V [sOkDE] u2 :=
-    h2.mono (fun j hj => ⟨hj, by simp at hj; rcases hj with rfl | rfl | rfl <;> simp [upd, aG, hg, aZero,
-        VG.Impl.Rsa.X86.Recover.aN]⟩)
-      (fun j hj => ⟨hj, by simp at hj; rcases hj with rfl | rfl | rfl <;> simp [upd, wA, wZ2, wX3, hx']⟩)
-      (fun d hd => ⟨hd, rfl⟩)
-  refine WP.mono (product_ok (y := aG) (x := wX3) (a := wA) (t := wT) (z := wZ2)
-    ⟨by decide, by simp, by simp, by simp, by decide, by decide, by decide, by decide, by decide, by decide,
-      by decide, by decide, by decide, by decide, by decide⟩ (by simp [upd, wZ2, wA]) h3) fun t ht => ?_
+  refine WP.assoc (WP.seq (WP.mono (aProductHead_ok h hg hx) fun u h3 =>
+    WP.mono (product_ok aProductIdx (by simp [upd, wZ2, wA]) h3) fun t ht => ?_))
   unfold ProdS at ht
   refine ⟨_, _, _, ht.mono (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩)
     (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩), by simp [upd], by simp [upd, wA, wZ2, wX3], by simp [upd, aG, aZero],

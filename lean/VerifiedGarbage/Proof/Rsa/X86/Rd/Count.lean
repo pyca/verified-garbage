@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The loops' public counts in prime recovery by Appendix C.2 (i686)
 
@@ -80,6 +81,13 @@ theorem KS.countNext_ok (h : KS g s0 A live AW liveW V ls s) (hc : sK ∈ ls)
   rfl
 
 end
+
+/-- A sequence with a last part: its first parts, then the last. -/
+theorem wp_seqs_snoc : ∀ {c : Prog isa} {cs : List (Prog isa)} {last : Prog isa} {s : State}
+    {Q : State → Prop}, WP isa (seqs (c :: cs)) s (fun u => WP isa last u Q) →
+      WP isa (seqs (c :: cs ++ [last])) s Q
+  | _, [], _, _, _, h => WP.seq h
+  | _, _ :: _, _, _, _, h => WP.seq (WP.mono (WP.seq_iff.mp h) fun _ hu => wp_seqs_snoc hu)
 
 /-- `K` runs of a body that takes its invariant from step `i` to `i + 1`, and sets ZF on the
 last. -/

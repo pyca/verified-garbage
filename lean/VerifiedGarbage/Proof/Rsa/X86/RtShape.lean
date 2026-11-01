@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
+public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedRt
@@ -19,6 +20,9 @@ namespace VG.Proof.Rsa.X86.RtShape
 open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
 
  theorem recover_all : Impl.Rsa.X86.RecoverRt.code.allInstrs noSp=true := by
+  rsa_stack_shape
+
+ theorem recoverDet_all : Impl.Rsa.X86.RecoverDetRt.code.allInstrs noSp=true := by
   rsa_stack_shape
 
  theorem privateCrt_all : (Impl.Bignum.X86.CrtRt.code).allInstrs noSp=true := by
@@ -42,6 +46,9 @@ open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
   exact Code.all_of_allInstrs h
 
  theorem recover_spSafe : (Impl.Rsa.X86.RecoverRt.code).all (fun i => !isa.writesSp i)=true := all_spSafe recover_all
+
+ theorem recoverDet_spSafe : (Impl.Rsa.X86.RecoverDetRt.code).all (fun i => !isa.writesSp i)=true :=
+  all_spSafe recoverDet_all
 
  theorem privateCrt_spSafe : (Impl.Bignum.X86.CrtRt.code).all (fun i => !isa.writesSp i)=true := all_spSafe privateCrt_all
 

@@ -90,8 +90,8 @@ fn keys(c: &mut Criterion) {
     // OpenSSL has no function that brings `(n, e, d, p, q)` to the CRT form,
     // or that recovers `p` and `q` from `(n, e, d)`: its nearest is the same
     // arithmetic with its `BigNum`s (the CRT values, and SP 800-56B Rev. 2
-    // Appendix C.1 with the candidates 2, 3, …, as `from_components`), then
-    // `Rsa::from_private_components`.
+    // Appendix C.1 with the candidates 2, 3, …, as `from_components` where it
+    // does not use Appendix C.2), then `Rsa::from_private_components`.
     fn openssl_crt(
         n: &BigNumRef,
         e: &BigNumRef,
