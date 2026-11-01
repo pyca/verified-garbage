@@ -66,9 +66,9 @@ theorem textArgs_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [
 theorem sc_DI {s₀ : State} (h : streamCryptPre s₀) :
     WP isa (.block cryptEntry) s₀ (DI (s₀.gpr .a0) (s₀.gpr .a2) (s₀.gpr .a7) s₀.sp (s₀.gpr .a5)
       (s₀.gpr .a1).toNat (s₀.gpr .a6) (s₀.gpr .a3) (s₀.gpr .a4)) :=
-  WP.mono (sc1_wp (sc_W h)) fun s₁ h1 => ⟨s₁.gpr, h1.s2, h1.s1, h1.s0, h1.s9, h1.s8, h1.s10, h1.s11,
-    by rw [h1.s3, BitVec.ofNat_toNat, BitVec.setWidth_eq], h.2.2.2.2.2.2.2.2.2.2.2.2, sc_env h h1,
-    sc_dataW h h1.en.keeps.wr⟩
+  WP.mono (sc1_wp (sc_W h) (sc_al h)) fun s₁ h1 => ⟨s₁.gpr, h1.s2, h1.s1, h1.s0, h1.s9, h1.s8, h1.s10, h1.s11,
+    by rw [h1.s3, BitVec.ofNat_toNat, BitVec.setWidth_eq], sc_R h, sc_env h h1,
+    sc_dataW h h1.en.keeps.wr h1.en.keeps.sp⟩
 
 section
 variable {c st w sp D : Addr} {R : Nat} {N A T : BitVec 64}
@@ -90,20 +90,20 @@ theorem di_textArgs {s : State} (h : DI c st w sp D R N A T s) :
     WP isa (.block textArgs) s (CI c st w sp D R N A T) := by
   obtain ⟨V, h29, h30, h31, h20, h19, h22, h23, h28, hR, he, hd⟩ := h
   refine WP.mono textArgs_ok fun s₂ ⟨h24, h25, h26, hg, hk⟩ => ?_
-  have he₂ := he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide) (by revert r; decide)
-    (by revert r; decide)) hk.sp hk.rd hk.wr
+  have he₂ := he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide) (by revert r; decide))
+    hk.sp hk.rd hk.wr
   exact ⟨V, 0, T.toNat, h29, h30, h31, h20, h19, h22, h23, rfl, he₂, by rw [h24, he.fr _ (by decide), h20],
     by rw [h25, he.fr _ (by decide), h19, BitVec.ofNat_toNat, BitVec.setWidth_eq],
-    by rw [h26, he.fr _ (by decide), h23], h28, hR, by rw [h29, h30, h31]; exact hd.of_eq hk.rd hk.wr⟩
+    by rw [h26, he.fr _ (by decide), h23], h28, hR, by rw [h29, h30, h31]; exact hd.of_eq hk.rd hk.wr hk.sp⟩
 
 variable (L : Lay c st w)
 include L
 
 theorem ci_crypt {s : State} (h : CI c st w sp D R N A T s) : WP isa crypt s (TA c st w sp D N A T) := by
   obtain ⟨V, icb, P, h29, h30, h31, h20, h19, h22, h23, _, ci⟩ := h
-  refine WP.mono (WP.with_rdwr (crypt_ok (L.v h29 h30 h31) ci)) fun s' ⟨co, rd, wr, _⟩ =>
+  refine WP.mono (WP.with_rdwr (crypt_ok (L.v h29 h30 h31) ci)) fun s' ⟨co, rd, wr, sp'⟩ =>
     ⟨V, h29, h30, h31, h20, h19, h22, h23, co.env, ?_⟩
-  have := ci.data.ok.of_eq rd wr
+  have := ci.data.ok.of_eq rd wr sp'
   rw [h30, h31] at this
   exact this
 
@@ -112,8 +112,8 @@ theorem di_textAbsorb {s : State} (h : DI c st w sp D R N A T s) :
   obtain ⟨V, h29, h30, h31, h20, h19, h22, h23, h28, hR, he, hd⟩ := h
   refine WP.mono (WP.with_rdwr (textAbsorb_ok (L.v h29 h30 h31) (a := List.replicate (A.toNat % 16) 0)
     (ct := List.replicate T.toNat 0) he rfl (by rw [h20, h19, h30, h31]; exact hd.ok) (by simp [h22])
-    (by simp [h23]))) fun s' ⟨ta, rd, wr, _⟩ => ⟨V, h29, h30, h31, h20, h19, h22, h23, h28, hR, ta.env,
-      hd.of_eq rd wr⟩
+    (by simp [h23]))) fun s' ⟨ta, rd, wr, sp'⟩ => ⟨V, h29, h30, h31, h20, h19, h22, h23, h28, hR, ta.env,
+      hd.of_eq rd wr sp'⟩
 
 theorem ta_textAbsorb {s : State} (h : TA c st w sp D N A T s) :
     WP isa textAbsorb s fun s' => s'.gpr .s0 = w ∧ s'.sp = sp := by
