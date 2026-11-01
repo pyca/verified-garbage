@@ -215,6 +215,37 @@ theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 
     (⟨st + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨st + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by omega) (by omega)
 
+/-- Doublewords of the context, the state and `W` are aligned. -/
+theorem cal {d : Nat} (hd : d % 8 = 0) (h : d < 256) : (c + BitVec.ofNat 64 d).toNat % 8 = 0 := by
+  have := L.cw; have := L.ca
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]
+  omega
+
+theorem stal {d : Nat} (hd : d % 8 = 0) (h : d < 80) : (st + BitVec.ofNat 64 d).toNat % 8 = 0 := by
+  have := L.sw; have := L.sal
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]
+  omega
+
+theorem stal4 {d : Nat} (hd : d % 4 = 0) (h : d < 80) : (st + BitVec.ofNat 64 d).toNat % 4 = 0 := by
+  have := L.sw; have := L.sal
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]
+  omega
+
+theorem wal8 {d : Nat} (hd : d % 8 = 0) (h : d < 2560) : (w + BitVec.ofNat 64 d).toNat % 8 = 0 := by
+  have := L.ww; have := L.wal
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]
+  omega
+
+theorem w_fit {d n : Nat} (h : d + n ≤ 2560) (hn : 0 < n) : (w + BitVec.ofNat 64 d).toNat + n ≤ 2 ^ 64 := by
+  have := L.ww
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]
+  omega
+
+theorem st_fit {d n : Nat} (h : d + n ≤ 80) (hn : 0 < n) : (st + BitVec.ofNat 64 d).toNat + n ≤ 2 ^ 64 := by
+  have := L.sw
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]
+  omega
+
 omit L in
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
@@ -334,6 +365,10 @@ theorem bytesAt_writeBytes_self (m : Mem) (p : Addr) (xs : List Byte) (h : xs.le
   have := bytesAt_writeBytes m p 0 xs (by omega)
   simp only [Nat.zero_add, BitVec.add_zero] at this
   rw [this]; rfl
+
+theorem bytesAt_writeBytes_self' (m : Mem) (p : Addr) {xs : List Byte} {n : Nat} (hn : xs.length = n)
+    (h : n < 2 ^ 64) : bytesAt (writeBytes m p xs) p n = xs := by
+  subst hn; exact bytesAt_writeBytes_self m p xs h
 
 theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length = n := by
   simp [bytesAt]
