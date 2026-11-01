@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 # GHASH with VPCLMULQDQ on x86-64
 
 `vg_ghash_vpclmul(h = rdi, y = rsi, data = rdx, n = rcx, scratch = r8)`, with
-the contract of `vg_ghash` (`Spec.Gcm.ghashContract`), for CPUs with
+the contract of `vg_ghash` (`Proof.Gcm.ghashContract`), for CPUs with
 VPCLMULQDQ and AVX2 (and PCLMULQDQ and SSSE3, for the blocks left).
 
 `vg_ghash_pclmul`'s prologue computes `H'` (`H'ᵏ = Hᵏ · x⁻¹`) into `xmm3`

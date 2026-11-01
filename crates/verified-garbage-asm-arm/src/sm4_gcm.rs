@@ -652,7 +652,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #800
 bx lr",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -1309,7 +1309,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #800
 bx lr",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -1532,7 +1532,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #784
 bx lr",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
@@ -1666,7 +1666,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #784
 bx lr",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
@@ -1938,7 +1938,7 @@ ldr r11, [r11, #156]
 add sp, sp, #800
 bx lr",
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
@@ -2209,7 +2209,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #800
 bx lr",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -2357,7 +2357,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #800
 bx lr",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
@@ -2561,7 +2561,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #800
 bx lr",
-        vg_ghash = sym super::gcm::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }

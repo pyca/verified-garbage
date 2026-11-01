@@ -125,7 +125,7 @@ call {vg_ghash}
 call {vg_aes_ctr32_vaes}
 .base64 "WEiLfCQoSYsHSYtXCEiJB0iJVwhJi5+AAAAASYuviAAAAE2Lp5AAAABNi6+YAAAATYu3oAAAAE2Lv6gAAABIjaQkOAoAAMM="
 .p2align 6"#,
-        vg_ghash = sym crate::gcm::vg_ghash,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_encrypt_blocks_to_vaes = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_vaes::vg_aes_gcm_encrypt_blocks_to_vaes,
         vg_aes_gcm_encrypt_blocks_vaes = sym crate::aes::vg_aes_gcm_encrypt_blocks_vaes::vg_aes_gcm_encrypt_blocks_vaes,
         vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Gcm.X86.Rev
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Gcm.X86.GhashCT
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.Contract
+meta import VerifiedGarbage.Proof.Gcm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Gcm.X86.Ghash
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
@@ -637,7 +639,7 @@ theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashX86.pre s) :
       Proof.Gcm.ghashX86.post s s' := gh_correct s (GPre.of hs)
 
 theorem ghash_verified :
-    Verified X86.target Impl.Gcm.X86.Pclmul.ghash (Spec.Gcm.ghashContract X86.abi) :=
+    Verified X86.target Impl.Gcm.X86.Pclmul.ghash (Proof.Gcm.ghashContract X86.abi) :=
   Verified.of_correct ghash_correct ghash_ct
     (by
       open VG.Proof.Gcm.X86 in
@@ -648,7 +650,7 @@ theorem ghash_verified :
       have a4 : arg VG.Proof.Gcm.X86.ghSat 4 = 0x4000 := by decide
       have e : argAddr VG.Proof.Gcm.X86.ghSat 0 = 0x8004 := by decide
       have esp : VG.Proof.Gcm.X86.ghSat.gpr .esp = 0x8000 := rfl
-      sig_implies [Spec.Gcm.ghashContract, Spec.Gcm.ghashSig, X86.abi, X86.argSlots,
+      sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes, Proof.Gcm.ghashX86]
         [a0, a1, a2, a3, a4, e, esp] using VG.Proof.Gcm.X86.ghSat)
 

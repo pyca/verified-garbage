@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Aes.Blocks
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.Contract
 /-!
 # GHASH on x86 (32-bit): the whole function
 
@@ -828,7 +829,7 @@ theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashX86.pre s) :
   (gh_correct (GPre.of hs)).imp fun _ ⟨s', he, h⟩ => ⟨s', he, h⟩
 
 theorem ghash_verified :
-    Verified X86.target Impl.Gcm.X86.ghash (Spec.Gcm.ghashContract X86.abi) :=
+    Verified X86.target Impl.Gcm.X86.ghash (Proof.Gcm.ghashContract X86.abi) :=
   Verified.of_correct ghash_correct ghash_ct
     (by
       have a0 : arg ghSat 0 = 0x1000 := by decide
@@ -838,7 +839,7 @@ theorem ghash_verified :
       have a4 : arg ghSat 4 = 0x4000 := by decide
       have e : argAddr ghSat 0 = 0x8004 := by decide
       have esp : ghSat.gpr .esp = 0x8000 := rfl
-      sig_implies [Spec.Gcm.ghashContract, Spec.Gcm.ghashSig, X86.abi, X86.argSlots,
+      sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes, Proof.Gcm.ghashX86] [a0, a1, a2, a3, a4, e, esp] using ghSat)
 
 end VG.Proof.Gcm.X86

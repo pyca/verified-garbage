@@ -12,9 +12,6 @@ import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 namespace VG.Artifacts.Gcm.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Gcm.ghashApi.artifact RISCV64.target {
-    code := Impl.Gcm.RISCV64.ghash
-    stack := 2048
-    verified := Proof.Gcm.RISCV64.ghash_verified }]
+  ]
 
 end VG.Artifacts.Gcm.RISCV64

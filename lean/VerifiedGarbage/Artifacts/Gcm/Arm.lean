@@ -10,8 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Gcm.Arm
 
 def artifacts : List Artifact := [
-  Spec.Gcm.ghashApi.artifact Arm.target {
-    code := Impl.Gcm.Arm.ghash
-    verified := Proof.Gcm.Arm.ghash_verified }]
+  ]
 
 end VG.Artifacts.Gcm.Arm

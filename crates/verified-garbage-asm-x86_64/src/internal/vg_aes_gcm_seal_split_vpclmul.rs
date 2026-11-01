@@ -125,7 +125,7 @@ call {vg_ghash_vpclmul}
 call {vg_aes_ctr32}
 .base64 "WEiLfCQoSYsHSYtXCEiJB0iJVwhJi5+AAAAASYuviAAAAE2Lp5AAAABNi6+YAAAATYu3oAAAAE2Lv6gAAABIjaQkOAoAAMM="
 .p2align 6"#,
-        vg_ghash_vpclmul = sym crate::gcm::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_to_vpclmul = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_vpclmul::vg_aes_gcm_encrypt_blocks_to_vpclmul,
         vg_aes_gcm_encrypt_blocks_vpclmul = sym crate::aes::vg_aes_gcm_encrypt_blocks_vpclmul::vg_aes_gcm_encrypt_blocks_vpclmul,
         vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,

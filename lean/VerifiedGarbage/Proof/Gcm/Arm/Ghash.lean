@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Bytes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 import VerifiedGarbage.Proof.Aes.Blocks
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.Contract
+meta import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -870,9 +872,9 @@ def sat : State where
   wr := [⟨0x2000, 16⟩, ⟨0, 256⟩]
 
 theorem ghash_verified :
-    Verified Arm.target Impl.Gcm.Arm.ghash (Spec.Gcm.ghashContract Arm.abi) :=
+    Verified Arm.target Impl.Gcm.Arm.ghash (Proof.Gcm.ghashContract Arm.abi) :=
   Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Spec.Gcm.ghashContract, Spec.Gcm.ghashSig, Proof.Gcm.ghashArm, Arm.abi, Arm.argRegs,
+    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.ghashArm, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Gcm.Arm.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Gcm.Arm.sat)

@@ -497,7 +497,7 @@ jmp 216b
         vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul,
         vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym crate::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_ghash_vpclmul = sym crate::gcm::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }

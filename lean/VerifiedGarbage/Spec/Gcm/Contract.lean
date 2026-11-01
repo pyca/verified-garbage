@@ -6,19 +6,13 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # AES-GCM: the contracts, on every target
 
-**Trusted** (as every file in `Spec/`). The contracts of the primitive
-AES-GCM is built from, and of AES-GCM itself, in terms of `Spec/Gcm.lean`,
+**Trusted** (as every file in `Spec/`). The contracts of AES-GCM, in terms of `Spec/Gcm.lean`,
 for any target: `A` is the target's calling convention. The signatures fix
 where the arguments are, the memory each function may access, disjointness,
 and that the pointers, the lengths and the number of rounds are public (see
 `TCB/Sig.lean`); the contracts add the rest. Everything else (keys, key
 schedules, hash subkeys, IVs, additional data, texts, tags and states) is
 secret.
-
-## The primitive
-
-`vg_ghash` continues `GHASH_H` over whole blocks. It takes a `scratch`
-buffer of working space, sized for the target that needs the most.
 
 ## AES-GCM
 
@@ -65,34 +59,6 @@ arguments passed in memory, where the calling convention allows it
 @[expose] public section
 
 namespace VG.Spec.Gcm
-
-/-- `vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32])`.
-`scratch` is working space. -/
-def ghashSig : Sig where
-  params := [("h", .array false .u8 16), ("y", .array true .u8 16),
-    ("data", .slice false (.array .u8 16) "n"), ("scratch", .array true .u64 32)]
-
-/-- With the hash subkey `H` at `h` and a block `Y` at `y`: replaces `Y`
-with `GHASH_H` continued from `Y` over the `n` blocks at `data`
-(`Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H`). The hash subkey, `Y` and the data are secret. -/
-def ghashContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  ghashSig.contract A (post := fun h y data n _scratch m m' _ =>
-    blockAt m' y = ghashFrom (blockAt m h) (blockAt m y) (blocksAt m data n.toNat))
-    (stack := stack)
-
-/-- `vg_ghash` on every target. -/
-def ghashApi : Api where
-  module := "gcm"
-  name := "vg_ghash"
-  sig := ghashSig
-  contracts := some fun A stack => ghashContract A stack
-  summary := "GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` \
-    the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and \
-    `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks \
-    big-endian, `•` the multiplication of §6.3).\n\n\
-    Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect \
-    timing, not `H`, `Y` or the data."
-  safety := ["The contents of `scratch` on return are unspecified."]
 
 /-! ## AES-GCM: the key context -/
 
