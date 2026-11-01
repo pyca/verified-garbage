@@ -53,14 +53,16 @@ def callArgs : List Instr :=
 /-- Our return address back from the frame. -/
 def ret : List Instr := [.addSp .r12 0, .load .d .r0 .r12 152, .mtlr .r0]
 
+/-- Copy every piece and seal the contiguous result. -/
+def body : Prog isa :=
+  .seq Gather.PPC64LE.gather
+    (.seq (.block callArgs) (.seq (.call "vg_aes_gcm_seal" sealCode) (.block ret)))
+
+/-- The common gather frame and argument saves. -/
+def withBody (main : Prog isa) : Prog isa :=
+  .frame (.alloc 160) (.seq (.block entry) main) (.free 160)
+
 /-- `vg_aes_gcm_seal_gather`. -/
-def sealGather : Prog isa :=
-  .frame (.alloc 160)
-    (.seq (.block entry)
-    (.seq Gather.PPC64LE.gather
-    (.seq (.block callArgs)
-    (.seq (.call "vg_aes_gcm_seal" sealCode)
-      (.block ret)))))
-    (.free 160)
+def sealGather : Prog isa := withBody body
 
 end VG.Impl.AesGcm.PPC64LE.SealGather

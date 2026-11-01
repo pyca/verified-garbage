@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Verified
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks.Lit
@@ -19,6 +20,10 @@ namespace VG.Artifacts.AesGcm.PPC64LE
 open VG.Proof.AesGcm.PPC64LE
 
 def artifacts : List Artifact := [
+  Spec.Gcm.sealSplitApi.artifact PPC64LE.target {
+    code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 3 Impl.AesGcm.PPC64LE.SealSplit.seal
+    stack := 2800
+    verified := SealSplit.framed },
   Spec.Gcm.encryptBlocksSplitApi.artifact PPC64LE.target {
     code := Impl.AesGcm.PPC64LE.SplitBlocks.encrypt
     verified := SplitBlocks.encrypt_verified },
@@ -62,8 +67,8 @@ def artifacts : List Artifact := [
     stack := 2688
     verified := open_framed },
   Spec.Gcm.sealGatherApi.artifact PPC64LE.target {
-    code := Impl.AesGcm.PPC64LE.SealGather.sealGather
-    stack := 2832
-    verified := Gather.sealGather_verified }]
+    code := Impl.AesGcm.PPC64LE.GatherSplit.sealGather
+    stack := 2960
+    verified := GatherSplit.verified }]
 
 end VG.Artifacts.AesGcm.PPC64LE
