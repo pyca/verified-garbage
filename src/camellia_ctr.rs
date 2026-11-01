@@ -11,7 +11,7 @@
 //! which it replaces with the counter block to continue from, in constant
 //! time: its timing depends on none of the key, the counter block and the
 //! data. It processes eight counter blocks at a time on x86-64 and
-//! AArch64, and one at a time on x86, ARMv7 and PPC64LE. Encryption is bitsliced in
+//! AArch64, and one at a time on x86, ARMv7, PPC64LE and RISC-V. Encryption is bitsliced in
 //! general-purpose registers, with the S-boxes as Boolean circuits and no
 //! table lookups. This module holds the subkeys and handles a partial last block
 //! (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes padded to a block
@@ -25,7 +25,8 @@
     target_arch = "aarch64",
     target_arch = "x86",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::camellia::vg_camellia_expand_key;

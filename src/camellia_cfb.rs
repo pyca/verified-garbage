@@ -10,7 +10,7 @@
 //! ciphertext block, in constant time: their timing depends on none of the
 //! key, the chaining value and the data. Both are the modes' generic CFB over
 //! Camellia's bitsliced ECB code, one block at a time (in a batch of eight):
-//! on x86, x86-64, AArch64 and PPC64LE over the ECB code itself, on ARMv7 calling the
+//! on x86, x86-64, AArch64, PPC64LE and RISC-V over the ECB code itself, on ARMv7 calling the
 //! verified `vg_camellia_ecb_encrypt` once per block. This module holds the subkeys and handles a partial last segment: CFB
 //! encryption of a zero block is `CIPH_K` of the block to continue from,
 //! whose first bytes it XORs into the rest of the input.
@@ -20,7 +20,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::camellia::vg_camellia_expand_key;
@@ -46,7 +47,8 @@ type Cfb = unsafe extern "sysv64" fn(*const [u8; 272], usize, *mut [u8; 16], *mu
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 type Cfb = unsafe extern "C" fn(*const [u8; 272], usize, *mut [u8; 16], *mut [u8; 16], usize);
 

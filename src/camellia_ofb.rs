@@ -8,7 +8,7 @@
 //! block at `iv`, which it replaces with the last output block, in constant
 //! time: its timing depends on none of the key, the chaining value and the
 //! data. It is the modes' generic OFB over Camellia's bitsliced ECB code, one
-//! block at a time (in a batch of eight): on x86, x86-64, AArch64 and PPC64LE
+//! block at a time (in a batch of eight): on x86, x86-64, AArch64, PPC64LE and RISC-V
 //! over the ECB code itself, on ARMv7 calling the verified `vg_camellia_ecb_encrypt` once
 //! per block. This module holds the subkeys and handles a partial last block (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero
 //! block is the next output block, whose first bytes it XORs into the rest of
@@ -19,7 +19,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::camellia::vg_camellia_expand_key;
