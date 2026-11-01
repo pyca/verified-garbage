@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Packed
 import VerifiedGarbage.Proof.Bignum.CrtFrame
+public import VerifiedGarbage.Proof.Mont.Words
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Linarith
 
 /-!
 # RSA's inverse by divsteps on x86-64: a batch
@@ -392,5 +395,237 @@ theorem abUpd_ok {s : State} {B : Addr} {Z w n : Nat} (L : Lay B Z w n) (hs : Sc
       rw [show (16 : Nat) + 8 = 24 from rfl]; unfold oMu at *; omega), f₁ x (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
       unfold oMu at *; omega)]
+
+/-! ## A batch -/
+
+/-- The count of batches less one, its zero flag whether it is now zero. -/
+theorem decRsi_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
+    (hb : s.gpr .rsi = BitVec.ofNat 64 j) :
+    WP isa (.block [.alu .sub .rsi (.imm 1)]) s fun s' =>
+      s'.gpr .rsi = BitVec.ofNat 64 (j - 1) ∧ s'.zf = some (decide (j - 1 = 0)) ∧ s'.mem = s.mem ∧
+        Keep [.rsi] s s' := by
+  have e : BitVec.ofNat 64 j - BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 (j - 1) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (BitVec.signExtend 64 (1 : BitVec 32)).toNat = 1 from rfl]
+    rw [Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega : j - 1 < 2 ^ 64)]
+    omega
+  have ez : (BitVec.ofNat 64 (j - 1) == 0) = decide (j - 1 = 0) := by
+    by_cases h : j - 1 = 0
+    · rw [h]; simp
+    · rw [decide_eq_false h]
+      simp only [beq_eq_false_iff_ne, ne_eq]
+      intro he
+      have := congrArg BitVec.toNat he
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      exact h this
+  refine WP.mono (WP.keep [.rsi] (Q := fun t => t.gpr .rsi = BitVec.ofNat 64 (j - 1) ∧
+    t.zf = some (decide (j - 1 = 0)) ∧ t.mem = s.mem) ?_ rfl) fun t ⟨⟨a, b, c⟩, k⟩ => ⟨a, b, c, k⟩
+  have e' : BitVec.ofNat 64 j - 1 = BitVec.ofNat 64 (j - 1) := e
+  xrun [hb]
+  rw [e']; exact ⟨rfl, ez⟩
+
+theorem mw (m : Mem) (B : Addr) (o d : Nat) : VG.Proof.Mont.word m (off B o) d = word m B (o + d) := by
+  simp only [VG.Proof.Mont.word, VG.Proof.Mont.off, Bignum.word, off, BitVec.add_assoc, BitVec.ofNat_add]
+
+/-- The state between batches: `rdi` the window, the stride, `n`, and `d`,
+`-m⁻¹`, `m`, `f`, `g`, `a`, `b` in the window and arrays (modulo `2^(64 (n + 1))`). -/
+structure BS (B : Addr) (Z w n p mi : Nat) (I : Divstep.IState) (s : State) : Prop where
+  scr : Scr s B Z
+  rdi : s.gpr .rdi = off B (slot w 16)
+  r9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2))
+  r15 : s.gpr .r15 = BitVec.ofNat 64 n
+  d : word s.mem B (slot w 16 + oD) = BitVec.ofInt 64 I.d
+  mi : (word s.mem B (slot w 16 + oMi)).toNat = mi
+  P : wv s.mem B (slot w 25) n = p
+  f : (wv s.mem B (slot w 19) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = I.f % 2 ^ (64 * (n + 1))
+  g : (wv s.mem B (slot w 20) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = I.g % 2 ^ (64 * (n + 1))
+  a : (wv s.mem B (slot w 21) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = I.a % 2 ^ (64 * (n + 1))
+  b : (wv s.mem B (slot w 22) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = I.b % 2 ^ (64 * (n + 1))
+
+theorem batch_eq : batch = seqs ([.block (bStart ++ bWords ++ bSave)] ++
+    (lin oU oV 3 4 ++ shr 8 ++ lin oQ oR 3 4 ++ shr 4 ++ copyW 8 3) ++
+    (lin oU oV 5 6 ++ mred 8 ++ lin oQ oR 5 6 ++ mred 6 ++ copyW 8 5) ++ [.block [.alu .sub .rsi (.imm 1)]]) := by
+  simp only [batch, List.append_assoc]
+
+/-- A batch: `Divstep.batchS 59`, and the count of batches less one. -/
+theorem batch_ok {s : State} {B : Addr} {Z w n p mi c : Nat} (L : Lay B Z w n) {I : Divstep.IState}
+    (h : BS B Z w n p mi I s) (hrsi : s.gpr .rsi = BitVec.ofNat 64 c) (hc : 1 ≤ c) (hc' : c < 2 ^ 32)
+    (hd : |I.d| ≤ 2 ^ 30) (hodd : I.f % 2 = 1)
+    (hF : |I.f| ≤ 2 ^ (64 * n) * 2 ^ 3) (hG : |I.g| ≤ 2 ^ (64 * n) * 2 ^ 3)
+    (ha : -(p : Int) < I.a ∧ I.a < 2 * p) (hb : -(p : Int) < I.b ∧ I.b < 2 * p)
+    (hp : 0 < p) (hpA : p < 2 ^ (64 * n)) (hm : (p * mi + 1) % 2 ^ 64 = 0) :
+    WP isa batch s fun t =>
+      BS B Z w n p mi (Divstep.batchS 59 p mi I) t ∧ t.gpr .rsi = BitVec.ofNat 64 (c - 1) ∧
+      t.zf = some (decide (c - 1 = 0)) ∧
+      Frm B [(slot w 16, 72 * (w + 2))] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s t := by
+  have hN := L.nowrap
+  have hn1 := L.n1; have hnw := L.nw; have hw2' := L.w2; have hZ := L.z
+  have e16 := slot_eq w 16; have e19 := slot_eq w 19; have e20 := slot_eq w 20; have e21 := slot_eq w 21
+  have e22 := slot_eq w 22; have e23 := slot_eq w 23; have e25 := slot_eq w 25; have e26 := slot_eq w 26
+  have hw2 : 8 * (n + 1) ≤ 8 * (w + 2) := by omega
+  set T0 := Divstep.MSt.init I.d I.f I.g with hT0
+  rw [batch_eq, seqs_append_iff _ [.block [.alu .sub .rsi (.imm 1)]] (by simp) (by simp),
+    seqs_append_iff _ (lin oU oV 5 6 ++ mred 8 ++ lin oQ oR 5 6 ++ mred 6 ++ copyW 8 5) (by simp)
+      (by simp [lin]),
+    seqs_append_iff [.block (bStart ++ bWords ++ bSave)] _ (by simp) (by simp [lin])]
+  -- The divsteps.
+  have hb : WP isa (seqs [.block (bStart ++ bWords ++ bSave)]) s fun t =>
+      word t.mem B (slot w 16 + oD) = BitVec.ofInt 64 (Divstep.msteps 59 T0).d ∧
+      word t.mem B (slot w 16 + oU) = BitVec.ofInt 64 (Divstep.msteps 59 T0).u ∧
+      word t.mem B (slot w 16 + oV) = BitVec.ofInt 64 (Divstep.msteps 59 T0).v ∧
+      word t.mem B (slot w 16 + oQ) = BitVec.ofInt 64 (Divstep.msteps 59 T0).q ∧
+      word t.mem B (slot w 16 + oR) = BitVec.ofInt 64 (Divstep.msteps 59 T0).r ∧
+      Frm B [(slot w 16, 64)] s.mem t.mem ∧ t.gpr .rdi = off B (slot w 16) ∧
+      t.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2)) ∧ t.gpr .r12 = BitVec.ofNat 64 (n + 1) ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s t := by
+    show WP isa (.block (bStart ++ bWords ++ bSave)) s _
+    rw [WP.block_append_iff, WP.block_append_iff]
+    refine WP.mono (bStart_ok h.scr h.rdi h.r9 hw2' hZ) fun s₁ ⟨m₁, bx₁, r14₁, k₁⟩ => ?_
+    have hs₁ := h.scr.congr k₁.2.2
+    have di₁ : s₁.gpr .rdi = off B (slot w 16) := (k₁.gpr (by decide)).trans h.rdi
+    have oS0 := writeW_outside s.mem B (word s.mem B (slot w 19)) (d := slot w 16) (by omega)
+    have oS8 := writeW_outside (s.mem.writeW (off B (slot w 16)) (word s.mem B (slot w 19))) B
+      (word s.mem B (slot w 20)) (d := slot w 16 + 8) (by omega)
+    have w0' : word s₁.mem B (slot w 16) = word s.mem B (slot w 19) := by
+      rw [m₁, oS8.word (by omega) (by omega)]; exact word_writeW_self _ _ _ _
+    have w8' : word s₁.mem B (slot w 16 + 8) = word s.mem B (slot w 20) := by
+      rw [m₁]; exact word_writeW_self _ _ _ _
+    have c₁ : VG.Proof.Rsa.X86_64.Chunk.CScr s₁ (off B (slot w 16)) 96 :=
+      ⟨hs₁.sub (by omega) (by decide), di₁⟩
+    have ch : VG.Proof.Weierstrass.X86_64.ChunkAt (off B (slot w 16)) 0 64 true T0 s₁ :=
+      ⟨by rw [bx₁, h.d]; rfl, by rw [mw, Nat.add_zero, w0']; exact low_cong' h.f,
+        by rw [mw, Nat.zero_add, w8']; exact low_cong' h.g, fun _ => ⟨rfl, rfl, rfl, rfl⟩,
+        fun h => absurd h (by decide)⟩
+    refine WP.mono (bWords_ok c₁ (by decide) hodd hd ch) fun s₂ ⟨d₂, u₂, v₂, q₂, r₂, o₂, k₂⟩ => ?_
+    have hs₂ := hs₁.congr k₂.wr
+    have di₂ : s₂.gpr .rdi = off B (slot w 16) := (k₂.gpr _ (by decide)).trans di₁
+    refine WP.mono (bSave_ok hs₂ di₂ ((k₂.gpr _ (by decide)).trans r14₁)
+      ((k₂.gpr _ (by decide)).trans ((k₁.gpr (by decide)).trans h.r15)) (by omega))
+      fun t ⟨mt, r9t, r12t, kt⟩ => ?_
+    have ap : ∀ (m : Mem) (e d : Nat) (v : BitVec 64), d + 8 ≤ e ∨ e + 8 ≤ d → e + 8 ≤ Z → d + 8 ≤ Z →
+        word (m.writeW (off B e) v) B d = word m B d := fun m e d v h1 h2 h3 =>
+      (writeW_outside m B v (by omega)).word h1 (by omega)
+    have hk2 : Keep [.rax, .rbx, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12, .r13] s₁ s₂ := ⟨k₂.gpr, k₂.rd, k₂.wr⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, (kt.gpr (by decide)).trans di₂, r9t, r12t,
+      ((k₁.trans hk2).trans kt).mono (by decide)⟩
+    · rw [mt, ap _ _ _ _ (by unfold oD oR; omega) (by unfold oR; omega) (by unfold oD; omega),
+        ap _ _ _ _ (by unfold oD oQ; omega) (by unfold oQ; omega) (by unfold oD; omega),
+        ap _ _ _ _ (by unfold oD oV; omega) (by unfold oV; omega) (by unfold oD; omega),
+        ap _ _ _ _ (by unfold oD oU; omega) (by unfold oU; omega) (by unfold oD; omega), word_writeW_self, d₂]
+    · rw [mt, ap _ _ _ _ (by unfold oU oR; omega) (by unfold oR; omega) (by unfold oU; omega),
+        ap _ _ _ _ (by unfold oU oQ; omega) (by unfold oQ; omega) (by unfold oU; omega),
+        ap _ _ _ _ (by unfold oU oV; omega) (by unfold oV; omega) (by unfold oU; omega), word_writeW_self, u₂]
+    · rw [mt, ap _ _ _ _ (by unfold oV oR; omega) (by unfold oR; omega) (by unfold oV; omega),
+        ap _ _ _ _ (by unfold oV oQ; omega) (by unfold oQ; omega) (by unfold oV; omega), word_writeW_self, v₂]
+    · rw [mt, ap _ _ _ _ (by unfold oQ oR; omega) (by unfold oR; omega) (by unfold oQ; omega), word_writeW_self, q₂]
+    · rw [mt, word_writeW_self, r₂]
+    · have fo := Frm.of_outside_off (B := B) (o := slot w 16) (d := 0) (n := 24) o₂ (by omega) (by omega)
+      intro x hx
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hx
+      have hx' : ofs B x < slot w 16 ∨ slot w 16 + 64 ≤ ofs B x := hx
+      rw [mt]
+      rw [writeW_outside _ B _ (d := slot w 16 + oR) (by unfold oR; omega) x (by unfold oR; omega),
+        writeW_outside _ B _ (d := slot w 16 + oQ) (by unfold oQ; omega) x (by unfold oQ; omega),
+        writeW_outside _ B _ (d := slot w 16 + oV) (by unfold oV; omega) x (by unfold oV; omega),
+        writeW_outside _ B _ (d := slot w 16 + oU) (by unfold oU; omega) x (by unfold oU; omega),
+        writeW_outside _ B _ (d := slot w 16 + oD) (by unfold oD; omega) x (by unfold oD; omega)]
+      rw [fo x (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; omega), m₁,
+        oS8 x (by omega), oS0 x (by omega)]
+  refine WP.mono hb fun s₃ ⟨d₃, u₃, v₃, q₃, r₃, f₃, di₃, r9₃, r12₃, k₃⟩ => ?_
+  have hs₃ := h.scr.congr k₃.2.2
+  set m := Divstep.msteps 59 T0 with hm'
+  obtain ⟨rel₁, rel₂⟩ := Divstep.msteps_mat (d := I.d) (g := I.g) hodd 59
+  obtain ⟨bnd₁, bnd₂⟩ := Divstep.msteps_bnd I.d I.f I.g 59
+  have aw : ∀ e k, (e + 8 * k ≤ slot w 16 ∨ slot w 16 + 64 ≤ e) → e + 8 * k ≤ Z →
+      wv s₃.mem B e k = wv s.mem B e k := fun e k h1 h2 =>
+    f₃.wv_eq (fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact h1)
+      (by omega)
+  have hpos : (0 : Int) < 2 ^ 59 := by norm_num
+  have z₁ : m.u * I.f + m.v * I.g = 2 ^ 59 * ((m.u * I.f + m.v * I.g) / 2 ^ 59) := by
+    rw [← rel₁, Int.mul_ediv_cancel_left _ hpos.ne']
+  have z₂ : m.q * I.f + m.r * I.g = 2 ^ 59 * ((m.q * I.f + m.r * I.g) / 2 ^ 59) := by
+    rw [← rel₂, Int.mul_ediv_cancel_left _ hpos.ne']
+  have bF : ∀ y z : Int, |y| + |z| ≤ 2 ^ 59 →
+      -((2 ^ (64 * n) * 2 ^ 63 : Nat) : Int) ≤ y * I.f + z * I.g ∧ y * I.f + z * I.g < ((2 ^ (64 * n) * 2 ^ 63 : Nat) : Int) :=
+    fun y z hyz => by
+      have := Divstep.comb_le hyz hF hG
+      rw [abs_le] at this
+      push_cast
+      have : (2 : Int) ^ 59 * (2 ^ (64 * n) * 2 ^ 3) < 2 ^ (64 * n) * 2 ^ 63 := by
+        have := pow_pos (show (0 : Int) < 2 by norm_num) (64 * n); nlinarith
+      constructor <;> linarith
+  refine WP.mono (fgUpd_ok L hs₃ di₃ r9₃ r12₃ ((k₃.gpr (by decide)).trans h.r15) u₃ v₃ q₃ r₃ bnd₁ bnd₂
+    (by rw [aw _ _ (.inr (by omega)) (by omega)]; exact h.f) (by rw [aw _ _ (.inr (by omega)) (by omega)]; exact h.g)
+    z₁ z₂ (bF _ _ bnd₁) (bF _ _ bnd₂)) fun s₄ ⟨F₄, G₄, di₄, r9₄, r12₄, f₄, k₄⟩ => ?_
+  have hs₄ := hs₃.congr k₄.2.2
+  have fw : ∀ e, (e + 8 ≤ slot w 16 + oMu ∨ slot w 16 + oMu + 16 ≤ e) → e + 8 ≤ slot w 19 →
+      word s₄.mem B e = word s₃.mem B e := fun e h1 h2 => f₄.word_eq (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega)
+  have fv : ∀ e k, slot w 21 ≤ e → e + 8 * k ≤ slot w 23 ∨ (slot w 25 ≤ e ∧ e + 8 * k ≤ Z) →
+      wv s₄.mem B e k = wv s₃.mem B e k := fun e k h1 h2 => f₄.wv_eq (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega)
+  have ha2 : |I.a| ≤ 2 * p := abs_le.mpr ⟨by omega, by omega⟩
+  have hb2 : |I.b| ≤ 2 * p := abs_le.mpr ⟨by omega, by omega⟩
+  have mi₄ : (word s₄.mem B (slot w 16 + oMi)).toNat = mi := by
+    rw [fw _ (.inr (by unfold oMu oMi; omega)) (by unfold oMi; omega), f₃.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; dsimp only; unfold oMi; omega)
+      (by unfold oMi; omega), h.mi]
+  refine WP.mono (abUpd_ok L hs₄ di₄ r9₄ r12₄ ((k₄.gpr (by decide)).trans ((k₃.gpr (by decide)).trans h.r15))
+    (by rw [fw _ (.inl (by unfold oU oMu; omega)) (by unfold oU; omega)]; exact u₃)
+    (by rw [fw _ (.inl (by unfold oV oMu; omega)) (by unfold oV; omega)]; exact v₃)
+    (by rw [fw _ (.inl (by unfold oQ oMu; omega)) (by unfold oQ; omega)]; exact q₃)
+    (by rw [fw _ (.inl (by unfold oR oMu; omega)) (by unfold oR; omega)]; exact r₃) bnd₁ bnd₂
+    (by rw [fv _ _ (by omega) (.inl (by omega)), aw _ _ (.inr (by omega)) (by omega)]; exact h.a)
+    (by rw [fv _ _ (by omega) (.inl (by omega)), aw _ _ (.inr (by omega)) (by omega)]; exact h.b)
+    (by rw [fv _ _ (by omega) (.inr ⟨le_refl _, by omega⟩), aw _ _ (.inr (by omega)) (by omega)]; exact h.P)
+    mi₄ hp hpA hm (Divstep.comb_le2 (by norm_num) (by exact_mod_cast hp) bnd₁ ha2 hb2)
+    (Divstep.comb_le2 (by norm_num) (by exact_mod_cast hp) bnd₂ ha2 hb2))
+    fun s₅ ⟨A₅, B₅, di₅, r9₅, r12₅, f₅, k₅⟩ => ?_
+  have k15 := (k₃.trans k₄).trans k₅
+  refine WP.mono (decRsi_ok s₅ hc (by omega) ((k15.gpr (by decide)).trans hrsi)) fun t ⟨rt, zt, mt, kt⟩ => ?_
+  have f45 : Frm B [(slot w 16, 72 * (w + 2))] s₃.mem t.mem := by
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hx
+    rw [mt, f₅ x (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; unfold oMu; omega),
+      f₄ x (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; unfold oMu; omega)]
+  have hbS : Divstep.batchS 59 p mi I = ⟨m.d, (m.u * I.f + m.v * I.g) / 2 ^ 59, (m.q * I.f + m.r * I.g) / 2 ^ 59,
+      Divstep.mredRaw p mi (m.u * I.a + m.v * I.b), Divstep.mredRaw p mi (m.q * I.a + m.r * I.b)⟩ := by
+    simp only [Divstep.batchS, hm', hT0]
+  rw [hbS]
+  refine ⟨⟨h.scr.congr (k15.trans kt).2.2, (kt.gpr (by decide)).trans di₅, (kt.gpr (by decide)).trans r9₅,
+    ((k15.trans kt).gpr (by decide)).trans h.r15, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, rt, zt, ?_, ?_⟩
+  · rw [mt, f₅.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only <;> unfold oD oMu at * <;> omega) (by unfold oD; omega),
+      f₄.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only <;> unfold oD oMu at * <;> omega) (by unfold oD; omega), d₃]
+  · rw [mt, f₅.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only <;> unfold oMi oMu at * <;> omega) (by unfold oMi; omega)]
+    exact mi₄
+  · rw [mt, f₅.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega),
+      fv _ _ (by omega) (.inr ⟨le_refl _, by omega⟩), aw _ _ (.inr (by omega)) (by omega)]
+    exact h.P
+  · rw [mt, f₅.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega)]
+    exact F₄
+  · rw [mt, f₅.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega)]
+    exact G₄
+  · rw [mt]; exact A₅
+  · rw [mt]; exact B₅
+  · intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hx
+    rw [f45 x (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; exact hx),
+      f₃ x (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; omega)]
+  · exact (((k₃.trans k₄).trans k₅).trans kt).mono (by decide)
 
 end VG.Proof.Rsa.X86_64.InvB
