@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: writing the new block
@@ -24,7 +25,7 @@ namespace VG.Proof.Argon2.PPC64LE.Derive
 
 open VG VG.PPC64LE
 open VG.Proof.MdStream.PPC64LE (Upd Mupd wp_ld wp_std)
-open VG.Spec.Argon2 (blockAt)
+
 open VG.Impl.Argon2.PPC64LE.Derive (writeWord)
 
 /-- Doublewords of the memory matrix. -/

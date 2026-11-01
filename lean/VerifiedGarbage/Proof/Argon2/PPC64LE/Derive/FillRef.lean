@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Divide
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillState
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: the reference lane, the window's start, and its base
@@ -22,7 +23,7 @@ namespace VG.Proof.Argon2.PPC64LE.Derive
 
 open VG VG.PPC64LE
 open VG.Proof.MdStream.PPC64LE (Upd Mupd wp_add wp_addi wp_sub wp_subi wp_li)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
 open VG.Impl.Argon2.PPC64LE.Derive (sliceOff segLenOff indexOff laneOff laneLenOff passOff
   j1Off j2Off refLaneOff startOff ld st ldw)
 

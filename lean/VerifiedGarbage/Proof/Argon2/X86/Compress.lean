@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.X86.Gb
 import VerifiedGarbage.Proof.Argon2.Permutation
 import VerifiedGarbage.Proof.Framework.Offset
@@ -153,7 +154,7 @@ end
 
 A block at `B + o` (`blk m B o`) as 64-bit words, each the pair of 32-bit words
 the code copies: `blk_of_words` builds it from them, `blockAt_eq` relates it to
-the contract's `Spec.Argon2.blockAt`, and `xor_words` XORs two blocks word by
+the contract's `Proof.Argon2.blockAt`, and `xor_words` XORs two blocks word by
 word.
 -/
 
@@ -212,7 +213,7 @@ end
 # Argon2 compression on x86 (32-bit): the contract of the proof
 
 `compressX86`: the contract the proof is written against, with the arguments
-on the stack only read; `Spec.Argon2.compressContract`, which lets the code
+on the stack only read; `Proof.Argon2.compressContract`, which lets the code
 write them, is reached by narrowing (`Proof/Argon2/X86/CompressVerified.lean`).
 `Pre` names the facts of its precondition.
 -/

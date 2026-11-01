@@ -32,6 +32,7 @@ import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Rc2.Memory32
 import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: calls of G in the filling loops
@@ -48,7 +49,7 @@ the memory matrix or a block of `scratch` from offset 4096 on (`GArg`), to
 namespace VG.Proof.Argon2.Arm.Derive
 
 open VG VG.Arm
-open VG.Spec.Argon2 (Block blockAt compress)
+open VG.Spec.Argon2 (Block compress)
 open VG.Proof.Argon2.Arm (blk compressArm)
 
 /-- `scratch`, as an address. -/

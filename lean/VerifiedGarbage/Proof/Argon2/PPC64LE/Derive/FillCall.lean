@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.CompressLit
 meta import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: calls of G in the filling loops
@@ -24,7 +25,7 @@ the memory matrix or a block of `scratch` from offset 4096 on (`GArg`), to
 namespace VG.Proof.Argon2.PPC64LE.Derive
 
 open VG VG.PPC64LE
-open VG.Spec.Argon2 (Block blockAt compress)
+open VG.Spec.Argon2 (Block compress)
 
 /-- A block G may read: a cell of the matrix, or a block of `scratch` from 4096
 on apart from the output at offset `o`. -/

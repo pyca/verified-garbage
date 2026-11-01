@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Scrypt.Spec
 meta import VerifiedGarbage.Proof.Scrypt.Spec
 public import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
@@ -578,18 +579,18 @@ theorem salsaWide_pre (s : State) (h : salsaWide.pre s) :
 /-- A state satisfying `salsaWide.pre`. -/
 def wideSat : State := { satState with rd := [], wr := [⟨0x1000, 64⟩, ⟨0x2000, 64⟩, ⟨0x4004, 8⟩] }
 
-theorem salsaWide_implies : salsaWide.Implies (Spec.Scrypt.salsaContract X86.abi) := by
+theorem salsaWide_implies : salsaWide.Implies (Proof.Scrypt.salsaContract X86.abi) := by
   have a0 : arg wideSat 0 = 0x1000 := by decide
   have a1 : arg wideSat 1 = 0x2000 := by decide
   have e : argAddr wideSat 0 = 0x4004 := by decide
   have esp : wideSat.gpr .esp = 0x4000 := rfl
-  sig_implies [Spec.Scrypt.salsaContract, Spec.Scrypt.salsaSig, salsaWide, Proof.Scrypt.salsaX86,
+  sig_implies [Proof.Scrypt.salsaContract, Proof.Scrypt.salsaSig, salsaWide, Proof.Scrypt.salsaX86,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [a0, a1, e, esp] using wideSat
 
 /-- The proof is written against `salsaX86`, widened to writable arguments. -/
 theorem salsa_verified :
-    Verified X86.target Impl.Scrypt.X86.salsa (Spec.Scrypt.salsaContract X86.abi) :=
+    Verified X86.target Impl.Scrypt.X86.salsa (Proof.Scrypt.salsaContract X86.abi) :=
   have hsat := salsaWide_implies.sat_left
   (Verified.narrowTo (Verified.of_correct salsa_correct salsa_ct (.refl ⟨satState, sat_pre⟩))
     narrowRd narrowWr salsaWide_pre

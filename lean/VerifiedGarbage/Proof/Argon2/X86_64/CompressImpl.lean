@@ -88,7 +88,7 @@ theorem ctlC_of_allInstrs {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr 
     simp only [ctlC, h.1.1, h.2, ih h.1.2, Bool.and_self]
 
 instance [c : CompressImpl] : Impl.Argon2.X86_64.Compressor :=
-  ⟨Spec.Argon2.compressApi.name ++ c.suffix, c.code⟩
+  ⟨"vg_argon2_compress" ++ c.suffix, c.code⟩
 
 theorem compressor_spSafe [CompressImpl] :
     (Impl.Argon2.X86_64.Compressor.code : Prog isa).all (fun i => !isa.writesSp i) = true :=

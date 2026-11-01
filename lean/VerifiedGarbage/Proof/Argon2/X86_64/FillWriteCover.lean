@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Argon2.X86_64.FillWritePrefix
 import VerifiedGarbage.Proof.Argon2.X86_64.CountCandidates
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Merged from `Proof.Argon2.X86_64.FillWrite`. -/
 

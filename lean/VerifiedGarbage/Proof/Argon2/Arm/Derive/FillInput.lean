@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: the input of the address block
@@ -24,7 +25,7 @@ namespace VG.Proof.Argon2.Arm.Derive
 
 open VG VG.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_mov wp_add wp_str op2_imm)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
 open VG.Proof.Argon2.Arm (blk ofWords blk_of_words)
 open VG.Proof.Sha512.Arm (A)
 open VG.Impl.Argon2.Arm.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff)

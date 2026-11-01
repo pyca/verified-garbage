@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: the final block and the tag
@@ -29,7 +30,7 @@ namespace VG.Proof.Argon2.PPC64LE.Derive
 
 open VG VG.PPC64LE
 open VG.Proof.MdStream.PPC64LE (Upd Mupd wp_addi wp_subi wp_li wp_std)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState xorBlock)
+open VG.Spec.Argon2 (Block zeroBlock FillState xorBlock)
 open VG.Spec.Blake2 (bytesAt)
 open VG.Impl.Argon2.PPC64LE.Derive (laneOff laneLenOff)
 

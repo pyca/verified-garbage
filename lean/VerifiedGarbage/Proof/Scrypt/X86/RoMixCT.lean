@@ -11,6 +11,7 @@ meta import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 import all Init.Data.Nat.Power2.Basic
 import VerifiedGarbage.Proof.Framework.Omega
@@ -746,7 +747,7 @@ theorem roMixWide_pre (s : State) (h : roMixWide.pre s) :
 def wideSat : State :=
   { sat with rd := [], wr := [⟨0x1000, 128⟩, ⟨0x2000, 128⟩, ⟨0x3000, 384⟩, ⟨0x5004, 24⟩] }
 
-theorem roMixWide_implies : roMixWide.Implies (Spec.Scrypt.roMixContract X86.abi 36) := by
+theorem roMixWide_implies : roMixWide.Implies (Proof.Scrypt.roMixContract X86.abi 36) := by
   have a0 : arg wideSat 0 = 0x1000 := by decide
   have a1 : arg wideSat 1 = 1 := by decide
   have a2 : arg wideSat 2 = 0x2000 := by decide
@@ -755,13 +756,13 @@ theorem roMixWide_implies : roMixWide.Implies (Spec.Scrypt.roMixContract X86.abi
   have a5 : arg wideSat 5 = 3 := by decide
   have e : argAddr wideSat 0 = 0x5004 := by decide
   have esp : wideSat.gpr .esp = 0x5000 := rfl
-  sig_implies [Spec.Scrypt.roMixContract, Spec.Scrypt.roMixSig, roMixWide,
+  sig_implies [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig, roMixWide,
     Proof.Scrypt.roMixX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp] using wideSat
 
 /-- The proof is written against `roMixX86`, widened to writable arguments. -/
 theorem roMix_verified :
-    Verified X86.target Impl.Scrypt.X86.roMix (Spec.Scrypt.roMixContract X86.abi 36) :=
+    Verified X86.target Impl.Scrypt.X86.roMix (Proof.Scrypt.roMixContract X86.abi 36) :=
   have hsat := roMixWide_implies.sat_left
   (Verified.narrowTo (Verified.of_correct roMix_correct roMix_ct (.refl ⟨sat, sat_pre⟩))
     narrowRd narrowWr roMixWide_pre

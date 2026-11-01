@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Argon2.X86.Compress
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 @[expose] public section
 
@@ -205,7 +206,7 @@ namespace VG.Proof.Argon2.X86.Derive
 open VG VG.X86
 open VG.X86.Wp (Upd Mupd wp_movi wp_mov wp_add wp_addi wp_subi)
 open VG.Spec.Blake2 (bytesAt)
-open VG.Spec.Argon2 (Block blockAt zeroBlock parseBlock)
+open VG.Spec.Argon2 (Block zeroBlock parseBlock)
 
 /-! ## Blocks in memory -/
 

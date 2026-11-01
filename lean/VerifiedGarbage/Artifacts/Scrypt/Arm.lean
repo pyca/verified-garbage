@@ -11,15 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Scrypt.Arm
 
 def artifacts : List Artifact := [
-  Spec.Scrypt.salsaApi.artifact Arm.target {
-    code := Impl.Scrypt.Arm.salsa
-    verified := Proof.Scrypt.Arm.salsa_verified },
-  Spec.Scrypt.blockMixApi.artifact Arm.target {
-    code := Impl.Scrypt.Arm.blockMix
-    verified := Proof.Scrypt.Arm.BlockMix.blockMix_verified },
-  Spec.Scrypt.roMixApi.artifact Arm.target {
-    code := Impl.Scrypt.Arm.roMix
-    verified := Proof.Scrypt.Arm.RoMix.roMix_verified },
   Spec.Scrypt.scryptApi.artifact Arm.target {
     code := Impl.Scrypt.Arm.scrypt "vg_pbkdf2_hmac_sha256_scratch" Proof.Scrypt.Arm.Whole.pbkC
     stack := 40

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.Words
 import VerifiedGarbage.Proof.Argon2.AArch64.Schedule
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
@@ -404,6 +405,6 @@ theorem compress_correct (s : State) (hs : compressLocal.pre s) :
   simpa using h
 
 theorem compress_verified : Verified AArch64.target Impl.Argon2.AArch64.compress
-    (Spec.Argon2.compressContract AArch64.abi) :=
+    (Proof.Argon2.compressContract AArch64.abi) :=
   Verified.of_correct compress_correct compress_ct compress_implies
 end VG.Proof.Argon2.AArch64

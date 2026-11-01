@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

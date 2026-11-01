@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: the address block and the random word
@@ -28,7 +29,7 @@ namespace VG.Proof.Argon2.Arm.Derive
 
 open VG VG.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_mov wp_add wp_and wp_cmp wp_ldr op2_imm op2_reg op2_lsr op2_lsl)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState compress addressBlock)
+open VG.Spec.Argon2 (Block zeroBlock FillState compress addressBlock)
 open VG.Proof.Argon2.Arm (blk)
 open VG.Proof.Sha512.Arm (Only A)
 open VG.Impl.Argon2.Arm.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff

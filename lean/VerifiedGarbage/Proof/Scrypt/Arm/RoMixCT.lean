@@ -39,6 +39,7 @@ meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
 # scryptROMix on 32-bit ARM: the precondition
@@ -2190,22 +2191,22 @@ theorem roMix_ct : ConstantTime isa Proof.Scrypt.roMixArm.pre Proof.Scrypt.roMix
     _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem roMix_verified :
-    Verified Arm.target Impl.Scrypt.Arm.roMix (Spec.Scrypt.roMixContract Arm.abi) :=
+    Verified Arm.target Impl.Scrypt.Arm.roMix (Proof.Scrypt.roMixContract Arm.abi) :=
   Verified.of_correct roMix_correct roMix_ct
     { pre := by
-        sig_implies_pre [Spec.Scrypt.roMixContract, Spec.Scrypt.roMixSig,
+        sig_implies_pre [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
           Proof.Scrypt.roMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
       post := by
-        sig_implies_post [Spec.Scrypt.roMixContract, Spec.Scrypt.roMixSig,
+        sig_implies_post [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
           Proof.Scrypt.roMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
       pub := by
-        sig_implies_pub [Spec.Scrypt.roMixContract, Spec.Scrypt.roMixSig,
+        sig_implies_pub [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
           Proof.Scrypt.roMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
       sat := by
-        implies_sat [Spec.Scrypt.roMixContract, Spec.Scrypt.roMixSig,
+        implies_sat [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
           Proof.Scrypt.roMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
           [Proof.Scrypt.Arm.RoMix.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]

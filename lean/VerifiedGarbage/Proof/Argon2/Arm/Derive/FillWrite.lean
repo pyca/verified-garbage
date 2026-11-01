@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Argon2.Arm.Words
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: writing the new block
@@ -25,7 +26,7 @@ namespace VG.Proof.Argon2.Arm.Derive
 open VG VG.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_ldr wp_str op2_reg)
 open VG.Proof.Blake2.Arm.Stream (wp_eor)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState compress xorBlock)
+open VG.Spec.Argon2 (Block zeroBlock FillState compress xorBlock)
 open VG.Proof.Argon2.Arm (blk ofWords blk_of_words)
 open VG.Proof.Sha512.Arm (A)
 open VG.Impl.Argon2.Arm.Derive (writeWord)

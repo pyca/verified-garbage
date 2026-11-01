@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Argon2.X86_64.Finish
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on x86-64 with AVX-512: the first and last XOR

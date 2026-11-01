@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Impl.Blake2.PPC64LE
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.PPC64LE.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -1253,16 +1254,16 @@ theorem compressS_verified' :
 
 theorem compressB_verified :
     Verified PPC64LE.target (Impl.Blake2.PPC64LE.compress Spec.Blake2.b)
-      (Spec.Blake2.compressBContract PPC64LE.abi) :=
+      (Proof.Blake2.compressBContract PPC64LE.abi) :=
   compressB_verified'.of_implies (by
-    sig_implies [Spec.Blake2.compressBContract, Spec.Blake2.compressBSig, compressPPC64LE,
+    sig_implies [Proof.Blake2.compressBContract, Proof.Blake2.compressBSig, compressPPC64LE,
       PPC64LE.abi, PPC64LE.argRegs, Spec.Blake2.blockBytes] [satState] using satState 64)
 
 theorem compressS_verified :
     Verified PPC64LE.target (Impl.Blake2.PPC64LE.compress Spec.Blake2.s)
-      (Spec.Blake2.compressSContract PPC64LE.abi) :=
+      (Proof.Blake2.compressSContract PPC64LE.abi) :=
   compressS_verified'.of_implies (by
-    sig_implies [Spec.Blake2.compressSContract, Spec.Blake2.compressSSig, compressPPC64LE,
+    sig_implies [Proof.Blake2.compressSContract, Proof.Blake2.compressSSig, compressPPC64LE,
       PPC64LE.abi, PPC64LE.argRegs, Spec.Blake2.blockBytes] [satState] using satState 32)
 
 end VG.Proof.Blake2.PPC64LE

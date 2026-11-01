@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.X86.BlockMix
@@ -457,7 +458,7 @@ def wideSat : State :=
   { sat with rd := [⟨0x1000, 128⟩], wr := [⟨0x2000, 128⟩, ⟨0x3000, 128⟩, ⟨0x5004, 20⟩] }
 
 theorem blockMixWide_implies :
-    blockMixWide.Implies (Spec.Scrypt.blockMixContract X86.abi 12) := by
+    blockMixWide.Implies (Proof.Scrypt.blockMixContract X86.abi 12) := by
   have a0 : arg wideSat 0 = 0x1000 := by decide
   have a1 : arg wideSat 1 = 1 := by decide
   have a2 : arg wideSat 2 = 0x2000 := by decide
@@ -465,13 +466,13 @@ theorem blockMixWide_implies :
   have a4 : arg wideSat 4 = 0x3000 := by decide
   have e : argAddr wideSat 0 = 0x5004 := by decide
   have esp : wideSat.gpr .esp = 0x5000 := rfl
-  sig_implies [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig, blockMixWide,
+  sig_implies [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig, blockMixWide,
     Proof.Scrypt.blockMixX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp] using wideSat
 
 /-- The proof is written against `blockMixX86`, widened to writable arguments. -/
 theorem blockMix_verified :
-    Verified X86.target Impl.Scrypt.X86.blockMix (Spec.Scrypt.blockMixContract X86.abi 12) :=
+    Verified X86.target Impl.Scrypt.X86.blockMix (Proof.Scrypt.blockMixContract X86.abi 12) :=
   have hsat := blockMixWide_implies.sat_left
   (Verified.narrowTo (Verified.of_correct blockMix_correct blockMix_ct (.refl ⟨sat, sat_pre⟩))
     narrowRd narrowWr blockMixWide_pre

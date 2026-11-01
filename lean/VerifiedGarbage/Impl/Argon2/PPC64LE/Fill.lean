@@ -91,7 +91,7 @@ def addressHeader : List Instr :=
     ldw .r3 iterationsArg, .store .d .r3 .r31 5152, ldw .r3 kindArg, .store .d .r3 .r31 5160,
     ld .r3 counterOff, .store .d .r3 .r31 5168]
 
-def compressName : String := Spec.Argon2.compressApi.name
+def compressName : String := "vg_argon2_compress"
 
 /-- `compress(r3, r4, r5, r6)`. -/
 def compressCall : Prog isa := .call compressName Impl.Argon2.PPC64LE.compress

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCT
 import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCorrect
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Scrypt.Contract
 
 @[expose] public section
 
@@ -22,19 +23,19 @@ theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixX86_64.pre
   exact (blockMix_rel (pre_of h₁) (pre_of h₂) (pubEq_of hpub) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem blockMix_verified :
-    Verified X86_64.target Impl.Scrypt.X86_64.blockMixFused (Spec.Scrypt.blockMixContract X86_64.abi 8) :=
+    Verified X86_64.target Impl.Scrypt.X86_64.blockMixFused (Proof.Scrypt.blockMixContract X86_64.abi 8) :=
   Verified.of_correct blockMix_correct blockMix_ct
     { pre := by
-        sig_implies_pre [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_pre [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixX86_64, X86_64.abi, X86_64.argRegs]
       post := by
-        sig_implies_post [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_post [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixX86_64, X86_64.abi, X86_64.argRegs]
       pub := by
-        sig_implies_pub [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_pub [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixX86_64, X86_64.abi, X86_64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_sat [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixX86_64, X86_64.abi, X86_64.argRegs,
           Proof.Scrypt.X86_64.BlockMix.satState]
           [Proof.Scrypt.X86_64.BlockMix.satState] using Proof.Scrypt.X86_64.BlockMix.satState }

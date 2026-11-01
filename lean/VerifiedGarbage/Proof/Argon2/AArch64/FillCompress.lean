@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressLit
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! The complete compression/update sequence from allocation and frame invariants. -/
 

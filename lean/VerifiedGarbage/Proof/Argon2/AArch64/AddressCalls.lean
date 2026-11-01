@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsStage
 public import VerifiedGarbage.Proof.Argon2.AddressInput
 import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Both compression calls produce exactly the reviewed independent-address block. -/
 

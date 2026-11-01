@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Compress
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Blake2.X86.CompressB.Lit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -324,9 +325,9 @@ theorem compress_verified : Verified X86.target compress (compressX86 Spec.Blake
     ⟨satState, sat_pre⟩⟩
 
 theorem compressB_verified :
-    Verified X86.target compress (Spec.Blake2.compressBContract X86.abi) :=
+    Verified X86.target compress (Proof.Blake2.compressBContract X86.abi) :=
   compress_verified.of_implies (by
-    sig_implies [Spec.Blake2.compressBContract, Spec.Blake2.compressBSig, Proof.Blake2.compressX86,
+    sig_implies [Proof.Blake2.compressBContract, Proof.Blake2.compressBSig, Proof.Blake2.compressX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes, Spec.Blake2.blockBytes]
       [satState, satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using satState)
 

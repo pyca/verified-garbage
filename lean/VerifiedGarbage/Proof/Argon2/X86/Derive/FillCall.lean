@@ -30,6 +30,7 @@ import VerifiedGarbage.Proof.MdStream.X86.Common
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha256.X86.Compress
 import VerifiedGarbage.Proof.Sha512.Spec
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on x86 (32-bit): calls of G in the filling loops
@@ -46,7 +47,7 @@ cell of the memory matrix or a block of `scratch` from offset 4096 on
 namespace VG.Proof.Argon2.X86.Derive
 
 open VG VG.X86
-open VG.Spec.Argon2 (Block blockAt compress)
+open VG.Spec.Argon2 (Block compress)
 open VG.Proof.Argon2.X86 (blk compressX86)
 
 theorem compress_nosp : NoSp Impl.Argon2.X86.compress := NoSp.of_all (by lit_decide)

@@ -13,16 +13,9 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
 namespace VG.Generic.Blake2b.AArch64.Argon2
 
 def artifacts (v : Proof.Argon2.AArch64.HPrime.Backend) : List Artifact := [
-  Spec.Argon2.hPrimeApi.artifact VG.AArch64.target {
-    suffix := v.suffix
-    code := Impl.Argon2.AArch64.HPrime.code v.hash
-    stack := 16
-    verified := Proof.Argon2.AArch64.HPrime.verified v
-    spSafe := Proof.Argon2.AArch64.HPrime.spSafe v
-    features := v.features },
   Spec.Argon2.deriveApi.artifact VG.AArch64.target {
     suffix := v.suffix
-    code := Impl.Argon2.AArch64.Derive.code (Spec.Argon2.hPrimeApi.name ++ v.suffix)
+    code := Impl.Argon2.AArch64.Derive.code ("vg_argon2_hprime" ++ v.suffix)
       v.hash
     stack := 400
     verified := Proof.Argon2.AArch64.Derive.verified v _

@@ -37,6 +37,7 @@ import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha256.X86.Compress
 import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Blake2.X86.CompressB.Lit
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 @[expose] public section
 
@@ -54,7 +55,7 @@ namespace VG.Proof.Argon2.X86.Derive
 
 open VG VG.X86
 open VG.X86.Wp (Upd Mupd Fupd wp_movi wp_mov wp_add wp_addi wp_subi wp_sub wp_addm wp_cmpi wp_ldm wp_stm)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState compress xorBlock)
+open VG.Spec.Argon2 (Block zeroBlock FillState compress xorBlock)
 open VG.Spec.Blake2 (bytesAt)
 open VG.Proof.Argon2.X86 (blk ofWords blk_of_words xor_words)
 open VG.Impl.Sha512.X86 (at_)
@@ -273,7 +274,7 @@ the whole function, in its frames, keeps the ABI's registers too.
 namespace VG.Proof.Argon2.X86.Derive
 
 open VG VG.X86
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
 open VG.Spec.Blake2 (bytesAt)
 
 theorem body_nosp : NoSp Impl.Argon2.X86.Derive.body := NoSp.of_all (by lit_decide)

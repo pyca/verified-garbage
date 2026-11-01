@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Blake2.Contract
 
 /-!
 # BLAKE2b on ARMv7: the streaming functions
@@ -36,13 +37,13 @@ theorem initB_verified :
 theorem updateB_verified :
     Verified Arm.target
       (Impl.Blake2.Arm.Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
-      (Spec.Blake2.updateBScratchContract Arm.abi 16) :=
+      (Proof.Blake2.updateBScratchContract Arm.abi 16) :=
   update_verified okB calleeB updateB_implies
 
 theorem finalizeB_verified :
     Verified Arm.target
       (Impl.Blake2.Arm.Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
-      (Spec.Blake2.finalizeBScratchContract Arm.abi 16) :=
+      (Proof.Blake2.finalizeBScratchContract Arm.abi 16) :=
   finalize_verified okB calleeB finalizeB_implies
 
 /-! ## `update` and `finalize` with their working space in a frame of their own

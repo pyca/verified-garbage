@@ -14,14 +14,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Argon2.X86
 
 def artifacts : List Artifact := [
-  Spec.Argon2.compressApi.artifact X86.target {
-    code := Impl.Argon2.X86.compress
-    stack := 0
-    verified := Proof.Argon2.X86.compressShared_verified },
-  Spec.Argon2.hPrimeApi.artifact X86.target {
-    code := Impl.Argon2.X86.HPrime.code
-    stack := 60
-    verified := Proof.Argon2.X86.HPrime.hPrimeShared_verified },
   Spec.Argon2.deriveApi.artifact X86.target {
     code := Impl.Argon2.X86.Derive.derive
     stack := 244

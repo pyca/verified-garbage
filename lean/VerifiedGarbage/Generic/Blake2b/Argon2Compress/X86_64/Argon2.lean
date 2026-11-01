@@ -80,7 +80,7 @@ def artifacts (v : Proof.Blake2.X86_64.Backend) (c : Proof.Argon2.X86_64.Compres
   have : Proof.Argon2.X86_64.CompressImpl := c
   [Spec.Argon2.deriveApi.artifact VG.X86_64.target {
     suffix := Emit.qualifiedName "" [("blake2b", v.suffix), ("g", c.suffix)]
-    code := Impl.Argon2.X86_64.Derive.code (Spec.Argon2.hPrimeApi.name ++ v.suffix)
+    code := Impl.Argon2.X86_64.Derive.code ("vg_argon2_hprime" ++ v.suffix)
       (Proof.Argon2.X86_64.HPrime.hash v)
     stack := 344
     verified := Proof.Argon2.X86_64.Derive.verified v _

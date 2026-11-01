@@ -36,6 +36,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Merged from `Proof.Argon2.X86_64.MemoryInitBlock`. -/
 
@@ -982,7 +983,7 @@ theorem Initialized.spec {m : Mem} {base : Addr} {p : Spec.Argon2.Params}
     {h0 : List Byte} (hl : 0 < p.lanes) (hq : 0 < p.laneLen)
     (h : Initialized m base p.lanes p.laneLen p.lanes h0)
     (k : Nat) (hk : k < p.blocks) :
-    Spec.Argon2.blockAt m (base + BitVec.ofNat 64 (1024 * k)) =
+    Proof.Argon2.blockAt m (base + BitVec.ofNat 64 (1024 * k)) =
       (Spec.Argon2.initMemory p h0).memory[k]'(by
         rw [Proof.Argon2.initMemory_size]; exact hk) := by
   have blocks := Proof.Argon2.blocks_lanes p hl

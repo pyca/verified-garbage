@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.FillWritePrefix
 public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Argon2.AArch64.CountCandidates
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Merged from `Proof.Argon2.AArch64.FillWrite`. -/
 

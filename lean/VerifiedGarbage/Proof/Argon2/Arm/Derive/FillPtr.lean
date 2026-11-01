@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Argon2.Arm.Mix
 import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
 import VerifiedGarbage.Proof.Argon2.Reference
 import VerifiedGarbage.Proof.Argon2.Dimensions
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: the reference block's column and the block pointers
@@ -24,7 +25,7 @@ namespace VG.Proof.Argon2.Arm.Derive
 open VG VG.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_mov wp_add wp_sub wp_and op2_imm op2_reg)
 open VG.Proof.Blake2.Arm.Stream (wp_adc)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
 open VG.Proof.Sha512.Arm (Only)
 open VG.Proof.Argon2.Arm (mulHi_ok mulHiV_eq)
 open VG.Impl.Argon2.Arm.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff

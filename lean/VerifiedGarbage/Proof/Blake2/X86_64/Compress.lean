@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Proof.Blake2.X86_64.Contract
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Blake2.X86_64.Lit
@@ -1533,16 +1534,16 @@ def satState (len : Nat) : State where
 
 theorem compressB_verified :
     Verified X86_64.target (Impl.Blake2.X86_64.compress Spec.Blake2.b)
-      (Spec.Blake2.compressBContract X86_64.abi) :=
+      (Proof.Blake2.compressBContract X86_64.abi) :=
   Verified.of_correct compressB_correct compressB_ct (by
-    sig_implies [Spec.Blake2.compressBContract, Spec.Blake2.compressBSig, compressX86_64,
+    sig_implies [Proof.Blake2.compressBContract, Proof.Blake2.compressBSig, compressX86_64,
       X86_64.abi, X86_64.argRegs, Spec.Blake2.blockBytes] [satState] using satState 64)
 
 theorem compressS_verified :
     Verified X86_64.target (Impl.Blake2.X86_64.compress Spec.Blake2.s)
-      (Spec.Blake2.compressSContract X86_64.abi) :=
+      (Proof.Blake2.compressSContract X86_64.abi) :=
   Verified.of_correct compressS_correct compressS_ct (by
-    sig_implies [Spec.Blake2.compressSContract, Spec.Blake2.compressSSig, compressX86_64,
+    sig_implies [Proof.Blake2.compressSContract, Proof.Blake2.compressSSig, compressX86_64,
       X86_64.abi, X86_64.argRegs, Spec.Blake2.blockBytes] [satState] using satState 32)
 
 end VG.Proof.Blake2.X86_64

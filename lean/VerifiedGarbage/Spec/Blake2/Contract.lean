@@ -6,15 +6,14 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # BLAKE2b and BLAKE2s: the contracts, on every target
 
-**Trusted** (as every file in `Spec/`). The contracts of the compression
-functions and of streaming BLAKE2b and BLAKE2s (`init`/`update`/`finalize`,
-on the representation `Repr`), in terms of `Spec/Blake2.lean`, for any
+**Trusted** (as every file in `Spec/`). The contracts of streaming BLAKE2b
+and BLAKE2s (`init`/`update`/`finalize`, on the representation `Repr`), in terms of `Spec/Blake2.lean`, for any
 target: `A` is the target's calling convention. The signatures fix where the
 arguments are, the memory each function may access, disjointness, and that
 the pointers and lengths are public (see `TCB/Sig.lean`); the contracts add
 the postconditions and which other arguments are public. States, keys and
-messages are secret; the offset counters, the final block flag, the output
-length and the key length are public.
+messages are secret; the counts, the output length and the key length are
+public.
 
 A digest is computed by `init` with the output length `nn` and the key, which
 makes the state represent `keyBlock w key` (the key padded to a block, or
@@ -30,12 +29,7 @@ included.
 pointer that an implementation's calls and frames use (`stack`, see
 `Sig.contract`), 0 for one that uses none: it depends on the target, and on
 which functions the implementation calls. They keep their working space
-there; `update_scratch` and `finalize_scratch` are the same functions with
-their working space passed in `scratch`, for functions that call them with
-theirs (Argon2's). `scratch` is working space, sized with room for
-vectorized implementations: the streaming functions pass theirs to the
-compression function, so theirs have room for its scratch and for what they
-keep across its calls.
+there.
 -/
 
 @[expose] public section
@@ -43,34 +37,6 @@ keep across its calls.
 namespace VG.Spec.Blake2
 
 /-! ## BLAKE2b -/
-
-/-- `vg_blake2b_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64])`.
-`t` and `last` are public; `scratch` is working space. -/
-def compressBSig : Sig where
-  params := [("state", .array true .u64 8), ("blocks", .slice false (.array .u8 128) "n"),
-    ("t", .int .u64 true), ("last", .int .u32 true), ("scratch", .array true .u64 64)]
-
-/-- Updates the state at `state` with the `n` 128-byte blocks at `blocks`:
-block `i` with the offset counter `t + 128 · i` (as a 128-bit integer), and
-with the final block flag if `last ≠ 0`. The state and the blocks are
-secret. -/
-def compressBContract {M : ISA} (A : Abi M) : Contract M :=
-  compressBSig.contract A (post := fun state blocks n t last _scratch m m' _ =>
-    stateAt 64 m' state = compressBlocks b (stateAt 64 m state) m blocks n.toNat t.toNat (last != 0))
-
-/-- `vg_blake2b_compress` on every target. -/
-def compressBApi : Api where
-  module := "blake2b"
-  name := "vg_blake2b_compress"
-  sig := compressBSig
-  contracts := some fun A _ => compressBContract A
-  summary := "The BLAKE2b compression function F (RFC 7693 §3.2): updates the state `*state` \
-    (`h[0..7]`) with the `n` 128-byte blocks starting at `blocks`, in order: block `i` with the \
-    offset counter `t + 128 * i` (a 128-bit integer, so it does not wrap), and with the final \
-    block flag if `last != 0`.\n\n\
-    Contract: `VG.Spec.Blake2.compressBContract`. Constant time: only the pointers, `n`, `t` and \
-    `last` may affect timing, not the state or the blocks."
-  safety := ["The contents of `scratch` on return are unspecified."]
 
 /-- `vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize)`.
 `outlen` is public. -/
@@ -138,35 +104,6 @@ def updateBApi : Api where
     "`count` must be the exact length of the data so far (the key block included), and `count + \
       len` less than 2⁶⁴."]
 
-/-- `vg_blake2b_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72])`:
-`vg_blake2b_update` with its working space passed in `scratch`, for
-functions that call it with theirs (Argon2's): room for the compression
-function's (`compressBSig`, 512 bytes) and the function's own spills (64
-bytes). -/
-def updateBScratchSig : Sig where
-  params := [("state", .array true .u8 192), ("count", .int .u64 true),
-    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 72)]
-
-/-- `updateBPost`, whatever `scratch` is. The state and the data are secret. -/
-def updateBScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  updateBScratchSig.contract A
-    (post := fun state count data len _scratch => updateBPost A.ptrBits state count data len)
-    (stack := stack)
-
-/-- `vg_blake2b_update_scratch` on every target. -/
-def updateBScratchApi : Api where
-  module := "blake2b"
-  name := "vg_blake2b_update_scratch"
-  sig := updateBScratchSig
-  contracts := some fun A stack => updateBScratchContract A stack
-  summary := "`vg_blake2b_update`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Blake2.updateBScratchContract`. Constant time: only the pointers, `count` \
-    and `len` may affect timing, not the state or the data."
-  safety := [
-    "`count` must be the exact length of the data so far (the key block included), and `count + \
-      len` less than 2⁶⁴.",
-    "The contents of `scratch` on return are unspecified."]
-
 /-- `vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64])`.
 `count` is public; `state` is left unspecified. -/
 def finalizeBSig : Sig where
@@ -200,61 +137,7 @@ def finalizeBApi : Api where
     "`count` must be the exact length of the data (the key block included), less than 2⁶⁴.",
     "The contents of `state` on return are unspecified."]
 
-/-- `vg_blake2b_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72])`:
-`vg_blake2b_finalize` with its working space passed in `scratch` (as for
-`updateBScratchSig`), for functions that call it with theirs (Argon2's). -/
-def finalizeBScratchSig : Sig where
-  params := [("state", .array true .u8 192), ("count", .int .u64 true),
-    ("out", .array true .u8 64), ("scratch", .array true .u64 72)]
-
-/-- `finalizeBPost`, whatever `scratch` is. The state is secret. -/
-def finalizeBScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  finalizeBScratchSig.contract A
-    (post := fun state count out _scratch => finalizeBPost A.ptrBits state count out)
-    (stack := stack)
-
-/-- `vg_blake2b_finalize_scratch` on every target. -/
-def finalizeBScratchApi : Api where
-  module := "blake2b"
-  name := "vg_blake2b_finalize_scratch"
-  sig := finalizeBScratchSig
-  contracts := some fun A stack => finalizeBScratchContract A stack
-  summary := "`vg_blake2b_finalize`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Blake2.finalizeBScratchContract`. Constant time: only the pointers and \
-    `count` may affect timing, not the state."
-  safety := [
-    "`count` must be the exact length of the data (the key block included), less than 2⁶⁴.",
-    "The contents of `state` on return are unspecified.",
-    "The contents of `scratch` on return are unspecified."]
-
 /-! ## BLAKE2s -/
-
-/-- `vg_blake2s_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, t: u64, last: u32, scratch: *mut [u64; 64])`.
-`t` and `last` are public; `scratch` is working space. -/
-def compressSSig : Sig where
-  params := [("state", .array true .u32 8), ("blocks", .slice false (.array .u8 64) "n"),
-    ("t", .int .u64 true), ("last", .int .u32 true), ("scratch", .array true .u64 64)]
-
-/-- Updates the state at `state` with the `n` 64-byte blocks at `blocks`:
-block `i` with the offset counter `t + 64 · i` (modulo 2⁶⁴, BLAKE2s's counter
-being 64 bits), and with the final block flag if `last ≠ 0`. The state and
-the blocks are secret. -/
-def compressSContract {M : ISA} (A : Abi M) : Contract M :=
-  compressSSig.contract A (post := fun state blocks n t last _scratch m m' _ =>
-    stateAt 32 m' state = compressBlocks s (stateAt 32 m state) m blocks n.toNat t.toNat (last != 0))
-
-/-- `vg_blake2s_compress` on every target. -/
-def compressSApi : Api where
-  module := "blake2s"
-  name := "vg_blake2s_compress"
-  sig := compressSSig
-  contracts := some fun A _ => compressSContract A
-  summary := "The BLAKE2s compression function F (RFC 7693 §3.2): updates the state `*state` \
-    (`h[0..7]`) with the `n` 64-byte blocks starting at `blocks`, in order: block `i` with the \
-    offset counter `t + 64 * i` (modulo 2⁶⁴), and with the final block flag if `last != 0`.\n\n\
-    Contract: `VG.Spec.Blake2.compressSContract`. Constant time: only the pointers, `n`, `t` and \
-    `last` may affect timing, not the state or the blocks."
-  safety := ["The contents of `scratch` on return are unspecified."]
 
 /-- `vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize)`.
 `outlen` is public. -/
@@ -322,21 +205,6 @@ def updateSApi : Api where
     "`count` must be the exact length of the data so far (the key block included), and `count + \
       len` less than 2⁶⁴."]
 
-/-- `vg_blake2s_update_scratch(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72])`:
-`vg_blake2s_update` with its working space passed in `scratch`, for
-functions that call it with theirs (Argon2's): room for the compression
-function's (`compressSSig`, 512 bytes) and the function's own spills (64
-bytes). -/
-def updateSScratchSig : Sig where
-  params := [("state", .array true .u8 96), ("count", .int .u64 true),
-    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 72)]
-
-/-- `updateSPost`, whatever `scratch` is. The state and the data are secret. -/
-def updateSScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  updateSScratchSig.contract A
-    (post := fun state count data len _scratch => updateSPost A.ptrBits state count data len)
-    (stack := stack)
-
 /-- `vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32])`.
 `count` is public; `state` is left unspecified. -/
 def finalizeSSig : Sig where
@@ -369,18 +237,5 @@ def finalizeSApi : Api where
   safety := [
     "`count` must be the exact length of the data (the key block included), less than 2⁶⁴.",
     "The contents of `state` on return are unspecified."]
-
-/-- `vg_blake2s_finalize_scratch(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 72])`:
-`vg_blake2s_finalize` with its working space passed in `scratch` (as for
-`updateSScratchSig`), for functions that call it with theirs (Argon2's). -/
-def finalizeSScratchSig : Sig where
-  params := [("state", .array true .u8 96), ("count", .int .u64 true),
-    ("out", .array true .u8 32), ("scratch", .array true .u64 72)]
-
-/-- `finalizeSPost`, whatever `scratch` is. The state is secret. -/
-def finalizeSScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  finalizeSScratchSig.contract A
-    (post := fun state count out _scratch => finalizeSPost A.ptrBits state count out)
-    (stack := stack)
 
 end VG.Spec.Blake2

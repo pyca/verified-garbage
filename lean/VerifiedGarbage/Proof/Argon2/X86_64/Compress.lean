@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Merged from `Proof.Argon2.X86_64.Round`. -/
 
@@ -277,7 +278,7 @@ theorem compress_correct (s : State) (hs : compressLocal.pre s) :
 
 /-- The emitted primitive is verified against the merged, target-independent contract. -/
 theorem compress_verified : Verified X86_64.target Impl.Argon2.X86_64.compress
-    (Spec.Argon2.compressContract X86_64.abi) :=
+    (Proof.Argon2.compressContract X86_64.abi) :=
   Verified.of_correct compress_correct compress_ct compress_implies
 
 end VG.Proof.Argon2.X86_64

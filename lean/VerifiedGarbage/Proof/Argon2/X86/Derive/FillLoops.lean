@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Argon2.X86.Derive.FillPtr
 import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on x86 (32-bit): the filling loops
@@ -28,7 +29,7 @@ namespace VG.Proof.Argon2.X86.Derive
 open VG VG.X86
 open VG.X86.Wp (Upd Mupd Fupd wp_movi wp_mov wp_add wp_addi wp_subi wp_sub wp_addm wp_cmpi wp_ldm wp_stm wp_andi
   wp_sbb_self wp_and wp_xor wp_xorm)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState compress xorBlock)
+open VG.Spec.Argon2 (Block zeroBlock FillState compress xorBlock)
 open VG.Proof.Argon2.X86 (blk)
 open VG.Impl.Argon2.X86.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff
   divisorOff strideOff)

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Blake2.X86.CompressS.Compress
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Blake2.Scratch
@@ -102,8 +103,8 @@ def finalizeSat : State :=
 /-! ## The shared contracts -/
 
 theorem compress_implies :
-    (Proof.Blake2.compressX86 Spec.Blake2.s).Implies (Spec.Blake2.compressSContract X86.abi) := by
-  sig_implies [Spec.Blake2.compressSContract, Spec.Blake2.compressSSig, Proof.Blake2.compressX86,
+    (Proof.Blake2.compressX86 Spec.Blake2.s).Implies (Proof.Blake2.compressSContract X86.abi) := by
+  sig_implies [Proof.Blake2.compressSContract, Proof.Blake2.compressSSig, Proof.Blake2.compressX86,
     Spec.Blake2.blockBytes, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [compressSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using compressSat
 
@@ -112,13 +113,13 @@ theorem init_implies : (initX86 Spec.Blake2.s).Implies (Spec.Blake2.initSContrac
     Spec.Blake2.blockBytes, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [initSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using initSat
 
-theorem update_implies : (updateX86 Spec.Blake2.s).Implies (Spec.Blake2.updateSScratchContract X86.abi 32) := by
-  sig_implies [Spec.Blake2.updateSScratchContract, Spec.Blake2.updateSScratchSig, updateX86, Proof.Blake2.countX86,
+theorem update_implies : (updateX86 Spec.Blake2.s).Implies (Proof.Blake2.updateSScratchContract X86.abi 32) := by
+  sig_implies [Proof.Blake2.updateSScratchContract, Proof.Blake2.updateSScratchSig, updateX86, Proof.Blake2.countX86,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [updateSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateSat
 
-theorem finalize_implies : (finalizeX86 Spec.Blake2.s).Implies (Spec.Blake2.finalizeSScratchContract X86.abi 32) := by
-  sig_implies [Spec.Blake2.finalizeSScratchContract, Spec.Blake2.finalizeSScratchSig, finalizeX86, Proof.Blake2.countX86,
+theorem finalize_implies : (finalizeX86 Spec.Blake2.s).Implies (Proof.Blake2.finalizeSScratchContract X86.abi 32) := by
+  sig_implies [Proof.Blake2.finalizeSScratchContract, Proof.Blake2.finalizeSScratchSig, finalizeX86, Proof.Blake2.countX86,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [finalizeSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeSat
 
@@ -133,7 +134,7 @@ theorem callee : CalleeOk Spec.Blake2.s Impl.Blake2.X86.CompressS.compress :=
   CalleeOk.of_verified compress_verified_x86 (NoSp.of_all (by lit_decide)) (by lit_decide)
 
 theorem compress_verified :
-    Verified X86.target Impl.Blake2.X86.CompressS.compress (Spec.Blake2.compressSContract X86.abi) :=
+    Verified X86.target Impl.Blake2.X86.CompressS.compress (Proof.Blake2.compressSContract X86.abi) :=
   compress_verified_x86.of_implies compress_implies
 
 theorem init_verified :
@@ -143,13 +144,13 @@ theorem init_verified :
 theorem update_verified :
     Verified X86.target
       (Impl.Blake2.X86.Stream.update 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
-      (Spec.Blake2.updateSScratchContract X86.abi 32) :=
+      (Proof.Blake2.updateSScratchContract X86.abi 32) :=
   (Stream.update_verified ok callee update_ct update_implies.sat_left).of_implies update_implies
 
 theorem finalize_verified :
     Verified X86.target
       (Impl.Blake2.X86.Stream.finalize 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
-      (Spec.Blake2.finalizeSScratchContract X86.abi 32) :=
+      (Proof.Blake2.finalizeSScratchContract X86.abi 32) :=
   (Stream.finalize_verified ok callee finalize_ct finalize_implies.sat_left).of_implies finalize_implies
 
 /-! ## `update` and `finalize` with their working space in a frame of their own

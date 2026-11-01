@@ -14,9 +14,6 @@ import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 namespace VG.Artifacts.Blake2s.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Blake2.compressSApi.artifact RISCV64.target {
-    code := Impl.Blake2.RISCV64.compress Spec.Blake2.s
-    verified := Proof.Blake2.RISCV64.compressS_verified },
   Spec.Blake2.initSApi.artifact RISCV64.target {
     code := Impl.Blake2.RISCV64.Stream.init Spec.Blake2.s
     verified := Proof.Blake2.RISCV64.Stream.initS_verified },

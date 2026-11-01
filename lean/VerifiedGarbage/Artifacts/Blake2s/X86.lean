@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Blake2s.X86
 
 def artifacts : List Artifact := [
-  Spec.Blake2.compressSApi.artifact X86.target {
-    code := Impl.Blake2.X86.CompressS.compress
-    verified := Proof.Blake2.X86.S.compress_verified },
   Spec.Blake2.initSApi.artifact X86.target {
     code := Impl.Blake2.X86.Stream.init Spec.Blake2.s
     verified := Proof.Blake2.X86.S.init_verified },

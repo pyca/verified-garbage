@@ -104,7 +104,7 @@ def addressHeader : List Instr :=
     .mov .eax (fr (argOff kindArg)), .store (at_ .edx 5160) .eax,
     .mov .eax (fr counterOff), .store (at_ .edx 5168) .eax]
 
-def compressName : String := Spec.Argon2.compressApi.name
+def compressName : String := "vg_argon2_compress"
 
 /-- `compress(eax, esi, ecx, edx)`, its arguments pushed last to first. -/
 def compressCall : Prog isa :=

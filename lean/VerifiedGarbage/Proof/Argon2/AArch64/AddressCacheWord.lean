@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Read exactly the public indexed word of the cached address block. -/
 

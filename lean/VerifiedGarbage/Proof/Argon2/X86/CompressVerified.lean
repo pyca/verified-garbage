@@ -40,6 +40,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha256.X86.Compress
 meta import VerifiedGarbage.Proof.Sha512.Spec
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 @[expose] public section
 
@@ -165,7 +166,7 @@ end
 
 Constant time, against `compressX86`; then `compressWide`, which lets the
 code write its arguments (`Verified.narrowTo`: it only reads them), and the
-shared contract `Spec.Argon2.compressContract`, which implies it.
+shared contract `Proof.Argon2.compressContract`, which implies it.
 -/
 
 namespace VG.Proof.Argon2.X86
@@ -312,14 +313,14 @@ theorem compressWide_verified : Verified X86.target Impl.Argon2.X86.compress com
         by decide, by decide⟩ <;>
       exact Region.disjoint_of_sep (by decide)⟩
 
-theorem compress_implies : compressWide.Implies (Spec.Argon2.compressContract X86.abi) := by
-  sig_implies [Spec.Argon2.compressContract, Spec.Argon2.compressSig, compressWide, compressX86,
+theorem compress_implies : compressWide.Implies (Proof.Argon2.compressContract X86.abi) := by
+  sig_implies [Proof.Argon2.compressContract, Proof.Argon2.compressSig, compressWide, compressX86,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [satWide, satState, satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using satWide
 
 /-- The emitted function, against the shared contract. -/
 theorem compressShared_verified :
-    Verified X86.target Impl.Argon2.X86.compress (Spec.Argon2.compressContract X86.abi) :=
+    Verified X86.target Impl.Argon2.X86.compress (Proof.Argon2.compressContract X86.abi) :=
   compressWide_verified.of_implies compress_implies
 
 end VG.Proof.Argon2.X86

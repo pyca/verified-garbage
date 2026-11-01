@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressOperation
 import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Establish compression-and-write invariants from the frame and allocations. -/
 

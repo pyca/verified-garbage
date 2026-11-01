@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Common
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Blake2.RISCV64.Verified
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.CT
@@ -109,9 +110,9 @@ theorem initB_verified :
 
 theorem updateScratchB_verified :
     Verified RISCV64.target (Impl.Blake2.RISCV64.Stream.updateScratch b)
-      (Spec.Blake2.updateBScratchContract RISCV64.abi) :=
+      (Proof.Blake2.updateBScratchContract RISCV64.abi) :=
   Verified.of_correct (fun st hs => Update.correct okB calleeB hs) updateScratchB_ct (by
-    sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig,
+    sig_implies [Proof.Blake2.updateBScratchContract, Proof.Blake2.updateBScratchSig,
       Proof.Blake2.updateRISCV64, Proof.Blake2.updatePost, Spec.Blake2.updateBPost, Spec.Blake2.bufOff,
       Spec.Blake2.blockBytes, RISCV64.abi, RISCV64.argRegs]
       [updateSat] using updateSat 64)
@@ -127,9 +128,9 @@ theorem updateB_verified :
 
 theorem finalizeScratchB_verified :
     Verified RISCV64.target (Impl.Blake2.RISCV64.Stream.finalizeScratch b)
-      (Spec.Blake2.finalizeBScratchContract RISCV64.abi) :=
+      (Proof.Blake2.finalizeBScratchContract RISCV64.abi) :=
   Verified.of_correct (fun st hs => Finalize.correct okB calleeB hs) finalizeScratchB_ct (by
-    sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig,
+    sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig,
       Proof.Blake2.finalizeRISCV64, Proof.Blake2.finalizePost, Spec.Blake2.finalizeBPost,
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes, RISCV64.abi, RISCV64.argRegs]
       [finalizeSat] using finalizeSat 64)

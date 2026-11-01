@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCalls
 import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Merged from `Proof.Argon2.AArch64.AddressGeneration`. -/
 

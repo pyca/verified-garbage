@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Blake2.AArch64.Stream.CT
 import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Update
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Common
 public import VerifiedGarbage.Impl.StackScratch.AArch64
@@ -482,17 +483,17 @@ theorem initB_verified :
 
 theorem updateB_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.Stream.update b)
-      (Spec.Blake2.updateBScratchContract AArch64.abi 16) :=
+      (Proof.Blake2.updateBScratchContract AArch64.abi 16) :=
   Verified.of_correct updateB_correct updateB_ct (by
-    sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig, Proof.Blake2.updateAArch64,
+    sig_implies [Proof.Blake2.updateBScratchContract, Proof.Blake2.updateBScratchSig, Proof.Blake2.updateAArch64,
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi, AArch64.argRegs]
       [updateSat] using updateSat 64)
 
 theorem finalizeB_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.Stream.finalize b)
-      (Spec.Blake2.finalizeBScratchContract AArch64.abi 16) :=
+      (Proof.Blake2.finalizeBScratchContract AArch64.abi 16) :=
   Verified.of_correct finalizeB_correct finalizeB_ct (by
-    sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig,
+    sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig,
       Proof.Blake2.finalizeAArch64, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi,
       AArch64.argRegs]
       [finalizeSat] using finalizeSat 64)
@@ -524,17 +525,17 @@ theorem initS_verified :
 
 theorem updateS_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.Stream.update s)
-      (Spec.Blake2.updateSScratchContract AArch64.abi 16) :=
+      (Proof.Blake2.updateSScratchContract AArch64.abi 16) :=
   Verified.of_correct updateS_correct updateS_ct (by
-    sig_implies [Spec.Blake2.updateSScratchContract, Spec.Blake2.updateSScratchSig, Proof.Blake2.updateAArch64,
+    sig_implies [Proof.Blake2.updateSScratchContract, Proof.Blake2.updateSScratchSig, Proof.Blake2.updateAArch64,
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi, AArch64.argRegs]
       [updateSat] using updateSat 32)
 
 theorem finalizeS_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.Stream.finalize s)
-      (Spec.Blake2.finalizeSScratchContract AArch64.abi 16) :=
+      (Proof.Blake2.finalizeSScratchContract AArch64.abi 16) :=
   Verified.of_correct finalizeS_correct finalizeS_ct (by
-    sig_implies [Spec.Blake2.finalizeSScratchContract, Spec.Blake2.finalizeSScratchSig,
+    sig_implies [Proof.Blake2.finalizeSScratchContract, Proof.Blake2.finalizeSScratchSig,
       Proof.Blake2.finalizeAArch64, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi,
       AArch64.argRegs]
       [finalizeSat] using finalizeSat 32)

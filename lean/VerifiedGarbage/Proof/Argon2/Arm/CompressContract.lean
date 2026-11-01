@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
@@ -8,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 # Argon2 compression on ARMv7: the contract of the proof
 
 `compressArm`: the contract the proof is written against (and the derivation
-uses for its calls); `Spec.Argon2.compressContract` implies it
+uses for its calls); `Proof.Argon2.compressContract` implies it
 (`Proof/Argon2/Arm/CompressVerified.lean`). `Pre` names the facts of its
 precondition.
 -/

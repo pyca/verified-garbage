@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Argon2.Arm.Words
 public import VerifiedGarbage.Proof.Argon2.Arm.Pass
 import VerifiedGarbage.Proof.Argon2.Permutation
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 compression on ARMv7: correctness

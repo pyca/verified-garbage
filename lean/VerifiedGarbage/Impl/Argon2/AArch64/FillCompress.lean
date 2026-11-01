@@ -25,7 +25,7 @@ def compressArgs : List Instr := [load .x3 .x19 248, mov .x2 .x3, addi .x2 4096]
 def writeArgs : List Instr := [load .x0 .x19 16, load .x1 .x19 248, addi .x1 4096, load .x5 .x19 0].flatten
 
 def operation : Prog isa :=
-  .seq (.call Spec.Argon2.compressApi.name VG.Impl.Argon2.AArch64.compress)
+  .seq (.call "vg_argon2_compress" VG.Impl.Argon2.AArch64.compress)
     (.seq (.block writeArgs) FillWrite.code)
 
 def setup : Prog isa := .seq (.block saveCurrent) (.block compressArgs)

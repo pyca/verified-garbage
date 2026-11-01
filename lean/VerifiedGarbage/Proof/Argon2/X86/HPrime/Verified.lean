@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.FinishCT
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
 import VerifiedGarbage.Proof.Sha512.X86.Rounds
 import VerifiedGarbage.Proof.Framework.Offset
@@ -214,7 +215,7 @@ Constant time, by relating two runs with the same public data piece by piece
 (`code_ct`): the setup is checked by the taint analysis from the arguments,
 `first` and `finishOutput` by their pieces; then `hPrime_verified` against the
 contract with the arguments read only, and `hPrimeShared_verified` against
-`Spec.Argon2.hPrimeContract`, which lets the code write them.
+`Proof.Argon2.hPrimeContract`, which lets the code write them.
 -/
 
 namespace VG.Proof.Argon2.X86.HPrime
@@ -493,14 +494,14 @@ theorem hPrimeWide_verified : Verified X86.target Impl.Argon2.X86.HPrime.code hP
         by decide, by decide, by decide, by decide, by decide, by decide⟩ <;>
       exact Region.disjoint_of_sep (by decide)⟩
 
-theorem hPrime_implies : hPrimeWide.Implies (Spec.Argon2.hPrimeContract X86.abi 60) := by
-  sig_implies [Spec.Argon2.hPrimeContract, Spec.Argon2.hPrimeSig, hPrimeWide, hPrimeX86,
+theorem hPrime_implies : hPrimeWide.Implies (Proof.Argon2.hPrimeContract X86.abi 60) := by
+  sig_implies [Proof.Argon2.hPrimeContract, Proof.Argon2.hPrimeSig, hPrimeWide, hPrimeX86,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [hSatWide, hSatState, hSatMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using hSatWide
 
 /-- The emitted function, against the shared contract. -/
 theorem hPrimeShared_verified :
-    Verified X86.target Impl.Argon2.X86.HPrime.code (Spec.Argon2.hPrimeContract X86.abi 60) :=
+    Verified X86.target Impl.Argon2.X86.HPrime.code (Proof.Argon2.hPrimeContract X86.abi 60) :=
   hPrimeWide_verified.of_implies hPrime_implies
 
 end VG.Proof.Argon2.X86.HPrime

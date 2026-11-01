@@ -3,33 +3,6 @@
 //! `assembly/blake2s.s`.
 #![allow(dead_code)]
 
-/// The BLAKE2s compression function F (RFC 7693 §3.2): updates the state `*state` (`h[0..7]`) with the `n` 64-byte blocks starting at `blocks`, in order: block `i` with the offset counter `t + 64 * i` (modulo 2⁶⁴), and with the final block flag if `last != 0`.
-///
-/// Contract: `VG.Spec.Blake2.compressSContract`. Constant time: only the pointers, `n`, `t` and `last` may affect timing, not the state or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `blocks` must be valid for reads of `64 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "AADI+QgA6PkQAAj6GAAo+iAASPooAGj6MACI+jgAqPpAAMj6SADo+lAAyPgAAAA4WAAI+D4A51RQAMd8eDPnfOAP53hQAOd8YADo+AAAJSg="
-beq %cr0, 20f
-22:
-.base64 "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"
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "AADI6QgA6OkQAAjqGAAo6iAASOooAGjqMACI6jgAqOpAAMjqSADo6iAAgE4=""#,
-    )
-}
-
 /// Starts a BLAKE2s computation of an `outlen`-byte digest with the `keylen`-byte key at `key` (none if `keylen` is 0): makes the streaming state `*state` represent the key padded to a block, the first block of the data (none for unkeyed hashing), hashed from the initial state for `outlen` and `keylen` (RFC 7693 §2.5, §3.3). The length of the data is then 64 if `keylen > 0` and 0 otherwise. Continue with `vg_blake2s_update` and `vg_blake2s_finalize`.
 ///
 /// Contract: `VG.Spec.Blake2.initSContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
@@ -132,7 +105,7 @@ b 23f
 22:
 23:
 .base64 "AAJb6xACm+sYArvrIALb6ygC++sIAnvrIAAB6DAAITimAwh8YAIhOCAAgE4=""#,
-        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress,
+        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
 }
 
@@ -168,6 +141,10 @@ b 23f
 .base64 "AAB6OCAAmjgBAKA4AADfOAEA4DgAABs5"
 bl {vg_blake2s_compress}
 .base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPkAAlvrEAKb6xgCu+sgAtvrKAL76wgCe+sgAAHoMAAhOKYDCHxgAiE4IACATg==""#,
-        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress,
+        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2s_compress.rs"]
+pub(crate) mod vg_blake2s_compress;

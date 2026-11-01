@@ -33,6 +33,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
 # The Salsa20/8 Core on 32-bit ARM
@@ -470,9 +471,9 @@ theorem salsa_ct : ConstantTime isa Proof.Scrypt.salsaArm.pre Proof.Scrypt.salsa
   rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem salsa_verified :
-    Verified Arm.target Impl.Scrypt.Arm.salsa (Spec.Scrypt.salsaContract Arm.abi) :=
+    Verified Arm.target Impl.Scrypt.Arm.salsa (Proof.Scrypt.salsaContract Arm.abi) :=
   Verified.of_correct salsa_correct salsa_ct (by
-    sig_implies [Spec.Scrypt.salsaContract, Spec.Scrypt.salsaSig, Proof.Scrypt.salsaArm, Arm.abi,
+    sig_implies [Proof.Scrypt.salsaContract, Proof.Scrypt.salsaSig, Proof.Scrypt.salsaArm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [Proof.Scrypt.Arm.satState]
       using Proof.Scrypt.Arm.satState)
 
@@ -1492,22 +1493,22 @@ theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixArm.pre Proof.Scrypt
     (by taint_decide)
 
 theorem blockMix_verified :
-    Verified Arm.target Impl.Scrypt.Arm.blockMix (Spec.Scrypt.blockMixContract Arm.abi) :=
+    Verified Arm.target Impl.Scrypt.Arm.blockMix (Proof.Scrypt.blockMixContract Arm.abi) :=
   Verified.of_correct blockMix_correct blockMix_ct
     { pre := by
-        sig_implies_pre [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_pre [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
       post := by
-        sig_implies_post [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_post [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
       pub := by
-        sig_implies_pub [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_pub [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
       sat := by
-        implies_sat [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        implies_sat [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
           [Proof.Scrypt.Arm.BlockMix.bmSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]

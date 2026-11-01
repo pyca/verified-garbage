@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -98,17 +99,17 @@ theorem initB_verified :
 
 theorem updateB_verified :
     Verified X86_64.target (Impl.Blake2.X86_64.Stream.update b)
-      (Spec.Blake2.updateBScratchContract X86_64.abi 8) :=
+      (Proof.Blake2.updateBScratchContract X86_64.abi 8) :=
   Verified.of_correct updateB_correct updateB_ct (by
-    sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig, Proof.Blake2.updateX86_64,
+    sig_implies [Proof.Blake2.updateBScratchContract, Proof.Blake2.updateBScratchSig, Proof.Blake2.updateX86_64,
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes, X86_64.abi, X86_64.argRegs]
       [updateSat] using updateSat 64)
 
 theorem finalizeB_verified :
     Verified X86_64.target (Impl.Blake2.X86_64.Stream.finalize b)
-      (Spec.Blake2.finalizeBScratchContract X86_64.abi 8) :=
+      (Proof.Blake2.finalizeBScratchContract X86_64.abi 8) :=
   Verified.of_correct finalizeB_correct finalizeB_ct (by
-    sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig,
+    sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig,
       Proof.Blake2.finalizeX86_64, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, X86_64.abi,
       X86_64.argRegs]
       [finalizeSat] using finalizeSat 64)

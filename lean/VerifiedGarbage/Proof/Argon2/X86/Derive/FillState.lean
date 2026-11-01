@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.X86.Derive.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.X86.Compress
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.FillStep
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 @[expose] public section
 
@@ -284,7 +285,7 @@ namespace VG.Proof.Argon2.X86.Derive
 open VG VG.X86
 open VG.X86.Wp (Upd Mupd Fupd wp_movi wp_mov wp_add wp_addi wp_subi wp_addm wp_cmpi wp_sbb_self wp_and wp_or
   wp_andi)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState addressBlock independent)
+open VG.Spec.Argon2 (Block zeroBlock FillState addressBlock independent)
 open VG.Proof.Argon2.X86 (blk)
 open VG.Proof.Sha512.X86 (rd64)
 open VG.Impl.Argon2.X86.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff)

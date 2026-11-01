@@ -23,7 +23,7 @@ def pointer (offset : Nat) : List Instr := [load .x0 .x19 248, addi .x0 offset].
 def args (x y out : Nat) : List Instr := [load .x3 .x19 248, mov .x0 .x3, addi .x0 x, mov .x1 .x3, addi .x1 y, mov .x2 .x3, addi .x2 out].flatten
 
 def stage (x y out : Nat) : Prog isa := .seq (.block (args x y out))
-  (.call Spec.Argon2.compressApi.name VG.Impl.Argon2.AArch64.compress)
+  (.call "vg_argon2_compress" VG.Impl.Argon2.AArch64.compress)
 
 def calls : Prog isa := .seq (stage 7168 5120 4096) (stage 7168 4096 6144)
 

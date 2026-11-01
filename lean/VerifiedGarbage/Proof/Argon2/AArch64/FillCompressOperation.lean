@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Merged from `Proof.Argon2.AArch64.FillCompressArgs`. -/
 

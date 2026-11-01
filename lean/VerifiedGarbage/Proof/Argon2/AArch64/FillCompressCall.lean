@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.Compress
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Invoke the verified compression primitive with narrowed permissions,
 retaining the surrounding matrix and derivation frame. -/
@@ -31,8 +32,8 @@ structure CallReady (s : State) : Prop where
   stackScratch : (below s.sp 8).Disjoint ⟨s.gpr .x3, 4096⟩
 
 structure Called (s t : State) : Prop where
-  result : Spec.Argon2.blockAt t.mem (s.gpr .x2) = Spec.Argon2.compress
-    (Spec.Argon2.blockAt s.mem (s.gpr .x0)) (Spec.Argon2.blockAt s.mem (s.gpr .x1))
+  result : Proof.Argon2.blockAt t.mem (s.gpr .x2) = Spec.Argon2.compress
+    (Proof.Argon2.blockAt s.mem (s.gpr .x0)) (Proof.Argon2.blockAt s.mem (s.gpr .x1))
   regs : ∀ r ∈ loopRegs, t.gpr r = s.gpr r
   rd : t.rd = s.rd
   wr : t.wr = s.wr
@@ -72,9 +73,9 @@ theorem call_ok (name : String) (s : State) (h : CallReady s) :
   obtain ⟨pre, cover, writes⟩ := call_hyps s h
   refine WP.call (k := compressLocal) compress_correct pre cover writes ?_ (by lit_decide)
   intro t rd wr sp frame regs _ result
-  change Spec.Argon2.blockAt t.mem (s.callEntry.gpr .x2) = Spec.Argon2.compress
-    (Spec.Argon2.blockAt s.mem (s.callEntry.gpr .x0))
-    (Spec.Argon2.blockAt s.mem (s.callEntry.gpr .x1)) at result
+  change Proof.Argon2.blockAt t.mem (s.callEntry.gpr .x2) = Spec.Argon2.compress
+    (Proof.Argon2.blockAt s.mem (s.callEntry.gpr .x0))
+    (Proof.Argon2.blockAt s.mem (s.callEntry.gpr .x1)) at result
   rw [State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs)] at result
