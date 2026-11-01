@@ -46,12 +46,11 @@ structure ProdIdx (y x a t z : Nat) (live liveW ls : List Nat) : Prop where
   live_apart : ∀ j ∈ live, j / 2 ≠ t ∧ j / 2 ≠ a ∧ j / 2 ≠ x
   liveW_apart : ∀ j ∈ liveW, y / 2 ≠ j
   sY_not : sY ∉ ls
-  sK_in : sK ∈ ls
 
 /-- The product's state after `i` steps: the multiplier, multiplicand and sum `(Y, X, P)`. -/
 def ProdS (g : Geo) (s0 : State) (A : Nat → Nat) (live : List Nat) (AW : Nat → Nat) (liveW : List Nat)
     (V : Nat → Nat) (ls : List Nat) (y x a K i : Nat) (st : Nat × Nat × Nat) (u : State) : Prop :=
-  KS g s0 (upd A y st.1) live (upd (upd AW x st.2.1) a st.2.2) liveW (upd V sK (K - i)) ls u
+  KS g s0 (upd A y st.1) live (upd (upd AW x st.2.1) a st.2.2) liveW (upd V sK (K - i)) (sK :: ls) u
 
 section
 variable {g : Geo} {s0 : State} {A : Nat → Nat} {live : List Nat}
@@ -91,7 +90,7 @@ theorem productStep_ok {y x a t z K i : Nat} {st : Nat × Nat × Nat} {u : State
   have sYK : sY ≠ sK := by decide
   have cnt : upd (upd V sK (K - i)) sY (upd A y Y y % 2) sK = K - i := by
     rw [upd_ne _ _ (Ne.symm sYK), upd_self]
-  refine WP.mono (h6.countNext_ok (by simp [I.sK_in]) (by rw [cnt]; omega) (by rw [cnt]; omega))
+  refine WP.mono (h6.countNext_ok (by simp) (by rw [cnt]; omega) (by rw [cnt]; omega))
     fun v ⟨hv, zv⟩ => ⟨?_, by rw [zv, cnt]⟩
   unfold ProdS prodStep
   refine hv.mono (fun j hj => ⟨by simp [hj], ?_⟩) (fun j hj => ⟨by simp [hj], ?_⟩)
@@ -109,7 +108,34 @@ theorem productStep_ok {y x a t z K i : Nat} {st : Nat × Nat × Nat} {u : State
     · subst ja
       simp [upd, ne, Ne.symm ne, ne3, zx, za, zero]
     · simp [upd, jx, ja, jt]
-  · have dY : d ≠ sY := fun e => I.sY_not (e ▸ hd)
-    by_cases dK : d = sK
+  · by_cases dK : d = sK
     · subst dK; simp only [upd, ite_true, Ne.symm sYK, ite_false]; omega
-    · simp [upd, dY, dK]
+    · have dY : d ≠ sY := fun e => I.sY_not (by simp at hd; rcases hd with h | h; exact absurd h dK; exact e ▸ h)
+      simp [upd, dY, dK]
+
+theorem product_ok {y x a t z Y X : Nat} {u : State}
+    (I : ProdIdx y x a t z live liveW ls) (zero : AW z = 0)
+    (h : KS g s0 (upd A y Y) live (upd (upd AW x X) a 0) liveW V ls u) :
+    WP isa (product y x a t z) u fun v =>
+      ProdS g s0 A live AW liveW V ls y x a (32 * g.w) (32 * g.w) ((prodStep (32 * g.W))^[32 * g.w] (Y, X, 0)) v := by
+  unfold product
+  refine WP.seq (WP.mono h.countN_ok fun u1 h1 => ?_)
+  have up := h.upper
+  have wpos : 0 < 32 * g.w := by change 0 < 32 * (2 * g.n + 2); omega
+  refine countLoop (P := fun i v => ProdS g s0 A live AW liveW V ls y x a (32 * g.w) i
+    ((prodStep (32 * g.W))^[i] (Y, X, 0)) v) wpos ?_ fun i v hi hv => ?_
+  · exact h1
+  · refine WP.mono (productStep_ok I zero hi (by change 32 * (2 * g.n + 2) < _; omega) hv) fun w ⟨hw, zw⟩ => ⟨?_, zw⟩
+    rw [Function.iterate_succ_apply']
+    exact hw
+
+/-- `product_ok` from the values of the arrays it names. -/
+theorem product_ok' {y x a t z Y X : Nat} {u : State}
+    (I : ProdIdx y x a t z live liveW ls) (zero : AW z = 0)
+    (h : KS g s0 A live AW liveW V ls u) (hy : A y = Y) (hx : AW x = X) (ha : AW a = 0) :
+    WP isa (product y x a t z) u fun v =>
+      ProdS g s0 A live AW liveW V ls y x a (32 * g.w) (32 * g.w) ((prodStep (32 * g.W))^[32 * g.w] (Y, X, 0)) v :=
+  product_ok I zero (by rw [upd_noop hy, upd_noop hx, upd_noop ha]; exact h)
+
+end
+end VG.Proof.Rsa.X86.Recover

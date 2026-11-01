@@ -183,9 +183,9 @@ def divA : Prog isa := seqs [wideN, div wid wA wR wN wDt,
   sub3 wid wT wA wN, .block [.store (sc sLt) .ebx]]
 
 /-- `m + 1`, `n - r`, their quotient and remainder, and whether it is zero. -/
-def divB : Prog isa := seqs [copy nar aOne1 aZero, .block (setOne nar aOne1),
+def divB : Prog isa := seqs [copy nar aOne1 aZero, .block (setOne nar aOne1), sub3 nar aD aN aRlo,
   chain nar .adc aM1 aM aOne1 false, .block (zeroAbove aM1),
-  sub3 nar aD aN aRlo, div nar aD aRem aM1 aDt, eqSFast nar sExact aRem aZero]
+  div nar aD aRem aM1 aDt, eqSFast nar sExact aRem aZero]
 
 /-! ## `b² - 4 n` -/
 

@@ -192,6 +192,20 @@ theorem twos_iter {b N x k : Nat} (pos : 0 < N) (hk : N < 2 ^ k) (hx : x < 2 ^ b
     exact Nat.Coprime.gcd_mul_right_cancel _ (Nat.Coprime.pow_left _ (by
       unfold Nat.Coprime; rw [Nat.gcd_rec, he]; rfl))
 
+/-- `u` and `x` after the halvings do not depend on `x'`. -/
+theorem twos_proj (b : Nat) : ∀ k u x y y', ((twoStep b)^[k] (u, x, y)).1 = ((twoStep b)^[k] (u, x, y')).1 ∧
+    ((twoStep b)^[k] (u, x, y)).2.1 = ((twoStep b)^[k] (u, x, y')).2.1
+  | 0, _, _, _, _ => ⟨rfl, rfl⟩
+  | k + 1, u, x, y, y' => by
+    rw [Function.iterate_succ_apply, Function.iterate_succ_apply]
+    unfold twoStep
+    simp only
+    split
+    · split
+      · exact twos_proj b k _ _ _ _
+      · exact twos_proj b k _ _ _ _
+    · exact twos_proj b k _ _ _ _
+
 /-! ## Products -/
 
 /-- A step of the product: the multiplier `y` halved, the multiplicand `x` doubled and the
