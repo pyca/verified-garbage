@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Modes.RISCV64.Seq
 public import VerifiedGarbage.Impl.Modes.CbcChained
 public import VerifiedGarbage.Impl.Modes.Ctr
+public import VerifiedGarbage.Impl.Modes.Ctr32
 public import VerifiedGarbage.Impl.Sm4.RISCV64.Ecb
 
 /-!
@@ -26,7 +27,7 @@ frame's base (`s4`) is ECB's base less `ecbOff` (`unpark`). 404 slots in
 all, with the modes'.
 
 `cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt`, `cfbDecrypt`
-and `ctr` (schedule = a0, iv = a1, data = a2, n = a3) are the modes over it.
+`ctr` and `ctr32` (schedule = a0, iv = a1, data = a2, n = a3) are the modes over it.
 -/
 
 @[expose] public section
@@ -90,5 +91,8 @@ def cfbDecrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbDec 4)
 
 /-- `vg_sm4_ctr`. -/
 def ctr : Prog isa := (dirCore .encrypt).seq Modes.Mode.ctr
+
+/-- `vg_sm4_ctr32`: counter mode with GCM's `inc₃₂`. -/
+def ctr32 : Prog isa := (dirCore .encrypt).seq Modes.Mode.ctr32
 
 end VG.Impl.Sm4.RISCV64

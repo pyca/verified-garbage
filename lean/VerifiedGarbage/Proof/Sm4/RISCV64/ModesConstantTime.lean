@@ -63,4 +63,8 @@ theorem ctr_constantTime (pre : State → Prop) : ConstantTime isa pre modePub c
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
+theorem ctr32_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ctr32 :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+    (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
+
 end VG.Proof.Sm4.RISCV64
