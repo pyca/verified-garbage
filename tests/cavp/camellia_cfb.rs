@@ -108,8 +108,9 @@ fn errors() {
     }
 }
 
-/// Independent batches must gather original ciphertext before overwriting it,
-/// including short batches and unaligned data and IV buffers.
+/// Decryption in place, which must read each ciphertext block before
+/// overwriting it, at many lengths, with unaligned data and IV buffers and
+/// guards around both.
 #[test]
 fn decrypt_batches_unaligned() {
     let iv = crate::bytes::pattern_array(11, 5);

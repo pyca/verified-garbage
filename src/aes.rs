@@ -2,10 +2,10 @@
 //! mode (AES-GCM in `crate::aes_gcm`, AES-CMAC in `crate::cmac::aes`, …)
 //! chooses one [`Backend`], and runs `vg_aes_expand_key`'s variant for it
 //! and its own functions' variants for it. Those functions may need more
-//! features than the key expansion (GCM's need PCLMULQDQ too, for GHASH), so
-//! on targets with more than one implementation each mode selects with
-//! `Backend::select_for`, passing the features its own variants need: a CPU
-//! without them runs the baseline implementation.
+//! features than the key expansion, so on targets with more than one
+//! implementation each mode selects with `Backend::select_for`, passing the
+//! features its own variants need: a CPU without them runs the baseline
+//! implementation.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -26,16 +26,15 @@ use verified_garbage_cpu::Features;
 /// functions built on it, by suffix.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
-    /// Constant-time scalar code, for the target's baseline ISA.
+    /// The baseline implementation.
     Scalar,
-    /// AES-NI: the `_aesni` functions.
+    /// `_aesni`.
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     AesNi,
-    /// VAES: the `_vaes` functions, with the key expansion
-    /// `vg_aes_expand_key_aesni`.
+    /// `_vaes`, with the key expansion `vg_aes_expand_key_aesni`.
     #[cfg(target_arch = "x86_64")]
     Vaes,
-    /// The AES extension: the `_aes` functions.
+    /// `_aes`.
     #[cfg(target_arch = "aarch64")]
     Aes,
 }
@@ -98,9 +97,8 @@ mod tests {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
     const NONE: Features = Features(0);
 
-    /// The implementation chosen for each set of features: AES-NI needs
-    /// AES-NI (for the key expansion) and everything the caller's functions
-    /// need (SSSE3 too, for those that run counter mode).
+    /// The implementation chosen for each set of features: AES-NI needs the
+    /// key expansion's features and everything the caller's functions need.
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn select() {
@@ -129,8 +127,8 @@ mod tests {
             Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ);
         assert_eq!(Backend::select_for(aes_ssse3, all, pclmul), Backend::Scalar);
         assert_eq!(Backend::select_for(all, all, pclmul), Backend::Vaes);
-        // VAES: everything the caller's VAES functions need (AVX2 too, for
-        // counter mode); failing that, AES-NI.
+        // VAES: everything the caller's `_vaes` functions need; failing that,
+        // AES-NI.
         let vaes = Features(
             verified_garbage_cpu::feature::AES
                 | verified_garbage_cpu::feature::AVX
@@ -225,7 +223,7 @@ mod tests {
         );
     }
 
-    /// The scalar implementation is the only one.
+    /// The baseline implementation is the only one.
     #[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
     #[test]
     fn select() {

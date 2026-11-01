@@ -4,11 +4,17 @@
 //! `vg_keccak_absorb` (on AArch64 `vg_keccak_absorb_scratch`, with its
 //! working space on the Rust stack), `vg_keccak_pad` and `vg_keccak_squeeze`
 //! for the target architecture (contracts `VG.Spec.Sha3.absorbContract`,
-//! `absorbScratchContract`, `padContract` and `squeezeContract`) maintain a Keccak state that represents the message
-//! absorbed so far (`VG.Spec.Sha3.Repr`: the state after its whole blocks,
-//! with its remaining bytes XORed in), pad it and squeeze the output. The
-//! Rust types only keep that state together with the position in the
-//! current block, which the contracts take as an argument.
+//! `absorbScratchContract`, `padContract` and `squeezeContract`) maintain a
+//! Keccak state that represents the message absorbed so far
+//! (`VG.Spec.Sha3.Repr`: the state after its whole blocks, with its
+//! remaining bytes XORed in), pad it and squeeze the output. The Rust types
+//! only keep that state together with the position in the current block,
+//! which the contracts take as an argument.
+//!
+//! On AArch64, the `_sha3` variants of the three, with the same contracts,
+//! are chosen by `Backend::select` on CPUs with the features their
+//! `_FEATURES` constants name, only for `target_vendor = "apple"` (or, with
+//! the `cpu-features-env` feature, when `VG_CPU_FEATURES` names `sha3`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -37,19 +43,22 @@ use crate::arch::sha3::{
     vg_keccak_squeeze_sha3,
 };
 
-/// The selected permutation, shared by every phase of a sponge.
+/// The implementations of the sponge's functions, the same for every phase
+/// of a sponge.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
+    /// The baseline implementation.
     Scalar,
+    /// `_sha3`.
     #[cfg(target_arch = "aarch64")]
     Sha3,
 }
 
 impl Backend {
     pub(crate) fn detected() -> Self {
-        // Apple's SHA-3 instructions beat the scalar permutation. Neoverse
-        // N2 is faster with scalar code; explicit feature requests retain
-        // access to the hardware implementation for testing.
+        // The `_sha3` variants are faster on Apple's cores and slower on
+        // Neoverse N2; explicit feature requests retain access to them for
+        // testing.
         #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
         {
             static BACKEND: std::sync::OnceLock<Backend> = std::sync::OnceLock::new();
@@ -437,7 +446,7 @@ mod tests {
         }
     }
 
-    /// Compare scalar and SHA3-instruction sponges at every rate boundary,
+    /// Compare the baseline and `_sha3` sponges at every rate boundary,
     /// with split updates and multi-block output.
     #[cfg(target_arch = "aarch64")]
     #[test]
@@ -548,8 +557,9 @@ mod tests {
         }
     }
 
-    /// Whole-block absorption and its generic fallback agree around each
-    /// rate boundary, including a nonaligned update followed by two blocks.
+    /// Splitting a message into two updates around each rate boundary,
+    /// including a partial block followed by two blocks, gives the output
+    /// of one update.
     #[test]
     fn shake_absorb_boundaries() {
         let msg: [u8; 337] = core::array::from_fn(|i| (i * 11 + 5) as u8);

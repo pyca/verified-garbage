@@ -4,16 +4,16 @@
 //! (contract `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
 //! `vg_aes_ofb` (`VG.Spec.Ofb.aesContract`) XORs whole blocks with the
 //! output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`, which it
-//! replaces with the last output block, in constant time. It calls
-//! `vg_aes_encrypt_blocks` on one block at a time. This module holds the key
-//! schedule and handles a partial last block (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`):
-//! OFB of a zero block is the next output block, whose first bytes it XORs
-//! into the rest of the input.
+//! replaces with the last output block, in constant time. This module holds
+//! the key schedule and handles a partial last block (§6.4,
+//! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output block,
+//! whose first bytes it XORs into the rest of the input.
 //!
-//! On x86-64, CPUs with VAES and AVX2 run the `_vaes` function, and other
-//! CPUs with AES-NI the `_aesni` one (`crate::aes::Backend`), as on x86; on
-//! AArch64, CPUs with the AES instructions run the `_aes` one. Elsewhere, and on other CPUs, the constant-time
-//! bitsliced implementation runs.
+//! The variants of `vg_aes_ofb`, with the same contract, are chosen with
+//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
+//! constants name (and the key expansion's): on x86-64, `vg_aes_ofb_vaes`,
+//! then `vg_aes_ofb_aesni` (both with `vg_aes_expand_key_aesni`); on x86,
+//! `vg_aes_ofb_aesni`; on AArch64, `vg_aes_ofb_aes`.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -41,8 +41,8 @@ use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
-/// The instance of a function for `backend`: the scalar one, x86-64's or
-/// x86's for AES-NI, x86-64's for VAES, or AArch64's for the AES instructions.
+/// The variant of a function for `backend`: the baseline one, or its
+/// `_aesni`, `_vaes` or `_aes` one.
 macro_rules! instance {
     ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $aes:ident) => {
         match $backend {

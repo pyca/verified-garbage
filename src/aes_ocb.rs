@@ -18,13 +18,11 @@
 //! `crate::aes_gcm`): 1 to 16 bytes, checked at compile time. §3.1 defines
 //! the AEADs with tags of 16, 12 and 8 bytes.
 //!
-//! The functions are emitted once for each implementation of AES they call
-//! (`vg_aes_expand_key`, `vg_aes_encrypt_blocks` and
-//! `vg_aes_decrypt_blocks`), which have the same contracts: on x86-64, CPUs
-//! with VAES and AVX2 run the `_vaes` instances, and other CPUs with AES-NI
-//! and SSSE3 the `_aesni` ones (`crate::aes::Backend`); on x86, CPUs with AES-NI run the `_aesni` instances; on AArch64,
-//! CPUs with the AES instructions run the `_aes` ones. On ARMv7, PPC64LE
-//! and RISC-V there is only the constant-time scalar implementation.
+//! The variants of these functions, with the same contracts, are chosen
+//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
+//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
+//! then the `_aesni` ones; on x86, the `_aesni` ones; on AArch64, the `_aes`
+//! ones.
 
 #![cfg(any(
     target_arch = "x86",
@@ -56,8 +54,8 @@ use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
-/// The instance of a function for `backend`: the scalar one, x86-64's or
-/// x86's for AES-NI, x86-64's for VAES, or AArch64's for the AES instructions.
+/// The variant of a function for `backend`: the baseline one, or its
+/// `_aesni`, `_vaes` or `_aes` one.
 macro_rules! instance {
     ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $aes:ident) => {
         match $backend {
@@ -161,7 +159,7 @@ pub struct AesOcb {
     ctx: [u64; 32],
     /// The number of rounds of AES.
     rounds: usize,
-    /// The implementation of AES the functions called call.
+    /// The implementation of AES of the functions called.
     backend: Backend,
 }
 

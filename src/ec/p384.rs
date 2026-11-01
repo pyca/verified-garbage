@@ -1,10 +1,8 @@
 //! P-384's multiplications, which [`ecdsa`](crate::ecdsa) and
 //! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. On x86-64 CPUs with BMI2, ADX and AVX2, the `_adx` variants
-//! multiply field elements with `mulx`, `adcx` and `adox`, and the
-//! signatures' and public keys' comb selects its entries with AVX2. On
-//! ARMv7 cores with `umaal`, the `_umaal` variants multiply field elements
-//! and scalars with it.
+//! compute. `Mul::select` chooses, on CPUs with the features their
+//! `_FEATURES` constants name, the `_adx` variants on x86-64 and the
+//! `_umaal` ones on ARMv7.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -36,14 +34,12 @@ use verified_garbage_cpu::Features;
 /// The multiplications of P-384's field elements.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Mul {
-    /// The target's baseline ISA.
+    /// The baseline implementation.
     Baseline,
-    /// BMI2's `mulx` and ADX's `adcx` and `adox`, with the comb's selection
-    /// by AVX2 (the `_adx` variants).
+    /// `_adx`.
     #[cfg(target_arch = "x86_64")]
     Adx,
-    /// ARMv7's `umaal` for the Montgomery multiplications (the `_umaal`
-    /// variants).
+    /// `_umaal`.
     #[cfg(target_arch = "arm")]
     Umaal,
 }

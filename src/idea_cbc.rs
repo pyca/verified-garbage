@@ -9,10 +9,8 @@
 //! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
 //! decryption from the chaining value at `iv`, and the chaining value with the
 //! one to continue from, the last ciphertext block, in constant time: their
-//! timing depends on none of the key, the chaining value and the data. Both are
-//! the modes' generic CBC, one block at a time: on x86, x86-64 and AArch64 over
-//! the scalar block code, on ARMv7 calling the verified `vg_idea_ecb` for each
-//! block. This module checks the lengths and holds the subkeys.
+//! timing depends on none of the key, the chaining value and the data. This
+//! module checks the lengths and holds the subkeys.
 
 #![cfg(any(
     target_arch = "x86",

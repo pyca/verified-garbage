@@ -257,10 +257,9 @@ mod tests {
     }
 
     /// The implementation chosen, and on AArch64 the NEON one whichever is
-    /// chosen, give the same tag as the scalar one, for lengths around the
-    /// numbers of blocks from which the vector code runs (8 on AArch64; 28,
-    /// 32 and 40 on x86-64) and multiples of four blocks, in one piece and in two split at
-    /// many positions.
+    /// chosen, give the same tag as the baseline one, for lengths up to 1100
+    /// bytes, many within a byte of a multiple of a block, in one piece and
+    /// in two split at many positions.
     #[test]
     fn implementations_agree() {
         let key: [u8; 32] = core::array::from_fn(|i| (i * 11 + 1) as u8);
@@ -305,8 +304,8 @@ mod tests {
             assert_eq!(Backend::select(ifma), Backend::Ifma);
             assert_eq!(Backend::select(avx512), Backend::Avx512);
             assert_eq!(Backend::select(avx2), Backend::Avx2);
-            // AVX-512F alone is not enough: the AVX-512 instance calls the
-            // AVX2 one.
+            // AVX-512F alone is not enough:
+            // `VG_POLY1305_UPDATE_AVX512_FEATURES` names more.
             assert_eq!(
                 Backend::select(Features(
                     verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F

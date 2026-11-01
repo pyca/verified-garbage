@@ -1,4 +1,4 @@
-//! End-to-end differential tests for scrypt's scalar mixing path.
+//! End-to-end differential tests of scrypt against OpenSSL.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -8,12 +8,10 @@
 //! `cfbDecryptContract`) replace whole blocks with `Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or
 //! `Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the block at `iv`, which they replace with the last
 //! ciphertext block, in constant time: their timing depends on none of the
-//! key, the chaining value and the data. Both are the modes' generic CFB over
-//! Camellia's bitsliced ECB code, one block at a time (in a batch of eight):
-//! on x86, x86-64, AArch64, PPC64LE and RISC-V over the ECB code itself, on ARMv7 calling the
-//! verified `vg_camellia_ecb_encrypt` once per block. This module holds the subkeys and handles a partial last segment: CFB
-//! encryption of a zero block is `CIPH_K` of the block to continue from,
-//! whose first bytes it XORs into the rest of the input.
+//! key, the chaining value and the data. This module holds the subkeys and
+//! handles a partial last segment: CFB encryption of a zero block is
+//! `CIPH_K` of the block to continue from, whose first bytes it XORs into
+//! the rest of the input.
 
 #![cfg(any(
     target_arch = "x86",

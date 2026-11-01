@@ -81,9 +81,8 @@ mod tests {
 
     #[test]
     fn zeroizes() {
-        // Bytes before, between and after aligned words, at every offset,
-        // through the 32-byte (or, with AVX on x86-64, 64-byte), word and
-        // byte loops.
+        // Bytes before, between and after aligned words, at every offset and
+        // every length up to 100.
         for start in 0..8 {
             for end in start..=100 {
                 let mut words = [u64::MAX; 13];
@@ -95,7 +94,7 @@ mod tests {
                 }
             }
         }
-        // Several iterations of the widest loop, and every tail after them.
+        // Longer lengths, from 191 to 262 bytes, at an odd offset.
         for len in 192..=263 {
             let mut big = [u8::MAX; 264];
             zeroize(&mut big[1..len]);

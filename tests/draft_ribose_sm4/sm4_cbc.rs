@@ -1,7 +1,7 @@
 //! SM4-CBC: the CBC examples (A.2.2) of the Internet-Draft
 //! draft-ribose-cfrg-sm4-10, unmodified under vectors/, whole and in
 //! pieces; and CBC from ECB (`Sm4Ecb`, tested on the draft's ECB examples)
-//! on every length up to a few groups of sixteen blocks.
+//! on every length up to 50 blocks.
 
 #![cfg(any(
     target_arch = "x86",
@@ -69,7 +69,7 @@ fn draft_examples() {
     }
 }
 
-/// Every number of blocks up to three groups of sixteen and a bit.
+/// Every number of blocks up to 50.
 #[test]
 fn from_ecb() {
     let key: [u8; 16] = crate::bytes::pattern_array(17, 3);
@@ -101,8 +101,9 @@ fn incomplete_blocks() {
     }
 }
 
-/// The scalar block core must respect byte-aligned slices and both guards,
-/// including empty calls and the old sixteen-block batching boundaries.
+/// Slices at every byte offset, with an unaligned chaining value, leave the
+/// bytes around them unchanged, including empty slices and lengths around
+/// multiples of sixteen blocks.
 #[test]
 fn unaligned_guarded() {
     for key in [[0; 16], [0xff; 16], crate::bytes::pattern_array(1, 0)] {

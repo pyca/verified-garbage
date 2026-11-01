@@ -11,13 +11,10 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 /// has no streaming AES-GCM, is measured one-shot only, with a separate tag
 /// as this library's is. The one-shot functions are also measured at `RECORD_SIZES`, the short
 /// messages of protocols such as TLS and QUIC, where the fixed costs of a
-/// call (the hash subkey's powers, the tag) weigh the most. Encryption with
-/// a key used for many messages, as a TLS or QUIC connection's is, is also
-/// measured at `REUSED_SIZES`, which leave some blocks after the last 16
-/// (also out of place from two halves, whose second holds whole blocks):
-/// this library computes its keys' powers of the hash subkey once a key has
-/// been used for enough messages, which the benchmarks that set up a key for
-/// each message never reach.
+/// call (the key's setup, the tag) weigh the most. Encryption with a key
+/// used for many messages, as a TLS or QUIC connection's is, is also
+/// measured at `REUSED_SIZES`, which are not multiples of 16 blocks (also
+/// out of place from two halves, whose second holds whole blocks).
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -489,8 +486,7 @@ pub fn bench(c: &mut Criterion) {
 /// buffer), and OpenSSL streams the pieces through one context. A
 /// connection's records are also measured from its key's setup on
 /// (`aes-*-gcm-tls-connection`, of 1, 2, 4 and 16 records), so that the cost
-/// of a key used for a few records, and the point where the powers are
-/// computed, are counted too.
+/// of a key used for a few records is counted too.
 ///
 /// Each record's buffers sit at fixed offsets from a 4 KiB boundary
 /// (`Offsets::DEFAULT`, where rustls puts them), the same at every size and
@@ -510,14 +506,9 @@ fn tls_records(c: &mut Criterion) {
     /// each next to sizes that are not a multiple of 16 (as most records'
     /// are), since the end of a record costs differently from its blocks;
     /// and records of 16, 32, 48, 64 and 255 bytes with their content type
-    /// (alerts, handshake messages, small requests), shorter than the
-    /// messages the library computes its keys' powers for; records of 112 to
-    /// 240 bytes with their content type, fewer than 16 blocks, which AES-NI
-    /// and AVX encrypt outside the 8-block loop; a 2048-byte record, where
-    /// VAES's `seal` changes paths; and records of 288, 416, 432 and 448
-    /// bytes of text, whose short `open` copies its text into the blocks it
-    /// hashes at an offset of 1 to 3 blocks into a group of four (all but
-    /// 432, which starts a group).
+    /// (alerts, handshake messages, small requests); records of 112 to 240
+    /// bytes with their content type, fewer than 16 blocks; a 2048-byte
+    /// record; and records of 288, 416, 432 and 448 bytes of text.
     const TLS_SIZES: [usize; 29] = [
         15, 31, 47, 63, 111, 127, 207, 239, 254, 255, 256, 257, 287, 415, 431, 447, 1023, 1024,
         1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
@@ -681,11 +672,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
         };
         let vg_key = AesGcm::new(key).unwrap();
         // A connection's key has sealed and opened many records before its
-        // short ones: seal more long records than the library's
-        // `POWERS_AFTER` on AArch64 (2), so that short records find its
-        // powers ready, as they do in a connection, rather than measuring a
-        // key that has not computed them (on x86-64, the key computes them
-        // when it is created).
+        // short ones: seal long records with it first, as a connection has.
         let mut warm = vec![0u8; 1024];
         for _ in 0..64 {
             vg_key.encrypt_in_place(&nonce, &aad, &mut warm).unwrap();
@@ -759,10 +746,8 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             });
             g.finish();
 
-            // Records shorter than the messages the library computes its
-            // keys' powers for, sealed in place too (`encrypt_in_place`, as
-            // QUIC and aws-lc-rs's callers seal): its `_prepared` instances
-            // choose their paths for these lengths themselves.
+            // Records shorter than 256 bytes, sealed in place too
+            // (`encrypt_in_place`, as QUIC and aws-lc-rs's callers seal).
             if size < 256 {
                 let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-in-place") + label);
                 g.throughput(Throughput::Bytes(size as u64 + 1));
@@ -859,9 +844,7 @@ fn tls_connection_rows(c: &mut Criterion) {
         };
         // A new connection: its key set up, then `records` records of 255
         // bytes and their content type sealed with it. A connection of a
-        // few records measures what the key's setup costs (on x86-64,
-        // computing the powers of the hash subkey); 16 cross the point
-        // where this library computes them on AArch64.
+        // few records measures what the key's setup costs.
         let data = [0u8; 255];
         let mut out = [0u8; 256];
         let mut record = [0u8; 256];
@@ -930,8 +913,7 @@ fn tls_connection_rows(c: &mut Criterion) {
 /// A key's setup and drop alone (`aes-*-gcm-new`, by the key's length in
 /// bytes): what every benchmark that sets up a key for each message pays
 /// besides the message, measured here rather than by subtracting a reused
-/// key's time (on x86-64, `AesGcm::new` computes the powers of the hash
-/// subkey). OpenSSL sets up a context with the key, aws-lc-rs a
+/// key's time. OpenSSL sets up a context with the key, aws-lc-rs a
 /// `LessSafeKey`.
 #[cfg(any(
     target_arch = "x86_64",

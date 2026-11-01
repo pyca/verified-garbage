@@ -4,25 +4,25 @@
 //! [`sign`] is the verified `vg_rsa_pkcs1_sign` (contract
 //! `VG.Spec.RsaPkcs1Sig.signContract`): EMSA-PKCS1-v1_5's encoding of the hash
 //! value (RFC 8017 §9.2) to the modulus' length, then the private-key
-//! operation of `vg_rsa_private_checked`, which releases the signature only if
-//! it passes the check against the public exponent, as BoringSSL's `RSA_sign`
-//! does. Its timing may depend on the public key, the hash function and the
-//! lengths, but not on the hash value or the private key. On a CPU with BMI2
-//! and ADX, `vg_rsa_pkcs1_sign_adx` does the same with the faster Montgomery
-//! multiplication; on one with AVX512_IFMA and AVX512VL too,
-//! `vg_rsa_pkcs1_sign_ifma` (see [`crate::rsa`]).
+//! operation checked against the public exponent
+//! (`VG.Spec.Rsa.privateChecked`), which releases the signature only if it
+//! passes the check, as BoringSSL's `RSA_sign` does. Its timing may depend
+//! on the public key, the hash function and the lengths, but not on the hash
+//! value or the private key.
 //!
 //! [`verify`] is the verified `vg_rsa_pkcs1_verify_precomputed` (contract
 //! `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`), which accepts a signature exactly
 //! when `s^e mod n` is the encoding of the hash value, as BoringSSL's
-//! `RSA_verify` does. It reuses the public key's precomputed modulus values
-//! and selects ADX multiplication when available. [`recover`] is
-//! `vg_rsa_pkcs1_recover_precomputed` (contract
-//! `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`), with its ADX variant
-//! on x86-64, which reuses the key's precomputed values as [`verify`] does
-//! and returns the hash value a signature signs, as BoringSSL's
+//! `RSA_verify` does, given the public key's precomputed modulus values.
+//! [`recover`] is `vg_rsa_pkcs1_recover_precomputed` (contract
+//! `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`), given them too, which
+//! returns the hash value a signature signs, as BoringSSL's
 //! `EVP_PKEY_verify_recover` does. Everything they read is public and their
 //! timing may depend on it.
+//!
+//! The variants of the three, with the same contracts, are the ones with
+//! the suffix of the implementation [`crate::rsa`]'s `Backend` chooses
+//! (`_adx`, `_ifma`, `_umaal`).
 //!
 //! This module only checks the lengths and allocates the memory the
 //! functions work in.

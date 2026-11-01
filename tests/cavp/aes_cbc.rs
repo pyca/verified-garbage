@@ -36,8 +36,8 @@ fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool
         assert_eq!(output, expected);
         assert_eq!(chain, last);
         if split {
-            // The published multi-block vectors exercise the parallel group
-            // and each short tail at every alignment, with guards on stores.
+            // The published multi-block vectors at every alignment, with
+            // guards around the output.
             for offset in 0..16 {
                 let mut storage = vec![0xa5; offset + input.len() + 16];
                 storage[offset..offset + input.len()].copy_from_slice(input);

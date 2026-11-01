@@ -1,5 +1,5 @@
 //! SEED-CBC: RFC 4196's vectors as pyca/cryptography reformats them, unmodified under vectors/; and CBC from ECB
-//! (`SeedEcb`, tested on RFC 4269's vectors) on every number of blocks up to 40 (two batches of sixteen and a bit).
+//! (`SeedEcb`, tested on RFC 4269's vectors) on every number of blocks up to 40.
 
 #![cfg(any(
     target_arch = "x86",
@@ -74,7 +74,7 @@ fn pyca_vectors() {
     assert_eq!(key_lens, [16; 2]);
 }
 
-/// Every number of blocks up to 40: two batches of sixteen and a bit.
+/// Every number of blocks up to 40.
 #[test]
 fn from_ecb() {
     let data: Vec<u8> = crate::bytes::pattern(16 * 40, 31, 7);

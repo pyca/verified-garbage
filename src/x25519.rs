@@ -1,24 +1,20 @@
 //! X25519 (RFC 7748), Diffie-Hellman on Curve25519.
 //!
-//! The whole function is the verified assembly `vg_x25519` (contract
+//! The whole function is the verified `vg_x25519` (contract
 //! `VG.Spec.X25519.x25519Contract`): `X25519(k, u)` of RFC 7748 §5, the
 //! scalar decoded (clamped) and the u-coordinate's top bit masked as the RFC
-//! specifies, in constant time. On x86-64 CPUs with BMI2 and ADX it is
-//! `vg_x25519_adx`, with the same contract and faster field multiplications,
-//! and on those that also have AVX512_IFMA and AVX512VL `vg_x25519_ifma`,
-//! whose ladder does four field multiplications at once. On ARMv7 cores with
-//! `umaal` it is `vg_x25519_umaal`, whose field multiplications use it.
-//! This module gives it working space, and destroys what it leaves there.
+//! specifies, in constant time. This module gives it working space, and
+//! destroys what it leaves there.
 //!
-//! On AArch64, x86 and x86-64, [`public_key`](PrivateKey::public_key) is the verified
-//! assembly `vg_x25519_base` (contract `VG.Spec.X25519.x25519BaseContract`):
-//! `X25519(k, 9)` computed as the u-coordinate of a fixed-base multiplication
-//! on edwards25519, with Ed25519's precomputed tables, rather than with the
-//! ladder. On x86-64, `vg_x25519_base_adx` uses BMI2 and ADX when available
-//! (and AVX2 to select its comb's entries), and `vg_x25519_base_ifma` also
-//! AVX512F, AVX512_IFMA and AVX512VL, whose
-//! comb adds two tables' entries at once with eight-lane field
-//! multiplications.
+//! On AArch64, ARMv7, x86 and x86-64,
+//! [`public_key`](PrivateKey::public_key) is the verified `vg_x25519_base`
+//! (contract `VG.Spec.X25519.x25519BaseContract`), `X25519(k, 9)`;
+//! elsewhere it is `vg_x25519` of the base point.
+//!
+//! The variants of both, with the same contracts, are chosen by
+//! `Backend::select` on CPUs with the features their `_FEATURES` constants
+//! name: on x86-64, the `_ifma` ones, then the `_adx` ones; on ARMv7,
+//! `vg_x25519_umaal`.
 //!
 //! [`diffie_hellman`](PrivateKey::diffie_hellman) rejects the all-zero
 //! shared secret that a public key of small order gives (RFC 7748 §6.1), in
@@ -59,19 +55,15 @@ use verified_garbage_cpu::Features;
 /// The implementations of `vg_x25519`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
-    /// The target's baseline ISA.
+    /// The baseline implementation.
     Baseline,
-    /// BMI2's `mulx` and ADX's `adcx` and `adox`, and AVX2 for the
-    /// fixed-base comb's selection.
+    /// `_adx`.
     #[cfg(target_arch = "x86_64")]
     Adx,
-    /// AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` for the ladder (on
-    /// `ymm` registers, `ymm16`–`ymm20` among them, with AVX512F and
-    /// AVX512VL) and the fixed-base comb (on `zmm` registers, with
-    /// AVX512F), and `Adx`'s multiplications for the inversion.
+    /// `_ifma`.
     #[cfg(target_arch = "x86_64")]
     Ifma,
-    /// ARMv7's `umaal` for the ladder's field multiplications.
+    /// `_umaal`, of `vg_x25519` alone.
     #[cfg(target_arch = "arm")]
     Umaal,
 }
@@ -200,7 +192,7 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
     out
 }
 
-/// `X25519(scalar, 9)`, with the ladder.
+/// `X25519(scalar, 9)`, by `x25519`.
 #[cfg(any(
     target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
@@ -286,9 +278,9 @@ mod tests {
         assert_eq!(a.clone().public_key(), ka);
     }
 
-    /// The public key is `X25519(k, 9)` for many scalars: random ones, and
-    /// ones with every nibble the same (each digit of the fixed-base comb),
-    /// and each individual bit (including the bits that clamping overrides).
+    /// The public key is `X25519(k, 9)` for many scalars: random ones, ones
+    /// with every nibble the same, and each individual bit (including the
+    /// bits that clamping overrides).
     #[test]
     fn public_key_is_x25519_of_base_point() {
         let check = |k: &[u8; 32]| {
@@ -319,7 +311,8 @@ mod tests {
         {
             let adx = Features(VG_X25519_ADX_FEATURES.0 | VG_X25519_BASE_ADX_FEATURES.0);
             assert_eq!(Backend::select(adx), Backend::Adx);
-            // The ladder's features alone, without the comb's AVX2.
+            // `vg_x25519_adx`'s features alone, without the AVX2 of
+            // `vg_x25519_base_adx`'s.
             assert_eq!(Backend::select(VG_X25519_ADX_FEATURES), Backend::Baseline);
             assert_eq!(
                 Backend::select(Features(verified_garbage_cpu::feature::BMI2)),
@@ -333,8 +326,7 @@ mod tests {
                 )),
                 Backend::Adx
             );
-            // Without AVX512F, which the ladder's EVEX-encoded instructions and
-            // the comb need.
+            // Without AVX512F, which both `_ifma` functions need.
             assert_eq!(
                 Backend::select(Features(
                     ifma.0 & !Features(verified_garbage_cpu::feature::AVX512F).0

@@ -1,9 +1,8 @@
 //! ECDSA over P-256: deterministic signatures with HMAC-SHA-256 or
-//! HMAC-SHA-384 (`vg_ecdsa_p256_<hash>_sign`, which calls
-//! `vg_ecdsa_p256_sign`), public keys (`vg_ec_p256_public_key`), and
-//! verification (`vg_ecdsa_p256_verify`), each with BMI2 and ADX (and the
-//! comb's selection by AVX2) where the CPU has them (`_adx`), and on ARMv7
-//! with `umaal` where the CPU has it (`_umaal`).
+//! HMAC-SHA-384 (`vg_ecdsa_p256_<hash>_sign`), public keys
+//! (`vg_ec_p256_public_key`), and verification (`vg_ecdsa_p256_verify`), and
+//! their variants on CPUs with the features their `_FEATURES` constants
+//! name: `_adx` on x86-64, `_umaal` on ARMv7.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -104,7 +103,8 @@ unsafe fn sign_with<const N: usize>(
 /// Whether `signature` verifies with `q` for the hash whose leftmost 32
 /// bytes are `e`.
 fn verify_with(q: &[u8; 65], e: &[u8; 32], signature: &[u8; 64]) -> Result<(), Error> {
-    // Align the public point table to avoid split cache-line loads on x86-64.
+    // Aligned to a cache line on x86-64, where that makes verification
+    // faster.
     #[cfg_attr(target_arch = "x86_64", repr(align(64)))]
     struct Scratch([u64; 1024]);
     let mut scratch = Scratch([0u64; 1024]);

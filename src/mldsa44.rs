@@ -9,15 +9,19 @@
 //! `ML-DSA.Verify` (Algorithms 2 and 3), which format the message with its
 //! context string, compute the message representative `μ` and call the
 //! internal algorithms on it, `vg_mldsa44_sign` and `vg_mldsa44_verify`
-//! (§6), all composing the verified polynomial arithmetic and SHA-3. This
-//! module supplies the randomness and working space, and destroys the
-//! intermediate values (§3.6.3).
+//! (§6). This module supplies the randomness and working space, and
+//! destroys the intermediate values (§3.6.3).
 //!
 //! On x86-64 and AArch64, verification is `vg_mldsa44_verify_message_cached`
 //! (`verifyMessageCachedContract`), which takes the hash `tr = H(pk, 64)`
 //! of the public key (FIPS 204 Algorithm 8) rather than computing it each
 //! time: a [`VerifyingKey44`] keeps it, computed when the key is made from
 //! its bytes or taken from the private key, which holds it.
+//!
+//! Their variants, with the same contracts, are chosen with
+//! `crate::mldsa_common::Backend` on CPUs with the features their
+//! `_FEATURES` constants name: the `_avx2` ones on x86-64, the `_sha3` ones
+//! on AArch64.
 //!
 //! A private key is kept as the 32-byte seed `ξ` it is generated from
 //! (§3.6.3), which [`SigningKey44::from_seed`] expands; the caller generates

@@ -20,8 +20,8 @@ use crate::arch::dsa::vg_dsa_generate_key;
 use crate::arch::dsa::vg_dsa_generate_key_adx;
 use crate::cpu::detected;
 
-// Keep common rejections inside one verified sampler invocation instead of
-// repeating the x86 domain check's modular exponentiation. Eight draws use
+// On x86, give one call of the verified sampler eight draws, so that a
+// common rejection does not repeat its check of the domain. Eight draws use
 // at most 256 random bytes; the sampler still enforces its 128-draw limit.
 #[cfg(target_arch = "x86")]
 const DRAW_BATCH: usize = 8;

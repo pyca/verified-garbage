@@ -1,5 +1,4 @@
-//! Validated SEC 1 conversion in one call of verified code. Coordinate
-//! arithmetic, root recovery, parsing and output handling are all in Lean.
+//! Validated SEC 1 conversion, each in one call of a verified function.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -15,8 +14,8 @@ use crate::cpu::detected;
 #[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 use verified_garbage_cpu::Features;
 
-/// The baseline implementation, or the faster one (x86-64's `_adx`, ARMv7's
-/// `_umaal`) if the CPU has its features.
+/// The baseline implementation, or its variant (x86-64's `_adx`, ARMv7's
+/// `_umaal`) on CPUs with the features its `_FEATURES` constant names.
 #[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {

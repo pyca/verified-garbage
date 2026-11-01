@@ -116,7 +116,7 @@ fn generated_safe_primes_match_openssl_checks() {
 #[test]
 fn partial_words_and_arbitrary_exponents_match_openssl() {
     use openssl::bn::MsbOption;
-    // Cover both sides of the 16-limb minimum and subsequent eight-limb boundaries.
+    // Moduli of many lengths from 512 to 8191 bits, whole and partial words.
     for bits in [
         512, 513, 520, 577, 960, 961, 1023, 1024, 1025, 1472, 1473, 1536, 1537, 2049, 4095, 8191,
     ] {
@@ -160,7 +160,7 @@ fn window_boundaries_match_openssl() {
     let params = Parameters::from_components(&p_bytes, &[2], None).unwrap();
     let peer = PublicKey::from_components(&params, &[3]).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
-    // Exercise the public window-size boundary and every final-window width.
+    // Exponents of 38 to 43 bytes, each at several encoded widths.
     // OpenSSL supplies an independent oracle for fresh random exponents.
     for bytes in 38..=43 {
         let mut x = BigNum::new().unwrap();

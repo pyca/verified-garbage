@@ -1,6 +1,6 @@
 //! ECDH over P-384 (`vg_ecdh_p384`), and public keys
-//! (`vg_ec_p384_public_key`), each with BMI2 and ADX where the CPU has them
-//! (`_adx`), and on ARMv7 with `umaal` where the CPU has it (`_umaal`).
+//! (`vg_ec_p384_public_key`), and their variants on CPUs with the features
+//! their `_FEATURES` constants name: `_adx` on x86-64, `_umaal` on ARMv7.
 
 #![cfg(any(
     target_arch = "x86_64",

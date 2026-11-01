@@ -2,7 +2,7 @@
 //! draft-ribose-cfrg-sm4-10, unmodified
 //! under vectors/, whole, in pieces and truncated; and CTR from ECB
 //! (`Sm4Ecb`, tested on the draft's ECB examples) on every length up to
-//! a few groups of sixteen blocks and across the carries of the counter.
+//! 50 blocks and a bit and across the carries of the counter.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -74,7 +74,7 @@ fn draft_examples() {
     }
 }
 
-/// Every length up to three groups of sixteen blocks and a bit, from
+/// Every length up to 50 blocks and a bit, from
 /// counter blocks that carry across each 32-bit word boundary or wrap entirely.
 #[test]
 fn from_ecb() {

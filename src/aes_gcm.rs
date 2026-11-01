@@ -1,9 +1,10 @@
 //! AES-GCM (NIST SP 800-38D) with 128-, 192- and 256-bit AES keys.
 //!
-//! Key setup, in-place AEAD and the streaming operations are verified assembly: `vg_aes_gcm_init` (contract
-//! `VG.Spec.Gcm.initContract`) writes the key context (the AES key schedule
-//! and the hash subkey `H`), `vg_aes_gcm_seal` and `vg_aes_gcm_open`
-//! (`sealContract`, `openContract`) are GCM-AE and GCM-AD (§7), and
+//! Key setup, in-place AEAD and the streaming operations are verified
+//! assembly: `vg_aes_gcm_init` (contract `VG.Spec.Gcm.initContract`) writes
+//! the key context (the AES key schedule and the hash subkey `H`),
+//! `vg_aes_gcm_seal` and `vg_aes_gcm_open` (`sealContract`,
+//! `openContract`) are GCM-AE and GCM-AD (§7), and
 //! `vg_aes_gcm_stream_init`, `_aad`, `_encrypt`, `_decrypt`, `_finish` and
 //! `_verify` keep a streaming state (`VG.Spec.Gcm.StreamRepr`). `open` and
 //! `verify` check the tag, in constant time, and `open` decrypts only if it
@@ -232,51 +233,49 @@ const MAX_AAD: u64 = (1 << 61) - 1;
 /// exist.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Backend {
-    /// The baseline ISA's functions.
+    /// The baseline implementation.
     Scalar,
-    /// AES-NI for AES: the `_aesni` instances.
+    /// `_aesni`.
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     AesNi,
-    /// PCLMULQDQ for GHASH: the `_pclmul` instances.
+    /// `_pclmul`.
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     Pclmul,
-    /// Both: the `_aesni_pclmul` instances.
+    /// `_aesni_pclmul`.
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     AesNiPclmul,
-    /// VAES for AES: the `_vaes` instances.
+    /// `_vaes`.
     #[cfg(target_arch = "x86_64")]
     Vaes,
-    /// VPCLMULQDQ for GHASH: the `_vpclmul` instances.
+    /// `_vpclmul`.
     #[cfg(target_arch = "x86_64")]
     Vpclmul,
-    /// VAES and PCLMULQDQ: the `_vaes_pclmul` instances.
+    /// `_vaes_pclmul`.
     #[cfg(target_arch = "x86_64")]
     VaesPclmul,
-    /// AES-NI and VPCLMULQDQ: the `_aesni_vpclmul` instances.
+    /// `_aesni_vpclmul`.
     #[cfg(target_arch = "x86_64")]
     AesNiVpclmul,
-    /// VAES and VPCLMULQDQ: the `_vaes_vpclmul` instances.
+    /// `_vaes_vpclmul`.
     #[cfg(target_arch = "x86_64")]
     VaesVpclmul,
-    /// VAES, VPCLMULQDQ and AVX-512: the `_vaes_vpclmul_avx512` instances.
+    /// `_vaes_vpclmul_avx512`.
     #[cfg(target_arch = "x86_64")]
     VaesVpclmulAvx512,
-    /// AES-NI, PCLMULQDQ and AVX: the `_aesni_pclmul_avx` instances.
+    /// `_aesni_pclmul_avx`.
     #[cfg(target_arch = "x86_64")]
     AesNiPclmulAvx,
-    /// The AES instructions for AES and PMULL for GHASH (Rust's `aes`
-    /// feature stands for both): the `_aes` instances.
+    /// `_aes`.
     #[cfg(target_arch = "aarch64")]
     Aes,
-    /// Both, with FEAT_SHA3: the `_aes_sha3` instances.
+    /// `_aes_sha3`.
     #[cfg(target_arch = "aarch64")]
     AesSha3,
 }
 
-/// The instance of a function for `backend`: the baseline one, then those
-/// for x86-64 and x86 (AES-NI, PCLMULQDQ, both), those for x86-64 alone
-/// (VAES, VPCLMULQDQ, and their pairs with the others; AES-NI and PCLMULQDQ
-/// with AVX) and AArch64 (AES and PMULL, without and with FEAT_SHA3).
+/// The variant of a function for `backend`: the baseline one, then those
+/// for x86-64 and x86, those for x86-64 alone and those for AArch64, by
+/// suffix.
 macro_rules! instance {
     ($backend:expr, $scalar:ident,
      x86_64: [$aesni:ident, $pclmul:ident, $aesni_pclmul:ident],
@@ -998,12 +997,12 @@ macro_rules! assert_tag_length {
 /// [`decryptor`](Self::decryptor) start incremental ones.
 #[derive(Clone)]
 // On x86-64 the key context, with the powers, is the first field, aligned
-// to a cache line: the `_prepared` instances load its round keys and powers
-// 16 bytes at a time, and at 8 bytes' alignment some of those loads would
-// cross cache lines. Elsewhere it is the first field too: after the
-// pointer `fns`, on x86 its offset in a 4-byte-aligned value left the
-// compiler unable to clear it with aligned 16-byte stores in `new`, and it
-// called `memset` instead (4–5% slower `new` on Zen 3).
+// to a cache line, so that the `_prepared` variants' reads of it do not
+// cross cache lines, as some would at 8 bytes' alignment. Elsewhere it is
+// the first field too: after the pointer `fns`, on x86 its offset in a
+// 4-byte-aligned value left the compiler unable to clear it with aligned
+// 16-byte stores in `new`, and it called `memset` instead (4–5% slower
+// `new` on Zen 3).
 #[cfg_attr(all(target_arch = "x86_64", feature = "alloc"), repr(C, align(64)))]
 #[cfg_attr(not(all(target_arch = "x86_64", feature = "alloc")), repr(C))]
 pub struct AesGcm {
@@ -1741,8 +1740,7 @@ mod tests {
     use crate::cpu::detected;
     use verified_garbage_cpu::Features;
 
-    /// The implementation chosen for each set of features: AES's and
-    /// GHASH's, independently.
+    /// The implementation chosen for each set of features.
     #[test]
     fn backend() {
         let f = |bits: u32| select(Features(bits));
@@ -1781,7 +1779,8 @@ mod tests {
                 | verified_garbage_cpu::feature::VAES
                 | verified_garbage_cpu::feature::VPCLMULQDQ;
             assert_eq!(f(all), Backend::VaesVpclmul);
-            // The 512-bit loops need AVX512F and AVX512BW too.
+            // The `_vaes_vpclmul_avx512` variants need AVX512F and AVX512BW
+            // too.
             let avx512 = all
                 | verified_garbage_cpu::feature::AVX512F
                 | verified_garbage_cpu::feature::AVX512BW;
@@ -1819,8 +1818,8 @@ mod tests {
                     | verified_garbage_cpu::feature::VPCLMULQDQ),
                 Backend::Vpclmul
             );
-            // AES-NI and PCLMULQDQ with AVX (and without AVX2, which the
-            // 256-bit code needs): one pass.
+            // AES-NI and PCLMULQDQ with AVX, and without AVX2, which the
+            // `_vaes` and `_vpclmul` variants need.
             assert_eq!(
                 f(verified_garbage_cpu::feature::AES
                     | verified_garbage_cpu::feature::AVX
@@ -2163,10 +2162,8 @@ mod tests {
         }
     }
 
-    /// One-shot encryption and decryption of whole blocks in one pass (from
-    /// 16 blocks, interleaved on CPUs with VAES and VPCLMULQDQ) agree with
-    /// the streaming functions, and a wrong tag leaves the ciphertext as it
-    /// was.
+    /// One-shot encryption and decryption of long messages agree with the
+    /// streaming functions, and a wrong tag leaves the ciphertext as it was.
     #[test]
     fn long_one_shot() {
         let msg: [u8; 4111] = core::array::from_fn(|i| (i * 31 + 7) as u8);
@@ -2239,10 +2236,10 @@ mod tests {
             let mut k = self.clone();
             k.fns = backend.fns(detected());
             // On x86-64, the powers `backend` computes, if the backend `new`
-            // chose has no `_prepared` instances (VAES without VPCLMULQDQ
-            // chooses `VaesPclmul`, and `AesNiPclmulAvx` runs) or prepares
-            // another number of them (AVX-512 all 48, VAES-256 16): from the
-            // key context alone, as `new` would with `backend`.
+            // chose has no `_prepared` instances or prepares another number
+            // of them (`VG.Spec.Gcm.PreparedPowersRepr` or
+            // `PreparedPowers16Repr`): from the key context alone, as `new`
+            // would with `backend`.
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
             if !matches!(
                 (self.fns.prepare, k.fns.prepare),
@@ -2285,9 +2282,8 @@ mod tests {
     }
 
     /// Every implementation the CPU can run encrypts and decrypts long
-    /// messages (whole groups of 16 blocks, which some implementations
-    /// interleave, and the blocks left) as the baseline one does, one-shot
-    /// and streaming.
+    /// messages as the baseline one does, one-shot, streaming and out of
+    /// place.
     #[test]
     fn backends_agree() {
         let msg: [u8; 3100] = core::array::from_fn(|i| (i * 13 + 1) as u8);
@@ -2301,9 +2297,6 @@ mod tests {
                 .filter(|(_, need)| detected().contains(*need))
             {
                 let k = k.with_backend(b);
-                // `encrypt` copies texts shorter than 768 bytes and seals
-                // them in place, and streams longer ones, on the backends
-                // with out-of-place interleaved loops.
                 for len in [256, 300, 512, 767, 768, 769, 1024, 1300, 3072] {
                     let mut want = msg;
                     let want_tag = base
@@ -2373,8 +2366,7 @@ mod tests {
 
     /// Every number of whole blocks from 16 to 41, alone or with part of a
     /// block after them, encrypts as the baseline does on every backend the
-    /// CPU can run, for each key size: interleaved loops that take every
-    /// block from 16 on end with each number of blocks left over.
+    /// CPU can run, for each key size.
     #[test]
     fn block_counts_agree() {
         let msg: [u8; 661] = core::array::from_fn(|i| (i * 11 + 5) as u8);
@@ -2468,9 +2460,8 @@ mod tests {
         assert!(with.prepare.is_some_and(|f| fn_addr_eq(f, p.prepare)));
     }
 
-    /// Prepared contexts agree with fresh contexts around both interleaved
-    /// loop widths, including partial blocks and input in one to three
-    /// pieces.
+    /// Prepared contexts agree with fresh contexts for lengths from none to
+    /// 10000 bytes, including partial blocks, and input in pieces.
     #[cfg(all(
         any(target_arch = "x86_64", target_arch = "aarch64"),
         feature = "alloc"
@@ -2521,16 +2512,12 @@ mod tests {
                             if len < 17 {
                                 continue;
                             }
-                            // One piece (the gathering's path for TLS
-                            // records; on 512-bit registers from 256
-                            // bytes); a second of 1 byte (the same, a TLS
-                            // 1.3 record's content type), none (the
-                            // same, a TLS 1.2 record's), 16 bytes (the same
-                            // when the first ends on a block), or 17;
-                            // three; empty
-                            // pieces around and between them (which AArch64
-                            // copies as it does the others); and as many
-                            // pieces as `encrypt` takes.
+                            // One piece (as a TLS record); a second of 1
+                            // byte (a TLS 1.3 record's content type), none
+                            // (a TLS 1.2 record's), 16 bytes or 17; three;
+                            // empty pieces around and between them (which
+                            // AArch64's `encrypt` copies as it does the
+                            // others); and as many pieces as `encrypt` takes.
                             let (a, b) = plain.split_at(len - 17);
                             let (b, c) = b.split_at(1);
                             let many: alloc::vec::Vec<&[u8]> =
@@ -2660,9 +2647,7 @@ mod tests {
     }
 
     /// Streaming a long message in three updates, split on and off block
-    /// boundaries (each update finishes the block the text so far left
-    /// partial, then takes its whole blocks in one pass), agrees with the
-    /// one-shot functions, in both directions.
+    /// boundaries, agrees with the one-shot functions, in both directions.
     #[test]
     fn long_stream() {
         let msg: [u8; 1100] = core::array::from_fn(|i| (i * 7 + 3) as u8);

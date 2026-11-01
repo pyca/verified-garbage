@@ -9,13 +9,10 @@
 //! `vg_sm4_ctr` (`VG.Spec.Sm4.ctrContract`) XORs whole blocks with the
 //! output blocks `Oⱼ = CIPH_K(Tⱼ)` from the counter block at `ctr`, which it
 //! replaces with the counter block to continue from, in constant time: its
-//! timing depends on none of the key, the counter block and the data. It
-//! uses bitsliced SM4 in general-purpose registers, with no table lookups:
-//! sixteen counter blocks at a time on x86-64 and AArch64, eight on ARMv7,
-//! and one on x86 and PPC64LE. This module holds the key schedule and
-//! handles a partial last block (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the
-//! last bytes padded to a block XORs them with the first bytes of the next
-//! output block.
+//! timing depends on none of the key, the counter block and the data. This
+//! module holds the key schedule and handles a partial last block (§6.5,
+//! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes padded to a block XORs
+//! them with the first bytes of the next output block.
 //!
 //! The caller chooses the initial counter block, and must never use a
 //! counter block twice with the same key (Appendix B.2).

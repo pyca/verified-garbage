@@ -8,9 +8,7 @@
 //! `cfbDecryptContract`) replace whole blocks with their CFB encryption or
 //! decryption from the block at `iv`, which they replace with the last
 //! ciphertext block, in constant time: their timing depends on none of the
-//! key, the chaining value and the data. Both are the modes' generic CFB: on
-//! x86, x86-64 and AArch64 over the scalar block code, on ARMv7 calling the
-//! verified `vg_idea_ecb` once per block. This module holds the subkeys and
+//! key, the chaining value and the data. This module holds the subkeys and
 //! handles a partial last segment (§6.3, `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`):
 //! CFB encryption of a zero block gives `CIPH_K` of the block to continue
 //! from, whose first bytes it XORs into the rest of the input.

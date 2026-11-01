@@ -6,9 +6,7 @@
 //! XORs whole blocks with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the
 //! block at `iv`, which it replaces with the last output block, in constant
 //! time: its timing depends on none of the key, the chaining value and the
-//! data. It is the modes' generic OFB: on x86, x86-64 and AArch64 over the scalar
-//! block code, on ARMv7 calling the verified `vg_idea_ecb` for each block.
-//! This module holds the subkeys and handles a partial last block (§6.4,
+//! data. This module holds the subkeys and handles a partial last block (§6.4,
 //! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output block,
 //! whose first bytes it XORs into the rest of the input.
 

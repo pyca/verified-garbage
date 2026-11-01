@@ -37,7 +37,7 @@ crate::error::impl_error! {
 /// each but `Scalar` is their instances with its suffix.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
-    /// The target's baseline ISA.
+    /// The baseline implementation.
     Scalar,
     /// The `_x2_sha3` instances.
     #[cfg(target_arch = "aarch64")]
@@ -564,8 +564,9 @@ macro_rules! ml_kem {
         mod backend_tests {
             use super::{Backend, $DecapsulationKey, SHA3};
 
-            /// With the SHA-3 extension, both paired instances (whichever
-            /// `backend()` chooses, which the known-answer tests run) agree
+            /// With the SHA-3 extension, both the `_x2_sha3` and the
+            /// `_x2_sha3_keccak_sha3` instances (whichever `backend()`
+            /// chooses, which the known-answer tests run) agree
             /// with the baseline's on keys, shared keys and ciphertexts, and
             /// on the implicit rejection of a modified ciphertext.
             #[test]

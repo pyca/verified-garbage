@@ -1,4 +1,5 @@
-//! Differential checks against OpenSSL around OCB batch and tail boundaries.
+//! Differential checks against OpenSSL of AES-OCB, at every length up to 257
+//! bytes and around larger powers of two.
 #![cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",

@@ -4,11 +4,11 @@
 //! [`sign`] is the verified `vg_rsa_pss_<H>_mgf1_<H>_sign` (contract
 //! `VG.Spec.RsaPss.signContract`): EMSA-PSS's encoding of the hash value
 //! with a salt of random bytes (RFC 8017 §9.1.1), then the private-key
-//! operation of `vg_rsa_private_checked`, which releases the signature only if
-//! it passes the check against the public exponent, as BoringSSL's
-//! `RSA_sign_pss_mgf1` does. Its timing may depend on the public key, the hash
-//! function and the lengths, but not on the hash value, the salt or the
-//! private key.
+//! operation checked against the public exponent
+//! (`VG.Spec.Rsa.privateChecked`), which releases the signature only if it
+//! passes the check, as BoringSSL's `RSA_sign_pss_mgf1` does. Its timing
+//! may depend on the public key, the hash function and the lengths, but not
+//! on the hash value, the salt or the private key.
 //!
 //! [`verify`] is the verified `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed` (contract
 //! `VG.Spec.RsaPss.verifyPrecomputedContract`): RSAVP1, then EMSA-PSS-VERIFY (RFC 8017
@@ -19,10 +19,9 @@
 //! signature, the hash value or anything computed from them but the result.
 //! Verification reuses the public-key values cached by [`PublicKey::new`].
 //!
-//! Each function runs the implementation of the hash function's compression
-//! function that the CPU is best at (as [`crate::hashes`] does), and for
-//! both operations, the RSA backend's (see [`crate::rsa`]): the verified
-//! functions are emitted for each pair, all with the same contracts.
+//! The variants of each hash function's functions, with the same contracts,
+//! are one for each pair of the implementations of the hash function and of
+//! the RSA operations that [`crate::hashes`] and [`crate::rsa`] choose.
 //!
 //! MGF1 over another hash function than the hash value's is not supported.
 //! This module only checks the lengths, draws the salt and allocates the
@@ -478,12 +477,11 @@ fn call_verify<const N: usize>(
 
 /// The verified functions of one hash function: for each implementation of
 /// its compression function (a variant of its streaming backend), `verify`
-/// and `sign` calling the selected public- and private-key operations
-/// (`crate::rsa::Backend`), with the CPU features each needs. The functions
-/// calling the x86-64 RSA backends (`verify_adx`, `verify_ifma`, `adx`, `ifma`) are given for
-/// the variants that have them, and used on x86-64 only; the signature
-/// calling the private-key operation with ARMv7's `umaal` (`umaal`), on
-/// ARMv7 only, together with verification through its UMAAL public operation.
+/// and `sign` for each RSA backend (`crate::rsa::Backend`), with the CPU
+/// features each needs. Those for the x86-64 RSA backends (`verify_adx`,
+/// `verify_ifma`, `adx`, `ifma`) are given for the variants that have them,
+/// and used on x86-64 only; those for `Umaal` (`umaal`, `verify_umaal`),
+/// on ARMv7 only.
 macro_rules! pss_hash {
     (
         $n:literal, $backend:ident {

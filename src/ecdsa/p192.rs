@@ -1,5 +1,5 @@
 //! ECDSA over p192: deterministic signatures with HMAC-SHA-256
-//! (`vg_ecdsa_p192_sha256_sign`, which calls `vg_ecdsa_p192_sign`), public
+//! (`vg_ecdsa_p192_sha256_sign`), public
 //! keys (`vg_ec_p192_public_key`), and verification (`vg_ecdsa_p192_verify`).
 
 #![cfg(any(

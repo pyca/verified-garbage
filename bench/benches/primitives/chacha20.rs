@@ -8,9 +8,8 @@ use criterion::Criterion;
 
 /// The shared sizes, and TLS 1.3's records of 1 KiB and 4 KiB of payload,
 /// whose plaintext is one byte longer (the content type): a partial last
-/// block, which ChaCha20-Poly1305 encrypts at these sizes too; 480 bytes,
-/// which leave 224 after the AArch64 code's whole 256-byte chunks; and short
-/// inputs: QUIC's header protection mask (5 bytes, RFC 9001 §5.4.4), part
+/// block, which ChaCha20-Poly1305 encrypts at these sizes too; 480 bytes;
+/// and short inputs: QUIC's header protection mask (5 bytes, RFC 9001 §5.4.4), part
 /// of one block (16 bytes) and two blocks (128 bytes).
 const SIZES: [usize; 9] = [5, 16, 64, 128, 480, 1024, 1025, 4097, 16384];
 

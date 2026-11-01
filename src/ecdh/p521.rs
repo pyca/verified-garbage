@@ -1,6 +1,6 @@
 //! ECDH over P-521 (`vg_ecdh_p521`), and public keys
-//! (`vg_ec_p521_public_key`), with BMI2 and ADX (and the public keys' comb's
-//! selection by AVX2) where the CPU has them (`_adx`).
+//! (`vg_ec_p521_public_key`), and their `_adx` variants on x86-64 CPUs with
+//! the features their `_FEATURES` constants name.
 
 #![cfg(any(
     target_arch = "x86_64",

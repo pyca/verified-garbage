@@ -149,9 +149,8 @@ fn nist_ecb() {
 }
 
 /// The known-answer files' vectors with the same key and direction, in
-/// runs, each transformed in one call: for every length up to 41 blocks (two
-/// of the VAES code's groups of sixteen, one of eight and one more), and the
-/// whole run (up to the 128 vectors of `ECBVarTxt`'s).
+/// runs, each transformed in one call: for every length up to 41 blocks, and
+/// the whole run (up to the 128 vectors of `ECBVarTxt`'s).
 #[test]
 fn nist_ecb_runs() {
     let files = [

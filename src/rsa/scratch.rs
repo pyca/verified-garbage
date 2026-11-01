@@ -21,11 +21,9 @@ struct Line([u64; 8]);
 
 /// Zeroed working space of a private-key operation, starting at a 64-byte
 /// boundary and wiped when it is dropped (the functions given it leave
-/// secrets in it). The AVX512_IFMA functions (`vg_rsa_private_crt_ifma` and its
-/// callers) read their numbers as 32-byte vectors at offsets from the start
-/// of the working space that are multiples of 32: a `Vec<u64>`, aligned to
-/// 8 bytes only, splits half of them across cache lines, which made 3072-
-/// and 4096-bit private-key operations a sixth slower.
+/// secrets in it). In a `Vec<u64>`, aligned to 8 bytes only, the `_ifma`
+/// functions' 3072- and 4096-bit private-key operations were a sixth
+/// slower.
 pub(crate) struct Scratch {
     lines: Vec<Line>,
     words: usize,

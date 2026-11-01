@@ -9,10 +9,8 @@
 //! replace each block with its CBC encryption or decryption from the chaining
 //! value at `iv`, and the chaining value with the one to continue from, the
 //! last ciphertext block, in constant time: their timing depends on none of the
-//! key, the chaining value and the data. Both are the modes' generic CBC, one
-//! block at a time: on x86-64, AArch64, x86, PPC64LE and RISC-V over the scalar block
-//! function, on ARMv7 calling the verified ECB function for each block. This module
-//! checks the lengths and holds the key schedule.
+//! key, the chaining value and the data. This module checks the lengths and
+//! holds the key schedule.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -11,15 +11,8 @@
 //! operation is the verified `vg_rsa_public_precomputed_checked` (contract
 //! `VG.Spec.Rsa.publicPrecomputedCheckedContract`), which checks the public
 //! exponent within BoringSSL's limits (odd, from 3 to `2^33 - 1`) and the
-//! input, computes `input^e mod n` by Montgomery multiplication, and writes it
-//! out. Their timing may depend on the public key (`n` and `e`) but not on
-//! the input. On a CPU with BMI2, ADX and AVX2 (as for the private-key
-//! operation below), `vg_rsa_public_precompute_adx` and
-//! `vg_rsa_public_precomputed_checked_adx`, with the same contracts, do the
-//! same with a faster Montgomery multiplication; on one with AVX512_IFMA and
-//! AVX512VL too, `vg_rsa_public_precomputed_checked_ifma` computes
-//! `input^65537 mod n` for a 2048-, 3072- or 4096-bit modulus with
-//! AVX512_IFMA's multiplications, and does as the `_adx` function otherwise.
+//! input, computes `input^e mod n`, and writes it out. Their timing may
+//! depend on the public key (`n` and `e`) but not on the input.
 //!
 //! The private-key operation, with a key in the Chinese remainder form
 //! `(p, q, dP, dQ, qInv)` (§3.2) and its public exponent `e`, is the verified
@@ -29,23 +22,17 @@
 //! does: a fault in the computation, or a key whose values do not match, is
 //! never released ([`Error::Fault`]). Its timing may depend on the public key
 //! and the lengths of `p` and `q`, but not on the input or on the private
-//! key's values. On a CPU with BMI2, ADX and AVX2,
-//! `vg_rsa_private_checked_adx` does the same with the faster Montgomery
-//! multiplication, reading its exponentiation's table with AVX2; on one with
-//! AVX512_IFMA and AVX512VL too, `vg_rsa_private_checked_ifma` does the same,
-//! computing the two exponentiations of a 2048-, 3072- or 4096-bit key with
-//! primes of half its size at once, in 256-bit vector registers.
+//! key's values.
 //!
 //! A private key can also be loaded from its modulus, its exponents and its
 //! primes `(n, e, d, p, q)`, whose CRT values `dP`, `dQ` and `qInv` the
 //! verified `vg_rsa_crt_values` (contract `VG.Spec.Rsa.crtValuesContract`)
 //! computes, or from `(n, e, d)` alone, whose primes the verified
 //! `vg_rsa_recover_primes` (contract `VG.Spec.Rsa.recoverPrimesContract`)
-//! recovers by SP 800-56B Rev. 2 Appendix C.1 (`vg_rsa_recover_primes_adx`
-//! on a CPU with BMI2, ADX and AVX2). The timing of the first may depend on `n`
-//! but not on the private key; that of the second on `n`, `e` and the number
-//! of candidates the recovery tried (1 or 2 for most keys), but not
-//! otherwise on `d`.
+//! recovers by SP 800-56B Rev. 2 Appendix C.1. The timing of the first may
+//! depend on `n` but not on the private key; that of the second on `n`, `e`
+//! and the number of candidates the recovery tried (1 or 2 for most keys),
+//! but not otherwise on `d`.
 //!
 //! [`PrivateKey::check_key`] checks a loaded key as BoringSSL's
 //! `RSA_check_key` does, by the verified `vg_rsa_check_key` (contract
@@ -54,6 +41,16 @@
 //! `q qInv ≡ 1 (mod p)`. Its timing may depend on the public key and the
 //! lengths of the private values, but not on their values. Loading a key does
 //! not run it.
+//!
+//! The variants of `vg_rsa_public_precompute`,
+//! `vg_rsa_public_precomputed_checked`, `vg_rsa_private_checked` and
+//! `vg_rsa_recover_primes`, with the same contracts, are chosen with
+//! `Backend::select`, on CPUs with the features their `_FEATURES` constants
+//! (and those of the functions built on them) name: on x86-64, the
+//! `_ifma` ones of `vg_rsa_public_precomputed_checked` and
+//! `vg_rsa_private_checked` (with the `_adx` ones of the others), then the
+//! `_adx` ones; on ARMv7 under Linux, Android and the BSDs, the `_umaal`
+//! ones.
 //!
 //! This module only checks the lengths, the form of the modulus and the
 //! public exponent, and allocates the memory they work in.
@@ -130,19 +127,15 @@ use verified_garbage_cpu::Features;
 /// `crate::rsa_keygen`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
-    /// The baseline ISA.
+    /// The baseline implementation.
     Baseline,
-    /// Montgomery multiplication with BMI2's `mulx` and ADX's `adcx` and
-    /// `adox`, and the private-key operation's table read with AVX2.
+    /// `_adx`.
     #[cfg(target_arch = "x86_64")]
     Adx,
-    /// `Adx`, and AVX512_IFMA's multiplications for 2048-, 3072- and
-    /// 4096-bit keys: for the private-key operation, and for the public-key
-    /// operation with `e = 65537`.
+    /// `_ifma` where a function has one, and `_adx` otherwise.
     #[cfg(target_arch = "x86_64")]
     Ifma,
-    /// ARMv7's UMAAL arithmetic for public and private RSA, modulus
-    /// setup, prime recovery, and Miller–Rabin rounds of key generation.
+    /// `_umaal`.
     #[cfg(all(
         target_arch = "arm",
         any(
@@ -540,7 +533,7 @@ pub(crate) mod tests {
             Backend::select(Features(verified_garbage_cpu::feature::BMI2)),
             Backend::Baseline
         );
-        // The private-key operation's `_adx` code reads its table with AVX2.
+        // `VG_RSA_PRIVATE_CHECKED_ADX_FEATURES` names AVX2 too.
         assert_eq!(
             Backend::select(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES),
             Backend::Baseline

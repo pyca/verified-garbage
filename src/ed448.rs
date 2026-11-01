@@ -1,16 +1,18 @@
 //! Ed448 (RFC 8032), deterministic signatures from 57-byte private keys,
 //! with an optional context of up to 255 bytes.
 //!
-//! Key derivation, signing, and verification each call one complete verified
-//! assembly operation, including SHAKE256. Signing uses the public key derived
-//! once by [`SigningKey::from_seed`]. This is Ed448 with a context (`dom4` with
-//! flag 0), not Ed448ph. Secret scratch values are cleared after use.
+//! Key derivation, signing, and verification each call one verified
+//! function, including SHAKE256. Signing uses the public key derived once by
+//! [`SigningKey::from_seed`]. This is Ed448 with a context (`dom4` with flag
+//! 0), not Ed448ph. Secret scratch values are cleared after use.
 //!
-//! On x86-64, BMI2/ADX field arithmetic is selected when supported.
+//! On x86-64, their `_adx` variants, with the same contracts, are chosen on
+//! CPUs with the features their `_FEATURES` constants name.
 //!
-//! On AArch64, each operation has an instance for each implementation of the
+//! On AArch64, each operation has a variant for each implementation of the
 //! Keccak permutation, and calls the one the SHA-3 functions use
-//! (`crate::hashes::sha3::Backend`).
+//! (`crate::hashes::sha3::Backend`), on CPUs with the features of all three
+//! operations' `_FEATURES` constants.
 
 #![cfg(any(
     target_arch = "x86_64",

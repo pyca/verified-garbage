@@ -151,9 +151,9 @@ fn limits_and_empty_input() {
     }
 }
 
-/// Many blocks at once (the implementations may process several blocks
-/// together) give what each block gives alone, at every count up to past
-/// several batches; decryption inverts encryption.
+/// Many blocks at once give what each block gives alone, at counts up to
+/// 1100 (those within two of a multiple of 64, and multiples of 37);
+/// decryption inverts encryption.
 #[test]
 fn batches_match_single_blocks() {
     for key_len in [16, 24] {

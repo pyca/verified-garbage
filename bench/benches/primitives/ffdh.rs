@@ -100,7 +100,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
-        // Cold checked construction, including ARM's eager public comb setup.
+        // Cold checked construction.
         // VG validates imported parameters; OpenSSL only constructs its object.
         let mut group = c.benchmark_group("ffdh_parameters_from");
         group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
@@ -138,9 +138,9 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
-        // Cold cases include the checked constructor (and ARM's eager
-        // public comb setup). Keep these separate from reused-Parameters
-        // generation below: one-key total cost can dominate warm gains.
+        // Cold cases include the checked constructor. Keep these separate
+        // from reused-Parameters generation below: one-key total cost can
+        // dominate warm gains.
         // Here and below, verified-garbage draws its keys from a fixed tape
         // (`generate_private_key` but for `getrandom`); OpenSSL and AWS-LC
         // draw from their own generators.
@@ -181,7 +181,7 @@ pub fn bench(c: &mut Criterion) {
             .unwrap(),
         )
         .unwrap();
-        // Warm: params, including ARM's shared immutable context, already exists.
+        // Warm: params already exists.
         let mut group = c.benchmark_group("ffdh_generate");
         #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
         group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {

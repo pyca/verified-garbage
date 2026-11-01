@@ -8,12 +8,8 @@
 //! `cfbDecryptContract`) replace whole blocks with their CFB encryption or
 //! decryption from the block at `iv`, which they replace with the last
 //! ciphertext block, in constant time: their timing depends on none of the key,
-//! the chaining value and the data. Both are the modes' generic CFB over the
-//! inlined ECB code, one block at a time (on AArch64, one per batch of the ECB
-//! code's sixteen), reading the schedule where it is (on ARMv7, calling the
-//! verified `vg_blowfish_ecb_encrypt` for each block; on RISC-V, from a copy in
-//! a 16-byte aligned stack frame, zeroed before returning). This module holds the
-//! schedule and handles a partial last segment (§6.3, `Cₙ* = Pₙ* ⊕
+//! the chaining value and the data. This module holds the schedule and
+//! handles a partial last segment (§6.3, `Cₙ* = Pₙ* ⊕
 //! MSB_u(CIPH_K(Cₙ₋₁))`): CFB encryption of a zero block gives `CIPH_K` of the
 //! block to continue from, whose first bytes it XORs into the rest of the
 //! input.

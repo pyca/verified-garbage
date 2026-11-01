@@ -195,9 +195,10 @@ impl Domain {
 
     /// Run the key search on `tape` into `x` and `y` (`p_len` bytes each):
     /// the status (1 for a key pair, 3 for a budget exhausted, 0 for more
-    /// entropy), the bytes of the tape consumed and the next request
-    /// ARMv7 and AArch64 reuse the canonical public comb context initialized by `new`;
-    /// other architectures use their existing full-width search.
+    /// entropy), the bytes of the tape consumed and the next request.
+    /// ARMv7 and AArch64 call `vg_ffdh_generate_key_search_cached`, given the
+    /// public context `new` computed; other architectures
+    /// `vg_ffdh_generate_key_search`.
     pub(super) fn key_search(
         &self,
         state: &mut [u64; 16],
@@ -386,7 +387,7 @@ mod cache_tests {
                 &mut ws,
                 Backend::Umaal,
             );
-            // Canonical representation includes every metadata and comb-table word.
+            // Every word of the context is the same.
             assert_eq!(baseline.words(), umaal.words());
             let mut draw = alloc::vec![0; domain.p_len];
             draw[domain.p_len - 1] = 3;

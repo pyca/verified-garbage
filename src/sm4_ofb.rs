@@ -6,12 +6,8 @@
 //! key schedule, and `vg_sm4_ofb` (`VG.Spec.Sm4.ofbContract`) XORs whole
 //! blocks with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`,
 //! which it replaces with the last output block, in constant time: its
-//! timing depends on none of the key, the chaining value and the data. It is
-//! a serial SM4 core on AArch64 and bitsliced SM4 on other targets, one
-//! feedback block at a time. ARMv7 and PPC64LE prepare the round keys
-//! once per call and retain them across feedback blocks. This module holds
-//! the key schedule and
-//! handles a partial last block (§6.4,
+//! timing depends on none of the key, the chaining value and the data. This
+//! module holds the key schedule and handles a partial last block (§6.4,
 //! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output block,
 //! whose first bytes it XORs into the rest of the input.
 

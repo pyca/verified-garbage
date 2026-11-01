@@ -61,10 +61,10 @@ super::oaep_pair!(28, Sha224Backend, Sha1Backend {
         decrypt: vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_sha2_mgf1_sha2 [VG_RSA_OAEP_SHA224_MGF1_SHA1_DECRYPT_SHA224_SHA2_MGF1_SHA2_FEATURES],
     },
 } never {
-    // SHA-1's and SHA-224's SHA extensions code needs the same features
-    // (`sha` and `ssse3`; on AArch64, `sha2`), and SHA-224's AVX2 code
-    // is chosen only without them: no CPU selects these pairs
-    // (`backend_features` checks it).
+    // SHA-1's and SHA-224's `_shani` variants need the same features
+    // (`sha` and `ssse3`; on AArch64, their `_sha2` ones `sha2`), and
+    // SHA-224's `_avx2` is chosen only without them: no CPU selects these
+    // pairs (`backend_features` checks it).
     #[cfg(target_arch = "x86")]
     (Scalar, ShaNi) => {
         encrypt: vg_rsa_oaep_sha224_mgf1_sha1_encrypt_precomputed_sha1_shani [VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA1_SHANI_FEATURES],

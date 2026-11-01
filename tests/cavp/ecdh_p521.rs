@@ -73,8 +73,8 @@ fn ecdh_p521_invalid() {
     let n = unhex(
         "01fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa51868783bf2f966b7fcc0148f709a5d03bb5c9b8899c47aebb6fb71e91386409",
     );
-    // Working scalar reduction must not turn an invalid original key into
-    // an accepted one, including when its low 521 bits form a valid key.
+    // A private key not in `[1, n)` is refused, including when its low 521
+    // bits form a valid key.
     let mut invalid_scalars = vec![[0; 66], n.try_into().unwrap(), [0xff; 66]];
     for high in [2, 4, 0x80, 0xfe] {
         let mut scalar = d;

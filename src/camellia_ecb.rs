@@ -1,9 +1,12 @@
 //! Camellia ECB (RFC 3713), in place and without padding.
 //!
-//! Key expansion and ECB encryption/decryption use verified primitives.
-//! Each operation accepts complete 16-byte blocks, including empty input.
-//! ECB is bitsliced, eight blocks at a time in general-purpose registers,
-//! with the S-boxes as Boolean circuits: no table lookups.
+//! ECB is the block cipher applied to each block on its own, so the whole
+//! mode is verified assembly: `vg_camellia_expand_key` (contract
+//! `VG.Spec.Camellia.expandKeyContract`) writes the subkeys, and
+//! `vg_camellia_ecb_encrypt` and `vg_camellia_ecb_decrypt`
+//! (`ecbEncryptContract`, `ecbDecryptContract`) replace each block with its
+//! encryption or decryption, in constant time. Each operation accepts
+//! complete 16-byte blocks, including empty input.
 
 #![cfg(any(
     target_arch = "x86_64",

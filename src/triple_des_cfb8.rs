@@ -8,10 +8,7 @@
 //! `cfb8DecryptContract`) replace each byte with its XOR with the first byte of
 //! `CIPH_K` of the input block, and the input block at `iv` with the one to
 //! continue from, in constant time: their timing depends on none of the key,
-//! the input block and the data. Both are the modes' generic CFB8 over the
-//! scalar block function: on x86, x86-64, AArch64, PPC64LE and RISC-V over the block code
-//! itself, on ARMv7 calling the verified `vg_triple_des_ecb_encrypt` for each
-//! byte. This module holds the key schedule.
+//! the input block and the data. This module holds the key schedule.
 
 #![cfg(any(
     target_arch = "x86",

@@ -1,7 +1,7 @@
 //! Camellia-CBC: OpenSSL's test vectors as pyca/cryptography vendors them,
 //! unmodified under vectors/; and CBC from ECB (`CamelliaEcb`, tested on
-//! RFC 3713's and NTT's vectors) on every length up to a few groups of eight
-//! blocks, for each key length.
+//! RFC 3713's and NTT's vectors) on every length up to 27 blocks, for each
+//! key length.
 
 #![cfg(any(
     target_arch = "x86",
@@ -76,7 +76,7 @@ fn openssl_vectors() {
     assert_eq!(key_lens, [16, 16, 16, 16, 24, 24, 24, 24, 32, 32, 32, 32]);
 }
 
-/// Every number of blocks up to three groups of eight and a bit.
+/// Every number of blocks up to 27.
 #[test]
 fn from_ecb() {
     let data: Vec<u8> = crate::bytes::pattern(16 * 27, 31, 7);

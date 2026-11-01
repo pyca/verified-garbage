@@ -7,14 +7,7 @@
 //! `vg_camellia_cbc_decrypt_chained` (`VG.Spec.Camellia.cbcEncryptChainedContract`,
 //! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
 //! decryption from the chaining value at `iv`, in constant time: their
-//! timing depends on none of the key, the chaining value and the data. Both
-//! are the modes' generic CBC over Camellia's bitsliced ECB code, with the
-//! S-boxes as Boolean circuits. On x86-64 and AArch64, decryption
-//! transforms eight blocks at a time, and encryption, in which each block
-//! needs the one before, one block at a time (in a batch of eight, so about
-//! eight times ECB's cost). On x86, PPC64LE and RISC-V, both transform one block at a
-//! time in a batch of eight, and on ARMv7 both call the verified ECB function once
-//! per block (a batch of eight), so about eight times ECB's cost. This
+//! timing depends on none of the key, the chaining value and the data. This
 //! module checks the lengths and holds the subkeys.
 
 #![cfg(any(

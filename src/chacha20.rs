@@ -437,10 +437,9 @@ mod tests {
         assert_eq!(data, ks);
     }
 
-    /// The implementation chosen gives the same keystream as the scalar one,
-    /// for lengths around multiples of eight and sixteen blocks, in one call
-    /// and split,
-    /// and up to the last block counter.
+    /// The implementation chosen gives the same keystream as the baseline
+    /// one, for 35 blocks in one call and split every 61 bytes, and up to the
+    /// last block counter.
     #[test]
     fn implementations_agree() {
         const LEN: usize = 16 * 64 * 2 + 64 * 3;
@@ -463,11 +462,10 @@ mod tests {
         }
     }
 
-    /// Bulk vector stores handle unaligned slices, preserve their surrounding
-    /// bytes, and agree with scalar code at the four-block/tail boundary,
-    /// around the AVX2 tail's pass of six blocks (257 to 384 bytes), the AVX2
-    /// last pass of eight blocks (385 to 511 bytes), and the AVX-512 last
-    /// pass of twelve blocks (513 to 768 bytes) or sixteen (769 to 1023).
+    /// The implementation chosen gives the same keystream as the baseline
+    /// one on unaligned slices, leaving the bytes around them unchanged, for
+    /// lengths within a byte of multiples of a block, from three blocks to
+    /// sixteen, and up to the last block counter.
     #[test]
     fn bulk_boundaries() {
         for len in [
@@ -485,8 +483,8 @@ mod tests {
                     let mut actual = msg;
                     ChaCha20::new(&key(), &n).apply_keystream(&mut actual[offset..offset + len]);
                     assert_eq!(actual, expected);
-                    // Starting with a buffered partial block must still reach
-                    // the same later bulk boundary and final counter.
+                    // Starting with a partial block gives the same keystream,
+                    // up to the same final counter.
                     let mut fragmented = msg;
                     let mut c = ChaCha20::new(&key(), &n);
                     c.apply_keystream(&mut fragmented[offset..offset + 1]);

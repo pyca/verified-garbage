@@ -1,12 +1,15 @@
 //! Triple DES ECB (FIPS 46-3), in place and without padding.
 //!
-//! Key expansion and ECB encryption/decryption use verified primitives.
-//! Each operation accepts complete eight-byte blocks, including empty input.
-//! On x86-64 with AVX-512F, ECB runs 512 blocks at a time while that many
-//! are left (`Backend::Avx512`), and with AVX2, 256 (`Backend::Avx2`);
-//! elsewhere on x86-64, and for the rest, 128 at a time with SSE2, then 64.
-//! On AArch64, ECB runs 128 blocks at a time in AdvSIMD registers; on ARMv7,
-//! x86, PPC64LE and RISC-V, one block at a time.
+//! Key expansion and ECB encryption/decryption use verified primitives:
+//! `vg_triple_des_expand_key`, `vg_triple_des_ecb_encrypt` and
+//! `vg_triple_des_ecb_decrypt` (`VG.Spec.TripleDes.expandKeyContract`,
+//! `ecbEncryptContract`, `ecbDecryptContract`). Each operation accepts
+//! complete eight-byte blocks, including empty input.
+//!
+//! The variants of ECB encryption and decryption, with the same contracts,
+//! are chosen by `Backend::select` on CPUs with the features their
+//! `_FEATURES` constants name: on x86-64, `vg_triple_des_ecb_encrypt_avx512`
+//! and `vg_triple_des_ecb_decrypt_avx512`, then the `_avx2` ones.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -34,12 +37,12 @@ use verified_garbage_cpu::Features;
 /// The implementations of ECB encryption and decryption.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
-    /// Bitsliced, 64 blocks at a time, for the target's baseline ISA.
+    /// The baseline implementation.
     Scalar,
-    /// AVX2, 256 blocks at a time.
+    /// `_avx2`.
     #[cfg(target_arch = "x86_64")]
     Avx2,
-    /// AVX-512F, 512 blocks at a time.
+    /// `_avx512`.
     #[cfg(target_arch = "x86_64")]
     Avx512,
 }

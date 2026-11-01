@@ -89,7 +89,7 @@ fn rfc5528_test_vectors() {
 /// The counter block's increment carries across its 32- and 64-bit words and
 /// wraps from `1¹²⁸` to `0¹²⁸`: the output blocks are Camellia (by
 /// Camellia-ECB) of the counter blocks counted with `u128`. The messages are
-/// longer than a group of eight blocks, so that a group follows another.
+/// 17 blocks and a bit long.
 #[test]
 fn counter_carries_and_wraps() {
     let starts: [u128; 6] = [
@@ -130,9 +130,10 @@ fn limits_and_lengths() {
     }
 }
 
-/// Batches and partial blocks must not touch bytes outside the slice, even
-/// when its address is unaligned. Compare with ECB of independently counted
-/// counter blocks, including a carry between batches.
+/// Lengths around multiples of eight and sixteen blocks, and partial blocks,
+/// must not touch bytes outside the slice, even when its address is
+/// unaligned. Compare with ECB of independently counted counter blocks, from
+/// a counter that wraps around after eight blocks.
 #[test]
 fn unaligned_batch_boundaries() {
     for key_len in [16, 24, 32] {

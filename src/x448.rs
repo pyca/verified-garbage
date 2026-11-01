@@ -1,17 +1,16 @@
 //! X448 (RFC 7748), Diffie-Hellman on Curve448.
 //!
-//! The whole function is the verified assembly `vg_x448` (contract
+//! The whole function is the verified `vg_x448` (contract
 //! `VG.Spec.X448.x448Contract`): `X448(k, u)` of RFC 7748 §5, the
 //! scalar decoded (clamped) and all 448 bits of the u-coordinate reduced
-//! modulo the field prime, in constant time. On x86-64 CPUs with BMI2 and
-//! ADX it is `vg_x448_adx`, with the same contract and faster field
-//! multiplications. This module gives it working space, and destroys what it
-//! leaves there.
+//! modulo the field prime, in constant time. On x86-64 CPUs with the
+//! features `VG_X448_ADX_FEATURES` names, `Backend::select` chooses its
+//! variant `vg_x448_adx`, with the same contract. This module gives it
+//! working space, and destroys what it leaves there.
 //!
 //! On AArch64, [`public_key`](PrivateKey::public_key) is the verified
-//! assembly `vg_x448_base` (contract `VG.Spec.X448.x448BaseContract`):
-//! `X448(k, 5)` computed as the u-coordinate of a fixed-base multiplication on
-//! edwards448, with precomputed tables, rather than with the ladder.
+//! `vg_x448_base` (contract `VG.Spec.X448.x448BaseContract`), `X448(k, 5)`;
+//! elsewhere it is `vg_x448` of the base point.
 //!
 //! [`diffie_hellman`](PrivateKey::diffie_hellman) rejects the all-zero
 //! shared secret that a public key of small order gives (RFC 7748 §6.2), in
@@ -38,9 +37,9 @@ use verified_garbage_cpu::Features;
 /// The implementations of `vg_x448`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
-    /// The target's baseline ISA.
+    /// The baseline implementation.
     Baseline,
-    /// BMI2's `mulx` and ADX's `adcx` and `adox`.
+    /// `_adx`.
     #[cfg(target_arch = "x86_64")]
     Adx,
 }
@@ -122,7 +121,7 @@ fn base(scalar: &[u8; 56]) -> [u8; 56] {
     out
 }
 
-/// `X448(scalar, 5)`, with the ladder.
+/// `X448(scalar, 5)`, by `x448`.
 #[cfg(not(target_arch = "aarch64"))]
 fn base(scalar: &[u8; 56]) -> [u8; 56] {
     x448(scalar, &BASE_POINT)
@@ -206,7 +205,7 @@ mod tests {
     }
 
     /// The public key is `X448(k, 5)` for many scalars: random ones, and ones
-    /// with every nibble the same (each digit of the fixed-base comb).
+    /// with every nibble the same.
     #[test]
     fn public_key_is_x448_of_base_point() {
         let check = |k: &[u8; 56]| {

@@ -1,10 +1,13 @@
 //! SM4 ECB (GB/T 32907-2016, as transcribed in draft-ribose-cfrg-sm4-10;
 //! SP 800-38A §6.1), in place and without padding.
 //!
-//! Key expansion and ECB encryption/decryption use verified primitives.
-//! Each operation accepts complete 16-byte blocks, including empty input.
-//! ECB runs sixteen blocks at a time, computing each round bitsliced in
-//! general-purpose registers, with no table lookups.
+//! ECB is the block cipher applied to each block on its own, so the whole
+//! mode is verified assembly: `vg_sm4_expand_key` (contract
+//! `VG.Spec.Sm4.expandKeyContract`) writes the key schedule, and
+//! `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt` (`ecbEncryptContract`,
+//! `ecbDecryptContract`) replace each block with its encryption or
+//! decryption, in constant time. Each operation accepts complete 16-byte
+//! blocks, including empty input.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -34,8 +37,7 @@ crate::error::impl_error! {
 /// An expanded SM4 key for ECB encryption and decryption.
 ///
 /// No padding is added or removed.
-// Aligned to 8 bytes so that the code, which copies the schedule into its
-// working space, can copy it a doubleword at a time on RISC-V.
+// Aligned to 8 bytes, which makes the functions faster on RISC-V.
 #[repr(C, align(8))]
 pub struct Sm4Ecb {
     schedule: [u8; 128],
@@ -105,9 +107,7 @@ mod tests {
     struct Aligned([u8; 136]);
 
     /// The functions take the schedule at any address: from copies at every
-    /// offset modulo 8 (on RISC-V, copied into the working space a doubleword
-    /// at a time from the aligned one and a byte at a time from the others)
-    /// they compute what they compute from the context's.
+    /// offset modulo 8 they compute what they compute from the context's.
     #[test]
     fn unaligned_schedule() {
         let ctx = Sm4Ecb::new(&[0x5a; 16]);

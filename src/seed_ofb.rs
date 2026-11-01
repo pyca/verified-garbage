@@ -5,13 +5,10 @@
 //! the key schedule, and `vg_seed_ofb` (`VG.Spec.Seed.ofbContract`) XORs
 //! whole blocks with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at
 //! `iv`, which it replaces with the last output block, in constant time: its
-//! timing depends on none of the key, the chaining value and the data. It is
-//! the modes' generic OFB over `vg_seed_ecb_encrypt`: on x86-64, AArch64 and
-//! PPC64LE over its batch of sixteen blocks, on ARMv7 and x86 calling it once per block (a
-//! batch of eight, so about eight times ECB's cost). This module holds the
-//! key schedule and handles a partial last block (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is
-//! the next output block, whose first bytes it XORs into the rest of the
-//! input.
+//! timing depends on none of the key, the chaining value and the data. This
+//! module holds the key schedule and handles a partial last block (§6.4,
+//! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output block,
+//! whose first bytes it XORs into the rest of the input.
 
 #![cfg(any(
     target_arch = "x86",
@@ -70,7 +67,7 @@ impl SeedOfb {
 
     /// OFB of whole blocks.
     fn crypt(&self, iv: &mut [u8; 16], blocks: &mut [u8]) {
-        // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
+        // SAFETY: `blocks` holds `len / 16` whole blocks (its length is a
         // multiple of 16), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them
         // on the callee's stack. The function zeroes its working space on its

@@ -1,6 +1,6 @@
 //! ECDH over secp256k1 (`vg_ecdh_secp256k1`), and public keys
-//! (`vg_ec_secp256k1_public_key`), each on ARMv7 with `umaal` where the CPU
-//! has it (`_umaal`).
+//! (`vg_ec_secp256k1_public_key`), and their `_umaal` variants on ARMv7
+//! CPUs with the features their `_FEATURES` constants name.
 
 #![cfg(any(
     target_arch = "x86_64",

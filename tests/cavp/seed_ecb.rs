@@ -140,10 +140,11 @@ fn cryptography_cfb() {
     assert!(count >= 2);
 }
 
-/// Many blocks at once, across batches of sixteen, agree with one at a time.
+/// Many blocks at once, at lengths around multiples of sixteen blocks, agree
+/// with one at a time.
 #[test]
 fn batches() {
-    // Generated inputs test agreement between batch sizes, not known answers.
+    // Generated inputs test agreement between lengths, not known answers.
     let ctx = SeedEcb::new(&[7; 16]);
     let input: Vec<u8> = crate::bytes::pattern(16 * 50, 1, 0);
     for blocks in [1, 15, 16, 17, 31, 32, 33, 50] {

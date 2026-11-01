@@ -205,7 +205,7 @@ pub struct AesSiv {
     ctx: [u64; 64],
     /// The number of rounds of AES for each half of the key.
     rounds: usize,
-    /// The implementation of AES the functions called call.
+    /// The implementation of AES of the functions called.
     backend: Backend,
 }
 
