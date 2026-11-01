@@ -406,11 +406,11 @@ def shrx := x .shrx
 
 /-! ## Printing -/
 
-#guard printer.instr (.shiftCl .shl .rdx) == ["shl rdx, cl"]
-#guard printer.instr (.shiftCl .shr .r8) == ["shr r8, cl"]
-#guard printer.instr (.shiftCl .sar .rax) == ["sar rax, cl"]
-#guard printer.instr (.shiftx .shlx .rax .rbx .rcx) == ["shlx rax, rbx, rcx"]
-#guard printer.instr (.shiftx .shrx .r8 .r15 .rdx) == ["shrx r8, r15, rdx"]
+#guard Instr.asm (.shiftCl .shl .rdx) == ["shl rdx, cl"]
+#guard Instr.asm (.shiftCl .shr .r8) == ["shr r8, cl"]
+#guard Instr.asm (.shiftCl .sar .rax) == ["sar rax, cl"]
+#guard Instr.asm (.shiftx .shlx .rax .rbx .rcx) == ["shlx rax, rbx, rcx"]
+#guard Instr.asm (.shiftx .shrx .r8 .r15 .rdx) == ["shrx r8, r15, rdx"]
 
 -- Their CPU features (the SDM's "CPUID Feature Flag": BMI2 for `shlx` and
 -- `shrx`, none for the shifts by CL); none writes `rsp` unless it is the

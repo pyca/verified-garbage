@@ -2871,7 +2871,6 @@ cd lean
 lake exe cache get                   # prebuilt Mathlib
 lake build --log-level=warning       # check all proofs (without each module's recorded profile)
 lake env lean --run Emit.lean        # regenerate the crates of crates/ after changing lean/VerifiedGarbage/Artifacts/
-python3 ../ci/preassemble.py         # and pre-assemble them
 ```
 
 To benchmark against OpenSSL (through rust-openssl; needs its headers) and

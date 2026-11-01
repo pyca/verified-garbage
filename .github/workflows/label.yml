@@ -3,11 +3,10 @@ name: Label
 # Labels a pull request `untrusted-only` while every file it touches (and,
 # for a rename, the path it was renamed from) is an implementation
 # (`lean/VerifiedGarbage/Impl/`), a proof (`lean/VerifiedGarbage/Proof/`) or
-# generated assembly (`crates/verified-garbage-asm-<target>/asm/`, and its
-# pre-assembled `src/`, which CI checks is the same code:
-# `ci/check_preassembled.py`), and removes the label otherwise: such a
-# pull request changes nothing that Lean (or, for `src/`, that check) does not
-# check (lean/README.md, "What you need to trust").
+# generated code (`crates/verified-garbage-asm-<target>/src/`, or ARM's
+# `asm/`), and removes the label otherwise: such a pull request changes
+# nothing that Lean does not check (lean/README.md, "What you need to
+# trust").
 #
 # `pull_request_target` runs this file as it is on the base branch, so a pull
 # request cannot change how it is labeled; nothing here checks out or runs

@@ -226,15 +226,15 @@ def cmov (cc : Cond) (src : Src) (cf zf : Bool) :
 
 /-! ## Printing -/
 
-#guard printer.instr (.shift .shl .rcx 4) == ["shl rcx, 4"]
-#guard printer.instr (.shift .shl .r15 63) == ["shl r15, 63"]
-#guard printer.instr (.shift32 .shl .rcx 31) == ["shl ecx, 31"]
-#guard printer.instr (.shift32 .shl .r9 1) == ["shl r9d, 1"]
-#guard printer.instr (.cmov .b .r8 (.reg .rcx)) == ["cmovb r8, rcx"]
-#guard printer.instr (.cmov .ae .rax (.reg .r15)) == ["cmovae rax, r15"]
-#guard printer.instr (.cmov .e .r13 (.mem { base := .rsi, disp := 8 })) ==
+#guard Instr.asm (.shift .shl .rcx 4) == ["shl rcx, 4"]
+#guard Instr.asm (.shift .shl .r15 63) == ["shl r15, 63"]
+#guard Instr.asm (.shift32 .shl .rcx 31) == ["shl ecx, 31"]
+#guard Instr.asm (.shift32 .shl .r9 1) == ["shl r9d, 1"]
+#guard Instr.asm (.cmov .b .r8 (.reg .rcx)) == ["cmovb r8, rcx"]
+#guard Instr.asm (.cmov .ae .rax (.reg .r15)) == ["cmovae rax, r15"]
+#guard Instr.asm (.cmov .e .r13 (.mem { base := .rsi, disp := 8 })) ==
   ["cmove r13, QWORD PTR [rsi+8]"]
-#guard printer.instr (.cmov .ne .rdx (.mem { base := .rdi, index := some .rcx, scale := 8 })) ==
+#guard Instr.asm (.cmov .ne .rdx (.mem { base := .rdi, index := some .rcx, scale := 8 })) ==
   ["cmovne rdx, QWORD PTR [rdi+rcx*8]"]
 
 -- Neither needs a CPU feature beyond the baseline; each writes `rsp` if

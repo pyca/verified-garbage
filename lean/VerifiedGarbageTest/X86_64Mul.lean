@@ -54,8 +54,8 @@ def rcx (a b lo hi : BitVec 64) (c : Bool) : Bool :=
 
 /-! ## Printing -/
 
-#guard printer.instr (.mul .rcx) == ["mul rcx"]
-#guard printer.instr (.mul .r11) == ["mul r11"]
+#guard Instr.asm (.mul .rcx) == ["mul rcx"]
+#guard Instr.asm (.mul .r11) == ["mul r11"]
 
 -- `mul` is in the x86-64 baseline, and does not write `rsp`.
 #guard isa.requires (.mul .rcx) == []

@@ -214,11 +214,11 @@ def adox (a b : BitVec 64) (c : Bool) :
 
 /-! ## Printing -/
 
-#guard printer.instr (.mulx .r9 .r8 (.reg .rcx)) == ["mulx r9, r8, rcx"]
-#guard printer.instr (.mulx .rax .r15 (.mem { base := .rdi, disp := 24 })) ==
+#guard Instr.asm (.mulx .r9 .r8 (.reg .rcx)) == ["mulx r9, r8, rcx"]
+#guard Instr.asm (.mulx .rax .r15 (.mem { base := .rdi, disp := 24 })) ==
   ["mulx rax, r15, QWORD PTR [rdi+24]"]
-#guard printer.instr (.adcx .r8 (.reg .rax)) == ["adcx r8, rax"]
-#guard printer.instr (.adox .r13 (.mem { base := .rsi, disp := 8 })) ==
+#guard Instr.asm (.adcx .r8 (.reg .rax)) == ["adcx r8, rax"]
+#guard Instr.asm (.adox .r13 (.mem { base := .rsi, disp := 8 })) ==
   ["adox r13, QWORD PTR [rsi+8]"]
 
 -- Their CPU features (the SDM's "CPUID Feature Flag"); `mulx` writes `rsp`

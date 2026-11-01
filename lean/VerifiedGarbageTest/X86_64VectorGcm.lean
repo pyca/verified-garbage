@@ -79,40 +79,40 @@ def products : List (BitVec 8 × BitVec 512) := [
 #guard checkZ (fun d => .vpsrldq d .xmm0 255) 0
 
 /-! Exact printed operands and CPU features for every new form. -/
-#guard printer.instr (.vop (.vbin .vaesenc .l128 .xmm5 .xmm0 .xmm1)) == ["vaesenc xmm5, xmm0, xmm1"]
+#guard Instr.asm (.vop (.vbin .vaesenc .l128 .xmm5 .xmm0 .xmm1)) == ["vaesenc xmm5, xmm0, xmm1"]
 #guard isa.requires (.vop (.vbin .vaesenc .l128 .xmm5 .xmm0 .xmm1)) == ["aes", "avx"]
 #guard !isa.writesSp (.vop (.vbin .vaesenc .l128 .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.vop (.vbin .vaesenc .l256 .xmm5 .xmm0 .xmm1)) == ["vaesenc ymm5, ymm0, ymm1"]
+#guard Instr.asm (.vop (.vbin .vaesenc .l256 .xmm5 .xmm0 .xmm1)) == ["vaesenc ymm5, ymm0, ymm1"]
 #guard isa.requires (.vop (.vbin .vaesenc .l256 .xmm5 .xmm0 .xmm1)) == ["vaes", "avx"]
 #guard !isa.writesSp (.vop (.vbin .vaesenc .l256 .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.zop (.zbin .vaesenc .xmm5 .xmm0 .xmm1)) == ["vaesenc zmm5, zmm0, zmm1"]
+#guard Instr.asm (.zop (.zbin .vaesenc .xmm5 .xmm0 .xmm1)) == ["vaesenc zmm5, zmm0, zmm1"]
 #guard isa.requires (.zop (.zbin .vaesenc .xmm5 .xmm0 .xmm1)) == ["vaes", "avx512f"]
 #guard !isa.writesSp (.zop (.zbin .vaesenc .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.vop (.vbin .vaesenclast .l128 .xmm5 .xmm0 .xmm1)) == ["vaesenclast xmm5, xmm0, xmm1"]
+#guard Instr.asm (.vop (.vbin .vaesenclast .l128 .xmm5 .xmm0 .xmm1)) == ["vaesenclast xmm5, xmm0, xmm1"]
 #guard isa.requires (.vop (.vbin .vaesenclast .l128 .xmm5 .xmm0 .xmm1)) == ["aes", "avx"]
 #guard !isa.writesSp (.vop (.vbin .vaesenclast .l128 .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.vop (.vbin .vaesenclast .l256 .xmm5 .xmm0 .xmm1)) == ["vaesenclast ymm5, ymm0, ymm1"]
+#guard Instr.asm (.vop (.vbin .vaesenclast .l256 .xmm5 .xmm0 .xmm1)) == ["vaesenclast ymm5, ymm0, ymm1"]
 #guard isa.requires (.vop (.vbin .vaesenclast .l256 .xmm5 .xmm0 .xmm1)) == ["vaes", "avx"]
 #guard !isa.writesSp (.vop (.vbin .vaesenclast .l256 .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.zop (.zbin .vaesenclast .xmm5 .xmm0 .xmm1)) == ["vaesenclast zmm5, zmm0, zmm1"]
+#guard Instr.asm (.zop (.zbin .vaesenclast .xmm5 .xmm0 .xmm1)) == ["vaesenclast zmm5, zmm0, zmm1"]
 #guard isa.requires (.zop (.zbin .vaesenclast .xmm5 .xmm0 .xmm1)) == ["vaes", "avx512f"]
 #guard !isa.writesSp (.zop (.zbin .vaesenclast .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.vop (.vpclmulqdq .l128 .xmm5 .xmm0 .xmm1 17)) == ["vpclmulqdq xmm5, xmm0, xmm1, 17"]
+#guard Instr.asm (.vop (.vpclmulqdq .l128 .xmm5 .xmm0 .xmm1 17)) == ["vpclmulqdq xmm5, xmm0, xmm1, 17"]
 #guard isa.requires (.vop (.vpclmulqdq .l128 .xmm5 .xmm0 .xmm1 17)) == ["pclmulqdq", "avx"]
 #guard !isa.writesSp (.vop (.vpclmulqdq .l128 .xmm5 .xmm0 .xmm1 17))
-#guard printer.instr (.vop (.vpclmulqdq .l256 .xmm5 .xmm0 .xmm1 17)) == ["vpclmulqdq ymm5, ymm0, ymm1, 17"]
+#guard Instr.asm (.vop (.vpclmulqdq .l256 .xmm5 .xmm0 .xmm1 17)) == ["vpclmulqdq ymm5, ymm0, ymm1, 17"]
 #guard isa.requires (.vop (.vpclmulqdq .l256 .xmm5 .xmm0 .xmm1 17)) == ["vpclmulqdq", "avx"]
 #guard !isa.writesSp (.vop (.vpclmulqdq .l256 .xmm5 .xmm0 .xmm1 17))
-#guard printer.instr (.zop (.vpclmulqdq .xmm5 .xmm0 .xmm1 17)) == ["vpclmulqdq zmm5, zmm0, zmm1, 17"]
+#guard Instr.asm (.zop (.vpclmulqdq .xmm5 .xmm0 .xmm1 17)) == ["vpclmulqdq zmm5, zmm0, zmm1, 17"]
 #guard isa.requires (.zop (.vpclmulqdq .xmm5 .xmm0 .xmm1 17)) == ["vpclmulqdq", "avx512f"]
 #guard !isa.writesSp (.zop (.vpclmulqdq .xmm5 .xmm0 .xmm1 17))
-#guard printer.instr (.zop (.zbin .vpshufb .xmm5 .xmm0 .xmm1)) == ["vpshufb zmm5, zmm0, zmm1"]
+#guard Instr.asm (.zop (.zbin .vpshufb .xmm5 .xmm0 .xmm1)) == ["vpshufb zmm5, zmm0, zmm1"]
 #guard isa.requires (.zop (.zbin .vpshufb .xmm5 .xmm0 .xmm1)) == ["avx512bw"]
 #guard !isa.writesSp (.zop (.zbin .vpshufb .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.zop (.vpslldq .xmm5 .xmm0 8)) == ["vpslldq zmm5, zmm0, 8"]
+#guard Instr.asm (.zop (.vpslldq .xmm5 .xmm0 8)) == ["vpslldq zmm5, zmm0, 8"]
 #guard isa.requires (.zop (.vpslldq .xmm5 .xmm0 8)) == ["avx512bw"]
 #guard !isa.writesSp (.zop (.vpslldq .xmm5 .xmm0 8))
-#guard printer.instr (.zop (.vpsrldq .xmm5 .xmm0 8)) == ["vpsrldq zmm5, zmm0, 8"]
+#guard Instr.asm (.zop (.vpsrldq .xmm5 .xmm0 8)) == ["vpsrldq zmm5, zmm0, 8"]
 #guard isa.requires (.zop (.vpsrldq .xmm5 .xmm0 8)) == ["avx512bw"]
 #guard !isa.writesSp (.zop (.vpsrldq .xmm5 .xmm0 8))
 

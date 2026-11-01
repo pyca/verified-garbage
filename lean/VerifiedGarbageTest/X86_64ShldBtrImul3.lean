@@ -432,10 +432,10 @@ fault. -/
 
 /-! ## Printing -/
 
-#guard printer.instr (.imul3 .rax .r12 19) == ["imul rax, r12, 19"]
-#guard printer.instr (.imul3 .rax .r12 (BitVec.ofInt 32 (-1))) == ["imul rax, r12, -1"]
-#guard printer.instr (.shld .r12 .r11 1) == ["shld r12, r11, 1"]
-#guard printer.instr (.btr .r11 63) == ["btr r11, 63"]
+#guard Instr.asm (.imul3 .rax .r12 19) == ["imul rax, r12, 19"]
+#guard Instr.asm (.imul3 .rax .r12 (BitVec.ofInt 32 (-1))) == ["imul rax, r12, -1"]
+#guard Instr.asm (.shld .r12 .r11 1) == ["shld r12, r11, 1"]
+#guard Instr.asm (.btr .r11 63) == ["btr r11, 63"]
 
 -- All three are in the x86-64 baseline, and write `rsp` only as their destination.
 #guard isa.requires (.imul3 .rax .rcx 19) == []

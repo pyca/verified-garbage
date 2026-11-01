@@ -20,7 +20,6 @@ CI runs each of these, and fails if it does:
 | `check_lean_single_importer.py` | No new proof module has only one importer without saying why |
 | `check_lean_speed.py` | The rules of "Keeping proofs fast" that need no build (allowances in `lean_speed_allowed.py`) |
 | `check_mcdt.py` | Intel's MCDT instructions run only inside the MXCSR prologue and epilogue |
-| `check_preassembled.py` | Each generated crate's pre-assembled `src/` (from `preassemble.py`) compiles to the same code as its printed `asm/` |
 | `check_registrations.py` | Registration and variant files only bind |
 | `check_skills.py` | The skills' frontmatter and links, and CLAUDE.md's list of them |
 | `check_variants.py` | Every variant reaches every function built on it |
@@ -41,7 +40,6 @@ needs the edited modules built: run it before pushing, as CLAUDE.md says.
 | `fetch_lean_cache.py` | Streams the published Lean cache, resuming dropped connections (lean/README.md) |
 | `rust_arches.py` | The Rust jobs a change needs, from `rust_matrix.toml` |
 | `cpu_tests.py`, `cpu_shards.py` | The tests of each CPU-feature line, and their split across shards |
-| `objfile.py` | Reads rlibs and ELF objects, for `preassemble.py` and `check_preassembled.py` |
 | `export_rust_coverage.py` | Exports an instrumented test run's coverage as lcov |
 | `rust_test_timing.sh`, `rustdoc_timing.sh`, `rustdoc_timing.cmd` | Turn on libtest's `--report-time` for the timing metrics |
 | `bench_arches.py`, `bench_compare.py`, `bench_cache_key.sh` | The Benchmarks workflow (the `benchmarking` skill) |
@@ -60,7 +58,6 @@ Run by hand; none of these is a check.
 | `lit_imports.py` | Kernel checks that evaluate code without its literal, ranked by cost (the `proof-performance` skill) |
 | `lean_shard_replay.py` | Compares shard planners on retained CI metrics |
 | `trim_lean_imports.py` | Narrows the imports of many modules at once (the `lean-modules` skill) |
-| `preassemble.py` | Writes each generated crate's `src/` from its `asm/`, pre-assembled, after the emitter (`--check`: fails if stale) |
 | `lean_import_build.py`, `lean_import_graph.py`, `lean_import_replay.py`, `lean_source_evidence.py`, `lean_module_uses.lean`, `stress_lean_imports.py` | The import planner behind `check_lean_public_imports.py --fix` and `trim_lean_imports.py` ([IMPORT_NARROWING.md](IMPORT_NARROWING.md)) |
 
 `fixtures/` holds the unit tests' fixtures.

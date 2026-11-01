@@ -956,17 +956,15 @@ def targetsOf (as : List Artifact) : List (String × String) :=
 def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
 
 /-- The directory of the crate of the target named `t` that holds its
-generated files: `src/`, which its crate compiles, for a target whose
-printer emits its straight-line code as machine code (RISC-V's,
-`TCB/RISCV64/Encode.lean`, AArch64's, PPC64LE's and x86's,
-`TCB/<ISA>/Encode.lean`), and `asm/`, the code as printed, for the others,
-whose crates compile it as it is (ARM's) or pre-assembled
-(`ci/preassemble.py` writes their `src/`). Keyed on the target here, rather
-than being a field of its `Printer`, so that it does not change what every
-proof imports. -/
+generated files, which its crate compiles: `src/`, for a target whose
+printer emits its straight-line code as machine code (`TCB/<ISA>/Encode.lean`:
+every target's but ARM's), and `asm/` for ARM's, whose one crate serves both
+A32 and Thumb, and is assembled from its text. Keyed on the target here,
+rather than being a field of its `Printer`, so that it does not change what
+every proof imports. -/
 def codeSubdir : String → String
-  | "riscv64" | "aarch64" | "powerpc64le" | "x86" => "src"
-  | _ => "asm"
+  | "arm" => "asm"
+  | _ => "src"
 
 /-- The directory of the target `t`'s generated files, under `crates/`:
 `codeSubdir t` of its crate (`crateDir`). -/

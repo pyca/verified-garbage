@@ -30,22 +30,22 @@ def aesDecLast : BitVec 512 := 0x5d171bfc6eefaa1c594dd7cbaf60db5576024b3d234802f
 #guard ((XOp.bin .aesdec .xmm0 .xmm1).exec Avx512.s).xmm .xmm0 == aesDecRound.extractLsb' 0 128
 #guard ((XOp.bin .aesdeclast .xmm0 .xmm1).exec Avx512.s).xmm .xmm0 == aesDecLast.extractLsb' 0 128
 
-#guard printer.instr (.vop (.vbin .vaesdec .l128 .xmm5 .xmm0 .xmm1)) == ["vaesdec xmm5, xmm0, xmm1"]
+#guard Instr.asm (.vop (.vbin .vaesdec .l128 .xmm5 .xmm0 .xmm1)) == ["vaesdec xmm5, xmm0, xmm1"]
 #guard isa.requires (.vop (.vbin .vaesdec .l128 .xmm5 .xmm0 .xmm1)) == ["aes", "avx"]
 #guard !isa.writesSp (.vop (.vbin .vaesdec .l128 .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.vop (.vbin .vaesdec .l256 .xmm5 .xmm0 .xmm1)) == ["vaesdec ymm5, ymm0, ymm1"]
+#guard Instr.asm (.vop (.vbin .vaesdec .l256 .xmm5 .xmm0 .xmm1)) == ["vaesdec ymm5, ymm0, ymm1"]
 #guard isa.requires (.vop (.vbin .vaesdec .l256 .xmm5 .xmm0 .xmm1)) == ["vaes", "avx"]
 #guard !isa.writesSp (.vop (.vbin .vaesdec .l256 .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.zop (.zbin .vaesdec .xmm5 .xmm0 .xmm1)) == ["vaesdec zmm5, zmm0, zmm1"]
+#guard Instr.asm (.zop (.zbin .vaesdec .xmm5 .xmm0 .xmm1)) == ["vaesdec zmm5, zmm0, zmm1"]
 #guard isa.requires (.zop (.zbin .vaesdec .xmm5 .xmm0 .xmm1)) == ["vaes", "avx512f"]
 #guard !isa.writesSp (.zop (.zbin .vaesdec .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.vop (.vbin .vaesdeclast .l128 .xmm5 .xmm0 .xmm1)) == ["vaesdeclast xmm5, xmm0, xmm1"]
+#guard Instr.asm (.vop (.vbin .vaesdeclast .l128 .xmm5 .xmm0 .xmm1)) == ["vaesdeclast xmm5, xmm0, xmm1"]
 #guard isa.requires (.vop (.vbin .vaesdeclast .l128 .xmm5 .xmm0 .xmm1)) == ["aes", "avx"]
 #guard !isa.writesSp (.vop (.vbin .vaesdeclast .l128 .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.vop (.vbin .vaesdeclast .l256 .xmm5 .xmm0 .xmm1)) == ["vaesdeclast ymm5, ymm0, ymm1"]
+#guard Instr.asm (.vop (.vbin .vaesdeclast .l256 .xmm5 .xmm0 .xmm1)) == ["vaesdeclast ymm5, ymm0, ymm1"]
 #guard isa.requires (.vop (.vbin .vaesdeclast .l256 .xmm5 .xmm0 .xmm1)) == ["vaes", "avx"]
 #guard !isa.writesSp (.vop (.vbin .vaesdeclast .l256 .xmm5 .xmm0 .xmm1))
-#guard printer.instr (.zop (.zbin .vaesdeclast .xmm5 .xmm0 .xmm1)) == ["vaesdeclast zmm5, zmm0, zmm1"]
+#guard Instr.asm (.zop (.zbin .vaesdeclast .xmm5 .xmm0 .xmm1)) == ["vaesdeclast zmm5, zmm0, zmm1"]
 #guard isa.requires (.zop (.zbin .vaesdeclast .xmm5 .xmm0 .xmm1)) == ["vaes", "avx512f"]
 #guard !isa.writesSp (.zop (.zbin .vaesdeclast .xmm5 .xmm0 .xmm1))
 #guard isa.requires (.vbinLoad .vaesdec .l128 .xmm0 .xmm1 { base := .rdi }) == ["aes", "avx"]

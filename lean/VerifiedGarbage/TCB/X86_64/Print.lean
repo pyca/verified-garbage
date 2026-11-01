@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.TCB.X86_64.Encode
 public import VerifiedGarbage.TCB.Print
 
 /-!
@@ -8,6 +8,13 @@ public import VerifiedGarbage.TCB.Print
 
 **Trusted.** Emits Intel syntax without register prefixes, which is the
 default dialect of Rust's `asm!`/`naked_asm!` on x86-64.
+
+Each straight-line instruction and the return are printed as their machine
+code (`Encode.lean`), `.byte <bytes>`, each after a line `// <the
+instruction's text>`, which the emitter writes as a Rust comment
+(`Rust.template`): the assembler only copies the bytes. The branches
+(`jcc`, `jmp`), the call and the address of a static (`symLines`) are
+printed as text, for the assembler and linker to lay out.
 -/
 
 @[expose] public section
@@ -373,11 +380,20 @@ def Instr.memOps : Instr → List MemOp
   | .lfence | .mul _ | .imul .. | .imul3 .. | .shld .. | .btr ..
   | .push _ | .pop .. | .alloc _ | .free _ => []
 
+/-- The lines of an instruction: each of its instructions' text (`asm`) as a
+comment, then that instruction's bytes (`encode`); its text if it has no
+encoding (`leaSym`, printed by `symLines`, or an instruction that
+`unencodable` reports, which the emitter refuses). -/
+def Instr.code (i : Instr) : List String :=
+  match i.encode with
+  | some bs => (i.asm.zip bs).flatMap fun (t, b) => [s!"// {t}", byteLine b]
+  | none => i.asm
+
 def printer : Printer isa where
-  instr := Instr.asm
+  instr := Instr.code
   branch c l := [s!"j{c.name} {l}"]
   jump l := s!"jmp {l}"
-  ret := ["ret"]
+  ret := ["// ret", byteLine retBytes]
   call := "call"
   -- The static's RIP-relative address, which `TCB/Rust.lean` writes with
   -- its symbol; `asm` gives the same text, for reading.
@@ -396,8 +412,10 @@ def printer : Printer isa where
   relative to them is fixed by the function alone: a change to other code
   cannot move them, and with them its performance. -/
   funcAlign := [".p2align 6"]
-  unencodable i := match i.memOps.filter (!·.dispOk) with
-    | [] => none
-    | m :: _ => some s!"the displacement of the memory operand {m.addr} does not fit in 32 bits"
+  unencodable
+    | .leaSym .. => none
+    | i => match i.memOps.filter (!·.dispOk) with
+      | [] => if i.encode.isNone then some "an operand does not fit its field" else none
+      | m :: _ => some s!"the displacement of the memory operand {m.addr} does not fit in 32 bits"
 
 end VG.X86_64

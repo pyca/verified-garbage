@@ -330,30 +330,6 @@ jobs:
       - run: python3 ci/check_mcdt.py
       - run: python3 ci/check_vectors.py
 
-  # The code each generated crate compiles, `src/` (written by
-  # ci/preassemble.py, which is not trusted), is the code the emitter printed
-  # and `lean` checked, `asm/`: the same sections, symbols and relocations
-  # (ci/check_preassembled.py).
-  preassembled:
-    name: Pre-assembled code
-    runs-on: ubuntu-26.04
-    env:
-      RUSTUP_TOOLCHAIN: stable
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          # The generated crates, but not the proofs.
-          sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            /*
-            !/lean/
-            !/docs/
-      - name: Install Rust
-        run: rustup toolchain install stable --profile minimal --target "$(python3 ci/check_preassembled.py --triples)"
-      - run: rustc -vV
-      - run: python3 ci/check_preassembled.py
-
   # The Rust jobs' matrices (ci/rust_matrix.toml), narrowed to the
   # architectures whose tests run: a pull request starts only the jobs of
   # those its changes can affect (ci/rust_arches.py): an architecture's own
@@ -1086,7 +1062,7 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-shard, lean-imports, preassembled, rust-arches, rust, rust-thumb, rust-lint, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, rust-arches, rust, rust-thumb, rust-lint, rust-cpu-features, coverage]
     runs-on: ubuntu-26.04
     # To list the run's artifacts.
     permissions:
@@ -1099,8 +1075,7 @@ jobs:
         id: check
         env:
           RESULTS: >-
-            ${{ needs.lean.result }} ${{ needs.lean-imports.result }} ${{ needs.preassembled.result }}
-            ${{ needs.rust-arches.result }}
+            ${{ needs.lean.result }} ${{ needs.lean-imports.result }} ${{ needs.rust-arches.result }}
           # Each skipped exactly when `rust-arches` left its matrix empty.
           RUST: ${{ needs.rust.result }} ${{ needs.rust-arches.outputs.rust == '[]' }}
           THUMB: ${{ needs.rust-thumb.result }} ${{ needs.rust-arches.outputs.thumb == '[]' }}
