@@ -175,24 +175,39 @@ end
 /-- The state after `copyArg bytes j` from `u`, whose `t0` is its stack
 pointer. -/
 def copyState (bytes j : Nat) (u : State) : State :=
-  { u.write .t1 (u.mem.readW (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 64) with
+  { (u.write .t1 (u.sp + BitVec.ofNat 64 (argStep bytes))).write .t1
+      (u.mem.readW (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 64) with
     mem := u.mem.writeW (u.sp + BitVec.ofNat 64 (8 * j))
       (u.mem.readW (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 64) }
 
 theorem copyArg_run {bytes j : Nat} {u : State} (ht0 : u.gpr .t0 = u.sp) (hal : u.sp.toNat % 8 = 0)
-    (ho : bytes + 8 * j < 2048) (h8 : bytes % 8 = 0)
+    (ho : bytes - argStep bytes + 8 * j < 2048) (h8 : bytes % 8 = 0)
     (hr : InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 8)
     (hw : InRegions u.wr (u.sp + BitVec.ofNat 64 (8 * j)) 8) :
     execBlock isa (copyArg bytes j) u = some (copyState bytes j u,
       [.addr (u.sp + BitVec.ofNat 64 (bytes + 8 * j)), .addr (u.sp + BitVec.ofNat 64 (8 * j))]) := by
-  have hl := exec_load_d (s := u) (t := .t1) (n := .t0) (off := bytes + 8 * j) ho
-    (by rw [ht0]; exact Spill.al8 hal (by omega)) (by rw [ht0]; exact hr)
-  have hs := exec_store_d (s := u.write .t1 (u.mem.readW (u.gpr .t0 + BitVec.ofNat 64 (bytes + 8 * j)) 64))
+  have hst : argStep bytes ≤ bytes ∧ argStep bytes < 2048 := by unfold argStep; omega
+  obtain ⟨u₁, hu₁⟩ : ∃ v, v = u.write .t1 (u.sp + BitVec.ofNat 64 (argStep bytes)) := ⟨_, rfl⟩
+  have ha := exec_addi_nat (s := u) (d := .t1) (n := .t0) (m := argStep bytes) hst.2
+  rw [ht0, ← hu₁] at ha
+  have hsrc : u₁.gpr .t1 + BitVec.ofNat 64 (bytes - argStep bytes + 8 * j) =
+      u.sp + BitVec.ofNat 64 (bytes + 8 * j) := by
+    rw [hu₁]
+    simp only [State.write, ↓reduceIte]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add,
+      show argStep bytes + (bytes - argStep bytes + 8 * j) = bytes + 8 * j by omega]
+  have hrd : u₁.rd = u.rd ∧ u₁.wr = u.wr ∧ u₁.gpr .t0 = u.sp ∧ u₁.mem = u.mem := by
+    subst hu₁; exact ⟨rfl, rfl, by simp only [State.write, reduceCtorEq, ↓reduceIte, ht0], rfl⟩
+  have hl := exec_load_d (s := u₁) (t := .t1) (n := .t1) (off := bytes - argStep bytes + 8 * j) ho
+    (by rw [hsrc]; exact Spill.al8 hal (by omega)) (by rw [hsrc, hrd.1, hrd.2.1]; exact hr)
+  rw [hsrc, hrd.2.2.2] at hl
+  have hs := exec_store_d (s := u₁.write .t1 (u.mem.readW (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 64))
     (t := .t1) (n := .t0) (off := 8 * j) (by omega)
-    (by simp only [State.write, reduceCtorEq, ↓reduceIte, ht0]; exact Spill.al8 hal (by omega))
-    (by simp only [State.write, reduceCtorEq, ↓reduceIte, ht0]; exact hw)
-  simp only [copyArg, execBlock, isa, hl, hs, Option.map_some, addrs, List.map_cons, List.map_nil,
-    List.cons_append, List.nil_append]
+    (by simp only [State.write, reduceCtorEq, ↓reduceIte, hrd.2.2.1]; exact Spill.al8 hal (by omega))
+    (by simp only [State.write, hrd.2.2.1, hrd.2.1, reduceCtorEq, ↓reduceIte]; exact hw)
+  simp only [copyArg, execBlock, isa, ha, hl, hs, Option.map_some, addrs, List.map_cons, List.map_nil,
+    List.cons_append, List.nil_append, hsrc]
+  subst hu₁
   simp only [State.write, reduceCtorEq, ↓reduceIte, ht0, copyState]
 
 @[simp] theorem copyState_sp (bytes j : Nat) (u : State) : (copyState bytes j u).sp = u.sp := rfl
@@ -228,7 +243,7 @@ def copyTrace (bytes : Nat) (sp : Addr) (m : Nat) : List Leak :=
 
 theorem copies_run {bytes : Nat} {u : State} (ht0 : u.gpr .t0 = u.sp) (hal : u.sp.toNat % 8 = 0)
     (h8 : bytes % 8 = 0) :
-    ∀ m, bytes + 8 * m < 2048 →
+    ∀ m, bytes - argStep bytes + 8 * m < 2048 →
       (∀ j < m, InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 8) →
       (∀ j < m, InRegions u.wr (u.sp + BitVec.ofNat 64 (8 * j)) 8) →
       execBlock isa ((List.range m).flatMap (copyArg bytes)) u =
@@ -318,7 +333,7 @@ def setArgsState (bytes m : Nat) (u : State) : State :=
 address after them; nothing else written, and only `t0` and `t1` changed. -/
 theorem setArgs_run {bytes m : Nat} {u : State} (hal : u.sp.toNat % 8 = 0)
     (hfit : bytes + 8 + 8 * m < 2 ^ 64) (hb : 8 + 8 * m ≤ bytes)
-    (ho : bytes + 8 * m < 2048) (h8 : bytes % 8 = 0)
+    (ho : bytes - argStep bytes + 8 * m < 2048) (h8 : bytes % 8 = 0)
     (hr : ∀ j < m, InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 8)
     (hw : ∀ j ≤ m, InRegions u.wr (u.sp + BitVec.ofNat 64 (8 * j)) 8) :
     execBlock isa (setArgs bytes m) u = some (setArgsState bytes m u, setArgsTrace bytes u.sp m) ∧
@@ -330,6 +345,7 @@ theorem setArgs_run {bytes m : Nat} {u : State} (hal : u.sp.toNat % 8 = 0)
         u.mem.readW (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 64) ∧
       (setArgsState bytes m u).mem.readW (u.sp + BitVec.ofNat 64 (8 * m)) 64 =
         u.sp + BitVec.ofNat 64 (8 + 8 * m) := by
+  have hsa : argStep bytes = min bytes 2032 := rfl
   -- `addi t0, sp, 0`.
   let u₀ := u.write .t0 (u.sp + BitVec.ofNat 64 0)
   have h0 : execBlock isa [.addSp .t0 0] u = some (u₀, []) := by
@@ -337,13 +353,13 @@ theorem setArgs_run {bytes m : Nat} {u : State} (hal : u.sp.toNat % 8 = 0)
       addrs, List.map_nil, List.append_nil]; rfl
   have ht0 : u₀.gpr .t0 = u₀.sp := by
     simp only [u₀, State.write, ↓reduceIte, BitVec.add_zero]
-  have hc := copies_run (bytes := bytes) (u := u₀) ht0 hal h8 m (by omega_using [ho])
+  have hc := copies_run (bytes := bytes) (u := u₀) ht0 hal h8 m (by omega_using [hsa, ho])
     (fun j hj => hr j hj) (fun j hj => hw j (by omega_using [hj]))
   obtain ⟨f, hv⟩ := copiedState_mem (bytes := bytes) (u := u₀) m (by omega_using [hfit])
     (by omega_using [hb])
   have ht := tail_run (m := m) (w := copiedState bytes u₀ m)
     (by rw [copiedState_gpr _ _ (by decide), copiedState_sp]; exact ht0)
-    (by rw [copiedState_sp]; exact hal) (by omega_using [ho, hb])
+    (by rw [copiedState_sp]; exact hal) (by omega_using [hsa, ho, hb])
     (by rw [copiedState_wr, copiedState_sp]; exact hw m (Nat.le_refl _))
   have hsp₀ : u₀.sp = u.sp := rfl
   have hmem₀ : u₀.mem = u.mem := rfl
@@ -368,11 +384,11 @@ theorem setArgs_run {bytes m : Nat} {u : State} (hal : u.sp.toNat % 8 = 0)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩
     · exact Offset.contains_base _ (d := 8 * m) (k := 8 * (m + 1)) (by omega_using [])
-        (by omega_using [ho])
+        (by omega_using [hsa, ho])
   · show (w.mem.writeW _ _).readW _ 64 = _
     rw [Mem.readW_writeW_sep, hv j hj]
     · exact Offset.sep _ (d := 8 * j) (n := 8) (e := 8 * m) (k := 8)
-        (by omega_using [hj]) (by omega_using [ho, hj]) (by omega_using [ho])
+        (by omega_using [hj]) (by omega_using [hsa, ho, hj]) (by omega_using [hsa, ho])
     · decide
   · show (w.mem.writeW _ _).readW _ 64 = _
     rw [Mem.readW_writeW_self64]
@@ -403,7 +419,7 @@ def narrowA (sig : Sig) (e : Elem) (n bytes m : Nat) (s : State) : State :=
 buffer's address and the buffer; the offsets of the copies' loads fit
 `ld`'s. -/
 abbrev FitsA (m bytes : Nat) (e : Elem) (n : Nat) : Prop :=
-  8 + 8 * m + n * e.size ≤ bytes ∧ bytes + 8 * m < 2048 ∧ bytes % 16 = 0
+  8 + 8 * m + n * e.size ≤ bytes ∧ bytes - argStep bytes + 8 * m < 2048 ∧ bytes % 16 = 0
 
 theorem stackArg_withRegions (u : State) (rd wr : List Region) (j : Nat) :
     stackArg (u.withRegions rd wr) j = stackArg u j := rfl
@@ -428,6 +444,7 @@ theorem argsState_run (hk : (sig.words abi.ptrBits).length = 8 + m)
       stackArg (setArgsState bytes m u) m = u.sp + BitVec.ofNat 64 (8 + 8 * m) := by
   intro u
   obtain ⟨hb0, hb1, hb2⟩ := hb
+  have hsa : argStep bytes = min bytes 2032 := rfl
   rw [pre_stk hk hl] at hs
   obtain ⟨⟨hal, hst, hfit⟩, hrd, -, -, -, -, -⟩ := hs
   have hsb : stack + bytes ≤ s.sp.toNat := by rcases hst with h | h <;> omega_using [h, hb0]
@@ -454,9 +471,9 @@ theorem argsState_run (hk : (sig.words abi.ptrBits).length = 8 + m)
     fun j hj => ⟨_, List.mem_cons_self .., by
       show (⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ : Region).Contains _ 8
       exact Offset.contains_base _ (d := 8 * j) (n := 8) (k := bytes)
-        (by omega_using [hb0, hj]) (by omega_using [hb0, hb1, hj])⟩
+        (by omega_using [hb0, hj]) (by omega_using [hsa, hb0, hb1, hj])⟩
   obtain ⟨hrun, hrd', hwr', hsp', hg, hf, hv, hlast⟩ := setArgs_run (bytes := bytes) (m := m)
-    (u := u) hual (by omega_using [hb0, hb1]) (by omega_using [hb0]) (by omega_using [hb1])
+    (u := u) hual (by omega_using [hsa, hb0, hb1]) (by omega_using [hb0]) (by omega_using [hsa, hb1])
     (by omega_using [hb2]) (fun j hj => by rw [hsrc]; exact hargs j hj) hframe
   have hfa : u.mem = s.mem := rfl
   refine ⟨hrun, hrd', hwr', hsp', fun q h₁ h₂ => (hg q h₁ h₂).trans ?_, ?_, fun j hj => ?_, ?_⟩
@@ -542,6 +559,7 @@ theorem narrowA_pre (hk : (sig.words abi.ptrBits).length = 8 + m)
   have hk' : ((sig.withScratch nm e n).words abi.ptrBits).length = 8 + (m + 1) := by
     rw [Sig.words_withScratch, List.length_append, List.length_singleton, hk]; omega_using []
   obtain ⟨hb0, hb1, hb2⟩ := hb
+  have hsa : argStep bytes = min bytes 2032 := rfl
   rw [pre_stk hk hl] at hs
   obtain ⟨⟨hal, hst, -⟩, -, -, hpw, hres, hnw, hpr, hu64⟩ := hs
   have hsb : stack + bytes ≤ s.sp.toNat := by rcases hst with h | h <;> omega_using [h, hb0]
@@ -694,6 +712,7 @@ theorem withStackScratchArgs_run {c : Prog isa} (hk : (sig.words abi.ptrBits).le
   obtain ⟨hrun, hrd', hwr', -, -, -, -, -⟩ := argsState_run hk hl hb hs
   obtain ⟨hsp, hg, -, -⟩ := narrowA_facts hk hl hb hs
   obtain ⟨hb0, hb1, hb2⟩ := hb
+  have hsa : argStep bytes = min bytes 2032 := rfl
   rw [pre_stk hk hl] at hs
   obtain ⟨⟨-, hst, -⟩, hrd, hwr, -, -, -, -⟩ := hs
   have hsb : stack + bytes ≤ s.sp.toNat := by rcases hst with h | h <;> omega_using [h, hb0]
@@ -701,14 +720,14 @@ theorem withStackScratchArgs_run {c : Prog isa} (hk : (sig.words abi.ptrBits).le
   have hpush : isa.push (.alloc bytes) s = some (allocd bytes s) := by
     show push (.alloc bytes) s = some (allocd bytes s)
     unfold push
-    exact ite_eq_left_of_eq_true _ _ (eq_true ⟨by omega_using [hb0], by omega_using [hb1], hb2,
+    exact ite_eq_left_of_eq_true _ _ (eq_true ⟨by omega_using [hb0], by omega_using [hsa, hb2, hb1], hb2,
       by omega_using [hsb]⟩) |>.trans rfl
   -- The regions of `narrowA`: the buffers, and the frame's buffer and copies.
   have hF : ∀ {d k : Nat}, d + k ≤ bytes →
       Covers [⟨s.sp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 d, k⟩]
         (⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr) :=
     fun hk => Covers.one ⟨_, List.mem_cons_self .., by
-      exact Offset.contains_base _ hk (by omega_using [hk, hb1])⟩
+      exact Offset.contains_base _ hk (by omega_using [hk, hsa, hb2, hb1])⟩
   have hbufR : ∀ a ∈ Sig.bufs sig.params (stkArgs m s), a.2 = false → a.1 ∈ s.rd := fun a ha h => by
     rw [hrd]
     exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨List.mem_append_left _ ha, by simp [h]⟩, rfl⟩
@@ -750,7 +769,7 @@ theorem withStackScratchArgs_run {c : Prog isa} (hk : (sig.words abi.ptrBits).le
       (s₃.withRegions s.rd (⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr)) =
         some (popState bytes s s₃) := by
     simp only [isa, pop, State.withRegions, allocd, hsp₃, List.head?_cons, List.tail_cons,
-      show 0 < bytes by omega_using [hb0], show bytes ≤ 4064 by omega_using [hb1], hb2, and_self,
+      show 0 < bytes by omega_using [hb0], show bytes ≤ 4064 by omega_using [hsa, hb2, hb1], hb2, and_self,
       ite_true, BitVec.sub_add_cancel]
     rfl
   have hex := Exec.frame hpush (Exec.seq (Exec.block hrun) hw) hpop
