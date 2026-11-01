@@ -20,18 +20,6 @@ open VG.Proof.Gcm.Clmul VG.Proof.Gcm.Poly
 open VG.VectorCrypto (polyMul)
 open VG.Impl.Gcm.PPC64LE.Vpmsum (Y C U LO MID HI A T H MASK Z)
 
-def lowPair (a b : BitVec 128) : BitVec 128 := Clmul.vdword a 0 ++ Clmul.vdword b 0
-
-def highPair (a b : BitVec 128) : BitVec 128 := Clmul.vdword a 1 ++ Clmul.vdword b 1
-
-def pmPair (a b : BitVec 128) : BitVec 128 :=
-  polyMul (Clmul.vdword a 0) (Clmul.vdword b 0) ^^^ polyMul (Clmul.vdword a 1) (Clmul.vdword b 1)
-
-def pairedProd (a b ka kb : BitVec 128) : VG.Proof.Gcm.Clmul.Prod :=
-  ⟨pmPair (highPair a b) (lowPair ka kb),
-   pmPair (lowPair a b) (lowPair ka kb) ^^^ pmPair (highPair a b) (highPair ka kb),
-   pmPair (lowPair a b) (highPair ka kb)⟩
-
 theorem pairedProd_eq (a b ka kb : BitVec 128) :
     pairedProd a b ka kb =
       (VG.Proof.Gcm.Clmul.Prod.zero.acc a (ext8 ka ka) ka).acc b (ext8 kb kb) kb := by
@@ -45,27 +33,9 @@ theorem pairedProd_val (a b ka kb : BitVec 128) :
   rw [pairedProd_eq, VG.Proof.Gcm.Clmul.Prod.val_acc,
     VG.Proof.Gcm.Clmul.Prod.val_acc, VG.Proof.Gcm.Clmul.Prod.val_zero, zero_add]
 
-def addProd (p q : VG.Proof.Gcm.Clmul.Prod) : VG.Proof.Gcm.Clmul.Prod :=
-  ⟨p.lo ^^^ q.lo, p.mid ^^^ q.mid, p.hi ^^^ q.hi⟩
-
 theorem addProd_val (p q : VG.Proof.Gcm.Clmul.Prod) : (addProd p q).val = p.val + q.val := by
   simp only [addProd, VG.Proof.Gcm.Clmul.Prod.val, φ_xor]
   ring
-
-theorem half_swap_right (a b : BitVec 128) : half a (half b b) = lowPair a b := by
-  rw [half, half, vdword_append_1]
-  rfl
-
-theorem swap_half_swap_left (a b : BitVec 128) :
-    half (half (half b b) a) (half (half b b) a) = highPair a b := by
-  rw [half_self, ext8_eq, half, half, vdword_append_0, vdword_append_1, vdword_append_0]
-  rfl
-
-
-def keyValue (h : BitVec 128) : Nat → BitVec 128
-  | 0 => h
-  | n+1 => ext8 (mulV (ext8 (keyValue h n) (keyValue h n)) h)
-      (mulV (ext8 (keyValue h n) (keyValue h n)) h)
 
 theorem keyValue_class (h : BitVec 128) (n : Nat) :
     x * φ (keyValue h n) = (x * φ h)^(n+1) := by
@@ -76,26 +46,6 @@ theorem keyValue_class (h : BitVec 128) (n : Nat) :
     calc
       x * (x * φ (keyValue h n) * φ h) = (x * φ (keyValue h n)) * (x * φ h) := by ring
       _ = _ := by rw [ih]
-
-theorem packedProducts_ok (loKey hiKey : VReg) (ka kb : BitVec 128) (s : State)
-    (hl : Free loKey) (hh : Free hiKey)
-    (hlo : s.vpr loKey = lowPair ka kb) (hhi : s.vpr hiKey = highPair ka kb) :
-    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.packedProducts loKey hiKey)) s fun t =>
-      prod t = pairedProd (s.vpr A) (s.vpr HI) ka kb ∧ VOnly [HI, U, T, LO, MID] s t := by
-  obtain ⟨hl2, hl3, -, hl5, hl7⟩ := hl
-  obtain ⟨hh2, hh3, hh4, hh5, hh7⟩ := hh
-  apply WP.of_runBlock
-  simp only [Impl.Gcm.PPC64LE.Vpmsum.packedProducts, runBlock_cons, runStep_some, runBlock_nil,
-    exec_shift8, exec_pm, exec_xor, vpr_writeV, Option.some.injEq, exists_eq_left',
-    hl2, hl3, hl5, hl7, hh2, hh3, hh4, hh5, hh7, ite_true, ite_false, reduceCtorEq]
-  refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_writeV], by simp only [mem_writeV],
-    by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
-    by simp only [lr_writeV]⟩⟩
-  · simp only [prod, vpr_writeV, ite_true, ite_false, reduceCtorEq, hlo, hhi,
-      half_swap_right, swap_half_swap_left, pairedProd, pmPair]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [vpr_writeV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
-
 
 theorem swap_ok (d n : VReg) (s : State) :
     WP isa (.block [.vop (.sldoi d n n 8)]) s fun t =>
@@ -644,5 +594,36 @@ theorem recoverKey_ok (h : BitVec 128) (s : State) (hk : PackedKeys h 4 s) :
     exact (vdwords h).symm
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [vpr_writeV, hr.1, hr.2, ite_false]
+
+theorem adjustedKey_class (h : BitVec 128) : x * φ (adjustedKey h) = φ h := by
+  rw [adjustedKey, Clmul.φ_ext8_self, ρ_mulV, ρ_ext8_self]
+  calc
+    x * (x * φ h * φ xInv2) = φ h * (x^2 * φ xInv2) := by ring
+    _ = φ h := by rw [x2_φ_xInv2, mul_one]
+
+theorem foldedProducts_val (h y : BitVec 128) (f : Nat → BitVec 128) :
+    (foldedProducts h y f).val = hashField (x * φ h) (φ y) (fun j => φ (f j)) 8 := by
+  simp only [foldedProducts, show List.range 4 = [0,1,2,3] from rfl,
+    List.foldl_cons, List.foldl_nil, addProd_val, VG.Proof.Gcm.Clmul.Prod.val_zero,
+    canonicalTerm, pairedProd_val, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub,
+    Nat.reduceEqDiff, ↓reduceIte, ↓keyValue_term, ρ_ext8_self, φ_xor, hashField]
+  ring
+
+theorem hashField_list (h y : BitVec 128) (f : Nat → BitVec 128) (n : Nat) :
+    φ (Spec.Gcm.ghashFrom h y ((List.range n).map f)) =
+      hashField (φ h) (φ y) (fun j => φ (f j)) n := by
+  induction n with
+  | zero => simp only [List.range_zero, List.map_nil, Spec.Gcm.ghashFrom, List.foldl_nil, hashField]
+  | succ n ih =>
+    have he : Spec.Gcm.ghashFrom h y ((List.range (n+1)).map f) =
+        Spec.Gcm.mul (Spec.Gcm.ghashFrom h y ((List.range n).map f) ^^^ f n) h := by
+      simp only [List.range_succ, List.map_append, List.map_singleton, Spec.Gcm.ghashFrom,
+        List.foldl_append, List.foldl_cons, List.foldl_nil]
+    rw [he, φ_mul, φ_xor, ih, hashField]
+
+theorem folded_correct (h y : BitVec 128) (f : Nat → BitVec 128) :
+    canonicalFold (adjustedKey h) y f = Spec.Gcm.ghashFrom h y ((List.range 8).map f) := by
+  apply φ_inj
+  rw [canonicalFold, Clmul.φ_ext8_self, ρ_reduce, foldedProducts_val, adjustedKey_class, hashField_list]
 
 end VG.Proof.Gcm.PPC64LE.Vpmsum

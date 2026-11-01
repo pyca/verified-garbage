@@ -39,13 +39,18 @@ def setup : List Instr :=
 def load (v : VReg) (p : Reg) : List Instr :=
   Impl.Vector.PPC64LE.loadPerm v p mask
 
-def store (v : VReg) (p : Reg) : List Instr :=
-  [.vop (.perm v v v mask), .stxvd2x v p .r0]
+def storePerm (d n : VReg) (p offset : Reg) : List Instr :=
+  [.vop (.perm d n n mask), .stxvd2x d p offset]
+
+def store (v : VReg) (p : Reg) : List Instr := storePerm v v p .r0
 
 def xorKey (rs : List VReg) : List Instr := rs.map fun v => .vop (.logic .xor v v key)
 
+def cipherRegs (inverse last : Bool) (k : VReg) (rs : List VReg) : List Instr :=
+  rs.map fun v => .vop (.cipher inverse last v v k)
+
 def round (inverse last : Bool) (rs : List VReg) : List Instr :=
-  load key .r9 ++ rs.map fun v => .vop (.cipher inverse last v v key)
+  load key .r9 ++ cipherRegs inverse last key rs
 
 def keyStep (inverse : Bool) : Instr :=
   if inverse then .subi .r9 .r9 16 else .addi .r9 .r9 16
