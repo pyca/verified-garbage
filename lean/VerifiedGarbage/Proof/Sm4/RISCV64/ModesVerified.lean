@@ -103,7 +103,7 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (d : Dir) (hstep 
   refine ⟨al, sp, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp, by rw [e16]; exact fV,
     by rw [hwr, hstep]; simp, by rw [hstep]; exact fD, by rw [hstep, eS]; exact dSD.symm,
     by rw [eV, eS]; exact dSV.symm, fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega, by rw [e16]; omega⟩,
-    layout d⟩
+    Mode.layout d⟩
 
 theorem keyArgs_of {post : State → State → Prop} {M : Mode} (d : Dir) (hstep : M.step = 16)
     {s : State} (h : (modeContract post).pre s) :

@@ -21,32 +21,6 @@ pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8
     )
 }
 
-/// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
-///
-/// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `blocks` must be valid for reads of `16 * n` bytes.
-/// * `state` must not overlap `blocks` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `blocks` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkBIlYdIlweIl4fIloFInHi0cYJf///w+JR0iLRxwl/P//D4lHTInBwekCAciJR1iLRyAl/P//D4lHUInBwekCAciJR1yLRyQl/P//D4lHVInBwekCAciJR2CLdCQIi0wkDIXJ"
-je 20f
-22:
-.base64 "iwcDBokHi0cEE0YEiUcEi0cIE0YIiUcIi0cME0YMiUcMi0cQg9ABiUcQuwAAAAC9AAAAAIsHi09I9+EBwxHVi0cEi09g9+EBwxHVi0cIi09c9+EBwxHVi0cMi09Y9+EBwxHViV9kieu9AAAAAIsHi09M9+EBwxHVi0cEi09I9+EBwxHVi0cIi09g9+EBwxHVi0cMi09c9+EBwxHVi0cQi09Y9+EBwxHViV9oieu9AAAAAIsHi09Q9+EBwxHVi0cEi09M9+EBwxHVi0cIi09I9+EBwxHVi0cMi09g9+EBwxHVi0cQi09c9+EBwxHViV9sieu9AAAAAIsHi09U9+EBwxHVi0cEi09Q9+EBwxHVi0cIi09M9+EBwxHVi0cMi09I9+EBwxHVi0cQi09g9+EBwxHViV9wieu9AAAAAItHEItPSPfhAcMR1YnYwegCicEBwAHAAciD4wMDR2SJB4tHaIPQAIlHBItHbIPQAIlHCItHcIPQAIlHDIPTAIlfEIPGEItEJAwBwAHAAcABwItMJAgByDnw"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "iweDwAWJR2SLRwSD0ACJR2iLRwiD0ACJR2yLRwyD0ACJR3CLRxCD0ACJwsHoAr0AAAAAKcWLB4tPZDHBIekxyIkHi0cEi09oMcEh6THIiUcEi0cIi09sMcEh6THIiUcIi0cMi09wMcEh6THIiUcMi0cQMcIh6jHQg+ADiUcQifiLWHSLcHiLeHyLaBS5AAAAAIlIFMM="
-.p2align 6"#,
-    )
-}
-
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
@@ -135,6 +109,10 @@ jmp 21f
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_blocks.rs"]
+pub(crate) mod vg_poly1305_blocks;
 
 #[rustfmt::skip]
 #[path = "internal/vg_poly1305_finalize_scratch.rs"]

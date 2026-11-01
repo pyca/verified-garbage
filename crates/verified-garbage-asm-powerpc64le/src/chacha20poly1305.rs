@@ -56,10 +56,10 @@ bl {vg_poly1305_blocks}
 .base64 "AuFEew8AgDk4YEx/DwCMOQLhjHkUYoR8AuGFew8AgDk4YIx/DwCMOQLhjHkUYqV8FCqEfAEAhDjkJoR4AAB4OAAAvTgIAtg4"
 bl {vg_poly1305_finalize_scratch}
 .base64 "AACYOQACDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmwAiE4IACATg==""#,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
@@ -117,11 +117,11 @@ bl {vg_poly1305_finalize_scratch}
 .base64 "AQCAOXABmJFAAXg4AACbOAAAvDgAANg4"
 bl {vg_chacha20_xor}
 .base64 "wAF46AAAneh4ImN8yAGY6AgAveh4KoR8eCNjfAAAgDhQIIN8eCNjfOAPY3gBAIA4UCBjfAAAmDkAAgzopgMIfNABDOvYASzr4AFM6+gBbOvwAYzr+AGs6yAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5sAIhOCAAgE4=""#,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
     )
 }
 

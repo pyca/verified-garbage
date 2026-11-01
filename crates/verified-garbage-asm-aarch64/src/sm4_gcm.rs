@@ -3,99 +3,6 @@
 //! `assembly/sm4_gcm.s`.
 #![allow(dead_code)]
 
-/// SM4 counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks; draft-ribose-cfrg-sm4-10 §7.1): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, in place, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)` (§6.2: the rightmost 32 bits, read as a big-endian integer, incremented modulo 2³², the leftmost 96 bits unchanged), and leaves `inc₃₂ⁿ(CB₁)` in `*counter` (unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
-///
-/// Contract: `VG.Spec.Sm4.ctr32Contract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `counter` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `counter` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `counter` and `data` may overlap the 3264 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ctr32(schedule: *const [u8; 128], counter: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd13303ff,0x910003e4,0x91000085,0xf90630b3,0xf90634b4,0xf90638b5,0xf9063cb6,0xf90640b7
-.inst 0xf90644b8,0xf90648b9,0xf9064cba,0xf90650bb,0xf90654bc,0xf9400026,0xdac00cc6,0xf9400427
-.inst 0xdac00ce7,0xf90658a6,0xf9065ca7,0x0b0300ea,0xd360fce7,0xd3607ce7,0x8b0a00e7,0xdac00cc6
-.inst 0xdac00ce7,0xf9000427,0xf9000026,0x91000057,0x91000078,0x4e080fdc,0x4e080cbb,0x4e080efd
-.inst 0x4e080f1e,0xd2800001,0x910000a2,0xd2803183
-bl {vg_sm4_prepare_keys}
-.inst 0x4e083f65,0x4e083f9e,0x4e083fb7,0x4e083fd8
-cbz x24, 20f
-22:
-.inst 0xf94658a6,0xf9465ca7,0xd2800029,0xdac00cc8,0xf90180a8,0xdac00ce8,0xf90184a8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf90188a8,0xdac00ce8,0xf9018ca8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf90190a8,0xdac00ce8,0xf90194a8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf90198a8,0xdac00ce8,0xf9019ca8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901a0a8,0xdac00ce8,0xf901a4a8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901a8a8,0xdac00ce8,0xf901aca8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901b0a8,0xdac00ce8,0xf901b4a8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901b8a8,0xdac00ce8,0xf901bca8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901c0a8,0xdac00ce8,0xf901c4a8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901c8a8,0xdac00ce8,0xf901cca8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901d0a8,0xdac00ce8,0xf901d4a8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901d8a8,0xdac00ce8,0xf901dca8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901e0a8,0xdac00ce8,0xf901e4a8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901e8a8,0xdac00ce8,0xf901eca8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901f0a8,0xdac00ce8,0xf901f4a8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xdac00cc8,0xf901f8a8,0xdac00ce8,0xf901fca8,0x0b0900e8
-.inst 0xd360fce7,0xd3607ce7,0x8b0800e7,0xf90658a6,0xf9065ca7,0x4e080fdc,0x4e080cbb,0x4e080efd
-.inst 0x4e080f1e,0x910000a0,0xd2803181
-bl {vg_sm4_crypt_prepared}
-.inst 0x4e083f65,0x4e083f9e,0x4e083fb7,0x4e083fd8,0xd344ff0d
-cbnz x13, 23f
-.inst 0x91000310
-b 24f
-23:
-.inst 0xd2800210
-24:
-.inst 0x910000ae,0x910c01ce,0x910002ef,0x91000211
-25:
-.inst 0xf94001c8,0xf94001e9,0xca090108,0xf90001e8,0xf94005c8,0xf94005e9,0xca090108,0xf90005e8
-.inst 0x910041ce,0x910041ef,0xd1000631
-cbnz x17, 25b
-.inst 0x910001f7,0xcb100318
-cbnz x24, 22b
-b 21f
-20:
-21:
-.inst 0xf94630b3,0xf94634b4,0xf94638b5,0xf9463cb6,0xf94640b7,0xf94644b8,0xf94648b9,0xf9464cba
-.inst 0xf94650bb,0xf94654bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
-.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
-.inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
-.inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611
-.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611
-.inst 0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611
-.inst 0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611
-.inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
-.inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
-.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
-.inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
-.inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x911803f0,0xa9004611
-.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
-.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
-.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
-.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912003f0
-.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
-.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
-.inst 0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611
-.inst 0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611
-.inst 0x912803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
-.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
-.inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
-.inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
-.inst 0xa91f4611,0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
-.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x913303ff,0xd65f03c0
-.p2align 6",
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
-    )
-}
-
 /// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
@@ -119,7 +26,7 @@ bl {vg_sm4_ctr32}
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .p2align 6",
         vg_sm4_expand_key = sym super::sm4::vg_sm4_expand_key,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -498,7 +405,7 @@ bl {vg_sm4_ctr32}
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -901,7 +808,7 @@ b 21f
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1129,7 +1036,7 @@ b 244f
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1357,7 +1264,7 @@ b 255f
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1443,7 +1350,7 @@ bl {vg_sm4_ctr32}
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1574,7 +1481,7 @@ b 21f
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -2129,7 +2036,7 @@ bl {vg_sm4_ctr32}
 .inst 0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -2526,7 +2433,7 @@ b 21f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c43ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -2748,7 +2655,7 @@ b 244f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -2970,7 +2877,7 @@ b 255f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -3050,7 +2957,7 @@ bl {vg_sm4_ctr32}
 .inst 0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -3175,7 +3082,7 @@ b 21f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 

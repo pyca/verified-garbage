@@ -34,6 +34,6 @@ jmp 21f
 call {vg_aes_ctr32_aesni}
 .base64 "ww=="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }

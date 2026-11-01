@@ -115,7 +115,10 @@ mod tests {
             Backend::select_for(aes_ssse3, aes_ssse3, aes_ssse3),
             Backend::Vaes
         );
-        assert_eq!(Backend::select_for(aes, aes_ssse3, aes_ssse3), Backend::Scalar);
+        assert_eq!(
+            Backend::select_for(aes, aes_ssse3, aes_ssse3),
+            Backend::Scalar
+        );
         for f in [Features(0), Features(verified_garbage_cpu::feature::SSSE3)] {
             assert_eq!(Backend::select_for(f, NONE, NONE), Backend::Scalar);
         }
@@ -124,9 +127,8 @@ mod tests {
                 | verified_garbage_cpu::feature::PCLMULQDQ
                 | verified_garbage_cpu::feature::SSSE3,
         );
-        let pclmul = Features(
-            verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ,
-        );
+        let pclmul =
+            Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ);
         assert_eq!(Backend::select_for(aes_ssse3, all, pclmul), Backend::Scalar);
         assert_eq!(Backend::select_for(all, all, pclmul), Backend::Vaes);
         // VAES: everything the caller's VAES functions need (AVX2 too, for
@@ -153,7 +155,10 @@ mod tests {
                 | verified_garbage_cpu::feature::SSSE3
                 | verified_garbage_cpu::feature::VAES,
         );
-        assert_eq!(Backend::select_for(no_avx2, vaes, aes_ssse3), Backend::AesNi);
+        assert_eq!(
+            Backend::select_for(no_avx2, vaes, aes_ssse3),
+            Backend::AesNi
+        );
         assert_eq!(
             Backend::select_for(
                 Features(

@@ -3,41 +3,6 @@
 //! `assembly/sm4_gcm.s`.
 #![allow(dead_code)]
 
-/// SM4 counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks; draft-ribose-cfrg-sm4-10 §7.1): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, in place, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)` (§6.2: the rightmost 32 bits, read as a big-endian integer, incremented modulo 2³², the leftmost 96 bits unchanged), and leaves `inc₃₂ⁿ(CB₁)` in `*counter` (unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
-///
-/// Contract: `VG.Spec.Sm4.ctr32Contract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `counter` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `counter` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `counter` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1516 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ctr32(schedule: *const [u8; 128], counter: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkKPr//4uEJNwFAACJRCQEi4Qk4AUAAIlEJAiLhCTkBQAAiUQkDIuEJOgFAACJRCQQieCDwBiJRCQUi0QkFImYmAUAAImwnAUAAIm4oAUAAImopAUAAInHi3QkCIsGiYewBQAAi0YEiYe0BQAAi0YIiYe4BQAAi0YMiYe8BQAAuLMAAAC6AAAAAItMJARQV1JR"
-call {vg_sm4_prepare_keys}
-.base64 "WFhYWIt8JBSLRCQMiYeoBQAAi0QkEImHrAUAAIXA"
-je 20f
-22:
-.base64 "i7eoBQAAi6+sBQAAi4ewBQAAiYcAAQAAi4e0BQAAiYcEAQAAi4e4BQAAiYcIAQAAi4e8BQAAiYcMAQAAi7eoBQAAi6+sBQAAuLMAAABQVw=="
-call {vg_sm4_crypt_prepared}
-.base64 "WFiJt6gFAACJr6wFAACLt6gFAACLr6wFAACLBjOHAAEAAIkGi0YEM4cEAQAAiUYEi0YIM4cIAQAAiUYIi0YMM4cMAQAAiUYMi4e8BQAAD8iDwAEPyImHvAUAAIPGEIPtAYm3qAUAAImvrAUAAA=="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "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"
-.p2align 6"#,
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared,
-    )
-}
-
 /// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
@@ -60,7 +25,7 @@ call {vg_sm4_ctr32}
 .base64 "WFhYWIudgAAAAIu1hAAAAIu9iAAAAIutjAAAAI2kJBAKAADD"
 .p2align 6"#,
         vg_sm4_expand_key = sym super::sm4::vg_sm4_expand_key,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -359,7 +324,7 @@ jmp 213f
 213:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -495,7 +460,7 @@ jmp 222f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -545,7 +510,7 @@ call {vg_sm4_ctr32}
 .base64 "WFhYWItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkJAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -621,7 +586,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -875,7 +840,7 @@ call {vg_sm4_ctr32}
 .base64 "WFhYWItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1160,7 +1125,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1447,7 +1412,7 @@ jmp 213f
 213:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -1579,7 +1544,7 @@ jmp 222f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1625,7 +1590,7 @@ call {vg_sm4_ctr32}
 .base64 "WFhYWItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkJAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1697,7 +1662,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -1947,7 +1912,7 @@ call {vg_sm4_ctr32}
 .base64 "WFhYWItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
@@ -2228,6 +2193,6 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4_gcm::vg_sm4_ctr32,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }

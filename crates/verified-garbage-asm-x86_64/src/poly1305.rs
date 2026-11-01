@@ -21,151 +21,6 @@ pub unsafe extern "sysv64" fn vg_poly1305_init(state: *mut [u64; 16], key: *cons
     )
 }
 
-/// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
-///
-/// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `blocks` must be valid for reads of `16 * n` bytes.
-/// * `state` must not overlap `blocks` (distinct Rust objects never do).
-/// * Neither `state` nor `blocks` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SIlfSEiJb1BMiWdYTIlvYEyJd2hMiX9wSInRSLj///8P/P//D0yLRxhJIcBIuPz//w/8//8PTItPIEkhwU2JyknB6gJNAcpMix9Ii18ISItvEEiFyQ=="
-je 20f
-22:
-.base64 "TAMeSBNeCEiD1QFMidhJ9+FJicZJiddMidhJ9+BJicNJidVIidhJ9+BJAcZJEddIidhJ9+JJAcNJEdVIietJD6/aSQHeSYPXAEyJ60kPr+hMAfNJEe9MifhIg+D8TIn9SIPlA0nB7wJMAfhJAcNIg9MASIPVAEiDxhBIg+kB"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TInYSIPABUiJ2kiD0gBJiexJg9QATYnlScHtAkG+AAAAAE0p7kmD5ANMMdhMIfBJMcNIMdpMIfJIMdNJMexNIfRMMeVMiR9IiV8ISIlvEEiLX0hIi29QTItnWEyLb2BMi3doTIt/cMM="
-.p2align 6"#,
-    )
-}
-
-/// The CPU features `vg_poly1305_blocks_avx2` requires (`Artifact.features`).
-pub const VG_POLY1305_BLOCKS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
-///
-/// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `blocks` must be valid for reads of `16 * n` bytes.
-/// * `state` must not overlap `blocks` (distinct Rust objects never do).
-/// * Neither `state` nor `blocks` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_blocks_avx2(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SIP6IA=="
-jb 20f
-.base64 "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"
-22:
-.base64 "xf5vPsV+b0YgxMFFbOjEwUVt8MTj/QDt2MTj/QD22MW1c9Yoxb1z9hjEwT1z0CbFxXP2MsXFc9cmxa1z1TTFrev/xc1z9QzFzXPWJsXVc/UmxdVz1SbEQflu0cRCfVnSxEE168rF/dTFxfXUzsXt1NfFvdTbxbXU5MWF9OnFDfTSxa3U7cUV9NPFrdTtxR301MWt1O3FrXP1AsWt1O3FJfTQxa3U7cWF9PLFDfTTxa3U9sUV9NTFrdT2xa1z9gLFrdT2xR300MWt1PbFJfTRxa3U9sWF9PvFDfTUxa3U/8Wtc/cCxa3U/8UV9NDFrdT/xR300cWt1P/FJfTSxa3U/8UF9MTEwS1z8ALEQT3UwsUN9NDEQT3UwsUV9NHEQT3UwsUd9NLEQT3UwsUl9NPEQT3UwsUF9MjFDfTRxEE11MrFFfTSxEE11MrFHfTTxEE11MrFJfTUxEE11MrEwflu4MTifVnkxa1z1RrF1dvExa3U9sWtc9Yaxc3bzMWt1P/FrXPXGsXF29TEQT3UwsTBLXPQGsW929zEQTXUysTBLXPRGsX9b+zFtdvkxMFNc/ICxS3U1sWt1MDFrXPQGsX928XFrdTJSIPGQEiD6QE="
-jne 22b
-.base64 "uAUAAABBuv///wfF/m8+xX5vRiDEwUVs6MTBRW3wxOP9AO3YxOP9APbYxbVz1ijFvXP2GMTBPXPQJsXFc/YyxcVz1ybFrXPVNMWt6//FzXP1DMXNc9YmxdVz9SbF1XPVJsRB+W7RxEJ9WdLEQTXrysX91MXF9dTOxe3U18W91NvFtdTkxMElc9MgxMEdc9QgxMEVc9UgxMENc9YgxMEFc9cgxYX06cUN9NLFrdTtxRX008Wt1O3FHfTUxa3U7cWtc/UCxa3U7cUl9NDFrdTtxYX08sUN9NPFrdT2xRX01MWt1PbFrXP2AsWt1PbFHfTQxa3U9sUl9NHFrdT2xYX0+8UN9NTFrdT/xa1z9wLFrdT/xRX00MWt1P/FHfTRxa3U/8Ul9NLFrdT/xQX0xMTBLXPwAsRBPdTCxQ300MRBPdTCxRX00cRBPdTCxR300sRBPdTCxSX008RBPdTCxQX0yMUN9NHEQTXUysUV9NLEQTXUysUd9NPEQTXUysUl9NTEQTXUysTB+W7gxOJ9WeTFrXPVGsXV28TFrdT2xa1z1hrFzdvMxa3U/8Wtc9caxcXb1MRBPdTCxMEtc9Aaxb3b3MRBNdTKxMEtc9Eaxf1v7MW12+TEwU1z8gLFLdTWxa3UwMWtc9Aaxf3bxcWt1MnEY/0A0E7FrdToxVVt1cWt1O3EY/0A0U7FrdTxxU1t1sWt1PbEY/0A0k7FrdT6xUVt18Wt1P/EY/0A007FLdTDxEE9bdDEQT3UwsRj/QDUTsUt1MzEQTVt0cRBNdTKxMH5buDE4n1Z5MWtc9UaxdXbxMWt1PbFrXPWGsXN28zFrdT/xa1z1xrFxdvUxEE91MLEwS1z0BrFvdvcxEE11MrEwS1z0RrF/W/sxbXb5MTBTXPyAsUt1NbFrdTAxa1z0BrF/dvFxa3UycTB+W7oxOJ9We3FrXPRGsX1283FrdTSxa1z0hrF7dvVxa3U28Wtc9MaxeXb3cWt1OTEYflu0MRCfVnSxS3U2MTBLXPTGsUl293FLdThxMEtc9QaxR3b5cUt1OrEwS1z1RrFFdvtxS3U88TBLXPWGsUN2/XFLdT8xMEtc9caxQXb/cTB+W7yxOJ9WfbFLfTWxEEl29rFrd/AxaXrwMRBHdvixa3fycWd68nEQRXb6sWt39LFlevSxEEN2/LFrd/bxY3r28RBBdv6xa3f5MWF6+QPrugPrld4xc1z8RrFxXPyNMXN6/DFzev3xcVz0gzFvXPzDsW96//FvXP0KMW96//FvXPUGMVNbNfFen8XxEFFbNDFen9XCMX4d0iDxkBIg+IDSIXS"
-je 23f
-call {vg_poly1305_blocks}
-jmp 24f
-23:
-24:
-jmp 21f
-20:
-call {vg_poly1305_blocks}
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
-    )
-}
-
-/// The CPU features `vg_poly1305_blocks_avx512` requires (`Artifact.features`).
-pub const VG_POLY1305_BLOCKS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2);
-
-/// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
-///
-/// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `blocks` must be valid for reads of `16 * n` bytes.
-/// * `state` must not overlap `blocks` (distinct Rust objects never do).
-/// * Neither `state` nor `blocks` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_blocks_avx512(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SIP6KA=="
-jb 20f
-.base64 "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"
-22:
-.base64 "YvF+SG8+YnF+SG9GAWLRxUhs6GLRxUht8GLxtUhz1ihi8b1Ic/YYYtG9SHPQJmLxxUhz9jJi8cVIc9cmYvGtSHPVNGLRxUjr+mLxzUhz9Qxi8c1Ic9YmYvHVSHP1JmLx1Uhz1SZicbVY608OYvH9SNTFYvH1SNTOYvHtSNTXYtHlSNTYYtHdSNThYvH9WPRvB2Jx9Vj0Vwti0dVI1Opice1Y9JdUAAAAYtHVSNTqYnHlWPRXCmLR1UjU6mJx3Vj0l0wAAABi0dVI1Opi8f1Y9Lc8AAAAYnH1WPRXB2LRzUjU8mJx7Vj0Vwti0c1I1PJiceVY9JdUAAAAYtHNSNTyYnHdWPRXCmLRzUjU8mLx/Vj0fwhicfVY9Jc8AAAAYtHFSNT6YnHtWPRXB2LRxUjU+mJx5Vj0Vwti0cVI1Ppicd1Y9JdUAAAAYtHFSNT6YnH9WPSHRAAAAGJx9Vj0VwhiUb1I1MJice1Y9Jc8AAAAYlG9SNTCYnHlWPRXB2JRvUjUwmJx3Vj0VwtiUb1I1MJicf1Y9E8JYnH1WPSXRAAAAGJRtUjUymJx7Vj0VwhiUbVI1MpiceVY9Jc8AAAAYlG1SNTKYnHdWPRXB2JRtUjUymLxrUhz1Rpi8dVY20cNYtHNSNTyYvGtSHPWGmLxzVjbTw1i0cVI1Ppi8a1Ic9caYvHFWNtXDWJRvUjUwmLRrUhz0Bpi8b1Y218NYlG1SNTKYtGtSHPRGmLxtVjbZw1i0c1Ic/ICYnGtSNTWYtH9SNTCYvGtSHPQGmLx/VjbRw1i0fVI1MpIgcaAAAAASIPpAQ=="
-jne 22b
-.base64 "uAUAAABBuv///wdi8X5Ibz5icX5Ib0YBYtHFSGzoYtHFSG3wYvG1SHPWKGLxvUhz9hhi0b1Ic9AmYvHFSHP2MmLxxUhz1yZi8a1Ic9U0YtHFSOv6YvHNSHP1DGLxzUhz1iZi8dVIc/UmYvHVSHPVJsRB+W7RYlL9SFnSYlG1SOvKYvH9SNTFYvH1SNTOYvHtSNTXYtHlSNTYYtHdSNThYtGlSHPTIGLRnUhz1CBi0ZVIc9UgYtGNSHPWIGLRhUhz1yBi0fVI9O9iUe1I9NZi0dVI1OpiUeVI9NVi0dVI1OpiUd1I9NRi0dVI1Opi8a1Ic/UCYtHVSNTqYlH9SPTTYtHVSNTqYtHtSPT3YlHlSPTWYtHNSNTyYlHdSPTVYtHNSNTyYvGtSHP2AmLRzUjU8mJR/Uj01GLRzUjU8mJR9Uj002LRzUjU8mLR5Uj0/2JR3Uj01mLRxUjU+mLxrUhz9wJi0cVI1PpiUf1I9NVi0cVI1PpiUfVI9NRi0cVI1PpiUe1I9NNi0cVI1PpiUd1I9Mdi0a1Ic/ACYlG9SNTCYlH9SPTWYlG9SNTCYlH1SPTVYlG9SNTCYlHtSPTUYlG9SNTCYlHlSPTTYlG9SNTCYlH9SPTPYlH1SPTWYlG1SNTKYlHtSPTVYlG1SNTKYlHlSPTUYlG1SNTKYlHdSPTTYlG1SNTKxMH5buBi8v1IWeRi8a1Ic9UaYvHVSNvEYtHNSNTyYvGtSHPWGmLxzUjbzGLRxUjU+mLxrUhz1xpi8cVI29RiUb1I1MJi0a1Ic9AaYvG9SNvcYlG1SNTKYtGtSHPRGmLx/Uhv7GLxtUjb5GLRzUhz8gJica1I1NZi0f1I1MJi8a1Ic9AaYvH9SNvFYtH1SNTKYnN9SEPQ7mLR/UjU6mJzVUhD1QFi0dVI1OpicdVIbdVi0dVI1Opic3VIQ9HuYtH1SNTyYnNNSEPWAWLRzUjU8mJxzUht1mLRzUjU8mJzbUhD0u5i0e1I1Ppic0VIQ9cBYtHFSNT6YnHFSG3XYtHFSNT6YnNlSEPT7mJR5UjUwmJTPUhD0AFiUb1I1MJiUb1IbdBiUb1I1MJic11IQ9TuYlHdSNTKYlM1SEPRAWJRtUjUymJRtUht0WJRtUjUysTB+W7gYvL9SFnkYvGtSHPVGmLx1UjbxGLRzUjU8mLxrUhz1hpi8c1I28xi0cVI1Ppi8a1Ic9caYvHFSNvUYlG9SNTCYtGtSHPQGmLxvUjb3GJRtUjUymLRrUhz0Rpi8f1Ib+xi8bVI2+Ri0c1Ic/ICYnGtSNTWYtH9SNTCYvGtSHPQGmLx/UjbxWLR9UjUysTB+W7oxOJ9We3FrXPRGsX1283FrdTSxa1z0hrF7dvVxa3U28Wtc9MaxeXb3cWt1OTEYflu0MRCfVnSxS3U2MTBLXPTGsUl293FLdThxMEtc9QaxR3b5cUt1OrEwS1z1RrFFdvtxS3U88TBLXPWGsUN2/XFLdT8xMEtc9caxQXb/cTB+W7yxOJ9WfbFLfTWxEEl29rFrd/AxaXrwMRBHdvixa3fycWd68nEQRXb6sWt39LFlevSxEEN2/LFrd/bxY3r28RBBdv6xa3f5MWF6+QPrugPrld4xc1z8RrFxXPyNMXN6/DFzev3xcVz0gzFvXPzDsW96//FvXP0KMW96//FvXPUGMVNbNfFen8XxEFFbNDFen9XCMX4d0iBxoAAAABIg+IHSIXS"
-je 23f
-call {vg_poly1305_blocks}
-jmp 24f
-23:
-24:
-jmp 21f
-20:
-call {vg_poly1305_blocks_avx2}
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
-        vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2,
-    )
-}
-
-/// The CPU features `vg_poly1305_blocks_ifma` requires (`Artifact.features`).
-pub const VG_POLY1305_BLOCKS_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA);
-
-/// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
-///
-/// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `blocks` must be valid for reads of `16 * n` bytes.
-/// * `state` must not overlap `blocks` (distinct Rust objects never do).
-/// * Neither `state` nor `blocks` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_blocks_ifma(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SIP6IA=="
-jb 20f
-.base64 "D65feItHeCX//wAAiUd4uL8fAACJR3wPrld8D67oSLj///8P/P//D0yLVxhJIcJIuPz//w/8//8PTItfIEkhw0m4//////8PAABMiUdoSLgAAAAAAAEAAEiJR3BMidBMIcBMidlIweEUTYnRScHpLEwJyUwhwU2J2UnB6RjE4flu2GLy/UhZ28Th+W7hYvL9SFnkxMH5buli8v1IWe1i8c1Ic/QEYvGNSHP0AmLRzUjU9mLxxUhz9QRi8Y1Ic/UCYtHFSNT+YvH9SG/DYvH9SG/MYvH9SG/VYlE9SO/AYlElSO/bYlE1SO/JYlEdSO/kYlEtSO/SYlEVSO/tYnL9SLTDYnL9SLXbYnL9SLTMYnL9SLXkYnL9SLTVYnL9SLXtYnL1SLTHYnL1SLXfYnL1SLTLYnL1SLXjYnL1SLTUYnL1SLXsYnLtSLTGYnLtSLXeYnLtSLTPYnLtSLXnYnLtSLTTYnLtSLXrYtGNSHPzCGJRtUjUzmLRjUhz9AhiUa1I1NZi0Y1Ic/UMYlG9SNTGYtGNSHP1CmJRvUjUxmLRjUhz0Cxi8b1Y20cNYlG1SNTOYtGNSHPRLGLxtVjbTw1iUa1I1NZi0Y1Ic9IsYvGtWNtXDWLRhUhz9gRi0f1I1Mdi0YVIc/YCYtH9SNTHYvGNSHPQLGLx/VjbRw1i0fVI1M5mSA9+wEiJRzhmSA9+yEiJR0BmSA9+0EiJR0hi8f1Ib9hi8f1Ib+Fi8f1Ib+pi8c1Ic/QEYvGNSHP0AmLRzUjU9mLxxUhz9QRi8Y1Ic/UCYtHFSNT+YlE9SO/AYlElSO/bYlE1SO/JYlEdSO/kYlEtSO/SYlEVSO/tYnL9SLTDYnL9SLXbYnL9SLTMYnL9SLXkYnL9SLTVYnL9SLXtYnL1SLTHYnL1SLXfYnL1SLTLYnL1SLXjYnL1SLTUYnL1SLXsYnLtSLTGYnLtSLXeYnLtSLTPYnLtSLXnYnLtSLTTYnLtSLXrYtGNSHPzCGJRtUjUzmLRjUhz9AhiUa1I1NZi0Y1Ic/UMYlG9SNTGYtGNSHP1CmJRvUjUxmLRjUhz0Cxi8b1Y20cNYlG1SNTOYtGNSHPRLGLxtVjbTw1iUa1I1NZi0Y1Ic9IsYvGtWNtXDWLRhUhz9gRi0f1I1Mdi0YVIc/YCYtH9SNTHYvGNSHPQLGLx/VjbRw1i0fVI1M5mSA9+wEiJR1BmSA9+yEiJR1hmSA9+0EiJR2Bi8f1Ib9hi8f1Ib+Fi8f1Ib+pi8c1Ic/QEYvGNSHP0AmLRzUjU9mLxxUhz9QRi8Y1Ic/UCYtHFSNT+YlE9SO/AYlElSO/bYlE1SO/JYlEdSO/kYlEtSO/SYlEVSO/tYnL9SLTDYnL9SLXbYnL9SLTMYnL9SLXkYnL9SLTVYnL9SLXtYnL1SLTHYnL1SLXfYnL1SLTLYnL1SLXjYnL1SLTUYnL1SLXsYnLtSLTGYnLtSLXeYnLtSLTPYnLtSLXnYnLtSLTTYnLtSLXrYtGNSHPzCGJRtUjUzmLRjUhz9AhiUa1I1NZi0Y1Ic/UMYlG9SNTGYtGNSHP1CmJRvUjUxmLRjUhz0Cxi8b1Y20cNYlG1SNTOYtGNSHPRLGLxtVjbTw1iUa1I1NZi0Y1Ic9IsYvGtWNtXDWLRhUhz9gRi0f1I1Mdi0YVIc/YCYtH9SNTHYvGNSHPQLGLx/VjbRw1i0fVI1M5i8f1Ib9hi8f1Ib+Fi8f1Ib+pi8c1Ic/QEYvGNSHP0AmLRzUjU9mLxxUhz9QRi8Y1Ic/UCYtHFSNT+TItPEEnB4ShIi08ISMHpGEkJyUiLTwhIweEUSIsHSMHoLEgJwUwhwUiLB0whwMTh+W7AxOH5bsnEwflu0UiJ0UjB6QNIg+kB"
-22:
-.base64 "YnF+SG82YnF+SG9+AWJRjUhsx2JRjUhtz2JxvVjbdw1i0f1I1MZi0Y1Ic9AsYtGFSHPxFGJRjUjr92JxjVjbdw1i0fVI1M5i0Y1Ic9EYYnGNWOt3DmLR7UjU1mJRPUjvwGJRJUjv22JRNUjvyWJRHUjv5GJRLUjv0mJRFUjv7WJy/Ui0w2Jy/Ui122Jy/Ui0zGJy/Ui15GJy/Ui01WJy/Ui17WJy9Ui0x2Jy9Ui132Jy9Ui0y2Jy9Ui142Jy9Ui01GJy9Ui17GJy7Ui0xmJy7Ui13mJy7Ui0z2Jy7Ui152Jy7Ui002Jy7Ui162LRjUhz8whiUbVI1M5i0Y1Ic/QIYlGtSNTWYtGNSHP1DGJRvUjUxmLRjUhz9QpiUb1I1MZi0Y1Ic9AsYvG9WNtHDWJRtUjUzmLRjUhz0Sxi8bVY208NYlGtSNTWYtGNSHPSLGLxrVjbVw1i0YVIc/YEYtH9SNTHYtGFSHP2AmLR/UjUx2LxjUhz0Cxi8f1Y20cNYtH1SNTOSIHGgAAAAEiD6QE="
-jne 22b
-.base64 "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"
-je 23f
-call {vg_poly1305_blocks}
-jmp 24f
-23:
-24:
-jmp 21f
-20:
-call {vg_poly1305_blocks_avx2}
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
-        vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2,
-    )
-}
-
 /// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
 ///
 /// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
@@ -254,7 +109,7 @@ jmp 212f
 212:
 .base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
 .p2align 6"#,
-        vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2,
+        vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2::vg_poly1305_blocks_avx2,
     )
 }
 
@@ -317,7 +172,7 @@ jmp 212f
 212:
 .base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
 .p2align 6"#,
-        vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512,
+        vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512::vg_poly1305_blocks_avx512,
     )
 }
 
@@ -380,7 +235,7 @@ jmp 212f
 212:
 .base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
 .p2align 6"#,
-        vg_poly1305_blocks_ifma = sym super::poly1305::vg_poly1305_blocks_ifma,
+        vg_poly1305_blocks_ifma = sym super::poly1305::vg_poly1305_blocks_ifma::vg_poly1305_blocks_ifma,
     )
 }
 
@@ -439,9 +294,25 @@ jmp 212f
 212:
 .base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
 .p2align 6"#,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_blocks.rs"]
+pub(crate) mod vg_poly1305_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_blocks_avx2.rs"]
+pub(crate) mod vg_poly1305_blocks_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_blocks_avx512.rs"]
+pub(crate) mod vg_poly1305_blocks_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_blocks_ifma.rs"]
+pub(crate) mod vg_poly1305_blocks_ifma;
 
 #[rustfmt::skip]
 #[path = "internal/vg_poly1305_finalize_scratch.rs"]

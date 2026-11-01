@@ -157,8 +157,8 @@ jmp 232f
 232:
 .base64 "i0UAi00Ei1UIi10Mi72sAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCwAAww=="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -326,8 +326,8 @@ jmp 235f
 235:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAsAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -486,8 +486,8 @@ jmp 232f
 232:
 .base64 "i0UAi00Ei1UIi10Mi72sAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCwAAww=="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -655,8 +655,8 @@ jmp 235f
 235:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAsAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -815,8 +815,8 @@ jmp 232f
 232:
 .base64 "i0UAi00Ei1UIi10Mi72sAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCwAAww=="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -984,8 +984,8 @@ jmp 235f
 235:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAsAAMM="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -1140,8 +1140,8 @@ jmp 232f
 232:
 .base64 "i0UAi00Ei1UIi10Mi72sAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCwAAww=="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -1305,8 +1305,8 @@ jmp 235f
 235:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAsAAMM="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }

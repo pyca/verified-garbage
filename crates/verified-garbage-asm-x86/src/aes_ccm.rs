@@ -132,7 +132,7 @@ jne 225b
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -277,7 +277,7 @@ jmp 228f
 228:
 .base64 "i4WwAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
     )
 }
@@ -407,7 +407,7 @@ jne 225b
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -548,7 +548,7 @@ jmp 228f
 228:
 .base64 "i4WwAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }

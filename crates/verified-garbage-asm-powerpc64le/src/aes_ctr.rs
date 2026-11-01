@@ -37,6 +37,6 @@ b 21f
 20:
 21:
 .base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }

@@ -22,8 +22,8 @@ bl {vg_aes_expand_key_scratch}
 .base64 "AAAAOPAAHfj4AB34YAAf+GgAH/h466N/eOOEf2AAvzjwAN04AQDgOAACHzk="
 bl {vg_aes_ctr32}
 .base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OsgCiE4IACATg==""#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 

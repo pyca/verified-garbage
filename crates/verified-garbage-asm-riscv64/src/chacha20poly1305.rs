@@ -311,10 +311,10 @@ call {vg_poly1305_finalize}
 .insn 4, 0x27010113
 .insn 2, 0x8082
 .option pop",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_update = sym super::poly1305::vg_poly1305_update,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
     )
 }
@@ -695,11 +695,11 @@ call {vg_chacha20_xor}
 .insn 4, 0x27010113
 .insn 2, 0x8082
 .option pop",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_update = sym super::poly1305::vg_poly1305_update,
         vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
     )
 }
 

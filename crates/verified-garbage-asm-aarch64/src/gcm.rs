@@ -308,8 +308,8 @@ bl {vg_aes_ctr32_aes}
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
@@ -889,7 +889,7 @@ bl {vg_aes_ctr32_aes}
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
 }
@@ -1545,7 +1545,7 @@ b 2131f
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
 }
@@ -1957,7 +1957,7 @@ b 244f
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
@@ -2186,7 +2186,7 @@ b 255f
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
@@ -2274,7 +2274,7 @@ bl {vg_aes_ctr32_aes}
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
@@ -2407,7 +2407,7 @@ b 21f
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
@@ -3068,7 +3068,7 @@ bl {vg_aes_ctr32_aes}
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
@@ -3729,7 +3729,7 @@ b 2131f
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
@@ -5534,7 +5534,7 @@ bl {vg_aes_ctr32_aes}
 .arch_extension nosha3
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
@@ -7204,7 +7204,7 @@ b 2378f
 .arch_extension nosha3
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
@@ -7234,8 +7234,8 @@ bl {vg_aes_ctr32}
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -7611,7 +7611,7 @@ bl {vg_aes_ctr32}
 .inst 0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -8011,7 +8011,7 @@ b 21f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -8404,7 +8404,7 @@ b 244f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -8627,7 +8627,7 @@ b 255f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -8709,7 +8709,7 @@ bl {vg_aes_ctr32}
 .inst 0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -8836,7 +8836,7 @@ b 21f
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 

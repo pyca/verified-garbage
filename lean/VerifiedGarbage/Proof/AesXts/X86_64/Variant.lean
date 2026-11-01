@@ -21,10 +21,10 @@ address and stack below it no buffer overlaps), never writes the stack
 pointer, and makes at most one level of calls.
 
 There are two kinds: the functions calling an implementation of the block
-functions (`XtsImpl.blocks`, e.g. `vg_aes_xts_encrypt_aesni`, emitted by
-`Generic/AesBlocks/X86_64/AesXts.lean`), and the one-pass functions, which
-call nothing (`XtsImpl.vaesVpclmul`, `XtsImpl.aesniPclmul`, emitted by
-`Artifacts/AesXts/X86_64.lean`).
+functions (`XtsImpl.blocks`, e.g. `vg_aes_xts_encrypt_aesni`), and the one-pass
+functions, which call nothing (`XtsImpl.vaesVpclmul`, `XtsImpl.aesniPclmul`).
+All are internal functions, emitted from the code of the data-unit
+functions that call them.
 -/
 
 @[expose] public section

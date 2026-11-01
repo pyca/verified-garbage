@@ -22,40 +22,6 @@ pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8
     )
 }
 
-/// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
-///
-/// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `blocks` must be valid for reads of `16 * n` bytes.
-/// * `state` must not overlap `blocks` (distinct Rust objects never do).
-/// * Neither `state` nor `blocks` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd29ffff0,0xf2a1fff0,0xf2dfff90,0xf2e1fff0,0xf9400c07,0x8a1000e7,0xd29fff90,0xf2a1fff0
-.inst 0xf2dfff90,0xf2e1fff0,0xf9401008,0x8a100108,0xd342fd11,0x8b080231,0xf9400004,0xf9400405
-.inst 0xf9400806
-cbz x2, 20f
-22:
-.inst 0xf940002d,0xf940042e,0xd280002f,0xab0d0084,0xba0e00a5,0x9a0f00c6,0x9b077c89,0x9bc77c8a
-.inst 0x9b117cad,0x9bd17cae,0xab0d0129,0x9a0e014a,0x9b087c8b,0x9bc87c8c,0x9b077cad,0x9bc77cae
-.inst 0xab0d016b,0x9a0e018c,0x9b117ccd,0xd280000e,0xab0d016b,0x9a0e018c,0x9b077ccd,0xab0a016b
-.inst 0x9a0d018c,0x91000124,0x91000165,0xd280006e,0x8aee018d,0x8a0e0186,0xd342fd8c,0x8b0c01ad
-.inst 0xd280000e,0xab0d0084,0xba0e00a5,0x9a0e00c6,0x91004021,0xd1000442
-cbnz x2, 22b
-b 21f
-20:
-21:
-.inst 0xd28000ad,0xd280000e,0xab0d0089,0xba0e00aa,0x9a0e00cb,0xd342fd6c,0xd280000e,0xcb0c01cc
-.inst 0xd280006e,0x8a0e016b,0xca04012d,0x8a0c01ad,0xca0d0084,0xca05014d,0x8a0c01ad,0xca0d00a5
-.inst 0xca06016d,0x8a0c01ad,0xca0d00c6,0xf9000004,0xf9000405,0xf9000806,0xd65f03c0
-.p2align 6",
-    )
-}
-
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
@@ -319,6 +285,10 @@ b 21f
 .p2align 6",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_blocks.rs"]
+pub(crate) mod vg_poly1305_blocks;
 
 #[rustfmt::skip]
 #[path = "internal/vg_poly1305_finalize_scratch.rs"]
