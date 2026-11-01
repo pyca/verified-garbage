@@ -11,7 +11,8 @@
     target_arch = "x86",
     target_arch = "arm",
     target_arch = "aarch64",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::ec_p256::vg_ec_p256_public_key;

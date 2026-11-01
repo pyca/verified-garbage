@@ -1,5 +1,5 @@
-//! ECDSA over P-256 with SHA-256 and with SHA-384, and P-256 public keys,
-//! beside OpenSSL and aws-lc-rs (which signs over P-256 only with SHA-256).
+//! ECDSA over P-256 with SHA-256 and with SHA-384, beside OpenSSL and
+//! aws-lc-rs (which signs over P-256 only with SHA-256).
 
 use criterion::Criterion;
 
@@ -26,22 +26,12 @@ pub const USES: &[&str] = &[
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub fn bench(c: &mut Criterion) {
-    use std::hint::black_box;
-
-    use aws_lc_rs::agreement::{ECDH_P256, PrivateKey};
     use aws_lc_rs::signature::{
         ECDSA_P256_SHA256_ASN1, ECDSA_P256_SHA256_FIXED_SIGNING, ECDSA_P256_SHA384_ASN1,
     };
-    use criterion::BenchmarkId;
-    use openssl::bn::{BigNum, BigNumContext};
-    use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
-    use openssl::nid::Nid;
-    use verified_garbage::ecdsa::{P256, SigningKey};
     use verified_garbage::hashes::sha256::Sha256;
     use verified_garbage::hashes::sha384::Sha384;
-
-    use crate::{AWS_LC, OPENSSL, VG};
 
     let d = [0x42; 32];
     hash::<Sha256>(
@@ -60,47 +50,6 @@ pub fn bench(c: &mut Criterion) {
         &ECDSA_P256_SHA384_ASN1,
         &d,
     );
-
-    // The public key of a private key, uncompressed: in OpenSSL, `[d]G` and
-    // its encoding. The ids' size is the bytes of the public key.
-    let group = EcGroup::from_curve_name(Nid::X9_62_PRIME256V1).unwrap();
-    let mut ctx = BigNumContext::new().unwrap();
-    let mut g = c.benchmark_group("ec_p256_public_key");
-    g.bench_function(BenchmarkId::new(VG, 65), |b| {
-        b.iter(|| {
-            SigningKey::<P256>::from_bytes(black_box(&d))
-                .public_key()
-                .unwrap()
-        })
-    });
-    g.bench_function(BenchmarkId::new(OPENSSL, 65), |b| {
-        b.iter(|| {
-            let d = BigNum::from_slice(black_box(&d)).unwrap();
-            let mut q = EcPoint::new(&group).unwrap();
-            q.mul_generator2(&group, &d, &mut ctx).unwrap();
-            q.to_bytes(&group, PointConversionForm::UNCOMPRESSED, &mut ctx)
-                .unwrap()
-        })
-    });
-    // aws-lc-rs computes the public key of a bare private key only for ECDH
-    // (`agreement::PrivateKey`), when it constructs one.
-    assert_eq!(
-        PrivateKey::from_private_key(&ECDH_P256, &d)
-            .unwrap()
-            .compute_public_key()
-            .unwrap()
-            .as_ref(),
-        SigningKey::<P256>::from_bytes(&d).public_key().unwrap()
-    );
-    g.bench_function(BenchmarkId::new(AWS_LC, 65), |b| {
-        b.iter(|| {
-            PrivateKey::from_private_key(&ECDH_P256, black_box(&d))
-                .unwrap()
-                .compute_public_key()
-                .unwrap()
-        })
-    });
-    g.finish();
 }
 
 /// Signing and verifying with the hash function `H`, named `name`, which

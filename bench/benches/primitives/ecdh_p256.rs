@@ -1,4 +1,4 @@
-//! ECDH over P-256 beside OpenSSL and aws-lc-rs.
+//! ECDH over P-256, and P-256 public keys, beside OpenSSL and aws-lc-rs.
 
 use criterion::Criterion;
 
@@ -9,7 +9,8 @@ pub const USES: &[&str] = &["ecdh_p256", "ec_p256", "ec_p256_validate"];
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
@@ -19,7 +20,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::derive::Deriver;
-    use openssl::ec::{EcGroup, EcKey, EcPoint};
+    use openssl::ec::{EcGroup, EcKey, EcPoint, PointConversionForm};
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use verified_garbage::ecdh::{P256, PrivateKey};
@@ -80,6 +81,45 @@ pub fn bench(c: &mut Criterion) {
     });
     g.finish();
 
+    // The public key of a private key, uncompressed: in OpenSSL, `[d]G` and
+    // its encoding. The ids' size is the bytes of the public key.
+    let mut g = c.benchmark_group("ec_p256_public_key");
+    g.bench_function(BenchmarkId::new(VG, 65), |b| {
+        b.iter(|| {
+            PrivateKey::<P256>::from_bytes(black_box(&d))
+                .public_key()
+                .unwrap()
+        })
+    });
+    g.bench_function(BenchmarkId::new(OPENSSL, 65), |b| {
+        b.iter(|| {
+            let d = BigNum::from_slice(black_box(&d)).unwrap();
+            let mut q = EcPoint::new(&group).unwrap();
+            q.mul_generator2(&group, &d, &mut ctx).unwrap();
+            q.to_bytes(&group, PointConversionForm::UNCOMPRESSED, &mut ctx)
+                .unwrap()
+        })
+    });
+    // aws-lc-rs computes the public key of a bare private key only for ECDH
+    // (`agreement::PrivateKey`), when it constructs one.
+    assert_eq!(
+        agreement::PrivateKey::from_private_key(&agreement::ECDH_P256, &d)
+            .unwrap()
+            .compute_public_key()
+            .unwrap()
+            .as_ref(),
+        PrivateKey::<P256>::from_bytes(&d).public_key().unwrap()
+    );
+    g.bench_function(BenchmarkId::new(AWS_LC, 65), |b| {
+        b.iter(|| {
+            agreement::PrivateKey::from_private_key(&agreement::ECDH_P256, black_box(&d))
+                .unwrap()
+                .compute_public_key()
+                .unwrap()
+        })
+    });
+    g.finish();
+
     #[cfg(target_arch = "x86_64")]
     {
         let mut g = c.benchmark_group("ec_validate_p256");
@@ -109,6 +149,7 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
