@@ -3,29 +3,6 @@
 //! `assembly/sha3.s`.
 #![allow(dead_code)]
 
-/// The permutation Keccak-f[1600] (FIPS 202 §3.4): applies it to the state `*state` (lane `x + 5y` at index `x + 5y`).
-///
-/// Contract: `VG.Spec.Sha3.permuteContract`. Constant time: only the pointers may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImeiAEAAEiJrpABAABMiaaYAQAATImuoAEAAEyJtqgBAABMib6wAQAASLgBAAAAAAAAAEiJhsgAAABIuIKAAAAAAAAASImG0AAAAEi4ioAAAAAAAIBIiYbYAAAASLgAgACAAAAAgEiJhuAAAABIuIuAAAAAAAAASImG6AAAAEi4AQAAgAAAAABIiYbwAAAASLiBgACAAAAAgEiJhvgAAABIuAmAAAAAAACASImGAAEAAEi4igAAAAAAAABIiYYIAQAASLiIAAAAAAAAAEiJhhABAABIuAmAAIAAAAAASImGGAEAAEi4CgAAgAAAAABIiYYgAQAASLiLgACAAAAAAEiJhigBAABIuIsAAAAAAACASImGMAEAAEi4iYAAAAAAAIBIiYY4AQAASLgDgAAAAAAAgEiJhkABAABIuAKAAAAAAACASImGSAEAAEi4gAAAAAAAAIBIiYZQAQAASLgKgAAAAAAAAEiJhlgBAABIuAoAAIAAAACASImGYAEAAEi4gYAAgAAAAIBIiYZoAQAASLiAgAAAAAAAgEiJhnABAABIuAEAAIAAAAAASImGeAEAAEi4CIAAgAAAAIBIiYaAAQAAScfHQP///0iLRwhIg/D/SIlHCEiLRxBIg/D/SIlHEEiLR0BIg/D/SIlHQEiLR2BIg/D/SIlHYEiLh4gAAABIg/D/SImHiAAAAEiLh6AAAABIg/D/SImHoAAAAEiLn6gAAABIi4+wAAAASIuXuAAAAEiLr8AAAAA="
-20:
-.base64 "TIsHTItPMEyLV2BMi5+QAAAASDNPEEgzVxhMMcBIM18ISDNPOEgzRyhJiexIM28gTDHRSDNHUEgzV0BMMctIM29ISDOPiAAAAEgzR3hIM1doSDNfWEgzb3BJic1Iwck/SDHBTDHaSMHIP0gx0Egzn4AAAABIwco/SDHaSDOvmAAAAEjByz9IMetIwc0/TDHtSTHJSTHSScHJFEkx60kxxEnByhVJMdhNic1JwcsrTQnRTTHBScHMMk4zjD6IAQAATYnmTSHcTIkOTTHUSYPy/0yJZhBNCdpMi6ewAAAATTHqTIlWCE0hxUyLT0hNMfVMi1dQTIluIE0JxkyLRxhNMd5Mi5+AAAAATIl2GEkx6Ekx1EnByCRJMctJMcFJwcwDScHLE0kx2knBySxNicVNCeBJwco9TTHYTIlGQE2Jzk0h6UyLRwhNMeFJg/T/TIlOSE0J3EyLTzhNMdRMiWY4TSHTTIunoAAAAE0x80yJXjBNCdZMi1doTTHuTIufmAAAAEyJdihJMepJMcNJwconSTHRScHLOEkx3EnByTpJMchJwcwuTYnVTSHaScHIP0mD8/9NMcpMiVZYTYnmTSHcTItXWE0x7EyJZmBNCc1Mi6e4AAAATTHFTIluUE0hwU0x8UyJTnBNCcZMi08oTTHeTIufiAAAAEyJdmhMi0cgSTHKSTHTScHKNkkx2UnByzFJMexJwckcSTHAScHMCE2J1U0J2knByCVJg/P/TTHKTImWgAAAAE2J5k0J3E0x7EyJpogAAABNIc1NMcVMiW54TQnBTTHxTImOmAAAAE0h8E0x2EyJhpAAAABIM1cQSDNvQEjBygJIM4+oAAAASMHNCUgzR3BIwck+SDNfeEjByBlIwcsXSYnVSCHqSIP1/0gxykiJlsAAAABJicZIIehMMehIiYagAAAASQnNSTHdTImuuAAAAEgh2Uwx8UiJjrAAAABMCfNIMetIiZ6oAAAASInVTInqTIsGTItOMEyLVmBMi56QAAAASDNOEEgzVhhMMcBIM14ISDNOOEgzRihJiexIM24gTDHRSDNGUEgzVkBMMctIM25ISDOOiAAAAEgzRnhIM1ZoSDNeWEgzbnBJic1Iwck/SDHBTDHaSMHIP0gx0EgznoAAAABIwco/SDHaSDOumAAAAEjByz9IMetIwc0/TDHtSTHJSTHSScHJFEkx60kxxEnByhVJMdhNic1JwcsrTQnRTTHBScHMMk4zjD6QAQAATYnmTSHcTIkPTTHUSYPy/0yJZxBNCdpMi6awAAAATTHqTIlXCE0hxUyLTkhNMfVMi1ZQTIlvIE0JxkyLRhhNMd5Mi56AAAAATIl3GEkx6Ekx1EnByCRJMctJMcFJwcwDScHLE0kx2knBySxNicVNCeBJwco9TTHYTIlHQE2Jzk0h6UyLRghNMeFJg/T/TIlPSE0J3EyLTjhNMdRMiWc4TSHTTIumoAAAAE0x80yJXzBNCdZMi1ZoTTHuTIuemAAAAEyJdyhJMepJMcNJwconSTHRScHLOEkx3EnByTpJMchJwcwuTYnVTSHaScHIP0mD8/9NMcpMiVdYTYnmTSHcTItWWE0x7EyJZ2BNCc1Mi6a4AAAATTHFTIlvUE0hwU0x8UyJT3BNCcZMi04oTTHeTIueiAAAAEyJd2hMi0YgSTHKSTHTScHKNkkx2UnByzFJMexJwckcSTHAScHMCE2J1U0J2knByCVJg/P/TTHKTImXgAAAAE2J5k0J3E0x7EyJp4gAAABNIc1NMcVMiW94TQnBTTHxTImPmAAAAE0h8E0x2EyJh5AAAABIM1YQSDNuQEjBygJIM46oAAAASMHNCUgzRnBIwck+SDNeeEjByBlIwcsXSYnVSCHqSIP1/0gxykiJl8AAAABJicZIIehMMehIiYegAAAASQnNSTHdTImvuAAAAEgh2Uwx8UiJj7AAAABMCfNIMetIiZ+oAAAASInVTInqSYPHEA=="
-jne 20b
-.base64 "SItHCEiD8P9IiUcISItHEEiD8P9IiUcQSItHQEiD8P9IiUdASItHYEiD8P9IiUdgSIuHiAAAAEiD8P9IiYeIAAAASIuHoAAAAEiD8P9IiYegAAAASIueiAEAAEiLrpABAABMi6aYAQAATIuuoAEAAEyLtqgBAABMi76wAQAAww=="
-.p2align 6"#,
-    )
-}
-
 /// Absorbs data into a SHA-3 or SHAKE computation: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % rate`.
 ///
 /// Contract: `VG.Spec.Sha3.absorbContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
@@ -64,7 +41,7 @@ jmp 21f
 21:
 .base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJIgCAADD"
 .p2align 6"#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
@@ -108,7 +85,7 @@ jmp 21f
 21:
 .base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
 .p2align 6"#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
@@ -128,30 +105,7 @@ pub unsafe extern "sysv64" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, 
 call {vg_keccak_f1600}
 .base64 "SI2kJIgCAADD"
 .p2align 6"#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
-    )
-}
-
-/// `vg_keccak_pad`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha3.padScratchContract`. Constant time: only the pointers, `rate`, `pos` and `suffix` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
-    core::arch::naked_asm!(
-        r#".base64 "D7YEF0gxyIgEFw+2RDf/SDWAAAAAiEQ3/0yJxg=="
-call {vg_keccak_f1600}
-.base64 "ww=="
-.p2align 6"#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
@@ -193,50 +147,6 @@ jmp 21f
 21:
 .base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJIgCAADD"
 .p2align 6"#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
-    )
-}
-
-/// `vg_keccak_squeeze`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Sha3.squeezeScratchContract`. Constant time: only the pointers, `rate`, `pos` and `outlen` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `out` must be valid for reads and writes of `outlen` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` at most `rate`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "SYmZAAIAAEmJqQgCAABNiaEQAgAATYmpGAIAAE2JsSACAABNibkoAgAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
-je 20f
-22:
-.base64 "STns"
-je 23f
-jmp 24f
-23:
-.base64 "QbwAAAAASInfTIn+"
-call {vg_keccak_f1600}
-.base64 "SIn7SYn3"
-24:
-.base64 "TYniQbsHAAAATSHaTYnzSYPrCEnB6z9NCdpNhdI="
-je 25f
-.base64 "Qg+2BCNBiEUASYPFAUmDxAFJg+4B"
-jmp 26f
-25:
-.base64 "SosEI0mJRQBJg8UISYPECEmD7gg="
-26:
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
-.p2align 6"#,
-        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

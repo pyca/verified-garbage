@@ -27,8 +27,8 @@ bl {vg_keccak_squeeze_scratch}
 bl {vg_ed448_scalar_base}
 .base64 "mAAY6HgAuOqAANjqiAD46pAAGOumAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPnAACE4IACATg==""#,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base,
     )
 }
@@ -258,8 +258,8 @@ bl {vg_ed448_scalar_reduce}
 bl {vg_ed448_scalar_mul_add}
 .base64 "AAAAORAAFfkYABX5IAAV+SgAFfkwABX5OAAV+UAAFflIABX5UAAV+VgAFflgABX5aAAV+XAAFfl4ABX5gAAV+YgAFfmQABX5mAAV+aAAFfmoABX5sAAV+bgAFfnAABX5yAAV+dAAFfnYABX54AAV+egAFfnwABX5+AAV+QABFfkIARX5EAEV+RgBFfkgARX5KAEV+TABFfk4ARX5QAEV+UgBFflQARX5WAEV+WABFfloARX5cAEV+XgBFfnIARXogAGV6ogB1eqQAfXqmAEV66ABNeuoAZXrsAG167gB1evAAbXqpgMIfEACITggAIBO""#,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base,
         vg_ed448_scalar_mul_add = sym super::ed448::vg_ed448_scalar_mul_add,
@@ -308,8 +308,8 @@ bl {vg_ed448_verify_equation}
 21:
 .base64 "MAEhOCAAgE4=""#,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce,
         vg_ed448_verify_equation = sym super::ed448::vg_ed448_verify_equation,
     )
@@ -520,3 +520,15 @@ bne %cr0, 235b
 .base64 "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""#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600.rs"]
+pub(crate) mod vg_keccak_f1600;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_pad_scratch.rs"]
+pub(crate) mod vg_keccak_pad_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_squeeze_scratch.rs"]
+pub(crate) mod vg_keccak_squeeze_scratch;

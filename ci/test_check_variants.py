@@ -122,7 +122,8 @@ class Flow(unittest.TestCase):
 class Internal(unittest.TestCase):
     # Internal functions (`fn <name>()`, no signature): `vg_f` with the variant
     # `vg_f_s`, whose suffix a function with a signature has (`vg_g_s`), and
-    # `vg_f_mod`, whose suffix none has.
+    # `vg_f_mod`, whose suffix none has, nor `vg_f_x`, whose suffix is only a
+    # word of one (`vg_g_x_s`).
     def targets(self, calls):
         out = {}
         for name, callees in calls.items():
@@ -131,9 +132,11 @@ class Internal(unittest.TestCase):
         return {"x": out}
 
     def test_variants(self):
-        t = self.targets({"vg_f": [], "vg_f_s": [], "vg_f_mod": [], "vg_g": ["vg_f", "vg_f_mod"],
-                          "vg_g_s": ["vg_f_s", "vg_f_mod"]})["x"]
-        self.assertEqual(check_variants.variants(t), {"vg_g_s": ("vg_g", "s"), "vg_f_s": ("vg_f", "s")})
+        t = self.targets({"vg_f": [], "vg_f_s": [], "vg_f_mod": [], "vg_f_x": [],
+                          "vg_g": ["vg_f", "vg_f_mod", "vg_f_x"],
+                          "vg_g_s": ["vg_f_s", "vg_f_mod", "vg_f_x"], "vg_g_x_s": ["vg_f", "vg_f_mod", "vg_f_x"]})["x"]
+        self.assertEqual(check_variants.variants(t), {"vg_g_s": ("vg_g", "s"), "vg_g_x_s": ("vg_g", "x_s"),
+                                                      "vg_f_s": ("vg_f", "s")})
 
     def test_flow(self):
         calls = {"vg_f": [], "vg_f_s": [], "vg_g": ["vg_f"], "vg_g_s": ["vg_f"], "vg_h": [],

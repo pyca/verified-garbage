@@ -306,8 +306,8 @@ ldr r12, [sp], #4
 ldr lr, [sp], #4
 bx lr",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base,
     )
 }
@@ -8044,8 +8044,8 @@ ldr r12, [sp], #4
 ldr lr, [sp], #4
 bx lr",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base,
         vg_ed448_scalar_mul_add = sym super::ed448::vg_ed448_scalar_mul_add,
@@ -8268,8 +8268,8 @@ ldr lr, [sp], #4
 21:
 bx lr",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce,
         vg_ed448_verify_equation = sym super::ed448::vg_ed448_verify_equation,
     )
@@ -15587,3 +15587,15 @@ bx lr",
         vg_gf448_r16_add = sym super::gf448_r16::vg_gf448_r16_add,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600.rs"]
+pub(crate) mod vg_keccak_f1600;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_pad_scratch.rs"]
+pub(crate) mod vg_keccak_pad_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_squeeze_scratch.rs"]
+pub(crate) mod vg_keccak_squeeze_scratch;
