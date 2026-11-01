@@ -31,7 +31,7 @@ section
 
 /-! # The public iteration count for the exponent product -/
 
-section
+@[expose] public section
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
@@ -64,7 +64,7 @@ section
 
 /-! # Setting up and computing the exact exponent product -/
 
-section
+@[expose] public section
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
