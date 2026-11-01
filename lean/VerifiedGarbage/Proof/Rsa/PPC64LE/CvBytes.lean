@@ -258,4 +258,11 @@ theorem bytes_of_store {m m' : Mem} {B O : Addr} {w j L : Nat} (hL : L ≤ 4 * w
   rw [hl] at e2
   exact e2.symm
 
+
+/-- A number of `L` bytes is below `2^(8 L)`. -/
+theorem os2ip_bytes_lt (m : Mem) (p : Addr) (L : Nat) : Spec.Rsa.os2ip (Spec.Rsa.bytesAt m p L) < 2 ^ (8 * L) := by
+  have h := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt m p L)
+  rwa [show (Spec.Rsa.bytesAt m p L).length = L by simp [Spec.Rsa.bytesAt], show (256 : Nat) = 2 ^ 8 from rfl,
+    ← Nat.pow_mul] at h
+
 end VG.Proof.Rsa.PPC64LE.Keys

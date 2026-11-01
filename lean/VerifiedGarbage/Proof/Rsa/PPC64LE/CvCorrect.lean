@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvFail
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArith
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvCheck
@@ -58,7 +59,7 @@ theorem bytes_of {m m' : Mem} {B O : Addr} {w j L : Nat} (hL : L ≤ 4 * w)
     Spec.Rsa.bytesAt m' O L = Spec.Rsa.i2osp (num m B w j % 2 ^ (8 * L)) L := by
   rw [bytes_of_store hL fun c hc => by rw [hb c hc]; rfl, Nat.pow_mul]
 
-theorem valid_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
+theorem valid_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
     (hv : Spec.Rsa.modulusValid (nIn s0) (cvK s0) = true) :
     WP isa valid s fun t => Done s0 t ∧ Keep allRegs s t := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
@@ -70,7 +71,13 @@ theorem valid_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (loads_ok b1 (ha.of_keep k1) w1 z1) fun t2 ⟨b2, w2, i2, k2⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (arith_ok w2 i2) fun t3 ⟨w3, k3, ⟨X₁, X₂, V, hm, h₁, h₂⟩, h₃, h₄, r3⟩ => ?_
+  have a2 := ha.of_keep (k1.trans k2)
+  have hP := os2ip_bytes_lt s0.mem (PPC64LE.stackArg s0 0) (PPC64LE.stackArg s0 1).toNat
+  have hQ := os2ip_bytes_lt s0.mem (PPC64LE.stackArg s0 2) (PPC64LE.stackArg s0 3).toNat
+  have hw16 := (pre_ws h.pre).2.1
+  refine WP.mono (arith_ok w2 i2 (pL := (PPC64LE.stackArg s0 1).toNat) (qL := (PPC64LE.stackArg s0 3).toNat)
+    (by omega) (by rw [a2.r20]; exact ofNat_toNat64 _) (by rw [a2.r22]; exact ofNat_toNat64 _) p1 (by omega) (by omega) hP hQ)
+    fun t3 ⟨w3, k3, ⟨X₁, X₂, V, hm, h₁, h₂⟩, h₃, h₄, r3⟩ => ?_
   have b3 : Base s0 t3 := b2.of_keep k3 (by decide) (by decide) r3.sp r3.lr r3.rd r3.wr (r3.gpr _ (by decide))
   rw [show seqs [VG.Impl.Rsa.PPC64LE.CrtValues.stores] = VG.Impl.Rsa.PPC64LE.CrtValues.stores from rfl]
   refine WP.mono (stores_ok b3 (ha.of_keep ((k1.trans k2).trans r3)) w3 (b := decide (maskOf (pIn s0) (qIn s0) X₁ X₂ V))
@@ -154,7 +161,7 @@ theorem restore_ok {s0 t : State} {m : Mem} (h : Fr s0 m t) :
     e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13]
   exact e0
 
-theorem cv_correct (s : State) (h : cvP.pre s) :
+theorem cv_correct [InvLaw] (s : State) (h : cvP.pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ cvP.post s t := by
   show WP isa code s fun t => abiPreserved s t ∧ cvP.post s t
   obtain ⟨-, hrd, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, dn, -, -, -, -, -, -, -, wn,

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithB
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithC
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
@@ -34,10 +35,12 @@ abbrev arithArrs : List Nat := partAArrs ++ partBArrs ++ [aDR2, aDR3]
 abbrev arithSlots : List Nat := partASlots ++ partBSlots
 
 /-- The registers `arith` changes. -/
-abbrev arithRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10]
+abbrev arithRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
-theorem arith_ok {s : State} {B : Addr} {Z w Nv P Q Dd : Nat} (h : Ws s B Z w nArr)
-    (hi : ArInit s.mem B w Nv P Q Dd) :
+theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B Z w nArr)
+    (hi : ArInit s.mem B w Nv P Q Dd) (hw : 10 ≤ w) (h20 : s.gpr .r20 = BitVec.ofNat 64 pL)
+    (h22 : s.gpr .r22 = BitVec.ofNat 64 qL) (hpL : 1 ≤ pL) (hpw : pL ≤ 4 * w) (hqw : qL ≤ 4 * w)
+    (hP : P < 2 ^ (8 * pL)) (hQ : Q < 2 ^ (8 * qL)) :
     WP isa arith s fun t => Ws t B Z w nArr ∧ KeyWorkspace.Keep B w arithArrs arithSlots s.mem t.mem ∧
       (∃ X₁ X₂ V, slot t.mem B sMask = (if maskOf P Q X₁ X₂ V then 1 else 0) ∧
         (0 < P → X₁ = Nv / P ∧ X₂ = Nv % P) ∧
@@ -66,8 +69,9 @@ theorem arith_ok {s : State} {B : Addr} {Z w Nv P Q Dd : Nat} (h : Ws s B Z w nA
   have bo : slot t1.mem B sPodd ≤ 1 := by rw [o1]; omega_arith
   have b1 : slot t1.mem B sE1 ≤ 1 := by rw [e1]; split <;> omega_arith
   have b2 : slot t1.mem B sE2 ≤ 1 := by rw [e2]; split <;> omega_arith
-  refine WP.mono (partB_ok (P := P) (Q := Q) h1 (by rw [keepA _ (by decide) (by decide), hi.q])
-    (by rw [keepA _ (by decide) (by decide), hi.p]) z1 bo b1 b2) fun t2 ⟨h2, k2, m2, v2, r2⟩ => ?_
+  refine WP.mono (partB_ok (P := P) (Q := Q) h1 hw (by rw [keepA _ (by decide) (by decide), hi.q])
+    (by rw [keepA _ (by decide) (by decide), hi.p]) z1 bo b1 b2 (by rw [r1.gpr _ (by decide), h20])
+    (by rw [r1.gpr _ (by decide), h22]) hpL hpw hqw hP hQ) fun t2 ⟨h2, k2, m2, v2, r2⟩ => ?_
   rw [wp_seqs_append (by unfold divD; exact List.cons_ne_nil _ _) (by unfold divD; exact List.cons_ne_nil _ _)]
   have top2 : w32 t2.mem B (arr w aDD + 4 * w) = 0 := by
     rw [KeyWorkspace.Keep.word k2 (i := w) (by omega_arith) (by decide) (by decide) (fit _ (by decide)), top1]
