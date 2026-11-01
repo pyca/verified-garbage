@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Checks that the generated x86 code only runs the instructions affected by
 MXCSR-configuration-dependent timing (MCDT) under Intel's mitigation, from
-the listings of the generated code of `crates/verified-garbage-asm-x86_64/`
-and `crates/verified-garbage-asm-x86/`, `listing/<module>.s`: the text of
+the assembly files of the generated code of `crates/verified-garbage-asm-x86_64/`
+and `crates/verified-garbage-asm-x86/`, `assembly/<module>.s`: the text of
 each instruction of `src/<module>.rs`, whose machine code that file holds
 (the emitter writes both from the same printed code, `TCB/Rust.lean`).
 
@@ -51,7 +51,7 @@ AFFECTED = {
     "vpmullq", "vpmullw", "vpmuludq",
 }  # fmt: skip
 
-# A function of a listing (`Rust.moduleListing`): its name, then its lines,
+# A function of an assembly file (`Rust.moduleAssembly`): its name, then its lines,
 # each instruction indented by a tab, each label not.
 FN = re.compile(r"^(vg_\w+):$")
 LABEL = re.compile(r"^(\d+):$")
@@ -59,7 +59,7 @@ MXCSR_VALUE = {"8127", "0x1FBF", "0x1fbf"}
 
 
 def functions(text):
-    """The functions of a listing, in order: each one's name, its
+    """The functions of an assembly file, in order: each one's name, its
     instructions, the line of the file each is on, and where each numeric
     label is (the index of the instruction it precedes); and the lines that
     are none of these."""
@@ -224,17 +224,17 @@ def main():
     for target_name in TARGETS:
         src = asm_layout.target_dir(ROOT, target_name)
         for path in sorted(src.glob("*.rs")):
-            # Every naked function is checked: each is in its module's listing,
+            # Every naked function is checked: each is in its module's assembly file,
             # which must be read in full, and this not pass on a function left
             # unread.
             naked = path.read_text().count("#[unsafe(naked)]")
-            listing = src.parent / "listing" / f"{path.stem}.s"
-            if not listing.is_file():
+            assembly = src.parent / "assembly" / f"{path.stem}.s"
+            if not assembly.is_file():
                 if naked:
-                    errors.append(f"{path.relative_to(ROOT)}: has no listing {listing.relative_to(ROOT)}")
+                    errors.append(f"{path.relative_to(ROOT)}: has no assembly file {assembly.relative_to(ROOT)}")
                 continue
-            fns, unread = functions(listing.read_text())
-            where = listing.relative_to(ROOT)
+            fns, unread = functions(assembly.read_text())
+            where = assembly.relative_to(ROOT)
             errors += [f"{where}:{n}: neither a function, an instruction nor a label" for n in unread]
             for name, instrs, lines, labels in fns:
                 errs, n = check_function(f"{where} ({name})", instrs, lines, labels)

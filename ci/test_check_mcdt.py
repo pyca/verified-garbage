@@ -10,7 +10,7 @@ from unittest.mock import patch
 import check_mcdt
 
 
-class Listings(unittest.TestCase):
+class Assembly(unittest.TestCase):
     def test_functions(self):
         # Each function's instructions, the line of each, and its labels; the
         # header's comments and blank lines are skipped.
@@ -41,9 +41,9 @@ class Listings(unittest.TestCase):
     def test_unread_lines(self):
         self.assertEqual(check_mcdt.functions("mov eax, 1\nvg_f:\n\tret\n  ret\n")[1], [1, 4])
 
-    def run_main(self, src, listing):
+    def run_main(self, src, assembly):
         """`main`'s status and errors, with the module `m` of each target
-        `src` and its listing `listing` (`None`: none)."""
+        `src` and its assembly file `assembly` (`None`: none)."""
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             for arch in check_mcdt.TARGETS:
@@ -51,9 +51,9 @@ class Listings(unittest.TestCase):
                 (crate / "src").mkdir(parents=True)
                 (crate / "src" / "lib.rs").write_text("")
                 (crate / "src" / "m.rs").write_text(src)
-                if listing is not None:
-                    (crate / "listing").mkdir()
-                    (crate / "listing" / "m.s").write_text(listing)
+                if assembly is not None:
+                    (crate / "assembly").mkdir()
+                    (crate / "assembly" / "m.s").write_text(assembly)
             stderr = io.StringIO()
             with patch.object(check_mcdt, "ROOT", root), contextlib.redirect_stderr(stderr), \
                     contextlib.redirect_stdout(io.StringIO()):
@@ -68,26 +68,26 @@ class Listings(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertEqual(errors, [
             line for arch in check_mcdt.TARGETS for line in [
-                f"crates/verified-garbage-asm-{arch}/listing/m.s (vg_f):4: `pmuludq xmm0, xmm1` "
+                f"crates/verified-garbage-asm-{arch}/assembly/m.s (vg_f):4: `pmuludq xmm0, xmm1` "
                 "is outside Intel's MXCSR prologue and epilogue "
                 "(MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean)",
-                f"crates/verified-garbage-asm-{arch}/listing/m.s (vg_g):7: `pmullw xmm0, xmm1` "
+                f"crates/verified-garbage-asm-{arch}/assembly/m.s (vg_g):7: `pmullw xmm0, xmm1` "
                 "is outside Intel's MXCSR prologue and epilogue "
                 "(MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean)"]])
 
     def test_unlisted_functions_fail(self):
-        # Every naked function of the module is in its listing, read in full.
+        # Every naked function of the module is in its assembly file, read in full.
         status, errors = self.run_main(self.NAKED * 2, "vg_f:\n\tret\n")
         self.assertEqual(status, 1)
-        self.assertEqual(errors, [f"crates/verified-garbage-asm-{arch}/listing/m.s: lists 1 of the "
+        self.assertEqual(errors, [f"crates/verified-garbage-asm-{arch}/assembly/m.s: lists 1 of the "
                                   f"2 naked functions of crates/verified-garbage-asm-{arch}/src/m.rs"
                                   for arch in check_mcdt.TARGETS])
         status, errors = self.run_main(self.NAKED, None)
-        self.assertEqual(errors, [f"crates/verified-garbage-asm-{arch}/src/m.rs: has no listing "
-                                  f"crates/verified-garbage-asm-{arch}/listing/m.s"
+        self.assertEqual(errors, [f"crates/verified-garbage-asm-{arch}/src/m.rs: has no assembly file "
+                                  f"crates/verified-garbage-asm-{arch}/assembly/m.s"
                                   for arch in check_mcdt.TARGETS])
         status, errors = self.run_main(self.NAKED, "vg_f:\n\tret\nret\n")
-        self.assertEqual(errors, [f"crates/verified-garbage-asm-{arch}/listing/m.s:3: neither a "
+        self.assertEqual(errors, [f"crates/verified-garbage-asm-{arch}/assembly/m.s:3: neither a "
                                   "function, an instruction nor a label" for arch in check_mcdt.TARGETS])
 
     def test_passes(self):
