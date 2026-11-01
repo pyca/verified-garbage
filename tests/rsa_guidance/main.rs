@@ -15,9 +15,9 @@
     feature = "alloc"
 ))]
 
-use crate::bytes::unhex;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};
+use verified_garbage_test_vectors::unhex;
 
 /// The vectors' file (`crate::vectors`).
 fn text() -> String {

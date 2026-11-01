@@ -63,12 +63,7 @@ mod triple_des_cfb8;
 mod triple_des_ecb;
 mod triple_des_ofb;
 
-use crate::bytes::unhex;
-// The records of a CAVP response file that have a `COUNT` (records end at
-// an empty line; a key given twice keeps its last value), and its `key =
-// value` lines in order: parsed in a crate optimized in test builds
-// (Cargo.toml).
-use verified_garbage_test_vectors::{cavp_fields as fields, cavp_records as records};
+use verified_garbage_test_vectors::{cavp_fields, unhex};
 
 /// The vectors of the curve `curve` (`"P-192"`) of the SP 800-56A ECC CDH
 /// primitive test, its integers `len` bytes long: each `QCAVS`
@@ -86,7 +81,7 @@ fn ecdh_vectors(curve: &str, len: usize) -> Vec<[Vec<u8>; 4]> {
     let text = crate::vectors::text("vectors/nist-cavp/ecc-cdh/KAS_ECC_CDH_PrimitiveTest.txt");
     let text = text.split_once(&format!("[{curve}]")).unwrap().1;
     let text = text.split_once("\n[").unwrap().0;
-    let fields = fields(text);
+    let fields = cavp_fields(text);
     assert_eq!(fields.len(), 25 * 7);
     let mut vectors = Vec::new();
     for v in fields.chunks(7) {
@@ -118,7 +113,7 @@ fn check_messages<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) -> u
 /// every digest length.
 fn messages(text: &str, header: &str, digest: &dyn Fn(&[u8]) -> Vec<u8>) -> usize {
     assert!(text.contains(header));
-    let fields = fields(text);
+    let fields = cavp_fields(text);
     assert_eq!(fields.len() % 3, 0);
     for v in fields.chunks(3) {
         assert_eq!([v[0].0, v[1].0, v[2].0], ["Len", "Msg", "MD"]);
@@ -142,7 +137,7 @@ fn check_monte_carlo<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) {
 /// its second argument; not generic, as [`messages`].
 fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8], &mut [u8])) {
     assert!(text.contains(&format!("[L = {n}]")));
-    let fields = fields(text);
+    let fields = cavp_fields(text);
     assert_eq!(fields[0].0, "Seed");
     let mut seed = unhex(fields[0].1);
     assert_eq!(seed.len(), n);

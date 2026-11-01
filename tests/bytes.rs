@@ -29,10 +29,6 @@ pub fn xor(a: &[u8], b: &[u8]) -> Vec<u8> {
     bytes
 }
 
-// Hex decoding, optimized in test builds (Cargo.toml): the tests decode
-// tens of megabytes of it.
-pub use verified_garbage_test_vectors::{unhex, unhex_spaced};
-
 /// Whether every byte of `bytes` is `value` (guard bytes a call must not
 /// have written).
 pub fn all_equal(bytes: &[u8], value: u8) -> bool {

@@ -13,9 +13,7 @@
 
 use verified_garbage::aes_gcm::{AesGcm, Error};
 
-use verified_garbage_test_vectors::{Record, cavp_blocks};
-
-use super::unhex;
+use verified_garbage_test_vectors::{Record, cavp_blocks, unhex};
 
 /// The records of a GCM response file, from each `Count` line to the next
 /// blank line, and whether each has a bare `FAIL` line, its only line that

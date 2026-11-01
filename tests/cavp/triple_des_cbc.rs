@@ -14,7 +14,7 @@
 use verified_garbage::triple_des_cbc::{Error, TripleDesCbc};
 use verified_garbage::triple_des_ecb::TripleDesEcb;
 
-use super::unhex;
+use verified_garbage_test_vectors::{cavp_records, unhex};
 
 /// CBC encryption from ECB, one block at a time.
 fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> Vec<u8> {
@@ -55,7 +55,7 @@ fn check(ctx: &TripleDesCbc, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
 
 fn check_file(text: &str) -> usize {
     let mut count = 0;
-    for fields in super::records(text) {
+    for fields in cavp_records(text) {
         let mut key = unhex(fields["KEY1"]);
         key.extend(unhex(fields["KEY2"]));
         key.extend(unhex(fields["KEY3"]));

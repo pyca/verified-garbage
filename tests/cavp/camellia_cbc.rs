@@ -15,7 +15,7 @@
 use verified_garbage::camellia_cbc::{CamelliaCbc, Error};
 use verified_garbage::camellia_ecb::CamelliaEcb;
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// CBC encryption from ECB, one block at a time.
 fn reference(key: &[u8], iv: [u8; 16], data: &[u8]) -> Vec<u8> {

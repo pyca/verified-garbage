@@ -12,7 +12,7 @@
 
 use verified_garbage::aes_cbc::{AesCbc, Error};
 
-use super::unhex;
+use verified_garbage_test_vectors::{cavp_records, unhex};
 
 type Operation = fn(&AesCbc, &mut [u8; 16], &mut [u8]) -> Result<(), Error>;
 
@@ -75,7 +75,7 @@ fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool
 /// Checks every vector of a response file, and returns how many there were.
 fn check_file(text: &str, split: bool) -> usize {
     let mut count = 0;
-    for fields in super::records(text) {
+    for fields in cavp_records(text) {
         check(
             &unhex(fields["KEY"]),
             &unhex(fields["IV"]),

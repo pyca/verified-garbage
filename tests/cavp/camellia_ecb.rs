@@ -13,7 +13,7 @@
 
 use verified_garbage::camellia_ecb::{CamelliaEcb, Error};
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// `key` encrypts `plaintext` (any number of blocks) to `ciphertext` and
 /// decrypts it back.

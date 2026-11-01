@@ -12,7 +12,7 @@
 
 use verified_garbage::aes_ecb::{AesEcb, Error};
 
-use super::unhex;
+use verified_garbage_test_vectors::{Record, cavp_records, unhex};
 
 type Operation = fn(&AesEcb, &mut [u8]) -> Result<(), Error>;
 
@@ -48,7 +48,7 @@ fn check(key: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool) {
 /// Checks every vector of a response file, and returns how many there were.
 fn check_file(text: &str, split: bool) -> usize {
     let mut count = 0;
-    for fields in super::records(text) {
+    for fields in cavp_records(text) {
         check(
             &unhex(fields["KEY"]),
             &unhex(fields["PLAINTEXT"]),
@@ -183,7 +183,7 @@ fn nist_ecb_runs() {
                 "[DECRYPT]" => encrypt = false,
                 _ => {}
             }
-            let fields = crate::text::fields(record);
+            let fields = Record::parse(record);
             if !fields.contains_key("COUNT") {
                 continue;
             }

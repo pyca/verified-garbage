@@ -24,7 +24,7 @@ fn hex_lines(text: &str) -> Vec<u8> {
     for line in text.lines() {
         let line = line.trim();
         if !line.is_empty() && line.bytes().all(|b| b.is_ascii_hexdigit()) {
-            bytes.extend(crate::bytes::unhex(line));
+            bytes.extend(verified_garbage_test_vectors::unhex(line));
         }
     }
     bytes

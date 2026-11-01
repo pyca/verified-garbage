@@ -1,7 +1,8 @@
 //! draft-sca-cfrg-sm3-02's examples: Appendix A (GB/T 32905-2016's two) and
 //! Appendix B (eighteen hashes from GB/T 32918's SM2 examples).
 
-use super::{check, unhex};
+use super::check;
+use verified_garbage_test_vectors::unhex;
 
 /// The vectors' file (`crate::vectors`).
 fn draft() -> String {

@@ -12,7 +12,7 @@
     target_arch = "riscv64"
 ))]
 
-use super::{fields, messages, unhex};
+use super::messages;
 
 /// Checks every `Len`/`Msg`/`MD` vector of a message test file for a
 /// hash function `digest` with `N`-byte digests (whose header gives the
@@ -23,6 +23,7 @@ fn check_messages<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) -> u
     })
 }
 use verified_garbage::hashes::sha3::{Sha3_224, Sha3_256, Sha3_384, Sha3_512, Shake128, Shake256};
+use verified_garbage_test_vectors::{cavp_fields, unhex};
 
 /// The SHA3VS Monte Carlo test of a hash function `digest` with `N`-byte
 /// digests: 100 checkpoints, each after 1000 iterations of hashing the
@@ -36,7 +37,7 @@ fn check_monte_carlo<const N: usize>(text: &str, digest: fn(&[u8]) -> [u8; N]) {
 /// than for every digest length.
 fn monte_carlo(text: &str, n: usize, digest: &dyn Fn(&[u8], &mut [u8])) {
     assert!(text.contains(&format!("[L = {}]", 8 * n)));
-    let fields = fields(text);
+    let fields = cavp_fields(text);
     assert_eq!(fields[0].0, "Seed");
     let mut md = unhex(fields[0].1);
     assert_eq!(md.len(), n);
@@ -101,7 +102,7 @@ cavp!(sha3_512, Sha3_512, "SHA3_512", 73, 100);
 /// whose outputs are `out` bytes, and returns how many there were.
 fn check_shake_messages(text: &str, out: usize, xof: fn(&[u8], &mut [u8])) -> usize {
     assert!(text.contains(&format!("[Outputlen = {}]", 8 * out)));
-    let fields = fields(text);
+    let fields = cavp_fields(text);
     assert_eq!(fields.len() % 3, 0);
     for v in fields.chunks(3) {
         assert_eq!([v[0].0, v[1].0, v[2].0], ["Len", "Msg", "Output"]);
@@ -118,7 +119,7 @@ fn check_shake_messages(text: &str, out: usize, xof: fn(&[u8], &mut [u8])) -> us
 /// Checks every vector of a SHAKE `VariableOut` file, and returns how
 /// many there were.
 fn check_shake_variable(text: &str, xof: fn(&[u8], &mut [u8])) -> usize {
-    let fields = fields(text);
+    let fields = cavp_fields(text);
     assert_eq!(fields.len() % 4, 0);
     for v in fields.chunks(4) {
         assert_eq!(
@@ -142,7 +143,7 @@ fn check_shake_variable(text: &str, xof: fn(&[u8], &mut [u8])) -> usize {
 fn check_shake_monte_carlo(text: &str, min: usize, max: usize, xof: fn(&[u8], &mut [u8])) {
     assert!(text.contains(&format!("[Minimum Output Length (bits) = {}]", 8 * min)));
     assert!(text.contains(&format!("[Maximum Output Length (bits) = {}]", 8 * max)));
-    let fields = fields(text);
+    let fields = cavp_fields(text);
     assert_eq!(fields[0].0, "Msg");
     let mut output = unhex(fields[0].1);
     let checkpoints = &fields[1..];

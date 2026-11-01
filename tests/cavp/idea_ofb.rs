@@ -15,7 +15,7 @@
 use verified_garbage::idea_ecb::IdeaEcb;
 use verified_garbage::idea_ofb::{IdeaOfb, InvalidKeyLength};
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// OFB from ECB: the output and the last output block used.
 fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> (Vec<u8>, [u8; 8]) {

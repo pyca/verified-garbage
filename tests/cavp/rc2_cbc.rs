@@ -11,8 +11,7 @@
 
 use verified_garbage::rc2_cbc::{Error, Rc2CbcDecryptor, Rc2CbcEncryptor};
 
-use super::unhex;
-use crate::text::fields;
+use verified_garbage_test_vectors::{Record, unhex};
 
 /// What [`Rc2CbcEncryptor`] and [`Rc2CbcDecryptor`] both have, so that
 /// each test runs in both directions.
@@ -117,7 +116,7 @@ fn rfc2268() {
         .unwrap();
     let mut count = 0;
     for record in excerpt.split("   Key length (bytes) = ").skip(1) {
-        let f = fields(record);
+        let f = Record::parse(record);
         let key_lines = record.split("   Key = ").nth(1).unwrap();
         let mut lines = key_lines.lines();
         let mut key_hex = lines.next().unwrap().to_owned();
@@ -154,7 +153,7 @@ fn openssl_cbc() {
     let text = crate::vectors::text("vectors/openssl-rc2/evpciph_rc2.txt");
     let mut count = 0;
     for record in text.split("\n\n") {
-        let f = fields(record);
+        let f = Record::parse(record);
         let Some(cipher) = f.get("Cipher").filter(|name| name.ends_with("CBC")) else {
             continue;
         };
@@ -184,7 +183,7 @@ fn openssl_cbc() {
 #[test]
 fn cryptography_cbc_and_default_bits() {
     let text = crate::vectors::text("vectors/cryptography-rc2/rc2-cbc.txt");
-    let f = fields(&text);
+    let f = Record::parse(&text);
     let key = unhex(f["Key"]);
     let iv = unhex(f["IV"]);
     let plaintext = unhex(f["Plaintext"]);
@@ -228,7 +227,7 @@ fn output_too_small_of<C: Cbc>(key: &[u8], iv: &[u8], input: &[u8], expected: &[
 #[test]
 fn output_too_small() {
     let text = crate::vectors::text("vectors/cryptography-rc2/rc2-cbc.txt");
-    let f = fields(&text);
+    let f = Record::parse(&text);
     let key = unhex(f["Key"]);
     let iv = unhex(f["IV"]);
     let plaintext = unhex(f["Plaintext"]);

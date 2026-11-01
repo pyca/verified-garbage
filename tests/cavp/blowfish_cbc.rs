@@ -16,7 +16,7 @@
 use verified_garbage::blowfish_cbc::{BlowfishCbc, Error};
 use verified_garbage::blowfish_ecb::BlowfishEcbEncryptor;
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// CBC encryption from ECB, one block at a time.
 fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> Vec<u8> {

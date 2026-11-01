@@ -1,13 +1,5 @@
 //! Parsing the text of the vendored vector files.
 
-pub use verified_garbage_test_vectors::Record;
-
-/// The `key = value` lines of `record`, trimmed, by key (a key given twice
-/// keeps its last value).
-pub fn fields(record: &str) -> Record<'_> {
-    Record::parse(record)
-}
-
 /// The fields of one test vector of an RFC: `label: hex`, with continuation
 /// lines `: hex`, labels in lower case with single spaces (RFC 3686 writes
 /// both `Counter Block (1)` and `Counter block (1)`, RFC 5528
@@ -35,7 +27,7 @@ pub fn labelled(vector: &str) -> Vec<(String, Vec<u8>)> {
     }
     let mut fields = Vec::new();
     for (label, value) in out {
-        fields.push((label, crate::bytes::unhex_spaced(&value)));
+        fields.push((label, verified_garbage_test_vectors::unhex_spaced(&value)));
     }
     fields
 }

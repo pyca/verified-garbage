@@ -20,7 +20,7 @@ mod sm4_ctr;
 mod sm4_ecb;
 mod sm4_ofb;
 
-use crate::bytes::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// The text of the appendix between the headings starting `from` and `to`.
 fn section(from: &str, to: &str) -> String {

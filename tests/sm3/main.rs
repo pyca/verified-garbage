@@ -24,7 +24,6 @@
 mod cryptography;
 mod draft_sca_cfrg_sm3;
 
-use crate::bytes::unhex;
 use verified_garbage::hashes::HashFunction;
 use verified_garbage::hashes::sm3::Sm3;
 

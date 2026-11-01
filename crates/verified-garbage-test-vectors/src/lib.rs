@@ -47,7 +47,9 @@ pub fn try_unhex(s: &str) -> Option<Vec<u8>> {
     // once, after the loop, which then has no branch but its own.
     let mut digits = 0;
     let mut bytes = Vec::with_capacity(s.len() / 2);
-    for pair in s.chunks_exact(2) {
+    // No remainder: the length is even.
+    let (pairs, _) = s.as_chunks::<2>();
+    for pair in pairs {
         let (hi, lo) = (DIGITS[pair[0] as usize], DIGITS[pair[1] as usize]);
         digits |= hi | lo;
         bytes.push(hi << 4 | lo);

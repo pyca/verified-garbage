@@ -16,9 +16,9 @@
     target_arch = "riscv64"
 ))]
 
-use crate::bytes::unhex;
 use verified_garbage::hashes::md5::Md5;
 use verified_garbage::hmac::Hmac;
+use verified_garbage_test_vectors::unhex;
 
 /// A value: `0x<hex>`, `0x<hh> repeated <n> times`, or a quoted string.
 fn value(v: &str) -> Vec<u8> {

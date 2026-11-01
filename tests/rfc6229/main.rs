@@ -9,8 +9,8 @@
     target_arch = "riscv64"
 ))]
 
-use crate::bytes::unhex_spaced;
 use verified_garbage::rc4::{Error, Rc4};
+use verified_garbage_test_vectors::unhex_spaced;
 
 #[test]
 fn every_published_answer_and_streaming_split() {

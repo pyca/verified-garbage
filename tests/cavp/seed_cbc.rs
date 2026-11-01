@@ -13,7 +13,7 @@
 use verified_garbage::seed_cbc::{Error, SeedCbc};
 use verified_garbage::seed_ecb::SeedEcb;
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// CBC encryption from ECB, one block at a time.
 fn reference(key: &[u8], iv: [u8; 16], data: &[u8]) -> Vec<u8> {

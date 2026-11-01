@@ -12,7 +12,7 @@
 
 use verified_garbage::aes_ofb::{AesOfb, InvalidKeyLength};
 
-use super::unhex;
+use verified_garbage_test_vectors::{cavp_records, unhex};
 
 /// The block to continue from after `n` whole blocks of the vector's
 /// message: the `n`-th output block, the input XOR the output's last block.
@@ -74,7 +74,7 @@ fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool
 /// Checks every vector of a response file, and returns how many there were.
 fn check_file(text: &str, split: bool) -> usize {
     let mut count = 0;
-    for fields in super::records(text) {
+    for fields in cavp_records(text) {
         check(
             &unhex(fields["KEY"]),
             &unhex(fields["IV"]),

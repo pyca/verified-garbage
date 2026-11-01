@@ -17,12 +17,12 @@
     target_arch = "riscv64"
 ))]
 
-use crate::bytes::unhex;
 use verified_garbage::hashes::sha224::Sha224;
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
 use verified_garbage::hashes::sha512::Sha512;
 use verified_garbage::hmac::{Hmac, HmacHash};
+use verified_garbage_test_vectors::unhex;
 
 /// A test case: its fields (`Key`, `Data`, `HMAC-SHA-224`, …), each the hex
 /// it lists, and the length the RFC states for the key, if it does.

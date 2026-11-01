@@ -14,7 +14,7 @@
 use verified_garbage::seed_cfb::{InvalidKeyLength, SeedCfb128};
 use verified_garbage::seed_ecb::SeedEcb;
 
-use super::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// CFB64 from ECB: the output and the block to continue from (the last
 /// ciphertext block, or after a partial segment `CIPH_K` of the last whole

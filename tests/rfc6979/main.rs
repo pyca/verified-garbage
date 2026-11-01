@@ -17,7 +17,7 @@ mod p256;
 mod p384;
 mod p521;
 
-use crate::bytes::unhex;
+use verified_garbage_test_vectors::unhex;
 
 /// The errors' messages.
 

@@ -26,7 +26,7 @@ use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
 use verified_garbage::hashes::sha512::Sha512;
 
-use super::unhex;
+use verified_garbage_test_vectors::{cavp_fields, unhex};
 
 const N: &str = "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551";
 const P: &str = "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff";
@@ -75,7 +75,7 @@ fn vectors() -> Vec<Vector> {
             .map(|(name, _)| *name)
             .find(|name| *name == hash)
             .unwrap();
-        let fields = super::fields(body);
+        let fields = cavp_fields(body);
         assert_eq!(fields.len(), 15 * 6);
         for v in fields.chunks(6) {
             let names: Vec<&str> = v.iter().map(|(k, _)| *k).collect();

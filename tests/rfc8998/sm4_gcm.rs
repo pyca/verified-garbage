@@ -1,8 +1,8 @@
 //! SM4-GCM against RFC 8998's example and a reference GCM over SM4-ECB.
 
-use crate::bytes::unhex_spaced;
 use verified_garbage::sm4_ecb::Sm4Ecb;
 use verified_garbage::sm4_gcm::{Error, Sm4Gcm};
+use verified_garbage_test_vectors::unhex_spaced;
 
 /// The value of the field `label` of Appendix A.1: the hex after `label:`,
 /// and on the lines after it that hold nothing but hex.

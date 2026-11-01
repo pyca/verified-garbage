@@ -15,8 +15,8 @@
     feature = "alloc"
 ))]
 
-use crate::bytes::unhex_spaced;
 use verified_garbage::scrypt::{Error, scrypt, verify};
+use verified_garbage_test_vectors::unhex_spaced;
 
 /// One `scrypt (P="…", S="…", N=…, r=…, p=…, dkLen=…) = <hex>` vector.
 struct Vector {

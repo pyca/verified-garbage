@@ -16,13 +16,13 @@
 
 use verified_garbage::aes_xts::{AesXts, Error, MAX_BLOCKS};
 
-use super::unhex;
+use verified_garbage_test_vectors::{cavp_records, unhex};
 
 /// Checks every vector of whole bytes of a response file, in both
 /// directions, and returns how many there were and how many were skipped.
 fn check_file(text: &str) -> (usize, usize) {
     let (mut count, mut skipped) = (0, 0);
-    for fields in super::records(text) {
+    for fields in cavp_records(text) {
         let bits: usize = fields["DataUnitLen"].parse().unwrap();
         if !bits.is_multiple_of(8) {
             skipped += 1;

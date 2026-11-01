@@ -14,8 +14,8 @@
     target_arch = "riscv64"
 ))]
 
-use crate::bytes::unhex_spaced;
 use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor, Error};
+use verified_garbage_test_vectors::unhex_spaced;
 
 /// The vectors' file (`crate::vectors`).
 fn text() -> String {

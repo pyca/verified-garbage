@@ -15,7 +15,7 @@
 use verified_garbage::triple_des_cfb::{InvalidKeyLength, TripleDesCfb64};
 use verified_garbage::triple_des_ecb::TripleDesEcb;
 
-use super::unhex;
+use verified_garbage_test_vectors::{cavp_records, unhex};
 
 /// CFB64 from ECB: the output and the block to continue from (the last
 /// ciphertext block, or after a partial segment `CIPH_K` of the last whole
@@ -61,7 +61,7 @@ fn check(ctx: &TripleDesCfb64, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8])
 
 fn check_file(text: &str) -> usize {
     let mut count = 0;
-    for fields in super::records(text) {
+    for fields in cavp_records(text) {
         let mut key = unhex(fields["KEY1"]);
         key.extend(unhex(fields["KEY2"]));
         key.extend(unhex(fields["KEY3"]));
