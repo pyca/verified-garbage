@@ -60,6 +60,17 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   among them. A variant calling the function it is a variant of is exempt,
   as above.
 
+An *internal function* (`Rust.Internal` in `lean/VerifiedGarbage/TCB/Rust.lean`),
+which the emitter writes to `src/internal/<name>.rs` of its crate, is code
+that verified functions call but that has no contract: it has no Rust
+signature (`fn <name>()`), so its variants are not found by their
+signature. A variant of an internal function `f` is the internal function
+`f_<suffix>` whose suffix is made of words that are the words of the
+suffixes of variants of functions with signatures on the target (`_shani`,
+`_avx2`, `_blake2b_avx2`, …): `vg_p384_mul_mod_n` is not a variant of
+`vg_p384_mul`, as no function of a signature has a variant `_mod_n`. Its
+CPU features are in a `_FEATURES` constant of its file, as an artifact's.
+
 A function the emitter renders as another name of an identical function of
 its module (`pub use self::<f> as <name>;`, `Rust.alias` in
 `lean/VerifiedGarbage/TCB/Rust.lean`) is that function's code: it has its
@@ -98,9 +109,11 @@ FEATURES = re.compile(
 
 
 def sources():
-    """Each generated file's target and text."""
+    """Each generated file's target and text: its modules' and its internal
+    functions' (`internal/<name>.rs`)."""
     return [(target, path.read_text())
-            for target, d in asm_layout.target_dirs(ROOT).items() for path in sorted(d.glob("*.rs"))]
+            for target, d in asm_layout.target_dirs(ROOT).items()
+            for path in sorted(d.glob("*.rs")) + sorted(d.glob("internal/vg_*.rs"))]
 
 
 def bodies(text):
@@ -157,17 +170,30 @@ def features(srcs):
     return targets
 
 
+# The signature of an internal function (`fn <name>()`).
+INTERNAL = ("", "")
+
+
 def variants(fns):
     """`(base, suffix)` of each function that is a variant of another: the
-    longest `base` it extends with `_<suffix>`, with the same signature."""
-    out = {}
-    for name, (sig, _) in fns.items():
-        parts = name.split("_")
-        for i in range(len(parts) - 1, 1, -1):
-            base = "_".join(parts[:i])
-            if base in fns and fns[base][0] == sig:
-                out[name] = (base, "_".join(parts[i:]))
-                break
+    longest `base` it extends with `_<suffix>`, with the same signature; of
+    an internal function (which has none), the longest whose suffix is made
+    of the words of the suffixes of the variants of functions with one."""
+    def find(names, ok):
+        out = {}
+        for name in names:
+            parts = name.split("_")
+            for i in range(len(parts) - 1, 1, -1):
+                base = "_".join(parts[:i])
+                if base in fns and fns[base][0] == fns[name][0] and ok(parts[i:]):
+                    out[name] = (base, "_".join(parts[i:]))
+                    break
+        return out
+
+    out = find([n for n, (sig, _) in fns.items() if sig != INTERNAL], lambda _: True)
+    words = {w for _, suffix in out.values() for w in suffix.split("_")}
+    out.update(find([n for n, (sig, _) in fns.items() if sig == INTERNAL],
+                    lambda ws: all(w in words for w in ws)))
     return out
 
 

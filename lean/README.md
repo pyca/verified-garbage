@@ -23,8 +23,10 @@ VerifiedGarbage/
     Registration.lean  `Api.artifact`: an `Artifact` made from an `Api` and only
                     what its implementation chooses (`Registration`)
     Rust.lean       rendering artifacts as Rust naked functions; checks that every
-                    call is of the artifact whose code the model runs for it, and
-                    that each artifact declares the CPU features its code needs
+                    call is of the function whose code the model runs for it (an
+                    artifact, or an internal function the emitter writes from that
+                    code), and that each artifact declares the CPU features its
+                    code needs
     Axioms.lean     `#assert_standard_axioms`
     Audit.lean      `#assert_no_compiler_overrides` (the compiled code the emitter
                     runs is what the kernel checked) and `#assert_spec_origin`
@@ -117,9 +119,18 @@ never import proofs.
 
 A function can call another (`Code.call name body`): the model runs the
 callee's code `body` between the call and return instructions, so the
-caller's proof covers it, and the emitter only emits the call if `name` is
-the artifact whose code is `body`. A caller's proof can use the callee's
+caller's proof covers it, and the emitter only emits the call if the
+function it emits as `name` is `body`. A caller's proof can use the callee's
 `Verified` proof rather than go through its code again.
+
+So a function that only verified code calls, an implementation detail of
+the functions it serves, needs no `Api`, no contract in `Spec/` and no
+registration: when `name` is not an artifact of the target, the emitter
+emits it as an *internal function* (`Rust.Internal`), from `body`, private
+to the crate (`internal/<name>.rs`), where no Rust code can call it. Its
+proof, and the contract it is proven against, are the caller's business, in
+`Proof/`: what is trusted is only the contract of each artifact that calls
+it. Give a function an `Api` only if the Rust code calls it.
 
 Code saves registers on the stack, or passes arguments on the stack, in a
 stack frame (`Code.frame push body pop`): the push moves the stack pointer
@@ -144,7 +155,8 @@ constant.
   and encoders, which must print what the models mean.
 * For each artifact: its contract in `Spec/` (and the algorithm spec it
   refers to), its `sig` and `doc` (its `Api` in `Spec/`), and
-  `TCB/Emit.lean`, which decides what is emitted.
+  `TCB/Emit.lean`, which decides what is emitted. Not the internal functions
+  it calls, which have no contract: its proof covers their code.
 * Lean's kernel, and the assembler in `rustc`/LLVM for what is printed as
   text: ARM's code, and the branches, calls, addresses of statics and
   directives of the others.
