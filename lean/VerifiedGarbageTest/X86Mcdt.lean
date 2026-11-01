@@ -94,10 +94,10 @@ def s₁ : Option State := isa.push (.mcdtEnter .eax) s₀
 
 /-! ## Printing and feature declarations -/
 
-#guard printer.instr (.pmuludq .xmm2 .xmm7) == ["pmuludq xmm2, xmm7"]
-#guard printer.instr (.mcdtEnter .ecx) == ["lea esp, [esp-12]", "stmxcsr DWORD PTR [esp+4]",
+#guard Instr.asm (.pmuludq .xmm2 .xmm7) == ["pmuludq xmm2, xmm7"]
+#guard Instr.asm (.mcdtEnter .ecx) == ["lea esp, [esp-12]", "stmxcsr DWORD PTR [esp+4]",
   "mov ecx, 8127", "mov DWORD PTR [esp], ecx", "ldmxcsr DWORD PTR [esp]", "lfence"]
-#guard printer.instr .mcdtLeave == ["lfence", "ldmxcsr DWORD PTR [esp+4]", "lea esp, [esp+12]"]
+#guard Instr.asm .mcdtLeave == ["lfence", "ldmxcsr DWORD PTR [esp+4]", "lea esp, [esp+12]"]
 #guard Instr.requires (.pmuludq .xmm0 .xmm1) == []
 #guard Instr.requires (.mcdtEnter .eax) == []
 #guard Instr.requires .mcdtLeave == []

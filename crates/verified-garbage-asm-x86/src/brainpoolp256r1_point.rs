@@ -16,128 +16,573 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_brainpoolp256r1_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
+        // mov eax, DWORD PTR [esp+4]
+        // mov DWORD PTR [eax+3584], edi
+        // mov edi, eax
+        // mov eax, 3424
+        // mov ecx, 3328
+        // mov edx, 3648
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xd60b8c78900000e00b8890424448b
-.byte 0,185,0,13,0,0,186,64,14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x00,0xb9,0x00,0x0d,0x00,0x00,0xba,0x40,0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3456
+        // mov ecx, 3360
+        // mov edx, 3680
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000d20b900000d80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3488
+        // mov ecx, 3392
+        // mov edx, 3712
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x80ba00000d40b900000da0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3360
+        // mov ecx, 3328
+        // mov edx, 3744
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000d00b900000d20b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3456
+        // mov ecx, 3424
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000d60b900000d80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3744
+        // mov edx, 3744
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000ea0b900000ec0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3680
+        // mov ecx, 3648
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000e40b900000e60b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3744
+        // mov edx, 3744
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000ea0b900000ec0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3392
+        // mov ecx, 3328
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000d00b900000d40b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3488
+        // mov ecx, 3424
+        // mov edx, 3808
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000d60b900000da0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3808
+        // mov ecx, 3776
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000ec0b900000ee0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3648
+        // mov edx, 3808
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000e40b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3808
+        // mov ecx, 3776
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000ec0b900000ee0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3392
+        // mov ecx, 3360
+        // mov edx, 3808
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000d20b900000d40b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3488
+        // mov ecx, 3456
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000d80b900000da0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3232
+        // mov ecx, 3808
+        // mov edx, 3808
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000ee0b900000ca0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3680
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000e60b900000e80b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3232
+        // mov ecx, 3808
+        // mov edx, 3808
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000ee0b900000ca0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3520
+        // mov edx, 3296
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000dc0b900000ec0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3552
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000de0b900000e80b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3296
+        // mov ecx, 3232
+        // mov edx, 3296
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000ca0b900000ce0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3296
+        // mov ecx, 3680
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000e60b900000ce0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3296
+        // mov ecx, 3680
+        // mov edx, 3296
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000e60b900000ce0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3296
+        // mov ecx, 3232
+        // mov edx, 3264
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000ca0b900000ce0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3648
+        // mov ecx, 3648
+        // mov edx, 3680
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000e40b900000e40b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3648
+        // mov ecx, 3680
+        // mov edx, 3680
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000e60b900000e40b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3520
+        // mov edx, 3712
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x80ba00000dc0b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3552
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000de0b900000ec0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3680
+        // mov edx, 3680
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000e60b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3648
+        // mov edx, 3712
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x80ba00000e40b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3520
+        // mov edx, 3712
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x80ba00000dc0b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3776
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000ec0b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3680
+        // mov edx, 3648
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x40ba00000e60b900000ec0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3648
+        // mov ecx, 3264
+        // mov edx, 3264
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000cc0b900000e40b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3808
+        // mov edx, 3648
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x40ba00000ee0b900000ec0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3232
+        // mov ecx, 3744
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000ea0b900000ca0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3648
+        // mov ecx, 3232
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000ca0b900000e40b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3680
+        // mov ecx, 3744
+        // mov edx, 3648
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x40ba00000ea0b900000e60b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3296
+        // mov ecx, 3808
+        // mov edx, 3296
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000ee0b900000ce0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3648
+        // mov ecx, 3296
+        // mov edx, 3296
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000ce0b900000e40b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
-        r".byte 88,88,88,88,139,191,0,14,0,0,195",
-        r".p2align 6",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov edi, DWORD PTR [edi+3584]
+        // ret
+        r".byte 0x58,0x58,0x58,0x58,0x8b,0xbf,0x00,0x0e,0x00,0x00,0xc3
+.p2align 6",
         vg_brainpoolp256r1_mul_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_mul_mod_p,
         vg_brainpoolp256r1_add_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_add_mod_p,
         vg_brainpoolp256r1_sub_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_sub_mod_p,
@@ -158,128 +603,573 @@ pub unsafe extern "C" fn vg_brainpoolp256r1_point_add(ws: *mut [u64; 1024]) {
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_brainpoolp256r1_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
+        // mov eax, DWORD PTR [esp+4]
+        // mov DWORD PTR [eax+3584], edi
+        // mov edi, eax
+        // mov eax, 3328
+        // mov ecx, 3328
+        // mov edx, 3648
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xd00b8c78900000e00b8890424448b
-.byte 0,185,0,13,0,0,186,64,14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x00,0xb9,0x00,0x0d,0x00,0x00,0xba,0x40,0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3360
+        // mov ecx, 3360
+        // mov edx, 3680
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000d20b900000d20b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3392
+        // mov ecx, 3392
+        // mov edx, 3712
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x80ba00000d40b900000d40b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3360
+        // mov ecx, 3328
+        // mov edx, 3744
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000d00b900000d20b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3360
+        // mov ecx, 3328
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000d00b900000d20b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3744
+        // mov edx, 3744
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000ea0b900000ec0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3680
+        // mov ecx, 3648
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000e40b900000e60b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3744
+        // mov edx, 3744
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000ea0b900000ec0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3392
+        // mov ecx, 3328
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000d00b900000d40b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3392
+        // mov ecx, 3328
+        // mov edx, 3808
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000d00b900000d40b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3808
+        // mov ecx, 3776
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000ec0b900000ee0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3648
+        // mov edx, 3808
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000e40b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3808
+        // mov ecx, 3776
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000ec0b900000ee0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3392
+        // mov ecx, 3360
+        // mov edx, 3808
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000d20b900000d40b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3392
+        // mov ecx, 3360
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000d20b900000d40b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3232
+        // mov ecx, 3808
+        // mov edx, 3808
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000ee0b900000ca0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3680
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000e60b900000e80b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3232
+        // mov ecx, 3808
+        // mov edx, 3808
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000ee0b900000ca0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3520
+        // mov edx, 3296
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000dc0b900000ec0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3552
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000de0b900000e80b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3296
+        // mov ecx, 3232
+        // mov edx, 3296
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000ca0b900000ce0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3296
+        // mov ecx, 3680
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000e60b900000ce0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3296
+        // mov ecx, 3680
+        // mov edx, 3296
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000e60b900000ce0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3296
+        // mov ecx, 3232
+        // mov edx, 3264
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000ca0b900000ce0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3648
+        // mov ecx, 3648
+        // mov edx, 3680
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000e40b900000e40b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3648
+        // mov ecx, 3680
+        // mov edx, 3680
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000e60b900000e40b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3520
+        // mov edx, 3712
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x80ba00000dc0b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3552
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000de0b900000ec0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3680
+        // mov edx, 3680
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x60ba00000e60b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3648
+        // mov edx, 3712
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x80ba00000e40b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3520
+        // mov edx, 3712
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x80ba00000dc0b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3712
+        // mov ecx, 3776
+        // mov edx, 3776
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000ec0b900000e80b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3680
+        // mov edx, 3648
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x40ba00000e60b900000ec0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3648
+        // mov ecx, 3264
+        // mov edx, 3264
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xc0ba00000cc0b900000e40b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3776
+        // mov ecx, 3808
+        // mov edx, 3648
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x40ba00000ee0b900000ec0b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3232
+        // mov ecx, 3744
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000ea0b900000ca0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3648
+        // mov ecx, 3232
+        // mov edx, 3232
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xa0ba00000ca0b900000e40b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_sub_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_sub_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3680
+        // mov ecx, 3744
+        // mov edx, 3648
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0x40ba00000ea0b900000e60b858585858
-.byte 14,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0e,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3296
+        // mov ecx, 3808
+        // mov edx, 3296
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000ee0b900000ce0b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_mul_mod_p}",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_mul_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov eax, 3648
+        // mov ecx, 3296
+        // mov edx, 3296
+        // push eax
+        // push ecx
+        // push edx
+        // push edi
         r".octa 0xe0ba00000ce0b900000e40b858585858
-.byte 12,0,0,80,81,82,87",
-        r"call {vg_brainpoolp256r1_add_mod_p}",
-        r".byte 88,88,88,88,139,191,0,14,0,0,195",
-        r".p2align 6",
+.byte 0x0c,0x00,0x00,0x50,0x51,0x52,0x57
+call {vg_brainpoolp256r1_add_mod_p}",
+        // pop eax
+        // pop eax
+        // pop eax
+        // pop eax
+        // mov edi, DWORD PTR [edi+3584]
+        // ret
+        r".byte 0x58,0x58,0x58,0x58,0x8b,0xbf,0x00,0x0e,0x00,0x00,0xc3
+.p2align 6",
         vg_brainpoolp256r1_mul_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_mul_mod_p,
         vg_brainpoolp256r1_add_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_add_mod_p,
         vg_brainpoolp256r1_sub_mod_p = sym super::brainpoolp256r1_mont::vg_brainpoolp256r1_sub_mod_p,

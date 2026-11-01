@@ -14,9 +14,48 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".octa 0xb80774d0391424548b0c24448b53,0x448b00000000b900000000bb3deb0000,0x8b10b60fc8010824448b2374c1390c24,0x8b01c183d309c23100b60fc801102444
-.octa 0xe8c101e883d88900ebdf75c1390c2444
-.byte 31,91,195",
-        r".p2align 6",
+        // push ebx
+        // mov eax, DWORD PTR [esp+12]
+        // mov edx, DWORD PTR [esp+20]
+        // cmp eax, edx
+        r".byte 0x53,0x8b,0x44,0x24,0x0c,0x8b,0x54,0x24,0x14,0x39,0xd0
+je 20f",
+        // mov eax, 0
+        r".byte 0xb8,0x00,0x00,0x00,0x00
+jmp 21f
+20:",
+        // mov ebx, 0
+        // mov ecx, 0
+        // mov eax, DWORD PTR [esp+12]
+        // cmp ecx, eax
+        r".octa 0xc1390c24448b00000000b900000000bb
+je 22f
+24:",
+        // mov eax, DWORD PTR [esp+8]
+        // add eax, ecx
+        // movzx edx, BYTE PTR [eax]
+        // mov eax, DWORD PTR [esp+16]
+        // add eax, ecx
+        // movzx eax, BYTE PTR [eax]
+        // xor edx, eax
+        // or ebx, edx
+        // add ecx, 1
+        // mov eax, DWORD PTR [esp+12]
+        // cmp ecx, eax
+        r".octa 0xfc8011024448b10b60fc8010824448b
+.byte 0xb6,0x00,0x31,0xc2,0x09,0xd3,0x83,0xc1,0x01,0x8b,0x44,0x24,0x0c,0x39,0xc1
+jne 24b
+jmp 23f
+22:
+23:",
+        // mov eax, ebx
+        // sub eax, 1
+        // shr eax, 31
+        r".byte 0x89,0xd8,0x83,0xe8,0x01,0xc1,0xe8,0x1f
+21:",
+        // pop ebx
+        // ret
+        r".byte 0x5b,0xc3
+.p2align 6",
     )
 }

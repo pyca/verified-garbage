@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.TCB.X86.Encode
 public import VerifiedGarbage.TCB.Print
 
 /-!
@@ -8,6 +8,13 @@ public import VerifiedGarbage.TCB.Print
 
 **Trusted.** Emits Intel syntax without register prefixes, which is the
 default dialect of Rust's `asm!`/`naked_asm!` on x86.
+
+Each straight-line instruction, and the return, is printed as its machine
+code (`Encode.lean`), `.byte <bytes>`, after a line `// <the instruction's
+text>`, which the emitter writes as a Rust comment (`Rust.template`): the
+assembler only copies the bytes. The branches (`jcc`, `jmp`), the call and
+the address of a static (`symPush`) are printed as text, for the assembler
+and linker to lay out.
 -/
 
 @[expose] public section
@@ -135,8 +142,17 @@ def Instr.asm : Instr → List String
 def Cond.name : Cond → String
   | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"
 
+/-- The lines of an instruction: each of its instructions' text (`asm`) as a
+comment, then that instruction's bytes (`encode`); its text if it has no
+encoding (`symPush`, printed by `symLines`, or an instruction that
+`unencodable` reports, which the emitter refuses). -/
+def Instr.code (i : Instr) : List String :=
+  match i.encode with
+  | some bs => (i.asm.zip bs).flatMap fun (t, b) => [s!"// {t}", byteLine b]
+  | none => i.asm
+
 def printer : Printer isa where
-  instr := Instr.asm
+  instr := Instr.code
   -- Label 2 is private to this adjacent call/address pair. Structured
   -- control flow uses 20, 21, ...; repeated pairs use the nearest 2b/2f.
   -- LLVM's Intel-syntax parser rejects symbol differences as ADD operands.
@@ -150,7 +166,7 @@ def printer : Printer isa where
     | _ => none
   branch c l := [s!"j{c.name} {l}"]
   jump l := s!"jmp {l}"
-  ret := ["ret"]
+  ret := ["// ret", byteLine retBytes]
   call := "call"
   /- Every function starts on a 64-byte boundary, a cache line: the unit
   AMD's op cache builds its entries from (Zen 4 Software Optimization Guide,
@@ -159,5 +175,8 @@ def printer : Printer isa where
   relative to them is fixed by the function alone: a change to other code
   cannot move them, and with them its performance. -/
   funcAlign := [".p2align 6"]
+  unencodable
+    | .symPush .. => none
+    | i => if i.encode.isNone then some "an operand does not fit its field" else none
 
 end VG.X86

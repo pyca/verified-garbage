@@ -57,8 +57,8 @@ def ecx (a b lo hi : BitVec 32) (c : Bool) : Bool :=
 
 /-! ## Printing -/
 
-#guard printer.instr (.mul .ecx) == ["mul ecx"]
-#guard printer.instr (.mul .esi) == ["mul esi"]
+#guard Instr.asm (.mul .ecx) == ["mul ecx"]
+#guard Instr.asm (.mul .esi) == ["mul esi"]
 
 -- `mul` is in the i486 baseline, and does not write `esp`.
 #guard isa.requires (.mul .ecx) == []

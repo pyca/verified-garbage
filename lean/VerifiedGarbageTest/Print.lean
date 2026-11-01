@@ -38,7 +38,7 @@ open X86_64
 #guard text (X86.printer.function
     (.frame (.symPush .edx "VG_TABLE") (.block []) (.free 4) : Prog X86.isa)) ==
   ["call 2f", "2:", "mov edx, DWORD PTR [esp]", ".byte 0x81, 194", ".long <pcrel VG_TABLE>",
-    "lea esp, [esp+4]", "ret"]
+    "// lea esp, [esp+4]", ".byte 0x8d,0x64,0x24,0x04", "// ret", ".byte 0xc3"]
 
 #guard Rust.line "call" (.sym ".long " .x86PcRel "VG_TABLE") ==
   "        r\".long {VG_TABLE} - 2b\",\n"
@@ -341,30 +341,30 @@ def sampleX86 : Prog X86.isa :=
         .shift .ror .ebx 6, .shift .shr .eax 10, .bswap .eax]) .ne))
 
 #guard text (X86.printer.function sampleX86) == [
-  "mov eax, DWORD PTR [esp+16]",
-  "test ebp, ebp",
+  "// mov eax, DWORD PTR [esp+16]", ".byte 0x8b,0x44,0x24,0x10",
+  "// test ebp, ebp", ".byte 0x85,0xed",
   "je 20f",
   "22:",
-  "mov ebx, eax",
-  "mov ecx, -2",
-  "mov edx, DWORD PTR [esi]",
-  "mov DWORD PTR [eax+96], ebx",
-  "add ecx, 1116352408",
-  "adc ecx, edx",
-  "sub ebp, 1",
-  "sbb ecx, edx",
-  "and ebx, DWORD PTR [esi+28]",
-  "or ebx, edx",
-  "xor ebx, ecx",
-  "cmp edi, 64",
-  "ror ebx, 6",
-  "shr eax, 10",
-  "bswap eax",
+  "// mov ebx, eax", ".byte 0x89,0xc3",
+  "// mov ecx, -2", ".byte 0xb9,0xfe,0xff,0xff,0xff",
+  "// mov edx, DWORD PTR [esi]", ".byte 0x8b,0x16",
+  "// mov DWORD PTR [eax+96], ebx", ".byte 0x89,0x58,0x60",
+  "// add ecx, 1116352408", ".byte 0x81,0xc1,0x98,0x2f,0x8a,0x42",
+  "// adc ecx, edx", ".byte 0x11,0xd1",
+  "// sub ebp, 1", ".byte 0x83,0xed,0x01",
+  "// sbb ecx, edx", ".byte 0x19,0xd1",
+  "// and ebx, DWORD PTR [esi+28]", ".byte 0x23,0x5e,0x1c",
+  "// or ebx, edx", ".byte 0x09,0xd3",
+  "// xor ebx, ecx", ".byte 0x31,0xcb",
+  "// cmp edi, 64", ".byte 0x83,0xff,0x40",
+  "// ror ebx, 6", ".byte 0xc1,0xcb,0x06",
+  "// shr eax, 10", ".byte 0xc1,0xe8,0x0a",
+  "// bswap eax", ".byte 0x0f,0xc8",
   "jne 22b",
   "jmp 21f",
   "20:",
   "21:",
-  "ret"
+  "// ret", ".byte 0xc3"
 ]
 
 /-- The x86 (32-bit) byte instructions, every 8-bit register name, and `jb`/`jae`. -/
@@ -374,12 +374,12 @@ def sampleX86Bytes : Prog X86.isa :=
     (.seq (.ite .b (.block []) (.block [])) (.ite .ae (.block []) (.block [])))
 
 #guard text (X86.printer.function sampleX86Bytes) == [
-  "movzx eax, BYTE PTR [esi+32]",
-  "movzx edi, BYTE PTR [ebp]",
-  "mov BYTE PTR [ebx+5], al",
-  "mov BYTE PTR [ebx+5], cl",
-  "mov BYTE PTR [ebx+5], dl",
-  "mov BYTE PTR [ebx+5], bl",
+  "// movzx eax, BYTE PTR [esi+32]", ".byte 0x0f,0xb6,0x46,0x20",
+  "// movzx edi, BYTE PTR [ebp]", ".byte 0x0f,0xb6,0x7d,0x00",
+  "// mov BYTE PTR [ebx+5], al", ".byte 0x88,0x43,0x05",
+  "// mov BYTE PTR [ebx+5], cl", ".byte 0x88,0x4b,0x05",
+  "// mov BYTE PTR [ebx+5], dl", ".byte 0x88,0x53,0x05",
+  "// mov BYTE PTR [ebx+5], bl", ".byte 0x88,0x5b,0x05",
   "jb 20f",
   "jmp 21f",
   "20:",
@@ -388,7 +388,7 @@ def sampleX86Bytes : Prog X86.isa :=
   "jmp 23f",
   "22:",
   "23:",
-  "ret"
+  "// ret", ".byte 0xc3"
 ]
 
 /-- Every ARMv7 instruction form, every second-operand form, and both conditions. -/
@@ -630,13 +630,14 @@ def sampleRV : Prog RISCV64.isa :=
     .alloc 4096, .free 4096].all (·.unencodable.isSome)
 #guard RISCV64.Instr.unencodable (.lla .a0 "VG_TABLE") == none
 #guard RISCV64.Instr.unencodable (.alloc 4064) == none
--- RISC-V's, AArch64's and PPC64LE's generated files, already machine code, are in
+-- RISC-V's, AArch64's, PPC64LE's and x86's generated files, already machine code, are in
 -- their crates' `src/`, which they compile; every other target's, the code
 -- as printed, in its `asm/`.
 #guard Rust.codeDir "riscv64" == "verified-garbage-asm-riscv64/src"
 #guard Rust.codeDir "aarch64" == "verified-garbage-asm-aarch64/src"
 #guard Rust.codeDir "powerpc64le" == "verified-garbage-asm-powerpc64le/src"
-#guard ["x86_64", "x86", "arm"].all fun t =>
+#guard Rust.codeDir "x86" == "verified-garbage-asm-x86/src"
+#guard ["x86_64", "arm"].all fun t =>
   Rust.codeDir t == s!"verified-garbage-asm-{t}/asm"
 -- Consecutive `.inst` lines are joined, 8 words a line at most; nothing
 -- else is.
@@ -645,6 +646,20 @@ def sampleRV : Prog RISCV64.isa :=
 #guard Rust.template "bl" [.text ".inst 0x1", .text "20:", .text ".inst 0x2", .text ".inst 0x3",
     .call "vg_f", .text ".inst 0x4"] ==
   "        r\".inst 0x1\n20:\n.inst 0x2,0x3\nbl {vg_f}\n.inst 0x4\",\n"
+-- Consecutive encoded `.byte` lines are joined, and packed into `.octa`s of
+-- 16 bytes, little-endian, then a `.byte` of the rest; another `.byte` line
+-- (`symPush`'s) is neither.
+#guard Rust.template "call" ((List.range 18).map fun i => .text (X86.byteLine [i])) ==
+  "        r\".octa 0xf0e0d0c0b0a09080706050403020100\n.byte 0x10,0x11\",\n"
+#guard Rust.template "call" [.text ".byte 0x81, 199", .text (X86.byteLine [1, 2]),
+    .text (X86.byteLine [3])] ==
+  "        r\".byte 0x81, 199\n.byte 0x01,0x02,0x03\",\n"
+#guard Rust.packBytes ((List.range 70).map (· % 256)) == [
+  ".octa 0xf0e0d0c0b0a09080706050403020100,0x1f1e1d1c1b1a19181716151413121110," ++
+    "0x2f2e2d2c2b2a29282726252423222120,0x3f3e3d3c3b3a39383736353433323130",
+  ".byte 0x40,0x41,0x42,0x43,0x44,0x45"]
+#guard Rust.byteLine? ".byte 0x81, 199" == none
+#guard Rust.byteLine? ".byte 0x81,0xc7" == some [0x81, 0xc7]
 #guard Rust.template "bl" [.text ".long 0x1", .text ".long 0x2", .text ".inst 0x3"] ==
   "        r\".long 0x1,0x2\n.inst 0x3\",\n"
 #guard Rust.template "bl" [.text ".insn 4, 0x1", .text ".insn 4, 0x2"] ==
@@ -771,7 +786,8 @@ def callSample : Prog X86_64.isa :=
   .text "mov rdi, rbx", .call "vg_f", .text "mov rax, rdx", .text "ret"]
 #guard AArch64.printer.function (.call "vg_f" (.block []) : Prog AArch64.isa) ==
   [.call "vg_f", .text "// ret", .text ".inst 0xd65f03c0"]
-#guard X86.printer.function (.call "vg_f" (.block []) : Prog X86.isa) == [.call "vg_f", .text "ret"]
+#guard X86.printer.function (.call "vg_f" (.block []) : Prog X86.isa) ==
+  [.call "vg_f", .text "// ret", .text ".byte 0xc3"]
 #guard Arm.printer.function (.call "vg_f" (.block []) : Prog Arm.isa) == [.call "vg_f", .text "bx lr"]
 #guard PPC64LE.printer.function (.call "vg_f" (.block []) : Prog PPC64LE.isa) ==
   [.call "vg_f", .text "// blr", .text ".long 0x4e800020"]
@@ -868,7 +884,7 @@ instructions. -/
 -- address.
 #guard text (X86.printer.function
     (.frame (.push [.ecx, .eax]) (.call "vg_f" (.block [])) (.pop .edx 2) : Prog X86.isa)) == [
-  "push ecx", "push eax", "<call vg_f>", "pop edx", "pop edx", "ret"]
+  "// push ecx", ".byte 0x51", "// push eax", ".byte 0x50", "<call vg_f>", "// pop edx", ".byte 0x5a", "// pop edx", ".byte 0x5a", "// ret", ".byte 0xc3"]
 
 -- Pass two arguments on the stack, inside a frame saving `rbx` (x86-64).
 #guard text (printer.function

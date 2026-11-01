@@ -26,8 +26,8 @@ relocations and symbols as compiling `asm/`.
 The other crates compile the emitter's output itself, and are not
 pre-assembled: ARM's (`asm/`), which is built both as ARM and as Thumb code,
 whose bytes differ, and which Rust cannot tell apart at compile time; and
-RISC-V's, AArch64's and PPC64LE's (`src/`), whose printers already emit each
-instruction's machine code (`lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`).
+RISC-V's, AArch64's, PPC64LE's and x86's (`src/`), whose printers already
+emit each instruction's machine code (`lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`).
 
     python3 ci/preassemble.py [TARGET ...]          # rewrite src/
     python3 ci/preassemble.py --check [TARGET ...]  # fail if src/ is stale
@@ -51,7 +51,6 @@ CPU_CRATE = CRATES / "verified-garbage-cpu"
 # (an ELF one: the code is the same on every OS of the target).
 TRIPLES = {
     "x86_64": "x86_64-unknown-linux-gnu",
-    "x86": "i686-unknown-linux-gnu",
 }
 
 NAKED = re.compile(r"^    core::arch::naked_asm!\(\n(.*?)^    \)\n", re.M | re.S)
@@ -232,7 +231,7 @@ def octa(b):
 def encode(target, b):
     if not b:
         return []
-    if target in ("x86_64", "x86"):
+    if target == "x86_64":
         return octa(b)
     raise ValueError(target)
 

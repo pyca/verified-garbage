@@ -243,8 +243,63 @@ def commentOf : Line → Option String
 `.long` (PPC64LE's, `TCB/PPC64LE/Encode.lean`). -/
 def joinable : List String := [".inst ", ".long "]
 
+/-- The value of a hexadecimal digit. -/
+def hexDigit (c : Char) : Option Nat :=
+  if '0' ≤ c ∧ c ≤ '9' then some (c.toNat - '0'.toNat)
+  else if 'a' ≤ c ∧ c ≤ 'f' then some (c.toNat - 'a'.toNat + 10)
+  else none
+
+/-- The bytes of an encoded `.byte` line, as x86's printers emit each
+instruction (`TCB/X86/Encode.lean`'s `byteLine`): `.byte ` then bytes of two
+lowercase hexadecimal digits each (`0xNN`), separated by commas alone;
+`none` for any other line (e.g. `symPush`'s `.byte 0x81, 199`). -/
+def byteLine? (l : String) : Option (List Nat) :=
+  if l.startsWith ".byte " then
+    ((l.drop 6).toString.splitOn ",").mapM fun p =>
+      match p.toList with
+      | ['0', 'x', h, l] => do return (← hexDigit h) * 16 + (← hexDigit l)
+      | _ => none
+  else none
+
+/-- The bytes `bs` as `.octa` lines, each of up to 4 values of 16 bytes,
+little-endian (GNU as, "`.octa`": "16-byte integers", in the target's byte
+order, little-endian on x86), then a `.byte` line of the bytes after the
+last whole 16 (in `byteLine?`'s form). -/
+def packBytes (bs : List Nat) : List String :=
+  let hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
+  let byte (b : Nat) : String :=
+    let ds := Nat.toDigits 16 b
+    "0x" ++ String.ofList (List.replicate (2 - ds.length) '0' ++ ds)
+  let whole := bs.length / 16
+  let octas := (List.range whole).map fun i =>
+    ((bs.drop (16 * i)).take 16).foldr (fun b v => v * 256 + b) 0
+  let lines := (List.range ((whole + 3) / 4)).map fun j =>
+    ".octa " ++ ",".intercalate (((octas.drop (4 * j)).take 4).map hex)
+  let tail := bs.drop (16 * whole)
+  lines ++ (if tail.isEmpty then [] else [".byte " ++ ",".intercalate (tail.map byte)])
+
+/-- A line of a template as it is written: an encoded `.byte` line of 16
+bytes or more packed into `.octa`s (`packBytes`), any other as it is. -/
+def packLine (l : String) : List String :=
+  match byteLine? l with
+  | some bs => if bs.length ≥ 16 then packBytes bs else [l]
+  | none => [l]
+
+/-- Whether `p` is a `.byte` line that ends in an encoded byte (`, 0xNN` or
+` 0xNN`): its last five characters, so that joining a run of lines reads
+each once. Joining `.byte` lines is correct whatever their form, as the
+bytes of `.byte a, b` then `.byte c` are those of `.byte a, b,c`; this only
+keeps the other `.byte` lines (`symPush`'s `.byte 0x81, 199`) out of the
+runs that `packLine` packs. -/
+def endsInByte (p : String) : Bool :=
+  let tail := (p.takeEnd 5).toString
+  p.startsWith ".byte " && (tail.startsWith "," || tail.startsWith " ") &&
+    (byteLine? (".byte " ++ (tail.drop 1).toString)).isSome
+
 /-- The template line `t` added to the run of lines `run` (reversed): joined
-to the line before it if both are lines of the same `joinable` directive,
+to the line before it if `t` is an encoded `.byte` line (`byteLine?`) and
+that one a `.byte` line ending in an encoded byte (`endsInByte`), as the one
+`.byte` line of the bytes of both, in order; or if both are lines of the same `joinable` directive,
 of one word (`t`) and of fewer than 8 (the line before), as
 `<directive> <words>,<word>`, which the assembler reads as the same words in
 turn (GNU as, "`.inst`": "one or more expressions"; "`.long`": "zero or more
@@ -253,6 +308,7 @@ So a run of encoded instructions is a few lines for rustc and the assembler
 to read, not one per instruction. -/
 def pushLine (t : String) : List String → List String
   | p :: run =>
+    if (byteLine? t).isSome && endsInByte p then (p ++ "," ++ (t.drop 6).toString) :: run else
     match joinable.find? (t.startsWith ·) with
     | some d =>
       let w := (t.drop d.length).toString
@@ -276,7 +332,8 @@ no comment is about (e.g. a label or a branch, after the commented
 instructions before it) starts a new literal, so that each literal's
 comments are just above it: one literal per run of commented lines and the
 lines after them, not per line. Consecutive lines of an encoded
-instruction's directive are joined (`pushLine`). -/
+instruction's directive are joined (`pushLine`), and encoded bytes packed
+into `.octa`s (`packLine`). -/
 def template (call : String) (ls : List Line) : String :=
   go ls [] [] false false
 where
@@ -299,7 +356,7 @@ where
     | run, cs => String.join (cs.reverse.map fun c => s!"        {c}\n") ++
       match run with
       | [] => ""
-      | run => "        " ++ literal ("\n".intercalate run.reverse) ++ ",\n"
+      | run => "        " ++ literal ("\n".intercalate (run.reverse.flatMap packLine)) ++ ",\n"
 
 /-- `fs` as an English list of code spans: "`a`, `b` and `c`". -/
 def codeList : List String → String
@@ -901,14 +958,14 @@ def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
 /-- The directory of the crate of the target named `t` that holds its
 generated files: `src/`, which its crate compiles, for a target whose
 printer emits its straight-line code as machine code (RISC-V's,
-`TCB/RISCV64/Encode.lean`, AArch64's and PPC64LE's, `TCB/<ISA>/Encode.lean`),
-and `asm/`, the code as printed, for the others,
+`TCB/RISCV64/Encode.lean`, AArch64's, PPC64LE's and x86's,
+`TCB/<ISA>/Encode.lean`), and `asm/`, the code as printed, for the others,
 whose crates compile it as it is (ARM's) or pre-assembled
 (`ci/preassemble.py` writes their `src/`). Keyed on the target here, rather
 than being a field of its `Printer`, so that it does not change what every
 proof imports. -/
 def codeSubdir : String → String
-  | "riscv64" | "aarch64" | "powerpc64le" => "src"
+  | "riscv64" | "aarch64" | "powerpc64le" | "x86" => "src"
   | _ => "asm"
 
 /-- The directory of the target `t`'s generated files, under `crates/`:

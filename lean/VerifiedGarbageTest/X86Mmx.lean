@@ -116,24 +116,24 @@ def s₁ : Option State := isa.push .mmxEnter s₀
 #guard (isa.pop .emms s s).isNone
 
 /-! ## Printing and feature declarations -/
-#guard printer.instr (.mop (.bin .paddq .mm0 (.reg .mm1))) == ["paddq mm0, mm1"]
-#guard printer.instr (.mop (.bin .pxor .mm2 (.mem { base := .esp, disp := 8 }))) ==
+#guard Instr.asm (.mop (.bin .paddq .mm0 (.reg .mm1))) == ["paddq mm0, mm1"]
+#guard Instr.asm (.mop (.bin .pxor .mm2 (.mem { base := .esp, disp := 8 }))) ==
   ["pxor mm2, QWORD PTR [esp+8]"]
-#guard printer.instr (.mop (.bin .por .mm3 (.reg .mm4))) == ["por mm3, mm4"]
-#guard printer.instr (.mop (.bin .pand .mm5 (.reg .mm6))) == ["pand mm5, mm6"]
-#guard printer.instr (.mop (.bin .pandn .mm7 (.reg .mm0))) == ["pandn mm7, mm0"]
-#guard printer.instr (.mop (.shift .psllq .mm1 23)) == ["psllq mm1, 23"]
-#guard printer.instr (.mop (.shift .psrlq .mm2 41)) == ["psrlq mm2, 41"]
-#guard printer.instr (.mop (.movq .mm3 (.reg .mm4))) == ["movq mm3, mm4"]
-#guard printer.instr (.mop (.movq .mm5 (.mem { base := .esi, disp := 16 }))) ==
+#guard Instr.asm (.mop (.bin .por .mm3 (.reg .mm4))) == ["por mm3, mm4"]
+#guard Instr.asm (.mop (.bin .pand .mm5 (.reg .mm6))) == ["pand mm5, mm6"]
+#guard Instr.asm (.mop (.bin .pandn .mm7 (.reg .mm0))) == ["pandn mm7, mm0"]
+#guard Instr.asm (.mop (.shift .psllq .mm1 23)) == ["psllq mm1, 23"]
+#guard Instr.asm (.mop (.shift .psrlq .mm2 41)) == ["psrlq mm2, 41"]
+#guard Instr.asm (.mop (.movq .mm3 (.reg .mm4))) == ["movq mm3, mm4"]
+#guard Instr.asm (.mop (.movq .mm5 (.mem { base := .esi, disp := 16 }))) ==
   ["movq mm5, QWORD PTR [esi+16]"]
-#guard printer.instr (.mop (.punpckldq .mm6 .mm7)) == ["punpckldq mm6, mm7"]
-#guard printer.instr (.mop (.movd .mm0 .eax)) == ["movd mm0, eax"]
-#guard printer.instr (.mop (.movq2dq .xmm1 .mm2)) == ["movq2dq xmm1, mm2"]
-#guard printer.instr (.mop (.movdq2q .mm3 .xmm4)) == ["movdq2q mm3, xmm4"]
-#guard printer.instr (.mmxStore { base := .edi, disp := 24 } .mm5) == ["movq QWORD PTR [edi+24], mm5"]
-#guard printer.instr .mmxEnter == []
-#guard printer.instr .emms == ["emms"]
+#guard Instr.asm (.mop (.punpckldq .mm6 .mm7)) == ["punpckldq mm6, mm7"]
+#guard Instr.asm (.mop (.movd .mm0 .eax)) == ["movd mm0, eax"]
+#guard Instr.asm (.mop (.movq2dq .xmm1 .mm2)) == ["movq2dq xmm1, mm2"]
+#guard Instr.asm (.mop (.movdq2q .mm3 .xmm4)) == ["movdq2q mm3, xmm4"]
+#guard Instr.asm (.mmxStore { base := .edi, disp := 24 } .mm5) == ["movq QWORD PTR [edi+24], mm5"]
+#guard Instr.asm .mmxEnter == []
+#guard Instr.asm .emms == ["emms"]
 -- All MMX or SSE2: the baseline.
 #guard isa.requires (.mop (.bin .paddq .mm0 (.reg .mm1))) == []
 #guard isa.requires (.mop (.movq2dq .xmm1 .mm2)) == []
