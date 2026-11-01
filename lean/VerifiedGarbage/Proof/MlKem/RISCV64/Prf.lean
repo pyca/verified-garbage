@@ -22,6 +22,19 @@ writes `SamplePolyCBD₂(PRF₂(σ, N))` (its NTT if `withNtt`) to polynomial
 
 @[expose] public section
 
+namespace VG.Impl.MlKem.RISCV64.KemLay
+
+/-! ## The offsets of the polynomials the top level works in -/
+
+abbrev oAcc (K : KemLay) : Nat := oPoly K.jAcc
+abbrev oTmp (K : KemLay) : Nat := oPoly K.jTmp
+abbrev oAhat (K : KemLay) : Nat := oPoly K.jAhat
+abbrev oSample (K : KemLay) : Nat := oPoly K.jSample
+abbrev oNtt (K : KemLay) : Nat := oPoly K.jNtt
+abbrev oCt (K : KemLay) : Nat := oPoly K.jCt
+
+end VG.Impl.MlKem.RISCV64.KemLay
+
 namespace VG.Proof.MlKem.RISCV64
 
 open VG VG.RISCV64 VG.Impl.MlKem.RISCV64
@@ -131,7 +144,8 @@ tactic_template "offs" : tactic => `(tactic| (
                    (try have := (‹KemLay.WF _›).k4)
                    (try have := (‹KemLay.WF _›).du)
                    (try have := (‹KemLay.WF _›).dv)
-                   (try simp only [oPoly, oPrf, oSeed, oSigma, KemLay.jAcc, KemLay.jTmp, KemLay.jAhat, KemLay.jSample,
+                   (try simp only [oPoly, oPrf, oSeed, oSigma, KemLay.oAcc, KemLay.oTmp, KemLay.oAhat, KemLay.oSample, KemLay.oNtt,
+                     KemLay.oCt, KemLay.jAcc, KemLay.jTmp, KemLay.jAhat, KemLay.jSample,
                      KemLay.jNtt, KemLay.jCt, oK, oKbar, oMsg, oHek, oSave, oG, oCin, KemLay.ekLen, KemLay.ctLen,
                      KemLay.uLen, KemLay.vLen])
                    omega_arith))
@@ -148,7 +162,8 @@ tactic_template "kdecide" : tactic => `(tactic| first
                    (try have := (‹KemLay.WF _›).dv)
                    (try simp only [List.all_cons, List.all_nil, List.any_cons, List.any_nil, List.all_append, List.any_append, sep0,
                      subB0, inB, sepB, sepAll, List.length_cons, List.length_nil, List.getD_cons_zero, List.getD_cons_succ,
-                     oPoly, oPrf, oSeed, oSigma, KemLay.jAcc, KemLay.jTmp, KemLay.jAhat, KemLay.jSample, KemLay.jNtt,
+                     oPoly, oPrf, oSeed, oSigma, KemLay.oAcc, KemLay.oTmp, KemLay.oAhat, KemLay.oSample, KemLay.oNtt,
+                     KemLay.oCt, KemLay.jAcc, KemLay.jTmp, KemLay.jAhat, KemLay.jSample, KemLay.jNtt,
                      KemLay.jCt, oK, oKbar, oMsg, oHek, oSave, oG, oCin, KemLay.ekLen, KemLay.ctLen, KemLay.uLen,
                      KemLay.vLen, KemLay.dkLen, Bool.and_true, Bool.or_false,
                      Bool.true_and, Bool.false_or, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, bne_iff_ne, ne_eq,
@@ -196,7 +211,7 @@ def prfOut (withNtt : Bool) (σ : List Byte) (N : Nat) : Poly :=
 /-- What one `PRF` changes. -/
 abbrev prfW (K : KemLay) (N : Nat) : List (Nat × Nat × Nat) :=
   [(0, 0, 200), (1, 0, 1168), (0, 984, 1), (0, 1056, 128), (0, oPoly (K.k + N), 1024),
-    (0, oPoly K.jNtt, 1024)]
+    (0, K.oNtt, 1024)]
 
 theorem bytes_one (m : Mem) (p : Addr) : bytesAt m p 1 = [m p] := by
   simp [bytesAt]
@@ -236,7 +251,7 @@ theorem nttArgs_ok {s : State} {P : BitVec 64} {N : Nat} (hN : N ≤ 2 * K.k) (h
     WP isa (.block (slotAt .a0 .s6 K.k ++ polyAddr .a1 K.jNtt)) s fun s' =>
       Only s s' ∧
       s'.gpr .a0 = P + BitVec.ofNat 64 (oPoly (K.k + N)) ∧
-      s'.gpr .a1 = P + BitVec.ofNat 64 (oPoly K.jNtt) := by
+      s'.gpr .a1 = P + BitVec.ofNat 64 (K.oNtt) := by
   have k4 := hK.k4
   rw [← List.append_nil (polyAddr .a1 K.jNtt)]
   refine wp_slotAt (i := N) (by omega_arith) (by omega_arith) (by decide) h6 fun s₁ h₁ =>
@@ -287,7 +302,7 @@ theorem prfBody_ok {L : Lay} {s : State} (hc : Ctx L s) (withNtt : Bool) {N₁ N
   have hc₄ := hc₃.kept k₄
   have g6₄ : s₄.gpr .s6 = BitVec.ofNat 64 N := by
     rw [k₄.cs .s6 (by decide), o₃.cs .s6 (by decide), g6₂]
-  have fin : ∀ s₅, KeptX [.s6] (L.RL [(0, oPoly (K.k + N), 1024), (0, oPoly K.jNtt, 1024)]) s₄ s₅ →
+  have fin : ∀ s₅, KeptX [.s6] (L.RL [(0, oPoly (K.k + N), 1024), (0, K.oNtt, 1024)]) s₄ s₅ →
       s₅.gpr .s6 = BitVec.ofNat 64 N → PolyIs s₅.mem (L.A 0 (oPoly (K.k + N))) (prfOut withNtt σ N) →
       WP isa (.block (count .s6 N₁)) s₅ fun s' => KeptX [.s6] (L.RL (prfW K N)) s s' ∧
         s'.gpr .s6 = BitVec.ofNat 64 (N + 1) ∧ (s'.gpr .t0 != 0) = decide (N + 1 ≠ N₁) ∧
@@ -313,7 +328,7 @@ end
 /-- What the loop changes: the regions of `prfW`, with all its polynomials. -/
 abbrev prfLW (K : KemLay) (N₀ N₁ : Nat) : List (Nat × Nat × Nat) :=
   [(0, 0, 200), (1, 0, 1168), (0, 984, 1), (0, 1056, 128), (0, oPoly (K.k + N₀), 1024 * (N₁ - N₀)),
-    (0, oPoly K.jNtt, 1024)]
+    (0, K.oNtt, 1024)]
 
 structure PrfInv (K : KemLay) (L : Lay) (withNtt : Bool) (σ : List Byte) (N₀ N₁ : Nat) (s₀ : State) (t : Nat)
     (s : State) : Prop where
@@ -325,14 +340,14 @@ structure PrfInv (K : KemLay) (L : Lay) (withNtt : Bool) (σ : List Byte) (N₀ 
 theorem prfW_sig {K : KemLay} (hK : K.WF) : ∀ N < 2 * K.k + 1, (prfW K N).all (sep0 oSigma 32) = true := by
   have := hK.k4
   intro N hN
-  simp only [prfW, List.all_cons, List.all_nil, sep0, oPoly, KemLay.jNtt, oSigma, Bool.and_true, Bool.and_eq_true,
+  simp only [prfW, List.all_cons, List.all_nil, sep0, oPoly, KemLay.oNtt, KemLay.jNtt, oSigma, Bool.and_true, Bool.and_eq_true,
     Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq, true_and]
   omega_arith
 
 theorem prfW_slot {K : KemLay} (hK : K.WF) {N N' : Nat} (hN : N < 2 * K.k + 1) (hN' : N' < 2 * K.k + 1)
     (h : N' ≠ N) : (prfW K N).all (sep0 (oPoly (K.k + N')) 1024) = true := by
   have := hK.k4
-  simp only [prfW, List.all_cons, List.all_nil, sep0, oPoly, KemLay.jNtt, Bool.and_true, Bool.and_eq_true,
+  simp only [prfW, List.all_cons, List.all_nil, sep0, oPoly, KemLay.oNtt, KemLay.jNtt, Bool.and_true, Bool.and_eq_true,
     Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq, true_and]
   omega_arith
 
@@ -363,7 +378,7 @@ theorem prfStep_ok {L : Lay} {s₀ : State} (hc : Ctx L s₀) (withNtt : Bool) {
     · exact ⟨L.R 0 984 1, by simp, fun _ h => h⟩
     · exact ⟨L.R 0 1056 128, by simp, fun _ h => h⟩
     · exact ⟨L.R 0 (oPoly (K.k + N₀)) (1024 * (N₁ - N₀)), by simp, hc.sub0 (by offs) (by offs) (by offs)⟩
-    · exact ⟨L.R 0 (oPoly K.jNtt) 1024, by simp, fun _ h => h⟩
+    · exact ⟨L.R 0 (K.oNtt) 1024, by simp, fun _ h => h⟩
   · rw [← h.sig]
     exact Lay.bytes_keep hL k'.frame (hc.sepAll0 (by decide) (prfW_sig hK _ (by omega_arith))) (by decide)
   · by_cases e : N = N₀ + t
