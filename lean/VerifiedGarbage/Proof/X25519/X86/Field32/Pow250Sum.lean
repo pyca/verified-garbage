@@ -18,6 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 namespace VG.Proof.X25519.X86
 
 taint_summary pow250Sum : VG.X86.taint τCall
-  (.call Spec.X25519.Field32.pow250Api.name Impl.X25519.X86.Field32.pow250Fn)
+  (.call "vg_gf25519_r32_pow250" Impl.X25519.X86.Field32.pow250Fn)
 
 end VG.Proof.X25519.X86

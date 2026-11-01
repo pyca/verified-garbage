@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Point16Contract
+public import VerifiedGarbage.Proof.X25519.Field16Contract
 import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ed25519.Arm.AsFn
@@ -25,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 /-!
 # `vg_ed25519_r16_point_add` and `vg_ed25519_r16_point_double` on ARMv7, verified
 
-Each function meets its contract of `Spec/Ed25519/Point16.lean`, with no
+Each function meets its contract of `Proof/Ed25519/Point16Contract.lean`, with no
 stack: the proof against `addF` (`doubleF`), the contract's facts by
 register, from `asFn_ok` and `fieldCodeOn_ok` on the slots of the operands,
 whose limbs the contract bounds (`opSlots`); the elements as the contract
@@ -40,8 +42,8 @@ every address is `ws` plus a constant or the product's row counter.
 namespace VG.Proof.Ed25519.Arm.Point16
 
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Impl.Ed25519.Arm.Point16 VG.Proof.Ed25519.Arm VG.Proof.X25519.Arm
-open VG.Spec.Ed25519.Point16 (elemAt pointAt PointLimbs Keeps pAt qAt dAt)
-open VG.Spec.X25519.Field16 (Limbs)
+open VG.Proof.Ed25519.Point16 (elemAt pointAt PointLimbs Keeps pAt qAt dAt)
+open VG.Proof.X25519.Field16 (Limbs)
 
 /-- The slots the functions write: the result's and the formula's
 temporaries'. -/
@@ -78,8 +80,8 @@ result and the temporaries. -/
 theorem keeps_of_frame {b : BitVec 32} {W : List Slot} (hW : ∀ j ∈ W, j.val < 4 ∨ (8 ≤ j.val ∧ j.val < 16))
     {m m' : Mem} (hf : Frame (wRegions b W ++ [saveR b]) m m') : Keeps (State.addr b) m m' := by
   intro i hi hp ht ho
-  simp only [Spec.Ed25519.Point16.wsBytes, pAt, qAt, Spec.Ed25519.Point16.tmpAt, dAt,
-    Spec.X25519.Field16.ownAt, Spec.X25519.Field16.ownEnd] at hi hp ht ho
+  simp only [Proof.Ed25519.Point16.wsBytes, pAt, qAt, Proof.Ed25519.Point16.tmpAt, dAt,
+    Proof.X25519.Field16.ownAt, Proof.X25519.Field16.ownEnd] at hi hp ht ho
   have hc : (⟨State.addr b + BitVec.ofNat 64 i, 1⟩ : Region).Contains (State.addr b + BitVec.ofNat 64 i) 1 := by
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
   have hA := ACC_eq
@@ -103,13 +105,13 @@ theorem pointW_ok : ∀ j ∈ pointW, j.val < 4 ∨ (8 ≤ j.val ∧ j.val < 16)
 theorem lim_point {m : Mem} {b : BitVec 32} {o q : Nat} (ho : o = 64 + 64 * q)
     (h : PointLimbs m (State.addr b) o) (i : Slot) (hi : q ≤ i.val ∧ i.val < q + 4) :
     Lim m (State.addr b) (offset i) :=
-  lim_of_limbs (by simp only [ho, offset, Spec.Ed25519.Point16.elemBytes, Spec.X25519.Field16.elemBytes,
-    Spec.X25519.Field16.limbs]; omega) (h (i.val - q) (by omega))
+  lim_of_limbs (by simp only [ho, offset, Proof.Ed25519.Point16.elemBytes, Proof.X25519.Field16.elemBytes,
+    Proof.X25519.Field16.limbs]; omega) (h (i.val - q) (by omega))
 
 theorem limbs_point {m : Mem} {b : BitVec 32} {S : List Slot} (hl : LimOn m b S)
     (h : ∀ i : Slot, i.val < 4 → i ∈ S) : PointLimbs m (State.addr b) pAt := fun j hj =>
-  limbs_of_lim (i := ⟨j, by omega⟩) (by simp only [pAt, offset, Spec.Ed25519.Point16.elemBytes,
-    Spec.X25519.Field16.elemBytes, Spec.X25519.Field16.limbs]) (hl _ (h _ hj))
+  limbs_of_lim (i := ⟨j, by omega⟩) (by simp only [pAt, offset, Proof.Ed25519.Point16.elemBytes,
+    Proof.X25519.Field16.elemBytes, Proof.X25519.Field16.limbs]) (hl _ (h _ hj))
 
 theorem d_slot {m : Mem} {b : BitVec 32} (hd : elemAt m (State.addr b) dAt = Spec.Ed25519.d) :
     env m b 16 = Spec.Ed25519.d := by
@@ -207,7 +209,7 @@ def satF : State where
   wr := [⟨0x1000, 8192⟩]
 
 theorem sat_limbAt : ∀ o < 22, ∀ i < 16,
-    Spec.X25519.Field16.limbAt satMem 0x1000 (BitVec.ofNat 32 (64 + 64 * o)) i < 2 ^ 16 := by
+    Proof.X25519.Field16.limbAt satMem 0x1000 (BitVec.ofNat 32 (64 + 64 * o)) i < 2 ^ 16 := by
   decide +kernel
 
 theorem sat_limbs (o : Nat) (ho : o < 22) : Limbs satMem 0x1000 (BitVec.ofNat 32 (64 + 64 * o)) :=
@@ -215,11 +217,11 @@ theorem sat_limbs (o : Nat) (ho : o < 22) : Limbs satMem 0x1000 (BitVec.ofNat 32
 
 theorem sat_points (o : Nat) (ho : o + 4 ≤ 22) : PointLimbs satMem 0x1000 (64 + 64 * o) := fun j hj => by
   have := sat_limbs (o + j) (by omega)
-  rwa [show 64 + 64 * (o + j) = 64 + 64 * o + Spec.Ed25519.Point16.elemBytes * j by
-    simp only [Spec.Ed25519.Point16.elemBytes, Spec.X25519.Field16.elemBytes, Spec.X25519.Field16.limbs]; omega]
+  rwa [show 64 + 64 * (o + j) = 64 + 64 * o + Proof.Ed25519.Point16.elemBytes * j by
+    simp only [Proof.Ed25519.Point16.elemBytes, Proof.X25519.Field16.elemBytes, Proof.X25519.Field16.limbs]; omega]
     at this
 
-theorem sat_dval : Spec.X25519.Field16.valAt satMem 0x1000 (BitVec.ofNat 32 dAt) = dLit := by
+theorem sat_dval : Proof.X25519.Field16.valAt satMem 0x1000 (BitVec.ofNat 32 dAt) = dLit := by
   decide +kernel
 
 theorem d_eq : Spec.Ed25519.d = Fin.ofNat Spec.X25519.P dLit := by decide +kernel
@@ -227,35 +229,35 @@ theorem d_eq : Spec.Ed25519.d = Fin.ofNat Spec.X25519.P dLit := by decide +kerne
 theorem sat_d : elemAt satMem 0x1000 dAt = Spec.Ed25519.d := by
   rw [d_eq, elemAt, sat_dval]
 
-theorem add_sat : (Spec.Ed25519.Point16.addContract Arm.abi).pre satF := by
-  unfold Spec.Ed25519.Point16.addContract
+theorem add_sat : (Proof.Ed25519.Point16.addContract Arm.abi).pre satF := by
+  unfold Proof.Ed25519.Point16.addContract
   exact Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.Ed25519.Point16.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
+    sig_reduce [Sig.wfPre, Proof.Ed25519.Point16.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
     exact ⟨by decide, sat_points 0 (by decide), sat_points 4 (by decide), sat_limbs 16 (by decide), sat_d⟩)
 
-theorem double_sat : (Spec.Ed25519.Point16.doubleContract Arm.abi).pre satF := by
-  unfold Spec.Ed25519.Point16.doubleContract
+theorem double_sat : (Proof.Ed25519.Point16.doubleContract Arm.abi).pre satF := by
+  unfold Proof.Ed25519.Point16.doubleContract
   exact Sig.contract_pre_of_check (by decide +kernel) (by
-    sig_reduce [Sig.wfPre, Spec.Ed25519.Point16.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
+    sig_reduce [Sig.wfPre, Proof.Ed25519.Point16.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, satF]
     exact ⟨by decide, sat_points 0 (by decide), sat_limbs 16 (by decide), sat_d⟩)
 
-theorem addFn_verified : Verified Arm.target addFn (Spec.Ed25519.Point16.addContract Arm.abi) :=
+theorem addFn_verified : Verified Arm.target addFn (Proof.Ed25519.Point16.addContract Arm.abi) :=
   Verified.of_correct add_arm add_ct
-    { pre := by sig_implies_pre [Spec.Ed25519.Point16.addContract, Spec.Ed25519.Point16.sig, addF, fPre,
+    { pre := by sig_implies_pre [Proof.Ed25519.Point16.addContract, Proof.Ed25519.Point16.sig, addF, fPre,
         fPub, wsOf, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      post := by sig_implies_post [Spec.Ed25519.Point16.addContract, Spec.Ed25519.Point16.sig, addF, fPre,
+      post := by sig_implies_post [Proof.Ed25519.Point16.addContract, Proof.Ed25519.Point16.sig, addF, fPre,
         fPub, wsOf, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      pub := by sig_implies_pub [Spec.Ed25519.Point16.addContract, Spec.Ed25519.Point16.sig, addF, fPre,
+      pub := by sig_implies_pub [Proof.Ed25519.Point16.addContract, Proof.Ed25519.Point16.sig, addF, fPre,
         fPub, wsOf, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := ⟨satF, add_sat⟩ }
 
-theorem doubleFn_verified : Verified Arm.target doubleFn (Spec.Ed25519.Point16.doubleContract Arm.abi) :=
+theorem doubleFn_verified : Verified Arm.target doubleFn (Proof.Ed25519.Point16.doubleContract Arm.abi) :=
   Verified.of_correct double_arm double_ct
-    { pre := by sig_implies_pre [Spec.Ed25519.Point16.doubleContract, Spec.Ed25519.Point16.sig, doubleF, fPre,
+    { pre := by sig_implies_pre [Proof.Ed25519.Point16.doubleContract, Proof.Ed25519.Point16.sig, doubleF, fPre,
         fPub, wsOf, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      post := by sig_implies_post [Spec.Ed25519.Point16.doubleContract, Spec.Ed25519.Point16.sig, doubleF, fPre,
+      post := by sig_implies_post [Proof.Ed25519.Point16.doubleContract, Proof.Ed25519.Point16.sig, doubleF, fPre,
         fPub, wsOf, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      pub := by sig_implies_pub [Spec.Ed25519.Point16.doubleContract, Spec.Ed25519.Point16.sig, doubleF, fPre,
+      pub := by sig_implies_pub [Proof.Ed25519.Point16.doubleContract, Proof.Ed25519.Point16.sig, doubleF, fPre,
         fPub, wsOf, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := ⟨satF, double_sat⟩ }
 

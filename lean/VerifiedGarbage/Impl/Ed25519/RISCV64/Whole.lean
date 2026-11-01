@@ -101,7 +101,7 @@ def publicKey : Prog isa :=
   .seq (hashUpdate .s9 [.li .a1 0] .s8 0 [.li .a3 32]) <|
   .seq (hashFinalize .s9 [.li .a1 32] .s10 0) <|
   .seq (.block (prune .s10 0 64 ++ [mov .a0 .s7, .addi .a1 .s10 64, mov .a2 .s9])) <|
-  .seq (.call Spec.Ed25519.scalarBaseApi.name scalarBase) <|
+  .seq (.call "vg_ed25519_scalar_base" scalarBase) <|
   .block (restoreRegs .s10 96 pkRegs)
 
 /-! ## `vg_ed25519_sign_cached(out = a0, seed = a1, pk = a2, message = a3, len = a4, scratch = a5)`,
@@ -132,9 +132,9 @@ def signNonce : Prog isa :=
   .seq (hashUpdate .s10 [.li .a1 32] .s8 0 [mov .a3 .s9]) <|
   .seq (hashFinalize .s10 [.addi .a1 .s9 32] .s11 128) <|
   .seq (.block [.addi .a0 .s11 64, .addi .a1 .s11 128, mov .a2 .s10]) <|
-  .seq (.call Spec.Ed25519.scalarReduceApi.name scalarReduce) <|
+  .seq (.call "vg_ed25519_scalar_reduce" scalarReduce) <|
   .seq (.block [mov .a0 .s7, .addi .a1 .s11 64, mov .a2 .s10]) <|
-  .call Spec.Ed25519.scalarBaseApi.name scalarBase
+  .call "vg_ed25519_scalar_base" scalarBase
 
 /-- The challenge, and `S`. -/
 def signChallenge : Prog isa :=
@@ -144,9 +144,9 @@ def signChallenge : Prog isa :=
   .seq (hashUpdate .s10 [.li .a1 64] .s8 0 [mov .a3 .s9]) <|
   .seq (hashFinalize .s10 [.addi .a1 .s9 64] .s11 128) <|
   .seq (.block [.addi .a0 .s11 96, .addi .a1 .s11 128, mov .a2 .s10]) <|
-  .seq (.call Spec.Ed25519.scalarReduceApi.name scalarReduce) <|
+  .seq (.call "vg_ed25519_scalar_reduce" scalarReduce) <|
   .seq (.block [.addi .a0 .s7 32, .addi .a1 .s11 64, .addi .a2 .s11 96, .addi .a3 .s11 0, mov .a4 .s10]) <|
-  .call Spec.Ed25519.scalarMulAddApi.name scalarMulAdd
+  .call "vg_ed25519_scalar_mul_add" scalarMulAdd
 
 def signCached : Prog isa :=
   .seq (.block signSetup) <| .seq signExpand <| .seq signNonce <| .seq signChallenge <|
@@ -169,12 +169,12 @@ def verifyHash : Prog isa :=
   .seq (hashUpdate .s9 [.li .a1 64] .s7 0 [mov .a3 .s8]) <|
   .seq (hashFinalize .s9 [.addi .a1 .s8 64] .s10 64) <|
   .seq (.block [.addi .a0 .s10 0, .addi .a1 .s10 64, mov .a2 .s9]) <|
-  .seq (.call Spec.Ed25519.scalarReduceApi.name scalarReduce) <|
+  .seq (.call "vg_ed25519_scalar_reduce" scalarReduce) <|
   .block [.li .a5 0, .store .d .a5 .s10 32, .store .d .a5 .s10 40, .store .d .a5 .s10 48,
     .store .d .a5 .s10 56, .addi .a0 .s10 192, .addi .a1 .s10 128, .addi .a2 .s10 0, mov .a3 .s9]
 
 def verifyMessage : Prog isa :=
-  .seq verifyHash <| .seq (.call Spec.Ed25519.verifyEquationApi.name verifyEquation) <|
+  .seq verifyHash <| .seq (.call "vg_ed25519_verify_equation" verifyEquation) <|
   .block (restoreRegs .s10 224 verifyRegs)
 
 /-! ## The functions, with their frames -/

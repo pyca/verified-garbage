@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Points
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
@@ -89,9 +90,9 @@ theorem doubleRfcOps_formula (e : Env) : point (evalOps doubleRfcOps e) 0 1 2 3 
 
 /-- `doubleRfcOps` computes RFC 8032's doubling. -/
 theorem doubleRfcOps_eval (e : Env) :
-    point (evalOps doubleRfcOps e) 0 1 2 3 = Spec.Ed25519.Point64.pointDouble (point e 0 1 2 3) := by
+    point (evalOps doubleRfcOps e) 0 1 2 3 = Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3) := by
   rw [doubleRfcOps_formula]
-  simp only [dblResult, Spec.Ed25519.Point64.pointDouble, point]
+  simp only [dblResult, Proof.Ed25519.Point64.pointDouble, point]
   congr 1 <;> grind
 
 /-- What `addAffineOps` computes, from the point's coordinates and the cached entry's. -/

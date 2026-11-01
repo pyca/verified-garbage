@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Field
-public import VerifiedGarbage.Spec.X25519.Field32
+public import VerifiedGarbage.Spec.X25519
 
 /-! A fixed addition chain shared by inversion and square-root recovery, on
 RISC-V, as on PPC64LE (`Impl/Ed25519/PPC64LE/Power.lean`). -/
@@ -35,7 +35,7 @@ def chain250 : Prog isa :=
   .seq (sqn 17 16 100) <| .seq (mulP 16 17 16) <|
   .seq (sqn 16 16 50) (mulP 15 16 15)
 
-/-- `vg_gf25519_r32_pow250` (`Spec/X25519/Field32.lean`): `ws` moved to
+/-- `vg_gf25519_r32_pow250` (`Proof/X25519/Field32Contract.lean`): `ws` moved to
 `a3`, and the chain. It uses only caller-saved registers. -/
 def pow250Fn : Prog isa := .seq (.block [.addi .a3 .a0 0]) chain250
 
@@ -43,7 +43,7 @@ def pow250Fn : Prog isa := .seq (.block [.addi .a3 .a0 0]) chain250
 after (the callee keeps it in `a0`). -/
 def power250 : Prog isa :=
   .seq (.block [.addi .a0 .a3 0])
-    (.seq (.call Spec.X25519.Field32.pow250Api.name pow250Fn) (.block [.addi .a3 .a0 0]))
+    (.seq (.call "vg_gf25519_r32_pow250" pow250Fn) (.block [.addi .a3 .a0 0]))
 
 /-- `[o] = [a] · [b]`, by a call of `vg_gf25519_r32_mul`. -/
 def mulPc (o a b : Slot) : Prog isa := mulCall (offset o) (offset a) (offset b)

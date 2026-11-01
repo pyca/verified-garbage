@@ -4,13 +4,14 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Ed448 base-point multiplication on AArch64: the contract its callers use
 
 Untrusted: everything here is checked by Lean. The contract the proof is
-written against (the facts of `Spec.Ed448.scalarBaseContract` it uses, stated
+written against (the facts of `Proof.Ed448.scalarBaseContract` it uses, stated
 for AArch64), that the function has no frames, and `BaseOk`: that it meets
 the contract in constant time. `BaseVerified.lean` proves `BaseOk` with the
 group law and the comb's arithmetic; the proofs of the functions that call

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldProg
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Point
-public import VerifiedGarbage.Spec.Ed25519.Point32
+public import VerifiedGarbage.Proof.Ed25519.Point32Contract
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -24,16 +24,16 @@ open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64 VG.Proof.X25519.RISC
 open VG.Spec.X25519 (P)
 
 theorem elemAt_eq (m : Mem) (b : Addr) (i : Slot) :
-    Spec.Ed25519.Point32.elemAt m b (offset i) = env m b i :=
+    Proof.Ed25519.Point32.elemAt m b (offset i) = env m b i :=
   congrArg (Fin.ofNat P) (read_V m b (offset i))
 
 theorem pointAt_eq (m : Mem) (b : Addr) :
-    Spec.Ed25519.Point32.pointAt m b Spec.Ed25519.Point32.pAt = point (env m b) 0 1 2 3 := by
-  simp only [Spec.Ed25519.Point32.pointAt, point, ← elemAt_eq]; rfl
+    Proof.Ed25519.Point32.pointAt m b Proof.Ed25519.Point32.pAt = point (env m b) 0 1 2 3 := by
+  simp only [Proof.Ed25519.Point32.pointAt, point, ← elemAt_eq]; rfl
 
 theorem pointAt_q (m : Mem) (b : Addr) :
-    Spec.Ed25519.Point32.pointAt m b Spec.Ed25519.Point32.qAt = point (env m b) 4 5 6 7 := by
-  simp only [Spec.Ed25519.Point32.pointAt, point, ← elemAt_eq]; rfl
+    Proof.Ed25519.Point32.pointAt m b Proof.Ed25519.Point32.qAt = point (env m b) 4 5 6 7 := by
+  simp only [Proof.Ed25519.Point32.pointAt, point, ← elemAt_eq]; rfl
 
 /-- A byte of the eight-KiB working space outside a range of it. -/
 theorem byte_out8 {b : Addr} {i e k : Nat} (hi : i + 1 ≤ 8192) (he : e + k ≤ 8192) (h : i < e ∨ e + k ≤ i) :
@@ -45,9 +45,9 @@ abbrev addW (b : Addr) : List Region :=
   [⟨b + BitVec.ofNat 64 64, 128⟩, ⟨b + BitVec.ofNat 64 320, 256⟩, ⟨b + BitVec.ofNat 64 ACC, 64⟩]
 
 /-- The point addition's `Keeps`, from its frame. -/
-theorem keeps_add {b : Addr} {m m' : Mem} (hf : Frame (addW b) m m') : Spec.Ed25519.Point32.Keeps b m m' := by
+theorem keeps_add {b : Addr} {m m' : Mem} (hf : Frame (addW b) m m') : Proof.Ed25519.Point32.Keeps b m m' := by
   intro i hi hp ht ho
-  simp only [Spec.Ed25519.Point32.wsBytes, Spec.Ed25519.Point32.pAt, Spec.Ed25519.Point32.elemBytes] at hi hp ht ho
+  simp only [Proof.Ed25519.Point32.wsBytes, Proof.Ed25519.Point32.pAt, Proof.Ed25519.Point32.elemBytes] at hi hp ht ho
   have hA := eACC_eq
   refine hf _ fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -73,12 +73,12 @@ theorem addW_ok (b : Addr) :
       (Nat.le_refl _)⟩
 
 theorem addFn_ok {s : State} (hwr : s.wr = [⟨s.gpr .a0, 8192⟩]) (hal : (s.gpr .a0).toNat % 8 = 0)
-    (hd : Spec.Ed25519.Point32.elemAt s.mem (s.gpr .a0) Spec.Ed25519.Point32.dAt = Spec.Ed25519.d) :
+    (hd : Proof.Ed25519.Point32.elemAt s.mem (s.gpr .a0) Proof.Ed25519.Point32.dAt = Spec.Ed25519.d) :
     WP isa addFn s fun t =>
-      Spec.Ed25519.Point32.pointAt t.mem (s.gpr .a0) Spec.Ed25519.Point32.pAt =
-        Spec.Ed25519.pointAdd (Spec.Ed25519.Point32.pointAt s.mem (s.gpr .a0) Spec.Ed25519.Point32.pAt)
-          (Spec.Ed25519.Point32.pointAt s.mem (s.gpr .a0) Spec.Ed25519.Point32.qAt) ∧
-      Spec.Ed25519.Point32.Keeps (s.gpr .a0) s.mem t.mem := by
+      Proof.Ed25519.Point32.pointAt t.mem (s.gpr .a0) Proof.Ed25519.Point32.pAt =
+        Spec.Ed25519.pointAdd (Proof.Ed25519.Point32.pointAt s.mem (s.gpr .a0) Proof.Ed25519.Point32.pAt)
+          (Proof.Ed25519.Point32.pointAt s.mem (s.gpr .a0) Proof.Ed25519.Point32.qAt) ∧
+      Proof.Ed25519.Point32.Keeps (s.gpr .a0) s.mem t.mem := by
   have hin : (⟨s.gpr .a0, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; simp
   refine WP.seq (wp_mv fun s1 u1 => WP.block_nil ?_)
   have hc1 : Ctx (s.gpr .a0) s1 :=

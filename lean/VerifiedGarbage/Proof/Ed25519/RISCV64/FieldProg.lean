@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Field32Contract
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.MulFn
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Field
 public import VerifiedGarbage.Proof.Framework.Covers
@@ -129,7 +130,7 @@ theorem field_finish {b : Addr} {s t : State} (o : Slot) (hr : Rest fclob s t)
 
 /-- An element at an offset of the working space, as `valAt` reads it. -/
 theorem valAt_slot (m : Mem) (b : Addr) (i : Slot) :
-    Spec.X25519.Field32.valAt m b (BitVec.ofNat 32 (offset i)) = V m b (offset i) := by
+    Proof.X25519.Field32.valAt m b (BitVec.ofNat 32 (offset i)) = V m b (offset i) := by
   have := slot_range i
   rw [valAt_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), V, V]
   exact val32_congr fun k _ => by rw [limb, limb, wd_shift, Nat.zero_add]
@@ -144,9 +145,9 @@ def mulK (b : Addr) (o a c : Slot) : Contract isa where
     env t'.mem b = Function.update (env t.mem b) o (env t.mem b a * env t.mem b c)
   pub _ _ := True
 
-theorem fits_slot (i : Slot) : Spec.X25519.Field32.Fits (BitVec.ofNat 32 (offset i)) := by
+theorem fits_slot (i : Slot) : Proof.X25519.Field32.Fits (BitVec.ofNat 32 (offset i)) := by
   have := slot_range i
-  simp only [Spec.X25519.Field32.Fits, Spec.X25519.Field32.elemBytes, Spec.X25519.Field32.ownAt,
+  simp only [Proof.X25519.Field32.Fits, Proof.X25519.Field32.elemBytes, Proof.X25519.Field32.ownAt,
     BitVec.toNat_ofNat]
   omega
 

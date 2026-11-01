@@ -31,13 +31,13 @@ def chain250 : Prog isa :=
   .seq (sqn 17 16 100) <| .seq (mulP 16 17 16) <|
   .seq (sqn 16 16 50) (mulP 15 16 15)
 
-/-- `vg_gf25519_r16_pow250` (`Spec/X25519/Field16.lean`): the chain, saving
+/-- `vg_gf25519_r16_pow250` (`Proof/X25519/Field16Contract.lean`): the chain, saving
 and restoring the registers it changes, `r10` (its squarings' counter)
 among them. -/
 def pow250Fn : Prog isa := asFn true chain250
 
 /-- A call of `vg_gf25519_r16_pow250`. -/
-def power250 : Prog isa := .call Spec.X25519.Field16.pow250Api.name pow250Fn
+def power250 : Prog isa := .call "vg_gf25519_r16_pow250" pow250Fn
 
 /-- `[o] = [a] · [b]`, by a call of `vg_gf25519_r16_mul`. -/
 def mulPc (o a b : Slot) : Prog isa := mulCall (offset o) (offset a) (offset b)

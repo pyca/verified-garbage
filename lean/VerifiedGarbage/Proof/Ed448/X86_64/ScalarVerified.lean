@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAddMain
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
@@ -74,9 +75,9 @@ theorem scalarReduce_ct :
     (fun _ _ h₁ h₂ hp => scalarReduce_agree h₁ h₂ hp) (by taint_decide)
 
 theorem scalarReduce_verified : Verified X86_64.target scalarReduce
-    (Spec.Ed448.scalarReduceContract X86_64.abi) :=
+    (Proof.Ed448.scalarReduceContract X86_64.abi) :=
   Verified.of_correct scalarReduce_ok scalarReduce_ct (by
-    sig_implies [Spec.Ed448.scalarReduceContract, Spec.Ed448.scalarReduceSig,
+    sig_implies [Proof.Ed448.scalarReduceContract, Proof.Ed448.scalarReduceSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs, scalarReduceLocal]
       [scalarReduceSat] using scalarReduceSat)
 
@@ -127,9 +128,9 @@ theorem scalarMulAdd_ct :
     (fun _ _ h₁ h₂ hp => scalarMulAdd_agree h₁ h₂ hp) (by taint_decide)
 
 theorem scalarMulAdd_verified : Verified X86_64.target scalarMulAdd
-    (Spec.Ed448.scalarMulAddContract X86_64.abi) :=
+    (Proof.Ed448.scalarMulAddContract X86_64.abi) :=
   Verified.of_correct scalarMulAdd_ok scalarMulAdd_ct (by
-    sig_implies [Spec.Ed448.scalarMulAddContract, Spec.Ed448.scalarMulAddSig,
+    sig_implies [Proof.Ed448.scalarMulAddContract, Proof.Ed448.scalarMulAddSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs, scalarMulAddLocal]
       [scalarMulAddSat] using scalarMulAddSat)
 

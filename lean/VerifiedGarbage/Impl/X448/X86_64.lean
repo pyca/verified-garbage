@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Isa
-public import VerifiedGarbage.Spec.X448.Field64
+public import VerifiedGarbage.Spec.X448
 
 /-!
 # X448: x86-64 implementation
@@ -355,7 +355,7 @@ def invert (F : Field) : Prog isa := .seq (chain223 F Z2) (invTail F)
 
 /-! ## The chain as a function
 
-`vg_gf448_r64_pow223` (`Spec/X448/Field64.lean`): `chain223` of slot 12,
+`vg_gf448_r64_pow223` (`Proof/X448/Field64Contract.lean`): `chain223` of slot 12,
 with the baseline's multiplications, between a save of the callee-saved
 registers it writes (`rbx`, `rbp`, `r12`–`r15`) at `SAVE`, in its own
 working space, and their restore. -/
@@ -379,7 +379,7 @@ def pow223FnWith (F : Field) : Prog isa := .seq (.block powSave) (.seq (chain223
 def pow223Fn : Prog isa := pow223FnWith baseline
 
 /-- A call of `vg_gf448_r64_pow223`. -/
-def pow223Call : Prog isa := .call Spec.X448.Field64.pow223Api.name pow223Fn
+def pow223Call : Prog isa := .call "vg_gf448_r64_pow223" pow223Fn
 
 /-- The registers that carry the words at `keep` across a call (`pow223Keep`), which the
 function restores. -/
@@ -393,7 +393,7 @@ def pow223KeepWith (F : Field) (name : String) (keep : List Nat) : Prog isa :=
     (.seq (.call name (pow223FnWith F)) (.block ((keepRegs.zip keep).map fun (r, d) => .store (sc d) r)))
 
 def pow223Keep (keep : List Nat) : Prog isa :=
-  pow223KeepWith baseline Spec.X448.Field64.pow223Api.name keep
+  pow223KeepWith baseline "vg_gf448_r64_pow223" keep
 
 /-- `invert` by a call: `Z2` copied to slot 12, the chain called (keeping the words at
 `keep`), then `invTail`. -/

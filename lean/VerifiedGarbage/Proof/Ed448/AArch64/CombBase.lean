@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Comb56Contract
 import VerifiedGarbage.Proof.X448.AArch64.Base.Negate
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
@@ -107,9 +108,9 @@ meta import VerifiedGarbage.Proof.X448.Wide.Term
 meta import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Spec.X448.Field56
+public import VerifiedGarbage.Proof.X448.Field56Contract
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
-public import VerifiedGarbage.Spec.Ed448.Point56
+public import VerifiedGarbage.Proof.Ed448.Point56Contract
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Isa
@@ -139,7 +140,7 @@ products' algebra (`ci/check_lean_speed.py`).
   keeps `Frame` and leaves the comb's sums, as the inlined comb does. The call runs on the working
   space and the tables (`WP.callV`, with the function's own proof as its contract, `combK`), and
   the return address is kept in a lane of `v8`, whose low half the function restores.
-* `combBaseFn_verified`: the function meets `combBaseContract` of `Spec/Ed448/Comb56.lean`, with
+* `combBaseFn_verified`: the function meets `combBaseContract` of `Proof/Ed448/Comb56Contract.lean`, with
   no stack, under the calling convention with the comb's tables (`Abi.withConsts combConsts`).
   The bits the contract reads are those of the scalar `bitsAt` (`bits_of_isBits`); the comb's
   sums, `G + Σ_j d_{2j+1} 256^j` and `G + Σ_j d_{2j} 256^j`, are its odd and even nibbles' sums
@@ -693,8 +694,8 @@ open VG.Proof.X448.AArch64.Fast (BEnv)
 open VG.Proof.X448.AArch64.Base (pt Bits CombHeld combConsts_eq combWords_length satMem satMem_held)
 open VG.Proof.X448 (combG oddSumZ evenSumZ oddSum evenSum)
 open VG.Proof.Ed448 (Rep baseAff)
-open VG.Spec.Ed448.Comb56 (bitsAt IsBits oddNibbles evenNibbles)
-open VG.Spec.X448.Field56 (slotAt elemAt Bounded)
+open VG.Proof.Ed448.Comb56 (bitsAt IsBits oddNibbles evenNibbles)
+open VG.Proof.X448.Field56 (slotAt elemAt Bounded)
 
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
@@ -706,12 +707,12 @@ theorem bitsAt_lt {m : Mem} {ws : Addr} : ∀ {T : Nat}, IsBits m ws T → bitsA
     have ih := bitsAt_lt (T := T) fun i hi => h i (by omega_arith)
     have hb := h T (by omega_arith)
     simp only [bitsAt, Nat.pow_succ]
-    have : 2 ^ T * (m (ws + BitVec.ofNat 64 (Spec.Ed448.Comb56.bitsOff + T))).toNat ≤ 2 ^ T * 1 :=
+    have : 2 ^ T * (m (ws + BitVec.ofNat 64 (Proof.Ed448.Comb56.bitsOff + T))).toNat ≤ 2 ^ T * 1 :=
       Nat.mul_le_mul_left _ (by omega_arith)
     omega_arith
 
 theorem bitsAt_bit {m : Mem} {ws : Addr} : ∀ {T : Nat}, IsBits m ws T → ∀ t < T,
-    bitsAt m ws T / 2 ^ t % 2 = (m (ws + BitVec.ofNat 64 (Spec.Ed448.Comb56.bitsOff + t))).toNat
+    bitsAt m ws T / 2 ^ t % 2 = (m (ws + BitVec.ofNat 64 (Proof.Ed448.Comb56.bitsOff + t))).toNat
   | 0, _, t, ht => absurd ht (Nat.not_lt_zero _)
   | T + 1, h, t, ht => by
     have hT : IsBits m ws T := fun i hi => h i (by omega_arith)
@@ -757,8 +758,8 @@ theorem pointEqual_of_rep {p : Spec.Ed448.Point} {s : Nat} (h : Rep p ((s : ℤ)
 /-! ## The contract -/
 
 theorem pointAt_eqN (m : Mem) (ws : Addr) (n : Nat) (x y z : Index) (hx : x.val = n) (hy : y.val = n + 1)
-    (hz : z.val = n + 2) : Spec.Ed448.Point56.pointAt m ws n = pt (EV m ws) x y z := by
-  simp only [Spec.Ed448.Point56.pointAt, pt]
+    (hz : z.val = n + 2) : Proof.Ed448.Point56.pointAt m ws n = pt (EV m ws) x y z := by
+  simp only [Proof.Ed448.Point56.pointAt, pt]
   subst hx
   rw [← hy, ← hz, VG.Proof.Ed448.AArch64.Point56.elemAt_eq, VG.Proof.Ed448.AArch64.Point56.elemAt_eq,
     VG.Proof.Ed448.AArch64.Point56.elemAt_eq]
@@ -770,16 +771,16 @@ def combL : Contract isa where
     (s.gpr .x0).toNat + 8192 ≤ 2 ^ 64 ∧ CombHeld s [⟨s.gpr .x0, 8192⟩] ∧
     ((s.gpr .x1).toNat = 56 ∨ (s.gpr .x1).toNat = 57) ∧ IsBits s.mem (s.gpr .x0) (8 * (s.gpr .x1).toNat) ∧
     Bounded s.mem (s.gpr .x0) ∧
-    ∀ i < 8, VG.Spec.X448.Field56.limbAt s.mem (s.gpr .x0) (slotAt 19) i = 0
+    ∀ i < 8, VG.Proof.X448.Field56.limbAt s.mem (s.gpr .x0) (slotAt 19) i = 0
   post s s' := Bounded s'.mem (s.gpr .x0) ∧ elemAt s'.mem (s.gpr .x0) (slotAt 2) ≠ 0 ∧
     elemAt s'.mem (s.gpr .x0) (slotAt 5) ≠ 0 ∧
-    Spec.Ed448.pointEqual (Spec.Ed448.Point56.pointAt s'.mem (s.gpr .x0) 0)
+    Spec.Ed448.pointEqual (Proof.Ed448.Point56.pointAt s'.mem (s.gpr .x0) 0)
       (Spec.Ed448.pointMul (oddNibbles (bitsAt s.mem (s.gpr .x0) (8 * (s.gpr .x1).toNat)) (s.gpr .x1).toNat)
         Spec.Ed448.basePoint) = true ∧
-    Spec.Ed448.pointEqual (Spec.Ed448.Point56.pointAt s'.mem (s.gpr .x0) 3)
+    Spec.Ed448.pointEqual (Proof.Ed448.Point56.pointAt s'.mem (s.gpr .x0) 3)
       (Spec.Ed448.pointMul (evenNibbles (bitsAt s.mem (s.gpr .x0) (8 * (s.gpr .x1).toNat)) (s.gpr .x1).toNat)
         Spec.Ed448.basePoint) = true ∧
-    VG.Spec.X448.Field56.Keeps (s.gpr .x0) Spec.Ed448.Comb56.written s.mem s'.mem
+    VG.Proof.X448.Field56.Keeps (s.gpr .x0) Proof.Ed448.Comb56.written s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.sp = s₂.sp ∧
     s₁.syms combSym = s₂.syms combSym
 
@@ -804,10 +805,10 @@ theorem comb_arm (s : State) (hs : combL.pre s) :
     exact pointEqual_of_rep (by rw [← odd_eq]; exact ho.odd)
   · rw [pointAt_eqN _ _ 3 3 4 5 rfl rfl rfl]
     exact pointEqual_of_rep (by rw [← even_eq]; exact ho.even)
-  · simp only [Spec.Ed448.Comb56.written, VG.Spec.X448.Field56.own, slotAt, VG.Spec.X448.Field56.slots,
-      VG.Spec.X448.Field56.accAt, VG.Spec.X448.Field56.accEnd, List.mem_cons, List.not_mem_nil, or_false,
+  · simp only [Proof.Ed448.Comb56.written, VG.Proof.X448.Field56.own, slotAt, VG.Proof.X448.Field56.slots,
+      VG.Proof.X448.Field56.accAt, VG.Proof.X448.Field56.accEnd, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hr
-    simp only [VG.Spec.X448.Field56.wsBytes] at hi
+    simp only [VG.Proof.X448.Field56.wsBytes] at hi
     have e := VG.Proof.X448.AArch64.Base.ofs_off0 (s.gpr .x0) (d := i) (by omega_arith)
     have hA : ACC = 3584 := rfl
     exact ho.mem _ (by rw [e]; omega_arith) (by rw [e]; omega_arith)
@@ -863,7 +864,7 @@ theorem sat_bounded : Bounded satMem2 0x1000 := by
 theorem sat_bits : IsBits satMem2 0x1000 (8 * 56) := by
   unfold IsBits; decide +kernel
 
-theorem sat_zero : ∀ i < 8, VG.Spec.X448.Field56.limbAt satMem2 0x1000 (slotAt 19) i = 0 := by
+theorem sat_zero : ∀ i < 8, VG.Proof.X448.Field56.limbAt satMem2 0x1000 (slotAt 19) i = 0 := by
   decide +kernel
 
 /-- The shared contract's precondition, from its facts. -/
@@ -872,27 +873,27 @@ theorem spec_pre {s : State} (hrd : s.rd = [⟨s.syms combSym, 8 * combWords.len
     (ht : CombHeld s [⟨s.gpr .x0, 8192⟩])
     (hal : (s.syms combSym).toNat % 64 = 0) (hn : (s.gpr .x1).toNat = 56 ∨ (s.gpr .x1).toNat = 57)
     (hbits : IsBits s.mem (s.gpr .x0) (8 * (s.gpr .x1).toNat)) (hb : Bounded s.mem (s.gpr .x0))
-    (hz : ∀ i < 8, VG.Spec.X448.Field56.limbAt s.mem (s.gpr .x0) (slotAt 19) i = 0) :
-    (Spec.Ed448.Comb56.combBaseContract (AArch64.abi.withConsts combConsts)).pre s := by
-  sig_pre [Spec.Ed448.Comb56.combBaseContract, Spec.Ed448.Comb56.sig, AArch64.abi, AArch64.argRegs,
+    (hz : ∀ i < 8, VG.Proof.X448.Field56.limbAt s.mem (s.gpr .x0) (slotAt 19) i = 0) :
+    (Proof.Ed448.Comb56.combBaseContract (AArch64.abi.withConsts combConsts)).pre s := by
+  sig_pre [Proof.Ed448.Comb56.combBaseContract, Proof.Ed448.Comb56.sig, AArch64.abi, AArch64.argRegs,
     combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
   exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, hal, by rw [hrd]; rfl, hw, hnw, hn, hbits, hb, hz⟩
 
-theorem implies : combL.Implies (Spec.Ed448.Comb56.combBaseContract (AArch64.abi.withConsts combConsts)) where
+theorem implies : combL.Implies (Proof.Ed448.Comb56.combBaseContract (AArch64.abi.withConsts combConsts)) where
   pre s h := by
-    sig_pre [Spec.Ed448.Comb56.combBaseContract, Spec.Ed448.Comb56.sig, AArch64.abi, AArch64.argRegs,
+    sig_pre [Proof.Ed448.Comb56.combBaseContract, Proof.Ed448.Comb56.sig, AArch64.abi, AArch64.argRegs,
       combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, hnw, hn, hbits, hb, hz⟩ := h
     refine ⟨?_, hw, hnw, ⟨hheld, hfit, by rw [hw] at hdw; exact hdw⟩, hn, hbits, hb, hz⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by
     intro s s' _ h
-    sig_post [Spec.Ed448.Comb56.combBaseContract, Spec.Ed448.Comb56.sig, AArch64.abi, AArch64.argRegs,
+    sig_post [Proof.Ed448.Comb56.combBaseContract, Proof.Ed448.Comb56.sig, AArch64.abi, AArch64.argRegs,
       combConsts_eq, Abi.withConsts]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ed448.Comb56.combBaseContract, Spec.Ed448.Comb56.sig, AArch64.abi, AArch64.argRegs,
+    sig_pub [Proof.Ed448.Comb56.combBaseContract, Proof.Ed448.Comb56.sig, AArch64.abi, AArch64.argRegs,
       combConsts_eq, Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1⟩ := h
     exact ⟨h0, h1, hsp, hsy⟩
@@ -907,7 +908,7 @@ theorem implies : combL.Implies (Spec.Ed448.Comb56.combBaseContract (AArch64.abi
 
 theorem combBaseFn_verified :
     Verified AArch64.target combBaseFn
-      (Spec.Ed448.Comb56.combBaseContract (AArch64.abi.withConsts combConsts)) :=
+      (Proof.Ed448.Comb56.combBaseContract (AArch64.abi.withConsts combConsts)) :=
   Verified.of_correct comb_arm comb_ct implies
 
 end VG.Proof.Ed448.AArch64.CombBase

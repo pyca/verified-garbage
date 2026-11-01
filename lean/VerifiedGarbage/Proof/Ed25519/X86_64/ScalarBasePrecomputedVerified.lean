@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -95,8 +96,8 @@ theorem scalarBase_spec_pre {s : State}
     (f2 : (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64)
     (ht : CombHeld s [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rsp, 8⟩])
     (hal : (s.syms combSym).toNat % 64 = 0) :
-    (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts)).pre s := by
-  sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    (Proof.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts)).pre s := by
+  sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
     X86_64.abi, X86_64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow, combWords_length]
   obtain ⟨held, fit, hdw⟩ := ht
@@ -105,7 +106,7 @@ theorem scalarBase_spec_pre {s : State}
     hdw _ (by simp), hal, by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, f0, f1, f2⟩
 
 theorem scalarBase_sat :
-    (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts)).pre baseSatStateT := by
+    (Proof.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts)).pre baseSatStateT := by
   refine scalarBase_spec_pre rfl rfl (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
@@ -114,9 +115,9 @@ theorem scalarBase_sat :
   rintro r (rfl | rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
 
 theorem scalarBase_implies :
-    scalarBaseLocal.Implies (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts)) where
+    scalarBaseLocal.Implies (Proof.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts)) where
   pre s h := by
-    sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
       X86_64.abi, X86_64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow, combWords_length] at h
     obtain ⟨hd, hheld, hfit, hdw, hdr, -, ht, hw, -, h2, h3, r1, -, r3, -, -, f2⟩ := h
@@ -129,11 +130,11 @@ theorem scalarBase_implies :
       · exact hdr
   post := by
     intro s s' _ h
-    sig_post [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    sig_post [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
       X86_64.abi, X86_64.argRegs, combConsts_eq, Abi.withConsts, scalarBaseLocal]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    sig_pub [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
       X86_64.abi, X86_64.argRegs, combConsts_eq, Abi.withConsts] at h
     obtain ⟨h0, hs, h1, h2, h3⟩ := h
     exact ⟨h0, h1, h2, h3, hs⟩
@@ -156,8 +157,8 @@ theorem scalarBase_spec_pre8 {s : State}
     (ht : CombHeld s [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rsp, 8⟩])
     (hq : Region.Disjoint ⟨s.syms combSym, 40448⟩ ⟨s.gpr .rsp - 8#64, 8⟩)
     (hal : (s.syms combSym).toNat % 64 = 0) :
-    (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8).pre s := by
-  sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
+    (Proof.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8).pre s := by
+  sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
     X86_64.abi, X86_64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow, combWords_length]
   obtain ⟨held, fit, hdw⟩ := ht
@@ -166,7 +167,7 @@ theorem scalarBase_spec_pre8 {s : State}
     hdw _ (by simp), hq, hal, by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, q1, q2, q3, f0, f1, f2⟩
 
 theorem scalarBase_sat8 :
-    (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8).pre baseSatStateT := by
+    (Proof.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8).pre baseSatStateT := by
   refine scalarBase_spec_pre8 rfl rfl (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
@@ -179,21 +180,21 @@ theorem scalarBase_sat8 :
 
 /-- The contract with 8 bytes of stack, for the call's return address. -/
 theorem scalarBase_implies8 :
-    scalarBaseLocal.Implies (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8) :=
+    scalarBaseLocal.Implies (Proof.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8) :=
   scalarBase_implies.stack8 ⟨baseSatStateT, scalarBase_sat8⟩
 
 theorem scalarBase_verified_of {c : Prog isa} (hc : c.InlineOk = true)
     (hcor : ∀ s, scalarBaseLocal.pre s →
       ∃ t s', Exec isa c.inline s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s')
     (hct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub c.inline) :
-    Verified X86_64.target c (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8) :=
+    Verified X86_64.target c (Proof.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8) :=
   Verified.of_inline hc hcor hct scalarBase_implies8 (fun _ h => Sig.clear_of_pre_consts h)
     (fun s b hv u hs hp => scalarBase_patch s b hv u (scalarBase_implies8.pre s hs)
       (Sig.clear_of_pre_consts hs) hp)
     (fun s₁ s₂ h₁ h₂ hp => (scalarBase_implies8.pub s₁ s₂ h₁ h₂ hp).1)
 
 theorem scalarBase_precomputed_verified [X25519.X86_64.DivstepInv] : Verified X86_64.target (scalarBase_precomputed fld)
-    (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8) :=
+    (Proof.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8) :=
   scalarBase_verified_of (by fld_lit_decide) scalarBase_precomputed_okI scalarBase_precomputed_ct
 
 end VG.Proof.Ed25519.X86_64

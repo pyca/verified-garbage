@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.Call
-public import VerifiedGarbage.Spec.X448.Field16
+public import VerifiedGarbage.Proof.X448.Field16Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # X448 on ARMv7: the field functions' contracts
 
-The facts of the contracts of `Spec/X448/Field16.lean` on 32-bit ARM, by
+The facts of the contracts of `Proof/X448/Field16Contract.lean` on 32-bit ARM, by
 name (`armPre`, `mulArm`, …: `ws`, `o`, `a` and `b` in `r0`–`r3`), and the
 functions meet them (`mul_arm`, …): the specification's limbs and values are
 the proofs' (`limbAt_eq`, `valAt_eq`), and what the functions keep is what
@@ -21,7 +21,7 @@ the contracts say (`keeps_of_field`).
 namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448.Radix16
-open VG.Spec.X448.Field16 (limbAt valAt Limbs Fits)
+open VG.Proof.X448.Field16 (limbAt valAt Limbs Fits)
 
 /-- What the binary functions' preconditions share, by register. -/
 def armPre (s : State) : Prop :=
@@ -50,7 +50,7 @@ def binArm (r : Nat → Nat → Nat → Prop) : Contract Arm.isa where
   pre := armPre
   post s s' := Limbs s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1) ∧
     r (argV s'.mem s .r1) (argV s.mem s .r2) (argV s.mem s .r3) ∧
-    Spec.X448.Field16.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1) s.mem s'.mem
+    Proof.X448.Field16.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1) s.mem s'.mem
   pub := armPub
 
 def mulArm : Contract Arm.isa := binArm fun o a b => o % Spec.X448.P = a * b % Spec.X448.P
@@ -61,17 +61,17 @@ def mulA24Arm : Contract Arm.isa where
   pre := armPre1
   post s s' := Limbs s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1) ∧
     argV s'.mem s .r1 % Spec.X448.P = 39081 * argV s.mem s .r2 % Spec.X448.P ∧
-    Spec.X448.Field16.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1) s.mem s'.mem
+    Proof.X448.Field16.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1) s.mem s'.mem
   pub := armPub1
 
 theorem limbAt_eq (m : Mem) (ws : Addr) (o : BitVec 32) (i : Nat) :
     limbAt m ws o i = limbs m ws o.toNat i := rfl
 
 theorem valN_eq (m : Mem) (ws : Addr) (o : BitVec 32) :
-    ∀ n, Spec.X448.Field16.valN m ws o n = Radix16.valN (limbs m ws o.toNat) n
+    ∀ n, Proof.X448.Field16.valN m ws o n = Radix16.valN (limbs m ws o.toNat) n
   | 0 => rfl
   | n + 1 => by
-    rw [Spec.X448.Field16.valN, Radix16.valN, valN_eq m ws o n, limbAt_eq, radix, ← Nat.pow_mul]
+    rw [Proof.X448.Field16.valN, Radix16.valN, valN_eq m ws o n, limbAt_eq, radix, ← Nat.pow_mul]
 
 theorem valAt_eq (m : Mem) (ws : Addr) (o : BitVec 32) : valAt m ws o = fe m ws o.toNat :=
   valN_eq m ws o 28
@@ -85,11 +85,11 @@ theorem limbs_of_bounded {m : Mem} {ws : Addr} {o : BitVec 32} (h : Bounded m ws
     Limbs m ws o := h
 
 theorem keeps_of_field {ws : Addr} {o : BitVec 32} {m m' : Mem} (h : FieldMem ws o.toNat m m') :
-    Spec.X448.Field16.Keeps ws o m m' := by
+    Proof.X448.Field16.Keeps ws o m m' := by
   intro i hi hown ho
   have e : ofs ws (ws + BitVec.ofNat 64 i) = i := Mem.sub_ofNat_toNat ws (by omega)
-  refine h _ (by rw [e]; simp only [Spec.X448.Field16.elemBytes, Spec.X448.Field16.limbs] at ho; omega)
-    (by rw [e]; simp only [Spec.X448.Field16.ownAt] at hown; simp only [ACC]; omega)
+  refine h _ (by rw [e]; simp only [Proof.X448.Field16.elemBytes, Proof.X448.Field16.limbs] at ho; omega)
+    (by rw [e]; simp only [Proof.X448.Field16.ownAt] at hown; simp only [ACC]; omega)
 
 theorem entry_of {s : State} (h : armPre s) :
     Entry true s (State.addr (s.gpr .r0)) (s.gpr .r1).toNat (s.gpr .r2).toNat (s.gpr .r3).toNat :=

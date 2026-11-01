@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
@@ -14,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 # Ed448 scalar multiply-add on x86-64: the whole function
 
 The contract the proof is written against (the facts of
-`Spec.Ed448.scalarMulAddContract` it uses, stated for x86-64), and the
+`Proof.Ed448.scalarMulAddContract` it uses, stated for x86-64), and the
 correctness of `vg_ed448_scalar_mul_add` against it.
 -/
 

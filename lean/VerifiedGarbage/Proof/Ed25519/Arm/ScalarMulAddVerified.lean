@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.X25519.Arm.Mul
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
@@ -815,9 +816,9 @@ theorem scalarMulAdd_ok (s : State) (hs : scalarMulAddLocal.pre s) :
   scalarMulAdd_correct (ScalarMulAddPre.of hs)
 
 theorem scalarMulAdd_verified : Verified Arm.target scalarMulAdd
-    (Spec.Ed25519.scalarMulAddContract Arm.abi) :=
+    (Proof.Ed25519.scalarMulAddContract Arm.abi) :=
   Verified.of_correct scalarMulAdd_ok scalarMulAdd_ct (by
-    sig_implies [Spec.Ed25519.scalarMulAddContract, Spec.Ed25519.scalarMulAddSig,
+    sig_implies [Proof.Ed25519.scalarMulAddContract, Proof.Ed25519.scalarMulAddSig,
       Spec.Ed25519.scratchWords, scalarMulAddLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
       [scalarMulAddSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scalarMulAddSat)

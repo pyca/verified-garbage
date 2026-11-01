@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseStep
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseInit
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseEncode

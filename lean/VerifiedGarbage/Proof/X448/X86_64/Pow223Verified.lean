@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Field64Contract
 import VerifiedGarbage.Proof.X448.X86_64.Pow223
 import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -22,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # X448 on x86-64: `vg_gf448_r64_pow223`, verified
 
-The facts of `Spec.X448.Field64.pow223Contract` on x86-64 (`pow64`: `ws` in
+The facts of `Proof.X448.Field64.pow223Contract` on x86-64 (`pow64`: `ws` in
 `rdi`), which `pow223Fn` meets (`pow223Fn_ok`): the callee-saved registers
 are restored, and every byte it writes is in `[960, 1648)` of `ws`, which the
 return address is apart from; the slots' values are `c222` and `c223` of slot
@@ -36,7 +37,7 @@ satisfying the precondition.
 namespace VG.Proof.X448.X86_64
 
 open VG VG.X86_64 VG.Impl.X448.X86_64 VG.Proof.X448
-open VG.Spec.X448.Field64 (valAt aAt eAt oAt)
+open VG.Proof.X448.Field64 (valAt aAt eAt oAt)
 
 /-- `vg_gf448_r64_pow223(ws = rdi)`. -/
 def pow64 : Contract isa where
@@ -47,7 +48,7 @@ def pow64 : Contract isa where
         valAt s.mem (s.gpr .rdi) aAt ^ (2 ^ 223 - 1) % Spec.X448.P ∧
       valAt s'.mem (s.gpr .rdi) eAt % Spec.X448.P =
         valAt s.mem (s.gpr .rdi) aAt ^ (2 ^ 222 - 1) % Spec.X448.P ∧
-      Spec.X448.Field64.Keeps (s.gpr .rdi) s.mem s'.mem
+      Proof.X448.Field64.Keeps (s.gpr .rdi) s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi
 
 theorem mv_eq_wordsVal (m : Mem) (base : Addr) : ∀ d k, mv m base d k = Mont.wordsVal m base d k
@@ -92,8 +93,8 @@ theorem pow223With_x64 {F : Impl.X448.X86_64.Field} (hf : FieldOk F)
   · rw [show eAt = slot (20 : Index).val from rfl, show aAt = slot (12 : Index).val from rfl, valAt_mod,
       he, chainEnv_20, c222_eq, pw_val _ _ _ ha]
   · intro i hi hown
-    simp only [Spec.X448.Field64.wsBytes, Spec.X448.Field64.ownAt, Spec.X448.Field64.ownEnd,
-      Spec.X448.Field64.slotAt] at hi hown
+    simp only [Proof.X448.Field64.wsBytes, Proof.X448.Field64.ownAt, Proof.X448.Field64.ownEnd,
+      Proof.X448.Field64.slotAt] at hi hown
     exact hm _ (by rw [ofs_off' _ (by omega)]; omega)
 
 theorem pow223_x64 (s : State) (hs : pow64.pre s) :
@@ -122,18 +123,18 @@ def powSat : State where
   wr := [⟨0x1000, 8192⟩]
 
 theorem pow223_verified :
-    Verified X86_64.target pow223Fn (Spec.X448.Field64.pow223Contract X86_64.abi) :=
+    Verified X86_64.target pow223Fn (Proof.X448.Field64.pow223Contract X86_64.abi) :=
   Verified.of_correct pow223_x64 pow223_ct (by
-    sig_implies [Spec.X448.Field64.pow223Contract, Spec.X448.Field64.sig, X86_64.abi, X86_64.argRegs,
+    sig_implies [Proof.X448.Field64.pow223Contract, Proof.X448.Field64.sig, X86_64.abi, X86_64.argRegs,
       pow64] [powSat] using powSat)
 
 /-- Shared correctness for any verified field backend and its constant-time certificate. -/
 theorem pow223With_verified {F : Impl.X448.X86_64.Field} (hf : FieldOk F)
     (hmx : (pow223FnWith F).allInstrs (fun i => !loadsMxcsr i) = true)
     (hct : ConstantTime isa pow64.pre pow64.pub (pow223FnWith F)) :
-    Verified X86_64.target (pow223FnWith F) (Spec.X448.Field64.pow223Contract X86_64.abi) :=
+    Verified X86_64.target (pow223FnWith F) (Proof.X448.Field64.pow223Contract X86_64.abi) :=
   Verified.of_correct (pow223With_x64 hf hmx) hct (by
-    sig_implies [Spec.X448.Field64.pow223Contract, Spec.X448.Field64.sig, X86_64.abi, X86_64.argRegs,
+    sig_implies [Proof.X448.Field64.pow223Contract, Proof.X448.Field64.sig, X86_64.abi, X86_64.argRegs,
       pow64] [powSat] using powSat)
 
 end VG.Proof.X448.X86_64

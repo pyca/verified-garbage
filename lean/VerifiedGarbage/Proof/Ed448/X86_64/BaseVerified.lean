@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
@@ -118,19 +119,19 @@ theorem scalarBase_ct0 : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pu
 theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.clear.pre scalarBaseLocal.pub scalarBase :=
   fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => scalarBase_ct0 s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1 hp e₁ e₂
 
-theorem scalarBase_implies : scalarBaseLocal.Implies (Spec.Ed448.scalarBaseContract X86_64.abi) := by
-  sig_implies [Spec.Ed448.scalarBaseContract, Spec.Ed448.scalarBaseSig,
+theorem scalarBase_implies : scalarBaseLocal.Implies (Proof.Ed448.scalarBaseContract X86_64.abi) := by
+  sig_implies [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig,
     Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs, scalarBaseLocal]
     [scalarBaseSat] using scalarBaseSat
 
 /-- The contract with 8 bytes of stack, for the call's return address. -/
-theorem scalarBase_implies8 : scalarBaseLocal.Implies (Spec.Ed448.scalarBaseContract X86_64.abi 8) :=
+theorem scalarBase_implies8 : scalarBaseLocal.Implies (Proof.Ed448.scalarBaseContract X86_64.abi 8) :=
   scalarBase_implies.stack8_abi (by
-    sig_implies_sat [Spec.Ed448.scalarBaseContract, Spec.Ed448.scalarBaseSig,
+    sig_implies_sat [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs, scalarBaseSat] [scalarBaseSat] using scalarBaseSat)
 
 theorem scalarBase_verified (hL : Proof.Ed448.BaseLadderOk) : Verified X86_64.target scalarBase
-    (Spec.Ed448.scalarBaseContract X86_64.abi 8) :=
+    (Proof.Ed448.scalarBaseContract X86_64.abi 8) :=
   Verified.of_inline_ct scalarBase_inlineOk (scalarBase_okI hL) scalarBase_ct0 scalarBase_implies8
     (fun _ h => Sig.clear_of_pre h)
     (fun s b hv u hs hp => scalarBase_patch s b hv u (scalarBase_implies8.pre s hs) (Sig.clear_of_pre hs) hp)

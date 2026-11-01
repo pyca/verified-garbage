@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.X86.VerifyCT
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -89,19 +90,19 @@ theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.map (·.to
     rw [BitVec.eq_of_toNat_eq h.1, byteMap_inj h.2]
 
 theorem verifyEquationWide_implies :
-    verifyEquationWide.Implies (Spec.Ed448.verifyEquationContract X86.abi 20) where
+    verifyEquationWide.Implies (Proof.Ed448.verifyEquationContract X86.abi 20) where
   pre := by
-    sig_implies_pre [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_implies_pre [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, verifyEquationWide, verifyEquationLocal, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
   post s t _ h := by
-    sig_post [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_post [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     change t.gpr .eax = _ at h
     rw [BitVec.setWidth_append_eq_right]
     exact h
   pub s t _ _ h := by
-    sig_pub [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_pub [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
     obtain ⟨sp, bytes, pk, sig, challenge, base⟩ := h
     have hb := byteMap_inj bytes
@@ -117,12 +118,12 @@ theorem verifyEquationWide_implies :
     have a3 : arg verifyEquationSat 3 = 0x4000 := by decide
     have e : argAddr verifyEquationSat 0 = 0x8004 := by decide
     have esp : verifyEquationSat.gpr .esp = 0x8000 := rfl
-    sig_implies_sat [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
+    sig_implies_sat [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, verifyEquationWide, verifyEquationLocal, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] [a0, a1, a2, a3, e, esp] using verifyEquationSat
 
 theorem verifyEquation_verified (hR : RecoverOk) (hE : VerifyEqOk) :
-    Verified X86.target verifyEquation (Spec.Ed448.verifyEquationContract X86.abi 20) := by
+    Verified X86.target verifyEquation (Proof.Ed448.verifyEquationContract X86.abi 20) := by
   have hsat := verifyEquationWide_implies.sat_left
   have satLocal : ∃ s, verifyEquationLocal.pre s := hsat.elim fun s h => ⟨_, verifyEquationWide_pre s h⟩
   have verifiedLocal : Verified X86.target verifyEquation verifyEquationLocal :=

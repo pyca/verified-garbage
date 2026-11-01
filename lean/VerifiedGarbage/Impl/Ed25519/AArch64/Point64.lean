@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
-public import VerifiedGarbage.Spec.Ed25519.Point64
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519's point doubling and affine addition on AArch64, as functions
 
 `vg_ed25519_r64_double_ext(ws)` and `vg_ed25519_r64_add_affine_ext(ws)`
-(`Spec/Ed25519/Point64.lean`; AAPCS64: `ws` in `x0`) run field programs on
+(`Proof/Ed25519/Point64Contract.lean`; AAPCS64: `ws` in `x0`) run field programs on
 the slots the base-point comb keeps its operands in: the point in slots 0–3
 (byte 64), the affine entry's `[Y - X, Y + X, 2dT]` in slots 4–6 (byte 192),
 and their temporaries in slots 8–15 (bytes 320–575), the functions' own
@@ -66,9 +66,9 @@ def call (name : String) (body : Prog isa) : Prog isa :=
   .seq (.block [.vop (.ins .d2 .v31 0 .x30)]) <|
     .seq (.call name body) (.block [.umov .x .x30 .v31 0])
 
-def doubleCall : Prog isa := call Spec.Ed25519.Point64.doubleExtApi.name doubleFn
+def doubleCall : Prog isa := call "vg_ed25519_r64_double_ext" doubleFn
 
-def affCall : Prog isa := call Spec.Ed25519.Point64.addAffineExtApi.name affFn
+def affCall : Prog isa := call "vg_ed25519_r64_add_affine_ext" affFn
 
 end Point64
 

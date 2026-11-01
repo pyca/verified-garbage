@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Point32Contract
+public import VerifiedGarbage.Proof.X25519.Field32Contract
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -14,8 +16,8 @@ import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 /-!
 # `vg_gf25519_r32_mul`, `vg_gf25519_r32_pow250` and `vg_ed25519_r32_point_add` on PPC64LE, verified
 
-Each function meets its contract of `Spec/X25519/Field32.lean` or
-`Spec/Ed25519/Point32.lean`, with no stack: the proof against a contract of
+Each function meets its contract of `Proof/X25519/Field32Contract.lean` or
+`Proof/Ed25519/Point32Contract.lean`, with no stack: the proof against a contract of
 its facts by register (`mulPPC`, `powPPC`, `addPPC`), which the shared one
 implies, and a state satisfying it. The elements as the contracts read them
 are the proofs' (`SpecConv`), and what a function keeps is its frame
@@ -29,7 +31,7 @@ namespace VG.Proof.Ed25519.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Ed25519.PPC64LE VG.Proof.X25519.PPC64LE
 open VG.Spec.X25519 (P)
-open VG.Spec.X25519.Field32 (valAt Fits Keeps Keeps₂)
+open VG.Proof.X25519.Field32 (valAt Fits Keeps Keeps₂)
 
 /-- An offset argument, the low word of its register. -/
 abbrev offArg (s : State) (r : Reg) : BitVec 32 := (s.gpr r).setWidth 32
@@ -53,21 +55,21 @@ def wsPub (s₁ s₂ : State) : Prop := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.sp 
 def powPPC : Contract isa where
   pre := wsPre 4096
   post s s' :=
-    valAt s'.mem (s.gpr .r3) (BitVec.ofNat 32 Spec.X25519.Field32.oAt) % P =
-        valAt s.mem (s.gpr .r3) (BitVec.ofNat 32 Spec.X25519.Field32.aAt) ^ (2 ^ 250 - 1) % P ∧
-      valAt s'.mem (s.gpr .r3) (BitVec.ofNat 32 Spec.X25519.Field32.eAt) % P =
-        valAt s.mem (s.gpr .r3) (BitVec.ofNat 32 Spec.X25519.Field32.aAt) ^ 11 % P ∧
+    valAt s'.mem (s.gpr .r3) (BitVec.ofNat 32 Proof.X25519.Field32.oAt) % P =
+        valAt s.mem (s.gpr .r3) (BitVec.ofNat 32 Proof.X25519.Field32.aAt) ^ (2 ^ 250 - 1) % P ∧
+      valAt s'.mem (s.gpr .r3) (BitVec.ofNat 32 Proof.X25519.Field32.eAt) % P =
+        valAt s.mem (s.gpr .r3) (BitVec.ofNat 32 Proof.X25519.Field32.aAt) ^ 11 % P ∧
       Keeps₂ (s.gpr .r3) s.mem s'.mem
   pub := wsPub
 
 /-- `addContract` by register. -/
 def addPPC : Contract isa where
-  pre s := wsPre 8192 s ∧ Spec.Ed25519.Point32.elemAt s.mem (s.gpr .r3) Spec.Ed25519.Point32.dAt = Spec.Ed25519.d
+  pre s := wsPre 8192 s ∧ Proof.Ed25519.Point32.elemAt s.mem (s.gpr .r3) Proof.Ed25519.Point32.dAt = Spec.Ed25519.d
   post s s' :=
-    Spec.Ed25519.Point32.pointAt s'.mem (s.gpr .r3) Spec.Ed25519.Point32.pAt =
-        Spec.Ed25519.pointAdd (Spec.Ed25519.Point32.pointAt s.mem (s.gpr .r3) Spec.Ed25519.Point32.pAt)
-          (Spec.Ed25519.Point32.pointAt s.mem (s.gpr .r3) Spec.Ed25519.Point32.qAt) ∧
-      Spec.Ed25519.Point32.Keeps (s.gpr .r3) s.mem s'.mem
+    Proof.Ed25519.Point32.pointAt s'.mem (s.gpr .r3) Proof.Ed25519.Point32.pAt =
+        Spec.Ed25519.pointAdd (Proof.Ed25519.Point32.pointAt s.mem (s.gpr .r3) Proof.Ed25519.Point32.pAt)
+          (Proof.Ed25519.Point32.pointAt s.mem (s.gpr .r3) Proof.Ed25519.Point32.qAt) ∧
+      Proof.Ed25519.Point32.Keeps (s.gpr .r3) s.mem s'.mem
   pub := wsPub
 
 /-- Code that writes only the registers `R`, none of them nonvolatile, and never the link
@@ -92,7 +94,7 @@ def satWs : State where
 theorem fits_toNat {s : State} {r : Reg} (h : Fits (offArg s r)) :
     (s.gpr r).toNat % 2 ^ 32 = (offArg s r).toNat ∧ (offArg s r).toNat + 32 ≤ 768 := by
   refine ⟨by rw [BitVec.toNat_setWidth], ?_⟩
-  simpa [Fits, Spec.X25519.Field32.elemBytes, Spec.X25519.Field32.ownAt] using h
+  simpa [Fits, Proof.X25519.Field32.elemBytes, Proof.X25519.Field32.ownAt] using h
 
 theorem mul_ok' (s : State) (hs : mulPPC.pre s) :
     ∃ t s', VG.Exec isa mulFn s t s' ∧ abiPreserved s s' ∧ mulPPC.post s s' := by
@@ -105,11 +107,11 @@ theorem mul_ok' (s : State) (hs : mulPPC.pre s) :
   refine ⟨t, s', he, mulFn_abi he hR, ?_, keeps_mul h4 hF⟩
   rw [valAt_eq, valAt_eq, valAt_eq]; exact hV
 
-theorem mulFn_verified : Verified PPC64LE.target mulFn (Spec.X25519.Field32.mulContract PPC64LE.abi) :=
+theorem mulFn_verified : Verified PPC64LE.target mulFn (Proof.X25519.Field32.mulContract PPC64LE.abi) :=
   Verified.of_correct mul_ok' (mulFn_ct fun _ _ _ _ ⟨h3, h4, h5, h6, hsp⟩ => ⟨hsp, h3, fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Spec.X25519.Field32.mulContract, Spec.X25519.Field32.sig, mulPPC, offArg,
+    contract_implies [Proof.X25519.Field32.mulContract, Proof.X25519.Field32.sig, mulPPC, offArg,
       PPC64LE.abi, PPC64LE.argRegs] [satWs] using satWs)
 
 /-! ## `pow250` -/
@@ -125,17 +127,17 @@ theorem pow_ok' (s : State) (hs : powPPC.pre s) :
     rw [congrFun hE 14, (power250Env_eval _).2, Proof.X25519.chainF_eq]
   refine ⟨t, s', he, abi_of_rest (by decide) he hR (by decide +kernel)
     (by rw [← Code.allInstrs_eq]; decide +kernel), ?_, ?_, keeps_pow hF⟩
-  · rw [show Spec.X25519.Field32.oAt = offset 15 from rfl, show Spec.X25519.Field32.aAt = offset 2 from rfl,
+  · rw [show Proof.X25519.Field32.oAt = offset 15 from rfl, show Proof.X25519.Field32.aAt = offset 2 from rfl,
       valAt_ofNat, valAt_ofNat]
     have h := val_of_env h15
     exact h
-  · rw [show Spec.X25519.Field32.eAt = offset 14 from rfl, show Spec.X25519.Field32.aAt = offset 2 from rfl,
+  · rw [show Proof.X25519.Field32.eAt = offset 14 from rfl, show Proof.X25519.Field32.aAt = offset 2 from rfl,
       valAt_ofNat, valAt_ofNat]
     exact val_of_env (e := 11) h14
 
-theorem pow250Fn_verified : Verified PPC64LE.target pow250Fn (Spec.X25519.Field32.pow250Contract PPC64LE.abi) :=
+theorem pow250Fn_verified : Verified PPC64LE.target pow250Fn (Proof.X25519.Field32.pow250Contract PPC64LE.abi) :=
   Verified.of_correct pow_ok' (pow250Fn_ct fun _ _ _ _ ⟨h3, hsp⟩ => ⟨hsp, h3⟩) (by
-    contract_implies [Spec.X25519.Field32.pow250Contract, Spec.X25519.Field32.pow250Sig, powPPC, wsPre, wsPub,
+    contract_implies [Proof.X25519.Field32.pow250Contract, Proof.X25519.Field32.pow250Sig, powPPC, wsPre, wsPub,
       PPC64LE.abi, PPC64LE.argRegs] [satWs] using satWs)
 
 /-! ## The point addition -/
@@ -195,21 +197,21 @@ theorem addMem_d : (addMem.read ((0x1000 : Addr) + BitVec.ofNat 64 576) 32).toNa
 theorem d_eq : Spec.Ed25519.d = Fin.ofNat Spec.X25519.P dLit := by decide +kernel
 
 theorem satAdd_d :
-    Spec.Ed25519.Point32.elemAt satAdd.mem (0x1000 : Addr) Spec.Ed25519.Point32.dAt = Spec.Ed25519.d := by
-  rw [d_eq, Spec.Ed25519.Point32.elemAt]
+    Proof.Ed25519.Point32.elemAt satAdd.mem (0x1000 : Addr) Proof.Ed25519.Point32.dAt = Spec.Ed25519.d := by
+  rw [d_eq, Proof.Ed25519.Point32.elemAt]
   exact congrArg _ addMem_d
 
-theorem addFn_verified : Verified PPC64LE.target addFn (Spec.Ed25519.Point32.addContract PPC64LE.abi) :=
+theorem addFn_verified : Verified PPC64LE.target addFn (Proof.Ed25519.Point32.addContract PPC64LE.abi) :=
   Verified.of_correct add_ok' (addFn_ct fun _ _ _ _ ⟨h3, hsp⟩ => ⟨hsp, h3⟩)
-    { pre := by implies_pre [Spec.Ed25519.Point32.addContract, Spec.Ed25519.Point32.sig, addPPC, wsPre, wsPub,
+    { pre := by implies_pre [Proof.Ed25519.Point32.addContract, Proof.Ed25519.Point32.sig, addPPC, wsPre, wsPub,
         PPC64LE.abi, PPC64LE.argRegs]
-      post := by implies_post [Spec.Ed25519.Point32.addContract, Spec.Ed25519.Point32.sig, addPPC, wsPre, wsPub,
+      post := by implies_post [Proof.Ed25519.Point32.addContract, Proof.Ed25519.Point32.sig, addPPC, wsPre, wsPub,
         PPC64LE.abi, PPC64LE.argRegs]
-      pub := by implies_pub [Spec.Ed25519.Point32.addContract, Spec.Ed25519.Point32.sig, addPPC, wsPre, wsPub,
+      pub := by implies_pub [Proof.Ed25519.Point32.addContract, Proof.Ed25519.Point32.sig, addPPC, wsPre, wsPub,
         PPC64LE.abi, PPC64LE.argRegs]
       sat := by
         refine ⟨satAdd, ?_⟩
-        sig_pre [Spec.Ed25519.Point32.addContract, Spec.Ed25519.Point32.sig, addPPC, wsPre, PPC64LE.abi,
+        sig_pre [Proof.Ed25519.Point32.addContract, Proof.Ed25519.Point32.sig, addPPC, wsPre, PPC64LE.abi,
           PPC64LE.argRegs, satAdd]
         sig_and_intros
         all_goals first

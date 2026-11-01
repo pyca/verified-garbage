@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -82,9 +83,9 @@ theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub
   · exact h3
 
 theorem scalarBase_verified (hl : BaseLadderOk) :
-    Verified Arm.target scalarBase (Spec.Ed448.scalarBaseContract Arm.abi) :=
+    Verified Arm.target scalarBase (Proof.Ed448.scalarBaseContract Arm.abi) :=
   Verified.of_correct (scalarBase_ok hl) scalarBase_ct (by
-    sig_implies [Spec.Ed448.scalarBaseContract, Spec.Ed448.scalarBaseSig,
+    sig_implies [Proof.Ed448.scalarBaseContract, Proof.Ed448.scalarBaseSig,
       Spec.Ed448.scratchWords, scalarBaseLocal, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [scalarBaseSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scalarBaseSat)

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
-public import VerifiedGarbage.Spec.Ed25519.Point64
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 
 /-!
 # RFC 8032's doubling represents the double
@@ -21,15 +21,15 @@ open Spec.Ed25519 (Point)
 open Edwards
 
 theorem pointDouble_neg (p : Point) :
-    Spec.Ed25519.Point64.pointDouble p =
+    Proof.Ed25519.Point64.pointDouble p =
       ⟨-(dblPoint p).X, -(dblPoint p).Y, -(dblPoint p).Z, -(dblPoint p).T⟩ := by
-  simp only [Spec.Ed25519.Point64.pointDouble, dblPoint]
+  simp only [Proof.Ed25519.Point64.pointDouble, dblPoint]
   congr 1 <;> grind
 
 private theorem toZ_neg' (a : Fe) : toZ (-a) = -toZ a := rfl
 
 theorem pointDouble_rep {p : Point} {a : EPoint dZ} (h : RepP p a) :
-    Rep (Spec.Ed25519.Point64.pointDouble p) (a + a) := by
+    Rep (Proof.Ed25519.Point64.pointDouble p) (a + a) := by
   have hr := dblPoint_rep h
   rw [pointDouble_neg]
   refine ⟨?_, ?_, ?_, ?_⟩

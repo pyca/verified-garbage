@@ -385,10 +385,6 @@ pub mod ed25519;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod ed25519_r32;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod ed448;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
@@ -398,14 +394,6 @@ pub mod ffdh;
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
 pub mod gcm;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod gf25519_r32;
-
-#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod gf448_r16;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]

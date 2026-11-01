@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Field16Contract
 public import VerifiedGarbage.Proof.X448.X86.Ops
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.TaintErase
@@ -118,13 +119,13 @@ theorem entryOf_covw (hs : Scr s base) :
 
 end
 
-theorem fits_slot {o : Nat} (h : Slot o) : Spec.X448.Field16.Fits (BitVec.ofNat 32 o) := by
+theorem fits_slot {o : Nat} (h : Slot o) : Proof.X448.Field16.Fits (BitVec.ofNat 32 o) := by
   have : o + 112 ≤ 3584 := h
   show (BitVec.ofNat 32 o).toNat + 112 ≤ 3584
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact this
 
 theorem limbs_slot {m : Mem} {base : Addr} {a : Nat} (h : Slot a) (hb : Bounded m base a) :
-    Spec.X448.Field16.Limbs m base (BitVec.ofNat 32 a) := by
+    Proof.X448.Field16.Limbs m base (BitVec.ofNat 32 a) := by
   have : a + 112 ≤ 3584 := h
   rw [limbs_spec, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hb
 

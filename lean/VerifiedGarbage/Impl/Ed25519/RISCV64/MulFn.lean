@@ -8,7 +8,7 @@ public import VerifiedGarbage.TCB.Code
 /-!
 # `vg_gf25519_r32_mul` on RISC-V
 
-`vg_gf25519_r32_mul(ws, o, a, b)` (`Spec/X25519/Field32.lean`: `ws` in `a0`,
+`vg_gf25519_r32_mul(ws, o, a, b)` (`Proof/X25519/Field32Contract.lean`: `ws` in `a0`,
 the offsets in the low words of `a1`–`a3`) runs X25519's RISC-V product
 (`Impl/X25519/RISCV64/R64.lean`'s `mulAt`: four 64-bit words by columns, with
 `mul` and `mulhu`, then `lo + 38 hi` and the carry folded in twice) in its own

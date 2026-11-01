@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
 import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
 public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
@@ -117,16 +118,16 @@ theorem dblOps_formula (e : Env) (t : Bool) :
   · exact ⟨rfl, rfl, rfl, nofun⟩
   · exact ⟨rfl, rfl, rfl, fun _ => rfl⟩
 
-theorem dblResult_eq (e : Env) : dblResult e = Spec.Ed25519.Point64.pointDouble (point e 0 1 2 3) := by
-  simp only [dblResult, Spec.Ed25519.Point64.pointDouble, point]
+theorem dblResult_eq (e : Env) : dblResult e = Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3) := by
+  simp only [dblResult, Proof.Ed25519.Point64.pointDouble, point]
   congr 1 <;> grind
 
 /-- `dblOps` computes RFC 8032's doubling (`pointDouble`), but for `T` unless `t`. -/
 theorem dblOps_eval (e : Env) (t : Bool) :
-    evalOps (dblOps t) e 0 = (Spec.Ed25519.Point64.pointDouble (point e 0 1 2 3)).X ∧
-      evalOps (dblOps t) e 1 = (Spec.Ed25519.Point64.pointDouble (point e 0 1 2 3)).Y ∧
-      evalOps (dblOps t) e 2 = (Spec.Ed25519.Point64.pointDouble (point e 0 1 2 3)).Z ∧
-      (t = true → evalOps (dblOps t) e 3 = (Spec.Ed25519.Point64.pointDouble (point e 0 1 2 3)).T) := by
+    evalOps (dblOps t) e 0 = (Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3)).X ∧
+      evalOps (dblOps t) e 1 = (Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3)).Y ∧
+      evalOps (dblOps t) e 2 = (Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3)).Z ∧
+      (t = true → evalOps (dblOps t) e 3 = (Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3)).T) := by
   rw [← dblResult_eq]; exact dblOps_formula e t
 
 /-- `addCachedOps` computes `pointAdd` of the point in slots 0–3 and `q`, whose cached form is

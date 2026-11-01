@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Field
-public import VerifiedGarbage.Spec.Ed25519.Point32
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519's point addition and doubling on x86 (32-bit), as functions
 
 `vg_ed25519_r32_point_add(ws)`, `vg_ed25519_r32_add_affine(ws)` and
-`vg_ed25519_r32_double(ws)` (`Spec/Ed25519/Point32.lean`), cdecl: `ws` at
+`vg_ed25519_r32_double(ws)` (`Proof/Ed25519/Point32Contract.lean`), cdecl: `ws` at
 `[esp + 4]`. Each (`fnOf`) saves the callee-saved registers it changes
 (`ebx`, `ebp` and `edi`) in its own working space (`SAVE`), loads `ws` into
 `edi`, runs its field program (`pointAddOps`: slots 0–3 become the sum of
@@ -60,12 +60,12 @@ def callOf (name : String) (fn : Prog isa) : Prog isa :=
   .frame (.push [.edi]) (.call name fn) (.pop .eax 1)
 
 /-- A call of `vg_ed25519_r32_point_add`. -/
-def addCall : Prog isa := callOf Spec.Ed25519.Point32.addApi.name addFn
+def addCall : Prog isa := callOf "vg_ed25519_r32_point_add" addFn
 
 /-- A call of `vg_ed25519_r32_add_affine`. -/
-def affCall : Prog isa := callOf Spec.Ed25519.Point32.addAffineApi.name affFn
+def affCall : Prog isa := callOf "vg_ed25519_r32_add_affine" affFn
 
 /-- A call of `vg_ed25519_r32_double`. -/
-def doubleCall : Prog isa := callOf Spec.Ed25519.Point32.doubleApi.name doubleFn
+def doubleCall : Prog isa := callOf "vg_ed25519_r32_double" doubleFn
 
 end VG.Impl.Ed25519.X86.Point32

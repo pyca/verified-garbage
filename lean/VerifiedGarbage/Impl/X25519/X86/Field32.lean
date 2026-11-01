@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.X25519.X86
-public import VerifiedGarbage.Spec.X25519.Field32
+public import VerifiedGarbage.Spec.X25519
 
 /-!
 # Powers in curve25519's field on x86 (32-bit), as a function
 
-`vg_gf25519_r32_pow250(ws)` (`Spec/X25519/Field32.lean`), cdecl: `ws` at
+`vg_gf25519_r32_pow250(ws)` (`Proof/X25519/Field32Contract.lean`), cdecl: `ws` at
 `[esp + 4]`. It saves the callee-saved registers in its own working space
 (`SAVE`), loads `ws` into `edi`, copies `a` (byte 128) to `AC`, and runs the
 addition chain of ref10's `fe_invert` up to `a^(2^250 - 1)` with X25519's
@@ -26,6 +26,9 @@ The function's own working space is bytes 576 to 1023: `E2`, `E3`, `AC`,
 namespace VG.Impl.X25519.X86.Field32
 
 open VG.X86 VG.Impl.X25519.X86
+
+/-- Where `pow250` reads `a`. -/
+def aAt : Nat := 128
 
 /-- Where `a^11` is left. -/
 def E0 : Nat := 512
@@ -67,7 +70,7 @@ copied to `AC`. -/
 def entry : List Instr :=
   [.mov .eax (.mem (at_ .esp 4)), .store (at_ .eax SAVE) .ebx, .store (at_ .eax (SAVE + 4)) .esi,
     .store (at_ .eax (SAVE + 8)) .edi, .store (at_ .eax (SAVE + 12)) .ebp, .mov .edi (.reg .eax)] ++
-  copy AC Spec.X25519.Field32.aAt
+  copy AC aAt
 
 /-- The registers restored, through `edx = ws`. -/
 def exit : List Instr :=
@@ -81,6 +84,6 @@ def pow250Fn : Prog isa := .seq (.block entry) (.seq chain (.block exit))
 call changes `eax`, `ecx`, `edx`, the flags, bytes 512 to 1023 of the
 working space and the 8 bytes below `esp`. -/
 def pow250Call : Prog isa :=
-  .frame (.push [.edi]) (.call Spec.X25519.Field32.pow250Api.name pow250Fn) (.pop .eax 1)
+  .frame (.push [.edi]) (.call "vg_gf25519_r32_pow250" pow250Fn) (.pop .eax 1)
 
 end VG.Impl.X25519.X86.Field32

@@ -159,7 +159,7 @@ def mulSmall : List Instr :=
 /-! ## The field functions
 
 `vg_gf448_r16_{mul,add,sub,mul_a24}(ws = r0, o = r1, a = r2, b = r3)`
-(`Spec/X448/Field16.lean`): the registers they change and must restore are
+(`Proof/X448/Field16Contract.lean`): the registers they change and must restore are
 saved at `SAVE` (in their own working space, from `ACC`), `r6` takes the
 limb mask, and `r9`, `lr` and `r12` point to `[o]`, `[a]` and `[b]`. They
 never write `r0`, `r8`, `r10` or `r11`, so that a caller keeps its working

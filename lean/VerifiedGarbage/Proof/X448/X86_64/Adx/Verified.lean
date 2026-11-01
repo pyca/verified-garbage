@@ -51,7 +51,7 @@ theorem x448Adx_ok (s : State) (hs : Proof.X448.x448X86_64.pre s) :
   have hc : WP isa Impl.X448.X86_64.x448Adx.inline s
       (fun u => gprPreserved s u ∧ Proof.X448.x448X86_64.post s u) := by
     change WP isa (Impl.X448.X86_64.x448Of Impl.X448.X86_64.adx (Impl.X448.X86_64.ladder Impl.X448.X86_64.adx)
-      (Impl.X448.X86_64.invertCallWith Impl.X448.X86_64.adx (Spec.X448.Field64.pow223Api.name ++ "_adx")).inline) s _
+      (Impl.X448.X86_64.invertCallWith Impl.X448.X86_64.adx ("vg_gf448_r64_pow223" ++ "_adx")).inline) s _
     exact correct_of adx_ok (fun h => ladder_post adx_ok h)
       (fun h => invertCallWith_post adx_ok _ (keep := []) (by simp) h) (Pre.of s hs)
   obtain ⟨t, s', he, h⟩ := hc

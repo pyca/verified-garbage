@@ -55,7 +55,7 @@ theorem verifyEquation_noFrames : Impl.Ed25519.RISCV64.verifyEquation.noFrames =
 
 /-- The call of `verify_equation`. -/
 theorem verCall_ok {s t : State} (hp : VerPre s) (ha : VerArgs s t) :
-    WP isa (.call Spec.Ed25519.verifyEquationApi.name Impl.Ed25519.RISCV64.verifyEquation) t fun t' =>
+    WP isa (.call "vg_ed25519_verify_equation" Impl.Ed25519.RISCV64.verifyEquation) t fun t' =>
       VerInv s t' ∧ (t'.gpr .a0).setWidth 32 = verResult s := by
   obtain ⟨hc, hw⟩ := verCall_covers hp ha
   refine WP.call (k := verifyRV) verify_ok' (verCall_pre hp ha) hc hw (fun t' a b c f g _ hpost => ?_)

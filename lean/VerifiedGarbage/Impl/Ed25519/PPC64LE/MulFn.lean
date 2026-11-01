@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Word
-public import VerifiedGarbage.Spec.X25519.Field32
+public import VerifiedGarbage.Spec.X25519
 
 /-!
 # `vg_gf25519_r32_mul` on PPC64LE
 
-`vg_gf25519_r32_mul(ws, o, a, b)` (`Spec/X25519/Field32.lean`; ELFv2: `ws`
+`vg_gf25519_r32_mul(ws, o, a, b)` (`Proof/X25519/Field32Contract.lean`; ELFv2: `ws`
 in `r3`, the offsets in the low words of `r4`–`r6`) runs the product of the
 inlined code (`mul`, from X25519's PPC64LE product: row by row, with
 `mulld`, then `lo + 38 hi` and the carry folded in twice), but with its
@@ -71,6 +71,6 @@ def mulFn : Prog isa :=
 `r6` before and after (the callee keeps it in `r3`). -/
 def mulCall (o a b : Nat) : Prog isa :=
   .seq (.block [.addi .r3 .r6 0, .li .r4 o, .li .r5 a, .li .r6 b])
-    (.seq (.call Spec.X25519.Field32.mulApi.name mulFn) (.block [.addi .r6 .r3 0]))
+    (.seq (.call "vg_gf25519_r32_mul" mulFn) (.block [.addi .r6 .r3 0]))
 
 end VG.Impl.Ed25519.PPC64LE

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Field32Contract
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointOps
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Freeze
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Power
@@ -42,7 +43,7 @@ theorem env_of_val {m m' : Mem} {b : Addr} {i j : Slot} {e : Nat}
   rw [h, ← Nat.pow_mod]
 
 /-- The slots below `pow250`'s results keep their elements. -/
-theorem env_keeps₂ {b : Addr} {m m' : Mem} (h : Spec.X25519.Field32.Keeps₂ b m m') {i : Slot} (hi : i.val < 14) :
+theorem env_keeps₂ {b : Addr} {m m' : Mem} (h : Proof.X25519.Field32.Keeps₂ b m m') {i : Slot} (hi : i.val < 14) :
     env m' b i = env m b i := by
   have hs := slot_range i
   unfold env FS
@@ -50,8 +51,8 @@ theorem env_keeps₂ {b : Addr} {m m' : Mem} (h : Spec.X25519.Field32.Keeps₂ b
   refine congrArg (fun v : BitVec (8 * 32) => Proof.X25519.toFe v.toNat) (Mem.read_congr fun j hj => ?_)
   have ho : offset i = 64 + 32 * i.val := rfl
   rw [Offset.add_add]
-  exact h (offset i + j) (by simp only [Spec.X25519.Field32.wsBytes]; omega_arith)
-    (by simp only [Spec.X25519.Field32.eAt]; omega_arith)
+  exact h (offset i + j) (by simp only [Proof.X25519.Field32.wsBytes]; omega_arith)
+    (by simp only [Proof.X25519.Field32.eAt]; omega_arith)
 
 /-- The registers `vg_gf25519_r32_pow250` never writes. -/
 def powKept : List Reg := [.r2, .r3, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23,
@@ -89,7 +90,7 @@ theorem power250_ok {b : Addr} {s : State} (hc : Ctx8 b s) :
     have := List.all_eq_true.mp (List.all_eq_true.mp nw i hi) q hq
     simpa using this
   -- The elements, as the contract reads them.
-  have hv : ∀ i : Slot, ∀ {m : Mem}, Spec.X25519.Field32.valAt m b (BitVec.ofNat 32 (offset i)) = V m b (offset i) :=
+  have hv : ∀ i : Slot, ∀ {m : Mem}, Proof.X25519.Field32.valAt m b (BitVec.ofNat 32 (offset i)) = V m b (offset i) :=
     fun i m => valAt_ofNat m b i
   refine wp_addi (by decide) (by decide) fun t1 v1 => WP.block_nil ⟨⟨⟨fun q hq => ?_, ?_, ?_, ?_⟩, ?_⟩, ?_, ?_, ?_⟩
   · by_cases h6 : q = .r6
@@ -112,16 +113,16 @@ theorem power250_ok {b : Addr} {s : State} (hc : Ctx8 b s) :
         rw [hx']
         exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
       rw [hx']
-      exact hks _ (by simp only [Spec.X25519.Field32.wsBytes]; omega_arith)
-        (by simp only [Spec.X25519.Field32.eAt, Spec.X25519.Field32.ownEnd]; omega_arith)
+      exact hks _ (by simp only [Proof.X25519.Field32.wsBytes]; omega_arith)
+        (by simp only [Proof.X25519.Field32.eAt, Proof.X25519.Field32.ownEnd]; omega_arith)
     · rw [← u1.mem]
       exact hfr x fun r hr => by rw [List.mem_singleton.mp hr]; exact hw
   · rw [v1.mem]
-    rw [show Spec.X25519.Field32.oAt = offset 15 from rfl, show Spec.X25519.Field32.aAt = offset 2 from rfl,
+    rw [show Proof.X25519.Field32.oAt = offset 15 from rfl, show Proof.X25519.Field32.aAt = offset 2 from rfl,
       hv, hv] at h15
     exact env_of_val h15
   · rw [v1.mem]
-    rw [show Spec.X25519.Field32.eAt = offset 14 from rfl, show Spec.X25519.Field32.aAt = offset 2 from rfl,
+    rw [show Proof.X25519.Field32.eAt = offset 14 from rfl, show Proof.X25519.Field32.aAt = offset 2 from rfl,
       hv, hv] at h14
     exact env_of_val h14
   · intro i hi

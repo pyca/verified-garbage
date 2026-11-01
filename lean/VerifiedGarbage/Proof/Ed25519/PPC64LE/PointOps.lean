@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldProg
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Spec.Ed25519.Point32
+public import VerifiedGarbage.Proof.Ed25519.Point32Contract
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 
 /-!
@@ -43,7 +43,7 @@ def Kept (i : Slot) : Prop := 4 ≤ i.val ∧ i.val < 8 ∨ 16 ≤ i.val
 
 instance (i : Slot) : Decidable (Kept i) := by unfold Kept; infer_instance
 
-theorem env_keeps {b : Addr} {m m' : Mem} (h : Spec.Ed25519.Point32.Keeps b m m') {i : Slot} (hi : Kept i) :
+theorem env_keeps {b : Addr} {m m' : Mem} (h : Proof.Ed25519.Point32.Keeps b m m') {i : Slot} (hi : Kept i) :
     env m' b i = env m b i := by
   have hs := slot_range i
   have hA := ACC_eq
@@ -54,8 +54,8 @@ theorem env_keeps {b : Addr} {m m' : Mem} (h : Spec.Ed25519.Point32.Keeps b m m'
   unfold Kept at hi'
   have ho : offset i = 64 + 32 * i.val := rfl
   rw [Offset.add_add]
-  refine (h (offset i + j) (by simp only [Spec.Ed25519.Point32.wsBytes]; omega)
-    (by simp only [Spec.Ed25519.Point32.pAt, Spec.Ed25519.Point32.elemBytes]; omega) (by omega) (by omega))
+  refine (h (offset i + j) (by simp only [Proof.Ed25519.Point32.wsBytes]; omega)
+    (by simp only [Proof.Ed25519.Point32.pAt, Proof.Ed25519.Point32.elemBytes]; omega) (by omega) (by omega))
 
 /-- The registers `vg_ed25519_r32_point_add` never writes. -/
 def keptRegs : List Reg := [.r2, .r3, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23,
@@ -75,8 +75,8 @@ theorem addCall_ok {b : Addr} {s : State} (hc : Ctx8 b s) (hd : env s.mem b 16 =
       r.base = r'.base + BitVec.ofNat 64 off ∧ off + r.len ≤ r'.len := fun r hr => by
     rw [List.mem_singleton.mp hr, u1.wr]
     exact ⟨_, hc.wr, 0, by simp, by simp⟩
-  have hd' : Spec.Ed25519.Point32.elemAt s1.mem b Spec.Ed25519.Point32.dAt = Spec.Ed25519.d := by
-    rw [u1.mem, show Spec.Ed25519.Point32.dAt = offset 16 from rfl, elemAt_eq]; exact hd
+  have hd' : Proof.Ed25519.Point32.elemAt s1.mem b Proof.Ed25519.Point32.dAt = Spec.Ed25519.d := by
+    rw [u1.mem, show Proof.Ed25519.Point32.dAt = offset 16 from rfl, elemAt_eq]; exact hd
   refine WP.seq (WP.call (k := addPPC) add_ok' (rd := []) (wr := [⟨b, 8192⟩])
     ⟨⟨rfl, by rw [State.withRegions_wr, g _ (by decide), e3]⟩, by
       rw [State.withRegions_mem, State.callEntry_mem, g _ (by decide), e3]; exact hd'⟩
@@ -116,8 +116,8 @@ theorem addCall_ok {b : Addr} {s : State} (hc : Ctx8 b s) (hd : env s.mem b 16 =
         rw [hx']
         exact Offset.contains _ (by omega) (by omega) (by omega)
       rw [hx']
-      exact hks _ (by simp only [Spec.Ed25519.Point32.wsBytes]; omega)
-        (by simp only [Spec.Ed25519.Point32.pAt, Spec.Ed25519.Point32.elemBytes]; omega) (by omega) (by omega)
+      exact hks _ (by simp only [Proof.Ed25519.Point32.wsBytes]; omega)
+        (by simp only [Proof.Ed25519.Point32.pAt, Proof.Ed25519.Point32.elemBytes]; omega) (by omega) (by omega)
     · rw [← u1.mem]
       exact hfr x fun r hr => by rw [List.mem_singleton.mp hr]; exact hw
   · rw [v1.mem, ← pointAt_eq, hpt, pointAt_eq, pointAt_q]
