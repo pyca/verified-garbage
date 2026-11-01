@@ -34,11 +34,6 @@ open VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Proof.Divstep (sgn)
 
-/-- Arrays `j ≠ k` of `w + 2` words: any parts of them are apart. -/
-theorem slot_apart {w j k a b : Nat} (h : j ≠ k) (ha : a ≤ 8 * (w + 2)) (hb : b ≤ 8 * (w + 2)) :
-    slot w j + a ≤ slot w k ∨ slot w k + b ≤ slot w j := by
-  rcases slot_sep (w := w) h with h' | h' <;> [exact .inl (by omega); exact .inr (by omega)]
-
 /-- The values of an array that a piece leaves alone. -/
 theorem wv_out {m m' : Mem} {B : Addr} {w o n j L : Nat} (h : Outside B (slot w o) n m m') (hjo : o ≠ j)
     (hn : n ≤ 8 * (w + 2)) (hL : L ≤ w + 2) (hZ : slot w 16 + B.toNat ≤ 2 ^ 64) (hj : j < 16) :

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
+public import VerifiedGarbage.Proof.Bignum.Layout
 
 /-!
 # RSA private keys on AArch64: what the batched inverse's proofs share
@@ -61,4 +62,10 @@ theorem base_vnone (j : Nat) (r : Reg) : (base j r).all (fun i => (vdstOf i).isN
   split
   · simp only [List.all_append, List.all_replicate]; simp [vdstOf]
   · simp only [List.all_append, mulBitsF_vnone]; rfl
+open VG.Proof.Bignum in
+/-- Arrays `j ≠ k` of `w + 2` words: any parts of them are apart. -/
+theorem slot_apart {w j k a b : Nat} (h : j ≠ k) (ha : a ≤ 8 * (w + 2)) (hb : b ≤ 8 * (w + 2)) :
+    slot w j + a ≤ slot w k ∨ slot w k + b ≤ slot w j := by
+  rcases slot_sep (w := w) h with h' | h' <;> [exact .inl (by omega); exact .inr (by omega)]
+
 end VG.Proof.Rsa.AArch64

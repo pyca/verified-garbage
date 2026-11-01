@@ -108,7 +108,8 @@ structure LInv (C : ICfg) (s₀ : State) (k : Nat) (s : State) : Prop where
   m : wv s.mem C.B (slot C.w C.iM) C.n = C.p
   frm : Frm C.B C.ranges s₀.mem s.mem
   keep : Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17] s₀ s
-  v19 : s.v .v19 = s₀.v .v19
+  x1s : laneOf s .v19 0 = s₀.gpr .x1
+  x2s : laneOf s .v19 1 = s₀.gpr .x2
 
 /-- Array `j` is apart from three others' parts. -/
 theorem apart3 {w j a b c L la lb lc : Nat} (hja : j ≠ a) (hjb : j ≠ b) (hjc : j ≠ c) (hL : L ≤ w + 2)
@@ -210,7 +211,9 @@ theorem batch_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 *
     by rw [laneOf, v₃, v₂, ← laneOf, l2, hI.mi],
     by rw [keepAB hC.dMT hC.dX₂M.symm hC.dX₁M.symm (by have := hC.nw; omega) hC.hM,
       keepFG hC.dMT hC.dUM.symm hC.dVM.symm (by have := hC.nw; omega) hC.hM]; exact hI.m, ?_,
-    ((hI.keep.trans k13).mono (by decide)), by rw [v₃, v₂, lv _ (by decide) (by decide) (by decide), hI.v19]⟩, ?_⟩
+    ((hI.keep.trans k13).mono (by decide)),
+    by rw [laneOf, v₃, v₂, lv _ (by decide) (by decide) (by decide)]; exact hI.x1s,
+    by rw [laneOf, v₃, v₂, lv _ (by decide) (by decide) (by decide)]; exact hI.x2s⟩, ?_⟩
   · refine (hI.frm.trans (by rw [hm₁]; exact Frm.refl _ _ _)).trans ((Frm.widen fr₂ ?_).trans (Frm.widen fr₃ ?_))
     all_goals
       intro r hr
