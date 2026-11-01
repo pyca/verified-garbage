@@ -1,0 +1,33 @@
+# Internal functions: the brief for each family's session
+
+You are taking one family of a larger, already-established refactor of pyca/verified-garbage (Lean-verified assembly, generated Rust crates). Read CLAUDE.md and lean/README.md first, then the merged example PRs below; follow their pattern exactly.
+
+## The goal
+
+A verified function that only other verified code calls (never the Rust code in src/, tests/ or bench/) must have NO spec: no `Api`, no `Contract`/`Sig` in `lean/VerifiedGarbage/Spec/`, no registration. Since pyca/verified-garbage#3873 and #3897, the emitter (`lean/VerifiedGarbage/TCB/Rust.lean`, `Rust.Internal`) emits any called function that is not an artifact as an *internal function*, from the code its callers' proofs run, into `crates/verified-garbage-asm-<t>/src/internal/<name>.rs`, declared from its algorithm's module file. So for each such function:
+
+1. Delete its `Api` from `Spec/<Alg>/…` and every registration of it (`Artifacts/`, `Generic/`, and variant backends' function lists under `Proof/`).
+2. Move the `Sig`/`Contract` (and any `Pre`/`Post`/helper definitions only they use) out of `Spec/` into an untrusted `Proof/<Alg>/Contract.lean` (or `Proof/<Alg>/<Name>Contract.lean`), namespace `VG.Proof.<Alg>`, with `open VG.Spec VG.Spec.<Alg>` and a module doc saying it is not trusted (copy the wording from `lean/VerifiedGarbage/Proof/Rc2/Contract.lean` or `Proof/Hmac/Contract.lean` on main). Keep definition order (Sig before Pre/Post before Contract).
+3. Rewrite references: `Spec.<Alg>.x` → `Proof.<Alg>.x`; files that `open Spec.<Alg>` and use moved names unqualified also need `Proof.<Alg>` opened and a `public import` of the new module; `Spec.<Alg>.fooApi.name` → the literal string (e.g. `"vg_sha256_compress"`, or `s!"…{I.rust}…"` for parameterized `Api`s); dot notation on structures (`I.fooContract`) → `Proof.<Alg>.Instance.fooContract I` (no extra parentheses: they fill the optional `stack` argument early). `Impl/` and `Spec/` may never import `Proof/`.
+4. Update the Spec module docs so they no longer describe the removed functions (move that text into the Proof file's doc), and drop `#assert_standard_axioms` lines of moved contracts from `VerifiedGarbageTest/`.
+5. Rust: if `src/` uses only a `_FEATURES`/`_WRITTEN` constant of such a function (e.g. in a dispatch table), use the caller's constant or drop the entry.
+
+Per the user: also remove specs of implementation details that are NOT implemented yet, and contracts that have no `Api` at all (they cannot be public functions) — e.g. a whole `Spec/` file of them moves to `Proof/`. Keep specs of functions Rust calls or is meant to call (public-API-shaped). If an open PR by someone else adds implementation-detail specs, go ahead anyway; they resolve against yours.
+
+To find which `Api`s are internal: collect the identifiers in src/, tests/ and bench/ with `ci/check_variants.py`'s `tokens` (lower-cased; a `VG_X_FEATURES`/`VG_X_<PARAM>_WRITTEN` use counts as a use of `vg_x`), and the generated function names of each `Api` (its name and its variants `name_<suffix>`) in `crates/*/src/**/*.rs`; an `Api` none of whose functions is used is internal. Parameterized `Api`s (`Instance.fooApi`, `s!"vg_…{x}"`) need the same check by their generated names.
+
+Merged examples to copy: pyca/verified-garbage#3876 (RC2, simplest), #3888 (AES-CMAC, variants naming the callee), #3893 (HMAC and PBKDF2: parameterized `Instance` `Api`s, dot notation, Generic registrations), #3901 (AES-GCM: several spec files, whole files moved, unimplemented specs removed). Read their diffs.
+
+## How to work
+
+* Bootstrap: this checkout starts on the branch `claude/wizardly-goldberg-4af022-bootstrap`, whose session-start hook (`.claude/hooks/session-start.sh`) has already installed elan and the Lean toolchain, `zstandard`, the Rust targets below, and restored the CI build cache into `lean/.lake`; `export PATH="$HOME/.elan/bin:$PATH"` if `lean` is not on your PATH. Don't install them again. If the hook did not run (no `~/.elan`), run `CLAUDE_CODE_REMOTE=true .claude/hooks/session-start.sh` yourself: the user has authorized it. The cache is of a recent main; follow CLAUDE.md's rule on restoring it again after large upstream Lean changes (`python3 ci/fetch_lean_cache.py | …`, lean/README.md).
+* Create your work branch from origin/main (`git fetch origin main && git checkout -b <branch> origin/main`): never put this bootstrap branch's `.claude/settings.json`, `.claude/hooks/` or this brief in your PR.
+* Branch: `claude/wizardly-goldberg-4af022-<family>`. One PR for your family. Commit messages and PR bodies: follow the merged examples; end commits with the attribution lines from your system prompt; never put model names in commits/PRs.
+* Build what you touch first (`lake build --log-level=warning +<module>`), then the full validation before pushing:
+  - `cd lean && lake build --log-level=warning && lake env lean --run Emit.lean && lake env lean --run Emit.lean --check`
+  - every step of the Static checks job in .github/workflows/ci.yml (run `ci/run_unit_tests.py` WITHOUT the elan toolchain on PATH: with it, `test_check_lean_import_integration` fails on unmodified main, a known pre-existing issue)
+  - `python3 ci/check_lean_public_imports.py --base origin/main -m <edited modules>` (see CLAUDE.md)
+  - `cargo fmt --check`; `cargo clippy --all-targets -- -D warnings` with `--target` for x86_64-unknown-linux-gnu, i686-unknown-linux-gnu, aarch64-unknown-linux-gnu, armv7-unknown-linux-gnueabihf, powerpc64le-unknown-linux-gnu, riscv64gc-unknown-linux-gnu (`rustup target add` them); `cargo test`, and `VG_CPU_FEATURES=none cargo test --features cpu-features-env`.
+* Rebasing (main moves fast; other sessions are doing the other families in parallel): `git fetch origin main && git rebase origin/main`; for conflicts in generated files (`crates/`), take main's side, then ALWAYS rebuild and rerun `Emit.lean` to regenerate — never resolve generated files textually (a textual merge once missed a new caller from main and broke CI). Never squash with `git reset --soft origin/main` when main has moved (it reverts main's new commits); rebase instead. Check CLAUDE.md's rule on restoring the cache again after large upstream Lean changes.
+* Open the PR (GitHub MCP tools), then call `subscribe_pr_activity` on it and own it to the end: fix CI failures, rebase and regenerate on merge conflicts (the maintainer will comment "merge conflicts" or "CI failing"), reply briefly on the PR when you fix something, until it is merged. Don't touch other families' files.
+* Report back to the session that created you (send_message to it) when your PR is opened and again when it is merged or if you are blocked.
