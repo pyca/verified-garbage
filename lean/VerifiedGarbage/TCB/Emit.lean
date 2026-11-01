@@ -267,7 +267,7 @@ def parseArgs (args : List String) : Option (Bool × Option String × FilePath) 
   | _ => none
 
 /-- Writes `files` (paths relative to `dir` and their contents) under `dir`,
-deleting any other `.rs` file under the directories `under` (relative to
+deleting any other `.rs` or `.s` file under the directories `under` (relative to
 `dir`, `""` for all of it) but those of `others`; or, if `check`, writes
 nothing and fails if the files on disk differ from `files`. -/
 def sync (dir : FilePath) (check : Bool) (files : List (String × String))
@@ -286,14 +286,16 @@ def sync (dir : FilePath) (check : Bool) (files : List (String × String))
     else
       IO.FS.writeFile path text
       IO.println s!"wrote {path}"
-  -- Any other `.rs` file there would be unverified code.
+  -- Any other `.rs` file there would be unverified code, and another `.s` a
+  -- assembly file of none.
   let expectedPaths := files.map fun (n, _) => (dir / n).normalize
   let otherDirs := others.map fun (o : String) => (dir / o).normalize.toString ++ "/"
   for u in under do
     let d := if u.isEmpty then dir else dir / u
     unless ← d.pathExists do continue
     for path in ← d.walkDir do
-      if path.extension == some "rs" && !expectedPaths.contains path.normalize &&
+      if (path.extension == some "rs" || path.extension == some "s") &&
+          !expectedPaths.contains path.normalize &&
           !otherDirs.any (path.normalize.toString.startsWith ·) then
         if check then
           IO.eprintln s!"{path} is not generated from any artifact"
@@ -303,26 +305,26 @@ def sync (dir : FilePath) (check : Bool) (files : List (String × String))
           IO.println s!"removed stale {path}"
   return ok
 
-/-- The directories of generated files (`Rust.codeDir`) of the crates of
-generated code under `dir` (`Rust.crateDir`): those it deletes stale `.rs`
+/-- The directories of generated files (`Rust.generatedDirs`) of the crates
+of generated code under `dir` (`Rust.crateDir`): those it deletes stale
 files in, and checks. -/
 def codeDirs (dir : FilePath) : IO (List String) := do
   unless ← dir.pathExists do return []
   let mut ds := #[]
   for e in ← dir.readDir do
     if (← e.path.isDir) && e.fileName.startsWith (Rust.crateDir "") then
-      ds := ds.push (Rust.codeDir (e.fileName.drop (Rust.crateDir "").length).toString)
+      ds := ds ++ (Rust.generatedDirs (e.fileName.drop (Rust.crateDir "").length).toString).toArray
   return (ds.qsort (· < ·)).toList
 
 /-- Writes the files generated from `as` under the directory in `args` (by
-default `../crates`), deleting any other `.rs` file in the directory of
+default `../crates`), deleting any other generated file in the directories of
 generated files of a crate of generated code there (`codeDirs`, and nothing
 else: the rest of those crates, and the other crates, are not the emitter's);
 or, if `args` starts with `--check`, writes nothing and
 fails if the files on disk differ from what would be generated.
 
 With `--part FILE`, `as` are the artifacts of a part (`parts`): only the
-files of their targets' crates are written or checked, and the other `.rs`
+files of their targets' crates are written or checked, and the other generated
 files in those crates' directories of generated files; then `FILE` gets their targets, for `finish`, which
 checks the rest. -/
 def run (as : List Artifact) (args : List String) : IO UInt32 := do
@@ -331,7 +333,7 @@ def run (as : List Artifact) (args : List String) : IO UInt32 := do
     | .ok files => pure files
     | .error e => do IO.eprintln e; return 1
   let targets := Rust.targetsOf as
-  let own := targets.map (Rust.codeDir ·.1)
+  let own := targets.flatMap (Rust.generatedDirs ·.1)
   let ok ← match part with
     | none => sync dir check files (Rust.dedup (own ++ (← codeDirs dir))) []
     | some _ =>
@@ -359,7 +361,7 @@ def finish (targets : List (List (String × String))) (args : List String) : IO 
   if let some t := inTwoParts targets then
     IO.eprintln s!"the artifacts of the target {t} are in two parts"
     return 1
-  let own := targets.flatten.map (Rust.codeDir ·.1)
+  let own := targets.flatten.flatMap (Rust.generatedDirs ·.1)
   let stale := (← codeDirs dir).filter (!own.contains ·)
   unless ← sync dir check [] stale [] do
     IO.eprintln "run `lake build && lake env lean --run Emit.lean` in lean/ and commit the result"

@@ -11,8 +11,8 @@ default dialect of Rust's `asm!`/`naked_asm!` on x86-64.
 
 Each straight-line instruction and the return are printed as their machine
 code (`Encode.lean`), `.byte <bytes>`, each after a line `// <the
-instruction's text>`, which the emitter writes as a Rust comment
-(`Rust.template`): the assembler only copies the bytes. The branches
+instruction's text>`, which the emitter writes in the module's assembly file, not in its code
+(`Rust.assembly`): the assembler only copies the bytes. The branches
 (`jcc`, `jmp`), the call and the address of a static (`symLines`) are
 printed as text, for the assembler and linker to lay out.
 -/

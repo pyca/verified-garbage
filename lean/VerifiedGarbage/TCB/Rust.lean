@@ -230,9 +230,10 @@ def line (call : String) : Line → String
     s!"        concat!(\"{escape s}\", vg_sym_pageoff!(\"" ++ "{" ++ n ++ "}\")),\n"
   | l => "        " ++ literal ((lineText call l).getD "") ++ ",\n"
 
-/-- The text of a comment line of a printer (`// <text>` on one line, e.g.
-the text of an instruction that RISC-V's printer emits as its machine code),
-which `template` writes as a Rust comment, not as a line of the assembly. -/
+/-- The text of a comment line of a printer (`// <text>` on one line: the
+text of an instruction that the printer emits as its machine code, in the
+directive after it), which is not a line of the assembly: `template` leaves
+it out, and the assembly file has it (`assembly`). -/
 def commentOf : Line → Option String
   | .text l =>
     if l.startsWith "// " && !l.contains '\n' && !l.contains '\r' then some l else none
@@ -325,38 +326,55 @@ those lines separated by newlines, the others as arguments of their own
 `naked_asm!` joins its arguments with newlines, so the template is the same
 as with one argument per line. A function's template is then a few tokens
 for rustc to parse and expand, not one per line.
-A comment line (`commentOf`), which comments the line after it, is not part
-of the template: it is written as a Rust comment before the string literal
-that line is in, so the assembler never sees it. A comment after a line that
-no comment is about (e.g. a label or a branch, after the commented
-instructions before it) starts a new literal, so that each literal's
-comments are just above it: one literal per run of commented lines and the
-lines after them, not per line. Consecutive lines of an encoded
-instruction's directive are joined (`pushLine`), and encoded bytes packed
-into `.octa`s (`packLine`). -/
+A comment line (`commentOf`) is not part of the template, nor of the Rust
+code: the assembly file has it (`assembly`), so that neither rustc nor the
+assembler reads it. Consecutive lines of an encoded instruction's directive
+are joined (`pushLine`), and encoded bytes packed into `.octa`s
+(`packLine`). -/
 def template (call : String) (ls : List Line) : String :=
-  go ls [] [] false false
+  go (ls.filter (commentOf · |>.isNone)) []
 where
-  /-- The arguments for `ls`, after the run of text lines `run` and the
-  comments `cs` before it (both reversed); `tail` if `run` has a line that
-  no comment is about since its last commented one, and `after` if the line
-  before was a comment. -/
-  go : List Line → List String → List String → Bool → Bool → String
-    | [], run, cs, _, _ => flush run cs
-    | l :: ls, run, cs, tail, after => match commentOf l with
-      | some c =>
-        if tail then flush run cs ++ go ls [] [c] false true
-        else go ls run (c :: cs) false true
-      | none => match lineText call l with
-        | some t => go ls (pushLine t run) cs (tail || !after) false
-        | none => flush run cs ++ line call l ++ go ls [] [] false false
-  /-- The comments `cs`, then the run of text lines `run` as one string
-  literal (both reversed). -/
-  flush : List String → List String → String
-    | run, cs => String.join (cs.reverse.map fun c => s!"        {c}\n") ++
-      match run with
-      | [] => ""
-      | run => "        " ++ literal ("\n".intercalate (run.reverse.flatMap packLine)) ++ ",\n"
+  /-- The arguments for `ls`, after the run of text lines `run` (reversed). -/
+  go : List Line → List String → String
+    | [], run => flush run
+    | l :: ls, run => match lineText call l with
+      | some t => go ls (pushLine t run)
+      | none => flush run ++ line call l ++ go ls []
+  /-- The run of text lines `run` as one string literal (reversed). -/
+  flush : List String → String
+    | [] => ""
+    | run => "        " ++ literal ("\n".intercalate (run.reverse.flatMap packLine)) ++ ",\n"
+
+/-- A line of a function's assembly file (`assembly`): a line of text as it is, a
+call or the address of a static as `lineText` writes it, the static's name
+an operand of `naked_asm!` (`{NAME}`). -/
+def assemblyLine (call : String) : Line → String
+  | .text l => l
+  | .sym s _ n => s ++ "{" ++ n ++ "}"
+  | l => (lineText call l).getD ""
+
+/-- Whether a printed line is a directive: the machine code of the
+instruction a comment before it is the text of. -/
+def isDirective : Line → Bool
+  | .text l => l.startsWith "."
+  | _ => false
+
+/-- The assembly file of the printed lines `ls` of a function: each line of its
+assembly as text (`assemblyLine`), but for an instruction a printer emits as
+its machine code, whose comment (`commentOf`) is its text, in place of the
+directive after it. -/
+def assembly (call : String) (ls : List Line) : List String :=
+  go ls false
+where
+  /-- The assembly file of `ls`, after a comment if `after`, whose directive the
+  first line of `ls` then is if it is one. -/
+  go : List Line → Bool → List String
+    | [], _ => []
+    | l :: ls, after =>
+      if after && isDirective l then go ls false
+      else match commentOf l with
+        | some c => (c.drop 3).toString :: go ls true
+        | none => assemblyLine call l :: go ls false
 
 /-- `fs` as an English list of code spans: "`a`, `b` and `c`". -/
 def codeList : List String → String
@@ -590,14 +608,21 @@ def funcOptions : String → List String × List String
 `Printer.featureCfg` of its features). -/
 def gateOf (a : Artifact) : String := cfgGate (a.features.filterMap a.target.printer.featureCfg)
 
+/-- The lines of `a`'s function, given its printed code `lines`: the target's
+opening `funcOptions`, the directives enabling its features, `lines`, the
+directives disabling them, the printer's `funcAlign`, and the closing
+`funcOptions`. -/
+def bodyOf (a : Artifact) (lines : List Line) : List Line :=
+  let P := a.target.printer
+  let (start, stop) := funcOptions a.target.name
+  start.map .text ++ (a.features.flatMap P.enableFeature).map .text ++ lines ++
+    (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text ++ stop.map .text
+
 /-- The text of `a`'s function after its name, given `a`'s printed code
 `lines`: its signature and its body, the `naked_asm!` of its code
 (`function`). -/
 def codeOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
-  let P := a.target.printer
-  let (start, stop) := funcOptions a.target.name
-  let body := start.map .text ++ (a.features.flatMap P.enableFeature).map .text ++ lines ++
-    (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text ++ stop.map .text
+  let body := bodyOf a lines
   let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
   let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
   s!"{a.sig.rust} " ++ "{\n" ++
@@ -721,24 +746,42 @@ structure Prepared where
 
 def Prepared.of (a : Artifact) : Prepared := ⟨a, _, _, rfl, rfl⟩
 
-/-- The text of the functions of a module, the artifacts of `ps` in order:
-each as `function` writes it, but for those with the same `sameKey`, of
-which only the one with the shortest name (the first of them, if several
-are as short) is, and each other the `alias` of it. -/
-def moduleText (moduleOf : Artifact → String → String) (ps : List Prepared) : String :=
+/-- The functions of a module, the artifacts of `ps` in order: each with the
+text of its function after its name (`codeOf`) and the name of the function
+it is emitted as: of those with the same `sameKey`, the one with the
+shortest name (the first of them, if several are as short). -/
+def moduleItems (moduleOf : Artifact → String → String) (ps : List Prepared) :
+    List (Prepared × String × String) :=
   let items := ps.map fun p =>
     let code := codeOf p.art p.lines (moduleOf p.art)
     let key := sameKey p.art code
-    (p.art, code, hash key, key)
+    (p, code, hash key, key)
   -- The function each key's artifacts are emitted as.
   let canon (h : UInt64) (key : String) : String :=
     (items.filter fun (_, _, h', k) => h' == h && k == key).foldl (init := none)
-      (fun best (a, _) => match best with
-        | some b => if a.name.length < b.length then some a.name else some b
-        | none => some a.name) |>.getD ""
-  String.join (items.map fun (a, code, h, key) =>
-    let c := canon h key
-    "\n" ++ if c == a.name then function.withCode a code else alias a c)
+      (fun best (p, _) => match best with
+        | some b => if p.art.name.length < b.length then some p.art.name else some b
+        | none => some p.art.name) |>.getD ""
+  items.map fun (p, code, h, key) => (p, code, canon h key)
+
+/-- The text of the functions of a module (`moduleItems`): each as `function`
+writes it, if it is emitted as itself, else the `alias` of the function it
+is emitted as. -/
+def moduleText (items : List (Prepared × String × String)) : String :=
+  String.join (items.map fun (p, code, c) =>
+    "\n" ++ if c == p.art.name then function.withCode p.art code else alias p.art c)
+
+/-- The assembly file of the functions of a module (`moduleItems`), which the
+crate does not compile: each function emitted as itself as its name, then
+its lines (`assembly`), each indented but its labels; each other as a line
+naming the function it is. -/
+def moduleAssembly (items : List (Prepared × String × String)) : String :=
+  String.join (items.map fun (p, _, c) =>
+    if c == p.art.name then
+      s!"\n{p.art.name}:\n" ++ String.join ((assembly p.art.target.printer.call
+        (bodyOf p.art p.lines)).map fun l =>
+          if l.endsWith ":" && !l.contains ' ' then l ++ "\n" else "\t" ++ l ++ "\n")
+    else s!"\n// {p.art.name}: the function `{c}`\n")
 
 /-- `p`'s artifact declares exactly the CPU features its code requires
 (`featureCheck`). -/
@@ -959,6 +1002,21 @@ def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
 crate's (`crateDir`) `src/`, which the crate compiles. -/
 def codeDir (t : String) : String := crateDir t ++ "/src"
 
+/-- The directories of the target `t`'s generated files, under `crates/`: its
+code (`codeDir`) and its assembly files (`assemblyFile`). -/
+def generatedDirs (t : String) : List String := [codeDir t, crateDir t ++ "/assembly"]
+
+/-- The assembly file of a module `m` (`moduleAssembly`), in its crate: `assembly/<m>.s`. -/
+def assemblyFile (m : String) : String := s!"assembly/{m}.s"
+
+/-- The first lines of the assembly file of the module `m` of the target `t`. -/
+def assemblyHeader (t m : String) : String :=
+  s!"// The functions of `src/{m}.rs` of `{crateDir t}`, as text: generated from\n" ++
+  "// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.\n" ++
+  "// Each instruction the printer encodes is here as its text, and in\n" ++
+  "// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`\n" ++
+  "// gives.\n"
+
 /-- The root module of the target `t`'s crate, `lib.rs` (in its `codeDir`): the macros its
 modules use (`symMacros`) and a `mod`
 declaration of each of its modules `mods`, each compiled only under the
@@ -996,12 +1054,16 @@ def render (ps : List Prepared) (moduleOf : Artifact → String → String) : Li
     (if ts.isEmpty then [] else
       (s!"{src}/consts/mod.rs", tablesMod t ts) ::
         ts.map fun (n, ws) => (s!"{src}/consts/{tableModule n}.rs", tableFile t n ws)) ++
-    -- Each module's file on a task of its own: a part (`Emit.run`) has one target.
+    -- Each module's files on a task of their own: a part (`Emit.run`) has one target.
     ((modules.map fun m => Task.spawn fun _ =>
-      (s!"{src}/{m}.rs",
-        header ++ s!"//! Verified `{m}` functions for `{t}`.\n" ++
+      let items := moduleItems moduleOf (arts.filter (·.art.module == m))
+      [(s!"{src}/{m}.rs",
+        header ++ s!"//! Verified `{m}` functions for `{t}`, whose text is in\n" ++
+        s!"//! `{assemblyFile m}`.\n" ++
         "#![allow(dead_code)]\n" ++
-        moduleText moduleOf (arts.filter (·.art.module == m)))).map Task.get)
+        moduleText items),
+       (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++ moduleAssembly items)]).map
+      Task.get).flatten
   -- Each target's files on a task of their own.
   ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten
 

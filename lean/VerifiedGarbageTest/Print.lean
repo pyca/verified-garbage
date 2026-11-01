@@ -700,10 +700,18 @@ def sampleRV : Prog RISCV64.isa :=
   "        r\"lla a5, {VG_TABLE}\",\n"
 #guard RISCV64.Instr.asm (.lla .a5 "VG_TABLE") == ["lla a5, VG_TABLE"]
 -- A template with an `lla` between text lines: the `lla` is a line of the
--- same string literal.
+-- same string literal, and the instructions' comments are not in it, nor in
+-- the Rust code, but in the assembly file, in place of their machine code.
 #guard Rust.template RISCV64.printer.call
     (RISCV64.printer.function (.block [.li .a0 1, .lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) ==
-  "        // addi a0, zero, 1\n        r\".insn 2, 0x4505\nlla a5, {VG_TABLE}\",\n        // ret\n        r\".insn 2, 0x8082\",\n"
+  "        r\".insn 2, 0x4505\nlla a5, {VG_TABLE}\n.insn 2, 0x8082\",\n"
+#guard Rust.assembly RISCV64.printer.call
+    (RISCV64.printer.function (.block [.li .a0 1, .lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) ==
+  ["addi a0, zero, 1", "lla a5, {VG_TABLE}", "ret"]
+-- A comment not followed by a directive, its machine code, is only the text:
+-- the line after it is in the assembly file too.
+#guard Rust.assembly "call" [.text "// a", .text "b", .text "// c", .text ".byte 0x00", .text ".p2align 6"] ==
+  ["a", "b", "c", ".p2align 6"]
 
 -- Every RISC-V function's text enables the M and C extensions for itself alone
 -- (`Rust.funcOptions`): `.option push` and `.option arch, +m, +c` are its first
@@ -715,29 +723,17 @@ def sampleRV : Prog RISCV64.isa :=
 #guard ["x86_64", "x86", "aarch64", "arm", "powerpc64le"].all (Rust.funcOptions · == ([], []))
 #guard match Artifacts.Ct.RISCV64.artifacts with
   | [a] => ((Rust.function a (fun _ => "")).splitOn "naked_asm!(\n").getLast! == "        r\".option push
-.option arch, +m, +c\",
-        // addi a4, zero, 0
-        // sub a7, a1, a3
-        r\".insn 2, 0x4701
+.option arch, +m, +c
+.insn 2, 0x4701
 .insn 4, 0x40d588b3
-beqz a7, 20f\",
-        // addi a0, zero, 0
-        r\".insn 2, 0x4501
+beqz a7, 20f
+.insn 2, 0x4501
 j 21f
-20:\",
-        // addi a5, zero, 0
-        r\".insn 2, 0x4781
+20:
+.insn 2, 0x4781
 beqz a1, 22f
-24:\",
-        // add t0, a0, a5
-        // lbu t1, 0(t0)
-        // add t0, a2, a5
-        // lbu t2, 0(t0)
-        // xor t1, t1, t2
-        // or a4, a4, t1
-        // addi a5, a5, 1
-        // sub a7, a5, a1
-        r\".insn 4, 0x00f502b3
+24:
+.insn 4, 0x00f502b3
 .insn 4, 0x0002c303
 .insn 4, 0x00f602b3
 .insn 4, 0x0002c383
@@ -748,14 +744,11 @@ beqz a1, 22f
 bnez a7, 24b
 j 23f
 22:
-23:\",
-        // addi a4, a4, -1
-        // srli a0, a4, 63
-        r\".insn 2, 0x177d
+23:
+.insn 2, 0x177d
 .insn 4, 0x03f75513
-21:\",
-        // ret
-        r\".insn 2, 0x8082
+21:
+.insn 2, 0x8082
 .option pop\",
     )
 }

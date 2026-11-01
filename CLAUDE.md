@@ -48,7 +48,8 @@ own changes are rebuilt either way, on top of the restored build.
   `lake env lean --run Emit.lean` in `lean/`, which writes each crate's
   `src/` (whose printer emits each straight-line instruction as its machine
   code, `TCB/<ISA>/Encode.lean`, but ARM's, whose one crate serves both A32
-  and Thumb, as text).
+  and Thumb, as text), and its assembly file, the text of that code,
+  `assembly/<module>.s`, which is not compiled: read the code there.
 * **No unverified shortcuts in proofs.** No `sorry`, `admit`, `native_decide`,
   `bv_decide` or new `axiom`s in anything an artifact depends on.
   `lake build` and the emitter enforce this (warnings are errors, and
