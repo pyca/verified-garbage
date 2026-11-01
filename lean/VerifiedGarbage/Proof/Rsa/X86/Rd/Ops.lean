@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Div
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Compare
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -227,6 +228,16 @@ theorem KS.view {j : Nat} (h : KS g s0 A live AW liveW V ls s) (hj : j ∈ liveW
   { h with
     arrs := h.arrs.add (by rw [num_low, ← h.arrsW j hj]; rfl)
     live_lt := fun i hi => (List.mem_cons.mp hi).elim (fun e => by have := h.liveW_lt j hj; show i < 44; omega) (h.live_lt i) }
+
+/-- Whether two narrow numbers are equal, into the header word `d`. -/
+theorem KS.eq_w {d a b : Nat} (h : KS g s0 A live AW liveW V ls s)
+    (ha : a ∈ live) (hb : b ∈ live) (hd : SlotOk d) :
+    WP isa (VG.Impl.Rsa.X86.KeyRt.eqSFast nar d a b) s fun t =>
+      KS g s0 A live AW liveW (upd V d (if A a = A b then 1 else 0)) (d :: ls) t := by
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.eqSFast_ok h.rt (h.live_lt a ha) (h.live_lt b hb) hd.2.1)
+    fun t ⟨_, k, e, r⟩ => ?_
+  rw [kw_nar] at k e
+  exact h.slot1 k hd (r.mono (by decide)) (by rw [e, h.arrs a ha, h.arrs b hb])
 
 theorem divSlots_ok : ∀ d ∈ [VG.Impl.Rsa.X86.KeyRt.sCy, VG.Impl.Rsa.X86.KeyRt.sQb], SlotOk d := by decide
 
