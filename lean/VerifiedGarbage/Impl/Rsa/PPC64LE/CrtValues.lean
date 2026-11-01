@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.Div
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.Inverse
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.InvBatch
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE
@@ -17,8 +18,9 @@ only branch on data). Then, with `w = ⌈n_len / 4⌉` digits of 32 bits:
 * `n`, `p`, `q` and `d` are read into arrays, and `n` divided by `p`
   (`Div.lean`): `p q = n` is `p` odd, `n / p = q` and `n mod p = 0` (as `n`
   is odd).
-* `qInv` is the inverse of `q` modulo `p | 1` (`Inverse.lean`), which exists
-  if the gcd it computes is 1.
+* `qInv` is the inverse of `q` modulo `p | 1` (`InvBatch.lean`), which exists
+  if the gcd it computes is 1, at the primes' width: `⌈max(p_len, q_len) / 4⌉`
+  digits.
 * `dP` and `dQ` are the remainders of `d` divided by `p` and by `q` with
   their low bits cleared: `p - 1` and `q - 1` for odd primes, which `p q = n`
   makes them.
@@ -146,18 +148,22 @@ def loads : Prog isa := seqs [
   .block [.addi .r6 .r21 0, .addi .r8 .r22 0], load aQ,
   .block [.addi .r6 .r23 0, .addi .r8 .r24 0], load aD]
 
-/-- `inverse`'s start: `(u, v, x₁, x₂) = (q, m, 1, 0)` with `m = p | 1`,
-`[aNM] = 2^(32 w) - m` and `[aOne] = 1`. -/
-def invSetup : List (Prog isa) := [
-  copy 0 aQ, copy aM aP, .block (orOne aM), copy 1 aM, .block (setOne 2 ++ setOne aOne),
-  sub3 aNM aZero aM]
+/-- `r11 := ⌈max(p_len, q_len) / 4⌉`, the primes' digits, without a branch:
+`p_len - ((p_len - q_len) & mask)`, the mask all ones where `p_len < q_len`. -/
+def nCalc : List Instr :=
+  [.sub .r11 .r20 .r22, .lsr .d .r0 .r11 63, .li .r3 0, .sub .r0 .r3 .r0, .logic .and .r11 .r11 .r0,
+    .sub .r11 .r20 .r11, .addi .r11 .r11 3, .lsr .d .r11 .r11 2]
+
+/-- The inverse's start: `x = q`, `m = p | 1`, `[aOne] = 1` and the primes'
+digits in `r11`. -/
+def invSetup : List (Prog isa) := [copy 0 aQ, copy aM aP, .block (orOne aM ++ setOne aOne ++ nCalc)]
 
 /-- `p` odd, `n` divided by `p`, the checks of `p q = n` and of the inverse,
 `qInv` computed, and `d` divided by `p - 1` and by `q - 1`. -/
 def arith : Prog isa := seqs ([
   copy aDD aP, .block (bitOf sPodd aP), div aDQ aDR aDD aDT,
   eqS sE1 aDQ aQ, eqS sE2 aDR aZero] ++ invSetup ++ [
-  inverse, eqS sE3 1 aOne,
+  VG.Impl.Rsa.PPC64LE.InvBatch.inverse, eqS sE3 1 aOne,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   copy aDQ aD, copy aDD aP, .block (clrLow aDD), div aDQ aDR2 aDD aDT,
   copy aDQ aD, copy aDD aQ, .block (clrLow aDD), div aDQ aDR3 aDD aDT])
