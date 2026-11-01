@@ -265,4 +265,132 @@ theorem fgUpd_ok {s : State} {B : Addr} {Z w n : Nat} (L : Lay B Z w n) (hs : Sc
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
       unfold oMu at *; omega)]
 
+/-- `(a, b) := (mredRaw (u a + v b), mredRaw (q a + r b))`, from the matrix in the window. -/
+theorem abUpd_ok {s : State} {B : Addr} {Z w n : Nat} (L : Lay B Z w n) (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = off B (slot w 16)) (h9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2)))
+    (h12 : s.gpr .r12 = BitVec.ofNat 64 (n + 1)) (h15 : s.gpr .r15 = BitVec.ofNat 64 n)
+    {u v q r a b : Int} {p mi : Nat}
+    (hu : word s.mem B (slot w 16 + oU) = BitVec.ofInt 64 u) (hv : word s.mem B (slot w 16 + oV) = BitVec.ofInt 64 v)
+    (hq : word s.mem B (slot w 16 + oQ) = BitVec.ofInt 64 q) (hr : word s.mem B (slot w 16 + oR) = BitVec.ofInt 64 r)
+    (huv : |u| + |v| ≤ 2 ^ 59) (hqr : |q| + |r| ≤ 2 ^ 59)
+    (ha : (wv s.mem B (slot w 21) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = a % 2 ^ (64 * (n + 1)))
+    (hb : (wv s.mem B (slot w 22) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = b % 2 ^ (64 * (n + 1)))
+    (hP : wv s.mem B (slot w 25) n = p) (hmi : (word s.mem B (slot w 16 + oMi)).toNat = mi)
+    (hp : 0 < p) (hpA : p < 2 ^ (64 * n)) (hm : (p * mi + 1) % 2 ^ 64 = 0)
+    (ht₁ : |u * a + v * b| ≤ 2 ^ 63 * p) (ht₂ : |q * a + r * b| ≤ 2 ^ 63 * p) :
+    WP isa (seqs (lin oU oV 5 6 ++ mred 8 ++ lin oQ oR 5 6 ++ mred 6 ++ copyW 8 5)) s fun t =>
+      (wv t.mem B (slot w 21) (n + 1) : Int) % 2 ^ (64 * (n + 1)) =
+        Divstep.mredRaw p mi (u * a + v * b) % 2 ^ (64 * (n + 1)) ∧
+      (wv t.mem B (slot w 22) (n + 1) : Int) % 2 ^ (64 * (n + 1)) =
+        Divstep.mredRaw p mi (q * a + r * b) % 2 ^ (64 * (n + 1)) ∧
+      t.gpr .rdi = off B (slot w 16) ∧ t.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2)) ∧
+      t.gpr .r12 = BitVec.ofNat 64 (n + 1) ∧
+      Frm B [(slot w 16 + oMu, 16), (slot w 21, 16 * (w + 2)), (slot w 23, 16 * (w + 2))] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s t := by
+  have hN := L.nowrap
+  have hn1 := L.n1; have hnw := L.nw; have hw2' := L.w2; have hZ := L.z
+  have e16 := slot_eq w 16; have e19 := slot_eq w 19; have e21 := slot_eq w 21; have e22 := slot_eq w 22
+  have e23 := slot_eq w 23; have e24 := slot_eq w 24; have e25 := slot_eq w 25; have e26 := slot_eq w 26
+  have e5 := slot_eq w (16 + 5); have e6 := slot_eq w (16 + 6); have e7 := slot_eq w (16 + 7)
+  have e8 := slot_eq w (16 + 8)
+  have hw2 : 8 * (n + 1) ≤ 8 * (w + 2) := by omega
+  have au := Int.natCast_natAbs u; have av := Int.natCast_natAbs v
+  have aq := Int.natCast_natAbs q; have ar := Int.natCast_natAbs r
+  have tu : (BitVec.ofInt 64 u).toInt = u := Divstep.toInt_small (by have := abs_nonneg v; omega)
+  have tv : (BitVec.ofInt 64 v).toInt = v := Divstep.toInt_small (by have := abs_nonneg u; omega)
+  have tq : (BitVec.ofInt 64 q).toInt = q := Divstep.toInt_small (by have := abs_nonneg r; omega)
+  have tr : (BitVec.ofInt 64 r).toInt = r := Divstep.toInt_small (by have := abs_nonneg q; omega)
+  rw [seqs_append_iff _ (copyW 8 5) (by simp [lin, mred]) (by simp [copyW]),
+    seqs_append_iff _ (mred 6) (by simp [lin, mred]) (by simp [mred]),
+    seqs_append_iff _ (lin oQ oR 5 6) (by simp [lin, mred]) (by simp [lin]),
+    seqs_append_iff (lin oU oV 5 6) (mred 8) (by simp [lin]) (by simp [mred])]
+  -- `t := u a + v b`.
+  refine WP.mono (linP_ok (kX := 5) (kY := 6) hs hdi h9 h12 hnw L.w24 (by decide) (by decide) (by omega)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (by rw [hu, hv, tu, tv]; omega)) fun s₁ ⟨v₁, f₁, k₁⟩ => ?_
+  rw [hu, hv, tu, tv, Divstep.cong_comb ha hb] at v₁
+  -- Words of the window and `m` after the combination.
+  have m₁ : ∀ e, (e + 8 ≤ slot w 16 + oMu ∨ slot w 16 + oMu + 16 ≤ e) → e + 8 ≤ slot w 23 →
+      word s₁.mem B e = word s.mem B e := fun e h1 h2 => f₁.word_eq (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega)
+  have P₁ : wv s₁.mem B (slot w 25) n = p := by
+    rw [f₁.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega), hP]
+  -- `S := mredRaw t`.
+  refine WP.mono (mredP_ok (kD := 8) (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) ((k₁.gpr (by decide)).trans h9)
+    ((k₁.gpr (by decide)).trans h15) hn1 hnw L.w24 hw2' hZ (by decide)) fun s₂ ⟨v₂, r9₂, r12₂, f₂, k₂⟩ => ?_
+  rw [m₁ (slot w 16 + oMi) (.inr (by unfold oMu oMi; omega)) (by unfold oMi; omega), hmi] at v₂
+  have S₂ := mred_val v₂ P₁ v₁ hp hpA hm ht₁
+  have k12 := k₁.trans k₂
+  have fr2 : ∀ x, ofs B x < slot w 16 + oMu ∨ slot w 16 + oMu + 16 ≤ ofs B x → ofs B x < slot w 23 →
+      (ofs B x < slot w 24 ∨ slot w 24 + 8 * (n + 1) ≤ ofs B x) → s₂.mem x = s.mem x := fun x h1 h2 h3 => by
+    rw [f₂ x (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      rw [show (16 : Nat) + 8 = 24 from rfl]; unfold oMu at *; omega), f₁ x (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      unfold oMu at *; omega)]
+  have m₂ : ∀ e, (e + 8 ≤ slot w 16 + oMu ∨ slot w 16 + oMu + 16 ≤ e) → e + 8 ≤ slot w 23 →
+      word s₂.mem B e = word s.mem B e := fun e h1 h2 =>
+    Mem.readW_congr fun i hi => fr2 _ (by rw [ofs_off B (by omega)]; omega) (by rw [ofs_off B (by omega)]; omega)
+      (by rw [ofs_off B (by omega)]; omega)
+  have A₂ : ∀ e, slot w 19 ≤ e → e + 8 * (n + 1) ≤ slot w 23 → wv s₂.mem B e (n + 1) = wv s.mem B e (n + 1) :=
+    fun e h1 h2 => wv_congr fun i hi => m₂ _ (.inr (by unfold oMu; omega)) (by omega)
+  refine WP.mono (linP_ok (kX := 5) (kY := 6) (hs.congr k12.2.2) ((k12.gpr (by decide)).trans hdi)
+    r9₂ r12₂ hnw L.w24 (by decide) (by decide) (by omega)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (by rw [m₂ _ (.inl (by unfold oQ oMu; omega)) (by unfold oQ; omega),
+      m₂ _ (.inl (by unfold oR oMu; omega)) (by unfold oR; omega), hq, hr, tq, tr]; omega))
+    fun s₃ ⟨v₃, f₃, k₃⟩ => ?_
+  rw [m₂ _ (.inl (by unfold oQ oMu; omega)) (by unfold oQ; omega), m₂ _ (.inl (by unfold oR oMu; omega))
+    (by unfold oR; omega), hq, hr, tq, tr, A₂ _ (by omega) (by omega), A₂ _ (by omega) (by omega),
+    Divstep.cong_comb ha hb] at v₃
+  have k13 := k12.trans k₃
+  have m₃ : ∀ e, (e + 8 ≤ slot w 16 + oMu ∨ slot w 16 + oMu + 16 ≤ e) → e + 8 ≤ slot w 23 →
+      word s₃.mem B e = word s.mem B e := fun e h1 h2 => by
+    rw [f₃.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega), m₂ e h1 h2]
+  have P₃ : wv s₃.mem B (slot w 25) n = p := by
+    rw [f₃.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega),
+      f₂.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega), P₁]
+  -- `b := mredRaw (q a + r b)`.
+  refine WP.mono (mredP_ok (kD := 6) (hs.congr k13.2.2) ((k13.gpr (by decide)).trans hdi)
+    ((k₃.gpr (by decide)).trans r9₂) ((k13.gpr (by decide)).trans h15) hn1 hnw L.w24 hw2' hZ (by decide))
+    fun s₄ ⟨v₄, r9₄, r12₄, f₄, k₄⟩ => ?_
+  rw [m₃ (slot w 16 + oMi) (.inr (by unfold oMu oMi; omega)) (by unfold oMi; omega), hmi] at v₄
+  have B₄ := mred_val v₄ P₃ v₃ hp hpA hm ht₂
+  have k14 := k13.trans k₄
+  -- `a := S`.
+  refine WP.mono (copyWP_ok (kS := 8) (kD := 5) (hs.congr k14.2.2) ((k14.gpr (by decide)).trans hdi)
+    r9₄ r12₄ hnw L.w24 (by omega) (by omega) (by omega)) fun t ⟨vt, ot, kt⟩ => ?_
+  have S₄ : wv s₄.mem B (slot w 24) (n + 1) = wv s₂.mem B (slot w 24) (n + 1) := by
+    rw [f₄.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega),
+      f₃.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> unfold oMu at * <;> omega) (by omega)]
+  refine ⟨?_, ?_, ((k14.trans kt).gpr (by decide)).trans hdi, (kt.gpr (by decide)).trans r9₄,
+    (kt.gpr (by decide)).trans r12₄, ?_, (k14.trans kt).mono (by decide)⟩
+  · rw [show (16 : Nat) + 5 = 21 from rfl] at vt; rw [vt, show (16 : Nat) + 8 = 24 from rfl, S₄]; exact S₂
+  · rw [ot.wv (by omega) (by omega)]; exact B₄
+  · intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
+    obtain ⟨xW, xA, xT⟩ := hx
+    rw [ot x (by omega), f₄ x (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      rw [show (16 : Nat) + 6 = 22 from rfl]; unfold oMu at *; omega), f₃ x (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      unfold oMu at *; omega), f₂ x (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      rw [show (16 : Nat) + 8 = 24 from rfl]; unfold oMu at *; omega), f₁ x (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      unfold oMu at *; omega)]
+
 end VG.Proof.Rsa.X86_64.InvB
