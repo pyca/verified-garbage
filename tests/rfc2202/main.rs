@@ -16,16 +16,9 @@
     target_arch = "riscv64"
 ))]
 
+use crate::bytes::unhex;
 use verified_garbage::hashes::md5::Md5;
 use verified_garbage::hmac::Hmac;
-
-fn unhex(s: &str) -> Vec<u8> {
-    assert_eq!(s.len() % 2, 0, "{s}");
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
-}
 
 /// A value: `0x<hex>`, `0x<hh> repeated <n> times`, or a quoted string.
 fn value(v: &str) -> Vec<u8> {

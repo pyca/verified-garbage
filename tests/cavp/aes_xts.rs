@@ -71,7 +71,7 @@ fn nist_xts() {
 #[test]
 fn limits_and_lengths() {
     for len in 0..=80 {
-        let key: Vec<_> = (0..len).map(|i| (17 * i + 3) as u8).collect();
+        let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 32 | 48 | 64) {
             assert!(matches!(AesXts::new(&key), Err(Error::InvalidKeyLength)));
             continue;
@@ -89,7 +89,7 @@ fn limits_and_lengths() {
         }
         // Every length round-trips, and a data unit's whole blocks before
         // the last two do not depend on what follows them.
-        let message: Vec<_> = (0..16 * 6).map(|i| (7 * i + 1) as u8).collect();
+        let message: Vec<_> = crate::bytes::pattern(16 * 6, 7, 1);
         let mut whole = message.clone();
         ctx.encrypt(&i, &mut whole).unwrap();
         for n in 16..=message.len() {

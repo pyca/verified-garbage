@@ -12,15 +12,8 @@
 
 use std::collections::BTreeMap;
 
+use crate::bytes::unhex;
 use verified_garbage::idea_ecb::{Error, IdeaEcb};
-
-fn unhex(s: &str) -> Vec<u8> {
-    assert_eq!(s.len() % 2, 0);
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
-}
 
 /// Encrypts or decrypts `input` with `operation`, whole, in two pieces at
 /// every block boundary (with empty calls around them), and a block at a

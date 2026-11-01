@@ -67,13 +67,7 @@ macro_rules! mldsa_tests {
             }
         }
 
-        fn unhex(s: &str) -> Vec<u8> {
-            assert_eq!(s.len() % 2, 0);
-            (0..s.len())
-                .step_by(2)
-                .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-                .collect()
-        }
+        use crate::bytes::unhex;
 
         /// The groups of the parameter set in the vendored file `json`.
         fn groups<T: crate::json::FromJson>(json: &str) -> Vec<Group<T>> {

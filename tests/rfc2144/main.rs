@@ -12,16 +12,8 @@
     target_arch = "riscv64"
 ))]
 
+use crate::bytes::unhex_spaced as unhex;
 use verified_garbage::cast5_ecb::{Cast5Ecb, Error};
-
-fn unhex(text: &str) -> Vec<u8> {
-    let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-    assert_eq!(hex.len() % 2, 0);
-    (0..hex.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
-        .collect()
-}
 
 /// Encrypts `plaintext` to `ciphertext` and back, whole and a block at a
 /// time.
@@ -115,11 +107,11 @@ fn cryptography_cbc() {
         let cipher = Cast5Ecb::new(&key).unwrap();
         let mut chain = iv.clone();
         for (p, c) in plaintext.chunks(8).zip(ciphertext.chunks(8)) {
-            let mut block: Vec<u8> = p.iter().zip(&chain).map(|(a, b)| a ^ b).collect();
+            let mut block: Vec<u8> = crate::bytes::xor(p, &chain);
             cipher.encrypt(&mut block).unwrap();
             assert_eq!(block, c);
             cipher.decrypt(&mut block).unwrap();
-            let decrypted: Vec<u8> = block.iter().zip(&chain).map(|(a, b)| a ^ b).collect();
+            let decrypted: Vec<u8> = crate::bytes::xor(&block, &chain);
             assert_eq!(decrypted, p);
             chain = c.to_vec();
         }

@@ -252,7 +252,7 @@ fn nist_ecb_runs() {
 #[test]
 fn limits_and_empty_input() {
     for len in 0..=40 {
-        let key: Vec<_> = (0..len).map(|i| (17 * i + 3) as u8).collect();
+        let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 16 | 24 | 32) {
             assert!(matches!(AesEcb::new(&key), Err(Error::InvalidKeyLength)));
             continue;

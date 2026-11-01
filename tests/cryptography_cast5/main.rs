@@ -67,7 +67,7 @@ fn modes_match_ecb() {
             ecb.encrypt(&mut b).unwrap();
             b
         };
-        let xor = |a: &[u8], b: &[u8]| -> Vec<u8> { a.iter().zip(b).map(|(x, y)| x ^ y).collect() };
+        let xor = crate::bytes::xor;
 
         // CBC: Cⱼ = CIPH(Pⱼ ⊕ Cⱼ₋₁); CFB64: Cⱼ = Pⱼ ⊕ CIPH(Cⱼ₋₁); OFB: Oⱼ = CIPH(Oⱼ₋₁).
         let (mut cbc, mut cfb, mut ofb) = (Vec::new(), Vec::new(), Vec::new());

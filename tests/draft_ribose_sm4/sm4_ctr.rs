@@ -32,7 +32,7 @@ fn reference(key: &[u8; 16], ctr: [u8; 16], data: &[u8]) -> Vec<u8> {
     let blocks = data.len().div_ceil(16);
     let mut keystream: Vec<u8> = (0..blocks).flat_map(|i| add(ctr, i)).collect();
     Sm4Ecb::new(key).encrypt(&mut keystream).unwrap();
-    data.iter().zip(&keystream).map(|(x, y)| x ^ y).collect()
+    crate::bytes::xor(data, &keystream)
 }
 
 /// `apply_keystream` on `data` from `ctr`, whole and split at every block
@@ -86,13 +86,13 @@ fn draft_examples() {
 /// counter blocks that carry across each 32-bit word boundary or wrap entirely.
 #[test]
 fn from_ecb() {
-    let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
+    let key: [u8; 16] = crate::bytes::pattern_array(17, 3);
     let ctx = Sm4Ctr::new(&key);
-    let data: Vec<u8> = (0..16 * 50 + 7).map(|i| (i * 31 + 7) as u8).collect();
+    let data: Vec<u8> = crate::bytes::pattern(16 * 50 + 7, 31, 7);
     let low = u128::from(u64::MAX - 20);
     for ctr in [
         [0; 16],
-        core::array::from_fn(|i| (i * 11) as u8),
+        crate::bytes::pattern_array(11, 0),
         (u128::from(u32::MAX) - 20).to_be_bytes(),
         ((1u128 << 96) - 21).to_be_bytes(),
         low.to_be_bytes(),
@@ -116,7 +116,7 @@ fn from_ecb() {
 /// bytes outside the requested slice must remain untouched.
 #[test]
 fn unaligned_batches() {
-    let key = core::array::from_fn(|i| (i * 7 + 1) as u8);
+    let key = crate::bytes::pattern_array(7, 1);
     let ctx = Sm4Ctr::new(&key);
     let ctr = (u128::MAX - 8).to_be_bytes();
     for offset in 1..=4 {

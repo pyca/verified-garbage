@@ -14,16 +14,9 @@
     target_arch = "riscv64"
 ))]
 
+use crate::bytes::unhex;
 use verified_garbage::hashes::HashFunction;
 use verified_garbage::hashes::md5::Md5;
-
-fn unhex(s: &str) -> Vec<u8> {
-    assert_eq!(s.len() % 2, 0);
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
-}
 
 /// The `(message, digest)` of each `MD5 ("message") = digest` line of the
 /// test suite. The RFC wraps two of them onto a second line, so the suite's

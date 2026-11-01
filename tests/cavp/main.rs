@@ -63,6 +63,8 @@ mod triple_des_cfb8;
 mod triple_des_ecb;
 mod triple_des_ofb;
 
+use crate::bytes::unhex;
+
 /// The `key = value` lines of a CAVP response file, in order, without the
 /// comments, blank lines and `[L = ...]` section headers.
 fn fields(text: &str) -> Vec<(&str, &str)> {
@@ -70,14 +72,6 @@ fn fields(text: &str) -> Vec<(&str, &str)> {
         .map(str::trim)
         .filter(|l| !l.is_empty() && !l.starts_with('#') && !l.starts_with('['))
         .map(|l| l.split_once(" = ").unwrap())
-        .collect()
-}
-
-fn unhex(s: &str) -> Vec<u8> {
-    assert_eq!(s.len() % 2, 0);
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
         .collect()
 }
 

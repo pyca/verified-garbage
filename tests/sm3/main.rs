@@ -24,16 +24,9 @@
 mod cryptography;
 mod draft_sca_cfrg_sm3;
 
+use crate::bytes::unhex;
 use verified_garbage::hashes::HashFunction;
 use verified_garbage::hashes::sm3::Sm3;
-
-fn unhex(s: &str) -> Vec<u8> {
-    assert_eq!(s.len() % 2, 0);
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
-}
 
 /// Checks the hash value of `msg`, in one call and absorbed in two pieces
 /// split at every position.

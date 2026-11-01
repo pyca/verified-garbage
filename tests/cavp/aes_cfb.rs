@@ -196,7 +196,7 @@ fn nist_cfb128() {
 #[test]
 fn limits_and_lengths() {
     for len in 0..=40 {
-        let key: Vec<_> = (0..len).map(|i| (17 * i + 3) as u8).collect();
+        let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 16 | 24 | 32) {
             assert!(matches!(AesCfb128::new(&key), Err(InvalidKeyLength)));
             continue;
@@ -210,7 +210,7 @@ fn limits_and_lengths() {
         // round-trips.
         // Cross several eight-block batches, the four-block tail, and every
         // partial segment. Offsets exercise unaligned in-place loads/stores.
-        let message: Vec<_> = (0..16 * 34 + 16).map(|i| (7 * i + 1) as u8).collect();
+        let message: Vec<_> = crate::bytes::pattern(16 * 34 + 16, 7, 1);
         let mut ciphertext = message.clone();
         ctx.encrypt(&mut iv, &mut ciphertext);
         for n in 0..message.len() {

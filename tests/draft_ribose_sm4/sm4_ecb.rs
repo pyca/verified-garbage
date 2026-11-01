@@ -16,6 +16,7 @@
 use verified_garbage::sm4_ecb::{Error, Sm4Ecb};
 
 use super::{field, section};
+use crate::bytes::xor;
 
 struct Example {
     key: [u8; 16],
@@ -35,10 +36,6 @@ fn encrypt_block(ctx: &Sm4Ecb, block: &[u8]) -> Vec<u8> {
     let mut out = block.to_vec();
     ctx.encrypt(&mut out).unwrap();
     out
-}
-
-fn xor(a: &[u8], b: &[u8]) -> Vec<u8> {
-    a.iter().zip(b).map(|(x, y)| x ^ y).collect()
 }
 
 /// ECB in both directions, whole and split at every block boundary.

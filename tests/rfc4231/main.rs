@@ -17,19 +17,12 @@
     target_arch = "riscv64"
 ))]
 
+use crate::bytes::unhex;
 use verified_garbage::hashes::sha224::Sha224;
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
 use verified_garbage::hashes::sha512::Sha512;
 use verified_garbage::hmac::{Hmac, HmacHash};
-
-fn unhex(s: &str) -> Vec<u8> {
-    assert_eq!(s.len() % 2, 0, "{s}");
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
-}
 
 /// A test case: its fields (`Key`, `Data`, `HMAC-SHA-224`, …), each the hex
 /// it lists, and the length the RFC states for the key, if it does.

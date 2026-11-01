@@ -1,16 +1,8 @@
 //! SM4-GCM against RFC 8998's example and a reference GCM over SM4-ECB.
 
+use crate::bytes::unhex_spaced as unhex;
 use verified_garbage::sm4_ecb::Sm4Ecb;
 use verified_garbage::sm4_gcm::{Error, Sm4Gcm};
-
-fn unhex(text: &str) -> Vec<u8> {
-    let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-    assert_eq!(hex.len() % 2, 0);
-    (0..hex.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
-        .collect()
-}
 
 /// The value of the field `label` of Appendix A.1: the hex after `label:`,
 /// and on the lines after it that hold nothing but hex.
@@ -226,7 +218,7 @@ fn reference(key: &[u8; 16], nonce: &[u8], aad: &[u8], pt: &[u8]) -> (Vec<u8>, [
         .enumerate()
         .flat_map(|(i, c)| {
             let ks = ciph(inc32(j0, i as u32 + 1)).to_be_bytes();
-            c.iter().zip(ks).map(|(x, k)| x ^ k).collect::<Vec<_>>()
+            crate::bytes::xor(c, &ks)
         })
         .collect();
     let lens = ((8 * aad.len() as u128) << 64) | (8 * ct.len() as u128);

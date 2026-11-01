@@ -23,7 +23,7 @@ fn reference(key: &[u8], iv: [u8; 16], data: &[u8]) -> (Vec<u8>, [u8; 16]) {
     let mut out = Vec::new();
     for block in data.chunks(16) {
         ecb.encrypt(&mut o).unwrap();
-        out.extend(block.iter().zip(&o).map(|(x, y)| x ^ y));
+        out.extend(crate::bytes::xor(block, &o));
     }
     (out, o)
 }
@@ -57,10 +57,10 @@ fn openssl_vectors() {
 /// Every length up to 20 blocks, whole and split at every block.
 #[test]
 fn from_ecb() {
-    let data: Vec<u8> = (0..16 * 20).map(|i| (i * 31 + 7) as u8).collect();
-    let iv: [u8; 16] = core::array::from_fn(|i| (i * 11 + 5) as u8);
+    let data: Vec<u8> = crate::bytes::pattern(16 * 20, 31, 7);
+    let iv: [u8; 16] = crate::bytes::pattern_array(11, 5);
     for key_len in [16, 24, 32] {
-        let key: Vec<u8> = (0..key_len).map(|i| (17 * i + 3) as u8).collect();
+        let key: Vec<u8> = crate::bytes::pattern(key_len, 17, 3);
         let ctx = CamelliaOfb::new(&key).unwrap();
         for len in 0..=data.len() {
             let (output, after) = reference(&key, iv, &data[..len]);
