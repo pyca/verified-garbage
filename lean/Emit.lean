@@ -111,38 +111,36 @@ def main (args : List String) : IO UInt32 := do
   let emitDir : System.FilePath := ".lake" / "emit"
   IO.FS.createDirAll emitDir
   let lean ← IO.appPath
-  -- Each part's driver, and Lake's setup for it (which also loads the trusted base's
-  -- shared libraries), all at once.
-  let setups ← parts.mapM fun (t, mods, gens, vars) => do
+  -- Each part on a task of its own: its driver, Lake's setup for it (which also loads the
+  -- trusted base's shared libraries), and then the driver, run as soon as its setup is
+  -- written rather than once every part's is, so that the parts with fewer artifacts
+  -- finish while the larger ones are still setting up.
+  let runs ← parts.mapM fun (t, mods, gens, vars) => do
     let driver := emitDir / s!"Driver{t}.lean"
+    let setup := emitDir / s!"Driver{t}.json"
+    let targets := emitDir / s!"{t}.targets"
     let text := VG.Emit.driver mods gens vars
     -- Only if it changed, so that Lake does not take it for a new file.
     let old ← if ← driver.pathExists then some <$> IO.FS.readFile driver else pure none
     unless old == some text do IO.FS.writeFile driver text
-    IO.asTask (setupFile driver (emitDir / s!"Driver{t}.json"))
-  for task in setups do
-    match task.get with
-    | .ok 0 => pure ()
-    | .ok code => return code
-    | .error e => throw e
-  -- Each part's driver, run at once.
-  let mut children : Array (System.FilePath × IO.Process.Child {}) := #[]
-  for (t, _) in parts do
-    let driver := emitDir / s!"Driver{t}.lean"
-    let targets := emitDir / s!"{t}.targets"
     if ← targets.pathExists then IO.FS.removeFile targets
     let partArgs := (if check then ["--check"] else []) ++ ["--part", targets.toString] ++
       (if check then args.drop 1 else args)
-    children := children.push (targets, ← IO.Process.spawn
-      { cmd := lean.toString,
-        args := #["--setup", (emitDir / s!"Driver{t}.json").toString, "--run", driver.toString] ++
-          partArgs.toArray })
+    let task ← IO.asTask (prio := .dedicated) do
+      let code ← setupFile driver setup
+      unless code == 0 do return code
+      let child ← IO.Process.spawn
+        { cmd := lean.toString,
+          args := #["--setup", setup.toString, "--run", driver.toString] ++ partArgs.toArray }
+      child.wait
+    return (targets, task)
   let mut code := 0
-  for (_, child) in children do
-    let c ← child.wait
-    if code == 0 then code := c
+  for (_, task) in runs do
+    match task.get with
+    | .ok c => if code == 0 then code := c
+    | .error e => throw e
   unless code == 0 do return code
-  let targets ← children.toList.mapM fun (f, _) => do
+  let targets ← runs.mapM fun (f, _) => do
     let lines := ((← IO.FS.readFile f).splitOn "\n").filter fun (l : String) => !l.isEmpty
     return lines.map fun (l : String) =>
       match l.splitOn "\t" with
