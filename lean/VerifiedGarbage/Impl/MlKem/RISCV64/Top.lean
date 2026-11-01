@@ -76,11 +76,13 @@ abbrev oCin : Nat := oPoly 22
 /-! ## Building blocks -/
 
 /-- `d ← s11 + oPoly j`, as `s11 + 1024 (j + 2)`. -/
-def polyAddr (d : Reg) (j : Nat) : List Instr := [.li d (j + 2), .shift .sll .d d d 10, .add d .s11 d]
+def polyAddr (d : Reg) (j : Nat) : List Instr :=
+  [.li d ((j + 2 : Nat) : Int), .shift .sll .d d d 10, .add d .s11 d]
 
 /-- `d ← s11 + oPoly j + 1024 c`: polynomial `c` of an array of them from
 polynomial `j`. -/
-def slotAt (d c : Reg) (j : Nat) : List Instr := [.addi d c (j + 2), .shift .sll .d d d 10, .add d .s11 d]
+def slotAt (d c : Reg) (j : Nat) : List Instr :=
+  [.addi d c ((j + 2 : Nat) : Int), .shift .sll .d d d 10, .add d .s11 d]
 
 /-- `d ← b + m c`, through `t0`. -/
 def atMul (d b c : Reg) (m : Nat) : List Instr := [.li .t0 m, .mul .t0 c .t0, .add d b .t0]
