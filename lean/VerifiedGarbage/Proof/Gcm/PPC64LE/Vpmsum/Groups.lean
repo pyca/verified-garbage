@@ -371,7 +371,8 @@ theorem packedProductsWith_ok (reg : Fin 5 → VReg) (hinj : Function.Injective 
       VOnly [reg 0, reg 1, reg 2, reg 3, reg 4] s t := by
   have heq : ∀ i j : Fin 5, (reg i = reg j) ↔ i = j :=
     fun _ _ => ⟨fun h => hinj h, congrArg reg⟩
-  cases canonical <;> simp only [Impl.Gcm.PPC64LE.Vpmsum.packedProductsWith,
+  cases canonical <;> simp only [Impl.Gcm.PPC64LE.Vpmsum.packedProductsWith,Impl.Gcm.PPC64LE.Vpmsum.packedMultiplyWith,
+    List.cons_append,List.nil_append,
     Bool.false_eq_true, ite_false, ite_true]
   all_goals
     apply WP.of_runBlock
@@ -384,6 +385,82 @@ theorem packedProductsWith_ok (reg : Fin 5 → VReg) (hinj : Function.Injective 
         vdword_append_0, vdword_append_1, vdword_ext8_0, vdword_ext8_1]
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp only [vpr_writeV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+
+def permPair (a b control : BitVec 128) : BitVec 128 :=
+  ofVBytes fun i =>
+    let j := (vbyte control i).toNat % 32
+    if j < 16 then vbyte a j else vbyte b (j-16)
+
+theorem exec_permPair (d a b c : VReg) (s : State) :
+    exec (.vop (.perm d a b c)) s =
+      some (s.writeV d (permPair (s.vpr a) (s.vpr b) (s.vpr c))) := rfl
+
+theorem pair_mask_control (i : Fin 16) :
+    (vbyte Impl.Gcm.PPC64LE.Vpmsum.pairLowMask i).toNat % 32 =
+      (if i.val<8 then i.val+8 else i.val+16) ∧
+    (vbyte Impl.Gcm.PPC64LE.Vpmsum.pairHighMask i).toNat % 32 =
+      (if i.val<8 then i.val else i.val+8) := by
+  have h : ∀ i : Fin 16,
+    (vbyte Impl.Gcm.PPC64LE.Vpmsum.pairLowMask i).toNat % 32 =
+      (if i.val<8 then i.val+8 else i.val+16) ∧
+    (vbyte Impl.Gcm.PPC64LE.Vpmsum.pairHighMask i).toNat % 32 =
+      (if i.val<8 then i.val else i.val+8) := by decide
+  exact h i
+
+theorem permPair_halves (a b : BitVec 128) (low : Bool) :
+    permPair a b (if low then Impl.Gcm.PPC64LE.Vpmsum.pairLowMask
+      else Impl.Gcm.PPC64LE.Vpmsum.pairHighMask) =
+      (dw a (if low then 0 else 1) ++ dw b (if low then 0 else 1)) := by
+  unfold VG.Proof.Gcm.Clmul.vdword
+  apply VG.PPC64LE.ext_vbyte
+  intro i hi
+  rw [permPair,vbyte_packed _ hi]
+  have hm := pair_mask_control ⟨i,hi⟩
+  cases low <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.mul_zero,Nat.mul_one] at *
+  all_goals
+    rw [show (vbyte _ i).toNat % 32 = _ from (by first | exact hm.2 | exact hm.1)]
+    by_cases h : i<8
+    all_goals
+      simp only [h,ite_true,ite_false]
+      simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
+      apply BitVec.eq_of_getLsbD_eq
+      intro r hr
+      simp only [vbyte,BitVec.getLsbD_extractLsb',BitVec.getLsbD_append,hr,decide_true,Bool.true_and]
+      simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
+      rw [decide_eq_true (by omega),Bool.true_and]
+      congr 1 <;> omega
+
+theorem packedPermProductsWith_ok (reg : Fin 5 → VReg) (hinj : Function.Injective reg)
+    (a b loKey hiKey lowMask highMask : VReg) (ka kb : BitVec 128) (s : State)
+    (ha : ∀ i, a ≠ reg i) (hb : ∀ i, b ≠ reg i)
+    (hl : ∀ i, loKey ≠ reg i) (hh : ∀ i, hiKey ≠ reg i)
+    (hmh : ∀ i, highMask ≠ reg i)
+    (hlo : s.vpr loKey = lowPair ka kb) (hhi : s.vpr hiKey = highPair ka kb)
+    (hmaskl : s.vpr lowMask = Impl.Gcm.PPC64LE.Vpmsum.pairLowMask)
+    (hmaskh : s.vpr highMask = Impl.Gcm.PPC64LE.Vpmsum.pairHighMask) :
+    WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.packedPermProductsWith
+      a b (reg 1) (reg 2) (reg 3) (reg 4) (reg 0) loKey hiKey lowMask highMask)) s fun t =>
+      (⟨t.vpr (reg 3),t.vpr (reg 4),t.vpr (reg 0)⟩ : VG.Proof.Gcm.Clmul.Prod) =
+        pairedProd (ext8 (s.vpr a) (s.vpr a)) (ext8 (s.vpr b) (s.vpr b)) ka kb ∧
+      VOnly [reg 0,reg 1,reg 2,reg 3,reg 4] s t := by
+  have heq : ∀ i j : Fin 5, (reg i = reg j) ↔ i = j :=
+    fun _ _ => ⟨fun h => hinj h,congrArg reg⟩
+  apply WP.of_runBlock
+  simp only [Impl.Gcm.PPC64LE.Vpmsum.packedPermProductsWith,Impl.Gcm.PPC64LE.Vpmsum.packedMultiplyWith,
+    List.cons_append,List.nil_append,
+    runBlock_cons,runStep_some,runBlock_nil,exec_permPair,exec_pm,exec_xor,
+    vpr_writeV,Option.some.injEq,exists_eq_left',ha,hb,hl,hh,hmh,heq,
+    Fin.reduceEq,ite_true,ite_false]
+  refine ⟨?_,⟨fun r hr => ?_,by simp only [gpr_writeV],by simp only [mem_writeV],
+    by simp only [rd_writeV],by simp only [wr_writeV],by simp only [sp_writeV],
+    by simp only [lr_writeV]⟩⟩
+  · rw [hmaskl,hmaskh,show permPair (s.vpr a) (s.vpr b) Impl.Gcm.PPC64LE.Vpmsum.pairLowMask = _ from
+      permPair_halves _ _ true,show permPair (s.vpr a) (s.vpr b) Impl.Gcm.PPC64LE.Vpmsum.pairHighMask = _ from
+      permPair_halves _ _ false]
+    simp only [hlo,hhi,pairedProd,pmPair,lowPair,highPair,Bool.false_eq_true,ite_false,ite_true,
+      vdword_append_0,vdword_append_1,vdword_ext8_0,vdword_ext8_1]
+  · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
+    simp only [vpr_writeV,hr.1,hr.2.1,hr.2.2.1,hr.2.2.2.1,hr.2.2.2.2,ite_false]
 
 def pairedRegs : Fin 5 → VReg
   | ⟨0, _⟩ => HI | ⟨1, _⟩ => U | ⟨2, _⟩ => T | ⟨3, _⟩ => LO | _ => MID

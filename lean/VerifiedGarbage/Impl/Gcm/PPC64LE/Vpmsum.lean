@@ -104,15 +104,27 @@ def packKeyStep (j : Nat) : List Instr :=
 def packedKeys : List Instr := (List.range 4).flatMap packKeyStep
 
 def packedAccs : List (VReg × VReg) := [(Y,LO),(.v16,MID),(.v17,HI)]
+def packedMultiplyWith (u t lo mid hi loKey hiKey : VReg) : List Instr :=
+  [.vop (.pmsumd hi u hiKey), .vop (.pmsumd lo t loKey),
+   .vop (.pmsumd mid u loKey), .vop (.pmsumd u t hiKey),
+   .vop (.logic .xor mid mid u)]
+
 def packedProductsWith (a b u t lo mid hi loKey hiKey : VReg) (canonical : Bool) : List Instr :=
   let p := if canonical then t else u
   let q := if canonical then u else t
   [.vop (.sldoi hi b b 8),
    .vop (.sldoi p a hi 8),
-   .vop (.sldoi q hi a 8), .vop (.sldoi q q q 8),
-   .vop (.pmsumd hi u hiKey), .vop (.pmsumd lo t loKey),
-   .vop (.pmsumd mid u loKey), .vop (.pmsumd u t hiKey),
-   .vop (.logic .xor mid mid u)]
+   .vop (.sldoi q hi a 8), .vop (.sldoi q q q 8)] ++
+  packedMultiplyWith u t lo mid hi loKey hiKey
+
+-- Canonical AES vectors already have the needed byte order. Two permutations
+-- pack their matching doublewords directly for the shared polynomial products.
+def pairLowMask : BitVec 128 := 0x08090a0b0c0d0e0f18191a1b1c1d1e1f
+def pairHighMask : BitVec 128 := 0x00010203040506071011121314151617
+
+def packedPermProductsWith (a b u t lo mid hi loKey hiKey lowMask highMask : VReg) : List Instr :=
+  [.vop (.perm t a b lowMask), .vop (.perm u a b highMask)] ++
+  packedMultiplyWith u t lo mid hi loKey hiKey
 
 def packedProducts (loKey hiKey : VReg) : List Instr :=
   packedProductsWith A HI U T LO MID HI loKey hiKey false
