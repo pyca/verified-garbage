@@ -32,13 +32,13 @@ theorem body_rel (hv : Gather.SealOk)
   refine rel_seq (rel_taint [.r12] (by rw [he₁.sp,he₂.sp,hP])
     (by simp [he₁.r12,he₂.r12,hP]) (by taint_decide))
     (select_wp h₁.base he₁ hn₁) (select_wp h₂.base he₂ hn₂) fun u₁ u₂ hu₁ hu₂ => ?_
-  have ev₁ := VG.Proof.Gather.PPC64LE.eval_zero (r := .r0) (a := (stackArg s₁ 1 >>> 9).toNat)
+  have ev₁ := VG.Proof.Gather.PPC64LE.eval_nonzero (r := .r0) (a := (stackArg s₁ 1 >>> 9).toNat)
     (by rw [hu₁.choice,BitVec.ofNat_toNat,BitVec.setWidth_eq]) (stackArg s₁ 1 >>> 9).isLt
-  have ev₂ := VG.Proof.Gather.PPC64LE.eval_zero (r := .r0) (a := (stackArg s₁ 1 >>> 9).toNat)
+  have ev₂ := VG.Proof.Gather.PPC64LE.eval_nonzero (r := .r0) (a := (stackArg s₁ 1 >>> 9).toNat)
     (by rw [hu₂.choice,BitVec.ofNat_toNat,BitVec.setWidth_eq,a1]) (stackArg s₁ 1 >>> 9).isLt
-  refine rel_ite ev₁ ev₂ (fun _ => Gather.body_rel hv hct h₁.base h₂.base pub hu₁.entered hu₂.entered) (fun _ => ?_)
-  have hn : (stackArg s₁ 1 >>> 9).toNat≠0 :=
-    of_decide_eq_false ‹decide ((stackArg s₁ 1 >>> 9).toNat=0)=false›
+  refine rel_ite ev₁ ev₂ (fun ht => ?_)
+    (fun _ => Gather.body_rel hv hct h₁.base h₂.base pub hu₁.entered hu₂.entered)
+  have hn : (stackArg s₁ 1 >>> 9).toNat≠0 := of_decide_eq_true ht
   exact fast_rel hs hsct h₁ h₂ pub hu₁.entered hu₂.entered hu₁.count hu₂.count (nonempty_of_choice h₁.base hn)
 
 

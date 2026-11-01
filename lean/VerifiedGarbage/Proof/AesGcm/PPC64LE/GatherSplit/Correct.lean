@@ -71,10 +71,10 @@ theorem body_wp (hv : Gather.SealOk) (hs : SplitOk) {s e : State} (h : Layout s)
       fun y => abiPreserved s (freed 160 y) ∧ gatherPost s (freed 160 y) := by
   unfold Impl.AesGcm.PPC64LE.GatherSplit.body
   refine WP.seq (WP.mono (select_wp h.base he hcount) fun u hu => ?_)
-  refine WP.ite (decide ((u.gpr .r0).toNat=0))
-    (VG.Proof.Gather.PPC64LE.eval_zero (by rw [BitVec.ofNat_toNat,BitVec.setWidth_eq]) (u.gpr .r0).isLt)
-    (fun _ => slow_wp hv h.base hu.entered) (fun _ => ?_)
-  have hn : (u.gpr .r0).toNat≠0 := of_decide_eq_false ‹decide ((u.gpr .r0).toNat=0)=false›
+  refine WP.ite (decide ((u.gpr .r0).toNat≠0))
+    (VG.Proof.Gather.PPC64LE.eval_nonzero (by rw [BitVec.ofNat_toNat,BitVec.setWidth_eq]) (u.gpr .r0).isLt)
+    (fun ht => ?_) (fun _ => slow_wp hv h.base hu.entered)
+  have hn : (u.gpr .r0).toNat≠0 := of_decide_eq_true ht
   rw [hu.choice] at hn
   exact fast_wp hs h hu.entered hu.count (nonempty_of_choice h.base hn)
 

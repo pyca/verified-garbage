@@ -45,7 +45,7 @@ def fast : Prog isa := .seq (.seq (.block skip) VG.Impl.Gather.PPC64LE.gather)
 
 
 def body : Prog isa := .seq (.block select)
-  (.ite (.zero .d .r0) SealGather.body fast)
+  (.ite (.nonzero .d .r0) fast SealGather.body)
 
 
 def sealGather : Prog isa := SealGather.withBody body

@@ -1804,8 +1804,8 @@ b 27f
 pub unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "Yf8h+AAAgTloAGz4cACM+HgArPiAAMz4iADs+JAADPmmAgh8mAAM+BABDOhgAAz4eEsnfXhTSH0AASzpCAEM6EK6AHgAACAo"
-beq %cr0, 20f
-.base64 "CABn6BQaKX0QAOc4//8IOQAAKCg="
+bne %cr0, 20f
+.base64 "AAAoKA=="
 beq %cr0, 22f
 24:
 .base64 "AABn6AgAh+gQAOc4wuiFeAAAJSg="
@@ -1829,12 +1829,12 @@ bne %cr0, 24b
 b 23f
 22:
 23:
-.base64 "5CZLeVA4a30AACvpCABL6WgAbOhwAIzoeACs6IAAzOiIAOzokAAM6QABDOhgAAz4CAEM6GgADPgQAQzocAAM+A=="
-bl {vg_aes_gcm_seal_split}
+.base64 "aABs6HAAjOh4AKzogADM6IgA7OiQAAzpAAEs6QgBTOk="
+bl {vg_aes_gcm_seal}
 .base64 "AACBOZgADOimAwh8"
 b 21f
 20:
-.base64 "AAAoKA=="
+.base64 "CABn6BQaKX0QAOc4//8IOQAAKCg="
 beq %cr0, 211f
 213:
 .base64 "AABn6AgAh+gQAOc4wuiFeAAAJSg="
@@ -1858,13 +1858,13 @@ bne %cr0, 213b
 b 212f
 211:
 212:
-.base64 "aABs6HAAjOh4AKzogADM6IgA7OiQAAzpAAEs6QgBTOk="
-bl {vg_aes_gcm_seal}
+.base64 "5CZLeVA4a30AACvpCABL6WgAbOhwAIzoeACs6IAAzOiIAOzokAAM6QABDOhgAAz4CAEM6GgADPgQAQzocAAM+A=="
+bl {vg_aes_gcm_seal_split}
 .base64 "AACBOZgADOimAwh8"
 21:
 .base64 "oAAhOCAAgE4=""#,
-        vg_aes_gcm_seal_split = sym super::gcm::vg_aes_gcm_seal_split,
         vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
+        vg_aes_gcm_seal_split = sym super::gcm::vg_aes_gcm_seal_split,
     )
 }
 

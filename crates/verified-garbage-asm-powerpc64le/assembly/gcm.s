@@ -4865,11 +4865,7 @@ vg_aes_gcm_seal_gather:
 	ld %r0, 264(%r12)
 	rldicl %r0, %r0, 55, 9
 	cmpldi %cr0, %r0, 0
-	beq %cr0, 20f
-	ld %r3, 8(%r7)
-	add %r9, %r9, %r3
-	addi %r7, %r7, 16
-	addi %r8, %r8, -1
+	bne %cr0, 20f
 	cmpldi %cr0, %r8, 0
 	beq %cr0, 22f
 24:
@@ -4911,28 +4907,24 @@ vg_aes_gcm_seal_gather:
 	b 23f
 22:
 23:
-	rldicr %r11, %r10, 4, 59
-	subf %r11, %r11, %r7
-	ld %r9, 0(%r11)
-	ld %r10, 8(%r11)
 	ld %r3, 104(%r12)
 	ld %r4, 112(%r12)
 	ld %r5, 120(%r12)
 	ld %r6, 128(%r12)
 	ld %r7, 136(%r12)
 	ld %r8, 144(%r12)
-	ld %r0, 256(%r12)
-	std %r0, 96(%r12)
-	ld %r0, 264(%r12)
-	std %r0, 104(%r12)
-	ld %r0, 272(%r12)
-	std %r0, 112(%r12)
-	bl {vg_aes_gcm_seal_split}
+	ld %r9, 256(%r12)
+	ld %r10, 264(%r12)
+	bl {vg_aes_gcm_seal}
 	addi %r12, %r1, 0
 	ld %r0, 152(%r12)
 	mtlr %r0
 	b 21f
 20:
+	ld %r3, 8(%r7)
+	add %r9, %r9, %r3
+	addi %r7, %r7, 16
+	addi %r8, %r8, -1
 	cmpldi %cr0, %r8, 0
 	beq %cr0, 211f
 213:
@@ -4974,15 +4966,23 @@ vg_aes_gcm_seal_gather:
 	b 212f
 211:
 212:
+	rldicr %r11, %r10, 4, 59
+	subf %r11, %r11, %r7
+	ld %r9, 0(%r11)
+	ld %r10, 8(%r11)
 	ld %r3, 104(%r12)
 	ld %r4, 112(%r12)
 	ld %r5, 120(%r12)
 	ld %r6, 128(%r12)
 	ld %r7, 136(%r12)
 	ld %r8, 144(%r12)
-	ld %r9, 256(%r12)
-	ld %r10, 264(%r12)
-	bl {vg_aes_gcm_seal}
+	ld %r0, 256(%r12)
+	std %r0, 96(%r12)
+	ld %r0, 264(%r12)
+	std %r0, 104(%r12)
+	ld %r0, 272(%r12)
+	std %r0, 112(%r12)
+	bl {vg_aes_gcm_seal_split}
 	addi %r12, %r1, 0
 	ld %r0, 152(%r12)
 	mtlr %r0
