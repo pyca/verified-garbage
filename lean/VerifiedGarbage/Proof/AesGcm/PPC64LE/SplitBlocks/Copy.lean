@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.SplitBlocks
 public import VerifiedGarbage.Proof.Aes.Memory
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
@@ -214,5 +215,22 @@ theorem ok (base : State) (total count : Nat) (cfg : Config base total count) :
       refine WP.mono (loop_ok cfg (by omega) (initial_inv cfg)) fun t ht => ?_
       exact ⟨ht.keep,ht.vectors,ht.source,ht.left.trans (by rw [Nat.sub_self]; rfl),
         ht.processed,ht.frame⟩
+
+
+
+theorem Result.blockAt {base s : State} {total count i : Nat} (hs : Result base total count s)
+    (hc : count≤total) (hi : i<total) :
+    Spec.Gcm.blockAt s.mem (base.gpr .r30+BitVec.ofNat 64 (16*i))=
+      if i<count then Spec.Gcm.blockAt base.mem (base.gpr .r17+BitVec.ofNat 64 (16*i))
+      else Spec.Gcm.blockAt base.mem (base.gpr .r30+BitVec.ofNat 64 (16*i)) := by
+  by_cases hic : i<count
+  · rw [ite_eq_left hic]
+    apply VG.Proof.Aes.PPC64LE.Crypto.aesState_inj
+    rw [VG.Proof.Aes.PPC64LE.Crypto.aesState_blockAt,hs.processed.stateAt hic hc]
+    exact (VG.Proof.Aes.PPC64LE.Crypto.aesState_blockAt ..).symm
+  · rw [ite_eq_right hic]
+    apply VG.Proof.Aes.PPC64LE.Crypto.aesState_inj
+    rw [VG.Proof.Aes.PPC64LE.Crypto.aesState_blockAt,VG.Proof.Aes.PPC64LE.Crypto.aesState_blockAt]
+    exact hs.processed.original (by omega) hi
 
 end VG.Proof.AesGcm.PPC64LE.SplitBlocks.Copy
