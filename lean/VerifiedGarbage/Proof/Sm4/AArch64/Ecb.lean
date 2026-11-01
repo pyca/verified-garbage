@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.Group
 public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Contract
 public import VerifiedGarbage.Proof.Sm4.AArch64.Keys
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
@@ -199,8 +200,8 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbAArch64 dir).pre s₀) :
 def dirOf (decrypt : BitVec 64) : Dir := if decrypt = 0 then .encrypt else .decrypt
 
 theorem specDirA_dirOf (decrypt : BitVec 64) :
-    specDirA (dirOf decrypt) = Spec.Sm4.directionOf decrypt.toNat := by
-  unfold dirOf Spec.Sm4.directionOf
+    specDirA (dirOf decrypt) = Proof.Sm4.directionOf decrypt.toNat := by
+  unfold dirOf Proof.Sm4.directionOf
   by_cases h : decrypt = 0
   · subst h; rfl
   · have h' : decrypt.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')
@@ -218,7 +219,7 @@ def ecbAnyAArch64 : Contract AArch64.isa where
       (s.gpr .x4).toNat + 8 * slots ≤ 2 ^ 64
   post s s' :=
     Spec.Sm4.blocksAt s'.mem (s.gpr .x1) (s.gpr .x2).toNat =
-      Spec.Sm4.ecb (Spec.Sm4.scheduleAt s.mem (s.gpr .x0)) (Spec.Sm4.directionOf (s.gpr .x3).toNat)
+      Spec.Sm4.ecb (Spec.Sm4.scheduleAt s.mem (s.gpr .x0)) (Proof.Sm4.directionOf (s.gpr .x3).toNat)
         (Spec.Sm4.blocksAt s.mem (s.gpr .x1) (s.gpr .x2).toNat)
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧

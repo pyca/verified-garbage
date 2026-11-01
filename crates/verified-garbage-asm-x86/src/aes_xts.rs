@@ -3,90 +3,6 @@
 //! `assembly/aes_xts.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_aes_xts_encrypt_aesni` requires (`Artifact.features`).
-pub const VG_AES_XTS_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.1, NIST SP 800-38E) of whole blocks, in place: replaces the `n` 16-byte blocks `Pⱼ` at `data` with `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `T₀` is the tweak at `*tweak` and `Tⱼ₊₁ = Tⱼ ⊗ α` (§5.2), and `*tweak` with `Tₙ` (leaving it unchanged if `n = 0`), so that a further call continues the data unit. `AES-enc(Key1, ·)` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. The caller computes the first tweak, `AES-enc(Key2, i)`, and steals ciphertext for a partial last block.
-///
-/// Contract: `VG.Spec.Xts.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `tweak` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `tweak`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `tweak`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
-je 20f
-.base64 "i1wkDItsJBi4AAAAAImFAAgAAImFBAgAAImFCAgAAImFDAgAAIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAAA="
-22:
-.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMiwOLSwSLUwiLewwBwBHJEdIR/xntgeWHAAAAMeiJA4lLBIlTCIl7DIPGEItEJBQBwAHAAcABwANEJBA5xg=="
-jne 22b
-.base64 "i1wkDItsJBi4AAAAAIkDiUMEiUMIiUMMiwOLjQAIAAAxyIkDi0MEi40ECAAAMciJQwSLQwiLjQgIAAAxyIlDCItDDIuNDAgAADHIiUMMi3QkEItEJASLTCQIifKLXCQUVVNSUVA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "WFhYWFg="
-23:
-.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMiwOLSwSLUwiLewwBwBHJEdIR/xntgeWHAAAAMeiJA4lLBIlTCIl7DIPGEItEJBQBwAHAAcABwANEJBA5xg=="
-jne 23b
-jmp 21f
-20:
-21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-    )
-}
-
-/// The CPU features `vg_aes_xts_decrypt_aesni` requires (`Artifact.features`).
-pub const VG_AES_XTS_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.1, NIST SP 800-38E) of whole blocks, in place: replaces the `n` 16-byte blocks `Cⱼ` at `data` with `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `T₀` is the tweak at `*tweak` and `Tⱼ₊₁ = Tⱼ ⊗ α` (§5.2), and `*tweak` with `Tₙ` (leaving it unchanged if `n = 0`), so that a further call continues the data unit. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. The caller computes the first tweak, `AES-enc(Key2, i)`, and steals ciphertext for a partial last block.
-///
-/// Contract: `VG.Spec.Xts.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `tweak` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `tweak`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `tweak`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
-je 20f
-.base64 "i1wkDItsJBi4AAAAAImFAAgAAImFBAgAAImFCAgAAImFDAgAAIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAAA="
-22:
-.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMiwOLSwSLUwiLewwBwBHJEdIR/xntgeWHAAAAMeiJA4lLBIlTCIl7DIPGEItEJBQBwAHAAcABwANEJBA5xg=="
-jne 22b
-.base64 "i1wkDItsJBi4AAAAAIkDiUMEiUMIiUMMiwOLjQAIAAAxyIkDi0MEi40ECAAAMciJQwSLQwiLjQgIAAAxyIlDCItDDIuNDAgAADHIiUMMi3QkEItEJASLTCQIifKLXCQUVVNSUVA="
-call {vg_aes_decrypt_blocks_aesni}
-.base64 "WFhYWFg="
-23:
-.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMiwOLSwSLUwiLewwBwBHJEdIR/xntgeWHAAAAMeiJA4lLBIlTCIl7DIPGEItEJBQBwAHAAcABwANEJBA5xg=="
-jne 23b
-jmp 21f
-20:
-21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
-.p2align 6"#,
-        vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni,
-    )
-}
-
 /// The CPU features `vg_aes_xts_encrypt_unit_aesni` requires (`Artifact.features`).
 pub const VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
@@ -128,7 +44,7 @@ jmp 21f
 21:
 .base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAMM="
 .p2align 6"#,
-        vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni,
+        vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni::vg_aes_xts_encrypt_aesni,
     )
 }
 
@@ -178,84 +94,8 @@ call {vg_aes_xts_decrypt_aesni}
 21:
 .base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAMM="
 .p2align 6"#,
-        vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni,
-        vg_aes_xts_decrypt_aesni = sym super::aes_xts::vg_aes_xts_decrypt_aesni,
-    )
-}
-
-/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.1, NIST SP 800-38E) of whole blocks, in place: replaces the `n` 16-byte blocks `Pⱼ` at `data` with `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `T₀` is the tweak at `*tweak` and `Tⱼ₊₁ = Tⱼ ⊗ α` (§5.2), and `*tweak` with `Tₙ` (leaving it unchanged if `n = 0`), so that a further call continues the data unit. `AES-enc(Key1, ·)` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. The caller computes the first tweak, `AES-enc(Key2, i)`, and steals ciphertext for a partial last block.
-///
-/// Contract: `VG.Spec.Xts.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `tweak` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `tweak`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `tweak`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
-je 20f
-.base64 "i1wkDItsJBi4AAAAAImFAAgAAImFBAgAAImFCAgAAImFDAgAAIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAAA="
-22:
-.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMiwOLSwSLUwiLewwBwBHJEdIR/xntgeWHAAAAMeiJA4lLBIlTCIl7DIPGEItEJBQBwAHAAcABwANEJBA5xg=="
-jne 22b
-.base64 "i1wkDItsJBi4AAAAAIkDiUMEiUMIiUMMiwOLjQAIAAAxyIkDi0MEi40ECAAAMciJQwSLQwiLjQgIAAAxyIlDCItDDIuNDAgAADHIiUMMi3QkEItEJASLTCQIifKLXCQUVVNSUVA="
-call {vg_aes_encrypt_blocks}
-.base64 "WFhYWFg="
-23:
-.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMiwOLSwSLUwiLewwBwBHJEdIR/xntgeWHAAAAMeiJA4lLBIlTCIl7DIPGEItEJBQBwAHAAcABwANEJBA5xg=="
-jne 23b
-jmp 21f
-20:
-21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
-.p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-    )
-}
-
-/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.1, NIST SP 800-38E) of whole blocks, in place: replaces the `n` 16-byte blocks `Cⱼ` at `data` with `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `T₀` is the tweak at `*tweak` and `Tⱼ₊₁ = Tⱼ ⊗ α` (§5.2), and `*tweak` with `Tₙ` (leaving it unchanged if `n = 0`), so that a further call continues the data unit. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. The caller computes the first tweak, `AES-enc(Key2, i)`, and steals ciphertext for a partial last block.
-///
-/// Contract: `VG.Spec.Xts.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `tweak` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `tweak`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `tweak`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
-je 20f
-.base64 "i1wkDItsJBi4AAAAAImFAAgAAImFBAgAAImFCAgAAImFDAgAAIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAAA="
-22:
-.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMiwOLSwSLUwiLewwBwBHJEdIR/xntgeWHAAAAMeiJA4lLBIlTCIl7DIPGEItEJBQBwAHAAcABwANEJBA5xg=="
-jne 22b
-.base64 "i1wkDItsJBi4AAAAAIkDiUMEiUMIiUMMiwOLjQAIAAAxyIkDi0MEi40ECAAAMciJQwSLQwiLjQgIAAAxyIlDCItDDIuNDAgAADHIiUMMi3QkEItEJASLTCQIifKLXCQUVVNSUVA="
-call {vg_aes_decrypt_blocks}
-.base64 "WFhYWFg="
-23:
-.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMiwOLSwSLUwiLewwBwBHJEdIR/xntgeWHAAAAMeiJA4lLBIlTCIl7DIPGEItEJBQBwAHAAcABwANEJBA5xg=="
-jne 23b
-jmp 21f
-20:
-21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
-.p2align 6"#,
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni::vg_aes_xts_encrypt_aesni,
+        vg_aes_xts_decrypt_aesni = sym super::aes_xts::vg_aes_xts_decrypt_aesni::vg_aes_xts_decrypt_aesni,
     )
 }
 
@@ -296,7 +136,7 @@ jmp 21f
 21:
 .base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAMM="
 .p2align 6"#,
-        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
+        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
     )
 }
 
@@ -342,7 +182,23 @@ call {vg_aes_xts_decrypt}
 21:
 .base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAMM="
 .p2align 6"#,
-        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
-        vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt,
+        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
+        vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt::vg_aes_xts_decrypt,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_decrypt.rs"]
+pub(crate) mod vg_aes_xts_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_decrypt_aesni.rs"]
+pub(crate) mod vg_aes_xts_decrypt_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_encrypt.rs"]
+pub(crate) mod vg_aes_xts_encrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_encrypt_aesni.rs"]
+pub(crate) mod vg_aes_xts_encrypt_aesni;

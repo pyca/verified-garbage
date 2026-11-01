@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.AesCbc.Arm
 
 `vg_aes_xts_encrypt(schedule = r0, rounds = r1, tweak = r2, data = r3, n, scratch)`
 and `vg_aes_xts_decrypt` with the same arguments (the last two on the stack;
-see `VG.Spec.Xts.aesEncryptContract` and `aesDecryptContract`), composed of
+see `VG.Proof.Xts.aesEncryptContract` and `aesDecryptContract`), composed of
 calls of the verified `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on
 one block at a time, in place.
 

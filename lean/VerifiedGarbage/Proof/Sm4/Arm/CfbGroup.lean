@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Sm4.Arm.CfbFill
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
-import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCfb
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchXor
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # One eight-block CFB decryption batch on ARMv7 -/
 
@@ -23,7 +24,7 @@ open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchXor
 open VG.Proof.Sm4.Arm.BatchGroup (batchRegions count_wp encrypted_lane table_frame difference_zero)
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 def inputBlock (m : Mem) (B D : BitVec 32) (k : Nat) : List Byte :=
   if k = 0 then bytesAt m (counterAddr B) 16 else bytesAt m (dataAddr D (k - 1)) 16

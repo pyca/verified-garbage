@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Poly1305.Contract
+meta import VerifiedGarbage.Proof.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Poly1305.Spec
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
@@ -454,9 +456,9 @@ theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksX86_64.pre Proof.Poly1
   rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem blocks_verified :
-    Verified X86_64.target Impl.Poly1305.X86_64.blocks (Spec.Poly1305.blocksContract X86_64.abi) :=
+    Verified X86_64.target Impl.Poly1305.X86_64.blocks (Proof.Poly1305.blocksContract X86_64.abi) :=
   Verified.of_correct blocks_ok blocks_ct (by
-    sig_implies [Spec.Poly1305.blocksContract, Spec.Poly1305.blocksSig, Proof.Poly1305.blocksX86_64,
+    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, Proof.Poly1305.blocksX86_64,
       X86_64.abi, X86_64.argRegs] [Proof.Poly1305.X86_64.blocksSat] using
       Proof.Poly1305.X86_64.blocksSat)
 

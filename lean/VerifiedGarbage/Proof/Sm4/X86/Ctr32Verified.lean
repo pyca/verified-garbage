@@ -14,6 +14,7 @@ meta import VerifiedGarbage.Proof.Modes.Ctr32
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
 meta import VerifiedGarbage.Impl.Sm4.X86.Ctr32
+public import VerifiedGarbage.Proof.Sm4.Contract
 
 /-!
 # SM4's counter mode with `inc₃₂` on x86 meets its contracts
@@ -61,9 +62,9 @@ theorem wide_implies_ctr32 :
     (wideContract ctr32Post).Implies (Proof.Sm4.ctr32ScratchContract X86.abi 184 20) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
-    sig_pre [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Spec.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post] at h
+    sig_pre [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post] at h
     sig_split h
-    sig_reduce [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Spec.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
+    sig_reduce [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
     sig_and_intros
     sig_close
     all_goals first
@@ -73,9 +74,9 @@ theorem wide_implies_ctr32 :
       | (rw [VG.X86.Taint.sub_setWidth (by omega)]; try simp only [Nat.mul_comm] at *
          first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-  · sig_implies_post [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Spec.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
-  · sig_implies_pub [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Spec.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
-  · sig_implies_sat [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Spec.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
+  · sig_implies_post [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
+  · sig_implies_pub [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
+  · sig_implies_sat [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem ctr32_verified : Verified X86.target ctr32 (Proof.Sm4.ctr32ScratchContract X86.abi 184 20) :=
@@ -85,8 +86,8 @@ theorem ctr32_verified : Verified X86.target ctr32 (Proof.Sm4.ctr32ScratchContra
 returning. -/
 theorem ctr32_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 ctr32)
-      (Spec.Sm4.ctr32Contract X86.abi 1516) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
+      (Proof.Sm4.ctr32Contract X86.abi 1516) :=
+  X86.Verified.stackScratchWiped (sig := Proof.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
     (n := 184) (post := Proof.Sm4.ctr32Post X86.abi.ptrBits) (wa := true) (stack := 20)
     (bytes := 1496) ctr32_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)

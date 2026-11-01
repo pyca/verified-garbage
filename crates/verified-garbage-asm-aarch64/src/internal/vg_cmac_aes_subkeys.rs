@@ -20,6 +20,6 @@ bl {vg_aes_ctr32}
 .inst 0xcb0b018b,0xd28010ec,0x8a0c016b,0xd37ffd4c,0xd37ff929,0xaa0c0129,0xd37ff94a,0xca0b014a
 .inst 0xdac00d29,0xdac00d4a,0xf9000a69,0xf9000e6a,0xf944129e,0xf9440a93,0xf9440e94,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }

@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Contract
 
 /-!
 # AES counter mode with the Armv8 Cryptographic Extension
@@ -687,9 +688,9 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AA
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32_verified :
-    Verified AArch64.target ctr32 (Spec.Gcm.ctr32Contract AArch64.abi) :=
+    Verified AArch64.target ctr32 (Proof.Gcm.ctr32Contract AArch64.abi) :=
   Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Spec.Gcm.ctr32Contract, Spec.Gcm.ctr32Sig, Proof.Aes.ctr32AArch64, AArch64.abi,
+    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.ctr32AArch64, AArch64.abi,
       AArch64.argRegs] [Proof.Aes.AArch64.satState] using Proof.Aes.AArch64.satState)
 
 end VG.Proof.Aes.AArch64.Aese

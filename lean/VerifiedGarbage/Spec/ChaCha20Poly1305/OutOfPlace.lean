@@ -3,7 +3,6 @@ public import VerifiedGarbage.Spec.ChaCha20Poly1305
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 
-
 /-!
 # ChaCha20-Poly1305 encryption out of place
 
@@ -26,16 +25,6 @@ enforce for the construction to be secure anyway: the block counter never
 wraps around. The key, the nonce, the additional data, the data and the tag
 are secret; the pointers, the lengths, the number of slices and where they
 are (their addresses and lengths) are public.
-
-`vg_chacha20_poly1305_seal_split` is `vg_chacha20_poly1305_seal` on the data
-in `dst` whose first `src_len` bytes are read from `src` instead: the first
-slice of a gathered plaintext encrypted out of place, the rest (a TLS
-record's content type) already copied after it in place, with no copy of
-the first slice. Its output overlaps no other buffer either, and, as
-`seal`'s, its contract does not limit the length of the data; its input
-from `src` is at most as long as its output. The key, the nonce, the
-additional data, the data and the tag are secret; the pointers and the
-lengths are public. Existing contracts are unchanged.
 -/
 
 @[expose] public section
@@ -111,54 +100,5 @@ def sealGatherApi : Api where
   safety := [
     "The slices `src` lists must be `len` bytes long in all.",
     "`len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8)."]
-
-
-/-- `vg_chacha20_poly1305_seal_split(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16])`. -/
-def sealSplitSig : Sig where
-  params := [("key", .array false .u8 32), ("nonce", .array false .u8 12),
-    ("aad", .slice false .u8 "aad_len"), ("src", .slice false .u8 "src_len"),
-    ("dst", .slice true .u8 "len"), ("tag", .array true .u8 16)]
-
-/-- The input from `src` is at most as long as the output. -/
-def sealSplitPre (pb : Nat) : Curry (sealSplitSig.words pb) (Mem → Prop) :=
-  fun _key _nonce _aad _aadLen _src srcLen _dst len _tag _ => srcLen.toNat ≤ len.toNat
-
-/-- With the key at `key` and the nonce at `nonce`, and an input from `src`
-at most as long as the output: the `len` bytes at `dst` are the encryption of
-the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len`
-on, for the `aad_len` bytes of additional data at `aad`, and the tag is at
-`tag`. (`sealPost`, with the data's first `src_len` bytes read from `src`.) -/
-def sealSplitPost (pb : Nat) : sealSplitSig.Post pb :=
-  fun key nonce aad aadLen src srcLen dst len tag m m' _ =>
-    srcLen.toNat ≤ len.toNat →
-    encrypt (bytesAt m key 32) (bytesAt m nonce 12) (bytesAt m aad aadLen.toNat)
-        (bytesAt m src srcLen.toNat ++ (bytesAt m dst len.toNat).drop srcLen.toNat) =
-      (bytesAt m' dst len.toNat, bytesAt m' tag 16)
-
-/-- For an input from `src` at most as long as the output (`sealSplitPre`):
-`sealSplitPost`. -/
-def sealSplitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealSplitSig.contract A (pre := sealSplitPre A.ptrBits) (post := sealSplitPost A.ptrBits)
-    (writeArgs := true)
-    (stack := stack)
-
-/-- `vg_chacha20_poly1305_seal_split` on every target. -/
-def sealSplitApi : Api where
-  module := "chacha20poly1305"
-  name := "vg_chacha20_poly1305_seal_split"
-  sig := sealSplitSig
-  writeArgs := true
-  contracts := some fun A stack => sealSplitContract A stack
-  summary := "ChaCha20-Poly1305 encryption (RFC 8439 §2.8) of data whose first bytes are in \
-    another buffer: with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes made of \
-    the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, writes the \
-    ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the \
-    `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` of `dst` \
-    with its first `src_len` bytes read from `src`.\n\n\
-    Contract: `VG.Spec.ChaCha20Poly1305.sealSplitContract`. Constant time: only the pointers, \
-    `src_len` and `len` may affect timing, not the key, the nonce, the additional data or the \
-    data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which \
-    the caller must not exceed for the construction to be secure."
-  safety := ["`src_len` must be at most `len`."]
 
 end VG.Spec.ChaCha20Poly1305

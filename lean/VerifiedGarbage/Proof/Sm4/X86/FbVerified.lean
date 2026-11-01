@@ -48,6 +48,8 @@ meta import VerifiedGarbage.Proof.Sm4.X86.Copy
 meta import VerifiedGarbage.Proof.Sm4.X86.Crypt8
 meta import VerifiedGarbage.Spec.Ctr.Contract
 meta import VerifiedGarbage.Spec.Sm4.Cfb
+public import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
+meta import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
 
 /-!
 # SM4-OFB and SM4-CFB128 on x86 (32-bit) meet their contracts

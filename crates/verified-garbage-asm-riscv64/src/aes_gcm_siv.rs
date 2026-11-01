@@ -745,8 +745,8 @@ j 232f
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -1522,8 +1522,8 @@ j 235f
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }

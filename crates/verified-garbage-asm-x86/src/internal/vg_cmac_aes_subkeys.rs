@@ -15,6 +15,6 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_subkeys() {
 call {vg_aes_ctr32}
 .base64 "WFhYWFhYiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzokDiUsEiVMIiXMMiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzolDEIlLFIlTGIlzHItEJBCLmBAIAACLsBQIAACLuBgIAACLqBwIAADD"
 .p2align 6"#,
-        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }

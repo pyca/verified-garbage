@@ -18,6 +18,6 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_subkeys_aesni() {
 call {vg_aes_ctr32_aesni}
 .base64 "WFhYWFhYiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzokDiUsEiVMIiXMMiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzolDEIlLFIlTGIlzHItEJBCLmBAIAACLsBQIAACLuBgIAACLqBwIAADD"
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }

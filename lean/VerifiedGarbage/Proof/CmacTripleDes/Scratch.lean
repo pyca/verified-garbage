@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Cmac.TripleDesContract
+public import VerifiedGarbage.Proof.Cmac.TripleDesContract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -25,7 +25,7 @@ only within the function's buffers (`initPost_local`, `updatePost_local`,
 
 namespace VG.Proof.CmacTripleDes
 
-open VG.Spec.Cmac
+open VG.Spec.Cmac VG.Proof.Cmac
 
 /-- `vg_cmac_triple_des_init` with `scratch: *mut [u64; 80]`. -/
 def initScratchSig : Sig where

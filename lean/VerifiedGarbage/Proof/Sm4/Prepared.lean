@@ -1,11 +1,16 @@
 module
 
+public import VerifiedGarbage.Proof.Sm4.Contract
 public import VerifiedGarbage.Spec.Sm4.Contract
 
 /-!
 # SM4 with its round keys prepared once, in a working space
 
-**Trusted.** Two callable pieces of SM4's modes. A bitsliced implementation
+Not trusted: the contracts that the proofs of internal functions (`Rust.Internal`),
+which only verified code calls, are of, and that the proofs of their callers
+compose. Only the callers' contracts, in `Spec/`, are trusted.
+
+Two callable pieces of SM4's modes. A bitsliced implementation
 turns the round keys into a table of its own (their bits as masks of its
 lanes) before it transforms any block, at about the cost of a batch of
 blocks: `vg_sm4_ecb` does so on every call. The modes transform one batch
@@ -33,7 +38,9 @@ address and length, and the direction, are public.
 
 @[expose] public section
 
-namespace VG.Spec.Sm4.Prepared
+namespace VG.Proof.Sm4.Prepared
+
+open VG.Spec VG.Spec.Sm4
 
 /-- Where an implementation keeps the prepared round keys and the batch's
 blocks in its working space, and how it encodes the round keys. -/
@@ -105,43 +112,4 @@ def cryptContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contra
       Keeps ws wsLen.toNat L.cryptScratch m m')
     (stack := stack)
 
-/-- The ranges as the documentation lists them. -/
-def rangesDoc (rs : List (Nat × Nat)) : String :=
-  ", ".intercalate (rs.map fun (o, k) => s!"{o}..{o + k}")
-
-def prepareApi (L : Layout) : Api where
-  module := "sm4"
-  name := "vg_sm4_prepare_keys"
-  sig := prepareSig
-  contracts := some fun A stack => prepareContract L A stack
-  summary := s!"Prepares SM4's round keys for `vg_sm4_crypt_prepared`: writes at the bytes {rangesDoc L.table} \
-    of `ws` the round keys written by `vg_sm4_expand_key` at \
-    `schedule`, in the order of encryption (`decrypt = 0`) or decryption (`decrypt = 1`), in \
-    the implementation's encoding (`VG.Spec.Sm4.Prepared.Layout.encode`). Every byte of `ws` \
-    but those of the ranges {rangesDoc L.prepScratch} keeps its value. It is not part of the \
-    library's Rust API.\n\n\
-    Contract: `VG.Spec.Sm4.Prepared.prepareContract`. Constant time: only pointers, `ws_len` \
-    and `decrypt` may affect timing, not the round keys."
-  safety := ["`decrypt` must be 0 or 1.", s!"`ws_len` must be at least {(L.size + 7) / 8}.",
-    s!"The bytes {rangesDoc L.prepScratch} of `ws` are unspecified on return and hold secrets, \
-      which the caller must destroy."]
-
-def cryptApi (L : Layout) : Api where
-  module := "sm4"
-  name := "vg_sm4_crypt_prepared"
-  sig := cryptSig
-  contracts := some fun A stack => cryptContract L A stack
-  summary := s!"SM4 ECB (draft-ribose-cfrg-sm4-10 §7.1–7.2, SP 800-38A §6.1) of the {L.blocks} \
-    16-byte blocks at byte {L.buf} of `ws`, in place, under the round keys that \
-    `vg_sm4_prepare_keys` wrote at the bytes {rangesDoc L.table}, in the direction \
-    it prepared them for. Every byte of `ws` but those of the ranges {rangesDoc L.cryptScratch} \
-    (the blocks' among them, not the round keys') keeps its value, so the round keys serve \
-    every batch. It is not part of the library's Rust API.\n\n\
-    Contract: `VG.Spec.Sm4.Prepared.cryptContract`. Constant time: only pointers and `ws_len` \
-    may affect timing, not the round keys or the blocks."
-  safety := [s!"`ws_len` must be at least {(L.size + 7) / 8}.",
-    "`ws` must hold the round keys as `vg_sm4_prepare_keys` wrote them.",
-    s!"The bytes {rangesDoc L.cryptScratch} of `ws` are unspecified on return but for the \
-      blocks, and hold secrets, which the caller must destroy."]
-
-end VG.Spec.Sm4.Prepared
+end VG.Proof.Sm4.Prepared

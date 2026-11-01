@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # AES-GCM: the contracts, on every target
 
-**Trusted** (as every file in `Spec/`). The contracts of the primitives
+**Trusted** (as every file in `Spec/`). The contracts of the primitive
 AES-GCM is built from, and of AES-GCM itself, in terms of `Spec/Gcm.lean`,
 for any target: `A` is the target's calling convention. The signatures fix
 where the arguments are, the memory each function may access, disjointness,
@@ -15,17 +15,10 @@ and that the pointers, the lengths and the number of rounds are public (see
 schedules, hash subkeys, IVs, additional data, texts, tags and states) is
 secret.
 
-## The primitives
+## The primitive
 
-* `vg_aes_ctr32` XORs AES counter-mode keystream (with GCM's `inc₃₂`) into
-  whole blocks in place, from a key schedule that `vg_aes_expand_key`
-  (`VG.Spec.Aes.expandKeyContract`) wrote. With a zero block it computes
-  `H = CIPH_K(0¹²⁸)`, and with `S` it computes the unmasked tag
-  `S ⊕ CIPH_K(J₀)`.
-* `vg_ghash` continues `GHASH_H` over whole blocks.
-
-Each takes a `scratch` buffer of working space, sized for the target that
-needs the most.
+`vg_ghash` continues `GHASH_H` over whole blocks. It takes a `scratch`
+buffer of working space, sized for the target that needs the most.
 
 ## AES-GCM
 
@@ -72,45 +65,6 @@ arguments passed in memory, where the calling convention allows it
 @[expose] public section
 
 namespace VG.Spec.Gcm
-
-/-- `vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256])`.
-`rounds` is public; `scratch` is working space. -/
-def ctr32Sig : Sig where
-  params := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
-    ("counter", .array true .u8 16), ("data", .slice true (.array .u8 16) "n"),
-    ("scratch", .array true .u64 256)]
-
-/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
-`16 (rounds + 1)` bytes at `schedule`: XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)`
-into the `n` blocks at `data`, where `CB₁` is the block at `counter` and
-`CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` at `counter`. The key
-schedule, the counter and the data are secret. -/
-def ctr32Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  ctr32Sig.contract A
-    (pre := fun _schedule rounds _counter _data _n _scratch _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun schedule rounds counter data n _scratch m m' _ =>
-      let ciph := aesWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
-      blocksAt m' data n.toNat = ctr32 ciph (blockAt m counter) (blocksAt m data n.toNat) ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter))
-    (stack := stack)
-
-/-- `vg_aes_ctr32` on every target. -/
-def ctr32Api : Api where
-  module := "aes"
-  name := "vg_aes_ctr32"
-  sig := ctr32Sig
-  contracts := some fun A stack => ctr32Contract A stack
-  summary := "AES counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole \
-    blocks): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` \
-    is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in \
-    `*counter`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first \
-    `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.\n\n\
-    Contract: `VG.Spec.Gcm.ctr32Contract`. Constant time: only the pointers, `rounds` and `n` may \
-    affect timing, not the key schedule, the counter block or the data."
-  safety := [
-    "`rounds` must be 10, 12 or 14.",
-    "The contents of `scratch` on return are unspecified."]
 
 /-- `vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32])`.
 `scratch` is working space. -/

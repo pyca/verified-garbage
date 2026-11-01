@@ -8,6 +8,14 @@ public import VerifiedGarbage.Spec.Gcm.Contract
 Not trusted: the contracts that the proofs of internal functions (`Rust.Internal`),
 which only verified code calls, are of, and that the proofs of their callers
 compose. Only the callers' contracts, in `Spec/`, are trusted.
+
+`vg_aes_ctr32` XORs AES counter-mode keystream (with GCM's `inc₃₂`) into
+whole blocks in place, from a key schedule that `vg_aes_expand_key`
+(`VG.Spec.Aes.expandKeyContract`) wrote: the block-cipher work of AES-GCM
+and of the modes built on AES. With a zero block it computes
+`H = CIPH_K(0¹²⁸)`, and with `S` it computes the unmasked tag
+`S ⊕ CIPH_K(J₀)`. It takes a `scratch` buffer of working space, sized for
+the target that needs the most.
 -/
 
 @[expose] public section
@@ -15,6 +23,28 @@ compose. Only the callers' contracts, in `Spec/`, are trusted.
 namespace VG.Proof.Gcm
 
 open VG.Spec VG.Spec.Gcm
+
+/-- `vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256])`.
+`rounds` is public; `scratch` is working space. -/
+def ctr32Sig : Sig where
+  params := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
+    ("counter", .array true .u8 16), ("data", .slice true (.array .u8 16) "n"),
+    ("scratch", .array true .u64 256)]
+
+/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
+`16 (rounds + 1)` bytes at `schedule`: XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)`
+into the `n` blocks at `data`, where `CB₁` is the block at `counter` and
+`CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` at `counter`. The key
+schedule, the counter and the data are secret. -/
+def ctr32Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  ctr32Sig.contract A
+    (pre := fun _schedule rounds _counter _data _n _scratch _ =>
+      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
+    (post := fun schedule rounds counter data n _scratch m m' _ =>
+      let ciph := aesWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
+      blocksAt m' data n.toNat = ctr32 ciph (blockAt m counter) (blocksAt m data n.toNat) ∧
+        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter))
+    (stack := stack)
 
 /-- `vg_aes_gcm_encrypt_blocks(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264])`,
 and `vg_aes_gcm_decrypt_blocks` with the same signature. `rounds` is public;

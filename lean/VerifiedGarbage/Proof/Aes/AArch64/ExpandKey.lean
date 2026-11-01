@@ -5,6 +5,8 @@ public import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
 public import VerifiedGarbage.Proof.Aes.KeyExp
 public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Aes.Contract
+meta import VerifiedGarbage.Proof.Aes.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -927,9 +929,9 @@ theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyAArch64.pre
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem expandKey_verified :
-    Verified AArch64.target Impl.Aes.AArch64.expandKey (Spec.Aes.expandKeyScratchContract AArch64.abi) :=
+    Verified AArch64.target Impl.Aes.AArch64.expandKey (Proof.Aes.expandKeyScratchContract AArch64.abi) :=
   Verified.of_correct expandKey_correct expandKey_ct (by
-    sig_implies [Spec.Aes.expandKeyScratchContract, Spec.Aes.expandKeyScratchSig, Proof.Aes.expandKeyAArch64,
+    sig_implies [Proof.Aes.expandKeyScratchContract, Proof.Aes.expandKeyScratchSig, Proof.Aes.expandKeyAArch64,
       AArch64.abi, AArch64.argRegs] [Proof.Aes.AArch64.ekSatState] using
       Proof.Aes.AArch64.ekSatState)
 

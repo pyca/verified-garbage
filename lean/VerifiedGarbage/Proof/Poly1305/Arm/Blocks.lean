@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Poly1305.Arm.Bytes
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Poly1305.Contract
+meta import VerifiedGarbage.Proof.Poly1305.Contract
 public import VerifiedGarbage.Proof.Poly1305.Spec
 import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -657,9 +659,9 @@ theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksArm.pre Proof.Poly1305
       taint_decide)
 
 theorem blocks_verified :
-    Verified Arm.target Impl.Poly1305.Arm.blocks (Spec.Poly1305.blocksContract Arm.abi) :=
+    Verified Arm.target Impl.Poly1305.Arm.blocks (Proof.Poly1305.blocksContract Arm.abi) :=
   Verified.of_correct blocks_ok blocks_ct (by
-    sig_implies [Spec.Poly1305.blocksContract, Spec.Poly1305.blocksSig, Proof.Poly1305.blocksArm,
+    sig_implies [Proof.Poly1305.blocksContract, Proof.Poly1305.blocksSig, Proof.Poly1305.blocksArm,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Poly1305.Arm.blocksSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using
       Proof.Poly1305.Arm.blocksSat)

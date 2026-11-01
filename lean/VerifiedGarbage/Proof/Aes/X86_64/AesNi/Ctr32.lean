@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.Contract
+meta import VerifiedGarbage.Proof.Gcm.Contract
 import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -640,9 +642,9 @@ theorem ctr32_ct : ConstantTime isa ctr32X86_64.pre ctr32X86_64.pub ctr32 := by
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32_verified :
-    Verified X86_64.target Impl.Aes.X86_64.AesNi.ctr32 (Spec.Gcm.ctr32Contract X86_64.abi) :=
+    Verified X86_64.target Impl.Aes.X86_64.AesNi.ctr32 (Proof.Gcm.ctr32Contract X86_64.abi) :=
   Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Spec.Gcm.ctr32Contract, Spec.Gcm.ctr32Sig, Proof.Aes.X86_64.AesNi.ctr32X86_64,
+    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.X86_64.AesNi.ctr32X86_64,
       X86_64.abi, X86_64.argRegs] [Proof.Aes.X86_64.AesNi.satState] using
       Proof.Aes.X86_64.AesNi.satState)
 

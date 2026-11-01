@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.AesCbc.RISCV64
 
 `vg_aes_xts_encrypt(schedule = a0, rounds = a1, tweak = a2, data = a3, n = a4, scratch = a5)`
 and `vg_aes_xts_decrypt` with the same arguments (see
-`VG.Spec.Xts.aesEncryptContract` and `aesDecryptContract`), composed of
+`VG.Proof.Xts.aesEncryptContract` and `aesDecryptContract`), composed of
 calls of the verified `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on
 one block at a time, in place, as on PPC64LE (`VG.Impl.AesXts.PPC64LE`).
 

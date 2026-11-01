@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-!
 # Constant-time composition for batched SM4 counter mode with `inc₃₂`
@@ -30,7 +32,7 @@ open VG.Proof.Sm4.Arm.BatchPrologue
 open VG.Proof.Sm4.Arm.BatchFill (counterAddr workspace_part total_eq)
 open VG.Proof.Sm4.Arm.BatchGroup (count_wp table_frame)
 open VG.Proof.Sm4.Arm.Batch32Loop
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 def groupHead : Prog isa := .seq BatchCtr.count (.seq BatchCtr32.fill BatchCtr.crypt)
 
@@ -161,7 +163,7 @@ end
 
 theorem initial {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {t : List Byte} {n : Nat}
     (hD : s.gpr .r6 = D) (hN : s.gpr .r7 = BitVec.ofNat 32 n)
-    (hH : Spec.Sm4.Prepared.Holds layout s.mem (State.addr B) K .encrypt)
+    (hH : Proof.Sm4.Prepared.Holds layout s.mem (State.addr B) K .encrypt)
     (hC : Spec.Aes.bytesAt s.mem (counterAddr B) 16 = t) : LoopInv s B D K t n 0 s :=
   ⟨fun _ _ => rfl, by simpa only [Nat.mul_zero, BitVec.add_zero] using hD,
     by simpa only [Nat.sub_zero] using hN, by omega_arith, rfl, rfl, rfl, Frame.refl _ _, hH,

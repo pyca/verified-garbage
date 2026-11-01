@@ -31,7 +31,7 @@ bl {vg_cmac_aes_subkeys_aes}
 .inst 0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
         vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes::vg_cmac_aes_subkeys_aes,
     )
 }
@@ -93,7 +93,7 @@ bl {vg_cmac_aes_subkeys}
 .inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9444e9e,0xf9444293,0xf9444a95,0xf9444694,0x912403ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }

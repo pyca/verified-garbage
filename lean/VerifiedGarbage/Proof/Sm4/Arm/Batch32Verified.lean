@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr32
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchCT
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Sm4.Contract
 
 /-! # Batched ARMv7 SM4 counter mode with `inc₃₂` meets the public, wiped-stack contract -/
 
@@ -46,21 +47,21 @@ def satState : State where
 
 theorem implies : ctr32Arm.Implies (Proof.Sm4.ctr32ScratchContract Arm.abi 189 0) where
   pre s h := by
-    sig_pre [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Spec.Sm4.ctr32Sig,
+    sig_pre [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     rcases h with ⟨sp, rd, wr, ki, kd, ks, id, ivs, ia, ds, da, sa, fk, fi, fd, fb⟩
     rw [Nat.mul_comm] at wr kd id ds da fd
     exact ⟨sp, rd, wr, ki, kd, ks, id, ivs, ds, ia, da, sa, fk, fi, fd, fb⟩
   post s s' _ h := by
-    sig_post [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Post, Spec.Sm4.ctr32Sig,
+    sig_post [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Post, Proof.Sm4.ctr32Sig,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact ⟨h.data, h.iv⟩
   pub s₁ s₂ _ _ h := by
-    sig_pub [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Spec.Sm4.ctr32Sig,
+    sig_pub [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     exact h
   sat := by
-    sig_implies_sat [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Spec.Sm4.ctr32Sig,
+    sig_implies_sat [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr]
       [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 
@@ -69,14 +70,14 @@ theorem verified : Verified Arm.target BatchCtr32.ctr32 (Proof.Sm4.ctr32ScratchC
 
 def frameState : State := { satState with rd := [⟨0x1000, 128⟩], wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩] }
 
-theorem frameSat : ∃ s, (Spec.Sm4.ctr32Contract Arm.abi 1520).pre s := by
-  implies_sat [Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem frameSat : ∃ s, (Proof.Sm4.ctr32Contract Arm.abi 1520).pre s := by
+  implies_sat [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, State.addr] [frameState, satState] using frameState
 
 theorem framed : Verified Arm.target
     BatchCtr32.ctr32Framed
-    (Spec.Sm4.ctr32Contract Arm.abi 1520) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Sm4.ctr32Sig) (nm := "scratch") (e := .u64) (n := 189)
+    (Proof.Sm4.ctr32Contract Arm.abi 1520) :=
+  Arm.Verified.stackScratchWiped (sig := Proof.Sm4.ctr32Sig) (nm := "scratch") (e := .u64) (n := 189)
     (post := Proof.Sm4.ctr32Post Arm.abi.ptrBits) (wa := true) (stack := 0) (m := 0) (bytes := 1520)
     verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm4.ctr32Post_local _)

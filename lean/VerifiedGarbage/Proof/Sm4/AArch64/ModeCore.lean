@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-!
 # SM4's core for the modes on AArch64
@@ -228,9 +230,9 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
   refine WP.seq (WP.of_runBlock ⟨s₄, by rw [runBlock_app, keepHead_ok, Option.bind_some]; exact eargs, ?_⟩)
   have hsep : Region.Disjoint ⟨s.gpr .x0, 128⟩ ⟨B, 8 * slots⟩ :=
     (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]; omega_arith))
-  have w : WP isa (.call (Spec.Sm4.Prepared.prepareApi layout).name prepareKeys) s₄ fun s' =>
+  have w : WP isa (.call "vg_sm4_prepare_keys" prepareKeys) s₄ fun s' =>
       s'.rd = s₄.rd ∧ s'.wr = s₄.wr ∧ Frame [⟨B, 8 * slots⟩] s₄.mem s'.mem ∧
-      Spec.Sm4.Prepared.Holds layout s'.mem B (Spec.Sm4.scheduleAt s.mem (s.gpr .x0)) (specDirA d) := by
+      Proof.Sm4.Prepared.Holds layout s'.mem B (Spec.Sm4.scheduleAt s.mem (s.gpr .x0)) (specDirA d) := by
     refine WP.call (k := prepAArch64) prep_correct (rd := [⟨s.gpr .x0, 128⟩]) (wr := [⟨B, 8 * slots⟩]) ?_
       (Covers.append_left (Covers.left (Covers.of_mem fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [rd₄']; exact hin))
@@ -259,13 +261,13 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
         rw [State.withRegions_mem, State.callEntry_mem, mem₄]
       have g0 : (s₄.callEntry.withRegions [⟨s.gpr .x0, 128⟩] [⟨B, 8 * slots⟩]).gpr .x0 = s.gpr .x0 := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), x0₄]
-      have g1 : Spec.Sm4.directionOf
+      have g1 : Proof.Sm4.directionOf
           ((s₄.callEntry.withRegions [⟨s.gpr .x0, 128⟩] [⟨B, 8 * slots⟩]).gpr .x1).toNat = specDirA d := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), x1₄]
         cases d <;> rfl
       have g2 : (s₄.callEntry.withRegions [⟨s.gpr .x0, 128⟩] [⟨B, 8 * slots⟩]).gpr .x2 = B := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), x2₄]
-      change Spec.Sm4.Prepared.Holds layout _ _ _ _ at hH
+      change Proof.Sm4.Prepared.Holds layout _ _ _ _ at hH
       rw [hm, hm₀, g0, g1, g2] at hH
       exact hH
   obtain ⟨t₅, s₅, e₅, rd₅, wr₅, f₅, hH⟩ := w
@@ -290,8 +292,8 @@ theorem blockAt_of_ecb {K : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction} {m m' : 
 
 /-- The table survives what a batch keeps. -/
 theorem holds_of_keeps {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction}
-    (h : Spec.Sm4.Prepared.Holds layout m B k d) (hk : Spec.Sm4.Prepared.Keeps B slots layout.cryptScratch m m') :
-    Spec.Sm4.Prepared.Holds layout m' B k d := fun r hr i hi => by
+    (h : Proof.Sm4.Prepared.Holds layout m B k d) (hk : Proof.Sm4.Prepared.Keeps B slots layout.cryptScratch m m') :
+    Proof.Sm4.Prepared.Holds layout m' B k d := fun r hr i hi => by
   have hr' := hr
   rw [layout_table] at hr'
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -326,15 +328,15 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
   have wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂, kept_wr]
   show WP isa cryptCall s _
   refine WP.seq (WP.of_runBlock ⟨s₃, by rw [runBlock_app, keepHead_ok, Option.bind_some]; exact eargs, ?_⟩)
-  have hH : Spec.Sm4.Prepared.Holds layout s.mem B k (specDirA d) := by
+  have hH : Proof.Sm4.Prepared.Holds layout s.mem B k (specDirA d) := by
     refine holds_of_words ?_
     rw [ofSpecDir_specDirA]
     exact words_of_readyAt hr
-  have w : WP isa (.call (Spec.Sm4.Prepared.cryptApi layout).name cryptPrepared) s₃ fun s' =>
+  have w : WP isa (.call "vg_sm4_crypt_prepared" cryptPrepared) s₃ fun s' =>
       s'.rd = s₃.rd ∧ s'.wr = s₃.wr ∧ Frame [⟨B, 8 * slots⟩] s₃.mem s'.mem ∧
       Spec.Sm4.blocksAt s'.mem (B + BitVec.ofNat 64 layout.buf) layout.blocks =
         Spec.Sm4.ecb k (specDirA d) (Spec.Sm4.blocksAt s.mem (B + BitVec.ofNat 64 layout.buf) layout.blocks) ∧
-      Spec.Sm4.Prepared.Keeps B slots layout.cryptScratch s.mem s'.mem := by
+      Proof.Sm4.Prepared.Keeps B slots layout.cryptScratch s.mem s'.mem := by
     refine WP.call (k := cryptAArch64) crypt_correct (rd := []) (wr := [⟨B, 8 * slots⟩]) ?_
       (Covers.append_left Covers.nil (Covers.right (by rw [wr₃']; exact ws_covers hs)))
       (by rw [wr₃']; exact ws_covers hs) (fun s' hrd hwr _ hf _ _ hpost => ⟨hrd, hwr, hf, ?_⟩) (by lit_decide)

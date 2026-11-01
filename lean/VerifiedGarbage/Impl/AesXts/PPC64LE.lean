@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.AesCbc.PPC64LE
 
 `vg_aes_xts_encrypt(schedule = r3, rounds = r4, tweak = r5, data = r6, n = r7, scratch = r8)`
 and `vg_aes_xts_decrypt` with the same arguments (see
-`VG.Spec.Xts.aesEncryptContract` and `aesDecryptContract`), composed of
+`VG.Proof.Xts.aesEncryptContract` and `aesDecryptContract`), composed of
 calls of the verified `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on
 one block at a time, in place, as on ARMv7 (`VG.Impl.AesXts.Arm`).
 

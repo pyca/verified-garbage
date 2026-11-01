@@ -11,18 +11,12 @@ public import VerifiedGarbage.Spec.Camellia.Ctr
 as `CIPH⁻¹_K`, under the subkeys of `rounds` rounds that
 `vg_camellia_expand_key` writes.
 
-`vg_camellia_cbc_encrypt` and `vg_camellia_cbc_decrypt` transform `n` whole
-blocks in place, from the chaining value at `iv`, which they only read. A
-caller may process a message in pieces of whole blocks: the chaining value
-of the next piece is the last ciphertext block of this one (`Cbc.next`),
-which the caller has (after encryption, the last block at `data`; before
-decryption, the last block it decrypts). Padding is the caller's.
-
-`vg_camellia_cbc_encrypt_chained` and `vg_camellia_cbc_decrypt_chained`
-are the same but for `iv`, which they replace with the chaining value to
-continue from (`Cbc.next`), as AES-CBC's functions do
-(`Spec/Cbc/Contract.lean`), so that the caller keeps no block of its own
-between pieces.
+`vg_camellia_cbc_encrypt_chained` and `vg_camellia_cbc_decrypt_chained` transform
+`n` whole blocks in place, from the chaining value at `iv`, which they
+replace with the chaining value to continue from (`Cbc.next`, the last
+ciphertext block), as AES-CBC's functions do (`Spec/Cbc/Contract.lean`):
+a caller may process a message in pieces of whole blocks, and keeps no
+block of its own between them. Padding is the caller's.
 
 Only the pointers, `rounds` and `n` are public: no part of the chaining
 value may affect timing.
@@ -37,52 +31,8 @@ lists of 16 bytes (`Cbc.Cipher`). -/
 def invCipher (sk : Subkeys) : Cbc.Cipher := fun b =>
   (decryptBlock sk (Vector.ofFn fun i => b.getD i.val 0)).toList
 
-/-- `vg_camellia_cbc_encrypt(schedule: *const [u8; 272], rounds: usize, iv: *const [u8; 16], data: *mut [u8; 16], n: usize)`,
-and `vg_camellia_cbc_decrypt` with the same signature. `rounds` is public. -/
-def cbcSig : Sig where
-  params := [("schedule", .array false .u8 272), ("rounds", .int .usize true),
-    ("iv", .array false .u8 16), ("data", .slice true (.array .u8 16) "n")]
-
-/-- `rounds` is 18 or 24. -/
-def cbcPre (pb : Nat) : Curry (cbcSig.words pb) (Mem → Prop) :=
-  fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24
-
-/-- For `rounds` of 18 or 24, with the subkeys of that many rounds at
-`schedule` (`subkeysAt`): replaces the `n` blocks at `data` with their CBC
-encryption (§6.2) by Camellia, from the chaining value at `iv`. Stated for those numbers of rounds, which the precondition requires, so
-that it reads only the buffers. -/
-def cbcEncryptPost (pb : Nat) : cbcSig.Post pb := fun schedule rounds iv data n m m' _ =>
-  (rounds.toNat = 18 ∨ rounds.toNat = 24) →
-    Cbc.blocksAt m' data n.toNat =
-      Cbc.encrypt (cipher (subkeysAt m schedule rounds.toNat)) (Aes.bytesAt m iv 16)
-        (Cbc.blocksAt m data n.toNat)
-
-/-- For `rounds` of 18 or 24, with the subkeys of that many rounds at
-`schedule`: replaces the `n` blocks at `data` with their CBC decryption
-(§6.2) by Camellia, from the chaining value at `iv`. Stated for those numbers of rounds, as
-`cbcEncryptPost`. -/
-def cbcDecryptPost (pb : Nat) : cbcSig.Post pb := fun schedule rounds iv data n m m' _ =>
-  (rounds.toNat = 18 ∨ rounds.toNat = 24) →
-    Cbc.blocksAt m' data n.toNat =
-      Cbc.decrypt (invCipher (subkeysAt m schedule rounds.toNat)) (Aes.bytesAt m iv 16)
-        (Cbc.blocksAt m data n.toNat)
-
-/-- `cbcPre` and `cbcEncryptPost`. The subkeys, the chaining value and the
-data are secret. -/
-def cbcEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcSig.contract A (pre := cbcPre A.ptrBits) (post := cbcEncryptPost A.ptrBits)
-    (writeArgs := true) (stack := stack)
-
-/-- `cbcPre` and `cbcDecryptPost`. -/
-def cbcDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcSig.contract A (pre := cbcPre A.ptrBits) (post := cbcDecryptPost A.ptrBits)
-    (writeArgs := true) (stack := stack)
-
-/-! ## Updating the chaining value -/
-
 /-- `vg_camellia_cbc_encrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize)`,
-and `vg_camellia_cbc_decrypt_chained` with the same signature: `cbcSig`, but
-for `iv`, which they write. -/
+and `vg_camellia_cbc_decrypt_chained` with the same signature. -/
 def cbcChainedSig : Sig where
   params := [("schedule", .array false .u8 272), ("rounds", .int .usize true),
     ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]
@@ -91,8 +41,8 @@ def cbcChainedSig : Sig where
 `schedule`: replaces the `n` blocks at `data` with their CBC encryption
 (§6.2) by Camellia, from the chaining value at `iv`, and the chaining value
 with the last ciphertext block (unchanged if `n = 0`), as
-`Cbc.aesEncryptContract` does. Stated for those numbers of rounds, as
-`cbcEncryptPost` is. -/
+`Cbc.aesEncryptContract` does. Stated for those numbers of rounds, which
+the precondition requires, so that it reads only the buffers. -/
 def cbcEncryptChainedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cbcChainedSig.contract A
     (pre := fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24)
@@ -109,7 +59,7 @@ def cbcEncryptChainedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contrac
 (§6.2) by Camellia, from the chaining value at `iv`, and the chaining value
 with the last ciphertext block, the last block at `data` on entry (unchanged
 if `n = 0`), as `Cbc.aesDecryptContract` does. Stated for those numbers of
-rounds, as `cbcEncryptPost` is. -/
+rounds, as `cbcEncryptChainedContract` is. -/
 def cbcDecryptChainedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cbcChainedSig.contract A
     (pre := fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24)

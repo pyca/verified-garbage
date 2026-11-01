@@ -128,6 +128,6 @@ call {vg_aes_ctr32_aesni}
         vg_ghash_vpclmul = sym crate::gcm::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_to_aesni_vpclmul = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_aesni_vpclmul::vg_aes_gcm_encrypt_blocks_to_aesni_vpclmul,
         vg_aes_gcm_encrypt_blocks_aesni_vpclmul = sym crate::aes::vg_aes_gcm_encrypt_blocks_aesni_vpclmul::vg_aes_gcm_encrypt_blocks_aesni_vpclmul,
-        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }

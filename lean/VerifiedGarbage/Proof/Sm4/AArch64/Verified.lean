@@ -29,6 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Sm4.Contract
 
 /-!
 # SM4 ECB on AArch64 meets its contracts
@@ -186,16 +187,16 @@ def ecbDirFrameSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x3000, 16⟩]
 
-theorem ecbDirFrameSat_pre : ∃ s, (Spec.Sm4.ecbDirContract AArch64.abi 3168).pre s := by
-  implies_sat [Spec.Sm4.ecbDirContract, Spec.Sm4.ecbDirSig, Spec.Sm4.ecbSig, AArch64.abi, AArch64.argRegs]
+theorem ecbDirFrameSat_pre : ∃ s, (Proof.Sm4.ecbDirContract AArch64.abi 3168).pre s := by
+  implies_sat [Proof.Sm4.ecbDirContract, Proof.Sm4.ecbDirSig, Spec.Sm4.ecbSig, AArch64.abi, AArch64.argRegs]
     [ecbDirFrameSat] using ecbDirFrameSat
 
 /-- `vg_sm4_ecb`: ECB in the direction `decrypt` selects, with its working
 space on the stack. -/
 theorem ecbAny_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x4 396 ecbAny)
-      (Spec.Sm4.ecbDirContract AArch64.abi 3168) :=
-  AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.ecbDirSig) (nm := "scratch") (e := .u64)
+      (Proof.Sm4.ecbDirContract AArch64.abi 3168) :=
+  AArch64.Verified.stackScratchWiped (sig := Proof.Sm4.ecbDirSig) (nm := "scratch") (e := .u64)
     (n := 396) (pre := Proof.Sm4.ecbDirPre AArch64.abi.ptrBits) (post := Proof.Sm4.ecbDirPost AArch64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 3168) ecbAny_verified
     (by decide) (by decide) (by decide) (Proof.Sm4.ecbDirPostOut_local _) ecbDirFrameSat_pre

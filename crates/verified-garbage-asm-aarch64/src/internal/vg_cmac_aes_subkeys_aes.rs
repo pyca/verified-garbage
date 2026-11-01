@@ -25,6 +25,6 @@ bl {vg_aes_ctr32_aes}
 .inst 0xdac00d29,0xdac00d4a,0xf9000a69,0xf9000e6a,0xf944129e,0xf9440a93,0xf9440e94,0xd65f03c0
 .arch_extension noaes
 .p2align 6",
-        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }

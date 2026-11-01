@@ -21,8 +21,7 @@ schedule.
 
 `vg_aes_expand_key` keeps its working space on the stack (`stack` is the
 number of bytes of stack below the stack pointer its frame uses, see
-`Sig.contract`). `vg_aes_expand_key_scratch` is the same function with its
-working space passed in `scratch`, for functions that call it with theirs.
+`Sig.contract`).
 -/
 
 @[expose] public section
@@ -62,48 +61,12 @@ def expandKeyApi : Api where
   contracts := some fun A stack => expandKeyContract A stack
   summary := "The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of \
     the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` \
-    rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`, as \
-    `vg_aes_ctr32` reads it.\n\n\
+    rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`.\n\n\
     Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may \
     affect timing, not the key."
   safety := [
     "`key_len` must be 16, 24 or 32.",
     "The bytes of `schedule` after the key schedule are unspecified on return."]
-
-/-- `vg_aes_expand_key_scratch(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64])`:
-`vg_aes_expand_key` with its working space passed in `scratch`, for
-functions that call it with theirs (AES-GCM's, AES-GCM-SIV's, AES-SIV's,
-AES-OCB's and CMAC's). The first `16 (Nr + 1)` bytes of `schedule` hold the
-key schedule on exit; the rest of it, and `scratch`, are working space. -/
-def expandKeyScratchSig : Sig where
-  params := [("key", .slice false .u8 "key_len"), ("schedule", .array true .u8 240),
-    ("scratch", .array true .u64 64)]
-
-/-- For a key of 16, 24 or 32 bytes at `key`, writes its key schedule
-(`expandKey`, `16 (Nr + 1)` bytes for `Nr = key_len / 4 + 6` rounds) to
-`schedule`. The key is secret. -/
-def expandKeyScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  expandKeyScratchSig.contract A
-    (pre := fun _key keyLen _schedule _scratch _ =>
-      keyLen.toNat = 16 ∨ keyLen.toNat = 24 ∨ keyLen.toNat = 32)
-    (post := fun key keyLen schedule _scratch m m' _ =>
-      bytesAt m' schedule (16 * (rounds (keyLen.toNat / 4) + 1)) =
-        expandKey (bytesAt m key keyLen.toNat))
-    (stack := stack)
-
-/-- `vg_aes_expand_key_scratch` on every target. -/
-def expandKeyScratchApi : Api where
-  module := "aes"
-  name := "vg_aes_expand_key_scratch"
-  sig := expandKeyScratchSig
-  contracts := some fun A stack => expandKeyScratchContract A stack
-  summary := "`vg_aes_expand_key`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Aes.expandKeyScratchContract`. Constant time: only the pointers and \
-    `key_len` may affect timing, not the key."
-  safety := [
-    "`key_len` must be 16, 24 or 32.",
-    "The bytes of `schedule` after the key schedule are unspecified on return.",
-    "The contents of `scratch` on return are unspecified."]
 
 /-! ## The cipher and the inverse cipher on whole blocks -/
 

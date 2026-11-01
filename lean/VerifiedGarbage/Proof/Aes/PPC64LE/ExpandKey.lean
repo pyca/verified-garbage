@@ -11,6 +11,7 @@ meta import VerifiedGarbage.Proof.Aes.PPC64LE.CodeLit
 meta import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.ExpandKey
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+public import VerifiedGarbage.Proof.Aes.Contract
 
 /-! # Baseline POWER8 AES key-expansion contracts -/
 
@@ -54,9 +55,9 @@ theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyPPC64LE.pre Proof.Aes
   expandKey_ct_of _ _ fun _ _ ⟨h1, h2, h3, _, hsp⟩ => ⟨h1, h2, h3, hsp⟩
 
 theorem expandKey_verified :
-    Verified PPC64LE.target Impl.Aes.PPC64LE.expandKey (Spec.Aes.expandKeyScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Aes.PPC64LE.expandKey (Proof.Aes.expandKeyScratchContract PPC64LE.abi) :=
   Verified.of_correct expandKey_correct expandKey_ct (by
-    sig_implies [Spec.Aes.expandKeyScratchContract, Spec.Aes.expandKeyScratchSig,
+    sig_implies [Proof.Aes.expandKeyScratchContract, Proof.Aes.expandKeyScratchSig,
       Proof.Aes.expandKeyPPC64LE, PPC64LE.abi, PPC64LE.argRegs] [ekSatState] using ekSatState)
 
 /-- A direct call needs only the key and the output schedule. -/

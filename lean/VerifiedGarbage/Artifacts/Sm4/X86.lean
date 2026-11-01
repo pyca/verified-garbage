@@ -24,12 +24,6 @@ def artifacts : List Artifact := [
   Spec.Sm4.ecbDecryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .decrypt)
     stack := 1452
-    verified := Proof.Sm4.X86.ecb_framed .decrypt },
-  (Spec.Sm4.Prepared.prepareApi Impl.Sm4.X86.layout).artifact X86.target {
-    code := Impl.Sm4.X86.prepareKeys
-    verified := Proof.Sm4.X86.prepare_verified },
-  (Spec.Sm4.Prepared.cryptApi Impl.Sm4.X86.layout).artifact X86.target {
-    code := Impl.Sm4.X86.cryptPrepared
-    verified := Proof.Sm4.X86.crypt_verified }]
+    verified := Proof.Sm4.X86.ecb_framed .decrypt }]
 
 end VG.Artifacts.Sm4.X86

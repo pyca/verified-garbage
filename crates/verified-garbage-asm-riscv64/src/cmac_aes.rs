@@ -85,7 +85,7 @@ call {vg_cmac_aes_subkeys}
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }

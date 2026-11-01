@@ -25,6 +25,7 @@ meta import VerifiedGarbage.Proof.Sm4.AArch64.Ctr32Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Sm4.Contract
 
 /-!
 # SM4's counter mode with `inc₃₂` on AArch64 meets its contracts
@@ -142,14 +143,14 @@ def ctr32FrameSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
-theorem ctr32FrameSat_pre : ∃ s, (Spec.Sm4.ctr32Contract AArch64.abi 3264).pre s := by
-  implies_sat [Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs] [ctr32FrameSat] using ctr32FrameSat
+theorem ctr32FrameSat_pre : ∃ s, (Proof.Sm4.ctr32Contract AArch64.abi 3264).pre s := by
+  implies_sat [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs] [ctr32FrameSat] using ctr32FrameSat
 
 /-- `vg_sm4_ctr32` with its working space on the stack. -/
 theorem ctr32_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 ctr32)
-      (Spec.Sm4.ctr32Contract AArch64.abi 3264) :=
-  AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
+      (Proof.Sm4.ctr32Contract AArch64.abi 3264) :=
+  AArch64.Verified.stackScratchWiped (sig := Proof.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
     (n := 408) (post := Proof.Sm4.ctr32Post AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3264) ctr32_verified
     (by decide) (by decide) (by decide) (Proof.Sm4.ctr32PostOut_local _) ctr32FrameSat_pre

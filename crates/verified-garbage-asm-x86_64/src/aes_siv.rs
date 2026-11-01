@@ -29,7 +29,7 @@ call {vg_cmac_aes_subkeys_aesni}
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,
     )
 }
@@ -56,7 +56,7 @@ call {vg_cmac_aes_subkeys}
 call {vg_aes_expand_key_scratch}
 .base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
 .p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
@@ -87,7 +87,7 @@ call {vg_cmac_aes_subkeys_vaes}
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
     )
 }
@@ -200,7 +200,7 @@ jmp 218f
 .p2align 6"#,
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -328,7 +328,7 @@ jmp 227f
 .p2align 6"#,
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -440,7 +440,7 @@ jmp 218f
 .p2align 6"#,
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
         vg_cmac_aes_update_aesni_cbc = sym super::cmac_aes::vg_cmac_aes_update_aesni_cbc::vg_cmac_aes_update_aesni_cbc,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -568,7 +568,7 @@ jmp 227f
 .p2align 6"#,
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
         vg_cmac_aes_update_aesni_cbc = sym super::cmac_aes::vg_cmac_aes_update_aesni_cbc::vg_cmac_aes_update_aesni_cbc,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -676,7 +676,7 @@ jmp 218f
 .p2align 6"#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -800,7 +800,7 @@ jmp 227f
 .p2align 6"#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -912,7 +912,7 @@ jmp 218f
 .p2align 6"#,
         vg_cmac_aes_finalize_vaes = sym super::cmac_aes::vg_cmac_aes_finalize_vaes::vg_cmac_aes_finalize_vaes,
         vg_cmac_aes_update_vaes = sym super::cmac_aes::vg_cmac_aes_update_vaes::vg_cmac_aes_update_vaes,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }
 
@@ -1040,6 +1040,6 @@ jmp 227f
 .p2align 6"#,
         vg_cmac_aes_finalize_vaes = sym super::cmac_aes::vg_cmac_aes_finalize_vaes::vg_cmac_aes_finalize_vaes,
         vg_cmac_aes_update_vaes = sym super::cmac_aes::vg_cmac_aes_update_vaes::vg_cmac_aes_update_vaes,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }

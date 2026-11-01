@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -30,6 +30,9 @@ public import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 meta import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 public import VerifiedGarbage.Proof.Sm4.Common
 meta import VerifiedGarbage.Proof.Sm4.Common
+public import VerifiedGarbage.Proof.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Prepared
+meta import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # SM4 prepared-key helpers on ARMv7 meet their contracts -/
 
@@ -39,7 +42,7 @@ namespace VG.Proof.Sm4.Arm
 
 open VG VG.Arm VG.Impl.Sm4.Arm
 open VG.Proof.Sm4 (specDirArm)
-open VG.Spec.Sm4.Prepared (Holds Keeps)
+open VG.Proof.Sm4.Prepared (Holds Keeps)
 
 theorem prepared_size_eq : layout.size = 4 * slots := rfl
 
@@ -90,7 +93,7 @@ def prepArm : Contract isa where
     (s.gpr .r1).toNat ≤ 1 ∧ layout.size ≤ 8 * (s.gpr .r3).toNat
   post s s' :=
     Holds layout s'.mem (State.addr (s.gpr .r2)) (Spec.Sm4.scheduleAt s.mem (State.addr (s.gpr .r0)))
-      (Spec.Sm4.directionOf (s.gpr .r1).toNat) ∧
+      (Proof.Sm4.directionOf (s.gpr .r1).toNat) ∧
     Keeps (State.addr (s.gpr .r2)) (s.gpr .r3).toNat layout.prepScratch s.mem s'.mem
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3
@@ -131,9 +134,9 @@ def preparedPrepSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 1456⟩]
 
-theorem prepare_verified : Verified Arm.target prepareKeys (Spec.Sm4.Prepared.prepareContract layout Arm.abi) :=
+theorem prepare_verified : Verified Arm.target prepareKeys (Proof.Sm4.Prepared.prepareContract layout Arm.abi) :=
   Verified.of_correct prepared_prep_correct prepared_prep_ct (by
-    sig_implies [Spec.Sm4.Prepared.prepareContract, Spec.Sm4.Prepared.prepareSig, prepArm, Arm.abi,
+    sig_implies [Proof.Sm4.Prepared.prepareContract, Proof.Sm4.Prepared.prepareSig, prepArm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr, prepared_size_eq, slots] [preparedPrepSat]
       using preparedPrepSat)
 
@@ -232,19 +235,19 @@ def preparedCryptSat : State where
   rd := []
   wr := [⟨0x2000, 1456⟩]
 
-theorem prepared_crypt_implies : cryptArm.Implies (Spec.Sm4.Prepared.cryptContract layout Arm.abi) where
+theorem prepared_crypt_implies : cryptArm.Implies (Proof.Sm4.Prepared.cryptContract layout Arm.abi) where
   pre := by
-    sig_implies_pre [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptArm, Arm.abi,
+    sig_implies_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptArm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr]
   post := by
-    sig_implies_post [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptArm, Arm.abi,
+    sig_implies_post [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptArm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr]
   pub := by
-    sig_implies_pub [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, cryptArm, Arm.abi,
+    sig_implies_pub [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptArm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr]
   sat := by
     refine ⟨preparedCryptSat, ?_⟩
-    sig_pre [Spec.Sm4.Prepared.cryptContract, Spec.Sm4.Prepared.cryptSig, Arm.abi, Arm.argRegs,
+    sig_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, State.addr]
     sig_and_intros
     all_goals first
@@ -252,7 +255,7 @@ theorem prepared_crypt_implies : cryptArm.Implies (Spec.Sm4.Prepared.cryptContra
       | exact ⟨_, _, preparedCryptSat_holds⟩
       | (rw [prepared_size_eq, slots_eq]; decide)
 
-theorem crypt_verified : Verified Arm.target cryptPrepared (Spec.Sm4.Prepared.cryptContract layout Arm.abi) :=
+theorem crypt_verified : Verified Arm.target cryptPrepared (Proof.Sm4.Prepared.cryptContract layout Arm.abi) :=
   Verified.of_correct prepared_crypt_correct prepared_crypt_ct prepared_crypt_implies
 
 end VG.Proof.Sm4.Arm

@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+public import VerifiedGarbage.Proof.Sm4.Prepared
+public import VerifiedGarbage.Proof.Sm4.Contract
 
 /-! # SM4 prepared round keys and batches on ARMv7: functional correctness -/
 
@@ -18,6 +20,16 @@ namespace VG.Proof.Sm4.Arm
 open VG VG.Arm VG.Arm.Straight VG.Impl.Sm4.Arm
 open VG.Impl.Aes.Arm (sb movR)
 open VG.Proof.Sm4 (specDirArm)
+
+/-- The table's slots, as bytes. -/
+def layout : Prepared.Layout where
+  table := [(4 * tableSlot, 4 * (tableEnd - tableSlot))]
+  encode k d i := (preparedWord k (ofSpecDir d) (i / 4)).extractLsb' (8 * (i % 4)) 8
+  buf := 4 * tailSlot
+  blocks := 8
+  prepScratch := [(0, 4 * slots)]
+  cryptScratch := [(0, 4 * tableSlot), (4 * savedSlot, 4 * (slots - savedSlot))]
+  size := 4 * slots
 
 /-! ## The encoding -/
 
@@ -54,7 +66,7 @@ theorem table_byte {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) {o : 
   congr 2; omega
 
 theorem holds_of_words {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) {k : Spec.Sm4.Schedule}
-    {d : Spec.Sm4.Direction} (h : WordsAt m B k (ofSpecDir d)) : Spec.Sm4.Prepared.Holds layout m (B.setWidth 64) k d := by
+    {d : Spec.Sm4.Direction} (h : WordsAt m B k (ofSpecDir d)) : Proof.Sm4.Prepared.Holds layout m (B.setWidth 64) k d := by
   intro r hr i hi
   rw [layout_table, List.mem_singleton] at hr
   subst hr
@@ -64,7 +76,7 @@ theorem holds_of_words {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤
   rfl
 
 theorem words_of_holds {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) {k : Spec.Sm4.Schedule}
-    {d : Spec.Sm4.Direction} (h : Spec.Sm4.Prepared.Holds layout m (B.setWidth 64) k d) :
+    {d : Spec.Sm4.Direction} (h : Proof.Sm4.Prepared.Holds layout m (B.setWidth 64) k d) :
     WordsAt m B k (ofSpecDir d) := by
   intro w h1 h2
   simp only [Mem.readW]
@@ -99,8 +111,8 @@ theorem words_of_readyAt {m : Mem} {B : BitVec 32} {k : Spec.Sm4.Schedule} {d : 
   exact wordRel_eq (h e he) hj
 
 theorem ofSpecDir_directionOf (decrypt : BitVec 32) :
-    ofSpecDir (Spec.Sm4.directionOf decrypt.toNat) = dirOf decrypt := by
-  unfold dirOf Spec.Sm4.directionOf
+    ofSpecDir (Proof.Sm4.directionOf decrypt.toNat) = dirOf decrypt := by
+  unfold dirOf Proof.Sm4.directionOf
   by_cases h : decrypt = 0
   · subst h; rfl
   · have h' : decrypt.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')

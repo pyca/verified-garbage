@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.RISCV64.Ecb
 public import VerifiedGarbage.Impl.Sm4.Planes
-public import VerifiedGarbage.Spec.Sm4.Prepared
+public import VerifiedGarbage.Spec.Sm4.Contract
 
 /-!
 # SM4's round keys prepared once, and batches under them, on RISC-V
 
 `vg_sm4_prepare_keys` and `vg_sm4_crypt_prepared`
-(`Spec/Sm4/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions of
+(`Proof/Sm4/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions of
 the working space, for the modes, as on PPC64LE
 (`Impl/Sm4/PPC64LE/Prepared.lean`):
 
@@ -62,16 +62,5 @@ a mask of the round keys' planes, or plane `w % 8` of the table's entry. -/
 def preparedWord (k : Spec.Sm4.Schedule) (d : Dir) (w : Nat) : BitVec 64 :=
   if w < tableSlot then (keyMasks.find? (·.1 = w)).elim 0 (·.2)
   else Impl.Sm4.planeOf (keyEntry k d ((w - tableSlot) / 8)) ((w - tableSlot) % 8)
-
-/-- The masks' slots and the table's, as byte ranges. -/
-def layout : Spec.Sm4.Prepared.Layout where
-  table := [(8 * evenSlot, 40), (8 * tableSlot, 8 * (tableEnd - tableSlot))]
-  encode k d i := (preparedWord k (ofSpecDir d) (i / 8)).extractLsb' (8 * (i % 8)) 8
-  buf := 8 * tailSlot
-  blocks := 16
-  prepScratch := [(0, 8 * slots)]
-  cryptScratch := [(0, 8 * evenSlot), (8 * bsBase, 8 * (tableSlot - bsBase)),
-    (8 * savedSlot, 8 * (slots - savedSlot))]
-  size := 8 * slots
 
 end VG.Impl.Sm4.RISCV64

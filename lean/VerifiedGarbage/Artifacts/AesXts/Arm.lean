@@ -13,14 +13,6 @@ namespace VG.Artifacts.AesXts.Arm
 open VG.Proof.AesXts.Arm
 
 def artifacts : List Artifact := [
-  Spec.Xts.aesEncryptApi.artifact Arm.target {
-    code := Impl.AesXts.Arm.encrypt
-    stack := 8
-    verified := encrypt_verified },
-  Spec.Xts.aesDecryptApi.artifact Arm.target {
-    code := Impl.AesXts.Arm.decrypt
-    stack := 8
-    verified := decrypt_verified },
   Spec.Xts.aesEncryptUnitApi.artifact Arm.target {
     code := Impl.AesXts.ArmUnit.encrypt
     stack := 16

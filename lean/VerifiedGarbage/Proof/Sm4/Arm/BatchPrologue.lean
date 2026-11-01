@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
 import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
-import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # The batched SM4-CTR prologue and its external precondition -/
 
@@ -27,7 +28,7 @@ open VG VG.Arm VG.Impl.Sm4.Arm VG.Proof.Sm4.Arm
 open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchEntry VG.Proof.Sm4.Arm.BatchChain
 open VG.Spec.Aes (bytesAt)
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 abbrev Kp (s : State) : BitVec 32 := s.gpr .r0
 abbrev Iv (s : State) : BitVec 32 := s.gpr .r1

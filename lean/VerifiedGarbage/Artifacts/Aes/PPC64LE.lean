@@ -15,12 +15,6 @@ def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Aes.PPC64LE.expandKey
     verified := Proof.Aes.PPC64LE.expandKey_direct_verified },
-  Spec.Aes.expandKeyScratchApi.artifact PPC64LE.target {
-    code := Impl.Aes.PPC64LE.expandKey
-    verified := Proof.Aes.PPC64LE.expandKey_verified },
-  Spec.Gcm.ctr32Api.artifact PPC64LE.target {
-    code := Impl.Aes.PPC64LE.ctr32
-    verified := Proof.Aes.PPC64LE.ctr32_verified },
   Spec.Aes.encryptBlocksApi.artifact PPC64LE.target {
     code := Impl.Aes.PPC64LE.encryptBlocks
     verified := Proof.Aes.PPC64LE.encryptBlocks_verified },

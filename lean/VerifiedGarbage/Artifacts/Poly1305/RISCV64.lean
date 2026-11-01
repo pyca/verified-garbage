@@ -15,9 +15,6 @@ def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact RISCV64.target {
     code := Impl.Poly1305.RISCV64.init
     verified := Proof.Poly1305.RISCV64.Shared.init },
-  Spec.Poly1305.blocksApi.artifact RISCV64.target {
-    code := Impl.Poly1305.RISCV64.blocks
-    verified := Proof.Poly1305.RISCV64.Shared.blocks },
   Spec.Poly1305.updateApi.artifact RISCV64.target {
     code := Impl.Poly1305.RISCV64.update
     verified := Proof.Poly1305.RISCV64.Shared.update },

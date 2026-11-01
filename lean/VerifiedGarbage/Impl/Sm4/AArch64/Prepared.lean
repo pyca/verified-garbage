@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 public import VerifiedGarbage.Impl.Sm4.Planes
-public import VerifiedGarbage.Spec.Sm4.Prepared
+public import VerifiedGarbage.Spec.Sm4.Contract
 
 /-!
 # SM4's round keys prepared once, and batches under them, on AArch64
 
 `vg_sm4_prepare_keys` and `vg_sm4_crypt_prepared`
-(`Spec/Sm4/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions of
+(`Proof/Sm4/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions of
 the working space, for the modes, which call them (`Ctr.lean`).
 
 * `prepareKeys(schedule = x0, decrypt = x1, ws = x2, ws_len = x3)` saves
@@ -59,17 +59,6 @@ def preparedWord (k : Spec.Sm4.Schedule) (d : Dir) (w : Nat) : BitVec 64 :=
   if w < tableSlot then (keyMasks.find? (·.1 = w)).elim 0 (·.2)
   else Impl.Sm4.planeOf (keyEntry k d ((w - tableSlot) / 8)) ((w - tableSlot) % 8)
 
-/-- The masks' slots and the table's, as byte ranges. -/
-def layout : Spec.Sm4.Prepared.Layout where
-  table := [(8 * evenSlot, 24), (8 * tableSlot, 8 * (tableEnd - tableSlot))]
-  encode k d i := (preparedWord k (ofSpecDir d) (i / 8)).extractLsb' (8 * (i % 8)) 8
-  buf := 8 * tailSlot
-  blocks := 16
-  prepScratch := [(0, 8 * slots)]
-  cryptScratch := [(0, 8 * evenSlot), (8 * (grpSlot + 1), 8 * (tableSlot - grpSlot - 1)),
-    (8 * savedSlot, 8 * (slots - savedSlot))]
-  size := 8 * slots
-
 /-! ## The calls -/
 
 /-- Before a call: the return address, `sb` and the two registers the modes
@@ -92,11 +81,11 @@ in `x0` and the working space at `sb`, of `slots` words. -/
 def prepareCall (d : Dir) : Prog isa :=
   .seq (.block (keepHead ++ [.movz .x .x1 (BitVec.ofNat 16 (dirFlagOf d)) 0, movR .x2 sb,
       .movz .x .x3 (BitVec.ofNat 16 slots) 0]))
-    (.seq (.call (Spec.Sm4.Prepared.prepareApi layout).name prepareKeys) (.block keepTail))
+    (.seq (.call "vg_sm4_prepare_keys" prepareKeys) (.block keepTail))
 
 /-- A call of `vg_sm4_crypt_prepared` on the working space at `sb`. -/
 def cryptCall : Prog isa :=
   .seq (.block (keepHead ++ [movR .x0 sb, .movz .x .x1 (BitVec.ofNat 16 slots) 0]))
-    (.seq (.call (Spec.Sm4.Prepared.cryptApi layout).name cryptPrepared) (.block keepTail))
+    (.seq (.call "vg_sm4_crypt_prepared" cryptPrepared) (.block keepTail))
 
 end VG.Impl.Sm4.AArch64

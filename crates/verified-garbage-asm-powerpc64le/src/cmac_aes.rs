@@ -22,7 +22,7 @@ bl {vg_aes_expand_key_scratch}
 .base64 "eHPDfXiDBH7wAK44eHvmfQ=="
 bl {vg_cmac_aes_subkeys}
 .base64 "AAAgORABLvkYAS75mAgP6IAIz+mQCA/qiAjv6aYDCHwgCSE4IACATg==""#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }

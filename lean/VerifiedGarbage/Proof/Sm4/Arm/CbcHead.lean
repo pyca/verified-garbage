@@ -7,9 +7,10 @@ public import VerifiedGarbage.Proof.Sm4.Arm.CbcGroup
 public import VerifiedGarbage.Proof.Sm4.Arm.CbcLoop
 import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
-import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # Public registers across the CBC decryption cipher phase -/
 
@@ -20,7 +21,7 @@ open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchEntry VG.Proof.Sm4.Arm.BatchChain
 open VG.Proof.Sm4.Arm.BatchGroup (count_wp table_frame)
 open VG.Proof.Sm4.Arm.BatchPrologue
-open VG.Spec.Sm4.Prepared (Holds)
+open VG.Proof.Sm4.Prepared (Holds)
 
 def groupHead : Prog isa := .seq BatchCtr.count (.seq BatchCbc.fill BatchCtr.crypt)
 def groupTail : Prog isa := .seq (BatchCbc.chooseXor 0 8)

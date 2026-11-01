@@ -7,11 +7,12 @@ import VerifiedGarbage.Proof.Sm4.Planes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
+public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-!
 # SM4's prepared round keys and batches on AArch64: the code
 
-What `vg_sm4_prepare_keys` writes (`layout`, `Spec.Sm4.Prepared.Holds`) is
+What `vg_sm4_prepare_keys` writes (`layout`, `Proof.Sm4.Prepared.Holds`) is
 the masks and the table that ECB's rounds read (`ReadyAt`), word for word
 (`WordsAt`, `holds_iff_words`, `readyAt_iff_words`): each of the table's
 words is the plane of its round key (`planeOf`, the only words related to
@@ -29,6 +30,17 @@ namespace VG.Proof.Sm4.AArch64
 open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Sm4.AArch64
 open VG.Impl.Aes.AArch64 (sb t0 movR stS)
 open VG.Proof.Sm4 (WordRel specDirA)
+
+/-- The masks' slots and the table's, as byte ranges. -/
+def layout : Prepared.Layout where
+  table := [(8 * evenSlot, 24), (8 * tableSlot, 8 * (tableEnd - tableSlot))]
+  encode k d i := (preparedWord k (ofSpecDir d) (i / 8)).extractLsb' (8 * (i % 8)) 8
+  buf := 8 * tailSlot
+  blocks := 16
+  prepScratch := [(0, 8 * slots)]
+  cryptScratch := [(0, 8 * evenSlot), (8 * (grpSlot + 1), 8 * (tableSlot - grpSlot - 1)),
+    (8 * savedSlot, 8 * (slots - savedSlot))]
+  size := 8 * slots
 
 /-! ## The encoding -/
 
@@ -85,14 +97,14 @@ theorem table_ranges (o : Nat) :
     · exact ⟨_, .inr rfl, o - 1024, by dsimp only; omega_arith, by dsimp only; omega_arith⟩
 
 theorem holds_of_words {m : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction}
-    (h : WordsAt m B k (ofSpecDir d)) : Spec.Sm4.Prepared.Holds layout m B k d := by
+    (h : WordsAt m B k (ofSpecDir d)) : Proof.Sm4.Prepared.Holds layout m B k d := by
   intro r hr i hi
   have hw := (table_ranges (r.1 + i)).1 ⟨r, hr, i, hi, rfl⟩
   rw [word_byte_addr, byte_of_readW m _ (by omega_arith), h _ hw]
   rfl
 
 theorem words_of_holds {m : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction}
-    (h : Spec.Sm4.Prepared.Holds layout m B k d) : WordsAt m B k (ofSpecDir d) := by
+    (h : Proof.Sm4.Prepared.Holds layout m B k d) : WordsAt m B k (ofSpecDir d) := by
   intro w hw
   simp only [Mem.readW, BitVec.setWidth_eq]
   refine Mem.read_eq_of_bytes fun j hj => ?_

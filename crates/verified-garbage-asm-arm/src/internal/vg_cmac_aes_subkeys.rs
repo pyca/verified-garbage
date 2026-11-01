@@ -93,6 +93,6 @@ ldr r6, [r5, #2072]
 ldr lr, [r5, #2076]
 ldr r5, [r5, #2068]
 bx lr",
-        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }

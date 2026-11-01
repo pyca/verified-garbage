@@ -30,6 +30,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 meta import VerifiedGarbage.Proof.Sm4.Arm.Lit
+public import VerifiedGarbage.Proof.Sm4.Contract
 
 /-!
 # SM4 ECB on ARMv7: the functions of one direction
@@ -69,7 +70,7 @@ def dirFlag : Dir → Nat
 theorem ecbCall_eq (d : Dir) :
     ecbCall d = .frame (.push [.r4, .lr])
       (.seq (.block [.mov .r4 (.reg .lr), .mov .r3 (.imm (BitVec.ofNat 32 (dirFlag d)))])
-        (.seq (.call Spec.Sm4.ecbDirApi.name ecbAnyCode) (.block [.mov .lr (.reg .r4)])))
+        (.seq (.call "vg_sm4_ecb" ecbAnyCode) (.block [.mov .lr (.reg .r4)])))
       (.pop .r4 (4 * [Reg.r4, .lr].length)) := by
   cases d <;> rfl
 
@@ -104,11 +105,11 @@ theorem movs_wp (d : Dir) (s₀ : State) :
           wr := by rw [u₃.wr, u₂.wr, pushed_wr]; rfl }
 
 theorem entry_pre {d : Dir} {s₀ σ₃ : State} (hs : (ecbCallArm d).pre s₀) (e : Entry d s₀ σ₃) :
-    (Spec.Sm4.ecbDirContract Arm.abi 1472).pre (σ₃.callEntry.withRegions s₀.rd s₀.wr) := by
+    (Proof.Sm4.ecbDirContract Arm.abi 1472).pre (σ₃.callEntry.withRegions s₀.rd s₀.wr) := by
   obtain ⟨hsp, hrd, hwr, dKD, sK, sD, fitK, fitD⟩ := hs
   obtain ⟨g₃, -, r3₃, sp₃, -, -, -⟩ := e
   have sp8 : (s₀.sp - BitVec.ofNat 32 8).toNat = s₀.sp.toNat - 8 := FrameStack.sub_toNat' (by omega_arith)
-  sig_pre [Spec.Sm4.ecbDirContract, Spec.Sm4.ecbDirSig, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs,
+  sig_pre [Proof.Sm4.ecbDirContract, Proof.Sm4.ecbDirSig, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val]
   have e0 := g₃ .r0 (by decide) (by decide)
   have e1 := g₃ .r1 (by decide) (by decide)
@@ -154,7 +155,7 @@ theorem ecbCall_correct (d : Dir) (s₀ : State) (hs : (ecbCallArm d).pre s₀) 
   have ⟨pre₃, cov₃⟩ := And.intro (entry_pre ⟨hsp, hrd, hwr, dKD, sK, sD, fitK, fitD⟩ e) (entry_covers e)
   obtain ⟨g₃, r4₃, r3₃, sp₃, mem₃, rd₃, wr₃⟩ := e
   have sp8 : (s₀.sp - BitVec.ofNat 32 8).toNat = s₀.sp.toNat - 8 := FrameStack.sub_toNat' (by omega_arith)
-  refine WP.seq (FrameStack.WP.callF (k := Spec.Sm4.ecbDirContract Arm.abi 1472) ecbAny_framed.1
+  refine WP.seq (FrameStack.WP.callF (k := Proof.Sm4.ecbDirContract Arm.abi 1472) ecbAny_framed.1
     (rd := s₀.rd) (wr := s₀.wr) ?_ ?_ ?_ ?_ ?_)
   · exact pre₃
   · exact cov₃.1
@@ -200,9 +201,9 @@ theorem ecbCall_correct (d : Dir) (s₀ : State) (hs : (ecbCallArm d).pre s₀) 
         · have h3 : r ≠ .r3 := by rintro rfl; revert hr; decide
           rw [u₄.other r hl, pres' r hr hl, g₃ r h4 h3]
     · rw [popped_sp, sp4]; exact BitVec.sub_add_cancel _ _
-    · sig_post [Spec.Sm4.ecbDirContract, Spec.Sm4.ecbDirSig, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs,
+    · sig_post [Proof.Sm4.ecbDirContract, Proof.Sm4.ecbDirSig, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val] at post'
-      have hd' : Spec.Sm4.directionOf (BitVec.ofNat 32 (dirFlag d)).toNat = specDirArm d := by cases d <;> rfl
+      have hd' : Proof.Sm4.directionOf (BitVec.ofNat 32 (dirFlag d)).toNat = specDirArm d := by cases d <;> rfl
       rw [g₃ .r0 (by decide) (by decide), g₃ .r1 (by decide) (by decide), g₃ .r2 (by decide) (by decide),
         r3₃, hd', mem₃] at post'
       simp only [State.addr] at hsch hblk
@@ -224,8 +225,8 @@ theorem τ0_agree (s₁ s₂ : State) : VG.Arm.Taint.Agree τ0 s₁ s₂ :=
 
 theorem entry_pub {d : Dir} {s₁ s₂ σ₁ σ₂ : State} (hp : (ecbCallArm d).pub s₁ s₂)
     (e₁ : Entry d s₁ σ₁) (e₂ : Entry d s₂ σ₂) {rd wr : List Region} :
-    (Spec.Sm4.ecbDirContract Arm.abi 1472).pub (σ₁.callEntry.withRegions rd wr) (σ₂.callEntry.withRegions rd wr) := by
-  sig_pub [Spec.Sm4.ecbDirContract, Spec.Sm4.ecbDirSig, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs,
+    (Proof.Sm4.ecbDirContract Arm.abi 1472).pub (σ₁.callEntry.withRegions rd wr) (σ₂.callEntry.withRegions rd wr) := by
+  sig_pub [Proof.Sm4.ecbDirContract, Proof.Sm4.ecbDirSig, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val]
   obtain ⟨psp, p0, p1, p2⟩ := hp
   exact ⟨by rw [e₁.sp, e₂.sp, psp], by rw [e₁.gpr _ (by decide) (by decide), e₂.gpr _ (by decide) (by decide), p0],

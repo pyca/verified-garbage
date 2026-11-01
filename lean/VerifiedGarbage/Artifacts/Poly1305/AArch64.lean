@@ -18,9 +18,6 @@ def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.init
     verified := Proof.Poly1305.AArch64.init_verified },
-  Spec.Poly1305.blocksApi.artifact AArch64.target {
-    code := Impl.Poly1305.AArch64.Radix64.blocks
-    verified := Proof.Poly1305.AArch64.Radix64.blocks_verified },
   Spec.Poly1305.updateApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Radix64.update
     stack := 128

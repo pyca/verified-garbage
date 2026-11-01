@@ -24,12 +24,6 @@ def artifacts : List Artifact := [
   Spec.Sm4.ecbDecryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .decrypt)
     stack := 3248
-    verified := Proof.Sm4.PPC64LE.ecb_framed .decrypt },
-  (Spec.Sm4.Prepared.prepareApi Impl.Sm4.PPC64LE.layout).artifact PPC64LE.target {
-    code := Impl.Sm4.PPC64LE.prepareKeys
-    verified := Proof.Sm4.PPC64LE.prepare_verified },
-  (Spec.Sm4.Prepared.cryptApi Impl.Sm4.PPC64LE.layout).artifact PPC64LE.target {
-    code := Impl.Sm4.PPC64LE.cryptPrepared
-    verified := Proof.Sm4.PPC64LE.crypt_verified }]
+    verified := Proof.Sm4.PPC64LE.ecb_framed .decrypt }]
 
 end VG.Artifacts.Sm4.PPC64LE

@@ -40,11 +40,11 @@ def modeFrameSat : State where
   wr := [⟨0x3000, 16⟩, ⟨0x4000, 0⟩]
 
 theorem cbcEncFrameSat_pre : ∃ s, (Spec.Camellia.cbcEncryptChainedContract PPC64LE.abi 3408).pre s := by
-  implies_sat [Spec.Camellia.cbcEncryptChainedContract, Spec.Camellia.cbcChainedSig, Spec.Camellia.cbcPre,
+  implies_sat [Spec.Camellia.cbcEncryptChainedContract, Spec.Camellia.cbcChainedSig,
     PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
 
 theorem cbcDecFrameSat_pre : ∃ s, (Spec.Camellia.cbcDecryptChainedContract PPC64LE.abi 3408).pre s := by
-  implies_sat [Spec.Camellia.cbcDecryptChainedContract, Spec.Camellia.cbcChainedSig, Spec.Camellia.cbcPre,
+  implies_sat [Spec.Camellia.cbcDecryptChainedContract, Spec.Camellia.cbcChainedSig,
     PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
 
 theorem ofbFrameSat_pre : ∃ s, (Spec.Camellia.ofbContract PPC64LE.abi 3408).pre s := by

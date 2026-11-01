@@ -28,11 +28,11 @@ open VG.Proof.Aes.X86 (BlocksImpl)
 
 /-- `vg_aes_xts_encrypt` calling the block functions of `v`, with `v`'s suffix. -/
 abbrev xtsE (v : BlocksImpl) : Impl.Aes.X86.Blocks :=
-  ⟨Spec.Xts.aesEncryptApi.name ++ v.suffix, Impl.AesXts.X86.encrypt v.enc⟩
+  ⟨"vg_aes_xts_encrypt" ++ v.suffix, Impl.AesXts.X86.encrypt v.enc⟩
 
 /-- `vg_aes_xts_decrypt` calling the block functions of `v`, with `v`'s suffix. -/
 abbrev xtsD (v : BlocksImpl) : Impl.Aes.X86.Blocks :=
-  ⟨Spec.Xts.aesDecryptApi.name ++ v.suffix, Impl.AesXts.X86.decrypt v.dec⟩
+  ⟨"vg_aes_xts_decrypt" ++ v.suffix, Impl.AesXts.X86.decrypt v.dec⟩
 
 theorem callee_nosp_all {c : Prog isa} (h : NoSp c) : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   rw [Code.allInstrs_eq]

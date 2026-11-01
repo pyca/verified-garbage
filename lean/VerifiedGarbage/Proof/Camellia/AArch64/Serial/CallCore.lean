@@ -133,7 +133,7 @@ theorem callPrepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × Lis
       toNat_total]
   have hm₀ : (s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).mem = s.mem := by
     rw [State.withRegions_mem, State.callEntry_mem, mem₅]
-  have w : WP isa (.call (Spec.Camellia.Prepared.prepareEncryptApi layout).name prepareEncrypt) s₅ fun s' =>
+  have w : WP isa (.call "vg_camellia_prepare_encrypt_keys" prepareEncrypt) s₅ fun s' =>
       s'.rd = s₅.rd ∧ s'.wr = s₅.wr ∧ (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₅.gpr r) ∧
       Frame [⟨B, 8 * core.total⟩] s₅.mem s'.mem ∧
       Holds layout s'.mem B R (schedWords s.mem p R) .encrypt ∧ Keeps B core.total [(0, 528)] s.mem s'.mem := by
@@ -228,7 +228,7 @@ theorem callCrypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : 
       toNat_total]
   have hm₀ : (s₄.callEntry.withRegions [] [⟨B, 8 * core.total⟩]).mem = s.mem := by
     rw [State.withRegions_mem, State.callEntry_mem, mem₄]
-  have w : WP isa (.call (Spec.Camellia.Prepared.encryptPreparedApi layout).name encryptPrepared) s₄ fun s' =>
+  have w : WP isa (.call "vg_camellia_encrypt_prepared" encryptPrepared) s₄ fun s' =>
       s'.rd = s₄.rd ∧ s'.wr = s₄.wr ∧ (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₄.gpr r) ∧
       Frame [⟨B, 8 * core.total⟩] s₄.mem s'.mem ∧
       Spec.Camellia.blocksAt s'.mem (B + BitVec.ofNat 64 layout.buf) layout.blocks =

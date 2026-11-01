@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Aes.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Contract
@@ -13,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 `vg_aes_expand_key` keeps its working space in a frame of its own
 (`Verified.stackScratchWiped`, `Verified.regScratchWiped`), around the code
 of `vg_aes_expand_key_scratch`, proved against
-`Spec.Aes.expandKeyScratchContract`: that contract gives the frame's, the
+`Proof.Aes.expandKeyScratchContract`: that contract gives the frame's, the
 shared contract with the `scratch` buffer appended, whatever it holds
 (`expandKey_scratch`).
 

@@ -49,18 +49,6 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
     stack := 1880
     verified := Gather.gather_verified v
     spSafe := Gather.gather_spSafe v
-    features := features v }] ++
-  -- Only the AVX-512 implementations' `seal_gather` calls `seal_split`.
-  match v.poly with
-  | .avx512 | .ifma => [
-    Spec.ChaCha20Poly1305.sealSplitApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1736 3 42
-        (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)
-      stack := 1800
-      verified := Split.sealSplit_framed v
-      spSafe := X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v)
-      features := features v }]
-  | _ => []
+    features := features v }]
 
 end VG.Generic.ChaCha20Xor.X86_64.ChaCha20Poly1305

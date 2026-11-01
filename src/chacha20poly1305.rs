@@ -556,15 +556,17 @@ mod tests {
     }
 
     /// The functions called for each implementation need the features of
-    /// both `vg_chacha20_xor`'s and `vg_poly1305_blocks`'s for the same CPUs,
-    /// `open`'s, `seal_gather`'s and (for AVX-512) `seal_split`'s the same as
-    /// `seal`'s, and `select` chooses by them.
+    /// both ChaCha20's and Poly1305's for the same CPUs (those of
+    /// `vg_chacha20_apply` and `vg_poly1305_update`, which call the same
+    /// implementations of `vg_chacha20_xor` and `vg_poly1305_blocks`),
+    /// `open`'s and `seal_gather`'s the same as `seal`'s, and `select`
+    /// chooses by them.
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn features() {
         use crate::arch::chacha20::{
-            VG_CHACHA20_XOR_AVX2_FEATURES, VG_CHACHA20_XOR_AVX512_FEATURES,
-            VG_CHACHA20_XOR_AVX512VL_FEATURES,
+            VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
+            VG_CHACHA20_APPLY_AVX512VL_FEATURES,
         };
         use crate::arch::chacha20poly1305::{
             VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES, VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES,
@@ -576,21 +578,18 @@ mod tests {
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512VL_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES,
         };
         use crate::arch::poly1305::{
-            VG_POLY1305_BLOCKS_AVX2_FEATURES, VG_POLY1305_BLOCKS_AVX512_FEATURES,
-            VG_POLY1305_BLOCKS_IFMA_FEATURES,
+            VG_POLY1305_UPDATE_AVX2_FEATURES, VG_POLY1305_UPDATE_AVX512_FEATURES,
+            VG_POLY1305_UPDATE_IFMA_FEATURES,
         };
         let avx2 = Features::all(&[
-            VG_CHACHA20_XOR_AVX2_FEATURES,
-            VG_POLY1305_BLOCKS_AVX2_FEATURES,
+            VG_CHACHA20_APPLY_AVX2_FEATURES,
+            VG_POLY1305_UPDATE_AVX2_FEATURES,
         ]);
         let avx512 = Features::all(&[
-            VG_CHACHA20_XOR_AVX512_FEATURES,
-            VG_POLY1305_BLOCKS_AVX512_FEATURES,
+            VG_CHACHA20_APPLY_AVX512_FEATURES,
+            VG_POLY1305_UPDATE_AVX512_FEATURES,
         ]);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, avx2);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES, avx2);
@@ -598,26 +597,23 @@ mod tests {
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES, avx512);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES, avx512);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES, avx512);
-        assert_eq!(VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES, avx512);
         let avx512vl = Features::all(&[
-            VG_CHACHA20_XOR_AVX512VL_FEATURES,
-            VG_POLY1305_BLOCKS_AVX512_FEATURES,
+            VG_CHACHA20_APPLY_AVX512VL_FEATURES,
+            VG_POLY1305_UPDATE_AVX512_FEATURES,
         ]);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES, avx512vl);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES, avx512vl);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES, avx512vl);
-        assert_eq!(VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512VL_FEATURES, avx512vl);
         let ifma = Features::all(&[
-            VG_CHACHA20_XOR_AVX512_FEATURES,
-            VG_POLY1305_BLOCKS_IFMA_FEATURES,
+            VG_CHACHA20_APPLY_AVX512_FEATURES,
+            VG_POLY1305_UPDATE_IFMA_FEATURES,
         ]);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, ifma);
         // `open_ifma` runs `vg_chacha20_xor_avx512vl`'s rounds from 449 to
-        // 639 bytes.
-        let ifma_open = Features::all(&[ifma, VG_CHACHA20_XOR_AVX512VL_FEATURES]);
+        // 639 bytes, as `vg_chacha20_apply_avx512vl` does.
+        let ifma_open = Features::all(&[ifma, VG_CHACHA20_APPLY_AVX512VL_FEATURES]);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, ifma_open);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES, ifma);
-        assert_eq!(VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES, ifma);
         assert_eq!(select(avx2), Backend::Avx2);
         assert_eq!(select(avx512), Backend::Avx512);
         assert_eq!(select(avx512vl), Backend::Avx512Vl);
@@ -626,7 +622,7 @@ mod tests {
         assert_ne!(select(ifma), Backend::Ifma);
         // AVX-512F alone is not enough: the AVX-512 instances' Poly1305
         // calls its AVX2 implementation.
-        assert_eq!(select(VG_CHACHA20_XOR_AVX512_FEATURES), Backend::Scalar);
+        assert_eq!(select(VG_CHACHA20_APPLY_AVX512_FEATURES), Backend::Scalar);
         assert_eq!(
             select(Features(verified_garbage_cpu::feature::AVX)),
             Backend::Scalar
@@ -634,23 +630,20 @@ mod tests {
     }
 
     /// On x86, the SSSE3 instances (`seal`, `open` and `seal_gather`) need
-    /// the features of `vg_chacha20_xor_ssse3` (and of
-    /// `vg_chacha20_apply_ssse3`, which `select` checks), and `select`
+    /// the features of `vg_chacha20_apply_ssse3` (which calls the same
+    /// `vg_chacha20_xor_ssse3`, and which `select` checks), and `select`
     /// chooses them with SSSE3.
     #[cfg(target_arch = "x86")]
     #[test]
     fn features() {
-        use crate::arch::chacha20::{
-            VG_CHACHA20_APPLY_SSSE3_FEATURES, VG_CHACHA20_XOR_SSSE3_FEATURES,
-        };
+        use crate::arch::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES;
         use crate::arch::chacha20poly1305::{
             VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES,
         };
         use verified_garbage_cpu::Features;
-        let ssse3 = VG_CHACHA20_XOR_SSSE3_FEATURES;
-        assert_eq!(VG_CHACHA20_APPLY_SSSE3_FEATURES, ssse3);
+        let ssse3 = VG_CHACHA20_APPLY_SSSE3_FEATURES;
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES, ssse3);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, ssse3);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES, ssse3);
@@ -659,27 +652,28 @@ mod tests {
     }
 
     /// On AArch64, the SVE2 instances need the features of
-    /// `vg_chacha20_xor_sve2`, `open`'s and `seal_gather`'s the same as
+    /// `vg_chacha20_apply_sve2` (which calls the same `vg_chacha20_xor_sve2`),
+    /// `open`'s and `seal_gather`'s the same as
     /// `seal`'s, and `select` chooses them with SVE2 (and the NEON ones
     /// without).
     #[cfg(target_arch = "aarch64")]
     #[test]
     fn features() {
-        use crate::arch::chacha20::VG_CHACHA20_XOR_SVE2_FEATURES;
+        use crate::arch::chacha20::VG_CHACHA20_APPLY_SVE2_FEATURES;
         use crate::arch::chacha20poly1305::{
             VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES,
         };
         use verified_garbage_cpu::Features;
-        let sve2 = VG_CHACHA20_XOR_SVE2_FEATURES;
+        let sve2 = VG_CHACHA20_APPLY_SVE2_FEATURES;
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES, sve2);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES, sve2);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES, sve2);
         assert_eq!(
             select(Features::all(&[
                 Features(verified_garbage_cpu::feature::NEON),
-                VG_CHACHA20_XOR_SVE2_FEATURES
+                VG_CHACHA20_APPLY_SVE2_FEATURES
             ])),
             Backend::Sve2
         );

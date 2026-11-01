@@ -29,6 +29,7 @@ public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Body
 public import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Contract
 public import VerifiedGarbage.Spec.Sm4.Gcm
 public import VerifiedGarbage.TCB.Arm.Target
 
@@ -312,10 +313,10 @@ theorem a_rd : (ctrArgs s).rd = s.rd := rfl
 omit h in
 theorem a_wr : (ctrArgs s).wr = s.wr := rfl
 
-theorem pre : (Spec.Sm4.ctr32Contract Arm.abi 1520).pre
+theorem pre : (Proof.Sm4.ctr32Contract Arm.abi 1520).pre
     ((ctrArgs s).callEntry.withRegions (ctrRd K) (ctrWr C D n)) := by
   have hn := toNat_ofNat32 h.n_lt
-  sig_pre [Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  sig_pre [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rw [h.r0, h.r2, h.r3, h.r12, hn, Nat.mul_comm n 16]
   exact ⟨h.hsp, by have := s.sp.isLt; omega, rfl, by unfold ctrWr; rw [Nat.mul_comm n 16]; rfl, h.kc, h.kd, h.cd,
     h.bk, h.bc, h.bd, h.fitK, h.fitC, h.fitD⟩
@@ -335,12 +336,12 @@ end CtrCall
 theorem ctr_call {s : State} {K C D : BitVec 32} {n : Nat} (h : CtrCall s K C D n) :
     WP isa ctrCall s (CtrPost s K C D n) := by
   refine WP.seq (WP.of_runBlock ⟨ctrArgs s, rfl, ?_⟩)
-  refine FrameStack.WP.callF (k := Spec.Sm4.ctr32Contract Arm.abi 1520) Proof.Sm4.Arm.Batch32Verified.framed.1
+  refine FrameStack.WP.callF (k := Proof.Sm4.ctr32Contract Arm.abi 1520) Proof.Sm4.Arm.Batch32Verified.framed.1
     (rd := ctrRd K) (wr := ctrWr C D n) h.pre h.cov h.covW
     (by rw [CtrCall.a_sp]; exact Nat.le_trans ctr_stack h.hsp) ?_
   intro s' hrd hwr hsp hf hcs hpost
   have hn := toNat_ofNat32 h.n_lt
-  sig_post [Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hpost
+  sig_post [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hpost
   rw [h.r0, h.r2, h.r3, h.r12, hn] at hpost
   obtain ⟨hdata, hctr⟩ := hpost
   refine ⟨hrd, hwr, hsp, fun r hr hlr => ?_, ?_, hdata, hctr⟩
@@ -375,13 +376,13 @@ theorem ctr_rel {P : State → State → Prop}
   obtain ⟨rfl, rfl⟩ := x₁
   obtain ⟨rfl, rfl⟩ := x₂
   have hn := toNat_ofNat32 h₁.n_lt
-  have r := RelCT.call (k := Spec.Sm4.ctr32Contract Arm.abi 1520) Proof.Sm4.Arm.Batch32Verified.framed.1
+  have r := RelCT.call (k := Proof.Sm4.ctr32Contract Arm.abi 1520) Proof.Sm4.Arm.Batch32Verified.framed.1
     Proof.Sm4.Arm.Batch32Verified.framed.2.1 (ctrRd K) (ctrWr C D n)
     (P := fun x y => x = ctrArgs a ∧ y = ctrArgs b) (fun x y ⟨ex, ey⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ y₁ y₂
   · exact ⟨by rw [r.1], trivial⟩
   subst ex ey
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.cov, h₁.covW, h₂.cov, h₂.covW⟩
-  sig_pub [Spec.Sm4.ctr32Contract, Spec.Sm4.ctr32Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  sig_pub [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rw [h₁.r0, h₁.r2, h₁.r3, h₁.r12, h₂.r0, h₂.r2, h₂.r3, h₂.r12, hsp]
   exact ⟨rfl, rfl, rfl, rfl, rfl⟩
 

@@ -15,9 +15,6 @@ def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact X86.target {
     code := Impl.Poly1305.X86.init
     verified := Proof.Poly1305.X86.init_verified },
-  Spec.Poly1305.blocksApi.artifact X86.target {
-    code := Impl.Poly1305.X86.blocks
-    verified := Proof.Poly1305.X86.blocks_verified },
   Spec.Poly1305.updateApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 156 5 Impl.Poly1305.X86.update
     stack := 156

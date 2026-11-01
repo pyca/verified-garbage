@@ -1,9 +1,10 @@
 //! The implementations of AES, which everything built on it follows:
 //! AES-GCM (`crate::aes_gcm`) and AES-CMAC (`crate::cmac::aes`) each choose
-//! one [`Backend`], and run its key expansion and its counter mode, directly
-//! or through their own functions for it (e.g. `vg_cmac_aes_update_aesni`
-//! calls `vg_aes_ctr32_aesni`). Those functions may need more features than
-//! AES's own (GCM's `vg_ghash_pclmul` needs PCLMULQDQ), so on targets with
+//! one [`Backend`], and run its key expansion directly and its counter mode
+//! through their own functions for it (e.g. `vg_cmac_aes_update_aesni`
+//! calls `vg_aes_ctr32_aesni`, an internal function of the verified code).
+//! Those functions need the features of the counter mode they call, and may
+//! need more (GCM's `vg_ghash_pclmul` needs PCLMULQDQ), so on targets with
 //! more than one implementation each caller selects with
 //! `Backend::select_for`, passing theirs: a CPU without them runs the scalar
 //! implementation.
@@ -17,12 +18,10 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use crate::arch::aes::VG_AES_CTR32_VAES_FEATURES;
 #[cfg(target_arch = "aarch64")]
-use crate::arch::aes::{VG_AES_CTR32_AES_FEATURES, VG_AES_EXPAND_KEY_AES_FEATURES};
+use crate::arch::aes::VG_AES_EXPAND_KEY_AES_FEATURES;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::aes::{VG_AES_CTR32_AESNI_FEATURES, VG_AES_EXPAND_KEY_AESNI_FEATURES};
+use crate::arch::aes::VG_AES_EXPAND_KEY_AESNI_FEATURES;
 use verified_garbage_cpu::Features;
 
 /// The implementations of `vg_aes_expand_key` and `vg_aes_ctr32`.
@@ -46,15 +45,10 @@ pub(crate) enum Backend {
 impl Backend {
     /// The best implementation a CPU with the features `f` can run, for a
     /// caller whose own functions for AES-NI need the features `aesni`
-    /// (besides those of `vg_aes_expand_key_aesni` and `vg_aes_ctr32_aesni`,
-    /// which this checks).
+    /// (besides those of `vg_aes_expand_key_aesni`, which this checks).
     #[cfg(target_arch = "x86")]
     pub(crate) fn select_for(f: Features, aesni: Features) -> Backend {
-        const OWN: Features = Features::all(&[
-            VG_AES_EXPAND_KEY_AESNI_FEATURES,
-            VG_AES_CTR32_AESNI_FEATURES,
-        ]);
-        if f.contains(OWN) && f.contains(aesni) {
+        if f.contains(VG_AES_EXPAND_KEY_AESNI_FEATURES) && f.contains(aesni) {
             Backend::AesNi
         } else {
             Backend::Scalar
@@ -63,18 +57,12 @@ impl Backend {
 
     /// The best implementation a CPU with the features `f` can run, for a
     /// caller whose own functions for VAES and for AES-NI need the features
-    /// `vaes` and `aesni` (besides those of `vg_aes_ctr32_vaes`,
-    /// `vg_aes_expand_key_aesni` and `vg_aes_ctr32_aesni`, which this
-    /// checks).
+    /// `vaes` and `aesni` (besides those of `vg_aes_expand_key_aesni`, which
+    /// both run and this checks).
     #[cfg(target_arch = "x86_64")]
     pub(crate) fn select_for(f: Features, vaes: Features, aesni: Features) -> Backend {
-        const OWN: Features = Features::all(&[
-            VG_AES_EXPAND_KEY_AESNI_FEATURES,
-            VG_AES_CTR32_AESNI_FEATURES,
-        ]);
-        const OWN_VAES: Features =
-            Features::all(&[VG_AES_EXPAND_KEY_AESNI_FEATURES, VG_AES_CTR32_VAES_FEATURES]);
-        if f.contains(OWN_VAES) && f.contains(vaes) {
+        const OWN: Features = VG_AES_EXPAND_KEY_AESNI_FEATURES;
+        if f.contains(OWN) && f.contains(vaes) {
             Backend::Vaes
         } else if f.contains(OWN) && f.contains(aesni) {
             Backend::AesNi
@@ -85,13 +73,10 @@ impl Backend {
 
     /// The best implementation a CPU with the features `f` can run, for a
     /// caller whose own functions for the AES extension need the features
-    /// `aes` (besides those of `vg_aes_expand_key_aes` and
-    /// `vg_aes_ctr32_aes`, which this checks).
+    /// `aes` (besides those of `vg_aes_expand_key_aes`, which this checks).
     #[cfg(target_arch = "aarch64")]
     pub(crate) fn select_for(f: Features, aes: Features) -> Backend {
-        const OWN: Features =
-            Features::all(&[VG_AES_EXPAND_KEY_AES_FEATURES, VG_AES_CTR32_AES_FEATURES]);
-        if f.contains(OWN) && f.contains(aes) {
+        if f.contains(VG_AES_EXPAND_KEY_AES_FEATURES) && f.contains(aes) {
             Backend::Aes
         } else {
             Backend::Scalar
@@ -116,50 +101,38 @@ mod tests {
     const NONE: Features = Features(0);
 
     /// The implementation chosen for each set of features: AES-NI needs
-    /// AES-NI and SSSE3 (for counter mode), and everything the caller's
-    /// functions need.
+    /// AES-NI (for the key expansion) and everything the caller's functions
+    /// need (SSSE3 too, for those that run counter mode).
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn select() {
-        let aes =
+        let aes = Features(verified_garbage_cpu::feature::AES);
+        let aes_ssse3 =
             Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
-        assert_eq!(Backend::select_for(aes, NONE, NONE), Backend::AesNi);
+        assert_eq!(Backend::select_for(aes, aes, aes), Backend::Vaes);
+        assert_eq!(Backend::select_for(aes, aes_ssse3, aes), Backend::AesNi);
         assert_eq!(
-            Backend::select_for(aes, NONE, Features(verified_garbage_cpu::feature::AES)),
-            Backend::AesNi
+            Backend::select_for(aes_ssse3, aes_ssse3, aes_ssse3),
+            Backend::Vaes
         );
-        for f in [
-            Features(0),
-            Features(verified_garbage_cpu::feature::AES),
-            Features(verified_garbage_cpu::feature::SSSE3),
-        ] {
-            assert_eq!(Backend::select_for(f, NONE, NONE), Backend::Scalar);
-        }
         assert_eq!(
-            Backend::select_for(
-                aes,
-                NONE,
-                Features(
-                    verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ
-                )
-            ),
+            Backend::select_for(aes, aes_ssse3, aes_ssse3),
             Backend::Scalar
         );
+        for f in [Features(0), Features(verified_garbage_cpu::feature::SSSE3)] {
+            assert_eq!(Backend::select_for(f, NONE, NONE), Backend::Scalar);
+        }
         let all = Features(
             verified_garbage_cpu::feature::AES
                 | verified_garbage_cpu::feature::PCLMULQDQ
                 | verified_garbage_cpu::feature::SSSE3,
         );
-        assert_eq!(
-            Backend::select_for(
-                all,
-                NONE,
-                Features(verified_garbage_cpu::feature::PCLMULQDQ)
-            ),
-            Backend::AesNi
-        );
-        // VAES needs AVX2 too, and everything the caller's VAES functions
-        // need; failing that, AES-NI.
+        let pclmul =
+            Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ);
+        assert_eq!(Backend::select_for(aes_ssse3, all, pclmul), Backend::Scalar);
+        assert_eq!(Backend::select_for(all, all, pclmul), Backend::Vaes);
+        // VAES: everything the caller's VAES functions need (AVX2 too, for
+        // counter mode); failing that, AES-NI.
         let vaes = Features(
             verified_garbage_cpu::feature::AES
                 | verified_garbage_cpu::feature::AVX
@@ -167,12 +140,12 @@ mod tests {
                 | verified_garbage_cpu::feature::SSSE3
                 | verified_garbage_cpu::feature::VAES,
         );
-        assert_eq!(Backend::select_for(vaes, NONE, NONE), Backend::Vaes);
+        assert_eq!(Backend::select_for(vaes, vaes, aes_ssse3), Backend::Vaes);
         assert_eq!(
             Backend::select_for(
                 vaes,
-                Features(verified_garbage_cpu::feature::PCLMULQDQ),
-                NONE
+                Features::all(&[vaes, Features(verified_garbage_cpu::feature::PCLMULQDQ)]),
+                aes_ssse3
             ),
             Backend::AesNi
         );
@@ -182,7 +155,10 @@ mod tests {
                 | verified_garbage_cpu::feature::SSSE3
                 | verified_garbage_cpu::feature::VAES,
         );
-        assert_eq!(Backend::select_for(no_avx2, NONE, NONE), Backend::AesNi);
+        assert_eq!(
+            Backend::select_for(no_avx2, vaes, aes_ssse3),
+            Backend::AesNi
+        );
         assert_eq!(
             Backend::select_for(
                 Features(

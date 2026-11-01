@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Group
 public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.Contract
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Keys
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sm4.PPC64LE.LayersLit
@@ -199,8 +200,8 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbPPC64LE dir).pre s₀) :
 def dirOf (decrypt : BitVec 64) : Dir := if decrypt = 0 then .encrypt else .decrypt
 
 theorem specDirA_dirOf (decrypt : BitVec 64) :
-    specDirA (dirOf decrypt) = Spec.Sm4.directionOf decrypt.toNat := by
-  unfold dirOf Spec.Sm4.directionOf
+    specDirA (dirOf decrypt) = Proof.Sm4.directionOf decrypt.toNat := by
+  unfold dirOf Proof.Sm4.directionOf
   by_cases h : decrypt = 0
   · subst h; rfl
   · have h' : decrypt.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')

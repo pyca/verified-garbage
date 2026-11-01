@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.AesXts.RISCV64
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
 public import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Spec.Xts.Contract
+public import VerifiedGarbage.Proof.Xts.Contract
 import VerifiedGarbage.Proof.AesXts.RISCV64.Body
 import VerifiedGarbage.Proof.AesXts.RISCV64.Lit
 import VerifiedGarbage.Proof.AesCbc.RISCV64.CT
@@ -51,14 +52,14 @@ theorem encrypt_noFrames : encrypt.noFrames = true := by lit_decide
 
 theorem decrypt_noFrames : decrypt.noFrames = true := by lit_decide
 
-theorem encrypt_verified : Verified RISCV64.target encrypt (Spec.Xts.aesEncryptContract RISCV64.abi) :=
+theorem encrypt_verified : Verified RISCV64.target encrypt (Proof.Xts.aesEncryptContract RISCV64.abi) :=
   Verified.of_correct encrypt_correct encrypt_ct (by
-    sig_implies [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, modeRISCV64, AesXts.xtsMode,
+    sig_implies [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, modeRISCV64, AesXts.xtsMode,
       ciphOf, RISCV64.abi, RISCV64.argRegs, VG.Proof.AesCbc.length_blocksAt] [sat] using sat)
 
-theorem decrypt_verified : Verified RISCV64.target decrypt (Spec.Xts.aesDecryptContract RISCV64.abi) :=
+theorem decrypt_verified : Verified RISCV64.target decrypt (Proof.Xts.aesDecryptContract RISCV64.abi) :=
   Verified.of_correct decrypt_correct decrypt_ct (by
-    sig_implies [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, modeRISCV64, AesXts.xtsMode,
+    sig_implies [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, modeRISCV64, AesXts.xtsMode,
       ciphOf, RISCV64.abi, RISCV64.argRegs, VG.Proof.AesCbc.length_blocksAt] [sat] using sat)
 
 end VG.Proof.AesXts.RISCV64

@@ -15,17 +15,12 @@ decryption subkeys that `vg_idea_invert_key` writes (`cryptBlock`, as
 `vg_idea_ecb`): `vg_idea_cbc_encrypt` takes the former, `vg_idea_cbc_decrypt`
 the latter.
 
-`vg_idea_cbc_encrypt` and `vg_idea_cbc_decrypt` transform `n` whole blocks in
-place, from the chaining value at `iv`, which they only read. A caller may
-process a message in pieces of whole blocks: the chaining value of the next
-piece is the last ciphertext block of this one (`Cbc.next`), which the caller
-has (after encryption, the last block at `data`; before decryption, the last
-block it decrypts). Padding is the caller's.
-
-`vg_idea_cbc_encrypt_chained` and `vg_idea_cbc_decrypt_chained` are the
-same but for `iv`, which they replace with the chaining value to continue
-from (`Cbc.next`), as AES-CBC's functions do (`Spec/Cbc/Contract.lean`), so
-that the caller keeps no block of its own between pieces.
+`vg_idea_cbc_encrypt_chained` and `vg_idea_cbc_decrypt_chained` transform
+`n` whole blocks in place, from the chaining value at `iv`, which they
+replace with the chaining value to continue from (`Cbc.next`, the last
+ciphertext block), as AES-CBC's functions do (`Spec/Cbc/Contract.lean`):
+a caller may process a message in pieces of whole blocks, and keeps no
+block of its own between them. Padding is the caller's.
 
 Only the pointers and `n` are public: no part of the chaining value may affect
 timing.
@@ -45,37 +40,8 @@ def cipher (z : Schedule) : Cbc.Cipher := fun b =>
 def cbcBlocksAt (m : Mem) (p : Addr) (n : Nat) : List (List Byte) :=
   (blocksAt m p n).map Vector.toList
 
-/-- `vg_idea_cbc_encrypt(schedule: *const [u8; 104], iv: *const [u8; 8], data: *mut [u8; 8], n: usize)`,
-and `vg_idea_cbc_decrypt` with the same signature. -/
-def cbcSig : Sig where
-  params := [("schedule", .array false .u8 104), ("iv", .array false .u8 8),
-    ("data", .slice true (.array .u8 8) "n")]
-
-/-- With the encryption subkeys at `schedule`: replaces the `n` blocks at
-`data` with their CBC encryption (§6.2) by IDEA, from the chaining value at
-`iv`. -/
-def cbcEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcSig.contract A
-    (post := fun schedule iv data n m m' _ =>
-      cbcBlocksAt m' data n.toNat =
-        Cbc.encrypt (cipher (scheduleAt m schedule)) (Aes.bytesAt m iv 8) (cbcBlocksAt m data n.toNat))
-    (writeArgs := true) (stack := stack)
-
-/-- With the decryption subkeys at `schedule`: replaces the `n` blocks at
-`data` with their CBC decryption (§6.2) by IDEA, from the chaining value at
-`iv`. -/
-def cbcDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcSig.contract A
-    (post := fun schedule iv data n m m' _ =>
-      cbcBlocksAt m' data n.toNat =
-        Cbc.decrypt (cipher (scheduleAt m schedule)) (Aes.bytesAt m iv 8) (cbcBlocksAt m data n.toNat))
-    (writeArgs := true) (stack := stack)
-
-/-! ## Updating the chaining value -/
-
 /-- `vg_idea_cbc_encrypt_chained(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize)`,
-and `vg_idea_cbc_decrypt_chained` with the same signature: `cbcSig`, but
-for `iv`, which they write. -/
+and `vg_idea_cbc_decrypt_chained` with the same signature. -/
 def cbcChainedSig : Sig where
   params := [("schedule", .array false .u8 104), ("iv", .array true .u8 8),
     ("data", .slice true (.array .u8 8) "n")]

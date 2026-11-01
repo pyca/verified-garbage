@@ -24,6 +24,7 @@ meta import VerifiedGarbage.Impl.Aes.X86_64.Vaes
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Contract
 
 @[expose] public section
 
@@ -520,9 +521,9 @@ theorem ctr32_ct : ConstantTime isa AesNi.ctr32X86_64.pre AesNi.ctr32X86_64.pub 
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
 
 theorem ctr32_verified :
-    Verified X86_64.target Impl.Aes.X86_64.Vaes.ctr32 (Spec.Gcm.ctr32Contract X86_64.abi) :=
+    Verified X86_64.target Impl.Aes.X86_64.Vaes.ctr32 (Proof.Gcm.ctr32Contract X86_64.abi) :=
   Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Spec.Gcm.ctr32Contract, Spec.Gcm.ctr32Sig, Proof.Aes.X86_64.AesNi.ctr32X86_64,
+    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.X86_64.AesNi.ctr32X86_64,
       X86_64.abi, X86_64.argRegs] [Proof.Aes.X86_64.AesNi.satState] using
       Proof.Aes.X86_64.AesNi.satState)
 

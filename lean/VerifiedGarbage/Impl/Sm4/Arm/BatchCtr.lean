@@ -36,7 +36,7 @@ def entry : List Instr :=
 
 def prepare : Prog isa :=
   .seq (.block [movR .r0 .r4, .mov .r1 (.imm 0), movR .r2 sb, .mov .r3 (.imm 182)])
-    (.call (Spec.Sm4.Prepared.prepareApi layout).name prepareKeys)
+    (.call "vg_sm4_prepare_keys" prepareKeys)
 
 def crypt : Prog isa :=
   .seq (.block [movR .r0 sb, .mov .r1 (.imm 182)])

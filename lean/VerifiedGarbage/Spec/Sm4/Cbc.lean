@@ -11,17 +11,12 @@ public import VerifiedGarbage.Spec.Sm4.Ctr
 (§7.2, the same rounds with the round keys in reverse order) as
 `CIPH⁻¹_K`, under the 128-byte schedule that `vg_sm4_expand_key` writes.
 
-`vg_sm4_cbc_encrypt` and `vg_sm4_cbc_decrypt` transform `n` whole blocks in
-place, from the chaining value at `iv`, which they only read. A caller may
-process a message in pieces of whole blocks: the chaining value of the next
-piece is the last ciphertext block of this one (`Cbc.next`), which the
-caller has (after encryption, the last block at `data`; before decryption,
-the last block it decrypts). Padding is the caller's.
-
-`vg_sm4_cbc_encrypt_chained` and `vg_sm4_cbc_decrypt_chained` are the
-same but for `iv`, which they replace with the chaining value to continue
-from (`Cbc.next`), as AES-CBC's functions do (`Spec/Cbc/Contract.lean`), so
-that the caller keeps no block of its own between pieces.
+`vg_sm4_cbc_encrypt_chained` and `vg_sm4_cbc_decrypt_chained` transform
+`n` whole blocks in place, from the chaining value at `iv`, which they
+replace with the chaining value to continue from (`Cbc.next`, the last
+ciphertext block), as AES-CBC's functions do (`Spec/Cbc/Contract.lean`):
+a caller may process a message in pieces of whole blocks, and keeps no
+block of its own between them. Padding is the caller's.
 
 Only the pointers and `n` are public: no part of the chaining value may
 affect timing.
@@ -36,35 +31,8 @@ blocks as lists of 16 bytes (`Cbc.Cipher`). -/
 def invCipher (k : Schedule) : Cbc.Cipher := fun b =>
   (decryptBlock k (Vector.ofFn fun i => b.getD i.val 0)).toList
 
-/-- `vg_sm4_cbc_encrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize)`,
-and `vg_sm4_cbc_decrypt` with the same signature. -/
-def cbcSig : Sig where
-  params := [("schedule", .array false .u8 128), ("iv", .array false .u8 16),
-    ("data", .slice true (.array .u8 16) "n")]
-
-/-- With the schedule at `schedule`: replaces the `n` blocks at `data` with
-their CBC encryption (§6.2) by SM4, from the chaining value at `iv`. -/
-def cbcEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcSig.contract A
-    (post := fun schedule iv data n m m' _ =>
-      Cbc.blocksAt m' data n.toNat =
-        Cbc.encrypt (cipher (scheduleAt m schedule)) (Aes.bytesAt m iv 16) (Cbc.blocksAt m data n.toNat))
-    (writeArgs := true) (stack := stack)
-
-/-- With the schedule at `schedule`: replaces the `n` blocks at `data` with
-their CBC decryption (§6.2) by SM4, from the chaining value at `iv`. -/
-def cbcDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcSig.contract A
-    (post := fun schedule iv data n m m' _ =>
-      Cbc.blocksAt m' data n.toNat =
-        Cbc.decrypt (invCipher (scheduleAt m schedule)) (Aes.bytesAt m iv 16) (Cbc.blocksAt m data n.toNat))
-    (writeArgs := true) (stack := stack)
-
-/-! ## Updating the chaining value -/
-
 /-- `vg_sm4_cbc_encrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize)`,
-and `vg_sm4_cbc_decrypt_chained` with the same signature: `cbcSig`, but
-for `iv`, which they write. -/
+and `vg_sm4_cbc_decrypt_chained` with the same signature. -/
 def cbcChainedSig : Sig where
   params := [("schedule", .array false .u8 128), ("iv", .array true .u8 16),
     ("data", .slice true (.array .u8 16) "n")]

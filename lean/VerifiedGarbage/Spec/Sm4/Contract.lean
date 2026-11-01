@@ -82,43 +82,4 @@ def ecbDecryptApi : Api where
     may affect timing, not the schedule or data, including S-box inputs."
   safety := []
 
-/-! ## Either direction
-
-An implementation may share one body between the two directions: the ECB
-functions above then call `vg_sm4_ecb`, which takes the direction as a
-public argument. It is not part of the library's Rust API. -/
-
-/-- The direction `decrypt` selects: 0 to encrypt, otherwise decrypt. -/
-def directionOf (decrypt : Nat) : Direction := if decrypt = 0 then .encrypt else .decrypt
-
-/-- `vg_sm4_ecb(schedule, data, n, decrypt: usize)`: the ECB functions'
-arguments, then the direction (0 to encrypt, 1 to decrypt), which is public. -/
-def ecbDirSig : Sig where
-  params := ecbSig.params ++ [("decrypt", .int .usize true)]
-
-/-- For `decrypt` of 0 or 1: replaces the `n` blocks at `data` with their
-encryption (`decrypt = 0`) or decryption (`decrypt = 1`) under the round keys
-at `schedule`. -/
-def ecbDirContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  ecbDirSig.contract A
-    (pre := fun _schedule _data _n decrypt _ => decrypt.toNat ≤ 1)
-    (post := fun schedule data n decrypt m m' _ =>
-      blocksAt m' data n.toNat =
-        ecb (scheduleAt m schedule) (directionOf decrypt.toNat) (blocksAt m data n.toNat))
-    (writeArgs := true) (stack := stack)
-
-def ecbDirApi : Api where
-  module := "sm4"
-  name := "vg_sm4_ecb"
-  sig := ecbDirSig
-  writeArgs := true
-  contracts := some fun A stack => ecbDirContract A stack
-  summary := "SM4 ECB encryption (`decrypt = 0`) or decryption (`decrypt = 1`) \
-    (draft-ribose-cfrg-sm4-10 §7.1, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the round keys written \
-    by `vg_sm4_expand_key`: what `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt` do, for \
-    implementations that share one body between them. For `n = 0`, no data is transformed.\n\n\
-    Contract: `VG.Spec.Sm4.ecbDirContract`. Constant time: only pointers, `n` and `decrypt` \
-    may affect timing, not the round keys or data."
-  safety := ["`decrypt` must be 0 or 1."]
-
 end VG.Spec.Sm4

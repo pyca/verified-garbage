@@ -27,6 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.ChaCha20.Contract
 
 /-!
 # ChaCha20 keystream XOR on x86 (32-bit)
@@ -1343,22 +1344,22 @@ theorem xorSsse3_ct : ConstantTime isa Proof.ChaCha20.xorX86.pre Proof.ChaCha20.
     Impl.ChaCha20.X86.Xor.xorSsse3 :=
   VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by native_taint_decide)
 
-theorem xorX86_implies : Proof.ChaCha20.xorX86.Implies (Spec.ChaCha20.xorContract X86.abi 12) := by
+theorem xorX86_implies : Proof.ChaCha20.xorX86.Implies (Proof.ChaCha20.xorContract X86.abi 12) := by
   have a0 : arg sat 0 = 0x1000 := by decide
   have a1 : arg sat 1 = 0x2000 := by decide
   have a2 : arg sat 2 = 0 := by decide
   have a3 : arg sat 3 = 0x3000 := by decide
   have e : argAddr sat 0 = 0x5004 := by decide
   have esp : sat.gpr .esp = 0x5000 := rfl
-  sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, X86.abi, X86.argSlots,
+  sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes, Proof.ChaCha20.xorX86] [a0, a1, a2, a3, e, esp] using sat
 
 theorem xor_verified :
-    Verified X86.target Impl.ChaCha20.X86.Xor.xor (Spec.ChaCha20.xorContract X86.abi 12) :=
+    Verified X86.target Impl.ChaCha20.X86.Xor.xor (Proof.ChaCha20.xorContract X86.abi 12) :=
   Verified.of_correct xor_correct xor_ct xorX86_implies
 
 theorem xorSsse3_verified :
-    Verified X86.target Impl.ChaCha20.X86.Xor.xorSsse3 (Spec.ChaCha20.xorContract X86.abi 12) :=
+    Verified X86.target Impl.ChaCha20.X86.Xor.xorSsse3 (Proof.ChaCha20.xorContract X86.abi 12) :=
   Verified.of_correct xorSsse3_correct xorSsse3_ct xorX86_implies
 
 end VG.Proof.ChaCha20.X86.Xor
