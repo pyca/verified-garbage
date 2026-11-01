@@ -29,7 +29,7 @@ fn reference(key: &[u8], iv: [u8; 8], data: &[u8], encrypt: bool) -> (Vec<u8>, [
     for block in data.chunks(8) {
         let mut o = chain;
         ecb.encrypt(&mut o).unwrap();
-        let y: Vec<u8> = block.iter().zip(&o).map(|(x, y)| x ^ y).collect();
+        let y: Vec<u8> = crate::bytes::xor(block, &o);
         let c = if encrypt { &y[..] } else { block };
         chain = if block.len() == 8 {
             c.try_into().unwrap()
@@ -115,10 +115,10 @@ fn cavp_mmt() {
 /// Every length up to 27 blocks, in each direction.
 #[test]
 fn from_ecb() {
-    let data: Vec<u8> = (0..8 * 27).map(|i| (i * 31 + 7) as u8).collect();
-    let iv: [u8; 8] = core::array::from_fn(|i| (i * 11 + 5) as u8);
+    let data: Vec<u8> = crate::bytes::pattern(8 * 27, 31, 7);
+    let iv: [u8; 8] = crate::bytes::pattern_array(11, 5);
     for key_len in [16, 24] {
-        let key: Vec<u8> = (0..key_len).map(|i| (17 * i + 3) as u8).collect();
+        let key: Vec<u8> = crate::bytes::pattern(key_len, 17, 3);
         let ctx = TripleDesCfb64::new(&key).unwrap();
         for len in 0..=data.len() {
             for encrypt in [true, false] {

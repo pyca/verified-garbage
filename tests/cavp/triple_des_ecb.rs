@@ -136,7 +136,7 @@ fn nist_ecb() {
 #[test]
 fn limits_and_empty_input() {
     for len in 0..=33 {
-        let key: Vec<_> = (0..len).map(|i| (17 * i + 3) as u8).collect();
+        let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if len == 16 || len == 24 {
             let ctx = TripleDesEcb::new(&key).unwrap();
             ctx.encrypt(&mut []).unwrap();
@@ -166,7 +166,7 @@ fn limits_and_empty_input() {
 #[test]
 fn batches_match_single_blocks() {
     for key_len in [16, 24] {
-        let key: Vec<_> = (0..key_len).map(|i| (29 * i + 11) as u8).collect();
+        let key: Vec<_> = crate::bytes::pattern(key_len, 29, 11);
         let ctx = TripleDesEcb::new(&key).unwrap();
         let plaintext: Vec<_> = (0..8 * 1100)
             .map(|i| (i * 131 + 7 + i / 256) as u8)

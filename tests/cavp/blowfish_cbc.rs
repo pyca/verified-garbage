@@ -24,7 +24,7 @@ fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> Vec<u8> {
     let mut chain = iv;
     let mut out = Vec::new();
     for block in data.chunks(8) {
-        let b: Vec<u8> = block.iter().zip(&chain).map(|(x, y)| x ^ y).collect();
+        let b: Vec<u8> = crate::bytes::xor(block, &chain);
         assert_eq!(ecb.update(&b, &mut chain).unwrap(), 8);
         out.extend_from_slice(&chain);
     }
@@ -80,10 +80,10 @@ fn pyca_vectors() {
 /// Every number of blocks up to 27.
 #[test]
 fn from_ecb() {
-    let data: Vec<u8> = (0..8 * 27).map(|i| (i * 31 + 7) as u8).collect();
-    let iv: [u8; 8] = core::array::from_fn(|i| (i * 11 + 5) as u8);
+    let data: Vec<u8> = crate::bytes::pattern(8 * 27, 31, 7);
+    let iv: [u8; 8] = crate::bytes::pattern_array(11, 5);
     for key_len in [4, 16, 56] {
-        let key: Vec<u8> = (0..key_len).map(|i| (17 * i + 3) as u8).collect();
+        let key: Vec<u8> = crate::bytes::pattern(key_len, 17, 3);
         let ctx = BlowfishCbc::new(&key).unwrap();
         for blocks in 0..=27 {
             let input = &data[..8 * blocks];

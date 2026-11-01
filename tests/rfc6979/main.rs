@@ -17,7 +17,10 @@ mod p256;
 mod p384;
 mod p521;
 
+use crate::bytes::unhex;
+
 /// The errors' messages.
+
 #[test]
 fn errors() {
     use verified_garbage::ecdsa::Error;
@@ -26,14 +29,6 @@ fn errors() {
         Error::InvalidSignature.to_string(),
         "invalid ECDSA signature"
     );
-}
-
-fn unhex(s: &str) -> Vec<u8> {
-    assert_eq!(s.len() % 2, 0, "{s}");
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
 }
 
 /// The hex value of the first line from `lines[*i..]` that begins with

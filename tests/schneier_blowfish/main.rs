@@ -14,20 +14,12 @@
     target_arch = "riscv64"
 ))]
 
+use crate::bytes::unhex_spaced as unhex;
 use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor, Error};
 
 /// The vectors' file (`crate::vectors`).
 fn text() -> String {
     crate::vectors::text("vectors/schneier-blowfish-vectors/vectors-2.txt")
-}
-
-fn unhex(text: &str) -> Vec<u8> {
-    let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-    assert_eq!(hex.len() % 2, 0);
-    (0..hex.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
-        .collect()
 }
 
 fn encrypt(key: &[u8], input: &[u8]) -> Vec<u8> {
@@ -129,7 +121,7 @@ fn cbc_record() {
     let mut chain = iv.clone();
     let mut cipher = Vec::new();
     for block in clear.chunks(8) {
-        let input: Vec<u8> = block.iter().zip(&chain).map(|(a, b)| a ^ b).collect();
+        let input: Vec<u8> = crate::bytes::xor(block, &chain);
         let mut output = [0; 8];
         assert_eq!(encryptor.update(&input, &mut output), Ok(8));
         cipher.extend_from_slice(&output);
@@ -141,7 +133,7 @@ fn cbc_record() {
     for block in cipher.chunks(8) {
         let mut output = [0; 8];
         assert_eq!(decryptor.update(block, &mut output), Ok(8));
-        decrypted.extend(output.iter().zip(&chain).map(|(a, b)| a ^ b));
+        decrypted.extend(crate::bytes::xor(&output, &chain));
         chain = block.to_vec();
     }
     assert_eq!(decrypted, clear);
@@ -154,8 +146,8 @@ fn cbc_record() {
 /// key.
 #[test]
 fn many_blocks() {
-    let key: Vec<u8> = (0..56).map(|i| (i * 37 + 11) as u8).collect();
-    let data: Vec<u8> = (0..8 * 50).map(|i| (i * 101 + 7) as u8).collect();
+    let key: Vec<u8> = crate::bytes::pattern(56, 37, 11);
+    let data: Vec<u8> = crate::bytes::pattern(8 * 50, 101, 7);
     let single: Vec<u8> = data
         .chunks(8)
         .flat_map(|block| encrypt(&key, block))
@@ -174,7 +166,7 @@ fn many_blocks() {
 #[test]
 fn streaming_splits() {
     let key = unhex("0123456789ABCDEFF0E1D2C3B4A59687");
-    let data: Vec<u8> = (0..8 * 20).map(|i| (i * 13 + 5) as u8).collect();
+    let data: Vec<u8> = crate::bytes::pattern(8 * 20, 13, 5);
     let whole = encrypt(&key, &data);
     let mut cipher = BlowfishEcbEncryptor::new(&key).unwrap();
     let mut decipher = BlowfishEcbDecryptor::new(&key).unwrap();

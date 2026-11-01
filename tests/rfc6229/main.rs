@@ -9,16 +9,8 @@
     target_arch = "riscv64"
 ))]
 
+use crate::bytes::unhex_spaced as unhex;
 use verified_garbage::rc4::{Error, Rc4};
-
-fn unhex(text: &str) -> Vec<u8> {
-    let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-    assert_eq!(hex.len() % 2, 0);
-    (0..hex.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
-        .collect()
-}
 
 #[test]
 fn every_published_answer_and_streaming_split() {
@@ -114,8 +106,8 @@ fn generated_key_boundaries_and_round_trips() {
     assert_eq!(Rc4::new(&[]).err(), Some(Error::InvalidKeyLength));
     assert_eq!(Rc4::new(&[0; 257]).err(), Some(Error::InvalidKeyLength));
     for length in [1, 2, 255, 256] {
-        let key: Vec<u8> = (0..length).map(|i| (i * 37) as u8).collect();
-        let original: Vec<u8> = (0..513).map(|i| (i * 19 + 7) as u8).collect();
+        let key: Vec<u8> = crate::bytes::pattern(length, 37, 0);
+        let original: Vec<u8> = crate::bytes::pattern(513, 19, 7);
         let mut expected = original.clone();
         reference(&key, &mut expected);
         let mut data = original.clone();

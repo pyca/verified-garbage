@@ -22,7 +22,7 @@ fn reference(key: &[u8; 16], iv: [u8; 16], data: &[u8]) -> Vec<u8> {
     let mut chain = iv;
     let mut out = Vec::new();
     for block in data.chunks(16) {
-        let mut b: Vec<u8> = block.iter().zip(&chain).map(|(x, y)| x ^ y).collect();
+        let mut b: Vec<u8> = crate::bytes::xor(block, &chain);
         ecb.encrypt(&mut b).unwrap();
         chain.copy_from_slice(&b);
         out.extend_from_slice(&b);
@@ -71,10 +71,10 @@ fn draft_examples() {
 /// Every number of blocks up to three groups of sixteen and a bit.
 #[test]
 fn from_ecb() {
-    let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
-    let iv: [u8; 16] = core::array::from_fn(|i| (i * 11 + 5) as u8);
+    let key: [u8; 16] = crate::bytes::pattern_array(17, 3);
+    let iv: [u8; 16] = crate::bytes::pattern_array(11, 5);
     let ctx = Sm4Cbc::new(&key);
-    let data: Vec<u8> = (0..16 * 50).map(|i| (i * 31 + 7) as u8).collect();
+    let data: Vec<u8> = crate::bytes::pattern(16 * 50, 31, 7);
     for blocks in 0..=50 {
         let input = &data[..16 * blocks];
         check(&ctx, iv, input, &reference(&key, iv, input));
@@ -104,11 +104,11 @@ fn incomplete_blocks() {
 /// including empty calls and the old sixteen-block batching boundaries.
 #[test]
 fn unaligned_guarded() {
-    for key in [[0; 16], [0xff; 16], core::array::from_fn(|i| i as u8)] {
+    for key in [[0; 16], [0xff; 16], crate::bytes::pattern_array(1, 0)] {
         let ctx = Sm4Cbc::new(&key);
-        let iv = core::array::from_fn(|i| (i * 19 + 3) as u8);
+        let iv = crate::bytes::pattern_array(19, 3);
         for blocks in [0, 1, 2, 3, 15, 16, 17, 31, 32, 33, 64, 65] {
-            let input: Vec<u8> = (0..16 * blocks).map(|i| (i * 29 + 11) as u8).collect();
+            let input: Vec<u8> = crate::bytes::pattern(16 * blocks, 29, 11);
             let expected = reference(&key, iv, &input);
             let after = expected.last_chunk::<16>().copied().unwrap_or(iv);
             for offset in 0..16 {
