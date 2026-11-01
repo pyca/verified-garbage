@@ -30,8 +30,8 @@ def core : Direction → Prog isa
 
 /-- The core's name. -/
 def coreName : Direction → String
-  | .encrypt => Spec.TripleDes.ecbEncryptCoreApi.name
-  | .decrypt => Spec.TripleDes.ecbDecryptCoreApi.name
+  | .encrypt => "vg_triple_des_ecb_encrypt_core"
+  | .decrypt => "vg_triple_des_ecb_decrypt_core"
 
 /-- A call of the core. -/
 def coreCall (d : Direction) : Prog isa := .call (coreName d) (core d)

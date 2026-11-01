@@ -81,24 +81,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64 Impl.TripleDes.X86_64.Key.expandKey
     stack := 520
     verified := Proof.TripleDes.X86_64.expandKey_framed },
-  Spec.TripleDes.encryptBlockApi.artifact X86_64.target {
-    code := Impl.TripleDes.X86_64.encryptBlock
-    stack := 0
-    verified := Proof.TripleDes.X86_64.encrypt_verified },
-  Spec.TripleDes.decryptBlockApi.artifact X86_64.target {
-    code := Impl.TripleDes.X86_64.decryptBlock
-    stack := 0
-    verified := Proof.TripleDes.X86_64.decrypt_verified },
-  Spec.TripleDes.ecbEncryptCoreApi.artifact X86_64.target {
-    code := Impl.TripleDes.X86_64.BitsliceSse.encrypt
-    stack := 0
-    verified := Proof.TripleDes.X86_64.BitslicedSse.encrypt_verified
-    spSafe := Code.all_of_allInstrs (Proof.TripleDes.X86_64.sse_ecb_sp .encrypt) },
-  Spec.TripleDes.ecbDecryptCoreApi.artifact X86_64.target {
-    code := Impl.TripleDes.X86_64.BitsliceSse.decrypt
-    stack := 0
-    verified := Proof.TripleDes.X86_64.BitslicedSse.decrypt_verified
-    spSafe := Code.all_of_allInstrs (Proof.TripleDes.X86_64.sse_ecb_sp .decrypt) },
   Spec.TripleDes.ecbEncryptApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
       (Impl.TripleDes.X86_64.EcbCall.sse .encrypt)

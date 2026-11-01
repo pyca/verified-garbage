@@ -23,7 +23,7 @@ bl {vg_triple_des_expand_key}
 bl {vg_triple_des_encrypt_block}
 .base64 "AADAOCg05HzgD+h4UDAofRsAQDk4UCl9pA/neHhK53yAAWA5KF3jfOAP6HhQMCh9GwBAOThQKX2kD+d4eErnfIgBYDkoXeN8AAAAOJABA/gQAh7oKAL+6yAC3uumAwh8oAIhOCAAgE4=""#,
         vg_triple_des_expand_key = sym super::triple_des::vg_triple_des_expand_key,
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym super::internal::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
 
@@ -89,7 +89,7 @@ b 214f
 214:
 23:
 .base64 "EAIF6BgCpesgAsXrKALl66YDCHzQAiE4IACATg==""#,
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym super::internal::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
 
@@ -132,6 +132,6 @@ b 23f
 .base64 "AAKFOA=="
 bl {vg_triple_des_encrypt_block}
 .base64 "AALl6AAA//gQAgXoKALl66YDCHygAiE4IACATg==""#,
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym super::internal::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }

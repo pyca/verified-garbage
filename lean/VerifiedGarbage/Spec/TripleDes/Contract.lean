@@ -10,8 +10,7 @@ public import VerifiedGarbage.TCB.Artifact
 and public pointers/lengths. Key bytes, round keys and data are secret.
 The schedule has 48 little-endian 64-bit slots (384 bytes), in encryption
 order for K1, K2 and K3. Expansion zero-extends each 48-bit round key.
-The block functions' scratch contents are unspecified on return; key
-expansion and ECB keep their working space on the stack. `stack` accounts
+Key expansion and ECB keep their working space on the stack. `stack` accounts
 for frames and calls; ECB permits writes to ABI argument areas to call block
 primitives.
 
@@ -49,46 +48,6 @@ def expandKeyApi : Api where
     Contract: `VG.Spec.TripleDes.expandKeyContract`. Constant time: only pointers and \
     `key_len` may affect timing, not key bytes."
   safety := ["`key_len` must be 16 or 24."]
-
-def blockSig : Sig where
-  params := [("schedule", .array false .u8 384), ("data", .array true .u8 8),
-    ("scratch", .array true .u64 64)]
-
-def encryptBlockContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  blockSig.contract A
-    (post := fun schedule data _scratch m m' _ =>
-      blockAt m' data = encryptBlock (scheduleAt m schedule) (blockAt m data))
-    (stack := stack)
-
-def encryptBlockApi : Api where
-  module := "triple_des"
-  name := "vg_triple_des_encrypt_block"
-  sig := blockSig
-  contracts := some fun A stack => encryptBlockContract A stack
-  summary := "Triple DES block encryption (FIPS 46-3): transforms the 8 bytes at `data` \
-    in place under the three DES schedules at `schedule`. Each schedule contains sixteen \
-    encryption-order 48-bit round keys in little-endian 64-bit slots; upper bits are ignored.\n\n\
-    Contract: `VG.Spec.TripleDes.encryptBlockContract`. Constant time: only pointers \
-    may affect timing, not the schedule or data, including S-box inputs."
-  safety := ["The contents of `scratch` on return are unspecified."]
-
-def decryptBlockContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  blockSig.contract A
-    (post := fun schedule data _scratch m m' _ =>
-      blockAt m' data = decryptBlock (scheduleAt m schedule) (blockAt m data))
-    (stack := stack)
-
-def decryptBlockApi : Api where
-  module := "triple_des"
-  name := "vg_triple_des_decrypt_block"
-  sig := blockSig
-  contracts := some fun A stack => decryptBlockContract A stack
-  summary := "Triple DES block decryption (FIPS 46-3): transforms the 8 bytes at `data` \
-    in place under the three DES schedules at `schedule`. Each schedule contains sixteen \
-    encryption-order 48-bit round keys in little-endian 64-bit slots; upper bits are ignored.\n\n\
-    Contract: `VG.Spec.TripleDes.decryptBlockContract`. Constant time: only pointers \
-    may affect timing, not the schedule or data, including S-box inputs."
-  safety := ["The contents of `scratch` on return are unspecified."]
 
 def ecbSig : Sig where
   params := [("schedule", .array false .u8 384), ("data", .slice true (.array .u8 8) "n")]
@@ -130,84 +89,5 @@ def ecbDecryptApi : Api where
     Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` \
     may affect timing, not the schedule or data."
   safety := []
-
-/-! ## ECB with its working space as an argument
-
-The ECB functions above keep their working space in a frame of their own. The
-same computation with the working space passed in (`scratch`, 1024 bytes,
-whatever it holds) is a function of its own, so that the ECB functions of a
-target, each with its own wide loop for the blocks it handles at a time, can
-call one copy of the code for the blocks left. -/
-
-def ecbCoreSig : Sig where
-  params := [("schedule", .array false .u8 384), ("data", .slice true (.array .u8 8) "n"),
-    ("scratch", .array true .u64 128)]
-
-/-- `ecbContract`, whatever `scratch` is. -/
-def ecbCoreContract {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat := 0) : Contract M :=
-  ecbCoreSig.contract A
-    (post := fun schedule data n _scratch => ecbPost direction A.ptrBits schedule data n)
-    (writeArgs := true) (stack := stack)
-
-def ecbEncryptCoreContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  ecbCoreContract A .encrypt stack
-
-def ecbDecryptCoreContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  ecbCoreContract A .decrypt stack
-
-def ecbEncryptCoreApi : Api where
-  module := "triple_des"
-  name := "vg_triple_des_ecb_encrypt_core"
-  sig := ecbCoreSig
-  writeArgs := true
-  contracts := some fun A stack => ecbEncryptCoreContract A stack
-  summary := "Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at \
-    `data`, in place, under the schedule written by `vg_triple_des_expand_key`, with the \
-    1024 bytes at `scratch` as working space: `vg_triple_des_ecb_encrypt` without its own \
-    frame. No padding is added or removed. For `n = 0`, no data is transformed.\n\n\
-    Contract: `VG.Spec.TripleDes.ecbEncryptCoreContract`. Constant time: only pointers and `n` \
-    may affect timing, not the schedule or data."
-  safety := ["The contents of `scratch` on return are unspecified."]
-
-def ecbDecryptCoreApi : Api where
-  module := "triple_des"
-  name := "vg_triple_des_ecb_decrypt_core"
-  sig := ecbCoreSig
-  writeArgs := true
-  contracts := some fun A stack => ecbDecryptCoreContract A stack
-  summary := "Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at \
-    `data`, in place, under the schedule written by `vg_triple_des_expand_key`, with the \
-    1024 bytes at `scratch` as working space: `vg_triple_des_ecb_decrypt` without its own \
-    frame. No padding is added or removed. For `n = 0`, no data is transformed.\n\n\
-    Contract: `VG.Spec.TripleDes.ecbDecryptCoreContract`. Constant time: only pointers and `n` \
-    may affect timing, not the schedule or data."
-  safety := ["The contents of `scratch` on return are unspecified."]
-
-/-! ## Either direction
-
-An implementation may share one body between the two directions: the
-block or ECB functions above then call `vg_triple_des_crypt_block` or
-`vg_triple_des_ecb`, which take the direction as a public argument. They are
-not part of the library's Rust API. -/
-
-/-- The direction `decrypt` selects: 0 to encrypt, otherwise decrypt. -/
-def directionOf (decrypt : Nat) : Direction := if decrypt = 0 then .encrypt else .decrypt
-
-/-- The block function of a direction. -/
-def cryptBlock (k : Schedule) : Direction → Block → Block
-  | .encrypt => encryptBlock k
-  | .decrypt => decryptBlock k
-
-/-- `vg_triple_des_ecb(schedule, data, n, decrypt: usize)`. -/
-def ecbDirSig : Sig where
-  params := ecbSig.params ++ [("decrypt", .int .usize true)]
-
-def ecbDirContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  ecbDirSig.contract A
-    (pre := fun _schedule _data _n decrypt _ => decrypt.toNat ≤ 1)
-    (post := fun schedule data n decrypt m m' _ =>
-      blocksAt m' data n.toNat =
-        ecb (scheduleAt m schedule) (directionOf decrypt.toNat) (blocksAt m data n.toNat))
-    (writeArgs := true) (stack := stack)
 
 end VG.Spec.TripleDes
