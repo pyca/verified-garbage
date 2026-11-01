@@ -3,6 +3,153 @@
 //! `assembly/gcm.s`.
 #![allow(dead_code)]
 
+/// AES-GCM encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5) with an external plaintext prefix: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `src_n` blocks at `src` followed by the original blocks `dst[src_n..n]`, writes all `n` ciphertext blocks at `dst`, advances `*counter` by `n` applications of `inc32`, and continues `*y` through GHASH over that ciphertext. Pass `src_n = 0` for in-place encryption or `src_n = n` for encryption entirely out of place.
+///
+/// Contract: `VG.Spec.Gcm.encryptBlocksSplitContract`. Constant time: only the pointers, `rounds`, `src_n` and `n` may affect timing, not the key context, counter, hash accumulator or plaintext.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `counter` must be valid for reads and writes of 16 bytes.
+/// * `y` must be valid for reads and writes of 16 bytes.
+/// * `src` must be valid for reads of `16 * src_n` bytes.
+/// * `dst` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2112 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `src_n` must be at most `n`.
+/// * The contents of `scratch` on return are unspecified.
+/// * `counter`, `y`, `dst` and `scratch` must not overlap each other, `ctx`, `src` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_encrypt_blocks_split(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], src_n: usize, dst: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+    core::arch::naked_asm!(
+        r#".base64 "AAAqKA=="
+beq %cr0, 20f
+.base64 "AACBOWAAbOmYACv6oABr+ng78Xx4QxN9eEsnfXhTSH14W2l9AAAp+wgASfsQAGn7GACJ+yAAqfsoAMn7MADp+6YCCHw4AAn4eBt9fHgjnHx4K7t8eDPafHg7/nx4Qxl9eEs/fULZLHsAACwo"
+beq %cr0, 22f
+.base64 "eOujf3jjhH9422V/ePPGfwcAADg4ACt/UMjrfPAAHTl400l/QABfOQAAJyg="
+beq %cr0, 24f
+.base64 "AADK+QgA6vkQAAr6KACK+jAAqvo4AMr6QADq+kgACvtQAEr6eFNQfYAAEDp4Sy59cADgOQAAADjEBAAQBgdgPQQFa2HGB2t5AgNrZQABa2EOD4A9DA2MYcYHjHkKC4xlCAmMYWcBa35nASx8LJpgEiwKcxIQAIA6AAEQO2AAQDoAAGA9AABrYcYHa3kAAGtlAABrYQAAgD0AAIxhxgeMeQAAjGUBAIxhZwErfmcBLHwsiiASLAoxEpmnMH4AwmA9AABrYcYHa3kAAGtlAABrYQDCgD0AAIxhxgeMeQAAjGUAAIxhZwGrfWcBLHwsaqARLAqtEQBGYD0AAGthxgdreQAAa2UAAGthAACAPQAAjGHGB4x5AACMZQMAjGFnAWt9ZwEsfCxaYBEsCmsRmQYofetMKREsSikRLAIpEshcERIsSiASyFzREchc6REsAk4SyGxSEixyzhHEdO8RxJTvESwCTxLIbFISLIIQEsR8EBIsklISxJRwESxaaxGZBk5961RKEQwAYDksXAV9eBtpfIRcixGEZAwRLGIsESwCKRLIXBESLEogEshc0RHIXOkRLAJOEshsUhIscs4RxHTvEcSU7xEsAk8SyGxSEiyCEBLEfBASLJJSEsSUkBEsYowRLEIoESxiSRIsklISLEoMEeAAYDmZXxB98ABgOZlfUH4sYiwRLAIpEshcERIsSiASyFzREchc6REsAk4SyGxSEixyzhHEdO8RxJTvESwCTxLIbFISLIIQEsR8EBIsklISxJSQESxijBGEZAwRLGIsESwCKRLIXBESLEogEshc0RHIXOkRLAJOEshsUhIscs4RxHTvEcSU7xEsAk8SyGxSEiyCEBLEfBASLJJSEsSUkBEsYowRLEIoESxiSRIsklISLEoMEcAAYDmZXxB90ABgOZlfUH4sYiwRLAIpEshcERIsSiASyFzREchc6REsAk4SyGxSEixyzhHEdO8RxJTvESwCTxLIbFISLIIQEsR8EBIsklISxJSQESxijBGEZAwRLGIsESwCKRLIXBESLEogEshc0RHIXOkRLAJOEshsUhIscs4RxHTvEcSU7xEsAk8SyGxSEiyCEBLEfBASLJJSEsSUkBEsYowRLEIoESxiSRIsklISLEoMEaAAYDmZXxB9sABgOZlfUH4sYiwRLAIpEshcERIsSiASyFzREchc6REsAk4SyGxSEixyzhHEdO8RxJTvESwCTxLIbFISLIIQEsR8EBIsklISxJSQESxijBGEZAwRLGIsESwCKRLIXBESLEogEshc0RHIXOkRLAJOEshsUhIscs4RxHTvEcSU7xEsAk8SyGxSEiyCEBLEfBASLJJSEsSUkBEsYowRLEIoESxiSRIsklISLEoMEYAAYDmZXxB9kABgOZlfUH4JCGA9CwprYcYHa3kNDGtlDw5rYRkYgD0bGoxhxgeMeR0cjGUfHoxhZwErfmcBLHwsiiASLAoxEiAAYDmZXzB+AQBgPQMCa2HGB2t5BQRrZQcGa2EREIA9ExKMYcYHjHkVFIxlFxaMYWcBK35nASx8LIogEiwKMRIwAGA5mV8wflAAYDmZX3B+YABgOZlfsH14wwt/AQCEOQ=="
+26:
+.base64 "mQYJfetECBGZBwt9EAApORAAazn//4w5AAAsKA=="
+bne %cr0, 26b
+.base64 "eMMDf0AA4DpQAAA7mQYFfOsEABCZfxB8"
+27:
+.base64 "mX4QfJmmMH6AiFESgIggEICQQBCAkGEQgJCCEICQoxCAkMQQgJDlEICQRhKZf1B+CAAIOZkGA33ERAAQxEQhEMREQhDERGMQxESEEMREpRDERMYQxETnEJmmA30gAKA6ma4jfTAAwDqZtmN9mb6DfZnGw32ZluN9cABgOZleA36AAIA5mWYjfpAAIzmZBkl+CEUAEAhFIRAIRUIQCEVjEAhFhBAIRaUQCEXGEAhF5xAITQAQCE0hEAhNQhAITWMQCE2EEAhNpRAITcYQCE3nEOQmjHiZZiN9CF0AEAhdIRAIXUIQCF1jEAhdhBAIXaUQCF3GEAhd5xAIZQAQCGUhEAhlQhAIZWMQCGWEEAhlpRAIZcYQCGXnEAh1ABAIdSEQCHVCEAh1YxAIdYQQCHWlEAh1xhAIdecQCH0AEAh9IRAIfUIQCH1jEAh9hBAIfaUQCH3GEAh95xAIhQAQCIUhEAiFQhAIhWMQCIWEEAiFpRAIhcYQCIXnEAiNABAIjSEQCI1CEAiNYxAIjYQQCI2lEAiNxhAIjecQCJUAEAiVIRAIlUIQCJVjEAiVhBAIlaUQCJXGEAiV5xCgACM59v9EOQAAKig="
+beq %cr0, 28f
+210:
+.base64 "mQYJfQhFABAIRSEQCEVCEAhFYxAIRYQQCEWlEAhFxhAIRecQEAApOf//SjkAACoo"
+bne %cr0, 210b
+b 29f
+28:
+29:
+.base64 "CU0AEAlNIRAJTUIQCU1jEAlNhBAJTaUQCU3GEAlN5xAAADMo"
+beq %cr0, 211f
+.base64 "wuhsegAALCg="
+bne %cr0, 213f
+.base64 "//+TOeAPjHkAACwo"
+beq %cr0, 215f
+.base64 "mQYGfQ=="
+b 216f
+215:
+.base64 "mQYRfQ=="
+216:
+.base64 "/v+TOeAPjHkAACwo"
+beq %cr0, 217f
+.base64 "maYmfQ=="
+b 218f
+217:
+.base64 "maYxfQ=="
+218:
+.base64 "/f+TOeAPjHkAACwo"
+beq %cr0, 219f
+.base64 "ma5mfQ=="
+b 220f
+219:
+.base64 "ma5xfQ=="
+220:
+.base64 "/P+TOeAPjHkAACwo"
+beq %cr0, 221f
+.base64 "mbaGfQ=="
+b 222f
+221:
+.base64 "mbaRfQ=="
+222:
+.base64 "+/+TOeAPjHkAACwo"
+beq %cr0, 223f
+.base64 "mb7GfQ=="
+b 224f
+223:
+.base64 "mb7RfQ=="
+224:
+.base64 "+v+TOeAPjHkAACwo"
+beq %cr0, 225f
+.base64 "mcbmfQ=="
+b 226f
+225:
+.base64 "mcbxfQ=="
+226:
+.base64 "+f+TOeAPjHkAACwo"
+beq %cr0, 227f
+.base64 "mZYGfg=="
+b 228f
+227:
+.base64 "mZYRfg=="
+228:
+.base64 "+P+TOeAPjHkAACwo"
+beq %cr0, 229f
+.base64 "mV4mfg=="
+b 230f
+229:
+.base64 "mV4xfg=="
+230:
+.base64 "5CZsehRiMX4AAGA6"
+b 214f
+213:
+.base64 "mQYRfZmmMX2ZrnF9mbaRfZm+0X2ZxvF9mZYRfpleMX6AADE6+P9zOg=="
+214:
+b 212f
+211:
+.base64 "mQYGfZmmJn2ZrmZ9mbaGfZm+xn2ZxuZ9mZYGfpleJn4="
+212:
+.base64 "60QIEcREABDrTCkRxEwhEOtcaxHEXEIQ62SMEcRkYxDrdM4RxHSEEOt87xHEfKUQ64QQEsSExhDrjDESxIznEOsEABGZBwZ96wwhEZmnJn3rFGIRma9mfescgxGZt4Z96yTEEZm/xn3rLOURmcfmfes0BhKZlwZ+6zwnEplfJn6AAMY4+P/nOJmucH6ZtrB9gACgOpAAwDrEVAAQma4QfZm2MH0gALU6IADWOusMQBJrCyASyEwREshE0hHIRPERyEwyEsSM7xGEdE4RhHxvEYSEkBGZrhB9mbYwfSAAtTogANY66xxCEmsbIhLITBESyETSEchE8RHITDISxIzvEcR0ShHEfGsRxISMEZmuEH2ZtjB9IAC1OiAA1jrrLEQSayskEshMERLIRNIRyETxEchMMhLEjO8RxHRKEcR8axHEhIwRma4QfZm2MH0gALU6IADWOus8RhJrOyYSyEwREshE0hHIRPERyEwyEsSM7xHEVM4RxFzvEcRkEBKZxnB+mZawfcSMMRIsik4SyGxSEixyzhHEdO8RxJTvESyKTxLIbFISLIIQEsR8EBIsklISxJRQESxSShEAACco"
+bne %cr0, 27b
+.base64 "DABgOSxdBX3rVEoRmQdOfYD/kDkAAMzpCADs6RAADOooAIzqMACs6jgAzOpAAOzqSAAM61AATOo="
+b 25f
+24:
+25:
+.base64 "BwAAODgAK39QyIt95CaMeRRi3n94W3l9"
+b 23f
+22:
+23:
+.base64 "AAAzKA=="
+beq %cr0, 231f
+.base64 "ePPLfwAAADg="
+233:
+.base64 "mQYxfpkHK34QADE6EABrOf//czoAADMo"
+bne %cr0, 233b
+b 232f
+231:
+232:
+.base64 "mAA/6qAAf+oAADko"
+beq %cr0, 234f
+.base64 "eOujf3jjhH9422V/ePPGf3jLJ39AAB85"
+bl {vg_aes_ctr32}
+.base64 "8AB9OHjTRH9488V/eMsmf0AA/zg="
+bl {vg_ghash}
+b 235f
+234:
+235:
+.base64 "OAAf6KYDCHx4++x/AAAs6wgATOsQAGzrGACM6yAArOsoAMzrMADs6w=="
+b 21f
+20:
+21:
+.base64 "IACATg==""#,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash,
+    )
+}
+
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
 /// Contract: `VG.Spec.Gcm.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key context, the counter block, `Y` or the data.

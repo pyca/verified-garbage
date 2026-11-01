@@ -63,9 +63,13 @@ def maybeBulk : Prog isa := .ite (.zero .d .r12) (.block []) bulk
 def body : Prog isa := .seq (.block wrapperEntry) (.seq maybeBulk
  (.seq copyPrefix (.seq (.block restoreExtra) (.seq tail (.block wrapperExit)))))
 
+def head : Prog isa := .block argsHead
+
+def rest : Prog isa := .seq (.block argsRest) body
+
 /-- Nine-argument whole-block helper; `scratch` is at the incoming `sp+96`.
 Restore the extra saves before the leaf calls reuse the core's scratch. -/
 def encrypt : Prog isa := .ite (.zero .d .r10) (.block [])
- (.seq (.block argsHead) (.seq (.block argsRest) body))
+ (.seq head rest)
 
 end VG.Impl.AesGcm.PPC64LE.SplitBlocks
