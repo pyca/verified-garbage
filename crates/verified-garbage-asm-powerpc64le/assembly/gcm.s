@@ -301,6 +301,42 @@ vg_aes_gcm_encrypt_blocks:
 	stxvd2x 40, %r16, %r11
 	li %r11, 144
 	stxvd2x 50, %r16, %r11
+	lis %r11, 2057
+	ori %r11, %r11, 2571
+	rldicr %r11, %r11, 32, 31
+	oris %r11, %r11, 3085
+	ori %r11, %r11, 3599
+	lis %r12, 6169
+	ori %r12, %r12, 6683
+	rldicr %r12, %r12, 32, 31
+	oris %r12, %r12, 7197
+	ori %r12, %r12, 7711
+	mtvsrd 49, %r11
+	mtvsrd 33, %r12
+	vsldoi %v17, %v0, %v17, 8
+	vsldoi %v17, %v17, %v1, 8
+	li %r11, 32
+	stxvd2x 49, %r16, %r11
+	lis %r11, 1
+	ori %r11, %r11, 515
+	rldicr %r11, %r11, 32, 31
+	oris %r11, %r11, 1029
+	ori %r11, %r11, 1543
+	lis %r12, 4113
+	ori %r12, %r12, 4627
+	rldicr %r12, %r12, 32, 31
+	oris %r12, %r12, 5141
+	ori %r12, %r12, 5655
+	mtvsrd 49, %r11
+	mtvsrd 33, %r12
+	vsldoi %v17, %v0, %v17, 8
+	vsldoi %v17, %v17, %v1, 8
+	li %r11, 48
+	stxvd2x 49, %r16, %r11
+	li %r11, 80
+	stxvd2x 51, %r16, %r11
+	li %r11, 96
+	stxvd2x 45, %r16, %r11
 	or %r11, %r24, %r24
 	addi %r12, %r4, 1
 26:
@@ -500,6 +536,8 @@ vg_aes_gcm_encrypt_blocks:
 	stxvd2x 49, %r6, %r11
 	addi %r6, %r6, 128
 	addi %r7, %r7, -8
+	lxvd2x 51, %r16, %r21
+	lxvd2x 45, %r16, %r22
 	li %r21, 128
 	li %r22, 144
 	vxor %v0, %v0, %v10
@@ -507,10 +545,8 @@ vg_aes_gcm_encrypt_blocks:
 	lxvd2x 41, %r16, %r22
 	addi %r21, %r21, 32
 	addi %r22, %r22, 32
-	vsldoi %v16, %v1, %v1, 8
-	vsldoi %v18, %v0, %v16, 8
-	vsldoi %v17, %v16, %v0, 8
-	vsldoi %v17, %v17, %v17, 8
+	vperm %v18, %v0, %v1, %v19
+	vperm %v17, %v0, %v1, %v13
 	vpmsumd %v16, %v17, %v9
 	vpmsumd %v14, %v18, %v8
 	vpmsumd %v15, %v17, %v8
@@ -523,10 +559,8 @@ vg_aes_gcm_encrypt_blocks:
 	lxvd2x 41, %r16, %r22
 	addi %r21, %r21, 32
 	addi %r22, %r22, 32
-	vsldoi %v16, %v3, %v3, 8
-	vsldoi %v18, %v2, %v16, 8
-	vsldoi %v17, %v16, %v2, 8
-	vsldoi %v17, %v17, %v17, 8
+	vperm %v18, %v2, %v3, %v19
+	vperm %v17, %v2, %v3, %v13
 	vpmsumd %v16, %v17, %v9
 	vpmsumd %v14, %v18, %v8
 	vpmsumd %v15, %v17, %v8
@@ -539,10 +573,8 @@ vg_aes_gcm_encrypt_blocks:
 	lxvd2x 41, %r16, %r22
 	addi %r21, %r21, 32
 	addi %r22, %r22, 32
-	vsldoi %v16, %v5, %v5, 8
-	vsldoi %v18, %v4, %v16, 8
-	vsldoi %v17, %v16, %v4, 8
-	vsldoi %v17, %v17, %v17, 8
+	vperm %v18, %v4, %v5, %v19
+	vperm %v17, %v4, %v5, %v13
 	vpmsumd %v16, %v17, %v9
 	vpmsumd %v14, %v18, %v8
 	vpmsumd %v15, %v17, %v8
@@ -555,10 +587,8 @@ vg_aes_gcm_encrypt_blocks:
 	lxvd2x 41, %r16, %r22
 	addi %r21, %r21, 32
 	addi %r22, %r22, 32
-	vsldoi %v16, %v7, %v7, 8
-	vsldoi %v18, %v6, %v16, 8
-	vsldoi %v17, %v16, %v6, 8
-	vsldoi %v17, %v17, %v17, 8
+	vperm %v18, %v6, %v7, %v19
+	vperm %v17, %v6, %v7, %v13
 	vpmsumd %v16, %v17, %v9
 	vpmsumd %v14, %v18, %v8
 	vpmsumd %v15, %v17, %v8
@@ -567,6 +597,8 @@ vg_aes_gcm_encrypt_blocks:
 	vxor %v14, %v14, %v10
 	vxor %v15, %v15, %v11
 	vxor %v16, %v16, %v12
+	lxvd2x 51, %r16, %r24
+	lxvd2x 45, %r16, %r18
 	vxor %v17, %v17, %v17
 	vsldoi %v18, %v14, %v17, 8
 	vpmsumd %v18, %v18, %v13
