@@ -2488,6 +2488,7 @@ def coreCounter (s : State) : Region := ⟨s.gpr .r5,16⟩
 def coreY (s : State) : Region := ⟨s.gpr .r9,16⟩
 def coreData (s : State) (n : Nat) : Region := ⟨s.gpr .r6,16*n⟩
 def coreWork (s : State) : Region := ⟨s.gpr .r10,2048⟩
+def coreSpills (s : State) : Region := ⟨s.gpr .r10,88⟩
 
 structure CoreLayout (base : State) (n : Nat) : Prop where
   reads : Covers [coreKey base] (base.rd++base.wr)
@@ -3511,6 +3512,42 @@ theorem gh_fixed [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
       (by simpa only [heffects.mem] using fx.tables)
 
 
+def storeGprs : List Reg := [.r6,.r7,.r12,.r17,.r19]
+
+structure BatchStoreResult (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block)
+    (input : Nat → BitVec 64 → BitVec 64 → Prop) (k : Nat) (start s : State) : Prop where
+  fixed : LoopFixed base nr s
+  keep : Keep storeGprs start s
+  frame : Frame [coreData base n] start.mem s.mem
+  processed : VG.Proof.Aes.Memory.Processed base.mem s.mem (base.gpr .r6) n (k+8)
+    (cipherStateWith base nr plaintext)
+  values : ∀ i<8, cipherAt s i=cipherBlockWith base nr plaintext (k+i)
+  ptr : s.gpr .r6=start.gpr .r6+128
+  left : s.gpr .r7=start.gpr .r7-8
+  hash : s.vpr .v10=start.vpr .v10
+  input : input (k+8) (s.gpr .r17) (s.gpr .r19)
+
+def StoreCorrect (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block)
+    (input : Nat → BitVec 64 → BitVec 64 → Prop) (store : Prog isa) : Prop :=
+  ∀ k start, k+8≤n → LoopFixed base nr start →
+    Frame [coreWork base,coreData base n] base.mem start.mem →
+    start.gpr .r6=base.gpr .r6+BitVec.ofNat 64 (16*k) → DataOffsets start →
+    VG.Proof.Aes.Memory.Processed base.mem start.mem (base.gpr .r6) n k
+      (cipherStateWith base nr plaintext) →
+    (∀ i<8, cipherAt start i=Spec.Gcm.ctxCiph base.mem (base.gpr .r3) nr
+      (Nat.repeat Spec.Gcm.inc32 (k+i) (Spec.Gcm.blockAt base.mem (base.gpr .r5)))) →
+    input k (start.gpr .r17) (start.gpr .r19) →
+    WP isa store start (BatchStoreResult base n nr plaintext input k start)
+
+theorem stores_correct (base : State) (n nr : Nat) (lay : CoreLayout base n) (hmax : nr<15) :
+    StoreCorrect base n nr (defaultPlaintext base) (fun _ _ _ => True)
+      (.block Impl.AesGcm.PPC64LE.Blocks.stores) := by
+  intro k start hk fx _frame ptr offsets proc vals _input
+  refine WP.mono (stores_fixed base start n nr k lay fx hmax hk ptr offsets proc vals)
+    fun t ⟨ht,fx',hvals⟩ => ?_
+  exact ⟨fx',ht.keep.mono (by simp [storeGprs]),ht.frame,ht.processed,hvals,ht.ptr,ht.left,
+    ht.v .v10 (by decide),trivial⟩
+
 structure LoopInvWith (base ready : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block)
     (input : Nat → BitVec 64 → BitVec 64 → Prop) (k : Nat) (s : State) : Prop where
   bound : k≤n
@@ -3552,22 +3589,24 @@ theorem LoopInv.initial {base entry ready : State} {n nr : Nat} (lay : CoreLayou
   LoopInvWith.initial lay hr hn trivial
 
 
-theorem batch_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
-    {base ready s : State} {n nr k : Nat} (lay : CoreLayout base n)
-    (hmin : 9<nr) (hmax : nr<15) (hk : k+8≤n) (hs : LoopInv base ready n nr k s) :
-    WP isa Impl.AesGcm.PPC64LE.Blocks.batch s (LoopInv base ready n nr (k+8)) := by
+theorem batchWithStore_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+    {base ready s : State} {n nr k : Nat} {plaintext : Nat → Spec.Gcm.Block}
+    {input : Nat → BitVec 64 → BitVec 64 → Prop} (lay : CoreLayout base n) (store : Prog isa)
+    (correct : StoreCorrect base n nr plaintext input store)
+    (hmin : 9<nr) (hmax : nr<15) (hk : k+8≤n) (hs : LoopInvWith base ready n nr plaintext input k s) :
+    WP isa (Impl.AesGcm.PPC64LE.Blocks.batchWithStore store) s (LoopInvWith base ready n nr plaintext input (k+8)) := by
   let cb := Nat.repeat Spec.Gcm.inc32 k (Spec.Gcm.blockAt base.mem (base.gpr .r5))
-  rw [Impl.AesGcm.PPC64LE.Blocks.batch,Impl.AesGcm.PPC64LE.Blocks.batchWith]
+  rw [Impl.AesGcm.PPC64LE.Blocks.batchWithStore,Impl.AesGcm.PPC64LE.Blocks.batchWith]
   apply WP.seq
   refine WP.mono (counters_fixed base s n nr cb lay hs.fixed hmax hs.counter)
     fun ctr ⟨hc,fxc,hcf,hcb⟩ => ?_
   have hdataBody : (coreData base n).Disjoint (coreBody base) :=
     (lay.scratch (coreData base n) (by simp)).sub_right (coreBody_sub base)
-  have hpc : VG.Proof.Aes.Memory.Processed base.mem ctr.mem (base.gpr .r6) n k (cipherState base nr) :=
+  have hpc : VG.Proof.Aes.Memory.Processed base.mem ctr.mem (base.gpr .r6) n k (cipherStateWith base nr plaintext) :=
     hs.processed.frame hcf (by simpa only [List.mem_singleton,forall_eq,coreData] using hdataBody) lay.size
   apply WP.seq
   refine WP.mono (aes8_fixed base ctr n nr lay fxc hmin hmax) fun aes ⟨ha,fxa,hoff,hfa⟩ => ?_
-  have hpa : VG.Proof.Aes.Memory.Processed base.mem aes.mem (base.gpr .r6) n k (cipherState base nr) := by
+  have hpa : VG.Proof.Aes.Memory.Processed base.mem aes.mem (base.gpr .r6) n k (cipherStateWith base nr plaintext) := by
     rw [hfa.mem]; exact hpc
   have ptra : aes.gpr .r6=base.gpr .r6+BitVec.ofNat 64 (16*k) :=
     (hfa.keep.gpr (by decide)).trans ((hc.keep.gpr (by decide)).trans hs.ptr)
@@ -3576,12 +3615,18 @@ theorem batch_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     intro i hi
     rw [ha i hi,hc.values i hi]
     exact congrArg (Spec.Gcm.ctxCiph base.mem (base.gpr .r3) nr) (repeat_counter_add _ k i)
-  rw [List.append_assoc,WP.block_append_iff]
-  refine WP.mono (stores_fixed base aes n nr k lay fxa hmax hk ptra hoff hpa vals)
-    fun stored ⟨hd,fxd,hvals⟩ => ?_
-  refine WP.mono (gh_fixed base stored n nr lay fxd (by
+  have frameA : Frame [coreWork base,coreData base n] base.mem aes.mem := by
+    rw [hfa.mem]
+    exact hs.baseFrame.trans (coreFrame_toWork base n (hcf.mono (by simp)))
+  have inputA : input k (aes.gpr .r17) (aes.gpr .r19) := by
+    rw [hfa.keep.gpr (r := .r17) (by decide),hfa.keep.gpr (r := .r19) (by decide),
+      hc.keep.gpr (r := .r17) (by decide),hc.keep.gpr (r := .r19) (by decide)]
+    exact hs.input
+  apply WP.seq
+  refine WP.mono (correct k aes hk fxa frameA ptra hoff hpa vals inputA) fun stored hd => ?_
+  refine WP.mono (gh_fixed base stored n nr lay hd.fixed (by
     intro i hi
-    have hfree : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.dataOffset i ∉ [.r6,.r7] := by decide
+    have hfree : ∀ i : Fin 8, Impl.AesGcm.PPC64LE.Blocks.dataOffset i ∉ storeGprs := by decide
     rw [hd.keep.gpr (hfree ⟨i,hi⟩)]
     exact hoff i hi)) fun t ⟨hy,fxg,hg⟩ => ?_
   have htableData : (⟨base.gpr .r10+128,512⟩ : Region).Disjoint (coreData base n) :=
@@ -3596,14 +3641,14 @@ theorem batch_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
   have hstoreFrame : Frame [coreBody base,coreData base n] ctr.mem stored.mem := by
     rw [← hfa.mem]
     exact hd.frame.mono (by simp [coreData])
-  have hyStored : stored.vpr .v10=hashPrefix base nr k :=
-    (hd.v .v10 (by decide)).trans ((hfa.v .v10 (by decide)).trans ((hc.v .v10 (by decide)).trans hs.y))
+  have hyStored : stored.vpr .v10=hashPrefixWith base nr plaintext k :=
+    hd.hash.trans ((hfa.v .v10 (by decide)).trans ((hc.v .v10 (by decide)).trans hs.y))
   have hmap : (List.range 8).map (cipherAt stored)=
-      (List.range 8).map (fun i => cipherBlock base nr (k+i)) := by
-    exact List.map_congr_left fun i hi => hvals i (List.mem_range.mp hi)
-  refine ⟨hk,fxg,?_,?_,?_,?_,?_,?_,?_,?_,?_,trivial⟩
+      (List.range 8).map (fun i => cipherBlockWith base nr plaintext (k+i)) := by
+    exact List.map_congr_left fun i hi => hd.values i (List.mem_range.mp hi)
+  refine ⟨hk,fxg,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
   · exact ((((hs.keep.trans hc.keep).trans hfa.keep).trans hd.keep).trans hg.keep).mono
-      (by simp [loopGprs,aesGprs,Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs,or_left_comm,or_comm])
+      (by simp [loopGprs,storeGprs,aesGprs,Impl.AesGcm.PPC64LE.Blocks.keyOffsetRegs,or_left_comm,or_comm])
   · simpa only [hg.mem] using (hs.frame.trans hctrFrame).trans hstoreFrame
   · rw [hg.keep.gpr (by decide),hd.ptr,ptra]
     change base.gpr .r6+BitVec.ofNat 64 (16*k)+BitVec.ofNat 64 128=_
@@ -3621,6 +3666,16 @@ theorem batch_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
   · rw [hy,hyStored,hmap,hashPrefixWith_add]
   · simpa only [hg.mem] using hs.baseFrame.trans
       (coreFrame_toWork base n (hctrFrame.trans hstoreFrame))
+  · rw [hg.keep.gpr (r := .r17) (by decide),hg.keep.gpr (r := .r19) (by decide)]
+    exact hd.input
+
+
+theorem batch_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+    {base ready s : State} {n nr k : Nat} (lay : CoreLayout base n)
+    (hmin : 9<nr) (hmax : nr<15) (hk : k+8≤n) (hs : LoopInv base ready n nr k s) :
+    WP isa Impl.AesGcm.PPC64LE.Blocks.batch s (LoopInv base ready n nr (k+8)) :=
+  batchWithStore_ok lay (.block Impl.AesGcm.PPC64LE.Blocks.stores) (stores_correct base n nr lay hmax)
+    hmin hmax hk hs
 
 
 theorem batchesWith_ok
@@ -3844,7 +3899,8 @@ theorem processed_ciphertext {base : State} {m : Mem} {n nr : Nat} {plaintext : 
     List.getElem_map,List.getElem_range,List.getElem_zipWith,cipherBlockWith]
 
 
-structure CoreResultWith (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (s : State) : Prop where
+structure CoreResultWith (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block)
+    (input : Nat → BitVec 64 → BitVec 64 → Prop) (s : State) : Prop where
   frame : Frame [coreWork base,coreData base n,coreCounter base,coreY base] base.mem s.mem
   ciphertext : Spec.Gcm.blocksAt s.mem (base.gpr .r6) n=Spec.Gcm.ctr32
     (Spec.Gcm.ctxCiph base.mem (base.gpr .r3) nr) (Spec.Gcm.blockAt base.mem (base.gpr .r5))
@@ -3855,14 +3911,16 @@ structure CoreResultWith (base : State) (n nr : Nat) (plaintext : Nat → Spec.G
     (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r9))
     (Spec.Gcm.blocksAt s.mem (base.gpr .r6) n)
   restored : ∀ p ∈ Impl.AesGcm.PPC64LE.Blocks.saved, s.gpr p.1=base.gpr p.1
+  input : input n (s.gpr .r17) (s.gpr .r19)
+  narrow : Frame [coreSpills base,coreBody base,coreData base n,coreCounter base,coreY base] base.mem s.mem
 
 
-abbrev CoreResult (base : State) (n nr : Nat) := CoreResultWith base n nr (defaultPlaintext base)
+abbrev CoreResult (base : State) (n nr : Nat) := CoreResultWith base n nr (defaultPlaintext base) (fun _ _ _ => True)
 
 theorem finish_ok {base entry ready s : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block}
     {input : Nat → BitVec 64 → BitVec 64 → Prop} (lay : CoreLayout base n)
     (hc : CacheResult base entry nr ready) (hs : LoopInvWith base ready n nr plaintext input n s) :
-    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.exit) s (CoreResultWith base n nr plaintext) := by
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.exit) s (CoreResultWith base n nr plaintext input) := by
   have hfbase := hs.baseFrame
   refine WP.mono (exit_ok lay hs.fixed (saved_during_loop lay hc hs)) fun t ht => ?_
   have hp := hs.processed.frame ht.frame (by
@@ -3872,7 +3930,7 @@ theorem finish_ok {base entry ready s : State} {n nr : Nat} {plaintext : Nat →
     · rw [List.mem_singleton] at hr
       subst r
       exact (lay.data (coreY base) (by simp)).symm) lay.size
-  refine ⟨(hfbase.mono (by simp)).trans (ht.frame.mono (by simp)),processed_ciphertext hp,?_,?_,ht.restored⟩
+  refine ⟨(hfbase.mono (by simp)).trans (ht.frame.mono (by simp)),processed_ciphertext hp,?_,?_,ht.restored,?_,?_⟩
   · rw [ht.mem]
     exact exitCounter_value lay hs.fixed hfbase hs.word
   · rw [processed_blocks hp]
@@ -3881,6 +3939,13 @@ theorem finish_ok {base entry ready s : State} {n nr : Nat} {plaintext : Nat →
     change rev128 (((s.mem.writeW (s.gpr .r5+12) (rev32 ((s.gpr .r8).setWidth 32))).writeW
       (s.gpr .r14) (rev128 (s.vpr .v10))).readW (s.gpr .r14) 128)=_
     rw [Mem.readW_writeW_self _ _ 16 _ (by decide),rev128_rev128,hs.y]
+  · rw [ht.keep.gpr (r := .r17) (by decide),ht.keep.gpr (r := .r19) (by decide)]
+    exact hs.input
+  · have hsave : Frame [coreSpills base] base.mem (coreSavedMem base) :=
+      Spill.saveMem_frame_base (show ∀ p∈Impl.AesGcm.PPC64LE.Blocks.saved, p.2+8≤88 from by decide)
+        (by decide) base.mem (base.gpr .r10) base.gpr
+    exact (((hsave.mono (by simp)).trans (hc.frame.mono (by simp))).trans
+      (hs.frame.mono (by simp))).trans (ht.frame.mono (by simp))
 
 
 theorem core_nonemptyWith_ok
@@ -3891,7 +3956,7 @@ theorem core_nonemptyWith_ok
     (hi : input 0 (base.gpr .r17) (base.gpr .r19)) (lay : CoreLayout base n) (hn : base.gpr .r7=BitVec.ofNat 64 n)
     (hpos : 0<n) (hm : n%8=0) (hmax : nr<15)
     (hr : base.gpr .r4=BitVec.ofNat 64 nr) (hH : base.gpr .r8=base.gpr .r3+240#64) :
-    WP isa (Impl.AesGcm.PPC64LE.Blocks.codeWith body) base (CoreResultWith base n nr plaintext) := by
+    WP isa (Impl.AesGcm.PPC64LE.Blocks.codeWith body) base (CoreResultWith base n nr plaintext input) := by
   have hne : base.gpr .r7≠0 := by
     intro he
     have hh := congrArg BitVec.toNat he
@@ -3937,7 +4002,7 @@ theorem core_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
       rw [Impl.AesGcm.PPC64LE.Blocks.code,Impl.AesGcm.PPC64LE.Blocks.codeWith]
       refine WP.ite true (by simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hn]; rfl)
         (fun _ => WP.block_nil ?_) (by simp)
-      refine ⟨Frame.refl _ _,?_,rfl,?_,fun _ _ => rfl⟩
+      refine ⟨Frame.refl _ _,?_,rfl,?_,fun _ _ => rfl,trivial,Frame.refl _ _⟩
       · simp only [Spec.Gcm.blocksAt,List.range_zero,List.map_nil,Spec.Gcm.ctr32,Spec.Gcm.keystream,
           List.length_nil,List.zipWith_nil_left]
       · rfl
