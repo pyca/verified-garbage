@@ -15,22 +15,21 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".long 0x38e00000,0x7d262050,0x28290000
+        r#".base64 "AADgOFAgJn0AACko"
 beq %cr0, 20f
-.long 0x38600000
+.base64 "AABgOA=="
 b 21f
 20:
-.long 0x39000000,0x28240000
+.base64 "AAAAOQAAJCg="
 beq %cr0, 22f
 24:
-.long 0x7d434214,0x896a0000,0x7d454214,0x898a0000,0x7d6b6278,0x7ce75b78,0x39080001,0x7d244050
-.long 0x28290000
+.base64 "FEJDfQAAaokUQkV9AACKiXhia314W+d8AQAIOVBAJH0AACko"
 bne %cr0, 24b
 b 23f
 22:
 23:
-.long 0x38e7ffff,0x78e30fe0
+.base64 "///nOOAP43g="
 21:
-.long 0x4e800020",
+.base64 "IACATg==""#,
     )
 }

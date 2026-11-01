@@ -22,155 +22,139 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".long 0xf821f0a1,0x39810000,0x380c0068,0xf80c0060,0x39810000,0xe96c0060,0x7c0802a6,0xf9eb0088
-.long 0xfa0b0090,0xfa2b0098,0xfa4b00a0,0xfa6b00a8,0xfa8b00b0,0xfaab00b8,0xfacb00c0,0xfaeb00c8
-.long 0xfb0b00d0,0xfb2b00d8,0xf9cb0080,0xf80b00e0,0x7d6e5b78,0x7caf2b78,0x7c701b78,0x7c912378
-.long 0x7cd23378,0x7cf33b78,0x7d144378,0x7d354b78,0x7d565378,0x3b200000
+        r#".base64 "ofAh+AAAgTloAAw4YAAM+AAAgTlgAGzppgIIfIgA6/mQAAv6mAAr+qAAS/qoAGv6sACL+rgAq/rAAMv6yADr+tAAC/vYACv7gADL+eAAC/h4W259eCuvfHgbcHx4I5F8eDPSfHg783x4QxR9eEs1fXhTVn0AACA7"
 20:
-.long 0x806f0000,0x808f0004,0x80af0008,0x932e0070,0x906e0074,0x908e0078,0x90ae007c,0x38000000
-.long 0xf80e00f0,0xf80e00f8,0x7e038378,0x7e248b78,0x38ae0070,0x38ce00f0,0x38e00001,0x390e06f0
+.base64 "AABvgAQAj4AIAK+AcAAuk3QAbpB4AI6QfACukAAAADjwAA74+AAO+HiDA354iyR+cACuOPAAzjgBAOA48AYOOQ=="
 bl {vg_aes_ctr32}
-.long 0xe86e00f0,0x7b241f24,0x7c8e2214,0xf8640010,0x3b390001,0x7a25f842,0x38a5ffff,0x7cb92850
-.long 0x28250000
+.base64 "8ABu6CQfJHsUIo58EABk+AEAOTtC+CV6//+lOFAouXwAACUo"
 bne %cr0, 20b
-.long 0x386e0020,0x3891fffa,0x78841764,0x38ae0100,0x38ce06f0
+.base64 "IABuOPr/kThkF4R4AAGuOPAGzjg="
 bl {vg_aes_expand_key_scratch}
-.long 0xe86e0010,0xe88e0018,0x38a00001,0x7c652838,0x38c00000,0x7ca53050,0x7863f842,0x7886f806
-.long 0x7c633378,0x7884f842,0x3cc0e100,0x78c607c6,0x7ca53038,0x7c842a78,0x38e00040,0x7c8e3d28
-.long 0x38e00048,0x7c6e3d28,0x38000000,0xf80e0050,0xf80e0058,0x7e579378,0x7e789b78,0x7b0be102
-.long 0x282b0000
+.base64 "EABu6BgAjugBAKA4OChlfAAAwDhQMKV8QvhjeAb4hnh4M2N8QviEeADhwDzGB8Z4ODClfHgqhHxAAOA4KD2OfEgA4DgoPW58AAAAOFAADvhYAA74eJNXfnibeH4C4Qt7AAArKA=="
 beq %cr0, 21f
 23:
-.long 0x7b19b282,0x28390000
+.base64 "grIZewAAOSg="
 beq %cr0, 24f
-.long 0x3b200040
+.base64 "QAAgOw=="
 b 25f
 24:
-.long 0x7b19e102
+.base64 "AuEZew=="
 25:
-.long 0x388e01f0,0x7f23cb78,0x39200008,0x39400000
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
 26:
-.long 0x7cb74c28,0x7cd75428,0xf8a40000,0xf8c40008,0x3af70010,0x38840010,0x3863ffff,0x28230000
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 26b
-.long 0x7b2526e4,0x7f05c050,0x386e0040,0x388e0050,0x38ae01f0,0x7f26cb78,0x38ee05f0
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
-.long 0x7b0be102,0x282b0000
+.base64 "AuELewAAKyg="
 bne %cr0, 23b
 b 22f
 21:
 22:
-.long 0x28380000
+.base64 "AAA4KA=="
 beq %cr0, 27f
-.long 0x38000000,0xf80e00f0,0xf80e00f8,0x7ee3bb78,0x388e00f0,0x7f05c378
+.base64 "AAAAOPAADvj4AA74eLvjfvAAjjh4wwV/"
 29:
-.long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
 bne %cr0, 29b
-.long 0x3aee00f0,0x3b000010,0x7b19b282,0x28390000
+.base64 "8ADuOhAAADuCshl7AAA5KA=="
 beq %cr0, 210f
-.long 0x3b200040
+.base64 "QAAgOw=="
 b 211f
 210:
-.long 0x7b19e102
+.base64 "AuEZew=="
 211:
-.long 0x388e01f0,0x7f23cb78,0x39200008,0x39400000
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
 212:
-.long 0x7cb74c28,0x7cd75428,0xf8a40000,0xf8c40008,0x3af70010,0x38840010,0x3863ffff,0x28230000
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 212b
-.long 0x7b2526e4,0x7f05c050,0x386e0040,0x388e0050,0x38ae01f0,0x7f26cb78,0x38ee05f0
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
-.long 0x7b0be102
+.base64 "AuELew=="
 b 28f
 27:
 28:
-.long 0x7e97a378,0x7eb8ab78,0x7b0be102,0x282b0000
+.base64 "eKOXfniruH4C4Qt7AAArKA=="
 beq %cr0, 213f
 215:
-.long 0x7b19b282,0x28390000
+.base64 "grIZewAAOSg="
 beq %cr0, 216f
-.long 0x3b200040
+.base64 "QAAgOw=="
 b 217f
 216:
-.long 0x7b19e102
+.base64 "AuEZew=="
 217:
-.long 0x388e01f0,0x7f23cb78,0x39200008,0x39400000
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
 218:
-.long 0x7cb74c28,0x7cd75428,0xf8a40000,0xf8c40008,0x3af70010,0x38840010,0x3863ffff,0x28230000
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 218b
-.long 0x7b2526e4,0x7f05c050,0x386e0040,0x388e0050,0x38ae01f0,0x7f26cb78,0x38ee05f0
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
-.long 0x7b0be102,0x282b0000
+.base64 "AuELewAAKyg="
 bne %cr0, 215b
 b 214f
 213:
 214:
-.long 0x28380000
+.base64 "AAA4KA=="
 beq %cr0, 219f
-.long 0x38000000,0xf80e00f0,0xf80e00f8,0x7ee3bb78,0x388e00f0,0x7f05c378
+.base64 "AAAAOPAADvj4AA74eLvjfvAAjjh4wwV/"
 221:
-.long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
 bne %cr0, 221b
-.long 0x3aee00f0,0x3b000010,0x7b19b282,0x28390000
+.base64 "8ADuOhAAADuCshl7AAA5KA=="
 beq %cr0, 222f
-.long 0x3b200040
+.base64 "QAAgOw=="
 b 223f
 222:
-.long 0x7b19e102
+.base64 "AuEZew=="
 223:
-.long 0x388e01f0,0x7f23cb78,0x39200008,0x39400000
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
 224:
-.long 0x7cb74c28,0x7cd75428,0xf8a40000,0xf8c40008,0x3af70010,0x38840010,0x3863ffff,0x28230000
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 224b
-.long 0x7b2526e4,0x7f05c050,0x386e0040,0x388e0050,0x38ae01f0,0x7f26cb78,0x38ee05f0
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
-.long 0x7b0be102
+.base64 "AuELew=="
 b 220f
 219:
 220:
-.long 0x7a631f24,0xf86e00f0,0x7aa31f24,0xf86e00f8,0x3aee00f0,0x3b000010,0x7b19b282,0x28390000
+.base64 "JB9jevAAbvgkH6N6+ABu+PAA7joQAAA7grIZewAAOSg="
 beq %cr0, 225f
-.long 0x3b200040
+.base64 "QAAgOw=="
 b 226f
 225:
-.long 0x7b19e102
+.base64 "AuEZew=="
 226:
-.long 0x388e01f0,0x7f23cb78,0x39200008,0x39400000
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
 227:
-.long 0x7cb74c28,0x7cd75428,0xf8a40000,0xf8c40008,0x3af70010,0x38840010,0x3863ffff,0x28230000
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 227b
-.long 0x7b2526e4,0x7f05c050,0x386e0040,0x388e0050,0x38ae01f0,0x7f26cb78,0x38ee05f0
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
-.long 0x7b0be102,0x39200058,0x7c6e4c28,0x39200050,0x7c8e4c28,0xe8af0000,0x7c632a78,0x80af0008
-.long 0x7c842a78,0x78840fa4,0x7884f842,0xf86e0060,0xf88e0068,0xe86e0060,0xe88e0068,0xf86e0070
-.long 0xf88e0078,0x38000000,0xf80e0000,0xf80e0008,0x386e0100,0x7e248b78,0x38ae0070,0x390e06f0
-.long 0x38ce0000,0x38e00001
+.base64 "AuELe1gAIDkoTG58UAAgOShMjnwAAK/oeCpjfAgAr4B4KoR8pA+EeEL4hHhgAG74aACO+GAAbuhoAI7ocABu+HgAjvgAAAA4AAAO+AgADvgAAW44eIskfnAArjjwBg45AADOOAEA4Dg="
 bl {vg_aes_ctr32}
-.long 0x7e97a378,0x7eb8ab78,0xe86e0000,0xe88e0008,0x38a00001,0x78a5f806,0x7c842b78,0xf86e0060
-.long 0xf88e0068,0x7b0be102,0x282b0000
+.base64 "eKOXfniruH4AAG7oCACO6AEAoDgG+KV4eCuEfGAAbvhoAI74AuELewAAKyg="
 beq %cr0, 228f
 230:
-.long 0xe86e0060,0xe88e0068,0xf86e0070,0xf88e0078,0x386e0100,0x7e248b78,0x38ae0070,0x390e06f0
-.long 0x7ee6bb78,0x38e00001
+.base64 "YABu6GgAjuhwAG74eACO+AABbjh4iyR+cACuOPAGDjl4u+Z+AQDgOA=="
 bl {vg_aes_ctr32}
-.long 0x806e0060,0x38630001,0x906e0060,0x3af70010,0x3b18fff0,0x7b0be102,0x282b0000
+.base64 "YABugAEAYzhgAG6QEAD3OvD/GDsC4Qt7AAArKA=="
 bne %cr0, 230b
 b 229f
 228:
 229:
-.long 0x28380000
+.base64 "AAA4KA=="
 beq %cr0, 231f
-.long 0xe86e0060,0xe88e0068,0xf86e0070,0xf88e0078,0x38000000,0xf80e00f0,0xf80e00f8,0x386e0100
-.long 0x7e248b78,0x38ae0070,0x390e06f0,0x38ce00f0,0x38e00001
+.base64 "YABu6GgAjuhwAG74eACO+AAAADjwAA74+AAO+AABbjh4iyR+cACuOPAGDjnwAM44AQDgOA=="
 bl {vg_aes_ctr32}
-.long 0x386e00f0,0x7ee4bb78,0x7f05c378
+.base64 "8ABuOHi75H54wwV/"
 233:
-.long 0x88040000,0x88c30000,0x7c003278,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+.base64 "AAAEiAAAw4h4MgB8AAAEmAEAYzgBAIQ4//+lOAAAJSg="
 bne %cr0, 233b
 b 232f
 231:
 232:
-.long 0xe86e0000,0xe88e0008,0xf8760000,0xf8960008,0xe80e00e0,0x7c0803a6,0xe9ee0088,0xea0e0090
-.long 0xea2e0098,0xea4e00a0,0xea6e00a8,0xea8e00b0,0xeaae00b8,0xeace00c0,0xeaee00c8,0xeb0e00d0
-.long 0xeb2e00d8,0xe9ce0080,0x38210f60,0x4e800020",
+.base64 "AABu6AgAjugAAHb4CACW+OAADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYA8hOCAAgE4=""#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_ghash = sym super::gcm::vg_ghash,
@@ -196,165 +180,147 @@ b 232f
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".long 0xf821f0a1,0x39810000,0x380c0068,0xf80c0060,0x39810000,0xe96c0060,0x7c0802a6,0xf9eb0088
-.long 0xfa0b0090,0xfa2b0098,0xfa4b00a0,0xfa6b00a8,0xfa8b00b0,0xfaab00b8,0xfacb00c0,0xfaeb00c8
-.long 0xfb0b00d0,0xfb2b00d8,0xf9cb0080,0xf80b00e0,0x7d6e5b78,0x7caf2b78,0x7c701b78,0x7c912378
-.long 0x7cd23378,0x7cf33b78,0x7d144378,0x7d354b78,0x7d565378,0xe8760000,0xe8960008,0xf86e0000
-.long 0xf88e0008,0x3b200000
+        r#".base64 "ofAh+AAAgTloAAw4YAAM+AAAgTlgAGzppgIIfIgA6/mQAAv6mAAr+qAAS/qoAGv6sACL+rgAq/rAAMv6yADr+tAAC/vYACv7gADL+eAAC/h4W259eCuvfHgbcHx4I5F8eDPSfHg783x4QxR9eEs1fXhTVn0AAHboCACW6AAAbvgIAI74AAAgOw=="
 20:
-.long 0x806f0000,0x808f0004,0x80af0008,0x932e0070,0x906e0074,0x908e0078,0x90ae007c,0x38000000
-.long 0xf80e00f0,0xf80e00f8,0x7e038378,0x7e248b78,0x38ae0070,0x38ce00f0,0x38e00001,0x390e06f0
+.base64 "AABvgAQAj4AIAK+AcAAuk3QAbpB4AI6QfACukAAAADjwAA74+AAO+HiDA354iyR+cACuOPAAzjgBAOA48AYOOQ=="
 bl {vg_aes_ctr32}
-.long 0xe86e00f0,0x7b241f24,0x7c8e2214,0xf8640010,0x3b390001,0x7a25f842,0x38a5ffff,0x7cb92850
-.long 0x28250000
+.base64 "8ABu6CQfJHsUIo58EABk+AEAOTtC+CV6//+lOFAouXwAACUo"
 bne %cr0, 20b
-.long 0x386e0020,0x3891fffa,0x78841764,0x38ae0100,0x38ce06f0
+.base64 "IABuOPr/kThkF4R4AAGuOPAGzjg="
 bl {vg_aes_expand_key_scratch}
-.long 0xe86e0010,0xe88e0018,0x38a00001,0x7c652838,0x38c00000,0x7ca53050,0x7863f842,0x7886f806
-.long 0x7c633378,0x7884f842,0x3cc0e100,0x78c607c6,0x7ca53038,0x7c842a78,0x38e00040,0x7c8e3d28
-.long 0x38e00048,0x7c6e3d28,0x38000000,0xf80e0050,0xf80e0058,0x7e97a378,0x7eb8ab78,0xe86e0000
-.long 0xe88e0008,0x38a00001,0x78a5f806,0x7c842b78,0xf86e0060,0xf88e0068,0x7b0be102,0x282b0000
+.base64 "EABu6BgAjugBAKA4OChlfAAAwDhQMKV8QvhjeAb4hnh4M2N8QviEeADhwDzGB8Z4ODClfHgqhHxAAOA4KD2OfEgA4DgoPW58AAAAOFAADvhYAA74eKOXfniruH4AAG7oCACO6AEAoDgG+KV4eCuEfGAAbvhoAI74AuELewAAKyg="
 beq %cr0, 21f
 23:
-.long 0xe86e0060,0xe88e0068,0xf86e0070,0xf88e0078,0x386e0100,0x7e248b78,0x38ae0070,0x390e06f0
-.long 0x7ee6bb78,0x38e00001
+.base64 "YABu6GgAjuhwAG74eACO+AABbjh4iyR+cACuOPAGDjl4u+Z+AQDgOA=="
 bl {vg_aes_ctr32}
-.long 0x806e0060,0x38630001,0x906e0060,0x3af70010,0x3b18fff0,0x7b0be102,0x282b0000
+.base64 "YABugAEAYzhgAG6QEAD3OvD/GDsC4Qt7AAArKA=="
 bne %cr0, 23b
 b 22f
 21:
 22:
-.long 0x28380000
+.base64 "AAA4KA=="
 beq %cr0, 24f
-.long 0xe86e0060,0xe88e0068,0xf86e0070,0xf88e0078,0x38000000,0xf80e00f0,0xf80e00f8,0x386e0100
-.long 0x7e248b78,0x38ae0070,0x390e06f0,0x38ce00f0,0x38e00001
+.base64 "YABu6GgAjuhwAG74eACO+AAAADjwAA74+AAO+AABbjh4iyR+cACuOPAGDjnwAM44AQDgOA=="
 bl {vg_aes_ctr32}
-.long 0x386e00f0,0x7ee4bb78,0x7f05c378
+.base64 "8ABuOHi75H54wwV/"
 26:
-.long 0x88040000,0x88c30000,0x7c003278,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+.base64 "AAAEiAAAw4h4MgB8AAAEmAEAYzgBAIQ4//+lOAAAJSg="
 bne %cr0, 26b
 b 25f
 24:
 25:
-.long 0x7e579378,0x7e789b78,0x7b0be102,0x282b0000
+.base64 "eJNXfnibeH4C4Qt7AAArKA=="
 beq %cr0, 27f
 29:
-.long 0x7b19b282,0x28390000
+.base64 "grIZewAAOSg="
 beq %cr0, 210f
-.long 0x3b200040
+.base64 "QAAgOw=="
 b 211f
 210:
-.long 0x7b19e102
+.base64 "AuEZew=="
 211:
-.long 0x388e01f0,0x7f23cb78,0x39200008,0x39400000
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
 212:
-.long 0x7cb74c28,0x7cd75428,0xf8a40000,0xf8c40008,0x3af70010,0x38840010,0x3863ffff,0x28230000
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 212b
-.long 0x7b2526e4,0x7f05c050,0x386e0040,0x388e0050,0x38ae01f0,0x7f26cb78,0x38ee05f0
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
-.long 0x7b0be102,0x282b0000
+.base64 "AuELewAAKyg="
 bne %cr0, 29b
 b 28f
 27:
 28:
-.long 0x28380000
+.base64 "AAA4KA=="
 beq %cr0, 213f
-.long 0x38000000,0xf80e00f0,0xf80e00f8,0x7ee3bb78,0x388e00f0,0x7f05c378
+.base64 "AAAAOPAADvj4AA74eLvjfvAAjjh4wwV/"
 215:
-.long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
 bne %cr0, 215b
-.long 0x3aee00f0,0x3b000010,0x7b19b282,0x28390000
+.base64 "8ADuOhAAADuCshl7AAA5KA=="
 beq %cr0, 216f
-.long 0x3b200040
+.base64 "QAAgOw=="
 b 217f
 216:
-.long 0x7b19e102
+.base64 "AuEZew=="
 217:
-.long 0x388e01f0,0x7f23cb78,0x39200008,0x39400000
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
 218:
-.long 0x7cb74c28,0x7cd75428,0xf8a40000,0xf8c40008,0x3af70010,0x38840010,0x3863ffff,0x28230000
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 218b
-.long 0x7b2526e4,0x7f05c050,0x386e0040,0x388e0050,0x38ae01f0,0x7f26cb78,0x38ee05f0
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
-.long 0x7b0be102
+.base64 "AuELew=="
 b 214f
 213:
 214:
-.long 0x7e97a378,0x7eb8ab78,0x7b0be102,0x282b0000
+.base64 "eKOXfniruH4C4Qt7AAArKA=="
 beq %cr0, 219f
 221:
-.long 0x7b19b282,0x28390000
+.base64 "grIZewAAOSg="
 beq %cr0, 222f
-.long 0x3b200040
+.base64 "QAAgOw=="
 b 223f
 222:
-.long 0x7b19e102
+.base64 "AuEZew=="
 223:
-.long 0x388e01f0,0x7f23cb78,0x39200008,0x39400000
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
 224:
-.long 0x7cb74c28,0x7cd75428,0xf8a40000,0xf8c40008,0x3af70010,0x38840010,0x3863ffff,0x28230000
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 224b
-.long 0x7b2526e4,0x7f05c050,0x386e0040,0x388e0050,0x38ae01f0,0x7f26cb78,0x38ee05f0
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
-.long 0x7b0be102,0x282b0000
+.base64 "AuELewAAKyg="
 bne %cr0, 221b
 b 220f
 219:
 220:
-.long 0x28380000
+.base64 "AAA4KA=="
 beq %cr0, 225f
-.long 0x38000000,0xf80e00f0,0xf80e00f8,0x7ee3bb78,0x388e00f0,0x7f05c378
+.base64 "AAAAOPAADvj4AA74eLvjfvAAjjh4wwV/"
 227:
-.long 0x88030000,0x98040000,0x38630001,0x38840001,0x38a5ffff,0x28250000
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
 bne %cr0, 227b
-.long 0x3aee00f0,0x3b000010,0x7b19b282,0x28390000
+.base64 "8ADuOhAAADuCshl7AAA5KA=="
 beq %cr0, 228f
-.long 0x3b200040
+.base64 "QAAgOw=="
 b 229f
 228:
-.long 0x7b19e102
+.base64 "AuEZew=="
 229:
-.long 0x388e01f0,0x7f23cb78,0x39200008,0x39400000
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
 230:
-.long 0x7cb74c28,0x7cd75428,0xf8a40000,0xf8c40008,0x3af70010,0x38840010,0x3863ffff,0x28230000
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 230b
-.long 0x7b2526e4,0x7f05c050,0x386e0040,0x388e0050,0x38ae01f0,0x7f26cb78,0x38ee05f0
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
-.long 0x7b0be102
+.base64 "AuELew=="
 b 226f
 225:
 226:
-.long 0x7a631f24,0xf86e00f0,0x7aa31f24,0xf86e00f8,0x3aee00f0,0x3b000010,0x7b19b282,0x28390000
+.base64 "JB9jevAAbvgkH6N6+ABu+PAA7joQAAA7grIZewAAOSg="
 beq %cr0, 231f
-.long 0x3b200040
+.base64 "QAAgOw=="
 b 232f
 231:
-.long 0x7b19e102
+.base64 "AuEZew=="
 232:
-.long 0x388e01f0,0x7f23cb78,0x39200008,0x39400000
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
 233:
-.long 0x7cb74c28,0x7cd75428,0xf8a40000,0xf8c40008,0x3af70010,0x38840010,0x3863ffff,0x28230000
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 233b
-.long 0x7b2526e4,0x7f05c050,0x386e0040,0x388e0050,0x38ae01f0,0x7f26cb78,0x38ee05f0
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
-.long 0x7b0be102,0x39200058,0x7c6e4c28,0x39200050,0x7c8e4c28,0xe8af0000,0x7c632a78,0x80af0008
-.long 0x7c842a78,0x78840fa4,0x7884f842,0xf86e0060,0xf88e0068,0xe86e0060,0xe88e0068,0xf86e0070
-.long 0xf88e0078,0x38000000,0xf80e00f0,0xf80e00f8,0x386e0100,0x7e248b78,0x38ae0070,0x390e06f0
-.long 0x38ce00f0,0x38e00001
+.base64 "AuELe1gAIDkoTG58UAAgOShMjnwAAK/oeCpjfAgAr4B4KoR8pA+EeEL4hHhgAG74aACO+GAAbuhoAI7ocABu+HgAjvgAAAA48AAO+PgADvgAAW44eIskfnAArjjwBg458ADOOAEA4Dg="
 bl {vg_aes_ctr32}
-.long 0xe86e0000,0xe88e00f0,0x7c632278,0xe88e0008,0xe8ae00f8,0x7c842a78,0x7c632378,0x38800000
-.long 0x7c832050,0x7c632378,0x78630fe0,0x3b200001,0x7f23c850,0x39200000,0x7d394850,0x7e83a378
-.long 0x7ea4ab78,0x28240000
+.base64 "AABu6PAAjuh4ImN8CACO6PgAruh4KoR8eCNjfAAAgDhQIIN8eCNjfOAPY3gBACA7UMgjfwAAIDlQSDl9eKODfnirpH4AACQo"
 beq %cr0, 234f
 236:
-.long 0x88030000,0x7c004838,0x98030000,0x38630001,0x3884ffff,0x28240000
+.base64 "AAADiDhIAHwAAAOYAQBjOP//hDgAACQo"
 bne %cr0, 236b
 b 235f
 234:
 235:
-.long 0x7f23cb78,0xe80e00e0,0x7c0803a6,0xe9ee0088,0xea0e0090,0xea2e0098,0xea4e00a0,0xea6e00a8
-.long 0xea8e00b0,0xeaae00b8,0xeace00c0,0xeaee00c8,0xeb0e00d0,0xeb2e00d8,0xe9ce0080,0x38210f60
-.long 0x4e800020",
+.base64 "eMsjf+AADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYA8hOCAAgE4=""#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_ghash = sym super::gcm::vg_ghash,

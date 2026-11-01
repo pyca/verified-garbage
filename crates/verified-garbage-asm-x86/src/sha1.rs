@@ -15,9 +15,8 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
-        r".octa 0xefcdab89b9088967452301b90424448b,0x10325476b908488998badcfeb9044889
-.byte 0x89,0x48,0x0c,0xb9,0xf0,0xe1,0xd2,0xc3,0x89,0x48,0x10,0xc3
-.p2align 6",
+        r#".base64 "i0QkBLkBI0VniQi5iavN74lIBLn+3LqYiUgIuXZUMhCJSAy58OHSw4lIEMM="
+.p2align 6"#,
     )
 }
 
@@ -36,74 +35,16 @@ pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_compress(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        r".octa 0x4c68894878894470894058891024448b,0x544d890c244c8b504d8908244c8bc589
-.byte 0x85,0xc9
+        r#".base64 "i0QkEIlYQIlwRIl4SIloTInFi0wkCIlNUItMJAyJTVSFyQ=="
 je 20f
 22:
-.octa 0x8b0c578b084f8b045f8b078b04247c8b,0xcf89fe01007d89cf0f3f8b507d8b1077,0x81fe011bcfc1c789fe01d731df21d731,0xcf0f047f8b507d8b02cbc15a827999c6
-.octa 0x89fa01cf31c721cf31df89fa01047d89,0x8b02c8c15a827999c281fa011bcfc1f7,0xdf31c789f901087d89cf0f087f8b507d,0x99c181f9011bcfc1d789f901df31f721
-.octa 0x7d89cf0f0c7f8b507d8b02cec15a8279,0xc1cf89fb01c731d721c731f789fb010c,0x507d8b02cac15a827999c381fb011bcf,0xcf21f731d789f801107d89cf0f107f8b
-.octa 0x5a82799905f8011bcfc1df89f801f731,0xfe01147d89cf0f147f8b507d8b02c9c1,0x11bcfc1c789fe01d731df21d731cf89,0x187f8b507d8b02cbc15a827999c681fe
-.octa 0x1cf31c721cf31df89fa01187d89cf0f,0xc8c15a827999c281fa011bcfc1f789fa,0xc789f9011c7d89cf0f1c7f8b507d8b02,0x81f9011bcfc1d789f901df31f721df31
-.octa 0xcf0f207f8b507d8b02cec15a827999c1,0x89fb01c731d721c731f789fb01207d89,0x8b02cac15a827999c381fb011bcfc1cf,0xf731d789f801247d89cf0f247f8b507d
-.octa 0x799905f8011bcfc1df89f801f731cf21,0x287d89cf0f287f8b507d8b02c9c15a82,0xcfc1c789fe01d731df21d731cf89fe01,0x8b507d8b02cbc15a827999c681fe011b
-.octa 0x31c721cf31df89fa012c7d89cf0f2c7f,0x5a827999c281fa011bcfc1f789fa01cf,0xf901307d89cf0f307f8b507d8b02c8c1,0x11bcfc1d789f901df31f721df31c789
-.octa 0x347f8b507d8b02cec15a827999c181f9,0x1c731d721c731f789fb01347d89cf0f,0xcac15a827999c381fb011bcfc1cf89fb,0xd789f801387d89cf0f387f8b507d8b02
-.octa 0x5f8011bcfc1df89f801f731cf21f731,0x89cf0f3c7f8b507d8b02c9c15a827999,0xc789fe01d731df21d731cf89fe013c7d,0x7d8b02cbc15a827999c681fe011bcfc1
-.octa 0x7d891fcfc1007d33087d33207d3334,0xcfc1f789fa01cf31c721cf31df89fa01,0x33387d8b02c8c15a827999c281fa011b,0xf901047d891fcfc1047d330c7d33247d
-.octa 0x11bcfc1d789f901df31f721df31c789,0x287d333c7d8b02cec15a827999c181f9,0xf789fb01087d891fcfc1087d33107d33,0x81fb011bcfc1cf89fb01c731d721c731
-.octa 0x7d332c7d33007d8b02cac15a827999c3,0xf731d789f8010c7d891fcfc10c7d3314,0x799905f8011bcfc1df89f801f731cf21,0x7d33187d33307d33047d8b02c9c15a82
-.octa 0x1d731cf31df89fe01107d891fcfc110,0xcbc16ed9eba1c681fe011bcfc1c789fe,0x1fcfc1147d331c7d33347d33087d8b02,0xc1f789fa01cf31df31c789fa01147d89
-.octa 0xc7d8b02c8c16ed9eba1c281fa011bcf,0x1187d891fcfc1187d33207d33387d33,0xf9011bcfc1d789f901df31c731f789f9,0x333c7d33107d8b02cec16ed9eba1c181
-.octa 0x31d789fb011c7d891fcfc11c7d33247d,0xeba1c381fb011bcfc1cf89fb01c731f7,0x7d33287d33007d33147d8b02cac16ed9,0x1f731d731cf89f801207d891fcfc120
-.octa 0x2c9c16ed9eba105f8011bcfc1df89f8,0x891fcfc1247d332c7d33047d33187d8b,0xcfc1c789fe01d731cf31df89fe01247d,0x331c7d8b02cbc16ed9eba1c681fe011b
-.octa 0xfa01287d891fcfc1287d33307d33087d,0x81fa011bcfc1f789fa01cf31df31c789,0x7d330c7d33207d8b02c8c16ed9eba1c2,0xc731f789f9012c7d891fcfc12c7d3334
-.octa 0xd9eba1c181f9011bcfc1d789f901df31,0x307d33387d33107d33247d8b02cec16e,0xfb01c731f731d789fb01307d891fcfc1,0x2cac16ed9eba1c381fb011bcfc1cf89
-.octa 0x891fcfc1347d333c7d33147d33287d8b,0xcfc1df89f801f731d731cf89f801347d,0x7d332c7d8b02c9c16ed9eba105f8011b,0x89fe01387d891fcfc1387d33007d3318
-.octa 0xc681fe011bcfc1c789fe01d731cf31df,0x47d331c7d33307d8b02cbc16ed9eba1,0x31df31c789fa013c7d891fcfc13c7d33,0x6ed9eba1c281fa011bcfc1f789fa01cf
-.octa 0xc1007d33087d33207d33347d8b02c8c1,0x89f901df31c731f789f901007d891fcf,0x8b02cec16ed9eba1c181f9011bcfc1d7,0x7d891fcfc1047d330c7d33247d33387d
-.octa 0x1bcfc1cf89fb01c731f731d789fb0104,0x7d333c7d8b02cac16ed9eba1c381fb01,0x89f801087d891fcfc1087d33107d3328,0xa105f8011bcfc1df89f801f731d731cf
-.octa 0x33147d332c7d33007d8b02c9c16ed9eb,0xd731cf31df89fe010c7d891fcfc10c7d,0xc16ed9eba1c681fe011bcfc1c789fe01,0xcfc1107d33187d33307d33047d8b02cb
-.octa 0xf789fa01cf31df31c789fa01107d891f,0x7d8b02c8c16ed9eba1c281fa011bcfc1,0x147d891fcfc1147d331c7d33347d3308,0x11bcfc1d789f901df31c731f789f901
-.octa 0x387d330c7d8b02cec16ed9eba1c181f9,0xd789fb01187d891fcfc1187d33207d33,0xa1c381fb011bcfc1cf89fb01c731f731,0x33247d333c7d33107d8b02cac16ed9eb
-.octa 0xf731d731cf89f8011c7d891fcfc11c7d,0xc9c16ed9eba105f8011bcfc1df89f801,0x1fcfc1207d33287d33007d33147d8b02,0x21cf31df89fe01cf21df89fe01207d89
-.octa 0x8f1bbcdcc681fe011bcfc1c789fe01d7,0xc1247d332c7d33047d33187d8b02cbc1,0x31c789fa01df21c789fa01247d891fcf,0xbcdcc281fa011bcfc1f789fa01cf21df
-.octa 0x7d33307d33087d331c7d8b02c8c18f1b,0x89f901c721f789f901287d891fcfc128,0xc181f9011bcfc1d789f901df21c731f7,0x347d330c7d33207d8b02cec18f1bbcdc
-.octa 0x1f721d789fb012c7d891fcfc12c7d33,0xfb011bcfc1cf89fb01c721f731d789fb,0x33107d33247d8b02cac18f1bbcdcc381,0x21cf89f801307d891fcfc1307d33387d
-.octa 0x1bcfc1df89f801f721d731cf89f801d7,0x147d33287d8b02c9c18f1bbcdc05f801,0xdf89fe01347d891fcfc1347d333c7d33,0xcfc1c789fe01d721cf31df89fe01cf21
-.octa 0x332c7d8b02cbc18f1bbcdcc681fe011b,0xfa01387d891fcfc1387d33007d33187d,0xf789fa01cf21df31c789fa01df21c789,0x7d8b02c8c18f1bbcdcc281fa011bcfc1
-.octa 0x3c7d891fcfc13c7d33047d331c7d3330,0xf901df21c731f789f901c721f789f901,0x2cec18f1bbcdcc181f9011bcfc1d789,0x891fcfc1007d33087d33207d33347d8b
-.octa 0xc721f731d789fb01f721d789fb01007d,0xc18f1bbcdcc381fb011bcfc1cf89fb01,0xcfc1047d330c7d33247d33387d8b02ca,0xd731cf89f801d721cf89f801047d891f
-.octa 0x8f1bbcdc05f8011bcfc1df89f801f721,0xc1087d33107d33287d333c7d8b02c9c1,0x31df89fe01cf21df89fe01087d891fcf,0xbcdcc681fe011bcfc1c789fe01d721cf
-.octa 0x7d33147d332c7d33007d8b02cbc18f1b,0x89fa01df21c789fa010c7d891fcfc10c,0xc281fa011bcfc1f789fa01cf21df31c7,0x187d33307d33047d8b02c8c18f1bbcdc
-.octa 0x1c721f789f901107d891fcfc1107d33,0xf9011bcfc1d789f901df21c731f789f9,0x33347d33087d8b02cec18f1bbcdcc181,0x21d789fb01147d891fcfc1147d331c7d
-.octa 0x1bcfc1cf89fb01c721f731d789fb01f7,0x7d330c7d8b02cac18f1bbcdcc381fb01,0x89f801187d891fcfc1187d33207d3338,0xc1df89f801f721d731cf89f801d721cf
-.octa 0x33107d8b02c9c18f1bbcdc05f8011bcf,0xfe011c7d891fcfc11c7d33247d333c7d,0xc789fe01d721cf31df89fe01cf21df89,0x7d8b02cbc18f1bbcdcc681fe011bcfc1
-.octa 0x207d891fcfc1207d33287d33007d3314,0xfa01cf21df31c789fa01df21c789fa01,0x2c8c18f1bbcdcc281fa011bcfc1f789,0x891fcfc1247d332c7d33047d33187d8b
-.octa 0xdf21c731f789f901c721f789f901247d,0xc18f1bbcdcc181f9011bcfc1d789f901,0xcfc1287d33307d33087d331c7d8b02ce,0xf731d789fb01f721d789fb01287d891f
-.octa 0x1bbcdcc381fb011bcfc1cf89fb01c721,0x2c7d33347d330c7d33207d8b02cac18f,0xcf89f801d721cf89f8012c7d891fcfc1,0xbcdc05f8011bcfc1df89f801f721d731
-.octa 0x7d33387d33107d33247d8b02c9c18f1b,0x1d731cf31df89fe01307d891fcfc130,0xcbc1ca62c1d6c681fe011bcfc1c789fe,0x1fcfc1347d333c7d33147d33287d8b02
-.octa 0xc1f789fa01cf31df31c789fa01347d89,0x2c7d8b02c8c1ca62c1d6c281fa011bcf,0x1387d891fcfc1387d33007d33187d33,0xf9011bcfc1d789f901df31c731f789f9
-.octa 0x331c7d33307d8b02cec1ca62c1d6c181,0x31d789fb013c7d891fcfc13c7d33047d,0xc1d6c381fb011bcfc1cf89fb01c731f7,0x7d33087d33207d33347d8b02cac1ca62
-.octa 0x1f731d731cf89f801007d891fcfc100,0x2c9c1ca62c1d605f8011bcfc1df89f8,0x891fcfc1047d330c7d33247d33387d8b,0xcfc1c789fe01d731cf31df89fe01047d
-.octa 0x333c7d8b02cbc1ca62c1d6c681fe011b,0xfa01087d891fcfc1087d33107d33287d,0x81fa011bcfc1f789fa01cf31df31c789,0x7d332c7d33007d8b02c8c1ca62c1d6c2
-.octa 0xc731f789f9010c7d891fcfc10c7d3314,0x62c1d6c181f9011bcfc1d789f901df31,0x107d33187d33307d33047d8b02cec1ca,0xfb01c731f731d789fb01107d891fcfc1
-.octa 0x2cac1ca62c1d6c381fb011bcfc1cf89,0x891fcfc1147d331c7d33347d33087d8b,0xcfc1df89f801f731d731cf89f801147d,0x7d330c7d8b02c9c1ca62c1d605f8011b
-.octa 0x89fe01187d891fcfc1187d33207d3338,0xc681fe011bcfc1c789fe01d731cf31df,0x247d333c7d33107d8b02cbc1ca62c1d6,0x31df31c789fa011c7d891fcfc11c7d33
-.octa 0xca62c1d6c281fa011bcfc1f789fa01cf,0xc1207d33287d33007d33147d8b02c8c1,0x89f901df31c731f789f901207d891fcf,0x8b02cec1ca62c1d6c181f9011bcfc1d7
-.octa 0x7d891fcfc1247d332c7d33047d33187d,0x1bcfc1cf89fb01c731f731d789fb0124,0x7d331c7d8b02cac1ca62c1d6c381fb01,0x89f801287d891fcfc1287d33307d3308
-.octa 0xd605f8011bcfc1df89f801f731d731cf,0x33347d330c7d33207d8b02c9c1ca62c1,0xd731cf31df89fe012c7d891fcfc12c7d,0xc1ca62c1d6c681fe011bcfc1c789fe01
-.octa 0xcfc1307d33387d33107d33247d8b02cb,0xf789fa01cf31df31c789fa01307d891f,0x7d8b02c8c1ca62c1d6c281fa011bcfc1,0x347d891fcfc1347d333c7d33147d3328
-.octa 0x11bcfc1d789f901df31c731f789f901,0x187d332c7d8b02cec1ca62c1d6c181f9,0xd789fb01387d891fcfc1387d33007d33,0xd6c381fb011bcfc1cf89fb01c731f731
-.octa 0x33047d331c7d33307d8b02cac1ca62c1,0xf731d731cf89f8013c7d891fcfc13c7d,0xc9c1ca62c1d605f8011bcfc1df89f801,0xc5703084f03045f03070304247c8b02
-.octa 0x77890c5789084f89045f890789107703,0x1e88354458b50458940c08350458b10
-.byte 0x89,0x45,0x54
+.base64 "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"
 jne 22b
 jmp 21f
 20:
 21:
-.byte 0x8b,0x5d,0x40,0x8b,0x75,0x44,0x8b,0x7d,0x48,0x8b,0x6d,0x4c,0xc3
-.p2align 6",
+.base64 "i11Ai3VEi31Ii21Mww=="
+.p2align 6"#,
     )
 }
 
@@ -122,74 +63,70 @@ jmp 21f
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x4489000000c024848bffffff4424a48d,0x24848b08244489000000c424848b0424,0x89000000cc24848b0c244489000000c8,0xe08914244489000000d024848b102444
-.octa 0x70897058891824448b182444891cc083,0x8b10246c8b04245c8b7c688978788974
-.byte 0x74,0x24,0x14,0x8b,0x7c,0x24,0x08,0x83,0xe7,0x3f
+        r#".base64 "jaQkRP///4uEJMAAAACJRCQEi4QkxAAAAIlEJAiLhCTIAAAAiUQkDIuEJMwAAACJRCQQi4Qk0AAAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
 20:
-.byte 0x85,0xff
+.base64 "hf8="
 je 21f
-.byte 0xb8,0x40,0x00,0x00,0x00,0x29,0xf8,0x39,0xc6
+.base64 "uEAAAAAp+DnG"
 jb 23f
 jmp 24f
 23:
-.byte 0x89,0xf0
+.base64 "ifA="
 24:
-.byte 0x29,0xc6,0x01,0xdf,0x85,0xc0
+.base64 "KcYB34XA"
 je 25f
 27:
-.octa 0x1e88301c78301c583144f88004db60f
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
 jne 27b
 jmp 26f
 25:
 26:
-.byte 0x29,0xdf,0xb9,0x00,0x00,0x00,0x00,0x83,0xff,0x40
+.base64 "Kd+5AAAAAIP/QA=="
 je 28f
 jmp 29f
 28:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xbf,0x00,0x00,0x00,0x00,0xb9,0x01,0x00,0x00,0x00
+.base64 "idiDwBS/AAAAALkBAAAA"
 29:
 jmp 22f
 21:
-.byte 0x83,0xfe,0x40
+.base64 "g/5A"
 jae 210f
-.byte 0xb8,0x40,0x00,0x00,0x00,0x29,0xf8,0x39,0xc6
+.base64 "uEAAAAAp+DnG"
 jb 212f
 jmp 213f
 212:
-.byte 0x89,0xf0
+.base64 "ifA="
 213:
-.byte 0x29,0xc6,0x01,0xdf,0x85,0xc0
+.base64 "KcYB34XA"
 je 214f
 216:
-.octa 0x1e88301c78301c583144f88004db60f
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
 jne 216b
 jmp 215f
 214:
 215:
-.byte 0x29,0xdf,0xb9,0x00,0x00,0x00,0x00,0x83,0xff,0x40
+.base64 "Kd+5AAAAAIP/QA=="
 je 217f
 jmp 218f
 217:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xbf,0x00,0x00,0x00,0x00,0xb9,0x01,0x00,0x00,0x00
+.base64 "idiDwBS/AAAAALkBAAAA"
 218:
 jmp 211f
 210:
-.octa 0x89ce89d501ca29f2893fe183f189e889
-.byte 0xd1,0xc1,0xe9,0x06
+.base64 "ieiJ8YPhP4nyKcoB1YnOidHB6QY="
 211:
 22:
-.byte 0x85,0xc9
+.base64 "hck="
 jne 219f
 jmp 220f
 219:
-.byte 0x8b,0x54,0x24,0x18,0x52,0x51,0x50,0x53
+.base64 "i1QkGFJRUFM="
 call {vg_sha1_compress}
-.byte 0x58,0x58,0x58,0x58,0xb9,0x01,0x00,0x00,0x00,0x85,0xc9
+.base64 "WFhYWLkBAAAAhck="
 220:
 jne 20b
-.octa 0x7c688b78788b74708b70588b1824448b
-.byte 0x8d,0xa4,0x24,0xbc,0x00,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkGItYcItwdIt4eItofI2kJLwAAADD"
+.p2align 6"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
@@ -210,42 +147,39 @@ jne 20b
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r".octa 0x4489000000bc24848bffffff4824a48d,0x24848b08244489000000c024848b0424,0x89000000c824848b0c244489000000c4,0x1424448b1424448918c083e089102444
-.octa 0x5c8bc5897c6889787889747089705889,0xc244c8b000000808d8908244c8b0424,0x888d8910244c8b000000848d89,0x80b9fa01da893fe78308247c8b
-.byte 0x88,0x4a,0x14,0x83,0xc7,0x01,0xbe,0x00,0x00,0x00,0x00,0x83,0xff,0x39
+        r#".base64 "jaQkSP///4uEJLwAAACJRCQEi4QkwAAAAIlEJAiLhCTEAAAAiUQkDIuEJMgAAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACIShSDxwG+AAAAAIP/OQ=="
 jae 20f
 jmp 21f
 20:
-.byte 0xbe,0x01,0x00,0x00,0x00
+.base64 "vgEAAAA="
 21:
 22:
-.byte 0xb8,0x40,0x00,0x00,0x00,0x85,0xf6
+.base64 "uEAAAACF9g=="
 je 23f
 jmp 24f
 23:
-.byte 0xb8,0x38,0x00,0x00,0x00
+.base64 "uDgAAAA="
 24:
-.byte 0xb9,0x00,0x00,0x00,0x00,0x29,0xf8
+.base64 "uQAAAAAp+A=="
 je 25f
 27:
-.byte 0x89,0xda,0x01,0xfa,0x88,0x4a,0x14,0x83,0xc7,0x01,0x83,0xe8,0x01
+.base64 "idoB+ohKFIPHAYPoAQ=="
 jne 27b
 jmp 26f
 25:
 26:
-.byte 0x85,0xf6
+.base64 "hfY="
 je 28f
 jmp 29f
 28:
-.octa 0xc901c901000000848d8b00000080858b,0xfc001c001c001d1091deac1c289c901
-.byte 0xc9,0x89,0x4b,0x4c,0x0f,0xc8,0x89,0x43,0x50
+.base64 "i4WAAAAAi42EAAAAAckByQHJicLB6h0J0QHAAcABwA/JiUtMD8iJQ1A="
 29:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xb9,0x01,0x00,0x00,0x00,0x55,0x51,0x50,0x53
+.base64 "idiDwBS5AQAAAFVRUFM="
 call {vg_sha1_compress}
-.byte 0x58,0x58,0x58,0x58,0xbf,0x00,0x00,0x00,0x00,0x83,0xee,0x01
+.base64 "WFhYWL8AAAAAg+4B"
 je 22b
-.octa 0xf044b8b0889c90f0b8b00000088858b,0xf0c4b8b084889c90f084b8b044889c9,0x8b705d8b104889c90f104b8b0c4889c9,0xc3000000b824a48d7c6d8b787d8b7475
-.p2align 6",
+.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXyNpCS4AAAAww=="
+.p2align 6"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
@@ -267,73 +201,70 @@ je 22b
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_update_scratch(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        r".octa 0x7c68897878897470897058891824448b,0x8247c8b1424748b10246c8b04245c8b
-.byte 0x83,0xe7,0x3f
+        r#".base64 "i0QkGIlYcIlwdIl4eIlofItcJASLbCQQi3QkFIt8JAiD5z8="
 20:
-.byte 0x85,0xff
+.base64 "hf8="
 je 21f
-.byte 0xb8,0x40,0x00,0x00,0x00,0x29,0xf8,0x39,0xc6
+.base64 "uEAAAAAp+DnG"
 jb 23f
 jmp 24f
 23:
-.byte 0x89,0xf0
+.base64 "ifA="
 24:
-.byte 0x29,0xc6,0x01,0xdf,0x85,0xc0
+.base64 "KcYB34XA"
 je 25f
 27:
-.octa 0x1e88301c78301c583144f88004db60f
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
 jne 27b
 jmp 26f
 25:
 26:
-.byte 0x29,0xdf,0xb9,0x00,0x00,0x00,0x00,0x83,0xff,0x40
+.base64 "Kd+5AAAAAIP/QA=="
 je 28f
 jmp 29f
 28:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xbf,0x00,0x00,0x00,0x00,0xb9,0x01,0x00,0x00,0x00
+.base64 "idiDwBS/AAAAALkBAAAA"
 29:
 jmp 22f
 21:
-.byte 0x83,0xfe,0x40
+.base64 "g/5A"
 jae 210f
-.byte 0xb8,0x40,0x00,0x00,0x00,0x29,0xf8,0x39,0xc6
+.base64 "uEAAAAAp+DnG"
 jb 212f
 jmp 213f
 212:
-.byte 0x89,0xf0
+.base64 "ifA="
 213:
-.byte 0x29,0xc6,0x01,0xdf,0x85,0xc0
+.base64 "KcYB34XA"
 je 214f
 216:
-.octa 0x1e88301c78301c583144f88004db60f
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
 jne 216b
 jmp 215f
 214:
 215:
-.byte 0x29,0xdf,0xb9,0x00,0x00,0x00,0x00,0x83,0xff,0x40
+.base64 "Kd+5AAAAAIP/QA=="
 je 217f
 jmp 218f
 217:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xbf,0x00,0x00,0x00,0x00,0xb9,0x01,0x00,0x00,0x00
+.base64 "idiDwBS/AAAAALkBAAAA"
 218:
 jmp 211f
 210:
-.octa 0x89ce89d501ca29f2893fe183f189e889
-.byte 0xd1,0xc1,0xe9,0x06
+.base64 "ieiJ8YPhP4nyKcoB1YnOidHB6QY="
 211:
 22:
-.byte 0x85,0xc9
+.base64 "hck="
 jne 219f
 jmp 220f
 219:
-.byte 0x8b,0x54,0x24,0x18,0x52,0x51,0x50,0x53
+.base64 "i1QkGFJRUFM="
 call {vg_sha1_compress}
-.byte 0x58,0x58,0x58,0x58,0xb9,0x01,0x00,0x00,0x00,0x85,0xc9
+.base64 "WFhYWLkBAAAAhck="
 220:
 jne 20b
-.octa 0x7c688b78788b74708b70588b1824448b
-.byte 0xc3
-.p2align 6",
+.base64 "i0QkGItYcItwdIt4eItofMM="
+.p2align 6"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
@@ -356,43 +287,39 @@ jne 20b
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_finalize_scratch(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        r".octa 0x7c68897878897470897058891424448b,0x808d8908244c8b04245c8bc589,0x8d8910244c8b000000848d890c244c8b,0xb9fa01da893fe78308247c8b00000088
-.octa 0x8300000000be01c783144a8800000080
-.byte 0xff,0x39
+        r#".base64 "i0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACIShSDxwG+AAAAAIP/OQ=="
 jae 20f
 jmp 21f
 20:
-.byte 0xbe,0x01,0x00,0x00,0x00
+.base64 "vgEAAAA="
 21:
 22:
-.byte 0xb8,0x40,0x00,0x00,0x00,0x85,0xf6
+.base64 "uEAAAACF9g=="
 je 23f
 jmp 24f
 23:
-.byte 0xb8,0x38,0x00,0x00,0x00
+.base64 "uDgAAAA="
 24:
-.byte 0xb9,0x00,0x00,0x00,0x00,0x29,0xf8
+.base64 "uQAAAAAp+A=="
 je 25f
 27:
-.byte 0x89,0xda,0x01,0xfa,0x88,0x4a,0x14,0x83,0xc7,0x01,0x83,0xe8,0x01
+.base64 "idoB+ohKFIPHAYPoAQ=="
 jne 27b
 jmp 26f
 25:
 26:
-.byte 0x85,0xf6
+.base64 "hfY="
 je 28f
 jmp 29f
 28:
-.octa 0xc901c901000000848d8b00000080858b,0xfc001c001c001d1091deac1c289c901
-.byte 0xc9,0x89,0x4b,0x4c,0x0f,0xc8,0x89,0x43,0x50
+.base64 "i4WAAAAAi42EAAAAAckByQHJicLB6h0J0QHAAcABwA/JiUtMD8iJQ1A="
 29:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xb9,0x01,0x00,0x00,0x00,0x55,0x51,0x50,0x53
+.base64 "idiDwBS5AQAAAFVRUFM="
 call {vg_sha1_compress}
-.byte 0x58,0x58,0x58,0x58,0xbf,0x00,0x00,0x00,0x00,0x83,0xee,0x01
+.base64 "WFhYWL8AAAAAg+4B"
 je 22b
-.octa 0xf044b8b0889c90f0b8b00000088858b,0xf0c4b8b084889c90f084b8b044889c9,0x8b705d8b104889c90f104b8b0c4889c9
-.byte 0x75,0x74,0x8b,0x7d,0x78,0x8b,0x6d,0x7c,0xc3
-.p2align 6",
+.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXzD"
+.p2align 6"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
@@ -416,28 +343,16 @@ pub const VG_SHA1_COMPRESS_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_compress_shani(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        r".octa 0x6f0ff31bc0700f66026f0ff30424548b,0xd0e0fb80cf9730f660cd9730f66044a,0xf66d06e0f6608090a0bb8f86e0f660c,0xb8fa6c0f66d06e0f6604050607b8fa62
-.octa 0xeb0f660cfa730f66d06e0f6600010203
-.byte 0xfa,0x8b,0x4c,0x24,0x08,0x8b,0x54,0x24,0x10,0x8b,0x44,0x24,0x0c,0x85,0xc0
+        r#".base64 "i1QkBPMPbwJmD3DAG/MPb0oEZg9z2QxmD3P5DLgPDg0MZg9u+LgLCgkIZg9u0GYPYvq4BwYFBGYPbtBmD2z6uAMCAQBmD27QZg9z+gxmD+v6i0wkCItUJBCLRCQMhcA="
 je 20f
 22:
-.octa 0x380f66196f0ff3104a7f0ff3027f0ff3,0x6600c1cc3a0fcbfe0f66d06f0f66df00,0x6f0f66e700380f6610616f0ff3ca6f0f,0xff3ca6f0f6600c1cc3a0fccc8380fd0
-.octa 0xcdc8380fd06f0f66ef00380f6620696f,0xf6630716f0ff3ca6f0f6600c1cc3a0f,0xc1cc3a0fcec8380fd06f0f66f70038,0xdeca380fddef0f66dcc9380fca6f0f66
-.octa 0x6f0f6600c1cc3a0fcbc8380fd06f0f66,0x6f0f66e3ca380fe6ef0f66e5c9380fca,0x380fca6f0f6601c1cc3a0fccc8380fd0,0x380fd06f0f66ecca380febef0f66eec9
-.octa 0x66f3c9380fca6f0f6601c1cc3a0fcdc8,0xfcec8380fd06f0f66f5ca380ff4ef0f,0xddef0f66dcc9380fca6f0f6601c1cc3a,0xc1cc3a0fcbc8380fd06f0f66deca380f
-.octa 0xca380fe6ef0f66e5c9380fca6f0f6601,0xf6601c1cc3a0fccc8380fd06f0f66e3,0xf66ecca380febef0f66eec9380fca6f,0xfca6f0f6602c1cc3a0fcdc8380fd06f
-.octa 0xfd06f0f66f5ca380ff4ef0f66f3c938,0xdcc9380fca6f0f6602c1cc3a0fcec838,0xcbc8380fd06f0f66deca380fddef0f66,0xef0f66e5c9380fca6f0f6602c1cc3a0f
-.octa 0xcc3a0fccc8380fd06f0f66e3ca380fe6,0x380febef0f66eec9380fca6f0f6602c1,0x6602c1cc3a0fcdc8380fd06f0f66ecca,0x66f5ca380ff4ef0f66f3c9380fca6f0f
-.octa 0xca6f0f6603c1cc3a0fcec8380fd06f0f,0xd06f0f66deca380fddef0f66dcc9380f,0xc9380fca6f0f6603c1cc3a0fcbc8380f,0xc8380fd06f0f66e3ca380fe6ef0f66e5
-.octa 0xf66eec9380fca6f0f6603c1cc3a0fcc,0x3a0fcdc8380fd06f0f66ecca380febef,0xff4ef0f66f3c9380fca6f0f6603c1cc,0x3c1cc3a0fcec8380fd06f0f66f5ca38
-.octa 0x526f0ff3c2fe0f66126f0ff3ca6f0f66
-.byte 0x10,0x0f,0x38,0xc8,0xca,0x83,0xc1,0x40,0x83,0xe8,0x01
+.base64 "8w9/AvMPf0oQ8w9vGWYPOADfZg9v0GYP/ssPOszBAGYPb8rzD29hEGYPOADnZg9v0A84yMwPOszBAGYPb8rzD29pIGYPOADvZg9v0A84yM0POszBAGYPb8rzD29xMGYPOAD3Zg9v0A84yM4POszBAGYPb8oPOMncZg/v3Q84yt5mD2/QDzjIyw86zMEAZg9vyg84yeVmD+/mDzjK42YPb9APOMjMDzrMwQFmD2/KDzjJ7mYP7+sPOMrsZg9v0A84yM0POszBAWYPb8oPOMnzZg/v9A84yvVmD2/QDzjIzg86zMEBZg9vyg84ydxmD+/dDzjK3mYPb9APOMjLDzrMwQFmD2/KDzjJ5WYP7+YPOMrjZg9v0A84yMwPOszBAWYPb8oPOMnuZg/v6w84yuxmD2/QDzjIzQ86zMECZg9vyg84yfNmD+/0DzjK9WYPb9APOMjODzrMwQJmD2/KDzjJ3GYP790POMreZg9v0A84yMsPOszBAmYPb8oPOMnlZg/v5g84yuNmD2/QDzjIzA86zMECZg9vyg84ye5mD+/rDzjK7GYPb9APOMjNDzrMwQJmD2/KDzjJ82YP7/QPOMr1Zg9v0A84yM4POszBA2YPb8oPOMncZg/v3Q84yt5mD2/QDzjIyw86zMEDZg9vyg84yeVmD+/mDzjK42YPb9APOMjMDzrMwQNmD2/KDzjJ7mYP7+sPOMrsZg9v0A84yM0POszBA2YPb8oPOMnzZg/v9A84yvVmD2/QDzjIzg86zMEDZg9vyvMPbxJmD/7C8w9vUhAPOMjKg8FAg+gB"
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x730f66d06f0f661bc0700f660424548b,0xc3027f0ff304527f0ff3d1eb0f6604da
-.p2align 6",
+.base64 "i1QkBGYPcMAbZg9v0GYPc9oEZg/r0fMPf1IE8w9/AsM="
+.p2align 6"#,
     )
 }
 
@@ -460,74 +375,70 @@ pub const VG_SHA1_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verifi
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_update_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x4489000000c024848bffffff4424a48d,0x24848b08244489000000c424848b0424,0x89000000cc24848b0c244489000000c8,0xe08914244489000000d024848b102444
-.octa 0x70897058891824448b182444891cc083,0x8b10246c8b04245c8b7c688978788974
-.byte 0x74,0x24,0x14,0x8b,0x7c,0x24,0x08,0x83,0xe7,0x3f
+        r#".base64 "jaQkRP///4uEJMAAAACJRCQEi4QkxAAAAIlEJAiLhCTIAAAAiUQkDIuEJMwAAACJRCQQi4Qk0AAAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
 20:
-.byte 0x85,0xff
+.base64 "hf8="
 je 21f
-.byte 0xb8,0x40,0x00,0x00,0x00,0x29,0xf8,0x39,0xc6
+.base64 "uEAAAAAp+DnG"
 jb 23f
 jmp 24f
 23:
-.byte 0x89,0xf0
+.base64 "ifA="
 24:
-.byte 0x29,0xc6,0x01,0xdf,0x85,0xc0
+.base64 "KcYB34XA"
 je 25f
 27:
-.octa 0x1e88301c78301c583144f88004db60f
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
 jne 27b
 jmp 26f
 25:
 26:
-.byte 0x29,0xdf,0xb9,0x00,0x00,0x00,0x00,0x83,0xff,0x40
+.base64 "Kd+5AAAAAIP/QA=="
 je 28f
 jmp 29f
 28:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xbf,0x00,0x00,0x00,0x00,0xb9,0x01,0x00,0x00,0x00
+.base64 "idiDwBS/AAAAALkBAAAA"
 29:
 jmp 22f
 21:
-.byte 0x83,0xfe,0x40
+.base64 "g/5A"
 jae 210f
-.byte 0xb8,0x40,0x00,0x00,0x00,0x29,0xf8,0x39,0xc6
+.base64 "uEAAAAAp+DnG"
 jb 212f
 jmp 213f
 212:
-.byte 0x89,0xf0
+.base64 "ifA="
 213:
-.byte 0x29,0xc6,0x01,0xdf,0x85,0xc0
+.base64 "KcYB34XA"
 je 214f
 216:
-.octa 0x1e88301c78301c583144f88004db60f
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
 jne 216b
 jmp 215f
 214:
 215:
-.byte 0x29,0xdf,0xb9,0x00,0x00,0x00,0x00,0x83,0xff,0x40
+.base64 "Kd+5AAAAAIP/QA=="
 je 217f
 jmp 218f
 217:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xbf,0x00,0x00,0x00,0x00,0xb9,0x01,0x00,0x00,0x00
+.base64 "idiDwBS/AAAAALkBAAAA"
 218:
 jmp 211f
 210:
-.octa 0x89ce89d501ca29f2893fe183f189e889
-.byte 0xd1,0xc1,0xe9,0x06
+.base64 "ieiJ8YPhP4nyKcoB1YnOidHB6QY="
 211:
 22:
-.byte 0x85,0xc9
+.base64 "hck="
 jne 219f
 jmp 220f
 219:
-.byte 0x8b,0x54,0x24,0x18,0x52,0x51,0x50,0x53
+.base64 "i1QkGFJRUFM="
 call {vg_sha1_compress_shani}
-.byte 0x58,0x58,0x58,0x58,0xb9,0x01,0x00,0x00,0x00,0x85,0xc9
+.base64 "WFhYWLkBAAAAhck="
 220:
 jne 20b
-.octa 0x7c688b78788b74708b70588b1824448b
-.byte 0x8d,0xa4,0x24,0xbc,0x00,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkGItYcItwdIt4eItofI2kJLwAAADD"
+.p2align 6"#,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
 }
@@ -552,42 +463,39 @@ pub const VG_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_finalize_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r".octa 0x4489000000bc24848bffffff4824a48d,0x24848b08244489000000c024848b0424,0x89000000c824848b0c244489000000c4,0x1424448b1424448918c083e089102444
-.octa 0x5c8bc5897c6889787889747089705889,0xc244c8b000000808d8908244c8b0424,0x888d8910244c8b000000848d89,0x80b9fa01da893fe78308247c8b
-.byte 0x88,0x4a,0x14,0x83,0xc7,0x01,0xbe,0x00,0x00,0x00,0x00,0x83,0xff,0x39
+        r#".base64 "jaQkSP///4uEJLwAAACJRCQEi4QkwAAAAIlEJAiLhCTEAAAAiUQkDIuEJMgAAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACIShSDxwG+AAAAAIP/OQ=="
 jae 20f
 jmp 21f
 20:
-.byte 0xbe,0x01,0x00,0x00,0x00
+.base64 "vgEAAAA="
 21:
 22:
-.byte 0xb8,0x40,0x00,0x00,0x00,0x85,0xf6
+.base64 "uEAAAACF9g=="
 je 23f
 jmp 24f
 23:
-.byte 0xb8,0x38,0x00,0x00,0x00
+.base64 "uDgAAAA="
 24:
-.byte 0xb9,0x00,0x00,0x00,0x00,0x29,0xf8
+.base64 "uQAAAAAp+A=="
 je 25f
 27:
-.byte 0x89,0xda,0x01,0xfa,0x88,0x4a,0x14,0x83,0xc7,0x01,0x83,0xe8,0x01
+.base64 "idoB+ohKFIPHAYPoAQ=="
 jne 27b
 jmp 26f
 25:
 26:
-.byte 0x85,0xf6
+.base64 "hfY="
 je 28f
 jmp 29f
 28:
-.octa 0xc901c901000000848d8b00000080858b,0xfc001c001c001d1091deac1c289c901
-.byte 0xc9,0x89,0x4b,0x4c,0x0f,0xc8,0x89,0x43,0x50
+.base64 "i4WAAAAAi42EAAAAAckByQHJicLB6h0J0QHAAcABwA/JiUtMD8iJQ1A="
 29:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xb9,0x01,0x00,0x00,0x00,0x55,0x51,0x50,0x53
+.base64 "idiDwBS5AQAAAFVRUFM="
 call {vg_sha1_compress_shani}
-.byte 0x58,0x58,0x58,0x58,0xbf,0x00,0x00,0x00,0x00,0x83,0xee,0x01
+.base64 "WFhYWL8AAAAAg+4B"
 je 22b
-.octa 0xf044b8b0889c90f0b8b00000088858b,0xf0c4b8b084889c90f084b8b044889c9,0x8b705d8b104889c90f104b8b0c4889c9,0xc3000000b824a48d7c6d8b787d8b7475
-.p2align 6",
+.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXyNpCS4AAAAww=="
+.p2align 6"#,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
 }
@@ -613,73 +521,70 @@ pub const VG_SHA1_UPDATE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_update_scratch_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        r".octa 0x7c68897878897470897058891824448b,0x8247c8b1424748b10246c8b04245c8b
-.byte 0x83,0xe7,0x3f
+        r#".base64 "i0QkGIlYcIlwdIl4eIlofItcJASLbCQQi3QkFIt8JAiD5z8="
 20:
-.byte 0x85,0xff
+.base64 "hf8="
 je 21f
-.byte 0xb8,0x40,0x00,0x00,0x00,0x29,0xf8,0x39,0xc6
+.base64 "uEAAAAAp+DnG"
 jb 23f
 jmp 24f
 23:
-.byte 0x89,0xf0
+.base64 "ifA="
 24:
-.byte 0x29,0xc6,0x01,0xdf,0x85,0xc0
+.base64 "KcYB34XA"
 je 25f
 27:
-.octa 0x1e88301c78301c583144f88004db60f
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
 jne 27b
 jmp 26f
 25:
 26:
-.byte 0x29,0xdf,0xb9,0x00,0x00,0x00,0x00,0x83,0xff,0x40
+.base64 "Kd+5AAAAAIP/QA=="
 je 28f
 jmp 29f
 28:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xbf,0x00,0x00,0x00,0x00,0xb9,0x01,0x00,0x00,0x00
+.base64 "idiDwBS/AAAAALkBAAAA"
 29:
 jmp 22f
 21:
-.byte 0x83,0xfe,0x40
+.base64 "g/5A"
 jae 210f
-.byte 0xb8,0x40,0x00,0x00,0x00,0x29,0xf8,0x39,0xc6
+.base64 "uEAAAAAp+DnG"
 jb 212f
 jmp 213f
 212:
-.byte 0x89,0xf0
+.base64 "ifA="
 213:
-.byte 0x29,0xc6,0x01,0xdf,0x85,0xc0
+.base64 "KcYB34XA"
 je 214f
 216:
-.octa 0x1e88301c78301c583144f88004db60f
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
 jne 216b
 jmp 215f
 214:
 215:
-.byte 0x29,0xdf,0xb9,0x00,0x00,0x00,0x00,0x83,0xff,0x40
+.base64 "Kd+5AAAAAIP/QA=="
 je 217f
 jmp 218f
 217:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xbf,0x00,0x00,0x00,0x00,0xb9,0x01,0x00,0x00,0x00
+.base64 "idiDwBS/AAAAALkBAAAA"
 218:
 jmp 211f
 210:
-.octa 0x89ce89d501ca29f2893fe183f189e889
-.byte 0xd1,0xc1,0xe9,0x06
+.base64 "ieiJ8YPhP4nyKcoB1YnOidHB6QY="
 211:
 22:
-.byte 0x85,0xc9
+.base64 "hck="
 jne 219f
 jmp 220f
 219:
-.byte 0x8b,0x54,0x24,0x18,0x52,0x51,0x50,0x53
+.base64 "i1QkGFJRUFM="
 call {vg_sha1_compress_shani}
-.byte 0x58,0x58,0x58,0x58,0xb9,0x01,0x00,0x00,0x00,0x85,0xc9
+.base64 "WFhYWLkBAAAAhck="
 220:
 jne 20b
-.octa 0x7c688b78788b74708b70588b1824448b
-.byte 0xc3
-.p2align 6",
+.base64 "i0QkGItYcItwdIt4eItofMM="
+.p2align 6"#,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
 }
@@ -706,43 +611,39 @@ pub const VG_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_finalize_scratch_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        r".octa 0x7c68897878897470897058891424448b,0x808d8908244c8b04245c8bc589,0x8d8910244c8b000000848d890c244c8b,0xb9fa01da893fe78308247c8b00000088
-.octa 0x8300000000be01c783144a8800000080
-.byte 0xff,0x39
+        r#".base64 "i0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACIShSDxwG+AAAAAIP/OQ=="
 jae 20f
 jmp 21f
 20:
-.byte 0xbe,0x01,0x00,0x00,0x00
+.base64 "vgEAAAA="
 21:
 22:
-.byte 0xb8,0x40,0x00,0x00,0x00,0x85,0xf6
+.base64 "uEAAAACF9g=="
 je 23f
 jmp 24f
 23:
-.byte 0xb8,0x38,0x00,0x00,0x00
+.base64 "uDgAAAA="
 24:
-.byte 0xb9,0x00,0x00,0x00,0x00,0x29,0xf8
+.base64 "uQAAAAAp+A=="
 je 25f
 27:
-.byte 0x89,0xda,0x01,0xfa,0x88,0x4a,0x14,0x83,0xc7,0x01,0x83,0xe8,0x01
+.base64 "idoB+ohKFIPHAYPoAQ=="
 jne 27b
 jmp 26f
 25:
 26:
-.byte 0x85,0xf6
+.base64 "hfY="
 je 28f
 jmp 29f
 28:
-.octa 0xc901c901000000848d8b00000080858b,0xfc001c001c001d1091deac1c289c901
-.byte 0xc9,0x89,0x4b,0x4c,0x0f,0xc8,0x89,0x43,0x50
+.base64 "i4WAAAAAi42EAAAAAckByQHJicLB6h0J0QHAAcABwA/JiUtMD8iJQ1A="
 29:
-.byte 0x89,0xd8,0x83,0xc0,0x14,0xb9,0x01,0x00,0x00,0x00,0x55,0x51,0x50,0x53
+.base64 "idiDwBS5AQAAAFVRUFM="
 call {vg_sha1_compress_shani}
-.byte 0x58,0x58,0x58,0x58,0xbf,0x00,0x00,0x00,0x00,0x83,0xee,0x01
+.base64 "WFhYWL8AAAAAg+4B"
 je 22b
-.octa 0xf044b8b0889c90f0b8b00000088858b,0xf0c4b8b084889c90f084b8b044889c9,0x8b705d8b104889c90f104b8b0c4889c9
-.byte 0x75,0x74,0x8b,0x7d,0x78,0x8b,0x6d,0x7c,0xc3
-.p2align 6",
+.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXzD"
+.p2align 6"#,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
 }

@@ -24,22 +24,18 @@ pub const VG_AES_CFB8_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = v
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb8_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
-.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+        r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
 je 20f
 22:
-.octa 0x824448b490000080087894924048b49,0xfa894cee8948df894800000808878949
-.byte 0x48,0x81,0xc2,0x00,0x08,0x00,0x00,0xb9,0x01,0x00,0x00,0x00,0x4d,0x89,0xf8
+.base64 "SYsEJEmJhwAIAABJi0QkCEmJhwgIAABIid9Iie5MifpIgcIACAAAuQEAAABNifg="
 call {vg_aes_encrypt_blocks_aesni}
-.octa 0xc83148000008008fb60f410045b60f41,0x89490824548b4901244c8b4900458841,0x1c583490f244488410724548949240c
-.byte 0x49,0x83,0xee,0x01
+.base64 "QQ+2RQBBD7aPAAgAAEgxyEGIRQBJi0wkAUmLVCQISYkMJEmJVCQHQYhEJA9Jg8UBSYPuAQ=="
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
-.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -65,22 +61,18 @@ pub const VG_AES_CFB8_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = v
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb8_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
-.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+        r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
 je 20f
 22:
-.octa 0x824448b490000080087894924048b49,0xfa894cee8948df894800000808878949
-.byte 0x48,0x81,0xc2,0x00,0x08,0x00,0x00,0xb9,0x01,0x00,0x00,0x00,0x4d,0x89,0xf8
+.base64 "SYsEJEmJhwAIAABJi0QkCEmJhwgIAABIid9Iie5MifpIgcIACAAAuQEAAABNifg="
 call {vg_aes_encrypt_blocks_aesni}
-.octa 0xc13148000008008fb60f410045b60f41,0x89490824548b4901244c8b49004d8841,0x1c583490f244488410724548949240c
-.byte 0x49,0x83,0xee,0x01
+.base64 "QQ+2RQBBD7aPAAgAAEgxwUGITQBJi0wkAUmLVCQISYkMJEmJVCQHQYhEJA9Jg8UBSYPuAQ=="
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
-.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -102,22 +94,18 @@ jmp 21f
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb8_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
-.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+        r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
 je 20f
 22:
-.octa 0x824448b490000080087894924048b49,0xfa894cee8948df894800000808878949
-.byte 0x48,0x81,0xc2,0x00,0x08,0x00,0x00,0xb9,0x01,0x00,0x00,0x00,0x4d,0x89,0xf8
+.base64 "SYsEJEmJhwAIAABJi0QkCEmJhwgIAABIid9Iie5MifpIgcIACAAAuQEAAABNifg="
 call {vg_aes_encrypt_blocks}
-.octa 0xc83148000008008fb60f410045b60f41,0x89490824548b4901244c8b4900458841,0x1c583490f244488410724548949240c
-.byte 0x49,0x83,0xee,0x01
+.base64 "QQ+2RQBBD7aPAAgAAEgxyEGIRQBJi0wkAUmLVCQISYkMJEmJVCQHQYhEJA9Jg8UBSYPuAQ=="
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
-.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -139,22 +127,18 @@ jmp 21f
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb8_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
-.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+        r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
 je 20f
 22:
-.octa 0x824448b490000080087894924048b49,0xfa894cee8948df894800000808878949
-.byte 0x48,0x81,0xc2,0x00,0x08,0x00,0x00,0xb9,0x01,0x00,0x00,0x00,0x4d,0x89,0xf8
+.base64 "SYsEJEmJhwAIAABJi0QkCEmJhwgIAABIid9Iie5MifpIgcIACAAAuQEAAABNifg="
 call {vg_aes_encrypt_blocks}
-.octa 0xc13148000008008fb60f410045b60f41,0x89490824548b4901244c8b49004d8841,0x1c583490f244488410724548949240c
-.byte 0x49,0x83,0xee,0x01
+.base64 "QQ+2RQBBD7aPAAgAAEgxwUGITQBJi0wkAUmLVCQISYkMJEmJVCQHQYhEJA9Jg8UBSYPuAQ=="
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
-.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -180,22 +164,18 @@ pub const VG_AES_CFB8_ENCRYPT_VAES_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb8_encrypt_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
-.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+        r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
 je 20f
 22:
-.octa 0x824448b490000080087894924048b49,0xfa894cee8948df894800000808878949
-.byte 0x48,0x81,0xc2,0x00,0x08,0x00,0x00,0xb9,0x01,0x00,0x00,0x00,0x4d,0x89,0xf8
+.base64 "SYsEJEmJhwAIAABJi0QkCEmJhwgIAABIid9Iie5MifpIgcIACAAAuQEAAABNifg="
 call {vg_aes_encrypt_blocks_vaes}
-.octa 0xc83148000008008fb60f410045b60f41,0x89490824548b4901244c8b4900458841,0x1c583490f244488410724548949240c
-.byte 0x49,0x83,0xee,0x01
+.base64 "QQ+2RQBBD7aPAAgAAEgxyEGIRQBJi0wkAUmLVCQISYkMJEmJVCQHQYhEJA9Jg8UBSYPuAQ=="
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
-.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.p2align 6"#,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
     )
 }
@@ -221,22 +201,18 @@ pub const VG_AES_CFB8_DECRYPT_VAES_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_cfb8_decrypt_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".octa 0x894d00000818a9894900000810998949,0x30b1894d00000828a9894d00000820a1,0xf58948fb894800000838b9894d000008
-.byte 0x49,0x89,0xd4,0x49,0x89,0xcd,0x4d,0x89,0xc6,0x4d,0x89,0xcf,0x4d,0x85,0xf6
+        r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
 je 20f
 22:
-.octa 0x824448b490000080087894924048b49,0xfa894cee8948df894800000808878949
-.byte 0x48,0x81,0xc2,0x00,0x08,0x00,0x00,0xb9,0x01,0x00,0x00,0x00,0x4d,0x89,0xf8
+.base64 "SYsEJEmJhwAIAABJi0QkCEmJhwgIAABIid9Iie5MifpIgcIACAAAuQEAAABNifg="
 call {vg_aes_encrypt_blocks_vaes}
-.octa 0xc13148000008008fb60f410045b60f41,0x89490824548b4901244c8b49004d8841,0x1c583490f244488410724548949240c
-.byte 0x49,0x83,0xee,0x01
+.base64 "QQ+2RQBBD7aPAAgAAEgxwUGITQBJi0wkAUmLVCQISYkMJEmJVCQHQYhEJA9Jg8UBSYPuAQ=="
 jne 22b
 jmp 21f
 20:
 21:
-.octa 0x8b4d00000818af8b49000008109f8b49,0x30b78b4d00000828af8b4d00000820a7
-.byte 0x08,0x00,0x00,0x4d,0x8b,0xbf,0x38,0x08,0x00,0x00,0xc3
-.p2align 6",
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.p2align 6"#,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
     )
 }

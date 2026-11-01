@@ -19,29 +19,8 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_salsa20_8(b: *mut [u8; 64], scratch: *mut [u32; 16]) {
     core::arch::naked_asm!(
-        r".octa 0x6f0ff310486f0ff3006f0ff30424448b,0xd2700f6639c9700f6630586f0ff32050,0xf66e1620f66e06f0f6693db700f664e,0xf66f3620f66f26f0f66e96a0f66e86f
-.octa 0xf66c66c0f66c46f0f66fb6a0f66fa6f,0xf66d76c0f66d56f0f66ce6d0f66cc6f,0x4ed2700f6639e3700f66df6d0f66dd6f,0xfe0f66e06f0f66cc6f0f6693d9700f66
-.octa 0x6619d5720f6607f4720f66ec6f0f66e3,0x66e0fe0f66e16f0f66cdef0f66ccef0f,0xef0f6617d5720f6609f4720f66ec6f0f,0x6f0f66e1fe0f66e26f0f66d5ef0f66d4
-.octa 0x66dcef0f6613d5720f660df4720f66ec,0x66ec6f0f66e2fe0f66e36f0f66ddef0f,0xef0f66c4ef0f660ed5720f6612f4720f,0x39db700f664ed2700f6693c9700f66c5
-.octa 0xf4720f66ec6f0f66e1fe0f66e06f0f66,0xf66ddef0f66dcef0f6619d5720f6607,0x6609f4720f66ec6f0f66e0fe0f66e36f,0xe26f0f66d5ef0f66d4ef0f6617d5720f
-.octa 0x720f660df4720f66ec6f0f66e3fe0f66,0xf66e16f0f66cdef0f66ccef0f6613d5,0xed5720f6612f4720f66ec6f0f66e2fe,0x700f6639c9700f66c5ef0f66c4ef0f66
-.octa 0x66e3fe0f66e06f0f6693db700f664ed2,0xef0f6619d5720f6607f4720f66ec6f0f,0x6f0f66e0fe0f66e16f0f66cdef0f66cc,0x66d4ef0f6617d5720f6609f4720f66ec
-.octa 0x66ec6f0f66e1fe0f66e26f0f66d5ef0f,0xef0f66dcef0f6613d5720f660df4720f,0x720f66ec6f0f66e2fe0f66e36f0f66dd,0x66c5ef0f66c4ef0f660ed5720f6612f4
-.octa 0xf6639db700f664ed2700f6693c9700f,0x6607f4720f66ec6f0f66e1fe0f66e06f,0xe36f0f66ddef0f66dcef0f6619d5720f,0x720f6609f4720f66ec6f0f66e0fe0f66
-.octa 0xf66e26f0f66d5ef0f66d4ef0f6617d5,0x13d5720f660df4720f66ec6f0f66e3fe,0xe2fe0f66e16f0f66cdef0f66ccef0f66,0xf660ed5720f6612f4720f66ec6f0f66
-.octa 0x4ed2700f6639c9700f66c5ef0f66c4ef,0x6f0f66e3fe0f66e06f0f6693db700f66,0x66ccef0f6619d5720f6607f4720f66ec,0x66ec6f0f66e0fe0f66e16f0f66cdef0f
-.octa 0xef0f66d4ef0f6617d5720f6609f4720f,0x720f66ec6f0f66e1fe0f66e26f0f66d5,0x66ddef0f66dcef0f6613d5720f660df4,0x12f4720f66ec6f0f66e2fe0f66e36f0f
-.octa 0x700f66c5ef0f66c4ef0f660ed5720f66,0xe06f0f6639db700f664ed2700f6693c9,0x720f6607f4720f66ec6f0f66e1fe0f66,0xf66e36f0f66ddef0f66dcef0f6619d5
-.octa 0x17d5720f6609f4720f66ec6f0f66e0fe,0xe3fe0f66e26f0f66d5ef0f66d4ef0f66,0xf6613d5720f660df4720f66ec6f0f66,0xf66e2fe0f66e16f0f66cdef0f66ccef
-.octa 0xc4ef0f660ed5720f6612f4720f66ec6f,0xf664ed2700f6639c9700f66c5ef0f66,0x66ec6f0f66e3fe0f66e06f0f6693db70,0xef0f66ccef0f6619d5720f6607f4720f
-.octa 0x720f66ec6f0f66e0fe0f66e16f0f66cd,0x66d5ef0f66d4ef0f6617d5720f6609f4,0xdf4720f66ec6f0f66e1fe0f66e26f0f,0x6f0f66ddef0f66dcef0f6613d5720f66
-.octa 0xf6612f4720f66ec6f0f66e2fe0f66e3,0x93c9700f66c5ef0f66c4ef0f660ed572,0xf66e06f0f6639db700f664ed2700f66,0x19d5720f6607f4720f66ec6f0f66e1fe
-.octa 0xe0fe0f66e36f0f66ddef0f66dcef0f66,0xf6617d5720f6609f4720f66ec6f0f66,0xf66e3fe0f66e26f0f66d5ef0f66d4ef,0xccef0f6613d5720f660df4720f66ec6f
-.octa 0xec6f0f66e2fe0f66e16f0f66cdef0f66,0xf66c4ef0f660ed5720f6612f4720f66,0xdb700f664ed2700f6639c9700f66c5ef,0x4ed2700f6639cb700f6693e1700f6693
-.octa 0xe96a0f66e86f0f66d9620f66d86f0f66,0xfc6a0f66fa6f0f66f4620f66f26f0f66,0xce6d0f66cb6f0f66c66c0f66c36f0f66,0xe76d0f66e56f0f66d76c0f66d56f0f66
-.octa 0xf339e4700f664ed2700f6693c9700f66,0x6f0ff320706f0ff310686f0ff3186f0f,0xf66d6fe0f66cdfe0f66c3fe0f663078,0x20507f0ff310487f0ff3007f0ff3e7fe
-.byte 0xf3,0x0f,0x7f,0x60,0x30,0xc3
-.p2align 6",
+        r#".base64 "i0QkBPMPbwDzD29IEPMPb1Ag8w9vWDBmD3DJOWYPcNJOZg9w25NmD2/gZg9i4WYPb+hmD2rpZg9v8mYPYvNmD2/6Zg9q+2YPb8RmD2zGZg9vzGYPbc5mD2/VZg9s12YPb91mD23fZg9w4zlmD3DSTmYPcNmTZg9vzGYPb+BmD/7jZg9v7GYPcvQHZg9y1RlmD+/MZg/vzWYPb+FmD/7gZg9v7GYPcvQJZg9y1RdmD+/UZg/v1WYPb+JmD/7hZg9v7GYPcvQNZg9y1RNmD+/cZg/v3WYPb+NmD/7iZg9v7GYPcvQSZg9y1Q5mD+/EZg/vxWYPcMmTZg9w0k5mD3DbOWYPb+BmD/7hZg9v7GYPcvQHZg9y1RlmD+/cZg/v3WYPb+NmD/7gZg9v7GYPcvQJZg9y1RdmD+/UZg/v1WYPb+JmD/7jZg9v7GYPcvQNZg9y1RNmD+/MZg/vzWYPb+FmD/7iZg9v7GYPcvQSZg9y1Q5mD+/EZg/vxWYPcMk5Zg9w0k5mD3Dbk2YPb+BmD/7jZg9v7GYPcvQHZg9y1RlmD+/MZg/vzWYPb+FmD/7gZg9v7GYPcvQJZg9y1RdmD+/UZg/v1WYPb+JmD/7hZg9v7GYPcvQNZg9y1RNmD+/cZg/v3WYPb+NmD/7iZg9v7GYPcvQSZg9y1Q5mD+/EZg/vxWYPcMmTZg9w0k5mD3DbOWYPb+BmD/7hZg9v7GYPcvQHZg9y1RlmD+/cZg/v3WYPb+NmD/7gZg9v7GYPcvQJZg9y1RdmD+/UZg/v1WYPb+JmD/7jZg9v7GYPcvQNZg9y1RNmD+/MZg/vzWYPb+FmD/7iZg9v7GYPcvQSZg9y1Q5mD+/EZg/vxWYPcMk5Zg9w0k5mD3Dbk2YPb+BmD/7jZg9v7GYPcvQHZg9y1RlmD+/MZg/vzWYPb+FmD/7gZg9v7GYPcvQJZg9y1RdmD+/UZg/v1WYPb+JmD/7hZg9v7GYPcvQNZg9y1RNmD+/cZg/v3WYPb+NmD/7iZg9v7GYPcvQSZg9y1Q5mD+/EZg/vxWYPcMmTZg9w0k5mD3DbOWYPb+BmD/7hZg9v7GYPcvQHZg9y1RlmD+/cZg/v3WYPb+NmD/7gZg9v7GYPcvQJZg9y1RdmD+/UZg/v1WYPb+JmD/7jZg9v7GYPcvQNZg9y1RNmD+/MZg/vzWYPb+FmD/7iZg9v7GYPcvQSZg9y1Q5mD+/EZg/vxWYPcMk5Zg9w0k5mD3Dbk2YPb+BmD/7jZg9v7GYPcvQHZg9y1RlmD+/MZg/vzWYPb+FmD/7gZg9v7GYPcvQJZg9y1RdmD+/UZg/v1WYPb+JmD/7hZg9v7GYPcvQNZg9y1RNmD+/cZg/v3WYPb+NmD/7iZg9v7GYPcvQSZg9y1Q5mD+/EZg/vxWYPcMmTZg9w0k5mD3DbOWYPb+BmD/7hZg9v7GYPcvQHZg9y1RlmD+/cZg/v3WYPb+NmD/7gZg9v7GYPcvQJZg9y1RdmD+/UZg/v1WYPb+JmD/7jZg9v7GYPcvQNZg9y1RNmD+/MZg/vzWYPb+FmD/7iZg9v7GYPcvQSZg9y1Q5mD+/EZg/vxWYPcMk5Zg9w0k5mD3Dbk2YPcOGTZg9wyzlmD3DSTmYPb9hmD2LZZg9v6GYPaulmD2/yZg9i9GYPb/pmD2r8Zg9vw2YPbMZmD2/LZg9tzmYPb9VmD2zXZg9v5WYPbedmD3DJk2YPcNJOZg9w5DnzD28Y8w9vaBDzD29wIPMPb3gwZg/+w2YP/s1mD/7WZg/+5/MPfwDzD39IEPMPf1Ag8w9/YDDD"
+.p2align 6"#,
     )
 }
 
@@ -63,20 +42,16 @@ pub unsafe extern "C" fn vg_salsa20_8(b: *mut [u8; 64], scratch: *mut [u32; 16])
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_scrypt_blockmix(b: *const [u8; 128], r: usize, y: *mut [u8; 128], ry: usize, scratch: *mut [u32; 32]) {
     core::arch::naked_asm!(
-        r".octa 0x4c68894878894470894058891424448b,0x40b90824448b0c24748b04245c8b,0x40ed83c501c501dd89c701f789e1f700
+        r#".base64 "i0QkFIlYQIlwRIl4SIloTItcJASLdCQMi0QkCLlAAAAA9+GJ9wHHid0BxQHFg+1A"
 20:
-.octa 0x7f0ff3c1ef0f660b6f0ff300456f0ff3,0xf3c1ef0f66104b6f0ff310456f0ff306,0xf66204b6f0ff320456f0ff310467f0f,0x4b6f0ff330456f0ff320467f0ff3c1ef
-.octa 0x56501424448b30467f0ff3c1ef0f6630
+.base64 "8w9vRQDzD28LZg/vwfMPfwbzD29FEPMPb0sQZg/vwfMPf0YQ8w9vRSDzD29LIGYP78HzD39GIPMPb0Uw8w9vSzBmD+/B8w9/RjCLRCQUUFY="
 call {vg_salsa20_8}
-.octa 0xef0f660b6f0ff3066f0ff340c3835858,0x66104b6f0ff310466f0ff3077f0ff3c1,0x6f0ff320466f0ff310477f0ff3c1ef0f,0x30466f0ff320477f0ff3c1ef0f66204b
-.octa 0x448b30477f0ff3c1ef0f66304b6f0ff3
-.byte 0x24,0x14,0x50,0x57
+.base64 "WFiDw0DzD28G8w9vC2YP78HzD38H8w9vRhDzD29LEGYP78HzD39HEPMPb0Yg8w9vSyBmD+/B8w9/RyDzD29GMPMPb0swZg/vwfMPf0cwi0QkFFBX"
 call {vg_salsa20_8}
-.octa 0x24448b40c78340c68340c383fd895858,0xc639c8010c244c8be1f700000040b908
+.base64 "WFiJ/YPDQIPGQIPHQItEJAi5QAAAAPfhi0wkDAHIOcY="
 jne 20b
-.octa 0x4c688b48788b44708b40588b1424448b
-.byte 0xc3
-.p2align 6",
+.base64 "i0QkFItYQItwRIt4SItoTMM="
+.p2align 6"#,
         vg_salsa20_8 = sym super::scrypt::vg_salsa20_8,
     )
 }
@@ -99,41 +74,32 @@ jne 20b
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize) {
     core::arch::naked_asm!(
-        r".octa 0x84b0890000008098891424448b,0x824448b0000008ca88900000088b889
-.byte 0xb9,0x01,0x00,0x00,0x00,0x8b,0x54,0x24,0x10,0x01,0xd2
+        r#".base64 "i0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAItEJAi5AQAAAItUJBAB0g=="
 20:
-.byte 0x01,0xc0,0x01,0xc9,0x39,0xd0
+.base64 "AcAByTnQ"
 jne 20b
-.byte 0xd1,0xe9,0x89,0xcd,0x89,0xcb,0x8b,0x74,0x24,0x0c
+.base64 "0emJzYnLi3QkDA=="
 21:
-.octa 0x24448bc289e1f700000008b90824448b
-.byte 0x04,0x89,0xf1
+.base64 "i0QkCLkIAAAA9+GJwotEJASJ8Q=="
 22:
-.octa 0xea8310c18310c083017f0ff3006f0ff3
-.byte 0x01
+.base64 "8w9vAPMPfwGDwBCDwRCD6gE="
 jne 22b
-.octa 0x515251500424548b08244c8b1424448b
-.byte 0x56
+.base64 "i0QkFItMJAiLVCQEUFFSUVY="
 call {vg_scrypt_blockmix}
-.octa 0xe1f700000080b90824448b5858585858
-.byte 0x01,0xc6,0x83,0xeb,0x01
+.base64 "WFhYWFiLRCQIuYAAAAD34QHGg+sB"
 jne 21b
-.byte 0x89,0xeb
+.base64 "ies="
 23:
-.octa 0x244c8bc789e1f700000080b90824448b,0xf7c82101e983e989008b40e883c80104,0x811424548b0424448bc1010c244c8be7
-.byte 0xc2,0xc0,0x00,0x00,0x00,0xc1,0xef,0x04
+.base64 "i0QkCLmAAAAA9+GJx4tMJAQByIPoQIsAiemD6QEhyPfni0wkDAHBi0QkBItUJBSBwsAAAADB7wQ="
 24:
-.octa 0x27f0ff3c1ef0f66096f0ff3006f0ff3
-.byte 0x83,0xc0,0x10,0x83,0xc1,0x10,0x83,0xc2,0x10,0x83,0xef,0x01
+.base64 "8w9vAPMPbwlmD+/B8w9/AoPAEIPBEIPCEIPvAQ=="
 jne 24b
-.octa 0x4c8b1424448b000000c0c6811424748b
-.byte 0x24,0x08,0x8b,0x54,0x24,0x04,0x50,0x51,0x52,0x51,0x56
+.base64 "i3QkFIHGwAAAAItEJBSLTCQIi1QkBFBRUlFW"
 call {vg_scrypt_blockmix}
-.byte 0x58,0x58,0x58,0x58,0x58,0x83,0xeb,0x01
+.base64 "WFhYWFiD6wE="
 jne 23b
-.octa 0x84b08b00000080988b1424448b
-.byte 0x8b,0xb8,0x88,0x00,0x00,0x00,0x8b,0xa8,0x8c,0x00,0x00,0x00,0xc3
-.p2align 6",
+.base64 "i0QkFIuYgAAAAIuwhAAAAIu4iAAAAIuojAAAAMM="
+.p2align 6"#,
         vg_scrypt_blockmix = sym super::scrypt::vg_scrypt_blockmix,
     )
 }
@@ -159,22 +125,18 @@ jne 23b
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x2404892824448b505050505050505050,0x82444893024448b042444892c24448b,0x24448900000001b80c2444893424448b,0x19c8c14024448b142444893c24448b10
-.byte 0x89,0x44,0x24,0x18,0x8b,0x44,0x24,0x4c,0x89,0x44,0x24,0x1c
+        r#".base64 "UFBQUFBQUFBQi0QkKIkEJItEJCyJRCQEi0QkMIlEJAiLRCQ0iUQkDLgBAAAAiUQkEItEJDyJRCQUi0QkQMHIGYlEJBiLRCRMiUQkHA=="
 call {vg_pbkdf2_hmac_sha256_scratch}
-.byte 0x8b,0x44,0x24,0x3c,0x89,0x44,0x24,0x20
+.base64 "i0QkPIlEJCA="
 20:
-.octa 0x8b042444893824448b2404892024448b,0x8b0c2444894824448b08244489442444,0x448902c0833824448b102444894c2444
-.byte 0x24,0x14
+.base64 "i0QkIIkEJItEJDiJRCQEi0QkRIlEJAiLRCRIiUQkDItEJEyJRCQQi0QkOIPAAolEJBQ="
 call {vg_scrypt_romix}
-.octa 0x24548bc8012024448b19c9c138244c8b
-.byte 0x40,0xc1,0xca,0x19,0x03,0x54,0x24,0x3c,0x89,0x44,0x24,0x20,0x39,0xd0
+.base64 "i0wkOMHJGYtEJCAByItUJEDByhkDVCQ8iUQkIDnQ"
 jne 20b
-.octa 0x8b042444892c24448b2404892824448b,0x448919c8c14024448b082444893c2444,0x895424448b1024448900000001b80c24,0x894c24448b182444895824448b142444
-.byte 0x44,0x24,0x1c
+.base64 "i0QkKIkEJItEJCyJRCQEi0QkPIlEJAiLRCRAwcgZiUQkDLgBAAAAiUQkEItEJFSJRCQUi0QkWIlEJBiLRCRMiUQkHA=="
 call {vg_pbkdf2_hmac_sha256_scratch}
-.byte 0x58,0x58,0x58,0x58,0x58,0x58,0x58,0x58,0x58,0xc3
-.p2align 6",
+.base64 "WFhYWFhYWFhYww=="
+.p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
@@ -205,22 +167,18 @@ pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_ga
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_scrypt_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r".octa 0x2404892824448b505050505050505050,0x82444893024448b042444892c24448b,0x24448900000001b80c2444893424448b,0x19c8c14024448b142444893c24448b10
-.byte 0x89,0x44,0x24,0x18,0x8b,0x44,0x24,0x4c,0x89,0x44,0x24,0x1c
+        r#".base64 "UFBQUFBQUFBQi0QkKIkEJItEJCyJRCQEi0QkMIlEJAiLRCQ0iUQkDLgBAAAAiUQkEItEJDyJRCQUi0QkQMHIGYlEJBiLRCRMiUQkHA=="
 call {vg_pbkdf2_hmac_sha256_scratch_shani}
-.byte 0x8b,0x44,0x24,0x3c,0x89,0x44,0x24,0x20
+.base64 "i0QkPIlEJCA="
 20:
-.octa 0x8b042444893824448b2404892024448b,0x8b0c2444894824448b08244489442444,0x448902c0833824448b102444894c2444
-.byte 0x24,0x14
+.base64 "i0QkIIkEJItEJDiJRCQEi0QkRIlEJAiLRCRIiUQkDItEJEyJRCQQi0QkOIPAAolEJBQ="
 call {vg_scrypt_romix}
-.octa 0x24548bc8012024448b19c9c138244c8b
-.byte 0x40,0xc1,0xca,0x19,0x03,0x54,0x24,0x3c,0x89,0x44,0x24,0x20,0x39,0xd0
+.base64 "i0wkOMHJGYtEJCAByItUJEDByhkDVCQ8iUQkIDnQ"
 jne 20b
-.octa 0x8b042444892c24448b2404892824448b,0x448919c8c14024448b082444893c2444,0x895424448b1024448900000001b80c24,0x894c24448b182444895824448b142444
-.byte 0x44,0x24,0x1c
+.base64 "i0QkKIkEJItEJCyJRCQEi0QkPIlEJAiLRCRAwcgZiUQkDLgBAAAAiUQkEItEJFSJRCQUi0QkWIlEJBiLRCRMiUQkHA=="
 call {vg_pbkdf2_hmac_sha256_scratch_shani}
-.byte 0x58,0x58,0x58,0x58,0x58,0x58,0x58,0x58,0x58,0xc3
-.p2align 6",
+.base64 "WFhYWFhYWFhYww=="
+.p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch_shani = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch_shani,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )

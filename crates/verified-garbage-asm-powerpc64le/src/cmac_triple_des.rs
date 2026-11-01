@@ -17,15 +17,11 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".long 0xf821fd61,0x38c10020,0x7c0802a6,0xf8060210,0xfbc60220,0xfbe60228,0x7c7f1b78,0x7cde3378
-.long 0x7c832378,0x7ca42b78,0x7fe5fb78
+        r#".base64 "Yf0h+CAAwTimAgh8EAIG+CACxvsoAub7eBt/fHgz3nx4I4N8eCukfHj75X8="
 bl {vg_triple_des_expand_key}
-.long 0x7fe3fb78,0x7fc5f378,0x389e0200,0x38000000,0xf8040000
+.base64 "ePvjf3jzxX8AAp44AAAAOAAABPg="
 bl {vg_triple_des_encrypt_block}
-.long 0x38c00000,0x7ce43428,0x78e80fe0,0x7d283050,0x3940001b,0x7d295038,0x78e70fa4,0x7ce74a78
-.long 0x39600180,0x7ce35d28,0x78e80fe0,0x7d283050,0x3940001b,0x7d295038,0x78e70fa4,0x7ce74a78
-.long 0x39600188,0x7ce35d28,0x38000000,0xf8030190,0xe81e0210,0xebfe0228,0xebde0220,0x7c0803a6
-.long 0x382102a0,0x4e800020",
+.base64 "AADAOCg05HzgD+h4UDAofRsAQDk4UCl9pA/neHhK53yAAWA5KF3jfOAP6HhQMCh9GwBAOThQKX2kD+d4eErnfIgBYDkoXeN8AAAAOJABA/gQAh7oKAL+6yAC3uumAwh8oAIhOCAAgE4=""#,
         vg_triple_des_expand_key = sym super::triple_des::vg_triple_des_expand_key,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block,
     )
@@ -44,57 +40,55 @@ bl {vg_triple_des_encrypt_block}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".long 0xf821fd31,0x38e10020,0x7c0802a6,0xf8070210,0xfba70218,0xfbc70220,0xfbe70228,0x7cbd2b78
-.long 0x7ce53b78,0x28240000
+        r#".base64 "Mf0h+CAA4TimAgh8EAIH+BgCp/sgAsf7KALn+3grvXx4O+V8AAAkKA=="
 beq %cr0, 20f
-.long 0x3904ffff,0x39200007,0x7d084838,0x39080001
+.base64 "//8EOQcAIDk4SAh9AQAIOQ=="
 b 21f
 20:
-.long 0x39000000
+.base64 "AAAAOQ=="
 21:
-.long 0x39200008,0x7d284850,0x78cae102,0x7d664850,0x796b0fe0,0x7d4a5b78,0x282a0000
+.base64 "CAAgOVBIKH0C4cp4UEhmfeAPa3l4W0p9AAAqKA=="
 bne %cr0, 22f
-.long 0x39630198,0x7d6b4214,0x7faaeb78,0x7ccc3378,0x282c0000
+.base64 "mAFjORRCa31466p/eDPMfAAALCg="
 beq %cr0, 24f
 26:
-.long 0x880a0000,0x980b0000,0x394a0001,0x396b0001,0x398cffff,0x282c0000
+.base64 "AAAKiAAAC5gBAEo5AQBrOf//jDkAACwo"
 bne %cr0, 26b
 b 25f
 24:
 25:
 b 23f
 22:
-.long 0x39630198,0x7d6b4214,0x7faaeb78,0x7d2c4b78,0x282c0000
+.base64 "mAFjORRCa31466p/eEssfQAALCg="
 beq %cr0, 27f
 29:
-.long 0x880a0000,0x980b0000,0x394a0001,0x396b0001,0x398cffff,0x282c0000
+.base64 "AAAKiAAAC5gBAEo5AQBrOf//jDkAACwo"
 bne %cr0, 29b
 b 28f
 27:
 28:
-.long 0x7d5d5378,0x7fc93050,0x3bdeffff,0x7bdee8c2,0x7fe93050,0x7bcc1f24,0x7fecf850,0xe8e30190
-.long 0xe9230198,0x7ce74a78,0xf8e50200,0x38850200
+.base64 "eFNdfVAwyX///947wujee1Aw6X8kH8x7UPjsf5AB4+iYASPpeErnfAAC5fgAAoU4"
 bl {vg_triple_des_encrypt_block}
-.long 0x283e0000
+.base64 "AAA+KA=="
 beq %cr0, 210f
 212:
-.long 0xe8e50200,0xe93d0000,0x7ce74a78,0xf8e50200,0x3bbd0008,0x3bdeffff
+.base64 "AALl6AAAPel4Sud8AALl+AgAvTv//947"
 bl {vg_triple_des_encrypt_block}
-.long 0x283e0000
+.base64 "AAA+KA=="
 bne %cr0, 212b
 b 211f
 210:
 211:
-.long 0xe8e50200,0xf8e30190,0x39630198,0x7faaeb78,0x7fecfb78,0x282c0000
+.base64 "AALl6JAB4/iYAWM5eOuqf3j77H8AACwo"
 beq %cr0, 213f
 215:
-.long 0x880a0000,0x980b0000,0x394a0001,0x396b0001,0x398cffff,0x282c0000
+.base64 "AAAKiAAAC5gBAEo5AQBrOf//jDkAACwo"
 bne %cr0, 215b
 b 214f
 213:
 214:
 23:
-.long 0xe8050210,0xeba50218,0xebc50220,0xebe50228,0x7c0803a6,0x382102d0,0x4e800020",
+.base64 "EAIF6BgCpesgAsXrKALl66YDCHzQAiE4IACATg==""#,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block,
     )
 }
@@ -113,31 +107,31 @@ b 214f
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
     core::arch::naked_asm!(
-        r".long 0xf821fd61,0x38c10020,0x7c0802a6,0xf8060210,0xfbe60228,0x7cbf2b78,0x7cc53378,0x28240000
+        r#".base64 "Yf0h+CAAwTimAgh8EAIG+CgC5vt4K798eDPFfAAAJCg="
 beq %cr0, 20f
-.long 0x3904ffff,0x39200007,0x7d084838,0x39080001
+.base64 "//8EOQcAIDk4SAh9AQAIOQ=="
 b 21f
 20:
-.long 0x39000000
+.base64 "AAAAOQ=="
 21:
-.long 0x3928fff8,0x28290000
+.base64 "+P8oOQAAKSg="
 beq %cr0, 22f
-.long 0x38000000,0xf8050208,0x39430198,0x39650208,0x7d0c4378,0x282c0000
+.base64 "AAAAOAgCBfiYAUM5CAJlOXhDDH0AACwo"
 beq %cr0, 24f
 26:
-.long 0x880a0000,0x980b0000,0x394a0001,0x396b0001,0x398cffff,0x282c0000
+.base64 "AAAKiAAAC5gBAEo5AQBrOf//jDkAACwo"
 bne %cr0, 26b
 b 25f
 24:
 25:
-.long 0x39200080,0x992b0000,0xe8e50208,0xe9230188,0x7ce74a78,0xe9230190,0x7ce74a78,0xf8e50200
+.base64 "gAAgOQAAK5kIAuXoiAEj6XhK53yQASPpeErnfAAC5fg="
 b 23f
 22:
-.long 0xe8e30198,0xe9230180,0x7ce74a78,0xe9230190,0x7ce74a78,0xf8e50200
+.base64 "mAHj6IABI+l4Sud8kAEj6XhK53wAAuX4"
 23:
-.long 0x38850200
+.base64 "AAKFOA=="
 bl {vg_triple_des_encrypt_block}
-.long 0xe8e50200,0xf8ff0000,0xe8050210,0xebe50228,0x7c0803a6,0x382102a0,0x4e800020",
+.base64 "AALl6AAA//gQAgXoKALl66YDCHygAiE4IACATg==""#,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block,
     )
 }

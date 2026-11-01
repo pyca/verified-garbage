@@ -20,20 +20,17 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ofb(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf8080840,0xf9c80810,0xf9e80818,0xfa080820,0xfa280828,0xfa480830,0xfa680838
-.long 0x7c6e1b78,0x7c8f2378,0x7cb02b78,0x7cd13378,0x7cf23b78,0x7d134378,0x28320000
+        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
 beq %cr0, 20f
 22:
-.long 0x7dc37378,0x7de47b78,0x7e058378,0x38c00001,0x7e679b78
+.base64 "eHPDfXh75H14gwV+AQDAOHibZ34="
 bl {vg_aes_encrypt_blocks}
-.long 0xe9310000,0xe9500000,0x7d295278,0xf9310000,0xe9310008,0xe9500008,0x7d295278,0xf9310008
-.long 0x3a310010,0x3a52ffff,0x28320000
+.base64 "AAAx6QAAUOl4Uil9AAAx+QgAMekIAFDpeFIpfQgAMfkQADE6//9SOgAAMig="
 bne %cr0, 22b
 b 21f
 20:
 21:
-.long 0xe8130840,0xe9d30810,0xe9f30818,0xea130820,0xea330828,0xea530830,0xea730838,0x7c0803a6
-.long 0x4e800020",
+.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }

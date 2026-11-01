@@ -184,10 +184,11 @@ def escapeBraces (s : String) : String :=
 
 /-- A Rust string literal whose value is `s`: a raw string literal, which
 rustc reads faster (it maps each character of an ordinary literal's
-template back to the source by unescaping it), unless `s` has a `"` or a
-carriage return, which a raw string literal cannot hold. -/
+template back to the source by unescaping it), `r"…"`, or `r#"…"#` if `s`
+has a `"` (`.base64`'s string, `packRun`); an ordinary one if `s` has a
+carriage return, which a raw string literal cannot hold, or a `"#`. -/
 def literal (s : String) : String :=
-  if s.any (fun c => c == '"' || c == '\r') then
+  if s.contains '\r' || (s.splitOn "\"#").length > 1 then
     "\"" ++ s.foldl (init := "") (fun acc c =>
       match c with
       | '\\' => acc ++ "\\\\"
@@ -195,6 +196,7 @@ def literal (s : String) : String :=
       | '\n' => acc ++ "\\n"
       | '\r' => acc ++ "\\r"
       | c => acc.push c) ++ "\""
+  else if s.contains '"' then "r#\"" ++ s ++ "\"#"
   else "r\"" ++ s ++ "\""
 
 def header : String :=

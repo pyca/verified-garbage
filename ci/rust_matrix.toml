@@ -79,7 +79,7 @@ rust = "stable"
 name = "Linux, x86-64"
 os = "ubuntu-26.04"
 arch = "x86_64"
-rust = "1.88"
+rust = "1.95"
 
 # One job each for the upcoming toolchains, to catch regressions (and new
 # warnings, which are errors here) before they reach stable.

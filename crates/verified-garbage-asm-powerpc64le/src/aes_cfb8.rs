@@ -20,22 +20,17 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cfb8_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf8080840,0xf9c80810,0xf9e80818,0xfa080820,0xfa280828,0xfa480830,0xfa680838
-.long 0x7c6e1b78,0x7c8f2378,0x7cb02b78,0x7cd13378,0x7cf23b78,0x7d134378,0x28320000
+        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
 beq %cr0, 20f
 22:
-.long 0xe9300000,0xf9330800,0xe9300008,0xf9330808,0x7dc37378,0x7de47b78,0x38b30800,0x38c00001
-.long 0x7e679b78
+.base64 "AAAw6QAIM/kIADDpCAgz+Xhzw314e+R9AAizOAEAwDh4m2d+"
 bl {vg_aes_encrypt_blocks}
-.long 0x89310000,0x89530800,0x7d295278,0x99310000,0xe9500000,0xe9700008,0x794ac202,0x796cc1c6
-.long 0x7d4a6378,0x796bc202,0x792cc1c6,0x7d6b6378,0xf9500000,0xf9700008,0x3a310001,0x3a52ffff
-.long 0x28320000
+.base64 "AAAxiQAIU4l4Uil9AAAxmQAAUOkIAHDpAsJKecbBbHl4Y0p9AsJrecbBLHl4Y2t9AABQ+QgAcPkBADE6//9SOgAAMig="
 bne %cr0, 22b
 b 21f
 20:
 21:
-.long 0xe8130840,0xe9d30810,0xe9f30818,0xea130820,0xea330828,0xea530830,0xea730838,0x7c0803a6
-.long 0x4e800020",
+.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -57,22 +52,17 @@ b 21f
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cfb8_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf8080840,0xf9c80810,0xf9e80818,0xfa080820,0xfa280828,0xfa480830,0xfa680838
-.long 0x7c6e1b78,0x7c8f2378,0x7cb02b78,0x7cd13378,0x7cf23b78,0x7d134378,0x28320000
+        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
 beq %cr0, 20f
 22:
-.long 0xe9300000,0xf9330800,0xe9300008,0xf9330808,0x7dc37378,0x7de47b78,0x38b30800,0x38c00001
-.long 0x7e679b78
+.base64 "AAAw6QAIM/kIADDpCAgz+Xhzw314e+R9AAizOAEAwDh4m2d+"
 bl {vg_aes_encrypt_blocks}
-.long 0x89310000,0x89530800,0x7d4a4a78,0x99510000,0xe9500000,0xe9700008,0x794ac202,0x796cc1c6
-.long 0x7d4a6378,0x796bc202,0x792cc1c6,0x7d6b6378,0xf9500000,0xf9700008,0x3a310001,0x3a52ffff
-.long 0x28320000
+.base64 "AAAxiQAIU4l4Skp9AABRmQAAUOkIAHDpAsJKecbBbHl4Y0p9AsJrecbBLHl4Y2t9AABQ+QgAcPkBADE6//9SOgAAMig="
 bne %cr0, 22b
 b 21f
 20:
 21:
-.long 0xe8130840,0xe9d30810,0xe9f30818,0xea130820,0xea330828,0xea530830,0xea730838,0x7c0803a6
-.long 0x4e800020",
+.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }

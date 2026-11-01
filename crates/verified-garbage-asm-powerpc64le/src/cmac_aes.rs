@@ -19,15 +19,9 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf8060820,0xf9c60810,0xf9e60818,0x7cae2b78,0x7ccf3378,0x39200000,0xf9250000
-.long 0xf9250008,0x7dc57378,0x38c00001,0x7de77b78
+        r#".base64 "pgIIfCAIBvgQCMb5GAjm+Xgrrnx4M898AAAgOQAAJfkIACX5eHPFfQEAwDh4e+d9"
 bl {vg_aes_encrypt_blocks}
-.long 0x39600000,0x7d2e5c28,0x39600008,0x7d4e5c28,0x792b0fe0,0x39800000,0x7d6b6050,0x39800087
-.long 0x7d6b6038,0x794c0fe0,0x79290fa4,0x7d296378,0x794a0fa4,0x7d4a5a78,0x39600000,0x7d2e5d28
-.long 0x39600008,0x7d4e5d28,0x39600000,0x7d2e5c28,0x39600008,0x7d4e5c28,0x792b0fe0,0x39800000
-.long 0x7d6b6050,0x39800087,0x7d6b6038,0x794c0fe0,0x79290fa4,0x7d296378,0x794a0fa4,0x7d4a5a78
-.long 0x39600010,0x7d2e5d28,0x39600018,0x7d4e5d28,0xe80f0820,0xe9cf0810,0xe9ef0818,0x7c0803a6
-.long 0x4e800020",
+.base64 "AABgOShcLn0IAGA5KFxOfeAPK3kAAIA5UGBrfYcAgDk4YGt94A9MeaQPKXl4Yyl9pA9KeXhaSn0AAGA5KF0ufQgAYDkoXU59AABgOShcLn0IAGA5KFxOfeAPK3kAAIA5UGBrfYcAgDk4YGt94A9MeaQPKXl4Yyl9pA9KeXhaSn0QAGA5KF0ufRgAYDkoXU59IAgP6BAIz+kYCO/ppgMIfCAAgE4=""#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -49,20 +43,17 @@ bl {vg_aes_encrypt_blocks}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf8080840,0xf9c80810,0xf9e80818,0xfa080820,0xfa280828,0xfa480830,0xfa680838
-.long 0x7c6e1b78,0x7c8f2378,0x7cb02b78,0x7cd13378,0x7cf23b78,0x7d134378,0x28320000
+        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
 beq %cr0, 20f
 22:
-.long 0xe9300000,0xe9510000,0x7d295278,0xf9300000,0xe9300008,0xe9510008,0x7d295278,0xf9300008
-.long 0x7dc37378,0x7de47b78,0x7e058378,0x38c00001,0x7e679b78
+.base64 "AAAw6QAAUel4Uil9AAAw+QgAMOkIAFHpeFIpfQgAMPl4c8N9eHvkfXiDBX4BAMA4eJtnfg=="
 bl {vg_aes_encrypt_blocks}
-.long 0x3a310010,0x3a52ffff,0x28320000
+.base64 "EAAxOv//UjoAADIo"
 bne %cr0, 22b
 b 21f
 20:
 21:
-.long 0xe8130840,0xe9d30810,0xe9f30818,0xea130820,0xea330828,0xea530830,0xea730838,0x7c0803a6
-.long 0x4e800020",
+.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -85,26 +76,24 @@ b 21f
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".long 0x7c0802a6,0xf8080810,0xf9c80818,0x3927fff0,0x28290000
+        r#".base64 "pgIIfBAICPgYCMj58P8nOQAAKSg="
 beq %cr0, 20f
-.long 0x39200000,0xf9280800,0xf9280808,0x39480800,0x7ccb3378,0x7cec3b78,0x28270000
+.base64 "AAAgOQAIKPkICCj5AAhIOXgzy3x4O+x8AAAnKA=="
 beq %cr0, 22f
 24:
-.long 0x892b0000,0x992a0000,0x396b0001,0x394a0001,0x398cffff,0x282c0000
+.base64 "AAAriQAAKpkBAGs5AQBKOf//jDkAACwo"
 bne %cr0, 24b
 b 23f
 22:
 23:
-.long 0x39200080,0x992a0000,0xe9280800,0xe9430100,0x7d295278,0xf9280800,0xe9280808,0xe9430108
-.long 0x7d295278,0xf9280808
+.base64 "gAAgOQAAKpkACCjpAAFD6XhSKX0ACCj5CAgo6QgBQ+l4Uil9CAgo+Q=="
 b 21f
 20:
-.long 0xe9260000,0xe94300f0,0x7d295278,0xf9280800,0xe9260008,0xe94300f8,0x7d295278,0xf9280808
+.base64 "AAAm6fAAQ+l4Uil9AAgo+QgAJun4AEPpeFIpfQgIKPk="
 21:
-.long 0xe9250000,0xe9480800,0x7d295278,0xf9250000,0xe9250008,0xe9480808,0x7d295278,0xf9250008
-.long 0x7d0e4378,0x38c00001,0x7dc77378
+.base64 "AAAl6QAISOl4Uil9AAAl+QgAJekICEjpeFIpfQgAJfl4Qw59AQDAOHhzx30="
 bl {vg_aes_encrypt_blocks}
-.long 0xe80e0810,0xe9ce0818,0x7c0803a6,0x4e800020",
+.base64 "EAgO6BgIzummAwh8IACATg==""#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -123,13 +112,11 @@ bl {vg_aes_encrypt_blocks}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".long 0xf821f6e1,0x38c10020,0x7c0802a6,0xf8060898,0xf9c60880,0xfa060890,0xf9e60888,0x7c6e1b78
-.long 0x7ccf3378,0x78b0f082,0x3a100006,0x7c832378,0x7ca42b78,0x7dc57378
+        r#".base64 "4fYh+CAAwTimAgh8mAgG+IAIxvmQCAb6iAjm+Xgbbnx4M898gvCweAYAEDp4I4N8eCukfHhzxX0="
 bl {vg_aes_expand_key_scratch}
-.long 0x7dc37378,0x7e048378,0x38ae00f0,0x7de67b78
+.base64 "eHPDfXiDBH7wAK44eHvmfQ=="
 bl {vg_cmac_aes_subkeys}
-.long 0x39200000,0xf92e0110,0xf92e0118,0xe80f0898,0xe9cf0880,0xea0f0890,0xe9ef0888,0x7c0803a6
-.long 0x38210920,0x4e800020",
+.base64 "AAAgORABLvkYAS75mAgP6IAIz+mQCA/qiAjv6aYDCHwgCSE4IACATg==""#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
@@ -149,61 +136,59 @@ bl {vg_cmac_aes_subkeys}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".long 0xf821f6e1,0x39010020,0x7c0802a6,0xf8080880,0xf9c80888,0xf9e80890,0xfa080898,0xfa2808a0
-.long 0xfa4808a8,0xfa6808b0,0x7c6e1b78,0x7c8f2378,0x7cd03378,0x7cf13b78,0x7d134378,0x28250000
+        r#".base64 "4fYh+CAAATmmAgh8gAgI+IgIyPmQCOj5mAgI+qAIKPqoCEj6sAho+ngbbnx4I498eDPQfHg78Xx4QxN9AAAlKA=="
 beq %cr0, 20f
-.long 0x3925ffff,0x3940000f,0x7d295038,0x39290001
+.base64 "//8lOQ8AQDk4UCl9AQApOQ=="
 b 21f
 20:
-.long 0x39200000
+.base64 "AAAgOQ=="
 21:
-.long 0x7a2ae102,0x282a0000
+.base64 "AuEqegAAKig="
 beq %cr0, 22f
-.long 0x39400010
+.base64 "EABAOQ=="
 b 23f
 22:
-.long 0x7e2a8b78
+.base64 "eIsqfg=="
 23:
-.long 0x39800010,0x7d896050,0x7d6c5050,0x796b0fe0,0x282b0000
+.base64 "EACAOVBgiX1QUGx94A9reQAAKyg="
 beq %cr0, 24f
-.long 0x7d4c5378
+.base64 "eFNMfQ=="
 b 25f
 24:
 25:
-.long 0x7d886378,0x7d4e4a14,0x394a0120,0x7e0b8378,0x282c0000
+.base64 "eGOIfRRKTn0gAUo5eIMLfgAALCg="
 beq %cr0, 26f
 28:
-.long 0x892b0000,0x992a0000,0x396b0001,0x394a0001,0x398cffff,0x282c0000
+.base64 "AAAriQAAKpkBAGs5AQBKOf//jDkAACwo"
 bne %cr0, 28b
 b 27f
 26:
 27:
-.long 0x7e104214,0x7e288850,0x38e00000,0x28310000
+.base64 "FEIQflCIKH4AAOA4AAAxKA=="
 beq %cr0, 29f
-.long 0x38e00001
+.base64 "AQDgOA=="
 b 210f
 29:
 210:
-.long 0x7dc37378,0x7de47b78,0x38ae0110,0x38ce0120,0x7e689b78
+.base64 "eHPDfXh75H0QAa44IAHOOHibaH4="
 bl {vg_cmac_aes_update}
-.long 0x3a400000,0x28310000
+.base64 "AABAOgAAMSg="
 beq %cr0, 211f
-.long 0x3a51ffff,0x3920000f,0x7e494838,0x7e499050
+.base64 "//9ROg8AIDk4SEl+UJBJfg=="
 b 212f
 211:
 212:
-.long 0x7a47e102,0x7dc37378,0x7de47b78,0x38ae0110,0x7e068378,0x7e689b78
+.base64 "AuFHenhzw314e+R9EAGuOHiDBn54m2h+"
 bl {vg_cmac_aes_update}
-.long 0x7e109214,0x7e328850,0x394e0120,0x7e0b8378,0x7e2c8b78,0x282c0000
+.base64 "FJIQflCIMn4gAU45eIMLfniLLH4AACwo"
 beq %cr0, 213f
 215:
-.long 0x892b0000,0x992a0000,0x396b0001,0x394a0001,0x398cffff,0x282c0000
+.base64 "AAAriQAAKpkBAGs5AQBKOf//jDkAACwo"
 bne %cr0, 215b
 b 214f
 213:
 214:
-.long 0xe8130880,0xe9d30888,0xe9f30890,0xea130898,0xea3308a0,0xea5308a8,0xea7308b0,0x7c0803a6
-.long 0x38210920,0x4e800020",
+.base64 "gAgT6IgI0+mQCPPpmAgT6qAIM+qoCFPqsAhz6qYDCHwgCSE4IACATg==""#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
     )
 }
@@ -223,15 +208,14 @@ b 214f
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".long 0xf821f6e1,0x38e10020,0x7c0802a6,0xe9230110,0xf9260000,0xe9230118,0xf9260008,0xf8070888
-.long 0xf9c70880,0x7cee3b78,0x7ce83b78,0x7ca72b78,0x7cc53378,0x38c30120,0x28270000
+        r#".base64 "4fYh+CAA4TimAgh8EAEj6QAAJvkYASPpCAAm+YgIB/iACMf5eDvufHg76Hx4K6d8eDPFfCABwzgAACco"
 beq %cr0, 20f
-.long 0x38e7ffff,0x3920000f,0x7ce74838,0x38e70001
+.base64 "///nOA8AIDk4SOd8AQDnOA=="
 b 21f
 20:
 21:
 bl {vg_cmac_aes_finalize}
-.long 0xe80e0888,0xe9ce0880,0x7c0803a6,0x38210920,0x4e800020",
+.base64 "iAgO6IAIzummAwh8IAkhOCAAgE4=""#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
     )
 }
