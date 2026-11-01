@@ -502,6 +502,12 @@ def main():
     groups = None
     if shards > 1:
         groups = shard_groups(listed, shard, shards)
+    # Run-only scope: SHA-256 and two representative public callers.
+    focused = {"sha256", "hmac-sha256", "pbkdf2-hmac-sha256"}
+    groups = sorted(set(listed) & focused)
+    if set(groups) != focused:
+        raise RuntimeError("focused experiment groups missing from the benchmark registry")
+    print("Focused experiment groups: " + ", ".join(groups), file=sys.stderr)
     # Interleaved, every group is named (base's runs of a benchmark it lacks
     # measure nothing); otherwise, unsharded, each side runs all of its own.
     selected = groups if groups is not None or owner is None else sorted(listed)
