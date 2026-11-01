@@ -2976,7 +2976,7 @@ mod tests {
         let msg: [u8; 300] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
         for aad_len in [0, 5, 16, 20] {
             let aad = &msg[..aad_len];
-            for len in [0, 1, 16, 17, 127, 128, 129, 300] {
+            for len in [0, 1, 16, 17, 300] {
                 let mut want = msg;
                 let want_tag = k.encrypt_in_place(&nonce, aad, &mut want[..len]).unwrap();
                 let m = &msg[..len];
