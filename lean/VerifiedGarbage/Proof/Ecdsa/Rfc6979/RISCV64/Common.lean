@@ -1,5 +1,8 @@
 module
 
+-- separate module: its proofs (about 4 s) cost more than its imports, and its importer's
+-- changes need not re-check them
+
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
 public import VerifiedGarbage.Spec.Ecdsa.P256
