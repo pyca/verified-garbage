@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.CTPrelude
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.CTBody
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Cache
@@ -34,7 +35,7 @@ def AadI (b t : State) : Prop := OT b t ∧ ∃ s, Initial b s ∧ ∃ s₁,
 theorem entry_one {b t : State} (hb : scratchContract.pre b) (ht : EntryI b t) :
     OT b t ∧ t.gpr .r24=(prepared b).gpr .r5 ∧ t.gpr .r25=BitVec.ofNat 64 ((prepared b).gpr .r6).toNat := by
   obtain ⟨s,hs,h1⟩ := ht
-  have hr := CTEntry.entry_ready (entry_access s hs.pre) h1
+  have hr := SealEntry.entry_ready (entry_access s hs.pre) h1
   obtain ⟨hsp,hg,hW,hT⟩ := prepared_public hb hs
   simp only [hsp,hg .r3 (by decide),hg .r4 (by decide),hg .r5 (by decide),hg .r6 (by decide),
     hg .r7 (by decide),hg .r8 (by decide),hg .r9 (by decide),hg .r10 (by decide),hW,hT] at hr
@@ -84,7 +85,7 @@ theorem body_ready [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
     (L : Lay ((prepared b).gpr .r3) (stackArg b 3+BitVec.ofNat 64 16) (stackArg b 3))
     (hv : ((prepared b).gpr .r4).toNat=10 ∨ ((prepared b).gpr .r4).toNat=12 ∨ ((prepared b).gpr .r4).toNat=14)
     (ht : AadI b t) :
-    WP isa Impl.AesGcm.PPC64LE.SealSplit.body t (CTEntry.ReturnI (stackArg b 3) (stackArg b 2) (prepared b).sp) := by
+    WP isa Impl.AesGcm.PPC64LE.SealSplit.body t (SealEntry.ReturnI (stackArg b 3) (stackArg b 2) (prepared b).sp) := by
   obtain ⟨hot,s,hs,s₁,h1,oa,rd,wr⟩ := ht
   obtain ⟨hsp,hg,hW,hT⟩ := prepared_public hb hs
   have hd : DataW (s₁.gpr .r29) (s₁.gpr .r30) (s₁.gpr .r31) t (s₁.gpr .r27) (s₁.gpr .r23).toNat := by
@@ -124,18 +125,18 @@ theorem stages_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
     rw [prepared_gpr b .r4 (by decide)]
     exact lay.rounds
   refine CT.seq (J := EntryI b)
-    (CTEntry.entry_ct (I := PreparedI b) (v := (prepared b).gpr) (sp := (prepared b).sp) (W := stackArg b 3)
+    (SealEntry.entry_ct (I := PreparedI b) (v := (prepared b).gpr) (sp := (prepared b).sp) (W := stackArg b 3)
       (fun s ⟨o,ho,hs⟩ => by subst s; exact entry_access o ho.pre)
       (fun s ⟨o,ho,hs⟩ => by subst s; exact ⟨(prepared_public hb ho).1,(prepared_public hb ho).2.1,(prepared_public hb ho).2.2.1⟩))
     (fun s ⟨o,ho,hs⟩ => ?_) ?_
   · subst s
-    exact WP.mono (CTEntry.entry_wp (entry_access o ho.pre)) fun t ht => ⟨o,ho,ht⟩
+    exact WP.mono (SealEntry.entry_wp (entry_access o ho.pre)) fun t ht => ⟨o,ho,ht⟩
   · refine CT.seq (J := AadI b) ((oneAad_ct L).mono (fun s hs =>
       ⟨(entry_one hb hs).1.1,(entry_one hb hs).2.1,(entry_one hb hs).2.2⟩))
       (fun _ => aad_ready hb) ?_
     exact CT.seq (CTBlocks.body_ct L hv (AadI b) (fun _ hs => hs.1.1) (fun _ => body_si hb))
       (fun _ => body_ready hb L hv)
-      (CTEntry.return_ct ((lay.workApart (tagR b) (by simp)).sub_right (Region.sub_prefix (by decide))))
+      (SealEntry.return_ct ((lay.workApart (tagR b) (by simp)).sub_right (Region.sub_prefix (by decide))))
 
 
 end VG.Proof.AesGcm.PPC64LE.SealSplit.CTStages

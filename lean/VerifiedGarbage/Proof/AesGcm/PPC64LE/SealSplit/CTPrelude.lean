@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Correct
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.CTEntry
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealEntry
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Correct
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.CTEntry
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealEntry
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 
 -- separate module: public stack arguments are promoted only after their proved loads.
@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 @[expose] public section
 namespace VG.Proof.AesGcm.PPC64LE.SealSplit.CTPrelude
 open VG VG.PPC64LE
-open CTEntry (entryRegs)
+open SealEntry (entryRegs)
 
 structure Initial (base s : State) : Prop where
   pre : scratchContract.pre s
