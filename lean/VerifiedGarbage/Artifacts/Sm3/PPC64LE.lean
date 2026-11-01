@@ -10,9 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sm3.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Sm3.compressApi.artifact PPC64LE.target {
-    code := Impl.Sm3.PPC64LE.compress
-    verified := Proof.Sm3.PPC64LE.Shared.compress },
   Spec.Sm3.initApi.artifact PPC64LE.target {
     code := Impl.Sm3.PPC64LE.Stream.init
     verified := Proof.Sm3.PPC64LE.Shared.init },

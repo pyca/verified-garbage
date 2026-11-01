@@ -27,6 +27,9 @@ pub(crate) mod vg_seed_decrypt_blocks;
 pub(crate) mod vg_seed_encrypt_blocks;
 
 #[rustfmt::skip]
+pub(crate) mod vg_sm3_compress;
+
+#[rustfmt::skip]
 pub(crate) mod vg_triple_des_decrypt_block;
 
 #[rustfmt::skip]

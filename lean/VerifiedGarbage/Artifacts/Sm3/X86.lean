@@ -11,9 +11,6 @@ import VerifiedGarbage.Proof.Sm3.X86.Lit
 namespace VG.Artifacts.Sm3.X86
 
 def artifacts : List Artifact := [
-  Spec.Sm3.compressApi.artifact X86.target {
-    code := Impl.Sm3.X86.compress
-    verified := Proof.Sm3.X86.Shared.compress },
   Spec.Sm3.initApi.artifact X86.target {
     code := Impl.Sm3.X86.Stream.init
     verified := Proof.Sm3.X86.Shared.init },

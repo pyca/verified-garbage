@@ -157,7 +157,6 @@ run_cmd do
   for (msg, md) in vs do
     unless Spec.Sm3.hash msg == md do throwError "SM3 of the {msg.length}-byte oscca.txt vector is wrong"
 
-#assert_standard_axioms VG.Spec.Sm3.compressContract
 #assert_standard_axioms VG.Spec.Sm3.initContract
 #assert_standard_axioms VG.Spec.Sm3.updateContract
 #assert_standard_axioms VG.Spec.Sm3.finalizeContract

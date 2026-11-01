@@ -6,8 +6,7 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # SM3: the contracts, on every target
 
-**Trusted** (as every file in `Spec/`). The contracts of the compression
-function and of streaming SM3 (`init`/`update`/`finalize`, on the
+**Trusted** (as every file in `Spec/`). The contracts of streaming SM3 (`init`/`update`/`finalize`, on the
 representation `Repr`), in terms of `Spec/Sm3.lean`, for any target:
 `A` is the target's calling convention. The signatures fix where the
 arguments are, the memory each function may access, disjointness, and that
@@ -28,33 +27,6 @@ calls SM3 with working space of its own.)
 @[expose] public section
 
 namespace VG.Spec.Sm3
-
-/-- `vg_sm3_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 72])`.
-`scratch` is working space: room for a block's whole message expansion
-(`W_0 … W_67` and `W'_0 … W'_63`, 528 bytes) and six saved callee-saved
-registers. The streaming functions pass theirs to it. -/
-def compressSig : Sig where
-  params := [("state", .array true .u32 8), ("blocks", .slice false (.array .u8 64) "n"),
-    ("scratch", .array true .u64 72)]
-
-/-- Updates the hash value at `state` with the `n` 64-byte blocks at
-`blocks`. The hash value and the blocks are secret. -/
-def compressContract {M : ISA} (A : Abi M) : Contract M :=
-  compressSig.contract A (post := fun state blocks n _scratch m m' _ =>
-    stateAt m' state = compressBlocks (stateAt m state) m blocks n.toNat)
-
-/-- `vg_sm3_compress` on every target. -/
-def compressApi : Api where
-  module := "sm3"
-  name := "vg_sm3_compress"
-  sig := compressSig
-  contracts := some fun A _ => compressContract A
-  summary := "The SM3 compression function (GB/T 32905-2016, draft-sca-cfrg-sm3-02 §5.3): \
-    updates the hash value `*state` (`A … H`) with the `n` 64-byte blocks starting at \
-    `blocks`, in order.\n\n\
-    Contract: `VG.Spec.Sm3.compressContract`. Constant time: only the pointers and `n` may \
-    affect timing, not the hash value or the blocks."
-  safety := ["The contents of `scratch` on return are unspecified."]
 
 /-- `vg_sm3_init(state: *mut [u8; 96])`. -/
 def initSig : Sig where

@@ -21,6 +21,9 @@ pub(crate) mod vg_rc2_encrypt_block;
 pub(crate) mod vg_rc2_expand_key;
 
 #[rustfmt::skip]
+pub(crate) mod vg_sm3_compress;
+
+#[rustfmt::skip]
 pub(crate) mod vg_triple_des_decrypt_block;
 
 #[rustfmt::skip]
