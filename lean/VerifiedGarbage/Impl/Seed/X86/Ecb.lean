@@ -95,7 +95,7 @@ def cntSlot : Nat := ptrSlot + 1
 def slots : Nat := cntSlot + 1
 
 /-- The working space the blocks functions take, in slots: the 136 64-bit
-words of `Spec.Seed.blocksSig`, of which the code uses the first `slots`. -/
+words of `Proof.Seed.blocksSig`, of which the code uses the first `slots`. -/
 def wsSlots : Nat := 272
 
 /-- The callee-saved registers, and their slots. -/

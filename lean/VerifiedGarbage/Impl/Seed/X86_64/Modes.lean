@@ -39,7 +39,7 @@ open VG.Impl.Modes.X86_64 (copyW)
 open VG.Spec.Seed (Direction)
 
 /-- The core's buffer, after the blocks function's working space
-(`Spec.Seed.blocksSig`'s 136 words). -/
+(`Proof.Seed.blocksSig`'s 136 words). -/
 def bufSlot : Nat := 136
 
 /-- The schedule's copy, after the buffer. -/

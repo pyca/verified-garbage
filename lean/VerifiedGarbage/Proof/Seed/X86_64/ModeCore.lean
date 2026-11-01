@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.Ecb
+public import VerifiedGarbage.Proof.Seed.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Impl.X86_64Scal
 import VerifiedGarbage.Proof.Framework.Sig
@@ -30,7 +31,7 @@ a schedule, its cipher `Spec.Seed.cipher` for encryption and
 `Spec.Seed.invCipher` for decryption, and the key ready when its copy in the
 core's slots is the schedule and the 8 bytes below `rsp` are apart from the
 slots. `crypt` calls the blocks function of `d` (`WP.call`, with
-`Spec.Seed.blocksContract`) on the buffer's sixteen blocks, its return
+`Proof.Seed.blocksContract`) on the buffer's sixteen blocks, its return
 address stored in the 8 bytes below `rsp`; the scratch buffer's address,
 the data's address and the blocks left cross the call in `xmm12` …
 `xmm14`, since the callee writes no `xmm` register (`scalCode`).
@@ -227,11 +228,11 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
       s'.xmm = s₉.xmm ∧ s'.ymmHi = s₉.ymmHi := by
     refine WP.vecKeep (blockCall_scal d) ?_
     rw [blockCall_eq]
-    refine WP.call (k := Spec.Seed.blocksContract abi d) (blocks_verified d).1 (blocks_nosp d)
+    refine WP.call (k := Proof.Seed.blocksContract abi d) (blocks_verified d).1 (blocks_nosp d)
       (by rw [blocks_depth]; decide) (rd := [⟨schedAddr B, 128⟩]) (wr := [⟨bufAt B, 256⟩, ⟨B, 1088⟩]) ?_
       (Covers.of_sub fun r hr => ?_) (Covers.of_sub fun r hr => ?_)
       (fun s' hrd hwr hcs hf _ hpost => ?_)
-    · sig_pre [Spec.Seed.blocksContract, Spec.Seed.blocksSig, abi, argRegs]
+    · sig_pre [Proof.Seed.blocksContract, Proof.Seed.blocksSig, abi, argRegs]
       rw [rdi₉, rsi₉, rdx₉, rcx₉, rsp₉, show (16 : BitVec 64).toNat * 16 = 256 from rfl]
       have hfit : ∀ off, off < 1536 → (B + BitVec.ofNat 64 off).toNat = B.toNat + off := fun off h => by
         rw [Offset.toNat_add_ofNat]; omega
@@ -255,7 +256,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
     · obtain ⟨s₂', hm₂, _, hpost⟩ := hpost
       rw [blocks_depth, rsp₉] at hf
       refine ⟨hrd, hwr, hcs, by simpa using hf, ?_⟩
-      sig_reduce [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs] at hpost
+      sig_reduce [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs] at hpost
       rw [BitVec.setWidth_eq, rdi₉, rsi₉, rdx₉, show (16 : BitVec 64).toNat = 16 from rfl] at hpost
       have hfr := callEntry_frame' s₉
       rw [State.callEntry_mem, rsp₉] at hfr

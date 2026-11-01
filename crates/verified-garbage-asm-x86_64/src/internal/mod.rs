@@ -16,3 +16,9 @@ pub(crate) mod vg_rc2_encrypt_block;
 
 #[rustfmt::skip]
 pub(crate) mod vg_rc2_expand_key;
+
+#[rustfmt::skip]
+pub(crate) mod vg_seed_decrypt_blocks;
+
+#[rustfmt::skip]
+pub(crate) mod vg_seed_encrypt_blocks;

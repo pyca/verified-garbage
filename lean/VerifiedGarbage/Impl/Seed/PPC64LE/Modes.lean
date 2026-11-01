@@ -16,7 +16,7 @@ makes on one block.
 `dirCore d`: the core for the modes (`Impl/Modes/PPC64LE/Seq.lean`), with
 the round keys in the order of the direction `d`: encryption's for CBC
 encryption, OFB and CFB, decryption's for CBC decryption. Its slots are the
-blocks function's working space (136, as `Spec.Seed.blocksSig` has it) and
+blocks function's working space (136, as `Proof.Seed.blocksSig` has it) and
 the buffer's block (`bufSlot`), then the modes' six: 144 in all, with the
 modes' (`[u64; 144]`).
 

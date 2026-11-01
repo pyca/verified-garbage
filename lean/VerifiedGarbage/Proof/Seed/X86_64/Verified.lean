@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Seed.X86_64.Ecb
 public import VerifiedGarbage.Proof.Seed.X86_64.ConstantTime
 public import VerifiedGarbage.Spec.Seed.Contract
+public import VerifiedGarbage.Proof.Seed.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -135,17 +136,17 @@ def satStateBlocks : State := { satState with wr := [⟨0x2000, 0⟩, ⟨0x3000,
 /-- ECB against `vg_seed_encrypt_blocks`'s contract: its working space is 136 words, of which
 the code uses the first 132. -/
 theorem encrypt_blocks_verified : Verified target Impl.Seed.X86_64.encrypt
-    (Spec.Seed.blocksContract abi .encrypt) := by
+    (Proof.Seed.blocksContract abi .encrypt) := by
   refine Verified.of_correct (encrypt_correct (n := 1088) (by decide))
     (encrypt_constantTime _ _ (ecbTaint_agree .encrypt (n := 1088) (by decide) (by decide))) ?_
-  sig_implies [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
+  sig_implies [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
     contract, publicRegs_five] [satStateBlocks] using satStateBlocks
 
 theorem decrypt_blocks_verified : Verified target Impl.Seed.X86_64.decrypt
-    (Spec.Seed.blocksContract abi .decrypt) := by
+    (Proof.Seed.blocksContract abi .decrypt) := by
   refine Verified.of_correct (decrypt_correct (n := 1088) (by decide))
     (decrypt_constantTime _ _ (ecbTaint_agree .decrypt (n := 1088) (by decide) (by decide))) ?_
-  sig_implies [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
+  sig_implies [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
     contract, publicRegs_five] [satStateBlocks] using satStateBlocks
 
 end VG.Proof.Seed.X86_64

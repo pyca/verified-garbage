@@ -23,14 +23,6 @@ def artifacts : List Artifact := [
   Spec.Seed.ecbDecryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1120 .r6 136 (Impl.Seed.PPC64LE.ecbCall .decrypt)
     stack := 1168
-    verified := Proof.Seed.PPC64LE.ecbCall_framed .decrypt },
-  Spec.Seed.encryptBlocksApi.artifact PPC64LE.target {
-    code := Impl.Seed.PPC64LE.encrypt
-    stack := 0
-    verified := Proof.Seed.PPC64LE.encrypt_blocks_verified },
-  Spec.Seed.decryptBlocksApi.artifact PPC64LE.target {
-    code := Impl.Seed.PPC64LE.decrypt
-    stack := 0
-    verified := Proof.Seed.PPC64LE.decrypt_blocks_verified }]
+    verified := Proof.Seed.PPC64LE.ecbCall_framed .decrypt }]
 
 end VG.Artifacts.Seed.PPC64LE

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Seed.X86_64.Modes
+public import VerifiedGarbage.Proof.Seed.Contract
 public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
@@ -81,7 +82,7 @@ theorem blockCall_eq (d : Spec.Seed.Direction) :
   cases d <;> rfl
 
 theorem blocks_verified (d : Spec.Seed.Direction) :
-    Verified target (blocksCode d) (Spec.Seed.blocksContract abi d) := by
+    Verified target (blocksCode d) (Proof.Seed.blocksContract abi d) := by
   cases d
   · exact encrypt_blocks_verified
   · exact decrypt_blocks_verified
@@ -109,15 +110,15 @@ theorem ecbCall_correct (d : Spec.Seed.Direction) (s₀ : State) (hs : (ecbCallX
   obtain ⟨hrd, hwr, dKD, dKS, dDS, rD, rS, sK, sD, sS, hsp, fitK, fitD, fitS⟩ := hs
   have hv := blocks_verified d
   rw [show ecbCall d = blockCall d from rfl, blockCall_eq]
-  refine (WP.call_mx (k := Spec.Seed.blocksContract abi d) hv.1 (blocks_nosp d)
+  refine (WP.call_mx (k := Proof.Seed.blocksContract abi d) hv.1 (blocks_nosp d)
     (by rw [blocks_depth]; decide) (rd := s₀.rd) (wr := s₀.wr) ?_
     (Covers.refl _) (Covers.refl _)
     (Q := fun s' => abiPreserved s₀ s' ∧ (ecbCallX86_64 d).post s₀ s') ?_).elim
     fun t ⟨s', he, hq⟩ => ⟨t, s', he, hq⟩
-  · sig_pre [Spec.Seed.blocksContract, Spec.Seed.blocksSig, abi, argRegs]
+  · sig_pre [Proof.Seed.blocksContract, Proof.Seed.blocksSig, abi, argRegs]
     exact ⟨hrd, hwr, dKD, dKS, dDS, sK, sD, sS, fitK, fitD, fitS⟩
   · intro s' _ _ hcs hf _ ⟨s₂, hm₂, _, hpost⟩ hmx
-    sig_reduce [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs] at hpost
+    sig_reduce [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs] at hpost
     rw [BitVec.setWidth_eq] at hpost
     rw [blocks_depth] at hf
     have hfr := callEntry_frame' s₀
