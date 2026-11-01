@@ -1,17 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.X448.RISCV64.Bits
 public import VerifiedGarbage.Proof.X448.RISCV64.Setup
-import VerifiedGarbage.Proof.X448.RISCV64.Freeze
-import VerifiedGarbage.Proof.X448.RISCV64.Invert
+public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.RISCV64.Isa
 
 /-!
-# X448 on RISCV64: the whole function
+# X448 on RISCV64: the whole function's contract
 
-`vg_x448` writes `X448(k, u)` to `out` (`x448_correct`).
+`vg_x448`'s contract on this target (`x448RISCV64`), and facts about the
+slots and the output that its proof (`Proof/X448/RISCV64/R64/Verified.lean`)
+uses.
 -/
 
 @[expose] public section
@@ -44,25 +44,6 @@ theorem XPre.of {s : State} (h : x448RISCV64.pre s) : XPre s := by
 section
 variable {b : Addr}
 
-theorem lastSwap_ok {s : State} (hc : Ctx b s) {sw : Nat} (hsw : sw ≤ 1)
-    (h0 : s.gpr .t2 = BitVec.ofNat 64 sw) {v : Nat → Fe} (hS : SlotsOk s.mem b LQ v) :
-    WP isa (.block lastSwap) s fun s' => Stp b s s' ∧ Ctx b s' ∧
-      SlotsOk s'.mem b LQ (swapV Z2 Z3 sw (swapV X2 X3 sw v)) := by
-  simp only [lastSwap, mask, List.cons_append, List.nil_append]
-  refine wp_li (by decide) fun s1 u1 => wp_sub fun s2 u2 => ?_
-  have hr2 : Rest [.t0] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
-  have hc2 : Ctx b s2 := hc.of_rest hr2 (by decide)
-  have e11 : s2.gpr .t0 = 0 - BitVec.ofNat 64 sw := by
-    rw [u2.gpr, u1.gpr, u1.other _ (by decide), h0]; rfl
-  have hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
-  refine WP.append (cswapS (v := v) (qs := LQ) (by decide) (by decide) (by decide) (by decide) (by decide) hc2
-    hsw e11 (by rw [hm2]; exact hS)) fun s3 ⟨hr3, hf3, hS3⟩ => ?_
-  have hc3 : Ctx b s3 := hc2.of_rest hr3 (by decide)
-  refine WP.mono (cswapS (by decide) (by decide) (by decide) (by decide) (by decide) hc3 hsw
-    (by rw [hr3.gpr _ (by decide), e11]) hS3) fun s4 ⟨hr4, hf4, hS4⟩ =>
-    ⟨⟨(hr2.mono (by decide)).trans ((hr3.mono (by decide)).trans (hr4.mono (by decide))),
-      by rw [← hm2]; exact hf3.trans hf4⟩, hc3.of_rest hr4 (by decide), hS4⟩
-
 /-- The slots stay through a write of `BITS`. -/
 theorem SlotsOk.bits {m m' : Mem} {qs : List Nat} {v : Nat → Fe} (hS : SlotsOk m b qs v)
     (hq : (qs.all fun q => q + 56 ≤ BITS) = true)
@@ -83,46 +64,5 @@ theorem bytesAt_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : 
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
   exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega) (by omega)) hc
-
-theorem x448_correct {s : State} (hp : XPre s) :
-    WP isa x448 s fun s' => x448RISCV64.post s s' := by
-  have hB : BITS = 1064 := rfl
-  have hsc_in : (⟨s.gpr .a1, 56⟩ : Region) ∈ s.rd ++ s.wr := by rw [hp.rd]; simp
-  have hsub : Region.Sub ⟨wsB s, 2048⟩ ⟨s.gpr .a3, 8192⟩ := by
-    have := wsB_sub s (o := 0) (n := 2048) (by decide)
-    rwa [BitVec.add_zero] at this
-  unfold x448
-  refine WP.seq (WP.mono (setup_ok hp) fun s1 ⟨hc1, hf1, hS1, hr1⟩ => ?_)
-  refine WP.seq (WP.mono (bits_ok hc1 (hr1.gpr .a1 (by decide)) (by rw [hr1.rd, hr1.wr]; exact hsc_in)
-    (hp.sc_ws.sub_right hsub)) fun s2 ⟨hc2, hr2, hf2, hb2⟩ => ?_)
-  have hS2 := hS1.bits (by decide) hf2
-  refine WP.seq (WP.mono (ladder_ok hc2 hb2 hS2) fun s3 ⟨hst3, hc3, h0, hS3⟩ => ?_)
-  refine WP.seq (WP.mono (lastSwap_ok hc3 (ladderAfter_swap_le _ _ (by decide)) h0 hS3)
-    fun s4 ⟨hst4, hc4, hS4⟩ => ?_)
-  refine WP.seq (WP.mono (invert_ok hc4 (hS4.mono (by decide)) rfl) fun s5 ⟨hst5, hc5, hS5⟩ => ?_)
-  refine WP.seq (WP.mono (mulS (o := X2) (x := X2) (y := R) (by decide) (by decide) (by decide)
-    (by decide) hc5 hS5) fun s6 ⟨hr6, hf6, hS6⟩ => ?_)
-  -- The registers and regions along the way.
-  have hst6 : Stp (wsB s) s2 s6 := hst3.trans (hst4.trans (hst5.trans ⟨hr6.mono (by decide), hf6⟩))
-  have h3' : s6.gpr .a0 = s.gpr .a0 := by
-    rw [hst6.rest.gpr _ (by decide), hr2.gpr _ (by decide), hr1.gpr _ (by decide)]
-  have hwr6 : s6.wr = s.wr := by rw [hst6.rest.wr, hr2.wr, hr1.wr]
-  have hc6 : Ctx (wsB s) s6 := hc5.of_rest hr6 (by decide)
-  refine WP.mono (freeze_ok hc6 h3'
-    (fun k hk => in_base (len := 56) (by rw [hwr6, hp.wr]; simp) (by omega) (by omega)) (hp.out_ws.sub_right hsub).symm)
-    fun s7 ⟨hbytes, _, _⟩ => ?_
-  -- The result.
-  show bytesAt s7.mem _ 56 = _
-  rw [hbytes, VG.Proof.X448.x448_eq]
-  -- The scalar, as read by `bits`.
-  have hk : bytesAt s1.mem (s.gpr .a1) 56 = bytesAt s.mem (s.gpr .a1) 56 :=
-    bytesAt_frame hf1 fun r hr => by rw [List.mem_singleton.mp hr]; exact hp.sc_ws
-  rw [hk] at hS3 h0 hS4 hS5 hS6
-  have e6 : FS s6.mem (wsB s) X2 = _ := hS6 X2 (by decide)
-  rw [← VG.Proof.X448.toFe_val, ← VG.Proof.X448.encodeUCoordinate_eq]
-  change VG.Spec.X448.encodeUCoordinate (FS s6.mem (wsB s) X2) = _
-  rw [e6]
-  simp only [upd, swapV, ladV, sel, iteT, VG.Proof.X448.invert_eq, VG.Proof.X448.pow_pw, cswap_fst,
-    uOf, X1, X2, Z2, X3, Z3, R, Nat.reduceEqDiff, ite_false]
 
 end VG.Proof.X448.RISCV64
