@@ -400,4 +400,147 @@ theorem fin2_ok {s : State} {B : Addr} {Z w n p t₁ : Nat} {f : Int} (h : FS B 
     exact (((frW o₁ (by decide) (by decide) (by omega)).trans (frW o₂ (by decide) (by decide) (by omega))).trans
       F₄).trans F₅
 
+theorem countN_ok {s : State} {n : Nat} (h13 : s.gpr .r13 = BitVec.ofNat 64 n) :
+    WP isa (.block countN) s fun t => t.gpr .r12 = BitVec.ofNat 64 (n + 1) ∧ t.mem = s.mem ∧ Keep [.r12] s t := by
+  refine WP.mono (WP.keep [.r12] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 (n + 1) ∧ t.mem = s.mem) (by
+    unfold countN
+    xrun [h13]
+    rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]) rfl)
+    fun t ⟨⟨a, b⟩, k⟩ => ⟨a, b, k⟩
+
+/-- The end's last part. -/
+def fin3L (iV iX₂ : Nat) : List (Prog isa) := [zeroA aA,
+  .block (countN ++ ([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi),
+  wordLoop 0 subBody,
+  .block (isNeg aF ++ base aA .r8 ++ base aF .rsi), wordLoop 0 selBody,
+  .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
+  copyA iV aA, copyA iX₂ aT]
+
+/-- `[v] = |f|` and `[x₂] = t`. -/
+theorem fin3_ok {s : State} {B : Addr} {Z w n p x : Nat} {f : Int} (h : FS B Z w n s) {iV iX₂ : Nat}
+    (hV : iV < 16) (hX : iX₂ < 16) (hVX : iV ≠ iX₂)
+    (hT : wv s.mem B (slot w aT) (n + 1) = x) (hx : x < p) (hZT : HZ s.mem B w n aT) (hpn : p < 2 ^ (64 * n))
+    (hf : (wv s.mem B (slot w aF) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = f % 2 ^ (64 * (n + 1)))
+    (hf1 : -(p : Int) ≤ f) (hf2 : f ≤ p) :
+    WP isa (seqs (fin3L iV iX₂)) s fun t => t.gpr .rdi = B ∧
+      wv t.mem B (slot w iV) w = f.natAbs ∧ wv t.mem B (slot w iX₂) w = x ∧
+      Frm B [(slot w iV, 8 * w), (slot w iX₂, 8 * w), (slot w 16, 80 * (w + 2))] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
+  have hn := h.ws.scr.nowrap
+  have hnw := h.nw; have hn1 := h.n1
+  have eF : slot w aF = 256 + 19 * (8 * (w + 2)) := slot_eq w 19
+  have eA : slot w aA = 256 + 21 * (8 * (w + 2)) := slot_eq w 21
+  have eT : slot w aT = 256 + 23 * (8 * (w + 2)) := slot_eq w 23
+  have eS : slot w aS = 256 + 24 * (8 * (w + 2)) := slot_eq w 24
+  have e16 : slot w 16 = 256 + 16 * (8 * (w + 2)) := slot_eq w 16
+  have e26 : slot w 26 = 256 + 26 * (8 * (w + 2)) := slot_eq w 26
+  have hZ := h.z
+  have hw := h.ws.w2
+  have hH : (p : Int) < 2 ^ (64 * n) * 2 ^ 63 := by
+    have : 2 ^ (64 * n) ≤ 2 ^ (64 * n) * 2 ^ 63 := Nat.le_mul_of_pos_right _ (by decide)
+    have : p < 2 ^ (64 * n) * 2 ^ 63 := by omega
+    exact_mod_cast this
+  have hHpos : (0 : Int) < 2 ^ (64 * n) * 2 ^ 63 := by
+    have := Nat.mul_pos (Nat.two_pow_pos (64 * n)) (Nat.two_pow_pos 63); exact_mod_cast this
+  have e2 : (2 : Int) * (2 ^ (64 * n) * 2 ^ 63) = 2 ^ (64 * (n + 1)) := by
+    rw [show 64 * (n + 1) = 64 * n + 63 + 1 by omega, pow_succ, pow_add]; ring
+  have hFv := Divstep.tc_eq (H := 2 ^ (64 * n) * 2 ^ 63) (x := f) (W := (wv s.mem B (slot w aF) (n + 1) : Int))
+    hHpos (by omega) (by omega) (Int.natCast_nonneg _)
+    (by have := wv_lt s.mem B (slot w aF) (n + 1); rw [e2]; exact_mod_cast this) (by rw [e2]; exact hf)
+  rw [e2] at hFv
+  have sV := h.sl (show iV < 26 by omega)
+  have sX := h.sl (show iX₂ < 26 by omega)
+  unfold fin3L
+  simp only [seqs]
+  -- `a := 0`.
+  refine WP.seq (WP.mono (zeroAI_ok h.ws hZ (j := aA) (by decide)) fun s₁ ⟨zA₁, o₁, r9₁, k₁⟩ => ?_)
+  have h₁ : FS B Z w n s₁ := ⟨wsOut h.ws o₁ k₁ (by decide), hZ, r9₁, (k₁.gpr (by decide)).trans h.r13, hn1, hnw⟩
+  have F₁ : wv s₁.mem B (slot w aF) (n + 1) = wv s.mem B (slot w aF) (n + 1) := by
+    rw [o₁.wv (Or.inl (by omega)) (by omega)]
+  have zA₁' : wv s₁.mem B (slot w aA) (n + 1) = 0 := by
+    rw [← (HZ.of_zero (n := n) zA₁).wv_eq (by omega), zA₁]
+  -- `s := 0 - f`.
+  rw [show countN ++ ([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi =
+    countN ++ (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi) by
+    simp only [List.append_assoc]]
+  refine WP.seq (WP.block_append_iff.mpr (WP.mono (countN_ok h₁.r13) fun s₂ ⟨r12₂, m₂, k₂⟩ => ?_))
+  have h₂ := h₁.of_mem m₂ k₂ (by decide) (by decide) (by decide)
+  refine WP.mono (WP.seq_iff.mp (subN_ok h₂ (a := aA) (b := aF) (c := aS) (by decide) (by decide) (by decide)
+    (by decide) (by decide) r12₂ (N := n + 1) (by omega) (by omega))) fun s₂' h₂' => WP.seq (WP.mono h₂'
+    fun s₃ ⟨cb, _, hv₃, _, _, o₃, k₃⟩ => ?_)
+  have h₃ := h₂.of_out o₃ k₃ (by decide) (by decide) (by decide)
+  rw [m₂, zA₁', F₁] at hv₃
+  have F₃ : wv s₃.mem B (slot w aF) (n + 1) = wv s.mem B (slot w aF) (n + 1) := by
+    rw [o₃.wv (Or.inl (by omega)) (by omega), m₂, F₁]
+  have A₃ : wv s₃.mem B (slot w aA) (n + 1) = 0 := by rw [o₃.wv (Or.inl (by omega)) (by omega), m₂, zA₁']
+  have k23 := k₂.trans k₃
+  -- `a := f` if `f ≥ 0`.
+  refine WP.seq (WP.mono (WP.seq_iff.mp (selN_ok h₃ (isNeg_ok h₃ (j := aF) (by decide) (x := f) (by rw [F₃]; exact hf)
+    (by omega) (by omega)) (a := aA) (c := aF) (by decide) (by decide) (by decide)
+    ((k₃.gpr (by decide)).trans r12₂) (N := n + 1) (by omega) (by omega))) fun u hu => WP.seq (WP.mono hu
+    fun s₄ ⟨hv₄, o₄, k₄⟩ => ?_))
+  have h₄ := h₃.of_out o₄ k₄ (by decide) (by decide) (by decide)
+  rw [A₃, F₃] at hv₄
+  have S₄ : wv s₄.mem B (slot w aS) (n + 1) = wv s₃.mem B (slot w aS) (n + 1) := by
+    rw [o₄.wv (Or.inr (by omega)) (by omega)]
+  have F₄ : wv s₄.mem B (slot w aF) (n + 1) = wv s.mem B (slot w aF) (n + 1) := by
+    rw [o₄.wv (Or.inl (by omega)) (by omega), F₃]
+  -- `a := s` if `f < 0`.
+  refine WP.seq (WP.mono (WP.seq_iff.mp (selN_ok h₄ (nonNeg_ok h₄ (j := aF) (by decide) (x := f) (by rw [F₄]; exact hf)
+    (by omega) (by omega)) (a := aA) (c := aS) (by decide) (by decide) (by decide)
+    (((k₃.trans k₄).gpr (by decide)).trans r12₂) (N := n + 1) (by omega) (by omega))) fun u hu => WP.seq (WP.mono hu
+    fun s₅ ⟨hv₅, o₅, k₅⟩ => ?_))
+  have h₅ := h₄.of_out o₅ k₅ (by decide) (by decide) (by decide)
+  rw [hv₄, S₄] at hv₅
+  -- `|f|`.
+  have hp0 : (0 : Int) ≤ p := Int.natCast_nonneg _
+  have hS3 := wv_lt s₃.mem B (slot w aS) (n + 1)
+  have habs : wv s₅.mem B (slot w aA) (n + 1) = f.natAbs := by
+    rw [hv₅]
+    by_cases h0 : 0 ≤ f
+    · simp only [decide_eq_true h0, show ¬ f < 0 by omega, decide_false, Bool.false_eq_true, ↓reduceIte] at hFv ⊢
+      have : ((f.natAbs : Nat) : Int) = f := Int.natAbs_of_nonneg h0
+      omega
+    · simp only [decide_eq_false h0, show f < 0 by omega, ↓reduceIte, Bool.false_eq_true] at hFv ⊢
+      have : ((f.natAbs : Nat) : Int) = -f := Int.ofNat_natAbs_of_nonpos (by omega)
+      have hv₃' : (wv s₃.mem B (slot w aS) (n + 1) : Int) + wv s.mem B (slot w aF) (n + 1) =
+          2 ^ (64 * (n + 1)) * cb.toNat := by rw [Nat.zero_add] at hv₃; exact_mod_cast hv₃
+      have hS3' : (wv s₃.mem B (slot w aS) (n + 1) : Int) < 2 ^ (64 * (n + 1)) := by exact_mod_cast hS3
+      cases cb <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.cast_zero, Nat.cast_one] at hv₃' <;> omega
+  have hZA : HZ s₅.mem B w n aA :=
+    ((HZ.of_zero (n := n) zA₁).out (by rw [← m₂]; exact o₃) (fun i _ _ => Or.inl (by omega)) (by omega)).out
+      o₄ (fun i h1 _ => Or.inr (by omega)) (by omega) |>.out o₅ (fun i h1 _ => Or.inr (by omega)) (by omega)
+  have hfp : f.natAbs ≤ p := by omega
+  have hfw : f.natAbs < 2 ^ (64 * w) := Nat.lt_of_le_of_lt hfp (Nat.lt_of_lt_of_le hpn
+    (Nat.pow_le_pow_right (by decide) (by omega)))
+  have Aw : wv s₅.mem B (slot w aA) w = f.natAbs :=
+    wv_lowK (by rw [hZA.wv_eq (by omega), habs]) hfw (by omega)
+  -- `t`, unchanged.
+  have T₅ : wv s₅.mem B (slot w aT) (w + 2) = wv s.mem B (slot w aT) (w + 2) := by
+    rw [o₅.wv (Or.inr (by omega)) (by omega), o₄.wv (Or.inr (by omega)) (by omega),
+      o₃.wv (Or.inl (by omega)) (by omega), m₂, o₁.wv (Or.inr (by omega)) (by omega)]
+  have hxw : x < 2 ^ (64 * w) := Nat.lt_of_lt_of_le (by omega) (Nat.pow_le_pow_right (by decide) (by omega) :
+    2 ^ (64 * n) ≤ 2 ^ (64 * w))
+  have Tw : wv s₅.mem B (slot w aT) w = x :=
+    wv_lowK (by rw [T₅, hZT.wv_eq (by omega), hT]) hxw (by omega)
+  -- The copies.
+  refine WP.seq (WP.mono (copyAI_ok h₅.ws hZ (o := iV) (a := aA) (by omega) (by decide) (by unfold aA; omega))
+    fun s₆ ⟨v₆, o₆, k₆⟩ => ?_)
+  have sVA := slot_far (w := w) (show iV ≠ aT by unfold aT; omega)
+  have sVX := slot_far (w := w) hVX
+  have sXA := slot_far (w := w) (show iX₂ ≠ aT by unfold aT; omega)
+  refine WP.mono (copyAI_ok (wsOut h₅.ws o₆ k₆ (by decide)) hZ (o := iX₂) (a := aT) (by omega) (by decide)
+    (by unfold aT; omega)) fun t ⟨v₇, o₇, k₇⟩ => ⟨?_, ?_, ?_, ?_, ?_⟩
+  · exact ((((((k₁.trans k23).trans k₄).trans k₅).trans k₆).trans k₇).gpr (by decide)).trans h.ws.rdi
+  · rw [o₇.wv (by omega) (by omega), v₆, Aw]
+  · rw [v₇, o₆.wv (by omega) (by omega), Tw]
+  · have big : ∀ {m m' : Mem}, Frm B [(slot w 16, 80 * (w + 2))] m m' →
+        Frm B [(slot w iV, 8 * w), (slot w iX₂, 8 * w), (slot w 16, 80 * (w + 2))] m m' :=
+      fun f => f.mono (by simp)
+    exact (((((big (frW o₁ (by decide) (by decide) (by omega))).trans
+      (big (by rw [← m₂]; exact frW o₃ (by decide) (by decide) (by omega)))).trans
+      (big (frW o₄ (by decide) (by decide) (by omega)))).trans (big (frW o₅ (by decide) (by decide) (by omega)))).trans
+      (Frm.of_outside o₆ (by simp))).trans (Frm.of_outside o₇ (by simp))
+  · exact (((((k₁.trans k23).trans k₄).trans k₅).trans k₆).trans k₇).mono (by decide)
+
 end VG.Proof.Rsa.X86_64.InvB
