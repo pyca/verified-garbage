@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Exchange
 public import VerifiedGarbage.Impl.EcKey.Compressed.P256.RISCV64
 public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 import VerifiedGarbage.Proof.EcKey.Compressed.Encode
+import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.PublicKey
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.CheckVerified
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.CheckLit
@@ -12,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
-import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # P-256's point compression and decompression on RISC-V: correctness
@@ -565,5 +566,169 @@ theorem root_ok {s : State} {base : Addr} (hw : WsReg s base) (hacc : sv base s 
     exact h
   · have h4 : sv base s₄ Y2 = (sv base s₃ ZERO + W.p - sv base s₃ Y1) % W.p := e₄
     rw [h4, z₃, Nat.zero_add, y1₄]
+
+/-! ### The checks into the flag, the root's choice and the output -/
+
+theorem mask_maskOf (P : Prop) [Decidable P] : VG.Proof.Weierstrass.mask P = maskOf (decide P) := by
+  unfold VG.Proof.Weierstrass.mask maskOf; by_cases h : P <;> simp [h]
+
+theorem same_mask (x y : BitVec 64) :
+    ((x ^^^ y) &&& BitVec.ofInt 64 1) + BitVec.ofInt 64 (-1) = maskOf (decide (x.toNat % 2 = y.toNat % 2)) := by
+  have hlow : (x ^^^ y) &&& 1 = if x.toNat % 2 = y.toNat % 2 then 0 else 1 := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_and, BitVec.toNat_xor, show (1 : BitVec 64).toNat = 1 from rfl,
+      Nat.and_one_is_mod, show 2 = 2 ^ 1 from rfl, Nat.xor_mod_two_pow]
+    rcases Nat.mod_two_eq_zero_or_one x.toNat with hx | hx <;>
+      rcases Nat.mod_two_eq_zero_or_one y.toNat with hy | hy <;> simp [hx, hy]
+  rw [show BitVec.ofInt 64 1 = 1 from rfl, hlow]
+  by_cases h : x.toNat % 2 = y.toNat % 2 <;> simp [h, maskOf] <;> decide
+
+/-- `parMask a`: `a7` is the mask of the low bits of `[a]` and `PAR` differing. -/
+theorem parMask_ok {s : State} {base : Addr} (hw : WsReg s base) {a : Nat} (ha : a < 44) :
+    WP isa (.block (Cfg.parMask p256 a)) s fun s' =>
+      Rest [.t0, .t1, .a7] s s' ∧ s'.mem = s.mem ∧
+      s'.gpr .a7 = maskOf (decide ((word s.mem base (p256.sl a)).toNat % 2 ≠
+        (word s.mem base (p256.sl PAR)).toNat % 2)) := by
+  have sl8 : p256.sl a % 8 = 0 := by rw [sl_eq]; omega
+  have sl2 : p256.sl a < 2048 := by rw [sl_eq]; omega
+  rw [Cfg.parMask]
+  refine ld_ws hw sl2 sl8 fun s₁ u₁ => ?_
+  refine ld_ws (hw.of_kp (Kp.of_upd u₁)) (d := p256.sl PAR) (by decide) (by decide) fun s₂ u₂ => ?_
+  refine wp_xor fun s₃ u₃ => ?_
+  refine WP.cons (exec_logicImm (by decide)) ?_
+  have u₃a := Upd.write s₃ .t0 (s₃.gpr .t0 &&& BitVec.ofInt 64 1)
+  refine wp_li (imm := 0) (by decide) fun s₄ u₄ => wp_sub fun s₅ u₅ => WP.block_nil ⟨?_, ?_, ?_⟩
+  · have R := fun {a b : State} {d : Reg} {v : BitVec 64} (u : Upd a b d v) (h : d ∈ [Reg.t0, .t1, .a7]) =>
+      u.rest (ws := [Reg.t0, .t1, .a7]) h
+    exact ((((R u₁ (by decide)).trans (R u₂ (by decide))).trans (R u₃ (by decide))).trans
+      (R u₃a (by decide))).trans ((R u₄ (by decide)).trans (R u₅ (by decide)))
+  · rw [u₅.mem, u₄.mem, u₃a.mem, u₃.mem, u₂.mem, u₁.mem]
+  · rw [u₅.gpr, u₄.gpr, u₄.other _ (by decide), u₃a.gpr, u₃.gpr, u₂.other _ (by decide), u₂.gpr, u₁.gpr, u₁.mem,
+      show BitVec.ofNat 64 0 = 0 from rfl, show BitVec.ofInt 64 1 = 1 from rfl,
+      VG.Proof.EcKey.Compressed.xor_low_mask, mask_maskOf]
+
+/-- `sameMask a`: `a7` is the mask of the low bits of `[a]` and `PAR` being equal. -/
+theorem sameMask_ok {s : State} {base : Addr} (hw : WsReg s base) {a : Nat} (ha : a < 44) :
+    WP isa (.block (Cfg.sameMask p256 a)) s fun s' =>
+      Rest [.t0, .t1, .a7] s s' ∧ s'.mem = s.mem ∧
+      s'.gpr .a7 = maskOf (decide ((word s.mem base (p256.sl a)).toNat % 2 =
+        (word s.mem base (p256.sl PAR)).toNat % 2)) := by
+  have sl8 : p256.sl a % 8 = 0 := by rw [sl_eq]; omega
+  have sl2 : p256.sl a < 2048 := by rw [sl_eq]; omega
+  rw [Cfg.sameMask]
+  refine ld_ws hw sl2 sl8 fun s₁ u₁ => ?_
+  refine ld_ws (hw.of_kp (Kp.of_upd u₁)) (d := p256.sl PAR) (by decide) (by decide) fun s₂ u₂ => ?_
+  refine wp_xor fun s₃ u₃ => ?_
+  refine WP.cons (exec_logicImm (by decide)) ?_
+  have u₃a := Upd.write s₃ .t0 (s₃.gpr .t0 &&& BitVec.ofInt 64 1)
+  refine WP.cons (exec_addi (by decide)) ?_
+  have u₄ := Upd.write (s₃.write .t0 (s₃.gpr .t0 &&& BitVec.ofInt 64 1)) .a7
+    ((s₃.write .t0 (s₃.gpr .t0 &&& BitVec.ofInt 64 1)).gpr .t0 + BitVec.ofInt 64 (-1))
+  refine WP.block_nil ⟨?_, ?_, ?_⟩
+  · have R := fun {a b : State} {d : Reg} {v : BitVec 64} (u : Upd a b d v) (h : d ∈ [Reg.t0, .t1, .a7]) =>
+      u.rest (ws := [Reg.t0, .t1, .a7]) h
+    exact ((((R u₁ (by decide)).trans (R u₂ (by decide))).trans (R u₃ (by decide))).trans
+      (R u₃a (by decide))).trans (R u₄ (by decide))
+  · rw [u₄.mem, u₃a.mem, u₃.mem, u₂.mem, u₁.mem]
+  · rw [u₄.gpr, u₃a.gpr, u₃.gpr, u₂.other _ (by decide), u₂.gpr, u₁.gpr, u₁.mem, same_mask]
+
+/-- The end: the masks of `y² = rhs` and of the chosen root's parity into the
+flag, the root of the first byte's parity chosen, and the point (or zeros)
+to `out`, the flag's low bit returned and the saved registers restored. -/
+theorem dfin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s2 = out)
+    (hfit : out.toNat + 65 ≤ 2 ^ 64)
+    (hout : ∀ i < 65, InRegions s.wr (out + BitVec.ofNat 64 i) 1)
+    (hdis : (⟨out, 65⟩ : Region).Disjoint ⟨base, 8192⟩)
+    {c : Bool} (hF : word s.mem base FL = maskOf c) {pr : Nat}
+    (hpr : (word s.mem base (p256.sl PAR)).toNat % 2 = pr) :
+    WP isa (.block (zeroMask p256.n (p256.sl DIF) ++ andFlag p256 ++ Cfg.parMask p256 Y1 ++
+      sel p256.n (p256.sl YF) (p256.sl Y1) (p256.sl Y2) ++ Cfg.sameMask p256 YF ++ andFlag p256 ++
+      ([.load .d .a7 wb (p256.sl FLAG)] : List Instr) ++ pointOut p256 CX YF)) s fun s' =>
+      s'.gpr .a0 = (if (c && decide (sv base s DIF = 0)) &&
+          decide ((if sv base s Y1 % 2 ≠ pr then sv base s Y2 else sv base s Y1) % 2 = pr) then 1 else 0) ∧
+      bytesAt s'.mem out 65 = (if (c && decide (sv base s DIF = 0)) &&
+          decide ((if sv base s Y1 % 2 ≠ pr then sv base s Y2 else sv base s Y1) % 2 = pr) then 4 else 0) ::
+        (toBytes 32 (if (c && decide (sv base s DIF = 0)) &&
+          decide ((if sv base s Y1 % 2 ≠ pr then sv base s Y2 else sv base s Y1) % 2 = pr) then sv base s CX else 0) ++
+        toBytes 32 (if (c && decide (sv base s DIF = 0)) &&
+          decide ((if sv base s Y1 % 2 ≠ pr then sv base s Y2 else sv base s Y1) % 2 = pr) then
+            (if sv base s Y1 % 2 ≠ pr then sv base s Y2 else sv base s Y1) else 0)) ∧
+      s'.gpr .s0 = word s.mem base 0 ∧ s'.gpr .s1 = word s.mem base 8 ∧ s'.gpr .s2 = word s.mem base 16 ∧
+      s'.gpr .ra = word s.mem base 24 ∧ s'.gpr .s3 = word s.mem base 32 ∧
+      (∀ r ∈ preserved, r ≠ .s0 → r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp := by
+  rw [show p256.n = 4 from rfl]
+  simp only [List.append_assoc]
+  -- `y² = rhs`.
+  refine WP.block_append (WP.mono (zeroMask_ok hw (n := 4) (a := p256.sl DIF) (by decide) (by decide))
+    fun s₁ ⟨r₁, m₁, g₁⟩ => ?_)
+  have hw₁ := hw.of_rest r₁
+  refine WP.block_append (WP.mono (andFlag_ok hw₁) fun s₂ ⟨f₂, r₂, O₂⟩ => ?_)
+  have hw₂ := hw₁.of_rest r₂
+  have w₂ : ∀ i, i < 44 → i ≠ FLAG → wordsVal s₂.mem base (p256.sl i) 4 = sv base s i := fun i hi hf => by
+    rw [O₂.wordsVal (by rw [sl_eq, FL]; omega) (by rw [sl_eq]; omega), m₁]
+  have wd₂ : ∀ i, i < 44 → i ≠ FLAG → word s₂.mem base (p256.sl i) = word s.mem base (p256.sl i) := fun i hi hf => by
+    rw [O₂.word (by rw [sl_eq, FL]; omega) (by rw [sl_eq]; omega), m₁]
+  -- The root of the first byte's parity.
+  refine WP.block_append (WP.mono (parMask_ok hw₂ (a := Y1) (by decide)) fun s₃ ⟨r₃, m₃, g₃⟩ => ?_)
+  have hw₃ := hw₂.of_rest r₃
+  have par₂ : (word s₂.mem base (p256.sl PAR)).toNat % 2 = pr := by rw [wd₂ PAR (by decide) (by decide), hpr]
+  have y1₂ : (word s₂.mem base (p256.sl Y1)).toNat % 2 = sv base s Y1 % 2 := by
+    rw [VG.Proof.EcKey.Compressed.slot_parity s₂.mem base (p256.sl Y1) 4 (by decide)]
+    exact congrArg (· % 2) (w₂ Y1 (by decide) (by decide))
+  rw [par₂, y1₂] at g₃
+  refine WP.block_append (WP.mono (sel_ok (decide (sv base s Y1 % 2 ≠ pr)) 4 hw₃ g₃ (o := p256.sl YF)
+    (a := p256.sl Y1) (b := p256.sl Y2) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₄ ⟨v₄, r₄, O₄⟩ => ?_)
+  have hw₄ := hw₃.of_rest r₄
+  have yf₄ : wordsVal s₄.mem base (p256.sl YF) 4 =
+      if sv base s Y1 % 2 ≠ pr then sv base s Y2 else sv base s Y1 := by
+    rw [v₄, m₃, w₂ Y1 (by decide) (by decide), w₂ Y2 (by decide) (by decide)]
+    by_cases h : sv base s Y1 % 2 ≠ pr <;> simp [h]
+  generalize hy : (if sv base s Y1 % 2 ≠ pr then sv base s Y2 else sv base s Y1) = y at yf₄
+  refine WP.block_append (WP.mono (sameMask_ok hw₄ (a := YF) (by decide)) fun s₅ ⟨r₅, m₅, g₅⟩ => ?_)
+  have hw₅ := hw₄.of_rest r₅
+  have par₄ : (word s₄.mem base (p256.sl PAR)).toNat % 2 = pr := by
+    rw [O₄.word (by decide) (by decide), m₃, par₂]
+  have yf₄' : (word s₄.mem base (p256.sl YF)).toNat % 2 = y % 2 := by
+    rw [VG.Proof.EcKey.Compressed.slot_parity s₄.mem base (p256.sl YF) 4 (by decide), yf₄]
+  rw [par₄, yf₄'] at g₅
+  refine WP.block_append (WP.mono (andFlag_ok hw₅) fun s₆ ⟨f₆, r₆, O₆⟩ => ?_)
+  have hw₆ := hw₅.of_rest r₆
+  rw [List.singleton_append]
+  refine ld_ws hw₆ (d := p256.sl FLAG) (by decide) (by decide) fun s₇ u₇ => ?_
+  have hw₇ := hw₆.of_kp (Kp.of_upd u₇)
+  generalize hB : ((c && decide (sv base s DIF = 0)) && decide (y % 2 = pr)) = B
+  have fl₆ : word s₆.mem base FL = maskOf B := by
+    rw [f₆, m₅, O₄.word (by decide) (by decide), m₃, f₂, g₁, g₅, m₁, hF, maskOf_and, maskOf_and, ← hB]
+  have a₇ : s₇.gpr .a7 = maskOf B := by rw [u₇.gpr, sl_FLAG, fl₆]
+  have q₇ : s₇.gpr .s2 = out := by
+    rw [u₇.other _ (by decide), r₆.gpr _ (by decide), r₅.gpr _ (by decide), r₄.gpr _ (by decide),
+      r₃.gpr _ (by decide), r₂.gpr _ (by decide), r₁.gpr _ (by decide), h2]
+  have wr₇ : s₇.wr = s.wr := by rw [u₇.wr, r₆.wr, r₅.wr, r₄.wr, r₃.wr, r₂.wr, r₁.wr]
+  refine WP.mono (pointOut_ok hw₇ q₇ hfit (by rw [wr₇]; exact hout) hdis a₇ (by rw [u₇.mem]; exact fl₆)
+    (xo := CX) (yo := YF) (by decide) (by decide))
+    fun s' ⟨a0', b', s0', s1', s2', ra', s3', regs', sp'⟩ => ?_
+  have m₇₄ : s₇.mem = s₆.mem := u₇.mem
+  have w₇ : ∀ d, d + 8 ≤ 40 → word s₇.mem base d = word s.mem base d := fun d hd => by
+    rw [m₇₄, O₆.word (by rw [FL]; omega) (by omega), m₅, O₄.word (by rw [sl_eq]; omega) (by omega), m₃,
+      O₂.word (by rw [FL]; omega) (by omega), m₁]
+  have cx₇ : sv base s₇ CX = sv base s CX := by
+    show wordsVal _ _ _ _ = _
+    rw [m₇₄, O₆.wordsVal (by decide) (by decide), m₅, O₄.wordsVal (by decide) (by decide), m₃,
+      w₂ CX (by decide) (by decide)]
+  have yf₇ : sv base s₇ YF = y := by
+    show wordsVal _ _ _ _ = _
+    rw [m₇₄, O₆.wordsVal (by decide) (by decide), m₅, yf₄]
+  refine ⟨a0', by rw [b', cx₇, yf₇], by rw [s0', w₇ 0 (by decide)], by rw [s1', w₇ 8 (by decide)],
+    by rw [s2', w₇ 16 (by decide)], by rw [ra', w₇ 24 (by decide)], by rw [s3', w₇ 32 (by decide)],
+    fun r hr h0 h1 h2' h3' => ?_, by rw [sp', u₇.sp, r₆.sp, r₅.sp, r₄.sp, r₃.sp, r₂.sp, r₁.sp]⟩
+  have hn : r ∉ [Reg.t0, .t1, .t3, .t4, .a7] := by
+    intro h; simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl | rfl | rfl | rfl <;> exact absurd hr (by decide)
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  rw [regs' r hr h0 h1 h2' h3', u₇.other _ hn.2.2.2.2, r₆.gpr _ (by simp [hn.1]),
+    r₅.gpr _ (by simp [hn.1, hn.2.1, hn.2.2.2.2]), r₄.gpr _ (by simp [hn.1, hn.2.1]),
+    r₃.gpr _ (by simp [hn.1, hn.2.1, hn.2.2.2.2]), r₂.gpr _ (by simp [hn.1]),
+    r₁.gpr _ (by simp [hn.2.2.1, hn.2.2.2.1, hn.2.2.2.2])]
 
 end VG.Proof.EcKey.Compressed.RISCV64.P256
