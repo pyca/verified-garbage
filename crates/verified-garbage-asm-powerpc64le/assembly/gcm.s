@@ -371,6 +371,8 @@ vg_aes_gcm_encrypt_blocks:
 	vcipher %v5, %v5, %v9
 	vcipher %v6, %v6, %v9
 	vcipher %v7, %v7, %v9
+	rldicr %r12, %r4, 4, 59
+	lxvd2x 41, %r3, %r12
 	vcipher %v0, %v0, %v11
 	vcipher %v1, %v1, %v11
 	vcipher %v2, %v2, %v11
@@ -448,15 +450,14 @@ vg_aes_gcm_encrypt_blocks:
 	b 29f
 28:
 29:
-	lxvd2x 40, %r9, %r0
-	vcipherlast %v0, %v0, %v8
-	vcipherlast %v1, %v1, %v8
-	vcipherlast %v2, %v2, %v8
-	vcipherlast %v3, %v3, %v8
-	vcipherlast %v4, %v4, %v8
-	vcipherlast %v5, %v5, %v8
-	vcipherlast %v6, %v6, %v8
-	vcipherlast %v7, %v7, %v8
+	vcipherlast %v0, %v0, %v9
+	vcipherlast %v1, %v1, %v9
+	vcipherlast %v2, %v2, %v9
+	vcipherlast %v3, %v3, %v9
+	vcipherlast %v4, %v4, %v9
+	vcipherlast %v5, %v5, %v9
+	vcipherlast %v6, %v6, %v9
+	vcipherlast %v7, %v7, %v9
 	lxvd2x 40, %r6, %r0
 	lxvd2x 41, %r6, %r20
 	lxvd2x 43, %r6, %r21
