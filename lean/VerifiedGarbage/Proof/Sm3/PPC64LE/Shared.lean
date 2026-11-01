@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Sm3.PPC64LE.Stream.Init
 import VerifiedGarbage.Proof.Sm3.PPC64LE.Stream.Md
 public import VerifiedGarbage.Proof.Sm3.Scratch
 public import VerifiedGarbage.Spec.Sm3.Contract
+public import VerifiedGarbage.Proof.Sm3.Contract
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
@@ -67,9 +68,9 @@ theorem compressWide_verified : Verified PPC64LE.target Impl.Sm3.PPC64LE.compres
       | exact Region.Disjoint.symm (Offset.disjoint_of_le (by decide) (by decide)))
 
 theorem compress :
-    Verified PPC64LE.target Impl.Sm3.PPC64LE.compress (Spec.Sm3.compressContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Sm3.PPC64LE.compress (Proof.Sm3.compressContract PPC64LE.abi) :=
   compressWide_verified.of_implies (by
-    contract_implies [Spec.Sm3.compressContract, Spec.Sm3.compressSig, compressWide,
+    contract_implies [Proof.Sm3.compressContract, Proof.Sm3.compressSig, compressWide,
       Proof.Sm3.compressPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [compressSat, Proof.Sm3.PPC64LE.satState] using compressSat)
 

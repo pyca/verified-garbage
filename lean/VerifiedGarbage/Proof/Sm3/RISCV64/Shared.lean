@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 public import VerifiedGarbage.Proof.Sm3.RISCV64.Compress
 public import VerifiedGarbage.Proof.Sm3.RISCV64.Stream
 public import VerifiedGarbage.Spec.Sm3.Contract
+public import VerifiedGarbage.Proof.Sm3.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-!
@@ -55,9 +56,9 @@ theorem compressWide_verified :
       Region.disjoint_of_sep (by decide)⟩
 
 theorem compress :
-    Verified RISCV64.target Impl.Sm3.RISCV64.compress (Spec.Sm3.compressContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.Sm3.RISCV64.compress (Proof.Sm3.compressContract RISCV64.abi) :=
   compressWide_verified.of_implies (by
-    contract_implies [Spec.Sm3.compressContract, Spec.Sm3.compressSig, compressWide,
+    contract_implies [Proof.Sm3.compressContract, Proof.Sm3.compressSig, compressWide,
       Proof.Sm3.compressRISCV64, RISCV64.abi, RISCV64.argRegs]
       [compressSat, Proof.Sm3.RISCV64.satState] using compressSat)
 

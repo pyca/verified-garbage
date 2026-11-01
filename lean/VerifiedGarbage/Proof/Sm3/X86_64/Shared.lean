@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm3.X86_64.Compress
+public import VerifiedGarbage.Proof.Sm3.Contract
 import VerifiedGarbage.Proof.Sm3.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Sm3.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Sm3.Scratch
@@ -68,9 +69,9 @@ theorem compressWide_verified : Verified X86_64.target Impl.Sm3.X86_64.compress 
       | exact Region.Disjoint.symm (Offset.disjoint_of_le (by decide) (by decide)))
 
 theorem compress :
-    Verified X86_64.target Impl.Sm3.X86_64.compress (Spec.Sm3.compressContract X86_64.abi) :=
+    Verified X86_64.target Impl.Sm3.X86_64.compress (Proof.Sm3.compressContract X86_64.abi) :=
   compressWide_verified.of_implies (by
-    contract_implies [Spec.Sm3.compressContract, Spec.Sm3.compressSig, compressWide,
+    contract_implies [Proof.Sm3.compressContract, Proof.Sm3.compressSig, compressWide,
       Proof.Sm3.compressX86_64, X86_64.abi, X86_64.argRegs]
       [compressSat, Proof.Sm3.X86_64.satState] using compressSat)
 

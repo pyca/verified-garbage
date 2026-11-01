@@ -10,9 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sm3.AArch64
 
 def artifacts : List Artifact := [
-  Spec.Sm3.compressApi.artifact AArch64.target {
-    code := Impl.Sm3.AArch64.compress
-    verified := Proof.Sm3.AArch64.Shared.compress },
   Spec.Sm3.initApi.artifact AArch64.target {
     code := Impl.Sm3.AArch64.Stream.init
     verified := Proof.Sm3.AArch64.Shared.init },

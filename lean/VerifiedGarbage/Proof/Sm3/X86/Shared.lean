@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Sm3.Contract
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm3.X86.Compress
@@ -136,8 +137,8 @@ tactic_template "narrowC" loc:Lean.Parser.Tactic.location : tactic =>
                      VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd,
                      State.withRegions_wr] $loc)
 
-theorem compressWide_implies : compressWide.Implies (Spec.Sm3.compressContract X86.abi) := by
-  contract_implies [Spec.Sm3.compressContract, Spec.Sm3.compressSig, compressWide,
+theorem compressWide_implies : compressWide.Implies (Proof.Sm3.compressContract X86.abi) := by
+  contract_implies [Proof.Sm3.compressContract, Proof.Sm3.compressSig, compressWide,
     Proof.Sm3.compressX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [compressSat, Proof.Sm3.X86.satState, Proof.Sm3.X86.satMem, X86.arg, X86.argAddr, Mem.readW,
       Mem.read] using compressSat
@@ -158,7 +159,7 @@ theorem compressWide_verified : Verified X86.target Impl.Sm3.X86.compress compre
     compressWide_implies.sat_left
 
 theorem compress :
-    Verified X86.target Impl.Sm3.X86.compress (Spec.Sm3.compressContract X86.abi) :=
+    Verified X86.target Impl.Sm3.X86.compress (Proof.Sm3.compressContract X86.abi) :=
   compressWide_verified.of_implies compressWide_implies
 
 theorem init :
