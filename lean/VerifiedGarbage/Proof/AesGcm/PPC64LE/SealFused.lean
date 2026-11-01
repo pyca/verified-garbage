@@ -172,11 +172,12 @@ theorem args_call {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
 
 /-- The fused call preserves the one-shot environment and returns the three
 whole-block results in the caller's state and data buffers. -/
-structure WholeOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (m : Mem) (t : State) : Prop where
+structure WholeOutWith (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (m : Mem)
+    (plaintext : List Spec.Gcm.Block) (t : State) : Prop where
   env : Env V sp t
   data : Spec.Gcm.blocksAt t.mem (V .r27) ((V .r23).toNat/16) =
     Spec.Gcm.ctr32 (Spec.Gcm.ctxCiph m (V .r29) R) (Spec.Gcm.blockAt m (V .r30+48))
-      (Spec.Gcm.blocksAt m (V .r27) ((V .r23).toNat/16))
+      plaintext
   counter : Spec.Gcm.blockAt t.mem (V .r30+48) =
     Nat.repeat Spec.Gcm.inc32 ((V .r23).toNat/16) (Spec.Gcm.blockAt m (V .r30+48))
   hash : Spec.Gcm.blockAt t.mem (V .r30+16) =
@@ -184,6 +185,10 @@ structure WholeOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (m : Mem) (t : 
       (Spec.Gcm.blocksAt t.mem (V .r27) ((V .r23).toNat/16))
   frame : Frame [⟨V .r30+48,16⟩,⟨V .r30+16,16⟩,
     ⟨V .r27,((V .r23).toNat/16)*16⟩,⟨V .r31+448,2112⟩] m t.mem
+
+abbrev WholeOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (m : Mem) (t : State) :=
+  WholeOutWith V sp R m (Spec.Gcm.blocksAt m (V .r27) ((V .r23).toNat/16)) t
+
 
 theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
@@ -225,8 +230,8 @@ theorem WholeOut.ctr {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {m : Mem} {t 
 
 /-- Whole ciphertext blocks extend the padded AAD's GHASH state without
 re-reading the ciphertext through the separate absorber. -/
-theorem WholeOut.absorbed {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {m : Mem} {t : State}
-    (h : WholeOut V sp R m t) {x : List Byte}
+theorem WholeOutWith.absorbed {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {m : Mem} {t : State} {plaintext : List Spec.Gcm.Block}
+    (h : WholeOutWith V sp R m plaintext t) {x : List Byte}
     (hx : Proof.Gcm.Absorbed m (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH m (V .r29)) x)
     (hx0 : x.length%16=0) :
     Proof.Gcm.Absorbed t.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH m (V .r29))
@@ -265,8 +270,8 @@ theorem data_suffix {c st w : Addr} {s : State} {D : Addr} {n j : Nat}
   · rw [hz,Nat.add_zero]; exact Nat.le_of_lt (D+BitVec.ofNat 64 j).isLt
   · rw [h.ok.toNat_add (by omega)]; have := h.ok.fit; omega
 
-theorem WholeOut.rest {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State}
-    (h : WholeOut V sp R s.mem t)
+theorem WholeOutWith.rest {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State} {plaintext : List Spec.Gcm.Block}
+    (h : WholeOutWith V sp R s.mem plaintext t)
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat) :
     Spec.Aes.bytesAt t.mem (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16)))
       ((V .r23).toNat%16) =
@@ -390,21 +395,21 @@ theorem whole_ctx_disjoint {V : Reg → BitVec 64} {s : State}
   · exact hd.ctx.sub_right (Region.sub_prefix (by omega))
   · exact L.cw'.sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
 
-theorem WholeOut.cipher {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State}
-    (h : WholeOut V sp R s.mem t) (L : Lay (V .r29) (V .r30) (V .r31))
+theorem WholeOutWith.cipher {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State} {plaintext : List Spec.Gcm.Block}
+    (h : WholeOutWith V sp R s.mem plaintext t) (L : Lay (V .r29) (V .r30) (V .r31))
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat)
     (hv : R=10 ∨ R=12 ∨ R=14) :
     ciphOf t.mem (V .r29) R=Spec.Gcm.ctxCiph s.mem (V .r29) R :=
   ciph_keep h.frame (whole_ctx_disjoint L hd) hv
 
-theorem WholeOut.hashKey {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State}
-    (h : WholeOut V sp R s.mem t) (L : Lay (V .r29) (V .r30) (V .r31))
+theorem WholeOutWith.hashKey {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State} {plaintext : List Spec.Gcm.Block}
+    (h : WholeOutWith V sp R s.mem plaintext t) (L : Lay (V .r29) (V .r30) (V .r31))
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat) :
     Spec.Gcm.blockAt t.mem (V .r29+240)=Spec.Gcm.ctxH s.mem (V .r29) :=
   ctxH_keep h.frame (whole_ctx_disjoint L hd)
 
-theorem WholeOut.j0 {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State}
-    (h : WholeOut V sp R s.mem t) (L : Lay (V .r29) (V .r30) (V .r31))
+theorem WholeOutWith.j0 {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State} {plaintext : List Spec.Gcm.Block}
+    (h : WholeOutWith V sp R s.mem plaintext t) (L : Lay (V .r29) (V .r30) (V .r31))
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat) :
     Spec.Gcm.blockAt t.mem (V .r30)=Spec.Gcm.blockAt s.mem (V .r30) := by
   apply blockAt_frame h.frame
@@ -466,19 +471,37 @@ theorem tag_body_sub (V : Reg → BitVec 64) :
   · exact ⟨⟨V .r31,16⟩,by simp [bodyFrame],by rw [BitVec.add_zero]; exact fun _ h => h⟩
   · exact ⟨⟨V .r31+448,2112⟩,by simp [bodyFrame],Offset.sub _ (by decide) (by decide)⟩
 
-structure BodyOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (H : Spec.Gcm.Block)
-    (a : List Byte) (m : Mem) (t : State) : Prop where
+structure BodyOutWith (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (H : Spec.Gcm.Block)
+    (a : List Byte) (m : Mem) (plaintext : List Byte) (t : State) (extra : List Region := []) : Prop where
   env : Env V sp t
   ciphertext : Spec.Aes.bytesAt t.mem (V .r27) (V .r23).toNat =
     Spec.Gcm.gctr (Spec.Gcm.ctxCiph m (V .r29) R) (Spec.Gcm.blockAt m (V .r30+48))
-      (Spec.Aes.bytesAt m (V .r27) (V .r23).toNat)
+      plaintext
   tag : Spec.Aes.bytesAt t.mem (V .r31) 16 =
     Spec.Gcm.toBytes (Spec.Gcm.ghashFrom H
       (Spec.Gcm.ghash H (Spec.Gcm.blocks (Proof.Gcm.padded a
         (Spec.Aes.bytesAt t.mem (V .r27) (V .r23).toNat))))
       [Spec.Gcm.ofBytes (Proof.Gcm.lensBlock a.length (V .r23).toNat)] ^^^
       Spec.Gcm.ctxCiph m (V .r29) R (Spec.Gcm.blockAt m (V .r30)))
-  frame : Frame (bodyFrame V) m t.mem
+  frame : Frame (bodyFrame V++extra) m t.mem
+
+
+theorem BodyOutWith.rebase {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {H : Spec.Gcm.Block}
+    {a p : List Byte} {m m₀ : Mem} {t : State} {extra : List Region}
+    (h : BodyOutWith V sp R H a m p t extra) (hf : Frame (bodyFrame V++extra) m₀ m)
+    (hc : Spec.Gcm.ctxCiph m (V .r29) R=Spec.Gcm.ctxCiph m₀ (V .r29) R)
+    (hb : Spec.Gcm.blockAt m (V .r30+48)=Spec.Gcm.blockAt m₀ (V .r30+48))
+    (hj : Spec.Gcm.blockAt m (V .r30)=Spec.Gcm.blockAt m₀ (V .r30)) :
+    BodyOutWith V sp R H a m₀ p t extra := by
+  refine ⟨h.env,?_,?_,hf.trans h.frame⟩
+  · rw [h.ciphertext,hc,hb]
+  · rw [h.tag,hc,hj]
+
+
+abbrev BodyOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (H : Spec.Gcm.Block)
+    (a : List Byte) (m : Mem) (t : State) :=
+  BodyOutWith V sp R H a m (Spec.Aes.bytesAt m (V .r27) (V .r23).toNat) t
+
 
 theorem data_tag_disjoint {V : Reg → BitVec 64} {s : State} {D : Addr} {n : Nat}
     (hd : DataOk (V .r30) (V .r31) s D n) :
@@ -491,44 +514,68 @@ theorem data_tag_disjoint {V : Reg → BitVec 64} {s : State} {D : Addr} {n : Na
   · simpa only [BitVec.add_zero] using hd.w.sub_right (Region.sub_prefix (by decide : 16≤2560))
   · exact hd.w.sub_right (Lay.wSub (by decide))
 
-theorem fastBody_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
-    {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat} {a : List Byte}
-    (L : Lay (V .r29) (V .r30) (V .r31)) (he : Env V sp s)
-    (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat)
+structure WholeDone (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (a : List Byte)
+    (m : Mem) (pWhole pTail : List Byte) (t : State) (extra : List Region := []) : Prop where
+  env : Env V sp t
+  wholeLen : pWhole.length=16*((V .r23).toNat/16)
+  wholeCiphertext : Spec.Aes.bytesAt t.mem (V .r27) (16*((V .r23).toNat/16))=
+    Proof.Gcm.xorKs (Spec.Gcm.ctxCiph m (V .r29) R) (Spec.Gcm.blockAt m (V .r30+48)) 0 pWhole
+  ctr : Proof.Gcm.Ctr t.mem (V .r30+48) (V .r30+64)
+    (Spec.Gcm.ctxCiph m (V .r29) R) (Spec.Gcm.blockAt m (V .r30+48)) (16*((V .r23).toNat/16))
+  abs : Proof.Gcm.Absorbed t.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH m (V .r29))
+    ((a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length))++
+      Spec.Aes.bytesAt t.mem (V .r27) (16*((V .r23).toNat/16)))
+  cipher : ciphOf t.mem (V .r29) R=Spec.Gcm.ctxCiph m (V .r29) R
+  hashKey : Spec.Gcm.blockAt t.mem (V .r29+240)=Spec.Gcm.ctxH m (V .r29)
+  j0 : Spec.Gcm.blockAt t.mem (V .r30)=Spec.Gcm.blockAt m (V .r30)
+  pending : Spec.Aes.bytesAt t.mem (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16)=pTail
+  frame : Frame (bodyFrame V++extra) m t.mem
+
+
+theorem finishWhole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
+    {V : Reg → BitVec 64} {sp : Addr} {t : State} {R : Nat} {a pWhole pTail : List Byte} {m : Mem} {extra : List Region}
+    (L : Lay (V .r29) (V .r30) (V .r31)) (mid : WholeDone V sp R a m pWhole pTail t extra)
+    (hd : DataW (V .r29) (V .r30) (V .r31) t (V .r27) (V .r23).toNat)
     (hR : V .r28=BitVec.ofNat 64 R) (hv : R=10 ∨ R=12 ∨ R=14)
-    (ha : (V .r22).toNat=a.length) (hn : 0<(V .r23).toNat)
-    (hab : Proof.Gcm.Absorbed s.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH s.mem (V .r29))
-      (a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length))) :
-    WP isa Impl.AesGcm.PPC64LE.SealFused.fastBody s
-      (BodyOut V sp R (Spec.Gcm.ctxH s.mem (V .r29)) a s.mem) := by
+    (ha : (V .r22).toNat=a.length) (hbig : 0<(V .r23).toNat) :
+    WP isa (.seq (.seq (.block Impl.AesGcm.PPC64LE.SealFused.tailSetup)
+      Impl.AesGcm.PPC64LE.cryptTail) (.seq (Impl.AesGcm.PPC64LE.absorb 16) (Impl.AesGcm.PPC64LE.finTag 0))) t
+      (fun z => BodyOutWith V sp R (Spec.Gcm.ctxH m (V .r29)) a m (pWhole++pTail) z extra) := by
   have hj : 16*((V .r23).toNat/16)≤(V .r23).toNat := by omega
   have hnrem : (V .r23).toNat-16*((V .r23).toNat/16)=(V .r23).toNat%16 := by omega
   have hxpad : (a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length)).length%16=0 := by
     rw [List.length_append,Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
-  refine WP.seq (WP.mono (WP.with_rdwr (whole_ok L he hd hR hv)) fun t ⟨hw,rdt,wrt,_⟩ => ?_)
-  have hdt := hd.of_eq rdt wrt
+  have hdt := hd
   have hds := data_suffix hdt hj
   rw [hnrem] at hds
-  have hcw := hw.cipher L hd hv
-  refine WP.seq (WP.mono (WP.with_rdwr (tail_ok (icb := Spec.Gcm.blockAt s.mem (V .r30+48))
-    L hw.env hdt hR hv)) fun u ⟨⟨ht,h24,h25,h26⟩,rdu,wru,_⟩ => ?_)
-  have hHu : Spec.Gcm.blockAt u.mem (V .r29+BitVec.ofNat 64 240)=Spec.Gcm.ctxH s.mem (V .r29) := by
+  have hcw := mid.cipher
+  refine WP.seq (WP.mono (WP.with_rdwr (tail_ok (icb := Spec.Gcm.blockAt m (V .r30+48))
+    L mid.env hdt hR hv)) fun u ⟨⟨ht,h24,h25,h26⟩,rdu,wru,_⟩ => ?_)
+  have hHu : Spec.Gcm.blockAt u.mem (V .r29+BitVec.ofNat 64 240)=Spec.Gcm.ctxH m (V .r29) := by
     rw [blockAt_frame ht.frame (fun r hr => (ctx_crFrame L hds r hr).sub_left
       (Lay.ctxSub (d := 240) (n := 16) (by decide)))]
-    exact hw.hashKey L hd
+    exact mid.hashKey
   let x := (a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length))++
     Spec.Aes.bytesAt t.mem (V .r27) (16*((V .r23).toNat/16))
   have hx0 : x.length%16=0 := by
     simp only [x,List.length_append,length_bytesAt] at hxpad ⊢; omega
-  have habu : Proof.Gcm.Absorbed u.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH s.mem (V .r29)) x := by
-    apply (hw.absorbed hab hxpad).congr
+  have habu : Proof.Gcm.Absorbed u.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH m (V .r29)) x := by
+    apply mid.abs.congr
     · exact blockAt_frame ht.frame (stp_crFrame L hds (by decide))
     · change Spec.Aes.bytesAt u.mem (V .r30+32) (x.length%16)=
         Spec.Aes.bytesAt t.mem (V .r30+32) (x.length%16)
       simp only [hx0,Spec.Aes.bytesAt,List.range_zero,List.map_nil]
-  have hciph := whole_tail_ciphertext hw ht hd hcw
-    (Proof.Gcm.ctr_zero s.mem _ _ _ rfl)
-  have ai : AbsIn V sp 16 (Spec.Gcm.ctxH s.mem (V .r29)) x
+  have hctr : Proof.Gcm.Ctr t.mem (V .r30+48) (V .r30+64) (ciphOf t.mem (V .r29) R)
+      (Spec.Gcm.blockAt m (V .r30+48)) (16*((V .r23).toNat/16)) := by
+    rw [hcw]; exact mid.ctr
+  have htail := ht.out hctr
+  rw [hcw,mid.pending] at htail
+  have hprefix := (tail_prefix ht hd).trans mid.wholeCiphertext
+  have hciph : Spec.Aes.bytesAt u.mem (V .r27) (V .r23).toNat=
+      Spec.Gcm.gctr (Spec.Gcm.ctxCiph m (V .r29) R) (Spec.Gcm.blockAt m (V .r30+48)) (pWhole++pTail) := by
+    rw [show (V .r23).toNat=16*((V .r23).toNat/16)+(V .r23).toNat%16 by omega,bytesAt_add,hprefix,htail,
+      Proof.Gcm.gctr_eq,Proof.Gcm.xorKs_append,mid.wholeLen,Nat.zero_add]
+  have ai : AbsIn V sp 16 (Spec.Gcm.ctxH m (V .r29)) x
       (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16) u :=
     ⟨ht.env,h24,h25,by rw [hx0]; exact h26,hds.ok.of_eq rdu wru,hHu⟩
   refine WP.seq (WP.mono (WP.with_rdwr (absorb_ok L (.inr rfl) ai)) fun v ⟨ab,rdv,wrv,_⟩ => ?_)
@@ -545,7 +592,7 @@ theorem fastBody_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum
     rw [← tail_prefix ht hd,← bytesAt_add]
     rw [show 16*((V .r23).toNat/16)+(V .r23).toNat%16=(V .r23).toNat by omega]
   rw [hxfull] at habv
-  have hHv : Spec.Gcm.blockAt v.mem (V .r29+BitVec.ofNat 64 240)=Spec.Gcm.ctxH s.mem (V .r29) := by
+  have hHv : Spec.Gcm.blockAt v.mem (V .r29+BitVec.ofNat 64 240)=Spec.Gcm.ctxH m (V .r29) := by
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl))]; exact hHu
   refine WP.mono (finTag_ok L (o := 0) (.inl rfl) (a := a)
     (ct := Spec.Aes.bytesAt v.mem (V .r27) (V .r23).toNat) ab.env hR hv hHv
@@ -563,10 +610,36 @@ theorem fastBody_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum
       blockAt_frame (abs_taFrame ab.frame) (by
         simpa only [BitVec.add_zero] using stp_taFrame L (d := 0) (k := 16) (.inl (by decide))),
       blockAt_frame ht.frame (by simpa only [BitVec.add_zero] using
-        (stp_crFrame L hds (d := 0) (k := 16) (by decide))),hw.j0 L hd]
-  · exact ((hw.frame.sub (whole_body_sub V)).trans
-      (ht.frame.sub (cr_body_sub V (by omega)))).trans
-      ((ab.frame.sub (abs_body_sub V)).trans (fg.frame.sub (tag_body_sub V)))
+        (stp_crFrame L hds (d := 0) (k := 16) (by decide))),mid.j0]
+  · exact mid.frame.trans (((ht.frame.sub (cr_body_sub V (by omega))).trans
+      ((ab.frame.sub (abs_body_sub V)).trans (fg.frame.sub (tag_body_sub V)))).mono (fun _ hr => List.mem_append_left _ hr))
+
+theorem fastBody_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+    {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat} {a : List Byte}
+    (L : Lay (V .r29) (V .r30) (V .r31)) (he : Env V sp s)
+    (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat)
+    (hR : V .r28=BitVec.ofNat 64 R) (hv : R=10 ∨ R=12 ∨ R=14)
+    (ha : (V .r22).toNat=a.length) (hn : 0<(V .r23).toNat)
+    (hab : Proof.Gcm.Absorbed s.mem (V .r30+16) (V .r30+32) (Spec.Gcm.ctxH s.mem (V .r29))
+      (a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length))) :
+    WP isa Impl.AesGcm.PPC64LE.SealFused.fastBody s
+      (BodyOut V sp R (Spec.Gcm.ctxH s.mem (V .r29)) a s.mem) := by
+  have hxpad : (a++Spec.Gcm.zeros (Spec.Gcm.padLen a.length)).length%16=0 := by
+    rw [List.length_append,Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
+  refine WP.seq (WP.mono (WP.with_rdwr (whole_ok L he hd hR hv)) fun t ⟨hw,rdt,wrt,_⟩ => ?_)
+  have hctr := hw.ctr (Proof.Gcm.ctr_zero s.mem _ _ _ rfl)
+  have mid : WholeDone V sp R a s.mem
+      (Spec.Aes.bytesAt s.mem (V .r27) (16*((V .r23).toNat/16)))
+      (Spec.Aes.bytesAt s.mem (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16)) t := by
+    refine ⟨hw.env,length_bytesAt _ _ _,hctr.1,?_,hw.absorbed hab hxpad,hw.cipher L hd hv,hw.hashKey L hd,
+      hw.j0 L hd,?_,hw.frame.sub (whole_body_sub V)⟩
+    · simpa only [Nat.zero_add] using hctr.2
+    · exact hw.rest hd
+  refine WP.mono (finishWhole_ok L mid (hd.of_eq rdt wrt) hR hv ha hn) fun z hz => ?_
+  have hp := bytesAt_add s.mem (V .r27) (16*((V .r23).toNat/16)) ((V .r23).toNat%16)
+  rw [show 16*((V .r23).toNat/16)+(V .r23).toNat%16=(V .r23).toNat by omega] at hp
+  simpa only [← hp] using hz
+
 
 theorem ot_body_sub (V : Reg → BitVec 64) :
     ∀ r ∈ otFrame (V .r30) (V .r31) 0,

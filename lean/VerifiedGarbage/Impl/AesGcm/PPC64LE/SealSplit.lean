@@ -47,8 +47,8 @@ def whole : Prog isa := .seq (.block blockArgs)
  (.call "vg_aes_gcm_encrypt_blocks_split" SplitBlocks.encrypt)
 
 def nonempty : Prog isa := .seq (.block sourceArgs) (.seq partialCopy
- (.seq whole (.seq (.block SealFused.tailSetup)
- (.seq cryptTail (.seq (absorb 16) (finTag 0))))))
+ (.seq whole (.seq (.seq (.block SealFused.tailSetup) cryptTail)
+ (.seq (absorb 16) (finTag 0)))))
 
 def body : Prog isa := .ite (.zero .d .r23) (.seq oneCrypt (oneTag 0)) nonempty
 
