@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Blake2.X86.LitB
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
+public import VerifiedGarbage.Proof.Argon2.Contract
 @[expose] public section
 
 section
@@ -21,7 +22,7 @@ section
 # Argon2 H′ on x86 (32-bit): the contract of the proof
 
 `hPrimeX86`: `vg_argon2_hprime(input, input_len, out, out_len, scratch)` with
-its arguments only read; `Spec.Argon2.hPrimeContract`, which lets the code
+its arguments only read; `Proof.Argon2.hPrimeContract`, which lets the code
 write them, is reached by narrowing. H′ uses the 60 bytes of stack below its
 return address: a call of `vg_blake2b_update` pushes six words and its return
 address, and `update` itself uses 32 bytes.

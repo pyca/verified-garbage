@@ -12,9 +12,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Blake2b.X86
 
 def artifacts : List Artifact := [
-  Spec.Blake2.compressBApi.artifact X86.target {
-    code := Impl.Blake2.X86.CompressB.compress
-    verified := Proof.Blake2.X86.CompressB.compressB_verified },
   Spec.Blake2.initBApi.artifact X86.target {
     code := Impl.Blake2.X86.Stream.init Spec.Blake2.b
     verified := Proof.Blake2.X86.B.initB_verified },
@@ -25,14 +22,6 @@ def artifacts : List Artifact := [
   Spec.Blake2.finalizeBApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 600 4 (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
     stack := 32 + 600
-    verified := Proof.Blake2.X86.B.finalizeB_framed },
-  Spec.Blake2.updateBScratchApi.artifact X86.target {
-    code := Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress
-    stack := 32
-    verified := Proof.Blake2.X86.B.updateB_verified },
-  Spec.Blake2.finalizeBScratchApi.artifact X86.target {
-    code := Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress
-    stack := 32
-    verified := Proof.Blake2.X86.B.finalizeB_verified }]
+    verified := Proof.Blake2.X86.B.finalizeB_framed }]
 
 end VG.Artifacts.Blake2b.X86

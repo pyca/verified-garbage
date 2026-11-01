@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Argon2.Arm.Mix
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 compression on ARMv7: verified
@@ -29,7 +30,7 @@ both runs agree on (`RelCT`): the pointers are public; the passes over the
 rows and columns depend only on `scratch` (`rounds_ct`); and `out`, loaded
 from `scratch` after the rounds, is the same in both runs, by correctness. `compress_verified'` is the proof against `compressArm`, which the
 derivation uses for its calls; the shared contract
-`Spec.Argon2.compressContract` implies it (`compress_verified`).
+`Proof.Argon2.compressContract` implies it (`compress_verified`).
 -/
 
 @[expose] public section
@@ -172,14 +173,14 @@ theorem compress_verified' : Verified Arm.target Impl.Argon2.Arm.compress compre
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
   exact ⟨t, s', he, ⟨h₁, Exec.sp he⟩, h₂⟩
 
-theorem compress_implies : compressArm.Implies (Spec.Argon2.compressContract Arm.abi) := by
-  sig_implies [Spec.Argon2.compressContract, Spec.Argon2.compressSig, compressArm, Arm.abi, Arm.argRegs,
+theorem compress_implies : compressArm.Implies (Proof.Argon2.compressContract Arm.abi) := by
+  sig_implies [Proof.Argon2.compressContract, Proof.Argon2.compressSig, compressArm, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [satState, Mem.readW, Mem.read] using satState
 
 /-- The emitted function, against the shared contract. -/
 theorem compress_verified :
-    Verified Arm.target Impl.Argon2.Arm.compress (Spec.Argon2.compressContract Arm.abi) :=
+    Verified Arm.target Impl.Argon2.Arm.compress (Proof.Argon2.compressContract Arm.abi) :=
   compress_verified'.of_implies compress_implies
 
 end VG.Proof.Argon2.Arm

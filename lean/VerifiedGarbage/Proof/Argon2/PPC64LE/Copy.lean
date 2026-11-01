@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 
 /-! # Argon2 compression on PPC64LE: the initial and final XORs -/

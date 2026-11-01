@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: what keeps the filling state, and data-dependent addressing
@@ -24,7 +25,7 @@ namespace VG.Proof.Argon2.Arm.Derive
 
 open VG VG.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_ldr)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
 open VG.Proof.Argon2.Arm (blk)
 open VG.Proof.Sha512.Arm (Only A)
 open VG.Impl.Argon2.Arm.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff

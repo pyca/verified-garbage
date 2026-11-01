@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: the memory's initialization
@@ -30,7 +31,7 @@ namespace VG.Proof.Argon2.Arm.Derive
 open VG VG.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd wp_mov wp_add wp_sub wp_cmp op2_imm op2_reg)
 open VG.Spec.Blake2 (bytesAt)
-open VG.Spec.Argon2 (Block blockAt zeroBlock parseBlock)
+open VG.Spec.Argon2 (Block zeroBlock parseBlock)
 open VG.Impl.Argon2.Arm.Derive (ld st)
 
 /-! ## Blocks in memory -/

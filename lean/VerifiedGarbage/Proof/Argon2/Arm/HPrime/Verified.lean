@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Correct
 public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.OutputCT
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -20,7 +21,7 @@ Constant time, by relating two runs with the same public data piece by piece
 (`code_ct`): the setup is checked by the taint analysis from the stack
 argument, `first` and `finishOutput` by their pieces; then `hPrime_verified`
 against `hPrimeArm`, and `hPrimeShared_verified` against
-`Spec.Argon2.hPrimeContract`.
+`Proof.Argon2.hPrimeContract`.
 -/
 
 @[expose] public section
@@ -245,14 +246,14 @@ theorem hPrime_verified : Verified Arm.target Impl.Argon2.Arm.HPrime.code hPrime
   obtain ⟨t, s', he, h₁, h₂, h₃⟩ := correct (pre_of s hs)
   exact ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩
 
-theorem hPrime_implies : hPrimeArm.Implies (Spec.Argon2.hPrimeContract Arm.abi 32) := by
-  sig_implies [Spec.Argon2.hPrimeContract, Spec.Argon2.hPrimeSig, hPrimeArm, VG.Proof.Argon2.Arm.stkR,
+theorem hPrime_implies : hPrimeArm.Implies (Proof.Argon2.hPrimeContract Arm.abi 32) := by
+  sig_implies [Proof.Argon2.hPrimeContract, Proof.Argon2.hPrimeSig, hPrimeArm, VG.Proof.Argon2.Arm.stkR,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [hSatState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using hSatState
 
 /-- The emitted function, against the shared contract. -/
 theorem hPrimeShared_verified :
-    Verified Arm.target Impl.Argon2.Arm.HPrime.code (Spec.Argon2.hPrimeContract Arm.abi 32) :=
+    Verified Arm.target Impl.Argon2.Arm.HPrime.code (Proof.Argon2.hPrimeContract Arm.abi 32) :=
   hPrime_verified.of_implies hPrime_implies
 
 end VG.Proof.Argon2.Arm.HPrime

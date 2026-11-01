@@ -27,6 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Blake2.Contract
 
 /-!
 # BLAKE2b compression function on x86-64 with AVX-512
@@ -331,9 +332,9 @@ theorem compress_ct : ConstantTime isa (compressX86_64 Spec.Blake2.b).pre
     (by taint_decide)
 
 theorem compress_verified :
-    Verified X86_64.target Impl.Blake2.X86_64.Avx512.compress (Spec.Blake2.compressBContract X86_64.abi) :=
+    Verified X86_64.target Impl.Blake2.X86_64.Avx512.compress (Proof.Blake2.compressBContract X86_64.abi) :=
   Verified.of_correct compress_correct compress_ct (by
-    sig_implies [Spec.Blake2.compressBContract, Spec.Blake2.compressBSig, compressX86_64,
+    sig_implies [Proof.Blake2.compressBContract, Proof.Blake2.compressBSig, compressX86_64,
       X86_64.abi, X86_64.argRegs, Spec.Blake2.blockBytes] [satState] using satState 64)
 
 

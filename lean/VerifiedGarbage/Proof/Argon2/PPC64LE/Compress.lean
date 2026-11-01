@@ -21,6 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Rounds
 
 /-! # Argon2 compression G on PPC64LE: correctness, constant time, `Verified` -/
@@ -154,7 +155,7 @@ theorem compress_correct (s : State) (hs : compressLocal.pre s) :
   exact ⟨tr, t, he, ⟨hk, Exec.sp he, Exec.lr he (by lit_decide) (by rw [← Code.allInstrs_eq]; lit_decide)⟩, hp⟩
 
 theorem compress_verified : Verified PPC64LE.target Impl.Argon2.PPC64LE.compress
-    (Spec.Argon2.compressContract PPC64LE.abi) :=
+    (Proof.Argon2.compressContract PPC64LE.abi) :=
   Verified.of_correct compress_correct compress_ct compress_implies
 
 end VG.Proof.Argon2.PPC64LE

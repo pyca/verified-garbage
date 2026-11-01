@@ -30,7 +30,7 @@ namespace VG.Proof.Blake2.X86_64.Avx2
 
 /-- The compression function, as the streaming functions call it. -/
 def avx2 : Impl.Blake2.X86_64.Stream.Callee :=
-  ⟨Spec.Blake2.compressBApi.name ++ "_avx2", Impl.Blake2.X86_64.Avx2.compress⟩
+  ⟨"vg_blake2b_compress" ++ "_avx2", Impl.Blake2.X86_64.Avx2.compress⟩
 
 materialize_code compressY := Impl.Blake2.X86_64.Avx2.compress
 materialize_code updateY := Impl.Blake2.X86_64.Stream.update Spec.Blake2.b avx2

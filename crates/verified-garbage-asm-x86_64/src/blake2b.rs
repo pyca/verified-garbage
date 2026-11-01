@@ -31,44 +31,6 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_blake2b_compress_avx2` requires (`Artifact.features`).
-pub const VG_BLAKE2B_COMPRESS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// The BLAKE2b compression function F (RFC 7693 §3.2): updates the state `*state` (`h[0..7]`) with the `n` 128-byte blocks starting at `blocks`, in order: block `i` with the offset counter `t + 128 * i` (a 128-bit integer, so it does not wrap), and with the final block flag if `last != 0`.
-///
-/// Contract: `VG.Spec.Blake2.compressBContract`. Constant time: only the pointers, `n`, `t` and `last` may affect timing, not the state or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 64 bytes.
-/// * `blocks` must be valid for reads of `128 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2b_compress_avx2(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "RYnASLgDBAUGBwABAsRh+W7wSLgLDA0ODwgJCsRh+W7oxEEJbPXEQ/0A9kRIuAIDBAUGBwABxGH5bvhIuAoLDA0ODwgJxGH5bujEQQFs/cRD/QD/REi4CMm882fmCWrEYflu2Ei4O6fKhIWuZ7vEYflu6MRBIWzdSLgr+JT+cvNuPMRh+W7QSLjxNh1fOvVPpcRh+W7oxEEpbNXEQyU42gFIuNGC5q1/Ug5RxGH5buBIuB9sPiuMaAWbxGH5bujEQRls5Ui4a71B+6vZgx/EYflu0Ei4eSF+ExnN4FvEYflu6MRBKWzVxEMdOOIBuAAAAABNhcA="
-je 20f
-.base64 "ScfA/////w=="
-jmp 21f
-20:
-21:
-.base64 "SIXS"
-je 22f
-24:
-.base64 "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8MX91MXF/dTBxeXv2MX9cNuxxe3U08X178rEwnUAzsTifVpuYMTifVp2SMTjVQLuDMTifVp+WMRifVpGEMTDRQL4wMTjVQLv8MX91MXF/dTBxeXv2MTCZQDfxe3U08X178rF3XPRP8X11MnF9e/MxOP9AMCTxOP9ANI5xOP9ANtOxOJ9Wm4IxOJ9WnYYxONVAu4MxOJ9Wn44xGJ9WkZwxMNFAvjAxONVAu/wxf3UxcX91MHF5e/Yxf1w27HF7dTTxfXvysTCdQDOxOJ9Wm5IxOJ9WnZgxONVAu4MxOJ9Wn4oxGJ9WkZoxMNFAvjAxONVAu/wxf3UxcX91MHF5e/YxMJlAN/F7dTTxfXvysXdc9E/xfXUycX178zE4/0AwDnE4/0A0pPE4/0A207E4n1abmDE4n1aNsTjVQLuDMTifVp+cMRifVpGGMTDRQL4wMTjVQLv8MX91MXF/dTBxeXv2MX9cNuxxe3U08X178rEwnUAzsTifVpuKMTifVp2cMTjVQLuDMTifVp+aMRifVpGSMTDRQL4wMTjVQLv8MX91MXF/dTBxeXv2MTCZQDfxe3U08X178rF3XPRP8X11MnF9e/MxOP9AMCTxOP9ANI5xOP9ANtOxOJ9Wm5AxOJ9WjbF/XD2TsTjVQLuDMTifVp+MMRifVpGQMTDRQL4wMTjVQLv8MX91MXF/dTBxeXv2MX9cNuxxe3U08X178rEwnUAzsTifVpuWMTifVp2MMTjVQLuDMTifVp+GMRifVpGCMTDRQL4wMTjVQLv8MX91MXF/dTBxeXv2MTCZQDfxe3U08X178rF3XPRP8X11MnF9e/MxOP9AMA5xOP9ANKTxOP9ANtOxOJ9Wm5oxOJ9WnYwxONVAu4MxOJ9Wn5gxGJ9WkYQxMNFAvjAxONVAu/wxf3UxcX91MHF5e/Yxf1w27HF7dTTxfXvysTCdQDOxOJ9Wm5YxOJ9WnZoxONVAu4MxOJ9Wn4IxGJ9WkZAxMNFAvjAxONVAu/wxf3UxcX91MHF5e/YxMJlAN/F7dTTxfXvysXdc9E/xfXUycX178zE4/0AwJPE4/0A0jnE4/0A207E4n1abhDE4n1adiDE41UC7gzE4n1afnDF/XD/TsRifVpGOMTDRQL4wMTjVQLv8MX91MXF/dTBxeXv2MX9cNuxxe3U08X178rEwnUAzsTifVpuUMTifVo2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"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "xfh3ww=="
-.p2align 6"#,
-    )
-}
-
 /// The CPU features `vg_blake2b_update_avx2` requires (`Artifact.features`).
 pub const VG_BLAKE2B_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
@@ -144,7 +106,7 @@ jmp 23f
 23:
 .base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
 .p2align 6"#,
-        vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2,
+        vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2::vg_blake2b_compress_avx2,
     )
 }
 
@@ -185,169 +147,7 @@ jmp 23f
 call {vg_blake2b_compress_avx2}
 .base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
 .p2align 6"#,
-        vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2,
-    )
-}
-
-/// The CPU features `vg_blake2b_update_scratch_avx2` requires (`Artifact.features`).
-pub const VG_BLAKE2B_UPDATE_SCRATCH_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// `vg_blake2b_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Blake2.updateBScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 576 bytes.
-/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2b_update_scratch_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYAAIAAEmJqAgCAABNiaAQAgAATYmoGAIAAE2JsCACAABNibgoAgAASIn7TYnHSInVSYnMSYn2TYn1SYPtAUmD5X9Jg8UBTYX2"
-je 20f
-jmp 21f
-20:
-.base64 "Qb0AAAAA"
-21:
-.base64 "TYXk"
-je 22f
-.base64 "TYXt"
-je 24f
-.base64 "uIAAAABMKehJOcQ="
-jb 26f
-jmp 27f
-26:
-.base64 "TIng"
-27:
-.base64 "SSnESQHGSIXA"
-je 28f
-210:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 210b
-jmp 29f
-28:
-29:
-.base64 "TYXk"
-je 211f
-.base64 "SInfSIneSIPGQLoBAAAATInxQbgAAAAATYn5"
-call {vg_blake2b_compress_avx2}
-.base64 "SIn7TYnPQb0AAAAA"
-jmp 212f
-211:
-212:
-jmp 25f
-24:
-25:
-.base64 "TYXk"
-je 213f
-.base64 "TIngSIPoAUjB6AdIhcA="
-je 215f
-.base64 "SInfSInuSInCTInxSIHBgAAAAEG4AAAAAE2J+Q=="
-call {vg_blake2b_compress_avx2}
-.base64 "SIn7TYnPTIngSIPoAUiD4H9Ig8ABSSnETAHlTQHmSYnE"
-jmp 216f
-215:
-216:
-.base64 "TIngSQHGQbwAAAAA"
-217:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 217b
-jmp 214f
-213:
-214:
-jmp 23f
-22:
-23:
-.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
-.p2align 6"#,
-        vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2,
-    )
-}
-
-/// The CPU features `vg_blake2b_finalize_scratch_avx2` requires (`Artifact.features`).
-pub const VG_BLAKE2B_FINALIZE_SCRATCH_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// `vg_blake2b_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Blake2.finalizeBScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 576 bytes.
-/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2b_finalize_scratch_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZAAIAAEiJqQgCAABMiaEQAgAATImpGAIAAEyJsSACAABMibkoAgAASIn7SYnPSInVSYn2TYn1SYPtAUmD5X9Jg8UBTYX2"
-je 20f
-jmp 21f
-20:
-.base64 "Qb0AAAAA"
-21:
-.base64 "QbkAAAAAuIAAAABMKeg="
-je 22f
-24:
-.base64 "RohMK0BJg8UBSIPoAQ=="
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SInfSIneSIPGQLoBAAAATInxQbgBAAAATYn5"
-call {vg_blake2b_compress_avx2}
-.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
-.p2align 6"#,
-        vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2,
-    )
-}
-
-/// The CPU features `vg_blake2b_compress_avx512` requires (`Artifact.features`).
-pub const VG_BLAKE2B_COMPRESS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// The BLAKE2b compression function F (RFC 7693 §3.2): updates the state `*state` (`h[0..7]`) with the `n` 128-byte blocks starting at `blocks`, in order: block `i` with the offset counter `t + 128 * i` (a 128-bit integer, so it does not wrap), and with the final block flag if `last != 0`.
-///
-/// Contract: `VG.Spec.Blake2.compressBContract`. Constant time: only the pointers, `n`, `t` and `last` may affect timing, not the state or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 64 bytes.
-/// * `blocks` must be valid for reads of `128 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2b_compress_avx512(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "RYnASLgIybzzZ+YJasRh+W7YSLg7p8qEha5nu8Rh+W7oxEEhbN1IuCv4lP5y8248xGH5btBIuPE2HV869U+lxGH5bujEQSls1cRDJTjaAUi40YLmrX9SDlHEYflu4Ei4H2w+K4xoBZvEYflu6MRBGWzlSLhrvUH7q9mDH8Rh+W7QSLh5IX4TGc3gW8Rh+W7oxEEpbNXEQx044gG4AAAAAE2FwA=="
-je 20f
-.base64 "ScfA/////w=="
-jmp 21f
-20:
-21:
-.base64 "SIXS"
-je 22f
-24:
-.base64 "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"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "xfh3ww=="
-.p2align 6"#,
+        vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2::vg_blake2b_compress_avx2,
     )
 }
 
@@ -426,7 +226,7 @@ jmp 23f
 23:
 .base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
 .p2align 6"#,
-        vg_blake2b_compress_avx512 = sym super::blake2b::vg_blake2b_compress_avx512,
+        vg_blake2b_compress_avx512 = sym super::blake2b::vg_blake2b_compress_avx512::vg_blake2b_compress_avx512,
     )
 }
 
@@ -467,165 +267,7 @@ jmp 23f
 call {vg_blake2b_compress_avx512}
 .base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
 .p2align 6"#,
-        vg_blake2b_compress_avx512 = sym super::blake2b::vg_blake2b_compress_avx512,
-    )
-}
-
-/// The CPU features `vg_blake2b_update_scratch_avx512` requires (`Artifact.features`).
-pub const VG_BLAKE2B_UPDATE_SCRATCH_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// `vg_blake2b_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Blake2.updateBScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 576 bytes.
-/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2b_update_scratch_avx512(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYAAIAAEmJqAgCAABNiaAQAgAATYmoGAIAAE2JsCACAABNibgoAgAASIn7TYnHSInVSYnMSYn2TYn1SYPtAUmD5X9Jg8UBTYX2"
-je 20f
-jmp 21f
-20:
-.base64 "Qb0AAAAA"
-21:
-.base64 "TYXk"
-je 22f
-.base64 "TYXt"
-je 24f
-.base64 "uIAAAABMKehJOcQ="
-jb 26f
-jmp 27f
-26:
-.base64 "TIng"
-27:
-.base64 "SSnESQHGSIXA"
-je 28f
-210:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 210b
-jmp 29f
-28:
-29:
-.base64 "TYXk"
-je 211f
-.base64 "SInfSIneSIPGQLoBAAAATInxQbgAAAAATYn5"
-call {vg_blake2b_compress_avx512}
-.base64 "SIn7TYnPQb0AAAAA"
-jmp 212f
-211:
-212:
-jmp 25f
-24:
-25:
-.base64 "TYXk"
-je 213f
-.base64 "TIngSIPoAUjB6AdIhcA="
-je 215f
-.base64 "SInfSInuSInCTInxSIHBgAAAAEG4AAAAAE2J+Q=="
-call {vg_blake2b_compress_avx512}
-.base64 "SIn7TYnPTIngSIPoAUiD4H9Ig8ABSSnETAHlTQHmSYnE"
-jmp 216f
-215:
-216:
-.base64 "TIngSQHGQbwAAAAA"
-217:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 217b
-jmp 214f
-213:
-214:
-jmp 23f
-22:
-23:
-.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
-.p2align 6"#,
-        vg_blake2b_compress_avx512 = sym super::blake2b::vg_blake2b_compress_avx512,
-    )
-}
-
-/// The CPU features `vg_blake2b_finalize_scratch_avx512` requires (`Artifact.features`).
-pub const VG_BLAKE2B_FINALIZE_SCRATCH_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// `vg_blake2b_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Blake2.finalizeBScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 576 bytes.
-/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2b_finalize_scratch_avx512(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZAAIAAEiJqQgCAABMiaEQAgAATImpGAIAAEyJsSACAABMibkoAgAASIn7SYnPSInVSYn2TYn1SYPtAUmD5X9Jg8UBTYX2"
-je 20f
-jmp 21f
-20:
-.base64 "Qb0AAAAA"
-21:
-.base64 "QbkAAAAAuIAAAABMKeg="
-je 22f
-24:
-.base64 "RohMK0BJg8UBSIPoAQ=="
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SInfSIneSIPGQLoBAAAATInxQbgBAAAATYn5"
-call {vg_blake2b_compress_avx512}
-.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
-.p2align 6"#,
-        vg_blake2b_compress_avx512 = sym super::blake2b::vg_blake2b_compress_avx512,
-    )
-}
-
-/// The BLAKE2b compression function F (RFC 7693 §3.2): updates the state `*state` (`h[0..7]`) with the `n` 128-byte blocks starting at `blocks`, in order: block `i` with the offset counter `t + 128 * i` (a 128-bit integer, so it does not wrap), and with the final block flag if `last != 0`.
-///
-/// Contract: `VG.Spec.Blake2.compressBContract`. Constant time: only the pointers, `n`, `t` and `last` may affect timing, not the state or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 64 bytes.
-/// * `blocks` must be valid for reads of `128 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2b_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmZKAEAAEmJqTABAABNiaE4AQAATYmpQAEAAE2JsUgBAABNiblQAQAARYnASYmxAAEAAEmJkQgBAABJiYkQAQAAuAAAAABJiYEYAQAATYXA"
-je 20f
-.base64 "SMfA/////w=="
-jmp 21f
-20:
-21:
-.base64 "SYmBIAEAAEiF0g=="
-je 22f
-24:
-.base64 "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"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SYuZKAEAAEmLqTABAABNi6E4AQAATYupQAEAAE2LsUgBAABNi7lQAQAAww=="
-.p2align 6"#,
+        vg_blake2b_compress_avx512 = sym super::blake2b::vg_blake2b_compress_avx512::vg_blake2b_compress_avx512,
     )
 }
 
@@ -700,7 +342,7 @@ jmp 23f
 23:
 .base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
 .p2align 6"#,
-        vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress,
+        vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
 }
 
@@ -737,122 +379,42 @@ jmp 23f
 call {vg_blake2b_compress}
 .base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
 .p2align 6"#,
-        vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress,
+        vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
 }
 
-/// `vg_blake2b_update`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Blake2.updateBScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 576 bytes.
-/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2b_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmYAAIAAEmJqAgCAABNiaAQAgAATYmoGAIAAE2JsCACAABNibgoAgAASIn7TYnHSInVSYnMSYn2TYn1SYPtAUmD5X9Jg8UBTYX2"
-je 20f
-jmp 21f
-20:
-.base64 "Qb0AAAAA"
-21:
-.base64 "TYXk"
-je 22f
-.base64 "TYXt"
-je 24f
-.base64 "uIAAAABMKehJOcQ="
-jb 26f
-jmp 27f
-26:
-.base64 "TIng"
-27:
-.base64 "SSnESQHGSIXA"
-je 28f
-210:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 210b
-jmp 29f
-28:
-29:
-.base64 "TYXk"
-je 211f
-.base64 "SInfSIneSIPGQLoBAAAATInxQbgAAAAATYn5"
-call {vg_blake2b_compress}
-.base64 "SIn7TYnPQb0AAAAA"
-jmp 212f
-211:
-212:
-jmp 25f
-24:
-25:
-.base64 "TYXk"
-je 213f
-.base64 "TIngSIPoAUjB6AdIhcA="
-je 215f
-.base64 "SInfSInuSInCTInxSIHBgAAAAEG4AAAAAE2J+Q=="
-call {vg_blake2b_compress}
-.base64 "SIn7TYnPTIngSIPoAUiD4H9Ig8ABSSnETAHlTQHmSYnE"
-jmp 216f
-215:
-216:
-.base64 "TIngSQHGQbwAAAAA"
-217:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 217b
-jmp 214f
-213:
-214:
-jmp 23f
-22:
-23:
-.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
-.p2align 6"#,
-        vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress,
-    )
-}
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_compress.rs"]
+pub(crate) mod vg_blake2b_compress;
 
-/// `vg_blake2b_finalize`, with its working space in `*scratch`.
-///
-/// Contract: `VG.Spec.Blake2.finalizeBScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 576 bytes.
-/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
-/// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2b_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZAAIAAEiJqQgCAABMiaEQAgAATImpGAIAAEyJsSACAABMibkoAgAASIn7SYnPSInVSYn2TYn1SYPtAUmD5X9Jg8UBTYX2"
-je 20f
-jmp 21f
-20:
-.base64 "Qb0AAAAA"
-21:
-.base64 "QbkAAAAAuIAAAABMKeg="
-je 22f
-24:
-.base64 "RohMK0BJg8UBSIPoAQ=="
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SInfSIneSIPGQLoBAAAATInxQbgBAAAATYn5"
-call {vg_blake2b_compress}
-.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAAww=="
-.p2align 6"#,
-        vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress,
-    )
-}
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_compress_avx2.rs"]
+pub(crate) mod vg_blake2b_compress_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_compress_avx512.rs"]
+pub(crate) mod vg_blake2b_compress_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_finalize_scratch.rs"]
+pub(crate) mod vg_blake2b_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_finalize_scratch_avx2.rs"]
+pub(crate) mod vg_blake2b_finalize_scratch_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_finalize_scratch_avx512.rs"]
+pub(crate) mod vg_blake2b_finalize_scratch_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_update_scratch.rs"]
+pub(crate) mod vg_blake2b_update_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_update_scratch_avx2.rs"]
+pub(crate) mod vg_blake2b_update_scratch_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_update_scratch_avx512.rs"]
+pub(crate) mod vg_blake2b_update_scratch_avx512;

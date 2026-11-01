@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillState
 import VerifiedGarbage.Proof.Argon2.X86.Derive.HCall
 import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on x86 (32-bit): what keeps the filling state, and data-dependent addressing
@@ -21,7 +22,7 @@ namespace VG.Proof.Argon2.X86.Derive
 
 open VG VG.X86
 open VG.X86.Wp (Upd Mupd Fupd wp_movi wp_mov wp_add wp_addi wp_subi wp_addm wp_cmpi wp_ldm wp_stm)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
 open VG.Proof.Argon2.X86 (blk)
 open VG.Impl.Argon2.X86.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff
   divisorOff strideOff j1Off j2Off)

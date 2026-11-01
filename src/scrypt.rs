@@ -11,7 +11,7 @@
 //! contract; likewise `vg_scrypt_avx2` with AVX2 on x86-64, and on AArch64
 //! `vg_scrypt_sha2` with the SHA-256 instructions.
 //!
-//! ROMix (contract `VG.Spec.Scrypt.roMixContract`) calls the verified
+//! ROMix (`VG.Proof.Scrypt.roMixContract`) calls the verified
 //! `vg_scrypt_blockmix`, which calls `vg_salsa20_8` or computes Salsa20/8
 //! itself, depending on the target. This module only checks the parameters
 //! and allocates the memory scrypt works in (and, for [`verify`], compares

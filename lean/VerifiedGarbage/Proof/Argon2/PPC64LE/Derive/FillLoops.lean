@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: the filling loops
@@ -30,7 +31,7 @@ namespace VG.Proof.Argon2.PPC64LE.Derive
 
 open VG VG.PPC64LE
 open VG.Proof.MdStream.PPC64LE (Upd wp_addi wp_subi wp_sub wp_li)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
 open VG.Impl.Argon2.PPC64LE.Derive (sliceOff segLenOff indexOff laneOff passOff counterOff ld st)
 
 /-- The body, the memory matrix holding `st`'s. -/

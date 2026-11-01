@@ -36,12 +36,6 @@ import VerifiedGarbage.Proof.Sha256.Stream
 namespace VG.Generic.Blake2s.X86_64.Stream
 
 def artifacts (v : Proof.Blake2.X86_64.BackendS) : List Artifact := [
-  Spec.Blake2.compressSApi.artifact VG.X86_64.target {
-    suffix := v.suffix
-    code := v.code
-    verified := v.verified
-    spSafe := v.spSafe
-    features := v.features },
   Spec.Blake2.updateSApi.artifact VG.X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update

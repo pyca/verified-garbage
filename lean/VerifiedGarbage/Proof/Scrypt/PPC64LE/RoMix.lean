@@ -43,6 +43,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
 # scryptROMix on PPC64LE: the precondition
@@ -1930,19 +1931,19 @@ theorem roMix_ct : ConstantTime isa Proof.Scrypt.roMixPPC64LE.pre Proof.Scrypt.r
     _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem roMix_verified :
-    Verified PPC64LE.target Impl.Scrypt.PPC64LE.roMix (Spec.Scrypt.roMixContract PPC64LE.abi 48) :=
+    Verified PPC64LE.target Impl.Scrypt.PPC64LE.roMix (Proof.Scrypt.roMixContract PPC64LE.abi 48) :=
   Verified.of_correct roMix_correct roMix_ct
     { pre := by
-        sig_implies_pre [Spec.Scrypt.roMixContract, Spec.Scrypt.roMixSig,
+        sig_implies_pre [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
           Proof.Scrypt.roMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs, below]
       post := by
-        sig_implies_post [Spec.Scrypt.roMixContract, Spec.Scrypt.roMixSig,
+        sig_implies_post [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
           Proof.Scrypt.roMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       pub := by
-        sig_implies_pub [Spec.Scrypt.roMixContract, Spec.Scrypt.roMixSig,
+        sig_implies_pub [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
           Proof.Scrypt.roMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       sat := by
-        sig_implies_sat [Spec.Scrypt.roMixContract, Spec.Scrypt.roMixSig,
+        sig_implies_sat [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
           Proof.Scrypt.roMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs, below,
           Proof.Scrypt.PPC64LE.RoMix.satState]
           [Proof.Scrypt.PPC64LE.RoMix.satState] using Proof.Scrypt.PPC64LE.RoMix.satState }

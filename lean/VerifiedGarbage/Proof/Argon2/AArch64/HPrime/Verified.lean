@@ -26,6 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Merged from `Proof.Argon2.AArch64.HPrime.OutputCT`. -/
 
@@ -467,7 +468,7 @@ namespace VG.Proof.Argon2.AArch64.HPrime
 open VG VG.AArch64 VG.Impl.Argon2.AArch64.HPrime
 
 theorem verified (v : Backend) :
-    Verified AArch64.target (code v.hash) (Spec.Argon2.hPrimeContract AArch64.abi 16) :=
+    Verified AArch64.target (code v.hash) (Proof.Argon2.hPrimeContract AArch64.abi 16) :=
   Verified.of_correct (code_correct v) (code_ct v) contract_implies
 
 theorem spSafe (v : Backend) : (code v.hash).all (fun i => !isa.writesSp i) = true := by

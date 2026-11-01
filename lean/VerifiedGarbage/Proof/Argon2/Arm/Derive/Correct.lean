@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Reduce
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillLoops
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: the derivation is correct
@@ -20,7 +21,7 @@ the whole function, in its frames, keeps the ABI's registers too.
 namespace VG.Proof.Argon2.Arm.Derive
 
 open VG VG.Arm
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
 open VG.Spec.Blake2 (bytesAt)
 
 section

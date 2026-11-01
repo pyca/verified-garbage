@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Impl.Blake2.AArch64
 import VerifiedGarbage.Proof.Blake2.AArch64.Schedule
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.AArch64.Contract
 import VerifiedGarbage.Proof.Blake2.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -1222,16 +1223,16 @@ theorem compressS_verified' :
 
 theorem compressB_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.compress Spec.Blake2.b)
-      (Spec.Blake2.compressBContract AArch64.abi) :=
+      (Proof.Blake2.compressBContract AArch64.abi) :=
   compressB_verified'.of_implies (by
-    sig_implies [Spec.Blake2.compressBContract, Spec.Blake2.compressBSig, compressAArch64,
+    sig_implies [Proof.Blake2.compressBContract, Proof.Blake2.compressBSig, compressAArch64,
       AArch64.abi, AArch64.argRegs, Spec.Blake2.blockBytes] [satState] using satState 64)
 
 theorem compressS_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.compress Spec.Blake2.s)
-      (Spec.Blake2.compressSContract AArch64.abi) :=
+      (Proof.Blake2.compressSContract AArch64.abi) :=
   compressS_verified'.of_implies (by
-    sig_implies [Spec.Blake2.compressSContract, Spec.Blake2.compressSSig, compressAArch64,
+    sig_implies [Proof.Blake2.compressSContract, Proof.Blake2.compressSSig, compressAArch64,
       AArch64.abi, AArch64.argRegs, Spec.Blake2.blockBytes] [satState] using satState 32)
 
 end VG.Proof.Blake2.AArch64

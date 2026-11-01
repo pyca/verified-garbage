@@ -14,9 +14,6 @@ import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 namespace VG.Artifacts.Blake2b.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Blake2.compressBApi.artifact RISCV64.target {
-    code := Impl.Blake2.RISCV64.compress Spec.Blake2.b
-    verified := Proof.Blake2.RISCV64.compressB_verified },
   Spec.Blake2.initBApi.artifact RISCV64.target {
     code := Impl.Blake2.RISCV64.Stream.init Spec.Blake2.b
     verified := Proof.Blake2.RISCV64.Stream.initB_verified },
@@ -27,12 +24,6 @@ def artifacts : List Artifact := [
   Spec.Blake2.finalizeBApi.artifact RISCV64.target {
     code := Impl.Blake2.RISCV64.Stream.finalize Spec.Blake2.b
     stack := 576
-    verified := Proof.Blake2.RISCV64.Stream.finalizeB_verified },
-  Spec.Blake2.updateBScratchApi.artifact RISCV64.target {
-    code := Impl.Blake2.RISCV64.Stream.updateScratch Spec.Blake2.b
-    verified := Proof.Blake2.RISCV64.Stream.updateScratchB_verified },
-  Spec.Blake2.finalizeBScratchApi.artifact RISCV64.target {
-    code := Impl.Blake2.RISCV64.Stream.finalizeScratch Spec.Blake2.b
-    verified := Proof.Blake2.RISCV64.Stream.finalizeScratchB_verified }]
+    verified := Proof.Blake2.RISCV64.Stream.finalizeB_verified }]
 
 end VG.Artifacts.Blake2b.RISCV64

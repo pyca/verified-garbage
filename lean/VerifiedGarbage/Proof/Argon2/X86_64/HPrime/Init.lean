@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Blake2.Contract
 
 /-! Merged from `Proof.Argon2.X86_64.HPrime.Hash`. -/
 
@@ -33,8 +34,8 @@ open VG VG.X86_64 VG.Impl.Argon2.X86_64.HPrime
 /-- Obligations of any streaming BLAKE2b backend used by H′. -/
 structure HashOk (h : Hash) : Prop where
   init : Verified X86_64.target h.init (Spec.Blake2.initBContract X86_64.abi)
-  update : Verified X86_64.target h.update (Spec.Blake2.updateBScratchContract X86_64.abi 8)
-  finalize : Verified X86_64.target h.finalize (Spec.Blake2.finalizeBScratchContract X86_64.abi 8)
+  update : Verified X86_64.target h.update (Proof.Blake2.updateBScratchContract X86_64.abi 8)
+  finalize : Verified X86_64.target h.finalize (Proof.Blake2.finalizeBScratchContract X86_64.abi 8)
   initNoSp : NoSp h.init
   updateNoSp : NoSp h.update
   finalizeNoSp : NoSp h.finalize

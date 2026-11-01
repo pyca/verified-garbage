@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: the memory's initialization
@@ -31,7 +32,7 @@ namespace VG.Proof.Argon2.PPC64LE.Derive
 open VG VG.PPC64LE
 open VG.Proof.MdStream.PPC64LE (Upd Mupd wp_add wp_sub wp_addi wp_subi wp_li wp_lsl wp_mov wp_std wp_stw)
 open VG.Spec.Blake2 (bytesAt)
-open VG.Spec.Argon2 (Block blockAt zeroBlock parseBlock)
+open VG.Spec.Argon2 (Block zeroBlock parseBlock)
 open VG.Proof.Argon2 (matrixCell Represents initialBytes)
 open VG.Impl.Argon2.PPC64LE.Derive (ld st lda ldw)
 

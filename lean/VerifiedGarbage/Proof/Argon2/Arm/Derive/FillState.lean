@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
 import VerifiedGarbage.Proof.Argon2.FillStep
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: the state of the filling loops
@@ -26,7 +27,7 @@ namespace VG.Proof.Argon2.Arm.Derive
 open VG VG.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_mov wp_sub wp_orr wp_and wp_cmp op2_imm op2_reg op2_lsr)
 open VG.Proof.Blake2.Arm.Stream (wp_eor)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState addressBlock independent)
+open VG.Spec.Argon2 (Block zeroBlock FillState addressBlock independent)
 open VG.Proof.Argon2.Arm (blk)
 open VG.Proof.Sha512.Arm (Only rd64 A)
 open VG.Impl.Argon2.Arm.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff)

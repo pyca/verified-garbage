@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Block
 public import VerifiedGarbage.Proof.Blake2.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -763,14 +764,14 @@ theorem compress_noCalls : Impl.Blake2.Arm.S.compress.noCalls = true := by
   lit_decide
 
 theorem compress_implies :
-    (compressArm Spec.Blake2.s).Implies (Spec.Blake2.compressSContract Arm.abi) := by
-  sig_implies [Spec.Blake2.compressSContract, Spec.Blake2.compressSSig, compressArm, tArm, Arm.abi,
+    (compressArm Spec.Blake2.s).Implies (Proof.Blake2.compressSContract Arm.abi) := by
+  sig_implies [Proof.Blake2.compressSContract, Proof.Blake2.compressSSig, compressArm, tArm, Arm.abi,
     Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Spec.Blake2.blockBytes]
     [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat
 
 /-- The proof, against the shared contract of `Spec/Blake2/Contract.lean`. -/
 theorem compress_verified :
-    Verified Arm.target Impl.Blake2.Arm.S.compress (Spec.Blake2.compressSContract Arm.abi) :=
+    Verified Arm.target Impl.Blake2.Arm.S.compress (Proof.Blake2.compressSContract Arm.abi) :=
   compress_verified'.of_implies compress_implies
 
 end VG.Proof.Blake2.ArmS

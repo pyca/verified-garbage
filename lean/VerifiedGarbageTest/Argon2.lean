@@ -133,7 +133,5 @@ run_cmd do
 
 #assert_standard_axioms VG.Spec.Argon2.derive
 #assert_standard_axioms VG.Spec.Argon2.deriveContract
-#assert_standard_axioms VG.Spec.Argon2.hPrimeContract
-#assert_standard_axioms VG.Spec.Argon2.compressContract
 
 end VG.Test.Argon2

@@ -12,17 +12,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Scrypt.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Scrypt.salsaApi.artifact PPC64LE.target {
-    code := Impl.Scrypt.PPC64LE.salsa
-    verified := Proof.Scrypt.PPC64LE.salsa_verified },
-  Spec.Scrypt.blockMixApi.artifact PPC64LE.target {
-    code := Impl.Scrypt.PPC64LE.blockMix
-    stack := 48
-    verified := Proof.Scrypt.PPC64LE.BlockMix.blockMix_verified },
-  Spec.Scrypt.roMixApi.artifact PPC64LE.target {
-    code := Impl.Scrypt.PPC64LE.roMix
-    stack := 48
-    verified := Proof.Scrypt.PPC64LE.RoMix.roMix_verified },
   Spec.Scrypt.scryptApi.artifact PPC64LE.target {
     code := Impl.Scrypt.PPC64LE.Whole.scrypt Proof.Scrypt.PPC64LE.Whole.pbkName
       Proof.Scrypt.PPC64LE.Whole.pbkCode

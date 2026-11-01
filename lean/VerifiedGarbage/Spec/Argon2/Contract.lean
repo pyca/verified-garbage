@@ -6,8 +6,8 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # Argon2: contracts on every target
 
-**Trusted** (as every file in `Spec/`). The compression function G, H′,
-and the complete Argon2 derivation of RFC 9106, including all hashing,
+**Trusted** (as every file in `Spec/`). The complete Argon2 derivation of
+RFC 9106, including all hashing,
 memory filling and finalization in verified assembly. The Rust caller
 validates parameters and supplies allocations; it does not implement any
 cryptographic step. Version 1.3 (0x13) is fixed by the specification.
@@ -32,63 +32,6 @@ the entry point permits serial evaluation of the lanes. `stack` and
 namespace VG.Spec.Argon2
 
 open Blake2 (bytesAt)
-
-/-- A block at `p`, decoded as little-endian words. -/
-def blockAt (m : Mem) (p : Addr) : Block :=
-  Vector.ofFn fun j => m.read (p + BitVec.ofNat 64 (8 * j.val)) 8
-
-/-- `vg_argon2_compress(x: *const [u64; 128], y: *const [u64; 128],
-out: *mut [u64; 128], scratch: *mut [u64; 512])`.
-G: two input blocks, one output block and 4 KiB of working space. -/
-def compressSig : Sig where
-  params := [("x", .array false .u64 128), ("y", .array false .u64 128),
-    ("out", .array true .u64 128), ("scratch", .array true .u64 512)]
-
-def compressContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  compressSig.contract A
-    (post := fun x y out _scratch m m' _ => blockAt m' out = compress (blockAt m x) (blockAt m y))
-    (writeArgs := true) (stack := stack)
-
-def compressApi : Api where
-  module := "argon2"
-  name := "vg_argon2_compress"
-  sig := compressSig
-  writeArgs := true
-  contracts := some fun A stack => compressContract A stack
-  summary := "Argon2's compression function G (RFC 9106 §3.5–3.6): writes G(*x, *y) to \
-    `*out`. Each block is 128 little-endian 64-bit words.\n\n\
-    Contract: `VG.Spec.Argon2.compressContract`. Constant time: only the pointers may affect \
-    timing, not the input blocks."
-  safety := ["`scratch` is working space: its contents on return are unspecified."]
-
-/-- `vg_argon2_hprime(input: *const u8, input_len: usize, out: *mut u8,
-out_len: usize, scratch: *mut [u64; 2048])`.
-H′ with a runtime output length, including the LE32 length prefix. -/
-def hPrimeSig : Sig where
-  params := [("input", .slice false .u8 "input_len"), ("out", .slice true .u8 "out_len"),
-    ("scratch", .array true .u64 2048)]
-
-def hPrimeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  hPrimeSig.contract A
-    (pre := fun _input inputLen _out outLen _scratch _m =>
-      inputLen.toNat < 2 ^ 32 ∧ 1 ≤ outLen.toNat ∧ outLen.toNat < 2 ^ 32)
-    (post := fun input inputLen out outLen _scratch m m' _ =>
-      bytesAt m' out outLen.toNat = hPrime outLen.toNat (bytesAt m input inputLen.toNat))
-    (writeArgs := true) (stack := stack)
-
-def hPrimeApi : Api where
-  module := "argon2"
-  name := "vg_argon2_hprime"
-  sig := hPrimeSig
-  writeArgs := true
-  contracts := some fun A stack => hPrimeContract A stack
-  summary := "Argon2's variable-length hash H′ (RFC 9106 §3.3): hashes the `input_len` bytes \
-    at `input` to `out_len` bytes at `out`, including the LE32 output-length prefix and \
-    the BLAKE2b chaining required for outputs longer than 64 bytes.\n\n\
-    Contract: `VG.Spec.Argon2.hPrimeContract`. Constant time: only pointers and lengths may \
-    affect timing, not the input or the output."
-  safety := ["`input_len` must be less than 2^32; `out_len` must be in 1..2^32-1.",
-    "`scratch` is working space: its contents on return are unspecified."]
 
 /-- Decode the public type parameter. The contract requires `kind ≤ 2`. -/
 def params (kind passes memory lanes tagLen : Nat) : Params :=

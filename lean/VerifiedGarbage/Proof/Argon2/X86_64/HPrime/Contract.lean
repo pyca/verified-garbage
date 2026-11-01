@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! # H′: a local x86-64 contract -/
 
@@ -40,8 +41,8 @@ def satState : State where
   rd := [⟨0x1000, 1⟩]
   wr := [⟨0x2000, 1⟩, ⟨0x4000, 16384⟩]
 
-theorem contract_implies : localContract.Implies (Spec.Argon2.hPrimeContract X86_64.abi 16) := by
-  sig_implies [Spec.Argon2.hPrimeContract, Spec.Argon2.hPrimeSig, localContract,
+theorem contract_implies : localContract.Implies (Proof.Argon2.hPrimeContract X86_64.abi 16) := by
+  sig_implies [Proof.Argon2.hPrimeContract, Proof.Argon2.hPrimeSig, localContract,
     inputR, outputR, workR, retR, stackR, below, X86_64.abi, X86_64.argRegs] [satState] using satState
 
 end VG.Proof.Argon2.X86_64.HPrime

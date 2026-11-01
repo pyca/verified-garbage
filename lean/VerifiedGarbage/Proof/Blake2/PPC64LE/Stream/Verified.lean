@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.CT
 import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Init
 import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Update
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
@@ -502,18 +503,18 @@ theorem initB_verified :
 
 theorem updateB_verified :
     Verified PPC64LE.target (Impl.Blake2.PPC64LE.Stream.update b)
-      (Spec.Blake2.updateBScratchContract PPC64LE.abi 48) :=
+      (Proof.Blake2.updateBScratchContract PPC64LE.abi 48) :=
   Verified.of_correct updateB_correct updateB_ct (by
-    sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig,
+    sig_implies [Proof.Blake2.updateBScratchContract, Proof.Blake2.updateBScratchSig,
       Proof.Blake2.updatePPC64LE, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, PPC64LE.abi,
       PPC64LE.argRegs]
       [updateSat] using updateSat 64)
 
 theorem finalizeB_verified :
     Verified PPC64LE.target (Impl.Blake2.PPC64LE.Stream.finalize b)
-      (Spec.Blake2.finalizeBScratchContract PPC64LE.abi 48) :=
+      (Proof.Blake2.finalizeBScratchContract PPC64LE.abi 48) :=
   Verified.of_correct finalizeB_correct finalizeB_ct (by
-    sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig,
+    sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig,
       Proof.Blake2.finalizePPC64LE, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, PPC64LE.abi,
       PPC64LE.argRegs]
       [finalizeSat] using finalizeSat 64)
@@ -547,18 +548,18 @@ theorem initS_verified :
 
 theorem updateS_verified :
     Verified PPC64LE.target (Impl.Blake2.PPC64LE.Stream.update s)
-      (Spec.Blake2.updateSScratchContract PPC64LE.abi 48) :=
+      (Proof.Blake2.updateSScratchContract PPC64LE.abi 48) :=
   Verified.of_correct updateS_correct updateS_ct (by
-    sig_implies [Spec.Blake2.updateSScratchContract, Spec.Blake2.updateSScratchSig,
+    sig_implies [Proof.Blake2.updateSScratchContract, Proof.Blake2.updateSScratchSig,
       Proof.Blake2.updatePPC64LE, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, PPC64LE.abi,
       PPC64LE.argRegs]
       [updateSat] using updateSat 32)
 
 theorem finalizeS_verified :
     Verified PPC64LE.target (Impl.Blake2.PPC64LE.Stream.finalize s)
-      (Spec.Blake2.finalizeSScratchContract PPC64LE.abi 48) :=
+      (Proof.Blake2.finalizeSScratchContract PPC64LE.abi 48) :=
   Verified.of_correct finalizeS_correct finalizeS_ct (by
-    sig_implies [Spec.Blake2.finalizeSScratchContract, Spec.Blake2.finalizeSScratchSig,
+    sig_implies [Proof.Blake2.finalizeSScratchContract, Proof.Blake2.finalizeSScratchSig,
       Proof.Blake2.finalizePPC64LE, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, PPC64LE.abi,
       PPC64LE.argRegs]
       [finalizeSat] using finalizeSat 32)

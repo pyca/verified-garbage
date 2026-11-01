@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Blake2b.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Blake2.compressBApi.artifact PPC64LE.target {
-    code := Impl.Blake2.PPC64LE.compress Spec.Blake2.b
-    verified := Proof.Blake2.PPC64LE.compressB_verified },
   Spec.Blake2.initBApi.artifact PPC64LE.target {
     code := Impl.Blake2.PPC64LE.Stream.init Spec.Blake2.b
     verified := Proof.Blake2.PPC64LE.Stream.initB_verified },
@@ -24,14 +21,6 @@ def artifacts : List Artifact := [
   Spec.Blake2.finalizeBApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 608 .r6 (Impl.Blake2.PPC64LE.Stream.finalize Spec.Blake2.b)
     stack := 48 + 608
-    verified := Proof.Blake2.PPC64LE.Stream.finalizeB_framed },
-  Spec.Blake2.updateBScratchApi.artifact PPC64LE.target {
-    code := Impl.Blake2.PPC64LE.Stream.update Spec.Blake2.b
-    stack := 48
-    verified := Proof.Blake2.PPC64LE.Stream.updateB_verified },
-  Spec.Blake2.finalizeBScratchApi.artifact PPC64LE.target {
-    code := Impl.Blake2.PPC64LE.Stream.finalize Spec.Blake2.b
-    stack := 48
-    verified := Proof.Blake2.PPC64LE.Stream.finalizeB_verified }]
+    verified := Proof.Blake2.PPC64LE.Stream.finalizeB_framed }]
 
 end VG.Artifacts.Blake2b.PPC64LE

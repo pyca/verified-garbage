@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Compress
 public import VerifiedGarbage.Impl.Blake2.Arm.CompressS
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 
 /-!
 # BLAKE2s on ARMv7: the streaming functions
@@ -33,13 +34,13 @@ theorem initS_verified :
 theorem updateS_verified :
     Verified Arm.target
       (Impl.Blake2.Arm.Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress)
-      (Spec.Blake2.updateSScratchContract Arm.abi 16) :=
+      (Proof.Blake2.updateSScratchContract Arm.abi 16) :=
   update_verified okS calleeS updateS_implies
 
 theorem finalizeS_verified :
     Verified Arm.target
       (Impl.Blake2.Arm.Stream.finalize (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress)
-      (Spec.Blake2.finalizeSScratchContract Arm.abi 16) :=
+      (Proof.Blake2.finalizeSScratchContract Arm.abi 16) :=
   finalize_verified okS calleeS finalizeS_implies
 
 /-! ## `update` and `finalize` with their working space in a frame of their own

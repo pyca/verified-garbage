@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Copy
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCall
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: one block of the filling loops
@@ -29,7 +30,7 @@ namespace VG.Proof.Argon2.PPC64LE.Derive
 
 open VG VG.PPC64LE
 open VG.Proof.MdStream.PPC64LE (Upd wp_addi)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState compress xorBlock)
+open VG.Spec.Argon2 (Block zeroBlock FillState compress xorBlock)
 open VG.Impl.Argon2.PPC64LE.Derive (passOff counterOff tmpOff curOff)
 
 section

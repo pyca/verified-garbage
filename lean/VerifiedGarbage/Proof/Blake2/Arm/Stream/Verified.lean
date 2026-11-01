@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Blake2.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Finalize
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -89,14 +90,14 @@ theorem initB_implies : (initArm b).Implies (Spec.Blake2.initBContract Arm.abi) 
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [initSat] using initSat 64
 
-theorem updateB_implies : (updateArm b).Implies (Spec.Blake2.updateBScratchContract Arm.abi 16) := by
-  sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig, Proof.Blake2.updateArm,
+theorem updateB_implies : (updateArm b).Implies (Proof.Blake2.updateBScratchContract Arm.abi 16) := by
+  sig_implies [Proof.Blake2.updateBScratchContract, Proof.Blake2.updateBScratchSig, Proof.Blake2.updateArm,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.Stream.below, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
     [updateSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using updateSat 64
 
-theorem finalizeB_implies : (finalizeArm b).Implies (Spec.Blake2.finalizeBScratchContract Arm.abi 16) := by
-  sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig, Proof.Blake2.finalizeArm,
+theorem finalizeB_implies : (finalizeArm b).Implies (Proof.Blake2.finalizeBScratchContract Arm.abi 16) := by
+  sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig, Proof.Blake2.finalizeArm,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.Stream.below, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
     [finalizeSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using finalizeSat 64
@@ -108,14 +109,14 @@ theorem initS_implies : (initArm s).Implies (Spec.Blake2.initSContract Arm.abi) 
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [initSat] using initSat 32
 
-theorem updateS_implies : (updateArm s).Implies (Spec.Blake2.updateSScratchContract Arm.abi 16) := by
-  sig_implies [Spec.Blake2.updateSScratchContract, Spec.Blake2.updateSScratchSig, Proof.Blake2.updateArm,
+theorem updateS_implies : (updateArm s).Implies (Proof.Blake2.updateSScratchContract Arm.abi 16) := by
+  sig_implies [Proof.Blake2.updateSScratchContract, Proof.Blake2.updateSScratchSig, Proof.Blake2.updateArm,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.Stream.below, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
     [updateSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using updateSat 32
 
-theorem finalizeS_implies : (finalizeArm s).Implies (Spec.Blake2.finalizeSScratchContract Arm.abi 16) := by
-  sig_implies [Spec.Blake2.finalizeSScratchContract, Spec.Blake2.finalizeSScratchSig, Proof.Blake2.finalizeArm,
+theorem finalizeS_implies : (finalizeArm s).Implies (Proof.Blake2.finalizeSScratchContract Arm.abi 16) := by
+  sig_implies [Proof.Blake2.finalizeSScratchContract, Proof.Blake2.finalizeSScratchSig, Proof.Blake2.finalizeArm,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.Stream.below, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
     [finalizeSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using finalizeSat 32

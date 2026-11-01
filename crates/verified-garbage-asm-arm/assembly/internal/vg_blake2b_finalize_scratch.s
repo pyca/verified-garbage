@@ -1,0 +1,98 @@
+// The functions of `src/internal/vg_blake2b_finalize_scratch.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_blake2b_finalize_scratch:
+	ldr r12, [sp, #4]
+	str r4, [r12, #512]
+	str r5, [r12, #516]
+	str r6, [r12, #520]
+	str r7, [r12, #524]
+	str r8, [r12, #528]
+	str r9, [r12, #532]
+	str r10, [r12, #536]
+	str r11, [r12, #540]
+	str lr, [r12, #544]
+	mov r4, r0
+	mov r5, r12
+	ldr r6, [sp, #0]
+	mov r9, r2
+	mov r10, r3
+	sub r8, r9, #1
+	and r8, r8, #127
+	add r8, r8, #1
+	orr r12, r9, r10
+	cmp r12, #0
+	beq 20f
+	b 21f
+20:
+	mov r8, #0
+21:
+	mov r12, #0
+	mov r11, #128
+	subs r11, r11, r8
+	beq 22f
+24:
+	add r1, r4, r8
+	strb r12, [r1, #64]
+	add r8, r8, #1
+	subs r11, r11, #1
+	bne 24b
+	b 23f
+22:
+23:
+	mov r0, r4
+	add r1, r4, #64
+	mov r2, #1
+	mov r3, r9
+	mov r11, r10
+	mov r12, #1
+	mov lr, r5
+	push {r3, r11, r12, lr}
+	bl {vg_blake2b_compress}
+	ldr r3, [sp], #16
+	ldr r12, [r4, #0]
+	str r12, [r6, #0]
+	ldr r12, [r4, #4]
+	str r12, [r6, #4]
+	ldr r12, [r4, #8]
+	str r12, [r6, #8]
+	ldr r12, [r4, #12]
+	str r12, [r6, #12]
+	ldr r12, [r4, #16]
+	str r12, [r6, #16]
+	ldr r12, [r4, #20]
+	str r12, [r6, #20]
+	ldr r12, [r4, #24]
+	str r12, [r6, #24]
+	ldr r12, [r4, #28]
+	str r12, [r6, #28]
+	ldr r12, [r4, #32]
+	str r12, [r6, #32]
+	ldr r12, [r4, #36]
+	str r12, [r6, #36]
+	ldr r12, [r4, #40]
+	str r12, [r6, #40]
+	ldr r12, [r4, #44]
+	str r12, [r6, #44]
+	ldr r12, [r4, #48]
+	str r12, [r6, #48]
+	ldr r12, [r4, #52]
+	str r12, [r6, #52]
+	ldr r12, [r4, #56]
+	str r12, [r6, #56]
+	ldr r12, [r4, #60]
+	str r12, [r6, #60]
+	mov r3, r5
+	ldr r4, [r3, #512]
+	ldr r5, [r3, #516]
+	ldr r6, [r3, #520]
+	ldr r7, [r3, #524]
+	ldr r8, [r3, #528]
+	ldr r9, [r3, #532]
+	ldr r10, [r3, #536]
+	ldr r11, [r3, #540]
+	ldr lr, [r3, #544]
+	bx lr

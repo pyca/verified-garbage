@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.FinishReady
 import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Merged from `Proof.Argon2.X86_64.FinishStage`. -/
 

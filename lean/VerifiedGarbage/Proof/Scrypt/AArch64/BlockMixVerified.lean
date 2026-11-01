@@ -23,6 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
 # scryptBlockMix on AArch64: correctness of the loop
@@ -767,20 +768,20 @@ theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixAArch64.pre
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
 
 theorem blockMix_verified :
-    Verified AArch64.target Impl.Scrypt.AArch64.referenceBlockMix (Spec.Scrypt.blockMixContract AArch64.abi
+    Verified AArch64.target Impl.Scrypt.AArch64.referenceBlockMix (Proof.Scrypt.blockMixContract AArch64.abi
       16) :=
   Verified.of_correct blockMix_correct blockMix_ct
     { pre := by
-        sig_implies_pre [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_pre [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs]
       post := by
-        sig_implies_post [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_post [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs]
       pub := by
-        sig_implies_pub [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_pub [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Scrypt.blockMixContract, Spec.Scrypt.blockMixSig,
+        sig_implies_sat [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
           Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs,
           Proof.Scrypt.AArch64.BlockMix.bmSat]
           [Proof.Scrypt.AArch64.BlockMix.bmSat] using Proof.Scrypt.AArch64.BlockMix.bmSat }

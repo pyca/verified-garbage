@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: the filling state, and data-dependent addressing
@@ -23,7 +24,7 @@ namespace VG.Proof.Argon2.PPC64LE.Derive
 
 open VG VG.PPC64LE
 open VG.Proof.MdStream.PPC64LE (Upd Mupd wp_lwz)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
 open VG.Proof.Argon2 (matrixCell Represents)
 open VG.Impl.Argon2.PPC64LE.Derive (j1Off j2Off)
 

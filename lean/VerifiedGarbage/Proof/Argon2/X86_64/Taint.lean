@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint

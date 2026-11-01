@@ -674,7 +674,7 @@ theorem stage_rel (x y out : Nat)
     (argTrace : RelCT isa (fun s t => s.gpr .x19 = t.gpr .x19 ∧ s.sp = t.sp)
       (.block (args x y out)) (fun s t => s.sp = t.sp)) :
     RelCT isa Related (stage x y out) Related := by
-  have call := FillCompress.call_rel Spec.Argon2.compressApi.name (P := CallRelated)
+  have call := FillCompress.call_rel "vg_argon2_compress" (P := CallRelated)
     (fun _ _ hp => ⟨hp.left, hp.right, hp.args .x0 (by simp), hp.args .x1 (by simp),
       hp.args .x2 (by simp), hp.args .x3 (by simp), hp.stacks⟩)
   have trace := (args_public_rel x y out hx hy ho bx by_ bo argTrace).seq call
@@ -1257,8 +1257,8 @@ theorem called_public {s t a b : State} (hp : Related s t)
       exact hp.args .x3 (by simp)
 
 theorem call_public_rel : RelCT isa Related
-    (.call Spec.Argon2.compressApi.name VG.Impl.Argon2.AArch64.compress) BeforeWrite := by
-  have trace := call_rel Spec.Argon2.compressApi.name (P := Related) (fun _ _ hp =>
+    (.call "vg_argon2_compress" VG.Impl.Argon2.AArch64.compress) BeforeWrite := by
+  have trace := call_rel "vg_argon2_compress" (P := Related) (fun _ _ hp =>
     ⟨hp.left.call, hp.right.call, hp.args .x0 (by simp), hp.args .x1 (by simp),
       hp.args .x2 (by simp), hp.args .x3 (by simp), hp.sp⟩)
   have full := trace.wpDep (fun s t hp =>

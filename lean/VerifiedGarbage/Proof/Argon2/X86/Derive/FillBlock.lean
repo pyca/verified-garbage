@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
 import VerifiedGarbage.Proof.Argon2.X86.Derive.FillInput
 import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 @[expose] public section
 
@@ -28,7 +29,7 @@ namespace VG.Proof.Argon2.X86.Derive
 open VG VG.X86
 open VG.X86.Wp (Upd Mupd Fupd wp_movi wp_mov wp_add wp_addi wp_subi wp_sub wp_addm wp_cmpi wp_ldm wp_stm wp_andi
   wp_sbb_self wp_and wp_xor wp_xorm)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState compress xorBlock)
+open VG.Spec.Argon2 (Block zeroBlock FillState compress xorBlock)
 open VG.Proof.Argon2.X86 (blk ofWords blk_of_words)
 open VG.Impl.Sha512.X86 (at_)
 open VG.Impl.Argon2.X86.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff
@@ -252,7 +253,7 @@ namespace VG.Proof.Argon2.X86.Derive
 open VG VG.X86
 open VG.X86.Wp (Upd Mupd Fupd wp_movi wp_mov wp_add wp_addi wp_subi wp_sub wp_addm wp_cmpi wp_ldm wp_stm wp_andi
   wp_sbb_self wp_and wp_xor wp_xorm)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState compress xorBlock)
+open VG.Spec.Argon2 (Block zeroBlock FillState compress xorBlock)
 open VG.Proof.Argon2.X86 (blk ofWords blk_of_words xor_words)
 open VG.Impl.Argon2.X86.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff
   j1Off j2Off refLaneOff startOff countOff tmpOff curOff writeBlock)

@@ -1,0 +1,165 @@
+// The functions of `src/internal/vg_argon2_hprime.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_argon2_hprime:
+	ldr r12, [sp, #0]
+	str r4, [r12, #840]
+	str r5, [r12, #844]
+	str r6, [r12, #848]
+	str r7, [r12, #852]
+	str r8, [r12, #856]
+	str r9, [r12, #860]
+	str r10, [r12, #864]
+	str r11, [r12, #868]
+	str lr, [r12, #872]
+	mov r4, r12
+	mov r5, r0
+	mov r6, r1
+	mov r7, r2
+	mov r8, r3
+	str r3, [r4, #832]
+	sub r1, r8, #1
+	lsr r1, r1, #6
+	cmp r1, #0
+	beq 20f
+	mov r1, #64
+	b 21f
+20:
+	mov r1, r8
+21:
+	mov r0, r4
+	mov r2, r4
+	mov r3, #0
+	bl {vg_blake2b_init}
+	mov r2, #0
+	mov r3, #0
+	add r9, r4, #832
+	mov r10, #4
+	mov r0, r4
+	add r12, r4, #192
+	push {r9, r10, r12, lr}
+	bl {vg_blake2b_update_scratch}
+	ldr r0, [sp], #16
+	mov r2, #4
+	mov r3, #0
+	mov r9, r5
+	mov r10, r6
+	mov r0, r4
+	add r12, r4, #192
+	push {r9, r10, r12, lr}
+	bl {vg_blake2b_update_scratch}
+	ldr r0, [sp], #16
+	mov r3, #0
+	adds r2, r6, #4
+	adc r3, r3, #0
+	mov r0, r4
+	add r1, r4, #768
+	add r12, r4, #192
+	push {r1, r12}
+	bl {vg_blake2b_finalize_scratch}
+	ldr r0, [sp], #8
+	sub r0, r8, #1
+	lsr r0, r0, #6
+	cmp r0, #0
+	beq 22f
+	mov r10, #32
+	add r9, r4, #768
+24:
+	ldrb r12, [r9, #0]
+	strb r12, [r7, #0]
+	add r9, r9, #1
+	add r7, r7, #1
+	subs r10, r10, #1
+	bne 24b
+	sub r8, r8, #32
+	sub r0, r8, #1
+	lsr r0, r0, #6
+	cmp r0, #0
+	beq 25f
+27:
+	mov r1, #64
+	mov r0, r4
+	mov r2, r4
+	mov r3, #0
+	bl {vg_blake2b_init}
+	mov r2, #0
+	mov r3, #0
+	add r9, r4, #768
+	mov r10, #64
+	mov r0, r4
+	add r12, r4, #192
+	push {r9, r10, r12, lr}
+	bl {vg_blake2b_update_scratch}
+	ldr r0, [sp], #16
+	mov r2, #64
+	mov r3, #0
+	mov r0, r4
+	add r1, r4, #768
+	add r12, r4, #192
+	push {r1, r12}
+	bl {vg_blake2b_finalize_scratch}
+	ldr r0, [sp], #8
+	mov r10, #32
+	add r9, r4, #768
+28:
+	ldrb r12, [r9, #0]
+	strb r12, [r7, #0]
+	add r9, r9, #1
+	add r7, r7, #1
+	subs r10, r10, #1
+	bne 28b
+	sub r8, r8, #32
+	sub r0, r8, #1
+	lsr r0, r0, #6
+	cmp r0, #0
+	bne 27b
+	b 26f
+25:
+26:
+	mov r1, r8
+	mov r0, r4
+	mov r2, r4
+	mov r3, #0
+	bl {vg_blake2b_init}
+	mov r2, #0
+	mov r3, #0
+	add r9, r4, #768
+	mov r10, #64
+	mov r0, r4
+	add r12, r4, #192
+	push {r9, r10, r12, lr}
+	bl {vg_blake2b_update_scratch}
+	ldr r0, [sp], #16
+	mov r2, #64
+	mov r3, #0
+	mov r0, r4
+	add r1, r4, #768
+	add r12, r4, #192
+	push {r1, r12}
+	bl {vg_blake2b_finalize_scratch}
+	ldr r0, [sp], #8
+	b 23f
+22:
+23:
+	mov r10, r8
+	add r9, r4, #768
+29:
+	ldrb r12, [r9, #0]
+	strb r12, [r7, #0]
+	add r9, r9, #1
+	add r7, r7, #1
+	subs r10, r10, #1
+	bne 29b
+	ldr r5, [r4, #844]
+	ldr r6, [r4, #848]
+	ldr r7, [r4, #852]
+	ldr r8, [r4, #856]
+	ldr r9, [r4, #860]
+	ldr r10, [r4, #864]
+	ldr r11, [r4, #868]
+	ldr lr, [r4, #872]
+	ldr r4, [r4, #840]
+	bx lr

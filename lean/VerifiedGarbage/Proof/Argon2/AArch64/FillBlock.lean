@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelSpec
 public import VerifiedGarbage.Proof.Argon2.AArch64.RandomSource
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Merged from `Proof.Argon2.AArch64.RandomSourceState`. -/
 

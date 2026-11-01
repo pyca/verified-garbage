@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! # XOR the permuted block with R and write the output -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
 import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! The complete compression/update sequence from allocation and frame invariants. -/
 

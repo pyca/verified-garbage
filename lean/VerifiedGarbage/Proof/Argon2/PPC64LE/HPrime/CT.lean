@@ -25,6 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Setup
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Setup
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Merged from `Proof.Argon2.PPC64LE.HPrime.OutputCT`. -/
 
@@ -463,7 +464,7 @@ namespace VG.Proof.Argon2.PPC64LE.HPrime
 open VG VG.PPC64LE VG.Impl.Argon2.PPC64LE.HPrime
 
 theorem verified :
-    Verified PPC64LE.target code (Spec.Argon2.hPrimeContract PPC64LE.abi 48) :=
+    Verified PPC64LE.target code (Proof.Argon2.hPrimeContract PPC64LE.abi 48) :=
   Verified.of_correct code_correct code_ct contract_implies
 
 end VG.Proof.Argon2.PPC64LE.HPrime

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Scrypt.Contract
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.Scrypt.PPC64LE.Salsa
 meta import VerifiedGarbage.Proof.Scrypt.Spec
@@ -27,7 +28,7 @@ meta import VerifiedGarbage.Spec.Scrypt.Contract
 
 The rounds on the low words of the registers (`RI`), then the whole function
 (`correct`), constant time, and `salsa_verified` against
-`Spec.Scrypt.salsaContract`.
+`Proof.Scrypt.salsaContract`.
 -/
 
 @[expose] public section
@@ -502,9 +503,9 @@ theorem salsa_ct : ConstantTime isa Proof.Scrypt.salsaPPC64LE.pre Proof.Scrypt.s
   rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem salsa_verified :
-    Verified PPC64LE.target Impl.Scrypt.PPC64LE.salsa (Spec.Scrypt.salsaContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Scrypt.PPC64LE.salsa (Proof.Scrypt.salsaContract PPC64LE.abi) :=
   Verified.of_correct salsa_correct salsa_ct (by
-    sig_implies [Spec.Scrypt.salsaContract, Spec.Scrypt.salsaSig, Proof.Scrypt.salsaPPC64LE,
+    sig_implies [Proof.Scrypt.salsaContract, Proof.Scrypt.salsaSig, Proof.Scrypt.salsaPPC64LE,
       PPC64LE.abi, PPC64LE.argRegs] [Proof.Scrypt.PPC64LE.satState] using
       Proof.Scrypt.PPC64LE.satState)
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.Arm.Gb
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 A block at `B + o` (`blk m B o`) as 64-bit words, each the pair of 32-bit words
 the code copies: `blk_of_words` builds it from them, `blockAt_eq` relates it to
-the contract's `Spec.Argon2.blockAt`, and `xor_words` XORs two blocks word by
+the contract's `Proof.Argon2.blockAt`, and `xor_words` XORs two blocks word by
 word.
 -/
 

@@ -33,7 +33,7 @@ use core::fmt;
 use crate::arch::argon2::vg_argon2;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::argon2::{
-    VG_ARGON2_COMPRESS_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX512_FEATURES, vg_argon2_blake2b_avx2,
+    VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_G_AVX512_FEATURES, vg_argon2_blake2b_avx2,
     vg_argon2_blake2b_avx2_g_avx2, vg_argon2_blake2b_avx2_g_avx512, vg_argon2_blake2b_avx512,
     vg_argon2_blake2b_avx512_g_avx2, vg_argon2_blake2b_avx512_g_avx512, vg_argon2_g_avx2,
     vg_argon2_g_avx512,
@@ -41,9 +41,9 @@ use crate::arch::argon2::{
 use crate::hashes::blake2b::Blake2bBackend;
 use verified_garbage_cpu::Features;
 
-/// The implementations of Argon2's compression function G
-/// (`vg_argon2_compress`), which every derivation calls, with each BLAKE2b
-/// backend (`vg_argon2` and its variants).
+/// The implementations of Argon2's compression function G, which every
+/// derivation calls, with each BLAKE2b backend (`vg_argon2` and its
+/// variants).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum CompressBackend {
     /// Constant-time scalar code, for the target's baseline ISA.
@@ -62,9 +62,9 @@ impl CompressBackend {
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     pub(crate) fn select(f: Features) -> CompressBackend {
-        if f.contains(VG_ARGON2_COMPRESS_AVX512_FEATURES) {
+        if f.contains(VG_ARGON2_G_AVX512_FEATURES) {
             CompressBackend::Avx512
-        } else if f.contains(VG_ARGON2_COMPRESS_AVX2_FEATURES) {
+        } else if f.contains(VG_ARGON2_G_AVX2_FEATURES) {
             CompressBackend::Avx2
         } else {
             CompressBackend::Scalar
@@ -451,24 +451,17 @@ mod tests {
         }
     }
 
-    /// The implementation of G chosen for each set of features, and the
-    /// features of the derivation calling it.
+    /// The implementation of G chosen for each set of features.
     #[test]
     fn select() {
         #[cfg(target_arch = "x86_64")]
         {
-            use crate::arch::argon2::{VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_G_AVX512_FEATURES};
-            assert_eq!(VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX2_FEATURES);
             assert_eq!(
-                VG_ARGON2_G_AVX512_FEATURES,
-                VG_ARGON2_COMPRESS_AVX512_FEATURES
-            );
-            assert_eq!(
-                CompressBackend::select(VG_ARGON2_COMPRESS_AVX2_FEATURES),
+                CompressBackend::select(VG_ARGON2_G_AVX2_FEATURES),
                 CompressBackend::Avx2
             );
             assert_eq!(
-                CompressBackend::select(VG_ARGON2_COMPRESS_AVX512_FEATURES),
+                CompressBackend::select(VG_ARGON2_G_AVX512_FEATURES),
                 CompressBackend::Avx512
             );
             assert_eq!(

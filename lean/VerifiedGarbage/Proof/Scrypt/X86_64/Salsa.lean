@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
 # The Salsa20/8 Core on x86-64: the rounds
@@ -744,9 +745,9 @@ theorem salsa_ct : ConstantTime isa Proof.Scrypt.salsaX86_64.pre Proof.Scrypt.sa
   rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem salsa_verified :
-    Verified X86_64.target Impl.Scrypt.X86_64.salsa (Spec.Scrypt.salsaContract X86_64.abi) :=
+    Verified X86_64.target Impl.Scrypt.X86_64.salsa (Proof.Scrypt.salsaContract X86_64.abi) :=
   Verified.of_correct salsa_correct salsa_ct (by
-    sig_implies [Spec.Scrypt.salsaContract, Spec.Scrypt.salsaSig, Proof.Scrypt.salsaX86_64,
+    sig_implies [Proof.Scrypt.salsaContract, Proof.Scrypt.salsaSig, Proof.Scrypt.salsaX86_64,
       X86_64.abi, X86_64.argRegs] [Proof.Scrypt.X86_64.satState] using Proof.Scrypt.X86_64.satState)
 
 end VG.Proof.Scrypt.X86_64

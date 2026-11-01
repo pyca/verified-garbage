@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
@@ -34,30 +35,30 @@ structure BackendS where
   features : List String
   code : Prog isa
   callee : Stream.CalleeOk s code
-  verified : Verified X86_64.target code (Spec.Blake2.compressSContract abi)
+  verified : Verified X86_64.target code (Proof.Blake2.compressSContract abi)
   spSafe : code.all (fun i => !isa.writesSp i) = true
   updateCT : ConstantTime isa (updateX86_64 s).pre (updateX86_64 s).pub
-    (Impl.Blake2.X86_64.Stream.update s ⟨Spec.Blake2.compressSApi.name ++ suffix, code⟩)
+    (Impl.Blake2.X86_64.Stream.update s ⟨"vg_blake2s_compress" ++ suffix, code⟩)
   finalizeCT : ConstantTime isa (finalizeX86_64 s).pre (finalizeX86_64 s).pub
-    (Impl.Blake2.X86_64.Stream.finalize s ⟨Spec.Blake2.compressSApi.name ++ suffix, code⟩)
+    (Impl.Blake2.X86_64.Stream.finalize s ⟨"vg_blake2s_compress" ++ suffix, code⟩)
   updateMxcsr : (Impl.Blake2.X86_64.Stream.update s
-    ⟨Spec.Blake2.compressSApi.name ++ suffix, code⟩).allInstrs (fun i => !loadsMxcsr i) = true
+    ⟨"vg_blake2s_compress" ++ suffix, code⟩).allInstrs (fun i => !loadsMxcsr i) = true
   finalizeMxcsr : (Impl.Blake2.X86_64.Stream.finalize s
-    ⟨Spec.Blake2.compressSApi.name ++ suffix, code⟩).allInstrs (fun i => !loadsMxcsr i) = true
+    ⟨"vg_blake2s_compress" ++ suffix, code⟩).allInstrs (fun i => !loadsMxcsr i) = true
   updateSpSafe : (Impl.Blake2.X86_64.Stream.update s
-    ⟨Spec.Blake2.compressSApi.name ++ suffix, code⟩).all (fun i => !isa.writesSp i) = true
+    ⟨"vg_blake2s_compress" ++ suffix, code⟩).all (fun i => !isa.writesSp i) = true
   finalizeSpSafe : (Impl.Blake2.X86_64.Stream.finalize s
-    ⟨Spec.Blake2.compressSApi.name ++ suffix, code⟩).all (fun i => !isa.writesSp i) = true
+    ⟨"vg_blake2s_compress" ++ suffix, code⟩).all (fun i => !isa.writesSp i) = true
   /-- The stack the streaming functions use, so that `update` and `finalize`
   can keep their working space in a frame of their own. -/
   updateDepth : (Impl.Blake2.X86_64.Stream.update s
-    ⟨Spec.Blake2.compressSApi.name ++ suffix, code⟩).x86_64Depth ≤ 8
+    ⟨"vg_blake2s_compress" ++ suffix, code⟩).x86_64Depth ≤ 8
   finalizeDepth : (Impl.Blake2.X86_64.Stream.finalize s
-    ⟨Spec.Blake2.compressSApi.name ++ suffix, code⟩).x86_64Depth ≤ 8
+    ⟨"vg_blake2s_compress" ++ suffix, code⟩).x86_64Depth ≤ 8
 
 namespace BackendS
 
-def compressName (v : BackendS) : String := Spec.Blake2.compressSApi.name ++ v.suffix
+def compressName (v : BackendS) : String := "vg_blake2s_compress" ++ v.suffix
 
 def hashCallee (v : BackendS) : Impl.Blake2.X86_64.Stream.Callee := ⟨v.compressName, v.code⟩
 def update (v : BackendS) : Prog isa := Impl.Blake2.X86_64.Stream.update s v.hashCallee
@@ -75,16 +76,16 @@ theorem finalize_correct (v : BackendS) (st : State) (hs : (finalizeX86_64 s).pr
   exact ⟨t, s', he, abiPreserved_of_exec v.finalizeMxcsr he h.1, h.2⟩
 
 theorem update_verified (v : BackendS) :
-    Verified X86_64.target v.update (Spec.Blake2.updateSScratchContract abi 8) :=
+    Verified X86_64.target v.update (Proof.Blake2.updateSScratchContract abi 8) :=
   Verified.of_correct v.update_correct v.updateCT (by
-    sig_implies [Spec.Blake2.updateSScratchContract, Spec.Blake2.updateSScratchSig, Proof.Blake2.updateX86_64,
+    sig_implies [Proof.Blake2.updateSScratchContract, Proof.Blake2.updateSScratchSig, Proof.Blake2.updateX86_64,
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes, X86_64.abi, X86_64.argRegs]
       [Stream.updateSat] using Stream.updateSat 32)
 
 theorem finalize_verified (v : BackendS) :
-    Verified X86_64.target v.finalize (Spec.Blake2.finalizeSScratchContract abi 8) :=
+    Verified X86_64.target v.finalize (Proof.Blake2.finalizeSScratchContract abi 8) :=
   Verified.of_correct v.finalize_correct v.finalizeCT (by
-    sig_implies [Spec.Blake2.finalizeSScratchContract, Spec.Blake2.finalizeSScratchSig,
+    sig_implies [Proof.Blake2.finalizeSScratchContract, Proof.Blake2.finalizeSScratchSig,
       Proof.Blake2.finalizeX86_64, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, X86_64.abi,
       X86_64.argRegs] [Stream.finalizeSat] using Stream.finalizeSat 32)
 

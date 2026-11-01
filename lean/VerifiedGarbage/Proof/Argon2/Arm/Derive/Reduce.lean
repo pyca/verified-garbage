@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on ARMv7: the final block and the tag
@@ -28,7 +29,7 @@ namespace VG.Proof.Argon2.Arm.Derive
 
 open VG VG.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_mov wp_sub wp_str op2_imm op2_reg)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState compress xorBlock)
+open VG.Spec.Argon2 (Block zeroBlock FillState compress xorBlock)
 open VG.Spec.Blake2 (bytesAt)
 open VG.Proof.Argon2.Arm (blk ofWords blk_of_words xor_words)
 open VG.Proof.Sha512.Arm (Only A)

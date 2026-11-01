@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Blake2.Contract
 import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
@@ -122,14 +123,14 @@ theorem init_implies : (initX86 Spec.Blake2.b).Implies (Spec.Blake2.initBContrac
     Spec.Blake2.blockBytes, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [initSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using initSat
 
-theorem update_implies : (updateX86 Spec.Blake2.b).Implies (Spec.Blake2.updateBScratchContract X86.abi 32) := by
-  sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig, updateX86, Proof.Blake2.countX86,
+theorem update_implies : (updateX86 Spec.Blake2.b).Implies (Proof.Blake2.updateBScratchContract X86.abi 32) := by
+  sig_implies [Proof.Blake2.updateBScratchContract, Proof.Blake2.updateBScratchSig, updateX86, Proof.Blake2.countX86,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [updateSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateSat
 
 theorem finalize_implies :
-    (finalizeX86 Spec.Blake2.b).Implies (Spec.Blake2.finalizeBScratchContract X86.abi 32) := by
-  sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig, finalizeX86,
+    (finalizeX86 Spec.Blake2.b).Implies (Proof.Blake2.finalizeBScratchContract X86.abi 32) := by
+  sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig, finalizeX86,
     Proof.Blake2.countX86, Proof.Blake2.bufOff, Spec.Blake2.blockBytes, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [finalizeSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeSat
@@ -143,13 +144,13 @@ theorem initB_verified :
 theorem updateB_verified :
     Verified X86.target
       (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
-      (Spec.Blake2.updateBScratchContract X86.abi 32) :=
+      (Proof.Blake2.updateBScratchContract X86.abi 32) :=
   (update_verified ok callee update_ct update_implies.sat_left).of_implies update_implies
 
 theorem finalizeB_verified :
     Verified X86.target
       (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
-      (Spec.Blake2.finalizeBScratchContract X86.abi 32) :=
+      (Proof.Blake2.finalizeBScratchContract X86.abi 32) :=
   (finalize_verified ok callee finalize_ct finalize_implies.sat_left).of_implies finalize_implies
 
 /-! ## `update` and `finalize` with their working space in a frame of their own

@@ -12,13 +12,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Argon2.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Argon2.compressApi.artifact PPC64LE.target {
-    code := Impl.Argon2.PPC64LE.compress
-    verified := Proof.Argon2.PPC64LE.compress_verified },
-  Spec.Argon2.hPrimeApi.artifact PPC64LE.target {
-    code := Impl.Argon2.PPC64LE.HPrime.code
-    stack := 48
-    verified := Proof.Argon2.PPC64LE.HPrime.verified },
   Spec.Argon2.deriveApi.artifact PPC64LE.target {
     code := Impl.Argon2.PPC64LE.Derive.derive
     stack := 384

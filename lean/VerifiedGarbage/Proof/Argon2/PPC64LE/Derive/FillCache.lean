@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: the address block
@@ -28,7 +29,7 @@ namespace VG.Proof.Argon2.PPC64LE.Derive
 
 open VG VG.PPC64LE
 open VG.Proof.MdStream.PPC64LE (Upd Mupd wp_add wp_addi wp_sub wp_li wp_lsl wp_lsr wp_and wp_mov wp_lwz)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState compress addressBlock)
+open VG.Spec.Argon2 (Block zeroBlock FillState compress addressBlock)
 open VG.Proof.Argon2 (matrixCell Represents)
 open VG.Impl.Argon2.PPC64LE.Derive (indexOff counterOff j1Off j2Off)
 

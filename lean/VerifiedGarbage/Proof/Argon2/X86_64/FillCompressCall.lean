@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
 import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Invoke the verified compression primitive with narrowed permissions,
 retaining the surrounding matrix and derivation frame. -/
@@ -28,8 +29,8 @@ structure CallReady (s : State) : Prop where
   stackScratch : (below (s.gpr .rsp) 8).Disjoint ⟨s.gpr .rcx, 4096⟩
 
 structure Called (s t : State) : Prop where
-  result : Spec.Argon2.blockAt t.mem (s.gpr .rdx) = Spec.Argon2.compress
-    (Spec.Argon2.blockAt s.mem (s.gpr .rdi)) (Spec.Argon2.blockAt s.mem (s.gpr .rsi))
+  result : Proof.Argon2.blockAt t.mem (s.gpr .rdx) = Spec.Argon2.compress
+    (Proof.Argon2.blockAt s.mem (s.gpr .rdi)) (Proof.Argon2.blockAt s.mem (s.gpr .rsi))
   regs : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r
   rd : t.rd = s.rd
   wr : t.wr = s.wr
@@ -67,7 +68,7 @@ theorem call_hyps (s : State) (h : CallReady s) :
 
 theorem callEntry_block (s : State) (p : Addr)
     (h : (below (s.gpr .rsp) 8).Disjoint ⟨p, 1024⟩) :
-    Spec.Argon2.blockAt s.callEntry.mem p = Spec.Argon2.blockAt s.mem p := by
+    Proof.Argon2.blockAt s.callEntry.mem p = Proof.Argon2.blockAt s.mem p := by
   have frame : Frame [below (s.gpr .rsp) 8] s.mem s.callEntry.mem := by
     rw [State.callEntry_mem]
     exact (Frame.refl _ _).writeW (r := below (s.gpr .rsp) 8) (by simp) _
@@ -87,9 +88,9 @@ theorem call_ok [CompressImpl] (s : State) (h : CallReady s) :
   refine WP.call_mx (k := compressLocal) CompressImpl.correct CompressImpl.noSp
     (by rw [CompressImpl.depth]; decide) pre cover writes ?_
   intro t rd wr regs frame _ ⟨u, memU, regsU, result⟩ mx
-  change Spec.Argon2.blockAt u.mem (s.callEntry.gpr .rdx) = Spec.Argon2.compress
-    (Spec.Argon2.blockAt s.callEntry.mem (s.callEntry.gpr .rdi))
-    (Spec.Argon2.blockAt s.callEntry.mem (s.callEntry.gpr .rsi)) at result
+  change Proof.Argon2.blockAt u.mem (s.callEntry.gpr .rdx) = Spec.Argon2.compress
+    (Proof.Argon2.blockAt s.callEntry.mem (s.callEntry.gpr .rdi))
+    (Proof.Argon2.blockAt s.callEntry.mem (s.callEntry.gpr .rsi)) at result
   rw [State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp), memU,

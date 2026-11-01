@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Blake2.Spec
 import VerifiedGarbage.Proof.Framework.InstancePriority

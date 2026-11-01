@@ -33,6 +33,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Poly1305.X86_64
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Verified Argon2 block compression on x86-64 with AVX-512
@@ -296,7 +297,7 @@ theorem compress_ct : ConstantTime isa compressLocal.pre compressLocal.pub
 
 /-- `vg_argon2_compress_avx512` meets the contract of `vg_argon2_compress`. -/
 theorem compress_verified : Verified X86_64.target Impl.Argon2.X86_64.Avx512.compress
-    (Spec.Argon2.compressContract X86_64.abi) :=
+    (Proof.Argon2.compressContract X86_64.abi) :=
   Verified.of_correct compress_correct compress_ct compress_implies
 
 end VG.Proof.Argon2.X86_64.Avx512

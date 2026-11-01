@@ -3,40 +3,6 @@
 //! `assembly/blake2s.s`.
 #![allow(dead_code)]
 
-/// The BLAKE2s compression function F (RFC 7693 §3.2): updates the state `*state` (`h[0..7]`) with the `n` 64-byte blocks starting at `blocks`, in order: block `i` with the offset counter `t + 64 * i` (modulo 2⁶⁴), and with the final block flag if `last != 0`.
-///
-/// Contract: `VG.Spec.Blake2.compressSContract`. Constant time: only the pointers, `n`, `t` and `last` may affect timing, not the state or the blocks.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `blocks` must be valid for reads of `64 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `blocks` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkHIlYUIlwVIl4WInGi3wkCItEJBCJRkCLRCQUiUZEuQAAAACLRCQYhcA="
-je 20f
-.base64 "uf////8="
-jmp 21f
-20:
-21:
-.base64 "iU5Ii0QkDIlGTIXA"
-je 22f
-24:
-.base64 "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"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "i15Qi35Yi3ZUww=="
-.p2align 6"#,
-    )
-}
-
 /// Starts a BLAKE2s computation of an `outlen`-byte digest with the `keylen`-byte key at `key` (none if `keylen` is 0): makes the streaming state `*state` represent the key padded to a block, the first block of the data (none for unkeyed hashing), hashed from the initial state for `outlen` and `keylen` (RFC 7693 §2.5, §3.3). The length of the data is then 64 if `keylen > 0` and 0 otherwise. Continue with `vg_blake2s_update` and `vg_blake2s_finalize`.
 ///
 /// Contract: `VG.Spec.Blake2.initSContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
@@ -138,7 +104,7 @@ jmp 23f
 23:
 .base64 "ieiLmAACAACLsAQCAACLuAgCAACLqAwCAACNpCRcAgAAww=="
 .p2align 6"#,
-        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress,
+        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
 }
 
@@ -176,6 +142,10 @@ jmp 23f
 call {vg_blake2s_compress}
 .base64 "WFhYWFhYWItEJBCLC4kIi0sEiUgEi0sIiUgIi0sMiUgMi0sQiUgQi0sUiUgUi0sYiUgYi0sciUgcieiLmAACAACLsAQCAACLuAgCAACLqAwCAACNpCRYAgAAww=="
 .p2align 6"#,
-        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress,
+        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2s_compress.rs"]
+pub(crate) mod vg_blake2s_compress;

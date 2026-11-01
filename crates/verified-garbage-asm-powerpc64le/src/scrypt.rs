@@ -3,99 +3,7 @@
 //! `assembly/scrypt.s`.
 #![allow(dead_code)]
 
-/// The Salsa20/8 Core (RFC 7914 §3): replaces the 64 bytes `*b` by their Salsa20/8 Core (the 16 little-endian words, 8 rounds, then the input added word by word).
-///
-/// Contract: `VG.Spec.Scrypt.salsaContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `b` must be valid for reads and writes of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 64 bytes.
-/// * `scratch` is working space: its contents on return are unspecified.
-/// * `b` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * Neither `b` nor `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_salsa20_8(b: *mut [u8; 64], scratch: *mut [u32; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "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""#,
-    )
-}
-
-/// scryptBlockMix (RFC 7914 §4) with block size parameter `r`: writes scryptBlockMix of the `128 * r` bytes at `b` to the `128 * ry` bytes at `y`. Calls `vg_salsa20_8` for each 64-byte block.
-///
-/// Contract: `VG.Spec.Scrypt.blockMixContract`. Constant time: only the pointers and `r` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `b` must be valid for reads of `128 * r` bytes.
-/// * `y` must be valid for reads and writes of `128 * ry` bytes.
-/// * `scratch` must be valid for reads and writes of 128 bytes.
-/// * `ry` must equal `r`, and `r` must be positive.
-/// * `scratch` is working space: its contents on return are unspecified.
-/// * `y` and `scratch` must not overlap each other or `b` (distinct Rust objects never do).
-/// * None of `b`, `y` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_scrypt_blockmix(b: *const [u8; 128], r: usize, y: *mut [u8; 128], ry: usize, scratch: *mut [u32; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4QAAH+0gAJ/tQAEf7WACH+2AAp/toAGf7AACEOwAAAzsAACU7AABnO2Q2iXgUSkV/JD6JeBRKo3/A/707"
-20:
-.base64 "AAA96QAAWOl4Uil9AAA5+QgAPekIAFjpeFIpfQgAOfkQAD3pEABY6XhSKX0QADn5GAA96RgAWOl4Uil9GAA5+SAAPekgAFjpeFIpfSAAOfkoAD3pKABY6XhSKX0oADn5MAA96TAAWOl4Uil9MAA5+TgAPek4AFjpeFIpfTgAOfkAAHk4AACbOA=="
-bl {vg_salsa20_8}
-.base64 "QAAYOwAAOekAAFjpeFIpfQAAOvkIADnpCABY6XhSKX0IADr5EAA56RAAWOl4Uil9EAA6+RgAOekYAFjpeFIpfRgAOvkgADnpIABY6XhSKX0gADr5KAA56SgAWOl4Uil9KAA6+TAAOekwAFjpeFIpfTAAOvk4ADnpOABY6XhSKX04ADr5AAB6OAAAmzg="
-bl {vg_salsa20_8}
-.base64 "AAC6O0AAGDtAADk7QABaO///nDsAADwo"
-bne %cr0, 20b
-.base64 "QAAb60gAO+tQAFvrWACb62AAu+toAHvrIAAB6DAAITimAwh8IACATg==""#,
-        vg_salsa20_8 = sym super::scrypt::vg_salsa20_8,
-    )
-}
-
-/// scryptROMix (RFC 7914 §5) with block size parameter `r` and cost parameter `N = vlen / r`: replaces the `128 * r` bytes at `b` by their scryptROMix. Step 2 writes `V[0], …, V[N - 1]` to `v`. Calls `vg_scrypt_blockmix` for each scryptBlockMix.
-///
-/// Contract: `VG.Spec.Scrypt.roMixContract`. Not constant time in the indices: timing may depend on the pointers, `r`, `N` and the indices `j` of step 3 (`VG.Spec.Scrypt.roMixIndices`), which are derived from the data and so leak information about it (as in every scrypt that indexes `V` directly), but on nothing else.
-///
-/// # Safety
-///
-/// * `b` must be valid for reads and writes of `128 * r` bytes.
-/// * `v` must be valid for reads and writes of `128 * vlen` bytes.
-/// * `scratch` must be valid for reads and writes of `128 * slen` bytes.
-/// * `r` must be positive, `vlen` must be `N * r` for a power of two `N`, and `slen` must be `r + 2`.
-/// * `v` and `scratch` are working space: their contents on return are unspecified.
-/// * `b`, `v` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `b`, `v` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "gAAH+4gAJ/uQAEf7mACH+6AAp/uwAGf7pgIIfKgAB/gAAAM7AAAlOwAAZzskPpp4AAAkOQEAQDkUMmZ9"
-20:
-.base64 "FEopfRRSSn1QSIt9AAAsKA=="
-bne %cr0, 20b
-.base64 "QvhKebgAW/kAAIo7AAC5Ow=="
-21:
-.base64 "AAA4OQAAXTnC6Et7"
-22:
-.base64 "AACJ6QAAivkIACk5CABKOf//azkAACso"
-bne %cr0, 22b
-.base64 "AAB9OMLJRHsAALg4AADEOAAA+zg="
-bl {vg_scrypt_blockmix}
-.base64 "FNK9f///nDsAADwo"
-bne %cr0, 21b
-.base64 "uACb6///vDs="
-23:
-.base64 "FNI4fcD/KTkAACnpOOgpfdLRSX0Uykp9AAA4OcAAeznC6Ex7"
-24:
-.base64 "AADJ6AAACul4QsZ8AADL+AgAKTkIAEo5CABrOf//jDkAACwo"
-bne %cr0, 24b
-.base64 "wAB7OMLJRHsAALg4AADEOAAA+zg="
-bl {vg_scrypt_blockmix}
-.base64 "//+cOwAAPCg="
-bne %cr0, 23b
-.base64 "qAAb6KYDCHyAABvriAA765AAW+uYAJvroAC767AAe+sgAIBO""#,
-        vg_scrypt_blockmix = sym super::scrypt::vg_scrypt_blockmix,
-    )
-}
-
-/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
+/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
@@ -126,10 +34,22 @@ bne %cr0, 20b
 bl {vg_pbkdf2_hmac_sha256_scratch}
 .base64 "IAAe6KYDCHwoAN7rcAAhOCAAgE4=""#,
         vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
-        vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
+        vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
     )
 }
 
 #[rustfmt::skip]
 #[path = "internal/vg_pbkdf2_hmac_sha256_scratch.rs"]
 pub(crate) mod vg_pbkdf2_hmac_sha256_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_salsa20_8.rs"]
+pub(crate) mod vg_salsa20_8;
+
+#[rustfmt::skip]
+#[path = "internal/vg_scrypt_blockmix.rs"]
+pub(crate) mod vg_scrypt_blockmix;
+
+#[rustfmt::skip]
+#[path = "internal/vg_scrypt_romix.rs"]
+pub(crate) mod vg_scrypt_romix;

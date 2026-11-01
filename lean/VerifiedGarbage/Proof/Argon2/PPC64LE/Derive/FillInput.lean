@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillSteps
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: the address-generation input block
@@ -22,7 +23,7 @@ namespace VG.Proof.Argon2.PPC64LE.Derive
 
 open VG VG.PPC64LE
 open VG.Proof.MdStream.PPC64LE (Upd Mupd wp_li)
-open VG.Spec.Argon2 (Block blockAt zeroBlock)
+open VG.Spec.Argon2 (Block zeroBlock)
 open VG.Impl.Argon2.PPC64LE.Derive (passOff laneOff sliceOff counterOff ld lda ldw)
 
 /-- Doublewords of `scratch`. -/

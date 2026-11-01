@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!
 # Argon2 on PPC64LE: the state of the filling loops
@@ -23,7 +24,7 @@ namespace VG.Proof.Argon2.PPC64LE.Derive
 
 open VG VG.PPC64LE
 open VG.Proof.MdStream.PPC64LE (Upd Mupd wp_li wp_sub wp_lsr wp_and)
-open VG.Spec.Argon2 (Block blockAt zeroBlock FillState addressBlock independent)
+open VG.Spec.Argon2 (Block zeroBlock FillState addressBlock independent)
 open VG.Proof.Argon2 (matrixCell Represents)
 open VG.Impl.Argon2.PPC64LE.Derive (sliceOff segLenOff indexOff laneOff laneLenOff passOff counterOff)
 

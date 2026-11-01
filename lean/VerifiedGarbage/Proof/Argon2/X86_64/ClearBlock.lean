@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-! Zero every word, preserving the enclosing loop's registers and memory. -/
 
