@@ -191,18 +191,26 @@ theorem readBlock_ok (ctr : Bool) (b : VReg) (s : State) (hb : b ≠ mask)
     · exact hf.keep.gpr (by decide : Reg.r6 ∉ [Reg.r8])
     · exact hf.weaken (by simp) (by simp)
 
+theorem storePerm_ok (d n : VReg) (p offset : Reg) (s : State) (hp : p ≠ .r0)
+    (hm : s.vpr mask = byteMask) (hw : InRegions s.wr (s.gpr p+s.gpr offset) 16) :
+    WP isa (.block (Impl.Aes.PPC64LE.Crypto.storePerm d n p offset)) s
+      (· = {s.writeV d (flip (s.vpr n)) with
+        mem := s.mem.write (s.gpr p+s.gpr offset) 16 (rev128 (s.vpr n))}) := by
+  have hw' : InRegions (s.writeV d (flip (s.vpr n))).wr
+      ((s.writeV d (flip (s.vpr n))).gpr p + (s.writeV d (flip (s.vpr n))).gpr offset) 16 := by
+    simpa only [wr_writeV, gpr_writeV] using hw
+  apply WP.of_runBlock
+  simp only [Impl.Aes.PPC64LE.Crypto.storePerm, runBlock_cons, runStep_some, runBlock_nil,
+    exec_flip d n s hm, exec_stxvd2x d p offset _ hp hw', gpr_writeV, mem_writeV,
+    vpr_writeV, ite_true, flip_store, Option.some.injEq, exists_eq_left']
+
 theorem store_ok (b : VReg) (p : Reg) (s : State) (hp : p ≠ .r0)
     (h0 : s.gpr .r0 = 0) (hm : s.vpr mask = byteMask) (hw : InRegions s.wr (s.gpr p) 16) :
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.store b p)) s
       (· = {s.writeV b (flip (s.vpr b)) with mem := s.mem.write (s.gpr p) 16 (rev128 (s.vpr b))}) := by
-  have hw' : InRegions (s.writeV b (flip (s.vpr b))).wr
-      ((s.writeV b (flip (s.vpr b))).gpr p + (s.writeV b (flip (s.vpr b))).gpr .r0) 16 := by
-    simpa only [wr_writeV, gpr_writeV, h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hw
-  apply WP.of_runBlock
-  simp only [Impl.Aes.PPC64LE.Crypto.store, runBlock_cons, runStep_some, runBlock_nil,
-    exec_flip _ _ _ hm, exec_stxvd2x b p .r0 _ hp hw', gpr_writeV, mem_writeV,
-    vpr_writeV, ite_true, h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero, flip_store,
-    Option.some.injEq, exists_eq_left']
+  have hs := storePerm_ok b b p .r0 s hp hm
+    (by simpa only [h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hw)
+  simpa only [Impl.Aes.PPC64LE.Crypto.store, h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hs
 
 
 structure Stored (b : VReg) (s t : State) (out : BitVec 128) : Prop where

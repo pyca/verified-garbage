@@ -47,17 +47,22 @@ def consts : List Instr :=
 def loadRev (d : VReg) (p : Reg) : List Instr :=
   Impl.Vector.PPC64LE.loadPerm d p MASK
 
-def products (a key : VReg) : List Instr :=
-  [.vop (.sldoi U a Z 8), .vop (.pmsumd HI U key),
-   .vop (.sldoi U Z a 8), .vop (.pmsumd LO U key),
-   .vop (.pmsumd MID a key)]
+/-- Polynomial product and reduction generators shared with fused ciphers. -/
+def productsWith (u lo mid hi zero a key : VReg) : List Instr :=
+  [.vop (.sldoi u a zero 8), .vop (.pmsumd hi u key),
+   .vop (.sldoi u zero a 8), .vop (.pmsumd lo u key),
+   .vop (.pmsumd mid a key)]
 
-def reduce (d : VReg) : List Instr :=
-  [.vop (.sldoi T LO Z 8), .vop (.pmsumd T T C),
-   .vop (.sldoi LO LO LO 8), .vop (.logic .xor MID MID LO), .vop (.logic .xor MID MID T),
-   .vop (.sldoi T MID Z 8), .vop (.pmsumd T T C),
-   .vop (.sldoi HI HI HI 8), .vop (.logic .xor HI HI MID),
-   .vop (.sldoi T T T 8), .vop (.logic .xor d HI T)]
+def reduceWith (lo mid hi tmp zero poly d : VReg) : List Instr :=
+  [.vop (.sldoi tmp lo zero 8), .vop (.pmsumd tmp tmp poly),
+   .vop (.sldoi lo lo lo 8), .vop (.logic .xor mid mid lo), .vop (.logic .xor mid mid tmp),
+   .vop (.sldoi tmp mid zero 8), .vop (.pmsumd tmp tmp poly),
+   .vop (.sldoi hi hi hi 8), .vop (.logic .xor hi hi mid),
+   .vop (.sldoi tmp tmp tmp 8), .vop (.logic .xor d hi tmp)]
+
+def products (a key : VReg) : List Instr := productsWith U LO MID HI Z a key
+
+def reduce (d : VReg) : List Instr := reduceWith LO MID HI T Z C d
 
 def mul (d a key : VReg) : List Instr := products a key ++ reduce d
 
@@ -99,13 +104,18 @@ def packKeyStep (j : Nat) : List Instr :=
 def packedKeys : List Instr := (List.range 4).flatMap packKeyStep
 
 def packedAccs : List (VReg × VReg) := [(Y,LO),(.v16,MID),(.v17,HI)]
+def packedProductsWith (a b u t lo mid hi loKey hiKey : VReg) (canonical : Bool) : List Instr :=
+  let p := if canonical then t else u
+  let q := if canonical then u else t
+  [.vop (.sldoi hi b b 8),
+   .vop (.sldoi p a hi 8),
+   .vop (.sldoi q hi a 8), .vop (.sldoi q q q 8),
+   .vop (.pmsumd hi u hiKey), .vop (.pmsumd lo t loKey),
+   .vop (.pmsumd mid u loKey), .vop (.pmsumd u t hiKey),
+   .vop (.logic .xor mid mid u)]
+
 def packedProducts (loKey hiKey : VReg) : List Instr :=
-  [.vop (.sldoi HI HI HI 8),
-   .vop (.sldoi U A HI 8),
-   .vop (.sldoi T HI A 8), .vop (.sldoi T T T 8),
-   .vop (.pmsumd HI U hiKey), .vop (.pmsumd LO T loKey),
-   .vop (.pmsumd MID U loKey), .vop (.pmsumd U T hiKey),
-   .vop (.logic .xor MID MID U)]
+  packedProductsWith A HI U T LO MID HI loKey hiKey false
 
 def packedSave (j : Nat) : List Instr :=
   if j=0 then packedAccs.map (fun (acc,p) => .vop (.logic .or acc p p))
