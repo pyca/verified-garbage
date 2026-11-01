@@ -502,6 +502,15 @@ def main():
     groups = None
     if shards > 1:
         groups = shard_groups(listed, shard, shards)
+    # This run-only branch measures the public APIs changed by split seal,
+    # with the in-place encrypt group as its control.
+    focused = {"aes-128-gcm-encrypt", "aes-128-gcm-encrypt-out-of-place",
+               "aes-128-gcm-encrypt-two-pieces", "aes-128-gcm-tls-seal",
+               "aes-256-gcm-tls-seal"}
+    if not focused.issubset(listed):
+        raise RuntimeError("split-seal experiment groups missing from registry")
+    groups = sorted(focused)
+    print("Focused experiment groups: " + ", ".join(groups), file=sys.stderr)
     # Interleaved, every group is named (base's runs of a benchmark it lacks
     # measure nothing); otherwise, unsharded, each side runs all of its own.
     selected = groups if groups is not None or owner is None else sorted(listed)
