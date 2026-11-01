@@ -2,28 +2,28 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb.Spec
 public import VerifiedGarbage.Impl.AesCfb.RISCV64
+public import VerifiedGarbage.Impl.AesOfb.RISCV64
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.CT
-import VerifiedGarbage.Proof.AesOfb.RISCV64.Body
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Body
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.AesCfb.Spec
 meta import VerifiedGarbage.Impl.AesCfb.RISCV64
+meta import VerifiedGarbage.Impl.AesOfb.RISCV64
 meta import VerifiedGarbage.Proof.AesCbc.RISCV64.CT
-meta import VerifiedGarbage.Proof.AesOfb.RISCV64.Body
 meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Body
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Aes.RISCV64.BlocksVerified
 meta import VerifiedGarbage.Proof.Aes.RISCV64.BlocksVerified
 
 /-!
-# AES-CFB128 on RISC-V: one block, and constant time
+# AES-CFB128 decryption on RISC-V: one block, and constant time
 
-As on PPC64LE (`Proof/AesCfb/PPC64LE/Body.lean`): `encBody_ok` and
-`decBody_ok`, one run of `body` takes the loop invariant AES-CBC's proofs
-share (`Proof/AesCbc/RISCV64/Loop.lean`) from `k` blocks to `k + 1`, for
-`cfbMode`. The code before the call and the call are AES-OFB's
-(`Proof/AesOfb/RISCV64/Body.lean`). `encBody_ct` and `decBody_ct`: they are
-constant time, by the shared framework, with the call on the block at `iv`.
+As on PPC64LE (`Proof/AesCfb/PPC64LE/Body.lean`): `decBody_ok`, one run of
+`body decPost` takes the loop invariant AES-CBC's proofs share
+(`Proof/AesCbc/RISCV64/Loop.lean`) from `k` blocks to `k + 1`, for
+`cfbMode false`. The code before the call (`ivArgs`, `ivA_wp`) and the call
+are on the block at `iv`. `decBody_ct`: it is constant time, by the shared
+framework. (Encryption runs the CFB128 chain, `Proof/Aes/RISCV64/ChainModes.lean`.)
 -/
 
 @[expose] public section
@@ -31,12 +31,71 @@ constant time, by the shared framework, with the call on the block at `iv`.
 namespace VG.Proof.AesCfb.RISCV64
 
 open VG VG.RISCV64 VG.Impl.AesCfb.RISCV64
-open VG.Impl.AesCbc.RISCV64 (whole xorInto copy advance encCall)
+open VG.Impl.AesCbc.RISCV64 (whole xorInto copy advance encCall mov)
 open VG.Impl.AesOfb.RISCV64 (ivArgs)
-open VG.Proof.AesOfb.RISCV64 (ivA_wp)
 open VG.Proof.AesCbc
 open VG.Proof.AesCbc.RISCV64
 open VG.Spec.Aes (bytesAt)
+
+/-- The arguments of a call on the block at `iv`, with the working space at
+the start of the scratch buffer. -/
+theorem callPreIv {s₀ : State} (hp : UPre s₀) {s : State}
+    (a0 : s.gpr .a0 = W s₀) (a1 : s.gpr .a1 = s₀.gpr .a1) (a2 : s.gpr .a2 = Iv s₀)
+    (a3 : s.gpr .a3 = BitVec.ofNat 64 1) (a4 : s.gpr .a4 = S s₀)
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
+    CallPre s (W s₀) (Iv s₀) (S s₀) (R s₀) where
+  a0 := a0
+  a1 := by rw [a1, a1_ofNat]
+  a2 := a2
+  a3 := a3
+  a4 := a4
+  rounds := hp.rounds
+  wd := hp.sch_iv
+  ws := hp.sch_scr.sub_right wsR_sub
+  ds := hp.iv_scr.sub_right wsR_sub
+  wrap := hp.iv_wrap
+  reads := by
+    rw [hrd, hwr, hp.rd, hp.wr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨schR s₀, by simp, 0, by simp, by simp⟩
+    · exact ⟨ivR s₀, by simp, 0, by simp, by simp⟩
+    · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
+  writes := by
+    rw [hwr, hp.wr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨ivR s₀, by simp, 0, by simp, by simp⟩
+    · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
+
+theorem ivA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv M s₀ k s) :
+    WP isa (.block ivArgs) s (Pre s₀ (Iv s₀) s.mem s) := by
+  unfold ivArgs mov
+  refine Steps.wp_mv fun s₁ u₁ => Steps.wp_mv fun s₂ u₂ => Steps.wp_mv fun s₃ u₃ =>
+    Steps.wp_li (imm := 1) (by decide) fun s₄ u₄ => Steps.wp_mv fun s₅ u₅ => WP.block_nil ?_
+  have keep (r : Reg) (hr : r ∈ preserved) : s₅.gpr r = s.gpr r := by
+    have h' := (preserved_ne hr).1
+    simp only [argRegs5, List.mem_cons, List.not_mem_nil, or_false, not_or] at h'
+    obtain ⟨h0, h1, h2, h3, h4⟩ := h'
+    rw [u₅.other _ h4, u₄.other _ h3, u₃.other _ h2, u₂.other _ h1, u₁.other _ h0]
+  refine ⟨callPreIv hp ?_ ?_ ?_ ?_ ?_ ?_ ?_, keep, ?_, ?_, ?_, ?_⟩
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+      u₁.gpr, h.s1]
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
+      u₁.other _ (by decide), h.s2]
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide),
+      u₁.other _ (by decide), h.s3]
+  · rw [u₅.other _ (by decide), u₄.gpr]
+  · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+      u₁.other _ (by decide), h.s6]
+  · rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd]
+  · rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]
+  · rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  · rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  · rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  · rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
 
 /-- What the code before the call and the call leave, for either
 direction. -/
@@ -122,33 +181,6 @@ theorem linv_succ {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k <
       set_prefix _ _ _ hl' (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [mem₅, hiv]
 
-theorem encBody_ok : BodyOk (cfbMode true) (body encPost) := by
-  intro s₀ hp k hk s h
-  refine call_ok hp h encPost fun s₂ a => ?_
-  rw [encPost, List.append_assoc]
-  refine xorBlk_wp hp hk h a fun s₃ g₃ b₃ i₃ f₃ rd₃ wr₃ sp₃ => ?_
-  refine copy_wp (P := Iv s₀) (Q := blk s₀ k) (by decide) (by decide)
-    (by rw [g₃ _ (by decide) (by decide), a.g .s3 (by decide), h.s3])
-    (by rw [g₃ _ (by decide) (by decide), a.g .s4 (by decide), h.s4])
-    ⟨dataR s₀, by rw [rd₃, wr₃, a.regs]; simp, UPre.data_sub hk⟩
-    ⟨ivR s₀, by rw [wr₃, a.wr]; simp, fun _ h => h⟩ (hp.blk_iv hk).symm
-    fun s₄ g₄ cp₄ f₄ rd₄ wr₄ sp₄ => ?_
-  have b₄ : bytesAt s₄.mem (blk s₀ k) 16 = bytesAt s₃.mem (blk s₀ k) 16 :=
-    bytesAt_frame f₄ (one (hp.blk_iv hk)) (by decide)
-  have i₄ : bytesAt s₄.mem (Iv s₀) 16 = bytesAt s₄.mem (blk s₀ k) 16 := by rw [cp₄, b₄]
-  have newBlk : bytesAt s₄.mem (blk s₀ k) 16 =
-      Spec.Cbc.xor ((blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk))
-        (Spec.Cbc.aesWith (R s₀) (wK s₀) (chainK (cfbMode true) s₀ k)) := by
-    rw [b₄, b₃, h.block hk, a.iv, h.iv]
-  have outSucc : outK (cfbMode true) s₀ (k + 1) = outK (cfbMode true) s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16] := by
-    rw [newBlk]
-    simp only [outK, chainK, cfbMode_out, cfbMode_chain, cfb, cts, ite_true, take_succ_blks s₀ hk,
-      encrypt_snoc]
-  refine linv_succ hp hk h a (fun r h3 h4 => by rw [g₄ r h3, g₃ r h3 h4]) (by rw [rd₄, rd₃])
-    (by rw [wr₄, wr₃]) (by rw [sp₄, sp₃]) (step_frame a f₃ f₄) outSucc ?_
-  rw [i₄]
-  simp only [chainK, cfbMode_chain, cts, ite_true, outSucc, next_snoc]
-
 theorem decBody_ok : BodyOk (cfbMode false) (body decPost) := by
   intro s₀ hp k hk s h
   refine call_ok hp h decPost fun s₂ a => ?_
@@ -181,22 +213,17 @@ theorem decBody_ok : BodyOk (cfbMode false) (body decPost) := by
 
 /-! ## Constant time -/
 
-theorem encPost_taint : ∃ h, (taint.check (Taint.ofRegs [.s3, .s4, .s5, .s6])
-    (.block encPost) h).isSome = true := ⟨_, by taint_decide⟩
+/-- The code before the call, from the pointers. -/
+theorem pre_taint : ∃ h, (taint.check (Taint.ofRegs vars) (.block ivArgs) h).isSome = true :=
+  ⟨_, by taint_decide⟩
 
 theorem decPost_taint : ∃ h, (taint.check (Taint.ofRegs [.s3, .s4, .s5, .s6])
     (.block decPost) h).isSome = true := ⟨_, by taint_decide⟩
 
-theorem encBody_ct : BodyCt (cfbMode true) (body encPost) :=
-  fun hp hp' hq k => VG.Proof.AesCbc.RISCV64.body_ct (D := fun s₀ _ => Iv s₀)
-    (fun hq _ => pub_Iv hq) Proof.Aes.RISCV64.encryptBlocks_correct Proof.Aes.RISCV64.encryptBlocks_ct
-    encryptBlocks_noFrames Proof.AesOfb.RISCV64.pre_taint encPost_taint
-    (@fun _ hp _ _ _ h => WP.mono (ivA_wp hp h) fun _ a => ⟨_, a⟩) hp hp' hq k
-
 theorem decBody_ct : BodyCt (cfbMode false) (body decPost) :=
   fun hp hp' hq k => VG.Proof.AesCbc.RISCV64.body_ct (D := fun s₀ _ => Iv s₀)
     (fun hq _ => pub_Iv hq) Proof.Aes.RISCV64.encryptBlocks_correct Proof.Aes.RISCV64.encryptBlocks_ct
-    encryptBlocks_noFrames Proof.AesOfb.RISCV64.pre_taint decPost_taint
+    encryptBlocks_noFrames pre_taint decPost_taint
     (@fun _ hp _ _ _ h => WP.mono (ivA_wp hp h) fun _ a => ⟨_, a⟩) hp hp' hq k
 
 end VG.Proof.AesCfb.RISCV64
