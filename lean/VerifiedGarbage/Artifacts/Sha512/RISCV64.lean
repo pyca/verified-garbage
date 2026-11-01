@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sha512.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Sha512.compressApi.artifact RISCV64.target {
-    code := Impl.Sha512.RISCV64.compress
-    verified := Proof.Sha512.RISCV64.Shared.compress },
   Spec.Sha512.init384Api.artifact RISCV64.target {
     code := Impl.Sha512.RISCV64.Stream.initWith Spec.Sha512.H0_384
     verified := Proof.Sha512.RISCV64.Shared.init384 },

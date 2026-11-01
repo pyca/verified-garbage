@@ -32,7 +32,7 @@ open VG.X86
 words of working space and a 20-byte digest. -/
 def hmacHash (suffix : String) (updC finC : Prog isa) : Impl.Pbkdf2.Stream.X86.Hash :=
   ⟨64, 84, 20, 20, 20, Spec.Sha1.initApi.name, Impl.Sha1.X86.Stream.init,
-    Spec.Sha1.updateScratchApi.name ++ suffix, updC, Spec.Sha1.finalizeScratchApi.name ++ suffix,
+    "vg_sha1_update_scratch" ++ suffix, updC, "vg_sha1_finalize_scratch" ++ suffix,
     finC⟩
 
 /-- SHA-1 as a Merkle–Damgård hash function, with a backend's compression

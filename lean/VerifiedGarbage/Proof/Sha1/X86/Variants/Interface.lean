@@ -11,8 +11,10 @@ public import VerifiedGarbage.TCB.Registration
 A backend is one implementation of SHA-1's compression function on x86: a
 variant of the interface `Sha1` on x86 (`Variants/Sha1/X86/`). Each function
 built on it (in `Generic/Sha1/X86/`) is emitted once for each backend, named
-with its suffix (see `TCB/Emit.lean`): its own functions, the compression
-function and the streaming ones made with it (`functions`), and HMAC's `init`
+with its suffix (see `TCB/Emit.lean`): its own functions, the streaming
+ones made with it (`functions`; its compression function and the streaming
+functions with their working space passed in `scratch` are internal
+functions, emitted from their callers' code), and HMAC's `init`
 and `finalize`, PBKDF2's `iterate` and the whole of PBKDF2, the
 implementations for every hash function (`Impl/Pbkdf2/Md/X86.lean`,
 `Impl/Pbkdf2/Whole/X86.lean`) at SHA-1 made with the backend (`Code.lean`).
@@ -78,8 +80,7 @@ structure Backend where
   /-- The CPU features its compression function requires, which the
   functions built on it require too. -/
   features : List String
-  /-- Its own functions: the compression function and the streaming
-  functions made with it. -/
+  /-- Its own functions: the streaming functions made with it. -/
   functions : List StreamFn
   /-- No instruction of the functions built on it writes `esp` (the
   artifacts' `spSafe`). -/

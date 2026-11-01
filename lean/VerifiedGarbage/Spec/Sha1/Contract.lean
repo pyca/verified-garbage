@@ -6,9 +6,9 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # SHA-1: the contracts, on every target
 
-**Trusted** (as every file in `Spec/`). The contracts of the compression
-function and of streaming SHA-1 (`init`/`update`/`finalize`, on the
-representation `Repr`), in terms of `Spec/Sha1.lean`, for any target:
+**Trusted** (as every file in `Spec/`). The contracts of streaming SHA-1
+(`init`/`update`/`finalize`, on the representation `Repr`), in terms of
+`Spec/Sha1.lean`, for any target:
 `A` is the target's calling convention. The signatures fix where the
 arguments are, the memory each function may access, disjointness, and that
 the pointers and lengths are public (see `TCB/Sig.lean`); the contracts add
@@ -21,39 +21,12 @@ memory in one call, with no streaming state.
 `update`, `finalize` and `digest` take the number of bytes of stack below the stack pointer that
 an implementation's calls and frames use (`stack`, see `Sig.contract`), 0 for
 one that uses none: it depends on the target, and on which functions the
-implementation calls. They keep their working space there; `update_scratch`
-and `finalize_scratch` are the same functions with their working space
-passed in `scratch`, for functions that call them with theirs (HMAC's,
-PBKDF2's).
+implementation calls. They keep their working space there.
 -/
 
 @[expose] public section
 
 namespace VG.Spec.Sha1
-
-/-- `vg_sha1_compress(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14])`.
-`scratch` is working space. -/
-def compressSig : Sig where
-  params := [("state", .array true .u32 5), ("blocks", .slice false (.array .u8 64) "n"),
-    ("scratch", .array true .u64 14)]
-
-/-- Updates the hash value at `state` with the `n` 64-byte blocks at
-`blocks`. The hash value and the blocks are secret. -/
-def compressContract {M : ISA} (A : Abi M) : Contract M :=
-  compressSig.contract A (post := fun state blocks n _scratch m m' _ =>
-    stateAt m' state = compressBlocks (stateAt m state) m blocks n.toNat)
-
-/-- `vg_sha1_compress` on every target. -/
-def compressApi : Api where
-  module := "sha1"
-  name := "vg_sha1_compress"
-  sig := compressSig
-  contracts := some fun A _ => compressContract A
-  summary := "The SHA-1 compression function (FIPS 180-4 §6.1.2): updates the hash value `*state` \
-    with the `n` 64-byte blocks starting at `blocks`, in order.\n\n\
-    Contract: `VG.Spec.Sha1.compressContract`. Constant time: only the pointers and `n` may affect \
-    timing, not the hash value or the blocks."
-  safety := ["The contents of `scratch` on return are unspecified."]
 
 /-- `vg_sha1_init(state: *mut [u8; 84])`. -/
 def initSig : Sig where
@@ -106,31 +79,6 @@ def updateApi : Api where
     may affect timing, not the state or the data."
   safety := []
 
-/-- `vg_sha1_update_scratch(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20])`:
-`vg_sha1_update` with its working space passed in `scratch`, for functions
-that call it with theirs (HMAC's, PBKDF2's). -/
-def updateScratchSig : Sig where
-  params := [("state", .array true .u8 84), ("count", .int .u64 true),
-    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 20)]
-
-/-- `updatePost`, whatever `scratch` is. The state and the data are secret. -/
-def updateScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  updateScratchSig.contract A (post := fun state count data len _scratch => updatePost A.ptrBits state count data len)
-    (writeArgs := true)
-    (stack := stack)
-
-/-- `vg_sha1_update_scratch` on every target. -/
-def updateScratchApi : Api where
-  module := "sha1"
-  name := "vg_sha1_update_scratch"
-  sig := updateScratchSig
-  writeArgs := true
-  contracts := some fun A stack => updateScratchContract A stack
-  summary := "`vg_sha1_update`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Sha1.updateScratchContract`. Constant time: only the pointers, `count` and \
-    `len` may affect timing, not the state or the data."
-  safety := ["The contents of `scratch` on return are unspecified."]
-
 /-- `vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20])`.
 `count` is public; `state` is left unspecified. -/
 def finalizeSig : Sig where
@@ -159,33 +107,6 @@ def finalizeApi : Api where
     Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may \
     affect timing, not the state."
   safety := ["The contents of `state` on return are unspecified."]
-
-/-- `vg_sha1_finalize_scratch(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20])`:
-`vg_sha1_finalize` with its working space passed in `scratch`, for functions
-that call it with theirs (HMAC's, PBKDF2's). -/
-def finalizeScratchSig : Sig where
-  params := [("state", .array true .u8 84), ("count", .int .u64 true),
-    ("out", .array true .u8 20), ("scratch", .array true .u64 20)]
-
-/-- `finalizePost`, whatever `scratch` is. The state is secret. -/
-def finalizeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  finalizeScratchSig.contract A (post := fun state count out _scratch => finalizePost A.ptrBits state count out)
-    (writeArgs := true)
-    (stack := stack)
-
-/-- `vg_sha1_finalize_scratch` on every target. -/
-def finalizeScratchApi : Api where
-  module := "sha1"
-  name := "vg_sha1_finalize_scratch"
-  sig := finalizeScratchSig
-  writeArgs := true
-  contracts := some fun A stack => finalizeScratchContract A stack
-  summary := "`vg_sha1_finalize`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Sha1.finalizeScratchContract`. Constant time: only the pointers and \
-    `count` may affect timing, not the state."
-  safety := [
-    "The contents of `state` on return are unspecified.",
-    "The contents of `scratch` on return are unspecified."]
 
 /-- `vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20])`: the
 whole computation in one call, with no streaming state. -/

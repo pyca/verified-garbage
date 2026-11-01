@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha512.Contract
 public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
@@ -43,21 +44,21 @@ def finalizeSat : State :=
     wr := [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 1376⟩] }
 
 theorem compressImplies :
-    Proof.Sha512.compressWideX86_64.Implies (Spec.Sha512.compressContract X86_64.abi) := by
-  sig_implies [Spec.Sha512.compressContract, Spec.Sha512.compressSig, Proof.Sha512.compressWideX86_64,
+    Proof.Sha512.compressWideX86_64.Implies (Proof.Sha512.compressContract X86_64.abi) := by
+  sig_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, Proof.Sha512.compressWideX86_64,
     Proof.Sha512.compressX86_64, X86_64.abi, X86_64.argRegs]
     [Proof.Sha512.X86_64.wideSat, Proof.Sha512.X86_64.satState] using Proof.Sha512.X86_64.wideSat
 
 theorem compress :
-    Verified X86_64.target Impl.Sha512.X86_64.Rolled.compress (Spec.Sha512.compressContract X86_64.abi) :=
+    Verified X86_64.target Impl.Sha512.X86_64.Rolled.compress (Proof.Sha512.compressContract X86_64.abi) :=
   Proof.Sha512.X86_64.Rolled.compress_verified.of_implies compressImplies
 
 theorem compress_avx2 :
-    Verified X86_64.target Impl.Sha512.X86_64.Avx2Rolled.compress (Spec.Sha512.compressContract X86_64.abi) :=
+    Verified X86_64.target Impl.Sha512.X86_64.Avx2Rolled.compress (Proof.Sha512.compressContract X86_64.abi) :=
   Proof.Sha512.X86_64.Avx2.Rolled.compress_verified.of_implies compressImplies
 
 theorem compress_shani :
-    Verified X86_64.target Impl.Sha512.X86_64.ShaNi.compress (Spec.Sha512.compressContract X86_64.abi) :=
+    Verified X86_64.target Impl.Sha512.X86_64.ShaNi.compress (Proof.Sha512.compressContract X86_64.abi) :=
   Proof.Sha512.X86_64.ShaNi.compressWide_verified.of_implies compressImplies
 
 theorem init (iv : Spec.Sha512.HashValue) :
@@ -68,15 +69,15 @@ theorem init (iv : Spec.Sha512.HashValue) :
       [Proof.Sha512.X86_64.Stream.initSat] using Proof.Sha512.X86_64.Stream.initSat)
 
 theorem updateScratchImplies :
-    Proof.Sha512.updateX86_64.Implies (Spec.Sha512.updateScratchContract X86_64.abi 8) := by
-  sig_implies [Spec.Sha512.updateScratchContract, Spec.Sha512.updateScratchSig,
+    Proof.Sha512.updateX86_64.Implies (Proof.Sha512.updateScratchContract X86_64.abi 8) := by
+  sig_implies [Proof.Sha512.updateScratchContract, Proof.Sha512.updateScratchSig,
     Proof.Sha512.updateX86_64, X86_64.abi, X86_64.argRegs]
     [updateSat, Proof.Sha512.X86_64.Stream.Update.sat,
       MdStream.X86_64.Update.sat, Impl.Sha512.X86_64.Stream.params] using updateSat
 
 theorem finalizeScratchImplies :
-    Proof.Sha512.finalizeX86_64.Implies (Spec.Sha512.finalizeScratchContract X86_64.abi 8) := by
-  sig_implies [Spec.Sha512.finalizeScratchContract, Spec.Sha512.finalizeScratchSig,
+    Proof.Sha512.finalizeX86_64.Implies (Proof.Sha512.finalizeScratchContract X86_64.abi 8) := by
+  sig_implies [Proof.Sha512.finalizeScratchContract, Proof.Sha512.finalizeScratchSig,
     Proof.Sha512.finalizeX86_64, X86_64.abi, X86_64.argRegs]
     [finalizeSat, Proof.Sha512.X86_64.Stream.Finalize.sat,
       MdStream.X86_64.Finalize.sat, Impl.Sha512.X86_64.Stream.params] using finalizeSat
@@ -86,7 +87,7 @@ open VG.Impl.Sha512.X86_64.Stream (Callee) in
 theorem updateScratch {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params) md f.code)
     (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
     Verified X86_64.target (Impl.Sha512.X86_64.Stream.update f)
-      (Spec.Sha512.updateScratchContract X86_64.abi 8) :=
+      (Proof.Sha512.updateScratchContract X86_64.abi 8) :=
   (Proof.Sha512.X86_64.Stream.Update.verified_of hf (by
     simp only [Impl.Sha512.X86_64.Stream.update, Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody,
       Impl.MdStream.X86_64.updateTail, Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressWith,
@@ -106,7 +107,7 @@ open VG.Impl.Sha512.X86_64.Stream (Callee) in
 theorem finalizeScratch {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params) md f.code)
     (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
     Verified X86_64.target (Impl.Sha512.X86_64.Stream.finalize f)
-      (Spec.Sha512.finalizeScratchContract X86_64.abi 8) :=
+      (Proof.Sha512.finalizeScratchContract X86_64.abi 8) :=
   (Proof.Sha512.X86_64.Stream.Finalize.verified_of hf (by
     simp only [Impl.Sha512.X86_64.Stream.finalize, Impl.MdStream.X86_64.finalize,
       Impl.MdStream.X86_64.finalizeBody, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,

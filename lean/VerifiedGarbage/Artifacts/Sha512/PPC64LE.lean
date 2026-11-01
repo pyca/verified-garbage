@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Sha512.PPC64LE.Shared
 namespace VG.Artifacts.Sha512.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Sha512.compressApi.artifact PPC64LE.target {
-    code := Impl.Sha512.PPC64LE.compress
-    verified := Proof.Sha512.PPC64LE.Shared.compress },
   Spec.Sha512.init384Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_384
     verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_384 },
@@ -34,12 +31,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize
     stack := 1408
     verified := Proof.Sha512.PPC64LE.Shared.finalize },
-  Spec.Sha512.updateScratchApi.artifact PPC64LE.target {
-    code := Impl.Sha512.PPC64LE.Stream.update
-    verified := Proof.Sha512.PPC64LE.Shared.updateScratch },
-  Spec.Sha512.finalizeScratchApi.artifact PPC64LE.target {
-    code := Impl.Sha512.PPC64LE.Stream.finalize
-    verified := Proof.Sha512.PPC64LE.Shared.finalizeScratch },
   Spec.Sha512.finalize384Api.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize384
     stack := 1408

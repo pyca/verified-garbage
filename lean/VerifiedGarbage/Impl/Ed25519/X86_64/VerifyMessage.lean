@@ -58,13 +58,13 @@ def finalizeArgs : List Instr :=
 def hash (f : Callee) (suffix : String) : Prog isa :=
   .seq (callWith initArgs Spec.Sha512.init512Api.name
       (Sha512.X86_64.Stream.init Spec.Sha512.H0_512))
-    (.seq (callWith (prefixArgs fSignature 0) (Spec.Sha512.updateScratchApi.name ++ suffix)
+    (.seq (callWith (prefixArgs fSignature 0) ("vg_sha512_update_scratch" ++ suffix)
       (Sha512.X86_64.Stream.update f))
-    (.seq (callWith (prefixArgs fPublicKey 32) (Spec.Sha512.updateScratchApi.name ++ suffix)
+    (.seq (callWith (prefixArgs fPublicKey 32) ("vg_sha512_update_scratch" ++ suffix)
       (Sha512.X86_64.Stream.update f))
-    (.seq (callWith messageArgs (Spec.Sha512.updateScratchApi.name ++ suffix)
+    (.seq (callWith messageArgs ("vg_sha512_update_scratch" ++ suffix)
       (Sha512.X86_64.Stream.update f))
-      (callWith finalizeArgs (Spec.Sha512.finalizeScratchApi.name ++ suffix)
+      (callWith finalizeArgs ("vg_sha512_finalize_scratch" ++ suffix)
         (Sha512.X86_64.Stream.finalize f)))))
 
 def reduceArgs : List Instr :=

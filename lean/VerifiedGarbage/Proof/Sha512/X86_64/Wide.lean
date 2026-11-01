@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha512.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Sha512.X86_64.Compress
 import VerifiedGarbage.Proof.Framework.Contract
@@ -8,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # SHA-512 compression on x86-64 with the shared contract's scratch space
 
 `compressWideX86_64` is `compressX86_64` with the 1328 bytes of scratch space
-that the shared contract (`Spec.Sha512.compressContract`) gives the
+that the shared contract (`Proof.Sha512.compressContract`) gives the
 compression function, and that the streaming functions pass it
 (`Impl.Sha512.X86_64.Stream.params`): every implementation is proven against
 it, the scalar one by widening its own proof (`Verified.widen`, the same code

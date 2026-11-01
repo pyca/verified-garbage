@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha256.Contract
 public import VerifiedGarbage.Proof.Sha256.Md
 import VerifiedGarbage.Proof.MdStream.Prefix
 public import VerifiedGarbage.Spec.Sha256.Contract
@@ -36,7 +37,7 @@ theorem sha224_eq (m : List Byte) : (md.hash Spec.Sha256.H0_224 m).take 28 = Spe
 
 /-- `vg_sha224_finalize` with its working space in `scratch`
 (`Spec.Sha256.finalize224Sig` and the scratch of
-`Spec.Sha256.finalizeScratchSig`). -/
+`Proof.Sha256.finalizeScratchSig`). -/
 def finalize224ScratchSig : Sig where
   params := [("state", .array true .u8 96), ("count", .int .u64 true),
     ("out", .array true .u8 28), ("scratch", .array true .u64 76)]

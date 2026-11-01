@@ -97,7 +97,7 @@ theorem update_call_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (
     (hi : Input L (value L p) (value L n)) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (OutArgs L
       [(.x0, .caller 5 0), (.x1, .const count), (.x2, p), (.x3, n), (.x4, .caller 5 192)]))
-      (.call (Spec.Sha512.updateScratchApi.name ++ backend.suffix) backend.update)
+      (.call ("vg_sha512_update_scratch" ++ backend.suffix) backend.update)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL ha hb backend.update_verified.1 backend.update_verified.2.1 (Whole.update_depth backend)
   · intro g v m t hc _ _ hs
@@ -119,7 +119,7 @@ theorem finalize_call_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁)
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (OutArgs L
       [(.x0, .caller 5 0), (.x1, if b then .caller 4 n else .const n),
         (.x2, .frame 192), (.x3, .caller 5 192)]))
-      (.call (Spec.Sha512.finalizeScratchApi.name ++ backend.suffix) backend.finalize)
+      (.call ("vg_sha512_finalize_scratch" ++ backend.suffix) backend.finalize)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL ha hb backend.finalize_verified.1 backend.finalize_verified.2.1 (Whole.finalize_depth backend)
   · intro g v m t hc _ _ hs

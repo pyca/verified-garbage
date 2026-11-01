@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Md5.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Md5.RISCV64.Compress
 public import VerifiedGarbage.Proof.Md5.RISCV64.Stream
@@ -22,9 +23,9 @@ working space in a frame of their own, of 144 bytes
 namespace VG.Proof.Md5.RISCV64.Shared
 
 theorem compress :
-    Verified RISCV64.target Impl.Md5.RISCV64.compress (Spec.Md5.compressContract RISCV64.abi) :=
+    Verified RISCV64.target Impl.Md5.RISCV64.compress (Proof.Md5.compressContract RISCV64.abi) :=
   Proof.Md5.RISCV64.compress_verified.of_implies (by
-    contract_implies [Spec.Md5.compressContract, Spec.Md5.compressSig, Proof.Md5.compressRISCV64,
+    contract_implies [Proof.Md5.compressContract, Proof.Md5.compressSig, Proof.Md5.compressRISCV64,
       RISCV64.abi, RISCV64.argRegs]
       [Proof.Md5.RISCV64.satState] using Proof.Md5.RISCV64.satState)
 

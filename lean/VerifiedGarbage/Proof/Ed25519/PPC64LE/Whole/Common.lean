@@ -38,9 +38,9 @@ def shaHash : Impl.Hmac.Stream.PPC64LE.Hash where
   W := 224
   initN := Spec.Sha512.init512Api.name
   initC := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_512
-  updN := Spec.Sha512.updateScratchApi.name
+  updN := "vg_sha512_update_scratch"
   updC := Impl.Sha512.PPC64LE.Stream.update
-  finN := Spec.Sha512.finalizeScratchApi.name
+  finN := "vg_sha512_finalize_scratch"
   finC := Impl.Sha512.PPC64LE.Stream.finalize
   hmacInitN := "vg_hmac_sha512_init_scratch"
 

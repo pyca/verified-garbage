@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.X86.Shared
 meta import VerifiedGarbage.Proof.Md5.X86.Shared
 import VerifiedGarbage.Proof.Md5.X86.Lit
@@ -36,7 +37,7 @@ def updateContract (stack : Nat) : Contract X86.isa :=
 
 -- The contract with the scratch argument is `Sig.scratchContract` of the one
 -- without it.
-example : Spec.Md5.updateScratchContract X86.abi 20 =
+example : Proof.Md5.updateScratchContract X86.abi 20 =
     Sig.scratchContract X86.abi updateSig "scratch" .u64 14 (Curry.const (fun _ => True) _) updatePost
       true 20 := rfl
 

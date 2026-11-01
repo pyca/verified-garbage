@@ -42,12 +42,12 @@ def hash : Hash where
   P := Impl.Md5.X86_64.Stream.params
   D := 16
   W := Spec.Hmac.md5I.scratch
-  compN := Spec.Md5.compressApi.name
+  compN := "vg_md5_compress"
   compC := Impl.Md5.X86_64.compress
   initN := Spec.Md5.initApi.name
   initC := Impl.Md5.X86_64.Stream.init
-  updN := Spec.Md5.updateScratchApi.name
-  finN := Spec.Md5.finalizeScratchApi.name
+  updN := "vg_md5_update_scratch"
+  finN := "vg_md5_finalize_scratch"
   hmacInitN := "vg_hmac_md5_init_scratch"
   hmacFinN := "vg_hmac_md5_finalize_scratch"
   iterN := "vg_pbkdf2_hmac_md5_iterate"

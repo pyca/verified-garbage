@@ -52,8 +52,8 @@ def hash (v : Compress) : Hash where
   compC := v.callee.code
   initN := Spec.Sha256.init224Api.name
   initC := Impl.Sha256.X86_64.Stream.init224
-  updN := Spec.Sha256.updateScratchApi.name ++ v.suffix
-  finN := Spec.Sha256.finalizeScratchApi.name ++ v.suffix
+  updN := "vg_sha256_update_scratch" ++ v.suffix
+  finN := "vg_sha256_finalize_scratch" ++ v.suffix
   hmacInitN := "vg_hmac_sha224_init_scratch" ++ v.suffix
   hmacFinN := "vg_hmac_sha224_finalize_scratch" ++ v.suffix
   iterN := "vg_pbkdf2_hmac_sha224_iterate" ++ v.suffix

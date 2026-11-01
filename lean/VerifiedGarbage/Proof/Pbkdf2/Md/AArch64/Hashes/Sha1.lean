@@ -50,9 +50,9 @@ def hash (v : Compress) : Hash where
   compC := v.code
   initN := Spec.Sha1.initApi.name
   initC := Impl.Sha1.AArch64.Stream.init
-  updN := Spec.Sha1.updateScratchApi.name ++ v.suffix
+  updN := "vg_sha1_update_scratch" ++ v.suffix
   updC := v.update
-  finN := Spec.Sha1.finalizeScratchApi.name ++ v.suffix
+  finN := "vg_sha1_finalize_scratch" ++ v.suffix
   finC := v.finalize
   hmacInitN := "vg_hmac_sha1_init_scratch" ++ v.suffix
   hmacFinN := "vg_hmac_sha1_finalize_scratch" ++ v.suffix
@@ -184,9 +184,7 @@ theorem satPF :
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- The streaming `update` and `finalize` made with `v`, which keep their
-working space in a frame of their own, `update_scratch` and
-`finalize_scratch`, which HMAC's and PBKDF2's code calls with theirs, and the
-one-shot `digest` (`Proof/Sha1/AArch64/OneShot.lean`), which
+working space in a frame of their own, and the one-shot `digest` (`Proof/Sha1/AArch64/OneShot.lean`), which
 `Generic/MdHash/AArch64/Stream.lean` emits. -/
 def stream : List StreamFn := [
   { api := Spec.Sha1.updateApi
@@ -200,18 +198,6 @@ def stream : List StreamFn := [
     contract := Spec.Sha1.finalizeContract AArch64.abi (16 + 160)
     stack := 16 + 160
     verified := Proof.Sha1.AArch64.Shared.finalize_of v.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { api := Spec.Sha1.updateScratchApi
-    code := v.update
-    contract := Spec.Sha1.updateScratchContract AArch64.abi 16
-    stack := 16
-    verified := Proof.Sha1.AArch64.Shared.updateScratch_of v.update_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { api := Spec.Sha1.finalizeScratchApi
-    code := v.finalize
-    contract := Spec.Sha1.finalizeScratchContract AArch64.abi 16
-    stack := 16
-    verified := Proof.Sha1.AArch64.Shared.finalizeScratch_of v.finalize_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha1.digestApi
     code := Proof.Sha1.AArch64.oneShotWith v.name v.code

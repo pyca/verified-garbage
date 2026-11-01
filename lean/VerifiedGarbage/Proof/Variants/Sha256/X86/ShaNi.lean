@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha256.Contract
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 meta import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
@@ -105,19 +106,19 @@ theorem finalize_ct : ConstantTime isa (finK (P := params) md 160).pre
   VG.Taint.constantTime (A := sseTaint) (Proof.MdStream.X86.Finalize.τ₀ params 160)
     (fun _ _ h₁ h₂ hp => Proof.MdStream.X86.Finalize.agree₀ dims h₁ h₂ hp) (by taint_decide)
 
-theorem compress_shared : Verified X86.target cmpC (Spec.Sha256.compressContract X86.abi) :=
+theorem compress_shared : Verified X86.target cmpC (Proof.Sha256.compressContract X86.abi) :=
   (Proof.Sha256.X86.Shared.compressWide_of Proof.Sha256.X86.ShaNi.compress_verified
     Proof.Sha256.X86.Shared.compressWide_implies.sat_left).of_implies
       Proof.Sha256.X86.Shared.compressWide_implies
 
 theorem updateScratch_shared :
-    Verified X86.target sha256Update (Spec.Sha256.updateScratchContract X86.abi 20) :=
+    Verified X86.target sha256Update (Proof.Sha256.updateScratchContract X86.abi 20) :=
   (Proof.Sha256.X86.Shared.updateWide_of (Proof.Sha256.X86.Stream.update_of callee update_ct)
     Proof.Sha256.X86.Shared.updateWide_implies.sat_left).of_implies
       Proof.Sha256.X86.Shared.updateWide_implies
 
 theorem finalizeScratch_shared :
-    Verified X86.target sha256Finalize (Spec.Sha256.finalizeScratchContract X86.abi 20) :=
+    Verified X86.target sha256Finalize (Proof.Sha256.finalizeScratchContract X86.abi 20) :=
   (Proof.Sha256.X86.Shared.finalizeWide_of (Proof.Sha256.X86.Stream.finalize_of callee finalize_ct)
     Proof.Sha256.X86.Shared.finalizeWide_implies.sat_left).of_implies
       Proof.Sha256.X86.Shared.finalizeWide_implies
@@ -169,13 +170,6 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
     stream := stream,
     features := ["sha", "ssse3"],
     functions := [
-      { api := Spec.Sha256.compressApi
-        code := cmpC
-        contract := Spec.Sha256.compressContract X86.abi
-        verified := compress_shared
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
-        spSafe := Code.all_of_allInstrs ?_ },
       { api := Spec.Sha256.updateApi
         code := Impl.StackScratch.X86.withStackScratch 636 5 sha256Update
         contract := Spec.Sha256.updateContract X86.abi (20 + 636)
@@ -201,22 +195,6 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
         verified := Proof.Sha256.X86.Shared.finalize224_frame
           (Proof.Sha256.X86.Shared.finalize224Scratch (Proof.Sha256.X86.Stream.finalize224_of callee finalize224_ct))
           ?_ ?_
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
-        spSafe := Code.all_of_allInstrs ?_ },
-      { api := Spec.Sha256.updateScratchApi
-        code := sha256Update
-        contract := Spec.Sha256.updateScratchContract X86.abi 20
-        stack := 20
-        verified := updateScratch_shared
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
-        spSafe := Code.all_of_allInstrs ?_ },
-      { api := Spec.Sha256.finalizeScratchApi
-        code := sha256Finalize
-        contract := Spec.Sha256.finalizeScratchContract X86.abi 20
-        stack := 20
-        verified := finalizeScratch_shared
         ofSig := ⟨_, _, _, rfl⟩
         ofApi := rfl
         spSafe := Code.all_of_allInstrs ?_ }],

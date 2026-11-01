@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha1.Contract
 import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Init
 import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
 import VerifiedGarbage.Proof.Sha1.Scratch
@@ -29,9 +30,9 @@ frame's 32-byte header.
 namespace VG.Proof.Sha1.PPC64LE.Shared
 
 theorem compress :
-    Verified PPC64LE.target Impl.Sha1.PPC64LE.compress (Spec.Sha1.compressContract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.Sha1.PPC64LE.compress (Proof.Sha1.compressContract PPC64LE.abi) :=
   Proof.Sha1.PPC64LE.compress_verified.of_implies (by
-    contract_implies [Spec.Sha1.compressContract, Spec.Sha1.compressSig,
+    contract_implies [Proof.Sha1.compressContract, Proof.Sha1.compressSig,
       Proof.Sha1.compressPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [Proof.Sha1.PPC64LE.satState] using Proof.Sha1.PPC64LE.satState)
 
@@ -43,17 +44,17 @@ theorem init :
       [Proof.Sha1.PPC64LE.Stream.initSat] using Proof.Sha1.PPC64LE.Stream.initSat)
 
 theorem updateScratch :
-    Verified PPC64LE.target Impl.Sha1.PPC64LE.Stream.update (Spec.Sha1.updateScratchContract PPC64LE.abi 48) :=
+    Verified PPC64LE.target Impl.Sha1.PPC64LE.Stream.update (Proof.Sha1.updateScratchContract PPC64LE.abi 48) :=
   Proof.Sha1.PPC64LE.Stream.Update.update_verified.of_implies (by
-    contract_implies [Spec.Sha1.updateScratchContract, Spec.Sha1.updateScratchSig, Proof.Sha1.updatePPC64LE,
+    contract_implies [Proof.Sha1.updateScratchContract, Proof.Sha1.updateScratchSig, Proof.Sha1.updatePPC64LE,
       PPC64LE.abi, PPC64LE.argRegs]
       [Proof.Sha1.PPC64LE.Stream.Update.sat,
         MdStream.PPC64LE.Update.sat, Impl.Sha1.PPC64LE.Stream.params] using Proof.Sha1.PPC64LE.Stream.Update.sat)
 
 theorem finalizeScratch :
-    Verified PPC64LE.target Impl.Sha1.PPC64LE.Stream.finalize (Spec.Sha1.finalizeScratchContract PPC64LE.abi 48) :=
+    Verified PPC64LE.target Impl.Sha1.PPC64LE.Stream.finalize (Proof.Sha1.finalizeScratchContract PPC64LE.abi 48) :=
   Proof.Sha1.PPC64LE.Stream.Finalize.finalize_verified.of_implies (by
-    contract_implies [Spec.Sha1.finalizeScratchContract, Spec.Sha1.finalizeScratchSig,
+    contract_implies [Proof.Sha1.finalizeScratchContract, Proof.Sha1.finalizeScratchSig,
       Proof.Sha1.finalizePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [Proof.Sha1.PPC64LE.Stream.Finalize.sat,
         MdStream.PPC64LE.Finalize.satD, Impl.Sha1.PPC64LE.Stream.params]

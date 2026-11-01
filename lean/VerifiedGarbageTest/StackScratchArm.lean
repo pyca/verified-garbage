@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.Arm.Shared
 meta import VerifiedGarbage.Proof.Md5.Arm.Shared
 import VerifiedGarbage.Proof.Md5.Stream
@@ -42,7 +43,7 @@ def updateContract (stack : Nat) : Contract Arm.isa :=
 
 -- The contract with the scratch argument is `Sig.scratchContract` of the one
 -- without it.
-example : Spec.Md5.updateScratchContract Arm.abi =
+example : Proof.Md5.updateScratchContract Arm.abi =
     Sig.scratchContract Arm.abi updateSig "scratch" .u64 14 (Curry.const (fun _ => True) _) updatePost
       true 0 := rfl
 
@@ -95,7 +96,7 @@ def compressPost : compressSig.Post Arm.abi.ptrBits := fun state blocks n m m' _
 def compressContract (stack : Nat) : Contract Arm.isa :=
   compressSig.contract Arm.abi (post := compressPost) (stack := stack)
 
-example : Spec.Md5.compressContract Arm.abi =
+example : Proof.Md5.compressContract Arm.abi =
     Sig.scratchContract Arm.abi compressSig "scratch" .u64 8 (Curry.const (fun _ => True) _) compressPost
       false 0 := rfl
 

@@ -628,7 +628,7 @@ theorem upd_wsub : ∀ r ∈ updWr L, Within r L.OUT ∨ Within r L.SCR := by
 
 theorem upd_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : UpdArgs L t)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr []) :
-    WP isa (.call (Spec.Sha512.updateScratchApi.name ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee)) t
+    WP isa (.call ("vg_sha512_update_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧
         Spec.Sha512.Repr Spec.Sha512.H0_512 t'.mem L.scr (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
   refine call_ok hL (upd_verified v).1 (upd_nosp v) (upd_depth v) hc (upd_pre hL hc ha) (upd_sub hL) upd_wsub
@@ -643,7 +643,7 @@ theorem upd_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
 
 theorem upd_step (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr []) :
-    WP isa (callWith pkUpdateArgs (Spec.Sha512.updateScratchApi.name ++ v.suffix)
+    WP isa (callWith pkUpdateArgs ("vg_sha512_update_scratch" ++ v.suffix)
       (Impl.Sha512.X86_64.Stream.update v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧
         Spec.Sha512.Repr Spec.Sha512.H0_512 t'.mem L.scr (Spec.Ed25519.bytesAt m₀ L.seed 32) :=
@@ -712,7 +712,7 @@ theorem fin_wsub : ∀ r ∈ finWr L, Within r L.OUT ∨ Within r L.SCR := by
 
 theorem fin_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : FinArgs L t)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr (Spec.Ed25519.bytesAt m₀ L.seed 32)) :
-    WP isa (.call (Spec.Sha512.finalizeScratchApi.name ++ v.suffix) (Impl.Sha512.X86_64.Stream.finalize v.callee)) t
+    WP isa (.call ("vg_sha512_finalize_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.finalize v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧ Spec.Sha512.bytesAt t'.mem (L.scr + BitVec.ofNat 64 1568) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
   refine call_ok hL (fin_verified v).1 (fin_nosp v) (fin_depth v) hc (fin_pre hL hc ha) fin_sub fin_wsub
@@ -726,7 +726,7 @@ theorem fin_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
 
 theorem fin_step (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr (Spec.Ed25519.bytesAt m₀ L.seed 32)) :
-    WP isa (callWith pkFinalizeArgs (Spec.Sha512.finalizeScratchApi.name ++ v.suffix)
+    WP isa (callWith pkFinalizeArgs ("vg_sha512_finalize_scratch" ++ v.suffix)
       (Impl.Sha512.X86_64.Stream.finalize v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧ Spec.Sha512.bytesAt t'.mem (L.scr + BitVec.ofNat 64 1568) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ L.seed 32) :=

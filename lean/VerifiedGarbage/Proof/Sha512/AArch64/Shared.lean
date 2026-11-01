@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha512.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
@@ -117,9 +118,9 @@ def finalizeSat : State :=
     wr := [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 1376⟩] }
 
 theorem compress_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.compressAArch64) :
-    Verified AArch64.target code (Spec.Sha512.compressContract AArch64.abi) := by
-  have hi : compressWide.Implies (Spec.Sha512.compressContract AArch64.abi) := by
-    sig_implies [Spec.Sha512.compressContract, Spec.Sha512.compressSig, compressWide,
+    Verified AArch64.target code (Proof.Sha512.compressContract AArch64.abi) := by
+  have hi : compressWide.Implies (Proof.Sha512.compressContract AArch64.abi) := by
+    sig_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, compressWide,
       Proof.Sha512.compressAArch64, AArch64.abi, AArch64.argRegs]
       [compressSat, Proof.Sha512.AArch64.satState] using compressSat
   exact (compressWide_of hv hi.sat_left).of_implies hi
@@ -132,24 +133,24 @@ theorem init (iv : Spec.Sha512.HashValue) :
       [Proof.Sha512.AArch64.Stream.initSat] using Proof.Sha512.AArch64.Stream.initSat)
 
 theorem updateScratch_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.updateAArch64) :
-    Verified AArch64.target code (Spec.Sha512.updateScratchContract AArch64.abi 16) := by
-  have hi : updateWide.Implies (Spec.Sha512.updateScratchContract AArch64.abi 16) := by
-    contract_implies [Spec.Sha512.updateScratchContract, Spec.Sha512.updateScratchSig, updateWide,
+    Verified AArch64.target code (Proof.Sha512.updateScratchContract AArch64.abi 16) := by
+  have hi : updateWide.Implies (Proof.Sha512.updateScratchContract AArch64.abi 16) := by
+    contract_implies [Proof.Sha512.updateScratchContract, Proof.Sha512.updateScratchSig, updateWide,
       Proof.Sha512.updateAArch64, AArch64.abi, AArch64.argRegs]
       [updateSat, Proof.Sha512.AArch64.Stream.Update.sat, MdStream.AArch64.Update.sat,
         Impl.Sha512.AArch64.Stream.params] using updateSat
   exact (updateWide_of hv hi.sat_left).of_implies hi
 
 theorem finalizeScratch_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.finalizeAArch64) :
-    Verified AArch64.target code (Spec.Sha512.finalizeScratchContract AArch64.abi 16) := by
-  have hi : finalizeWide.Implies (Spec.Sha512.finalizeScratchContract AArch64.abi 16) := by
-    contract_implies [Spec.Sha512.finalizeScratchContract, Spec.Sha512.finalizeScratchSig, finalizeWide,
+    Verified AArch64.target code (Proof.Sha512.finalizeScratchContract AArch64.abi 16) := by
+  have hi : finalizeWide.Implies (Proof.Sha512.finalizeScratchContract AArch64.abi 16) := by
+    contract_implies [Proof.Sha512.finalizeScratchContract, Proof.Sha512.finalizeScratchSig, finalizeWide,
       Proof.Sha512.finalizeAArch64, AArch64.abi, AArch64.argRegs]
       [finalizeSat, Proof.Sha512.AArch64.Stream.Finalize.sat, MdStream.AArch64.Finalize.sat,
         Impl.Sha512.AArch64.Stream.params] using finalizeSat
   exact (finalizeWide_of hv hi.sat_left).of_implies hi
 
-theorem compress : Verified AArch64.target Impl.Sha512.AArch64.compress (Spec.Sha512.compressContract AArch64.abi) :=
+theorem compress : Verified AArch64.target Impl.Sha512.AArch64.compress (Proof.Sha512.compressContract AArch64.abi) :=
   compress_of Proof.Sha512.AArch64.compress_verified
 
 /-- `update`: `updateScratch_of` with its working space in a frame of its own. -/

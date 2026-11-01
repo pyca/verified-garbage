@@ -11,9 +11,6 @@ import VerifiedGarbage.Proof.Md5.X86.Lit
 namespace VG.Artifacts.Md5.X86
 
 def artifacts : List Artifact := [
-  Spec.Md5.compressApi.artifact X86.target {
-    code := Impl.Md5.X86.compress
-    verified := Proof.Md5.X86.Shared.compress },
   Spec.Md5.initApi.artifact X86.target {
     code := Impl.Md5.X86.Stream.init
     verified := Proof.Md5.X86.Shared.init },
@@ -24,14 +21,6 @@ def artifacts : List Artifact := [
   Spec.Md5.finalizeApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 136 4 Impl.Md5.X86.Stream.finalize
     stack := 20 + 136
-    verified := Proof.Md5.X86.Shared.finalize },
-  Spec.Md5.updateScratchApi.artifact X86.target {
-    code := Impl.Md5.X86.Stream.update
-    stack := 20
-    verified := Proof.Md5.X86.Shared.updateScratch },
-  Spec.Md5.finalizeScratchApi.artifact X86.target {
-    code := Impl.Md5.X86.Stream.finalize
-    stack := 20
-    verified := Proof.Md5.X86.Shared.finalizeScratch }]
+    verified := Proof.Md5.X86.Shared.finalize }]
 
 end VG.Artifacts.Md5.X86

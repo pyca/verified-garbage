@@ -11,16 +11,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sha1.AArch64
 
 def artifacts : List Artifact := [
-  Spec.Sha1.compressApi.artifact AArch64.target {
-    code := Impl.Sha1.AArch64.compress
-    verified := Proof.Sha1.AArch64.Shared.compress },
   Spec.Sha1.initApi.artifact AArch64.target {
     code := Impl.Sha1.AArch64.Stream.init
-    verified := Proof.Sha1.AArch64.Shared.init },
-  Spec.Sha1.compressApi.artifact AArch64.target {
-    suffix := "_sha2"
-    code := Impl.Sha1.AArch64.Sha2.compress
-    verified := Proof.Sha1.AArch64.Shared.compress_of Proof.Sha1.AArch64.Sha2.compress_verified
-    features := ["sha2"] }]
+    verified := Proof.Sha1.AArch64.Shared.init }]
 
 end VG.Artifacts.Sha1.AArch64

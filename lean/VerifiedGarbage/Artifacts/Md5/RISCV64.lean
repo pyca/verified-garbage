@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Md5.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Md5.compressApi.artifact RISCV64.target {
-    code := Impl.Md5.RISCV64.compress
-    verified := Proof.Md5.RISCV64.Shared.compress },
   Spec.Md5.initApi.artifact RISCV64.target {
     code := Impl.Md5.RISCV64.Stream.init
     verified := Proof.Md5.RISCV64.Shared.init },

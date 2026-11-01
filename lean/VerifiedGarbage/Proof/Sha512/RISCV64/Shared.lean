@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha512.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Compress
 import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Init
@@ -64,9 +65,9 @@ def compressSat : State :=
   { Proof.Sha512.RISCV64.satState with wr := [⟨0x1000, 64⟩, ⟨0x3000, 1328⟩] }
 
 theorem compress :
-    Verified RISCV64.target Impl.Sha512.RISCV64.compress (Spec.Sha512.compressContract RISCV64.abi) := by
-  have hi : compressWide.Implies (Spec.Sha512.compressContract RISCV64.abi) := by
-    contract_implies [Spec.Sha512.compressContract, Spec.Sha512.compressSig, compressWide,
+    Verified RISCV64.target Impl.Sha512.RISCV64.compress (Proof.Sha512.compressContract RISCV64.abi) := by
+  have hi : compressWide.Implies (Proof.Sha512.compressContract RISCV64.abi) := by
+    contract_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, compressWide,
       Proof.Sha512.compressRISCV64, RISCV64.abi, RISCV64.argRegs]
       [compressSat, Proof.Sha512.RISCV64.satState] using compressSat
   exact (compressWide_verified hi.sat_left).of_implies hi

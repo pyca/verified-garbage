@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha256.Contract
 public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
@@ -158,23 +159,23 @@ calls) run in a frame that allocates it (`Verified.stackScratch`), for an
 namespace VG.Proof.Sha256.X86_64.Shared
 
 theorem compress :
-    Verified X86_64.target Impl.Sha256.X86_64.compress (Spec.Sha256.compressContract X86_64.abi) :=
+    Verified X86_64.target Impl.Sha256.X86_64.compress (Proof.Sha256.compressContract X86_64.abi) :=
   Proof.Sha256.X86_64.compress_verified.of_implies (by
-    contract_implies [Spec.Sha256.compressContract, Spec.Sha256.compressSig,
+    contract_implies [Proof.Sha256.compressContract, Proof.Sha256.compressSig,
       Proof.Sha256.compressX86_64, X86_64.abi, X86_64.argRegs]
       [Proof.Sha256.X86_64.satState] using Proof.Sha256.X86_64.satState)
 
 theorem compress_shani :
-    Verified X86_64.target Impl.Sha256.X86_64.ShaNi.compress (Spec.Sha256.compressContract X86_64.abi) :=
+    Verified X86_64.target Impl.Sha256.X86_64.ShaNi.compress (Proof.Sha256.compressContract X86_64.abi) :=
   Proof.Sha256.X86_64.ShaNi.compress_verified.of_implies (by
-    contract_implies [Spec.Sha256.compressContract, Spec.Sha256.compressSig,
+    contract_implies [Proof.Sha256.compressContract, Proof.Sha256.compressSig,
       Proof.Sha256.compressX86_64, X86_64.abi, X86_64.argRegs]
       [Proof.Sha256.X86_64.satState] using Proof.Sha256.X86_64.satState)
 
 theorem compress_avx2 :
-    Verified X86_64.target Impl.Sha256.X86_64.Avx2.compress (Spec.Sha256.compressContract X86_64.abi) :=
+    Verified X86_64.target Impl.Sha256.X86_64.Avx2.compress (Proof.Sha256.compressContract X86_64.abi) :=
   Proof.Sha256.X86_64.Avx2.compress_verified.of_implies (by
-    contract_implies [Spec.Sha256.compressContract, Spec.Sha256.compressSig,
+    contract_implies [Proof.Sha256.compressContract, Proof.Sha256.compressSig,
       Proof.Sha256.compressX86_64, X86_64.abi, X86_64.argRegs]
       [Proof.Sha256.X86_64.satState] using Proof.Sha256.X86_64.satState)
 
@@ -197,14 +198,14 @@ open VG.Impl.Sha256.X86_64.Stream (Callee) in
 theorem updateScratch {f : Callee} (hf : f.Ok)
     (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
     Verified X86_64.target (Impl.Sha256.X86_64.Stream.update f)
-      (Spec.Sha256.updateScratchContract X86_64.abi 8) :=
+      (Proof.Sha256.updateScratchContract X86_64.abi 8) :=
   (Proof.Sha256.X86_64.Stream.Update.verified_of hf (by
     simp only [Impl.Sha256.X86_64.Stream.update, Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody,
       Impl.MdStream.X86_64.updateTail, Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressWith,
       Code.allInstrs, hm,
       Bool.true_and]
     decide +kernel)).of_implies (by
-    contract_implies [Spec.Sha256.updateScratchContract, Spec.Sha256.updateScratchSig, Proof.Sha256.updateX86_64,
+    contract_implies [Proof.Sha256.updateScratchContract, Proof.Sha256.updateScratchSig, Proof.Sha256.updateX86_64,
       X86_64.abi, X86_64.argRegs]
       [Proof.Sha256.X86_64.Stream.Update.sat,
         MdStream.X86_64.Update.sat, Impl.Sha256.X86_64.Stream.params] using Proof.Sha256.X86_64.Stream.Update.sat)
@@ -222,13 +223,13 @@ open VG.Impl.Sha256.X86_64.Stream (Callee) in
 theorem finalizeScratch {f : Callee} (hf : f.Ok)
     (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
     Verified X86_64.target (Impl.Sha256.X86_64.Stream.finalize f)
-      (Spec.Sha256.finalizeScratchContract X86_64.abi 8) :=
+      (Proof.Sha256.finalizeScratchContract X86_64.abi 8) :=
   (Proof.Sha256.X86_64.Stream.Finalize.verified_of hf (by
     simp only [Impl.Sha256.X86_64.Stream.finalize, Impl.MdStream.X86_64.finalize,
       Impl.MdStream.X86_64.finalizeBody, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
       Code.allInstrs, hm, Bool.true_and]
     decide +kernel)).of_implies (by
-    contract_implies [Spec.Sha256.finalizeScratchContract, Spec.Sha256.finalizeScratchSig,
+    contract_implies [Proof.Sha256.finalizeScratchContract, Proof.Sha256.finalizeScratchSig,
       Proof.Sha256.finalizeX86_64, X86_64.abi, X86_64.argRegs]
       [Proof.Sha256.X86_64.Stream.Finalize.sat,
         MdStream.X86_64.Finalize.sat, Impl.Sha256.X86_64.Stream.params] using Proof.Sha256.X86_64.Stream.Finalize.sat)

@@ -37,10 +37,10 @@ def init : Prog isa := callWith initArgs Spec.Sha512.init512Api.name
   (Sha512.X86.Stream.init Spec.Sha512.H0_512)
 
 def update (args : List Instr) : Prog isa :=
-  callWith args Spec.Sha512.updateScratchApi.name Sha512.X86.Stream.update
+  callWith args "vg_sha512_update_scratch" Sha512.X86.Stream.update
 
 def finalize (prefixLen : Nat) (withMessage : Bool) : Prog isa :=
-  callWith (finalizeArgs prefixLen withMessage) Spec.Sha512.finalizeScratchApi.name Sha512.X86.Stream.finalize
+  callWith (finalizeArgs prefixLen withMessage) "vg_sha512_finalize_scratch" Sha512.X86.Stream.finalize
 
 def hashSeed : Prog isa :=
   .seq init (.seq (update (inputArgs 1 0)) (finalize 32 false))

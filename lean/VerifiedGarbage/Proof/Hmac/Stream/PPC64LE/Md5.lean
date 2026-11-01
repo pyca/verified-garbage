@@ -42,9 +42,9 @@ def hash : Hash where
   W := 112
   initN := Spec.Md5.initApi.name
   initC := Impl.Md5.PPC64LE.Stream.init
-  updN := Spec.Md5.updateScratchApi.name
+  updN := "vg_md5_update_scratch"
   updC := Impl.Md5.PPC64LE.Stream.update
-  finN := Spec.Md5.finalizeScratchApi.name
+  finN := "vg_md5_finalize_scratch"
   finC := Impl.Md5.PPC64LE.Stream.finalize
   hmacInitN := "vg_hmac_md5_init_scratch"
 

@@ -38,9 +38,9 @@ def hash (iv : HashValue) (D : Nat) (initN hmacInitN : String) : Hash where
   W := 224
   initN := initN
   initC := Impl.Sha512.PPC64LE.Stream.init iv
-  updN := Spec.Sha512.updateScratchApi.name
+  updN := "vg_sha512_update_scratch"
   updC := Impl.Sha512.PPC64LE.Stream.update
-  finN := Spec.Sha512.finalizeScratchApi.name
+  finN := "vg_sha512_finalize_scratch"
   finC := Impl.Sha512.PPC64LE.Stream.finalize
   hmacInitN := hmacInitN
 

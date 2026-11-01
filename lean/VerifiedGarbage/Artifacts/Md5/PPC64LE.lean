@@ -10,9 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Md5.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Md5.compressApi.artifact PPC64LE.target {
-    code := Impl.Md5.PPC64LE.compress
-    verified := Proof.Md5.PPC64LE.Shared.compress },
   Spec.Md5.initApi.artifact PPC64LE.target {
     code := Impl.Md5.PPC64LE.Stream.init
     verified := Proof.Md5.PPC64LE.Shared.init },
@@ -23,14 +20,6 @@ def artifacts : List Artifact := [
   Spec.Md5.finalizeApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 144 .r6 Impl.Md5.PPC64LE.Stream.finalize
     stack := 48 + 144
-    verified := Proof.Md5.PPC64LE.Shared.finalize },
-  Spec.Md5.updateScratchApi.artifact PPC64LE.target {
-    code := Impl.Md5.PPC64LE.Stream.update
-    stack := 48
-    verified := Proof.Md5.PPC64LE.Shared.updateScratch },
-  Spec.Md5.finalizeScratchApi.artifact PPC64LE.target {
-    code := Impl.Md5.PPC64LE.Stream.finalize
-    stack := 48
-    verified := Proof.Md5.PPC64LE.Shared.finalizeScratch }]
+    verified := Proof.Md5.PPC64LE.Shared.finalize }]
 
 end VG.Artifacts.Md5.PPC64LE

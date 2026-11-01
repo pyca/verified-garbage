@@ -10,9 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sha512.Arm
 
 def artifacts : List Artifact := [
-  Spec.Sha512.compressApi.artifact Arm.target {
-    code := Impl.Sha512.Arm.compress
-    verified := Proof.Sha512.Arm.Shared.compress },
   Spec.Sha512.init384Api.artifact Arm.target {
     code := Impl.Sha512.Arm.Stream.init Spec.Sha512.H0_384
     verified := Proof.Sha512.Arm.Shared.init Spec.Sha512.H0_384 },
@@ -33,12 +30,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratch 1392 1 Impl.Sha512.Arm.Stream.finalize
     stack := 1392
     verified := Proof.Sha512.Arm.Shared.finalize },
-  Spec.Sha512.updateScratchApi.artifact Arm.target {
-    code := Impl.Sha512.Arm.Stream.update
-    verified := Proof.Sha512.Arm.Shared.updateScratch },
-  Spec.Sha512.finalizeScratchApi.artifact Arm.target {
-    code := Impl.Sha512.Arm.Stream.finalize
-    verified := Proof.Sha512.Arm.Shared.finalizeScratch },
   Spec.Sha512.finalize384Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 1392 1
       (Impl.Sha512.Arm.Stream.finalizeDigest Impl.Sha512.Arm.Stream.params384)

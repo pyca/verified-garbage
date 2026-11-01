@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Md5.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Md5.X86.Compress
 import VerifiedGarbage.Proof.Md5.X86.Stream.Init
@@ -108,9 +109,9 @@ def updateSat : State :=
     rd := [⟨0x2000, 0⟩], wr := [⟨0x1000, 80⟩, ⟨0x3000, 112⟩, ⟨0x5004, 24⟩] }
 
 theorem compress :
-    Verified X86.target Impl.Md5.X86.compress (Spec.Md5.compressContract X86.abi) :=
+    Verified X86.target Impl.Md5.X86.compress (Proof.Md5.compressContract X86.abi) :=
   Proof.Md5.X86.compress_verified.of_implies (by
-    contract_implies [Spec.Md5.compressContract, Spec.Md5.compressSig, Proof.Md5.compressX86,
+    contract_implies [Proof.Md5.compressContract, Proof.Md5.compressSig, Proof.Md5.compressX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [Proof.Md5.X86.satState, Proof.Md5.X86.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
       using Proof.Md5.X86.satState)
@@ -123,20 +124,20 @@ theorem init :
       [Proof.Md5.X86.Stream.initSat, Proof.Md5.X86.Stream.initSatMem, X86.arg, X86.argAddr, Mem.readW,
         Mem.read] using Proof.Md5.X86.Stream.initSat)
 
-theorem updateWide_implies : updateWide.Implies (Spec.Md5.updateScratchContract X86.abi 20) := by
-  contract_implies [Spec.Md5.updateScratchContract, Spec.Md5.updateScratchSig, updateWide,
+theorem updateWide_implies : updateWide.Implies (Proof.Md5.updateScratchContract X86.abi 20) := by
+  contract_implies [Proof.Md5.updateScratchContract, Proof.Md5.updateScratchSig, updateWide,
     Proof.Md5.updateX86, Proof.Md5.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [updateSat, Proof.Md5.X86.Stream.Update.sat, MdStream.X86.Update.sat, MdStream.X86.Update.sat₀,
       MdStream.X86.Update.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateSat
 
 theorem updateScratch :
-    Verified X86.target Impl.Md5.X86.Stream.update (Spec.Md5.updateScratchContract X86.abi 20) :=
+    Verified X86.target Impl.Md5.X86.Stream.update (Proof.Md5.updateScratchContract X86.abi 20) :=
   (updateWide_verified updateWide_implies.sat_left).of_implies updateWide_implies
 
 theorem finalizeScratch :
-    Verified X86.target Impl.Md5.X86.Stream.finalize (Spec.Md5.finalizeScratchContract X86.abi 20) :=
+    Verified X86.target Impl.Md5.X86.Stream.finalize (Proof.Md5.finalizeScratchContract X86.abi 20) :=
   Proof.Md5.X86.Stream.Finalize.finalize_verified.of_implies (by
-    contract_implies [Spec.Md5.finalizeScratchContract, Spec.Md5.finalizeScratchSig,
+    contract_implies [Proof.Md5.finalizeScratchContract, Proof.Md5.finalizeScratchSig,
       Proof.Md5.finalizeX86, Proof.Md5.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [Proof.Md5.X86.Stream.Finalize.sat, MdStream.X86.Finalize.sat, MdStream.X86.Finalize.sat₀,
         MdStream.X86.Finalize.satMem, Impl.Md5.X86.Stream.params, X86.arg, X86.argAddr, Mem.readW,

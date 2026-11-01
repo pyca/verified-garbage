@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha1.Contract
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 meta import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Sha1.X86.Shared
@@ -124,11 +125,11 @@ def stream : Sha1Stream := by
   taint_decide_all
 
 theorem updateScratch_shared :
-    Verified X86.target sha1Update (Spec.Sha1.updateScratchContract X86.abi 20) :=
+    Verified X86.target sha1Update (Proof.Sha1.updateScratchContract X86.abi 20) :=
   Proof.Sha1.X86.Shared.updateScratch_of stream.updOK
 
 theorem finalizeScratch_shared :
-    Verified X86.target sha1Finalize (Spec.Sha1.finalizeScratchContract X86.abi 20) :=
+    Verified X86.target sha1Finalize (Proof.Sha1.finalizeScratchContract X86.abi 20) :=
   Proof.Sha1.X86.Shared.finalizeScratch_of stream.finOK
 
 materialize_code sha1HInit := (sha1M stream cmpN cmpC).hmacInit
@@ -149,13 +150,6 @@ def variant : Proof.Sha1.X86.Variants.Backend := by
     stream := stream,
     features := ["sha", "ssse3"],
     functions := [
-      { api := Spec.Sha1.compressApi
-        code := cmpC
-        contract := Spec.Sha1.compressContract X86.abi
-        verified := Proof.Sha1.X86.Shared.compress_of Proof.Sha1.X86.ShaNi.compress_verified
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
-        spSafe := Code.all_of_allInstrs ?_ },
       { api := Spec.Sha1.updateApi
         code := Impl.StackScratch.X86.withStackScratch 188 5 sha1Update
         contract := Spec.Sha1.updateContract X86.abi (20 + 188)
@@ -170,22 +164,6 @@ def variant : Proof.Sha1.X86.Variants.Backend := by
         stack := 20 + 184
         verified := Proof.Sha1.X86.Shared.finalize_frame finalizeScratch_shared ?_
           ?_
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
-        spSafe := Code.all_of_allInstrs ?_ },
-      { api := Spec.Sha1.updateScratchApi
-        code := sha1Update
-        contract := Spec.Sha1.updateScratchContract X86.abi 20
-        stack := 20
-        verified := updateScratch_shared
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
-        spSafe := Code.all_of_allInstrs ?_ },
-      { api := Spec.Sha1.finalizeScratchApi
-        code := sha1Finalize
-        contract := Spec.Sha1.finalizeScratchContract X86.abi 20
-        stack := 20
-        verified := finalizeScratch_shared
         ofSig := ⟨_, _, _, rfl⟩
         ofApi := rfl
         spSafe := Code.all_of_allInstrs ?_ }],
