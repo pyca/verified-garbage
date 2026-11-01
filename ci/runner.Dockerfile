@@ -63,21 +63,40 @@ RUN printf '%s\n' \
 #   target's architecture;
 # * gcc and libc6-dev, rustc's linker and the benchmarks' C build scripts
 #   (with binutils' readelf);
-# * riscv64 keeps the C compiler, assembler and headers needed by benchmarks,
-#   but excludes unused profiling/OpenMP libraries, binutils tools, character
-#   set converters and Git/Perl programs, as its test-only image did;
+# * riscv64 excludes unused profiling/OpenMP libraries, binutils tools,
+#   character set converters and Git/Perl programs. Its tests' image
+#   (BENCH=false, the riscv64 tag) also leaves out what only compiling C
+#   uses: gcc's C compiler (cc1, and the libraries only cc1 loads), the
+#   headers, the assembler, and OpenSSL's development files and pkg-config.
+#   Its tests only link, and RISE's runners pull the image for every job at
+#   a few MB/s. The benchmarks' image (BENCH=true, the riscv64-bench tag)
+#   keeps them, for the build scripts that compile C;
 # * git and ca-certificates, for actions/checkout;
 # * python3, for the coverage export and the benchmark comparison;
 # * zstd, for actions/cache (through Swatinem/rust-cache);
 # * openssl, with which the benchmarks record OpenSSL's version (and which
 #   ca-certificates depends on);
 # * libssl-dev and pkg-config, for the benchmarks, which link OpenSSL
-#   (rust-openssl).
-RUN case "$(dpkg --print-architecture)" in \
+#   (rust-openssl), but not in riscv64's tests' image.
+ARG BENCH=true
+RUN bench="libssl-dev pkg-config" && \
+    case "$(dpkg --print-architecture)" in \
         i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
         arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
         ppc64el) foreign=; packages= ;; \
         riscv64) foreign=; packages=; \
+            if [ "$BENCH" != true ]; then \
+                bench=; \
+                printf '%s\n' \
+                    'path-exclude=/usr/libexec/gcc/*/*/cc1' \
+                    'path-exclude=/usr/lib/*/libisl.so*' \
+                    'path-exclude=/usr/lib/*/libmpfr.so*' \
+                    'path-exclude=/usr/include/*' \
+                    'path-exclude=/usr/lib/gcc/*/*/include/*' \
+                    'path-exclude=/usr/bin/*-as' \
+                    'path-exclude=/usr/bin/as' \
+                    > /etc/dpkg/dpkg.cfg.d/excludes-riscv64-tests; \
+            fi; \
             printf '%s\n' \
                 'path-exclude=/usr/libexec/gcc/*/*/cc1plus' \
                 'path-exclude=/usr/lib/gcc/*/*/libgomp*' \
@@ -122,8 +141,7 @@ RUN case "$(dpkg --print-architecture)" in \
         ca-certificates \
         python3 \
         openssl \
-        libssl-dev \
-        pkg-config \
+        $bench \
         zstd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists

@@ -39,9 +39,12 @@ jobs:
           - {tag: "verified-garbage-runner:armv7-cross", platform: "linux/arm64", os: ubuntu-26.04-arm}
           # For PPC64LE's tests, on the ppc64le runner they run on.
           - {tag: "verified-garbage-runner:ppc64le", platform: "linux/ppc64le", os: ubuntu-24.04-ppc64le}
-          # For RISC-V's tests and benchmarks, on their riscv64 runner (RISE's, as
-          # pyca/infra's riscv64 images use).
-          - {tag: "verified-garbage-runner:riscv64", platform: "linux/riscv64", os: ubuntu-24.04-riscv}
+          # For RISC-V's tests and, with what compiling C needs, its
+          # benchmarks, on their riscv64 runner (RISE's, as pyca/infra's
+          # riscv64 images use). The tests' image leaves that out: their jobs
+          # pull it, at a few MB/s, every time.
+          - {tag: "verified-garbage-runner:riscv64", platform: "linux/riscv64", os: ubuntu-24.04-riscv, build-args: "BENCH=false"}
+          - {tag: "verified-garbage-runner:riscv64-bench", platform: "linux/riscv64", os: ubuntu-24.04-riscv}
           # For the lints of every target (`rust-lint`).
           - {tag: "verified-garbage-runner:lint", platform: "linux/amd64", os: ubuntu-26.04}
     name: ${{ matrix.image.tag }}
@@ -87,6 +90,7 @@ jobs:
           cache-from: ${{ env.IMAGE }}
           tags: ${{ env.IMAGE }}
           platforms: ${{ env.PLATFORM }}
+          build-args: ${{ matrix.image.build-args }}
           pull: true
           # BuildKit's strongest zstd (every layer, the base image's too): the
           # riscv64 runners pull the image for every job at a few MB/s, so a
@@ -115,7 +119,11 @@ jobs:
               git --version
               python3 -V
               openssl version
-              pkg-config --exists openssl
+              # OpenSSL for the benchmarks where they are built (not in
+              # riscv64's tests' image).
+              if command -v pkg-config; then
+                pkg-config --exists openssl
+              fi
               zstd --version
               rustc -vV
               # Clippy and rustfmt only where the image has them (the lint
@@ -125,9 +133,11 @@ jobs:
                 cargo fmt --version
               fi
               command -v "$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n "s/^host: //p")/bin/llvm-cov"
-              # Each C compiler with its OpenSSL.
+              # Each C compiler with its OpenSSL (riscv64's tests' image has
+              # no C compiler proper, cc1: it only links, which cargo run
+              # checks).
               for gcc in /usr/bin/*-linux-gnu*-gcc; do
-                if [ -e "$gcc" ]; then
+                if [ -e "$gcc" ] && [ -x "$("$gcc" -print-prog-name=cc1)" ]; then
                   echo "#include <openssl/ssl.h>" | "$gcc" -xc -c -o /tmp/check-openssl.o -
                 fi
               done

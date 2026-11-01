@@ -169,7 +169,7 @@ PLATFORMS = {
     },
     "riscv64": {
         "os": "ubuntu-24.04-riscv",
-        "image": "ghcr.io/pyca/verified-garbage-runner:riscv64",
+        "image": "ghcr.io/pyca/verified-garbage-runner:riscv64-bench",
     },
 }
 
