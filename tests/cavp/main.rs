@@ -89,13 +89,6 @@ fn records(text: &str) -> Vec<BTreeMap<&str, &str>> {
 /// The vectors of the curve `curve` (`"P-192"`) of the SP 800-56A ECC CDH
 /// primitive test, its integers `len` bytes long: each `QCAVS`
 /// (uncompressed), `dIUT`, `QIUT` (uncompressed) and `ZIUT`.
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
-))]
 fn ecdh_vectors(curve: &str, len: usize) -> Vec<[Vec<u8>; 4]> {
     // An integer, which the file writes with up to two more leading zero
     // bytes (P-521's).
