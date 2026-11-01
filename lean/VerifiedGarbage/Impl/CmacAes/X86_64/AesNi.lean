@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 
 `vg_cmac_aes_update_aesni_cbc(schedule = rdi, rounds = rsi, state = rdx, data = rcx, n = r8,
 scratch = r9)`, with the contract of `vg_cmac_aes_update`
-(`Spec.Cmac.aesUpdateContract`), for CPUs with AES-NI: §6.2 step 6,
+(`Proof.Cmac.aesUpdateContract`), for CPUs with AES-NI: §6.2 step 6,
 `Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)`, one block after the other in registers.
 
 The round keys stay in SSE registers across all blocks: round key `j`

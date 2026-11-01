@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.Cmac.Contract
 import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
 import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Proof.Cmac.Contract
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
@@ -412,9 +414,9 @@ def updSat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x4000, 2176⟩]
 
 theorem update_verified (v : Ctr32Impl) :
-    Verified X86_64.target (update v.callee) (Spec.Cmac.aesUpdateContract X86_64.abi 8) :=
+    Verified X86_64.target (update v.callee) (Proof.Cmac.aesUpdateContract X86_64.abi 8) :=
   Verified.of_correct (update_correct v) (update_ct v) (by
-    sig_implies [Spec.Cmac.aesUpdateContract, Spec.Cmac.aesUpdateSig, updateX86_64, X86_64.abi,
+    sig_implies [Proof.Cmac.aesUpdateContract, Proof.Cmac.aesUpdateSig, updateX86_64, X86_64.abi,
       X86_64.argRegs] [updSat] using updSat)
 
 /-- A state satisfying `vg_cmac_aes_subkeys`'s precondition. -/
@@ -430,9 +432,9 @@ def subSat : State where
   wr := [⟨0x2000, 32⟩, ⟨0x4000, 2176⟩]
 
 theorem subkeys_verified (v : Ctr32Impl) :
-    Verified X86_64.target (subkeys v.callee) (Spec.Cmac.aesSubkeysContract X86_64.abi 8) :=
+    Verified X86_64.target (subkeys v.callee) (Proof.Cmac.aesSubkeysContract X86_64.abi 8) :=
   Verified.of_correct (subkeys_correct v) (subkeys_ct v) (by
-    sig_implies [Spec.Cmac.aesSubkeysContract, Spec.Cmac.aesSubkeysSig, subkeysX86_64, X86_64.abi,
+    sig_implies [Proof.Cmac.aesSubkeysContract, Proof.Cmac.aesSubkeysSig, subkeysX86_64, X86_64.abi,
       X86_64.argRegs] [subSat] using subSat)
 
 /-- A state satisfying `vg_cmac_aes_finalize`'s precondition (with no last bytes). -/
@@ -448,9 +450,9 @@ def finSat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x4000, 2176⟩]
 
 theorem finalize_verified (v : Ctr32Impl) :
-    Verified X86_64.target (finalize v.callee) (Spec.Cmac.aesFinalizeContract X86_64.abi 8) :=
+    Verified X86_64.target (finalize v.callee) (Proof.Cmac.aesFinalizeContract X86_64.abi 8) :=
   Verified.of_correct (finalize_correct v) (finalize_ct v) (by
-    sig_implies [Spec.Cmac.aesFinalizeContract, Spec.Cmac.aesFinalizeSig, finalizeX86_64, X86_64.abi,
+    sig_implies [Proof.Cmac.aesFinalizeContract, Proof.Cmac.aesFinalizeSig, finalizeX86_64, X86_64.abi,
       X86_64.argRegs] [finSat] using finSat)
 
 end VG.Proof.CmacAes.X86_64

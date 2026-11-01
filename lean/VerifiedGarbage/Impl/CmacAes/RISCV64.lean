@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Cmac.RISCV64
 `vg_cmac_aes_subkeys(schedule = a0, rounds = a1, subkeys = a2, scratch = a3)`,
 `vg_cmac_aes_update(schedule = a0, rounds = a1, state = a2, data = a3, n = a4, scratch = a5)`
 and `vg_cmac_aes_finalize(key = a0, rounds = a1, state = a2, last = a3, last_len = a4, scratch = a5)`
-(see `VG.Spec.Cmac.aesSubkeysContract` and the others), composed of calls of
+(see `VG.Proof.Cmac.aesSubkeysContract` and the others), composed of calls of
 the verified `vg_aes_encrypt_blocks` on one block in place, as on PPC64LE
 (`VG.Impl.CmacAes.PPC64LE`).
 

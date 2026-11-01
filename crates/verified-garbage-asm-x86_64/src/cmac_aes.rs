@@ -3,171 +3,6 @@
 //! `assembly/cmac_aes.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_cmac_aes_update_aesni_cbc` requires (`Artifact.features`).
-pub const VG_CMAC_AES_UPDATE_AESNI_CBC_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// CMAC's chaining (NIST SP 800-38B §6.2 step 6) for AES, over whole blocks: replaces the block `C₀` at `*state` with `Cₙ`, where `Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)` for the `n` 16-byte blocks `M₁ … Mₙ` starting at `data`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Cmac.aesUpdateContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `state` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `schedule` or `data` (distinct Rust objects never do).
-/// * None of `schedule`, `state`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_update_aesni_cbc(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "TYXA"
-je 20f
-.base64 "8w9vD/MPbwJmD+/B8w9vVxDzD29fIPMPb2cw8w9vb0DzD293UPMPb39g80QPb0dw80QPb4+AAAAA80QPb5eQAAAA80QPb5+gAAAA80QPb6ewAAAA80QPb6/AAAAA80QPb7fQAAAASIP+Cg=="
-je 22f
-.base64 "SIP+DA=="
-je 24f
-.base64 "80QPb7/gAAAAZkQP7/k="
-26:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843MVmQQ843MZmQQ843cdIg8EQSYPoAQ=="
-jne 26b
-jmp 25f
-24:
-.base64 "80QPb7/AAAAAZkQP7/k="
-27:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843cdIg8EQSYPoAQ=="
-jne 27b
-25:
-jmp 23f
-22:
-.base64 "80QPb7+gAAAAZkQP7/k="
-28:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843cdIg8EQSYPoAQ=="
-jne 28b
-23:
-.base64 "8w9vD2YP78HzD38C"
-jmp 21f
-20:
-21:
-.base64 "ww=="
-.p2align 6"#,
-    )
-}
-
-/// The CPU features `vg_cmac_aes_subkeys_aesni` requires (`Artifact.features`).
-pub const VG_CMAC_AES_SUBKEYS_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
-
-/// The CMAC subkey generation (NIST SP 800-38B §6.1) for AES: writes `K1 ‖ K2` to `*subkeys`, where `L = CIPH_K(0¹²⁸)`, `K1 = L << 1` (XORed with `R₁₂₈ = 0¹²⁰10000111` if the leftmost bit of `L` is 1) and `K2` is `K1` doubled the same way. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Cmac.aesSubkeysContract`. Constant time: only the pointers and `rounds` may affect timing, not the key schedule or the subkeys.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `subkeys` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `subkeys` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `subkeys` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_subkeys_aesni(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZEAgAAEiJqRgIAABIidNIic24AAAAAEiJgQAIAABIiYEICAAASIkCSIlCCEmJ6UiJ6kiBwgAIAABIidlBuAEAAAA="
-call {vg_aes_ctr32_aesni}
-.base64 "SIsDSA/ISItTCEgPykiJwUjB6T9BuAAAAABJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEgPykiJA0iJUwhIiwNID8hIi1MISA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSIlDEEiJUxhIi50QCAAASIutGAgAAMM="
-.p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-    )
-}
-
-/// The CPU features `vg_cmac_aes_update_aesni` requires (`Artifact.features`).
-pub const VG_CMAC_AES_UPDATE_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
-
-/// CMAC's chaining (NIST SP 800-38B §6.2 step 6) for AES, over whole blocks: replaces the block `C₀` at `*state` with `Cₙ`, where `Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)` for the `n` 16-byte blocks `M₁ … Mₙ` starting at `data`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Cmac.aesUpdateContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `state` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `schedule` or `data` (distinct Rust objects never do).
-/// * None of `schedule`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_update_aesni(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
-je 20f
-22:
-.base64 "SYsEJEkzRQBJiYcACAAASYtEJAhJM0UISYmHCAgAALgAAAAASYkEJEmJRCQISInfSInuTYn5TIn6SIHCAAgAAEyJ4UG4AQAAAA=="
-call {vg_aes_ctr32_aesni}
-.base64 "SYPFEEmD7gE="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
-.p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-    )
-}
-
-/// The CPU features `vg_cmac_aes_finalize_aesni` requires (`Artifact.features`).
-pub const VG_CMAC_AES_FINALIZE_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
-
-/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the block at `*state` is the chaining value `Cₙ₋₁` of the message's blocks but the last (as `vg_cmac_aes_update` computes it from a zero block), and the `last_len` bytes at `last` are the message's last bytes `Mₙ*`, replaces it with the MAC `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if `last_len` is 16, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise. `*key` is the 240 bytes `vg_aes_expand_key` writes the key schedule for `rounds` rounds to, followed by the subkeys `K1 ‖ K2` (as `vg_cmac_aes_subkeys` writes them). `last_len` is 0 only for the empty message.
-///
-/// Contract: `VG.Spec.Cmac.aesFinalizeContract`. Constant time: only the pointers, `rounds` and `last_len` may affect timing, not the key schedule, the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 272 bytes.
-/// * `state` must be valid for reads and writes of 16 bytes.
-/// * `last` must be valid for reads of `last_len` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `last_len` must be at most 16.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `key` or `last` (distinct Rust objects never do).
-/// * None of `key`, `state`, `last` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_finalize_aesni(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYP4EA=="
-je 20f
-.base64 "uAAAAABJiYEACAAASYmBCAgAAE2FwA=="
-je 22f
-.base64 "QboAAAAA"
-24:
-.base64 "Qg+2BBFDiIQRAAgAAEmDwgFNOcI="
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "uIAAAABDiIQBAAgAAEmLgQAIAABIM4cAAQAASYmBAAgAAEmLgQgIAABIM4cIAQAASYmBCAgAAA=="
-jmp 21f
-20:
-.base64 "SIsBSDOH8AAAAEmJgQAIAABIi0EISDOH+AAAAEmJgQgIAAA="
-21:
-.base64 "SYuBAAgAAEgzAkmJgQAIAABJi4EICAAASDNCCEmJgQgIAAC4AAAAAEiJAkiJQghIidFMicpIgcIACAAAQbgBAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "ww=="
-.p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-    )
-}
-
 /// The CPU features `vg_cmac_aes_init_aesni` requires (`Artifact.features`).
 pub const VG_CMAC_AES_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
@@ -193,7 +28,7 @@ call {vg_cmac_aes_subkeys_aesni}
 .base64 "uAAAAABIiYMQAQAASImDGAEAAEiLnYAIAABMi6WQCAAASIutiAgAAEiNpCQICQAAww=="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni,
+        vg_cmac_aes_subkeys_aesni = sym super::internal::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,
     )
 }
 
@@ -225,106 +60,7 @@ jmp 21f
 call {vg_cmac_aes_finalize_aesni}
 .base64 "SI2kJAgJAADD"
 .p2align 6"#,
-        vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni,
-    )
-}
-
-/// The CMAC subkey generation (NIST SP 800-38B §6.1) for AES: writes `K1 ‖ K2` to `*subkeys`, where `L = CIPH_K(0¹²⁸)`, `K1 = L << 1` (XORed with `R₁₂₈ = 0¹²⁰10000111` if the leftmost bit of `L` is 1) and `K2` is `K1` doubled the same way. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Cmac.aesSubkeysContract`. Constant time: only the pointers and `rounds` may affect timing, not the key schedule or the subkeys.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `subkeys` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `subkeys` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `subkeys` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZEAgAAEiJqRgIAABIidNIic24AAAAAEiJgQAIAABIiYEICAAASIkCSIlCCEmJ6UiJ6kiBwgAIAABIidlBuAEAAAA="
-call {vg_aes_ctr32}
-.base64 "SIsDSA/ISItTCEgPykiJwUjB6T9BuAAAAABJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEgPykiJA0iJUwhIiwNID8hIi1MISA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSIlDEEiJUxhIi50QCAAASIutGAgAAMM="
-.p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-    )
-}
-
-/// CMAC's chaining (NIST SP 800-38B §6.2 step 6) for AES, over whole blocks: replaces the block `C₀` at `*state` with `Cₙ`, where `Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)` for the `n` 16-byte blocks `M₁ … Mₙ` starting at `data`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Cmac.aesUpdateContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `state` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `schedule` or `data` (distinct Rust objects never do).
-/// * None of `schedule`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
-je 20f
-22:
-.base64 "SYsEJEkzRQBJiYcACAAASYtEJAhJM0UISYmHCAgAALgAAAAASYkEJEmJRCQISInfSInuTYn5TIn6SIHCAAgAAEyJ4UG4AQAAAA=="
-call {vg_aes_ctr32}
-.base64 "SYPFEEmD7gE="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
-.p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-    )
-}
-
-/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the block at `*state` is the chaining value `Cₙ₋₁` of the message's blocks but the last (as `vg_cmac_aes_update` computes it from a zero block), and the `last_len` bytes at `last` are the message's last bytes `Mₙ*`, replaces it with the MAC `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if `last_len` is 16, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise. `*key` is the 240 bytes `vg_aes_expand_key` writes the key schedule for `rounds` rounds to, followed by the subkeys `K1 ‖ K2` (as `vg_cmac_aes_subkeys` writes them). `last_len` is 0 only for the empty message.
-///
-/// Contract: `VG.Spec.Cmac.aesFinalizeContract`. Constant time: only the pointers, `rounds` and `last_len` may affect timing, not the key schedule, the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 272 bytes.
-/// * `state` must be valid for reads and writes of 16 bytes.
-/// * `last` must be valid for reads of `last_len` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `last_len` must be at most 16.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `key` or `last` (distinct Rust objects never do).
-/// * None of `key`, `state`, `last` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYP4EA=="
-je 20f
-.base64 "uAAAAABJiYEACAAASYmBCAgAAE2FwA=="
-je 22f
-.base64 "QboAAAAA"
-24:
-.base64 "Qg+2BBFDiIQRAAgAAEmDwgFNOcI="
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "uIAAAABDiIQBAAgAAEmLgQAIAABIM4cAAQAASYmBAAgAAEmLgQgIAABIM4cIAQAASYmBCAgAAA=="
-jmp 21f
-20:
-.base64 "SIsBSDOH8AAAAEmJgQAIAABIi0EISDOH+AAAAEmJgQgIAAA="
-21:
-.base64 "SYuBAAgAAEgzAkmJgQAIAABJi4EICAAASDNCCEmJgQgIAAC4AAAAAEiJAkiJQghIidFMicpIgcIACAAAQbgBAAAA"
-call {vg_aes_ctr32}
-.base64 "ww=="
-.p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+        vg_cmac_aes_finalize_aesni = sym super::internal::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
     )
 }
 
@@ -349,7 +85,7 @@ call {vg_cmac_aes_subkeys}
 .base64 "uAAAAABIiYMQAQAASImDGAEAAEiLnYAIAABMi6WQCAAASIutiAgAAEiNpCQICQAAww=="
 .p2align 6"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
+        vg_cmac_aes_subkeys = sym super::internal::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
 
@@ -377,118 +113,7 @@ jmp 21f
 call {vg_cmac_aes_finalize}
 .base64 "SI2kJAgJAADD"
 .p2align 6"#,
-        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
-    )
-}
-
-/// The CPU features `vg_cmac_aes_subkeys_vaes` requires (`Artifact.features`).
-pub const VG_CMAC_AES_SUBKEYS_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
-
-/// The CMAC subkey generation (NIST SP 800-38B §6.1) for AES: writes `K1 ‖ K2` to `*subkeys`, where `L = CIPH_K(0¹²⁸)`, `K1 = L << 1` (XORed with `R₁₂₈ = 0¹²⁰10000111` if the leftmost bit of `L` is 1) and `K2` is `K1` doubled the same way. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Cmac.aesSubkeysContract`. Constant time: only the pointers and `rounds` may affect timing, not the key schedule or the subkeys.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `subkeys` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `subkeys` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `subkeys` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_subkeys_vaes(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImZEAgAAEiJqRgIAABIidNIic24AAAAAEiJgQAIAABIiYEICAAASIkCSIlCCEmJ6UiJ6kiBwgAIAABIidlBuAEAAAA="
-call {vg_aes_ctr32_vaes}
-.base64 "SIsDSA/ISItTCEgPykiJwUjB6T9BuAAAAABJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEgPykiJA0iJUwhIiwNID8hIi1MISA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSIlDEEiJUxhIi50QCAAASIutGAgAAMM="
-.p2align 6"#,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-    )
-}
-
-/// The CPU features `vg_cmac_aes_update_vaes` requires (`Artifact.features`).
-pub const VG_CMAC_AES_UPDATE_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
-
-/// CMAC's chaining (NIST SP 800-38B §6.2 step 6) for AES, over whole blocks: replaces the block `C₀` at `*state` with `Cₙ`, where `Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)` for the `n` 16-byte blocks `M₁ … Mₙ` starting at `data`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Cmac.aesUpdateContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `state` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `schedule` or `data` (distinct Rust objects never do).
-/// * None of `schedule`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_update_vaes(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
-je 20f
-22:
-.base64 "SYsEJEkzRQBJiYcACAAASYtEJAhJM0UISYmHCAgAALgAAAAASYkEJEmJRCQISInfSInuTYn5TIn6SIHCAAgAAEyJ4UG4AQAAAA=="
-call {vg_aes_ctr32_vaes}
-.base64 "SYPFEEmD7gE="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
-.p2align 6"#,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-    )
-}
-
-/// The CPU features `vg_cmac_aes_finalize_vaes` requires (`Artifact.features`).
-pub const VG_CMAC_AES_FINALIZE_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
-
-/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the block at `*state` is the chaining value `Cₙ₋₁` of the message's blocks but the last (as `vg_cmac_aes_update` computes it from a zero block), and the `last_len` bytes at `last` are the message's last bytes `Mₙ*`, replaces it with the MAC `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if `last_len` is 16, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise. `*key` is the 240 bytes `vg_aes_expand_key` writes the key schedule for `rounds` rounds to, followed by the subkeys `K1 ‖ K2` (as `vg_cmac_aes_subkeys` writes them). `last_len` is 0 only for the empty message.
-///
-/// Contract: `VG.Spec.Cmac.aesFinalizeContract`. Constant time: only the pointers, `rounds` and `last_len` may affect timing, not the key schedule, the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 272 bytes.
-/// * `state` must be valid for reads and writes of 16 bytes.
-/// * `last` must be valid for reads of `last_len` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `last_len` must be at most 16.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `key` or `last` (distinct Rust objects never do).
-/// * None of `key`, `state`, `last` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_finalize_vaes(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYP4EA=="
-je 20f
-.base64 "uAAAAABJiYEACAAASYmBCAgAAE2FwA=="
-je 22f
-.base64 "QboAAAAA"
-24:
-.base64 "Qg+2BBFDiIQRAAgAAEmDwgFNOcI="
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "uIAAAABDiIQBAAgAAEmLgQAIAABIM4cAAQAASYmBAAgAAEmLgQgIAABIM4cIAQAASYmBCAgAAA=="
-jmp 21f
-20:
-.base64 "SIsBSDOH8AAAAEmJgQAIAABIi0EISDOH+AAAAEmJgQgIAAA="
-21:
-.base64 "SYuBAAgAAEgzAkmJgQAIAABJi4EICAAASDNCCEmJgQgIAAC4AAAAAEiJAkiJQghIidFMicpIgcIACAAAQbgBAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "ww=="
-.p2align 6"#,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
+        vg_cmac_aes_finalize = sym super::internal::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }
 
@@ -517,7 +142,7 @@ call {vg_cmac_aes_subkeys_vaes}
 .base64 "uAAAAABIiYMQAQAASImDGAEAAEiLnYAIAABMi6WQCAAASIutiAgAAEiNpCQICQAAww=="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes,
+        vg_cmac_aes_subkeys_vaes = sym super::internal::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
     )
 }
 
@@ -549,7 +174,7 @@ jmp 21f
 call {vg_cmac_aes_finalize_vaes}
 .base64 "SI2kJAgJAADD"
 .p2align 6"#,
-        vg_cmac_aes_finalize_vaes = sym super::cmac_aes::vg_cmac_aes_finalize_vaes,
+        vg_cmac_aes_finalize_vaes = sym super::internal::vg_cmac_aes_finalize_vaes::vg_cmac_aes_finalize_vaes,
     )
 }
 
@@ -618,7 +243,7 @@ jmp 212f
 212:
 .base64 "SYufgAgAAEmLr4gIAABNi6eQCAAATYuvmAgAAE2Lt6AIAABNi7+oCAAASI2kJAgJAADD"
 .p2align 6"#,
-        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni,
+        vg_cmac_aes_update_aesni = sym super::internal::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
     )
 }
 
@@ -687,7 +312,7 @@ jmp 212f
 212:
 .base64 "SYufgAgAAEmLr4gIAABNi6eQCAAATYuvmAgAAE2Lt6AIAABNi7+oCAAASI2kJAgJAADD"
 .p2align 6"#,
-        vg_cmac_aes_update_aesni_cbc = sym super::cmac_aes::vg_cmac_aes_update_aesni_cbc,
+        vg_cmac_aes_update_aesni_cbc = sym super::internal::vg_cmac_aes_update_aesni_cbc::vg_cmac_aes_update_aesni_cbc,
     )
 }
 
@@ -752,7 +377,7 @@ jmp 212f
 212:
 .base64 "SYufgAgAAEmLr4gIAABNi6eQCAAATYuvmAgAAE2Lt6AIAABNi7+oCAAASI2kJAgJAADD"
 .p2align 6"#,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
 
@@ -821,6 +446,6 @@ jmp 212f
 212:
 .base64 "SYufgAgAAEmLr4gIAABNi6eQCAAATYuvmAgAAE2Lt6AIAABNi7+oCAAASI2kJAgJAADD"
 .p2align 6"#,
-        vg_cmac_aes_update_vaes = sym super::cmac_aes::vg_cmac_aes_update_vaes,
+        vg_cmac_aes_update_vaes = sym super::internal::vg_cmac_aes_update_vaes::vg_cmac_aes_update_vaes,
     )
 }

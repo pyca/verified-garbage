@@ -13,15 +13,6 @@ namespace VG.Artifacts.CmacAes.RISCV64
 open VG.Proof.CmacAes.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Cmac.aesSubkeysApi.artifact RISCV64.target {
-    code := Impl.CmacAes.RISCV64.subkeys
-    verified := subkeys_verified },
-  Spec.Cmac.aesUpdateApi.artifact RISCV64.target {
-    code := Impl.CmacAes.RISCV64.update
-    verified := update_verified },
-  Spec.Cmac.aesFinalizeApi.artifact RISCV64.target {
-    code := Impl.CmacAes.RISCV64.finalize
-    verified := finalize_verified },
   Spec.Cmac.aesInitApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2304 .a3 Impl.CmacAes.Stream.RISCV64.init
     stack := 2304

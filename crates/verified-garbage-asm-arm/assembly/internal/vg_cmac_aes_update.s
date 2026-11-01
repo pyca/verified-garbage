@@ -1,0 +1,69 @@
+// The functions of `src/internal/vg_cmac_aes_update.rs` of `verified-garbage-asm-arm`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_cmac_aes_update:
+	ldr r12, [sp, #4]
+	str r4, [r12, #2064]
+	str r5, [r12, #2068]
+	str r6, [r12, #2072]
+	str r7, [r12, #2076]
+	str r8, [r12, #2080]
+	str r9, [r12, #2084]
+	str lr, [r12, #2092]
+	str r10, [r12, #2088]
+	mov r4, r0
+	mov r5, r1
+	mov r6, r2
+	mov r7, r3
+	ldr r8, [sp, #0]
+	mov r10, r12
+	cmp r8, #0
+	beq 20f
+22:
+	ldr r0, [r6, #0]
+	ldr r1, [r7, #0]
+	eor r0, r0, r1
+	str r0, [r10, #2048]
+	ldr r0, [r6, #4]
+	ldr r1, [r7, #4]
+	eor r0, r0, r1
+	str r0, [r10, #2052]
+	ldr r0, [r6, #8]
+	ldr r1, [r7, #8]
+	eor r0, r0, r1
+	str r0, [r10, #2056]
+	ldr r0, [r6, #12]
+	ldr r1, [r7, #12]
+	eor r0, r0, r1
+	str r0, [r10, #2060]
+	mov r0, #0
+	str r0, [r6, #0]
+	str r0, [r6, #4]
+	str r0, [r6, #8]
+	str r0, [r6, #12]
+	mov r0, r4
+	mov r1, r5
+	add r2, r10, #2048
+	mov r3, r6
+	mov r9, #1
+	push {r9, r10}
+	bl {vg_aes_ctr32}
+	ldr r9, [sp], #8
+	add r7, r7, #16
+	subs r8, r8, #1
+	bne 22b
+	b 21f
+20:
+21:
+	ldr r4, [r10, #2064]
+	ldr r5, [r10, #2068]
+	ldr r6, [r10, #2072]
+	ldr r7, [r10, #2076]
+	ldr r8, [r10, #2080]
+	ldr r9, [r10, #2084]
+	ldr lr, [r10, #2092]
+	ldr r10, [r10, #2088]
+	bx lr

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.CmacAes.PPC64LE
 public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.Cmac.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Contract
 import VerifiedGarbage.Proof.CmacAes.PPC64LE.CT
@@ -50,9 +51,9 @@ def subSat : State where
   rd := [⟨0x1000, 240⟩]
   wr := [⟨0x2000, 32⟩, ⟨0x4000, 2176⟩]
 
-theorem subkeys_verified : Verified PPC64LE.target subkeys (Spec.Cmac.aesSubkeysContract PPC64LE.abi) :=
+theorem subkeys_verified : Verified PPC64LE.target subkeys (Proof.Cmac.aesSubkeysContract PPC64LE.abi) :=
   Verified.of_correct subkeys_correct subkeys_ct (by
-    sig_implies [Spec.Cmac.aesSubkeysContract, Spec.Cmac.aesSubkeysSig, subkeysPPC64LE, PPC64LE.abi,
+    sig_implies [Proof.Cmac.aesSubkeysContract, Proof.Cmac.aesSubkeysSig, subkeysPPC64LE, PPC64LE.abi,
       PPC64LE.argRegs] [subSat] using subSat)
 
 /-- A state satisfying `vg_cmac_aes_update`'s precondition (with no blocks). -/
@@ -65,9 +66,9 @@ def updSat : State where
   rd := [⟨0x1000, 240⟩, ⟨0x3000, 0⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x4000, 2176⟩]
 
-theorem update_verified : Verified PPC64LE.target update (Spec.Cmac.aesUpdateContract PPC64LE.abi) :=
+theorem update_verified : Verified PPC64LE.target update (Proof.Cmac.aesUpdateContract PPC64LE.abi) :=
   Verified.of_correct update_correct update_ct (by
-    sig_implies [Spec.Cmac.aesUpdateContract, Spec.Cmac.aesUpdateSig, updatePPC64LE, PPC64LE.abi,
+    sig_implies [Proof.Cmac.aesUpdateContract, Proof.Cmac.aesUpdateSig, updatePPC64LE, PPC64LE.abi,
       PPC64LE.argRegs] [updSat] using updSat)
 
 /-- A state satisfying `vg_cmac_aes_finalize`'s precondition (with no last bytes). -/
@@ -80,9 +81,9 @@ def finSat : State where
   rd := [⟨0x1000, 272⟩, ⟨0x3000, 0⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x4000, 2176⟩]
 
-theorem finalize_verified : Verified PPC64LE.target finalize (Spec.Cmac.aesFinalizeContract PPC64LE.abi) :=
+theorem finalize_verified : Verified PPC64LE.target finalize (Proof.Cmac.aesFinalizeContract PPC64LE.abi) :=
   Verified.of_correct finalize_correct finalize_ct (by
-    sig_implies [Spec.Cmac.aesFinalizeContract, Spec.Cmac.aesFinalizeSig, finalizePPC64LE, PPC64LE.abi,
+    sig_implies [Proof.Cmac.aesFinalizeContract, Proof.Cmac.aesFinalizeSig, finalizePPC64LE, PPC64LE.abi,
       PPC64LE.argRegs] [finSat] using finSat)
 
 end VG.Proof.CmacAes.PPC64LE

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.CmacAes.AArch64.Aese
 public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateLoop
 public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.Cmac.Contract
 import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -16,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.CmacAes.AArch64.Aese
 meta import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateLoop
 meta import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Proof.Cmac.Contract
 meta import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 meta import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
 meta import VerifiedGarbage.Proof.Cmac.Spec
@@ -360,8 +362,8 @@ theorem ct : ConstantTime isa updateAArch64.pre updateAArch64.pub update := by
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem verified : Verified AArch64.target update (Spec.Cmac.aesUpdateContract AArch64.abi) :=
+theorem verified : Verified AArch64.target update (Proof.Cmac.aesUpdateContract AArch64.abi) :=
   Verified.of_correct correct ct (by
-    sig_implies [Spec.Cmac.aesUpdateContract, Spec.Cmac.aesUpdateSig, updateAArch64, AArch64.abi,
+    sig_implies [Proof.Cmac.aesUpdateContract, Proof.Cmac.aesUpdateSig, updateAArch64, AArch64.abi,
       AArch64.argRegs] [updSat] using updSat)
 end VG.Proof.CmacAes.AArch64.Aese

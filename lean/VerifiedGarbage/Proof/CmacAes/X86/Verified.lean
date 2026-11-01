@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
 public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.Cmac.Contract
 public import VerifiedGarbage.Proof.CmacAes.X86.Subkeys
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
 meta import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Proof.Cmac.Contract
 meta import VerifiedGarbage.Proof.CmacAes.X86.Subkeys
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
@@ -200,7 +202,7 @@ def subSat : State where
   rd := [⟨0x1000, 240⟩, ⟨0x8004, 16⟩]
   wr := [⟨0x2000, 32⟩, ⟨0x4000, 2176⟩]
 
-theorem subkeys_verified : Verified X86.target (subkeys v.callee) (Spec.Cmac.aesSubkeysContract X86.abi 28) :=
+theorem subkeys_verified : Verified X86.target (subkeys v.callee) (Proof.Cmac.aesSubkeysContract X86.abi 28) :=
   Verified.of_correct (fun _ hs => subkeys_wp v hs) (subkeys_ct v) (by
     have a0 : arg subSat 0 = 0x1000 := by decide
     have a1 : arg subSat 1 = 10 := by decide
@@ -208,7 +210,7 @@ theorem subkeys_verified : Verified X86.target (subkeys v.callee) (Spec.Cmac.aes
     have a3 : arg subSat 3 = 0x4000 := by decide
     have e : argAddr subSat 0 = 0x8004 := by decide
     have esp : subSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Cmac.aesSubkeysContract, Spec.Cmac.aesSubkeysSig, X86.abi, X86.argSlots,
+    sig_implies [Proof.Cmac.aesSubkeysContract, Proof.Cmac.aesSubkeysSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, subkeysX86] [a0, a1, a2, a3, e, esp] using subSat)
 
 /-- A state satisfying `vg_cmac_aes_finalize`'s precondition: the key at
@@ -225,7 +227,7 @@ def finSat : State where
   rd := [⟨0x1000, 272⟩, ⟨0x3000, 0⟩, ⟨0x8004, 24⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x4000, 2176⟩]
 
-theorem finalize_verified : Verified X86.target (finalize v.callee) (Spec.Cmac.aesFinalizeContract X86.abi 28) :=
+theorem finalize_verified : Verified X86.target (finalize v.callee) (Proof.Cmac.aesFinalizeContract X86.abi 28) :=
   Verified.of_correct (fun _ hs => finalize_wp v hs) (finalize_ct v) (by
     have a0 : arg finSat 0 = 0x1000 := by decide
     have a1 : arg finSat 1 = 10 := by decide
@@ -235,14 +237,14 @@ theorem finalize_verified : Verified X86.target (finalize v.callee) (Spec.Cmac.a
     have a5 : arg finSat 5 = 0x4000 := by decide
     have e : argAddr finSat 0 = 0x8004 := by decide
     have esp : finSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Cmac.aesFinalizeContract, Spec.Cmac.aesFinalizeSig, X86.abi, X86.argSlots,
+    sig_implies [Proof.Cmac.aesFinalizeContract, Proof.Cmac.aesFinalizeSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, finalizeX86] [a0, a1, a2, a3, a4, a5, e, esp] using finSat)
 
 /-- A state satisfying `vg_cmac_aes_update`'s precondition: as `finSat`,
 with no blocks. -/
 def updSat : State := { finSat with rd := [⟨0x1000, 240⟩, ⟨0x3000, 0⟩, ⟨0x8004, 24⟩] }
 
-theorem update_verified : Verified X86.target (update v.callee) (Spec.Cmac.aesUpdateContract X86.abi 28) :=
+theorem update_verified : Verified X86.target (update v.callee) (Proof.Cmac.aesUpdateContract X86.abi 28) :=
   Verified.of_correct (fun _ hs => update_wp v hs) (update_ct v) (by
     have a0 : arg updSat 0 = 0x1000 := by decide
     have a1 : arg updSat 1 = 10 := by decide
@@ -252,7 +254,7 @@ theorem update_verified : Verified X86.target (update v.callee) (Spec.Cmac.aesUp
     have a5 : arg updSat 5 = 0x4000 := by decide
     have e : argAddr updSat 0 = 0x8004 := by decide
     have esp : updSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Cmac.aesUpdateContract, Spec.Cmac.aesUpdateSig, X86.abi, X86.argSlots,
+    sig_implies [Proof.Cmac.aesUpdateContract, Proof.Cmac.aesUpdateSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, updateX86] [a0, a1, a2, a3, a4, a5, e, esp] using updSat)
 
 end VG.Proof.CmacAes.X86

@@ -34,21 +34,6 @@ namespace VG.Generic.AesCtr32.AArch64.CmacAes
 open VG.Proof.CmacAes.AArch64
 
 def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
-  Spec.Cmac.aesSubkeysApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.CmacAes.AArch64.subkeys v.callee
-    verified := subkeys_verified v
-    features := v.features },
-  Spec.Cmac.aesUpdateApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.CmacAes.AArch64.update v.callee
-    verified := update_verified v
-    features := v.features },
-  Spec.Cmac.aesFinalizeApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.CmacAes.AArch64.finalize v.callee
-    verified := finalize_verified v
-    features := v.features },
   Spec.Cmac.aesInitApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2304 .x3

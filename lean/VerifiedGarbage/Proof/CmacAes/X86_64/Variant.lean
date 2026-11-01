@@ -78,7 +78,7 @@ theorem update_xdepth (v : Ctr32Impl) : (Impl.CmacAes.X86_64.update v.callee).x8
 /-- The chaining by calls of `v` on one block at a time,
 `vg_cmac_aes_update` with `v`'s suffix. -/
 def UpdateImpl.ctr32 (v : Ctr32Impl) : UpdateImpl where
-  callee := ⟨Spec.Cmac.aesUpdateApi.name ++ v.suffix, Impl.CmacAes.X86_64.update v.callee⟩
+  callee := ⟨"vg_cmac_aes_update" ++ v.suffix, Impl.CmacAes.X86_64.update v.callee⟩
   depth := by rw [update_depth]
   ok := update_correct v
   ct := update_ct v
@@ -98,7 +98,7 @@ theorem aesniCbc_nosp : NoSp Impl.CmacAes.X86_64.AesNi.update := by
 /-- The chaining in AES-NI registers, `vg_cmac_aes_update_aesni_cbc`, which
 goes with `vg_aes_ctr32_aesni`. -/
 def UpdateImpl.aesniCbc : UpdateImpl where
-  callee := ⟨Spec.Cmac.aesUpdateApi.name ++ "_aesni_cbc", Impl.CmacAes.X86_64.AesNi.update⟩
+  callee := ⟨"vg_cmac_aes_update" ++ "_aesni_cbc", Impl.CmacAes.X86_64.AesNi.update⟩
   depth := by decide +kernel
   ok := AesNi.update_ok
   ct := AesNi.update_ct

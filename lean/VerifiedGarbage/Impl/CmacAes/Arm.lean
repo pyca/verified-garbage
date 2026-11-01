@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
 `vg_cmac_aes_subkeys(schedule = r0, rounds = r1, subkeys = r2, scratch = r3)`,
 `vg_cmac_aes_update(schedule = r0, rounds = r1, state = r2, data = r3, n = [sp], scratch = [sp + 4])`
 and `vg_cmac_aes_finalize(key = r0, rounds = r1, state = r2, last = r3, last_len = [sp], scratch = [sp + 4])`
-(see `VG.Spec.Cmac.aesSubkeysContract` and the others), composed of calls of
+(see `VG.Proof.Cmac.aesSubkeysContract` and the others), composed of calls of
 the verified `vg_aes_ctr32`, one block at a time: with a counter block `X`
 and a zero data block, it leaves `CIPH_K(X)` in the data block.
 

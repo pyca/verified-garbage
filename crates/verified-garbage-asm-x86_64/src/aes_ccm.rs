@@ -139,7 +139,7 @@ jmp 228f
 jne 230b
 .base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJDAKAADD"
 .p2align 6"#,
-        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni,
+        vg_cmac_aes_update_aesni = sym super::internal::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
     )
 }
@@ -314,7 +314,7 @@ jmp 240f
 .base64 "SYuH4AAAAEmLX3BJi294TYungAAAAE2Lr4gAAABNi7eQAAAATYu/mAAAAEiNpCQwCgAAww=="
 .p2align 6"#,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni,
+        vg_cmac_aes_update_aesni = sym super::internal::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
     )
 }
 
@@ -454,7 +454,7 @@ jmp 228f
 jne 230b
 .base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJDAKAADD"
 .p2align 6"#,
-        vg_cmac_aes_update_aesni_cbc = sym super::cmac_aes::vg_cmac_aes_update_aesni_cbc,
+        vg_cmac_aes_update_aesni_cbc = sym super::internal::vg_cmac_aes_update_aesni_cbc::vg_cmac_aes_update_aesni_cbc,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
     )
 }
@@ -629,7 +629,7 @@ jmp 240f
 .base64 "SYuH4AAAAEmLX3BJi294TYungAAAAE2Lr4gAAABNi7eQAAAATYu/mAAAAEiNpCQwCgAAww=="
 .p2align 6"#,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_cmac_aes_update_aesni_cbc = sym super::cmac_aes::vg_cmac_aes_update_aesni_cbc,
+        vg_cmac_aes_update_aesni_cbc = sym super::internal::vg_cmac_aes_update_aesni_cbc::vg_cmac_aes_update_aesni_cbc,
     )
 }
 
@@ -765,7 +765,7 @@ jmp 228f
 jne 230b
 .base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJDAKAADD"
 .p2align 6"#,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -936,7 +936,7 @@ jmp 240f
 .base64 "SYuH4AAAAEmLX3BJi294TYungAAAAE2Lr4gAAABNi7eQAAAATYu/mAAAAEiNpCQwCgAAww=="
 .p2align 6"#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
+        vg_cmac_aes_update = sym super::internal::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
 
@@ -1076,7 +1076,7 @@ jmp 228f
 jne 230b
 .base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJDAKAADD"
 .p2align 6"#,
-        vg_cmac_aes_update_vaes = sym super::cmac_aes::vg_cmac_aes_update_vaes,
+        vg_cmac_aes_update_vaes = sym super::internal::vg_cmac_aes_update_vaes::vg_cmac_aes_update_vaes,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
     )
 }
@@ -1251,6 +1251,6 @@ jmp 240f
 .base64 "SYuH4AAAAEmLX3BJi294TYungAAAAE2Lr4gAAABNi7eQAAAATYu/mAAAAEiNpCQwCgAAww=="
 .p2align 6"#,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-        vg_cmac_aes_update_vaes = sym super::cmac_aes::vg_cmac_aes_update_vaes,
+        vg_cmac_aes_update_vaes = sym super::internal::vg_cmac_aes_update_vaes::vg_cmac_aes_update_vaes,
     )
 }

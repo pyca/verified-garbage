@@ -43,27 +43,6 @@ namespace VG.Generic.AesCtr32.X86.CmacAes
 open VG.Proof.CmacAes.X86
 
 def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
-  Spec.Cmac.aesSubkeysApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.CmacAes.X86.subkeys v.callee
-    stack := 28
-    verified := subkeys_verified v
-    spSafe := subkeys_spSafe v
-    features := v.features },
-  Spec.Cmac.aesUpdateApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.CmacAes.X86.update v.callee
-    stack := 28
-    verified := update_verified v
-    spSafe := update_spSafe v
-    features := v.features },
-  Spec.Cmac.aesFinalizeApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.CmacAes.X86.finalize v.callee
-    stack := 28
-    verified := finalize_verified v
-    spSafe := finalize_spSafe v
-    features := v.features },
   Spec.Cmac.aesInitApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2324 3
