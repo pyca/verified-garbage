@@ -201,7 +201,7 @@ GROUPS = {
         ],
     },
     "mldsa": {
-        "lib": ["mldsa_common"],
+        "lib": ["mldsa_common", "mldsa44", "mldsa65", "mldsa87"],
         "tests": [
             "acvp::mldsa44",
             "acvp::mldsa65",
