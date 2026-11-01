@@ -16,6 +16,7 @@
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
+    target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
@@ -53,8 +54,8 @@ json_struct! {
 }
 
 /// Defines the tests of the parameter set `$n` (`"768"`), of the module
-/// `verified_garbage::$module` (`verified_garbage::mlkem768`,
-/// `verified_garbage::mlkem1024`) and its key types.
+/// `verified_garbage::$module` (`mlkem768`,
+/// `mlkem1024`) and its key types.
 macro_rules! mlkem_tests {
     ($n:literal, verified_garbage::$module:ident, $DecapsulationKey:ident, $EncapsulationKey:ident) => {
         use verified_garbage::hashes::sha3::Sha3_256;
