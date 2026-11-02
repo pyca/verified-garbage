@@ -243,7 +243,6 @@ theorem half_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N)
   have := h.wle
   rw [half, WP.seq_iff]
   refine ptr_ok h (by decide) (by decide) (show j < 2048 by omega_arith) ?_
-  have h₀ := h.of_keep (Keep.write s .t0 (off B (arr w j)))
   have hb : WP isa (.block [.shift .sll .d .t5 .s9 3, .add .t5 .t0 .t5, .store .d .t4 .t5 0, mov .t3 .s9])
       (s.write .t0 (off B (arr w j))) fun u =>
       (u.gpr .t0 = off B (arr w j) ∧ u.gpr .t3 = BitVec.ofNat 64 w ∧
