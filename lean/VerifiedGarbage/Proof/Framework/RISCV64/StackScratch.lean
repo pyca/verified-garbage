@@ -462,20 +462,17 @@ def popState (bytes : Nat) (s s₄ : State) : State :=
 /-- A run of the code and the wipe from `narrow s` is a run of
 `withStackScratchWiped` from `s` (with the same trace), which keeps what the
 calling convention requires, and whose memory and registers are those of
-that run. -/
-theorem withStackScratch_run {c : Prog isa} (hk : (sig.words abi.ptrBits).length < 8)
+that run, from the one fact about `s` it needs: the frame fits below its
+stack pointer. -/
+theorem withStackScratch_runSp {c : Prog isa} (hk : (sig.words abi.ptrBits).length < 8)
     (hb : 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes) {s : State}
-    (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) {t : List Leak} {s₄ : State}
-    (he : Exec isa c (narrow sig e n bytes s) t s₄) (ha : abiPreserved (narrow sig e n bytes s) s₄)
-    (hl : Sig.noLists sig.params = true) :
+    (hsb : bytes ≤ s.sp.toNat) {t : List Leak} {s₄ : State}
+    (he : Exec isa c (narrow sig e n bytes s) t s₄) (ha : abiPreserved (narrow sig e n bytes s) s₄) :
     Exec isa (withStackScratch bytes (scratchReg sig) c) s t (popState bytes s s₄) ∧
       abiPreserved s (popState bytes s s₄) ∧ (popState bytes s s₄).mem = s₄.mem ∧
       (popState bytes s s₄).gpr = s₄.gpr := by
   obtain ⟨hb0, hb1, hb2, hb3⟩ := hb
   obtain ⟨hr2, hra, -⟩ := argRegs_scratch _ hk
-  rw [pre_regs (by omega_arith) hl] at hs
-  obtain ⟨⟨-, hwf⟩, -, -, -, -, -, -⟩ := hs
-  have hsb : stack + bytes ≤ s.sp.toNat := by rcases hwf with h | h <;> omega_arith
   have hpush : isa.push (.alloc bytes) s = some (allocd bytes s) := by
     show push (.alloc bytes) s = some (allocd bytes s)
     unfold push
@@ -519,6 +516,19 @@ theorem withStackScratch_run {c : Prog isa} (hk : (sig.words abi.ptrBits).length
   · show s₄.gpr .ra = s.gpr .ra
     rw [ha.2.2, narrow_gpr]
     simp only [show Reg.ra ≠ scratchReg sig from fun h => hra h.symm, ↓reduceIte]
+
+/-- `withStackScratch_runSp`, from the precondition. -/
+theorem withStackScratch_run {c : Prog isa} (hk : (sig.words abi.ptrBits).length < 8)
+    (hb : 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) {t : List Leak} {s₄ : State}
+    (he : Exec isa c (narrow sig e n bytes s) t s₄) (ha : abiPreserved (narrow sig e n bytes s) s₄)
+    (hl : Sig.noLists sig.params = true) :
+    Exec isa (withStackScratch bytes (scratchReg sig) c) s t (popState bytes s s₄) ∧
+      abiPreserved s (popState bytes s s₄) ∧ (popState bytes s s₄).mem = s₄.mem ∧
+      (popState bytes s s₄).gpr = s₄.gpr := by
+  rw [pre_regs (by omega_using [hk]) hl] at hs
+  obtain ⟨⟨-, hwf⟩, -, -, -, -, -, -⟩ := hs
+  exact withStackScratch_runSp hk hb (by rcases hwf with h | h <;> omega_using [h, hb]) he ha
 
 /-- Code verified for a function whose last argument, in a register, is a
 scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified

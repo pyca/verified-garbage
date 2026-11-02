@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Common
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Frame
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.BaseContract
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -20,13 +21,17 @@ namespace VG.Proof.Ed25519.RISCV64.Whole
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64.Whole VG.Proof.X25519.RISCV64
 open VG.Spec.Ed25519 (bytesAt)
+open VG.Impl.Ed25519.RISCV64 (combSym combWord)
 
 /-- The message. -/
 abbrev msgR (s : State) : Region := ⟨s.gpr .a3, (s.gpr .a4).toNat⟩
 
+/-- What the body may write. -/
+abbrev signW (s : State) : List Region := [⟨s.gpr .a0, 64⟩, ⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 288⟩, below s.sp 208]
+
 /-- The precondition, by register. -/
 structure SignPre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .a1, 32⟩, ⟨s.gpr .a2, 32⟩, msgR s]
+  rd : s.rd = [⟨s.gpr .a1, 32⟩, ⟨s.gpr .a2, 32⟩, msgR s, TBL (s.syms combSym)]
   wr : s.wr = [⟨s.gpr .a0, 64⟩, ⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 288⟩]
   alC : (s.gpr .a5).toNat % 8 = 0
   alF : (s.gpr .a6).toNat % 8 = 0
@@ -51,9 +56,10 @@ structure SignPre (s : State) : Prop where
   bC : (below s.sp 208).Disjoint ⟨s.gpr .a5, 8192⟩
   bF : (below s.sp 208).Disjoint ⟨s.gpr .a6, 288⟩
   pk : bytesAt s.mem (s.gpr .a2) 32 = Spec.Ed25519.publicKey (bytesAt s.mem (s.gpr .a1) 32)
-
-/-- What the body may write. -/
-abbrev signW (s : State) : List Region := [⟨s.gpr .a0, 64⟩, ⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 288⟩, below s.sp 208]
+  tal : (s.syms combSym).toNat % 8 = 0
+  tfit : (s.syms combSym).toNat + 49152 ≤ 2 ^ 64
+  words : ∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q
+  tW : ∀ r ∈ signW s, (TBL (s.syms combSym)).Disjoint r
 
 /-- The values in `s1` and `s7`–`s11`. -/
 def signV (s : State) : Reg → BitVec 64
