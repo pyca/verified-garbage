@@ -339,7 +339,7 @@ def lay (s : State) : Lay :=
 theorem lay_top (s : State) : (lay s).B + BitVec.ofNat 64 1248 = s.sp := BitVec.sub_add_cancel _ _
 
 theorem lay_args (s : State) : (lay s).B + BitVec.ofNat 64 1248 = stackArgAddr s 0 := by
-  simp only [lay, stackArgAddr]; bv_omega
+  rw [lay_top]; exact (BitVec.add_zero _).symm
 
 theorem lay_ok {s : State} (h : scryptRV.pre s) : (lay s).Ok := by
   obtain ⟨hst, h40, hal, -, -, pb, pv, pc, po, sb, sv, sc, so, bv, bc, bo, ba, vc, vo, va, co, ca, oa,
