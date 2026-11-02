@@ -51,9 +51,9 @@ def passBody : List Instr :=
 the remainder, which then has the divisor subtracted (a mask `a4` of all
 ones, while it is not negative) or added (`a4 = 0`); the new mask and
 quotient bit from its sign, the bit shifted into the dividend's word. -/
-def step (q r d : Nat) : Prog isa :=
+def stepK (q r d : Nat) (k : Reg) : Prog isa :=
   .seq (.block (qword q ++ [.load .d .t5 .t2 0, .shift .srl .d .t3 .t5 63] ++ ptr .t0 r ++ ptr .t1 d ++
-      [.logicImm .and .t4 .a4 1, .addi .t2 .s9 1]))
+      [.logicImm .and .t4 .a4 1, .addi .t2 k 1]))
     (.seq (countLoop .t2 passBody)
       (.block ([.shift .srl .d .t5 .t6 63, .addi .a4 .t5 (-1), .logicImm .and .a5 .a4 1] ++ qword q ++
         [.load .d .t5 .t2 0, .shift .sll .d .t5 .t5 1, .logic .or .t5 .t5 .a5, .store .d .t5 .t2 0,
@@ -72,12 +72,16 @@ def fixBody : List Instr :=
     .addi .t1 .t1 8]
 
 /-- A negative remainder has the divisor added back. -/
-def fix (r d : Nat) : Prog isa :=
-  .seq (.block (ptr .t0 r ++ ptr .t1 d ++ [.logicImm .xor .a4 .a4 (-1), .li .t4 0, .addi .t3 .s9 1]))
+def fixK (r d : Nat) (k : Reg) : Prog isa :=
+  .seq (.block (ptr .t0 r ++ ptr .t1 d ++ [.logicImm .xor .a4 .a4 (-1), .li .t4 0, .addi .t3 k 1]))
     (countLoop .t3 fixBody)
 
-/-- `64 w` division steps of `[q]` by `[d]`: the quotient in `[q]` and the
-remainder in `[r]` (`t` is not used). -/
-def div (q r d _t : Nat) : Prog isa := .seq (init r) (.seq (.loop (step q r d) (.nonzero .s7)) (fix r d))
+/-- `64 w` division steps of `[q]` by `[d]`: the quotient in `[q]` (`w` words) and the
+remainder in `[r]` (`[k] + 1` words, the divisor's `[k]` words and a word 0). -/
+def divK (q r d : Nat) (k : Reg) : Prog isa :=
+  .seq (init r) (.seq (.loop (stepK q r d k) (.nonzero .s7)) (fixK r d k))
+
+/-- `divK` with `k = w`, the remainder in `[r]` (`t` is not used). -/
+def div (q r d _t : Nat) : Prog isa := divK q r d .s9
 
 end VG.Impl.Rsa.RISCV64.Div
