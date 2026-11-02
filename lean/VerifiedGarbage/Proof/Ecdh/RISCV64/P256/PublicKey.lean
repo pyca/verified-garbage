@@ -331,7 +331,8 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRVC.pre s) :
     rw [r₆.gpr _ (by decide), r₅.gpr _ (by decide), r₄.gpr _ (by decide), u₃.gpr, u₂b.other _ (by decide),
       u₂a.other _ (by decide), r₂.gpr _ (by decide), h3₁]
   -- `[d]G`, `Z^(p-2)` and `x`.
-  refine WP.seq (WP.mono (VG.Proof.Ecdsa.RISCV64.Comb.tailG_ok hL hw₆ h3₆ tc₆ rx₆ ry₆ hT₆)
+  refine WP.seq (WP.mono (VG.Proof.Ecdsa.RISCV64.Comb.tailG_ok hL hw₆ h3₆ tc₆ rx₆ ry₆
+    ((sv_unch (O₅.unch.trans O₆.unch) BP (by decide)).trans (const_at cs₄ 11)) hT₆)
     fun s₇ ⟨Kc₇, U₇, f₇, rep₇, xolt, xoeq, acclt, acceq⟩ => ?_)
   have hw₇ := hw₆.of_kc Kc₇
   have one₇ : sv base s₇ ONE = 1 := by show wordsVal _ _ _ _ = _; rw [sv_unch U₇ ONE (by decide)]; exact tc₆.one

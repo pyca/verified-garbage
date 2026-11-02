@@ -24,7 +24,7 @@ with the pieces of ECDH (`Impl/Ecdh/RISCV64.lean`) and of signing
    (Straus): a table of the sixteen points `[a]G + [b]Q` (`a, b < 4`, entry
    `4 a + b`, `x`, `y` and `z` of `n` words each, `24 n` bytes) at `JT`, from
    `G`, `Q`, `2G`, `3G`, `2Q` and `3Q` in slots (`build`), by the complete
-   addition; then from `R = O`, for the windows `j` from 127 down to 0 (the
+   addition for `a = -3` (`rcb3`, with `b` at `BP`); then from `R = O`, for the windows `j` from 127 down to 0 (the
    counter `s1`), the window's entry `4 u_j + v_j` selected from the sixteen
    without a secret address (the comb's tree of masks, `Comb.tree`, over
    entries at `a0 = s0 + JT`), and `R = 4 R + E` by three complete additions
@@ -108,8 +108,9 @@ def copyTo : Nat → Nat → Nat → List Instr
   | 0, _, _ => []
   | k + 1, o, a => [.load .d .t0 wb a, .store .d .t0 .a6 o] ++ copyTo k (o + 8) (a + 8)
 
-/-- `o = p + q` by the complete addition. -/
-def addPt (p q o : Pt) : Prog isa := fprog c.FP (rcb c.rcbSlots p q o)
+/-- `o = p + q` by the complete addition for `a = -3` (Algorithm 4 of Renes,
+Costello and Batina). -/
+def addPt (p q o : Pt) : Prog isa := fprog c.FP (rcb3 c.rcb3Slots p q o)
 
 /-- The points `[a]G` and `[b]Q` (`a, b ∈ 1 … 3`) in slots. -/
 def gPt : Nat → Pt

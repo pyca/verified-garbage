@@ -129,7 +129,7 @@ theorem tab_wr_of_consts {st : Nat} {s : State} (h : ConstsOk p256CombConsts st 
 /-- `tail` with `vg_p256_mul_g`, from `G` in `R`'s first two slots. -/
 theorem tailG_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base)
     (h3 : s.gpr .s3 = base) (hc : TailConsts base s) (hx : sv base s RX = W.gx * 2 ^ 256 % W.p)
-    (hy : sv base s RY = W.gy * 2 ^ 256 % W.p) (hT : TabAt base s) :
+    (hy : sv base s RY = W.gy * 2 ^ 256 % W.p) (hbp : sv base s BP = W.b * 2 ^ 256 % W.p) (hT : TabAt base s) :
     WP isa (Impl.Ecdh.RISCV64.Cfg.tail p256 mulGP256Name mulGP256) s fun s' =>
       Kc s s' ∧ Unch base tailW s.mem s'.mem ∧
       word s'.mem base FL = word s.mem base FL &&& maskOf (decide (sv base s K < W.n)) &&&
@@ -174,10 +174,11 @@ theorem tailG_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base)
     simp only [State.withRegions_mem, State.callEntry_mem, u₂.mem]
   refine WP.call (mulG_rv hL) (rd := [tabRegion s₂]) (wr := [⟨base, 8192⟩]) ?_ (Covers.append htab hcov) hcov
     (fun s₃ r₃ w₃ p₃ _ G₃ _ hp => ?_) Impl.Ecdsa.RISCV64.Comb.mulGP256_noFrames
-  · refine ⟨rfl, by rw [e0]; rfl, by rw [e0]; exact hw₁.nowrap, by rw [e0]; exact hw₁.al, ?_, ?_, ?_, ?_, ?_⟩
+  · refine ⟨rfl, by rw [e0]; rfl, by rw [e0]; exact hw₁.nowrap, by rw [e0]; exact hw₁.al, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [e0, em]
       exact ⟨(coord_sv _ _ MP).trans hc₁.mp, (coord_sv _ _ ZERO).trans hc₁.zero,
         (coord_sv _ _ ONEP).trans hc₁.onep, (coord_sv _ _ AP).trans hc₁.ap, (coord_sv _ _ B3P).trans hc₁.b3p⟩
+    · rw [e0, em]; exact (e₁ BP (by decide)).trans hbp
     · rw [em]; exact fun i hi => by rw [show (s₂.callEntry.withRegions _ _).syms = s₁.syms from sy₂]; exact hT₁.held i hi
     · exact (show (s₂.callEntry.withRegions [tabRegion s₂] [⟨base, 8192⟩]).syms = s₁.syms from sy₂) ▸ hT₁.al
     · exact (show (s₂.callEntry.withRegions [tabRegion s₂] [⟨base, 8192⟩]).syms = s₁.syms from sy₂) ▸ hT₁.fit

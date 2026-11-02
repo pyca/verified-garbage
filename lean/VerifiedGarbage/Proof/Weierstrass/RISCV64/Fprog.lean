@@ -226,4 +226,44 @@ theorem rcb_ok {M : Mod} {base : Addr} {F : Field} [NeZero F.S.m] (hF : FieldOk 
     · exact Or.inr (rcb_out_mem hx)
     · exact Or.inl hx
 
+/-! ## Formulas on numbered slots: `a = -3` -/
+
+/-- A formula on numbered slots (`NumOk`), renamed to the slots of a sum. -/
+theorem ofN_ok {M : Mod} {base : Addr} {F : Field} [NeZero F.S.m] (hF : FieldOk F) (hk : F.S.k = M.n)
+    {Sl : Nat → Prop} (hL : Lay M (own M.n) Sl) (hS2 : Short Sl)
+    (hm : UnitMod F.S.m (2 ^ (64 * M.n))) {N : List FOp} (hN : NumOk N) {S : RcbSlots} {p q o : Pt}
+    (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat}
+    {E : Nat → Fin F.S.m} {s : State} (hI : Inv M.n base F.S.m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
+    WP isa (fprog F (ofN N S p q o)) s fun s' => KeepR M.n base (rcbW S o) s s' ∧
+      Inv M.n base F.S.m Sl ([o.x, o.y, o.z] ++ V) (runOps (ofN N S p q o) E) s' ∧
+      (runOps (ofN N S p q o) E o.x, runOps (ofN N S p q o) E o.y, runOps (ofN N S p q o) E o.z) =
+        (runOps N (fun y => E (rcbσ S p q o y)) 6, runOps N (fun y => E (rcbσ S p q o y)) 7,
+          runOps N (fun y => E (rcbσ S p q o y)) 8) ∧
+      ∀ x, x ∉ rcbW S o → runOps (ofN N S p q o) E x = E x := by
+  have hR : readsOk (ofN N S p q o) V = true := readsOk_mono (ofN_readsOk hN S p q o) hV
+  refine WP.mono (fprog_ok hF hk hL hS2 hm _ hI (fun op hop x hx => hSl x (ofN_slots op hop x hx)) hR)
+    fun s' ⟨hk', hI'⟩ => ⟨hk'.mono fun w hw => ?_, hI'.sub fun x hx => ?_, ?_,
+      fun x hx => runOps_of_not_out _ _ fun op hop h => hx (h ▸ ofN_out hN op hop)⟩
+  · obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw
+    exact ofN_out hN op hop
+  · rw [mem_validAfter]
+    rcases List.mem_append.mp hx with hx | hx
+    · exact Or.inr (ofN_out_mem hN hx)
+    · exact Or.inl hx
+  · exact congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7) (ofN_run hN hA E 8))
+
+/-- `o = p + q` by Algorithm 4 (`a = -3`, with `b` in `S.b3`). -/
+theorem rcb3_ok {M : Mod} {base : Addr} {F : Field} [NeZero F.S.m] (hF : FieldOk F) (hk : F.S.k = M.n)
+    {Sl : Nat → Prop} (hL : Lay M (own M.n) Sl) (hS2 : Short Sl)
+    (hm : UnitMod F.S.m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
+    (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat}
+    {E : Nat → Fin F.S.m} {s : State} (hI : Inv M.n base F.S.m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
+    WP isa (fprog F (rcb3 S p q o)) s fun s' => KeepR M.n base (rcbW S o) s s' ∧
+      Inv M.n base F.S.m Sl ([o.x, o.y, o.z] ++ V) (runOps (rcb3 S p q o) E) s' ∧
+      (runOps (rcb3 S p q o) E o.x, runOps (rcb3 S p q o) E o.y, runOps (rcb3 S p q o) E o.z) =
+        VG.Proof.Weierstrass.rcbAdd3 (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) (E q.z) := by
+  rw [rcb3_eq]
+  exact WP.mono (ofN_ok hF hk hL hS2 hm rcb3N_ok hA hSl hI hV) fun s' ⟨k, I, v, _⟩ =>
+    ⟨k, I, v.trans (rcb3N_run _)⟩
+
 end VG.Proof.Weierstrass.RISCV64
