@@ -314,6 +314,10 @@ theorem xorLoop_ok {t : State} {p q : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 
 
 /-! ## The rounds -/
 
+/-- The offsets of our part of the working space that MGF1 changes only in
+`dst`: all but those of the streaming state, the digest and the counter. -/
+abbrev Kp (o : Nat) : Prop := o < oRsa ∧ (o < oSt ∨ oCtr + 4 ≤ o)
+
 /-- `src`, `srcLen`, `dst` and `dstLen`: in `EM`'s place, and apart. -/
 structure MFit (src srcLen dst dstLen : Nat) : Prop where
   fs : src + srcLen ≤ 1024
@@ -333,7 +337,7 @@ structure MgfI (S : State → Addr) (vf : State → Reg → BitVec 64) (s : Stat
   s9 : v.gpr .s9 = BitVec.ofNat 64 dstLen
   s10 : v.gpr .s10 = BitVec.ofNat 64 c
   s11 : v.gpr .s11 = BitVec.ofNat 64 (c * D)
-  em : ∀ o < oSt, view v.mem (S s) o = mixV V mk dst (min (c * D) dstLen) o
+  em : ∀ o, Kp o → view v.mem (S s) o = mixV V mk dst (min (c * D) dstLen) o
 
 theorem xorAt_getD (m : Mem) (p q : Addr) {n i : Nat} (hi : i < n) :
     (xorAt m p q n).getD i 0 = m (p + BitVec.ofNat 64 i) ^^^ m (q + BitVec.ofNat 64 i) := by
@@ -391,7 +395,7 @@ theorem round_ok {G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {Gs : Spec.Mgf1.H
     rw [bytesAt_view]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    rw [k₆.mem, s₂ _ (by omega) (by simp; omega), o₁.mem, I.em _ (by omega), mixV, ifn (by omega)]
+    rw [k₆.mem, s₂ _ (by omega) (by simp; omega), o₁.mem, I.em _ ⟨by omega, .inl (by omega)⟩, mixV, ifn (by omega)]
   have hR7 : hG.SH.Repr t₇.mem (off (S s) oSt) (srcB V src srcLen) := by
     have := r₇ [] (by rw [k₆.mem]; exact r₂) (by rw [o₆.get .a1, o₅.get .a1, e₄]; rfl)
     rw [List.nil_append] at this
@@ -465,7 +469,7 @@ theorem round_ok {G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {Gs : Spec.Mgf1.H
   have hs1 : (c + 1) * G.D = c * G.D + G.D := Nat.succ_mul _ _
   refine ⟨by rw [xt, hs1], b₁₅.only P k₁₆, by rw [k₁₆.get .s6, m₁₅ _ (by decide), I.s6],
     by rw [k₁₆.get .s7, m₁₅ _ (by decide), I.s7], by rw [k₁₆.get .s8, m₁₅ _ (by decide), I.s8],
-    by rw [k₁₆.get .s9, m₁₅ _ (by decide), I.s9], x10, by rw [x11, hs1], fun o ho => ?_⟩
+    by rw [k₁₆.get .s9, m₁₅ _ (by decide), I.s9], x10, by rw [x11, hs1], fun o ⟨ho, ho'⟩ => ?_⟩
   -- `EM`'s place.
   have hold : view t₁₃.mem (S s) o = view v.mem (S s) o := by
     have e₁₃ := s₁₃ o (by omega) (by simp; omega)
@@ -496,9 +500,9 @@ theorem round_ok {G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {Gs : Spec.Mgf1.H
     have hq : (o - dst) / G.D = c := Nat.div_eq_of_lt_le (by omega) (by omega)
     have hr : (o - dst) % G.D = o - (dst + c * G.D) := by
       rw [Nat.mod_eq_sub_mul_div, hq, Nat.mul_comm]; omega
-    rw [ifp hx, I.em o ho, mixV, mixV, ifn (by omega), ifp (by rw [hs1]; omega),
+    rw [ifp hx, I.em o ⟨ho, ho'⟩, mixV, mixV, ifn (by omega), ifp (by rw [hs1]; omega),
       Proof.Mgf1.mgf1_getD hGv _ (show o - dst < dstLen by omega), hGl, hq, hr]
-  · rw [ifn hx, I.em o ho, mixV, mixV]
+  · rw [ifn hx, I.em o ⟨ho, ho'⟩, mixV, mixV]
     by_cases hy : dst ≤ o ∧ o < dst + min (c * G.D) dstLen
     · rw [ifp hy, ifp (by rw [hs1]; omega)]
     · rw [ifn hy, ifn (by rw [hs1]; omega)]
@@ -510,7 +514,7 @@ theorem mgfXor_ok {G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {Gs : Spec.Mgf1.
     {src srcLen dst dstLen : Nat} (hf : MFit src srcLen dst dstLen) {t : State} (h : Base S vf s t)
     (h6 : t.gpr .s6 = off (S s) src) (h7 : t.gpr .s7 = BitVec.ofNat 64 srcLen) (h8 : t.gpr .s8 = off (S s) dst)
     (h9 : t.gpr .s9 = BitVec.ofNat 64 dstLen) :
-    WP isa (mgfXor G) t fun t' => Base S vf s t' ∧ ∀ o < oSt, view t'.mem (S s) o =
+    WP isa (mgfXor G) t fun t' => Base S vf s t' ∧ ∀ o, Kp o → view t'.mem (S s) o =
       mixV (view t.mem (S s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (S s)) src srcLen) dstLen) dst dstLen o := by
   have hpos := hf.pos
   have hD : 0 < G.D := hG.hD0

@@ -125,14 +125,14 @@ theorem mask_ok {H G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {Gs : Spec.Mgf1.
   have hsrc : srcB (view t₅.mem (S s)) (1 + H.D) (kk s - H.D - 1) =
       srcB (mixV (view t.mem (S s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (S s)) 1 H.D) (kk s - H.D - 1)) (1 + H.D)
         (kk s - H.D - 1)) (1 + H.D) (kk s - H.D - 1) :=
-    List.map_congr_left fun i hi => v₅ _ (by have := List.mem_range.mp hi; omega)
+    List.map_congr_left fun i hi => v₅ _ ⟨by have := List.mem_range.mp hi; omega, .inl (by have := List.mem_range.mp hi; omega)⟩
   rw [bytesAt_S]
   refine (List.map_congr_left fun i hi => ?_).trans ((em_mask hGv (by omega) hsd hdbl he.z0 he.sd hdb).trans ?_)
   · have hi := List.mem_range.mp hi
-    rw [v₁₀ i (by omega), hsrc, mixV, mixV]
+    rw [v₁₀ i ⟨by omega, .inl (by omega)⟩, hsrc, mixV, mixV]
     split
-    · rw [v₅ i (by omega)]
-    · rw [v₅ i (by omega)]
+    · rw [v₅ i ⟨by omega, .inl (by omega)⟩]
+    · rw [v₅ i ⟨by omega, .inl (by omega)⟩]
   · rw [← hDB]; rfl
 
 end
