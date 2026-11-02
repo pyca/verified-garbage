@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.ReadHalves
 
 /-!
 # Points into slots 4–7 on RISC-V, from any table
@@ -23,6 +24,7 @@ namespace VG.Proof.Ed25519.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64 VG.Proof.X25519.RISCV64
 open VG.Proof.X25519 (val32_congr)
+open VG.Impl.Ed25519 (negBaseCached)
 
 theorem wd_shift' (m : Mem) (b : Addr) (o d : Nat) : wd m (b + BitVec.ofNat 64 o) d = wd m b (o + d) := by
   unfold wd; rw [Offset.add_add]
@@ -95,6 +97,56 @@ theorem pointFromTableQ_ok {s : State} (hc : Ctx8 b s) {q : Addr} (h14 : s.gpr .
     rcases hi with hi | hi
     · exact Offset.disjoint _ (.inl (by simp only [offset]; omega)) (by omega) (by omega)
     · exact Offset.disjoint _ (.inr (by simp only [offset]; omega)) (by omega) (by omega)
+
+/-! ## The static of `-[1]B … -[15]B` -/
+
+private theorem lo_digit (v k' : Nat) :
+    v / 2 ^ (64 * k') % 2 ^ 64 % 2 ^ 32 = v / 2 ^ (32 * (2 * k')) % 2 ^ 32 := by
+  rw [Nat.mod_mod_of_dvd _ (by decide : 2 ^ 32 ∣ 2 ^ 64), show 32 * (2 * k') = 64 * k' by omega]
+
+private theorem hi_digit (v k' : Nat) :
+    (v / 2 ^ (64 * k') % 2 ^ 64) >>> 32 % 2 ^ 32 = v / 2 ^ (32 * (2 * k' + 1)) % 2 ^ 32 := by
+  rw [Nat.shiftRight_eq_div_pow, show (2 : Nat) ^ 64 = 2 ^ 32 * 2 ^ 32 from rfl, Nat.mod_mul_right_div_self,
+    Nat.mod_mod, Nat.div_div_eq_div_mul, ← Nat.pow_add, show 64 * k' + 32 = 32 * (2 * k' + 1) by omega]
+
+/-- Limb `k` of coordinate `c` of the static's entry `j`. -/
+theorem limb_static {m : Mem} {T : Addr}
+    (hw : ∀ q < 240, m.readW (T + BitVec.ofNat 64 (8 * q)) 64 = bWord q) {j c k : Nat}
+    (hj : j < 15) (hc : c < 4) (hk : k < 8) :
+    limb m (T + BitVec.ofNat 64 (128 * j)) (32 * c) k =
+      (pointCoord (negBaseCached j) c).val / 2 ^ (32 * k) % 2 ^ 32 := by
+  unfold limb wd
+  rw [Offset.add_add]
+  obtain ⟨k', hk'⟩ : ∃ k', k = 2 * k' ∨ k = 2 * k' + 1 := ⟨k / 2, by omega⟩
+  rcases hk' with rfl | rfl
+  · have hq : 16 * j + 4 * c + k' < 240 := by omega
+    rw [show 128 * j + (32 * c + 4 * (2 * k')) = 8 * (16 * j + 4 * c + k') by omega,
+      Mem.readW_lo32 (hw _ hq), BitVec.toNat_setWidth, bWord, BitVec.toNat_ofNat,
+      show (16 * j + 4 * c + k') / 16 = j by omega, show (16 * j + 4 * c + k') / 4 % 4 = c by omega,
+      show (16 * j + 4 * c + k') % 4 = k' by omega, lo_digit]
+  · have hq : 16 * j + 4 * c + k' < 240 := by omega
+    rw [show 128 * j + (32 * c + 4 * (2 * k' + 1)) = 8 * (16 * j + 4 * c + k') + 4 by omega,
+      ← Offset.add_add, Mem.readW_hi32 (hw _ hq), BitVec.extractLsb'_toNat, bWord, BitVec.toNat_ofNat,
+      show (16 * j + 4 * c + k') / 16 = j by omega, show (16 * j + 4 * c + k') / 4 % 4 = c by omega,
+      show (16 * j + 4 * c + k') % 4 = k' by omega, hi_digit]
+
+/-- **The static's entry `j`** is `negBaseCached j`. -/
+theorem tableAt_static {m : Mem} {T : Addr}
+    (hw : ∀ q < 240, m.readW (T + BitVec.ofNat 64 (8 * q)) 64 = bWord q) {j : Nat} (hj : j < 15) :
+    tableAt m (T + BitVec.ofNat 64 (128 * j)) 0 = negBaseCached j := by
+  have hf : ∀ c < 4, FS m (T + BitVec.ofNat 64 (128 * j)) (32 * c) = pointCoord (negBaseCached j) c := by
+    intro c hc
+    unfold FS V
+    rw [val32_congr (g := fun k => (pointCoord (negBaseCached j) c).val / 2 ^ (32 * k) % 2 ^ 32)
+      fun k hk => limb_static hw hj hc hk, val32_digits,
+      Nat.mod_eq_of_lt (Nat.lt_trans (pointCoord (negBaseCached j) c).isLt (by decide))]
+    exact Fin.ext (Nat.mod_eq_of_lt (pointCoord (negBaseCached j) c).isLt)
+  have e0 := hf 0 (by decide)
+  have e1 := hf 1 (by decide)
+  have e2 := hf 2 (by decide)
+  have e3 := hf 3 (by decide)
+  simp only [Nat.mul_zero, Nat.reduceMul] at e0 e1 e2 e3
+  simp only [tableAt, Nat.zero_add, e0, e1, e2, e3, pointCoord]
 
 end
 

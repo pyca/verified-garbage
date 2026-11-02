@@ -3,6 +3,7 @@ module
 -- separate module: its proofs (about 6 s) build in parallel with `Encode`'s and `VerifyFn`'s, which `ScalarBase` also imports
 
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Comb
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.WindowDigit
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.BaseContract
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
 public import VerifiedGarbage.Proof.X25519.RISCV64.Instr
@@ -48,12 +49,6 @@ namespace VG.Proof.Ed25519.RISCV64
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519 VG.Impl.Ed25519.RISCV64 VG.Proof.X25519.RISCV64
 open VG.Proof.X25519 (sel)
 
-/-- Digit `i`'s nibble of the scalar at `p`. -/
-def nibAt (m : Mem) (p : Addr) (i : Nat) : Nat :=
-  (m (p + BitVec.ofNat 64 (i / 2))).toNat / 16 ^ (i % 2) % 16
-
-theorem nibAt_lt (m : Mem) (p : Addr) (i : Nat) : nibAt m p i < 16 := Nat.mod_lt _ (by decide)
-
 /-- The magnitude of the digit `n - 8`. -/
 def magOf (n : Nat) : Nat := if n < 8 then 8 - n else n - 8
 
@@ -71,20 +66,10 @@ theorem wp_xori {d n : Reg} {imm : Int} (h : imm12 imm)
     WP isa (.block (.logicImm .xor d n imm :: is)) s Q :=
   WP.cons (exec_logicImm h) (k _ (Upd.write _ _ _))
 
-theorem wp_andi' {d n : Reg} {imm : Int} (h : imm12 imm)
-    (k : ∀ s', Upd s s' d (s.gpr n &&& BitVec.ofInt 64 imm) → WP isa (.block is) s' Q) :
-    WP isa (.block (.logicImm .and d n imm :: is)) s Q :=
-  WP.cons (exec_logicImm h) (k _ (Upd.write _ _ _))
-
 theorem wp_addi' {d n : Reg} {imm : Int} (h : imm12 imm)
     (k : ∀ s', Upd s s' d (s.gpr n + BitVec.ofInt 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addi d n imm :: is)) s Q :=
   WP.cons (exec_addi h) (k _ (Upd.write _ _ _))
-
-theorem wp_srlr {d n m : Reg}
-    (k : ∀ s', Upd s s' d (s.gpr n >>> ((s.gpr m).toNat % 64)) → WP isa (.block is) s' Q) :
-    WP isa (.block (.shiftReg .srl .d d n m :: is)) s Q :=
-  WP.cons rfl (k _ (Upd.write _ _ _))
 
 theorem wp_li0 {d : Reg} (k : ∀ s', Upd s s' d 0 → WP isa (.block is) s' Q) :
     WP isa (.block (.li d 0 :: is)) s Q :=
@@ -108,15 +93,6 @@ private theorem identity_fact : ∀ a ≤ 8,
 private theorem counter_fact : ∀ i < 64,
     BitVec.ofNat 64 i >>> 1 = BitVec.ofNat 64 (i / 2) ∧
       ((BitVec.ofNat 64 i &&& BitVec.ofInt 64 1) <<< 2).toNat % 64 = 4 * (i % 2) := by decide
-
-theorem nibble_eq (v : Nat) (hv : v < 256) (o : Nat) :
-    (BitVec.ofNat 64 v >>> (4 * o) &&& BitVec.ofInt 64 15) = BitVec.ofNat 64 (v / 16 ^ o % 16) := by
-  apply BitVec.eq_of_toNat_eq
-  have h16 : (BitVec.ofInt 64 15).toNat = 2 ^ 4 - 1 := rfl
-  have hl : v / 16 ^ o % 16 < 2 ^ 64 := Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)
-  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, h16,
-    Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hl,
-    Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega), Nat.pow_mul]
 
 private theorem maskReg_fact : ∀ k < 8,
     maskReg (k + 1) ≠ .a0 ∧ maskReg (k + 1) ≠ .a4 ∧ maskReg (k + 1) ≠ .a3 ∧
