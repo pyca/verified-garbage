@@ -387,6 +387,107 @@ pub fn bench(c: &mut Criterion) {
         }
         g.finish();
     }
+    {
+        // The unproven key functions: the CRT values, and the two key checks (next to OpenSSL's RSA_check_key).
+        use openssl::rsa::Rsa;
+        use verified_garbage_asm_riscv64::rsa_proto3::{
+            vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values,
+        };
+        for (name, kind) in [
+            ("rsa_proto_crt_values", 0),
+            ("rsa_proto_check_key", 1),
+            ("rsa_proto_check_crt_key", 2),
+        ] {
+            let mut g = c.benchmark_group(name);
+            for bits in [2048u32, 4096] {
+                let key = Rsa::generate(bits).unwrap();
+                let k = key.size() as usize;
+                let pad = |b: Vec<u8>, l: usize| {
+                    let mut v = vec![0u8; l - b.len()];
+                    v.extend(b);
+                    v
+                };
+                let (n, e, d) = (key.n().to_vec(), key.e().to_vec(), pad(key.d().to_vec(), k));
+                let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
+                let (pl, ql) = (p.len(), q.len());
+                let dp = pad(key.dmp1().unwrap().to_vec(), pl);
+                let dq = pad(key.dmq1().unwrap().to_vec(), ql);
+                let qi = pad(key.iqmp().unwrap().to_vec(), pl);
+                let mut scratch = vec![0u64; 16 * k + 64];
+                let (mut odp, mut odq, mut oqi) = (vec![0u8; pl], vec![0u8; ql], vec![0u8; pl]);
+                g.bench_function(BenchmarkId::new(VG, bits), |b| match kind {
+                    0 => b.iter(|| unsafe {
+                        vg_rsa_crt_values(
+                            odp.as_mut_ptr(),
+                            pl,
+                            odq.as_mut_ptr(),
+                            ql,
+                            oqi.as_mut_ptr(),
+                            pl,
+                            n.as_ptr(),
+                            k,
+                            p.as_ptr(),
+                            pl,
+                            q.as_ptr(),
+                            ql,
+                            black_box(d.as_ptr()),
+                            k,
+                            scratch.as_mut_ptr(),
+                            scratch.len(),
+                        )
+                    }),
+                    1 => b.iter(|| unsafe {
+                        vg_rsa_check_key(
+                            n.as_ptr(),
+                            k,
+                            e.as_ptr(),
+                            e.len(),
+                            black_box(d.as_ptr()),
+                            k,
+                            p.as_ptr(),
+                            pl,
+                            q.as_ptr(),
+                            ql,
+                            dp.as_ptr(),
+                            pl,
+                            dq.as_ptr(),
+                            ql,
+                            qi.as_ptr(),
+                            pl,
+                            scratch.as_mut_ptr(),
+                            scratch.len(),
+                        )
+                    }),
+                    _ => b.iter(|| unsafe {
+                        vg_rsa_check_crt_key(
+                            n.as_ptr(),
+                            k,
+                            e.as_ptr(),
+                            e.len(),
+                            black_box(p.as_ptr()),
+                            pl,
+                            q.as_ptr(),
+                            ql,
+                            dp.as_ptr(),
+                            pl,
+                            dq.as_ptr(),
+                            ql,
+                            qi.as_ptr(),
+                            pl,
+                            scratch.as_mut_ptr(),
+                            scratch.len(),
+                        )
+                    }),
+                });
+                if kind == 1 {
+                    g.bench_function(BenchmarkId::new(OPENSSL, bits), |b| {
+                        b.iter(|| black_box(&key).check_key().unwrap())
+                    });
+                }
+            }
+            g.finish();
+        }
+    }
     let mut ctx = BigNumContext::new().unwrap();
     for (name, kind) in [
         ("rsa_proto_mul", 0),
