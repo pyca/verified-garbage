@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Env
 public import VerifiedGarbage.Spec.Rsa
 
@@ -24,7 +24,7 @@ odd `m > 1` and `a`, `m < 2^(32 n)`. `loadE`: `load j` reads bytes into a zero a
 namespace VG.Proof.RsaKeyGen.PPC64LE.Key
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum VG.Proof.Bignum.PPC64LE VG.Proof.Rsa VG.Proof.Rsa.PPC64LE.Keys
-open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 inverse aM aNM aZero aT1 aT3 aT4 sOdd sB sC)
+open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 aM aNM aZero aT1 aT3 aT4 sOdd sB sC)
 open VG.Impl.Rsa.PPC64LE.CrtValues (load)
 open VG.Impl.RsaKeyGen.PPC64LE.Key (nArr aDv aOne invOf)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)

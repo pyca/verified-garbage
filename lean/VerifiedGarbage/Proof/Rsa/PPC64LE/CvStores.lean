@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvMid
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBase
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 
 /-!

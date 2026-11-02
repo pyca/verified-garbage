@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcSetup
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvStores
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem

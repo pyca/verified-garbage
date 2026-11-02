@@ -11,7 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Body
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Stores
 

@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.PPC64LE.Recover
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.MulMod
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.Precompute
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.InvBatch
 
 /-! # `vg_rsa_recover_primes_det` on PPC64LE
 
-SP 800-56B Rev. 2 Appendix C.2 without a branch on a secret, in
-`vg_rsa_recover_primes`' working space, entry, loads, product `d e` and
-stores (`Impl/Rsa/PPC64LE/Recover.lean`): the numbers are `w` digits
+SP 800-56B Rev. 2 Appendix C.2 without a branch on a secret, after the
+entry, the check of `n`, the loads and the product `d e` (in the namespace
+`Recover`, with the stores and the exits): the numbers are `w` digits
 (narrow) or, in the same working space read with `W = 2 w + 2` digits, wide,
 wide array `j` being the narrow arrays `2 j` and `2 j + 1`. A narrow number
 copied into the low half of a wide array of zeros is that wide number.
@@ -34,6 +37,125 @@ operations of the key working space (`KeyWs.lean`).
 -/
 
 @[expose] public section
+
+namespace VG.Impl.Rsa.PPC64LE.Recover
+
+open VG.PPC64LE VG.Impl.Rsa.PPC64LE.Keys VG.Impl.Rsa.PPC64LE.Div
+
+/-! ## The header
+
+Bytes 0–39 are the function's slots, 124–132 the shared routines', and 152
+the mask of the result (`CrtValues.sMask`, which `CrtValues.mask` reads). -/
+
+def sMask : Nat := CrtValues.sMask
+
+/-! ## The arrays
+
+With `w` digits: `n` (32), 1 (33) and 0 (34). Arrays 44–45 hold the saved
+registers. -/
+
+def aN : Nat := 32
+def aOne : Nat := 33
+def aZ : Nat := 34
+/-- The number of arrays zeroed; the saved registers are in the next two. -/
+def nArr : Nat := 44
+
+/-- With `W` digits: zero, `e`, `d`, `M`, the modulus of the product, and
+the temporaries 5–8 of `mulMod`. -/
+def wZ : Nat := 0
+def wE : Nat := 1
+def wD : Nat := 2
+def wM : Nat := 3
+def wMod : Nat := 4
+def wT : Nat := 5
+
+/-! ## Contexts -/
+
+/-- `W = 2 w + 2` into `r29` and its stride into `r30`. -/
+def ctxW : List Instr := [.lsl .r29 .r29 1, .addi .r29 .r29 2] ++ stride
+
+/-- Back to `w = (W - 2) / 2`. -/
+def ctxw : List Instr := [.subi .r29 .r29 2, .lsr .d .r29 .r29 1] ++ stride
+
+/-! ## Entry and exit -/
+
+/-- The nonvolatile registers, in the order they are saved. -/
+def savedReg (i : Nat) : Reg :=
+  [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30,
+    .r31].getD i .r14
+
+/-- `w = 2 ⌈n_len / 8⌉ + 2` into `rd`, from `n_len` in `r8`. -/
+def wOf (rd : Reg) : List Instr := [.addi rd .r8 7, .lsr .d rd rd 3, .lsl rd rd 1, .addi rd rd 2]
+
+/-- The base of the key array `nArr` into `rd`, the working space's base in
+`b` and the stride in `s`. -/
+def saveBase (rd b s : Reg) : List Instr := [.li rd nArr, .mul rd rd s, .add rd rd b, .addi rd rd hdr]
+
+/-- The working space's base into `r11` and the nonvolatile registers saved
+in its arrays 44–45 (through `r12`). -/
+def save : List Instr :=
+  CrtValues.stackArg .r11 2 ++ wOf .r12 ++ [.addi .r0 .r12 2, .lsl .r0 .r0 2] ++ saveBase .r12 .r11 .r0 ++
+    (List.range 18).map (fun i => .store .d (savedReg i) .r12 (8 * i))
+
+/-- The working space's base, `w` and the stride; `p`, `q`, `n`, `n_len`,
+`e`, `e_len` kept, and `d` and `d_len` from the stack. -/
+def entry : List Instr :=
+  save ++ [.addi .r31 .r11 0] ++ wOf .r29 ++ stride ++
+  [.addi .r21 .r3 0, .addi .r23 .r5 0, .addi .r24 .r7 0, .addi .r25 .r8 0, .addi .r26 .r9 0,
+    .addi .r27 .r10 0] ++
+  CrtValues.stackArg .r28 0 ++ CrtValues.stackArg .r22 1
+
+/-- `n` checked: 0 in `r0` if it is valid. -/
+def nCheck : Prog isa := .seq (.block [.addi .r9 .r24 0, .addi .r10 .r25 0]) CrtValues.check
+
+/-- The saved registers restored, through `r11`, `r31` last. -/
+def restore : List Instr :=
+  saveBase .r11 .r31 .r30 ++ (List.range 18).map (fun i => .load .d (savedReg i) .r11 (8 * i))
+
+/-- Zeros to `p` and `q`, and 0 returned. -/
+def fail : Prog isa := seqs [
+  .block [.addi .r5 .r21 0, .addi .r8 .r25 0], CrtValues.zeroBytes,
+  .block [.addi .r5 .r23 0, .addi .r8 .r25 0], CrtValues.zeroBytes,
+  .block [.li .r3 0]]
+
+/-! ## The numbers -/
+
+/-- Every array zeroed. -/
+def zeroAll : Prog isa := .seq (.block [.li .r8 nArr, .mul .r8 .r8 .r30, .lsr .d .r8 .r8 2]) (zeroArrays .r8)
+
+/-- `[j] :=` the `rL` bytes at `rP`. -/
+def loadR (rP rL : Reg) (j : Nat) : List (Prog isa) :=
+  [.block [.addi .r6 rP 0, .addi .r8 rL 0], CrtValues.load j]
+
+/-- `n` read, then with `W` `e` and `d` (to the arrays `wE` and `wD`), and
+`c = 8 (e_len + d_len)` into `r26`. -/
+def loads : Prog isa :=
+  seqs ([zeroAll] ++ loadR .r24 .r25 aN ++ [.block ctxW] ++ loadR .r26 .r27 wE ++ loadR .r28 .r22 wD ++
+    [.block [.add .r26 .r27 .r22, .lsl .r26 .r26 3]])
+
+/-- The top digit of `[j]` := `2^31`: `[j] = 2^(32 w - 1)` if it was zero. -/
+def setTop (j : Nat) : List Instr :=
+  ptr .r5 j ++ [.lsl .r0 .r29 2, .add .r5 .r5 .r0, .subi .r5 .r5 4, .li .r0 1, .lsl .r0 .r0 31,
+    .store .w .r0 .r5 0]
+
+/-- With `W`: the modulus `2^(32 W - 1)`, and `8 e_len` steps. -/
+def prodSet : List Instr := setTop wMod ++ [.lsl .r4 .r27 3]
+
+/-- `M := d e`. -/
+def prod : Prog isa := .seq (.block prodSet) (mulMod wZ wE wD wM wMod wT)
+
+/-! ## The factors -/
+
+/-- The digit above the `w` of `[j]` cleared, as the division's divisor needs. -/
+def clrW (j : Nat) : List Instr := ptr .r5 j ++ [.lsl .r0 .r29 2, .add .r5 .r5 .r0, .li .r0 0, .store .w .r0 .r5 0]
+
+/-- The factors written out under the mask, and the mask returned. -/
+def stores : Prog isa := seqs [
+  .block ([.addi .r5 .r21 0, .addi .r8 .r25 0] ++ CrtValues.mask), CrtValues.storeBytes 5,
+  .block ([.addi .r5 .r23 0, .addi .r8 .r25 0] ++ CrtValues.mask), CrtValues.storeBytes 6,
+  .block [.load .w .r3 .r31 sMask]]
+
+end VG.Impl.Rsa.PPC64LE.Recover
 
 namespace VG.Impl.Rsa.PPC64LE.RecoverDet
 

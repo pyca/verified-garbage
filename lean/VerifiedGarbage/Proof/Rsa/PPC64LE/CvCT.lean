@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Rsa.PPC64LE.CvFail
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvStores
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE: constant time

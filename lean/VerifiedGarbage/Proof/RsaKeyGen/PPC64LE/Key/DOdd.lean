@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Mul
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.DMath
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.RsaKeyGen.OddInverseQuotient
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega

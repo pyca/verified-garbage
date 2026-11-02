@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCk
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcEntry
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvCheck
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step

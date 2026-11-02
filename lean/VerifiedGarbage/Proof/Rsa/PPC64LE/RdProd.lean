@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdOps
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 

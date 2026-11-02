@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Env
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.DivLoop
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLoop
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithA
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
@@ -23,8 +23,8 @@ on a digit (`setDigit`), with a continuation; `ltSE` (a comparison, through
 namespace VG.Proof.RsaKeyGen.PPC64LE.Key
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa VG.Proof.Rsa.PPC64LE.Keys
-open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 sel half eqS bitOf andS stBorrow inverse aM aNM aZero aT1
-  aT3 aT4 sOdd sB sC)
+open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 sel half eqS bitOf andS stBorrow aM aNM aZero aT1
+ aT3 aT4 sOdd sB sC)
 open VG.Impl.Rsa.PPC64LE.Div (div)
 open VG.Impl.RsaKeyGen.PPC64LE.Key (nArr aDv aT aOne X0 X1 X2 X3 X4 X5 X6 X7 X8 notS andNotS selS setDigit
   ltS addTo invOf)

@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvStores
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Spec.Rsa
 
 /-!

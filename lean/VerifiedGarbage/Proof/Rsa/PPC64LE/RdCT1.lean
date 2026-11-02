@@ -13,26 +13,21 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCheck
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RvEntry
+import VerifiedGarbage.Proof.Rsa.PPC64LE.RdEntry
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcFrame
-meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCheck
-meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvEntry
+meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RdEntry
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.KcFrame
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvEntry
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCheck
-meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvLoads
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdEntry
 public import Aesop.BuiltinRules
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Basic
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvLoads
 
 /-!
 # `vg_rsa_recover_primes_det` on PPC64LE: constant time of the entry and the check of `n`
 
-The entry and the check of `n` are `vg_rsa_recover_primes`'s, with the public
-data of `rdP` (`rdPub`: the argument registers, the stack
+The entry and the check of `n` (`RdEntry.lean`), with the public data of
+`rdP` (`rdPub`: the argument registers, the stack
 arguments and the bytes of `n` and `e`).
 -/
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvLoads
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdEntry
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyOps
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Div
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.RecoverDet
@@ -8,11 +8,8 @@ public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyHalf
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.DivLoop
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvTop
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCtx
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvSlots
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Shifts
 import VerifiedGarbage.Proof.Rsa.PPC64LE.EvenW
 import VerifiedGarbage.Proof.Rsa.PPC64LE.WordLoops

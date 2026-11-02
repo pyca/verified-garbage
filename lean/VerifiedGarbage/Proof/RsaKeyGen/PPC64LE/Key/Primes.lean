@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Env3
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Env2

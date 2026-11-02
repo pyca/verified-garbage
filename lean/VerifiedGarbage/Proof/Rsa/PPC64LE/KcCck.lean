@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.KcMath
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCk
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CheckCrtKey
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubE
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcChecks

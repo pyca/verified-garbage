@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Primes
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Lcm
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.DPart
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Tail
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
