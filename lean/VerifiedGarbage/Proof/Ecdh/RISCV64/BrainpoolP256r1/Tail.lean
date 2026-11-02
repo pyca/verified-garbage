@@ -227,7 +227,7 @@ theorem rangeOf_ok {i : Nat} (hi : i < 44) {s : State} {base : Addr} (hw : WsReg
   rw [rangeOf, show brainpoolp256r1.n = 4 from rfl]
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (ltMask_ok hw (n := 4) (a := brainpoolp256r1.sl i) (m := brainpoolp256r1.sl MN) a8
-    (by decide) a2 (by decide)) fun s₁ ⟨r₁, m₁, g₁⟩ => ?_)
+    (by decide) (by omega) (by decide)) fun s₁ ⟨r₁, m₁, g₁⟩ => ?_)
   have hw₁ := hw.of_rest r₁
   refine WP.block_append (WP.mono (andFlag_ok hw₁) fun s₂ ⟨f₂, r₂, O₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
