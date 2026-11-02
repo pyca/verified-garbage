@@ -32,7 +32,8 @@
         target_arch = "x86_64",
         target_arch = "aarch64",
         target_arch = "arm",
-        target_arch = "powerpc64"
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
     ),
     feature = "alloc"
 ))]
@@ -58,7 +59,6 @@ use core::fmt;
 use crate::cpu::detected;
 use crate::rsa::{PrivateKey, PublicKey};
 pub use crate::rsa_pkcs1_sig::Hash;
-use crate::rsa_pss::{public_scratch_words, scratch_words};
 use crate::zeroize::zeroize;
 
 /// Why an encryption or a decryption was refused.
@@ -98,6 +98,19 @@ impl fmt::Display for Error {
 
 impl core::error::Error for Error {}
 
+/// The words of working space decryption needs for an `n_len`-byte modulus
+/// (`VG.Spec.RsaPss.scratchWords`, which OAEP's contracts share with PSS's
+/// but is defined here so that OAEP does not need `rsa_pss`).
+fn scratch_words(n_len: usize) -> usize {
+    crate::rsa::scratch_words(n_len) + 1024
+}
+
+/// The words of working space encryption needs for an `n_len`-byte modulus
+/// (`VG.Spec.RsaPss.publicScratchWords`).
+fn public_scratch_words(n_len: usize) -> usize {
+    crate::rsa::public_scratch_words(n_len) + 1024
+}
+
 /// The operating system's random bytes.
 fn os_random(buf: &mut [u8]) -> Result<(), Error> {
     getrandom::fill(buf).map_err(|_| Error::Randomness)
@@ -115,7 +128,13 @@ macro_rules! verified_fn_types {
         #[cfg(target_arch = "x86_64")]
         type $name $(<const $l: usize>)? = unsafe extern "sysv64" fn($($arg),*) -> $ret;
         $(#[$doc])*
-        #[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm", target_arch = "powerpc64"))]
+        #[cfg(any(
+            target_arch = "x86",
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "powerpc64",
+            target_arch = "riscv64"
+        ))]
         type $name $(<const $l: usize>)? = unsafe extern "C" fn($($arg),*) -> $ret;
     )*};
 }
