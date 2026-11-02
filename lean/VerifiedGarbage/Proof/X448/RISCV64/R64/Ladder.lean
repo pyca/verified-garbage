@@ -30,7 +30,8 @@ the bits `447` down to `n` (`ladderAfter k x1 n`) to the state after `n - 1`,
 with the swap in `t2` and the counter in `t1`; the loop (`ladder_ok`) runs it
 for the bits 447 down to 0. The operations' list (`ladOps`), the elements
 (`ladV`) and their values after an iteration (`ladOps_vals`) are that
-file's.
+file's, but for the multiplication by `a24`, by the one-word constant
+(`mulSmallS`) rather than by its slot (`ladAB_vals`).
 -/
 
 -- separate module: its proofs (about 2.5 s) cost more than its imports, and its importer's
@@ -217,6 +218,25 @@ theorem subS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = tr
   · rw [upd_of_ne _ _ hqo]
     exact slots_after hq1 ho (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
 
+/-- `a24 · [x]`, the ladder's multiplication by a one-word constant. -/
+theorem mulSmallS {o x : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
+    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) {s : State} (hc : Ctx b s) (hS : SlotsOk s.mem b qs v) :
+    WP isa (.block (mulSmall o x 39081)) s fun s' => Rest clob64 s s' ∧ Frame [FA b] s.mem s'.mem ∧
+      SlotsOk s'.mem b (o :: qs) (upd v o (VG.Spec.X448.a24 * v x)) := by
+  have hq1 := sep8_sep1 hq
+  have hx' := sep1_get hq1 hx
+  have hA := ACC_eq
+  have hK : (sext32 (39081 : BitVec 32)).toNat = 39081 := by decide
+  refine WP.mono (mulSmall_ok (by rw [hK]; decide) (by rw [hK]; decide) (by omega) (by omega)
+    (sep8_o hq) (sep8_get hq hx) hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
+  by_cases hqo : q = o
+  · subst hqo
+    rw [upd_self, ← hS x hx]
+    rw [hK] at hv
+    exact toFe_mul hv
+  · rw [upd_of_ne _ _ hqo]
+    exact slots_after hq1 ho (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
+
 /-- The number of an element is unchanged if its doublewords are. -/
 theorem V_congr64 {m m' : Mem} {q q' : Nat} (h : ∀ k < 7, ew m' b q k = ew m b q' k) :
     V m' b q = V m b q' := by
@@ -329,6 +349,11 @@ theorem opSub {o x y : Nat} (hq : Sep8 o qs = true) (ho : o + 56 ≤ ACC) (hx : 
     WP isa (.block (sub o x y)) s (Cur b s0 a c (o :: qs) (upd v o (v x - v y))) :=
   WP.mono (subS hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
+theorem opMulSmall {o x : Nat} (hq : Sep8 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
+    {s : State} (h : Cur b s0 a c qs v s) :
+    WP isa (.block (mulSmall o x 39081)) s (Cur b s0 a c (o :: qs) (upd v o (a24 * v x))) :=
+  WP.mono (mulSmallS hq ho hx h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+
 end
 
 /-! ## Sequences of field operations -/
@@ -437,21 +462,44 @@ theorem head_ok {b : Addr} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b k sL
       u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), e12],
     by rw [u9.mem]; exact hS8⟩
 
-theorem step_eq : step = .seq (.block stepHead) (opsCode ladOps (.block [])) := rfl
+/-- The operations of an iteration before its multiplication by `a24`, and
+after it. -/
+def ladA : List FOp := ladOps.take 15
+def ladB : List FOp := ladOps.drop 16
+
+theorem step_eq : step = .seq (.block stepHead)
+    (opsCode ladA (.seq (.block (mulSmall Z2 E 39081)) (opsCode ladB (.block [])))) := rfl
+
+theorem ladA_ok : opsOk ladA LQ = true := by decide
+
+theorem ladB_ok : opsOk ladB (Z2 :: outsQ ladA LQ) = true := by decide
+
+/-- The multiplication by `a24` is `ladOps`'s by the slot `A24`, which holds `a24`. -/
+theorem ladAB_vals (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) (q : Nat) :
+    runOps ladB (upd (runOps ladA (swapV Z2 Z3 (st.swap ^^^ bit k t) (swapV X2 X3 (st.swap ^^^ bit k t)
+      (ladV x1 st)))) Z2 (a24 * runOps ladA (swapV Z2 Z3 (st.swap ^^^ bit k t)
+        (swapV X2 X3 (st.swap ^^^ bit k t) (ladV x1 st))) E)) q =
+    runOps ladOps (swapV Z2 Z3 (st.swap ^^^ bit k t) (swapV X2 X3 (st.swap ^^^ bit k t)
+      (ladV x1 st))) q := by
+  simp only [ladA, ladB, ladOps, List.take, List.drop, runOps, FOp.out, FOp.val, upd, swapV, ladV,
+    X1, X2, Z2, X3, Z3, A, B, C, D, AA, BB, E, DA, CB, A24, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem step_ok {b : Addr} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b k sL.mem)
     {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 448) {s : State} (h : LadInv b k x1 sL n s) :
     WP isa step s fun s' => LadInv b k x1 sL (n - 1) s' ∧ (s'.gpr .t1 != 0) = decide (n - 1 ≠ 0) := by
   rw [step_eq]
   refine WP.seq (WP.mono (head_ok hbits hn hn' h) fun s1 h1 =>
-    ops_ok ladOps LQ _ s1 ladOps_ok h1 fun s2 h2 => ?_)
-  refine WP.block_nil ⟨⟨h2.ctx, h2.stp, ?_, h2.t1, ?_⟩, ?_⟩
-  · rw [h2.t2, ladderAfter_step k x1 (show n - 1 < 448 by omega_arith), Nat.sub_add_cancel hn,
+    ops_ok ladA LQ _ s1 ladA_ok h1 fun s2 h2 => ?_)
+  refine WP.seq (WP.mono (opMulSmall (o := Z2) (x := E) (by decide) (by decide) (by decide) h2)
+    fun s3 h3 => ops_ok ladB _ _ s3 ladB_ok h3 fun s4 h4 => ?_)
+  refine WP.block_nil ⟨⟨h4.ctx, h4.stp, ?_, h4.t1, ?_⟩, ?_⟩
+  · rw [h4.t2, ladderAfter_step k x1 (show n - 1 < 448 by omega_arith), Nat.sub_add_cancel hn,
       ladderStep_eq]
-  · refine (h2.slots.mono (by decide)).congr fun q hq => ?_
-    rw [ladderAfter_step k x1 (show n - 1 < 448 by omega_arith), Nat.sub_add_cancel hn]
+  · refine (h4.slots.mono (by decide)).congr fun q hq => ?_
+    rw [ladderAfter_step k x1 (show n - 1 < 448 by omega_arith), Nat.sub_add_cancel hn,
+      ladAB_vals]
     exact ladOps_vals k x1 _ (n - 1) q hq
-  · rw [h2.t1, ofNat_ne_zero (by omega_arith)]
+  · rw [h4.t1, ofNat_ne_zero (by omega_arith)]
 
 /-- The ladder, from the state with the bits of the scalar in `BITS` and the
 initial elements in `LQ`. -/
