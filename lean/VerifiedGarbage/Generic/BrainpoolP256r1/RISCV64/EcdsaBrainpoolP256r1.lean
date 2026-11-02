@@ -1,0 +1,25 @@
+module
+
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.SignVerified
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.RISCV64.Ecdsa
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.VerifyVerified
+public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.SignLit
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.VerifyLit
+
+/-! # ECDSA over brainpoolp256r1 (FIPS 186-5) on RISC-V -/
+
+@[expose] public section
+
+namespace VG.Generic.BrainpoolP256r1.RISCV64.EcdsaBrainpoolP256r1
+
+def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List Artifact := [
+  Spec.Ecdsa.BrainpoolP256r1.verifyApi.artifact RISCV64.target {
+    code := Impl.Ecdsa.RISCV64.verifyBrainpoolP256r1
+    verified := Proof.Ecdsa.RISCV64.BrainpoolP256r1.verify_verified h.law }]
+
+end VG.Generic.BrainpoolP256r1.RISCV64.EcdsaBrainpoolP256r1
