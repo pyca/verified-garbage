@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
 public import VerifiedGarbage.Proof.Bignum.RISCV64.ModExpWin
 import VerifiedGarbage.Proof.Bignum.RISCV64.ModArith
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontCore
@@ -378,5 +379,89 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w j k : Nat} (h : Env s B Z w) (hj :
       have hn : ¬ wordsVal s.mem B (slot w j) w = wordsVal s.mem B (slot w k) w := fun e => h0 (hiff.mp e)
       simp only [hn, decide_false, mask]
       simp only [this, ite_true]; rfl
+
+/-! ## `R² mod m` by doublings -/
+
+/-- One word 1 and the others 0 are 1. -/
+theorem wordsVal_one {m : Mem} {B : Addr} {d : Nat} {w : Nat} (hw : 1 ≤ w) (h0 : word m B d = 1)
+    (hz : ∀ i < w - 1, word m B (d + 8 + 8 * i) = 0) : wordsVal m B d w = 1 := by
+  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega⟩
+  simp only [wordsVal, h0, ModArith.ma_wordsVal_zero (w := k) fun i hi => hz i (by omega)]
+  rfl
+
+/-- The registers `rr` writes. -/
+def rrRegs : List Reg := [.a0, .a1, .a2, .a5, .a6, .t3, .t4, .t5, .s0, .s1, .s2, .s3, .s4]
+
+/-- `rr`: `R² mod m = 2^(128 w) mod m` into arrays 1 and 24, for `m ≥ 2` in
+array 0, changing only arrays 1–24. -/
+theorem rr_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w)
+    (hN : 2 ≤ wordsVal s.mem B (slot w 0) w) :
+    WP isa rr s fun t =>
+      (wordsVal t.mem B (slot w 1) w = 2 ^ (128 * w) % wordsVal s.mem B (slot w 0) w ∧
+        wordsVal t.mem B (slot w 24) w = 2 ^ (128 * w) % wordsVal s.mem B (slot w 0) w ∧
+        Outside B (slot w 1) (24 * (8 * (w + 2))) s.mem t.mem) ∧ Keep rrRegs s t := by
+  have hs := h.hs
+  have hnw := hs.nowrap
+  have hZ := h.hZ
+  have hw2 := h.w2
+  have hw48 := h.w48
+  have e : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e24 := e 24; have e25 := e 25; have e28 := e 28
+  unfold rr
+  refine WP.seq ?_
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (h.base (rd := .a2) (by decide) 1) fun s₁ ⟨⟨a2, m1⟩, k1⟩ => ?_
+  refine WP.mono ((h.keep k1).base (rd := .a5) (by decide) 2) fun s₂ ⟨⟨a5, m2⟩, k2⟩ => ?_
+  refine WP.mono ((h.keep (k1.trans k2)).base (rd := .a6) (by decide) 3) fun s₃ ⟨⟨a6, m3⟩, k3⟩ => ?_
+  have a2' : s₃.gpr .a2 = off B (slot w 1) := by rw [k3.gpr (by decide), k2.gpr (by decide)]; exact a2
+  refine WP.mono (WP.keep [.t3] (Q := fun u => u.gpr .t3 = off B (slot w 1) ∧ u.mem = s₃.mem)
+    (by brun [a2', BitVec.add_zero]) (by rfl) (by rfl)) fun s₄ ⟨⟨a3, m4⟩, k4⟩ => ?_
+  have k14 := ((k1.trans k2).trans k3).trans k4
+  have m14 : s₄.mem = s.mem := by rw [m4, m3, m2, m1]
+  have hE4 := h.keep k14 (by decide)
+  refine WP.seq (WP.mono (zeroWords_ok (hs.congr k14.2.2) a3 hE4.t0 (by omega) (by omega) (slot_al w 1)
+    (by omega)) fun s₅ ⟨⟨_, hz, out5⟩, k5⟩ => ?_)
+  rw [m14] at out5
+  have k15 := k14.trans k5
+  have a2'' : s₅.gpr .a2 = off B (slot w 1) := by rw [k5.gpr (by decide), k4.gpr (by decide)]; exact a2'
+  have hE5 := h.keep k15 (by decide)
+  refine WP.seq (WP.mono (WP.keep [.s0, .a1] (Q := fun u => u.mem = s₅.mem.writeW (off B (slot w 1)) (1 : BitVec 64) ∧
+      u.gpr .a1 = BitVec.ofNat 64 (128 * w)) ?_ (by rfl) (by rfl)) fun s₆ ⟨⟨m6, a1⟩, k6⟩ => ?_)
+  · have e7 : BitVec.ofNat 64 w <<< 7 = BitVec.ofNat 64 (128 * w) := by
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+      omega_arith
+    brun [a2'', hE5.t0, exec_li_lit (show 1 < 2048 by decide), BitVec.add_zero, e7,
+      (hs.congr k15.2.2).st (show slot w 1 + 8 ≤ Z by omega),
+      (hs.congr k15.2.2).al8 (show slot w 1 + 8 ≤ Z by omega) (slot_al w 1), exec_shift_d (show 7 < 64 by decide)]
+    rfl
+  have k16 := k15.trans k6
+  have hE6 := h.keep k16 (by decide)
+  have hw6 := writeW_outside s₅.mem B (d := slot w 1) (1 : BitVec 64) (by omega_arith)
+  have n6 : wordsVal s₆.mem B (slot w 0) w = wordsVal s.mem B (slot w 0) w := by
+    rw [m6, hw6.wordsVal (by omega) (by omega_arith), out5.wordsVal (by omega) (by omega_arith)]
+  have x6 : wordsVal s₆.mem B (slot w 1) w = 2 ^ 0 % wordsVal s.mem B (slot w 0) w := by
+    rw [Nat.pow_zero, Nat.mod_eq_of_lt (by omega)]
+    refine wordsVal_one (by omega) (by rw [m6]; exact word_writeW_self _ _ _ _) fun i hi => ?_
+    rw [m6, hw6.word (by omega) (by omega_arith)]
+    have := hz (i + 1) (by omega)
+    rwa [show slot w 1 + 8 * (i + 1) = slot w 1 + 8 + 8 * i by omega] at this
+  refine WP.seq (WP.mono (r2Dbl_ok (a := 0) (M := 128 * w) (hs.congr k16.2.2)
+    ((k6.gpr (by decide)).trans ((k5.gpr (by decide)).trans ((k4.gpr (by decide)).trans
+      ((k3.gpr (by decide)).trans a5))))
+    ((k6.gpr (by decide)).trans ((k5.gpr (by decide)).trans ((k4.gpr (by decide)).trans a6))) hE6.a7
+    ((k6.gpr (by decide)).trans a2'') hE6.t0 (by omega) (by omega) (by omega) n6 (by omega) x6 a1 (by omega)
+    (by omega_arith)) fun s₇ ⟨x7, out7, k7⟩ => ?_)
+  rw [Nat.zero_add] at x7
+  have k17 := k16.trans k7
+  have hE7 := h.keep k17 (by decide)
+  refine WP.mono (copy_ok hE7 (o := 24) (a := 1) (by decide) (by decide) (by decide))
+    fun t ⟨⟨hc, out8⟩, k8⟩ => ⟨⟨?_, ?_, ?_⟩, (k17.trans k8).mono (by decide)⟩
+  · rw [out8.wordsVal (by omega) (by omega_arith), x7]
+  · rw [wordsVal_congr (m' := t.mem) (m := s₇.mem) (d' := slot w 24) (d := slot w 1) fun i hi => hc i (by omega),
+      x7]
+  · have o6 : Outside B (slot w 1) (24 * (8 * (w + 2))) s.mem s₆.mem := by
+      rw [m6]; exact (out5.mono (by omega) (by omega)).trans (hw6.mono (by omega) (by omega))
+    exact ((o6.trans (out7.mono (by omega) (by omega)))).trans (out8.mono (by omega) (by omega))
 
 end VG.Proof.Dsa.RISCV64
