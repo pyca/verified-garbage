@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.RISCV64.ModesVerified
 public import VerifiedGarbage.Spec.Sm4.Gcm
 public import VerifiedGarbage.Proof.Sm4.Contract
 meta import VerifiedGarbage.Proof.Sm4.Contract
-import VerifiedGarbage.Proof.Modes.RISCV64.Ctr32
+import VerifiedGarbage.Proof.Modes.RISCV64.WideCtr
 import VerifiedGarbage.Proof.Modes.Ctr32
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
@@ -16,7 +16,8 @@ meta import VerifiedGarbage.Spec.Sm4.Gcm
 /-!
 # SM4's counter mode with GCM's `inc₃₂` on RISC-V meets its contract
 
-`ctr32_verified`: the counter mode of `Proof/Modes/RISCV64/Ctr32.lean` over
+`ctr32_verified`: the counter mode of `Proof/Modes/RISCV64/WideCtr.lean`,
+sixteen blocks a step while sixteen are left (`ctr32Wide_wp`), over
 SM4's core (`dirCoreSpec .encrypt`) meets `vg_sm4_ctr32`'s contract with the
 modes' frame of 3232 bytes below the stack pointer (`modeContract`), and is
 constant time as the other modes are (`ModesConstantTime.lean`). As on
@@ -43,10 +44,11 @@ def ctr32Post (s s' : State) : Prop :=
 
 theorem ctr32_correct (s : State) (hs : (modeContract ctr32Post).pre s) :
     ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ (modeContract ctr32Post).post s s' :=
-  WP.mono (Proof.Modes.RISCV64.ctr32_wp (dirCoreSpec .encrypt) rfl
-    (seqPre_of .encrypt (M := Mode.ctr32) rfl hs)
-    (keyArgs_of .encrypt (M := Mode.ctr32) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => by
+  WP.mono (Proof.Modes.RISCV64.ctr32Wide_wp (lg := 4) (dirCoreSpec .encrypt) rfl (by decide)
+    (by exact (by decide : 2 ^ 4 ≤ 16)) (by decide)
+    (seqPre_of .encrypt (M := Mode.ctr32Early) rfl hs)
+    (keyArgs_of .encrypt (M := Mode.ctr32Early) rfl hs))
+    fun _ ⟨h1, h2, h3, _⟩ => by
       simp only [cipher_enc] at h2 h3
       refine ⟨h1, ?_, h3⟩
       rw [Proof.Modes.gcmBlocks_eq, Proof.Modes.gcmBlocks_eq]

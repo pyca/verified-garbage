@@ -20,6 +20,10 @@ that decrypt whose blocks can be deciphered independently:
   (`Mode.cfbDecEarly`): `pre` copies `Cⱼ₋₁` (the chaining value) to the
   buffer and makes `Cⱼ` the chaining value, and `post` XORs the enciphered
   block into the data.
+* Counter mode, with the counter block stepped in `pre`
+  (`Mode.ctrEarly`, `Mode.ctr32Early`, `Mode.ctrEarlyWith`): `pre` copies the
+  counter block to the buffer and steps it (`inc`, or GCM's `inc₃₂`), and
+  `post` XORs the enciphered block into the data.
 -/
 
 @[expose] public section
@@ -58,11 +62,39 @@ def cfbDecEarly : Mode where
   step := 4 * bw
   ivOut := true
 
+/-- The counter block stepped by `inc` (SP 800-38A, Appendix B.1). -/
+def ctrInc : Op := { inc := true, wide := true, dst := .chn, dOff := 0, src := .chn, sOff := 0 }
+
+/-- The counter block stepped by GCM's `inc₃₂` (SP 800-38D §6.2). -/
+def ctr32Inc : Op := { inc32 := true, wide := true, dst := .chn, dOff := 12, src := .chn, sOff := 12 }
+
+/-- Counter mode (SP 800-38A §6.5) with the counter block stepped by `o`
+before the block cipher: `buf := Tⱼ`, `Tⱼ₊₁` to the chaining value, and
+`Oⱼ = Pⱼ ⊕ CIPH_K(buf)` to the data. -/
+def ctrEarlyWith (o : Op) : Mode where
+  pre := copyBlk 4 .buf .chn ++ [o]
+  post := xorBlk 4 .dat .dat .buf
+  step := 16
+  ivOut := true
+
+/-- Counter mode with `inc`, the counter block stepped before the block cipher. -/
+def ctrEarly : Mode := ctrEarlyWith ctrInc
+
+/-- Counter mode with GCM's `inc₃₂`, the counter block stepped before the
+block cipher. -/
+def ctr32Early : Mode := ctrEarlyWith ctr32Inc
+
 /-- CBC decryption, `G` blocks at a time. -/
 def cbcDecWide (G : Nat) : Mode := widen G (4 * bw) (cbcDecChained bw)
 
 /-- CFB decryption, `G` blocks at a time. -/
 def cfbDecWide (G : Nat) : Mode := widen G (4 * bw) (cfbDecEarly bw)
+
+/-- Counter mode with `inc`, `G` blocks at a time. -/
+def ctrWide (G : Nat) : Mode := widen G 16 ctrEarly
+
+/-- Counter mode with GCM's `inc₃₂`, `G` blocks at a time. -/
+def ctr32Wide (G : Nat) : Mode := widen G 16 ctr32Early
 
 end Mode
 

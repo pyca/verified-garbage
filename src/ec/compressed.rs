@@ -140,7 +140,6 @@ macro_rules! codec {
     };
 }
 
-#[cfg(not(target_arch = "riscv64"))]
 codec!(
     P192,
     24,
@@ -348,7 +347,6 @@ mod tests {
             }
         };
     }
-    #[cfg(not(target_arch = "riscv64"))]
     cases!(p192, P192, 24);
     cases!(p224, P224, 28);
     cases!(p256, P256, 32);

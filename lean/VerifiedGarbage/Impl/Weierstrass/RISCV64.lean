@@ -146,8 +146,8 @@ def copy : Nat → Nat → Nat → List Instr
 /-- The mask `a7 = -bit` of bit `s1` of the number at `src`, through `t0`–`t2`:
 its word `s1 >>> 6` shifted right by `s1 mod 64`. -/
 def bitMask (src : Nat) : List Instr :=
-  [.shift .srl .d .t0 ctr 6, .shift .sll .d .t0 .t0 3, .add .t0 .t0 wb, .load .d .t1 .t0 src,
-    .shiftReg .srl .d .t1 .t1 ctr, .logicImm .and .t1 .t1 1, .li .t2 0, .sub .a7 .t2 .t1]
+  [.shift .srl .d .t0 ctr 6, .shift .sll .d .t0 .t0 3, .add .t0 .t0 wb] ++ ldAt .t1 .t0 src ++
+    [.shiftReg .srl .d .t1 .t1 ctr, .logicImm .and .t1 .t1 1, .li .t2 0, .sub .a7 .t2 .t1]
 
 /-- `s1 -= 1`. -/
 def decCounter : Instr := .addi ctr ctr (-1)

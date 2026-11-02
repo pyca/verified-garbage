@@ -1,14 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Window
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Gen4
 public import VerifiedGarbage.Spec.P224
 
 /-! # P-224 on RISC-V: four-word field elements and scalars, and `vg_p224_mul`
 
 The functions modulo `p` and `n` are those of any four-word modulus
-(`Impl/Weierstrass/RISCV64/Gen4.lean`), and `vg_p224_mul` is the ladder of
-P-256 and P-384, over the four words of the scalar.
+(`Impl/Weierstrass/RISCV64/Gen4.lean`), and `vg_p224_mul` is P-256's by
+four-bit windows and Jacobian doublings (`Impl/Ecdsa/RISCV64/Window.lean`).
 -/
 
 @[expose] public section
@@ -39,7 +40,7 @@ def p224Order : Weierstrass.RISCV64.Field := ⟨Impl.Weierstrass.Mont.p224n, p22
 /-- P-224 as the code has it. -/
 def p224 : Cfg := { n := 4, C := Spec.P224.curve, FP := p224Field }
 
-/-- `vg_p224_mul`. -/
-def mulP224 : Prog isa := p224.mulFn
+/-- `vg_p224_mul`, by windows. -/
+def mulP224 : Prog isa := Window.Cfg.mulFn p224
 
 end VG.Impl.Ecdsa.RISCV64
