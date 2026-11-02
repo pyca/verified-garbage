@@ -17,6 +17,15 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import all Init.Data.Nat.Power2.Basic
 import Mathlib.Tactic.Set
+import Mathlib.Tactic.DefEqTransformations
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
+import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Scrypt.RISCV64.Lit
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Impl.Scrypt.RISCV64.RoMix
 
 /-!
 # scryptROMix on RISC-V: correctness
@@ -1113,5 +1122,555 @@ theorem correct {wide : Bool} {s₀ : State} (hp : Pre wide s₀) :
   show bytesAt s'.mem (bP s₀) (128 * rr s₀) = roMix (rr s₀) (NN s₀) (B s₀)
   rw [hm', ← h₆.x, Nat.sub_self]
   rfl
+
+/-! # Constant time, up to the indices `j`
+
+As on PPC64LE: we relate two runs (`RelCT`). Correctness determines our
+registers from the public arguments, so they agree between the calls, where
+the taint analysis proves each piece constant time; the calls are constant
+time by scryptBlockMix's own proof. In step 3, the address of `V[j]` depends
+on `j`, which the contract declares public: the two runs compute the same
+`j`, since both compute their indices in order (`Inv3.js`) and agree on the
+whole list. -/
+
+/-! ## What each run knows -/
+
+/-- The public arguments are the same. -/
+structure PubEq (s₀ s₀' : State) : Prop where
+  a0 : s₀.gpr .a0 = s₀'.gpr .a0
+  a1 : s₀.gpr .a1 = s₀'.gpr .a1
+  a2 : s₀.gpr .a2 = s₀'.gpr .a2
+  a3 : s₀.gpr .a3 = s₀'.gpr .a3
+  a4 : s₀.gpr .a4 = s₀'.gpr .a4
+  a5 : s₀.gpr .a5 = s₀'.gpr .a5
+  sp : s₀.sp = s₀'.sp
+
+section
+variable {s₀ s₀' : State} (hq : PubEq s₀ s₀')
+include hq
+
+theorem PubEq.rr : rr s₀ = rr s₀' := by simp only [RoMix.rr, hq.a1]
+theorem PubEq.NN : NN s₀ = NN s₀' := by simp only [RoMix.NN, RoMix.vl, RoMix.rr, hq.a1, hq.a3]
+theorem PubEq.vAt (i : Nat) : vAt s₀ i = vAt s₀' i := by
+  simp only [RoMix.vAt, RoMix.vP, RoMix.rr, hq.a1, hq.a2]
+theorem PubEq.tP : tP s₀ = tP s₀' := by simp only [RoMix.tP, hq.a4]
+
+end
+
+/-- The registers the loops keep, with `s8 = bp` and `s7 = q`. -/
+structure KR (s₀ : State) (bp q : Addr) (s : State) : Prop where
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  s4 : s.gpr .s4 = bP s₀
+  s5 : s.gpr .s5 = vP s₀
+  s9 : s.gpr .s9 = tP s₀
+  s10 : s.gpr .s10 = sv s₀
+  s6 : s.gpr .s6 = BitVec.ofNat 64 (128 * rr s₀)
+  s7 : s.gpr .s7 = q
+  s8 : s.gpr .s8 = bp
+
+/-- The registers `KR` fixes. -/
+abbrev kRegs : List Reg := [.s4, .s5, .s9, .s10, .s6, .s7, .s8]
+
+theorem kRegs_ne : ∀ r ∈ kRegs, r ≠ .a0 ∧ r ≠ .a1 ∧ r ≠ .a2 ∧ r ≠ .a3 ∧ r ≠ .t0 ∧ r ≠ .t1 := by
+  decide
+
+theorem kRegs_pres : ∀ r ∈ kRegs, r ∈ preserved ∧ r ∉ linkRegs := by decide
+
+theorem KR.keep {s₀ : State} {bp q : Addr} {s s' : State} (h : KR s₀ bp q s)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp)
+    (hk : ∀ r ∈ kRegs, s'.gpr r = s.gpr r) : KR s₀ bp q s' :=
+  ⟨hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp, (hk _ (by decide)).trans h.s4,
+    (hk _ (by decide)).trans h.s5, (hk _ (by decide)).trans h.s9, (hk _ (by decide)).trans h.s10,
+    (hk _ (by decide)).trans h.s6, (hk _ (by decide)).trans h.s7, (hk _ (by decide)).trans h.s8⟩
+
+/-- Whether an instruction writes none of `kRegs`. -/
+def kFree (i : Instr) : Bool := kRegs.all fun r => dstOf i != some r
+
+/-- `KR` survives code that writes none of its registers. -/
+theorem KR.exec {c : Prog isa} (hc : c.allInstrs kFree = true) {s₀ : State} {bp q : Addr}
+    {s s' : State} {t : List Leak} (he : Exec isa c s t s') (h : KR s₀ bp q s) : KR s₀ bp q s' := by
+  obtain ⟨rd, wr, sp⟩ := Exec.rdwr he
+  rw [Code.allInstrs_eq, List.all_eq_true] at hc
+  refine h.keep rd wr sp fun r hr => Exec.gpr (fun i hi => ?_) he (.inr (kRegs_pres r hr).2)
+  have := hc i hi
+  simp only [kFree, List.all_eq_true] at this
+  simpa using this r hr
+
+theorem Inv2.kr {s₀ : State} {i : Nat} {s : State} (h : Inv2 s₀ i s) :
+    KR s₀ (vAt s₀ i) (BitVec.ofNat 64 (NN s₀ - i)) s :=
+  ⟨h.rd, h.wr, h.sp, h.s4, h.s5, h.s9, h.s10, h.s6, h.s7, h.s8⟩
+
+theorem Inv3.kr {s₀ : State} {i : Nat} {s : State} (h : Inv3 s₀ i s) :
+    KR s₀ (BitVec.ofNat 64 (NN s₀ - 1)) (BitVec.ofNat 64 (NN s₀ - i)) s :=
+  ⟨h.rd, h.wr, h.sp, h.s4, h.s5, h.s9, h.s10, h.s6, h.s7, h.s8⟩
+
+theorem agree_of {rs : List Reg} {s₁ s₂ : State} (hsp : s₁.sp = s₂.sp)
+    (h : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) :
+    VG.RISCV64.Taint.Agree (VG.RISCV64.Taint.ofRegs rs) s₁ s₂ :=
+  ⟨hsp, fun r hr => h r (VG.RISCV64.Taint.mem_ofRegs.mp hr)⟩
+
+/-- The registers `KR` fixes, and the stack pointer, agree in two runs. -/
+theorem agree_K {s₀ s₀' : State} (hq : PubEq s₀ s₀') {bp q bp' q' : Addr} {s s' : State}
+    (h : KR s₀ bp q s) (h' : KR s₀' bp' q' s') (hbp : bp = bp') (hq' : q = q') {extra : List Reg}
+    (hx : ∀ r ∈ extra, s.gpr r = s'.gpr r) :
+    VG.RISCV64.Taint.Agree (VG.RISCV64.Taint.ofRegs (extra ++ kRegs)) s s' := by
+  refine agree_of (by rw [h.sp, h'.sp, hq.sp]) fun r hr => ?_
+  rcases List.mem_append.mp hr with hr | hr
+  · exact hx r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · rw [h.s4, h'.s4, bP, bP, hq.a0]
+  · rw [h.s5, h'.s5, vP, vP, hq.a2]
+  · rw [h.s9, h'.s9, hq.tP]
+  · rw [h.s10, h'.s10, sv, sv, hq.a5]
+  · rw [h.s6, h'.s6, hq.rr]
+  · rw [h.s7, h'.s7, hq']
+  · rw [h.s8, h'.s8, hbp]
+
+/-- The arguments of a call of scryptBlockMix from `A` into `b`. -/
+structure Args (s₀ : State) (A : Addr) (s : State) : Prop where
+  a0 : s.gpr .a0 = A
+  a1 : s.gpr .a1 = BitVec.ofNat 64 (rr s₀)
+  a2 : s.gpr .a2 = bP s₀
+  a3 : s.gpr .a3 = bsv s₀
+
+/-- A block that may be the source of such a call. -/
+structure SrcOK (wide : Bool) (s₀ : State) (A : Addr) : Prop where
+  b : Region.Disjoint ⟨A, 128 * rr s₀⟩ ⟨bP s₀, 128 * rr s₀⟩
+  w : Region.Disjoint ⟨A, 128 * rr s₀⟩ (bsvR s₀)
+  nw : A.toNat + 128 * rr s₀ ≤ 2 ^ 64
+  al : wide = true → A.toNat % 8 = 0
+  inr : InRegions (s₀.rd ++ s₀.wr) A (128 * rr s₀)
+
+theorem srcOK_v {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {i : Nat} (hi : i < NN s₀) :
+    SrcOK wide s₀ (vAt s₀ i) :=
+  ⟨(vAt_b hp hi).sub_right b_sub', (vAt_s hp hi).sub_right (bsv_sub s₀), vAt_nw hp hi,
+    fun hw => vAt_al hp hw i, InRegions.right (vAt_in hp hi)⟩
+
+theorem srcOK_t {wide : Bool} {s₀ : State} (hp : Pre wide s₀) : SrcOK wide s₀ (tP s₀) :=
+  ⟨t_b hp, (hp.t_s.sub_left t_sub').sub_right (bsv_sub s₀), t_nw hp, fun hw => (hp.al hw).2.2,
+    InRegions.right (t_in hp)⟩
+
+theorem call_pre {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {A : Addr} (hA : SrcOK wide s₀ A)
+    {bp q : Addr} {s : State} (h : KR s₀ bp q s) (ha : Args s₀ A s) :
+    (Proof.Scrypt.blockMixRISCV64 wide).pre (s.callEntry.withRegions [⟨A, rr s₀ * 128⟩]
+      [⟨bP s₀, rr s₀ * 128⟩, ⟨bsv s₀, 96⟩]) ∧
+    Covers ([⟨A, rr s₀ * 128⟩] ++ [⟨bP s₀, rr s₀ * 128⟩, ⟨bsv s₀, 96⟩]) (s.rd ++ s.wr) ∧
+    Covers [⟨bP s₀, rr s₀ * 128⟩, ⟨bsv s₀, 96⟩] s.wr := by
+  have lt := r_lt hp
+  have er : (BitVec.ofNat 64 (rr s₀)).toNat = rr s₀ := toNat_ofNat_lt (by omega)
+  have hw : Covers [⟨bP s₀, rr s₀ * 128⟩, ⟨bsv s₀, 96⟩] s.wr :=
+    Covers.pair (Covers.one (by rw [h.wr]; exact b_in hp)) (Covers.one (by rw [h.wr]; exact bsv_in hp))
+  refine ⟨?_, Covers.append_left (rs := [⟨A, rr s₀ * 128⟩])
+    (Covers.one (by rw [h.rd, h.wr, rmul]; exact hA.inr)) hw.right, hw⟩
+  simp only [Proof.Scrypt.blockMixRISCV64, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_gpr _ (by decide : Reg.a0 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.a1 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.a2 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.a3 ∉ linkRegs), ha.a0, ha.a1, ha.a2, ha.a3, er]
+  exact ⟨trivial, trivial, by rw [rmul]; exact (hp.b_s.sub_left b_sub').sub_right (bsv_sub s₀),
+    by rw [rmul]; exact hA.b, by rw [rmul]; exact hA.w, by rw [rmul]; exact hA.nw, hp.b_nw,
+    by have := hp.s_nw; rw [toNat_add_ofNat _ (by omega)]; omega, hp.pos,
+    Spill.al8 hp.s_al (by decide), fun hw => ⟨hA.al hw, (hp.al hw).1⟩⟩
+
+theorem call_wp {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {A : Addr} (hA : SrcOK wide s₀ A)
+    {bp q : Addr} {s : State} (h : KR s₀ bp q s) (ha : Args s₀ A s) :
+    WP isa (.call (blockMixName wide) (Impl.Scrypt.RISCV64.blockMix wide)) s (KR s₀ bp q) := by
+  have lt := r_lt hp
+  exact blockMixCall_ok wide ha.a0 ha.a1 ha.a2 ha.a3 hp.pos lt
+    (by rw [rmul]; exact (hp.b_s.sub_left b_sub').sub_right (bsv_sub s₀))
+    (by rw [rmul]; exact hA.b) (by rw [rmul]; exact hA.w) (by rw [rmul]; exact hA.nw) hp.b_nw
+    (by have := hp.s_nw; rw [toNat_add_ofNat _ (by omega)]; omega)
+    (Spill.al8 hp.s_al (by decide)) (fun hw => ⟨hA.al hw, (hp.al hw).1⟩)
+    (by rw [h.rd, h.wr, rmul]; exact hA.inr) (by rw [h.wr]; exact b_in hp)
+    (by rw [h.wr]; exact bsv_in hp) fun _ rd wr sp cs _ _ =>
+      h.keep rd wr sp fun r hr => cs r (kRegs_pres r hr).1
+
+theorem call_rel {wide : Bool} {s₀ s₀' : State} (hp : Pre wide s₀) (hp' : Pre wide s₀')
+    (hq : PubEq s₀ s₀') {A A' : Addr} (hA : SrcOK wide s₀ A) (hA' : SrcOK wide s₀' A') (hAA : A = A')
+    {bp q bp' q' : Addr} :
+    RelCT isa (fun s s' => (KR s₀ bp q s ∧ Args s₀ A s) ∧ (KR s₀' bp' q' s' ∧ Args s₀' A' s'))
+      (.call (blockMixName wide) (Impl.Scrypt.RISCV64.blockMix wide))
+      fun s s' => KR s₀ bp q s ∧ KR s₀' bp' q' s' := by
+  subst hAA
+  have eb : bP s₀' = bP s₀ := hq.a0.symm
+  have es : bsv s₀' = bsv s₀ := by simp only [bsv, sv, hq.a5]
+  have er : rr s₀' = rr s₀ := hq.rr.symm
+  have call := RelCT.call (n := blockMixName wide) (P := fun s s' =>
+      (KR s₀ bp q s ∧ Args s₀ A s) ∧ (KR s₀' bp' q' s' ∧ Args s₀' A s'))
+    (BlockMix.blockMix_verified wide).1 (BlockMix.blockMix_verified wide).2.1 [⟨A, rr s₀ * 128⟩]
+    [⟨bP s₀, rr s₀ * 128⟩, ⟨bsv s₀, 96⟩] fun s s' ⟨⟨h, ha⟩, ⟨h', ha'⟩⟩ => by
+      obtain ⟨p₁, c₁, w₁⟩ := call_pre hp hA h ha
+      obtain ⟨p₂, c₂, w₂⟩ := call_pre hp' hA' h' ha'
+      rw [eb, es, er] at p₂ c₂ w₂
+      refine ⟨p₁, p₂, ?_, c₁, w₁, c₂, w₂⟩
+      simp only [Proof.Scrypt.blockMixRISCV64, State.withRegions_gpr, State.withRegions_sp,
+        State.callEntry_sp, State.callEntry_gpr _ (by decide : Reg.a0 ∉ linkRegs),
+        State.callEntry_gpr _ (by decide : Reg.a1 ∉ linkRegs),
+        State.callEntry_gpr _ (by decide : Reg.a2 ∉ linkRegs),
+        State.callEntry_gpr _ (by decide : Reg.a3 ∉ linkRegs), ha.a0, ha.a1, ha.a2, ha.a3,
+        ha'.a0, ha'.a1, ha'.a2, ha'.a3, eb, es, er, h.sp, h'.sp, hq.sp]
+      exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+  exact (call.wp fun s s' h => ⟨call_wp hp hA h.1.1 h.1.2, call_wp hp' hA' h.2.1 h.2.2⟩).mono
+    (fun _ _ h => h) fun _ _ h => h.2
+
+/-! ## Relating pieces of code -/
+
+/-- Code that writes none of `kRegs` keeps `KR` in both runs. -/
+theorem RelCT.keepK {P : State → State → Prop} {c : Prog isa} (h : RelCT isa P c fun _ _ => True)
+    (hc : c.allInstrs kFree = true) {s₀ s₀' : State} {bp q bp' q' : Addr}
+    (hk : ∀ s s', P s s' → KR s₀ bp q s ∧ KR s₀' bp' q' s') :
+    RelCT isa P c fun s s' => KR s₀ bp q s ∧ KR s₀' bp' q' s' :=
+  fun _ _ _ _ _ _ hp e e' =>
+    ⟨(h _ _ _ _ _ _ hp e e').1, KR.exec hc e (hk _ _ hp).1, KR.exec hc e' (hk _ _ hp).2⟩
+
+theorem RelCT.assoc {P Q : State → State → Prop} {a b c : Prog isa}
+    (h : RelCT isa P (.seq (.seq a b) c) Q) : RelCT isa P (.seq a (.seq b c)) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with
+  | seq a₁ bc₁ =>
+    cases bc₁ with
+    | seq b₁ c₁ =>
+      cases e₂ with
+      | seq a₂ bc₂ =>
+        cases bc₂ with
+        | seq b₂ c₂ =>
+          obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq (.seq a₁ b₁) c₁) (.seq (.seq a₂ b₂) c₂)
+          simp only [List.append_assoc] at ht
+          exact ⟨ht, hq⟩
+
+theorem RelCT.exists' {α : Type} {P : α → State → State → Prop} {c : Prog isa}
+    {Q : State → State → Prop} (h : ∀ a, RelCT isa (P a) c Q) :
+    RelCT isa (fun s s' => ∃ a, P a s s') c Q :=
+  fun _ _ _ _ _ _ ⟨a, hp⟩ e e' => h a _ _ _ _ _ _ hp e e'
+
+/-! ## Setting up the calls -/
+
+theorem tail_wp {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {bp q A : Addr} {s : State}
+    (h : KR s₀ bp q s) (hA : s.gpr .a0 = A) :
+    WP isa (.block bmTail) s fun s' => KR s₀ bp q s' ∧ Args s₀ A s' := by
+  have lt := r_lt hp
+  refine wp_srl (by decide) fun a ua => wp_mv fun b ub => wp_addi (by decide) fun d ud =>
+    WP.block_nil ⟨?_, ?_⟩
+  · exact h.keep (by rw [ud.rd, ub.rd, ua.rd]) (by rw [ud.wr, ub.wr, ua.wr])
+      (by rw [ud.sp, ub.sp, ua.sp]) fun r hr => by
+        obtain ⟨-, h1, h2, h3, -⟩ := kRegs_ne r hr
+        rw [ud.other _ h3, ub.other _ h2, ua.other _ h1]
+  have h1 : a.gpr .a1 = BitVec.ofNat 64 (rr s₀) := by
+    rw [ua.gpr, h.s6, shr_ofNat _ lt]; exact congrArg (BitVec.ofNat _) (by omega)
+  exact ⟨by rw [ud.other _ (by decide), ub.other _ (by decide), ua.other _ (by decide), hA],
+    by rw [ud.other _ (by decide), ub.other _ (by decide), h1],
+    by rw [ud.other _ (by decide), ub.gpr, ua.other _ (by decide), h.s4],
+    by rw [ud.gpr, ub.other _ (by decide), ua.other _ (by decide), h.s10]⟩
+
+theorem args2_wp {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {bp q : Addr} {s : State}
+    (h : KR s₀ bp q s) :
+    WP isa (.block ([mov .a0 .s8] ++ bmTail)) s fun s' => KR s₀ bp q s' ∧ Args s₀ bp s' :=
+  wp_mv fun a ua => tail_wp hp
+    (h.keep ua.rd ua.wr ua.sp fun r hr => ua.other r (kRegs_ne r hr).1) (by rw [ua.gpr, h.s8])
+
+theorem args3_wp {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {bp q : Addr} {s : State}
+    (h : KR s₀ bp q s) :
+    WP isa (.block ([mov .a0 .s9] ++ bmTail)) s fun s' => KR s₀ bp q s' ∧ Args s₀ (tP s₀) s' :=
+  wp_mv fun a ua => tail_wp hp
+    (h.keep ua.rd ua.wr ua.sp fun r hr => ua.other r (kRegs_ne r hr).1) (by rw [ua.gpr, h.s9])
+
+/-! ## The pieces the taint analysis proves, for both widths -/
+
+theorem rel_ac (wide : Bool) {P : State → State → Prop}
+    (hP : ∀ s s', P s s' → VG.RISCV64.Taint.Agree (VG.RISCV64.Taint.ofRegs ([] ++ kRegs)) s s') :
+    RelCT isa P (.seq (.block [mov .t0 .s4, mov .t1 .s8, unitCount wide]) (copyLoop wide))
+      fun _ _ => True := by
+  cases wide
+  · exact RelCT.taint (A := taint) _ hP (by taint_decide)
+  · exact RelCT.taint (A := taint) _ hP (by taint_decide)
+
+theorem rel_jb (wide : Bool) {P : State → State → Prop}
+    (hP : ∀ s s', P s s' → VG.RISCV64.Taint.Agree (VG.RISCV64.Taint.ofRegs ([] ++ kRegs)) s s') :
+    RelCT isa P (.block (jBlock wide)) fun _ _ => True := by
+  cases wide
+  · exact RelCT.taint (A := taint) _ hP (by taint_decide)
+  · exact RelCT.taint (A := taint) _ hP (by taint_decide)
+
+theorem rel_mx (wide : Bool) {P : State → State → Prop}
+    (hP : ∀ s s', P s s' → VG.RISCV64.Taint.Agree (VG.RISCV64.Taint.ofRegs ([.t0] ++ kRegs)) s s') :
+    RelCT isa P (.seq (.block [.mul .t1 .t0 .s6, .add .t1 .t1 .s5, mov .t0 .s4, mov .t2 .s9,
+        if wide then .shift .srl .d .t3 .s6 3 else mov .t3 .s6]) (xorLoop wide)) fun _ _ => True := by
+  cases wide
+  · exact RelCT.taint (A := taint) _ hP (by taint_decide)
+  · exact RelCT.taint (A := taint) _ hP (by taint_decide)
+
+/-! ## Step 2, in two runs -/
+
+theorem eval_s7 (s : State) : isa.eval (.nonzero .s7) s = some (s.gpr .s7 != 0) :=
+  eval_nonzero s .s7
+
+theorem step2_kFree (wide : Bool) :
+    (Code.seq (.block [mov .t0 .s4, mov .t1 .s8, unitCount wide]) (copyLoop wide) : Prog isa).allInstrs
+      kFree = true := by
+  cases wide <;> decide
+
+section
+variable {wide : Bool} {s₀ s₀' : State} (hp : Pre wide s₀) (hp' : Pre wide s₀') (hq : PubEq s₀ s₀')
+include hp hp' hq
+
+theorem body2_rel {i : Nat} (hi : i < NN s₀) :
+    RelCT isa (fun s s' => Inv2 s₀ i s ∧ Inv2 s₀' i s') (step2 wide)
+      fun s s' => (Inv2 s₀ (i + 1) s ∧ (s.gpr .s7 != 0) = decide (i + 1 ≠ NN s₀)) ∧
+        (Inv2 s₀' (i + 1) s' ∧ (s'.gpr .s7 != 0) = decide (i + 1 ≠ NN s₀')) := by
+  have hi' : i < NN s₀' := hq.NN ▸ hi
+  have ev : vAt s₀ i = vAt s₀' i := hq.vAt i
+  have e15 : BitVec.ofNat 64 (NN s₀ - i) = BitVec.ofNat 64 (NN s₀' - i) := by rw [hq.NN]
+  let K (t₀ t : State) : Prop := KR t₀ (vAt t₀ i) (BitVec.ofNat 64 (NN t₀ - i)) t
+  have ac : RelCT isa (fun s s' => Inv2 s₀ i s ∧ Inv2 s₀' i s')
+      (.seq (.block [mov .t0 .s4, mov .t1 .s8, unitCount wide]) (copyLoop wide))
+      fun s s' => K s₀ s ∧ K s₀' s' :=
+    RelCT.keepK (rel_ac wide (fun _ _ h => agree_K hq h.1.kr h.2.kr ev e15 (by simp)))
+      (step2_kFree wide) fun _ _ h => ⟨h.1.kr, h.2.kr⟩
+  have x : RelCT isa (fun s s' => K s₀ s ∧ K s₀' s')
+      (.block ([mov .a0 .s8] ++ bmTail)) fun s s' =>
+        (K s₀ s ∧ Args s₀ (vAt s₀ i) s) ∧ (K s₀' s' ∧ Args s₀' (vAt s₀' i) s') :=
+    ((RelCT.taint (A := taint) (VG.RISCV64.Taint.ofRegs ([] ++ kRegs))
+      (fun _ _ h => agree_K hq h.1 h.2 ev e15 (by simp)) (by taint_decide)).wp
+      fun _ _ h => ⟨args2_wp hp h.1, args2_wp hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+  have cl := call_rel hp hp' hq (srcOK_v hp hi) (srcOK_v hp' hi') ev
+    (bp := vAt s₀ i) (q := BitVec.ofNat 64 (NN s₀ - i)) (bp' := vAt s₀' i)
+    (q' := BitVec.ofNat 64 (NN s₀' - i))
+  have e : RelCT isa (fun s s' => K s₀ s ∧ K s₀' s')
+      (.block [.add .s8 .s8 .s6, .addi .s7 .s7 (-1)]) fun _ _ => True :=
+    RelCT.taint (A := taint) (VG.RISCV64.Taint.ofRegs ([] ++ kRegs))
+      (fun _ _ h => agree_K hq h.1 h.2 ev e15 (by simp)) (by taint_decide)
+  have body := RelCT.assoc (ac.seq ((x.seq cl).seq e))
+  rw [← blockMixTo_eq] at body
+  exact (body.wp fun _ _ h => ⟨step2_ok hp hi h.1, step2_ok hp' hi' h.2⟩).mono
+    (fun _ _ h => h) fun _ _ h => h.2
+
+theorem loop2_rel :
+    RelCT isa (fun s s' => Inv2 s₀ 0 s ∧ Inv2 s₀' 0 s')
+      (.loop (step2 wide) (.nonzero .s7))
+      fun s s' => Inv2 s₀ (NN s₀) s ∧ Inv2 s₀' (NN s₀') s' := by
+  have lp := RelCT.loop (M := isa) (body := step2 wide)
+    (c := .nonzero .s7) (Q := fun s s' => Inv2 s₀ (NN s₀) s ∧ Inv2 s₀' (NN s₀') s')
+    (fun n s s' => ∃ i, n = NN s₀ - i ∧ i < NN s₀ ∧ Inv2 s₀ i s ∧ Inv2 s₀' i s') (fun n => by
+      intro s s' t t' u u' ⟨i, hn, hi, h, h'⟩ e e'
+      obtain ⟨ht, ⟨j, z⟩, ⟨j', z'⟩⟩ := body2_rel hp hp' hq hi _ _ _ _ _ _ ⟨h, h'⟩ e e'
+      beta_reduce
+      rw [eval_s7, eval_s7, z, z', ← hq.NN]
+      refine ⟨ht, rfl, fun hf => ?_, fun ht' => ?_⟩
+      · have hl : i + 1 = NN s₀ := by simpa using hf
+        exact ⟨hl ▸ j, hl ▸ j'⟩
+      · have hl : i + 1 ≠ NN s₀ := by simpa using ht'
+        exact ⟨NN s₀ - (i + 1), by omega, i + 1, rfl, by omega, j, j'⟩) (NN s₀)
+  exact lp.mono (fun _ _ h => ⟨0, rfl, NN_pos hp, h.1, h.2⟩) fun _ _ h => h
+
+end
+
+/-! ## Step 3, in two runs -/
+
+theorem j_wp {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {q : Addr} {s : State}
+    (h : KR s₀ (BitVec.ofNat 64 (NN s₀ - 1)) q s) {j : Nat} (hj : jOf s₀ s.mem = j) :
+    WP isa (.block (jBlock wide)) s fun s' =>
+      KR s₀ (BitVec.ofNat 64 (NN s₀ - 1)) q s' ∧ s'.gpr .t0 = BitVec.ofNat 64 j :=
+  WP.mono (j_ok hp h.s4 h.s6 h.s8 h.rd h.wr) fun _ ⟨u0, uk, _, urd, uwr, usp⟩ =>
+    ⟨h.keep urd uwr usp fun r hr => by
+        obtain ⟨-, -, -, -, h0, h1⟩ := kRegs_ne r hr
+        exact uk r h0 h1 (by revert r hr; decide) (by revert r hr; decide),
+      by rw [u0, hj]⟩
+
+/-- The next index, from the ones still to come. -/
+theorem drop_js {s₀ : State} {i : Nat} (hi : i < NN s₀) {s : State} (h : Inv3 s₀ i s) :
+    ∃ rest, (Spec.Scrypt.roMixIndices (rr s₀) (NN s₀) (B s₀)).drop i = jOf s₀ s.mem :: rest := by
+  have e : NN s₀ - i = NN s₀ - (i + 1) + 1 := by omega
+  have hs := h.js
+  rw [e, mixLoop_succ_snd] at hs
+  exact ⟨_, hs.symm⟩
+
+theorem step3_kFree (wide : Bool) :
+    (Code.seq (.block [.mul .t1 .t0 .s6, .add .t1 .t1 .s5, mov .t0 .s4, mov .t2 .s9,
+      if wide then .shift .srl .d .t3 .s6 3 else mov .t3 .s6]) (xorLoop wide) : Prog isa).allInstrs
+      kFree = true := by
+  cases wide <;> decide
+
+section
+variable {wide : Bool} {s₀ s₀' : State} (hp : Pre wide s₀) (hp' : Pre wide s₀') (hq : PubEq s₀ s₀')
+include hp hp' hq
+
+theorem body3_rel_j {i : Nat} (hi : i < NN s₀) (j : Nat) :
+    RelCT isa (fun s s' => (Inv3 s₀ i s ∧ jOf s₀ s.mem = j) ∧ (Inv3 s₀' i s' ∧ jOf s₀' s'.mem = j))
+      (step3 wide)
+      fun s s' => (Inv3 s₀ (i + 1) s ∧ (s.gpr .s7 != 0) = decide (i + 1 ≠ NN s₀)) ∧
+        (Inv3 s₀' (i + 1) s' ∧ (s'.gpr .s7 != 0) = decide (i + 1 ≠ NN s₀')) := by
+  have hi' : i < NN s₀' := hq.NN ▸ hi
+  have e1 : BitVec.ofNat 64 (NN s₀ - 1) = BitVec.ofNat 64 (NN s₀' - 1) := by rw [hq.NN]
+  have e15 : BitVec.ofNat 64 (NN s₀ - i) = BitVec.ofNat 64 (NN s₀' - i) := by rw [hq.NN]
+  let K (t₀ t : State) : Prop :=
+    KR t₀ (BitVec.ofNat 64 (NN t₀ - 1)) (BitVec.ofNat 64 (NN t₀ - i)) t
+  have jb : RelCT isa (fun s s' => (Inv3 s₀ i s ∧ jOf s₀ s.mem = j) ∧
+        (Inv3 s₀' i s' ∧ jOf s₀' s'.mem = j)) (.block (jBlock wide)) fun s s' =>
+        (K s₀ s ∧ s.gpr .t0 = BitVec.ofNat 64 j) ∧ (K s₀' s' ∧ s'.gpr .t0 = BitVec.ofNat 64 j) :=
+    ((rel_jb wide (fun _ _ h => agree_K hq h.1.1.kr h.2.1.kr e1 e15 (by simp))).wp
+      fun _ _ h => ⟨j_wp hp h.1.1.kr h.1.2, j_wp hp' h.2.1.kr h.2.2⟩).mono (fun _ _ h => h)
+      fun _ _ h => h.2
+  have mx : RelCT isa (fun s s' => (K s₀ s ∧ s.gpr .t0 = BitVec.ofNat 64 j) ∧
+        (K s₀' s' ∧ s'.gpr .t0 = BitVec.ofNat 64 j))
+      (.seq (.block [.mul .t1 .t0 .s6, .add .t1 .t1 .s5, mov .t0 .s4, mov .t2 .s9,
+        if wide then .shift .srl .d .t3 .s6 3 else mov .t3 .s6]) (xorLoop wide))
+      fun s s' => K s₀ s ∧ K s₀' s' :=
+    RelCT.keepK (rel_mx wide
+      (fun _ _ h => agree_K hq h.1.1 h.2.1 e1 e15 fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2, h.2.2]))
+      (step3_kFree wide) fun _ _ h => ⟨h.1.1, h.2.1⟩
+  have x : RelCT isa (fun s s' => K s₀ s ∧ K s₀' s')
+      (.block ([mov .a0 .s9] ++ bmTail)) fun s s' =>
+        (K s₀ s ∧ Args s₀ (tP s₀) s) ∧ (K s₀' s' ∧ Args s₀' (tP s₀') s') :=
+    ((RelCT.taint (A := taint) (VG.RISCV64.Taint.ofRegs ([] ++ kRegs))
+      (fun _ _ h => agree_K hq h.1 h.2 e1 e15 (by simp)) (by taint_decide)).wp
+      fun _ _ h => ⟨args3_wp hp h.1, args3_wp hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+  have cl := call_rel hp hp' hq (srcOK_t hp) (srcOK_t hp') hq.tP
+    (bp := BitVec.ofNat 64 (NN s₀ - 1)) (q := BitVec.ofNat 64 (NN s₀ - i))
+    (bp' := BitVec.ofNat 64 (NN s₀' - 1)) (q' := BitVec.ofNat 64 (NN s₀' - i))
+  have e : RelCT isa (fun s s' => K s₀ s ∧ K s₀' s') (.block [.addi .s7 .s7 (-1)])
+      fun _ _ => True :=
+    RelCT.taint (A := taint) (VG.RISCV64.Taint.ofRegs ([] ++ kRegs))
+      (fun _ _ h => agree_K hq h.1 h.2 e1 e15 (by simp)) (by taint_decide)
+  have body := jb.seq (RelCT.assoc (mx.seq ((x.seq cl).seq e)))
+  rw [← blockMixTo_eq] at body
+  exact (body.wp fun _ _ h => ⟨step3_ok hp hi h.1.1, step3_ok hp' hi' h.2.1⟩).mono
+    (fun _ _ h => h) fun _ _ h => h.2
+
+variable (hL : Spec.Scrypt.roMixIndices (rr s₀) (NN s₀) (B s₀) =
+  Spec.Scrypt.roMixIndices (rr s₀') (NN s₀') (B s₀'))
+include hL
+
+theorem body3_rel {i : Nat} (hi : i < NN s₀) :
+    RelCT isa (fun s s' => Inv3 s₀ i s ∧ Inv3 s₀' i s') (step3 wide)
+      fun s s' => (Inv3 s₀ (i + 1) s ∧ (s.gpr .s7 != 0) = decide (i + 1 ≠ NN s₀)) ∧
+        (Inv3 s₀' (i + 1) s' ∧ (s'.gpr .s7 != 0) = decide (i + 1 ≠ NN s₀')) := by
+  have hi' : i < NN s₀' := hq.NN ▸ hi
+  refine (RelCT.exists' fun (j : Nat) => body3_rel_j hp hp' hq hi j).mono
+    (fun s s' ⟨h, h'⟩ => ?_) fun _ _ h => h
+  obtain ⟨r, hr⟩ := drop_js hi h
+  obtain ⟨r', hr'⟩ := drop_js hi' h'
+  rw [← hL, hr] at hr'
+  have e := (List.cons.inj hr').1
+  exact ⟨jOf s₀ s.mem, ⟨h, rfl⟩, ⟨h', e.symm⟩⟩
+
+theorem loop3_rel :
+    RelCT isa (fun s s' => Inv3 s₀ 0 s ∧ Inv3 s₀' 0 s')
+      (.loop (step3 wide) (.nonzero .s7))
+      fun s s' => Inv3 s₀ (NN s₀) s ∧ Inv3 s₀' (NN s₀') s' := by
+  have lp := RelCT.loop (M := isa) (body := step3 wide)
+    (c := .nonzero .s7) (Q := fun s s' => Inv3 s₀ (NN s₀) s ∧ Inv3 s₀' (NN s₀') s')
+    (fun n s s' => ∃ i, n = NN s₀ - i ∧ i < NN s₀ ∧ Inv3 s₀ i s ∧ Inv3 s₀' i s') (fun n => by
+      intro s s' t t' u u' ⟨i, hn, hi, h, h'⟩ e e'
+      obtain ⟨ht, ⟨j, z⟩, ⟨j', z'⟩⟩ := body3_rel hp hp' hq hL hi _ _ _ _ _ _ ⟨h, h'⟩ e e'
+      beta_reduce
+      rw [eval_s7, eval_s7, z, z', ← hq.NN]
+      refine ⟨ht, rfl, fun hf => ?_, fun ht' => ?_⟩
+      · have hl : i + 1 = NN s₀ := by simpa using hf
+        exact ⟨hl ▸ j, hl ▸ j'⟩
+      · have hl : i + 1 ≠ NN s₀ := by simpa using ht'
+        exact ⟨NN s₀ - (i + 1), by omega, i + 1, rfl, by omega, j, j'⟩) (NN s₀)
+  exact lp.mono (fun _ _ h => ⟨0, rfl, NN_pos hp, h.1, h.2⟩) fun _ _ h => h
+
+theorem roMix_rel :
+    RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') (Impl.Scrypt.RISCV64.roMix wide) fun _ _ => True := by
+  unfold Impl.Scrypt.RISCV64.roMix
+  have pro : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') (.block rmPrologue)
+      fun s s' => P1 s₀ s ∧ P1 s₀' s' :=
+    ((RelCT.taint (A := taint) (VG.RISCV64.Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
+      (P := fun s s' => s = s₀ ∧ s' = s₀') (fun _ _ ⟨e, e'⟩ => by
+        rw [e, e']
+        refine agree_of hq.sp fun r hr => ?_
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+        · exact hq.a0
+        · exact hq.a1
+        · exact hq.a2
+        · exact hq.a3
+        · exact hq.a4
+        · exact hq.a5) (c := .block rmPrologue) (by taint_decide)).wp
+      (F₁ := P1 s₀) (F₂ := P1 s₀') fun _ _ ⟨e, e'⟩ => by
+        rw [e, e']; exact ⟨prologue_ok hp, prologue_ok hp'⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+  have nl : RelCT isa (fun s s' => P1 s₀ s ∧ P1 s₀' s') nLoop fun s s' => N1 s₀ s ∧ N1 s₀' s' :=
+    ((RelCT.taint (A := taint) (VG.RISCV64.Taint.ofRegs [.t0, .t1, .t2])
+      (fun _ _ ⟨h, h'⟩ => agree_of (by rw [h.sp, h'.sp, hq.sp]) fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · rw [h.t0, h'.t0, hq.rr]
+        · rw [h.t1, h'.t1]
+        · rw [h.t2, h'.t2, RoMix.vl, RoMix.vl, hq.a3]) (c := nLoop) (by taint_decide)).wp
+      fun _ _ h => ⟨nloop_ok hp h.1, nloop_ok hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+  have st : RelCT isa (fun s s' => N1 s₀ s ∧ N1 s₀' s') (.block rmSetup)
+      fun s s' => Inv2 s₀ 0 s ∧ Inv2 s₀' 0 s' :=
+    ((RelCT.taint (A := taint) (VG.RISCV64.Taint.ofRegs [.t1, .s5, .s10])
+      (fun _ _ ⟨h, h'⟩ => agree_of (by rw [h.sp, h'.sp, hq.sp]) fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · rw [h.t1, h'.t1, hq.NN]
+        · rw [h.s5, h'.s5, vP, vP, hq.a2]
+        · rw [h.s10, h'.s10, sv, sv, hq.a5]) (c := .block rmSetup) (by taint_decide)).wp
+      fun _ _ h => ⟨setup2_ok hp h.1, setup2_ok hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+  have md : RelCT isa (fun s s' => Inv2 s₀ (NN s₀) s ∧ Inv2 s₀' (NN s₀') s') (.block rmMid)
+      fun s s' => Inv3 s₀ 0 s ∧ Inv3 s₀' 0 s' :=
+    ((RelCT.taint (A := taint) (VG.RISCV64.Taint.ofRegs [.s10])
+      (fun _ _ ⟨h, h'⟩ => agree_of (by rw [h.sp, h'.sp, hq.sp]) fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        rw [h.s10, h'.s10, sv, sv, hq.a5]) (c := .block rmMid) (by taint_decide)).wp
+      fun _ _ h => ⟨mid_ok hp h.1, mid_ok hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+  have epi : RelCT isa (fun s s' => Inv3 s₀ (NN s₀) s ∧ Inv3 s₀' (NN s₀') s') (.block rmEpilogue)
+      fun _ _ => True :=
+    RelCT.taint (A := taint) (VG.RISCV64.Taint.ofRegs [.s10])
+      (fun _ _ h => agree_of (by rw [h.1.sp, h.2.sp, hq.sp]) fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        rw [h.1.s10, h.2.s10, sv, sv, hq.a5]) (by taint_decide)
+  exact pro.seq (nl.seq (st.seq ((loop2_rel hp hp' hq).seq
+    (md.seq ((loop3_rel hp hp' hq hL).seq epi)))))
+
+end
+
+/-! ## Verified -/
+
+theorem pubEq_of {wide : Bool} {s₁ s₂ : State} (h : (Proof.Scrypt.roMixRISCV64 wide).pub s₁ s₂) :
+    PubEq s₁ s₂ :=
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1⟩
+
+theorem preserved_cases : ∀ r ∈ preserved, r ∈ rmSaved.map Prod.fst ∨ r ∈ mid := by
+  decide
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .a0 => 0x1000 | .a1 => 1 | .a2 => 0x2000 | .a3 => 1 | .a4 => 0x3000 | .a5 => 0x4000 | _ => 0
+  sp := 0x8000
+  mem _ := 0
+  rd := []
+  wr := [⟨0x1000, 128⟩, ⟨0x2000, 128⟩, ⟨0x3000, 128⟩, ⟨0x4000, 168⟩]
+
+theorem roMix_correct {wide : Bool} (s : State) (hs : (Proof.Scrypt.roMixRISCV64 wide).pre s) :
+    ∃ t s', Exec isa (Impl.Scrypt.RISCV64.roMix wide) s t s' ∧ abiPreserved s s' ∧
+      (Proof.Scrypt.roMixRISCV64 wide).post s s' := by
+  obtain ⟨t, s', he, hk, hsp, hm, hpost⟩ := correct (pre_of hs)
+  refine ⟨t, s', he, ⟨fun r hr => ?_, hsp, hk (.ra, 0) (by decide)⟩, hpost⟩
+  rcases preserved_cases r hr with h | h
+  · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp h
+    exact hk p hp
+  · exact hm r h
+
+theorem roMix_ct (wide : Bool) : ConstantTime isa (Proof.Scrypt.roMixRISCV64 wide).pre
+    (Proof.Scrypt.roMixRISCV64 wide).pub (Impl.Scrypt.RISCV64.roMix wide) := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂
+  exact (roMix_rel (pre_of h₁) (pre_of h₂) (pubEq_of hpub) hpub.2.2.2.2.2.2.2
+    _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+
+theorem roMix_verified (wide : Bool) :
+    Verified RISCV64.target (Impl.Scrypt.RISCV64.roMix wide) (Proof.Scrypt.roMixRISCV64 wide) :=
+  ⟨roMix_correct, roMix_ct wide, ⟨satState, rfl, rfl, Region.disjoint_of_sep (by decide),
+    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+    Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide, by decide,
+    by decide, ⟨0, rfl⟩, by decide, fun _ => by decide⟩⟩
 
 end VG.Proof.Scrypt.RISCV64.RoMix
