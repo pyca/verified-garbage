@@ -111,7 +111,7 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.RandomSignResult} (h : rsContra
     (hsig : R.status = 1 → Spec.Rsa.bytesAt t.mem (rlOf s₀).out (2 * (rlOf s₀).ql) =
       R.signature.getD (List.replicate (2 * (rlOf s₀).ql) 0))
     (hnone : R.status ≠ 1 → R.signature = none) :
-    WP isa (finish (lenQ .t5 ++ [.add .t5 .t5 .t5])) t (Fin s₀ R) := by
+    WP isa (finish (lenQ .t5 ++ ([.add .t5 .t5 .t5] : List Instr))) t (Fin s₀ R) := by
   have hL := rlOf_ok h
   have hq := hL.ql
   have hp := hL.pl
