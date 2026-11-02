@@ -196,6 +196,16 @@ theorem x_wv {B BX : Addr} {Z ZX w : Nat} {m m' : Mem} (o : WinO B w m m')
     rw [Outside.word_sep o hsep (by omega_arith) (show d + 8 ≤ ZX by omega_arith) hX,
       x_wv o hsep hZ hX (d := d + 8) (k := k) (by omega_arith)]
 
+/-- A number of `X` after code that wrote only the prime's working space. -/
+theorem x_wv' {B BX : Addr} {Z ZX o n : Nat} {m m' : Mem} (h : Outside B o n m m')
+    (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x) (hon : o + n ≤ Z) (hX : BX.toNat + ZX ≤ 2 ^ 64) :
+    ∀ {d k : Nat}, d + 8 * k ≤ ZX → wordsVal m' BX d k = wordsVal m BX d k
+  | _, 0, _ => rfl
+  | d, k + 1, hd => by
+    simp only [wordsVal]
+    rw [Outside.word_sep h hsep hon (show d + 8 ≤ ZX by omega_arith) hX,
+      x_wv' h hsep hon hX (d := d + 8) (k := k) (by omega_arith)]
+
 /-- An array apart from one that changed in its `n ≤ 8 (w + 2)` bytes. -/
 theorem arr_n {B : Addr} {w o j n : Nat} {m m' : Mem} (h : Outside B (slot w o) n m m') (hn : n ≤ 8 * (w + 2))
     (hj : j < 24) (hne : j ≠ o) (hN : B.toNat + slot w 24 ≤ 2 ^ 64) : A m' B w j = A m B w j :=
@@ -283,7 +293,7 @@ theorem xbase_ok {t : State} {BX : Addr} {w : Nat} {rd : Reg} (hrd : rd ≠ .s11
 
 /-- The top word of array `j`, `w` past its base, := 0. -/
 theorem top0_ok {t : State} {B : Addr} {Z w j N : Nat} (h : WCtx t B Z w N) (hj : j < 24) :
-    WP isa (.block (base .t3 j ++ [.add .t3 .t3 .s5, .addi .t3 .t3 (-16), .li .s0 0, .store .d .s0 .t3 0])) t
+    WP isa (.block (base .t3 j ++ ([.add .t3 .t3 .s5, .addi .t3 .t3 (-16), .li .s0 0, .store .d .s0 .t3 0] : List Instr))) t
       fun u => (u.mem = t.mem.writeW (off B (slot w j + 8 * w)) (0 : BitVec 64)) ∧ Keep [.t3, .s0] t u := by
   have hn := h.nw
   have sl := h.sl hj
@@ -692,5 +702,147 @@ theorem reduceIn_ok {s : State} {B BX : Addr} {Z ZX w wX k N Cv : Nat} (h : WCtx
       (by rw [hR2]; exact hR2') hj I) I0)
     fun t I => ⟨⟨I.ctx, I.ra, ?_, I.p1, I.fix, I.out⟩, I.keep⟩
   rw [← Nat.mod_eq_of_lt I.slt, I.sv, hC]
+
+/-! ## The power -/
+
+/-- The registers `power` writes. -/
+def powerRegs : List Reg :=
+  [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4, .s7, .s8, .s9,
+    .s10]
+
+/-- The prime's working space of 24 arrays. -/
+abbrev PFr (B : Addr) (w : Nat) (m m' : Mem) : Prop := Outside B (slot w 0) (24 * (8 * (w + 2))) m m'
+
+theorem slot24' (w : Nat) : slot w 0 + 24 * (8 * (w + 2)) = slot w 24 := by unfold slot; omega_arith
+
+theorem PFr.of_win {B : Addr} {w : Nat} {m m' : Mem} (h : WinO B w m m') : PFr B w m m' :=
+  h.mono (by unfold slot; omega_arith) (by unfold slot; omega_arith)
+
+theorem bytes_out {B D : Addr} {Z w L : Nat} {m m' : Mem} (h : PFr B w m m') (hZ : slot w 24 ≤ Z)
+    (hsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
+    Spec.Rsa.bytesAt m' D L = Spec.Rsa.bytesAt m D L := by
+  unfold Spec.Rsa.bytesAt
+  refine List.map_congr_left fun i hi => h _ ?_
+  have hi := List.mem_range.mp hi
+  have := slot24' w
+  by_contra hc
+  obtain ⟨h1, h2⟩ := not_or.mp hc
+  exact hsep i hi (D + BitVec.ofNat 64 i) (by simp only [VG.Proof.Bignum.ofs] at h1 h2 ⊢; omega) rfl
+
+theorem low_odd {m : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) (h : wordsVal m B d w % 2 = 1) :
+    (Mont.word m B d).toNat % 2 = 1 := by
+  obtain ⟨w', rfl⟩ : ∃ w', w = w' + 1 := ⟨w - 1, by omega_arith⟩
+  simp only [wordsVal] at h
+  omega_arith
+
+/-- `power xj oD oLen`, in a prime's working space at `B` of 24 arrays of `w`
+words (array 0's base in `a7` and `ra`, the arrays' size in `s5`, `w` in
+`t0`), for the prime `p` (`Pv`, odd, at least 2) in `X`'s array `xj` (`X` at
+`BX`, in `s6`, apart from `B`, its arrays' size in `s11`), `c` the first
+`w n` words of `X`'s array 6 (`n` chunks of the `⌈k / 8⌉` words, `k` in
+`X`'s header) and the exponent's `L ≥ 1` bytes at `D`, and `L`, in `X`'s
+header words `oD` and `oLen`: `c^d mod p` in array 4, as a number of the
+exponent's bytes, most significant first; nothing but the working space
+written. -/
+theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : Nat} (hs : Scr s B Z)
+    (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
+    (hra : s.gpr .ra = off B (slot w 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
+    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
+    (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2))) (hxj : slot wX xj + 8 * w ≤ ZX)
+    (hP : wordsVal s.mem BX (slot wX xj) w = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
+    (hkw : Mont.word s.mem BX Crt.oNLen = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
+    (hXZ : slot wX 6 + 8 * (w * nChunks ((k + 7) / 8) w) ≤ ZX)
+    (hC : wordsVal s.mem BX (slot wX 6) (w * nChunks ((k + 7) / 8) w) = Cv)
+    (hoD : oD + 8 ≤ ZX) (hoD8 : oD % 8 = 0) (hoD' : oD < 2048) (hoL : oLen + 8 ≤ ZX) (hoL8 : oLen % 8 = 0)
+    (hoL' : oLen < 2048) (hDw : Mont.word s.mem BX oD = D) (hLw : Mont.word s.mem BX oLen = BitVec.ofNat 64 L)
+    (hL : 1 ≤ L) (hL' : L < 2 ^ 63) (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hDsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
+    WP isa (Crt.power xj oD oLen) s fun t =>
+      (wordsVal t.mem B (slot w 4) w = Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
+        PFr B w s.mem t.mem) ∧ Keep powerRegs s t := by
+  have hn : B.toNat + slot w 24 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
+  have hxn := hx.nowrap
+  have e24 := slot24' w
+  have s01 := slot_lt (w := w) (show 0 < 1 by decide)
+  have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
+  unfold Crt.power
+  -- The prime into array 0.
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.t3] (Q := fun u => u.gpr .t3 = off B (slot w 0) ∧ u.mem = s.mem)
+    (by brun [h7, BitVec.add_zero]) (by rfl) (by rfl)) fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_
+  refine WP.mono (xbase_ok (rd := .t4) (by decide) ((k1.gpr (by decide)).trans h6)
+    ((k1.gpr (by decide)).trans h11) xj) fun s₂ ⟨⟨a4, m2⟩, k2⟩ => ?_
+  have k12 := k1.trans k2
+  have hm2 : s₂.mem = s.mem := by rw [m2, m1]
+  have hx2 := hx.congr k12.2.2
+  refine WP.seq (WP.mono (Pub.copyIn_ok (B := B) (P := BX) (Zp := ZX) (dS := slot wX xj) (dD := slot w 0) (w := w)
+    (hs.congr k12.2.2) hxn (fun j hj => hx2.ld (by omega_arith))
+    (fun j hj => hx2.al8 (by omega_arith) (by have := slot_al wX xj; omega_arith)) a4
+    ((k2.gpr (by decide)).trans a3) ((k12.gpr (by decide)).trans ht0) (by omega_arith) hw' (slot_al w 0) hxj
+    (by omega_arith) hsep) fun s₃ ⟨⟨_, _, c3, o3⟩, k3⟩ => ?_)
+  rw [hm2] at c3 o3
+  have v0 : wordsVal s₃.mem B (slot w 0) w = Pv := by rw [wv_words c3, hP]
+  have k13 := k12.trans k3
+  have h7' : s₃.gpr .a7 = off B (slot w 0) := (k13.gpr (by decide)).trans h7
+  have h5' : s₃.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)) := (k13.gpr (by decide)).trans h5
+  -- `-p⁻¹ mod 2⁶⁴` and the bases.
+  refine WP.seq ?_
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (minv_ok (hs.congr k13.2.2) h7' (slot_al w 0) (by omega_arith)
+    (low_odd (w := w) (by omega_arith) (by rw [v0]; exact hodd))) fun s₄ ⟨⟨inv4, m4⟩, k4⟩ => ?_
+  refine WP.mono (Pub.base_ok (rd := .a2) (by decide) ((k4.gpr (by decide)).trans h7')
+    ((k4.gpr (by decide)).trans h5') 1) fun s₅ ⟨⟨a2, m5⟩, k5⟩ => ?_
+  refine WP.mono (Pub.base_ok (rd := .a5) (by decide) ((k5.gpr (by decide)).trans ((k4.gpr (by decide)).trans h7'))
+    ((k5.gpr (by decide)).trans ((k4.gpr (by decide)).trans h5')) 2) fun s₆ ⟨⟨a5, m6⟩, k6⟩ => ?_
+  have k46 := (k4.trans k5).trans k6
+  refine WP.mono (Pub.base_ok (rd := .a6) (by decide) ((k46.gpr (by decide)).trans h7')
+    ((k46.gpr (by decide)).trans h5') 3) fun s₇ ⟨⟨a6, m7⟩, k7⟩ => ?_
+  have k37 := k46.trans k7
+  have hm7 : s₇.mem = s₃.mem := by rw [m7, m6, m5, m4]
+  have c7 : WCtx s₇ B Z w Pv := ⟨hs.congr (k13.trans k37).2.2, hw2, hw', hZ, (k37.gpr (by decide)).trans h7',
+    (k37.gpr (by decide)).trans h5', (k37.gpr (by decide)).trans ((k13.gpr (by decide)).trans ht0),
+    by rw [((k5.trans k6).trans k7).gpr (by decide), hm7]; exact inv4, by rw [hm7]; exact v0⟩
+  -- `R² mod p`.
+  refine WP.seq (WP.mono (r2Prime_ok (tmp := 4) c7 (((k6.trans k7).gpr (by decide)).trans a2)
+    ((k7.gpr (by decide)).trans a5) a6 (by decide) (by decide) hP2 hodd) fun s₈ ⟨⟨c8, r8, _, o8⟩, k8⟩ => ?_)
+  have F8 : PFr B w s.mem s₈.mem := by
+    rw [← hm7] at o3
+    exact (o3.mono (Nat.le_refl _) (by omega_arith)).trans (PFr.of_win o8)
+  have k18 := (k13.trans k37).trans k8
+  -- `c mod p`.
+  refine WP.seq (WP.mono (reduceIn_ok (k := k) (Cv := Cv) c8 ((k18.gpr (by decide)).trans hra) (hx.congr k18.2.2) hsep
+    ((k18.gpr (by decide)).trans h6) ((k18.gpr (by decide)).trans h11)
+    (by rw [Outside.word_sep F8 hsep (by omega_arith) (show Crt.oNLen + 8 ≤ ZX by unfold Crt.oNLen; unfold slot hdrBytes at hXZ; omega_arith)
+      hxn]; exact hkw) hk hk' hXZ hP2 hodd r8 (by rw [x_wv' F8 hsep (by omega_arith) hxn hXZ]; exact hC))
+    fun s₉ ⟨⟨c9, _, r9, p9, _, o9⟩, k9⟩ => ?_)
+  have F9 : PFr B w s.mem s₉.mem := F8.trans (PFr.of_win o9)
+  have k19 := k18.trans k9
+  -- The exponent.
+  refine WP.seq (WP.mono (WP.keep [.s9, .s10] (Q := fun u => u.gpr .s9 = off D 0 ∧ u.gpr .s10 = BitVec.ofNat 64 L ∧
+      u.mem = s₉.mem)
+    (by
+      have hx9 := hx.congr k19.2.2
+      brun [(k19.gpr (by decide)).trans h6, hoD', hoL', hx9.ld hoD, hx9.ld hoL, hx9.al8 hoD hoD8, hx9.al8 hoL hoL8,
+        Outside.word_sep F9 hsep (by omega_arith) hoD hxn, Outside.word_sep F9 hsep (by omega_arith) hoL hxn, hDw, hLw,
+        BitVec.add_zero])
+    (by rfl) (by rfl)) fun s₁₀ ⟨⟨a9, a10, m10⟩, k10⟩ => ?_)
+  have c10 := c9.regs k10 (by decide) m10
+  have k110 := k19.trans k10
+  have n10 : wordsVal s₁₀.mem B (slot w 0) w = Pv := c10.n
+  have hR2 : A s₁₀.mem B w 1 = 2 ^ (64 * w) * 2 ^ (64 * w) % Pv := by
+    rw [m10, p9, r8, ← Nat.pow_add]; congr 2; omega_arith
+  refine WP.mono (powWin_ok c10.scr hw2 hw' hZ c10.a7 c10.s5 c10.t0 c10.inv
+    (by rw [n10]; exact hP2) (by rw [n10]; exact hodd)
+    (by rw [n10, show wordsVal s₁₀.mem B (slot w 1) w = _ from hR2]; exact Nat.mod_lt _ (by omega_arith)) a9 a10 hL hL'
+    (by rw [k110.2.1, k110.2.2]; exact hrd) hDsep) fun t ⟨⟨ht, ot⟩, kt⟩ => ⟨⟨?_, ?_⟩, ?_⟩
+  · rw [ht (by rw [n10]; exact hR2), n10, show wordsVal s₁₀.mem B (slot w 4) w = Cv % Pv by rw [m10]; exact r9,
+      ← Nat.pow_mod, bytes_out (by rw [← m10] at F9; exact F9) hZ hDsep]
+  · rw [← m10] at F9
+    exact F9.trans (PFr.of_win ot)
+  · exact Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within
+      (Keep.within (Keep.within (Keep.within (Keep.refl powerRegs s) k1 (by decide)) k2 (by decide)) k3 (by decide))
+      k4 (by decide)) k5 (by decide)) k6 (by decide)) k7 (by decide)) k8 (by decide)) k9 (by decide)) k10
+      (by decide)) kt (by decide)
 
 end VG.Proof.Bignum.RISCV64.Win
