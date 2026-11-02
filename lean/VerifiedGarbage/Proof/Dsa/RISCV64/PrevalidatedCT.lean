@@ -84,7 +84,8 @@ theorem runRp : ∀ v s, ΦRp v s → WP isa (Code.seqL FRp) s fun _ => True := 
 theorem C0p.c0 {v : VD} {s : State} (h : C0p v s) : C0 v s := ⟨h.1.1, h.2⟩
 
 /-- Each level's states are verification's. -/
-theorem atT {n : Nat} (hn : FTp.take n = FT.take n) {v : VD} {u : State} (h : At C0p FTp n v u) : At C0 FT n v u :=
+theorem atT {n : Nat} {F : List (Prog isa)} (hn : FTp.take n = F.take n) {v : VD} {u : State}
+    (h : At C0p FTp n v u) : At C0 F n v u :=
   at_mono (fun _ _ h => C0p.c0 h) hn h
 
 theorem toX1 {v : VD} {u : State} (h : ΦX1p v u) : ΦX1 v u := ⟨atT rfl h.1, h.2⟩
@@ -104,7 +105,7 @@ theorem toR0 {v : VD} {u : State} (h : ΦRp v u) : ΦR0 v u := ⟨atX2 rfl h.1, 
 /-! ## The key is valid -/
 
 /-- The key's public part passes the checks, on the public data. -/
-abbrev KV (v : VD) : Prop := KM v ∧ EOk v (v.L.pl + v.L.ql) ∧ EOk v (2 * v.L.pl + v.L.ql)
+abbrev KV (v : VD) : Prop := KM v ∧ EOk v (v.L.pl + v.L.ql) ∧ EOk v (2 * v.L.pl + v.L.ql) ∧ GV v
 
 theorem vd_bytes (s : State) {o k : Nat} (hk : o + k ≤ 3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat) :
     Spec.Rsa.bytesAt s.mem (off (s.gpr .a0) o) k = (vdOf s).sl o k := by
@@ -127,7 +128,8 @@ theorem kv_of {v : VD} {s : State} (h : C0p v s) : KV v := by
   rw [KeyOk, ep, eq, eg, ey] at hK
   obtain ⟨⟨hsz, hq, hp'⟩, ⟨⟨g1, g2⟩, ⟨y1, y2⟩⟩, hd, hg, hy⟩ := hK
   have bd := VG.Proof.Dsa.supported_bounds hsz
-  exact ⟨⟨hsz, hp', hq, (pmod_iff (by omega) (by omega)).mp hd⟩, ⟨⟨g1, g2⟩, hg⟩, ⟨⟨y1, y2⟩, hy⟩⟩
+  exact ⟨⟨hsz, hp', hq, (pmod_iff (by omega) (by omega)).mp hd⟩, ⟨⟨g1, g2⟩, hg⟩, ⟨⟨y1, y2⟩, hy⟩,
+    gC0 _ _ ⟨hp, rfl⟩⟩
 
 theorem kvX1 {v : VD} {u : State} (h : ΦX1p v u) : KV v := at_pure (G := KV) (fun _ _ h => kv_of h) h.1
 theorem kvX2 {v : VD} {u : State} (h : ΦX2p v u) : KV v := at_pure (G := KV) (fun _ _ h => kvX1 h) h.1
@@ -136,12 +138,12 @@ theorem kvR {v : VD} {u : State} (h : ΦRp v u) : KV v := at_pure (G := KV) (fun
 /-! ## `XR` -/
 
 theorem pinsRp_0 : Pins (At ΦRp FRp 0) [.s6, .s11, .ra] :=
-  pins_at_fix fixB (fun _ => rfl) fun _ _ h => ⟨[], _, .block rfl, (semR0 (toR0 h)).1.fixB⟩
+  pins_at_fix fixB (fun _ => rfl) fun _ _ h => ⟨[], _, .block rfl, (onR0 _ _ (toR0 h)).1.fixB⟩
 
 theorem pinsRp_2 : Pins (At ΦRp FRp 2) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.key v.L.pl), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun _ _ h => by
-    have B := (semR0 (toR0 h)).1
+    have B := (onR0 _ _ (toR0 h)).1
     refine WP.of_flat (c := .seq (.block enterQ) (.block ptrQ)) rfl
       (WP.seq (WP.mono (enterQ_ok B.ok B.scr B.regs) fun _ ⟨⟨iq, m⟩, k⟩ => ?_))
     have B1 := B.keepM k m
@@ -152,7 +154,7 @@ theorem pinsRp_2 : Pins (At ΦRp FRp 2) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8
 theorem setupQ_P1 {v : VD} {s : State} (h : P1 v s) (hk : KM v) :
     WP isa setupQ s fun t => SR3 v t := by
   obtain ⟨B, l, hsz⟩ := h
-  refine WP.mono (setupQ_ok B.ok B.scr B.regs (B.hk.take (by omega))) fun t ⟨⟨_, q0, qtop, qb⟩, k⟩ => ?_
+  refine WP.mono (setupQ_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega))) fun t ⟨⟨_, q0, qtop, qb⟩, k⟩ => ?_
   have hb := qb.body B.ok
   exact ⟨⟨⟨B.body k hb, by rw [Lens, hb.word (by decide)]; exact l, hsz⟩, hk.2.1, hk.2.2.1⟩, hk.2.2.2,
     by rw [q0, B.q], qtop⟩
@@ -161,7 +163,7 @@ theorem pinsRp_11 : Pins (At ΦRp FRp 11) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, v.key), (.s8, BitVec.ofNat 64 v.L.pl)])
     (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq setupQ (.seq (.block enterP) (.block ptrP))) rfl
-      (WP.seq (WP.mono (setupQ_P1 (semR0 (toR0 h)) (kvR h).1) fun _ hs => by
+      (WP.seq (WP.mono (setupQ_P1 (onR0 _ _ (toR0 h)) (kvR h).1) fun _ hs => by
         have B := hs.1.1.1
         refine WP.seq (WP.mono (enterP_ok B.ok B.scr B.regs) fun _ ⟨⟨ip, m⟩, k⟩ => ?_)
         have B1 := B.keepM k m
@@ -170,8 +172,9 @@ theorem pinsRp_11 : Pins (At ΦRp FRp 11) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .
 
 theorem semBp {v : VD} {u : State} (h : At ΦRp FRp 26 v u) : SB v u :=
   at_sem (M := SB) (fun _ _ h' => WP.of_flat (c := .seq setupQ setupP) rfl
-    (WP.seq (WP.mono (setupQ_P1 (semR0 (toR0 h')) (kvR h').1) fun _ hs =>
-      (setupP_SR3 hs).mono fun _ ⟨c, _⟩ => ⟨⟨c, (kvR h').1, (kvR h').2.1⟩, (kvR h').2.2⟩))) h
+    (WP.seq (WP.mono (setupQ_P1 (onR0 _ _ (toR0 h')) (kvR h').1) fun _ hs =>
+      (setupP_SR3 hs).mono fun _ ⟨c, _⟩ =>
+        ⟨⟨c, (kvR h').1, (kvR h').2.1, (kvR h').2.2.2.1⟩, (kvR h').2.2.1, (kvR h').2.2.2.2⟩))) h
 
 theorem drop26 : FRp.drop 26 = FB := by decide +kernel
 
@@ -198,19 +201,19 @@ theorem XR_rel : RelCT isa (Two ΦRp) XR fun _ _ => True := by
 
 theorem X2p_rel : RelCT isa (Two ΦX2p) X2p fun _ _ => True :=
   chain_start (chain_cons runX2p (m := 12) (by decide)
-    (two_taint _ (pins_mono pinsX2_0 fun _ _ h => atX2 rfl h) (by taint_decide))
+    (two_taint _ (pins_mono (pinsX2_0 onX2) fun _ _ h => atX2 rfl h) (by taint_decide))
     (chain_cons runX2p (m := 13) (by decide) (rel_ite_at hFX2p
-      (fun v s₁ s₂ h₁ h₂ => zeroX2 v s₁ s₂ (atX2 rfl h₁) (atX2 rfl h₂)) XR_rel fail_rel) nil_rel))
+      (fun v s₁ s₂ h₁ h₂ => zeroX2 onX2 v s₁ s₂ (atX2 rfl h₁) (atX2 rfl h₂)) XR_rel fail_rel) nil_rel))
 
 theorem X1p_rel : RelCT isa (Two ΦX1p) X1p fun _ _ => True := by
   refine chain_start (chain_cons runX1p (m := 2) (by decide)
-    (two_taint _ (pins_mono pinsX1_0 fun _ _ h => atX1 rfl h) (by taint_decide)) ?_)
+    (two_taint _ (pins_mono (pinsX1_0 onX1) fun _ _ h => atX1 rfl h) (by taint_decide)) ?_)
   refine chain_cons runX1p (m := 4) (by decide)
-    (two_taint _ (pins_mono pinsX1_2 fun _ _ h => atX1 rfl h) (by taint_decide)) ?_
+    (two_taint _ (pins_mono (pinsX1_2 onX1) fun _ _ h => atX1 rfl h) (by taint_decide)) ?_
   refine chain_cons runX1p (m := 5) (by decide)
-    (two_taint _ (pins_mono pinsX1_4 fun _ _ h => atX1 rfl h) (by taint_decide)) ?_
+    (two_taint _ (pins_mono (pinsX1_4 onX1) fun _ _ h => atX1 rfl h) (by taint_decide)) ?_
   exact chain_cons runX1p (m := 6) (by decide) (rel_ite_at hFX1p
-    (fun v s₁ s₂ h₁ h₂ => zeroX1 v s₁ s₂ (atX1 rfl h₁) (atX1 rfl h₂)) X2p_rel fail_rel) nil_rel
+    (fun v s₁ s₂ h₁ h₂ => zeroX1 onX1 v s₁ s₂ (atX1 rfl h₁) (atX1 rfl h₂)) X2p_rel fail_rel) nil_rel
 
 theorem s6_keptp : ∀ i ∈ instrs (VG.Proof.Bignum.RISCV64.seg FTp 1 6), dstOf i ≠ some .s6 := by
   have h : (instrs (VG.Proof.Bignum.RISCV64.seg FTp 1 6)).all (fun i => dstOf i != some .s6) = true := by
@@ -231,14 +234,14 @@ theorem prevalidated_rel : RelCT isa (Two C0p) Prevalidated.verify fun _ _ => Tr
   · refine RelCT.mono (P := Two C0)
       (VG.Proof.Bignum.RISCV64.RelCT.seqL_single (entry_rel.mono (fun _ _ h => h) fun _ _ _ => trivial))
       (fun _ _ ⟨a, h₁, h₂, hsp⟩ => ⟨a, (at_zero_inv h₁).c0, (at_zero_inv h₂).c0, hsp⟩) fun _ _ h => h
-  refine chain_cons runTp (m := 2) (by decide) (two_taint _ (pins_mono pinsT1 fun _ _ h => atT rfl h)
+  refine chain_cons runTp (m := 2) (by decide) (two_taint _ (pins_mono (pinsT1 front0) fun _ _ h => atT rfl h)
     (by taint_decide)) ?_
-  refine chain_cons runTp (m := 4) (by decide) (two_taint _ (pins_mono pinsT2 fun _ _ h => atT rfl h)
+  refine chain_cons runTp (m := 4) (by decide) (two_taint _ (pins_mono (pinsT2 front0) fun _ _ h => atT rfl h)
     (by taint_decide)) ?_
-  refine chain_cons runTp (m := 5) (by decide) (two_taint _ (pins_mono pinsT4 fun _ _ h => atT rfl h)
+  refine chain_cons runTp (m := 5) (by decide) (two_taint _ (pins_mono (pinsT4 front0) fun _ _ h => atT rfl h)
     (by taint_decide)) ?_
   refine chain_cons runTp (m := 6) (by decide) (rel_ite_at hFTp
-    (fun v s₁ s₂ h₁ h₂ => zeroT v s₁ s₂ (atT rfl h₁) (atT rfl h₂)) X1p_rel fail_rel) ?_
+    (fun v s₁ s₂ h₁ h₂ => zeroT front0 v s₁ s₂ (atT rfl h₁) (atT rfl h₂)) X1p_rel fail_rel) ?_
   exact two_taint _ pinsTp6 (by taint_decide)
 
 theorem prevalidated_ct : ConstantTime isa vpContract.pre vpContract.pub Prevalidated.verify :=

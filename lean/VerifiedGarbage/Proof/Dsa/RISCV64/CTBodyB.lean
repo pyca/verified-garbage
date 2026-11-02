@@ -75,7 +75,7 @@ theorem prod_pre {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : Q
     show ((word s₂.mem v.L.Q (slot v.L.wq 0)).toNat * (s₂.gpr .t1).toNat + 1) % 2 ^ 64 = 0
     rw [m2, k2.gpr (by decide)]; exact I1.2.1, by rw [arrQ, m2]; exact I1.2.2⟩
   have h42 : arrQ s₂.mem v.L 4 < v.q := by rw [arrQ, m2]; exact h41
-  refine WP.seq (WP.mono (loadQ_ok (j := 5) I2.1.qs hL (by decide) (I2.1.base.hsg.sub (o := 0) (k := v.L.ql)
+  refine WP.seq (WP.mono (loadQ_ok (j := 5) I2.1.qs hL (by decide) ((I2.1.base.sg I2.1.vb).sub (o := 0) (k := v.L.ql)
     (by omega)) (by rw [a7, off_zero]) a8 (by omega) (by omega)) fun s₃ ⟨⟨Q3, _, _, o3⟩, k3⟩ => ?_)
   obtain ⟨I3, h43⟩ := I2.arr h42 Q3 k3.2.1 k3.2.2 (k3.gpr (by decide)) o3 (by omega) (by omega) (by omega)
     (by omega)
@@ -151,7 +151,7 @@ theorem stQ6 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v 
   refine stQ5 h fun t ⟨B, I, h24⟩ h4 mw => ?_
   have hL := B.base.ok
   have h4' : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
-  refine WP.seq (WP.mono (products_ok (W := arrQ t.mem v.L 4) hL B.qs I B.base.hsg B.base.dig8 B.lens hqb h4'
+  refine WP.seq (WP.mono (products_ok (W := arrQ t.mem v.L 4) hL B.qs I (B.base.sg B.vb) (B.base.dig8 B.vb.1) B.lens hqb h4'
     (B.base.hdg.take (Nat.min_le_left _ _)) (by rw [B.q0]; exact hq) (by rw [B.q0]; exact hqo)
     (by rw [B.q0]; exact hql) (by rw [h24, B.q0]) rfl (by rw [B.q0]; exact h4))
     fun u ⟨⟨Q, _, _, qb⟩, k⟩ => hc u (B.stepQ Q k.2.1 k.2.2 qb) (mw.body (qb.body hL)))
@@ -243,7 +243,7 @@ theorem pinsB171 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
       (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (copy 1 24) (.block (getQ .s10))))))))))))
       (by decide +kernel) (stQ6 (hsem _ _ h) fun _ B _ =>
       WP.seq (WP.mono (head_QB B (hsem _ _ h).vals.2.2.2.2.2) fun _ ⟨c, a7, _, a9⟩ =>
-        powP_pre c (c.1.hk.sub (by omega)) a7 a9))
+        powP_pre c (c.1.hk.sub (by have := c.1.kn; omega)) a7 a9))
 
 /-- `combine` up to its second power, then `c`. -/
 theorem stC2 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v s)
@@ -255,7 +255,7 @@ theorem stC2 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v 
   refine stQ6 h fun _ B _ => WP.seq (WP.mono (head_QB B hpo) fun _ ⟨c1, a7, _, a9⟩ => ?_)
   have hL := c1.1.ok
   have hpl := c1.1.pl; have hql := c1.1.ql
-  refine WP.seq (WP.mono (powP_CB (o := 0) c1 (c1.1.hk.sub (by omega)) a7 a9 (by omega) hp hpo)
+  refine WP.seq (WP.mono (powP_CB (o := 0) c1 (c1.1.hk.sub (by have := c1.1.kn; omega)) a7 a9 (by omega) hp hpo)
     fun _ ⟨c2, _, _⟩ => ?_)
   have e := Lay.slot_eq v.L.wp
   have e0 := e 0; have e1 := e 1; have e24 := e 24; have e25 := e 25; have e28 := e 28; have hw := hL.wp_ge
@@ -289,7 +289,7 @@ theorem pinsB225 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
       (.seq (.block HEAD) (.seq powP (.seq (copy 25 4) (.seq (.block MID) (.seq (.block (getP .s8))
       (.seq (loadArr 4) (.seq (copy 1 24) (.block (getQ .s10))))))))))))))) (by decide +kernel)
-      (stC2 (hsem _ _ h) fun _ c a7 a9 => powP_pre c (c.1.hk.sub (by omega)) a7 a9)
+      (stC2 (hsem _ _ h) fun _ c a7 a9 => powP_pre c (c.1.hk.sub (by have := (hsem _ _ h).1.2.2.2; omega)) a7 a9)
 
 /-- `combine`'s products, before the store. -/
 theorem tail_pre {v : VD} {s : State} (h : CB v s) (hp : 2 ≤ v.p) :
@@ -346,7 +346,7 @@ theorem pinsB288 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
       (stC2 (hsem _ _ h) fun _ c a7 a9 => by
         obtain ⟨-, -, -, -, hp, hpo⟩ := (hsem _ _ h).vals
         have hpl := c.1.pl; have hql := c.1.ql
-        exact WP.seq (WP.mono (powP_CB (o := v.L.ql) c (c.1.hk.sub (by omega)) a7 a9 (by omega) hp hpo)
+        exact WP.seq (WP.mono (powP_CB (o := v.L.ql) c (c.1.hk.sub (by have := (hsem _ _ h).1.2.2.2; omega)) a7 a9 (by omega) hp hpo)
           fun _ ⟨c', _, _⟩ => tail_pre c' hp))
 
 /-- Up to `combine`, then `c`. -/
@@ -355,7 +355,7 @@ theorem stC4 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v 
     WP isa (.seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
       (.seq combine c))))))) s Q := by
   obtain ⟨-, -, -, -, hp, hpo⟩ := h.vals
-  refine stQ6 h fun _ B _ => WP.seq (WP.mono (combine_ok B.base.ok B.base.scr B.base.regs B.base.hk B.p0 hp hpo
+  refine stQ6 h fun _ B _ => WP.seq (WP.mono (combine_ok B.base.ok B.base.scr B.base.regs (B.base.hk.take B.ky) B.p0 hp hpo
     B.p24) fun t ⟨⟨_, _, bd, kq⟩, k⟩ => hc t (B.base.body k bd) ((keepQ_arr0 B.base.ok kq).trans B.q0))
 
 /-- `compare`'s first block. -/

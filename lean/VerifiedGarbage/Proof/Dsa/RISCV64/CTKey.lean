@@ -40,7 +40,7 @@ theorem ptrQ_P0 {v : VD} {s : State} (h : P0 v s) :
 
 /-- p's or q's `sigLen`. -/
 theorem sigLen_P0 {v : VD} {s : State} {o k : Nat} (h : P0 v s) (hk : 1 ≤ k ∧ k ≤ 1024)
-    (hok : o + k ≤ 3 * v.L.pl + v.L.ql) (h7 : s.gpr .s7 = off v.key o) (h8 : s.gpr .s8 = BitVec.ofNat 64 k) :
+    (hok : o + k ≤ v.kn) (h7 : s.gpr .s7 = off v.key o) (h8 : s.gpr .s8 = BitVec.ofNat 64 k) :
     WP isa sigLen s fun t => (P0 v t ∧ t.gpr .a1 = BitVec.ofNat 64 (significant (v.sl o k)).1) ∧
       Keep sigRegs s t :=
   WP.mono (sigLen_ok h7 h8 hk.1 hk.2 (h.1.hk.sub hok).rd) fun _ ⟨⟨a1, m⟩, kt⟩ =>
@@ -48,7 +48,7 @@ theorem sigLen_P0 {v : VD} {s : State} {o k : Nat} (h : P0 v s) (hk : 1 ≤ k �
 
 /-- p's or q's `bytesBits`. -/
 theorem bytesBits_P0 {v : VD} {s : State} {o k : Nat} (h : P0 v s) (hk : 1 ≤ k ∧ k ≤ 1024)
-    (hok : o + k ≤ 3 * v.L.pl + v.L.ql) (h7 : s.gpr .s7 = off v.key o) (h8 : s.gpr .s8 = BitVec.ofNat 64 k) :
+    (hok : o + k ≤ v.kn) (h7 : s.gpr .s7 = off v.key o) (h8 : s.gpr .s8 = BitVec.ofNat 64 k) :
     WP isa bytesBits s fun t => (P0 v t ∧ t.gpr .a1 = BitVec.ofNat 64 (significant (v.sl o k)).1 ∧
       (t.gpr .a0 = 0 ↔ 128 ≤ (significant (v.sl o k)).2.toNat)) ∧ Keep sigRegs s t :=
   WP.mono (bytesBits_ok h7 h8 hk.1 hk.2 (h.1.hk.sub hok).rd) fun _ ⟨⟨a1, a0, m⟩, kt⟩ =>
@@ -58,45 +58,57 @@ theorem off_zero (p : Addr) : off p 0 = p := BitVec.add_zero p
 
 /-! ## `verify` -/
 
-theorem semT1 {v : VD} {s : State} (h : C0 v s) : WP isa (Code.seqL (FT.take 1)) s (P0 v) :=
-  WP.of_flat (c := .block Verify.entry) rfl (front_P0 h)
-
-theorem pinsT1 : Pins (At C0 FT 1) [.s6, .s11, .ra] :=
-  pins_at_fix fixB (fun _ => rfl) fun _ _ h => (semT1 h).mono fun _ h => h.1.fixB
-
-theorem pinsT2 : Pins (At C0 FT 2) [.s6, .s11, .ra, .s7, .s8] :=
-  pins_at_fix (fun v => fixB v ++ [(.s7, v.key), (.s8, BitVec.ofNat 64 v.L.pl)]) (fun _ => rfl) fun _ _ h =>
-    WP.of_flat (c := .seq (.block Verify.entry) (.block ptrP)) rfl (WP.seq (WP.mono (front_P0 h) fun _ h =>
-      (ptrP_P0 h).mono fun _ ⟨h, a7, a8⟩ => h.1.fixB.app ⟨a7, a8, trivial⟩))
-
-theorem pinsT4 : Pins (At C0 FT 4) [.s6, .s11, .ra, .s7, .s8, .a1] :=
-  pins_at_fix (fun v => fixB v ++ [(.s7, v.key), (.s8, BitVec.ofNat 64 v.L.pl), (.a1, BitVec.ofNat 64 v.sP)])
-    (fun _ => rfl) fun v _ h =>
-    WP.of_flat (c := .seq (.block Verify.entry) (.seq (.block ptrP) sigLen)) rfl (WP.seq (WP.mono (front_P0 h)
-      fun _ h => WP.seq ((ptrP_P0 h).mono fun _ ⟨h, a7, a8⟩ =>
-        (sigLen_P0 (o := 0) (k := v.L.pl) h (by have := h.1.pl; omega) (by omega) (by rw [off_zero]; exact a7) a8).mono
-          fun _ ⟨⟨h', a1⟩, k⟩ => h'.1.fixB.app ⟨(k.gpr (r := .s7) (by decide)).trans a7, (k.gpr (r := .s8) (by decide)).trans a8,
-            a1, trivial⟩)))
+/-- The top level's first programs, for the entry `e`. -/
+abbrev TF (e : List Instr) : List (Prog isa) := Code.flat (Code.seq (.block e) (.seq (.block ptrP) bytesBits))
 
 /-- At the branch on p's top bit. -/
 abbrev MT (v : VD) (u : State) : Prop :=
   P0 v u ∧ u.gpr .a1 = BitVec.ofNat 64 v.sP ∧ (u.gpr .a0 = 0 ↔ 128 ≤ v.tP)
 
-theorem midT {v : VD} {s : State} (h : C0 v s) : WP isa (Code.seqL (FT.take 5)) s (MT v) :=
-  WP.of_flat (c := .seq (.block Verify.entry) (.seq (.block ptrP) bytesBits)) rfl (WP.seq (WP.mono (front_P0 h)
-    fun _ h => WP.seq ((ptrP_P0 h).mono fun _ ⟨h, a7, a8⟩ =>
-      (bytesBits_P0 (o := 0) (k := v.L.pl) h (by have := h.1.pl; omega) (by omega) (by rw [off_zero]; exact a7) a8).mono
-        fun _ ⟨h', _⟩ => h')))
-
-theorem zeroT : ∀ v s₁ s₂, At C0 FT 5 v s₁ → At C0 FT 5 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
-  zero_at (fun v => 128 ≤ v.tP) fun _ _ h => (midT h).mono fun _ h => h.2.2
-
 /-- `X1`'s phase: p's scan passed. -/
 abbrev SX1 (v : VD) (u : State) : Prop := P0 v u ∧ u.gpr .a1 = BitVec.ofNat 64 v.sP ∧ 128 ≤ v.tP
 
-theorem semX1 {v : VD} {u : State} (h : ΦX1 v u) : SX1 v u :=
-  let m := at_sem (fun _ _ h => midT h) h.1
+section Top
+
+variable {e : List Instr} {C : VD → State → Prop} (hfront : ∀ v s, C v s → WP isa (.block e) s (P0 v))
+include hfront
+
+theorem semT1 {v : VD} {s : State} (h : C v s) : WP isa (Code.seqL ((TF e).take 1)) s (P0 v) :=
+  WP.of_flat (c := .block e) rfl (hfront _ _ h)
+
+theorem pinsT1 : Pins (At C (TF e) 1) [.s6, .s11, .ra] :=
+  pins_at_fix fixB (fun _ => rfl) fun _ _ h => (semT1 hfront h).mono fun _ h => h.1.fixB
+
+theorem pinsT2 : Pins (At C (TF e) 2) [.s6, .s11, .ra, .s7, .s8] :=
+  pins_at_fix (fun v => fixB v ++ [(.s7, v.key), (.s8, BitVec.ofNat 64 v.L.pl)]) (fun _ => rfl) fun _ _ h =>
+    WP.of_flat (c := .seq (.block e) (.block ptrP)) rfl (WP.seq (WP.mono (hfront _ _ h) fun _ h =>
+      (ptrP_P0 h).mono fun _ ⟨h, a7, a8⟩ => h.1.fixB.app ⟨a7, a8, trivial⟩))
+
+theorem pinsT4 : Pins (At C (TF e) 4) [.s6, .s11, .ra, .s7, .s8, .a1] :=
+  pins_at_fix (fun v => fixB v ++ [(.s7, v.key), (.s8, BitVec.ofNat 64 v.L.pl), (.a1, BitVec.ofNat 64 v.sP)])
+    (fun _ => rfl) fun v _ h =>
+    WP.of_flat (c := .seq (.block e) (.seq (.block ptrP) sigLen)) rfl (WP.seq (WP.mono (hfront _ _ h)
+      fun _ h => WP.seq ((ptrP_P0 h).mono fun _ ⟨h, a7, a8⟩ =>
+        (sigLen_P0 (o := 0) (k := v.L.pl) h (by have := h.1.pl; omega) (by have := h.1.kn; omega) (by rw [off_zero]; exact a7) a8).mono
+          fun _ ⟨⟨h', a1⟩, k⟩ => h'.1.fixB.app ⟨(k.gpr (r := .s7) (by decide)).trans a7, (k.gpr (r := .s8) (by decide)).trans a8,
+            a1, trivial⟩)))
+
+theorem midT {v : VD} {s : State} (h : C v s) : WP isa (Code.seqL ((TF e).take 5)) s (MT v) :=
+  WP.of_flat (c := .seq (.block e) (.seq (.block ptrP) bytesBits)) rfl (WP.seq (WP.mono (hfront _ _ h)
+    fun _ h => WP.seq ((ptrP_P0 h).mono fun _ ⟨h, a7, a8⟩ =>
+      (bytesBits_P0 (o := 0) (k := v.L.pl) h (by have := h.1.pl; omega) (by have := h.1.kn; omega) (by rw [off_zero]; exact a7) a8).mono
+        fun _ ⟨h', _⟩ => h')))
+
+theorem zeroT : ∀ v s₁ s₂, At C (TF e) 5 v s₁ → At C (TF e) 5 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => 128 ≤ v.tP) fun _ _ h => (midT hfront h).mono fun _ h => h.2.2
+
+
+theorem semX1 {v : VD} {u : State} (h : At C (TF e) 5 v u ∧ u.gpr .a0 = 0) : SX1 v u :=
+  let m := at_sem (fun _ _ h => midT hfront h) h.1
   ⟨m.1, m.2.1, m.2.2.mp h.2⟩
+
+
+end Top
 
 /-! ## `restore` -/
 
@@ -110,7 +122,8 @@ theorem pinsT6 : Pins (At C0 FT 6) [.s6] :=
   pins_fix (fun v => [(.s6, v.L.S)]) (fun _ => rfl) fun v u ⟨s₀, t, h₀, e⟩ => by
     rw [take_split FT (n := 1) (m := 6) (by decide)] at e
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
-    have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0) (F := FT) (n := 1) (M := P0) (fun _ _ h => semT1 h) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
+    have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0) (F := FT) (n := 1) (M := P0)
+      (fun _ _ h => WP.of_flat (c := .block Verify.entry) rfl (front_P0 h)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
     exact ⟨(Exec.gpr_callFree s6_kept e₂ rfl).trans h₁, trivial⟩
 
 /-! ## `X1`: q's scan -/
@@ -120,57 +133,61 @@ theorem a2_P0 {v : VD} {s : State} (h : P0 v s) :
   WP.mono (WP.keep [.a2] (Q := fun t => t.gpr .a2 = s.gpr .a1 ∧ t.mem = s.mem) (by brun [BitVec.add_zero])
     (by decide) (by rfl)) fun _ ⟨⟨a2, m⟩, k⟩ => ⟨⟨⟨h.1.keepM k m, by rw [Lens, m]; exact h.2⟩, a2⟩, k⟩
 
-theorem pinsX1_0 : Pins (At ΦX1 FX1 0) [.s6, .s11, .ra, .a1] :=
-  pins_at_fix (fun v => fixB v ++ [(.a1, BitVec.ofNat 64 v.sP)]) (fun _ => rfl) fun _ _ h =>
-    ⟨[], _, .block rfl, (semX1 h).1.1.fixB.app ⟨(semX1 h).2.1, trivial⟩⟩
-
-theorem pinsX1_2 : Pins (At ΦX1 FX1 2) [.s6, .s11, .ra, .a2, .s7, .s8] :=
-  pins_at_fix (fun v => fixB v ++ [(.a2, BitVec.ofNat 64 v.sP), (.s7, off v.key v.L.pl),
-      (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl) fun v _ h =>
-    WP.of_flat (c := (.seq (.block [.addi .a2 .a1 0]) (.block ptrQ) : Prog isa)) rfl (WP.seq (WP.mono (a2_P0 (semX1 h).1)
-      fun _ ⟨⟨h', a2⟩, _⟩ => (ptrQ_P0 h').mono fun _ ⟨⟨h'', a7, a8⟩, k⟩ =>
-        h''.1.fixB.app ⟨(k.gpr (r := .a2) (by decide)).trans (a2.trans (semX1 h).2.1), a7, a8, trivial⟩))
-
-theorem pinsX1_4 : Pins (At ΦX1 FX1 4) [.s6, .s11, .ra, .a1, .a2, .s7, .s8] :=
-  pins_at_fix (fun v => fixB v ++ [(.a1, BitVec.ofNat 64 v.sQ), (.a2, BitVec.ofNat 64 v.sP),
-      (.s7, off v.key v.L.pl), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl) fun v _ h =>
-    WP.of_flat (c := (.seq (.block [.addi .a2 .a1 0]) (.seq (.block ptrQ) sigLen) : Prog isa)) rfl
-      (WP.seq (WP.mono (a2_P0 (semX1 h).1) fun _ ⟨⟨h', a2⟩, _⟩ => WP.seq ((ptrQ_P0 h').mono
-        fun _ ⟨⟨h'', a7, a8⟩, k⟩ =>
-          (sigLen_P0 (o := v.L.pl) (k := v.L.ql) h'' (by have := h''.1.ql; omega) (by omega) a7 a8).mono fun _ ⟨⟨h₃, a1⟩, k'⟩ =>
-            h₃.1.fixB.app ⟨a1, (k'.gpr (r := .a2) (by decide)).trans ((k.gpr (r := .a2) (by decide)).trans
-              (a2.trans (semX1 h).2.1)), (k'.gpr (r := .s7) (by decide)).trans a7,
-              (k'.gpr (r := .s8) (by decide)).trans a8, trivial⟩)))
-
 /-- At the branch on q's top bit. -/
 abbrev MX1 (v : VD) (u : State) : Prop :=
   P0 v u ∧ u.gpr .a1 = BitVec.ofNat 64 v.sQ ∧ u.gpr .a2 = BitVec.ofNat 64 v.sP ∧ 128 ≤ v.tP ∧
     (u.gpr .a0 = 0 ↔ 128 ≤ v.tQ)
 
-theorem midX1 {v : VD} {s : State} (h : ΦX1 v s) : WP isa (Code.seqL (FX1.take 5)) s (MX1 v) :=
-  WP.of_flat (c := (.seq (.block [.addi .a2 .a1 0]) (.seq (.block ptrQ) bytesBits) : Prog isa)) rfl
-    (WP.seq (WP.mono (a2_P0 (semX1 h).1) fun _ ⟨⟨h', a2⟩, _⟩ => WP.seq ((ptrQ_P0 h').mono
-      fun _ ⟨⟨h'', a7, a8⟩, k⟩ =>
-        (bytesBits_P0 (o := v.L.pl) (k := v.L.ql) h'' (by have := h''.1.ql; omega) (by omega) a7 a8).mono fun _ ⟨⟨h₃, a1, a0⟩, k'⟩ =>
-          ⟨h₃, a1, (k'.gpr (r := .a2) (by decide)).trans ((k.gpr (r := .a2) (by decide)).trans (a2.trans (semX1 h).2.1)),
-            (semX1 h).2.2, a0⟩)))
-
-theorem zeroX1 : ∀ v s₁ s₂, At ΦX1 FX1 5 v s₁ → At ΦX1 FX1 5 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
-  zero_at (fun v => 128 ≤ v.tQ) fun _ _ h => (midX1 h).mono fun _ h => h.2.2.2.2
-
 /-- `X2`'s phase: both scans passed. -/
 abbrev SX2 (v : VD) (u : State) : Prop :=
   P0 v u ∧ u.gpr .a1 = BitVec.ofNat 64 v.sQ ∧ u.gpr .a2 = BitVec.ofNat 64 v.sP ∧ 128 ≤ v.tP ∧ 128 ≤ v.tQ
 
-theorem semX2 {v : VD} {u : State} (h : ΦX2 v u) : SX2 v u :=
-  let m := at_sem (fun _ _ h => midX1 h) h.1
+section X1
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SX1 v u)
+include hΦ
+
+theorem pinsX1_0 : Pins (At Φ FX1 0) [.s6, .s11, .ra, .a1] :=
+  pins_at_fix (fun v => fixB v ++ [(.a1, BitVec.ofNat 64 v.sP)]) (fun _ => rfl) fun _ _ h =>
+    ⟨[], _, .block rfl, (hΦ _ _ h).1.1.fixB.app ⟨(hΦ _ _ h).2.1, trivial⟩⟩
+
+theorem pinsX1_2 : Pins (At Φ FX1 2) [.s6, .s11, .ra, .a2, .s7, .s8] :=
+  pins_at_fix (fun v => fixB v ++ [(.a2, BitVec.ofNat 64 v.sP), (.s7, off v.key v.L.pl),
+      (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl) fun v _ h =>
+    WP.of_flat (c := (.seq (.block [.addi .a2 .a1 0]) (.block ptrQ) : Prog isa)) rfl (WP.seq (WP.mono (a2_P0 (hΦ _ _ h).1)
+      fun _ ⟨⟨h', a2⟩, _⟩ => (ptrQ_P0 h').mono fun _ ⟨⟨h'', a7, a8⟩, k⟩ =>
+        h''.1.fixB.app ⟨(k.gpr (r := .a2) (by decide)).trans (a2.trans (hΦ _ _ h).2.1), a7, a8, trivial⟩))
+
+theorem pinsX1_4 : Pins (At Φ FX1 4) [.s6, .s11, .ra, .a1, .a2, .s7, .s8] :=
+  pins_at_fix (fun v => fixB v ++ [(.a1, BitVec.ofNat 64 v.sQ), (.a2, BitVec.ofNat 64 v.sP),
+      (.s7, off v.key v.L.pl), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl) fun v _ h =>
+    WP.of_flat (c := (.seq (.block [.addi .a2 .a1 0]) (.seq (.block ptrQ) sigLen) : Prog isa)) rfl
+      (WP.seq (WP.mono (a2_P0 (hΦ _ _ h).1) fun _ ⟨⟨h', a2⟩, _⟩ => WP.seq ((ptrQ_P0 h').mono
+        fun _ ⟨⟨h'', a7, a8⟩, k⟩ =>
+          (sigLen_P0 (o := v.L.pl) (k := v.L.ql) h'' (by have := h''.1.ql; omega) (by have := h''.1.kn; omega) a7 a8).mono fun _ ⟨⟨h₃, a1⟩, k'⟩ =>
+            h₃.1.fixB.app ⟨a1, (k'.gpr (r := .a2) (by decide)).trans ((k.gpr (r := .a2) (by decide)).trans
+              (a2.trans (hΦ _ _ h).2.1)), (k'.gpr (r := .s7) (by decide)).trans a7,
+              (k'.gpr (r := .s8) (by decide)).trans a8, trivial⟩)))
+
+theorem midX1 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FX1.take 5)) s (MX1 v) :=
+  WP.of_flat (c := (.seq (.block [.addi .a2 .a1 0]) (.seq (.block ptrQ) bytesBits) : Prog isa)) rfl
+    (WP.seq (WP.mono (a2_P0 (hΦ _ _ h).1) fun _ ⟨⟨h', a2⟩, _⟩ => WP.seq ((ptrQ_P0 h').mono
+      fun _ ⟨⟨h'', a7, a8⟩, k⟩ =>
+        (bytesBits_P0 (o := v.L.pl) (k := v.L.ql) h'' (by have := h''.1.ql; omega) (by have := h''.1.kn; omega) a7 a8).mono fun _ ⟨⟨h₃, a1, a0⟩, k'⟩ =>
+          ⟨h₃, a1, (k'.gpr (r := .a2) (by decide)).trans ((k.gpr (r := .a2) (by decide)).trans (a2.trans (hΦ _ _ h).2.1)),
+            (hΦ _ _ h).2.2, a0⟩)))
+
+theorem zeroX1 : ∀ v s₁ s₂, At Φ FX1 5 v s₁ → At Φ FX1 5 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => 128 ≤ v.tQ) fun _ _ h => (midX1 hΦ h).mono fun _ h => h.2.2.2.2
+
+
+theorem semX2 {v : VD} {u : State} (h : At Φ FX1 5 v u ∧ u.gpr .a0 = 0) : SX2 v u :=
+  let m := at_sem (fun _ _ h => midX1 hΦ h) h.1
   ⟨m.1, m.2.1, m.2.2.1, m.2.2.2.1, m.2.2.2.2.mp h.2⟩
 
-/-! ## `X2`: the pair of sizes -/
+end X1
 
-theorem pinsX2_0 : Pins (At ΦX2 FX2 0) [.s6, .s11, .ra, .a1, .a2] :=
-  pins_at_fix (fun v => fixB v ++ [(.a1, BitVec.ofNat 64 v.sQ), (.a2, BitVec.ofNat 64 v.sP)]) (fun _ => rfl)
-    fun _ _ h => ⟨[], _, .block rfl, (semX2 h).1.1.fixB.app ⟨(semX2 h).2.1, (semX2 h).2.2.1, trivial⟩⟩
+/-! ## `X2`: the pair of sizes -/
 
 theorem sP_le (v : VD) : v.sP ≤ v.L.pl := by
   have := VG.Proof.Dsa.significant_fits v.pB
@@ -187,8 +204,23 @@ abbrev MX2 (v : VD) (u : State) : Prop :=
   Base v u ∧ Lens v v.sQ u ∧ 128 ≤ v.tP ∧ 128 ≤ v.tQ ∧
     (u.gpr .a0 = 0 ↔ Spec.Dsa.supportedSizes (8 * v.sP) (8 * v.sQ))
 
-theorem midX2 {v : VD} {s : State} (h : ΦX2 v s) : WP isa (Code.seqL (FX2.take 12)) s (MX2 v) := by
-  obtain ⟨⟨B, l0⟩, a1, a2, hp, hq⟩ := semX2 h
+/-- The sizes are supported. -/
+abbrev SzOk (v : VD) : Prop := Spec.Dsa.supportedSizes (Spec.Dsa.bitLength v.p) (Spec.Dsa.bitLength v.q)
+
+/-- After the sizes: the header's lengths with q's significant octets. -/
+abbrev P1 (v : VD) (u : State) : Prop := Base v u ∧ Lens v v.qb u ∧ SzOk v
+
+section X2
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SX2 v u)
+include hΦ
+
+theorem pinsX2_0 : Pins (At Φ FX2 0) [.s6, .s11, .ra, .a1, .a2] :=
+  pins_at_fix (fun v => fixB v ++ [(.a1, BitVec.ofNat 64 v.sQ), (.a2, BitVec.ofNat 64 v.sP)]) (fun _ => rfl)
+    fun _ _ h => ⟨[], _, .block rfl, (hΦ _ _ h).1.1.fixB.app ⟨(hΦ _ _ h).2.1, (hΦ _ _ h).2.2.1, trivial⟩⟩
+
+theorem midX2 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FX2.take 12)) s (MX2 v) := by
+  obtain ⟨⟨B, l0⟩, a1, a2, hp, hq⟩ := hΦ _ _ h
   have hL := B.ok
   have hpl := B.pl; have hql := B.ql
   have hsp := sP_le v; have hsq := sQ_le v
@@ -211,22 +243,18 @@ theorem midX2 {v : VD} {s : State} (h : ΦX2 v s) : WP isa (Code.seqL (FX2.take 
   refine ⟨B.kept k (Kept.ofHdr hL (by rw [m]; exact hw))
     (Regs.of_pack hL B.regs (k.gpr (by decide)) (k.gpr (by decide)) (k.gpr (by decide)) w hqb hd), w, hp, hq, g0⟩
 
-theorem zeroX2 : ∀ v s₁ s₂, At ΦX2 FX2 12 v s₁ → At ΦX2 FX2 12 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
-  zero_at (fun v => Spec.Dsa.supportedSizes (8 * v.sP) (8 * v.sQ)) fun _ _ h => (midX2 h).mono fun _ h => h.2.2.2.2
+theorem zeroX2 : ∀ v s₁ s₂, At Φ FX2 12 v s₁ → At Φ FX2 12 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => Spec.Dsa.supportedSizes (8 * v.sP) (8 * v.sQ)) fun _ _ h => (midX2 hΦ h).mono fun _ h => h.2.2.2.2
 
-/-- The sizes are supported. -/
-abbrev SzOk (v : VD) : Prop := Spec.Dsa.supportedSizes (Spec.Dsa.bitLength v.p) (Spec.Dsa.bitLength v.q)
-
-/-- After the sizes: the header's lengths with q's significant octets. -/
-abbrev P1 (v : VD) (u : State) : Prop := Base v u ∧ Lens v v.qb u ∧ SzOk v
-
-theorem semR0 {v : VD} {u : State} (h : ΦR0 v u) : P1 v u := by
-  obtain ⟨B, l, hp, hq, h0⟩ := at_sem (fun _ _ h => midX2 h) h.1
+theorem semR0 {v : VD} {u : State} (h : At Φ FX2 12 v u ∧ u.gpr .a0 = 0) : P1 v u := by
+  obtain ⟨B, l, hp, hq, h0⟩ := at_sem (fun _ _ h => midX2 hΦ h) h.1
   have hok : SzOk v := (VG.Proof.Dsa.supported_scans v.pB v.qB).mpr ⟨hp, hq, h0.mp h.2⟩
   have hb : v.qb = v.sQ := by
     have := VG.Proof.Dsa.subgroup_scan_width (p := v.pB) hok
     show Spec.Dsa.bitLength v.q / 8 = _
     rw [show v.q = Spec.Dsa.decodeBE v.qB from rfl, this]; unfold VD.sQ; omega
   exact ⟨B, by rw [hb]; exact l, hok⟩
+
+end X2
 
 end VG.Proof.Dsa.RISCV64.CT

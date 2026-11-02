@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFront
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+public import VerifiedGarbage.Impl.Dsa.RISCV64.Sign
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Proof.Bignum.RISCV64.Reach
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
@@ -11,6 +12,7 @@ public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFront
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+meta import VerifiedGarbage.Impl.Dsa.RISCV64.Sign
 meta import VerifiedGarbage.Proof.Dsa.DomainShape
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.Reach
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
@@ -226,6 +228,14 @@ structure VD where
   dig : Addr
   dl : Nat
   kb : List Byte
+  /-- The key's public octets, `kb`'s: p||q||g, then y for a key, and x when signing. -/
+  kn : Nat
+  /-- The octets at `sig`: the signature's, the nonce's, x's, or none. -/
+  sgl : Nat
+  /-- Whether the header keeps the digest's address. -/
+  full : Bool
+  /-- `out`, which the header's word `hOut` keeps, when signing or deriving. -/
+  out : Option Addr
 
 namespace VD
 
@@ -258,23 +268,28 @@ structure Base (v : VD) (s : State) : Prop where
   ok : v.L.Ok
   regs : Regs s v.L v.key v.sig
   scr : ScrL s v.L
-  hk : Src s v.L v.key (3 * v.L.pl + v.L.ql)
-  hsg : Src s v.L v.sig (2 * v.L.ql)
+  hk : Src s v.L v.key v.kn
+  hsg : Src s v.L v.sig v.sgl
   hdg : Src s v.L v.dig v.d
-  kb : Spec.Rsa.bytesAt s.mem v.key (3 * v.L.pl + v.L.ql) = v.kb
-  dig8 : word s.mem v.L.S hDigest = v.dig
+  kb : Spec.Rsa.bytesAt s.mem v.key v.kn = v.kb
+  kn : 2 * v.L.pl + v.L.ql ≤ v.kn
+  dig8 : v.full = true → word s.mem v.L.S hDigest = v.dig
+  hout : ∀ o ∈ v.out, word s.mem v.L.S Sign.hOut = o
 
 theorem Base.step {v : VD} {s t : State} (h : Base v s) (hr : Regs t v.L v.key v.sig) (hrd : t.rd = s.rd)
     (hwr : t.wr = s.wr) (ho : Outside v.L.S 0 v.L.Z s.mem t.mem)
-    (h8 : word t.mem v.L.S hDigest = word s.mem v.L.S hDigest) : Base v t :=
+    (h8 : word t.mem v.L.S hDigest = word s.mem v.L.S hDigest)
+    (h24 : word t.mem v.L.S Sign.hOut = word s.mem v.L.S Sign.hOut) : Base v t :=
   ⟨h.ok, hr, h.scr.congr hwr, h.hk.keep hrd hwr, h.hsg.keep hrd hwr, h.hdg.keep hrd hwr,
-    (h.hk.bytes ho (by omega)).trans h.kb, h8.trans h.dig8⟩
+    (h.hk.bytes ho (by omega)).trans h.kb, h.kn, fun hf => h8.trans (h.dig8 hf),
+    fun o ho => h24.trans (h.hout o ho)⟩
 
 /-- `Base` through code that keeps its registers and changes memory only in
 `Kept`'s places. -/
 theorem Base.kept {v : VD} {s t : State} {rs : List Reg} (h : Base v s) (k : Keep rs s t)
     (hk : Kept v.L s.mem t.mem) (hr : Regs t v.L v.key v.sig) : Base v t :=
   h.step hr k.2.1 k.2.2 hk.out (hk.word (Or.inl (by decide)))
+    (hk.word (Or.inr ⟨by simp only [hLens, Sign.hOut]; omega, by simp only [Sign.hOut]; omega⟩))
 
 /-- `Base` through code that keeps its registers and changes memory only in
 the body. -/
@@ -287,17 +302,17 @@ theorem Base.keepM {v : VD} {s t : State} {rs : List Reg} (h : Base v s) (k : Ke
     (hm : t.mem = s.mem) (hr : ∀ r ∈ regsRegs, r ∉ rs := by decide) : Base v t :=
   h.body k (by rw [hm]; exact Body.refl _ _) hr
 
-theorem Base.bytes {v : VD} {s : State} (h : Base v s) {o k : Nat} (hk : o + k ≤ 3 * v.L.pl + v.L.ql) :
+theorem Base.bytes {v : VD} {s : State} (h : Base v s) {o k : Nat} (hk : o + k ≤ v.kn) :
     Spec.Rsa.bytesAt s.mem (off v.key o) k = v.sl o k := by
   rw [VD.sl, ← h.kb, VG.Proof.Dsa.bytesAt_slice s.mem v.key hk]
 
 theorem Base.bytesP {v : VD} {s : State} (h : Base v s) : Spec.Rsa.bytesAt s.mem v.key v.L.pl = v.pB := by
-  have := h.bytes (o := 0) (k := v.L.pl) (by omega)
+  have := h.bytes (o := 0) (k := v.L.pl) (by have := h.kn; omega)
   rwa [off, BitVec.add_zero] at this
 
 theorem Base.bytesQ {v : VD} {s : State} (h : Base v s) :
     Spec.Rsa.bytesAt s.mem (off v.key v.L.pl) v.L.ql = v.qB :=
-  h.bytes (by omega)
+  h.bytes (by have := h.kn; omega)
 
 theorem Base.p {v : VD} {s : State} (h : Base v s) : pOf s.mem v.L v.key = v.p := by
   rw [pOf, h.bytesP]; rfl
@@ -306,9 +321,12 @@ theorem Base.q {v : VD} {s : State} (h : Base v s) : qOf s.mem v.L v.key = v.q :
   rw [qOf, h.bytesQ]; rfl
 
 theorem Base.g {v : VD} {s : State} (h : Base v s) : gOf s.mem v.L v.key = v.g := by
-  rw [gOf, h.bytes (by omega)]; rfl
+  rw [gOf, h.bytes (by have := h.kn; omega)]; rfl
 
-theorem Base.y {v : VD} {s : State} (h : Base v s) : yOf s.mem v.L v.key = v.y := by
+/-- The public octets name y. -/
+abbrev KY (v : VD) : Prop := 3 * v.L.pl + v.L.ql ≤ v.kn
+
+theorem Base.y {v : VD} {s : State} (h : Base v s) (hy : KY v) : yOf s.mem v.L v.key = v.y := by
   rw [yOf, h.bytes (by omega)]; rfl
 
 /-- The header's lengths, with `qb` as q's significant octets. -/
@@ -345,7 +363,8 @@ theorem fix_envQ {v : VD} {s : State} (h : InQ s v.L) : Fix (envQ v) s := ⟨h.e
 /-- A call's public data. -/
 def vdOf (s : State) : VD :=
   ⟨layOf s, s.gpr .a0, s.gpr .a4, s.gpr .a6, (s.gpr .a7).toNat,
-    Spec.Rsa.bytesAt s.mem (s.gpr .a0) (3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat)⟩
+    Spec.Rsa.bytesAt s.mem (s.gpr .a0) (3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat),
+    3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat, 2 * (s.gpr .a3).toNat, true, none⟩
 
 /-- On entry. -/
 def C0 (v : VD) (s : State) : Prop := vContract.pre s ∧ vdOf s = v
@@ -377,7 +396,8 @@ theorem front_P0 {v : VD} {s : State} (h : C0 v s) : WP isa (.block Verify.entry
     pre_src (A := s.gpr .a4) (by rw [hrd]; simp) dGS nwG (s.gpr .a5).isLt (by simp only [vdOf, layOf]; omega_arith)
       k.2.1 k.2.2,
     pre_src (A := s.gpr .a6) (by rw [hrd]; simp) dDS nwD (s.gpr .a7).isLt (Nat.min_le_left _ _) k.2.1 k.2.2,
-    ((hK rfl rfl).bytes F.out (by simp only [layOf] at hZ ⊢; omega)), F.dig⟩, F.lens⟩
+    ((hK rfl rfl).bytes F.out (by simp only [layOf] at hZ ⊢; omega)), by simp only [vdOf, layOf]; omega,
+    fun _ => F.dig, fun _ h => nomatch h⟩, F.lens⟩
 
 /-- After loading `scratch`'s address. -/
 def L1 (v : VD) (s : State) : Prop := s.gpr .t2 = v.L.S
