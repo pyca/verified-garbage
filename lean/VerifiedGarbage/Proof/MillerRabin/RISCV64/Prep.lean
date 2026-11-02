@@ -19,11 +19,11 @@ registers (`Env`: `a7` array 0's base, `s5` the arrays' size, `t0` `w`, `s6`
 the working space): `lowWord_ok`, the lowest nonzero word of `c − 1`;
 `halfPass_ok`, `[t4] := s3 ? [t3] / 2 : [t3]`, in place or not;
 `expSetup_ok`, `E = (c − 1) / 2^σ` in array 27 and the lowest set bit of
-`c − 1`'s lowest nonzero word after it. `repeat16_val` and `sig_word` are
-the masks of `σ > j`, which the round's last squarings test too.
+`c − 1`'s lowest nonzero word after it, with the masks of `σ > j`
+(`repeat16_ok`, `halfK_word`).
 -/
 
--- separate module: the round's last squarings (`repeat16_val`, `sig_word`) and the search's callers use it too
+-- separate module: the searches' callers (RSA's candidates, FFDH's and DSA's parameters) use `Env` and `expSetup_ok` too
 
 @[expose] public section
 
@@ -344,7 +344,7 @@ theorem halfPass_ok {s : State} {B : Addr} {Z w eS eD : Nat} {mb : Bool} (hs : S
 
 /-! ## The exponent -/
 
-theorem shl3_ofNat (w : Nat) : BitVec.ofNat 64 w <<< 3 = BitVec.ofNat 64 (8 * w) := by
+theorem shl3_w (w : Nat) : BitVec.ofNat 64 w <<< 3 = BitVec.ofNat 64 (8 * w) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
   omega_arith
@@ -360,7 +360,7 @@ theorem markerAddr_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) {rd :
       (t.gpr rd = off B (slot w aE + 8 * w) ∧ t.mem = s₁.mem) ∧ Keep [.t2, rd] s₁ t := by
     rcases hrd with rfl | rfl <;>
     · refine WP.keep _ ?_ (by rfl) (by rfl)
-      brun [(k1.gpr (by decide)).trans h.t0, shl3_ofNat w, a14]
+      brun [(k1.gpr (by decide)).trans h.t0, shl3_w w, a14]
   exact WP.mono hb fun t ⟨⟨a, m⟩, k⟩ => ⟨⟨a, m.trans m1⟩, (k1.trans k).mono (by
     rcases hrd with rfl | rfl <;> decide)⟩
 
@@ -398,12 +398,12 @@ theorem lowBit_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) {x : BitV
 /-! ## The masks of `σ > j` -/
 
 /-- `K` for `j = 1, 2, 3`: `0xDDDD…`, `0x9999…`, `0x1111…`. -/
-def sigK64 (j : Nat) : BitVec 64 :=
+def halfK (j : Nat) : BitVec 64 :=
   if j = 1 then 0xDDDDDDDDDDDDDDDD#64 else if j = 2 then 0x9999999999999999#64 else 0x1111111111111111#64
 
 /-- `repeat16 t4 t5 (sigK j)`: `t4 := K`. -/
 theorem repeat16_ok (s : State) {j : Nat} (hj : j = 1 ∨ j = 2 ∨ j = 3) :
-    WP isa (.block (repeat16 .t4 .t5 (sigK j))) s fun t => (t.gpr .t4 = sigK64 j ∧ t.mem = s.mem) ∧
+    WP isa (.block (repeat16 .t4 .t5 (sigK j))) s fun t => (t.gpr .t4 = halfK j ∧ t.mem = s.mem) ∧
       Keep [.t4, .t5] s t := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
   rcases hj with rfl | rfl | rfl <;>
@@ -412,22 +412,22 @@ theorem repeat16_ok (s : State) {j : Nat} (hj : j = 1 ∨ j = 2 ∨ j = 3) :
     brun [exec_lui]
     decide
 
-theorem sig_mask (j : Nat) (hj : j = 1 ∨ j = 2 ∨ j = 3) {k : Nat} (hk : k < 64) :
-    (BitVec.twoPow 64 k &&& sigK64 j = 0) = ¬ (j < sigOf k) := by
+theorem halfK_mask (j : Nat) (hj : j = 1 ∨ j = 2 ∨ j = 3) {k : Nat} (hk : k < 64) :
+    (BitVec.twoPow 64 k &&& halfK j = 0) = ¬ (j < sigOf k) := by
   rcases hj with rfl | rfl | rfl
   · exact VG.Proof.RsaKeyGen.sig_mask1 k hk
   · exact VG.Proof.RsaKeyGen.sig_mask2 k hk
   · exact VG.Proof.RsaKeyGen.sig_mask3 k hk
 
-theorem sig_word {c j : Nat} (hj : j = 1 ∨ j = 2 ∨ j = 3) :
-    decide (BitVec.twoPow 64 (mrA c % 64) &&& sigK64 j ≠ 0) = decide (j < mrSig c) := by
-  have h := sig_mask j hj (k := mrA c % 64) (Nat.mod_lt _ (by decide))
+theorem halfK_word {c j : Nat} (hj : j = 1 ∨ j = 2 ∨ j = 3) :
+    decide (BitVec.twoPow 64 (mrA c % 64) &&& halfK j ≠ 0) = decide (j < mrSig c) := by
+  have h := halfK_mask j hj (k := mrA c % 64) (Nat.mod_lt _ (by decide))
   rw [VG.Proof.RsaKeyGen.sigOf_mod] at h
   apply decide_eq_decide.mpr
   rw [show mrSig c = sigOf (mrA c) from rfl, ne_eq, h, Decidable.not_not]
 
 /-- `0 − (0 <u x)`: the mask of `x ≠ 0`. -/
-theorem nz_mask (x : BitVec 64) : 0#64 - (if 0#64 < x then 1 else 0) = mask (decide (x ≠ 0)) := by
+theorem nz_mask64 (x : BitVec 64) : 0#64 - (if 0#64 < x then 1 else 0) = mask (decide (x ≠ 0)) := by
   by_cases hx : x = 0
   · subst hx; decide
   · have hlt : 0#64 < x := by
@@ -461,7 +461,7 @@ theorem condMid_ok {s : State} {B : Addr} {Z w c : Nat} (hs : Scr s B Z) (hZ : s
       (t.gpr .s3 = mask (decide (j < mrSig c)) ∧ t.mem = s₂.mem) ∧ Keep [.t2, .t3, .s3] s₂ t := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
     brun [exec_li (show imm12 0 by decide), a4, (k2.gpr (by decide)).trans a3]
-    rw [show (BitVec.ofNat 64 0 : BitVec 64) = 0#64 from rfl, nz_mask, sig_word hj]
+    rw [show (BitVec.ofNat 64 0 : BitVec 64) = 0#64 from rfl, nz_mask64, halfK_word hj]
   exact WP.mono hb fun t ⟨⟨a, m⟩, k⟩ => ⟨⟨a, by rw [m, m2, m1]⟩, ((k1.trans k2).trans k).mono (by decide)⟩
 
 theorem halfCond_eq (j : Nat) : halfCond j =
