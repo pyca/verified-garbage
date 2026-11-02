@@ -19,9 +19,10 @@ import Init.Data.Option.Basic
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Rsa.X86.RvBatchGcd
-import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
 import VerifiedGarbage.Proof.Rsa.X86.RvBatchTimeCheck
-import VerifiedGarbage.Proof.Rsa.X86.GcdBatchRt.Time
+public import VerifiedGarbage.Proof.Rsa.X86.GcdBatchRt.Time
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Base
+public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
 import VerifiedGarbage.Proof.Rsa.X86.RvArguments
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rsa.X86.RvGcdSet
@@ -33,22 +34,13 @@ the Montgomery setup, the candidate search and the factors' computation and
 export.
 -/
 
--- Formerly `VerifiedGarbage/Proof/Rsa/X86/RvBatchGcdTime.lean`, which only this module imported.
-section
-
-/-! # Constant-time execution of recovery GCD -/
-
-section
-variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
-include rsaBatchLaw
+-- Public: Appendix C.2's timing (`Rd/Time.lean`) relates its GCD through them too.
+@[expose] public section
 namespace VG.Proof.Rsa.X86.Recover
-open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG VG.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
-open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
-open VG.Proof.Rsa (sub32)
 
-omit rsaBatchLaw in
 /-- A stage's state is what the batched GCD's timing starts from, in the wide layout. -/
 theorem KS.gcdPre {g : Geo} (pg : PubG g) {s0 s : State} {A : Nat → Nat} {live : List Nat}
     {AW : Nat → Nat} {liveW : List Nat} {V : Nat → Nat} {ls : List Nat}
@@ -57,7 +49,6 @@ theorem KS.gcdPre {g : Geo} (pg : PubG g) {s0 s : State} {A : Nat → Nat} {live
   ⟨h.rtW, by decide, ⟨h.argsOk pg, h.sp, fun i hi => h.arg (h.start.2 i hi).1 (by
     change i < 12 at hi; omega)⟩⟩
 
-omit rsaBatchLaw in
 theorem gcdFits {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     {AW : Nat → Nat} {liveW : List Nat} {V : Nat → Nat} {ls : List Nat}
     (h : KS g s0 A live AW liveW V ls s) :
@@ -73,6 +64,24 @@ theorem gcdFits {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_⟩ <;> rw [en]
   · generalize 2 * g.n + 3 = q at *; omega
   all_goals omega
+
+end VG.Proof.Rsa.X86.Recover
+end
+
+-- Formerly `VerifiedGarbage/Proof/Rsa/X86/RvBatchGcdTime.lean`, which only this module imported.
+section
+
+/-! # Constant-time execution of recovery GCD -/
+
+section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
+namespace VG.Proof.Rsa.X86.Recover
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.Rsa.X86.Recover
+open VG.Proof.Rsa.X86.Keys
+open VG.Proof.Rsa (sub32)
 
 omit rsaBatchLaw in
 theorem batchGcd_relCT {g : Geo} (pg : PubG g) {s0 t0 : State} {V W : Nat → Nat} {m y z : Nat} :
