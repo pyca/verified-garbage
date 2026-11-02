@@ -33,8 +33,8 @@ the lengths of the pieces are public as every length is.
 
 The streaming functions take the number of bytes of stack below the stack
 pointer that an implementation's calls and frames use (`stack`), and
-`apply`, which may call `vg_chacha20_xor` and `vg_chacha20_block`, may
-overwrite its arguments passed in memory (`writeArgs`). Its implementations
+`apply` may overwrite its arguments passed in memory (`writeArgs`), to pass
+arguments to the functions it calls. Its implementations
 for CPU features (e.g. `vg_chacha20_apply_avx2`) have the same contract.
 -/
 
