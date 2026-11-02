@@ -13,7 +13,8 @@ pub const USES: &[&str] = &["rsa"];
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
@@ -72,7 +73,8 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 fn keys(c: &mut Criterion) {
     use std::hint::black_box;
@@ -321,6 +323,7 @@ fn keys(c: &mut Criterion) {
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
