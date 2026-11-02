@@ -28,7 +28,7 @@ open VG.Impl.Bignum.X86_64.Public (aN)
 
 open VG.Impl.Rsa.X86_64.Keys.Recover.Folded
 
-theorem rpCode_correct (M : Mont) (hmx : (Folded.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
+theorem rpCode_correct [InvLaw] (M : Mont) (hmx : (Folded.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : rpContract.pre s) :
     ∃ t s', Exec isa (Folded.code M.mm) s t s' ∧ abiPreserved s s' ∧ rpContract.post s s' := by
   have c := rpCtx_of h

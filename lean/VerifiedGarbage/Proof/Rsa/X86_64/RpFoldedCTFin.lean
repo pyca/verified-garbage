@@ -99,11 +99,10 @@ theorem finA_ct (M : Mont) : RelCT isa (Two GR3) (seqs [.block [.mov .rax (.mem 
   rw [o₅.word (Or.inr (by omega_arith)) (by omega_arith)]
   exact word_above_zero (n := wk I.k) (L := wk I.k + 2) (by omega_arith) (by rw [z]; exact Nat.two_pow_pos _)
 
-theorem fin_ct (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) fun _ _ => True := by
+theorem fin_ct [InvLaw] (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) fun _ _ => True := by
   rw [show fin M.mm = [.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax], M.mm aY aY aOne, zeroA fU,
       .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ [.mov32 .rbp (.imm 0)]),
-      wordLoop 0 subBody] ++ ([zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁), zeroA fX₂,
-        inverse fU fV fX₁ fX₂ aN fT, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT] ++
+      wordLoop 0 subBody] ++ ([inverse fU fV fX₂ aN, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT] ++
       ([.block (ws ++ base fV .rbx ++ base fQ .r10 ++ [.mov32 .rbp (.imm 0)]), wordLoop 0 ltBody,
         .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody] ++
       (storeA fV sP Impl.Bignum.X86_64.Public.sK sMask ++ (storeA fQ sQ Impl.Bignum.X86_64.Public.sK sMask ++
@@ -125,7 +124,7 @@ theorem fin_ct (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) fun _ _ => Tru
   exact (two_taint [.rdi] pins_GSr (by taint_decide)).mono (fun _ _ h => h) fun _ _ _ => ⟨default, trivial, trivial⟩
 
 /-- Preparation, candidates and output preserve the original leakage policy. -/
-theorem rest_ct (M : Mont) : RelCT isa (Two GR0) (Folded.rest M.mm) fun _ _ => True := by
+theorem rest_ct [InvLaw] (M : Mont) : RelCT isa (Two GR0) (Folded.rest M.mm) fun _ _ => True := by
   rw [show Folded.rest M.mm = seqs ([prepare] ++ (mont M.mm ++ ([Folded.candLoop M.mm] ++ fin M.mm))) by
     simp only [Folded.rest, List.append_assoc]]
   exact (ct_app (Ξ := fun (_ : RpP) (_ : State) => True) (by simp) (by simp [mont]) (ct_one prepare_ct)

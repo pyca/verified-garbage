@@ -53,7 +53,7 @@ structure KCtx (s : State) : Prop where
   L : KLens (keyIn s)
   rsi : (s.gpr .rsi).toNat = 2 * (s.gpr .r9).toNat
   hs : Scr s (arg s 10) ((arg s 11).toNat * 8)
-  hZ : slot (keyIn s).W 16 ≤ (arg s 11).toNat * 8
+  hZ : slot (keyIn s).W 26 ≤ (arg s 11).toNat * 8
   ha : ∀ j < 11, InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8
   hsep : ∀ j < 11, ∀ m', Outside (arg s 10) 0 (8 * 32) s.mem m' → m'.readW (stackArgAddr s j) 64 = stackArg s j
   p : Src s (arg s 10) ((arg s 11).toNat * 8) (s.gpr .r8) (keyIn s).pb

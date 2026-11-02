@@ -32,8 +32,7 @@ theorem rest_eq (mul : Nat → Nat → Nat → Prog isa) : Folded.rest mul = seq
     (([.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax], mul aY aY aOne, zeroA fU,
       .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
       wordLoop 0 subBody] : List (Prog isa)) ++
-    ([zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁), zeroA fX₂, inverse fU fV fX₁ fX₂ aN fT,
-      zeroA fQ, copyA fQ aN, divmod fQ fR fV fT] ++
+    ([inverse fU fV fX₂ aN, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT] ++
     (([.block (ws ++ base fV .rbx ++ base fQ .r10 ++ ([.mov32 .rbp (.imm 0)] : List Instr)), wordLoop 0 ltBody,
       .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody] : List (Prog isa)) ++
     (storeA fV sP Impl.Bignum.X86_64.Public.sK Impl.Bignum.X86_64.Public.sMask ++
@@ -43,7 +42,7 @@ theorem rest_eq (mul : Nat → Nat → Nat → Prog isa) : Folded.rest mul = seq
 
 /-- `rest`: `recoverPrimes.go`'s result, and `p` and `q` written masked by
 it. -/
-theorem rpRest_ok (M : Mont) {I : RpIn} {m₀ : Mem} {N m : Nat} {s : State} (h : RestPre I m₀ N m s) :
+theorem rpRest_ok [InvLaw] (M : Mont) {I : RpIn} {m₀ : Mem} {N m : Nat} {s : State} (h : RestPre I m₀ N m s) :
     WP isa (Folded.rest M.mm) s fun u => ∃ res : Option Nat, ∃ cnt : Nat,
       recoverPrimes.go N (splitTwos m).1 (splitTwos m).2 recoverTries = (res.map (pqOf N), cnt) ∧
       (List.range I.k).map (fun i => u.mem (I.pP + BitVec.ofNat 64 i)) =
@@ -115,9 +114,12 @@ theorem rpRest_ok (M : Mont) {I : RpIn} {m₀ : Mem} {N m : Nat} {s : State} (h 
   have hn₄ : wv s₄.mem I.B (slot (wk I.k) aN) (wk I.k) = N := by
     rw [hf₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith)]; exact hc₃.hn
   -- `p = gcd(u, n)`, `q = n / p`.
-  refine wp_seqs_append (by simp) (by simp) (WP.mono (finB_ok S₄.ws hn₄ h.odd hN1 hU0)
+  have hZ26 : slot (wk I.k) 26 ≤ I.Z := by
+    have := L.z; have := L.k1; unfold slot hdrBytes wk; omega
+  have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega
+  refine wp_seqs_append (by simp) (by simp) (WP.mono (finB_ok S₄.ws hZ26 hw20 hn₄ h.odd)
     fun s₅ ⟨hf₅, k₅, _, hv₅, hq₅, _⟩ => ?_)
-  have S₅ := S₄.step hf₅ (by decide) (by decide) k₅ (by decide)
+  have S₅ := S₄.step26 hf₅ hZ26 (by decide) (by decide) k₅ (by decide)
   -- The larger first.
   refine wp_seqs_append (by simp) (by simp [storeA]) (WP.mono (finC_ok S₅.ws)
     fun s₆ ⟨hf₆, k₆, _, hv₆, hq₆⟩ => ?_)

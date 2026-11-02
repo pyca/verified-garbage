@@ -24,18 +24,18 @@ namespace VG.Proof.Rsa.X86_64.RecoveryFolded
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Rsa.X86_64.Keys.Recover
 
-theorem call_verified (M : Mont) {c : Prog isa} (hc : c.InlineOk = true)
+theorem call_verified [InvLaw] (M : Mont) {c : Prog isa} (hc : c.InlineOk = true)
     (hin : c.inline = Folded.code M.mm)
     (hmx : (Folded.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified target c (Spec.Rsa.recoverPrimesContract abi 8) :=
   Verified.of_inline_sig hc (hin ▸ rpCode_correct M hmx) (hin ▸ rpCode_constantTime M) rp_implies8
     (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h) rp_patch
 
-theorem base_verified :
+theorem base_verified [InvLaw] :
     Verified target (Folded.code CallMont.base.mm) (Spec.Rsa.recoverPrimesContract abi 8) :=
   call_verified VG.Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel) rfl (by decide +kernel)
 
-theorem adx_verified :
+theorem adx_verified [InvLaw] :
     Verified target (Folded.code CallMont.adx.mm) (Spec.Rsa.recoverPrimesContract abi 8) :=
   call_verified VG.Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) rfl (by decide +kernel)
 

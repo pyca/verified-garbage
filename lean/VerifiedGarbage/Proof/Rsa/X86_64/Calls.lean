@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
@@ -77,7 +79,7 @@ theorem crt_call_ct {c : Prog isa} (hc : c.InlineOk = true)
 
 /-! ## `vg_rsa_recover_primes` -/
 
-theorem rp_call_verified (M : Mont) {c : Prog isa} (hc : c.InlineOk = true)
+theorem rp_call_verified [InvLaw] (M : Mont) {c : Prog isa} (hc : c.InlineOk = true)
     (hin : c.inline = Keys.Recover.code M.mm)
     (hmx : (Keys.Recover.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified target c (Spec.Rsa.recoverPrimesContract abi 8) :=
