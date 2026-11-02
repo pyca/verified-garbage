@@ -150,9 +150,9 @@ def build : Prog isa :=
 /-- The window's entry number `4 u_j + v_j` into `t2`, for `j` in `s1`: the
 two bits `2j`, `2j + 1` of `u` and of `v`, from their words `j >>> 5`. -/
 def window : List Instr :=
-  [.shift .srl .d .t1 ctr 5, .shift .sll .d .t1 .t1 3, .add .t1 .t1 wb,
-   .load .d .t2 .t1 (c.sl UU), .load .d .t3 .t1 (c.sl VV),
-   .shift .sll .d .t0 ctr 1, .shiftReg .srl .d .t2 .t2 .t0, .shiftReg .srl .d .t3 .t3 .t0,
+  [.shift .srl .d .t1 ctr 5, .shift .sll .d .t1 .t1 3, .add .t1 .t1 wb] ++
+  ldAt .t2 .t1 (c.sl UU) ++ ldAt .t3 .t1 (c.sl VV) ++
+  [.shift .sll .d .t0 ctr 1, .shiftReg .srl .d .t2 .t2 .t0, .shiftReg .srl .d .t3 .t3 .t0,
    .logicImm .and .t2 .t2 3, .logicImm .and .t3 .t3 3,
    .shift .sll .d .t2 .t2 2, .logic .or .t2 .t2 .t3]
 
