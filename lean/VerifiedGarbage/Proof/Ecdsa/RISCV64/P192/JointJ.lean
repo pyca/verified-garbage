@@ -220,17 +220,17 @@ theorem stepJ_ok (hL : Law W) {base : Addr} {s₀ : State} {G Q : Point W} {u v 
   -- `T = 4 R`.
   refine WP.seq (WP.mono (quad2_ok hL hw₂ hK₂ hX pR₂) fun s₄ ⟨K₄, U₄, pT⟩ => ?_)
   have hw₄ := hw₂.of_kp K₄
-  have k₄ : ∀ d ∈ [p192.sl AP, p192.sl BP, p192.sl EX, p192.sl EY, p192.sl EZ],
+  have k₄ : ∀ d ∈ [p192.sl AP, p192.sl BP, p192.sl p192.EX, p192.sl p192.EY, p192.sl p192.EZ],
       wordsVal s₄.mem base d 4 = wordsVal s₂.mem base d 4 := fun d hd =>
     U₄.wordsVal (fun w hw => by
-      have := (by decide : ∀ d ∈ [p192.sl AP, p192.sl BP, p192.sl EX, p192.sl EY,
-        p192.sl EZ], ∀ w ∈ quadW, d + 8 * 4 ≤ w.1 ∨ w.1 + w.2 ≤ d) d hd w hw
-      exact this) (by have := (by decide : ∀ d ∈ [p192.sl AP, p192.sl BP, p192.sl EX,
-        p192.sl EY, p192.sl EZ], d < 2048) d hd; omega)
+      have := (by decide : ∀ d ∈ [p192.sl AP, p192.sl BP, p192.sl p192.EX, p192.sl p192.EY,
+        p192.sl p192.EZ], ∀ w ∈ quadW, d + 8 * 4 ≤ w.1 ∨ w.1 + w.2 ≤ d) d hd w hw
+      exact this) (by have := (by decide : ∀ d ∈ [p192.sl AP, p192.sl BP, p192.sl p192.EX,
+        p192.sl p192.EY, p192.sl p192.EZ], d < 2048) d hd; omega)
   have pE₄ := pE.of_eq (k₄ _ (by decide)) (k₄ _ (by decide)) (k₄ _ (by decide))
   -- `R = T + E`.
   refine WP.mono (addPt_ok hL hw₄ ((k₄ _ (by decide)).trans ap₂) ((k₄ _ (by decide)).trans bp₂)
-    (p := p192.pt TX TY TZ) (q := p192.pt EX EY EZ) (o := p192.pt RX RY RZ) ⟨by decide, by decide⟩ (by decide)
+    (p := p192.pt TX TY TZ) (q := p192.pt p192.EX p192.EY p192.EZ) (o := p192.pt RX RY RZ) ⟨by decide, by decide⟩ (by decide)
     hT4 hE pT pE₄) fun s₅ ⟨K₅, U₅, pR₅⟩ => ?_
   refine ⟨hw₄.of_kp K₅, ?_, ?_, ?_, ?_⟩
   · rw [K₅.gpr _ (by decide), K₄.gpr _ (by decide), r₂.gpr _ (by decide), u₁.gpr]

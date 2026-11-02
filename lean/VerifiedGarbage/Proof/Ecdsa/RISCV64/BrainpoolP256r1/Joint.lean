@@ -57,8 +57,8 @@ abbrev jSl : List Nat :=
     brainpoolp256r1.sl RX, brainpoolp256r1.sl RY, brainpoolp256r1.sl RZ, brainpoolp256r1.sl DX, brainpoolp256r1.sl DY, brainpoolp256r1.sl DZ, brainpoolp256r1.sl TX, brainpoolp256r1.sl TY, brainpoolp256r1.sl TZ,
     brainpoolp256r1.sl GX, brainpoolp256r1.sl GY, brainpoolp256r1.sl ONEP, brainpoolp256r1.sl CPX, brainpoolp256r1.sl CPY,
     brainpoolp256r1.sl G2X, brainpoolp256r1.sl G2Y, brainpoolp256r1.sl G2Z, brainpoolp256r1.sl G3X, brainpoolp256r1.sl G3Y, brainpoolp256r1.sl G3Z,
-    brainpoolp256r1.sl Q2X, brainpoolp256r1.sl Q2Y, brainpoolp256r1.sl Q2Z, brainpoolp256r1.sl Q3X, brainpoolp256r1.sl Q3Y, brainpoolp256r1.sl Q3Z,
-    brainpoolp256r1.sl EX, brainpoolp256r1.sl EY, brainpoolp256r1.sl EZ]
+    brainpoolp256r1.sl Q2X, brainpoolp256r1.sl Q2Y, brainpoolp256r1.sl Q2Z, brainpoolp256r1.sl brainpoolp256r1.Q3X, brainpoolp256r1.sl brainpoolp256r1.Q3Y, brainpoolp256r1.sl brainpoolp256r1.Q3Z,
+    brainpoolp256r1.sl brainpoolp256r1.EX, brainpoolp256r1.sl brainpoolp256r1.EY, brainpoolp256r1.sl brainpoolp256r1.EZ]
 
 theorem jLay : Lay brainpoolp256r1.MP' (own 4) (· ∈ jSl) :=
   ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ jSl, ∀ y ∈ jSl, x ≠ y → x + 8 * 4 ≤ y ∨ y + 8 * 4 ≤ x)
@@ -293,7 +293,7 @@ structure JPre (base : Addr) (s : State) (Q : Point W) : Prop where
 abbrev gqSl : List Nat :=
   [brainpoolp256r1.sl GX, brainpoolp256r1.sl GY, brainpoolp256r1.sl ONEP, brainpoolp256r1.sl CPX, brainpoolp256r1.sl CPY,
     brainpoolp256r1.sl G2X, brainpoolp256r1.sl G2Y, brainpoolp256r1.sl G2Z, brainpoolp256r1.sl G3X, brainpoolp256r1.sl G3Y, brainpoolp256r1.sl G3Z,
-    brainpoolp256r1.sl Q2X, brainpoolp256r1.sl Q2Y, brainpoolp256r1.sl Q2Z, brainpoolp256r1.sl Q3X, brainpoolp256r1.sl Q3Y, brainpoolp256r1.sl Q3Z]
+    brainpoolp256r1.sl Q2X, brainpoolp256r1.sl Q2Y, brainpoolp256r1.sl Q2Z, brainpoolp256r1.sl brainpoolp256r1.Q3X, brainpoolp256r1.sl brainpoolp256r1.Q3Y, brainpoolp256r1.sl brainpoolp256r1.Q3Z]
 
 theorem gPt_sl : ∀ a ∈ [1, 2, 3], (Cfg.gPt brainpoolp256r1 a).x ∈ gqSl ∧ (Cfg.gPt brainpoolp256r1 a).y ∈ gqSl ∧
     (Cfg.gPt brainpoolp256r1 a).z ∈ gqSl := by decide
@@ -540,7 +540,7 @@ abbrev selRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, 
 theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : j < 128)
     (h1 : s.gpr .s1 = BitVec.ofNat 64 j) {G Q : Point W} (hT : JTab base s G Q) :
     WP isa (.block (Cfg.select brainpoolp256r1)) s fun s' =>
-      PtOk base s' (brainpoolp256r1.pt EX EY EZ) (ent G Q ((wordsVal s.mem base (brainpoolp256r1.sl UU) 4 >>> (2 * j)) % 4)
+      PtOk base s' (brainpoolp256r1.pt brainpoolp256r1.EX brainpoolp256r1.EY brainpoolp256r1.EZ) (ent G Q ((wordsVal s.mem base (brainpoolp256r1.sl UU) 4 >>> (2 * j)) % 4)
         ((wordsVal s.mem base (brainpoolp256r1.sl VV) 4 >>> (2 * j)) % 4)) ∧
       Outside base 1920 96 s.mem s'.mem ∧ Rest selRegs s s' := by
   have hn := hw.nowrap
@@ -567,7 +567,7 @@ theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
     simp [show c < 64 by omega]
   refine WP.mono (WP.rdwr (scansJ_ok brainpoolp256r1 (by decide) (by decide) (by decide) (by decide) (by decide) 12
     (Nat.le_refl _) hw₄ h0 hm)) fun s₅ ⟨⟨v₅, O₅, k₅⟩, rd₅, wr₅, sp₅⟩ => ?_
-  simp only [show brainpoolp256r1.jt = 2048 from rfl, show brainpoolp256r1.sl EX = 1920 from rfl, show brainpoolp256r1.n = 4 from rfl,
+  simp only [show brainpoolp256r1.jt = 2048 from rfl, show brainpoolp256r1.sl brainpoolp256r1.EX = 1920 from rfl, show brainpoolp256r1.n = 4 from rfl,
     Nat.reduceMul] at v₅ O₅
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, m₂, m₁]
   rw [m₄] at v₅ O₅
