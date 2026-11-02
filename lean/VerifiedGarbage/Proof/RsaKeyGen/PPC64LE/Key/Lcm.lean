@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Mul
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+import VerifiedGarbage.Proof.RsaKeyGen.HalveBounds
 import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
@@ -26,6 +27,7 @@ open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 sel half aZero)
 open VG.Impl.RsaKeyGen.PPC64LE.Key (nArr aDv aT aS aOne aTwo aThree aPm aQm aU aV aF aU2 aV2 aG aL aDr aDt
   X0 X1 X2 ltS notS andNotS halfSel halfStep halving gcdUV lcmPart divBy invOf mulTo cnt8)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
+open VG.Proof.Rsa.PPC64LE (InvLaw)
 
 theorem shl3_ofNat {L : Nat} (_h : 8 * L < 2 ^ 64) : BitVec.ofNat 64 L <<< 3 = BitVec.ofNat 64 (8 * L) := by
   apply BitVec.eq_of_toNat_eq
@@ -189,12 +191,13 @@ theorem halving_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
 abbrev gcdArrs : List Nat := [aU2, aV2, aT, aS, aG] ++ invOfArrs
 
 theorem gcdUV_eq : gcdUV = seqs (([.block (VG.Impl.Rsa.PPC64LE.Keys.bitOf X0 aV ++ notS X0 X0),
-    sel aU2 aU aV X0, sel aV2 aV aU X0] : List (Prog isa)) ++ (ltS X1 aV2 aTwo ++ ([sel aS aV2 aThree X1, invOf aU2 aS,
+    sel aU2 aU aV X0, sel aV2 aV aU X0] : List (Prog isa)) ++ (ltS X1 aV2 aTwo ++ ([sel aS aV2 aThree X1, invOf aU2 aS VG.Impl.RsaKeyGen.PPC64LE.Key.nP,
       sel aG 1 aOne X1] : List (Prog isa)))) := rfl
 
 /-- `gcdUV`: `v` odd by a swap (if it is even), and `[aG] := gcd(u, v)`, 1 for `v < 2`. -/
-theorem gcdUV_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1) (two : V aTwo = 2)
-    (three : V aThree = 3) (zero : V aZero = 0)
+theorem gcdUV_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1) (two : V aTwo = 2)
+    (three : V aThree = 3) (hw10 : 10 ≤ w) {L : Nat} (h22 : s.gpr .r22 = BitVec.ofNat 64 L) (hL' : 8 * L < 2 ^ 64)
+    (hL4 : L % 4 = 0) (hL1 : 4 ≤ L) (hLw : L ≤ 4 * w) (hu : V aU < 2 ^ (8 * L)) (hv : V aV < 2 ^ (8 * L))
     (hodd : 2 ≤ (if V aV % 2 = 0 then V aU else V aV) → (if V aV % 2 = 0 then V aU else V aV) % 2 = 1) :
     WP isa gcdUV s fun t => Ws t B Z w nArr ∧
       (∃ V' F', KS t.mem B w V' F' ∧ (∀ j < nArr, j ∉ gcdArrs → V' j = V j) ∧
@@ -221,7 +224,7 @@ theorem gcdUV_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1
   obtain ⟨V5, k5, e5, o5⟩ := k5.vx
   obtain ⟨F5, k5, g5, p5⟩ := k5.fx
   have b5 : F5 X1 ≤ 1 := by rw [g5]; exact flag01 _
-  change WP isa (.seq (sel aS aV2 aThree X1) (.seq (invOf aU2 aS) (sel aG 1 aOne X1))) t5 _
+  change WP isa (.seq (sel aS aV2 aThree X1) (.seq (invOf aU2 aS VG.Impl.RsaKeyGen.PPC64LE.Key.nP) (sel aG 1 aOne X1))) t5 _
   refine WP.seq (WP.mono (selE h5 k5 (o := aS) (a := aV2) (b := aThree) (sl := X1) (bit := b5))
     fun t6 ⟨h6, k6, f6, r6⟩ => ?_)
   obtain ⟨V6, k6, e6, o6⟩ := k6.vx
@@ -241,14 +244,24 @@ theorem gcdUV_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1
     by_cases hl : (if V aV % 2 = 0 then V aU else V aV) < 2
     · rw [vS]; simp only [hl, ↓reduceIte]; decide
     · rw [vS]; simp only [hl, ↓reduceIte]; exact ⟨hodd (by omega_arith), by omega_arith⟩
-  refine WP.seq (WP.mono (invOfE h6 k6 (a := aU2) (m := aS) (one := by vsimp [o6, o5, o4, o3, one])
-    (zero := by vsimp [o6, o5, o4, o3, zero]) (odd := sO.1) (gt := sO.2)) fun t7 ⟨h7, ⟨V7, k7, fr7, g7, _, _⟩, f7,
-      r7⟩ => ?_)
+  have e32 : 32 * (L / 4) = 8 * L := by omega_arith
+  have K6 : Keep opsRegs s t6 := ((((r1.trans' r2).trans' r3).trans' r4).trans' r5).trans' r6
+  have hw6 := nP_width (s := t6) (by rw [K6.gpr .r22 (by decide)]; exact h22) (by omega_arith)
+  have bU2 : V6 aU2 < 2 ^ (32 * (L / 4)) := by
+    rw [vU2, e32]; split <;> with_reducible assumption
+  have bS : V6 aS < 2 ^ (32 * (L / 4)) := by
+    rw [vS, e32]
+    by_cases hl : (if V aV % 2 = 0 then V aU else V aV) < 2
+    · simp only [hl, ↓reduceIte]
+      exact Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (by decide) (by omega_arith : 2 ≤ 8 * L))
+    · simp only [hl, ↓reduceIte]; split <;> with_reducible assumption
+  refine WP.seq (WP.mono (invOfE h6 k6 hw10 (a := aU2) (m := aS) (hk := hw6) (hn1 := by omega_arith)
+    (hnw := by omega_arith) (han := bU2) (hmn := bS) (odd := sO.1) (gt := sO.2)) fun t7 ⟨h7, ⟨V7, k7, fr7, g7, _, _⟩, f7, r7⟩ => ?_)
   refine WP.mono (selE h7 k7 (o := aG) (a := 1) (b := aOne) (sl := X1) (bit := b5)) fun t ⟨ht, kt, ft, rt⟩ => ?_
   obtain ⟨V8, kt, e8, o8⟩ := kt.vx
   refine ⟨ht, ⟨V8, F5, kt, fun j hj hn => ?_, fun d d0 d1 => ?_, ?_⟩,
     (((((f1.trans f2).trans f3).trans f4).trans f5).trans f6).trans (f7.trans ft),
-    ((((((r1.trans' r2).trans' r3).trans' r4).trans' r5).trans' r6).trans' (r7.trans' rt.mono)).mono⟩
+    (((((((r1.trans' r2).trans' r3).trans' r4).trans' r5).trans' r6).mono.trans' (r7.trans' rt.mono)))⟩
   · simp only [gcdArrs, invOfArrs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false, not_or] at hn
     obtain ⟨n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15, n16, n17, n18, n19⟩ := hn
@@ -271,8 +284,9 @@ theorem lcmPart_eq : lcmPart = .seq halving (.seq gcdUV (.seq (copy aL aF) (.seq
     (VG.Impl.Rsa.PPC64LE.Div.div aL aDr aDv aDt)))) := rfl
 
 /-- `[aL] := lcm(p - 1, q - 1)`. -/
-theorem lcmPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
+theorem lcmPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
     (h22 : s.gpr .r22 = BitVec.ofNat 64 L) (hL : 0 < L) (hL' : 8 * L < 2 ^ 64) (hw : 32 * w = 16 * L)
+    (hw10 : 10 ≤ w) (hL4 : L % 4 = 0)
     (hpm : V aPm < 2 ^ (8 * L)) (hqm : V aQm < 2 ^ (8 * L))
     (one : V aOne = 1) (two : V aTwo = 2) (three : V aThree = 3) (zero : V aZero = 0) :
     WP isa lcmPart s fun t => Ws t B Z w nArr ∧
@@ -296,7 +310,11 @@ theorem lcmPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
   have c2 : V1 aTwo = 2 := by rw [o1 aTwo (by decide) (by decide), two]
   have c3 : V1 aThree = 3 := by rw [o1 aThree (by decide) (by decide), three]
   have c0 : V1 aZero = 0 := by rw [o1 aZero (by decide) (by decide), zero]
-  refine WP.seq (WP.mono (gcdUV_ok h1 k1 c1 c2 c3 c0 (by rw [eu, ev]; exact LE.1))
+  have hb := VG.Proof.RsaKeyGen.halveIter_bounds (8 * L) (st := (V aPm, V aQm, V aPm * V aQm))
+    (a := 2 ^ (8 * L)) (b := 2 ^ (8 * L)) (f := V aPm * V aQm + 1) ⟨hpm, hqm, Nat.lt_succ_self _⟩
+  rw [hS] at hb
+  refine WP.seq (WP.mono (gcdUV_ok h1 k1 c1 c2 c3 hw10 (by rw [r1.gpr .r22 (by decide)]; exact h22) hL' hL4
+    (by omega_arith) (by omega_arith) (by rw [eu]; exact hb.1) (by rw [ev]; exact hb.2.1) (by rw [eu, ev]; exact LE.1))
     fun t2 ⟨h2, ⟨V2, F2, k2, o2, p2, e2⟩, f2, r2⟩ => ?_)
   refine WP.seq (WP.mono (copyE h2 k2 (o := aL) (a := aF)) fun t3 ⟨h3, k3, f3, r3⟩ => ?_)
   obtain ⟨V3, k3, e3, o3⟩ := k3.vx

@@ -39,7 +39,7 @@ abbrev allArrs : List Nat := List.range nArr
 abbrev opsRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10]
 
 /-- The registers the body changes, but for the entry's: also the loops' count. -/
-abbrev bodyRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
+abbrev bodyRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
 /-- The frame of the body: memory but the arrays and the slots. -/
 abbrev KK (B : Addr) (w : Nat) (m m' : Mem) : Prop := KeyWorkspace.Keep B w allArrs allSlots m m'

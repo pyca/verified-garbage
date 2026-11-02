@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Result
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBytes
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvCorrect
@@ -20,6 +21,7 @@ registers (as `vg_rsa_crt_values`'s, `Proof/Rsa/PPC64LE/CvCorrect.lean`),
 
 namespace VG.Proof.RsaKeyGen.PPC64LE.Key
 
+open VG.Proof.Rsa.PPC64LE (InvLaw)
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
 open VG.Impl.RsaKeyGen.PPC64LE.Key (code nArr aN aD aP aQ aDP aDQ aQi)
 open VG.Impl.Rsa.PPC64LE.CrtValues (restore)
@@ -151,7 +153,7 @@ theorem restore_ok {s0 t : State} {m : Mem} (h : Fr s0 m t) :
     e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13]
   exact e0
 
-theorem key_correct (s : State) (h : keyP.pre s) :
+theorem key_correct [InvLaw] (s : State) (h : keyP.pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ keyP.post s t := by
   show WP isa code s fun t => abiPreserved s t ∧ keyP.post s t
   unfold code

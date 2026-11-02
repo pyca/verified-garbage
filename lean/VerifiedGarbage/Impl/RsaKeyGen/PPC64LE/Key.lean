@@ -23,20 +23,22 @@ Then, as ARMv7 computes the key (`Impl/RsaKeyGen/Arm/Key.lean`):
 2. `L = lcm(p - 1, q - 1)`: their product `φ` (`mul`, over `8 p_len` bits);
    `8 p_len` steps that halve `u`, `v` (copies of `p - 1` and `q - 1`) and `φ`
    while `u` and `v` are both even; `v` made odd by a swap (if it is even);
-   `gcd(u, v)` by `inverse` (modulo `v`, or 3 for `v < 2`) and 1 for `v < 2`;
+   `gcd(u, v)` by `invOf` (modulo `v`, or 3 for `v < 2`; at the primes'
+   width) and 1 for `v < 2`;
    and `φ` divided by it (`Impl/Rsa/PPC64LE/Div.lean`).
 3. `d = e⁻¹ mod L`, and the flag of its existence, for every case of `e`,
    selected by masks of whether `e` is odd and whether it is 1, without
    branches:
    * `e` odd and at least 3 (with the modulus 3 otherwise): `L = e Q + R`,
-     `x = R⁻¹ mod e` by `inverse`, `t = e - x` and
+     `x = R⁻¹ mod e` by `invOf` (two digits), `t = e - x` and
      `d = Q t + (R t + 1) / e` (`Proof/RsaKeyGen/OddInverseQuotient.lean`),
      whose products fit `w` digits;
    * `e = 1`: `d = 1`, for `L ≠ 1`;
-   * `e` even: `d = e⁻¹ mod L` by `inverse` for an odd `L ≥ 3` (the modulus
+   * `e` even: `d = e⁻¹ mod L` by `invOf` (`w` digits) for an odd `L ≥ 3` (the modulus
      3 otherwise), which `e = 0` never has.
 4. Whether `d` exists and `d ≤ 2^(8 p_len)`: the status 2.
-5. `qInv` by `inverse` (modulo `p`, or 3 for a `p` even or below 3),
+5. `qInv` by `invOf` (modulo `p`, or 3 for a `p` even or below 3; at the
+   primes' width),
    `dP = d mod (p - 1)` and `dQ = d mod (q - 1)` by the division (by 1 for
    `p - 1` or `q - 1` zero, which the mask then rules out), and `n = p q` by
    `mul`; the mask of the existence of `d`, `gcd(q, p) = 1`,
@@ -59,8 +61,7 @@ open VG.Impl.Rsa.PPC64LE.CrtValues (stackArg load storeBytes restore)
 
 /-! ## The arrays
 
-0–14 are `inverse`'s (`aM` its modulus, `aNM` the negated modulus, `aZero`
-zero); then the constants, the inputs and the numbers. `aDv` is the
+0–14 are the inverse's (`aM` its modulus; `aZero` zero, which it leaves); then the constants, the inputs and the numbers. `aDv` is the
 division's divisor: only copies write it, so its extra digit stays 0. -/
 
 def aOne : Nat := 15
@@ -193,14 +194,23 @@ def halfStep : Prog isa := seqs ([.block (bitOf X0 aU ++ bitOf X1 aV ++ notS X1 
 def halving : Prog isa :=
   seqs [mulTo aF aPm aQm cnt8, copy aU aPm, copy aV aQm, .block cnt8, .loop halfStep (.nonzero .d .r11)]
 
-/-- `inverse`'s start for `[a]` modulo `[m]` (copied into `aM`): `(u, v, x₁,
-x₂) = (a, m, 1, 0)` and the negated modulus. -/
-def invOf (a m : Nat) : Prog isa :=
-  seqs [copy aM m, copy 0 a, copy 1 aM, copy 2 aOne, copy 3 aZero, sub3 aNM aZero aM, inverse]
+/-- `[a]` modulo `[m]` by the batched inverse (`Impl/Rsa/PPC64LE/InvBatch.lean`):
+`a` into array 0 and `m` into `aM`, and `k` sets its width, `r11` digits. -/
+def invOf (a m : Nat) (k : List Instr) : Prog isa :=
+  seqs [copy aM m, copy 0 a, .block k, VG.Impl.Rsa.PPC64LE.InvBatch.inverse]
+
+/-- The width of the primes, `p_len / 4` digits. -/
+def nP : List Instr := [.lsr .d .r11 .r22 2]
+
+/-- Two digits, for numbers below `2^64`. -/
+def nTwo : List Instr := [.li .r11 2]
+
+/-- The full width, `w` digits. -/
+def nW : List Instr := [.addi .r11 .r29 0]
 
 /-- `v` odd by a swap, `[aG] := gcd(u, v)` (1 for `v < 2`). -/
 def gcdUV : Prog isa := seqs ([.block (bitOf X0 aV ++ notS X0 X0), sel aU2 aU aV X0, sel aV2 aV aU X0] ++
-  ltS X1 aV2 aTwo ++ [sel aS aV2 aThree X1, invOf aU2 aS, sel aG 1 aOne X1])
+  ltS X1 aV2 aTwo ++ [sel aS aV2 aThree X1, invOf aU2 aS nP, sel aG 1 aOne X1])
 
 /-- `[q] := [q] / [d]` (`[aDr]` := the remainder), through `aDv`. -/
 def divBy (q d : Nat) : Prog isa := seqs [copy aDv d, div q aDr aDv aDt]
@@ -220,7 +230,7 @@ def eFlags : Prog isa := seqs ([.block (bitOf X3 aE), eqS X4 aE aOne] ++ ltS X5 
 `x = R⁻¹ mod mE`, `t = mE - x`, `[aDo] := Q t + (R t + 1) / mE`, and
 `X6` := `L ≥ 2` and `gcd(R, mE) = 1`. -/
 def dOdd : Prog isa := seqs ([.block (andNotS X0 X5 X3), sel aME aThree aE X0, copy aQd aL, copy aDv aME,
-  div aQd aR aDv aDt, invOf aR aME, eqS X1 1 aOne, sub3 aTt aME 3,
+  div aQd aR aDv aDt, invOf aR aME nTwo, eqS X1 1 aOne, sub3 aTt aME 3,
   mulTo aQt aQd aTt [.li .r11 64], mulTo aRt aR aTt [.li .r11 64], addTo aRt aOne aNc aZero,
   div aRt aDr aDv aDt, copy aDo aQt, addTo aDo aRt aNc aZero] ++ ltS X2 aL aTwo ++
   [.block (andNotS X6 X2 X1)])
@@ -232,7 +242,7 @@ def dOne : Prog isa := seqs [eqS X0 aL aOne, .block (notS X7 X0 ++ selS X6 X6 X7
 `d = e⁻¹ mod mL`, and `X1` := `L` odd, at least 3, and `gcd(e, mL) = 1`;
 then `[aD]` and `X6` by whether `e` is odd. -/
 def dEven : Prog isa := seqs ([.block (bitOf X0 aL)] ++ ltS X1 aL aThree ++
-  [.block (andNotS X2 X1 X0), sel aMl aThree aL X2, invOf aE aMl, eqS X0 1 aOne,
+  [.block (andNotS X2 X1 X0), sel aMl aThree aL X2, invOf aE aMl nW, eqS X0 1 aOne,
     .block (andS X1 X2 X0 ++ selS X6 X1 X6 X3), sel aD 3 aS X3])
 
 /-- `d` and `X6`. -/
@@ -246,7 +256,7 @@ def smallPart : Prog isa := seqs (ltS X0 aD aC ++ [.block (andS X7 X0 X6)])
 /-- `qInv` into `aQi` (modulo `p`, or 3 for a `p` even or below 3), `X0` `p`
 odd, and `X1` the flag of `gcd(q, p) = 1`. -/
 def qinvPart : Prog isa := seqs ([.block (bitOf X0 aP)] ++ ltS X1 aP aThree ++
-  [.block (andNotS X2 X1 X0), sel aMq aThree aP X2, invOf aQ aMq, eqS X1 1 aOne, copy aQi 3])
+  [.block (andNotS X2 X1 X0), sel aMq aThree aP X2, invOf aQ aMq nP, eqS X1 1 aOne, copy aQi 3])
 
 /-- `[o] := d mod [j]`, by 1 for `[j] = 0`. -/
 def crtOf (o j : Nat) : Prog isa :=

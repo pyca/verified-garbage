@@ -27,6 +27,7 @@ open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 sel eqS aZero)
 open VG.Impl.Rsa.PPC64LE.Div (div)
 open VG.Impl.RsaKeyGen.PPC64LE.Key (nArr aDv aT aOne aTwo aThree aE aL aME aQd aR aDr aDt aTt aQt aRt aNc aDo
   X0 X1 X2 X3 X4 X5 X6 ltS andNotS eFlags dOdd invOf mulTo addTo)
+open VG.Proof.Rsa.PPC64LE (InvLaw)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
 section
@@ -60,7 +61,7 @@ theorem eFlags_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 
 abbrev dOddArrs : List Nat := [aME, aQd, aDv, aR, aDr, aDt, aTt, aQt, aRt, aNc, aDo, aT] ++ invOfArrs ++ mulArrs
 
 theorem dOdd_eq : dOdd = seqs (([.block (andNotS X0 X5 X3), sel aME aThree aE X0, copy aQd aL, copy aDv aME,
-    div aQd aR aDv aDt, invOf aR aME, eqS X1 1 aOne, sub3 aTt aME 3, mulTo aQt aQd aTt [.li .r11 64],
+    div aQd aR aDv aDt, invOf aR aME VG.Impl.RsaKeyGen.PPC64LE.Key.nTwo, eqS X1 1 aOne, sub3 aTt aME 3, mulTo aQt aQd aTt [.li .r11 64],
     mulTo aRt aR aTt [.li .r11 64], addTo aRt aOne aNc aZero, div aRt aDr aDv aDt, copy aDo aQt,
     addTo aDo aRt aNc aZero] : List (Prog isa)) ++ (ltS X2 aL aTwo ++ ([.block (andNotS X6 X2 X1)] : List (Prog isa)))) := rfl
 
@@ -70,7 +71,7 @@ theorem li64_ok (u : State) : WP isa (.block [.li .r11 64]) u fun u' =>
   prun
 
 /-- The odd case: `[aDo] = Q t + (R t + 1) / mE` and `X6`. -/
-theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he : V aE < 2 ^ 64)
+theorem dOdd_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 ≤ w) (he : V aE < 2 ^ 64)
     (one : V aOne = 1) (two : V aTwo = 2) (three : V aThree = 3) (zero : V aZero = 0)
     (b3 : F X3 = V aE % 2) (b5 : F X5 = if V aE < 3 then 1 else 0) :
     WP isa dOdd s fun t => Ws t B Z w nArr ∧
@@ -117,8 +118,9 @@ theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he
     rw [c5 aZero (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), zero]
   have vM5 : V5 aME = mE (V aE) := by
     rw [o5 aME (by decide) (by decide) (by decide) (by decide), o4 aME (by decide), o3 aME (by decide), vME]
-  refine WP.seq (WP.mono (invOfE h5 k5 (a := aR) (m := aME) (one := one5) (zero := zero5)
-    (odd := by rw [vM5]; exact mo.1) (gt := by rw [vM5]; exact mo.2))
+  refine WP.seq (WP.mono (invOfE h5 k5 hw (a := aR) (m := aME) (hk := nTwo_width) (hn1 := by decide)
+    (hnw := by omega_arith) (han := by rw [vR]; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) mlt)
+    (hmn := by rw [vM5]; exact mlt) (odd := by rw [vM5]; exact mo.1) (gt := by rw [vM5]; exact mo.2))
     fun t6 ⟨h6, ⟨V6, k6, o6, g6, d6, l6⟩, f6, r6⟩ => ?_)
   simp only [vM5, vR] at g6 d6 l6
   -- `X1` := `gcd(R, mE) = 1`, `t = mE - x`.
@@ -229,9 +231,9 @@ theorem dOdd_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (he
     by_cases a : V aL < 2 <;> by_cases b : (V aL % mE (V aE)).gcd (mE (V aE)) = 1 <;> simp [a, b]
   · exact ((((((((((((((f1.trans f2).trans f3).trans f4).trans f5).trans f6).trans f7).trans f8).trans f9).trans
       f10).trans f11).trans f12).trans f13).trans f14).trans f15).trans f16
-  · have K8 : Keep opsRegs s t8 :=
-      ((((((r1.trans' r2).trans' r3).trans' r4).trans' r5).trans' r6).trans' r7).trans' r8
-    exact (((((((K8.mono.trans' r9).trans' r10).trans' r11.mono).trans' r12.mono).trans' r13.mono).trans'
+  · have K8 : Keep bodyRegs s t8 :=
+      ((((((r1.trans' r2).trans' r3).trans' r4).trans' r5).mono.trans' r6).trans' r7.mono).trans' r8.mono
+    exact (((((((K8.trans' r9.mono).trans' r10).trans' r11.mono).trans' r12.mono).trans' r13.mono).trans'
       r14.mono).trans' r15.mono).trans' r16.mono
 
 end
