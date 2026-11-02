@@ -50,8 +50,8 @@ theorem absorbBuf_ok (s : State) (pad : Bool) {R : Nat} (hk : Keys R s)
         2 ^ 128 * pad.toNat)) * R) % P ∧ Bounds s') ∧ Keeps absorbRegs s s' := by
   have hin : ∀ d, d + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (s.gpr .a0 + BitVec.ofNat 64 d) 8 :=
     fun d hd => in_st' (List.mem_append_right _ hw) hd
-  refine WP.mono (absorb_key_ok s .a0 56 pad hk (by decide) (hin 56 (by decide))
-    (hin (56 + 8) (by decide))) fun s' ⟨ha, k⟩ => ⟨fun hb => ?_, k⟩
+  refine WP.mono (absorb_key_ok s .a0 56 pad false hk (by decide) (hin 56 (by decide))
+    (hin (56 + 8) (by decide)) (fun h => by cases h)) fun s' ⟨ha, k⟩ => ⟨fun hb => ?_, k⟩
   obtain ⟨hv', hb'⟩ := ha hb
   refine ⟨?_, hb'⟩
   rw [hv', leNum_buf]

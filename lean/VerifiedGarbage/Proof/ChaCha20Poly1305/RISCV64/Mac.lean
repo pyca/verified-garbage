@@ -49,6 +49,13 @@ theorem covers_ctx {s₀ s : State} (hp : APre e s₀) (hwr : s.wr = s₀.wr) (r
 
 theorem cx_zero (s₀ : State) : cx s₀ = off (cx s₀) 0 := (off_zero _).symm
 
+/-- The context is 4-byte aligned, and so is it plus a multiple of 8. -/
+theorem cx_al4 (s₀ : State) : (cx s₀).toNat % 4 = 0 := by
+  have := cx_al s₀ (d := 0) (by decide); rw [off_zero] at this; omega
+
+theorem off_al4 (s₀ : State) {d : Nat} (hd : d % 8 = 0) : (off (cx s₀) d).toNat % 4 = 0 := by
+  have := cx_al s₀ hd; omega
+
 /-- `ctx[0, 64)` as a part. -/
 theorem st_sub (s₀ : State) : (⟨cx s₀, 64⟩ : Region) = sub s₀ 0 64 := by rw [sub, ← cx_zero]
 
@@ -72,7 +79,7 @@ theorem keyGen_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
       bytesAt s'.mem (off (cx s₀) 64) 32 = otk s₀ := by
   refine WP.seq (wp_addi (imm := bufOff) (by decide) fun s₁ u₁ => WP.block_nil ?_)
   have a0₁ : s₁.gpr .a0 = cx s₀ := by rw [u₁.other _ (by decide), ha]
-  refine block_call a0₁ (B := off (cx s₀) 64) (by rw [u₁.gpr, ha]; rfl)
+  refine block_call a0₁ (B := off (cx s₀) 64) (hSa := cx_al4 s₀) (hBa := off_al4 s₀ (by decide)) (by rw [u₁.gpr, ha]; rfl)
     (Offset.disjoint_base (cx s₀) (d := 64) (n := 256) (k := 64) (by decide) (by decide)) ?_ ?_ fun s' k hb => ?_
   · refine covers_right (covers_ctx hp (by rw [u₁.wr, h.wr]) _ fun r hr => ?_)
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -167,7 +174,7 @@ theorem macAad_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
   have hP : (sub s₀ polyOff 128).Disjoint (aR s₀) := (APre.w_sub (s₀ := s₀) hp.a_w (k := polyOff) (n := 128) (by decide)).symm
   have cP : Covers [sub s₀ polyOff 128] s₃.wr := covers_ctx hp w₃ _ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 608; decide⟩
-  refine WP.seq (update_call (P := ps s₀) (D := ad s₀) (c := BitVec.ofNat 64 0) (n := AL s₀)
+  refine WP.seq (update_call (P := ps s₀) (hPa := cx_al s₀ (by decide)) (D := ad s₀) (c := BitVec.ofNat 64 0) (n := AL s₀)
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), ha])
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr])
     (by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.regs.s7])
@@ -189,7 +196,7 @@ theorem macAad_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
       h.regs.s8]
   have cP' : Covers [sub s₀ polyOff 128] s₉.wr := covers_ctx hp w₉ _ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 608; decide⟩
-  refine update_call (P := ps s₀) (D := off (cx s₀) zeroOff) (c := s₀.gpr .a3)
+  refine update_call (P := ps s₀) (hPa := cx_al s₀ (by decide)) (D := off (cx s₀) zeroOff) (c := s₀.gpr .a3)
     (n := (16 - AL s₀ % 16) % 16) (by rw [u₉.other _ (by decide), a0₈])
     (by rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide),
       u₅.gpr, s8₄])
@@ -291,7 +298,8 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) 
     · exact ⟨dR s₀, by rw [w₆]; exact hp.d_wr, 0, (BitVec.add_zero _).symm, by simp⟩
     · exact ⟨wR s₀, by rw [w₆]; exact hp.w_wr, pad (wk s₀) + 64, cx_off s₀ 64,
         by show pad (wk s₀) + 64 + 320 ≤ 616; omega⟩
-  refine WP.seq (xor_call (S := cx s₀) (D := dp s₀) (n := L s₀) (B := off (cx s₀) 64) a0₆
+  refine WP.seq (xor_call (S := cx s₀) (D := dp s₀) (n := L s₀) (B := off (cx s₀) 64)
+    (hSa := cx_al4 s₀) (hBa := off_al4 s₀ (by decide)) a0₆
     (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, g₃.gpr, u₂.other _ (by decide),
       u₁.other _ (by decide), h.regs.s9])
     (by rw [u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), g₃.gpr, u₂.other _ (by decide),
@@ -384,7 +392,7 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   have c₄ : (s₄.gpr .a1).toNat % 16 = 0 := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.gpr]; exact round16_mod _
-  refine WP.seq (update_call (P := ps s₀) (D := dp s₀) (c := s₄.gpr .a1) (n := L s₀) a0₄ rfl
+  refine WP.seq (update_call (P := ps s₀) (hPa := cx_al s₀ (by decide)) (D := dp s₀) (c := s₄.gpr .a1) (n := L s₀) a0₄ rfl
     (by rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h.regs.s9])
     (by rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.regs.s10, a5_eq])
     (fit_d' s₀) hdP
@@ -417,7 +425,7 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     rw [u₁₂.gpr, u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide),
       u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), a0₅, ps_add]
     rfl
-  refine WP.seq (update_call (P := ps s₀) (D := off (cx s₀) zeroOff) (c := s₁₂.gpr .a1)
+  refine WP.seq (update_call (P := ps s₀) (hPa := cx_al s₀ (by decide)) (D := off (cx s₀) zeroOff) (c := s₁₂.gpr .a1)
     (n := (16 - L s₀ % 16) % 16) a0₁₂ rfl a2₁₂
     (by rw [u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.gpr, u₉.gpr, u₉.other _ (by decide), u₈.other _ (by decide),
       u₇.other _ (by decide), u₆.other _ (by decide), i₅.regs.s10, padN])
@@ -466,7 +474,7 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     rw [u₂₀.other _ (by decide), u₁₉.gpr, u₁₈.other _ (by decide), u₁₇.other _ (by decide),
       u₁₆.other _ (by decide), u₁₅.other _ (by decide), u₁₄.other _ (by decide), a0₁₃, ps_add]
     rfl
-  refine WP.seq (update_call (P := ps s₀) (D := off (cx s₀) lenOff) (c := s₂₀.gpr .a1) (n := 16) a0₂₀ rfl
+  refine WP.seq (update_call (P := ps s₀) (hPa := cx_al s₀ (by decide)) (D := off (cx s₀) lenOff) (c := s₂₀.gpr .a1) (n := 16) a0₂₀ rfl
     a2₂₀ u₂₀.gpr (by decide) (sub_disj s₀ (a := polyOff) (n := 128) (b := lenOff) (m := 16) (by decide) (by decide)
       (by decide))
     (covers_right (covers_ctx hp i₂₀.wr _ fun r hr => by
@@ -507,7 +515,7 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     omega
   have m₂₈ : s₂₈.mem = s₂₁.mem := by
     rw [u₂₈.mem, u₂₇.mem, u₂₆.mem, u₂₅.mem, u₂₄.mem, u₂₃.mem, u₂₂.mem]
-  refine finalize_call (P := ps s₀) (O := O) (c := s₂₈.gpr .a1) (by rw [u₂₈.other _ (by decide), a0₂₇]) rfl
+  refine finalize_call (P := ps s₀) (hPa := cx_al s₀ (by decide)) (O := O) (c := s₂₈.gpr .a1) (by rw [u₂₈.other _ (by decide), a0₂₇]) rfl
     u₂₈.gpr hPO (by rw [List.nil_append]; exact covers_right (by rw [i₂₈.wr]; exact hOw))
     (by rw [i₂₈.wr]; exact hOw) fun s' k' ht => ?_
   refine ⟨((((((((st₂₁.upd' u₂₂).upd' u₂₃).upd' u₂₄).upd' u₂₅).upd' u₂₆).upd' u₂₇).upd' u₂₈).trans k'.step),

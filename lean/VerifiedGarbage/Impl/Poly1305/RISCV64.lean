@@ -76,16 +76,17 @@ def M0 : BitVec 64 := 0x0ffffffc0fffffff
 
 /-- The clamped `r`, `s1`, and the accumulator, from the state at `a0`. -/
 def setup : List Instr :=
-  loadLE64 R0 T1 T2 .a0 24 ++ loadLE64 R1 T1 T2 .a0 32 ++ movImm64 T1 T2 M0 ++
+  [.load .d R0 .a0 24, .load .d R1 .a0 32] ++ movImm64 T1 T2 M0 ++
   ([.logic .and R0 R0 T1, .logicImm .and T1 T1 (-4), .logic .and R1 R1 T1,
     .shift .srl .d S1 R1 2, .add S1 S1 R1] : List Instr) ++
-  loadLE64 H0 T1 T2 .a0 0 ++ loadLE64 H1 T1 T2 .a0 8 ++ loadLE64 H2 T1 T2 .a0 16
+  [.load .d H0 .a0 0, .load .d H1 .a0 8, .load .d H2 .a0 16]
 
 /-! ## Absorbing a block -/
 
 /-- `h += m`, for the block `m` at `off(b)`, and `h += 2¹²⁸` if `pad`. -/
-def addBlock (b : Reg) (off : Nat) (pad : Bool) : List Instr :=
-  loadLE64 X0 T1 T2 b off ++ loadLE64 X1 T1 T2 b (off + 8) ++ add3 H0 H1 H2 X0 X1 ++
+def addBlock (b : Reg) (off : Nat) (pad : Bool) (wide : Bool := false) : List Instr :=
+  (if wide then [.load .d X0 b off, .load .d X1 b (off + 8)]
+    else loadLE64 X0 T1 T2 b off ++ loadLE64 X1 T1 T2 b (off + 8)) ++ add3 H0 H1 H2 X0 X1 ++
     (if pad then [.addi H2 H2 1] else [])
 
 /-- `x = h0 r0 + h1 s1` in `t3, t4`, `y = h0 r1 + h1 r0 + h2 s1` in `t5, t6`
@@ -106,8 +107,8 @@ def fold : List Instr :=
 /-- Absorbing the block at `off(b)`, with `pad` for a whole block (the `0x01`
 byte appended to it is `2¹²⁸`), without for a padded last block (whose
 `0x01` byte is inside it). -/
-def absorb (b : Reg) (off : Nat) (pad : Bool) : List Instr :=
-  addBlock b off pad ++ products ++ combine ++ fold
+def absorb (b : Reg) (off : Nat) (pad : Bool) (wide : Bool := false) : List Instr :=
+  addBlock b off pad wide ++ products ++ combine ++ fold
 
 /-! ## The final reduction -/
 
@@ -129,7 +130,7 @@ def reduce : List Instr :=
 
 /-- `h` stored. -/
 def storeH : List Instr :=
-  storeLE64 H0 T1 T2 .a0 0 ++ storeLE64 H1 T1 T2 .a0 8 ++ storeLE64 H2 T1 T2 .a0 16
+  [.store .d H0 .a0 0, .store .d H1 .a0 8, .store .d H2 .a0 16]
 
 /-! ## `init(state = a0, key = a1)` -/
 
@@ -140,11 +141,12 @@ def init : Prog isa :=
 
 The blocks are read from `a3`. -/
 
-def body : Prog isa := .block (absorb .a3 0 true ++ ([.addi .a3 .a3 16, .addi .a2 .a2 (-1)] : List Instr))
+def body (wide : Bool) : Prog isa :=
+  .block (absorb .a3 0 true wide ++ ([.addi .a3 .a3 16, .addi .a2 .a2 (-1)] : List Instr))
 
 def blocks : Prog isa :=
   .seq (.block (.addi .a3 .a1 0 :: setup))
-  (.seq (.ite (.zero .a2) (.block []) (.loop body (.nonzero .a2)))
+  (.seq (.ite (.zero .a2) (.block []) (.loop (body false) (.nonzero .a2)))
     (.block (reduce ++ storeH)))
 
 /-! ## `update(state = a0, count = a1, data = a2, len = a3)`
@@ -173,11 +175,15 @@ def fill : Prog isa :=
     (.ite (.zero X0) (.block (absorb .a0 56 true)) (.block []))))
 
 /-- Absorbs the whole blocks of the data, from `a2`, counting them in `t3`. -/
+def wholeLoop (wide : Bool) : Prog isa :=
+  .loop (.block (absorb .a2 0 true wide ++ ([.addi .a2 .a2 16, .addi .a3 .a3 (-16),
+    .shift .srl .d X0 .a3 4] : List Instr))) (.nonzero X0)
+
 def whole : Prog isa :=
   .seq (.block [.shift .srl .d X0 .a3 4])
     (.ite (.zero X0) (.block [])
-      (.loop (.block (absorb .a2 0 true ++ ([.addi .a2 .a2 16, .addi .a3 .a3 (-16),
-        .shift .srl .d X0 .a3 4] : List Instr))) (.nonzero X0)))
+      (.seq (.block [.logicImm .and T1 .a2 7])
+        (.ite (.zero T1) (wholeLoop true) (wholeLoop false))))
 
 /-- Copies the rest of the data into the (empty) buffer. -/
 def rest : Prog isa :=
@@ -209,7 +215,7 @@ def lastBlock : Prog isa :=
 
 /-- `h += s`, modulo `2¹²⁸`. -/
 def addS : List Instr :=
-  loadLE64 X0 T1 T2 .a0 40 ++ loadLE64 X1 T1 T2 .a0 48 ++ add2 H0 H1 X0 X1
+  [.load .d X0 .a0 40, .load .d X1 .a0 48] ++ add2 H0 H1 X0 X1
 
 /-- The tag stored. -/
 def storeTag : List Instr := storeLE64 H0 T1 T2 .a2 0 ++ storeLE64 H1 T1 T2 .a2 8

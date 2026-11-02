@@ -26,13 +26,14 @@ writes `block` of the state at `state` to the first 16 words of `buf`.
 
 The code may read `state` (64 bytes) and read and write `buf` (256 bytes;
 its first 64 bytes hold the result on exit, and the rest is unspecified).
-`buf` may not overlap `state`. The pointers are public; the state (key,
-counter and nonce) is secret. -/
+`buf` may not overlap `state`, and both are 4-byte aligned, as every caller's
+are. The pointers are public; the state (key, counter and nonce) is secret. -/
 def blockRISCV64 : Contract RISCV64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, 64⟩
     let buf : Region := ⟨s.gpr .a1, 256⟩
-    s.rd = [state] ∧ s.wr = [buf] ∧ buf.Disjoint state
+    s.rd = [state] ∧ s.wr = [buf] ∧ buf.Disjoint state ∧
+      (s.gpr .a0).toNat % 4 = 0 ∧ (s.gpr .a1).toNat % 4 = 0
   post s s' := stateAt s'.mem (s.gpr .a1) = block (stateAt s.mem (s.gpr .a0))
   pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.sp = s₂.sp
 

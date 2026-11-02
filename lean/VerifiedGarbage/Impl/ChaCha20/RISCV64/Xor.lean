@@ -59,8 +59,20 @@ def xorLoop : Prog isa :=
   .loop (.block [.load .b .t3 .s5 0, .load .b .t4 .t2 0, .logic .xor .t3 .t3 .t4, .store .b .t3 .s5 0,
     .addi .s5 .s5 1, .addi .t2 .t2 1, .addi .a2 .a2 (-1)]) (.nonzero .a2)
 
-/-- The block counter (word 12 of the state) incremented. -/
-def next : List Instr := loadLE32 .t1 .t3 .a0 48 ++ [.addi .t1 .t1 1] ++ storeLE32 .t1 .t3 .a0 48
+/-- XORs the next `a2` bytes (a multiple of 8) of the keystream (from `t2`)
+into the data (at `s5`, 8-byte aligned, as `t2` is), a doubleword at a time. -/
+def xorWide : Prog isa :=
+  .loop (.block [.load .d .t3 .s5 0, .load .d .t4 .t2 0, .logic .xor .t3 .t3 .t4, .store .d .t3 .s5 0,
+    .addi .s5 .s5 8, .addi .t2 .t2 8, .addi .a2 .a2 (-8)]) (.nonzero .a2)
+
+/-- `xorWide` if the data, the keystream and the length are multiples of 8
+(`t3 = ((s5 | t2) | a2) & 7` is zero), else `xorLoop`. -/
+def xorAny : Prog isa :=
+  .seq (.block [.logic .or .t3 .s5 .t2, .logic .or .t3 .t3 .a2, .logicImm .and .t3 .t3 7])
+    (.ite (.zero .t3) xorWide xorLoop)
+
+/-- The block counter (word 12 of the state, 4-byte aligned) incremented. -/
+def next : List Instr := [.load .w .t1 .a0 48, .addi .t1 .t1 1, .store .w .t1 .a0 48]
 
 /-- One block: the keystream into `buf`, `a2 = min(64, s6)` bytes of it
 XORed into the data, and the counter incremented. -/
@@ -69,7 +81,7 @@ def body : Prog isa :=
   (.seq (.block [.shift .srl .d .t1 .s6 6, mov .a2 .s6])
   (.seq (.ite (.zero .t1) (.block []) (.block [.li .a2 64]))
   (.seq (.block [.sub .s6 .s6 .a2, mov .t2 .a1])
-  (.seq xorLoop (.block next)))))
+  (.seq xorAny (.block next)))))
 
 def xor : Prog isa :=
   .seq (.block (save ++ [mov .s5 .a1, mov .s6 .a2, mov .a1 .a3]))

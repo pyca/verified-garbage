@@ -92,6 +92,7 @@ structure FPre (s₀ : State) : Prop where
   st_in : sR (st s₀) ∈ s₀.wr
   o_in : oR' s₀ ∈ s₀.wr
   st_o : (sR (st s₀)).Disjoint (oR' s₀)
+  st_al : (st s₀).toNat % 8 = 0
 
 theorem kf_lt (s₀ : State) : kf s₀ < 16 := Nat.mod_lt _ (by decide)
 
@@ -112,7 +113,8 @@ theorem fprologue_ok {s₀ : State} (hp : FPre s₀) :
     WP isa (.block (.logicImm .and Y1 .a1 15 :: setup)) s₀ (F0 s₀) := by
   refine wp_andi (by decide) fun s₁ u₁ => WP.mono (setup_ok s₁ (by
     rw [u₁.other _ (by decide), u₁.rd, u₁.wr]
-    exact List.mem_append_right _ hp.st_in)) fun s₂ ⟨hk, ha, k⟩ => ?_
+    exact List.mem_append_right _ hp.st_in) (by rw [u₁.other _ (by decide)]; exact hp.st_al))
+    fun s₂ ⟨hk, ha, k⟩ => ?_
   have m₁ : s₁.mem = s₀.mem := u₁.mem
   have a0₁ : s₁.gpr .a0 = s₀.gpr .a0 := u₁.other _ (by decide)
   have hR : Rk s₁.mem (s₁.gpr .a0) = Rn s₀ := by rw [m₁, a0₁]
@@ -340,7 +342,8 @@ theorem fepilogue_ok {s₀ : State} (hp : FPre s₀) {s₁ : State} (h₁ : F0 s
   refine WP.block_append (WP.mono (reduce_ok s) fun s₂ ⟨hr, k₂⟩ => ?_)
   have x0₂ : s₂.gpr .a0 = st s₀ := by rw [k₂.gpr', x0]
   refine WP.block_append (WP.mono (addS_ok s₂ (by
-    rw [k₂.2.2.1, k₂.2.2.2.1, ht.wr, x0₂]; exact List.mem_append_right _ hp.st_in))
+    rw [k₂.2.2.1, k₂.2.2.2.1, ht.wr, x0₂]; exact List.mem_append_right _ hp.st_in)
+    (by rw [x0₂]; exact hp.st_al))
     fun s₃ ⟨ha, k₃⟩ => ?_)
   have x2₃ : s₃.gpr .a2 = op s₀ := by rw [k₃.gpr', k₂.gpr', x2]
   refine WP.mono (storeTag_ok s₃ (by rw [k₃.2.2.2.1, k₂.2.2.2.1, ht.wr, x2₃]; exact hp.o_in))
@@ -425,9 +428,9 @@ def finalizeSat : State where
 
 theorem finalize_verified : Verified RISCV64.target finalize Proof.Poly1305.finalizeRISCV64 :=
   ⟨fun s hs => finalize_ok s ⟨by rw [hs.2.1]; exact List.mem_cons_self,
-      by rw [hs.2.1]; exact List.mem_cons_of_mem _ List.mem_cons_self, hs.2.2⟩,
+      by rw [hs.2.1]; exact List.mem_cons_of_mem _ List.mem_cons_self, hs.2.2.1, hs.2.2.2⟩,
     finalize_ct fun _ _ h => h,
-    ⟨finalizeSat, rfl, rfl, Region.disjoint_of_sep (by decide)⟩⟩
+    ⟨finalizeSat, rfl, rfl, Region.disjoint_of_sep (by decide), by decide⟩⟩
 
 /-- A state satisfying the precondition, with a working space. -/
 def finalizeScratchSat : State where
@@ -441,9 +444,9 @@ def finalizeScratchSat : State where
 theorem finalizeScratch_verified :
     Verified RISCV64.target finalize Proof.Poly1305.finalizeScratchRISCV64 :=
   ⟨fun s hs => finalize_ok s ⟨by rw [hs.2.1]; exact List.mem_cons_self,
-      by rw [hs.2.1]; exact List.mem_cons_of_mem _ List.mem_cons_self, hs.2.2.1⟩,
+      by rw [hs.2.1]; exact List.mem_cons_of_mem _ List.mem_cons_self, hs.2.2.1, hs.2.2.2.2.2⟩,
     finalize_ct fun _ _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.2⟩,
     ⟨finalizeScratchSat, rfl, rfl, Region.disjoint_of_sep (by decide),
-      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩⟩
+      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), by decide⟩⟩
 
 end VG.Proof.Poly1305.RISCV64

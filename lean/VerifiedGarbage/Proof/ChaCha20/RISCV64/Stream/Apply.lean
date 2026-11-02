@@ -42,7 +42,8 @@ def applyRISCV64 : Contract RISCV64.isa where
     let state : Region := ⟨s.gpr .a0, 768⟩
     let data : Region := ⟨s.gpr .a1, (s.gpr .a2).toNat⟩
     s.rd = [] ∧ s.wr = [state, data] ∧ state.Disjoint data ∧
-    (s.gpr .a0).toNat + 768 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + (s.gpr .a2).toNat ≤ 2 ^ 64
+    (s.gpr .a0).toNat + 768 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + (s.gpr .a2).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .a0).toNat % 8 = 0
   post s s' :=
     keyAt s'.mem (s.gpr .a0) = keyAt s.mem (s.gpr .a0) ∧
       if (s.gpr .a2).toNat ≤ leftAt s.mem (s.gpr .a0) then
@@ -158,10 +159,19 @@ structure APre (s₀ : State) : Prop where
   st_d : (stR s₀).Disjoint (dR s₀)
   wrap_st : (st s₀).toNat + 768 ≤ 2 ^ 64
   wrap_d : (dp s₀).toNat + L s₀ ≤ 2 ^ 64
+  st_al : (st s₀).toNat % 8 = 0
 
 theorem APre.of (s₀ : State) (h : Proof.ChaCha20.applyRISCV64.pre s₀) : APre s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5⟩ := h
-  exact ⟨h1, h2, h3, h4, h5⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6⟩
+
+/-- The state plus a multiple of 4 is 4-byte aligned. -/
+theorem APre.al {s₀ : State} (hp : APre s₀) {d : Nat} (hd : d % 4 = 0) :
+    (st s₀ + BitVec.ofNat 64 d).toNat % 4 = 0 := by
+  have := hp.st_al
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+  have := (st s₀).isLt
+  omega
 
 theorem APre.w_st {s₀ : State} (hp : APre s₀) {d n : Nat} (h : d + n ≤ 768) :
     InRegions s₀.wr (st s₀ + BitVec.ofNat 64 d) n :=
@@ -715,7 +725,7 @@ theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (h
     omega
   refine xor_call (S := st s₀ + BitVec.ofNat 64 192) (D := dp s₀ + BitVec.ofNat 64 (H s₀))
     (B := st s₀ + BitVec.ofNat 64 256) (n := 64 * NB s₀) A.a0 (by rw [A.a1, h.s6]) (by rw [A.a2, h.a2])
-    A.a3 (by omega) dSD dSB dDB hwrap
+    A.a3 (by omega) dSD dSB dDB hwrap (hp.al (by decide)) (hp.al (by decide))
     (by rw [hrd₁, hwr₁, List.nil_append, List.nil_append]; exact Covers.of_sub hcov)
     (by rw [hwr₁]; exact Covers.of_sub hcov) ?_
   intro s₂ k₂ x₂
@@ -894,6 +904,7 @@ theorem tail_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q2 s₀ s) (ht 
   have hrd₁ : s₁.rd = [] := by rw [rd₁, h.rd, hp.rd]
   have stS : Region.Sub ⟨st s₀, 64⟩ (stR s₀) := prefix_sub _ (by omega)
   refine WP.seq (block_call a0₁ a1₁ (Offset.disjoint_base _ (by omega) (by omega))
+    (by have := hp.st_al; omega) (hp.al (by decide))
     (by
       rw [hrd₁, hwr₁]
       refine Covers.of_sub fun r hr => ?_

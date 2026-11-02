@@ -53,17 +53,19 @@ def written : List Reg :=
   [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a1, .a2, .a3, .a4, .a5, .a6, .a7]
 
 /-- The absorbing of a block, with the key from `Keys`. -/
-theorem absorb_key_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) {R : Nat} (hk : Keys R s)
+theorem absorb_key_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) (wide : Bool) {R : Nat}
+    (hk : Keys R s)
     (ho : off + 15 < 2048)
     (h0 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 off) 8)
     (h8 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 (off + 8)) 8)
+    (hal : wide = true → (s.gpr b + BitVec.ofNat 64 off).toNat % 8 = 0)
     (hb : b ∉ absorbRegs := by decide) :
-    WP isa (.block (absorb b off pad)) s fun s' =>
+    WP isa (.block (absorb b off pad wide)) s fun s' =>
       (Bounds s → hv s' % P =
         ((hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
           2 ^ 128 * pad.toNat)) * R) % P ∧ Bounds s') ∧ Keeps absorbRegs s s' := by
   obtain ⟨q, hr0, hr1, hq, hs1, hr⟩ := hk
-  simpa only [← hr, Bounds] using absorb_ok s b off pad hr0 hr1 hq hs1 ho h0 h8 hb
+  simpa only [← hr, Bounds] using absorb_ok s b off pad wide hr0 hr1 hq hs1 ho h0 h8 hal hb
 
 theorem bounds_eq {s s' : State} {rs : List Reg} (h : Keeps rs s s')
     (hr : H0 ∉ rs ∧ H1 ∉ rs ∧ H2 ∉ rs := by decide) :
@@ -89,9 +91,10 @@ structure BPre (s₀ : State) : Prop where
   wr : s₀.wr = [sR (st s₀)]
   st_bl : (sR (st s₀)).Disjoint (blR s₀)
   nowrap : (bp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
+  st_al : (st s₀).toNat % 8 = 0
 
 theorem BPre.of (s₀ : State) (h : Proof.Poly1305.blocksRISCV64.pre s₀) : BPre s₀ :=
-  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2⟩
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩
 
 namespace BPre
 variable {s₀ : State} (hp : BPre s₀)
@@ -158,7 +161,7 @@ theorem advance_ok (s : State) :
 
 theorem body_ok {s₀ : State} (hp : BPre s₀) {i : Nat} (hi : i < nb s₀) {s : State}
     (hL : LInv s₀ i s) :
-    WP isa body s fun s' =>
+    WP isa (body false) s fun s' =>
       (isa.eval (.nonzero .a2) s' = some false ∧ Common s₀ (nb s₀) s') ∨
       (isa.eval (.nonzero .a2) s' = some true ∧ i + 1 < nb s₀ ∧ LInv s₀ (i + 1) s') := by
   have hin : ∀ d : Nat, d + 8 ≤ 16 →
@@ -166,8 +169,8 @@ theorem body_ok {s₀ : State} (hp : BPre s₀) {i : Nat} (hi : i < nb s₀) {s 
     intro d hd
     rw [hL.rd, hL.wr, hL.a3, hp.rd]
     exact ⟨blR s₀, List.mem_append_left _ (List.mem_singleton_self _), hp.blk_contains hi hd⟩
-  have hab := absorb_key_ok s .a3 0 true hL.keys (by decide) (hin 0 (by decide))
-    (hin (0 + 8) (by decide))
+  have hab := absorb_key_ok s .a3 0 true false hL.keys (by decide) (hin 0 (by decide))
+    (hin (0 + 8) (by decide)) (fun h => by cases h)
   refine WP.block_append (WP.mono hab fun s₁ ⟨ha, k₁⟩ => ?_)
   refine WP.mono (advance_ok s₁) fun s₂ ⟨a₁, a₂, k₂⟩ => ?_
   have k := k₁.trans k₂
@@ -208,7 +211,7 @@ theorem epilogue_ok {s₀ : State} (hp : BPre s₀) {s : State} (hc : Common s�
   refine WP.block_append (WP.mono (reduce_ok s) fun s₁ ⟨hr, k₁⟩ => ?_)
   have x0₁ : s₁.gpr .a0 = st s₀ := by rw [k₁.gpr', hc.a0]
   refine WP.mono (storeH_ok s₁ (by
-    rw [k₁.2.2.2.1, hc.wr, hp.wr, x0₁]; exact List.mem_singleton_self _))
+    rw [k₁.2.2.2.1, hc.wr, hp.wr, x0₁]; exact List.mem_singleton_self _) (by rw [x0₁]; exact hp.st_al))
     fun s₂ ⟨m₂, _, _, _, _⟩ => ?_
   intro key msg hrep
   have hA := A0_lt hrep
@@ -233,7 +236,8 @@ theorem blocks_correct {s₀ : State} (hp : BPre s₀) :
   rw [blocks]
   refine WP.seq (Steps.wp_mv fun s₁ u₁ => WP.mono (setup_ok s₁ (by
     rw [u₁.other _ (by decide), u₁.rd, u₁.wr, hp.wr]
-    exact List.mem_append_right _ (List.mem_singleton_self _))) fun s₂ h₂ => ?_)
+    exact List.mem_append_right _ (List.mem_singleton_self _))
+    (by rw [u₁.other _ (by decide)]; exact hp.st_al)) fun s₂ h₂ => ?_)
   obtain ⟨hk, ha, k⟩ := h₂
   have k₁ : Keeps [.a3] s₀ s₁ := ⟨fun r hr => u₁.other r (by simpa using hr), u₁.mem, u₁.rd, u₁.wr,
     u₁.sp⟩
@@ -259,7 +263,7 @@ theorem blocks_correct {s₀ : State} (hp : BPre s₀) :
       simp only [x2₂, beq_eq_false_iff_ne, ne_eq] at h
       exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
     let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv s₀ i s
-    have hstep : ∀ m s, Inv m s → WP isa body s (fun s' =>
+    have hstep : ∀ m s, Inv m s → WP isa (body false) s (fun s' =>
         (isa.eval (.nonzero .a2) s' = some false ∧ Common s₀ (nb s₀) s') ∨
         (isa.eval (.nonzero .a2) s' = some true ∧ ∃ m' < m, Inv m' s')) := by
       rintro m s ⟨i, rfl, hi, hL⟩
@@ -300,6 +304,6 @@ def blocksSat : State where
   wr := [⟨0x1000, 128⟩]
 
 theorem blocks_verified : Verified RISCV64.target blocks Proof.Poly1305.blocksRISCV64 :=
-  ⟨blocks_ok, blocks_ct, ⟨blocksSat, rfl, rfl, Region.disjoint_of_sep (by decide), by decide⟩⟩
+  ⟨blocks_ok, blocks_ct, ⟨blocksSat, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide⟩⟩
 
 end VG.Proof.Poly1305.RISCV64

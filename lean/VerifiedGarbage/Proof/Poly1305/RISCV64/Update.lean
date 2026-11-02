@@ -67,6 +67,7 @@ structure UPre (s₀ : State) : Prop where
   rd : s₀.rd = [dR s₀]
   wr : s₀.wr = [sR (st s₀)]
   st_d : (sR (st s₀)).Disjoint (dR s₀)
+  st_al : (st s₀).toNat % 8 = 0
 
 theorem dl_lt (s₀ : State) : dl s₀ < 2 ^ 64 := (s₀.gpr .a3).isLt
 
@@ -182,7 +183,8 @@ theorem uprologue_ok {s₀ : State} (hp : UPre s₀) :
     WP isa (.block (.logicImm .and Y1 .a1 15 :: setup)) s₀ (Pre1 s₀) := by
   refine wp_andi (by decide) fun s₁ u₁ => WP.mono (setup_ok s₁ (by
     rw [u₁.other _ (by decide), u₁.rd, u₁.wr, hp.wr]
-    exact List.mem_append_right _ (List.mem_singleton_self _))) fun s₂ ⟨hk, ha, k⟩ => ?_
+    exact List.mem_append_right _ (List.mem_singleton_self _))
+    (by rw [u₁.other _ (by decide)]; exact hp.st_al)) fun s₂ ⟨hk, ha, k⟩ => ?_
   have m₁ : s₁.mem = s₀.mem := u₁.mem
   have a0₁ : s₁.gpr .a0 = s₀.gpr .a0 := u₁.other _ (by decide)
   have hR : Rk s₁.mem (s₁.gpr .a0) = Rn s₀ := by rw [m₁, a0₁]
@@ -470,13 +472,26 @@ theorem data_value {s₀ : State} (hp : UPre s₀) {m : Mem} (hf : Frame [wR (st
   rw [hw 0 (by decide), hw (0 + 8) (by decide)]
 
 /-- The block of data after `c` bytes. -/
-abbrev wholeBody : List Instr :=
-  absorb .a2 0 true ++ ([.addi .a2 .a2 16, .addi .a3 .a3 (-16), .shift .srl .d X0 .a3 4] : List Instr)
+abbrev wholeBody (wide : Bool) : List Instr :=
+  absorb .a2 0 true wide ++
+    ([.addi .a2 .a2 16, .addi .a3 .a3 (-16), .shift .srl .d X0 .a3 4] : List Instr)
+
+/-- `x & 7 = 0`: `x` is a multiple of 8. -/
+theorem and7_zero {x : BitVec 64} (h : x &&& BitVec.ofInt 64 7 = 0) : x.toNat % 8 = 0 := by
+  have e := congrArg BitVec.toNat h
+  rwa [BitVec.toNat_and, show (BitVec.ofInt 64 7).toNat = 2 ^ 3 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod] at e
+
+/-- The data after `c + 16` bytes is aligned if it is after `c`. -/
+theorem data_al16 {p : Addr} {c : Nat} (h : (p + BitVec.ofNat 64 c).toNat % 8 = 0) :
+    (p + BitVec.ofNat 64 (c + 16)).toNat % 8 = 0 := by
+  rw [← Offset.add_add]; exact st_al8 h (by decide)
 
 /-- One whole block of data. -/
 theorem whole_step {s₀ : State} (hp : UPre s₀) {c : Nat} {s : State} (h : Cons s₀ c s)
-    (hc : 16 ≤ dl s₀ - c) :
-    WP isa (.block wholeBody) s
+    (hc : 16 ≤ dl s₀ - c) (wide : Bool)
+    (hal : wide = true → (dp s₀ + BitVec.ofNat 64 c).toNat % 8 = 0) :
+    WP isa (.block (wholeBody wide)) s
       fun s' => Cons s₀ (c + 16) s' ∧ s'.gpr X0 = BitVec.ofNat 64 ((dl s₀ - (c + 16)) / 16) := by
   have hdl := dl_lt s₀
   have hin : ∀ d : Nat, d + 8 ≤ 16 →
@@ -484,8 +499,9 @@ theorem whole_step {s₀ : State} (hp : UPre s₀) {c : Nat} {s : State} (h : Co
     intro d hd
     rw [h.a2, Offset.add_add]
     exact hp.data_in h.toUCommon (by omega_using [hc, hd])
-  refine WP.block_append (WP.mono (absorb_key_ok s .a2 0 true h.keys (by decide) (hin 0 (by decide))
-    (hin (0 + 8) (by decide))) fun s₁ ⟨ha, k₁⟩ => ?_)
+  refine WP.block_append (WP.mono (absorb_key_ok s .a2 0 true wide h.keys (by decide) (hin 0 (by decide))
+    (hin (0 + 8) (by decide)) (fun hw => by rw [h.a2, BitVec.add_zero]; exact hal hw))
+    fun s₁ ⟨ha, k₁⟩ => ?_)
   refine wp_addi (imm := 16) (by decide) fun s₂ u₂ => wp_subi (imm := 16) (by decide) fun s₃ u₃ =>
     wp_srl (by decide) fun s₄ u₄ => WP.block_nil ?_
   have ht : Temps s₁ s₄ := ((Temps.upd u₂).trans (Temps.upd u₃)).trans (Temps.upd u₄)
@@ -527,20 +543,21 @@ theorem whole_step {s₀ : State} (hp : UPre s₀) {c : Nat} {s : State} (h : Co
 
 /-- The loop over the whole blocks of data. -/
 theorem whole_loop {s₀ : State} (hp : UPre s₀) {c : Nat} {s : State} (h : Cons s₀ c s)
-    (hc : 16 ≤ dl s₀ - c) :
-    WP isa (.loop (.block wholeBody) (.nonzero X0)) s fun s' =>
+    (hc : 16 ≤ dl s₀ - c) (wide : Bool)
+    (hal : wide = true → (dp s₀ + BitVec.ofNat 64 c).toNat % 8 = 0) :
+    WP isa (wholeLoop wide) s fun s' =>
       ∃ c', Cons s₀ c' s' ∧ dl s₀ - c' < 16 := by
   have hdl := dl_lt s₀
-  refine WP.loop (M := isa) (fun k s => ∃ c, k = dl s₀ - c ∧ Cons s₀ c s ∧ 16 ≤ dl s₀ - c) ?_ _ s
-    ⟨c, rfl, h, hc⟩
-  rintro k s ⟨c, rfl, h, hc⟩
-  refine WP.mono (whole_step hp h hc) fun s' ⟨h', hx⟩ => ?_
+  refine WP.loop (M := isa) (fun k s => ∃ c, k = dl s₀ - c ∧ Cons s₀ c s ∧ 16 ≤ dl s₀ - c ∧
+    (wide = true → (dp s₀ + BitVec.ofNat 64 c).toNat % 8 = 0)) ?_ _ s ⟨c, rfl, h, hc, hal⟩
+  rintro k s ⟨c, rfl, h, hc, hal⟩
+  refine WP.mono (whole_step hp h hc wide hal) fun s' ⟨h', hx⟩ => ?_
   have hev := eval_nonzero_ofNat s' X0 (k := (dl s₀ - (c + 16)) / 16) (by omega_using [hdl]) hx
   by_cases hl : dl s₀ - (c + 16) < 16
   · exact .inl ⟨by rw [hev, decide_eq_false (show ¬ (dl s₀ - (c + 16)) / 16 ≠ 0 by omega_using [hl])],
       c + 16, h', hl⟩
   · exact .inr ⟨by rw [hev, decide_eq_true (show (dl s₀ - (c + 16)) / 16 ≠ 0 by omega_using [hl])],
-      _, by omega_using [hl], c + 16, rfl, h', by omega_using [hl]⟩
+      _, by omega_using [hl], c + 16, rfl, h', by omega_using [hl], fun hw => data_al16 (hal hw)⟩
 
 theorem whole_ok {s₀ : State} (hp : UPre s₀) {s : State}
     (h : (∃ c, Cons s₀ c s) ∨ (Done s₀ s ∧ s.gpr .a3 = 0)) :
@@ -565,7 +582,16 @@ theorem whole_ok {s₀ : State} (hp : UPre s₀) {s : State}
     · simp only [decide_eq_true_eq] at hl
       exact WP.block_nil (.inl ⟨c, hb, hl⟩)
     · simp only [decide_eq_false_iff_not, Nat.not_lt] at hl
-      exact WP.mono (whole_loop hp hb hl) fun s' h' => .inl h'
+      refine WP.seq (wp_andi (by decide) fun s₂ u₂ => WP.block_nil ?_)
+      have hb₂ : Cons s₀ c s₂ := { Temps.ucommon hb.toUCommon (Temps.upd u₂) with
+        c_le := hb.c_le, whole := hb.whole
+        a2 := (u₂.other _ (by decide)).trans hb.a2
+        a3 := (u₂.other _ (by decide)).trans hb.a3, acc := Temps.acc hb.acc (Temps.upd u₂) }
+      refine WP.ite (s₂.gpr T1 == 0) rfl (fun hz => ?_) fun _ =>
+        WP.mono (whole_loop hp hb₂ hl false fun h => by cases h) fun s' h' => .inl h'
+      have hz' := and7_zero (by rw [← u₂.gpr]; exact beq_iff_eq.mp hz)
+      rw [u₁.other _ (by decide), hc.a2] at hz'
+      exact WP.mono (whole_loop hp hb₂ hl true fun _ => hz') fun s' h' => .inl h'
   · have hq : s₁.gpr X0 = 0 := by rw [u₁.gpr, hz]; rfl
     refine WP.ite true (by rw [eval_zero, hq]; rfl) (fun _ => ?_) (fun h => absurd h (by decide))
     exact WP.block_nil (.inr ⟨Temps.done hd ht, ha3.trans hz⟩)
@@ -665,7 +691,8 @@ theorem uepilogue_ok {s₀ : State} (hp : UPre s₀) {s : State} (hd : Done s₀
     WP isa (.block (reduce ++ storeH)) s fun s' => Proof.Poly1305.updateRISCV64.post s₀ s' := by
   refine WP.block_append (WP.mono (reduce_ok s) fun s₁ ⟨hr, k₁⟩ => ?_)
   have x0₁ : s₁.gpr .a0 = st s₀ := by rw [k₁.gpr', hd.a0]
-  refine WP.mono (storeH_ok s₁ (by rw [k₁.2.2.2.1, hd.wr, x0₁, hp.wr]; exact List.mem_singleton_self _))
+  refine WP.mono (storeH_ok s₁ (by rw [k₁.2.2.2.1, hd.wr, x0₁, hp.wr]; exact List.mem_singleton_self _)
+    (by rw [x0₁]; exact hp.st_al))
     fun s₂ ⟨m₂, _, _, _, _⟩ => ?_
   have mem₁ : s₁.mem = s.mem := k₁.2.1
   rw [x0₁, mem₁] at m₂
@@ -709,7 +736,7 @@ theorem update_correct {s₀ : State} (hp : UPre s₀) :
 theorem update_ok (s : State) (hs : Proof.Poly1305.updateRISCV64.pre s) :
     ∃ t s', Exec isa update s t s' ∧ abiPreserved s s' ∧ Proof.Poly1305.updateRISCV64.post s s' := by
   obtain ⟨tr, t, he, hpost, hkeep⟩ :=
-    WP.keep written (update_correct ⟨hs.1, hs.2.1, hs.2.2⟩) (by lit_decide) (by lit_decide)
+    WP.keep written (update_correct ⟨hs.1, hs.2.1, hs.2.2.1, hs.2.2.2⟩) (by lit_decide) (by lit_decide)
   exact ⟨tr, t, he, abiPreserved_of_keep he hkeep (by decide) (by decide), hpost⟩
 
 theorem update_ct : ConstantTime isa Proof.Poly1305.updateRISCV64.pre
@@ -734,6 +761,6 @@ def updateSat : State where
   wr := [⟨0x1000, 128⟩]
 
 theorem update_verified : Verified RISCV64.target update Proof.Poly1305.updateRISCV64 :=
-  ⟨update_ok, update_ct, ⟨updateSat, rfl, rfl, Region.disjoint_of_sep (by decide)⟩⟩
+  ⟨update_ok, update_ct, ⟨updateSat, rfl, rfl, Region.disjoint_of_sep (by decide), by decide⟩⟩
 
 end VG.Proof.Poly1305.RISCV64

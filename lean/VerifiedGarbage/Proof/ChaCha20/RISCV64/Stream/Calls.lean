@@ -46,8 +46,15 @@ theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   intro i hi
   exact hf.bytes (R := ⟨p, n⟩) hd hn (List.mem_range.mp hi)
 
+/-- An 8-byte aligned pointer plus a multiple of 4 is 4-byte aligned. -/
+theorem al4_of_al8 {p : Addr} (h : p.toNat % 8 = 0) {d : Nat} (hd : d % 4 = 0) :
+    (p + BitVec.ofNat 64 d).toNat % 4 = 0 := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+  have := p.isLt
+  omega
+
 theorem block_call {s : State} {S B : Addr} (ha0 : s.gpr .a0 = S) (ha1 : s.gpr .a1 = B)
-    (hdj : (⟨B, 256⟩ : Region).Disjoint ⟨S, 64⟩)
+    (hdj : (⟨B, 256⟩ : Region).Disjoint ⟨S, 64⟩) (hSa : S.toNat % 4 = 0) (hBa : B.toNat % 4 = 0)
     (hc : Covers ([⟨S, 64⟩] ++ [⟨B, 256⟩]) (s.rd ++ s.wr)) (hw : Covers [⟨B, 256⟩] s.wr)
     {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨B, 256⟩] s s' → stateAt s'.mem B = Spec.ChaCha20.block (stateAt s.mem S) → Q s') :
@@ -57,7 +64,7 @@ theorem block_call {s : State} {S B : Addr} (ha0 : s.gpr .a0 = S) (ha1 : s.gpr .
   · simp only [Proof.ChaCha20.blockRISCV64, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs),
       callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs), ha0, ha1]
-    exact ⟨trivial, trivial, hdj⟩
+    exact ⟨trivial, trivial, hdj, hSa, hBa⟩
   · intro s' hrd hwr hsp hf hcs _ hpost
     refine hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ ?_
     simpa only [Proof.ChaCha20.blockRISCV64, State.withRegions_gpr, State.withRegions_mem,
@@ -71,6 +78,7 @@ theorem xor_call {s : State} {S D B : Addr} {n : Nat}
     (ha2 : s.gpr .a2 = BitVec.ofNat 64 n) (ha3 : s.gpr .a3 = B) (hn : n < 2 ^ 64)
     (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩) (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩)
     (hDB : (⟨D, n⟩ : Region).Disjoint ⟨B, 320⟩) (hwrap : D.toNat + n ≤ 2 ^ 64)
+    (hSa : S.toNat % 4 = 0) (hBa : B.toNat % 4 = 0)
     (hc : Covers ([] ++ [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩] s.wr)
     {Q : State → Prop}
@@ -86,7 +94,7 @@ theorem xor_call {s : State} {S D B : Addr} {n : Nat}
       State.withRegions_wr, callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs),
       callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs),
       callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs), ha0, ha1, ha2, ha3, hn']
-    exact ⟨trivial, trivial, hSD, hSB, hDB, hwrap⟩
+    exact ⟨trivial, trivial, hSD, hSB, hDB, hwrap, hSa, hBa⟩
   · intro s' hrd hwr hsp hf hcs _ hpost
     refine hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ ?_
     simpa only [Proof.ChaCha20.xorRISCV64, State.withRegions_gpr, State.withRegions_mem,

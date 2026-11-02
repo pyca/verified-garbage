@@ -37,7 +37,7 @@ def blocksRISCV64 : Contract RISCV64.isa where
     let state : Region := ⟨s.gpr .a0, 128⟩
     let blocks : Region := ⟨s.gpr .a1, 16 * (s.gpr .a2).toNat⟩
     s.rd = [blocks] ∧ s.wr = [state] ∧ state.Disjoint blocks ∧
-      (s.gpr .a1).toNat + 16 * (s.gpr .a2).toNat ≤ 2 ^ 64
+      (s.gpr .a1).toNat + 16 * (s.gpr .a2).toNat ≤ 2 ^ 64 ∧ (s.gpr .a0).toNat % 8 = 0
   post s s' := ∀ key msg, Repr s.mem (s.gpr .a0) key msg →
     Repr s'.mem (s.gpr .a0) key (msg ++ bytesAt s.mem (s.gpr .a1) (16 * (s.gpr .a2).toNat))
   pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
@@ -50,7 +50,7 @@ def updateRISCV64 : Contract RISCV64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, 128⟩
     let data : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
-    s.rd = [data] ∧ s.wr = [state] ∧ state.Disjoint data
+    s.rd = [data] ∧ s.wr = [state] ∧ state.Disjoint data ∧ (s.gpr .a0).toNat % 8 = 0
   post s s' := ∀ key msg, Buffered s.mem (s.gpr .a0) key msg →
     (s.gpr .a1).toNat % 16 = msg.length % 16 →
     Buffered s'.mem (s.gpr .a0) key (msg ++ bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
@@ -64,7 +64,7 @@ def finalizeRISCV64 : Contract RISCV64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, 128⟩
     let out : Region := ⟨s.gpr .a2, 16⟩
-    s.rd = [] ∧ s.wr = [state, out] ∧ state.Disjoint out
+    s.rd = [] ∧ s.wr = [state, out] ∧ state.Disjoint out ∧ (s.gpr .a0).toNat % 8 = 0
   post s s' := ∀ key msg, Buffered s.mem (s.gpr .a0) key msg →
     (s.gpr .a1).toNat % 16 = msg.length % 16 → bytesAt s'.mem (s.gpr .a2) 16 = mac key msg
   pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
@@ -79,7 +79,7 @@ def finalizeScratchRISCV64 : Contract RISCV64.isa where
     let out : Region := ⟨s.gpr .a2, 16⟩
     let scratch : Region := ⟨s.gpr .a3, 128⟩
     s.rd = [] ∧ s.wr = [state, out, scratch] ∧ state.Disjoint out ∧ state.Disjoint scratch ∧
-      out.Disjoint scratch
+      out.Disjoint scratch ∧ (s.gpr .a0).toNat % 8 = 0
   post s s' := finalizeRISCV64.post s s'
   pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
     s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.sp = s₂.sp
