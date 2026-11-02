@@ -93,7 +93,8 @@ theorem pointOut_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gp
     fun hi w hw => by simp only [List.mem_singleton] at hw; subst hw; left; rw [sl_eq]; omega
   have fit : ∀ {i}, i < 44 → p256.sl i + 8 * 4 ≤ 2 ^ 64 := fun hi => by rw [sl_eq]; omega
   -- `04` under the mask.
-  rw [pointOut, retCode, restoreCode, show p256.n = 4 from rfl, show 1 + 8 * 4 = 33 from rfl]
+  rw [pointOut, retCode, restoreCode, show p256.C.len = 8 * p256.n from rfl, storeLen_mul, storeLen_mul,
+    show p256.n = 4 from rfl, show 1 + 8 * 4 = 33 from rfl]
   simp only [List.append_assoc]
   rw [List.cons_append, List.cons_append, List.cons_append, List.nil_append]
   refine wp_li (imm := 4) (by decide) fun s₄ u₄ => wp_and fun s₅ u₅ => ?_
@@ -118,7 +119,7 @@ theorem pointOut_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gp
       have := sp' (off := 0) (k := 1) (by decide) i (by simpa using hi); simpa using this
   -- `x` and `y` under the mask.
   refine WP.block_append (WP.mono (storeNum_ok _ 4 hw₆ a₆ (q := .s2) (a := p256.sl xo) (off := 1) (by decide) (sl8 xo)
-    (sl32 hxo) (by decide)
+    (Nat.le_trans (sl32 hxo) (by decide)) (by decide)
     (fun i hi => by rw [q₆, wr₆]; exact hout (1 + i) (by omega))
     (fun i hi => by rw [q₆]; exact out_of_disj hdis hfit (by omega))) fun s₇ ⟨r₇, m₇⟩ => ?_)
   have hw₇ := hw₆.of_rest r₇
@@ -130,7 +131,7 @@ theorem pointOut_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gp
     rw [m₇]; exact writeBytes_unch _ fun i hi => sp' (off := 1) (k := 32) (by decide) i
       (by simpa [VG.Proof.Weierstrass.length_toBytes] using hi)
   refine WP.block_append (WP.mono (storeNum_ok _ 4 hw₇ a₇ (q := .s2) (a := p256.sl yo) (off := 33) (by decide) (sl8 yo)
-    (sl32 hyo) (by decide)
+    (Nat.le_trans (sl32 hyo) (by decide)) (by decide)
     (fun i hi => by rw [q₇, r₇.wr, wr₆]; exact hout (33 + i) (by omega))
     (fun i hi => by rw [q₇]; exact out_of_disj hdis hfit (by omega))) fun s₈ ⟨r₈, m₈⟩ => ?_)
   have hw₈ := hw₇.of_rest r₈
@@ -274,7 +275,7 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRVC.pre s) :
   obtain ⟨⟨hrd, hwr, hod, hdd, hfo, hfd, hfs, hal⟩, hk⟩ := hs
   simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hod hdd hfo hfd hfs hal
   have hp0 : 0 < W.p := by decide
-  rw [publicKeyP256, Cfg.publicKeyFn, show p256.n = 4 from rfl]
+  rw [publicKeyP256, Cfg.publicKeyFn, show p256.C.len = 8 * p256.n from rfl, loadLen_mul, show p256.n = 4 from rfl]
   simp only [List.append_assoc]
   generalize hb : s.gpr .a2 = base at hwr hod hdd hfs hal
   have hwr' : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; simp

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Window
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Gen4
 public import VerifiedGarbage.Spec.P192
 
@@ -9,8 +10,8 @@ public import VerifiedGarbage.Spec.P192
 P-192's `p` and `n` are below `2¹⁹²`, and its numbers are kept in four words
 whose top one is zero, so that the functions modulo `p` and `n` are those of
 any four-word modulus (`Impl/Weierstrass/RISCV64/Gen4.lean`), and
-`vg_p192_mul` is the ladder of P-224, P-256 and P-384, over the four words
-of the scalar.
+`vg_p192_mul` is P-256's by four-bit windows and Jacobian doublings
+(`Impl/Ecdsa/RISCV64/Window.lean`).
 -/
 
 @[expose] public section
@@ -46,7 +47,7 @@ def p192Order : Weierstrass.RISCV64.Field := ⟨p192n4, p192MulN, p192AddN, p192
 /-- P-192 as the code has it. -/
 def p192 : Cfg := { n := 4, C := Spec.P192.curve, FP := p192Field }
 
-/-- `vg_p192_mul`. -/
-def mulP192 : Prog isa := p192.mulFn
+/-- `vg_p192_mul`, by windows. -/
+def mulP192 : Prog isa := Window.Cfg.mulFn p192
 
 end VG.Impl.Ecdsa.RISCV64

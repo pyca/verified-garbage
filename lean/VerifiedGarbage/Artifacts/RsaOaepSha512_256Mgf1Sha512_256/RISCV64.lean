@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Verified
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # RSAES-OAEP with SHA-512/256 and MGF1 with SHA-512/256 on RISC-V: encryption -/
+/-! # RSAES-OAEP with SHA-512/256 and MGF1 with SHA-512/256 on RISC-V: encryption and decryption -/
 
 @[expose] public section
 
@@ -15,6 +16,12 @@ def artifacts : List Artifact := [
       Proof.Hmac.Stream.RISCV64.Sha512_256.hash Proof.Hmac.Stream.RISCV64.Sha512_256.hash
     stack := 336
     verified := Proof.RsaOaep.RISCV64.link_verified Proof.RsaOaep.RISCV64.sha512_256L
+      Proof.RsaOaep.RISCV64.sha512_256L },
+  (Spec.RsaOaep.decryptApi Spec.Mgf1.sha512_256 Spec.Mgf1.sha512_256).artifact RISCV64.target {
+    code := Impl.RsaOaep.RISCV64.Dec.decrypt
+      Proof.Hmac.Stream.RISCV64.Sha512_256.hash Proof.Hmac.Stream.RISCV64.Sha512_256.hash
+    stack := 3472
+    verified := Proof.RsaOaep.RISCV64.Dec.dec_link_verified Proof.RsaOaep.RISCV64.sha512_256L
       Proof.RsaOaep.RISCV64.sha512_256L }]
 
 end VG.Artifacts.RsaOaepSha512_256Mgf1Sha512_256.RISCV64

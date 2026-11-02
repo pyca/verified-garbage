@@ -79,11 +79,11 @@ def sameMask (a : Nat) : List Instr :=
 
 /-- `vg_ec_<curve>_compress_public_key(out = a0, public = a1, scratch = a2)`. -/
 def compressFn (checkName : String) (checkCode : Prog isa) : Prog isa :=
-  .seq (.block (saveCode .a2 ++ loadNum c.n (c.sl CX) .a1 1 ++ loadNum c.n (c.sl CY) .a1 (1 + 8 * c.n) ++
+  .seq (.block (saveCode .a2 ++ loadLen c.C.len (c.sl CX) .a1 1 ++ loadLen c.C.len (c.sl CY) .a1 (1 + c.C.len) ++
     leadMask .a1 ++ sdAt .a7 wb (c.sl FLAG) ++ constCode c)) <|
   .seq (wsCall checkName checkCode) <|
-  .block (ldAt .a7 wb (c.sl FLAG) ++ [.load .d .t0 wb (c.sl CY), .logicImm .and .t0 .t0 1, .addi .t0 .t0 2,
-      .logic .and .t0 .t0 .a7, .store .b .t0 .s2 0] ++ storeNum c.n (c.sl CX) .s2 1 ++ retCode c)
+  .block (ldAt .a7 wb (c.sl FLAG) ++ ldAt .t0 wb (c.sl CY) ++ [.logicImm .and .t0 .t0 1, .addi .t0 .t0 2,
+      .logic .and .t0 .t0 .a7, .store .b .t0 .s2 0] ++ storeLen c.C.len (c.sl CX) .s2 1 ++ retCode c)
 
 /-- The power `rhs^((p+1)/4)`, into `ACC`. -/
 def sqrtP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RHS, c.sl ONEP, c.sl EXPS, 64 * c.n⟩
@@ -101,7 +101,7 @@ def rootOps : List FOp :=
 
 /-- `vg_ec_<curve>_decompress_public_key(out = a0, public = a1, scratch = a2)`. -/
 def decompressFn : Prog isa :=
-  .seq (.block (saveCode .a2 ++ loadNum c.n (c.sl CX) .a1 1 ++ parCode c .a1 ++ tagMask .a1 ++
+  .seq (.block (saveCode .a2 ++ loadLen c.C.len (c.sl CX) .a1 1 ++ parCode c .a1 ++ tagMask .a1 ++
     sdAt .a7 wb (c.sl FLAG) ++ constCode c ++ setConst c.n (c.sl EXPS) ((c.C.p + 1) / 4) ++
     ltMask c.n (c.sl CX) (c.sl MP) ++ andFlag c)) <|
   .seq (fprog c.FP (rhsOps c)) <|

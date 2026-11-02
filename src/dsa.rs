@@ -21,25 +21,38 @@
         target_arch = "x86_64",
         target_arch = "aarch64",
         target_arch = "arm",
-        all(target_arch = "powerpc64", target_endian = "little")
+        all(target_arch = "powerpc64", target_endian = "little"),
+        target_arch = "riscv64"
     ),
     feature = "alloc"
 ))]
 
 use alloc::{vec, vec::Vec};
 use core::fmt;
-#[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
+#[cfg(any(
+    target_arch = "aarch64",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+))]
 use core::sync::atomic::{AtomicU8, Ordering};
 
 use crate::arch::dsa::vg_dsa_sign_random;
-#[cfg(not(any(target_arch = "aarch64", target_arch = "powerpc64")))]
+#[cfg(not(any(
+    target_arch = "aarch64",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+)))]
 use crate::arch::dsa::vg_dsa_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
     VG_DSA_GENERATE_KEY_ADX_FEATURES, VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES,
     vg_dsa_sign_random_adx, vg_dsa_verify_adx,
 };
-#[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
+#[cfg(any(
+    target_arch = "aarch64",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+))]
 use crate::arch::dsa::{vg_dsa_validate_public_key, vg_dsa_verify_prevalidated};
 use crate::cpu::detected;
 use crate::zeroize::{Int, zeroize};
@@ -100,7 +113,11 @@ impl core::error::Error for Error {}
 /// domain and public value. Domain primality is the caller's responsibility.
 #[derive(Debug)]
 #[cfg_attr(
-    not(any(target_arch = "aarch64", target_arch = "powerpc64")),
+    not(any(
+        target_arch = "aarch64",
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
+    )),
     derive(Clone)
 )]
 pub struct PublicKey {
@@ -109,11 +126,19 @@ pub struct PublicKey {
     q_len: usize,
     backend: Backend,
     // 0 = unchecked, 1 = valid, 2 = invalid. The owned key bytes never change.
-    #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
+    #[cfg(any(
+        target_arch = "aarch64",
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
+    ))]
     validated: AtomicU8,
 }
 
-#[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
+#[cfg(any(
+    target_arch = "aarch64",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+))]
 impl Clone for PublicKey {
     fn clone(&self) -> Self {
         Self {
@@ -121,7 +146,11 @@ impl Clone for PublicKey {
             p_len: self.p_len,
             q_len: self.q_len,
             backend: self.backend,
-            #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
+            #[cfg(any(
+                target_arch = "aarch64",
+                target_arch = "powerpc64",
+                target_arch = "riscv64"
+            ))]
             validated: AtomicU8::new(self.validated.load(Ordering::Relaxed)),
         }
     }
@@ -148,7 +177,11 @@ impl PublicKey {
             p_len: p.len(),
             q_len: q.len(),
             backend: Backend::select(detected()),
-            #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
+            #[cfg(any(
+                target_arch = "aarch64",
+                target_arch = "powerpc64",
+                target_arch = "riscv64"
+            ))]
             validated: AtomicU8::new(0),
         })
     }
@@ -161,14 +194,26 @@ impl PublicKey {
         if signature.len() != 2 * self.q_len {
             return false;
         }
-        #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
+        #[cfg(any(
+            target_arch = "aarch64",
+            target_arch = "powerpc64",
+            target_arch = "riscv64"
+        ))]
         let validation = self.validated.load(Ordering::Relaxed);
-        #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
+        #[cfg(any(
+            target_arch = "aarch64",
+            target_arch = "powerpc64",
+            target_arch = "riscv64"
+        ))]
         if validation == 2 {
             return false;
         }
         let mut scratch = Secret(vec![0u64; 16 * self.p_len]);
-        #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
+        #[cfg(any(
+            target_arch = "aarch64",
+            target_arch = "powerpc64",
+            target_arch = "riscv64"
+        ))]
         if validation == 0 {
             // SAFETY: import establishes widths, the key owns its immutable
             // bytes, and scratch is a separate allocation of 16*p_len words.
@@ -214,11 +259,19 @@ impl PublicKey {
             };
         }
         let result = match self.backend {
-            #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
+            #[cfg(any(
+                target_arch = "aarch64",
+                target_arch = "powerpc64",
+                target_arch = "riscv64"
+            ))]
             // SAFETY: successful validation above, or a cached result for the
             // exact same immutable owned bytes, establishes the new precondition.
             Backend::Baseline => verify!(vg_dsa_verify_prevalidated),
-            #[cfg(not(any(target_arch = "aarch64", target_arch = "powerpc64")))]
+            #[cfg(not(any(
+                target_arch = "aarch64",
+                target_arch = "powerpc64",
+                target_arch = "riscv64"
+            )))]
             Backend::Baseline => verify!(vg_dsa_verify),
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => verify!(vg_dsa_verify_adx),
@@ -348,6 +401,9 @@ impl PrivateKey {
 mod keygen;
 mod parameters;
 
+// Parameter generation is not yet implemented on RISC-V (`parameters.rs`
+// states the architectures it supports).
+#[cfg(not(target_arch = "riscv64"))]
 pub use parameters::Parameters;
 
 #[cfg(test)]

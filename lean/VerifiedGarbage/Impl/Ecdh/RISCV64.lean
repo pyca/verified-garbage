@@ -32,8 +32,9 @@ field functions, on their pointers: the function is constant time.
    base to `s0` and `s3` and `out` to `s2` (after each call, `s0` is set
    from `s3` again: the callees restore `s0` from memory, which the taint
    analysis takes for a secret, and write neither `s2` nor `s3`);
-2. `d` read big-endian into `K`'s slot (`loadNum`: a doubleword at a time,
-   a byte at a time, as the arguments' alignment is not known), the
+2. `d` read big-endian into `K`'s slot (`loadLen`: a doubleword at a time,
+   a byte at a time, as the arguments' alignment is not known, after the
+   bytes of a top word of fewer than eight), the
    constants stored (`setConst`, from immediates);
 3. for ECDH, the peer's `x` and `y` read into the check's slots, the flag set
    to the mask of the peer's first byte being `04`, and the check of the
@@ -43,7 +44,7 @@ field functions, on their pointers: the function is constant time.
    call of `vg_<curve>_mul`, `Z^(p-2)` by `chainPow`, `x = X Z^(p-2)` (and `y`)
    out of Montgomery's form, and the mask of `Z ≠ 0` into the flag;
 5. `x` (and `y`) stored big-endian to `out` under the flag's mask
-   (`storeNum`), the flag's low bit returned, the registers restored.
+   (`storeLen`), the flag's low bit returned, the registers restored.
 
 Everything is computed whatever the flag: only the pointers may affect
 timing.
@@ -76,8 +77,8 @@ def TB := 46
 /-- Word `j` of `[a] - [m]` with the borrow in `t5` (into and out of it),
 through `t3`, `t4`, `t6` and `a4`. -/
 def ltWord (a m : Nat) : List Instr :=
-  [.load .d .t3 wb a, .load .d .t4 wb m,
-    .sltu .t6 .t3 .t4, .sub .t3 .t3 .t4, .sltu .a4 .t3 .t5, .sub .t3 .t3 .t5, .add .t5 .t6 .a4]
+  ldAt .t3 wb a ++ ldAt .t4 wb m ++
+    [.sltu .t6 .t3 .t4, .sub .t3 .t3 .t4, .sltu .a4 .t3 .t5, .sub .t3 .t3 .t5, .add .t5 .t6 .a4]
 
 /-- The words of `[a] - [m]`, `k` of them, the borrow in `t5`. -/
 def ltWords : Nat → Nat → Nat → List Instr
@@ -138,21 +139,45 @@ doubleword at a time through `t0` and `t1`, from its most significant. -/
 def loadNum : Nat → Nat → Reg → Nat → List Instr
   | 0, _, _, _ => []
   | k + 1, o, p, off =>
-    Impl.Words.RISCV64.loadBE64 .t0 .t1 p off ++ [.store .d .t0 wb (o + 8 * k)] ++ loadNum k o p (off + 8)
+    Impl.Words.RISCV64.loadBE64 .t0 .t1 p off ++ sdAt .t0 wb (o + 8 * k) ++ loadNum k o p (off + 8)
 
 /-- The `n`-word number at `a` under the mask `a7`, to `q + off` big-endian,
 through `t0` and `t1`, from its most significant word. -/
 def storeNum : Nat → Nat → Reg → Nat → List Instr
   | 0, _, _, _ => []
   | k + 1, a, q, off =>
-    [.load .d .t0 wb (a + 8 * k), .logic .and .t0 .t0 .a7] ++ Impl.Words.RISCV64.storeBE 8 .t0 .t1 q off ++
+    ldAt .t0 wb (a + 8 * k) ++ [.logic .and .t0 .t0 .a7] ++ Impl.Words.RISCV64.storeBE 8 .t0 .t1 q off ++
       storeNum k a q (off + 8)
+
+/-- `t0 := 256^k t0 +` the `k`-byte big-endian number at `p + off`, a byte
+at a time through `t1`. -/
+def loadBytesBE : Nat → Reg → Nat → List Instr
+  | 0, _, _ => []
+  | k + 1, p, off =>
+    [.shift .sll .d .t0 .t0 8, .load .b .t1 p off, .logic .or .t0 .t0 .t1] ++ loadBytesBE k p (off + 1)
+
+/-- `[o] = ` the `len`-byte big-endian number at `p + off`, in `⌈len / 8⌉`
+words: the `len % 8` bytes of its top word, if any, a byte at a time
+(`loadBytesBE`), then its whole words (`loadNum`). -/
+def loadLen (len o : Nat) (p : Reg) (off : Nat) : List Instr :=
+  (if len % 8 = 0 then [] else
+    [.li .t0 0] ++ loadBytesBE (len % 8) p off ++ sdAt .t0 wb (o + 8 * (len / 8))) ++
+  loadNum (len / 8) o p (off + len % 8)
+
+/-- The `⌈len / 8⌉`-word number at `a` under the mask `a7`, to `q + off` in
+`len` bytes big-endian: the `len % 8` low bytes of its top word, if any,
+then its whole words (`storeNum`). -/
+def storeLen (len a : Nat) (q : Reg) (off : Nat) : List Instr :=
+  (if len % 8 = 0 then [] else
+    ldAt .t0 wb (a + 8 * (len / 8)) ++ [.logic .and .t0 .t0 .a7] ++
+      Impl.Words.RISCV64.storeBE (len % 8) .t0 .t1 q off) ++
+  storeNum (len / 8) a q (off + len % 8)
 
 /-- `[o] = x mod 2^(64 n)`, `n` words, from immediates through `t0` and `t1`. -/
 def setConst : Nat → Nat → Nat → List Instr
   | 0, _, _ => []
   | k + 1, o, x =>
-    Impl.Words.RISCV64.li64 .t0 .t1 (BitVec.ofNat 64 x) ++ [.store .d .t0 wb o] ++ setConst k (o + 8) (x >>> 64)
+    Impl.Words.RISCV64.li64 .t0 .t1 (BitVec.ofNat 64 x) ++ sdAt .t0 wb o ++ setConst k (o + 8) (x >>> 64)
 
 /-- The mask `a7` of the byte at `[q]` being `04`, through `t0`: all ones iff
 `byte ^ 4 = 0`, the top bit of `(byte ^ 4) - 1`, negated. -/
@@ -234,21 +259,21 @@ def retCode : List Instr := ldAt .a0 wb (c.sl FLAG) ++ [.logicImm .and .a0 .a0 1
 slots `xo` and `yo`, the flag's low bit returned and the registers
 restored. -/
 def pointOut (xo yo : Nat) : List Instr :=
-  [.li .t0 4, .logic .and .t0 .t0 .a7, .store .b .t0 .s2 0] ++ storeNum c.n (c.sl xo) .s2 1 ++
-    storeNum c.n (c.sl yo) .s2 (1 + 8 * c.n) ++ retCode c
+  [.li .t0 4, .logic .and .t0 .t0 .a7, .store .b .t0 .s2 0] ++ storeLen c.C.len (c.sl xo) .s2 1 ++
+    storeLen c.C.len (c.sl yo) .s2 (1 + c.C.len) ++ retCode c
 
 /-- `vg_ecdh_<curve>(out = a0, d = a1, peer = a2, scratch = a3)`. -/
 def ecdhFn (checkName mulName : String) (checkCode mulCode : Prog isa) : Prog isa :=
-  .seq (.block (saveCode .a3 ++ loadNum c.n (c.sl K) .a1 0 ++ loadNum c.n (c.sl CX) .a2 1 ++
-    loadNum c.n (c.sl CY) .a2 (1 + 8 * c.n) ++ leadMask .a2 ++ sdAt .a7 wb (c.sl FLAG) ++ constCode c)) <|
+  .seq (.block (saveCode .a3 ++ loadLen c.C.len (c.sl K) .a1 0 ++ loadLen c.C.len (c.sl CX) .a2 1 ++
+    loadLen c.C.len (c.sl CY) .a2 (1 + c.C.len) ++ leadMask .a2 ++ sdAt .a7 wb (c.sl FLAG) ++ constCode c)) <|
   .seq (wsCall checkName checkCode) <|
   .seq (.block (copy c.n (c.sl RX) (c.sl CPX) ++ copy c.n (c.sl RY) (c.sl CPY))) <|
   .seq (tail c mulName mulCode) <|
-  .block (zCode c ++ storeNum c.n (c.sl XO) .s2 0 ++ retCode c)
+  .block (zCode c ++ storeLen c.C.len (c.sl XO) .s2 0 ++ retCode c)
 
 /-- `vg_ec_<curve>_public_key(out = a0, d = a1, scratch = a2)`. -/
 def publicKeyFn (mulName : String) (mulCode : Prog isa) : Prog isa :=
-  .seq (.block (saveCode .a2 ++ loadNum c.n (c.sl K) .a1 0 ++
+  .seq (.block (saveCode .a2 ++ loadLen c.C.len (c.sl K) .a1 0 ++
     [.li .t0 0, .addi .t0 .t0 (-1)] ++ sdAt .t0 wb (c.sl FLAG) ++ constCode c ++
     copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY))) <|
   .seq (tail c mulName mulCode) <|

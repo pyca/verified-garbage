@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.WindowA
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Gen4
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Secp256k1Field
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Secp256k1Order
@@ -28,7 +30,8 @@ def secp256k1Order : Weierstrass.RISCV64.Field :=
 complete addition for any `a` (`am3 := false`). -/
 def secp256k1 : Cfg := { n := 4, C := Spec.Secp256k1.curve, FP := secp256k1Field, am3 := false }
 
-/-- `vg_secp256k1_mul`. -/
-def mulSecp256k1 : Prog isa := secp256k1.mulFn
+/-- `vg_secp256k1_mul`, by four-bit windows with the Jacobian doubling for `a = 0`
+(`Impl/Ecdsa/RISCV64/WindowA.lean`). -/
+def mulSecp256k1 : Prog isa := WindowA.Cfg.mulFn secp256k1 Impl.Weierstrass.dblJ0
 
 end VG.Impl.Ecdsa.RISCV64

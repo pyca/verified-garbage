@@ -81,8 +81,8 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P224.curve) : Kit where
   len := rfl
   nbits := by decide
   two := by decide
-  nw4 := .inl rfl
-  Qw := .inr ⟨rfl, rfl⟩
+  nw9 := ⟨by decide, by decide⟩
+  Qw := .inr (.inl ⟨rfl, rfl⟩)
   coreC := Impl.Ecdsa.RISCV64.P224.signP224
   K := []
   core_call h _ hQ := core_call hL h hQ

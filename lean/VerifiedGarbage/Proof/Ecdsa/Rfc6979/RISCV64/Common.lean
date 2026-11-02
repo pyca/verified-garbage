@@ -175,8 +175,8 @@ structure Kit where
   len : E.curve.len = Q
   nbits : Spec.Ecdsa.nBits E.curve = 8 * Q
   two : 2 ^ (8 * Q) < 2 * E.curve.n
-  nw4 : nw = 4 ∨ nw = 6
-  Qw : Q = 8 * nw ∨ (nw = 4 ∧ Q = 28)
+  nw9 : 4 ≤ nw ∧ nw ≤ 9
+  Qw : Q = 8 * nw ∨ (nw = 4 ∧ Q = 28) ∨ (nw = 4 ∧ Q = 24)
   coreC : Prog isa
   K : List (String × List (BitVec 64))
   core_call : ∀ {nm : String} {s : State} {o d g k w : Addr}, CoreArgs Q K s o d g k w →
@@ -204,7 +204,7 @@ structure Rfc where
   hnw : c.nw = kit.nw
   hQ : c.Q = kit.Q
   hDQ : kit.Q ≤ c.H.D
-  hD48 : c.H.D ≤ 48
+  hD64 : c.H.D ≤ 64
   hS : c.H.S ≤ 192
   hct : c.tries = I.tries
   hT : 1 ≤ c.tries
@@ -299,20 +299,28 @@ structure Sz (P : Rfc) : Prop where
   B : P.c.H.B = 64 ∨ P.c.H.B = 128
   S : P.c.H.S = P.c.H.N + P.c.H.B
   S192 : P.c.H.S ≤ 192
-  D : P.Q ≤ P.c.H.D ∧ P.c.H.D ≤ 48
-  Q : (P.Q = 28 ∨ P.Q = 32 ∨ P.Q = 48) ∧ P.Q ≤ 48 ∧ P.c.Q = P.Q ∧ P.c.frB = 192 + 8 * P.kit.nw ∧
-    P.Q ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ P.Q + 4 ∧ (8 * P.kit.nw = 32 ∨ 8 * P.kit.nw = 48)
+  D : P.Q ≤ P.c.H.D ∧ P.c.H.D ≤ 64
+  Q : 24 ≤ P.Q ∧ P.Q ≤ 72 ∧ P.c.Q = P.Q ∧
+    (P.c.fH + 8 * P.kit.nw ≤ P.c.frB ∧ P.c.frB ≤ P.c.fH + 8 * P.kit.nw + 15 ∧ P.c.frB % 16 = 0) ∧
+    P.Q ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ P.Q + 8 ∧ (32 ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ 72)
+  H : 128 + P.c.H.D + 1 ≤ P.c.fH ∧ 192 ≤ P.c.fH ∧ P.c.fH ≤ 208 ∧ P.c.fH % 8 = 0
   HF : P.c.H.F ≤ 1024
   X : P.c.H.ibytes + P.c.H.F ≤ P.X ∧ P.c.H.fbytes + P.c.H.F ≤ P.X ∧ P.c.H.F ≤ P.X ∧ P.X ≤ 4096
 
 theorem sizes (P : Rfc) : Sz P := by
   have hl := P.hH.lay
   have hB := P.hH.hB64
-  have := P.kit.nw4
+  have := P.kit.nw9
   have := P.kit.Qw
-  refine ⟨P.hH.hN, hB, rfl, P.hS, ⟨P.hDQ, P.hD48⟩, ⟨by simp only [Rfc.Q]; omega, by simp only [Rfc.Q]; omega,
-    by simp only [Rfc.Q, P.hQ], by simp only [Cfg.frB, fH, P.hnw], by simp only [Rfc.Q]; omega,
-    by simp only [Rfc.Q]; omega, by omega⟩, P.hH.hF, ?_⟩
+  have hD := P.hD64
+  have hDQ := P.hDQ
+  have hnw := P.hnw
+  have hfH : (P.c.fH = 192 ∧ P.c.H.D < 64) ∨ (P.c.fH = 208 ∧ ¬ P.c.H.D < 64) := by
+    unfold Cfg.fH; split <;> simp_all
+  refine ⟨P.hH.hN, hB, rfl, P.hS, ⟨hDQ, hD⟩, ⟨by simp only [Rfc.Q]; omega, by simp only [Rfc.Q]; omega,
+    by simp only [Rfc.Q, P.hQ], ?_, by simp only [Rfc.Q]; omega,
+    by simp only [Rfc.Q]; omega, by omega⟩, by omega, P.hH.hF, ?_⟩
+  · simp only [Cfg.frB, hnw]; omega
   have := hl.ibytes; have := hl.fbytes; have := P.hH.hF
   simp only [Rfc.X]
   omega
@@ -344,11 +352,11 @@ theorem scr_wr {s : State} (hwr : s.wr = s₀.wr) : scrR s₀ ∈ s.wr := by rw 
 
 theorem in_fr {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ P.c.frB) :
     InRegions s.wr (sA s₀ o) n :=
-  ⟨_, fr_wr hp hwr, Offset.contains_base _ h (by have := (sizes P).Q; omega)⟩
+  ⟨_, fr_wr hp hwr, Offset.contains_base _ h (by have := (sizes P).Q; have := (sizes P).H; omega)⟩
 
 theorem in_fr' {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ P.c.frB) :
     InRegions (s.rd ++ s.wr) (sA s₀ o) n :=
-  ⟨_, List.mem_append_right _ (fr_wr hp hwr), Offset.contains_base _ h (by have := (sizes P).Q; omega)⟩
+  ⟨_, List.mem_append_right _ (fr_wr hp hwr), Offset.contains_base _ h (by have := (sizes P).Q; have := (sizes P).H; omega)⟩
 
 /-- The frame is apart from the stack below it. -/
 theorem f_s : (frR P s₀).Disjoint (stk P s₀) :=
@@ -423,9 +431,9 @@ def Wk (P : Rfc) (s₀ : State) (r : Region) : Prop :=
 
 theorem Wk.ok (hp : Pre P s₀) {r : Region} (h : Wk P s₀ r) :
     Region.Disjoint (svR s₀) r ∧ ∃ r' ∈ wrs P s₀, Region.Sub r r' := by
-  have sv : Region.Sub (svR s₀) (frR P s₀) := part_sub (by have := (sizes P).Q; omega)
+  have sv : Region.Sub (svR s₀) (frR P s₀) := part_sub (by have := (sizes P).Q; have := (sizes P).H; omega)
   rcases h with ⟨o, n, rfl, h₁, h₂⟩ | h | h | ⟨n, rfl, hn⟩
-  · exact ⟨part_disj (s₀ := s₀) (.inl h₁) (by have := (sizes P).Q; omega) (by have := (sizes P).Q; omega),
+  · exact ⟨part_disj (s₀ := s₀) (.inl h₁) (by have := (sizes P).Q; have := (sizes P).H; omega) (by have := (sizes P).Q; have := (sizes P).H; omega),
       _, by simp, part_sub (s₀ := s₀) h₂⟩
   · exact ⟨(hp.f_o.sub_left sv).sub_right h, _, by simp, h⟩
   · exact ⟨(hp.f_c.sub_left sv).sub_right h, _, by simp, h⟩
@@ -452,7 +460,7 @@ theorem KR.dBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) :
     · exact hp.f_d.symm
     · exact hp.o_d.symm
     · exact hp.d_c
-    · exact hp.b_d.symm) (by have := (sizes P).Q; omega)
+    · exact hp.b_d.symm) (by have := (sizes P).Q; have := (sizes P).H; omega)
 
 theorem KR.dgBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) {n : Nat} (hn : n ≤ P.c.H.D) :
     bytesAt s.mem (dg s₀) n = bytesAt s₀.mem (dg s₀) n :=

@@ -40,7 +40,7 @@ abbrev TagInputEq : Prop := ∀ a n pt d : List Byte, Spec.GcmSiv.tagInput a n p
 /-- Regions of `W` as offsets and lengths. -/
 abbrev wRs (W : Addr) (rs : List (Nat × Nat)) : List Region := rs.map fun q => ⟨W + BitVec.ofNat 64 q.1, q.2⟩
 
-theorem keyR_eq (W : Addr) : keyR W = wRs W [(16, 112), (240, 16), (256, 240), (1792, 2048)] := rfl
+theorem keyR_eq (W : Addr) : keyR W = wRs W [(16, 112), (240, 1280), (1792, 2048)] := rfl
 
 theorem polyR_eq (c : Cx) :
     polyR c = wRs c.W [(96, 16), (240, 16), (80, 16), (496, 1024), (1536, 256)] ++ [below c.SP 2048] := rfl
@@ -67,8 +67,9 @@ theorem wRsB_mut {c : Cx} {rs : List (Nat × Nat)} (h : ∀ q ∈ rs, q.1 + q.2 
 theorem cryR_mut (c : Cx) : ∀ r ∈ cryR c.W c.D c.n, ∃ r' ∈ mutR c, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact sub_lo (by decide)
+  · exact sub_hi (by decide) (by decide)
   · exact sub_hi (by decide) (by decide)
   · exact sub_hi (by decide) (by decide)
   · exact sub_data
@@ -200,7 +201,8 @@ theorem seal_wp' (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) (hTw : 
   have t₅ : bytesAt s₅.mem (c.W + BitVec.ofNat 64 0) 16 = bytesAt s₄.mem (c.W + BitVec.ofNat 64 0) 16 :=
     bytesAt_keep Cr.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)

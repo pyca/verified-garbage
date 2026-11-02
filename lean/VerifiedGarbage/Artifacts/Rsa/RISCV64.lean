@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivVerified
 public import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValVerified
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkCkV
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkCckV
+public import VerifiedGarbage.Proof.Rsa.RISCV64.RdVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on RISC-V -/
@@ -34,6 +35,9 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.RISCV64.KeyCheck.ck_verified },
   Spec.Rsa.checkCrtKeyApi.artifact RISCV64.target {
     code := Impl.Rsa.RISCV64.CheckCrtKey.code
-    verified := Proof.Rsa.RISCV64.KeyCheck.cck_verified }]
+    verified := Proof.Rsa.RISCV64.KeyCheck.cck_verified },
+  Spec.Rsa.recoverPrimesDetApi.artifact RISCV64.target {
+    code := Impl.Rsa.RISCV64.RecoverDet.code
+    verified := Proof.Rsa.RISCV64.RecDet.rd_verified }]
 
 end VG.Artifacts.Rsa.RISCV64

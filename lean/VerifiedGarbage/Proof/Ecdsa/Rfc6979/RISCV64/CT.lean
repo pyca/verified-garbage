@@ -50,7 +50,7 @@ def UpdCks (c : Cfg) : Nat → List Part → Prop
   | cnt, p :: ps => Ck [.s0, .s1, .s3] (.block (c.updArgs cnt p)) ∧ UpdCks c (cnt + p.2.2) ps
 
 /-- The parts of the messages of steps d and f, of `V = HMAC_K(V)` and of step h.3. -/
-abbrev fullParts (c : Cfg) : List Part := [(.s1, fV, c.H.D + 1), (.s3, 0, c.Q), (.s1, fH, c.Q)]
+abbrev fullParts (c : Cfg) : List Part := [(.s1, fV, c.H.D + 1), (.s3, 0, c.Q), (.s1, c.fH, c.Q)]
 abbrev vParts (c : Cfg) : List Part := [(.s1, fV, c.H.D)]
 abbrev rParts (c : Cfg) : List Part := [(.s1, fV, c.H.D + 1)]
 
@@ -224,8 +224,8 @@ theorem hmac_rel {σ σ' : State} (k : KR P s₀ σ) (k' : KR P s₀' σ') {ps :
     (G₁ := HFA P s₀ σ (msgOf σ.mem s₀ ps) dst) (G₂ := HFA P s₀' σ' (msgOf σ'.mem s₀' ps) dst)
     (by decide)
     (fun _ h => h.1.kr) (fun _ h => h.1.kr) cf
-    (fun s h => by rw [← hl]; exact finArgs_ok h dst (by omega) (by have := (sizes P).Q; omega))
-    (fun s h => by rw [← hl']; exact finArgs_ok h dst (by omega) (by have := (sizes P).Q; omega))
+    (fun s h => by rw [← hl]; exact finArgs_ok h dst (by omega) (by have := (sizes P).Q; have := (sizes P).H; omega))
+    (fun s h => by rw [← hl']; exact finArgs_ok h dst (by omega) (by have := (sizes P).Q; have := (sizes P).H; omega))
   have r₅ : RelCT isa (fun t t' => HFA P s₀ σ (msgOf σ.mem s₀ ps) dst t ∧ HFA P s₀' σ' (msgOf σ'.mem s₀' ps) dst t')
       (.call P.c.hfN P.c.H.finalize)
       fun t t' => HD P s₀ σ (msgOf σ.mem s₀ ps) dst t ∧ HD P s₀' σ' (msgOf σ'.mem s₀' ps) dst t' :=
@@ -249,15 +249,16 @@ abbrev KK (P : Rfc) (s₀ s₀' : State) (t t' : State) : Prop := KR P s₀ t �
 theorem initKV_kr {s₀ : State} (hp : Pre P s₀) {s : State} (h : KR P s₀ s) :
     WP isa (.block P.c.initKV) s (KR P s₀) := by
   have hz := sizes P
+  have hzH := hz.H
   obtain ⟨hD1, hD2⟩ := hz.D
   unfold Cfg.initKV
   rw [WP.block_append_iff]
   refine WP.mono (store_ok hp h (doff := fK) (bs := List.replicate P.c.H.D 0) (fun i hi => by
       simp only [List.length_replicate] at hi; simp [List.getD_eq_getElem?_getD, hi])
-    (by simp only [fK, List.length_replicate]; have := (sizes P).Q; omega)) fun t₁ h₁ => ?_
+    (by simp only [fK, List.length_replicate]; have := (sizes P).Q; have := (sizes P).H; omega)) fun t₁ h₁ => ?_
   exact WP.mono (store_ok hp h₁.1 (doff := fV) (bs := List.replicate P.c.H.D 1) (fun i hi => by
       simp only [List.length_replicate] at hi; simp [List.getD_eq_getElem?_getD, hi])
-    (by simp only [fV, List.length_replicate]; have := (sizes P).Q; omega)) fun t₂ h₂ => h₂.1
+    (by simp only [fV, List.length_replicate]; have := (sizes P).Q; have := (sizes P).H; omega)) fun t₂ h₂ => h₂.1
 
 section
 variable {s₀ s₀' : State} (hp : Pre P s₀) (hp' : Pre P s₀') (hq : PubEq P s₀ s₀') (hc : Checks P.c)
@@ -275,50 +276,54 @@ theorem hmac_kk {ps : List Part} (hps : ∀ p ∈ ps, PartOk P p) (hb : P.c.H.B 
 
 theorem hmacV_kk : RelCT isa (KK P s₀ s₀') P.c.hmacV (KK P s₀ s₀') := by
   have hz := sizes P
+  have hzH := hz.H
   obtain ⟨hD1, hD2⟩ := hz.D
   exact hmac_kk hp hp' hq hc (fun p hp' => by
       simp only [List.mem_singleton] at hp'; subst hp'
-      exact .inl ⟨rfl, by simp only [fV]; omega, by simp only [fV]; have := (sizes P).Q; omega⟩)
-    (by simp only [total]; rcases hz.B with h' | h' <;> omega) ⟨by decide, by simp only [fV]; have := (sizes P).Q; omega⟩
+      exact .inl ⟨rfl, by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega, by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega⟩)
+    (by simp only [total]; rcases hz.B with h' | h' <;> omega) ⟨by decide, by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega⟩
     hc.uV hc.fVc
 
 omit hc in
 theorem sep_kk {b : Nat} (hb : b < 256) (cs : Ck [.s1] (.block (P.c.sep b))) :
     RelCT isa (KK P s₀ s₀') (.block (P.c.sep b)) (KK P s₀ s₀') := by
   have hz := sizes P
+  have hzH := hz.H
   obtain ⟨hD1, hD2⟩ := hz.D
   have hw : ∀ {σ : State} (hσ : Pre P σ) {s : State}, KR P σ s → WP isa (.block (P.c.sep b)) s (KR P σ) :=
     fun hσ s h => WP.mono (store_ok hσ h (doff := fV + P.c.H.D) (bs := [b]) (fun i hi => by
       simp only [List.length_singleton] at hi; obtain rfl : i = 0 := by omega
-      simpa using hb) (by simp only [fV, List.length_singleton]; have := (sizes P).Q; omega)) fun _ h => h.1
+      simpa using hb) (by simp only [fV, List.length_singleton]; have := (sizes P).Q; have := (sizes P).H; omega)) fun _ h => h.1
   exact (rel_kr hq (by decide) (fun _ h => h) (fun _ h => h) cs (fun s h => hw hp h) fun s h => hw hp' h).mono
     (fun _ _ h => h) fun _ _ h => h
 
 theorem rekeyFull_kk {b : Nat} (hb : b < 256) (cs : Ck [.s1] (.block (P.c.sep b))) :
     RelCT isa (KK P s₀ s₀') (P.c.rekeyFull b) (KK P s₀ s₀') := by
   have hz := sizes P
+  have hzH := hz.H
   obtain ⟨hD1, hD2⟩ := hz.D
   unfold Cfg.rekeyFull
   refine (sep_kk hp hp' hq hb cs).seq ((hmac_kk hp hp' hq hc (fun p hp' => ?_) ?_ ⟨by decide, ?_⟩ hc.uF
     hc.fF).seq (hmacV_kk hp hp' hq hc))
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl | rfl
-    · exact .inl ⟨rfl, by simp only [fV]; omega, by simp only [fV]; have := (sizes P).Q; omega⟩
+    · exact .inl ⟨rfl, by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega, by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega⟩
     · exact .inr ⟨rfl, rfl, Nat.le_of_eq (sizes P).Q.2.2.1⟩
-    · exact .inl ⟨rfl, by simp only [fH]; omega, by simp only [fH]; have := (sizes P).Q; omega⟩
+    · exact .inl ⟨rfl, by (try dsimp only); have := (sizes P).H; have := (sizes P).Q; omega, by (try dsimp only); have := (sizes P).H; have := (sizes P).Q; have := (sizes P).Q; have := (sizes P).H; omega⟩
   · simp only [total]; have := (sizes P).Q; rcases hz.B with h' | h' <;> omega
-  · simp only [fK]; have := (sizes P).Q; omega
+  · simp only [fK]; have := (sizes P).Q; have := (sizes P).H; omega
 
 theorem rekey_kk : RelCT isa (KK P s₀ s₀') P.c.rekey (KK P s₀ s₀') := by
   have hz := sizes P
+  have hzH := hz.H
   obtain ⟨hD1, hD2⟩ := hz.D
   unfold Cfg.rekey
   refine (sep_kk hp hp' hq (b := 0) (by decide) hc.sep0).seq ((hmac_kk hp hp' hq hc (fun p hp' => ?_) ?_
     ⟨by decide, ?_⟩ hc.uR hc.fR).seq (hmacV_kk hp hp' hq hc))
   · simp only [List.mem_singleton] at hp'; subst hp'
-    exact .inl ⟨rfl, by simp only [fV]; omega, by simp only [fV]; have := (sizes P).Q; omega⟩
+    exact .inl ⟨rfl, by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega, by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega⟩
   · simp only [total]; rcases hz.B with h' | h' <;> omega
-  · simp only [fK]; have := (sizes P).Q; omega
+  · simp only [fK]; have := (sizes P).Q; have := (sizes P).H; omega
 
 end
 
