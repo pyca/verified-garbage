@@ -100,11 +100,15 @@ fn check(name: &str) -> (usize, usize, usize) {
         let id = test.tc_id;
         let (ct, label, msg) = (&test.case.ct.0, &test.case.label.0, &test.case.msg.0);
         let r = decrypt(key, ct, h, g, label);
+        // On x86-64, MGF1 is over any of the vectors' hash functions.
+        #[cfg(not(target_arch = "x86_64"))]
         if r == Err(Error::UnsupportedHash) {
             let e = encrypt(public, msg, h, g, label);
             assert_eq!(e, Err(Error::UnsupportedHash), "{name} tcId {id}");
             unsupported.add();
-        } else if test.result == Expectation::Invalid {
+            return;
+        }
+        if test.result == Expectation::Invalid {
             let e = if ct.len() == n.len() {
                 Error::Decryption
             } else {
@@ -171,7 +175,10 @@ fn rsa_oaep_every_pair() {
             }
         }
     }
-    assert_eq!(pairs.len(), if cfg!(target_arch = "x86_64") { 49 } else { 13 });
+    assert_eq!(
+        pairs.len(),
+        if cfg!(target_arch = "x86_64") { 49 } else { 13 }
+    );
     for (i, &(h, g)) in pairs.iter().enumerate() {
         let msg: Vec<u8> = (0..k - 2 * h.digest_len() - 2).map(|i| i as u8).collect();
         let ct = encrypt(&public, &msg, h, g, b"label").unwrap();

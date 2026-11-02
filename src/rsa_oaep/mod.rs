@@ -25,7 +25,7 @@
 //! same contract, are one for each choice of the implementations of the
 //! hash functions and of the RSA operations that [`hashes`](crate::hashes)
 //! and [`rsa`](crate::rsa) make (and of MGF1's table). Each hash function
-//! on x86-64, and each pair elsewhere, has a file, `table/<H>.rs` or
+//! on x86-64 has a module in `table.rs`, and each pair elsewhere a file,
 //! `<H>_mgf1_<G>.rs`, naming its verified functions for each choice
 //! (`oaep_hash!`, `oaep_pair!`).
 //!
@@ -117,7 +117,8 @@ fn os_random(buf: &mut [u8]) -> Result<(), Error> {
 #[cfg(target_arch = "x86_64")]
 type Mgf1 = *const [u64; 5];
 #[cfg(not(target_arch = "x86_64"))]
-type Mgf1 = ();
+#[derive(Clone, Copy)]
+struct Mgf1;
 
 /// `$f($args, $mgf1)` on x86-64 and `$f($args)` elsewhere: a call of a
 /// verified function with MGF1's hash function, as it takes it (`Mgf1`).
@@ -130,7 +131,7 @@ macro_rules! call_verified {
 #[cfg(not(target_arch = "x86_64"))]
 macro_rules! call_verified {
     ($f:expr, $mgf1:expr; $($arg:expr),* $(,)?) => {{
-        let () = $mgf1;
+        let Mgf1 = $mgf1;
         $f($($arg),*)
     }};
 }
@@ -215,7 +216,7 @@ macro_rules! with_functions {
         match $pair {
             $((Hash::$h, Hash::$g) => {
                 let (encrypt, decrypt) = $module::functions(f);
-                let $fns = (encrypt, decrypt, ());
+                let $fns = (encrypt, decrypt, Mgf1);
                 Some($body)
             })*
             _ => None,
@@ -472,6 +473,7 @@ fn decrypt_with(
 /// With MGF1 over another hash function, the arms after `never` are the
 /// pairs of implementations no CPU chooses: they are there for the match to
 /// be exhaustive, and the test checks that no set of features chooses them.
+#[cfg(not(target_arch = "x86_64"))]
 macro_rules! oaep_pair {
     (@impl $f:ident, $n:literal, $select:expr,
         [$([$(#[$attr:meta])*] $pat:pat => $fns:tt)*],
@@ -622,6 +624,7 @@ macro_rules! oaep_pair {
     };
 }
 
+#[cfg(not(target_arch = "x86_64"))]
 use oaep_pair;
 
 #[cfg(test)]
@@ -656,8 +659,12 @@ mod tests {
                             Hash::Sha3_224 | Hash::Sha3_256 | Hash::Sha3_384 | Hash::Sha3_512
                         )
                 };
-                let ok = supported(h)
-                    && (if cfg!(target_arch = "x86_64") { supported(g) } else { g == h || g == Hash::Sha1 });
+                // On x86-64, MGF1 is over any of them (`table::mgf1`);
+                // elsewhere, over the hash function itself or SHA-1.
+                #[cfg(target_arch = "x86_64")]
+                let ok = supported(h) && supported(g);
+                #[cfg(not(target_arch = "x86_64"))]
+                let ok = supported(h) && (g == h || g == Hash::Sha1);
                 assert_eq!(with_functions!(h, g, |_fns| ()).is_some(), ok);
                 n += usize::from(ok);
             }
