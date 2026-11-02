@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcTab
+public import VerifiedGarbage.Proof.HashTable.X86_64
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCall
 public import VerifiedGarbage.Impl.RsaOaep.X86_64.Precomputed
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
@@ -28,9 +30,16 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 open VG.Proof.Rsa.X86_64 (PublicImpl)
+open VG.Proof.Pbkdf2.Md.X86_64 (MdHash)
+open VG.Impl.Mgf1.X86_64.Table (Fns)
+open VG.Proof.HashTable.X86_64 (tables fnsOf Coh tabOK_of held_tableOf hashAt_tableOf fnsGood_of)
 
 /-- `encK`'s postcondition, if `pre` holds the values for `n`. -/
 def post (H G : Spec.Mgf1.Hash) (s u : State) : Prop := Consistent s → (encK H G).post s u
+
+/-- `post` for MGF1's hash function the table names. -/
+def postT (H : Spec.Mgf1.Hash) (s u : State) : Prop :=
+  ∀ G, Spec.HashTable.hashAt s.mem (stackArg s 9) = some G → post H G s u
 
 /-- What the function's caller sees of the registers and the stack, from a
 state in the frame. -/
@@ -53,15 +62,18 @@ theorem encEnd_abi {H : Spec.Mgf1.Hash} {s s₂ : State} (hp : EPre H s) (he : E
     · exact hp.d_ret_out
     · exact hp.d_ret_scr
 
-variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
+variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm)
   (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
 
-include hH KH hG KG mH mG in
-theorem encMain_ok (v : PublicImpl) {s t : State} (hp : PPre mH.G s) (he : EnvE s t)
+include hH KH hG mH mG in
+theorem encMain_ok (v : PublicImpl) {f : Fns} (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd)
+    (hgf : Table.FnsGood f.fin) {s t : State} (hp : PPreT mH.G s) (he : EnvE s t) (hsy : t.syms = s.syms)
+    (ok : Table.TabOK Gm.stream f s.syms) (hm : Table.TabMem Gm.stream s.syms (stackArg s 9) s.mem)
+    (hDm : s.mem.readW (off (stackArg s 9) 32) 64 = BitVec.ofNat 64 Gm.D)
     (L : Lay t (fb s) (stackArg s 5)) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem (fb s) (stackArg s 5) V W) (hW : ArgsW s W)
     (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) :
-    WP isa (Impl.RsaOaep.X86_64.Precomputed.encMain Hl.stream Gm.stream v.name v.code) t fun t' => EnvE s t' ∧
+    WP isa (Impl.RsaOaep.X86_64.Precomputed.encMain Hl.stream f v.name v.code) t fun t' => EnvE s t' ∧
       (Consistent s → Spec.Rsa.written t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
         (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
           (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
@@ -69,17 +81,18 @@ theorem encMain_ok (v : PublicImpl) {s t : State} (hp : PPre mH.G s) (he : EnvE 
             (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
             (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)))) := by
   unfold Impl.RsaOaep.X86_64.Precomputed.encMain seqs seqs seqs seqs seqs seqs
-  refine encMask_ok hH KH hG KG mH mG hp.toEPre he L R hW hk fun t9 V9 W9 he9 L9 R9 W9e hlist => ?_
+  refine encMask_ok hH KH hG mH mG hgi hgu hgf hp.toEPre he hsy (fun t he' sy => etab hp he' sy ok hm hDm) L R hW
+    hk fun t9 V9 W9 he9 L9 R9 W9e hlist => ?_
   refine WP.seq ?_
   rw [Impl.RsaOaep.X86_64.Precomputed.pubArgs, WP.block_append_iff]
   refine WP.mono (wp_good pubArgs_good (pubArgs_ok L9 R9 W9e))
     fun t10 ⟨⟨L10, k10, R10, hdi, hsi, _, _, h8, h9⟩, sp10, mx10, f10⟩ => ?_
   have he10 : EnvE s t10 := he9.step k10.2.1 k10.2.2 sp10 (keep_cs3 k10 (by decide)) mx10 f10
-  refine WP.mono (wp_good (block_good _ rfl) (load_pre hp he10.rsp he10.rd he10.fr))
+  refine WP.mono (wp_good (block_good _ rfl) (load_pre hp.toPPre he10.rsp he10.rd he10.fr))
     fun t11 ⟨⟨k11, hm11, hdx, hcx⟩, sp11, mx11, f11⟩ => ?_
   have he11 : EnvE s t11 := he10.step k11.2.1 k11.2.2 sp11 (keep_cs3 k11 (by decide)) mx11 f11
   have L11 : Lay t11 (fb s) (stackArg s 5) := L10.congr (k11.gpr (by decide)) k11.2.2 (by rw [hm11])
-  refine WP.mono (call_ok v hp L11 (hm11 ▸ R10) he11.rd he11.wr he11.fr (by simp [upd]) (by simp [upd])
+  refine WP.mono (call_ok v hp.toPPre L11 (hm11 ▸ R10) he11.rd he11.wr he11.fr (by simp [upd]) (by simp [upd])
     (by simp [upd]) (by simp [upd]) ((k11.gpr (by decide)).trans hdi) ((k11.gpr (by decide)).trans hsi) hdx hcx
     ((k11.gpr (by decide)).trans h8) ((k11.gpr (by decide)).trans h9))
     fun t12 ⟨hout, rd12, wr12, cs12, mx12, f12⟩ => ?_
@@ -89,12 +102,18 @@ theorem encMain_ok (v : PublicImpl) {s t : State} (hp : PPre mH.G s) (he : EnvE 
   rw [hlist] at this
   exact this
 
-include hH KH hG KG mH mG in
-theorem code_correct (v : PublicImpl) (s : State)
-    (h : (Spec.RsaOaep.encryptPrecomputedContract mH.G mG.G abi encStack).pre s) :
-    ∃ t s', Exec isa (Impl.RsaOaep.X86_64.Precomputed.encrypt Hl.stream Gm.stream v.name v.code) s t s' ∧
-      abiPreserved s s' ∧ post mH.G mG.G s s' := by
-  have hp : PPre mH.G s := pre_of h
+variable {vs : List MdHash} (hc : Coh vs)
+
+include hH KH mH hc in
+theorem code_correct (v : PublicImpl) (s : State) (h : (encC mH.G (tables vs)).pre s) :
+    ∃ t s', Exec isa (Impl.RsaOaep.X86_64.Precomputed.encrypt Hl.stream (fnsOf vs) v.name v.code) s t s' ∧
+      abiPreserved s s' ∧ postT mH.G s s' := by
+  obtain ⟨hp, ⟨T, hT, hheld⟩, hd⟩ := preT_of h
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
+  obtain ⟨hm, hidx, hDm⟩ := held_tableOf hheld
+  have ok := tabOK_of hc hd hw
+  obtain ⟨hgi, hgu, hgf⟩ := fnsGood_of vs
+  have hGa : Spec.HashTable.hashAt s.mem (stackArg s 9) = some w.mgf.G := hashAt_tableOf hidx
   have hk1 := hp.k1; have hk2 := hp.k2
   have hlen : mH.G.len = Hl.D := mH.len
   have hnl : (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat).length = (s.gpr .rcx).toNat := by
@@ -102,16 +121,21 @@ theorem code_correct (v : PublicImpl) (s : State)
   have hml : (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat).length = (stackArg s 3).toNat := by
     simp [Spec.Rsa.bytesAt]
   have hsl : (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len).length = mH.G.len := by simp [Spec.Rsa.bytesAt]
-  suffices hw : WP isa (Impl.RsaOaep.X86_64.Precomputed.encrypt Hl.stream Gm.stream v.name v.code) s
-      fun s' => abiPreserved s s' ∧ post mH.G mG.G s s' by
-    obtain ⟨t, s', he, hq⟩ := hw; exact ⟨t, s', he, hq⟩
+  suffices hw : WP isa (Impl.RsaOaep.X86_64.Precomputed.encrypt Hl.stream (fnsOf vs) v.name v.code) s
+      fun s' => abiPreserved s s' ∧ post mH.G w.mgf.G s s' by
+    obtain ⟨t, s', he, hq, hpo⟩ := hw
+    refine ⟨t, s', he, hq, fun G hG' => ?_⟩
+    rw [hGa] at hG'
+    obtain rfl := Option.some.inj hG'
+    exact hpo
   refine wp_alloc (by have := hp.sp1; unfold encStack at this; unfold frameBytes; omega) ?_
-  refine encBodyWith_ok hH hp.toEPre (fun t' he' hw' hb => ?_) fun t he L R hk => ?_
+  refine encBodyWith_ok hH hp.toEPre (fun t' he' hw' hb => ?_) fun t he hsy L R hk => ?_
   · obtain ⟨h1, h2, h3, h4⟩ := encEnd_ok hp.toEPre he' hw'
     refine ⟨h1, h2, h3, fun _ => ?_⟩
     show Spec.Rsa.written _ _ _ _ _
     rw [encrypt_none (by rw [hnl, hlen, hml]; omega)]; exact h4
-  · refine WP.mono (encMain_ok hH KH hG KG mH mG v hp he L R (fun _ _ => rfl) hk) fun t' ⟨he', hw'⟩ => ?_
+  · refine WP.mono (encMain_ok hH KH w.ok mH w.mgf v hgi hgu hgf hp he hsy ok hm hDm L R (fun _ _ => rfl) hk)
+      fun t' ⟨he', hw'⟩ => ?_
     obtain ⟨h1, h2, h3⟩ := encEnd_abi hp.toEPre he'
     refine ⟨h1, h2, h3, fun hq => ?_⟩
     show Spec.Rsa.written _ _ _ _ _

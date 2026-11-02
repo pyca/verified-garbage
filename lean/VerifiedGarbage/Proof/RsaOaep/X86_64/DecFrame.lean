@@ -117,7 +117,7 @@ theorem EnvD.step {s t t' : State} (he : EnvD s t) (hrd : t'.rd = t.rd) (hwr : t
 theorem arg_readD {s : State} (hp : DPre s) {m : Mem} (hf : Frame [frR s] s.mem m) {j : Nat} (hj : j < 17) :
     m.readW (off (fb s) (frameBytes + 8 + 8 * j)) 64 = stackArg s j := by
   rw [argAddr]
-  refine hf.readW (r := ⟨stackArgAddr s 0, 136⟩) ?_ (fun r' hr' => ?_) (by decide)
+  refine hf.readW (r := ⟨stackArgAddr s 0, 144⟩) ?_ (fun r' hr' => ?_) (by decide)
   · rw [stackArgAddr_j s j]
     exact Offset.contains_base _ (by omega) (by omega)
   · simp only [List.mem_singleton] at hr'; subst hr'
@@ -132,7 +132,7 @@ theorem copy1D_ok {s : State} (hp : DPre s) {u : State} (hsp : u.gpr .rsp = fb s
   have := hp.sp2
   have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega)
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
-    refine ⟨⟨stackArgAddr s 0, 136⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
+    refine ⟨⟨stackArgAddr s 0, 144⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
     rw [argAddr, stackArgAddr_j s j]
     exact Offset.contains_base _ (by omega) (by omega)
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j)) ?_ rfl)
