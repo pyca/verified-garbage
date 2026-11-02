@@ -191,4 +191,61 @@ theorem macLoop?_ok {cr : Reg} (hcr : cr ∉ [Reg.t4, .a0, .s0, .s1, .s2, .s3, .
     exact WP.block_nil (macPost_zero h4 h0)
   · exact macLoop_ok hcr hU hs hT8 hY8 h4 h0 hc (Nat.pos_of_ne_zero (of_decide_eq_false hz)) hN' hT hY sY
 
+/-- The registers a row writes. -/
+def macRunRegs : List Reg := [.a0, .t4, .t5, .t6, .s1, .s2, .s3, .s4]
+
+/-- A row of `K` steps (`macRun`, `K` in `t5`), the pointers `t4`, `a0` at
+`dT`, `dY`: the `K` words at `dT` and the carry `s1` make up `T + x Y + c`,
+the pointers advanced past them. -/
+theorem macRun_ok {B : Addr} {Z dT dY K : Nat} {s : State} (hs : Scr s B Z)
+    (hT8 : dT % 8 = 0) (hY8 : dY % 8 = 0)
+    (h4 : s.gpr .t4 = off B dT) (h0 : s.gpr .a0 = off B dY)
+    (h5 : s.gpr .t5 = BitVec.ofNat 64 K) (hK : K < 2 ^ 32)
+    (hT : dT + 8 * K ≤ Z) (hY : dY + 8 * K ≤ Z) (sY : dY + 8 * K ≤ dT ∨ dT + 8 * K ≤ dY) :
+    WP isa macRun s fun t =>
+      (t.gpr .t4 = off B (dT + 8 * K) ∧ t.gpr .a0 = off B (dY + 8 * K) ∧
+        Outside B dT (8 * K) s.mem t.mem ∧
+        wordsVal t.mem B dT K + 2 ^ (64 * K) * (t.gpr .s1).toNat =
+          wordsVal s.mem B dT K + (s.gpr .s0).toNat * wordsVal s.mem B dY K + (s.gpr .s1).toNat) ∧
+      Keep macRunRegs s t := by
+  have hnw := hs.nowrap
+  have hKd := Nat.mod_add_div K 4
+  generalize hN₁ : K % 4 = N₁ at hKd
+  generalize hN₂ : K / 4 = N₂ at hKd
+  unfold macRun
+  have hpre : WP isa (.block [.logicImm .and .t6 .t5 3, .shift .srl .d .t5 .t5 2]) s fun s₁ =>
+      (s₁.gpr .t6 = BitVec.ofNat 64 N₁ ∧ s₁.gpr .t5 = BitVec.ofNat 64 N₂ ∧ s₁.mem = s.mem) ∧
+        Keep [.t5, .t6] s s₁ := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [h5, fios_rem K (by omega_arith), fios_quot K (by omega_arith), hN₁, hN₂]
+  refine WP.seq (WP.mono hpre fun s₁ ⟨⟨i6, i5, im⟩, k₁⟩ => ?_)
+  have g₁ : ∀ r ∈ [Reg.t4, .a0, .s0, .s1], s₁.gpr r = s.gpr r := fun r hr => k₁.gpr (by revert r hr; decide)
+  refine WP.seq (WP.mono (macLoop?_ok (cr := .t5) (by decide) (U := 4) (N := N₂) (by decide) (hs.congr k₁.2.2)
+    hT8 hY8 (by rw [g₁ .t4 (by decide), h4]) (by rw [g₁ .a0 (by decide), h0]) i5 (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith)) fun s₂ ⟨j4, j0, jout, jeq, k₂⟩ => ?_)
+  have g₂ : s₂.gpr .t6 = s₁.gpr .t6 := k₂.gpr (by decide)
+  have g₂' : s₂.gpr .s0 = s₁.gpr .s0 := k₂.gpr (by decide)
+  refine WP.mono (macLoop?_ok (cr := .t6) (by decide) (U := 1) (N := N₁) (by decide) (hs.congr (k₁.trans k₂).2.2)
+    (dT := dT + 8 * (4 * N₂)) (dY := dY + 8 * (4 * N₂)) (by omega_arith) (by omega_arith) j4 j0
+    (by rw [g₂, i6]) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
+    fun t ⟨n4, n0, nout, neq, k₃⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+  · rw [n4, Nat.one_mul, Nat.add_assoc, ← Nat.mul_add]; congr 2; omega_arith
+  · rw [n0, Nat.one_mul, Nat.add_assoc, ← Nat.mul_add]; congr 2; omega_arith
+  · rw [← im]
+    exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans (nout.mono (by omega_arith) (by omega_arith))
+  · rw [Nat.one_mul] at neq
+    rw [im, g₁ .s0 (by decide), g₁ .s1 (by decide)] at jeq
+    have rY : wordsVal s₂.mem B (dY + 8 * (4 * N₂)) N₁ = wordsVal s.mem B (dY + 8 * (4 * N₂)) N₁ := by
+      rw [← im]; exact jout.wordsVal (by omega_arith) (by omega_arith)
+    have rT : wordsVal s₂.mem B (dT + 8 * (4 * N₂)) N₁ = wordsVal s.mem B (dT + 8 * (4 * N₂)) N₁ := by
+      rw [← im]; exact jout.wordsVal (by omega_arith) (by omega_arith)
+    rw [rY, rT, g₂', k₁.gpr (r := .s0) (by decide)] at neq
+    have e := mac_sum_group jeq neq
+    rw [← fios_wordsVal_append, ← fios_wordsVal_append, show 4 * N₂ + N₁ = K by omega_arith,
+      ← Nat.pow_add, ← Nat.mul_add, show 4 * N₂ + N₁ = K by omega_arith] at e
+    rw [show wordsVal s₂.mem B dT (4 * N₂) = wordsVal t.mem B dT (4 * N₂) by
+      exact (nout.wordsVal (by omega_arith) (by omega_arith)).symm, ← fios_wordsVal_append,
+      show 4 * N₂ + N₁ = K by omega_arith] at e
+    exact e
+
 end VG.Proof.Bignum.RISCV64
