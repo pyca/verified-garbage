@@ -1,4 +1,5 @@
 module
+-- separate module: the contracts of signing's primitives, built in parallel with `CallSP` and `CallV`, which `CallS` also imports, as on PPC64LE
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Contracts
 import VerifiedGarbage.Proof.Framework.Contract

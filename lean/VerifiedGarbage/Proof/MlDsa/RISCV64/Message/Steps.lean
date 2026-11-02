@@ -1,4 +1,5 @@
 module
+-- separate module: the setup and the steps, built in parallel with `Contracts`, which `Sign` also imports
 
 import VerifiedGarbage.Impl.MlDsa.RISCV64.Message
 public import VerifiedGarbage.Proof.Sha3.RISCV64.Pieces

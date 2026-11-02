@@ -1,4 +1,5 @@
 module
+-- separate module: the calls of signing's primitives, built in parallel with `Sign/Inv`, which `Sign/Control` also imports, as on PPC64LE
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.CallSP
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.ContractsS

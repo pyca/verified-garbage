@@ -273,6 +273,18 @@ pub mod md5;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
+pub mod mldsa44;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
+pub mod mldsa65;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
+pub mod mldsa87;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
 pub mod mlkem1024;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
