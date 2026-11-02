@@ -43,6 +43,9 @@ tests. Each branch is checked together with the exit (`RelCT.ite_seq`), so
 nothing after the branch needs its correctness.
 -/
 
+-- separate module: the taint checks are not re-run with every change to the correctness proofs
+-- (`RdCorrect.lean`), which `RdVerified.lean` combines with them
+
 @[expose] public section
 
 namespace VG.Proof.Rsa.RISCV64.RecDet
