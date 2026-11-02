@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.WWit
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.WRound
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Fin
+public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Setup
 public import VerifiedGarbage.Proof.RsaKeyGen.MrLoopAt
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.Loop
@@ -666,5 +667,93 @@ theorem millerRabin_ok (Ri : RoundImpl) {σ : State} {B R : Addr} {L w c rl ch :
     (fun n s => ∃ k, LInv σ s B R L w c rl ch r k n) (fun n s ⟨k, hk⟩ => ?_) _ s0 ⟨0, l0⟩
   exact WP.mono (body_ok Ri hk hpt) fun s' hs => hs.elim (fun ⟨ev, _, q⟩ => .inl ⟨ev, q⟩)
     (fun ⟨ev, hn, li⟩ => .inr ⟨ev, n - 1, by omega_arith, k + 1, li⟩)
+
+/-! ## The test's result -/
+
+/-- The test's result from the status and octets read the witnesses left in
+the header: 0 if the tape ran out, the probable prime, or 3. -/
+theorem res_ok {s0 u : State} {w c : Nat} (hc : Ctx s0 u) (hp : Prep u (stackArg s0 1) (sL s0) w c)
+    (hw : oL s0 = 8 * w)
+    (hres : match Spec.RsaKeyGen.primalityTest c ((Spec.Rsa.bytesAt s0.mem (s0.gpr .a7) (rL s0)).drop (8 * w)) with
+      | none => word u.mem (stackArg s0 1) (8 * hStat) = BitVec.ofNat 64 0
+      | some (b, rest) => word u.mem (stackArg s0 1) (8 * hStat) = BitVec.ofNat 64 (if b then 1 else 2) ∧
+          word u.mem (stackArg s0 1) (8 * hUsed) = BitVec.ofNat 64 (rL s0 - rest.length))
+    (hop : cOp s0 = (Spec.RsaKeyGen.primalityTest c
+        ((Spec.Rsa.bytesAt s0.mem (s0.gpr .a7) (rL s0)).drop (8 * w))).map
+      fun pr => (if pr.1 then .prime c else .rejected, pr.2)) :
+    WP isa VG.Impl.RsaKeyGen.RISCV64.Candidate.testResult u fun t => Fr s0 t ∧ CQ s0 (t.gpr .a0) t.mem := by
+  have hf := hc.fr
+  have hP := hf.pre
+  have e := hp.env
+  have hcS : (cO s0).Disjoint ⟨stackArg s0 1, 8 * sL s0⟩ := by
+    have := hP.oS; simp only [cS, sL] at this ⊢; rwa [Nat.mul_comm]
+  generalize hB : stackArg s0 1 = B at hp e hres hcS
+  have hs := e.hs
+  have hnw := hs.nowrap
+  have hZ : 256 + 28 * (8 * (w + 2)) ≤ 8 * sL s0 := e.hZ
+  -- A store to the octets read keeps the scratch.
+  have keepS : ∀ (m : Mem) (v : BitVec 64) (d : Nat), d + 8 ≤ 8 * sL s0 →
+      (m.writeW (fw s0 VG.Impl.RsaKeyGen.RISCV64.Candidate.oRead) v).readW (off B d) 64 = m.readW (off B d) 64 :=
+    fun m v d hd =>
+      ((Frame.refl [rdW s0] m).writeW (r := rdW s0) (List.mem_singleton_self _) v (Region.contains_self _ _)).readW
+        (r := ⟨off B d, 8⟩) (Region.contains_self _ _) (fun ρ hρ => by
+          simp only [List.mem_singleton] at hρ; subst hρ
+          refine (hP.FS.sub_left (fw_sub s0 (o := VG.Impl.RsaKeyGen.RISCV64.Candidate.oRead) (n := 8)
+            (by decide))).symm.sub_left ?_
+          rw [← hB]
+          have := Offset.sub_base (stackArg s0 1) (d := d) (n := 8) (k := (stackArg s0 2).toNat * 8)
+            (by simp only [sL] at hd; omega_arith)
+          exact this) (by decide)
+  have al : ∀ o, o % 8 = 0 → (fb s0 + BitVec.ofNat 64 o).toNat % 8 = 0 := fun o h8 => fw_al hP h8
+  have hW : InRegions u.wr (fb s0 + BitVec.ofNat 64 176) 8 :=
+    ⟨kF s0, by rw [hf.wr]; exact List.mem_cons_self, kF_contains (by decide)⟩
+  have r160 : (u.mem.writeW (fb s0 + 176#64) (u.mem.readW (B + 152#64) 64)).readW (B + 160#64) 64 =
+      u.mem.readW (B + 160#64) 64 := keepS _ _ 160 (by omega_arith)
+  unfold VG.Impl.RsaKeyGen.RISCV64.Candidate.testResult
+  refine WP.seq (WP.mono (WP.rdwr (WP.keep [.t2] (Q := fun t =>
+      t.mem = u.mem.writeW (fw s0 VG.Impl.RsaKeyGen.RISCV64.Candidate.oRead) (word u.mem B (8 * hUsed)) ∧
+        t.gpr .t2 = word u.mem B (8 * hStat)) (by
+    simp only [ldh, hUsed, hStat, VG.Impl.RsaKeyGen.RISCV64.Candidate.stf,
+      VG.Impl.RsaKeyGen.RISCV64.Candidate.oRead]
+    brun [e.s6, hf.s11, hs.ld (d := 152) (n := 8) (by omega_arith), hs.al8 (d := 152) (by omega_arith) (by decide),
+      hs.ld (d := 160) (n := 8) (by omega_arith), hs.al8 (d := 160) (by omega_arith) (by decide),
+      al 176 (by decide), hW, r160]) (by rfl) (by rfl))) fun t₁ ⟨⟨⟨m₁, a₁⟩, k₁⟩, rd₁, wr₁, sp₁⟩ => ?_)
+  have c₁ : Ctx s0 t₁ := hc.step sp₁ k₁.2.1 k₁.2.2 (k₁.gpr (by decide)) (by
+    rw [m₁]
+    exact (Frame.refl _ _).writeW (r := rdW s0) (w := 64) (by simp) _ (Region.contains_self _ _))
+  have hus₁ : t₁.mem.readW (fw s0 VG.Impl.RsaKeyGen.RISCV64.Candidate.oRead) 64 = word u.mem B (8 * hUsed) := by
+    rw [m₁]; exact Mem.readW_writeW_self64 _ _ _
+  generalize hpt : Spec.RsaKeyGen.primalityTest c ((Spec.Rsa.bytesAt s0.mem (s0.gpr .a7) (rL s0)).drop (8 * w)) = pt
+    at hres hop
+  rcases pt with _ | ⟨b, rest⟩
+  · refine WP.ite _ (Steps.eval_zero_ofNat _ _ (by decide) (a₁.trans hres)) (fun _ => ?_)
+      (fun h => absurd h (by decide))
+    exact finNone_post c₁ (by rw [hop]; rfl)
+  · obtain ⟨hst, hus⟩ := hres
+    refine WP.ite _ (Steps.eval_zero_ofNat _ _ (by split <;> decide) (a₁.trans hst))
+      (fun h => absurd h (by cases b <;> decide)) (fun _ => ?_)
+    refine WP.seq (WP.mono (WP.rdwr (WP.keep [.t2] (Q := fun t => t.gpr .t2 = BitVec.ofNat 64 (if b then 0 else 1) ∧
+        t.mem = t₁.mem) (by
+      brun [a₁, hst]
+      cases b <;> rfl) (by rfl) (by rfl))) fun t₂ ⟨⟨⟨b₂, m₂⟩, k₂⟩, rd₂, wr₂, sp₂⟩ => ?_)
+    have c₂ : Ctx s0 t₂ := c₁.step sp₂ k₂.2.1 k₂.2.2 (k₂.gpr (by decide)) (by rw [m₂]; exact Frame.refl _ _)
+    refine WP.ite _ (Steps.eval_zero_ofNat _ _ (by split <;> decide) b₂) (fun h => ?_) (fun h => ?_)
+    · have hb : b = true := by revert h; cases b <;> decide
+      subst hb
+      have hs₂ : Scr t₂ B (8 * sL s0) := hs.congr (k₂.2.2.trans k₁.2.2)
+      have e0 : slot w 0 = 256 := by simp [slot, hdrBytes]
+      have h7 : t₂.gpr .a7 = VG.Proof.Mont.off B 256 := by
+        rw [k₂.gpr (by decide), k₁.gpr (by decide), e.a7, e0]
+      refine finPrime_post c₂ hs₂ h7
+        (by rw [hw]; omega_arith) hw hcS ?_ (by rw [hop]; rfl) (by rw [m₂, hus₁, hus])
+      have hv : A t₂.mem B w 0 = c := by
+        rw [← hp.n]; simp only [A, Pre.wordsVal_eq_wv]; rw [m₂, m₁]
+        exact VG.Proof.Bignum.wv_congr fun i hi => keepS _ _ _ (by simp only [slot, hdrBytes]; omega_arith)
+      simp only [A, e0] at hv
+      exact hv
+    · have hb : b = false := by revert h; cases b <;> decide
+      subst hb
+      exact fin_ok 3 (by decide) c₂ (by rw [hop]; rfl) (by rw [outOf, hop]; rfl)
+        (by rw [m₂, hus₁, hus, usedOf, hop]; rfl)
 
 end VG.Proof.RsaKeyGen.RISCV64.Cand
