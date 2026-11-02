@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.Law3
 
 /-!
 # ECDSA verification on RISC-V: the joint ladder
@@ -184,7 +185,7 @@ structure PtOk (base : Addr) (s : State) (p : Pt) (P : Point W) : Prop where
 
 /-- The slots of the joint ladder's additions. -/
 abbrev jSl : List Nat :=
-  [p256.sl AP, p256.sl B3P, p256.sl T0, p256.sl T1, p256.sl T2, p256.sl T3, p256.sl T4, p256.sl T5,
+  [p256.sl AP, p256.sl BP, p256.sl T0, p256.sl T1, p256.sl T2, p256.sl T3, p256.sl T4, p256.sl T5,
     p256.sl RX, p256.sl RY, p256.sl RZ, p256.sl DX, p256.sl DY, p256.sl DZ, p256.sl TX, p256.sl TY, p256.sl TZ,
     p256.sl GX, p256.sl GY, p256.sl ONEP, p256.sl CPX, p256.sl CPY,
     p256.sl G2X, p256.sl G2Y, p256.sl G2Z, p256.sl G3X, p256.sl G3Y, p256.sl G3Z,
@@ -199,46 +200,42 @@ theorem jShort : Short (· ∈ jSl) := by decide
 
 /-- What the additions write. -/
 abbrev addW (o : Pt) : List (Nat × Nat) :=
-  (rcbW p256.rcbSlots o).map (fun w => (w, 8 * 4)) ++ [(own 4, 64 * 4)]
+  (rcbW (Cfg.rcb3Slots p256) o).map (fun w => (w, 8 * 4)) ++ [(own 4, 64 * 4)]
 
 /-- `o = p + q` by the complete addition, for points in slots of `jSl`. -/
 theorem addPt_ok (hL : Law W) {base : Addr} {s : State} (hw : WsReg s base)
     (hap : wordsVal s.mem base (p256.sl AP) 4 = W.a * 2 ^ 256 % W.p)
-    (hbp : wordsVal s.mem base (p256.sl B3P) 4 = 3 * W.b * 2 ^ 256 % W.p)
-    {p q o : Pt} (hA : RcbApart p256.rcbSlots p q o)
-    (hsl : ∀ x ∈ rcbW p256.rcbSlots o ++ rcbR p256.rcbSlots p q, x ∈ jSl)
+    (hbp : wordsVal s.mem base (p256.sl BP) 4 = W.b * 2 ^ 256 % W.p)
+    {p q o : Pt} (hA : RcbApart (Cfg.rcb3Slots p256) p q o)
+    (hsl : ∀ x ∈ rcbW (Cfg.rcb3Slots p256) o ++ rcbR (Cfg.rcb3Slots p256) p q, x ∈ jSl)
     {P P' : Point W} (hP : onCurve W P = true) (hP' : onCurve W P' = true)
     (hp : PtOk base s p P) (hq : PtOk base s q P') :
     WP isa (Cfg.addPt p256 p q o) s fun s' =>
       Kp s s' ∧ Unch base (addW o) s.mem s'.mem ∧ PtOk base s' o (Spec.Weierstrass.add P P') := by
   have hp0 : 0 < W.p := by decide
   rw [Cfg.addPt]
-  have hI : Inv 4 base W.p (· ∈ jSl) (rcbR p256.rcbSlots p q)
+  have hI : Inv 4 base W.p (· ∈ jSl) (rcbR (Cfg.rcb3Slots p256) p q)
       (fun x => toM W.p (2 ^ (64 * 4)) (wordsVal s.mem base x 4)) s := by
     refine ⟨hw, fun x hx => hsl x (List.mem_append_right _ hx), fun x hx => ?_, fun x _ => rfl⟩
-    simp only [rcbR, Cfg.rcbSlots, List.mem_cons, List.not_mem_nil, or_false] at hx
+    simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · rw [hap]; exact Nat.mod_lt _ hp0
-    · rw [hbp]; exact Nat.mod_lt _ hp0
+    · show wordsVal _ _ (p256.sl AP) 4 < _; rw [hap]; exact Nat.mod_lt _ hp0
+    · show wordsVal _ _ (p256.sl BP) 4 < _; rw [hbp]; exact Nat.mod_lt _ hp0
     exacts [hp.x, hp.y, hp.z, hq.x, hq.y, hq.z]
-  refine WP.mono (rcb_ok (F := p256Field) field_ok rfl jLay jShort unit hA hsl hI (fun x hx => hx))
-    fun s₁ ⟨k₁, I₁, t₁, _⟩ => ?_
-  have ea : toM W.p (2 ^ (64 * 4)) (wordsVal s.mem base (p256.sl AP) 4) = Fin.ofNat W.p W.a := by
-    rw [hap, toM_mont unit]
-  have eb : toM W.p (2 ^ (64 * 4)) (wordsVal s.mem base (p256.sl B3P) 4) = Fin.ofNat W.p (3 * W.b) := by
+  refine WP.mono (rcb3_ok (F := p256Field) field_ok rfl jLay jShort unit hA hsl hI (fun x hx => hx))
+    fun s₁ ⟨k₁, I₁, t₁⟩ => ?_
+  have eb : toM W.p (2 ^ (64 * 4)) (wordsVal s.mem base (p256.sl BP) 4) = Fin.ofNat W.p W.b := by
     rw [hbp, toM_mont unit]
   generalize hE : (fun x => toM W.p (2 ^ (64 * 4)) (wordsVal s.mem base x 4)) = E at I₁ t₁
-  have hrep := hL.add hP hP' hp.rep hq.rep (X3 := runOps (rcb p256.rcbSlots p q o) E o.x)
-    (Y3 := runOps (rcb p256.rcbSlots p q o) E o.y) (Z3 := runOps (rcb p256.rcbSlots p q o) E o.z)
+  have hrep := hL.add3 Comb.am3 hP hP' hp.rep hq.rep (X3 := runOps (rcb3 (Cfg.rcb3Slots p256) p q o) E o.x)
+    (Y3 := runOps (rcb3 (Cfg.rcb3Slots p256) p q o) E o.y) (Z3 := runOps (rcb3 (Cfg.rcb3Slots p256) p q o) E o.z)
     (by
       subst hE
-      show rcbAdd (Fin.ofNat W.p W.a) (Fin.ofNat W.p (3 * W.b)) _ _ _ _ _ _ = _
-      rw [← ea, ← eb]
+      show rcbAdd3 (Fin.ofNat W.p W.b) _ _ _ _ _ _ = _
+      rw [← eb]
       exact t₁.symm)
-  have hm : ∀ x ∈ [o.x, o.y, o.z], x ∈ rcbW p256.rcbSlots o ++ rcbR p256.rcbSlots p q := by
-    intro x hx
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl <;> simp [rcbW]
+  have hm : ∀ x ∈ [o.x, o.y, o.z], x ∈ [o.x, o.y, o.z] ++ rcbR (Cfg.rcb3Slots p256) p q :=
+    fun x hx => List.mem_append_left _ hx
   refine ⟨k₁.kp, k₁.mem, ⟨?_, I₁.lt _ (hm _ (by simp)), I₁.lt _ (hm _ (by simp)), I₁.lt _ (hm _ (by simp))⟩⟩
   have vx : tmv W 4 base s₁ o.x = _ := I₁.val _ (hm _ (by simp))
   have vy : tmv W 4 base s₁ o.y = _ := I₁.val _ (hm _ (by simp))
@@ -277,7 +274,7 @@ structure BS (base : Addr) (s₀ s : State) (G Q : Point W) (L : List Nat) : Pro
   kp : Kp s₀ s
   unch : Unch base buildW s₀.mem s.mem
   ap : wordsVal s.mem base (p256.sl AP) 4 = W.a * 2 ^ 256 % W.p
-  bp : wordsVal s.mem base (p256.sl B3P) 4 = 3 * W.b * 2 ^ 256 % W.p
+  bp : wordsVal s.mem base (p256.sl BP) 4 = W.b * 2 ^ 256 % W.p
   ents : ∀ e ∈ L, e < 16 ∧ EntOk base s G Q e
 
 /-- A point to entry `e`: the entries so far are kept, and so is every slot. -/
@@ -300,7 +297,7 @@ theorem store_ok' {base : Addr} {s₀ s : State} {G Q : Point W} {L : List Nat} 
       exact ⟨(2048, 1536), List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self),
         by show 2048 ≤ 2048 + 96 * e; omega, by show 2048 + 96 * e + 96 ≤ 2048 + 1536; omega⟩
   · rw [hd (p256.sl AP) (by show 256 + 32 ≤ 2048; omega)]; exact h.ap
-  · rw [hd (p256.sl B3P) (by show 288 + 32 ≤ 2048; omega)]; exact h.bp
+  · rw [hd (p256.sl BP) (by show 1344 + 32 ≤ 2048; omega)]; exact h.bp
   · intro e' he'
     simp only [List.mem_cons] at he'
     rcases he' with rfl | he'
@@ -318,8 +315,8 @@ theorem store_ok' {base : Addr} {s₀ s : State} {G Q : Point W} {L : List Nat} 
 /-- `o = p + q`, for `o` among the slots the construction writes: the
 entries are kept. -/
 theorem add_ok' (hL : Law W) {base : Addr} {s₀ s : State} {G Q : Point W} {L : List Nat}
-    (h : BS base s₀ s G Q L) {p q o : Pt} (hA : RcbApart p256.rcbSlots p q o)
-    (hsl : ∀ x ∈ rcbW p256.rcbSlots o ++ rcbR p256.rcbSlots p q, x ∈ jSl)
+    (h : BS base s₀ s G Q L) {p q o : Pt} (hA : RcbApart (Cfg.rcb3Slots p256) p q o)
+    (hsl : ∀ x ∈ rcbW (Cfg.rcb3Slots p256) o ++ rcbR (Cfg.rcb3Slots p256) p q, x ∈ jSl)
     (hW : ∀ w ∈ addW o, ∃ w' ∈ buildW, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2)
     {P P' : Point W} (hP : onCurve W P = true) (hP' : onCurve W P' = true)
     (hp : PtOk base s p P) (hq : PtOk base s q P') :
@@ -332,7 +329,7 @@ theorem add_ok' (hL : Law W) {base : Addr} {s₀ s : State} {G Q : Point W} {L :
   have hfar : ∀ d, 2048 ≤ d → d + 32 ≤ 3840 → ∀ w ∈ addW o, d + 32 ≤ w.1 ∨ w.1 + w.2 ≤ d := by
     intro d h1 h2 w hw
     obtain ⟨w', hw', l1, l2⟩ := hW w hw
-    have hsl' : ∀ x ∈ rcbW p256.rcbSlots o, x + 32 ≤ 2048 := fun x hx =>
+    have hsl' : ∀ x ∈ rcbW (Cfg.rcb3Slots p256) o, x + 32 ≤ 2048 := fun x hx =>
       (by decide : ∀ x ∈ jSl, x + 32 ≤ 2048) x (hsl x (List.mem_append_left _ hx))
     simp only [addW, List.mem_append, List.mem_map, List.mem_singleton] at hw
     rcases hw with ⟨x, hx, rfl⟩ | rfl
@@ -357,8 +354,14 @@ theorem add_ok' (hL : Law W) {base : Addr} {s₀ s : State} {G Q : Point W} {L :
         simp only [buildW, List.mem_cons, List.not_mem_nil, or_false] at hw'
         rcases hw' with rfl | rfl | rfl | rfl <;> decide
       omega
-    rw [hd (p256.sl B3P) (fun w hw => .inl (by have := hlow w hw; show 288 + 32 ≤ w.1; omega))
-      (by show 288 + 32 ≤ 8192; omega)]
+    have hfarB : ∀ w ∈ addW o, p256.sl BP + 8 * 4 ≤ w.1 ∨ w.1 + w.2 ≤ p256.sl BP := fun w hw => by
+      obtain ⟨w', hw', l1, l2⟩ := hW w hw
+      have : 1344 + 32 ≤ w'.1 ∨ w'.1 + w'.2 ≤ 1344 := by
+        simp only [buildW, List.mem_cons, List.not_mem_nil, or_false] at hw'
+        rcases hw' with rfl | rfl | rfl | rfl <;> decide
+      show 1344 + 32 ≤ w.1 ∨ w.1 + w.2 ≤ 1344
+      omega
+    rw [hd (p256.sl BP) hfarB (by show 1344 + 32 ≤ 8192; omega)]
     exact h.bp
   · intro e he
     obtain ⟨hlt, hok⟩ := h.ents e he
@@ -399,7 +402,7 @@ end
 structure JPre (base : Addr) (s : State) (Q : Point W) : Prop where
   ws : WsReg s base
   ap : wordsVal s.mem base (p256.sl AP) 4 = W.a * 2 ^ 256 % W.p
-  bp : wordsVal s.mem base (p256.sl B3P) 4 = 3 * W.b * 2 ^ 256 % W.p
+  bp : wordsVal s.mem base (p256.sl BP) 4 = W.b * 2 ^ 256 % W.p
   zero : wordsVal s.mem base (p256.sl ZERO) 4 = 0
   onep : wordsVal s.mem base (p256.sl ONEP) 4 = 1 * 2 ^ 256 % W.p
   gx : wordsVal s.mem base (p256.sl GX) 4 = W.gx * 2 ^ 256 % W.p
@@ -434,14 +437,14 @@ theorem keep_addT {base : Addr} {m m' : Mem} (U : Unch base (addW (p256.pt TX TY
   exact U.wordsVal (h d hd) (by have : d < 2048 := (by decide : ∀ d ∈ gqSl, d < 2048) d hd; omega)
 
 theorem apart_mixed' : ∀ a ∈ [1, 2, 3], ∀ b ∈ [1, 2, 3],
-    ((rcbW p256.rcbSlots (p256.pt TX TY TZ)).Nodup ∧
-      ∀ x ∈ rcbR p256.rcbSlots (Cfg.gPt p256 a) (Cfg.qPt p256 b), x ∉ rcbW p256.rcbSlots (p256.pt TX TY TZ)) ∧
-    (∀ x ∈ rcbW p256.rcbSlots (p256.pt TX TY TZ) ++ rcbR p256.rcbSlots (Cfg.gPt p256 a) (Cfg.qPt p256 b), x ∈ jSl) :=
+    ((rcbW (Cfg.rcb3Slots p256) (p256.pt TX TY TZ)).Nodup ∧
+      ∀ x ∈ rcbR (Cfg.rcb3Slots p256) (Cfg.gPt p256 a) (Cfg.qPt p256 b), x ∉ rcbW (Cfg.rcb3Slots p256) (p256.pt TX TY TZ)) ∧
+    (∀ x ∈ rcbW (Cfg.rcb3Slots p256) (p256.pt TX TY TZ) ++ rcbR (Cfg.rcb3Slots p256) (Cfg.gPt p256 a) (Cfg.qPt p256 b), x ∈ jSl) :=
   by decide
 
 theorem apart_mixed {a b : Nat} (ha : a ∈ [1, 2, 3]) (hb : b ∈ [1, 2, 3]) :
-    RcbApart p256.rcbSlots (Cfg.gPt p256 a) (Cfg.qPt p256 b) (p256.pt TX TY TZ) ∧
-    (∀ x ∈ rcbW p256.rcbSlots (p256.pt TX TY TZ) ++ rcbR p256.rcbSlots (Cfg.gPt p256 a) (Cfg.qPt p256 b), x ∈ jSl) :=
+    RcbApart (Cfg.rcb3Slots p256) (Cfg.gPt p256 a) (Cfg.qPt p256 b) (p256.pt TX TY TZ) ∧
+    (∀ x ∈ rcbW (Cfg.rcb3Slots p256) (p256.pt TX TY TZ) ++ rcbR (Cfg.rcb3Slots p256) (Cfg.gPt p256 a) (Cfg.qPt p256 b), x ∈ jSl) :=
   have h := apart_mixed' a ha b hb
   ⟨⟨h.1.1, h.1.2⟩, h.2⟩
 
@@ -529,9 +532,9 @@ theorem first3_ok {base : Addr} {s₀ s : State} {G Q : Point W} (h : BS base s�
 entries `e₂` and `e₃`; the slots of `D` are kept. -/
 theorem mult_ok (hL : Law W) {base : Addr} {s₀ s : State} {G Q P : Point W} (hP : onCurve W P = true)
     {L : List Nat} (h : BS base s₀ s G Q L) {p₁ p₂ p₃ : Pt} {e₂ e₃ : Nat} (he₂ : e₂ < 16) (he₃ : e₃ < 16)
-    (hA₂ : RcbApart p256.rcbSlots p₁ p₁ p₂) (hA₃ : RcbApart p256.rcbSlots p₂ p₁ p₃)
-    (hsl₂ : ∀ x ∈ rcbW p256.rcbSlots p₂ ++ rcbR p256.rcbSlots p₁ p₁, x ∈ jSl)
-    (hsl₃ : ∀ x ∈ rcbW p256.rcbSlots p₃ ++ rcbR p256.rcbSlots p₂ p₁, x ∈ jSl)
+    (hA₂ : RcbApart (Cfg.rcb3Slots p256) p₁ p₁ p₂) (hA₃ : RcbApart (Cfg.rcb3Slots p256) p₂ p₁ p₃)
+    (hsl₂ : ∀ x ∈ rcbW (Cfg.rcb3Slots p256) p₂ ++ rcbR (Cfg.rcb3Slots p256) p₁ p₁, x ∈ jSl)
+    (hsl₃ : ∀ x ∈ rcbW (Cfg.rcb3Slots p256) p₃ ++ rcbR (Cfg.rcb3Slots p256) p₂ p₁, x ∈ jSl)
     (hW₂ : ∀ w ∈ addW p₂, ∃ w' ∈ buildW, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2)
     (hW₃ : ∀ w ∈ addW p₃, ∃ w' ∈ buildW, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2)
     (hs₂ : ∀ x ∈ [p₂.x, p₂.y, p₂.z], x % 8 = 0 ∧ x + 32 ≤ 2048)
@@ -910,7 +913,7 @@ theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
 /-- What the steps read, as the loop's start `s₀` holds it. -/
 structure LPre (base : Addr) (s₀ : State) (G Q : Point W) (u v : Nat) : Prop where
   ap : wordsVal s₀.mem base (p256.sl AP) 4 = W.a * 2 ^ 256 % W.p
-  bp : wordsVal s₀.mem base (p256.sl B3P) 4 = 3 * W.b * 2 ^ 256 % W.p
+  bp : wordsVal s₀.mem base (p256.sl BP) 4 = W.b * 2 ^ 256 % W.p
   uu : wordsVal s₀.mem base (p256.sl UU) 4 = u
   vv : wordsVal s₀.mem base (p256.sl VV) 4 = v
   tab : JTab base s₀ G Q
@@ -959,7 +962,7 @@ theorem step_ok (hL : Law W) {base : Addr} {s₀ : State} {G Q : Point W} {u v :
       (O₂.wordsVal (by decide) (by decide))
   have ap₂ : wordsVal s₂.mem base (p256.sl AP) 4 = W.a * 2 ^ 256 % W.p := by
     rw [e₂ _ (by decide) (by decide) (by decide)]; exact hP.ap
-  have bp₂ : wordsVal s₂.mem base (p256.sl B3P) 4 = 3 * W.b * 2 ^ 256 % W.p := by
+  have bp₂ : wordsVal s₂.mem base (p256.sl BP) 4 = W.b * 2 ^ 256 % W.p := by
     rw [e₂ _ (by decide) (by decide) (by decide)]; exact hP.bp
   have hX := ent_curve hL hP.g hP.q (u >>> (2 * j)) (v >>> (2 * j))
   have hD := hL.onCurve_add hX hX
@@ -969,14 +972,14 @@ theorem step_ok (hL : Law W) {base : Addr} {s₀ : State} {G Q : Point W} {u v :
   refine WP.seq (WP.mono (addPt_ok hL hw₂ ap₂ bp₂ (p := p256.pt RX RY RZ) (q := p256.pt RX RY RZ)
     (o := p256.pt DX DY DZ) ⟨by decide, by decide⟩ (by decide) hX hX pR₂ pR₂) fun s₃ ⟨K₃, U₃, pD⟩ => ?_)
   have hw₃ := hw₂.of_kp K₃
-  have k₃ : ∀ d ∈ [p256.sl AP, p256.sl B3P, p256.sl EX, p256.sl EY, p256.sl EZ],
+  have k₃ : ∀ d ∈ [p256.sl AP, p256.sl BP, p256.sl EX, p256.sl EY, p256.sl EZ],
       wordsVal s₃.mem base d 4 = wordsVal s₂.mem base d 4 := keepU U₃ (by decide)
   -- `T = D + D`.
   refine WP.seq (WP.mono (addPt_ok hL hw₃ ((k₃ _ (by decide)).trans ap₂) ((k₃ _ (by decide)).trans bp₂)
     (p := p256.pt DX DY DZ) (q := p256.pt DX DY DZ) (o := p256.pt TX TY TZ) ⟨by decide, by decide⟩ (by decide)
     hD hD pD pD) fun s₄ ⟨K₄, U₄, pT⟩ => ?_)
   have hw₄ := hw₃.of_kp K₄
-  have k₄ : ∀ d ∈ [p256.sl AP, p256.sl B3P, p256.sl EX, p256.sl EY, p256.sl EZ],
+  have k₄ : ∀ d ∈ [p256.sl AP, p256.sl BP, p256.sl EX, p256.sl EY, p256.sl EZ],
       wordsVal s₄.mem base d 4 = wordsVal s₃.mem base d 4 := keepU U₄ (by decide)
   have pE₄ := pE.of_eq ((k₄ _ (by decide)).trans (k₃ _ (by decide))) ((k₄ _ (by decide)).trans (k₃ _ (by decide)))
     ((k₄ _ (by decide)).trans (k₃ _ (by decide)))
@@ -1011,7 +1014,7 @@ theorem joint_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : JPre
   rw [Cfg.joint]
   refine WP.seq (WP.mono (build_ok hL hp) fun s₁ ⟨K₁, U₁, T₁⟩ => ?_)
   have hw₁ := hp.ws.of_kp K₁
-  have e₁ : ∀ d ∈ [p256.sl ZERO, p256.sl ONEP, p256.sl AP, p256.sl B3P, p256.sl UU, p256.sl VV],
+  have e₁ : ∀ d ∈ [p256.sl ZERO, p256.sl ONEP, p256.sl AP, p256.sl BP, p256.sl UU, p256.sl VV],
       wordsVal s₁.mem base d 4 = wordsVal s.mem base d 4 := keepU U₁ (by decide)
   rw [show p256.n = 4 from rfl]
   simp only [List.append_assoc]
@@ -1031,9 +1034,9 @@ theorem joint_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : JPre
   have U₅ : Unch base [(512, 96)] s₁.mem s₅.mem := by
     rw [u₅.mem]
     exact ((O₂.unch.trans O₃.unch).trans O₄.unch).cover (by decide)
-  have e₅ : ∀ d ∈ [p256.sl ZERO, p256.sl ONEP, p256.sl AP, p256.sl B3P, p256.sl UU, p256.sl VV],
+  have e₅ : ∀ d ∈ [p256.sl ZERO, p256.sl ONEP, p256.sl AP, p256.sl BP, p256.sl UU, p256.sl VV],
       wordsVal s₅.mem base d 4 = wordsVal s.mem base d 4 := fun d hd =>
-    (keepU U₅ (D := [p256.sl ZERO, p256.sl ONEP, p256.sl AP, p256.sl B3P, p256.sl UU, p256.sl VV]) (by decide) d hd).trans
+    (keepU U₅ (D := [p256.sl ZERO, p256.sl ONEP, p256.sl AP, p256.sl BP, p256.sl UU, p256.sl VV]) (by decide) d hd).trans
       (e₁ d hd)
   have T₅ : JTab base s₅ (Spec.Weierstrass.G W) Q := T₁.of_eq fun d h1 h2 => U₅.wordsVal (by simp; omega) (by omega)
   -- The start: `R = O`.

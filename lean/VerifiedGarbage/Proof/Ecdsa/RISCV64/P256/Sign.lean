@@ -132,6 +132,7 @@ structure SetupS (base : Addr) (s s' : State) : Prop where
   r2n : sv base s' R2N = 2 ^ 256 * 2 ^ 256 % W.n
   onen : sv base s' ONEN = 2 ^ 256 % W.n
   expn : sv base s' EXPN = W.n - 2
+  bp : sv base s' BP = W.b * 2 ^ 256 % W.p
   rx : sv base s' RX = W.gx * 2 ^ 256 % W.p
   ry : sv base s' RY = W.gy * 2 ^ 256 % W.p
   flag : word s'.mem base FL = maskOf ((true && decide (ofBytes (bytesAt s.mem (s.gpr .a1) 32) < W.n)) &&
@@ -248,7 +249,7 @@ theorem setupS_ok {s : State} (hs : signRV.pre (stripConsts Impl.Ecdsa.RISCV64.C
     fun x h0 h2 h3 hx => by rw [K₁₀ x hx, g₁ x h0 h2 h3], ?_, ?_, ?_,
     by rw [U₂₁₀.word (by decide) (by decide), w0], by rw [U₂₁₀.word (by decide) (by decide), w1],
     by rw [U₂₁₀.word (by decide) (by decide), w2], by rw [U₂₁₀.word (by decide) (by decide), w3],
-    by rw [U₂₁₀.word (by decide) (by decide), w4], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    by rw [U₂₁₀.word (by decide) (by decide), w4], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [r₁₀.rd, r₉.rd, K₈.rd, r₇.rd, r₆.rd, u₅.rd, u₄b.rd, u₄a.rd, r₂₄.rd, rd₁]
   · rw [r₁₀.wr, r₉.wr, K₈.wr, r₇.wr, r₆.wr, u₅.wr, u₄b.wr, u₄a.wr, r₂₄.wr, wr₁]
   · rw [r₁₀.sp, r₉.sp, K₈.sp, r₇.sp, r₆.sp, u₅.sp, u₄b.sp, u₄a.sp, r₂₄.sp, sp₁]
@@ -265,6 +266,9 @@ theorem setupS_ok {s : State} (hs : signRV.pre (stripConsts Impl.Ecdsa.RISCV64.C
   · rw [sv₁₀ R2N (by decide) (by decide) (by decide), sv₈ R2N (by decide)]; exact cs₇ (R2N, _) (by decide)
   · rw [sv₁₀ ONEN (by decide) (by decide) (by decide), sv₈ ONEN (by decide)]; exact cs₇ (ONEN, _) (by decide)
   · rw [sv₁₀ EXPN (by decide) (by decide) (by decide), sv₈ EXPN (by decide)]; exact cs₇ (EXPN, _) (by decide)
+  · rw [sv₁₀ BP (by decide) (by decide) (by decide), sv₈ BP (by decide),
+      show sv base s₇ BP = sv base s₆ BP from sv_unch U₇ BP (by decide)]
+    exact const_at cs₆ 11
   · show wordsVal _ _ _ _ = _
     rw [O₁₀.wordsVal (by decide) (by decide), v₉, show wordsVal s₈.mem base (p256.sl GX) 4 = sv base s₈ GX from rfl,
       sv₈ GX (by decide),
@@ -663,7 +667,7 @@ theorem sign_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : signRVC.pre 
   have hT₁ : Comb.TabAt base s₁ :=
     (Comb.tabAt_of_consts hk (by rw [hwr]; simp)).of_frame sy₁ S.rd F₁ (Comb.tab_wr_of_consts hk)
   -- `k`'s range, `[k]G` and `x`.
-  refine WP.seq (WP.mono (Comb.tailG_ok hL S.ws S.s3 S.tc S.rx S.ry hT₁)
+  refine WP.seq (WP.mono (Comb.tailG_ok hL S.ws S.s3 S.tc S.rx S.ry S.bp hT₁)
     fun s₂ ⟨Kc₂, U₂, f₂, rep₂, xolt, xoeq, acclt, acceq⟩ => ?_)
   have hw₂ := S.ws.of_kc Kc₂
   have e₂ : ∀ i ∈ [ZERO, ONE, K, DD, EE, R2N, ONEN, EXPN], sv base s₂ i = sv base s₁ i := fun i hi => by

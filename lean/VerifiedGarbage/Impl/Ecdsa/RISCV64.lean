@@ -85,6 +85,11 @@ def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
 def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl B3P, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
 
+/-- The slots of the complete addition for `a = -3` (`rcb3`): `b` in
+Montgomery's form at slot 40 (`Impl/Ecdh/RISCV64.lean`'s `BP`) in place of
+`3 b`. -/
+def rcb3Slots : RcbSlots := { c.rcbSlots with b3 := c.sl 40 }
+
 /-- The ladder over every bit of the `n` words at `K`'s slot, from the
 point at `ACC`, `PT`, `ONEP`. -/
 def mulLadder : LadderCfg where

@@ -1218,139 +1218,154 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 320
+	addi a2, zero, 352
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 320
+	addi a1, zero, 1536
+	addi a2, zero, 352
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
 	addi a2, zero, 928
-	addi a3, zero, 960
+	addi a3, zero, 1536
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
+	addi a1, zero, 1536
+	addi a2, zero, 832
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 928
+	addi a2, zero, 928
+	addi a3, zero, 1536
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1536
+	addi a2, zero, 320
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1568
+	addi a2, zero, 320
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1536
+	addi a2, zero, 1536
+	addi a3, zero, 1568
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1568
 	addi a2, zero, 800
 	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 352
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 352
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
-	addi a3, zero, 1536
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
-	addi a3, zero, 1536
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 1536
-	addi a3, zero, 1600
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 832
-	addi a3, zero, 1600
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 832
-	addi a3, zero, 1600
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1568
 	addi a2, zero, 1536
-	addi a3, zero, 1600
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 1568
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 1600
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 1536
+	addi a2, zero, 1568
+	addi a3, zero, 1600
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1600
+	addi a2, zero, 1536
+	addi a3, zero, 1536
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1536
+	addi a2, zero, 1536
+	addi a3, zero, 1600
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1600
+	addi a2, zero, 832
+	addi a3, zero, 1536
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1536
+	addi a2, zero, 832
+	addi a3, zero, 1536
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1568
+	addi a2, zero, 1344
+	addi a3, zero, 1568
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1568
+	addi a2, zero, 1568
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1568
 	addi a2, zero, 1568
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 1568
+	addi a3, zero, 1568
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1568
+	addi a2, zero, 832
+	addi a3, zero, 1568
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 1568
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 1568
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1568
+	addi a2, zero, 1536
+	addi a3, zero, 1600
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1568
+	addi a2, zero, 1568
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1536
 	addi a2, zero, 896
@@ -1359,22 +1374,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 1536
 	addi a2, zero, 1536
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 1600
+	addi a2, zero, 928
+	addi a3, zero, 1600
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 960
-	addi a3, zero, 1600
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1600
 	addi a2, zero, 1600
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -1444,31 +1459,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 1536
-	addi a3, zero, 1600
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 320
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 1568
 	addi a3, zero, 1600
 	call {vg_p256_add_mod_p}
@@ -1478,8 +1468,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 1632
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -1488,95 +1478,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 1632
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1696
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 1632
+	addi a2, zero, 1536
+	addi a3, zero, 1600
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 320
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1632
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1696
 	addi a2, zero, 1632
-	addi a3, zero, 1696
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 1664
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1632
-	addi a2, zero, 832
-	addi a3, zero, 1696
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1696
-	addi a2, zero, 832
-	addi a3, zero, 1696
+	addi a1, zero, 1664
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1664
 	addi a2, zero, 1632
-	addi a3, zero, 1696
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 1664
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 1696
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 1632
+	addi a2, zero, 1664
+	addi a3, zero, 1696
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1696
+	addi a2, zero, 1632
+	addi a3, zero, 1632
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1632
+	addi a2, zero, 1632
+	addi a3, zero, 1696
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1696
+	addi a2, zero, 832
+	addi a3, zero, 1632
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1632
+	addi a2, zero, 832
+	addi a3, zero, 1632
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1344
+	addi a3, zero, 1664
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1664
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1664
 	addi a2, zero, 1664
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 1664
+	addi a3, zero, 1664
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 832
+	addi a3, zero, 1664
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 1664
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 1664
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1632
+	addi a3, zero, 1696
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1664
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1632
 	addi a2, zero, 896
@@ -1585,22 +1615,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 1632
 	addi a2, zero, 1632
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 1696
+	addi a2, zero, 928
+	addi a3, zero, 1696
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1696
-	addi a2, zero, 960
-	addi a3, zero, 1696
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1696
 	addi a2, zero, 1696
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -1670,139 +1700,154 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 1280
+	addi a2, zero, 1440
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1280
+	addi a1, zero, 1728
+	addi a2, zero, 1440
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
 	addi a2, zero, 928
-	addi a3, zero, 960
+	addi a3, zero, 1728
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
+	addi a1, zero, 1728
+	addi a2, zero, 832
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 928
+	addi a2, zero, 928
+	addi a3, zero, 1728
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1280
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1760
+	addi a2, zero, 1280
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1728
+	addi a3, zero, 1760
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1760
 	addi a2, zero, 800
 	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1440
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 1440
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
-	addi a3, zero, 1728
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
-	addi a3, zero, 1728
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 1728
-	addi a3, zero, 1792
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 832
-	addi a3, zero, 1792
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 832
-	addi a3, zero, 1792
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1760
 	addi a2, zero, 1728
-	addi a3, zero, 1792
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 1760
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 1792
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 1728
+	addi a2, zero, 1760
+	addi a3, zero, 1792
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1792
+	addi a2, zero, 1728
+	addi a3, zero, 1728
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1728
+	addi a3, zero, 1792
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1792
+	addi a2, zero, 832
+	addi a3, zero, 1728
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 832
+	addi a3, zero, 1728
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1760
+	addi a2, zero, 1344
+	addi a3, zero, 1760
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1760
+	addi a2, zero, 1760
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1760
 	addi a2, zero, 1760
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 1760
+	addi a3, zero, 1760
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1760
+	addi a2, zero, 832
+	addi a3, zero, 1760
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 1760
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 1760
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1760
+	addi a2, zero, 1728
+	addi a3, zero, 1792
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1760
+	addi a2, zero, 1760
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1728
 	addi a2, zero, 896
@@ -1811,22 +1856,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 1728
 	addi a2, zero, 1728
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 1792
+	addi a2, zero, 928
+	addi a3, zero, 1792
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 960
-	addi a3, zero, 1792
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -1896,31 +1941,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 1728
-	addi a3, zero, 1792
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1280
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 1760
 	addi a3, zero, 1792
 	call {vg_p256_add_mod_p}
@@ -1930,8 +1950,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 1824
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -1940,95 +1960,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 1824
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1888
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 1824
+	addi a2, zero, 1728
+	addi a3, zero, 1792
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1856
+	addi a2, zero, 1280
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1824
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1888
 	addi a2, zero, 1824
-	addi a3, zero, 1888
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 1856
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1824
-	addi a2, zero, 832
-	addi a3, zero, 1888
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1888
-	addi a2, zero, 832
-	addi a3, zero, 1888
+	addi a1, zero, 1856
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1856
 	addi a2, zero, 1824
-	addi a3, zero, 1888
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 1856
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 1888
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 1824
+	addi a2, zero, 1856
+	addi a3, zero, 1888
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1888
+	addi a2, zero, 1824
+	addi a3, zero, 1824
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1824
+	addi a2, zero, 1824
+	addi a3, zero, 1888
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1888
+	addi a2, zero, 832
+	addi a3, zero, 1824
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1824
+	addi a2, zero, 832
+	addi a3, zero, 1824
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1856
+	addi a2, zero, 1344
+	addi a3, zero, 1856
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1856
+	addi a2, zero, 1856
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1856
 	addi a2, zero, 1856
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 1856
+	addi a3, zero, 1856
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1856
+	addi a2, zero, 832
+	addi a3, zero, 1856
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 1856
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 1856
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1856
+	addi a2, zero, 1824
+	addi a3, zero, 1888
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1856
+	addi a2, zero, 1856
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1824
 	addi a2, zero, 896
@@ -2037,22 +2097,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 1824
 	addi a2, zero, 1824
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 1888
+	addi a2, zero, 928
+	addi a3, zero, 1888
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1888
-	addi a2, zero, 960
-	addi a3, zero, 1888
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1888
 	addi a2, zero, 1888
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -2122,31 +2182,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 320
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1280
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 352
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
@@ -2156,8 +2191,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -2166,95 +2201,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 704
+	addi a2, zero, 320
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1280
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 704
-	addi a2, zero, 832
-	addi a3, zero, 768
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 832
-	addi a3, zero, 768
+	addi a1, zero, 736
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 736
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 768
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 704
+	addi a2, zero, 736
+	addi a3, zero, 768
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 704
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1344
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 736
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 736
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 832
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 736
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 896
@@ -2263,22 +2338,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 704
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 768
+	addi a2, zero, 928
+	addi a3, zero, 768
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 960
-	addi a3, zero, 768
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 768
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -2348,31 +2423,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 320
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1728
-	addi a3, zero, 1792
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 352
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
@@ -2382,8 +2432,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 1792
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -2392,95 +2442,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 704
+	addi a2, zero, 320
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1728
+	addi a3, zero, 1792
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 704
-	addi a2, zero, 832
-	addi a3, zero, 768
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 832
-	addi a3, zero, 768
+	addi a1, zero, 736
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 736
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 768
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 704
+	addi a2, zero, 736
+	addi a3, zero, 768
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 704
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1344
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 736
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 736
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 832
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 736
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 896
@@ -2489,22 +2579,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 704
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 768
+	addi a2, zero, 928
+	addi a3, zero, 768
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 960
-	addi a3, zero, 768
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 768
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -2574,31 +2664,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 320
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1824
-	addi a3, zero, 1888
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 352
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
@@ -2608,8 +2673,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 1888
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -2618,95 +2683,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 704
+	addi a2, zero, 320
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1824
+	addi a3, zero, 1888
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 704
-	addi a2, zero, 832
-	addi a3, zero, 768
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 832
-	addi a3, zero, 768
+	addi a1, zero, 736
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 736
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 768
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 704
+	addi a2, zero, 736
+	addi a3, zero, 768
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 704
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1344
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 736
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 736
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 832
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 736
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 896
@@ -2715,22 +2820,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 704
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 768
+	addi a2, zero, 928
+	addi a3, zero, 768
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 960
-	addi a3, zero, 768
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 768
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -2800,31 +2905,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 1536
-	addi a3, zero, 1600
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1280
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 1568
 	addi a3, zero, 1600
 	call {vg_p256_add_mod_p}
@@ -2834,8 +2914,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -2844,95 +2924,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 704
+	addi a2, zero, 1536
+	addi a3, zero, 1600
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1280
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 704
-	addi a2, zero, 832
-	addi a3, zero, 768
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 832
-	addi a3, zero, 768
+	addi a1, zero, 736
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 736
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 768
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 704
+	addi a2, zero, 736
+	addi a3, zero, 768
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 704
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1344
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 736
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 736
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 832
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 736
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 896
@@ -2941,22 +3061,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 704
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 768
+	addi a2, zero, 928
+	addi a3, zero, 768
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 960
-	addi a3, zero, 768
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 768
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -3026,31 +3146,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 1536
-	addi a3, zero, 1600
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1728
-	addi a3, zero, 1792
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 1568
 	addi a3, zero, 1600
 	call {vg_p256_add_mod_p}
@@ -3060,8 +3155,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 1792
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -3070,95 +3165,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 704
+	addi a2, zero, 1536
+	addi a3, zero, 1600
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1728
+	addi a3, zero, 1792
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 704
-	addi a2, zero, 832
-	addi a3, zero, 768
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 832
-	addi a3, zero, 768
+	addi a1, zero, 736
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 736
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 768
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 704
+	addi a2, zero, 736
+	addi a3, zero, 768
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 704
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1344
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 736
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 736
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 832
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 736
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 896
@@ -3167,22 +3302,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 704
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 768
+	addi a2, zero, 928
+	addi a3, zero, 768
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 960
-	addi a3, zero, 768
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 768
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -3252,31 +3387,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 1536
-	addi a3, zero, 1600
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1824
-	addi a3, zero, 1888
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 1568
 	addi a3, zero, 1600
 	call {vg_p256_add_mod_p}
@@ -3286,8 +3396,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 1888
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -3296,95 +3406,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 704
+	addi a2, zero, 1536
+	addi a3, zero, 1600
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1824
+	addi a3, zero, 1888
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 704
-	addi a2, zero, 832
-	addi a3, zero, 768
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 832
-	addi a3, zero, 768
+	addi a1, zero, 736
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 736
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 768
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 704
+	addi a2, zero, 736
+	addi a3, zero, 768
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 704
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1344
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 736
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 736
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 832
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 736
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 896
@@ -3393,22 +3543,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 704
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 768
+	addi a2, zero, 928
+	addi a3, zero, 768
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 960
-	addi a3, zero, 768
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 768
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -3478,31 +3628,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 1632
-	addi a3, zero, 1696
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1280
-	addi a3, zero, 224
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 1664
 	addi a3, zero, 1696
 	call {vg_p256_add_mod_p}
@@ -3512,8 +3637,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 224
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -3522,95 +3647,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 704
+	addi a2, zero, 1632
+	addi a3, zero, 1696
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1280
+	addi a3, zero, 224
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 704
-	addi a2, zero, 832
-	addi a3, zero, 768
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 832
-	addi a3, zero, 768
+	addi a1, zero, 736
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 736
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 768
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 704
+	addi a2, zero, 736
+	addi a3, zero, 768
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 704
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1344
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 736
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 736
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 832
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 736
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 896
@@ -3619,22 +3784,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 704
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 768
+	addi a2, zero, 928
+	addi a3, zero, 768
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 960
-	addi a3, zero, 768
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 768
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -3704,31 +3869,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 1632
-	addi a3, zero, 1696
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1728
-	addi a3, zero, 1792
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 1664
 	addi a3, zero, 1696
 	call {vg_p256_add_mod_p}
@@ -3738,8 +3878,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 1792
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -3748,95 +3888,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 704
+	addi a2, zero, 1632
+	addi a3, zero, 1696
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1728
+	addi a3, zero, 1792
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 704
-	addi a2, zero, 832
-	addi a3, zero, 768
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 832
-	addi a3, zero, 768
+	addi a1, zero, 736
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 736
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 768
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 704
+	addi a2, zero, 736
+	addi a3, zero, 768
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 704
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1344
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 736
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 736
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 832
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 736
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 896
@@ -3845,22 +4025,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 704
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 768
+	addi a2, zero, 928
+	addi a3, zero, 768
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 960
-	addi a3, zero, 768
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 768
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -3930,31 +4110,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 1632
-	addi a3, zero, 1696
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1824
-	addi a3, zero, 1888
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 1664
 	addi a3, zero, 1696
 	call {vg_p256_add_mod_p}
@@ -3964,8 +4119,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 1888
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -3974,95 +4129,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 704
+	addi a2, zero, 1632
+	addi a3, zero, 1696
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1824
+	addi a3, zero, 1888
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 704
-	addi a2, zero, 832
-	addi a3, zero, 768
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 832
-	addi a3, zero, 768
+	addi a1, zero, 736
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 736
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 768
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 704
+	addi a2, zero, 736
+	addi a3, zero, 768
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 704
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1344
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 736
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 736
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 832
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 736
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 896
@@ -4071,22 +4266,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 704
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 768
+	addi a2, zero, 928
+	addi a3, zero, 768
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 960
-	addi a3, zero, 768
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 768
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 1
@@ -4949,31 +5144,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 512
-	addi a3, zero, 576
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 512
-	addi a3, zero, 576
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 544
 	addi a3, zero, 576
 	call {vg_p256_add_mod_p}
@@ -4983,8 +5153,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 576
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 608
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -4993,95 +5163,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 608
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 672
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 608
+	addi a2, zero, 512
+	addi a3, zero, 576
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 640
+	addi a2, zero, 512
+	addi a3, zero, 576
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 608
-	addi a2, zero, 288
+	addi a2, zero, 608
+	addi a3, zero, 640
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 640
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 640
+	addi a2, zero, 608
+	addi a3, zero, 640
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 672
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
+	addi a1, zero, 608
+	addi a2, zero, 640
+	addi a3, zero, 672
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
 	addi a1, zero, 672
+	addi a2, zero, 608
+	addi a3, zero, 608
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 608
 	addi a2, zero, 608
 	addi a3, zero, 672
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 608
-	addi a2, zero, 832
-	addi a3, zero, 672
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
 	addi a1, zero, 672
 	addi a2, zero, 832
-	addi a3, zero, 672
+	addi a3, zero, 608
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 608
+	addi a2, zero, 832
+	addi a3, zero, 608
 	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 640
+	addi a2, zero, 1344
+	addi a3, zero, 640
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 832
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 640
+	addi a2, zero, 640
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 640
+	addi a2, zero, 640
+	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 640
+	addi a3, zero, 640
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 640
+	addi a2, zero, 832
+	addi a3, zero, 640
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 640
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 640
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 640
 	addi a2, zero, 608
 	addi a3, zero, 672
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
 	addi a1, zero, 640
 	addi a2, zero, 640
-	addi a3, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 608
 	addi a2, zero, 896
@@ -5090,22 +5300,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 608
 	addi a2, zero, 608
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 672
+	addi a2, zero, 928
+	addi a3, zero, 672
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 672
-	addi a2, zero, 960
-	addi a3, zero, 672
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 672
 	addi a2, zero, 672
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
@@ -5149,31 +5359,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 608
-	addi a3, zero, 672
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 608
-	addi a3, zero, 672
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 640
 	addi a3, zero, 672
 	call {vg_p256_add_mod_p}
@@ -5183,8 +5368,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 672
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -5193,95 +5378,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 704
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 704
+	addi a2, zero, 608
+	addi a3, zero, 672
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 608
+	addi a3, zero, 672
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 704
-	addi a2, zero, 832
-	addi a3, zero, 768
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 832
-	addi a3, zero, 768
+	addi a1, zero, 736
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 736
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 768
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 704
+	addi a2, zero, 736
+	addi a3, zero, 768
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 704
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 768
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 704
+	addi a2, zero, 832
+	addi a3, zero, 704
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 1344
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 736
 	addi a2, zero, 736
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 736
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 832
+	addi a3, zero, 736
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 736
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 736
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 736
+	addi a2, zero, 736
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 896
@@ -5290,22 +5515,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 704
 	addi a2, zero, 704
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 768
+	addi a2, zero, 928
+	addi a3, zero, 768
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 768
-	addi a2, zero, 960
-	addi a3, zero, 768
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 768
 	addi a2, zero, 768
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
@@ -5349,31 +5574,6 @@ vg_ecdsa_p256_verify:
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 928
-	addi a2, zero, 704
-	addi a3, zero, 768
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 1920
-	addi a3, zero, 1984
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 800
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
-	addi a3, zero, 960
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 960
 	addi a2, zero, 736
 	addi a3, zero, 768
 	call {vg_p256_add_mod_p}
@@ -5383,8 +5583,8 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 1984
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 512
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
@@ -5393,95 +5593,135 @@ vg_ecdsa_p256_verify:
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 960
-	addi a2, zero, 960
+	addi a1, zero, 928
+	addi a2, zero, 928
 	addi a3, zero, 512
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 576
-	addi a2, zero, 256
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a1, zero, 512
+	addi a2, zero, 704
+	addi a3, zero, 768
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 544
+	addi a2, zero, 1920
+	addi a3, zero, 1984
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 512
-	addi a2, zero, 288
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 576
 	addi a2, zero, 512
-	addi a3, zero, 576
-	call {vg_p256_add_mod_p}
+	addi a3, zero, 544
+	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 512
-	addi a2, zero, 832
-	addi a3, zero, 576
-	call {vg_p256_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 576
-	addi a2, zero, 832
-	addi a3, zero, 576
+	addi a1, zero, 544
+	addi a2, zero, 800
+	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 544
 	addi a2, zero, 512
-	addi a3, zero, 576
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 800
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 800
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
-	addi a3, zero, 864
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 288
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 832
-	addi a2, zero, 832
-	addi a3, zero, 864
-	call {vg_p256_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 800
-	addi a3, zero, 864
+	addi a3, zero, 544
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 864
-	addi a2, zero, 256
+	addi a1, zero, 576
+	addi a2, zero, 1344
 	addi a3, zero, 864
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 928
-	addi a2, zero, 928
+	addi a1, zero, 512
+	addi a2, zero, 544
+	addi a3, zero, 576
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 576
+	addi a2, zero, 512
+	addi a3, zero, 512
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 512
+	addi a2, zero, 512
+	addi a3, zero, 576
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 576
+	addi a2, zero, 832
+	addi a3, zero, 512
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 512
+	addi a2, zero, 832
+	addi a3, zero, 512
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 544
+	addi a2, zero, 1344
+	addi a3, zero, 544
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 864
 	addi a3, zero, 864
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
+	addi a1, zero, 864
 	addi a2, zero, 832
-	addi a3, zero, 928
-	call {vg_p256_mul_mod_p}
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 544
+	addi a2, zero, 544
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 544
 	addi a2, zero, 544
 	addi a3, zero, 800
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 544
+	addi a3, zero, 544
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 544
+	addi a2, zero, 832
+	addi a3, zero, 544
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 800
+	addi a3, zero, 800
 	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 800
-	addi a2, zero, 960
-	addi a3, zero, 928
+	addi a2, zero, 832
+	addi a3, zero, 800
+	call {vg_p256_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 800
+	addi a2, zero, 800
+	addi a3, zero, 864
+	call {vg_p256_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 832
+	addi a2, zero, 928
+	addi a3, zero, 544
 	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 864
+	addi a2, zero, 800
+	addi a3, zero, 544
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 544
+	addi a2, zero, 512
+	addi a3, zero, 576
+	call {vg_p256_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 544
+	addi a2, zero, 544
+	addi a3, zero, 864
+	call {vg_p256_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 512
 	addi a2, zero, 896
@@ -5490,22 +5730,22 @@ vg_ecdsa_p256_verify:
 	addi a0, s0, 0
 	addi a1, zero, 512
 	addi a2, zero, 512
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_sub_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 800
-	addi a2, zero, 896
-	addi a3, zero, 832
+	addi a1, zero, 576
+	addi a2, zero, 928
+	addi a3, zero, 576
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 576
-	addi a2, zero, 960
-	addi a3, zero, 576
+	addi a1, zero, 832
+	addi a2, zero, 896
+	addi a3, zero, 800
 	call {vg_p256_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 576
 	addi a2, zero, 576
-	addi a3, zero, 800
+	addi a3, zero, 832
 	call {vg_p256_add_mod_p}
 	bnez s1, 21b
 	ld t0, 224(s0)

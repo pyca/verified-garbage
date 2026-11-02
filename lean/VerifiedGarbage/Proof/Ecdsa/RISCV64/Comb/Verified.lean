@@ -41,10 +41,12 @@ open VG.Spec.Weierstrass (Curve Fe Point)
 abbrev tabRegion (s : State) : Region := ⟨s.syms p256Sym, 151552⟩
 
 /-- `vg_p256_mul_g(ws = a0)`: the table its only readable region, its words
-there, at a multiple of 64, apart from the working space. -/
+there, at a multiple of 64, apart from the working space; `b` in Montgomery's
+form at slot 40 (byte 1344), for the complete addition for `a = -3`. -/
 def mulGRVc : Contract isa where
   pre s := s.rd = [tabRegion s] ∧ s.wr = [⟨s.gpr .a0, 8192⟩] ∧ (s.gpr .a0).toNat + 8192 ≤ 2 ^ 64 ∧
     (s.gpr .a0).toNat % 8 = 0 ∧ MC.ConstsOk (s.gpr .a0) s.mem ∧
+    wordsVal s.mem (s.gpr .a0) 1344 4 = W.b * 2 ^ 256 % W.p ∧
     (∀ i < 18944, s.mem.readW (s.syms p256Sym + BitVec.ofNat 64 (8 * i)) 64 = p256CombWords.getD i 0) ∧
     (s.syms p256Sym).toNat % 64 = 0 ∧ (s.syms p256Sym).toNat + 151552 ≤ 2 ^ 64 ∧
     Region.Disjoint (tabRegion s) ⟨s.gpr .a0, 8192⟩
@@ -88,8 +90,8 @@ theorem keepsG_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (savesG ++ bodyW) 
 /-- `vg_p256_mul_g` meets `mulGRVc`, given the group law. -/
 theorem mulG_rv (hL : Law W) (s : State) (hs : mulGRVc.pre s) :
     ∃ t s', Exec isa mulGP256 s t s' ∧ abiPreserved s s' ∧ mulGRVc.post s s' := by
-  obtain ⟨hrd, hwr, hfit, hal, ⟨-, hz, hone, ha, hb3⟩, hheld, htal, htfit, hdisj⟩ := hs
-  generalize hb : s.gpr .a0 = base at hwr hfit hal hz hone ha hb3 hdisj
+  obtain ⟨hrd, hwr, hfit, hal, ⟨-, hz, hone, ha, -⟩, hbp, hheld, htal, htfit, hdisj⟩ := hs
+  generalize hb : s.gpr .a0 = base at hwr hfit hal hz hone ha hbp hdisj
   have hT₀ : TabOk s base (s.syms p256Sym) :=
     tabOk_of_pre (by rw [hrd]; exact List.mem_singleton_self _) hheld htal htfit hdisj
   have hwr' : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; exact List.mem_singleton_self _
@@ -137,8 +139,8 @@ theorem mulG_rv (hL : Law W) (s : State) (hs : mulGRVc.pre s) :
     simp only [Impl.Weierstrass.Mul.Curve.mont, Nat.one_mul]; rfl
   have ha₆ : wordsVal s₆.mem base 256 4 = W.a * 2 ^ (64 * 4) % W.p := by
     rw [e₆ 256 (by omega), ← cs 256 (by omega)]; exact ha
-  have hb₆ : wordsVal s₆.mem base 288 4 = (3 * W.b) * 2 ^ (64 * 4) % W.p := by
-    rw [e₆ 288 (by omega), ← cs 288 (by omega)]; exact hb3
+  have hb₆ : wordsVal s₆.mem base 1344 4 = W.b * 2 ^ (64 * 4) % W.p := by
+    rw [e₆ 1344 (by omega)]; exact hbp
   -- The body.
   refine WP.seq (WP.mono (body_ok hL hw₆ (by rw [u₆.gpr, u₅.other _ (by decide), g₄, u₀.gpr]) hT₆ hz₆ h1₆
     (by simp only [tmv]; rw [ha₆]; exact tm _) (by simp only [tmv]; rw [hb₆]; exact tm _)

@@ -558,10 +558,11 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     show wordsVal _ _ _ _ = _
     rcases hi with rfl | rfl <;> exact sv_unch (U₃.trans U₄) _ (by decide)
-  have e₁₄ : ∀ i ∈ [GX, GY, VR, AP, B3P], sv base s₄ i = sv base s₁ i := fun i hi => by
+  have e₁₄ : ∀ i ∈ [GX, GY, VR, AP, B3P, BP], sv base s₄ i = sv base s₁ i := fun i hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     show wordsVal _ _ _ _ = _
-    rcases hi with rfl | rfl | rfl | rfl | rfl <;> exact sv_unch (U₁₃.trans U₄) _ (by decide)
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl <;> exact sv_unch (U₁₃.trans U₄) _ (by decide)
+  have bp₁ : sv base s₁ BP = W.b * 2 ^ 256 % W.p := const_at S.consts 11
   generalize hF : word s₂.mem base FL = F at px₂ py₂ f₂
   generalize hx : sv base s₁ CX = x at px₂ py₂ f₂ Sx
   generalize hy : sv base s₁ CY = y at px₂ py₂ f₂ Sy
@@ -587,7 +588,8 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
     · rw [ite_eq_right h0, ite_eq_right h0, toM_mont unit, toM_mont unit]
       exact (hval h0).2.2
   -- `[u]G + [v]Q`, by the joint ladder.
-  refine WP.seq (WP.mono (VG.Proof.Ecdsa.RISCV64.Joint.joint_ok hL ⟨hw₄, tc₄.ap, tc₄.b3p, tc₄.zero, tc₄.onep,
+  refine WP.seq (WP.mono (VG.Proof.Ecdsa.RISCV64.Joint.joint_ok hL ⟨hw₄, tc₄.ap, (e₁₄ BP (by simp)).trans bp₁,
+    tc₄.zero, tc₄.onep,
     (e₁₄ GX (by simp)).trans gx₁, (e₁₄ GY (by simp)).trans gy₁, lt_qx, lt_qy, hQ, hon⟩)
     fun s₆ ⟨K₆, U₆, pR₆⟩ => ?_)
   have hw₆ := hw₄.of_kc K₆

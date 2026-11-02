@@ -44,7 +44,8 @@ From `R = S`, for `j` from 36 down to 0 (the counter `s1 = j + 1`, then `j`):
    (`sel`, from zero and one);
 6. `-y` (the field's subtraction from zero) into `ACC`, and `y = -y` by the
    sign's mask;
-7. `T = R + D` by the complete addition (`rcb`), copied to `R`.
+7. `T = R + D` by the complete addition for `a = -3` (`rcb3`, with `b` at
+   slot 40), copied to `R`.
 
 The only branch is on the counter, and every address is `s0` plus a constant
 (plus `8 (7j >>> 6)` for the window's words) or the table's address plus a
@@ -154,7 +155,7 @@ def negate : Prog isa :=
 def step : Prog isa :=
   .seq (.block (decCounter :: select c)) <|
   .seq (negate c) <|
-  .seq (fprog c.FP (rcb c.rcbSlots (c.pt RX RY RZ) (c.pt DX DY DZ) (c.pt TX TY TZ)))
+  .seq (fprog c.FP (rcb3 c.rcb3Slots (c.pt RX RY RZ) (c.pt DX DY DZ) (c.pt TX TY TZ)))
     (.block (copy c.n (c.sl RX) (c.sl TX) ++ copy c.n (c.sl RY) (c.sl TY) ++ copy c.n (c.sl RZ) (c.sl TZ)))
 
 /-- The comb's body: the copy of `k` and its zero word, `R = S` (`start`,
