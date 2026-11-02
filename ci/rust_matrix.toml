@@ -53,13 +53,14 @@ rust = "stable"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:ppc64le" }
 
 # RISC-V: natively on a riscv64 runner (RISE's, as pyca/infra's riscv64
-# images use), in the same Dockerfile's image for it.
+# images use), with the toolchain its image installs (`rust = "host"`, see
+# ci.yml): a container image of our own took the job 46 s to start, as RISE's
+# runners pull it for every job at a few MB/s and unpack it slowly.
 [[rust]]
 name = "Linux, RISC-V"
 os = "ubuntu-24.04-riscv"
 arch = "riscv64"
-rust = "stable"
-container = { image = "ghcr.io/pyca/verified-garbage-runner:riscv64" }
+rust = "host"
 
 [[rust]]
 name = "macOS, AArch64"

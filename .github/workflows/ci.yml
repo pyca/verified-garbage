@@ -386,8 +386,9 @@ jobs:
       options: ${{ matrix.container.options || '' }}
     env:
       # Selects the toolchain without `rustup default`, which refuses 32-bit
-      # toolchains on a 64-bit kernel.
-      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
+      # toolchains on a 64-bit kernel; `host` (empty here) is the runner's
+      # default.
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust != 'host' && matrix.rust || '' }}
       RUSTFLAGS: -D warnings -Cinstrument-coverage
       # Both relative to the crate root, where the test binaries run.
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
@@ -412,7 +413,38 @@ jobs:
       - uses: ./.github/actions/runner-info
 
       - name: Install Rust
+        if: ${{ matrix.rust != 'host' }}
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component llvm-tools
+      # `host`: the toolchain the runner's image installs (RISE's riscv64
+      # runners', on which pulling a container image took longer than any
+      # other step but the tests), whatever its version, and what else the
+      # job runs, which the image may stop having. Its llvm-tools, which the
+      # image lacks, are a 90 MB download, of which the job needs only
+      # llvm-cov and llvm-profdata: those come from the cache, keyed by the
+      # compiler they belong to.
+      - id: host-rust
+        name: Check the runner's toolchain
+        if: ${{ matrix.rust == 'host' }}
+        run: |
+          for tool in python3 git zstd gcc rustc cargo; do
+            if ! command -v "$tool" > /dev/null; then
+              echo "::error::the runner has no $tool"
+              exit 1
+            fi
+          done
+          rustc -vV
+          echo "bin=$(dirname "$(rustc --print target-libdir)")/bin" >> "$GITHUB_OUTPUT"
+          echo "key=llvm-tools-$(rustc -vV | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+      - id: llvm-tools
+        if: ${{ matrix.rust == 'host' }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ steps.host-rust.outputs.bin }}/llvm-cov
+            ${{ steps.host-rust.outputs.bin }}/llvm-profdata
+          key: ${{ steps.host-rust.outputs.key }}
+      - if: ${{ matrix.rust == 'host' && steps.llvm-tools.outputs.cache-hit != 'true' }}
+        run: rustup component add llvm-tools
       # A push to main builds only to save main's cache, whose key covers
       # the toolchain, the CARGO_*/RUST_* environment and Cargo.toml and
       # Cargo.lock, not the crate's sources. An entry is never overwritten,
