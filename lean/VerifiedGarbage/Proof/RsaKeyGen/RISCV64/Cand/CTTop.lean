@@ -682,4 +682,60 @@ theorem gcd_rel : RelCT isa (Two (SG X0)) gcdCheck (Two (SG M4)) :=
 
 end
 
+/-! ### `main` -/
+
+theorem close_cand {a : KD} {x y : State} (kx : KR a x) (ky : KR a y) (hav : oL x ≤ rL x) :
+    Spec.RsaKeyGen.tooClose (64 * cw x) (Spec.RsaKeyGen.otherPrime (pB x)) (candOf x) =
+      Spec.RsaKeyGen.tooClose (64 * cw y) (Spec.RsaKeyGen.otherPrime (pB y)) (candOf y) := by
+  have hav' : oL y ≤ rL y := by rw [← kx.1.oL_eq ky.1, ← kx.1.rL_eq ky.1]; exact hav
+  have e := close_agree kx.1 ky.1 hav
+  obtain ⟨hw, -, -⟩ := cw_facts kx.1.1
+  obtain ⟨hw', -, -⟩ := cw_facts ky.1.1
+  rw [candS_eq kx.1.1 hav, candS_eq ky.1.1 hav', hw, hw', show 8 * (8 * cw x) = 64 * cw x by omega,
+    show 8 * (8 * cw y) = 64 * cw y by omega] at e
+  exact e
+
+theorem gcd_cand {a : KD} {x y : State} (kx : KR a x) (ky : KR a y) (hav : oL x ≤ rL x)
+    (hc : Spec.RsaKeyGen.tooClose (64 * cw x) (Spec.RsaKeyGen.otherPrime (pB x)) (candOf x) = false) :
+    Nat.gcd (candOf x - 1) (eV x) = 1 ↔ Nat.gcd (candOf y - 1) (eV y) = 1 := by
+  have hav' : oL y ≤ rL y := by rw [← kx.1.oL_eq ky.1, ← kx.1.rL_eq ky.1]; exact hav
+  obtain ⟨hw, -, -⟩ := cw_facts kx.1.1
+  have hc' : Spec.RsaKeyGen.tooClose (8 * oL x) (Spec.RsaKeyGen.otherPrime (pB x)) (candS x) = false := by
+    rw [candS_eq kx.1.1 hav, hw, show 8 * (8 * cw x) = 64 * cw x by omega]; exact hc
+  have e := gcd_agree kx.1 ky.1 hav hc'
+  rw [candS_eq kx.1.1 hav, candS_eq ky.1.1 hav'] at e
+  exact e
+
+theorem ncl_of {s0 t : State} (h : M3 s0 t) (ev : isa.eval (.nonzero .s9) t = some false) :
+    Spec.RsaKeyGen.tooClose (64 * cw s0) (Spec.RsaKeyGen.otherPrime (pB s0)) (candOf s0) = false := by
+  rw [VG.RISCV64.Steps.eval_nonzero_ofNat _ _ (by split <;> decide) h.f] at ev
+  revert ev; cases Spec.RsaKeyGen.tooClose _ _ (candOf s0) <;> decide
+
+theorem main_rel {trial : Prog isa} (R : RoundImpl)
+    (hT : RelCT isa (Two TSt) (test trial R.name R.code) fun t₁ t₂ => t₁.sp = t₂.sp) :
+    RelCT isa (Two (SG MIn)) (main trial R.name R.code) fun _ _ => True := by
+  unfold main
+  simp only [seqs]
+  refine RelCT.seq setup_rel (RelCT.seq loadC_rel (RelCT.seq close_rel (iteW ?_
+    (wk (fun _ _ _ _ h => h.1.ctx.fr) (finish_rel 2 (by decide)))
+    (RelCT.seq (wk (fun _ _ _ _ h => ⟨h.1, ncl_of h.1 h.2⟩) gcd_rel) (iteW ?_
+      (wk (fun _ _ _ _ h => h.1.ctx.fr) (finish_rel 3 (by decide)))
+      (wk (fun _ _ _ _ ⟨h, ev⟩ => ⟨h, h.g.mp (by rw [VG.RISCV64.Steps.eval_nonzero] at ev; simpa using ev)⟩)
+        (hT.mono (fun _ _ h => h) fun _ _ _ => trivial)))))))
+  · rintro a s₁ s₂ ⟨x, kx, h₁⟩ ⟨y, ky, h₂⟩
+    rw [VG.RISCV64.Steps.eval_nonzero, VG.RISCV64.Steps.eval_nonzero, h₁.f, h₂.f, close_cand kx ky h₁.hav]
+  · rintro a s₁ s₂ ⟨x, kx, h₁⟩ ⟨y, ky, h₂⟩
+    rw [VG.RISCV64.Steps.eval_nonzero, VG.RISCV64.Steps.eval_nonzero]
+    have i : s₁.gpr .s9 = 0 ↔ s₂.gpr .s9 = 0 := h₁.g.trans ((gcd_cand kx ky h₁.hav h₁.ncl).trans h₂.g.symm)
+    congr 1
+    by_cases z : s₁.gpr .s9 = 0
+    · rw [z, i.mp z]
+    · rw [bne_iff_ne.mpr z, bne_iff_ne.mpr fun e => z (i.mpr e)]
+
+/-- `vg_rsa_keygen_candidate` is constant time, given the test's (`TSt`). -/
+theorem cand_ct {trial : Prog isa} (D : DivOk trial) (R : RoundImpl)
+    (hT : RelCT isa (Two TSt) (test trial R.name R.code) fun t₁ t₂ => t₁.sp = t₂.sp) :
+    ConstantTime isa contract.pre contract.pub (code trial R.name R.code) :=
+  cand_ct_of D R (main_rel R hT)
+
 end VG.Proof.RsaKeyGen.RISCV64.Cand
