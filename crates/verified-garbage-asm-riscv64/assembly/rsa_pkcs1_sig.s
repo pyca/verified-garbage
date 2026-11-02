@@ -1921,3 +1921,947 @@ vg_rsa_pkcs1_recover_precomputed:
 21:
 	ret
 	.option pop
+
+vg_rsa_pkcs1_sign:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -1168
+	addi t0, sp, 0
+	sd s1, 96(t0)
+	sd s2, 104(t0)
+	sd s3, 112(t0)
+	sd s4, 120(t0)
+	sd s5, 128(t0)
+	sd ra, 136(t0)
+	addi s1, a0, 0
+	addi s2, a2, 0
+	addi s3, a3, 0
+	addi s4, a4, 0
+	addi s5, a5, 0
+	addi t6, sp, 1168
+	addi a1, t0, 144
+	addi a2, s3, 0
+	slli a3, a6, 32
+	srli a3, a3, 32
+	addi a4, a7, 0
+	ld a5, 0(t6)
+	addi t3, a3, 0
+	beqz t3, 20f
+	addi t3, a3, -1
+	beqz t3, 22f
+	addi t3, a3, -2
+	beqz t3, 24f
+	addi t3, a3, -3
+	beqz t3, 26f
+	addi t3, a3, -4
+	beqz t3, 28f
+	addi t3, a3, -5
+	beqz t3, 210f
+	addi t3, a3, -6
+	beqz t3, 212f
+	addi t3, a3, -7
+	beqz t3, 214f
+	addi t3, a3, -8
+	beqz t3, 216f
+	addi t3, a3, -9
+	beqz t3, 218f
+	addi t3, a3, -10
+	beqz t3, 220f
+	addi t3, a3, -11
+	beqz t3, 222f
+	addi t3, zero, 2047
+	addi t4, zero, 0
+	j 223f
+222:
+	addi t3, zero, 83
+	addi t4, zero, 64
+223:
+	j 221f
+220:
+	addi t3, zero, 67
+	addi t4, zero, 48
+221:
+	j 219f
+218:
+	addi t3, zero, 51
+	addi t4, zero, 32
+219:
+	j 217f
+216:
+	addi t3, zero, 47
+	addi t4, zero, 28
+217:
+	j 215f
+214:
+	addi t3, zero, 51
+	addi t4, zero, 32
+215:
+	j 213f
+212:
+	addi t3, zero, 47
+	addi t4, zero, 28
+213:
+	j 211f
+210:
+	addi t3, zero, 83
+	addi t4, zero, 64
+211:
+	j 29f
+28:
+	addi t3, zero, 67
+	addi t4, zero, 48
+29:
+	j 27f
+26:
+	addi t3, zero, 51
+	addi t4, zero, 32
+27:
+	j 25f
+24:
+	addi t3, zero, 47
+	addi t4, zero, 28
+25:
+	j 23f
+22:
+	addi t3, zero, 35
+	addi t4, zero, 20
+23:
+	j 21f
+20:
+	addi t3, zero, 34
+	addi t4, zero, 16
+21:
+	sub t5, a5, t4
+	bnez t5, 224f
+	addi t5, t3, 11
+	sub t5, a2, t5
+	srli t5, t5, 63
+	bnez t5, 226f
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	sub t5, a2, t3
+	addi t5, t5, -3
+	addi t0, zero, 255
+228:
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t5, t5, -1
+	bnez t5, 228b
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t3, a3, 0
+	beqz t3, 229f
+	addi t3, a3, -1
+	beqz t3, 231f
+	addi t3, a3, -2
+	beqz t3, 233f
+	addi t3, a3, -3
+	beqz t3, 235f
+	addi t3, a3, -4
+	beqz t3, 237f
+	addi t3, a3, -5
+	beqz t3, 239f
+	addi t3, a3, -6
+	beqz t3, 241f
+	addi t3, a3, -7
+	beqz t3, 243f
+	addi t3, a3, -8
+	beqz t3, 245f
+	addi t3, a3, -9
+	beqz t3, 247f
+	addi t3, a3, -10
+	beqz t3, 249f
+	addi t3, a3, -11
+	beqz t3, 251f
+	j 252f
+251:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 81
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 96
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 101
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 10
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 64
+	sb t0, 0(a1)
+	addi a1, a1, 1
+252:
+	j 250f
+249:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 65
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 96
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 101
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+250:
+	j 248f
+247:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 49
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 96
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 101
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 8
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 32
+	sb t0, 0(a1)
+	addi a1, a1, 1
+248:
+	j 246f
+245:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 45
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 96
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 101
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 7
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 28
+	sb t0, 0(a1)
+	addi a1, a1, 1
+246:
+	j 244f
+243:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 49
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 96
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 101
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 32
+	sb t0, 0(a1)
+	addi a1, a1, 1
+244:
+	j 242f
+241:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 45
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 96
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 101
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 28
+	sb t0, 0(a1)
+	addi a1, a1, 1
+242:
+	j 240f
+239:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 81
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 96
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 101
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 64
+	sb t0, 0(a1)
+	addi a1, a1, 1
+240:
+	j 238f
+237:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 65
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 96
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 101
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+238:
+	j 236f
+235:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 49
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 96
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 101
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 32
+	sb t0, 0(a1)
+	addi a1, a1, 1
+236:
+	j 234f
+233:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 45
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 96
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 1
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 101
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 28
+	sb t0, 0(a1)
+	addi a1, a1, 1
+234:
+	j 232f
+231:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 33
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 9
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 43
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 14
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 3
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 26
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 20
+	sb t0, 0(a1)
+	addi a1, a1, 1
+232:
+	j 230f
+229:
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 32
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 48
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 12
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 6
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 8
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 42
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 72
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 134
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 247
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 13
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 2
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 5
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 0
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 4
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t0, zero, 16
+	sb t0, 0(a1)
+	addi a1, a1, 1
+230:
+253:
+	lbu t0, 0(a4)
+	sb t0, 0(a1)
+	addi a4, a4, 1
+	addi a1, a1, 1
+	addi a5, a5, -1
+	bnez a5, 253b
+	addi a0, zero, 1
+	j 227f
+226:
+	addi a0, zero, 0
+227:
+	j 225f
+224:
+	addi a0, zero, 0
+225:
+	beqz a0, 254f
+	addi t0, sp, 0
+	addi t6, sp, 1168
+	ld t1, 8(t6)
+	sd t1, 0(t0)
+	ld t1, 16(t6)
+	sd t1, 8(t0)
+	ld t1, 24(t6)
+	sd t1, 16(t0)
+	ld t1, 32(t6)
+	sd t1, 24(t0)
+	ld t1, 40(t6)
+	sd t1, 32(t0)
+	ld t1, 48(t6)
+	sd t1, 40(t0)
+	ld t1, 56(t6)
+	sd t1, 48(t0)
+	ld t1, 64(t6)
+	sd t1, 56(t0)
+	ld t1, 72(t6)
+	sd t1, 64(t0)
+	ld t1, 80(t6)
+	sd t1, 72(t0)
+	ld t1, 88(t6)
+	sd t1, 80(t0)
+	ld t1, 96(t6)
+	sd t1, 88(t0)
+	addi a0, s1, 0
+	addi a1, s3, 0
+	addi a2, s2, 0
+	addi a3, s3, 0
+	addi a4, s4, 0
+	addi a5, s5, 0
+	addi a6, t0, 144
+	addi a7, s3, 0
+	call {vg_rsa_private_checked}
+	addi t0, sp, 0
+	addi a1, t0, 144
+	addi t5, s3, 0
+	addi t0, zero, 0
+256:
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t5, t5, -1
+	bnez t5, 256b
+	j 255f
+254:
+	addi a1, s1, 0
+	addi t5, s3, 0
+	addi t0, zero, 0
+257:
+	sb t0, 0(a1)
+	addi a1, a1, 1
+	addi t5, t5, -1
+	bnez t5, 257b
+255:
+	addi t0, sp, 0
+	ld s1, 96(t0)
+	ld s2, 104(t0)
+	ld s3, 112(t0)
+	ld s4, 120(t0)
+	ld s5, 128(t0)
+	ld ra, 136(t0)
+	addi sp, sp, 1168
+	ret
+	.option pop
