@@ -82,7 +82,7 @@ def compressFn (checkName : String) (checkCode : Prog isa) : Prog isa :=
   .seq (.block (saveCode .a2 ++ loadNum c.n (c.sl CX) .a1 1 ++ loadNum c.n (c.sl CY) .a1 (1 + 8 * c.n) ++
     leadMask .a1 ++ sdAt .a7 wb (c.sl FLAG) ++ constCode c)) <|
   .seq (wsCall checkName checkCode) <|
-  .block (ldAt .a7 wb (c.sl FLAG) ++ [.load .d .t0 wb (c.sl CY), .logicImm .and .t0 .t0 1, .addi .t0 .t0 2,
+  .block (ldAt .a7 wb (c.sl FLAG) ++ ldAt .t0 wb (c.sl CY) ++ [.logicImm .and .t0 .t0 1, .addi .t0 .t0 2,
       .logic .and .t0 .t0 .a7, .store .b .t0 .s2 0] ++ storeNum c.n (c.sl CX) .s2 1 ++ retCode c)
 
 /-- The power `rhs^((p+1)/4)`, into `ACC`. -/

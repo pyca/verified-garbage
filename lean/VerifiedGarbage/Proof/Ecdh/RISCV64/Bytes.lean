@@ -101,7 +101,7 @@ theorem bytesAt_out {base q : Addr} {o len n : Nat} {m m' : Mem} (h : Outside ba
 
 /-- `loadNum`: the `8 k` bytes at `p + off`, big-endian, to the slot at `o`. -/
 theorem loadNum_ok : ∀ (k : Nat) {s : State} {base : Addr} {o : Nat} {p : Reg} {off : Nat},
-    WsReg s base → p ∉ [Reg.t0, .t1] → o % 8 = 0 → o + 8 * k ≤ 2048 → off + 8 * k ≤ 2048 →
+    WsReg s base → p ∉ [Reg.t0, .t1] → o % 8 = 0 → o + 8 * k ≤ 4096 → off + 8 * k ≤ 2048 →
     (∀ j < k, InRegions (s.rd ++ s.wr) (s.gpr p + BitVec.ofNat 64 (off + 8 * j)) 8) →
     (∀ i < 8 * k, ¬ (⟨base, 8192⟩ : Region).Contains (s.gpr p + BitVec.ofNat 64 (off + i)) 1) →
     WP isa (.block (loadNum k o p off)) s fun s' =>
@@ -118,7 +118,7 @@ theorem loadNum_ok : ∀ (k : Nat) {s : State} {base : Addr} {o : Nat} {p : Reg}
         (be64 s.mem (s.gpr p) off)) :=
       ((Upd.write _ _ _).rest (by decide)).trans ((Upd.write _ _ _).rest (by decide))
     have hw₁ := hw.of_rest r₁
-    refine sd_ws hw₁ (d := o + 8 * k) (by omega) (by omega) fun s₂ u₂ => ?_
+    refine sdAt_ws hw₁ (by decide) (d := o + 8 * k) (by omega) (by omega) fun s₂ u₂ => ?_
     have r₂ : Rest [.t0, .t1] s s₂ := r₁.trans (u₂.rest _)
     have O₂ : Outside base (o + 8 * k) 8 s.mem s₂.mem := by
       rw [u₂.mem]; exact writeW_outside _ _ _ (by omega)
@@ -144,7 +144,7 @@ theorem loadNum_ok : ∀ (k : Nat) {s : State} {base : Addr} {o : Nat} {p : Reg}
 
 /-- `setConst`: `x mod 2^(64 k)` to the slot at `o`. -/
 theorem setConst_ok : ∀ (k : Nat) {s : State} {base : Addr} {o x : Nat},
-    WsReg s base → o % 8 = 0 → o + 8 * k ≤ 2048 →
+    WsReg s base → o % 8 = 0 → o + 8 * k ≤ 4096 →
     WP isa (.block (setConst k o x)) s fun s' =>
       Rest [.t0, .t1] s s' ∧ Outside base o (8 * k) s.mem s'.mem ∧ wordsVal s'.mem base o k = x % 2 ^ (64 * k)
   | 0, s, _, _, _, _, _, _ => WP.block_nil ⟨Rest.refl _ _, Outside.refl _ _ _ _, by simp [wordsVal, Nat.mod_one]⟩
@@ -156,7 +156,7 @@ theorem setConst_ok : ∀ (k : Nat) {s : State} {base : Addr} {o x : Nat},
     have r₁ : Rest [.t0, .t1] s ((s.write .t1 (sext32 ((BitVec.ofNat 64 x).setWidth 32))).write .t0
         (BitVec.ofNat 64 x)) :=
       ((Upd.write _ _ _).rest (by decide)).trans ((Upd.write _ _ _).rest (by decide))
-    refine sd_ws (hw.of_rest r₁) (d := o) (by omega) ho fun s₂ u₂ => ?_
+    refine sdAt_ws (hw.of_rest r₁) (by decide) (d := o) (by omega) ho fun s₂ u₂ => ?_
     have r₂ : Rest [.t0, .t1] s s₂ := r₁.trans (u₂.rest _)
     have O₂ : Outside base o 8 s.mem s₂.mem := by rw [u₂.mem]; exact writeW_outside _ _ _ (by omega)
     refine WP.mono (setConst_ok k (hw.of_rest r₂) (o := o + 8) (x := x >>> 64) (by omega) (by omega))
@@ -189,7 +189,7 @@ open VG.WriteBytes in
 /-- `storeNum`: the slot's number under the mask, or zeros, big-endian at
 `q + off`. -/
 theorem storeNum_ok (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr} {a : Nat} {q : Reg} {off : Nat},
-    WsReg s base → s.gpr .a7 = maskOf c → q ∉ [Reg.t0, .t1] → a % 8 = 0 → a + 8 * k ≤ 2048 →
+    WsReg s base → s.gpr .a7 = maskOf c → q ∉ [Reg.t0, .t1] → a % 8 = 0 → a + 8 * k ≤ 4096 →
     off + 8 * k ≤ 2048 →
     (∀ i < 8 * k, InRegions s.wr (s.gpr q + BitVec.ofNat 64 (off + i)) 1) →
     (∀ i < 8 * k, ¬ (⟨base, 8192⟩ : Region).Contains (s.gpr q + BitVec.ofNat 64 (off + i)) 1) →
@@ -201,7 +201,7 @@ theorem storeNum_ok (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr} {a : Na
   | k + 1, s, base, a, q, off, hw, hc, hq, ha, ha', hoff, hout, hsep => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
     simp only [storeNum, List.cons_append, List.append_assoc]
-    refine ld_ws hw (d := a + 8 * k) (by omega) (by omega) fun s₁ u₁ => wp_and fun s₂ u₂ => ?_
+    refine ldAt_ws hw (d := a + 8 * k) (by omega) (by omega) fun s₁ u₁ => wp_and fun s₂ u₂ => ?_
     have r₂ : Rest [.t0, .t1] s s₂ := (u₁.rest (by decide)).trans (u₂.rest (by decide))
     have g₂ : s₂.gpr q = s.gpr q := r₂.gpr _ (by simp [hq.1, hq.2])
     have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
