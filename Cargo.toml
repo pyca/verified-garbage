@@ -13,6 +13,12 @@ include = ["/src", "/LICENSE*", "/README.md"]
 # Every integration test is a module of the one test binary, `tests/main.rs`.
 autotests = false
 
+# No doc-tests: there are none, and finding that out cost `cargo test` 2 s
+# on RISC-V. ci/check_doctests.py fails on a doc code block, which would
+# never run: turn them back on to add one.
+[lib]
+doctest = false
+
 [features]
 default = ["alloc"]
 # Everything that allocates, through the `alloc` crate: Argon2, scrypt, RSA,

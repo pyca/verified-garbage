@@ -322,6 +322,7 @@ jobs:
       - run: python3 ci/check_arch_gates.py
       - run: python3 ci/check_variants.py
       - run: python3 ci/check_skills.py
+      - run: python3 ci/check_doctests.py
       # `rust-cpu-features` sets it per line of a CPU's `runs`, inline.
       - name: Only rust-cpu-features sets VG_CPU_FEATURES
         run: "! grep -nE '^ *VG_CPU_FEATURES:' .github/workflows/ci.yml"
