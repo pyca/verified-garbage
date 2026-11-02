@@ -12,8 +12,9 @@ def save : List Instr :=
   (List.range 12).flatMap fun i =>
     [.store .d ([Reg.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11].getD i .s0) .a0 (128 + 8 * i)]
 def restore : List Instr :=
-  (List.range 12).flatMap fun i =>
-    [.load .d ([Reg.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11].getD i .s0) .s6 (128 + 8 * i)]
+  ((List.range 12).filter (· != 6)).flatMap (fun i =>
+    [.load .d ([Reg.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11].getD i .s0) .s6 (128 + 8 * i)]) ++
+  [.load .d .s6 .s6 (128 + 8 * 6)]
 
 /-- proto(ws = a0, w = a1, count = a2): arrays of w+2 words from ws+256; `count` operations. -/
 def setup : List Instr :=

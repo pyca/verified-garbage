@@ -261,12 +261,12 @@ bnez s7, 20b
 .insn 4, 0x098b3983
 .insn 4, 0x0a0b3a03
 .insn 4, 0x0a8b3a83
-.insn 4, 0x0b0b3b03
 .insn 4, 0x0b8b3b83
 .insn 4, 0x0c0b3c03
 .insn 4, 0x0c8b3c83
 .insn 4, 0x0d0b3d03
 .insn 4, 0x0d8b3d83
+.insn 4, 0x0b0b3b03
 .insn 2, 0x8082
 .option pop",
     )
@@ -598,12 +598,12 @@ bnez s7, 20b
 .insn 4, 0x098b3983
 .insn 4, 0x0a0b3a03
 .insn 4, 0x0a8b3a83
-.insn 4, 0x0b0b3b03
 .insn 4, 0x0b8b3b83
 .insn 4, 0x0c0b3c03
 .insn 4, 0x0c8b3c83
 .insn 4, 0x0d0b3d03
 .insn 4, 0x0d8b3d83
+.insn 4, 0x0b0b3b03
 .insn 2, 0x8082
 .option pop",
     )

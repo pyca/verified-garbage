@@ -31,3 +31,17 @@ fn sqr_matches_mul() {
         assert_eq!(&a[32 + 5 * st..32 + 5 * st + w], &b[32 + 5 * st..32 + 5 * st + w], "w = {w}");
     }
 }
+
+#[test]
+fn repeated_calls_keep_registers() {
+    let mut acc = 0u64;
+    let mut vs: Vec<Vec<u64>> = [16usize, 24, 48].iter().map(|&w| setup(w, w as u64)).collect();
+    for k in 0..200u64 {
+        for (j, &w) in [16usize, 24, 48].iter().enumerate() {
+            unsafe { vg_proto_mont_mul(vs[j].as_mut_ptr(), w, 2) };
+            unsafe { vg_proto_mont_sqr(vs[j].as_mut_ptr(), w, 2) };
+            acc = acc.wrapping_add(k * j as u64);
+        }
+    }
+    assert_eq!(acc, (0..200u64).map(|k| 3 * k).sum::<u64>());
+}
