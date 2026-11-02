@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.RdSqrt
 import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdContract
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvEntry
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCorrect
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCheck
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFail
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFinS
@@ -55,6 +54,13 @@ theorem mask_eq (c0 c1 c2 c3 c4 c5 c6 : Bool) :
 
 theorem b2n_dec (p : Prop) [Decidable p] : (if p then 1 else 0) = b2n (decide p) := by
   simp only [b2n, decide_eq_true_eq]
+
+/-- The bytes of a factor. -/
+abbrev outB (b : Bool) (v k : Nat) : List Byte := if b then Spec.Rsa.i2osp v k else List.replicate k 0
+
+theorem nV_lt256 (s0 : State) : nV s0 < 256 ^ kK s0 := by
+  have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s0.mem (s0.gpr .r7) (kK s0))
+  rwa [VG.Proof.Bignum.bytesAt_length] at this
 
 section
 variable [VG.Proof.Rsa.PPC64LE.InvLaw] {s0 s : State} {A : Bool → Nat → Nat} {V : Nat → Nat}
@@ -359,11 +365,15 @@ theorem branchD_ok {s s2 : State} (hd : rdP.pre s) (b2 : RBase s s2) (a2 : RArgs
       ⟨ft, rd_post_none ?_ t3 vp vq⟩
     rw [pkd_eq, ite_eq_right hmv]
 
+/-- All registers but `r1`, `r2` and `r13`. -/
+abbrev rdRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r17,
+  .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31]
+
 theorem rd_correct (s : State) (h : rdP.pre s) :
     ∃ tr t, Exec isa VG.Impl.Rsa.PPC64LE.RecoverDet.code s tr t ∧ abiPreserved s t ∧ rdP.post s t := by
   have hv := rdP_pre h
   show WP isa VG.Impl.Rsa.PPC64LE.RecoverDet.code s fun t => abiPreserved s t ∧ rdP.post s t
-  have hw := WP.keep rvRegs (c := VG.Impl.Rsa.PPC64LE.RecoverDet.code) (s := s) (Q := fun t => t.sp = s.sp ∧
+  have hw := WP.keep rdRegs (c := VG.Impl.Rsa.PPC64LE.RecoverDet.code) (s := s) (Q := fun t => t.sp = s.sp ∧
     t.lr = s.lr ∧ (∀ r ∈ preserved, r ≠ .r2 → t.gpr r = s.gpr r) ∧ rdP.post s t) ?_ (by decide +kernel)
     (by decide +kernel)
   · refine WP.mono hw fun t ⟨⟨tsp, tlr, hr, post⟩, kt⟩ => ⟨⟨fun r hr' => ?_, tsp, tlr⟩, post⟩

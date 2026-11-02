@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFail
 /-!
 # `vg_rsa_recover_primes_det` on PPC64LE: constant time, and verified
 
-`rd_ct`: as `RvCT.lean`, after the entry and the check of `n` (`RdCT1.lean`):
+`rd_ct`: after the entry and the check of `n` (`RdCT1.lean`):
 for a valid modulus the loads, `d e`, Appendix C.2 and the stores
 (`RecoverDet.valid`) are checked by `taint_decide` on the registers that
 hold the pointers, the lengths and `w` (every count is set from `w`, every
