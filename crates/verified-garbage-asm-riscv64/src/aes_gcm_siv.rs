@@ -78,33 +78,36 @@ pub unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds:
 .insn 4, 0x00b4c283
 .insn 4, 0x5e540da3
 .insn 2, 0x4d81
+.insn 4, 0x1f040793
+.insn 4, 0x0019d613
+.insn 2, 0x167d
 20:
 .insn 4, 0x5f046503
 .insn 4, 0x5f446583
-.insn 4, 0x5f846603
-.insn 4, 0x07b42823
-.insn 2, 0xd868
-.insn 2, 0xdc2c
-.insn 2, 0xdc70
-.insn 2, 0x4281
-.insn 4, 0x0e543823
-.insn 4, 0x0e543c23
+.insn 4, 0x5f846683
+.insn 4, 0x01b7a023
+.insn 2, 0xc3c8
+.insn 2, 0xc78c
+.insn 2, 0xc7d4
+.insn 2, 0x0d85
+.insn 2, 0x07c1
+.insn 2, 0x167d
+bnez a2, 20b
 .insn 2, 0x854a
 .insn 2, 0x85ce
-.insn 4, 0x07040613
-.insn 4, 0x0f040693
-.insn 2, 0x4705
-.insn 4, 0x70040793
-call {vg_aes_ctr32}
-.insn 2, 0x7868
-.insn 4, 0x003d9593
-.insn 2, 0x95a2
-.insn 2, 0xe988
-.insn 2, 0x0d85
-.insn 4, 0x0019d613
-.insn 2, 0x167d
-.insn 4, 0x41b60633
-bnez a2, 20b
+.insn 4, 0x1f040613
+.insn 2, 0x86ee
+.insn 4, 0x70040713
+call {vg_aes_encrypt_blocks}
+.insn 4, 0x1f040793
+.insn 4, 0x01040593
+21:
+.insn 2, 0x6388
+.insn 2, 0xe188
+.insn 2, 0x07c1
+.insn 2, 0x05a1
+.insn 2, 0x1dfd
+bnez s11, 21b
 .insn 4, 0x02040513
 .insn 4, 0xffa98593
 .insn 2, 0x058a
@@ -162,18 +165,18 @@ call {vg_aes_expand_key_scratch}
 .insn 2, 0x8cd2
 .insn 2, 0x8d56
 .insn 4, 0x004d5893
-beqz a7, 21f
-23:
-.insn 4, 0x00ad5d93
-beqz s11, 24f
-.insn 4, 0x04000d93
-j 25f
+beqz a7, 22f
 24:
-.insn 4, 0x004d5d93
+.insn 4, 0x00ad5d93
+beqz s11, 25f
+.insn 4, 0x04000d93
+j 26f
 25:
+.insn 4, 0x004d5d93
+26:
 .insn 4, 0x1f040593
 .insn 2, 0x856e
-26:
+27:
 .insn 4, 0x008cc603
 .insn 2, 0x0622
 .insn 4, 0x009cc283
@@ -223,7 +226,7 @@ j 25f
 .insn 2, 0x0cc1
 .insn 2, 0x05c1
 .insn 2, 0x157d
-bnez a0, 26b
+bnez a0, 27b
 .insn 4, 0x004d9613
 .insn 4, 0x40cd0d33
 .insn 4, 0x04040513
@@ -233,36 +236,36 @@ bnez a0, 26b
 .insn 4, 0x60040713
 call {vg_ghash}
 .insn 4, 0x004d5893
-bnez a7, 23b
-j 22f
-21:
+bnez a7, 24b
+j 23f
 22:
-beqz s10, 27f
+23:
+beqz s10, 28f
 .insn 2, 0x4281
 .insn 4, 0x0e543823
 .insn 4, 0x0e543c23
 .insn 2, 0x8566
 .insn 4, 0x0f040593
 .insn 2, 0x866a
-29:
+210:
 .insn 4, 0x00054283
 .insn 4, 0x00558023
 .insn 2, 0x0505
 .insn 2, 0x0585
 .insn 2, 0x167d
-bnez a2, 29b
+bnez a2, 210b
 .insn 4, 0x0f040c93
 .insn 2, 0x4d41
 .insn 4, 0x00ad5d93
-beqz s11, 210f
+beqz s11, 211f
 .insn 4, 0x04000d93
-j 211f
-210:
-.insn 4, 0x004d5d93
+j 212f
 211:
+.insn 4, 0x004d5d93
+212:
 .insn 4, 0x1f040593
 .insn 2, 0x856e
-212:
+213:
 .insn 4, 0x008cc603
 .insn 2, 0x0622
 .insn 4, 0x009cc283
@@ -312,7 +315,7 @@ j 211f
 .insn 2, 0x0cc1
 .insn 2, 0x05c1
 .insn 2, 0x157d
-bnez a0, 212b
+bnez a0, 213b
 .insn 4, 0x004d9613
 .insn 4, 0x40cd0d33
 .insn 4, 0x04040513
@@ -322,24 +325,24 @@ bnez a0, 212b
 .insn 4, 0x60040713
 call {vg_ghash}
 .insn 4, 0x004d5893
-j 28f
-27:
+j 29f
 28:
+29:
 .insn 2, 0x8cda
 .insn 2, 0x8d5e
 .insn 4, 0x004d5893
-beqz a7, 213f
-215:
-.insn 4, 0x00ad5d93
-beqz s11, 216f
-.insn 4, 0x04000d93
-j 217f
+beqz a7, 214f
 216:
-.insn 4, 0x004d5d93
+.insn 4, 0x00ad5d93
+beqz s11, 217f
+.insn 4, 0x04000d93
+j 218f
 217:
+.insn 4, 0x004d5d93
+218:
 .insn 4, 0x1f040593
 .insn 2, 0x856e
-218:
+219:
 .insn 4, 0x008cc603
 .insn 2, 0x0622
 .insn 4, 0x009cc283
@@ -389,7 +392,7 @@ j 217f
 .insn 2, 0x0cc1
 .insn 2, 0x05c1
 .insn 2, 0x157d
-bnez a0, 218b
+bnez a0, 219b
 .insn 4, 0x004d9613
 .insn 4, 0x40cd0d33
 .insn 4, 0x04040513
@@ -399,36 +402,36 @@ bnez a0, 218b
 .insn 4, 0x60040713
 call {vg_ghash}
 .insn 4, 0x004d5893
-bnez a7, 215b
-j 214f
-213:
+bnez a7, 216b
+j 215f
 214:
-beqz s10, 219f
+215:
+beqz s10, 220f
 .insn 2, 0x4281
 .insn 4, 0x0e543823
 .insn 4, 0x0e543c23
 .insn 2, 0x8566
 .insn 4, 0x0f040593
 .insn 2, 0x866a
-221:
+222:
 .insn 4, 0x00054283
 .insn 4, 0x00558023
 .insn 2, 0x0505
 .insn 2, 0x0585
 .insn 2, 0x167d
-bnez a2, 221b
+bnez a2, 222b
 .insn 4, 0x0f040c93
 .insn 2, 0x4d41
 .insn 4, 0x00ad5d93
-beqz s11, 222f
+beqz s11, 223f
 .insn 4, 0x04000d93
-j 223f
-222:
-.insn 4, 0x004d5d93
+j 224f
 223:
+.insn 4, 0x004d5d93
+224:
 .insn 4, 0x1f040593
 .insn 2, 0x856e
-224:
+225:
 .insn 4, 0x008cc603
 .insn 2, 0x0622
 .insn 4, 0x009cc283
@@ -478,7 +481,7 @@ j 223f
 .insn 2, 0x0cc1
 .insn 2, 0x05c1
 .insn 2, 0x157d
-bnez a0, 224b
+bnez a0, 225b
 .insn 4, 0x004d9613
 .insn 4, 0x40cd0d33
 .insn 4, 0x04040513
@@ -488,9 +491,9 @@ bnez a0, 224b
 .insn 4, 0x60040713
 call {vg_ghash}
 .insn 4, 0x004d5893
-j 220f
-219:
+j 221f
 220:
+221:
 .insn 4, 0x003a9513
 .insn 2, 0xf868
 .insn 4, 0x003b9513
@@ -498,15 +501,15 @@ j 220f
 .insn 4, 0x0f040c93
 .insn 2, 0x4d41
 .insn 4, 0x00ad5d93
-beqz s11, 225f
+beqz s11, 226f
 .insn 4, 0x04000d93
-j 226f
-225:
-.insn 4, 0x004d5d93
+j 227f
 226:
+.insn 4, 0x004d5d93
+227:
 .insn 4, 0x1f040593
 .insn 2, 0x856e
-227:
+228:
 .insn 4, 0x008cc603
 .insn 2, 0x0622
 .insn 4, 0x009cc283
@@ -556,7 +559,7 @@ j 226f
 .insn 2, 0x0cc1
 .insn 2, 0x05c1
 .insn 2, 0x157d
-bnez a0, 227b
+bnez a0, 228b
 .insn 4, 0x004d9613
 .insn 4, 0x40cd0d33
 .insn 4, 0x04040513
@@ -642,30 +645,55 @@ call {vg_aes_ctr32}
 .insn 2, 0xf028
 .insn 2, 0xf42c
 .insn 4, 0x004d5893
-beqz a7, 228f
-230:
-.insn 2, 0x7028
-.insn 2, 0x742c
-.insn 2, 0xf828
-.insn 2, 0xfc2c
+beqz a7, 229f
+231:
+.insn 4, 0x00ad5d93
+beqz s11, 232f
+.insn 4, 0x04000d93
+j 233f
+232:
+.insn 4, 0x004d5d93
+233:
+.insn 4, 0x1f040793
+.insn 2, 0x85ee
+234:
+.insn 2, 0x7030
+.insn 2, 0x7434
+.insn 2, 0xe390
+.insn 2, 0xe794
+.insn 4, 0x06046603
+.insn 2, 0x0605
+.insn 2, 0xd030
+.insn 2, 0x07c1
+.insn 2, 0x15fd
+bnez a1, 234b
 .insn 4, 0x10040513
 .insn 2, 0x85ce
-.insn 4, 0x07040613
-.insn 4, 0x70040793
-.insn 2, 0x86e6
-.insn 2, 0x4705
-call {vg_aes_ctr32}
-.insn 4, 0x06046503
+.insn 4, 0x1f040613
+.insn 2, 0x86ee
+.insn 4, 0x70040713
+call {vg_aes_encrypt_blocks}
+.insn 4, 0x1f040513
+.insn 2, 0x85e6
+.insn 4, 0x004d9613
+235:
+.insn 4, 0x0005c283
+.insn 4, 0x00054683
+.insn 4, 0x00d2c2b3
+.insn 4, 0x00558023
 .insn 2, 0x0505
-.insn 2, 0xd028
-.insn 2, 0x0cc1
-.insn 2, 0x1d41
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 235b
+.insn 2, 0x8cae
+.insn 4, 0x004d9613
+.insn 4, 0x40cd0d33
 .insn 4, 0x004d5893
-bnez a7, 230b
-j 229f
-228:
+bnez a7, 231b
+j 230f
 229:
-beqz s10, 231f
+230:
+beqz s10, 236f
 .insn 2, 0x7028
 .insn 2, 0x742c
 .insn 2, 0xf828
@@ -683,7 +711,7 @@ call {vg_aes_ctr32}
 .insn 4, 0x0f040513
 .insn 2, 0x85e6
 .insn 2, 0x866a
-233:
+238:
 .insn 4, 0x0005c283
 .insn 4, 0x00054683
 .insn 4, 0x00d2c2b3
@@ -691,10 +719,10 @@ call {vg_aes_ctr32}
 .insn 2, 0x0505
 .insn 2, 0x0585
 .insn 2, 0x167d
-bnez a2, 233b
-j 232f
-231:
-232:
+bnez a2, 238b
+j 237f
+236:
+237:
 .insn 4, 0x00044283
 .insn 4, 0x005c0023
 .insn 4, 0x00144283
@@ -745,9 +773,10 @@ j 232f
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -858,33 +887,36 @@ pub unsafe extern "C" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds:
 .insn 4, 0x00fc4283
 .insn 4, 0x005407a3
 .insn 2, 0x4d81
+.insn 4, 0x1f040793
+.insn 4, 0x0019d613
+.insn 2, 0x167d
 20:
 .insn 4, 0x5f046503
 .insn 4, 0x5f446583
-.insn 4, 0x5f846603
-.insn 4, 0x07b42823
-.insn 2, 0xd868
-.insn 2, 0xdc2c
-.insn 2, 0xdc70
-.insn 2, 0x4281
-.insn 4, 0x0e543823
-.insn 4, 0x0e543c23
+.insn 4, 0x5f846683
+.insn 4, 0x01b7a023
+.insn 2, 0xc3c8
+.insn 2, 0xc78c
+.insn 2, 0xc7d4
+.insn 2, 0x0d85
+.insn 2, 0x07c1
+.insn 2, 0x167d
+bnez a2, 20b
 .insn 2, 0x854a
 .insn 2, 0x85ce
-.insn 4, 0x07040613
-.insn 4, 0x0f040693
-.insn 2, 0x4705
-.insn 4, 0x70040793
-call {vg_aes_ctr32}
-.insn 2, 0x7868
-.insn 4, 0x003d9593
-.insn 2, 0x95a2
-.insn 2, 0xe988
-.insn 2, 0x0d85
-.insn 4, 0x0019d613
-.insn 2, 0x167d
-.insn 4, 0x41b60633
-bnez a2, 20b
+.insn 4, 0x1f040613
+.insn 2, 0x86ee
+.insn 4, 0x70040713
+call {vg_aes_encrypt_blocks}
+.insn 4, 0x1f040793
+.insn 4, 0x01040593
+21:
+.insn 2, 0x6388
+.insn 2, 0xe188
+.insn 2, 0x07c1
+.insn 2, 0x05a1
+.insn 2, 0x1dfd
+bnez s11, 21b
 .insn 4, 0x02040513
 .insn 4, 0xffa98593
 .insn 2, 0x058a
@@ -949,30 +981,55 @@ call {vg_aes_expand_key_scratch}
 .insn 2, 0xf028
 .insn 2, 0xf42c
 .insn 4, 0x004d5893
-beqz a7, 21f
-23:
-.insn 2, 0x7028
-.insn 2, 0x742c
-.insn 2, 0xf828
-.insn 2, 0xfc2c
+beqz a7, 22f
+24:
+.insn 4, 0x00ad5d93
+beqz s11, 25f
+.insn 4, 0x04000d93
+j 26f
+25:
+.insn 4, 0x004d5d93
+26:
+.insn 4, 0x1f040793
+.insn 2, 0x85ee
+27:
+.insn 2, 0x7030
+.insn 2, 0x7434
+.insn 2, 0xe390
+.insn 2, 0xe794
+.insn 4, 0x06046603
+.insn 2, 0x0605
+.insn 2, 0xd030
+.insn 2, 0x07c1
+.insn 2, 0x15fd
+bnez a1, 27b
 .insn 4, 0x10040513
 .insn 2, 0x85ce
-.insn 4, 0x07040613
-.insn 4, 0x70040793
-.insn 2, 0x86e6
-.insn 2, 0x4705
-call {vg_aes_ctr32}
-.insn 4, 0x06046503
+.insn 4, 0x1f040613
+.insn 2, 0x86ee
+.insn 4, 0x70040713
+call {vg_aes_encrypt_blocks}
+.insn 4, 0x1f040513
+.insn 2, 0x85e6
+.insn 4, 0x004d9613
+28:
+.insn 4, 0x0005c283
+.insn 4, 0x00054683
+.insn 4, 0x00d2c2b3
+.insn 4, 0x00558023
 .insn 2, 0x0505
-.insn 2, 0xd028
-.insn 2, 0x0cc1
-.insn 2, 0x1d41
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 28b
+.insn 2, 0x8cae
+.insn 4, 0x004d9613
+.insn 4, 0x40cd0d33
 .insn 4, 0x004d5893
-bnez a7, 23b
-j 22f
-21:
+bnez a7, 24b
+j 23f
 22:
-beqz s10, 24f
+23:
+beqz s10, 29f
 .insn 2, 0x7028
 .insn 2, 0x742c
 .insn 2, 0xf828
@@ -990,7 +1047,7 @@ call {vg_aes_ctr32}
 .insn 4, 0x0f040513
 .insn 2, 0x85e6
 .insn 2, 0x866a
-26:
+211:
 .insn 4, 0x0005c283
 .insn 4, 0x00054683
 .insn 4, 0x00d2c2b3
@@ -998,25 +1055,25 @@ call {vg_aes_ctr32}
 .insn 2, 0x0505
 .insn 2, 0x0585
 .insn 2, 0x167d
-bnez a2, 26b
-j 25f
-24:
-25:
+bnez a2, 211b
+j 210f
+29:
+210:
 .insn 2, 0x8cd2
 .insn 2, 0x8d56
 .insn 4, 0x004d5893
-beqz a7, 27f
-29:
+beqz a7, 212f
+214:
 .insn 4, 0x00ad5d93
-beqz s11, 210f
+beqz s11, 215f
 .insn 4, 0x04000d93
-j 211f
-210:
+j 216f
+215:
 .insn 4, 0x004d5d93
-211:
+216:
 .insn 4, 0x1f040593
 .insn 2, 0x856e
-212:
+217:
 .insn 4, 0x008cc603
 .insn 2, 0x0622
 .insn 4, 0x009cc283
@@ -1066,7 +1123,7 @@ j 211f
 .insn 2, 0x0cc1
 .insn 2, 0x05c1
 .insn 2, 0x157d
-bnez a0, 212b
+bnez a0, 217b
 .insn 4, 0x004d9613
 .insn 4, 0x40cd0d33
 .insn 4, 0x04040513
@@ -1076,36 +1133,36 @@ bnez a0, 212b
 .insn 4, 0x60040713
 call {vg_ghash}
 .insn 4, 0x004d5893
-bnez a7, 29b
-j 28f
-27:
-28:
-beqz s10, 213f
+bnez a7, 214b
+j 213f
+212:
+213:
+beqz s10, 218f
 .insn 2, 0x4281
 .insn 4, 0x0e543823
 .insn 4, 0x0e543c23
 .insn 2, 0x8566
 .insn 4, 0x0f040593
 .insn 2, 0x866a
-215:
+220:
 .insn 4, 0x00054283
 .insn 4, 0x00558023
 .insn 2, 0x0505
 .insn 2, 0x0585
 .insn 2, 0x167d
-bnez a2, 215b
+bnez a2, 220b
 .insn 4, 0x0f040c93
 .insn 2, 0x4d41
 .insn 4, 0x00ad5d93
-beqz s11, 216f
+beqz s11, 221f
 .insn 4, 0x04000d93
-j 217f
-216:
+j 222f
+221:
 .insn 4, 0x004d5d93
-217:
+222:
 .insn 4, 0x1f040593
 .insn 2, 0x856e
-218:
+223:
 .insn 4, 0x008cc603
 .insn 2, 0x0622
 .insn 4, 0x009cc283
@@ -1155,7 +1212,7 @@ j 217f
 .insn 2, 0x0cc1
 .insn 2, 0x05c1
 .insn 2, 0x157d
-bnez a0, 218b
+bnez a0, 223b
 .insn 4, 0x004d9613
 .insn 4, 0x40cd0d33
 .insn 4, 0x04040513
@@ -1165,24 +1222,24 @@ bnez a0, 218b
 .insn 4, 0x60040713
 call {vg_ghash}
 .insn 4, 0x004d5893
-j 214f
-213:
-214:
+j 219f
+218:
+219:
 .insn 2, 0x8cda
 .insn 2, 0x8d5e
 .insn 4, 0x004d5893
-beqz a7, 219f
-221:
+beqz a7, 224f
+226:
 .insn 4, 0x00ad5d93
-beqz s11, 222f
+beqz s11, 227f
 .insn 4, 0x04000d93
-j 223f
-222:
+j 228f
+227:
 .insn 4, 0x004d5d93
-223:
+228:
 .insn 4, 0x1f040593
 .insn 2, 0x856e
-224:
+229:
 .insn 4, 0x008cc603
 .insn 2, 0x0622
 .insn 4, 0x009cc283
@@ -1232,7 +1289,7 @@ j 223f
 .insn 2, 0x0cc1
 .insn 2, 0x05c1
 .insn 2, 0x157d
-bnez a0, 224b
+bnez a0, 229b
 .insn 4, 0x004d9613
 .insn 4, 0x40cd0d33
 .insn 4, 0x04040513
@@ -1242,36 +1299,36 @@ bnez a0, 224b
 .insn 4, 0x60040713
 call {vg_ghash}
 .insn 4, 0x004d5893
-bnez a7, 221b
-j 220f
-219:
-220:
-beqz s10, 225f
+bnez a7, 226b
+j 225f
+224:
+225:
+beqz s10, 230f
 .insn 2, 0x4281
 .insn 4, 0x0e543823
 .insn 4, 0x0e543c23
 .insn 2, 0x8566
 .insn 4, 0x0f040593
 .insn 2, 0x866a
-227:
+232:
 .insn 4, 0x00054283
 .insn 4, 0x00558023
 .insn 2, 0x0505
 .insn 2, 0x0585
 .insn 2, 0x167d
-bnez a2, 227b
+bnez a2, 232b
 .insn 4, 0x0f040c93
 .insn 2, 0x4d41
 .insn 4, 0x00ad5d93
-beqz s11, 228f
+beqz s11, 233f
 .insn 4, 0x04000d93
-j 229f
-228:
+j 234f
+233:
 .insn 4, 0x004d5d93
-229:
+234:
 .insn 4, 0x1f040593
 .insn 2, 0x856e
-230:
+235:
 .insn 4, 0x008cc603
 .insn 2, 0x0622
 .insn 4, 0x009cc283
@@ -1321,7 +1378,7 @@ j 229f
 .insn 2, 0x0cc1
 .insn 2, 0x05c1
 .insn 2, 0x157d
-bnez a0, 230b
+bnez a0, 235b
 .insn 4, 0x004d9613
 .insn 4, 0x40cd0d33
 .insn 4, 0x04040513
@@ -1331,9 +1388,9 @@ bnez a0, 230b
 .insn 4, 0x60040713
 call {vg_ghash}
 .insn 4, 0x004d5893
-j 226f
-225:
-226:
+j 231f
+230:
+231:
 .insn 4, 0x003a9513
 .insn 2, 0xf868
 .insn 4, 0x003b9513
@@ -1341,15 +1398,15 @@ j 226f
 .insn 4, 0x0f040c93
 .insn 2, 0x4d41
 .insn 4, 0x00ad5d93
-beqz s11, 231f
+beqz s11, 236f
 .insn 4, 0x04000d93
-j 232f
-231:
+j 237f
+236:
 .insn 4, 0x004d5d93
-232:
+237:
 .insn 4, 0x1f040593
 .insn 2, 0x856e
-233:
+238:
 .insn 4, 0x008cc603
 .insn 2, 0x0622
 .insn 4, 0x009cc283
@@ -1399,7 +1456,7 @@ j 232f
 .insn 2, 0x0cc1
 .insn 2, 0x05c1
 .insn 2, 0x157d
-bnez a0, 233b
+bnez a0, 238b
 .insn 4, 0x004d9613
 .insn 4, 0x40cd0d33
 .insn 4, 0x04040513
@@ -1492,17 +1549,17 @@ call {vg_aes_ctr32}
 .insn 4, 0x41b60633
 .insn 2, 0x855a
 .insn 2, 0x85de
-beqz a1, 234f
-236:
+beqz a1, 239f
+241:
 .insn 4, 0x00054283
 .insn 4, 0x00c2f2b3
 .insn 4, 0x00550023
 .insn 2, 0x0505
 .insn 2, 0x15fd
-bnez a1, 236b
-j 235f
-234:
-235:
+bnez a1, 241b
+j 240f
+239:
+240:
 .insn 2, 0x856e
 .insn 2, 0x8322
 .insn 4, 0x08033403
@@ -1522,8 +1579,9 @@ j 235f
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
