@@ -135,6 +135,23 @@ theorem pins_at_fix {Φ : α → State → Prop} {F : List (Prog isa)} {n : Nat}
     (hw : ∀ a s, Φ a s → WP isa (Code.seqL (F.take n)) s (Fix (ps a))) : Pins (At Φ F n) rs :=
   pins_fix ps hrs fun _ _ h => at_sem hw h
 
+/-- The states of a cut of another list with the same first `n` programs, from
+states of a stronger predicate. -/
+theorem at_mono {Φ Ψ : α → State → Prop} {F F' : List (Prog isa)} {n : Nat} (hΦ : ∀ a s, Ψ a s → Φ a s)
+    (hF : F'.take n = F.take n) {a : α} {u : State} (h : At Ψ F' n a u) : At Φ F n a u :=
+  let ⟨s₀, t, h₀, e⟩ := h
+  ⟨s₀, t, hΦ a s₀ h₀, hF ▸ e⟩
+
+theorem pins_mono {Φ Ψ : α → State → Prop} {rs : List Reg} (h : Pins Φ rs) (hΨ : ∀ a s, Ψ a s → Φ a s) :
+    Pins Ψ rs :=
+  fun a _ _ h₁ h₂ => h a _ _ (hΨ a _ h₁) (hΨ a _ h₂)
+
+/-- A fact of the public data, from the level's states. -/
+theorem at_pure {Φ : α → State → Prop} {F : List (Prog isa)} {n : Nat} {G : α → Prop} (hG : ∀ a s, Φ a s → G a)
+    {a : α} {u : State} (h : At Φ F n a u) : G a :=
+  let ⟨s₀, _, h₀, _⟩ := h
+  hG a s₀ h₀
+
 /-- Both runs agree whether `r` is zero at a cut where it is zero exactly when
 the public data satisfies `C`. -/
 theorem zero_at {Φ : α → State → Prop} {F : List (Prog isa)} {n : Nat} {r : Reg} (C : α → Prop)

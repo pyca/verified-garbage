@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.CTBase
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
-import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
+public import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyA
 import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyB
 import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyBody
@@ -39,28 +39,32 @@ open VG VG.RISCV64 VG.RISCV64.Taint VG.Impl.Dsa.RISCV64 VG.Proof.Dsa.RISCV64
 open VG.Proof.Bignum.RISCV64.Pre (Two Pins two_taint)
 open VG.Proof.Bignum.RISCV64 (At chain_cons chain_start at_zero_inv)
 
-theorem pinsB0 : Pins (At ΦB FB 0) [.s6, .s11, .ra] :=
-  pins_at_fix fixB (fun _ => rfl) fun _ _ h => ⟨[], _, .block rfl, (semB h).1.1.base.fixB⟩
+theorem pinsB0 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) : Pins (At Φ FB 0) [.s6, .s11, .ra] :=
+  pins_at_fix fixB (fun _ => rfl) fun _ _ h => ⟨[], _, .block rfl, (hsem _ _ h).1.1.base.fixB⟩
 
-theorem body_rel : RelCT isa (Two ΦB) Verify.body fun _ _ => True := by
-  refine chain_start (chain_cons runB (m := 1) (by decide) (two_taint _ pinsB0 (by taint_decide)) ?_)
-  refine chain_cons runB (m := 9) (by decide) (two_taint _ pinsB1 (by taint_decide)) ?_
-  refine chain_cons runB (m := 50) (by decide) (two_taint _ pinsB9 (by taint_decide)) ?_
-  refine chain_cons runB (m := 53) (by decide) (two_taint _ pinsB50 (by taint_decide)) ?_
-  refine chain_cons runB (m := 63) (by decide) (two_taint _ pinsB53 (by taint_decide)) ?_
-  refine chain_cons runB (m := 104) (by decide) (two_taint _ pinsB63 (by taint_decide)) ?_
-  refine chain_cons runB (m := 106) (by decide) (two_taint _ pinsB104 (by taint_decide)) ?_
-  refine chain_cons runB (m := 108) (by decide) (two_taint _ pinsB106 (by taint_decide)) ?_
-  refine chain_cons runB (m := 154) (by decide) (two_taint _ pinsB108 (by taint_decide)) ?_
-  refine chain_cons runB (m := 157) (by decide) (two_taint _ pinsB154 (by taint_decide)) ?_
-  refine chain_cons runB (m := 161) (by decide) (two_taint _ pinsB157 (by taint_decide)) ?_
-  refine chain_cons runB (m := 171) (by decide) (two_taint _ pinsB161 (by taint_decide)) ?_
-  refine chain_cons runB (m := 215) (by decide) (two_taint _ pinsB171 (by taint_decide)) ?_
-  refine chain_cons runB (m := 225) (by decide) (two_taint _ pinsB215 (by taint_decide)) ?_
-  refine chain_cons runB (m := 288) (by decide) (two_taint _ pinsB225 (by taint_decide)) ?_
-  refine chain_cons runB (m := 291) (by decide) (two_taint _ pinsB288 (by taint_decide)) ?_
-  refine chain_cons runB (m := 297) (by decide) (two_taint _ pinsB291 (by taint_decide)) ?_
-  exact two_taint _ pinsB297 (by taint_decide)
+/-- `body`, from a level whose states are in `body`'s phase. -/
+theorem body_rel' {Φ : VD → State → Prop} (runB : ∀ v s, Φ v s → WP isa (Code.seqL FB) s fun _ => True)
+    (hsem : ∀ v u, Φ v u → SB v u) : RelCT isa (Two Φ) Verify.body fun _ _ => True := by
+  refine chain_start (chain_cons runB (m := 1) (by decide) (two_taint _ (pinsB0 hsem) (by taint_decide)) ?_)
+  refine chain_cons runB (m := 9) (by decide) (two_taint _ (pinsB1 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 50) (by decide) (two_taint _ (pinsB9 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 53) (by decide) (two_taint _ (pinsB50 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 63) (by decide) (two_taint _ (pinsB53 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 104) (by decide) (two_taint _ (pinsB63 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 106) (by decide) (two_taint _ (pinsB104 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 108) (by decide) (two_taint _ (pinsB106 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 154) (by decide) (two_taint _ (pinsB108 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 157) (by decide) (two_taint _ (pinsB154 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 161) (by decide) (two_taint _ (pinsB157 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 171) (by decide) (two_taint _ (pinsB161 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 215) (by decide) (two_taint _ (pinsB171 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 225) (by decide) (two_taint _ (pinsB215 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 288) (by decide) (two_taint _ (pinsB225 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 291) (by decide) (two_taint _ (pinsB288 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 297) (by decide) (two_taint _ (pinsB291 hsem) (by taint_decide)) ?_
+  exact two_taint _ (pinsB297 hsem) (by taint_decide)
+
+theorem body_rel : RelCT isa (Two ΦB) Verify.body fun _ _ => True := body_rel' runB fun _ _ h => semB h
 
 /-- `elemOrder`, from a level whose states are in the P space. -/
 theorem eo_rel {Φ : VD → State → Prop} (hrun : ∀ v s, Φ v s → WP isa (Code.seqL FE) s fun _ => True)

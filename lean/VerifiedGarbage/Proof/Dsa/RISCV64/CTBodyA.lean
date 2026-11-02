@@ -149,17 +149,19 @@ theorem enterQ_SB {v : VD} {s : State} (h : SB v s) :
   exact WP.mono (ptrR_ok B1.scr B1.ok B1.regs) fun _ ⟨⟨a7, a8, m'⟩, k'⟩ =>
     ⟨⟨B1.keepM k' m', iq.keep k', a7, a8⟩, k.trans k'⟩
 
-theorem pinsB1 : Pins (At ΦB FB 1) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB1 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 1) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.sig), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
-    fun _ _ h => WP.of_flat (c := .block (enterQ ++ ptrR)) rfl ((enterQ_SB (semB h)).mono
+    fun _ _ h => WP.of_flat (c := .block (enterQ ++ ptrR)) rfl ((enterQ_SB (hsem _ _ h)).mono
       fun _ ⟨⟨B, iq, a7, a8⟩, _⟩ => (B.fixB.app (fix_envQ iq)).app ⟨a7, a8, trivial⟩)
 
-theorem pinsB9 : Pins (At ΦB FB 9) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB9 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 9) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.sig v.L.ql), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun v _ h => by
-    have hql := h |> semB |>.1.1.base.ql
+    have hql := (hsem _ _ h).1.1.base.ql
     refine WP.of_flat (c := .seq (.block (enterQ ++ ptrR)) (.seq (loadArr 5) (.block ptrS))) rfl
-      (WP.seq (WP.mono (enterQ_SB (semB h)) fun _ ⟨⟨B, iq, a7, a8⟩, _⟩ => ?_))
+      (WP.seq (WP.mono (enterQ_SB (hsem _ _ h)) fun _ ⟨⟨B, iq, a7, a8⟩, _⟩ => ?_))
     have Q : QS _ _ _ _ := ⟨iq, B.scr, B.regs⟩
     have hL := B.ok
     refine WP.seq (WP.mono (loadQ_ok (j := 5) Q hL (by decide) (B.hsg.sub (o := 0) (k := v.L.ql) (by omega))
@@ -178,12 +180,13 @@ theorem stQ3 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v 
     fun _ ⟨B', mw⟩ => WP.seq (WP.mono (rrQ_QB B' hq hqo) fun t ⟨⟨I, qb⟩, _⟩ =>
       hc t I (mw.body (qb.body B'.base.ok)))))
 
-theorem pinsB50 : Pins (At ΦB FB 50) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB50 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 50) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.L.Buf), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun v _ h => by
-    have hq := (semB h).vals.1
+    have hq := (hsem _ _ h).vals.1
     refine WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq minus2 (.block ptrBuf))))) rfl
-      (stQ3 (semB h) fun _ ⟨B, _, _⟩ _ => ?_)
+      (stQ3 (hsem _ _ h) fun _ ⟨B, _, _⟩ _ => ?_)
     have hL := B.base.ok
     refine WP.seq (WP.mono (minus2_ok B.qs.inq.env (show 2 ≤ arrQ _ v.L 0 by rw [B.q0]; exact hq))
       fun _ ⟨⟨_, o⟩, k⟩ => ?_)
@@ -200,19 +203,21 @@ theorem stQ4 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v 
   exact stQ3 h fun _ I mw => WP.seq (WP.mono (qMinus2_QI I hq hql) fun t ⟨⟨I', qb⟩, _⟩ =>
     hc t I' (mw.body (qb.body I.1.base.ok)))
 
-theorem pinsB53 : Pins (At ΦB FB 53) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB53 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 53) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.sig v.L.ql), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.block ptrS))))) rfl
-      (stQ4 (semB h) fun _ ⟨B, _, _⟩ _ => WP.mono (ptrS_ok B.base.scr B.base.ok B.base.regs)
+      (stQ4 (hsem _ _ h) fun _ ⟨B, _, _⟩ _ => WP.mono (ptrS_ok B.base.scr B.base.ok B.base.regs)
         fun _ ⟨⟨b7, b8, m⟩, k'⟩ => (fix_QB (B.stepM k' m)).app ⟨b7, b8, trivial⟩)
 
-theorem pinsB63 : Pins (At ΦB FB 63) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
+theorem pinsB63 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 63) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s9, off v.L.Buf 0), (.s10, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun v _ h => by
     refine WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq (.block ptrS)
       (.seq (loadArr 4) (.seq (copy 1 24) (.block (ptrBuf ++ [.addi .s9 .s7 0, .addi .s10 .s8 0]))))))))) rfl
-      (stQ4 (semB h) fun _ ⟨B, _, _⟩ _ => ?_)
+      (stQ4 (hsem _ _ h) fun _ ⟨B, _, _⟩ _ => ?_)
     have hL := B.base.ok
     have hql := B.base.ql
     have hwq := hL.wq_ge
@@ -245,12 +250,13 @@ theorem stQ5 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v 
 /-- `scalarLen`'s block. -/
 abbrev SLB : List Instr := getQb .s8 ++ getD .t3 ++ [.sub .a0 .s8 .t3, .shift .srl .d .a0 .a0 63]
 
-theorem pinsB104 : Pins (At ΦB FB 104) [.s6, .s11, .ra, .a7, .s5, .t0, .s8, .t3, .a0] :=
+theorem pinsB104 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 104) [.s6, .s11, .ra, .a7, .s5, .t0, .s8, .t3, .a0] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s8, BitVec.ofNat 64 v.qb), (.t3, BitVec.ofNat 64 v.d),
       (.a0, BitVec.ofNat 64 (if v.qb < v.d then 1 else 0))]) (fun _ => rfl) fun v _ h => by
-    have hqb := (semB h).vals.2.2.2.1
+    have hqb := (hsem _ _ h).vals.2.2.2.1
     refine WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
-      (.block SLB)))))) rfl (stQ5 (semB h) fun _ ⟨B, _, _⟩ _ _ => ?_)
+      (.block SLB)))))) rfl (stQ5 (hsem _ _ h) fun _ ⟨B, _, _⟩ _ _ => ?_)
     have hL := B.base.ok
     have hp : v.L.pl < 2 ^ 16 := by have := B.base.pl; simp only [Nat.reducePow]; omega
     have hq : v.L.ql < 2 ^ 16 := by have := B.base.ql; simp only [Nat.reducePow]; omega
@@ -273,13 +279,14 @@ theorem pinsB104 : Pins (At ΦB FB 104) [.s6, .s11, .ra, .a7, .s5, .t0, .s8, .t3
     exact (fix_QB B').app ⟨(kt.gpr (r := .s8) (by decide)).trans a8', (kt.gpr (r := .t3) (by decide)).trans b3, c0,
       trivial⟩
 
-theorem pinsB106 : Pins (At ΦB FB 106) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB106 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 106) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.dig), (.s8, BitVec.ofNat 64 (min v.d v.qb))])
     (fun _ => rfl) fun v _ h => by
     refine WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
-      (.seq scalarLen (.block [.load .d .s7 .s6 hDigest]))))))) rfl (stQ5 (semB h) fun _ ⟨B, _, _⟩ _ _ => ?_)
+      (.seq scalarLen (.block [.load .d .s7 .s6 hDigest]))))))) rfl (stQ5 (hsem _ _ h) fun _ ⟨B, _, _⟩ _ _ => ?_)
     have hL := B.base.ok
-    have h3 : v.qb < 2 ^ 16 := by have := B.base.ql; have := (semB h).vals.2.2.2.1; simp only [Nat.reducePow]; omega
+    have h3 : v.qb < 2 ^ 16 := by have := B.base.ql; have := (hsem _ _ h).vals.2.2.2.1; simp only [Nat.reducePow]; omega
     have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
     refine WP.seq (WP.mono (scalarLen_ok B.base.scr hL B.base.regs.s6 B.lens h3 h4) fun s₀ ⟨⟨a8, m0⟩, k0⟩ => ?_)
     have B0 := B.stepM k0 m0
@@ -308,12 +315,13 @@ theorem scalar_QI {v : VD} {s : State} (h : QI v s) (h4 : arrQ s.mem v.L 4 < v.q
   · rw [arrQ, o.wordsVal (by omega) (by omega_arith)]; exact h24
   · rw [arrQ, o.wordsVal (by omega) (by omega_arith)]; exact h4
 
-theorem pinsB108 : Pins (At ΦB FB 108) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB108 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 108) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.sig), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
-      (.seq scalar (.block ptrR))))))) rfl (stQ5 (semB h) fun _ I h4 _ =>
-      WP.seq (WP.mono (scalar_QI I h4 (semB h).vals.2.2.2.1) fun _ ⟨⟨B, _, _⟩, _⟩ =>
+      (.seq scalar (.block ptrR))))))) rfl (stQ5 (hsem _ _ h) fun _ I h4 _ =>
+      WP.seq (WP.mono (scalar_QI I h4 (hsem _ _ h).vals.2.2.2.1) fun _ ⟨⟨B, _, _⟩, _⟩ =>
         WP.mono (ptrR_ok B.base.scr B.base.ok B.base.regs) fun _ ⟨⟨b7, b8, m⟩, k'⟩ =>
           (fix_QB (B.stepM k' m)).app ⟨b7, b8, trivial⟩))
 
