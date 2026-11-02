@@ -5,8 +5,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
-public import VerifiedGarbage.Impl.Rsa.Arm.Recover
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Proof.Rsa.MontContract

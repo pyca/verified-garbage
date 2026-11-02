@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdOps
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpIn
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdArgs
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 public import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
-import VerifiedGarbage.Proof.Rsa.AArch64.RpSkip
+import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -14,12 +14,12 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdOps
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpIn
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RdArgs
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpSkip
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -30,8 +30,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 /-!
 # `vg_rsa_recover_primes_det` on AArch64: constant time, the operations
 
-`dpub`: the public data (`vg_rsa_recover_primes`' but for the number of
-tries, which this function does not have). `GC w X`: the working space at
+`dpub`: the public data. `GC w X`: the working space at
 the width `w k` (`G`), with facts `X` about the registers or memory, for the
 public data and a public count (a loop's index). `CTW Φ Ψ c`: `c` leaks the
 same in two runs from `Φ` with the same public data, and runs from `Φ` to

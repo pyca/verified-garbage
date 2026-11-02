@@ -3,11 +3,11 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin1
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.St
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Rsa.Arm.RvStore
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Store
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont3
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
-import VerifiedGarbage.Proof.Rsa.Arm.RvStage
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools
 
 /-! # A candidate on ARMv7: the results, as pieces
 

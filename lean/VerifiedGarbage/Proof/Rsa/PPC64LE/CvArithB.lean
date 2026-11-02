@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithA
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLoop
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 
 /-!
@@ -19,8 +19,8 @@ the four checks.
 namespace VG.Proof.Rsa.PPC64LE.CrtValues
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
-open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 orOne setOne andS eqS inverse aM aNM aZero aT1 aT2 aT3 aT4
-  sOdd sB sC)
+open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 orOne setOne andS eqS aM aNM aZero aT1 aT2 aT3 aT4
+ sOdd sB sC)
 open VG.Impl.Rsa.PPC64LE.CrtValues (invSetup sPodd sE1 sE2 sE3 sMask aOne aQ aP nArr)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 

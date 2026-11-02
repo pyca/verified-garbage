@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.Div
-public import VerifiedGarbage.Impl.Rsa.PPC64LE.Inverse
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyArrays
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.InvBatch
 
 /-!

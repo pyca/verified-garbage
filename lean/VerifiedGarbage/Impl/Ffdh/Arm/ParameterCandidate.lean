@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.R2
 public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
 public import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyWs
-public import VerifiedGarbage.Impl.Rsa.Arm.Recover
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyFrame
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 
 /-! One safe-prime parameter candidate on ARMv7. The 72-byte local frame

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.Arm.Recover
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyFrame
 public import VerifiedGarbage.Impl.MillerRabin.Arm.Arithmetic
 
 /-!

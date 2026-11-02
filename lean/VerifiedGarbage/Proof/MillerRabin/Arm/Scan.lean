@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces2
 import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.WideMul
-import VerifiedGarbage.Proof.Rsa.Arm.RvKS
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 
 /-! # The Miller–Rabin round on ARMv7: the scan and the table's shift
 

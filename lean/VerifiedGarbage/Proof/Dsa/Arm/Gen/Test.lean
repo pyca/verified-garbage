@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 
 /-! # DSA parameter generation on ARMv7: a probable-prime test (`test_vp`)
 

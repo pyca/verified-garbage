@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.RecoverDet
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint2
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint2
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Rsa.Arm.RecoverDet
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Rsa.Arm.RvTaint2
+meta import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint2
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

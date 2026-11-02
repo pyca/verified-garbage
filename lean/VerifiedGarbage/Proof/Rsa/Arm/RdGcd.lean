@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 
 import VerifiedGarbage.Proof.Rsa.Arm.InverseCT
-import VerifiedGarbage.Proof.Rsa.Arm.RvOps
-import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # `vg_rsa_recover_primes_det` on ARMv7: the GCD and the products

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.St
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Inv
 import VerifiedGarbage.Proof.Rsa.Arm.InverseCT
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
 
 /-! # A candidate on ARMv7: differences and inverses as pieces
 

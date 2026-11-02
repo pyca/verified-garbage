@@ -2,20 +2,14 @@ module
 -- separate module: its correctness proofs (`det_ok`, `sizedD_ok`) build in parallel with the timing's stages, `TimeSteps` and `TimeCheck`
 
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
-public import VerifiedGarbage.Proof.Rsa.X86.RvStores
-public import VerifiedGarbage.Proof.Rsa.X86.RvLoads
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Inputs
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
-import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
-import VerifiedGarbage.Proof.Rsa.X86.RvArguments
-import VerifiedGarbage.Proof.Rsa.X86.RvProductCore
-import VerifiedGarbage.Proof.Rsa.X86.RvSlots
-import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Twos

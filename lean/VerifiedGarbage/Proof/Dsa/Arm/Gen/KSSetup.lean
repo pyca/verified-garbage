@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: the key working space set up

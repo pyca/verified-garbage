@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecBase
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified

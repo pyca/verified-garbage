@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 import VerifiedGarbage.Proof.Framework.Block
 
 /-! # A candidate on ARMv7: a high word of an array changed

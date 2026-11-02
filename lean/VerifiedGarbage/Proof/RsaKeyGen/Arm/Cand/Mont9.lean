@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont3
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint6
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
 
 /-! # A candidate on ARMv7: the Montgomery forms of 1 and −1 (`montB_vp`)
 

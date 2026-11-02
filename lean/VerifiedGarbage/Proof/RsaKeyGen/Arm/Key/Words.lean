@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 import VerifiedGarbage.Proof.Mont.WriteWord32
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 
 /-! # An RSA key on ARMv7: a word of an array set
 

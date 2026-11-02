@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.RsaKeyGen.Trial16
 import VerifiedGarbage.Proof.Bignum.Arm.TrialDivision16
 

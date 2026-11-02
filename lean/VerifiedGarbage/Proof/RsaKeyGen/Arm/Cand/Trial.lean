@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Tab
 
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.TrialP

@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
+import VerifiedGarbage.Proof.Rsa.Sub32
 
 /-! # A candidate on ARMv7: a witness's octets (`witnessLoad_vp`)
 

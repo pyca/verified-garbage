@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont7
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Rsa.Sub32
 
 /-! # A candidate on ARMv7: Miller–Rabin's start (`mrInit_vp`)
 

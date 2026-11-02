@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MillerRabin.Arm.Mont
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Taint
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Math
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Base
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.MillerRabin.Arm.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
-import VerifiedGarbage.Proof.Rsa.Arm.RvKS
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 
 /-! # The Miller–Rabin round on ARMv7: its steps as pieces
 

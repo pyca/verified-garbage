@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.St
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr2
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
 
 /-! # A candidate on ARMv7: a witness that passed (`St.ponPass`)
 

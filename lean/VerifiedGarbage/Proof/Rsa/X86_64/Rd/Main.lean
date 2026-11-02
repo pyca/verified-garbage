@@ -2,10 +2,10 @@ module
 -- separate module: its proofs build in parallel with the constant-time ones, `CTBase`, `CTParts` and `CTLoops`
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Tail
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpMain
+public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Entry
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
-import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
+import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Prod
 import VerifiedGarbage.Proof.Rsa.X86_64.Div
 import VerifiedGarbage.Proof.Rsa.KeyMath
 import VerifiedGarbage.Proof.Bignum.Octets

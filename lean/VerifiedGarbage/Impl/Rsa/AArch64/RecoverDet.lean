@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.AArch64.Recover
+public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
+public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 
 /-!
 # `vg_rsa_recover_primes_det` on AArch64: SP 800-56B Rev. 2 Appendix C.2
 
-`vg_rsa_recover_primes`' arguments, entry and exits (`Recover.lean`), and
-`Keys.lean`'s layout at two widths, which the code switches between by
+The arguments' header slots, the entry, the exits and `d e` (in the namespace
+`Recover`), and `Keys.lean`'s layout at two widths, which the code switches between by
 rewriting the header (`setNar`, `setWid`): narrow numbers of
 `v = ⌈k / 8⌉ + 1` words and wide ones of `W = 2 v + 2` words, wide array `j`
 being narrow arrays `2 j` and `2 j + 1`. Then, without a branch on a
@@ -31,6 +32,53 @@ Every loop's count is a function of the public `k`; every check is a mask.
 -/
 
 @[expose] public section
+
+namespace VG.Impl.Rsa.AArch64.Recover
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64 VG.Impl.Rsa.AArch64.Keys
+open VG.Impl.Bignum.Public (sN sK sE sElen sMask sCnt aN aX aR2 aXm aY aOne)
+
+/-! ## The layout -/
+
+/-- Header slots, beside `vg_rsa_public`'s `sN`, `sK`, `sE`, `sElen`,
+`sMask` and `sCnt` and the layout's `sStride`: `p` and `q`'s pointers, and
+`d`'s pointer and length. -/
+def sP : Nat := sFn 0
+def sQ : Nat := sFn 5
+def sD : Nat := sFn 7
+def sDl : Nat := sFn 8
+/-- Arrays, after `vg_rsa_public`'s 0 to 7: `e` (8), `d` (9), and `M = d e`
+over 10 and 11. -/
+def aE : Nat := 8
+def aD : Nat := 9
+def aM : Nat := 10
+/-! ## The entry and the exits -/
+
+/-- The arguments in the header at `scratch` (the third stack argument),
+whose base goes in `x0`; then `n` and `n_len` into `x2` and `x3` for
+`invalid`. `p_len` and `q_len` are `n_len`. -/
+def entry : List Instr :=
+  [.ldrSp .x8 16, .str .x .x0 .x8 (8 * sP), .str .x .x2 .x8 (8 * sQ), .str .x .x4 .x8 (8 * sN),
+    .str .x .x5 .x8 (8 * sK), .str .x .x6 .x8 (8 * sE), .str .x .x7 .x8 (8 * sElen),
+    .ldrSp .x9 0, .str .x .x9 .x8 (8 * sD), .ldrSp .x9 8, .str .x .x9 .x8 (8 * sDl), mov .x0 .x8,
+    mov .x2 .x4, mov .x3 .x5]
+
+/-- Zeros to `p` and `q`, and 0 returned. -/
+def fail : Prog isa := seqs [zeroOut sP sK, zeroOut sQ sK, .block [movi .x0 0]]
+
+/-! ## `d e` -/
+
+/-- `M := d e`: `M += e_j d` at word `j`, for each word `j` of `e`. -/
+def prod : List (Prog isa) :=
+  [zeroA aM, zeroA (aM + 1),
+    .block (ws ++ base aE .x5 ++ base aD .x9 ++ base aM .x8 ++
+      [mov .x11 .x5, ldh .x3 sElen, .addImm .x .x3 .x3 7, .lsr .x .x13 .x3 3, movi .x7 0]),
+    Crt.mulRows]
+
+/-- `x15 :=` the mask of `x9 = 0` (`x9 - 1` borrows). -/
+def zeroMask : List Instr := [movi .x7 0, movi .x4 1, .subs .x .x3 .x9 .x4] ++ borrowMask
+
+end VG.Impl.Rsa.AArch64.Recover
 
 namespace VG.Impl.Rsa.AArch64.RecoverDet
 

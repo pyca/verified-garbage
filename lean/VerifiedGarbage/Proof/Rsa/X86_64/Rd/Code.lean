@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Main
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
+public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Entry
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
-import VerifiedGarbage.Proof.Rsa.X86_64.RpOut
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
@@ -17,8 +16,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 `RecoverDet.code`, from a state its contract allows, writes `primesKeyDet`
 of its inputs (`rdCode_correct`), against `rdContract`, which states the
-shared contract's precondition on the registers and the stack, and implies
-`vg_rsa_recover_primes`' (`rpContract`), whose entry and failure it shares.
+shared contract's precondition on the registers and the stack: `rpPre`, the
+precondition of the entry and the failure path (`Rd/Entry.lean`), with
+`e_len ≤ 8`.
 -/
 
 @[expose] public section
@@ -33,7 +33,7 @@ open VG.Impl.Bignum.X86_64.Public (aN)
 n = r8, n_len = r9, e = [rsp + 8], e_len = [rsp + 16], d = [rsp + 24],
 d_len = [rsp + 32], scratch = [rsp + 40], scratch_len = [rsp + 48])`. -/
 def rdContract : Contract isa where
-  pre s := rpContract.pre s ∧ (stackArg s 1).toNat ≤ 8
+  pre s := rpPre s ∧ (stackArg s 1).toNat ≤ 8
   post s s' :=
     Spec.Rsa.writtenAll s'.mem [(s.gpr .rdi, (s.gpr .r9).toNat), (s.gpr .rdx, (s.gpr .r9).toNat)]
       ((s'.gpr .rax).setWidth 32)
@@ -49,8 +49,8 @@ def rdContract : Contract isa where
       Spec.Rsa.bytesAt s₁.mem (stackArg s₁ 0) (stackArg s₁ 1).toNat =
         Spec.Rsa.bytesAt s₂.mem (stackArg s₂ 0) (stackArg s₂ 1).toNat
 
-/-- `rdContract`'s precondition is `rpContract`'s, with `e_len ≤ 8`. -/
-theorem rd_rp {s : State} (h : rdContract.pre s) : rpContract.pre s ∧ (stackArg s 1).toNat ≤ 8 := h
+/-- `rdContract`'s precondition is `rpPre`, with `e_len ≤ 8`. -/
+theorem rd_rp {s : State} (h : rdContract.pre s) : rpPre s ∧ (stackArg s 1).toNat ≤ 8 := h
 
 /-- What `RecoverDet.code` leaves, from a valid modulus. -/
 theorem rdWritten_of {m : Mem} {pp pq : Addr} {rax : BitVec 64} {nb eb db : List Byte}

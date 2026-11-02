@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdOps
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
-import VerifiedGarbage.Proof.Rsa.AArch64.RpProd
+import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Bignum.Octets

@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.InvInstance
 import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Verified
 public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverDet
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
-public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -89,16 +88,6 @@ theorem crtValues_verified :
     Verified target (Impl.Rsa.X86_64.Keys.CrtValues.code)
       (Spec.Rsa.crtValuesContract abi) :=
   cv_verified (by decide +kernel)
-
-theorem recover_verified :
-    Verified target (Impl.Rsa.X86_64.Keys.Recover.code Proof.Rsa.X86_64.CallMont.base.mm)
-      (Spec.Rsa.recoverPrimesContract abi 8) :=
-  rp_call_verified Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel) rfl (by decide +kernel)
-
-theorem recoverAdx_verified :
-    Verified target (Impl.Rsa.X86_64.Keys.Recover.code Proof.Rsa.X86_64.CallMont.adx.mm)
-      (Spec.Rsa.recoverPrimesContract abi 8) :=
-  rp_call_verified Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) rfl (by decide +kernel)
 
 theorem checkKey_verified :
     Verified target (Impl.Rsa.X86_64.CheckKey.code)

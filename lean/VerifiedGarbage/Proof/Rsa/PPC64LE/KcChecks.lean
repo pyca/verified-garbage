@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcOps
 public import VerifiedGarbage.Proof.Rsa.KeyCheckMath
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcBase
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.MulMod

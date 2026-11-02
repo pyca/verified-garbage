@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Front1
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint1
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
-import VerifiedGarbage.Proof.Rsa.Arm.RvTaint4
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint4
+import VerifiedGarbage.Proof.Rsa.Sub32
 
 /-! # An RSA key on ARMv7: `p ≥ q`, `p − 1` and `q − 1` (`primes_vp`) -/
 

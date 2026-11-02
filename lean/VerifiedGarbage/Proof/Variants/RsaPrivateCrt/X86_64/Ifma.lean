@@ -136,19 +136,6 @@ import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
-import VerifiedGarbage.Proof.Rsa.X86_64.RpExp
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFin
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
-import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
-import VerifiedGarbage.Proof.Rsa.X86_64.RpLt
-import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
-import VerifiedGarbage.Proof.Rsa.X86_64.RpOut
-import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
-import VerifiedGarbage.Proof.Rsa.X86_64.RpRest
-import VerifiedGarbage.Proof.Rsa.X86_64.RpSkip
-import VerifiedGarbage.Proof.Rsa.X86_64.RpSq
 public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
@@ -271,18 +258,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 public import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpExp
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpFin
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpLt
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpOut
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpRest
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpSkip
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpSq
 
 /-!
 # `vg_rsa_private_crt` on x86-64: with AVX512_IFMA: the variant's code and proofs

@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.DivLoop
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLoop
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.Div
-public import VerifiedGarbage.Impl.Rsa.PPC64LE.Inverse
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyArrays
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 
 /-!

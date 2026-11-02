@@ -3,14 +3,14 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Base
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvStage
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools
 public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! # A candidate on ARMv7: tools for Montgomery multiplication's stages

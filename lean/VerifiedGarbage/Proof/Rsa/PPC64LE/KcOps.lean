@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.MulMod
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyOps
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyHalf
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Rsa.PPC64LE.DivLoop
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithA
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic

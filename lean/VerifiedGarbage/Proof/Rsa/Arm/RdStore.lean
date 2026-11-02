@@ -1,10 +1,10 @@
 module
 -- separate module: builds in parallel with the stages of the body, `RdOps` to `RdSqrt`
-public import VerifiedGarbage.Proof.Rsa.Arm.RvFin5
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Stores
 
-import VerifiedGarbage.Proof.Rsa.Arm.RvStore
-import VerifiedGarbage.Proof.Rsa.Arm.RvTaint4
-import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Store
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint4
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Slots
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec

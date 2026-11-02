@@ -1,30 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
-public import VerifiedGarbage.Proof.Rsa.X86.RvABI
-public import VerifiedGarbage.Proof.Rsa.X86.RvResult
-public import VerifiedGarbage.Proof.Rsa.X86.RvPair
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Abi
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Base
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Rsa.X86.RvModulusTiming
-import VerifiedGarbage.Proof.Rsa.X86.RvFailureTiming
-import VerifiedGarbage.Proof.Rsa.X86.RvEntryTiming
-import VerifiedGarbage.Proof.Rsa.X86.RvInstalled
-import VerifiedGarbage.Proof.Rsa.X86.RvReturn
-import VerifiedGarbage.Proof.Rsa.X86.RvBuffers
-import VerifiedGarbage.Proof.Rsa.X86.RvResources
-import VerifiedGarbage.Proof.Rsa.X86.RvArgumentsEq
-import VerifiedGarbage.Proof.Rsa.X86.RvArguments
+import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeCheck
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeSteps
 public import VerifiedGarbage.Proof.Rsa.X86.GcdBatchRt.Time
@@ -33,8 +22,6 @@ import VerifiedGarbage.Proof.Rsa.X86.Rd.Stages
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Stages2
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Sized
-import VerifiedGarbage.Proof.Rsa.X86.RvFailure
-import VerifiedGarbage.Proof.Rsa.X86.RvSatisfiable
 import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
@@ -47,17 +34,15 @@ import VerifiedGarbage.Proof.Framework.Offset
 Its traces depend on the arguments alone: past the modulus check, which reads
 the modulus (public: the contract's leak is the modulus and the public
 exponent), every piece is checked by the taint analysis or runs a public count
-of times (`det_relCT`). As for prime recovery by Appendix C.1, the pieces'
-checks take the arguments public, which needs the writable regions apart from
+of times (`det_relCT`). The pieces' checks take the arguments public, which needs the writable regions apart from
 them: `sizedD_relCT` from states whose writable regions are narrowed to the
 working space and the outputs, and `sizedNarrowD_relCT` from the states
 themselves.
 -/
-/-! ## What the timing shares with Appendix C.1's
+/-! ## The narrowed regions and the GCD's timing
 
 The writable regions the pieces' checks narrow to, and the GCD's timing
-from a stage (formerly in C.1's `RvTimeSized` and `RvTimeRest`, which only
-C.1's timing used besides).
+from a stage.
 -/
 
 @[expose] public section

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Inv
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import VerifiedGarbage.Proof.RsaKeyGen.KeyInv
-import VerifiedGarbage.Proof.Rsa.Arm.RvProd
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Prod
 import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-! # An RSA key on ARMv7: the numbers the body computes

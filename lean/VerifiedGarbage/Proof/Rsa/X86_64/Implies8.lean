@@ -1,11 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.Contract
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
-import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 public import VerifiedGarbage.Proof.Rsa.Contract
@@ -41,32 +39,5 @@ theorem crt_implies8 : crtContract.Implies (Proof.Rsa.privateCrtContract abi 8) 
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := by sig_implies_sat [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq] [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using crtSatState
-
-theorem rp_implies8 : rpContract.Implies (Spec.Rsa.recoverPrimesContract abi 8) where
-  pre := by
-    intro s h
-    sig_pre [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rpContract, stackArgs_six,
-      List.append_eq, List.range, List.range.loop] at h
-    sig_split h
-    sig_reduce [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rpContract, stackArgs_six,
-      List.append_eq, List.range, List.range.loop]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rpContract,
-    stackArgs_six, List.append_eq, List.range, List.range.loop]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rpContract, stackArgs_six,
-      List.append_eq, List.range, List.range.loop] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5⟩ := h
-    obtain ⟨hl₁, hc⟩ := List.append_inj' hl (List.length_singleton.trans List.length_singleton.symm)
-    have hm := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl₁
-    obtain ⟨hn, he⟩ := List.append_inj hm (by rw [bytesAt_length, bytesAt_length, h9])
-    refine ⟨?_, a0, a1, a2, a3, a4, a5, hn, he, List.singleton_inj.mp hc⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rpContract,
-    stackArgs_six, List.append_eq] [rpSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using rpSatState
 
 end VG.Proof.Rsa.X86_64

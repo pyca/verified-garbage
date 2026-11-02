@@ -7,10 +7,14 @@ import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint6
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont1
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont4
+import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
+import VerifiedGarbage.Proof.Rsa.TwosMath
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools
 
 /-! # A candidate on ARMv7: Montgomery multiplication's base and header
 

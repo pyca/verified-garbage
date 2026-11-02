@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import VerifiedGarbage.Proof.Rsa.X86.RvTaint
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Taint
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
-meta import VerifiedGarbage.Proof.Rsa.X86.RvTaint
+meta import VerifiedGarbage.Proof.Rsa.X86.Rd.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 

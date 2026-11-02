@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvNumbers
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Numbers
 
 /-! # A candidate on ARMv7: the working space and the candidate (`loadC_vp`)
 

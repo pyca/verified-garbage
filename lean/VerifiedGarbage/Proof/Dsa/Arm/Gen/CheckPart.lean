@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 
 /-! # DSA parameter generation on ARMv7: checking p‖q‖g
 

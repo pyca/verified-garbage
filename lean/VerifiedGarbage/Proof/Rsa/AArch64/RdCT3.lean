@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdCT2
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
-import VerifiedGarbage.Proof.Rsa.AArch64.RpSkip
+import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdCT2
 meta import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpSkip
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.TaintBatch

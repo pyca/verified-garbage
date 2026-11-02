@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
 import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces2
 import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Rsa.Arm.RvBase
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Base
 
 /-! # The Miller–Rabin round on ARMv7: the words of the exponent
 

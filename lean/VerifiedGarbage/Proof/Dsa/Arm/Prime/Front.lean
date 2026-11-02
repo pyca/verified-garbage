@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Instr
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint1
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath

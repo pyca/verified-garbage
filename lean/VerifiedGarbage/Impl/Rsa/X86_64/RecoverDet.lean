@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 
 /-!
 # `vg_rsa_recover_primes_det` on x86-64
 
-`vg_rsa_recover_primes`' arguments, entry and failure (`Recover.lean`), and
 SP 800-56B Rev. 2 Appendix C.2 without a branch on a secret, in the working
 space of `Keys.lean` at two widths, which the header gives (`width`):
 narrow numbers of `v = ⌈k / 8⌉ + 1` words, the modulus and three bits more,
@@ -28,9 +27,74 @@ and wide numbers of `W = 2 v + 2` words, wide array `j` being narrow arrays
   check (`sMask`).
 
 Every loop's count is a public length.
+
+The arguments' header slots, the entry, the failure path and the product
+`d e` are in the namespace `Recover`.
 -/
 
 @[expose] public section
+
+namespace VG.Impl.Rsa.X86_64.Keys.Recover
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
+open VG.Impl.Rsa.X86_64.Keys
+
+/-! ## The layout -/
+
+/-- Header slots: `p` and `q`'s pointers, and `d`'s pointer and length (`n`
+and `e` in `vg_rsa_public`'s `sN`, `sK`, `sE` and `sElen`). -/
+def sP : Nat := sOut
+def sQ : Nat := sIn
+def sD : Nat := sI
+def sDl : Nat := sBit
+/-- Arrays, after `vg_rsa_public`'s 0 to 7: `e` (8), `d` (9), and `M = d e`
+over 10 and 11. -/
+def aE : Nat := 8
+def aD : Nat := 9
+def aM : Nat := 10
+/-- The stack argument `i` (from 1). -/
+def stk (i : Nat) : MemOp := { base := .rsp, disp := 8 * i }
+
+/-! ## The entry and the exits -/
+
+/-- Save the callee-saved registers and the arguments in the header at
+`scratch`, with its base in `rdi`. `p_len` and `q_len` are `n_len`. -/
+def entry : List Instr :=
+  ([.mov .r11 (.mem (stk 5))] : List Instr) ++
+  (saved.zipIdx.map fun (r, i) => .store { base := .r11, disp := 8 * i } r) ++
+  ([.store { base := .r11, disp := 8 * sP } .rdi, .store { base := .r11, disp := 8 * sQ } .rdx,
+    .store { base := .r11, disp := 8 * sN } .r8, .store { base := .r11, disp := 8 * sK } .r9,
+    .mov .rax (.mem (stk 1)), .store { base := .r11, disp := 8 * sE } .rax,
+    .mov .rax (.mem (stk 2)), .store { base := .r11, disp := 8 * sElen } .rax,
+    .mov .rax (.mem (stk 3)), .store { base := .r11, disp := 8 * sD } .rax,
+    .mov .rax (.mem (stk 4)), .store { base := .r11, disp := 8 * sDl } .rax, .mov .rdi (.reg .r11)] : List Instr)
+
+/-- Zeros to `p` and `q`, and 0 returned. -/
+def fail : Prog isa := seqs [zeroOut sP sK, zeroOut sQ sK, .block (([.mov32 .rax (.imm 0)] : List Instr) ++ exit)]
+
+/-! ## `d e` -/
+
+/-- The bases of `e`, `M` and `d` into `rbx`, `r10` and `r15`, the words of
+`e` into `r11`, and the row counter `r13 := 0`. -/
+def prodInit : List Instr :=
+  ws ++ base aE .rbx ++ base aM .r10 ++ base aD .r15 ++
+    ([.mov .r11 (.mem (hdr sElen)), .alu .add .r11 (.imm 7), .shift .shr .r11 3, .mov32 .r13 (.imm 0)] : List Instr)
+
+/-- Row `r13`: `rcx := e[r13]`, the accumulator at word `r13` of `M`, and
+`d`'s base in `r9`. -/
+def rowHead : List Instr :=
+  [.mov .rcx (.mem (ix .rbx .r13)), .mov .r8 (.reg .r13), .alu .add .r8 (.reg .r8), .alu .add .r8 (.reg .r8),
+    .alu .add .r8 (.reg .r8), .alu .add .r8 (.reg .r10), .mov .r9 (.reg .r15)]
+
+/-- The row counter against `r11`. -/
+def rowNext : List Instr := [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.reg .r11)]
+
+/-- `M := d e`: `M += e_j d` at word `j`, for each word `j` of `e`. -/
+def prod : List (Prog isa) :=
+  [zeroA aM, zeroA (aM + 1),
+    .seq (.block prodInit) (.loop (.seq (.block rowHead) (.seq mulAddRow (.block rowNext))) .ne)]
+
+end VG.Impl.Rsa.X86_64.Keys.Recover
 
 namespace VG.Impl.Rsa.X86_64.Keys.RecoverDet
 
@@ -96,12 +160,6 @@ def countN : List Instr := ws ++ ([.mov .rax (.reg .r12), .shift .shl .rax 6, .s
 /-- `32 W = 64 (w + 1)` (half the wide width's bits) into the count. -/
 def countW : List Instr :=
   ws ++ ([.mov .rax (.reg .r12), .alu .add .rax (.imm 1), .shift .shl .rax 6, .store (hdr sCt) .rax] : List Instr)
-
-/-! ## The arrays
-
-Narrow: `n` (0), zero (1, so that wide 0 is `n`), one (2, wide 1), `x`
-(wide 2), `x₂` (6), `u` (7), `g` (12, wide 6), a temporary (14, wide 7);
-`e`, `d` and `d e` as `Recover.prod` takes them (8, 9 and wide 5). -/
 
 /-! ## `d e - 1` (wide) -/
 

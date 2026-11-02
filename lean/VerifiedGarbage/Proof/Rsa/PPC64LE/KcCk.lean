@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCkPre
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcMath
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CheckKey
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubE
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
 import VerifiedGarbage.Proof.Framework.Block

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Prep
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvMid
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyHalf
-import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
 import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
-import VerifiedGarbage.Proof.Rsa.Arm.RvKS
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 
 /-! # The Miller–Rabin round on ARMv7: the blocks on the header words as pieces
 

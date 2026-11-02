@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaPss.Arm
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Lay
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Offset
