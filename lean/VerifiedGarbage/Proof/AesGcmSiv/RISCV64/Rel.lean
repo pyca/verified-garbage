@@ -6,8 +6,10 @@ public import VerifiedGarbage.Proof.Gather.RISCV64.LoopCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Callee
+public import VerifiedGarbage.Proof.AesOcb.RISCV64.Callee
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Env
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
+public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
 
 /-!
 # AES-GCM-SIV on RISC-V: relating two runs
@@ -17,7 +19,7 @@ Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/AesCcm/RISCV64/Rel.lean`): the code between calls is related by the
 taint analysis, from the registers the environment pins to the same public
 values in both runs and those the correctness proofs pin (`rel_env`); each
-call by its callee's proof (`rel_ctr`, `rel_gh`, `rel_key`). What the next
+call by its callee's proof (`rel_ctr`, `rel_enc`, `rel_gh`, `rel_key`). What the next
 piece needs of each run holds after every run of the previous one: by its
 correctness proof, or, for the registers code without calls does not write,
 by its instructions alone (`Runs.kept`).
@@ -113,5 +115,16 @@ theorem gh_runs {c : Cx} {s : State} {H Y D S : Addr} {n : Nat} (E : Env c s) (h
 theorem key_runs {c : Cx} {s : State} {K : Addr} {kl : Nat} {C S : Addr} (E : Env c s) (h : KeyCall s K kl C S) :
     Runs Impl.AesGcm.RISCV64.keyCall s (Kept c s) :=
   Runs.of_wp (WP.mono (Proof.AesGcm.RISCV64.key_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
+
+theorem rel_enc {σ₁ σ₂ : State} {K D S : Addr} {R n : Nat} (h₁ : Proof.AesOcb.RISCV64.BCall σ₁ K D S R n)
+    (h₂ : Proof.AesOcb.RISCV64.BCall σ₂ K D S R n) (hsp : σ₁.sp = σ₂.sp) :
+    RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcmSiv.RISCV64.encCall TT :=
+  Proof.AesOcb.RISCV64.blk_rel Proof.Aes.RISCV64.encryptBlocks_correct Proof.Aes.RISCV64.encryptBlocks_ct
+    fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, D, S, R, n, h₁, h₂, hsp⟩
+
+theorem enc_runs {c : Cx} {s : State} {K D S : Addr} {R n : Nat} (E : Env c s)
+    (h : Proof.AesOcb.RISCV64.BCall s K D S R n) : Runs Impl.AesGcmSiv.RISCV64.encCall s (Kept c s) :=
+  Runs.of_wp (WP.mono (Proof.AesOcb.RISCV64.blk_call Proof.Aes.RISCV64.encryptBlocks_correct
+    Proof.AesOcb.RISCV64.encryptBlocks_noFrames h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
 
 end VG.Proof.AesGcmSiv.RISCV64
