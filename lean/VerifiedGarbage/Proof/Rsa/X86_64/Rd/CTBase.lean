@@ -443,13 +443,13 @@ theorem divmod_ct {iQ iR iD iT : Nat} (hQ : iQ < 16) (hR : iR < 16) (hD : iD < 1
   exact wsG_ct (fun _ _ h => h) ht fun p s h => by
     rw [← e]; exact divmod_gd hQ hR hD hT dQR dQD dQT dRD dRT dDT hF p s h
 
-theorem inverse_gd [InvLaw] {iU iV iX₂ iM : Nat} (hZ26 : ∀ p : RpP, slot (w p.k) 26 ≤ p.Z)
-    (hw20 : ∀ p : RpP, w p.k < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hX : iX₂ < 16) (hM : iM < 16)
+theorem inverse_gd [InvLaw] {iU iV iX₂ iM : Nat} (hZ26 : ∀ p s, GD w F p s → slot (w p.k) 26 ≤ p.Z)
+    (hw20 : ∀ p s, GD w F p s → w p.k < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hX : iX₂ < 16) (hM : iM < 16)
     (hVX : iV ≠ iX₂) (hF : Arr F) (p : RpP) (s : State) (h : GD w F p s) :
     WP isa (inverse iU iV iX₂ iM) s (GD w F p) := by
-  refine WP.mono (InvLaw.inverse_ok h.ws (hZ26 p) (hw20 p) hU hV hX hM hVX) fun t ⟨_, f, k, _⟩ =>
+  refine WP.mono (InvLaw.inverse_ok h.ws (hZ26 p s h) (hw20 p s h) hU hV hX hM hVX) fun t ⟨_, f, k, _⟩ =>
     h.frm f (fun r hr => ?_) k (by decide) hF
-  have z26 := hZ26 p
+  have z26 := hZ26 p s h
   have l26 := slot_lin (w p.k) 26
   have l16 := slot_lin (w p.k) 16
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -458,8 +458,8 @@ theorem inverse_gd [InvLaw] {iU iV iX₂ iM : Nat} (hZ26 : ∀ p : RpP, slot (w 
   · exact ⟨slot_256 _ _, by have := slot_Z h hX; dsimp only; omega_arith⟩
   · exact ⟨slot_256 _ _, by dsimp only; omega_arith⟩
 
-theorem inverse_ct [InvLaw] {iU iV iX₂ iM : Nat} (hZ26 : ∀ p : RpP, slot (w p.k) 26 ≤ p.Z)
-    (hw20 : ∀ p : RpP, w p.k < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hX : iX₂ < 16) (hM : iM < 16)
+theorem inverse_ct [InvLaw] {iU iV iX₂ iM : Nat} (hZ26 : ∀ p s, GD w F p s → slot (w p.k) 26 ≤ p.Z)
+    (hw20 : ∀ p s, GD w F p s → w p.k < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hX : iX₂ < 16) (hM : iM < 16)
     (hVX : iV ≠ iX₂) (hF : Arr F) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r13 (.reg .r12)] : List Instr))
       (inverseN iU iV iX₂ iM)) hc).isSome = true) :
