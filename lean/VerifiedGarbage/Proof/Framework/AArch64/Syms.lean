@@ -54,6 +54,8 @@ theorem execBlock_syms : ∀ {is : List Instr} {s s' : State} {t : List Leak},
 theorem Exec.syms {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s') :
     s'.syms = s.syms := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block e => exact execBlock_syms e
   | seq _ _ ih₁ ih₂ => exact ih₂.trans ih₁
   | iteT _ _ ih | iteF _ _ ih => exact ih

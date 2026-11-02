@@ -266,6 +266,79 @@ def Abi.withConsts {M : ISA} (A : Abi M) (cs : List (String × List (BitVec 64))
         ∀ t ∈ Abi.constRegions (f s) cs, t.base.toNat % 64 = 0
       pub s₁ s₂ := A.pub s₁ s₂ ∧ ∀ c ∈ cs, f s₁ c.1 = f s₂ c.1 }
 
+/-! ## Tables of functions
+
+A function may take a table of functions: a read-only array of `u64`
+(`Param.array false .u64 k`) that holds one of the `static`s the emitter
+writes for an interface (`FnTable`, `TCB/Rust.lean`), as a `&'static`
+reference to it: the addresses of its functions (`ISA.fnAddr`, each a
+pointer-sized word), then its words of data. Its code calls them by an
+indirect call (`Code.icall`). `A.withTables sig ts` is the calling convention as
+a contract for such a function sees it, where each `(param, tables)` of
+`ts` names an array parameter of `sig` and the tables it may point to: the
+memory there holds the words of one of them, at the state's addresses of
+its functions; the functions of distinct names are at distinct addresses
+(distinct functions, whose code is not empty, are: the emitter emits each
+function a table names as a function of its own, never as another name of
+one, `Rust.checkFnTables`; a linker that folds functions of identical code
+into one, identical code folding, which rustc does not ask for, must not
+be used); and the addresses of
+the functions, and which of the tables each parameter points to, are public
+(where each function is, as where each static is, does not depend on the
+data a function works on, and the Rust caller chooses the table by the CPU's
+features, not by a secret). The array's own region, read-only and apart from
+every writable one, is the contract's (`Sig.contract`) as for any other
+array. With no tables, it is `A`. -/
+
+/-- A table of functions: the `static` `name` of the type `iface` (an
+interface, which every table of it shares), holding the addresses of the
+functions `fns`, then the words `data`, each 64 bits (on a target with
+64-bit pointers: `TCB/Rust.lean`). -/
+structure FnTable where
+  name : String
+  iface : String
+  fns : List String
+  data : List (BitVec 64) := []
+  deriving DecidableEq, Repr
+
+/-- The words of `T` in the state `s`: the addresses of its functions, then
+its data. -/
+def FnTable.words (M : ISA) (s : M.State) (T : FnTable) : List (BitVec 64) :=
+  T.fns.map (M.fnAddr s) ++ T.data
+
+/-- The memory `m` holds the words `ws` at `p`: word `i` (64 bits,
+little-endian) at `p + 8 i`. -/
+def Abi.tableHeld (m : Mem) (p : Addr) (ws : List (BitVec 64)) : Prop :=
+  ∀ i < ws.length, m.readW (p + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0
+
+/-- The index among the machine-level arguments (`Sig.words`) of the first
+argument of the parameter named `x`, if there is one. -/
+def Sig.wordIndex : List (String × Param) → String → Option Nat
+  | [], _ => none
+  | (n, p) :: ps, x => if n = x then some 0 else (Sig.wordIndex ps x).map (· + (p.words 64).length)
+
+def Abi.withTables {M : ISA} (A : Abi M) (sig : Sig) (ts : List (String × List FnTable)) : Abi M :=
+  match ts with
+  | [] => A
+  | ts =>
+    let fns := ts.flatMap fun t => t.2.flatMap (·.fns)
+    /- The address the parameter `x` holds, among the arguments `vals`. -/
+    let arg (vals : List (BitVec 64)) (x : String) : Option Addr :=
+      (Sig.wordIndex sig.params x).map fun k => vals.getD k 0
+    { A with
+      wf ws n s := A.wf ws n s ∧
+        (match A.args ws with
+          | none => False
+          | some vals => ∀ t ∈ ts, ∃ p, arg (vals s) t.1 = some p ∧
+              ∃ T ∈ t.2, Abi.tableHeld (A.mem s) p (T.words M s)) ∧
+        fns.Pairwise fun f g => f ≠ g → M.fnAddr s f ≠ M.fnAddr s g
+      pub s₁ s₂ := A.pub s₁ s₂ ∧ (∀ f ∈ fns, M.fnAddr s₁ f = M.fnAddr s₂ f) ∧
+        match A.args ((sig.words A.ptrBits).map (·.bits A.ptrBits)) with
+        | none => False
+        | some vals => ∀ t ∈ ts, ∀ p₁ p₂, arg (vals s₁) t.1 = some p₁ → arg (vals s₂) t.1 = some p₂ →
+            ∀ T ∈ t.2, (Abi.tableHeld (A.mem s₁) p₁ (T.words M s₁) ↔
+              Abi.tableHeld (A.mem s₂) p₂ (T.words M s₂)) }
+
 /-- The `n` bytes below the stack pointer `sp`, if any. -/
 def stackBelow (sp : Addr) : Nat → List Region
   | 0 => []

@@ -302,6 +302,8 @@ theorem pop_sp {j : Instr} {s₁ s₂ s' : State} (h : pop j s₁ s₂ = some s'
 theorem Exec.sp {c : Prog isa} {s s' : State} {t : List Leak} (h : VG.Exec isa c s t s') :
     s'.sp = s.sp := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h => exact execBlock_sp h
   | seq _ _ ih₁ ih₂ => exact ih₂.trans ih₁
   | iteT _ _ ih => exact ih
@@ -371,6 +373,7 @@ unchanged. -/
 theorem Exec.lr {c : Prog isa} {s s' : State} {t : List Leak} (h : VG.Exec isa c s t s')
     (hc : c.noCalls = true) (hi : (instrs c).all (fun i => !i.writesLr) = true) : s'.lr = s.lr := by
   induction h with
+  | icall | icallNext => simp [Code.noCalls] at hc
   | block h => exact execBlock_lr h hi
   | seq _ _ ih₁ ih₂ =>
     simp only [Code.noCalls, Bool.and_eq_true, instrs, List.all_append] at hc hi
