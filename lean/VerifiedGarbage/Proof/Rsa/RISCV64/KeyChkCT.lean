@@ -215,12 +215,11 @@ theorem ne_of_eval {s : State} (h : isa.eval (.zero .t0) s = some false) : s.gpr
 /-- `KeyCheck.fn` is constant time, from the function's pieces. -/
 theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)} {mvRegs : List Reg}
     (H : F.Ok oS na moves ([setup, .block eArr] ++ loads ++ body ++ [.block ret]) mvRegs) (hoS : 8 * oS < 2048)
-    (hS1 : ∀ {α : Type} (Φ : α → State → Prop), Pins Φ [] →
-      RelCT isa (Two Φ) (.block [.addSp .t0 0, .load .d .t0 .t0 (8 * oS)]) fun _ _ => True)
-    (hS2 : ∀ {α : Type} (Φ : α → State → Prop), Pins Φ (.t0 :: argRegs) →
-      RelCT isa (Two Φ) (.block (save2 ++ moves)) fun _ _ => True)
-    (hT : ∀ {α : Type} (Φ : α → State → Prop), Pins Φ (.s11 :: mvRegs) →
-      RelCT isa (Two Φ) (seqs ([setup, .block eArr] ++ loads ++ body ++ [.block ret])) fun _ _ => True) :
+    {hc1 hc2 hc3 : VG.Taint.Hint taint.T}
+    (hS1 : (taint.check (Taint.ofRegs []) (.block [.addSp .t0 0, .load .d .t0 .t0 (8 * oS)]) hc1).isSome = true)
+    (hS2 : (taint.check (Taint.ofRegs (.t0 :: argRegs)) (.block (save2 ++ moves)) hc2).isSome = true)
+    (hT : (taint.check (Taint.ofRegs (.s11 :: mvRegs))
+      (seqs ([setup, .block eArr] ++ loads ++ body ++ [.block ret])) hc3).isSome = true) :
     RelCT isa (Two F.C0) (fn (8 * oS) moves loads body) fun _ _ => True := by
   have same : ∀ {a : β} {x y : State}, F.C0 a x → F.C0 a y → F.B x = F.B y ∧ F.E x = F.E y ∧ F.N x = F.N y ∧
       F.L x = F.L y ∧ F.K x = F.K y ∧
@@ -242,12 +241,12 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
   refine RelCT.seq (R := Two F.S7) (RelCT.seq (R := Two F.S2) (RelCT.block_append
     (RelCT.seq (R := Two F.S1) ?_ ?_)) ?_) ?_
   · -- `save`'s first part.
-    refine two_post (hS1 _ fun _ _ _ _ _ r hr => absurd hr List.not_mem_nil) fun a s c0 => ?_
+    refine two_post (two_taint _ (fun _ _ _ _ _ r hr => absurd hr List.not_mem_nil) hS1) fun a s c0 => ?_
     have hp := H.hk s c0.1
     exact WP.mono (save1_ok s hoS (hp.arg_rd hp.hoS) (hp.arg_al hp.hoS)) fun t ⟨⟨t0, tm, tsp⟩, k⟩ =>
       ⟨s, c0, ⟨t0.trans hp.base, tm, tsp⟩, k⟩
   · -- `save`'s second part and the moves.
-    refine two_post (hS2 _ ?_) fun a s ⟨s0, c0, ht⟩ => ?_
+    refine two_post (two_taint _ ?_ hS2) fun a s ⟨s0, c0, ht⟩ => ?_
     · rintro a s₁ s₂ ⟨x, hx, ⟨tx, -, -⟩, kx⟩ ⟨y, hy, ⟨ty, -, -⟩, ky⟩ r hr
       have hs := same hx hy
       rcases List.mem_cons.mp hr with rfl | hr
@@ -341,7 +340,7 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
       congr 1
       rw [Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq, x0, y0, sameEv hx hy, sameMv hx hy]
     · -- The valid branch.
-      refine RelCT.mono (two_post (Φ := fun a s => F.S7 a s ∧ s.gpr .t0 = 0) (hT _ ?_) ?_) ?_ fun _ _ h => h
+      refine RelCT.mono (two_post (Φ := fun a s => F.S7 a s ∧ s.gpr .t0 = 0) (two_taint _ ?_ hT) ?_) ?_ fun _ _ h => h
       · rintro a s₁ s₂ ⟨⟨x, vx, hx, mx, ⟨-, -, xm⟩, kx⟩, -⟩ ⟨⟨y, vy, hy, my, ⟨-, -, ym⟩, ky⟩, -⟩ r hr
         rcases List.mem_cons.mp hr with rfl | hr
         · rw [(mx.base kx xm).s11, (my.base ky ym).s11, (same hx hy).1]
