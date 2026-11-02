@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Res
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Main
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry
@@ -38,7 +39,7 @@ theorem keyPost_of {s t : State} (c : KCtx s) (R : OutsRes (keyIn s) t.mem (t.gp
 theorem mask_bne_k (b : Bool) : (mask b != 0) = b := by cases b <;> decide
 
 /-- `code` computes `keyOp`. -/
-theorem keyCode_wp (s : State) (h : keyPre s) : WP isa code s fun t => abiPreserved s t ∧ keyPost s t := by
+theorem keyCode_wp [VG.Proof.Rsa.AArch64.InvLaw] (s : State) (h : keyPre s) : WP isa code s fun t => abiPreserved s t ∧ keyPost s t := by
   have c := keyCtx_of h
   rw [code_eq]
   refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (keyStart_k c) fun t₁ k₁ => ?_)
@@ -65,7 +66,7 @@ theorem keyCode_wp (s : State) (h : keyPre s) : WP isa code s fun t => abiPreser
     exact ⟨abiPreserved_of_keep ((F.ks.keep.trans kt).mono (by decide)), keyPost_of c R⟩
 
 /-- `vg_rsa_keygen_key`. -/
-theorem keyCode_correct (s : State) (h : keyA.pre s) :
+theorem keyCode_correct [VG.Proof.Rsa.AArch64.InvLaw] (s : State) (h : keyA.pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ keyA.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := keyCode_wp s h
   exact ⟨t, s', he, hg, hp⟩

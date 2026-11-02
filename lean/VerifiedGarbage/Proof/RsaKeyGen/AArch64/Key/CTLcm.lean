@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
 
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
@@ -296,7 +297,7 @@ theorem gcdUV_eq2 : gcdUV = ([.block (evenMaskOf aV ++ (([mov .x14 .x12] : List 
   simp only [gcdUV, List.append_assoc]
 
 /-- `gcdUV`, from word `W` of `u` zero. -/
-theorem gcdUV_ct : RelCT isa (Two (KG (TopZ aU))) (seqs gcdUV) (Two (KG NF)) := by
+theorem gcdUV_ct [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG (TopZ aU))) (seqs gcdUV) (Two (KG NF)) := by
   have sT : ∀ (cs : List Rc) (rs : List Reg), cs.all Rc.ok = true → .arr aU ∉ cs → Stab (TopZ aU) cs rs :=
     fun _ rs hok hn => stab_top rs (by decide) hok hn
   have sK : ∀ (cs : List Rc) (rs : List Reg), cs.all Rc.ok = true → .hdr kOk ∉ cs → Stab KokM cs rs :=
@@ -357,7 +358,7 @@ abbrev LF : KIn → State → Prop := fun I t => PF I t ∧ av I t.mem aL = I.L
 
 /-- `lcmPart` leaks the same in runs with the same public data, and leaves
 `LF` (`lcm_k`). -/
-theorem lcmPart_ct : RelCT isa (Two (KG PF)) (seqs lcmPart) (Two (KG LF)) := by
+theorem lcmPart_ct [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG PF)) (seqs lcmPart) (Two (KG LF)) := by
   refine kg_ct ?_ fun I _ s h L hf => by
     have hPw := lt_pow_half L.P_lt 1
     have hQw := lt_pow_half L.Q_lt 1

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
 
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DOdd
@@ -73,7 +74,7 @@ theorem ofNat_beq_zero {e : Nat} (he : e < 2 ^ 64) : (BitVec.ofNat 64 e == 0) = 
     rw [beq_eq_false_iff_ne.mpr this, decide_eq_false h]
 
 /-- `dPart`, for `e < 2⁶⁴`. -/
-theorem dPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 : e < 2 ^ 64)
+theorem dPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 : e < 2 ^ 64)
     (hev : word s.mem I.B (8 * kEv) = BitVec.ofNat 64 e) (hL : av I s.mem aL = L) (hLW : L < 2 ^ (64 * I.W)) :
     WP isa dPart s fun t => KS I s₀ t ∧ KF I.B I.W csD s.mem t.mem ∧ DRes I e L t.mem := by
   have hld := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega)

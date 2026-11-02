@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Qinv
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Crt
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.NFin
@@ -101,7 +102,7 @@ def TailPost (I : KIn) (s t : State) (ok : Bool) : Prop :=
     Keep kRegs s t
 
 /-- `keyPart`. -/
-theorem keyPart_k {I : KIn} {s₀ s : State} (h : KFront I s₀ s) (L : KLens I) (O : KOuts I) {ok : Bool}
+theorem keyPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KFront I s₀ s) (L : KLens I) (O : KOuts I) {ok : Bool}
     (hok : word s.mem I.B (8 * kOk) = mask ok) :
     WP isa keyPart s (fun t => TailPost I s t ok) := by
   have hk := h.ks

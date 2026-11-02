@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
 import Mathlib.Algebra.Group.Nat.Defs
@@ -62,7 +63,7 @@ theorem cv_implies : cvA.Implies (Spec.Rsa.crtValuesContract abi) where
     List.append_eq] [cvSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using cvSatState
 
 /-- `vg_rsa_crt_values`. -/
-theorem cv_verified : Verified target CrtValues.code (Spec.Rsa.crtValuesContract abi) :=
+theorem cv_verified [InvLaw] : Verified target CrtValues.code (Spec.Rsa.crtValuesContract abi) :=
   Verified.of_correct cvCode_correct cvCode_constantTime cv_implies
 
 end VG.Proof.Rsa.AArch64

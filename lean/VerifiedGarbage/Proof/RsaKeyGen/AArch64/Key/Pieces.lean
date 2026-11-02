@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
 import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
-import VerifiedGarbage.Proof.Rsa.AArch64.InvFinish
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
@@ -359,7 +359,7 @@ theorem divmod_rem {I : KIn} {m : Mem} {iR : Nat} {a d : Nat} (ha : a < 2 ^ (64 
 /-- `inverse u v x₁ x₂ m t` from `v = m`, `x₁ = 1`, `x₂ = 0` and word `W`
 of `u` zero: for an odd `m > 1`, `v = gcd(u, m)` and `x₂ u ≡ v (mod m)`,
 `x₂ < m`. -/
-theorem inverse_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {iU iV iX₁ iX₂ iM iT : Nat}
+theorem inverse_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) {iU iV iX₁ iX₂ iM iT : Nat}
     (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
     (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
     (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
@@ -371,7 +371,7 @@ theorem inverse_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {iU iV iX₁ iX�
         av I t.mem iV = Nat.gcd (av I s.mem iU) (av I s.mem iM) ∧
         ((av I s.mem iM : Nat) : Int) ∣ (av I t.mem iX₂ : Int) * av I s.mem iU - av I t.mem iV ∧
         av I t.mem iX₂ < av I s.mem iM) := by
-  refine WP.mono (inverse_ok h.ws hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M
+  refine WP.mono (InvLaw.inverse_ok h.ws hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M
     dX₂T dMT hU0 hVM hX1 hX2) fun t ⟨_, hf, k, hv⟩ => ?_
   have f : KF I.B I.W [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT] s.mem t.mem :=
     KF.of_frm hf fun r hr => by

@@ -1,4 +1,5 @@
 module
+-- separate module: keeps the algebra of the inverse's proof out of its callers, which take its contract through `InvLaw`; only `Instances` imports it
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLoop
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef

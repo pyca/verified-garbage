@@ -1,4 +1,5 @@
 module
+-- separate module: the start builds in parallel with the end pieces (`InvEnd`)
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLoop
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef

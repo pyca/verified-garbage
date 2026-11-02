@@ -1,4 +1,5 @@
 module
+-- separate module: a batch's divsteps build in parallel with its updates (`InvStage`)
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
@@ -45,8 +46,8 @@ theorem pack_unpack (S N : Nat) (hS : S < 2 ^ 32) (hN : N < 2 ^ 32) :
 /-- The batch head's tail: `d` and the matrix into lanes, `x11`, `x12` back, `x15` counted. -/
 theorem headTail_ok' (s : State) {S N : Nat} (hS : S < 2 ^ 32) (hN : N < 2 ^ 32)
     (h14 : s.gpr .x14 = BitVec.ofNat 64 S <<< 32 + BitVec.ofNat 64 N) :
-    WP isa (.block ([.vop (.ins .d2 .v18 0 .x1), .vop (.ins .d2 .v16 0 .x4), .vop (.ins .d2 .v16 1 .x5),
-      .vop (.ins .d2 .v17 0 .x6), .vop (.ins .d2 .v17 1 .x7)] ++ (unpackW ++ ([.subImm .x .x15 .x15 1] : List Instr)))) s
+    WP isa (.block (([.vop (.ins .d2 .v18 0 .x1), .vop (.ins .d2 .v16 0 .x4), .vop (.ins .d2 .v16 1 .x5),
+      .vop (.ins .d2 .v17 0 .x6), .vop (.ins .d2 .v17 1 .x7)] : List Instr) ++ (unpackW ++ ([.subImm .x .x15 .x15 1] : List Instr)))) s
       fun t => (laneOf t .v18 0 = s.gpr .x1 ∧ laneOf t .v18 1 = laneOf s .v18 1 ∧ laneOf t .v16 0 = s.gpr .x4 ∧
         laneOf t .v16 1 = s.gpr .x5 ∧ laneOf t .v17 0 = s.gpr .x6 ∧ laneOf t .v17 1 = s.gpr .x7 ∧
         (∀ r, r ≠ .v16 → r ≠ .v17 → r ≠ .v18 → t.v r = s.v r) ∧ t.gpr .x11 = BitVec.ofNat 64 S ∧
@@ -56,7 +57,7 @@ theorem headTail_ok' (s : State) {S N : Nat} (hS : S < 2 ^ 32) (hN : N < 2 ^ 32)
   rw [← List.append_assoc]; unfold unpackW
   brun [exec_ins, h14, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.v_write, RegUpd.v_setV, (pack_unpack S N hS hN).1]
   simp only [laneOf, RegUpd.v_write, RegUpd.v_setV, (pack_unpack S N hS hN).2]
-  simp (config := { decide := true }) only [extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide), extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide), extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide), extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide), ite_true, ite_false, true_and, and_true]
+  simp only [reduceCtorEq, ↓reduceIte, extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide), extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide), extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide), extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide), true_and, and_true]
   intro r h1 h2 h3
   simp only [h1, h2, h3, ite_false]
 

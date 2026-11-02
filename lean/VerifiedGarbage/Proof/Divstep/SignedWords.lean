@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # Signed multiword numbers and their shift right by 59

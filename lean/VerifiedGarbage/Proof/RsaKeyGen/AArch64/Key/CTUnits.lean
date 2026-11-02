@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.Div
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
-import VerifiedGarbage.Proof.Rsa.AArch64.InvFinish
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -343,7 +343,7 @@ theorem inverse_ct0 {F : KIn → State → Prop} {iU iV iX₁ iX₂ iM iT : Nat}
     RelCT isa (Two (KG F)) (inverse iU iV iX₁ iX₂ iM iT) fun _ _ => True := by
   rw [inverse_eq]; exact kg_ws0 ht
 
-theorem inverse_ct {F : KIn → State → Prop} {iU iV iX₁ iX₂ iM iT : Nat}
+theorem inverse_ct [VG.Proof.Rsa.AArch64.InvLaw] {F : KIn → State → Prop} {iU iV iX₁ iX₂ iM iT : Nat}
     (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
     (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
     (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
@@ -355,7 +355,7 @@ theorem inverse_ct {F : KIn → State → Prop} {iU iV iX₁ iX₂ iM iT : Nat}
     RelCT isa (Two (KG fun I t => F I t ∧ InvS iU iV iX₁ iX₂ iM I t)) (inverse iU iV iX₁ iX₂ iM iT)
       (Two (KG F)) :=
   kg_ct (inverse_ct0 ht) fun I _ s h _ ⟨hf, hU0, hVM, hX1, hX2⟩ => by
-    refine WP.mono (inverse_ok h.ws hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M
+    refine WP.mono (InvLaw.inverse_ok h.ws hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M
       dX₂T dMT hU0 hVM hX1 hX2) fun t ⟨_, hf', k, _⟩ => ?_
     have hn := h.ws.scr.nowrap
     have f : KF I.B I.W [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT] s.mem t.mem :=

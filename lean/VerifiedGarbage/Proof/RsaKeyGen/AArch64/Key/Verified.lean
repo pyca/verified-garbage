@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Code
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTCode
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Implies
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
 public import VerifiedGarbage.Proof.Framework.Lit
@@ -24,7 +25,7 @@ namespace VG.Proof.RsaKeyGen.AArch64.Key
 open VG VG.AArch64
 
 /-- `vg_rsa_keygen_key`. -/
-theorem key_verified :
+theorem key_verified [VG.Proof.Rsa.AArch64.InvLaw] :
     Verified target VG.Impl.RsaKeyGen.AArch64.Key.code (Spec.RsaKeyGen.keyContract abi) :=
   Verified.of_correct keyCode_correct keyCode_constantTime key_implies
 

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
 
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
@@ -70,7 +71,7 @@ theorem dEven_eq : dEven = loadEv ++ (divisorOf aL ++
   simp only [dEven, List.append_assoc]
 
 /-- `dEven`, for an even `e` (any `L`: `divmod` divides `e`, a word, by `L` or 1). -/
-theorem dEven_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 : e < 2 ^ 64)
+theorem dEven_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 : e < 2 ^ 64)
     (hee : e % 2 = 0) (hev : word s.mem I.B (8 * kEv) = BitVec.ofNat 64 e) (hL : av I s.mem aL = L)
     (_hLW : L < 2 ^ (64 * I.W)) :
     WP isa (seqs dEven) s fun t => KS I s₀ t ∧ KF I.B I.W csD s.mem t.mem ∧ DRes I e L t.mem := by

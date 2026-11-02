@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
@@ -342,7 +343,7 @@ theorem cvPre_of {s t₁ t : State} (c : CvCtx s) (h : CvHeadPost s t₁) (hm : 
       a1 := c.a1, a2 := c.a2, a3 := c.a3, wr := kk.wr }
 
 /-- `vg_rsa_crt_values`. -/
-theorem cvCode_correct (s : State) (h : cvA.pre s) :
+theorem cvCode_correct [InvLaw] (s : State) (h : cvA.pre s) :
     ∃ t s', Exec isa CrtValues.code s t s' ∧ abiPreserved s s' ∧ cvA.post s s' := by
   have c := cvCtx_of h
   clear h

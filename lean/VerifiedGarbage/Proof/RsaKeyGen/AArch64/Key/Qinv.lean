@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
 
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
@@ -47,7 +48,7 @@ theorem qMod_bad (P : Nat) : (if (decide (P % 2 = 0) || decide (P < 3)) = true t
     simp [h1, h2, show P % 2 = 1 ↔ ¬ P % 2 = 0 by omega_arith]
 
 /-- `qinvPart`, for `[aPa] = P` and `[aQa] = Q`. -/
-theorem qinvPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {P Q : Nat} {ok : Bool}
+theorem qinvPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) {P Q : Nat} {ok : Bool}
     (hP : av I s.mem aPa = P) (hQ : av I s.mem aQa = Q) (hok : word s.mem I.B (8 * kOk) = mask ok) :
     WP isa (seqs qinvPart) s fun t => KS I s₀ t ∧ KF I.B I.W csQ s.mem t.mem ∧
       word t.mem I.B (8 * kOk) = mask (decide (Nat.gcd Q (qMod P) = 1) && ok) ∧

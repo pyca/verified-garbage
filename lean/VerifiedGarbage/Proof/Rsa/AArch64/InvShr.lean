@@ -1,4 +1,5 @@
 module
+-- separate module: the shifts build in parallel with the rows (`InvRow`) and the reductions (`InvMred`)
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run

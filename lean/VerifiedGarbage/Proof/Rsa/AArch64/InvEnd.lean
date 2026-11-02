@@ -1,4 +1,5 @@
 module
+-- separate module: the end pieces build in parallel with the batches (`InvLoop`, `InvInit`)
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run

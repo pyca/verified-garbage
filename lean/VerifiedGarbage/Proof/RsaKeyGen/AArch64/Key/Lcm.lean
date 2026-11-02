@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Halve
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
@@ -113,7 +114,7 @@ theorem ldOk_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {c : Bool} (hok : wo
 /-- `gcdUV`: `v` made odd by a swap (`evenMaskOf_k`), the mask of `v < 2`
 into `kOk`, `inverse` modulo `v` (3 if `v < 2`, by `selC_k`), and 1 for
 `v < 2`. -/
-theorem gcdUV_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) (hU0 : atop I s.mem aU = 0)
+theorem gcdUV_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) (hU0 : atop I s.mem aU = 0)
     (hodd : let v := if av I s.mem aV % 2 = 0 then av I s.mem aU else av I s.mem aV; 2 ≤ v → v % 2 = 1) :
     WP isa (seqs gcdUV) s fun t => KS I s₀ t ∧
       KF I.B I.W [.arr aU, .arr aV, .arr aC, .arr aM, .arr aX₁, .arr aX₂, .arr aT, .hdr kOk] s.mem t.mem ∧
@@ -254,7 +255,7 @@ theorem lcmPart_eq : lcmPart = phi ++ (([zeroA aU, copyA aU aPm, zeroA aV, copyA
   simp only [lcmPart, List.append_assoc]
 
 /-- `lcmPart`: `[aL] := lcm(a, b)`. -/
-theorem lcm_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {w : Nat} (hW : I.W = 2 * w)
+theorem lcm_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) {w : Nat} (hW : I.W = 2 * w)
     {a b : Nat} (ha : av I s.mem aPm = a) (hb : av I s.mem aQm = b) (ha' : a < 2 ^ (64 * w))
     (hb' : b < 2 ^ (64 * w)) :
     WP isa (seqs lcmPart) s fun t => KS I s₀ t ∧ KF I.B I.W csL s.mem t.mem ∧ av I t.mem aL = Nat.lcm a b := by

@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # A word of a signed linear combination of multiword numbers

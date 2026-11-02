@@ -156,7 +156,7 @@ theorem initHead_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : 
     (h11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2))) (h12 : s.gpr .x12 = BitVec.ofNat 64 n) (hn1 : 1 ≤ n)
     (hn : n ≤ w) (hw : w < 2 ^ 24) (hZ : slot w 16 ≤ Z) {iF iG iM : Nat} (hF : iF < 16) (hG : iG < 16)
     (dFG : iF ≠ iG) :
-    WP isa (.block ([.vop (.ins .d2 .v19 0 .x1), .vop (.ins .d2 .v19 1 .x2)] ++ zeroTop iF ++ zeroTop iG ++
+    WP isa (.block (([.vop (.ins .d2 .v19 0 .x1), .vop (.ins .d2 .v19 1 .x2)] : List Instr) ++ zeroTop iF ++ zeroTop iG ++
       base iG .x8 ++ ([ld .x3 .x8, movi .x4 1, .logic .and .x .x3 .x3 .x4, .subImm .x .x15 .x3 1, movi .x7 0,
         mov .x14 .x12, .adds .x .x3 .x7 .x7] : List Instr) ++ base iM .x10 ++ base iG .x5)) s fun t =>
       (t.mem = (s.mem.writeW (off B (slot w iF + 8 * n)) 0#64).writeW (off B (slot w iG + 8 * n)) 0#64 ∧
@@ -174,11 +174,11 @@ theorem initHead_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : 
   refine WP.block_append_iff.mpr (WP.mono (WP.keep [] (Q := fun t => laneOf t .v19 0 = s.gpr .x1 ∧
       laneOf t .v19 1 = s.gpr .x2 ∧ (∀ r, r ≠ .v19 → t.v r = s.v r) ∧ t.mem = s.mem ∧ t.c = s.c)
     (by brun [exec_ins, RegUpd.gpr_setV, RegUpd.mem_setV]
-        simp (config := { decide := true }) only [laneOf, RegUpd.v_setV, ite_true, Nat.mul_zero, Nat.mul_one,
+        simp only [reduceCtorEq, ↓reduceIte, laneOf, RegUpd.v_setV, Nat.mul_zero, Nat.mul_one,
           extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide),
           extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide),
-          extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide),
-          extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide), ite_false, true_and]
+          
+          extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide), true_and]
         exact ⟨fun r h => by simp only [h, ite_false], rfl⟩) (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨l0, l1, lv, m₁, c₁⟩, k₁⟩ => ?_)
   have g0 : s₁.gpr .x0 = B := (k₁.gpr .x0 (by decide)).trans h0
   have g11 : s₁.gpr .x11 = _ := (k₁.gpr .x11 (by decide)).trans h11
@@ -227,7 +227,7 @@ theorem initLast_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : 
     (hF : iF < 16) (dBM : iB ≠ iM) (dFB : iF ≠ iB) :
     WP isa (.block (base iB .x16 ++ ([movi .x3 1, st .x3 .x16] : List Instr) ++ base iM .x3 ++
       ([ld .x3 .x3, movi .x4 1, .logic .orr .x .x3 .x3 .x4] : List Instr) ++ minv ++
-      [.vop (.ins .d2 .v18 1 .x15), movi .x3 1, .vop (.ins .d2 .v18 0 .x3)] ++ base iF .x16 ++
+      ([.vop (.ins .d2 .v18 1 .x15), movi .x3 1, .vop (.ins .d2 .v18 0 .x3)] : List Instr) ++ base iF .x16 ++
       ([ld .x4 .x16, .logic .orr .x .x4 .x4 .x3, st .x4 .x16] : List Instr) ++ batchCount)) s fun t =>
       (t.mem = (s.mem.writeW (off B (slot w iB)) 1#64).writeW (off B (slot w iF))
           (word s.mem B (slot w iF) ||| 1#64) ∧ laneOf t .v18 0 = 1#64 ∧
@@ -269,12 +269,11 @@ theorem initLast_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : 
       laneOf t .v18 1 = s₅.gpr .x15 ∧ (∀ r, r ≠ .v18 → t.v r = s₅.v r) ∧ t.mem = s₅.mem ∧ t.gpr .x3 = 1#64)
     (by
       brun [exec_ins, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.v_write]
-      simp (config := { decide := true }) only [laneOf, RegUpd.v_write, RegUpd.v_setV, ite_true, Nat.mul_zero,
+      simp only [reduceCtorEq, ↓reduceIte, laneOf, RegUpd.v_write, RegUpd.v_setV, Nat.mul_zero,
         Nat.mul_one, extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide),
-        extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide),
         extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide),
-        extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide), ite_false, true_and]
-      exact fun r h => by simp only [h, ite_false]) (by decide) (by decide) (by decide +kernel))
+        extract_setLane64 _ _ (show (1 : Nat) < 2 by decide) (show (1 : Nat) < 2 by decide), true_and]
+      exact ⟨rfl, fun r h => by simp only [h, ite_false]⟩) (by decide) (by decide) (by decide +kernel))
     fun s₆ ⟨⟨l0, l1, lv, m₆, h3₆⟩, k₆⟩ => ?_)
   have k16 := k15.trans k₆
   refine WP.block_append_iff.mpr (WP.mono (WP.vfix (base_ok iF .x16 ((k16.gpr .x0 (by decide)).trans h0)

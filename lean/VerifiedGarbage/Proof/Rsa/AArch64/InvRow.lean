@@ -1,4 +1,5 @@
 module
+-- separate module: the rows build in parallel with the shifts (`InvShr`) and the reductions (`InvMred`)
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
@@ -119,7 +120,7 @@ theorem linLoop_ok {s : State} {B : Addr} {Z L eX eY eO : Nat} (hs : Scr s B Z)
 
 /-- `rowP`'s start: the coefficients from `cv` and their sign masks. -/
 theorem rowHead_ok (s : State) {cv : VReg} (hcv : cv = .v16 ∨ cv = .v17) :
-    WP isa (.block ([.umov .x .x4 cv 0, .umov .x .x5 cv 1] ++ coefMasks)) s fun t =>
+    WP isa (.block (([.umov .x .x4 cv 0, .umov .x .x5 cv 1] : List Instr) ++ coefMasks)) s fun t =>
       (t.gpr .x4 = (s.v cv).extractLsb' 0 64 ∧ t.gpr .x5 = (s.v cv).extractLsb' 64 64 ∧
         t.gpr .x9 = 0#64 - (t.gpr .x4 >>> 63) ∧ t.gpr .x10 = 0#64 - (t.gpr .x5 >>> 63) ∧ t.mem = s.mem ∧
         t.v = s.v) ∧ Keep [.x4, .x5, .x9, .x10, .x13] s t := by

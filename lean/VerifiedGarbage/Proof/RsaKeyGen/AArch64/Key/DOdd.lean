@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
 
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
@@ -133,7 +134,7 @@ theorem dOdd_eq : dOdd = loadEv ++ (([zeroA aQt, copyA aQt aL, divmod aQt aR aE 
   simp only [dOdd, List.append_assoc]
 
 /-- `dOdd`, for an odd `e ≥ 3`. -/
-theorem dOdd_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he3 : 3 ≤ e) (he64 : e < 2 ^ 64)
+theorem dOdd_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he3 : 3 ≤ e) (he64 : e < 2 ^ 64)
     (heo : e % 2 = 1) (hev : word s.mem I.B (8 * kEv) = BitVec.ofNat 64 e) (hL : av I s.mem aL = L)
     (hLW : L < 2 ^ (64 * I.W)) :
     WP isa (seqs dOdd) s fun t => KS I s₀ t ∧ KF I.B I.W csD s.mem t.mem ∧ DRes I e L t.mem := by

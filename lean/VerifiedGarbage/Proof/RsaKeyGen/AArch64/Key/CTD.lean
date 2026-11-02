@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
@@ -124,7 +125,7 @@ theorem dOne_ct0 : RelCT isa (Two (KG NF)) (seqs dOne) fun _ _ => True := by
 abbrev csI : List Rc := [.arr aU, .arr aV, .arr aX₁, .arr aX₂, .arr aT]
 
 /-- `inverse` modulo `[j]`, from `invFrom j`, with word `W` of `u` zero. -/
-theorem invFrom_ct {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hjU : j ≠ aU) (hjV : j ≠ aV) (hj1 : j ≠ aX₁)
+theorem invFrom_ct [VG.Proof.Rsa.AArch64.InvLaw] {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hjU : j ≠ aU) (hjV : j ≠ aV) (hj1 : j ≠ aX₁)
     (hj2 : j ≠ aX₂) (hjT : j ≠ aT) (hF : Stab F csI allR) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base j .x16 ++ base aV .x17)) copyWords)
       hc₁).isSome = true)
@@ -253,7 +254,7 @@ theorem dOdd_eq2 : dOdd = loadEv ++ (([zeroA aQt, copyA aQt aL, divmod aQt aR aE
       mulAddRow] : List (Prog isa)))))) := by
   simp only [dOdd, List.append_assoc]
 
-theorem dOdd_ct0 : RelCT isa (Two (KG fun I t => EvOK I t ∧ I.E % 2 = 1)) (seqs dOdd) fun _ _ => True := by
+theorem dOdd_ct0 [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG fun I t => EvOK I t ∧ I.E % 2 = 1)) (seqs dOdd) fun _ _ => True := by
   have sF : ∀ (cs : List Rc) (rs : List Reg), cs.all Rc.ok = true → .hdr kEv ∉ cs →
       Stab (fun I t => EvOK I t ∧ OddE I t) cs rs :=
     fun _ rs hok hn => stab_and (stab_ev rs hok hn) (stab_oddE _ _)
@@ -347,7 +348,7 @@ theorem dEven_eq2 : dEven = loadEv ++ (divisorOf aL ++
 /-- After `dEven`'s mask block. -/
 abbrev EvM : KIn → State → Prop := fun I t => (TopZ aU I t ∧ KokM I t) ∧ X15M I t
 
-theorem dEven_ct0 : RelCT isa (Two (KG EvOK)) (seqs dEven) fun _ _ => True := by
+theorem dEven_ct0 [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG EvOK)) (seqs dEven) fun _ _ => True := by
   suffices h : RelCT isa (Two (KG NF)) (seqs dEven) fun _ _ => True from
     h.mono (fun _ _ h => two_kg (fun _ _ _ => trivial) h) fun _ _ h => h
   have sT : ∀ (cs : List Rc) (rs : List Reg), cs.all Rc.ok = true → .arr aU ∉ cs →
@@ -396,7 +397,7 @@ theorem dEven_ct0 : RelCT isa (Two (KG EvOK)) (seqs dEven) fun _ _ => True := by
 
 /-! ## `dPart` -/
 
-theorem dPart_ct0 : RelCT isa (Two (KG EvOK)) dPart fun _ _ => True := by
+theorem dPart_ct0 [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG EvOK)) dPart fun _ _ => True := by
   unfold dPart
   refine RelCT.seq (kg_x0 (G := fun I t => EvOK I t ∧ t.gpr .x3 = BitVec.ofNat 64 I.E) (by taint_decide)
     fun I _ s h _ hev => ?_) ?_
@@ -441,7 +442,7 @@ theorem dPart_ct0 : RelCT isa (Two (KG EvOK)) dPart fun _ _ => True := by
 /-- After `dPart`: the front's facts, and `d` with `kOk`. -/
 abbrev DF : KIn → State → Prop := fun I t => PF I t ∧ DRes I I.E I.L t.mem
 
-theorem dPart_ct : RelCT isa (Two (KG LF)) dPart (Two (KG DF)) :=
+theorem dPart_ct [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG LF)) dPart (Two (KG DF)) :=
   kg_ct (dPart_ct0.mono (fun _ _ h => two_kg (fun _ _ h => h.1.2.2.2.2.1) h) fun _ _ h => h)
     fun I _ s h L ⟨hf, hL⟩ => WP.mono (dPart_k h L.E_lt hf.2.2.2.2.1 hL L.L_lt) fun _ ⟨ht, f, d⟩ =>
       ⟨ht, PF.frame (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) h.hZ hf f, d⟩
