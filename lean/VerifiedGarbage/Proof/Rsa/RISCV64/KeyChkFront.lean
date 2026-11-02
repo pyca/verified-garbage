@@ -162,6 +162,29 @@ theorem tail_ok {v : State} {E N : Addr} {L K : Nat} (h4 : v.gpr .a4 = off E 0)
   · rw [kt.gpr (by decide), kz.gpr (by decide), y4, x7]
   · exact ((((ku.trans kx).trans ky).trans kz).trans kt).mono (by decide)
 
+/-- The tail's block after `readE`: `e` checked, and the moves to `check`. -/
+theorem tB_ok {u : State} {E : Nat} {N : Addr} {K : Nat} (u7 : u.gpr .s7 = BitVec.ofNat 64 E) (hE : E ≤ 2 ^ 33)
+    (g1 : u.gpr .s1 = off N 0) (g2 : u.gpr .s2 = BitVec.ofNat 64 K) :
+    WP isa (.block (VG.Impl.Bignum.RISCV64.PublicChecked.checkE ++
+        [mov .a5 .s9, mov .a4 .s7, mov .s7 .s1, mov .s8 .s2])) u fun y =>
+      (y.gpr .a5 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if Spec.Rsa.exponentValid E then 1 else 0) ∧
+        y.gpr .a4 = BitVec.ofNat 64 E <<< 31 ∧ y.gpr .s7 = off N 0 ∧ y.gpr .s8 = BitVec.ofNat 64 K ∧
+        y.mem = u.mem) ∧ Keep [.s7, .s9, .t2, .t3, .t4, .a5, .a4, .s7, .s8] u y := by
+  rw [WP.block_append_iff]
+  refine WP.mono (Pub.checkE_ok u7 hE) fun x ⟨⟨x9, x7, xm⟩, kx⟩ => ?_
+  have g1' : x.gpr .s1 = off N 0 := by rw [kx.gpr (by decide), g1]
+  have g2' : x.gpr .s2 = BitVec.ofNat 64 K := by rw [kx.gpr (by decide), g2]
+  refine WP.mono (WP.keep [.a5, .a4, .s7, .s8] (Q := fun y => y.gpr .a5 = x.gpr .s9 ∧ y.gpr .a4 = x.gpr .s7 ∧
+    y.gpr .s7 = off N 0 ∧ y.gpr .s8 = BitVec.ofNat 64 K ∧ y.mem = x.mem) (by
+      brun [mov, g1', g2', add_ofNat_zero']) (by rfl) (by rfl)) fun y ⟨⟨y5, y4, y7, y8, ym⟩, ky⟩ =>
+    ⟨⟨y5.trans x9, y4.trans x7, y7, y8, ym.trans xm⟩, kx.trans ky⟩
+
+/-- The tail's last block: `t0 := (a5 + 1) | s0`. -/
+theorem tE_ok (z : State) :
+    WP isa (.block [.addi .t0 .a5 1, .logic .or .t0 .t0 .s0]) z fun t =>
+      (t.gpr .t0 = (z.gpr .a5 + BitVec.ofNat 64 1) ||| z.gpr .s0 ∧ t.mem = z.mem) ∧ Keep [.t0] z t :=
+  WP.keep [.t0] (by brun []) (by rfl) (by rfl)
+
 /-! ## The set-up -/
 
 /-- `w = ⌈K / 8⌉`. -/

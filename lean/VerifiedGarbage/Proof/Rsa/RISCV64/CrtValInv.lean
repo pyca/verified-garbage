@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyInv
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -17,8 +18,9 @@ namespace VG.Proof.Rsa.RISCV64.CrtValues
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
 open VG.Impl.Rsa.RISCV64.Keys (seqs mov)
-open VG.Impl.Rsa.RISCV64.Keys (zeroArrays load orOne copy setOne sub3 aM aNM aZero)
-open VG.Impl.Rsa.RISCV64.CrtValues (narrow widen invSetup nInv aOne)
+open VG.Impl.Rsa.RISCV64.Keys (zeroArrays load orOne copy setOne sub3 aM aNM aZero inverse eqS sOdd sB sC)
+open VG.Impl.Rsa.RISCV64.Keys (andS)
+open VG.Impl.Rsa.RISCV64.CrtValues (narrow widen invSetup nInv aOne sE3 sPodd sE1 sE2 sMask mask)
 
 /-- The primes' words. -/
 abbrev wP (s0 : State) : Nat := (max (pL s0) (qL s0) + 7) / 8
@@ -193,5 +195,151 @@ theorem invSetup_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
   · rw [f8.num (j := aOne) (by decide) (by simp) (fit _ (by decide)), v7,
       f6.num (j := aOne) (by decide) (by simp) (fit _ (by decide)),
       z5 aOne (by decide) (by decide) (by decide) (by decide)]
+
+/-! ## The inverse and the gcd's check -/
+
+theorem Mv_lt (s0 : State) : Mv s0 < 2 ^ (8 * pL s0) ∨ pL s0 = 0 := by
+  rcases Nat.eq_zero_or_pos (pL s0) with e | e
+  · exact .inr e
+  · left
+    have hp := os2ip_bytes_lt s0.mem (stackArg s0 0) (pL s0)
+    have e2 : 2 ^ (8 * pL s0) = 2 * 2 ^ (8 * pL s0 - 1) := by
+      rw [← Nat.pow_succ']; congr 1; omega_arith
+    rw [e2] at hp ⊢
+    simp only [Mv, Pv, pB]
+    omega_arith
+
+theorem QM_lt {s0 : State} (h : PreC s0) : Qv s0 * Mv s0 < 2 ^ (2 * (4 * (pL s0 + qL s0))) := by
+  have hq := os2ip_bytes_lt s0.mem (stackArg s0 2) (qL s0)
+  have hm := (Mv_lt s0).resolve_right (by have := h.p1; simp only [pL]; omega_arith)
+  have e : 2 ^ (2 * (4 * (pL s0 + qL s0))) = 2 ^ (8 * qL s0) * 2 ^ (8 * pL s0) := by
+    rw [← Nat.pow_add]; congr 1; omega_arith
+  rw [e]
+  exact Nat.mul_lt_mul'' hq hm
+
+/-- After the inverse: `V` the gcd and `X` the inverse it found. -/
+structure IC (s0 : State) (V X : Nat) : Prop where
+  vx : 1 < Mv s0 → V = Nat.gcd (Qv s0) (Mv s0) ∧ (Mv s0 : Int) ∣ (X : Int) * Qv s0 - V ∧ X < Mv s0
+
+/-- The arrays and slots the inverse's phase writes. -/
+abbrev invDs : List Nat := [sOdd, sB, sC, sE3]
+
+theorem invCore_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
+    (ws : Ws s (bOf s0) (zOf s0) (wP s0) nInv) (is : IS s0 s)
+    (h7 : s.gpr .s7 = BitVec.ofNat 64 (4 * (pL s0 + qL s0))) :
+    WP isa (.seq inverse (eqS sE3 1 aOne)) s fun t => CB s0 s0.mem t ∧ Ws t (bOf s0) (zOf s0) (wP s0) nInv ∧
+      Keys.Frame (bOf s0) (wP s0) (List.range nInv) invDs s.mem t.mem ∧
+      IC s0 (num t.mem (bOf s0) (wP s0) 1) (num t.mem (bOf s0) (wP s0) 3) ∧
+      slot t.mem (bOf s0) sE3 = (if num t.mem (bOf s0) (wP s0) 1 = 1 then 1 else 0) ∧
+      Keep (.s7 :: opRegs) s t := by
+  have hz := h.zk
+  have hp1 := h.p1
+  have hq1 := h.q1
+  have ⟨lp, lq⟩ := lt32 h
+  have fitZ : ∀ j < nInv, arr (wP s0) j + S (wP s0) ≤ zOf s0 := fun j hj =>
+    Nat.le_trans (arr_end hj) ws.fits
+  have fit : ∀ j < nInv, arr (wP s0) j + S (wP s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
+  rw [WP.seq_iff]
+  refine WP.mono (inverse_ok ws (by decide) (by decide) h7 (by simp only [pL]; omega_arith)
+    (by simp only [pL, qL]; omega_arith)) fun t1 ⟨w1, f1, k1, v1⟩ => ?_
+  have c1 := c.of_frame f1 (fun j hj => fitZ j (by revert j hj; decide)) (by decide)
+    (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k1 (by decide)
+  have hodd : Mv s0 % 2 = 1 := by simp only [Mv]; omega_arith
+  have D := fun h1M => inverse_done (t := t1.mem) (K := 4 * (pL s0 + qL s0))
+    (by rw [is.nM]; exact hodd) (by rw [is.nM]; exact h1M) (by rw [is.n0, is.nM]; exact QM_lt h)
+    (by simp only [bank, is.n0, is.n1, is.n2, is.n3, is.nM]) (v1 (by rw [is.nM]; exact is.nNM)
+      is.nZ (by rw [is.nM]; exact hodd) (by rw [is.nM]; exact h1M)
+      (by simp only [bank, is.n0, is.n1, is.n2, is.n3, is.nM]))
+  rw [is.n0, is.nM] at D
+  refine WP.mono (eqS_ok w1 (d := sE3) (a := 1) (b := aOne) (by decide) (by decide) (by decide) (by decide)
+    (by decide)) fun t ⟨w2, f2, v2, k2⟩ => ?_
+  have c2 := c1.of_frame f2 (by simp) (by decide) (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k2 (by decide)
+  have o1 : num t1.mem (bOf s0) (wP s0) aOne = 1 := by
+    rw [f1.num (j := aOne) (by decide) (by decide) (fit _ (by decide)), is.nOne]
+  have n1 : num t.mem (bOf s0) (wP s0) 1 = num t1.mem (bOf s0) (wP s0) 1 :=
+    f2.num (j := 1) (by simp) (by decide) (fit _ (by decide))
+  have n3 : num t.mem (bOf s0) (wP s0) 3 = num t1.mem (bOf s0) (wP s0) 3 :=
+    f2.num (j := 3) (by simp) (by decide) (fit _ (by decide))
+  refine ⟨c2, w2, (f1.mono (fun j hj => List.mem_range.mpr (by revert j hj; decide)) (by decide)).trans
+      (f2.mono (by simp) (by decide)), ⟨fun h1M => by rw [n1, n3]; exact D h1M⟩, by rw [v2, o1, n1],
+    Keep.trans' k1 (Keep.mono k2 (by decide))⟩
+
+/-! ## Back to the working space of `w` words -/
+
+/-- An array from 16 on of the working space of `w` words, past the narrowed one's 16 arrays. -/
+theorem wide_words {B : Addr} {w w' : Nat} {ds : List Nat} {m m' : Mem}
+    (f : Keys.Frame B w' (List.range nInv) ds m m') (hw : w' ≤ w) (hds : ∀ d ∈ ds, d + 8 ≤ Keys.hdr)
+    {j k : Nat} (hj : nInv ≤ j) (hk : k ≤ w + 2) (fit : arr w j + S w ≤ 2 ^ 64) :
+    wordsVal m' B (arr w j) k = wordsVal m B (arr w j) k := by
+  refine f.words (fun j' hj' => .inr ?_) (fun d hd => .inr ?_) (by simp only [S] at fit; omega_arith)
+  · have := List.mem_range.mp hj'
+    have e1 := arr_end (w := w') this
+    have e2 : arr w' nInv ≤ arr w nInv := by simp only [arr, S]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ (by omega_arith)) _
+    have e3 := arr_mono (w := w) hj
+    omega_arith
+  · have := hds d hd; have := hdr_le_arr w j; omega_arith
+
+/-- A slot, past a frame of arrays. -/
+theorem slot_of_arrs {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (f : Keys.Frame B w js [] m m') {e : Nat}
+    (he : e + 8 ≤ Keys.hdr) : slot m' B e = slot m B e := f.slot he (by simp)
+
+/-- Words of the working space, past a write apart from it. -/
+theorem wordsVal_of_out {O B : Addr} {L Z : Nat} {m m' : Mem} (hd : (⟨O, L⟩ : Region).Disjoint ⟨B, Z⟩)
+    (ho : Outside O 0 L m m') {d k : Nat} (hdk : d + 8 * k ≤ Z) (hZ : Z < 2 ^ 64) :
+    wordsVal m' B d k = wordsVal m B d k := by
+  induction k generalizing d with
+  | zero => rfl
+  | succ k ih =>
+    simp only [wordsVal]
+    have hw : word m' B d = word m B d := Mem.readW_congr fun i hi => by
+      refine out_of_scr hd ho ?_
+      rw [off_add]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+    rw [hw, ih (by omega_arith)]
+
+/-! ## The mask -/
+
+theorem mask_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (bit : slot s.mem B sMask ≤ 1) :
+    WP isa (.block mask) s fun t =>
+      (t.gpr .t4 = (if decide (slot s.mem B sMask ≠ 0) then BitVec.allOnes 64 else 0) ∧ t.mem = s.mem) ∧
+        Keep [.t4, .t5] s t := by
+  have hz := h.hdr_le
+  have nw := h.nowrap
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  brun [mask, h.s11, fin64_exec_li_zero, add_ofNat_zero', h.scr.al8 (d := sMask) (by simp only [hdr_eq] at hz; omega_arith) (by decide),
+    h.scr.ld (d := sMask) (n := 8) (by simp only [hdr_eq] at hz; omega_arith), show sMask < 2048 by decide]
+  exact mask_of_slot _ bit
+
+theorem bit_ite {c : Prop} [Decidable c] : (if c then 1 else 0 : Nat) ≤ 1 := by split <;> decide
+
+/-- The checks and'ed into `sMask`, and its mask in `t4`. -/
+theorem maskBlk_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
+    (b1 : slot s.mem B sPodd ≤ 1) (b2 : slot s.mem B sE1 ≤ 1) (b3 : slot s.mem B sE2 ≤ 1)
+    (b4 : slot s.mem B sE3 ≤ 1) :
+    WP isa (.block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3 ++ mask)) s fun t =>
+      Ws t B Z w N ∧ Keys.Frame B w [] [sMask] s.mem t.mem ∧
+      slot t.mem B sMask = slot s.mem B sPodd * slot s.mem B sE1 * slot s.mem B sE2 * slot s.mem B sE3 ∧
+      t.gpr .t4 = (if decide (slot t.mem B sMask ≠ 0) then BitVec.allOnes 64 else 0) ∧ Keep opRegs s t := by
+  rw [WP.block_append_iff]
+  refine WP.mono (andS_ok h (d := sMask) (a := sPodd) (b := sE1) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) b1 b2) fun t1 ⟨w1, f1, v1, k1⟩ => ?_
+  rw [WP.block_append_iff]
+  have e2 : slot t1.mem B sE2 = slot s.mem B sE2 := f1.slot (by decide) (by decide)
+  have e3 : slot t1.mem B sE3 = slot s.mem B sE3 := f1.slot (by decide) (by decide)
+  refine WP.mono (andS_ok w1 (d := sMask) (a := sMask) (b := sE2) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by rw [v1]; exact Nat.mul_le_one b1 b2) (by rw [e2]; exact b3))
+    fun t2 ⟨w2, f2, v2, k2⟩ => ?_
+  rw [WP.block_append_iff]
+  have e3' : slot t2.mem B sE3 = slot s.mem B sE3 := by rw [f2.slot (by decide) (by decide), e3]
+  refine WP.mono (andS_ok w2 (d := sMask) (a := sMask) (b := sE3) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by rw [v2, v1, e2]; exact Nat.mul_le_one (Nat.mul_le_one b1 b2) b3)
+    (by rw [e3']; exact b4)) fun t3 ⟨w3, f3, v3, k3⟩ => ?_
+  have V : slot t3.mem B sMask = slot s.mem B sPodd * slot s.mem B sE1 * slot s.mem B sE2 * slot s.mem B sE3 := by
+    rw [v3, v2, v1, e2, e3']
+  refine WP.mono (mask_ok w3 (by rw [V]; exact Nat.mul_le_one (Nat.mul_le_one (Nat.mul_le_one b1 b2) b3) b4))
+    fun t ⟨⟨u4, um⟩, k4⟩ => ?_
+  rw [← um] at V u4
+  exact ⟨w3.of_keep k4, by rw [um]; exact (f1.trans f2).trans f3, V, u4,
+    Keep.trans' k1 (Keep.trans' k2 (Keep.trans' k3 (Keep.mono k4 (by decide))))⟩
 
 end VG.Proof.Rsa.RISCV64.CrtValues
