@@ -381,7 +381,8 @@ theorem valid_iff (x y : Nat) :
 theorem ecdh_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : EPre s) :
     WP isa ecdhP384 s fun s' => abiPreserved s s' ∧ ecdhRV.post s s' := by
   have hp0 : 0 < W.p := by decide
-  rw [ecdhP384, Cfg.ecdhFn]
+  rw [ecdhP384, Cfg.ecdhFn, show p384.C.len = 8 * p384.n from rfl]
+  simp only [loadLen_mul, storeLen_mul]
   refine WP.seq (WP.mono (setup_ok hs) fun s₁ S => ?_)
   obtain ⟨hw₁, S2, S3, Sregs, Srd, Swr, Ssp, Ssv0, Ssv1, Ssv2, Ssv3, Ssv4, Sk, Sx, Sy, Sflag, Scs⟩ := S
   generalize hb : s.gpr .a3 = base at hw₁ S3 Ssv0 Ssv1 Ssv2 Ssv3 Ssv4 Sk Sx Sy Sflag Scs
