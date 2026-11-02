@@ -1,6 +1,6 @@
 module
 
--- separate module: the windowed exponentiation, the largest of the CRT's proofs, which only `CrtPower` uses
+-- separate module: the windowed exponentiation, the largest of the CRT's proofs, apart from `CrtR2`, which `recombineP`'s proof imports too
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PubPower
 public import VerifiedGarbage.Proof.Bignum.RISCV64.MontSqr
 public import VerifiedGarbage.Impl.Bignum.RISCV64.ModExp
