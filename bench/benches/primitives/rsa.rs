@@ -337,6 +337,105 @@ pub fn bench(c: &mut Criterion) {
     // Only the private operation's and key loading's pieces this run (the
     // key-generation and Miller–Rabin groups are skipped).
     const ONLY_PIECES: bool = true;
+    // Only `vg_rsa_keygen_key` (Proto9) this run: the key from its two primes,
+    // and the variant without the inverse of an even `e` (timing only).
+    const ONLY_P9: bool = true;
+    if ONLY_P9 {
+        use openssl::rsa::Rsa;
+        use verified_garbage_asm_riscv64::rsa_proto9 as p9;
+        type F = unsafe extern "C" fn(
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *const u8,
+            usize,
+            *mut u64,
+            usize,
+        ) -> u32;
+        let fs: [(&str, F); 2] = [
+            ("rsa_proto_keygen_key", p9::vg_rsa_keygen_key_proto as F),
+            (
+                "rsa_proto_keygen_key_odd",
+                p9::vg_rsa_keygen_key_odd_proto as F,
+            ),
+        ];
+        let keys: Vec<(u32, Vec<u8>, Vec<u8>)> = [2048u32, 3072, 4096]
+            .iter()
+            .map(|&bits| {
+                let k = Rsa::generate(bits).unwrap();
+                let len = (bits / 16) as usize;
+                let pad = |b: Vec<u8>| {
+                    let mut v = vec![0u8; len - b.len()];
+                    v.extend(b);
+                    v
+                };
+                (
+                    bits,
+                    pad(k.p().unwrap().to_vec()),
+                    pad(k.q().unwrap().to_vec()),
+                )
+            })
+            .collect();
+        let e = [1u8, 0, 1];
+        for (name, f) in fs {
+            let mut g = c.benchmark_group(name);
+            for (bits, p, q) in &keys {
+                let len = p.len();
+                let mut o: [Vec<u8>; 7] = [
+                    vec![0; 2 * len],
+                    vec![0; 2 * len],
+                    vec![0; len],
+                    vec![0; len],
+                    vec![0; len],
+                    vec![0; len],
+                    vec![0; len],
+                ];
+                let mut scratch = vec![0u64; 16 * 2 * len + 32];
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    b.iter(|| unsafe {
+                        o[2].copy_from_slice(p);
+                        o[3].copy_from_slice(q);
+                        let [n, d, kp, kq, dp, dq, qi] = &mut o;
+                        let r = f(
+                            n.as_mut_ptr(),
+                            n.len(),
+                            d.as_mut_ptr(),
+                            d.len(),
+                            kp.as_mut_ptr(),
+                            kp.len(),
+                            kq.as_mut_ptr(),
+                            kq.len(),
+                            dp.as_mut_ptr(),
+                            dp.len(),
+                            dq.as_mut_ptr(),
+                            dq.len(),
+                            qi.as_mut_ptr(),
+                            qi.len(),
+                            black_box(e.as_ptr()),
+                            e.len(),
+                            scratch.as_mut_ptr(),
+                            scratch.len(),
+                        );
+                        assert_eq!(r, 1);
+                        r
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     // Only the Montgomery variants that may also write s5–s10 (Proto8) this run.
     const ONLY_P8: bool = true;
     if ONLY_P8 {
