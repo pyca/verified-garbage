@@ -28,11 +28,14 @@
 //! primes `(n, e, d, p, q)`, whose CRT values `dP`, `dQ` and `qInv` the
 //! verified `vg_rsa_crt_values` (contract `VG.Spec.Rsa.crtValuesContract`)
 //! computes, or from `(n, e, d)` alone, whose primes the verified
-//! `vg_rsa_recover_primes` (contract `VG.Spec.Rsa.recoverPrimesContract`)
-//! recovers by SP 800-56B Rev. 2 Appendix C.1. The timing of the first may
-//! depend on `n` but not on the private key; that of the second on `n`, `e`
-//! and the number of candidates the recovery tried (1 or 2 for most keys),
-//! but not otherwise on `d`.
+//! `vg_rsa_recover_primes_det` (contract
+//! `VG.Spec.Rsa.recoverPrimesDetContract`) recovers by SP 800-56B Rev. 2
+//! Appendix C.2 on i686, and `vg_rsa_recover_primes` (contract
+//! `VG.Spec.Rsa.recoverPrimesContract`) by Appendix C.1 on the other
+//! targets. The timing of the first may depend on `n` but not on the private
+//! key; that of Appendix C.2 on `n` and `e` only, and that of Appendix C.1 on
+//! `n`, `e` and the number of candidates it tried (1 or 2 for most keys), but
+//! not otherwise on `d`.
 //!
 //! [`PrivateKey::check_key`] checks a loaded key as BoringSSL's
 //! `RSA_check_key` does, by the verified `vg_rsa_check_key` (contract
