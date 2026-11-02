@@ -6,6 +6,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 
+-- separate module: it builds while `vg_rsa_private_checked`'s proofs, which only `Call.lean` imports,
+-- do.
+
 /-!
 # `vg_rsa_pkcs1_sign` on RISC-V: the setup and the encoding
 

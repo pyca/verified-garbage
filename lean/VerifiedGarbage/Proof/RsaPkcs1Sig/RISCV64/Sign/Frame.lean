@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 import VerifiedGarbage.Proof.Framework.Offset
 
+-- separate module: it builds while `Proof/RsaPkcs1Sig/RISCV64/Encode.lean`, which `Setup.lean` also
+-- imports, does.
+
 /-!
 # `vg_rsa_pkcs1_sign` on RISC-V: the frame
 
