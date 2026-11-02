@@ -336,7 +336,7 @@ theorem setupX_ok {s : State} {S : Addr} {Z k pl : Nat} (hs : Scr s S Z) (hZ : 1
     hpl8, wv]
   refine ⟨by simp [slot, hdrBytes], by simp [slot, hdrBytes], congrArg _ (by omega_arith),
     congrArg _ (by omega_arith), ?_, ?_, ?_⟩
-  · rw [VG.Proof.Bignum.word, hdr_rw (d := 104) (d' := 96) _ S _ (Or.inl (by decide)) (by decide) (by decide),
+  · rw [Mont.word, hdr_rw (d := 104) (d' := 96) _ S _ (Or.inl (by decide)) (by decide) (by decide),
       Mem.readW_writeW_self64]
     exact congrArg _ (by unfold slot hdrBytes; omega_arith)
   · exact congrArg _ (by unfold wordsOf slot hdrBytes; split <;> omega_arith)
