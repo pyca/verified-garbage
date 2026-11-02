@@ -49,8 +49,8 @@ theorem body_wideWith (body : Prog isa) (bodyProof : BodyVerified body) {s u : S
     (uz : u.z = Spec.Rsa.modulusValid (mkP s).n (mkP s).K) :
     ∃ tr v, Exec isa body (u.withRegions u.rd (xRegs s)) tr v ∧
       Exec isa body u tr (v.withRegions u.rd u.wr) ∧ v.sp = s.sp - BitVec.ofNat 32 56 := by
-  have pre := in_x h usp urd umem
-  obtain ⟨tr, v, run, bo, _⟩ := bodyProof.wp _ _ ⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, uz⟩
+  obtain ⟨pre, tr⟩ := in_x h usp urd umem
+  obtain ⟨tr, v, run, bo, _⟩ := bodyProof.wp _ _ ⟨⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, tr⟩, uz⟩
   have cov := h.xCovers pre.sizes
   have run' := Exec.widen (rd := u.rd) (wr := u.wr) run
     (Covers.append (Covers.refl _) (by rw [uwr]; exact cov)) (by rw [uwr]; exact cov)
@@ -88,13 +88,13 @@ theorem rv_ctWith (body : Prog isa) (bodyProof : BodyVerified body) : RelCT isa 
           obtain ⟨trB2, w2, runB2, wide2, wsp2⟩ := body_wideWith body bodyProof ht usp2 urd2 uwr2 umem2 uz2
           obtain ⟨rfl, rfl⟩ := Exec.det body1 wide1
           obtain ⟨rfl, rfl⟩ := Exec.det body2 wide2
-          have pre1 := in_x hs usp1 urd1 umem1
-          have pre2 := in_x ht usp2 urd2 umem2
-          rw [← hP] at pre2
+          obtain ⟨pre1, tr1⟩ := in_x hs usp1 urd1 umem1
+          obtain ⟨pre2, tr2⟩ := in_x ht usp2 urd2 umem2
+          rw [← hP] at pre2 tr2
           have uz2' := uz2.trans (by rw [hP] : Spec.Rsa.modulusValid (mkP t0).n (mkP t0).K =
             Spec.Rsa.modulusValid (mkP s0).n (mkP s0).K)
           have trB := ((bodyProof (P := mkP s0)).ct _ _ _ _ _ _
-            ⟨_, _, ⟨⟨pre1, rfl, rfl, rfl, Frame.refl _ _⟩, uz1⟩, ⟨⟨pre2, rfl, rfl, rfl, Frame.refl _ _⟩, uz2'⟩⟩
+            ⟨_, _, ⟨⟨⟨pre1, rfl, rfl, rfl, Frame.refl _ _⟩, tr1⟩, uz1⟩, ⟨⟨⟨pre2, rfl, rfl, rfl, Frame.refl _ _⟩, tr2⟩, uz2'⟩⟩
             runB1 runB2).1
           have trR := ((stackLoads_ct pcCalleeSaved : RelCT isa (fun s t => s.sp = t.sp)
             (.block VG.Impl.Bignum.Arm.PcFn.restore) (fun s t => s.sp = t.sp)) _ _ _ _ _ _
