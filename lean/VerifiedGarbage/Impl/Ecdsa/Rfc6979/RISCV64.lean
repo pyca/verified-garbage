@@ -3,15 +3,17 @@ module
 public import VerifiedGarbage.Impl.Hmac.Stream.RISCV64
 public import VerifiedGarbage.Impl.Ecdh.RISCV64
 public import VerifiedGarbage.Impl.Ecdh.RISCV64.Num4
+public import VerifiedGarbage.Impl.Ecdh.RISCV64.Num0
 public import VerifiedGarbage.Impl.Words.RISCV64.Bytes
 
 /-!
 # Deterministic ECDSA (RFC 6979) on RISC-V
 
 `sign(out = a0, d = a1, digest = a2, scratch = a3) -> a0`: RFC 6979 §3.2
-for a curve of scalars of `Q` bytes in `nw` 64-bit words (`Q = 8 nw`, or
-`8 nw - 4` with a top word of four bytes: P-256's 32, P-384's 48, P-224's
-28) whose order `n` has `8 Q` bits, and a
+for a curve of scalars of `Q` bytes in `nw` 64-bit words (`Q = 8 nw`;
+`8 nw - 4`, a top word of four bytes; or `8 nw - 8`, a top word of zero:
+P-256's 32, P-384's 48, P-224's 28, P-192's 24) whose order `n` has `8 Q`
+bits, and a
 Merkle–Damgård hash function `H` whose output is `D ≥ Q` bytes, with HMAC
 computed by calling `H`'s HMAC `init` and `finalize` and its streaming
 `update` (`Impl/Hmac/Stream/RISCV64.lean`), and each candidate tried by
@@ -31,7 +33,8 @@ outer states (at 0 and 192), which `core` then overwrites. The functions we
 call use the stack below the frame.
 
 1. `h = bits2octets(digest)`: the leftmost `Q` bytes, big-endian, read into
-   `scratch` (`loadNum`, or `loadNum4` for a top word of four bytes) and reduced modulo `n` by a call of the order's addition with
+   `scratch` (`loadNum`, `loadNum4` for a top word of four bytes, or
+   `loadNum0` for a top word of zero) and reduced modulo `n` by a call of the order's addition with
    zero (they are below `2^(8 Q) < 2n`), then written big-endian to `h`.
 2. Steps b to g: `V = 0x01…`, `K = 0x00…`, `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`,
    `V = HMAC_K(V)`, `K = HMAC_K(V ‖ 0x01 ‖ d ‖ h)`, `V = HMAC_K(V)`, each
@@ -114,12 +117,16 @@ def sY : Nat := 2 * (8 * c.nw)
 
 /-- The `Q`-byte number at `p + off` big-endian to `[o]`. -/
 def loadQ (o : Nat) (p : Reg) (off : Nat) : List Instr :=
-  if c.Q = 8 * c.nw then Ecdh.RISCV64.loadNum c.nw o p off else Ecdh.RISCV64.loadNum4 (c.nw - 1) o p off
+  if c.Q = 8 * c.nw then Ecdh.RISCV64.loadNum c.nw o p off
+  else if c.Q + 4 = 8 * c.nw then Ecdh.RISCV64.loadNum4 (c.nw - 1) o p off
+  else Ecdh.RISCV64.loadNum0 (c.nw - 1) o p off
 
 /-- The number at `[a]` under the mask `a7`, to `q + off` big-endian in `Q`
-bytes. -/
+bytes (for a top word of zero, its low `nw - 1` words). -/
 def storeQ (a : Nat) (q : Reg) (off : Nat) : List Instr :=
-  if c.Q = 8 * c.nw then Ecdh.RISCV64.storeNum c.nw a q off else Ecdh.RISCV64.storeNum4 (c.nw - 1) a q off
+  if c.Q = 8 * c.nw then Ecdh.RISCV64.storeNum c.nw a q off
+  else if c.Q + 4 = 8 * c.nw then Ecdh.RISCV64.storeNum4 (c.nw - 1) a q off
+  else Ecdh.RISCV64.storeNum (c.nw - 1) a q off
 
 /-- Our caller's registers into the frame, which `s1` then holds; the
 arguments into the registers that keep them. -/

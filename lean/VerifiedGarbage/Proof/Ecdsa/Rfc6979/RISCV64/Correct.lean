@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Num4
+import VerifiedGarbage.Proof.Ecdh.RISCV64.Num0
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Tail
 import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.BE64
@@ -649,7 +650,7 @@ theorem frame_of_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Un
 
 /-- `loadQ`: the `Q` bytes at `p + off`, big-endian, to the slot at `o`, in
 `nw` words. -/
-theorem loadQ_ok (c : Cfg) (hQw : c.Q = 8 * c.nw ∨ (c.nw = 4 ∧ c.Q = 28)) {s : State} {base : Addr} {o : Nat}
+theorem loadQ_ok (c : Cfg) (hQw : c.Q = 8 * c.nw ∨ (c.nw = 4 ∧ c.Q = 28) ∨ (c.nw = 4 ∧ c.Q = 24)) {s : State} {base : Addr} {o : Nat}
     {p : Reg} {off n : Nat} (hw : WsReg s base) (hp : p ∉ [Reg.t0, .t1]) (ho : o % 8 = 0)
     (ho' : o + 8 * c.nw ≤ 2048) (hoff : off + 8 * c.nw ≤ 2048)
     (hr : (⟨s.gpr p, n⟩ : Region) ∈ s.rd ++ s.wr) (hn : off + c.Q ≤ n) (hn' : n ≤ 8192)
@@ -657,18 +658,23 @@ theorem loadQ_ok (c : Cfg) (hQw : c.Q = 8 * c.nw ∨ (c.nw = 4 ∧ c.Q = 28)) {s
     WP isa (.block (c.loadQ o p off)) s fun s' =>
       VG.Proof.X25519.RISCV64.Rest [.t0, .t1] s s' ∧ Outside base o (8 * c.nw) s.mem s'.mem ∧
       wordsVal s'.mem base o c.nw = Spec.Weierstrass.ofBytes (bytesAt s.mem (s.gpr p + BitVec.ofNat 64 off) c.Q) := by
-  rcases hQw with h | ⟨h4, h28⟩
+  rcases hQw with h | ⟨h4, h28⟩ | ⟨h4, h24⟩
   · rw [Cfg.loadQ, ite_eq_left_of_eq_true _ _ (eq_true h), h]
     exact VG.Proof.Weierstrass.RISCV64.loadNum_ok c.nw hw hp ho (Nat.le_trans ho' (by decide)) hoff
       (fun j hj => Proof.Ecdh.RISCV64.P256.in_rd8 hr (by omega) hn') (fun i hi => hsep i (by omega))
-  · rw [Cfg.loadQ, ite_eq_right_of_eq_false _ _ (eq_false (by omega)), h4, h28]
+  · rw [Cfg.loadQ, ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
+      ite_eq_left_of_eq_true _ _ (eq_true (by omega)), h4, h28]
     exact VG.Proof.Weierstrass.RISCV64.loadNum4_ok 3 hw hp ho (by omega) (by omega)
       (VG.Proof.Weierstrass.RISCV64.in_rd4 hr (by omega) hn')
+      (fun j hj => Proof.Ecdh.RISCV64.P256.in_rd8 hr (by omega) hn') (fun i hi => hsep i (by omega))
+  · rw [Cfg.loadQ, ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
+      ite_eq_right_of_eq_false _ _ (eq_false (by omega)), h4, h24]
+    exact VG.Proof.Weierstrass.RISCV64.loadNum0_ok 3 hw hp ho (by omega) (by omega)
       (fun j hj => Proof.Ecdh.RISCV64.P256.in_rd8 hr (by omega) hn') (fun i hi => hsep i (by omega))
 
 /-- `storeQ`: the `nw`-word number at `a` under the mask, to `q + off`
 big-endian in `Q` bytes. -/
-theorem storeQ_ok (c : Cfg) (hQw : c.Q = 8 * c.nw ∨ (c.nw = 4 ∧ c.Q = 28)) (b : Bool) {s : State} {base : Addr}
+theorem storeQ_ok (c : Cfg) (hQw : c.Q = 8 * c.nw ∨ (c.nw = 4 ∧ c.Q = 28) ∨ (c.nw = 4 ∧ c.Q = 24)) (b : Bool) {s : State} {base : Addr}
     {a : Nat} {q : Reg} {off : Nat} (hw : WsReg s base) (hc : s.gpr .a7 = VG.Proof.Weierstrass.RISCV64.maskOf b)
     (hq : q ∉ [Reg.t0, .t1]) (ha : a % 8 = 0) (ha' : a + 8 * c.nw ≤ 2048) (hoff : off + 8 * c.nw ≤ 2048)
     (hout : ∀ i < c.Q, InRegions s.wr (s.gpr q + BitVec.ofNat 64 (off + i)) 1)
@@ -676,12 +682,17 @@ theorem storeQ_ok (c : Cfg) (hQw : c.Q = 8 * c.nw ∨ (c.nw = 4 ∧ c.Q = 28)) (
     WP isa (.block (c.storeQ a q off)) s fun s' =>
       VG.Proof.X25519.RISCV64.Rest [.t0, .t1] s s' ∧ s'.mem = VG.WriteBytes.writeBytes s.mem (s.gpr q + BitVec.ofNat 64 off)
         (Spec.Weierstrass.toBytes c.Q (if b then wordsVal s.mem base a c.nw else 0)) := by
-  rcases hQw with h | ⟨h4, h28⟩
+  rcases hQw with h | ⟨h4, h28⟩ | ⟨h4, h24⟩
   · rw [Cfg.storeQ, ite_eq_left_of_eq_true _ _ (eq_true h), h]
     exact VG.Proof.Weierstrass.RISCV64.storeNum_ok b c.nw hw hc hq ha (Nat.le_trans ha' (by decide)) hoff
       (fun i hi => hout i (by omega)) (fun i hi => hsep i (by omega))
-  · rw [Cfg.storeQ, ite_eq_right_of_eq_false _ _ (eq_false (by omega)), h4, h28]
+  · rw [Cfg.storeQ, ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
+      ite_eq_left_of_eq_true _ _ (eq_true (by omega)), h4, h28]
     exact VG.Proof.Weierstrass.RISCV64.storeNum4_ok b 3 hw hc hq ha (by omega) (by omega)
+      (fun i hi => hout i (by omega)) (fun i hi => hsep i (by omega))
+  · rw [Cfg.storeQ, ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
+      ite_eq_right_of_eq_false _ _ (eq_false (by omega)), h4, h24]
+    exact VG.Proof.Weierstrass.RISCV64.storeNum_low_ok b 3 hw hc hq ha (by omega) (by omega)
       (fun i hi => hout i (by omega)) (fun i hi => hsep i (by omega))
 
 section
@@ -712,7 +723,7 @@ theorem reduce_ok {s : State} (h : KR P s₀ s) :
   have hz := sizes P
   have hzH := hz.H
   have hn := P.kit.nw9
-  have hQw : P.c.Q = 8 * P.c.nw ∨ (P.c.nw = 4 ∧ P.c.Q = 28) := by rw [P.hQ, P.hnw]; exact P.kit.Qw
+  have hQw : P.c.Q = 8 * P.c.nw ∨ (P.c.nw = 4 ∧ P.c.Q = 28) ∨ (P.c.nw = 4 ∧ P.c.Q = 24) := by rw [P.hQ, P.hnw]; exact P.kit.Qw
   have hzQ := hz.Q
   have := hz.H
   have hQQ : P.Q = P.kit.Q := rfl
