@@ -12,9 +12,7 @@ import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 # Ed448 on RISCV64: constants in slots
 
 `constField o v` stores the fourteen words of `v` in the slot at `o`
-(`constField_ok`), and `initSlots` the starting values of the base-point
-multiplication: `R = (0 : 1 : 1)`, the base point `Q` and `d`
-(`initSlots_ok`).
+(`constField_ok`), which keeps the other slots (`slot_keep`).
 -/
 
 @[expose] public section
@@ -93,64 +91,6 @@ theorem slot_keep {m m' : Mem} {o q : Nat} (hf : Frame [⟨b + BitVec.ofNat 64 o
   unfold V
   exact val32_congr (limb_frame hf fun r hr k hk => by
     rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
-
-/-- The slots `initSlots` writes. -/
-def initQ : List Nat := [RX, RY, RZ, QX, QY, QZ, DK]
-
-/-- The starting value of each of them. -/
-def initVal (q : Nat) : Nat :=
-  if q = RX then Spec.Ed448.identity.X.val else if q = RY then Spec.Ed448.identity.Y.val
-  else if q = RZ then Spec.Ed448.identity.Z.val else if q = QX then Spec.Ed448.basePoint.X.val
-  else if q = QY then Spec.Ed448.basePoint.Y.val else if q = QZ then Spec.Ed448.basePoint.Z.val
-  else Spec.Ed448.d.val
-
-/-- After the first `n` of the stores of `initSlots`. -/
-structure InitInv (b : Addr) (s0 : State) (n : Nat) (s : State) : Prop where
-  rest : Rest [.a4] s0 s
-  frame : Frame (initQ.map fun q => ⟨b + BitVec.ofNat 64 q, 56⟩) s0.mem s.mem
-  vals : ∀ i < n, V s.mem b (initQ.getD i 0) = initVal (initQ.getD i 0)
-
-theorem initQ_sep : ∀ i < 7, ∀ j < 7, i ≠ j →
-    initQ.getD i 0 + 56 ≤ initQ.getD j 0 ∨ initQ.getD j 0 + 56 ≤ initQ.getD i 0 := by decide
-
-theorem initQ_mem : ∀ i < 7, initQ.getD i 0 ∈ initQ := by decide
-
-theorem initQ_fits : ∀ i < 7, initQ.getD i 0 + 56 ≤ 2048 := by decide
-
-theorem initQ_al : ∀ i < 7, initQ.getD i 0 % 4 = 0 := by decide
-
-theorem initSlots_eq : initSlots = (List.range 7).flatMap fun i =>
-    constField (initQ.getD i 0) (initVal (initQ.getD i 0)) := by
-  simp only [initSlots, List.range_succ, List.range_zero, List.flatMap_append, List.nil_append,
-    List.flatMap_cons, List.flatMap_nil, List.append_nil]
-  rfl
-
-theorem initSlots_ok {s : State} (hc : Ctx b s) :
-    WP isa (.block initSlots) s fun t => Rest [.a4] s t ∧
-      Frame (initQ.map fun q => ⟨b + BitVec.ofNat 64 q, 56⟩) s.mem t.mem ∧
-      ∀ q ∈ initQ, V t.mem b q = initVal q := by
-  rw [initSlots_eq]
-  refine WP.mono (wp_range_flatMap (M := isa) (InitInv b s) (fun i t hi h => ?_) 7 (Nat.le_refl _) s
-    ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega_arith⟩) fun t h => ⟨h.rest, h.frame, fun q hq => ?_⟩
-  · have hi' := initQ_fits i hi
-    have hv : initVal (initQ.getD i 0) < 2 ^ 224 * 2 ^ 224 := by
-      simp only [initVal]; repeat' split
-      all_goals exact fe_lt _
-    refine WP.mono (constField_ok (hc.of_rest h.rest (by decide)) hi' (initQ_al i hi) hv) fun u ⟨ru, fu, vu⟩ =>
-      ⟨h.rest.trans ru, h.frame.trans (fu.sub fun r hr => ⟨r, ?_, fun x hx => hx⟩), fun j hj => ?_⟩
-    · rw [List.mem_singleton.mp hr]
-      exact List.mem_map.mpr ⟨_, initQ_mem i hi, rfl⟩
-    · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-      · rw [slot_keep fu (initQ_sep i hi j (by omega_arith) (by omega_arith)) hi' (initQ_fits j (by omega_arith))]
-        exact h.vals j hj
-      · exact vu
-  · have : ∃ i < 7, initQ.getD i 0 = q := by
-      simp only [initQ, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      exacts [⟨0, by decide, rfl⟩, ⟨1, by decide, rfl⟩, ⟨2, by decide, rfl⟩, ⟨3, by decide, rfl⟩,
-        ⟨4, by decide, rfl⟩, ⟨5, by decide, rfl⟩, ⟨6, by decide, rfl⟩]
-    obtain ⟨i, hi, rfl⟩ := this
-    exact h.vals i hi
 
 end
 
