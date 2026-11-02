@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.WindowA
+
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.P521Field
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.P521Order
 public import VerifiedGarbage.Spec.P521
@@ -26,7 +28,15 @@ def p521Order : Weierstrass.RISCV64.Field :=
 /-- P-521 as the code has it. -/
 def p521 : Cfg := { n := 9, C := Spec.P521.curve, FP := p521Field }
 
-/-- `vg_p521_mul`. -/
-def mulP521 : Prog isa := p521.mulFn
+/-- P-521 as `vg_p521_mul`'s four-bit windows have it: the table at 4096, past
+the slots, the entry `E` in slots 46 to 48, which the contract lets it write,
+and the complete addition for any `a`, from `a` and `3 b`, which the
+contract's caller provides (`am3 := false`); the doublings are those for
+`a = -3`. -/
+def p521w : Cfg := { p521 with jt := 4096, ve := 46, am3 := false }
+
+/-- `vg_p521_mul`, by four-bit windows with the Jacobian doubling for `a = -3`
+(`Impl/Ecdsa/RISCV64/WindowA.lean`). -/
+def mulP521 : Prog isa := WindowA.Cfg.mulFn p521w Impl.Weierstrass.dblJ
 
 end VG.Impl.Ecdsa.RISCV64

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.MulFn
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.Window
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.P384.Point
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.MulLit
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.MulFn
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.Window
 meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -26,7 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 The facts of `Impl.Weierstrass.Mul.Curve.mulInRangeContract` for P-384 on
 RISC-V, by register (`mulRVc`: `ws` in `a0`), and `mulFn` meets them
 (`mul_rv`), given the group law: the saves of `s0`, `s1` and `ra` (past the
-numbered slots, in the contract's tail), `mulBody_ok`, and the loads that
+numbered slots, in the contract's tail), the windows' `body_ok`, and the loads that
 restore them. The coordinates the specification decodes are the proofs'
 (`Point.dec_eq`, given Fermat's little theorem from the group law), and
 `Represents` is `Rep`. What the function writes is its own working space or
@@ -77,13 +79,12 @@ theorem coordAt_eq (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) :
 abbrev saves : List (Nat × Nat) := [(2224, 8), (2232, 8), (2240, 8)]
 
 /-- What the function writes is its own working space or the result's. -/
-theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (saves ++ mulBW) m m') : MC.Keeps ws m m' := by
+theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (saves ++ Window.bodyW) m m') : MC.Keeps ws m m' := by
   intro i hi hown hp
   have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega)]
-  have hw' := (by decide : ∀ w ∈ saves ++ mulBW, (880 ≤ w.1 ∧ w.1 + w.2 ≤ 1552) ∨ (w.1 = 160 ∧ w.2 = 48) ∨
-    2224 ≤ w.1 ∨ (736 ≤ w.1 ∧ w.1 + w.2 ≤ 880)) w hw
+  have hw' := (by decide : ∀ w ∈ saves ++ Window.bodyW, (736 ≤ w.1 ∧ w.1 + w.2 ≤ 1552) ∨ 2224 ≤ w.1) w hw
   simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot, Impl.Weierstrass.Mul.Curve.tmpAt,
     Impl.Weierstrass.Mul.Curve.bitsAt, Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes,
     MC, Impl.Weierstrass.Mul.p384, true_and] at hown hp
@@ -113,7 +114,7 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
   -- The saves and `s0 = a0`.
   suffices h : WP isa mulP384 s fun s' => abiPreserved s s' ∧ mulRVc.post s s' by
     obtain ⟨t, s', he, h⟩ := h; exact ⟨t, s', he, h⟩
-  rw [mulP384, Cfg.mulFn, show p384.mulSave = 2224 from rfl]
+  rw [mulP384, WindowA.Cfg.mulFn, show p384w.mulSave = 2224 from rfl]
   simp only [List.append_assoc]
   rw [← List.append_nil (ldAt .s0 .s0 2224)]
   refine WP.seq (sdAt_a0 hb hwr' hal (by decide) (d := 2224) (by decide) (by decide) fun s₁ u₁ => ?_)
@@ -161,14 +162,21 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
   have hon' := hon
   rw [eP] at hon'
   -- The body.
-  refine WP.seq (WP.mono (mulBody_ok hL hw₄ hz' hone' (by rw [ha']; exact tm _) (by rw [hb3']; exact tm _)
-    (by rw [ha']; exact Nat.mod_lt _ hp0) (by rw [hb3']; exact Nat.mod_lt _ hp0) (qx ▸ hx) (qy ▸ hy) hon')
-    fun s₅ ⟨K₅, U₅, lt₅, R₅⟩ => ?_)
+  have hpre : Window.WPre base s₄ :=
+    ⟨hw₄, ⟨show sv base s₄ AP = _ by rw [ha', Nat.mul_comm], show sv base s₄ B3P = _ by rw [hb3', Nat.mul_comm], hz',
+      hone'⟩, show sv base s₄ RX < W.p from qx ▸ hx, show sv base s₄ RY < W.p from qy ▸ hy, hon'⟩
+  refine WP.seq (WP.mono (Window.body_ok hL hpre) fun s₅ ⟨K₅, U₅, pR₅⟩ => ?_)
+  have lt₅ : ∀ x ∈ [p384.sl RX, p384.sl RY, p384.sl RZ], wordsVal s₅.mem base x 6 < W.p := by
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl
+    exacts [pR₅.x, pR₅.y, pR₅.z]
+  have R₅ := pR₅.rep
   -- The loads.
   have hw₅ := hw₄.of_kc K₅
   have far : ∀ d ∈ [2224, 2232, 2240], word s₅.mem base d = word s₄.mem base d := fun d hd =>
     U₅.word (fun w hw => by
-      have := (by decide : ∀ w ∈ mulBW, w.1 + w.2 ≤ 2224 ∨ 3712 ≤ w.1) w hw
+      have := (by decide : ∀ w ∈ Window.bodyW, w.1 + w.2 ≤ 2224 ∨ 2848 ≤ w.1) w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       omega) (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega)
   have w20 : word s₅.mem base 2240 = s.gpr .ra := by

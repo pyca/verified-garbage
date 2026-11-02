@@ -54,8 +54,8 @@ abbrev jSl : List Nat :=
     p256.sl RX, p256.sl RY, p256.sl RZ, p256.sl DX, p256.sl DY, p256.sl DZ, p256.sl TX, p256.sl TY, p256.sl TZ,
     p256.sl GX, p256.sl GY, p256.sl ONEP, p256.sl CPX, p256.sl CPY,
     p256.sl G2X, p256.sl G2Y, p256.sl G2Z, p256.sl G3X, p256.sl G3Y, p256.sl G3Z,
-    p256.sl Q2X, p256.sl Q2Y, p256.sl Q2Z, p256.sl Q3X, p256.sl Q3Y, p256.sl Q3Z,
-    p256.sl EX, p256.sl EY, p256.sl EZ]
+    p256.sl Q2X, p256.sl Q2Y, p256.sl Q2Z, p256.sl p256.Q3X, p256.sl p256.Q3Y, p256.sl p256.Q3Z,
+    p256.sl p256.EX, p256.sl p256.EY, p256.sl p256.EZ]
 
 theorem jLay : Lay p256.MP' (own 4) (· ∈ jSl) :=
   ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ jSl, ∀ y ∈ jSl, x ≠ y → x + 8 * 4 ≤ y ∨ y + 8 * 4 ≤ x)
@@ -286,7 +286,7 @@ structure JPre (base : Addr) (s : State) (Q : Point W) : Prop where
 abbrev gqSl : List Nat :=
   [p256.sl GX, p256.sl GY, p256.sl ONEP, p256.sl CPX, p256.sl CPY,
     p256.sl G2X, p256.sl G2Y, p256.sl G2Z, p256.sl G3X, p256.sl G3Y, p256.sl G3Z,
-    p256.sl Q2X, p256.sl Q2Y, p256.sl Q2Z, p256.sl Q3X, p256.sl Q3Y, p256.sl Q3Z]
+    p256.sl Q2X, p256.sl Q2Y, p256.sl Q2Z, p256.sl p256.Q3X, p256.sl p256.Q3Y, p256.sl p256.Q3Z]
 
 theorem gPt_sl : ∀ a ∈ [1, 2, 3], (Cfg.gPt p256 a).x ∈ gqSl ∧ (Cfg.gPt p256 a).y ∈ gqSl ∧
     (Cfg.gPt p256 a).z ∈ gqSl := by decide
@@ -533,7 +533,7 @@ abbrev selRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, 
 theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : j < 128)
     (h1 : s.gpr .s1 = BitVec.ofNat 64 j) {G Q : Point W} (hT : JTab base s G Q) :
     WP isa (.block (Cfg.select p256)) s fun s' =>
-      PtOk base s' (p256.pt EX EY EZ) (ent G Q ((wordsVal s.mem base (p256.sl UU) 4 >>> (2 * j)) % 4)
+      PtOk base s' (p256.pt p256.EX p256.EY p256.EZ) (ent G Q ((wordsVal s.mem base (p256.sl UU) 4 >>> (2 * j)) % 4)
         ((wordsVal s.mem base (p256.sl VV) 4 >>> (2 * j)) % 4)) ∧
       Outside base 1920 96 s.mem s'.mem ∧ Rest selRegs s s' := by
   have hn := hw.nowrap
@@ -560,7 +560,7 @@ theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
     simp [show c < 64 by omega]
   refine WP.mono (WP.rdwr (scansJ_ok p256 (by decide) (by decide) (by decide) (by decide) (by decide) 12
     (Nat.le_refl _) hw₄ h0 hm)) fun s₅ ⟨⟨v₅, O₅, k₅⟩, rd₅, wr₅, sp₅⟩ => ?_
-  simp only [show p256.jt = 2048 from rfl, show p256.sl EX = 1920 from rfl, show p256.n = 4 from rfl,
+  simp only [show p256.jt = 2048 from rfl, show p256.sl p256.EX = 1920 from rfl, show p256.n = 4 from rfl,
     Nat.reduceMul] at v₅ O₅
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, m₂, m₁]
   rw [m₄] at v₅ O₅
