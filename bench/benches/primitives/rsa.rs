@@ -337,6 +337,93 @@ pub fn bench(c: &mut Criterion) {
     // Only the private operation's and key loading's pieces this run (the
     // key-generation and Miller–Rabin groups are skipped).
     const ONLY_PIECES: bool = true;
+    // Only the CRT variants this run (bench/rv-rsa-crt-misc): the CRT as on
+    // main, and with a one-pass masked table scan, with `R² mod p` kept for the
+    // recombination, and with both.
+    {
+        use openssl::rsa::Rsa;
+        use verified_garbage_asm_riscv64::rsa_proto7::{
+            vg_proto_crt_base, vg_proto_crt_both, vg_proto_crt_keep, vg_proto_crt_scan,
+        };
+        type Crt = unsafe extern "C" fn(
+            *mut u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *mut u64,
+            usize,
+        ) -> u32;
+        let fs: [(&str, Crt); 4] = [
+            ("rsa_crtv_base", vg_proto_crt_base),
+            ("rsa_crtv_scan", vg_proto_crt_scan),
+            ("rsa_crtv_keep", vg_proto_crt_keep),
+            ("rsa_crtv_both", vg_proto_crt_both),
+        ];
+        let keys: Vec<_> = [2048u32, 3072, 4096]
+            .iter()
+            .map(|&b| (b, Rsa::generate(b).unwrap()))
+            .collect();
+        for (name, f) in fs {
+            let mut g = c.benchmark_group(name);
+            for (bits, key) in &keys {
+                let k = key.size() as usize;
+                let pad = |b: Vec<u8>, l: usize| {
+                    let mut v = vec![0u8; l - b.len()];
+                    v.extend(b);
+                    v
+                };
+                let n = key.n().to_vec();
+                let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
+                let (pl, ql) = (p.len(), q.len());
+                let dp = pad(key.dmp1().unwrap().to_vec(), pl);
+                let dq = pad(key.dmq1().unwrap().to_vec(), ql);
+                let qi = pad(key.iqmp().unwrap().to_vec(), pl);
+                let mut input = vec![0x42; k];
+                input[0] = 0;
+                let mut out = vec![0; k];
+                let mut scratch = vec![0u64; 16 * k + 64];
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    b.iter(|| unsafe {
+                        f(
+                            out.as_mut_ptr(),
+                            k,
+                            n.as_ptr(),
+                            k,
+                            black_box(input.as_ptr()),
+                            k,
+                            p.as_ptr(),
+                            pl,
+                            q.as_ptr(),
+                            ql,
+                            dp.as_ptr(),
+                            pl,
+                            dq.as_ptr(),
+                            ql,
+                            qi.as_ptr(),
+                            pl,
+                            scratch.as_mut_ptr(),
+                            scratch.len(),
+                        )
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
+    #[allow(unreachable_code)]
     if !ONLY_PIECES {
         // The unproven RSA key generation candidate: one accepted candidate
         // (a known prime, so all its witnesses run), and a whole prime's
