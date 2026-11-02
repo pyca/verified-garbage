@@ -150,6 +150,6 @@ theorem adcRow_ok {Dst X Y : Addr} {xb yb db : Reg} {xo yo d n : Nat} {msk : Boo
   | j + 1, hj => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
     exact WP.block_append (WP.mono (adcRow_ok hD hX hY hc0 j (by omega)) fun s h =>
-      adcStep_ok hD hX hY (j := j) (by omega) h)
+      adcStep_ok hD hX hY (j := j) (hj := by omega) h)
 
 end VG.Proof.Weierstrass.RISCV64.GenWide
