@@ -279,13 +279,27 @@ theorem wide_words {B : Addr} {w w' : Nat} {ds : List Nat} {m m' : Mem}
     omega_arith
   · have := hds d hd; have := hdr_le_arr w j; omega_arith
 
+/-- Words past the narrowed working space's 16 arrays. -/
+theorem wide_at {B : Addr} {w' : Nat} {ds : List Nat} {m m' : Mem}
+    (f : Keys.Frame B w' (List.range nInv) ds m m') (hds : ∀ d ∈ ds, d + 8 ≤ Keys.hdr)
+    {d k : Nat} (hd : arr w' nInv ≤ d) (fit : d + 8 * k ≤ 2 ^ 64) :
+    wordsVal m' B d k = wordsVal m B d k := by
+  refine f.words (fun j' hj' => .inr ?_) (fun e he => .inr ?_) fit
+  · have := arr_end (w := w') (List.mem_range.mp hj'); omega_arith
+  · have := hds e he; have := hdr_le_arr w' nInv; omega_arith
+
+theorem arr_wide {w' w j : Nat} (hw : w' ≤ w) (hj : nInv ≤ j) : arr w' nInv ≤ arr w j := by
+  have e2 : arr w' nInv ≤ arr w nInv := by
+    simp only [arr, S]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ (by omega_arith)) _
+  exact Nat.le_trans e2 (arr_mono hj)
+
 /-- A slot, past a frame of arrays. -/
 theorem slot_of_arrs {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (f : Keys.Frame B w js [] m m') {e : Nat}
     (he : e + 8 ≤ Keys.hdr) : slot m' B e = slot m B e := f.slot he (by simp)
 
 /-- Words of the working space, past a write apart from it. -/
 theorem wordsVal_of_out {O B : Addr} {L Z : Nat} {m m' : Mem} (hd : (⟨O, L⟩ : Region).Disjoint ⟨B, Z⟩)
-    (ho : Outside O 0 L m m') {d k : Nat} (hdk : d + 8 * k ≤ Z) (hZ : Z < 2 ^ 64) :
+    (ho : Outside O 0 L m m') {d k : Nat} (hdk : d + 8 * k ≤ Z) (hZ : Z ≤ 2 ^ 64) :
     wordsVal m' B d k = wordsVal m B d k := by
   induction k generalizing d with
   | zero => rfl
