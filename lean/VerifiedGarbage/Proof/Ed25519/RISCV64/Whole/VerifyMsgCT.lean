@@ -7,6 +7,9 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
+import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
+public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 meta import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.VerifyMsg
 meta import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Sha512OK
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -14,6 +17,9 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
+meta import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Consts
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 
 /-!
 # `vg_ed25519_verify` on RISC-V, with its frame as an argument: by register, and constant time
@@ -33,10 +39,12 @@ namespace VG.Proof.Ed25519.RISCV64.Whole
 
 open VG VG.RISCV64 VG.Impl.Ed25519.RISCV64.Whole
 open VG.Spec.Ed25519 (bytesAt)
+open VG.Impl.Ed25519.RISCV64 (bSym bConsts)
+open VG.Proof.Ed25519.RISCV64 (bstat_of_consts rd_of_bconsts RhsOk RhsCT)
 
 /-- The contract by register: `pk` in `a0`, the message in `a1` (`len` in `a2`), the signature in
-`a3`, `scratch` in `a4`, the frame in `a5`. -/
-def verC : Contract isa where
+`a3`, `scratch` in `a4`, the frame in `a5`; without the static. -/
+def verR : Contract isa where
   pre s :=
     let pk : Region := ⟨s.gpr .a0, 32⟩
     let msg : Region := ⟨s.gpr .a1, (s.gpr .a2).toNat⟩
@@ -56,13 +64,26 @@ def verC : Contract isa where
     (bytesAt s₂.mem (s₂.gpr .a0) 32 ++ bytesAt s₂.mem (s₂.gpr .a1) (s₂.gpr .a2).toNat ++
       bytesAt s₂.mem (s₂.gpr .a3) 64).map (·.toNat)
 
-theorem verC_pre {s : State} (h : verC.pre s) : VerPre s :=
-  let ⟨a, b, c, d, e, f, g, h', i, j, k, l, m, n, o, p, q, r⟩ := h
-  ⟨a, b, c, d, e, f, g, h', i, j, k, l, m, n, o, p, q, r⟩
+/-- `verR` with the static of `verify_equation` (`abi.withConsts bConsts`). -/
+def verC : Contract isa where
+  pre s := verR.pre (stripConsts bConsts s) ∧ ConstsOk bConsts 208 s
+  post := verR.post
+  pub s₁ s₂ := verR.pub s₁ s₂ ∧ s₁.syms bSym = s₂.syms bSym
 
-theorem ver_ok (s : State) (hs : verC.pre s) :
+theorem verC_pre {s : State} (h : verC.pre s) : VerPre s := by
+  obtain ⟨⟨a, b, c, d, e, f, g, h', i, j, k, l, m, n, o, p, q, r⟩, hk⟩ := h
+  simp only [stripConsts_gpr, stripConsts_wr, stripConsts_sp] at *
+  obtain ⟨-, tfit, words, twr, tres⟩ := bstat_of_consts hk
+  have hrd : s.rd = [⟨s.gpr .a0, 32⟩, vmsgR s, ⟨s.gpr .a3, 64⟩, vtbR s] := rd_of_bconsts hk a
+  have hB : below s.sp 208 ∈ RISCV64.abi.reserved 208 s := by
+    show _ ∈ stackBelow s.sp 208
+    rw [stackBelow_pos _ (by decide)]; simp
+  exact ⟨hrd, b, c, d, e, f, g, h', i, j, k, l, m, n, o, p, q, r, tfit, words, twr _ (by rw [b]; simp),
+    twr _ (by rw [b]; simp), tres _ hB⟩
+
+theorem ver_ok (hR : RhsOk) (s : State) (hs : verC.pre s) :
     ∃ t s', Exec isa verifyMessage s t s' ∧ abiPreserved s s' ∧ verC.post s s' := by
-  obtain ⟨t, s', he, hg, hsp, hra, hq⟩ := verifyMessage_wp sha512OK (verC_pre hs)
+  obtain ⟨t, s', he, hg, hsp, hra, hq⟩ := verifyMessage_wp sha512OK hR (verC_pre hs)
   exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hq⟩
 
 /-- Two runs on the same public data, as `RelCT.constantTime` relates them. -/
@@ -72,7 +93,7 @@ abbrev VP (s₁ s₂ : State) : Prop := verC.pre s₁ ∧ verC.pre s₂ ∧ verC
 theorem vp_bytes {s₁ s₂ : State} (h : VP s₁ s₂) :
     bytesAt s₁.mem (s₁.gpr .a0) 32 = bytesAt s₂.mem (s₂.gpr .a0) 32 ∧ vmsgB s₁ = vmsgB s₂ ∧
       bytesAt s₁.mem (s₁.gpr .a3) 64 = bytesAt s₂.mem (s₂.gpr .a3) 64 := by
-  obtain ⟨-, -, -, -, p2, -, -, -, -, pl⟩ := h
+  obtain ⟨-, -, ⟨-, -, p2, -, -, -, -, pl⟩, -⟩ := h
   have hl : ∀ (s : State) (p : Addr) (n : Nat), (bytesAt s.mem p n).length = n := fun _ _ _ => by
     simp [bytesAt]
   exact bytes_of_leak (by rw [hl, hl]) (by rw [hl, hl, p2]) pl
@@ -88,31 +109,34 @@ theorem restore_ct {P : State → State → Prop}
 /-- Two runs' entry states. -/
 abbrev VPair : Type := {σ : State × State // VP σ.1 σ.2}
 
-theorem ver_ct : ConstantTime isa verC.pre verC.pub verifyMessage := by
+theorem ver_ct (hR : RhsOk) (hRC : RhsCT) : ConstantTime isa verC.pre verC.pub verifyMessage := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
   unfold verifyMessage
-  refine RelCT.seq (R := fun t₁ t₂ => ∃ σ : VPair, VerArgs σ.1.1 t₁ ∧ VerArgs σ.1.2 t₂) ?_ <|
+  refine RelCT.seq (R := fun (t₁ t₂ : State) => ∃ σ : VPair, (VerArgs σ.1.1 t₁ ∧ t₁.syms = σ.1.1.syms) ∧
+    (VerArgs σ.1.2 t₂ ∧ t₂.syms = σ.1.2.syms)) ?_ <|
     RelCT.seq (R := fun t₁ t₂ => ∃ σ : VPair, VerInv σ.1.1 t₁ ∧ VerInv σ.1.2 t₂) ?_ ?_
   · refine ((RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5]) (fun s₁ s₂ h => ?_)
-      (by taint_decide)).wpDep (F := VerArgs) fun s₁ s₂ h =>
-        ⟨verifyHash_ok sha512OK (verC_pre h.1), verifyHash_ok sha512OK (verC_pre h.2.1)⟩).mono (fun _ _ h => h)
+      (by taint_decide)).wpDep (F := fun (s t : State) => VerArgs s t ∧ t.syms = s.syms) fun s₁ s₂ h =>
+        ⟨WP.mono_syms (verifyHash_ok sha512OK (verC_pre h.1)) fun _ a sy => ⟨a, sy⟩,
+          WP.mono_syms (verifyHash_ok sha512OK (verC_pre h.2.1)) fun _ a sy => ⟨a, sy⟩⟩).mono (fun _ _ h => h)
       fun t₁ t₂ ⟨_, σ₁, σ₂, hp, a₁, a₂⟩ => ⟨⟨(σ₁, σ₂), hp⟩, a₁, a₂⟩
-    obtain ⟨-, -, p0, p1, p2, p3, p4, p5, psp, -⟩ := h
+    obtain ⟨-, -, ⟨p0, p1, p2, p3, p4, p5, psp, -⟩, -⟩ := h
     refine ⟨psp, fun r hr => ?_⟩
     simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · refine RelCT.exists_ fun σ => ?_
-    refine ((RelCT.callEx (k := verifyRV) verify_ok' verify_ct fun t₁ t₂ ⟨a₁, a₂⟩ => ?_).wp
-      (F₁ := VerInv σ.1.1) (F₂ := VerInv σ.1.2) fun t₁ t₂ ⟨a₁, a₂⟩ =>
-        ⟨WP.mono (verCall_ok (verC_pre σ.2.1) a₁) fun _ h => h.1,
-          WP.mono (verCall_ok (verC_pre σ.2.2.1) a₂) fun _ h => h.1⟩).mono (fun _ _ h => h)
+    refine ((RelCT.callEx (k := verifyRV) (verify_ok' hR) (verify_ct hR hRC)
+      fun t₁ t₂ ⟨⟨a₁, y₁⟩, ⟨a₂, y₂⟩⟩ => ?_).wp
+      (F₁ := VerInv σ.1.1) (F₂ := VerInv σ.1.2) fun t₁ t₂ ⟨⟨a₁, y₁⟩, ⟨a₂, y₂⟩⟩ =>
+        ⟨WP.mono (verCall_ok hR (verC_pre σ.2.1) a₁ y₁) fun _ h => h.1,
+          WP.mono (verCall_ok hR (verC_pre σ.2.2.1) a₂ y₂) fun _ h => h.1⟩).mono (fun _ _ h => h)
       fun t₁ t₂ ⟨_, i₁, i₂⟩ => ⟨σ, i₁, i₂⟩
     have hp₁ := verC_pre σ.2.1
     have hp₂ := verC_pre σ.2.2.1
     obtain ⟨c₁, w₁⟩ := verCall_covers hp₁ a₁
     obtain ⟨c₂, w₂⟩ := verCall_covers hp₂ a₂
-    refine ⟨_, _, _, _, verCall_pre hp₁ a₁, verCall_pre hp₂ a₂, ?_, c₁, w₁, c₂, w₂⟩
-    obtain ⟨-, -, p0, p1, p2, p3, p4, p5, psp, -⟩ := σ.2
+    refine ⟨_, _, _, _, verCall_pre hp₁ a₁ y₁, verCall_pre hp₂ a₂ y₂, ?_, c₁, w₁, c₂, w₂⟩
+    obtain ⟨-, -, ⟨p0, p1, p2, p3, p4, p5, psp, -⟩, psy⟩ := σ.2
     obtain ⟨b0, bm, b3⟩ := vp_bytes σ.2
     have ch : vChallenge σ.1.1 = vChallenge σ.1.2 := by
       unfold vChallenge
@@ -123,10 +147,13 @@ theorem ver_ct : ConstantTime isa verC.pre verC.pub verifyMessage := by
       State.callEntry_gpr _ (show Reg.a3 ∉ linkRegs by decide)]
     rw [a₁.a0, a₂.a0, a₁.a1, a₂.a1, a₁.a2, a₂.a2, a₁.a3, a₂.a3, a₁.inv.sp, a₂.inv.sp, a₁.ch, a₂.ch,
       a₁.pk, a₂.pk, a₁.sig, a₂.sig, b0, b3, ch]
-    exact ⟨by rw [p5], by rw [p5], p5, p4, psp, rfl⟩
-  · exact RelCT.exists_ fun σ => restore_ct fun t₁ t₂ ⟨i₁, i₂⟩ =>
-      ⟨by rw [i₁.sp, i₂.sp]; exact σ.2.2.2.2.2.2.2.2.2.1, by
+    exact ⟨by rw [p5], by rw [p5], p5, p4, psp, rfl, by
+      show t₁.syms bSym = t₂.syms bSym
+      rw [y₁, y₂]; exact psy⟩
+  · exact RelCT.exists_ fun σ => restore_ct fun t₁ t₂ ⟨i₁, i₂⟩ => by
+      obtain ⟨-, -, ⟨-, -, -, -, -, p5, psp, -⟩, -⟩ := σ.2
+      exact ⟨by rw [i₁.sp, i₂.sp]; exact psp, by
         rw [i₁.regs .s10 (by decide), i₂.regs .s10 (by decide), verV_s10, verV_s10]
-        exact σ.2.2.2.2.2.2.2.2.1⟩
+        exact p5⟩
 
 end VG.Proof.Ed25519.RISCV64.Whole

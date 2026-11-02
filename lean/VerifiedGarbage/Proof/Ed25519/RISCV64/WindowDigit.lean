@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.VerifyWindow
-import VerifiedGarbage.Proof.Ed25519.WindowNibble
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -13,8 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # A window's digit on RISC-V
 
 `nibble p o` leaves in `a2` nibble `s1` of the bytes at `p + o`, as the
-comb's digit reads its scalar's (`nibble_ok`, `nibAt`); nibble `i` of `n` bytes is
-the base-16 digit `i` of their number (`nibAt_eqN`).
+comb's digit reads its scalar's (`nibble_ok`, `nibAt`).
 -/
 
 @[expose] public section
@@ -56,18 +54,6 @@ theorem nibble_eq (v : Nat) (hv : v < 256) (o : Nat) :
 theorem counter_fact128 : ∀ i < 128,
     BitVec.ofNat 64 i >>> 1 = BitVec.ofNat 64 (i / 2) ∧
       ((BitVec.ofNat 64 i &&& BitVec.ofInt 64 1) <<< 2).toNat % 64 = 4 * (i % 2) := by decide
-
-/-- Nibble `i` of `n` bytes is digit `i` of their number. -/
-theorem nibAt_eqN (m : Mem) (p : Addr) {n i : Nat} (hi : i < 2 * n) :
-    nibAt m p i = Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m p n) / 16 ^ i % 16 := by
-  rw [Proof.Ed25519.decodeLE_nibble, Proof.Ed25519.nibbleOf, nibAt]
-  have hg : (Spec.Ed25519.bytesAt m p n).getD (i / 2) 0 = m (p + BitVec.ofNat 64 (i / 2)) := by
-    simp [Spec.Ed25519.bytesAt, List.getD_eq_getElem?_getD, show i / 2 < n by omega]
-  rw [hg]
-  have := (m (p + BitVec.ofNat 64 (i / 2))).isLt
-  rcases Nat.mod_two_eq_zero_or_one i with h | h
-  · rw [h, ite_eq_right (by decide), Nat.pow_zero, Nat.div_one]
-  · rw [h, ite_eq_left rfl, Nat.pow_one]; omega
 
 theorem nibble_ok {s : State} {p : Reg} (hp : p ∉ [Reg.a1, .a2, .t0, .s1]) {P : Addr} (hP : s.gpr p = P)
     {o i : Nat} (ho : o < 2048) (hi : i < 128) (h1 : s.gpr .s1 = BitVec.ofNat 64 i)

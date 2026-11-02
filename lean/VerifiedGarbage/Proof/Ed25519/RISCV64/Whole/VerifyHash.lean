@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Common
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Frame
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarVerified
+public import VerifiedGarbage.Impl.Ed25519.RISCV64.VerifyWindow
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
 import VerifiedGarbage.Proof.Ed25519.Challenge
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
@@ -32,9 +33,12 @@ open VG.Spec.Ed25519 (bytesAt)
 /-- The message. -/
 abbrev vmsgR (s : State) : Region := ⟨s.gpr .a1, (s.gpr .a2).toNat⟩
 
-/-- The precondition, by register. -/
+/-- The static of the cached `-[1]B … -[15]B`, which `verify_equation` reads. -/
+abbrev vtbR (s : State) : Region := ⟨s.syms Impl.Ed25519.RISCV64.bSym, 1920⟩
+
+/-- The precondition, by register, with the static `vtbR` of `verify_equation`. -/
 structure VerPre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .a0, 32⟩, vmsgR s, ⟨s.gpr .a3, 64⟩]
+  rd : s.rd = [⟨s.gpr .a0, 32⟩, vmsgR s, ⟨s.gpr .a3, 64⟩, vtbR s]
   wr : s.wr = [⟨s.gpr .a4, 8192⟩, ⟨s.gpr .a5, 272⟩]
   alC : (s.gpr .a4).toNat % 8 = 0
   alF : (s.gpr .a5).toNat % 8 = 0
@@ -52,6 +56,12 @@ structure VerPre (s : State) : Prop where
   bS : (below s.sp 208).Disjoint ⟨s.gpr .a3, 64⟩
   bC : (below s.sp 208).Disjoint ⟨s.gpr .a4, 8192⟩
   bF : (below s.sp 208).Disjoint ⟨s.gpr .a5, 272⟩
+  tfit : (s.syms Impl.Ed25519.RISCV64.bSym).toNat + 1920 ≤ 2 ^ 64
+  twords : ∀ q < 240, s.mem.readW (s.syms Impl.Ed25519.RISCV64.bSym + BitVec.ofNat 64 (8 * q)) 64 =
+    Impl.Ed25519.RISCV64.bWord q
+  tC : (vtbR s).Disjoint ⟨s.gpr .a4, 8192⟩
+  tF : (vtbR s).Disjoint ⟨s.gpr .a5, 272⟩
+  tB : (vtbR s).Disjoint (below s.sp 208)
 
 /-- What the body may write. -/
 abbrev verW (s : State) : List Region := [⟨s.gpr .a4, 8192⟩, ⟨s.gpr .a5, 272⟩, below s.sp 208]
