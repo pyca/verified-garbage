@@ -154,7 +154,8 @@ theorem mont_eq {r x : Nat} (hr : r < W.p) (h : r * 2 ^ 512 % W.p = x * (2 ^ 512
   toM_inj unit hr (Nat.mod_lt _ (by decide)) ((toM_r2 unit h).trans (toM_mont unit).symm)
 
 /-- brainpoolP512r1's check of `Proof/Weierstrass/CheckPointContract.lean`. -/
-abbrev CC : Impl.Weierstrass.CheckPoint.Curve := Impl.Weierstrass.CheckPoint.brainpoolp512r1
+abbrev CC : Impl.Weierstrass.CheckPoint.Curve :=
+  { Impl.Weierstrass.CheckPoint.brainpoolp512r1 with montOwn := 7680, montOwnEnd := 8192 }
 
 /-- `vg_brainpoolp512r1_check_point(ws = a0)`. -/
 def checkRVc : Contract isa where
@@ -167,7 +168,7 @@ theorem num_eq (m : Mem) (ws : Addr) (i : Nat) (hi : i < 100 := by decide) :
     CC.num ws m (CC.slot i) = wordsVal m ws (brainpoolp512r1.sl i) 8 := by
   unfold Impl.Weierstrass.CheckPoint.Curve.num
   rw [Impl.Weierstrass.Mont.numAt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
-    simp only [Impl.Weierstrass.CheckPoint.Curve.slot, CC, Impl.Weierstrass.CheckPoint.brainpoolp512r1]; omega)]
+    simp only [Impl.Weierstrass.CheckPoint.Curve.slot, Impl.Weierstrass.CheckPoint.brainpoolp512r1]; omega)]
   exact read_eq_wordsVal m ws 8 _
 
 theorem flag_eq (m : Mem) (ws : Addr) : CC.flag ws m = word m ws FL := by
@@ -187,9 +188,9 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws chkW m m') : CC.Kee
   refine hu _ fun w hw => ?_
   rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega)]
   have hw' := (by decide : ∀ w ∈ chkW, (192 ≤ w.1 ∧ w.1 + w.2 ≤ 256) ∨ (w.1 = FL ∧ w.2 = 8) ∨
-    (∃ j ∈ [34, 35, 37, 38, 41, 42, 43], w.1 = 64 + 64 * j ∧ w.2 = 64) ∨ (3584 ≤ w.1 ∧ w.1 + w.2 ≤ 4096)) w hw
+    (∃ j ∈ [34, 35, 37, 38, 41, 42, 43], w.1 = 64 + 64 * j ∧ w.2 = 64) ∨ (7680 ≤ w.1 ∧ w.1 + w.2 ≤ 8192)) w hw
   simp only [FL, Impl.Weierstrass.CheckPoint.Curve.Own, Impl.Weierstrass.CheckPoint.Curve.Out,
-    Impl.Weierstrass.CheckPoint.Curve.slot, Impl.Weierstrass.CheckPoint.Curve.flagAt, CC,
+    Impl.Weierstrass.CheckPoint.Curve.slot, Impl.Weierstrass.CheckPoint.Curve.flagAt,
     Impl.Weierstrass.CheckPoint.brainpoolp512r1, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes,
     List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left, not_or] at hown hout hw'
   omega
@@ -363,9 +364,9 @@ theorem check_rv (s : State) (hs : checkRVc.pre s) :
       word_writeW_self]
   have Kp₁₂ : Kp s₃ s₁₂ := K₄.trans (C₅.kp.trans (C₆.kp.trans (K₇.kp.trans ((Kp.of_rest r₈).trans
     ((Kp.of_rest r₉).trans ((Kp.of_upd u₁₀).trans ((Kp.of_rest r₁₁).trans (Kp.of_rest r₁₂))))))))
-  refine ldAt_ws hw₁₂ (d := 168) (by decide) (by decide) fun s₁₃ u₁₃ => ?_
+  refine ldAt_ws hw₁₂ (d := 200) (by decide) (by decide) fun s₁₃ u₁₃ => ?_
   have hw₁₃ := hw₁₂.of_kp (Kp.of_upd u₁₃)
-  refine ldAt_ws hw₁₃ (d := 160) (by decide) (by decide) fun s₁₄ u₁₄ => WP.block_nil ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
+  refine ldAt_ws hw₁₃ (d := 192) (by decide) (by decide) fun s₁₄ u₁₄ => WP.block_nil ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · by_cases h0 : r = .s0
     · subst h0; rw [u₁₄.gpr, u₁₃.mem, w28]
     rw [u₁₄.other _ h0, u₁₃.other _ (fun e => by subst e; revert hr; decide), Kp₁₂.gpr r hr, g₃ r h0]

@@ -589,7 +589,7 @@ theorem same_mask (x y : BitVec 64) :
   by_cases h : x.toNat % 2 = y.toNat % 2 <;> simp [h, maskOf] <;> decide
 
 /-- `parMask a`: `a7` is the mask of the low bits of `[a]` and `PAR` differing. -/
-theorem parMask_ok {s : State} {base : Addr} (hw : WsReg s base) {a : Nat} (ha : a < 38) :
+theorem parMask_ok {s : State} {base : Addr} (hw : WsReg s base) {a : Nat} (ha : a < 30) :
     WP isa (.block (Cfg.parMask brainpoolp512r1 a)) s fun s' =>
       Rest [.t0, .t1, .a7] s s' ∧ s'.mem = s.mem ∧
       s'.gpr .a7 = maskOf (decide ((word s.mem base (brainpoolp512r1.sl a)).toNat % 2 ≠
@@ -613,7 +613,7 @@ theorem parMask_ok {s : State} {base : Addr} (hw : WsReg s base) {a : Nat} (ha :
       VG.Proof.EcKey.Compressed.xor_low_mask, mask_maskOf]
 
 /-- `sameMask a`: `a7` is the mask of the low bits of `[a]` and `PAR` being equal. -/
-theorem sameMask_ok {s : State} {base : Addr} (hw : WsReg s base) {a : Nat} (ha : a < 38) :
+theorem sameMask_ok {s : State} {base : Addr} (hw : WsReg s base) {a : Nat} (ha : a < 30) :
     WP isa (.block (Cfg.sameMask brainpoolp512r1 a)) s fun s' =>
       Rest [.t0, .t1, .a7] s s' ∧ s'.mem = s.mem ∧
       s'.gpr .a7 = maskOf (decide ((word s.mem base (brainpoolp512r1.sl a)).toNat % 2 =

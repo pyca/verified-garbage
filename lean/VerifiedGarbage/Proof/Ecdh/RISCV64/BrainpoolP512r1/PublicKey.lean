@@ -81,7 +81,7 @@ theorem pointOut_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gp
       s'.gpr .ra = word s.mem base 24 ∧ s'.gpr .s3 = word s.mem base 32 ∧
       (∀ r ∈ preserved, r ≠ .s0 → r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp := by
   have sl8 : ∀ i, brainpoolp512r1.sl i % 8 = 0 := fun i => by rw [sl_eq]; omega
-  have sl32 : ∀ {i}, i < 38 → brainpoolp512r1.sl i + 8 * 8 ≤ 2048 := fun hi => by rw [sl_eq]; omega
+  have sl32 : ∀ {i}, i < 41 → brainpoolp512r1.sl i + 8 * 8 ≤ 4096 := fun hi => by rw [sl_eq]; omega
   have ap : ∀ {i}, i < 44 → ∀ w ∈ [((8192 : Nat), (2 ^ 64 : Nat))], brainpoolp512r1.sl i + 8 * 8 ≤ w.1 ∨ w.1 + w.2 ≤ brainpoolp512r1.sl i :=
     fun hi w hw => by simp only [List.mem_singleton] at hw; subst hw; left; rw [sl_eq]; omega
   have fit : ∀ {i}, i < 44 → brainpoolp512r1.sl i + 8 * 8 ≤ 2 ^ 64 := fun hi => by rw [sl_eq]; omega
@@ -377,7 +377,7 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
   unfold pkRV
   simp only
   rw [hpk]
-  have z97 : (0 : Byte) :: (toBytes 48 0 ++ toBytes 48 0) = List.replicate 97 0 := by decide
+  have z129 : (0 : Byte) :: (toBytes 64 0 ++ toBytes 64 0) = List.replicate 129 0 := by decide
   by_cases hd : 1 ≤ D ∧ D < W.n
   · obtain ⟨hR, -, -, rzlt⟩ := rep₇ hd.1 hd.2
     have eG : Point.affine (toM W.p (2 ^ 512) (sv base s₆ RX)) (toM W.p (2 ^ 512) (sv base s₆ RY)) =
@@ -393,7 +393,7 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
     · rw [ite_eq_left ((toM_eq_zero_iff unit rzlt).mpr hz)] at hpk'
       rw [hpk']
       rw [decide_eq_true hz] at a0' bytes'
-      exact ⟨a0', bytes'.trans z97⟩
+      exact ⟨a0', bytes'.trans z129⟩
     · rw [ite_eq_right fun h => hz ((toM_eq_zero_iff unit rzlt).mp h)] at hpk'
       rw [hpk']
       rw [decide_eq_false hz] at a0' bytes'
@@ -405,7 +405,7 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
         simp [this]
       · simp [hn]
     rw [hb] at a0' bytes'
-    exact ⟨a0', bytes'.trans z97⟩
+    exact ⟨a0', bytes'.trans z129⟩
 
 theorem pk_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : pkRV.pre s) :
     ∃ t s', Exec isa publicKeyBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ pkRV.post s s' := by
