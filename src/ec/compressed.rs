@@ -256,7 +256,6 @@ codec!(
         VG_EC_BRAINPOOLP384R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
     ]
 );
-#[cfg(not(target_arch = "riscv64"))]
 codec!(
     BrainpoolP512r1,
     64,
@@ -361,6 +360,5 @@ mod tests {
     cases!(brainpoolp256r1, BrainpoolP256r1, 32);
     #[cfg(not(target_arch = "riscv64"))]
     cases!(brainpoolp384r1, BrainpoolP384r1, 48);
-    #[cfg(not(target_arch = "riscv64"))]
     cases!(brainpoolp512r1, BrainpoolP512r1, 64);
 }
