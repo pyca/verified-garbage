@@ -296,6 +296,130 @@ theorem divA_vp (hn0 : 0 < P.n) {f g : Nat × Nat × Nat → Nat × Nat × Nat} 
       rw [upd_self]; simp only [VA, upd_self, AWA2, AWA1]; rd_up
     · exact ⟨by decide, by simp only [VA]; rd_up⟩
 
+/-- `m mod 2^(32 w) + 1` modulo `2^(32 w)` (1 where that is zero), `n - r mod 2^(32 w)`, and their
+quotient and remainder. -/
+abbrev m1R (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
+  sub32 P.w (aV P f g σ / P.n % 2 ^ (32 * P.w)) (sub32 P.w 0 1)
+abbrev m1V (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
+  if m1R P f g σ = 0 then 1 else m1R P f g σ
+abbrev dV (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
+  sub32 P.w P.n (aV P f g σ % P.n % 2 ^ (32 * P.w))
+abbrev qV (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat := dV P f g σ / m1V P f g σ
+abbrev remV (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat := dV P f g σ % m1V P f g σ
+
+def ABd (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
+  upd (upd (AB P) aM1 (m1V P f g σ)) aD (dV P f g σ)
+def AWB (P : RP) : Nat → Nat := upd (upd (upd (fun _ => 0) wZ 0) wOne 1) wN P.n
+abbrev LWB : List Nat := [wN, wOne, wZ]
+
+/-- Ready for the narrow division. -/
+def DB1 (P : RP) (E : State → Prop) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ s : State) : Prop :=
+  Dk P E (ABd P f g) [aD, aM1, aN, aZN, aOneN] (fun _ => AWB P) LWB (VA P f g) [sLt, sOkDE] P.w nArr σ s ∧
+    DivHdr s.mem P.B P.w aD aRem aM1 aDt ∧ w32 s.mem (State.addr P.B) (arr P.w aM1 + 4 * P.w) = 0
+
+theorem divBPre_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → Prop} :
+    VP (Dk P E (fun _ => AB P) LB (AWA2 P f g) LWA (VA P f g) [sLt, sOkDE] P.w nArr) divBPre (DB1 P E f g) := by
+  refine VP.dctx divBPre_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h0, hv⟩ => ?_
+  have sz := h0.sizes
+  have h1 := h0.narrow (j := wA) (by decide) (by decide)
+  rw [show 2 * wA = aMlo from rfl] at h1
+  have h2 := h1.narrow (j := wR) (by decide) (by decide)
+  rw [show 2 * wR = aRlo from rfl] at h2
+  simp only [divBPre, seqs]
+  refine WP.seq (WP.mono (h2.sub_w hv (o := aT2) (a := aZN) (b := aOneN) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide)) fun s1 ⟨h3, hv3, _, _⟩ => ?_)
+  refine WP.seq (WP.mono (h3.sub_w hv3 (o := aT1) (a := aMlo) (b := aT2) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide)) fun s2 ⟨h4, hv4, _, _⟩ => ?_)
+  have h4' := h4.mono (A' := upd (upd (upd (AB P) aT1 (m1R P f g σ)) aRlo (aV P f g σ % P.n % 2 ^ (32 * P.w)))
+      aN P.n)
+    (live' := [aT1, aRlo, aN, aZN, aOneN]) (AW' := AWA2 P f g σ) (liveW' := LWA) (V' := VA P f g σ)
+    (ls' := [sLt, sOkDE])
+    (fun j hj => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+      refine ⟨by rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
+      rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [AWA2, AWA1, AB] <;> rd_ev)
+    (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
+  refine WP.seq (WP.mono (h4'.eqS_w hv4 (d := sM0) (a := aT1) (b := aZN) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide)) fun s3 ⟨h5, hv5, _⟩ => ?_)
+  refine WP.seq (WP.mono (h5.sel_w hv5 (o := aM1) (a := aT1) (b := aOneN) (sl := sM0) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rd_up; split <;> omega) (by decide))
+    fun s4 ⟨h6, hv6, _⟩ => ?_)
+  refine WP.seq (WP.mono (h6.sub_w hv6 (o := aD) (a := aN) (b := aRlo) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide)) fun s5 ⟨h7, hv7, _, _⟩ => ?_)
+  refine clrW_ok hv7 (j := aM1) (by decide) (by decide) fun s6 hv8 k8 n8 top8 r8 => ?_
+  have h8 := h7.same1 k8 (by decide) n8 (by decide) (h7.r8_of r8) r8.sp r8.rd r8.wr
+  rw [← List.append_nil (VG.Impl.Rsa.Arm.CrtValues.divHdr _ _ _ _)]
+  refine VG.Proof.Rsa.Arm.CrtValues.divHdr_ok hv8 (by decide) (by decide) (by decide) (by decide) h8.cnt
+    fun t hvt kt dt rt => WP.block_nil ⟨⟨e, ?_, hvt⟩, dt, ?_⟩
+  · have hds : ∀ d ∈ ([0, 4, 8, 12] : List Nat), SlotOk d := by decide
+    have h9 := h8.core kt (by simp) hds (h8.r8_of rt) rt.sp rt.rd rt.wr (h8.arrs_w kt (by simp) hds) h8.live_lt
+      (h8.arrsW_w kt (by simp) hds) h8.liveW_lt (h8.sl_keep kt (by decide)) h8.ls_ok
+    refine h9.mono (fun j hj => ?_) (fun j hj => ?_) (fun d hd => ?_)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+      refine ⟨by rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
+      rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [ABd, AB, m1V] <;> rd_ev
+    · simp only [LWB, List.mem_cons, List.not_mem_nil, or_false] at hj
+      refine ⟨by rcases hj with rfl | rfl | rfl <;> decide, ?_⟩
+      rcases hj with rfl | rfl | rfl <;> simp only [AWB, AWA2, AWA1] <;> rd_ev
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      refine ⟨by rcases hd with rfl | rfl <;> decide, ?_⟩
+      rcases hd with rfl | rfl <;> rd_up
+  · have fD := fit_w sz (show aM1 < nArr by decide)
+    have hS : S P.w = 4 * (P.w + 2) := rfl
+    rw [kt.word (by omega) (by simp) (by decide) fD, top8]
+
+def ABq (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
+  upd (upd (AB P) aD (qV P f g σ)) aRem (remV P f g σ)
+def VB (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
+  upd (VA P f g σ) sExact (if remV P f g σ = 0 then 1 else 0)
+
+theorem divB_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → Prop} :
+    VP (Dk P E (fun _ => AB P) LB (AWA2 P f g) LWA (VA P f g) [sLt, sOkDE] P.w nArr) divB
+      (Dk P E (fun σ => upd (AB P) aD (qV P f g σ)) [aD, aN, aZN, aOneN] (fun _ => AWB P) LWB (VB P f g)
+        [sExact, sLt, sOkDE] P.w nArr) := by
+  simp only [divB, seqs]
+  let D2 := fun σ s => E σ ∧ KS P σ (ABq P f g σ) [aRem, aD, aN, aZN, aOneN] (AWB P) LWB (VA P f g σ) [sLt, sOkDE] s
+  refine divBPre_vp.seq (VP.seq (G := D2) ?_ (VP.seq (G := Dk P E (ABq P f g) [aRem, aD, aN, aZN, aOneN]
+    (fun _ => AWB P) LWB (VA P f g) [sLt, sOkDE] P.w nArr) ?_ ?_))
+  · refine VP.of_ct (fun σ₁ σ₂ => (VG.Proof.Rsa.Arm.Div.code_ct (g := divGeom P.B P.Z P.w aD aRem aM1 aDt)).mono
+      (fun s t h => ⟨divGeom_ctx h.1.1.2.2 (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) (by decide) (by decide) (by decide) (by decide) h.1.2.1,
+        divGeom_ctx h.2.1.2.2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) (by decide) (by decide) (by decide) h.2.2.1⟩) fun _ _ _ => trivial)
+      fun σ s ⟨⟨e, h, hv⟩, hh, top⟩ => ?_
+    have sz := h.sizes
+    refine WP.mono (div_ok hv (q := aD) (r := aRem) (d := aM1) (t := aDt) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hh top)
+      fun t ⟨k, r, v⟩ => ⟨e, ?_⟩
+    have vD : num s.mem P.B P.w aM1 = m1V P f g σ := by rw [h.arrs aM1 (by decide)]; simp only [ABd]; rd_up
+    have vQ : num s.mem P.B P.w aD = dV P f g σ := by rw [h.arrs aD (by decide)]; simp only [ABd]; rd_up
+    obtain ⟨vr, vq⟩ := v (by rw [vD]; simp only [m1V]; split <;> omega)
+    rw [vD, vQ] at vr vq
+    have hjs : ∀ j ∈ ([aD, aRem, aDt] : List Nat), arr P.w j + S P.w ≤ P.Z := fun j hj => fitZ_w sz (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; rcases hj with rfl | rfl | rfl <;> decide)
+    refine h.core k hjs (by simp) (by rw [r.gpr _ (by decide), h.r8]) r.sp r.rd r.wr (fun j hj => ?_) (by decide)
+      (h.arrsW_w k (by decide) (by simp)) h.liveW_lt (h.sl_keep k (by simp)) h.ls_ok
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl | rfl | rfl
+    · rw [vr]; simp only [ABq]; rd_up
+    · rw [vq]; simp only [ABq]; rd_up
+    all_goals
+      rw [k.num (by decide) (by simp) (fit_w sz (by decide)), h.arrs _ (by decide)]
+      simp only [ABq, ABd]; rd_up
+  · refine VP.taint [.r8] ctxw_taint (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => ?_) fun σ s ⟨e, h⟩ => ?_
+    · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.r8, h₂.2.r8]
+    exact WP.mono (ctxw_ok h.bs h.r8 h.cnt) fun t ⟨hvt, r, m⟩ => ⟨e, h.of_rest r m (by decide), hvt⟩
+  · refine VP.dctx eqExact_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hv⟩ => ?_
+    refine WP.mono (h.eqS_w hv (d := sExact) (a := aRem) (b := aZN) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide)) fun t ⟨ht, hvt, _⟩ => ⟨e, ?_, hvt⟩
+    refine ht.mono (fun j hj => ?_) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ?_)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+      refine ⟨by rcases hj with rfl | rfl | rfl | rfl <;> decide, ?_⟩
+      rcases hj with rfl | rfl | rfl | rfl <;> simp only [ABq] <;> rd_up
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      refine ⟨by rcases hd with rfl | rfl | rfl <;> decide, ?_⟩
+      rcases hd with rfl | rfl | rfl <;> simp only [VB, ABq, AB] <;> rd_ev
+
 end
 
 end VG.Proof.Rsa.Arm.RecoverDet

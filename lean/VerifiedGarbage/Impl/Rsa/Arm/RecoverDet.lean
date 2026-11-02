@@ -22,7 +22,8 @@ secret:
   (`product`);
 * `m = ⌊a / n⌋` and `r = a mod n` (the division on the wide arrays), whether
   `m < n`, and `b - 1 = (n - r) / (m + 1)` with its remainder (on the narrow
-  arrays);
+  arrays; a divisor `m + 1` that is zero modulo `2^(32 w)`, which only
+  `m ≥ n` gives, is replaced by 1);
 * `b² - 4 n` (`product` again), whether it is positive, and its integer
   square root two bits at a time from the top (`sqrtBody`), with the
   remainder;
@@ -70,6 +71,8 @@ def sOk5 : Nat := 76
 def sK : Nat := 80
 /-- `u = 1`. -/
 def sU1 : Nat := 84
+/-- `m + 1` is zero modulo `2^(32 w)`. -/
+def sM0 : Nat := 88
 def sMask : Nat := VG.Impl.Rsa.Arm.Recover.sMask
 
 /-! ## Arrays
@@ -220,8 +223,10 @@ def divAPost : Prog isa := seqs [.block toW, sub3 wT1 wA wN, .block (brw sLt ++ 
 
 def divA : Prog isa := seqs [divAPre, Rsa.Arm.Div.code, .block restoreW, divAPost]
 
-/-- `m + 1`, `n - r`, their quotient and remainder, and whether it is zero. -/
-def divBPre : Prog isa := seqs [sub3 aT1 aZN aOneN, sub3 aM1 aMlo aT1, sub3 aD aN aRlo,
+/-- `m + 1` (1 where it is zero modulo `2^(32 w)`, so that the divisor is
+positive), `n - r`, their quotient and remainder, and whether it is zero. -/
+def divBPre : Prog isa := seqs [sub3 aT2 aZN aOneN, sub3 aT1 aMlo aT2, eqS sM0 aT1 aZN aW,
+  sel aM1 aT1 aOneN sM0, sub3 aD aN aRlo,
   .block (clrW aM1 ++ VG.Impl.Rsa.Arm.CrtValues.divHdr aD aRem aM1 aDt)]
 
 def divB : Prog isa := seqs [divBPre, Rsa.Arm.Div.code, .block ctxw, eqS sExact aRem aZN aW]
