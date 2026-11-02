@@ -21,6 +21,9 @@ validation. `setup_ok`: for a key that passes `KeyOk`,
 (`verifyLike_ok`).
 -/
 
+-- separate module: as `VerifyFn` from `VerifyImplies`, so that the constant-time proof and the registration
+-- can import the correctness proof without the contract tactics `PrevalidatedImplies` uses.
+
 @[expose] public section
 
 namespace VG.Proof.Dsa.RISCV64
