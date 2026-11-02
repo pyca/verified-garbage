@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.Div
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+import VerifiedGarbage.Proof.Rsa.AArch64.InvFinish
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -332,12 +333,13 @@ abbrev InvS (iU iV iX₁ iX₂ iM : Nat) : KIn → State → Prop := fun I t =>
   atop I t.mem iU = 0 ∧ av I t.mem iV = av I t.mem iM ∧ av I t.mem iX₁ = 1 ∧ av I t.mem iX₂ = 0
 
 theorem inverse_eq (iU iV iX₁ iX₂ iM iT : Nat) : inverse iU iV iX₁ iX₂ iM iT =
-    .seq (.block (ws ++ ([.lsl .x .x6 .x12 7] : List Instr)))
-      (.loop (VG.Impl.Rsa.AArch64.Keys.invStep iU iV iX₁ iX₂ iM iT) (.nonzero .x .x6)) := rfl
+    .seq (.block (ws ++ ([.lsr .x .x3 .x12 21] : List Instr)))
+      (.ite (.zero .x .x3) (VG.Impl.Rsa.AArch64.Keys.inverseB iU iV iX₁ iX₂ iM iT)
+        (VG.Impl.Rsa.AArch64.Keys.inverseBits iU iV iX₁ iX₂ iM iT)) := rfl
 
 theorem inverse_ct0 {F : KIn → State → Prop} {iU iV iX₁ iX₂ iM iT : Nat} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block ([.lsl .x .x6 .x12 7] : List Instr))
-      (.loop (VG.Impl.Rsa.AArch64.Keys.invStep iU iV iX₁ iX₂ iM iT) (.nonzero .x .x6))) hc).isSome = true) :
+    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block ([.lsr .x .x3 .x12 21] : List Instr))
+      (.ite (.zero .x .x3) (VG.Impl.Rsa.AArch64.Keys.inverseB iU iV iX₁ iX₂ iM iT) (VG.Impl.Rsa.AArch64.Keys.inverseBits iU iV iX₁ iX₂ iM iT))) hc).isSome = true) :
     RelCT isa (Two (KG F)) (inverse iU iV iX₁ iX₂ iM iT) fun _ _ => True := by
   rw [inverse_eq]; exact kg_ws0 ht
 
@@ -348,8 +350,8 @@ theorem inverse_ct {F : KIn → State → Prop} {iU iV iX₁ iX₂ iM iT : Nat}
     (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT)
     (hF : Stab F [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT] dvRegs)
     {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block ([.lsl .x .x6 .x12 7] : List Instr))
-      (.loop (VG.Impl.Rsa.AArch64.Keys.invStep iU iV iX₁ iX₂ iM iT) (.nonzero .x .x6))) hc).isSome = true) :
+    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block ([.lsr .x .x3 .x12 21] : List Instr))
+      (.ite (.zero .x .x3) (VG.Impl.Rsa.AArch64.Keys.inverseB iU iV iX₁ iX₂ iM iT) (VG.Impl.Rsa.AArch64.Keys.inverseBits iU iV iX₁ iX₂ iM iT))) hc).isSome = true) :
     RelCT isa (Two (KG fun I t => F I t ∧ InvS iU iV iX₁ iX₂ iM I t)) (inverse iU iV iX₁ iX₂ iM iT)
       (Two (KG F)) :=
   kg_ct (inverse_ct0 ht) fun I _ s h _ ⟨hf, hU0, hVM, hX1, hX2⟩ => by

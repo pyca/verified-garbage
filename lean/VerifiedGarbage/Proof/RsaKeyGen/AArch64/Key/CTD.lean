@@ -128,8 +128,8 @@ theorem invFrom_ct {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hjU : j
     (hj2 : j ≠ aX₂) (hjT : j ≠ aT) (hF : Stab F csI allR) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base j .x16 ++ base aV .x17)) copyWords)
       hc₁).isSome = true)
-    (ht₂ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block ([.lsl .x .x6 .x12 7] : List Instr))
-      (.loop (VG.Impl.Rsa.AArch64.Keys.invStep aU aV aX₁ aX₂ j aT) (.nonzero .x .x6))) hc₂).isSome = true) :
+    (ht₂ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block ([.lsr .x .x3 .x12 21] : List Instr))
+      (.ite (.zero .x .x3) (VG.Impl.Rsa.AArch64.Keys.inverseB aU aV aX₁ aX₂ j aT) (VG.Impl.Rsa.AArch64.Keys.inverseBits aU aV aX₁ aX₂ j aT))) hc₂).isSome = true) :
     RelCT isa (Two (KG fun I t => F I t ∧ TopZ aU I t)) (seqs (invFrom j ++ [inverse aU aV aX₁ aX₂ j aT]))
       (Two (KG F)) := by
   have sFT : ∀ (cs : List Rc), (∀ c ∈ cs, c ∈ csI) → cs.all Rc.ok = true → .arr aU ∉ cs →

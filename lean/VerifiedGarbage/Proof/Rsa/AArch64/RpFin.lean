@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RpMont
 import VerifiedGarbage.Proof.Rsa.AArch64.RpHalf
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+import VerifiedGarbage.Proof.Rsa.AArch64.InvFinish
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -186,11 +187,7 @@ theorem finB_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w) (hn : wv s
   have f₆ : Frm B (rg w [fU, fV, fX₁, fX₂, fT] []) u₅.mem u₆.mem := f₆'.widen (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
+    all_goals exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
   have h₆ := h₅.congrG f₆ (by simp) k₆ (by decide)
   rw [vN₅, vU₅] at hv₆
   obtain ⟨hg₆, -, -⟩ := hv₆ hodd hN1

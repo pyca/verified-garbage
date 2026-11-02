@@ -236,9 +236,9 @@ def invStep (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
     [.block [.subImm .x .x6 .x6 1]])))
 
 /-- `x6 := 128 w`. -/
-def invInit : List Instr := ws ++ ([.lsl .x .x6 .x12 7] : List Instr)
+def invInit : List Instr := [.lsl .x .x6 .x12 7]
 
-/-- `128 w` steps of the binary extended Euclidean algorithm. -/
+/-- `128 w` steps of the binary extended Euclidean algorithm, for the width `w` in `x12`. -/
 def inverseBits (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
   .seq (.block invInit) (.loop (invStep iU iV iX₁ iX₂ iM iT) (.nonzero .x .x6))
 
@@ -366,7 +366,8 @@ def inverseN (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
 /-- `inverse u v x₁ x₂ m t`: `[v] = gcd(a, m)` and `[x₂] a ≡ [v] (mod m)`
 for `[u] = a` and the odd `[m] = [v]`. -/
 def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
-  .seq (.block ws) (inverseN iU iV iX₁ iX₂ iM iT)
+  .seq (.block (ws ++ [.lsr .x .x3 .x12 21]))
+    (.ite (.zero .x .x3) (inverseB iU iV iX₁ iX₂ iM iT) (inverseBits iU iV iX₁ iX₂ iM iT))
 
 /-! ## Masks -/
 

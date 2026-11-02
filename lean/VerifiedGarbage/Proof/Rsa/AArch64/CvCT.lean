@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+import VerifiedGarbage.Proof.Rsa.AArch64.InvFinish
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -250,8 +251,8 @@ def GI (p : CvP) (s : State) : Prop :=
     wv s.mem p.B (slot (wk p.k) aX₁) (wk p.k) = 1 ∧ wv s.mem p.B (slot (wk p.k) aX₂) (wk p.k) = 0
 
 theorem inverse_ct {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block [.lsl .x .x6 .x12 7])
-      (.loop (VG.Impl.Rsa.AArch64.Keys.invStep aU aV aX₁ aX₂ aP aT) (.nonzero .x .x6))) hc).isSome = true) :
+    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block ([.lsr .x .x3 .x12 21] : List Instr))
+      (.ite (.zero .x .x3) (VG.Impl.Rsa.AArch64.Keys.inverseB aU aV aX₁ aX₂ aP aT) (VG.Impl.Rsa.AArch64.Keys.inverseBits aU aV aX₁ aX₂ aP aT))) hc).isSome = true) :
     RelCT isa (Two GI) (inverse aU aV aX₁ aX₂ aP aT) (Two GA) :=
   ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.1.ws) ht fun _ _ ⟨h, u0, vm, x1, x2⟩ =>
     WP.mono (inverse_ok h.ws (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide)
@@ -260,10 +261,10 @@ theorem inverse_ct {hc : VG.Taint.Hint VG.AArch64.Taint.T}
       (by decide) (by decide) u0 vm x1 x2) fun _ ⟨_, f, k, _⟩ => h.frm f (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl
-        · exact ⟨aU, by decide, .inr rfl⟩
-        · exact ⟨aV, by decide, .inr rfl⟩
-        · exact ⟨aX₁, by decide, .inr rfl⟩
-        · exact ⟨aX₂, by decide, .inr rfl⟩
+        · exact ⟨aU, by decide, .inl rfl⟩
+        · exact ⟨aV, by decide, .inl rfl⟩
+        · exact ⟨aX₁, by decide, .inl rfl⟩
+        · exact ⟨aX₂, by decide, .inl rfl⟩
         · exact ⟨aT, by decide, .inl rfl⟩) k (by decide)
 
 /-! ## The loads -/

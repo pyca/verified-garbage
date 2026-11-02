@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RpMont
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+import VerifiedGarbage.Proof.Rsa.AArch64.InvFinish
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
@@ -179,8 +180,8 @@ theorem xv_keep {I : RpIn} {s t : State} (hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64) {j
     exact hv
 
 theorem inverse_gct {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block [.lsl .x .x6 .x12 7])
-      (.loop (VG.Impl.Rsa.AArch64.Keys.invStep fU fV fX₁ fX₂ aN fT) (.nonzero .x .x6))) hc).isSome = true) :
+    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block ([.lsr .x .x3 .x12 21] : List Instr))
+      (.ite (.zero .x .x3) (VG.Impl.Rsa.AArch64.Keys.inverseB fU fV fX₁ fX₂ aN fT) (VG.Impl.Rsa.AArch64.Keys.inverseBits fU fV fX₁ fX₂ aN fT))) hc).isSome = true) :
     RelCT isa (Two (FX (XW true true))) (inverse fU fV fX₁ fX₂ aN fT) (Two (FX fun _ _ => True)) := by
   refine ws_ct RpP.B RpP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun p s h => ?_
   have hw := h.ws
@@ -200,11 +201,7 @@ theorem inverse_gct {hc : VG.Taint.Hint VG.AArch64.Taint.T}
   have f : Frm I.B (rg (wk I.k) [fU, fV, fX₁, fX₂, fT] []) s.mem u.mem := f'.widen (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
+    all_goals exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
   exact h.step f (by decide) (by simp) (by simp) k (by decide) fun _ _ _ => trivial
 
 theorem divmod_gct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
