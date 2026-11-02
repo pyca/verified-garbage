@@ -84,6 +84,25 @@ theorem wp_srlw {d n : Reg} {sh : Nat} (h : sh < 32) (h0 : 0 < sh)
 
 end
 
+
+theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
+    BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
+  rw [show BitVec.ofNat 64 a = BitVec.ofNat 64 (a - b) + BitVec.ofNat 64 b by
+    rw [← BitVec.ofNat_add, Nat.sub_add_cancel h], BitVec.add_sub_cancel]
+
+theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
+    (BitVec.ofNat 64 a - BitVec.ofNat 64 b == 0) = decide (a = b) := by
+  by_cases h : a = b
+  · simp [h]
+  · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
+    intro h'
+    apply h
+    have := congrArg BitVec.toNat h'
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
+      Nat.mod_eq_of_lt hb] at this
+    change _ = 0 at this
+    omega
+
 /-- `s'` is `s` with (at most) the registers `ds` changed. -/
 structure Only (ds : List Reg) (s s' : State) : Prop where
   gpr : ∀ r, r ∉ ds → s'.gpr r = s.gpr r
