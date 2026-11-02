@@ -188,7 +188,8 @@ fn vetted_generation_preserves_entropy_refills() {
     target_arch = "arm",
     target_arch = "x86_64",
     target_arch = "x86",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 #[test]
 fn vetted_domain_validation_checks_complete_components() {
