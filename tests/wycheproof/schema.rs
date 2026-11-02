@@ -97,7 +97,8 @@ json_struct! {
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 json_struct! {
     /// A group of one curve and one encoding of the public keys.
