@@ -26,7 +26,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::PKey;
     use verified_garbage::ecdh::{BrainpoolP256r1, PrivateKey};
 
-    use crate::{OPENSSL, VG};
+    use crate::{BenchDyn, OPENSSL, VG};
 
     // Keys below brainpoolP256r1's order.
     let d = [0x42; 32];
@@ -47,14 +47,14 @@ pub fn bench(c: &mut Criterion) {
         PKey::from_ec_key(EcKey::from_private_components(&group, &d_bn, &public).unwrap()).unwrap();
     let mut g = c.benchmark_group("ecdh_brainpoolp256r1");
     // The ids' size is the bytes of the shared secret.
-    g.bench_function(BenchmarkId::new(VG, 32), |b| {
+    g.bench(BenchmarkId::new(VG, 32), |b| {
         b.iter(|| {
             black_box(&vg_private)
                 .diffie_hellman(black_box(&peer))
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 32), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
             let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
             let peer = PKey::from_ec_key(EcKey::from_public_key(&group, &point).unwrap()).unwrap();
@@ -68,10 +68,10 @@ pub fn bench(c: &mut Criterion) {
     #[cfg(target_arch = "x86_64")]
     {
         let mut g = c.benchmark_group("ec_validate_brainpoolp256r1");
-        g.bench_function(BenchmarkId::new(VG, 65), |b| {
+        g.bench(BenchmarkId::new(VG, 65), |b| {
             b.iter(|| BrainpoolP256r1::validate_public_key(black_box(&peer)))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, 65), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, 65), |b| {
             b.iter(|| {
                 let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
                 // OpenSSL validates coordinates and the curve equation while decoding.
@@ -82,7 +82,7 @@ pub fn bench(c: &mut Criterion) {
         let mut one = [0; 32];
         one[31] = 1;
         let key = PrivateKey::<BrainpoolP256r1>::from_bytes(&one);
-        g.bench_function(BenchmarkId::new("scalar-multiply", 65), |b| {
+        g.bench(BenchmarkId::new("scalar-multiply", 65), |b| {
             b.iter(|| black_box(&key).diffie_hellman(black_box(&peer)).is_ok())
         });
         g.finish();

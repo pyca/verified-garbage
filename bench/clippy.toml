@@ -1,0 +1,10 @@
+# Criterion's code that runs a benchmark is generic over the routine's
+# type, so each closure given to these got a copy of it in the benchmark
+# crate: most of its build. `BenchDyn::bench` (benches/primitives/main.rs)
+# passes the routine as a `dyn FnMut`.
+disallowed-methods = [
+    { path = "criterion::BenchmarkGroup::bench_function", reason = "use `BenchDyn::bench` (benches/primitives/main.rs), whose routine is a `dyn FnMut`" },
+    { path = "criterion::BenchmarkGroup::bench_with_input", reason = "use `BenchDyn::bench` (benches/primitives/main.rs), whose routine is a `dyn FnMut`" },
+    { path = "criterion::Criterion::bench_function", reason = "use `BenchDyn::bench` (benches/primitives/main.rs) on a group, whose routine is a `dyn FnMut`" },
+    { path = "criterion::Criterion::bench_with_input", reason = "use `BenchDyn::bench` (benches/primitives/main.rs) on a group, whose routine is a `dyn FnMut`" },
+]

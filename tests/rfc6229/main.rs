@@ -1,4 +1,6 @@
-//! All RFC 6229 §2 answers, read from the byte-for-byte vendored RFC.
+//! RC4: all RFC 6229 §2 answers, read from the byte-for-byte vendored RFC,
+//! whole and streaming; and round trips under keys of the lengths it has
+//! none of.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -81,39 +83,20 @@ fn every_published_answer_and_streaming_split() {
     assert_eq!(answers, 252);
 }
 
-/// Independent scalar reference for generated boundary inputs, not a
-/// source of known-answer vectors. Public APIs always use verified assembly.
-fn reference(key: &[u8], data: &mut [u8]) {
-    let mut table: Vec<u8> = (0..=255).collect();
-    let mut j = 0u8;
-    for i in 0..256 {
-        j = j.wrapping_add(table[i]).wrapping_add(key[i % key.len()]);
-        table.swap(i, usize::from(j));
-    }
-    let mut i = 0u8;
-    j = 0;
-    for byte in data {
-        i = i.wrapping_add(1);
-        j = j.wrapping_add(table[usize::from(i)]);
-        table.swap(usize::from(i), usize::from(j));
-        let idx = table[usize::from(i)].wrapping_add(table[usize::from(j)]);
-        *byte ^= table[usize::from(idx)];
-    }
-}
-
+/// Keys outside 1–256 bytes are errors; under keys of lengths RFC 6229 has
+/// none of (1, 2, 255 and 256 bytes), decryption in pieces undoes
+/// encryption.
 #[test]
-fn generated_key_boundaries_and_round_trips() {
+fn key_lengths_and_round_trips() {
     assert_eq!(Rc4::new(&[]).err(), Some(Error::InvalidKeyLength));
     assert_eq!(Rc4::new(&[0; 257]).err(), Some(Error::InvalidKeyLength));
     for length in [1, 2, 255, 256] {
         let key: Vec<u8> = crate::bytes::pattern(length, 37, 0);
         let original: Vec<u8> = crate::bytes::pattern(513, 19, 7);
-        let mut expected = original.clone();
-        reference(&key, &mut expected);
         let mut data = original.clone();
         let mut cipher = Rc4::new(&key).unwrap();
         cipher.apply_keystream(&mut data);
-        assert_eq!(data, expected);
+        assert_ne!(data, original);
         let mut cipher = Rc4::new(&key).unwrap();
         for chunk in data.chunks_mut(17) {
             cipher.apply_keystream(chunk);

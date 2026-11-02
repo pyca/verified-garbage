@@ -1,6 +1,7 @@
-//! SEC 1 conversions of the public keys in Wycheproof's ECDSA groups,
-//! plus its compressed ECDH encodings, including malformed coordinates: a
-//! file per curve, each on the architectures of its curve.
+//! SEC 1 conversions: the public keys of Wycheproof's ECDSA groups,
+//! compressed and back, and its compressed ECDH encodings, including
+//! malformed coordinates, decompressed, compressed back and used: a file per
+//! curve, each on the architectures of its curve.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -42,13 +43,10 @@ macro_rules! public_keys {
             crate::wycheproof::harness::par_each(&file.test_groups, |g| {
                 let public: [u8; 2 * $len + 1] =
                     g.params.public_key.uncompressed.0[..].try_into().unwrap();
-                // The reference encoding follows SEC 1 §2.3.3 directly
-                // from the published uncompressed point's x and y bytes.
-                let mut expected = [0; $len + 1];
-                expected[0] = 2 | (public[2 * $len] & 1);
-                expected[1..].copy_from_slice(&public[1..1 + $len]);
-                assert_eq!($curve::compress_public_key(&public), Some(expected));
-                assert_eq!($curve::decompress_public_key(&expected), Some(public));
+                // Wycheproof's compressed points are checked against
+                // `compress_public_key` by `compressed_peers`.
+                let compressed = $curve::compress_public_key(&public).unwrap();
+                assert_eq!($curve::decompress_public_key(&compressed), Some(public));
             });
         }
     };

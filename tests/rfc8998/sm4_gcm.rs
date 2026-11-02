@@ -1,6 +1,6 @@
-//! SM4-GCM against RFC 8998's example and a reference GCM over SM4-ECB.
+//! SM4-GCM on RFC 8998's example; Wycheproof's vectors are in
+//! `tests/wycheproof/sm4_gcm.rs`.
 
-use verified_garbage::sm4_ecb::Sm4Ecb;
 use verified_garbage::sm4_gcm::{Error, Sm4Gcm};
 use verified_garbage_test_vectors::unhex_spaced;
 
@@ -169,142 +169,8 @@ fn rfc8998_example_in_pieces() {
     }
 }
 
-/// GF(2¹²⁸) multiplication, SP 800-38D §6.3 Algorithm 1, bit by bit.
-fn mul(x: u128, y: u128) -> u128 {
-    let r = 0xE1u128 << 120;
-    let (mut z, mut v) = (0u128, y);
-    for i in 0..128 {
-        if (x >> (127 - i)) & 1 == 1 {
-            z ^= v;
-        }
-        v = if v & 1 == 1 { (v >> 1) ^ r } else { v >> 1 };
-    }
-    z
-}
-
-/// GHASH (§6.4) of `data` padded with zeros to whole blocks.
-fn ghash(h: u128, y: u128, data: &[u8]) -> u128 {
-    data.chunks(16).fold(y, |y, c| {
-        let mut b = [0; 16];
-        b[..c.len()].copy_from_slice(c);
-        mul(y ^ u128::from_be_bytes(b), h)
-    })
-}
-
-/// GCM-AE (§7.1) over SM4-ECB, from the definitions.
-fn reference(key: &[u8; 16], nonce: &[u8], aad: &[u8], pt: &[u8]) -> (Vec<u8>, [u8; 16]) {
-    let ecb = Sm4Ecb::new(key);
-    let ciph = |x: u128| {
-        let mut b = x.to_be_bytes();
-        ecb.encrypt(&mut b).unwrap();
-        u128::from_be_bytes(b)
-    };
-    let h = ciph(0);
-    let j0 = if nonce.len() == 12 {
-        let mut b = [0; 16];
-        b[..12].copy_from_slice(nonce);
-        b[15] = 1;
-        u128::from_be_bytes(b)
-    } else {
-        ghash(
-            h,
-            ghash(h, 0, nonce),
-            &(8 * nonce.len() as u128).to_be_bytes(),
-        )
-    };
-    let inc32 = |x: u128, k: u32| (x & !0xFFFF_FFFF) | (x as u32).wrapping_add(k) as u128;
-    let mut ct = Vec::with_capacity(pt.len());
-    for (i, c) in pt.chunks(16).enumerate() {
-        let ks = ciph(inc32(j0, i as u32 + 1)).to_be_bytes();
-        ct.extend(crate::bytes::xor(c, &ks));
-    }
-    let lens = ((8 * aad.len() as u128) << 64) | (8 * ct.len() as u128);
-    let s = mul(ghash(h, ghash(h, 0, aad), &ct) ^ lens, h);
-    (ct, (s ^ ciph(j0)).to_be_bytes())
-}
-
-/// Bytes that are not a pattern.
-fn bytes(seed: u8, n: usize) -> Vec<u8> {
-    (0..n)
-        .map(|i| {
-            (i as u32)
-                .wrapping_mul(2654435761)
-                .wrapping_add(seed as u32)
-                .to_be_bytes()[0]
-        })
-        .collect()
-}
-
-fn check(key: &Sm4Gcm, k: &[u8; 16], nonce: &[u8], aad: &[u8], pt: &[u8]) {
-    let (ct, tag) = reference(k, nonce, aad, pt);
-    let mut data = pt.to_vec();
-    assert_eq!(key.encrypt_in_place(nonce, aad, &mut data), Ok(tag));
-    assert_eq!(data, ct);
-    assert_eq!(key.decrypt_in_place(nonce, aad, &mut data, &tag), Ok(()));
-    assert_eq!(data, pt);
-}
-
-/// Every nonce length up to 33 bytes, every length of additional data and
-/// text up to 3 blocks and more, against the reference.
-#[test]
-fn against_reference() {
-    let k: [u8; 16] = bytes(1, 16).try_into().unwrap();
-    let key = Sm4Gcm::new(&k);
-    for nonce_len in 1..=33 {
-        check(&key, &k, &bytes(2, nonce_len), &bytes(3, 21), &bytes(4, 37));
-    }
-    for aad_len in 0..=50 {
-        for text_len in (0..=50).chain([63, 64, 65, 255, 256, 257, 4095, 4096, 4097, 4129]) {
-            check(
-                &key,
-                &k,
-                &bytes(5, 12),
-                &bytes(6, aad_len),
-                &bytes(7, text_len),
-            );
-        }
-    }
-    // Long messages: 70,001 bytes, and 70,000 of them from an odd address.
-    let long = bytes(8, 70_001);
-    check(&key, &k, &bytes(9, 12), &bytes(10, 3), &long);
-    check(&key, &k, &bytes(9, 7), &bytes(10, 3), &long[1..]);
-}
-
-/// A long text in pieces of every length up to 40 bytes, against the
-/// reference.
-#[test]
-fn pieces_against_reference() {
-    let k: [u8; 16] = bytes(11, 16).try_into().unwrap();
-    let key = Sm4Gcm::new(&k);
-    let nonce = bytes(12, 16);
-    let aad = bytes(13, 29);
-    let pt = bytes(14, 9000);
-    let (ct, tag) = reference(&k, &nonce, &aad, &pt);
-    for step in 1..=40 {
-        let mut enc = key.encryptor(&nonce).unwrap();
-        for piece in aad.chunks(step) {
-            enc.update_aad(piece).unwrap();
-        }
-        let mut data = pt.clone();
-        for (i, piece) in data.chunks_mut(step * 97 % 5000 + step).enumerate() {
-            // Pieces of the step's length and a long one in turn.
-            let (a, b) = piece.split_at_mut(piece.len().min(step + i % 3));
-            enc.update(a).unwrap();
-            enc.update(b).unwrap();
-        }
-        assert_eq!(enc.finalize(), tag);
-        assert_eq!(data, ct);
-        let mut dec = key.decryptor(&nonce).unwrap();
-        dec.update_aad(&aad).unwrap();
-        for piece in data.chunks_mut(step) {
-            dec.update(piece).unwrap();
-        }
-        assert_eq!(dec.finalize(&tag), Ok(()));
-        assert_eq!(data, pt);
-    }
-}
-
-/// An empty nonce is an error; empty messages have tags.
+/// An empty nonce is an error; an empty message has a tag, the same
+/// streaming as at once.
 #[test]
 fn nonces_and_empty_messages() {
     let k = [0x5a; 16];
@@ -319,8 +185,9 @@ fn nonces_and_empty_messages() {
     );
     assert!(key.encryptor(&[]).is_err());
     assert!(key.decryptor(&[]).is_err());
-    let (_, tag) = reference(&k, &[1], &[], &[]);
+    let tag = key.encrypt_in_place(&[1], &[], &mut []).unwrap();
     assert_eq!(key.encryptor(&[1]).unwrap().finalize(), tag);
+    assert_eq!(key.decrypt_in_place(&[1], &[], &mut [], &tag), Ok(()));
     assert_eq!(key.decryptor(&[1]).unwrap().finalize(&tag), Ok(()));
     assert_eq!(Error::TagMismatch.to_string(), "SM4-GCM tag does not match");
 }

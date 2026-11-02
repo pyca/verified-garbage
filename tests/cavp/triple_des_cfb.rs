@@ -1,7 +1,5 @@
 //! Triple DES-CFB64: NIST CAVP's multi-block message tests, unmodified under
-//! vectors/; and CFB64 from ECB (`TripleDesEcb`, tested on CAVP's ECB
-//! vectors) on every length up to a few dozen blocks, partial last segments
-//! included, for each key length.
+//! vectors/, truncated and split (`tests/modes.rs`), for each key length.
 
 #![cfg(any(
     target_arch = "x86",
@@ -13,50 +11,18 @@
 ))]
 
 use verified_garbage::triple_des_cfb::{InvalidKeyLength, TripleDesCfb64};
-use verified_garbage::triple_des_ecb::TripleDesEcb;
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
-/// CFB64 from ECB: the output and the block to continue from (the last
-/// ciphertext block, or after a partial segment `CIPH_K` of the last whole
-/// one's).
-fn reference(key: &[u8], iv: [u8; 8], data: &[u8], encrypt: bool) -> (Vec<u8>, [u8; 8]) {
-    let ecb = TripleDesEcb::new(key).unwrap();
-    let mut chain = iv;
-    let mut out = Vec::new();
-    for block in data.chunks(8) {
-        let mut o = chain;
-        ecb.encrypt(&mut o).unwrap();
-        let y: Vec<u8> = crate::bytes::xor(block, &o);
-        let c = if encrypt { &y[..] } else { block };
-        chain = if block.len() == 8 {
-            c.try_into().unwrap()
-        } else {
-            o
-        };
-        out.extend(y);
-    }
-    (out, chain)
-}
-
-/// `plaintext` encrypts to `ciphertext` and decrypts back, whole and split
-/// at every block boundary, leaving the last ciphertext block as the block to
-/// continue from.
+/// `plaintext` encrypts to `ciphertext` and decrypts back, truncated and
+/// split (`crate::modes::check`).
 fn check(ctx: &TripleDesCfb64, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
-    let after: [u8; 8] = ciphertext[ciphertext.len() - 8..].try_into().unwrap();
-    for offset in (0..=plaintext.len()).step_by(8) {
-        let mut chain = iv;
-        let mut buffer = plaintext.to_vec();
-        ctx.encrypt(&mut chain, &mut buffer[..offset]);
-        ctx.encrypt(&mut chain, &mut buffer[offset..]);
-        assert_eq!(buffer, ciphertext);
-        assert_eq!(chain, after);
-        let mut chain = iv;
-        ctx.decrypt(&mut chain, &mut buffer[..offset]);
-        ctx.decrypt(&mut chain, &mut buffer[offset..]);
-        assert_eq!(buffer, plaintext);
-        assert_eq!(chain, after);
-    }
+    let vector = (plaintext, ciphertext);
+    let cfb = crate::modes::Feedback::Ciphertext;
+    crate::modes::check(cfb, iv, vector, vector, &|iv, b| ctx.encrypt(iv, b));
+    crate::modes::check(cfb, iv, vector, (ciphertext, plaintext), &|iv, b| {
+        ctx.decrypt(iv, b)
+    });
 }
 
 fn check_file(text: &str) -> usize {
@@ -101,31 +67,6 @@ fn cavp_mmt() {
         )),
         20
     );
-}
-
-/// Every length up to 27 blocks, in each direction.
-#[test]
-fn from_ecb() {
-    let data: Vec<u8> = crate::bytes::pattern(8 * 27, 31, 7);
-    let iv: [u8; 8] = crate::bytes::pattern_array(11, 5);
-    for key_len in [16, 24] {
-        let key: Vec<u8> = crate::bytes::pattern(key_len, 17, 3);
-        let ctx = TripleDesCfb64::new(&key).unwrap();
-        for len in 0..=data.len() {
-            for encrypt in [true, false] {
-                let (output, after) = reference(&key, iv, &data[..len], encrypt);
-                let mut chain = iv;
-                let mut buffer = data[..len].to_vec();
-                if encrypt {
-                    ctx.encrypt(&mut chain, &mut buffer);
-                } else {
-                    ctx.decrypt(&mut chain, &mut buffer);
-                }
-                assert_eq!(buffer, output);
-                assert_eq!(chain, after);
-            }
-        }
-    }
 }
 
 #[test]

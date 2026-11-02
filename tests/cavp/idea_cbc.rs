@@ -1,6 +1,6 @@
 //! IDEA-CBC: pyca/cryptography's vectors (derived from the AESVS MMT data,
-//! verified against Botan), unmodified under vectors/; and CBC from ECB
-//! (`IdeaEcb`, tested on the NESSIE vectors) on every number of blocks up to 27.
+//! verified against Botan), unmodified under vectors/, whole and split at
+//! every block.
 
 #![cfg(any(
     target_arch = "x86",
@@ -12,32 +12,14 @@
 ))]
 
 use verified_garbage::idea_cbc::{Error, IdeaCbc};
-use verified_garbage::idea_ecb::IdeaEcb;
 
 use verified_garbage_test_vectors::unhex;
-
-/// CBC encryption from ECB, one block at a time.
-fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> Vec<u8> {
-    let ecb = IdeaEcb::new(key).unwrap();
-    let mut chain = iv;
-    let mut out = Vec::new();
-    for block in data.chunks(8) {
-        let mut b: Vec<u8> = crate::bytes::xor(block, &chain);
-        ecb.encrypt(&mut b).unwrap();
-        chain.copy_from_slice(&b);
-        out.extend_from_slice(&b);
-    }
-    out
-}
 
 /// `plaintext` encrypts to `ciphertext` and decrypts back, whole and split
 /// at every block boundary, leaving the last ciphertext block as the
 /// chaining value.
 fn check(ctx: &IdeaCbc, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
-    let after: [u8; 8] = match ciphertext.len() {
-        0 => iv,
-        len => ciphertext[len - 8..].try_into().unwrap(),
-    };
+    let after: [u8; 8] = *ciphertext.last_chunk().unwrap();
     for offset in (0..=plaintext.len()).step_by(8) {
         let mut chain = iv;
         let mut buffer = plaintext.to_vec();
@@ -73,21 +55,6 @@ fn pyca_vectors() {
         );
     }
     assert_eq!(key_lens, [16; 20]);
-}
-
-/// Every number of blocks up to 27.
-#[test]
-fn from_ecb() {
-    let data: Vec<u8> = crate::bytes::pattern(8 * 27, 31, 7);
-    let iv: [u8; 8] = crate::bytes::pattern_array(11, 5);
-    {
-        let key: Vec<u8> = crate::bytes::pattern(16, 17, 3);
-        let ctx = IdeaCbc::new(&key).unwrap();
-        for blocks in 0..=27 {
-            let input = &data[..8 * blocks];
-            check(&ctx, iv, input, &reference(&key, iv, input));
-        }
-    }
 }
 
 #[test]

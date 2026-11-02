@@ -22,7 +22,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::rsa::Rsa;
     use verified_garbage::rsa_keygen::{generate_from, generate_prime_from, key_from_primes};
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
     // A prime of `bits` bits from OpenSSL that `e = 65537` admits, as the
     // benchmarks below need: OpenSSL does not test `gcd(p - 1, e)`, which
     // fails for one prime in 65537.
@@ -52,7 +52,7 @@ pub fn bench(c: &mut Criterion) {
     g.sample_size(10);
     for bits in [1024, 1536, 2048] {
         let rand = OnceCell::new();
-        g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+        g.bench(BenchmarkId::new(VG, bits / 8), |b| {
             let rand = rand.get_or_init(|| {
                 fixed_octets(bits, |r| {
                     generate_prime_from(bits, &[1, 0, 1], None, r).is_ok()
@@ -68,7 +68,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, bits / 8), |b| {
             b.iter(|| {
                 let mut p = BigNum::new().unwrap();
                 p.generate_prime(black_box(bits as i32), false, None, None)
@@ -96,7 +96,7 @@ pub fn bench(c: &mut Criterion) {
         (4096, KeySize::Rsa4096),
     ] {
         let rand = OnceCell::new();
-        g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+        g.bench(BenchmarkId::new(VG, bits / 8), |b| {
             let rand = rand.get_or_init(|| {
                 let mut draws: Vec<(usize, Vec<u8>)> = (0..9)
                     .map(|i| {
@@ -112,10 +112,10 @@ pub fn bench(c: &mut Criterion) {
                 generate_from(black_box(bits), black_box(&[1, 0, 1]), black_box(rand)).unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, bits / 8), |b| {
             b.iter(|| Rsa::generate(black_box(bits as u32)).unwrap())
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, bits / 8), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, bits / 8), |b| {
             b.iter(|| KeyPair::generate(black_box(size)).unwrap())
         });
     }
@@ -138,12 +138,12 @@ pub fn bench(c: &mut Criterion) {
         let (pv, qv) = (p.to_vec(), q.to_vec());
         assert!(key_from_primes(&[1, 0, 1], &pv, &qv).unwrap().check_key());
         let mut ctx = BigNumContext::new().unwrap();
-        g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+        g.bench(BenchmarkId::new(VG, bits / 8), |b| {
             b.iter(|| {
                 key_from_primes(black_box(&[1, 0, 1]), black_box(&pv), black_box(&qv)).unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, bits / 8), |b| {
             b.iter(|| {
                 let one = BigNum::from_u32(1).unwrap();
                 let e = BigNum::from_u32(65537).unwrap();
@@ -197,7 +197,7 @@ fn bench_candidate(
     sizes: &[usize],
     admitted_prime: impl Fn(i32) -> openssl::bn::BigNum,
 ) {
-    use crate::{OPENSSL, VG};
+    use crate::{BenchDyn, OPENSSL, VG};
     use criterion::BenchmarkId;
     use openssl::bn::BigNumContext;
     use std::hint::black_box;
@@ -224,7 +224,7 @@ fn bench_candidate(
             prime
         );
         let mut ctx = BigNumContext::new().unwrap();
-        g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+        g.bench(BenchmarkId::new(VG, bits / 8), |b| {
             b.iter(|| {
                 generate_prime_from(
                     black_box(bits),
@@ -235,7 +235,7 @@ fn bench_candidate(
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, bits / 8), |b| {
             b.iter(|| assert!(black_box(&p).is_prime_fasttest(16, &mut ctx, true).unwrap()))
         });
     }

@@ -194,6 +194,30 @@ macro_rules! whole_pbkdf2 {
                     }
                 )*
             }
+
+            /// With no expected value computed here, for the hash
+            /// functions without published PBKDF2 vectors too: a key of
+            /// three blocks less a byte begins with the key of one block
+            /// derived from the same inputs (block `i` of a derived key
+            /// depends on `i` alone), and `pbkdf2_hmac_verify` accepts it
+            /// and rejects it with a byte changed. The vectors are in
+            /// `tests/wycheproof/pbkdf2_<hash>.rs`, where there are any.
+            #[test]
+            fn prefix_and_verify() {
+                let iterations = core::num::NonZeroU32::new(3).unwrap();
+                let mut long = [0; 3 * $output - 1];
+                super::super::pbkdf2_hmac::<$hash>(b"password", b"salt", iterations, &mut long);
+                let mut short = [0; $output];
+                super::super::pbkdf2_hmac::<$hash>(b"password", b"salt", iterations, &mut short);
+                assert_eq!(long[..$output], short);
+                let verify = super::super::pbkdf2_hmac_verify::<$hash, { 3 * $output - 1 }>;
+                assert_eq!(verify(b"password", b"salt", iterations, &long), Ok(()));
+                long[$output] ^= 1;
+                assert_eq!(
+                    verify(b"password", b"salt", iterations, &long),
+                    Err(super::super::KeyMismatch)
+                );
+            }
         }
     };
 }

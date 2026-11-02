@@ -1,6 +1,5 @@
 //! Triple DES-CFB8: NIST CAVP's multi-block message tests, unmodified under
-//! vectors/; and CFB8 from ECB (`TripleDesEcb`, tested on CAVP's ECB
-//! vectors) on every length up to a few dozen bytes, for each key length.
+//! vectors/, whole and split at every byte, for each key length.
 
 #![cfg(any(
     target_arch = "x86",
@@ -12,37 +11,15 @@
 ))]
 
 use verified_garbage::triple_des_cfb8::{InvalidKeyLength, TripleDesCfb8};
-use verified_garbage::triple_des_ecb::TripleDesEcb;
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
-/// CFB8 from ECB: the output and the input block to continue from.
-fn reference(key: &[u8], iv: [u8; 8], data: &[u8], encrypt: bool) -> (Vec<u8>, [u8; 8]) {
-    let ecb = TripleDesEcb::new(key).unwrap();
-    let mut input = iv;
-    let mut out = Vec::new();
-    for &x in data {
-        let mut o = input;
-        ecb.encrypt(&mut o).unwrap();
-        let y = x ^ o[0];
-        input.rotate_left(1);
-        input[7] = if encrypt { y } else { x };
-        out.push(y);
-    }
-    (out, input)
-}
-
-/// The input block after `ciphertext` from `iv`.
-fn after(iv: [u8; 8], ciphertext: &[u8]) -> [u8; 8] {
-    let mut all = iv.to_vec();
-    all.extend_from_slice(ciphertext);
-    all[all.len() - 8..].try_into().unwrap()
-}
-
 /// `plaintext` encrypts to `ciphertext` and decrypts back, whole and split
-/// at every byte.
+/// at every byte, leaving the shift register holding the last eight bytes
+/// of the IV and the ciphertext.
 fn check(ctx: &TripleDesCfb8, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
-    let next = after(iv, ciphertext);
+    let register = [&iv[..], ciphertext].concat();
+    let next: [u8; 8] = register[register.len() - 8..].try_into().unwrap();
     for offset in 0..=plaintext.len() {
         let mut chain = iv;
         let mut buffer = plaintext.to_vec();
@@ -100,31 +77,6 @@ fn cavp_mmt() {
         )),
         20
     );
-}
-
-/// Every length up to 40 bytes, in each direction.
-#[test]
-fn from_ecb() {
-    let data: Vec<u8> = crate::bytes::pattern(40, 31, 7);
-    let iv: [u8; 8] = crate::bytes::pattern_array(11, 5);
-    for key_len in [16, 24] {
-        let key: Vec<u8> = crate::bytes::pattern(key_len, 17, 3);
-        let ctx = TripleDesCfb8::new(&key).unwrap();
-        for len in 0..=data.len() {
-            for encrypt in [true, false] {
-                let (output, next) = reference(&key, iv, &data[..len], encrypt);
-                let mut chain = iv;
-                let mut buffer = data[..len].to_vec();
-                if encrypt {
-                    ctx.encrypt(&mut chain, &mut buffer);
-                } else {
-                    ctx.decrypt(&mut chain, &mut buffer);
-                }
-                assert_eq!(buffer, output);
-                assert_eq!(chain, next);
-            }
-        }
-    }
 }
 
 #[test]

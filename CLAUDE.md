@@ -90,6 +90,13 @@ own changes are rebuilt either way, on top of the restored build.
   files byte for byte into a directory under `vectors/`, with a new
   `vectors/sources/<name>.toml` for that directory saying where they came
   from (`ci/check_vectors.py` checks it), and read them from there.
+  Tests check published vectors, never a reference implementation written
+  in the tests (a mode built from ECB, a KDF from its MAC, a model of the
+  cipher or the encoding): the formal proofs cover the rest. To reach the
+  code's other paths, use the vectors in other ways (truncated, in pieces,
+  split at every point, at unaligned offsets), or check the API against
+  itself with no model (decryption undoes encryption; a batch gives what
+  the same blocks give one at a time).
 * **Every public API has a benchmark** in `bench/benches/primitives/`,
   next to OpenSSL's equivalent, and aws-lc-rs's if it has one. The
   Benchmarks workflow runs only by hand, never on pull requests: a change

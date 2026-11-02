@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::cast5_ofb::Cast5Ofb;
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     // CAST5 is in OpenSSL 3's legacy provider; retain the default provider
     // for the other algorithms benchmarked by this process.
@@ -41,7 +41,7 @@ pub fn bench(c: &mut Criterion) {
             group.throughput(Throughput::Bytes(size as u64));
             let data = vec![0x5a; size];
             let mut buffer = crate::InPlace::new(size, &data);
-            group.bench_function(BenchmarkId::new(VG, size), |b| {
+            group.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
                     let ctx = Cast5Ofb::new(black_box(key)).unwrap();
                     let mut chain = black_box(iv);
@@ -51,7 +51,7 @@ pub fn bench(c: &mut Criterion) {
                 })
             });
             let mut output = vec![0; size + 8];
-            group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            group.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
                     let mut ctx =
                         Crypter::new(cipher, mode, black_box(key), Some(black_box(&iv))).unwrap();

@@ -1,8 +1,9 @@
 //! SM4 ECB: Appendix A of the Internet-Draft draft-ribose-cfrg-sm4-10, unmodified
 //! under vectors/ (its round keys and intermediate values are checked in
 //! `lean/VerifiedGarbageTest/Sm4.lean`). Its single blocks and its repeated
-//! encryptions (A.1) and its ECB examples (A.2.1) test ECB directly; its
-//! CBC, OFB, CFB and CTR examples (A.2.2–A.2.5) are computed here from ECB.
+//! encryptions (A.1) and its ECB examples (A.2.1); its CBC, OFB, CFB and CTR
+//! examples (A.2.2–A.2.5) are in `sm4_cbc.rs`, `sm4_ofb.rs`, `sm4_cfb.rs`
+//! and `sm4_ctr.rs`.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -16,7 +17,6 @@
 use verified_garbage::sm4_ecb::{Error, Sm4Ecb};
 
 use super::{field, section};
-use crate::bytes::xor;
 
 struct Example {
     key: [u8; 16],
@@ -30,12 +30,6 @@ fn example(text: &str) -> Example {
         plaintext: field(text, "Plaintext:"),
         ciphertext: field(text, "Ciphertext:"),
     }
-}
-
-fn encrypt_block(ctx: &Sm4Ecb, block: &[u8]) -> Vec<u8> {
-    let mut out = block.to_vec();
-    ctx.encrypt(&mut out).unwrap();
-    out
 }
 
 /// ECB in both directions, whole and split at every block boundary.
@@ -143,89 +137,6 @@ fn unaligned_data() {
         assert_eq!(buffer[offset..], e.ciphertext[..]);
         ctx.decrypt(&mut buffer[offset..]).unwrap();
         assert_eq!(buffer[offset..], e.plaintext[..]);
-    }
-}
-
-#[test]
-fn cbc() {
-    for (from, to) in [
-        ("A.2.2.1.  Example 1", "A.2.2.2.  Example 2"),
-        ("A.2.2.2.  Example 2", "A.2.3.  SM4-OFB Examples"),
-    ] {
-        let text = &section(from, to);
-        let e = example(text);
-        let ctx = Sm4Ecb::new(&e.key);
-        let mut chain = field(text, "IV:");
-        let mut ciphertext: Vec<u8> = Vec::new();
-        for block in e.plaintext.chunks(16) {
-            chain = encrypt_block(&ctx, &xor(block, &chain));
-            ciphertext.extend(&chain);
-        }
-        assert_eq!(ciphertext, e.ciphertext);
-        // Decryption of all the blocks at once.
-        let mut decrypted = e.ciphertext.clone();
-        ctx.decrypt(&mut decrypted).unwrap();
-        let previous = [
-            field(text, "IV:"),
-            e.ciphertext[..e.ciphertext.len() - 16].to_vec(),
-        ]
-        .concat();
-        assert_eq!(xor(&decrypted, &previous), e.plaintext);
-    }
-}
-
-#[test]
-fn ofb() {
-    for (from, to) in [
-        ("A.2.3.1.  Example 1", "A.2.3.2.  Example 2"),
-        ("A.2.3.2.  Example 2", "A.2.4.  SM4-CFB Examples"),
-    ] {
-        let text = &section(from, to);
-        let e = example(text);
-        let ctx = Sm4Ecb::new(&e.key);
-        let mut state = field(text, "IV:");
-        let mut keystream: Vec<u8> = Vec::new();
-        for _ in e.plaintext.chunks(16) {
-            state = encrypt_block(&ctx, &state);
-            keystream.extend(&state);
-        }
-        assert_eq!(xor(&e.plaintext, &keystream), e.ciphertext);
-    }
-}
-
-#[test]
-fn cfb() {
-    for (from, to) in [
-        ("A.2.4.1.  Example 1", "A.2.4.2.  Example 2"),
-        ("A.2.4.2.  Example 2", "A.2.5.  SM4-CTR Examples"),
-    ] {
-        let text = &section(from, to);
-        let e = example(text);
-        let ctx = Sm4Ecb::new(&e.key);
-        let mut chain = field(text, "IV:");
-        let mut ciphertext: Vec<u8> = Vec::new();
-        for block in e.plaintext.chunks(16) {
-            chain = xor(block, &encrypt_block(&ctx, &chain));
-            ciphertext.extend(&chain);
-        }
-        assert_eq!(ciphertext, e.ciphertext);
-    }
-}
-
-#[test]
-fn ctr() {
-    for (from, to) in [
-        ("A.2.5.1.  Example 1", "A.2.5.2.  Example 2"),
-        ("A.2.5.2.  Example 2", "Appendix B.  Sample Implementation"),
-    ] {
-        let text = &section(from, to);
-        let e = example(text);
-        let ctx = Sm4Ecb::new(&e.key);
-        let iv = u128::from_be_bytes(field(text, "IV:").try_into().unwrap());
-        // All the counter blocks at once.
-        let mut keystream = crate::bytes::counter_blocks(iv, e.plaintext.len() / 16);
-        ctx.encrypt(&mut keystream).unwrap();
-        assert_eq!(xor(&e.plaintext, &keystream), e.ciphertext);
     }
 }
 

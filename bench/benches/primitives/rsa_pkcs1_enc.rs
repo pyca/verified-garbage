@@ -27,7 +27,7 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::rsa::{PrivateKey, PublicKey};
     use verified_garbage::rsa_pkcs1_enc::{decrypt, encrypt_with_rng};
 
-    use crate::{AWS_LC, OPENSSL, VG, fixed_tape};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
     // Moduli of 2048, 3072 and 4096 bits with the exponent 65537; the ids'
     // size is the modulus' bytes. Each library loads the key once, outside
     // the measurements. verified-garbage takes its padding string from a
@@ -48,7 +48,7 @@ pub fn bench(c: &mut Criterion) {
         )
         .unwrap();
         let mut out = vec![0; k];
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 let mut tape = fixed_tape(k as u64);
                 encrypt_with_rng(black_box(&vg_key), black_box(&msg), |buf| {
@@ -58,7 +58,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 black_box(&openssl_key)
                     .public_encrypt(black_box(&msg), &mut out, Padding::PKCS1)
@@ -72,7 +72,7 @@ pub fn bench(c: &mut Criterion) {
         let mut pt = vec![0; k];
         let len = key.private_decrypt(&ct, &mut pt, Padding::PKCS1).unwrap();
         assert_eq!(pt[..len], msg);
-        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, k), |b| {
             b.iter(|| {
                 black_box(&aws_key)
                     .encrypt(black_box(&msg), &mut out)
@@ -107,10 +107,10 @@ pub fn bench(c: &mut Criterion) {
         let mut ct = vec![0; k];
         key.public_encrypt(&msg, &mut ct, Padding::PKCS1).unwrap();
         let mut out = vec![0; k];
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| decrypt(black_box(&vg_key), black_box(&ct)).unwrap())
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 black_box(&key)
                     .private_decrypt(black_box(&ct), &mut out, Padding::PKCS1)
@@ -128,7 +128,7 @@ pub fn bench(c: &mut Criterion) {
         )
         .unwrap();
         assert_eq!(aws_key.decrypt(&ct, &mut out).unwrap(), msg);
-        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, k), |b| {
             b.iter(|| {
                 black_box(&aws_key)
                     .decrypt(black_box(&ct), &mut out)

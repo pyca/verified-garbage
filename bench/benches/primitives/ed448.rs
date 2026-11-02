@@ -20,7 +20,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::sign::{Signer, Verifier};
     use verified_garbage::ed448::{SigningKey, VerifyingKey};
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     let seed = [0x42; 57];
     let key = SigningKey::from_seed(&seed);
@@ -29,10 +29,10 @@ pub fn bench(c: &mut Criterion) {
     let openssl_public = PKey::public_key_from_raw_bytes(public.as_bytes(), Id::ED448).unwrap();
 
     let mut g = c.benchmark_group("ed448_keygen");
-    g.bench_function(BenchmarkId::new(VG, 57), |b| {
+    g.bench(BenchmarkId::new(VG, 57), |b| {
         b.iter(|| SigningKey::from_seed(black_box(&seed)))
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 57), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 57), |b| {
         b.iter(|| {
             PKey::private_key_from_raw_bytes(black_box(&seed), Id::ED448)
                 .unwrap()
@@ -45,10 +45,10 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("ed448_sign");
     for size in SIZES {
         let message = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| key.sign(black_box(&message)))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 Signer::new_without_digest(&openssl_key)
                     .unwrap()
@@ -63,14 +63,14 @@ pub fn bench(c: &mut Criterion) {
     for size in SIZES {
         let message = vec![0x5a; size];
         let signature = key.sign(&message);
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 public
                     .verify(black_box(&message), black_box(&signature))
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 Verifier::new_without_digest(&openssl_public)
                     .unwrap()

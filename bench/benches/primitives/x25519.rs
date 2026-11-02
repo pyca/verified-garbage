@@ -23,7 +23,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::{Id, PKey};
     use verified_garbage::x25519::{PrivateKey, x25519};
 
-    use crate::{AWS_LC, OPENSSL, VG, fixed_tape};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
     let private = [0x42; 32];
     let peer = PrivateKey::from_bytes(&[0x24; 32]).public_key();
     // Each side's private key is loaded once, outside the measurements, as a
@@ -56,14 +56,14 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("x25519");
     // One Diffie-Hellman: a shared secret from a private key and the peer's
     // public key. The ids' size is the bytes of the shared secret.
-    g.bench_function(BenchmarkId::new(VG, 32), |b| {
+    g.bench(BenchmarkId::new(VG, 32), |b| {
         b.iter(|| {
             black_box(&vg_private)
                 .diffie_hellman(black_box(&peer))
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 32), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
             let peer = PKey::public_key_from_raw_bytes(black_box(&peer), Id::X25519).unwrap();
             let mut d = Deriver::new(black_box(&openssl_private)).unwrap();
@@ -71,7 +71,7 @@ pub fn bench(c: &mut Criterion) {
             d.derive_to_vec().unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(AWS_LC, 32), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 32), |b| {
         b.iter(|| aws_lc_agree(black_box(&aws_lc_private), black_box(&peer)))
     });
     g.finish();
@@ -80,10 +80,10 @@ pub fn bench(c: &mut Criterion) {
     // multiplication alone: their nearest is the same Diffie-Hellman (which
     // also rejects an all-zero secret).
     let mut g = c.benchmark_group("x25519_raw");
-    g.bench_function(BenchmarkId::new(VG, 32), |b| {
+    g.bench(BenchmarkId::new(VG, 32), |b| {
         b.iter(|| x25519(black_box(&private), black_box(&peer)))
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 32), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
             let peer = PKey::public_key_from_raw_bytes(black_box(&peer), Id::X25519).unwrap();
             let mut d = Deriver::new(black_box(&openssl_private)).unwrap();
@@ -91,16 +91,16 @@ pub fn bench(c: &mut Criterion) {
             d.derive_to_vec().unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(AWS_LC, 32), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 32), |b| {
         b.iter(|| aws_lc_agree(black_box(&aws_lc_private), black_box(&peer)))
     });
     g.finish();
 
     let mut g = c.benchmark_group("x25519_public_key");
-    g.bench_function(BenchmarkId::new(VG, 32), |b| {
+    g.bench(BenchmarkId::new(VG, 32), |b| {
         b.iter(|| PrivateKey::from_bytes(black_box(&private)).public_key())
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 32), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
             PKey::private_key_from_raw_bytes(black_box(&private), Id::X25519)
                 .unwrap()
@@ -108,7 +108,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(AWS_LC, 32), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 32), |b| {
         b.iter(|| {
             agreement::PrivateKey::from_private_key(&agreement::X25519, black_box(&private))
                 .unwrap()
@@ -123,7 +123,7 @@ pub fn bench(c: &mut Criterion) {
     // key is from a fixed tape (`PrivateKey::generate` but for `getrandom`);
     // the others draw from their own generators.
     let mut g = c.benchmark_group("x25519_generate");
-    g.bench_function(BenchmarkId::new(VG, 32), |b| {
+    g.bench(BenchmarkId::new(VG, 32), |b| {
         b.iter(|| {
             let mut bytes = [0; 32];
             fixed_tape(32)(&mut bytes);
@@ -131,7 +131,7 @@ pub fn bench(c: &mut Criterion) {
             (*key.as_bytes(), key.public_key())
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 32), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
             let key = PKey::generate_x25519().unwrap();
             (
@@ -140,7 +140,7 @@ pub fn bench(c: &mut Criterion) {
             )
         })
     });
-    g.bench_function(BenchmarkId::new(AWS_LC, 32), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 32), |b| {
         b.iter(|| {
             let key = agreement::PrivateKey::generate(&agreement::X25519).unwrap();
             let private: Curve25519SeedBin = key.as_be_bytes().unwrap();

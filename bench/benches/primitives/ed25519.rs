@@ -22,7 +22,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::sign::{Signer, Verifier};
     use verified_garbage::ed25519::{SigningKey, VerifyingKey};
 
-    use crate::{AWS_LC, OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
     let seed = [0x42; 32];
     let key = SigningKey::from_seed(&seed);
@@ -34,10 +34,10 @@ pub fn bench(c: &mut Criterion) {
     let aws_lc_public = ParsedPublicKey::new(&ED25519, public.as_bytes()).unwrap();
 
     let mut g = c.benchmark_group("ed25519_keygen");
-    g.bench_function(BenchmarkId::new(VG, 32), |b| {
+    g.bench(BenchmarkId::new(VG, 32), |b| {
         b.iter(|| SigningKey::from_seed(black_box(&seed)))
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 32), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
             PKey::private_key_from_raw_bytes(black_box(&seed), Id::ED25519)
                 .unwrap()
@@ -46,7 +46,7 @@ pub fn bench(c: &mut Criterion) {
         })
     });
     // aws-lc-rs derives the public key when it constructs the key pair.
-    g.bench_function(BenchmarkId::new(AWS_LC, 32), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 32), |b| {
         b.iter(|| Ed25519KeyPair::from_seed_unchecked(black_box(&seed)).unwrap())
     });
     g.finish();
@@ -54,10 +54,10 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("ed25519_sign");
     for size in SIZES {
         let message = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| key.sign(black_box(&message)))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 Signer::new_without_digest(&openssl_key)
                     .unwrap()
@@ -66,7 +66,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         assert_eq!(aws_lc_key.sign(&message).as_ref(), key.sign(&message));
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| aws_lc_key.sign(black_box(&message)))
         });
     }
@@ -76,14 +76,14 @@ pub fn bench(c: &mut Criterion) {
     for size in SIZES {
         let message = vec![0x5a; size];
         let signature = key.sign(&message);
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 public
                     .verify(black_box(&message), black_box(&signature))
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 Verifier::new_without_digest(&openssl_public)
                     .unwrap()
@@ -91,7 +91,7 @@ pub fn bench(c: &mut Criterion) {
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_public
                     .verify_sig(black_box(&message), black_box(&signature))

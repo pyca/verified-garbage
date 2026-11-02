@@ -21,12 +21,12 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use verified_garbage::scrypt::{scrypt, verify};
 
-    use crate::{OPENSSL, VG};
+    use crate::{BenchDyn, OPENSSL, VG};
     let mut g = c.benchmark_group("scrypt");
     g.sample_size(10);
     for n in [1024u64, 16384] {
         let mut out = [0u8; 64];
-        g.bench_function(BenchmarkId::new(VG, n), |b| {
+        g.bench(BenchmarkId::new(VG, n), |b| {
             b.iter(|| {
                 scrypt(
                     black_box(b"password"),
@@ -40,7 +40,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, n), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, n), |b| {
             b.iter(|| {
                 openssl::pkcs5::scrypt(
                     black_box(b"password"),
@@ -62,7 +62,7 @@ pub fn bench(c: &mut Criterion) {
     for n in [1024u64, 16384] {
         let mut expected = [0u8; 64];
         scrypt(b"password", b"NaCl", n, 8, 1, usize::MAX, &mut expected).unwrap();
-        g.bench_function(BenchmarkId::new(VG, n), |b| {
+        g.bench(BenchmarkId::new(VG, n), |b| {
             b.iter(|| {
                 verify(
                     black_box(b"password"),
@@ -77,7 +77,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut out = [0u8; 64];
-        g.bench_function(BenchmarkId::new(OPENSSL, n), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, n), |b| {
             b.iter(|| {
                 openssl::pkcs5::scrypt(
                     black_box(b"password"),

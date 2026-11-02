@@ -7,6 +7,8 @@
 // Some of its functions only the tests of `tests/main.rs` use.
 #[allow(dead_code)]
 mod bytes;
+#[allow(dead_code)]
+mod modes;
 mod vectors;
 
 #[path = "cavp/main.rs"]

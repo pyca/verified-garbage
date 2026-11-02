@@ -35,7 +35,7 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::ecdsa::{P521, SigningKey};
     use verified_garbage::hashes::sha512::Sha512;
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     // A key below P-521's order, whose top byte is at most 1.
     let mut d = [0x42; 66];
@@ -54,14 +54,14 @@ pub fn bench(c: &mut Criterion) {
     let group = EcGroup::from_curve_name(Nid::SECP521R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let mut g = c.benchmark_group("ec_p521_public_key");
-    g.bench_function(BenchmarkId::new(VG, 133), |b| {
+    g.bench(BenchmarkId::new(VG, 133), |b| {
         b.iter(|| {
             SigningKey::<P521>::from_bytes(black_box(&d))
                 .public_key()
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 133), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 133), |b| {
         b.iter(|| {
             let d = BigNum::from_slice(black_box(&d)).unwrap();
             let mut q = EcPoint::new(&group).unwrap();
@@ -80,7 +80,7 @@ pub fn bench(c: &mut Criterion) {
             .as_ref(),
         SigningKey::<P521>::from_bytes(&d).public_key().unwrap()
     );
-    g.bench_function(BenchmarkId::new(AWS_LC, 133), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 133), |b| {
         b.iter(|| {
             PrivateKey::from_private_key(&ECDH_P521, black_box(&d))
                 .unwrap()
@@ -124,7 +124,7 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>
     use openssl::sign::{Signer, Verifier};
     use verified_garbage::ecdsa::{P521, SigningKey, VerifyingKey};
 
-    use crate::{AWS_LC, OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
     let key = SigningKey::<P521>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::SECP521R1).unwrap();
@@ -144,10 +144,10 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>
     let mut g = c.benchmark_group(format!("ecdsa_p521_{name}_sign"));
     for size in SIZES {
         let message = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| key.sign::<H>(black_box(&message)).unwrap())
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 Signer::new(md, &openssl_key)
                     .unwrap()
@@ -160,7 +160,7 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>
             verifying_key
                 .verify::<H>(&message, sig.as_ref().try_into().unwrap())
                 .unwrap();
-            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, size), |b| {
                 b.iter(|| aws_lc_key.sign(&rng, black_box(&message)).unwrap())
             });
         }
@@ -178,14 +178,14 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>
         .unwrap()
         .to_der()
         .unwrap();
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 verifying_key
                     .verify::<H>(black_box(&message), &sig)
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let point = EcPoint::from_bytes(&group, black_box(&q), &mut ctx).unwrap();
                 let ec = EcKey::from_public_key(&group, &point).unwrap();
@@ -198,7 +198,7 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>
         UnparsedPublicKey::new(aws_lc_verify, &q)
             .verify(&message, &der)
             .unwrap();
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 UnparsedPublicKey::new(aws_lc_verify, black_box(&q))
                     .verify(black_box(&message), &der)

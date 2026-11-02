@@ -17,7 +17,7 @@ pub const USES: &[&str] = &["ffdh", "rsa_mont", "miller_rabin"];
 pub fn bench(c: &mut Criterion) {
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     use crate::AWS_LC;
-    use crate::{OPENSSL, VG, fixed_tape};
+    use crate::{BenchDyn, OPENSSL, VG, fixed_tape};
     use criterion::BenchmarkId;
     use openssl::{bn::BigNum, derive::Deriver, dh::Dh, pkey::PKey, pkey_ctx::PkeyCtx};
     use std::hint::black_box;
@@ -78,17 +78,17 @@ pub fn bench(c: &mut Criterion) {
         // to compare the complete operation cryptography needs.
         let mut group = c.benchmark_group("ffdh_exchange");
         #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-        group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {
+        group.bench(BenchmarkId::new(AWS_LC, size / 8), |b| {
             b.iter(|| black_box(&aws_key).exchange(black_box(&aws_peer)))
         });
-        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+        group.bench(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
                 black_box(&key)
                     .exchange(black_box(peer.public_key()))
                     .unwrap()
             })
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+        group.bench(BenchmarkId::new(OPENSSL, size / 8), |b| {
             b.iter(|| {
                 let mut deriver = Deriver::new(&openssl_pkey).unwrap();
                 deriver.set_peer(black_box(&openssl_peer)).unwrap();
@@ -103,12 +103,12 @@ pub fn bench(c: &mut Criterion) {
         // Cold checked construction.
         // VG validates imported parameters; OpenSSL only constructs its object.
         let mut group = c.benchmark_group("ffdh_parameters_from");
-        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+        group.bench(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
                 Parameters::from_components(black_box(&p), black_box(&g), q.as_deref()).unwrap()
             })
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+        group.bench(BenchmarkId::new(OPENSSL, size / 8), |b| {
             b.iter(|| {
                 Dh::from_pqg(
                     BigNum::from_slice(black_box(&p)).unwrap(),
@@ -120,12 +120,12 @@ pub fn bench(c: &mut Criterion) {
         });
         group.finish();
         let mut group = c.benchmark_group("ffdh_from_private");
-        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+        group.bench(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
                 PrivateKey::from_private_components(black_box(&params), black_box(&x)).unwrap()
             })
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+        group.bench(BenchmarkId::new(OPENSSL, size / 8), |b| {
             b.iter(|| {
                 Dh::from_pqg(
                     BigNum::from_slice(black_box(&p)).unwrap(),
@@ -145,7 +145,7 @@ pub fn bench(c: &mut Criterion) {
         // (`generate_private_key` but for `getrandom`); OpenSSL and AWS-LC
         // draw from their own generators.
         let mut group = c.benchmark_group("ffdh_cold_first_key");
-        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+        group.bench(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
                 let mut tape = fixed_tape(size as u64);
                 Parameters::from_components(black_box(&p), black_box(&g), q.as_deref())
@@ -157,7 +157,7 @@ pub fn bench(c: &mut Criterion) {
                     .unwrap()
             })
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+        group.bench(BenchmarkId::new(OPENSSL, size / 8), |b| {
             b.iter(|| {
                 Dh::from_pqg(
                     BigNum::from_slice(black_box(&p)).unwrap(),
@@ -184,10 +184,10 @@ pub fn bench(c: &mut Criterion) {
         // Warm: params already exists.
         let mut group = c.benchmark_group("ffdh_generate");
         #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-        group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {
+        group.bench(BenchmarkId::new(AWS_LC, size / 8), |b| {
             b.iter(|| aws_lc::Dh::parameters(&p, &g, q.as_deref()).generate())
         });
-        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+        group.bench(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
                 let mut tape = fixed_tape(size as u64);
                 black_box(&params)
@@ -198,20 +198,20 @@ pub fn bench(c: &mut Criterion) {
                     .unwrap()
             })
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+        group.bench(BenchmarkId::new(OPENSSL, size / 8), |b| {
             let mut keygen = PkeyCtx::new(&openssl_params).unwrap();
             keygen.keygen_init().unwrap();
             b.iter(|| keygen.keygen().unwrap())
         });
         group.finish();
         let mut group = c.benchmark_group("ffdh_private_from");
-        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+        group.bench(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
                 PrivateKey::from_components(black_box(&params), black_box(&y), black_box(&x))
                     .unwrap()
             })
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+        group.bench(BenchmarkId::new(OPENSSL, size / 8), |b| {
             b.iter(|| {
                 Dh::from_pqg(
                     BigNum::from_slice(&p).unwrap(),
@@ -228,10 +228,10 @@ pub fn bench(c: &mut Criterion) {
         });
         group.finish();
         let mut group = c.benchmark_group("ffdh_public_from");
-        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+        group.bench(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| PublicKey::from_components(black_box(&params), black_box(&y)).unwrap())
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+        group.bench(BenchmarkId::new(OPENSSL, size / 8), |b| {
             b.iter(|| {
                 Dh::from_pqg(
                     BigNum::from_slice(&p).unwrap(),
@@ -245,7 +245,7 @@ pub fn bench(c: &mut Criterion) {
         });
         group.finish();
         let mut group = c.benchmark_group("ffdh_components");
-        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+        group.bench(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
                 black_box(params.components());
                 black_box(key.public_key());
@@ -255,7 +255,7 @@ pub fn bench(c: &mut Criterion) {
                 black_box(params.key_size());
             })
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+        group.bench(BenchmarkId::new(OPENSSL, size / 8), |b| {
             b.iter(|| {
                 black_box(openssl_key.prime_p());
                 black_box(openssl_key.generator());
@@ -285,7 +285,7 @@ pub fn bench(c: &mut Criterion) {
             // 512 bits; the larger ARM case uses 64 to stay within the
             // native job's time limit.
             group.sample_size(if bits == 512 { 100 } else { 64 });
-            group.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+            group.bench(BenchmarkId::new(VG, bits / 8), |b| {
                 b.iter(|| {
                     let mut tape = fixed_tape(u64::from(generator));
                     Parameters::generate_with_rng(black_box(bits), generator, |buf: &mut [u8]| {
@@ -295,7 +295,7 @@ pub fn bench(c: &mut Criterion) {
                     .unwrap()
                 })
             });
-            group.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
+            group.bench(BenchmarkId::new(OPENSSL, bits / 8), |b| {
                 b.iter(|| Dh::generate_params(bits as u32, generator).unwrap())
             });
         }

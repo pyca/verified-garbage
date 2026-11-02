@@ -32,7 +32,7 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::ecdsa::{P224, SigningKey};
     use verified_garbage::hashes::sha224::Sha224;
 
-    use crate::{OPENSSL, VG};
+    use crate::{BenchDyn, OPENSSL, VG};
 
     let d = [0x42; 28];
     hash::<Sha224>(c, "sha224", MessageDigest::sha224(), &d);
@@ -42,14 +42,14 @@ pub fn bench(c: &mut Criterion) {
     let group = EcGroup::from_curve_name(Nid::SECP224R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let mut g = c.benchmark_group("ec_p224_public_key");
-    g.bench_function(BenchmarkId::new(VG, 57), |b| {
+    g.bench(BenchmarkId::new(VG, 57), |b| {
         b.iter(|| {
             SigningKey::<P224>::from_bytes(black_box(&d))
                 .public_key()
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 57), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 57), |b| {
         b.iter(|| {
             let d = BigNum::from_slice(black_box(&d)).unwrap();
             let mut q = EcPoint::new(&group).unwrap();
@@ -87,7 +87,7 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P224>
     use openssl::sign::{Signer, Verifier};
     use verified_garbage::ecdsa::{P224, SigningKey, VerifyingKey};
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     let key = SigningKey::<P224>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::SECP224R1).unwrap();
@@ -101,10 +101,10 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P224>
     let mut g = c.benchmark_group(format!("ecdsa_p224_{name}_sign"));
     for size in SIZES {
         let message = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| key.sign::<H>(black_box(&message)).unwrap())
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 Signer::new(md, &openssl_key)
                     .unwrap()
@@ -128,14 +128,14 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P224>
         .unwrap()
         .to_der()
         .unwrap();
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 verifying_key
                     .verify::<H>(black_box(&message), &sig)
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let point = EcPoint::from_bytes(&group, black_box(&q), &mut ctx).unwrap();
                 let ec = EcKey::from_public_key(&group, &point).unwrap();

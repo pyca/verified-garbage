@@ -1,9 +1,9 @@
 //! Blowfish-ECB against Eric Young's test vectors, as Schneier publishes
 //! them, read from the byte-for-byte vendored file: every ECB record, every
-//! `set_key` record (and the rejection of keys shorter than 32 bits), and
-//! the CBC record, chained here a block at a time through ECB. Then ECB of
-//! many blocks at once against one block at a time, and the streaming
-//! wrapper's splits and errors.
+//! `set_key` record (and the rejection of keys shorter than 32 bits); its
+//! CBC record, as pyca/cryptography reformats it, tests CBC itself, in
+//! `tests/cavp/blowfish_cbc.rs`. Then ECB of many blocks at once against one
+//! block at a time, and the streaming wrapper's splits and errors.
 
 #![cfg(any(
     target_arch = "x86",
@@ -93,52 +93,6 @@ fn set_key_records() {
         count += 1;
     }
     assert_eq!(count, 24);
-}
-
-/// The CBC record, through ECB a block at a time: the data, with its
-/// trailing zero, is zero-padded to four blocks, as the record's 32 bytes of
-/// ciphertext show.
-#[test]
-fn cbc_record() {
-    let text = text();
-    let value = |name: &str| {
-        let line = text.lines().find(|line| line.starts_with(name)).unwrap();
-        unhex_spaced(line.split_once("= ").unwrap().1.trim())
-    };
-    let key = value("key[16]");
-    let iv = value("iv[8]");
-    let data = text
-        .lines()
-        .filter(|line| line.starts_with("data[29]  = 3"))
-        .map(|line| unhex_spaced(line.split_once("= ").unwrap().1.trim()))
-        .next()
-        .unwrap();
-    let expected = value("cipher[32]");
-    let mut clear = data.clone();
-    clear.resize(32, 0);
-    let mut encryptor = BlowfishEcbEncryptor::new(&key).unwrap();
-    let mut decryptor = BlowfishEcbDecryptor::new(&key).unwrap();
-    let mut chain = iv.clone();
-    let mut cipher = Vec::new();
-    for block in clear.chunks(8) {
-        let input: Vec<u8> = crate::bytes::xor(block, &chain);
-        let mut output = [0; 8];
-        assert_eq!(encryptor.update(&input, &mut output), Ok(8));
-        cipher.extend_from_slice(&output);
-        chain = output.to_vec();
-    }
-    assert_eq!(cipher, expected);
-    let mut chain = iv;
-    let mut decrypted = Vec::new();
-    for block in cipher.chunks(8) {
-        let mut output = [0; 8];
-        assert_eq!(decryptor.update(block, &mut output), Ok(8));
-        decrypted.extend(crate::bytes::xor(&output, &chain));
-        chain = block.to_vec();
-    }
-    assert_eq!(decrypted, clear);
-    encryptor.finalize().unwrap();
-    decryptor.finalize().unwrap();
 }
 
 /// Many blocks at once match one block at a time, for every count up to

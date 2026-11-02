@@ -26,7 +26,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::{BenchmarkId, Throughput};
     use verified_garbage::aes_gcm_siv::AesGcmSiv;
 
-    use crate::{AWS_LC, SIZES, VG};
+    use crate::{AWS_LC, BenchDyn, SIZES, VG};
 
     let key = [0x42; 16];
     let nonce = [0x24; 12];
@@ -51,14 +51,14 @@ pub fn bench(c: &mut Criterion) {
 
         let mut g = c.benchmark_group("aes-128-gcm-siv-encrypt");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let k = AesGcmSiv::new(black_box(&key)).unwrap();
                 k.encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf))
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_key(black_box(&key))
                     .seal_in_place_separate_tag(
@@ -73,7 +73,7 @@ pub fn bench(c: &mut Criterion) {
 
         let mut g = c.benchmark_group("aes-128-gcm-siv-decrypt");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 buf.copy_from_slice(&ct);
                 let k = AesGcmSiv::new(black_box(&key)).unwrap();
@@ -86,7 +86,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 buf.copy_from_slice(&ct);
                 aws_lc_key(black_box(&key))

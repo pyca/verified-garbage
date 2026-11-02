@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::Cipher;
     use verified_garbage::cmac::triple_des::TripleDesCmac;
 
-    use crate::{AWS_LC, OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
     let key: [u8; 24] = core::array::from_fn(|i| 0x42 ^ i as u8);
     let pkey = PKey::cmac(&Cipher::des_ede3_cbc(), &key).unwrap();
@@ -33,11 +33,11 @@ pub fn bench(c: &mut Criterion) {
     for size in SIZES {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| TripleDesCmac::mac(black_box(&key), black_box(&data)).unwrap())
         });
         let mut out = [0u8; 8];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut s = Signer::new_without_digest(&pkey).unwrap();
                 s.sign_oneshot(&mut out, black_box(&data)).unwrap()
@@ -45,7 +45,7 @@ pub fn bench(c: &mut Criterion) {
         });
         let tag = cmac::sign(&cmac::Key::new(TDES, &key).unwrap(), &data).unwrap();
         assert_eq!(tag.as_ref(), TripleDesCmac::mac(&key, &data).unwrap());
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 let k = cmac::Key::new(TDES, black_box(&key)).unwrap();
                 cmac::sign(&k, black_box(&data)).unwrap()
@@ -59,7 +59,7 @@ pub fn bench(c: &mut Criterion) {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
         let mac = TripleDesCmac::mac(&key, &data).unwrap();
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let mut m = TripleDesCmac::new(black_box(&key)).unwrap();
                 m.update(black_box(&data));
@@ -67,7 +67,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut out = [0u8; 8];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut s = Signer::new_without_digest(&pkey).unwrap();
                 let n = s.sign_oneshot(&mut out, black_box(&data)).unwrap();
@@ -75,7 +75,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         cmac::verify(&cmac::Key::new(TDES, &key).unwrap(), &data, &mac).unwrap();
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 let k = cmac::Key::new(TDES, black_box(&key)).unwrap();
                 cmac::verify(&k, black_box(&data), black_box(&mac)).unwrap()

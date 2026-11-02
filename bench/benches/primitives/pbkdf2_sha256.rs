@@ -27,7 +27,7 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::hashes::sha256::Sha256;
     use verified_garbage::pbkdf2::{pbkdf2_hmac, pbkdf2_hmac_verify};
 
-    use crate::{AWS_LC, OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
     crate::pbkdf2_group(
         c,
@@ -46,7 +46,7 @@ pub fn bench(c: &mut Criterion) {
         let n = NonZeroU32::new(iterations as u32).unwrap();
         let mut expected = [0u8; 32];
         pbkdf2_hmac::<Sha256>(&password, &salt, n, &mut expected);
-        g.bench_function(BenchmarkId::new(VG, iterations), |b| {
+        g.bench(BenchmarkId::new(VG, iterations), |b| {
             b.iter(|| {
                 pbkdf2_hmac_verify::<Sha256, 32>(
                     black_box(&password),
@@ -58,7 +58,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut out = [0u8; 32];
-        g.bench_function(BenchmarkId::new(OPENSSL, iterations), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, iterations), |b| {
             b.iter(|| {
                 openssl::pkcs5::pbkdf2_hmac(
                     black_box(&password),
@@ -73,7 +73,7 @@ pub fn bench(c: &mut Criterion) {
         });
         let alg = aws_lc_rs::pbkdf2::PBKDF2_HMAC_SHA256;
         aws_lc_rs::pbkdf2::verify(alg, n, &salt, &password, &expected).unwrap();
-        g.bench_function(BenchmarkId::new(AWS_LC, iterations), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, iterations), |b| {
             b.iter(|| {
                 aws_lc_rs::pbkdf2::verify(
                     alg,

@@ -38,7 +38,7 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::rsa::{PrivateKey, PublicKey};
     use verified_garbage::rsa_pkcs1_sig::{Hash, recover, sign, verify};
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     let digest = [0x42; 32];
     let keys: Vec<_> = [2048, 3072, 4096]
@@ -93,12 +93,12 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("rsa_pkcs1_sign");
     for (pkey, vg_private, _, sig, aws_private, _) in &keys {
         let k = sig.len();
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| sign(black_box(vg_private), black_box(&digest), Hash::Sha256).unwrap())
         });
         let mut c = ctx(pkey, |c| c.sign_init().unwrap());
         let mut out = vec![0; k];
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| c.sign(black_box(&digest), Some(&mut out)).unwrap())
         });
         let aws_sign = |digest: &[u8], out: &mut [u8]| {
@@ -109,7 +109,7 @@ pub fn bench(c: &mut Criterion) {
         };
         aws_sign(&digest, &mut out);
         assert_eq!(out, *sig);
-        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, k), |b| {
             b.iter(|| aws_sign(black_box(&digest), &mut out))
         });
     }
@@ -135,7 +135,7 @@ pub fn bench(c: &mut Criterion) {
         .iter()
         .map(|x| x.to_vec())
         .collect();
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 let v = black_box(&v);
                 let key =
@@ -145,7 +145,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut out = vec![0; k];
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 let v = black_box(&v);
                 let bn = |i: usize| BigNum::from_slice(&v[i]).unwrap();
@@ -165,7 +165,7 @@ pub fn bench(c: &mut Criterion) {
                 c.sign(black_box(&digest), Some(&mut out)).unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, k), |b| {
             b.iter(|| {
                 let v = black_box(&v);
                 let key = RsaKeyPair::from_components(&KeyPairComponents {
@@ -189,7 +189,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("rsa_pkcs1_verify");
     for (pkey, _, vg_public, sig, _, aws_public) in &keys {
         let k = sig.len();
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 assert!(verify(
                     black_box(vg_public),
@@ -200,10 +200,10 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut c = ctx(pkey, |c| c.verify_init().unwrap());
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| assert!(c.verify(black_box(&digest), black_box(sig)).unwrap()))
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, k), |b| {
             b.iter(|| {
                 let digest = Digest::import_less_safe(black_box(&digest), &SHA256).unwrap();
                 black_box(aws_public)
@@ -222,13 +222,13 @@ pub fn bench(c: &mut Criterion) {
         let k = sig.len();
         let rsa = pkey.rsa().unwrap();
         let (n, e) = (rsa.n().to_vec(), rsa.e().to_vec());
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 let key = PublicKey::new(black_box(&n), black_box(&e)).unwrap();
                 assert!(verify(&key, black_box(sig), &digest, Hash::Sha256))
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 let key = Rsa::from_public_components(
                     BigNum::from_slice(black_box(&n)).unwrap(),
@@ -243,7 +243,7 @@ pub fn bench(c: &mut Criterion) {
                 assert!(c.verify(black_box(&digest), black_box(sig)).unwrap())
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, k), |b| {
             b.iter(|| {
                 let key = RsaPublicKeyComponents {
                     n: black_box(&n),
@@ -261,12 +261,12 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("rsa_pkcs1_recover");
     for (pkey, _, vg_public, sig, _, _) in &keys {
         let k = sig.len();
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| recover(black_box(vg_public), black_box(sig), Hash::Sha256).unwrap())
         });
         let mut c = ctx(pkey, |c| c.verify_recover_init().unwrap());
         let mut out = vec![0; k];
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| c.verify_recover(black_box(sig), Some(&mut out)).unwrap())
         });
     }

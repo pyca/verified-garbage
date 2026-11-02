@@ -24,7 +24,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::PKey;
     use verified_garbage::ecdh::{P521, PrivateKey};
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     // Keys below P-521's order, whose top byte is at most 1.
     let mut d = [0x42; 66];
@@ -63,14 +63,14 @@ pub fn bench(c: &mut Criterion) {
     );
     let mut g = c.benchmark_group("ecdh_p521");
     // The ids' size is the bytes of the shared secret.
-    g.bench_function(BenchmarkId::new(VG, 66), |b| {
+    g.bench(BenchmarkId::new(VG, 66), |b| {
         b.iter(|| {
             black_box(&vg_private)
                 .diffie_hellman(black_box(&peer))
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 66), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 66), |b| {
         b.iter(|| {
             let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
             let peer = PKey::from_ec_key(EcKey::from_public_key(&group, &point).unwrap()).unwrap();
@@ -79,7 +79,7 @@ pub fn bench(c: &mut Criterion) {
             d.derive_to_vec().unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(AWS_LC, 66), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 66), |b| {
         b.iter(|| aws_lc_agree(black_box(&aws_lc_private), black_box(&peer)))
     });
     g.finish();
@@ -87,10 +87,10 @@ pub fn bench(c: &mut Criterion) {
     #[cfg(target_arch = "x86_64")]
     {
         let mut g = c.benchmark_group("ec_validate_p521");
-        g.bench_function(BenchmarkId::new(VG, 133), |b| {
+        g.bench(BenchmarkId::new(VG, 133), |b| {
             b.iter(|| P521::validate_public_key(black_box(&peer)))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, 133), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, 133), |b| {
             b.iter(|| {
                 let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
                 // OpenSSL validates coordinates and the curve equation while decoding.
@@ -101,7 +101,7 @@ pub fn bench(c: &mut Criterion) {
         let mut one = [0; 66];
         one[65] = 1;
         let key = PrivateKey::<P521>::from_bytes(&one);
-        g.bench_function(BenchmarkId::new("scalar-multiply", 133), |b| {
+        g.bench(BenchmarkId::new("scalar-multiply", 133), |b| {
             b.iter(|| black_box(&key).diffie_hellman(black_box(&peer)).is_ok())
         });
         g.finish();

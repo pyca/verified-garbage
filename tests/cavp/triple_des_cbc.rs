@@ -1,6 +1,5 @@
 //! Triple DES-CBC: NIST CAVP's multi-block message tests, unmodified under
-//! vectors/; and CBC from ECB (`TripleDesEcb`, tested on CAVP's ECB
-//! vectors) on every length up to a few dozen blocks, for each key length.
+//! vectors/, whole and split at every block.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -12,32 +11,14 @@
 ))]
 
 use verified_garbage::triple_des_cbc::{Error, TripleDesCbc};
-use verified_garbage::triple_des_ecb::TripleDesEcb;
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
-
-/// CBC encryption from ECB, one block at a time.
-fn reference(key: &[u8], iv: [u8; 8], data: &[u8]) -> Vec<u8> {
-    let ecb = TripleDesEcb::new(key).unwrap();
-    let mut chain = iv;
-    let mut out = Vec::new();
-    for block in data.chunks(8) {
-        let mut b: Vec<u8> = crate::bytes::xor(block, &chain);
-        ecb.encrypt(&mut b).unwrap();
-        chain.copy_from_slice(&b);
-        out.extend_from_slice(&b);
-    }
-    out
-}
 
 /// `plaintext` encrypts to `ciphertext` and decrypts back, whole and split
 /// at every block boundary, leaving the last ciphertext block as the
 /// chaining value.
 fn check(ctx: &TripleDesCbc, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
-    let after: [u8; 8] = match ciphertext.len() {
-        0 => iv,
-        len => ciphertext[len - 8..].try_into().unwrap(),
-    };
+    let after: [u8; 8] = *ciphertext.last_chunk().unwrap();
     for offset in (0..=plaintext.len()).step_by(8) {
         let mut chain = iv;
         let mut buffer = plaintext.to_vec();
@@ -95,21 +76,6 @@ fn cavp_mmt() {
         )),
         20
     );
-}
-
-/// Every number of blocks up to 27.
-#[test]
-fn from_ecb() {
-    let data: Vec<u8> = crate::bytes::pattern(8 * 27, 31, 7);
-    let iv: [u8; 8] = crate::bytes::pattern_array(11, 5);
-    for key_len in [16, 24] {
-        let key: Vec<u8> = crate::bytes::pattern(key_len, 17, 3);
-        let ctx = TripleDesCbc::new(&key).unwrap();
-        for blocks in 0..=27 {
-            let input = &data[..8 * blocks];
-            check(&ctx, iv, input, &reference(&key, iv, input));
-        }
-    }
 }
 
 #[test]

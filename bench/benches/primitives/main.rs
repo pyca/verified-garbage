@@ -16,7 +16,10 @@
 
 use std::hint::black_box;
 
-use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use criterion::measurement::WallTime;
+use criterion::{
+    Bencher, BenchmarkGroup, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main,
+};
 use openssl::hash::{MessageDigest, hash};
 use openssl::pkey::PKey;
 use openssl::sign::Signer;
@@ -216,6 +219,29 @@ const VG: &str = "verified-garbage";
 const OPENSSL: &str = "openssl";
 const AWS_LC: &str = "aws-lc-rs";
 
+/// `BenchmarkGroup::bench_function` (which `clippy.toml` disallows), given
+/// its routine as a `dyn FnMut`.
+///
+/// Criterion's code that runs a benchmark (`run_bench` and its
+/// `Routine::sample`, `warm_up`, `profile`, …) is generic over the routine's
+/// type, so each closure given to `bench_function` got a copy of it, compiled
+/// in this crate: 85% of its LLVM IR, which ThinLTO and LLVM's passes spent
+/// most of the crate's build on (about 4 minutes on RISC-V's runners, done
+/// for both sides of a comparison). With a `dyn FnMut` there is one copy.
+/// What `Bencher::iter` times is unchanged: its closure is still a type of
+/// its own, called directly in criterion's loop. Only the call of `f`, once
+/// per sample, goes through the vtable.
+pub(crate) trait BenchDyn {
+    fn bench(&mut self, id: BenchmarkId, f: impl FnMut(&mut Bencher<'_>));
+}
+
+impl BenchDyn for BenchmarkGroup<'_, WallTime> {
+    #[allow(clippy::disallowed_methods)]
+    fn bench(&mut self, id: BenchmarkId, mut f: impl FnMut(&mut Bencher<'_>)) {
+        self.bench_function(id, &mut f as &mut dyn FnMut(&mut Bencher<'_>));
+    }
+}
+
 /// Benchmarks the hash `vg` against OpenSSL's `md` and, if it has the hash,
 /// aws-lc-rs's `aws_lc`.
 pub(crate) fn hash_group<const N: usize>(
@@ -241,10 +267,10 @@ pub(crate) fn hash_group_sizes<const N: usize>(
     for &size in sizes {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| vg(black_box(&data)))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| hash(md, black_box(&data)).unwrap())
         });
         if let Some(alg) = aws_lc {
@@ -252,7 +278,7 @@ pub(crate) fn hash_group_sizes<const N: usize>(
                 aws_lc_rs::digest::digest(alg, &data).as_ref(),
                 &vg(&data)[..]
             );
-            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, size), |b| {
                 b.iter(|| aws_lc_rs::digest::digest(alg, black_box(&data)))
             });
         }
@@ -276,7 +302,7 @@ mod transcript {
     use openssl::hash::{Hasher, MessageDigest};
     use verified_garbage::hashes::HashFunction;
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     /// A TLS 1.3 handshake's transcript, as rustls hashes it: each message in
     /// turn (ClientHello, ServerHello, EncryptedExtensions, Certificate,
@@ -359,13 +385,13 @@ mod transcript {
         assert_eq!(openssl_transcript(md, &msgs), vg_transcript::<H>(&msgs));
         assert_eq!(aws_lc_transcript(alg, &msgs), vg_transcript::<H>(&msgs));
         let mut g = c.benchmark_group(name);
-        g.bench_function(BenchmarkId::new(VG, TRANSCRIPT_LEN), |b| {
+        g.bench(BenchmarkId::new(VG, TRANSCRIPT_LEN), |b| {
             b.iter(|| vg_transcript::<H>(&msgs))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, TRANSCRIPT_LEN), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, TRANSCRIPT_LEN), |b| {
             b.iter(|| openssl_transcript(md, &msgs))
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, TRANSCRIPT_LEN), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, TRANSCRIPT_LEN), |b| {
             b.iter(|| aws_lc_transcript(alg, &msgs))
         });
         g.finish();
@@ -398,10 +424,10 @@ pub(crate) fn hash_verify_group<const N: usize>(
         let data = vec![0x5a; size];
         let expected = digest(&data);
         assert_eq!(hash(md, &data).unwrap()[..], expected[..]);
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| assert!(vg(black_box(&data), black_box(&expected))))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let d = hash(md, black_box(&data)).unwrap();
                 assert!(openssl::memcmp::eq(&d, black_box(&expected)))
@@ -440,11 +466,11 @@ pub(crate) fn hmac_group_sizes<O: AsRef<[u8]>>(
     for &size in sizes {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| vg(black_box(&key), black_box(&data)))
         });
         let mut out = [0u8; 64];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut s = Signer::new(md, &pkey).unwrap();
                 s.sign_oneshot(&mut out, black_box(&data)).unwrap()
@@ -454,7 +480,7 @@ pub(crate) fn hmac_group_sizes<O: AsRef<[u8]>>(
             use aws_lc_rs::hmac;
             let tag = hmac::sign(&hmac::Key::new(alg, &key), &data);
             assert_eq!(tag.as_ref(), vg(&key, &data).as_ref());
-            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, size), |b| {
                 b.iter(|| hmac::sign(&hmac::Key::new(alg, black_box(&key)), black_box(&data)))
             });
         }
@@ -489,7 +515,7 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
         let mac = Hmac::<H>::mac(&key, &data);
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let mut h = Hmac::<H>::new(black_box(&key));
                 h.update(black_box(&data));
@@ -497,7 +523,7 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
             })
         });
         let mut out = [0u8; 64];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut s = Signer::new(md, &pkey).unwrap();
                 let n = s.sign_oneshot(&mut out, black_box(&data)).unwrap();
@@ -507,7 +533,7 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
         if let Some(alg) = aws_lc {
             use aws_lc_rs::hmac;
             hmac::verify(&hmac::Key::new(alg, &key), &data, mac.as_ref()).unwrap();
-            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, size), |b| {
                 b.iter(|| {
                     let k = hmac::Key::new(alg, black_box(&key));
                     hmac::verify(&k, black_box(&data), black_box(mac.as_ref())).unwrap()
@@ -544,10 +570,10 @@ pub(crate) fn pbkdf2_group(
         g.throughput(Throughput::Elements(iterations as u64));
         let mut out = vec![0u8; len];
         let n = std::num::NonZeroU32::new(iterations as u32).unwrap();
-        g.bench_function(BenchmarkId::new(VG, iterations), |b| {
+        g.bench(BenchmarkId::new(VG, iterations), |b| {
             b.iter(|| vg(black_box(&password), black_box(&salt), n, &mut out))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, iterations), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, iterations), |b| {
             b.iter(|| {
                 openssl::pkcs5::pbkdf2_hmac(
                     black_box(&password),
@@ -564,7 +590,7 @@ pub(crate) fn pbkdf2_group(
             vg(&password, &salt, n, &mut expected);
             aws_lc_rs::pbkdf2::derive(alg, n, &salt, &password, &mut out);
             assert_eq!(out, expected);
-            g.bench_function(BenchmarkId::new(AWS_LC, iterations), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, iterations), |b| {
                 b.iter(|| {
                     aws_lc_rs::pbkdf2::derive(
                         alg,

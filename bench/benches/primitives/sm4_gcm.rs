@@ -26,7 +26,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::cipher_ctx::CipherCtx;
     use verified_garbage::sm4_gcm::Sm4Gcm;
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
     let nonce: [u8; 12] = core::array::from_fn(|i| (5 * i + 1) as u8);
@@ -59,7 +59,7 @@ pub fn bench(c: &mut Criterion) {
         let mut g = c.benchmark_group("sm4-gcm-encrypt");
         g.throughput(Throughput::Bytes(size as u64));
         let mut buf = data.clone();
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 Sm4Gcm::new(black_box(&key))
                     .encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf))
@@ -68,7 +68,7 @@ pub fn bench(c: &mut Criterion) {
         });
         if let Some(cipher) = &cipher {
             let mut t = [0u8; 16];
-            g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| openssl_encrypt(cipher, &mut out, &mut t))
             });
         }
@@ -76,7 +76,7 @@ pub fn bench(c: &mut Criterion) {
 
         let mut g = c.benchmark_group("sm4-gcm-decrypt");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 buf.copy_from_slice(&ct);
                 Sm4Gcm::new(black_box(&key))
@@ -90,7 +90,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         if let Some(cipher) = &cipher {
-            g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
                     let mut ctx = CipherCtx::new().unwrap();
                     ctx.decrypt_init(Some(cipher), Some(black_box(&key)), Some(black_box(&nonce)))
@@ -108,7 +108,7 @@ pub fn bench(c: &mut Criterion) {
         let k = Sm4Gcm::new(&key);
         let mut g = c.benchmark_group("sm4-gcm-stream-encrypt");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let mut s = k.encryptor(black_box(&nonce)).unwrap();
                 s.update_aad(black_box(&aad)).unwrap();

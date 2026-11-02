@@ -33,7 +33,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode, decrypt_aead, encrypt_aead};
     use verified_garbage::aes_gcm::AesGcm;
 
-    use crate::{AWS_LC, OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
     /// The sizes measured one-shot only, besides `SIZES`.
     const RECORD_SIZES: [usize; 3] = [128, 192, 384];
@@ -67,7 +67,7 @@ pub fn bench(c: &mut Criterion) {
 
         let mut g = c.benchmark_group("aes-128-gcm-encrypt");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let k = AesGcm::new(black_box(&key)).unwrap();
                 k.encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf))
@@ -75,7 +75,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut t = [0u8; 16];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 encrypt_aead(
                     cipher,
@@ -88,7 +88,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_key(black_box(&key))
                     .seal_in_place_separate_tag(
@@ -107,7 +107,7 @@ pub fn bench(c: &mut Criterion) {
         let mut aws_lc_tag = [0u8; 16];
         let mut g = c.benchmark_group("aes-128-gcm-encrypt-out-of-place");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let k = AesGcm::new(black_box(&key)).unwrap();
                 k.encrypt(
@@ -119,7 +119,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut s = Crypter::new(
                     cipher,
@@ -134,7 +134,7 @@ pub fn bench(c: &mut Criterion) {
                 s.get_tag(&mut t).unwrap();
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_key(black_box(&key))
                     .seal_out_of_place_scatter(
@@ -179,7 +179,7 @@ pub fn bench(c: &mut Criterion) {
         );
         let mut g = c.benchmark_group("aes-128-gcm-encrypt-two-pieces");
         g.throughput(Throughput::Bytes(size as u64 + 1));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let k = AesGcm::new(black_box(&key)).unwrap();
                 k.encrypt(
@@ -192,7 +192,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut ossl_out = vec![0u8; size + 1 + cipher.block_size()];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut s = Crypter::new(
                     cipher,
@@ -208,7 +208,7 @@ pub fn bench(c: &mut Criterion) {
                 s.get_tag(&mut t).unwrap();
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_key(black_box(&key))
                     .seal_out_of_place_scatter(
@@ -226,7 +226,7 @@ pub fn bench(c: &mut Criterion) {
 
         let mut g = c.benchmark_group("aes-128-gcm-decrypt");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 buf.copy_from_slice(&ct);
                 let k = AesGcm::new(black_box(&key)).unwrap();
@@ -239,7 +239,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 decrypt_aead(
                     cipher,
@@ -252,7 +252,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 buf.copy_from_slice(&ct);
                 aws_lc_key(black_box(&key))
@@ -272,7 +272,7 @@ pub fn bench(c: &mut Criterion) {
         }
         let mut g = c.benchmark_group("aes-128-gcm-stream");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let k = AesGcm::new(black_box(&key)).unwrap();
                 let mut s = k.encryptor(black_box(&nonce)).unwrap();
@@ -282,7 +282,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut out = vec![0u8; size + cipher.block_size()];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut s = Crypter::new(
                     cipher,
@@ -331,17 +331,17 @@ pub fn bench(c: &mut Criterion) {
         assert_eq!((&buf[..], &tag[..]), (&ossl_out[..size], &ossl_tag[..]));
         let mut g = c.benchmark_group("aes-128-gcm-encrypt-reused-key");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 vg_key
                     .encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf))
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| ossl_seal(&[black_box(&data)], &mut ossl_out))
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_reused
                     .seal_in_place_separate_tag(
@@ -364,7 +364,7 @@ pub fn bench(c: &mut Criterion) {
         assert_eq!((&out[..], &tag[..]), (&ossl_out[..size + 1], &ossl_tag[..]));
         let mut g = c.benchmark_group("aes-128-gcm-encrypt-two-pieces-reused-key");
         g.throughput(Throughput::Bytes(size as u64 + 1));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 vg_key
                     .encrypt(
@@ -376,10 +376,10 @@ pub fn bench(c: &mut Criterion) {
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| ossl_seal(&[black_box(&data), black_box(&ty)], &mut ossl_out))
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_reused
                     .seal_out_of_place_scatter(
@@ -405,7 +405,7 @@ pub fn bench(c: &mut Criterion) {
         assert_eq!((&out[..], &tag[..]), (&ossl_out[..size], &ossl_tag[..]));
         let mut g = c.benchmark_group("aes-128-gcm-encrypt-halves-reused-key");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 vg_key
                     .encrypt(
@@ -417,10 +417,10 @@ pub fn bench(c: &mut Criterion) {
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| ossl_seal(&[black_box(h1), black_box(h2)], &mut ossl_out))
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_reused
                     .seal_out_of_place_scatter(
@@ -446,7 +446,7 @@ pub fn bench(c: &mut Criterion) {
     let mut tag = [0u8; 16];
     let mut g = c.benchmark_group("aes-128-gcm-stream-bytes");
     g.throughput(Throughput::Bytes(size as u64));
-    g.bench_function(BenchmarkId::new(VG, size), |b| {
+    g.bench(BenchmarkId::new(VG, size), |b| {
         b.iter(|| {
             let k = AesGcm::new(black_box(&key)).unwrap();
             let mut s = k.encryptor(black_box(&nonce)).unwrap();
@@ -457,7 +457,7 @@ pub fn bench(c: &mut Criterion) {
             s.finalize()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, size), |b| {
         b.iter(|| {
             let mut s = Crypter::new(
                 cipher,
@@ -659,7 +659,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
     use openssl::cipher_ctx::CipherCtx;
     use verified_garbage::aes_gcm::AesGcm;
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     let nonce = [0x24; 12];
     let aad = Aligned::new(&[0x17, 0x03, 0x03, 0x40, 0x11], offsets.aad);
@@ -705,7 +705,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
 
             let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal") + label);
             g.throughput(Throughput::Bytes(size as u64 + 1));
-            g.bench_function(BenchmarkId::new(VG, size), |b| {
+            g.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
                     vg_key
                         .encrypt(
@@ -717,7 +717,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
                         .unwrap()
                 })
             });
-            g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
                     ossl.encrypt_init(None, None, Some(black_box(&nonce)))
                         .unwrap();
@@ -733,7 +733,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
                     t
                 })
             });
-            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, size), |b| {
                 b.iter(|| {
                     aws_lc_key
                         .seal_in_place_separate_tag(
@@ -751,7 +751,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             if size < 256 {
                 let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-in-place") + label);
                 g.throughput(Throughput::Bytes(size as u64 + 1));
-                g.bench_function(BenchmarkId::new(VG, size), |b| {
+                g.bench(BenchmarkId::new(VG, size), |b| {
                     b.iter(|| {
                         vg_key
                             .encrypt_in_place(
@@ -769,7 +769,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             let mut buf = Aligned::new(&ct, offsets.input);
             let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-open") + label);
             g.throughput(Throughput::Bytes(size as u64 + 1));
-            g.bench_function(BenchmarkId::new(VG, size), |b| {
+            g.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
                     buf.copy_from_slice(&ct);
                     vg_key
@@ -782,7 +782,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
                         .unwrap()
                 })
             });
-            g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
                     ossl_dec
                         .decrypt_init(None, None, Some(black_box(&nonce)))
@@ -795,7 +795,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
                     ossl_dec.cipher_final(&mut ossl_out[n..]).unwrap();
                 })
             });
-            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, size), |b| {
                 b.iter(|| {
                     buf.copy_from_slice(&ct);
                     aws_lc_key
@@ -831,7 +831,7 @@ fn tls_connection_rows(c: &mut Criterion) {
     use openssl::cipher_ctx::CipherCtx;
     use verified_garbage::aes_gcm::AesGcm;
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     let nonce = [0x24; 12];
     let aad = [0x17, 0x03, 0x03, 0x40, 0x11];
@@ -853,7 +853,7 @@ fn tls_connection_rows(c: &mut Criterion) {
         let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-connection"));
         for records in [1, 2, 4, 16] {
             g.throughput(Throughput::Bytes((records * 256) as u64));
-            g.bench_function(BenchmarkId::new(VG, records), |b| {
+            g.bench(BenchmarkId::new(VG, records), |b| {
                 b.iter(|| {
                     let k = AesGcm::new(black_box(key)).unwrap();
                     for _ in 0..records {
@@ -869,7 +869,7 @@ fn tls_connection_rows(c: &mut Criterion) {
                     }
                 })
             });
-            g.bench_function(BenchmarkId::new(OPENSSL, records), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, records), |b| {
                 b.iter(|| {
                     let mut ossl = CipherCtx::new().unwrap();
                     ossl.encrypt_init(Some(ossl_alg), Some(black_box(key)), None)
@@ -890,7 +890,7 @@ fn tls_connection_rows(c: &mut Criterion) {
                     }
                 })
             });
-            g.bench_function(BenchmarkId::new(AWS_LC, records), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, records), |b| {
                 b.iter(|| {
                     let k = LessSafeKey::new(UnboundKey::new(alg, black_box(key)).unwrap());
                     for _ in 0..records {
@@ -932,7 +932,7 @@ fn key_setup_rows(c: &mut Criterion) {
     use openssl::cipher_ctx::CipherCtx;
     use verified_garbage::aes_gcm::AesGcm;
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     for (bits, key) in [(128, &[0x42u8; 16][..]), (256, &[0x42u8; 32][..])] {
         let (alg, ossl_alg) = if bits == 128 {
@@ -941,10 +941,10 @@ fn key_setup_rows(c: &mut Criterion) {
             (&AES_256_GCM, OsslCipher::aes_256_gcm())
         };
         let mut g = c.benchmark_group(format!("aes-{bits}-gcm-new"));
-        g.bench_function(BenchmarkId::new(VG, key.len()), |b| {
+        g.bench(BenchmarkId::new(VG, key.len()), |b| {
             b.iter(|| black_box(AesGcm::new(black_box(key)).unwrap()))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, key.len()), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, key.len()), |b| {
             b.iter(|| {
                 let mut ossl = CipherCtx::new().unwrap();
                 ossl.encrypt_init(Some(ossl_alg), Some(black_box(key)), None)
@@ -952,7 +952,7 @@ fn key_setup_rows(c: &mut Criterion) {
                 black_box(ossl)
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, key.len()), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, key.len()), |b| {
             b.iter(|| {
                 black_box(LessSafeKey::new(
                     UnboundKey::new(alg, black_box(key)).unwrap(),

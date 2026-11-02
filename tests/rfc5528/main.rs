@@ -1,6 +1,7 @@
 //! The Camellia-CTR test vectors of RFC 5528 §4.1, read from the
-//! byte-for-byte vendored RFC, and the increment of the counter block across
-//! its words and past `2¹²⁸`, against Camellia-ECB on the counter blocks.
+//! byte-for-byte vendored RFC; and the increment of the counter block across
+//! its words and past `2¹²⁸`, each block of a keystream being the one its
+//! counter block gives alone (`tests/modes.rs`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -14,7 +15,6 @@
 use crate::bytes::counter_add;
 use crate::text::{get, labelled};
 use verified_garbage::camellia_ctr::{CamelliaCtr, InvalidKeyLength};
-use verified_garbage::camellia_ecb::CamelliaEcb;
 
 /// Checks a message in one call, split at every block boundary, one call per
 /// block, and cut short at each length, with the counter block left after
@@ -87,9 +87,8 @@ fn rfc5528_test_vectors() {
 }
 
 /// The counter block's increment carries across its 32- and 64-bit words and
-/// wraps from `1¹²⁸` to `0¹²⁸`: the output blocks are Camellia (by
-/// Camellia-ECB) of the counter blocks counted with `u128`. The messages are
-/// 17 blocks and a bit long.
+/// wraps from `1¹²⁸` to `0¹²⁸` (`crate::modes::check_counter`), on messages
+/// of 17 blocks and a bit, at aligned and unaligned addresses.
 #[test]
 fn counter_carries_and_wraps() {
     let starts: [u128; 6] = [
@@ -103,14 +102,8 @@ fn counter_carries_and_wraps() {
     for key_len in [16, 24, 32] {
         let key: Vec<_> = crate::bytes::pattern(key_len, 29, 7);
         let ctx = CamelliaCtr::new(&key).unwrap();
-        let ecb = CamelliaEcb::new(&key).unwrap();
         for start in starts {
-            let ctr = start.to_be_bytes();
-            let message: Vec<_> = crate::bytes::pattern(16 * 17 + 7, 11, 5);
-            let mut stream = crate::bytes::counter_blocks(start, message.len().div_ceil(16));
-            ecb.encrypt(&mut stream).unwrap();
-            let expected: Vec<_> = crate::bytes::xor(&message, &stream);
-            check(&ctx, &ctr, &message, &expected);
+            crate::modes::check_counter(start.to_be_bytes(), 18, &|c, b| ctx.apply_keystream(c, b));
         }
     }
 }
@@ -127,33 +120,5 @@ fn limits_and_lengths() {
         let mut ctr = [0x3c; 16];
         ctx.apply_keystream(&mut ctr, &mut []);
         assert_eq!(ctr, [0x3c; 16]);
-    }
-}
-
-/// Lengths around multiples of eight and sixteen blocks, and partial blocks,
-/// must not touch bytes outside the slice, even when its address is
-/// unaligned. Compare with ECB of independently counted counter blocks, from
-/// a counter that wraps around after eight blocks.
-#[test]
-fn unaligned_batch_boundaries() {
-    for key_len in [16, 24, 32] {
-        let key: Vec<_> = crate::bytes::pattern(key_len, 19, 1);
-        let ctx = CamelliaCtr::new(&key).unwrap();
-        let ecb = CamelliaEcb::new(&key).unwrap();
-        let start = u128::MAX - 7;
-        for len in [0usize, 1, 15, 16, 17, 127, 128, 129, 255, 256, 257, 1025] {
-            let mut stream = crate::bytes::counter_blocks(start, len.div_ceil(16));
-            ecb.encrypt(&mut stream).unwrap();
-            for offset in 1..16 {
-                let mut buffer = vec![0xa5; offset + len + 16];
-                let mut ctr = start.to_be_bytes();
-                ctx.apply_keystream(&mut ctr, &mut buffer[offset..offset + len]);
-                assert!(crate::bytes::all_equal(&buffer[..offset], 0xa5));
-                assert!(crate::bytes::all_equal(&buffer[offset + len..], 0xa5));
-                let expected: Vec<_> = stream[..len].iter().map(|b| b ^ 0xa5).collect();
-                assert_eq!(&buffer[offset..offset + len], expected);
-                assert_eq!(ctr, counter_add(&start.to_be_bytes(), len.div_ceil(16)));
-            }
-        }
     }
 }
