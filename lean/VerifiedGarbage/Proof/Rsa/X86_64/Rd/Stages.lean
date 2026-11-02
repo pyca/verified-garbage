@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.X86_64.Div
+import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Framework.Omega
@@ -311,5 +312,378 @@ theorem twosG_ok [InvLaw] {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (h
       (fr o4 fun y => by tg_omega)).trans (fr o5 fun y => by tg_omega)).trans (fr o6 fun y => by tg_omega)).trans
       (fr o7 fun y => by tg_omega)).trans (hI.frm.mono fun y => by tg_omega)).trans
       (f9'.mono fun y => by tg_omega)
+
+/-! ## `a`, `m`, `r` and whether `m < n` (wide) -/
+
+theorem mask_and1 (a b : Bool) : mask a &&& mask b = mask (a && b) := by cases a <;> cases b <;> decide
+
+theorem sub8_ofNat {a : Nat} (h : 8 ≤ a) (ha : a < 2 ^ 64) :
+    BitVec.ofNat 64 a - 8 = BitVec.ofNat 64 (a - 8) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (8 : BitVec 64).toNat = 8 from rfl]
+  omega_arith
+
+/-- `setEl`: `e`'s length `4 w - 8`, for `Recover.prod`. -/
+theorem setEl_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
+    WP isa (.block setEl) s fun t =>
+      t.mem = s.mem.writeW (off B (8 * Impl.Bignum.X86_64.Public.sElen)) (BitVec.ofNat 64 (4 * w - 8)) ∧
+        Keep [.r12, .r9, .rax] s t := by
+  have h256 := h.h256
+  have hw2 := h.w2
+  have hw1 := h.w1
+  unfold setEl
+  rw [WP.block_append_iff]
+  refine WP.mono h.ws_ok fun s₁ ⟨h12, _, m₁, k₁⟩ => ?_
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem.writeW (off B (8 * Impl.Bignum.X86_64.Public.sElen))
+    (BitVec.ofNat 64 (4 * w - 8))) ?_ rfl) fun t ⟨mt, k₂⟩ => ⟨mt, (k₁.trans k₂).mono (by simp)⟩
+  have hs₁ := h.scr.congr k₁.2.2
+  have hdi₁ : s₁.gpr .rdi = B := (k₁.gpr (by decide)).trans h.rdi
+  xrun [State.ea, hdr, hdi₁, hdrOff, h12, hs₁.st (d := 8 * Impl.Bignum.X86_64.Public.sElen)
+    (by simp only [Impl.Bignum.X86_64.Public.sElen, sFn]; omega_arith), m₁, ofNat_dbl]
+  rw [show 2 * (2 * w) = 4 * w by omega_arith, sub8_ofNat (by omega_arith) (by omega_arith)]
+
+/-- `andNz`: the mask in `rbp` and'ed into `sMask`. -/
+theorem andNz_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {b c : Bool} (hm : mw s.mem B = mask c)
+    (hb : s.gpr .rbp = mask b) :
+    WP isa (.block andNz) s fun t =>
+      t.mem = s.mem.writeW (off B (8 * Impl.Bignum.X86_64.Public.sMask)) (mask (c && b)) ∧ Keep [.rbp] s t := by
+  have h256 := h.h256
+  refine WP.keep [.rbp] (Q := fun t => t.mem = s.mem.writeW (off B (8 * Impl.Bignum.X86_64.Public.sMask))
+    (mask (c && b))) ?_ rfl
+  unfold andNz
+  unfold mw at hm
+  xrun [State.ea, hdr, h.rdi, hdrOff, h.scr.ld (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by st_omega),
+    h.scr.st (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by st_omega), hm, hb]
+  rw [mask_and1, Bool.and_comm]
+
+/-- What `divA` changes: `e`'s length, the mask, and the wide arrays from 6 on. -/
+def DaP (w y : Nat) : Prop := (160 ≤ y ∧ y < 168) ∨ (176 ≤ y ∧ y < 184) ∨ (slot w 6 ≤ y ∧ y < slot w 16)
+
+macro "da_omega" : tactic =>
+  `(tactic| (simp only [DaP, DOk, Bignum.slot, hdrBytes, Impl.Bignum.X86_64.Public.sMask,
+    Impl.Bignum.X86_64.Public.sElen, sFn, ar]; omega_arith))
+
+/-- `divA` (wide, `w = 2 v + 2`): `a = g x mod 2^(64 w)` for `g` (wide array 6,
+below `2^(64 v)`) and `x` (wide array 2), `m = a / n` into wide array 7 and
+`r = a mod n` into wide array 6, and the mask and'ed with whether `m < n`. -/
+theorem divA_ok {s : State} {B : Addr} {Z w v : Nat} (h : Ws s B Z w) (hwv : w = 2 * v + 2) (hv1 : 1 ≤ v) {N G X : Nat}
+    {c : Bool} (hN : wv s.mem B (slot w 0) w = N) (hN0 : 0 < N) (hG : wv s.mem B (slot w 6) w = G)
+    (hGv : G < 2 ^ (64 * v)) (hX : wv s.mem B (slot w 2) w = X) (hm : mw s.mem B = mask c) :
+    WP isa (seqs divA) s fun t =>
+      wv t.mem B (slot w 7) w = X * G % 2 ^ (64 * w) / N ∧ wv t.mem B (slot w 6) w = X * G % 2 ^ (64 * w) % N ∧
+      mw t.mem B = mask (c && decide (X * G % 2 ^ (64 * w) / N < N)) ∧
+      FrmP B (DaP w) s.mem t.mem ∧ Keep [.r12, .r9, .rax, .rsi, .rbx, .r14, .r8, .r10, .r15, .r11, .r13, .rdx,
+        .rbp, .rcx] s t := by
+  have hn := h.scr.nowrap
+  have h256 := h.h256
+  have hZ := h.hZ
+  have hZ' : 256 + 16 * (8 * (w + 2)) ≤ Z := hZ
+  have hw1 := h.w1
+  have hw2 := h.w2
+  have hw4 : (4 * w - 8 + 7) / 8 = v := by omega_arith
+  simp only [divA, List.cons_append, List.nil_append, seqs]
+  -- `e`'s length, `g` and `x` as `Recover.prod` takes them.
+  refine WP.seq (WP.mono (setEl_ok h) fun t₁ ⟨m1, k1⟩ => ?_)
+  have h₁ := h.congrW m1 (by da_omega) (by decide) k1 (by simp)
+  have o1 : Outside B (8 * Impl.Bignum.X86_64.Public.sElen) 8 s.mem t₁.mem := by
+    rw [m1]; exact writeW_outside _ _ _ (by da_omega)
+  refine WP.seq (WP.mono (copyA_ok h₁ (o := 8) (a := 6) (by decide) (by decide) (by decide)) fun t₂ ⟨v2, o2, k2⟩ => ?_)
+  have h₂ := h₁.congrO o2 (by da_omega) k2 (by simp)
+  refine WP.seq (WP.mono (copyA_ok h₂ (o := 9) (a := 2) (by decide) (by decide) (by decide)) fun t₃ ⟨v3, o3, k3⟩ => ?_)
+  have h₃ := h₂.congrO o3 (by da_omega) k3 (by simp)
+  have G₃ : wv t₃.mem B (slot w 8) w = G := by
+    rw [o3.wv (by da_omega) (by da_omega), v2, o1.wv (by da_omega) (by da_omega), hG]
+  have X₃ : wv t₃.mem B (slot w 9) w = X := by
+    rw [v3, o2.wv (by da_omega) (by da_omega), o1.wv (by da_omega) (by da_omega), hX]
+  have el₃ : word t₃.mem B (8 * Impl.Bignum.X86_64.Public.sElen) = BitVec.ofNat 64 (4 * w - 8) := by
+    rw [o3.word (by da_omega) (by da_omega), o2.word (by da_omega) (by da_omega), m1, word_writeW_self]
+  -- `a = x g`.
+  refine wp_seqs_append (by simp [Recover.prod]) (by simp) (WP.mono (prod_ok h₃ el₃ (by omega_arith) (by omega_arith)
+    (by rw [hw4]; show wv t₃.mem B (slot w 8) w < _; rw [G₃]; exact hGv)) fun t₄ ⟨v4, o4, k4⟩ => ?_)
+  simp only [Recover.aE, Recover.aD, Recover.aM] at v4 o4
+  rw [G₃, X₃] at v4
+  have h₄ := h₃.congrO o4 (by da_omega) k4 (by simp)
+  have N₄ : wv t₄.mem B (slot w 0) w = N := by
+    rw [o4.wv (by da_omega) (by da_omega), o3.wv (by da_omega) (by da_omega), o2.wv (by da_omega) (by da_omega),
+      o1.wv (by da_omega) (by da_omega), hN]
+  have A₄ : wv t₄.mem B (slot w 10) w = X * G % 2 ^ (64 * w) := by
+    rw [← v4, show 2 * (w + 2) = w + (w + 4) by omega_arith]; exact wv_low_mod
+  -- `m` and `r`.
+  simp only [seqs]
+  refine WP.seq (WP.mono (divmod_ok h₄.scr h₄.rdi h₄.hw h₄.hS (by omega_arith) hw2 hZ (iQ := 10) (iR := 12) (iD := 0)
+    (iT := 13) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun t₅ ⟨_, f5, k5, hq5⟩ => ?_)
+  rw [N₄, A₄] at hq5
+  obtain ⟨r5, q5⟩ := hq5 hN0
+  have f5' : FrmP B (fun y => slot w 10 ≤ y ∧ y < slot w 14) t₄.mem t₅.mem := FrmP.of_frm f5 fun r hr y h1 h2 => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp only [Bignum.slot, hdrBytes] at h1 h2 ⊢ <;> omega_arith
+  have h₅ := h₄.congrP f5' (fun y => by da_omega) k5 (by decide)
+  have N₅ : wv t₅.mem B (slot w 0) w = N := by rw [f5'.wv_eq (fun y => by da_omega) (by da_omega), N₄]
+  -- Whether `m < n`.
+  refine WP.seq (WP.mono (subA_ok h₅ (t := 14) (a := 10) (b := 0) (by decide) (by decide) (by decide) (by decide)
+    (by decide)) fun t₆ ⟨hb6, _, o6, k6⟩ => ?_)
+  rw [q5, N₅] at hb6
+  have h₆ := h₅.congrO o6 (by da_omega) k6 (by simp)
+  have hm₆ : mw t₆.mem B = mask c := by
+    unfold mw at hm ⊢
+    rw [o6.word (by da_omega) (by da_omega), f5'.word_eq (fun y => by da_omega) (by da_omega),
+      o4.word (by da_omega) (by da_omega), o3.word (by da_omega) (by da_omega), o2.word (by da_omega) (by da_omega),
+      o1.word (by da_omega) (by da_omega), hm]
+  refine WP.seq (WP.mono (andNz_ok h₆ hm₆ hb6) fun t₇ ⟨m7, k7⟩ => ?_)
+  have h₇ := h₆.congrW m7 (by da_omega) (by decide) k7 (by simp)
+  have o7 : Outside B (8 * Impl.Bignum.X86_64.Public.sMask) 8 t₆.mem t₇.mem := by
+    rw [m7]; exact writeW_outside _ _ _ (by da_omega)
+  -- `m` and `r` into wide arrays 7 and 6.
+  refine WP.seq (WP.mono (copyA_ok h₇ (o := 7) (a := 10) (by decide) (by decide) (by decide)) fun t₈ ⟨v8, o8, k8⟩ => ?_)
+  have h₈ := h₇.congrO o8 (by da_omega) k8 (by simp)
+  refine WP.mono (copyA_ok h₈ (o := 6) (a := 12) (by decide) (by decide) (by decide)) fun t ⟨v9, o9, k9⟩ => ?_
+  have fr : ∀ {o n : Nat} {m m' : Mem}, Outside B o n m m' → (∀ y, o ≤ y → y < o + n → DaP w y) →
+      FrmP B (DaP w) m m' := fun ho hP => FrmP.of_out ho hP
+  have hNw : N < 2 ^ (64 * w) := hN ▸ wv_lt _ _ _ _
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [o9.wv (by da_omega) (by da_omega), v8, o7.wv (by da_omega) (by da_omega), o6.wv (by da_omega) (by da_omega), q5]
+  · rw [v9, o8.wv (by da_omega) (by da_omega), o7.wv (by da_omega) (by da_omega), o6.wv (by da_omega) (by da_omega),
+      wv_low_of_lt (v := w) (w := w + 1) (by omega_arith) (by rw [r5]; exact Nat.lt_trans (Nat.mod_lt _ hN0) hNw), r5]
+  · unfold mw
+    rw [o9.word (by da_omega) (by da_omega), o8.word (by da_omega) (by da_omega), m7, word_writeW_self]
+  · exact (((((((((fr o1 fun y => by da_omega).trans (fr o2 fun y => by da_omega)).trans (fr o3 fun y => by da_omega)).trans
+      (fr o4 fun y => by da_omega)).trans (f5'.mono fun y => by da_omega)).trans (fr o6 fun y => by da_omega)).trans
+      (fr o7 fun y => by da_omega)).trans (fr o8 fun y => by da_omega)).trans (fr o9 fun y => by da_omega))
+  · exact ((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans k9).mono
+      (by simp [stepRegs])
+
+/-! ## `m + 1`, `n - r`, `b` (narrow) -/
+
+/-- What `divB` changes: arrays 4 to 9, and the mask. -/
+def DbP (w y : Nat) : Prop := (slot w 4 ≤ y ∧ y < slot w 10) ∨ (176 ≤ y ∧ y < 184)
+
+macro "db_omega" : tactic =>
+  `(tactic| (simp only [DbP, DOk, Bignum.slot, hdrBytes, Impl.Bignum.X86_64.Public.sMask, sFn, ar]; omega_arith))
+
+/-- `divB` (narrow): `m₁ = (m mod 2^(64 w) + 1) mod 2^(64 w)` and `d = n - r`
+(modulo `2^(64 w)`), from the low words of `m` (array 14) and `r` (array
+12); the quotient `q` and remainder of `d` by `m₁` where `m₁ > 0`; the mask
+and'ed with whether the remainder is zero; `b = (q + 1) mod 2^(64 w)` in
+wide array 4 (narrow 8 and 9). -/
+theorem divB_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {N Ml Rl : Nat} {c : Bool}
+    (hN : wv s.mem B (slot w 0) w = N) (hone : wv s.mem B (slot w 2) w = 1) (hz : wv s.mem B (slot w 3) w = 0)
+    (hM : wv s.mem B (slot w 14) w = Ml) (hR : wv s.mem B (slot w 12) w = Rl) (hm : mw s.mem B = mask c) :
+    WP isa (seqs divB) s fun t => ∃ q rem : Nat,
+      (0 < (Ml + 1) % 2 ^ (64 * w) → q = wsub (64 * w) N Rl / ((Ml + 1) % 2 ^ (64 * w)) ∧
+        rem = wsub (64 * w) N Rl % ((Ml + 1) % 2 ^ (64 * w))) ∧
+      wv t.mem B (slot w 8) (2 * (w + 2)) = (q + 1) % 2 ^ (64 * w) ∧
+      mw t.mem B = mask (c && decide (rem = 0)) ∧
+      FrmP B (DbP w) s.mem t.mem ∧ Keep [.r12, .r9, .r8, .rax, .r14, .r15, .rbp, .r10, .rbx, .rsi, .r11, .r13, .rdx]
+        s t := by
+  have hn := h.scr.nowrap
+  have h256 := h.h256
+  have hZ := h.hZ
+  have hZ' : 256 + 16 * (8 * (w + 2)) ≤ Z := hZ
+  have hw1 := h.w1
+  have hw2 := h.w2
+  have hNw : N < 2 ^ (64 * w) := hN ▸ wv_lt _ _ _ _
+  simp only [divB, List.cons_append, List.nil_append, seqs]
+  -- `m₁`.
+  refine WP.seq (WP.mono (zeroA_ok h (j := 4) (by decide)) fun t₁ ⟨z1, o1, k1⟩ => ?_)
+  have h₁ := h.congrO o1 (by db_omega) k1 (by simp)
+  refine WP.seq (WP.mono (addA_ok h₁ (o := 4) (a := 14) (b := 2) (by decide) (by decide) (by decide) (by decide)
+    (by decide)) fun t₂ ⟨v2, o2, k2⟩ => ?_)
+  rw [o1.wv (by db_omega) (by db_omega), o1.wv (by db_omega) (by db_omega), hM, hone] at v2
+  have h₂ := h₁.congrO o2 (by db_omega) k2 (by simp)
+  -- `d`.
+  refine WP.seq (WP.mono (zeroA_ok h₂ (j := 5) (by decide)) fun t₃ ⟨z3, o3, k3⟩ => ?_)
+  have h₃ := h₂.congrO o3 (by db_omega) k3 (by simp)
+  refine WP.seq (WP.mono (subA_ok h₃ (t := 5) (a := 0) (b := 12) (by decide) (by decide) (by decide) (by decide)
+    (by decide)) fun t₄ ⟨_, e4, o4, k4⟩ => ?_)
+  have N₃ : wv t₃.mem B (slot w 0) w = N := by
+    rw [o3.wv (by db_omega) (by db_omega), o2.wv (by db_omega) (by db_omega), o1.wv (by db_omega) (by db_omega), hN]
+  have R₃ : wv t₃.mem B (slot w 12) w = Rl := by
+    rw [o3.wv (by db_omega) (by db_omega), o2.wv (by db_omega) (by db_omega), o1.wv (by db_omega) (by db_omega), hR]
+  rw [N₃, R₃] at e4
+  have D₄ := wsub_of_eq e4 (wv_lt _ _ _ _) hNw (hR ▸ wv_lt _ _ _ _)
+  have h₄ := h₃.congrO o4 (by db_omega) k4 (by simp)
+  have M1₄ : wv t₄.mem B (slot w 4) w = (Ml + 1) % 2 ^ (64 * w) := by
+    rw [o4.wv (by db_omega) (by db_omega), o3.wv (by db_omega) (by db_omega), v2]
+  -- `q` and the remainder.
+  refine WP.seq (WP.mono (divmod_ok h₄.scr h₄.rdi h₄.hw h₄.hS (by omega_arith) hw2 hZ (iQ := 5) (iR := 6) (iD := 4)
+    (iT := 7) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun t₅ ⟨_, f5, k5, hq5⟩ => ?_)
+  rw [M1₄, D₄] at hq5
+  have f5' : FrmP B (fun y => slot w 5 ≤ y ∧ y < slot w 8) t₄.mem t₅.mem := FrmP.of_frm f5 fun r hr y h1 h2 => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp only [Bignum.slot, hdrBytes] at h1 h2 ⊢ <;> omega_arith
+  have h₅ := h₄.congrP f5' (fun y => by db_omega) k5 (by decide)
+  -- Whether the remainder is zero.
+  have hz₅ : wv t₅.mem B (slot w 3) w = 0 := by
+    rw [f5'.wv_eq (fun y => by db_omega) (by db_omega), o4.wv (by db_omega) (by db_omega),
+      o3.wv (by db_omega) (by db_omega), o2.wv (by db_omega) (by db_omega), o1.wv (by db_omega) (by db_omega), hz]
+  refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok h₅ (a := 6) (b := 3) (by decide) (by decide))
+    fun t₆ ⟨hz6, m6, k6⟩ => ?_)
+  rw [hz₅] at hz6
+  have h₆ := h₅.congrP (FrmP.of_eq (P := fun _ => False) m6) (fun y hy => hy.elim) k6 (by simp)
+  have hm₆ : mw t₆.mem B = mask c := by
+    unfold mw at hm ⊢
+    rw [m6, f5'.word_eq (fun y => by db_omega) (by db_omega), o4.word (by db_omega) (by db_omega),
+      o3.word (by db_omega) (by db_omega), o2.word (by db_omega) (by db_omega), o1.word (by db_omega) (by db_omega), hm]
+  simp only [seqs]
+  refine WP.seq (WP.mono (andZero_ok h₆ hm₆ hz6) fun t₇ ⟨m7, k7⟩ => ?_)
+  have h₇ := h₆.congrW m7 (by db_omega) (by decide) k7 (by simp)
+  have o7 : Outside B (8 * Impl.Bignum.X86_64.Public.sMask) 8 t₆.mem t₇.mem := by
+    rw [m7]; exact writeW_outside _ _ _ (by db_omega)
+  -- `b = q + 1`.
+  refine WP.seq (WP.mono (zeroA_ok h₇ (j := 8) (by decide)) fun t₈ ⟨z8, o8, k8⟩ => ?_)
+  have h₈ := h₇.congrO o8 (by db_omega) k8 (by simp)
+  refine WP.seq (WP.mono (addA_ok h₈ (o := 8) (a := 5) (b := 2) (by decide) (by decide) (by decide) (by decide)
+    (by decide)) fun t₉ ⟨v9, o9, k9⟩ => ?_)
+  have h₉ := h₈.congrO o9 (by db_omega) k9 (by simp)
+  refine WP.mono (zeroA_ok h₉ (j := 9) (by decide)) fun t ⟨z10, o10, k10⟩ => ?_
+  have one₈ : wv t₈.mem B (slot w 2) w = 1 := by
+    rw [o8.wv (by db_omega) (by db_omega), o7.wv (by db_omega) (by db_omega), m6, f5'.wv_eq (fun y => by db_omega)
+      (by db_omega), o4.wv (by db_omega) (by db_omega), o3.wv (by db_omega) (by db_omega),
+      o2.wv (by db_omega) (by db_omega), o1.wv (by db_omega) (by db_omega), hone]
+  rw [one₈, o8.wv (by db_omega) (by db_omega), o7.wv (by db_omega) (by db_omega), m6] at v9
+  refine ⟨wv t₅.mem B (slot w 5) w, wv t₅.mem B (slot w 6) w, fun hpos => ?_, ?_, ?_, ?_, ?_⟩
+  · obtain ⟨r5, q5⟩ := hq5 hpos
+    refine ⟨q5, ?_⟩
+    have l1 := Nat.mod_lt (wsub (64 * w) N Rl) hpos
+    have l2 := Nat.mod_lt (Ml + 1) (Nat.two_pow_pos (64 * w))
+    have l3 : wv t₅.mem B (slot w 6) (w + 1) < 2 ^ (64 * w) := by rw [r5]; omega_arith
+    rw [wv_low_of_lt (v := w) (w := w + 1) (by omega_arith) l3, r5]
+  · -- `b`'s top words are zero.
+    have zt : wv t.mem B (slot w 8 + 8 * w) (w + 4) = 0 := by
+      rw [show w + 4 = 2 + (w + 2) by omega_arith, wv_add,
+        show slot w 8 + 8 * w + 8 * 2 = slot w 9 by simp only [Bignum.slot, hdrBytes]; omega_arith, z10,
+        o10.wv (by db_omega) (by db_omega), o9.wv (by db_omega) (by db_omega)]
+      rw [wv_zero_sub (a := w) (k := 2) z8 (by omega_arith)]
+    rw [show 2 * (w + 2) = w + (w + 4) by omega_arith, wv_top_zero zt, o10.wv (by db_omega) (by db_omega), v9,
+      Nat.add_comm]
+  · unfold mw
+    rw [o10.word (by db_omega) (by db_omega), o9.word (by db_omega) (by db_omega), o8.word (by db_omega) (by db_omega),
+      m7, word_writeW_self]
+  · have fr : ∀ {o n : Nat} {m m' : Mem}, Outside B o n m m' → (∀ y, o ≤ y → y < o + n → DbP w y) →
+        FrmP B (DbP w) m m' := fun ho hP => FrmP.of_out ho hP
+    exact ((((((((((fr o1 fun y => by db_omega).trans (fr o2 fun y => by db_omega)).trans (fr o3 fun y => by db_omega)).trans
+      (fr o4 fun y => by db_omega)).trans (f5'.mono fun y => by db_omega)).trans (FrmP.of_eq m6)).trans
+      (fr o7 fun y => by db_omega)).trans (fr o8 fun y => by db_omega)).trans (fr o9 fun y => by db_omega)).trans
+      (fr o10 fun y => by db_omega))
+  · exact (((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans k9).trans k10).mono
+      (by simp [stepRegs])
+
+/-! ## `b² - 4 n` (wide) -/
+
+/-- What `minus4n` changes: wide arrays 0 and 7 to 15, and the mask. -/
+def MnP (w y : Nat) : Prop := (slot w 0 ≤ y ∧ y < slot w 1) ∨ (slot w 7 ≤ y ∧ y < slot w 16) ∨ (176 ≤ y ∧ y < 184)
+
+macro "mn_omega" : tactic =>
+  `(tactic| (simp only [MnP, DOk, Bignum.slot, hdrBytes, Impl.Bignum.X86_64.Public.sMask,
+    Impl.Bignum.X86_64.Public.sElen, sFn, ar]; omega_arith))
+
+/-- `minus4n` (wide, `w = 2 v + 2`): `b²` (`b` in wide array 4, below
+`2^(64 v)`), `4 n` (`n` in wide array 0, doubled twice in place), `X = b² - 4 n`
+into wide array 7, and the mask and'ed with `b² > 4 n` as `ok4Of` says. -/
+theorem minus4n_ok {s : State} {B : Addr} {Z w v : Nat} (h : Ws s B Z w) (hwv : w = 2 * v + 2) (hv1 : 1 ≤ v)
+    {N b : Nat} {c : Bool} (hN : wv s.mem B (slot w 0) w = N) (hone : wv s.mem B (slot w 1) w = 1)
+    (hb : wv s.mem B (slot w 4) w = b) (hbv : b < 2 ^ (64 * v))
+    (hel : word s.mem B (8 * Impl.Bignum.X86_64.Public.sElen) = BitVec.ofNat 64 (4 * w - 8))
+    (hm : mw s.mem B = mask c) :
+    WP isa (seqs minus4n) s fun t =>
+      wv t.mem B (slot w 7) w = xOf (64 * v) (64 * w) N b ∧ mw t.mem B = mask (c && ok4Of (64 * v) (64 * w) N b) ∧
+      FrmP B (MnP w) s.mem t.mem ∧ Keep [.r12, .r9, .rax, .rsi, .rbx, .r14, .r8, .r10, .r15, .r11, .r13, .rdx,
+        .rbp, .rcx] s t := by
+  have hn := h.scr.nowrap
+  have h256 := h.h256
+  have hZ := h.hZ
+  have hZ' : 256 + 16 * (8 * (w + 2)) ≤ Z := hZ
+  have hw1 := h.w1
+  have hw2 := h.w2
+  have hw4 : (4 * w - 8 + 7) / 8 = v := by omega_arith
+  have hbw : b < 2 ^ (64 * w) := hb ▸ wv_lt _ _ _ _
+  have hNw : N < 2 ^ (64 * w) := hN ▸ wv_lt _ _ _ _
+  simp only [minus4n, List.cons_append, List.nil_append, seqs]
+  refine WP.seq (WP.mono (copyA_ok h (o := 8) (a := 4) (by decide) (by decide) (by decide)) fun t₁ ⟨v1, o1, k1⟩ => ?_)
+  have h₁ := h.congrO o1 (by mn_omega) k1 (by simp)
+  refine WP.seq (WP.mono (copyA_ok h₁ (o := 9) (a := 4) (by decide) (by decide) (by decide)) fun t₂ ⟨v2, o2, k2⟩ => ?_)
+  have h₂ := h₁.congrO o2 (by mn_omega) k2 (by simp)
+  have E₂ : wv t₂.mem B (slot w 8) w = b := by rw [o2.wv (by mn_omega) (by mn_omega), v1, hb]
+  have D₂ : wv t₂.mem B (slot w 9) w = b := by rw [v2, o1.wv (by mn_omega) (by mn_omega), hb]
+  have el₂ : word t₂.mem B (8 * Impl.Bignum.X86_64.Public.sElen) = BitVec.ofNat 64 (4 * w - 8) := by
+    rw [o2.word (by mn_omega) (by mn_omega), o1.word (by mn_omega) (by mn_omega), hel]
+  -- `b²`.
+  refine wp_seqs_append (by simp [Recover.prod]) (by simp) (WP.mono (prod_ok h₂ el₂ (by omega_arith) (by omega_arith)
+    (by rw [hw4]; show wv t₂.mem B (slot w 8) w < _; rw [E₂]; exact hbv)) fun t₃ ⟨v3, o3, k3⟩ => ?_)
+  simp only [Recover.aE, Recover.aD, Recover.aM] at v3 o3
+  rw [E₂, D₂] at v3
+  have h₃ := h₂.congrO o3 (by mn_omega) k3 (by simp)
+  have S₃ : wv t₃.mem B (slot w 10) w = b * b % 2 ^ (64 * w) := by
+    rw [← v3, show 2 * (w + 2) = w + (w + 4) by omega_arith]; exact wv_low_mod
+  -- `4 n`.
+  simp only [seqs]
+  refine WP.seq (WP.mono (shlA_ok h₃ false (j := 0) (c₀ := false) (by decide) (shlPre_mask h₃ maskZero))
+    fun t₄ ⟨_, _, e4, o4, k4⟩ => ?_)
+  simp only [shlN, ↓reduceIte, Bool.false_eq_true] at e4 o4
+  have h₄ := h₃.congrO o4 (by mn_omega) k4 (by simp)
+  refine WP.seq (WP.mono (shlA_ok h₄ false (j := 0) (c₀ := false) (by decide) (shlPre_mask h₄ maskZero))
+    fun t₅ ⟨_, _, e5, o5, k5⟩ => ?_)
+  simp only [shlN, ↓reduceIte, Bool.false_eq_true] at e5 o5
+  have h₅ := h₄.congrO o5 (by mn_omega) k5 (by simp)
+  have N₃ : wv t₃.mem B (slot w 0) w = N := by
+    rw [o3.wv (by mn_omega) (by mn_omega), o2.wv (by mn_omega) (by mn_omega), o1.wv (by mn_omega) (by mn_omega), hN]
+  have F₅ : wv t₅.mem B (slot w 0) w = fourN (64 * w) N := by
+    rw [N₃] at e4
+    obtain ⟨v4', _⟩ := dbl_val e4 (wv_lt _ _ _ _)
+    obtain ⟨v5', _⟩ := dbl_val e5 (wv_lt _ _ _ _)
+    rw [v5', v4']
+    simp only [Bool.toNat_false, Nat.add_zero, fourN]
+  have S₅ : wv t₅.mem B (slot w 10) w = sqOf (64 * v) (64 * w) b := by
+    rw [o5.wv (by mn_omega) (by mn_omega), o4.wv (by mn_omega) (by mn_omega), S₃]
+    unfold sqOf
+    rw [prod_iter _ _ _ hbw]
+    simp only
+    rw [Nat.mod_eq_of_lt hbv]
+  -- `X = b² - 4 n` and the checks.
+  refine WP.seq (WP.mono (subA_ok h₅ (t := 12) (a := 10) (b := 0) (by decide) (by decide) (by decide) (by decide)
+    (by decide)) fun t₆ ⟨hb6, e6, o6, k6⟩ => ?_)
+  rw [S₅, F₅] at hb6 e6
+  have h₆ := h₅.congrO o6 (by mn_omega) k6 (by simp)
+  have hm₆ : mw t₆.mem B = mask c := by
+    unfold mw at hm ⊢
+    rw [o6.word (by mn_omega) (by mn_omega), o5.word (by mn_omega) (by mn_omega), o4.word (by mn_omega) (by mn_omega),
+      o3.word (by mn_omega) (by mn_omega), o2.word (by mn_omega) (by mn_omega), o1.word (by mn_omega) (by mn_omega), hm]
+  refine WP.seq (WP.mono (andB_ok h₆ hm₆ hb6) fun t₇ ⟨m7, k7⟩ => ?_)
+  have h₇ := h₆.congrW m7 (by mn_omega) (by decide) k7 (by simp)
+  have o7 : Outside B (8 * Impl.Bignum.X86_64.Public.sMask) 8 t₆.mem t₇.mem := by
+    rw [m7]; exact writeW_outside _ _ _ (by mn_omega)
+  have X₇ : wv t₇.mem B (slot w 12) w = xOf (64 * v) (64 * w) N b := by
+    rw [o7.wv (by mn_omega) (by mn_omega)]
+    exact wsub_of_eq e6 (wv_lt _ _ _ _) (S₅ ▸ wv_lt _ _ _ _) (F₅ ▸ wv_lt _ _ _ _)
+  have one₇ : wv t₇.mem B (slot w 1) w = 1 := by
+    rw [o7.wv (by mn_omega) (by mn_omega), o6.wv (by mn_omega) (by mn_omega), o5.wv (by mn_omega) (by mn_omega),
+      o4.wv (by mn_omega) (by mn_omega), o3.wv (by mn_omega) (by mn_omega), o2.wv (by mn_omega) (by mn_omega),
+      o1.wv (by mn_omega) (by mn_omega), hone]
+  refine WP.seq (WP.mono (subA_ok h₇ (t := 13) (a := 12) (b := 1) (by decide) (by decide) (by decide) (by decide)
+    (by decide)) fun t₈ ⟨hb8, _, o8, k8⟩ => ?_)
+  rw [X₇, one₇] at hb8
+  have h₈ := h₇.congrO o8 (by mn_omega) k8 (by simp)
+  have hm₈ : mw t₈.mem B = mask (c && !decide (sqOf (64 * v) (64 * w) b < fourN (64 * w) N)) := by
+    unfold mw
+    rw [o8.word (by mn_omega) (by mn_omega), m7, word_writeW_self]
+  refine WP.seq (WP.mono (andB_ok h₈ hm₈ hb8) fun t₉ ⟨m9, k9⟩ => ?_)
+  have h₉ := h₈.congrW m9 (by mn_omega) (by decide) k9 (by simp)
+  have o9 : Outside B (8 * Impl.Bignum.X86_64.Public.sMask) 8 t₈.mem t₉.mem := by
+    rw [m9]; exact writeW_outside _ _ _ (by mn_omega)
+  refine WP.mono (copyA_ok h₉ (o := 7) (a := 12) (by decide) (by decide) (by decide)) fun t ⟨v10, o10, k10⟩ => ?_
+  have fr : ∀ {o n : Nat} {m m' : Mem}, Outside B o n m m' → (∀ y, o ≤ y → y < o + n → MnP w y) →
+      FrmP B (MnP w) m m' := fun ho hP => FrmP.of_out ho hP
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [v10, o9.wv (by mn_omega) (by mn_omega), o8.wv (by mn_omega) (by mn_omega), X₇]
+  · unfold mw
+    rw [o10.word (by mn_omega) (by mn_omega), m9, word_writeW_self, ok4Of, Bool.not_or, Bool.and_assoc]
+  · exact (((((((((fr o1 fun y => by mn_omega).trans (fr o2 fun y => by mn_omega)).trans (fr o3 fun y => by mn_omega)).trans
+      (fr o4 fun y => by mn_omega)).trans (fr o5 fun y => by mn_omega)).trans (fr o6 fun y => by mn_omega)).trans
+      (fr o7 fun y => by mn_omega)).trans (fr o8 fun y => by mn_omega)).trans (fr o9 fun y => by mn_omega)).trans
+      (fr o10 fun y => by mn_omega)
+  · exact (((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans k9).trans k10).mono
+      (by simp)
 
 end VG.Proof.Rsa.X86_64.Rd
