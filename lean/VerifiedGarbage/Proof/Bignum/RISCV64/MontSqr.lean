@@ -355,4 +355,161 @@ theorem zeroT_ok {s : State} {B : Addr} {Z dT w : Nat} (hs : Scr s B Z)
     rfl
   · exact Keep.trans' jk ((((Keep.mem _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono (by decide))
 
+/-! ## The cross products -/
+
+/-- `L + K + 1 + R` words: the low `L`, the middle `K`, a word and the rest. -/
+theorem wordsVal_seg (m : Mem) (B : Addr) (d L K R : Nat) :
+    wordsVal m B d (L + K + 1 + R) = wordsVal m B d L + 2 ^ (64 * L) * (wordsVal m B (d + 8 * L) K +
+      2 ^ (64 * K) * ((word m B (d + 8 * (L + K))).toNat + 2 ^ 64 * wordsVal m B (d + 8 * (L + K + 1)) R)) := by
+  rw [show L + K + 1 + R = L + (K + (R + 1)) by omega_arith, fios_wordsVal_append, fios_wordsVal_append,
+    show R + 1 = 0 + (R + 1) by omega_arith, Nat.zero_add, wordsVal,
+    show d + 8 * L + 8 * K = d + 8 * (L + K) by omega_arith,
+    show d + 8 * (L + K) + 8 = d + 8 * (L + K + 1) by omega_arith]
+
+/-- The registers `cross` writes. -/
+def crossRegs : List Reg := [.a0, .a1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
+
+/-- `cross`, `a` (`w` words) at `dA` (`a3`), `T` (`2 w + 2` words, 0) at `dT`
+(`a5`): `T` the cross products of `a`, `crossPart … (w - 1)`. -/
+theorem cross_ok {s₀ : State} {B : Addr} {Z dA dT w : Nat} (hs : Scr s₀ B Z)
+    (hA8 : dA % 8 = 0) (hT8 : dT % 8 = 0)
+    (h3 : s₀.gpr .a3 = off B dA) (h5 : s₀.gpr .a5 = off B dT) (ht0 : s₀.gpr .t0 = BitVec.ofNat 64 w)
+    (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hA : dA + 8 * w ≤ Z) (hT : dT + 8 * (2 * w + 2) ≤ Z)
+    (dAT : dA + 8 * w ≤ dT ∨ dT + 8 * (2 * w + 2) ≤ dA) (hz : wordsVal s₀.mem B dT (2 * w + 2) = 0) :
+    WP isa cross s₀ fun s =>
+      (wordsVal s.mem B dT (2 * w + 2) = crossPart s₀.mem B dA w (w - 1) ∧
+        Outside B dT (8 * (2 * w + 2)) s₀.mem s.mem) ∧ Keep crossRegs s₀ s := by
+  have hnw := hs.nowrap
+  unfold cross
+  have hpre : WP isa (.block [.addi .t3 .a3 0, .addi .a1 .t0 (-1), .addi .t2 .a5 8]) s₀ fun s₁ =>
+      (s₁.gpr .t3 = off B dA ∧ s₁.gpr .a1 = BitVec.ofNat 64 (w - 1) ∧ s₁.gpr .t2 = off B (dT + 8 * (2 * 0 + 1)) ∧
+        s₁.mem = s₀.mem) ∧ Keep [.t3, .a1, .t2] s₀ s₁ := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [h3, h5, ht0, BitVec.add_zero, ofNat_sub_one (show 1 ≤ w by omega_arith) (by omega_arith)]
+  refine WP.seq (WP.mono hpre fun s₁ ⟨⟨i3, i1, i2, im⟩, k₁⟩ => ?_)
+  let J : Nat → State → Prop := fun i s =>
+    s.gpr .t3 = off B (dA + 8 * i) ∧ s.gpr .t2 = off B (dT + 8 * (2 * i + 1)) ∧
+      Outside B dT (8 * (2 * w + 2)) s₀.mem s.mem ∧
+      wordsVal s.mem B dT (2 * w + 2) = crossPart s₀.mem B dA w i ∧
+      wordsVal s.mem B (dT + 8 * (i + w)) (w + 2 - i) = 0 ∧ Keep crossRegs s₀ s
+  have hJ0 : J 0 s₁ := by
+    refine ⟨by rw [i3]; rfl, i2, by rw [im]; exact Outside.refl _ _ _ _, by rw [im, hz]; rfl, ?_,
+      k₁.mono (by decide)⟩
+    have e := fios_wordsVal_append s₀.mem B dT w (w + 2)
+    rw [show w + (w + 2) = 2 * w + 2 by omega_arith, hz] at e
+    rw [im, Nat.zero_add, Nat.sub_zero]
+    have := Nat.two_pow_pos (64 * w)
+    rcases Nat.eq_zero_or_pos (wordsVal s₀.mem B (dT + 8 * w) (w + 2)) with h | h
+    · exact h
+    · exfalso; have := Nat.mul_le_mul_left (2 ^ (64 * w)) h; omega_arith
+  refine WP.mono (wp_countdown (body := .seq (.block [.load .d .s0 .t3 0, .li .s1 0, .addi .a0 .t3 8,
+      .addi .t4 .t2 0, .addi .t5 .a1 0]) (.seq macRun (.block [.store .d .s1 .t4 0, .addi .t3 .t3 8,
+      .addi .t2 .t2 16, .addi .a1 .a1 (-1)]))) (cnt := .a1) (N := w - 1) (by omega_arith) (by omega_arith) J
+    (fun i hi s hJ hc => ?_) hJ0 i1) fun s ⟨_, _, jout, jv, _, jk⟩ => ⟨⟨jv, jout⟩, jk⟩
+  obtain ⟨j3, j2, jout, jv, jz, jk⟩ := hJ
+  have hsJ := hs.congr jk.2.2
+  -- The start of row `i`.
+  have hrp : WP isa (.block [.load .d .s0 .t3 0, .li .s1 0, .addi .a0 .t3 8, .addi .t4 .t2 0,
+      .addi .t5 .a1 0]) s fun s₂ =>
+      (s₂.gpr .s0 = word s.mem B (dA + 8 * i) ∧ s₂.gpr .s1 = 0 ∧ s₂.gpr .a0 = off B (dA + 8 * (i + 1)) ∧
+        s₂.gpr .t4 = off B (dT + 8 * (2 * i + 1)) ∧ s₂.gpr .t5 = BitVec.ofNat 64 (w - 1 - i) ∧
+        s₂.mem = s.mem) ∧ Keep [.s0, .s1, .a0, .t4, .t5] s s₂ := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [fin64_exec_li_zero, j3, j2, hc, BitVec.add_zero, hsJ.ld (show dA + 8 * i + 8 ≤ Z by omega_arith),
+      hsJ.al8 (show dA + 8 * i + 8 ≤ Z by omega_arith) (by omega_arith),
+      show dA + 8 * i + 8 = dA + 8 * (i + 1) by omega_arith]
+  refine WP.seq (WP.mono hrp fun s₂ ⟨⟨l0, l1, la, l4, l5, lm⟩, k₂⟩ => ?_)
+  -- The row.
+  have hK : w - 1 - i < 2 ^ 32 := by omega_arith
+  refine WP.seq (WP.mono (macRun_ok (dT := dT + 8 * (2 * i + 1)) (dY := dA + 8 * (i + 1)) (K := w - 1 - i)
+    (hsJ.congr k₂.2.2) (by omega_arith) (by omega_arith) l4 la l5 hK (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun s₃ ⟨⟨n4, _, nout, neq⟩, k₃⟩ => ?_)
+  -- Its carry, and the pointers.
+  have g₃ : ∀ r ∈ [Reg.t3, .t2, .a1], s₃.gpr r = s.gpr r := fun r hr => by
+    rw [k₃.gpr (by revert r hr; decide), k₂.gpr (by revert r hr; decide)]
+  have hsK := hsJ.congr (k₂.trans k₃).2.2
+  have dK : dT + 8 * (2 * i + 1) + 8 * (w - 1 - i) = dT + 8 * (i + w) := by omega_arith
+  rw [dK] at n4
+  have hst : WP isa (.block [.store .d .s1 .t4 0, .addi .t3 .t3 8, .addi .t2 .t2 16, .addi .a1 .a1 (-1)]) s₃
+      fun t => t = ((({ s₃ with mem := s₃.mem.writeW (off B (dT + 8 * (i + w))) (s₃.gpr .s1) } : State).write
+        .t3 (off B (dA + 8 * i + 8))).write .t2 (off B (dT + 8 * (2 * i + 1) + 16))).write .a1
+          (s.gpr .a1 - BitVec.ofNat 64 1) := by
+    brun [n4, g₃ .t3 (by decide), g₃ .t2 (by decide), g₃ .a1 (by decide), j3, j2,
+      hsK.st (show dT + 8 * (i + w) + 8 ≤ Z by omega_arith),
+      hsK.al8 (show dT + 8 * (i + w) + 8 ≤ Z by omega_arith) (by omega_arith)]
+  refine WP.mono hst fun t e => ?_
+  subst e
+  have hm : ∀ x, ({ s₃ with mem := s₃.mem.writeW (off B (dT + 8 * (i + w))) (s₃.gpr .s1) } : State).mem x =
+      (s₃.mem.writeW (off B (dT + 8 * (i + w))) (s₃.gpr .s1)) x := fun _ => rfl
+  -- The memory, word by word.
+  have outW : Outside B (dT + 8 * (i + w)) 8 s₃.mem (s₃.mem.writeW (off B (dT + 8 * (i + w))) (s₃.gpr .s1)) :=
+    writeW_outside _ B _ (by omega_arith)
+  have o₃ : Outside B (dT + 8 * (2 * i + 1)) (8 * (w - 1 - i)) s.mem s₃.mem := by rw [← lm]; exact nout
+  refine ⟨⟨by gsimp; rw [show dA + 8 * i + 8 = dA + 8 * (i + 1) by omega_arith], by gsimp; rw [show dT + 8 * (2 * i + 1) + 16 = dT + 8 * (2 * (i + 1) + 1) by omega_arith],
+    ?_, ?_, ?_, ?_⟩, by gsimp⟩
+  · gsimp
+    exact (jout.trans ((o₃.mono (by omega_arith) (by omega_arith)).trans (outW.mono (by omega_arith) (by omega_arith))))
+  · gsimp
+    -- The low words, the row, its carry and the rest.
+    have hlen : 2 * w + 2 = (2 * i + 1) + (w - 1 - i) + 1 + (w + 1 - i) := by omega_arith
+    rw [hlen, wordsVal_seg]
+    rw [hlen, wordsVal_seg] at jv
+    have eL : wordsVal (s₃.mem.writeW (off B (dT + 8 * (i + w))) (s₃.gpr .s1)) B dT (2 * i + 1) =
+        wordsVal s.mem B dT (2 * i + 1) := by
+      rw [outW.wordsVal (by omega_arith) (by omega_arith)]
+      exact o₃.wordsVal (by omega_arith) (by omega_arith)
+    have eM : wordsVal (s₃.mem.writeW (off B (dT + 8 * (i + w))) (s₃.gpr .s1)) B (dT + 8 * (2 * i + 1)) (w - 1 - i) =
+        wordsVal s₃.mem B (dT + 8 * (2 * i + 1)) (w - 1 - i) :=
+      outW.wordsVal (by omega_arith) (by omega_arith)
+    have eW : word (s₃.mem.writeW (off B (dT + 8 * (i + w))) (s₃.gpr .s1)) B (dT + 8 * (2 * i + 1 + (w - 1 - i))) =
+        s₃.gpr .s1 := by
+      rw [show dT + 8 * (2 * i + 1 + (w - 1 - i)) = dT + 8 * (i + w) by omega_arith]; exact word_writeW_self _ _ _ _
+    have eR : ∀ m' : Mem, Outside B (dT + 8 * (2 * i + 1)) (8 * (w - 1 - i) + 8) s.mem m' →
+        wordsVal m' B (dT + 8 * (2 * i + 1 + (w - 1 - i) + 1)) (w + 1 - i) =
+          wordsVal s.mem B (dT + 8 * (2 * i + 1 + (w - 1 - i) + 1)) (w + 1 - i) := fun m' h =>
+      h.wordsVal (by omega_arith) (by omega_arith)
+    have oA : Outside B (dT + 8 * (2 * i + 1)) (8 * (w - 1 - i) + 8) s.mem
+        (s₃.mem.writeW (off B (dT + 8 * (i + w))) (s₃.gpr .s1)) :=
+      (o₃.mono (Nat.le_refl _) (by omega_arith)).trans (outW.mono (by omega_arith) (by omega_arith))
+    rw [eL, eM, eW, eR _ oA]
+    -- On entry, word `i + w` and the rest are 0.
+    have ez := jz
+    rw [show w + 2 - i = 0 + 1 + (w + 1 - i) by omega_arith, show 0 + 1 + (w + 1 - i) = 1 + (w + 1 - i) by omega_arith,
+      fios_wordsVal_append, show (1 : Nat) = 0 + 1 from rfl, wordsVal] at ez
+    have zw : (word s.mem B (dT + 8 * (2 * i + 1 + (w - 1 - i)))).toNat = 0 := by
+      rw [show dT + 8 * (2 * i + 1 + (w - 1 - i)) = dT + 8 * (i + w) by omega_arith]; simp [wordsVal] at ez; omega_arith
+    have zr : wordsVal s.mem B (dT + 8 * (2 * i + 1 + (w - 1 - i) + 1)) (w + 1 - i) = 0 := by
+      rw [show dT + 8 * (2 * i + 1 + (w - 1 - i) + 1) = dT + 8 * (i + w) + 8 * (0 + 1) by omega_arith]
+      simp only [wordsVal, Nat.mul_zero, Nat.add_zero, Nat.zero_add] at ez
+      rcases Nat.eq_zero_or_pos (wordsVal s.mem B (dT + 8 * (i + w) + 8 * 1) (w + 1 - i)) with h | h
+      · exact h
+      · exfalso; have := Nat.mul_le_mul_left (2 ^ 64) h; omega_arith
+    rw [zw, zr] at jv
+    rw [zr]
+    -- The row's sum.
+    rw [lm, l0, l1, jout.word (by omega_arith) (by omega_arith),
+      jout.wordsVal (d := dA + 8 * (i + 1)) (by omega_arith) (by omega_arith)] at neq
+    rw [crossPart, ← jv]
+    have h0 : (0 : BitVec 64).toNat = 0 := rfl
+    simp only [h0, Nat.mul_zero, Nat.add_zero] at neq ⊢
+    generalize 2 ^ (64 * (2 * i + 1)) = P at ⊢
+    generalize 2 ^ (64 * (w - 1 - i)) = Q at neq ⊢
+    generalize wordsVal s₃.mem B (dT + 8 * (2 * i + 1)) (w - 1 - i) = M' at neq ⊢
+    generalize (s₃.gpr Reg.s1).toNat = c at neq ⊢
+    rw [Nat.add_assoc, ← Nat.mul_add, ← neq]
+  · gsimp
+    have oA : Outside B (dT + 8 * (2 * i + 1)) (8 * (w - 1 - i) + 8) s.mem
+        (s₃.mem.writeW (off B (dT + 8 * (i + w))) (s₃.gpr .s1)) :=
+      (o₃.mono (Nat.le_refl _) (by omega_arith)).trans (outW.mono (by omega_arith) (by omega_arith))
+    rw [show dT + 8 * (i + 1 + w) = dT + 8 * (i + w) + 8 * 1 by omega_arith,
+      show w + 2 - (i + 1) = w + 1 - i by omega_arith, oA.wordsVal (by omega_arith) (by omega_arith)]
+    have ez := jz
+    rw [show w + 2 - i = 1 + (w + 1 - i) by omega_arith, fios_wordsVal_append] at ez
+    rcases Nat.eq_zero_or_pos (wordsVal s.mem B (dT + 8 * (i + w) + 8 * 1) (w + 1 - i)) with h | h
+    · exact h
+    · exfalso; have := Nat.mul_le_mul_left (2 ^ (64 * 1)) h; omega_arith
+  · exact Keep.trans' jk (Keep.trans' (k₂.mono (by decide)) (Keep.trans' (k₃.mono (by decide))
+      ((((Keep.mem _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).trans (Keep.write _ _ _) |>.mono
+        (by decide))))
+
 end VG.Proof.Bignum.RISCV64
