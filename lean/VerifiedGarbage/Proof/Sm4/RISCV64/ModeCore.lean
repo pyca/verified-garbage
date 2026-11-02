@@ -214,7 +214,7 @@ theorem layout (d : Dir) : Layout (dirCore d) :=
 /-- A word of ECB's scratch buffer outside the core's buffer, apart from what
 the mode writes. -/
 theorem word_apart (d : Dir) {B : Addr} {k : Nat} (hk : k < slots)
-    (hkb : k < tailSlot ∨ tailSlot + 2 ≤ k) {r : Region}
+    (hkb : k < tailSlot ∨ tailSlot + 32 ≤ k) {r : Region}
     (hr : Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (blkRegion (dirCore d) B)) :
     Region.Disjoint ⟨wordAddr (ecbA B) k, 8⟩ r := by
   rw [slots_eq] at hk
@@ -226,7 +226,7 @@ theorem word_apart (d : Dir) {B : Addr} {k : Nat} (hk : k < slots)
     show Region.Sub _ ⟨B + BitVec.ofNat 64 (8 * 6), 8 * (404 - 6)⟩
     exact Offset.sub B (by omega) (by omega)
   · refine Region.Disjoint.sub_right ?_ hr
-    show Region.Disjoint _ ⟨B + BitVec.ofNat 64 (8 * 103), 4 * 4 * 1⟩
+    show Region.Disjoint _ ⟨B + BitVec.ofNat 64 (8 * 103), 4 * 4 * 16⟩
     exact Offset.disjoint B (by omega) (by omega) (by omega)
 
 theorem ready_frame (d : Dir) {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule}
@@ -234,7 +234,7 @@ theorem ready_frame (d : Dir) {s s' : State} {B : Addr} {ws : List Region} {k : 
     (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (blkRegion (dirCore d) B)) :
     Ready d s' B ws k := by
   obtain ⟨hm, hk, hka⟩ := h
-  have keep : ∀ j < slots, (j < tailSlot ∨ tailSlot + 2 ≤ j) →
+  have keep : ∀ j < slots, (j < tailSlot ∨ tailSlot + 32 ≤ j) →
       s'.mem.readW (wordAddr (ecbA B) j) 64 = s.mem.readW (wordAddr (ecbA B) j) 64 := fun j hj hjb =>
     hf.readW (Region.contains_self _ _) (fun r hr => word_apart d hj hjb (hd r hr)) (by decide)
   refine ⟨fun kv hkv => ?_, fun e he => (hk e he).congr fun j hj => ?_, ?_⟩
@@ -248,7 +248,7 @@ theorem ready_frame (d : Dir) {s s' : State} {B : Addr} {ws : List Region} {k : 
     rcases hd r hr with h | h
     · exact h.sub_left (show Region.Sub ⟨B + BitVec.ofNat 64 48, 8⟩ ⟨B + BitVec.ofNat 64 (8 * 6), 8 * (404 - 6)⟩
         from Offset.sub B (by decide) (by decide))
-    · exact Region.Disjoint.sub_right (show Region.Disjoint _ ⟨B + BitVec.ofNat 64 (8 * 103), 4 * 4 * 1⟩ from
+    · exact Region.Disjoint.sub_right (show Region.Disjoint _ ⟨B + BitVec.ofNat 64 (8 * 103), 4 * 4 * 16⟩ from
         Offset.disjoint B (.inl (by decide)) (by decide) (by decide)) h
 
 /-! ## The core's code -/
@@ -530,19 +530,18 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.S
       simp only [List.mem_singleton] at hr <;> subst hr <;>
       refine ⟨_, List.mem_singleton_self _, sub_core d B ?_ ?_⟩ <;>
       (try simp only [savedSlot_eq, tableSlot_eq]) <;> decide
-  · have hj' : j < 1 := hj
-    obtain rfl : j = 0 := by omega
-    have hP : blkAddr (dirCore d) B 0 = s₄.gpr sb + BitVec.ofNat 64 (8 * tailSlot + 16 * 0) := by
+  · have hj' : j < 16 := hj
+    have hP : blkAddr (dirCore d) B j = s₄.gpr sb + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := by
       rw [sb₄]
-      show B + BitVec.ofNat 64 (8 * 103) + BitVec.ofNat 64 (4 * 4 * 0) = B + BitVec.ofNat 64 56 + _
-      rw [Offset.add_add, Offset.add_add, tailSlot_eq]
+      show B + BitVec.ofNat 64 (8 * 103) + BitVec.ofNat 64 (4 * 4 * j) = B + BitVec.ofNat 64 56 + _
+      rw [Offset.add_add, Offset.add_add, tailSlot_eq, show 8 * 103 + 4 * 4 * j = 56 + (8 * 96 + 16 * j) by omega]
     show bytesAt v.mem _ 16 = dirCipher d k (bytesAt s.mem _ 16)
-    have := o 0 (by decide)
+    have := o j hj'
     simp only [tailBlock, hb, sb₄] at this
     rw [hP, dirCipher_bytes, Proof.Sm4.bytesAt_eq_blockAt, mv, sb₄, this, quads_spec, mem₄]
     rw [blockAt_frame f₂ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [ecbA_add, ecbA_add]
-      exact Offset.disjoint B (.inl (by rw [tailSlot_eq, savedSlot_eq]; decide)) (by rw [tailSlot_eq]; decide)
+      exact Offset.disjoint B (.inl (by rw [tailSlot_eq, savedSlot_eq]; omega)) (by rw [tailSlot_eq]; omega)
         (by rw [savedSlot_eq]; decide)]
     rfl
 

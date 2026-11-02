@@ -8,7 +8,8 @@ public import VerifiedGarbage.Spec.Sm4.Ofb
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Modes.RISCV64.Modes
-import VerifiedGarbage.Proof.Modes.RISCV64.Ctr
+import VerifiedGarbage.Proof.Modes.RISCV64.Wide
+import VerifiedGarbage.Proof.Modes.RISCV64.WideCtr
 public import VerifiedGarbage.Proof.Modes.RISCV64.Seq
 public import VerifiedGarbage.Proof.Modes.Steps
 import VerifiedGarbage.Proof.Framework.Contract
@@ -135,10 +136,11 @@ theorem cbcEncryptChained_correct (s : State) (hs : (modeContract cbcEncPost).pr
 
 theorem cbcDecryptChained_correct (s : State) (hs : (modeContract cbcDecPost).pre s) :
     ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcDecPost).post s s' :=
-  WP.mono (Proof.Modes.RISCV64.cbcDecChained_wp (dirCoreSpec .decrypt)
+  WP.mono (Proof.Modes.RISCV64.cbcDecWide_wp (lg := 4) (dirCoreSpec .decrypt)
+    (by decide) (by exact (by decide : 2 ^ 4 ≤ 16)) (by exact (by decide : 2 ^ 4 * (4 * 4) ≤ 2032))
     (seqPre_of .decrypt (M := Mode.cbcDecChained 4) rfl hs)
     (keyArgs_of .decrypt (M := Mode.cbcDecChained 4) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_dec] at h2 h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_dec] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem ofb_correct (s : State) (hs : (modeContract ofbPost).pre s) :
     ∃ t s', Exec isa ofb s t s' ∧ abiPreserved s s' ∧ (modeContract ofbPost).post s s' :=
@@ -156,17 +158,19 @@ theorem cfbEncrypt_correct (s : State) (hs : (modeContract cfbEncPost).pre s) :
 
 theorem cfbDecrypt_correct (s : State) (hs : (modeContract cfbDecPost).pre s) :
     ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContract cfbDecPost).post s s' :=
-  WP.mono (Proof.Modes.RISCV64.cfbDec_wp (dirCoreSpec .encrypt)
-    (seqPre_of .encrypt (M := Mode.cfbDec 4) rfl hs)
-    (keyArgs_of .encrypt (M := Mode.cfbDec 4) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩
+  WP.mono (Proof.Modes.RISCV64.cfbDecWide_wp (lg := 4) (dirCoreSpec .encrypt)
+    (by decide) (by exact (by decide : 2 ^ 4 ≤ 16)) (by exact (by decide : 2 ^ 4 * (4 * 4) ≤ 2032))
+    (seqPre_of .encrypt (M := Mode.cfbDecEarly 4) rfl hs)
+    (keyArgs_of .encrypt (M := Mode.cfbDecEarly 4) rfl hs))
+    fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem ctr_correct (s : State) (hs : (modeContract ctrPost).pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract ctrPost).post s s' :=
-  WP.mono (Proof.Modes.RISCV64.ctr_wp (dirCoreSpec .encrypt) rfl
-    (seqPre_of .encrypt (M := Mode.ctr) rfl hs)
-    (keyArgs_of .encrypt (M := Mode.ctr) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩
+  WP.mono (Proof.Modes.RISCV64.ctrWide_wp (lg := 4) (dirCoreSpec .encrypt) rfl (by decide)
+    (by exact (by decide : 2 ^ 4 ≤ 16)) (by decide)
+    (seqPre_of .encrypt (M := Mode.ctrEarly) rfl hs)
+    (keyArgs_of .encrypt (M := Mode.ctrEarly) rfl hs))
+    fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩
 
 /-! ## The contracts -/
 
