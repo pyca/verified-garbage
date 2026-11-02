@@ -59,10 +59,12 @@ abbrev chnRegion (c : Core) (B : Addr) : Region := ⟨slotA B Core.chnSlot, 4 * 
 abbrev scrRegion (c : Core) (B : Addr) : Region := ⟨B, 8 * c.total⟩
 
 /-- What a run keeps fixed: the frame at `B`, the data at `D` of `n`
-steps of `st` bytes, and the layout. -/
-structure Fixed (c : Core) (s₀ : State) (B D : Addr) (n st : Nat) : Prop where
+steps of `st` bytes, readable, and writable if the mode's operations write
+to them (`.dat ∈ ws`, the areas they write), and the layout. -/
+structure Fixed (c : Core) (s₀ : State) (B D : Addr) (n st : Nat) (ws : List Loc) : Prop where
   scr : ScrIn s₀ B c.total
-  dataW : dataRegion D st n ∈ s₀.wr
+  dataR : dataRegion D st n ∈ s₀.rd ++ s₀.wr
+  dataW : Loc.dat ∈ ws → dataRegion D st n ∈ s₀.wr
   dataFit : D.toNat + st * n ≤ 2 ^ 64
   dataScr : Region.Disjoint (dataRegion D st n) (scrRegion c B)
   nFit : n < 2 ^ 64
@@ -124,9 +126,10 @@ theorem slot_sub {B : Addr} {total d n : Nat} (h : d + n ≤ 8 * total) :
   VG.Offset.sub_base _ h
 
 /-- Every byte of the areas at step `j`, as the code addresses them. -/
-theorem areasOk {s₀ s : State} {B D : Addr} {n st j : Nat} (hF : Fixed c s₀ B D n st) (hj : j < n)
-    (hb : s.gpr sb = B) (hdp : s.gpr .s2 = D + BitVec.ofNat 64 (st * j)) (hwr : s.wr = s₀.wr) :
-    AreasOk c s (lens c st) (areas c B D st j) allLocs := by
+theorem areasOk {ws : List Loc} {s₀ s : State} {B D : Addr} {n st j : Nat} (hF : Fixed c s₀ B D n st ws) (hj : j < n)
+    (hb : s.gpr sb = B) (hdp : s.gpr .s2 = D + BitVec.ofNat 64 (st * j)) (hrd : s.rd = s₀.rd)
+    (hwr : s.wr = s₀.wr) :
+    AreasOk c s (lens c st) (areas c B D st j) ws := by
   have hL := hF.layout
   have hfit := hF.scr.fit
   have hge := hL.buf_ge
@@ -139,18 +142,29 @@ theorem areasOk {s₀ s : State} {B D : Addr} {n st j : Nat} (hF : Fixed c s₀ 
   have hb4 : 8 * c.buf + 4 * c.bw ≤ min (8 * c.total) 2032 :=
     Nat.le_min.mpr ⟨Nat.le_trans (Nat.add_le_add_left (Nat.le_mul_of_pos_right _ hL.G_pos) _) hbuf,
       Nat.le_trans (Nat.add_le_add_left (Nat.le_mul_of_pos_right _ hL.G_pos) _) hdisp⟩
-  have hW : ∀ l off w, 0 < w → off + w ≤ lens c st l → InRegions s.wr (areas c B D st j l + BitVec.ofNat 64 off) w := by
-    intro l off w hw0 ho
+  -- The step's data, in the data, and the slots, in the frame.
+  have hDat : ∀ off w, 0 < w → off + w ≤ st →
+      (dataRegion D st n).Contains (D + BitVec.ofNat 64 (st * j) + BitVec.ofNat 64 off) w := fun off w hw0 ho => by
+    rw [VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega_using [hjn, ho]) (by omega_using [hD, hjn, ho, hw0])
+  have hScr : ∀ l off w, l ≠ .dat → 0 < w → off + w ≤ lens c st l →
+      InRegions s.wr (areas c B D st j l + BitVec.ofNat 64 off) w := by
+    intro l off w hl hw0 ho
     rw [hwr]
     cases l
-    · simp only [lens, areas] at ho ⊢
-      refine ⟨_, hF.dataW, ?_⟩
-      rw [VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega_using [hjn, ho]) (by omega_using [hD, hjn, ho, hw0])
+    · exact absurd rfl hl
     · simp only [lens, areas] at ho ⊢
       rw [VG.Offset.add_add]; exact hF.scr.low _ _ (by have := hge; simp only [coreSlot] at this; slot_omega)
     · simp only [lens, areas] at ho ⊢
       rw [VG.Offset.add_add]; exact hF.scr.low _ _ (by omega_using [hb4, ho])
-  refine ⟨fun l off ho => ?_, fun l off ho => ?_, fun l off w hw0 ho => ?_, fun l _ off w hw0 ho => hW l off w hw0 ho,
+  have hW : ∀ l ∈ ws, ∀ off w, 0 < w → off + w ≤ lens c st l →
+      InRegions s.wr (areas c B D st j l + BitVec.ofNat 64 off) w := by
+    intro l hl off w hw0 ho
+    cases l
+    · simp only [lens, areas] at ho ⊢
+      rw [hwr]; exact ⟨_, hF.dataW hl, hDat off w hw0 ho⟩
+    · exact hScr _ off w (by decide) hw0 ho
+    · exact hScr _ off w (by decide) hw0 ho
+  refine ⟨fun l off ho => ?_, fun l off ho => ?_, fun l off w hw0 ho => ?_, hW,
     fun l l' hne => ?_, fun l => ?_⟩
   · cases l
     · simp only [Core.loc, lens, areas] at ho ⊢
@@ -163,8 +177,12 @@ theorem areasOk {s₀ s : State} {B D : Addr} {n st j : Nat} (hF : Fixed c s₀ 
     · simp only [Core.loc, lens] at ho ⊢; omega_using [ho, hst, hbw]
     · simp only [Core.loc, lens] at ho ⊢; slot_omega
     · simp only [Core.loc, lens] at ho ⊢; omega_using [ho, hb4, hdisp]
-  · obtain ⟨r, hr, hc⟩ := hW l off w hw0 ho
-    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  · cases l
+    · simp only [lens, areas] at ho ⊢
+      rw [hrd, hwr]; exact ⟨_, hF.dataR, hDat off w hw0 ho⟩
+    all_goals
+      obtain ⟨r, hr, hc⟩ := hScr _ off w (by decide) hw0 ho
+      exact ⟨r, List.mem_append_right _ hr, hc⟩
   · have dD : ∀ d m, d + m ≤ 8 * c.total →
         Region.Disjoint ⟨D + BitVec.ofNat 64 (st * j), st⟩ ⟨B + BitVec.ofNat 64 d, m⟩ :=
       fun d m h => (hF.dataScr.sub_left (VG.Offset.sub_base _ hjn)).sub_right (slot_sub h)
@@ -204,7 +222,7 @@ structure Regs (c : Core) (B D : Addr) (n st j : Nat) : Prop where
   dataChn : Region.Disjoint (dataRegion D st n) (chnRegion c B)
   toBig : ∀ r ∈ fine c B D st j, ∃ r' ∈ big c B D n st, Region.Sub r r'
 
-theorem regs {s₀ : State} {B D : Addr} {n st j : Nat} (hF : Fixed c s₀ B D n st) (hj : j < n) :
+theorem regs {ws : List Loc} {s₀ : State} {B D : Addr} {n st j : Nat} (hF : Fixed c s₀ B D n st ws) (hj : j < n) :
     Regs c B D n st j := by
   have hL := hF.layout
   have hfit := hF.scr.fit
@@ -279,26 +297,33 @@ theorem mem_kept {r : Reg} (h : r = .a0 ∨ r = .s1 ∨ r = .s3 ∨ r = .s2) : r
 theorem kept_ne : ∀ r ∈ kept, r ≠ .t0 ∧ r ≠ .t1 ∧ r ≠ .t2 := by decide
 
 /-- The operations' hypotheses, for `opsCode_wp`. -/
-theorem ops_ok {len : Loc → Nat} {os : List Op} (h : ∀ o ∈ os, o.InBounds len) :
-    ∀ o ∈ os, o.InBounds len ∧ o.dst ∈ allLocs :=
-  fun o ho => ⟨h o ho, mem_allLocs _⟩
+theorem ops_ok {len : Loc → Nat} {os : List Op} {ws : List Loc} (h : ∀ o ∈ os, o.InBounds len)
+    (hw : ∀ o ∈ os, o.dst ∈ ws) : ∀ o ∈ os, o.InBounds len ∧ o.dst ∈ ws :=
+  fun o ho => ⟨h o ho, hw o ho⟩
 
-theorem pre_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
-    {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st)
-    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st)) {j : Nat} (hj : j < n) {s : State}
-    (hI : Inv cs s₀ B D n st k F c0 xs j s) :
+/-- The regions of some of the areas are among those of all of them. -/
+theorem areaRegions_sub {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} {r : Region}
+    (h : r ∈ areaRegions len A ws) : r ∈ areaRegions len A allLocs := by
+  simp only [areaRegions, List.mem_map] at h ⊢
+  obtain ⟨l, _, rfl⟩ := h
+  exact ⟨l, mem_allLocs l, rfl⟩
+
+theorem pre_wp (cs : CoreSpec c) {ws : List Loc} {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
+    {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st ws)
+    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st)) (hpw : ∀ o ∈ M.pre, o.dst ∈ ws) {j : Nat} (hj : j < n)
+    {s : State} (hI : Inv cs s₀ B D n st k F c0 xs j s) :
     WP isa (.block (c.opsCode M.pre)) s
       (Mid cs s₀ B D n st j k s (applyOps M.pre (cont (areas c B D st j) s.mem))) := by
   have hR := regs hF hj
-  have hA : AreasOk c s (lens c st) (areas c B D st j) allLocs := areasOk hF hj hI.b hI.dp hI.wr
+  have hA : AreasOk c s (lens c st) (areas c B D st j) ws := areasOk hF hj hI.b hI.dp hI.rd hI.wr
   rw [← List.append_nil (c.opsCode M.pre)]
-  refine WP.of_syms (opsCode_wp c (ops_ok hpre) hA fun s₂ a₂ f₂ g₂ rd₂ wr₂ => WP.block_nil fun sy₂ => ?_)
+  refine WP.of_syms (opsCode_wp c (ops_ok hpre hpw) hA fun s₂ a₂ f₂ g₂ rd₂ wr₂ => WP.block_nil fun sy₂ => ?_)
   exact ⟨by rw [g₂ _ (by decide) (by decide) (by decide)]; exact hI.b,
     fun r hr => g₂ r (kept_ne r hr).1 (kept_ne r hr).2.1 (kept_ne r hr).2.2,
     by rw [rd₂, hI.rd], by rw [wr₂, hI.wr],
     cs.ready_frame hI.ready (fun r hr _ _ _ _ => g₂ r (kept_ne r hr).1 (kept_ne r hr).2.1 (kept_ne r hr).2.2) rd₂ wr₂ sy₂ f₂
-      hR.areasW hR.areasCore, a₂,
-    f₂.sub hR.areasFine⟩
+      (fun r hr => hR.areasW r (areaRegions_sub hr)) (fun r hr => hR.areasCore r (areaRegions_sub hr)), a₂,
+    f₂.sub fun r hr => hR.areasFine r (areaRegions_sub hr)⟩
 
 theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
     (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
@@ -307,8 +332,8 @@ theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
 theorem blkAddr_zero (c : Core) (B : Addr) : blkAddr c B 0 = slotA B c.buf := by
   simp only [blkAddr, Nat.mul_zero, BitVec.add_zero]
 
-theorem crypt_step (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n st : Nat} {k : cs.Key}
-    (hF : Fixed c s₀ B D n st) {j : Nat} (hj : j < n) {s s₂ : State} {a : Areas}
+theorem crypt_step (cs : CoreSpec c) {ws : List Loc} {s₀ : State} {B D : Addr} {n st : Nat} {k : cs.Key}
+    (hF : Fixed c s₀ B D n st ws) {j : Nat} (hj : j < n) {s s₂ : State} {a : Areas}
     (hm : Mid cs s₀ B D n st j k s a s₂) :
     WP isa c.crypt s₂ (Mid cs s₀ B D n st j k s (cryptBuf (4 * c.bw) (cs.cipher k) a)) := by
   have hR := regs hF hj
@@ -361,9 +386,10 @@ theorem ofNat_pred64 {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 64 k - BitVec.ofNat 
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   omega
 
-theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
-    {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st) (hM : M.step = st)
-    (hpost : ∀ o ∈ M.post, o.InBounds (lens c st)) (hcomp : Computes M (4 * c.bw) (cs.cipher k) F)
+theorem post_wp (cs : CoreSpec c) {ws : List Loc} {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
+    {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st ws) (hM : M.step = st)
+    (hpost : ∀ o ∈ M.post, o.InBounds (lens c st)) (hqw : ∀ o ∈ M.post, o.dst ∈ ws)
+    (hcomp : Computes M (4 * c.bw) (cs.cipher k) F)
     (hxs : xs.length = n) {j : Nat} (hj : j < n) {s s₃ : State} (hI : Inv cs s₀ B D n st k F c0 xs j s)
     (hm : Mid cs s₀ B D n st j k s (cryptBuf (4 * c.bw) (cs.cipher k)
       (applyOps M.pre (cont (areas c B D st j) s.mem))) s₃) :
@@ -378,8 +404,8 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
     fun r hr => hm.kept r (mem_kept hr)
   have dp₃ : s₃.gpr .s2 = D + BitVec.ofNat 64 (st * j) := by rw [k₃ _ (by simp), hI.dp]
   have np₃ : s₃.gpr .s3 = BitVec.ofNat 64 (n - j) := by rw [k₃ _ (by simp), hI.np]
-  have hA : AreasOk c s₃ (lens c st) (areas c B D st j) allLocs := areasOk hF hj hm.b dp₃ hm.wr
-  refine WP.of_syms (opsCode_wp c (ops_ok hpost) hA fun s₅ a₅ f₅ g₅ rd₅ wr₅ => ?_)
+  have hA : AreasOk c s₃ (lens c st) (areas c B D st j) ws := areasOk hF hj hm.b dp₃ hm.rd hm.wr
+  refine WP.of_syms (opsCode_wp c (ops_ok hpost hqw) hA fun s₅ a₅ f₅ g₅ rd₅ wr₅ => ?_)
   simp only [Core.advance]
   refine wp_addi (by omega_using [hM, hst, hbw]) fun s₆ u₆ =>
     wp_subi (imm := 1) (by decide) fun s₇ u₇ => WP.block_nil fun sy₇ => ?_
@@ -403,7 +429,8 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   have chn₅ : bytesAt s₅.mem (slotA B Core.chnSlot) (4 * c.bw) =
       (F (run F c0 (xs.take j)).2 (xs[j]'(by omega_using [hxs, hj]))).2 := by
     rw [← hc2]; exact rd_agree hstep (l := .chn) (Nat.le_refl _)
-  have all : Frame (fine c B D st j) s.mem s₅.mem := hm.frame.trans (f₅.sub hR.areasFine)
+  have all : Frame (fine c B D st j) s.mem s₅.mem :=
+    hm.frame.trans (f₅.sub fun r hr => hR.areasFine r (areaRegions_sub hr))
   have hrun : run F c0 (xs.take (j + 1)) = ((run F c0 (xs.take j)).1 ++
       [(F (run F c0 (xs.take j)).2 (xs[j]'(by omega_using [hxs, hj]))).1],
       (F (run F c0 (xs.take j)).2 (xs[j]'(by omega_using [hxs, hj]))).2) := by
@@ -417,7 +444,7 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
     congr 1
   · exact cs.ready_frame hm.ready (fun r hr _ h31 h30 _ => g₇ r (kept_ne r hr).1 (kept_ne r hr).2.1 (kept_ne r hr).2.2 h30 h31)
       (by rw [u₇.rd, u₆.rd, rd₅]) (by rw [u₇.wr, u₆.wr, wr₅]) sy₇ (by rw [m₇]; exact f₅)
-      hR.areasW hR.areasCore
+      (fun r hr => hR.areasW r (areaRegions_sub hr)) (fun r hr => hR.areasCore r (areaRegions_sub hr))
   · rw [m₇, chunksAt_set (j := j) (fun i hi hout => ?_), hI.data, out₅, run_set F c0 (by omega_using [hxs, hj])]
     refine all _ fun r hr hcon => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -434,19 +461,21 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
 
 /-! ## The step and the loop -/
 
-theorem body_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
-    {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st) (hM : M.step = st)
+theorem body_wp (cs : CoreSpec c) {ws : List Loc} {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
+    {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st ws) (hM : M.step = st)
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st)) (hpost : ∀ o ∈ M.post, o.InBounds (lens c st))
+    (hpw : ∀ o ∈ M.pre, o.dst ∈ ws) (hqw : ∀ o ∈ M.post, o.dst ∈ ws)
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hxs : xs.length = n) {j : Nat} (hj : j < n) {s : State}
     (hI : Inv cs s₀ B D n st k F c0 xs j s) :
     WP isa (c.body M) s (Inv cs s₀ B D n st k F c0 xs (j + 1)) := by
   unfold Core.body
-  exact WP.seq (WP.mono (pre_wp cs hF hpre hj hI) fun _ h₂ =>
-    WP.seq (WP.mono (crypt_step cs hF hj h₂) fun _ h₃ => post_wp cs hF hM hpost hcomp hxs hj hI h₃))
+  exact WP.seq (WP.mono (pre_wp cs hF hpre hpw hj hI) fun _ h₂ =>
+    WP.seq (WP.mono (crypt_step cs hF hj h₂) fun _ h₃ => post_wp cs hF hM hpost hqw hcomp hxs hj hI h₃))
 
-theorem loop_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
-    {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st) (hM : M.step = st)
+theorem loop_wp (cs : CoreSpec c) {ws : List Loc} {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st : Nat}
+    {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} (hF : Fixed c s₀ B D n st ws) (hM : M.step = st)
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st)) (hpost : ∀ o ∈ M.post, o.InBounds (lens c st))
+    (hpw : ∀ o ∈ M.pre, o.dst ∈ ws) (hqw : ∀ o ∈ M.post, o.dst ∈ ws)
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hxs : xs.length = n) {s : State}
     (hI : Inv cs s₀ B D n st k F c0 xs 0 s) :
     WP isa (.ite (.zero .s3) (.block []) (.loop (c.body M) (.nonzero .s3))) s
@@ -465,7 +494,7 @@ theorem loop_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
     (fun (m : Nat) (t : State) => ∃ j, m = n - j ∧ j < n ∧ Inv cs s₀ B D n st k F c0 xs j t)
     ?_ n s ⟨0, by omega_using [], by omega_using [hn], hI⟩
   rintro _ t ⟨j, rfl, hj, h⟩
-  refine WP.mono (body_wp cs hF hM hpre hpost hcomp hxs hj h) fun t' h' => ?_
+  refine WP.mono (body_wp cs hF hM hpre hpost hpw hqw hcomp hxs hj h) fun t' h' => ?_
   have e := ev (j := j + 1) (by omega_using [hj]) h'.np
   by_cases he : j + 1 = n
   · left; exact ⟨by rw [e]; simp [he], he ▸ h'⟩

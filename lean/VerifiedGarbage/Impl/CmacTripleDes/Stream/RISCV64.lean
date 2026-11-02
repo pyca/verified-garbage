@@ -6,13 +6,15 @@ public import VerifiedGarbage.Impl.Words.RISCV64.Bytes
 public import VerifiedGarbage.Impl.Words.RISCV64.XorBytes
 public import VerifiedGarbage.Impl.Words.RISCV64.Loops
 public import VerifiedGarbage.Impl.Cmac.RISCV64
+public import VerifiedGarbage.Impl.Modes.CbcMac
 
 /-!
 # Streaming TDEA-CMAC on RISC-V
 
 The streaming functions over the verified Triple DES key expansion
-(`vg_triple_des_expand_key`) and ECB encryption (`vg_triple_des_ecb_encrypt`,
-on one block in place), which they call, with the streaming state's layout
+(`vg_triple_des_expand_key`), ECB encryption (`vg_triple_des_ecb_encrypt`,
+on one block in place) and CBC-MAC (`vg_triple_des_mac_chain`, `macChain`),
+which they call, with the streaming state's layout
 of `Spec.Cmac.tdesRepr`: the key schedule at 0, the subkeys at 384 and 392,
 the chaining value at 400 and the bytes held back at 408. The state is the
 schedule ECB reads, and ECB enciphers the chaining value in place in the
@@ -29,8 +31,9 @@ too.
   computes the number of bytes held back `h` from `count`; if the data fit
   in the `8 - h` bytes after them, copies them there; otherwise it completes
   the block held back, XORs it into the chaining value and enciphers that,
-  then does the same with each whole block of the data but its last 1 to 8
-  bytes, which it holds back.
+  then chains each whole block of the data but its last 1 to 8 bytes, which
+  it holds back, in one call of `vg_triple_des_mac_chain`, which copies the
+  schedules once for all of them.
 * `finish(state = a0, count = a1, out = a2, scratch = a3)` XORs into the
   chaining value the block held back and `K1` if it is complete, else the
   bytes held back padded (in the scratch buffer) and `K2`, enciphers it, and
@@ -140,24 +143,22 @@ def chainSetup : List Instr :=
   [.add .s3 .s3 .t1, .addi .t2 .s4 (-1), .shift .srl .d .s5 .t2 3, .shift .sll .d .t2 .s5 3,
    .sub .s4 .s4 .t2, .addi .a0 .s1 400, .addi .a1 .s1 408] ++ xorBytes .t0 .t1 .a0 .a1 8 ++ ecbArgs 400
 
-/-- CBC-MAC (SP 800-38B §6.2, step 6), one block at a time: `buf := Mⱼ ⊕
-C`, and `C := CIPH_K(buf)` to the chaining value; the data are only read. -/
-def macMode : Modes.Mode where
-  pre := Modes.xorBlk 2 .buf .dat .chn
-  post := Modes.copyBlk 2 .chn .buf
-  step := 8
-  ivOut := true
+/-- `vg_triple_des_mac_chain(schedule = a0, state = a1, data = a2, n = a3)`:
+the CBC-MAC of the `n` blocks at `data` into the chaining value at `state`
+(`Mode.cbcMac`), over Triple DES's core for the modes
+(`Impl.TripleDes.RISCV64.dirCore .encrypt`), which copies the schedules into
+its frame once. It has no `Api`: `absorb` is proven with it, through its call
+of it. -/
+def macChain : Prog isa := (Impl.TripleDes.RISCV64.dirCore .encrypt).seq (Modes.Mode.cbcMac 2)
 
-/-- The CBC-MAC of the `n = a3` blocks at `a2` into the chaining value at
-`a1`, under the schedules at `a0`: Triple DES's core for the modes
-(`dirCore .encrypt`), inlined, which copies the schedules once. -/
-def macChain : Prog isa := (Impl.TripleDes.RISCV64.dirCore .encrypt).seq macMode
+/-- `macChain`'s call. -/
+def macCall : Prog isa := .call "vg_triple_des_mac_chain" macChain
 
-/-- The `s5` whole blocks of data at `s3` chained into the chaining value,
-and the data pointer past them. -/
+/-- The `s5` whole blocks of data at `s3` chained into the chaining value
+(`macCall`, on the state's schedules), and the data pointer past them. -/
 def chainLoop : Prog isa :=
   .seq (.block [mov .a0 .s1, .addi .a1 .s1 400, mov .a2 .s3, mov .a3 .s5, .shift .sll .d .t0 .s5 3,
-    .add .s3 .s3 .t0]) macChain
+    .add .s3 .s3 .t0]) macCall
 
 def chainPath : Prog isa :=
   .seq (.block ([.sub .s4 .a3 .t1] ++ toHeld .t1)) (.seq (copy .t6 .t4 .t3 .t5)
