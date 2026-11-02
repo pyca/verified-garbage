@@ -111,11 +111,8 @@ def main (args : List String) : IO UInt32 := do
   let emitDir : System.FilePath := ".lake" / "emit"
   IO.FS.createDirAll emitDir
   let lean ← IO.appPath
-  -- Each part on a task of its own: its driver, Lake's setup for it (which also loads the
-  -- trusted base's shared libraries), and then the driver, run as soon as its setup is
-  -- written rather than once every part's is, so that the parts with fewer artifacts
-  -- finish while the larger ones are still setting up.
-  let runs ← parts.mapM fun (t, mods, gens, vars) => do
+  -- Each part's driver, and the arguments of its run.
+  let jobs ← parts.mapM fun (t, mods, gens, vars) => do
     let driver := emitDir / s!"Driver{t}.lean"
     let setup := emitDir / s!"Driver{t}.json"
     let targets := emitDir / s!"{t}.targets"
@@ -126,9 +123,25 @@ def main (args : List String) : IO UInt32 := do
     if ← targets.pathExists then IO.FS.removeFile targets
     let partArgs := (if check then ["--check"] else []) ++ ["--part", targets.toString] ++
       (if check then args.drop 1 else args)
+    return (driver, setup, targets, text.length, partArgs)
+  -- Lake's setup for the largest part first, alone: it builds what that driver imports
+  -- that is out of date, which is most of what the others import too. Several `lake
+  -- setup-file`s building the same modules at once fail, each removing or replacing
+  -- the files another is writing.
+  let first := (jobs.map (·.2.2.2.1)).foldl max 0
+  let some (fDriver, fSetup, _) := jobs.find? (·.2.2.2.1 == first)
+    | IO.eprintln "no registration files"; return 1
+  let code ← setupFile fDriver fSetup
+  unless code == 0 do return code
+  -- Then each part on a task of its own: Lake's setup for it (which also loads the
+  -- trusted base's shared libraries), but the first's, and then the driver, run as soon
+  -- as its setup is written rather than once every part's is, so that the parts with
+  -- fewer artifacts finish while the larger ones are still setting up.
+  let runs ← jobs.mapM fun (driver, setup, targets, _, partArgs) => do
     let task ← IO.asTask (prio := .dedicated) do
-      let code ← setupFile driver setup
-      unless code == 0 do return code
+      unless driver == fDriver do
+        let code ← setupFile driver setup
+        unless code == 0 do return code
       let child ← IO.Process.spawn
         { cmd := lean.toString,
           args := #["--setup", setup.toString, "--run", driver.toString] ++ partArgs.toArray }
