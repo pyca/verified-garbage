@@ -93,7 +93,8 @@ theorem pointOut_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gp
     fun hi w hw => by simp only [List.mem_singleton] at hw; subst hw; left; rw [sl_eq]; omega
   have fit : ∀ {i}, i < 44 → p256.sl i + 8 * 4 ≤ 2 ^ 64 := fun hi => by rw [sl_eq]; omega
   -- `04` under the mask.
-  rw [pointOut, retCode, restoreCode, show p256.n = 4 from rfl, show 1 + 8 * 4 = 33 from rfl]
+  rw [pointOut, retCode, restoreCode, show p256.C.len = 8 * p256.n from rfl, storeLen_mul, storeLen_mul,
+    show p256.n = 4 from rfl, show 1 + 8 * 4 = 33 from rfl]
   simp only [List.append_assoc]
   rw [List.cons_append, List.cons_append, List.cons_append, List.nil_append]
   refine wp_li (imm := 4) (by decide) fun s₄ u₄ => wp_and fun s₅ u₅ => ?_
@@ -274,7 +275,7 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRVC.pre s) :
   obtain ⟨⟨hrd, hwr, hod, hdd, hfo, hfd, hfs, hal⟩, hk⟩ := hs
   simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hod hdd hfo hfd hfs hal
   have hp0 : 0 < W.p := by decide
-  rw [publicKeyP256, Cfg.publicKeyFn, show p256.n = 4 from rfl]
+  rw [publicKeyP256, Cfg.publicKeyFn, show p256.C.len = 8 * p256.n from rfl, loadLen_mul, show p256.n = 4 from rfl]
   simp only [List.append_assoc]
   generalize hb : s.gpr .a2 = base at hwr hod hdd hfs hal
   have hwr' : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; simp

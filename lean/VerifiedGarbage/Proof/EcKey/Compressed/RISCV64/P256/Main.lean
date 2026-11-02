@@ -66,7 +66,8 @@ theorem tag_eq (m : Mem) (base : Addr) (B : Bool) :
 theorem compress_ok {s : State} (hs : compRV.pre s) :
     WP isa compressP256 s fun s' => abiPreserved s s' ∧ compRV.post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfo, hfp, hfs, hal⟩ := hs
-  rw [compressP256, Cfg.compressFn]
+  rw [compressP256, Cfg.compressFn, show p256.C.len = 8 * p256.n from rfl]
+  simp only [loadLen_mul, storeLen_mul]
   generalize hb : s.gpr .a2 = base at hwr hpw how hfs hal
   have hwr' : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; simp
   simp only [List.append_assoc]
@@ -773,7 +774,7 @@ theorem decompress_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : DPre s
   have hp0 : 0 < W.p := by decide
   have hs' := hs
   obtain ⟨hrd, hwr, hpo, hpw, how, hfo, hfp, hfs, hal⟩ := hs'
-  rw [decompressP256, Cfg.decompressFn]
+  rw [decompressP256, Cfg.decompressFn, show p256.C.len = 8 * p256.n from rfl, loadLen_mul]
   refine WP.seq (WP.mono (dsetup_ok hs) fun s₁ S => ?_)
   obtain ⟨hw₁, S2, S3, Sregs, Srd, Swr, Ssp, Ssv0, Ssv1, Ssv2, Ssv3, Ssv4, Sx, Spar, Sflag, Scs, Sexps⟩ := S
   generalize hb : s.gpr .a2 = base at hw₁ S3 Ssv0 Ssv1 Ssv2 Ssv3 Ssv4 Sx Spar Sflag Scs Sexps hwr hpw how
