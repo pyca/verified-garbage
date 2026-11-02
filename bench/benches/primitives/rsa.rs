@@ -100,64 +100,6 @@ fn keys(c: &mut Criterion) {
         q: &BigNumRef,
     ) -> Rsa<Private> {
         let mut ctx = BigNumContext::new().unwrap();
-        {
-            // The unproven private-key operation (CRT, checked against e), next to OpenSSL's.
-            use openssl::rsa::{Padding, Rsa};
-            use verified_garbage_asm_riscv64::rsa_proto2::vg_rsa_private_checked;
-            let mut g = c.benchmark_group("rsa_proto_private");
-            for bits in [2048u32, 3072, 4096] {
-                let key = Rsa::generate(bits).unwrap();
-                let k = key.size() as usize;
-                let pad = |b: Vec<u8>, l: usize| {
-                    let mut v = vec![0u8; l - b.len()];
-                    v.extend(b);
-                    v
-                };
-                let (n, e) = (key.n().to_vec(), key.e().to_vec());
-                let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
-                let (pl, ql) = (p.len(), q.len());
-                let dp = pad(key.dmp1().unwrap().to_vec(), pl);
-                let dq = pad(key.dmq1().unwrap().to_vec(), ql);
-                let qi = pad(key.iqmp().unwrap().to_vec(), pl);
-                let mut input = vec![0x42; k];
-                input[0] = 0;
-                let mut out = vec![0; k];
-                let mut scratch = vec![0u64; 16 * k + 64];
-                g.bench_function(BenchmarkId::new(VG, bits), |b| {
-                    b.iter(|| unsafe {
-                        vg_rsa_private_checked(
-                            out.as_mut_ptr(),
-                            k,
-                            n.as_ptr(),
-                            k,
-                            e.as_ptr(),
-                            e.len(),
-                            black_box(input.as_ptr()),
-                            k,
-                            p.as_ptr(),
-                            pl,
-                            q.as_ptr(),
-                            ql,
-                            dp.as_ptr(),
-                            pl,
-                            dq.as_ptr(),
-                            ql,
-                            qi.as_ptr(),
-                            pl,
-                            scratch.as_mut_ptr(),
-                            scratch.len(),
-                        )
-                    })
-                });
-                g.bench_function(BenchmarkId::new(OPENSSL, bits), |b| {
-                    b.iter(|| {
-                        key.private_decrypt(black_box(&input), &mut out, Padding::NONE)
-                            .unwrap()
-                    })
-                });
-            }
-            g.finish();
-        }
         let mut p1 = p.to_owned().unwrap();
         p1.sub_word(1).unwrap();
         let mut q1 = q.to_owned().unwrap();
@@ -387,6 +329,64 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage_asm_riscv64::rsa_proto::{vg_proto_mont_mul, vg_proto_mont_sqr};
 
     use crate::{OPENSSL, VG};
+    {
+        // The unproven private-key operation (CRT, checked against e), next to OpenSSL's.
+        use openssl::rsa::{Padding, Rsa};
+        use verified_garbage_asm_riscv64::rsa_proto2::vg_rsa_private_checked;
+        let mut g = c.benchmark_group("rsa_proto_private");
+        for bits in [2048u32, 3072, 4096] {
+            let key = Rsa::generate(bits).unwrap();
+            let k = key.size() as usize;
+            let pad = |b: Vec<u8>, l: usize| {
+                let mut v = vec![0u8; l - b.len()];
+                v.extend(b);
+                v
+            };
+            let (n, e) = (key.n().to_vec(), key.e().to_vec());
+            let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
+            let (pl, ql) = (p.len(), q.len());
+            let dp = pad(key.dmp1().unwrap().to_vec(), pl);
+            let dq = pad(key.dmq1().unwrap().to_vec(), ql);
+            let qi = pad(key.iqmp().unwrap().to_vec(), pl);
+            let mut input = vec![0x42; k];
+            input[0] = 0;
+            let mut out = vec![0; k];
+            let mut scratch = vec![0u64; 16 * k + 64];
+            g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                b.iter(|| unsafe {
+                    vg_rsa_private_checked(
+                        out.as_mut_ptr(),
+                        k,
+                        n.as_ptr(),
+                        k,
+                        e.as_ptr(),
+                        e.len(),
+                        black_box(input.as_ptr()),
+                        k,
+                        p.as_ptr(),
+                        pl,
+                        q.as_ptr(),
+                        ql,
+                        dp.as_ptr(),
+                        pl,
+                        dq.as_ptr(),
+                        ql,
+                        qi.as_ptr(),
+                        pl,
+                        scratch.as_mut_ptr(),
+                        scratch.len(),
+                    )
+                })
+            });
+            g.bench_function(BenchmarkId::new(OPENSSL, bits), |b| {
+                b.iter(|| {
+                    key.private_decrypt(black_box(&input), &mut out, Padding::NONE)
+                        .unwrap()
+                })
+            });
+        }
+        g.finish();
+    }
     let mut ctx = BigNumContext::new().unwrap();
     for (name, kind) in [
         ("rsa_proto_mul", 0),
