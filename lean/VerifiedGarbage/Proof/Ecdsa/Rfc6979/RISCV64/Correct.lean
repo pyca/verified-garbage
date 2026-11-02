@@ -653,7 +653,7 @@ theorem loadQ_ok (c : Cfg) (hQw : c.Q = 8 * c.nw ∨ (c.nw = 4 ∧ c.Q = 28)) {s
       wordsVal s'.mem base o c.nw = Spec.Weierstrass.ofBytes (bytesAt s.mem (s.gpr p + BitVec.ofNat 64 off) c.Q) := by
   rcases hQw with h | ⟨h4, h28⟩
   · rw [Cfg.loadQ, ite_eq_left_of_eq_true _ _ (eq_true h), h]
-    exact VG.Proof.Weierstrass.RISCV64.loadNum_ok c.nw hw hp ho ho' hoff
+    exact VG.Proof.Weierstrass.RISCV64.loadNum_ok c.nw hw hp ho (Nat.le_trans ho' (by decide)) hoff
       (fun j hj => Proof.Ecdh.RISCV64.P256.in_rd8 hr (by omega) hn') (fun i hi => hsep i (by omega))
   · rw [Cfg.loadQ, ite_eq_right_of_eq_false _ _ (eq_false (by omega)), h4, h28]
     exact VG.Proof.Weierstrass.RISCV64.loadNum4_ok 3 hw hp ho (by omega) (by omega)
@@ -672,7 +672,7 @@ theorem storeQ_ok (c : Cfg) (hQw : c.Q = 8 * c.nw ∨ (c.nw = 4 ∧ c.Q = 28)) (
         (Spec.Weierstrass.toBytes c.Q (if b then wordsVal s.mem base a c.nw else 0)) := by
   rcases hQw with h | ⟨h4, h28⟩
   · rw [Cfg.storeQ, ite_eq_left_of_eq_true _ _ (eq_true h), h]
-    exact VG.Proof.Weierstrass.RISCV64.storeNum_ok b c.nw hw hc hq ha ha' hoff
+    exact VG.Proof.Weierstrass.RISCV64.storeNum_ok b c.nw hw hc hq ha (Nat.le_trans ha' (by decide)) hoff
       (fun i hi => hout i (by omega)) (fun i hi => hsep i (by omega))
   · rw [Cfg.storeQ, ite_eq_right_of_eq_false _ _ (eq_false (by omega)), h4, h28]
     exact VG.Proof.Weierstrass.RISCV64.storeNum4_ok b 3 hw hc hq ha (by omega) (by omega)
