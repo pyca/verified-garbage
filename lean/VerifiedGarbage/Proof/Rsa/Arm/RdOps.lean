@@ -56,7 +56,7 @@ macro "rd_ev" : tactic => `(tactic| (simp only [upd, VG.Impl.Rsa.Arm.RecoverDet.
     VG.Impl.Rsa.Arm.RecoverDet.sBoth, VG.Impl.Rsa.Arm.RecoverDet.sY, VG.Impl.Rsa.Arm.RecoverDet.sLt,
     VG.Impl.Rsa.Arm.RecoverDet.sExact, VG.Impl.Rsa.Arm.RecoverDet.sC1,
     VG.Impl.Rsa.Arm.RecoverDet.sC2, VG.Impl.Rsa.Arm.RecoverDet.sOk4, VG.Impl.Rsa.Arm.RecoverDet.sBb,
-    VG.Impl.Rsa.Arm.RecoverDet.sOk5, VG.Impl.Rsa.Arm.RecoverDet.sK, VG.Impl.Rsa.Arm.RecoverDet.sU1,
+    VG.Impl.Rsa.Arm.RecoverDet.sOk5, VG.Impl.Rsa.Arm.RecoverDet.sK, VG.Impl.Rsa.Arm.RecoverDet.sU1, VG.Impl.Rsa.Arm.RecoverDet.sM0,
     VG.Impl.Rsa.Arm.RecoverDet.sMask, VG.Impl.Rsa.Arm.Recover.wM, VG.Impl.Rsa.Arm.Recover.wMod,
     VG.Impl.Rsa.Arm.Recover.wZ, VG.Impl.Rsa.Arm.Recover.wE, VG.Impl.Rsa.Arm.Recover.wD,
     VG.Impl.Rsa.Arm.Recover.aN, VG.Impl.Rsa.Arm.Recover.sMask]; try simp))
