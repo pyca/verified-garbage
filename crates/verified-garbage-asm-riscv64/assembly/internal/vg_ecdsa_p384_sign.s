@@ -1241,7 +1241,7 @@ vg_ecdsa_p384_sign:
 	sd t0, 129(s0)
 	addi s0, s0, -2047
 	addi a0, s0, 0
-	call {vg_p384_mul}
+	call {vg_p384_mul_g}
 	addi s0, s3, 0
 	addi a0, s0, 0
 	addi a1, zero, 2047
