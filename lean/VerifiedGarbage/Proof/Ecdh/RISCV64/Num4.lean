@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
+public import VerifiedGarbage.Impl.Ecdh.RISCV64.Num4
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Weierstrass.Words
