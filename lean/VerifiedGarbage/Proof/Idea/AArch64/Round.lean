@@ -138,7 +138,7 @@ theorem tail_run (s : State) (hm : MaskOk s) :
       s'.gpr .x5 = s.gpr .x4 ^^^ ((s.gpr .x7 + s.gpr .x14) &&& 65535) ∧
       s'.gpr .x6 = s.gpr .x6 ^^^ ((s.gpr .x7 + s.gpr .x14) &&& 65535) ∧
       Keep [.x3, .x4, .x5, .x6, .x7, .x14] s s' := by
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, isa, Size.bits,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     BitVec.setWidth_eq, RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, Nat.reduceLT, hm,
     BitVec.ofNat_eq_ofNat, BitVec.add_zero, Option.some.injEq, exists_eq_left', true_and]
   keep_tac
