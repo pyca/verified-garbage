@@ -37,6 +37,7 @@ theorem armStack_rowLocal (replacement : Prog isa)
     · simp [stack]
     · simpa only [FrameStack.armStack] using ih
   | call _ _ _ => exact Nat.le_refl _
+  | icall => exact Nat.le_refl _
   | frame i _ _ ih =>
     simp only [Code.substLocal]; split
     · simp [stack]
@@ -92,6 +93,7 @@ theorem armStack_downLocal (c : Prog isa) :
     · simp [DownRowUmaal.codeU_stack]
     · simpa only [FrameStack.armStack] using ih
   | call _ _ _ => exact Nat.le_refl _
+  | icall => exact Nat.le_refl _
   | frame i _ _ ih =>
     simp only [Code.substLocal]; split
     · simp [DownRowUmaal.codeU_stack]

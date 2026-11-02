@@ -138,6 +138,8 @@ theorem pop_vec {i : Instr} {s₁ s₂ s' : State} (h : isa.pop i s₁ s₂ = so
 theorem Exec.vec {c : Prog isa} {r : VReg} (hc : ∀ i ∈ instrs c, vdstOf i ≠ some r)
     {s s' : State} {t : List Leak} (h : Exec isa c s t s') : s'.v r = s.v r := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h => exact execBlock_vec hc h
   | seq _ _ ih₁ ih₂ =>
     rw [ih₂ (fun i hi => hc i (List.mem_append_right _ hi)),

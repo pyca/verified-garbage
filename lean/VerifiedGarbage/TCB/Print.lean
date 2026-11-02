@@ -17,6 +17,9 @@ conditional branches:
   page of its address or the offset in that page (`Line.sym`), which
   `VG.Rust.files` writes in the syntax of the object format
 * `frame push body pop` ⟶  `push; body; pop`
+* `icall i name body next` ⟶  `i` (the indirect call instruction, e.g.
+  `call r11`; the functions it may call, `name` and those of `next`, are
+  emitted separately, as `call`'s)
 
 where `b<c> L` is the conditional branch to `L`, which on some targets is
 more than one instruction (e.g. a comparison, then the branch).
@@ -175,6 +178,7 @@ def Printer.lower : Code M.Instr M.Cond → Nat → List Line × List Line × Na
     let (lb, kb, n) := lower body n
     ((P.symLines i).getD ((P.instr i).map .text) ++ lb ++
       (P.symLines j).getD ((P.instr j).map .text), kb, n)
+  | .icall i .., n => ((P.symLines i).getD ((P.instr i).map .text), [], n)
 
 /-- The tables of constants the instructions of `c` carry (`tables`), but
 not those of the functions it calls, which are emitted with them. -/
@@ -185,6 +189,7 @@ def Printer.codeTables : Code M.Instr M.Cond → List (String × List (BitVec 64
   | .loop body _ => codeTables body
   | .call .. => []
   | .frame i body j => P.tables i ++ codeTables body ++ P.tables j
+  | .icall i .. => P.tables i
 
 /-- The complete body of a function: the lowered code, the return, and the
 cold branches' code after it. -/

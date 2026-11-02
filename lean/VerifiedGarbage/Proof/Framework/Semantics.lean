@@ -71,6 +71,16 @@ theorem Exec.det {c : Prog M} {s s₁ s₂ : M.State} {t₁ t₂ : List Leak}
       obtain ⟨rfl, rfl⟩ := ih b
       rw [hq] at hq'; cases hq'
       exact ⟨rfl, rfl⟩
+  | icall hi hc _ hr ih => cases h₂ with
+    | icall _ hc' b hr' =>
+      rw [hc] at hc'; cases hc'
+      obtain ⟨rfl, rfl⟩ := ih b
+      rw [hr] at hr'; cases hr'
+      exact ⟨rfl, rfl⟩
+    | icallNext hi' hne _ => rw [hi] at hi'; cases hi'; exact absurd rfl hne
+  | icallNext hi hne _ ih => cases h₂ with
+    | icall hi' _ _ _ => rw [hi] at hi'; cases hi'; exact absurd rfl hne
+    | icallNext _ _ b => exact ih b
 
 theorem Exec.block_iff {is : List M.Instr} {s s' : M.State} {t : List Leak} :
     Exec M (.block is) s t s' ↔ execBlock M is s = some (s', t) :=
@@ -167,6 +177,7 @@ def instrs {I C : Type} : Code I C → List I
   | .loop b _ => instrs b
   | .call _ b => instrs b
   | .frame i b j => i :: instrs b ++ [j]
+  | .icall i _ b n => i :: instrs b ++ instrs n
 
 /-- Whether code calls no function and has no frame: whether it runs only
 its own instructions, in the stack it was entered with. -/
@@ -177,6 +188,7 @@ def Code.noCalls {I C : Type} : Code I C → Bool
   | .loop b _ => b.noCalls
   | .call _ _ => false
   | .frame .. => false
+  | .icall .. => false
 
 /-- Whether code, and the functions it calls, has no frame. -/
 def Code.noFrames {I C : Type} : Code I C → Bool
@@ -186,6 +198,7 @@ def Code.noFrames {I C : Type} : Code I C → Bool
   | .loop b _ => b.noFrames
   | .call _ b => b.noFrames
   | .frame .. => false
+  | .icall _ _ b n => b.noFrames && n.noFrames
 
 /-- How deeply frames nest in `c` and the functions it calls. -/
 def Code.fdepth {I C : Type} : Code I C → Nat
@@ -195,6 +208,7 @@ def Code.fdepth {I C : Type} : Code I C → Nat
   | .loop b _ => b.fdepth
   | .call _ b => b.fdepth
   | .frame _ b _ => b.fdepth + 1
+  | .icall _ _ b n => max b.fdepth n.fdepth
 
 theorem Code.noFrames_of_noCalls {I C : Type} {c : Code I C} (h : c.noCalls = true) :
     c.noFrames = true := by
@@ -213,6 +227,7 @@ noncomputable def Code.allInstrs {I C : Type} (p : I → Bool) : Code I C → Bo
   | .loop b _ => b.allInstrs p
   | .call _ b => b.allInstrs p
   | .frame i b j => p i && b.allInstrs p && p j
+  | .icall i _ b n => p i && b.allInstrs p && n.allInstrs p
 
 theorem Code.allInstrs_eq {I C : Type} (p : I → Bool) (c : Code I C) :
     c.allInstrs p = (instrs c).all p := by

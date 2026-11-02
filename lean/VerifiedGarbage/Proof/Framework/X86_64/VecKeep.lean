@@ -104,6 +104,7 @@ theorem exec_scal {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c 
     s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi := by
   revert hc
   induction h with
+  | icall | icallNext => intro hc; simp only [scalCode, Bool.false_eq_true] at hc
   | block e => exact fun hc => execBlock_vec hc e
   | seq _ _ ih₁ ih₂ =>
     intro hc

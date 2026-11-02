@@ -57,6 +57,7 @@ def Code.eraseT : Prog isa → Prog isa
   | .loop b c => .loop (eraseT b) c
   | .call n b => .call n (eraseT b)
   | .frame p b q => .frame p (eraseT b) q
+  | .icall i n b nx => .icall i n b nx
 
 namespace Taint
 
@@ -106,6 +107,7 @@ theorem checkChunks_eraseT {chunkSize : Nat} (τ : (taintS L).T) (is : List isa.
 theorem check_eraseT (τ : (taintS L).T) (c : Prog isa) (h : VG.Taint.Hint (taintS L).T) :
     (taintS L).check τ (Code.eraseT c) h = (taintS L).check τ c h := by
   induction c generalizing τ h with
+  | icall => cases h <;> rfl
   | block is => cases h <;> first | rfl | exact checkChunks_eraseT τ is _
   | seq a b iha ihb =>
     cases h <;> first | rfl | simp only [Code.eraseT, VG.Taint.check, iha, ihb]

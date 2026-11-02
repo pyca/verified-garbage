@@ -35,6 +35,7 @@ def sdepth : Prog isa → Nat
   | .loop b _ => sdepth b
   | .call _ b => sdepth b
   | .frame i b _ => i.frameBytes + sdepth b
+  | .icall _ _ b n => max (sdepth b) (sdepth n)
 
 /-- Code whose frames all save a register uses `48` bytes of stack per frame. -/
 theorem sdepth_le_fdepth : ∀ c : Prog isa, pushFrames c = true → sdepth c ≤ 48 * c.fdepth
@@ -54,6 +55,10 @@ theorem sdepth_le_fdepth : ∀ c : Prog isa, pushFrames c = true → sdepth c �
     have := sdepth_le_fdepth b h.2
     cases i <;> simp only [Instr.isPush, Bool.false_eq_true, false_and] at h
     simp only [sdepth, Instr.frameBytes, Code.fdepth]; omega
+  | .icall _ _ b n, h => by
+    simp only [pushFrames, Bool.and_eq_true] at h
+    have := sdepth_le_fdepth b h.1; have := sdepth_le_fdepth n h.2
+    simp only [sdepth, Code.fdepth]; omega
 
 /-- The stack a frame's body uses is below the frame. -/
 theorem below_body' (sp : Addr) (a n : Nat) :
@@ -115,6 +120,8 @@ theorem push_any {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
 theorem Exec.frameAny {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s')
     (hd : sdepth c < 2 ^ 64) : Frame (s.wr ++ [below s.sp (sdepth c)]) s.mem s'.mem := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [sdepth] at hd ⊢
