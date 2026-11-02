@@ -554,7 +554,8 @@ theorem fn_rv (hk : S.k = 6) {core : Prog isa} {pre : Nat → Nat → Prop} {res
       res (arg S s .a2) (arg S s .a3) (numAt s'.mem (s.gpr .a0) (offArg s .a1) 6) ∧
       Keeps 6 (s.gpr .a0) (offArg s .a1) s.mem s'.mem := by
   obtain ⟨-, hwr, hfit, ⟨fo, fa, fb⟩, hal⟩ := hs
-  simp only [Fits, hk, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes] at fo fa fb
+  simp only [Fits, hk, VG.Proof.Weierstrass.RISCV64.rvOwn_le (show 6 ≤ 6 by decide), Impl.Weierstrass.Mont.ownAt,
+    Impl.Weierstrass.Mont.ownBytes] at fo fa fb
   simp only [arg, hk, numAt_d6] at hp ⊢
   obtain ⟨t, s', he, v, f, g, -, -, sp⟩ := fn_ok hcore rfl hal (by rw [hwr]; simp) hfit fo fa fb hp
   refine ⟨t, s', he, ⟨fun r hr => g r (by revert hr; revert r; decide), sp, g _ (by decide)⟩, v,
@@ -585,57 +586,73 @@ theorem rvPub_agree' : ∀ s₁ s₂ : State, rvPre S s₁ → rvPre S s₂ → 
 
 theorem sat_pre (hk : S.k = 6) : rvPre S satWs ∧ arg S satWs .a2 = 0 ∧ arg S satWs .a3 = 0 := by
   refine ⟨⟨rfl, rfl, by decide, ⟨?_, ?_, ?_⟩, by decide⟩, read_zero _ _, read_zero _ _⟩ <;>
-    simp [Fits, hk, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes, satWs, offArg]
+    simp [Fits, hk, VG.Proof.Weierstrass.RISCV64.rvOwn, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes,
+      satWs, offArg]
 
 theorem mul_verified (hk : S.k = 6) (hm : Ok S.m) (hct : CtOk (mulCore S.m)) :
-    Verified RISCV64.target (mulFn S.m) (S.mulContract RISCV64.abi) :=
-  Verified.of_correct (mul_rv hk hm) (fn_ct (Pre := (mulRV S).pre)
+    Verified RISCV64.target (mulFn S.m) (S.mulContract RISCV64.abi) := by
+  obtain ⟨c, w, m, k, d⟩ := S
+  cases hk
+  exact Verified.of_correct (mul_rv rfl hm) (fn_ct (Pre := (mulRV ⟨c, w, m, 6, d⟩).pre)
     (fun s₁ s₂ h₁ h₂ hp => rvPub_agree' s₁ s₂ h₁.1 h₂.1 hp) hct)
     { pre := by sig_implies_pre [Impl.Weierstrass.Mont.Modulus.mulContract, Impl.Weierstrass.Mont.sig, arg, mulRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
+        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
       post := by sig_implies_post [Impl.Weierstrass.Mont.Modulus.mulContract, Impl.Weierstrass.Mont.sig, arg,
-        mulRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
+        mulRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
+        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
       pub := by sig_implies_pub [Impl.Weierstrass.Mont.Modulus.mulContract, Impl.Weierstrass.Mont.sig, arg, mulRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
+        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
       sat := ⟨satWs, by
         sig_reduce [Sig.wfPre, Impl.Weierstrass.Mont.sig, RISCV64.abi, RISCV64.argRegs, satWs]
-        obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre hk
+        obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre (S := ⟨c, w, m, 6, d⟩) rfl
         refine ⟨⟨by decide, trivial, .inl (by decide)⟩, rfl, rfl, by simp, by simp, by simp, ?_⟩
         simp only [Bool.cond_true]
         refine ⟨⟨hfit, ?_⟩, by simp⟩
         rw [numAt, read_zero]; exact hm.pos⟩ }
 
 theorem add_verified (hk : S.k = 6) (hm : Ok S.m) (hct : CtOk (.block (addCore S.m))) :
-    Verified RISCV64.target (addFn S.m) (S.addContract RISCV64.abi) :=
-  Verified.of_correct (add_rv hk hm) (fn_ct (Pre := (addRV S).pre)
+    Verified RISCV64.target (addFn S.m) (S.addContract RISCV64.abi) := by
+  obtain ⟨c, w, m, k, d⟩ := S
+  cases hk
+  exact Verified.of_correct (add_rv rfl hm) (fn_ct (Pre := (addRV ⟨c, w, m, 6, d⟩).pre)
     (fun s₁ s₂ h₁ h₂ hp => rvPub_agree' s₁ s₂ h₁.1 h₂.1 hp) hct)
     { pre := by sig_implies_pre [Impl.Weierstrass.Mont.Modulus.addContract, Impl.Weierstrass.Mont.sig, arg, addRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
+        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
       post := by sig_implies_post [Impl.Weierstrass.Mont.Modulus.addContract, Impl.Weierstrass.Mont.sig, arg,
-        addRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
+        addRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
+        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
       pub := by sig_implies_pub [Impl.Weierstrass.Mont.Modulus.addContract, Impl.Weierstrass.Mont.sig, arg, addRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
+        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
       sat := ⟨satWs, by
         sig_reduce [Sig.wfPre, Impl.Weierstrass.Mont.sig, RISCV64.abi, RISCV64.argRegs, satWs]
-        obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre hk
+        obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre (S := ⟨c, w, m, 6, d⟩) rfl
         refine ⟨⟨by decide, trivial, .inl (by decide)⟩, rfl, rfl, by simp, by simp, by simp, ?_⟩
         simp only [Bool.cond_true]
         refine ⟨⟨hfit, ?_⟩, by simp⟩
-        rw [numAt, read_zero]; have := hm.pos; omega⟩ }
+        rw [numAt, read_zero]; have := hm.pos; dsimp only at this ⊢; omega⟩ }
 
 theorem sub_verified (hk : S.k = 6) (hm : Ok S.m) (hct : CtOk (.block (subCore S.m))) :
-    Verified RISCV64.target (subFn S.m) (S.subContract RISCV64.abi) :=
-  Verified.of_correct (sub_rv hk hm) (fn_ct (Pre := (subRV S).pre)
+    Verified RISCV64.target (subFn S.m) (S.subContract RISCV64.abi) := by
+  obtain ⟨c, w, m, k, d⟩ := S
+  cases hk
+  exact Verified.of_correct (sub_rv rfl hm) (fn_ct (Pre := (subRV ⟨c, w, m, 6, d⟩).pre)
     (fun s₁ s₂ h₁ h₂ hp => rvPub_agree' s₁ s₂ h₁.1 h₂.1 hp) hct)
     { pre := by sig_implies_pre [Impl.Weierstrass.Mont.Modulus.subContract, Impl.Weierstrass.Mont.sig, arg, subRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
+        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
       post := by sig_implies_post [Impl.Weierstrass.Mont.Modulus.subContract, Impl.Weierstrass.Mont.sig, arg,
-        subRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
+        subRV, rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
+        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
       pub := by sig_implies_pub [Impl.Weierstrass.Mont.Modulus.subContract, Impl.Weierstrass.Mont.sig, arg, subRV,
-        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs]
+        rvPre, rvPub, offArg, res, RISCV64.abi, RISCV64.argRegs,
+        VG.Proof.Weierstrass.RISCV64.rvOwn, VG.Proof.Weierstrass.RISCV64.rvOwnEnd, Impl.Weierstrass.Mont.ownAt]
       sat := ⟨satWs, by
         sig_reduce [Sig.wfPre, Impl.Weierstrass.Mont.sig, RISCV64.abi, RISCV64.argRegs, satWs]
-        obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre hk
+        obtain ⟨⟨-, -, -, hfit, -⟩, -, -⟩ := sat_pre (S := ⟨c, w, m, 6, d⟩) rfl
         refine ⟨⟨by decide, trivial, .inl (by decide)⟩, rfl, rfl, by simp, by simp, by simp, ?_⟩
         simp only [Bool.cond_true]
         refine ⟨⟨hfit, ?_⟩, by simp⟩
