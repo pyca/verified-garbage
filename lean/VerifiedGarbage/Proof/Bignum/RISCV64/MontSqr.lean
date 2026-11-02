@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.RISCV64.MontFios
+public import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 public import VerifiedGarbage.Impl.Bignum.RISCV64.MontSqr
 import VerifiedGarbage.Proof.Framework.Offset
@@ -304,5 +305,54 @@ theorem crossPart_last (m : Mem) (B : Addr) (d w : Nat) (hw : 1 ≤ w) :
     crossPart m B d w w = crossPart m B d w (w - 1) := by
   obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega_arith⟩
   simp [crossPart, wordsVal]
+
+/-! ## `T := 0` -/
+
+theorem ofNat_dbl2 (w : Nat) : off (BitVec.ofNat 64 w) (w + 2) = BitVec.ofNat 64 (2 * w + 2) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega_arith
+
+/-- `zeroT`, with `w` in `t0` and `T` at `dT` (`a5`): its `2 w + 2` words 0. -/
+theorem zeroT_ok {s : State} {B : Addr} {Z dT w : Nat} (hs : Scr s B Z)
+    (h5 : s.gpr .a5 = off B dT) (h0 : s.gpr .t0 = BitVec.ofNat 64 w) (hT8 : dT % 8 = 0)
+    (hw : w < 2 ^ 31) (hT : dT + 8 * (2 * w + 2) ≤ Z) :
+    WP isa zeroT s fun s' =>
+      wordsVal s'.mem B dT (2 * w + 2) = 0 ∧ Outside B dT (8 * (2 * w + 2)) s.mem s'.mem ∧
+        Keep [.t3, .t5, .s0] s s' := by
+  have hnw := hs.nowrap
+  unfold zeroT
+  refine WP.seq ?_
+  have hpre : WP isa (.block [.addi .t3 .a5 0, .add .t5 .t0 .t0, .addi .t5 .t5 2, .li .s0 0]) s
+      fun s₁ => (s₁.gpr .t3 = off B dT ∧ s₁.gpr .t5 = BitVec.ofNat 64 (2 * w + 2) ∧ s₁.gpr .s0 = 0 ∧
+        s₁.mem = s.mem) ∧ Keep [.t3, .t5, .s0] s s₁ := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [fin64_exec_li_zero, h5, h0, BitVec.add_zero, ofNat_dbl2]
+  refine WP.mono hpre fun s₁ ⟨⟨i3, i5, i0, im⟩, k₁⟩ => ?_
+  let Inv : Nat → State → Prop := fun i t =>
+    t.gpr .t3 = off B (dT + 8 * i) ∧ t.gpr .s0 = 0 ∧ Outside B dT (8 * i) s.mem t.mem ∧
+      wordsVal t.mem B dT i = 0 ∧ Keep [.t3, .t5] s₁ t
+  refine WP.mono (wp_countdown (body := .block ([.store .d .s0 .t3 0, .addi .t3 .t3 8] ++
+      ([.addi .t5 .t5 (-1)] : List Instr))) (cnt := .t5) (N := 2 * w + 2) (by omega_arith) (by omega_arith) Inv
+    (fun i hi t ⟨j3, j0, jout, jz, jk⟩ hc => ?_)
+    ⟨by rw [i3]; rfl, i0, by rw [← im]; exact Outside.refl _ _ _ _, rfl, Keep.refl _ _⟩ i5)
+    fun t ⟨_, _, tout, tz, tk⟩ => ⟨tz, tout, (k₁.trans tk).mono (by decide)⟩
+  have hs' := hs.congr (k₁.trans jk).2.2
+  have hst : WP isa (.block [.store .d .s0 .t3 0, .addi .t3 .t3 8, .addi .t5 .t5 (-1)]) t
+      fun t' => t' = ((({ t with mem := t.mem.writeW (off B (dT + 8 * i)) (0 : BitVec 64) } : State).write
+        .t3 (off B (dT + 8 * i + 8))).write .t5 (t.gpr .t5 - BitVec.ofNat 64 1)) := by
+    brun [j3, j0, hs'.st (show dT + 8 * i + 8 ≤ Z by omega_arith),
+      hs'.al8 (show dT + 8 * i + 8 ≤ Z by omega_arith) (by omega_arith)]
+  refine WP.mono hst fun t' e => ?_
+  subst e
+  refine ⟨⟨by gsimp; rw [show dT + 8 * i + 8 = dT + 8 * (i + 1) by omega_arith], by gsimp; exact j0, ?_, ?_, ?_⟩,
+    by gsimp⟩
+  · gsimp
+    exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans
+      ((writeW_outside t.mem B (d := dT + 8 * i) 0 (by omega_arith)).mono (by omega_arith) (by omega_arith))
+  · gsimp
+    rw [fios_wordsVal_write_top _ _ _ _ _ (by omega_arith), jz]
+    rfl
+  · exact Keep.trans' jk ((((Keep.mem _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono (by decide))
 
 end VG.Proof.Bignum.RISCV64
