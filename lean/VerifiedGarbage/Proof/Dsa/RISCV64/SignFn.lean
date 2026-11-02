@@ -4,9 +4,14 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.SignFront
 public import VerifiedGarbage.Proof.Dsa.RISCV64.SignBody
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
+import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+import VerifiedGarbage.Proof.Dsa.RISCV64.Elem
+import VerifiedGarbage.Proof.Dsa.RISCV64.Arr
+import VerifiedGarbage.Proof.Dsa.RISCV64.Sizes
 import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.Accepted
+import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
@@ -17,10 +22,13 @@ import VerifiedGarbage.Proof.Framework.Omega
 # DSA signing on RISC-V: the function
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/Sign/Fn.lean`). `sign_correct`:
-`vg_dsa_sign` meets `sContract`. After `entry` (`sfront_ok`), `checkKey`
-either runs `body` (`sbody_ok`) or `zeroOut` (`szero_ok`), and `restore`
-gives back the callee-saved registers (`sfinish_ok`); the result is the
-specification's by `Proof/Dsa/Accepted.lean`'s `signBytes_compute`.
+`vg_dsa_sign` meets `sContract`. After `entry` (`sfront_ok`), `checkSignKey`
+(`checkSignKey_ok`: the domain's checks and `1 < y < p`) either runs `body`
+(`sbody_ok`) or `zeroOut` (`szero_ok`), and `restore` gives back the
+callee-saved registers (`sfinish_ok`); the result is the specification's by
+`Proof/Dsa/Accepted.lean`'s `signBytes_compute`. The specification's
+`y^q mod p = 1` needs no check of its own: with the domain's `g^q mod p = 1`
+it follows from `g^x mod p = y`, which `body` checks (`signChecks_iff`).
 -/
 
 @[expose] public section
@@ -29,6 +37,86 @@ namespace VG.Proof.Dsa.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64
 open VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Dsa.RISCV64
+open VG.Proof.Bignum (slot)
+
+/-- `y^q mod p = 1` from `g^q mod p = 1` and `g^x mod p = y`. -/
+theorem pow_order_of_gen {p q g x y : Nat} (hp : 1 < p) (hg : g ^ q % p = 1) (hy : g ^ x % p = y) :
+    y ^ q % p = 1 := by
+  subst hy
+  rw [← Nat.pow_mod, ← Nat.pow_mul, Nat.mul_comm, Nat.pow_mul, Nat.pow_mod, hg, Nat.one_pow,
+    Nat.mod_eq_of_lt hp]
+
+/-- With the domain's checks and `1 < y < p`, the public key's checks hold
+whenever signing's do: `y^q mod p = 1` follows from `g^x mod p = y`. -/
+theorem signChecks_iff {p q g y x k z : Nat} (hg : 1 < g ∧ g < p) (hd : (p - 1) % q = 0)
+    (hgq : g ^ q % p = 1) (hy : 1 < y ∧ y < p) :
+    (VG.Proof.Dsa.publicChecks p q g y ∧ SignOk p q g y x k z) ↔ SignOk p q g y x k z :=
+  ⟨fun h => h.2, fun h => ⟨⟨⟨hg, hy⟩, hd, hgq, pow_order_of_gen (by omega) hgq h.2.2.1⟩, h⟩⟩
+
+/-- The domain passes its checks and `1 < y < p`: what `checkSignKey`
+checks. -/
+abbrev SignKeyOk (m : Mem) (L : Lay) (key : Addr) : Prop :=
+  ParamsOk m L key ∧ (1 < yOf m L key ∧ yOf m L key < pOf m L key)
+
+/-- `Sign.checkSignKey rest fail` runs `rest` exactly when the domain passes
+the specification's checks and `1 < y < p` (`SignKeyOk`), leaving what
+`checkKey` leaves (`Checked`); else `fail`. -/
+theorem checkSignKey_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : State → Prop}
+    {rest fail : Prog isa} (hL : L.Ok) (hs : ScrL s L) (hr : Regs s L key sig)
+    (hlen : word s.mem L.S hLens = pack L.pl L.ql 0 d) (hd : d < 2 ^ 16) (hk : Src s L key (3 * L.pl + L.ql))
+    (hrest : ∀ t, SignKeyOk s.mem L key → Checked s t L key sig d → Kept L s.mem t.mem → Keep ckRegs s t →
+      WP isa rest t Q)
+    (hfail : ∀ t, ¬ SignKeyOk s.mem L key → Kept L s.mem t.mem → Regs t L key sig → ScrL t L →
+      Keep ckRegs s t → WP isa fail t Q) :
+    WP isa (Sign.checkSignKey rest fail) s Q := by
+  have hZ := hL.z256
+  have hw := hL.wp_ge
+  have hw8 := hL.wp_eq
+  have hnw := hL.nowrap
+  have hbuf := hL.buf_end
+  have hqZ : L.qOff ≤ L.Z := by have := hbuf; simp only [Lay.bOff] at this; omega
+  have e : ∀ j, slot L.wp j = 256 + j * (8 * (L.wp + 2)) := fun _ => rfl
+  have e0 := e 0; have e4 := e 4; have e28 := e 28
+  have hq28 : L.qOff = slot L.wp 28 := rfl
+  unfold Sign.checkSignKey
+  refine checkParams_ok hL hs hr hlen hd (hk.take (by omega)) (fun t hP hc hb kc => ?_)
+    (fun t hn hb hrt hst kc => hfail t (fun hK => hn hK.1) hb hrt hst (keepPre (keepPre kc)))
+  have hpo : pOf s.mem L key % 2 = 1 := hP.1.2.2
+  have hp2 : 2 ≤ pOf s.mem L key := (VG.Proof.Dsa.supported_bounds hP.1.1).1
+  unfold andThen
+  refine WP.seq (WP.seq (WP.mono (ptrY_ok hc.scr hL hc.regs) fun t₇ ⟨⟨b7, b8, m₇⟩, k₇⟩ => ?_))
+  have k₀₇ := kc.trans k₇
+  have hk₇ := hk.keep k₀₇.2.1 k₀₇.2.2
+  have C₇ : Checked s t₇ L key sig d := hc.elem hL k₇ (by decide) (k₇.gpr (by decide)) (hc.inp.keep k₇)
+    (by rw [m₇]; exact Outside.refl _ _ _ _)
+  have he := hk₇.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega)
+  have en := C₇.inp.env
+  refine WP.seq (WP.mono (loadArr_ok en (j := 4) (N := off key (2 * L.pl + L.ql)) (by decide)
+      (by rw [b7]; exact (BitVec.add_zero _).symm) b8 (by omega) (by omega) he.rd
+      (fun i hi x hx => he.sep i hi x (Nat.lt_of_lt_of_le hx hqZ)))
+    fun s₁ ⟨⟨v4, top4, o1, a7⟩, k1⟩ => ?_)
+  have e1' : Env s₁ L.S L.qOff L.wp :=
+    ⟨en.hs.congr k1.2.2, a7, (k1.gpr (by decide)).trans en.s5, (k1.gpr (by decide)).trans en.t0, en.w2, en.w48,
+      en.hZ⟩
+  have A0 : wordsVal s₁.mem L.S (slot L.wp 0) L.wp = pOf s.mem L key := by
+    rw [o1.wordsVal (by omega) (by omega_arith)]; exact C₇.p0
+  refine WP.mono (elemRange_ok e1' top4) fun t₈ ⟨⟨r0, _, o2, e2⟩, k2⟩ => ?_
+  have K₇ : Kept L s.mem t₇.mem := by rw [m₇]; exact hb
+  have ey : Spec.Rsa.os2ip (Spec.Rsa.bytesAt t₇.mem (off key (2 * L.pl + L.ql)) L.pl) = yOf s.mem L key :=
+    y_kept hk K₇
+  rw [v4, A0, ey] at r0
+  have o12 := p_elem2 o1 o2
+  have k12 := k1.trans k2
+  have ip₈ : InP t₈ L := ⟨e2, (k12.gpr (by decide)).trans C₇.inp.s6⟩
+  have C₈ : Checked s t₈ L key sig d := C₇.elem hL k12 (by decide) (k12.gpr (by decide)) ip₈ o12
+  have K₈ := K₇.trans (Kept.ofBody hL (p_arrays_body hL o12))
+  have k₀₈ : Keep ckRegs s t₈ := (k₀₇.trans k12).mono fun r h => by
+    simp only [ckRegs, elemRegs, List.mem_append] at h ⊢
+    rcases h with (h | h) | (h | h) <;> simp only [h, true_or, or_true]
+  refine WP.ite _ (Steps.eval_zero _ _) (fun hb₈ => ?_) (fun hb₈ => hfail t₈ (fun hK => by
+      rw [r0.mpr hK.2] at hb₈
+      exact absurd hb₈ (by decide)) K₈ C₈.regs C₈.scr k₀₈)
+  exact hrest t₈ ⟨hP, r0.mp (beq_iff_eq.mp hb₈)⟩ C₈ K₈ k₀₈
 
 /-- The registers `Sign.zeroOut` writes. -/
 def szeroRegs : List Reg := [.t4, .t5, .s0] ++ zeroLoopRegs ++ [.a0]
@@ -154,17 +242,17 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
   have Out₁ : Outside (slayOf s).S 0 (slayOf s).Z s.mem s₁.mem :=
     F.out.mono (Nat.le_refl _) (by simp only [slayOf] at hZ ⊢; omega)
   obtain ⟨ep₁, eq₁, eg₁, ey₁⟩ := keyVals_kept (srcK3 s rfl rfl) Out₁
-  have hKs : KeyOk s₁.mem (slayOf s) (s.gpr .a2) ↔ KeyOk s.mem (slayOf s) (s.gpr .a2) := by
-    simp only [KeyOk, ep₁, eq₁, eg₁, ey₁]
-  refine WP.seq (checkKey_ok hL F.scr F.regs F.lens (by omega) (srcK3 s₁ k₁.2.1 k₁.2.2)
+  have hKs : SignKeyOk s₁.mem (slayOf s) (s.gpr .a2) ↔ SignKeyOk s.mem (slayOf s) (s.gpr .a2) := by
+    simp only [SignKeyOk, ParamsOk, ep₁, eq₁, eg₁, ey₁]
+  refine WP.seq (checkSignKey_ok hL F.scr F.regs F.lens (by omega) (srcK3 s₁ k₁.2.1 k₁.2.2)
     (fun t hK hc Kd kc => ?_) (fun t hn Kd hrt scrt kc => ?_))
   · have kt := k₁.trans kc
     have hKt := hKs.mp hK
     have Ot : Outside (slayOf s).S 0 (slayOf s).Z s.mem t.mem := Out₁.trans Kd.out
     have hq8 : Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) =
         8 * (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8) := by
-      have := hKt.1.1; unfold Spec.Dsa.supportedSizes at this; omega
-    refine WP.mono (sbody_ok hL hK hc Kd (srcK t kt.2.1 kt.2.2) (srcN t kt.2.1 kt.2.2) (by omega)
+      have := hKt.1.1.1; unfold Spec.Dsa.supportedSizes at this; omega
+    refine WP.mono (sbody_ok hL hK.1 hc Kd (srcK t kt.2.1 kt.2.2) (srcN t kt.2.1 kt.2.2) (by omega)
       ((srcD t kt.2.1 kt.2.2).take (Nat.min_le_left _ _)) (hwd t Kd) (hwo t Kd) (hout t kt.2.2) hno
       (srcO t kt.2.1 kt.2.2)) fun u ⟨⟨ob, r0u, ⟨m, Km, Om⟩, h6u, scru⟩, ku⟩ => ?_
     refine WP.mono (sfinish_ok h6u (hwr' u scru) hal'
@@ -182,13 +270,13 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
         (min (min (stackArg s 0).toNat 64) (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8)) =
         Spec.Rsa.bytesAt s.mem (s.gpr .a7)
           (min (stackArg s 0).toNat (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8)) := by
-      have := hKt.1.1; unfold Spec.Dsa.supportedSizes at this
+      have := hKt.1.1.1; unfold Spec.Dsa.supportedSizes at this
       rw [show min (min (stackArg s 0).toNat 64) (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8) =
         min (stackArg s 0).toNat (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8) by omega]
       exact ((srcD s rfl rfl).take (Nat.min_le_left _ _)).bytes Ot (by omega)
     rw [ed] at ob r0u
-    have hres := hspec hKt.1 hq8
-    simp only [hKt.2, true_and] at hres
+    have hres := hspec hKt.1.1 hq8
+    simp only [signChecks_iff hKt.1.2.1 hKt.1.2.2.1 hKt.1.2.2.2 hKt.2] at hres
     refine ⟨?_, ?_⟩
     · rw [w0, r0u, ret_ofNat, hres, signStatus_ite]
     · rw [wm, h1, ob, hres]
@@ -198,7 +286,7 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
     refine WP.mono (sfinish_ok ((ku.gpr (by decide)).trans hrt.s6) (hwr' u (scrt.congr ku.2.2)) hal'
       (fun i hi => (outSep uo (by simp only [saveOff]; omega)).trans (hsav' t Kd i hi)))
       fun w ⟨hab, w0, wm⟩ => ⟨hab, ?_⟩
-    have hn' : ¬ KeyOk s.mem (slayOf s) (s.gpr .a2) := fun hx => hn (hKs.mpr hx)
+    have hn' : ¬ SignKeyOk s.mem (slayOf s) (s.gpr .a2) := fun hx => hn (hKs.mpr hx)
     have hres : sRes s = none := by
       by_cases hs : VG.Proof.Dsa.shapeValid (pOf s.mem (slayOf s) (s.gpr .a2)) (qOf s.mem (slayOf s) (s.gpr .a2))
       · have hq8 : Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) =
@@ -206,7 +294,8 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
           have := hs.1; unfold Spec.Dsa.supportedSizes at this; omega
         rw [hspec hs hq8]
         split
-        · rename_i hx; exact absurd ⟨hs, hx.1⟩ hn'
+        · rename_i hx
+          exact absurd ⟨⟨hs, hx.1.1.1, hx.1.2.1, hx.1.2.2.1⟩, hx.1.1.2⟩ hn'
         · rfl
       · exact VG.Proof.Dsa.signBytes_invalid_shape (by rw [hkey]; exact hs)
     refine ⟨?_, ?_⟩

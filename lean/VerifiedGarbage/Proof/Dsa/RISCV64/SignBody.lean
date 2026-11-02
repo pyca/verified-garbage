@@ -118,7 +118,7 @@ space's array 25, s in its array 6, and in the header's word `hMask` the mask
 of the checks but `s ≠ 0`. -/
 theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {c : Prog isa}
     {Q : State → Prop}
-    (hL : L.Ok) (hK : KeyOk s₀.mem L key) (hc : Checked s₀ s L key nonce d)
+    (hL : L.Ok) (hK : ParamsOk s₀.mem L key) (hc : Checked s₀ s L key nonce d)
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
     (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hdg8 : word s.mem L.S hDigest = dig)
     (hcont : ∀ t, QS t L key nonce → BKept L s.mem t.mem →
@@ -146,11 +146,11 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {
     rw [← eq, qOf, ← VG.Proof.Bignum.pow256_eq]
     have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql)
     rwa [VG.Proof.Bignum.bytesAt_length] at this
-  unfold KeyOk at hK
+  unfold ParamsOk at hK
   generalize pOf s₀.mem L key = p at hK p0 p24 hcont
   generalize qOf s₀.mem L key = q at hK q0 lens hqlt hcont
   generalize gOf s₀.mem L key = g at hK eg hcont
-  generalize yOf s₀.mem L key = y at hK ey hcont
+  generalize yOf s₀.mem L key = y at ey hcont
   have B := VG.Proof.Dsa.supported_bounds hK.1.1
   have hqo : q % 2 = 1 := hK.1.2.1
   have hpo : p % 2 = 1 := hK.1.2.2
@@ -250,7 +250,7 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig : Addr} {d : Nat} {
 def sbodyRegs : List Reg := sprefixRegs ++ outputRegs
 
 theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
-    (hL : L.Ok) (hK : KeyOk s₀.mem L key) (hc : Checked s₀ s L key nonce d)
+    (hL : L.Ok) (hK : ParamsOk s₀.mem L key) (hc : Checked s₀ s L key nonce d)
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
     (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hdg8 : word s.mem L.S hDigest = dig)
     (hw : word s.mem L.S Sign.hOut = out) (hout : ∀ i < 2 * L.ql, InRegions s.wr (off out i) 1)
@@ -280,11 +280,11 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
     rwa [VG.Proof.Bignum.bytesAt_length] at this
   unfold Sign.body
   refine sprefix_ok hL hK hc hkp hk hn hd hdg hdg8 fun s₇ Q₇ K₇ m₇ r25₇ s6₇ k₁₇ => ?_
-  unfold KeyOk at hK
+  unfold ParamsOk at hK
   generalize pOf s₀.mem L key = p at hK m₇ r25₇ s6₇ ⊢
   generalize qOf s₀.mem L key = q at hK hqlt m₇ r25₇ s6₇ ⊢
   generalize gOf s₀.mem L key = g at hK m₇ r25₇ s6₇ ⊢
-  generalize yOf s₀.mem L key = y at hK m₇ ⊢
+  generalize yOf s₀.mem L key = y at m₇ ⊢
   generalize xOf s.mem L key = X at m₇ s6₇ ⊢
   generalize kOf s.mem L nonce = K at m₇ r25₇ s6₇ ⊢
   generalize Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength q / 8))) = Z at s6₇ ⊢
