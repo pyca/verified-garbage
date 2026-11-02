@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.PubPower
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
 public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtR2
+public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtSave
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
@@ -563,5 +564,105 @@ theorem recombineP_ok {s : State} {B BX : Addr} {Z ZX w wX L Pv m1 QI : Nat}
   · rw [u12 7 (by decide) (by decide) (by decide), v11 7 (by decide) (by decide), m10, rr9, ← Nat.pow_add]
     congr 2; omega_arith
   · rw [kt.gpr (by decide)]; exact h712
+
+/-! ## `recombineX` -/
+
+/-- A number of `w` words, zero-extended to `W`. -/
+theorem wordsVal_widen {m m' : Mem} {B B' : Addr} : ∀ {d d' w W : Nat},
+    (∀ i < w, Mont.word m B (d + 8 * i) = Mont.word m' B' (d' + 8 * i)) →
+    (∀ i, w ≤ i → i < W → Mont.word m B (d + 8 * i) = 0) → w ≤ W → wordsVal m B d W = wordsVal m' B' d' w
+  | d, _, 0, W, _, hz, _ => ModArith.ma_wordsVal_zero fun i hi => hz i (Nat.zero_le _) hi
+  | d, d', w + 1, W + 1, h, hz, hw => by
+    have h0 := h 0 (by omega)
+    simp only [Nat.mul_zero, Nat.add_zero] at h0
+    simp only [wordsVal]
+    rw [h0, wordsVal_widen (d := d + 8) (d' := d' + 8) (w := w) (W := W)
+      (fun i hi => by
+        have := h (i + 1) (by omega)
+        rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega, show d' + 8 * (i + 1) = d' + 8 + 8 * i by omega] at this)
+      (fun i h1 h2 => by
+        have := hz (i + 1) (by omega) (by omega)
+        rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega] at this) (by omega)]
+  | _, _, _ + 1, 0, _, _, hw => absurd hw (by omega)
+
+theorem wX_val {W : Nat} (h : W < 2 ^ 31) :
+    (BitVec.ofNat 64 (8 * (W + 2)) - BitVec.ofNat 64 16) >>> 3 = BitVec.ofNat 64 W := by
+  rw [show BitVec.ofNat 64 (8 * (W + 2)) - BitVec.ofNat 64 16 = BitVec.ofNat 64 (8 * W) by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
+    omega_arith, ofNat_shr3 _ (by omega_arith)]
+  congr 1; omega
+
+/-- The registers `widen` writes. -/
+def widenRegs : List Reg := [.a7, .ra, .s5, .t0, .t2, .t3, .t4, .t5, .s0, .s8, .s9]
+
+/-- `widen oB oLen xj`: the prime working space's array 4 (at the header's
+`oB`, of `wordsOf l` words for the length `l` at `oLen`) into `X`'s array
+`xj`, zero-extended to `X`'s `W` words. -/
+theorem widen_ok {s : State} {S Bp : Addr} {ZX Zp wX l oB oLen xj : Nat} (hx : Scr s S ZX) (hp : Scr s Bp Zp)
+    (hsep : ∀ x, ofs Bp x < Zp → ZX ≤ ofs S x)
+    (h6 : s.gpr .s6 = S) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hB : oB + 8 ≤ ZX) (hB8 : oB % 8 = 0) (hB' : oB < 2048) (hL : oLen + 8 ≤ ZX) (hL8 : oLen % 8 = 0)
+    (hL' : oLen < 2048) (hbase : Mont.word s.mem S oB = Bp) (hlen : Mont.word s.mem S oLen = BitVec.ofNat 64 l)
+    (hl1 : 1 ≤ l) (hl' : l ≤ 1024) (hxj : xj < 8) (hZX : slot wX 8 ≤ ZX) (hZp : slot (wordsOf l) 8 ≤ Zp)
+    (hwX : wordsOf l ≤ wX) (hwX' : wX < 2 ^ 31) :
+    WP isa (widen oB oLen xj) s fun t =>
+      (wordsVal t.mem S (slot wX xj) wX = wordsVal s.mem Bp (slot (wordsOf l) 4) (wordsOf l) ∧
+        Mont.Outside S (slot wX xj) (8 * wX) s.mem t.mem) ∧ Keep widenRegs s t := by
+  have hnx := hx.nowrap
+  have hnp := hp.nowrap
+  have wb := wordsOf_bounds hl1 hl'
+  have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
+  have p4 := e (wordsOf l) 4; have p8 := e (wordsOf l) 8
+  have xj8 := slot_le (w := wX) hxj
+  have xal := slot_al8 wX xj
+  have x8 := e wX 8
+  have hh : hdrBytes = 256 := rfl
+  unfold widen
+  refine WP.seq ?_
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (setupP_ok hx (h6.trans (BitVec.add_zero S).symm) hB hB8 hB' hL hL8 hL' hbase hlen hl1 hl')
+    fun s₁ ⟨⟨a7, _, a5, a0, _, m1⟩, k1⟩ => ?_
+  refine WP.mono (Pub.base_ok (rd := .s9) (by decide) a7 a5 4) fun s₂ ⟨⟨b9, m2⟩, k2⟩ => ?_
+  have k12 := k1.trans k2
+  refine WP.mono (WP.keep [.s8] (Q := fun s₃ => s₃.gpr .s8 = BitVec.ofNat 64 (wordsOf l) ∧ s₃.mem = s₂.mem) ?_
+    (by rfl) (by rfl)) fun s₃ ⟨⟨b8, m3⟩, k3⟩ => ?_
+  · brun [(k2.gpr (by decide)).trans a0, add_ofNat_zero]
+  have k13 := k12.trans k3
+  refine WP.mono (xb_ok (rd := .t3) (by decide) ((k13.gpr (by decide)).trans h6) ((k13.gpr (by decide)).trans h11)
+    xj) fun s₄ ⟨⟨b3, m4⟩, k4⟩ => ?_
+  have k14 := k13.trans k4
+  refine WP.mono (WP.keep [.t0] (Q := fun s₅ => s₅.gpr .t0 = BitVec.ofNat 64 wX ∧ s₅.mem = s₄.mem) ?_
+    (by rfl) (by rfl)) fun s₅ ⟨⟨c0, m5⟩, k5⟩ => ?_
+  · simp only [Crt.wX]
+    brun [(k14.gpr (by decide)).trans h11, wX_val hwX']
+  have k15 := k14.trans k5
+  have m05 : s₅.mem = s.mem := by rw [m5, m4, m3, m2, m1]
+  refine WP.seq (WP.mono (zeroWords_ok (d := slot wX xj) (hx.congr k15.2.2) ((k5.gpr (by decide)).trans b3) c0
+    (by omega_arith) hwX' (by omega_arith) (by omega_arith)) fun s₆ ⟨⟨_, hz, o6⟩, k6⟩ => ?_)
+  have k16 := k15.trans k6
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (xb_ok (rd := .t3) (by decide) ((k16.gpr (by decide)).trans h6) ((k16.gpr (by decide)).trans h11)
+    xj) fun s₇ ⟨⟨d3, m7⟩, k7⟩ => ?_
+  refine WP.mono (WP.keep [.t4, .t0] (Q := fun s₈ => s₈.gpr .t4 = off Bp (slot (wordsOf l) 4) ∧
+      s₈.gpr .t0 = BitVec.ofNat 64 (wordsOf l) ∧ s₈.mem = s₇.mem) ?_ (by rfl) (by rfl)) fun s₈ ⟨⟨d4, d0, m8⟩, k8⟩ => ?_
+  · brun [((((k3.trans k4).trans k5).trans k6).trans k7).gpr (r := .s9) (by decide) |>.trans b9,
+      ((((k4.trans k5).trans k6).trans k7)).gpr (r := .s8) (by decide) |>.trans b8, add_ofNat_zero]
+  have k18 := (k16.trans k7).trans k8
+  refine WP.mono (copyWords_ok (dS := slot (wordsOf l) 4) (dD := slot wX xj) (hp.congr k18.2.2) (hx.congr k18.2.2)
+    d4 ((k8.gpr (by decide)).trans d3) d0 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) hsep) fun t ⟨⟨_, hc, o9⟩, k9⟩ => ⟨⟨?_, ?_⟩, (k18.trans k9).mono (by decide)⟩
+  · have m68 : s₈.mem = s₆.mem := by rw [m8, m7]
+    rw [m68] at hc o9
+    refine wordsVal_widen (fun i hi => (hc i hi).trans ?_) (fun i h1 h2 => ?_) hwX
+    · have : Mont.word s₆.mem Bp (slot (wordsOf l) 4 + 8 * i) = Mont.word s₅.mem Bp (slot (wordsOf l) 4 + 8 * i) :=
+        Outside.word_sep o6 (B := Bp) (Z := Zp) (Zp := ZX) (fun x hx' => hsep x hx') (by omega_arith)
+          (by omega_arith) hnp
+      rw [this, m05]
+    · rw [Mont.Outside.word o9 (Or.inr (by omega_arith)) (by omega_arith)]; exact hz i h2
+  · rw [m05] at o6
+    rw [show s₈.mem = s₆.mem by rw [m8, m7]] at o9
+    exact o6.trans (Mont.Outside.mono o9 (Nat.le_refl _) (by omega_arith))
 
 end VG.Proof.Bignum.RISCV64.Crt
