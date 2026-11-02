@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdh.RISCV64
 public import VerifiedGarbage.Impl.Ecdsa.P256.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.P384.RISCV64
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Comb
 public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
 
@@ -74,7 +75,7 @@ def powN : PowCfg := ⟨MN' c, c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, c.sl EXPN,
 stored, the mask of `d` in `[1, n-1]`, and `G` to `R`'s first two slots. -/
 def setup : List Instr :=
   Cfg.saveCode .a4 ++ loadNum c.n (c.sl K) .a3 0 ++ loadNum c.n (c.sl DD) .a1 0 ++
-    loadNum c.n (c.sl EE) .a2 0 ++ [.li .t0 0, .addi .t0 .t0 (-1), .store .d .t0 wb (c.sl FLAG)] ++
+    loadNum c.n (c.sl EE) .a2 0 ++ [.li .t0 0, .addi .t0 .t0 (-1)] ++ sdAt .t0 wb (c.sl FLAG) ++
     Cfg.constCode c ++ (nConsts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
     Cfg.rangeOf c DD ++ copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY)
 
@@ -93,7 +94,7 @@ def nonzeroFlag (i : Nat) : List Instr :=
 /-- The checks of `r` and `s`, and `r ‖ s` to `out` under the flag's mask,
 the flag's low bit returned. -/
 def finish : List Instr :=
-  nonzeroFlag c RR ++ nonzeroFlag c SS ++ [.load .d .a7 wb (c.sl FLAG)] ++
+  nonzeroFlag c RR ++ nonzeroFlag c SS ++ ldAt .a7 wb (c.sl FLAG) ++
     storeNum c.n (c.sl RR) .s2 0 ++ storeNum c.n (c.sl SS) .s2 (8 * c.n) ++ Cfg.retCode c
 
 /-- What follows `x`: `r`, `s`, the checks and the result. -/
@@ -113,5 +114,8 @@ end Cfg
 
 /-- `vg_ecdsa_p256_sign`, with `[k]G` by the comb, `vg_p256_mul_g`. -/
 def signP256 : Prog isa := Cfg.sign p256 p256Order Comb.mulGP256Name Comb.mulGP256
+
+/-- `vg_ecdsa_p384_sign`, with `[k]G` by the ladder, `vg_p384_mul`. -/
+def signP384 : Prog isa := Cfg.sign p384 p384Order "vg_p384_mul" mulP384
 
 end VG.Impl.Ecdsa.RISCV64.Sign

@@ -89,7 +89,7 @@ variable (c : Cfg) (FN : Field)
 and `e`, and the masks of `r` and `s` in `[1, n-1]`. -/
 def setup : List Instr :=
   Ecdh.RISCV64.Cfg.saveCode .a3 ++ loadNum c.n (c.sl CX) .a0 1 ++ loadNum c.n (c.sl CY) .a0 (1 + 8 * c.n) ++
-    leadMask .a0 ++ ([.store .d .a7 wb (c.sl FLAG)] : List Instr) ++ Ecdh.RISCV64.Cfg.constCode c ++
+    leadMask .a0 ++ sdAt .a7 wb (c.sl FLAG) ++ Ecdh.RISCV64.Cfg.constCode c ++
     loadNum c.n (c.sl VR) .a2 0 ++ loadNum c.n (c.sl VS) .a2 (8 * c.n) ++ loadNum c.n (c.sl VE) .a1 0 ++
     Ecdh.RISCV64.Cfg.rangeOf c VR ++ Ecdh.RISCV64.Cfg.rangeOf c VS
 
