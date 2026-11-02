@@ -30,6 +30,7 @@ theorem _root_.VG.Code.allInstrs_inline {I C : Type} (p : I → Bool) :
   | .loop b _ => by simp only [Code.inline, Code.allInstrs, Code.allInstrs_inline p b]
   | .call _ _ => rfl
   | .frame _ b _ => by simp only [Code.inline, Code.allInstrs, Code.allInstrs_inline p b]
+  | .icall .. => rfl
 
 /-- `c` is verified against `k` if `c.inline` is correct and `c` constant
 time against a contract `k₀` that `k` implies, `k₀`'s postcondition does

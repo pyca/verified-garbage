@@ -89,6 +89,7 @@ theorem x86_64Depth_zero : ∀ {c : Prog isa}, NoSp c → c.depth = 0 → c.x86_
       x86_64Depth_zero (fun j hj => h j (List.mem_cons_of_mem _ (List.mem_append_left _ hj))) hd
     simp only [Code.x86_64Depth, hb, Nat.zero_add]
     cases i <;> simp_all [X86_64.Instr.frameBytes, Taint.clobbers]
+  | .icall .., _, hd => by simp [Code.depth] at hd
 
 /-- Code without frames uses the return addresses of its calls: 8 bytes for
 each level. -/
@@ -109,6 +110,12 @@ theorem x86_64Depth_noSp : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth = 8 * c.
       x86_64Depth_noSp (fun j hj => h j (List.mem_cons_of_mem _ (List.mem_append_left _ hj)))
     simp only [Code.x86_64Depth, Code.depth, hb]
     cases i <;> simp_all [X86_64.Instr.frameBytes, Taint.clobbers]
+  | .icall _ _ b n, h => by
+    have hb := x86_64Depth_noSp (c := b)
+      (fun j hj => h j (List.mem_append_left _ (List.mem_cons_of_mem _ hj)))
+    have hn := x86_64Depth_noSp (c := n) (fun j hj => h j (List.mem_append_right _ hj))
+    simp only [Code.x86_64Depth, Code.depth, hb, hn]
+    omega
 
 /-- What `Exec.stackFrame` adds to a weakest precondition: memory changes
 only within the writable regions and the stack below `rsp` the code uses. -/

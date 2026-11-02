@@ -56,6 +56,7 @@ theorem keepsIv_loop {b : Prog isa} {cc : Cond} (hb : KeepsIv b) : KeepsIv (.loo
   intro s t s' e
   generalize hp : (Code.loop b cc : Prog isa) = p at e
   induction e with
+  | icall | icallNext => cases hp
   | loopExit e₁ _ => cases hp; exact hb _ _ _ e₁
   | loopNext e₁ _ _ _ ih =>
     cases hp

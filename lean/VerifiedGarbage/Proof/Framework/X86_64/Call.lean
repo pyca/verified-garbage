@@ -27,6 +27,7 @@ def Code.depth {I C : Type} : Code I C → Nat
   | .loop b _ => b.depth
   | .call _ b => b.depth + 1
   | .frame _ b _ => b.depth
+  | .icall _ _ b n => max (b.depth + 1) n.depth
 
 end VG
 
@@ -146,6 +147,34 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
           rw [show 8 * (b.depth + 1) = 8 * b.depth + 8 by omega_arith]
           exact below_callee _ _
     rw [hm]; exact Frame.trans f₀ f₁'
+  | @icall _ _ b nx s₀ s₁ s₂ s₃ _ _ hc₁ hb hr ih =>
+    have hcb : NoSp b := fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))
+    have hd' : 8 * b.depth + 8 + 8 < 2 ^ 64 := by simp only [Code.depth] at hd; omega_arith
+    have e₁ : s₁ = s₀.callEntry := (Option.some.inj ((call_callEntry s₀).symm.trans hc₁)).symm
+    subst e₁
+    have hm : s₃.mem = s₂.mem := by
+      simp only [isa, ret] at hr; split at hr <;> cases hr; rfl
+    have f₀ : Frame (s₀.wr ++ [below (s₀.gpr .rsp) (8 * (b.depth + 1))]) s₀.mem s₀.callEntry.mem :=
+      Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
+        (below_call _ (by omega_arith) (by omega_arith))
+    have f₁ := ih hcb (by omega_arith)
+    simp only [State.callEntry_wr, State.callEntry_rsp] at f₁
+    have f₁' : Frame (s₀.wr ++ [below (s₀.gpr .rsp) (8 * (b.depth + 1))]) s₀.callEntry.mem s₂.mem :=
+      Frame.sub f₁ fun r hr => by
+        rcases List.mem_append.mp hr with hr | hr
+        · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+        · simp only [List.mem_singleton] at hr; subst hr
+          refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+          rw [show 8 * (b.depth + 1) = 8 * b.depth + 8 by omega_arith]
+          exact below_callee _ _
+    rw [hm]
+    exact Frame.below_mono (Frame.trans f₀ f₁') (by simp only [Code.depth]; omega_arith) (by omega_arith)
+  | @icallNext i nm bd n' b' nn _ _ _ _ _ _ _ ih =>
+    have hcn : NoSp (.icall i n' b' nn) :=
+      fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi))
+    have hle : (Code.icall i n' b' nn).depth ≤ (Code.icall i nm bd (.icall i n' b' nn)).depth :=
+      Nat.le_max_right _ _
+    exact Frame.below_mono (ih hcn (by omega_arith)) (by omega_arith) (by omega_arith)
 
 /-- Calling verified code: from a state `s` such that, once the call has
 stored its return address (`State.callEntry`), the callee's precondition

@@ -40,6 +40,7 @@ def Code.inline {I C : Type} : Code I C → Code I C
   | .loop b c => .loop b.inline c
   | .call _ b => b
   | .frame i b j => .frame i b.inline j
+  | .icall i n b nx => .icall i n b nx
 
 end VG
 
@@ -367,7 +368,7 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).syms = s.syms from rfl,
       show (s.patch H hv u).gpr = s.gpr from rfl]
     split <;> rfl
-  | push | pop | alloc | free => rfl
+  | push | pop | alloc | free | callr => rfl
   | _ => rfl
 
 theorem addrs_patch (i : Instr) : addrs i (s.patch H hv u) = addrs i s := by
@@ -684,6 +685,7 @@ noncomputable def _root_.VG.Code.InlineOk : Prog isa → Bool
   | .loop b _ => b.InlineOk
   | .call _ b => b.noCalls && b.allInstrs Instr.rspFree
   | .frame .. => false
+  | .icall .. => false
 
 /-- Inlined code whose calls call none calls none. -/
 theorem _root_.VG.Code.noCalls_inline {c : Prog isa} (h : c.InlineOk = true) : c.inline.noCalls = true := by
@@ -705,6 +707,7 @@ theorem _root_.VG.Code.noCalls_inline {c : Prog isa} (h : c.InlineOk = true) : c
     simp only [Code.InlineOk, Bool.and_eq_true] at h
     exact h.1
   | frame _ _ _ _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
+  | icall => simp only [Code.InlineOk, Bool.false_eq_true] at h
 
 /-- An instruction that neither reads nor writes `rsp` does not write it. -/
 theorem _root_.VG.X86_64.Instr.clobbers_rsp_of_rspFree {i : Instr} (h : i.rspFree = true) :
@@ -736,6 +739,7 @@ theorem _root_.VG.Code.clobbers_rsp_of_inlineOk {c : Prog isa} (h : c.InlineOk =
     simp only [Code.InlineOk, Bool.and_eq_true, Code.allInstrs_eq, List.all_eq_true] at h
     exact fun i hi => Instr.clobbers_rsp_of_rspFree (h.2 i hi)
   | frame _ _ _ _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
+  | icall => simp only [Code.InlineOk, Bool.false_eq_true] at h
 
 /-- Code without calls is its own inlined form. -/
 theorem _root_.VG.Code.inline_of_noCalls {c : Prog isa} (h : c.noCalls = true) : c.inline = c := by
@@ -752,6 +756,7 @@ theorem _root_.VG.Code.inline_of_noCalls {c : Prog isa} (h : c.noCalls = true) :
     simp only [Code.inline, ih h]
   | call _ _ _ => simp only [Code.noCalls, Bool.false_eq_true] at h
   | frame _ _ _ _ => simp only [Code.noCalls, Bool.false_eq_true] at h
+  | icall => simp only [Code.noCalls, Bool.false_eq_true] at h
 
 /-- The leakage of a run of `c`, from that of `c.inline` (a prefix of
 `t`): each call adds the address of its return address `h` before and after
@@ -770,6 +775,7 @@ def liftT (h : Addr) : Nat → Prog isa → List Leak → Option (List Leak × L
       | _ => none
   | f + 1, .call _ b, t => (liftT h f b t).map fun (p : List Leak × List Leak) => (.addr h :: (p.1 ++ [.addr h]), p.2)
   | _ + 1, .frame .., _ => none
+  | _ + 1, .icall .., _ => none
 
 /-- `ta` is the leakage `liftT` gives for `t`, with enough fuel, whatever follows. -/
 def Lifts (h : Addr) (c : Prog isa) (ta t : List Leak) : Prop :=
@@ -823,6 +829,7 @@ theorem Exec.F {F : State → State} {c : Prog isa} (hc : c.noCalls = true)
   | loopNext h₁ hk _ ih₁ ih₂ => exact .loopNext (ih₁ hc hF hs) ((hev _ _).trans hk) (ih₂ hc hF (hs.of_exec h₁))
   | call => simp [Code.noCalls] at hc
   | frame => simp [Code.noCalls] at hc
+  | icall | icallNext => simp [Code.noCalls] at hc
 
 /-- The leakage of code that calls nothing lifts to itself. -/
 theorem Exec.lifts_self (h' : Addr) {c : Prog isa} (hc : c.noCalls = true) {s s' : State} {t : List Leak}
@@ -867,6 +874,7 @@ theorem Exec.lifts_self (h' : Addr) {c : Prog isa} (hc : c.noCalls = true) {s s'
     rw [h₂ f (by omega_arith) r]; rfl
   | call => simp [Code.noCalls] at hc
   | frame => simp [Code.noCalls] at hc
+  | icall | icallNext => simp [Code.noCalls] at hc
 
 end
 
@@ -941,7 +949,7 @@ theorem loop_uninline {body : Prog isa} {k : Cond} {sp : Addr}
       b'.gpr .rsp = sp ∧ Lifts (sp - 8) (.loop body k) ta t := by
   generalize e : (Code.loop body.inline k : Prog isa) = L at h
   induction h generalizing hv u with
-  | block | seq | iteT | iteF | call | frame => cases e
+  | block | seq | iteT | iteF | call | frame | icall | icallNext => cases e
   | @loopExit body' k' s s' t h₁ hk _ =>
     cases e
     obtain ⟨hv', u', ta, ha, hs', ⟨N, hl⟩⟩ := ih h₁ hb hsp hv u
@@ -968,6 +976,7 @@ theorem Exec.uninline {c : Prog isa} (hc : c.InlineOk = true) {sp : Addr} {b b' 
     ∃ hv' u' ta, Exec isa c (b.patch (hole sp) hv u) ta (b'.patch (hole sp) hv' u') ∧ b'.gpr .rsp = sp ∧
       Lifts (sp - 8) c ta t := by
   induction c generalizing b b' t hv u with
+  | icall => simp only [Code.InlineOk, Bool.false_eq_true] at hc
   | block l =>
     simp only [Code.inline] at h
     simp only [Code.InlineOk, KList.all_eq, List.all_eq_true, Bool.not_eq_true'] at hc
