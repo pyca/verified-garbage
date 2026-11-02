@@ -246,6 +246,7 @@ theorem elemRange_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w)
     WP isa elemRange s fun t =>
       ((t.gpr .a0 = 0 ↔ 1 < wordsVal s.mem B (slot w 4) w ∧ wordsVal s.mem B (slot w 4) w <
           wordsVal s.mem B (slot w 0) w) ∧
+        wordsVal t.mem B (slot w 4) w = wordsVal s.mem B (slot w 4) w ∧
         Outside B (slot w 3) (5 * (8 * (w + 2))) s.mem t.mem ∧ Env t B Z w) ∧ Keep elemRangeRegs s t := by
   have hs := h.hs
   have hnw := hs.nowrap
@@ -290,7 +291,7 @@ theorem elemRange_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w)
     (by brun [BitVec.add_zero]) (by decide) (by rfl)) fun s₈ ⟨⟨a0, m8⟩, k8⟩ => ?_
   refine WP.mono (unmask_ok s₈ (a0.trans g1)) fun t ⟨⟨t0, mt⟩, kt⟩ => ?_
   have mt3 : t.mem = s₃.mem := by rw [mt, m8, m7, m6, m35]
-  refine ⟨⟨?_, ?_, h5.keep ((k6.trans k7).trans (k8.trans kt))⟩,
+  refine ⟨⟨?_, by rw [mt3]; exact A4', ?_, h5.keep ((k6.trans k7).trans (k8.trans kt))⟩,
     ((((k1.trans k2).trans k3).trans k4).trans (k5.trans ((k6.trans k7).trans (k8.trans kt)))).mono (by decide)⟩
   · rw [t0]
     simp only [Bool.and_eq_true, Bool.not_eq_true', decide_eq_true_eq, decide_eq_false_iff_not]
@@ -384,5 +385,84 @@ theorem elemOrder_ok {s : State} {L : Lay} {key sig : Addr} {p : Nat} (hL : L.Ok
     (k13.trans ((k4.trans k5).trans (k6.trans kt))).mono (by decide)⟩
   rw [t0, decide_eq_true_iff, A4']
   rw [show wordsVal s₅.mem L.S (slot L.wp 7) L.wp = 1 from v7]
+
+/-- The registers `checkElem` writes. -/
+def elemRegs : List Reg := loadRegs ++ elemRangeRegs ++ elemOrderRegs
+
+theorem p_elem {L : Lay} {m m₁ m₂ m₃ : Mem} (o1 : Outside L.S (slot L.wp 4) (8 * (L.wp + 1)) m m₁)
+    (o2 : Outside L.S (slot L.wp 3) (5 * (8 * (L.wp + 2))) m₁ m₂)
+    (o3 : Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) m₂ m₃) :
+    Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) m m₃ :=
+  ((o1.mono (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)).trans
+    (o2.mono (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega))).trans o3
+
+theorem p_elem2 {L : Lay} {m m₁ m₂ : Mem} (o1 : Outside L.S (slot L.wp 4) (8 * (L.wp + 1)) m m₁)
+    (o2 : Outside L.S (slot L.wp 3) (5 * (8 * (L.wp + 2))) m₁ m₂) :
+    Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) m m₂ :=
+  (o1.mono (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)).trans
+    (o2.mono (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega))
+
+theorem p_arrays_body {L : Lay} (hL : L.Ok) {m m' : Mem}
+    (o : Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) m m') : Body L m m' :=
+  Body.ofP hL o (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.qOff, Lay.slot_eq]; omega)
+
+/-- `checkElem`, in the P space with p (odd, at least 2) in array 0,
+`-p⁻¹ mod 2⁶⁴` in `t1` and `R² mod p` in array 24: the `p_len` octets at `E`
+(`s7`, `p_len` in `s8`) into array 4, and `a0 = 0` exactly when their number
+`e` has `1 < e < p` and `e^q mod p = 1`; arrays 1–23 change. -/
+theorem checkElem_ok {s : State} {L : Lay} {key sig E : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
+    (hr : Regs s L key sig) (hin : InP s L) (hk : Src s L key (2 * L.pl + L.ql))
+    (he : Src s L E L.pl) (h7 : s.gpr .s7 = E) (h8 : s.gpr .s8 = BitVec.ofNat 64 L.pl)
+    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1)
+    (hinv : ((word s.mem L.S (slot L.wp 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0)
+    (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
+    WP isa checkElem s fun t =>
+      (InP t L ∧ (t.gpr .a0 = 0 ↔ (1 < Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem E L.pl) ∧
+          Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem E L.pl) < p ∧
+          Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem E L.pl) ^ qOf s.mem L key % p = 1)) ∧
+        Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) s.mem t.mem ∧ t.gpr .t1 = s.gpr .t1) ∧
+        Keep elemRegs s t := by
+  have hZ := hL.z256
+  have hw := hL.wp_ge
+  have hw8 := hL.wp_eq
+  have hnw := hL.nowrap
+  have hbuf := hL.buf_end
+  have hqZ : L.qOff ≤ L.Z := by have := hbuf; simp only [Lay.bOff] at this; omega
+  have e : ∀ j, slot L.wp j = 256 + j * (8 * (L.wp + 2)) := fun _ => rfl
+  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e24 := e 24; have e28 := e 28
+  have hq28 : L.qOff = slot L.wp 28 := rfl
+  have en := hin.env
+  unfold checkElem andThen
+  refine WP.seq (WP.mono (loadArr_ok en (j := 4) (N := E) (by decide) (by rw [h7]; exact (BitVec.add_zero _).symm)
+    h8 (by omega) (by omega) he.rd (fun i hi x hx => he.sep i hi x (Nat.lt_of_lt_of_le hx hqZ)))
+    fun s₁ ⟨⟨v4, top4, o1, a7⟩, k1⟩ => ?_)
+  have e1' : Env s₁ L.S L.qOff L.wp :=
+    ⟨en.hs.congr k1.2.2, a7, (k1.gpr (by decide)).trans en.s5, (k1.gpr (by decide)).trans en.t0, en.w2, en.w48,
+      en.hZ⟩
+  have A0 : wordsVal s₁.mem L.S (slot L.wp 0) L.wp = p := by rw [o1.wordsVal (by omega) (by omega_arith)]; exact hp0
+  refine WP.seq (WP.mono (elemRange_ok e1' top4) fun s₂ ⟨⟨r0, a4, o2, e2⟩, k2⟩ => ?_)
+  rw [v4, A0] at r0
+  have o12 := p_elem2 o1 o2
+  have k12 := k1.trans k2
+  refine WP.ite _ (Steps.eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
+  · have hz := r0.mp (beq_iff_eq.mp hz)
+    have hb2 : Body L s.mem s₂.mem := p_arrays_body hL o12
+    refine WP.mono (elemOrder_ok (p := p) hL (hs.congr k12.2.2) (hr.keep k12 hb2)
+      ⟨e2, (k12.gpr (by decide)).trans hin.s6⟩ ((hk.keep k12.2.1 k12.2.2))
+      (by rw [arrP, o12.wordsVal (by omega) (by omega_arith)]; exact hp0) hp hpo
+      (by rw [o12.word (by omega) (by omega_arith), k12.gpr (by decide)]; exact hinv)
+      (by rw [arrP, o12.wordsVal (by omega) (by omega_arith)]; exact hrr))
+      fun t ⟨⟨t0, ti, o3⟩, k3⟩ => ⟨⟨ti, ?_, p_elem o1 o2 o3, ?_⟩, k12.trans k3⟩
+    · have A4 : arrP s₂.mem L 4 = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem E L.pl) := by
+        rw [arrP, a4]; exact v4
+      have hq : qOf s₂.mem L key = qOf s.mem L key := by
+        unfold qOf; rw [(hk.sub (o := L.pl) (k := L.ql) (by omega)).bytes hb2 (by omega)]
+      rw [t0, A4, hq]
+      exact ⟨fun h => ⟨hz.1, hz.2, h⟩, fun h => h.2.2⟩
+    · rw [(k12.trans k3).gpr (by decide)]
+  · refine WP.block_nil ⟨⟨⟨e2, (k12.gpr (by decide)).trans hin.s6⟩, ?_, o12, (k12.gpr (by decide))⟩,
+      k12.mono fun r h => List.mem_append_left _ h⟩
+    have hz : ¬ s₂.gpr .a0 = 0 := fun h => by simp [h] at hz
+    exact ⟨fun h => absurd h hz, fun h => absurd (r0.mpr ⟨h.1, h.2.1⟩) hz⟩
 
 end VG.Proof.Dsa.RISCV64
