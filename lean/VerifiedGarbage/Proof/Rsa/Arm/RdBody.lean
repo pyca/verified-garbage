@@ -175,6 +175,66 @@ theorem validD_vp [InvLaw] (hv : Spec.Rsa.modulusValid P.n P.K = true) (he : P.e
   refine VP.seq (divA_vp hn0) (VP.seq divB_vp (VP.seq (square_vp prodF) (VP.seq minus4n_vp
     (VP.seq (sqrt_vp sqrtF) factors_vp))))
 
+/-- The end of the body: `p`, `q` and the result as `primesKeyDet` gives them. -/
+def ResD (P : RP) (σ s : State) : Prop :=
+  Bo P σ s ∧ Spec.Rsa.writtenAll s.mem [(State.addr P.pP, P.K), (State.addr P.qP, P.K)] (s.gpr .r0)
+    ((Spec.Rsa.primesKeyDet P.nB P.eB (dB P σ)).map fun v => [v.1, v.2])
+
+theorem primesKeyDet_invalid (hv : Spec.Rsa.modulusValid P.n P.K = false) {σ : State} (pre : In P σ) :
+    Spec.Rsa.primesKeyDet P.nB P.eB (dB P σ) = none := by
+  have hl : P.nB.length = P.K := by rw [← pre.nB]; simp [Spec.Rsa.bytesAt]
+  simp only [Spec.Rsa.primesKeyDet, hl, show Spec.Rsa.os2ip P.nB = P.n from rfl, hv, Bool.false_eq_true,
+    ite_false]
+
+theorem failD_res {E : State → Prop} (hE : ∀ σ, E σ → Spec.Rsa.primesKeyDet P.nB P.eB (dB P σ) = none)
+    {σ s : State}
+    (h : E σ ∧ Bo P σ s ∧ Spec.Rsa.bytesAt s.mem (State.addr P.pP) P.K = List.replicate P.K 0 ∧
+      Spec.Rsa.bytesAt s.mem (State.addr P.qP) P.K = List.replicate P.K 0 ∧ s.gpr .r0 = 0) : ResD P σ s := by
+  obtain ⟨e, h, bp, bq, r0⟩ := h
+  refine ⟨h, ?_⟩
+  rw [hE σ e]
+  refine ⟨r0, fun o ho => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
+  rcases ho with rfl | rfl
+  · exact bp
+  · exact bq
+
+theorem feD_res (hv : Spec.Rsa.modulusValid P.n P.K = true) (he : P.el ≤ 8) {σ s : State}
+    (h : FeD P (In P) (pF' P) (qF' P) (okF' P) σ s) : ResD P σ s := by
+  obtain ⟨pre, bo, bp, bq, ret⟩ := h
+  refine ⟨bo, ?_⟩
+  rw [pk_eq hv pre he]
+  by_cases yes : okF' P σ = true
+  · simp only [okF'] at yes
+    simp only [yes, ite_true, Option.map_some]
+    refine ⟨by rw [ret]; simp only [okF', yes, b2n]; rfl, ?_⟩
+    simp only [List.map_cons, List.map_nil, bp, bq, outPD, outQD, okF', yes, ite_true]
+  · have no : okV P (fS P) (gS P) (hS P) σ = false := Bool.eq_false_iff.mpr yes
+    simp only [no, Bool.false_eq_true, ite_false, Option.map_none]
+    refine ⟨by rw [ret]; simp only [okF', no, b2n]; rfl, fun o ho => ?_⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
+    rcases ho with rfl | rfl
+    · rw [bp]; simp [outPD, okF', no]
+    · rw [bq]; simp [outQD, okF', no]
+
+/-- The body after the entry: Z iff `n` is valid. -/
+theorem bodyD_vp [InvLaw] (he : P.el ≤ 8) :
+    VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K)
+      (.ite .eq VG.Impl.Rsa.Arm.RecoverDet.valid VG.Impl.Rsa.Arm.Recover.fail) (ResD P) := by
+  refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) ?_ ?_
+  · show some s₁.z = some s₂.z
+    rw [h₁.2, h₂.2]
+  · refine VP.of_imp (p := Spec.Rsa.modulusValid P.n P.K = true) (fun σ s ⟨⟨_, z⟩, ev⟩ => ?_)
+      fun hv => ((validD_vp hv he).mono (fun σ s ⟨⟨h, _⟩, _⟩ => ⟨trivial, h⟩) fun _ _ h => feD_res hv he h)
+    have : some s.z = some true := ev
+    rw [← z]; simpa using this
+  · refine (fail_vp (E := fun σ => In P σ ∧ Spec.Rsa.modulusValid P.n P.K = false)).mono
+      (fun σ s ⟨⟨h, z⟩, ev⟩ => ⟨⟨h.pre, ?_⟩, h.bo⟩)
+      fun σ s h => failD_res (E := fun σ => In P σ ∧ Spec.Rsa.modulusValid P.n P.K = false)
+        (fun σ e => primesKeyDet_invalid e.2 e.1) h
+    have : some s.z = some false := ev
+    rw [← z]; simpa using this
+
 end
 
 end VG.Proof.Rsa.Arm.RecoverDet
