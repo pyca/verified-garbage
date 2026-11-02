@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Bignum.Layout
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_mov op2_reg)
 
 theorem crt_leaveNarrow_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32} {slot : Nat}
@@ -98,8 +98,8 @@ theorem crt_narrowResult_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
     ⟨⟨selected, sharedZ.buffers.context.narrow, narrowLayout, narrowR1, sepCN.symm, le⟩, reducedZ.cleared⟩
     (by decide) (by decide)) ?_
   rintro t ⟨selectedT, valueT, keepsT, frameT, restT⟩
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op7 : Operand 7 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   obtain ⟨arithT, modT⟩ := arith.after_array (o := 6) (by decide) keepsT frameT restT selectedT.ptr
   have powered := CrtPoweredState.of_ready arithT (modT.trans reducedZ.modulus) (valueT.trans resultZ)
     ((keeps_array_num keepsT fits op4 (by decide)).trans reducedZ.r2)

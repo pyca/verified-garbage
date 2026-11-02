@@ -45,7 +45,7 @@ theorem halfCountTail_ok {s : State} {base : BitVec 32} {capacity w count : Nat}
     exact workspace.read (by have := ready.arrayFit (j := 29) (by decide); omega)
   have stackSep : (⟨State.addr (s.sp + 60#32), 4⟩ : Region).Disjoint
       ⟨State.addr (B + BitVec.ofNat 32 d), 4⟩ := by
-    have a : State.addr (B + BitVec.ofNat 32 d) = off (State.addr base) (Spec.Rsa.Mont.arrAt w 29) := by
+    have a : State.addr (B + BitVec.ofNat 32 d) = off (State.addr base) (Proof.Rsa.Mont.arrAt w 29) := by
       rw [nativeAddr, VG.Arm.addr_add (ready.baseShiftFits workspace)]
       unfold off
       rw [BitVec.add_assoc, ← BitVec.ofNat_add, keyView_array]

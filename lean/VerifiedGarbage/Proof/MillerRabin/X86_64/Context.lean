@@ -22,21 +22,21 @@ open VG.Proof.Bignum.X86_64.MontFn (numAt_eq)
 theorem initial_ctx {s : State} (h : roundPre s) :
     let B := s.gpr .rdi
     let Z := (s.gpr .rsi).toNat * 8
-    let w := Spec.Rsa.Mont.wOf s.mem B
-    let c := Spec.Rsa.Mont.numAt s.mem B w 0
+    let w := Proof.Rsa.Mont.wOf s.mem B
+    let c := Proof.Rsa.Mont.numAt s.mem B w 0
     MrDims B Z w ∧ ∃ bm, MrCtx s B Z w (word s.mem B (8 * sMinv)) c bm ∧
       ECtx s.mem B w c ∧ c % 2 = 1 ∧ 3 ≤ c ∧ wv s.mem B (slot w aXm) w < c := by
   rcases h with ⟨-, hwr, hn, -, -, -, hL, hp⟩
-  dsimp only [Spec.MillerRabin.Layout, Spec.MillerRabin.extended] at hL
+  dsimp only [Proof.MillerRabin.Round.Layout, Proof.MillerRabin.Round.extended] at hL
   rcases hL with ⟨-, hm, h4, h128, hspace, -⟩
   rcases hm with ⟨-, -, -, harr⟩
-  dsimp only [Spec.MillerRabin.Prepared, Spec.MillerRabin.extended] at hp
+  dsimp only [Proof.MillerRabin.Round.Prepared, Proof.MillerRabin.Round.extended] at hp
   rcases hp with ⟨h3, hodd, hinv, hxm, hr1, hrm1, he, hl⟩
   dsimp only
   let B := s.gpr .rdi
   let Z := (s.gpr .rsi).toNat * 8
-  let w := Spec.Rsa.Mont.wOf s.mem B
-  let c := Spec.Rsa.Mont.numAt s.mem B w 0
+  let w := Proof.Rsa.Mont.wOf s.mem B
+  let c := Proof.Rsa.Mont.numAt s.mem B w 0
   have hs : Scr s B Z := Scr.of_mem (by rw [hwr]; simp [B, Z]) hn
   have h27 : slot w 27 ≤ Z := by
     change slot w 27 ≤ 8 * (s.gpr .rsi).toNat at hspace
@@ -48,7 +48,7 @@ theorem initial_ctx {s : State} (h : roundPre s) :
     exact h27, h4, h128⟩
   have hg : Good s B Z w (word s.mem B (8 * sMinv)) := by
     refine ⟨hs, rfl, ?_, rfl, ?_⟩
-    · simp only [w, Spec.Rsa.Mont.wOf, Spec.Rsa.Mont.wordAt, Spec.Rsa.Mont.wWord, VG.Proof.Bignum.word, sW, off]
+    · simp only [w, Proof.Rsa.Mont.wOf, Proof.Rsa.Mont.wordAt, Proof.Rsa.Mont.wWord, VG.Proof.Bignum.word, sW, off]
       simp
     · intro j hj
       exact harr j hj
@@ -60,7 +60,7 @@ theorem initial_ctx {s : State} (h : roundPre s) :
   · rw [← numAt_eq s.mem B w aRm1]
     exact hrm1
   · rw [← numAt_eq s.mem B w aE]
-    simpa only [Spec.MillerRabin.exponent, Spec.MillerRabin.shift, mrE, mrSig, sigOf, mrA, aE, B, w, c] using he
+    simpa only [Proof.MillerRabin.Round.exponent, Proof.MillerRabin.Round.shift, mrE, mrSig, sigOf, mrA, aE, B, w, c] using he
   · exact hl
   · rw [← numAt_eq s.mem B w aXm]
     exact hxm

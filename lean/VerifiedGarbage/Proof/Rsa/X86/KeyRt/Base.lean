@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # What the RSA key workspace's operations at a run-time width need of a state
 

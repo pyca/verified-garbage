@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.SharedR2
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 abbrev SqReady (base : BitVec 32) (len w : Nat) (P : State → Prop) (k : Nat) (s : State) : Prop :=
   (∃ m, R2Sq base len w m k s) ∧ P s
@@ -26,7 +26,7 @@ abbrev SqRel (base : BitVec 32) (len w : Nat) (P : State → Prop) (k : Nat) (s 
 theorem square_ct {base : BitVec 32} {len w k : Nat} {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len w P regions) (ct : TwoExp.MontgomeryTiming K) :
     RelCT isa (SqRel base len w P k) (K.op 4 4 4) (SqRel base len w P (2 * k)) := by
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op := relCT_keep_sp ((ct.op_ct 4 4 4 op4 op4 op4).mono
     (P' := SqRel base len w P k)
     (fun _ _ h => by

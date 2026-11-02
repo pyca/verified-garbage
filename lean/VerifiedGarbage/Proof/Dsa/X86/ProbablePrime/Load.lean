@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Mont.RegionOutside
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 /-! # The candidate's octets become arrays 0 and 5 of the workspace -/
 
 @[expose] public section

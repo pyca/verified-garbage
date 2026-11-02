@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 @[expose] public section
 namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
-open VG.Spec.Rsa.Mont (wordAt wOf numAt arrWord)
+open VG.Proof.Rsa.Mont (wordAt wOf numAt arrWord)
 
 structure Modulus (g : Geometry) (c : Nat) (m : Mem) : Prop where
   width : wOf m g.W = g.w
@@ -19,14 +19,14 @@ structure Modulus (g : Geometry) (c : Nat) (m : Mem) : Prop where
   inverse : ((m.readW (off g.W (g.array 0)) 64).toNat * (wordAt m g.W 7).toNat + 1) % 2 ^ 64 = 0
 
 theorem Modulus.layout {g : Geometry} (v : g.Valid) {c : Nat} {m : Mem} (M : Modulus g c m)
-    (aligned : g.L % 8 = 0) : VG.Spec.Rsa.Mont.Layout m g.W (g.L / 8) := by
-  rw [VG.Spec.Rsa.Mont.Layout, M.width]
+    (aligned : g.L % 8 = 0) : VG.Proof.Rsa.Mont.Layout m g.W (g.L / 8) := by
+  rw [VG.Proof.Rsa.Mont.Layout, M.width]
   refine ⟨by have := v.minWidth; omega, by have := v.maxWidth; omega, ?_, M.pointers⟩
   have fit := v.arrayFit (j := 7) (by decide)
   have all := v.arraysFit
   have order := Nat.mul_le_mul_right (8 * (g.w + 2)) (show 8 ≤ 28 by decide)
   have alignedL := Nat.mod_add_div g.L 8
-  unfold VG.Spec.Rsa.Mont.arrAt VG.Spec.Rsa.Mont.hdrBytes at *
+  unfold VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes at *
   omega
 
 theorem Modulus.keep {g : Geometry} (v : g.Valid) {c : Nat} {m m' : Mem}

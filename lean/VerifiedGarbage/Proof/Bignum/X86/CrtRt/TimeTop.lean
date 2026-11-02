@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Bignum.X86.CrtResources
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Private CRT RSA at a run-time width on i686 against its contract
 
@@ -38,9 +39,9 @@ structure TopABI (s : State) : Prop where
   abi : CrtABI s
   outArgs : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 72⟩
 
-theorem topABI_of {s : State} (h : (Spec.Rsa.privateCrtContract abi 96).pre s) : TopABI s := by
+theorem topABI_of {s : State} (h : (Proof.Rsa.privateCrtContract abi 96).pre s) : TopABI s := by
   refine ⟨crtABI_of h, ?_⟩
-  sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   with_reducible assumption
 
@@ -180,8 +181,8 @@ theorem operation_trace {s t : State} (A : TopABI s) (B : TopABI t)
           have T3 := (Crt.restore_relCT _ _ _ _ _ _ Agree E3 F3).1
           rw [T1, T2, T3]
 
-theorem constantTime : ConstantTime isa (Spec.Rsa.privateCrtContract abi 96).pre
-    (Spec.Rsa.privateCrtContract abi 96).pub CrtRt.code := by
+theorem constantTime : ConstantTime isa (Proof.Rsa.privateCrtContract abi 96).pre
+    (Proof.Rsa.privateCrtContract abi 96).pub CrtRt.code := by
   intro s t tr ur sf tf S T H E F
   have Args := Crt.arguments H
   exact operation_trace (topABI_of S) (topABI_of T) Args.2 Args.1 (Crt.modulusBytes H) E F
@@ -215,7 +216,7 @@ def satState : State where
   rd := [⟨8192, 64⟩, ⟨12288, 64⟩, ⟨16384, 1⟩, ⟨20480, 1⟩, ⟨24576, 1⟩, ⟨28672, 1⟩, ⟨32768, 1⟩]
   wr := [⟨4096, 64⟩, ⟨36864, 8448⟩, ⟨0x20004, 72⟩]
 
-theorem satisfiable : ∃ s, (Spec.Rsa.privateCrtContract abi 96).pre s := by
+theorem satisfiable : ∃ s, (Proof.Rsa.privateCrtContract abi 96).pre s := by
   have a0 : arg satState 0 = 4096 := by decide
   have a1 : arg satState 1 = 64 := by decide
   have a2 : arg satState 2 = 8192 := by decide
@@ -236,11 +237,11 @@ theorem satisfiable : ∃ s, (Spec.Rsa.privateCrtContract abi 96).pre s := by
   have a17 : arg satState 17 = 1056 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_implies_sat [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, e, esp, satState, Spec.Rsa.lenValid,
       Spec.Rsa.scratchWords] using satState
 
-theorem verified : Verified target CrtRt.code (Spec.Rsa.privateCrtContract abi 96) :=
+theorem verified : Verified target CrtRt.code (Proof.Rsa.privateCrtContract abi 96) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.Bignum.X86.CrtRt

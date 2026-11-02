@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Body
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # The probable-prime test meets its contract's functional part -/
 
@@ -16,7 +18,7 @@ open VG.Proof.Dsa.AArch64.Generation (allocState freeState alloc_frame_ok)
 /-- No byte of `ws` but those of the test's scratch ranges is in a region the test changes. -/
 theorem keeps_of_frame {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) {m : Mem}
     (hf : Frame (changed bits s) s.mem m) :
-    Spec.Dsa.ModPow.Keeps (s.gpr .x0) (s.gpr .x1).toNat (layout bits).scratch s.mem m := by
+    Proof.Dsa.ModPow.Keeps (s.gpr .x0) (s.gpr .x1).toNat (layout bits).scratch s.mem m := by
   intro i hi hout
   have hw := A.wsBound
   have hlen : len bits ≤ 384 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
@@ -49,12 +51,12 @@ theorem correct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) (s : 
         rw [hsp]; exact BitVec.sub_add_cancel .., hp.2.2.2.2⟩, hp⟩)
   obtain ⟨hx0, hused, hframe, _, _⟩ := hpost
   refine ⟨trace, t, he, hpre, ?_⟩
-  sig_post [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+  sig_post [contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argRegs]
   refine ⟨?_, keeps_of_frame hb A hframe, fun b rest h => ?_⟩
   · rw [hx0]
     have st : ∀ o : Option (Bool × Spec.RsaKeyGen.Rand),
-        (BitVec.setWidth 32 (BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status o))).toNat =
-          Spec.Dsa.ProbablePrime.status o := by
+        (BitVec.setWidth 32 (BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status o))).toNat =
+          Proof.Dsa.ProbablePrime.status o := by
       intro o
       rcases o with _ | ⟨_ | _, _⟩ <;> rfl
     exact st _

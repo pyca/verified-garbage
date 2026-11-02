@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombExp
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (Operand numAt)
+open VG.Proof.Rsa.Mont (Operand numAt)
 
 structure RowInput (base source table : BitVec 32) (len w bytes N M g E i : Nat)
     (P : State→Prop) (s : State) : Prop where

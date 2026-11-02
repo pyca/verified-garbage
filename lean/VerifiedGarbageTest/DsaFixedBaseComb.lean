@@ -1,18 +1,20 @@
 module
 
-import VerifiedGarbage.Spec.Dsa.FixedBaseComb
-meta import VerifiedGarbage.Spec.Dsa.FixedBaseComb
+import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
+meta import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 
-/-! Algebraic checks of the new contract's representation and frame policy.
+/-! Algebraic checks of the comb contracts' representation and frame policy
+(`Proof/Dsa/FixedBaseCombContract.lean`).
 These are synthetic small-field identities, not cryptographic known-answer
 vectors or a proof of an assembly implementation. -/
 
 open VG.Spec
-open Dsa.FixedBaseComb
+open VG.Proof.Dsa.FixedBaseComb
+open VG.Impl.Dsa.FixedBaseComb (Layout)
 
 private def layout : Layout :=
   { n := 1, e := 1, modulus := 0, base := 8, exponent := 16, result := 24,
@@ -56,7 +58,4 @@ private def checkContext (n e : Nat) : Bool :=
 -- Every DSA keygen storage shape, including 224/256-bit zero-padded comb rows.
 #guard [(16, 5), (32, 5), (32, 7), (32, 8), (48, 8)].all fun (n, e) => checkContext n e
 
-#assert_standard_axioms Dsa.FixedBaseComb.prepareContract
-#assert_standard_axioms Dsa.FixedBaseComb.powerContract
-#assert_no_compiler_overrides Dsa.FixedBaseComb.prepareApi Dsa.FixedBaseComb.powerApi
 #assert_spec_origin

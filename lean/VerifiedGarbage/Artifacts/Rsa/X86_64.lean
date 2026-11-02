@@ -39,26 +39,6 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.X86_64.PubIfma.checked Proof.Bignum.X86_64.Mont.adxSquare.mm
     verified := Proof.Bignum.X86_64.Ifma.Pub.ifma_verified
     features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"] },
-  Spec.Rsa.privateCrtApi.artifact X86_64.target {
-    code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.base.mm
-      (Impl.Rsa.X86_64.Crt.expLoopS Proof.Rsa.X86_64.CallMont.lazyBase Proof.Rsa.X86_64.CallMont.base.mm
-        Impl.Rsa.X86_64.Crt.tabSelect)
-    stack := 8
-    verified := Proof.Rsa.X86_64.Instances.crt_verified },
-  Spec.Rsa.privateCrtApi.artifact X86_64.target {
-    suffix := "_adx"
-    code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.adx.mm
-      (Impl.Rsa.X86_64.Crt.expLoop5S Proof.Rsa.X86_64.CallMont.lazyAdx Proof.Rsa.X86_64.CallMont.adx.mm
-        Impl.Rsa.X86_64.Crt.tabSelectV)
-    stack := 8
-    verified := Proof.Rsa.X86_64.Instances.crtAdx_verified
-    features := ["avx", "avx2", "bmi2", "adx"] },
-  Spec.Rsa.privateCrtApi.artifact X86_64.target {
-    suffix := "_ifma"
-    code := Impl.Rsa.X86_64.CrtIfma.code Proof.Rsa.X86_64.CallMont.adx.mm
-    stack := 8
-    verified := Proof.Rsa.X86_64.Instances.crtIfma_verified
-    features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"] },
   Spec.Rsa.crtValuesApi.artifact X86_64.target {
     code := Impl.Rsa.X86_64.Keys.CrtValues.code
     verified := Proof.Rsa.X86_64.Instances.crtValues_verified },

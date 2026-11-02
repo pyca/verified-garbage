@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Phase
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Finish
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.WriteP
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
@@ -65,7 +66,7 @@ def usedOf (p : PP) : Option (Option Nat × List Byte) → Nat
 
 /-- The end of a candidate, before the exit. -/
 def CEnd (p : PP) (res : Option (Option Nat × List Byte)) (t : State) : Prop :=
-  ESt p t ∧ t.gpr .r3 = BitVec.ofNat 64 (Spec.Ffdh.candidateStatus res) ∧
+  ESt p t ∧ t.gpr .r3 = BitVec.ofNat 64 (Proof.Ffdh.candidateStatus res) ∧
     Spec.Rsa.bytesAt t.mem p.op p.L = outOf p res ∧ t.mem.readW p.up 64 = BitVec.ofNat 64 (usedOf p res)
 
 /-- A store to `used` keeps the working space and `out`. -/
@@ -86,7 +87,7 @@ theorem used_store {p : PP} {s : State} (h : Bufs p s) {m m' : Mem} (hm : Outsid
 
 /-- `finish` for a candidate without p, from `St`. -/
 theorem finEnd {p : PP} {s : State} (h : St p s) {r v : Nat} (hr : r = 0 ∨ r = 2)
-    {res : Option (Option Nat × List Byte)} (hst : Spec.Ffdh.candidateStatus res = r)
+    {res : Option (Option Nat × List Byte)} (hst : Proof.Ffdh.candidateStatus res = r)
     (hout : outOf p res = List.replicate p.L 0) (huse : usedOf p res = if r = 0 then 0 else v)
     (hv : word s.mem p.B 152 = BitVec.ofNat 64 v) :
     WP isa (.block (finish r)) s (CEnd p res) := by

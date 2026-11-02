@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 structure PublicArithmetic (base dst np ep xp : BitVec 32) (len k eLen : Nat)
@@ -44,8 +44,8 @@ theorem PublicArithmetic.after_array {s t : State} {base dst np ep xp : BitVec 3
     (ho0 : o ≠ 0) (ho4 : o ≠ 4) :
     PublicArithmetic base dst np ep xp len k eLen nb eb xb t := by
   have fits : arrAt (Spec.Rsa.modulusWords k) 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   exact ⟨h.buffers.after_workspace frame rest, h.stack.after_workspace frame rest, ready,
     (keeps_array_num keeps fits op0 (Ne.symm ho0)).trans h.modulus, h.modulusLength, h.odd,
     (keeps_array_num keeps fits op4 (Ne.symm ho4)).trans h.r2⟩

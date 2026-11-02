@@ -18,7 +18,7 @@ zeros at once.
 The numbers live in the key working space at `scratch`
 (`Impl/Rsa/Arm/KeyWs.lean`), with `w = 2 ⌈n_len / 8⌉ + 2` words of 32 bits:
 then its stride is that of Montgomery multiplication's working space
-(`Spec/Rsa/Mont.lean`) for numbers of `⌈n_len / 8⌉` words of 64 bits, which
+(`Proof/Rsa/MontContract.lean`) for numbers of `⌈n_len / 8⌉` words of 64 bits, which
 is placed so that its 8 arrays are the key arrays 20–27, and its header
 lies in the arrays 16–19. The same working space read with `W = 2 w + 2`
 words has twice the stride, and its array `j` is the key arrays `2 j` and

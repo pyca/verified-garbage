@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Calling the verified CRT writes its result into the private stack candidate -/
 
@@ -69,7 +70,7 @@ theorem crt_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s 
     (crtCovers h).1 (crtCovers h).2 (crtWrites_sub h.valid)) ?_
   rintro t ⟨ht, F, K, u, M, G, post⟩
   refine ⟨ht, F, K, ?_⟩
-  sig_post [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes] at post
+  sig_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes] at post
   have sa := fun {j} (hj : j < 18) => crtArgs_values h args hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega

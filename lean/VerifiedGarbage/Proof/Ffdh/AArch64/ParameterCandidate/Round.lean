@@ -142,8 +142,8 @@ theorem round_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm a i K 
     WP isa (seqs (VG.Impl.Ffdh.AArch64.ParameterCandidate.round M.mm R.run)) s fun t =>
       (∃ bm', MrCtx t B Z w c bm') ∧ ECtx t.mem B w c ∧
       word t.mem B (8 * kStat) = BitVec.ofNat 64
-        (if Spec.MillerRabin.round c a then (if i + 1 < K then 4 else 1) else 2) ∧
-      word t.mem B (8 * fIdx) = BitVec.ofNat 64 (if Spec.MillerRabin.round c a then i + 1 else i) ∧
+        (if Proof.MillerRabin.Round.round c a then (if i + 1 < K then 4 else 1) else 2) ∧
+      word t.mem B (8 * fIdx) = BitVec.ofNat 64 (if Proof.MillerRabin.Round.round c a then i + 1 else i) ∧
       Frm B (rdRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hc.ws.scr.nowrap
   have hZ := hc.ws.hZ
@@ -186,7 +186,7 @@ theorem round_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm a i K 
   have hC₂ : word s₂.mem B (8 * fChecks) = BitVec.ofNat 64 K := by
     rw [f₂.word_eq (VG.Proof.RsaKeyGen.hdr_of_shape (sharedKernel_shape w) (by decide) (by decide))
       (by simp only [fChecks]; omega_arith)]; exact hC₁
-  generalize Spec.MillerRabin.round c a = f at hf₂ ⊢
+  generalize Proof.MillerRabin.Round.round c a = f at hf₂ ⊢
   refine WP.mono (rdTail_ok hc₂.ws hf₂ hI₂ hC₂ hi hK) fun t ⟨hm, k⟩ => ?_
   have hft : Frm B [(8 * fIdx, 8), (8 * kStat, 8)] s₂.mem t.mem := by
     rw [hm]

@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem expBit_ok (s : State) {base : BitVec 32} {len w M x E V : Nat}
@@ -24,7 +24,7 @@ theorem expBit_ok (s : State) {base : BitVec 32} {len w M x E V : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have size : 256 ≤ 8 * len := by
     have := h.ready.layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega
   rw [expBit, WP.seq_iff]
   refine WP.mono (exp_square_ok s h) ?_

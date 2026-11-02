@@ -11,7 +11,7 @@ open VG VG.Proof.MillerRabin.X86
 theorem paddedBefore (g : Geometry) {i j : Nat} (index : i < j) :
     g.array i + 8 * (g.w + 2) ≤ g.array j := by
   have step := Nat.mul_le_mul_right (8 * (g.w + 2)) index
-  unfold Geometry.array Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes
+  unfold Geometry.array Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes
   rw [Nat.succ_mul] at step
   omega
 

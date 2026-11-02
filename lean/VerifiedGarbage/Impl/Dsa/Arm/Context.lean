@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.Arm.Context
-public import VerifiedGarbage.Spec.Dsa.MontContext
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-! # Shared Montgomery context setup for ARMv7 DSA
 
@@ -35,7 +35,7 @@ def scratch (n : Nat) : List (Nat × Nat) :=
   [(resS n, 32), (0, 4), (oneS n, 8 * n), (rrS n, 8 * n),
     (tmpS n, 8 * n), (accS n, 4 * (8 * n + 2))]
 
-def layout (n : Nat) : Spec.Dsa.MontContext.Layout where
+def layout (n : Nat) : Impl.Dsa.MontContext.Layout where
   n := n
   modulus := modS n
   inverse := invO
@@ -44,7 +44,7 @@ def layout (n : Nat) : Spec.Dsa.MontContext.Layout where
   scratch := scratch n
   size := contextBytes n
 
-def name (n : Nat) : String := (Spec.Dsa.MontContext.api (layout n)).name
+def name (n : Nat) : String := s!"vg_dsa_context_{(layout n).n}"
 
 def head (n : Nat) : List Instr :=
   [.mov .r4 (.reg .r12), .mov .r0 (.reg .r12), .movw .r1 (BitVec.ofNat 16 (contextBytes n / 8))]

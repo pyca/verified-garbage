@@ -98,7 +98,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 private theorem table_after_output {s t : State} {p : CandidateParams}
     (table : TableData p.base p.length s.mem) (changed : Frame [⟨State.addr p.out, p.length⟩] s.mem t.mem) :

@@ -44,7 +44,7 @@ open VG.Proof.MillerRabin.PPC64LE.Search (Prep)
 open VG.Proof.MillerRabin.PPC64LE.Blinded (BCtx LKeep MOut millerRabin_ok)
 
 /-- The candidate. -/
-abbrev cand (bits : Nat) (σ : State) : Nat := Spec.Dsa.ProbablePrime.candidateAt (layout bits) σ.mem (σ.gpr .r3)
+abbrev cand (bits : Nat) (σ : State) : Nat := Proof.Dsa.ProbablePrime.candidateAt (layout bits) σ.mem (σ.gpr .r3)
 
 /-- The tape. -/
 abbrev tape (σ : State) : Spec.RsaKeyGen.Rand := Spec.Rsa.bytesAt σ.mem (σ.gpr .r5) (σ.gpr .r6).toNat
@@ -71,7 +71,7 @@ structure BIn (bits : Nat) (σ s : State) : Prop where
 /-- After the body. -/
 structure BOut (bits : Nat) (σ s t : State) : Prop where
   r31 : t.gpr .r31 = wsB σ
-  stat : word t.mem (wsB σ) (8 * hStat) = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status (res bits σ))
+  stat : word t.mem (wsB σ) (8 * hStat) = BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status (res bits σ))
   used : ∀ b rest, res bits σ = some (b, rest) →
     word t.mem (wsB σ) (8 * hUsed) = BitVec.ofNat 64 ((σ.gpr .r6).toNat - rest.length)
   frame : Frame [⟨wsB σ, 8 * keyWords bits⟩, below σ.sp 176] s.mem t.mem

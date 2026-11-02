@@ -11,7 +11,7 @@ import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure CrtInverseInput (base src : BitVec 32) (len w k M : Nat) (bs : List Byte) (s : State) : Prop where
   ready : ArithmeticReady base len w s

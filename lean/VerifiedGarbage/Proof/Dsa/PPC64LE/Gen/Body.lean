@@ -33,8 +33,8 @@ theorem WP.both {c : Prog isa} {s : State} {P Q : State → Prop} (h₁ : WP isa
 /-- A geometry's proofs, for every call with its `p_len` (and so its `q_len`). -/
 structure GeoOk (g : Geo) (pL qL : Nat) where
   HO : HashOk g.G
-  Lq : Spec.Dsa.ProbablePrime.Layout
-  Lp : Spec.Dsa.ProbablePrime.Layout
+  Lq : Impl.Dsa.ProbablePrime.Layout
+  Lp : Impl.Dsa.ProbablePrime.Layout
   ok : ∀ G : GP, (∃ σ, CIn 176 σ ∧ mkG σ = G) → G.pLen = pL → G.qLen = qL → GenOk G g HO Lq Lp
   hlb : HO.md.lenBytes qL =
     [0, 0, 0, 0, 0, 0, BitVec.ofNat 8 (8 * qL / 256), BitVec.ofNat 8 (8 * qL % 256)]

@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 /-- A selection whose pointers and count agree, then the workspace pointer
@@ -74,20 +74,20 @@ theorem tableBody_ct {base : BitVec 32} {len w M1 M2 x1 x2 j : Nat} (hj : j < 8)
       tableBody (fun _ _ => True) := by
   have entryOf (s : State) {M x : Nat} (h : BuildInv base len w M x j s) :
       WP isa (montOp 1 1 5) s (EntryReady base len w j) := by
-    have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) h.fits
+    have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) h.fits
     refine WP.mono (montOp_ok s h.power.ready (o := 1) (a := 1) (b := 5)
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
       (by rw [h.power.modulus]; exact h.power.inputBound)) ?_
     rintro t ⟨ready, _, _, _, keeps, _, _⟩
     exact ⟨ready, (keeps_header_readW keeps size (d := 220) (bits := 32) (by decide)).trans h.entry⟩
   unfold tableBody
   exact relCT_chain (Q₁ := EntryReady base len w j) (Q₂ := EntryReady base len w j)
     ((montOp_ct (base := base) (o := 1) (a := 1) (b := 5)
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) fit).mono
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) fit).mono
       (fun _ _ h => ⟨⟨h.1.power.ready, by rw [h.1.power.modulus]; exact h.1.power.inputBound⟩,
         ⟨h.2.1.power.ready, by rw [h.2.1.power.modulus]; exact h.2.1.power.inputBound⟩, h.2.2⟩)
       (fun _ _ h => h))

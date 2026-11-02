@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
 import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
 meta import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Spec.Rsa.Mont
+meta import VerifiedGarbage.Proof.Rsa.MontContract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
@@ -25,7 +25,7 @@ namespace VG.Proof.Bignum.X86_64.MontFn
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.Bignum VG.Impl.Bignum.X86_64.MontFn
 open VG.Impl.Bignum.X86_64.Public (aN aAcc aTmp)
-open VG.Spec.Rsa.Mont (numAt wOf wordAt Layout Operand arrAt aM minvWord)
+open VG.Proof.Rsa.Mont (numAt wOf wordAt Layout Operand arrAt aM minvWord)
 
 /-- The index in the low half of `r`. -/
 abbrev idx (s : State) (r : Reg) : Nat := ((s.gpr r).setWidth 32).toNat
@@ -48,7 +48,7 @@ def fnContract : Contract isa where
     let M := numAt s.mem ws w aM
     numAt s'.mem ws w (idx s .rdx) < M ∧
       numAt s'.mem ws w (idx s .rdx) * 2 ^ (64 * w) % M = numAt s.mem ws w (idx s .rcx) * numAt s.mem ws w (idx s .r8) % M ∧
-      Spec.Rsa.Mont.Keeps ws (s.gpr .rsi).toNat w (idx s .rdx) s.mem s'.mem
+      Proof.Rsa.Mont.Keeps ws (s.gpr .rsi).toNat w (idx s .rdx) s.mem s'.mem
   pub s₁ s₂ :=
     s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
       (s₁.gpr .rdx).setWidth 32 = (s₂.gpr .rdx).setWidth 32 ∧ (s₁.gpr .rcx).setWidth 32 = (s₂.gpr .rcx).setWidth 32 ∧
@@ -71,7 +71,7 @@ def fnLazyContract : Contract isa where
     let w := wOf s.mem ws
     let M := numAt s.mem ws w aM
     numAt s'.mem ws w (idx s .rdx) * 2 ^ (64 * w) % M = numAt s.mem ws w (idx s .rcx) * numAt s.mem ws w (idx s .r8) % M ∧
-      Spec.Rsa.Mont.Keeps ws (s.gpr .rsi).toNat w (idx s .rdx) s.mem s'.mem
+      Proof.Rsa.Mont.Keeps ws (s.gpr .rsi).toNat w (idx s .rdx) s.mem s'.mem
   pub := fnContract.pub
 
 theorem fnLazy_pre {s : State} (h : fnContract.pre s) : fnLazyContract.pre s :=
@@ -100,15 +100,15 @@ def satState : State where
   rd := []
   wr := [⟨0x1000, 512⟩]
 
-theorem fn_implies : fnContract.Implies (Spec.Rsa.Mont.mulContract abi) where
-  pre := by sig_implies_pre [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, fnContract, abi, argRegs]
-  post := by sig_implies_post [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, fnContract, abi, argRegs]
+theorem fn_implies : fnContract.Implies (Proof.Rsa.Mont.mulContract abi) where
+  pre := by sig_implies_pre [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, fnContract, abi, argRegs]
+  post := by sig_implies_post [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, fnContract, abi, argRegs]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, fnContract, abi, argRegs] at h
+    sig_pub [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, fnContract, abi, argRegs] at h
     obtain ⟨hsp, hw, hdi, hsi, hdx, hcx, h8⟩ := h
     exact ⟨hsp, hdi, hsi, hdx, hcx, h8, List.singleton_inj.mp hw⟩
-  sat := by sig_implies_sat [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, fnContract, abi, argRegs] [satState] using satState
+  sat := by sig_implies_sat [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, fnContract, abi, argRegs] [satState] using satState
 
 /-- The `k` words at offset `d` of `B` are the `8 k` bytes there. -/
 theorem read_eq_wv (m : Mem) (B : Addr) (d : Nat) : ∀ k, (m.read (off B d) (8 * k)).toNat = wv m B d k
@@ -132,8 +132,8 @@ theorem fn_good {s : State} (h : fnLazyContract.pre s) :
     wOf s.mem (s.gpr .rdi) < 2 ^ 31 := by
   obtain ⟨-, hwr, -, hnw, ⟨h2, h31, h8, harr⟩, -⟩ := h
   refine ⟨Scr.of_mem (by rw [hwr]; simp) hnw, ⟨?_, rfl, fun j hj => harr j hj⟩, by
-    simp only [slot, hdrBytes, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at h8 ⊢; omega, h2, h31⟩
-  simp [word, wOf, wordAt, Spec.Rsa.Mont.wWord, sW, off]
+    simp only [slot, hdrBytes, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at h8 ⊢; omega, h2, h31⟩
+  simp [word, wOf, wordAt, Proof.Rsa.Mont.wWord, sW, off]
 
 theorem fn_correct (s : State) (h : fnContract.pre s) :
     ∃ t s', Exec isa mulBase s t s' ∧ abiPreserved s s' ∧ fnContract.post s s' := by
@@ -261,7 +261,7 @@ theorem fn_ct : ConstantTime isa fnContract.pre fnContract.pub mulBase :=
         by simp only [idx, h8]⟩⟩) fun _ _ h => h)
 
 /-- `vg_rsa_mont_mul` on x86-64. -/
-theorem fn_verified : Verified target mulBase (Spec.Rsa.Mont.mulContract abi) :=
+theorem fn_verified : Verified target mulBase (Proof.Rsa.Mont.mulContract abi) :=
   Verified.of_correct fn_correct fn_ct fn_implies
 
 end VG.Proof.Bignum.X86_64.MontFn

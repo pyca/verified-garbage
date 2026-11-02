@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtPre
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCall
 import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Call the verified CRT into the private stack temporary -/
 
@@ -61,7 +62,7 @@ theorem crt_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s 
     (crtCovers h).1 (crtCovers h).2 (crtWrites_sub h.valid) (crtWrites_slots h.valid)) ?_
   rintro t ⟨ht, slotsT, frame, rest, post⟩
   refine ⟨ht, slotsT, frame, rest, ?_⟩
-  sig_post [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
+  sig_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
   have sa := fun {j} (hj : j < 14) => crtArgs_stack h args hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega

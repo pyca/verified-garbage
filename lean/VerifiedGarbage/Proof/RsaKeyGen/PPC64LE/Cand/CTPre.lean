@@ -111,7 +111,7 @@ theorem preCall_wp {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (hw
 
 /-- The round's contract holds where it is called. -/
 theorem CallIn.pre {s : State} {B : Addr} {L w c : Nat} (h : CallIn s B L w c) :
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176).pre
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 176).pre
       (s.callEntry.withRegions [] [⟨B, 8 * L⟩]) := by
   have e := h.prep.env
   have hnw := e.hs.nowrap
@@ -122,23 +122,23 @@ theorem CallIn.pre {s : State} {B : Addr} {L w c : Nat} (h : CallIn s B L w c) :
   have hL64 : L < 2 ^ 64 := by omega
   have hsp := h.sp
   have hstk := h.stk
-  sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs]
+  sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, PPC64LE.abi, PPC64LE.argRegs]
   simp only [h.r3, h.r4, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64, Nat.mul_comm L 8]
   exact ⟨hsp, trivial, hstk, by omega, h.prep.layout, h.prep.prepared h.a5⟩
 
 /-- Two runs' calls agree on the round's public data. -/
 theorem CallIn.pub {s₁ s₂ : State} {B : Addr} {L w c₁ c₂ : Nat} (h₁ : CallIn s₁ B L w c₁)
     (h₂ : CallIn s₂ B L w c₂) (hsp : s₁.sp = s₂.sp) :
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176).pub
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 176).pub
       (s₁.callEntry.withRegions [] [⟨B, 8 * L⟩]) (s₂.callEntry.withRegions [] [⟨B, 8 * L⟩]) := by
-  sig_pub [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs]
+  sig_pub [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, PPC64LE.abi, PPC64LE.argRegs]
   rw [h₁.r3, h₂.r3, h₁.r4, h₂.r4, h₁.prep.width, h₂.prep.width]
   exact ⟨hsp, rfl, rfl, rfl⟩
 
 /-- The round's call, keeping `r31`. -/
 theorem call_wp (R : RoundImpl) {s : State} {B : Addr} {L w c : Nat} (h : CallIn s B L w c) :
     WP isa (.call R.name R.code) s fun t => t.gpr .r31 = s.gpr .r31 := by
-  refine WP.callAny (k := Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176) R.verified.1
+  refine WP.callAny (k := Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 176) R.verified.1
     (rd := []) (wr := [⟨B, 8 * L⟩]) h.pre ?_ ?_ (fun s₃ _ _ _ _ hcs _ => hcs .r31 (by decide))
     (by have := R.stack; omega)
   · exact fun x n ⟨r, hr, hc⟩ => ⟨r, List.mem_append_right _ (by

@@ -38,7 +38,7 @@ or computed from the read-only arguments.
 namespace VG.Proof.Mont.X86.Rt
 
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Rt VG.Proof.Mont VG.Proof.Mont.X86
-open VG.Spec.Rsa.MontMul (Apart numAt scratchBytes)
+open VG.Proof.Rsa.MontMul (Apart numAt scratchBytes)
 
 theorem numAt_val32 (m : Mem) (ws : Addr) (d n : Nat) : numAt m ws d (8 * n) = val32 m ws d (2 * n) := by
   unfold numAt
@@ -50,8 +50,8 @@ theorem numAt_w32 (m : Mem) (ws : Addr) (d : Nat) : numAt m ws d 4 = w32 m ws d 
   rw [show 4 = 4 * 1 from rfl, VG.Proof.Dsa.X86.Pow.read_eq_val32 m ws 1 d]
   simp [val32]
 
-theorem rt_scalar_correct (s : State) (h : (Spec.Rsa.MontMul.mulContract abi 0).pre s) :
-    ∃ tr t, Exec isa Rt.scalarBody s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.MontMul.mulContract abi 0).post s t := by
+theorem rt_scalar_correct (s : State) (h : (Proof.Rsa.MontMul.mulContract abi 0).pre s) :
+    ∃ tr t, Exec isa Rt.scalarBody s tr t ∧ abiPreserved s t ∧ (Proof.Rsa.MontMul.mulContract abi 0).post s t := by
   have A := rtAbi_of h
   have hso := A.so
   have hol := A.o_le
@@ -75,7 +75,7 @@ theorem rt_scalar_correct (s : State) (h : (Spec.Rsa.MontMul.mulContract abi 0).
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · exact Mem.readW_congr fun i hi => far _ fun hc =>
       A.retScratch _ (Offset.contains_base _ (by omega) (by omega)) hc
-  · sig_post [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes]
+  · sig_post [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes]
     refine ⟨?_, ?_, ?_⟩
     · rw [numAt_val32, numAt_val32]; exact lt
     · rw [numAt_val32, numAt_val32, numAt_val32, numAt_val32,
@@ -106,9 +106,9 @@ theorem rtTaint_wf {s : State} (A : RtABI s) : VG.X86.Taint.Wf rtTaint s := by
   rintro r rfl
   exact VG.X86.Taint.frame_disjoint (n := 36) (by omega) A.retScratch A.argScratch.symm
 
-theorem rt_publicArgs {s t : State} (H : (Spec.Rsa.MontMul.mulContract abi 0).pub s t) :
+theorem rt_publicArgs {s t : State} (H : (Proof.Rsa.MontMul.mulContract abi 0).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ ∀ i < 9, arg s i = arg t i := by
-  sig_pub [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes] at H
+  sig_pub [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes] at H
   sig_split H
   refine ⟨by with_reducible assumption, fun i hi => ?_⟩
   match i, hi with
@@ -137,7 +137,7 @@ theorem rtTaint_agree {s₁ s₂ : State} (A₁ : RtABI s₁) (A₂ : RtABI s₂
     exact congrArg _ (args ((k - 4) / 4) (by omega))
 
 theorem rt_scalar_constantTime :
-    ConstantTime isa (Spec.Rsa.MontMul.mulContract abi 0).pre (Spec.Rsa.MontMul.mulContract abi 0).pub Rt.scalarBody :=
+    ConstantTime isa (Proof.Rsa.MontMul.mulContract abi 0).pre (Proof.Rsa.MontMul.mulContract abi 0).pub Rt.scalarBody :=
   VG.Taint.constantTime (A := taint) rtTaint (fun _ _ h₁ h₂ hp =>
     rtTaint_agree (rtAbi_of h₁) (rtAbi_of h₂) (rt_publicArgs hp).1 (rt_publicArgs hp).2) (by taint_decide)
 
@@ -251,7 +251,7 @@ theorem satB : numAt satMem 0x1000 112 8 = 0 := by
   | 6, _ => rfl
   | 7, _ => rfl
 
-theorem rt_satisfiable : ∃ s, (Spec.Rsa.MontMul.mulContract abi 0).pre s := by
+theorem rt_satisfiable : ∃ s, (Proof.Rsa.MontMul.mulContract abi 0).pre s := by
   refine ⟨satState, ?_⟩
   have a : ∀ i, i < 9 → arg satState i = satArg i := satArg_eq
   have a0 := a 0 (by decide); have a1 := a 1 (by decide); have a2 := a 2 (by decide)
@@ -261,7 +261,7 @@ theorem rt_satisfiable : ∃ s, (Spec.Rsa.MontMul.mulContract abi 0).pre s := by
   have e0 : argAddr satState 0 = 0xf0000004 := by decide
   have hw : BitVec.setWidth 64 (4096 : BitVec 32) = 4096 := by decide
   have hsp : BitVec.setWidth 64 (0xf0000000 : BitVec 32) = 0xf0000000 := by decide
-  sig_pre [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [a0, a1, a2, a3, a4, a5, a6, a7, a8, e0, hw, hsp]
   sig_and_intros
   all_goals try decide
@@ -270,7 +270,7 @@ theorem rt_satisfiable : ∃ s, (Spec.Rsa.MontMul.mulContract abi 0).pre s := by
   all_goals try (rw [show (4096 : Addr) = 0x1000 from rfl, satModulus, satInv]; decide)
   all_goals try (rw [show (4096 : Addr) = 0x1000 from rfl, satModulus, satB]; decide)
 
-theorem rt_scalar_verified : Verified target Rt.scalarBody (Spec.Rsa.MontMul.mulContract abi 0) :=
+theorem rt_scalar_verified : Verified target Rt.scalarBody (Proof.Rsa.MontMul.mulContract abi 0) :=
   ⟨rt_scalar_correct, rt_scalar_constantTime, rt_satisfiable⟩
 
 end VG.Proof.Mont.X86.Rt

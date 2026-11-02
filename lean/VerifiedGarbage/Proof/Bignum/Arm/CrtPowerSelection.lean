@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Bignum.Layout
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure CrtPowerSelection (g : CrtGeometry) (bs : Fin 7 → List Byte) (child : BitVec 32) (slot : Nat) (j : Fin 6)
     (s : State) : Prop where

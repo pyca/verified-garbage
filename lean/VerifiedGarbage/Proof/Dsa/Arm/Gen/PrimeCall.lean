@@ -376,7 +376,7 @@ theorem SS.primeCall_ok (h : SS G σ c s) {L u bits : Nat} {name : String} {code
     {Q : State → Prop}
     (k : ∀ t, (∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11], t.gpr r = s.gpr r) → t.sp = s.sp → t.rd = s.rd →
       t.wr = s.wr → Frame [G.rs sA (wa L), G.rU, G.rBelow] s.mem t.mem →
-      (t.gpr .r0).toNat = Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime (Spec.Dsa.decodeBE cb) (G.witB.drop u)) →
+      (t.gpr .r0).toNat = Proof.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime (Spec.Dsa.decodeBE cb) (G.witB.drop u)) →
       (∀ b rest, Spec.Dsa.probablePrime (Spec.Dsa.decodeBE cb) (G.witB.drop u) = some (b, rest) →
         t.mem.readW (State.addr G.sp + BitVec.ofNat 64 fUsedOut) 64 = BitVec.ofNat 64 (G.witLen - u - rest.length)) →
       Q t) :

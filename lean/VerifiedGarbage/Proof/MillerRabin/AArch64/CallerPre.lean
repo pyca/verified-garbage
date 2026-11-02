@@ -41,9 +41,9 @@ theorem narrow_pre {s : State} {B : Addr} {Z w c bm : Nat}
   · have := hc.ws.scr.nowrap
     have := call_size hEZ
     omega_arith
-  · change Spec.MillerRabin.Layout Spec.MillerRabin.compact s.mem B (callWords w)
+  · change Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact s.mem B (callWords w)
     exact layout_of_ctx hc h4 h128
-  · change Spec.MillerRabin.Prepared Spec.MillerRabin.compact s.mem B
+  · change Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact s.mem B
     exact prepared_of_ctx hc he ho h3 hx
 
 theorem narrow_covers {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)

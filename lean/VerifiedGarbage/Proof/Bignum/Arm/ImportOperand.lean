@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Keeps)
+open VG.Proof.Rsa.Mont (numAt Keeps)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 theorem importOperand_ok (s : State) {base src : BitVec 32} {len w o k : Nat}

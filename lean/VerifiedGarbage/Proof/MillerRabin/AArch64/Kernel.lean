@@ -30,7 +30,7 @@ structure Kernel where
     wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c →
     WP isa (seqs run) s fun t =>
       (∃ bm', MrCtx t B Z w c bm') ∧ ECtx t.mem B w c ∧
-      word t.mem B (8 * kFlag) = mask (Spec.MillerRabin.round c b) ∧
+      word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
       Frm B (Caller.callRanges w) s.mem t.mem ∧ Keep mmRegs s t
   ct : RelCT isa (Two Caller.Before) (seqs run) fun _ _ => True
 
@@ -65,7 +65,7 @@ private theorem inline_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b : Nat}
     (hx : wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c) :
     WP isa (seqs (preparedRound M.mm)) s fun t =>
       (∃ bm', MrCtx t B Z w c bm') ∧ ECtx t.mem B w c ∧
-      word t.mem B (8 * kFlag) = mask (Spec.MillerRabin.round c b) ∧
+      word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
       Frm B (Caller.callRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have hX : wv s.mem B (slot w aXm) w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * w) % c := by
     simpa only [VG.Proof.Bignum.powMod_eq, Nat.pow_one] using hx

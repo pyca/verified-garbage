@@ -189,7 +189,7 @@ theorem chkOk_of {D K : Nat} {s t : State} (hp : PreV D K s) {cK : Nat} (hcK : c
   have he : (BitVec.ofNat 64 (elS s)).toNat = elS s := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show elS s < 2 ^ 64 by omega)]
   have hb : (BitVec.ofNat 64 (ebS s)).toNat = ebS s := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show ebS s < 2 ^ 64 by unfold Spec.RsaPss.maxEmBits at hb2; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show ebS s < 2 ^ 64 by unfold Proof.RsaPss.maxEmBits at hb2; omega)]
   have hwem : (off (scr s) (loS s)).toNat + elS s ≤ 2 ^ 64 := by
     simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   have hwsc : (off (scr s) (8 * cwV s)).toNat + (stackArg s 2 - BitVec.ofNat 64 (cwV s)).toNat * 8 ≤ 2 ^ 64 := by
@@ -220,6 +220,6 @@ theorem chkOk_of {D K : Nat} {s t : State} (hp : PreV D K s) {cK : Nat} (hcK : c
     b1 := by rw [ha.x3, hb]; exact hb1
     b2 := by rw [ha.x3, hb]; exact hb2
     hel := by rw [ha.x2, ha.x3, he, hb]
-    hs := by rw [ha.x7, hsc]; unfold Spec.RsaPss.encodingScratchWords cwV at *; omega }
+    hs := by rw [ha.x7, hsc]; unfold Proof.RsaPss.encodingScratchWords cwV at *; omega }
 
 end VG.Proof.RsaPss.AArch64.Vfy

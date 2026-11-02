@@ -14,27 +14,27 @@ Montgomery one and minus one, the exponent and the word `2^(t mod 64)` after
 it in it (`PreparedLite`), as in the shared contract, without its
 representation's choice and stride. Only the arrays `wJs` and the header
 words 23, 26, 29 and 30 change (`KeepsLite`).
-It implies `Spec.MillerRabin.roundContract` (`round_implies`, `Proof/MillerRabin/Arm/Verified.lean`).
+It implies `Proof.MillerRabin.Round.roundContract` (`round_implies`, `Proof/MillerRabin/Arm/Verified.lean`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.MillerRabin.Arm
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt)
 
 def LayoutLite (m : Mem) (ws : Addr) (len : Nat) : Prop :=
-  Spec.Rsa.Mont.Layout m ws len ∧ 4 ≤ wOf m ws ∧ wOf m ws ≤ 128 ∧ arrAt (wOf m ws) nArr ≤ 8 * len
+  Proof.Rsa.Mont.Layout m ws len ∧ 4 ≤ wOf m ws ∧ wOf m ws ≤ 128 ∧ arrAt (wOf m ws) nArr ≤ 8 * len
 
 def PreparedLite (m : Mem) (ws : Addr) : Prop :=
   let w := wOf m ws
   let c := numAt m ws w 0
   let R := 2 ^ (64 * w)
   3 ≤ c ∧ c % 2 = 1 ∧
-    ((m.readW (ws + BitVec.ofNat 64 (arrAt w 0)) 64).toNat * (wordAt m ws Spec.Rsa.Mont.minvWord).toNat + 1) %
+    ((m.readW (ws + BitVec.ofNat 64 (arrAt w 0)) 64).toNat * (wordAt m ws Proof.Rsa.Mont.minvWord).toNat + 1) %
       2 ^ 64 = 0 ∧
     numAt m ws w 5 < c ∧ numAt m ws w 9 = R % c ∧ numAt m ws w 10 = c - R % c ∧
-    numAt m ws w 27 = Spec.MillerRabin.exponent c ∧
+    numAt m ws w 27 = Proof.MillerRabin.Round.exponent c ∧
     m.readW (ws + BitVec.ofNat 64 (arrAt w 27 + 8 * w)) 64 =
       BitVec.twoPow 64 ((Spec.Rsa.splitTwos (c - 1)).1 % 64)
 
@@ -55,7 +55,7 @@ def roundPost (s t : State) : Prop :=
   let w := wOf s.mem ws
   let c := numAt s.mem ws w 0
   (∀ b, numAt s.mem ws w 5 = b % c * 2 ^ (64 * w) % c →
-    (t.gpr .r0).toNat = if Spec.MillerRabin.round c b then 1 else 0) ∧
+    (t.gpr .r0).toNat = if Proof.MillerRabin.Round.round c b then 1 else 0) ∧
     KeepsLite ws (s.gpr .r1).toNat w s.mem t.mem
 
 def roundPub (s t : State) : Prop :=
@@ -87,11 +87,11 @@ theorem layout_congr (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws +
   have h256 : 256 ≤ 8 * len := Nat.le_trans (Nat.le_add_right _ _) fits
   have hw : wOf m' ws = wOf m ws := congrArg BitVec.toNat (readW_congr_on h (d := 8 * 6) (by omega))
   refine ⟨⟨?_, by rw [hw]; exact w4, by rw [hw]; exact w128, by rw [hw]; exact fits⟩, hw⟩
-  unfold Spec.Rsa.Mont.Layout at lay ⊢
+  unfold Proof.Rsa.Mont.Layout at lay ⊢
   rw [hw]
   refine ⟨lay.1, lay.2.1, lay.2.2.1, fun j hj => ?_⟩
   unfold wordAt
-  rw [readW_congr_on h (by simp only [Spec.Rsa.Mont.arrWord]; omega)]
+  rw [readW_congr_on h (by simp only [Proof.Rsa.Mont.arrWord]; omega)]
   exact lay.2.2.2 j hj
 
 theorem numAt_congr (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i))
@@ -106,7 +106,7 @@ theorem prepared_congr (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws
   generalize hW : wOf m ws = w at fits w4
   have fit : ∀ j < 28, arrAt w j + 8 * (w + 2) ≤ 8 * len := fun j hj => by
     have : j * (8 * (w + 2)) ≤ 27 * (8 * (w + 2)) := Nat.mul_le_mul_right _ (by omega)
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes, nArr] at fits ⊢
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes, nArr] at fits ⊢
     generalize 8 * (w + 2) = S at this fits ⊢
     omega
   unfold PreparedLite at hp ⊢
@@ -117,9 +117,9 @@ theorem prepared_congr (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws
     readW_congr_on h (d := arrAt w 27 + 8 * w) (by have := fit 27 (by omega); omega)]
   refine ⟨hp.1, hp.2.1, ?_, hp.2.2.2⟩
   have e1 : m'.readW (ws + BitVec.ofNat 64 (arrAt w 0)) 64 = m.readW (ws + BitVec.ofNat 64 (arrAt w 0)) 64 :=
-    readW_congr_on h (by have := fit 0 (by omega); simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this ⊢; omega)
-  have e2 : wordAt m' ws Spec.Rsa.Mont.minvWord = wordAt m ws Spec.Rsa.Mont.minvWord :=
-    readW_congr_on h (by have := fit 0 (by omega); simp only [arrAt, Spec.Rsa.Mont.hdrBytes, Spec.Rsa.Mont.minvWord] at this ⊢; omega)
+    readW_congr_on h (by have := fit 0 (by omega); simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this ⊢; omega)
+  have e2 : wordAt m' ws Proof.Rsa.Mont.minvWord = wordAt m ws Proof.Rsa.Mont.minvWord :=
+    readW_congr_on h (by have := fit 0 (by omega); simp only [arrAt, Proof.Rsa.Mont.hdrBytes, Proof.Rsa.Mont.minvWord] at this ⊢; omega)
   rw [e1, e2]
   exact hp.2.2.1
 

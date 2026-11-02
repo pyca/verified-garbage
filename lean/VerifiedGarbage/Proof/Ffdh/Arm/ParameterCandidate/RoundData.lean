@@ -14,7 +14,7 @@ Montgomery conversions and the shared round itself preserve these data. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Proof.Mont VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Keeps)
 open VG.Proof.MillerRabin.Arm (LayoutLite PreparedLite KeepsLite wJs)
 
 structure RoundData (base : BitVec 32) (capacity w n : Nat) (m : Mem) : Prop where
@@ -28,7 +28,7 @@ structure RoundData (base : BitVec 32) (capacity w n : Nat) (m : Mem) : Prop whe
   r2 : numAt m (VG.Arm.State.addr base) w 4 = 2 ^ (128 * w) % n
   one : numAt m (VG.Arm.State.addr base) w 9 = 2 ^ (64 * w) % n
   minus : numAt m (VG.Arm.State.addr base) w 10 = n - 2 ^ (64 * w) % n
-  exponent : numAt m (VG.Arm.State.addr base) w 27 = Spec.MillerRabin.exponent n
+  exponent : numAt m (VG.Arm.State.addr base) w 27 = Proof.MillerRabin.Round.exponent n
   power : m.readW (off (VG.Arm.State.addr base) (arrAt w 27 + 8 * w)) 64 =
     BitVec.twoPow 64 ((Spec.Rsa.splitTwos (n - 1)).1 % 64)
 
@@ -94,7 +94,7 @@ theorem RoundData.after_round {base : BitVec 32} {capacity w n : Nat} {m m' : Me
 private theorem array64 {w q : Nat} (words : w ≤ 128) (index : q ≤ 27) :
     arrAt w q + 8 * (w + 2) ≤ 2 ^ 64 := by
   have scale := Nat.mul_le_mul_right (8 * (w + 2)) index
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
   omega
 
 theorem RoundData.after_aux_word {base : BitVec 32} {capacity w n d : Nat} {m : Mem}
@@ -108,10 +108,10 @@ theorem RoundData.after_aux_word {base : BitVec 32} {capacity w n d : Nat} {m : 
     rw [numAt_native, numAt_native]
     apply outside.val32
     · right
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
+      simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
       omega
     · exact Nat.le_trans (by omega) fit
   · have fit := array64 h.maxWords (q := 27) (by decide)
-    exact outside.word (.inr (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)) (by omega)
+    exact outside.word (.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega)) (by omega)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

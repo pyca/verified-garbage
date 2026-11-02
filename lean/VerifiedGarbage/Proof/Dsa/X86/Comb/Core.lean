@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Mont.X86.ContextInit
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
 public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
-public import VerifiedGarbage.Spec.Dsa.FixedBaseComb
+public import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
 
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Power
 import VerifiedGarbage.Proof.Mont.X86.CombCanonical
@@ -28,8 +28,8 @@ def privateRanges (n e : Nat) : List (Nat × Nat) := setupRanges n ++ powerRange
 theorem private_core_ok {n e m : Nat} {base : Addr} {s : State}
     (h : Supported n e) (hs : Scr s base (layout n e).size)
     (hv : wordsVal s.mem base (slot n 0) n=m) (hm : 1<m) (odd : m%2=1)
-    (H : Spec.Rsa.wordsAt s.mem (off base (context n)) (Spec.Dsa.FixedBaseComb.contextWords (layout n e))=
-      Spec.Dsa.FixedBaseComb.context (layout n e) m (wordsVal s.mem base (slot n 5) n)) :
+    (H : Spec.Rsa.wordsAt s.mem (off base (context n)) (Proof.Dsa.FixedBaseComb.contextWords (layout n e))=
+      Proof.Dsa.FixedBaseComb.context (layout n e) m (wordsVal s.mem base (slot n 5) n)) :
     WP isa (core false n e) s fun t =>
       wordsVal t.mem base (slot n 6) n=
         wordsVal s.mem base (slot n 5) n ^ val32 s.mem base (slot n 8) e % m ∧
@@ -66,8 +66,8 @@ def coreRanges (prepare : Bool) (n e : Nat) : List (Nat × Nat) :=
   if prepare then prepareRanges n e else privateRanges n e
 
 def canonical (n e m g : Nat) (base : Addr) (mem : Mem) : Prop :=
-  Spec.Rsa.wordsAt mem (off base (context n)) (Spec.Dsa.FixedBaseComb.contextWords (layout n e))=
-    Spec.Dsa.FixedBaseComb.context (layout n e) m g
+  Spec.Rsa.wordsAt mem (off base (context n)) (Proof.Dsa.FixedBaseComb.contextWords (layout n e))=
+    Proof.Dsa.FixedBaseComb.context (layout n e) m g
 
 theorem core_ok {n e m : Nat} {base : Addr} {s : State}
     (h : Supported n e) (prepare : Bool) (hs : Scr s base (layout n e).size)

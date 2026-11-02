@@ -13,7 +13,7 @@ candidate guarantees a nonzero highest radix word. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm
 
 theorem candidatePrepareChoice_ok (s : State) {base src : BitVec 32} {len k : Nat}
@@ -80,8 +80,8 @@ theorem candidatePrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
   refine WP.mono (candidatePrepareChoice_ok s h normalized) ?_
   rintro v ⟨input,_,branch,memory,rest⟩
   have finish (t : State) (ready : ArithmeticReady base len (Spec.Rsa.modulusWords k) t)
-      (n : Spec.Rsa.Mont.numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt v.mem (State.addr src) k))
-      (r2 : Spec.Rsa.Mont.numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 4 = 2^(128*Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt v.mem (State.addr src) k))
+      (n : Proof.Rsa.Mont.numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt v.mem (State.addr src) k))
+      (r2 : Proof.Rsa.Mont.numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 4 = 2^(128*Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt v.mem (State.addr src) k))
       (frame : Frame [⟨State.addr base,8*len⟩] v.mem t.mem) (rt : Rest roundClobbers v t) :=
     And.intro ready (And.intro (memory ▸ n) (And.intro (memory ▸ r2)
       (And.intro (by simpa only [memory] using frame) ((rest.mono (by simp [roundClobbers])).trans rt))))

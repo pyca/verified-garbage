@@ -69,8 +69,8 @@ theorem table_loop_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : Bit
 
 theorem table_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 32}
     (h : Memory p sp s)
-    (modulus : Spec.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 0=p.P)
-    (r2 : Spec.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P)
+    (modulus : Proof.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 0=p.P)
+    (r2 : Proof.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P)
     (odd : p.P%2=1) (positive : 0<Spec.Rsa.FixedBaseComb.rows (bits p))
     (fits : Spec.Rsa.FixedBaseComb.rows (bits p)<2^32) :
     WP isa (VG.Impl.Ffdh.Arm.CombPrecompute.table

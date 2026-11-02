@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.TCB.Arm.Isa
 
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
@@ -18,7 +18,7 @@ of its result, all below array 8. -/
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 
 /-- The first `k` entries of the table hold `x^j R mod M`, `R = 2^(64 w)`. -/
 def TableHolds (m : Mem) (base : BitVec 32) (w M x k : Nat) : Prop :=
@@ -41,8 +41,8 @@ theorem keeps_table_num {m m' : Mem} {base : Addr} {len w o j : Nat}
   have below : a < 8 + j := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
     rcases ha with rfl | rfl | rfl
-    · simp only [Spec.Rsa.Mont.aAcc]; omega
-    · simp only [Spec.Rsa.Mont.aTmp]; omega
+    · simp only [Proof.Rsa.Mont.aAcc]; omega
+    · simp only [Proof.Rsa.Mont.aTmp]; omega
     · omega
   have := array_end_le (w := w) below
   omega

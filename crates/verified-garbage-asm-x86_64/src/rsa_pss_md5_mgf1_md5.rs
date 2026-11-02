@@ -3,393 +3,6 @@
 //! `assembly/rsa_pss_md5_mgf1_md5.s`.
 #![allow(dead_code)]
 
-/// EMSA-PSS-ENCODE (RFC 8017 §9.1.1) with MD5 and MGF1 with MD5, of the 16-byte digest `*digest` with the salt `salt`, into `em_bits` bits: writes the `em_len` bytes of the encoding to `em` and returns 1, or returns 0 if the salt does not fit (`em_len < 18 + salt_len`), leaving `em` unspecified. The step of RSASSA-PSS signing (`vg_rsa_pss_md5_mgf1_md5_sign`) before the RSA primitive.
-///
-/// Contract: `VG.Spec.RsaPss.encodeContract` of `VG.Spec.Mgf1.md5` and `VG.Spec.Mgf1.md5`. Constant time but for the pointers and lengths: timing does not depend on the digest or the salt.
-///
-/// # Safety
-///
-/// * `em` must be valid for reads and writes of `em_len` bytes.
-/// * `digest` must be valid for reads of 16 bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `em_bits` must be in 1..=8191.
-/// * `em_len` must be `⌈em_bits / 8⌉`.
-/// * `scratch_len` must be at least 1024; the contents of `scratch` on return are unspecified.
-/// * `em` and `scratch` must not overlap each other, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `em`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pss_md5_mgf1_md5_encode(em: *mut u8, em_len: usize, digest: *const [u8; 16], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkgAAAAEiJtCSIAAAASImUJCgBAABIiYwkOAEAAEyJhCRAAQAASIuEJJABAABIiYQkqAAAAEiLhCSIAAAASMHgA0wpyEiJwbj/AAAASNPoSImEJMgAAAC4AAAAAEiJhCTQAAAASIuEJIgAAABIg/gS"
-jb 20f
-.base64 "SIuUJEABAABIg+gSSDnQ"
-jb 22f
-.base64 "SIPAAUiJhCTAAAAASIuEJKgAAABIBQAKAABIi5Qk0AAAAEgB0EiJhCS4AAAASIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-24:
-.base64 "SokEAUmDwAhJgfgACAAA"
-jne 24b
-.base64 "SIu0JCgBAABBuAAAAAA="
-25:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gQ"
-jne 25b
-.base64 "SIu0JDgBAABMi5QkQAEAAEG4AAAAAE2F0g=="
-je 26f
-28:
-.base64 "Qg+2BAZCiEQBGEmDwAFNOdA="
-jne 28b
-jmp 27f
-26:
-27:
-.base64 "SIuEJEABAABIg8AYSImEJNgAAABIg8AISMHoBkiDwAFIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_md5_init}
-.base64 "SIuMJKgAAABIgcEADgAASIuUJNgAAABMi5Qk4AAAAEnByjpBuAAAAAA="
-29:
-.base64 "TInASDHQSIP4AUgZwEglgAAAAEYPtgwBSQnBRogMAUmDwAFNOdA="
-jne 29b
-.base64 "SIucJKgAAABIgcP4CAAATIukJNgAAABMieBIAcBIAcBIAcBIiUNISIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIuMJKgAAABIgcE4DgAASIu0JKgAAABIgcZACQAASIuUJPAAAABMi5Qk4AAAAEG4AAAAAA=="
-210:
-.base64 "TYnDSTHTSYP7AU0Z20G5AAAAAA=="
-211:
-.base64 "Qg+2BA5MIdhCD7Y8CUgJx0KIPAlJg8EBSYP5CA=="
-jne 211b
-.base64 "SIPBQEmDwAFNOdA="
-jne 210b
-.base64 "uAAAAABIiYQk6AAAAA=="
-212:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_md5_compress}
-.base64 "SIuMJKgAAABIi4Qk6AAAAEgzhCTwAAAASIP4AU0Z20G4AAAAAA=="
-213:
-.base64 "Qg+2hAEACAAAQg+2lAHACAAASDHQTCHYSDHCQoiUAcAIAABJg8ABSYP4EA=="
-jne 213b
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 212b
-.base64 "SIucJKgAAABIgcPACAAASIusJKgAAABIgcUACQAAiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxIi4wkqAAAAEiBwQAKAABMi5QkiAAAALgAAAAAQbgAAAAA"
-214:
-.base64 "QogEAUmDwAFNOdA="
-jne 214b
-.base64 "SIu8JLgAAABIi4QkwAAAAEgBx0iLhCRAAQAASCnHSIPvAbgBAAAAiAdIi7QkOAEAAEyLlCRAAQAAQbgAAAAATYXS"
-je 215f
-217:
-.base64 "Qg+2BAZCiEQHAUmDwAFNOdA="
-jne 217b
-jmp 216f
-215:
-216:
-.base64 "SIu8JLgAAABIi4QkwAAAAEgBx0iLtCSoAAAASIHGAAkAAEG4AAAAAA=="
-218:
-.base64 "Qg+2BAZCiAQHSYPAAUmD+BA="
-jne 218b
-.base64 "SIu8JKgAAABIgccACgAASIuEJIgAAABIAcdIg+8BuLwAAACIB7gAAAAASImEJPgAAABIiYQkAAEAAA=="
-219:
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-220:
-.base64 "SokEAUmDwAhJg/hA"
-jne 220b
-.base64 "SIu0JLgAAABMi4QkwAAAAEwBxkiLBkiJAUiLRghIiUEISIuEJPgAAACIQRNIwegIiEESSMHoCIhBEUjB6AiIQRC4FAAAAEiJhCTYAAAAuAEAAABIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_md5_init}
-.base64 "SIuMJKgAAABIgcEADgAAD7ZBFEgNgAAAAIhBFEiLnCSoAAAASIHD+AgAAEyLpCTYAAAATIngSAHASAHASAHASIlDSEiLhCTYAAAASIPACEjB6AZIiYQk8AAAAEiLtCSoAAAASIHGQAkAAEiLjCSoAAAASIHBOA4AAEiLBkiJAbgAAAAASImEJOgAAABIi7wkqAAAAEiBxwAIAABIi4wkqAAAAEiLtCToAAAASMHOOkgBzkiBxgAOAAC6AQAAAA=="
-call {vg_md5_compress}
-.base64 "SIucJKgAAABIgcMACAAASIusJKgAAABIgcUACQAAiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxIi4wkqAAAAEiBwQAJAABIi5QkAAEAAEiLvCS4AAAASAHXSIuEJMAAAABIKdBBuhAAAABMOdA="
-jb 221f
-.base64 "SIsBSDMHSIkHSItBCEgzRwhIiUcI"
-jmp 222f
-221:
-.base64 "SIuMJKgAAABIgcEACQAASIuUJAABAABIi7wkuAAAAEgB10iLhCTAAAAASCnQQboQAAAATDnQ"
-jb 223f
-jmp 224f
-223:
-.base64 "SYnC"
-224:
-.base64 "QbgAAAAA"
-225:
-.base64 "Qg+2BAFCD7YUB0gxwkKIFAdJg8ABTTnQ"
-jne 225b
-222:
-.base64 "SIuEJPgAAABIg8ABSImEJPgAAABIi4QkAAEAAEiDwBBIiYQkAAEAAEiLlCTAAAAASDnQ"
-jb 219b
-.base64 "SIu8JLgAAAAPtgdII4QkyAAAAIgHSIu0JKgAAABIgcYACgAASIu8JIAAAABMi5QkiAAAAEG4AAAAAA=="
-226:
-.base64 "Qg+2BAZCiAQHSYPAAU050A=="
-jne 226b
-.base64 "uAEAAAA="
-jmp 23f
-22:
-.base64 "uAAAAAA="
-23:
-jmp 21f
-20:
-.base64 "uAAAAAA="
-21:
-.base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
-.p2align 6"#,
-        vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
-    )
-}
-
-/// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with MD5 and MGF1 with MD5, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 16-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_md5_mgf1_md5_verify`) after the RSA primitive.
-///
-/// Contract: `VG.Spec.RsaPss.checkEncodingContract` of `VG.Spec.Mgf1.md5` and `VG.Spec.Mgf1.md5`. Constant time but for the pointers and lengths: timing does not depend on the digest or the encoding.
-///
-/// # Safety
-///
-/// * `digest` must be valid for reads of 16 bytes.
-/// * `em` must be valid for reads of `em_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `em_bits` must be in 1..=8191.
-/// * `em_len` must be `⌈em_bits / 8⌉`.
-/// * `scratch_len` must be at least 1024; the contents of `scratch` on return are unspecified.
-/// * `scratch` must not overlap `digest`, `em` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `digest`, `em` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pss_md5_mgf1_md5_check_encoding(digest: *const [u8; 16], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkKAEAAEiJtCQwAQAASImUJIgAAABMiYQkIAEAAEiLhCSQAQAASImEJKgAAABIi4QkiAAAAEjB4ANIKchIicG4/wAAAEjT6EiJhCTIAAAAuAAAAABIiYQk0AAAAEiLjCSoAAAASIHBAAoAAEiLtCQwAQAATIuUJIgAAABBuAAAAAA="
-20:
-.base64 "Qg+2BAZCiAQBSYPAAU050A=="
-jne 20b
-.base64 "RInISIXA"
-je 21f
-.base64 "uAEAAABIiYQkGAEAALoAAAAA"
-jmp 22f
-21:
-.base64 "uAAAAABIiYQkGAEAAEiLlCQgAQAA"
-22:
-.base64 "SIuEJIgAAABIg/gS"
-jb 23f
-.base64 "SIuEJIgAAABMi4Qk0AAAAEwpwEiD6BJIOdA="
-jb 25f
-.base64 "SIPAAUiJhCTAAAAASIuEJKgAAABIBQAKAABIi5Qk0AAAAEgB0EiJhCS4AAAASIuMJKgAAABIgcEACgAASIu8JIgAAABIAc9Ig+8BD7YHSDW8AAAARA+2CUyLlCTQAAAAQbsAAAAATSnTTSHZTAnISIu8JLgAAABED7YPTIucJMgAAABJgfP/AAAATSHZTAnISImEJAgBAAC4AAAAAEiJhCT4AAAASImEJAABAAA="
-27:
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-28:
-.base64 "SokEAUmDwAhJg/hA"
-jne 28b
-.base64 "SIu0JLgAAABMi4QkwAAAAEwBxkiLBkiJAUiLRghIiUEISIuEJPgAAACIQRNIwegIiEESSMHoCIhBEUjB6AiIQRC4FAAAAEiJhCTYAAAAuAEAAABIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_md5_init}
-.base64 "SIuMJKgAAABIgcEADgAAD7ZBFEgNgAAAAIhBFEiLnCSoAAAASIHD+AgAAEyLpCTYAAAATIngSAHASAHASAHASIlDSEiLhCTYAAAASIPACEjB6AZIiYQk8AAAAEiLtCSoAAAASIHGQAkAAEiLjCSoAAAASIHBOA4AAEiLBkiJAbgAAAAASImEJOgAAABIi7wkqAAAAEiBxwAIAABIi4wkqAAAAEiLtCToAAAASMHOOkgBzkiBxgAOAAC6AQAAAA=="
-call {vg_md5_compress}
-.base64 "SIucJKgAAABIgcMACAAASIusJKgAAABIgcUACQAAiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxIi4wkqAAAAEiBwQAJAABIi5QkAAEAAEiLvCS4AAAASAHXSIuEJMAAAABIKdBBuhAAAABMOdA="
-jb 29f
-.base64 "SIsBSDMHSIkHSItBCEgzRwhIiUcI"
-jmp 210f
-29:
-.base64 "SIuMJKgAAABIgcEACQAASIuUJAABAABIi7wkuAAAAEgB10iLhCTAAAAASCnQQboQAAAATDnQ"
-jb 211f
-jmp 212f
-211:
-.base64 "SYnC"
-212:
-.base64 "QbgAAAAA"
-213:
-.base64 "Qg+2BAFCD7YUB0gxwkKIFAdJg8ABTTnQ"
-jne 213b
-210:
-.base64 "SIuEJPgAAABIg8ABSImEJPgAAABIi4QkAAEAAEiDwBBIiYQkAAEAAEiLlCTAAAAASDnQ"
-jb 27b
-.base64 "SIu8JLgAAAAPtgdII4QkyAAAAIgHSIuEJBgBAABIhcA="
-je 214f
-.base64 "SIu8JLgAAABMi5QkwAAAAEG4AAAAALoAAAAAvgAAAABBuwAAAAA="
-216:
-.base64 "Qg+2BAdJicFJg/kBTRnJSYPx/0iJ0UiD8f9JIclMicFMIclICc5MIchJCcNMCcpJg8ABTTnQ"
-jne 216b
-.base64 "SYPzAUiD8v9JCdNIi4QkCAEAAEwJ2EiJtCQQAQAASIuMJMAAAABIKfFIg+kBTIuMJBgBAABNhck="
-je 217f
-jmp 218f
-217:
-.base64 "SYnJTDOMJCABAABMCcg="
-218:
-.base64 "SImEJAgBAABIg8EYSImMJNgAAAA="
-jmp 215f
-214:
-.base64 "SIuEJCABAABIO4QkwAAAAA=="
-jb 219f
-.base64 "SIu8JLgAAABMi5QkwAAAAEG4AAAAALoAAAAAvgAAAABBuwAAAAA="
-221:
-.base64 "Qg+2BAdJicFJg/kBTRnJSYPx/0iJ0UiD8f9JIclMicFMIclICc5MIchJCcNMCcpJg8ABTTnQ"
-jne 221b
-.base64 "SYPzAUiD8v9JCdNIi4QkCAEAAEwJ2EiJtCQQAQAASIuMJMAAAABIKfFIg+kBTIuMJBgBAABNhck="
-je 222f
-jmp 223f
-222:
-.base64 "SYnJTDOMJCABAABMCcg="
-223:
-.base64 "SImEJAgBAABIg8EYSImMJNgAAAA="
-jmp 220f
-219:
-.base64 "SIu8JLgAAABIi7QkwAAAAEiLlCQgAQAASCnWSIPuAUiJ8UjB6QNIweEDSIuEJAgBAABBuAAAAABIhck="
-je 224f
-226:
-.base64 "SgsEB0mDwAhJOcg="
-jne 226b
-jmp 225f
-224:
-225:
-.base64 "STnw"
-je 227f
-229:
-.base64 "Qg+2FAdICdBJg8ABSTnw"
-jne 229b
-jmp 228f
-227:
-228:
-.base64 "D7YUN0iD8gFICdBIibQkEAEAAEiJhCQIAQAASIuEJCABAABIg8AYSImEJNgAAAA="
-220:
-215:
-.base64 "SIuEJBgBAABIhcA="
-je 230f
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-232:
-.base64 "SokEAUmDwAhJgfgACAAA"
-jne 232b
-.base64 "SIu0JCgBAABBuAAAAAA="
-233:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gQ"
-jne 233b
-.base64 "SIu0JLgAAABMi5QkwAAAAEG4AAAAAA=="
-234:
-.base64 "Qg+2BAZCiEQBGEmDwAFNOdA="
-jne 234b
-.base64 "SIuEJBABAABIg8ABSImEJGgBAAC4AQAAAEiJhCRwAQAAuAoAAABIiYQkYAEAAA=="
-235:
-.base64 "SIuMJKgAAABIgcEYDgAASIu0JHABAABIAc5Mi5wkaAEAAEmD4wFBuQAAAABNKdlMi5QkwAAAAEG4AAAAAA=="
-236:
-.base64 "Qg+2BAFCD7Y8Bkgxx0whz0gx+EKIBAFJg8ABTTnQ"
-jne 236b
-.base64 "SIuEJGgBAABI0ehIiYQkaAEAAEiLhCRwAQAASAHASImEJHABAABIi4QkYAEAAEiD6AFIiYQkYAEAAA=="
-jne 235b
-.base64 "SIuEJMAAAABIg8AfSMHoBkiDwAFIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_md5_init}
-.base64 "SIuMJKgAAABIgcEADgAASIuUJNgAAABMi5Qk4AAAAEnByjpBuAAAAAA="
-237:
-.base64 "TInASDHQSIP4AUgZwEglgAAAAEYPtgwBSQnBRogMAUmDwAFNOdA="
-jne 237b
-.base64 "SIucJKgAAABIgcP4CAAATIukJNgAAABMieBIAcBIAcBIAcBIiUNISIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIuMJKgAAABIgcE4DgAASIu0JKgAAABIgcZACQAASIuUJPAAAABMi5Qk4AAAAEG4AAAAAA=="
-238:
-.base64 "TYnDSTHTSYP7AU0Z20G5AAAAAA=="
-239:
-.base64 "Qg+2BA5MIdhCD7Y8CUgJx0KIPAlJg8EBSYP5CA=="
-jne 239b
-.base64 "SIPBQEmDwAFNOdA="
-jne 238b
-.base64 "uAAAAABIiYQk6AAAAA=="
-240:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_md5_compress}
-.base64 "SIuMJKgAAABIi4Qk6AAAAEgzhCTwAAAASIP4AU0Z20G4AAAAAA=="
-241:
-.base64 "Qg+2hAEACAAAQg+2lAHACAAASDHQTCHYSDHCQoiUAcAIAABJg8ABSYP4EA=="
-jne 241b
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 240b
-.base64 "SIucJKgAAABIgcPACAAASIusJKgAAABIgcUACQAAiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxIi4wkqAAAAEiBwQAJAABIi7wkuAAAAEiLlCTAAAAASAHXSIuUJAgBAABBuAAAAAA="
-242:
-.base64 "Qg+2BAFGD7YMB0wxyEgJwkmDwAFJg/gQ"
-jne 242b
-.base64 "SIP6AUgZwEiD4AE="
-jmp 231f
-230:
-.base64 "SIuEJCABAABIO4QkwAAAAA=="
-jb 243f
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-245:
-.base64 "SokEAUmDwAhJgfgACAAA"
-jne 245b
-.base64 "SIu0JCgBAABBuAAAAAA="
-246:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gQ"
-jne 246b
-.base64 "SIu0JLgAAABMi5QkwAAAAEG4AAAAAA=="
-247:
-.base64 "Qg+2BAZCiEQBGEmDwAFNOdA="
-jne 247b
-.base64 "SIuEJBABAABIg8ABSImEJGgBAAC4AQAAAEiJhCRwAQAAuAoAAABIiYQkYAEAAA=="
-248:
-.base64 "SIuMJKgAAABIgcEYDgAASIu0JHABAABIAc5Mi5wkaAEAAEmD4wFBuQAAAABNKdlMi5QkwAAAAEG4AAAAAA=="
-249:
-.base64 "Qg+2BAFCD7Y8Bkgxx0whz0gx+EKIBAFJg8ABTTnQ"
-jne 249b
-.base64 "SIuEJGgBAABI0ehIiYQkaAEAAEiLhCRwAQAASAHASImEJHABAABIi4QkYAEAAEiD6AFIiYQkYAEAAA=="
-jne 248b
-.base64 "SIuEJMAAAABIg8AfSMHoBkiDwAFIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_md5_init}
-.base64 "SIuMJKgAAABIgcEADgAASIuUJNgAAABMi5Qk4AAAAEnByjpBuAAAAAA="
-250:
-.base64 "TInASDHQSIP4AUgZwEglgAAAAEYPtgwBSQnBRogMAUmDwAFNOdA="
-jne 250b
-.base64 "SIucJKgAAABIgcP4CAAATIukJNgAAABMieBIAcBIAcBIAcBIiUNISIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIuMJKgAAABIgcE4DgAASIu0JKgAAABIgcZACQAASIuUJPAAAABMi5Qk4AAAAEG4AAAAAA=="
-251:
-.base64 "TYnDSTHTSYP7AU0Z20G5AAAAAA=="
-252:
-.base64 "Qg+2BA5MIdhCD7Y8CUgJx0KIPAlJg8EBSYP5CA=="
-jne 252b
-.base64 "SIPBQEmDwAFNOdA="
-jne 251b
-.base64 "uAAAAABIiYQk6AAAAA=="
-253:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_md5_compress}
-.base64 "SIuMJKgAAABIi4Qk6AAAAEgzhCTwAAAASIP4AU0Z20G4AAAAAA=="
-254:
-.base64 "Qg+2hAEACAAAQg+2lAHACAAASDHQTCHYSDHCQoiUAcAIAABJg8ABSYP4EA=="
-jne 254b
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 253b
-.base64 "SIucJKgAAABIgcPACAAASIusJKgAAABIgcUACQAAiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxIi4wkqAAAAEiBwQAJAABIi7wkuAAAAEiLlCTAAAAASAHXSIuUJAgBAABBuAAAAAA="
-255:
-.base64 "Qg+2BAFGD7YMB0wxyEgJwkmDwAFJg/gQ"
-jne 255b
-.base64 "SIP6AUgZwEiD4AE="
-jmp 244f
-243:
-.base64 "SIuEJCABAABIg8AYSImEJNgAAABIg8AISMHoBkiDwAFIiYQk4AAAAEiLjCSoAAAASIHBAA4AAEyLlCTgAAAAScHKOrgAAAAAQbgAAAAA"
-256:
-.base64 "SokEAUmDwAhNOdA="
-jne 256b
-.base64 "SIu0JCgBAABBuAAAAAA="
-257:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gQ"
-jne 257b
-.base64 "SIu0JLgAAABIi4QkwAAAAEgBxkyLlCQgAQAATCnWQbgAAAAATYXS"
-je 258f
-260:
-.base64 "Qg+2BAZCiEQBGEmDwAFNOdA="
-jne 260b
-jmp 259f
-258:
-259:
-.base64 "SIuMJKgAAABIgcEADgAASIuUJCABAAC4gAAAAIhEERhIi7wkqAAAAEiBxwAIAAA="
-call {vg_md5_init}
-.base64 "SIucJKgAAABIgcP4CAAATIukJNgAAABMieBIAcBIAcBIAcBIiUNISIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIu0JKgAAABIgcZACQAASIuMJKgAAABIi4Qk4AAAAEjByDpIAcFIgcH4DQAASIsGSIkBuAAAAABIiYQk6AAAAA=="
-261:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_md5_compress}
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 261b
-.base64 "SIucJKgAAABIgcMACAAASIusJKgAAABIgcUACQAAiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxIi4wkqAAAAEiBwQAJAABIi7wkuAAAAEiLlCTAAAAASAHXSIuUJAgBAABBuAAAAAA="
-262:
-.base64 "Qg+2BAFGD7YMB0wxyEgJwkmDwAFJg/gQ"
-jne 262b
-.base64 "SIP6AUgZwEiD4AE="
-244:
-231:
-jmp 26f
-25:
-.base64 "uAAAAAA="
-26:
-jmp 24f
-23:
-.base64 "uAAAAAA="
-24:
-.base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
-.p2align 6"#,
-        vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
-    )
-}
-
 /// The CPU features `vg_rsa_pss_md5_mgf1_md5_sign_crt_adx` requires (`Artifact.features`).
 pub const VG_RSA_PSS_MD5_MGF1_MD5_SIGN_CRT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
@@ -447,7 +60,7 @@ jne 25b
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_pss_md5_mgf1_md5_encode = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_encode,
+        vg_rsa_pss_md5_mgf1_md5_encode = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_encode::vg_rsa_pss_md5_mgf1_md5_encode,
         vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
     )
 }
@@ -505,7 +118,7 @@ jne 25b
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_pss_md5_mgf1_md5_encode = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_encode,
+        vg_rsa_pss_md5_mgf1_md5_encode = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_encode::vg_rsa_pss_md5_mgf1_md5_encode,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }
@@ -567,7 +180,7 @@ jne 25b
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_pss_md5_mgf1_md5_encode = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_encode,
+        vg_rsa_pss_md5_mgf1_md5_encode = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_encode::vg_rsa_pss_md5_mgf1_md5_encode,
         vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
     )
 }
@@ -618,7 +231,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_rsa_public_precomputed_checked_adx = sym super::rsa::vg_rsa_public_precomputed_checked_adx,
-        vg_rsa_pss_md5_mgf1_md5_check_encoding = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_check_encoding,
+        vg_rsa_pss_md5_mgf1_md5_check_encoding = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_check_encoding::vg_rsa_pss_md5_mgf1_md5_check_encoding,
     )
 }
 
@@ -664,7 +277,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
-        vg_rsa_pss_md5_mgf1_md5_check_encoding = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_check_encoding,
+        vg_rsa_pss_md5_mgf1_md5_check_encoding = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_check_encoding::vg_rsa_pss_md5_mgf1_md5_check_encoding,
     )
 }
 
@@ -714,6 +327,14 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma,
-        vg_rsa_pss_md5_mgf1_md5_check_encoding = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_check_encoding,
+        vg_rsa_pss_md5_mgf1_md5_check_encoding = sym super::rsa_pss_md5_mgf1_md5::vg_rsa_pss_md5_mgf1_md5_check_encoding::vg_rsa_pss_md5_mgf1_md5_check_encoding,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pss_md5_mgf1_md5_check_encoding.rs"]
+pub(crate) mod vg_rsa_pss_md5_mgf1_md5_check_encoding;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pss_md5_mgf1_md5_encode.rs"]
+pub(crate) mod vg_rsa_pss_md5_mgf1_md5_encode;

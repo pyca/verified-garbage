@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # The x86-64 RSA functions' contracts, with 8 bytes of stack
@@ -22,24 +23,24 @@ namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
-theorem crt_implies8 : crtContract.Implies (Spec.Rsa.privateCrtContract abi 8) where
+theorem crt_implies8 : crtContract.Implies (Proof.Rsa.privateCrtContract abi 8) where
   pre := by
     intro s h
-    sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
+    sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     sig_split h
-    sig_reduce [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
+    sig_reduce [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
-  post := by sig_implies_post [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
+  post := by sig_implies_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
+    sig_pub [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h
     refine ⟨?_, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
       (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq] [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using crtSatState
+  sat := by sig_implies_sat [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq] [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using crtSatState
 
 theorem rp_implies8 : rpContract.Implies (Spec.Rsa.recoverPrimesContract abi 8) where
   pre := by

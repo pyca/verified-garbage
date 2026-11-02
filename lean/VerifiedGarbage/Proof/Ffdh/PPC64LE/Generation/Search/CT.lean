@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Loop
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.LeafCT
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Classify
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -16,6 +17,7 @@ meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Loop
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # The parameter search's timing depends on its public data alone (PPC64LE)
 

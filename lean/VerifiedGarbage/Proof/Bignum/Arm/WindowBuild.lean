@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps Operand)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 theorem rest_round {rs : List Reg} {s t : State} (h : Rest rs s t) : Rest roundClobbers s t :=
@@ -109,7 +109,7 @@ theorem entryStep_ok (s : State) {base : BitVec 32} {len w M x E a j : Nat}
   have nowrap := h.ready.workspace.nowrap
   have fe := Nat.le_trans (array_end_le (w := w) (show 8 + j < 16 by omega_arith)) fits
   have sepHdr (d : Nat) (hd : d + 4 ≤ 256) : d + 4 ≤ arrAt w (8 + j) := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith
   rw [WP.seq_iff]
   refine WP.mono (entryCopy_ok s h.ready fits ha hj entry) ?_
   rintro u ⟨ready, copied, outside, keeps, frameU, restU⟩
@@ -133,7 +133,7 @@ theorem entryStep_ok (s : State) {base : BitVec 32} {len w M x E a j : Nat}
   obtain ⟨e220, e228⟩ := header_after_writes u.mem base (base + BitVec.ofNat 32 (arrAt w (8 + (j + 1))))
     (BitVec.ofNat 32 (j + 1))
   have keeps : KeepsExp base s.mem t.mem :=
-    (KeepsExp.of_outside outside (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith)).trans (by
+    (KeepsExp.of_outside outside (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith)).trans (by
       rw [memT]; exact KeepsExp.of_writes _ _ _ _ (Or.inl (by decide)) (by decide) (Or.inl (by decide)) (by decide))
   refine ⟨powerT, tableU.after_ctl ctl fits nowrap (by omega_arith), ?_, by rw [memT]; exact e220,
     by rw [memT]; exact e228, zT, keeps, frameU.trans frameT, restU.trans (rest_round restT)⟩
@@ -145,12 +145,12 @@ theorem tableBody_ok (s : State) {base : BitVec 32} {len w M x j : Nat}
     WP isa tableBody s fun t => BuildInv base len w M x (j + 1) t ∧ t.z = decide (j + 1 = 8) ∧
       KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.fits
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith) fits
   rw [tableBody, WP.seq_iff]
   refine WP.mono (montOp_ok s h.power.ready (o := 1) (a := 1) (b := 5)
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
     (by rw [h.power.modulus]; exact h.power.inputBound)) ?_
   rintro u ⟨ready, modulus, bound, value, keeps, frameU, restU⟩
   rw [h.power.modulus] at bound value
@@ -243,13 +243,13 @@ theorem prodInit_ok (s : State) {base : BitVec 32} {len w M x : Nat} (h : TableP
   rw [c.mem] at keeps outside frameQ
   have powerQ := h.power.after_other readyQ keeps (by decide) (by decide) (by decide) (by decide) (by decide)
   have sepHdr (d : Nat) (hd : d + 4 ≤ 256) : d + 4 ≤ arrAt w 1 := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith
   have tableQ : TableHolds q.mem base w M x 2 := by
     intro i hi
     rw [outside_num outside fits nowrap (by omega_arith) (by omega_arith)]
     exact h.table i hi
   refine ⟨⟨powerQ, tableQ, fits, ?_, ?_, ?_, ?_⟩,
-    KeepsExp.of_outside outside (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith), frameQ,
+    KeepsExp.of_outside outside (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith), frameQ,
     (rest_round (c.rest (ws := [.r11]) (by simp))).trans restQ⟩
   · rw [value, c.mem]; exact h.power.inputBound
   · rw [value, c.mem, show 2 - 1 = 1 from rfl, Nat.pow_one]; exact h.power.inputValue

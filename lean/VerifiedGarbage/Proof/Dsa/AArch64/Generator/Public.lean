@@ -88,7 +88,7 @@ theorem map_toNat_inj : ∀ {l₁ l₂ : List Byte}, l₁.map (·.toNat) = l₂.
   | _ :: _, [], h => by simp at h
 
 theorem view_of_pub {s₁ s₂ : State} (h : (contract pLen).pub s₁ s₂) : view pLen s₁ = view pLen s₂ := by
-  sig_pub [contract, Spec.Dsa.GeneratorStage.contract, Spec.Dsa.GeneratorStage.sig, abi, argRegs] at h
+  sig_pub [contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs] at h
   obtain ⟨hsp, hl, h0, h1, h2, h3⟩ := h
   obtain ⟨hp, hl⟩ := List.cons.inj hl
   obtain ⟨hq, hr⟩ := List.cons.inj hl

@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeSquare
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure SquareInput (p : Inputs) (sp : BitVec 32) (n : Nat) (s : State) : Prop where
   core : Core p sp s
@@ -57,8 +57,8 @@ theorem power5_bound {p : Inputs} {sp : BitVec 32} {s : State}
 private theorem square_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} {n : Nat} :
     RelCT isa (fun s t => SquareInput p sp n s ∧ SquareInput p sp n t ∧ s.sp=t.sp)
       (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul 5 5 5) (fun _ _ => True) := by
-  have operand : Spec.Rsa.Mont.Operand 5 := by
-    simp [Spec.Rsa.Mont.Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]
+  have operand : Proof.Rsa.Mont.Operand 5 := by
+    simp [Proof.Rsa.Mont.Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
   exact (montCallOp_ct backend.name backend.mul (backend.rawCT operand operand operand) operand operand operand).mono
     (fun _ _ h => ⟨h.1.core.memory.ready,h.2.1.core.memory.ready,h.1.core.memory.calls.stack,
       h.2.1.core.memory.calls.stack,power5_bound h.1.core h.1.power,power5_bound h.2.1.core h.2.1.power,h.2.2⟩)

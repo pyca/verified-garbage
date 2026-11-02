@@ -46,7 +46,7 @@ structure RoundImpl where
   features : List String
 
 def RoundImpl.name (v : RoundImpl) : String :=
-  (Spec.MillerRabin.roundApi Spec.MillerRabin.extended).name ++ v.suffix
+  "vg_miller_rabin_round" ++ v.suffix
 
 /-- The round, multiplying by `mm`. -/
 def RoundImpl.code (v : RoundImpl) : Prog isa := round v.mm
@@ -73,7 +73,7 @@ theorem RoundImpl.ct (v : RoundImpl) : ConstantTime isa roundPre roundPub v.code
   round_call_ct v.mont v.body_inlineOk v.body_inline
 
 theorem RoundImpl.verified (v : RoundImpl) : Verified target v.code
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.extended 120) :=
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.extended 120) :=
   Verified.of_correct v.correct v.ct round_implies
 
 end VG.Proof.MillerRabin.X86_64

@@ -16,7 +16,7 @@ native RSA and shared Montgomery views. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt wordAt)
+open VG.Proof.Rsa.Mont (numAt arrAt wordAt)
 
 theorem key_number_of_workspaceEq {s : State} {base : BitVec 32} {capacity w j : Nat} {m' : Mem}
     (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
@@ -36,7 +36,7 @@ theorem MontData.after_workspaceEq {base : BitVec 32} {capacity w : Nat} {m m' :
     MontData base capacity w m' := by
   have fits : arrAt w 8 ≤ 8 * capacity := data.width ▸ data.layout.2.2.1
   have headerFits : 128 ≤ 8 * capacity := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   have num0 := equal.number fits (j := 0) (by decide)
   refine ⟨equal.layout data.layout, (equal.width (by omega)).trans data.width, ?_, ?_⟩

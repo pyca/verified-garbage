@@ -47,7 +47,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm.SharedExchange
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 structure MainInput (p : Inputs) (slots : List Nat) (yb xb : List Byte) (s : State) : Prop extends
     ExchangeMainInput p slots yb xb s where
@@ -143,7 +143,7 @@ theorem main_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb xb1 
     (fun _ _ h => ⟨⟨h.1.context,h.1.calls.toDomainCallMemory⟩,
       ⟨h.2.1.context,h.2.1.calls.toDomainCallMemory⟩,h.2.2⟩) (fun _ _ h => h)
   have ranges := (inRange_ct (base := p.base) (len := p.len) (w := p.w)
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
     (P' := fun (s t : State) => ExchangePowered p slots s ∧ ExchangePowered p slots t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.ready,h.2.1.ready,h.2.2⟩) (fun _ _ h => h)
   unfold VG.Impl.Ffdh.Arm.SharedExchange.main

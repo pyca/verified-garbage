@@ -185,7 +185,7 @@ end
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem subModArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
@@ -204,7 +204,7 @@ theorem subModArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have endA := Nat.le_trans (array_end_le ha.1) fits
   have endB := Nat.le_trans (array_end_le hb.1) fits
   have endM := Nat.le_trans (array_end_le (w := w) (j := 0) (by decide : 0 < 8)) fits
-  have small : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have small : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have nowrap := h.workspace.nowrap
   have width : 2 ≤ w := h.width ▸ h.layout.1
   have sepA := array_sep (w := w) hoa
@@ -216,7 +216,7 @@ theorem subModArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have oldA := keeps_array_num keepsU fits ha (Ne.symm hoa)
   have oldB := keeps_array_num keepsU fits hb (Ne.symm hob)
   have oldM := keeps_array_num keepsU fits (q := 0)
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (Ne.symm ho0)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (Ne.symm ho0)
   have high : val32 u.mem (State.addr base) (arrAt w o + 4 * (2 * w)) 2 = 0 := by
     rw [val32_append] at zero
     have positive : 0 < 2 ^ (32 * (2 * w)) := Nat.two_pow_pos _

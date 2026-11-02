@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -23,8 +23,8 @@ open VG.Proof.Ffdh.ParameterCandidate (checkWitnesses drawWitness_eq)
 def wA (mb : Nat) (r : List Byte) (u : Nat) : Nat := Spec.Rsa.os2ip ((r.drop u).take ((mb + 7) / 8)) % 2 ^ mb
 
 theorem mr_round_eq {N : Nat} (a : Nat) (hN : 3 ≤ N) (ho : N % 2 = 1) :
-    Spec.MillerRabin.round N a = Spec.Ffdh.mrRound N a := by
-  simpa only [Spec.MillerRabin.round] using VG.Proof.Ffdh.rsa_round_eq a hN ho
+    Proof.MillerRabin.Round.round N a = Spec.Ffdh.mrRound N a := by
+  simpa only [Proof.MillerRabin.Round.round] using VG.Proof.Ffdh.rsa_round_eq a hN ho
 
 theorem cw_short {N mb n : Nat} (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (hm : 1 ≤ mb) {r : List Byte} {u : Nat}
     (h : r.length < u + (mb + 7) / 8) : checkWitnesses N (n + 1) (r.drop u) = none := by

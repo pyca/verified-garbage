@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (Keeps)
+open VG.Proof.Rsa.Mont (Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem LayoutFrameReady.of_mem {s t : State} {base : BitVec 32} {len w : Nat} {rs : List Reg}

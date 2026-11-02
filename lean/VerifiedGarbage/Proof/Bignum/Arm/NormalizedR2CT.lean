@@ -58,7 +58,7 @@ open VG.Proof.X25519.Arm (wp_ldr)
     rw [h.width] at header
     have fits := h.width ▸ h.layout.2.2.1
     have size : 52 ≤ 8 * len := by
-      simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+      simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at fits
       omega
     refine wp_ldr (by decide) (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)) (h.workspace.read size) fun t u => WP.block_nil ?_
     exact ⟨(u.other .r0 (by decide)).trans h.ptr, u.gpr.trans header.1⟩
@@ -85,26 +85,26 @@ theorem init_ct {base : BitVec 32} {len w : Nat} :
 
 abbrev LoopReady (base : BitVec 32) (len w : Nat) (P : State → Prop) (s : State) : Prop :=
   (DoubleLoopReady base len w (w + 64) s ∧
-    Spec.Rsa.Mont.numAt s.mem (State.addr base) w 4 = 2 ^ (64 * (w - 1)) ∧
-    1 < Spec.Rsa.Mont.numAt s.mem (State.addr base) w 0) ∧ P s
+    Proof.Rsa.Mont.numAt s.mem (State.addr base) w 4 = 2 ^ (64 * (w - 1)) ∧
+    1 < Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0) ∧ P s
 
 theorem r2_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len w P regions) (ct : TwoExp.MontgomeryTiming K)
     (countFits : 128 * w < 2 ^ 32) :
     RelCT isa (fun s t =>
-      (ArithmeticReady base len w s ∧ P s ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.Mont.numAt s.mem (State.addr base) w 0) ∧
-      (ArithmeticReady base len w t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.Mont.numAt t.mem (State.addr base) w 0) ∧ s.sp = t.sp)
+      (ArithmeticReady base len w s ∧ P s ∧ 2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0) ∧
+      (ArithmeticReady base len w t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt t.mem (State.addr base) w 0) ∧ s.sp = t.sp)
       (VG.Impl.Bignum.Arm.NormalizedR2.r2 K.op) (fun _ _ => True) := by
   have initPost (s : State) (h : ArithmeticReady base len w s ∧ P s ∧
-      2 ^ (64 * (w - 1)) ≤ Spec.Rsa.Mont.numAt s.mem (State.addr base) w 0) :
+      2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0) :
       WP isa VG.Impl.Bignum.Arm.NormalizedR2.init s (LoopReady base len w P) := by
     refine WP.mono (normalizedR2Init_ok s h.1 h.2.2) ?_
     rintro t ⟨ready, seed, modulus, frame, rest⟩
     exact ⟨⟨ready, seed, by rw [modulus]; exact h.1.modulus⟩, K.stable frame rest h.2.1⟩
   have init := (relCT_keep_sp ((init_ct (base := base) (len := len) (w := w)).mono
     (P' := fun (s t : State) =>
-      (ArithmeticReady base len w s ∧ P s ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.Mont.numAt s.mem (State.addr base) w 0) ∧
-      (ArithmeticReady base len w t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.Mont.numAt t.mem (State.addr base) w 0) ∧ s.sp = t.sp)
+      (ArithmeticReady base len w s ∧ P s ∧ 2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0) ∧
+      (ArithmeticReady base len w t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt t.mem (State.addr base) w 0) ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h))
     (fun _ _ h => h.2.2)).wp (fun s t h => ⟨initPost s h.1, initPost t h.2.1⟩)
   have loopPost (s : State) (h : LoopReady base len w P s) :

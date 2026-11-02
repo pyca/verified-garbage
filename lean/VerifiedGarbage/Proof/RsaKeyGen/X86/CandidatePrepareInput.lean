@@ -29,7 +29,7 @@ structure Ready (P : MillerRabinLoop.Parameters) (s : State) : Prop where
   used : w32 s.mem P.g.W 152 = P.start
 
 theorem code_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (bound : P.g.w ≤ 64) {s : State} (I : Input P s) :
     WP isa (VG.Impl.RsaKeyGen.X86.Prepare.codeAt P.seed P.g.w name mont) s fun t =>

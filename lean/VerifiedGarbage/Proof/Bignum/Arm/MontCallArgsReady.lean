@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem montCallArgs_input (s u : State) {base : BitVec 32} {len w o a b : Nat}
@@ -30,7 +30,7 @@ theorem montCallArgs_input (s u : State) {base : BitVec 32} {len w o a b : Nat}
   let A := allocated 8 s
   have fit8 : 8 ≤ s.sp.toNat := by have := cs.fit; omega
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have endM := array_end_le (w := w) (j := 0) (k := 8) (by decide)
   have argsWs : Workspace A base (8 * len) :=
     ⟨h.workspace.nowrap, List.mem_cons_of_mem _ h.workspace.writable⟩
@@ -70,7 +70,7 @@ theorem montCallArgs_ready (s : State) {base : BitVec 32} {len w o a b : Nat}
   let A := allocated 8 s
   have fit8 : 8 ≤ s.sp.toNat := by have := cs.fit; omega
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have argsWs : Workspace A base (8 * len) :=
     ⟨h.workspace.nowrap, List.mem_cons_of_mem _ h.workspace.writable⟩
   have argsWrite : InRegions A.wr (State.addr A.sp) 4 :=

@@ -112,8 +112,8 @@ theorem sieve_context {E : Environment} (v : E.Valid) {c : Nat} {entropy : List 
   · change val32 s.mem ((E.workspace + 256#32).setWidth 64) 0 (2 * E.width) = c
     rw [v.candidateAddress, ← VG.Proof.Bignum.read_eq_val32, ← L.value, ← VG.Proof.Bignum.read_eq_val32]
     congr 2
-    change off (off E.base 256) 0 = off E.base (Spec.Rsa.Mont.arrAt E.width 0)
-    simp only [off, BitVec.add_zero, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero]
+    change off (off E.base 256) 0 = off E.base (Proof.Rsa.Mont.arrAt E.width 0)
+    simp only [off, BitVec.add_zero, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero]
 
 /-- A stage that writes only the stack below the saved registers keeps the
 input. -/

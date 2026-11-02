@@ -34,7 +34,7 @@ theorem round_ok {base : BitVec 32} {len w M E V c : Nat} {P : State → Prop} {
       Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have size : 256 ≤ 8 * len := by
     have fits := h.ready.layout.2.2.1
-    simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   rw [VG.Impl.Bignum.Arm.TwoExp.round, WP.seq_iff]
   refine WP.mono (bit_ok K s h hp hv byte) ?_

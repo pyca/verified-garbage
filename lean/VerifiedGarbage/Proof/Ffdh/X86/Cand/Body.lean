@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Spec
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-!
 # The FFDH candidate on i686: its body
@@ -114,7 +115,7 @@ theorem body_ok (h : In Ex base bytes len args s) {T : List Byte}
     {Tb : BitVec 32} (TT : Table Tb (s.gpr .esp) s)
     (TA : Region.Disjoint ⟨Tb.setWidth 64, 8192⟩ ⟨base, bytes⟩) :
     WP isa Impl.Ffdh.X86.Candidate.body s (Fin base len args up s
-      (Spec.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate bits g T))
+      (Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candUsed T (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candOut len (Spec.Ffdh.sievedParameterCandidate bits g T))) := by
   unfold Impl.Ffdh.X86.Candidate.body

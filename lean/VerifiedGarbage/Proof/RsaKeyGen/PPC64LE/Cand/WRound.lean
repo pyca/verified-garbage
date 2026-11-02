@@ -104,8 +104,8 @@ theorem kept_hdr {w d : Nat} (hd : d + 8 ≤ 256) (hk : ∀ k ∈ [23, 26, 29, 3
 structure RdPost (s : State) (B : Addr) (L w c a I U ch : Nat) (t : State) : Prop where
   prep : Prep t B L w c
   stat : word t.mem B (8 * hStat) =
-    BitVec.ofNat 64 (if Spec.MillerRabin.round c a then statOf I U ch else 2)
-  idx : word t.mem B (8 * hIdx) = BitVec.ofNat 64 (if Spec.MillerRabin.round c a then I + 1 else I)
+    BitVec.ofNat 64 (if Proof.MillerRabin.Round.round c a then statOf I U ch else 2)
+  idx : word t.mem B (8 * hIdx) = BitVec.ofNat 64 (if Proof.MillerRabin.Round.round c a then I + 1 else I)
   hdr : ∀ d, d + 8 ≤ 256 → (∀ k ∈ [23, 26, 29, 30, 1, 20, 22], d + 8 ≤ 8 * k ∨ 8 * k + 8 ≤ d) →
     word t.mem B d = word s.mem B d
   frame : Frame [⟨B, 8 * L⟩, below s.sp 176] s.mem t.mem
@@ -131,7 +131,7 @@ theorem round_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a I U ch : Nat} (
   have hsu := e.hs.congr hu.wr
   have h31 : u.gpr .r31 = B := hu.prep.env.h31
   refine WP.ite _ (eval_zero_ofNat _ _ (by split <;> decide) hu.r3) (fun hz => ?_) (fun hz => ?_)
-  · have hr : Spec.MillerRabin.round c a = false := by
+  · have hr : Proof.MillerRabin.Round.round c a = false := by
       by_contra hc; simp [hc] at hz
     refine WP.mono (WP.keep [.r3] (Q := fun t => t.mem = u.mem.writeW (off B (8 * hStat)) (BitVec.ofNat 64 2)) (by
       simp only [sth, hStat]; prun [h31, hsu.st (d := 160) (n := 8) (by omega)]) (by decide)) fun t ⟨tm, kt⟩ => ?_
@@ -162,7 +162,7 @@ theorem round_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a I U ch : Nat} (
         (Offset.contains_base _ (by simp only [hStat]; omega) (by simp only [hStat]; omega))
     · have h3 : r ≠ .r3 := fun e => by subst e; exact h2 (by decide)
       rw [kt.gpr r (by simp [h3]), hu.cs r hr h1]
-  · have hr : Spec.MillerRabin.round c a = true := by
+  · have hr : Proof.MillerRabin.Round.round c a = true := by
       by_contra hc; simp [hc] at hz
     have hL := hu.prep.env.hZ
     rw [slot_lin] at hL

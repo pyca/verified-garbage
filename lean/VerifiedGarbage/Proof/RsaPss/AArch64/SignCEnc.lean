@@ -166,7 +166,7 @@ theorem oEnc_toNat {D K : Nat} {s : State} (hp : PreS D K s) :
 /-- The call's arguments meet `encode`'s contract. -/
 theorem encOk_of {D K : Nat} {s t : State} (hp : PreS D K s) {cK : Nat} (hcK : cK ≤ K) {eb el lo : Nat}
     (ha : AtEnc K s eb el lo t) (hlo : lo + el ≤ (s.gpr .x3).toNat) (hel : el = Spec.RsaPss.emLength eb)
-    (hb1 : 1 ≤ eb) (hb2 : eb ≤ Spec.RsaPss.maxEmBits) : EncOk D cK t := by
+    (hb1 : 1 ≤ eb) (hb2 : eb ≤ Proof.RsaPss.maxEmBits) : EncOk D cK t := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hfb := fb_toNat hp
   have hkb := kb_toNat hp
@@ -185,7 +185,7 @@ theorem encOk_of {D K : Nat} {s t : State} (hp : PreS D K s) {cK : Nat} (hcK : c
   have he : (BitVec.ofNat 64 el).toNat = el := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show el < 2 ^ 64 by omega)]
   have hb : (BitVec.ofNat 64 eb).toNat = eb := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show eb < 2 ^ 64 by unfold Spec.RsaPss.maxEmBits at hb2; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show eb < 2 ^ 64 by unfold Proof.RsaPss.maxEmBits at hb2; omega)]
   have hcov : Covers [(⟨stackArg s 8, D⟩ : Region), ⟨stackArg s 9, (stackArg s 10).toNat⟩] (t.rd ++ t.wr) := by
     rw [ha.rd]
     exact Covers.left (Covers.trans (Covers.of_mem fun r hr => by
@@ -224,7 +224,7 @@ theorem encOk_of {D K : Nat} {s t : State} (hp : PreS D K s) {cK : Nat} (hcK : c
     b1 := by rw [ha.x5, hb]; exact hb1
     b2 := by rw [ha.x5, hb]; exact hb2
     hel := by rw [ha.x1, ha.x5, he, hb]; exact hel
-    hs := by rw [ha.x7, hsc]; unfold Spec.RsaPss.encodingScratchWords oEnc oY; omega }
+    hs := by rw [ha.x7, hsc]; unfold Proof.RsaPss.encodingScratchWords oEnc oY; omega }
 
 variable (G : Spec.Mgf1.Hash) in
 /-- After the call of `encode`: its result, and `EM` holding `lo` zero bytes
@@ -247,7 +247,7 @@ structure AfterEnc (K : Nat) (s : State) (eb el lo : Nat) (t : State) : Prop whe
 
 theorem encCall_ok {G : Spec.Mgf1.Hash} (c : EncImpl G) {K : Nat} {s t : State} (hp : PreS G.len K s)
     (hcK : c.stack ≤ K) {eb el lo : Nat} (ha : AtEnc K s eb el lo t) (hlo : lo + el ≤ (s.gpr .x3).toNat)
-    (hel : el = Spec.RsaPss.emLength eb) (hb1 : 1 ≤ eb) (hb2 : eb ≤ Spec.RsaPss.maxEmBits) :
+    (hel : el = Spec.RsaPss.emLength eb) (hb1 : 1 ≤ eb) (hb2 : eb ≤ Proof.RsaPss.maxEmBits) :
     WP isa (.call c.name c.code) t (AfterEnc G K s eb el lo) := by
   have hk2 := hp.k2
   have hhs := hp.hs
@@ -258,7 +258,7 @@ theorem encCall_ok {G : Spec.Mgf1.Hash} (c : EncImpl G) {K : Nat} {s t : State} 
   have he : (BitVec.ofNat 64 el).toNat = el := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show el < 2 ^ 64 by omega)]
   have hb : (BitVec.ofNat 64 eb).toNat = eb := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show eb < 2 ^ 64 by unfold Spec.RsaPss.maxEmBits at hb2; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show eb < 2 ^ 64 by unfold Proof.RsaPss.maxEmBits at hb2; omega)]
   refine encCall c (encOk_of hp hcK ha hlo hel hb1 hb2) fun s' hrd' hwr' hsp' hf hpres hvs hpost => ?_
   simp only [encWr] at hf
   rw [ha.x0, ha.x1, ha.x6, ha.x7, ha.sp, he] at hf

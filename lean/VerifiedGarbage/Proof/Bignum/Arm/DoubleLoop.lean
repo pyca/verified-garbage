@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopBody
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem double_power_step (i x m : Nat) :

@@ -38,7 +38,7 @@ theorem Ready.entry_eq {g : Geometry} {capacity : Nat} {p : BitVec 32} {s : Stat
 theorem Ready.callPre {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {s : State}
     (R : Ready g capacity p s) (length : g.L = 8 * capacity)
     (fit : 108 ≤ p.toNat) (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108)) :
-    CallPre (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96) args [below p 8] [⟨g.W, g.L⟩] s := by
+    CallPre (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96) args [below p 8] [⟨g.W, g.L⟩] s := by
   obtain ⟨c, b, S, odd, large, witness⟩ := R.1
   refine ⟨?_, ?_, ?_⟩
   · rw [R.entry_eq]
@@ -58,7 +58,7 @@ theorem Ready.callPre {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 
 theorem Ready.width {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {s : State}
     (R : Ready g capacity p s) (fit : 108 ≤ p.toNat)
     (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108)) :
-    Spec.Rsa.Mont.wOf (entry g s).mem g.W = g.w := by
+    Proof.Rsa.Mont.wOf (entry g s).mem g.W = g.w := by
   obtain ⟨c, b, S, _, _, _⟩ := R.1
   have F := entry_frame (by rw [R.sp]; omega) S.ready.scratch.nowrap
     (by rw [R.sp]; exact far.sub_right (below_sub (by decide : 12 ≤ 108) fit))
@@ -67,7 +67,7 @@ theorem Ready.width {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32
 theorem Ready.publicInputs {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {s t : State}
     (S : Ready g capacity p s) (T : Ready g capacity p t) (fit : 108 ≤ p.toNat)
     (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108)) :
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pub (entry g s) (entry g t) := by
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pub (entry g s) (entry g t) := by
   have sa := fun {i} (hi : i < 2) => entry_arg S.2 (by rw [S.sp]; omega) hi
   have ta := fun {i} (hi : i < 2) => entry_arg T.2 (by rw [T.sp]; omega) hi
   obtain ⟨c, b, D, _, _, _⟩ := S.1
@@ -79,9 +79,9 @@ theorem Ready.publicInputs {g : Geometry} (v : g.Valid) {capacity : Nat} {p : Bi
   have sp : (entry g s).gpr .esp = (entry g t).gpr .esp := by
     change (pushed args s).callEntry.gpr .esp = (pushed args t).callEntry.gpr .esp
     rw [callEntry_esp', callEntry_esp', S.sp, T.sp]
-  have width : [Spec.Rsa.Mont.wOf (entry g s).mem g.W] = [Spec.Rsa.Mont.wOf (entry g t).mem g.W] := by
+  have width : [Proof.Rsa.Mont.wOf (entry g s).mem g.W] = [Proof.Rsa.Mont.wOf (entry g t).mem g.W] := by
     rw [S.width v fit far, T.width v fit far]
-  sig_pub [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argSlots, argVal, argBytes]
+  sig_pub [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argSlots, argVal, argBytes]
   simp only [sa (by decide : 0 < 2), sa (by decide : 1 < 2), ta (by decide : 0 < 2), ta (by decide : 1 < 2), ↓reduceIte, ptr]
   exact ⟨sp, width, trivial, trivial⟩
 

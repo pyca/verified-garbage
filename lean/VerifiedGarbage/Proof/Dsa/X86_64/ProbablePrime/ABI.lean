@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.ProbablePrime
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # The probable-prime test's arguments, from its contract's precondition -/
 
@@ -15,7 +16,7 @@ abbrev stack : Nat := 184
 
 /-- The test's contract on x86-64. -/
 abbrev contract : Contract isa :=
-  Spec.Dsa.ProbablePrime.sizedContract Impl.Dsa.X86_64.ProbablePrime.layout
+  Proof.Dsa.ProbablePrime.sizedContract Impl.Dsa.X86_64.ProbablePrime.layout
     Impl.Dsa.X86_64.ProbablePrime.sizes abi stack
 
 /-- The candidate widths parameter generation tests. -/
@@ -51,13 +52,13 @@ structure PrimeABI (bits : Nat) (s : State) : Prop where
   randBound : (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64
   usedBound : (s.gpr .r8).toNat + 8 ≤ 2 ^ 64
   size : Impl.Dsa.Generation.Layout.domainCheck ≤ 8 * (s.gpr .rsi).toNat
-  odd : Spec.Dsa.ProbablePrime.candidateAt (Impl.Dsa.X86_64.ProbablePrime.layout bits) s.mem (s.gpr .rdi) % 2 = 1
+  odd : Proof.Dsa.ProbablePrime.candidateAt (Impl.Dsa.X86_64.ProbablePrime.layout bits) s.mem (s.gpr .rdi) % 2 = 1
   bits : Spec.Dsa.bitLength
-    (Spec.Dsa.ProbablePrime.candidateAt (Impl.Dsa.X86_64.ProbablePrime.layout bits) s.mem (s.gpr .rdi)) = bits
+    (Proof.Dsa.ProbablePrime.candidateAt (Impl.Dsa.X86_64.ProbablePrime.layout bits) s.mem (s.gpr .rdi)) = bits
 
 theorem primeABI_of {s : State} (h : contract.pre s) :
     Supported (s.gpr .r9).toNat ∧ PrimeABI (s.gpr .r9).toNat s := by
-  sig_pre [contract, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi,
+  sig_pre [contract, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig, abi,
     argRegs] at h
   sig_split h
   refine ⟨Supported.of_mem (by with_reducible assumption), ?_⟩

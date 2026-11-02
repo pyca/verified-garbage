@@ -22,7 +22,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.RtCall
 open VG.Proof.Bignum.X86.PublicRt (adds_ok frame_store frame_other argAt_alloc)
 open VG.Impl.Bignum.X86.PublicRt (argAt)
-open VG.Spec.Rsa.MontMul (scratchBytes)
+open VG.Proof.Rsa.MontMul (scratchBytes)
 
 /-- `offIn (.slot c j)`: `eax = numBase + j t` from `edx = t`. -/
 theorem offIn_ok {s : State} {is : List Instr} {Q : State → Prop} {c : Ctx} {j t : Nat}

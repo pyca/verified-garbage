@@ -95,20 +95,20 @@ theorem and80 (b : Byte) :
     rw [e] at this
     exact h ((key _ hb).mp this)
 
-theorem status_lt (r : Option (Bool × Spec.RsaKeyGen.Rand)) : Spec.Dsa.ProbablePrime.status r < 2 ^ 32 := by
-  rcases r with _ | ⟨_ | _, _⟩ <;> simp [Spec.Dsa.ProbablePrime.status]
+theorem status_lt (r : Option (Bool × Spec.RsaKeyGen.Rand)) : Proof.Dsa.ProbablePrime.status r < 2 ^ 32 := by
+  rcases r with _ | ⟨_ | _, _⟩ <;> simp [Proof.Dsa.ProbablePrime.status]
 
-theorem pCode_zero {r : Option (Bool × Spec.RsaKeyGen.Rand)} (h : Spec.Dsa.ProbablePrime.status r = 0) :
+theorem pCode_zero {r : Option (Bool × Spec.RsaKeyGen.Rand)} (h : Proof.Dsa.ProbablePrime.status r = 0) :
     pCode r = 0 := by
-  rcases r with _ | ⟨_ | _, _⟩ <;> simp_all [Spec.Dsa.ProbablePrime.status, pCode]
+  rcases r with _ | ⟨_ | _, _⟩ <;> simp_all [Proof.Dsa.ProbablePrime.status, pCode]
 
-theorem pCode_one {r : Option (Bool × Spec.RsaKeyGen.Rand)} (h : Spec.Dsa.ProbablePrime.status r = 1) :
+theorem pCode_one {r : Option (Bool × Spec.RsaKeyGen.Rand)} (h : Proof.Dsa.ProbablePrime.status r = 1) :
     pCode r = 1 := by
-  rcases r with _ | ⟨_ | _, _⟩ <;> simp_all [Spec.Dsa.ProbablePrime.status, pCode]
+  rcases r with _ | ⟨_ | _, _⟩ <;> simp_all [Proof.Dsa.ProbablePrime.status, pCode]
 
-theorem pCode_other {r : Option (Bool × Spec.RsaKeyGen.Rand)} (h₀ : Spec.Dsa.ProbablePrime.status r ≠ 0)
-    (h₁ : Spec.Dsa.ProbablePrime.status r ≠ 1) : pCode r = 4 := by
-  rcases r with _ | ⟨_ | _, _⟩ <;> simp_all [Spec.Dsa.ProbablePrime.status, pCode]
+theorem pCode_other {r : Option (Bool × Spec.RsaKeyGen.Rand)} (h₀ : Proof.Dsa.ProbablePrime.status r ≠ 0)
+    (h₁ : Proof.Dsa.ProbablePrime.status r ≠ 1) : pCode r = 4 := by
+  rcases r with _ | ⟨_ | _, _⟩ <;> simp_all [Proof.Dsa.ProbablePrime.status, pCode]
 
 /-- After X, p and its guard: the guard's flag, p and its arrays, and the
 state words the test reads. -/
@@ -286,9 +286,9 @@ theorem pAttempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid)
   have hP₆ : t₆.mem.readW (off E.base fP) 32 = BitVec.ofNat 32 4 := by
     rw [Env.Chg.word v C₆ (by simp only [fP, hdr]; omega_arith) (fun o ho => by
       simp only [List.mem_singleton] at ho; subst ho; simp only [sPP, ppWords, fP, hdr]; omega_arith), F.fp]
-  have cval : Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)) t₆.mem
+  have cval : Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)) t₆.mem
       (off E.base sPP) = pcand g E k offset Q := by
-    unfold Spec.Dsa.ProbablePrime.candidateAt
+    unfold Proof.Dsa.ProbablePrime.candidateAt
     have b8 : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)).bits / 8 = g.pLen := by
       show 8 * g.pLen / 8 = g.pLen; omega_arith
     rw [b8, VG.Offset.add_add, R₆, F.pk, decodeBE_encodeBE (by rw [e256]; exact pcLt)]

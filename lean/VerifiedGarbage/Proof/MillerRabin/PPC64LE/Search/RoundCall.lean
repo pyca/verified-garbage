@@ -44,13 +44,13 @@ def Kept (w i : Nat) : Prop :=
     (∀ j ∈ [2, 3, 5, 6, 8], i < slot w j ∨ slot w j + 8 * (w + 2) ≤ i) ∧ (i < slot w 11 ∨ slot w 27 ≤ i)
 
 theorem keeps_byte {m m' : Mem} {B : Addr} {L w i : Nat}
-    (h : Spec.MillerRabin.Keeps Spec.MillerRabin.compact B L w m m') (hi : i < 8 * L) (hk : Kept w i) :
+    (h : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B L w m m') (hi : i < 8 * L) (hk : Kept w i) :
     m' (B + BitVec.ofNat 64 i) = m (B + BitVec.ofNat 64 i) :=
   h i hi hk.1 hk.2.1 hk.2.2
 
 /-- A word the round keeps. -/
 theorem keeps_word {m m' : Mem} {B : Addr} {L w d : Nat}
-    (h : Spec.MillerRabin.Keeps Spec.MillerRabin.compact B L w m m') (hd : d + 8 ≤ 8 * L)
+    (h : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B L w m m') (hd : d + 8 ≤ 8 * L)
     (hk : ∀ i, d ≤ i → i < d + 8 → Kept w i) : word m' B d = word m B d :=
   (Mem.readW_congr fun i hi => by
     rw [show off B d + BitVec.ofNat 64 i = B + BitVec.ofNat 64 (d + i) by
@@ -59,7 +59,7 @@ theorem keeps_word {m m' : Mem} {B : Addr} {L w d : Nat}
 
 /-- A number of `2 w` digits the round keeps. -/
 theorem keeps_val32 {m m' : Mem} {B : Addr} {L w d : Nat}
-    (h : Spec.MillerRabin.Keeps Spec.MillerRabin.compact B L w m m') (hd : d + 8 * w ≤ 8 * L)
+    (h : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B L w m m') (hd : d + 8 * w ≤ 8 * L)
     (hk : ∀ i, d ≤ i → i < d + 8 * w → Kept w i) :
     val32 m' B d (2 * w) = val32 m B d (2 * w) :=
   val32_congr (d := d) (k := 2 * w) fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => by
@@ -93,31 +93,31 @@ structure Prep (s : State) (B : Addr) (L w c : Nat) : Prop where
   e : arr s.mem B w aE = mrE c
   l : s.mem.readW (off B (slot w aE + 8 * w)) 64 = BitVec.twoPow 64 (mrA c % 64)
 
-theorem Prep.width {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) : Spec.Rsa.Mont.wOf s.mem B = w := by
+theorem Prep.width {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) : Proof.Rsa.Mont.wOf s.mem B = w := by
   change (word s.mem B 48).toNat = w
   rw [h.wW, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.env.hw'; omega_arith)]
 
 theorem Prep.layout {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) :
-    Spec.MillerRabin.Layout Spec.MillerRabin.compact s.mem B L := by
+    Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact s.mem B L := by
   have hZ := h.env.hZ
   have h4 := h.env.hw
   have h128 := h.env.hw'
   simp only [slot, hdrBytes] at hZ
-  simp only [Spec.MillerRabin.Layout, h.width, Spec.MillerRabin.compact, Spec.Rsa.Mont.Layout, Spec.Rsa.Mont.arrAt,
-    Spec.Rsa.Mont.hdrBytes]
+  simp only [Proof.MillerRabin.Round.Layout, h.width, Proof.MillerRabin.Round.compact, Proof.Rsa.Mont.Layout, Proof.Rsa.Mont.arrAt,
+    Proof.Rsa.Mont.hdrBytes]
   refine ⟨Or.inr trivial, ⟨by omega_arith, by omega_arith, by omega_arith, fun j hj => h.arrW j hj⟩, h4, h128,
     by rw [show max (11 + 16) (max (27 + 1) (max (9 + 1) (10 + 1))) = 28 from rfl]; omega_arith, h.strideW⟩
 
 theorem Prep.prepared {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (h5 : arr s.mem B w 5 < c) :
-    Spec.MillerRabin.Prepared Spec.MillerRabin.compact s.mem B := by
-  have hn : Spec.Rsa.Mont.numAt s.mem B w 0 = c := (numAt_eq s.mem B w 0).trans h.n
-  simp only [Spec.MillerRabin.Prepared, h.width, hn, Spec.MillerRabin.compact]
+    Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact s.mem B := by
+  have hn : Proof.Rsa.Mont.numAt s.mem B w 0 = c := (numAt_eq s.mem B w 0).trans h.n
+  simp only [Proof.MillerRabin.Round.Prepared, h.width, hn, Proof.MillerRabin.Round.compact]
   refine ⟨h.c3, h.odd, h.inv, ?_, ?_, ?_, ?_, ?_⟩
   · rw [numAt_eq]; exact h5
   · rw [numAt_eq]; exact h.r9
   · rw [numAt_eq]; exact h.r10
   · rw [numAt_eq]
-    simpa only [Spec.MillerRabin.exponent, Spec.MillerRabin.shift, mrE, mrSig, sigOf, mrA, aE] using h.e
+    simpa only [Proof.MillerRabin.Round.exponent, Proof.MillerRabin.Round.shift, mrE, mrSig, sigOf, mrA, aE] using h.e
   · exact h.l
 
 /-- `Prep` survives a state that keeps `Env` and the words and
@@ -185,8 +185,8 @@ round's `Keeps`, and everything outside the working space and the round's
 stack. -/
 structure RcPost (s : State) (B : Addr) (L w c a : Nat) (t : State) : Prop where
   prep : Prep t B L w c
-  r3 : t.gpr .r3 = BitVec.ofNat 64 (if Spec.MillerRabin.round c a then 1 else 0)
-  keeps : Spec.MillerRabin.Keeps Spec.MillerRabin.compact B L w s.mem t.mem
+  r3 : t.gpr .r3 = BitVec.ofNat 64 (if Proof.MillerRabin.Round.round c a then 1 else 0)
+  keeps : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B L w s.mem t.mem
   frame : Frame [⟨B, 8 * L⟩, below s.sp 176] s.mem t.mem
   rd : t.rd = s.rd
   wr : t.wr = s.wr
@@ -309,9 +309,9 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
   have hL64 : L < 2 ^ 64 := by omega_arith
   have hwr₂ : ∀ x n, InRegions [⟨B, 8 * L⟩] x n → InRegions s₂.wr x n := fun _ _ => scr_covers p₂.env.hs
   -- The round.
-  refine WP.seq (WP.callAny (k := Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176) R.verified.1
+  refine WP.seq (WP.callAny (k := Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 176) R.verified.1
     (rd := []) (wr := [⟨B, 8 * L⟩]) ?_ ?_ ?_ (fun s₃ hrd hwr₃ hsp₃ hf hcs hpost => ?_) (by have := R.stack; omega_arith))
-  · sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs]
+  · sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, PPC64LE.abi, PPC64LE.argRegs]
     simp only [r3₂, r4₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64, Nat.mul_comm L 8, k12.sp]
     exact ⟨hsp, trivial, hstk, by omega_arith, p₂.layout, p₂.prepared (by
       show val32 s₂.mem B (slot w 5) (2 * w) < c; rw [mid.a5]; exact Nat.mod_lt _ (by have := h.c3; omega_arith))⟩
@@ -319,12 +319,12 @@ theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} 
     obtain ⟨r, hr, hc⟩ := hwr₂ x n (by simpa only [List.nil_append] using hx)
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   · exact hwr₂
-  sig_post [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs] at hpost
+  sig_post [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, PPC64LE.abi, PPC64LE.argRegs] at hpost
   obtain ⟨hres, hk3⟩ := hpost
   rw [r3₂, p₂.width] at hres hk3
   rw [r4₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64] at hk3
-  have hn₂ : Spec.Rsa.Mont.numAt s₂.mem B w 0 = c := (numAt_eq _ _ _ _).trans p₂.n
-  have h5₂ : Spec.Rsa.Mont.numAt s₂.mem B w 5 = a % c * 2 ^ (64 * w) % c := by
+  have hn₂ : Proof.Rsa.Mont.numAt s₂.mem B w 0 = c := (numAt_eq _ _ _ _).trans p₂.n
+  have h5₂ : Proof.Rsa.Mont.numAt s₂.mem B w 5 = a % c * 2 ^ (64 * w) % c := by
     rw [numAt_eq]; exact mid.a5
   rw [hn₂] at hres
   have hr3 := hres a h5₂

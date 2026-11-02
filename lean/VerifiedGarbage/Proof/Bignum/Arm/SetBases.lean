@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.Arm.SetBaseStep
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Impl.Bignum.Arm.SetBases
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (Rest ofNat_beq_zero)
 
 structure BasesInv (s0 : State) (base : BitVec 32) (w i : Nat) (s : State) : Prop where
@@ -34,11 +34,11 @@ theorem setBasesBody_ok {s0 s : State} {base : BitVec 32} {size w i : Nat}
     WP isa (.block setBaseStep) s fun t => BasesInv s0 base w (i + 1) t ∧
       t.z = decide (i + 1 = 8) := by
   have nowrap := ws.nowrap
-  have headerFits : 128 ≤ size := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have headerFits : 128 ≤ size := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have arrayFits : arrAt w i < size := by
     have hm := Nat.mul_le_mul_right (8 * (w + 2)) (by omega : i + 1 ≤ 8)
     rw [Nat.add_mul, Nat.one_mul] at hm
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits ⊢
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits ⊢
     omega
   have writable (d : Nat) (hd : d + 4 ≤ size) : InRegions s.wr (off (State.addr base) d) 4 := by
     rw [inv.rest.wr]
@@ -64,7 +64,7 @@ theorem setBasesBody_ok {s0 s : State} {base : BitVec 32} {size w i : Nat}
     congr 1
   · rw [cursor, inv.cursor, inv.rest.gpr .r5 (by simp), stride, Offset.add_add]
     rw [show arrAt w i + 8 * (w + 2) = arrAt w (i + 1) by
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes, Nat.add_mul, Nat.one_mul, Nat.add_assoc]]
+      simp only [arrAt, Proof.Rsa.Mont.hdrBytes, Nat.add_mul, Nat.one_mul, Nat.add_assoc]]
   · rw [count, inv.count]
     change BitVec.ofNat 32 (8 - i) - BitVec.ofNat 32 1 = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
@@ -106,7 +106,7 @@ theorem setBases_ok (s : State) {base : BitVec 32} {size w : Nat}
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
   · refine ⟨0, by decide, by decide, ?_⟩
-    exact ⟨by decide, by simpa using ptr, by simpa [arrAt, Spec.Rsa.Mont.hdrBytes] using cursor,
+    exact ⟨by decide, by simpa using ptr, by simpa [arrAt, Proof.Rsa.Mont.hdrBytes] using cursor,
       by simpa using count, by intro j hj; omega, Outside.refl _ _ _ _, Rest.refl _ _⟩
 
 end VG.Proof.Bignum.Arm

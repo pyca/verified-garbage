@@ -24,7 +24,7 @@ low words, as many as the narrow workspace has, are the whole value.
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Keeps)
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_mov op2_reg op2_lsl)
 
 /-- A value below `2^(64 v)` is its low `8 v` bytes. -/
@@ -81,7 +81,7 @@ theorem crt_narrowInputArgs_ok (s : State) {base : BitVec 32} {len v : Nat}
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   have fits : arrAt v 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega_arith
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_arith
   unfold narrowInputArgs
   refine wp_ldr (a := off (State.addr base) 72) (by decide)
     (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_arith)) (h.workspace.read (by omega_arith)) fun u a => ?_

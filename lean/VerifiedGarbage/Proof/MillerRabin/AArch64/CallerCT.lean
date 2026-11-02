@@ -21,7 +21,7 @@ private theorem ready_base {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Rea
   exact hc.ws.x0
 
 private theorem ready_width {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
-    Spec.Rsa.Mont.wOf s.mem L.B = L.w := by
+    Proof.Rsa.Mont.wOf s.mem L.B = L.w := by
   obtain ⟨⟨_, _, _, c, bm, b, hc, _⟩, _⟩ := h
   exact ctx_width hc
 

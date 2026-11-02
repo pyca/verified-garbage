@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.MrExponentRt
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentReady
 public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MrExponentRt.Scan
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MrExponentRt.Half
@@ -208,7 +208,7 @@ theorem code_ok {g : Geometry} (v : g.Valid) {c capacity : Nat} {p : BitVec 32} 
     (S : Ready g c capacity p s) (minusOne : val32 s.mem g.W (g.array 5) g.words = c - 1)
     (odd : c % 2 = 1) (large : 1 < c) :
     WP isa code s fun t =>
-      Ready g c capacity p t ∧ val32 t.mem g.W (g.array 27) g.words = Spec.MillerRabin.exponent c ∧
+      Ready g c capacity p t ∧ val32 t.mem g.W (g.array 27) g.words = Proof.MillerRabin.Round.exponent c ∧
       word t.mem g.W (g.array 27 + 8 * g.w) = Marker c ∧
       WorkspaceFrame g (preparedRanges g) s.mem t.mem ∧ Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem ∧
       Keeps Exponent.clob s t := by

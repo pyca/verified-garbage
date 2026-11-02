@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86.ProbablePrime
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateStackUse
+public import VerifiedGarbage.Spec.Dsa
 
 /-! # The probable-prime test uses at most 152 bytes below its caller -/
 

@@ -65,7 +65,7 @@ section
 section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem r2NormalizedCountState_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -78,7 +78,7 @@ theorem r2NormalizedCountState_ok (s : State) {base : BitVec 32} {len w : Nat}
       numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.layout.2.2.1
-  have size : 212 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 212 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   let c := (s.mem.readW (off (State.addr base) 208) 32).toNat
@@ -98,7 +98,7 @@ end
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest wp_subs op2_imm)
 
 structure R2PublicChecked (base : BitVec 32) (len w M : Nat) (s : State) : Prop where
@@ -123,7 +123,7 @@ theorem r2PublicPrepare_ok (s : State) {base : BitVec 32} {len w M : Nat}
   rintro v ⟨layoutV, flag, keeps, frameV, restV⟩
   have fits : arrAt w 8 ≤ 8 * len := ready.width ▸ ready.layout.2.2.1
   have op (i : Nat) (hi : i = 0 ∨ i = 4 ∨ i = 7) : Operand i := by
-    rcases hi with rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases hi with rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have oldTop := (keeps_array_num keeps fits (op 4 (by decide)) (by decide)).trans top
   have oldTwo := keeps_array_word (d := 0) (bits := 32) keeps fits (op 7 (by decide)) (by decide) (by omega)
   simp only [Nat.add_zero] at oldTwo

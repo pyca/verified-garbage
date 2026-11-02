@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Mont.X86.CombBuild
 import VerifiedGarbage.Proof.Mont.WordsCanonical
-public import VerifiedGarbage.Spec.Dsa.FixedBaseComb
+public import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -30,31 +30,31 @@ theorem TableAt.canonical {n context m g bits : Nat} {base : Addr} {mem : Mem}
   rw [V]
   rfl
 
-theorem context_canonical {L : Spec.Dsa.FixedBaseComb.Layout} {m g : Nat} {base : Addr} {mem : Mem}
+theorem context_canonical {L : Impl.Dsa.FixedBaseComb.Layout} {m g : Nat} {base : Addr} {mem : Mem}
     (P : wordsVal mem base L.context L.n=m)
     (R : wordsVal mem base (L.context+8*L.n) L.n=2^(128*L.n)%m)
     (T : TableAt L.n L.context m g (32*L.e) base (fun _ => True) mem) :
-    Spec.Rsa.wordsAt mem (off base L.context) (Spec.Dsa.FixedBaseComb.contextWords L)=
-      Spec.Dsa.FixedBaseComb.context L m g := by
-  have size : Spec.Dsa.FixedBaseComb.contextWords L=L.n+(L.n+32*L.n) := by
-    unfold Spec.Dsa.FixedBaseComb.contextWords Spec.Rsa.FixedBaseComb.entries Spec.Rsa.FixedBaseComb.teeth
+    Spec.Rsa.wordsAt mem (off base L.context) (Proof.Dsa.FixedBaseComb.contextWords L)=
+      Proof.Dsa.FixedBaseComb.context L m g := by
+  have size : Proof.Dsa.FixedBaseComb.contextWords L=L.n+(L.n+32*L.n) := by
+    unfold Proof.Dsa.FixedBaseComb.contextWords Spec.Rsa.FixedBaseComb.entries Spec.Rsa.FixedBaseComb.teeth
     omega
   rw [size,wordsAt_append,wordsAt_append,wordsAt_canonical,wordsAt_canonical,P,R]
   have addr : L.context+8*L.n+8*L.n=L.context+16*L.n := by omega
   rw [addr,T.canonical]
-  simp only [Spec.Dsa.FixedBaseComb.context,List.append_assoc]
+  simp only [Proof.Dsa.FixedBaseComb.context,List.append_assoc]
 
-theorem table_of_context {L : Spec.Dsa.FixedBaseComb.Layout} {m g : Nat} {base : Addr} {mem : Mem}
+theorem table_of_context {L : Impl.Dsa.FixedBaseComb.Layout} {m g : Nat} {base : Addr} {mem : Mem}
     (mp : 0<m) (mb : m<2^(64*L.n))
-    (H : Spec.Rsa.wordsAt mem (off base L.context) (Spec.Dsa.FixedBaseComb.contextWords L)=
-      Spec.Dsa.FixedBaseComb.context L m g) :
+    (H : Spec.Rsa.wordsAt mem (off base L.context) (Proof.Dsa.FixedBaseComb.contextWords L)=
+      Proof.Dsa.FixedBaseComb.context L m g) :
     TableAt L.n L.context m g (32*L.e) base (fun _ => True) mem := by
-  have size : Spec.Dsa.FixedBaseComb.contextWords L=2*L.n+32*L.n := by
-    unfold Spec.Dsa.FixedBaseComb.contextWords Spec.Rsa.FixedBaseComb.entries Spec.Rsa.FixedBaseComb.teeth
+  have size : Proof.Dsa.FixedBaseComb.contextWords L=2*L.n+32*L.n := by
+    unfold Proof.Dsa.FixedBaseComb.contextWords Spec.Rsa.FixedBaseComb.entries Spec.Rsa.FixedBaseComb.teeth
     omega
   have lists := congrArg (List.drop (2*L.n)) H
   rw [size,wordsAt_append,List.drop_left' (by simp only [Spec.Rsa.wordsAt,List.length_map,List.length_range])] at lists
-  unfold Spec.Dsa.FixedBaseComb.context at lists
+  unfold Proof.Dsa.FixedBaseComb.context at lists
   rw [List.drop_left' (by simp only [List.length_append,Spec.Rsa.toWords,List.length_map,List.length_range]; omega)] at lists
   have addr : L.context+8*(2*L.n)=L.context+16*L.n := by omega
   rw [addr] at lists

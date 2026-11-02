@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
 public import VerifiedGarbage.Impl.Rsa.Arm.Recover
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyView
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
@@ -24,7 +24,7 @@ open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 private theorem viewLarge {s : State} {base : BitVec 32} {capacity w : Nat}
     (h : KeyReady base capacity w s) : 96 < 8 * capacity := by
   have fit := h.arrayFit (j := 0) (by decide)
-  simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
+  simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
   omega
 
 theorem keyClrTop_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
@@ -34,7 +34,7 @@ theorem keyClrTop_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
       KeyReady base capacity w t ∧
       VG.Proof.Rsa.Arm.Keys.Keep (base + 96#32) (2 * w + 2) [j] [] s.mem t.mem ∧
       VG.Proof.Rsa.Arm.Keys.num t.mem (base + 96#32) (2 * w + 2) j =
-        Spec.Rsa.Mont.numAt s.mem (State.addr base) w j ∧
+        Proof.Rsa.Mont.numAt s.mem (State.addr base) w j ∧
       Rest VG.Proof.Rsa.Arm.Keys.opRegs s t := by
   have fits : base.toNat + 96 < 2 ^ 32 := by
     have := workspace.nowrap
@@ -45,7 +45,7 @@ theorem keyClrTop_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
       (2 * w + 2) 30 ∧
       VG.Proof.Rsa.Arm.Keys.Keep (base + 96#32) (2 * w + 2) [j] [] s.mem t.mem ∧
       VG.Proof.Rsa.Arm.Keys.num t.mem (base + 96#32) (2 * w + 2) j =
-        Spec.Rsa.Mont.numAt s.mem (State.addr base) w j ∧
+        Proof.Rsa.Mont.numAt s.mem (State.addr base) w j ∧
       Rest VG.Proof.Rsa.Arm.Keys.opRegs (s.withRegions s.rd [keyViewRegion base capacity]) t)
     (fun t ht keep value rest => WP.block_nil ⟨ht, keep, by
       rw [show 2 * w + 2 - 2 = 2 * w by omega] at value

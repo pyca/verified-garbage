@@ -20,7 +20,7 @@ states them; from them, the working space (`Ws`), the arguments on the stack
 namespace VG.Proof.Mont.X86.Rt
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont.X86.Rt VG.Proof.Mont VG.Proof.Mont.X86
-open VG.Spec.Rsa.MontMul (Apart numAt scratchBytes)
+open VG.Proof.Rsa.MontMul (Apart numAt scratchBytes)
 open VG.Proof.Mont.X86.Dynamic (ArgFar ofs_far)
 
 /-- The working space, from the first argument, and its bytes. -/
@@ -54,8 +54,8 @@ structure RtABI (s : State) : Prop where
   bLt : numAt s.mem (wsOf s) (arg s 8).toNat (8 * (arg s 2).toNat) <
     numAt s.mem (wsOf s) (arg s 3).toNat (8 * (arg s 2).toNat)
 
-theorem rtAbi_of {s : State} (h : (Spec.Rsa.MontMul.mulContract abi 0).pre s) : RtABI s := by
-  sig_pre [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow] at h
+theorem rtAbi_of {s : State} (h : (Proof.Rsa.MontMul.mulContract abi 0).pre s) : RtABI s := by
+  sig_pre [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
 

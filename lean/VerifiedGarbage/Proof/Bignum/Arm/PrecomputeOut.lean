@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Impl.Bignum.Arm.PrecomputeOut
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
 import VerifiedGarbage.Proof.Bignum.Arm.ExportArray
@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt wOf numAt Layout)
+open VG.Proof.Rsa.Mont (arrAt wOf numAt Layout)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 theorem precomputeOut_ok (s : State) {base dst : BitVec 32} {len w : Nat}
@@ -37,7 +37,7 @@ theorem precomputeOut_ok (s : State) {base dst : BitVec 32} {len w : Nat}
   have nowrap := ws.nowrap
   have hw : 2 ≤ w := width ▸ layout.1
   have fits : arrAt w 8 ≤ 8 * len := width ▸ layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have firstWrite : InRegions s.wr (State.addr dst) (8 * w) := by
     simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) write (by omega) (by omega)
   have firstSep := sep.sub_right (Region.sub_prefix (show 8 * w ≤ 16 * w by omega))

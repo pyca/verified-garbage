@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 public import VerifiedGarbage.Proof.Mont.X86.Words
-public import VerifiedGarbage.Spec.Dsa.ModPow
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
 import VerifiedGarbage.Proof.Dsa.X86.Comb.BodyWide
 
 /-! Both comb calls share the ordinary power helper's cdecl frame proof. -/
@@ -35,7 +35,7 @@ theorem call_ok {n e m size : Nat} {base : Addr} {s : State}
   unfold VG.Impl.Dsa.X86.Comb.call
   have bounds : slot n 0+8*n≤(layout n e).size ∧ slot n 5+8*n≤(layout n e).size ∧
       slot n 8+4*e≤(layout n e).size ∧
-      context n+8*Spec.Dsa.FixedBaseComb.contextWords (layout n e)≤(layout n e).size := by
+      context n+8*Proof.Dsa.FixedBaseComb.contextWords (layout n e)≤(layout n e).size := by
     rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide
   let P := fun mem => wordsVal mem base (slot n 0) n=m ∧
     wordsVal mem base (slot n 5) n=wordsVal s.mem base (slot n 5) n ∧

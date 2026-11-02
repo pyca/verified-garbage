@@ -103,7 +103,7 @@ def argsBytes : Nat := 36
 /-- The attempt, a call of `vg_ffdh_parameter_candidate_sieved`, in a frame of its arguments. -/
 def attempt : Prog isa :=
   .frame (.alloc argsBytes)
-    (.seq (.block arguments) (.call Spec.Ffdh.sievedParameterCandidateApi.name Candidate.code))
+    (.seq (.block arguments) (.call "vg_ffdh_parameter_candidate_sieved" Candidate.code))
     (.free argsBytes)
 
 /-- The status to `edx`, and the candidate's octets consumed. -/

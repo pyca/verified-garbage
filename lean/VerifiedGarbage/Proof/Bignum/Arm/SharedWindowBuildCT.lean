@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.SharedWindow
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.Bignum.Arm.TwoExp (Montgomery MontgomeryTiming OpInput)
 
 theorem tablePrepare_ct {base : BitVec 32} {len w M1 M2 x1 x2 : Nat}
@@ -56,11 +56,11 @@ theorem tableBody_ct {M1 M2 x1 x2 j : Nat} (hj : j < 8) (fits : arrAt w 16 ≤ 8
     RelCT isa (fun s t => (BuildInv base len w M1 x1 j s ∧ P s) ∧
       (BuildInv base len w M2 x2 j t ∧ P t) ∧ s.sp = t.sp)
       (VG.Impl.Bignum.Arm.SharedWindow.tableBody A.op) (fun _ _ => True) := by
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op5 : Operand 5 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op5 : Operand 5 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have entryOf (s : State) {M x : Nat} (h : BuildInv base len w M x j s ∧ P s) :
       WP isa (A.op 1 1 5) s (EntryReady base len w j) := by
-    have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) h.1.fits
+    have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) h.1.fits
     refine WP.mono (A.op_ok s 1 1 5 h.1.power.ready h.2 op1 op1 op5 (by decide)
       (by rw [h.1.power.modulus]; exact h.1.power.inputBound)) ?_
     rintro t ⟨ready, _, _, _, keeps, _, _, _⟩

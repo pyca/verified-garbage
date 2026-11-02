@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.Contract
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 
 /-! # Domain-checking resources supplied by the shared cdecl contract -/
@@ -29,8 +30,8 @@ structure CheckingABI (s : State) : Prop where
   keyLength : (arg s 1).toNat = 2 * (arg s 2).toNat + (arg s 3).toNat
   scratchLength : Spec.Dsa.scratchWords (arg s 2).toNat ≤ (arg s 5).toNat
 
-theorem checkingABI_of {s : State} (h : (Spec.Dsa.checkParametersContract abi 108).pre s) : CheckingABI s := by
-  sig_pre [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+theorem checkingABI_of {s : State} (h : (Proof.Dsa.checkParametersContract abi 108).pre s) : CheckingABI s := by
+  sig_pre [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
 

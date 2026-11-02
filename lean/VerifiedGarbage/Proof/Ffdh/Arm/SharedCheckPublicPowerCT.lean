@@ -19,7 +19,7 @@ open VG VG.Arm VG.Proof.Bignum.Arm
 private theorem sharedPublicPower_ct {base src ep : BitVec 32} {len w M : Nat}
     {P : State → Prop} {regions : List Region} {bb eb1 eb2 : List Byte}
     (K : TwoExp.Montgomery base len w P regions) (ct : TwoExp.MontgomeryTiming K)
-    (fits : Spec.Rsa.Mont.arrAt w 16 ≤ 8 * len) (positive : 0 < eb1.length)
+    (fits : Proof.Rsa.Mont.arrAt w 16 ≤ 8 * len) (positive : 0 < eb1.length)
     (length : eb1.length = eb2.length)
     (separate : ∀ r ∈ regions, Region.Disjoint ⟨State.addr ep, eb1.length⟩ r) :
     RelCT isa (fun s t => KeyPower.Input base src ep len w M P regions bb eb1 s ∧

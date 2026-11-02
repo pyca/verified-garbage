@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure PowerAtInput (p : Inputs) (slots : List Nat) (bs es : Nat)
     (M : Nat) (bb eb : List Byte) (s : State) : Prop where
@@ -57,9 +57,9 @@ theorem powerAt_ct {p : Inputs} {slots : List Nat} {bs es ec M : Nat} {bb eb1 eb
     (P' := fun (s t : State) => PowerAtInput p slots bs es M bb eb1 s ∧
       PowerAtInput p slots bs es M bb eb2 t ∧ s.sp = t.sp)
     (fun _ _ h => h.2.2) (fun _ _ _ => trivial)
-  have tableFit : Spec.Rsa.Mont.arrAt p.w 3 + 32 ≤ 8 * p.len := by
+  have tableFit : Proof.Rsa.Mont.arrAt p.w 3 + 32 ≤ 8 * p.len := by
     have fit := p.width.2.2.1
-    simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at *
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at *
     omega
   unfold VG.Impl.Ffdh.Arm.Domain.powerAt
   exact relCT_chain args

@@ -17,11 +17,11 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
 
 theorem mulEntry_pre {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     {capacity b c : Nat} (length : g.L = 8 * capacity) (M : Modulus g c s.mem)
-    (A : MulArguments g capacity b s) (right : Spec.Rsa.Mont.Operand b)
+    (A : MulArguments g capacity b s) (right : Proof.Rsa.Mont.Operand b)
     (rightLt : val32 s.mem g.W (g.array b) g.words < c)
     (fit : 80 ≤ (s.gpr .esp).toNat)
     (far : (⟨g.W, g.L⟩ : Region).Disjoint (below (s.gpr .esp) 80)) :
-    (Spec.Rsa.Mont.mulContract abi 56).pre (mulEntry g s) := by
+    (Proof.Rsa.Mont.mulContract abi 56).pre (mulEntry g s) := by
   have sa := fun {i} (hi : i < 5) => mulEntry_arg A (by omega) hi
   have capBound : capacity < 2 ^ 32 := by have := C.ws.nowrap; omega
   have ptrBound : g.W.toNat < 2 ^ 32 := by have := C.ws.nowrap; have := v.headerFit; omega
@@ -49,7 +49,7 @@ theorem mulEntry_pre {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ptrBound]
     exact Nat.mod_eq_of_lt g.W.isLt
   generalize eu : mulEntry g s = u at *
-  sig_pre [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa0, sa1, sa2, sa3, sa4, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt capBound, Nat.mod_eq_of_lt ptrBound, Nat.mod_eq_of_lt bBound,
     ptr, rd, wr, sp, ar, ← length, Nat.mul_comm capacity 8]

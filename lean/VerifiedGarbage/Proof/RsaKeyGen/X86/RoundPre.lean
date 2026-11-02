@@ -22,13 +22,13 @@ open VG VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 
 theorem Data.layout {g : Geometry} (v : g.Valid) {s : VG.X86.State} {c capacity : Nat} {p : BitVec 32}
     (S : Data g c capacity p s) (length : g.L = 8 * capacity) :
-    Spec.MillerRabin.Layout Spec.MillerRabin.compact s.mem g.W capacity := by
-  unfold Spec.MillerRabin.Layout
+    Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact s.mem g.W capacity := by
+  unfold Proof.MillerRabin.Round.Layout
   rw [S.ready.modulus.width]
   refine ⟨Or.inr rfl, ?_, v.minWidth, v.maxWidth, ?_, ?_⟩
   · have M := S.ready.modulus.layout v (by rw [length]; omega)
     simpa only [length, Nat.mul_div_cancel_left capacity (by decide : 0 < 8)] using M
-  · change Spec.Rsa.Mont.arrAt g.w 28 ≤ 8 * capacity
+  · change Proof.Rsa.Mont.arrAt g.w 28 ≤ 8 * capacity
     rw [← length]
     exact v.arraysFit
   · exact S.stride
@@ -38,14 +38,14 @@ theorem prepared_of {g : Geometry} {m : Mem} {c : Nat}
     (witness : val32 m g.W (g.array 5) g.words < c)
     (one : val32 m g.W (g.array 9) g.words = 2 ^ (64 * g.w) % c)
     (minusOne : val32 m g.W (g.array 10) g.words = c - 2 ^ (64 * g.w) % c)
-    (exponent : val32 m g.W (g.array 27) g.words = Spec.MillerRabin.exponent c)
+    (exponent : val32 m g.W (g.array 27) g.words = Proof.MillerRabin.Round.exponent c)
     (marker : word m g.W (g.array 27 + 8 * g.w) = BitVec.twoPow 64 ((Spec.Rsa.splitTwos (c - 1)).1 % 64)) :
-    Spec.MillerRabin.Prepared Spec.MillerRabin.compact m g.W := by
-  unfold Spec.MillerRabin.Prepared
+    Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact m g.W := by
+  unfold Proof.MillerRabin.Round.Prepared
   rw [M.width]
   dsimp only
   rw [VG.Proof.Mont.X86.Compact.numAt_val32]
-  simp only [show val32 m g.W (Spec.Rsa.Mont.arrAt g.w 0) (2 * g.w) = c from M.candidate]
+  simp only [show val32 m g.W (Proof.Rsa.Mont.arrAt g.w 0) (2 * g.w) = c from M.candidate]
   change 3 ≤ c ∧ _
   refine ⟨large, odd, M.inverse, ?_, ?_, ?_, ?_, marker⟩
   all_goals rw [VG.Proof.Mont.X86.Compact.numAt_val32]
@@ -57,7 +57,7 @@ theorem prepared_of {g : Geometry} {m : Mem} {c : Nat}
 theorem Data.prepared {g : Geometry} {s : VG.X86.State} {c capacity b : Nat} {p : BitVec 32}
     (S : Data g c capacity p s) (odd : c % 2 = 1) (large : 3 ≤ c)
     (witness : val32 s.mem g.W (g.array 5) g.words = b % c * 2 ^ (64 * g.w) % c) :
-    Spec.MillerRabin.Prepared Spec.MillerRabin.compact s.mem g.W :=
+    Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact s.mem g.W :=
   prepared_of S.ready.modulus odd large (by rw [witness]; exact Nat.mod_lt _ (by omega))
     S.one S.minusOne S.exponent S.marker
 
@@ -77,26 +77,26 @@ theorem entry_pre {g : Geometry} (v : g.Valid) {s : State} {c capacity b : Nat} 
     (witness : val32 s.mem g.W (g.array 5) g.words = b % c * 2 ^ (64 * g.w) % c)
     (fit : 108 ≤ (s.gpr .esp).toNat)
     (far : (⟨g.W, g.L⟩ : Region).Disjoint (below (s.gpr .esp) 108)) :
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pre (entry g s) := by
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pre (entry g s) := by
   have sa := fun {i} (hi : i < 2) => entry_arg A (by omega) hi
   have capBound : capacity < 2 ^ 32 := by have := S.ready.scratch.nowrap; omega
   have ptrBound : g.W.toNat < 2 ^ 32 := by have := S.ready.scratch.nowrap; have := v.headerFit; omega
   have F := entry_frame (by omega : 12 ≤ (s.gpr .esp).toNat) S.ready.scratch.nowrap
     (far.sub_right (below_sub (by decide : 12 ≤ 108) fit))
   have Mu := S.ready.modulus.keep v F (by simp) (by simp)
-  have lu : Spec.MillerRabin.Layout Spec.MillerRabin.compact (entry g s).mem g.W capacity := by
-    unfold Spec.MillerRabin.Layout
+  have lu : Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact (entry g s).mem g.W capacity := by
+    unfold Proof.MillerRabin.Round.Layout
     rw [Mu.width]
     refine ⟨Or.inr rfl, ?_, v.minWidth, v.maxWidth, ?_, ?_⟩
     · have M := Mu.layout v (by rw [length]; omega)
       simpa only [length, Nat.mul_div_cancel_left capacity (by decide : 0 < 8)] using M
-    · change Spec.Rsa.Mont.arrAt g.w 28 ≤ 8 * capacity
+    · change Proof.Rsa.Mont.arrAt g.w 28 ≤ 8 * capacity
       rw [← length]
       exact v.arraysFit
     · change (entry g s).mem.readW (off g.W 224) 64 = _
       rw [F.read64 (by have := v.headerFit; omega) (by simp)]
       exact S.stride
-  have pu : Spec.MillerRabin.Prepared Spec.MillerRabin.compact (entry g s).mem g.W := by
+  have pu : Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact (entry g s).mem g.W := by
     refine Prepare.prepared_of Mu odd large ?_ ?_ ?_ ?_ ?_
     · rw [F.val32 (v.arrayFit (by decide)) (by simp), witness]
       exact Nat.mod_lt _ (by omega)
@@ -122,7 +122,7 @@ theorem entry_pre {g : Geometry} (v : g.Valid) {s : State} {c capacity b : Nat} 
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ptrBound]
     exact Nat.mod_eq_of_lt g.W.isLt
   generalize eu : entry g s = u at *
-  sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa0, sa1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt capBound, Nat.mod_eq_of_lt ptrBound,
     ptr, rd, wr, sp, ar, ← length, Nat.mul_comm capacity 8]
   have sp12 : (s.gpr .esp - 12#32).toNat = (s.gpr .esp).toNat - 12 := sub_toNat (by omega)

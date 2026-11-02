@@ -37,7 +37,7 @@ theorem verified (v : RoundImpl) {pLen : Nat} (hb : Supported pLen) :
 /-- The stages with the round implementation `v`, as parameter generation
 calls them. -/
 def generatorStage (v : RoundImpl) : VG.Proof.Dsa.AArch64.Generation.GeneratorStage where
-  name pLen := (Spec.Dsa.GeneratorStage.api (Impl.Dsa.AArch64.Generator.layout pLen)).name ++ v.suffix
+  name pLen := s!"vg_dsa_generator_{8 * (Impl.Dsa.AArch64.Generator.layout pLen).pLen}" ++ v.suffix
   code := stageCode v
   verified _ hb := verified v hb
   depth := code_depth v

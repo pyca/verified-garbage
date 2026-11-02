@@ -102,7 +102,7 @@ def clrTop (j : Nat) : List Instr :=
 /-- `[o] = [a] [b] R⁻¹ mod n`, `R = 2^(8 B)`, by a call of `vg_rsa_mont_mul_at` in a frame of 36
 bytes, which keeps `ebx`, `esi`, `ebp` and `edi`; then `[o]`'s top words zeroed. -/
 def mmul (o a b : Nat) : Prog isa :=
-  .seq (.frame (.alloc 36) (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) (.free 36))
+  .seq (.frame (.alloc 36) (.seq (.block (mulArgs o a b)) (.call "vg_rsa_mont_mul_at" Sse2.atBody)) (.free 36))
     (.block (clrTop o))
 
 /-- `-n⁻¹ mod 2³²` from `[mBase]`'s low word. -/

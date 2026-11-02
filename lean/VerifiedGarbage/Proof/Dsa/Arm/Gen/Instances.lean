@@ -33,8 +33,7 @@ open VG.Impl.Rsa.Arm.Keys (ptr)
 
 /-- The probable-prime test over the round `v`, which tests q and p. -/
 def primeName (v : RoundImpl) : String :=
-  (Spec.Dsa.ProbablePrime.sizedApi Impl.Dsa.Arm.ProbablePrime.layout Impl.Dsa.Arm.ProbablePrime.sizes).name ++
-    v.suffix
+  "vg_dsa_probable_prime" ++ v.suffix
 
 /-- The geometry of `(pLen, qLen)`, hashing with `G`, testing with the round `v`. -/
 def geo (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo where
@@ -52,7 +51,7 @@ def geo (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo where
   powBase := baseS (pLen / 8)
   powExp := expS (pLen / 8)
   powRes := resS (pLen / 8)
-  checkName := Spec.Dsa.checkParametersApi.name
+  checkName := "vg_dsa_check_parameters"
   checkCode := VG.Impl.Dsa.Arm.Generate.checkParameters
 
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes := by decide) :

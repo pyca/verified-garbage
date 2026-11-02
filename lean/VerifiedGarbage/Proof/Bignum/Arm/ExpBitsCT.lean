@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem expBits_ct {base : BitVec 32} {len w M1 M2 x1 x2 E v : Nat}
     (fit : arrAt w 3 + 32 ≤ 8 * len) (hv : v < 256) :

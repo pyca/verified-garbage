@@ -4,12 +4,14 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Pow
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Dsa.ModPowContract
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
 
 /-!
 # DSA's exponentiation as a function on 32-bit ARM: `Verified`
 
-`vg_dsa_pow_{n}_{e}` against its contract (`Spec/Dsa/ModPow.lean`), from
+`vg_dsa_pow_{n}_{e}` against its contract (`Proof/Dsa/ModPowContract.lean`), from
 `powK_correct` and `powK_ct`: the contract's numbers are the bytes `Mem.read`
 reads (`numAt`), the same as the words `val32` reads (`read_eq_val32`).
 -/
@@ -20,9 +22,9 @@ namespace VG.Proof.Dsa.Arm.Pow
 
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm.Pow
-open VG.Spec.Dsa.ModPow (numAt Keeps)
+open VG.Proof.Dsa.ModPow (numAt Keeps)
 
-/-- The contract on ARM, as `Spec.Dsa.ModPow.powContract` states it. -/
+/-- The contract on ARM, as `Proof.Dsa.ModPow.powContract` states it. -/
 def powArm (n e : Nat) : Contract isa where
   pre s :=
     let ws := State.addr (s.gpr .r0)
@@ -69,19 +71,19 @@ def satState : State where
   wr := [⟨0x1000, 4960⟩]
 
 theorem powArm_implies {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
-    (powArm n e).Implies (Spec.Dsa.ModPow.powContract (layout n e) Arm.abi) where
+    (powArm n e).Implies (Proof.Dsa.ModPow.powContract (layout n e) Arm.abi) where
   pre := by
-    sig_implies_pre [Spec.Dsa.ModPow.powContract, Spec.Dsa.ModPow.sig, powArm, layout, Arm.abi, Arm.argRegs,
+    sig_implies_pre [Proof.Dsa.ModPow.powContract, Proof.Dsa.ModPow.sig, powArm, layout, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   post := by
-    sig_implies_post [Spec.Dsa.ModPow.powContract, Spec.Dsa.ModPow.sig, powArm, layout, Arm.abi, Arm.argRegs,
+    sig_implies_post [Proof.Dsa.ModPow.powContract, Proof.Dsa.ModPow.sig, powArm, layout, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   pub := by
-    sig_implies_pub [Spec.Dsa.ModPow.powContract, Spec.Dsa.ModPow.sig, powArm, layout, Arm.abi, Arm.argRegs,
+    sig_implies_pub [Proof.Dsa.ModPow.powContract, Proof.Dsa.ModPow.sig, powArm, layout, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   sat := by
     refine ⟨satState, ?_⟩
-    sig_pre [Spec.Dsa.ModPow.powContract, Spec.Dsa.ModPow.sig, layout, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    sig_pre [Proof.Dsa.ModPow.powContract, Proof.Dsa.ModPow.sig, layout, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     sig_and_intros
     · decide
@@ -98,7 +100,7 @@ theorem powArm_implies {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
 
 theorem verified (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)
     (hen : e ≤ 2 * n := by decide) :
-    Verified Arm.target (body n e) (Spec.Dsa.ModPow.powContract (layout n e) Arm.abi) :=
+    Verified Arm.target (body n e) (Proof.Dsa.ModPow.powContract (layout n e) Arm.abi) :=
   Verified.of_correct (powArm_correct hn hn48 he hen) (powArm_ct n e hn hn48) (powArm_implies hn hn48)
 
 end VG.Proof.Dsa.Arm.Pow

@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.MillerRabin
 the randomness at offsets (`seg r a n`, the `n` octets from `a`):
 `candidateStep_eq`. Its Miller–Rabin loop, one witness at a time from an
 offset (`mrLoop_step`, `mrLoop_done`), each witness's test by the flag of
-`MillerRabin.lean` (`mrIteration_cand`).
+`Proof/MillerRabin/Contract.lean` (`mrIteration_cand`).
 -/
 
 @[expose] public section

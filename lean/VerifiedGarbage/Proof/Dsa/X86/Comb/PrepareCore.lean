@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Mont.X86.CombCanonical
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
 public import VerifiedGarbage.Proof.Mont.X86.ContextInit
 public import VerifiedGarbage.Proof.Mont.X86.CombBuild
-public import VerifiedGarbage.Spec.Dsa.FixedBaseComb
+public import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
 import VerifiedGarbage.Proof.Mont.X86.CombBuild
 
@@ -27,8 +27,8 @@ theorem prepare_core_ok {n e m : Nat} {base : Addr} {s : State}
     WP isa (core true n e) s fun t =>
       wordsVal t.mem base (slot n 6) n=
         wordsVal s.mem base (slot n 5) n ^ val32 s.mem base (slot n 8) e % m ∧
-      Spec.Rsa.wordsAt t.mem (off base (context n)) (Spec.Dsa.FixedBaseComb.contextWords (layout n e))=
-        Spec.Dsa.FixedBaseComb.context (layout n e) m (wordsVal s.mem base (slot n 5) n) ∧
+      Spec.Rsa.wordsAt t.mem (off base (context n)) (Proof.Dsa.FixedBaseComb.contextWords (layout n e))=
+        Proof.Dsa.FixedBaseComb.context (layout n e) m (wordsVal s.mem base (slot n 5) n) ∧
       Outs base (prepareRanges n e) s.mem t.mem ∧ Keeps powerClob s t := by
   have L := table_layout h
   have shape : 128*n<2^32 ∧ contextBytes n≤(layout n e).size := by

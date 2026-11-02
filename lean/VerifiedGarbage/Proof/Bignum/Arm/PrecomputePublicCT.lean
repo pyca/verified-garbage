@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 def PublicR2Timing (code : Prog isa) : Prop := ∀ {base : BitVec 32} {len w M : Nat},
   128 * w < 2 ^ 32 → RelCT isa (fun s t =>

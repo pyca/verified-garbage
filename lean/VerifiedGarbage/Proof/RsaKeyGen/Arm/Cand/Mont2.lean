@@ -19,7 +19,7 @@ the key arrays 15–21 and 25; `VP.withMS`: a piece with such a step keeps
 namespace VG.Proof.RsaKeyGen.Arm.Cand
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 open VG.Proof.Rsa.Arm.Recover (VP)
 
 section
@@ -48,7 +48,7 @@ theorem MSp.of_read {s t : State} (h : MSp P σ s)
     rw [width]
     refine ⟨layout.1, layout.2.1, layout.2.2.1, fun j hj => ?_⟩
     unfold wordAt
-    rw [ew _ (.inl (by simp only [Spec.Rsa.Mont.arrWord]; omega))]
+    rw [ew _ (.inl (by simp only [Proof.Rsa.Mont.arrWord]; omega))]
     exact layout.2.2.2 j hj
   · change ((t.mem.readW (off (State.addr P.M0) (arrAt P.w 0)) 64).toNat *
       (t.mem.readW (off (State.addr P.M0) 56) 64).toNat + 1) % 2 ^ 64 = 0
@@ -127,7 +127,7 @@ theorem MS.of_keep (pre : In P σ) {s t : State} (h : MS P σ s) {js ds : List N
   refine h.of_read (fun d n hdn => ?_) ?_ ?_ sp rd wr
   · rw [pre.M0_off]
     have hdn : d + n ≤ mHd P := by
-      have : 232 ≤ arrAt P.w 0 := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+      have : 232 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
       rcases hdn with (h1 | ⟨_, h1⟩) | ⟨_, h1⟩ <;> simp only [mHd] at * <;> omega
     simp only [mHd] at hdn
     refine Mem.read_congr fun i hi => ?_

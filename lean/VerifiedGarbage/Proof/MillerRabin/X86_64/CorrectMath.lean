@@ -43,8 +43,8 @@ theorem round_math_ok (M : Mont) {s : State} (hpre : roundPre s) :
   rw [Nat.mul_comm (s.gpr .rsi).toNat 8] at hdim hc hn hwr hstack
   let B := s.gpr .rdi
   let n := (s.gpr .rsi).toNat
-  let w := Spec.Rsa.Mont.wOf s.mem B
-  let c := Spec.Rsa.Mont.numAt s.mem B w 0
+  let w := Proof.Rsa.Mont.wOf s.mem B
+  let c := Proof.Rsa.Mont.numAt s.mem B w 0
   have hR := coprime_pow2 hodd (64 * w)
   obtain ⟨b, _, hb⟩ := witness_exists hR hx
   have hX : wv s.mem B (slot w aXm) w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * w) % c := by
@@ -75,7 +75,7 @@ theorem round_math_ok (M : Mont) {s : State} (hpre : roundPre s) :
   rintro t ⟨hout, hregs, hkeep, hframe⟩
   refine ⟨fun r hr => (hregs r hr).trans (hk.gpr (by revert r; decide)), ⟨?_, ?_⟩, ?_⟩
   · intro b' hb'
-    have heq : Spec.MillerRabin.round c b = Spec.MillerRabin.round c b' := by
+    have heq : Proof.MillerRabin.Round.round c b = Proof.MillerRabin.Round.round c b' := by
       apply round_eq_of_mont (by have hc3 : 3 ≤ c := h3; omega_arith) hR
       rw [← hb, ← hb']
       exact (numAt_eq s.mem B w aXm).symm

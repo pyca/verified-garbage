@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem crt_wideSum_fits {a b c w : Nat} (ha : a < 2 ^ (64 * w))
     (hb : b < 2 ^ (64 * w)) (hc : c < 2 ^ (64 * w)) :
@@ -47,6 +47,6 @@ theorem CrtShared.recombine_input {s : State} {g : CrtGeometry} {bs : Fin 7 → 
       val32_lt s.mem (State.addr g.base) (crtProductB g.words) (2 * g.words)
   · rw [numAt_native]
     simpa only [show 32 * (2 * g.words) = 64 * g.words by omega] using
-      val32_lt s.mem (State.addr g.base) (Spec.Rsa.Mont.arrAt g.words 1) (2 * g.words)
+      val32_lt s.mem (State.addr g.base) (Proof.Rsa.Mont.arrAt g.words 1) (2 * g.words)
 
 end VG.Proof.Bignum.Arm

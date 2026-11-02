@@ -27,7 +27,7 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (calleeOf setWidth_toNat callee_frame rtPre_of ofs_in ofs_out ofs_eq
   rtBody_noSp rtBody_stackUse callee_pre)
-open VG.Spec.Rsa.MontMul (Apart scratchBytes)
+open VG.Proof.Rsa.MontMul (Apart scratchBytes)
 
 /-- The words of a call's frame: `ws`, `ws_len`, the width and the offsets. -/
 def callArg (edi wsLen : BitVec 32) (n m inv sc o a b : Nat) : Nat → BitVec 32
@@ -115,9 +115,9 @@ theorem callee_abi (scr : Scr s base bytes) (hbytes : bytes = wsLen.toNat * 8)
   have ln : lenOf (calleeOf g base bytes) = bytes := v1
   have v1' : 8 * (arg (calleeOf g base bytes) 1).toNat = bytes := by omega
   have Fc := callee_frame (base := base) (bytes := bytes) low hesp hFg
-  have numc : ∀ d k, d + k ≤ bytes → Spec.Rsa.MontMul.numAt (calleeOf g base bytes).mem base d k =
-      Spec.Rsa.MontMul.numAt s.mem base d k := fun d k hdk => by
-    unfold Spec.Rsa.MontMul.numAt
+  have numc : ∀ d k, d + k ≤ bytes → Proof.Rsa.MontMul.numAt (calleeOf g base bytes).mem base d k =
+      Proof.Rsa.MontMul.numAt s.mem base d k := fun d k hdk => by
+    unfold Proof.Rsa.MontMul.numAt
     rw [Fc.read (r := ⟨base, bytes⟩) (Offset.contains_base _ hdk (by omega))
       (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega)]
   have argAddr0 : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
@@ -159,14 +159,14 @@ end
 
 /-- The block storing the arguments, and the call. -/
 abbrev callCode (is : List Instr) : Prog isa :=
-  .frame (.alloc 36) (.seq (.block is) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) (.free 36)
+  .frame (.alloc 36) (.seq (.block is) (.call "vg_rsa_mont_mul_at" Sse2.atBody)) (.free 36)
 
 theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen : BitVec 32} {is : List Instr}
     (scr : Scr s base bytes) (hbytes : bytes = wsLen.toNat * 8) (R : CallRoom (s.gpr .esp) base bytes)
     (O : Offs bytes n m inv sc o a b)
     (hinv : (val32 s.mem base m (2 * n) * w32 s.mem base inv + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem base b (2 * n) < val32 s.mem base m (2 * n))
-    (hns : NoSp (.seq (.block is) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody) : Prog isa))
+    (hns : NoSp (.seq (.block is) (.call "vg_rsa_mont_mul_at" Sse2.atBody) : Prog isa))
     (hargs : WP isa (.block is) (allocFrame 36 s) fun g =>
       Keeps [.eax, .edx] (allocFrame 36 s) g ∧
       Frame [⟨((allocFrame 36 s).gpr .esp).setWidth 64, 36⟩] (allocFrame 36 s).mem g.mem ∧
@@ -201,7 +201,7 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
     rw [Kg.2.2, allocFrame_wr]; exact List.mem_cons_of_mem _ scr.wr
   have argA : argAddr g.callEntry 0 = (g.gpr .esp).setWidth 64 := by rw [argAddr_callEntry]; simp
   have low96 := R.low
-  refine WP.call (k := Spec.Rsa.MontMul.mulContract abi 56) (rd := [⟨argAddr g.callEntry 0, 36⟩])
+  refine WP.call (k := Proof.Rsa.MontMul.mulContract abi 56) (rd := [⟨argAddr g.callEntry 0, 36⟩])
     (wr := [⟨base, bytes⟩]) VG.Proof.Mont.X86.Sse2.at_correct rtBody_noSp (by rw [rtBody_stackUse]; omega)
     (callee_pre A R gEsp)
     (Covers.of_mem fun r hr => ?_) (Covers.of_mem fun r hr => ?_) fun s' rd' wr' cs' F _ ⟨s₂, m₂, _, post⟩ => ?_
@@ -209,8 +209,8 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
     · rw [argA]; exact List.mem_append_right _ hframe
     · exact List.mem_append_right _ hscr
   · rw [List.mem_singleton.mp hr]; exact hscr
-  change (Spec.Rsa.MontMul.mulContract abi 56).post (calleeOf g base bytes) s₂ at post
-  sig_post [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes] at post
+  change (Proof.Rsa.MontMul.mulContract abi 56).post (calleeOf g base bytes) s₂ at post
+  sig_post [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes] at post
   obtain ⟨L₂, C₂, K₂⟩ := post
   have blt := scr.size_lt
   have ca := fun i (hi : i < 9) => callee_arg (base := base) (bytes := bytes) low gEsp hread hi

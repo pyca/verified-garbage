@@ -26,7 +26,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.RtCall
 open VG.Proof.Bignum.X86.PublicRt (argAt_alloc mulBody_noSp mulArgs_ok mulArg mulFrame_val32 mulFrame_hdr numAt
   wb nw wb_eq wb_le countLoop count1_zf)
-open VG.Spec.Rsa.MontMul (scratchBytes)
+open VG.Proof.Rsa.MontMul (scratchBytes)
 
 section
 variable {s t : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -66,7 +66,7 @@ theorem PcIn.offs (h : PcIn base bytes len args s) :
   have f5 := (h.fits (j := 5) (by decide)).2
   have := h.dimensions
   refine ⟨this.1, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [numAt, numOff, wb, invOff, scratchBytes, VG.Spec.Rsa.MontMul.Apart] at * <;> omega
+    simp only [numAt, numOff, wb, invOff, scratchBytes, VG.Proof.Rsa.MontMul.Apart] at * <;> omega
 
 end
 

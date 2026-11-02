@@ -22,7 +22,7 @@ contract's postcondition.
 namespace VG.Proof.Mont.X86.Sse2
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont.X86.Sse2 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Mont.X86.Rt
-open VG.Spec.Rsa.MontMul (Apart numAt scratchBytes)
+open VG.Proof.Rsa.MontMul (Apart numAt scratchBytes)
 open VG.Proof.Mont.X86.Dynamic (ofs_far)
 
 theorem read_val32 (m : Mem) (base : Addr) : ∀ (k d : Nat),
@@ -57,8 +57,8 @@ theorem atReady {s : State} (A : AtABI s) :
   rw [numAt_val32', numAt_val32'] at hb
   exact ⟨A.entry, Ly, atParams_ok A, VG.Proof.Mont.X86.Square.low_inverse s.mem (wsOf s) _ _ Ly.hN hinv, hb⟩
 
-theorem at_correct (s : State) (h : (Spec.Rsa.MontMul.mulContract abi 56).pre s) :
-    ∃ tr t, Exec isa atBody s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.MontMul.mulContract abi 56).post s t := by
+theorem at_correct (s : State) (h : (Proof.Rsa.MontMul.mulContract abi 56).pre s) :
+    ∃ tr t, Exec isa atBody s tr t ∧ abiPreserved s t ∧ (Proof.Rsa.MontMul.mulContract abi 56).post s t := by
   have A := atAbi_of h
   have R := atReady A
   obtain ⟨tr, t, E, lt, cong, mem, cs, -, -⟩ := body_ok R.entry R.ly atBody_noSp R.par R.inv R.bLt
@@ -77,7 +77,7 @@ theorem at_correct (s : State) (h : (Spec.Rsa.MontMul.mulContract abi 56).pre s)
       simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
         at hc
       omega
-  · sig_post [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes]
+  · sig_post [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes]
     refine ⟨?_, ?_, ?_⟩
     · rw [numAt_val32', numAt_val32']; exact lt
     · rw [numAt_val32', numAt_val32', numAt_val32', numAt_val32',

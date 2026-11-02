@@ -28,8 +28,8 @@ theorem sharedKernel_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(8, 8), 
     [(7, 1), (2, 1), (3, 1), (5, 1), (6, 1), (8, 1), (11, 16)] (Caller.callRanges w) := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append, Caller.callRanges,
-    mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil, Caller.pad, aOne, Spec.Rsa.Mont.arrAt,
-    Spec.Rsa.Mont.hdrBytes] at hr
+    mutRanges, Proof.MillerRabin.Round.compact, List.map_cons, List.map_nil, Caller.pad, aOne, Proof.Rsa.Mont.arrAt,
+    Proof.Rsa.Mont.hdrBytes] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact .inr ⟨(7, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
       by simp only [slot, hdrBytes]; omega_using []⟩
@@ -109,7 +109,7 @@ theorem sharedMid_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : 
     (hfrm.mono (fun r hr => List.mem_append_left _ hr)).trans
       (hfr.mono (fun r hr => List.mem_append_right _ hr))
   refine ⟨hct, het, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hfm, (hk.trans kt).mono (by decide)⟩
-  · simpa only [Spec.MillerRabin.round, passOf] using hf
+  · simpa only [Proof.MillerRabin.Round.round, passOf] using hf
   · rw [hfm.word_eq (d := 8 * kI) ?_ (by simp only [kI, kElen, sFn]; omega_arith)]
     · exact hI
     · intro r hr
@@ -217,13 +217,13 @@ theorem sharedRound_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm 
 theorem sharedRoundRanges_lt (w : Nat) : ∀ r ∈ sharedRoundRanges w, r.1 + r.2 ≤ slot w aE := by
   intro r hr
   simp only [sharedRoundRanges, sharedMidRanges, witnessRanges, witRanges, Caller.callRanges,
-    mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil, List.cons_append,
+    mutRanges, Proof.MillerRabin.Round.compact, List.map_cons, List.map_nil, List.cons_append,
     List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
     simp only [Caller.pad, slot, hdrBytes, aOne, aE, aX, aAcc, aTmp, aXm, aB,
-      kUsed, kU, kI, kUni, kStat, kElen, kP, sFn, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+      kUsed, kU, kI, kUni, kStat, kElen, kP, sFn, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
     omega_arith
 
 end VG.Proof.RsaKeyGen.AArch64

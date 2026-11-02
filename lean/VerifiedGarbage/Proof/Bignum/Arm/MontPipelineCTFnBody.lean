@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.MontPipeline
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt Operand)
+open VG.Proof.Rsa.Mont (arrAt Operand)
 
 theorem fnBody_ct (round : Prog isa) (law : LoopLaw round) (ctLaw : LoopCTLaw round) {base : BitVec 32} {len w o a b : Nat}
     (ho : Operand o) (ha : Operand a) (hb : Operand b) (fit : arrAt w 3 + 32 ≤ 8 * len) :

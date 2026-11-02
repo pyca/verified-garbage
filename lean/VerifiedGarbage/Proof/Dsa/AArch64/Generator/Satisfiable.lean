@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.ABI
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Dsa.GeneratorStageContract
 
 /-! # A state meets the generator stage's precondition
 
@@ -59,7 +60,7 @@ theorem sat_exponent {pLen : Nat} (hb : Supported pLen) :
 
 theorem satisfiable {pLen : Nat} (hb : Supported pLen) : ∃ s, (contract pLen).pre s := by
   refine ⟨satState pLen, ?_⟩
-  sig_pre [contract, Spec.Dsa.GeneratorStage.contract, Spec.Dsa.GeneratorStage.sig, abi, argRegs]
+  sig_pre [contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
   sig_and_intros
   all_goals first
     | exact sat_odd hb

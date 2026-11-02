@@ -7,9 +7,11 @@ public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # ARMv7 checked public RSA is verified against the shared RSA contract -/
@@ -34,12 +36,12 @@ def publicSatState : State where
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x3100, 64⟩, ⟨0x8000, 24⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x4000, 8448⟩]
 
-theorem public_contract_sat : ∃ s, (Spec.Rsa.publicCheckedContract abi 56).pre s := by
-  sig_implies_sat [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+theorem public_contract_sat : ∃ s, (Proof.Rsa.publicCheckedContract abi 56).pre s := by
+  sig_implies_sat [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     [publicSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.scratchWords] using publicSatState
 
-theorem public_verified : Verified target PublicFn.code (Spec.Rsa.publicCheckedContract abi 56) :=
+theorem public_verified : Verified target PublicFn.code (Proof.Rsa.publicCheckedContract abi 56) :=
   ⟨public_contract_correct, public_contract_ct, public_contract_sat⟩
 
 end VG.Proof.Bignum.Arm

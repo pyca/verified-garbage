@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 structure ExchangeMainInput (p : Inputs) (slots : List Nat) (yb xb : List Byte) (s : State) : Prop where
   context : Context p slots s
@@ -78,7 +78,7 @@ theorem exchangePower_finish (s : State) {p : Inputs} {slots : List Nat} {yb xb 
 theorem exchangeRange_finish (s : State) {p : Inputs} {slots : List Nat}
     (h : ExchangePowered p slots s) (stable : stableSlots slots = true) (odd : p.P % 2 = 1) :
     WP isa (VG.Impl.Ffdh.Arm.inRange 6) s (ExchangeFinishInput p slots) := by
-  have op6 : Operand 6 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op6 : Operand 6 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine WP.mono (inRange_ok s h.ready op6 (by decide) (by rw [h.modulus]; exact odd)) ?_
   rintro u ⟨ready, _, arrays, frame, rest⟩
   exact ⟨h.context.after_workspace frame rest ready.ptr (fun d hd => (stableSlots_at stable hd).1),
@@ -105,7 +105,7 @@ theorem exchangeMain_ct {p : Inputs} {slots : List Nat} {yb xb1 xb2 : List Byte}
     (P' := fun (s t : State) => ExchangePowerInput p slots yb xb1 s ∧ ExchangePowerInput p slots yb xb2 t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.toPowerAtInput, h.2.1.toPowerAtInput, h.2.2⟩) (fun _ _ h => h)
   have ranges := (inRange_ct (base := p.base) (len := p.len) (w := p.w)
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
     (P' := fun (s t : State) => ExchangePowered p slots s ∧ ExchangePowered p slots t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.ready, h.2.1.ready, h.2.2⟩) (fun _ _ h => h)
   unfold VG.Impl.Ffdh.Arm.Domain.Exchange.main

@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Impl.Bignum.Arm.Setup
 
 import VerifiedGarbage.Proof.Bignum.Arm.SetupArgs
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_reg)
 
 theorem setup_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -28,7 +28,7 @@ theorem setup_ok (s : State) {base : BitVec 32} {len w : Nat}
       Outs (State.addr base) [(48, 8), (64, 64)] s.mem t.mem ∧
       Rest [.r0, .r4, .r5, .r8, .lr] s t := by
   have nowrap := ws.nowrap
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have a48 : State.addr (s.gpr .r0 + BitVec.ofNat 32 48) = off (State.addr base) 48 := by
     rw [ptr]; exact addr_add (by omega)
   have a52 : State.addr (s.gpr .r0 + BitVec.ofNat 32 (48 + 4)) =

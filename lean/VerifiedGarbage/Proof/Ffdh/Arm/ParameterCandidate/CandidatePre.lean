@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
@@ -27,9 +28,9 @@ structure CandidateAbi (p : CandidateParams) (s : State) : Prop where
   capacity : stackArg s 4 = BitVec.ofNat 32 p.capacity
   bytes : Spec.Rsa.bytesAt s.mem (State.addr p.tape) p.bytes.length = p.bytes
 
-theorem candidatePublic (s : State) (pre : (Spec.Ffdh.sievedParameterCandidateContract abi 184).pre s) :
+theorem candidatePublic (s : State) (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre s) :
     ∃ p, CandidateAbi p s := by
-  sig_pre [Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+  sig_pre [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
   obtain ⟨_, _, _, _, outUsed, outTape, outScratch, _, usedTape, usedScratch, _, tapeScratch, _,
     _, _, _, _, _, outFit, usedFit, tapeFit, scratchFit, lower, upper, width, generator, space⟩ := pre

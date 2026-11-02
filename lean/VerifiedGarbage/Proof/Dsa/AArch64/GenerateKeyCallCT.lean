@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDerivePre
 import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
 import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 /-! # Key generation's calls, by their callees' leakage contracts -/
 
@@ -35,7 +36,7 @@ theorem keygen_check_ct (v : Backend) : RelCT isa (KeygenCheckRelated v)
   refine ⟨keygenCheckRd s, keygenCheckWr s, keygenCheckRd t, keygenCheckWr t,
     keygen_check_pre hs ha.sp a1 a2 a3 a4 a5 a6, keygen_check_pre ht hb.sp b1 b2 b3 b4 b5 b6, ?_,
     hca, hwa, hcb, hwb⟩
-  sig_pub [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
+  sig_pub [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
   rw [a1, a2, b1, b2, keygen_bytes_params ha, keygen_bytes_params hb, hp.params,
     a3, a4, a5, a6, b3, b4, b5, b6, ha.sp, hb.sp, hp.base]
   exact ⟨rfl, rfl, hp.regs .x3 (by decide), hp.regs .x4 (by decide), hp.regs .x5 (by decide),

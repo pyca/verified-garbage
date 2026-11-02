@@ -19,7 +19,7 @@ only assumes the stated power, header, frame, and register guarantees.
 
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_mov wp_dp op2_lsr op2_imm dpVal)
 
 abbrev HeaderKept (base : BitVec 32) (s t : State) : Prop :=
@@ -47,7 +47,7 @@ theorem digit_ok (s : State) {base : BitVec 32} {len w V : Nat}
       t.gpr .r11 = BitVec.ofNat 32 (V / 128 % 2) ∧ t.mem = s.mem ∧ Rest [.r11] s t := by
   have size : 256 ≤ 8 * len := by
     have fits := h.layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   unfold VG.Impl.Bignum.Arm.TwoExp.digit
   refine wp_ldr (a := off (State.addr base) 200) (by decide)
@@ -95,8 +95,8 @@ theorem bit_ok {base : BitVec 32} {len w M E V : Nat} {P : State → Prop} {regi
   have readyT := (powerZ.ready.after_array (by decide : 6 ≠ 0) keepsT frameT restT ptrT).1
   have fits : arrAt w 8 ≤ 8 * len := powerZ.ready.width ▸ powerZ.ready.layout.2.2.1
   have modulusT := (keeps_array_num keepsT fits (q := 0)
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerZ.modulus
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerZ.modulus
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have boundT : numAt t.mem (State.addr base) w 6 < M := by
     rw [selectT, digitNat]
     split

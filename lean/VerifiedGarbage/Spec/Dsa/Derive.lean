@@ -6,21 +6,18 @@ public import VerifiedGarbage.Spec.Dsa.Generate
 # DSA domain checks and key derivation: the parts of key generation (trusted)
 
 `generateKeyBytes` checks the domain before it consumes any randomness, then
-samples x, then derives and checks the key. A key-generation function built
-like the randomized signer, a frame that samples x around calls of verified
-functions, calls these two between and after the sampling:
+samples x, then derives and checks the key:
 
-* `vg_dsa_check_parameters` accepts exactly the supported widths and
-  domains that `generateKeyBytes` accepts (`checkParametersBytes`). All its
-  inputs are public.
+* `checkParametersBytes` accepts exactly the supported widths and domains
+  that `generateKeyBytes` accepts. All its inputs are public.
 * `vg_dsa_derive_key` derives the key from an explicitly supplied scalar x,
   with `generateKeyBytes`'s checks (`deriveKeyBytes`): the domain, x's range,
   y = g^x mod p and `keyValid`. x is secret: only the domain and success may
   affect timing.
 
-Like signing with a supplied nonce, deriving a key from a supplied x is
-for a caller that samples x itself: x must be a fresh uniform scalar. Both
-check algebraic consistency, not primality. Scratch may contain secrets on
+Deriving a key from a supplied x is for a caller that samples x itself: x
+must be a fresh uniform scalar. It checks algebraic consistency, not
+primality. Scratch may contain secrets on
 return and must be destroyed by the caller.
 -/
 
@@ -45,23 +42,6 @@ def deriveKeyBytes (pLen qLen : Nat) (params x : List Byte) : Option (List Byte)
     | none => none
     | some key => if keyValid key then some (encodePrivateKey pLen qLen key) else none
 
-def checkParametersSig : Sig where
-  params := [("params", .slice false .u8 "params_len"), ("p_len", .int .usize true),
-    ("q_len", .int .usize true), ("scratch", .slice true .u64 "scratch_len")]
-  ret := some .u32
-
-def checkParametersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  checkParametersSig.contract A
-    (pre := fun _params paramsLen pLen qLen _scratch scratchLen _ =>
-      lengthsValid pLen.toNat qLen.toNat ∧ paramsLen.toNat = 2 * pLen.toNat + qLen.toNat ∧
-        scratchWords pLen.toNat ≤ scratchLen.toNat)
-    (post := fun params paramsLen pLen qLen _scratch _scratchLen m _m' r =>
-      r.toNat = if checkParametersBytes pLen.toNat qLen.toNat (bytesAt m params paramsLen.toNat)
-        then 1 else 0)
-    (writeArgs := true) (stack := stack)
-    (leak := some fun params paramsLen _pLen _qLen _scratch _scratchLen m =>
-      (bytesAt m params paramsLen.toNat).map (·.toNat))
-
 def deriveKeySig : Sig where
   params := [("out", .slice true .u8 "out_len"), ("params", .slice false .u8 "params_len"),
     ("p_len", .int .usize true), ("x", .slice false .u8 "q_len"),
@@ -83,22 +63,6 @@ def deriveKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       let pb := bytesAt m params paramsLen.toNat
       pb.map (·.toNat) ++
         [signStatus (deriveKeyBytes pLen.toNat qLen.toNat pb (bytesAt m x qLen.toNat))])
-
-def checkParametersApi : Api where
-  module := "dsa"
-  name := "vg_dsa_check_parameters"
-  sig := checkParametersSig
-  writeArgs := true
-  contracts := some fun A stack => checkParametersContract A stack
-  summary := "DSA domain checks on big-endian p||q||g (widths p_len, q_len, p_len), \
-    those of key generation before it samples: returns 1 if the widths are supported \
-    and the domain is algebraically consistent (supported bit lengths, odd p and q, \
-    q divides p-1, 1 < g < p, g^q = 1 mod p), otherwise 0. Checks algebraic \
-    consistency, not primality. All inputs are public. \
-    Contract: `VG.Spec.Dsa.checkParametersContract`."
-  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
-    "params_len must be 2*p_len + q_len.",
-    "scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return."]
 
 def deriveKeyApi : Api where
   module := "dsa"

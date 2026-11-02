@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 private theorem memoryOfMem {p : Inputs} {sp : BitVec 32} {s t : State}

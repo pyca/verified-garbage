@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem pairEntry_ok {s : State} {dst base : BitVec 32} {n i : Nat}
     (h : SieveContext dst base n s) (bound : i < (trialCount n))

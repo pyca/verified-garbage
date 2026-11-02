@@ -166,7 +166,7 @@ theorem paCopy_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {k offset Q us
     (VG.Proof.Dsa.bitLength_iff_bounds (by omega)).mpr ⟨by omega, F.lt⟩⟩
   · rw [Env.Chg.word v C₆ (by simp only [fUsed, hdr]; omega) (fun o ho => by
       simp only [List.mem_singleton] at ho; subst ho; simp only [sPP, ppWords, fUsed, hdr]; omega), F.used]
-  · unfold Spec.Dsa.ProbablePrime.candidateAt
+  · unfold Proof.Dsa.ProbablePrime.candidateAt
     have b8 : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.pLen)).bits / 8 = g.pLen := by
       show 8 * g.pLen / 8 = g.pLen; omega
     rw [b8, VG.Offset.add_add, R₆, F.pk, VG.Proof.Dsa.decodeBE_encodeBE (by rw [e256]; exact F.lt)]
@@ -215,7 +215,7 @@ theorem pAttempt_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen
     fun a t h => by obtain ⟨u, _, P⟩ := h; exact P.base
   have hw : ∀ (a : Nat × Nat × Nat × Nat) t, (∃ u, TPre E (8 * g.pLen) (a.2.2.2, pcand g E a.1 a.2.1 a.2.2.1) u ∧
       TestPost E (8 * g.pLen) a.2.2.2 (pcand g E a.1 a.2.1 a.2.2.1) u t) →
-      t.mem.readW (off E.base fRes) 32 = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status
+      t.mem.readW (off E.base fRes) 32 = BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status
         (Spec.Dsa.probablePrime (pcand g E a.1 a.2.1 a.2.2.1) (E.witT.drop a.2.2.2))) :=
     fun a t h => by obtain ⟨u, _, P⟩ := h; exact P.res
   refine cmpF_ct (by simp only [fRes, hdr]; omega) (by decide) _ hb hw (fun _ => status_lt _)

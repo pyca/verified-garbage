@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Implies
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Params
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
@@ -25,7 +26,7 @@ open VG VG.PPC64LE VG.Impl.Dsa.PPC64LE
 
 /-- `vg_dsa_check_parameters`. -/
 theorem checkParameters_verified :
-    Verified target Params.checkParameters (Spec.Dsa.checkParametersContract abi) :=
+    Verified target Params.checkParameters (Proof.Dsa.checkParametersContract abi) :=
   Verified.of_correct checkParameters_correct checkParameters_ct checkParameters_implies
 
 end VG.Proof.Dsa.PPC64LE

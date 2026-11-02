@@ -56,7 +56,7 @@ theorem plainOne_pair {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 
   exact ⟨trace, ⟨U.context, Z.context, agree⟩, U, Z⟩
 
 theorem code_raw {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (InputPair g capacity p) (VG.Impl.RsaKeyGen.X86.Constants.code g.w name mont)
@@ -64,12 +64,12 @@ theorem code_raw {mont : Prog isa} {name : String}
   unfold VG.Impl.RsaKeyGen.X86.Constants.code
   rw [Prepared.slot_eq]
   refine RelCT.seq (plainOne_pair v) (RelCT.seq
-    (mulY_relCT (p := p) (b := 4) verified noSp stack v length (by unfold Spec.Rsa.Mont.Operand; decide))
+    (mulY_relCT (p := p) (b := 4) verified noSp stack v length (by unfold Proof.Rsa.Mont.Operand; decide))
     (RelCT.seq (copy_relCT v 9 6 (by decide) (by decide)) ?_))
   exact (subtract_raw g.w).mono (fun _ _ H => H.2.2) (fun _ _ H => H)
 
 theorem code_trace {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (InputPair g capacity p) (VG.Impl.RsaKeyGen.X86.Constants.code g.w name mont) (Pair g [.edi]) := by

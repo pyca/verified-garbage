@@ -46,6 +46,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.OddInverseQuotient
 import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DEven
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEvenFrame
+public import VerifiedGarbage.Spec.Rsa.Contract
 /-! # The native factor, LCM, and private-inverse stages compose -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/DOne.lean`, which only this module imported.

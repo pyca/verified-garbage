@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
 public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Offset
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
 meta import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.MontFn
-meta import VerifiedGarbage.Spec.Rsa.Mont
+meta import VerifiedGarbage.Proof.Rsa.MontContract
 meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand)
 
 structure FnBodyReady (base : BitVec 32) (len w o a b : Nat) (s : State) : Prop where
   workspace : Workspace s base (8 * len)
@@ -34,7 +34,7 @@ structure FnBodyReady (base : BitVec 32) (len w o a b : Nat) (s : State) : Prop 
   aIndex : s.gpr .r3 = BitVec.ofNat 32 a
   bIndex : s.gpr .r12 = BitVec.ofNat 32 b
   inverse : ((word s.mem (State.addr base) (arrAt w 0)).toNat *
-    (wordAt s.mem (State.addr base) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
+    (wordAt s.mem (State.addr base) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
   operand : numAt s.mem (State.addr base) w b < numAt s.mem (State.addr base) w 0
 
 theorem bases_ready {base : BitVec 32} {len w o a b : Nat}
@@ -48,7 +48,7 @@ theorem bases_ready {base : BitVec 32} {len w o a b : Nat}
   rw [h.width] at header
   obtain ⟨ctx, _⟩ := layout_context h.workspace hw fits ho ha hb
   have bound : 128 ≤ 8 * len := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   refine WP.mono (bases_ok s h.workspace bound header ho.1 ha.1 hb.1 h.ptr h.outIndex h.aIndex h.bIndex) ?_
   rintro t ⟨regs, mem, keep⟩

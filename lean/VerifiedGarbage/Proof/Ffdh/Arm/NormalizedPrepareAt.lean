@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Block
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem normalizedPrepareAt24_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat}
     (h : Context p slots s) (calls : KeyCallMemory p s)

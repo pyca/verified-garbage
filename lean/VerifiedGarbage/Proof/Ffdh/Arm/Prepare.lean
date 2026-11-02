@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! Reuse RSA's native modulus preparation without imposing public-RSA
 exponent restrictions on FFDH scalars. -/
@@ -20,7 +20,7 @@ exponent restrictions on FFDH scalars. -/
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure PrepareInput (base src : BitVec 32) (len k : Nat) (s : State) : Prop where
   workspace : Workspace s base (8 * len)

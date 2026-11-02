@@ -19,7 +19,7 @@ working space), a selection and a comparison.
 namespace VG.Proof.MillerRabin.Arm
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.MillerRabin.Arm VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout)
 
 theorem wDs_sep : ∀ d ∈ wDs, ∀ e ∈ wDs, d ≠ e → d + 4 ≤ e ∨ e + 4 ≤ d := by decide
 theorem wDs_hdr : ∀ d ∈ wDs, d + 4 ≤ hdr := by decide

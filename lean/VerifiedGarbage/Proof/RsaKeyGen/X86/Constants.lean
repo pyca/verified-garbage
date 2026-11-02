@@ -69,7 +69,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof
 def clob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi]
 
 theorem code_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Ready g c capacity p s) (odd : c % 2 = 1) (positive : 0 < c)
@@ -84,7 +84,7 @@ theorem code_ok {mont : Prog isa} {name : String}
   refine WP.seq (WP.mono (plainOne_ok v S) fun a ⟨A, one, r2Same, Oa, Ka⟩ => ?_)
   have r2A := r2Same.trans r2
   refine WP.seq (WP.mono (mulY_ok verified noSp stack v A.context length A.modulus
-    (by unfold Spec.Rsa.Mont.Operand; decide) odd (by rw [r2A]; exact Nat.mod_lt _ positive)
+    (by unfold Proof.Rsa.Mont.Operand; decide) odd (by rw [r2A]; exact Nat.mod_lt _ positive)
     A.caller.readLen (by rw [A.caller.sp]; exact A.caller.low) (by rw [A.caller.sp]; exact A.caller.stackFar))
     fun b ⟨Vb, Ob, Kb, Cb, Mb, Fb⟩ => ?_)
   rw [A.caller.sp] at Fb

@@ -29,7 +29,7 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitial
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (wp_mov op2_imm)
 
 def InitialInput (p : Inputs) (sp : BitVec 32) (s : State) : Prop :=
@@ -76,8 +76,8 @@ theorem initialValues_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} (
     rintro u ⟨_,ready,_,keeps,frame,rest⟩
     have memory := h.1.after_arithmetic ready (frame.mono (by simp)) rest
     have fit := h.1.ready.width ▸ h.1.ready.layout.2.2.1
-    have modulus := (keeps_array_num keeps fit (by simp [Spec.Rsa.Mont.Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]) (by decide : 0≠1)).trans h.2.1
-    have r2 := (keeps_array_num keeps fit (by simp [Spec.Rsa.Mont.Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]) (by decide : 4≠1)).trans h.2.2
+    have modulus := (keeps_array_num keeps fit (by simp [Proof.Rsa.Mont.Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]) (by decide : 0≠1)).trans h.2.1
+    have r2 := (keeps_array_num keeps fit (by simp [Proof.Rsa.Mont.Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]) (by decide : 4≠1)).trans h.2.2
     exact ⟨⟨ready,by rw [r2,modulus]; exact Nat.mod_lt _ (by have := ready.modulus; rw [modulus] at this; omega)⟩,
       memory.calls.stack,memory.fixed⟩
   exact relCT_chain ((importAt_ct (p:=p) (slots:=slots) (k:=p.k) (by decide) (by simp [slots])

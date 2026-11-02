@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem isOne_ok (s : State) {base : BitVec 32} {len w a : Nat}
@@ -29,7 +29,7 @@ theorem isOne_ok (s : State) {base : BitVec 32} {len w a : Nat}
   rw [VG.Impl.Ffdh.Arm.isOne, WP.seq_iff]
   refine WP.mono (smallConst_ok s 1 h (by decide : 7 < 8) (by decide) (by decide) (by decide)) ?_
   rintro u ⟨readyU, one, _, keepsU, frameU, restU⟩
-  refine WP.mono (equal_ok u readyU ha (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])) ?_
+  refine WP.mono (equal_ok u readyU ha (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])) ?_
   rintro t ⟨ready, flag, arraysT, frameT, restT⟩
   rw [one, keeps_array_num keepsU fits ha na7] at flag
   exact ⟨ready, flag, fun q hq nq => (arraysT q hq).trans (keeps_array_num keepsU fits hq nq),

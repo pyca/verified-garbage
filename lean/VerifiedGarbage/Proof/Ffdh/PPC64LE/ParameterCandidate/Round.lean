@@ -43,7 +43,7 @@ theorem stat_eq {i K : Nat} (hi : i < 2 ^ 62) (hK : K < 2 ^ 62) :
 /-- What `round` leaves: the round's state `u` (`RcPost`), and the status
 and count stored over it. -/
 def RdPost (s : State) (B : Addr) (L w c a i K : Nat) (t : State) : Prop :=
-  ∃ u, RcPost s B L w c a u ∧ (t.mem = if Spec.MillerRabin.round c a then
+  ∃ u, RcPost s B L w c a u ∧ (t.mem = if Proof.MillerRabin.Round.round c a then
       (u.mem.writeW (B + BitVec.ofNat 64 176) (BitVec.ofNat 64 (i + 1))).writeW (B + BitVec.ofNat 64 160)
         (BitVec.ofNat 64 (if i + 1 < K then 4 else 1))
     else u.mem.writeW (B + BitVec.ofNat 64 160) (BitVec.ofNat 64 2)) ∧ Keep [.r3, .r4, .r5] u t
@@ -63,16 +63,16 @@ theorem roundCount_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a i K : Nat}
   have hs : Scr u B (8 * L) := hu.prep.env.hs
   have h31 : u.gpr .r31 = B := hu.prep.env.h31
   have l160 : InRegions u.wr (B + BitVec.ofNat 64 160) 8 := hs.st (d := 160) (by omega_arith)
-  refine WP.ite (decide ((if Spec.MillerRabin.round c a then 1 else 0) = 0))
+  refine WP.ite (decide ((if Proof.MillerRabin.Round.round c a then 1 else 0) = 0))
     (eval_zero_ofNat u .r3 (by split <;> decide) hu.r3) (fun hb => ?_) (fun hb => ?_)
-  · have hf : Spec.MillerRabin.round c a = false := by
-      cases hr : Spec.MillerRabin.round c a <;> simp_all
+  · have hf : Proof.MillerRabin.Round.round c a = false := by
+      cases hr : Proof.MillerRabin.Round.round c a <;> simp_all
     refine WP.mono (WP.keep [.r3] (Q := fun t => t.mem = u.mem.writeW (B + BitVec.ofNat 64 160)
       (BitVec.ofNat 64 2)) ?_ (by decide)) fun t ⟨tm, kt⟩ => ⟨u, hu, by rw [tm, hf]; rfl, kt.mono (by decide)⟩
     simp only [sth, hStat]
     prun [h31, l160]
-  · have ht : Spec.MillerRabin.round c a = true := by
-      cases hr : Spec.MillerRabin.round c a <;> simp_all
+  · have ht : Proof.MillerRabin.Round.round c a = true := by
+      cases hr : Proof.MillerRabin.Round.round c a <;> simp_all
     have rI : u.mem.readW (B + BitVec.ofNat 64 176) 64 = BitVec.ofNat 64 i :=
       (keeps_word hu.keeps (d := 176) (by omega_arith) (by kept_tac)).trans hI
     have rK : u.mem.readW (B + BitVec.ofNat 64 168) 64 = BitVec.ofNat 64 K :=

@@ -21,13 +21,13 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Impl.MillerRabin.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 theorem Data.multiply {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : List Nat}
     {V : Nat → BitVec 32} {Ds : List Nat} {s : State} (D : Data g A Js V Ds s)
     {capacity b c : Nat} {p : BitVec 32} (length : g.L = 8 * capacity)
     (M : Modulus g c s.mem) (C : Caller g capacity p s)
-    (right : Spec.Rsa.Mont.Operand b) (odd : c % 2 = 1) (rightLt : A b < c)
+    (right : Proof.Rsa.Mont.Operand b) (odd : c % 2 = 1) (rightLt : A b < c)
     (bKnown : b ∈ Js) (yKnown : 6 ∈ Js) (noScratch : ∀ j ∈ Js, j ≠ 2 ∧ j ≠ 3) :
     WP isa (mulY name code b) s fun t =>
       Data g (setAt A 6 (Word32.mm c g.w (A 6) (A b))) Js V Ds t ∧
@@ -75,12 +75,12 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Impl.MillerRabin.X86 VG.Proof.Mont VG.Proof.Mont.X86
 
 theorem Stage.multiply {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitVec 32}
     {A : Nat → Nat} {Js : List Nat} {V : Nat → BitVec 32} {Ds : List Nat} {s : State}
     (S : Stage g capacity c p A Js V Ds s) (length : g.L = 8 * capacity)
-    (b : Nat) (right : Spec.Rsa.Mont.Operand b) (odd : c % 2 = 1) (rightLt : A b < c)
+    (b : Nat) (right : Proof.Rsa.Mont.Operand b) (odd : c % 2 = 1) (rightLt : A b < c)
     (bKnown : b ∈ Js) (yKnown : aY ∈ Js) :
     WP isa (mulY name code b) s fun t =>
       Stage g capacity c p (setAt A aY (Word32.mm c g.w (A aY) (A b))) Js V Ds t ∧

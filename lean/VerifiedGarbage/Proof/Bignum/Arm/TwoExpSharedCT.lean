@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontCallOpCT
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm VG.Arm.FrameStack
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 theorem sharedMontgomeryTiming (base sp : BitVec 32) (len w : Nat) (name : String) (callee : Prog isa)
     (correct : ∀ (o a b : Nat), Operand o → Operand a → Operand b →

@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem crt_importFinalResidue_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
@@ -44,7 +44,7 @@ theorem crt_importFinalResidue_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → 
       (header 228 (by decide)).trans sharedU.main.q, (header 232 (by decide)).trans sharedU.main.product,
       (header 236 (by decide)).trans sharedU.main.compare, (header 240 (by decide)).trans sharedU.main.modulus⟩
   have modulus := keeps_array_num keeps h.buffers.context.arraysFit
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 0) (by decide : 0 ≠ 1)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 0) (by decide : 0 ≠ 1)
   have sharedT := sharedU.after_main (frame.mono (by simp)) rest mainT modulus
   rw [memU] at value frame
   exact ⟨sharedT, readyT, value, frame, (restU.mono (by decide)).trans rest⟩

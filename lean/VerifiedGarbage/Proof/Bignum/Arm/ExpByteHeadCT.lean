@@ -25,7 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (wp_ldr)
 
 theorem expByteHead_ct {base ep : BitVec 32} {len w : Nat} :
@@ -47,7 +47,7 @@ theorem expByteHead_ct {base ep : BitVec 32} {len w : Nat} :
   have wp (s : State) (h : P s) : WP isa (.block [.ldr .r2 .r0 128]) s Q := by
     have size : 132 ≤ 8 * len := by
       have := h.1.layout.2.2.1
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+      simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
       omega
     refine wp_ldr (a := VG.Proof.Mont.off (State.addr base) 128) (by decide)
       (by rw [h.1.ptr]; exact addr_add (by have := h.1.workspace.nowrap; omega))

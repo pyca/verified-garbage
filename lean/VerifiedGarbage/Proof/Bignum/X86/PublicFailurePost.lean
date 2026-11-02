@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Bignum.PublicWritten
 public import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
 
 /-! # The checked-RSA contract's postcondition, and the failure path meeting it -/

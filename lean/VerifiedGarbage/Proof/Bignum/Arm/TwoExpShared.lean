@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontCallOp
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm VG.Arm.FrameStack VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 abbrev CallReady (base sp : BitVec 32) (len : Nat) (s : State) : Prop :=
   CallStack base len s ∧ s.sp = sp

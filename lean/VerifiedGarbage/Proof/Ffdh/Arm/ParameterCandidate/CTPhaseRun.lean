@@ -229,7 +229,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Ffdh.Arm.KeySearch (Two)
 open VG.Proof.MillerRabin.Arm (RoundImpl LayoutLite PreparedLite roundPre roundPub)
-open VG.Spec.Rsa.Mont (wOf)
+open VG.Proof.Rsa.Mont (wOf)
 
 structure SharedRoundStart (p : MontMathData) (s : State) : Prop where
   workspace : Workspace s p.base (8 * p.capacity)
@@ -294,7 +294,7 @@ section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Ffdh.Arm.KeySearch
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 
 structure RoundKernelData where
   math : MontMathData
@@ -316,7 +316,7 @@ private structure RoundEncoded (p : RoundKernelData) (s : State) : Prop where
 private theorem encodeReady_ok (p : RoundKernelData) (s : State) (h : RoundKernelStart p s) :
     WP isa (VG.Impl.Bignum.Arm.montOp 5 1 4) s (RoundEncoded p) := by
   have operand (j : Nat) (member : j = 1 ∨ j = 5) : Operand j := by
-    rcases member with rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases member with rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine WP.mono (montEncode_ok s h.ready (operand 5 (by simp)) (operand 1 (by simp)) (by decide)
     h.data.modulus h.data.odd h.data.r2) ?_
   rintro t ⟨ready, _, encoded, keeps, frame, rest⟩
@@ -342,10 +342,10 @@ private theorem encodeReady_ct : RelCT isa (Two RoundKernelStart)
   intro s t trS trT u v h runS runT
   obtain ⟨p, left, right, sp⟩ := h
   have op (j : Nat) (member : j = 1 ∨ j = 4 ∨ j = 5) : Operand j := by
-    rcases member with rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases member with rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have fit : arrAt p.math.words 3 + 32 ≤ 8 * p.math.capacity := by
     have fits : arrAt p.math.words 8 ≤ 8 * p.math.capacity := left.ready.width ▸ left.ready.layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits ⊢
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits ⊢
     omega
   have boundL : numAt s.mem (State.addr p.math.base) p.math.words 4 < numAt s.mem (State.addr p.math.base) p.math.words 0 := by
     rw [left.data.r2, left.data.modulus]
@@ -458,7 +458,7 @@ theorem drawRange_ct : RelCT isa (Two DrawStart)
   refine sample.seq ?_
   intro s t trS trT u v h runS runT
   obtain ⟨p, left, right, sp⟩ := h
-  exact VG.Proof.Ffdh.Arm.inRange_ct (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Spec.Rsa.Mont.Operand 1) (by decide : 1 ≠ 7)
+  exact VG.Proof.Ffdh.Arm.inRange_ct (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Proof.Rsa.Mont.Operand 1) (by decide : 1 ≠ 7)
     _ _ _ _ _ _ ⟨left, right, sp⟩ runS runT
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -541,7 +541,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Ffdh.Arm.KeySearch
 open VG.Proof.MillerRabin.Arm (RoundImpl)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure RoundPoint where
   params : WitnessParams
@@ -567,7 +567,7 @@ private theorem roundStart_kernel (p : RoundPoint) (s : State) (h : RoundStart p
 private structure RoundReturned (p : RoundPoint) (s : State) : Prop where
   state : WitnessState p.params p.used p.passed s
   more : p.passed < p.params.checks
-  result : (s.gpr .r0).toNat = if Spec.MillerRabin.round p.params.modulus p.witness then 1 else 0
+  result : (s.gpr .r0).toNat = if Proof.MillerRabin.Round.round p.params.modulus p.witness then 1 else 0
 
 private theorem roundReturned_ok (v : RoundImpl) (p : RoundPoint) (s : State) (h : RoundStart p s) :
     WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel v.name v.code) s (RoundReturned p) := by
@@ -581,7 +581,7 @@ private theorem roundReturned_ok (v : RoundImpl) (p : RoundPoint) (s : State) (h
 private structure RoundCompared (p : RoundPoint) (s : State) : Prop where
   state : WitnessState p.params p.used p.passed s
   more : p.passed < p.params.checks
-  zero : s.z = !(Spec.MillerRabin.round p.params.modulus p.witness)
+  zero : s.z = !(Proof.MillerRabin.Round.round p.params.modulus p.witness)
 
 private theorem roundCompared_ok (p : RoundPoint) (s : State) (h : RoundReturned p s) :
     WP isa (.block [.cmp .r0 (.imm 0)]) s (RoundCompared p) := by
@@ -625,7 +625,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Ffdh.Arm.KeySearch
 open VG.Proof.MillerRabin.Arm (RoundImpl)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 def DrawMore (p : DrawPoint) (s : State) : Prop := DrawStart p s ∧ p.passed < p.params.checks
 
@@ -925,7 +925,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.Ffdh.Arm.KeySearch (Two two_post two_map)
 
 def montMath (p : MontInputData) : MontMathData := ⟨p.base, p.capacity, Spec.Rsa.modulusWords p.k⟩

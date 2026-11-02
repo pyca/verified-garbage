@@ -19,7 +19,7 @@ open VG.Impl.Bignum.X86.PublicContext
 def coreRanges (g : Geometry) : List (Nat × Nat) := phaseRanges g ++ montWrites g 6
 
 theorem core_okAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Ready g c capacity p s) (bound : g.w ≤ 64)
@@ -40,7 +40,7 @@ theorem core_okAt {mont : Prog isa} {name : String}
       (T.workspace.mono (fun r mem => List.mem_append_right _ mem))⟩
 
 theorem core_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Ready g c capacity p s) (bound : g.w ≤ 64)

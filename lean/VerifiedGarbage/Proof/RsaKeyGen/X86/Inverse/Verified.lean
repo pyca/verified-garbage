@@ -4,8 +4,10 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Correct
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.ConstantTime
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 
 /-! # `vg_rsa_keygen_inverse` is verified against its contract -/
 
@@ -42,7 +44,7 @@ theorem sat_argument2 : arg satState 2 = satArgument 2 := by decide +kernel
 
 theorem satisfiable : ∃ s, contract.pre s := by
   refine ⟨satState, ?_⟩
-  sig_pre [contract, inverseStack, Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig,
+  sig_pre [contract, inverseStack, Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig,
     abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sat_argument0, sat_argument1, sat_argument2]
   sig_and_intros

@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SquareUmaalDiag
 import VerifiedGarbage.Proof.Bignum.Arm.SquareBody
 import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
 import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
@@ -80,7 +80,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem squareBodyU_ok (s : State) {base : BitVec 32} {len o a : Nat}
@@ -89,7 +89,7 @@ theorem squareBodyU_ok (s : State) {base : BitVec 32} {len o a : Nat}
     (ptr : s.gpr .r0 = base) (po : s.gpr .r2 = BitVec.ofNat 32 o)
     (pa : s.gpr .r3 = BitVec.ofNat 32 a) (pb : s.gpr .r12 = BitVec.ofNat 32 a)
     (inverse : ((word s.mem (State.addr base) (arrAt (wOf s.mem (State.addr base)) 0)).toNat *
-      (wordAt s.mem (State.addr base) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0)
+      (wordAt s.mem (State.addr base) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0)
     (operand : numAt s.mem (State.addr base) (wOf s.mem (State.addr base)) a <
       numAt s.mem (State.addr base) (wOf s.mem (State.addr base)) 0)
     (stackRead : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4)
@@ -108,7 +108,7 @@ theorem squareBodyU_ok (s : State) {base : BitVec 32} {len o a : Nat}
   have fits : arrAt w 8 ≤ 8 * len := layout.2.2.1
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   have bound : 128 ≤ 8 * len := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   rw [squareBodyU, WP.seq_iff]
   refine WP.mono (bases_ok s ws bound header ho.1 ha.1 ha.1 ptr po pa pb) ?_
@@ -133,7 +133,7 @@ end
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest wp_cmp op2_reg)
 
 theorem montCallSquareUArithmetic_ok (s : State) {base : BitVec 32} {len w o a b : Nat}

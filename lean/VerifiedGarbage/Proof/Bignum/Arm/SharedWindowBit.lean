@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowArithmetic
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 theorem sharedWindowSquare_ok {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len w P regions) (s : State) {M x A p q V : Nat}
@@ -25,7 +25,7 @@ theorem sharedWindowSquare_ok {base : BitVec 32} {len w : Nat} {P : State → Pr
       u.mem.readW (off (State.addr base) 200) 32 = BitVec.ofNat 32 V ∧
       KeepsExp base s.mem u.mem ∧ P u ∧ Frame regions s.mem u.mem ∧ Rest roundClobbers s u := by
   have fits := h.fits
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
   refine WP.mono (sharedExpSquare_ok K s h.power hp) ?_
   rintro u ⟨powerU, keepsU, pU, frameU, restU⟩
   have hdrU (d : Nat) (hd : d + 4 ≤ 256) :=
@@ -83,7 +83,7 @@ theorem sharedWindowRound_ok {base : BitVec 32} {len w : Nat} {P : State → Pro
       P t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.fits
   have nowrap := h.power.ready.workspace.nowrap
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
   rw [SharedWindow.round, WP.seq_iff]
   refine WP.mono (sharedWindowBit_ok K s h hp hv byte) ?_
   rintro u ⟨⟨A', p', stateU, sum⟩, keepsU, pU, frameU, restU⟩

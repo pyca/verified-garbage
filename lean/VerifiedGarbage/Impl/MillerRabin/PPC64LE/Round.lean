@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
 # The shared Miller–Rabin round on PPC64LE
 
 `vg_miller_rabin_round(ws = r3, ws_len = r4)`, from a prepared workspace in
-the compact representation (`Spec.MillerRabin.compact`): the candidate `c`
+the compact representation (`Proof.MillerRabin.Round.compact`): the candidate `c`
 in array 0, the witness `b R mod c` in array 5, `R mod c` in array 9,
 `c − R mod c` in array 10, the exponent `E = (c − 1) / 2^σ` in array 27,
 followed by `l = 2^(v₂(c − 1) mod 64)`; the table of `T_j = b^j R mod c`

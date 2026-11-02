@@ -16,7 +16,7 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Impl.MillerRabin.X86 VG.Proof.Dsa.X86
 
 theorem prepareRun_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (Two g (CoreStart g capacity p))
@@ -30,7 +30,7 @@ theorem prepareRun_relCT {code : Prog isa} {name : String}
     ⟨⟨ρ.c, ρ.A, ρ.V, []⟩, T, mathT.1, mathT.2.1⟩⟩
 
 theorem coreWords_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (Two g (CoreRun g capacity p)) (.loop (wordStep name code) .ne) (Two g (CoreWords g capacity p)) := by
@@ -45,7 +45,7 @@ theorem coreMarker_relCT {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitV
     (fun _ _ H => H.marker v) (fun _ _ H => H.1.data.context)
 
 theorem core_trace {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (Two g (CoreStart g capacity p)) (core name code) (VG.X86.Taint.Agree (roundTaint [.edi])) := by

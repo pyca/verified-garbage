@@ -30,7 +30,7 @@ namespace VG.Proof.MillerRabin.Arm
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.MillerRabin.Arm VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 
 /-- A stage with the key view's registers. -/
 abbrev St (P : MP) (E : State → Prop) (A : State → Nat → Nat) (L : List Nat) (V : State → Nat → Nat)
@@ -114,8 +114,8 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
     VP (St P E A (aY :: L) V LS) (seqs (mulY (fios := fios) b))
       (St P E (fun σ => upd (A σ) aY (mm (cOf P σ.mem) P.w (A σ aY) (A σ b))) (aY :: L) V LS) := by
   have opd : Operand aY ∧ Operand b := by
-    refine ⟨by simp [Operand, aY, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp], ?_⟩
-    rcases hb with rfl | rfl <;> simp [Operand, aY, aX, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    refine ⟨by simp [Operand, aY, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp], ?_⟩
+    rcases hb with rfl | rfl <;> simp [Operand, aY, aX, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   simp only [mulY, seqs]
   let G1 := fun σ s => St P E A (aY :: L) V LS σ s ∧ s.gpr .r0 = P.ws
   let G2 := AfterM P E A L V LS (fun σ => mm (cOf P σ.mem) P.w (A σ aY) (A σ b))
@@ -147,7 +147,7 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
     · intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
       have len := hp.1.1.2.1.pre.len
       have ct := Arithmetic.product_ct fios (base := P.ws) (len := P.len) (w := P.w) opd.1 opd.1 opd.2
-        (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith)
+        (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith)
       exact ct s₁ s₂ t₁ t₂ u₁ u₂ ⟨rdy _ _ hp.1, rdy _ _ hp.2, by
         rw [hp.1.1.2.1.sp, hp.1.1.2.1.pre.sp, hp.2.1.2.1.sp, hp.2.1.2.1.pre.sp]⟩ e₁ e₂
     · obtain ⟨ar, lt⟩ := rdy σ s hs
@@ -202,7 +202,7 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
 theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E σ → A σ aY < cOf P σ.mem) (fios : Bool := false) :
     VP (St P E A (aY :: L) V LS) (seqs (sqY (fios := fios)))
       (St P E (fun σ => upd (A σ) aY (mm (cOf P σ.mem) P.w (A σ aY) (A σ aY))) (aY :: L) V LS) := by
-  have opd : Operand aY := by simp [Operand, aY, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have opd : Operand aY := by simp [Operand, aY, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have hbL : aY ∈ aY :: L := List.mem_cons_self
   have hbv := hYv
   simp only [sqY, seqs]
@@ -236,7 +236,7 @@ theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E 
     · intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
       have len := hp.1.1.2.1.pre.len
       have ct := Arithmetic.square_ct fios (base := P.ws) (len := P.len) (w := P.w) opd opd
-        (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith)
+        (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith)
       exact ct s₁ s₂ t₁ t₂ u₁ u₂ ⟨rdy _ _ hp.1, rdy _ _ hp.2, by
         rw [hp.1.1.2.1.sp, hp.1.1.2.1.pre.sp, hp.2.1.2.1.sp, hp.2.1.2.1.pre.sp]⟩ e₁ e₂
     · obtain ⟨ar, lt⟩ := rdy σ s hs

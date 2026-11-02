@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! # The prepared 64-bit contract implies native-word arithmetic conditions -/
 
 @[expose] public section
 namespace VG.Proof.Mont.X86.Compact
-open VG VG.Proof.Mont VG.Spec.Rsa.Mont
+open VG VG.Proof.Mont VG.Proof.Rsa.Mont
 
 theorem numAt_val32 (m : Mem) (W : Addr) (w j : Nat) :
     numAt m W w j = val32 m W (arrAt w j) (2 * w) := by

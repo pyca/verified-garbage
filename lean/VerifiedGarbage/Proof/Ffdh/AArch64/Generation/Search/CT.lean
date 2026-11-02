@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.LeafCT
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Classify
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -20,6 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # The parameter search's timing depends on its public data alone (AArch64)
 

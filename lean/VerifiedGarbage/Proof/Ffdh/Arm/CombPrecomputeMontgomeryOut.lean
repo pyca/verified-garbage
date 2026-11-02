@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem montgomeryOutArgs_ok (s : State) {p : Inputs} {sp : BitVec 32} (h : Memory p sp s) :
     WP isa (.block [.ldrSp .r4 4,.dp .add .r4 .r4 (.imm 24)]) s fun t =>

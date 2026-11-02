@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Encoding
+public import VerifiedGarbage.Proof.RsaPss.EncodingContract
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.Mem
@@ -25,10 +25,10 @@ open VG VG.AArch64
 open VG.Proof.RsaPkcs1Sig.AArch64 (Callee ArgsEq argsEq_regs)
 
 /-- `vg_rsa_pss_<H>_mgf1_<H>_encode` and its variants. -/
-abbrev EncImpl (G : Spec.Mgf1.Hash) := Callee fun K => Spec.RsaPss.encodeContract G G abi K
+abbrev EncImpl (G : Spec.Mgf1.Hash) := Callee fun K => Proof.RsaPss.encodeContract G G abi K
 
 /-- `vg_rsa_pss_<H>_mgf1_<H>_check_encoding` and its variants. -/
-abbrev ChkImpl (G : Spec.Mgf1.Hash) := Callee fun K => Spec.RsaPss.checkEncodingContract G G abi K
+abbrev ChkImpl (G : Spec.Mgf1.Hash) := Callee fun K => Proof.RsaPss.checkEncodingContract G G abi K
 
 /-- The `K` bytes below the stack pointer. -/
 abbrev stkR (K : Nat) (t : State) : Region := ⟨t.sp - BitVec.ofNat 64 K, K⟩
@@ -61,14 +61,14 @@ structure EncOk (D K : Nat) (t : State) : Prop where
   wsa : (t.gpr .x3).toNat + (t.gpr .x4).toNat ≤ 2 ^ 64
   ws : (t.gpr .x6).toNat + (t.gpr .x7).toNat * 8 ≤ 2 ^ 64
   b1 : 1 ≤ (t.gpr .x5).toNat
-  b2 : (t.gpr .x5).toNat ≤ Spec.RsaPss.maxEmBits
+  b2 : (t.gpr .x5).toNat ≤ Proof.RsaPss.maxEmBits
   hel : (t.gpr .x1).toNat = Spec.RsaPss.emLength (t.gpr .x5).toNat
-  hs : Spec.RsaPss.encodingScratchWords ≤ (t.gpr .x7).toNat
+  hs : Proof.RsaPss.encodingScratchWords ≤ (t.gpr .x7).toNat
 
 theorem EncOk.pre {G : Spec.Mgf1.Hash} {K : Nat} {t : State} (hK : 0 < K) (h : EncOk G.len K t) :
-    (Spec.RsaPss.encodeContract G G abi K).pre (t.callEntry.withRegions (encRd G.len t) (encWr t)) := by
+    (Proof.RsaPss.encodeContract G G abi K).pre (t.callEntry.withRegions (encRd G.len t) (encWr t)) := by
   obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
-  sig_pre [Spec.RsaPss.encodeContract, Spec.RsaPss.encodeSig, abi, argRegs, List.append_eq]
+  sig_pre [Proof.RsaPss.encodeContract, Proof.RsaPss.encodeSig, abi, argRegs, List.append_eq]
   exact ⟨h.sp1, h.ed, h.esa, h.es, h.ds, h.sas, h.ke, h.kd, h.ksa, h.ks, h.we, h.wd, h.wsa, h.ws, h.b1,
     h.b2, h.hel, h.hs⟩
 
@@ -84,11 +84,11 @@ theorem encCall {G : Spec.Mgf1.Hash} (c : EncImpl G) {t : State} {Q : State → 
             Spec.Rsa.bytesAt s'.mem (t.gpr .x0) (t.gpr .x1).toNat = e
         | none => (s'.gpr .x0).setWidth 32 = (0 : BitVec 32)) → Q s') :
     WP isa (.call c.name c.code) t Q := by
-  refine WP.callFV (k := Spec.RsaPss.encodeContract G G abi c.stack) c.verified.1 (h.pre c.pos)
+  refine WP.callFV (k := Proof.RsaPss.encodeContract G G abi c.stack) c.verified.1 (h.pre c.pos)
     (Covers.append_left (Covers.trans h.hrd (Covers.refl _)) (Covers.right h.hwr)) h.hwr ?_
     (by have := c.le; have := c.depth; omega)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
-  sig_post [Spec.RsaPss.encodeContract, Spec.RsaPss.encodeSig, abi, argRegs, List.append_eq] at hpost
+  sig_post [Proof.RsaPss.encodeContract, Proof.RsaPss.encodeSig, abi, argRegs, List.append_eq] at hpost
   exact hQ s' hrd' hwr' hsp' hf hpres hvs hpost
 
 /-- Two calls of `encode` leak alike if their arguments agree. -/
@@ -100,7 +100,7 @@ theorem encCallCT {G : Spec.Mgf1.Hash} (c : EncImpl G) {P : State → State → 
   refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
     Covers.append_left (Covers.trans h₂.hrd (Covers.refl _)) (Covers.right h₂.hwr), h₂.hwr⟩
-  sig_pub [Spec.RsaPss.encodeContract, Spec.RsaPss.encodeSig, abi, argRegs, List.append_eq]
+  sig_pub [Proof.RsaPss.encodeContract, Proof.RsaPss.encodeSig, abi, argRegs, List.append_eq]
   obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := argsEq_regs he
   exact ⟨he.sp, e0, e1, e2, e3, e4, e5, e6, e7⟩
 
@@ -127,14 +127,14 @@ structure ChkOk (D K : Nat) (t : State) : Prop where
   we : (t.gpr .x1).toNat + (t.gpr .x2).toNat ≤ 2 ^ 64
   ws : (t.gpr .x6).toNat + (t.gpr .x7).toNat * 8 ≤ 2 ^ 64
   b1 : 1 ≤ (t.gpr .x3).toNat
-  b2 : (t.gpr .x3).toNat ≤ Spec.RsaPss.maxEmBits
+  b2 : (t.gpr .x3).toNat ≤ Proof.RsaPss.maxEmBits
   hel : (t.gpr .x2).toNat = Spec.RsaPss.emLength (t.gpr .x3).toNat
-  hs : Spec.RsaPss.encodingScratchWords ≤ (t.gpr .x7).toNat
+  hs : Proof.RsaPss.encodingScratchWords ≤ (t.gpr .x7).toNat
 
 theorem ChkOk.pre {G : Spec.Mgf1.Hash} {K : Nat} {t : State} (hK : 0 < K) (h : ChkOk G.len K t) :
-    (Spec.RsaPss.checkEncodingContract G G abi K).pre (t.callEntry.withRegions (chkRd G.len t) (chkWr t)) := by
+    (Proof.RsaPss.checkEncodingContract G G abi K).pre (t.callEntry.withRegions (chkRd G.len t) (chkWr t)) := by
   obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
-  sig_pre [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, List.append_eq]
+  sig_pre [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, List.append_eq]
   exact ⟨h.sp1, h.ds, h.es, h.kd, h.ke, h.ks, h.wd, h.we, h.ws, h.b1, h.b2, h.hel, h.hs⟩
 
 /-- A call of `checkEncoding`. -/
@@ -148,11 +148,11 @@ theorem chkCall {G : Spec.Mgf1.Hash} (c : ChkImpl G) {t : State} {Q : State → 
         (Spec.RsaPss.expectedSaltLen (t.gpr .x4) ((t.gpr .x5).setWidth 32)) then (1 : BitVec 32) else 0) →
       Q s') :
     WP isa (.call c.name c.code) t Q := by
-  refine WP.callFV (k := Spec.RsaPss.checkEncodingContract G G abi c.stack) c.verified.1 (h.pre c.pos)
+  refine WP.callFV (k := Proof.RsaPss.checkEncodingContract G G abi c.stack) c.verified.1 (h.pre c.pos)
     (Covers.append_left (Covers.trans h.hrd (Covers.refl _)) (Covers.right h.hwr)) h.hwr ?_
     (by have := c.le; have := c.depth; omega)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
-  sig_post [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, List.append_eq] at hpost
+  sig_post [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, List.append_eq] at hpost
   exact hQ s' hrd' hwr' hsp' hf hpres hvs hpost
 
 /-- Two calls of `checkEncoding` leak alike if their arguments agree. -/
@@ -164,7 +164,7 @@ theorem chkCallCT {G : Spec.Mgf1.Hash} (c : ChkImpl G) {P : State → State → 
   refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
     Covers.append_left (Covers.trans h₂.hrd (Covers.refl _)) (Covers.right h₂.hwr), h₂.hwr⟩
-  sig_pub [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, List.append_eq]
+  sig_pub [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, List.append_eq]
   obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := argsEq_regs he
   exact ⟨he.sp, e0, e1, e2, e3, e4, by rw [e5], e6, e7⟩
 

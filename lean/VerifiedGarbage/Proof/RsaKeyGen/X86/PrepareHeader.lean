@@ -184,15 +184,15 @@ theorem codeWith_ok {hdr : List Instr} {g : Geometry} (v : g.Valid) {s : State} 
     simp only [Header.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
     have := v.headerFit
     rcases mem with rfl | rfl | rfl <;> omega)
-  have widthA : Spec.Rsa.Mont.wOf a.mem g.W = g.w := by
+  have widthA : Proof.Rsa.Mont.wOf a.mem g.W = g.w := by
     rw [Ma]
     exact Header.width_eq (by have := v.maxWidth; omega)
-  have layoutA : Spec.Rsa.Mont.Layout a.mem g.W capacity := by
+  have layoutA : Proof.Rsa.Mont.Layout a.mem g.W capacity := by
     rw [Ma]
     apply Header.layout scratch.edi (by have := v.minWidth; omega) (by have := v.maxWidth; omega)
     · rw [← length]
       have fit := v.arraysFit
-      unfold Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes at *
+      unfold Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at *
       omega
     · rw [← length]
       exact scratch.nowrap
@@ -214,9 +214,9 @@ theorem codeWith_ok {hdr : List Instr} {g : Geometry} (v : g.Valid) {s : State} 
       rw [Ot.word (by decide) (by decide)]
       exact widthA
     · intro j hj
-      change word t.mem g.W (8 * Spec.Rsa.Mont.arrWord j) = _
-      rw [Ot.word (Or.inr (by unfold Spec.Rsa.Mont.arrWord; omega)) (by unfold Spec.Rsa.Mont.arrWord; omega)]
-      simpa only [widthA, Geometry.array, VG.Proof.Mont.word, VG.Proof.Mont.off, Spec.Rsa.Mont.wordAt] using layoutA.2.2.2 j hj
+      change word t.mem g.W (8 * Proof.Rsa.Mont.arrWord j) = _
+      rw [Ot.word (Or.inr (by unfold Proof.Rsa.Mont.arrWord; omega)) (by unfold Proof.Rsa.Mont.arrWord; omega)]
+      simpa only [widthA, Geometry.array, VG.Proof.Mont.word, VG.Proof.Mont.off, Proof.Rsa.Mont.wordAt] using layoutA.2.2.2 j hj
     · rw [Ot.val32 (Or.inr (by have := v.arrayHeader 0; omega))
         (by have := scratch.nowrap; have := v.arrayFit (j := 0) (by decide); omega)]
       exact candidateA
@@ -254,7 +254,7 @@ theorem prepareRt_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat}
       Ready g c capacity p t ∧ Outs g.W ranges s.mem t.mem ∧ Keeps clob s t ∧
       word t.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
   have base : g.array 0 = 256 := by
-    simp [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+    simp [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
   unfold VG.Impl.RsaKeyGen.X86.HeaderRt.prepare
   rw [← base]
   exact codeWith_ok v scratch caller length candidate odd

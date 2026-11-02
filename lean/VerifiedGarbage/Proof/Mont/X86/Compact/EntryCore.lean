@@ -24,7 +24,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Compact.Entry
 @[expose] public section
 namespace VG.Proof.Mont.X86.Compact
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
-open VG.Spec.Rsa.Mont hiding Keeps
+open VG.Proof.Rsa.Mont hiding Keeps
 open VG.Impl.Mont.X86
 
 theorem Entry.core {s : State} (A : Entry s) :

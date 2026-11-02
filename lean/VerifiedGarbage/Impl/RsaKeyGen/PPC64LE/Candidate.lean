@@ -12,7 +12,7 @@ the others on the stack, at `sp + 96 + 8 i` for the `i`-th of them
 frame of `frameBytes` is allocated, and `r14`–`r31` are saved in it.
 
 The numbers live in the Montgomery working space of RSA's functions at
-`scratch` (`Spec.Rsa.Mont.Layout`: a header of 32 words, then arrays of
+`scratch` (`Proof.Rsa.Mont.Layout`: a header of 32 words, then arrays of
 `w + 2` words for `w = out_len / 8`), as the shared Miller–Rabin round takes
 it, with the prime search's state in its header
 (`Impl/MillerRabin/PPC64LE/Search.lean`). The candidate `c` is array 0.

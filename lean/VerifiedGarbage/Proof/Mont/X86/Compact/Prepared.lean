@@ -4,14 +4,14 @@ public import VerifiedGarbage.Proof.Mont.X86.Compact.Metadata
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Bounds
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Mont.X86.Compact.Layout
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! # The reviewed prepared workspace supplies native-word metadata -/
 
 @[expose] public section
 namespace VG.Proof.Mont.X86.Compact
 open VG VG.X86 VG.Proof.Mont
-open VG.Spec.Rsa.Mont
+open VG.Proof.Rsa.Mont
 
 theorem header_low (m : Mem) (W : Addr) (i : Nat) :
     w32 m W (8 * i) = (wordAt m W i).toNat % 2 ^ 32 := by

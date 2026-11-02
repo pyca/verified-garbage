@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.TCB.Arm.Isa
 
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 
 theorem frame_array_outside {m m' : Mem} {base : Addr} {d n : Nat}
     (fit : d + n < 2 ^ 64) (frame : Frame [⟨off base d, n⟩] m m') :

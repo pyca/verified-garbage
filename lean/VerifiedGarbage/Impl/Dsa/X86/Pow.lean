@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Impl.Mont.X86.Sse2
-public import VerifiedGarbage.Spec.Dsa.ModPow
-public import VerifiedGarbage.Spec.Rsa.MontMul
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-! # Shared DSA modular exponentiation on IA-32
 
@@ -52,7 +51,7 @@ def mulArgs (n o a b : Nat) : List Instr :=
 `vg_rsa_mont_mul_at` with its arguments in a frame of 36 bytes, which keeps
 `ebx`, `esi`, `ebp` and `edi`. -/
 def mul (n o a b : Nat) : Prog isa :=
-  .frame (.alloc 36) (.seq (.block (mulArgs n o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody))
+  .frame (.alloc 36) (.seq (.block (mulArgs n o a b)) (.call "vg_rsa_mont_mul_at" Sse2.atBody))
     (.free 36)
 
 /-- `k` Montgomery squarings of slot 4. -/
@@ -90,7 +89,7 @@ def body (n e : Nat) : Prog isa :=
 
 def scratch (n : Nat) : List (Nat × Nat) := [(0, 64), (slot n 1, contextBytes n - slot n 1)]
 
-def layout (n e : Nat) : Spec.Dsa.ModPow.Layout where
+def layout (n e : Nat) : Impl.Dsa.ModPow.Layout where
   n := n
   e := e
   modulus := slot n 0
@@ -100,7 +99,7 @@ def layout (n e : Nat) : Spec.Dsa.ModPow.Layout where
   scratch := scratch n
   size := contextBytes n
 
-def name (n e : Nat) : String := (Spec.Dsa.ModPow.powApi (layout n e)).name
+def name (n e : Nat) : String := s!"vg_dsa_pow_{(layout n e).n}_{(layout n e).e}"
 
 /-- Pass the workspace and its length using cdecl's two stack arguments. -/
 def call (n e : Nat) : Prog isa :=

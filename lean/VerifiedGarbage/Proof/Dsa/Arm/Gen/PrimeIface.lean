@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Sig
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # DSA's probable-prime test on ARMv7, as its callers see it
 
-The contract of `vg_dsa_probable_prime` (`Spec.Dsa.ProbablePrime.sizedContract`
+The contract of `vg_dsa_probable_prime` (`Proof.Dsa.ProbablePrime.sizedContract`
 for the ARMv7 layout and sizes, 144 bytes of stack) for a size `bits` in plain
 facts: its precondition (`PIn`, `pre_of_pin`), its postcondition (`PPost`,
 `ppost_of_post`) and what two calls must agree on (`pub_of`).
@@ -24,7 +24,7 @@ open VG VG.Arm
 open VG.Impl.Dsa.Arm.ProbablePrime (keyOff keyWords layout sizes)
 
 /-- The test's contract. -/
-abbrev primeK : Contract isa := Spec.Dsa.ProbablePrime.sizedContract layout sizes abi 144
+abbrev primeK : Contract isa := Proof.Dsa.ProbablePrime.sizedContract layout sizes abi 144
 
 /-- A verified test, with the stack it uses, for a size it takes. -/
 structure PrimeOk (bits : Nat) (code : Prog isa) : Prop where
@@ -34,7 +34,7 @@ structure PrimeOk (bits : Nat) (code : Prog isa) : Prop where
 
 /-- The candidate at `ws`. -/
 abbrev candOf (bits : Nat) (s : State) : Nat :=
-  Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0))
+  Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0))
 
 /-- The precondition, as facts. -/
 structure PIn (bits : Nat) (s : State) : Prop where
@@ -67,7 +67,7 @@ theorem PIn.bits {bits : Nat} {s : State} (h : PIn bits s) : (stackArg s 1).toNa
   rcases this with rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem pre_of_pin {bits : Nat} {s : State} (h : PIn bits s) : primeK.pre s := by
-  sig_pre [primeK, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi, argRegs,
+  sig_pre [primeK, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig, abi, argRegs,
     reduceClassify, Loc.val]
   rw [h.bits]
   exact ⟨h.spLo, h.spHi, h.rd, h.wr, h.wR, h.wU, h.wA, h.rU, h.uA, h.FW, h.FR, h.FU, h.FA, h.fw, h.fr, h.fu, h.sized,
@@ -79,14 +79,14 @@ abbrev resOf (bits : Nat) (s : State) : Option (Bool × Spec.RsaKeyGen.Rand) :=
 
 /-- The postcondition, as facts. -/
 def PPost (bits : Nat) (s t : State) : Prop :=
-  (t.gpr .r0).toNat = Spec.Dsa.ProbablePrime.status (resOf bits s) ∧
-    Spec.Dsa.ModPow.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1).toNat [(keyOff, 8 * keyWords bits)] s.mem t.mem ∧
+  (t.gpr .r0).toNat = Proof.Dsa.ProbablePrime.status (resOf bits s) ∧
+    Proof.Dsa.ModPow.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1).toNat [(keyOff, 8 * keyWords bits)] s.mem t.mem ∧
     ∀ b rest, resOf bits s = some (b, rest) →
       Spec.Rsa.wordsAt t.mem (State.addr (stackArg s 0)) 1 = [BitVec.ofNat 64 ((s.gpr .r3).toNat - rest.length)]
 
 theorem ppost_of_post {bits : Nat} {s t : State} (hb : (stackArg s 1).toNat = bits) (h : primeK.post s t) :
     PPost bits s t := by
-  sig_post [primeK, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi, argRegs,
+  sig_post [primeK, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr] at h
   rw [BitVec.setWidth_append_eq_right, hb] at h
   exact h
@@ -99,7 +99,7 @@ theorem pub_of {bits : Nat} {s t : State} (sp : s.sp = t.sp) (p0 : s.gpr .r0 = t
     (hr : Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat =
       Spec.Rsa.bytesAt t.mem (State.addr (t.gpr .r2)) (t.gpr .r3).toNat) :
     primeK.pub s t := by
-  sig_pub [primeK, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi, argRegs,
+  sig_pub [primeK, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr]
   rw [← a1, hb]
   exact ⟨sp, by simp only [candOf, State.addr] at hc hr; rw [hc, hr], p0, p1, p2, p3, a0, rfl⟩

@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Bignum.Arm.SelectArray
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.SelectCT
 import VerifiedGarbage.Proof.Framework.Arm.TaintErase
@@ -18,12 +18,12 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 structure SelectArrayReady (base : BitVec 32) (len w : Nat) (s : State) : Prop where
   workspace : Workspace s base (8 * len)
-  layout : Spec.Rsa.Mont.Layout s.mem (State.addr base) len
-  width : Spec.Rsa.Mont.wOf s.mem (State.addr base) = w
+  layout : Proof.Rsa.Mont.Layout s.mem (State.addr base) len
+  width : Proof.Rsa.Mont.wOf s.mem (State.addr base) = w
   ptr : s.gpr .r0 = base
 
 theorem selectArray_ct {base : BitVec 32} {len w o a b : Nat}
@@ -46,7 +46,7 @@ theorem selectArray_ct {base : BitVec 32} {len w o a b : Nat}
     exact h.1.ptr.trans h.2.ptr.symm
   have wp (s : State) (h : P s) : WP isa (.block (selectArrayArgs o a b)) s Q := by
     have fits := h.layout.2.2.1
-    have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
     exact WP.mono (selectArrayArgs_ok s ho ha hb h.workspace size header h.ptr)

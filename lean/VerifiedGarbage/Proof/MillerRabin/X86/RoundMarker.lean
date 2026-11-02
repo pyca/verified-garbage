@@ -17,6 +17,6 @@ theorem roundFrame_marker32 {g : Geometry} (v : g.Valid) {m m' : Mem}
   intro r mem
   simp only [roundWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> right <;>
-    unfold Geometry.array Geometry.words aExponent Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes <;> omega
+    unfold Geometry.array Geometry.words aExponent Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes <;> omega
 
 end VG.Proof.MillerRabin.X86

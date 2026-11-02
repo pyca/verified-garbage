@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtFn
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # The RSA private-key operation on PPC64LE: the shared contract
@@ -35,25 +37,25 @@ def satState : State where
     ⟨0x10060, 80⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
 
-theorem crt_implies : fnContract.Implies (Spec.Rsa.privateCrtContract abi) where
+theorem crt_implies : fnContract.Implies (Proof.Rsa.privateCrtContract abi) where
   pre := by
     intro s h
-    sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, fnContract, stackArgs_ten,
+    sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, fnContract, stackArgs_ten,
       List.append_eq] at h
-    sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, fnContract, stackArgs_ten,
+    sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, fnContract, stackArgs_ten,
       List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, fnContract, stackArgs_ten,
+    sig_reduce [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, fnContract, stackArgs_ten,
       List.append_eq]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
   post := by
-    sig_implies_post [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, fnContract,
+    sig_implies_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, fnContract,
       stackArgs_ten, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, fnContract, stackArgs_ten,
+    sig_pub [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, fnContract, stackArgs_ten,
       List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := h
@@ -62,7 +64,7 @@ theorem crt_implies : fnContract.Implies (Spec.Rsa.privateCrtContract abi) where
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
   sat := by
-    sig_implies_sat [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, fnContract,
+    sig_implies_sat [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, fnContract,
       stackArgs_ten, List.append_eq] [satState, stackArg, stackArgAddr, Mem.readW,
       Mem.read] using satState
 

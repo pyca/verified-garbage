@@ -60,10 +60,10 @@ theorem candidatePrepare_ct {base src : BitVec 32} {len k : Nat} :
         have hz : s.z = false := Option.some.inj h.2
         rw [h.1.1.2] at hz
         exact of_decide_eq_false hz
-      have fit : Spec.Rsa.Mont.arrAt (Spec.Rsa.modulusWords k) 3 + 32 ≤ 8 * len := by
+      have fit : Proof.Rsa.Mont.arrAt (Spec.Rsa.modulusWords k) 3 + 32 ≤ 8 * len := by
         have := h.1.1.1.1.space
         simp only [Spec.Rsa.publicScratchWords] at this
-        simp only [Spec.Rsa.Mont.arrAt,Spec.Rsa.Mont.hdrBytes]
+        simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes]
         omega
       have countFits : 128 * Spec.Rsa.modulusWords k < 2 ^ 32 := by
         have := h.1.1.1.1.maxLength

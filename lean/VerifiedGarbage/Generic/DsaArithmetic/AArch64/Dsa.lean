@@ -21,13 +21,6 @@ def artifacts (v : Backend) : List Artifact := [
     verified := random_sign_verified v
     spSafe := random_sign_sp v
     features := v.features },
-  Spec.Dsa.signApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.Dsa.AArch64.SignVerify.sign v.mul
-    stack := v.stack
-    verified := v.signVerified
-    spSafe := v.signSp
-    features := v.features },
   Spec.Dsa.verifyApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.Dsa.AArch64.SignVerify.verify v.mul
@@ -56,13 +49,6 @@ def artifacts (v : Backend) : List Artifact := [
     stack := v.stack + 256
     verified := keygen_verified v
     spSafe := keygen_sp v
-    features := v.features },
-  Spec.Dsa.checkParametersApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.Dsa.AArch64.Generate.checkParameters v.mul
-    stack := v.stack
-    verified := v.parametersVerified
-    spSafe := v.parametersSp
     features := v.features },
   Spec.Dsa.deriveKeyApi.artifact AArch64.target {
     suffix := v.suffix

@@ -13,7 +13,8 @@ public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Environment
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.TimingFront
 public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
+public import VerifiedGarbage.Spec.Dsa
 
 /-! # The whole test leaks only what the contract releases -/
 
@@ -56,9 +57,9 @@ theorem LoadedPair.keepFlags {E : Environment} (v : E.Valid) {c : Nat} {entropy 
       (by rw [Z.syms])).1⟩
 
 theorem sieved_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} (odd : c % 2 = 1)
     (length : Spec.Dsa.bitLength c = E.bits) :
@@ -85,9 +86,9 @@ theorem sieved_trace {mont round : Prog isa} {montName roundName : String}
       (fun _ _ _ => trivial))
 
 theorem body_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} (odd : c % 2 = 1)
     (length : Spec.Dsa.bitLength c = E.bits) :
@@ -110,9 +111,9 @@ def FramedPair (E : Environment) (c : Nat) (entropy : List Byte) (s t : State) :
   EntryPair E c entropy (Compact.entered s) (Compact.entered t) ∧ s.gpr .esp = t.gpr .esp
 
 theorem framed_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} (odd : c % 2 = 1)
     (length : Spec.Dsa.bitLength c = E.bits) :

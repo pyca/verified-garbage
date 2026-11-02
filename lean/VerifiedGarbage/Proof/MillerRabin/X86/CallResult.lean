@@ -18,15 +18,15 @@ theorem mulPost {g : Geometry} {s t : State} {capacity b c : Nat}
     (a0 : arg s 0 = BitVec.ofNat 32 g.W.toNat) (a1 : arg s 1 = BitVec.ofNat 32 capacity)
     (a2 : arg s 2 = 6#32) (a3 : arg s 3 = 6#32) (a4 : arg s 4 = BitVec.ofNat 32 b)
     (M : Modulus g c s.mem) (odd : c % 2 = 1)
-    (post : (Spec.Rsa.Mont.mulContract abi 56).post s t) :
+    (post : (Proof.Rsa.Mont.mulContract abi 56).post s t) :
     val32 t.mem g.W (g.array 6) g.words = Word32.mm c g.w
       (val32 s.mem g.W (g.array 6) g.words) (val32 s.mem g.W (g.array b) g.words) ∧
-    Spec.Rsa.Mont.Keeps g.W capacity g.w 6 s.mem t.mem := by
+    Proof.Rsa.Mont.Keeps g.W capacity g.w 6 s.mem t.mem := by
   have ptr : (BitVec.ofNat 32 g.W.toNat).setWidth 64 = g.W := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ptrBound]
     exact Nat.mod_eq_of_lt g.W.isLt
-  sig_post [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argSlots, argVal, argBytes] at post
+  sig_post [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argSlots, argVal, argBytes] at post
   simp only [a0, a1, a2, a3, a4, ptr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt capBound,
     Nat.mod_eq_of_lt (by omega : b < 2 ^ 32), M.width] at post
   obtain ⟨low, congruence, keeps⟩ := post

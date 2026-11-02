@@ -35,7 +35,7 @@ theorem next_ok {base source table : BitVec 32} {len w bytes N M g E i : Nat}
       t.z=decide (i=0) ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have size : 256≤8*len := by
     have arrayFits := h.ready.width ▸ h.ready.layout.2.2.1
-    simp only [Spec.Rsa.Mont.arrAt,Spec.Rsa.Mont.hdrBytes] at arrayFits
+    simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes] at arrayFits
     omega
   refine WP.mono (expDecrement_ok s h.ready.workspace (by omega) h.ready.ptr (by omega) fits counter) ?_
   rintro t ⟨mem,flag,rest⟩

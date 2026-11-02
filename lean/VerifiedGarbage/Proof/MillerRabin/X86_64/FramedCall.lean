@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallBody
@@ -39,9 +39,9 @@ theorem framed_call_ok (M : Mont) {code : Prog isa} {s : State} {B : Addr}
       ((entered s).gpr .rsp + BitVec.ofNat 64 p.2) 64 = word (entered s).mem B (8 * p.1)) :
     WP isa (.frame (.push saved) (.frame (.push [.rbp]) code (.pop .rbp 1))
       (.pop .r11 13)) s fun t =>
-      t.gpr .rax = BitVec.ofNat 64 (Spec.MillerRabin.round c b).toNat ∧
+      t.gpr .rax = BitVec.ofNat 64 (Proof.MillerRabin.Round.round c b).toNat ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
-      Spec.MillerRabin.Keeps Spec.MillerRabin.extended B n w s.mem t.mem ∧
+      Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.extended B n w s.mem t.mem ∧
       Frame [⟨s.gpr .rsp - 120#64, 120⟩, ⟨B, 8 * n⟩] s.mem t.mem := by
   apply round_frames hs
   have hd' : Region.Disjoint ⟨B, 8 * n⟩ ⟨(entered s).gpr .rsp, 112⟩ := by

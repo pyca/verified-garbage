@@ -17,7 +17,7 @@ one (`round_implies`, `round_verified`).
 
 namespace VG.Proof.MillerRabin.Arm
 open VG VG.Arm VG.Impl.MillerRabin.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt)
 
 /-- A four-limb prepared working space for the candidate 3. -/
 def satWord (i : Nat) : BitVec 64 :=
@@ -42,26 +42,26 @@ def satState : State where
   rd := []
   wr := [⟨0x1000, 2048⟩]
 
-theorem sat_layout : Spec.MillerRabin.Layout Spec.MillerRabin.compact satMem 0x1000 256 := by
-  simp only [Spec.MillerRabin.Layout, Spec.MillerRabin.compact, Spec.Rsa.Mont.Layout,
+theorem sat_layout : Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact satMem 0x1000 256 := by
+  simp only [Proof.MillerRabin.Round.Layout, Proof.MillerRabin.Round.compact, Proof.Rsa.Mont.Layout,
     Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
   decide +kernel
 
-theorem sat_prepared : Spec.MillerRabin.Prepared Spec.MillerRabin.compact satMem 0x1000 := by
+theorem sat_prepared : Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact satMem 0x1000 := by
   have hw : wOf satMem 0x1000 = 4 := by decide +kernel
   have hc : numAt satMem 0x1000 4 0 = 3 := by decide +kernel
   have h5 : numAt satMem 0x1000 4 5 = 2 := by decide +kernel
   have h9 : numAt satMem 0x1000 4 9 = 1 := by decide +kernel
   have h10 : numAt satMem 0x1000 4 10 = 2 := by decide +kernel
   have h27 : numAt satMem 0x1000 4 27 = 1 := by decide +kernel
-  simp only [Spec.MillerRabin.Prepared, Spec.MillerRabin.compact, hw, hc, h5, h9, h10, h27]
+  simp only [Proof.MillerRabin.Round.Prepared, Proof.MillerRabin.Round.compact, hw, hc, h5, h9, h10, h27]
   decide +kernel
 
 theorem round_implies : roundContract.Implies
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56) where
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 56) where
   pre := by
     intro s h
-    sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argRegs, reduceClassify, Loc.val,
+    sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argRegs, reduceClassify, Loc.val,
       State.addr] at h
     obtain ⟨spLo, _, rd, wr, disj, fit, lay, prep⟩ := h
     obtain ⟨_, mont, w4, w128, fits, _⟩ := lay
@@ -76,36 +76,36 @@ theorem round_implies : roundContract.Implies
     · exact prep
   post := by
     intro s t _ h
-    sig_post [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argRegs, reduceClassify, Loc.val,
+    sig_post [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argRegs, reduceClassify, Loc.val,
       State.addr]
     obtain ⟨hr, hk⟩ := h
     refine ⟨fun b hb => ?_, fun i hi hfl harr htab => hk i hi (fun k hk' => hfl k ?_) (fun j hj => ?_)⟩
     · rw [BitVec.setWidth_append_eq_right]; exact hr b hb
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk' ⊢
-      simp only [Spec.MillerRabin.compact]
+      simp only [Proof.MillerRabin.Round.compact]
       omega_arith
     · have ht : i < arrAt (wOf s.mem (State.addr (s.gpr .r0))) 11 ∨
           arrAt (wOf s.mem (State.addr (s.gpr .r0))) 27 ≤ i := htab
       by_cases hs : j ∈ [2, 3, 5, 6, 8]
-      · exact harr j (by simpa only [Spec.MillerRabin.compact] using hs)
+      · exact harr j (by simpa only [Proof.MillerRabin.Round.compact] using hs)
       · have hj' : 11 ≤ j ∧ j ≤ 26 := by
           simp only [wJs, aX, aY, aM1, List.mem_cons, List.not_mem_nil, or_false] at hj hs; omega_arith
         generalize wOf s.mem (State.addr (s.gpr .r0)) = w at ht ⊢
         have a := Nat.mul_le_mul_right (8 * (w + 2)) hj'.1
         have b := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ 27 by omega_arith)
         rw [Nat.add_mul, Nat.one_mul] at b
-        simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at ht ⊢
+        simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at ht ⊢
         generalize 8 * (w + 2) = S at *
         omega_arith
   pub := by
     rintro s t - - h
-    sig_pub [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argRegs, reduceClassify, Loc.val,
+    sig_pub [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argRegs, reduceClassify, Loc.val,
       State.addr] at h
     obtain ⟨sp, hw, h0, h1⟩ := h
     exact ⟨sp, h0, h1, List.singleton_inj.mp hw⟩
   sat := by
     refine ⟨satState, ?_⟩
-    sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argRegs, reduceClassify, Loc.val,
+    sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argRegs, reduceClassify, Loc.val,
       State.addr]
     exact ⟨by decide, by decide, by decide, Region.disjoint_of_le (by decide) (by decide) (by decide), by decide,
       sat_layout, sat_prepared⟩
@@ -127,7 +127,7 @@ theorem round_verified_lite (fios : Bool := false) : Verified Arm.target (code (
 
 /-- `vg_miller_rabin_round`. -/
 theorem round_verified (fios : Bool := false) : Verified Arm.target (code (fios := fios))
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56) :=
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 56) :=
   (round_verified_lite (fios := fios)).of_implies round_implies
 
 end VG.Proof.MillerRabin.Arm

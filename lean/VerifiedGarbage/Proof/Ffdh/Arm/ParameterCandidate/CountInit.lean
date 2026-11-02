@@ -58,7 +58,7 @@ theorem expCountInit_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
       keep.num (j := j) (by simpa using different.symm) (by simp) (ready.fit64 bound)]
   · intro d bound
     have fits := readyV.arrayFit (j := 0) (by decide)
-    simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fits
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fits
     rw [equal.word (bits := 64) (by omega), key_keep_header workspace ready (by simp) bound keep]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

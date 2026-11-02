@@ -20,7 +20,7 @@ theorem digitArgs_ok (s : State) {base source table : BitVec 32} {len w bytes N 
       t.mem=s.mem ∧ Rest [.r4,.r5,.r6,.r7,.r8] s t := by
   have size : 256≤8*len := by
     have arrayFits := ready.width ▸ ready.layout.2.2.1
-    simp only [Spec.Rsa.Mont.arrAt,Spec.Rsa.Mont.hdrBytes] at arrayFits
+    simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes] at arrayFits
     omega
   have addr (d : Nat) (hd : d<256) : State.addr (s.gpr .r0+BitVec.ofNat 32 d)=off (State.addr base) d := by
     rw [ready.ptr]

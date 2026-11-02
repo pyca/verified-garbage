@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
@@ -26,6 +27,7 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_crt` on x86-64: verified against the shared contract
@@ -55,7 +57,7 @@ theorem crtCode_constantTime (M : Mont) (E : CrtExpL M) (hE : E.CT) : ConstantTi
 /-- `vg_rsa_private_crt` with Montgomery multiplication `M`, given that its
 code never loads MXCSR (which the registration file evaluates). -/
 theorem crt_verified (M : Mont) (E : CrtExpL M) (hE : E.CT) (hmx : (Crt.code M.mm E.code).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (Crt.code M.mm E.code) (Spec.Rsa.privateCrtContract abi) :=
+    Verified target (Crt.code M.mm E.code) (Proof.Rsa.privateCrtContract abi) :=
   Verified.of_correct (crtCode_correct M E hmx) (crtCode_constantTime M E hE) crt_implies
 
 end VG.Proof.Bignum.X86_64

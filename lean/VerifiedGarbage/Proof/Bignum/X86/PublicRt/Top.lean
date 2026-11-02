@@ -16,6 +16,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Public RSA at a run-time width, from the entry to the return
 
@@ -174,8 +175,8 @@ structure TopABI (s : State) : Prop where
   room : CallRoom (s.gpr .esp) (argumentPointer s 8) ((arg s 9).toNat * 8)
   outArgs : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 40⟩
 
-theorem topABI_of {s : State} (h : (Spec.Rsa.publicCheckedContract abi 96).pre s) : TopABI s := by
-  sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+theorem topABI_of {s : State} (h : (Proof.Rsa.publicCheckedContract abi 96).pre s) : TopABI s := by
+  sig_pre [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   have low : 96 ≤ (s.gpr .esp).toNat := by with_reducible assumption
   have bs : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 96#64, 96⟩

@@ -14,7 +14,7 @@ namespace VG.Proof.Bignum.Arm.ConditionalExp
 
 variable {ok : Prop}
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem expByteHead_ok (s : State) {base ep : BitVec 32} {len w M x E : Nat}
@@ -26,7 +26,7 @@ theorem expByteHead_ok (s : State) {base ep : BitVec 32} {len w M x E : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest [.r1, .r2] s t := by
   have size : 256 ≤ 8 * len := by
     have := h.ready.layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega
   rw [expByteHead, WP.block_append_iff]
   refine WP.mono (expByteLoad_ok s h.ready.workspace (by omega) h.ready.ptr pointer read) ?_

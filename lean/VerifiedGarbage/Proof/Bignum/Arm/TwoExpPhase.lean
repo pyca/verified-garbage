@@ -26,7 +26,7 @@ linear doubling candidate used by each exponent bit.
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 def Montgomery.init {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
@@ -41,7 +41,7 @@ theorem init_ok {base : BitVec 32} {len w M : Nat} {P : State → Prop} {regions
     WP isa A.init s fun t => Power base len w M 0 t ∧ P t ∧ HeaderKept base s t ∧
       Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have op (i : Nat) (hi : i = 4 ∨ i = 6 ∨ i = 7) : Operand i := by
-    rcases hi with rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases hi with rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   rw [Montgomery.init, VG.Impl.Bignum.Arm.TwoExp.initial, WP.seq_iff]
   refine WP.mono (smallConst_ok s (1 : BitVec 32) h (o := 7)
@@ -88,7 +88,7 @@ end
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure Input (base ep : BitVec 32) (len w M : Nat) (P : State → Prop)

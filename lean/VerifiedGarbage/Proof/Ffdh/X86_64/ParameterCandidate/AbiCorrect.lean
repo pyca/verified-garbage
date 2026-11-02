@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Octets
 import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Algebra.NeZero
+public import VerifiedGarbage.Proof.Ffdh.Contract
 /-! # FFDH parameter generation on x86-64: preserve the complete System V ABI -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/ParameterCandidate/Correct.lean`, which only this module imported.
@@ -33,7 +34,7 @@ open VG.Proof.MillerRabin.X86_64
 
 def FinalResult (p : CandidateP) (t : State) : Prop :=
   let r := Spec.Ffdh.parameterCandidate p.bits p.gen p.rand
-  ((t.gpr .rax).setWidth 32).toNat = Spec.Ffdh.candidateStatus r ∧
+  ((t.gpr .rax).setWidth 32).toNat = Proof.Ffdh.candidateStatus r ∧
     Spec.Rsa.bytesAt t.mem p.op p.k =
       (match r with | some (some n, _) => Spec.Rsa.i2osp n p.k | _ => List.replicate p.k 0) ∧
     word t.mem p.up 0 = BitVec.ofNat 64
@@ -42,15 +43,15 @@ def FinalResult (p : CandidateP) (t : State) : Prop :=
 private theorem finish_result {p : CandidateP} {used : Nat} {s t : State}
     (hbound : used ≤ p.rand.length) (hr : NativeResult p used s.mem)
     (hout : word s.mem p.B (8 * oStatus) = 1 → Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem p.op p.k) = p.P)
-    (hax : t.gpr .rax = BitVec.ofNat 64 (Spec.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand)))
+    (hax : t.gpr .rax = BitVec.ofNat 64 (Proof.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand)))
     (hused : word t.mem p.up 0 = BitVec.ofNat 64
-      (if Spec.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand) = 0 then 0 else used))
+      (if Proof.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand) = 0 then 0 else used))
     (hbytes : Spec.Rsa.bytesAt t.mem p.op p.k =
-      (if Spec.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand) = 1 then
+      (if Proof.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand) = 1 then
         Spec.Rsa.bytesAt s.mem p.op p.k else List.replicate p.k 0)) : FinalResult p t := by
   unfold FinalResult
   cases he : Spec.Ffdh.parameterCandidate p.bits p.gen p.rand with
-  | none => simpa [he, Spec.Ffdh.candidateStatus, hax] using And.intro hbytes hused
+  | none => simpa [he, Proof.Ffdh.candidateStatus, hax] using And.intro hbytes hused
   | some ar =>
     obtain ⟨value, rest⟩ := ar
     have hrest : rest = p.rand.drop used := by simpa only [NativeResult, he] using hr.2.1
@@ -60,20 +61,20 @@ private theorem finish_result {p : CandidateP} {used : Nat} {s t : State}
     cases value with
     | none =>
       refine ⟨?_, ?_, ?_⟩
-      · simp [hax, he, Spec.Ffdh.candidateStatus]
-      · simpa only [he, Spec.Ffdh.candidateStatus, Nat.reduceEqDiff, ite_false] using hbytes
-      · simpa only [he, Spec.Ffdh.candidateStatus, Nat.reduceEqDiff, ite_false, hcount] using hused
+      · simp [hax, he, Proof.Ffdh.candidateStatus]
+      · simpa only [he, Proof.Ffdh.candidateStatus, Nat.reduceEqDiff, ite_false] using hbytes
+      · simpa only [he, Proof.Ffdh.candidateStatus, Nat.reduceEqDiff, ite_false, hcount] using hused
     | some n =>
       have hn : n = p.P := hr.2.2 n rest he
       have hstatus : word s.mem p.B (8 * oStatus) = BitVec.ofNat 64 1 := by
-        simpa only [he, Spec.Ffdh.candidateStatus] using hr.1
+        simpa only [he, Proof.Ffdh.candidateStatus] using hr.1
       have hval := hout hstatus
       have hi := VG.Proof.Rsa.i2osp_os2ip (Spec.Rsa.bytesAt s.mem p.op p.k)
       rw [bytesAt_length, hval, ← hn] at hi
       refine ⟨?_, ?_, ?_⟩
-      · simp [hax, he, Spec.Ffdh.candidateStatus]
-      · simpa only [he, Spec.Ffdh.candidateStatus, ite_true, hi] using hbytes
-      · simpa only [he, Spec.Ffdh.candidateStatus, Nat.reduceEqDiff, ite_false, hcount] using hused
+      · simp [hax, he, Proof.Ffdh.candidateStatus]
+      · simpa only [he, Proof.Ffdh.candidateStatus, ite_true, hi] using hbytes
+      · simpa only [he, Proof.Ffdh.candidateStatus, Nat.reduceEqDiff, ite_false, hcount] using hused
 
 theorem correct_ok (M : Mont) (R : R2Impl M) (K : Kernel) {s : State} (c : PcCtx s) :
     WP isa (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run) s fun t => pcPost s t ∧
@@ -81,10 +82,10 @@ theorem correct_ok (M : Mont) (R : R2Impl M) (K : Kernel) {s : State} (c : PcCtx
   unfold VG.Impl.Ffdh.X86_64.ParameterCandidate.code
   refine WP.seq (WP.mono (body_ok M R K c) fun u ⟨used, hu, hdu, hr, hout, hsaved, ku⟩ => ?_)
   let p := candidateOfState s
-  have hsmall : Spec.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand) < 2 ^ 64 := by
+  have hsmall : Proof.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand) < 2 ^ 64 := by
     cases Spec.Ffdh.parameterCandidate p.bits p.gen p.rand with
     | none => decide
-    | some ar => obtain ⟨value, rest⟩ := ar; cases value <;> dsimp only [Spec.Ffdh.candidateStatus] <;> decide
+    | some ar => obtain ⟨value, rest⟩ := ar; cases value <;> dsimp only [Proof.Ffdh.candidateStatus] <;> decide
   refine WP.mono (finish_ok hu hdu hr.1 hsmall hsaved)
     fun t ⟨hax, hused, hbytes, hregs, kt⟩ => ?_
   have hfinal := finish_result hu.bound hr hout hax hused hbytes

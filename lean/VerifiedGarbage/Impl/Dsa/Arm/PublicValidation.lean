@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Validate
-public import VerifiedGarbage.Spec.Dsa.PublicValidation
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-! # Shared public-key validation on ARMv7
 
@@ -27,7 +27,7 @@ def body (pLen qLen : Nat) : Prog isa :=
 
 def scratch : List (Nat × Nat) := [(0, 64), (116, 4), (168, 36), (256, 15456)]
 
-def layout (pLen qLen : Nat) : Spec.Dsa.PublicValidation.Layout where
+def layout (pLen qLen : Nat) : Impl.Dsa.PublicValidation.Layout where
   pLen := pLen
   qLen := qLen
   pPointer := Layout.field .p
@@ -39,7 +39,7 @@ def layout (pLen qLen : Nat) : Spec.Dsa.PublicValidation.Layout where
   scratch := scratch
   size := 15713
 
-def name (pLen qLen : Nat) : String := (Spec.Dsa.PublicValidation.api (layout pLen qLen)).name
+def name (pLen qLen : Nat) : String := s!"vg_dsa_public_validate_{(layout pLen qLen).pLen}_{(layout pLen qLen).qLen}"
 
 /-- Pass the workspace and packed public key; keep r12 in a callee-saved
 register across the call and its possible linker veneer. -/

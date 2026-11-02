@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShortCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassify
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # Candidate classification leaks only its public-tape result -/
 
@@ -29,11 +31,11 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64
 open VG.Impl.Ffdh.X86_64.Generation.Search
 
 def SearchFirstGuard (p : SearchPoint) (s : State) : Prop := SearchCTL p s ∧
-  s.gpr .rax = BitVec.ofNat 64 (Spec.Ffdh.candidateStatus (searchCandidate p.inputs p.used)) ∧
-  eval .e s = some (decide (Spec.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 1))
+  s.gpr .rax = BitVec.ofNat 64 (Proof.Ffdh.candidateStatus (searchCandidate p.inputs p.used)) ∧
+  eval .e s = some (decide (Proof.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 1))
 
 def SearchSecondGuard (p : SearchPoint) (s : State) : Prop := SearchCTL p s ∧
-  eval .e s = some (decide (Spec.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 2))
+  eval .e s = some (decide (Proof.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 2))
 
 private theorem first_guard_ready (p : SearchPoint) (s : State) (h : SearchCandidateCT p s) :
     WP isa (.block [.mov32 .rax (.reg .rax), .alu .cmp .rax (.imm 1)]) s (SearchFirstGuard p) := by
@@ -44,12 +46,12 @@ private theorem first_guard_ready (p : SearchPoint) (s : State) (h : SearchCandi
 private theorem second_guard_ready (p : SearchPoint) (s : State) (h : SearchFirstGuard p s) :
     WP isa (.block [.alu .cmp .rax (.imm 2)]) s (SearchSecondGuard p) := by
   obtain ⟨⟨original, hl⟩, ha, _⟩ := h
-  have hb : Spec.Ffdh.candidateStatus (searchCandidate p.inputs p.used) < 2 ^ 64 := by
+  have hb : Proof.Ffdh.candidateStatus (searchCandidate p.inputs p.used) < 2 ^ 64 := by
     cases hc : searchCandidate p.inputs p.used with
     | none => decide
     | some pair =>
       obtain ⟨value, rest⟩ := pair
-      cases value <;> dsimp only [Spec.Ffdh.candidateStatus] <;> decide
+      cases value <;> dsimp only [Proof.Ffdh.candidateStatus] <;> decide
   exact WP.mono (second_status_guard ha hb) fun _ ⟨⟨he, hm⟩, k⟩ =>
     ⟨⟨original, hl.keep k hm (by decide)⟩, he⟩
 

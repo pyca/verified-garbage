@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 /-- Arguments access only the caller's stack word and the public header. -/
 theorem montCallArgs_trace (s : State) {base : BitVec 32} {size o a b : Nat}
@@ -78,8 +78,8 @@ theorem montCallOp_ct (name : String) (callee : Prog isa)
   obtain ⟨hs, ht, cs, ctStack, boundS, boundT, sp⟩ := hp
   have fitS : 8 ≤ s.sp.toNat := by have := cs.fit; omega
   have fitT : 8 ≤ t.sp.toNat := by have := ctStack.fit; omega
-  have fits : VG.Spec.Rsa.Mont.arrAt w 8 ≤ 8 * len := hs.width ▸ hs.layout.2.2.1
-  have size : 52 ≤ 8 * len := by simp only [VG.Spec.Rsa.Mont.arrAt, VG.Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have fits : VG.Proof.Rsa.Mont.arrAt w 8 ≤ 8 * len := hs.width ▸ hs.layout.2.2.1
+  have size : 52 ≤ 8 * len := by simp only [VG.Proof.Rsa.Mont.arrAt, VG.Proof.Rsa.Mont.hdrBytes] at fits; omega
   unfold MontCall.op at e1 e2
   cases e1 with
   | seq f1 restore1 =>

@@ -34,9 +34,9 @@ structure Fixed (P : Parameters) : Prop where
   checks : P.checks = VG.Impl.RsaKeyGen.X86.WitnessChecks.checks P.g.w
 
 theorem drawRt_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) (Fx : Fixed P) {s : State} {k n : Nat} (S : StateAt P k n s)
     (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :
@@ -63,9 +63,9 @@ theorem drawRt_ok {mont round : Prog isa} {montName roundName : String}
   exact ⟨T, used, rounds, uniform, status, W, F, K⟩
 
 theorem drawRt_again_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) (Fx : Fixed P) {s : State} {k n : Nat} (S : StateAt P k n s)
     (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :
@@ -118,9 +118,9 @@ theorem drawRt_again_ok {mont round : Prog isa} {montName roundName : String}
         omega
 
 theorem stepRt_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) (Fx : Fixed P) {s : State} {k n : Nat} (S : StateAt P k n s) :
     WP isa (VG.Impl.RsaKeyGen.X86.WitnessRt.step montName mont roundName round) s fun t =>
@@ -196,9 +196,9 @@ theorem initRt_ok {P : Parameters} (v : P.Valid) (Fx : Fixed P) {s : State}
   · exact (BitVec.eq_of_toNat_eq (hdr (d := 28) (by decide))).trans randPtr
 
 theorem loopRt_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) (Fx : Fixed P) {s : State} {k n : Nat} (S : StateAt P k n s) :
     WP isa (.loop (VG.Impl.RsaKeyGen.X86.WitnessRt.step montName mont roundName round) .e) s fun t =>
@@ -218,9 +218,9 @@ theorem loopRt_ok {mont round : Prog isa} {montName roundName : String}
   · exact Or.inr ⟨again, j, by omega, i + 1, j - 1, by omega, next, Wa.trans Wt, Fa.trans Ft, Ka.trans Kt⟩
 
 theorem codeRt_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) (Fx : Fixed P) {s : State}
     (S : Prepare.Data P.g P.candidate P.capacity P.p s)

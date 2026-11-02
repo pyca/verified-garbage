@@ -19,7 +19,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem CrtPadInput.after_product {s t : State} {base : BitVec 32} {size len w d product j : Nat}
@@ -51,7 +51,7 @@ theorem CrtPadInput.after_product {s t : State} {base : BitVec 32} {size len w d
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+    · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
     · left; simp only; omega
   · have := h.main.nowrap; omega
 
@@ -64,7 +64,7 @@ end
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure CrtRecombineInput (base : BitVec 32) (size len w o a b cp cq d : Nat) (s : State) : Prop where

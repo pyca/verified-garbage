@@ -18,7 +18,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 structure EnvironmentTailLaw (env : SampleEnvironment) (layout : (p : Inputs) → ScalarLayout p) (code : Prog isa) : Prop where
   correct : ∀ (s : State) {p : Inputs} {slots : List Nat} {xb eb : List Byte}

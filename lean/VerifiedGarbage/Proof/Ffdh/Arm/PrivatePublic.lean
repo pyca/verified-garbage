@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 def privatePublicFlag (p : Inputs) (yb xb : List Byte) : BitVec 32 :=
   if 1 < Spec.Rsa.os2ip yb ∧ Spec.Rsa.os2ip yb < p.P - 1 then privateTailFlag p yb xb else 0
@@ -32,9 +32,9 @@ theorem privatePublic_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : Li
     (count : p.slotValue 44 = BitVec.ofNat 32 xb.length) :
     WP isa VG.Impl.Ffdh.Arm.Domain.CheckPrivate.publicCheck s fun t =>
       t.gpr .r0 = privatePublicFlag p yb xb ∧ Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') :
       Frame [⟨State.addr p.base, 8 * p.len⟩] m m' := f
   unfold VG.Impl.Ffdh.Arm.Domain.CheckPrivate.publicCheck

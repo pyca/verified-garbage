@@ -1903,7 +1903,7 @@ b 22f
 22:
 .inst 0xd65f03c0
 .p2align 6",
-        vg_rsa_square_4_4 = sym super::rsa::vg_rsa_square_4_4,
-        vg_miller_rabin_round = sym super::miller_rabin::vg_miller_rabin_round,
+        vg_rsa_square_4_4 = sym super::rsa::vg_rsa_square_4_4::vg_rsa_square_4_4,
+        vg_miller_rabin_round = sym super::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
     )
 }

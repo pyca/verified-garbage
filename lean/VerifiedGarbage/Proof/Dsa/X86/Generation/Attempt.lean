@@ -178,7 +178,7 @@ theorem attempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen 
     fun t₃ g₃ m₃ rd₃ wr₃ sy₃ => ?_) (fun h0 => ?_)
   · -- The witnesses ran out at q.
     have hn : r = none := by
-      rcases r with _ | ⟨_ | _, _⟩ <;> simp_all [Spec.Dsa.ProbablePrime.status]
+      rcases r with _ | ⟨_ | _, _⟩ <;> simp_all [Proof.Dsa.ProbablePrime.status]
     subst hn
     exact ⟨K₂.store G v hp (by simp [atRanges]) _ m₃ (g₃ _ (by decide)) (g₃ _ (by decide)) rd₃ wr₃ sy₃,
       by show _ = _; rw [m₃, Mem.readW_writeW_self32]⟩
@@ -190,7 +190,7 @@ theorem attempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen 
   rotate_left
   · -- q composite: the next seed.
     obtain ⟨rest, hrest⟩ : ∃ rest, r = some (false, rest) := by
-      rcases r with _ | ⟨_ | _, rest⟩ <;> simp_all [Spec.Dsa.ProbablePrime.status]
+      rcases r with _ | ⟨_ | _, rest⟩ <;> simp_all [Proof.Dsa.ProbablePrime.status]
     subst hrest
     have cur := probablePrime_cursor hr
     rw [wl] at cur
@@ -198,7 +198,7 @@ theorem attempt_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen 
     rw [mem₃, used₁]; rfl
   -- q a probable prime: p.
   obtain ⟨rest, hrest⟩ : ∃ rest, r = some (true, rest) := by
-    rcases r with _ | ⟨_ | _, rest⟩ <;> simp_all [Spec.Dsa.ProbablePrime.status]
+    rcases r with _ | ⟨_ | _, rest⟩ <;> simp_all [Proof.Dsa.ProbablePrime.status]
   subst hrest
   have cur := probablePrime_cursor hr
   rw [wl] at cur

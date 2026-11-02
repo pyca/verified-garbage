@@ -3,8 +3,8 @@ module
 import VerifiedGarbage.Proof.Bignum.Arm.MontContract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Rsa.Mont
-meta import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
+meta import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.TCB.Arm.Target
 public import Batteries.Logic
 public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
@@ -42,11 +42,11 @@ def montSatState : State where
   rd := [⟨0x8000, 4⟩]
   wr := [⟨0x1000, 512⟩]
 
-theorem mont_contract_sat : ∃ s, (Spec.Rsa.Mont.mulContract abi 36).pre s := by
-  sig_implies_sat [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+theorem mont_contract_sat : ∃ s, (Proof.Rsa.Mont.mulContract abi 36).pre s := by
+  sig_implies_sat [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     [montSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using montSatState
 
-theorem mont_verified : Verified target MontFn.mul (Spec.Rsa.Mont.mulContract abi 36) :=
+theorem mont_verified : Verified target MontFn.mul (Proof.Rsa.Mont.mulContract abi 36) :=
   ⟨mont_contract_correct, mont_contract_ct, mont_contract_sat⟩
 
 end VG.Proof.Bignum.Arm

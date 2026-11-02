@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithContract
 public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmeticCaller
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
 public import VerifiedGarbage.Proof.Framework.RelCT
 

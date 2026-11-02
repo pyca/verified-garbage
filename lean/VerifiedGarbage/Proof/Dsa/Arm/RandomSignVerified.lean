@@ -46,7 +46,7 @@ theorem randomSign_verified (name : String) :
   ⟨randomSign_correct name, randomSign_constantTime name, randomSign_satisfiable⟩
 
 /-- The randomized signer, calling the registered `vg_dsa_sign`. -/
-theorem randomSigning_verified : Verified Arm.target (code Spec.Dsa.signApi.name (Entry.operation true))
+theorem randomSigning_verified : Verified Arm.target (code "vg_dsa_sign" (Entry.operation true))
     (Spec.Dsa.randomSignContract Arm.abi 144) :=
   randomSign_verified _
 

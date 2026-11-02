@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -8,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.Contract
+meta import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
@@ -29,8 +31,8 @@ private def candidateSat : State where
   rd := [⟨0x2000, 0⟩, ⟨0x8000, 20⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1100, 8⟩, ⟨0x3000, 8448⟩]
 
-theorem candidate_sat : ∃ s, (Spec.Ffdh.sievedParameterCandidateContract abi 184).pre s := by
-  sig_implies_sat [Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+theorem candidate_sat : ∃ s, (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre s := by
+  sig_implies_sat [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
     [candidateSat, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.scratchWords] using candidateSat
 

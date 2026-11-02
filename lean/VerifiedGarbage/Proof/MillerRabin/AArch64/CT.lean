@@ -33,7 +33,7 @@ open VG.Impl.RsaKeyGen.AArch64.Candidate VG.Impl.MillerRabin.AArch64
 open VG.Proof.RsaKeyGen VG.Proof.RsaKeyGen.AArch64
 
 private def coreSpace (s : State) : VG.Proof.Bignum.AArch64.Ws :=
-  ⟨s.gpr .x0, (s.gpr .x1).toNat * 8, Spec.Rsa.Mont.wOf s.mem (s.gpr .x0)⟩
+  ⟨s.gpr .x0, (s.gpr .x1).toNat * 8, Proof.Rsa.Mont.wOf s.mem (s.gpr .x0)⟩
 
 private theorem initial_core {s : State} (h : roundPre s) : CorePre (coreSpace s) s := by
   obtain ⟨h4, h128, hEZ, bm, hc, hE, hodd, h3, hx⟩ := initial_ctx h

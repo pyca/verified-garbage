@@ -13,7 +13,7 @@ even when the modulus, base and secret exponent differ between executions. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem power_ct {base src ep : BitVec 32} {len w M1 M2 : Nat} {bb1 bb2 eb1 eb2 : List Byte}
     (fit : arrAt w 3 + 32 ≤ 8 * len) (fits : arrAt w 16 ≤ 8 * len)

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
@@ -83,7 +84,7 @@ open VG.Proof.Ffdh.Arm.KeySearch (Two two_post two_taint)
 
 def TableStart (p : CandidateParams × Nat) (s : State) : Prop := CandidateContext p.1 p.2 s
 private def TablePointer (p : CandidateParams × Nat) (s : State) : Prop :=
-  s.gpr .r11 = p.1.base + BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt p.1.words 34)
+  s.gpr .r11 = p.1.base + BitVec.ofNat 32 (Proof.Rsa.Mont.arrAt p.1.words 34)
 
 theorem tableWrite_ct : RelCT isa (Two TableStart)
     (.block VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrite) (fun _ _ => True) := by
@@ -388,7 +389,7 @@ open VG VG.Arm
 
 theorem candidatePost_spec {p : CandidateParams} {m : Mem} {r : BitVec 32} (post : candidatePost p m r) :
     let res := Spec.Ffdh.sievedParameterCandidate p.bits p.generator p.bytes
-    r.toNat = Spec.Ffdh.candidateStatus res ∧
+    r.toNat = Proof.Ffdh.candidateStatus res ∧
     Spec.Rsa.bytesAt m (State.addr p.out) p.length =
       (match res with | some (some n, _) => Spec.Rsa.i2osp n p.length | _ => List.replicate p.length 0) ∧
     Spec.Rsa.wordsAt m (State.addr p.usedPtr) 1 =
@@ -421,9 +422,9 @@ open VG VG.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 theorem candidate_correct (v : RoundImpl) (s : State)
-    (pre : (Spec.Ffdh.sievedParameterCandidateContract abi 184).pre s) :
+    (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) s tr t ∧
-      abiPreserved s t ∧ (Spec.Ffdh.sievedParameterCandidateContract abi 184).post s t := by
+      abiPreserved s t ∧ (Proof.Ffdh.sievedParameterCandidateContract abi 184).post s t := by
   obtain ⟨p, args⟩ := candidatePublic s pre
   obtain ⟨tr, t, run, preserved, post⟩ := candidateFn_ok v (candidateInput pre args)
   refine ⟨tr, t, run, preserved, ?_⟩
@@ -438,7 +439,7 @@ theorem candidate_correct (v : RoundImpl) (s : State)
     rw [args.tapeLength, BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.tapeCount]
   have bytes := args.bytes
   simp only [State.addr] at bytes result
-  sig_post [Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+  sig_post [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
   rw [BitVec.setWidth_append_eq_right]
   simp only [args.out, args.used, args.tape, widthNat, bitsNat, generatorNat, tapeNat, bytes]
@@ -809,11 +810,11 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem candidate_contract_ct (v : RoundImpl) : ConstantTime isa (Spec.Ffdh.sievedParameterCandidateContract abi 184).pre
-    (Spec.Ffdh.sievedParameterCandidateContract abi 184).pub (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) := by
+theorem candidate_contract_ct (v : RoundImpl) : ConstantTime isa (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre
+    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pub (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) := by
   intro s t trS trT u z hs ht hp runS runT
   obtain ⟨p, args⟩ := candidatePublic s hs
-  sig_pub [Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+  sig_pub [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at hp
   obtain ⟨sp, bytes, p0, p1, p2, p3, p4, p5, p6, p7, p8⟩ := hp
   have byteEq := congrArg (List.map (BitVec.ofNat 8)) bytes
@@ -851,12 +852,12 @@ open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 theorem candidate_verified (v : RoundImpl) :
     Verified target (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code)
-      (Spec.Ffdh.sievedParameterCandidateContract abi 184) :=
+      (Proof.Ffdh.sievedParameterCandidateContract abi 184) :=
   ⟨candidate_correct v, candidate_contract_ct v, candidate_sat⟩
 
 theorem optimizedCandidate_verified (umaal : Bool) (v : RoundImpl) :
     Verified target (VG.Impl.Ffdh.Arm.ParameterCandidate.optimizedCode umaal v.name v.code)
-      (Spec.Ffdh.sievedParameterCandidateContract abi 184) := by
+      (Proof.Ffdh.sievedParameterCandidateContract abi 184) := by
   cases umaal with
   | false => exact candidate_verified v
   | true => exact VG.Proof.Ffdh.Arm.CallerRows.verified (candidate_verified v)
@@ -1001,13 +1002,13 @@ open VG VG.Arm
 
 structure ParameterBackend where
   candidate : Prog isa
-  candidate_verified : Verified target candidate (Spec.Ffdh.sievedParameterCandidateContract abi 184)
+  candidate_verified : Verified target candidate (Proof.Ffdh.sievedParameterCandidateContract abi 184)
   candidateStack : FrameStack.armStack candidate ≤ 184
   suffix : String
   features : List String
 
 def ParameterBackend.candidateName (b : ParameterBackend) : String :=
-  Spec.Ffdh.sievedParameterCandidateApi.name ++ b.suffix
+  "vg_ffdh_parameter_candidate_sieved" ++ b.suffix
 
 def parameterBackend (v : VG.Proof.MillerRabin.Arm.RoundImpl) : ParameterBackend := by
   exact {

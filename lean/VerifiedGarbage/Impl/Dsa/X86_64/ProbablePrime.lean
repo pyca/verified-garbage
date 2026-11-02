@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeBytes
 public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-! # DSA's probable-prime test as a function of its own (x86-64)
 
@@ -49,7 +49,7 @@ def candidate (bits : Nat) : Nat :=
 def sizes : List Nat := [160, 256, 1024, 2048, 3072]
 
 /-- The test's place in the generation's scratch space. -/
-def layout (bits : Nat) : Spec.Dsa.ProbablePrime.Layout where
+def layout (bits : Nat) : Impl.Dsa.ProbablePrime.Layout where
   bits := bits
   candidate := candidate bits
   scratch := [(Generation.Layout.witness, len bits), (Generation.Layout.arithmetic, Generation.Layout.arithmeticBytes)]

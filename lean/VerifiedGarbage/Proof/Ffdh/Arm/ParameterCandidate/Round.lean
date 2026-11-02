@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 def roundPassed (p : WitnessParams) (passed witness : Nat) : Nat :=
@@ -43,8 +43,8 @@ theorem round_ok (v : RoundImpl) {s : State} {p : WitnessParams} {used passed wi
   refine WP.seq (WP.mono (roundKernel_ok v ready h.data h.saved.space h.stackScratch capacity
     h.stackBelow h.belowScratch input) ?_)
   rintro u ⟨dataU, valueU, frameU, restU⟩
-  have shared : Spec.MillerRabin.round p.modulus witness = Spec.Ffdh.mrRound p.modulus witness := by
-    simpa only [Spec.MillerRabin.round] using VG.Proof.Ffdh.rsa_round_eq witness h.data.large h.data.odd
+  have shared : Proof.MillerRabin.Round.round p.modulus witness = Spec.Ffdh.mrRound p.modulus witness := by
+    simpa only [Proof.MillerRabin.Round.round] using VG.Proof.Ffdh.rsa_round_eq witness h.data.large h.data.odd
   rw [shared] at valueU
   have ctxU := h.after_round dataU frameU restU
   refine WP.seq (WP.mono (cmpResult_ok valueU) ?_)

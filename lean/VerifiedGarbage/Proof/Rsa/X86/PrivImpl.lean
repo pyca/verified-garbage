@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Contract
 
@@ -14,7 +15,7 @@ open VG VG.X86
 structure CrtImpl where
   name : String
   code : Prog isa
-  verified : Verified target code (Spec.Rsa.privateCrtContract abi 96)
+  verified : Verified target code (Proof.Rsa.privateCrtContract abi 96)
   stack : stackUse code ≤ 96
   noSp : NoSp code
   pcName : String

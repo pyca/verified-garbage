@@ -23,7 +23,7 @@ section
 section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt wOf Layout)
+open VG.Proof.Rsa.Mont (numAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem normalizedPrecompute_ok {base src : BitVec 32} {len w k : Nat}
@@ -77,7 +77,7 @@ end
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem normalizedPrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
     {P : State → Prop} {regions : List Region}

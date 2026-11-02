@@ -18,7 +18,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 theorem domainDivides_ok (s : State) {p : Inputs} {slots : List Nat}
     (h : Context p slots s) (stable : stableSlots slots = true)
@@ -27,10 +27,10 @@ theorem domainDivides_ok (s : State) {p : Inputs} {slots : List Nat}
     WP isa VG.Impl.Ffdh.Arm.Domain.CheckDomain.divides s fun t => Context p slots t ∧
       t.gpr .r11 = (if p.P % p.Q = 1 then 1 else 0) ∧
       Frame (prepareAtWrites p s) s.mem t.mem ∧ VG.Proof.X25519.Arm.Rest roundClobbers s t := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op7 : Operand 7 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have qStack : Region.Disjoint ⟨State.addr p.q, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
     h.toArgumentMemory.domainSliceStack (by have := p.minLength; omega)
       (by rw [p.domainLength, hasQ]; simp only [ite_true]; omega)

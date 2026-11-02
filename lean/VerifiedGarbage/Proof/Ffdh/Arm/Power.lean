@@ -17,7 +17,7 @@ namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Mont (off)
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 
 structure PowerInput (base src ep : BitVec 32) (len w M : Nat)
     (bb eb : List Byte) (s : State) : Prop where
@@ -70,10 +70,10 @@ theorem powerBase_ok (s : State) {base src ep : BitVec 32} {len w M : Nat} {bb e
   have ebT := h.exponentBytes.after_workspace frame rest
   have bound : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
   have modT := (keeps_array_num keeps bound
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide : 0 ≠ 1)).trans h.modulus
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide : 0 ≠ 1)).trans h.modulus
   have r2T := (keeps_array_num keeps bound
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide : 4 ≠ 1)).trans h.r2
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at bound; omega
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide : 4 ≠ 1)).trans h.r2
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at bound; omega
   refine ⟨⟨ready, modT, h.odd, value,
     by rw [r2T]; exact Nat.mod_lt _ (by have := h.ready.modulus; rw [h.modulus] at this; omega),
     by rw [r2T, Nat.mod_mod, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega],

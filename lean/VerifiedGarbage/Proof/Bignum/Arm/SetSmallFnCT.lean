@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.SetSmallFn
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallCT
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.SetSmallFn
 meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-meta import VerifiedGarbage.Spec.Rsa.Mont
+meta import VerifiedGarbage.Proof.Rsa.MontContract
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.SetSmallCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
@@ -29,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt wOf Layout)
 
 structure SmallFnReady (base : BitVec 32) (len w o : Nat) (s : State) : Prop where
   workspace : Workspace s base (8 * len)
@@ -55,7 +55,7 @@ theorem setSmallFnBody_ct {base : BitVec 32} {len w o : Nat} (ho : o < 8) :
     · exact h.1.index.trans h.2.index.symm
   have wp (s : State) (h : P s) : WP isa (.block setSmallArgs) s Q := by
     have fits := h.layout.2.2.1
-    have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
     exact WP.mono (setSmallArgs_ok s h.workspace size header ho h.ptr h.index)

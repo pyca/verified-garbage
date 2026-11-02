@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CombTableState
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombScan
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 def HeaderKeeps (base : BitVec 32) (m m' : Mem) : Prop := ∀ d, d+4≤256 →
@@ -47,7 +47,7 @@ theorem header_of_writes (m : Mem) (base : BitVec 32) (a b : BitVec 32) :
 theorem header_of_outside {base : BitVec 32} {w : Nat} {m m' : Mem}
     (outside : Outside (State.addr base) (arrAt w 1) (8*w) m m') : HeaderKeeps base m m' := by
   intro d hd _ _
-  exact outside_read32 outside (Or.inl (by simp only [arrAt,Spec.Rsa.Mont.hdrBytes]; omega)) (by omega)
+  exact outside_read32 outside (Or.inl (by simp only [arrAt,Proof.Rsa.Mont.hdrBytes]; omega)) (by omega)
 
 theorem arrays_of_outside {base : BitVec 32} {len w : Nat} {m m' : Mem}
     (fits : arrAt w 8≤8*len) (nowrap : base.toNat+8*len≤2^32)

@@ -108,10 +108,10 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
       rw [r1n, r0, h.toNat (by simp only [sK]; omega_arith)]; simp only [sK] at big; omega_arith
     · show contextBytes n ≤ 8 * (s.gpr .r1).toNat
       rw [r1n]; omega_arith
-    · show Spec.Dsa.ModPow.numAt s.mem (State.addr (s.gpr .r0)) (modS n) (8 * n) % 2 = 1
-      rw [Spec.Dsa.ModPow.numAt, e0, pin.1]; exact hodd
-    · show 1 < Spec.Dsa.ModPow.numAt s.mem (State.addr (s.gpr .r0)) (modS n) (8 * n)
-      rw [Spec.Dsa.ModPow.numAt, e0, pin.1]; exact hgt
+    · show Proof.Dsa.ModPow.numAt s.mem (State.addr (s.gpr .r0)) (modS n) (8 * n) % 2 = 1
+      rw [Proof.Dsa.ModPow.numAt, e0, pin.1]; exact hodd
+    · show 1 < Proof.Dsa.ModPow.numAt s.mem (State.addr (s.gpr .r0)) (modS n) (8 * n)
+      rw [Proof.Dsa.ModPow.numAt, e0, pin.1]; exact hgt
     · rw [gi.sp]; have := gi.sp176; have := ok.stack; omega_arith
   refine VP.of_ct (fun σ₁ σ₂ => RelCT.call ok.correct ok.ct [] [G.rPow] fun s₁ s₂ ⟨h₁, h₂⟩ => ?_)
     fun σ s hs => ?_
@@ -148,7 +148,7 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
     · exact ⟨G.rs sA (wa G.pLen), List.mem_cons_self, by rw [GP.rPow, w8]; exact fun _ h => h⟩
     · exact ⟨G.rBelow, by simp, bl⟩
   · obtain ⟨v, -⟩ := hpost
-    simp only [Spec.Dsa.ModPow.numAt, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
+    simp only [Proof.Dsa.ModPow.numAt, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
       State.callEntry_gpr _ (show Reg.r0 ∉ linkRegs by decide)] at v
     have e0 : ∀ o, State.addr (s.gpr .r0) + BitVec.ofNat 64 o = G.sa (sA + o) := fun o => by
       rw [a0]; simp only [GP.sa]; rw [BitVec.add_assoc, ← BitVec.ofNat_add]

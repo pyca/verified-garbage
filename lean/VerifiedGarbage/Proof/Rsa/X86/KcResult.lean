@@ -5,10 +5,11 @@ public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Rsa.X86.KcChecks
 
-import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.Rsa.X86.KcDiv
 import VerifiedGarbage.Proof.Rsa.X86.KcOps
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
+public import VerifiedGarbage.Spec.Rsa.Contract
 /-! # Key-check arithmetic agrees with the shared RSA validity predicates -/
 
 -- Formerly `VerifiedGarbage/Proof/Rsa/X86/KcBody.lean`, which only this module imported.

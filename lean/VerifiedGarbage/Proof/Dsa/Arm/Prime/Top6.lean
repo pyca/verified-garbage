@@ -58,7 +58,7 @@ theorem prime_ok (v : RoundImpl) (h : CIn bits s) :
   rintro t' ⟨restored, memT, restT⟩
   have rc := res_c pre
   have m' : t'.mem = w.mem := memT
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, by show Spec.Dsa.ModPow.Keeps _ _ _ s.mem t'.mem; rw [m']; exact keeps h o bk, fun b rst hr => ?_⟩
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, by show Proof.Dsa.ModPow.Keeps _ _ _ s.mem t'.mem; rw [m']; exact keeps h o bk, fun b rst hr => ?_⟩
   · have ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
     show (popped .r12 56 t').gpr r = _
     rw [popped_gpr ne]

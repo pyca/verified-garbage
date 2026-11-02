@@ -17,6 +17,11 @@ are checked by the operations, including the domain's algebraic consistency;
 no contract assumes or asserts exact primality. Imported parameters require
 caller assurance of domain validity, as in Spec/Dsa.lean.
 
+`signContract` is one signing attempt with a supplied nonce. The Rust API
+does not offer it: `vg_dsa_sign_random` (`RandomSign.lean`) runs it with
+nonces drawn from its tape, and the domain-checked contracts
+(`DomainChecked.lean`) are stated as it.
+
 The domain and public key may affect timing. The digest, private scalar and
 nonce may not, except for the success/failure result of a signing attempt.
 Verification may reveal its Boolean result, but not otherwise its digest or
@@ -126,23 +131,6 @@ def verifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       publicBytesLeak pLen.toNat qLen.toNat kb ++
         [if verifyBytes pLen.toNat qLen.toNat kb (bytesAt m signature signatureLen.toNat)
           (bytesAt m digest digestLen.toNat) then 1 else 0])
-
-def signApi : Api where
-  module := "dsa"
-  name := "vg_dsa_sign"
-  sig := signSig
-  writeArgs := true
-  contracts := some fun A stack => signContract A stack
-  summary := "One DSA signing attempt on a prehashed digest. The key is big-endian \
-    p||q||g||y||x with component widths p_len, q_len, p_len, p_len, q_len; nonce \
-    is q_len bytes. Returns 1 and r||s (q_len bytes each), or 0 and zero output \
-    for invalid components, nonce or zero r/s. Checks algebraic consistency, \
-    not primality. Caller must assure domain validity and supply fresh independent \
-    nonces. Timing may depend on public p,q,g,y and success, not otherwise on \
-    x, nonce or digest. Contract: `VG.Spec.Dsa.signContract`."
-  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
-    "key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.",
-    "scratch_len must be at least 16*p_len words. Scratch may contain secrets on return."]
 
 def verifyApi : Api where
   module := "dsa"

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 
 import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # Buffer and argument geometry for CRT parameter calculation -/
 

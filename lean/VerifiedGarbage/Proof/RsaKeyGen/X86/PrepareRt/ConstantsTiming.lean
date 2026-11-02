@@ -129,7 +129,7 @@ def OneSet (g : Geometry) (capacity : Nat) (p : BitVec 32) (s : State) : Prop :=
   ∃ c, Ready g c capacity p s ∧ c % 2 = 1 ∧ val32 s.mem g.W (g.array 4) g.words < c
 
 theorem constants_trace {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56) (v : g.Valid) (length : g.L = 8 * capacity) :
     RelCT isa (fun s t => Constants.Input g capacity p s ∧ Constants.Input g capacity p t) (constants name mont)
       (fun _ _ => True) := by
@@ -144,12 +144,12 @@ theorem constants_trace {mont : Prog isa} {name : String}
           exact Nat.mod_lt _ positive⟩
   have mulT : RelCT isa (fun s t => OneSet g capacity p s ∧ OneSet g capacity p t) (VG.Impl.MillerRabin.X86.mulY name mont 4)
       (fun u z => Held g capacity p u ∧ Held g capacity p z) :=
-    withRuns ((mulY_relCT (p := p) (b := 4) verified noSp stack v length (by unfold Spec.Rsa.Mont.Operand; decide)).mono
+    withRuns ((mulY_relCT (p := p) (b := 4) verified noSp stack v length (by unfold Proof.Rsa.Mont.Operand; decide)).mono
       (fun s t ⟨⟨c, S, odd, lt⟩, ⟨d, T, odd', lt'⟩⟩ => ⟨held_pair ⟨c, S⟩ ⟨d, T⟩,
         ⟨S.context, ⟨c, S.modulus, odd, lt⟩, S.caller⟩, ⟨T.context, ⟨d, T.modulus, odd', lt'⟩, T.caller⟩⟩)
       (fun _ _ H => H))
       fun s ⟨c, S, odd, lt⟩ => WP.mono (mulY_ok verified noSp stack v S.context length S.modulus
-        (by unfold Spec.Rsa.Mont.Operand; decide) odd lt S.caller.readLen (by rw [S.caller.sp]; exact S.caller.low)
+        (by unfold Proof.Rsa.Mont.Operand; decide) odd lt S.caller.readLen (by rw [S.caller.sp]; exact S.caller.low)
         (by rw [S.caller.sp]; exact S.caller.stackFar)) fun b ⟨_, _, Kb, Cb, Mb, Fb⟩ => by
           rw [S.caller.sp] at Fb
           exact ⟨c, Cb, Mb, S.caller.keepFrame Kb (by decide) Fb, S.scratch.of_keeps Kb (by decide)⟩

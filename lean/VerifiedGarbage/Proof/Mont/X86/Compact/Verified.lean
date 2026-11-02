@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.Compact
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86.Target
 
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Mont.X86.Compact.Satisfiable
 namespace VG.Proof.Mont.X86.Compact
 open VG VG.X86
 
-theorem verified : Verified target VG.Impl.Mont.X86.Compact.body (Spec.Rsa.Mont.mulContract abi 16) :=
+theorem verified : Verified target VG.Impl.Mont.X86.Compact.body (Proof.Rsa.Mont.mulContract abi 16) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.Mont.X86.Compact

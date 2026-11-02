@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxLazy8
 /-!
 # Lazy Montgomery multiplication as a function (x86-64)
 
-`vg_rsa_lazy_mont_mul(ws, ws_len, o, a, b)` (`Spec.Rsa.Mont.mulLazyContract`):
+`vg_rsa_lazy_mont_mul(ws, ws_len, o, a, b)` (`Proof.Rsa.Mont.mulLazyContract`):
 the baseline is `vg_rsa_mont_mul`'s code, whose subtraction of `m` when it
 does not borrow leaves its result below `R` for any operands below `R`.
 `vg_rsa_lazy_mont_mul_adx` is `vg_rsa_mont_mul_adx` with the tiles' final

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Exponent
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Mont.Words32
 public import Init.Data.BitVec.Basic
 public import VerifiedGarbage.Proof.Mont.X86.Words
@@ -204,7 +204,7 @@ theorem passes_exponent {s : State} {base : Addr} {size n marker out c : Nat}
     (odd : c % 2 = 1) (value : val32 s.mem base out n = c / 2) :
     WP isa (passes n marker out) s fun t =>
       Context base size n marker out ((Spec.Rsa.splitTwos (c - 1)).1 % 64) t ∧
-      Outside base out (4 * n) s.mem t.mem ∧ val32 t.mem base out n = Spec.MillerRabin.exponent c ∧
+      Outside base out (4 * n) s.mem t.mem ∧ val32 t.mem base out n = Proof.MillerRabin.Round.exponent c ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
   refine WP.mono (passes_ok C) fun t ⟨T, O, V, K⟩ => ?_
   rw [value, VG.Proof.RsaKeyGen.sigOf_mod] at V
@@ -260,7 +260,7 @@ theorem code_ok {s : State} {base : Addr} {size w minusOne src out c : Nat} (scr
     (candidate : val32 s.mem base src (2 * w) = c)
     (minusValue : val32 s.mem base minusOne (2 * w) = c - 1) (odd : c % 2 = 1) (large : 1 < c) :
     WP isa (code w minusOne src out) s fun t =>
-      val32 t.mem base out (2 * w) = Spec.MillerRabin.exponent c ∧
+      val32 t.mem base out (2 * w) = Proof.MillerRabin.Round.exponent c ∧
       word t.mem base (out + 8 * w) = BitVec.twoPow 64 ((Spec.Rsa.splitTwos (c - 1)).1 % 64) ∧
       Outs base (ranges w src out) s.mem t.mem ∧ Keeps clob s t := by
   refine WP.seq (WP.mono (ExponentMarker.code_ok scratch minusFit minusValue (by omega))

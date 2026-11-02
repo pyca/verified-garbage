@@ -19,7 +19,7 @@ two runs; the bit and the digit are only data. -/
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- A window state with the byte at 200. -/
@@ -48,8 +48,8 @@ theorem windowBit_ct {base : BitVec 32} {len w M1 M2 x1 x2 A1 A2 p1 p2 q V1 V2 :
     WP.mono (windowSquare_ok s h.1 h.2.2) fun _ k => ⟨k.1, h.2.1, k.2.1⟩
   unfold windowBit
   refine relCT_chain (squareOp_ct (base := base) (len := len) (w := w) (o := 6) (a := 6)
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) |>.mono
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) |>.mono
       (fun _ _ h => ⟨⟨h.1.1.power.ready, by rw [h.1.1.power.modulus]; exact h.1.1.power.powerBound⟩,
         ⟨h.2.1.1.power.ready, by rw [h.2.1.1.power.modulus]; exact h.2.1.1.power.powerBound⟩, h.2.2⟩)
       (fun _ _ h => h)) (fun s h => squared s h) (fun s h => squared s h) ?_
@@ -73,7 +73,7 @@ theorem windowRound_ct {base : BitVec 32} {len w M1 M2 x1 x2 A1 A2 p1 p2 q V1 V2
       WP isa (.block expShift) s fun t => t.gpr .r0 = base := by
     have size : 204 ≤ 8 * len := by
       have := h.layout.2.2.1
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+      simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
       omega
     exact WP.mono (expShift_ok s h.workspace size h.ptr (V := (s.mem.readW
       (VG.Proof.Mont.off (State.addr base) 200) 32).toNat) (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]))

@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 def strideMemory (m : Mem) (base : BitVec 32) (w : Nat) : Mem :=
   (m.writeW (off (State.addr base) 224) (BitVec.ofNat 32 (8 * (w + 2)))).writeW
@@ -30,24 +30,24 @@ theorem keyStride_words {s : State} {base : BitVec 32} {capacity w : Nat}
       t.mem = strideMemory s.mem base w ∧ Rest [.r1] s t := by
   have fit := ready.arrayFit (j := 0) (by decide)
   have write224 : InRegions s.wr (State.addr (base + 224#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := workspace.nowrap; simp only [Spec.Rsa.Mont.arrAt,
-      Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)]
-    exact workspace.write (by simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes,
+    rw [VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)]
+    exact workspace.write (by simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
       Nat.zero_mul, Nat.add_zero] at fit; omega)
   have write228 : InRegions s.wr (State.addr (base + 228#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := workspace.nowrap; simp only [Spec.Rsa.Mont.arrAt,
-      Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)]
-    exact workspace.write (by simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes,
+    rw [VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)]
+    exact workspace.write (by simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
       Nat.zero_mul, Nat.add_zero] at fit; omega)
   refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   have stride := ready.r7
   rw [keyView_stride] at stride
   have addr224 : State.addr (base + 224#32) = off (State.addr base) 224 :=
-    VG.Arm.addr_add (by have := workspace.nowrap; simp only [Spec.Rsa.Mont.arrAt,
-      Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)
+    VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)
   have addr228 : State.addr (base + 228#32) = off (State.addr base) 228 :=
-    VG.Arm.addr_add (by have := workspace.nowrap; simp only [Spec.Rsa.Mont.arrAt,
-      Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)
+    VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)
   change s.gpr .r7 = _ at stride
   rw [addr224] at write224
   rw [addr228] at write228
@@ -90,14 +90,14 @@ theorem keyStride_ok {s : State} {base : BitVec 32} {capacity w : Nat}
   have values (j : Nat) (jBound : j < 35) : numAt t.mem (State.addr base) w j = numAt s.mem (State.addr base) w j := by
     unfold numAt
     apply congrArg BitVec.toNat
-    refine frame.read (r := ⟨off (State.addr base) (Spec.Rsa.Mont.arrAt w j), 8 * w⟩)
+    refine frame.read (r := ⟨off (State.addr base) (Proof.Rsa.Mont.arrAt w j), 8 * w⟩)
       (Region.contains_self _ _) ?_ (by omega)
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
     have scale := Nat.mul_le_mul_right (8 * (w + 2)) (show j ≤ 35 by omega)
-    apply Offset.disjoint _ (.inr ?_) (by simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]; omega) (by decide)
-    simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+    apply Offset.disjoint _ (.inr ?_) (by simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega) (by decide)
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
     omega
   have dataT := data.after_value frame (by
     intro r hr

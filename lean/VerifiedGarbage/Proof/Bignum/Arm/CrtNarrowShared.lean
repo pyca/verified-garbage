@@ -17,7 +17,7 @@ preserves the main and both full-width factor workspaces.
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- The limbs of a factor of `k` bytes in the narrow workspace. -/
@@ -48,7 +48,7 @@ theorem CrtShared.narrow_fits {s : State} {g : CrtGeometry} {bs : Fin 7 → List
   obtain ⟨two, le, fit⟩ := narrowWords_bounds bounds.1 bounds.2 valid.1
   refine ⟨two, le, fit, bounds.1, by have := h.buffers.lengthValid.2; omega, ?_⟩
   have arrays := h.buffers.context.arraysFit
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at arrays ⊢
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at arrays ⊢
   change _ ≤ g.words at le
   have := Nat.mul_le_mul_left 8 (Nat.add_le_add_right le 2)
   omega

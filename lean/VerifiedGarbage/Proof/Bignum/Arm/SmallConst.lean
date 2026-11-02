@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 theorem ArithmeticReady.of_mem {s t : State} {base : BitVec 32} {len w : Nat} {rs : List Reg}

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # A state meets the precondition: an all-ones candidate and an empty tape -/
 
@@ -92,7 +93,7 @@ theorem os2ip_ones : ∀ (n acc : Nat),
     grind
 
 theorem sat_candidate {bits : Nat} (b : Bits bits) :
-    Spec.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) ((satArgument 0).setWidth 64) =
+    Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) ((satArgument 0).setWidth 64) =
       2 ^ bits - 1 := by
   have bound := scratch_bound b
   have baseNat := satBase_toNat b
@@ -107,7 +108,7 @@ theorem sat_candidate {bits : Nat} (b : Bits bits) :
     unfold satMemory
     rw [ite_eq_right (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, baseNat]; omega),
       ite_eq_left (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, baseNat]; omega)]
-  unfold Spec.Dsa.ProbablePrime.candidateAt
+  unfold Proof.Dsa.ProbablePrime.candidateAt
   rw [bytes, VG.Proof.Dsa.decodeBE_os2ip]
   unfold Spec.Rsa.os2ip
   rw [os2ip_ones, Nat.zero_mul, Nat.zero_add]
@@ -115,7 +116,7 @@ theorem sat_candidate {bits : Nat} (b : Bits bits) :
   rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul, show 8 * (bits / 8) = bits by omega]
 
 theorem sat_odd {bits : Nat} (b : Bits bits) :
-    Spec.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) ((satArgument 0).setWidth 64) % 2 = 1 := by
+    Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) ((satArgument 0).setWidth 64) % 2 = 1 := by
   rw [sat_candidate b]
   have : 2 ^ bits % 2 = 0 := by
     rw [show bits = (bits - 1) + 1 by have := b.low; omega, Nat.pow_succ]; omega
@@ -124,7 +125,7 @@ theorem sat_odd {bits : Nat} (b : Bits bits) :
 
 theorem sat_length {bits : Nat} (b : Bits bits) :
     Spec.Dsa.bitLength
-      (Spec.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) ((satArgument 0).setWidth 64)) = bits := by
+      (Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) ((satArgument 0).setWidth 64)) = bits := by
   rw [sat_candidate b]
   have low := b.low
   have half : 2 ^ bits = 2 ^ (bits - 1) * 2 := by
@@ -173,7 +174,7 @@ theorem sat_argAddr (bits : Nat) : argAddr (satState bits) 0 = 0x20004#64 := by
 
 theorem satisfiable {bits : Nat} (b : Bits bits) : ∃ s, (contract bits).pre s := by
   refine ⟨satState bits, ?_⟩
-  sig_pre [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi,
+  sig_pre [contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow]
   simp only [sat_arguments bits 0 (by decide), sat_arguments bits 1 (by decide), sat_arguments bits 2 (by decide),
     sat_arguments bits 3 (by decide), sat_arguments bits 4 (by decide), sat_argAddr]

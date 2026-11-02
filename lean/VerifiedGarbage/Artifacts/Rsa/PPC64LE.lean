@@ -23,9 +23,6 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputedCheckedApi.artifact PPC64LE.target {
     code := Impl.Bignum.PPC64LE.PublicChecked.publicChecked
     verified := Proof.Bignum.PPC64LE.Pub.publicChecked_verified },
-  Spec.Rsa.privateCrtApi.artifact PPC64LE.target {
-    code := Impl.Bignum.PPC64LE.Crt.crt
-    verified := Proof.Bignum.PPC64LE.Crt.crt_verified },
   Spec.Rsa.privateCheckedApi.artifact PPC64LE.target {
     code := Impl.Rsa.PPC64LE.Priv.code
     stack := Impl.Rsa.PPC64LE.Priv.frameBytes

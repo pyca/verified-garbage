@@ -26,14 +26,14 @@ structure RoundImpl where
   features : List String
 
 def RoundImpl.name (v : RoundImpl) : String :=
-  (Spec.MillerRabin.roundApi Spec.MillerRabin.compact).name ++ v.suffix
+  "vg_miller_rabin_round" ++ v.suffix
 
 def RoundImpl.code (v : RoundImpl) : Prog isa := round v.roundMont.mm
 
 def RoundImpl.kernel (v : RoundImpl) : Kernel := Kernel.called v.roundMont v.name v.noFrames
 
 theorem RoundImpl.verified (v : RoundImpl) : Verified target v.code
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact) := by
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact) := by
   exact round_verified v.roundMont
 
 end VG.Proof.MillerRabin.AArch64

@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 def qRangeFlag (p : Inputs) : BitVec 32 := if 2 < p.Q ∧ p.Q < p.P - 1 ∧ p.Q % 2 = 1 then 1 else 0
 
@@ -33,9 +33,9 @@ theorem qRange_ok (s : State) {p : Inputs} {slots : List Nat}
       numAt t.mem (State.addr p.base) p.w 0 = p.P ∧
       numAt t.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P ∧
       Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem ∧ VG.Proof.X25519.Arm.Rest roundClobbers s t := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have qLength := p.qLength hasQ
   rw [VG.Impl.Ffdh.Arm.Domain.CheckDomain.qRange, WP.seq_iff]
   refine WP.mono (importAt_ok s 1 60 32 h stable h60 h32 ready (by decide) (by decide) (h.qBytes hasQ)

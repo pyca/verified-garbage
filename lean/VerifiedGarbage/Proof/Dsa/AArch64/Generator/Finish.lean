@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.Prepared
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-public import VerifiedGarbage.Spec.Dsa.GeneratorStage
+public import VerifiedGarbage.Proof.Dsa.GeneratorStageContract
 public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch
@@ -25,7 +25,7 @@ import Mathlib.Algebra.Group.Nat.Defs
 /-! # The stage, from the generator search to the domain check
 
 The generation's own search, then, once it finds a g, the packing of
-p ‖ q ‖ g and the domain check, leave the status of `Spec.Dsa.GeneratorStage.stage`
+p ‖ q ‖ g and the domain check, leave the status of `Proof.Dsa.GeneratorStage.stage`
 in the generation's status slot, and the packed domain when it is valid. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/Validate.lean`, which only this module imported.
@@ -97,8 +97,8 @@ abbrev qLen (pLen : Nat) : Nat := Impl.Dsa.AArch64.Generator.qLen pLen
 
 /-- What the stage computes. -/
 abbrev result (pLen : Nat) (s : State) : Option Spec.Dsa.Params :=
-  Spec.Dsa.GeneratorStage.stage (pOf pLen s.mem (s.gpr .x0)) (qOf pLen s.mem (s.gpr .x0))
-    (Spec.Dsa.GeneratorStage.candidates pLen (tape s))
+  Proof.Dsa.GeneratorStage.stage (pOf pLen s.mem (s.gpr .x0)) (qOf pLen s.mem (s.gpr .x0))
+    (Proof.Dsa.GeneratorStage.candidates pLen (tape s))
 
 /-- The memory the stage writes. -/
 def stageChanged (pLen : Nat) (s : State) : List Region :=
@@ -132,12 +132,12 @@ theorem StageABI.framePart (hb : Supported pLen) (A : StageABI pLen s) {d n : Na
     (⟨frameBase s, frameBytes⟩ : Region).Disjoint ⟨off (s.gpr .x0) d, n⟩ :=
   (arena hb A).frame_part h
 
-/-- The search's result is the generator `Spec.Dsa.GeneratorStage.stage` starts from. -/
+/-- The search's result is the generator `Proof.Dsa.GeneratorStage.stage` starts from. -/
 theorem plan_remaining (hb : Supported pLen) (A : StageABI pLen s) :
     (plan hb A).remaining 0 = Spec.Dsa.generator (pOf pLen s.mem (s.gpr .x0)) (qOf pLen s.mem (s.gpr .x0))
-      (Spec.Dsa.GeneratorStage.candidates pLen (tape s)) := by
+      (Proof.Dsa.GeneratorStage.candidates pLen (tape s)) := by
   simp only [GeneratorSearchPlan.remaining, plan, Arena.generatorPlan, arena, List.drop_zero,
-    Spec.Dsa.GeneratorStage.candidates]
+    Proof.Dsa.GeneratorStage.candidates]
   rfl
 
 theorem StageABI.packed_sep (hb : Supported pLen) (A : StageABI pLen s) {d n : Nat} (hd : d + n ≤ packed) :
@@ -341,7 +341,7 @@ theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : Sta
     have res : result pLen s = if Spec.Dsa.parametersValid (domainOf pLen s (plan hb A))
         then some (domainOf pLen s (plan hb A)) else none := by
       rw [rem] at hgv
-      simp only [result, Spec.Dsa.GeneratorStage.stage, hgv, Option.bind_eq_bind, Option.bind_some, domainOf, gdef]
+      simp only [result, Proof.Dsa.GeneratorStage.stage, hgv, Option.bind_eq_bind, Option.bind_some, domainOf, gdef]
     refine ⟨L₂, ⟨V₁, _, R₂, by simpa [VG.Proof.RsaOaep.AArch64.upd] using h5₁, ?_⟩, fun a' ha' => ?_, ?_, k₂.rd.trans P.rd, k₂.wr.trans P.wr⟩
     · simp only [VG.Proof.RsaOaep.AArch64.upd, ite_true, checkInput, check, res]
       by_cases hv : Spec.Dsa.parametersValid (domainOf pLen s (plan hb A)) <;> simp [hv]
@@ -368,7 +368,7 @@ theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : Sta
       | some gv => exact absurd (h19.trans (by simp [statusOf, h])) h1
     have res : result pLen s = none := by
       rw [rem] at hn
-      simp only [result, Spec.Dsa.GeneratorStage.stage, hn, Option.bind_eq_bind, Option.bind_none]
+      simp only [result, Proof.Dsa.GeneratorStage.stage, hn, Option.bind_eq_bind, Option.bind_none]
     obtain ⟨V', W', R', h5', h19'⟩ := S'.rep
     refine ⟨S'.lay, ⟨V', W', R', h5', by rw [h19', res]; simp [statusOf, hn]⟩, fun a ha => absurd ha (by rw [res]; simp),
       S'.frame, S'.rd, S'.wr⟩

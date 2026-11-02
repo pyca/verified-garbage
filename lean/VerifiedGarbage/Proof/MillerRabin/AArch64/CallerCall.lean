@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerSave
 
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerContext
@@ -37,8 +37,8 @@ theorem call_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
     WP isa (call name (round M.mm)) s fun t =>
       t.gpr .x0 = B ∧ abiPreserved s t ∧
       Frame [⟨B, 8 * (32 + 28 * (w + 2))⟩] s.mem t.mem ∧
-      ∃ m : Mem, Spec.MillerRabin.Keeps Spec.MillerRabin.compact B (32 + 28 * (w + 2)) w
-        (savedMem s B w) m ∧ t.mem = m.writeW (off B (8 * kFlag)) (mask (Spec.MillerRabin.round c b)) := by
+      ∃ m : Mem, Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B (32 + 28 * (w + 2)) w
+        (savedMem s B w) m ∧ t.mem = m.writeW (off B (8 * kFlag)) (mask (Proof.MillerRabin.Round.round c b)) := by
   let n := 32 + 28 * (w + 2)
   have hn : n < 2 ^ 64 := by dsimp only [n]; omega_arith
   have hsize : 8 * n ≤ Z := by
@@ -71,9 +71,9 @@ theorem call_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
       rw [Nat.mul_comm]
     · have := hc.ws.scr.nowrap
       omega_arith
-    · change Spec.MillerRabin.Layout Spec.MillerRabin.compact u.mem B n
+    · change Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact u.mem B n
       exact layout_of_ctx hcu h4 h128
-    · change Spec.MillerRabin.Prepared Spec.MillerRabin.compact u.mem B
+    · change Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact u.mem B
       apply prepared_of_ctx hcu heu ho h3
       rw [hxu]
       exact Nat.mod_lt _ (by omega_arith)
@@ -95,13 +95,13 @@ theorem call_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
   change roundPost e (v.withRegions [] [⟨B, 8 * n⟩]) at hp
   unfold roundPost at hp
   rw [hEB, hEN, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn] at hp
-  have hwE : Spec.Rsa.Mont.wOf e.mem B = w := ctx_width (s := u) hcu
-  have hcNum : Spec.Rsa.Mont.numAt e.mem B w 0 = c := (numAt_eq u.mem B w 0).trans hcu.n
+  have hwE : Proof.Rsa.Mont.wOf e.mem B = w := ctx_width (s := u) hcu
+  have hcNum : Proof.Rsa.Mont.numAt e.mem B w 0 = c := (numAt_eq u.mem B w 0).trans hcu.n
   dsimp only at hp
   rw [hwE, hcNum] at hp
-  change (∀ b', Spec.Rsa.Mont.numAt u.mem B w 5 = b' % c * 2 ^ (64 * w) % c →
-    ((v.gpr .x0).setWidth 32).toNat = if Spec.MillerRabin.round c b' then 1 else 0) ∧
-    Spec.MillerRabin.Keeps Spec.MillerRabin.compact B n w u.mem v.mem at hp
+  change (∀ b', Proof.Rsa.Mont.numAt u.mem B w 5 = b' % c * 2 ^ (64 * w) % c →
+    ((v.gpr .x0).setWidth 32).toNat = if Proof.MillerRabin.Round.round c b' then 1 else 0) ∧
+    Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B n w u.mem v.mem at hp
   have hr := hp.1 b (by rw [numAt_eq]; exact hxu)
   have hWS : Scr v B Z := hcu.ws.scr.congr hwr
   have hW : word v.mem B (8 * sW) = BitVec.ofNat 64 w :=

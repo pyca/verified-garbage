@@ -88,7 +88,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem environmentSample_next (env : SampleEnvironment) (sample : Prog isa) (layout : (p : Inputs) → ScalarLayout p)
@@ -123,8 +123,8 @@ theorem environmentImport_next (env : SampleEnvironment) (s : State) {p : Inputs
   rintro t ⟨context, ready, imported, keeps, frame, rest⟩ syms
   have fits : arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
   refine ⟨⟨⟨⟨h.context.after_workspace frame rest context.ptr (fun d hd => (stableSlots_at stable hd).1), ready,
-    (keeps_array_num keeps fits (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 0) (by decide)).trans h.modulus,
-    (keeps_array_num keeps fits (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 4) (by decide)).trans h.r2,
+    (keeps_array_num keeps fits (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 0) (by decide)).trans h.modulus,
+    (keeps_array_num keeps fits (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 4) (by decide)).trans h.r2,
     h.scalar.after_workspace frame rest, h.significant.after_workspace frame rest, h.outputs.after rest⟩, imported⟩, calls.after rest⟩, env.stable environment ?_ rest syms⟩
   exact frame.mono (by simp [keyCallWrites, keyWrites])
 

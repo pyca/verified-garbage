@@ -11,6 +11,7 @@ public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
 
 /-! # IA-32 modular exponentiation against the shared DSA specification -/
 
@@ -37,11 +38,11 @@ theorem read_ones (a : Addr) : ∀ k, (Mem.read (fun _ => 1) a (k + 2)).toNat % 
   omega
 
 theorem satisfiable {n e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) :
-    ∃ s, (Spec.Dsa.ModPow.powContract (layout n e) abi 96).pre s := by
+    ∃ s, (Proof.Dsa.ModPow.powContract (layout n e) abi 96).pre s := by
   refine ⟨satState, ?_⟩
   have a0 : arg satState 0 = 0x01010101 := by decide
   have a1 : arg satState 1 = 0x01010101 := by decide
-  sig_pre [Spec.Dsa.ModPow.powContract, Spec.Dsa.ModPow.sig, layout, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.Dsa.ModPow.powContract, Proof.Dsa.ModPow.sig, layout, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [a0, a1]
   sig_and_intros
   all_goals try decide
@@ -50,14 +51,14 @@ theorem satisfiable {n e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) :
     simp only [contextBytes, slot, stride]; omega
   all_goals
     obtain ⟨k, hk⟩ : ∃ k, 8 * n = k + 2 := ⟨8 * n - 2, by omega⟩
-    unfold Spec.Dsa.ModPow.numAt
+    unfold Proof.Dsa.ModPow.numAt
     rw [hk]
   · exact (read_ones _ k).1
   · exact Nat.lt_trans (by decide) (read_ones _ k).2
 
 theorem verified (n e : Nat) (hn : 2 ≤ n := by decide) (hn48 : n ≤ 48 := by decide)
     (he : 1 < e := by decide) (hen : e ≤ 2 * n := by decide) :
-    Verified target (body n e) (Spec.Dsa.ModPow.powContract (layout n e) abi 96) :=
+    Verified target (body n e) (Proof.Dsa.ModPow.powContract (layout n e) abi 96) :=
   ⟨correct hn hn48 he hen, constantTime hn hn48 he hen, satisfiable hn hn48⟩
 
 end VG.Proof.Dsa.X86.Pow

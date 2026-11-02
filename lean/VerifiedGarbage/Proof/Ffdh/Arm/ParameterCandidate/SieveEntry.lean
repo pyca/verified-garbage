@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 private theorem advance (base : BitVec 32) (offset i : Nat) :
     (base + BitVec.ofNat 32 (offset + 4 * i)) + 4 = base + BitVec.ofNat 32 (offset + 4 * (i + 1)) := by

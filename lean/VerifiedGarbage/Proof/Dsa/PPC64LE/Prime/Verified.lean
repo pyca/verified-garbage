@@ -24,10 +24,10 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Two)
 
 /-- The contract, with the table. -/
 abbrev contract (bits : Nat) : Contract isa :=
-  Spec.Dsa.ProbablePrime.contract (layout bits) (abi.withConsts K) 176
+  Proof.Dsa.ProbablePrime.contract (layout bits) (abi.withConsts K) 176
 
 theorem pre_of {bits : Nat} {s : State} (hs : (contract bits).pre s) : CIn bits s ∧ ConstsOk K 176 s := by
-  unfold contract Spec.Dsa.ProbablePrime.contract at hs
+  unfold contract Proof.Dsa.ProbablePrime.contract at hs
   obtain ⟨hp, hk⟩ := pre_consts.mp hs
   exact ⟨CIn.ofStrip (cin_of_pre bits _ hp), hk⟩
 
@@ -36,9 +36,9 @@ theorem correct (Ri : RoundImpl) {bits : Nat} (hb : Bits bits) (s : State) (hs :
   obtain ⟨h, hk⟩ := pre_of hs
   obtain ⟨t, s', he, hc⟩ := code_ok Ri hb h hk
   refine ⟨t, s', he, hc.abi, ?_⟩
-  unfold contract Spec.Dsa.ProbablePrime.contract
+  unfold contract Proof.Dsa.ProbablePrime.contract
   refine post_consts.mpr ?_
-  sig_post [Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+  sig_post [Proof.Dsa.ProbablePrime.sig, abi, argRegs]
   refine ⟨?_, hc.keeps, hc.used⟩
   rw [hc.r3, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   have := status_le (res bits s)
@@ -50,9 +50,9 @@ theorem constantTime (Ri : RoundImpl) {bits : Nat} (hb : Bits bits) :
   refine RelCT.constantTime ((code_ct Ri hb).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ?_) fun _ _ h => h)
   obtain ⟨c₁, k₁⟩ := pre_of h₁
   obtain ⟨c₂, k₂⟩ := pre_of h₂
-  unfold contract Spec.Dsa.ProbablePrime.contract at hp
+  unfold contract Proof.Dsa.ProbablePrime.contract at hp
   obtain ⟨hp, hsy⟩ := pub_consts.mp hp
-  sig_pub [Spec.Dsa.ProbablePrime.sig, abi, argRegs] at hp
+  sig_pub [Proof.Dsa.ProbablePrime.sig, abi, argRegs] at hp
   obtain ⟨hsp, hl, h3, h4, h5, h6, h7⟩ := hp
   obtain ⟨hc, ht⟩ := List.cons.inj hl
   have ht' : tape s₁ = tape s₂ :=

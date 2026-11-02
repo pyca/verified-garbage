@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTMain
 public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
 meta import VerifiedGarbage.Impl.Ffdh.X86.Candidate
+meta import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
@@ -15,6 +16,7 @@ import VerifiedGarbage.Proof.Ffdh.X86.Cand.Main
 import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-!
 # `vg_ffdh_parameter_candidate_sieved` on i686 in constant time
@@ -77,7 +79,7 @@ theorem pub_facts {s t : State} (H : contract.pub s t) :
     s.gpr .esp = t.gpr .esp ∧ (∀ i < 9, arg s i = arg t i) ∧
       s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = t.syms VG.Impl.RsaKeyGen.TrialTable32.symbol ∧
       entryRand s = entryRand t := by
-  sig_pub [contract, Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig, abi, argSlots,
+  sig_pub [contract, Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argSlots,
     argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at H
   obtain ⟨SP, sy, L, a0, a1, a2, a3, a4, a5, a6, a7, a8⟩ := H
   have inj : ∀ {l l' : List Byte}, l.map (fun x => x.toNat) = l'.map (fun x => x.toNat) → l = l' :=

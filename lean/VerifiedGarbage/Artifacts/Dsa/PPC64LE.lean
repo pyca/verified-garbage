@@ -20,12 +20,6 @@ def artifacts : List Artifact := [
   Spec.Dsa.verifyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Verify.verify
     verified := Proof.Dsa.PPC64LE.verify_verified },
-  Spec.Dsa.signApi.artifact PPC64LE.target {
-    code := Impl.Dsa.PPC64LE.Sign.sign
-    verified := Proof.Dsa.PPC64LE.sign_verified },
-  Spec.Dsa.checkParametersApi.artifact PPC64LE.target {
-    code := Impl.Dsa.PPC64LE.Params.checkParameters
-    verified := Proof.Dsa.PPC64LE.checkParameters_verified },
   Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Derive.derive
     verified := Proof.Dsa.PPC64LE.deriveKey_verified },

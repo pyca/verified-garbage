@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 namespace VG.Proof.MillerRabin.Arm
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.MillerRabin.Arm VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 
 section
 variable {P : MP} {σ s t : State} {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat}
@@ -74,7 +74,7 @@ theorem KS.ctx_ok (h : KS P σ A live V ls s) (r0 : s.gpr .r0 = P.ws) {rest : Li
 
 /-- A Montgomery multiplication writes, of the key arrays, only its own two and its result's. -/
 theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
-    (keeps : Keeps (State.addr P.ws) P.len P.w o m m') (frame : Frame [P.rS] m m') :
+    (keeps : Proof.Rsa.Mont.Keeps (State.addr P.ws) P.len P.w o m m') (frame : Frame [P.rS] m m') :
     Keep P.B P.W [2, 3, o] [] m m' := by
   have fit := pre.fit
   have len := pre.len
@@ -86,7 +86,7 @@ theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
     rw [ex]
     refine keeps _ hin fun j hj => ?_
     by_cases hlo : (x - State.addr P.ws).toNat < kOff
-    · simp only [arrAt, Spec.Rsa.Mont.hdrBytes, kOff] at hlo ⊢; omega
+    · simp only [arrAt, Proof.Rsa.Mont.hdrBytes, kOff] at hlo ⊢; omega
     have hB := pre.ofsB (x := x) (by simp only [ofs]; omega)
     have hj' : (arr P.W j, S P.W) ∈ ranges P.W [2, 3, o] [] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
@@ -118,8 +118,8 @@ theorem KS.mulY_ok {b Y : Nat} (h : KS P σ A live V ls s) (hb : b = aY ∨ b = 
   have cR := pre.c_lt
   have ce := h.c_eq
   have opd : Operand aY ∧ Operand b := by
-    refine ⟨by simp [Operand, aY, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp], ?_⟩
-    rcases hb with rfl | rfl <;> simp [Operand, aY, aX, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    refine ⟨by simp [Operand, aY, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp], ?_⟩
+    rcases hb with rfl | rfl <;> simp [Operand, aY, aX, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have eY : numAt s.mem (State.addr P.ws) P.w aY = Y := by rw [pre.numAt_eq (by rw [hy]; omega), hy]
   have eB : numAt s.mem (State.addr P.ws) P.w b = num s.mem P.B P.W b := pre.numAt_eq (by omega)
   simp only [mulY, seqs]

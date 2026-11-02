@@ -13,7 +13,7 @@ namespace VG.Proof.Dsa.X86.KeyRandom
 open VG VG.X86 VG.Impl.Dsa.X86
 
 def checkFn : CheckCall.CheckFn where
-  name := Spec.Dsa.checkParametersApi.name
+  name := "vg_dsa_check_parameters"
   code := Generate.checkParameters
   verified := checking_verified
   noSp := NoSp.of_all (by decide +kernel)

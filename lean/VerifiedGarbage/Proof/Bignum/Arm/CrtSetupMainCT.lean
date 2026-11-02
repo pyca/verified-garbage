@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 structure CrtMainInput (base : BitVec 32) (len w : Nat) (s : State) : Prop where
   workspace : Workspace s base (8 * len)
@@ -37,7 +37,7 @@ theorem crt_setupMain_ct {base : BitVec 32} {len w : Nat} (hw : 2 ≤ w) (hw' : 
     rintro t ⟨layout, width, ptr, _, rest⟩
     have shape : CrtLayoutState base len w t.mem := ⟨layout, width⟩
     exact ⟨h.workspace.congr rest.wr, ptr, shape.nativeCount (h.workspace.congr rest.wr)⟩
-  have size : 52 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 52 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   exact (pair_posts first wp).seq (crt_links_ct size)
 
 end VG.Proof.Bignum.Arm

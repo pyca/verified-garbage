@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_public_checked` and `vg_rsa_public_precomputed_checked` on x86-64
@@ -120,29 +121,29 @@ theorem publicChecked_constantTime : ConstantTime isa pubContract.pre pubContrac
       rcases hr with rfl | rfl | rfl | rfl <;> simp), hp.2.2.2.2.2.2⟩)
     fun _ _ _ _ h₁ h₂ hp => pubPub_same h₁ h₂ hp
 
-theorem publicChecked_implies : pubChkContract.Implies (Spec.Rsa.publicCheckedContract abi) where
+theorem publicChecked_implies : pubChkContract.Implies (Proof.Rsa.publicCheckedContract abi) where
   pre := by
     intro s h
     -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq] at h
-    sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq] at h
+    sig_pre [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq] at h
+    sig_pre [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq]
+    sig_reduce [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq]
     sig_and_intros
     sig_close
-  post := by sig_implies_post [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq]
+  post := by sig_implies_post [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq] at h
+    sig_pub [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hcx]) hl
     refine ⟨?_, a0, a1, a2, a3, hn, he⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
+  sat := by sig_implies_sat [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 
-theorem publicChecked_verified : Verified target publicChecked (Spec.Rsa.publicCheckedContract abi) :=
+theorem publicChecked_verified : Verified target publicChecked (Proof.Rsa.publicCheckedContract abi) :=
   have hct : ConstantTime isa pubChkContract.pre pubChkContract.pub publicChecked := publicChecked_constantTime
   Verified.of_correct (k := pubChkContract) publicChecked_correct hct publicChecked_implies
 

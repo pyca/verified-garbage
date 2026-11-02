@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
@@ -21,20 +21,20 @@ def roundPre (s : State) : Prop :=
     120 ≤ (s.gpr .rsp).toNat ∧
     Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨ws, n * 8⟩ ∧
     Region.Disjoint ⟨s.gpr .rsp - 120#64, 120⟩ ⟨ws, n * 8⟩ ∧
-    Spec.MillerRabin.Layout Spec.MillerRabin.extended s.mem ws n ∧
-    Spec.MillerRabin.Prepared Spec.MillerRabin.extended s.mem ws
+    Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.extended s.mem ws n ∧
+    Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.extended s.mem ws
 
 def roundPost (s t : State) : Prop :=
   let ws := s.gpr .rdi
-  let w := Spec.Rsa.Mont.wOf s.mem ws
-  let c := Spec.Rsa.Mont.numAt s.mem ws w 0
-  (∀ b, Spec.Rsa.Mont.numAt s.mem ws w 5 = b % c * 2 ^ (64 * w) % c →
-    ((t.gpr .rax).setWidth 32).toNat = if Spec.MillerRabin.round c b then 1 else 0) ∧
-    Spec.MillerRabin.Keeps Spec.MillerRabin.extended ws (s.gpr .rsi).toNat w s.mem t.mem
+  let w := Proof.Rsa.Mont.wOf s.mem ws
+  let c := Proof.Rsa.Mont.numAt s.mem ws w 0
+  (∀ b, Proof.Rsa.Mont.numAt s.mem ws w 5 = b % c * 2 ^ (64 * w) % c →
+    ((t.gpr .rax).setWidth 32).toNat = if Proof.MillerRabin.Round.round c b then 1 else 0) ∧
+    Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.extended ws (s.gpr .rsi).toNat w s.mem t.mem
 
 def roundPub (s t : State) : Prop :=
   s.gpr .rsp = t.gpr .rsp ∧ s.gpr .rdi = t.gpr .rdi ∧ s.gpr .rsi = t.gpr .rsi ∧
-    Spec.Rsa.Mont.wOf s.mem (s.gpr .rdi) = Spec.Rsa.Mont.wOf t.mem (t.gpr .rdi)
+    Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = Proof.Rsa.Mont.wOf t.mem (t.gpr .rdi)
 
 def roundContract : Contract isa where
   pre := roundPre
@@ -64,55 +64,55 @@ private def satState : State where
   rd := []
   wr := [⟨0x1000, 2048⟩]
 
-private theorem sat_layout : Spec.MillerRabin.Layout Spec.MillerRabin.extended
+private theorem sat_layout : Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.extended
     satMem 0x1000 256 := by
-  simp only [Spec.MillerRabin.Layout, Spec.MillerRabin.extended, Spec.Rsa.Mont.Layout,
+  simp only [Proof.MillerRabin.Round.Layout, Proof.MillerRabin.Round.extended, Proof.Rsa.Mont.Layout,
     Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
   decide +kernel
 
-private theorem sat_prepared : Spec.MillerRabin.Prepared Spec.MillerRabin.extended
+private theorem sat_prepared : Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.extended
     satMem 0x1000 := by
-  have hw : Spec.Rsa.Mont.wOf satMem 0x1000 = 4 := by decide +kernel
-  have hc : Spec.Rsa.Mont.numAt satMem 0x1000 4 0 = 3 := by
+  have hw : Proof.Rsa.Mont.wOf satMem 0x1000 = 4 := by decide +kernel
+  have hc : Proof.Rsa.Mont.numAt satMem 0x1000 4 0 = 3 := by
     rw [VG.Proof.Bignum.X86_64.MontFn.numAt_eq]; decide +kernel
-  have h5 : Spec.Rsa.Mont.numAt satMem 0x1000 4 5 = 2 := by
+  have h5 : Proof.Rsa.Mont.numAt satMem 0x1000 4 5 = 2 := by
     rw [VG.Proof.Bignum.X86_64.MontFn.numAt_eq]; decide +kernel
-  have h25 : Spec.Rsa.Mont.numAt satMem 0x1000 4 25 = 1 := by
+  have h25 : Proof.Rsa.Mont.numAt satMem 0x1000 4 25 = 1 := by
     rw [VG.Proof.Bignum.X86_64.MontFn.numAt_eq]; decide +kernel
-  have h26 : Spec.Rsa.Mont.numAt satMem 0x1000 4 26 = 2 := by
+  have h26 : Proof.Rsa.Mont.numAt satMem 0x1000 4 26 = 2 := by
     rw [VG.Proof.Bignum.X86_64.MontFn.numAt_eq]; decide +kernel
-  have h24 : Spec.Rsa.Mont.numAt satMem 0x1000 4 24 = 1 := by
+  have h24 : Proof.Rsa.Mont.numAt satMem 0x1000 4 24 = 1 := by
     rw [VG.Proof.Bignum.X86_64.MontFn.numAt_eq]; decide +kernel
-  simp only [Spec.MillerRabin.Prepared, Spec.MillerRabin.extended, hw, hc, h5, h25, h26, h24]
+  simp only [Proof.MillerRabin.Round.Prepared, Proof.MillerRabin.Round.extended, hw, hc, h5, h25, h26, h24]
   decide +kernel
 
 theorem round_implies : roundContract.Implies
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.extended 120) where
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.extended 120) where
   pre := by
     intro s h
-    sig_pre [stackBelow, Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argRegs] at h
+    sig_pre [stackBelow, Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argRegs] at h
     sig_split h
     rename_i hsp hrd hwr hret hstk hnowrap hLayout hc3 hodd hinv hxm hr1 hrm1 he
-    sig_reduce [roundContract, roundPre, Spec.MillerRabin.Prepared, stackBelow]
+    sig_reduce [roundContract, roundPre, Proof.MillerRabin.Round.Prepared, stackBelow]
     sig_and_intros
     sig_close
-    all_goals dsimp only [Spec.MillerRabin.extended] at *
+    all_goals dsimp only [Proof.MillerRabin.Round.extended] at *
     · exact hstk
     · exact hr1
     · exact hrm1
     · exact he
     · exact h
-  post := by sig_implies_post [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig,
+  post := by sig_implies_post [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig,
     roundContract, roundPost, abi, argRegs]
   pub := by
     rintro s t - - h
-    sig_pub [stackBelow, Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig,
+    sig_pub [stackBelow, Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig,
       roundContract, roundPub, abi, argRegs] at h
     obtain ⟨hsp, hw, h0, h1⟩ := h
     exact ⟨hsp, h0, h1, List.singleton_inj.mp hw⟩
   sat := by
     refine ⟨satState, ?_⟩
-    sig_pre [stackBelow, Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argRegs]
+    sig_pre [stackBelow, Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argRegs]
     sig_and_intros
     all_goals first
       | exact sat_layout

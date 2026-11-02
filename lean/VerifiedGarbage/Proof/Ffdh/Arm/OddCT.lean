@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (wp_ldr)
 
 theorem odd_ct {base : BitVec 32} {len w a : Nat} (ha : a < 8) :
@@ -36,7 +36,7 @@ theorem odd_ct {base : BitVec 32} {len w a : Nat} (ha : a < 8) :
       WP isa (.block [.ldr .r4 .r0 (64 + 8 * a)]) s
         (fun t => t.gpr .r4 = base + BitVec.ofNat 32 (arrAt w a)) := by
     have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-    have size : 64 + 8 * a + 4 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 64 + 8 * a + 4 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
     refine wp_ldr (by omega) (a := off (State.addr base) (64 + 8 * a))

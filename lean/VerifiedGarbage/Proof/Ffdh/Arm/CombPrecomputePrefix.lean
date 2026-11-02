@@ -27,7 +27,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeEntry
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 namespace CombBuilder

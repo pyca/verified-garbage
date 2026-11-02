@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhaseCT
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure WindowKernel where

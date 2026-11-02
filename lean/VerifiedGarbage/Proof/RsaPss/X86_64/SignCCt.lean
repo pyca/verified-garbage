@@ -73,12 +73,12 @@ theorem SSib.sfits {a s : State} (S : SSib G a s) : sfits G s ↔ sfits G a := b
   simp only [VG.Proof.RsaPss.X86_64.sfits, S.sel, S.ssl]
 
 theorem seb_ok {s : State} (hp : SPre G s) :
-    sclo s ≤ 1 ∧ 1 ≤ seb s ∧ seb s ≤ Spec.RsaPss.maxEmBits ∧ sel s ≤ 1024 := by
+    sclo s ≤ 1 ∧ 1 ≤ seb s ∧ seb s ≤ Proof.RsaPss.maxEmBits ∧ sel s ≤ 1024 := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hl8 : Nat.log2 (sn0v s) < 8 := RsaPss.log2_lt8 (s.mem (s.gpr .rdx))
   refine ⟨lo_le hl8 (by omega_arith), ?_, ?_, ?_⟩
   · unfold seb ebV; omega_arith
-  · unfold seb ebV Spec.RsaPss.maxEmBits; omega_arith
+  · unfold seb ebV Proof.RsaPss.maxEmBits; omega_arith
   · unfold sel seb ebV Spec.RsaPss.emLength; omega_arith
 
 /-- `encode`'s result, from whether it fits. -/

@@ -40,8 +40,8 @@ theorem round_correct (M : Mont) (s : State) (h : roundContract.pre s) :
     ∃ tr t, Exec isa (round M.mm) s tr t ∧ abiPreserved s t ∧ roundContract.post s t := by
   obtain ⟨h4, h128, hEZ, bm, hc, hE, hodd, h3, hx⟩ := initial_ctx h
   let B := s.gpr .x0
-  let w := Spec.Rsa.Mont.wOf s.mem B
-  let c := Spec.Rsa.Mont.numAt s.mem B w 0
+  let w := Proof.Rsa.Mont.wOf s.mem B
+  let c := Proof.Rsa.Mont.numAt s.mem B w 0
   have hR := coprime_pow2 hodd (64 * w)
   obtain ⟨b, -, hb⟩ := witness_exists hR hx
   have hX : wv s.mem B (slot w aXm) w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * w) % c := by
@@ -57,7 +57,7 @@ theorem round_correct (M : Mont) (s : State) (h : roundContract.pre s) :
     exact ⟨fun r hmem => k.gpr r (by revert r; decide), k.sp, k.vcs⟩
   · refine ⟨?_, ?_⟩
     · intro b' hb'
-      have hm' : Spec.MillerRabin.round c b = Spec.MillerRabin.round c b' := by
+      have hm' : Proof.MillerRabin.Round.round c b = Proof.MillerRabin.Round.round c b' := by
         apply round_eq_of_mont (by have hc3 : 3 ≤ c := h3; omega_arith : 0 < c) hR
         rw [← hb, ← hb']
         exact (numAt_eq s.mem B w aXm).symm

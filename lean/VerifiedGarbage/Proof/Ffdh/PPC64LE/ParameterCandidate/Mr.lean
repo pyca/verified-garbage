@@ -134,7 +134,7 @@ theorem wp_then {a b c : Prog isa} {s : State} {P Q : State → Prop} (h : WP is
 def mrGo (r : List Byte) (mb N i u : Nat) : Bool :=
   decide (u + (mb + 7) / 8 ≤ r.length) &&
     (!decide (2 ≤ wA mb r u ∧ wA mb r u < N - 1) ||
-      (Spec.MillerRabin.round N (wA mb r u) && decide (i + 1 < Spec.Ffdh.primeChecks mb)))
+      (Proof.MillerRabin.Round.round N (wA mb r u) && decide (i + 1 < Spec.Ffdh.primeChecks mb)))
 
 /-- An iteration: `hStat` tested after the head. -/
 theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × List Byte)} {i u : Nat} {s : State}

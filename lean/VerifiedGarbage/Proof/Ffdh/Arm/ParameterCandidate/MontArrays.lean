@@ -19,7 +19,7 @@ array routines. Clearing native padding makes both views agree exactly. -/
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.Rsa.Arm.Keys (num Keep opRegs)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 private theorem subtract_exact {a b r modulus borrow : Nat} (le : b ≤ a) (small : r < modulus)
     (value : r + b = a + modulus * borrow) (bit : borrow ≤ 1) : r = a - b := by

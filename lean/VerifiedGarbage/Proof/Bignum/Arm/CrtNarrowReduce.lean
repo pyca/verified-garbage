@@ -24,14 +24,14 @@ After the factor's full-width preparation, the input is imported into array
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt wordAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt wordAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- A full-width factor workspace holding the input modulo the factor, and a cleared result. -/
 structure CrtReducedState (base : BitVec 32) (len w M x : Nat) (mem : Mem) : Prop where
   layout : CrtLayoutState base len w mem
   inverse : ((word mem (State.addr base) (arrAt w 0)).toNat *
-    (wordAt mem (State.addr base) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
+    (wordAt mem (State.addr base) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
   positive : 1 < M
   odd : M % 2 = 1
   modulus : numAt mem (State.addr base) w 0 = M
@@ -63,10 +63,10 @@ theorem crt_narrowReduce_ok (s : State) {base xp ep : BitVec 32} {len w k eLen s
       let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr base) w 0)
       ArithmeticReady base len w t ∧ CrtReducedState base len w M (Spec.Rsa.os2ip xb) t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op7 : Operand 7 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   rw [reducePrime, WP.seq_iff]
   refine WP.mono (crt_primePower_prepare s h countFits) ?_
   rintro u ⟨prepared, frameU, restU⟩

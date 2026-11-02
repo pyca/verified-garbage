@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
 
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallResult
+public import VerifiedGarbage.Proof.Dsa.Contract
 /-! Relational timing for an internal derivation under its retained invariant. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86/KeyRandom/CheckCallCT.lean`, which only this module imported.
@@ -26,8 +27,8 @@ theorem call_pub {s₁ s₂ t₁ t₂ : State} (A₁ : KeyABI s₁) (A₂ : KeyA
     (hk : (rInput s₁).key.map (·.toNat) =
       (rInput s₂).key.map (·.toNat))
     :
-    (Spec.Dsa.checkParametersContract abi 108).pub (t₁.callEntry.withRegions rd wr) (t₂.callEntry.withRegions rd wr) := by
-  sig_pub [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argSlots, argVal, argBytes]
+    (Proof.Dsa.checkParametersContract abi 108).pub (t₁.callEntry.withRegions rd wr) (t₂.callEntry.withRegions rd wr) := by
+  sig_pub [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argSlots, argVal, argBytes]
   simp only [ce_arg A₁ h₁ C₁ rd wr (show 0 < 6 by decide),
     ce_arg A₁ h₁ C₁ rd wr (show 1 < 6 by decide),
     ce_arg A₁ h₁ C₁ rd wr (show 2 < 6 by decide),

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCall
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCArgs
-public import VerifiedGarbage.Spec.RsaPss.Encoding
+public import VerifiedGarbage.Proof.RsaPss.EncodingContract
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignSpec
 import VerifiedGarbage.Proof.RsaPss.SignEncode
 import VerifiedGarbage.Proof.RsaPss.VerifyCases
@@ -91,10 +91,10 @@ variable {s : State} (hk1 : 64 ≤ (s.gpr .x1).toNat) (hk2 : (s.gpr .x1).toNat �
   (h0 : s.mem (s.gpr .x0) ≠ 0)
 include hk1 hk2 h0
 
-theorem eb_bounds : 1 ≤ ebS s ∧ ebS s ≤ Spec.RsaPss.maxEmBits ∧ loS s + elS s = (s.gpr .x1).toNat ∧ loS s ≤ 1 := by
+theorem eb_bounds : 1 ≤ ebS s ∧ ebS s ≤ Proof.RsaPss.maxEmBits ∧ loS s + elS s = (s.gpr .x1).toNat ∧ loS s ≤ 1 := by
   have h0' : (s.mem (s.gpr .x0)).toNat ≠ 0 := fun h => h0 (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
   have hl8 := RsaPss.log2_lt8 (s.mem (s.gpr .x0))
-  unfold loS elS ebS Spec.RsaPss.emLength ebV Spec.RsaPss.maxEmBits
+  unfold loS elS ebS Spec.RsaPss.emLength ebV Proof.RsaPss.maxEmBits
   omega
 
 omit hk2 in

@@ -20,6 +20,8 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCall
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
+public import VerifiedGarbage.Proof.Dsa.GeneratorStageContract
 
 /-! # Calling the generator stage, which leaves its status in the generation frame
 
@@ -36,8 +38,8 @@ open VG.Impl.Bignum.AArch64 (movi)
 /-- The generator search's result, by the stage's. -/
 theorem generatorResult_stage (value q : Nat) (hs : List Nat) (rest : List Byte) :
     VG.Proof.Dsa.Generation.generatorResult value q hs rest =
-      some (Spec.Dsa.GeneratorStage.stage value q hs, rest) := by
-  unfold VG.Proof.Dsa.Generation.generatorResult Spec.Dsa.GeneratorStage.stage
+      some (Proof.Dsa.GeneratorStage.stage value q hs, rest) := by
+  unfold VG.Proof.Dsa.Generation.generatorResult Proof.Dsa.GeneratorStage.stage
   cases Spec.Dsa.generator value q hs with
   | none => rfl
   | some g => by_cases hv : Spec.Dsa.parametersValid ⟨value, q, g⟩ <;> simp [hv]
@@ -96,13 +98,13 @@ structure GeneratorCalled (p : GenerationContext) (value q : Nat) (s u t : State
   wr : t.wr = u.wr
   sp : t.sp = p.geo.F
   status : (t.gpr .x0).setWidth 32 = BitVec.ofNat 32
-    (if (Spec.Dsa.GeneratorStage.stage value q
+    (if (Proof.Dsa.GeneratorStage.stage value q
       ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE)).isSome then 1 else 0)
-  packed : ∀ a, Spec.Dsa.GeneratorStage.stage value q
+  packed : ∀ a, Proof.Dsa.GeneratorStage.stage value q
       ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE) = some a →
     Spec.Rsa.bytesAt t.mem (VG.Proof.Bignum.off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) =
       Spec.Dsa.encodeParams p.geo.pLen p.geo.qLen a
-  keeps : Spec.Dsa.ModPow.Keeps p.geo.B (usedBytes p.geo.pLen / 8)
+  keeps : Proof.Dsa.ModPow.Keeps p.geo.B (usedBytes p.geo.pLen / 8)
     (Impl.Dsa.AArch64.Generator.layout p.geo.pLen).scratch s.mem t.mem
   frame : Frame [⟨p.geo.B, usedBytes p.geo.pLen⟩, below p.geo.F 272] s.mem t.mem
 
@@ -112,8 +114,8 @@ structure GeneratorEntry (p : GenerationContext) (value qval : Nat) (u : State) 
   pre : (Generator.contract p.geo.pLen).pre (u.callEntry.withRegions (generatorCallRd p) (generatorCallWr p))
   reads : Covers (generatorCallRd p ++ generatorCallWr p) (u.rd ++ u.wr)
   writes : Covers (generatorCallWr p) u.wr
-  pv : Spec.Dsa.GeneratorStage.pAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = value
-  qv : Spec.Dsa.GeneratorStage.qAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = qval
+  pv : Proof.Dsa.GeneratorStage.pAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = value
+  qv : Proof.Dsa.GeneratorStage.qAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = qval
   tape : Spec.Rsa.bytesAt u.mem p.hs.ptr p.hs.bytes.length = p.hs.bytes
 
 theorem generatorCall_entry {p : GenerationContext} {W : Nat → BitVec 64} {s u : State}
@@ -134,12 +136,12 @@ theorem generatorCall_entry {p : GenerationContext} {W : Nat → BitVec 64} {s u
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
   have pfit : value < 256 ^ p.geo.pLen := by
     simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using domain.upper
-  have pv : Spec.Dsa.GeneratorStage.pAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = value := by
-    unfold Spec.Dsa.GeneratorStage.pAt Spec.Dsa.GeneratorStage.numberAt
+  have pv : Proof.Dsa.GeneratorStage.pAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = value := by
+    unfold Proof.Dsa.GeneratorStage.pAt Proof.Dsa.GeneratorStage.numberAt
     rw [hm]
     exact (congrArg Spec.Dsa.decodeBE bp).trans (VG.Proof.Dsa.decodeBE_encodeBE pfit)
-  have qv : Spec.Dsa.GeneratorStage.qAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = qval := by
-    unfold Spec.Dsa.GeneratorStage.qAt Spec.Dsa.GeneratorStage.numberAt
+  have qv : Proof.Dsa.GeneratorStage.qAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = qval := by
+    unfold Proof.Dsa.GeneratorStage.qAt Proof.Dsa.GeneratorStage.numberAt
     rw [hm]
     change Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B q)
       (Impl.Dsa.AArch64.Generator.qLen p.geo.pLen)) = qval
@@ -159,7 +161,7 @@ theorem generatorCall_entry {p : GenerationContext} {W : Nat → BitVec 64} {s u
     Offset.base_disjoint_below p.geo.F (by decide)
   have pre : (Generator.contract p.geo.pLen).pre
       (u.callEntry.withRegions (generatorCallRd p) (generatorCallWr p)) := by
-    sig_pre [Generator.contract, Spec.Dsa.GeneratorStage.contract, Spec.Dsa.GeneratorStage.sig, abi, argRegs]
+    sig_pre [Generator.contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
     sig_and_intros
     all_goals try simp only [h0, h1, h2, h3, hsp, hl, hw.1, generatorCallRd, generatorCallWr]
     · exact p.geo.callSize
@@ -201,12 +203,12 @@ theorem generatorCall_call_ok (G : GeneratorStage) {p : GenerationContext} {W : 
   refine WP.callF (G.verified p.geo.pLen hb).1 E.pre E.reads E.writes ?_
     (by have := hd; omega)
   intro t hrd' hwr' hsp' hf _ hpost
-  sig_post [Generator.contract, Spec.Dsa.GeneratorStage.contract, Spec.Dsa.GeneratorStage.sig, abi, argRegs]
+  sig_post [Generator.contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
     at hpost
   simp only [h0, h1, h2, h3, hl] at hpost
   rw [pv, qv] at hpost
   obtain ⟨hr, hkeeps, hpk⟩ := hpost
-  have cands : Spec.Dsa.GeneratorStage.candidates p.geo.pLen (Spec.Rsa.bytesAt u.mem p.hs.ptr p.hs.bytes.length) =
+  have cands : Proof.Dsa.GeneratorStage.candidates p.geo.pLen (Spec.Rsa.bytesAt u.mem p.hs.ptr p.hs.bytes.length) =
       (Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE := by
     rw [tapeV]; rfl
   rw [cands] at hr hpk
@@ -308,7 +310,7 @@ theorem generatorCall_ok (G : GeneratorStage) {p : GenerationContext} {W : Nat �
   have Rt : Rep t.mem p.geo.F p.geo.hash V W :=
     ⟨fun o ho => (hashKept o ho).trans (R.scr o ho), frameKept⟩
   have Lt : Lay t p.geo.F p.geo.hash := lay_of_rep L R Rt rfl (C.sp.trans L.sp.symm) (C.wr.trans ku.wr)
-  let res := Spec.Dsa.GeneratorStage.stage value qval
+  let res := Proof.Dsa.GeneratorStage.stage value qval
     ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE)
   refine WP.mono (generatorCallStatus_ok Lt Rt (b := res.isSome) C.status) fun t' ⟨Lt', Rt', ft', rdt', wrt'⟩ => ?_
   have hframe : Frame p.changed s.mem t'.mem := by

@@ -152,7 +152,7 @@ secret exponent and result flag. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure KeyExportInput (p : Inputs) (slots : List Nat) (s : State) : Prop where
   context : Context p slots s
@@ -208,7 +208,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 structure KeyPowerInput (p : Inputs) (slots : List Nat) (eb : List Byte) (s : State) : Prop extends
     PowerAtInput p slots 56 16 p.P ((p.dom.drop p.k).take p.k) eb s where
@@ -235,11 +235,11 @@ theorem keyPower_next (s : State) {p : Inputs} {slots : List Nat} {eb : List Byt
 theorem keyRange_next (s : State) {p : Inputs} {slots : List Nat}
     (stable : stableSlots slots = true) (odd : p.P % 2 = 1) (h : KeyRangeInput p slots s) :
     WP isa (VG.Impl.Ffdh.Arm.inRange 6) s (KeyExportInput p slots) := by
-  refine WP.mono (inRange_ok s h.ready (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6)
+  refine WP.mono (inRange_ok s h.ready (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6)
     (by decide) (by rw [h.modulus]; exact odd)) ?_
   rintro t ⟨ready, _, arrays, frame, rest⟩
   exact ⟨h.context.after_workspace frame rest ready.ptr (fun d hd => (stableSlots_at stable hd).1), ready,
-    h.outputs.after rest, by rw [arrays 6 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)]; exact h.valueFit⟩
+    h.outputs.after rest, by rw [arrays 6 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]; exact h.valueFit⟩
 
 theorem keyTail_ct {p : Inputs} {slots : List Nat} {eb1 eb2 : List Byte}
     (stable : stableSlots slots = true) (h4 : 4 ∈ slots) (h16 : 16 ∈ slots) (h20 : 20 ∈ slots) (h32 : 32 ∈ slots)
@@ -255,7 +255,7 @@ theorem keyTail_ct {p : Inputs} {slots : List Nat} {eb1 eb2 : List Byte}
     (by change BitVec.ofNat 32 p.scalarWidth = _; rw [size1]) (size1.trans size2.symm) odd).mono
     (P' := fun (s t : State) => KeyPowerInput p slots eb1 s ∧ KeyPowerInput p slots eb2 t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.toPowerAtInput, h.2.1.toPowerAtInput, h.2.2⟩) (fun _ _ h => h)
-  have range := (inRange_ct (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
+  have range := (inRange_ct (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
     (P' := fun (s t : State) => KeyRangeInput p slots s ∧ KeyRangeInput p slots t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.ready, h.2.1.ready, h.2.2⟩) (fun _ _ h => h)
   unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.tail

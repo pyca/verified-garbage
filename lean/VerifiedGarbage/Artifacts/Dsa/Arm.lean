@@ -15,23 +15,17 @@ namespace VG.Artifacts.Dsa.Arm
 
 def artifacts : List Artifact := [
   Spec.Dsa.randomSignApi.artifact Arm.target {
-    code := Impl.Dsa.Arm.RandomSign.code Spec.Dsa.signApi.name (Impl.Dsa.Arm.Entry.operation true)
+    code := Impl.Dsa.Arm.RandomSign.code "vg_dsa_sign" (Impl.Dsa.Arm.Entry.operation true)
     verified := Proof.Dsa.Arm.randomSigning_verified
     stack := 144 },
-  Spec.Dsa.signApi.artifact Arm.target {
-    code := Impl.Dsa.Arm.Entry.operation true
-    verified := Proof.Dsa.Arm.sign_verified },
   Spec.Dsa.verifyApi.artifact Arm.target {
     code := Impl.Dsa.Arm.Entry.operation false
     verified := Proof.Dsa.Arm.verify_verified },
-  Spec.Dsa.checkParametersApi.artifact Arm.target {
-    code := Impl.Dsa.Arm.Generate.checkParameters
-    verified := Proof.Dsa.Arm.check_verified },
   Spec.Dsa.deriveKeyApi.artifact Arm.target {
     code := Impl.Dsa.Arm.Generate.deriveKey
     verified := Proof.Dsa.Arm.derive_verified },
   Spec.Dsa.generateKeyApi.artifact Arm.target {
-    code := Impl.Dsa.Arm.GenerateKey.code Spec.Dsa.checkParametersApi.name Spec.Dsa.deriveKeyApi.name
+    code := Impl.Dsa.Arm.GenerateKey.code "vg_dsa_check_parameters" Spec.Dsa.deriveKeyApi.name
       Impl.Dsa.Arm.Generate.checkParameters Impl.Dsa.Arm.Generate.deriveKey
     verified := Proof.Dsa.Arm.Key.generating_verified
     stack := 144 }]

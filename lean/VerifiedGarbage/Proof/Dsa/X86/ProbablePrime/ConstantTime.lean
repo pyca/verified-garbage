@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABI
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.TimingBody
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABIEntry
 import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
 import VerifiedGarbage.Proof.Framework.Sig
@@ -24,9 +24,9 @@ open VG VG.X86
 structure PublicInputs (bits : Nat) (s t : State) : Prop where
   stack : s.gpr .esp = t.gpr .esp
   symbol : s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = t.syms VG.Impl.RsaKeyGen.TrialTable32.symbol
-  observations : Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
+  observations : Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
       ((arg s 0).setWidth 64) :: (callEntropy s).map (·.toNat) =
-    Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) t.mem
+    Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) t.mem
       ((arg t 0).setWidth 64) :: (callEntropy t).map (·.toNat)
   arg0 : arg s 0 = arg t 0
   arg1 : arg s 1 = arg t 1
@@ -35,7 +35,7 @@ structure PublicInputs (bits : Nat) (s t : State) : Prop where
   arg4 : arg s 4 = arg t 4
 
 theorem public_inputs {bits : Nat} {s t : State} (H : (contract bits).pub s t) : PublicInputs bits s t := by
-  sig_pub [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig,
+  sig_pub [contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at H
   sig_split H
   constructor <;> first | with_reducible assumption | (dsimp only [callEntropy]; with_reducible assumption)
@@ -53,9 +53,9 @@ theorem PublicInputs.entropy {bits : Nat} {s t : State} (P : PublicInputs bits s
   VG.Proof.RsaKeyGen.map_toNat_inj (List.cons.inj P.observations).2
 
 theorem constantTime {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96) {bits : Nat} (b : Bits bits) :
     ConstantTime isa (contract bits).pre (contract bits).pub
       (VG.Impl.Dsa.X86.ProbablePrime.code bits montName mont roundName round) := by

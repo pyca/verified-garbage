@@ -65,12 +65,6 @@ def artifacts : List Artifact := [
   Spec.Ffdh.parameterInitApi.artifact X86.target {
     code := Impl.Ffdh.X86.ParamInit.code
     verified := Proof.Ffdh.X86.ParamInit.verified },
-  Spec.Ffdh.sievedParameterCandidateApi.artifact X86.target {
-    code := Impl.Ffdh.X86.Candidate.code
-    verified := Proof.Ffdh.X86.Cand.verified
-    spSafe := Proof.Ffdh.X86.Shape.candidate_spSafe
-    consts := VG.Impl.RsaKeyGen.TrialTable32.consts
-    stack := 172 },
   Spec.Ffdh.sievedParameterSearchApi.artifact X86.target {
     code := Impl.Ffdh.X86.ParamSearch.code
     verified := Proof.Ffdh.X86.PSearch.verified

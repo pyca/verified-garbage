@@ -24,19 +24,19 @@ namespace VG.Proof.Bignum.X86_64.MontFn
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.Bignum VG.Impl.Bignum.X86_64.MontFn
 open VG.Impl.Bignum.X86_64.Public (aN aAcc aTmp)
-open VG.Spec.Rsa.Mont (numAt wOf wordAt Layout Operand Keeps arrAt aM minvWord)
+open VG.Proof.Rsa.Mont (numAt wOf wordAt Layout Operand Keeps arrAt aM minvWord)
 open VG.Proof.MlKem.X86_64
 
-theorem fnLazy_implies : fnLazyContract.Implies (Spec.Rsa.Mont.mulLazyContract abi) where
-  pre := by sig_implies_pre [Spec.Rsa.Mont.mulLazyContract, Spec.Rsa.Mont.sig, fnLazyContract, abi, argRegs]
-  post := by sig_implies_post [Spec.Rsa.Mont.mulLazyContract, Spec.Rsa.Mont.sig, fnLazyContract, abi, argRegs]
+theorem fnLazy_implies : fnLazyContract.Implies (Proof.Rsa.Mont.mulLazyContract abi) where
+  pre := by sig_implies_pre [Proof.Rsa.Mont.mulLazyContract, Proof.Rsa.Mont.sig, fnLazyContract, abi, argRegs]
+  post := by sig_implies_post [Proof.Rsa.Mont.mulLazyContract, Proof.Rsa.Mont.sig, fnLazyContract, abi, argRegs]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.Mont.mulLazyContract, Spec.Rsa.Mont.sig, fnLazyContract, fnContract, abi, argRegs] at h
+    sig_pub [Proof.Rsa.Mont.mulLazyContract, Proof.Rsa.Mont.sig, fnLazyContract, fnContract, abi, argRegs] at h
     obtain ⟨hsp, hw, hdi, hsi, hdx, hcx, h8⟩ := h
     exact ⟨hsp, hdi, hsi, hdx, hcx, h8, List.singleton_inj.mp hw⟩
   sat := by
-    sig_implies_sat [Spec.Rsa.Mont.mulLazyContract, Spec.Rsa.Mont.sig, fnLazyContract, abi, argRegs] [satState]
+    sig_implies_sat [Proof.Rsa.Mont.mulLazyContract, Proof.Rsa.Mont.sig, fnLazyContract, abi, argRegs] [satState]
       using satState
 
 /-- `mulBase_ok` without `[b] < m`: the baseline is lazy too. -/
@@ -104,7 +104,7 @@ theorem fnLazy_ct : ConstantTime isa fnLazyContract.pre fnLazyContract.pub mulBa
         by simp only [idx, h8]⟩⟩) fun _ _ h => h)
 
 /-- `vg_rsa_lazy_mont_mul` on x86-64: `vg_rsa_mont_mul`'s code. -/
-theorem fnLazy_verified : Verified target mulBase (Spec.Rsa.Mont.mulLazyContract abi) :=
+theorem fnLazy_verified : Verified target mulBase (Proof.Rsa.Mont.mulLazyContract abi) :=
   Verified.of_correct fnLazy_correct fnLazy_ct fnLazy_implies
 
 theorem fnAdxLazy_correct (s : State) (h : fnLazyContract.pre s) :
@@ -165,7 +165,7 @@ theorem fnAdxLazy_ct : ConstantTime isa fnLazyContract.pre fnLazyContract.pub mu
         by simp only [idx, h8]⟩⟩) fun _ _ h => h)
 
 /-- `vg_rsa_lazy_mont_mul_adx` on x86-64. -/
-theorem fnAdxLazy_verified : Verified target mulAdxLazy (Spec.Rsa.Mont.mulLazyContract abi) :=
+theorem fnAdxLazy_verified : Verified target mulAdxLazy (Proof.Rsa.Mont.mulLazyContract abi) :=
   Verified.of_correct fnAdxLazy_correct fnAdxLazy_ct fnLazy_implies
 
 end VG.Proof.Bignum.X86_64.MontFn

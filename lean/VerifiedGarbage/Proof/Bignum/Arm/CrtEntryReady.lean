@@ -126,7 +126,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure CrtCheckedState (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : Prop where
   selected : CrtSelected g bs g.base s
@@ -561,7 +561,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {P Q v1 v2 : Nat}
@@ -1082,13 +1082,13 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (arrAt Operand)
+open VG.Proof.Rsa.Mont (arrAt Operand)
 
 theorem crt_difference_ct {base : BitVec 32} {len w M1 M2 : Nat} (fit : arrAt w 3 + 32 ≤ 8 * len) :
     RelCT isa (fun s t => CrtDifferenceInput base len w M1 s ∧ CrtDifferenceInput base len w M2 t ∧ s.sp = t.sp)
       difference (fun _ _ => True) := by
   let P := fun (s t : State) => CrtDifferenceInput base len w M1 s ∧ CrtDifferenceInput base len w M2 t ∧ s.sp = t.sp
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have input (s : State) {M : Nat} (h : CrtDifferenceInput base len w M s) : ReduceOperandReady base len w s := by
     have positive : 0 < M := by have := h.ready.modulus; rw [h.modulus] at this; omega
     exact ⟨h.ready, by rw [h.r2, h.modulus]; exact Nat.mod_lt _ positive,
@@ -1101,7 +1101,7 @@ theorem crt_difference_ct {base : BitVec 32} {len w M1 M2 : Nat} (fit : arrAt w 
     (reduceOperand_ok s h.ready op1 (by decide) (by decide) h.modulus h.odd h.r2 h.one).mono (fun _ j => j.1)
   have reduced := (relCT_keep_sp reduce (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨wp s h.1, wp t h.2.1⟩)
-  have small : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega
+  have small : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega
   exact reduced.seq ((subModArray_ct (o := 5) (a := 6) (b := 1)
     (by decide) (by decide) (by decide) (by decide) small).mono
     (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ _ => trivial))
@@ -1120,7 +1120,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 
 theorem crt_timesInverse_ct {base src : BitVec 32} {len w k M1 M2 : Nat} {bs1 bs2 : List Byte}
     (fit : arrAt w 3 + 32 ≤ 8 * len) :
@@ -1131,7 +1131,7 @@ theorem crt_timesInverse_ct {base src : BitVec 32} {len w k M1 M2 : Nat} {bs1 bs
   let Q := fun (b : Nat) (s : State) => ArithmeticReady base len w s ∧
     numAt s.mem (State.addr base) w b < numAt s.mem (State.addr base) w 0
   have op (q : Nat) (hq : q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5) : Operand q := by
-    rcases hq with rfl | rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases hq with rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have load : RelCT isa P (savedOperand 1 96 100) (fun _ _ => True) :=
     (savedOperand_ct (base := base) (src := src) (len := len) (w := w) (k := k)
       (ps := 96) (cs := 100) (bs1 := bs1) (bs2 := bs2) (by decide : 1 < 8)).mono
@@ -1174,7 +1174,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem crt_coefficient_ct {base src : BitVec 32} {len w k M1 M2 : Nat} {bs1 bs2 : List Byte}
     (fit : arrAt w 3 + 32 ≤ 8 * len) :
@@ -1204,7 +1204,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
     RelCT isa (fun s t => CrtCoefficientSelection g bs1 g.base s ∧
@@ -1470,7 +1470,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem crt_computeStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem finish_ok {base : BitVec 32} {len w M E : Nat} {P : State → Prop} {regions : List Region}
@@ -23,9 +23,9 @@ theorem finish_ok {base : BitVec 32} {len w M E : Nat} {P : State → Prop} {reg
       numAt t.mem (State.addr base) w 7 = 1 ∧ P t ∧ HeaderKept base s t ∧
       Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   refine WP.mono (A.op_ok s 6 6 7 h.ready hp
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
     (by rw [h.one]; exact h.ready.modulus)) ?_
   rintro t ⟨ready, modulus, bound, value, keeps, pt, frame, rest⟩
   rw [h.modulus] at modulus bound value
@@ -34,9 +34,9 @@ theorem finish_ok {base : BitVec 32} {len w M E : Nat} {P : State → Prop} {reg
   rw [Nat.mod_eq_of_lt bound, Nat.mul_one, ← powMod_eq] at final
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
   have r2 := (keeps_array_num keeps fits
-    (q := 4) (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans h.r2
+    (q := 4) (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans h.r2
   have one := (keeps_array_num keeps fits
-    (q := 7) (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans h.one
+    (q := 7) (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans h.one
   exact ⟨ready, final, modulus, r2, one, pt, header_of_keeps h.ready keeps, frame, rest⟩
 
 end VG.Proof.Bignum.Arm.TwoExp

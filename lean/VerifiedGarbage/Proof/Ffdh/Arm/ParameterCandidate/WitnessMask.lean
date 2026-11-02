@@ -89,7 +89,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Keeps)
 
 theorem witnessMask_ok {s : State} {base : BitVec 32} {capacity w bits : Nat}
     (ready : ArithmeticReady base capacity w s) (stack : Workspace s s.sp 72)

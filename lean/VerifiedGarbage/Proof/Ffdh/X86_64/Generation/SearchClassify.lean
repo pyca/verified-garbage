@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRejectStep
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # The native controller classifies candidate outcomes without host decisions -/
 
@@ -44,7 +45,7 @@ theorem search_classify {p : SearchPublic} {original s : State} {used remaining 
   have hout := hp.2.1
   cases hc : searchCandidate p used with
   | none =>
-    rw [hc, Spec.Ffdh.candidateStatus] at hs
+    rw [hc, Proof.Ffdh.candidateStatus] at hs
     rw [hs] at he
     have hax := normalized_status hs ha
     refine WP.ite false he (fun hf => by cases hf) fun _ => ?_
@@ -60,7 +61,7 @@ theorem search_classify {p : SearchPublic} {original s : State} {used remaining 
     obtain ⟨value, rest⟩ := pair
     cases value with
     | some prime =>
-      rw [hc, Spec.Ffdh.candidateStatus] at hs
+      rw [hc, Proof.Ffdh.candidateStatus] at hs
       rw [hs] at he
       refine WP.ite true he (fun _ => ?_) (fun hf => by cases hf)
       change WP isa (.block accept) u (fun t => SearchClassified p original used remaining t)
@@ -71,7 +72,7 @@ theorem search_classify {p : SearchPublic} {original s : State} {used remaining 
       · rw [hm]
         simpa only [hc] using hout
     | none =>
-      rw [hc, Spec.Ffdh.candidateStatus] at hs
+      rw [hc, Proof.Ffdh.candidateStatus] at hs
       rw [hs] at he
       have hax := normalized_status hs ha
       refine WP.ite false he (fun hf => by cases hf) fun _ => ?_

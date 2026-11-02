@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # Public-call geometry preserved while the RSA scratch arrays change -/
 

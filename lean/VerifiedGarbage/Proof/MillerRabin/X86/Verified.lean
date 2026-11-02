@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Baseline
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.X86.Target
 
 import VerifiedGarbage.Proof.MillerRabin.X86.ConstantTime
@@ -34,13 +34,13 @@ theorem Entry.pushed_byte {s : State} (E : Entry s) {i : Nat} (index : i < lenOf
   exact Offset.contains_base _ (by omega) (by have := E.bound; omega)
 
 theorem correct (s : State)
-    (h : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pre s) :
+    (h : (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pre s) :
     ∃ tr t, Exec isa (code montName montCode) s tr t ∧ abiPreserved s t ∧
-      (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).post s t := by
+      (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).post s t := by
   have E := entry_of h
   obtain ⟨tr, t, exec, abi, result, frame⟩ := E.framed
   refine ⟨tr, t, exec, abi, ?_⟩
-  sig_post [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argSlots, argVal, argBytes]
+  sig_post [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argSlots, argVal, argBytes]
   refine ⟨?_, ?_⟩
   · intro b witness
     rw [BitVec.setWidth_append_eq_right]
@@ -59,7 +59,7 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86
 
 theorem verified : Verified target (VG.Impl.MillerRabin.X86.code montName montCode)
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96) :=
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.MillerRabin.X86

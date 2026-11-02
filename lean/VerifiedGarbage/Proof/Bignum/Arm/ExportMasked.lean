@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportMasked
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Bignum.Arm.ExportBE
 import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt wOf Layout)
+open VG.Proof.Rsa.Mont (numAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem exportMasked_truncated_ok (s : State) {base dst : BitVec 32} {len w o k : Nat} {accepted : Bool}
@@ -39,7 +39,7 @@ theorem exportMasked_truncated_ok (s : State) {base dst : BitVec 32} {len w o k 
   have countFits : k < 2 ^ 32 := by
     have fit := layout.2.2.1
     rw [width] at fit
-    simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at fit
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at fit
     have := ws.nowrap
     omega
   rw [exportMasked, WP.seq_iff]

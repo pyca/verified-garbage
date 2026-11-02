@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Rsa.X86.InvGate
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified
@@ -205,11 +206,11 @@ open VG.Proof.RsaKeyGen.X86.KeyRuntime (invArgs invEntry InvArguments invEntry_a
 abbrev invWords (a : Nat) : Nat := 35 + 15 * ((a + 7) / 8)
 
 /-- What the callee writes lies in the inverse's arrays and header words. -/
-theorem writes_ranges {a W i : Nat} (hka : kw a = W) (hw : Spec.RsaKeyGen.inverseWrites a i) :
+theorem writes_ranges {a W i : Nat} (hka : kw a = W) (hw : Proof.RsaKeyGen.inverseWrites a i) :
     ¬ ∀ r ∈ ranges W invArrs invSlots, i < r.1 ∨ r.1 + r.2 ≤ i := by
   intro out
   simp only [kw, Spec.Rsa.modulusWords] at hka
-  unfold Spec.RsaKeyGen.inverseWrites Spec.RsaKeyGen.inverseBytes at hw
+  unfold Proof.RsaKeyGen.inverseWrites Proof.RsaKeyGen.inverseBytes at hw
   rcases hw with ⟨lo, hi⟩ | ⟨j, hj, lo, hi⟩
   · have h0 := out (VG.Impl.Rsa.X86.Keys.sOdd, 4) (by simp [ranges])
     have h1 := out (VG.Impl.Rsa.X86.Keys.sB, 4) (by simp [ranges])
@@ -230,7 +231,7 @@ theorem writes_ranges {a W i : Nat} (hka : kw a = W) (hw : Spec.RsaKeyGen.invers
 /-- What `vg_rsa_keygen_inverse`'s postcondition tells its caller. -/
 theorem inversePost_of {s t : State} (post : VG.Proof.RsaKeyGen.X86.Inverse.contract.post s t) :
     (∀ i, i < VG.Proof.RsaKeyGen.X86.Inverse.size s →
-      ¬ Spec.RsaKeyGen.inverseWrites (VG.Proof.RsaKeyGen.X86.Inverse.len s) i →
+      ¬ Proof.RsaKeyGen.inverseWrites (VG.Proof.RsaKeyGen.X86.Inverse.len s) i →
       t.mem (VG.Proof.RsaKeyGen.X86.Inverse.base s + BitVec.ofNat 64 i) =
         s.mem (VG.Proof.RsaKeyGen.X86.Inverse.base s + BitVec.ofNat 64 i)) ∧
     num t.mem (VG.Proof.RsaKeyGen.X86.Inverse.base s) (kw (VG.Proof.RsaKeyGen.X86.Inverse.len s)) 1 =
@@ -243,7 +244,7 @@ theorem inversePost_of {s t : State} (post : VG.Proof.RsaKeyGen.X86.Inverse.cont
     num t.mem (VG.Proof.RsaKeyGen.X86.Inverse.base s) (kw (VG.Proof.RsaKeyGen.X86.Inverse.len s)) 3 <
       num s.mem (VG.Proof.RsaKeyGen.X86.Inverse.base s) (kw (VG.Proof.RsaKeyGen.X86.Inverse.len s)) 8 := by
   sig_post [VG.Proof.RsaKeyGen.X86.Inverse.contract, VG.Proof.RsaKeyGen.X86.Inverse.inverseStack,
-    Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig, abi, argSlots, argVal, argBytes] at post
+    Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig, abi, argSlots, argVal, argBytes] at post
   simp only [← VG.Proof.RsaKeyGen.X86.Inverse.inverseNum_num]
   exact post
 
@@ -439,7 +440,7 @@ theorem CallAt.pub {a : Nat} {u₁ u₂ : State} (C₁ : CallAt B Z len a u₁) 
     change (pushed invArgs u₁).callEntry.gpr .esp = (pushed invArgs u₂).callEntry.gpr .esp
     rw [callEntry_esp', callEntry_esp', sp]
   sig_pub [VG.Proof.RsaKeyGen.X86.Inverse.contract, VG.Proof.RsaKeyGen.X86.Inverse.inverseStack,
-    Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig, abi, argSlots, argVal, argBytes]
+    Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig, abi, argSlots, argVal, argBytes]
   simp only [sa (by decide : 0 < 3), sa (by decide : 1 < 3), sa (by decide : 2 < 3),
     ta (by decide : 0 < 3), ta (by decide : 1 < 3), ta (by decide : 2 < 3), ↓reduceIte]
   exact ⟨esp, trivial, trivial, trivial⟩

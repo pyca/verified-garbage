@@ -19,7 +19,7 @@ def Result (P : Parameters) (s : State) : Prop :=
 
 theorem count_policy (P : Parameters) (k : Nat) :
     WitnessStatus.status
-      (Spec.MillerRabin.round P.candidate (wit P.candidate P.bytes P.entropy (P.start + P.bytes * k)).1)
+      (Proof.MillerRabin.Round.round P.candidate (wit P.candidate P.bytes P.entropy (P.start + P.bytes * k)).1)
       (k + 1) ((mrSB P.candidate P.bytes P.start P.entropy k).2 +
         (wit P.candidate P.bytes P.entropy (P.start + P.bytes * k)).2.toNat) P.checks =
       if Spec.RsaKeyGen.mrIteration P.candidate P.twos.1 P.twos.2

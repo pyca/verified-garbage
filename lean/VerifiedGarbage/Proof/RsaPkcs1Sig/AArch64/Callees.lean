@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # The RSA operations as the signatures' callees, on AArch64
@@ -26,23 +27,23 @@ namespace VG.Proof.RsaPkcs1Sig.AArch64
 
 open VG VG.AArch64 VG.Proof.Rsa.AArch64
 
-theorem pub_stack : (Spec.Rsa.publicCheckedContract abi).Implies (Spec.Rsa.publicCheckedContract abi 16) where
+theorem pub_stack : (Proof.Rsa.publicCheckedContract abi).Implies (Proof.Rsa.publicCheckedContract abi 16) where
   pre := by
     intro s h
-    sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicCheckedSig, abi, argRegs,
+    sig_pre [Proof.Rsa.publicCheckedContract, Spec.Rsa.publicCheckedSig, abi, argRegs,
       Proof.Rsa.AArch64.stackArgs_two, List.append_eq] at h
-    sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicCheckedSig, abi, argRegs,
+    sig_pre [Proof.Rsa.publicCheckedContract, Spec.Rsa.publicCheckedSig, abi, argRegs,
       Proof.Rsa.AArch64.stackArgs_two, List.append_eq] at h
-    sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicCheckedSig, abi, argRegs,
+    sig_pre [Proof.Rsa.publicCheckedContract, Spec.Rsa.publicCheckedSig, abi, argRegs,
       Proof.Rsa.AArch64.stackArgs_two, List.append_eq]
-    sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicCheckedSig, abi, argRegs,
+    sig_pre [Proof.Rsa.publicCheckedContract, Spec.Rsa.publicCheckedSig, abi, argRegs,
       Proof.Rsa.AArch64.stackArgs_two, List.append_eq]
     sig_split h
     sig_and_intros
     all_goals with_reducible assumption
   post := fun _ _ _ h => h
   pub := fun _ _ _ _ h => h
-  sat := by sig_implies_sat [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicCheckedSig, abi, argRegs,
+  sat := by sig_implies_sat [Proof.Rsa.publicCheckedContract, Spec.Rsa.publicCheckedSig, abi, argRegs,
     Proof.Rsa.AArch64.stackArgs_two, List.append_eq] [pubSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using pubSatState
 
@@ -69,7 +70,7 @@ theorem pd_stack :
 
 /-- `vg_rsa_public_checked`. -/
 def pubChecked : PubChecked where
-  name := Spec.Rsa.publicCheckedApi.name
+  name := "vg_rsa_public_checked"
   code := Impl.Rsa.AArch64.Checked.publicChecked
   stack := 16
   verified := publicChecked_verified.of_implies pub_stack

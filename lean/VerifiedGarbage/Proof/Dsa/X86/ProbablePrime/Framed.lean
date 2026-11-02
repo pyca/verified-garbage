@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Finish
 public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportContext
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.NoSp
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpWords
@@ -44,9 +44,9 @@ theorem used_tail {E : Environment} (v : E.Valid) {m m' : Mem} (F : Frame [E.use
   exact v.usedWorkspace _ contains (Offset.contains_base E.base (by omega) (by omega))
 
 theorem sieved_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (L : Loaded E c entropy s) (odd : c % 2 = 1) (length : Spec.Dsa.bitLength c = E.bits) :
@@ -96,9 +96,9 @@ theorem sieved_ok {mont round : Prog isa} {montName roundName : String}
 def bodyClob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi]
 
 theorem body_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (I : EntryInput E c entropy s) (odd : c % 2 = 1) (length : Spec.Dsa.bitLength c = E.bits) :
@@ -190,9 +190,9 @@ theorem Outputs.keep {E : Environment} {res : Option (Bool × Spec.RsaKeyGen.Ran
   exact R
 
 theorem framed_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (I : EntryInput E c entropy (Compact.entered s)) (odd : c % 2 = 1) (length : Spec.Dsa.bitLength c = E.bits)

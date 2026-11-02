@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # The generation's prime-test parameters, from the function's arguments
 
@@ -26,7 +27,7 @@ abbrev frameSp (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 56
 
 /-- The candidate. -/
 abbrev candidateOf (bits : Nat) (s : State) : Nat :=
-  Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (s.gpr .rdi)
+  Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (s.gpr .rdi)
 
 /-- `ws`'s region. -/
 abbrev wsRegion (s : State) : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8⟩

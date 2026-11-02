@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 public import VerifiedGarbage.Impl.Mont.X86.Compact
 public import VerifiedGarbage.Proof.Framework.Offset
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 namespace VG.Proof.Mont.X86.Compact
-open VG VG.Spec.Rsa.Mont
+open VG VG.Proof.Rsa.Mont
 open VG.Impl.Mont.X86.Compact
 
 /-- The row multiplier precedes every product word. -/

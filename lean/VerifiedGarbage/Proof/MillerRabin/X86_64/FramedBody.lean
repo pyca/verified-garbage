@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyKeeps
@@ -31,9 +31,9 @@ theorem framed_body_ok (M : Mont) {s : State} {B : Addr} {n w c bm b : Nat} {mi 
     WP isa (.frame (.push saved)
       (.frame (.push [.rbp]) (VG.Impl.MillerRabin.X86_64.body M.mm) (.pop .rbp 1))
       (.pop .r11 13)) s fun t =>
-      t.gpr .rax = BitVec.ofNat 64 (Spec.MillerRabin.round c b).toNat ∧
+      t.gpr .rax = BitVec.ofNat 64 (Proof.MillerRabin.Round.round c b).toNat ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
-      Spec.MillerRabin.Keeps Spec.MillerRabin.extended B n w s.mem t.mem ∧
+      Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.extended B n w s.mem t.mem ∧
       Frame [⟨s.gpr .rsp - 112#64, 112⟩, ⟨B, 8 * n⟩] s.mem t.mem := by
   apply round_frames hs
   have hd' : Region.Disjoint ⟨B, 8 * n⟩ ⟨(entered s).gpr .rsp, 112⟩ := by

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp6
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp1
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp5
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp3
@@ -32,7 +32,7 @@ def tv (P : CP) (σ : State) : Nat := (Spec.Rsa.splitTwos (cv P σ - 1)).1
 
 /-- The round's exponent, followed by the word `2^(t mod 64)`. -/
 def EX (P : CP) (σ : State) : Nat :=
-  Spec.MillerRabin.exponent (cv P σ) + 2 ^ (32 * (P.W - 2)) * 2 ^ (tv P σ % 64)
+  Proof.MillerRabin.Round.exponent (cv P σ) + 2 ^ (32 * (P.W - 2)) * 2 ^ (tv P σ % 64)
 
 def AX (P : CP) (σ : State) : Nat → Nat := upd (A3 P σ) (mBase + 27) (EX P σ)
 abbrev LX : List Nat := [mBase + 27, aCm1, aTwo, aOne, aC]
@@ -51,15 +51,15 @@ theorem tv_lt {σ : State} (pre : In P σ) : tv P σ < 2 ^ 32 := by
 
 theorem exp_eq {σ : State} (pre : In P σ) :
     hIf (hIf (hIf (cv P σ / 2) (b2n (decide (tv P σ % 4 ≠ 1)))) (b2n (decide (tv P σ % 4 = 3 ∨ tv P σ % 4 = 0))))
-      (b2n (decide (tv P σ % 4 = 0))) = Spec.MillerRabin.exponent (cv P σ) := by
+      (b2n (decide (tv P σ % 4 = 0))) = Proof.MillerRabin.Round.exponent (cv P σ) := by
   rw [shift_div]
-  unfold Spec.MillerRabin.exponent Spec.MillerRabin.shift
+  unfold Proof.MillerRabin.Round.exponent Proof.MillerRabin.Round.shift
   have hodd := (cv_shape (σ := σ) pre).1
   rw [odd_div hodd (by dsimp only; split <;> omega)]
   rfl
 
-theorem exponent_le (c : Nat) : Spec.MillerRabin.exponent c ≤ c := by
-  unfold Spec.MillerRabin.exponent
+theorem exponent_le (c : Nat) : Proof.MillerRabin.Round.exponent c ≤ c := by
+  unfold Proof.MillerRabin.Round.exponent
   exact Nat.le_trans (Nat.div_le_self _ _) (Nat.sub_le _ _)
 
 theorem expSetup_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :

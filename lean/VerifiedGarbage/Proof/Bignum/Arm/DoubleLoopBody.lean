@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem doubleLoopMultiply_ok (s : State) {base : BitVec 32} {len w c : Nat}
@@ -35,8 +35,8 @@ theorem doubleLoopMultiply_ok (s : State) {base : BitVec 32} {len w c : Nat}
     · rw [mem]; exact h.inverse
     · rw [mem]; exact h.operand
     · rw [mem]; exact h.two
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op7 : Operand 7 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine WP.mono (doubleFnRestore_ok u ready op4 op7 op4
     (by rw [rest.rd, rest.wr, rest.sp]; exact h.stackRead)
     (by rw [rest.sp]; exact h.stackSep)
@@ -47,7 +47,7 @@ theorem doubleLoopMultiply_ok (s : State) {base : BitVec 32} {len w c : Nat}
   have state := h.after_double bound keeps frame fullRest ptr
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have oldM := keeps_array_num keeps fits
-    (show Operand 0 by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+    (show Operand 0 by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
   exact ⟨state, value, oldM, frame, fullRest⟩
 
 theorem doubleLoopBody_ok (s : State) {base : BitVec 32} {len w c : Nat}
@@ -61,7 +61,7 @@ theorem doubleLoopBody_ok (s : State) {base : BitVec 32} {len w c : Nat}
   refine WP.mono (doubleLoopMultiply_ok s h) ?_
   rintro u ⟨ready, value, modulus, frame, rest⟩
   have fits := ready.layout.2.2.1
-  have size : 212 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 212 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   refine WP.mono (doubleCount_ok u ready.workspace size ready.ptr hc hc' ready.counter) ?_
   rintro t ⟨mem, zero, keep⟩
   obtain ⟨state, frameT, number, modT⟩ := ready.after_count mem keep

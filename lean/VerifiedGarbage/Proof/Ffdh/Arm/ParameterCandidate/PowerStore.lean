@@ -19,7 +19,7 @@ array's padding, preserving all bytes of its actual exponent. -/
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.Rsa.Arm.Keys (arr S)
 
 theorem exponentPowerStore_words {s : State} {base : BitVec 32} {capacity w : Nat}

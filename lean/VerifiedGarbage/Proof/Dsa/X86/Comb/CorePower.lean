@@ -59,7 +59,7 @@ theorem corePower_ok {s : State} {base : Addr} {size len expLen n m output : Nat
     simp only [stride] at H
     omega
   have bounds (j : Nat) (hj : j<9) : slot n j+8*n≤size := by have := bound j hj; omega
-  have contextSize : 8*Spec.Dsa.FixedBaseComb.contextWords (layout n ((expLen+3)/4))=272*n := by
+  have contextSize : 8*Proof.Dsa.FixedBaseComb.contextWords (layout n ((expLen+3)/4))=272*n := by
     rcases supported with ⟨rfl,_⟩|⟨rfl,_⟩|⟨rfl,_⟩|⟨rfl,_⟩|⟨rfl,_⟩ <;> rfl
   unfold power
   dsimp only

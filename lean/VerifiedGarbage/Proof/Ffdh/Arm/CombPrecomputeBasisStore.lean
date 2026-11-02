@@ -39,7 +39,7 @@ theorem basisStore_ok (s : State) {p : Inputs} {sp : BitVec 32} {j : Nat}
   have coreT := coreU.after_workspace memory workspace
   have powerU := power.of_mem mem
   have powerT := powerU.after_workspace coreU workspace
-  have value : VG.Spec.Rsa.Mont.numAt u.mem (State.addr p.base) p.w 5=entryValue p (2^j) := by
+  have value : VG.Proof.Rsa.Mont.numAt u.mem (State.addr p.base) p.w 5=entryValue p (2^j) := by
     rw [powerU,entryValue,VG.Proof.Rsa.FixedBaseComb.exponent_tooth (bits p) j hj]
   have tableU : TablePrefix p (2^j) u.mem := by rw [mem];exact table
   have tableT := tableU.extend coreU.memory bound frame (written.trans value)

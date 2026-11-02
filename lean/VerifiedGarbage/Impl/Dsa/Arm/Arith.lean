@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Pow
 public import VerifiedGarbage.Impl.Dsa.Arm.Stream
-public import VerifiedGarbage.Spec.Dsa.ModArith
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-! # DSA's reductions and products as functions on 32-bit ARM
 
-`vg_dsa_reduce_{n}` and `vg_dsa_mulmod_{n}` (`Spec/Dsa/ModArith.lean`) reduce
+`vg_dsa_reduce_{n}` and `vg_dsa_mulmod_{n}` (`Proof/Dsa/ModArithContract.lean`) reduce
 the `r3` bytes at `r2` (`reduceStream`) or multiply slots 8 and 11
 (`ordinaryMul`), into slot 9, with the register saves of `Pow.lean`.
 Multiplication sets up the complete Montgomery context; byte reduction
@@ -31,14 +31,14 @@ def reduceBody (n : Nat) : Prog isa :=
 def mulBody (n : Nat) : Prog isa :=
   .seq (.block save) (.seq (Context.call n) (.seq (ordinaryMul n) (.block restore)))
 
-def reduceLayout (n : Nat) : Spec.Dsa.ModArith.ReduceLayout where
+def reduceLayout (n : Nat) : Impl.Dsa.ModArith.ReduceLayout where
   n := n
   modulus := modS n
   result := resS n
   scratch := scratch n
   size := contextBytes n
 
-def mulLayout (n : Nat) : Spec.Dsa.ModArith.MulLayout where
+def mulLayout (n : Nat) : Impl.Dsa.ModArith.MulLayout where
   n := n
   modulus := modS n
   a := baseS n
@@ -47,9 +47,9 @@ def mulLayout (n : Nat) : Spec.Dsa.ModArith.MulLayout where
   scratch := scratch n
   size := contextBytes n
 
-def reduceName (n : Nat) : String := (Spec.Dsa.ModArith.reduceApi (reduceLayout n)).name
+def reduceName (n : Nat) : String := s!"vg_dsa_reduce_{(reduceLayout n).n}"
 
-def mulName (n : Nat) : String := (Spec.Dsa.ModArith.mulApi (mulLayout n)).name
+def mulName (n : Nat) : String := s!"vg_dsa_mulmod_{(mulLayout n).n}"
 
 /-- The arguments of a call: the working space `r12` and its length, kept in
 `r11` across the call. -/

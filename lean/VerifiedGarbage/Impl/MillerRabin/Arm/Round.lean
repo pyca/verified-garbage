@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.MillerRabin.Arm.Arithmetic
 /-!
 # A prepared Miller–Rabin round on ARMv7
 
-`vg_miller_rabin_round(ws, ws_len)` (`Spec/MillerRabin.lean`), in the compact
+`vg_miller_rabin_round(ws, ws_len)` (`Proof/MillerRabin/Contract.lean`), in the compact
 representation, with the frame of `vg_rsa_public_checked`: `r0`–`r12` and
 `lr` pushed (56 bytes), so that frame word 0 holds `ws`, as Montgomery
 multiplication (`montOp`) needs it.

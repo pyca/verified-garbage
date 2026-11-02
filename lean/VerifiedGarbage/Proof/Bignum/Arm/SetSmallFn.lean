@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.SetSmallFn
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallArgs
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmall
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wOf numAt Layout)
+open VG.Proof.Rsa.Mont (arrAt wOf numAt Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem outside_workspace {m m' : Mem} {base : Addr} {size o n : Nat}
@@ -28,7 +28,7 @@ theorem outside_workspace {m m' : Mem} {base : Addr} {size o n : Nat}
 
 theorem outside_array_keeps {m m' : Mem} {base : Addr} {len w o : Nat}
     (outside : Outside base (arrAt w o) (8 * w) m m') (size : 8 * len < 2 ^ 64) :
-    Spec.Rsa.Mont.Keeps base len w o m m' := by
+    Proof.Rsa.Mont.Keeps base len w o m m' := by
   intro i hi separate
   have sep := separate o (by simp)
   apply outside
@@ -50,7 +50,7 @@ theorem setSmallFnBody_ok (s : State) {base : BitVec 32} {len o : Nat}
   have hw : 2 ≤ w := layout.1
   have fits : arrAt w 8 ≤ 8 * len := layout.2.2.1
   have arrayFits := Nat.le_trans (array_end_le ho) fits
-  have bound : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have bound : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   rw [setSmallFnBody, WP.seq_iff]
   refine WP.mono (setSmallArgs_ok s ws bound header ho ptr index) ?_

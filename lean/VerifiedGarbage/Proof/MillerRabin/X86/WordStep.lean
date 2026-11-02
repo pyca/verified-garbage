@@ -29,7 +29,7 @@ open VG VG.X86 VG.Impl.MillerRabin.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum.X86.PublicRt (countLoop)
 
 theorem wordWindows_ok {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitVec 32}
     {A : Nat → Nat} {Js : List Nat} {V : Nat → BitVec 32} {s : State}
@@ -131,7 +131,7 @@ def wordEndSlots (V : Nat → BitVec 32) (A : Nat → Nat) (c w : Nat) (x : BitV
   setAt (setAt V sFlag (BitVec.ofNat 32 (wordState A c w x F 8).2.toNat)) sWords (BitVec.ofNat 32 (q - 1))
 
 theorem wordStep_ok {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity c q : Nat} {p : BitVec 32}
     {A : Nat → Nat} {Js : List Nat} {V : Nat → BitVec 32} {s : State}

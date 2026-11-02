@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem witnessMaskStore_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
     (ready : ArithmeticReady base capacity w s) (bound : j < 2 * w)
@@ -25,7 +25,7 @@ theorem witnessMaskStore_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
         t.gpr .r0 = base) ∧ Rest [.r0, .r3, .r4] s t := by
   have fits : arrAt w 8 ≤ 8 * capacity := ready.width ▸ ready.layout.2.2.1
   have arrayFit := array_end_le (w := w) (j := 1) (k := 8) (by decide)
-  have size : 128 ≤ 8 * capacity := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * capacity := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem base ready.workspace.nowrap (Nat.le_refl _) ready.layout
   rw [ready.width] at header
   have pointer := header.array 1 (by decide)

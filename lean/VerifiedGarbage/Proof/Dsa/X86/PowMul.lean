@@ -26,7 +26,7 @@ namespace VG.Proof.Dsa.X86.Pow
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Mont.X86.Dynamic VG.Impl.Dsa.X86.Pow
-open VG.Spec.Rsa.MontMul (scratchBytes)
+open VG.Proof.Rsa.MontMul (scratchBytes)
 
 /-! ## The arguments -/
 
@@ -92,10 +92,10 @@ theorem offs {n o a b : Nat} (hn : 2 ≤ n) (ho : 4 ≤ o) (ho7 : o ≤ 7) (ha :
   have sb7 := Nat.mul_le_mul_right (stride n) hb7
   simp only [stride] at so so7 sa sa7 sb sb7
   refine ⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [contextBytes, calleeScratch, slot, stride, scratchBytes, VG.Spec.Rsa.MontMul.Apart] <;> omega_arith
+    simp only [contextBytes, calleeScratch, slot, stride, scratchBytes, VG.Proof.Rsa.MontMul.Apart] <;> omega_arith
 
 theorem mulBody_noSp (n o a b : Nat) :
-    NoSp (.seq (.block (mulArgs n o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody) : Prog isa) := by
+    NoSp (.seq (.block (mulArgs n o a b)) (.call "vg_rsa_mont_mul_at" Sse2.atBody) : Prog isa) := by
   apply NoSp.of_all
   rw [Code.allInstrs_eq]
   simp only [instrs, mulArgs, immStores, List.all_append, List.all_cons, List.all_nil]

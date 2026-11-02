@@ -20,7 +20,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm
 open VG.Proof.X25519.Arm (Rest)
 open VG.Proof.Ffdh.Arm.KeySearch
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 structure MaskStoreData where
   base : BitVec 32
@@ -46,7 +46,7 @@ private theorem loadBase_ok (p : MaskStoreData) (s : State) (h : MaskStoreStart 
 private theorem loadArray_ok (p : MaskStoreData) (s : State) (h : MaskStoreStart p s) :
     WP isa (.block [.ldr .r4 .r0 72]) s (MaskStoreHead p) := by
   have fits : arrAt p.words 8 ≤ 8 * p.capacity := h.1.width ▸ h.1.layout.2.2.1
-  have size : 128 ≤ 8 * p.capacity := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * p.capacity := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem p.base h.1.workspace.nowrap (Nat.le_refl _) h.1.layout
   rw [h.1.width] at header
   have addr72 : State.addr (p.base + 72#32) = off (State.addr p.base) 72 :=

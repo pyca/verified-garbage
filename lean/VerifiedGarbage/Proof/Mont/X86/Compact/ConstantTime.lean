@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.Artifact
 @[expose] public section
 namespace VG.Proof.Mont.X86.Compact
 open VG VG.X86 VG.Impl.Mont.X86
-open VG.Spec.Rsa.Mont
+open VG.Proof.Rsa.Mont
 
 theorem publicInputs {s t : State} (H : (mulContract abi 16).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ (∀ i < 5, arg s i = arg t i) ∧

@@ -27,7 +27,7 @@ def finishedState (A : Nat → Nat) (c w N k : Nat) : Nat × Bool :=
     (4 - VG.Proof.RsaKeyGen.sigOf k) 3 (exponentState (runValues A c w) c w N false N).2 3
 
 theorem core_ok {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity c k : Nat} {p : BitVec 32}
     {A : Nat → Nat} {V : Nat → BitVec 32} {s : State}

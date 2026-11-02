@@ -137,7 +137,7 @@ theorem sum_trace (v : g.Valid) :
     RelCT isa (fun s t => Base g q k s ∧ Base g q k t) sum (fun u z => Base g q k u ∧ Base g q k z) := by
   obtain ⟨fit6, -, many, -⟩ := WitnessRt.fits v
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
   unfold sum
   let Loop : State → Prop := At g q k fun a s => PtrAt s g.W .ebx (g.array 6) ∧ PtrAt s g.W .ebp (g.array 2) ∧
     (s.gpr .edx).toNat = 4 * g.words ∧ s.gpr .ecx = cmask false ∧ s.gpr .edi = a.gpr .edi
@@ -174,7 +174,7 @@ theorem reduce_trace (v : g.Valid) :
     RelCT isa (fun s t => Base g q k s ∧ Base g q k t) reduce (fun u z => Masked g q k u ∧ Masked g q k z) := by
   obtain ⟨fit6, -, many, -⟩ := WitnessRt.fits v
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
   have a02 : g.array 0 + 4 * g.words ≤ g.array 2 := g.arrayBefore (by decide)
   unfold reduce
   let Loop : State → Prop := At g q k fun _ s => PtrAt s g.W .ebp (g.array 2) ∧ PtrAt s g.W .ebx (g.array 0) ∧
@@ -206,7 +206,7 @@ theorem below_trace (v : g.Valid) (apart : (⟨g.W, g.L⟩ : Region).Disjoint �
       (fun u z => Choosing g q k u ∧ Choosing g q k z) := by
   obtain ⟨fit6, -, -, -⟩ := WitnessRt.fits v
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
   refine seg [.ebp, .esp] (fun r => if r = .ebp then BitVec.ofNat 32 (g.W.toNat + (g.array 2 + 4 * g.words))
     else q) (fun s ⟨_, B, P, _⟩ r mem => ?_) (rawBlock (by decide +kernel)) fun s ⟨a, B, P, b, mask⟩ =>
       WP.mono (below_frame B.ws P (by omega) B.stack mask) fun _ ⟨chosen, edi, M, K⟩ =>
@@ -242,7 +242,7 @@ theorem select_trace (v : g.Valid) (apart : (⟨g.W, g.L⟩ : Region).Disjoint �
     RelCT isa (fun s t => Choosing g q k s ∧ Choosing g q k t) select (fun u z => Done g q k u ∧ Done g q k z) := by
   obtain ⟨fit6, -, many, -⟩ := WitnessRt.fits v
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
   unfold select
   let Loop : State → Prop := At g q k fun _ s => PtrAt s g.W .ebp (g.array 2) ∧ PtrAt s g.W .ebx (g.array 6) ∧
     (s.gpr .edi).toNat = 4 * g.words ∧ ∃ b, s.gpr .ecx = cmask b

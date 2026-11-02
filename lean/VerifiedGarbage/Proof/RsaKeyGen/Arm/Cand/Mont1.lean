@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Vals
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.ByteWords
@@ -28,7 +28,7 @@ arrays 15–28 (`keep_of_frameM`).
 namespace VG.Proof.RsaKeyGen.Arm.Cand
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 
 /-- `R² mod c`. -/
 abbrev r2v (P : CP) (σ : State) : Nat := 2 ^ (128 * P.w) % cv P σ
@@ -39,7 +39,7 @@ structure MSp (P : CP) (σ : State) (s : State) : Prop where
   layout : Layout s.mem (State.addr P.M0) P.lenM
   width : wOf s.mem (State.addr P.M0) = P.w
   inverse : ((word s.mem (State.addr P.M0) (arrAt P.w 0)).toNat *
-    (wordAt s.mem (State.addr P.M0) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
+    (wordAt s.mem (State.addr P.M0) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
   n0 : numAt s.mem (State.addr P.M0) P.w 0 = cv P σ
   r2 : numAt s.mem (State.addr P.M0) P.w 4 = r2v P σ
   stackRead : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4
@@ -73,7 +73,7 @@ theorem In.M0_addr (pre : In P σ) : State.addr P.M0 = off (State.addr P.B) P.oM
 theorem In.oM_arrAt (pre : In P σ) (j : Nat) : P.oM + arrAt P.w j = arr P.W (mBase + j) := by
   have e := pre.oM_eq
   have s := pre.S_eq
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes, arr] at *
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes, arr] at *
   rw [s] at e ⊢
   rw [Nat.add_mul]
   omega_arith

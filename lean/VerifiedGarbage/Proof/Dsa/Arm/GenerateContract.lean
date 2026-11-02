@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Contract
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 /-!
 # DSA domain checks and key derivation on 32-bit ARM: the contracts
 
 Untrusted: everything here is checked by Lean. The facts of
-`Spec.Dsa.checkParametersContract` and `Spec.Dsa.deriveKeyContract` for
+`Proof.Dsa.checkParametersContract` and `Spec.Dsa.deriveKeyContract` for
 32-bit ARM, by name. `vg_dsa_check_parameters(params, params_len, p_len,
 q_len, scratch, scratch_len)` has its first four arguments in `r0`–`r3`
 and the others on the stack; `vg_dsa_derive_key(out, out_len, params,

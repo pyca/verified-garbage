@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Keeps
@@ -28,14 +28,14 @@ theorem body_keeps_ok (M : Mont) {s : State} {B S : Addr} {n w c bm b : Nat} {mi
     (hl : ∀ d, 8 ≤ d → d + 8 ≤ 112 → InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 d) 8)
     (hs : ∀ p ∈ restoreSlots, s.mem.readW (S + BitVec.ofNat 64 p.2) 64 = word s.mem B (8 * p.1)) :
     WP isa (VG.Impl.MillerRabin.X86_64.body M.mm) s fun t =>
-      t.gpr .rax = BitVec.ofNat 64 (Spec.MillerRabin.round c b).toNat ∧
+      t.gpr .rax = BitVec.ofNat 64 (Proof.MillerRabin.Round.round c b).toNat ∧
       t.gpr .rbx = s.mem.readW (S + 104#64) 64 ∧
       t.gpr .r12 = s.mem.readW (S + 96#64) 64 ∧
       t.gpr .r13 = s.mem.readW (S + 88#64) 64 ∧
       t.gpr .r14 = s.mem.readW (S + 80#64) 64 ∧
       t.gpr .r15 = s.mem.readW (S + 72#64) 64 ∧ Keep mmRegs s t ∧
       Frame [⟨B, 8 * n⟩] s.mem t.mem ∧
-      Spec.MillerRabin.Keeps Spec.MillerRabin.extended B n w s.mem t.mem := by
+      Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.extended B n w s.mem t.mem := by
   refine WP.mono (body_ok M hc h he hodd h3 hX hsp hd hl) ?_
   rintro t ⟨hr, hbx, h12, h13, h14, h15, hk, hf, u, hm, hu, hcore⟩
   refine ⟨hr, hbx, h12, h13, h14, h15, hk, hf, ?_⟩

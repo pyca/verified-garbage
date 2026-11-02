@@ -44,14 +44,14 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 theorem qRange_ct {p : Inputs} {slots : List Nat}
     (stable : stableSlots slots = true) (h60 : 60 ∈ slots) (h32 : 32 ∈ slots) (hasQ : p.hasQ = true) :
     RelCT isa (fun s t => ImportAtInput p slots s ∧ ImportAtInput p slots t ∧ s.sp = t.sp)
       VG.Impl.Ffdh.Arm.Domain.CheckDomain.qRange (fun _ _ => True) := by
   let P := ArithmeticReady p.base p.len p.w
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have imported := importAt_ct (p := p) (slots := slots) (a := 1) (slot := 60) (countSlot := 32)
     (k := p.k) stable h60 h32 rfl (by decide)
   have wpImport (s : State) (h : ImportAtInput p slots s) :
@@ -84,7 +84,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 structure DividesPrepared (p : Inputs) (slots : List Nat) (s : State) : Prop where
   context : Context p slots s
@@ -103,9 +103,9 @@ theorem domainDivides_ct {p : Inputs} {slots : List Nat}
     (hasQ : p.hasQ = true) (large : 1 < p.Q) (odd : p.Q % 2 = 1) :
     RelCT isa (fun s t => Context p slots s ∧ Context p slots t ∧ s.sp = t.sp)
       VG.Impl.Ffdh.Arm.Domain.CheckDomain.divides (fun _ _ => True) := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have qStack (s : State) (h : Context p slots s) :
       Region.Disjoint ⟨State.addr p.q, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
     h.toArgumentMemory.domainSliceStack (by have := p.minLength; omega)
@@ -143,7 +143,7 @@ theorem domainDivides_ct {p : Inputs} {slots : List Nat}
     exact ⟨ready, (keeps_array_num keeps fits op0 (by decide)).trans h.modulus,
       (keeps_array_num keeps fits op4 (by decide)).trans h.r2, one⟩
   have tableFit : arrAt p.w 3 + 32 ≤ 8 * p.len := by
-    have := p.width.2.2.1; simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at *; omega
+    have := p.width.2.2.1; simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at *; omega
   have reduce := (reduceOperand_ct (o := 1) op1 (by decide) (by decide) tableFit).mono
     (P' := fun (s t : State) => DividesOne p s ∧ DividesOne p t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.ready, by rw [h.1.r2, h.1.modulus]; exact Nat.mod_lt _ (by omega),
@@ -314,7 +314,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 structure DomainMainInput (p : Inputs) (slots : List Nat) (yb : List Byte) (s : State) : Prop where
   context : Context p slots s
@@ -337,9 +337,9 @@ theorem domainMain_ct {p : Inputs} {slots : List Nat}
       VG.Impl.Ffdh.Arm.Domain.CheckDomain.main (fun _ _ => True) := by
   let yb := (p.dom.drop p.k).take p.k
   have length : yb.length = p.k := p.gLength
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have pStack (s : State) (h : DomainMainInput p slots yb s) :
       Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
     h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))

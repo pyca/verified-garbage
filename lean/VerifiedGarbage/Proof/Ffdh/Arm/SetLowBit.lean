@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem setLowBit_store (s : State) {base : BitVec 32} {len w : Nat}
@@ -26,7 +26,7 @@ theorem setLowBit_store (s : State) {base : BitVec 32} {len w : Nat}
         (s.mem.readW (off (State.addr base) (arrAt w 7)) 32 ||| 1) ∧ Rest [.r3, .r4] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have bound := array_end_le (w := w) (by decide : 7 < 8)
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   have pointer := header.array 7 (by decide)

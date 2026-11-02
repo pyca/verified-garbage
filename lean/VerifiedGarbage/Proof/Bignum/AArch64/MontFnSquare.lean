@@ -32,7 +32,7 @@ namespace VG.Proof.Bignum.AArch64.MontFn
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Impl.Bignum
 open VG.Impl.Bignum.AArch64 VG.Impl.Bignum.AArch64.MontFn
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Spec.Rsa.Mont (numAt wOf wordAt minvWord)
+open VG.Proof.Rsa.Mont (numAt wOf wordAt minvWord)
 
 def tag (o a b : Nat) : BitVec 32 :=
   ((BitVec.ofNat 32 o ^^^ 5#32) ||| (BitVec.ofNat 32 a ^^^ 5#32)) ||| (BitVec.ofNat 32 b ^^^ 5#32)
@@ -98,7 +98,7 @@ theorem square_correct (s : State) (h : fnContract.pre s)
     intro j hj'
     rw [show ofs (s.gpr .x0) (s.gpr .x0 + BitVec.ofNat 64 i) = i by
       simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega)]]
-    exact hj j (by simpa only [ho, Public.aAcc, Public.aTmp, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] using hj')
+    exact hj j (by simpa only [ho, Public.aAcc, Public.aTmp, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] using hj')
 
 theorem mul_correct (s : State) (h : fnContract.pre s) :
     ∃ tr t, Exec isa mul s tr t ∧ abiPreserved s t ∧ fnContract.post s t := by
@@ -214,7 +214,7 @@ theorem mul_ct : ConstantTime isa fnContract.pre fnContract.pub mul :=
       ⟨ht, h0.symm, by rw [h1], (congrArg (wOf t.mem) h0).trans hw.symm,
         by simp only [idx, h2], by simp only [idx, h3], by simp only [idx, h4]⟩, hsp⟩) fun _ _ h => h)
 
-theorem mul_verified : Verified target mul (Spec.Rsa.Mont.mulContract abi) :=
+theorem mul_verified : Verified target mul (Proof.Rsa.Mont.mulContract abi) :=
   Verified.of_correct mul_correct mul_ct fn_implies
 
 end VG.Proof.Bignum.AArch64.MontFn

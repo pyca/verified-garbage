@@ -30,13 +30,13 @@ open VG.Impl.Dsa.Arm.ProbablePrime (keyOff keyWords layout)
 
 /-- The test's result, from the caller's memory. -/
 def resC (bits : Nat) (s : State) : Option (Bool × Spec.RsaKeyGen.Rand) :=
-  Spec.Dsa.probablePrime (Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0)))
+  Spec.Dsa.probablePrime (Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0)))
     (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
 
 /-- A call's result. -/
 def CPost (bits : Nat) (s t : State) : Prop :=
-  (t.gpr .r0).toNat = Spec.Dsa.ProbablePrime.status (resC bits s) ∧
-    Spec.Dsa.ModPow.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1).toNat [(keyOff, 8 * keyWords bits)] s.mem t.mem ∧
+  (t.gpr .r0).toNat = Proof.Dsa.ProbablePrime.status (resC bits s) ∧
+    Proof.Dsa.ModPow.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1).toNat [(keyOff, 8 * keyWords bits)] s.mem t.mem ∧
     ∀ b rest, resC bits s = some (b, rest) →
       Spec.Rsa.wordsAt t.mem (State.addr (stackArg s 0)) 1 = [BitVec.ofNat 64 ((s.gpr .r3).toNat - rest.length)]
 
@@ -129,7 +129,7 @@ theorem subW0 (h : CIn bits s) : Region.Sub (mkP bits s).rW0 (cF s) := by
 /-- The candidate's bytes are outside the key working space, the stack and `used`. -/
 theorem keeps (h : CIn bits s) (o : PreOut bits s t) {w : State}
     (bk : Bk (mkP bits s) (sx bits s t) w) :
-    Spec.Dsa.ModPow.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1).toNat [(keyOff, 8 * keyWords bits)] s.mem w.mem := by
+    Proof.Dsa.ModPow.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1).toNat [(keyOff, 8 * keyWords bits)] s.mem w.mem := by
   have fw := h.fw
   intro i hi hr
   have hr' := hr _ List.mem_cons_self

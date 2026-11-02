@@ -354,7 +354,7 @@ def checkPrimality : Except String Unit := do
 #assert_standard_axioms Spec.Dsa.sign
 #assert_standard_axioms Spec.Dsa.verify
 #assert_no_compiler_overrides Spec.Dsa.generateParameters Spec.Dsa.fromComponents Spec.Dsa.sign Spec.Dsa.verify
-#assert_no_compiler_overrides Spec.Dsa.signApi Spec.Dsa.verifyApi
+#assert_no_compiler_overrides Spec.Dsa.verifyApi
 #assert_spec_origin
 
 run_cmd do

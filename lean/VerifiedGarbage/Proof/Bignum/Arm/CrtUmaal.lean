@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFios
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.Arm.Target
@@ -65,7 +66,7 @@ namespace VG.Proof.Bignum.Arm
 open VG.Arm VG.Impl.Bignum.Arm
 
 theorem crtUmaal_verified :
-    Verified target CrtFios.code (Spec.Rsa.privateCrtContract abi 56) :=
+    Verified target CrtFios.code (Proof.Rsa.privateCrtContract abi 56) :=
   umaalArithmetic_verified (crt_verified (kernel := InlineWindow.kernel Fios.round (MontPipeline.RoundLaw.loop Fios.round_law)
     (MontPipeline.RoundCTLaw.loop Fios.round_law (by
       intro base size tmp a b mod acc n i _ hi

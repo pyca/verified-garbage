@@ -26,7 +26,7 @@ structure Kernel where
     wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c →
     WP isa run s fun t =>
       (∃ bm', MrCtx t B Z w mi c bm') ∧ ECtx t.mem B w c ∧
-      word t.mem B (8 * kFlag) = mask (Spec.MillerRabin.round c b) ∧
+      word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
       WorkFrame B (Caller.callRanges w) [below (s.gpr .rsp) 128] s.mem t.mem ∧
       Keep mmRegs s t
   ct : RelCT isa (Two Caller.Before) run fun _ _ => True

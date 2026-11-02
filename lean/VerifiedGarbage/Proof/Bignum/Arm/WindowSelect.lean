@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt wOf Layout Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf Layout Keeps)
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_dp wp_mov op2_reg op2_imm dpVal)
 
 /-- `selectRow` from arrays `a` or `b` (by the bit) to array `o`, any of the
@@ -83,7 +83,7 @@ theorem entryCopyArgs_ok (s : State) {base : BitVec 32} {len w a j : Nat}
       t.gpr .r10 = base + BitVec.ofNat 32 (arrAt w (8 + j)) ∧
       t.mem = s.mem ∧ Rest [.r0, .r10, .r11, .r12, .lr] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :
@@ -125,7 +125,7 @@ theorem scanArgs_ok (s : State) {base : BitVec 32} {len w j : Nat}
       t.gpr .r12 = base + BitVec.ofNat 32 (arrAt w (8 + j)) ∧ t.gpr .lr = BitVec.ofNat 32 (2 * w) ∧
       t.mem = s.mem ∧ Rest [.r0, .r10, .r12, .lr] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :

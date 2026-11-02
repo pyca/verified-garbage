@@ -21,7 +21,7 @@ namespace VG.Proof.Variants.RsaPrivateCrt.Arm.Base
 open VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
 def variant : Proof.Rsa.Arm.CrtImpl where
-  name := Spec.Rsa.privateCrtApi.name
+  name := "vg_rsa_private_crt"
   code := CrtFn.code
   verified := crt_verified
   stack := by decide +kernel

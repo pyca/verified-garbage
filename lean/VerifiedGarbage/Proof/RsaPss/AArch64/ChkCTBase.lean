@@ -33,8 +33,8 @@ structure PubC (a s : State) : Prop where
 theorem PubC.refl (s : State) : PubC s s := ⟨rfl, fun _ _ => rfl, rfl⟩
 
 theorem pubC_of (G : Spec.Mgf1.Hash) {S : Nat} {s₁ s₂ : State}
-    (h : (Spec.RsaPss.checkEncodingContract G G abi S).pub s₁ s₂) : PubC s₁ s₂ := by
-  sig_pub [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, List.append_eq] at h
+    (h : (Proof.RsaPss.checkEncodingContract G G abi S).pub s₁ s₂) : PubC s₁ s₂ := by
+  sig_pub [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, List.append_eq] at h
   obtain ⟨hsp, h0, h1, h2, h3, h4, h5, h6, h7⟩ := h
   refine ⟨hsp.symm, fun r hr => ?_, h5.symm⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

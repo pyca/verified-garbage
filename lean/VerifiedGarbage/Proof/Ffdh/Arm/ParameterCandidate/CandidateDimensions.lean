@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The existing FFDH allocation fits both RSA arithmetic and the compact prime table. -/
@@ -27,10 +27,10 @@ theorem CandidateParams.public_space (p : CandidateParams) : Spec.Rsa.publicScra
   dsimp only [Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords]
   omega
 
-theorem CandidateParams.table_fits (p : CandidateParams) : Spec.Rsa.Mont.arrAt p.words 34 + 4096 ≤ 8 * p.capacity := by
+theorem CandidateParams.table_fits (p : CandidateParams) : Proof.Rsa.Mont.arrAt p.words 34 + 4096 ≤ 8 * p.capacity := by
   have := p.length_bounds
   have space : 16 * p.length + 32 ≤ p.capacity := p.space
-  dsimp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, CandidateParams.words, Spec.Rsa.modulusWords]
+  dsimp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, CandidateParams.words, Spec.Rsa.modulusWords]
   omega
 
 theorem CandidateParams.capacity_fits (p : CandidateParams) : p.capacity < 2 ^ 32 := by

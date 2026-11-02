@@ -22,7 +22,7 @@ open VG.Impl.Mont.X86 (sc)
 /-- Before a test: the witness cursor `p.1` and the candidate `p.2`. -/
 def TPre (E : Env) (bits : Nat) (p : Nat × Nat) (s : State) : Prop :=
   Base E s ∧ s.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 p.1 ∧ p.1 ≤ E.witLen ∧
-    Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP) = p.2 ∧
+    Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP) = p.2 ∧
     p.2 % 2 = 1 ∧ Spec.Dsa.bitLength p.2 = bits
 
 /-- The test's writable regions, with `esp` at `E.sp`. -/
@@ -89,7 +89,7 @@ theorem test_ct {bits : Nat} {name : String} {callee : Prog isa}
     refine ⟨c₁, c₂, sp₁.trans sp₂.symm, ?_⟩
     generalize (pushed testRegs t₁).callEntry.withRegions (testRd E p.1) (testWrSp E) = w₁ at F₁ ⊢
     generalize (pushed testRegs t₂).callEntry.withRegions (testRd E p.1) (testWrSp E) = w₂ at F₂ ⊢
-    sig_pub [ppContract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argSlots, argVal,
+    sig_pub [ppContract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argSlots, argVal,
       argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
     obtain ⟨esp₁, sy₁, a0₁, a1₁, a2₁, a3₁, -, a0'₁, a2'₁, a3'₁, a4'₁, cand₁, ent₁⟩ := F₁
     obtain ⟨esp₂, sy₂, a0₂, a1₂, a2₂, a3₂, -, a0'₂, a2'₂, a3'₂, a4'₂, cand₂, ent₂⟩ := F₂
@@ -109,7 +109,7 @@ theorem test_ct {bits : Nat} {name : String} {callee : Prog isa}
     rcases hr with rfl | rfl
     · exact R.esp
     · exact R.edi.trans h.1.edi
-  refine RelCT.seq (both_post (Ψ := fun p x => x.zf = some (BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status
+  refine RelCT.seq (both_post (Ψ := fun p x => x.zf = some (BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status
       (Spec.Dsa.probablePrime p.2 (E.witT.drop p.1))) - 0 == 0) ∧ ∀ r ∈ [Reg.esp, .edi], x.gpr r = baseVal E r)
     (both_agree [.esp, .edi] (fun _ => baseVal E) pins₃ (tcheck _ _ (by decide +kernel))) fun p u hp => ?_) ?_
   · obtain ⟨s, h, R⟩ := hp
@@ -117,7 +117,7 @@ theorem test_ct {bits : Nat} {name : String} {callee : Prog isa}
     refine st_ok hsU (by simp only [fRes, hdr]; omega) fun x₁ M₁ => wp_cmpi fun x₂ F₂ _ z₂ => WP.block_nil ⟨?_, ?_⟩
     · rw [z₂, M₁.gpr, R.eax]
     · intro r hr; rw [F₂.gpr, M₁.gpr]; exact pins₃ p u ⟨s, h, R⟩ r hr
-  · refine both_ite (fun p => BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status
+  · refine both_ite (fun p => BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status
       (Spec.Dsa.probablePrime p.2 (E.witT.drop p.1))) - 0 == 0) (fun p x h => h.1) (RelCT.nil fun _ _ _ => trivial)
       (both_agree [.esp, .edi] (fun _ => baseVal E) (fun p x h => h.1.2) (tcheck _ _ (by decide +kernel)))
 

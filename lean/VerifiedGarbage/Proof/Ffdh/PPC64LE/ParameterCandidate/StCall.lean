@@ -23,7 +23,7 @@ open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 
 /-- A header word the round keeps. -/
 theorem keeps_hdr {m m' : Mem} {B : Addr} {n w i : Nat}
-    (h : Spec.MillerRabin.Keeps Spec.MillerRabin.compact B n w m m') (hi : i < 32)
+    (h : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B n w m m') (hi : i < 32)
     (hk : i ≠ 1 ∧ i ≠ 23 ∧ i ≠ 26 ∧ i ≠ 29 ∧ i ≠ 30) (hn : 256 ≤ 8 * n) :
     word m' B (8 * i) = word m B (8 * i) :=
   keeps_word h (by omega_arith) fun j h1 h2 => by
@@ -31,7 +31,7 @@ theorem keeps_hdr {m m' : Mem} {B : Addr} {n w i : Nat}
     and_intros <;> omega_arith
 
 theorem St.call {p : PP} {s t : State} {w : Nat} (h : St p s)
-    (hk : Spec.MillerRabin.Keeps Spec.MillerRabin.compact p.B p.n w s.mem t.mem)
+    (hk : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact p.B p.n w s.mem t.mem)
     (hf : Frame [⟨p.B, p.Z⟩, below p.sp 176] s.mem t.mem) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
     (hsp : t.sp = s.sp) (h31 : t.gpr .r31 = p.B) (hw : slot w 28 + saveBytes ≤ p.Z) (h2 : t.gpr .r2 = s.gpr .r2) : St p t := by
   have hn := h.dims.n
