@@ -131,7 +131,7 @@ theorem hashD_ok {t : State} (hd : DB s R EM t) : WP isa hashD t (DHS s R EM) :=
 /-- HMAC's `init` arguments, for the key at `scratch + key`. -/
 theorem macInitArgs_ok {t : State} (hp : Post s R EM t) {key : Nat} (hk : key < 2048) {Q : State → Prop}
     (hQ : ∀ u, Post s R EM u → u.gpr .a0 = scA s sSt → u.gpr .a1 = scA s sOuter → u.gpr .a2 = scA s key →
-      u.gpr .a3 = BitVec.ofNat 64 32 → u.mem = t.mem → Q u) :
+      u.gpr .a3 = BitVec.ofNat 64 32 → u.mem = t.mem → Kept [.a0, .a1, .a2, .a3] t u → Q u) :
     WP isa (.block (macInitArgs key)) t Q := by
   unfold macInitArgs
   refine wp_addi (imm := sSt) (fun v₁ p₁ f₁ => wp_addi (imm := sOuter) (fun v₂ p₂ f₂ =>
@@ -139,7 +139,7 @@ theorem macInitArgs_ok {t : State} (hp : Post s R EM t) {key : Nat} (hk : key < 
     (by decide)) (by decide)
   have O : Only [.a0, .a1, .a2, .a3] t v₄ := (p₁.trans (p₂.trans (p₃.trans p₄))).mono
   refine hQ v₄ (hp.keep h O.keep (ws := []) (by rw [O.mem]; exact Frame.refl _ _) (fun r hr => nomatch hr))
-    ?_ ?_ ?_ f₄ O.mem
+    ?_ ?_ ?_ f₄ O.mem O.keep
   · rw [p₄.get .a0, p₃.get .a0, p₂.get .a0, f₁, hp.s0]
   · rw [p₄.get .a1, p₃.get .a1, f₂, p₁.get .s0, hp.s0]
   · rw [p₄.get .a2, f₃, p₂.get .s0, p₁.get .s0, hp.s0]
@@ -170,7 +170,7 @@ theorem c_bytes {t : State} (hp : Post s R EM t) :
 theorem kdkMac_ok {t : State} (hd : DHS s R EM t) : WP isa kdkMac t (KD s R EM) := by
   have hk := h.k2
   unfold kdkMac
-  refine WP.seq (macInitArgs_ok h hd.toPost (key := sDH) (by decide) fun u₁ P₁ a0 a1 a2 a3 m₁ => ?_)
+  refine WP.seq (macInitArgs_ok h hd.toPost (key := sDH) (by decide) fun u₁ P₁ a0 a1 a2 a3 m₁ _ => ?_)
   refine WP.seq (macInit_ok h P₁ (i := sSt) (u := sOuter) (k := sDH) (by decide) (by decide) (by decide)
     (.inl (by decide)) (.inr (by decide)) (.inr (by decide)) a0 a1 a2 a3 fun u₂ P₂ A₂ hI hO => ?_)
   unfold kdkUpdArgs
