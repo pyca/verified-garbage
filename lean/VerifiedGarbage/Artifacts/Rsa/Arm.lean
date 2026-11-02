@@ -53,12 +53,6 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.Arm.RecoverFused.code
     stack := 56
     verified := Proof.Rsa.Arm.Recover.recover_primes_fused_verified },
-  Spec.Rsa.recoverPrimesApi.artifact Arm.target {
-    suffix := "_umaal"
-    code := Impl.Bignum.Arm.umaalArithmetic Impl.Rsa.Arm.RecoverFused.code
-    stack := 56
-    verified := Proof.Rsa.Arm.Recover.recover_primes_fused_umaal_verified
-    features := ["umaal"] },
   Spec.Rsa.recoverPrimesDetApi.artifact Arm.target {
     code := Impl.Rsa.Arm.RecoverDet.code
     stack := 56

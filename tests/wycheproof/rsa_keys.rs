@@ -1,8 +1,8 @@
 //! RSA private keys loaded from their components: from `(n, e, d, p, q)`
 //! (the CRT values by `vg_rsa_crt_values`) and from `(n, e, d)` (the primes
-//! recovered by `vg_rsa_recover_primes_det` on i686, and by
-//! `vg_rsa_recover_primes` on the other targets), with the two-prime private keys of
-//! the RSA test vector files (`rsa_*_test.json`; keys with other primes are
+//! recovered by `vg_rsa_recover_primes_det` on i686 and 32-bit ARM, and by
+//! `vg_rsa_recover_primes` on the other targets), with the two-prime private
+//! keys of the RSA test vector files (`rsa_*_test.json`; keys with other primes are
 //! skipped).
 //!
 //! On a few inputs, RSAEP of each key's result gives back the input, and the
@@ -15,8 +15,8 @@
 //! From each prime `p` and its CRT exponent `dP = e⁻¹ mod (p - 1)`, the key
 //! `(3 p, e, dP)` (`λ(3 p) = p - 1`) is valid, but one of its primes is 3,
 //! so `p + q - 1` is about `n / 3` and Appendix C.2's method does not find
-//! its primes: `from_components` refuses it on i686, and loads it by
-//! Appendix C.1 on the other targets.
+//! its primes: `from_components` refuses it on i686 and 32-bit ARM, and
+//! loads it by Appendix C.1 on the other targets.
 
 #![cfg(all(
     any(
@@ -65,7 +65,7 @@ fn triple(x: &[u8]) -> Vec<u8> {
 /// The key `(3 p, e, dP)` of the prime `p` (of the file `name`) and its CRT
 /// exponent `dP`: Appendix C.2 does not find its primes, so
 /// `from_components` refuses it.
-#[cfg(target_arch = "x86")]
+#[cfg(any(target_arch = "x86", target_arch = "arm"))]
 fn check_triple(name: &str, e: &[u8], p: &[u8], dp: &[u8]) {
     let key = PrivateKey::from_components(&triple(p), e, dp);
     assert!(
@@ -76,7 +76,7 @@ fn check_triple(name: &str, e: &[u8], p: &[u8], dp: &[u8]) {
 
 /// The key `(3 p, e, dP)` of the prime `p` (of the file `name`) and its CRT
 /// exponent `dP` loads from its components by Appendix C.1.
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 fn check_triple(name: &str, e: &[u8], p: &[u8], dp: &[u8]) {
     let n = triple(p);
     let key =

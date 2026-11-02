@@ -1,4 +1,5 @@
 module
+-- separate module: the proof of Appendix C.2's body is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Rsa.Arm.RdDiv
 
 import VerifiedGarbage.Proof.Rsa.Arm.RvOps
