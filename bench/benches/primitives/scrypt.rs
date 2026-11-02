@@ -13,7 +13,8 @@ pub const USES: &[&str] = &["scrypt", "pbkdf2_sha256", "hmac_sha256", "sha256"];
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
@@ -101,6 +102,7 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
