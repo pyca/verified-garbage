@@ -208,7 +208,7 @@ says, and `g = gcd(u, x₂)` in wide array 6 (narrow 12 and 13). -/
 theorem twosG_ok [InvLaw] {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (hZ26 : slot w 26 ≤ Z)
     (hw20 : w < 2 ^ 20) {N X : Nat} (hN : wv s.mem B (slot w 0) w = N) (hN2 : 2 ≤ N)
     (hone : wv s.mem B (slot w 2) w = 1) (hX : wv s.mem B (slot w 4) (2 * w + 2) = X) :
-    WP isa (seqs (twosInit ++ [.loop twosBody .ne, inverse 6 12 15 7])) s fun t =>
+    WP isa (seqs (twosInit ++ ([.loop twosBody .ne, inverse 6 12 15 7] : List (Prog isa)))) s fun t =>
       wv t.mem B (slot w 4) (2 * w + 2) = (twosSt w N X).2.2 ∧
       wv t.mem B (slot w 12) (2 * (w + 2)) = Nat.gcd (twosSt w N X).1 (twosSt w N X).2.1 ∧
       FrmP B (TgP w) s.mem t.mem ∧ Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13,

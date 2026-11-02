@@ -1,4 +1,5 @@
 module
+-- separate module: its proofs build in parallel with the constant-time ones, `CTBase`, `CTParts` and `CTLoops`
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
