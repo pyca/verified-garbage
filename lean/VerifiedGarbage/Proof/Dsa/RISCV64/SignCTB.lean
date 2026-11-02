@@ -8,6 +8,8 @@ public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Dsa.RISCV64.SignFn
 import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyBody
 import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Framework.Flat
 import VerifiedGarbage.Proof.Framework.Offset
@@ -19,6 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.SignFn
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyBody
 meta import VerifiedGarbage.Proof.Dsa.SizeBounds
+meta import VerifiedGarbage.Proof.Dsa.Encoding
+meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 meta import VerifiedGarbage.Proof.Framework.Flat
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -133,7 +137,7 @@ theorem PK.frame {v : VD} {s t : State} {rs : List Reg} (h : PK v s) (k : Keep r
     by rw [Lens, K.word (by decide) (by decide)]; exact h.lens, hq0.trans h.q0, h.os.keep k.2.1 k.2.2⟩
 
 theorem PK.keepM {v : VD} {s t : State} {rs : List Reg} (h : PK v s) (k : Keep rs s t) (hm : t.mem = s.mem)
-    (hr : ∀ r ∈ inRegs ++ regsRegs ++ [.t1], r ∉ rs := by decide) : PK v t :=
+    (hr : ∀ r ∈ inRegs ++ regsRegs ++ ([.t1] : List Reg), r ∉ rs := by decide) : PK v t :=
   h.frame k (h.cb.2.1.keep k fun r hm' => hr r (by simp [hm'])) (by
       show ((word t.mem v.L.S (slot v.L.wp 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
       rw [hm, k.gpr (fun hm' => hr .t1 (by simp) hm')]; exact h.cb.2.2.1)
@@ -488,5 +492,204 @@ theorem pinsBs195 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SBs v
             (by rfl)) fun _ ⟨⟨c9, c10, m5⟩, k5⟩ => ?_)
         exact (fix_QK ((K3.keepM k4 m4).keepM k5 m5)).app ⟨(k5.gpr (r := .s7) (by decide)).trans c7,
           (k5.gpr (r := .s8) (by decide)).trans c8, c9, c10, trivial⟩)
+
+/-- `inverseK` after `qMinus2`, then `c`. -/
+theorem stINV {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SBs v s)
+    (hc : ∀ t, QK v t → QInv t v.L → arrQ t.mem v.L 24 = 2 ^ (128 * v.L.wq) % v.q → arrQ t.mem v.L 4 < v.q →
+      arrQ t.mem v.L 25 < v.q → WP isa c t Q) :
+    WP isa (.seq Sign.keyPair (.seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ (.seq Verify.qMinus2
+      (.seq Sign.inverseK c)))))) s Q := by
+  obtain ⟨hq, hqo, -⟩ := h.vals
+  refine stQM h fun t K I h24 r25 => ?_
+  have hL := K.base.ok
+  exact WP.seq (WP.mono (inverseK_ok hL K.qs I (K.base.ns h.2.1) (by rw [K.q0]; exact hq) (by rw [K.q0]; exact hqo)
+      (by rw [K.q0]; exact h24))
+    fun u ⟨⟨Q, I', w4, k24, qa⟩, k⟩ => hc u (K.withQ Q k qa) I' (by rw [k24 24 (by decide) (by decide)]; exact h24)
+      (by rw [w4, K.q0]; exact Nat.mod_lt _ (by omega)) (by rw [k24 25 (by decide) (by decide)]; exact r25))
+
+theorem pinsBs236 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SBs v u) :
+    Pins (At Φ FBs 236) [.s6, .s11, .ra, .a7, .s5, .t0, .s8, .t3, .a0] :=
+  pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s8, BitVec.ofNat 64 v.qb), (.t3, BitVec.ofNat 64 v.d),
+      (.a0, BitVec.ofNat 64 (if v.qb < v.d then 1 else 0))]) (fun _ => rfl) fun v _ h => by
+    have hqb := (hsem _ _ h).vals.2.2.2.1
+    refine WP.of_flat (c := .seq Sign.keyPair (.seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
+      (.seq Verify.qMinus2 (.seq Sign.inverseK (.block SLB))))))) (by decide +kernel)
+      (stINV (hsem _ _ h) fun _ K _ _ _ _ => ?_)
+    have hL := K.base.ok
+    have hp : v.L.pl < 2 ^ 16 := by have := K.base.pl; simp only [Nat.reducePow]; omega
+    have hq : v.L.ql < 2 ^ 16 := by have := K.base.ql; simp only [Nat.reducePow]; omega
+    have h3 : v.qb < 2 ^ 16 := by have := K.base.ql; simp only [Nat.reducePow]; omega
+    have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
+    refine WP.block_append (WP.block_append (WP.mono (getQb_ok K.base.scr hL K.base.regs.s6 .s8)
+      fun u ⟨⟨a8, mu⟩, ku⟩ => WP.mono (getD_ok (K.base.scr.congr ku.2.2) hL
+        (by rw [ku.gpr (by decide)]; exact K.base.regs.s6) .t3) fun w ⟨⟨b3, mw⟩, kw⟩ => ?_))
+    have l := K.lens
+    rw [Lens] at l
+    rw [l, pack_qb hp hq h3 h4] at a8
+    rw [mu, l, pack_d hp hq h3 h4] at b3
+    have a8' : w.gpr .s8 = BitVec.ofNat 64 v.qb := (kw.gpr (by decide)).trans a8
+    have hsub := sub_shr63 (a := v.qb) (b := v.d) (by simp only [Nat.reducePow] at *; omega)
+      (by simp only [Nat.reducePow] at *; omega)
+    refine WP.mono (WP.keep [.a0] (Q := fun t => t.gpr .a0 = BitVec.ofNat 64 (if v.qb < v.d then 1 else 0) ∧
+      t.mem = w.mem) (by brun [a8', b3, exec_shift_d (show 63 < 64 by decide), hsub]) (by decide) (by rfl))
+      fun t ⟨⟨c0, mt⟩, kt⟩ => ?_
+    have K' := ((K.keepM ku mu).keepM kw mw).keepM kt mt
+    exact (fix_QK K').app ⟨(kt.gpr (r := .s8) (by decide)).trans a8', (kt.gpr (r := .t3) (by decide)).trans b3, c0,
+      trivial⟩
+
+theorem pinsBs238 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SBs v u) :
+    Pins (At Φ FBs 238) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+  pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.dig), (.s8, BitVec.ofNat 64 (min v.d v.qb))])
+    (fun _ => rfl) fun v _ h => by
+    refine WP.of_flat (c := .seq Sign.keyPair (.seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
+      (.seq Verify.qMinus2 (.seq Sign.inverseK (.seq Verify.scalarLen (.block [.load .d .s7 .s6 hDigest])))))))) (by decide +kernel)
+      (stINV (hsem _ _ h) fun _ K _ _ _ _ => ?_)
+    have hL := K.base.ok
+    have h3 : v.qb < 2 ^ 16 := by
+      have := K.base.ql; have := (hsem _ _ h).vals.2.2.2.1; simp only [Nat.reducePow]; omega
+    have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
+    refine WP.seq (WP.mono (scalarLen_ok K.base.scr hL K.base.regs.s6 K.lens h3 h4) fun s₀ ⟨⟨a8, m0⟩, k0⟩ => ?_)
+    have K0 := K.keepM k0 m0
+    obtain ⟨hin, hal⟩ := ScrL.hdr K0.base.scr hL (d := 8) (by decide) (by decide)
+    refine WP.mono (WP.keep [.s7] (Q := fun u => u.gpr .s7 = v.dig ∧ u.mem = s₀.mem)
+      (by brun [hDigest, K0.base.regs.s6, hin, hal]; exact K0.base.dig8 (hsem _ _ h).2.1.full) (by rfl) (by rfl))
+      fun _ ⟨⟨a7, m1⟩, k1⟩ => ?_
+    exact (fix_QK (K0.keepM k1 m1)).app ⟨a7, (k1.gpr (r := .s8) (by decide)).trans a8, trivial⟩
+
+/-- The digest's scalar is below `2 q`. -/
+theorem SBs.hz {v : VD} {s : State} (h : SBs v s) (m : Mem) :
+    Spec.Dsa.decodeBE (Spec.Rsa.bytesAt m v.dig (min v.d v.qb)) < 2 * v.q := by
+  obtain ⟨⟨⟨_, ⟨hsz, _, _, _⟩, _⟩, _⟩, _⟩ := h
+  have bd := VG.Proof.Dsa.supported_bounds hsz
+  have hq8 : Spec.Dsa.bitLength v.q = 8 * (Spec.Dsa.bitLength v.q / 8) := by
+    have : Spec.Dsa.supportedSizes (Spec.Dsa.bitLength v.p) (Spec.Dsa.bitLength v.q) := hsz
+    unfold Spec.Dsa.supportedSizes at this; omega
+  refine Nat.lt_of_lt_of_le (VG.Proof.Dsa.decodeBE_lt _) ?_
+  rw [VG.Proof.Bignum.bytesAt_length]
+  refine Nat.le_trans (Nat.pow_le_pow_right (by decide) (Nat.min_le_right _ _)) ?_
+  have := pow_bitLength_le (q := v.q) (by omega)
+  rw [hq8, Nat.pow_mul] at this
+  exact this
+
+theorem pinsBs252 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SBs v u) :
+    Pins (At Φ FBs 252) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8, .s9, .s10] :=
+  pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.key (3 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.ql),
+      (.s9, off v.key (3 * v.L.pl + v.L.ql)), (.s10, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl) fun v _ h => by
+    refine WP.of_flat (c := .seq Sign.keyPair (.seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
+      (.seq Verify.qMinus2 (.seq Sign.inverseK (.seq Verify.scalar (.seq (zeroArr 7) (.seq (Sign.addMod 6 6 7)
+        (.block (Sign.ptrX ++ [.addi .s9 .s7 0, .addi .s10 .s8 0]))))))))))) (by decide +kernel)
+      (stINV (hsem _ _ h) fun _ K _ _ _ _ => ?_)
+    have hL := K.base.ok
+    have hwq := hL.wq_ge
+    have hqs := hL.qslot
+    have e : ∀ j, slot v.L.wq j = 256 + j * (8 * (v.L.wq + 2)) := fun _ => rfl
+    have e0 := e 0; have e1 := e 1; have e6 := e 6; have e7 := e 7; have e8 := e 8; have e28 := e 28
+    have hqb := (hsem _ _ h).vals.2.2.2.1
+    have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
+    refine WP.seq (WP.mono (scalar_ok hL K.qs (K.base.dig8 (hsem _ _ h).2.1.full) K.lens hqb h4
+      (K.base.hdg.take (Nat.min_le_left _ _))) fun s₁ ⟨⟨Q1, v6, o1⟩, k1⟩ => ?_)
+    have K1 := K.withQ Q1 k1 (QArr.of o1 (by omega) (by omega))
+    refine WP.seq (WP.mono (zeroArr_ok K1.qs.inq.env (j := 7) (by decide)) fun s₂ ⟨⟨z7, o2⟩, k2⟩ => ?_)
+    have K2 := K1.qarr k2 (QArr.of o2 (by omega) (by omega))
+    have z2 : arrQ s₂.mem v.L 6 = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt _ v.dig (min v.d v.qb)) :=
+      (o2.wordsVal (by omega) (by omega)).trans v6
+    refine WP.seq (WP.mono (addMod_ok K2.qs.inq.env (o := 6) (a := 6) (b := 7) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by show arrQ s₂.mem v.L 6 + arrQ s₂.mem v.L 7 < 2 * arrQ s₂.mem v.L 0
+          rw [z2, show arrQ s₂.mem v.L 7 = 0 from z7, K2.q0, Nat.add_zero]; exact (hsem _ _ h).hz _))
+      fun s₃ ⟨⟨_, fr3⟩, k3⟩ => ?_)
+    have K3 := K2.qarr k3 (fr3.qarr (by decide) (by decide))
+    refine WP.block_append (WP.mono (ptrX_ok K3.qs.scr hL K3.qs.regs) fun s₄ ⟨⟨b7, b8, m4⟩, k4⟩ =>
+      WP.mono (WP.keep [.s9, .s10] (Q := fun u => u.gpr .s9 = off v.key (3 * v.L.pl + v.L.ql) ∧
+        u.gpr .s10 = BitVec.ofNat 64 v.L.ql ∧ u.mem = s₄.mem) (by brun [b7, b8, BitVec.add_zero]) (by decide) (by rfl))
+      fun _ ⟨⟨c9, c10, m5⟩, k5⟩ => ?_)
+    exact (fix_QK ((K3.keepM k4 m4).keepM k5 m5)).app ⟨(k5.gpr (r := .s7) (by decide)).trans b7,
+      (k5.gpr (r := .s8) (by decide)).trans b8, c9, c10, trivial⟩
+
+/-- `sValue` after `inverseK`, then `c`. -/
+theorem stSV {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SBs v s)
+    (hc : ∀ t, QK v t → WP isa c t Q) :
+    WP isa (.seq Sign.keyPair (.seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ (.seq Verify.qMinus2
+      (.seq Sign.inverseK (.seq Sign.sValue c))))))) s Q := by
+  obtain ⟨hq, hqo, -, hqb, -⟩ := h.vals
+  have bd := VG.Proof.Dsa.supported_bounds h.1.1.2.1.1
+  refine stINV h fun t K I h24 h4 r25 => ?_
+  have hL := K.base.ok
+  have hd : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
+  exact WP.seq (WP.mono (sValue_ok hL K.qs I (K.base.dig8 h.2.1.full) K.lens hqb hd
+      (K.base.hdg.take (Nat.min_le_left _ _)) K.os.key (by rw [K.q0]; omega) (by rw [K.q0]; exact hqo)
+      (by rw [K.q0]; exact h24) (by rw [K.q0]; exact h4) (by rw [K.q0]; exact r25) (by rw [K.q0]; exact h.hz _))
+    fun u ⟨⟨Q, _, _, _, qa⟩, k⟩ => hc u (K.withQ Q k qa))
+
+theorem pinsBs323 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SBs v u) :
+    Pins (At Φ FBs 323) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+  pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, oOf v), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
+    fun v _ h => by
+    refine WP.of_flat (c := .seq Sign.keyPair (.seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
+      (.seq Verify.qMinus2 (.seq Sign.inverseK (.seq Sign.sValue (.seq (zeroArr 7)
+        (.seq (.block [.load .d .a4 .s6 hMask]) (.seq (Sign.nonZero 6) (.seq (.block [.addi .s4 .a4 0])
+          (.seq (Sign.sel 1 25 7) (.seq (Sign.sel 2 6 7) (.block ([.load .d .s7 .s6 Sign.hOut] ++ getQ .s8)))))))))))))))
+      (by decide +kernel) (stSV (hsem _ _ h) fun _ K => ?_)
+    have hL := K.base.ok
+    have hwq := hL.wq_ge
+    have hqs := hL.qslot
+    have e : ∀ j, slot v.L.wq j = 256 + j * (8 * (v.L.wq + 2)) := fun _ => rfl
+    have e0 := e 0; have e1 := e 1; have e2 := e 2; have e3 := e 3; have e6 := e 6; have e7 := e 7
+    have e8 := e 8; have e25 := e 25; have e26 := e 26; have e28 := e 28
+    obtain ⟨b, hm⟩ := K.mw
+    refine WP.seq (WP.mono (zeroArr_ok K.qs.inq.env (j := 7) (by decide)) fun s₁ ⟨⟨z7, o1⟩, k1⟩ => ?_)
+    have qa1 : QArr v.L _ s₁.mem := QArr.of o1 (by omega) (by omega)
+    have K1 := K.qarr k1 qa1
+    obtain ⟨hld, hal⟩ := ScrL.hdr K1.qs.scr hL (d := 0) (by decide) (by decide)
+    have hw1 : word s₁.mem v.L.S hMask = mask b := by rw [(qa1.body hL).word (by decide)]; exact hm
+    refine WP.seq (WP.mono (WP.keep [.a4] (Q := fun u => u.gpr .a4 = mask b ∧ u.mem = s₁.mem)
+      (by brun [hMask, K1.qs.regs.s6, hld, hal]; exact hw1) (by decide) (by rfl)) fun s₂ ⟨⟨a4, m2⟩, k2⟩ => ?_)
+    have K2 := K1.keepM k2 m2
+    refine WP.seq (WP.mono (nonZero_ok K2.qs.inq.env (a := 6) (c := 0) (by decide) (by rw [m2]; exact z7) a4)
+      fun s₃ ⟨⟨b4, m3⟩, k3⟩ => ?_)
+    have K3 := K2.keepM k3 m3
+    refine WP.seq (WP.mono (WP.keep [.s4] (Q := fun u => u.gpr .s4 = mask (b && decide (wordsVal s₂.mem v.L.Q
+        (slot v.L.wq 6) v.L.wq ≠ 0)) ∧ u.mem = s₃.mem)
+      (by brun [b4, BitVec.add_zero]) (by decide) (by rfl)) fun s₄ ⟨⟨a20, m4⟩, k4⟩ => ?_)
+    have K4 := K3.keepM k4 m4
+    refine WP.seq (WP.mono (sel_ok K4.qs.inq.env (o := 1) (a := 25) (t := 7) (by decide) (by decide)
+      (by decide) (by decide) (by decide) a20) fun s₅ ⟨⟨_, o5⟩, k5⟩ => ?_)
+    have K5 := K4.qarr k5 (QArr.of o5 (by omega) (by omega))
+    refine WP.seq (WP.mono (sel_ok K5.qs.inq.env (o := 2) (a := 6) (t := 7) (by decide) (by decide)
+      (by decide) (by decide) (by decide) ((k5.gpr (by decide)).trans a20)) fun s₆ ⟨⟨_, o6⟩, k6⟩ => ?_)
+    have K6 := K5.qarr k6 (QArr.of o6 (by omega) (by omega))
+    obtain ⟨hld', hal'⟩ := ScrL.hdr K6.qs.scr hL (d := 24) (by decide) (by decide)
+    refine WP.block_append (WP.mono (WP.keep [.s7] (Q := fun u => u.gpr .s7 = oOf v ∧ u.mem = s₆.mem)
+      (by brun [Sign.hOut, K6.qs.regs.s6, hld', hal']; exact K6.base.hout _ (hsem _ _ h).2.1.out) (by decide) (by rfl))
+      fun s₇ ⟨⟨a7, m7⟩, k7⟩ => WP.mono (getQ_ok (K6.qs.scr.congr k7.2.2) hL (K6.qs.regs.keepM k7 m7) .s8)
+        fun _ ⟨⟨a8, m8⟩, k8⟩ => ?_)
+    exact (fix_QK ((K6.keepM k7 m7).keepM k8 m8)).app ⟨(k8.gpr (r := .s7) (by decide)).trans a7, a8, trivial⟩
+
+/-! ## The relations -/
+
+/-- `body`, from a level whose states are in its phase. -/
+theorem body_relS {Φ : VD → State → Prop} (runB : ∀ v s, Φ v s → WP isa (Code.seqL FBs) s fun _ => True)
+    (hsem : ∀ v u, Φ v u → SBs v u) : RelCT isa (Two Φ) Sign.body fun _ _ => True := by
+  refine chain_start (chain_cons runB (m := 2) (by decide) (two_taint _ (pinsBs0 hsem) (by taint_decide)) ?_)
+  refine chain_cons runB (m := 12) (by decide) (two_taint _ (pinsBs2 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 53) (by decide) (two_taint _ (pinsBs12 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 66) (by decide) (two_taint _ (pinsBs53 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 76) (by decide) (two_taint _ (pinsBs66 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 117) (by decide) (two_taint _ (pinsBs76 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 120) (by decide) (two_taint _ (pinsBs117 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 131) (by decide) (two_taint _ (pinsBs120 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 139) (by decide) (two_taint _ (pinsBs131 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 182) (by decide) (two_taint _ (pinsBs139 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 185) (by decide) (two_taint _ (pinsBs182 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 195) (by decide) (two_taint _ (pinsBs185 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 236) (by decide) (two_taint _ (pinsBs195 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 238) (by decide) (two_taint _ (pinsBs236 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 252) (by decide) (two_taint _ (pinsBs238 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 323) (by decide) (two_taint _ (pinsBs252 hsem) (by taint_decide)) ?_
+  exact two_taint _ (pinsBs323 hsem) (by taint_decide)
+
+theorem sign_ct : ConstantTime isa sContract.pre sContract.pub Sign.sign :=
+  RelCT.constantTime ((sign_rel (body_relS runBs onSBs)).mono (fun s _ ⟨hs, ht, hp⟩ =>
+    ⟨vdS s, ⟨hs, rfl⟩, ⟨ht, (vdS_eq hs hp).symm⟩, hp.1⟩) fun _ _ h => h)
 
 end VG.Proof.Dsa.RISCV64.CT
