@@ -5,8 +5,8 @@ module
 # Argon2 derivation on RISC-V: the frame
 
 `vg_argon2` allocates a frame of `locals` bytes, at whose stack pointer `s3`
-points for the whole derivation; `s4` points to `scratch` rounded up to a
-multiple of 8, and `s0` 2048 bytes above that (H′ keeps all three, and `s1`
+points for the whole derivation; `s4` points to `scratch`, and `s0` 2048
+bytes above that (H′ keeps all three, and `s1`
 and `s2`, which memory initialization uses). The frame holds:
 
 * `[0, 72)`: H₀, followed by LE32(column) and LE32(lane): the 72-byte input

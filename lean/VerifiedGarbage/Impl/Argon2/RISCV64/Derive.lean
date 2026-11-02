@@ -14,8 +14,10 @@ out_len)`, the last ten on the caller's stack.
 The PPC64LE derivation (`Impl/Argon2/PPC64LE/Derive.lean`): it allocates its
 frame (`Impl/Argon2/RISCV64/Layout.lean`), saves the return address, the
 caller's `s0`–`s4` and its register arguments there, and points `s3` to the
-frame, `s4` to `scratch` rounded up to a multiple of 8 and `s0` 2048 bytes
-above it throughout. It computes the parameters and H₀, initializes the
+frame, `s4` to `scratch` and `s0` 2048 bytes above it throughout. The
+contract's `memory` and `scratch` are arrays of `u64`, which RISC-V's
+contracts require to be 8-byte aligned (`Abi.alignsBufs`), so every access to
+them is a doubleword's or a word's. It computes the parameters and H₀, initializes the
 memory, fills it, XORs the last block of every lane into the first block of
 the memory, and writes H′ of it to `out`. The lanes are evaluated serially,
 which every positive `threads` permits.
@@ -60,12 +62,11 @@ def argSlots : List (Reg × Nat) :=
   [(.a0, 120), (.a1, 128), (.a2, 136), (.a3, 144), (.a4, 152), (.a5, 160), (.a6, 168), (.a7, 176)]
 
 /-- Save the return address, the caller's registers and the register
-arguments, and point `s3` to the frame, `s4` to the rounded `scratch` and
-`s0` 2048 bytes above it. -/
+arguments, and point `s3` to the frame, `s4` to `scratch` and `s0` 2048
+bytes above it. -/
 def setup : List Instr :=
   [.addSp .t0 0] ++ (savedSlots ++ argSlots).map (fun (r, d) => .store .d r .t0 d) ++
-  [HPrime.mov .s3 .t0, lda .s4 scratchArg, .addi .s4 .s4 7, .logicImm .and .s4 .s4 (-8),
-    .addi .s0 .s4 1024, .addi .s0 .s0 1024]
+  [HPrime.mov .s3 .t0, lda .s4 scratchArg, .addi .s0 .s4 1024, .addi .s0 .s0 1024]
 
 /-- The return address and the caller's registers, in the order they are
 restored: `s3`, the frame's pointer, last. -/

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Argon2.RISCV64.HPrime
 # Argon2 on RISC-V: the parameters and H₀
 
 `s3` points to the derivation's frame (`Impl/Argon2/RISCV64/Layout.lean`)
-and `s4` to the rounded `scratch`, as `r30` and `r31` on PPC64LE
+and `s4` to `scratch`, as `r30` and `r31` on PPC64LE
 (`Impl/Argon2/PPC64LE/Initial.lean`):
 
 * `parameters`: the segment length `⌊memory_cost / (4 · lanes)⌋`, by the

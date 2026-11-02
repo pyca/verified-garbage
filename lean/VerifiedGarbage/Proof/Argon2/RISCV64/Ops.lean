@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 namespace VG.Proof.Argon2.RISCV64
 
 open VG VG.RISCV64
-open VG.RISCV64.Wp (Upd WP.cons)
+open VG.RISCV64.Wp (Upd Mupd WP.cons)
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
@@ -45,6 +45,22 @@ theorem wp_sll {d n : Reg} {sh : Nat} (h : sh < 64)
     (k : ∀ s', Upd s s' d (s.gpr n <<< sh) → WP isa (.block is) s' Q) :
     WP isa (.block (.shift .sll .d d n sh :: is)) s Q :=
   WP.cons (exec_shift_d h) (k _ (Upd.write _ _ _))
+
+theorem wp_lwu {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
+    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hal : a.toNat % 4 = 0)
+    (hin : InRegions (s.rd ++ s.wr) a 4)
+    (k : ∀ s', Upd s s' t ((s.mem.readW a 32).setWidth 64) → WP isa (.block is) s' Q) :
+    WP isa (.block (.load .w t n off :: is)) s Q := by
+  refine WP.cons (s' := s.write t ((s.mem.readW a 32).setWidth 64)) ?_ (k _ (Upd.write _ _ _))
+  rw [exec_load_w ho (by rw [ha]; exact hal) (by rw [ha]; exact hin), ha]
+
+theorem wp_sw {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
+    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hal : a.toNat % 4 = 0) (hout : InRegions s.wr a 4)
+    (k : ∀ s', Mupd s s' (s.mem.writeW a ((s.gpr t).setWidth 32)) → WP isa (.block is) s' Q) :
+    WP isa (.block (.store .w t n off :: is)) s Q := by
+  refine WP.cons (s' := { s with mem := s.mem.writeW a ((s.gpr t).setWidth 32) }) ?_
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩)
+  rw [exec_store_w ho (by rw [ha]; exact hal) (by rw [ha]; exact hout), ha]
 
 theorem sext32_ushiftRight (x : BitVec 32) {sh : Nat} (h0 : 0 < sh) :
     sext32 (x >>> sh) = (x >>> sh).setWidth 64 := by

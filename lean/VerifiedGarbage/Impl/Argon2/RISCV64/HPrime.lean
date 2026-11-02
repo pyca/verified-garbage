@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Blake2.RISCV64.Stream
 scratch = a4)`: the PPC64LE implementation (`Impl/Argon2/PPC64LE/HPrime.lean`)
 with its registers renamed, calling the RISC-V BLAKE2b streaming functions
 (`vg_blake2b_init`, `_update_scratch`, `_finalize_scratch`). Its caller's
-scratch is 8-byte aligned, and holds the 192-byte hash state at offset 0, 576
+scratch is 8-byte aligned (an array of `u64`), and holds the 192-byte hash state at offset 0, 576
 bytes of BLAKE2b scratch at 192, the digest at 768, the four-byte length
 prefix at 832, and the saved `s0`–`s4` and return address at 840–887. `s0`
 and `s1` hold the input and its length, `s2` where the next output byte goes,

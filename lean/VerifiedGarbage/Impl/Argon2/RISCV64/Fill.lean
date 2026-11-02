@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Argon2.RISCV64.Initial
 
 The PPC64LE code (`Impl/Argon2/PPC64LE/Fill.lean`) with its registers renamed
 and the scratch rearranged, since offsets are below 2048: they are from `s4`,
-the rounded `scratch`, and `s0 = scratch + 2048`. The pass, lane, slice and
+`scratch`, and `s0 = scratch + 2048`. The pass, lane, slice and
 index are in the frame (`s3`), so every register but `s0`, `s3`, `s4` and
 the saved `s1`, `s2` is free within a block's update (`fillBlock`):
 
