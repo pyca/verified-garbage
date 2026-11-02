@@ -497,6 +497,7 @@ theorem loop_sim {x : BitVec 32} {o o' : State} {tr : List Leak}
       n.gpr .r9 = x → ∃ n', Exec isa (.loop (.block rowBodyU) .ne) n tr n' ∧ endState n' = o' := by
   generalize hc : (Code.loop rowBody2 .ne : Prog isa) = c at h
   induction h with
+  | icall | icallNext => cases hc
   | loopExit hb he =>
     cases hc
     intro n ag h1 h10 h9 hx
@@ -604,6 +605,10 @@ theorem armStack_umaalRows (c : Prog isa) :
     simp only [Code.subst]; split
     · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
     · simpa only [FrameStack.armStack] using ih
+  | icall =>
+    simp only [Code.subst]; split
+    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
+    · exact Nat.le_refl _
   | frame i b j ih =>
     simp only [Code.subst]; split
     · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]

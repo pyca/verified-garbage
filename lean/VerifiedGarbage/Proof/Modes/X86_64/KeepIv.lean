@@ -100,6 +100,7 @@ theorem keepsIv_of_ivSafe {c : Prog isa} (hc : ivSafe c = true) : KeepsIv c := b
   clear hz
   revert hc
   induction h with
+  | icall | icallNext => intro hc; simp only [ivSafe, Bool.false_eq_true] at hc
   | block e => exact fun hc => execBlock_ivSafe hc e
   | seq _ _ ih₁ ih₂ =>
     intro hc

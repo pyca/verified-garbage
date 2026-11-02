@@ -177,6 +177,8 @@ def hint (chunkSize : Nat) : A.T → Prog M → Option (A.T × Hint A.T)
     (A.call τ).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.ret τ₂).map (·, .call h)
   | τ, .frame i body j =>
     (A.push τ i).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.pop τ₂ j).map (·, .frame h)
+  -- `check` does not handle indirect calls.
+  | _, .icall .. => none
 where
   go (c : M.Cond) (body : A.T → Option (A.T × Hint A.T)) :
       Nat → A.T → Option (A.T × Hint A.T)
@@ -371,6 +373,8 @@ theorem check_sound {c : Prog M} {τ τ' : A.T} {hc : Hint A.T} {s₁ s₂ s₁'
         obtain ⟨ha₃, ha₃'⟩ := A.pop_sound ha₂ h₃ hq hq₂
         exact ⟨by rw [ha₁, ha₃], ha₃'⟩
     | _ => have h' : (none : Option A.T) = some τ' := h; cases h'
+  -- `check` fails on an indirect call.
+  | icall | icallNext => cases hc <;> (have h' : (none : Option A.T) = some τ' := h; cases h')
 
 /-- A successful check proves constant time, for any `Pub` under which the
 initial states agree on what the initial taint says is public. -/

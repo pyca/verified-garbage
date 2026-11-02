@@ -34,6 +34,7 @@ def topAllC (p : Instr → Bool) : Prog isa → Bool
   | .loop b _ => topAllC p b
   | .call _ _ => true
   | .frame i b j => p i && topAllC p b && p j
+  | .icall i _ _ n => p i && topAllC p n
 
 /-- Whether every instruction of `c` outside the functions it calls
 satisfies `p`. A block is walked with `List.rec`, which the kernel evaluates
@@ -46,6 +47,7 @@ faster than `List.all` (as `Code.allInstrs`). Compiled code runs `topAllC`
   | .loop b _ => topAll p b
   | .call _ _ => true
   | .frame i b j => p i && topAll p b && p j
+  | .icall i _ _ n => p i && topAll p n
 
 theorem topAll_block (p : Instr → Bool) (is : List Instr) : topAll p (.block is) = is.all p := by
   induction is with
@@ -77,6 +79,8 @@ theorem gpr_top {r : Reg} (hr : r ∉ linkRegs) {c : Prog isa} {s s' : State} {t
     (hb : (c.calls.all fun nb => (straight nb.2).any (restores r) || nb.2.allInstrs (keepsReg r)) = true) :
     s'.gpr r = s.gpr r := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h =>
     exact execBlock_keep (fun s : State => s.gpr r) (ok := fun i => keepsReg r i = true)
       (fun hi he => exec_gpr (by simpa [keepsReg] using hi) he)
@@ -120,6 +124,8 @@ theorem untouched_keep {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec 
         topAll p c = true → topAll q c = true := by
       intro p q hpq c
       induction c with
+      | icall i _ _ n _ ihn =>
+        simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨hpq i h.1, ihn h.2⟩
       | block is =>
         rw [topAll_block, topAll_block, List.all_eq_true, List.all_eq_true]
         exact fun h i hi => hpq i (h i hi)
