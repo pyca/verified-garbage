@@ -17,7 +17,7 @@ def artifacts : List Artifact := [
     verified := Proof.Seed.RISCV64.Modes.cbcEncryptChained_verified },
   Spec.Seed.cbcDecryptChainedApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.cbcDecryptChained
-    stack := 1104
+    stack := 1344
     verified := Proof.Seed.RISCV64.Modes.cbcDecryptChained_verified }]
 
 end VG.Artifacts.SeedCbc.RISCV64
