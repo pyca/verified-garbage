@@ -63,7 +63,8 @@
         target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "arm",
-        target_arch = "powerpc64"
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
     ),
     feature = "alloc"
 ))]
@@ -170,12 +171,13 @@ impl Backend {
     }
 
     /// The best implementation a CPU with the features `f` can run: on
-    /// i686, AArch64, PPC64LE, and ARMv7 where `umaal` is not detected, the
-    /// baseline is the only one.
+    /// i686, AArch64, PPC64LE, RISC-V, and ARMv7 where `umaal` is not
+    /// detected, the baseline is the only one.
     #[cfg(any(
         target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "powerpc64",
+        target_arch = "riscv64",
         all(
             target_arch = "arm",
             not(any(
