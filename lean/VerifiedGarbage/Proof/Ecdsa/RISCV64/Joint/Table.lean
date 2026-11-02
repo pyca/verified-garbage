@@ -219,7 +219,7 @@ theorem combine4 : ∀ a < 4, ∀ b < 4, (BitVec.ofNat 64 a <<< 2) ||| BitVec.of
 
 /-- The window's entry number, `4 u_j + v_j`, into `t2`, for `j` in `s1`. -/
 theorem window_ok (c : Cfg) {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : j < 32 * c.n)
-    (hU : c.sl UU + 8 * c.n ≤ 2048) (hV : c.sl VV + 8 * c.n ≤ 2048)
+    (hU : c.sl UU + 8 * c.n ≤ 4096) (hV : c.sl VV + 8 * c.n ≤ 4096)
     (h1 : s.gpr .s1 = BitVec.ofNat 64 j) :
     WP isa (.block (Cfg.window c)) s fun s' =>
       s'.gpr .t2 = BitVec.ofNat 64 (4 * ((wordsVal s.mem base (c.sl UU) c.n >>> (2 * j)) % 4) +
@@ -231,6 +231,7 @@ theorem window_ok (c : Cfg) {s : State} {base : Addr} (hw : WsReg s base) {j : N
   have hU8 : c.sl UU % 8 = 0 := by simp only [Cfg.sl, slot, UU]; omega
   have hV8 : c.sl VV % 8 = 0 := by simp only [Cfg.sl, slot, VV]; omega
   rw [Cfg.window]
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_srl (by decide) fun s₁ u₁ => wp_sll (by decide) fun s₂ u₂ => wp_add fun s₃ u₃ => ?_
   have e₃' : s₃.gpr .t1 = base + BitVec.ofNat 64 (8 * (j / 32)) := by
     rw [u₃.gpr, u₂.gpr, u₂.other .s0 (by decide), u₁.gpr, u₁.other .s0 (by decide), hw.s0, h1]
@@ -250,9 +251,9 @@ theorem window_ok (c : Cfg) {s : State} {base : Addr} (hw : WsReg s base) {j : N
     ⟨_, List.mem_append_right _ (r₃.wr ▸ hw.wr), Offset.contains_base base hd (by omega)⟩
   have alg : ∀ d, d % 8 = 0 → d < 8192 → (off base d).toNat % 8 = 0 := fun d h8 hd => by
     simp only [off]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  refine wp_ld (by omega) (e₃ (c.sl UU)) (alg _ (by omega) (by omega))
+  refine wp_ldAt (by omega) (e₃ (c.sl UU)) (alg _ (by omega) (by omega))
     (inr _ (by omega)) fun s₄ u₄ => ?_
-  refine wp_ld (by omega) (by rw [u₄.other .t1 (by decide)]; exact e₃ (c.sl VV))
+  refine wp_ldAt (by omega) (by rw [u₄.other .t1 (by decide)]; exact e₃ (c.sl VV))
     (alg _ (by omega) (by omega)) (by rw [u₄.rd, u₄.wr]; exact inr _ (by omega))
     fun s₅ u₅ => ?_
   refine wp_sll (by decide) fun s₆ u₆ => wp_srlReg fun s₇ u₇ => wp_srlReg fun s₈ u₈ => ?_
