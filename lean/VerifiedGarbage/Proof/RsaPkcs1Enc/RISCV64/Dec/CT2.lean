@@ -79,7 +79,7 @@ theorem prfBody_ct {label : List Nat} {len count : List Instr} {dst : Nat} (T : 
     (hmsg : ∀ s R EM u, DPre s → Post s R EM u → u.gpr .s8 = BitVec.ofNat 64 i →
       WP isa (.block (msgBytes label len)) u fun w => Frame [⟨scA s sMsg, 16⟩] u.mem w.mem ∧ Kept [.t1, .t2] u w)
     (hcount : ∀ s u, u.gpr .s9 = nbOf s →
-      WP isa (.block (count ++ [.sub .t1 .t1 .s8])) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C s - u.gpr .s8) :
+      WP isa (.block (count ++ ([.sub .t1 .t1 .s8] : List Instr))) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C s - u.gpr .s8) :
     RelCT isa (Rel e (L i)) (prfBody label len dst count)
       (Rel e fun s u => L (i + 1) s u ∧ u.gpr .t1 = C s - BitVec.ofNat 64 (i + 1)) := by
   have zz := hmac_sizes
@@ -160,7 +160,7 @@ theorem prfLoop_ct {label : List Nat} {len count : List Instr} {dst N : Nat} (T 
     (hmsg : ∀ i < N, ∀ s R EM u, DPre s → Post s R EM u → u.gpr .s8 = BitVec.ofNat 64 i →
       WP isa (.block (msgBytes label len)) u fun w => Frame [⟨scA s sMsg, 16⟩] u.mem w.mem ∧ Kept [.t1, .t2] u w)
     (hcount : ∀ s u, u.gpr .s9 = nbOf s →
-      WP isa (.block (count ++ [.sub .t1 .t1 .s8])) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C s - u.gpr .s8) :
+      WP isa (.block (count ++ ([.sub .t1 .t1 .s8] : List Instr))) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C s - u.gpr .s8) :
     RelCT isa (Rel e (L 0)) (.loop (prfBody label len dst count) (.nonzero .t1))
       (Rel e fun s u => PostAt s u ∧ u.gpr .s9 = nbOf s) := by
   refine (RelCT.loop (Q := Rel e fun s u => PostAt s u ∧ u.gpr .s9 = nbOf s) (fun m a b => ∃ i, m = N - i ∧ i < N ∧ Rel e (L i) a b)

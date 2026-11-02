@@ -210,7 +210,7 @@ theorem prfBody_ok {label : List Nat} {len count : List Instr} {dst : Nat} {t : 
         (Frame [⟨scA s sMsg, 16⟩] u.mem w.mem ∧
           Spec.Rsa.bytesAt w.mem (scA s sMsg) (label.length + 4) = text) ∧ Kept [.t1, .t2] u w)
     (hcount : ∀ u : State, u.gpr .s9 = t.gpr .s9 →
-      WP isa (.block (count ++ [.sub .t1 .t1 .s8])) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C - u.gpr .s8) :
+      WP isa (.block (count ++ ([.sub .t1 .t1 .s8] : List Instr))) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C - u.gpr .s8) :
     WP isa (prfBody label len dst count) t
       (PrfStep s R EM (dst + 32 * i) (Spec.Hmac.hmac Spec.Hmac.sha256 kd text) C i t) := by
   have zz := hmac_sizes
