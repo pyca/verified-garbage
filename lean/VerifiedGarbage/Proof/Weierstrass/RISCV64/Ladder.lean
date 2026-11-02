@@ -200,7 +200,7 @@ apart from what the ladder writes, with `L.nbits` of its bits, an immediate. -/
 structure LadLayR (L : LadderCfg) : Prop where
   lay : LadLay L (own L.M.n) 8192
   al : ∀ x ∈ ladSlots L, x % 8 = 0
-  short : ∀ x ∈ ladSlots L, x + 8 * L.M.n ≤ 2048
+  short : ∀ x ∈ ladSlots L, x + 8 * L.M.n ≤ 4096
   kal : L.bits % 8 = 0
   kshort : L.bits + 8 * L.M.n ≤ 4096
   kw : ∀ w ∈ ladWx L, L.bits + 8 * L.M.n ≤ w.1 ∨ w.1 + w.2 ≤ L.bits
@@ -467,8 +467,8 @@ structure PowLayR (P : PowCfg) (k : Nat) : Prop where
   tmp : P.tmp + 8 * k ≤ own k
   base : P.base + 8 * k ≤ own k
   one : P.one + 8 * k ≤ own k
-  short : P.acc + 8 * k ≤ 2048 ∧ P.tmp + 8 * k ≤ 2048 ∧ P.base + 8 * k ≤ 2048 ∧ P.one + 8 * k ≤ 2048 ∧
-    P.bits + 8 * k ≤ 2048
+  short : P.acc + 8 * k ≤ 4096 ∧ P.tmp + 8 * k ≤ 4096 ∧ P.base + 8 * k ≤ 4096 ∧ P.one + 8 * k ≤ 4096 ∧
+    P.bits + 8 * k ≤ 4096
   nbits : 1 ≤ P.nbits ∧ P.nbits ≤ 64 * k ∧ P.nbits < 2048
   k1 : 1 ≤ k
   acc_tmp : P.acc + 8 * k ≤ P.tmp ∨ P.tmp + 8 * k ≤ P.acc
