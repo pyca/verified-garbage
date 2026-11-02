@@ -57,7 +57,8 @@ theorem CIn.disjF (h : CIn s) {r : Region} (h1 : r.Disjoint (cF s)) (h2 : r.Disj
   rw [e, ← cA_eq]; exact h2
 
 theorem in_x (h : CIn s) {u : State} (hsp : u.sp = s.sp - BitVec.ofNat 32 56) (hrd : u.rd = s.rd)
-    (hmem : u.mem = entryMem s) : In (mkP s) (u.withRegions u.rd (xRegs s)) := by
+    (hmem : u.mem = entryMem s) :
+    In (mkP s) (u.withRegions u.rd (xRegs s)) ∧ Tries (mkP s) (u.withRegions u.rd (xRegs s)) := by
   have spLo := h.spLo; have spHi := h.spHi
   have hk := h.valid; simp only [Spec.Rsa.lenValid] at hk
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
@@ -74,7 +75,7 @@ theorem in_x (h : CIn s) {u : State} (hsp : u.sp = s.sp - BitVec.ofNat 32 56) (h
       Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat := h.bytes (R := cE s) h.Fe (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
   have dB' : Spec.Rsa.bytesAt (entryMem s) (State.addr (stackArg s 4)) (stackArg s 5).toNat =
       Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat := h.bytes (R := cD s) h.Fd (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
-  refine ⟨by simp only [State.withRegions_sp, hsp]; rfl, by show (s.sp - BitVec.ofNat 32 56).toNat + 88 ≤ 2 ^ 32; rw [spN]; omega, rfl,
+  refine ⟨⟨by simp only [State.withRegions_sp, hsp]; rfl, by show (s.sp - BitVec.ofNat 32 56).toNat + 88 ≤ 2 ^ 32; rw [spN]; omega, rfl,
     ⟨cN s, rdm _ (by simp), Region.contains_self _ _⟩, ⟨cE s, rdm _ (by simp), Region.contains_self _ _⟩,
     ⟨cD s, rdm _ (by simp), Region.contains_self _ _⟩, ⟨cA s, rdm _ (by simp), ?_⟩, hk.1, hk.2, h.el1, h.el2, h.dl1,
     h.dl2, h.scr, by show _ + (stackArg s 1).toNat ≤ _; rw [← h.pl]; exact h.fp,
@@ -85,7 +86,7 @@ theorem in_x (h : CIn s) {u : State} (hsp : u.sp = s.sp - BitVec.ofNat 32 56) (h
     by rw [h.rQ]; exact h.qe, by rw [h.rQ]; exact h.qd, by rw [h.rQ]; exact h.disjF h.Fq.symm h.qA,
     by rw [h.rFr]; exact h.Fn.symm, by rw [h.rFr]; exact h.Fe.symm, by rw [h.rFr]; exact h.Fd.symm,
     ?_, ?_, fwArg 0 (by decide), ?_, fwArg 2 (by decide), ?_, fwArg 4 (by decide), ?_, fwArg 6 (by decide),
-    by simp only [State.withRegions_mem, hmem]; exact nB, by simp only [State.withRegions_mem, hmem]; exact eB, ?_⟩
+    by simp only [State.withRegions_mem, hmem]; exact nB, by simp only [State.withRegions_mem, hmem]; exact eB⟩, ?_⟩
   · show (cA s).Contains (off (State.addr (s.sp - BitVec.ofNat 32 56)) 56) 32
     rw [show off (State.addr (s.sp - BitVec.ofNat 32 56)) 56 = stackArgAddr s 0 from h.argAddr (i := 0) (by decide)]
     exact Region.contains_self _ _

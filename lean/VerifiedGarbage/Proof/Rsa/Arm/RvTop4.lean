@@ -64,9 +64,9 @@ theorem rv_okWith (body : Prog isa) (bodyProof : BodyVerified body) (h : CIn s) 
   rw [WP.seq_iff]
   refine WP.mono (entry_run h) fun u ⟨usp, urd, uwr, umem, uz⟩ => ?_
   rw [WP.seq_iff]
-  have pre := in_x h usp urd umem
+  obtain ⟨pre, tr⟩ := in_x h usp urd umem
   have sz := pre.sizes
-  obtain ⟨tr, v, run, bo, res⟩ := bodyProof.wp _ _ ⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, uz⟩
+  obtain ⟨tr, v, run, bo, res⟩ := bodyProof.wp _ _ ⟨⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, tr⟩, uz⟩
   have cov := h.xCovers sz
   have run' := Exec.widen (rd := u.rd) (wr := u.wr) run
     (Covers.append (Covers.refl _) (by rw [uwr]; exact cov)) (by rw [uwr]; exact cov)

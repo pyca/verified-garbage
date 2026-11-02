@@ -75,6 +75,12 @@ theorem KS.mono (h : KS P σ A live AW liveW V ls s) {A' : Nat → Nat} {live' :
     fun j hj => (h.arrsW j (hlW j hj).1).trans (hlW j hj).2, fun d hd => (h.sl d (hls d hd).1).trans (hls d hd).2,
     fun j hj => h.live_lt j (hl j hj).1, fun j hj => h.liveW_lt j (hlW j hj).1, fun d hd => h.ls_ok d (hls d hd).1⟩
 
+/-- A step that changes registers but `r8`, and no memory. -/
+theorem KS.of_rest (h : KS P σ A live AW liveW V ls s) {rs : List Reg} (r : Rest rs s t) (m : t.mem = s.mem)
+    (h8 : .r8 ∉ rs) : KS P σ A live AW liveW V ls t :=
+  ⟨h.bs.of_rest r m, by rw [r.gpr _ h8, h.r8], m ▸ h.cnt, m ▸ h.arrs, m ▸ h.arrsW, m ▸ h.sl, h.live_lt,
+    h.liveW_lt, h.ls_ok⟩
+
 /-- A step with `w` words that writes the arrays `js` and the header words `ds`. -/
 theorem KS.core {js ds : List Nat} {v : Nat} (h : KS P σ A live AW liveW V ls s)
     (k : Keep P.B v js ds s.mem t.mem) (hjs : ∀ j ∈ js, arr v j + S v ≤ P.Z) (hds : ∀ d ∈ ds, SlotOk d)

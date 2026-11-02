@@ -21,13 +21,6 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa (b2n sqRes)
 open VG.Spec.Rsa (recoverPrimes recoverStep recoverTries splitTwos)
 
-/-- A piece whose stages imply a fact about the public parameters. -/
-theorem VP.of_imp {F G : State → State → Prop} {c : Prog isa} {p : Prop} (hp : ∀ σ s, F σ s → p)
-    (h : p → VP F c G) : VP F c G :=
-  ⟨fun σ s hs => (h (hp σ s hs)).wp σ s hs, fun s₁ s₂ t₁ t₂ s₁' s₂' hs e₁ e₂ =>
-    match hs with
-    | ⟨σ₁, σ₂, h₁, h₂⟩ => (h (hp _ _ h₁)).ct s₁ s₂ t₁ t₂ s₁' s₂' ⟨σ₁, σ₂, h₁, h₂⟩ e₁ e₂⟩
-
 section
 variable {P : RP}
 
@@ -76,7 +69,7 @@ theorem primesKey_snd (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (
   rcases recoverPrimes P.n P.e (dv P σ) with ⟨_ | ⟨p, q⟩, t⟩ <;> rfl
 
 theorem rest_facts (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (pre : In P σ)
-    (hg : goOn P σ = true) :
+    (hg : goOn P σ = true) (tr : Tries P σ) :
     1 ≤ tv P σ ∧ tv P σ ≤ P.c ∧ rv P σ < 2 ^ P.c ∧ (gos P σ 100).2 = P.nt := by
   obtain ⟨e1, e2, h0, h2⟩ := mv_facts hg
   have hM := M_lt pre
@@ -93,7 +86,7 @@ theorem rest_facts (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (pre
       conv => rhs; rw [s1]
       exact Nat.le_mul_of_pos_left _ (Nat.two_pow_pos _)
     omega
-  · rw [← pre.tries, primesKey_snd hv pre, VG.Proof.Rsa.recoverPrimes_go e2, ← e1]
+  · rw [← tr, primesKey_snd hv pre, VG.Proof.Rsa.recoverPrimes_go e2, ← e1]
     show (recoverPrimes.go P.n (tv P σ) (rv P σ) recoverTries).2 = _
     rw [tv_eq, rv_eq]
 
@@ -121,13 +114,13 @@ theorem sub32_one {w y : Nat} (h1 : 1 ≤ y) (h2 : y < 2 ^ (32 * w)) : sub32 w y
 
 /-- The result: the factors if the last candidate gave them. -/
 theorem resultWith_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) (hn1 : 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
-    {σ : State} (pre : In P σ) (hg : goOn P σ = true) (hgo : gos P σ 100 = gos P σ (100 - Jl P))
-    (hnt1 : 1 ≤ P.nt) (F : FinishInputs P)
+    {σ : State} (pre : In P σ) (hg : goOn P σ = true) (tr : Tries P σ)
+    (hgo : gos P σ 100 = gos P σ (100 - Jl P)) (hnt1 : 1 ≤ P.nt) (F : FinishInputs P)
     (rootEq : (if F.ok σ then some (F.value σ) else none) =
       recoverStep P.n (tv P σ) (rv P σ) (Jl P + 2)) :
     (Spec.Rsa.primesKey P.nB P.eB (dB P σ)).1 =
       if okF (F := F) P σ then some (Spec.Rsa.i2osp (bigF (F := F) P σ) P.K, Spec.Rsa.i2osp (smallF (F := F) P σ) P.K) else none := by
-  obtain ⟨-, -, -, hnt⟩ := rest_facts hv pre hg
+  obtain ⟨-, -, -, hnt⟩ := rest_facts hv pre hg tr
   have hle : P.nt ≤ 100 := by rw [← hnt]; exact VG.Proof.Rsa.go_le _ _ _ _ (Nat.le_refl _)
   have hJ : Jl P < recoverTries := by unfold recoverTries; simp only [Jl]; omega
   have g := VG.Proof.Rsa.go_eq P.n (tv P σ) (rv P σ) hJ
@@ -178,12 +171,12 @@ theorem resultWith_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) (hn1 : 1 < P.n
     rfl
 
 theorem result_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) (hn1 : 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
-    {σ : State} (pre : In P σ) (hg : goOn P σ = true) (hgo : gos P σ 100 = gos P σ (100 - Jl P))
-    (hnt1 : 1 ≤ P.nt) :
+    {σ : State} (pre : In P σ) (hg : goOn P σ = true) (tr : Tries P σ)
+    (hgo : gos P σ 100 = gos P σ (100 - Jl P)) (hnt1 : 1 ≤ P.nt) :
     (Spec.Rsa.primesKey P.nB P.eB (dB P σ)).1 =
       if okF P σ then some (Spec.Rsa.i2osp (bigF P σ) P.K, Spec.Rsa.i2osp (smallF P σ) P.K) else none := by
-  obtain ⟨ht1, htc, -, -⟩ := rest_facts hv pre hg
-  refine resultWith_eq hv hn1 nl pre hg hgo hnt1 (legacyFinish P) ?_
+  obtain ⟨ht1, htc, -, -⟩ := rest_facts hv pre hg tr
+  refine resultWith_eq hv hn1 nl pre hg tr hgo hnt1 (legacyFinish P) ?_
   change sqRes (sqst P σ (Jl P) P.c) = _
   exact VG.Proof.Rsa.sq_result ht1 htc
 
@@ -198,15 +191,15 @@ theorem valid_facts (hv : Spec.Rsa.modulusValid P.n P.K = true) (hk : 2 ≤ P.K)
   omega
 
 /-- The stage the candidates start from: `n` valid, and `d e - 1` even and positive. -/
-abbrev E1 (P : RP) (σ : State) : Prop := In P σ ∧ goOn P σ = true
+abbrev E1 (P : RP) (σ : State) : Prop := In P σ ∧ goOn P σ = true ∧ Tries P σ
 
 /-- From `m = 2^t r` to the factors. -/
 theorem rest_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hv : Spec.Rsa.modulusValid P.n P.K = true) :
     VP (fun σ s => E1 P σ ∧ KS P σ (Aload P σ) [aN] (AWs P σ) [wM, wZ] (Vs P σ) [sBit] s ∧ Ws s P.B P.Z P.W 22)
       rest (Fe P (Ej P (E1 P) (Jl P))) := by
   refine VP.of_imp (p := Sizes P ∧ 1 ≤ P.nt ∧ P.nt ≤ 100 ∧ 0 < P.c ∧ P.c < 2 ^ 31 ∧ P.n < 2 ^ (32 * P.w) ∧
-    2 ≤ P.K) (fun σ s ⟨⟨pre, hg⟩, _⟩ => ?_) fun ⟨hs, hnt1, hnt2, hc0, hcl, nl, hk⟩ => ?_
-  · obtain ⟨-, -, -, hnt⟩ := rest_facts hv pre hg
+    2 ≤ P.K) (fun σ s ⟨⟨pre, hg, tr⟩, _⟩ => ?_) fun ⟨hs, hnt1, hnt2, hc0, hcl, nl, hk⟩ => ?_
+  · obtain ⟨-, -, -, hnt⟩ := rest_facts hv pre hg tr
     have := pre.el1; have := pre.dl1; have := pre.el2; have := pre.dl2; have := pre.k2; have := pre.k1
     refine ⟨pre.sizes, ?_, ?_, by simp only [RP.c]; omega, by simp only [RP.c]; omega, n_lt pre, by omega⟩
     · rw [← hnt]; exact VG.Proof.Rsa.go_pos _ _ _ _ (Nat.le_refl _)
@@ -215,7 +208,7 @@ theorem rest_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hv : Spec.Rsa.modulusValid P.n P
   have hn : P.n % 2 = 1 ∧ 1 < P.n := ⟨hn1, hn2⟩
   simp only [rest, seqs]
   exact VP.seq (halving_vp fun _ _ => hc0) (VP.seq (mont_vp hn hs) (VP.seq
-    (candLoop_vp hn h101 hcl hc0 hnt1 hnt2 fun σ e => rest_facts hv e.1 e.2) (fin_vp hn nl)))
+    (candLoop_vp hn h101 hcl hc0 hnt1 hnt2 fun σ e => rest_facts hv e.1 e.2.1 e.2.2) (fin_vp hn nl)))
 
 end
 
