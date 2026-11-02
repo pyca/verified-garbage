@@ -207,7 +207,7 @@ theorem verSetup_ok {s u : State} (hp : VerPre s) (hu : Upd s u .t0 (s.gpr .a2 >
   have hS : (vsgR s) ∈ t₂.rd := by rw [h₂.rd, hp.rd]; simp
   have hP : (vpkR s) ∈ t₂.rd := by rw [h₂.rd, hp.rd]; simp
   -- The signature, copied to `200(F)`.
-  refine copyIn_ok (P := s.gpr .a5) (F := s.gpr .a7) (o := 200) (n := 114) (by decide) (by decide)
+  refine Proof.Ed25519.RISCV64.Whole.copyIn_ok (P := s.gpr .a5) (F := s.gpr .a7) (o := 200) (n := 114) (by decide) (by decide)
     (by rw [e₂.gpr, BitVec.add_zero, g5]) (by rw [e₂.other _ (by decide), g11]) (by decide)
     (fun i hi => in_base (List.mem_append_left _ hS) (by omega) (by omega))
     (fun i hi => in_base hFw₂ (by omega) (by omega))
@@ -217,7 +217,7 @@ theorem verSetup_ok {s u : State} (hp : VerPre s) (hu : Upd s u .t0 (s.gpr .a2 >
   have hFw₃ : (vfR s) ∈ t₃.wr := by rw [h₃.wr, hp.wr]; simp
   have hP₃ : (vpkR s) ∈ t₃.rd := by rw [h₃.rd, hp.rd]; simp
   -- `pk`, copied to `320(F)`.
-  refine copyIn_ok (P := s.gpr .a0) (F := s.gpr .a7) (o := 320) (n := 57) (by decide) (by decide)
+  refine Proof.Ed25519.RISCV64.Whole.copyIn_ok (P := s.gpr .a0) (F := s.gpr .a7) (o := 320) (n := 57) (by decide) (by decide)
     (by rw [r₃.gpr _ (by decide), e₂.other _ (by decide), g0]) (by rw [h₃.regs _ (by decide)]; rfl) (by decide)
     (fun i hi => in_base (List.mem_append_left _ hP₃) (by omega) (by omega))
     (fun i hi => in_base hFw₃ (by omega) (by omega))
@@ -414,7 +414,7 @@ theorem verHash_ok {s t : State} (hp : VerPre s) (h : V1 s t) :
   · rw [e₄.mem, e₃.mem, e₂.mem, e₁.mem, kR (by decide) (by decide), kH (by decide) (by decide), h.pk]
 
 /-- The call of `vg_ed448_verify_equation`. -/
-theorem verCall_ok (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) {s t : State} (hp : VerPre s)
+theorem verCall_ok (hR : Proof.Ed448.RecoverOk) {s t : State} (hp : VerPre s)
     (h : VArgs s t) :
     WP isa (.call "vg_ed448_verify_equation" Impl.Ed448.RISCV64.verifyEquation) t fun t' => VInv s t' ∧
       (t'.gpr .a0).setWidth 32 = if Spec.Ed448.verifyEquation (vpkB s) (vsigB s) (vkB s) then 1 else 0 := by
@@ -429,7 +429,7 @@ theorem verCall_ok (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) {
     · exact cov_right (cov_in (vF hp h.inv) (by decide)) a n ⟨_, List.mem_singleton_self _, hc⟩
     · exact cov_right (cov_in (vF hp h.inv) (by decide)) a n ⟨_, List.mem_singleton_self _, hc⟩
     · exact cov_right hW a n ⟨_, List.mem_singleton_self _, hc⟩
-  refine veq_call hR hV h.a0 h.a1 h.a2 h.a3 (vfsc hp (by decide)) (vfsc hp (by decide)) (vfsc hp (by decide)) hc hW
+  refine veq_call hR h.a0 h.a1 h.a2 h.a3 (vfsc hp (by decide)) (vfsc hp (by decide)) (vfsc hp (by decide)) hc hW
     fun t' rd' wr' sp' f' cs' r' => ⟨h.inv.step verifyRegs_pres rd' wr' sp' cs' f' (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨vscR s, by simp, fun _ h => h⟩) fun r hr => by
       rw [List.mem_singleton.mp hr]; exact vcslot hp, ?_⟩
@@ -457,7 +457,7 @@ theorem shr8_zero (x : BitVec 64) : (x >>> 8 == 0) = decide (x.toNat < 256) := b
     rw [h] at this
     exact hx (by simp at this; omega)
 
-theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) {s : State} (hp : VerPre s) :
+theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VerPre s) :
     WP isa verifyMessage s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.gpr .ra = s.gpr .ra ∧
       (t.gpr .a0).setWidth 32 = verResult s := by
   unfold verifyMessage
@@ -469,7 +469,7 @@ theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq
     unfold verifyMain verifyHash
     refine WP.seq (WP.seq (WP.mono (verSetup_ok hp hu) fun t₁ h₁ => ?_))
     refine WP.mono (verHash_ok hp h₁) fun t₂ h₂ => ?_
-    refine WP.seq (WP.mono (verCall_ok hR hV hp h₂) fun t₃ ⟨h₃, r₃⟩ => ?_)
+    refine WP.seq (WP.mono (verCall_ok hR hp h₂) fun t₃ ⟨h₃, r₃⟩ => ?_)
     have hrl : ∀ p ∈ restoreList 384 verifyRegs, p.2 + 8 ≤ 448 := by decide
     refine restore_ok h₃ hp.alF (h₃.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
       (fun p (hp' : p ∈ restoreList 384 verifyRegs) =>

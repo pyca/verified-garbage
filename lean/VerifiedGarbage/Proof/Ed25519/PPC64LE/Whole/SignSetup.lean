@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Prune
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -22,13 +22,17 @@ namespace VG.Proof.Ed25519.PPC64LE.Whole
 
 open VG VG.PPC64LE VG.Impl.Ed25519.PPC64LE.Whole VG.Proof.X25519.PPC64LE
 open VG.Spec.Ed25519 (bytesAt)
+open VG.Impl.Ed25519.PPC64LE (combSym combWord)
 
 /-- The message. -/
 abbrev msgR (s : State) : Region := ⟨s.gpr .r6, (s.gpr .r7).toNat⟩
 
+/-- What the body may write. -/
+abbrev signW (s : State) : List Region := [⟨s.gpr .r3, 64⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9, 288⟩, below s.sp 48]
+
 /-- The precondition, by register. -/
 structure SignPre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r4, 32⟩, ⟨s.gpr .r5, 32⟩, msgR s]
+  rd : s.rd = [⟨s.gpr .r4, 32⟩, ⟨s.gpr .r5, 32⟩, msgR s, TBL (s.syms combSym)]
   wr : s.wr = [⟨s.gpr .r3, 64⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9, 288⟩]
   oS : Region.Disjoint ⟨s.gpr .r3, 64⟩ ⟨s.gpr .r4, 32⟩
   oP : Region.Disjoint ⟨s.gpr .r3, 64⟩ ⟨s.gpr .r5, 32⟩
@@ -50,9 +54,9 @@ structure SignPre (s : State) : Prop where
   bC : (below s.sp 48).Disjoint ⟨s.gpr .r8, 8192⟩
   bF : (below s.sp 48).Disjoint ⟨s.gpr .r9, 288⟩
   pk : bytesAt s.mem (s.gpr .r5) 32 = Spec.Ed25519.publicKey (bytesAt s.mem (s.gpr .r4) 32)
-
-/-- What the body may write. -/
-abbrev signW (s : State) : List Region := [⟨s.gpr .r3, 64⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9, 288⟩, below s.sp 48]
+  tfit : (s.syms combSym).toNat + 49152 ≤ 2 ^ 64
+  words : ∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q
+  tW : ∀ r ∈ signW s, (TBL (s.syms combSym)).Disjoint r
 
 /-- The values in `r20`–`r25`. -/
 def signV (s : State) : Reg → BitVec 64

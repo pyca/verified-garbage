@@ -26,7 +26,6 @@ import Init.Data.Nat.Bitwise.Lemmas
 import Init.Data.Nat.Coprime
 import Init.Data.Nat.Gcd
 import Init.Data.Nat.Power2.Basic
-import Init.Data.Option.Basic
 import Init.Data.String.Basic
 import Init.Data.String.Defs
 import Init.Data.Vector.Basic

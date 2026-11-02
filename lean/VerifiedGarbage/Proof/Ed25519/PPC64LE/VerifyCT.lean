@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.PPC64LE.DecodeCT
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyFn
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldTest
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.DecodeCT
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyFn
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldTest
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
+meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 meta import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset

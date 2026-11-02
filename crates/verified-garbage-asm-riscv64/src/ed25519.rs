@@ -601,10 +601,6 @@ call {vg_ed25519_verify_equation}
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_ed25519_r32_point_add.rs"]
-pub(crate) mod vg_ed25519_r32_point_add;
-
-#[rustfmt::skip]
 #[path = "internal/vg_ed25519_scalar_base.rs"]
 pub(crate) mod vg_ed25519_scalar_base;
 

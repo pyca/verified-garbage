@@ -6,6 +6,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
 import VerifiedGarbage.Proof.X25519.RISCV64.Instr
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 
 /-!
 # `vg_ed25519_verify_equation` on RISC-V
@@ -23,14 +24,16 @@ open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64 VG.Proof.X25519.RISC
 open VG.Spec.Ed25519 (decodeLE bytesAt)
 
 /-- The precondition, by register: `pk` in `a0`, the signature in `a1`, the challenge in `a2` and
-`scratch`, aligned, in `a3`. -/
+`scratch`, aligned, in `a3`; the static of `-[1]B … -[15]B` at `bSym`. -/
 structure VerifyPre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .a0, 32⟩, ⟨s.gpr .a1, 64⟩, ⟨s.gpr .a2, 64⟩]
+  rd : s.rd = [⟨s.gpr .a0, 32⟩, ⟨s.gpr .a1, 64⟩, ⟨s.gpr .a2, 64⟩, ⟨s.syms bSym, 1920⟩]
   wr : s.wr = [⟨s.gpr .a3, 8192⟩]
   al : (s.gpr .a3).toNat % 8 = 0
   pk_ws : (⟨s.gpr .a0, 32⟩ : Region).Disjoint ⟨s.gpr .a3, 8192⟩
   sig_ws : (⟨s.gpr .a1, 64⟩ : Region).Disjoint ⟨s.gpr .a3, 8192⟩
   ch_ws : (⟨s.gpr .a2, 64⟩ : Region).Disjoint ⟨s.gpr .a3, 8192⟩
+  /-- The static of `-[1]B … -[15]B`. -/
+  bs : BStat (s.gpr .a3) (s.syms bSym) s
 
 /-- The saved registers' slots. -/
 def saveList : List (Reg × Nat) := (List.range 13).map fun i => (savedRegs.getD i .s0, SAVE + 8 * i)
@@ -116,7 +119,7 @@ theorem verifySetup_ok {s : State} (hp : VerifyPre s) :
     chD := hb ▸ hp.ch_ws }
   exact ⟨hb ▸ hv4, hR4, hb ▸ (by rw [hm4]; exact hf1), hb ▸ (by rw [hm4]; exact hsv)⟩
 
-theorem verify_ok {s : State} (hp : VerifyPre s) :
+theorem verify_ok (hR : RhsOk) {s : State} (hp : VerifyPre s) :
     WP isa Impl.Ed25519.RISCV64.verifyEquation s fun t =>
       (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.gpr .ra = s.gpr .ra ∧
       t.gpr .a0 = if Spec.Ed25519.verifyEquation (bytesAt s.mem (s.gpr .a0) 32) (bytesAt s.mem (s.gpr .a1) 64)
@@ -125,7 +128,7 @@ theorem verify_ok {s : State} (hp : VerifyPre s) :
   obtain ⟨b, hb⟩ : ∃ b, b = s.gpr .a3 := ⟨_, rfl⟩
   have hws : (⟨b, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr, hb]; simp
   unfold Impl.Ed25519.RISCV64.verifyEquation
-  refine WP.seq (WP.mono (verifySetup_ok hp) fun s5 ⟨hv5, hR5, hF5, hsv⟩ => ?_)
+  refine WP.seq (WP.mono_syms (verifySetup_ok hp) fun s5 ⟨hv5, hR5, hF5, hsv⟩ sy5 => ?_)
   rw [← hb] at hv5 hF5 hsv
   have hsub : ∀ r ∈ [(⟨b, 8192⟩ : Region)], Region.Sub r ⟨b, 8192⟩ := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact fun _ h => h
@@ -134,7 +137,10 @@ theorem verify_ok {s : State} (hp : VerifyPre s) :
         (bytesAt s.mem (s.gpr .a1) 64) (bytesAt s.mem (s.gpr .a2) 64) := by
     rw [bytesAt_ws hF5 hsub hv5.pkD (by decide), bytesAt_ws hF5 hsub hv5.sigD (by decide),
       bytesAt_ws hF5 hsub hv5.chD (by decide)]
-  refine WP.seq (WP.mono (verifyBody_ok hv5) fun s7 ⟨r7, f7, e17⟩ => ?_)
+  have hB5 : BStat b (s5.syms bSym) s5 := by
+    rw [sy5]
+    exact (hb ▸ hp.bs).of_frame hR5.rd hF5 hsub
+  refine WP.seq (WP.mono (verifyBody_ok hR hv5 hB5) fun s7 ⟨r7, f7, e17⟩ => ?_)
   rw [hbytes] at e17
   -- The result, then the registers restored.
   unfold verifyFinish
