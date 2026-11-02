@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ICall
-public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
 # Running an indirect call of a list of functions
@@ -91,5 +91,35 @@ theorem icallTarget_congr {s₁ s₂ : M.State} {a : Addr} {ts : List (String ×
     have := ih fun q hq => h q (List.mem_cons_of_mem _ hq)
     simp only [icallTarget, List.find?_cons] at this ⊢
     rw [h p (List.mem_cons_self ..), this]
+
+/-- An indirect call that reaches `(n, c)` runs as the call of `c`. -/
+theorem WP.icalls_of_call {i : M.Instr} {ts : List (String × Prog M)} {s : M.State} {a : Addr}
+    {n : String} {c : Prog M} {Q : M.State → Prop} (hi : M.icall i s = some a)
+    (hf : icallTarget M s a ts = some (n, c)) (h : WP M (.call n c) s Q) :
+    WP M (Code.icalls i ts) s Q := by
+  obtain ⟨t, s', e, hq⟩ := h
+  cases e with
+  | call hc hb hr => exact ⟨_, _, Exec.icalls hi hf hc hb hr, hq⟩
+
+/-- Two runs of an indirect call that reach the same function at the same
+address, with the instruction accessing the same addresses, are two runs of
+its call, with the address added to both traces. -/
+theorem RelCT.icalls_of_call {i : M.Instr} {p : String × Prog M} {ts : List (String × Prog M)}
+    {n : String} {c : Prog M} {P Q : M.State → M.State → Prop} (h : RelCT M P (.call n c) Q)
+    (hs : ∀ s₁ s₂, P s₁ s₂ → ∃ a, M.icall i s₁ = some a ∧ M.icall i s₂ = some a ∧
+      icallTarget M s₁ a (p :: ts) = some (n, c) ∧ icallTarget M s₂ a (p :: ts) = some (n, c) ∧
+      M.addrs i s₁ = M.addrs i s₂) :
+    RelCT M P (Code.icalls i (p :: ts)) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  obtain ⟨a, hi₁, hi₂, hf₁, hf₂, ha⟩ := hs _ _ hp
+  obtain ⟨a₁, n₁, b₁, x₁, y₁, u₁, hj₁, hg₁, hc₁, hb₁, hr₁, rfl⟩ := Exec.icalls_inv e₁
+  obtain ⟨a₂, n₂, b₂, x₂, y₂, u₂, hj₂, hg₂, hc₂, hb₂, hr₂, rfl⟩ := Exec.icalls_inv e₂
+  obtain rfl := Option.some.inj (hj₁.symm.trans hi₁)
+  obtain rfl := Option.some.inj (hj₂.symm.trans hi₂)
+  obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj (hg₁.symm.trans hf₁))
+  obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj (hg₂.symm.trans hf₂))
+  obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.call hc₁ hb₁ hr₁) (.call hc₂ hb₂ hr₂)
+  refine ⟨?_, hq⟩
+  simp only [icallTrace, ha, ht]
 
 end VG
