@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Rsa
 meta import VerifiedGarbage.Spec.Rsa
-import VerifiedGarbage.Spec.Rsa.RecoverDet
-meta import VerifiedGarbage.Spec.Rsa.RecoverDet
 import VerifiedGarbageTest.RsaFactors
 meta import VerifiedGarbageTest.RsaFactors
 import VerifiedGarbage.TCB.Axioms
@@ -251,8 +249,6 @@ def check (v : Vector) : Except String Unit := do
   -- A modulus with a leading zero octet, or an even one, is not valid.
   unless publicOp (0 :: nB) eB (0 :: kB) == none do throw "accepted a leading zero"
   unless publicOp (i2osp (n + 1) len) eB kB == none do throw "accepted an even modulus"
-  unless primesKeyDet (i2osp (n + 1) len) eB dB == none do
-    throw "primesKeyDet accepted an even modulus"
   unless crtKey (i2osp (n + 1) len) (bytes p) (bytes q) dB == none do
     throw "crtKey accepted an even modulus"
 
@@ -280,12 +276,11 @@ def checkEdges : Except String Unit := do
 #assert_standard_axioms Spec.Rsa.publicOp
 #assert_standard_axioms Spec.Rsa.privateCrt
 #assert_standard_axioms Spec.Rsa.crtKey
-#assert_standard_axioms Spec.Rsa.primesKeyDet
 #assert_standard_axioms Spec.Rsa.publicPrecompute
 #assert_standard_axioms Spec.Rsa.publicOpChecked
 #assert_standard_axioms Spec.Rsa.privateChecked
 #assert_standard_axioms Spec.Rsa.checkKey
-#assert_no_compiler_overrides Spec.Rsa.publicPrecompute Spec.Rsa.publicOp Spec.Rsa.privateCrt Spec.Rsa.crtKey Spec.Rsa.primesKeyDet
+#assert_no_compiler_overrides Spec.Rsa.publicPrecompute Spec.Rsa.publicOp Spec.Rsa.privateCrt Spec.Rsa.crtKey
 #assert_no_compiler_overrides Spec.Rsa.publicOpChecked Spec.Rsa.privateChecked Spec.Rsa.checkKey
 #assert_spec_origin
 
