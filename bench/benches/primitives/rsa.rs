@@ -334,7 +334,10 @@ pub fn bench(c: &mut Criterion) {
     const ONLY_MR: bool = true;
     // Only the key generation groups this run (set to false for the others).
     const ONLY_KEYGEN: bool = true;
-    {
+    // Only the private operation's and key loading's pieces this run (the
+    // key-generation and Miller–Rabin groups are skipped).
+    const ONLY_PIECES: bool = true;
+    if !ONLY_PIECES {
         // The unproven RSA key generation candidate: one accepted candidate
         // (a known prime, so all its witnesses run), and a whole prime's
         // generation (candidates from random octets until one is accepted),
@@ -409,10 +412,10 @@ pub fn bench(c: &mut Criterion) {
         }
         g.finish();
     }
-    if ONLY_KEYGEN {
+    if ONLY_KEYGEN && !ONLY_PIECES {
         return;
     }
-    {
+    if !ONLY_PIECES {
         // The unproven Miller–Rabin pieces: the prime search (`Search.millerRabin`,
         // after the sieve, the trial division by the shared table and `montPrep`)
         // of a prime, with 1 and with 8 witnesses (so the difference is 7
@@ -464,8 +467,110 @@ pub fn bench(c: &mut Criterion) {
             g.finish();
         }
     }
-    if ONLY_MR {
+    if ONLY_MR && !ONLY_PIECES {
         return;
+    }
+    {
+        // The private operation's pieces, each timed alone: the public
+        // precomputation (R² mod n, −n⁻¹), the public operation with e = 65537,
+        // and the CRT exponentiation without the check against e.
+        use openssl::rsa::Rsa;
+        use verified_garbage_asm_riscv64::rsa_proto2::{
+            vg_rsa_private_crt, vg_rsa_public_precompute, vg_rsa_public_precomputed_checked,
+        };
+        let mut gpre = c.benchmark_group("rsa_piece_precompute");
+        let mut keys = Vec::new();
+        for bits in [2048u32, 3072, 4096] {
+            let key = Rsa::generate(bits).unwrap();
+            let k = key.size() as usize;
+            let n = key.n().to_vec();
+            let mut pre = vec![0u64; 2 * k.div_ceil(8)];
+            let mut scratch = vec![0u64; 16 * k + 64];
+            gpre.bench_function(BenchmarkId::new(VG, bits), |b| {
+                b.iter(|| unsafe {
+                    vg_rsa_public_precompute(
+                        pre.as_mut_ptr(),
+                        pre.len(),
+                        black_box(n.as_ptr()),
+                        k,
+                        scratch.as_mut_ptr(),
+                        scratch.len(),
+                    )
+                })
+            });
+            keys.push((bits, key, pre));
+        }
+        gpre.finish();
+        let mut gpub = c.benchmark_group("rsa_piece_public");
+        for (bits, key, pre) in &keys {
+            let k = key.size() as usize;
+            let e = key.e().to_vec();
+            let mut input = vec![0x42; k];
+            input[0] = 0;
+            let mut out = vec![0; k];
+            let mut scratch = vec![0u64; 16 * k + 64];
+            gpub.bench_function(BenchmarkId::new(VG, bits), |b| {
+                b.iter(|| unsafe {
+                    vg_rsa_public_precomputed_checked(
+                        out.as_mut_ptr(),
+                        k,
+                        pre.as_ptr(),
+                        pre.len(),
+                        e.as_ptr(),
+                        e.len(),
+                        black_box(input.as_ptr()),
+                        k,
+                        scratch.as_mut_ptr(),
+                        scratch.len(),
+                    )
+                })
+            });
+        }
+        gpub.finish();
+        let mut gcrt = c.benchmark_group("rsa_piece_crt");
+        for (bits, key, _) in &keys {
+            let k = key.size() as usize;
+            let pad = |b: Vec<u8>, l: usize| {
+                let mut v = vec![0u8; l - b.len()];
+                v.extend(b);
+                v
+            };
+            let n = key.n().to_vec();
+            let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
+            let (pl, ql) = (p.len(), q.len());
+            let dp = pad(key.dmp1().unwrap().to_vec(), pl);
+            let dq = pad(key.dmq1().unwrap().to_vec(), ql);
+            let qi = pad(key.iqmp().unwrap().to_vec(), pl);
+            let mut input = vec![0x42; k];
+            input[0] = 0;
+            let mut out = vec![0; k];
+            let mut scratch = vec![0u64; 16 * k + 64];
+            gcrt.bench_function(BenchmarkId::new(VG, bits), |b| {
+                b.iter(|| unsafe {
+                    vg_rsa_private_crt(
+                        out.as_mut_ptr(),
+                        k,
+                        n.as_ptr(),
+                        k,
+                        black_box(input.as_ptr()),
+                        k,
+                        p.as_ptr(),
+                        pl,
+                        q.as_ptr(),
+                        ql,
+                        dp.as_ptr(),
+                        pl,
+                        dq.as_ptr(),
+                        ql,
+                        qi.as_ptr(),
+                        pl,
+                        scratch.as_mut_ptr(),
+                        scratch.len(),
+                    )
+                })
+            });
+        }
+        gcrt.finish();
     }
     {
         // The unproven private-key operation (CRT, checked against e), next to OpenSSL's.
@@ -568,7 +673,7 @@ pub fn bench(c: &mut Criterion) {
             ("rsa_proto_check_crt_key", 2),
         ] {
             let mut g = c.benchmark_group(name);
-            for bits in [2048u32, 4096] {
+            for bits in [2048u32, 3072, 4096] {
                 let key = Rsa::generate(bits).unwrap();
                 let k = key.size() as usize;
                 let pad = |b: Vec<u8>, l: usize| {
@@ -663,8 +768,16 @@ pub fn bench(c: &mut Criterion) {
         ("rsa_proto_sqr", 1),
         ("rsa_proto_exp", 2),
     ] {
+        if ONLY_PIECES && kind != 2 {
+            continue;
+        }
         let mut g = c.benchmark_group(name);
-        for w in [16usize, 24, 32, 48, 64] {
+        let widths: &[usize] = if ONLY_PIECES {
+            &[16, 24, 32]
+        } else {
+            &[16, 24, 32, 48, 64]
+        };
+        for &w in widths {
             let bits = 64 * w as i32;
             let mut ws = vec![0u64; 32 + 8 * (w + 2)];
             for (i, x) in ws.iter_mut().enumerate().skip(32) {
