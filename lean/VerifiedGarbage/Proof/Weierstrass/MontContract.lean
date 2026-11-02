@@ -32,7 +32,10 @@ operand (`o = a` or `o = b`) and the caller keeps its numbers where it
 likes. The `64 k` bytes below byte 4096 of `ws` (`ownAt`) are the function's
 own working space, and the numbers lie below them (`Fits`), so that an
 implementation reaches all of them with short offsets from the start of
-`ws`. On return the function's own bytes are unspecified and may hold
+`ws`. A target whose layout needs more of the working space below them (as
+RISC-V's for numbers of more than six words) states the own working space's
+start and end itself (the contracts' `own` and `ownEnd`); every other caller
+takes these defaults. On return the function's own bytes are unspecified and may hold
 intermediate values; every other byte of `ws` keeps its value but the
 result's (`Keeps`).
 
@@ -59,13 +62,16 @@ working space `ws`. -/
 def numAt (m : Mem) (ws : Addr) (o : BitVec 32) (k : Nat) : Nat :=
   (m.read (ws + BitVec.ofNat 64 o.toNat) (8 * k)).toNat
 
-/-- The number at offset `o` lies below the function's own working space. -/
-abbrev Fits (k : Nat) (o : BitVec 32) : Prop := o.toNat + 8 * k ≤ ownAt k
+/-- The number at offset `o` lies below the function's own working space,
+at `own` (`ownAt k` but where a target's layout puts it elsewhere). -/
+abbrev Fits (k : Nat) (o : BitVec 32) (own : Nat := ownAt k) : Prop := o.toNat + 8 * k ≤ own
 
-/-- Every byte of `ws` but those of the function's own working space and of
-the result at `o` keeps its value. -/
-def Keeps (k : Nat) (ws : Addr) (o : BitVec 32) (m m' : Mem) : Prop :=
-  ∀ i < wsBytes, (i < ownAt k ∨ 4096 ≤ i) → (i < o.toNat ∨ o.toNat + 8 * k ≤ i) →
+/-- Every byte of `ws` but those of the function's own working space (from
+`own` to `ownEnd`, by default `ownAt k` to 4096) and of the result at `o`
+keeps its value. -/
+def Keeps (k : Nat) (ws : Addr) (o : BitVec 32) (m m' : Mem) (own : Nat := ownAt k) (ownEnd : Nat := 4096) :
+    Prop :=
+  ∀ i < wsBytes, (i < own ∨ ownEnd ≤ i) → (i < o.toNat ∨ o.toNat + 8 * k ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
 
 /-- `ws: *mut [u64; 1024], o: u32, a: u32, b: u32`, the offsets public. -/
@@ -82,45 +88,49 @@ def R : Nat := 2 ^ (64 * M.k)
 
 /-- What each function requires of the offsets: the numbers lie below its
 own working space. -/
-def Fit (o a b : BitVec 32) : Prop := Fits M.k o ∧ Fits M.k a ∧ Fits M.k b
+def Fit (o a b : BitVec 32) (own : Nat := ownAt M.k) : Prop := Fits M.k o own ∧ Fits M.k a own ∧ Fits M.k b own
 
 /-- `mul`: for `b` below `m`, the number at `o` is below `m` and congruent to
 `a b R⁻¹`, that is, its product with `R` is congruent to `a b`. -/
-def mulContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+def mulContract {I : ISA} (A : Abi I) (stack : Nat := 0) (own : Nat := ownAt M.k) (ownEnd : Nat := 4096) :
+    Contract I :=
   sig.contract A
-    (pre := fun ws o a b m => M.Fit o a b ∧ numAt m ws b M.k < M.m)
+    (pre := fun ws o a b m => M.Fit o a b own ∧ numAt m ws b M.k < M.m)
     (post := fun ws o a b m m' _ =>
       numAt m' ws o M.k < M.m ∧
       numAt m' ws o M.k * M.R % M.m = numAt m ws a M.k * numAt m ws b M.k % M.m ∧
-      Keeps M.k ws o m m')
+      Keeps M.k ws o m m' own ownEnd)
     (stack := stack)
 
 /-- `sqr`: `mul` with `a` for `b` (the number at `b` is not read): for `a`
 below `m`, the number at `o` is below `m` and congruent to `a² R⁻¹`. -/
-def sqrContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+def sqrContract {I : ISA} (A : Abi I) (stack : Nat := 0) (own : Nat := ownAt M.k) (ownEnd : Nat := 4096) :
+    Contract I :=
   sig.contract A
-    (pre := fun ws o a b m => M.Fit o a b ∧ numAt m ws a M.k < M.m)
+    (pre := fun ws o a b m => M.Fit o a b own ∧ numAt m ws a M.k < M.m)
     (post := fun ws o a _ m m' _ =>
       numAt m' ws o M.k < M.m ∧
       numAt m' ws o M.k * M.R % M.m = numAt m ws a M.k * numAt m ws a M.k % M.m ∧
-      Keeps M.k ws o m m')
+      Keeps M.k ws o m m' own ownEnd)
     (stack := stack)
 
 /-- `add`: for `a + b` below `2 m`, the number at `o` is `(a + b) mod m`. -/
-def addContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+def addContract {I : ISA} (A : Abi I) (stack : Nat := 0) (own : Nat := ownAt M.k) (ownEnd : Nat := 4096) :
+    Contract I :=
   sig.contract A
-    (pre := fun ws o a b m => M.Fit o a b ∧ numAt m ws a M.k + numAt m ws b M.k < 2 * M.m)
+    (pre := fun ws o a b m => M.Fit o a b own ∧ numAt m ws a M.k + numAt m ws b M.k < 2 * M.m)
     (post := fun ws o a b m m' _ =>
-      numAt m' ws o M.k = (numAt m ws a M.k + numAt m ws b M.k) % M.m ∧ Keeps M.k ws o m m')
+      numAt m' ws o M.k = (numAt m ws a M.k + numAt m ws b M.k) % M.m ∧ Keeps M.k ws o m m' own ownEnd)
     (stack := stack)
 
 /-- `sub`: for `a` and `b` below `m`, the number at `o` is `(a - b) mod m`,
 that is, `(a + m - b) mod m`. -/
-def subContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+def subContract {I : ISA} (A : Abi I) (stack : Nat := 0) (own : Nat := ownAt M.k) (ownEnd : Nat := 4096) :
+    Contract I :=
   sig.contract A
-    (pre := fun ws o a b m => M.Fit o a b ∧ numAt m ws a M.k < M.m ∧ numAt m ws b M.k < M.m)
+    (pre := fun ws o a b m => M.Fit o a b own ∧ numAt m ws a M.k < M.m ∧ numAt m ws b M.k < M.m)
     (post := fun ws o a b m m' _ =>
-      numAt m' ws o M.k = (numAt m ws a M.k + M.m - numAt m ws b M.k) % M.m ∧ Keeps M.k ws o m m')
+      numAt m' ws o M.k = (numAt m ws a M.k + M.m - numAt m ws b M.k) % M.m ∧ Keeps M.k ws o m m' own ownEnd)
     (stack := stack)
 
 end Modulus

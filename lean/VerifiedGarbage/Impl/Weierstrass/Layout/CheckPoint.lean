@@ -18,13 +18,18 @@ namespace VG.Impl.Weierstrass.CheckPoint
 /-- A curve whose check of a public point is a function: the curve `W` (its
 prime `p` and coefficients `a` and `b`), its name (the function is
 `vg_<curve>_check_point`, in the Rust module `<curve>_check_point`), the
-count `k` of 64-bit words of a number, with `p < 2^(64 k)`, and how the
-documentation names it. -/
+count `k` of 64-bit words of a number, with `p < 2^(64 k)`, how the
+documentation names it, and where the own working space of the functions of
+`Proof/Weierstrass/MontContract.lean` that it calls starts and ends (by
+default `Mont.ownAt k` and 4096; a target whose layout puts them elsewhere
+gives its own). -/
 structure Curve where
   W : Spec.Weierstrass.Curve
   curve : String
   k : Nat
   desc : String
+  montOwn : Nat := Mont.ownAt k
+  montOwnEnd : Nat := 4096
 
 namespace Curve
 

@@ -69,7 +69,7 @@ variable (C : Curve)
 /-- Byte `i` is in the function's own working space: slot 2, 37, 41 or 42,
 or the own working space of the functions of `Proof/Weierstrass/MontContract.lean`. -/
 def Own (i : Nat) : Prop :=
-  (∃ j ∈ [2, 37, 41, 42], C.slot j ≤ i ∧ i < C.slot j + 8 * C.k) ∨ (Mont.ownAt C.k ≤ i ∧ i < 4096)
+  (∃ j ∈ [2, 37, 41, 42], C.slot j ≤ i ∧ i < C.slot j + 8 * C.k) ∨ (C.montOwn ≤ i ∧ i < C.montOwnEnd)
 
 /-- Byte `i` is one of a result's: of slots 34, 35, 38 and 43, or of the
 flag's word. -/
