@@ -21,7 +21,7 @@ hash's integer `e` is the digest's), on the layout of
 2. ECDH's `tail` (`tl`): the mask of `k` being in `[1, n-1]` into the flag,
    `R = [k]G`, `Z^(p-2)` and `x = X Z^(p-2)` out of Montgomery's form;
 3. modulo `n`, with the functions of `FN`: `r = x mod n` (`x + 0`, as
-   `x < p < 2n`), `k R`, `w = (k R)^(n-2)` (`pow`, in Montgomery's form:
+   `x < p < 2n`), `k R`, `w = (k R)^(n-2)` (`chainPow`, in Montgomery's form:
    `k^(n-2) R`), and `s = w (e R + (r R) (d R)) R⁻¹ R⁻¹` out of
    Montgomery's form;
 4. the masks of `r ≠ 0` and `s ≠ 0` anded into the flag (`R = O` gives
@@ -67,8 +67,8 @@ def nConsts : List (Nat × Nat) :=
 /-- The modulus `n`'s layout, as the power has it. -/
 def MN' : Mod := { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := 0 }
 
-/-- The power `(k R)^(n-2)`, into `ACC`. -/
-def powN : PowCfg := ⟨MN' c, c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, c.sl EXPN, 64 * c.n⟩
+/-- The power `(k R)^(n-2)`, into `ACC`, by the chain of `n - 2`. -/
+def chainN : ChainCfg := ChainCfg.ofExp (MN' c) (c.sl ACC) (c.sl KM) (c.sl Ecdh.RISCV64.TB) (c.C.n - 2)
 
 /-- The registers saved, the arguments read, the flag set, the constants
 stored, the mask of `d` in `[1, n-1]`, and `G` to `R`'s first two slots. -/
@@ -80,7 +80,7 @@ def setup : List Instr :=
 
 /-- `s = k^(n-2) (e + r d) mod n`, from `r` in `RR`, by the functions of `FN`. -/
 def scalars : Prog isa :=
-  progs [mulCall FN (c.sl KM) (c.sl K) (c.sl R2N), pow (powN c) FN,
+  progs [mulCall FN (c.sl KM) (c.sl K) (c.sl R2N), chainPow (chainN c) (c.sl ONEN) FN,
     mulCall FN (c.sl EM) (c.sl EE) (c.sl R2N), mulCall FN (c.sl RM) (c.sl RR) (c.sl R2N),
     mulCall FN (c.sl DM) (c.sl DD) (c.sl R2N), mulCall FN (c.sl TT) (c.sl RM) (c.sl DM),
     addCall FN (c.sl SU) (c.sl EM) (c.sl TT), mulCall FN (c.sl SMM) (c.sl ACC) (c.sl SU),

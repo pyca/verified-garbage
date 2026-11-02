@@ -237,7 +237,7 @@ structure UvPre (base : Addr) (s : State) (r sg e : Nat) : Prop where
 /-- `w = (s R)^(n-2)`, `u = e w` and `v = r w` modulo `n`. -/
 theorem uv_ok {base : Addr} {s : State} {r sg e : Nat} (hb : UvPre base s r sg e) :
     WP isa (Verify.Cfg.uv p256 p256Order) s fun s' => Kc s s' ∧
-      Unch base (cw KM ++ powWx (Cfg.powN p256) 4 ++ cw EM ++ cw UM ++ cw UU ++ cw RM ++ cw VM ++ cw VV)
+      Unch base (cw KM ++ chainWx (Cfg.chainN p256) 4 ++ cw EM ++ cw UM ++ cw UU ++ cw RM ++ cw VM ++ cw VV)
         s.mem s'.mem ∧
       sv base s' UU < W.n ∧ Fin.ofNat W.n (sv base s' UU) = Fin.ofNat W.n e * Fin.ofNat W.n sg ^ (W.n - 2) ∧
       sv base s' VV < W.n ∧ Fin.ofNat W.n (sv base s' VV) = Fin.ofNat W.n r * Fin.ofNat W.n sg ^ (W.n - 2) := by
@@ -264,15 +264,13 @@ theorem uv_ok {base : Addr} {s : State} {r sg e : Nat} (hb : UvPre base s r sg e
   -- `w`.
   have on₂ : sv base s₂ ONEN = 2 ^ 256 % W.n := by
     show wordsVal _ _ _ _ = _; rw [sv_unch U₂ ONEN (by decide)]; exact hb.onen
-  have ex₂ : sv base s₂ EXPN = W.n - 2 := by
-    show wordsVal _ _ _ _ = _; rw [sv_unch U₂ EXPN (by decide)]; exact hb.expn
-  refine WP.seq (WP.mono (pow_ok (P := Cfg.powN p256) (F := p256Order) order_ok rfl powNLay unitN hw₂ hn0
-    (by show sv base s₂ ONEN = _; rw [on₂]; rfl) (by show sv base s₂ EXPN < _; rw [ex₂]; decide))
+  refine WP.seq (WP.mono (chainPow_ok (P := Cfg.chainN p256) (F := p256Order) order_ok chainNLay unitN hw₂
+    (one := p256.sl ONEN) (by decide) (by decide) (by show sv base s₂ ONEN = _; rw [on₂]; rfl) chainN_ok)
     fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
   have hw₃ := hw₂.of_kc K₃
   have acc₃ : toM W.n (2 ^ 256) (sv base s₃ ACC) = Fin.ofNat W.n sg ^ (W.n - 2) := by
-    have v : toM W.n (2 ^ 256) (sv base s₃ ACC) = toM W.n (2 ^ 256) (sv base s₂ KM) ^ sv base s₂ EXPN := v₃
-    rw [v, km, ex₂]
+    have v : toM W.n (2 ^ 256) (sv base s₃ ACC) = toM W.n (2 ^ 256) (sv base s₂ KM) ^ (W.n - 2) := v₃
+    rw [v, km]
   have acclt₃ : sv base s₃ ACC < W.n := lt₃
   have k13 : ∀ i ∈ [VE, VR, R2N, ONE], sv base s₃ i = sv base s i := fun i hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -603,9 +601,9 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
     rcases hx with rfl | rfl | rfl
     exacts [pR₆.x, pR₆.y, pR₆.z]
   -- `Z^(p-2)` and `x`.
-  refine WP.seq (WP.mono (pow_ok (P := powP p256) (F := p256Field) field_ok rfl powLay unit hw₆ (by decide)
-    (by show sv base s₆ ONEP = _; rw [tc₆.onep]; rfl)
-    (by show sv base s₆ EXPP < _; rw [tc₆.expp]; decide)) fun s₇ ⟨K₇, U₇, lt₇, v₇⟩ => ?_)
+  refine WP.seq (WP.mono (chainPow_ok (P := chainP p256) (F := p256Field) field_ok chainLay unit hw₆
+    (one := p256.sl ONEP) (by decide) (by decide)
+    (by show sv base s₆ ONEP = _; rw [tc₆.onep]; rfl) chainP_ok) fun s₇ ⟨K₇, U₇, lt₇, v₇⟩ => ?_)
   have hw₇ := hw₆.of_kc K₇
   have tc₇ := tc₆.of_unch U₇ (by decide)
   refine WP.seq (WP.mono (affine_ok hw₇ (t := XM) (o := XO) (a := RX) (by decide) (by decide) (by decide) (by decide)
@@ -692,8 +690,8 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
         toM_mont unit, toM_mont unit, VG.Proof.EcKey.fe_eq h.2.1 rfl, VG.Proof.EcKey.fe_eq h.2.2.1 rfl]
     have rx₇ : sv base s₇ RX = sv base s₆ RX := sv_unch U₇ RX (by decide)
     have acc₇ : toM W.p (2 ^ 256) (sv base s₇ ACC) = toM W.p (2 ^ 256) (sv base s₆ RZ) ^ (W.p - 2) := by
-      have v : toM W.p (2 ^ 256) (sv base s₇ ACC) = toM W.p (2 ^ 256) (sv base s₆ RZ) ^ sv base s₆ EXPP := v₇
-      rw [v, tc₆.expp]
+      have v : toM W.p (2 ^ 256) (sv base s₇ ACC) = toM W.p (2 ^ 256) (sv base s₆ RZ) ^ (W.p - 2) := v₇
+      rw [v]
     have hxoX : Fin.ofNat W.p (sv base s₈ XO) =
         tmv W 4 base s₆ (p256.sl RX) * tmv W 4 base s₆ (p256.sl RZ) ^ (W.p - 2) := by
       rw [v₈, acc₇, rx₇]

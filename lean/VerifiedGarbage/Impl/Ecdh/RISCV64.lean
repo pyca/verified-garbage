@@ -40,7 +40,7 @@ field functions, on their pointers: the function is constant time.
    point called (its point, or `G`, to `R`'s first two slots); for the public
    key, the flag set and `G` copied there;
 4. the masks of `d < n` and `d ≠ 0` anded into the flag, then `R = [d]P` by a
-   call of `vg_<curve>_mul`, `Z^(p-2)` by `pow`, `x = X Z^(p-2)` (and `y`)
+   call of `vg_<curve>_mul`, `Z^(p-2)` by `chainPow`, `x = X Z^(p-2)` (and `y`)
    out of Montgomery's form, and the mask of `Z ≠ 0` into the flag;
 5. `x` (and `y`) stored big-endian to `out` under the flag's mask
    (`storeNum`), the flag's low bit returned, the registers restored.
@@ -68,6 +68,10 @@ def W1 := 41
 def W2 := 42
 def CPY := 43
 def FLAG := 44
+
+/-- The first of the nine slots of a power's table (`chainPow`), past those
+of `vg_p256_mul`'s saves (`mulSave`, slot 45). -/
+def TB := 46
 
 /-- Word `j` of `[a] - [m]` with the borrow in `t5` (into and out of it),
 through `t3`, `t4`, `t6` and `a4`. -/
@@ -198,8 +202,9 @@ def rangeOf (i : Nat) : List Instr :=
 /-- `d` in `[1, n-1]`. -/
 def rangeCode : List Instr := rangeOf c K
 
-/-- The power `Z^(p-2)`, into `ACC`. -/
-def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, c.sl EXPP, 64 * c.n⟩
+/-- The power `Z^(p-2)`, into `ACC`, by the chain of `p - 2` (its table
+from slot `TB`). -/
+def chainP : ChainCfg := ChainCfg.ofExp c.MP' (c.sl ACC) (c.sl RZ) (c.sl TB) (c.C.p - 2)
 
 /-- A call of `f`, whose code is `body`, on the working space, then `s0`
 from `s3`: the callees restore `s0` from memory, which the taint analysis
@@ -216,7 +221,7 @@ code `mulCode`), `Z^(p-2)`, and `x`. -/
 def tail (mulName : String) (mulCode : Prog isa) : Prog isa :=
   .seq (.block (rangeCode c)) <|
   .seq (wsCall mulName mulCode) <|
-  .seq (pow (powP c) c.FP) (affineCoord c XM XO RX)
+  .seq (chainPow (chainP c) (c.sl ONEP) c.FP) (affineCoord c XM XO RX)
 
 /-- The flag `&=` the mask of `Z ≠ 0`, and the flag to `a7`. -/
 def zCode : List Instr :=
