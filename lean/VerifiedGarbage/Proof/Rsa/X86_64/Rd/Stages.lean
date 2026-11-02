@@ -372,6 +372,7 @@ theorem divA_ok {s : State} {B : Addr} {Z w v : Nat} (h : Ws s B Z w) (hwv : w =
     WP isa (seqs divA) s fun t =>
       wv t.mem B (slot w 7) w = X * G % 2 ^ (64 * w) / N ∧ wv t.mem B (slot w 6) w = X * G % 2 ^ (64 * w) % N ∧
       mw t.mem B = mask (c && decide (X * G % 2 ^ (64 * w) / N < N)) ∧
+      word t.mem B (8 * Impl.Bignum.X86_64.Public.sElen) = BitVec.ofNat 64 (4 * w - 8) ∧
       FrmP B (DaP w) s.mem t.mem ∧ Keep [.r12, .r9, .rax, .rsi, .rbx, .r14, .r8, .r10, .r15, .r11, .r13, .rdx,
         .rbp, .rcx] s t := by
   have hn := h.scr.nowrap
@@ -441,12 +442,15 @@ theorem divA_ok {s : State} {B : Addr} {Z w v : Nat} (h : Ws s B Z w) (hwv : w =
   have fr : ∀ {o n : Nat} {m m' : Mem}, Outside B o n m m' → (∀ y, o ≤ y → y < o + n → DaP w y) →
       FrmP B (DaP w) m m' := fun ho hP => FrmP.of_out ho hP
   have hNw : N < 2 ^ (64 * w) := hN ▸ wv_lt _ _ _ _
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [o9.wv (by da_omega) (by da_omega), v8, o7.wv (by da_omega) (by da_omega), o6.wv (by da_omega) (by da_omega), q5]
   · rw [v9, o8.wv (by da_omega) (by da_omega), o7.wv (by da_omega) (by da_omega), o6.wv (by da_omega) (by da_omega),
       wv_low_of_lt (v := w) (w := w + 1) (by omega_arith) (by rw [r5]; exact Nat.lt_trans (Nat.mod_lt _ hN0) hNw), r5]
   · unfold mw
     rw [o9.word (by da_omega) (by da_omega), o8.word (by da_omega) (by da_omega), m7, word_writeW_self]
+  · rw [o9.word (by da_omega) (by da_omega), o8.word (by da_omega) (by da_omega), o7.word (by da_omega) (by da_omega),
+      o6.word (by da_omega) (by da_omega), f5'.word_eq (fun y => by da_omega) (by da_omega),
+      o4.word (by da_omega) (by da_omega), el₃]
   · exact (((((((((fr o1 fun y => by da_omega).trans (fr o2 fun y => by da_omega)).trans (fr o3 fun y => by da_omega)).trans
       (fr o4 fun y => by da_omega)).trans (f5'.mono fun y => by da_omega)).trans (fr o6 fun y => by da_omega)).trans
       (fr o7 fun y => by da_omega)).trans (fr o8 fun y => by da_omega)).trans (fr o9 fun y => by da_omega))
