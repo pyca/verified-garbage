@@ -1,4 +1,5 @@
 module
+-- separate module: builds in parallel with the stages of the body, `RdOps` to `RdSqrt`
 public import VerifiedGarbage.Proof.Rsa.Arm.RvFin5
 
 import VerifiedGarbage.Proof.Rsa.Arm.RvStore
