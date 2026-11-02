@@ -8,8 +8,8 @@ public import VerifiedGarbage.Impl.X448.RISCV64
 `vg_x448(out = a0, scalar = a1, point = a2, scratch = a3)`.
 
 The algorithm and layout of `Impl/X448/RISCV64.lean` (its ladder, its
-inversion, its decoding, its bits of the scalar and its final reduction), but
-for the field arithmetic, which takes a field element's 56 bytes as seven
+decoding, its bits of the scalar and its final reduction), but for the
+inversion and the field arithmetic, which takes a field element's 56 bytes as seven
 64-bit words `x₀ + 2⁶⁴ x₁ + … + 2³⁸⁴ x₆` (the same number as its fourteen
 32-bit limbs) and multiplies them with `mul` and `mulhu`, the low and high
 words of a 128-bit product, carrying with `sltu` (the sum `d := d + x`
@@ -33,6 +33,12 @@ space) stay where they are:
   as `c + 2²²⁴ c` twice (`foldR`) before the words are stored.
 * `add`, `sub`: with carries (borrows), the carry folded in (`foldR`), the
   borrow taken out (`unfoldR`) as `1 + 2²²⁴`, twice each.
+* `mulSmall`: by a one-word constant (the ladder's `a24`), with `mul` and
+  `mulhu` a word at a time, carrying into the next high word, and the top
+  word folded in twice (`foldR`).
+* `invert`: `z^(p-2)` by the addition chain of `Proof/X448/Invert.lean`
+  (`chain223`, runs of squarings `sqn` in a loop on `t1`, then `invTail`),
+  which Ed448's square root shares as far as `z^(2²²³ - 1)`.
 * `cswap`: with the mask `-swap` (in `t0`), a word at a time.
 
 The only branches are on the loop counters, and every address is a pointer
@@ -43,7 +49,7 @@ plus a constant or a counter, so only the pointers can affect timing.
 
 namespace VG.Impl.X448.RISCV64.R64
 
-open VG.RISCV64
+open VG.RISCV64 VG.Impl.Words.RISCV64
 open VG.Impl.X448.RISCV64 (X1 X2 Z2 X3 Z3 A B C D AA BB E DA CB A24 R ACC BITS align setup bits freeze one)
 
 /-! ## Registers -/
@@ -209,6 +215,22 @@ def subStep (a b k : Nat) : List Instr :=
 def sub (o a b : Nat) : List Instr :=
   (List.range 7).flatMap (subStep a b) ++ unfoldR .a5 ++ unfoldR .a5 ++ stW o
 
+/-! ## Multiplication by a one-word constant -/
+
+/-- Word `k` of `c · [a]` (`c` in `a6`) into `w k`, the carry in `a5` (out,
+and in for `k > 0`), through `t0` (the word of `[a]`) and `a7` (the high word
+of its product). -/
+def mulSmallStep (a k : Nat) : List Instr :=
+  if k = 0 then
+    [.load .d .t0 .a3 a, .mul (w 0) .t0 .a6, .mulhu .a5 .t0 .a6]
+  else
+    [.load .d .t0 .a3 (a + 8 * k), .mul (w k) .t0 .a6, .mulhu .a7 .t0 .a6,
+      .add (w k) (w k) .a5, .sltu .a5 (w k) .a5, .add .a5 .a5 .a7]
+
+/-- `[o] = c · [a]`, for `c < 2³¹` (built in `a6` by `li32`). -/
+def mulSmall (o a : Nat) (c : BitVec 32) : List Instr :=
+  li32 .a6 c ++ (List.range 7).flatMap (mulSmallStep a) ++ foldR .a5 ++ foldR .a5 ++ stW o
+
 /-! ## The swap -/
 
 /-- Swaps word `k` of `[x]` and `[y]` if the mask `t0` is all ones (and not
@@ -239,7 +261,7 @@ def step : Prog isa :=
   .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
   .seq (.block (sub D X3 Z3)) <| .seq (mul DA D A) <| .seq (mul CB C B) <|
   .seq (.block (add X3 DA CB)) <| .seq (mul X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
-  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (mul Z2 A24 E) <|
+  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (.block (mulSmall Z2 E 39081)) <|
   .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [])
 
 /-- The 448 iterations, for `t` from 447 down to 0, with `swap = 0`. -/
@@ -249,17 +271,53 @@ def ladder : Prog isa :=
 /-- The swap after the loop. -/
 def lastSwap : List Instr := mask ++ cswap X2 X3 ++ cswap Z2 Z3
 
-/-- `R = R²`, then `R = R · Z2` unless `t = t1 - 1` is 224 or 1. -/
-def invStep : Prog isa :=
-  .seq (.block [.addi .t1 .t1 (-1)]) <| .seq (mul R R R) <|
-  .seq (.block [.addi .a2 .t1 (-224)]) <|
-  .seq (.ite (.zero .a2) (.block [])
-    (.seq (.block [.addi .a2 .t1 (-1)]) (.ite (.zero .a2) (.block []) (mul R R Z2))))
-    (.block [])
+/-! ## The inversion
 
-/-- `[R] = [Z2]^(p-2)`, square-and-multiply over the bits of `p - 2` from 447
-down to 0. -/
-def invert : Prog isa := .seq (.block (one ++ [.li .t1 448])) (.loop invStep (.nonzero .t1))
+The addition chain of `Proof/X448/Invert.lean`, in the slots `T0`–`T6`
+and `R`, which no caller keeps across it: `z^(2^k - 1)` for `k` = 2, 4, 8,
+16, 32 and 64 in `T0`–`T5`, the running power in `T6`, then
+`z^(2²²³ - 1)` in `R`. -/
+
+def T0 : Nat := 616
+def T1 : Nat := 672
+def T2 : Nat := 728
+def T3 : Nat := 784
+def T4 : Nat := 896
+def T5 : Nat := 280
+def T6 : Nat := 560
+
+/-- `R = R²` (`t1` counting down). -/
+def sqStep (o : Nat) : Prog isa := .seq (.block [.addi .t1 .t1 (-1)]) (mul o o o)
+
+/-- `[o] = [x]^(2^n)`, `1 ≤ n ≤ 2048`: one square, then `n - 1` in a loop on
+`t1`. -/
+def sqn (o x n : Nat) : Prog isa :=
+  if n = 1 then mul o x x
+  else .seq (mul o x x) (.seq (.block [.li .t1 ((n - 1 : Nat) : Int)]) (.loop (sqStep o) (.nonzero .t1)))
+
+/-- `[R] = [z]^(2²²³ - 1)` and `[T6] = [z]^(2²²² - 1)`, through `T0`–`T5`:
+what the inversion and Ed448's square root share. -/
+def chain223 (z : Nat) : Prog isa :=
+  .seq (sqn T0 z 1) <| .seq (mul T0 T0 z) <|          -- z^(2^2 - 1)
+  .seq (sqn T1 T0 2) <| .seq (mul T1 T1 T0) <|        -- z^(2^4 - 1)
+  .seq (sqn T2 T1 4) <| .seq (mul T2 T2 T1) <|        -- z^(2^8 - 1)
+  .seq (sqn T3 T2 8) <| .seq (mul T3 T3 T2) <|        -- z^(2^16 - 1)
+  .seq (sqn T4 T3 16) <| .seq (mul T4 T4 T3) <|       -- z^(2^32 - 1)
+  .seq (sqn T5 T4 32) <| .seq (mul T5 T5 T4) <|       -- z^(2^64 - 1)
+  .seq (sqn T6 T5 64) <| .seq (mul T6 T6 T5) <|       -- z^(2^128 - 1)
+  .seq (sqn T6 T6 64) <| .seq (mul T6 T6 T5) <|       -- z^(2^192 - 1)
+  .seq (sqn T6 T6 16) <| .seq (mul T6 T6 T3) <|       -- z^(2^208 - 1)
+  .seq (sqn T6 T6 8) <| .seq (mul T6 T6 T2) <|        -- z^(2^216 - 1)
+  .seq (sqn T6 T6 4) <| .seq (mul T6 T6 T1) <|        -- z^(2^220 - 1)
+  .seq (sqn T6 T6 2) <| .seq (mul T6 T6 T0) <|        -- z^(2^222 - 1)
+  .seq (sqn R T6 1) (mul R R z)                       -- z^(2^223 - 1)
+
+/-- From `chain223 Z2`: `[R] = [Z2]^(p - 2)`. -/
+def invTail : Prog isa :=
+  .seq (sqn R R 225) <| .seq (sqn T6 T6 2) <| .seq (mul T6 T6 Z2) (mul R R T6)
+
+/-- `[R] = [Z2]^(p-2)`. -/
+def invert : Prog isa := .seq (chain223 Z2) invTail
 
 def x448 : Prog isa :=
   .seq (.block (align ++ setup)) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <|

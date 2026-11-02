@@ -38,6 +38,11 @@ def XQ : List Nat := [DY, DON, DK, R, Z2]
 
 theorem xOps_ok : R64.opsOk xOps XQ = true := by decide
 
+/-- The slots kept across `root`: not `DYY` and `DW`, which its chain uses. -/
+def RootQ : List Nat := [R, Z2, DT, DV, DU, DY, DK]
+
+theorem RootQ_sub : ∀ q ∈ RootQ, q ∈ outsQ xOps XQ := by decide
+
 /-- `u`, `v`, `t` and the candidate `x` for `y`. -/
 def uOf (y : Fe) : Fe := y * y - 1
 def vOf (y : Fe) : Fe := Spec.Ed448.d * (y * y) - 1
@@ -58,8 +63,8 @@ theorem decodeX_ok {s : State} (hc : Ctx b s) {y : Fe} (hy : FS s.mem b DY = y) 
   have h0 : R64.Cur b s (s.gpr .t2) (s.gpr .t1) XQ (FS s.mem b) s := ⟨hc, R64.Stp.refl _ _, rfl, rfl, fun _ _ => rfl⟩
   rw [decodeX_eq]
   refine R64.ops_ok xOps XQ _ s xOps_ok h0 fun s1 h1 => ?_
-  refine WP.seq (WP.mono (rootQ_ok (qs := outsQ xOps XQ) (by decide) (by decide) (by decide) h1.ctx
-    (fun q hq _ => h1.slots q hq) h1.t2) fun s2 ⟨hst2, hc2, hS2⟩ => ?_)
+  refine WP.seq (WP.mono (rootQ_ok (qs := RootQ) (by decide) (by decide) (by decide) h1.ctx
+    (fun q hq _ => h1.slots q (RootQ_sub q hq)) h1.t2) fun s2 ⟨hst2, hc2, hS2⟩ => ?_)
   refine WP.mono (R64.mulS (o := DXX) (x := DT) (y := R) (by decide) (by decide) (by decide) (by decide) hc2 hS2)
     fun t ⟨hrt, hft, hSt⟩ => ?_
   refine ⟨h1.stp.trans (hst2.trans ⟨hrt.mono (by decide), hft⟩), hc2.of_rest hrt (by decide), ?_, ?_, ?_, ?_, ?_⟩
