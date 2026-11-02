@@ -124,6 +124,25 @@ theorem save_ok (s₀ : State) {S : Addr} (hS : stackArg s₀ 0 = S)
     rw [gpr_write, ite_eq_right_iff.mpr fun e => absurd e hr6, h.gpr, k1.gpr hr0]
   · rw [mem_write, hsv i hi, gpr_write, ite_eq_right_iff.mpr fun e => absurd e (saved_ne_t2 i hi)]
 
+/-- `save`, from a state with the working space `S` in `t2`. -/
+theorem saveT2_ok (s₀ : State) {S : Addr} (h2 : s₀.gpr .t2 = S)
+    (hin : ∀ i < 13, InRegions s₀.wr (off (savW S) (8 * i)) 8)
+    (hal : ∀ i < 13, (off (savW S) (8 * i)).toNat % 8 = 0) :
+    WP isa (.block (save .t2)) s₀ (Saved s₀ S) := by
+  rw [save]
+  subst h2
+  refine WP.block_append (WP.mono (wp_range_flatMap (M := isa) (SI s₀)
+    (fun k s hk h => save_step s₀ hin hal hk h) 13 (Nat.le_refl _) s₀
+    ⟨rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s h => ?_)
+  have hw : s.gpr .t2 = s₀.gpr .t2 := by rw [h.gpr]
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_addi (show imm12 0 by decide),
+    BitVec.ofInt_ofNat, add_ofNat_zero, Option.some.injEq, exists_eq_left', hw]
+  refine ⟨⟨fun r hr => ?_, h.rd, h.wr⟩, h.sp, gpr_write_self _ _ _, h.frame, fun i hi => ?_⟩
+  · have hr6 : r ≠ .s6 := fun e => hr (by simp [e])
+    rw [gpr_write, ite_eq_right_iff.mpr fun e => absurd e hr6, h.gpr]
+  · rw [mem_write]; exact h.saved i hi
+
 /-- The first `n` registers are restored to `v`, from the state `sB` the
 restoring starts in. -/
 structure RI (sB : State) (S : Addr) (v : Nat → BitVec 64) (n : Nat) (s : State) : Prop where
