@@ -512,4 +512,154 @@ theorem cross_ok {s₀ : State} {B : Addr} {Z dA dT w : Nat} (hs : Scr s₀ B Z)
       ((((Keep.mem _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).trans (Keep.write _ _ _) |>.mono
         (by decide))))
 
+/-! ## Doubling and the squares of the words -/
+
+/-- A word doubled, with a bit shifted in: the bit shifted out, times `2⁶⁴`. -/
+theorem dbl_word (x b : BitVec 64) (hb : b.toNat ≤ 1) :
+    (x <<< 1 + b).toNat + 2 ^ 64 * (x >>> 63).toNat = 2 * x.toNat + b.toNat := by
+  have hx := x.isLt
+  have e1 : (x <<< 1).toNat = 2 * x.toNat % 2 ^ 64 := by
+    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.mul_comm]
+  have e2 : (x >>> 63).toNat = x.toNat / 2 ^ 63 := by
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_add, e1, e2]
+  omega_arith
+
+theorem shr63_le (x : BitVec 64) : (x >>> 63).toNat ≤ 1 := by
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+  have := x.isLt
+  omega_arith
+
+theorem carry_le (x y : BitVec 64) : (if x + y < y then (1 : BitVec 64) else 0).toNat ≤ 1 := by
+  split <;> decide
+
+/-- A step of `diag`: the pair `x₀ + 2⁶⁴ x₁` doubled, the bit `sh` shifted in
+and the carry `c` and `a²` added, as two words, the bit shifted out and the
+carry out. -/
+theorem diag_arith (x0 x1 a sh c : BitVec 64) (hsh : sh.toNat ≤ 1) :
+    (a * a + (c + (x0 <<< 1 + sh))).toNat +
+      2 ^ 64 * (x1 <<< 1 + x0 >>> 63 + (BitVec.ofNat 64 (a.toNat * a.toNat / 2 ^ 64) +
+        (if c + (x0 <<< 1 + sh) < x0 <<< 1 + sh then 1 else 0) +
+        (if a * a + (c + (x0 <<< 1 + sh)) < c + (x0 <<< 1 + sh) then 1 else 0))).toNat +
+      2 ^ 128 * ((x1 >>> 63).toNat + (if x1 <<< 1 + x0 >>> 63 + (BitVec.ofNat 64 (a.toNat * a.toNat / 2 ^ 64) +
+        (if c + (x0 <<< 1 + sh) < x0 <<< 1 + sh then 1 else 0) +
+        (if a * a + (c + (x0 <<< 1 + sh)) < c + (x0 <<< 1 + sh) then 1 else 0)) <
+          BitVec.ofNat 64 (a.toNat * a.toNat / 2 ^ 64) +
+        (if c + (x0 <<< 1 + sh) < x0 <<< 1 + sh then 1 else 0) +
+        (if a * a + (c + (x0 <<< 1 + sh)) < c + (x0 <<< 1 + sh) then 1 else 0) then (1 : BitVec 64) else 0).toNat) =
+      2 * (x0.toNat + 2 ^ 64 * x1.toNat) + sh.toNat + a.toNat * a.toNat + c.toNat := by
+  have h0 := dbl_word x0 sh hsh
+  have h1 := dbl_word x1 (x0 >>> 63) (shr63_le x0)
+  have hc := fios_chain (x0 <<< 1 + sh) a a c
+  generalize BitVec.ofNat 64 (a.toNat * a.toNat / 2 ^ 64) + (if c + (x0 <<< 1 + sh) < x0 <<< 1 + sh then 1 else 0) +
+    (if a * a + (c + (x0 <<< 1 + sh)) < c + (x0 <<< 1 + sh) then 1 else 0) = h at hc ⊢
+  have hz := carry_toNat (x1 <<< 1 + x0 >>> 63) h
+  have hzs : (x1 <<< 1 + x0 >>> 63 + h).toNat + 2 ^ 64 * (decide (2 ^ 64 ≤ (x1 <<< 1 + x0 >>> 63).toNat + h.toNat)).toNat =
+      (x1 <<< 1 + x0 >>> 63).toNat + h.toNat := by
+    rw [BitVec.toNat_add]
+    have := (x1 <<< 1 + x0 >>> 63).isLt
+    have := h.isLt
+    by_cases hh : 2 ^ 64 ≤ (x1 <<< 1 + x0 >>> 63).toNat + h.toNat <;>
+      simp only [hh, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
+  rw [hz]
+  omega_arith
+
+/-- The registers `diag` writes. -/
+def diagRegs : List Reg := [.a0, .t2, .t3, .t5, .s0, .s1, .s2, .s3, .s4]
+
+/-- The sum of `diag`'s first `i + 1` steps, from that of the first `i` and
+the last. -/
+theorem diag_sum {L W D P z0 z1 x0 x1 sh c sh' c' a : Nat}
+    (e₁ : L + P * (sh + c) = 2 * W + D)
+    (e₂ : z0 + 2 ^ 64 * z1 + 2 ^ 128 * (sh' + c') = 2 * (x0 + 2 ^ 64 * x1) + sh + a + c) :
+    L + P * (z0 + 2 ^ 64 * z1) + P * 2 ^ 128 * (sh' + c') = 2 * (W + P * (x0 + 2 ^ 64 * x1)) + (D + P * a) := by
+  have e : P * (z0 + 2 ^ 64 * z1) + P * 2 ^ 128 * (sh' + c') = P * (2 * (x0 + 2 ^ 64 * x1) + sh + a + c) := by
+    rw [← e₂]; grind
+  grind
+
+/-- `diag`, `a` (`w` words) at `dA` (`a3`), `T` at `dT` (`a5`): its first
+`2 w` words doubled, plus the squares of `a`'s words, and the bit and the
+carry out of them 0 but for their sum's top. -/
+theorem diag_ok {s₀ : State} {B : Addr} {Z dA dT w : Nat} (hs : Scr s₀ B Z)
+    (hA8 : dA % 8 = 0) (hT8 : dT % 8 = 0)
+    (h3 : s₀.gpr .a3 = off B dA) (h5 : s₀.gpr .a5 = off B dT) (ht0 : s₀.gpr .t0 = BitVec.ofNat 64 w)
+    (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hA : dA + 8 * w ≤ Z) (hT : dT + 16 * w ≤ Z)
+    (dAT : dA + 8 * w ≤ dT ∨ dT + 16 * w ≤ dA) :
+    WP isa diag s₀ fun s =>
+      (∃ e, wordsVal s.mem B dT (2 * w) + 2 ^ (128 * w) * e =
+          2 * wordsVal s₀.mem B dT (2 * w) + diagPart s₀.mem B dA w) ∧
+        Outside B dT (16 * w) s₀.mem s.mem ∧ Keep diagRegs s₀ s := by
+  have hnw := hs.nowrap
+  unfold diag
+  have hpre : WP isa (.block [.addi .t3 .a5 0, .addi .a0 .a3 0, .addi .t5 .t0 0, .li .t2 0, .li .s1 0]) s₀
+      fun s₁ => (s₁.gpr .t3 = off B dT ∧ s₁.gpr .a0 = off B dA ∧ s₁.gpr .t5 = BitVec.ofNat 64 w ∧
+        s₁.gpr .t2 = 0 ∧ s₁.gpr .s1 = 0 ∧ s₁.mem = s₀.mem) ∧ Keep [.t3, .a0, .t5, .t2, .s1] s₀ s₁ := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [fin64_exec_li_zero, h3, h5, ht0, BitVec.add_zero]
+  refine WP.seq (WP.mono hpre fun s₁ ⟨⟨i3, i0, i5, i2, i1, im⟩, k₁⟩ => ?_)
+  let J : Nat → State → Prop := fun i s =>
+    s.gpr .t3 = off B (dT + 16 * i) ∧ s.gpr .a0 = off B (dA + 8 * i) ∧ (s.gpr .t2).toNat ≤ 1 ∧
+      Outside B dT (16 * i) s₀.mem s.mem ∧
+      wordsVal s.mem B dT (2 * i) + 2 ^ (128 * i) * ((s.gpr .t2).toNat + (s.gpr .s1).toNat) =
+        2 * wordsVal s₀.mem B dT (2 * i) + diagPart s₀.mem B dA i ∧ Keep diagRegs s₀ s
+  have hJ0 : J 0 s₁ := ⟨by rw [i3]; rfl, by rw [i0]; rfl, by rw [i2]; decide, by rw [im]; exact Outside.refl _ _ _ _,
+    by rw [i2, i1]; simp [wordsVal, diagPart], k₁.mono (by decide)⟩
+  refine WP.mono (wp_countdown (body := .block (diagStep ++ ([.addi .t5 .t5 (-1)] : List Instr))) (cnt := .t5)
+    (N := w) (by omega_arith) (by omega_arith) J (fun i hi s hJ hc => ?_) hJ0 i5)
+    fun s ⟨_, _, _, jout, jv, jk⟩ => ⟨⟨_, jv⟩, jout, jk⟩
+  obtain ⟨j3, j0, j2, jout, jv, jk⟩ := hJ
+  have hsJ := hs.congr jk.2.2
+  have hst : WP isa (.block (diagStep ++ ([.addi .t5 .t5 (-1)] : List Instr))) s fun t =>
+      (∃ z0 z1 : BitVec 64, t.mem = (s.mem.writeW (off B (dT + 16 * i)) z0).writeW (off B (dT + 16 * i + 8)) z1 ∧
+        z0.toNat + 2 ^ 64 * z1.toNat + 2 ^ 128 * ((t.gpr .t2).toNat + (t.gpr .s1).toNat) =
+          2 * ((word s.mem B (dT + 16 * i)).toNat + 2 ^ 64 * (word s.mem B (dT + 16 * i + 8)).toNat) +
+            (s.gpr .t2).toNat + (word s.mem B (dA + 8 * i)).toNat * (word s.mem B (dA + 8 * i)).toNat +
+            (s.gpr .s1).toNat ∧
+        (t.gpr .t2).toNat ≤ 1 ∧ t.gpr .t3 = off B (dT + 16 * i + 16) ∧ t.gpr .a0 = off B (dA + 8 * i + 8) ∧
+        t.gpr .t5 = s.gpr .t5 - BitVec.ofNat 64 1) ∧ Keep (diagRegs ++ [.t5]) s t := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    unfold diagStep
+    brun [j3, j0, hsJ.ld (show dT + 16 * i + 8 ≤ Z by omega_arith),
+      hsJ.ld (show dT + 16 * i + 8 + 8 ≤ Z by omega_arith), hsJ.ld (show dA + 8 * i + 8 ≤ Z by omega_arith),
+      hsJ.st (show dT + 16 * i + 8 ≤ Z by omega_arith), hsJ.st (show dT + 16 * i + 8 + 8 ≤ Z by omega_arith),
+      hsJ.al8 (show dT + 16 * i + 8 ≤ Z by omega_arith) (by omega_arith),
+      hsJ.al8 (show dT + 16 * i + 8 + 8 ≤ Z by omega_arith) (by omega_arith),
+      hsJ.al8 (show dA + 8 * i + 8 ≤ Z by omega_arith) (by omega_arith)]
+    refine ⟨_, _, rfl, ?_, shr63_le _⟩
+    have := diag_arith (word s.mem B (dT + 16 * i)) (word s.mem B (dT + 16 * i + 8)) (word s.mem B (dA + 8 * i))
+      (s.gpr .t2) (s.gpr .s1) j2
+    simp only [word] at this ⊢
+    omega_arith
+  refine WP.mono hst fun t ⟨⟨z0, z1, tm, teq, t2, t3, ta0, t5⟩, tk⟩ => ⟨⟨?_, ?_, t2, ?_, ?_, ?_⟩, t5⟩
+  · rw [t3, show dT + 16 * i + 16 = dT + 16 * (i + 1) by omega_arith]
+  · rw [ta0, show dA + 8 * i + 8 = dA + 8 * (i + 1) by omega_arith]
+  · rw [tm]
+    exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans
+      (((writeW_outside _ B _ (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
+        ((writeW_outside _ B _ (by omega_arith)).mono (by omega_arith) (by omega_arith)))
+  · -- The words read are those on entry.
+    have w0 : word s.mem B (dT + 16 * i) = word s₀.mem B (dT + 16 * i) := jout.word (by omega_arith) (by omega_arith)
+    have w1 : word s.mem B (dT + 16 * i + 8) = word s₀.mem B (dT + 16 * i + 8) :=
+      jout.word (by omega_arith) (by omega_arith)
+    have wa : word s.mem B (dA + 8 * i) = word s₀.mem B (dA + 8 * i) := jout.word (by omega_arith) (by omega_arith)
+    rw [w0, w1, wa] at teq
+    have hn : wordsVal t.mem B dT (2 * (i + 1)) = wordsVal s.mem B dT (2 * i) +
+        2 ^ (64 * (2 * i)) * (z0.toNat + 2 ^ 64 * z1.toNat) := by
+      rw [tm, show 2 * (i + 1) = 2 * i + 2 by omega_arith, show dT + 16 * i = dT + 8 * (2 * i) by omega_arith]
+      exact fios_wordsVal_write2 _ _ _ _ _ _ (by omega_arith)
+    have ho : wordsVal s₀.mem B dT (2 * (i + 1)) = wordsVal s₀.mem B dT (2 * i) +
+        2 ^ (64 * (2 * i)) * ((word s₀.mem B (dT + 16 * i)).toNat + 2 ^ 64 * (word s₀.mem B (dT + 16 * i + 8)).toNat) := by
+      rw [show 2 * (i + 1) = 2 * i + 2 by omega_arith, fios_wordsVal_append s₀.mem B dT (2 * i) 2]
+      simp only [wordsVal, Nat.mul_zero, Nat.add_zero]
+      rw [show dT + 8 * (2 * i) = dT + 16 * i by omega_arith]
+    have hd : diagPart s₀.mem B dA (i + 1) = diagPart s₀.mem B dA i +
+        2 ^ (64 * (2 * i)) * ((word s₀.mem B (dA + 8 * i)).toNat * (word s₀.mem B (dA + 8 * i)).toNat) := by
+      rw [diagPart, show 128 * i = 64 * (2 * i) by omega_arith]
+    have hQ : 2 ^ (128 * (i + 1)) = 2 ^ (64 * (2 * i)) * 2 ^ 128 := by
+      rw [← Nat.pow_add]; congr 1; omega_arith
+    rw [show 128 * i = 64 * (2 * i) by omega_arith] at jv
+    rw [hn, ho, hd, hQ]
+    exact diag_sum jv teq
+  · exact Keep.trans' jk (tk.mono (by decide))
+
 end VG.Proof.Bignum.RISCV64
