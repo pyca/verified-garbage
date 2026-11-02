@@ -72,14 +72,14 @@ of the register is anything), then `s4 ← s4 ∧ a0`. -/
 def and24 : List Instr := [.shift .sll .d .a0 .a0 32, .shift .srl .d .a0 .a0 32, .logic .and .s4 .s4 .a0]
 
 def maskBody : List Instr :=
-  [.load .w .a3 .a1 0, .logic .and .a3 .a3 .t1, .store .w .a3 .a1 0, .addi .a1 .a1 4, .addi .a2 .a2 (-1)]
+  [.load .w .a3 .a1 0, .logic .and .a3 .a3 .t2, .store .w .a3 .a1 0, .addi .a1 .a1 4, .addi .a2 .a2 (-1)]
 
 /-- The polynomial at `a` masked by the result `a0` (0 or 1, after `and24`)
 of the sampler that wrote it: unchanged if 1, and zero if 0, so that it is
-reduced either way, without a branch. `t1 ← -a0`, then each coefficient
-`∧ t1`. -/
+reduced either way, without a branch. `t2 ← -a0`, then each coefficient
+`∧ t2`. -/
 def mask (a : Ptr) : Prog isa :=
-  .seq (.block (([.li .t1 0, .sub .t1 .t1 .a0] : List Instr) ++ Arg.instrs .a1 (.ptr a) ++
+  .seq (.block (([.li .t2 0, .sub .t2 .t2 .a0] : List Instr) ++ Arg.instrs .a1 (.ptr a) ++
       ([.li .a2 256] : List Instr)))
     (.loop (.block maskBody) (.nonzero .a2))
 
