@@ -318,46 +318,54 @@ fn keys(c: &mut Criterion) {
 
 #[cfg(target_arch = "riscv64")]
 pub fn bench(c: &mut Criterion) {
-    // Prototype (bench branch only): one unproven Montgomery multiplication
-    // or squaring of `w` words, next to OpenSSL's RSA operations.
+    // Prototype (bench branch only): unproven Montgomery multiplication and
+    // squaring of `w` words, next to OpenSSL's `BN_mod_mul`, `BN_mod_sqr`,
+    // and `BN_mod_exp` of an exponent as long as the modulus (a CRT half), for
+    // which the prototype does one squaring per bit and one multiplication
+    // per four bits (a 4-bit window).
     use criterion::BenchmarkId;
-    use openssl::rsa::{Padding, Rsa};
+    use openssl::bn::{BigNum, BigNumContext};
     use std::hint::black_box;
     use verified_garbage_asm_riscv64::rsa_proto::{vg_proto_mont_mul, vg_proto_mont_sqr};
-    let mut g = c.benchmark_group("rsa_proto");
-    for w in [16usize, 24, 32, 48, 64] {
-        let mut ws = vec![0u64; 32 + 8 * (w + 2)];
-        for (i, x) in ws.iter_mut().enumerate().skip(32) {
-            *x = (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+
+    use crate::{OPENSSL, VG};
+    let mut ctx = BigNumContext::new().unwrap();
+    for (name, kind) in [
+        ("rsa_proto_mul", 0),
+        ("rsa_proto_sqr", 1),
+        ("rsa_proto_exp", 2),
+    ] {
+        let mut g = c.benchmark_group(name);
+        for w in [16usize, 24, 32, 48, 64] {
+            let bits = 64 * w as i32;
+            let mut ws = vec![0u64; 32 + 8 * (w + 2)];
+            for (i, x) in ws.iter_mut().enumerate().skip(32) {
+                *x = (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+            }
+            ws[32] |= 1;
+            g.bench_function(BenchmarkId::new(VG, bits), |b| match kind {
+                0 => b.iter(|| unsafe { vg_proto_mont_mul(black_box(ws.as_mut_ptr()), w, 1) }),
+                1 => b.iter(|| unsafe { vg_proto_mont_sqr(black_box(ws.as_mut_ptr()), w, 1) }),
+                _ => b.iter(|| unsafe {
+                    vg_proto_mont_sqr(black_box(ws.as_mut_ptr()), w, 64 * w);
+                    vg_proto_mont_mul(black_box(ws.as_mut_ptr()), w, 16 * w);
+                }),
+            });
+            let mut m = BigNum::new().unwrap();
+            m.rand(bits, openssl::bn::MsbOption::ONE, true).unwrap();
+            let mut a = BigNum::new().unwrap();
+            m.rand_range(&mut a).unwrap();
+            let mut e = BigNum::new().unwrap();
+            e.rand(bits, openssl::bn::MsbOption::ONE, true).unwrap();
+            let mut r = BigNum::new().unwrap();
+            g.bench_function(BenchmarkId::new(OPENSSL, bits), |b| match kind {
+                0 => b.iter(|| r.mod_mul(black_box(&a), &a, &m, &mut ctx).unwrap()),
+                1 => b.iter(|| r.mod_sqr(black_box(&a), &m, &mut ctx).unwrap()),
+                _ => b.iter(|| r.mod_exp(black_box(&a), &e, &m, &mut ctx).unwrap()),
+            });
         }
-        ws[32] |= 1;
-        g.bench_function(BenchmarkId::new("mont_mul", 64 * w), |b| {
-            b.iter(|| unsafe { vg_proto_mont_mul(black_box(ws.as_mut_ptr()), w, 1) })
-        });
-        g.bench_function(BenchmarkId::new("mont_sqr", 64 * w), |b| {
-            b.iter(|| unsafe { vg_proto_mont_sqr(black_box(ws.as_mut_ptr()), w, 1) })
-        });
+        g.finish();
     }
-    for bits in [2048, 3072, 4096] {
-        let key = Rsa::generate(bits).unwrap();
-        let k = key.size() as usize;
-        let mut input = vec![0x42; k];
-        input[0] = 0;
-        let mut out = vec![0; k];
-        g.bench_function(BenchmarkId::new("openssl_private", bits), |b| {
-            b.iter(|| {
-                key.private_decrypt(black_box(&input), &mut out, Padding::NONE)
-                    .unwrap()
-            })
-        });
-        g.bench_function(BenchmarkId::new("openssl_public", bits), |b| {
-            b.iter(|| {
-                key.public_encrypt(black_box(&input), &mut out, Padding::NONE)
-                    .unwrap()
-            })
-        });
-    }
-    g.finish();
 }
 
 #[cfg(not(any(
