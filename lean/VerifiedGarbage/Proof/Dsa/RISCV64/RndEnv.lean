@@ -87,7 +87,7 @@ structure SE.Ok (E : SE) : Prop where
   M : E.M < 256
   qs : E.qs.length = E.W
   rnw : E.rand.toNat + E.rl ≤ 2 ^ 64
-  rl : E.rl < 2 ^ 63
+  rl : E.rl < 2 ^ 64
   qnw : E.qp.toNat + E.W ≤ 2 ^ 64
   fnw : E.F.toNat + frameBytes ≤ 2 ^ 64
   fal : E.F.toNat % 8 = 0
