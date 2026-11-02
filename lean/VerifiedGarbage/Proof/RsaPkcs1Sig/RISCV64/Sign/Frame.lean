@@ -162,9 +162,9 @@ variable {S : List Region} {s t w : State} {a b c d e : BitVec 64} {rs : List Re
 
 theorem not_kept {r : Reg} (hrs : ∀ r ∈ rs, r ∉ kept) (hr : r ∈ kept) : r ∉ rs := fun h => hrs r h hr
 
-theorem Mid.of (h : Mid S s a b c d e t) (hg : ∀ r ∈ kept, w.gpr r = t.gpr r) (hsp : w.sp = t.sp)
-    (hrd : w.rd = t.rd) (hwr : w.wr = t.wr) (hm : Frame (kR s :: S) s.mem w.mem)
-    (hsv : Spill.Saved (fb s) s.gpr saved w.mem) : Mid S s a b c d e w where
+theorem Mid.of {S' : List Region} (h : Mid S s a b c d e t) (hg : ∀ r ∈ kept, w.gpr r = t.gpr r)
+    (hsp : w.sp = t.sp) (hrd : w.rd = t.rd) (hwr : w.wr = t.wr) (hm : Frame (kR s :: S') s.mem w.mem)
+    (hsv : Spill.Saved (fb s) s.gpr saved w.mem) : Mid S' s a b c d e w where
   sp := hsp.trans h.sp
   rd := hrd.trans h.rd
   wr := hwr.trans h.wr
@@ -179,15 +179,15 @@ theorem Mid.of (h : Mid S s a b c d e t) (hg : ∀ r ∈ kept, w.gpr r = t.gpr r
 
 /-- `Mid` is kept by code writing registers other than those it keeps, and
 memory `hm` says is kept. -/
-theorem Mid.keep (h : Mid S s a b c d e t) (o : Kept rs t w) (hm : Frame (kR s :: S) s.mem w.mem)
-    (hsv : Spill.Saved (fb s) s.gpr saved w.mem) (hrs : ∀ r ∈ rs, r ∉ kept := by decide) :
-    Mid S s a b c d e w :=
+theorem Mid.keep {S' : List Region} (h : Mid S s a b c d e t) (o : Kept rs t w)
+    (hm : Frame (kR s :: S') s.mem w.mem) (hsv : Spill.Saved (fb s) s.gpr saved w.mem)
+    (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid S' s a b c d e w :=
   h.of (fun r hr => o.gpr r (not_kept hrs hr)) o.sp o.rd o.wr hm hsv
 
 /-- `Mid` is kept by code writing registers other than those it keeps. -/
 theorem Mid.only (h : Mid S s a b c d e t) (o : Only rs t w) (hrs : ∀ r ∈ rs, r ∉ kept := by decide) :
     Mid S s a b c d e w :=
-  h.keep o.keep (by rw [o.mem]; exact h.mem) (by rw [o.mem]; exact h.sv) hrs
+  h.keep (S' := S) o.keep (by rw [o.mem]; exact h.mem) (by rw [o.mem]; exact h.sv) hrs
 
 /-- Writes of the frame apart from the slots keep `Mid`'s memory. -/
 theorem Mid.frameMem (h : Mid S s a b c d e t) {f n : Nat} {m : Mem}
@@ -206,7 +206,7 @@ theorem Mid.frameW (h : Mid S s a b c d e t) (o : Kept rs t w) {f n : Nat}
     (he : oRa + 8 ≤ f ∨ f + n ≤ oSave) (hen : f + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 f, n⟩] t.mem w.mem)
     (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid S s a b c d e w :=
   have hf := h.frameMem he hen hm
-  h.keep o hf.1 hf.2 hrs
+  h.keep (S' := S) o hf.1 hf.2 hrs
 
 end
 
