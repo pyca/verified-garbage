@@ -1,5 +1,7 @@
 module
 
+-- separate module: the outcome's logic, of no ISA, builds in parallel with the proofs of the code
+
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
 import VerifiedGarbage.Proof.Rsa.Octets
 
