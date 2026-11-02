@@ -30,12 +30,12 @@
 //! computes, or from `(n, e, d)` alone, whose primes the verified
 //! `vg_rsa_recover_primes_det` (contract
 //! `VG.Spec.Rsa.recoverPrimesDetContract`) recovers by SP 800-56B Rev. 2
-//! Appendix C.2 on i686, and `vg_rsa_recover_primes` (contract
-//! `VG.Spec.Rsa.recoverPrimesContract`) by Appendix C.1 on the other
-//! targets. The timing of the first may depend on `n` but not on the private
-//! key; that of Appendix C.2 on `n` and `e` only, and that of Appendix C.1 on
-//! `n`, `e` and the number of candidates it tried (1 or 2 for most keys), but
-//! not otherwise on `d`.
+//! Appendix C.2 on i686 and 64-bit PowerPC, and `vg_rsa_recover_primes`
+//! (contract `VG.Spec.Rsa.recoverPrimesContract`) by Appendix C.1 on the
+//! other targets. The timing of the first may depend on `n` but not on the
+//! private key; that of Appendix C.2 on `n` and `e` only, and that of
+//! Appendix C.1 on `n`, `e` and the number of candidates it tried (1 or 2 for
+//! most keys), but not otherwise on `d`.
 //!
 //! [`PrivateKey::check_key`] checks a loaded key as BoringSSL's
 //! `RSA_check_key` does, by the verified `vg_rsa_check_key` (contract
@@ -46,8 +46,9 @@
 //! not run it.
 //!
 //! The variants of `vg_rsa_public_precompute`,
-//! `vg_rsa_public_precomputed_checked`, `vg_rsa_private_checked` and
-//! `vg_rsa_recover_primes`, with the same contracts, are chosen with
+//! `vg_rsa_public_precomputed_checked`, `vg_rsa_private_checked` and (on
+//! the targets that recover primes by Appendix C.1) `vg_rsa_recover_primes`,
+//! with the same contracts, are chosen with
 //! `Backend::select`, on CPUs with the features their `_FEATURES` constants
 //! (and those of the functions built on them) name: on x86-64, the
 //! `_ifma` ones of `vg_rsa_public_precomputed_checked` and
