@@ -51,7 +51,7 @@ open VG.Proof.Dsa.RISCV64.RS (sub1_beq sampleStatus_some nonce_eq zx_beq_zero)
 
 /-- The first instructions of the scan: q's address and length. -/
 theorem qargs_ok {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s₀) s₀ t) :
-    WP isa (.block (lenP .t3 ++ [.add .s7 .s1 .t3] ++ lenQ .s8)) t fun t₁ =>
+    WP isa (.block (lenP .t3 ++ ([.add .s7 .s1 .t3] : List Instr) ++ lenQ .s8)) t fun t₁ =>
       ((t₁.gpr .s7 = off (glOf s₀).par (glOf s₀).pl ∧ t₁.gpr .s8 = BitVec.ofNat 64 (glOf s₀).ql ∧
         t₁.mem = t.mem) ∧ Keep [.t3, .s7, .s8] t t₁) ∧ t₁.sp = t.sp := by
   have hL := glOf_ok h

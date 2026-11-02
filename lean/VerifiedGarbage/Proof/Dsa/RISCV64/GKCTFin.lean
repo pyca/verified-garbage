@@ -37,7 +37,7 @@ open VG.Proof.Dsa.RISCV64.RS (sub1_beq zeroLoopA_ok)
 
 /-- `zeroOut`'s first block: `out`'s address and length, and 0. -/
 theorem zblk_ok {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s₀) s₀ t) :
-    WP isa (.block ([.addSp .t3 0, .load .d .t4 .t3 oOut] ++ outLen ++ [.li .a0 0])) t fun t₂ =>
+    WP isa (.block (([.addSp .t3 0, .load .d .t4 .t3 oOut] : List Instr) ++ outLen ++ ([.li .a0 0] : List Instr))) t fun t₂ =>
       ((t₂.gpr .a0 = 0 ∧ t₂.gpr .t4 = (glOf s₀).out ∧ t₂.gpr .t5 = BitVec.ofNat 64 (glOf s₀).ol ∧
         t₂.mem = t.mem) ∧ Keep [.t3, .t4, .t5, .a0, .t2, .t1] t t₂) ∧ t₂.sp = t.sp := by
   have hL := glOf_ok h
@@ -88,7 +88,7 @@ theorem zeroOut_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h
 
 /-- The nonce zeroed and `used`'s address loaded. -/
 theorem usedLd_ok {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s₀) s₀ t) :
-    WP isa (.block (clearNonce ++ [.load .d .t4 .t0 oUsed])) t fun u =>
+    WP isa (.block (clearNonce ++ ([.load .d .t4 .t0 oUsed] : List Instr))) t fun u =>
       u.gpr .t4 = (glOf s₀).used ∧ u.sp = t.sp := by
   have hL := glOf_ok h
   have hF := hL.fnw
