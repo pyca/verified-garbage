@@ -4,20 +4,25 @@ public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyFn
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Encode
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.Comb
 import VerifiedGarbage.Proof.Ed25519.RISCV64.PointScalar
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Freeze
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
+import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
+public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 
 /-!
 # `vg_ed25519_scalar_base` on RISC-V: correctness
 
 The function moves `scratch`, aligned to 8 bytes, to `a3`, saves the
-callee-saved registers and `ra` there, puts the base point in slots 0–3,
-multiplies it by the 256-bit scalar (`pointFromScalar_ok`), encodes the
-product at `FR` (`pointEncode_ok`), and copies it to `out`
-(`packField_ok`).
+callee-saved registers and `ra` there, multiplies the base point by the
+256-bit scalar with the comb (`combMultiply_ok`), which reads the static
+`combSym`, encodes the product at `FR` (`pointEncode_ok`), and copies it to
+`out` (`packField_ok`).
 -/
 
 @[expose] public section
@@ -31,49 +36,61 @@ section
 variable {b : Addr}
 
 /-- The registers the engine writes. -/
-abbrev baseR : List Reg := .t6 :: .s5 :: .a4 :: batchR
+abbrev baseR : List Reg := .t6 :: stepR
 
-theorem scalarBaseEngine_ok {s : State} (hc : Ctx8 b s) {p : Addr} (h14 : s.gpr .s0 = p)
+theorem scalarBaseEngine_ok {s : State} (hc : Ctx8 b s) (hws : WS b s) {p T : Addr} (h14 : s.gpr .s0 = p)
     (hin : ∀ i < 32, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 i) 1)
-    (hpd : (⟨p, 32⟩ : Region).Disjoint ⟨b, 8192⟩) :
+    (hpd : (⟨p, 32⟩ : Region).Disjoint ⟨b, 8192⟩) (hT : TblAt s T) (hsym : s.syms combSym = T)
+    (apart : (TBL T).Disjoint ⟨b, 8192⟩) :
     WP isa scalarBaseEngine s fun t =>
-      Rest baseR s t ∧ Frame (pmulW b) s.mem t.mem ∧
-      V t.mem b FR = encodeNum (Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem p 32)) Spec.Ed25519.basePoint) := by
+      Rest baseR s t ∧ Frame (combW b) s.mem t.mem ∧
+      Spec.Ed25519.encodeLE 32 (V t.mem b FR) = Spec.Ed25519.scalarBase (bytesAt s.mem p 32) := by
   unfold scalarBaseEngine
-  refine WP.seq (WP.mono (initFields_ok hc.ctx) fun s1 ⟨r1, f1⟩ => ?_)
+  refine WP.seq (WP.mono_syms (initFields_ok hc.ctx) fun s1 ⟨r1, f1⟩ sy1 => ?_)
   have hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
-  unfold constPoint
-  refine WP.seq (WP.mono (fieldCode_ok _ hc1.ctx hc1.ws) fun s2 ⟨k2, e2⟩ => ?_)
-  have p2 := (env_constPoint (env s1.mem b) Spec.Ed25519.basePoint).1
-  rw [← e2] at p2
-  have hc2 : Ctx8 b s2 := hc1.of_keep k2
-  have hF2 : Frame [FA b] s.mem s2.mem := f1.trans k2.frame
-  have hb2 : bytesAt s2.mem p 32 = bytesAt s.mem p 32 := by
+  have hb1 : bytesAt s1.mem p 32 = bytesAt s.mem p 32 := by
     simp only [Spec.Ed25519.bytesAt, List.map_inj_left]
     intro i hi
-    exact bytes_ws hF2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)) hpd (by decide)
+    exact bytes_ws f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)) hpd (by decide)
       (List.mem_range.mp hi)
-  have hR2 : Rest baseR s s2 := (r1.mono (by decide)).trans (k2.rest.mono (by decide))
-  have hR2' : Rest fclob s s2 := (r1.mono (by decide)).trans k2.rest
-  refine WP.seq (WP.mono (pointFromScalar_ok hc2 (count := 16) (by decide) (by decide) (p := p)
-    (by rw [hR2'.gpr _ (by decide), h14])
-    (fun i hi => by rw [hR2.rd, hR2.wr]; exact hin i hi) hpd) fun s3 ⟨r3, f3, p3, _⟩ => ?_)
-  rw [hb2, p2] at p3
-  have hc3 : Ctx8 b s3 := hc2.of_rest r3 (by decide)
+  have hT1 : TblAt s1 T := hT.of_frame (by rw [r1.rd, r1.wr]) f1 fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact apart.sub_right (Offset.sub_base _ (by decide))
+  refine WP.seq (WP.mono_syms (combMultiply_ok hc1 (hws.of_rest r1) (by rw [r1.gpr _ (by decide), h14])
+    (fun i hi => by rw [r1.rd, r1.wr]; exact hin i hi) hpd hT1 (by rw [sy1, hsym]) apart)
+    fun s3 ⟨r3, f3, p3⟩ _ => ?_)
+  rw [hb1] at p3
+  have hc3 : Ctx8 b s3 := hc1.of_rest r3 (by decide)
   refine WP.mono (pointEncode_ok hc3) fun t ⟨rt, ft, vt⟩ => ⟨?_, ?_, ?_⟩
-  · exact hR2.trans ((r3.mono (by decide)).trans (rt.mono (by decide)))
-  · exact (hF2.mono (by simp)).trans (f3.trans (ft.mono (by simp)))
-  · rw [vt, p3]
+  · exact (r1.mono (by decide)).trans ((r3.mono (by decide)).trans (rt.mono (by decide)))
+  · exact (f1.mono (by simp)).trans (f3.trans (ft.mono (by simp)))
+  · rw [vt, ← encodePoint_eq, encodePoint_rep p3, Spec.Ed25519.scalarBase,
+      encodePoint_rep (pointMul_rep _ basePoint_rep)]
+
+/-- What the engine writes misses the saved registers' slots. -/
+theorem combW_saves (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1152) :
+    ∀ r ∈ combW b, Region.Disjoint ⟨b + BitVec.ofNat 64 lo, n⟩ r := by
+  intro r hr
+  have hS : SCAL = 1152 := rfl
+  have hG : SGN = 56 := rfl
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
 
 end
 
 /-- The precondition, by register: `out` in `a0`, `scalar` in `a1`, `scratch`, aligned, in `a2`. -/
 structure BasePre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .a1, 32⟩]
+  rd : s.rd = [⟨s.gpr .a1, 32⟩, TBL (s.syms combSym)]
   wr : s.wr = [⟨s.gpr .a0, 32⟩, ⟨s.gpr .a2, 8192⟩]
   al : (s.gpr .a2).toNat % 8 = 0
   out_ws : (⟨s.gpr .a0, 32⟩ : Region).Disjoint ⟨s.gpr .a2, 8192⟩
   sc_ws : (⟨s.gpr .a1, 32⟩ : Region).Disjoint ⟨s.gpr .a2, 8192⟩
+  tal : (s.syms combSym).toNat % 8 = 0
+  tfit : (s.syms combSym).toNat + 49152 ≤ 2 ^ 64
+  words : ∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q
+  tbl_ws : (TBL (s.syms combSym)).Disjoint ⟨s.gpr .a2, 8192⟩
 
 /-- The saved registers' slots. -/
 def baseList : List (Reg × Nat) := (List.range 7).map fun i => (baseSaved.getD i .s0, SAVE + 8 * i)
@@ -107,7 +124,7 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   unfold scalarBase scalarBaseSetup
   rw [baseSave_eq]
   simp only [List.cons_append, List.nil_append]
-  refine WP.seq (wp_mv fun s1 u1 => ?_)
+  refine WP.seq (WP.of_syms (wp_mv fun s1 u1 => ?_))
   have e1 : s1.gpr .a3 = b := by rw [u1.gpr, hb]
   have hsin : ∀ p ∈ baseList, InRegions s1.wr (s1.gpr .a3 + BitVec.ofNat 64 p.2) 8 := fun p hpl => by
     have := baseList_in p hpl
@@ -125,7 +142,7 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   have hrd2 : s2.rd = s1.rd := by rw [← hs2]
   have hwr2 : s2.wr = s1.wr := by rw [← hs2]
   have hsp2 : s2.sp = s1.sp := by rw [← hs2]
-  refine wp_mv fun s3 u3 => wp_mv fun s4 u4 => WP.block_nil ?_
+  refine wp_mv fun s3 u3 => wp_mv fun s4 u4 => WP.block_nil fun sy4 => ?_
   have hR4 : Rest [.a3, .s3, .s0] s s4 := by
     have h34 : Rest [.s3, .s0] s2 s4 := (u3.rest (by decide)).trans (u4.rest (by decide))
     refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
@@ -148,8 +165,21 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   have hin4 : ∀ i < 32, InRegions (s4.rd ++ s4.wr) (s.gpr .a1 + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [hR4.rd, hR4.wr, hp.rd]
-    exact in_base (List.mem_append_left _ (List.mem_singleton_self _)) (by omega) (by omega)
-  refine WP.seq (WP.mono (scalarBaseEngine_ok hc4 e14 hin4 hpd) fun s7 ⟨r7, f7, v7⟩ => ?_)
+    exact in_base (List.mem_append_left _ List.mem_cons_self) (by omega) (by omega)
+  have hws4 : WS b s4 := Covers.of_sub fun r hr => by
+    rw [List.mem_singleton.mp hr, hR4.wr]
+    exact ⟨_, hws, 0, by rw [BitVec.add_zero], by simp⟩
+  have hT4 : TblAt s4 (s.syms combSym) :=
+    ⟨hp.tal, hp.tfit, ⟨TBL (s.syms combSym), by rw [hR4.rd, hp.rd]; simp, by
+      simpa only [BitVec.add_zero] using Offset.contains_base (s.syms combSym) (d := 0) (n := 49152) (k := 49152)
+        (by omega) (by omega)⟩,
+      fun q hq => by
+        rw [hm4, ← hp.words q hq]
+        exact hf2.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega))
+          (by simp only [List.mem_singleton, forall_eq]; rw [hb]; exact hp.tbl_ws) (by decide)⟩
+  have hsym4 : s4.syms combSym = s.syms combSym := congrFun sy4 combSym
+  refine WP.seq (WP.mono (scalarBaseEngine_ok hc4 hws4 e14 hin4 hpd hT4 hsym4 (hb ▸ hp.tbl_ws))
+    fun s7 ⟨r7, f7, v7⟩ => ?_)
   rw [hsc] at v7
   -- The encoding to `out`, then the registers restored.
   unfold scalarBaseFinish
@@ -169,7 +199,7 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   have hsvw : Spill.Saved b s.gpr baseList w.mem := by
     have h7 : Spill.Saved b s.gpr baseList s7.mem := by
       rw [← hm4] at hsv
-      exact hsv.frame_in (lo := 1024) (n := 104) baseList_in f7 (mulW_saves 1024 104 (by omega) (by omega))
+      exact hsv.frame_in (lo := 1024) (n := 104) baseList_in f7 (combW_saves 1024 104 (by omega) (by omega))
     rw [← uv.mem] at h7
     exact h7.frame_in (lo := 1024) (n := 104) baseList_in hw.frame fun r hr => by
       rw [List.mem_singleton.mp hr]
@@ -190,25 +220,69 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
         hR4.gpr _ (by revert hr hm; cases r <;> decide)]
   · exact ht.gpr_of (.inl (by rw [baseList_regs]; decide))
   · rw [ht.mem]
-    have hv' : V v.mem b FR = encodeNum (Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem (s.gpr .a1) 32))
-        Spec.Ed25519.basePoint) := by rw [uv.mem]; exact v7
-    rw [out_bytes (b := b) (a := FR) (fun j hj => by rw [← Nat.zero_add (4 * j)]; exact hw.outs j hj) hv']
-    rfl
+    rw [out_bytes (b := b) (a := FR) (fun j hj => by rw [← Nat.zero_add (4 * j)]; exact hw.outs j hj) rfl,
+      uv.mem, v7]
 
-/-- `scalarBaseContract` by register. -/
+theorem combWords_length : combWords.length = 64 * 96 := by simp [combWords]
+
+theorem combWords_getD {q : Nat} (hq : q < 64 * 96) : combWords.getD q 0 = combWord q := by
+  simp [combWords, hq]
+
+/-- What `abi.withConsts [(combSym, ws)]` says of the comb's table, for words `ws` of `combWord`. -/
+theorem tbl_of_consts' {st : Nat} {s : State} {ws : List (BitVec 64)} (hl : ws.length = 64 * 96)
+    (hg : ∀ q < 64 * 96, ws.getD q 0 = combWord q) (h : ConstsOk [(combSym, ws)] st s) :
+    TBL (s.syms combSym) ∈ s.rd ∧ (s.syms combSym).toNat % 8 = 0 ∧ (s.syms combSym).toNat + 49152 ≤ 2 ^ 64 ∧
+      (∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q) ∧
+      (∀ r ∈ s.wr, (TBL (s.syms combSym)).Disjoint r) ∧
+      ∀ r ∈ RISCV64.abi.reserved st s, (TBL (s.syms combSym)).Disjoint r := by
+  have hrd := h.rd1
+  have hfit := h.fit List.mem_cons_self
+  have hal := h.aligned List.mem_cons_self
+  have hd : (∀ r ∈ s.wr, Region.Disjoint ⟨s.syms combSym, 8 * ws.length⟩ r) ∧
+      ∀ r ∈ RISCV64.abi.reserved st s, Region.Disjoint ⟨s.syms combSym, 8 * ws.length⟩ r :=
+    (h.2.2.1 _ List.mem_cons_self).2
+  rw [hl] at hrd hfit hd
+  refine ⟨hrd, by omega, hfit, fun q hq => ?_, hd.1, hd.2⟩
+  rw [h.held1 q (by rw [hl]; exact hq), hg q hq]
+
+/-- What `abi.withConsts combConsts` says of the comb's table. -/
+theorem tbl_of_consts {st : Nat} {s : State} (h : ConstsOk combConsts st s) :
+    TBL (s.syms combSym) ∈ s.rd ∧ (s.syms combSym).toNat % 8 = 0 ∧ (s.syms combSym).toNat + 49152 ≤ 2 ^ 64 ∧
+      (∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q) ∧
+      (∀ r ∈ s.wr, (TBL (s.syms combSym)).Disjoint r) ∧
+      ∀ r ∈ RISCV64.abi.reserved st s, (TBL (s.syms combSym)).Disjoint r :=
+  tbl_of_consts' combWords_length (fun _ hq => combWords_getD hq) h
+
+/-- `BasePre` on entry to a call of `vg_ed25519_scalar_base`. -/
+theorem basePre_call {t : State} {o p w T : Addr} (h0 : t.gpr .a0 = o) (h1 : t.gpr .a1 = p)
+    (h2 : t.gpr .a2 = w) (hsy : t.syms combSym = T) (al : w.toNat % 8 = 0)
+    (oW : (⟨o, 32⟩ : Region).Disjoint ⟨w, 8192⟩) (pW : (⟨p, 32⟩ : Region).Disjoint ⟨w, 8192⟩)
+    (tal : T.toNat % 8 = 0) (tfit : T.toNat + 49152 ≤ 2 ^ 64)
+    (words : ∀ q < 64 * 96, t.mem.readW (T + BitVec.ofNat 64 (8 * q)) 64 = combWord q)
+    (tW : (TBL T).Disjoint ⟨w, 8192⟩) :
+    BasePre (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]) := by
+  have e0 : (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]).gpr .a0 = o := by
+    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), h0]
+  have e1 : (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]).gpr .a1 = p := by
+    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), h1]
+  have e2 : (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]).gpr .a2 = w := by
+    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), h2]
+  have es : (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]).syms combSym = T := hsy
+  have em : (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]).mem = t.mem := rfl
+  exact ⟨by rw [e1, es]; rfl, by rw [e0, e2]; rfl, by rw [e2]; exact al, by rw [e0, e2]; exact oW,
+    by rw [e1, e2]; exact pW, by rw [es]; exact tal, by rw [es]; exact tfit,
+    fun q hq => by rw [em, es]; exact words q hq, by rw [es, e2]; exact tW⟩
+
+/-- `vg_ed25519_scalar_base`'s contract by register, an internal function's: `BasePre`. -/
 def baseRV : Contract isa where
-  pre s :=
-    let out : Region := ⟨s.gpr .a0, 32⟩
-    let sc : Region := ⟨s.gpr .a1, 32⟩
-    let ws : Region := ⟨s.gpr .a2, 8192⟩
-    s.rd = [sc] ∧ s.wr = [out, ws] ∧ (s.gpr .a2).toNat % 8 = 0 ∧ out.Disjoint ws ∧ sc.Disjoint ws
+  pre := BasePre
   post s s' := bytesAt s'.mem (s.gpr .a0) 32 = Spec.Ed25519.scalarBase (bytesAt s.mem (s.gpr .a1) 32)
-  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.sp = s₂.sp
+  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.sp = s₂.sp ∧
+    s₁.syms combSym = s₂.syms combSym
 
 theorem base_ok' (s : State) (hs : baseRV.pre s) :
     ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ baseRV.post s s' := by
-  obtain ⟨a, b, c, d, e⟩ := hs
-  obtain ⟨t, s', he, hg, hsp, hra, hb⟩ := scalarBase_ok ⟨a, b, c, d, e⟩
+  obtain ⟨t, s', he, hg, hsp, hra, hb⟩ := scalarBase_ok hs
   exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hb⟩
 
 end VG.Proof.Ed25519.RISCV64
