@@ -1,6 +1,7 @@
 module
+-- separate module: builds in parallel with the other stages of `det_ok` (`RdCorrect.lean`)
 
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdDiv
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdProd
 import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega

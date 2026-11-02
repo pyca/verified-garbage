@@ -1,6 +1,7 @@
 module
+-- separate module: builds in parallel with the other stages of `det_ok` (`RdCorrect.lean`)
 
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdBlocks
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdOps
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 import VerifiedGarbage.Proof.Framework.Block
@@ -53,17 +54,6 @@ theorem deMinus_ok (h : DS s0 true A [(true, 0), (true, 3), (false, 32)] V [] s)
   refine ⟨_, _, ht, by simp [upd, z], by simp [upd, z, deX], by simp [upd, z], by simp [upd], ?_, ?_⟩
   · simp [updV, upd, z, b2n, sB0, sB1]
   · simp [updV, upd, z, b2n, sB1, deX]
-
-/-- A narrow array, as the low half of a wide one, added to `live`. -/
-theorem DS.addLow (h : DS s0 b A live V ls s) {k : Nat} (hk : (true, k) ∈ live) (hk22 : k < 22)
-    (hl : ∀ e ∈ live, e ≠ (false, 2 * k)) :
-    DS s0 b (upd A false (2 * k) (A true k % 2 ^ (32 * ww (kK s0)))) ((false, 2 * k) :: live) V ls s :=
-  h.add (b' := false) (o := 2 * k) (by show 2 * k < 44; omega) (by rw [vw_false]; exact h.low hk) hl
-
-/-- The live arrays of the halvings: `u`, `x`, `2^k x`, zero, the multiplier (zero), one, `n`
-and one (narrow). -/
-abbrev twL : List (Bool × Nat) :=
-  [(true, 14), (true, 13), (true, 12), (true, 15), (true, 8), (true, 9), (false, 32), (false, 42)]
 
 /-- `twosInit`. -/
 theorem twosInit_ok (h : DS s0 true A [(true, 15), (true, 10), (true, 9), (false, 32)] V [sB1, sB0] s)

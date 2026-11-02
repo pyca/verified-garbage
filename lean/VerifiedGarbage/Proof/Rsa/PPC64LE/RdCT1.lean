@@ -1,4 +1,5 @@
 module
+-- separate module: builds in parallel with the correctness proofs (`RdCorrect.lean`)
 
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCorrect
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdContract

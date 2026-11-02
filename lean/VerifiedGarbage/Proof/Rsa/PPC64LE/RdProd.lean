@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdGcd
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdOps
 import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
@@ -23,14 +23,6 @@ open VG.Proof.Rsa (b2n)
 open VG.Proof.Rsa.RecoverDet (wsub wsub_neg prodStep)
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 open VG.Impl.Rsa.PPC64LE.RecoverDet (product productStep aProduct sB0 sB1 sY)
-
-/-- The arrays a product keeps, but its own: for the first, one and `n`; for the second, one,
-`n` (wide) and `b`. -/
-abbrev pR (x : Nat) : List (Bool × Nat) :=
-  if x = 12 then [(true, 9), (false, 32)] else [(true, 9), (true, 19), (false, 25)]
-
-/-- The arrays of a product: the multiplier, the multiplicand `x`, the product, zero, and `pR x`. -/
-abbrev pL (x : Nat) : List (Bool × Nat) := (true, 8) :: (true, x) :: (true, 17) :: (true, 15) :: pR x
 
 section
 variable {s0 s : State} {A : Bool → Nat → Nat} {V : Nat → Nat} {ls : List Nat}
