@@ -337,6 +337,84 @@ pub fn bench(c: &mut Criterion) {
     // Only the private operation's and key loading's pieces this run (the
     // key-generation and Miller–Rabin groups are skipped).
     const ONLY_PIECES: bool = true;
+    // Only the Montgomery multiplication and squaring variants this run.
+    const ONLY_P7: bool = true;
+    if ONLY_P7 {
+        use verified_garbage_asm_riscv64::rsa_proto7 as p7;
+        type F = unsafe extern "C" fn(*mut u64, usize, usize);
+        let ws_of = |w: usize| {
+            let mut ws = vec![0u64; 32 + 8 * (w + 2)];
+            for (i, x) in ws.iter_mut().enumerate().skip(32) {
+                *x = (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+            }
+            ws[32] |= 1;
+            ws
+        };
+        let muls: [(&str, F); 4] = [
+            ("base", p7::vg_p7_mul_base),
+            ("f", p7::vg_p7_mul_f),
+            ("u8", p7::vg_p7_mul_u8),
+            ("fu8", p7::vg_p7_mul_fu8),
+        ];
+        let sqrs: [(&str, F); 4] = [
+            ("base", p7::vg_p7_sqr_base),
+            ("f", p7::vg_p7_sqr_f),
+            ("u8", p7::vg_p7_sqr_u8),
+            ("fu8", p7::vg_p7_sqr_fu8),
+        ];
+        for (v, f) in muls {
+            let mut g = c.benchmark_group(format!("rsa_p7_mul_{v}"));
+            for w in [16usize, 32] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe { f(black_box(ws.as_mut_ptr()), w, 1) })
+                });
+            }
+            g.finish();
+        }
+        for (v, f) in sqrs {
+            let mut g = c.benchmark_group(format!("rsa_p7_sqr_{v}"));
+            for w in [16usize, 32] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe { f(black_box(ws.as_mut_ptr()), w, 1) })
+                });
+            }
+            g.finish();
+        }
+        // A modexp's multiplications at 64 w bits with 4-bit windows (no table): 64 w squarings
+        // and 16 w multiplications.
+        for ((v, fm), (_, fs)) in muls.into_iter().zip(sqrs) {
+            let mut g = c.benchmark_group(format!("rsa_p7_exp_{v}"));
+            for w in [16usize, 24, 32] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe {
+                        fs(black_box(ws.as_mut_ptr()), w, 64 * w);
+                        fm(black_box(ws.as_mut_ptr()), w, 16 * w);
+                    })
+                });
+            }
+            g.finish();
+        }
+        // 1000 iterations of 16 operations each.
+        let ks: [(&str, F); 5] = [
+            ("mul", p7::vg_p7_k_mul),
+            ("fused", p7::vg_p7_k_fused),
+            ("pair", p7::vg_p7_k_pair),
+            ("mulhu", p7::vg_p7_k_mulhu),
+            ("add", p7::vg_p7_k_add),
+        ];
+        for (v, f) in ks {
+            let mut g = c.benchmark_group(format!("rsa_p7_k_{v}"));
+            let mut ws = ws_of(4);
+            g.bench_function(BenchmarkId::new(VG, 16000), |b| {
+                b.iter(|| unsafe { f(black_box(ws.as_mut_ptr()), 3, 1000) })
+            });
+            g.finish();
+        }
+        return;
+    }
     if !ONLY_PIECES {
         // The unproven RSA key generation candidate: one accepted candidate
         // (a known prime, so all its witnesses run), and a whole prime's

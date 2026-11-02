@@ -54,6 +54,8 @@ pub mod rsa_proto4;
 pub mod rsa_proto5;
 #[rustfmt::skip]
 pub mod rsa_proto6;
+#[rustfmt::skip]
+pub mod rsa_proto7;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
