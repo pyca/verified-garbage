@@ -11450,6 +11450,7 @@ bnez a1, 2592b
 .insn 2, 0x9856
 .insn 2, 0x9856
 .insn 2, 0x9856
+.insn 2, 0x9856
 .insn 2, 0x8e3e
 .insn 4, 0x00528f33
 .insn 2, 0x0f09
