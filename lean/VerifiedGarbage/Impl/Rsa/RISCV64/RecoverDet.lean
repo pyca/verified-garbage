@@ -26,18 +26,20 @@ is that wide number.
 * `d e` by `mulMod` modulo `2^(64 W - 1)` over the `8 e_len` bits of `e`
   (wide), `x = d e - 1` and whether `d e ≥ 2`;
 * `64 w` steps that halve `u = n - 1` while it is even, and while `x` is
-  even too halve it and double `2^k x` (`u` and `x` narrow, `2^k x` wide);
+  even too halve it and double `2^k x` (`u` and `x` narrow, `2^k x` wide),
+  each a masked pass (`halfIf`, `dblIf`);
 * `gcd(u, x)` by the binary GCD (`gcdStep`: `Proof/Rsa/KeyMath.lean`'s
   `invStep` without the cofactors), `u` odd, in `32 w + 4 n_len`
-  iterations of two steps;
+  iterations of two steps, each the borrow of `u - v` (`cmpBody`), one
+  masked pass for both (`gcdBody`) and a halving;
 * `a = gcd(u, x) · 2^k x` modulo `2^(64 W)` by a schoolbook product of words
-  (`mulLow`, `mul` and `mulhu`), `m = ⌊a / n⌋`, `r = a mod n` (`Div.div`,
-  wide), and whether `m < n`;
+  (`mulLow`, `mul` and `mulhu`), `m = ⌊a / n⌋`, `r = a mod n` (`Div.divK`,
+  the quotient wide and the remainder `w + 1` words), and whether `m < n`;
 * `b - 1 = (n - r) / (m + 1)` (`Div.div`, narrow), `b² - 4 n` (`mulLow`) and
   whether `b² > 4 n`;
 * its square root, two bits at a time from the top in `32 W` steps
-  (`sqrtBody`): the wide radicand shifted left into the narrow remainder,
-  which keeps `4 y + 1` where it fits;
+  (`sqrtBody`): the wide radicand shifted left by two into the narrow
+  remainder (`shl2C`), which keeps `4 y + 1` where it fits (`trial`);
 * `p = (b + ϒ) / 2` and `q = (b - ϒ) / 2`, written under the mask of every
   check, which is returned.
 
@@ -232,24 +234,59 @@ def twosFlags : List Instr :=
   [.load .d .t5 .s11 sU, .load .d .t6 .s11 sX, .logicImm .xor .t5 .t5 1, .logicImm .xor .t6 .t6 1,
     .store .d .t5 .s11 sEven, .logic .and .t6 .t6 .t5, .store .d .t6 .s11 sBoth]
 
-/-- `[j]` halved if the slot `sl` holds 1, through `aT`. -/
-def halfIf (j sl : Nat) : Prog isa := seqs [copy aT j, .block [.li .t4 0], half aT, sel j j aT sl]
+/-- One word of `[j] := mask ? [j] / 2 : [j]` at `t0`, from the word and the next one, the mask
+in `a4`. -/
+def halfIfBody : List Instr :=
+  [.load .d .t5 .t0 0, .load .d .t6 .t0 8, .shift .srl .d .t1 .t5 1, .shift .sll .d .t6 .t6 63,
+    .logic .or .t1 .t1 .t6, .logic .xor .t1 .t1 .t5, .logic .and .t1 .t1 .a4, .logic .xor .t5 .t5 .t1,
+    .store .d .t5 .t0 0, .addi .t0 .t0 8]
+
+/-- `[j]` halved if the slot `sl` holds 1: word `w` := 0, then one pass, the mask `0 - [sl]` in `a4`. -/
+def halfIf (j sl : Nat) : Prog isa :=
+  .seq (.block (ptr .t0 j ++ [.load .d .a4 .s11 sl, .li .t4 0, .sub .a4 .t4 .a4, .shift .sll .d .t5 .s9 3,
+      .add .t5 .t0 .t5, .store .d .t4 .t5 0, mov .t3 .s9]))
+    (countLoop .t3 halfIfBody)
+
+/-- One word of `[j] := mask ? 2 [j] : [j]` at `t0`, the bit shifted out in `t4`, the mask in `a4`. -/
+def dblIfBody : List Instr :=
+  [.load .d .t5 .t0 0, .shift .sll .d .t6 .t5 1, .logic .or .t6 .t6 .t4, .shift .srl .d .t4 .t5 63,
+    .logic .xor .t6 .t6 .t5, .logic .and .t6 .t6 .a4, .logic .xor .t5 .t5 .t6, .store .d .t5 .t0 0,
+    .addi .t0 .t0 8]
+
+/-- `[j]` doubled modulo `2^(64 s9)` if the slot `sl` holds 1, in one pass. -/
+def dblIf (j sl : Nat) : Prog isa :=
+  .seq (.block (ptr .t0 j ++ [.load .d .a4 .s11 sl, .li .t4 0, .sub .a4 .t4 .a4, mov .t3 .s9]))
+    (countLoop .t3 dblIfBody)
 
 /-- A step: `u` halved if even, `x` halved and `2^k x` doubled (wide) if both are. -/
 def twosBody : Prog isa := seqs [.block twosFlags, halfIf aU sEven, halfIf aX2 sBoth, .block ctxW,
-  copy wT2 wX3, shl wT2, sel wX3 wX3 wT2 sBoth, .block (ctxw ++ next)]
+  dblIf wX3 sBoth, .block (ctxw ++ next)]
 
 def twos : Prog isa := seqs [twosInit, .loop twosBody (.nonzero .s7)]
 
 /-! ## The GCD (narrow) -/
 
+/-- One word of the borrow of `[t1] - [t2]`, in and out in `t4`. -/
+def cmpBody : List Instr :=
+  [.load .d .t5 .t1 0, .load .d .t6 .t2 0, .sltu .a4 .t5 .t6, .sub .t5 .t5 .t6, .sltu .t6 .t5 .t4,
+    .logic .or .t4 .a4 .t6, .addi .t1 .t1 8, .addi .t2 .t2 8]
+
+/-- One word of a step: with `m = (u ⊕ v) ∧ c`, `v := v ⊕ m` and `u := (u ⊕ m) - (v' ∧ odd)`, the
+borrow in `t4`, `u` at `t0` and `v` at `t1`, the masks of `c` and `odd` in `a4` and `a5`. -/
+def gcdBody : List Instr :=
+  [.load .d .t5 .t0 0, .load .d .t6 .t1 0, .logic .xor .t2 .t5 .t6, .logic .and .t2 .t2 .a4,
+    .logic .xor .t6 .t6 .t2, .logic .xor .t5 .t5 .t2, .store .d .t6 .t1 0, .logic .and .t6 .t6 .a5,
+    .sltu .t2 .t5 .t6, .sub .t5 .t5 .t6, .sltu .t6 .t5 .t4, .sub .t5 .t5 .t4, .logic .or .t4 .t2 .t6,
+    .store .d .t5 .t0 0, .addi .t0 .t0 8, .addi .t1 .t1 8]
+
 /-- A step of the binary GCD on `(u, v) = ([gU], [gV])`, `v` odd: with `odd`
 the low bit of `u` and `c = odd ∧ u < v`, `v := c ? u : v` and `u := (odd ?
 (c ? v - u : u - v) : u) / 2`. -/
 def gcdStep : Prog isa := seqs [
-  .block (bitOf sOdd gU), sub3 gT1 gU gV, .block (stBorrow sB ++ andS sC sOdd sB),
-  sub3 gT2 gV gU, sel gV gV gU sC, sel gT3 gT1 gT2 sC, sel gU gU gT3 sOdd,
-  .block [.li .t4 0], half gU]
+  .block (ptr .t1 gU ++ ptr .t2 gV ++ [.li .t4 0, mov .t3 .s9]), countLoop .t3 cmpBody,
+  .block (ptr .t0 gU ++ [.load .d .t5 .t0 0, .logicImm .and .t5 .t5 1, .li .t6 0, .sub .a5 .t6 .t5,
+    .sub .a4 .t6 .t4, .logic .and .a4 .a4 .a5] ++ ptr .t1 gV ++ [.li .t4 0, mov .t3 .s9]),
+  countLoop .t3 gcdBody, .block [.li .t4 0], half gU]
 
 /-- `gcd(x, u)` into `[gV]`, from `(x, u)`: `32 w + 4 n_len` iterations of
 two steps, `x u < 2^(64 w + 8 n_len)`; then into the low half of the wide
@@ -263,7 +300,7 @@ def gcd : Prog isa := seqs [copy gU aX2, copy gV aU,
 /-- `a = gcd(u, x) · 2^k x` modulo `2^(64 W)`; `n` into the zeroed wide
 `wN`, `m = ⌊a / n⌋` and `r = a mod n`, and whether `m < n`. -/
 def divA : Prog isa := seqs [copy (2 * wN) aN, .block ctxW, mulLow wA wG wX3,
-  div wA wR wN wDt, sub3 wT2 wA wN, .block (stBorrow sLt)]
+  .block [.addi .s8 .s9 (-2), .shift .srl .d .s8 .s8 1], divK wA wR wN .s8, sub3 wT2 wA wN, .block (stBorrow sLt)]
 
 /-! ## `b` (narrow) -/
 
@@ -285,9 +322,26 @@ def minus4n : Prog isa := seqs [sub3 aD aD aNeg1, copy (2 * wB) aD, .block ctxW,
 `[aRm]` takes them, and the root `[aSy]` a bit, one if `4 y + 1` fits in the
 remainder (narrow, but for the radicand). -/
 
-def sqrtBody : Prog isa := seqs [.block ctxW, shl wR, .block ctxw, shlC aRm, .block ctxW, shl wR,
-  .block ctxw, shlC aRm, copy aTy aSy, shl aTy, .block [.li .t4 1], shlC aTy,
-  sub3 aDf aRm aTy, .block (stBorrow sBb), sel aRm aDf aRm sBb,
+/-- One word of `[j] := 4 [j] + t4` modulo `2^(64 s9)`, the two bits shifted out in `t4`. -/
+def shl2Body : List Instr :=
+  [.load .d .t5 .t0 0, .shift .sll .d .t6 .t5 2, .logic .or .t6 .t6 .t4, .shift .srl .d .t4 .t5 62,
+    .store .d .t6 .t0 0, .addi .t0 .t0 8]
+
+/-- `[j] := 4 [j] + t4` modulo `2^(64 s9)`. -/
+def shl2C (j : Nat) : Prog isa := .seq (.block (ptr .t0 j ++ [mov .t3 .s9])) (countLoop .t3 shl2Body)
+
+/-- One word of `[t0] := [t1] - (4 [t2] + 1)`, the borrow in `t4` and the bits of `4 [t2] + 1` in `a4`. -/
+def trialBody : List Instr :=
+  [.load .d .t6 .t2 0, .shift .sll .d .t5 .t6 2, .logic .or .t5 .t5 .a4, .shift .srl .d .a4 .t6 62,
+    .load .d .t6 .t1 0, .sltu .a5 .t6 .t5, .sub .t6 .t6 .t5, .sltu .t5 .t6 .t4, .sub .t6 .t6 .t4,
+    .logic .or .t4 .a5 .t5, .store .d .t6 .t0 0, .addi .t0 .t0 8, .addi .t1 .t1 8, .addi .t2 .t2 8]
+
+/-- `[o] := [r] - (4 [y] + 1)` modulo `2^(64 s9)`, the borrow out in `t4`. -/
+def trial (o r y : Nat) : Prog isa :=
+  .seq (.block (ptrs o r y ++ [.li .t4 0, .li .a4 1, mov .t3 .s9])) (countLoop .t3 trialBody)
+
+def sqrtBody : Prog isa := seqs [.block (ctxW ++ [.li .t4 0]), shl2C wR, .block ctxw, shl2C aRm,
+  trial aDf aRm aSy, .block (stBorrow sBb), sel aRm aDf aRm sBb,
   .block [.load .d .t5 .s11 sBb, .logicImm .xor .t4 .t5 1], shlC aSy, .block next]
 
 def sqrt : Prog isa := seqs [.block ctxw,
