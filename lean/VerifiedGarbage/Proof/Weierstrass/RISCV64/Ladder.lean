@@ -125,7 +125,7 @@ theorem testBit_wordsVal (m : Mem) (base : Addr) : ∀ (n src j : Nat), j < 64 *
 
 /-- `a7 = -bit` of bit `j = s1` of the `n`-word number at `src`. -/
 theorem bitMask_ok {s : State} {base : Addr} (hw : WsReg s base) {src n j : Nat} (hj : j < 64 * n)
-    (hj64 : j < 2 ^ 58) (h1 : s.gpr .s1 = BitVec.ofNat 64 j) (hsrc : src + 8 * n ≤ 2048) (hs8 : src % 8 = 0) :
+    (hj64 : j < 2 ^ 58) (h1 : s.gpr .s1 = BitVec.ofNat 64 j) (hsrc : src + 8 * n ≤ 4096) (hs8 : src % 8 = 0) :
     WP isa (.block (bitMask src)) s fun s' =>
       s'.gpr .a7 = maskOf ((wordsVal s.mem base src n).testBit j) ∧ Rest [.t0, .t1, .t2, .a7] s s' ∧
         s'.mem = s.mem := by
@@ -144,7 +144,9 @@ theorem bitMask_ok {s : State} {base : Addr} (hw : WsReg s base) {src n j : Nat}
     omega
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   have r₃ : Rest [.t0] s s₃ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans (u₃.rest (by decide)))
-  refine wp_ld (by omega) e3 (by simp only [off]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega)
+  show WP isa (.block (ldAt .t1 .t0 src ++ [.shiftReg .srl .d .t1 .t1 ctr, .logicImm .and .t1 .t1 1,
+    .li .t2 0, .sub .a7 .t2 .t1])) s₃ _
+  refine wp_ldAt (by omega) e3 (by simp only [off]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega)
     ⟨_, List.mem_append_right _ (r₃.wr ▸ hw.wr), Offset.contains_base base (by omega) (by omega)⟩ fun s₄ u₄ => ?_
   refine wp_srlReg fun s₅ u₅ => wp_andi (imm := 1) (by decide) fun s₆ u₆ => ?_
   refine wp_li (imm := 0) (by decide) fun s₇ u₇ => wp_sub fun s₈ u₈ => WP.block_nil ⟨?_, ?_, ?_⟩
@@ -200,7 +202,7 @@ structure LadLayR (L : LadderCfg) : Prop where
   al : ∀ x ∈ ladSlots L, x % 8 = 0
   short : ∀ x ∈ ladSlots L, x + 8 * L.M.n ≤ 2048
   kal : L.bits % 8 = 0
-  kshort : L.bits + 8 * L.M.n ≤ 2048
+  kshort : L.bits + 8 * L.M.n ≤ 4096
   kw : ∀ w ∈ ladWx L, L.bits + 8 * L.M.n ≤ w.1 ∨ w.1 + w.2 ≤ L.bits
   nbits : L.nbits ≤ 64 * L.M.n
   nbits' : L.nbits < 2048
