@@ -157,7 +157,7 @@ they pass: `Q`, if failing them leads to `Q` and `main` does. -/
 theorem encBodyWith_ok {Hs : Spec.Mgf1.Hash} {main : Prog isa} {s : State} (hp : EPre Hs s) {Q : State → Prop}
     (hfail : ∀ t', EnvE s t' → Spec.Rsa.written t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
       none → ¬ 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat → Q t')
-    (hmain : ∀ t, EnvE s t → Lay t (fb s) (stackArg s 5) →
+    (hmain : ∀ t, EnvE s t → t.syms = s.syms → Lay t (fb s) (stackArg s 5) →
       Rep t.mem (fb s) (stackArg s 5) (fun o => s.mem (off (stackArg s 5) o)) (encW s) →
       2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat → WP isa main t Q) :
     WP isa (encBodyWith Hl.stream main) (allocState frameBytes s) Q := by
@@ -167,15 +167,15 @@ theorem encBodyWith_ok {Hs : Spec.Mgf1.Hash} {main : Prog isa} {s : State} (hp :
   unfold encBodyWith seqs seqs seqs
   have hW : ArgsW s (encW s) := fun _ _ => rfl
   obtain ⟨w14, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, w31⟩ := hW.w
-  refine WP.seq (WP.mono (encHead_ok (Hm := Hl.stream) hp (by omega)) fun t2 ⟨he2, L2, R2, hax2, hcf2⟩ => ?_)
+  refine WP.seq (WP.mono_syms (encHead_ok (Hm := Hl.stream) hp (by omega)) fun t2 ⟨he2, L2, R2, hax2, hcf2⟩ sy2 => ?_)
   refine WP.ite (M := isa) _ (show isa.eval .b t2 = _ from hcf2) (fun hb => ?_) (fun hb => ?_)
   · rw [decide_eq_true_eq] at hb
     exact WP.mono (encFail_ok hp he2 L2 R2 hW) fun t' ⟨he', hw'⟩ => hfail t' he' hw' (by omega)
   · rw [decide_eq_false_iff_not] at hb
-    refine WP.seq (WP.mono (wp_good (block_good _ rfl) (chkMsg_ok (Hm := Hl.stream) L2 R2 (k := (s.gpr .rcx).toNat)
+    refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (chkMsg_ok (Hm := Hl.stream) L2 R2 (k := (s.gpr .rcx).toNat)
       (mLen := (stackArg s 3).toNat) (by rw [w30, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hax2 (by omega)
       (by omega) (stackArg s 3).isLt (by omega)))
-      fun t3 ⟨⟨k3, hm3, hcf3⟩, sp3, mx3, f3⟩ => ?_)
+      fun t3 ⟨⟨k3, hm3, hcf3⟩, sp3, mx3, f3⟩ sy3 => ?_)
     have he3 : EnvE s t3 := he2.step k3.2.1 k3.2.2 sp3 (keep_cs3 k3 (by decide)) mx3 f3
     have L3 : Lay t3 (fb s) (stackArg s 5) := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
     have R3 : Rep t3.mem (fb s) (stackArg s 5) (fun o => s.mem (off (stackArg s 5) o)) (encW s) := hm3 ▸ R2
@@ -183,6 +183,6 @@ theorem encBodyWith_ok {Hs : Spec.Mgf1.Hash} {main : Prog isa} {s : State} (hp :
     · rw [decide_eq_true_eq] at hb'
       exact WP.mono (encFail_ok hp he3 L3 R3 hW) fun t' ⟨he', hw'⟩ => hfail t' he' hw' (by omega)
     · rw [decide_eq_false_iff_not] at hb'
-      exact hmain t3 he3 L3 R3 (by omega)
+      exact hmain t3 he3 (sy3.trans (sy2.trans rfl)) L3 R3 (by omega)
 
 end VG.Proof.RsaOaep.X86_64
