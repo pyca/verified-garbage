@@ -183,16 +183,6 @@ theorem setupP_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (hs : ScrL 
   have e0 := e 0; have e1 := e 1; have e24 := e 24; have e25 := e 25; have e28 := e 28
   have hsepK : ∀ i < 2 * L.pl + L.ql, ∀ x, ofs L.S x < L.qOff → off key i ≠ x := fun i hi x hx =>
     hk.sep i hi x (by simp only [Lay.bOff] at hbuf; omega_arith)
-  have hZ := hL.z256
-  have hw := hL.wp_ge
-  have hw8 := hL.wp_eq
-  have hnw := hL.nowrap
-  have hbuf := hL.buf_end
-  have hq0 := hL.qOff_eq
-  have e : ∀ j, slot L.wp j = 256 + j * (8 * (L.wp + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e24 := e 24; have e25 := e 25; have e28 := e 28
-  have hsepK : ∀ i < 2 * L.pl + L.ql, ∀ x, ofs L.S x < L.qOff → off key i ≠ x := fun i hi x hx =>
-    hk.sep i hi x (by simp only [Lay.bOff] at hbuf; omega_arith)
   unfold setupP
   refine WP.seq (WP.mono (enterP_ok hL hs hr) fun s₁ ⟨⟨p1, m1⟩, k1⟩ => ?_)
   refine WP.seq (WP.seq (WP.mono (ptrP_ok (hs.congr k1.2.2) hL (hr.keepM k1 m1)) fun s₂ ⟨⟨a7, a8, m2⟩, k2⟩ =>
