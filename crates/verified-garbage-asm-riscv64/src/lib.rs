@@ -329,6 +329,10 @@ pub mod rsa;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
+pub mod rsa_pkcs1_sig;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
 pub mod seed;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
