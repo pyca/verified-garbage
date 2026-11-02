@@ -18,9 +18,9 @@ public import VerifiedGarbage.TCB.Mem
   `dP = d mod (p - 1)`, `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p`, as
   §6.2.2's CRT format defines them (`crtValues`), and an error if `q` has no
   inverse modulo `p`.
-* `primesKey`: a private key in SP 800-56B's basic format `(n, e, d)`
-  (§6.2.2) brought to the prime-factor format: `p` and `q`, recovered by
-  Appendix C.1 (`recoverPrimes`).
+
+A private key in SP 800-56B's basic format `(n, e, d)` (§6.2.2) is brought to
+the prime-factor format by Appendix C.2 (`primesKeyDet`, `Rsa/RecoverDet.lean`).
 
 A private key in another format is brought to the CRT format once, when it
 is loaded, rather than at every operation.
@@ -45,17 +45,16 @@ operations will check instead of the above:
 
 Integers are naturals, converted from and to octet strings by OS2IP and
 I2OSP (§4), most significant octet first. The modulus `n` is given as its
-`k` octets, and so are the input and the output of the operations, and the
-factors `primesKey` recovers; `crtKey`'s values are as long as the factor
+`k` octets, and so are the input and the output of the operations;
+`crtKey`'s values are as long as the factor
 they are modulo.
 
 Every primitive checks what it can afford to: the modulus is odd and from 512
 to 8192 bits, its first octet is not zero (so `k` is its length in octets),
 the input is below `n`, and the factors' product is `n`. Nothing checks that
 `p` and `q` are prime or that the exponents match `e`. For a valid RSA key
-(distinct primes, `e·d ≡ 1 (mod λ(n))`), `primesKey` finds its factors but
-for the rare key whose factors `recoverPrimes` does not find (Appendix C.1,
-note 1), and `privateCrt` with the CRT values `crtKey` gives computes
+(distinct primes, `e·d ≡ 1 (mod λ(n))`), `privateCrt` with the CRT values
+`crtKey` gives computes
 `c^d mod n`; for any other key they compute exactly what is written here.
 
 Padding (EME-OAEP, EMSA-PSS, PKCS #1 v1.5) is a separate layer.
@@ -161,53 +160,6 @@ def splitTwos (m : Nat) : Nat × Nat :=
 termination_by m
 decreasing_by omega
 
-/-- Steps 3.b–3.f of SP 800-56B Rev. 2 Appendix C.1 for the candidate `g`:
-`some y` if they go to step 5 with `y`, `none` if they go to step 3.g. -/
-def recoverStep (n t r g : Nat) : Option Nat :=
-  let y := powMod g r n
-  -- Step 3.c.
-  if y = 1 ∨ y = n - 1 then none else squarings (t - 1) y
-where
-  /-- Step 3.d's `j` loop with `j` iterations left, then steps 3.e and 3.f. -/
-  squarings : Nat → Nat → Option Nat
-    | 0, y => if y * y % n = 1 then some y else none
-    | j + 1, y =>
-      let x := y * y % n
-      if x = 1 then some y else if x = n - 1 then none else squarings j x
-
-/-- The most candidates `recoverPrimes` tries: step 3's bound. -/
-def recoverTries : Nat := 100
-
-/-- SP 800-56B Rev. 2 Appendix C.1, `RecoverPrimeFactors(n, e, d)`: the prime
-factors `(p, q)` of `n`, with `p > q`, or `none` ("prime factors not found");
-and the number of candidates `g` tried.
-
-Step 3.a generates a random `g` in `[0, n-1]`. Here the `i`-th candidate is
-`g = i + 1`, so the result is a function of the key. For a valid key each
-candidate reveals the factors with probability at least 1/2 (Appendix C.1,
-note 1), so a key whose factors are not found is invalid but for a
-negligible fraction of keys. Step 5's `p = GCD(y - 1, n)` and `q = n / p`
-are ordered so that `p > q`, as Appendix C.2 orders them (note 3 of either
-says the order is arbitrary). -/
-def recoverPrimes (n e d : Nat) : Option (Nat × Nat) × Nat :=
-  -- Step 1: `m = de - 1`, which must be positive (for `t ≥ 1`) and even.
-  if d * e < 2 ∨ (d * e - 1) % 2 = 1 then (none, 0) else
-    -- Step 2.
-    let (t, r) := splitTwos (d * e - 1)
-    -- Step 3, for `i` from 1 to `recoverTries`.
-    let rec go : Nat → Option (Nat × Nat) × Nat
-      | 0 => (none, recoverTries)
-      | k + 1 =>
-        let i := recoverTries - k
-        match recoverStep n t r (i + 1) with
-        | some y =>
-          -- Step 5.
-          let p := Nat.gcd (y - 1) n
-          let q := n / p
-          (some (max p q, min p q), i)
-        | none => go k
-    go recoverTries
-
 /-! ## The primitives on octet strings
 
 The modulus `n` is `k` octets (OS2IP of `nB`, `k = nB.length`), and so are
@@ -244,18 +196,6 @@ def crtKey (nB pB qB dB : List Byte) : Option (List Byte × List Byte × List By
     (crtValues p q (os2ip dB)).map fun (dP, dQ, qInv) =>
       (i2osp dP pB.length, i2osp dQ qB.length, i2osp qInv pB.length)
   else none
-
-/-- The prime factors of the modulus `nB` of the private key `(nB, eB, dB)`
-(`recoverPrimes`): `some (p, q)` with `p > q`, as `k` octets each, or `none`
-if the modulus is not valid or its factors are not found; and the number of
-candidates `recoverPrimes` tried (0 if the modulus is not valid). -/
-def primesKey (nB eB dB : List Byte) : Option (List Byte × List Byte) × Nat :=
-  let n := os2ip nB
-  if modulusValid n nB.length then
-    match recoverPrimes n (os2ip eB) (os2ip dB) with
-    | (some (p, q), tries) => (some (i2osp p nB.length, i2osp q nB.length), tries)
-    | (none, tries) => (none, tries)
-  else (none, 0)
 
 /-! ## BoringSSL's checks
 

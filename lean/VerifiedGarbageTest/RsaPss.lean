@@ -10,6 +10,8 @@ import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 import VerifiedGarbageTest.Memo
 meta import VerifiedGarbageTest.Memo
+import VerifiedGarbageTest.RsaFactors
+meta import VerifiedGarbageTest.RsaFactors
 
 /-!
 # RSASSA-PSS and MGF1 specification tests
@@ -29,8 +31,8 @@ embedded in this test.
 * Signature generation (`SigGenPSS_186-3.txt`, `..._TruncatedSHAs.txt`, which
   give `d` and the salt): `encodeK` of the message's digest with the salt is
   `S^e mod n` as `k` octets, `verify` accepts `S`, `S` is `EM^d mod n`, and
-  `sign` gives `S` with the key in CRT form (its factors recovered from `d`
-  by `recoverPrimes`); it refuses a salt too long and a digest of the wrong
+  `sign` gives `S` with the key in CRT form (its factors found from `d`
+  by `RsaFactors.lean`'s test helper); it refuses a salt too long and a digest of the wrong
   length.
 -/
 
@@ -169,7 +171,7 @@ def privateKey (v : Vector) : Except String CrtKey := do
   let n := Rsa.os2ip v.n
   let k := v.n.length
   let e := Rsa.os2ip v.e
-  let (some (p, q), _) := Rsa.recoverPrimes n e (Rsa.os2ip v.d) | throw "factors not found"
+  let some (p, q) := VG.Test.Rsa.factors n e (Rsa.os2ip v.d) | throw "factors not found"
   let some (dP, dQ, qInv) := Rsa.crtValues p q (Rsa.os2ip v.d) | throw "no CRT values"
   let pB := Rsa.i2osp p k
   let qB := Rsa.i2osp q k

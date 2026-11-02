@@ -573,7 +573,7 @@ theorem rd_ct [InvLaw] : RelCT isa (fun s t => (CIn s ∧ (stackArg s 3).toNat �
 
 theorem cinD_of_pre (s : State) (h : (Spec.Rsa.recoverPrimesDetContract abi 56).pre s) :
     CIn s ∧ (stackArg s 3).toNat ≤ 8 := by
-  sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, reduceClassify, Loc.val] at h
+  sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, reduceClassify, Loc.val] at h
   obtain ⟨spLo, spHi, rd, wr, pq, pn, pe, pd, pS, pA, qn, qe, qd, qS, qA, nS, eS, dS, SA, Fp, Fq, Fn, Fe, Fd, FS, FA,
     fp, fq, fn, fe, fd, fS, valid, pl, ql, el1, el8, dl1, dl2, scr⟩ := h
   have hk := valid
@@ -587,7 +587,7 @@ theorem rd_contract_correct [InvLaw] (s : State) (h : (Spec.Rsa.recoverPrimesDet
   obtain ⟨hc, he⟩ := cinD_of_pre s h
   obtain ⟨tr, t, run, preserved, post⟩ := rd_ok hc he
   refine ⟨tr, t, run, preserved, ?_⟩
-  sig_post [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, reduceClassify, Loc.val,
+  sig_post [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, reduceClassify, Loc.val,
     State.addr]
   rw [BitVec.setWidth_append_eq_right]
   exact post
@@ -610,7 +610,7 @@ theorem rd_contract_ct [InvLaw] : ConstantTime isa (Spec.Rsa.recoverPrimesDetCon
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := cinD_of_pre s hs
   have it := (cinD_of_pre t ht).1
-  sig_pub [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, reduceClassify, Loc.val,
+  sig_pub [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, reduceClassify, Loc.val,
     State.addr] at hp
   obtain ⟨sp, bytes, p0, _, p2, _, a0, a1, a2, a3, a4, a5, a6, a7⟩ := hp
   have b3 := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 bytes
@@ -619,7 +619,7 @@ theorem rd_contract_ct [InvLaw] : ConstantTime isa (Spec.Rsa.recoverPrimesDetCon
   exact (rd_ct s t tr1 tr2 u v ⟨is, it, sp, mkPD_eq sp p0 p2 a0 a1 a2 a3 a4 a5 a6 a7 hn he, a0, a1⟩ e1 e2).1
 
 theorem rd_contract_sat : ∃ s, (Spec.Rsa.recoverPrimesDetContract abi 56).pre s := by
-  sig_implies_sat [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, reduceClassify,
+  sig_implies_sat [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, reduceClassify,
     Loc.val, State.addr]
     [rvSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid, Spec.Rsa.scratchWords]
     using rvSatState

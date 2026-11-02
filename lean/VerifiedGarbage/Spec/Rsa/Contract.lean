@@ -12,8 +12,6 @@ public import VerifiedGarbage.TCB.Artifact
   RSAEP needs (`Rsa.publicPrecompute`), to be kept with the key;
 * `vg_rsa_crt_values`: the CRT values `(dP, dQ, qInv)` of the private key
   `(p, q, d)` (`Rsa.crtKey`);
-* `vg_rsa_recover_primes`: the prime factors `(p, q)` of the modulus of the
-  private key `(n, e, d)` (`Rsa.primesKey`), for `vg_rsa_crt_values`;
 * `vg_rsa_public_precomputed_checked`: RSAEP and RSAVP1 (`Rsa.publicOp`)
   within BoringSSL's limits on the public exponent (`Rsa.publicOpChecked`),
   from the values `vg_rsa_public_precompute` computed, without computing
@@ -33,7 +31,7 @@ operation is `vg_rsa_private_checked`.
 Every number is a slice of octets, most significant first, with a length of
 its own (a `Sig` slice carries its own length). The modulus `n` is `n_len`
 octets, from 64 to 1024, and so are the input and the output, and the
-factors `vg_rsa_recover_primes` writes; `e` and `d` are at most `n_len`
+factors `vg_rsa_recover_primes_det` writes (`Rsa/RecoverDet.lean`); `e` and `d` are at most `n_len`
 octets; `p` and its values (`dP`, `qInv`) are `p_len` octets, and `q` and
 `dQ` are `q_len` octets, each below `n_len`. These are preconditions, on the
 public lengths; everything about the values is checked: the function returns
@@ -46,9 +44,7 @@ The signature determines memory validity, separation and that the pointers
 and lengths are public, through `Sig.contract`. The public key, `n` and `e`,
 is public too, and may affect timing (`leak`): an implementation may, for
 instance, branch on the bits of `e`. The input is secret (RSAEP may encrypt
-a secret), and so is every part of a private key. `vg_rsa_recover_primes`
-may also leak how many candidates it tried, which is 1 or 2 for most keys
-(SP 800-56B Rev. 2 Appendix C.1, note 1). The return
+a secret), and so is every part of a private key. The return
 value depends on secrets (whether the input is below `n`, and whether the
 private key is consistent).
 
@@ -219,59 +215,6 @@ def crtValuesApi : Api where
   safety := ["`n_len` must be in 64..=1024.", "`p_len` and `q_len` must be in 1..`n_len`.",
     "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.",
     "`d_len` must be in 1..=`n_len`."] ++ scratchSafety
-
-/-! ## `vg_rsa_recover_primes` -/
-
-/-- `vg_rsa_recover_primes(p: *mut u8, p_len: usize, q: *mut u8,
-q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize,
-d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32`. -/
-def recoverPrimesSig : Sig where
-  params := [("p", .slice true .u8 "p_len"), ("q", .slice true .u8 "q_len"),
-    ("n", .slice false .u8 "n_len"), ("e", .slice false .u8 "e_len"),
-    ("d", .slice false .u8 "d_len"), ("scratch", .slice true .u64 "scratch_len")]
-  ret := some .u32
-
-/-- The prime factors of the modulus of the private key `(n, e, d)`
-(`primesKey`). Constant time but for the public key and the number of
-candidates the recovery tried. -/
-def recoverPrimesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  recoverPrimesSig.contract A
-    (pre := fun _p pLen _q qLen _n nLen _e eLen _d dLen _scratch scratchLen _ =>
-      lenValid nLen.toNat ∧ pLen.toNat = nLen.toNat ∧ qLen.toNat = nLen.toNat ∧
-        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧ 1 ≤ dLen.toNat ∧ dLen.toNat ≤ nLen.toNat ∧
-        scratchWords nLen.toNat ≤ scratchLen.toNat)
-    (post := fun p _pLen q _qLen n nLen e eLen d dLen _scratch _scratchLen m m' r =>
-      writtenAll m' [(p, nLen.toNat), (q, nLen.toNat)] r
-        ((primesKey (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
-          (bytesAt m d dLen.toNat)).1.map fun v => [v.1, v.2]))
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _p _pLen _q _qLen n nLen e eLen d dLen _scratch _scratchLen m =>
-      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
-        [(primesKey (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
-          (bytesAt m d dLen.toNat)).2])
-
-def recoverPrimesApi : Api where
-  module := "rsa"
-  name := "vg_rsa_recover_primes"
-  sig := recoverPrimesSig
-  writeArgs := true
-  contracts := some fun A stack => recoverPrimesContract A stack
-  summary := s!"The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` \
-    (SP 800-56B Rev. 2 §6.2.2's basic format), which bring it to the prime-factor format \
-    `(p, q, d)` that `vg_rsa_crt_values` takes, recovered by SP 800-56B Rev. 2 Appendix C.1 \
-    with the candidates `g = 2, 3, …` and at most {recoverTries} of them. With the modulus \
-    `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte \
-    not zero), the public exponent `e` (`e_len` bytes) and the private exponent `d` \
-    (`d_len` bytes), both most significant first, writes `p` and `q` (`n_len` bytes each, \
-    most significant first) and returns 1; or writes zeros to both and returns 0 if `n` is \
-    not such a modulus or its factors are not found. For a valid RSA key the factors are \
-    found, but for a negligible fraction of keys.\n\n\
-    Contract: `VG.Spec.Rsa.recoverPrimesContract`. Constant time but for the public key \
-    and the number of candidates the recovery tried (1 or 2 for most keys): timing may \
-    depend on the pointers, the lengths, the contents of `n` and `e`, and that number, not \
-    otherwise on `d`."
-  safety := ["`n_len` must be in 64..=1024.", "`p_len` and `q_len` must be `n_len`.",
-    "`e_len` and `d_len` must be in 1..=`n_len`."] ++ scratchSafety
 
 /-! ## BoringSSL's checks
 
