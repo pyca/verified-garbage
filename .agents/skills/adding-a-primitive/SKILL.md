@@ -133,6 +133,8 @@ but the one it calls lacks (a variant chosen by hand, such as a field
 naming the callee, still follows the features), and each variant is used by the
 Rust code outside its tests (never emit one only a test calls). An internal
 function has no signature: its variants are the internal functions of its
-name and a suffix made of the words of other variants' suffixes
-(`vg_sha256_compress_shani`), and its CPU features are in the `_FEATURES`
-constant of its file.
+name and a suffix that is the whole suffix of a variant of a function with
+a signature on the target (`_shani`, `_avx2`, `_blake2b_avx2`, …), each
+variant of a variant adding one (`vg_keccak_f1600_x2` is not a variant of
+`vg_keccak_f1600`: no such function has a variant `_x2`), and its CPU
+features are in the `_FEATURES` constant of its file.
