@@ -101,12 +101,6 @@ theorem body_rel' {Φ : VD → State → Prop} (runB : ∀ v s, Φ v s → WP is
 
 theorem body_rel : RelCT isa (Two ΦB) Verify.body fun _ _ => True := body_rel' runB onB
 
-/-- `elemOrder`, from a level whose states are in the P space. -/
-theorem eo_rel {Φ : VD → State → Prop} (hrun : ∀ v s, Φ v s → WP isa (Code.seqL FE) s fun _ => True)
-    (hΦ : ∀ v u, Φ v u → Base v u ∧ InP u v.L) : RelCT isa (Two Φ) elemOrder fun _ _ => True :=
-  chain_start (chain_cons hrun (m := 3) (by decide) (two_taint _ (pinsE_0 hΦ) (by taint_decide))
-    (two_taint _ (pinsE_3 hΦ) (by taint_decide)))
-
 theorem K_rel : RelCT isa (Two ΦK) RK fun _ _ => True := by
   refine chain_start (chain_cons runK (m := 1) (by decide) (two_taint _ (pinsK_0 onK) (by taint_decide)) ?_)
   refine chain_cons runK (m := 28) (by decide) (two_taint _ (pinsK_1 onK) (by taint_decide)) ?_

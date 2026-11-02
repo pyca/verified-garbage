@@ -517,4 +517,10 @@ theorem pinsE_3 {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → Base v u
     have B3 := (B1.keepM k2 m2).keepM k3 m3
     exact (B3.fixB.app (fix_envP ((ip.keep k1).keep k2 |>.keep k3))).app ⟨b9, b10, trivial⟩
 
+/-- `elemOrder`, from a level whose states are in the P space. -/
+theorem eo_rel {Φ : VD → State → Prop} (hrun : ∀ v s, Φ v s → WP isa (Code.seqL FE) s fun _ => True)
+    (hΦ : ∀ v u, Φ v u → Base v u ∧ InP u v.L) : RelCT isa (Two Φ) elemOrder fun _ _ => True :=
+  chain_start (chain_cons hrun (m := 3) (by decide) (two_taint _ (pinsE_0 hΦ) (by taint_decide))
+    (two_taint _ (pinsE_3 hΦ) (by taint_decide)))
+
 end VG.Proof.Dsa.RISCV64.CT
