@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 
+-- separate module: the witnesses' arguments (`Args`) use its word masks, and the body's proof the gcd check (`gcdCheck_ok`)
+
 /-!
 # A candidate on RISC-V: `gcd(c − 1, e)`'s steps
 
