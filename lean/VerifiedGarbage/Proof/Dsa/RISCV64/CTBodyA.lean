@@ -36,6 +36,9 @@ theorem Base.q_lt {v : VD} {s : State} (h : Base v s) : v.q < 2 ^ (8 * v.L.ql) :
   have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (off v.key v.L.pl) v.L.ql)
   rwa [VG.Proof.Bignum.bytesAt_length] at this
 
+theorem Base.sg {v : VD} {s : State} (h : Base v s) (hv : VB v) : Src s v.L v.sig (2 * v.L.ql) :=
+  hv.2 ▸ h.hsg
+
 /-- The values `body` needs of the key. -/
 theorem SB.vals {v : VD} {s : State} (h : SB v s) :
     2 ≤ v.q ∧ v.q % 2 = 1 ∧ v.q < 2 ^ (8 * v.L.ql) ∧ v.qb ≤ v.L.ql ∧ 2 ≤ v.p ∧ v.p % 2 = 1 := by
@@ -55,14 +58,17 @@ structure QB (v : VD) (t : State) : Prop where
   q0 : arrQ t.mem v.L 0 = v.q
   p0 : arrP t.mem v.L 0 = v.p
   p24 : arrP t.mem v.L 24 = 2 ^ (128 * v.L.wp) % v.p
+  vb : VB v
+  ky : KY v
 
 theorem QB.stepQ {v : VD} {s t : State} (h : QB v s) (Q : QS t v.L v.key v.sig) (hrd : t.rd = s.rd)
     (hwr : t.wr = s.wr) (qb : QBuf v.L s.mem t.mem) : QB v t := by
   have hL := h.base.ok
   have hb := qb.body hL
-  exact ⟨h.base.step Q.regs hrd hwr (Kept.ofBody hL hb).out (hb.word (by decide)),
+  exact ⟨h.base.step Q.regs hrd hwr (Kept.ofBody hL hb).out (hb.word (by decide)) (hb.word (by decide)),
     by rw [Lens, hb.word (by decide)]; exact h.lens, Q,
-    (qb.arr0 hL).trans h.q0, (qb.arrP hL 0 (by decide)).trans h.p0, (qb.arrP hL 24 (by decide)).trans h.p24⟩
+    (qb.arr0 hL).trans h.q0, (qb.arrP hL 0 (by decide)).trans h.p0, (qb.arrP hL 24 (by decide)).trans h.p24,
+    h.vb, h.ky⟩
 
 theorem QB.step {v : VD} {s t : State} {rs : List Reg} (h : QB v s) (k : Keep rs s t)
     (qb : QBuf v.L s.mem t.mem) (hr : ∀ r ∈ inRegs ++ regsRegs, r ∉ rs := by decide) : QB v t :=
@@ -84,12 +90,12 @@ theorem ranges_SB {v : VD} {s : State} (h : SB v s) : WP isa ranges s fun t => Q
       (0 < sOf s.mem v.L v.sig ∧ sOf s.mem v.L v.sig < v.q))) := by
   have c := h.1.1
   have hL := c.base.ok
-  refine WP.mono (ranges_ok hL c.base.scr c.base.regs c.base.hsg) fun t ⟨⟨Q, _, a4, qa⟩, k⟩ => ?_
+  refine WP.mono (ranges_ok hL c.base.scr c.base.regs (c.base.sg h.2.2)) fun t ⟨⟨Q, _, a4, qa⟩, k⟩ => ?_
   have hb := qa.body hL
   have qb := qa.qbuf hL
   rw [c.q0] at a4
   exact ⟨⟨c.base.body k hb, by rw [Lens, hb.word (by decide)]; exact c.lens, Q, (qa.arr0 hL).trans c.q0,
-    (qb.arrP hL 0 (by decide)).trans c.p0, (qb.arrP hL 24 (by decide)).trans c.p24⟩, a4⟩
+    (qb.arrP hL 0 (by decide)).trans c.p0, (qb.arrP hL 24 (by decide)).trans c.p24, h.2.2, h.1.2.2.2⟩, a4⟩
 
 /-- The mask of r's and s's ranges is in the header's word `hMask`. -/
 abbrev MW (v : VD) (t : State) : Prop := ∃ b, word t.mem v.L.S hMask = mask b
@@ -109,9 +115,11 @@ theorem keepMask_QB {v : VD} {s : State} {b : Bool} (h : QB v s) (h4 : s.gpr .a4
     o.word (Or.inr (by decide)) (by simp only [hDigest]; omega)
   have w16 : word t.mem v.L.S hLens = word s.mem v.L.S hLens :=
     o.word (Or.inr (by decide)) (by simp only [hLens]; omega)
-  exact ⟨⟨h.base.step Q.regs k.2.1 k.2.2 o' w8, by rw [Lens, w16]; exact h.lens, Q,
+  have w24 : word t.mem v.L.S Sign.hOut = word s.mem v.L.S Sign.hOut :=
+    o.word (Or.inr (by simp only [hMask, Sign.hOut]; omega)) (by simp only [Sign.hOut]; omega)
+  exact ⟨⟨h.base.step Q.regs k.2.1 k.2.2 o' w8 w24, by rw [Lens, w16]; exact h.lens, Q,
     (keepQ_arr0 hL (mask_keepQ hL o)).trans h.q0, (mask_arrP hL o 0 (by decide)).trans h.p0,
-    (mask_arrP hL o 24 (by decide)).trans h.p24⟩, ⟨b, w.trans h4⟩⟩
+    (mask_arrP hL o 24 (by decide)).trans h.p24, h.vb, h.ky⟩, ⟨b, w.trans h4⟩⟩
 
 theorem rrQ_QB {v : VD} {s : State} (h : QB v s) (hq : 2 ≤ v.q) (hqo : v.q % 2 = 1) :
     WP isa rrQ s fun t => (QI v t ∧ QBuf v.L s.mem t.mem) ∧ Keep rrQRegs s t := by
@@ -133,7 +141,7 @@ theorem inverse_QI {v : VD} {s : State} (h : QI v s) (hq : 2 ≤ v.q) (hqo : v.q
     WP isa inverse s fun t => (QI v t ∧ arrQ t.mem v.L 4 < v.q ∧ QBuf v.L s.mem t.mem) ∧ Keep invRegs s t := by
   obtain ⟨B, I, h24⟩ := h
   have hL := B.base.ok
-  refine WP.mono (inverse_ok hL B.qs I B.base.hsg (by rw [B.q0]; exact hq) (by rw [B.q0]; exact hqo)
+  refine WP.mono (inverse_ok hL B.qs I (B.base.sg B.vb) (by rw [B.q0]; exact hq) (by rw [B.q0]; exact hqo)
     (by rw [B.q0]; exact h24)) fun t ⟨⟨Q', I', a4, kj, qa⟩, k⟩ =>
       ⟨⟨⟨B.stepQ Q' k.2.1 k.2.2 (qa.qbuf hL), I', by rw [kj 24 (by decide) (by decide)]; exact h24⟩,
         by rw [a4, B.q0]; exact Nat.mod_lt _ (by omega), qa.qbuf hL⟩, k⟩
@@ -164,7 +172,7 @@ theorem pinsB9 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) 
       (WP.seq (WP.mono (enterQ_SB (hsem _ _ h)) fun _ ⟨⟨B, iq, a7, a8⟩, _⟩ => ?_))
     have Q : QS _ _ _ _ := ⟨iq, B.scr, B.regs⟩
     have hL := B.ok
-    refine WP.seq (WP.mono (loadQ_ok (j := 5) Q hL (by decide) (B.hsg.sub (o := 0) (k := v.L.ql) (by omega))
+    refine WP.seq (WP.mono (loadQ_ok (j := 5) Q hL (by decide) ((B.sg (hsem _ _ h).2.2).sub (o := 0) (k := v.L.ql) (by omega))
       (by rw [a7, off_zero]) a8 (by omega) (by have := hL.wq_ge; omega)) fun _ ⟨⟨Q', _, _, o⟩, k⟩ => ?_)
     have qa : QArr v.L _ _ := QArr.of o (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)
     have B' := B.body k (qa.body hL)
@@ -223,7 +231,7 @@ theorem pinsB63 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u)
     have hwq := hL.wq_ge
     refine WP.seq (WP.mono (ptrS_ok B.base.scr hL B.base.regs) fun _ ⟨⟨a7, a8, m⟩, k⟩ => ?_)
     have B1 := B.stepM k m
-    refine WP.seq (WP.mono (loadQ_ok (j := 4) B1.qs hL (by decide) (B1.base.hsg.sub (o := v.L.ql) (k := v.L.ql)
+    refine WP.seq (WP.mono (loadQ_ok (j := 4) B1.qs hL (by decide) ((B1.base.sg B1.vb).sub (o := v.L.ql) (k := v.L.ql)
       (by omega)) a7 a8 (by omega) (by omega)) fun _ ⟨⟨Q2, _, _, o2⟩, k2⟩ => ?_)
     have B2 := B1.stepQ Q2 k2.2.1 k2.2.2
       (QArr.of o2 (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega) |>.qbuf hL)
@@ -292,7 +300,7 @@ theorem pinsB106 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     have B0 := B.stepM k0 m0
     obtain ⟨hin, hal⟩ := ScrL.hdr B0.base.scr hL (d := 8) (by decide) (by decide)
     refine WP.mono (WP.keep [.s7] (Q := fun u => u.gpr .s7 = v.dig ∧ u.mem = s₀.mem)
-      (by brun [hDigest, B0.base.regs.s6, hin, hal]; exact B0.base.dig8) (by rfl) (by rfl)) fun _ ⟨⟨a7, m1⟩, k1⟩ => ?_
+      (by brun [hDigest, B0.base.regs.s6, hin, hal]; exact B0.base.dig8 B0.vb.1) (by rfl) (by rfl)) fun _ ⟨⟨a7, m1⟩, k1⟩ => ?_
     exact (fix_QB (B0.stepM k1 m1)).app ⟨a7, (k1.gpr (r := .s8) (by decide)).trans a8, trivial⟩
 
 /-- `scalar`, in the Q space. -/
@@ -301,7 +309,7 @@ theorem scalar_QI {v : VD} {s : State} (h : QI v s) (h4 : arrQ s.mem v.L 4 < v.q
   obtain ⟨B, I, h24⟩ := h
   have hL := B.base.ok
   have h4' : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
-  refine WP.mono (scalar_ok hL B.qs B.base.dig8 B.lens hqb h4' (B.base.hdg.take (Nat.min_le_left _ _)))
+  refine WP.mono (scalar_ok hL B.qs (B.base.dig8 B.vb.1) B.lens hqb h4' (B.base.hdg.take (Nat.min_le_left _ _)))
     fun t ⟨⟨Q, _, o⟩, k⟩ => ?_
   have e1 := Lay.slot_eq v.L.wq 1; have e4 := Lay.slot_eq v.L.wq 4; have e6 := Lay.slot_eq v.L.wq 6
   have e7 := Lay.slot_eq v.L.wq 7; have e24 := Lay.slot_eq v.L.wq 24; have e0 := Lay.slot_eq v.L.wq 0

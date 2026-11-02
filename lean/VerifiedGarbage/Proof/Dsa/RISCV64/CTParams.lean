@@ -46,7 +46,7 @@ theorem P1.step {v : VD} {s t : State} {rs : List Reg} (h : P1 v s) (k : Keep rs
 
 /-- A pointer to the key's octets from `o`, `k` of them, then `odd`. -/
 theorem odd_P1 {v : VD} {s : State} {ptr : List Instr} {o k : Nat} (hk : 1 ≤ k ∧ k ≤ 1024)
-    (hok : o + k ≤ 3 * v.L.pl + v.L.ql)
+    (hok : o + k ≤ v.kn)
     (hptr : WP isa (.block ptr) s fun t => P1 v t ∧ t.gpr .s7 = off v.key o ∧ t.gpr .s8 = BitVec.ofNat 64 k) :
     WP isa (.block (ptr ++ odd)) s fun t => P1 v t ∧ (t.gpr .a0 = 0 ↔ Spec.Dsa.decodeBE (v.sl o k) % 2 = 1) :=
   WP.block_append (WP.mono hptr fun _ ⟨h', a7, a8⟩ =>
@@ -81,69 +81,109 @@ theorem rel_ptr {Φ : VD → State → Prop} {ptr : List Instr} (o k : VD → Na
 theorem pins_P1 {Φ : VD → State → Prop} (h : ∀ v s, Φ v s → P1 v s) : Pins Φ [.s6, .s11, .ra] :=
   pins_fix fixB (fun _ => rfl) fun v s hs => (h v s hs).1.fixB
 
-theorem relR0 : RelCT isa (Two (At ΦR0 FR0 0)) (seg FR0 0 1) fun _ _ => True :=
+section R0
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → P1 v u)
+include hΦ
+
+theorem relR0 : RelCT isa (Two (At Φ FR0 0)) (seg FR0 0 1) fun _ _ => True :=
   rel_ptr (fun _ => 0) (fun v => v.L.pl)
-    (fun _ _ h => (ptrP_P1 (semR0 (at_zero_inv h))).mono fun _ ⟨h', a7, a8⟩ => h'.1.fixB.app ⟨a7, a8, trivial⟩)
-    (pins_P1 fun _ _ h => semR0 (at_zero_inv h)) (by taint_decide) (by taint_decide)
+    (fun _ _ h => (ptrP_P1 (hΦ _ _ (at_zero_inv h))).mono fun _ ⟨h', a7, a8⟩ => h'.1.fixB.app ⟨a7, a8, trivial⟩)
+    (pins_P1 fun _ _ h => hΦ _ _ (at_zero_inv h)) (by taint_decide) (by taint_decide)
+
+end R0
 
 /-- At the branch on p's oddness. -/
 abbrev MR0 (v : VD) (u : State) : Prop := P1 v u ∧ (u.gpr .a0 = 0 ↔ v.p % 2 = 1)
 
-theorem midR0 {v : VD} {s : State} (h : ΦR0 v s) : WP isa (Code.seqL (FR0.take 1)) s (MR0 v) :=
+section R0
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → P1 v u)
+include hΦ
+
+theorem midR0 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FR0.take 1)) s (MR0 v) :=
   WP.of_flat (c := .block (ptrP ++ odd)) rfl
-    (odd_P1 (by have := (semR0 h).1.pl; omega) (by omega) (ptrP_P1 (semR0 h)))
+    (odd_P1 (by have := (hΦ _ _ h).1.pl; omega) (by have := (hΦ _ _ h).1.kn; omega) (ptrP_P1 (hΦ _ _ h)))
 
-theorem zeroR0 : ∀ v s₁ s₂, At ΦR0 FR0 1 v s₁ → At ΦR0 FR0 1 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
-  zero_at (fun v => v.p % 2 = 1) fun _ _ h => (midR0 h).mono fun _ h => h.2
+theorem zeroR0 : ∀ v s₁ s₂, At Φ FR0 1 v s₁ → At Φ FR0 1 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => v.p % 2 = 1) fun _ _ h => (midR0 hΦ h).mono fun _ h => h.2
 
-theorem semR1 {v : VD} {u : State} (h : ΦR1 v u) : P1 v u ∧ v.p % 2 = 1 :=
-  let m := at_sem (fun _ _ h => midR0 h) h.1
+theorem semR1 {v : VD} {u : State} (h : At Φ FR0 1 v u ∧ u.gpr .a0 = 0) : P1 v u ∧ v.p % 2 = 1 :=
+  let m := at_sem (fun _ _ h => midR0 hΦ h) h.1
   ⟨m.1, m.2.mp h.2⟩
 
-theorem relR1 : RelCT isa (Two (At ΦR1 FR1 0)) (seg FR1 0 1) fun _ _ => True :=
+end R0
+
+section R1
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → P1 v u ∧ v.p % 2 = 1)
+include hΦ
+
+theorem relR1 : RelCT isa (Two (At Φ FR1 0)) (seg FR1 0 1) fun _ _ => True :=
   rel_ptr (fun v => v.L.pl) (fun v => v.L.ql)
-    (fun _ _ h => (ptrQ_P1 (semR1 (at_zero_inv h)).1).mono fun _ ⟨h', a7, a8⟩ => h'.1.fixB.app ⟨a7, a8, trivial⟩)
-    (pins_P1 fun _ _ h => (semR1 (at_zero_inv h)).1) (by taint_decide) (by taint_decide)
+    (fun _ _ h => (ptrQ_P1 (hΦ _ _ (at_zero_inv h)).1).mono fun _ ⟨h', a7, a8⟩ => h'.1.fixB.app ⟨a7, a8, trivial⟩)
+    (pins_P1 fun _ _ h => (hΦ _ _ (at_zero_inv h)).1) (by taint_decide) (by taint_decide)
+
+end R1
 
 /-- At the branch on q's oddness. -/
 abbrev MR1 (v : VD) (u : State) : Prop := P1 v u ∧ v.p % 2 = 1 ∧ (u.gpr .a0 = 0 ↔ v.q % 2 = 1)
 
-theorem midR1 {v : VD} {s : State} (h : ΦR1 v s) : WP isa (Code.seqL (FR1.take 1)) s (MR1 v) :=
-  WP.of_flat (c := .block (ptrQ ++ odd)) rfl
-    ((odd_P1 (by have := (semR1 h).1.1.ql; omega) (by omega) (ptrQ_P1 (semR1 h).1)).mono
-      fun _ ⟨h', a0⟩ => ⟨h', (semR1 h).2, a0⟩)
+section R1
 
-theorem zeroR1 : ∀ v s₁ s₂, At ΦR1 FR1 1 v s₁ → At ΦR1 FR1 1 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
-  zero_at (fun v => v.q % 2 = 1) fun _ _ h => (midR1 h).mono fun _ h => h.2.2
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → P1 v u ∧ v.p % 2 = 1)
+include hΦ
+
+theorem midR1 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FR1.take 1)) s (MR1 v) :=
+  WP.of_flat (c := .block (ptrQ ++ odd)) rfl
+    ((odd_P1 (by have := (hΦ _ _ h).1.1.ql; omega) (by have := (hΦ _ _ h).1.1.kn; omega) (ptrQ_P1 (hΦ _ _ h).1)).mono
+      fun _ ⟨h', a0⟩ => ⟨h', (hΦ _ _ h).2, a0⟩)
+
+theorem zeroR1 : ∀ v s₁ s₂, At Φ FR1 1 v s₁ → At Φ FR1 1 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => v.q % 2 = 1) fun _ _ h => (midR1 hΦ h).mono fun _ h => h.2.2
+
+end R1
 
 /-- `R2`'s phase: p and q odd. -/
 abbrev SR2 (v : VD) (u : State) : Prop := P1 v u ∧ v.p % 2 = 1 ∧ v.q % 2 = 1
 
-theorem semR2 {v : VD} {u : State} (h : ΦR2 v u) : SR2 v u :=
-  let m := at_sem (fun _ _ h => midR1 h) h.1
+section R1
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → P1 v u ∧ v.p % 2 = 1)
+include hΦ
+
+theorem semR2 {v : VD} {u : State} (h : At Φ FR1 1 v u ∧ u.gpr .a0 = 0) : SR2 v u :=
+  let m := at_sem (fun _ _ h => midR1 hΦ h) h.1
   ⟨m.1, m.2.1, m.2.2.mp h.2⟩
+
+end R1
 
 /-! ## `p mod q = 1` -/
 
-theorem pinsR2_0 : Pins (At ΦR2 FR2 0) [.s6, .s11, .ra] :=
-  pins_at_fix fixB (fun _ => rfl) fun _ _ h => ⟨[], _, .block rfl, (semR2 h).1.1.fixB⟩
+section R2
 
-theorem pinsR2_2 : Pins (At ΦR2 FR2 2) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SR2 v u)
+include hΦ
+
+theorem pinsR2_0 : Pins (At Φ FR2 0) [.s6, .s11, .ra] :=
+  pins_at_fix fixB (fun _ => rfl) fun _ _ h => ⟨[], _, .block rfl, (hΦ _ _ h).1.1.fixB⟩
+
+theorem pinsR2_2 : Pins (At Φ FR2 2) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.key v.L.pl), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun _ _ h => by
-    have B := (semR2 h).1.1
+    have B := (hΦ _ _ h).1.1
     refine WP.of_flat (c := .seq (.block enterQ) (.block ptrQ)) rfl
       (WP.seq (WP.mono (enterQ_ok B.ok B.scr B.regs) fun _ ⟨⟨iq, m⟩, k⟩ => ?_))
     have B1 := B.keepM k m
     exact WP.mono (ptrQ_ok B1.scr B1.ok B1.regs) fun _ ⟨⟨a7, a8, m'⟩, k'⟩ =>
       ((B1.keepM k' m').fixB.app (fix_envQ (iq.keep k'))).app ⟨a7, a8, trivial⟩
 
-theorem pinsR2_10 : Pins (At ΦR2 FR2 10) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
+theorem pinsR2_10 : Pins (At Φ FR2 10) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s9, v.key), (.s10, BitVec.ofNat 64 v.L.pl)])
     (fun _ => rfl) fun v _ h => by
-    have B := (semR2 h).1.1
+    have B := (hΦ _ _ h).1.1
     refine WP.of_flat (c := .seq setupQ (.block ([.addi .s9 .s11 0] ++ getP .s10))) rfl
-      (WP.seq (WP.mono (setupQ_ok B.ok B.scr B.regs (B.hk.take (by omega))) fun t ⟨⟨iq, _, _, qb⟩, k⟩ => ?_))
+      (WP.seq (WP.mono (setupQ_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega))) fun t ⟨⟨iq, _, _, qb⟩, k⟩ => ?_))
     have B1 := B.body k (qb.body B.ok)
     refine WP.block_append (WP.mono (WP.keep [.s9] (Q := fun u => u.gpr .s9 = v.key ∧ u.mem = t.mem)
       (by brun [B1.regs.s11, BitVec.add_zero]) (by decide) (by rfl)) fun _ ⟨⟨a9, m⟩, k'⟩ => ?_)
@@ -152,6 +192,8 @@ theorem pinsR2_10 : Pins (At ΦR2 FR2 10) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .
       ((B2.keepM k'' m').fixB.app (fix_envQ ((iq.keep k').keep k''))).app
         ⟨(k''.gpr (r := .s9) (by decide)).trans a9, a10, trivial⟩
 
+end R2
+
 /-- q in the Q space's array 0, its word `w` zero. -/
 abbrev QF (v : VD) (u : State) : Prop :=
   arrQ u.mem v.L 0 = v.q ∧ word u.mem v.L.Q (slot v.L.wq 0 + 8 * v.L.wq) = 0
@@ -159,24 +201,38 @@ abbrev QF (v : VD) (u : State) : Prop :=
 /-- At the branch on `p mod q`. -/
 abbrev MR2 (v : VD) (u : State) : Prop := SR2 v u ∧ QF v u ∧ (u.gpr .a0 = 0 ↔ v.p % v.q = 1)
 
-theorem midR2 {v : VD} {s : State} (h : ΦR2 v s) : WP isa (Code.seqL (FR2.take 23)) s (MR2 v) := by
-  obtain ⟨⟨B, l, hsz⟩, hp, hq⟩ := semR2 h
+section R2
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SR2 v u)
+include hΦ
+
+theorem midR2 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FR2.take 23)) s (MR2 v) := by
+  obtain ⟨⟨B, l, hsz⟩, hp, hq⟩ := hΦ _ _ h
   have bd := VG.Proof.Dsa.supported_bounds hsz
-  refine WP.of_flat (c := pModQ) rfl (WP.mono (pModQ_ok B.ok B.scr B.regs (B.hk.take (by omega))
+  refine WP.of_flat (c := pModQ) rfl (WP.mono (pModQ_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega))
     (by rw [B.q]; omega)) fun t ⟨⟨_, q0, qtop, a0, qb⟩, k⟩ => ?_)
   have hb := qb.body B.ok
   exact ⟨⟨⟨B.body k hb, by rw [Lens, hb.word (by decide)]; exact l, hsz⟩, hp, hq⟩, ⟨by rw [q0, B.q], qtop⟩,
     by rw [a0, B.p, B.q]⟩
 
-theorem zeroR2 : ∀ v s₁ s₂, At ΦR2 FR2 23 v s₁ → At ΦR2 FR2 23 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
-  zero_at (fun v => v.p % v.q = 1) fun _ _ h => (midR2 h).mono fun _ h => h.2.2
+theorem zeroR2 : ∀ v s₁ s₂, At Φ FR2 23 v s₁ → At Φ FR2 23 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => v.p % v.q = 1) fun _ _ h => (midR2 hΦ h).mono fun _ h => h.2.2
+
+end R2
 
 /-- `R3`'s phase: also `p mod q = 1`, with q in the Q space. -/
 abbrev SR3 (v : VD) (u : State) : Prop := SR2 v u ∧ v.p % v.q = 1 ∧ QF v u
 
-theorem semR3 {v : VD} {u : State} (h : ΦR3 v u) : SR3 v u :=
-  let m := at_sem (fun _ _ h => midR2 h) h.1
+section R2
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SR2 v u)
+include hΦ
+
+theorem semR3 {v : VD} {u : State} (h : At Φ FR2 23 v u ∧ u.gpr .a0 = 0) : SR3 v u :=
+  let m := at_sem (fun _ _ h => midR2 hΦ h) h.1
   ⟨m.1, m.2.2.mp h.2, m.2.1⟩
+
+end R2
 
 /-! ## The P space and g -/
 
@@ -210,24 +266,31 @@ theorem setupP_SR3 {v : VD} {s : State} (h : SR3 v s) :
     WP isa setupP s fun t => CK v t ∧ Keep setupPRegs s t := by
   obtain ⟨⟨⟨B, l, hsz⟩, hp, _⟩, _, q0, qtop⟩ := h
   have bd := VG.Proof.Dsa.supported_bounds hsz
-  refine WP.mono (setupP_ok B.ok B.scr B.regs (B.hk.take (by omega)) (by rw [B.p]; omega) (by rw [B.p]; exact hp))
+  refine WP.mono (setupP_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega)) (by rw [B.p]; omega) (by rw [B.p]; exact hp))
     fun t ⟨⟨ip, p0, ptop, inv, _, p24, pb⟩, k⟩ => ⟨?_, k⟩
   have hb := pb.body B.ok
   exact ⟨B.body k hb, ip, by rw [p0, B.p], ptop, inv, by rw [p24, B.p], by rw [pb.arrQ B.ok]; exact q0,
     by rw [pb.qtop B.ok]; exact qtop, by rw [Lens, hb.word (by decide)]; exact l⟩
 
-theorem pinsR3_0 : Pins (At ΦR3 FR3 0) [.s6, .s11, .ra] :=
-  pins_at_fix fixB (fun _ => rfl) fun _ _ h => ⟨[], _, .block rfl, (semR3 h).1.1.1.fixB⟩
+section R3
 
-theorem pinsR3_2 : Pins (At ΦR3 FR3 2) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SR3 v u)
+include hΦ
+
+theorem pinsR3_0 : Pins (At Φ FR3 0) [.s6, .s11, .ra] :=
+  pins_at_fix fixB (fun _ => rfl) fun _ _ h => ⟨[], _, .block rfl, (hΦ _ _ h).1.1.1.fixB⟩
+
+theorem pinsR3_2 : Pins (At Φ FR3 2) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, v.key), (.s8, BitVec.ofNat 64 v.L.pl)])
     (fun _ => rfl) fun _ _ h => by
-    have B := (semR3 h).1.1.1
+    have B := (hΦ _ _ h).1.1.1
     refine WP.of_flat (c := .seq (.block enterP) (.block ptrP)) rfl
       (WP.seq (WP.mono (enterP_ok B.ok B.scr B.regs) fun _ ⟨⟨ip, m⟩, k⟩ => ?_))
     have B1 := B.keepM k m
     exact WP.mono (ptrP_ok B1.scr B1.ok B1.regs) fun _ ⟨⟨a7, a8, m'⟩, k'⟩ =>
       ((B1.keepM k' m').fixB.app (fix_envP (ip.keep k'))).app ⟨a7, a8, trivial⟩
+
+end R3
 
 /-- An element's pointer, in the P space. -/
 theorem ptr_CK {v : VD} {s : State} {ptr : List Instr} {o : Nat} (h : CK v s)
@@ -240,11 +303,18 @@ theorem ptr_CK {v : VD} {s : State} {ptr : List Instr} {o : Nat} (h : CK v s)
 
 theorem fix_CK {v : VD} {s : State} (h : CK v s) : Fix (fixB v ++ envP v) s := h.base.fixB.app (fix_envP h.inp)
 
-theorem pinsR3_18 : Pins (At ΦR3 FR3 18) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+section R3
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SR3 v u)
+include hΦ
+
+theorem pinsR3_18 : Pins (At Φ FR3 18) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl)])
     (fun _ => rfl) fun _ _ h =>
-    WP.of_flat (c := .seq setupP (.block ptrG)) rfl (WP.seq (WP.mono (setupP_SR3 (semR3 h)) fun _ ⟨c, _⟩ =>
+    WP.of_flat (c := .seq setupP (.block ptrG)) rfl (WP.seq (WP.mono (setupP_SR3 (hΦ _ _ h)) fun _ ⟨c, _⟩ =>
       (ptr_CK c (ptrG_ok c.base.scr c.base.ok c.base.regs)).mono fun _ ⟨⟨c', a7, a8⟩, _⟩ => (fix_CK c').app ⟨a7, a8, trivial⟩))
+
+end R3
 
 /-- An element of the key, octets from `o`: in range. -/
 abbrev ERange (v : VD) (o : Nat) : Prop :=
@@ -257,7 +327,7 @@ abbrev EOk (v : VD) (o : Nat) : Prop := ERange v o ∧ Spec.Dsa.decodeBE (v.sl o
 abbrev ME (v : VD) (o : Nat) (u : State) : Prop := Base v u ∧ InP u v.L ∧ (u.gpr .a0 = 0 ↔ ERange v o)
 
 /-- An element's pointer, its load and its range. -/
-theorem range_CK {v : VD} {s : State} {o : Nat} (h : CK v s) (ho : o + v.L.pl ≤ 3 * v.L.pl + v.L.ql)
+theorem range_CK {v : VD} {s : State} {o : Nat} (h : CK v s) (ho : o + v.L.pl ≤ v.kn)
     (h7 : s.gpr .s7 = off v.key o) (h8 : s.gpr .s8 = BitVec.ofNat 64 v.L.pl) :
     WP isa (.seq (loadArr 4) elemRange) s (ME v o) := by
   have hL := h.base.ok
@@ -283,28 +353,35 @@ theorem range_CK {v : VD} {s : State} {o : Nat} (h : CK v s) (ho : o + v.L.pl �
 
 /-- An element's pointer and `checkElem`. -/
 theorem elem_CK {v : VD} {s : State} {o : Nat} (h : CK v s) (hsz : SzOk v) (hpo : v.p % 2 = 1)
-    (ho : o + v.L.pl ≤ 3 * v.L.pl + v.L.ql)
+    (ho : o + v.L.pl ≤ v.kn)
     (h7 : s.gpr .s7 = off v.key o) (h8 : s.gpr .s8 = BitVec.ofNat 64 v.L.pl) :
     WP isa checkElem s fun t => CK v t ∧ (t.gpr .a0 = 0 ↔ EOk v o) := by
   have bd := VG.Proof.Dsa.supported_bounds hsz
-  refine WP.mono (checkElem_ok h.base.ok h.base.scr h.base.regs h.inp (h.base.hk.take (by omega))
+  refine WP.mono (checkElem_ok h.base.ok h.base.scr h.base.regs h.inp (h.base.hk.take (by have := h.base.kn; omega))
     (h.base.hk.sub ho) h7 h8 h.p0 (by omega) hpo h.inv h.p24) fun t ⟨⟨ip, a0, o', t1⟩, k⟩ =>
       ⟨h.elem k (by decide) t1 ip o', ?_⟩
   rw [a0, h.base.bytes ho, h.base.q, EOk, ERange, and_assoc]
 
+section R3
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SR3 v u)
+include hΦ
+
 /-- At the branch on g's range. -/
-theorem midEg {v : VD} {s : State} (h : ΦR3 v s) :
+theorem midEg {v : VD} {s : State} (h : Φ v s) :
     WP isa (Code.seqL (FR3.take 45)) s (ME v (v.L.pl + v.L.ql)) :=
   WP.of_flat (c := .seq setupP (.seq (.block ptrG) (.seq (loadArr 4) elemRange))) rfl
-    (WP.seq (WP.mono (setupP_SR3 (semR3 h)) fun _ ⟨c, _⟩ => WP.seq ((ptr_CK c (ptrG_ok c.base.scr c.base.ok c.base.regs)).mono
-      fun _ ⟨⟨c', a7, a8⟩, _⟩ => range_CK c' (by omega) a7 a8)))
+    (WP.seq (WP.mono (setupP_SR3 (hΦ _ _ h)) fun _ ⟨c, _⟩ => WP.seq ((ptr_CK c (ptrG_ok c.base.scr c.base.ok c.base.regs)).mono
+      fun _ ⟨⟨c', a7, a8⟩, _⟩ => range_CK c' (by have := c'.base.kn; omega) a7 a8)))
 
-theorem zeroEg : ∀ v s₁ s₂, At ΦR3 FR3 45 v s₁ → At ΦR3 FR3 45 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
-  zero_at (fun v => ERange v (v.L.pl + v.L.ql)) fun _ _ h => (midEg h).mono fun _ h => h.2.2
+theorem zeroEg : ∀ v s₁ s₂, At Φ FR3 45 v s₁ → At Φ FR3 45 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => ERange v (v.L.pl + v.L.ql)) fun _ _ h => (midEg hΦ h).mono fun _ h => h.2.2
 
-theorem semEg {v : VD} {u : State} (h : ΦEg v u) : Base v u ∧ InP u v.L :=
-  let m := at_sem (fun _ _ h => midEg h) h.1
+theorem semEg {v : VD} {u : State} (h : At Φ FR3 45 v u ∧ u.gpr .a0 = 0) : Base v u ∧ InP u v.L :=
+  let m := at_sem (fun _ _ h => midEg hΦ h) h.1
   ⟨m.1, m.2.1⟩
+
+end R3
 
 /-- The domain passed the checks. -/
 abbrev KM (v : VD) : Prop := SzOk v ∧ v.p % 2 = 1 ∧ v.q % 2 = 1 ∧ v.p % v.q = 1
@@ -312,64 +389,105 @@ abbrev KM (v : VD) : Prop := SzOk v ∧ v.p % 2 = 1 ∧ v.q % 2 = 1 ∧ v.p % v.
 /-- At the branch on g's check. -/
 abbrev MR3 (v : VD) (u : State) : Prop := CK v u ∧ KM v ∧ (u.gpr .a0 = 0 ↔ EOk v (v.L.pl + v.L.ql))
 
-theorem midR3 {v : VD} {s : State} (h : ΦR3 v s) : WP isa (Code.seqL (FR3.take 46)) s (MR3 v) := by
-  obtain ⟨⟨⟨B, l, hsz⟩, hp, hq⟩, pm, qf⟩ := semR3 h
+section R3
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SR3 v u)
+include hΦ
+
+theorem midR3 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FR3.take 46)) s (MR3 v) := by
+  obtain ⟨⟨⟨B, l, hsz⟩, hp, hq⟩, pm, qf⟩ := hΦ _ _ h
   exact WP.of_flat (c := .seq setupP (.seq (.block ptrG) checkElem)) rfl
-    (WP.seq (WP.mono (setupP_SR3 (semR3 h)) fun _ ⟨c, _⟩ => WP.seq ((ptr_CK c (ptrG_ok c.base.scr c.base.ok c.base.regs)).mono
-      fun _ ⟨⟨c', a7, a8⟩, _⟩ => (elem_CK c' hsz hp (by omega) a7 a8).mono fun _ ⟨c'', a0⟩ =>
+    (WP.seq (WP.mono (setupP_SR3 (hΦ _ _ h)) fun _ ⟨c, _⟩ => WP.seq ((ptr_CK c (ptrG_ok c.base.scr c.base.ok c.base.regs)).mono
+      fun _ ⟨⟨c', a7, a8⟩, _⟩ => (elem_CK c' hsz hp (by have := c'.base.kn; omega) a7 a8).mono fun _ ⟨c'', a0⟩ =>
         ⟨c'', ⟨hsz, hp, hq, pm⟩, a0⟩)))
 
-theorem zeroR3 : ∀ v s₁ s₂, At ΦR3 FR3 46 v s₁ → At ΦR3 FR3 46 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
-  zero_at (fun v => EOk v (v.L.pl + v.L.ql)) fun _ _ h => (midR3 h).mono fun _ h => h.2.2
+theorem zeroR3 : ∀ v s₁ s₂, At Φ FR3 46 v s₁ → At Φ FR3 46 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => EOk v (v.L.pl + v.L.ql)) fun _ _ h => (midR3 hΦ h).mono fun _ h => h.2.2
+
+end R3
 
 /-- `RK`'s phase: the domain passed the checks. -/
-abbrev SK (v : VD) (u : State) : Prop := CK v u ∧ KM v ∧ EOk v (v.L.pl + v.L.ql)
+abbrev SK (v : VD) (u : State) : Prop := CK v u ∧ KM v ∧ EOk v (v.L.pl + v.L.ql) ∧ KY v
 
-theorem semK {v : VD} {u : State} (h : ΦK v u) : SK v u :=
-  let m := at_sem (fun _ _ h => midR3 h) h.1
-  ⟨m.1, m.2.1, m.2.2.mp h.2⟩
+section R3
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SR3 v u)
+include hΦ
+
+theorem semK (hY : ∀ v u, Φ v u → KY v) {v : VD} {u : State} (h : At Φ FR3 46 v u ∧ u.gpr .a0 = 0) :
+    SK v u :=
+  let m := at_sem (fun _ _ h => midR3 hΦ h) h.1
+  ⟨m.1, m.2.1, m.2.2.mp h.2, at_pure hY h.1⟩
+
+end R3
 
 /-! ## y -/
 
-theorem pinsK_0 : Pins (At ΦK FK 0) [.s6, .s11, .ra, .a7, .s5, .t0] :=
-  pins_at_fix (fun v => fixB v ++ envP v) (fun _ => rfl) fun _ _ h => ⟨[], _, .block rfl, fix_CK (semK h).1⟩
+section K
 
-theorem pinsK_1 : Pins (At ΦK FK 1) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SK v u)
+include hΦ
+
+theorem pinsK_0 : Pins (At Φ FK 0) [.s6, .s11, .ra, .a7, .s5, .t0] :=
+  pins_at_fix (fun v => fixB v ++ envP v) (fun _ => rfl) fun _ _ h => ⟨[], _, .block rfl, fix_CK (hΦ _ _ h).1⟩
+
+theorem pinsK_1 : Pins (At Φ FK 1) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (2 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl)])
     (fun _ => rfl) fun _ _ h => WP.of_flat (c := .block ptrY) rfl
-      ((ptr_CK (semK h).1 (ptrY_ok (semK h).1.base.scr (semK h).1.base.ok (semK h).1.base.regs)).mono fun _ ⟨⟨c', a7, a8⟩, _⟩ => (fix_CK c').app ⟨a7, a8, trivial⟩)
+      ((ptr_CK (hΦ _ _ h).1 (ptrY_ok (hΦ _ _ h).1.base.scr (hΦ _ _ h).1.base.ok (hΦ _ _ h).1.base.regs)).mono fun _ ⟨⟨c', a7, a8⟩, _⟩ => (fix_CK c').app ⟨a7, a8, trivial⟩)
 
 /-- At the branch on y's range. -/
-theorem midEy {v : VD} {s : State} (h : ΦK v s) :
+theorem midEy {v : VD} {s : State} (h : Φ v s) :
     WP isa (Code.seqL (FK.take 28)) s (ME v (2 * v.L.pl + v.L.ql)) :=
   WP.of_flat (c := .seq (.block ptrY) (.seq (loadArr 4) elemRange)) rfl
-    (WP.seq ((ptr_CK (semK h).1 (ptrY_ok (semK h).1.base.scr (semK h).1.base.ok (semK h).1.base.regs)).mono fun _ ⟨⟨c', a7, a8⟩, _⟩ => range_CK c' (by omega) a7 a8))
+    (WP.seq ((ptr_CK (hΦ _ _ h).1 (ptrY_ok (hΦ _ _ h).1.base.scr (hΦ _ _ h).1.base.ok (hΦ _ _ h).1.base.regs)).mono fun _ ⟨⟨c', a7, a8⟩, _⟩ =>
+      range_CK c' (by have := (hΦ _ _ h).2.2.2; omega) a7 a8))
 
-theorem zeroEy : ∀ v s₁ s₂, At ΦK FK 28 v s₁ → At ΦK FK 28 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
-  zero_at (fun v => ERange v (2 * v.L.pl + v.L.ql)) fun _ _ h => (midEy h).mono fun _ h => h.2.2
+theorem zeroEy : ∀ v s₁ s₂, At Φ FK 28 v s₁ → At Φ FK 28 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => ERange v (2 * v.L.pl + v.L.ql)) fun _ _ h => (midEy hΦ h).mono fun _ h => h.2.2
 
-theorem semEy {v : VD} {u : State} (h : ΦEy v u) : Base v u ∧ InP u v.L :=
-  let m := at_sem (fun _ _ h => midEy h) h.1
+theorem semEy {v : VD} {u : State} (h : At Φ FK 28 v u ∧ u.gpr .a0 = 0) : Base v u ∧ InP u v.L :=
+  let m := at_sem (fun _ _ h => midEy hΦ h) h.1
   ⟨m.1, m.2.1⟩
+
+end K
 
 /-- At the branch on y's check. -/
 abbrev MK (v : VD) (u : State) : Prop := SK v u ∧ (u.gpr .a0 = 0 ↔ EOk v (2 * v.L.pl + v.L.ql))
 
-theorem midK {v : VD} {s : State} (h : ΦK v s) : WP isa (Code.seqL (FK.take 29)) s (MK v) := by
-  obtain ⟨c, km, eg⟩ := semK h
+section K
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SK v u)
+include hΦ
+
+theorem midK {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FK.take 29)) s (MK v) := by
+  obtain ⟨c, km, eg, ky⟩ := hΦ _ _ h
   exact WP.of_flat (c := .seq (.block ptrY) checkElem) rfl
     (WP.seq ((ptr_CK c (ptrY_ok c.base.scr c.base.ok c.base.regs)).mono fun _ ⟨⟨c', a7, a8⟩, _⟩ =>
-      (elem_CK c' km.1 km.2.1 (by omega) a7 a8).mono fun _ ⟨c'', a0⟩ => ⟨⟨c'', km, eg⟩, a0⟩))
+      (elem_CK c' km.1 km.2.1 (by omega) a7 a8).mono fun _ ⟨c'', a0⟩ => ⟨⟨c'', km, eg, ky⟩, a0⟩))
 
-theorem zeroK : ∀ v s₁ s₂, At ΦK FK 29 v s₁ → At ΦK FK 29 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
-  zero_at (fun v => EOk v (2 * v.L.pl + v.L.ql)) fun _ _ h => (midK h).mono fun _ h => h.2
+theorem zeroK : ∀ v s₁ s₂, At Φ FK 29 v s₁ → At Φ FK 29 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => EOk v (2 * v.L.pl + v.L.ql)) fun _ _ h => (midK hΦ h).mono fun _ h => h.2
+
+end K
+
+/-- The public data name a signature and a digest, as verification's do. -/
+abbrev VB (v : VD) : Prop := v.full = true ∧ v.sgl = 2 * v.L.ql
 
 /-- `body`'s phase: the key passed the checks. -/
-abbrev SB (v : VD) (u : State) : Prop := SK v u ∧ EOk v (2 * v.L.pl + v.L.ql)
+abbrev SB (v : VD) (u : State) : Prop := SK v u ∧ EOk v (2 * v.L.pl + v.L.ql) ∧ VB v
 
-theorem semB {v : VD} {u : State} (h : ΦB v u) : SB v u :=
-  let m := at_sem (fun _ _ h => midK h) h.1
-  ⟨m.1, m.2.mp h.2⟩
+section K
+
+variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SK v u)
+include hΦ
+
+theorem semB (hV : ∀ v u, Φ v u → VB v) {v : VD} {u : State} (h : At Φ FK 29 v u ∧ u.gpr .a0 = 0) :
+    SB v u :=
+  let m := at_sem (fun _ _ h => midK hΦ h) h.1
+  ⟨m.1, m.2.mp h.2, at_pure hV h.1⟩
+
+end K
 
 /-! ## `elemOrder` -/
 
