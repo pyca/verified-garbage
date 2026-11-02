@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.Dec.Call
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Encode
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 
@@ -54,11 +55,8 @@ theorem scIn {t : State} (hwr : t.wr = frR s :: s.wr) {a l : Nat} (ha : a + l �
   rw [hwr, h.hwr]; exact ⟨sR s, by simp, scContains h ha⟩
 
 theorem scCov {t : State} (hwr : t.wr = frR s :: s.wr) {a l : Nat} (ha : a + l ≤ scrBytes) :
-    Covers [⟨scA s a, l⟩] t.wr := by
-  rw [hwr, h.hwr]
-  exact Covers.of_mem fun r hr => by
-    rw [List.mem_singleton.mp hr]
-    exact ⟨sR s, by simp, scSub h ha⟩
+    Covers [⟨scA s a, l⟩] t.wr :=
+  Covers.one (scIn h hwr ha)
 
 theorem scByte {t : State} (hwr : t.wr = frR s :: s.wr) {a n : Nat} (ha : a + n ≤ scrBytes) :
     ∀ i < n, InRegions t.wr (scA s a + BitVec.ofNat 64 i) 1 := fun i hi => by
@@ -98,13 +96,9 @@ theorem zext_eq (x : BitVec 64) : x <<< 32 >>> 32 = zx x := by
 theorem privRel_of {s u : State} (A : AtRet s u) :
     PrivRel (s.gpr .a4).toNat (privOp s) (zx (u.gpr .a0)) (Spec.Rsa.bytesAt u.mem (s.gpr .a0) (s.gpr .a4).toNat) := by
   have := A.out
-  unfold privOut at this
+  change Spec.Rsa.writtenOutcome _ _ _ _ (privOp s) at this
   unfold PrivRel
-  revert this
-  cases privOp s with
-  | ok y => intro ⟨h1, h2⟩; exact ⟨by rw [h1]; rfl, h2⟩
-  | invalid => intro ⟨h1, h2⟩; exact ⟨by rw [h1]; rfl, h2⟩
-  | fault => intro ⟨h1, h2⟩; exact ⟨by rw [h1]; rfl, h2⟩
+  cases hc : privOp s <;> rw [hc] at this <;> exact ⟨by unfold zx; rw [this.1]; rfl, this.2⟩
 
 /-- From the call on: `Mid` with `out` and `scratch` written, `R` in `s7` and
 `EM` in `out`. -/
@@ -128,6 +122,7 @@ abbrev lowR (s : State) : Region :=
 omit h in
 theorem slot_low (s : State) {d : Nat} (hd : d + 8 ≤ frameBytes) :
     Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, 8⟩ (lowR s) := by
+  simp only [lowR]
   rw [fb_eq, BitVec.add_sub_cancel, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   exact Offset.disjoint_base _ (by omega) (by unfold frameBytes Impl.Rsa.RISCV64.Priv.frameBytes at *; omega)
 
@@ -156,9 +151,11 @@ theorem Post.keep {t w : State} (hp : Post s R EM t) {rs : List Reg} (o : Kept r
 
 /-! ## `D` -/
 
+omit h in
 theorem W_nil (s : State) : W s [] s :=
   ⟨Kept.refl _ _, (writeBytes_nil _ _).symm, by rw [List.length_nil, BitVec.add_zero]⟩
 
+omit h in
 theorem gpr_ofNat (x : BitVec 64) : x = BitVec.ofNat 64 x.toNat := by simp
 
 omit h in
@@ -177,10 +174,18 @@ theorem zeros_then (m : Mem) (q : Addr) {k : Nat} {ys : List Byte} (hl : ys.leng
     Spec.Rsa.bytesAt (writeBytes (writeBytes m q (List.replicate k 0))
       (q + BitVec.ofNat 64 (k - ys.length)) ys) q k = List.replicate (k - ys.length) 0 ++ ys := by
   have e : List.replicate k (0 : Byte) = List.replicate (k - ys.length) 0 ++ List.replicate ys.length 0 := by
-    rw [← List.replicate_append_replicate, Nat.sub_add_cancel hl]
-  have l1 : (List.replicate (k - ys.length) (0 : Byte)).length = k - ys.length := List.length_replicate ..
-  rw [e, ← writeBytes_append _ _ _ _ (by simp; omega), ← l1, writeBytes_writeBytes _ _ (by simp),
-    writeBytes_append _ _ _ _ (by simp; omega)]
+    rw [List.replicate_append_replicate, Nat.sub_add_cancel hl]
+  have e2 : writeBytes m q (List.replicate k 0) = writeBytes (writeBytes m q (List.replicate (k - ys.length) 0))
+      (q + BitVec.ofNat 64 (k - ys.length)) (List.replicate ys.length 0) := by
+    have := writeBytes_append m q (List.replicate (k - ys.length) (0 : Byte)) (List.replicate ys.length 0)
+      (by simp; omega)
+    rw [List.length_replicate] at this
+    rw [e, ← this]
+  have e3 : writeBytes (writeBytes m q (List.replicate (k - ys.length) 0)) (q + BitVec.ofNat 64 (k - ys.length)) ys =
+      writeBytes m q (List.replicate (k - ys.length) 0 ++ ys) := by
+    have := writeBytes_append m q (List.replicate (k - ys.length) (0 : Byte)) ys (by simp; omega)
+    rwa [List.length_replicate] at this
+  rw [e2, writeBytes_writeBytes _ _ (by simp), e3]
   have := Proof.RsaPkcs1Sig.bytesAt_writeBytes m q (List.replicate (k - ys.length) 0 ++ ys) (by simp; omega)
   rwa [List.length_append, List.length_replicate, Nat.sub_add_cancel hl] at this
 
