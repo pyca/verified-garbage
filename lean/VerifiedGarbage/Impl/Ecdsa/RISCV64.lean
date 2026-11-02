@@ -76,6 +76,10 @@ structure Cfg where
   (`Impl/Ecdsa/RISCV64/Verify.lean`): after the slots and the field
   functions' own space if it does not fit between them. -/
   jt : Nat := 2048
+  /-- Whether `a = -3`, so that verification's joint ladder adds by the
+  complete addition for `a = -3` (`rcb3`, `Impl/Ecdsa/RISCV64/Verify.lean`);
+  otherwise by the one for any `a` (`rcb`). -/
+  am3 : Bool := true
 
 namespace Cfg
 
