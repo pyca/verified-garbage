@@ -83,6 +83,12 @@ added. -/
 def liAt (rd : Reg) (v : Nat) : List Instr :=
   if v < 2048 then [.li rd v] else [.li rd 2047, .addi rd rd ((v - 2047 : Nat) : Int)]
 
+/-- `rd = base + v`, for `v < 6141`: from 2048 on, through `2047`s. -/
+def addAt (rd base : Reg) (v : Nat) : List Instr :=
+  if v < 2048 then [.addi rd base v]
+  else if v < 4095 then [.addi rd base 2047, .addi rd rd ((v - 2047 : Nat) : Int)]
+  else [.addi rd base 2047, .addi rd rd 2047, .addi rd rd ((v - 4094 : Nat) : Int)]
+
 /-! ## Calls -/
 
 /-- `[o] = f([a], [b])` by a call of `f`, whose code is `body`, on the

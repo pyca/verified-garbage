@@ -77,12 +77,6 @@ def Q3Z := 57
 def EX := 58
 def EY := 59
 def EZ := 60
-/-- `rd = base + v`, for `v < 6141`: from 2048 on, through `2047`s. -/
-def addAt (rd base : Reg) (v : Nat) : List Instr :=
-  if v < 2048 then [.addi rd base v]
-  else if v < 4095 then [.addi rd base 2047, .addi rd rd ((v - 2047 : Nat) : Int)]
-  else [.addi rd base 2047, .addi rd rd 2047, .addi rd rd ((v - 4094 : Nat) : Int)]
-
 namespace Cfg
 
 variable (c : Cfg) (FN : Field)
