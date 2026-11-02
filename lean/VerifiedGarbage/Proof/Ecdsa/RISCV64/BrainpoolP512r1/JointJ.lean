@@ -67,7 +67,7 @@ theorem quad2_ok (hL : Law W) {base : Addr} {s : State} (hw : WsReg s base) (hK 
       PtOk base s' (c.pt TX TY TZ) (d2 (d2 P)) := by
   have hp0 : 0 < W.p := by decide
   have hn := hw.nowrap
-  rw [VerifyJ.Cfg.quad2]
+  rw [VerifyJ.Cfg.quad2, VerifyJ.Cfg.jSlots_gen _ rfl]
   simp only [progs]
   -- The start: `a`, `b`, zero and `R`.
   have hI : Inv 8 base W.p (· ∈ wSl) [c.sl AP, c.sl B3P, c.sl ZERO, c.sl RX, c.sl RY, c.sl RZ]

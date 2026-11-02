@@ -1,6 +1,6 @@
 module
 
--- separate module: brainpoolP512r1's verification is its only importer, but it builds on both
+-- separate module: secp256k1's verification is its only importer, but it builds on both
 -- the joint ladder's proofs and the windows', which its importers need not re-check
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
 
 /-!
-# ECDSA verification over brainpoolP512r1 on RISC-V: the joint ladder with Jacobian doublings
+# ECDSA verification over secp256k1 on RISC-V: the joint ladder with Jacobian doublings
 
 `VerifyJ.Cfg.joint secp256k1 dblJ0` leaves in `R` a representative of
 `[u]G + [v]Q` (`jointJ_ok`), as the joint ladder of `Joint.lean` does: the same
@@ -63,7 +63,7 @@ theorem quad2_ok (hL : Law W) {base : Addr} {s : State} (hw : WsReg s base) (hK 
       PtOk base s' (c.pt TX TY TZ) (d2 (d2 P)) := by
   have hp0 : 0 < W.p := by decide
   have hn := hw.nowrap
-  rw [VerifyJ.Cfg.quad2]
+  rw [VerifyJ.Cfg.quad2, VerifyJ.Cfg.jSlots_gen _ rfl]
   simp only [progs]
   -- The start: `a`, `b`, zero and `R`.
   have hI : Inv 4 base W.p (· ∈ wSl) [c.sl AP, c.sl B3P, c.sl ZERO, c.sl RX, c.sl RY, c.sl RZ]

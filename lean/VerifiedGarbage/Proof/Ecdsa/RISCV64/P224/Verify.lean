@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.Sign
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.Exchange
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.P224
-import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.Joint
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.JointJ
 public import VerifiedGarbage.Spec.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.CheckVerified
@@ -25,8 +25,8 @@ import VerifiedGarbage.Proof.EcKey.PublicKey
 the group law (`verify_rv`): the setup (`vsetup_ok`: the saves, the public
 key's point and first byte, the constants, `r`, `s` and `e`, and the
 ranges of `r` and `s`), the check of the key (`check_ok`), `u` and `v`
-(`uv_ok`), `[u]G + [v]Q` by the joint ladder (`Joint.joint_ok`,
-`Proof/Ecdsa/RISCV64/P224/Joint.lean`), `x` and the comparison, and the result; the specification's
+(`uv_ok`), `[u]G + [v]Q` by the joint ladder (`JointJ.jointJ_ok`,
+`Proof/Ecdsa/RISCV64/P224/JointJ.lean`), `x` and the comparison, and the result; the specification's
 answer is `verify_eq`'s (`Proof/Ecdsa/Verify.lean`).
 -/
 
@@ -588,7 +588,7 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
     · rw [ite_eq_right h0, ite_eq_right h0, toM_mont unit, toM_mont unit]
       exact (hval h0).2.2
   -- `[u]G + [v]Q`, by the joint ladder.
-  refine WP.seq (WP.mono (VG.Proof.Ecdsa.RISCV64.P224.Joint.joint_ok hL ⟨hw₄, tc₄.ap, (e₁₄ BP (by simp)).trans bp₁,
+  refine WP.seq (WP.mono (VG.Proof.Ecdsa.RISCV64.P224.JointJ.jointJ_ok hL ⟨hw₄, tc₄.ap, (e₁₄ BP (by simp)).trans bp₁,
     tc₄.zero, tc₄.onep,
     (e₁₄ GX (by simp)).trans gx₁, (e₁₄ GY (by simp)).trans gy₁, lt_qx, lt_qy, hQ, hon⟩)
     fun s₆ ⟨K₆, U₆, pR₆⟩ => ?_)

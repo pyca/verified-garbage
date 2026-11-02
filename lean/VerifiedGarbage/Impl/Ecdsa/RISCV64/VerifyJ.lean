@@ -30,10 +30,22 @@ namespace Cfg
 
 variable (c : Cfg) (dbl : RcbSlots → Pt → Pt → List FOp)
 
+/-- The slots of `quad2`'s arithmetic: the complete addition's, with `b`
+at slot 40 for `a = -3` (`rcb3Slots`), as the windows of P-224 and P-256 have
+them. The Jacobian programs read neither `a` nor `b`, so the code is the same
+either way. -/
+def jSlots : RcbSlots := if c.am3 then c.rcb3Slots else c.rcbSlots
+
+theorem jSlots_gen (h : c.am3 = false) : jSlots c = c.rcbSlots := by
+  simp only [jSlots, h, Bool.false_eq_true, ↓reduceIte]
+
+theorem jSlots_am3 (h : c.am3 = true) : jSlots c = c.rcb3Slots := by
+  simp only [jSlots, h, ↓reduceIte]
+
 /-- `T = 4 R`: to Jacobian coordinates in `D`, two doublings between `D` and
 `T`, back to `T`, then `Y = 1` where `Z` is zero. -/
 def quad2 : Prog isa :=
-  let S := c.rcbSlots
+  let S := jSlots c
   let R := c.pt RX RY RZ
   let D := c.pt DX DY DZ
   let T := c.pt TX TY TZ
@@ -68,3 +80,17 @@ def verify (FN : Field) (checkName : String) (checkCode : Prog isa) : Prog isa :
 end Cfg
 
 end VG.Impl.Ecdsa.RISCV64.VerifyJ
+
+namespace VG.Impl.Ecdsa.RISCV64.Verify
+
+open VG.RISCV64 VG.Impl.Weierstrass
+
+/-- `vg_ecdsa_p256_verify`, its `R = 4 R` by `dblJ` (`a = -3`). -/
+def verifyP256 : Prog isa :=
+  VerifyJ.Cfg.verify p256 dblJ p256Order "vg_p256_check_point" Ecdh.RISCV64.checkP256
+
+/-- `vg_ecdsa_p384_verify`, its `R = 4 R` by `dblJ` (`a = -3`). -/
+def verifyP384 : Prog isa :=
+  VerifyJ.Cfg.verify p384 dblJ p384Order "vg_p384_check_point" Ecdh.RISCV64.checkP384
+
+end VG.Impl.Ecdsa.RISCV64.Verify
