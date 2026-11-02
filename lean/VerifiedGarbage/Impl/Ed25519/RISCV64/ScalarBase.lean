@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Verify
+public import VerifiedGarbage.Impl.Ed25519.RISCV64.Comb
 
 /-!
 # `vg_ed25519_scalar_base(out = a0, scalar = a1, scratch = a2)` on RISC-V
@@ -28,8 +29,7 @@ def baseSave : List Instr := (List.range 7).map fun i => .store .d (baseSaved.ge
 def baseRestore : List Instr := (List.range 7).map fun i => .load .d (baseSaved.getD i .s0) .a3 (SAVE + 8 * i)
 
 def scalarBaseEngine : Prog isa :=
-  .seq (.block initFields) (.seq (constPoint Spec.Ed25519.basePoint)
-    (.seq (pointFromScalar 16) pointEncode))
+  .seq (.block initFields) (.seq combMultiply pointEncode)
 
 def scalarBaseSetup : List Instr :=
   [.addi .a3 .a2 0] ++ baseSave ++ [.addi .s3 .a0 0, .addi .s0 .a1 0]
