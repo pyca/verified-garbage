@@ -1,6 +1,7 @@
 module
+-- separate module: builds in parallel with the other stages of `det_ok` (`RdCorrect.lean`)
 
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdProd
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdOps
 import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
@@ -57,10 +58,6 @@ theorem divA_ok (h : DS s0 true A (pL 12) V [sB1, sB0] s) (z : A true 15 = 0) (p
   refine WP.mono (h7.stBorrowB (sl := sLt) (by decide) b7 (by split <;> decide) (ls' := [sB1, sB0]) (by decide))
     fun t ⟨ht, _⟩ => ⟨_, _, ht.drop (by decide) (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals rd_simp [eq, er, z]
-
-/-- The arrays after the second division: `b - 1`, `-1`, zero, `n` (wide), zero (wide), one (wide)
-and `n`. -/
-abbrev dbL : List (Bool × Nat) := [(false, 25), (false, 23), (false, 30), (true, 19), (true, 15), (true, 9), (false, 32)]
 
 /-- `divB`: `n - r` by `m + 1` (narrow), and whether the remainder is zero. -/
 theorem divB_ok (h : DS s0 true A [(true, 17), (true, 18), (true, 19), (true, 15), (true, 9), (false, 32)] V
