@@ -398,7 +398,7 @@ theorem addW_ent {e : Nat} (_he : e < 16) : ∀ w ∈ addW (ent e),
     ∃ w' ∈ addsW, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
   intro w hw
   simp only [addW, rcbW_S3, ent_eq, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
-    List.mem_cons, List.not_mem_nil, or_false, own, Impl.Weierstrass.Mont.ownAt,
+    List.mem_cons, List.not_mem_nil, or_false, own, VG.Proof.Weierstrass.RISCV64.rvOwn_le (show 4 ≤ 6 by decide), Impl.Weierstrass.Mont.ownAt,
     Impl.Weierstrass.Mont.ownBytes] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals first
@@ -411,7 +411,7 @@ theorem addW_apart {e d : Nat} (_he : e < 16) (hd : d < 16) (hne : d ≠ e) (c :
     ∀ w ∈ addW (ent e), 2048 + 96 * d + 32 * c + 8 * 4 ≤ w.1 ∨ w.1 + w.2 ≤ 2048 + 96 * d + 32 * c := by
   intro w hw
   simp only [addW, rcbW_S3, ent_eq, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
-    List.mem_cons, List.not_mem_nil, or_false, own, Impl.Weierstrass.Mont.ownAt,
+    List.mem_cons, List.not_mem_nil, or_false, own, VG.Proof.Weierstrass.RISCV64.rvOwn_le (show 4 ≤ 6 by decide), Impl.Weierstrass.Mont.ownAt,
     Impl.Weierstrass.Mont.ownBytes] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega
 
