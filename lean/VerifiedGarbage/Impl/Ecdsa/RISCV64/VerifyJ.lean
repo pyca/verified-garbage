@@ -56,7 +56,7 @@ def quad2 : Prog isa :=
 /-- One step: `s1 -= 1`, the entry `E`, `T = 4 R`, `R = T + E`. -/
 def step : Prog isa :=
   .seq (.block (decCounter :: Verify.Cfg.select c)) <|
-  .seq (quad2 c dbl) (Verify.Cfg.addPt c (c.pt TX TY TZ) (c.pt EX EY EZ) (c.pt RX RY RZ))
+  .seq (quad2 c dbl) (Verify.Cfg.addPt c (c.pt TX TY TZ) (c.pt c.EX c.EY c.EZ) (c.pt RX RY RZ))
 
 /-- `R = [u]G + [v]Q`: the table, `R = O`, then the steps. -/
 def joint : Prog isa :=
