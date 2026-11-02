@@ -80,8 +80,9 @@ theorem kb_toNat : (kb s).toNat = s.sp.toNat - stackBytes := by
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat, stackBytes_eq] at *
   omega
 
+omit P in
 /-- A range at `kb s + d` in the stack the function uses. -/
-omit P in theorem kb_sub {d n : Nat} (h : d + n ≤ stackBytes) : Region.Sub ⟨kb s + BitVec.ofNat 64 d, n⟩ (kD s) :=
+theorem kb_sub {d n : Nat} (h : d + n ≤ stackBytes) : Region.Sub ⟨kb s + BitVec.ofNat 64 d, n⟩ (kD s) :=
   Offset.sub_base _ h
 
 omit P in theorem kb_contains {d n : Nat} (h : d + n ≤ stackBytes) : (kD s).Contains (kb s + BitVec.ofNat 64 d) n :=
@@ -100,14 +101,14 @@ theorem pb_off_al {d : Nat} (hd : d % 8 = 0) : (pb s + BitVec.ofNat 64 d).toNat 
 
 /-- A range of the private operation's frame, in the stack the function uses. -/
 theorem pb_sub {d n : Nat} (h : d + n ≤ privBytes) : Region.Sub ⟨pb s + BitVec.ofNat 64 d, n⟩ (kD s) := by
-  rw [pb_kb P, Offset.add_add]; exact kb_sub P (by unfold privBytes at h; rw [stackBytes_eq]; omega)
+  rw [pb_kb P, Offset.add_add]; exact kb_sub (by unfold privBytes at h; rw [stackBytes_eq]; omega)
 
 theorem PB_sub : Region.Sub (PB s) (kD s) := by
   have := pb_sub P (d := 0) (n := privBytes) (by decide); rwa [BitVec.add_zero] at this
 
 theorem fr_subD : Region.Sub (fr s) (kD s) := by
   show Region.Sub ⟨fb s, frameBytes⟩ _
-  rw [fb_kb P]; exact kb_sub P (by decide)
+  rw [fb_kb P]; exact kb_sub (by decide)
 
 omit P in theorem kR_subD : Region.Sub (kR s) (kD s) := kR_sub
 
@@ -140,6 +141,7 @@ structure AtPriv (s t : State) : Prop where
 structure Cp (s w : State) (n : Nat) (t : State) : Prop where
   keep : Kept [.t1] w t
   mem : Frame [PB s] w.mem t.mem
+  z : t.mem.readW (pb s + BitVec.ofNat 64 0) 64 = w.mem.readW (pb s + BitVec.ofNat 64 0) 64
   got : ∀ j < n, t.mem.readW (pb s + BitVec.ofNat 64 (8 * (j + 1))) 64 = stackArg s j
 
 section
@@ -171,14 +173,16 @@ theorem copy_step {w : State} (hw0 : w.gpr .t0 = pb s) (hw6 : w.gpr .t6 = s.sp) 
   refine wp_argD P (j := n) (by omega) (by rw [hc.keep.get .t6, hw6]) (hc.keep.rd.trans hrd) hmt
     (fun t₁ o₁ e₁ => ?_) (by omega)
   refine wp_sd (a := pb s + BitVec.ofNat 64 (8 * (n + 1))) (by rw [o₁.get .t0, hc.keep.get .t0, hw0])
-    (pb_off_al P (by omega) (by unfold privBytes; omega))
-    (by rw [o₁.wr, hc.keep.wr, hwr]; exact pb_in P (by unfold privBytes; omega)) (fun t₂ m₂ => wp_nil ?_)
+    (pb_off_al P (by omega))
+    (by rw [o₁.wr, hc.keep.wr, hwr]; exact pb_in (by unfold privBytes; omega)) (fun t₂ m₂ => wp_nil ?_)
     (by omega)
   rw [e₁] at m₂
-  refine ⟨(hc.keep.trans (o₁.keep.trans m₂.keep)).mono, ?_, fun j hj => ?_⟩
+  refine ⟨(hc.keep.trans (o₁.keep.trans m₂.keep)).mono, ?_, ?_, fun j hj => ?_⟩
   · rw [m₂.mem, o₁.mem]
     exact hc.mem.writeW (List.mem_singleton_self _) _ (Offset.contains_base (pb s) (d := 8 * (n + 1)) (n := 8)
       (k := privBytes) (by unfold privBytes; omega) (by omega))
+  · rw [m₂.mem, o₁.mem, Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
+    exact hc.z
   · rw [m₂.mem, o₁.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
     · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
@@ -189,7 +193,179 @@ theorem copies_ok {w : State} (hw0 : w.gpr .t0 = pb s) (hw6 : w.gpr .t6 = s.sp) 
     (hwr : w.wr = PB s :: fr s :: s.wr) (hm : Frame [kD s] s.mem w.mem) :
     WP isa (.block ((List.range 9).flatMap copyArg)) w (Cp s w 9) :=
   wp_range_flatMap (M := isa) (Cp s w) (fun _ _ hn hc => copy_step P hw0 hw6 hrd hwr hm hn hc) 9
-    (Nat.le_refl _) w ⟨Kept.refl _ _, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+    (Nat.le_refl _) w ⟨Kept.refl _ _, Frame.refl _ _, rfl, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+
+
+/-- Our stack arguments' base, from the private operation's frame. -/
+theorem pb_top : pb s + BitVec.ofNat 64 (privBytes + frameBytes) = s.sp := by
+  have := P.sp1
+  apply BitVec.eq_of_toNat_eq
+  simp only [pb, fb, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, stackBytes_eq, frameBytes,
+    privBytes] at *
+  omega
+
+/-- The private operation's part of `scratch`, in words. -/
+theorem sl_sub : stackArg s 14 - BitVec.ofNat 64 1024 = BitVec.ofNat 64 ((stackArg s 14).toNat - 1024) := by
+  have := scLen P; unfold oRsa at this
+  have := (stackArg s 14).isLt
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
+  omega
+
+/-- Our frame's slots, apart from the private operation's frame. -/
+theorem slots_PB : Region.Disjoint ⟨fb s + BitVec.ofNat 64 Proof.RsaOaep.RISCV64.oSv, frameBytes -
+    Proof.RsaOaep.RISCV64.oSv⟩ (PB s) := by
+  show Region.Disjoint _ ⟨pb s, privBytes⟩
+  rw [fb_kb P, Offset.add_add, pb_kb P]
+  exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
+
+theorem privArgs_ok {t : State} (E : Entered s t) :
+    WP isa (.block privArgs) (allocd privBytes t) (AtPriv s) := by
+  have hsp : t.sp = fb s := E.sv.sp
+  have usp : (allocd privBytes t).sp = pb s := by show t.sp - _ = _; rw [hsp]
+  have uwr : (allocd privBytes t).wr = PB s :: fr s :: s.wr := by
+    show (⟨t.sp - _, _⟩ : Region) :: t.wr = _; rw [hsp, E.sv.wr]
+  have urd : (allocd privBytes t).rd = s.rd := E.rd
+  have hmD : Frame [kD s] s.mem t.mem := E.mem.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, kR_subD⟩
+  have inD : ∀ {d : Nat}, d + 8 ≤ privBytes → (kD s).Contains (pb s + BitVec.ofNat 64 d) 8 := fun {d} hd => by
+    rw [pb_kb P, Offset.add_add]; exact kb_contains (by unfold privBytes at hd; rw [stackBytes_eq]; omega)
+  have inPB : ∀ {d : Nat}, d + 8 ≤ privBytes → (PB s).Contains (pb s + BitVec.ofNat 64 d) 8 := fun {d} hd =>
+    Offset.contains_base _ hd (by unfold privBytes at hd; omega)
+  unfold privArgs
+  simp only [List.cons_append, List.nil_append]
+  refine wp_addSp (imm := 0) (fun w₁ o₁ e₁ => wp_addSp (imm := privBytes + frameBytes) (fun w₂ o₂ e₂ => ?_)
+    (by decide)) (by decide)
+  rw [usp] at e₁
+  have O₂ : Only [.t0, .t6] (allocd privBytes t) w₂ := o₁.trans o₂
+  have g0 : w₂.gpr .t0 = pb s := by rw [o₂.get .t0, e₁, BitVec.add_zero]
+  have g6 : w₂.gpr .t6 = s.sp := by rw [e₂, o₁.sp, usp, pb_top P]
+  refine wp_sd (a := pb s + BitVec.ofNat 64 0) (by rw [g0]) (pb_off_al P (by decide))
+    (by rw [O₂.wr, uwr]; exact pb_in (by decide)) (fun w₃ m₃ => ?_) (by decide)
+  have hw0 : w₃.gpr .t0 = pb s := by rw [m₃.gpr]; exact g0
+  have hw6 : w₃.gpr .t6 = s.sp := by rw [m₃.gpr]; exact g6
+  have hrd : w₃.rd = s.rd := m₃.rd.trans (O₂.rd.trans urd)
+  have hwr : w₃.wr = PB s :: fr s :: s.wr := m₃.wr.trans (O₂.wr.trans uwr)
+  have hm₃ : Frame [kD s] s.mem w₃.mem := by
+    rw [m₃.mem, O₂.mem]; exact hmD.writeW (List.mem_singleton_self _) _ (inD (by decide))
+  have pb₃ : Frame [PB s] t.mem w₃.mem := by
+    rw [m₃.mem, O₂.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (inPB (by decide))
+  rw [WP.block_append_iff]
+  refine WP.mono (copies_ok P hw0 hw6 hrd hwr hm₃) fun v hc => ?_
+  have v0 : v.gpr .t0 = pb s := by rw [hc.keep.get .t0, hw0]
+  have v6 : v.gpr .t6 = s.sp := by rw [hc.keep.get .t6, hw6]
+  have vrd : v.rd = s.rd := hc.keep.rd.trans hrd
+  have vwr : v.wr = PB s :: fr s :: s.wr := hc.keep.wr.trans hwr
+  have hmv : Frame [kD s] s.mem v.mem := hm₃.trans (hc.mem.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, PB_sub P⟩)
+  have gv : ∀ r ∈ [Reg.s0, .s1, .s2, .s3, .a3, .a5, .a6, .a7], v.gpr r = t.gpr r := fun r hr => by
+    rw [hc.keep.gpr r (by revert r; decide), m₃.gpr, O₂.gpr r (by revert r; decide)]; rfl
+  refine wp_li (imm := 1024) (by decide) fun x₁ o₁ e₁ => wp_sll (sh := 3) (fun x₂ o₂ e₂ =>
+    wp_add fun x₃ o₃ e₃ => ?_) (by decide)
+  have O₃ : Only [.t1] v x₃ := (o₁.trans (o₂.trans o₃)).mono
+  refine wp_sd (a := pb s + BitVec.ofNat 64 80) (by rw [O₃.get .t0, v0]) (pb_off_al P (by decide))
+    (by rw [O₃.wr, vwr]; exact pb_in (by decide)) (fun x₄ m₄ => ?_) (by decide)
+  have hm₄ : Frame [kD s] s.mem x₄.mem := by
+    rw [m₄.mem, O₃.mem]; exact hmv.writeW (List.mem_singleton_self _) _ (inD (by decide))
+  refine wp_argD P (j := 14) (by decide) (by rw [m₄.gpr, O₃.get .t6, v6]) (m₄.rd.trans (O₃.rd.trans vrd)) hm₄
+    (fun x₅ o₅ e₅ => wp_subi (imm := 1024) (fun x₆ o₆ e₆ => ?_) (by decide))
+  have K₆ : Kept [.t1] v x₆ := (O₃.keep.trans (m₄.keep.trans (o₅.keep.trans o₆.keep))).mono
+  refine wp_sd (a := pb s + BitVec.ofNat 64 88) (by rw [K₆.get .t0, v0]) (pb_off_al P (by decide))
+    (by rw [K₆.wr, vwr]; exact pb_in (by decide)) (fun x₇ m₇ => ?_) (by decide)
+  have K₇ : Kept [.t1] v x₇ := (K₆.trans m₇.keep).mono
+  have hm₇ : Frame [kD s] s.mem x₇.mem := by
+    rw [m₇.mem, (o₅.trans o₆).mem]; exact hm₄.writeW (List.mem_singleton_self _) _ (inD (by decide))
+  refine wp_mov fun x₈ o₈ e₈ => wp_mov fun x₉ o₉ e₉ => wp_mov fun x₁₀ o₁₀ e₁₀ => wp_mov fun x₁₁ o₁₁ e₁₁ => ?_
+  have O₁₁ : Only [.a2, .a3, .a4, .a5] x₇ x₁₁ := (o₈.trans (o₉.trans (o₁₀.trans o₁₁))).mono
+  refine wp_argD P (j := 11) (by decide) (by rw [O₁₁.get .t6, K₇.get .t6, v6])
+    (O₁₁.rd.trans (K₇.rd.trans vrd)) (by rw [O₁₁.mem]; exact hm₇) fun x₁₂ o₁₂ e₁₂ => ?_
+  refine wp_mov fun x₁₃ o₁₃ e₁₃ => wp_addi (imm := Impl.RsaOaep.RISCV64.oEm) (fun x₁₄ o₁₄ e₁₄ =>
+    wp_mov fun x₁₅ o₁₅ e₁₅ => wp_nil ?_) (by decide)
+  have T : Only [.a2, .a3, .a4, .a5, .a6, .a7, .a0, .a1] x₇ x₁₅ :=
+    (O₁₁.trans (o₁₂.trans (o₁₃.trans (o₁₄.trans o₁₅)))).mono
+  have K : Kept [.t1, .a2, .a3, .a4, .a5, .a6, .a7, .a0, .a1] v x₁₅ := (K₇.trans T.keep).mono
+  have ks : ∀ r ∈ [Reg.s0, .s1, .s2, .s3], x₁₅.gpr r = t.gpr r := fun r hr => by
+    rw [K.gpr r (by revert r; decide), gv r (by revert r; decide)]
+  have hpb : Frame [PB s] t.mem x₁₅.mem := by
+    rw [T.mem, m₇.mem, (o₅.trans o₆).mem, m₄.mem, O₃.mem]
+    exact ((pb₃.trans hc.mem).writeW (List.mem_singleton_self _) _ (inPB (by decide))).writeW
+      (List.mem_singleton_self _) _ (inPB (by decide))
+  have hfm : x₁₅.mem = (v.mem.writeW (pb s + BitVec.ofNat 64 80) (x₃.gpr .t1)).writeW
+      (pb s + BitVec.ofNat 64 88) (x₆.gpr .t1) := by
+    rw [T.mem, m₇.mem, (o₅.trans o₆).mem, m₄.mem, O₃.mem]
+  have t80 : x₃.gpr .t1 = psa s 10 := by
+    rw [e₃, o₂.get .s0, o₁.get .s0, e₂, e₁, gv .s0 (by decide), E.s0]
+    show _ = Sd s + BitVec.ofNat 64 8192
+    congr 1
+  have t88 : x₆.gpr .t1 = psa s 11 := by rw [e₆, e₅]; exact sl_sub P
+  have r2 : ∀ d, d + 8 ≤ 80 → ((v.mem.writeW (pb s + BitVec.ofNat 64 80) (x₃.gpr .t1)).writeW
+      (pb s + BitVec.ofNat 64 88) (x₆.gpr .t1)).readW (pb s + BitVec.ofNat 64 d) 64 =
+      v.mem.readW (pb s + BitVec.ofNat 64 d) 64 := fun d hd => by
+    rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
+  have z0 : v.mem.readW (pb s + BitVec.ofNat 64 0) 64 = psa s 0 := by
+    rw [hc.z, m₃.mem, Mem.readW_writeW_self64, O₂.get .a7]; exact E.args .a7 (by decide)
+  have hg := hc.got
+  refine {
+    sp := K.sp.trans (hc.keep.sp.trans (m₃.sp.trans (O₂.sp.trans usp)))
+    rd := K.rd.trans vrd
+    wr := K.wr.trans vwr
+    mem := hmD.trans (hpb.sub fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, PB_sub P⟩)
+    sv := E.sv.sv.frame_in (lo := Proof.RsaOaep.RISCV64.oSv) (n := frameBytes - Proof.RsaOaep.RISCV64.oSv)
+        (fun p hp => by
+          have := Proof.RsaOaep.RISCV64.saved_offs p hp; unfold frameBytes Proof.RsaOaep.RISCV64.oSv at *; omega)
+        hpb
+      fun r hr => by rw [List.mem_singleton.mp hr]; exact slots_PB P
+    s0 := (ks .s0 (by decide)).trans E.s0
+    s1 := (ks .s1 (by decide)).trans E.s1
+    s2 := (ks .s2 (by decide)).trans E.s2
+    s3 := (ks .s3 (by decide)).trans E.s3
+    a0 := by
+      rw [o₁₅.get .a0, e₁₄, o₁₃.get .s0, o₁₂.get .s0, O₁₁.get .s0, K₇.get .s0, gv .s0 (by decide), E.s0]
+      exact BitVec.add_zero _
+    a1 := by
+      rw [e₁₅, o₁₄.get .s1, o₁₃.get .s1, o₁₂.get .s1, O₁₁.get .s1, K₇.get .s1, gv .s1 (by decide), E.s1]
+    a2 := by
+      rw [(o₉.trans (o₁₀.trans (o₁₁.trans (o₁₂.trans (o₁₃.trans (o₁₄.trans o₁₅)))))).get .a2, e₈,
+        K₇.get .a3, gv .a3 (by decide)]
+      exact E.args .a3 (by decide)
+    a3 := by
+      rw [(o₁₀.trans (o₁₁.trans (o₁₂.trans (o₁₃.trans (o₁₄.trans o₁₅))))).get .a3, e₉, o₈.get .s1, K₇.get .s1,
+        gv .s1 (by decide), E.s1]
+    a4 := by
+      rw [(o₁₁.trans (o₁₂.trans (o₁₃.trans (o₁₄.trans o₁₅)))).get .a4, e₁₀, o₉.get .a5, o₈.get .a5,
+        K₇.get .a5, gv .a5 (by decide)]
+      exact E.args .a5 (by decide)
+    a5 := by
+      rw [(o₁₂.trans (o₁₃.trans (o₁₄.trans o₁₅))).get .a5, e₁₁, o₁₀.get .a6, o₉.get .a6, o₈.get .a6,
+        K₇.get .a6, gv .a6 (by decide)]
+      exact E.args .a6 (by decide)
+    a6 := by rw [(o₁₃.trans (o₁₄.trans o₁₅)).get .a6, e₁₂]
+    a7 := by
+      rw [(o₁₄.trans o₁₅).get .a7, e₁₃, o₁₂.get .s1, O₁₁.get .s1, K₇.get .s1, gv .s1 (by decide), E.s1]
+    psa := fun i hi => by
+      rw [hfm]
+      match i, hi with
+      | 0, _ => exact (r2 _ (by decide)).trans z0
+      | 1, _ => exact (r2 _ (by decide)).trans (hg 0 (by decide))
+      | 2, _ => exact (r2 _ (by decide)).trans (hg 1 (by decide))
+      | 3, _ => exact (r2 _ (by decide)).trans (hg 2 (by decide))
+      | 4, _ => exact (r2 _ (by decide)).trans (hg 3 (by decide))
+      | 5, _ => exact (r2 _ (by decide)).trans (hg 4 (by decide))
+      | 6, _ => exact (r2 _ (by decide)).trans (hg 5 (by decide))
+      | 7, _ => exact (r2 _ (by decide)).trans (hg 6 (by decide))
+      | 8, _ => exact (r2 _ (by decide)).trans (hg 7 (by decide))
+      | 9, _ => exact (r2 _ (by decide)).trans (hg 8 (by decide))
+      | 10, _ =>
+        show Mem.readW _ (pb s + BitVec.ofNat 64 80) 64 = _
+        rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide),
+          Mem.readW_writeW_self64]
+        exact t80
+      | 11, _ =>
+        show Mem.readW _ (pb s + BitVec.ofNat 64 88) 64 = _
+        rw [Mem.readW_writeW_self64]
+        exact t88 }
 
 end
 
