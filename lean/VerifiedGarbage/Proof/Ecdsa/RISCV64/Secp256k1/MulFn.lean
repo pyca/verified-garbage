@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.RISCV64
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
-import VerifiedGarbage.Proof.Weierstrass.RISCV64.Secp256k1Field.Verified
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.Gen4
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Secp256k1Field.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -12,7 +12,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 # secp256k1's ladder on RISC-V
 
 The facts the proofs of `vg_secp256k1_mul` and its callers share: secp256k1's field
-functions meet the contracts by register (`field_ok`), the ladder's slots
+functions, those modulo any four-word modulus (`Proof/Weierstrass/RISCV64/Gen4.lean`)
+for its `p` (`p_ok`), meet the contracts by register (`field_ok`), the ladder's slots
 are laid out as `ladder_ok` needs (`lay`), and `mulBody` computes `R = [k]Q`
 (`mulBody_ok`): it copies `Q` from `R`'s first two slots to `ACC` and `PT`,
 sets `R = O` from zero and one, and runs the ladder, whose invariant is that
@@ -30,8 +31,10 @@ open VG.Spec.Weierstrass (Curve Fe Point)
 /-- secp256k1. -/
 abbrev W : Curve := Spec.Secp256k1.curve
 
+private theorem p_ok : Gen4.Ok Impl.Weierstrass.Mont.secp256k1p.m := ⟨by decide, by decide, by decide⟩
+
 theorem field_ok : FieldOk secp256k1Field :=
-  ⟨Secp256k1Field.mul_rv, Secp256k1Field.add_rv, Secp256k1Field.sub_rv, Impl.Weierstrass.RISCV64.Secp256k1Field.mulFn_noFrames,
+  ⟨Gen4.mul_rv rfl p_ok, Gen4.add_rv rfl p_ok, Gen4.sub_rv rfl p_ok, Impl.Weierstrass.RISCV64.Secp256k1Field.mulFn_noFrames,
     Impl.Weierstrass.RISCV64.Secp256k1Field.addFn_noFrames, Impl.Weierstrass.RISCV64.Secp256k1Field.subFn_noFrames⟩
 
 instance : NeZero secp256k1Field.S.m := ⟨by decide⟩
