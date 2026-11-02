@@ -46,7 +46,8 @@ theorem read1_setWidth (m : Mem) (a : Addr) : (m.read a 1).setWidth 64 = (m a).s
 
 /-- `output`, the mask of `b` in `s9`: `out`'s (`s10`) byte `i` is array 4's
 byte `k - 1 - i` if `b`, else 0; `a0` is 1 if `b`, else 0. -/
-theorem output_ok {s : State} {B O : Addr} {Z w k : Nat} {b : Bool} (hs : Scr s B Z) (ho : Scr s O k)
+theorem output_ok {s : State} {B O : Addr} {Z w k : Nat} {b : Bool} (hs : Scr s B Z)
+    (ho : ∀ i < k, InRegions s.wr (off O i) 1) (hno : O.toNat + k ≤ 2 ^ 64)
     (h7 : s.gpr .a7 = off B (slot w 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
     (h11 : s.gpr .s11 = BitVec.ofNat 64 k) (h10 : s.gpr .s10 = off O 0)
     (h9 : s.gpr .s9 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0))
@@ -57,7 +58,6 @@ theorem output_ok {s : State} {B O : Addr} {Z w k : Nat} {b : Bool} (hs : Scr s 
         Outside O 0 k s.mem t.mem ∧ t.gpr .a0 = BitVec.ofNat 64 (if b then 1 else 0)) ∧
       Keep [.s0, .a0, .t4, .t3, .t5] s t := by
   have hnw := hs.nowrap
-  have hno := ho.nowrap
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
   have e4 := e 4; have e8 := e 8
   unfold output
@@ -93,7 +93,7 @@ theorem output_ok {s : State} {B O : Addr} {Z w k : Nat} {b : Bool} (hs : Scr s 
             State).write .t3 (off O (j + 1))).write .t4
               (off B (slot w 4 + (k - 1) - j) - BitVec.ofNat 64 1)).write .t5 (t.gpr .t5 - BitVec.ofNat 64 1) := by
       brun [t4, t3, (tk.gpr (r := .s9) (by decide)).trans h9, hrd, add_ofNat_zero,
-        (ho.congr tk.2.2).st (d := j) (n := 1) (by omega_arith)]
+        (show InRegions t.wr (off O j) 1 by rw [tk.2.2]; exact ho j (by omega_arith))]
     refine WP.mono hst fun t' e => ?_
     subst e
     have hw1 := write1_outside t.mem O (d := j) (((t.mem.read (off B (slot w 4 + (k - 1) - j)) 1).setWidth 64 &&&
