@@ -248,4 +248,61 @@ theorem macRun_ok {B : Addr} {Z dT dY K : Nat} {s : State} (hs : Scr s B Z)
       show 4 * N₂ + N₁ = K by omega_arith] at e
     exact e
 
+/-! ## The square as cross products and squares of words -/
+
+/-- The first `i` rows of the cross products of the `w` words at `d`: row `r`
+is `a_r (a_{r+1} … a_{w-1}) 2^(64 (2 r + 1))`. -/
+def crossPart (m : Mem) (B : Addr) (d w : Nat) : Nat → Nat
+  | 0 => 0
+  | i + 1 => crossPart m B d w i +
+      2 ^ (64 * (2 * i + 1)) * ((word m B (d + 8 * i)).toNat * wordsVal m B (d + 8 * (i + 1)) (w - 1 - i))
+
+/-- The squares of the first `i` words at `d`: `Σ a_r² 2^(128 r)`. -/
+def diagPart (m : Mem) (B : Addr) (d : Nat) : Nat → Nat
+  | 0 => 0
+  | i + 1 => diagPart m B d i + 2 ^ (128 * i) * ((word m B (d + 8 * i)).toNat * (word m B (d + 8 * i)).toNat)
+
+theorem crossPart_shift (m : Mem) (B : Addr) (d w : Nat) : ∀ i, i ≤ w →
+    crossPart m B d (w + 1) (i + 1) =
+      2 ^ 64 * ((word m B d).toNat * wordsVal m B (d + 8) w) + 2 ^ 128 * crossPart m B (d + 8) w i
+  | 0, _ => by simp [crossPart]
+  | i + 1, hi => by
+    rw [crossPart, crossPart_shift m B d w i (by omega_arith), crossPart,
+      show d + 8 * (i + 1) = d + 8 + 8 * i by omega_arith,
+      show d + 8 * (i + 1 + 1) = d + 8 + 8 * (i + 1) by omega_arith,
+      show w + 1 - 1 - (i + 1) = w - 1 - i by omega_arith,
+      show 64 * (2 * (i + 1) + 1) = 128 + 64 * (2 * i + 1) by omega_arith, Nat.pow_add]
+    grind
+
+theorem diagPart_shift (m : Mem) (B : Addr) (d : Nat) : ∀ i,
+    diagPart m B d (i + 1) =
+      (word m B d).toNat * (word m B d).toNat + 2 ^ 128 * diagPart m B (d + 8) i
+  | 0 => by simp [diagPart]
+  | i + 1 => by
+    rw [diagPart, diagPart_shift m B d i, diagPart, show d + 8 * (i + 1) = d + 8 + 8 * i by omega_arith,
+      show 128 * (i + 1) = 128 + 128 * i by omega_arith, Nat.pow_add]
+    grind
+
+/-- The square of the `w` words at `d`: its squares of words and twice its
+cross products. -/
+theorem sq_parts (m : Mem) (B : Addr) : ∀ (d w : Nat),
+    wordsVal m B d w * wordsVal m B d w = diagPart m B d w + 2 * crossPart m B d w w
+  | _, 0 => by simp [wordsVal, diagPart, crossPart]
+  | d, w + 1 => by
+    rw [diagPart_shift, crossPart_shift m B d w w (Nat.le_refl _)]
+    have ih := (sq_parts m B (d + 8) w).symm
+    simp only [wordsVal]
+    generalize wordsVal m B (d + 8) w = P at ih ⊢
+    generalize (word m B d).toNat = a
+    generalize diagPart m B (d + 8) w = D at ih ⊢
+    generalize crossPart m B (d + 8) w w = C at ih ⊢
+    have e : 2 ^ 128 * D + 2 * (2 ^ 128 * C) = 2 ^ 128 * (P * P) := by rw [← ih]; grind
+    grind
+
+/-- The last row has no products. -/
+theorem crossPart_last (m : Mem) (B : Addr) (d w : Nat) (hw : 1 ≤ w) :
+    crossPart m B d w w = crossPart m B d w (w - 1) := by
+  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega_arith⟩
+  simp [crossPart, wordsVal]
+
 end VG.Proof.Bignum.RISCV64
