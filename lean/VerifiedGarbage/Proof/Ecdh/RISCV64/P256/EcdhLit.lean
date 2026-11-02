@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Impl.Ecdh.P256.RISCV64
 public import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.CheckLit
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulLit
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.WindowLit
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.Ecdh.P256.RISCV64
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.CheckLit
-meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulLit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.WindowLit
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 

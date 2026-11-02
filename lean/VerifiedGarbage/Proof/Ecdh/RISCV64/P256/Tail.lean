@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Check
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulVerified
-import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulLit
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.WindowLit
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.Window
 import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
@@ -496,7 +497,7 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
     (h3 : s.gpr .s3 = base) (hc : TailConsts base s) (hx : sv base s RX < W.p) (hy : sv base s RY < W.p)
     (hon : Spec.Weierstrass.onCurve W (.affine (toM W.p (2 ^ 256) (sv base s RX))
       (toM W.p (2 ^ 256) (sv base s RY))) = true) :
-    WP isa (tail p256 "vg_p256_mul" mulP256) s fun s' =>
+    WP isa (tail p256 "vg_p256_mul" Window.mulP256) s fun s' =>
       Kc s s' ∧ Unch base tailW s.mem s'.mem ∧
       word s'.mem base FL = word s.mem base FL &&& maskOf (decide (sv base s K < W.n)) &&&
         maskOf (!decide (sv base s K = 0)) ∧
@@ -516,7 +517,8 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
   have e₁ : ∀ i, i < 44 → sv base s₁ i = sv base s i := fun i hi =>
     sv_unch U₁ i (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; rw [sl_eq, FL]; omega)
       (by omega)
-  refine wsCallR_ok Impl.Ecdsa.RISCV64.mulP256_noFrames (mul_rv hL) hw₁ h3₁ (fun t r w a m => ?_)
+  refine wsCallR_ok Impl.Ecdsa.RISCV64.Window.mulP256_noFrames (VG.Proof.Ecdsa.RISCV64.Window.mul_rv hL) hw₁ h3₁
+    (fun t r w a m => ?_)
     fun s₂' s₂ K₂ mm₂ t a₂ m₂ hp₂ => ⟨K₂, ?_⟩
   · refine ⟨r, by rw [w, a], by rw [a]; exact hw₁.nowrap, by rw [a]; exact hw₁.al, ?_, ?_⟩
     · rw [a, m]
