@@ -13,6 +13,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 
+-- separate module: the whole function's proof (`code_ok`) and its constant-time proof import the frame without
+-- the proofs of the ends
+
 /-!
 # A candidate on RISC-V: the frame and the entry
 
