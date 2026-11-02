@@ -1611,12 +1611,8 @@ call {vg_p224_mul_mod_p}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_p224_check_point = sym super::ecdh_p224::vg_p224_check_point::vg_p224_check_point,
+        vg_p224_check_point = sym super::ec_p224_compressed::vg_p224_check_point::vg_p224_check_point,
         vg_p224_mul = sym super::ec_p224::vg_p224_mul::vg_p224_mul,
         vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_p224_check_point.rs"]
-pub(crate) mod vg_p224_check_point;
