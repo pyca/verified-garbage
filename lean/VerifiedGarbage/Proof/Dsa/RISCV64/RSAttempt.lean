@@ -89,7 +89,7 @@ theorem Scanned.step {s₀ t t' : State} (hs : Scanned (rlOf s₀) s₀ t) (hc :
 stack pointer, the regions and the memory. -/
 theorem Scanned.keep {s₀ t t' : State} {rs : List Reg} (hL : (rlOf s₀).Ok) (hs : Scanned (rlOf s₀) s₀ t)
     (k : Keep rs t t') (hsp : t'.sp = t.sp) (hm : t'.mem = t.mem)
-    (hd : ∀ r ∈ ctxRegs ++ [.s7, .s8, .s9], r ∉ rs := by decide) : Scanned (rlOf s₀) s₀ t' :=
+    (hd : ∀ r ∈ ctxRegs ++ ([.s7, .s8, .s9] : List Reg), r ∉ rs := by decide) : Scanned (rlOf s₀) s₀ t' :=
   hs.step (hs.ctx.step hL hsp k.2.1 k.2.2 (fun r hr => k.1 r (hd r (List.mem_append_left _ hr)))
     (by rw [hm]; exact Frame.refl _ _))
     (k.1 _ (hd _ (by decide))) (k.1 _ (hd _ (by decide))) (k.1 _ (hd _ (by decide)))
