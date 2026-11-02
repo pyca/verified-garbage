@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 
 /-!
 # `vg_rsa_recover_primes_det` on x86-64: the pieces
@@ -366,5 +368,49 @@ theorem _root_.VG.Proof.Rsa.X86_64.Ws.congrW {s t : State} {B : Addr} {Z w : Nat
   h.congrP (P := fun y => 8 * i ≤ y ∧ y < 8 * i + 8)
     (by rw [hm]; exact FrmP.of_writeW _ (by have := h.h256; have := h.scr.nowrap; omega_arith) fun _ h1 h2 => ⟨h1, h2⟩)
     (fun y hy => by unfold DOk at hi ⊢; omega_arith) k hr
+
+/-- `loadA_ok`, with the array's two words above the number zero too. -/
+theorem loadA2_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sLen len : Nat} {p : Addr}
+    {bs : List Byte} (hj : j < 16) (hP : sPtr < 32) (hL : sLen < 32)
+    (hp : word s.mem B (8 * sPtr) = p) (hl : word s.mem B (8 * sLen) = BitVec.ofNat 64 len)
+    (hsrc : Src s B Z p bs) (hlen : bs.length = len) (hl1 : 1 ≤ len) (hlw : len ≤ 8 * w) :
+    WP isa (seqs (loadA j sPtr sLen)) s fun t =>
+      wv t.mem B (slot w j) (w + 2) = Spec.Rsa.os2ip bs ∧ Outside B (slot w j) (8 * (w + 2)) s.mem t.mem ∧
+        Keep [.r12, .r9, .r8, .rax, .r14, .rbx, .rsi, .rcx, .rdx, .rbp] s t := by
+  have hn := h.scr.nowrap
+  have sj := h.sl hj
+  have hw2 := h.w2
+  simp only [loadA, seqs]
+  refine WP.seq (WP.mono (zeroA_ok h hj) fun s₁ ⟨hz, o₁, k₁⟩ => ?_)
+  have h₁ : Ws s₁ B Z w := h.congr (Frm.of_outside o₁ (List.mem_singleton_self _)) (fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact Mut.ofSlot w j _) k₁ (by decide)
+  have hh : ∀ i < 32, word s₁.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
+    o₁.word (Or.inl (by have := hdr_lt_slot w j hi; omega_arith)) (by omega_arith)
+  refine WP.seq (WP.block_append_iff.mpr (WP.block_append_iff.mpr (WP.mono h₁.ws_ok fun s₂ ⟨h12, h9, m₂, k₂⟩ =>
+    WP.mono (base_ok j (r := .rbx) (by decide) ((k₂.gpr (by decide)).trans h₁.rdi) h9) fun s₃ ⟨hbx, m₃, k₃⟩ =>
+      WP.mono (WP.keep [.rsi, .rcx] (Q := fun t => t.gpr .rsi = p ∧ t.gpr .rcx = BitVec.ofNat 64 len ∧
+        t.mem = s₃.mem) (by
+          have hdi₃ : s₃.gpr .rdi = B := ((k₂.trans k₃).gpr (by decide)).trans h₁.rdi
+          have hs₃ := h₁.scr.congr (k₂.trans k₃).2.2
+          have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
+            hs₃.ld (by have := h.h256; omega_arith)
+          xrun [State.ea, hdr, hdi₃, hdrOff, m₃, m₂, hl₃ sPtr hP, hl₃ sLen hL, hh sPtr hP, hh sLen hL, hp, hl]) rfl)
+      fun s₄ ⟨⟨hsi, hcx, m₄⟩, k₄⟩ => ?_)))
+  have k14 := ((k₁.trans k₂).trans k₃).trans k₄
+  have hs₄ := h.scr.congr k14.2.2
+  have hsrc₄ : Src s₄ B Z p bs := hsrc.congrK (fun x hx => by
+    rw [m₄, m₃, m₂]; exact o₁ x (Or.inr (by omega_arith))) k14
+  refine WP.mono (loadBE_ok (w := (len + 7) / 8) hs₄ hsi hcx ((k₄.gpr (by decide)).trans hbx) hlen hl1 (by omega_arith) rfl
+    (by omega_arith) (fun i hi => hsrc₄.rd i (by omega_arith)) (fun i hi => hsrc₄.val i (by omega_arith))
+    (fun i hi => Or.inr (by have := hsrc₄.out i (by omega_arith); omega_arith))) fun t ⟨hv, o, k₅⟩ => ?_
+  rw [m₄, m₃, m₂] at o
+  refine ⟨?_, fun x hx => by rw [o x (by omega_arith), o₁ x hx], (k14.trans k₅).mono (by decide)⟩
+  -- The words above the loaded ones are still zero.
+  have hz' : ∀ q < w + 2, word s₁.mem B (slot w j + 8 * q) = 0 := (wv_eq_zero_iff _ _ _ _).mp hz
+  have e := wv_add t.mem B (slot w j) ((len + 7) / 8) (w + 2 - (len + 7) / 8)
+  rw [show (len + 7) / 8 + (w + 2 - (len + 7) / 8) = w + 2 by omega_arith] at e
+  rw [e, hv, wv_zero (n := w + 2 - (len + 7) / 8) fun q hq => by
+      rw [o.word (by omega_arith) (by omega_arith), Nat.add_assoc, ← Nat.mul_add]; exact hz' _ (by omega_arith)]
+  simp
 
 end VG.Proof.Rsa.X86_64.Rd
