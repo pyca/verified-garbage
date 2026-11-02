@@ -198,7 +198,6 @@ codec!(
         VG_EC_P384_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
     ]
 );
-#[cfg(not(target_arch = "riscv64"))]
 codec!(
     P521,
     66,
