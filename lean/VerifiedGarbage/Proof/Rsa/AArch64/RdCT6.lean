@@ -5,9 +5,10 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.RdCT3
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdCode
 import VerifiedGarbage.Proof.Rsa.AArch64.RdMain
 import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
-import VerifiedGarbage.Proof.Rsa.AArch64.RpCT8
+import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpProd
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
@@ -23,9 +24,10 @@ meta import VerifiedGarbage.Proof.Rsa.AArch64.RdCT3
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdCode
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdMain
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT8
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpProd
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
@@ -238,14 +240,67 @@ theorem rdEntry_ct : RelCT isa (Two RDRel) (.block entry) (Two RD2) := by
       ⟨s, hs, h8.trans (congrArg DP.B hs.2), (k.gpr .x4 (by decide)).trans (rdRel_x4 hs),
         (k.gpr .x5 (by decide)).trans (rdRel_x5 hs), hw⟩
 
-/-- The public data of `vg_rsa_recover_primes` with no tries. -/
-def toRp (P : DP) : RpP := ⟨P.B, P.Z, P.k, P.el, P.dl, P.pP, P.pQ, P.pN, P.pE, P.pD, P.nb, P.eb, P.W, 0⟩
+/-! ## `fail` -/
 
-/-- On an invalid modulus there are no tries: the public data of
-`vg_rsa_recover_primes`. -/
-theorem pub_dpub {I : RpIn} (hl : I.nb.length = I.k) (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip I.nb) I.k = false) :
-    I.pub = toRp (dpub I) := by
-  simp only [RpIn.pub, toRp, dpub, Spec.Rsa.primesKey, hl, hv, Bool.false_eq_true, ite_false]
+/-- Between the zeros of `fail`. -/
+def GFr (a : Pub) (s : State) : Prop :=
+  ∃ I : RpIn, dpub I = a.1 ∧ Scr s I.B I.Z ∧ s.gpr .x0 = I.B ∧
+    RpArgs s.mem I.B I.k I.el I.dl I.pP I.pQ I.pN I.pE I.pD ∧ s.wr = I.W ∧ RpLens I ∧ DOuts I
+
+theorem pins_GFr : Pins GFr [.x0] := fun _ _ _ ⟨_, e₁, _, h₁, _⟩ ⟨_, e₂, _, h₂, _⟩ r hr => by
+  simp only [List.mem_singleton] at hr; subst hr
+  rw [h₁, h₂]
+  exact (congrArg DP.B e₁).trans (congrArg DP.B e₂).symm
+
+theorem zeroOutR_ct {sPtr : Nat} (hP : sPtr < 32) (ptr : DP → Addr)
+    (hA : ∀ (I : RpIn) (m : Mem), RpArgs m I.B I.k I.el I.dl I.pP I.pQ I.pN I.pE I.pD → DOuts I →
+      word m I.B (8 * sPtr) = ptr (dpub I) ∧
+      (∀ i < I.k, InRegions I.W (ptr (dpub I) + BitVec.ofNat 64 i) 1) ∧
+      (∀ i < I.k, I.Z ≤ ofs I.B (ptr (dpub I) + BitVec.ofNat 64 i)))
+    {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.x0]) (.block [ldh .x1 sPtr, ldh .x2 Public.sK, movi .x3 0]) hc).isSome
+      = true) :
+    RelCT isa (Two GFr) (zeroOut sPtr Public.sK) (Two GFr) :=
+  pin_ct [.x0] [.x1, .x2] (fun a => zoVal (ptr a.1) a.1.k) pins_GFr ht
+    (fun ⟨P, i⟩ s h => by
+      obtain ⟨I, rfl, hs, h0, ha, -, L, O⟩ := h
+      obtain ⟨hp, -⟩ := hA I s.mem ha O
+      have hn := hs.nowrap
+      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
+      have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+      refine WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t => t.gpr .x1 = ptr (dpub I) ∧
+        t.gpr .x2 = BitVec.ofNat 64 I.k) (by
+        brun [h0, hdr_enc hP, hdr_enc (show Public.sK < 32 by decide), hl' sPtr hP,
+          hl' Public.sK (by decide)]
+        exact ⟨hp, ha.k⟩) rfl rfl rfl)
+        fun t ⟨⟨h1, h2⟩, _⟩ r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact h1
+      · exact h2)
+    (by taint_decide) fun ⟨P, i⟩ s h => by
+      obtain ⟨I, rfl, hs, h0, ha, hW, L, O⟩ := h
+      obtain ⟨hp, hwr, hsep⟩ := hA I s.mem ha O
+      have hn := hs.nowrap
+      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
+      have hk1 := L.k1
+      have hk2 := L.k2
+      refine WP.mono (zeroOut_ok hs h0 h256 hP (by decide) hp ha.k (by omega) (by omega)
+        ⟨fun i hi => by rw [hW]; exact hwr i hi, hsep⟩) fun t ⟨_, hx, k⟩ => ?_
+      have fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) :=
+        fun i hi => (frm_scr hsep hx).word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega))
+          (by omega)
+      exact ⟨I, rfl, hs.congr k.wr, (k.gpr .x0 (by decide)).trans h0, ha.congr fun i hi => fw i (by
+        unfold rArg at hi; omega), k.wr.trans hW, L, O⟩
+
+/-- `fail` leaks the same in two runs with the same public data. -/
+theorem failR_ct : RelCT isa (Two GFr) fail fun _ _ => True := by
+  unfold fail
+  refine (ct_cons (by simp) (zeroOutR_ct (by decide) DP.pP (fun I m ha O => ⟨ha.p, O.p, O.sp⟩) (by taint_decide))
+    (ct_cons (by simp) (zeroOutR_ct (by decide) DP.pQ (fun I m ha O => ⟨ha.q, O.q, O.sq⟩) (by taint_decide))
+    (ct_one (Ψ := fun (_ : Pub) (_ : State) => True) (two_post (two_taint [.x0] pins_GFr (by taint_decide))
+      fun _ _ _ => WP.mono (WP.keep [.x0] (Q := fun _ => True) (by brun; exact ⟨_, rfl⟩) rfl rfl rfl)
+        fun _ _ => trivial)))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 /-- `vg_rsa_recover_primes_det` leaks the same in runs with the same public data. -/
 theorem rdCode_ct [InvLaw] : RelCT isa (Two RDRel) code fun _ _ => True := by
@@ -270,7 +325,7 @@ theorem rdCode_ct [InvLaw] : RelCT isa (Two RDRel) code fun _ _ => True := by
   -- `fail` or `main`.
   refine two_ite (fun p s₁ s₂ ⟨_, _, _, _, _, _, z₁⟩ ⟨_, _, _, _, _, _, z₂⟩ => by
     rw [eval_zero, eval_zero, z₁, z₂]) ?_ ?_
-  · refine two_map (fun a => toRp a.1) (fun p t ⟨⟨s, t₁, hs, h, hm, k, z⟩, hf⟩ => ?_) Rp.failR_ct
+  · refine failR_ct.mono (fun _ _ h => two_mono (fun p t ⟨⟨s, t₁, hs, h, hm, k, z⟩, hf⟩ => ?_) h) fun _ _ h => h
     have hpre := rpPre_of (rpCtx_of hs.1.1) h hm k
     have e : dpub (rpIn s) = p.1 := hs.2
     have z' : t.gpr .x9 = BitVec.ofNat 64 (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (rpIn s).nb) (rpIn s).k).toNat := by
@@ -278,7 +333,8 @@ theorem rdCode_ct [InvLaw] : RelCT isa (Two RDRel) code fun _ _ => True := by
     rw [eval_zero, z'] at hf
     have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (rpIn s).nb) (rpIn s).k = false := by
       revert hf; cases Spec.Rsa.modulusValid (Spec.Rsa.os2ip (rpIn s).nb) (rpIn s).k <;> simp
-    exact ⟨rpIn s, (pub_dpub hpre.L.nbl hv).trans (congrArg toRp e), hpre.scr, hpre.x0, hpre.args, hpre.wr, hpre.L, hpre.outs⟩
+    exact ⟨rpIn s, e, hpre.scr, hpre.x0, hpre.args, hpre.wr, hpre.L, ⟨fun i hi => by rw [← hpre.wr]; exact hpre.oP.wr i hi,
+      fun i hi => by rw [← hpre.wr]; exact hpre.oQ.wr i hi, hpre.oP.sep, hpre.oQ.sep, hpre.a⟩⟩
   · refine rdMain_ct.mono (fun _ _ h => two_mono (fun p t ⟨⟨s, t₁, hs, h, hm, k, z⟩, hf⟩ => ?_) h) fun _ _ h => h
     have hpre := rpPre_of (rpCtx_of hs.1.1) h hm k
     have e : dpub (rpIn s) = p.1 := hs.2

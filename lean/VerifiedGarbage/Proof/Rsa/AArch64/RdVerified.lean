@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.AArch64.RdCT6
-import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
@@ -22,6 +21,22 @@ import VerifiedGarbage.Proof.Bignum.Octets
 namespace VG.Proof.Rsa.AArch64.Rd
 
 open VG VG.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64
+
+theorem stackArgs_four (s : State) :
+    List.map (stackArg s) (List.range 4) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3] := rfl
+
+/-- A state meeting `rpA.pre`: a 512-bit modulus, one-byte exponents, and
+the stack arguments at `0x6000`. -/
+def rpSatState : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x1100 | .x3 => 64 | .x4 => 0x2000 | .x5 => 64 | .x6 => 0x3000
+    | .x7 => 1 | _ => 0
+  sp := 0x6000
+  mem a := if a = 0x6018 then 0x20
+    else if a = 0x6001 then 0x31 else if a = 0x6008 then 1 else if a = 0x6011 then 0x80
+    else if a = 0x6019 then 0x04 else 0
+  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x3100, 1⟩, ⟨0x6000, 32⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x1100, 64⟩, ⟨0x8000, 8448⟩]
 
 theorem rd_implies : rdA.Implies (Spec.Rsa.recoverPrimesDetContract abi) where
   pre := by

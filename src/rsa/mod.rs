@@ -32,10 +32,10 @@
 //! `VG.Spec.Rsa.recoverPrimesDetContract`) recovers by SP 800-56B Rev. 2
 //! Appendix C.2 on i686, x86-64, AArch64 and 64-bit PowerPC, and
 //! `vg_rsa_recover_primes` (contract `VG.Spec.Rsa.recoverPrimesContract`) by
-//! Appendix C.1 on the other targets. The timing of the first may depend on `n` but not on the
-//! private key; that of Appendix C.2 on `n` and `e` only, and that of
-//! Appendix C.1 on `n`, `e` and the number of candidates it tried (1 or 2 for
-//! most keys), but not otherwise on `d`.
+//! Appendix C.1 on the other targets. The timing of the first may depend on
+//! `n` but not on the private key; that of Appendix C.2 on `n` and `e` only,
+//! and that of Appendix C.1 on `n`, `e` and the number of candidates it tried
+//! (1 or 2 for most keys), but not otherwise on `d`.
 //!
 //! [`PrivateKey::check_key`] checks a loaded key as BoringSSL's
 //! `RSA_check_key` does, by the verified `vg_rsa_check_key` (contract
