@@ -16,13 +16,23 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
-#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "powerpc64"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+))]
 use crate::arch::rsa::vg_rsa_recover_primes_det;
 use crate::arch::rsa::{
     vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
 };
 // The targets without Appendix C.2 recover the primes by Appendix C.1.
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "powerpc64")))]
+#[cfg(not(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+)))]
 use crate::arch::rsa::vg_rsa_recover_primes;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::{vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma};
@@ -57,7 +67,12 @@ fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
 ///
 /// `64 ≤ n.len() ≤ 1024`, `1 ≤ e.len() ≤ 5`, `1 ≤ d.len() ≤ n.len()`,
 /// `p.len() = q.len() = n.len()` and `scratch.len() = scratch_words(n.len())`.
-#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "powerpc64"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+))]
 unsafe fn recover(
     p: &mut [u8],
     q: &mut [u8],
@@ -96,7 +111,12 @@ unsafe fn recover(
 /// # Safety
 ///
 /// As for the Appendix C.2 version.
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "powerpc64")))]
+#[cfg(not(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+)))]
 unsafe fn recover(
     p: &mut [u8],
     q: &mut [u8],
@@ -354,10 +374,10 @@ impl PrivateKey {
     /// byte, `e` odd, from 3 to `2^33 - 1`, and `d` 1 to `n.len()` bytes long
     /// without its leading zeros.
     ///
-    /// On i686, x86-64 and 64-bit PowerPC it recovers the primes by SP 800-56B Rev. 2
-    /// Appendix C.2's deterministic method, and refuses a key it does not
-    /// factor. Its
-    /// step 1 makes `a = K φ(n)`, with `K ≤ k²` for `k = (d e - 1) / λ(n)`
+    /// On i686, x86-64, AArch64 and 64-bit PowerPC it recovers the primes by
+    /// SP 800-56B Rev. 2 Appendix C.2's deterministic method, and refuses a
+    /// key it does not factor. Its step 1 makes `a = K φ(n)`, with `K ≤ k²`
+    /// for `k = (d e - 1) / λ(n)`
     /// (so `K < e²` for the least private exponent), and the method finds
     /// the primes whenever `K (p + q - 1) ≤ n`: it refuses only keys with a
     /// tiny prime factor (a few dozen bits at most) and those that are not
