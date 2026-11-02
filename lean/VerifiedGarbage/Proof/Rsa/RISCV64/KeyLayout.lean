@@ -227,6 +227,9 @@ theorem Ws.frame_out {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) {js
 
 /-! ## Array addresses -/
 
+theorem add_ofNat_zero' (x : BitVec 64) : x + BitVec.ofNat 64 0 = x := BitVec.add_zero x
+
+
 theorem ptr_val (B : Addr) (j S : Nat) :
     BitVec.ofNat 64 j * BitVec.ofNat 64 S + B + BitVec.ofNat 64 hdr = off B (hdr + j * S) := by
   simp only [off, BitVec.ofNat_add, BitVec.ofNat_mul]
