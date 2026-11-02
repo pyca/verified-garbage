@@ -759,7 +759,8 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
     (hDsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
     WP isa (Crt.power xj oD oLen) s fun t =>
       (wordsVal t.mem B (slot w 4) w = Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
-        wordsVal t.mem B (slot w 0) w = Pv ∧ PFr B w s.mem t.mem) ∧ Keep powerRegs s t := by
+        wordsVal t.mem B (slot w 0) w = Pv ∧ PFr B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0)) ∧
+      Keep powerRegs s t := by
   have hn : B.toNat + slot w 24 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
   have hxn := hx.nowrap
   have e24 := slot24' w
@@ -835,13 +836,14 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
   refine WP.mono (powWin_ok c10.scr hw2 hw' hZ c10.a7 c10.s5 c10.t0 c10.inv
     (by rw [n10]; exact hP2) (by rw [n10]; exact hodd)
     (by rw [n10, show wordsVal s₁₀.mem B (slot w 1) w = _ from hR2]; exact Nat.mod_lt _ (by omega_arith)) a9 a10 hL hL'
-    (by rw [k110.2.1, k110.2.2]; exact hrd) hDsep) fun t ⟨⟨ht, ot⟩, kt⟩ => ⟨⟨?_, ?_, ?_⟩, ?_⟩
+    (by rw [k110.2.1, k110.2.2]; exact hrd) hDsep) fun t ⟨⟨ht, ot⟩, kt⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [ht (by rw [n10]; exact hR2), n10, show wordsVal s₁₀.mem B (slot w 4) w = Cv % Pv by rw [m10]; exact r9,
       ← Nat.pow_mod, bytes_out (by rw [← m10] at F9; exact F9) hZ hDsep]
   · rw [← n10]
     exact Outside.wordsVal ot (Or.inl (by unfold slot; omega_arith)) (by omega_arith)
   · rw [← m10] at F9
     exact F9.trans (PFr.of_win ot)
+  · exact (kt.gpr (by decide)).trans c10.a7
   · exact Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within
       (Keep.within (Keep.within (Keep.within (Keep.refl powerRegs s) k1 (by decide)) k2 (by decide)) k3 (by decide))
       k4 (by decide)) k5 (by decide)) k6 (by decide)) k7 (by decide)) k8 (by decide)) k9 (by decide)) k10
