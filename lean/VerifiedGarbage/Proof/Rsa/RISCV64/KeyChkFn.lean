@@ -35,7 +35,7 @@ theorem KPre.arg_rd {s0 : State} {B : Addr} {Z K oS na : Nat} (h : KPre s0 B Z K
     (hi : i < na) : InRegions (s0.rd ++ s0.wr) (stackArgAddr s0 i) 8 := by
   have hs := h.sp
   refine ⟨_, List.mem_append_left _ h.args, ?_⟩
-  rw [stackArgAddr_eq]
+  rw [stackArgAddr_eq s0 i]
   exact Offset.contains_base (d := 8 * i) (n := 8) (k := 8 * na) (stackArgAddr s0 0) (by omega) (by omega)
 
 theorem KPre.arg_al {s0 : State} {B : Addr} {Z K oS na : Nat} (h : KPre s0 B Z K oS na) {i : Nat}
