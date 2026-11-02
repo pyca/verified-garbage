@@ -21,6 +21,7 @@ theorem loop_sim {x : BitVec 32} {o o' : State} {tr : List Leak}
       n.gpr .r9 = x → ∃ n', Exec isa (.loop DownRow.bodyU .ne) n tr n' ∧ endState n' = o' := by
   generalize hc : (Code.loop DownRow.body .ne : Prog isa) = c at h
   induction h with
+  | icall | icallNext => cases hc
   | loopExit hb he =>
     cases hc
     intro n ag h1 h10 h9 hx

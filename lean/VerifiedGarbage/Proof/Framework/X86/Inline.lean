@@ -553,6 +553,8 @@ theorem Exec.widen {c : Prog isa} {s s' : State} {t : List Leak} {rd wr : List R
 theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, Taint.clobbers i r = false)
     {s s' : State} {t : List Leak} (h : Exec isa c s t s') : s'.gpr r = s.gpr r := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h => exact execBlock_keep (fun s : State => s.gpr r) (fun hi he => exec_gpr hi he) hc h
   | seq _ _ ih₁ ih₂ =>
     rw [ih₂ (fun i hi => hc i (List.mem_append_right _ hi)),

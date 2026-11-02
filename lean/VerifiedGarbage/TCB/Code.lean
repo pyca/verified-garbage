@@ -37,6 +37,29 @@ frames (`ISA.writesSp`, `Artifact.spSafe`), which are nested, so that the
 memory a call instruction or a push stores to is below the stack pointer on
 entry: never memory that the caller of the function uses.
 
+## Indirect calls
+
+`icall i name body next` is an indirect call: the instruction `i` (e.g.
+x86-64's `call r64`) calls the function at the address it reads
+(`ISA.icall`), which the model knows only as an address. Each function
+emitted is at the address of its symbol (`ISA.fnAddr`, which the linker
+resolves, fixed for the run as a static's address is). If the address is
+that of the function `name`, the call is a call of `name`, whose code is
+`body`, as for `call`, observed with the address it calls (which the
+precondition must make public); otherwise it is `next`, which must be
+another indirect call by the same instruction `i`, of another function:
+the code is a chain of the functions the call may reach, and a call to any
+other address faults (`next` of the last is never run: any code but an
+indirect call). The printer prints only `i`; the emitter checks, as for
+`call`, that the function emitted as each `name` is `body`. So on a machine
+where distinct functions are at distinct addresses, the model runs the code
+of the function the processor calls. Which addresses an argument may hold
+is the precondition's: a table of functions (`Abi.withTables`).
+
+The CPU features the functions of the chain need are not the caller's
+(`Code.requires`): the caller runs only the one it is given, whose
+features its table states (`TCB/Rust.lean`).
+
 ## Stack frames
 
 `frame push body pop` saves registers on the stack around `body`, or passes
@@ -123,6 +146,16 @@ structure ISA where
   (#UD), which `exec` does not model: `Artifact.features` makes their
   presence the caller's obligation instead. -/
   requires : Instr → List String
+  /-- Semantics of an indirect call instruction, up to the transfer of
+  control: the address of the function it calls (read from a register, or
+  from the memory `addrs` gives). `none` if it faults or is not an indirect
+  call instruction; none is, on a target that does not set it. The rest of
+  the call is a call instruction's (`call`, `ret`). -/
+  icall : Instr → State → Option Addr := fun _ _ => none
+  /-- The address of the function of each name: its symbol, which the
+  linker resolves, fixed for the run of the program (as no instruction
+  changes it). -/
+  fnAddr : State → String → Addr := fun _ _ => 0
 
 /-- Structured code. -/
 inductive Code (I C : Type) where
@@ -136,6 +169,10 @@ inductive Code (I C : Type) where
   | call (name : String) (body : Code I C)
   /-- `push; body; pop`: a stack frame around `body`. -/
   | frame (push : I) (body : Code I C) (pop : I)
+  /-- An indirect call by the instruction `i`: of the function `name`,
+  whose code is `body`, if `i` calls its address, and otherwise `next`, an
+  indirect call by `i` of another function (see the module docs). -/
+  | icall (i : I) (name : String) (body : Code I C) (next : Code I C)
 
 /-- `if c then t else e`, with `t` laid out after the function's return
 (cold): `Code.ite c (.seq (.seq (.block []) (.block [])) t) e`. It is an
@@ -155,9 +192,12 @@ def Code.all {I C : Type} (p : I → Bool) : Code I C → Bool
   | .loop b _ => b.all p
   | .call _ b => b.all p
   | .frame i b j => p i && b.all p && p j
+  | .icall i _ b n => p i && b.all p && n.all p
 
 /-- The features that the instructions of `c`, and of the functions it
-calls, require (`ISA.requires`), with repetitions. -/
+calls, require (`ISA.requires`), with repetitions: but not those of the
+functions an indirect call may reach, which need only the features of the
+one called (see the module docs). -/
 def Code.requires {I C : Type} (req : I → List String) : Code I C → List String
   | .block is => is.flatMap req
   | .seq a b => a.requires req ++ b.requires req
@@ -165,9 +205,10 @@ def Code.requires {I C : Type} (req : I → List String) : Code I C → List Str
   | .loop b _ => b.requires req
   | .call _ b => b.requires req
   | .frame i b j => req i ++ b.requires req ++ req j
+  | .icall i _ _ n => req i ++ n.requires req
 
 /-- The calls in `c`, and in the functions it calls: each function's name
-and code. -/
+and code, those an indirect call may reach included. -/
 def Code.calls {I C : Type} : Code I C → List (String × Code I C)
   | .block _ => []
   | .seq a b => a.calls ++ b.calls
@@ -175,6 +216,7 @@ def Code.calls {I C : Type} : Code I C → List (String × Code I C)
   | .loop b _ => b.calls
   | .call n b => (n, b) :: b.calls
   | .frame _ b _ => b.calls
+  | .icall _ n b nx => (n, b) :: b.calls ++ nx.calls
 
 variable (M : ISA)
 
@@ -209,6 +251,15 @@ inductive Exec : Prog M → M.State → List Leak → M.State → Prop
   | frame {i j body s s₁ s₂ s' t} :
       M.push i s = some s₁ → Exec body s₁ t s₂ → M.pop j s₁ s₂ = some s' →
       Exec (.frame i body j) s ((M.addrs i s).map .addr ++ t ++ (M.addrs j s₂).map .addr) s'
+  | icall {i name body next s s₁ s₂ s' t} :
+      M.icall i s = some (M.fnAddr s name) → M.call s = some s₁ → Exec body s₁ t s₂ →
+      M.ret s₁ s₂ = some s' →
+      Exec (.icall i name body next) s ((M.addrs i s).map .addr ++ .addr (M.fnAddr s name) ::
+        ((M.callAddrs s).map .addr ++ t ++ (M.retAddrs s₂).map .addr)) s'
+  | icallNext {i name body name' body' next s s' t a} :
+      M.icall i s = some a → a ≠ M.fnAddr s name →
+      Exec (.icall i name' body' next) s t s' →
+      Exec (.icall i name body (.icall i name' body' next)) s t s'
 
 /-- `c` is constant-time with respect to `Pub` ("the two initial states agree
 on all public data") under the precondition `Pre`: any two terminating runs

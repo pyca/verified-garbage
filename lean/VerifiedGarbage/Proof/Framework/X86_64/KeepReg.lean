@@ -83,6 +83,7 @@ def check (r : Reg) : Prog isa → Abs → Option Abs
   | .loop b _, a => (check r b a).bind fun x => bif le a x then some a else none
   | .call .., _ => none
   | .frame .., _ => none
+  | .icall .., _ => none
 
 /-- `r` ends `c` with the value it starts with. -/
 def keeps (r : Reg) (c : Prog isa) : Bool :=
@@ -279,6 +280,9 @@ theorem Exec.holds {r : Reg} {v : BitVec 64} {c : Prog isa} {s s' : State} {t : 
     intro a b hc
     simp only [check, reduceCtorEq] at hc
   | frame =>
+    intro a b hc
+    simp only [check, reduceCtorEq] at hc
+  | icall | icallNext =>
     intro a b hc
     simp only [check, reduceCtorEq] at hc
 

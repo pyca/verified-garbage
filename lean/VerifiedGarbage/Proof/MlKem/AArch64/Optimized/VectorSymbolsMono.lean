@@ -155,6 +155,7 @@ theorem check_dom (names : List String) {c : Prog isa} {h : VG.Taint.Hint T} {τ
     ∃ σ', (analysis names).check σ c h = some σ' ∧ taint.le τ' σ' = true := by
   have tr := fun {a b c : T} => LeFrame.le_trans (A := VectorTaint.taint) (a := a) (b := b) (c := c)
   induction c generalizing τ σ τ' h with
+  | icall => cases h <;> simp only [VG.Taint.check, reduceCtorEq] at hc
   | block is =>
     cases h <;> try (simp only [VG.Taint.check, reduceCtorEq] at hc; done)
     exact checkChunks_dom names hc hle

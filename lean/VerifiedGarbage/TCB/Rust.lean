@@ -160,6 +160,58 @@ apart from every writable region and at a multiple of 64 (`Table`'s
 alignment): a `static` is a distinct immutable object, at a multiple of its
 type's alignment.
 
+An artifact may take tables of functions (`Artifact.tables`,
+`Abi.withTables`): read-only arrays of `u64`, each holding one of the
+tables of an interface, whose code calls their functions by indirect calls
+(`Code.icall`). `files` writes each table once per target, in a file of its
+own, `fn_tables/<name>.rs` (its name in lowercase), and `fn_tables/mod.rs`
+declares the type of each interface, which only these statics have (its
+fields are private to the module), and re-exports each table's items:
+
+```rust
+#[repr(C)]
+pub struct <Iface> {
+    fns: [*const (); <the number of its functions>],
+    data: [u64; <the number of its words of data>],
+}
+
+// SAFETY: …
+unsafe impl Sync for <Iface> {}
+
+impl <Iface> {
+    pub const fn words(&'static self) -> *const [u64; <k>] { … }
+}
+
+/// The CPU features `<NAME>` requires (`VG.FnTable`).
+pub const <NAME>_FEATURES: verified_garbage_cpu::Features = …;
+
+pub static <NAME>: super::<Iface> = super::<Iface> {
+    fns: [crate::<module>::<function> as *const (), …],
+    data: [<word>, …],
+};
+```
+
+On a target with 64-bit pointers, which `checkFnTables` requires, its words
+(`repr(C)`: the pointer-sized addresses, then the data) are those
+`Abi.withTables` says the memory holds where the parameter points: word `i`
+at offset `8 i`, the address of each function, the linker's resolution of
+its symbol (`ISA.fnAddr`), then the data. `checkFnTables` checks that each
+parameter that takes tables is a read-only array of `u64` of their length,
+that it lists every table of their interface on the target (the Rust caller
+may pass the `words()` of any static of the type), that tables of one name
+are one table and tables of one interface have one shape, and that every
+function a table names is emitted, as an artifact or an internal function,
+with the code the model runs for every call of it, indirect calls included
+(`checkCalls`, over `Code.calls`, which has the functions an indirect call
+may reach). The model of an indirect call runs the code of the function
+whose address the instruction reads (`Code.icall`), so its proof covers the
+code the processor runs. A table's constant of CPU features is those of its
+functions (`fnTableFeatures`), and the documentation of a function taking
+tables says the CPU must support those of the table it is given
+(`fnTablesDoc`): a caller's own features (`Code.requires`) leave out those
+of the functions an indirect call may reach, of which it runs only the one
+its table names.
+
 An artifact whose code needs CPU features beyond the target's baseline
 (`Artifact.features`) also gets a last `# Safety` item saying the CPU must
 support them, and a constant of them, for the Rust that checks for them
@@ -536,20 +588,34 @@ def ownRequires {I C : Type} (req : I → List String) : List String → Code I 
   | acc, .loop b _ => ownRequires req acc b
   | acc, .call _ _ => acc
   | acc, .frame i b j => add (ownRequires req (add acc (req i)) b) (req j)
+  | acc, .icall i _ _ n => ownRequires req (add acc (req i)) n
 where
   add (acc fs : List String) : List String :=
     fs.foldl (fun acc f => if acc.contains f then acc else acc ++ [f]) acc
 
+/-- The calls in `c`, and in the functions it calls, as `Code.calls`, but
+not those of an indirect call (`Code.icall`), nor any in the functions it
+may reach: the calls whose code's features `Code.requires` counts. -/
+def reqCalls {I C : Type} : Code I C → List (String × Code I C)
+  | .block _ => []
+  | .seq a b => reqCalls a ++ reqCalls b
+  | .ite _ t e => reqCalls t ++ reqCalls e
+  | .loop b _ => reqCalls b
+  | .call n b => (n, b) :: reqCalls b
+  | .frame _ b _ => reqCalls b
+  | .icall _ _ _ nx => reqCalls nx
+
 /-- The features that the instructions of `c`, and of the functions it
 calls, require (`Code.requires`), each once: those of the instructions of
 `c` outside its calls (`ownRequires`), then those of the code of each call
-(`Code.calls`, which has every call, those in the code of a call too),
+(`reqCalls`, which has every call, those in the code of a call too, but not
+the functions an indirect call may reach),
 skipping a call whose code requires what the first call of the same
 function's does (`distinctCalls`). These are the features of
 `dedup (c.requires req)`, without building the list with repetitions or
 going through the code of a function once per call of it. -/
 def requiresDedup {I C : Type} (req : I → List String) (c : Code I C) : List String :=
-  (distinctCalls (ownRequires req []) c.calls).foldl ownRequires.add (ownRequires req [] c)
+  (distinctCalls (ownRequires req []) (reqCalls c)).foldl ownRequires.add (ownRequires req [] c)
 
 /-- The first `some` of `f` over the instructions of `c`, but not those of
 the functions it calls. -/
@@ -560,6 +626,7 @@ def ownFirstSome? {I C : Type} (f : I → Option String) : Code I C → Option S
   | .loop b _ => ownFirstSome? f b
   | .call _ _ => none
   | .frame i b j => f i <|> ownFirstSome? f b <|> f j
+  | .icall i .. => f i
 
 /-- A `some` of `f` over the instructions of `c`, and of the functions it
 calls, if there is one: the first of those of `c` outside its calls
@@ -593,14 +660,24 @@ def prependSafety (doc : String) : List String → String
         (if safety.isEmpty then "" else "\n" ++ safety)
     | _ => doc
 
+/-- The `# Safety` items of the tables of functions `a` takes: each parameter
+must hold the words of one of the tables of its interface (`Abi.withTables`),
+and the CPU must have the features its functions need. -/
+def fnTablesDoc (a : Artifact) : List String :=
+  a.tables.filterMap fun (x, ts) => ts.head?.map fun T =>
+    s!"`{x}` must be the `words()` of one of the `{T.iface}` tables of functions of this crate \
+      (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` \
+      gives, if it has one."
+
 /-- The documentation of `a` as emitted: its `doc`, with what its signature's
 contract requires of the memory each buffer is valid for and of where its
 buffers are (`Sig.layoutNote` before its `# Safety` section, `Sig.validDoc`
 first in it and `Sig.layoutDoc` at the end), and the CPU features it needs
-(`featureDoc`). -/
+(`featureDoc`), and what the tables of functions it takes must be
+(`fnTablesDoc`). -/
 def fullDoc (a : Artifact) : String :=
   let A := a.target.abi
-  let items := Sig.layoutDoc A a.sig a.writeArgs a.stack
+  let items := Sig.layoutDoc A a.sig a.writeArgs a.stack ++ fnTablesDoc a
   featureDoc (prependSafety (insertNotes a.doc
       (Sig.layoutNote A a.sig a.writeArgs ++ writtenDoc a.name a.written))
     (Sig.validDoc A a.sig) ++ String.join (items.map ("\n* " ++ ·))) a.features
@@ -981,6 +1058,9 @@ def checkConsts (ps : List Prepared) (p : Prepared) : Except String Unit := do
       throw s!"{a.target.name}: {a.name} and {q.art.name} give a table of constants different words"
   if (ps.any fun q => q.art.target.name == a.target.name && q.art.module == "consts") then
     throw s!"{a.target.name}: an artifact's module is `consts`, the module of the tables of constants"
+  if (ps.any fun q => q.art.target.name == a.target.name && q.art.module == "fn_tables") then
+    throw s!"{a.target.name}: an artifact's module is `fn_tables`, the module of the tables of \
+      functions"
   let used := p.lines.filterMap fun | .sym _ _ n => some n | _ => none
   for n in used do
     unless (ts.map (·.1)).contains n do
@@ -1167,6 +1247,158 @@ def checkCalls (ps : List Prepared) (hs : List Internal) (p : Prepared) : Except
     throw s!"{t}: {a.name} calls {n}, which is neither an artifact nor an internal function"
   | some (n, true) =>
     throw s!"{t}: {a.name} calls {n}, whose code is not what the call runs"
+
+/-! ## Tables of functions -/
+
+/-- The tables of functions the artifacts `as` take (`Artifact.tables`),
+each once, in order of their names. -/
+def fnTables (as : List Artifact) : List FnTable :=
+  let all := as.flatMap fun a => a.tables.flatMap (·.2)
+  ((dedup (all.map (·.name))).mergeSort (· ≤ ·)).filterMap fun n => all.find? (·.name == n)
+
+/-- An interface's name is a Rust type's: an uppercase ASCII letter, then
+ASCII letters and digits; so it is never a keyword, and is not `Table` (the
+type of the tables of constants) or `Features`. Its tables' type is the
+interface's, which `fnTablesMod` declares. -/
+def ifaceName (n : String) : Bool :=
+  n != "Table" && n != "Features" &&
+  match n.toList with
+  | c :: cs => 'A' ≤ c && c ≤ 'Z' && cs.all fun c => c.isAlpha || c.isDigit
+  | [] => false
+
+/-- The CPU features the table `T` needs: those of each of its functions, the
+artifacts of `ps` and internal functions of `hs` of the target `t` named
+by it (`Artifact.features`, which `checkFeatures` checks are what their code
+requires, and `Internal.features`), each once. -/
+def fnTableFeatures (ps : List Prepared) (hs : List Internal) (t : String) (T : FnTable) :
+    List String :=
+  dedup (T.fns.flatMap fun f =>
+    match ps.find? fun q => q.art.target.name == t && q.art.name == f with
+    | some q => q.art.features
+    | none => ((internal? hs t f).map (·.features)).getD [])
+
+/-- What `sameKey` compares of `p`'s artifact, with every function it calls
+in the same module (`codeOf`'s `moduleOf`): artifacts emitted as one
+function (`alias`) have the same `sameKey`, and so the same `aliasKey`. -/
+def aliasKey (p : Prepared) : String := sameKey p.art (codeOf p.art p.lines fun _ => "")
+
+/-- The tables of functions `p`'s artifact takes (`Artifact.tables`), checked
+against those of the artifacts of `ps` and the internal functions `hs`:
+its target's code can name a `static` and has 64-bit pointers, as each
+table's words (`Abi.withTables`, `fnTableFile`) are; each names a distinct
+read-only array parameter of `u64` (`Param.array false .u64 k`), and tables
+of one interface, each of `k` words, named as `tableName` and `ifaceName`
+require, distinct, and every table of that interface that any artifact of
+the target takes: the Rust caller may pass the words of any static of the
+interface's type, which the emitter writes for every one of them. Every table
+of a name, of any artifact of the target, is the same table, and every table
+of an interface has as many functions and as many words of data; and every
+function a table names is an artifact or an internal function of the
+target, emitted with the code the model runs for each call of it
+(`checkCalls`), and, if an artifact, not one that may be emitted as another
+name of a function (`alias`, which an artifact of its module with the same
+`aliasKey` may be): `Abi.withTables` says the functions of distinct names
+are at distinct addresses, as distinct naked functions are. -/
+def checkFnTables (ps : List Prepared) (hs : List Internal) (p : Prepared) :
+    Except String Unit := do
+  let a := p.art
+  if a.tables.isEmpty then return
+  let t := a.target.name
+  unless a.target.abi.sym.isSome && a.target.abi.ptrBits == 64 do
+    throw s!"{t}: {a.name} takes tables of functions, which its target's code cannot name or \
+      whose words are not 64 bits"
+  let params := a.tables.map (·.1)
+  unless (dedup params).length == params.length do
+    throw s!"{t}: {a.name} gives a parameter two lists of tables of functions"
+  let others := (ps.filter (·.art.target.name == t)).flatMap fun q => q.art.tables.flatMap (·.2)
+  for (x, ts) in a.tables do
+    let some (.array false .u64 k) := a.sig.params.lookup x
+      | throw s!"{t}: {a.name}'s table of functions `{x}` is not a read-only array of `u64`"
+    let some T₀ := ts.head?
+      | throw s!"{t}: {a.name}'s parameter `{x}` has no tables of functions"
+    let names := ts.map (·.name)
+    unless (dedup names).length == names.length do
+      throw s!"{t}: {a.name} lists a table of functions twice for `{x}`"
+    for T in ts do
+      unless tableName T.name && ifaceName T.iface do
+        throw s!"{t}: {a.name}'s table of functions {T.name} of {T.iface} is not named as a Rust \
+          constant starting with `VG_` of a Rust type"
+      unless T.iface == T₀.iface do
+        throw s!"{t}: {a.name}'s parameter `{x}` has tables of two interfaces"
+      unless T.fns.length + T.data.length == k do
+        throw s!"{t}: {a.name}'s table of functions {T.name} is not of the {k} words of `{x}`"
+      for f in T.fns do
+        match ps.find? fun q => q.art.target.name == t && q.art.name == f with
+        | some q =>
+          if ps.any fun q' => q'.art.target.name == t && q'.art.module == q.art.module &&
+              q'.art.name != f && aliasKey q' == aliasKey q then
+            throw s!"{t}: the table of functions {T.name} names {f}, which may be emitted as \
+              another name of a function of the same code (`alias`), at that function's address"
+        | none =>
+          unless (internal? hs t f).isSome do
+            throw s!"{t}: the table of functions {T.name} names {f}, which is neither an \
+              artifact nor an internal function"
+    for U in others do
+      if U.iface == T₀.iface && !names.contains U.name then
+        throw s!"{t}: {a.name}'s parameter `{x}` does not list the table of functions {U.name} \
+          of {U.iface}, which its caller may pass"
+  for T in a.tables.flatMap (·.2) do
+    for U in others do
+      if U.name == T.name && U != T then
+        throw s!"{t}: two tables of functions named {T.name} differ"
+      if U.iface == T.iface && (U.fns.length != T.fns.length || U.data.length != T.data.length) then
+        throw s!"{t}: the tables of functions {T.name} and {U.name} of {T.iface} differ in shape"
+
+/-- The module of a table of functions, its name in lowercase. -/
+def fnTableModule (n : String) : String := n.toLower
+
+/-- The module of a target's tables of functions, `fn_tables/mod.rs`: the
+type of each interface of `ts`, holding the addresses of its functions (as
+the pointer-sized words `*const ()`, which the model's 64-bit words are on
+a target with 64-bit pointers) then its words of data, `repr(C)` so that
+word `i` is at offset `8 i`, as `Abi.tableHeld` says, with fields private
+to this module, so that only the statics the emitter writes, in its
+submodules, are of the type; and each table's module, whose items it
+re-exports. -/
+def fnTablesMod (t : String) (ts : List FnTable) : String :=
+  let ifaces := dedup (ts.map (·.iface))
+  header ++ s!"//! The tables of functions of the verified functions for `{t}` (`Artifact.tables`).\n" ++
+  "#![allow(dead_code, unused_imports)]\n" ++
+  String.join (ifaces.filterMap fun i => (ts.find? (·.iface == i)).map fun T =>
+    let k := T.fns.length + T.data.length
+    s!"\n/// A table of functions of the interface `{i}` (`VG.FnTable`): the addresses of its \
+      {T.fns.length} functions, then its {T.data.length} words of data. Only the statics of \
+      this module are of this type.\n" ++
+    s!"#[repr(C)]\npub struct {i} \{\n    fns: [*const (); {T.fns.length}],\n    \
+      data: [u64; {T.data.length}],\n}\n" ++
+    s!"\n// SAFETY: a `{i}` is immutable, and the functions it holds the addresses of may be \
+      called from any thread.\nunsafe impl Sync for {i} \{}\n" ++
+    s!"\nimpl {i} \{\n    /// The table's words, as the verified functions that take it read them.\n    \
+      pub const fn words(&'static self) -> *const [u64; {k}] \{\n        \
+      core::ptr::from_ref(self).cast()\n    }\n}\n") ++
+  String.join (ts.map fun T =>
+    s!"\n#[rustfmt::skip]\nmod {fnTableModule T.name};\npub use {fnTableModule T.name}::*;\n")
+
+/-- The file of the table of functions `T`, needing the CPU features
+`features`: the constant of them (`featuresConst`), and the static, under
+the `cfg` attribute of those features (`Printer.featureCfg`), holding the
+address of each of its functions (`moduleOf` gives its module, from the
+crate's root) and its words of data. -/
+def fnTableFile (T : Target) (tb : FnTable) (features : List String) (moduleOf : String → String) :
+    String :=
+  let gate := cfgGate (features.filterMap T.printer.featureCfg)
+  header ++ s!"//! The table of functions `{tb.name}` of the verified functions for `{T.name}` \
+    (`Artifact.tables`).\n" ++
+  "#![allow(dead_code)]\n\n" ++
+  featuresConst tb.name gate features "pub" "VG.FnTable" ++
+  s!"/// The table of functions `{tb.name}` of the interface `{tb.iface}`: " ++
+  ", ".intercalate (tb.fns.map fun f => s!"`{f}`") ++
+  (if tb.data.isEmpty then "" else
+    ", then the data " ++ ", ".intercalate (tb.data.map fun w => s!"{w.toNat}")) ++ ".\n" ++
+  gate ++
+  s!"pub static {tb.name}: super::{tb.iface} = super::{tb.iface} \{\n" ++
+  "    fns: [" ++ ", ".intercalate (tb.fns.map fun f => s!"crate::{moduleOf f}::{f} as *const ()") ++
+  "],\n    data: [" ++ ", ".intercalate (tb.data.map fun w => s!"{w.toNat}") ++ "],\n};\n"
 
 /-- The macros that write the page of a static's address and its offset in
 the page in the syntax of the object format (`Line.sym`): Mach-O's on
@@ -1367,13 +1599,21 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
     let hs := (hs.filter (·.target.name == t)).mergeSort (·.name ≤ ·.name)
     let modules := (distinct (arts.map (·.art)) (·.module)).mergeSort (· ≤ ·)
     let ts := tables (arts.map (·.art)) hs
-    let mods := if ts.isEmpty then modules else (modules ++ ["consts"]).mergeSort (· ≤ ·)
+    let fts := fnTables (arts.map (·.art))
+    let mods := (modules ++ (if ts.isEmpty then [] else ["consts"]) ++
+      (if fts.isEmpty then [] else ["fn_tables"])).mergeSort (· ≤ ·)
     let cfg := ((targetsOf (arts.map (·.art))).map (·.2)).headD ""
     let src := codeDir t
     (s!"{src}/lib.rs", targetRoot t cfg mods) ::
     (if ts.isEmpty then [] else
       (s!"{src}/consts/mod.rs", tablesMod t ts) ::
         ts.map fun (n, ws) => (s!"{src}/consts/{tableModule n}.rs", tableFile t n ws)) ++
+    (match fts, arts.head? with
+      | [], _ | _, none => []
+      | fts, some p₀ =>
+        (s!"{src}/fn_tables/mod.rs", fnTablesMod t fts) ::
+          fts.map fun T => (s!"{src}/fn_tables/{fnTableModule T.name}.rs",
+            fnTableFile p₀.art.target T (fnTableFeatures arts hs t T) (moduleOf t))) ++
     (hs.map fun h => Task.spawn fun _ =>
       let m := s!"internal/{h.name}"
       [(s!"{src}/{m}.rs", internalFile h (moduleOf t)),
@@ -1429,6 +1669,7 @@ def files (as : List Artifact) : Except String (List (String × String)) := do
   forMPar ps (checkConsts ps)
   forMPar hs (checkInternal ps hs)
   forMPar ps (checkInternalTables hs)
+  forMPar ps (checkFnTables ps hs)
   forMPar ps checkFeatures
   forMPar ps checkEncodable
   forMPar as checkLayout

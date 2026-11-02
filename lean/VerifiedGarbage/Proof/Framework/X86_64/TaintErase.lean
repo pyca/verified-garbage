@@ -64,6 +64,7 @@ abbrev Code.erase (c : Prog isa) : Prog isa := c.mapBlocks Instr.erase
 
 theorem Code.erase_inline (c : Prog isa) : (Code.erase c).inline = Code.erase c.inline := by
   induction c with
+  | icall => rfl
   | block is => rfl
   | seq a b iha ihb => show Code.seq _ _ = Code.seq _ _; rw [iha, ihb]
   | ite c t e iht ihe => show Code.ite c _ _ = Code.ite c _ _; rw [iht, ihe]
@@ -225,6 +226,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | adox d s => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | cmov _ d s => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | push _ => cases hs
+  | callr _ => cases hs
   | pop _ _ => cases hs
   | alloc _ => cases hs
   | free _ => cases hs
@@ -334,6 +336,7 @@ theorem run_erase (r : Reg) (is : List Instr) :
 
 theorem check_erase (r : Reg) (c : Prog isa) : ∀ a, check r (Code.erase c) a = check r c a := by
   induction c with
+  | icall => intro a; rfl
   | block is => intro a; exact congrArg some (run_erase r is a.ok a.xs.bits)
   | seq c d ihc ihd =>
     intro a
@@ -416,9 +419,11 @@ def checkN (r : Reg) : Prog isa → Abs → Option Abs
   | .loop b _, a => (checkN r b a).bind fun x => bif le a x then some a else none
   | .call .., _ => none
   | .frame .., _ => none
+  | .icall .., _ => none
 
 theorem checkN_eq (r : Reg) (c : Prog isa) : ∀ a, checkN r c a = check r c a := by
   induction c with
+  | icall => intro a; rfl
   | block is => intro a; exact congrArg some ((Abs.norm_eq _).trans (runN_eq r is _ _))
   | seq c d ihc ihd =>
     intro a

@@ -29,6 +29,7 @@ def Code.mapBlocks {I C : Type} (f : I → I) : Code I C → Code I C
   | .loop b c => .loop (b.mapBlocks f) c
   | .call n b => .call n (b.mapBlocks f)
   | .frame i b j => .frame i (b.mapBlocks f) j
+  | .icall i n b nx => .icall i n b nx
 
 namespace Taint
 
@@ -97,6 +98,7 @@ theorem MapInv.check (hA : A.MapInv f P) (c : Prog M) :
     ∀ τ (h : Hint A.T), P τ → A.check τ (c.mapBlocks f) h = A.check τ c h ∧
       ∀ τ', A.check τ c h = some τ' → P τ' := by
   induction c with
+  | icall => intro τ h _; cases h <;> exact ⟨rfl, fun _ h => by cases h⟩
   | block is =>
     intro τ h hτ
     cases h with
@@ -205,6 +207,7 @@ theorem MapInv.checkSum [Frame A] (hA : A.MapInv f P) (c : Prog M) :
     ∀ τ (h : SHint A.T), P τ → A.checkSum [] τ (c.mapBlocks f) h = A.checkSum [] τ c h ∧
       ∀ τ', A.checkSum [] τ c h = some τ' → P τ' := by
   induction c with
+  | icall => intro τ h _; cases h <;> exact ⟨rfl, fun _ h => by cases h⟩
   | block is =>
     intro τ h hτ
     cases h with

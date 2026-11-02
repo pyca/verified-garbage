@@ -40,6 +40,10 @@ theorem armStack_downRows (c : Prog isa) :
     simp only [Code.subst]; split
     · simp [DownRowUmaal.codeU_stack]
     · simpa only [FrameStack.armStack] using ih
+  | icall =>
+    simp only [Code.subst]; split
+    · simp [DownRowUmaal.codeU_stack]
+    · exact Nat.le_refl _
   | frame i b j ih =>
     simp only [Code.subst]; split
     · simp [DownRowUmaal.codeU_stack]

@@ -289,6 +289,8 @@ theorem pop_widen {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = 
 theorem Exec.rdwr {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s') :
     s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h => obtain ⟨r, w, p, -⟩ := execBlock_regions h; exact ⟨r, w, p⟩
   | seq _ _ ih₁ ih₂ => exact ⟨ih₂.1.trans ih₁.1, ih₂.2.1.trans ih₁.2.1, ih₂.2.2.trans ih₁.2.2⟩
   | iteT _ _ ih => exact ih
@@ -310,6 +312,8 @@ theorem Exec.rdwr {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c 
 theorem Exec.regions {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s')
     (hn : c.noFrames = true) : s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame s.wr s.mem s'.mem := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h => exact execBlock_regions h
   | seq _ _ ih₁ ih₂ =>
     simp only [Code.noFrames, Bool.and_eq_true] at hn
@@ -355,6 +359,8 @@ theorem Exec.widen {c : Prog isa} {s s' : State} {t : List Leak} {rd wr : List R
     (h : Exec isa c s t s') (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr) :
     Exec isa c (s.withRegions rd wr) t (s'.withRegions rd wr) := by
   induction h generalizing rd wr with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h => exact .block (execBlock_widen hc hw h)
   | seq h₁ _ ih₁ ih₂ =>
     obtain ⟨r₁, w₁, -⟩ := Exec.rdwr h₁
@@ -413,6 +419,8 @@ theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, dstOf i ≠ 
       by first | exact .inr (by decide) | exact .inl (by decide +kernel)) :
     s'.gpr r = s.gpr r := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h => exact execBlock_gpr hc h
   | seq _ _ ih₁ ih₂ =>
     simp only [Code.noCalls, Bool.and_eq_true] at hn

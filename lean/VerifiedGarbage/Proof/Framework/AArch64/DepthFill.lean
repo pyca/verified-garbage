@@ -31,6 +31,7 @@ theorem Code.aarch64Depth_fillHoles_le (n : String) (b e : Prog AArch64.isa) :
   | frame i x j ih =>
     simp only [Code.fillHoles, Code.aarch64Depth]
     omega
+  | icall i m x y => simp only [Code.fillHoles]; exact Nat.le_add_right _ _
 
 /-- Code that is the code with holes `e` with them filled by a callee without
 frames has at most the depth of `e`. -/

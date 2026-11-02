@@ -24,5 +24,6 @@ def callerRows : Prog isa → Prog isa
   | .call n x => .call n x
   | .frame i x j => if .frame i x j = row then rowU else
       if .frame i x j = DownRow.code then DownRow.codeU else .frame i (callerRows x) j
+  | .icall i n x y => .icall i n x y
 
 end VG.Impl.Ffdh.Arm

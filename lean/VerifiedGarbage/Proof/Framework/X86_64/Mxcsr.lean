@@ -58,6 +58,7 @@ noncomputable def ctlOk : Prog isa → Bool
   | .loop b _ => ctlOk b
   | .call _ b => ctlOk b
   | .frame i b j => !loadsMxcsr i && ctlOk b && !loadsMxcsr j
+  | .icall i _ b n => !loadsMxcsr i && ctlOk b && ctlOk n
 
 /-- A check that implies `ctlOk` and composes like `Code.allInstrs`: `c`
 itself never loads MXCSR, and the functions it calls satisfy `ctlOk`. -/
@@ -68,6 +69,7 @@ noncomputable def ctlC : Prog isa → Bool
   | .loop b _ => ctlC b
   | .call _ b => ctlOk b
   | .frame i b j => !loadsMxcsr i && ctlC b && !loadsMxcsr j
+  | .icall i _ b n => !loadsMxcsr i && ctlOk b && ctlC n
 
 theorem ctlOk_of_ctlC {c : Prog isa} (h : ctlC c = true) : ctlOk c = true := by
   induction c with
@@ -83,6 +85,9 @@ theorem ctlOk_of_ctlC {c : Prog isa} (h : ctlC c = true) : ctlOk c = true := by
   | frame _ _ _ ih =>
     simp only [ctlC, Bool.and_eq_true] at h
     simp only [ctlOk, h.1.1, h.2, ih h.1.2, Bool.and_self]
+  | icall _ _ _ _ _ ihn =>
+    simp only [ctlC, Bool.and_eq_true] at h
+    simp only [ctlOk, h.1.1, h.1.2, ihn h.2, Bool.and_self]
 
 /-- MXCSR's control bits, which the calling convention preserves. -/
 abbrev ctl (v : BitVec 32) : BitVec 10 := v.extractLsb' 6 10
@@ -175,6 +180,15 @@ theorem Exec.ctl {c : Prog isa} (hc : ctlOk c = true) {s s' : State} {t : List L
     split at hr <;> cases hr
     subst hc₁
     exact ih hc
+  | icall _ hc₁ _ hr ih =>
+    simp only [ctlOk, Bool.and_eq_true] at hc
+    simp only [isa, call, Option.some.injEq] at hc₁
+    simp only [isa, ret] at hr
+    split at hr <;> cases hr
+    subst hc₁
+    exact ih hc.1.2
+  | icallNext _ _ _ ih =>
+    exact ih (by simp only [ctlOk, Bool.and_eq_true] at hc ⊢; exact hc.2)
 
 /-- The calling-convention obligations of code that `ctlOk` accepts, from
 the others. -/

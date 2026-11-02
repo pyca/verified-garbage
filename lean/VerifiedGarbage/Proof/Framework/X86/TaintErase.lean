@@ -47,6 +47,7 @@ def Code.erase : Prog isa → Prog isa
   | .loop b c => .loop (erase b) c
   | .call n b => .call n b
   | .frame p b q => .frame p b q
+  | .icall i n b nx => .icall i n b nx
 
 namespace Taint
 
@@ -211,6 +212,7 @@ theorem check_erase (c : Prog isa) :
     ∀ (τ : T) (h : VG.Taint.Hint T), noBases τ = true → hintNoBases h = true →
       taint.check τ (Code.erase c) h = taint.check τ c h := by
   induction c with
+  | icall => intro τ h _ _; cases h <;> rfl
   | block is =>
     intro τ h hn hh
     cases h with

@@ -130,6 +130,7 @@ registers. -/
 theorem Exec.xmm_of {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s') :
     c.allInstrs (fun i => !KeepReg.writesVec i) = true → c.noCalls = true → s'.xmm = s.xmm := by
   induction h with
+  | icall | icallNext => intro _ hn; simp [Code.noCalls] at hn
   | block he =>
     intro hv _
     rw [allInstrs_block] at hv

@@ -29,6 +29,9 @@ theorem aarch64Depth_of_noFrames : ∀ (c : Prog isa), c.noFrames = true → c.a
     simp only [Code.noFrames] at h
     simp only [Code.aarch64Depth, aarch64Depth_of_noFrames b h]
   | .frame .., h => by simp [Code.noFrames] at h
+  | .icall _ _ b n, h => by
+    simp only [Code.noFrames, Bool.and_eq_true] at h
+    simp only [Code.aarch64Depth, aarch64Depth_of_noFrames b h.1, aarch64Depth_of_noFrames n h.2, Nat.max_self]
 
 theorem test_noFrames (v : RoundImpl) (bits : Nat) :
     (Impl.Dsa.AArch64.ProbablePrime.test bits v.mont.mm v.kernel.run).noFrames = true := by

@@ -42,6 +42,9 @@ theorem allStack_noSp {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = tru
   have eq : c.all (fun i => !isa.writesSp i) = c.allInstrs (fun i => !Taint.clobbers i .esp) := by
     clear h
     induction c with
+    | icall x _ b n hb hn =>
+      simp only [Code.all, Code.allInstrs]
+      rw [hb, hn, instr]
     | block is =>
       induction is with
       | nil => rfl
