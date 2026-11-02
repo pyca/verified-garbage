@@ -20,7 +20,8 @@ pub const USES: &[&str] = &[
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
@@ -69,7 +70,8 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::BrainpoolP512r1>>(
     c: &mut Criterion,
@@ -190,6 +192,7 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Brain
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
