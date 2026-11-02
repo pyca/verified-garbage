@@ -350,6 +350,32 @@ theorem QArr.bufBytes {L : Lay} {m m' : Mem} (h : QArr L m m') (hL : L.Ok) {n : 
   simp only [Lay.slot_eq] at *
   omega_arith
 
+/-- The buffer's bytes from `o` on are writable. -/
+theorem ScrL.bufSt {s : State} {L : Lay} (h : ScrL s L) (hL : L.Ok) {o k : Nat} (hk : o + k ≤ 2 * L.pl) :
+    ∀ i < k, InRegions s.wr (off (off L.Buf o) i) 1 := fun i hi => by
+  have := (h.buf hL).st (d := o + i) (n := 1) (by omega)
+  rwa [off_off]
+
+theorem buf_nowrap {L : Lay} (hL : L.Ok) {o k : Nat} (hk : o + k ≤ 2 * L.pl) (hk0 : 0 < k) :
+    (off L.Buf o).toNat + k ≤ 2 ^ 64 := by
+  have hb := hL.buf_end
+  have hw := hL.nowrap
+  rw [Lay.Buf, off_off, off, BitVec.toNat_add, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (show L.bOff + o < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show L.S.toNat + (L.bOff + o) < 2 ^ 64 by omega_arith)]
+  omega
+
+/-- The buffer from `d ≥ 1600` of the Q space on is past it. -/
+theorem sepQ_from (L : Lay) {d n : Nat} (hd : 1600 ≤ d) (hn : d + n ≤ 2 ^ 64) :
+    ∀ x, ofs (off L.Q d) x < n → 1600 ≤ ofs L.Q x := by
+  intro x hx
+  have hlt := (x - L.Q).isLt
+  simp only [ofs, off] at hx ⊢
+  rw [Offset.toNat_sub_add x L.Q (by omega_arith)] at hx
+  by_contra hc
+  rw [Nat.mod_eq_of_lt (by omega)] at hx
+  omega_arith
+
 /-- The buffer's first `n` bytes are a working space. -/
 theorem ScrL.bufN {s : State} {L : Lay} (h : ScrL s L) (hL : L.Ok) {n : Nat} (hn : n ≤ 2 * L.pl) :
     Scr s L.Buf n :=
