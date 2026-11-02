@@ -167,18 +167,25 @@ def qm (r : Reg) : List Instr :=
   [.shift .sll .d .a4 r 32, .shift .srl .d .a5 r 32, .sltu .a6 r .a4, .add .a6 .a6 .a5,
     .sltu .a7 .a4 .a6, .sub .a4 .a4 .a6, .sub .a5 .a5 .a7, .add .a5 .a5 r, .sltu .a6 .a5 r]
 
-/-- Round `i`: word `i + 3` of the product loaded, `w` in `rw i` replaced by
-`q = w + (w << 32)` and stored at its word, then `q m / 2⁶⁴` and the borrow
-`a2` of the round before subtracted from `rw (i + 1)`–`rw (i + 3)`, the
-borrow out of them into `a2`. -/
-def round (i : Nat) : List Instr :=
-  [.load .d (rw (i + 3)) .a3 (ACC + 8 * (i + 3)), .shift .sll .d .t0 (rw i) 32,
-    .add (rw i) (rw i) .t0, .store .d (rw i) .a3 (ACC + 8 * i)] ++ qm (rw i) ++
+/-- The quotient word `q = w + (w << 32)` of `w`, in place in `r`, through `t0`. -/
+def quotP (r : Reg) : List Instr := [.shift .sll .d .t0 r 32, .add r r .t0]
+
+/-- Round `i`, for the quotient word put into `rw i` by `quot` and the words
+1 to 3 of `q m` into `a4`–`a6` by `qm`: word `i + 3` of the product loaded,
+`w` in `rw i` replaced by `q` and stored at its word, then `q m / 2⁶⁴` and the
+borrow `a2` of the round before subtracted from `rw (i + 1)`–`rw (i + 3)`,
+the borrow out of them into `a2`. -/
+def roundWith (quot qm : Reg → List Instr) (i : Nat) : List Instr :=
+  [.load .d (rw (i + 3)) .a3 (ACC + 8 * (i + 3))] ++ quot (rw i) ++ [.store .d (rw i) .a3 (ACC + 8 * i)] ++
+  qm (rw i) ++
   [.sltu .a7 (rw (i + 1)) .a4, .sub (rw (i + 1)) (rw (i + 1)) .a4,
    .sltu .t0 (rw (i + 2)) .a5, .sub (rw (i + 2)) (rw (i + 2)) .a5, .sltu .a4 (rw (i + 2)) .a7,
    .sub (rw (i + 2)) (rw (i + 2)) .a7, .add .a7 .t0 .a4,
    .add .a6 .a6 .a2, .add .a6 .a6 .a7, .sltu .a2 (rw (i + 3)) .a6,
    .sub (rw (i + 3)) (rw (i + 3)) .a6]
+
+/-- Round `i` modulo `p`. -/
+def round (i : Nat) : List Instr := roundWith quotP qm i
 
 /-- Word `j` of a sum into `d = d + y + c` (`c` in `a2`, in and out),
 through `a6`. -/
@@ -196,12 +203,15 @@ def finish : List Instr :=
   ((List.range 6).flatMap fun j => .load .d .a7 .a3 (ACC + 8 * j) :: adcWord (X j) .a7) ++
   [.sub XC XC .a5]
 
-/-- The product at `ACC` reduced: its low three words loaded, the borrow
-zero, the six rounds, which leave words 6 to 8 in `rw 6`–`rw 8` (`X 0`–`X 2`),
-then `finish`. -/
-def reduce : List Instr :=
+/-- The product at `ACC` reduced by the rounds of `quot` and `qm`: its low
+three words loaded, the borrow zero, the six rounds, which leave words 6 to 8
+in `rw 6`–`rw 8` (`X 0`–`X 2`), then `finish`. -/
+def reduceWith (quot qm : Reg → List Instr) : List Instr :=
   (List.range 3).map (fun j => .load .d (rw j) .a3 (ACC + 8 * j)) ++ [.li .a2 0] ++
-    (List.range 6).flatMap round ++ finish
+    (List.range 6).flatMap (roundWith quot qm) ++ finish
+
+/-- The product at `ACC` reduced modulo `p`. -/
+def reduce : List Instr := reduceWith quotP qm
 
 /-! ## The operations -/
 

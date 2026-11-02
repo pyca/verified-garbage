@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.CT
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.P256
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha384
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
 public import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -8,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Common
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Order.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.CT
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.P256
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha384
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -38,6 +40,7 @@ def cfg : Cfg where
   coreN := "vg_ecdsa_p256_sign"
   coreC := Impl.Ecdsa.RISCV64.Sign.signP256
   tries := 8
+  nw := 4
 
 /-- The instance, for P-256's group law `hL`. -/
 def pack (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : Rfc where
@@ -46,10 +49,12 @@ def pack (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : Rfc where
   hiCt := Proof.Hmac.Stream.RISCV64.Sha384.init_ct
   hfCt := Proof.Hmac.Stream.RISCV64.Sha384.fin_ct
   I := Spec.Ecdsa.Rfc6979.P256Sha384.inst
+  kit := P256.kit hL
   hE := rfl
   hHash := rfl
   hD := rfl
-  hD32 := by decide
+  hnw := rfl
+  hDQ := (by decide : 8 * 4 ≤ cfg.H.D)
   hD48 := by decide
   hS := by decide
   hct := rfl
@@ -57,7 +62,6 @@ def pack (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : Rfc where
   hT' := by decide
   hFN := rfl
   hcC := rfl
-  law := hL
 
 theorem checks : Checks cfg := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, trivial⟩, ⟨?_, trivial⟩, ⟨?_, trivial⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
@@ -66,10 +70,10 @@ theorem checks : Checks cfg := by
 
 /-- The stack the function uses: its frame and its callees'. -/
 theorem stack_eq (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : (pack hL).N = 720 := by
-  simp only [Rfc.N, Rfc.X, pack, cfg, Proof.Hmac.Stream.RISCV64.Sha384.hash,
+  simp only [Rfc.N, Rfc.X, pack, cfg, Cfg.frB, Cfg.Q, Proof.Hmac.Stream.RISCV64.Sha384.hash,
     Proof.Hmac.Stream.RISCV64.Sha512Family.hash, Impl.Hmac.Stream.RISCV64.Hash.ibytes,
     Impl.Hmac.Stream.RISCV64.Hash.fbytes, Impl.Hmac.Stream.RISCV64.Hash.iso, Impl.Hmac.Stream.RISCV64.Hash.fso,
-    Impl.Hmac.Stream.RISCV64.Hash.S, Impl.Hmac.Stream.RISCV64.Hash.B, frB]
+    Impl.Hmac.Stream.RISCV64.Hash.S, Impl.Hmac.Stream.RISCV64.Hash.B, fH]
   decide
 
 theorem implies :
@@ -103,10 +107,11 @@ def satC : State :=
     rd := (satState 32 48).rd ++ [⟨0x100000, 151552⟩]
     syms := fun _ => 0x100000 }
 
-theorem sat : (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract (RISCV64.abi.withConsts tabK) 720).pre satC := by
+theorem sat : (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p256CombConsts) 720).pre satC := by
   have hl := VG.Proof.Ecdsa.RISCV64.Comb.combWords_length
   have held := VG.Proof.Ecdsa.RISCV64.Comb.combSatMem_held
-  rw [show tabK = [(Impl.Ecdsa.RISCV64.Comb.p256Sym, Impl.Ecdsa.RISCV64.Comb.p256CombWords)] from rfl]
+  rw [show Impl.Ecdsa.RISCV64.Comb.p256CombConsts =
+    [(Impl.Ecdsa.RISCV64.Comb.p256Sym, Impl.Ecdsa.RISCV64.Comb.p256CombWords)] from rfl]
   generalize Impl.Ecdsa.RISCV64.Comb.p256CombWords = W' at hl held ⊢
   generalize e : satC = s
   sig_pre [Spec.Ecdsa.Rfc6979.P256Sha384.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
@@ -126,7 +131,7 @@ theorem sat : (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract (RISCV64.abi.with
        rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 theorem sign_verified (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) :
-    Verified RISCV64.target (pack hL).c.sign (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract (RISCV64.abi.withConsts tabK) 720) :=
+    Verified RISCV64.target (pack hL).c.sign (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p256CombConsts) 720) :=
   RISCV64.sign_verified (P := pack hL) checks (stack_eq hL) (rfcRC_implies implies ⟨satC, sat⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P256Sha384
