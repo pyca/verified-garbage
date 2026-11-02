@@ -3,17 +3,17 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.RdGcd
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
 
-import VerifiedGarbage.Proof.Rsa.Arm.RvFin3
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Div
 import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
 import VerifiedGarbage.Proof.Rsa.Arm.DivCT
-import VerifiedGarbage.Proof.Rsa.Arm.RvCtx
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ctx
 import VerifiedGarbage.Proof.Rsa.Arm.KcStart
-import VerifiedGarbage.Proof.Rsa.Arm.RvOps
-import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvViews
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Views
 
 /-! # `vg_rsa_recover_primes_det` on ARMv7: the divisions
 

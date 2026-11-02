@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytes
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateDimensions
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SavedProject
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Bind candidate buffers and saved arguments to the existing native helper contracts. -/

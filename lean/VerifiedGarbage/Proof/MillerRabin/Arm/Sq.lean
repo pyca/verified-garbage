@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
 
 import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces2
-import VerifiedGarbage.Proof.Rsa.Arm.RvBase
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Base
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.Basic
 

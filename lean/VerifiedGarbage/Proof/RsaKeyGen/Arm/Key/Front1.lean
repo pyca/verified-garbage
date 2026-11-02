@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Half
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Vals
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
-import VerifiedGarbage.Proof.Rsa.Arm.RvNumbers
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Numbers
 
 /-! # An RSA key on ARMv7: the loads and the constants (`loads_vp`)
 

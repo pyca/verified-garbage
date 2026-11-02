@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont1
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
 
 /-! # A candidate on ARMv7: steps that keep Montgomery multiplication ready
 

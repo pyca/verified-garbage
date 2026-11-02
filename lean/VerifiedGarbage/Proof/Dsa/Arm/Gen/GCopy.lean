@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
 public import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 
 /-! # DSA parameter generation on ARMv7: copies between the arrays and `scratch`
 

@@ -5,9 +5,9 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RdStore
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
 
-import VerifiedGarbage.Proof.Rsa.Arm.RvNumbers
-import VerifiedGarbage.Proof.Rsa.Arm.RvProd
-import VerifiedGarbage.Proof.Rsa.Arm.RvFail
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Numbers
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Prod
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Fail
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # `vg_rsa_recover_primes_det` on ARMv7: the body (`bodyD_vp`)

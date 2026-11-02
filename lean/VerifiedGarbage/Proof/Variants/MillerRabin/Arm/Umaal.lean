@@ -132,10 +132,10 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KcOps
 public import VerifiedGarbage.Proof.Rsa.Arm.KcStart
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-public import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
-public import VerifiedGarbage.Proof.Rsa.Arm.RvOps
-public import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
-public import VerifiedGarbage.Proof.Rsa.Arm.RvViews
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Views
 public import VerifiedGarbage.Proof.Rsa.Arm.ShiftRight
 public import VerifiedGarbage.Proof.Rsa.KeyBits32
 public import VerifiedGarbage.Proof.Rsa.KeyViews
@@ -271,10 +271,6 @@ import VerifiedGarbage.Proof.Rsa.Arm.KcOps
 import VerifiedGarbage.Proof.Rsa.Arm.KcStart
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
-import VerifiedGarbage.Proof.Rsa.Arm.RvOps
-import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
-import VerifiedGarbage.Proof.Rsa.Arm.RvViews
 import VerifiedGarbage.Proof.Rsa.Arm.ShiftRight
 import VerifiedGarbage.Proof.Rsa.KeyBits32
 import VerifiedGarbage.Proof.Rsa.KeyViews

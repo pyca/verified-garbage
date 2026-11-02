@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Win
 import VerifiedGarbage.Proof.MillerRabin.Arm.Mont
 import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
 import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
-import VerifiedGarbage.Proof.Rsa.Arm.RvKS
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 
 /-! # The Miller–Rabin round on ARMv7: the body
 

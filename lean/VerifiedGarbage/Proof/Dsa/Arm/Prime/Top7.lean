@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top3
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
-public import VerifiedGarbage.Proof.Rsa.Arm.RvBase
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Base
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Body
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top4
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Top1

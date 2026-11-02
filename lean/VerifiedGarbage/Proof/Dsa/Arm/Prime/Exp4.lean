@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 import VerifiedGarbage.Proof.Mont.Words
-import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 

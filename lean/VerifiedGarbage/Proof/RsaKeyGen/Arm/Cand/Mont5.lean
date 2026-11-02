@@ -8,7 +8,10 @@ import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Seqs
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont4
+import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
+import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools
 
 /-! # A candidate on ARMv7: `−c⁻¹` and `R² mod c`
 

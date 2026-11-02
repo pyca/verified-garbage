@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont5
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont2
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 
 /-! # A candidate on ARMv7: Montgomery multiplications as pieces
 

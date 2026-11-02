@@ -2,9 +2,9 @@ module
 -- separate module: the proof of Appendix C.2's body is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Rsa.Arm.RdDiv
 
-import VerifiedGarbage.Proof.Rsa.Arm.RvOps
-import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
-import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Slots
 import VerifiedGarbage.Proof.Rsa.KeyBits32
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp

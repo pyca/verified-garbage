@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResiduePrime
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 

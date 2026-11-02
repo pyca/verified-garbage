@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Inv
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
 import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
 

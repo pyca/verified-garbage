@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.Arm.Recover
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyFrame
 
 /-! # RSA prime recovery by SP 800-56B Rev. 2 Appendix C.2 on ARMv7
 

@@ -43,7 +43,6 @@ open VG.Impl.Rsa.Arm.Keys.Inv
 open VG.Proof.X25519.Arm
 open VG.Proof.Rsa.Divstep (oddInput)
 
-
 /-- The state of the algorithm after `i` batches. -/
 abbrev st (p iv x i : Nat) : IState := invRun 30 p iv (oddInput p x) i
 

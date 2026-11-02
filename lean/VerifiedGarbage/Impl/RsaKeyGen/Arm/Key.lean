@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.Arm.Recover
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyFrame
 
 /-! # An RSA key from its two primes on ARMv7
 

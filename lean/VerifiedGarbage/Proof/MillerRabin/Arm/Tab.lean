@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Sq
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Scan
 import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Rsa.Arm.RvBase
+import VerifiedGarbage.Proof.Rsa.Arm.Stage.Base
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.CopyWords
 
