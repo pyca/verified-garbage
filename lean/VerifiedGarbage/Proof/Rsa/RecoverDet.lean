@@ -206,6 +206,30 @@ theorem twos_proj (b : Nat) : ∀ k u x y y', ((twoStep b)^[k] (u, x, y)).1 = ((
       · exact twos_proj b k _ _ _ _
     · exact twos_proj b k _ _ _ _
 
+/-- A step of the halvings halves `u` if it is even, whatever `x` and `x'` are. -/
+theorem twoStep_fst (b : Nat) (s : Nat × Nat × Nat) :
+    (twoStep b s).1 = if s.1 % 2 = 0 then s.1 / 2 else s.1 := by
+  unfold twoStep
+  split
+  · split <;> rfl
+  · rfl
+
+/-- `u` after the halvings does not depend on `x` or `x'`. -/
+theorem twos_fst (b : Nat) : ∀ k (s s' : Nat × Nat × Nat), s.1 = s'.1 →
+    ((twoStep b)^[k] s).1 = ((twoStep b)^[k] s').1
+  | 0, _, _, h => h
+  | k + 1, s, s', h => by
+    rw [Function.iterate_succ_apply', Function.iterate_succ_apply', twoStep_fst, twoStep_fst,
+      twos_fst b k s s' h]
+
+/-- After as many steps as `N` has bits, `u` is odd and at most `N`, whatever
+`x` and `x'` are. -/
+theorem twos_odd {b N k : Nat} (x y : Nat) (pos : 0 < N) (hk : N < 2 ^ k) :
+    ((twoStep b)^[k] (N, x, y)).1 % 2 = 1 ∧ ((twoStep b)^[k] (N, x, y)).1 ≤ N := by
+  rw [twos_fst b k (N, x, y) (N, 0, 0) rfl]
+  obtain ⟨h1, h2, -⟩ := twos_iter (b := b) (x := 0) pos hk (Nat.two_pow_pos b)
+  exact ⟨h1, h2⟩
+
 /-! ## Products -/
 
 /-- A step of the product: the multiplier `y` halved, the multiplicand `x` doubled and the
