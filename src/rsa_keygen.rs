@@ -56,8 +56,7 @@
         target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "arm",
-        target_arch = "powerpc64",
-        target_arch = "riscv64"
+        target_arch = "powerpc64"
     ),
     feature = "alloc"
 ))]
