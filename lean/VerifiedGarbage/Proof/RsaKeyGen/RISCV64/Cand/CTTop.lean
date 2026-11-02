@@ -554,4 +554,60 @@ theorem loadC_rel : RelCT isa (Two (SG M1)) loadC (Two (SG M2)) := by
   · rw [gpr_write_self, mem_write, hf.wOutLen]
   · rw [gpr_write_of_ne _ _ (by decide), gpr_write_of_ne _ _ (by decide), hf.s11]
 
+/-- After `closeCheck`'s load of `p_len`. -/
+def YP (s0 t : State) : Prop :=
+  (Fr s0 t ∧ Env t (stackArg s0 1) (8 * sL s0) (cw s0)) ∧ t.gpr .t2 = s0.gpr .a6
+
+/-- After `loadP`'s first block. -/
+def YQ (s0 t : State) : Prop :=
+  (t.gpr .s7 = s0.gpr .a5 ∧ t.gpr .s8 = s0.gpr .a1) ∧
+    t.gpr .a7 = off (stackArg s0 1) (slot (cw s0) VG.Impl.RsaKeyGen.RISCV64.Candidate.aP) ∧
+    t.gpr .s5 = BitVec.ofNat 64 (8 * (cw s0 + 2)) ∧ t.gpr .t0 = BitVec.ofNat 64 (cw s0) ∧ t.gpr .s6 = stackArg s0 1
+
+theorem keep_write (s : State) {r : Reg} (v : BitVec 64) : Keep [r] s (s.write r v) :=
+  ⟨fun r' hr => gpr_write_of_ne _ _ (by simpa using hr), rfl, rfl⟩
+
+theorem pins_YQ : Pins (SG YQ) [.s7, .s8, .a7, .t0, .s6, .s5] :=
+  pins_by fun _ _ _ _ _ kx ky h₁ h₂ r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [h₁.1.1, h₂.1.1, kx.reg ky (by decide)]
+    · rw [h₁.1.2, h₂.1.2, kx.reg ky (by decide)]
+    · rw [h₁.2.1, h₂.2.1, kx.arg ky (by decide), kx.cw ky]
+    · rw [h₁.2.2.2.1, h₂.2.2.2.1, kx.cw ky]
+    · rw [h₁.2.2.2.2, h₂.2.2.2.2, kx.arg ky (by decide)]
+    · rw [h₁.2.2.1, h₂.2.2.1, kx.cw ky]
+
+theorem pins_PA {X : State → State → Prop} (hx : ∀ s0 t, X s0 t → Fr s0 t ∧ Env t (stackArg s0 1) (8 * sL s0) (cw s0)) :
+    Pins (SG X) [.s11, .s6, .s5, .t0, .a7] :=
+  pins_by fun _ _ _ _ _ kx ky h₁ h₂ r hr => by
+    have ev := EVs.agree kx ky (EVs.of_env (hx _ _ h₁).2) (EVs.of_env (hx _ _ h₂).2)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · rw [(hx _ _ h₁).1.s11, (hx _ _ h₂).1.s11, kx.fb ky]
+    all_goals exact ev _ (by simp)
+
+theorem calc_rel {X : State → State → Prop}
+    (hx : ∀ s0 t, X s0 t → (Fr s0 t ∧ Env t (stackArg s0 1) (8 * sL s0) (cw s0)) ∧
+      WP isa (seqs closeCalc) t fun _ => True) :
+    RelCT isa (Two (SG X)) (seqs closeCalc) fun _ _ => True := by
+  show RelCT isa _ (.seq (.seq (.block loadPA) (.seq VG.Impl.Bignum.RISCV64.Precompute.loadN
+    (.block [.addi .a7 .s6 VG.Impl.Bignum.hdrBytes]))) (seqs (closeCalc.drop 1))) _
+  exact relCT_assocR (cutW (Y := YQ) (X' := fun _ _ => True) (fun _ _ h => loadPA_ok (hx _ _ h).1.1 (hx _ _ h).1.2)
+    (fun _ _ h => WP.assoc (hx _ _ h).2) (two_taint _ (pins_PA fun _ _ h => (hx _ _ h).1) (by taint_decide))
+    (wk (fun _ _ _ _ h => h.1) (two_taint _ pins_YQ (by taint_decide))))
+
+theorem close_rel : RelCT isa (Two (SG M2)) closeCheck (Two (SG M3)) := by
+  unfold closeCheck
+  refine cutW (Y := YP) (X' := M3) (fun s0 s h => ?_) (fun _ _ h => closeS h)
+    (two_taint _ (pins_fr fun _ _ h => h.ctx.fr) (by taint_decide))
+    (toPost (iteK (fun a s₁ s₂ ⟨x, kx, _, h₁⟩ ⟨y, ky, _, h₂⟩ => by
+        rw [VG.RISCV64.Steps.eval_zero, VG.RISCV64.Steps.eval_zero, h₁, h₂, kx.reg ky (by decide)])
+      (two_taint [] pins_nil (by taint_decide))
+      (calc_rel fun _ _ h => ⟨h.1.1.1, WP.mono h.2 fun _ _ => trivial⟩)))
+  have hf := h.ctx.fr
+  refine ldf_wp hf (by decide) (by decide) (WP.block_nil ⟨⟨hf.write (by decide) _, h.env.keep (keep_write _ _)
+    (by decide)⟩, ?_⟩)
+  rw [gpr_write_self, hf.wPLen]
+
 end VG.Proof.RsaKeyGen.RISCV64.Cand
