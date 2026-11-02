@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.VerifyHash
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyVerified
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

@@ -9,6 +9,7 @@ namespace VG.Artifacts.Ed25519PublicKey.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Ed25519.publicKeyApi.artifact PPC64LE.target {
+    consts := Impl.Ed25519.PPC64LE.combConsts
     code := Impl.Ed25519.PPC64LE.Whole.publicKeyCode
     stack := 224
     verified := Proof.Ed25519.PPC64LE.Whole.publicKey_framed }]

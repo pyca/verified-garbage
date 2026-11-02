@@ -6,10 +6,8 @@
 //! specifies, in constant time. This module gives it working space, and
 //! destroys what it leaves there.
 //!
-//! On AArch64, ARMv7, x86 and x86-64,
 //! [`public_key`](PrivateKey::public_key) is the verified `vg_x25519_base`
-//! (contract `VG.Spec.X25519.x25519BaseContract`), `X25519(k, 9)`;
-//! elsewhere it is `vg_x25519` of the base point.
+//! (contract `VG.Spec.X25519.x25519BaseContract`), `X25519(k, 9)`.
 //!
 //! The variants of both, with the same contracts, are chosen by
 //! `Backend::select` on CPUs with the features their `_FEATURES` constants
@@ -32,13 +30,6 @@
 #[cfg(target_arch = "aarch64")]
 use crate::arch::x25519::VG_X25519_BASE_SCRATCH_WRITTEN;
 use crate::arch::x25519::vg_x25519;
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "riscv64"
-))]
 use crate::arch::x25519::vg_x25519_base;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x25519::{
@@ -156,13 +147,6 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
 }
 
 /// `X25519(scalar, 9)`, by `vg_x25519_base`.
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "riscv64"
-))]
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
     // Uninitialized, as in `x25519`.
@@ -192,12 +176,6 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
     // does not exceed.
     unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), written) };
     out
-}
-
-/// `X25519(scalar, 9)`, by `x25519`.
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-fn base(scalar: &[u8; 32]) -> [u8; 32] {
-    x25519(scalar, &BASE_POINT)
 }
 
 /// An X25519 private key: 32 bytes, which X25519 decodes into a scalar.
