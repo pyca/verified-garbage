@@ -171,7 +171,8 @@ theorem onCurve_iff (x y : Fe c.C) : Spec.Weierstrass.onCurve c.C (.affine x y) 
   constructor <;> intro h <;> grind
 
 /-- The bytes `checkBody` may change are the own working space's and the results'. -/
-theorem keeps_of_unch {C : Impl.Weierstrass.CheckPoint.Curve} (hk : C.k = c.n) (h7 : c.n < 10) {ws : Addr}
+theorem keeps_of_unch {C : Impl.Weierstrass.CheckPoint.Curve} (hk : C.k = c.n) (h7 : c.n < 10)
+    (hlo : C.montOwn = Impl.Weierstrass.Mont.ownAt C.k) (hhi : C.montOwnEnd = 4096) {ws : Addr}
     {m m' : Mem} (hu : Unch ws (slW c [QXM, QYM, TMP, W0, W1, W2, W3, PY] ++ [(c.sl FLAG, 8)]) m m') :
     C.Keeps ws m m' := by
   intro i hi hown hp
@@ -181,7 +182,7 @@ theorem keeps_of_unch {C : Impl.Weierstrass.CheckPoint.Curve} (hk : C.k = c.n) (
   rw [Mem.sub_ofNat_toNat ws (by omega_arith)]
   simp only [Impl.Weierstrass.CheckPoint.Curve.Own, Impl.Weierstrass.CheckPoint.Curve.Out,
     Impl.Weierstrass.CheckPoint.Curve.slot, Impl.Weierstrass.CheckPoint.Curve.flagAt,
-    Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes, hk, List.mem_cons, List.not_mem_nil,
+    hlo, hhi, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes, hk, List.mem_cons, List.not_mem_nil,
     or_false, exists_eq_or_imp, exists_eq_left, not_or, not_and_or, Nat.not_lt, Nat.not_le] at hown hp
   simp only [slW, List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hw
@@ -197,7 +198,8 @@ theorem keeps_of_unch {C : Impl.Weierstrass.CheckPoint.Curve} (hk : C.k = c.n) (
 
 /-- The contract's postcondition, from `checkBodyR_ok`'s facts. -/
 theorem post_of_raw (hc : BaseCfgOk c) {C : Impl.Weierstrass.CheckPoint.Curve} (hW : C.W = c.C)
-    (hk : C.k = c.n) {base : Addr} {t t' : State}
+    (hk : C.k = c.n) (hlo : C.montOwn = Impl.Weierstrass.Mont.ownAt C.k) (hhi : C.montOwnEnd = 4096)
+    {base : Addr} {t t' : State}
     (U : Unch base (slW c [QXM, QYM, TMP, W0, W1, W2, W3, PY] ++ [(c.sl FLAG, 8)]) t.mem t'.mem)
     (f' : word t'.mem base (c.sl FLAG) = mask (PeerOk c base t
       (((word t.mem base (c.sl FLAG) = BitVec.allOnes 64) ∧ sv c base t E < c.C.p) ∧ sv c base t QY < c.C.p)))
@@ -259,7 +261,7 @@ theorem post_of_raw (hc : BaseCfgOk c) {C : Impl.Weierstrass.CheckPoint.Curve} (
   unfold Impl.Weierstrass.CheckPoint.Curve.post
   dsimp only
   rw [nE, nY, nXM, nYM, nPX, nPY, nGX, nGY, hR, hp, flag_sl hk, flag_sl hk, hfeq, f']
-  refine ⟨rfl, xm, ym, ?_, ?_, keeps_of_unch hk h7 U⟩
+  refine ⟨rfl, xm, ym, ?_, ?_, keeps_of_unch hk h7 hlo hhi U⟩
   · rw [px]
     by_cases hQ : PeerOk c base t
       (((word t.mem base (c.sl FLAG) = BitVec.allOnes 64) ∧ sv c base t E < c.C.p) ∧ sv c base t QY < c.C.p)
@@ -275,7 +277,8 @@ theorem post_of_raw (hc : BaseCfgOk c) {C : Impl.Weierstrass.CheckPoint.Curve} (
 code's prime, size and coefficients. -/
 theorem check_correct (hc : BaseCfgOk c) {C : Impl.Weierstrass.CheckPoint.Curve}
     (hC : Impl.Ecdh.AArch64.Cfg.checkCurve c = some C) (hW : C.W = c.C) (hk : C.k = c.n)
-    (s : State) (hs : (ptK C).pre s) :
+    (s : State) (hs : (ptK C).pre s) (hlo : C.montOwn = Impl.Weierstrass.Mont.ownAt C.k := by rfl)
+    (hhi : C.montOwnEnd = 4096 := by rfl) :
     ∃ t s', Exec isa (Impl.Ecdh.AArch64.Cfg.checkFn c) s t s' ∧ abiPreserved s s' ∧ (ptK C).post s s' := by
   obtain ⟨-, hwr, hfit, hmp, hr2, hap, hbp, hf⟩ := hs
   have h7 := hc.n10
@@ -313,7 +316,7 @@ theorem check_correct (hc : BaseCfgOk c) {C : Impl.Weierstrass.CheckPoint.Curve}
       refine ⟨tr, u', he', g', rd', wr', Exec.sp he', ?_⟩
       rw [← hum]
       rw [← hum] at hf
-      exact post_of_raw hc hW hk U' (by rw [hum]; simpa only [e] using f') hf x_lt
+      exact post_of_raw hc hW hk hlo hhi U' (by rw [hum]; simpa only [e] using f') hf x_lt
         (by rw [x, e]) y_lt (by rw [y, e]) (by rw [px]; simp only [e, hum]) (by rw [py]; simp only [e, hum])
   exact ⟨t, s', he, ⟨fun r hr => K.gpr r fun h => (List.mem_filter.mp h).elim fun h₁ h₂ =>
       (checkKept_pres hc r hr).elim (· h₁) (by simpa using h₂), K.sp, Exec.preservedV he hkv⟩, P⟩

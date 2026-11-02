@@ -3415,3 +3415,173 @@ bnez t5, 290b
 .option pop",
     )
 }
+
+/// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_rsa_private_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x81010113
+.insn 4, 0xb4010113
+.insn 2, 0x828a
+.insn 4, 0x0692b023
+.insn 4, 0x0722b423
+.insn 4, 0x0732b823
+.insn 4, 0x0742bc23
+.insn 4, 0x0952b023
+.insn 4, 0x0962b423
+.insn 4, 0x0812b823
+.insn 2, 0x84aa
+.insn 2, 0x8932
+.insn 2, 0x89b6
+.insn 2, 0x8a3a
+.insn 2, 0x8abe
+.insn 2, 0x8b42
+.insn 4, 0x7f010f93
+.insn 4, 0x4c0f8f93
+.insn 4, 0x0b028513
+.insn 2, 0x85ce
+.insn 2, 0x875a
+.insn 2, 0x87ce
+.insn 4, 0x000fb803
+.insn 4, 0x008fb883
+.insn 4, 0x010fb303
+.insn 4, 0x0062b023
+.insn 4, 0x018fb303
+.insn 4, 0x0062b423
+.insn 4, 0x020fb303
+.insn 4, 0x0062b823
+.insn 4, 0x028fb303
+.insn 4, 0x0062bc23
+.insn 4, 0x030fb303
+.insn 4, 0x0262b023
+.insn 4, 0x038fb303
+.insn 4, 0x0262b423
+.insn 4, 0x040fb303
+.insn 4, 0x0262b823
+.insn 4, 0x048fb303
+.insn 4, 0x0262bc23
+.insn 4, 0x050fb303
+.insn 4, 0x0462b023
+.insn 4, 0x058fb303
+.insn 4, 0x0462b423
+call {vg_rsa_private_crt}
+.insn 2, 0x828a
+.insn 4, 0x08a2bc23
+.insn 4, 0x4b028513
+.insn 4, 0x00798593
+.insn 2, 0x818d
+.insn 2, 0x0586
+.insn 2, 0x864a
+.insn 2, 0x86ce
+.insn 4, 0x7f010f93
+.insn 4, 0x4c0f8f93
+.insn 4, 0x050fb703
+.insn 4, 0x058fb783
+call {vg_rsa_public_precompute}
+.insn 2, 0x828a
+.insn 2, 0x8526
+.insn 2, 0x85ce
+.insn 4, 0x4b028613
+.insn 4, 0x00798693
+.insn 2, 0x828d
+.insn 2, 0x0686
+.insn 2, 0x8752
+.insn 2, 0x87d6
+.insn 4, 0x0b028813
+.insn 2, 0x88ce
+.insn 4, 0x7f010f93
+.insn 4, 0x4c0f8f93
+.insn 4, 0x050fb303
+.insn 4, 0x0062b023
+.insn 4, 0x058fb303
+.insn 4, 0x0062b423
+call {vg_rsa_public_precomputed_checked}
+.insn 2, 0x828a
+.insn 4, 0x0aa2b023
+.insn 2, 0x83a6
+.insn 2, 0x8e5a
+.insn 2, 0x4e81
+.insn 2, 0x8f4e
+20:
+.insn 4, 0x0003c583
+.insn 4, 0x000e4603
+.insn 2, 0x8db1
+.insn 4, 0x00beeeb3
+.insn 2, 0x0385
+.insn 2, 0x0e05
+.insn 2, 0x1f7d
+bnez t5, 20b
+.insn 2, 0x828a
+.insn 4, 0x0982b503
+.insn 4, 0x0a02b583
+.insn 2, 0x8d6d
+.insn 2, 0x8905
+.insn 2, 0x1efd
+.insn 4, 0x03fede93
+.insn 2, 0x4589
+.insn 4, 0x41d585b3
+.insn 4, 0x00aefeb3
+.insn 2, 0x4601
+.insn 4, 0x41d606b3
+.insn 4, 0x40a60533
+.insn 2, 0x8d6d
+.insn 2, 0x8f4e
+.insn 2, 0x83a6
+.insn 4, 0x0b028e13
+21:
+.insn 4, 0x000e4583
+.insn 2, 0x8df5
+.insn 4, 0x00b38023
+.insn 2, 0x4601
+.insn 4, 0x00ce0023
+.insn 2, 0x0385
+.insn 2, 0x0e05
+.insn 2, 0x1f7d
+bnez t5, 21b
+.insn 2, 0x828a
+.insn 4, 0x0902b083
+.insn 4, 0x0602b483
+.insn 4, 0x0682b903
+.insn 4, 0x0702b983
+.insn 4, 0x0782ba03
+.insn 4, 0x0802ba83
+.insn 4, 0x0882bb03
+.insn 4, 0x4c010113
+.insn 4, 0x7f010113
+.insn 2, 0x8082
+.option pop",
+        vg_rsa_private_crt = sym super::rsa::vg_rsa_private_crt::vg_rsa_private_crt,
+        vg_rsa_public_precompute = sym super::rsa::vg_rsa_public_precompute,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+    )
+}
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt.rs"]
+pub(crate) mod vg_rsa_private_crt;

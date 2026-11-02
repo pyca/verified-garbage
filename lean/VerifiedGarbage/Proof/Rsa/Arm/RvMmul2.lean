@@ -22,11 +22,6 @@ section
 variable {P : RP} {σ s t : State} {A : Nat → Nat} {live : List Nat} {AW : Nat → Nat} {liveW : List Nat}
   {V : Nat → Nat} {ls : List Nat}
 
-theorem KS.of_rest (h : KS P σ A live AW liveW V ls s) {rs : List Reg} (r : Rest rs s t) (m : t.mem = s.mem)
-    (h8 : .r8 ∉ rs) : KS P σ A live AW liveW V ls t :=
-  ⟨h.bs.of_rest r m, by rw [r.gpr _ h8, h.r8], m ▸ h.cnt, m ▸ h.arrs, m ▸ h.arrsW, m ▸ h.sl, h.live_lt,
-    h.liveW_lt, h.ls_ok⟩
-
 theorem MM.of_rest (h : MM P s) {rs : List Reg} (r : Rest rs s t) (m : t.mem = s.mem) : MM P t :=
   ⟨h.mr.of_read (fun d n _ => by rw [m]) (by rw [m, r.sp]) r.sp r.rd r.wr, m ▸ h.n0⟩
 
