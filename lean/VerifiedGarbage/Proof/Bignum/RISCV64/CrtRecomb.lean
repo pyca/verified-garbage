@@ -665,4 +665,85 @@ theorem widen_ok {s : State} {S Bp : Addr} {ZX Zp wX l oB oLen xj : Nat} (hx : S
     rw [show s₈.mem = s₆.mem by rw [m8, m7]] at o9
     exact o6.trans (Mont.Outside.mono o9 (Nat.le_refl _) (by omega_arith))
 
+/-- The low word of `2^(64 W) - 1`: all ones. -/
+theorem word0_ones {m : Mem} {B : Addr} {d W : Nat} (hW : 1 ≤ W) (h : wordsVal m B d W = 2 ^ (64 * W) - 1) :
+    (Mont.word m B d).toNat = 2 ^ 64 - 1 := by
+  obtain ⟨k, rfl⟩ : ∃ k, W = k + 1 := ⟨W - 1, by omega⟩
+  simp only [wordsVal] at h
+  have hp : 1 ≤ 2 ^ (64 * k) := Nat.one_le_two_pow
+  have hw := (Mont.word m B d).isLt
+  rw [show 64 * (k + 1) = 64 + 64 * k by omega, Nat.pow_add] at h
+  have := Nat.mul_le_mul_left (2 ^ 64) hp
+  omega_arith
+
+/-- Montgomery multiplication modulo `M = R - 1`, `R ≡ 1`: the product,
+when it is below `M`. -/
+theorem mont_ones {R x a : Nat} (hR : 2 ≤ R - 1) (hx : x < R - 1) (h : x * R % (R - 1) = a % (R - 1))
+    (ha : a < R - 1) : x = a := by
+  have e : x * R = x + (R - 1) * x := by
+    rw [show x * R = x * (R - 1) + x by
+      rw [← Nat.mul_add_one, show R - 1 + 1 = R by omega], Nat.add_comm, Nat.mul_comm]
+  rw [e, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt ha] at h
+  exact h
+
+/-- The registers `recombineX` writes. -/
+def recXRegs : List Reg :=
+  [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .ra, .s5, .t0, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4,
+    .s8, .s9]
+
+/-- `recombineX`: in `X` (at `S`, `s6`, of `W` words, `M = 2^(64 W) - 1` in
+array 0 and `q` in array 5), `h` (`P`'s array 4) into array 7 and `m₂`
+(`Q`'s array 4) into array 6, zero-extended, then `q h + m₂` into array 4,
+when it is below `M`. -/
+theorem recombineX_ok {s : State} {S BP BQ : Addr} {ZX ZP ZQ wX lp lq qv : Nat}
+    (hx : Scr s S ZX) (hp : Scr s BP ZP) (hq : Scr s BQ ZQ)
+    (sepP : ∀ x, ofs BP x < ZP → ZX ≤ ofs S x) (sepQ : ∀ x, ofs BQ x < ZQ → ZX ≤ ofs S x)
+    (h6 : s.gpr .s6 = S) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hZX : slot wX 8 ≤ ZX) (hw2 : 2 ≤ wX) (hw' : wX < 2 ^ 31)
+    (hbP : Mont.word s.mem S oBP = BP) (hlP : Mont.word s.mem S oPLen = BitVec.ofNat 64 lp)
+    (hbQ : Mont.word s.mem S oBQ = BQ) (hlQ : Mont.word s.mem S oQLen = BitVec.ofNat 64 lq)
+    (hp1 : 1 ≤ lp) (hp' : lp ≤ 1024) (hq1 : 1 ≤ lq) (hq' : lq ≤ 1024)
+    (hZP : slot (wordsOf lp) 8 ≤ ZP) (hZQ : slot (wordsOf lq) 8 ≤ ZQ)
+    (hwP : wordsOf lp ≤ wX) (hwQ : wordsOf lq ≤ wX)
+    (hM : wordsVal s.mem S (slot wX 0) wX = 2 ^ (64 * wX) - 1) (h5 : wordsVal s.mem S (slot wX 5) wX = qv)
+    (hH : wordsVal s.mem BP (slot (wordsOf lp) 4) (wordsOf lp) < 2 ^ (64 * wX) - 1)
+    (hlt : qv * wordsVal s.mem BP (slot (wordsOf lp) 4) (wordsOf lp) +
+      wordsVal s.mem BQ (slot (wordsOf lq) 4) (wordsOf lq) < 2 ^ (64 * wX) - 1) :
+    WP isa recombineX s fun t =>
+      (wordsVal t.mem S (slot wX 4) wX = qv * wordsVal s.mem BP (slot (wordsOf lp) 4) (wordsOf lp) +
+          wordsVal s.mem BQ (slot (wordsOf lq) 4) (wordsOf lq) ∧
+        Arrays S wX [2, 3, 4, 6, 7] s.mem t.mem) ∧ Keep recXRegs s t := by
+  have hnx := hx.nowrap
+  have hnq := hq.nowrap
+  have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
+  have x0 := e wX 0; have x4 := e wX 4; have x6 := e wX 6; have x7 := e wX 7; have x8 := e wX 8
+  have hh : hdrBytes = 256 := rfl
+  have hfit : ∀ j < 8, slot wX j + 8 * wX ≤ 2 ^ 64 := fun j hj => by
+    have := slot_le (w := wX) hj; omega_arith
+  have hR : 2 ≤ 2 ^ (64 * wX) - 1 := by
+    have : 2 ^ 64 ≤ 2 ^ (64 * wX) := Nat.pow_le_pow_right (by decide) (by omega)
+    omega_arith
+  unfold recombineX
+  -- `h` into array 7.
+  refine WP.seq (WP.mono (widen_ok (xj := 7) hx hp sepP h6 h11 (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hbP hlP hp1 hp' (by decide) hZX hZP hwP hw') fun s₁ ⟨⟨v7, o1⟩, k1⟩ => ?_)
+  have hd : ∀ {d}, d + 8 ≤ 256 → Mont.word s₁.mem S d = Mont.word s.mem S d := fun hd' =>
+    Mont.Outside.word o1 (Or.inl (by omega_arith)) (by omega_arith)
+  -- `m₂` into array 6.
+  refine WP.seq (WP.mono (widen_ok (xj := 6) (hx.congr k1.2.2) (hq.congr k1.2.2) sepQ ((k1.gpr (by decide)).trans h6)
+    ((k1.gpr (by decide)).trans h11) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    ((hd (by decide)).trans hbQ) ((hd (by decide)).trans hlQ) hq1 hq' (by decide) hZX hZQ hwQ hw')
+    fun s₂ ⟨⟨v6, o2⟩, k2⟩ => ?_)
+  have k12 := k1.trans k2
+  have r1 : Arrays S wX [7] s.mem s₁.mem := Arrays.of_outside (j := 7) (by simp) o1 (Nat.le_refl _) (by omega_arith)
+  have r2 : Arrays S wX [6] s₁.mem s₂.mem := Arrays.of_outside (j := 6) (by simp) o2 (Nat.le_refl _) (by omega_arith)
+  have mq : wordsVal s₁.mem BQ (slot (wordsOf lq) 4) (wordsOf lq) = wordsVal s.mem BQ (slot (wordsOf lq) 4) (wordsOf lq) :=
+    wordsVal_of_words fun i hi => Outside.word_apart o1 sepQ (by omega_arith)
+      (by have := slot_le (w := wordsOf lq) (show 4 < 8 by decide); omega_arith) hnq
+  rw [mq] at v6
+  have v7' : wordsVal s₂.mem S (slot wX 7) wX = wordsVal s.mem BP (slot (wordsOf lp) 4) (wordsOf lp) :=
+    (Pub.arrays_V r2 (j := 7) (by decide) (hfit 7 (by decide))).trans v7
+  have r12 := r1.trans (r1.mono (by simp) |>.trans r2) -- placeholder
+  sorry
+
 end VG.Proof.Bignum.RISCV64.Crt
