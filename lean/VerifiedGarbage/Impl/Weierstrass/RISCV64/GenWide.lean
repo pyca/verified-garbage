@@ -97,11 +97,16 @@ def macStep (xb : Reg) (xo ti to : Nat) : List Instr :=
     .add .t0 .t0 .a7, .sltu .t3 .t0 .a7, .add .a1 .a1 .t3,
     .add .t0 .t0 .a5, .sltu .t3 .t0 .a5, .add .a5 .a1 .t3, .store .d .t0 .a3 to]
 
+/-- `n` steps from word `δ` of `T` and of the words at `xb + xo`, each stored
+`δ` words down. -/
+def macRow (xb : Reg) (xo δ n : Nat) : List Instr :=
+  (List.range n).flatMap fun j => macStep xb (xo + 8 * (j + δ)) (T k + 8 * (j + δ)) (T k + 8 * j)
+
 /-- `T += a bᵢ`: `bᵢ` into `a4`, the carry `a5` zero, the steps over `a`'s
 words, then the carry into `T_k` and its carry stored as `T_{k+1}`. -/
 def mulRound (i : Nat) : List Instr :=
   [.load .d .a4 .t5 (8 * i), .li .a5 0] ++
-    (List.range k).flatMap (fun j => macStep .t4 (8 * j) (T k + 8 * j) (T k + 8 * j)) ++
+    macRow k .t4 0 0 k ++
     [.load .d .a7 .a3 (T k + 8 * k), .add .t0 .a7 .a5, .sltu .t3 .t0 .a5, .store .d .t0 .a3 (T k + 8 * k),
       .store .d .t3 .a3 (T k + 8 * (k + 1))]
 
@@ -112,7 +117,7 @@ carries into `T_{k-1}` and `T_k`. -/
 def redRound : List Instr :=
   [.load .d .a7 .a3 (T k), .mul .a4 .a7 .t6, .load .d .a6 .a3 (N k), .mulhu .a5 .a4 .a6, .li .t3 0,
     .sltu .t3 .t3 .a7, .add .a5 .a5 .t3] ++
-    (List.range (k - 1)).flatMap (fun j => macStep .a3 (N k + 8 * (j + 1)) (T k + 8 * (j + 1)) (T k + 8 * j)) ++
+    macRow k .a3 (N k) 1 (k - 1) ++
     [.load .d .a7 .a3 (T k + 8 * k), .add .t0 .a7 .a5, .sltu .t3 .t0 .a5, .store .d .t0 .a3 (T k + 8 * (k - 1)),
       .load .d .a7 .a3 (T k + 8 * (k + 1)), .add .a7 .a7 .t3, .store .d .a7 .a3 (T k + 8 * k)]
 
@@ -123,11 +128,11 @@ def mulInit : List Instr :=
 
 /-! ## The final subtraction -/
 
-/-- `[a3 + d] := [a3 + x] - [a3 + y] - a5`, the borrow in and out in `a5`, through
-`a6`, `a7`, `t0`, `t3` and `a1`. -/
+/-- `[db + d] := [xb + xo] - [yb + yo] - a5`, the borrow in and out in `a5`,
+through `a6`, `a7`, `t0`, `t3` and `a1` (P-256's `sbb`). -/
 def sbbStep (xb : Reg) (xo : Nat) (yb : Reg) (yo : Nat) (db : Reg) (d : Nat) : List Instr :=
-  [.load .d .a7 xb xo, .load .d .a6 yb yo, .sub .t0 .a7 .a6, .sltu .t3 .a7 .a6, .sltu .a1 .t0 .a5,
-    .sub .t0 .t0 .a5, .logic .or .a5 .t3 .a1, .store .d .t0 db d]
+  [.load .d .a7 xb xo, .load .d .a6 yb yo, .sltu .t3 .a7 .a6, .sub .t0 .a7 .a6, .sltu .a1 .t0 .a5,
+    .sub .t0 .t0 .a5, .add .a5 .t3 .a1, .store .d .t0 db d]
 
 /-- Word `j` of `[o]`: `N`'s (the difference) if the mask `a7` is zero, `T`'s if
 it is all ones, through `t0` and `a6`. -/
@@ -143,10 +148,11 @@ def csub : List Instr :=
 
 /-! ## The sum and the difference -/
 
-/-- `[a3 + T + 8j] := [a] + [b] + a5`, the carry in and out in `a5`. -/
+/-- `[a3 + T + 8j] := [a] + [b] + a5`, the carry in and out in `a5` (P-256's
+`adc`). -/
 def adcStep (j : Nat) : List Instr :=
   [.load .d .a6 .t4 (8 * j), .load .d .a7 .t5 (8 * j), .add .t0 .a6 .a7, .sltu .t3 .t0 .a7,
-    .add .t0 .t0 .a5, .sltu .a1 .t0 .a5, .logic .or .a5 .t3 .a1, .store .d .t0 .a3 (T k + 8 * j)]
+    .add .t0 .t0 .a5, .sltu .a5 .t0 .a5, .add .a5 .a5 .t3, .store .d .t0 .a3 (T k + 8 * j)]
 
 /-- `T = [a] + [b]`, `k + 1` words. -/
 def addSum : List Instr :=
@@ -155,7 +161,7 @@ def addSum : List Instr :=
 /-- Word `j` of `[o] = T + (m and the mask a2)`, the carry in and out in `a5`. -/
 def addMStep (j : Nat) : List Instr :=
   [.load .d .a7 .a3 (T k + 8 * j), .load .d .a6 .a3 (N k + 8 * j), .logic .and .a6 .a6 .a2,
-    .add .t0 .a7 .a6, .sltu .t3 .t0 .a6, .add .t0 .t0 .a5, .sltu .a1 .t0 .a5, .logic .or .a5 .t3 .a1,
+    .add .t0 .a7 .a6, .sltu .t3 .t0 .a6, .add .t0 .t0 .a5, .sltu .a5 .t0 .a5, .add .a5 .a5 .t3,
     .store .d .t0 .t2 (8 * j)]
 
 /-- `T = [a] - [b]` with borrows, the mask of the borrow into `a2`, then `m` added
