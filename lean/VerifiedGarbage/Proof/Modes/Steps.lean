@@ -187,6 +187,12 @@ def Computes (M : Mode) (L : Nat) (ciph : Cipher) (F : StepFn) : Prop :=
   ∀ a, rd (stepA M L ciph a) .dat M.step = (F (rd a .chn L) (rd a .dat M.step)).1 ∧
     rd (stepA M L ciph a) .chn L = (F (rd a .chn L) (rd a .dat M.step)).2
 
+/-- `M`'s operations compute `F`, with a chaining value of `L` bytes and the
+cipher `ciph` on the buffer's first `Lb` bytes (a group of blocks). -/
+def ComputesB (M : Mode) (L Lb : Nat) (ciph : Cipher) (F : StepFn) : Prop :=
+  ∀ a, rd (stepA M Lb ciph a) .dat M.step = (F (rd a .chn L) (rd a .dat M.step)).1 ∧
+    rd (stepA M Lb ciph a) .chn L = (F (rd a .chn L) (rd a .dat M.step)).2
+
 theorem getD_xor {x y : List Byte} {i : Nat} (hx : i < x.length) (hy : i < y.length) :
     (xor x y).getD i 0 = x.getD i 0 ^^^ y.getD i 0 := by
   have h : i < (xor x y).length := by simp [Spec.Cbc.xor]; omega

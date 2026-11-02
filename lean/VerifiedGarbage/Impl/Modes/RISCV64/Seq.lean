@@ -149,11 +149,18 @@ def restore : List Instr :=
 def wipe : Prog isa :=
   .seq (.block [.li .t0 0, mov .t1 .t3, .li .t2 c.total]) (fillLoop .t0 .t1 .t2)
 
-/-- The whole function. -/
-def seq (m : Mode) : Prog isa :=
+/-- The whole function, around the code `loops` that takes the steps: the
+frame, the entry, the key, `loops`, the chaining value back to the IV if
+`ivOut`, the registers back, and the frame wiped. -/
+def seqWith (loops : Prog isa) (ivOut : Bool) : Prog isa :=
   bigFrame c.frameBytes (.seq (.block (entry ++ c.ivIn)) (.seq c.prepare
-    (.seq (.ite (.zero .s3) (.block []) (.loop (c.body m) (.nonzero .s3)))
-      (.seq (.block ((if m.ivOut then c.ivBack else []) ++ restore)) c.wipe))))
+    (.seq loops (.seq (.block ((if ivOut then c.ivBack else []) ++ restore)) c.wipe))))
+
+/-- The steps, while any are left. -/
+def steps (m : Mode) : Prog isa := .ite (.zero .s3) (.block []) (.loop (c.body m) (.nonzero .s3))
+
+/-- The whole function. -/
+def seq (m : Mode) : Prog isa := c.seqWith (c.steps m) m.ivOut
 
 end Core
 
