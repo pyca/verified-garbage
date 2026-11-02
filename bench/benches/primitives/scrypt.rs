@@ -96,11 +96,44 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
 }
 
+/// PROTOTYPE (benchmark only, not for merge): OpenSSL's scrypt on riscv64,
+/// as a proxy for a scalar base-ISA Salsa20/8, at RFC 7914's last vector's
+/// cost (N = 2^20, r = 8, p = 1).
+#[cfg(target_arch = "riscv64")]
+pub fn bench(c: &mut Criterion) {
+    use std::hint::black_box;
+
+    use criterion::BenchmarkId;
+
+    use crate::{BenchDyn, OPENSSL};
+    let mut g = c.benchmark_group("scrypt");
+    g.sample_size(10);
+    for n in [16384u64, 1 << 20] {
+        let mut out = [0u8; 64];
+        g.bench(BenchmarkId::new(OPENSSL, n), |b| {
+            b.iter(|| {
+                openssl::pkcs5::scrypt(
+                    black_box(b"pleaseletmein"),
+                    black_box(b"SodiumChloride"),
+                    n,
+                    8,
+                    1,
+                    u64::MAX,
+                    &mut out,
+                )
+                .unwrap()
+            })
+        });
+    }
+    g.finish();
+}
+
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
