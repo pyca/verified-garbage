@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.X25519.RISCV64
 public import VerifiedGarbage.Spec.Ed25519
-public import VerifiedGarbage.Impl.Words.RISCV64.Bytes
-public import VerifiedGarbage.Impl.Words.RISCV64.Word64
+public import VerifiedGarbage.Impl.Words64.RISCV64
 
 /-!
 # Ed25519 on RISC-V: scalars modulo `L`
@@ -28,12 +27,14 @@ the pointers can affect timing.
 namespace VG.Impl.Ed25519.RISCV64
 
 open VG.RISCV64 VG.Impl.Words.RISCV64
-open VG.Impl.X25519.RISCV64 (pass ldSrc storeN cswap prologue zeroAcc row addSrc align)
+open VG.Impl.X25519.RISCV64 (pass ldSrc prologue zeroAcc row addSrc align)
 
 /-- Where the 16 limbs of a product are. -/
 def ACC : Nat := 864
-/-- Where the remainder is. -/
+/-- Where the remainder is, and the candidate of `vg_ed25519_verify_equation`'s
+check that `S < L` (`scalarSubtractSrc`). -/
 def SR : Nat := 160
+def SD : Nat := 192
 
 /-! ## Elements to and from bytes -/
 
@@ -44,6 +45,19 @@ def packField (p : Reg) (a dst : Nat) : List Instr :=
 /-- The 32 bytes at `p` plus `src` as the element at `o`. -/
 def unpackField (p : Reg) (o src : Nat) : List Instr :=
   (List.range 8).flatMap fun k => loadLE32 .a4 .a5 p (src + 4 * k) ++ [.store .w .a4 .a3 (o + 4 * k)]
+
+/-! ## The check that a scalar is below `L`
+
+`SR + (2^256 - 1 - L) + 1`, at `SD`, carries out exactly when `SR ≥ L`. -/
+
+/-- Word `k` of the complement of `L`, without its final carry-in. -/
+def scalarComplement (k : Nat) : Nat := 2 ^ 32 - 1 - Spec.Ed25519.L / 2 ^ (32 * k) % 2 ^ 32
+
+/-- Word `k` of `SR` plus that of the complement, which `lui` and `addiw` build
+(sign-extended) and two shifts zero-extend. -/
+def scalarSubtractSrc (k : Nat) : List Instr :=
+  [.load .w .a4 .a3 (SR + 4 * k)] ++ li32 .a2 (BitVec.ofNat 32 (scalarComplement k)) ++
+    [.shift .sll .d .a2 .a2 32, .shift .srl .d .a2 .a2 32, .add .a4 .a4 .a2]
 
 /-! ## The reduction
 
@@ -63,7 +77,7 @@ def orderLo : BitVec 64 := 0x5812631a5cf5d3ed
 def orderHi : BitVec 64 := 0x14def9dea2f79cd6
 
 /-- The next word, from the top (`t4` counts its bytes down from 64), into `a2`. -/
-def scalarLoad : List Instr := [.addi .t4 .t4 (-8), .add .a1 .t3 .t4] ++ loadLE64 .a2 .t0 .t1 .a1 0
+def scalarLoad : List Instr := [.addi .t4 .t4 (-8), .add .a1 .t3 .t4] ++ Impl.Words64.RISCV64.loadLE64 .a2 .t0 .t1 .a1 0
 
 /-- From `r = (r₀, r₁, r₂, r₃)` in `a4`–`a7` and `w` in `a2`: `h₀ = r₂ >> 60 | 2^4 r₃`
 (`t0`) and `h₁ = r₃ >> 60` (`t1`), so that `h₀ + 2^64 h₁ = (2^64 r + w) >> 252`; and
@@ -106,7 +120,7 @@ def scalarWord : List Instr := scalarLoad ++ wordFold
 
 def scalarInit : List Instr :=
   [.li .a4 0, .li .a5 0, .li .a6 0, .li .a7 0, .li .t4 64] ++
-    li64 .t5 .t0 orderLo ++ li64 .t6 .t0 orderHi
+    Impl.Words64.RISCV64.movImm64 .t5 .t0 orderLo ++ Impl.Words64.RISCV64.movImm64 .t6 .t0 orderHi
 
 /-- The remainder, into `SR`. -/
 def scalarStore : List Instr :=

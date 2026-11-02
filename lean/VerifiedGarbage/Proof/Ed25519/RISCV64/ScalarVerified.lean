@@ -44,7 +44,7 @@ theorem reduce_ok' (s : State) (hs : reduceRISCV64.pre s) :
     ∃ t s', VG.Exec isa Impl.Ed25519.RISCV64.scalarReduce s t s' ∧ abiPreserved s s' ∧
       reduceRISCV64.post s s' := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := hs
-  obtain ⟨t, s', he, hb, hk⟩ := WP.keep [.a2, .a3, .a4, .a5, .a6, .a7, .t0, .t3, .t4, .t5]
+  obtain ⟨t, s', he, hb, hk⟩ := WP.keep [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6]
     (reduce_ok ⟨h1, h2, h3, h4, h5⟩) (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), hb⟩
 
@@ -84,7 +84,7 @@ theorem mulAdd_ok' (s : State) (hs : mulAddRISCV64.pre s) :
     ∃ t s', VG.Exec isa Impl.Ed25519.RISCV64.scalarMulAdd s t s' ∧ abiPreserved s s' ∧
       mulAddRISCV64.post s s' := by
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hs
-  obtain ⟨t, s', he, hb, hk⟩ := WP.keep [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t3, .t4, .t5]
+  obtain ⟨t, s', he, hb, hk⟩ := WP.keep [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6]
     (mulAdd_ok ⟨h1, h2, h3, h4, h5, h6⟩) (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), hb⟩
 
