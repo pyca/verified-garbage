@@ -299,7 +299,7 @@ open VG.Impl.Rsa.X86.Recover
 
 theorem abiD_of {s : State} (h : (Spec.Rsa.recoverPrimesDetContract abi 96).pre s) :
     ABI s ∧ (arg s 7).toNat ≤ 8 := by
-  sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argSlots, argVal, argBytes,
+  sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
   sig_split h
   have rd : s.rd = [(caller s).buffer 4, (caller s).buffer 6, (caller s).buffer 8] := by
@@ -341,7 +341,7 @@ theorem satisfiableD : ∃ s, (Spec.Rsa.recoverPrimesDetContract abi 96).pre s :
   have a11 : arg satState 11 = 1056 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argSlots, argVal, argBytes,
+  sig_implies_sat [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argSlots, argVal, argBytes,
     stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, e, esp, satState, Spec.Rsa.lenValid, Spec.Rsa.scratchWords]
     using satState
@@ -426,7 +426,7 @@ theorem correctD (s : State) (h : (Spec.Rsa.recoverPrimesDetContract abi 96).pre
   obtain ⟨a, eSmall⟩ := abiD_of h
   obtain ⟨trace, t, run, written, preserved⟩ := operationD_ok a eSmall
   refine ⟨trace, t, run, preserved, ?_⟩
-  sig_post [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argSlots, argVal, argBytes]
+  sig_post [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argSlots, argVal, argBytes]
   rw [BitVec.setWidth_append_eq_right]
   unfold WrittenD outputBuffersD calculatedD inputBytes CallGeometry.buffer caller at written
   change Spec.Rsa.writtenAll t.mem
@@ -446,7 +446,7 @@ open VG.Proof.Bignum.X86
 
 theorem argumentsD_eq {s t : State} (h : (Spec.Rsa.recoverPrimesDetContract abi 96).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ ∀ i < 12, arg s i = arg t i := by
-  sig_pub [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argSlots, argVal, argBytes] at h
+  sig_pub [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argSlots, argVal, argBytes] at h
   sig_split h
   constructor
   · assumption
@@ -461,7 +461,7 @@ theorem modulusD_eq {s t : State} (h : (Spec.Rsa.recoverPrimesDetContract abi 96
   have args := (argumentsD_eq h).2
   have leak : (inputBytes (caller s) s.mem 0 ++ inputBytes (caller s) s.mem 1).map (·.toNat) =
       (inputBytes (caller t) t.mem 0 ++ inputBytes (caller t) t.mem 1).map (·.toNat) := by
-    sig_pub [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argSlots, argVal, argBytes] at h
+    sig_pub [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argSlots, argVal, argBytes] at h
     exact h.2.1
   have lenN : (inputBytes (caller s) s.mem 0).length = (inputBytes (caller t) t.mem 0).length := by
     simp only [inputBytes, VG.Proof.Bignum.bytesAt_length, caller, CallGeometry.buffer]

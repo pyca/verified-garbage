@@ -10,10 +10,8 @@ module `rsa`: the prime factors `(p, q)` of the modulus of the private key
 `(n, e, d)` (SP 800-56B Rev. 2 §6.2.2's basic format) by Appendix C.2's
 deterministic method (`recoverDet`), for `vg_rsa_crt_values`.
 
-`vg_rsa_recover_primes` (`Spec/Rsa/Contract.lean`) recovers them by
-Appendix C.1, which takes a full-size modular exponentiation for each
-candidate `g` it tries (one or two for most keys). Appendix C.2 takes none:
-a GCD, a product, two divisions and an integer square root. Its step 1 makes
+Appendix C.2 takes no modular exponentiation: a GCD, a product, two
+divisions and an integer square root. Its step 1 makes
 `a = K φ(n)` (with `K ≤ k²` for `k = (d e − 1) / λ(n)`, so `K < e²` for the
 least private exponent), and the method finds the factors whenever
 `K (p + q − 1) ≤ n`, roughly `K` below the smaller prime: for the least
@@ -23,7 +21,6 @@ for every two-prime key whose primes are not tiny, `φ(n)`-based and larger
 `2^(nBits/2)`, `e² ≤ n / (p + q − 1)`, `d < λ(n)`). The caller refuses a key
 it does not factor: one with a tiny prime factor (which trial division
 finds), or not a valid two-prime key.
-Existing contracts are unchanged.
 
 Whatever the key, a result `(p, q)` is a factorization of `n` with
 `p > q > 1` (`b` and `ϒ` have the same parity as `b² − ϒ² = 4n`, and
@@ -79,15 +76,21 @@ def primesKeyDet (nB eB dB : List Byte) : Option (List Byte × List Byte) :=
       (i2osp p nB.length, i2osp q nB.length)
   else none
 
-/-! ## `vg_rsa_recover_primes_det`
+/-! ## `vg_rsa_recover_primes_det` -/
 
-`vg_rsa_recover_primes`' signature (`recoverPrimesSig`), with `e` at most 8
-octets. -/
+/-- `vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8,
+q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize,
+d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32`. -/
+def recoverPrimesDetSig : Sig where
+  params := [("p", .slice true .u8 "p_len"), ("q", .slice true .u8 "q_len"),
+    ("n", .slice false .u8 "n_len"), ("e", .slice false .u8 "e_len"),
+    ("d", .slice false .u8 "d_len"), ("scratch", .slice true .u64 "scratch_len")]
+  ret := some .u32
 
 /-- The prime factors of the modulus of the private key `(n, e, d)` by
 Appendix C.2 (`primesKeyDet`). Constant time but for the public key. -/
 def recoverPrimesDetContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  recoverPrimesSig.contract A
+  recoverPrimesDetSig.contract A
     (pre := fun _p pLen _q qLen _n nLen _e eLen _d dLen _scratch scratchLen _ =>
       lenValid nLen.toNat ∧ pLen.toNat = nLen.toNat ∧ qLen.toNat = nLen.toNat ∧
         1 ≤ eLen.toNat ∧ eLen.toNat ≤ 8 ∧ 1 ≤ dLen.toNat ∧ dLen.toNat ≤ nLen.toNat ∧
@@ -103,7 +106,7 @@ def recoverPrimesDetContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract
 def recoverPrimesDetApi : Api where
   module := "rsa"
   name := "vg_rsa_recover_primes_det"
-  sig := recoverPrimesSig
+  sig := recoverPrimesDetSig
   writeArgs := true
   contracts := some fun A stack => recoverPrimesDetContract A stack
   summary := "The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` \

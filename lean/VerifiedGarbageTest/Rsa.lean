@@ -4,6 +4,10 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Rsa
 meta import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Spec.Rsa.RecoverDet
+meta import VerifiedGarbage.Spec.Rsa.RecoverDet
+import VerifiedGarbageTest.RsaFactors
+meta import VerifiedGarbageTest.RsaFactors
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
@@ -17,9 +21,8 @@ vectors (`vectors/nist-cavp-rsadp/`, SP 800-56B, 1024- and 2048-bit
 moduli). Each gives `n`, `e`, `d` and `c`, and either the result `k` or the
 failure for `c ≥ n`; no vector values are embedded in this test. For each:
 
-* `primesKey` recovers the factors of `n` (Appendix C.1), as `k` octets
-  each, as `recoverPrimes` does.
-* The recovered `p > q` multiply to `n`; `crtKey` gives their CRT values
+* The factors of `n`, found from `d` (`RsaFactors.lean`'s test helper):
+  `p > q` multiply to `n`; `crtKey` gives their CRT values
   (`crtValues`), with which `privateCrt` gives `k`, or fails for `c ≥ n`,
   also with `p`, `dP` and `qInv` one octet longer (a leading zero).
 * `publicOp` with `e` takes `k` back to `c`.
@@ -100,9 +103,8 @@ def ofWords (ws : List (BitVec 64)) : Nat := ws.foldr (fun x acc => x.toNat + 2 
 /-- `2^b mod n`, by `b` doublings. -/
 def powTwoMod (b n : Nat) : Nat := (List.range b).foldl (fun x _ => 2 * x % n) (1 % n)
 
-/-- Checks one vector; returns the number of candidates the factor recovery
-tried. -/
-def check (v : Vector) : Except String Nat := do
+/-- Checks one vector. -/
+def check (v : Vector) : Except String Unit := do
   let n := v.n
   let e := v.e
   let d := v.d
@@ -121,14 +123,7 @@ def check (v : Vector) : Except String Nat := do
   else
     unless v.c ≥ n && v.c < 256 ^ len do throw "failing vector's input not in [n, 256^k)"
     unless publicOp nB eB cB == none do throw "RSAEP accepted an input not below n"
-  let (some (p, q), tries) := recoverPrimes n e d | throw "factors not found"
-  unless 1 ≤ tries && tries ≤ recoverTries do throw s!"{tries} tries"
-  unless primesKey nB eB dB == (some (i2osp p len, i2osp q len), tries) do
-    throw "primesKey mismatch"
-  -- The `i`-th candidate is `g = i + 1`: those before the last tried fail.
-  let (t, r) := splitTwos (d * e - 1)
-  unless (List.range tries).all (fun i => (recoverStep n t r (i + 2)).isSome == (i + 1 == tries)) do
-    throw "candidates tried"
+  let some (p, q) := factors n e d | throw "factors not found"
   unless p * q == n && p > q && q > 1 do throw "factors wrong"
   let some (dP, dQ, qInv) := crtValues p q d | throw "no CRT values"
   unless (q * qInv) % p == 1 && dP < p - 1 && dQ < q - 1 do throw "CRT values wrong"
@@ -256,11 +251,10 @@ def check (v : Vector) : Except String Nat := do
   -- A modulus with a leading zero octet, or an even one, is not valid.
   unless publicOp (0 :: nB) eB (0 :: kB) == none do throw "accepted a leading zero"
   unless publicOp (i2osp (n + 1) len) eB kB == none do throw "accepted an even modulus"
-  unless primesKey (i2osp (n + 1) len) eB dB == (none, 0) do
-    throw "primesKey accepted an even modulus"
+  unless primesKeyDet (i2osp (n + 1) len) eB dB == none do
+    throw "primesKeyDet accepted an even modulus"
   unless crtKey (i2osp (n + 1) len) (bytes p) (bytes q) dB == none do
     throw "crtKey accepted an even modulus"
-  return tries
 
 /-- Edges on arithmetic inputs. -/
 def checkEdges : Except String Unit := do
@@ -282,20 +276,16 @@ def checkEdges : Except String Unit := do
     for a in List.range (2 * m) do
       let brute := (List.range m).find? fun x => a * x % m == 1
       unless inverse a m == brute do throw s!"inverse {a} mod {m}"
-  -- `d e - 1` odd, or `d e < 2`: no factors, and no candidate tried.
-  unless recoverPrimes (2 ^ 511 + 1) 3 2 == (none, 0) do throw "odd de - 1"
-  unless recoverPrimes (2 ^ 511 + 1) 3 0 == (none, 0) do throw "zero d"
-  unless recoverPrimes (2 ^ 511 + 1) 1 1 == (none, 0) do throw "de = 1"
 
 #assert_standard_axioms Spec.Rsa.publicOp
 #assert_standard_axioms Spec.Rsa.privateCrt
 #assert_standard_axioms Spec.Rsa.crtKey
-#assert_standard_axioms Spec.Rsa.primesKey
+#assert_standard_axioms Spec.Rsa.primesKeyDet
 #assert_standard_axioms Spec.Rsa.publicPrecompute
 #assert_standard_axioms Spec.Rsa.publicOpChecked
 #assert_standard_axioms Spec.Rsa.privateChecked
 #assert_standard_axioms Spec.Rsa.checkKey
-#assert_no_compiler_overrides Spec.Rsa.publicPrecompute Spec.Rsa.publicOp Spec.Rsa.privateCrt Spec.Rsa.crtKey Spec.Rsa.primesKey
+#assert_no_compiler_overrides Spec.Rsa.publicPrecompute Spec.Rsa.publicOp Spec.Rsa.privateCrt Spec.Rsa.crtKey Spec.Rsa.primesKeyDet
 #assert_no_compiler_overrides Spec.Rsa.publicOpChecked Spec.Rsa.privateChecked Spec.Rsa.checkKey
 #assert_spec_origin
 

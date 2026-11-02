@@ -127,22 +127,22 @@ theorem rdP_pre {s : State} (h : rdP.pre s) : rvPre s := by
 theorem rd_implies : rdP.Implies (Spec.Rsa.recoverPrimesDetContract abi) where
   pre := by
     intro s h
-    sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdP, stackArgs_four,
+    sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, rdP, stackArgs_four,
       List.append_eq] at h
-    sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdP, stackArgs_four,
+    sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, rdP, stackArgs_four,
       List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdP, stackArgs_four,
+    sig_reduce [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, rdP, stackArgs_four,
       List.append_eq]
     sig_and_intros
     sig_close
     all_goals first | with_reducible assumption | omega
   post := by
-    sig_implies_post [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdP,
+    sig_implies_post [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, rdP,
       stackArgs_four, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdP, stackArgs_four,
+    sig_pub [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, rdP, stackArgs_four,
       List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1, a2, a3⟩ := h
@@ -150,7 +150,7 @@ theorem rd_implies : rdP.Implies (Spec.Rsa.recoverPrimesDetContract abi) where
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩
   sat := by
-    sig_implies_sat [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdP,
+    sig_implies_sat [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, rdP,
       stackArgs_four, List.append_eq] [rvSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using rvSatState
 
 end VG.Proof.Rsa.PPC64LE.Recover
