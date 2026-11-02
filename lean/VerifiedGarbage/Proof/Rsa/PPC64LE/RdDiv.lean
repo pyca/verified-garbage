@@ -19,7 +19,7 @@ namespace VG.Proof.Rsa.PPC64LE.RecDet
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
 open VG.Proof.Rsa.PPC64LE.Recover
 open VG.Proof.Rsa (b2n)
-open VG.Proof.Rsa.RecoverDet (wsub)
+open VG.Proof.Rsa.RecoverDet (wsub wsub_neg)
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 open VG.Impl.Rsa.PPC64LE.RecoverDet (divA divB sB0 sB1 sLt sExact)
 

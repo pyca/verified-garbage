@@ -85,6 +85,61 @@ theorem wsub_of_lt {b a c : Nat} (hc : c < 2 ^ b) (h : a < c) : wsub b a c = a +
   unfold wsub
   rw [Nat.mod_eq_of_lt (by omega)]
 
+/-! ## The steps as code computes them, with carries -/
+
+/-- An addition by two subtractions: `a - (0 - c) = a + c`. -/
+theorem wsub_neg {b a c : Nat} (ha : a < 2 ^ b) (hc : c < 2 ^ b) : wsub b a (wsub b 0 c) = (a + c) % 2 ^ b := by
+  unfold wsub
+  rcases Nat.eq_zero_or_pos c with rfl | pos
+  · simp [Nat.mod_eq_of_lt ha]
+  · rw [show 0 + 2 ^ b - c = 2 ^ b - c by omega, Nat.mod_eq_of_lt (show 2 ^ b - c < 2 ^ b by omega),
+      show a + 2 ^ b - (2 ^ b - c) = a + c by omega]
+
+/-- A doubling modulo `2^b` and a bit shifted in. -/
+theorem dbl_add {b a c : Nat} (hb : 1 ≤ b) (hc : c ≤ 1) : 2 * a % 2 ^ b + c = (2 * a + c) % 2 ^ b := by
+  obtain ⟨k, rfl⟩ : ∃ k, b = k + 1 := ⟨b - 1, by omega⟩
+  rw [Nat.pow_succ, Nat.mul_comm (2 ^ k) 2]
+  have hk := Nat.two_pow_pos k
+  generalize 2 ^ k = Q at hk ⊢
+  have := Nat.mod_lt a hk
+  have e2 : 2 * a + c = (2 * (a % Q) + c) + (2 * Q) * (a / Q) :=
+    calc 2 * a + c = 2 * (a % Q + Q * (a / Q)) + c := by rw [Nat.mod_add_div]
+      _ = (2 * (a % Q) + c) + (2 * Q) * (a / Q) := by rw [Nat.mul_add, Nat.mul_assoc]; omega
+  rw [Nat.mul_mod_mul_left]
+  conv_rhs => rw [e2, Nat.add_mul_mod_self_left]
+  exact (Nat.mod_eq_of_lt (by omega)).symm
+
+/-- The bit a doubling shifts out. -/
+theorem two_div_le {x P : Nat} (h : x < P) : 2 * x / P ≤ 1 :=
+  Nat.lt_succ_iff.mp (Nat.div_lt_of_lt_mul (by omega))
+
+/-- A step of the square root as code computes it: the radicand doubled twice, its bits shifted
+into the remainder, and `4 y + 1` compared with the remainder. -/
+theorem sqrtStep_code {nb wb X R Y : Nat} (hnb : 1 ≤ nb) (hX : X < 2 ^ wb) :
+    sqrtStep nb wb (X, R, Y) =
+      (2 * (2 * X % 2 ^ wb) % 2 ^ wb,
+        if (2 * ((2 * R + 2 * X / 2 ^ wb) % 2 ^ nb) + 2 * (2 * X % 2 ^ wb) / 2 ^ wb) % 2 ^ nb <
+            (2 * (2 * Y % 2 ^ nb) + 1) % 2 ^ nb
+        then (2 * ((2 * R + 2 * X / 2 ^ wb) % 2 ^ nb) + 2 * (2 * X % 2 ^ wb) / 2 ^ wb) % 2 ^ nb
+        else wsub nb ((2 * ((2 * R + 2 * X / 2 ^ wb) % 2 ^ nb) + 2 * (2 * X % 2 ^ wb) / 2 ^ wb) % 2 ^ nb)
+          ((2 * (2 * Y % 2 ^ nb) + 1) % 2 ^ nb),
+        (2 * Y + if (2 * ((2 * R + 2 * X / 2 ^ wb) % 2 ^ nb) + 2 * (2 * X % 2 ^ wb) / 2 ^ wb) % 2 ^ nb <
+            (2 * (2 * Y % 2 ^ nb) + 1) % 2 ^ nb then 0 else 1) % 2 ^ nb) := by
+  have hi := two_div_le hX
+  have lo := two_div_le (Nat.mod_lt (2 * X) (Nat.two_pow_pos wb))
+  unfold sqrtStep
+  simp only
+  rw [dbl_add hnb hi, dbl_add hnb lo, dbl_add hnb (show 1 ≤ 1 by omega)]
+  have hr := Nat.mod_lt (2 * ((2 * R + 2 * X / 2 ^ wb) % 2 ^ nb) + 2 * (2 * X % 2 ^ wb) / 2 ^ wb)
+    (Nat.two_pow_pos nb)
+  generalize (2 * ((2 * R + 2 * X / 2 ^ wb) % 2 ^ nb) + 2 * (2 * X % 2 ^ wb) / 2 ^ wb) % 2 ^ nb = r at hr ⊢
+  generalize (2 * (2 * Y % 2 ^ nb) + 1) % 2 ^ nb = t
+  split
+  · simp
+  · rename_i c
+    simp only [Prod.mk.injEq, true_and]
+    refine ⟨(wsub_of_le hr (by omega)).symm, by rw [Nat.add_zero, dbl_add hnb (show 1 ≤ 1 by omega)]⟩
+
 /-- With the division's quotient and remainder where its divisor is positive, the mask and
 factors are Appendix C.2's result. -/
 theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤ n)
