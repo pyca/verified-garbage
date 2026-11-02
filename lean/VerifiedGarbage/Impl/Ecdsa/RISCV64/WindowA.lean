@@ -37,7 +37,6 @@ namespace VG.Impl.Ecdsa.RISCV64.WindowA
 
 open VG.RISCV64 VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64 VG.Impl.Ecdsa.RISCV64
 open VG.Impl.Ecdsa.RISCV64.Window (windows)
-open VG.Impl.Ecdsa.RISCV64.Verify (EX EY EZ)
 
 /-- `o = 2p` in Jacobian coordinates for any `a`, at the slot `S.a`
 (dbl-2007-bl, with `Z' = 2YZ` as a product): `A = X²`, `B = Y²`, `C = B²`,
@@ -105,7 +104,7 @@ def quad : Prog isa :=
 def step : Prog isa :=
   .seq (.block (decCounter :: select c)) <|
   .seq (quad c dbl) <|
-  .seq (Verify.Cfg.addPt c (c.pt RX RY RZ) (c.pt EX EY EZ) (c.pt TX TY TZ))
+  .seq (Verify.Cfg.addPt c (c.pt RX RY RZ) (c.pt c.EX c.EY c.EZ) (c.pt TX TY TZ))
     (.block (copyPt c (c.pt RX RY RZ) (c.pt TX TY TZ)))
 
 /-- The body: the table, `R = O`, then the windows. -/

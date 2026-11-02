@@ -60,8 +60,8 @@ def XN := 19
 def RN := 20
 def WD := 21
 
-/-! The joint ladder's slots, past the numbered ones: `2G`, `3G`, `2Q`, `3Q`,
-and the window's entry `E`. -/
+/-! The joint ladder's slots, past the numbered ones: `2G`, `3G` and `2Q`;
+`3Q` and the window's entry `E` are the configuration's (`Cfg.Q3X`, `Cfg.EX`). -/
 def G2X := 46
 def G2Y := 47
 def G2Z := 48
@@ -71,12 +71,6 @@ def G3Z := 51
 def Q2X := 52
 def Q2Y := 53
 def Q2Z := 54
-def Q3X := 55
-def Q3Y := 56
-def Q3Z := 57
-def EX := 58
-def EY := 59
-def EZ := 60
 namespace Cfg
 
 variable (c : Cfg) (FN : Field)
@@ -128,7 +122,7 @@ def gPt : Nat → Pt
 def qPt : Nat → Pt
   | 1 => c.pt CPX CPY ONEP
   | 2 => c.pt Q2X Q2Y Q2Z
-  | _ => c.pt Q3X Q3Y Q3Z
+  | _ => c.pt c.Q3X c.Q3Y c.Q3Z
 
 /-- Entry `e` from the point `p` in slots. -/
 def storePt (e : Nat) (p : Pt) : List Instr :=
@@ -161,7 +155,7 @@ def window : List Instr :=
 /-- Quadword `q` of the entry, selected by the masks of the entry number's
 four bits from the sixteen at `a0`, to `E`'s word `q`. -/
 def scanWord (q : Nat) : List Instr :=
-  Comb.treeAt .a0 (jb c) 4 (8 * q) Comb.treeRegs ++ sdAt .t0 wb (c.sl EX + 8 * q)
+  Comb.treeAt .a0 (jb c) 4 (8 * q) Comb.treeRegs ++ sdAt .t0 wb (c.sl c.EX + 8 * q)
 
 /-- The window's entry to `E`: the number, the masks of its four bits, the
 table's address in `a0`, and the `3 n` quadwords. -/
@@ -174,7 +168,7 @@ def step : Prog isa :=
   .seq (.block (decCounter :: select c)) <|
   .seq (addPt c (c.pt RX RY RZ) (c.pt RX RY RZ) (c.pt DX DY DZ)) <|
   .seq (addPt c (c.pt DX DY DZ) (c.pt DX DY DZ) (c.pt TX TY TZ))
-    (addPt c (c.pt TX TY TZ) (c.pt EX EY EZ) (c.pt RX RY RZ))
+    (addPt c (c.pt TX TY TZ) (c.pt c.EX c.EY c.EZ) (c.pt RX RY RZ))
 
 /-- `R = [u]G + [v]Q`: the table, `R = O`, then the steps. -/
 def joint : Prog isa :=
