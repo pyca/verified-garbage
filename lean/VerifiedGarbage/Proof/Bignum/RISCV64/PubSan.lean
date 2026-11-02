@@ -3,14 +3,11 @@ module
 public import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 public import VerifiedGarbage.Impl.Bignum.RISCV64.PublicChecked
-public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontCore
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreSave
-import VerifiedGarbage.Proof.Bignum.PackedRead
-import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
@@ -30,15 +27,8 @@ namespace VG.Proof.Bignum.RISCV64.Pub
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64
   VG.Impl.Bignum.RISCV64.PublicChecked
 open VG.Proof.Bignum.RISCV64
-open VG.Proof.Bignum (slot wv wv_congr wv_lt wv_add wv_eq_zero_iff)
+open VG.Proof.Bignum (slot)
 open VG.Proof.Mont (wordsVal)
-
-theorem san_wordsVal_eq_wv (m : Mem) (P : Addr) (d W : Nat) : wordsVal m P d W = wv m P d W := by
-  rw [VG.Proof.Bignum.wordsVal_read, VG.Proof.Bignum.read_eq_wv]
-
-theorem outside_wv {B : Addr} {o n : Nat} {m m' : Mem} (h : VG.Proof.Mont.Outside B o n m m') {d k : Nat}
-    (hd : d + 8 * k ≤ o ∨ o + n ≤ d) (hd' : d + 8 * k ≤ 2 ^ 64) : wv m' B d k = wv m B d k := by
-  rw [← san_wordsVal_eq_wv, ← san_wordsVal_eq_wv]; exact VG.Proof.Mont.Outside.wordsVal h hd hd'
 
 /-- `fixN`'s top word: `v`, or 1 if `v` is 0. -/
 def fixTop (v : BitVec 64) : BitVec 64 :=
@@ -180,15 +170,37 @@ theorem maskRR_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw1 : 1 �
     · rw [hw.word (by omega_arith) (by omega_arith)]; exact jz k hk
     · rw [VG.Proof.Mont.word_writeW_self, jout.word (Or.inr (Nat.le_refl _)) (by omega_arith)]
 
-theorem wv_top (m : Mem) (p : Addr) (d : Nat) {w : Nat} (hw : 1 ≤ w) :
-    wv m p d w = wv m p d (w - 1) + 2 ^ (64 * (w - 1)) * (Mont.word m p (d + 8 * (w - 1))).toNat := by
-  obtain ⟨v, rfl⟩ : ∃ v, w = v + 1 := ⟨w - 1, by omega_arith⟩
-  simp only [Nat.add_sub_cancel, wv]
+theorem wsv_congr {m m' : Mem} {p : Addr} : ∀ {d n : Nat},
+    (∀ i < n, Mont.word m' p (d + 8 * i) = Mont.word m p (d + 8 * i)) → wordsVal m' p d n = wordsVal m p d n
+  | _, 0, _ => rfl
+  | d, n + 1, h => by
+    have h0 : Mont.word m' p d = Mont.word m p d := by
+      have := h 0 (by omega_arith); rwa [Nat.mul_zero, Nat.add_zero] at this
+    have ih : wordsVal m' p (d + 8) n = wordsVal m p (d + 8) n := wsv_congr fun i hi => by
+      have := h (i + 1) (by omega_arith); rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega_arith] at this
+    simp only [wordsVal]
+    rw [h0, ih]
 
-theorem wv_low (m : Mem) (p : Addr) (d : Nat) {w : Nat} (hw : 1 ≤ w) :
-    wv m p d w % 2 = (Mont.word m p d).toNat % 2 := by
-  obtain ⟨v, rfl⟩ : ∃ v, w = 1 + v := ⟨w - 1, by omega_arith⟩
-  simp only [wv_add, wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero, Nat.mul_one]
+theorem wsv_zero {m : Mem} {p : Addr} : ∀ {d n : Nat}, (∀ i < n, Mont.word m p (d + 8 * i) = 0) → wordsVal m p d n = 0
+  | _, 0, _ => rfl
+  | d, n + 1, h => by
+    have h0 : Mont.word m p d = 0 := by
+      have := h 0 (by omega_arith); rwa [Nat.mul_zero, Nat.add_zero] at this
+    have ih : wordsVal m p (d + 8) n = 0 := wsv_zero fun i hi => by
+      have := h (i + 1) (by omega_arith); rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega_arith] at this
+    simp only [wordsVal]
+    rw [h0, ih]
+    rfl
+
+theorem wsv_top (m : Mem) (p : Addr) (d : Nat) {w : Nat} (hw : 1 ≤ w) :
+    wordsVal m p d w = wordsVal m p d (w - 1) + 2 ^ (64 * (w - 1)) * (Mont.word m p (d + 8 * (w - 1))).toNat := by
+  obtain ⟨v, rfl⟩ : ∃ v, w = v + 1 := ⟨w - 1, by omega_arith⟩
+  rw [Nat.add_sub_cancel, VG.Proof.Mont.wordsVal_succ_top]
+
+theorem wsv_low (m : Mem) (p : Addr) (d : Nat) {w : Nat} (hw : 1 ≤ w) :
+    wordsVal m p d w % 2 = (Mont.word m p d).toNat % 2 := by
+  obtain ⟨v, rfl⟩ : ∃ v, w = v + 1 := ⟨w - 1, by omega_arith⟩
+  simp only [wordsVal]
   omega_arith
 
 /-- `sanitize`: whatever arrays 0 and 1 held, array 0 is odd and at least 2,
@@ -212,7 +224,6 @@ theorem sanitize_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e3 := e 3; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
-  simp only [san_wordsVal_eq_wv]
   unfold sanitize
   refine WP.seq (WP.mono (fixN_ok hs hw2 hw' hZ h7 h5 h0) fun t₁ ⟨⟨tm, a5', a6'⟩, k1⟩ => ?_)
   generalize hw0 : Mont.word s.mem B (slot w 0) = w0 at tm
@@ -245,53 +256,52 @@ theorem sanitize_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2
     ⟨?_, (k12.trans k3).mono (by decide)⟩
   have hw0' : (w0 ||| 1#64).toNat % 2 = 1 := (or_one_odd w0).1
   have hft := fixTop_ne top
-  have N3 : wv t.mem B (slot w 0) w = wv t₁.mem B (slot w 0) w := by
-    rw [outside_wv out3 (Or.inl (by omega_arith)) (by omega_arith), outside_wv out2' (Or.inl (by omega_arith)) (by omega_arith)]
+  have N3 : wordsVal t.mem B (slot w 0) w = wordsVal t₁.mem B (slot w 0) w := by
+    rw [VG.Proof.Mont.Outside.wordsVal out3 (Or.inl (by omega_arith)) (by omega_arith), VG.Proof.Mont.Outside.wordsVal out2' (Or.inl (by omega_arith)) (by omega_arith)]
   have Wt0 : Mont.word t.mem B (slot w 0) = w0 ||| 1#64 := by
     rw [out3.word (by omega_arith) (by omega_arith), out2'.word (by omega_arith) (by omega_arith), W0]
-  have hN1 : wv t₁.mem B (slot w 0) w % 2 = 1 := by rw [wv_low _ _ _ (by omega_arith), W0]; exact hw0'
+  have hN1 : wordsVal t₁.mem B (slot w 0) w % 2 = 1 := by rw [wsv_low _ _ _ (by omega_arith), W0]; exact hw0'
   have h2 : 2 ≤ 2 ^ (64 * (w - 1)) :=
     Nat.le_trans (show 2 ≤ 2 ^ 1 by decide) (Nat.pow_le_pow_right (by decide) (by omega_arith))
-  have hN2 : 2 ^ (64 * (w - 1)) ≤ wv t₁.mem B (slot w 0) w := by
-    rw [wv_top _ _ _ (by omega_arith), WT]
+  have hN2 : 2 ^ (64 * (w - 1)) ≤ wordsVal t₁.mem B (slot w 0) w := by
+    rw [wsv_top _ _ _ (by omega_arith), WT]
     have h1 : 0 < (fixTop top).toNat := by
       rcases Nat.eq_zero_or_pos (fixTop top).toNat with h | h
       · exact absurd (BitVec.eq_of_toNat_eq h) hft.1
       · exact h
     have := Nat.le_mul_of_pos_right (2 ^ (64 * (w - 1))) h1
     omega_arith
-  have R1 : wv t₁.mem B (slot w 1) w = wv s.mem B (slot w 1) w := wv_congr fun i hi => W1 i hi
-  simp only [san_wordsVal_eq_wv] at hD
+  have R1 : wordsVal t₁.mem B (slot w 1) w = wordsVal s.mem B (slot w 1) w := wsv_congr fun i hi => W1 i hi
   rw [Wz] at h4
-  have hDl := wv_lt t₂.mem B (slot w 3) w
-  have hc1 : c = 1 ↔ wv t₁.mem B (slot w 1) w < wv t₁.mem B (slot w 0) w := by
+  have hDl := VG.Proof.Mont.wordsVal_lt t₂.mem B (slot w 3) w
+  have hc1 : c = 1 ↔ wordsVal t₁.mem B (slot w 1) w < wordsVal t₁.mem B (slot w 0) w := by
     generalize 2 ^ (64 * w) = P at hD hDl
     rcases (show c = 0 ∨ c = 1 by omega_arith) with rfl | rfl
     · rw [Nat.mul_zero, Nat.add_zero] at hD; omega_arith
     · rw [Nat.mul_one] at hD; omega_arith
   have T1 : ∀ i < w, Mont.word t.mem B (slot w 1 + 8 * i) = Mont.word s.mem B (slot w 1 + 8 * i) &&& t₂.gpr .s4 :=
     fun i hi => by rw [tw i hi, out2'.word (Or.inl (by omega_arith)) (by omega_arith), W1 i hi]
-  have R3 : wv t.mem B (slot w 1) w = if c = 1 then wv s.mem B (slot w 1) w else 0 := by
+  have R3 : wordsVal t.mem B (slot w 1) w = if c = 1 then wordsVal s.mem B (slot w 1) w else 0 := by
     rcases (show c = 0 ∨ c = 1 by omega_arith) with rfl | rfl
     · have hz : t₂.gpr .s4 = 0 := by rw [h4]; rfl
-      exact (wv_eq_zero_iff _ _ _ _).mpr fun q hq => by rw [T1 q hq, hz]; exact BitVec.and_zero
+      exact wsv_zero fun q hq => by rw [T1 q hq, hz]; exact BitVec.and_zero
     · have hz : t₂.gpr .s4 = BitVec.allOnes 64 := by rw [h4]; rfl
-      exact wv_congr fun i hi => by rw [T1 i hi, hz, BitVec.and_allOnes]
+      exact wsv_congr fun i hi => by rw [T1 i hi, hz, BitVec.and_allOnes]
   refine ⟨by rw [N3]; exact hN1, by rw [N3]; omega_arith, by rw [Wt0]; exact hw0', ?_, ?_, ?_⟩
   · rw [R3, N3]
     split
     · rename_i h; rw [← R1]; exact hc1.mp h
     · omega_arith
   · intro hodd hbig
-    have hw0o : w0.toNat % 2 = 1 := by rw [← hw0, ← wv_low _ _ _ (w := w) (by omega_arith)]; exact hodd
+    have hw0o : w0.toNat % 2 = 1 := by rw [← hw0, ← wsv_low _ _ _ (w := w) (by omega_arith)]; exact hodd
     have e0 : w0 ||| 1#64 = w0 := (or_one_odd w0).2 hw0o
     have htop0 : top ≠ 0 := fun h => by
-      have := wv_top s.mem B (slot w 0) (w := w) (by omega_arith)
+      have := wsv_top s.mem B (slot w 0) (w := w) (by omega_arith)
       rw [htop, h, show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero] at this
-      have := wv_lt s.mem B (slot w 0) (w - 1)
+      have := VG.Proof.Mont.wordsVal_lt s.mem B (slot w 0) (w - 1)
       omega_arith
     have et : fixTop top = top := hft.2 htop0
-    have NE : wv t₁.mem B (slot w 0) w = wv s.mem B (slot w 0) w := wv_congr fun i hi => by
+    have NE : wordsVal t₁.mem B (slot w 0) w = wordsVal s.mem B (slot w 0) w := wsv_congr fun i hi => by
       rcases Nat.eq_zero_or_pos i with rfl | hi0
       · rw [Nat.mul_zero, Nat.add_zero, W0, e0, hw0]
       · rcases (show i = w - 1 ∨ i < w - 1 by omega_arith) with rfl | hi1
