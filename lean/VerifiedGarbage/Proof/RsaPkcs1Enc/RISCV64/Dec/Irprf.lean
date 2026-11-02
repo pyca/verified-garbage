@@ -51,7 +51,7 @@ theorem prfLoop_ok {label : List Nat} {len count : List Instr} {dst N : Nat}
         (Frame [⟨scA s sMsg, 16⟩] u.mem w.mem ∧
           Spec.Rsa.bytesAt w.mem (scA s sMsg) (label.length + 4) = textF i) ∧ Kept [.t1, .t2] u w)
     (hcount : ∀ u : State, u.gpr .s9 = t₀.gpr .s9 →
-      WP isa (.block (count ++ [.sub .t1 .t1 .s8])) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C - u.gpr .s8)
+      WP isa (.block (count ++ ([.sub .t1 .t1 .s8] : List Instr))) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C - u.gpr .s8)
     (h0 : PInv s R EM kd dst textF t₀ 0 t₀) :
     WP isa (.loop (prfBody label len dst count) (.nonzero .t1)) t₀ (PInv s R EM kd dst textF t₀ N) := by
   refine VG.Proof.Bignum.RISCV64.count_loop hN0 (PInv s R EM kd dst textF t₀) (fun i hi u hu => ?_) h0
@@ -112,13 +112,13 @@ theorem nb_eq {k : BitVec 64} (hk : k.toNat ≤ 1024) :
 /-! ## The loops -/
 
 theorem count_ok (u : State) {c : Reg} (C : BitVec 64) (hc : u.gpr c = C) :
-    WP isa (.block ([mov .t1 c] ++ [.sub .t1 .t1 .s8])) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C - u.gpr .s8 := by
+    WP isa (.block (([mov .t1 c] : List Instr) ++ ([.sub .t1 .t1 .s8] : List Instr))) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C - u.gpr .s8 := by
   show WP isa (.block [mov .t1 c, .sub .t1 .t1 .s8]) u _
   exact wp_mov fun v₁ p₁ f₁ => wp_sub fun w p₂ f₂ => wp_nil
     ⟨(p₁.trans p₂).mono, by rw [f₂, f₁, hc, p₁.get .s8]⟩
 
 theorem count8_ok (u : State) :
-    WP isa (.block ([.li .t1 8] ++ [.sub .t1 .t1 .s8])) u fun w =>
+    WP isa (.block (([.li .t1 8] : List Instr) ++ ([.sub .t1 .t1 .s8] : List Instr))) u fun w =>
       Only [.t1] u w ∧ w.gpr .t1 = BitVec.ofNat 64 8 - u.gpr .s8 := by
   show WP isa (.block [.li .t1 (8 : Nat), .sub .t1 .t1 .s8]) u _
   exact wp_li (by decide) fun v₁ p₁ f₁ => wp_sub fun w p₂ f₂ => wp_nil
