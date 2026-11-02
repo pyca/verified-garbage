@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Dsa.RISCV64.SignFn
 import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyBody
+import VerifiedGarbage.Proof.Dsa.RISCV64.Elem
+import VerifiedGarbage.Proof.Dsa.RISCV64.Arr
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Framework.Flat
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveCT
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyBody
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.Elem
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.Arr
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.SignFront
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -27,14 +31,15 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 /-!
 # DSA signing on RISC-V: constant time, the levels
 
-`vg_dsa_sign` (`Sign.sign`) runs `Sign.entry`, then `checkKey` with
+`vg_dsa_sign` (`Sign.sign`) runs `Sign.entry`, then `Sign.checkSignKey` with
 `Sign.body` or `Sign.zeroOut`, then `restore`. Its public data (`vdS`) is
 the key's public octets (p||q||g||y), the nonce's and the digest's addresses
 and lengths, and `out`, which the header keeps. The entry loads `scratch`'s
 address from the stack, as verification's does (`sentry_rel`). Its levels
 are validation's (`ValidateCT.lean`), each failing to `zeroOut`
-(`szero_rel`, cut after its loads of the header), up to y's check, whose
-passing side is `body`, its relation a hypothesis here.
+(`szero_rel`, cut after its loads of the header), up to y's range (the
+key's level has no `elemOrder`: `midKs`), whose passing side is `body`, its
+relation a hypothesis here.
 -/
 
 @[expose] public section
@@ -45,6 +50,7 @@ open VG VG.RISCV64 VG.RISCV64.RegUpd VG.RISCV64.Taint VG.Proof.Mont VG.Proof.Big
 open VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Dsa.RISCV64 VG.Proof.Dsa.RISCV64
 open VG.Proof.Bignum.RISCV64.Pre (Two Pins two_post two_taint)
 open VG.Proof.Bignum.RISCV64 (At chain_cons chain_start at_zero_inv take_split)
+open VG.Proof.Bignum (slot)
 
 /-! ## The failing side: `zeroOut` -/
 
@@ -154,7 +160,7 @@ theorem sentry_rel : RelCT isa (Two C0s) (.block Sign.entry) fun _ _ => True := 
 
 /-! ## The levels -/
 
-abbrev RKs : Prog isa := andThen (.seq (.block ptrY) checkElem) Sign.body Sign.zeroOut
+abbrev RKs : Prog isa := andThen (.seq (.block ptrY) (.seq (loadArr 4) elemRange)) Sign.body Sign.zeroOut
 abbrev R3s : Prog isa := .seq setupP (andThen (.seq (.block ptrG) checkElem) RKs Sign.zeroOut)
 abbrev R2s : Prog isa := andThen pModQ R3s Sign.zeroOut
 abbrev R1s : Prog isa := andThen (.block (ptrQ ++ odd)) R2s Sign.zeroOut
@@ -183,8 +189,7 @@ abbrev ΦR2s (v : VD) (u : State) : Prop := At ΦR1s FR1s 1 v u ∧ u.gpr .a0 = 
 abbrev ΦR3s (v : VD) (u : State) : Prop := At ΦR2s FR2s 23 v u ∧ u.gpr .a0 = 0
 abbrev ΦEgs (v : VD) (u : State) : Prop := At ΦR3s FR3s 45 v u ∧ u.gpr .a0 = 0
 abbrev ΦKs (v : VD) (u : State) : Prop := At ΦR3s FR3s 46 v u ∧ u.gpr .a0 = 0
-abbrev ΦEys (v : VD) (u : State) : Prop := At ΦKs FKs 28 v u ∧ u.gpr .a0 = 0
-abbrev ΦBs (v : VD) (u : State) : Prop := At ΦKs FKs 29 v u ∧ u.gpr .a0 = 0
+abbrev ΦBs (v : VD) (u : State) : Prop := At ΦKs FKs 28 v u ∧ u.gpr .a0 = 0
 
 theorem hFTs : (FTs.drop 5).take 1 = [.ite (.zero .a0) X1s Sign.zeroOut] := rfl
 theorem hFX1s : (FX1s.drop 5).take 1 = [.ite (.zero .a0) X2s Sign.zeroOut] := rfl
@@ -194,8 +199,7 @@ theorem hFR1s : (FR1s.drop 1).take 1 = [.ite (.zero .a0) R2s Sign.zeroOut] := rf
 theorem hFR2s : (FR2s.drop 23).take 1 = [.ite (.zero .a0) R3s Sign.zeroOut] := rfl
 theorem hFR3gs : (FR3s.drop 45).take 1 = [.ite (.zero .a0) elemOrder (.block [])] := rfl
 theorem hFR3s : (FR3s.drop 46).take 1 = [.ite (.zero .a0) RKs Sign.zeroOut] := rfl
-theorem hFKys : (FKs.drop 28).take 1 = [.ite (.zero .a0) elemOrder (.block [])] := rfl
-theorem hFKs : (FKs.drop 29).take 1 = [.ite (.zero .a0) Sign.body Sign.zeroOut] := rfl
+theorem hFKs : (FKs.drop 28).take 1 = [.ite (.zero .a0) Sign.body Sign.zeroOut] := rfl
 
 theorem runTs : ∀ v s, C0s v s → WP isa (Code.seqL FTs) s fun _ => True := fun _ s h =>
   let ⟨tr, t, e, _⟩ := sign_correct s h.1
@@ -209,7 +213,6 @@ theorem runR2s : ∀ v s, ΦR2s v s → WP isa (Code.seqL FR2s) s fun _ => True 
 theorem runR3s : ∀ v s, ΦR3s v s → WP isa (Code.seqL FR3s) s fun _ => True := run_then runR2s hFR2s
 theorem runEgs : ∀ v s, ΦEgs v s → WP isa (Code.seqL FE) s fun _ => True := run_then runR3s hFR3gs
 theorem runKs : ∀ v s, ΦKs v s → WP isa (Code.seqL FKs) s fun _ => True := run_then runR3s hFR3s
-theorem runEys : ∀ v s, ΦEys v s → WP isa (Code.seqL FE) s fun _ => True := run_then runKs hFKys
 theorem runBs : ∀ v s, ΦBs v s → WP isa (Code.seqL FBs) s fun _ => True := run_then runKs hFKs
 
 theorem onX1s : ∀ v u, ΦX1s v u → SX1 v u := fun _ _ h => semX1 frontS ⟨atL rfl h.1, h.2⟩
@@ -226,11 +229,49 @@ theorem kyR3s : ∀ v u, ΦR3s v u → KY v := fun _ _ h =>
 
 theorem onKs : ∀ v u, ΦKs v u → SK v u := fun _ _ h => semK onR3s kyR3s ⟨atL rfl h.1, h.2⟩
 
-/-- `body`'s phase: the key passed the checks. -/
-abbrev SS (v : VD) (u : State) : Prop := SK v u ∧ EOk v (2 * v.L.pl + v.L.ql)
+/-- y's load and range, `CK` kept. -/
+theorem yrange_CK {v : VD} {s : State} {o : Nat} (h : CK v s) (ho : o + v.L.pl ≤ v.kn)
+    (h7 : s.gpr .s7 = off v.key o) (h8 : s.gpr .s8 = BitVec.ofNat 64 v.L.pl) :
+    WP isa (.seq (loadArr 4) elemRange) s fun t => CK v t ∧ (t.gpr .a0 = 0 ↔ ERange v o) := by
+  have hL := h.base.ok
+  have hbuf := hL.buf_end
+  have hqZ : v.L.qOff ≤ v.L.Z := by simp only [Lay.bOff] at hbuf; omega
+  have e0 := Lay.slot_eq v.L.wp 0; have e1 := Lay.slot_eq v.L.wp 1; have e4 := Lay.slot_eq v.L.wp 4
+  have hw := hL.wp_ge
+  have hnw := hL.nowrap
+  have en := h.inp.env
+  have he := h.base.hk.sub ho
+  refine WP.seq (WP.mono (loadArr_ok en (j := 4) (N := off v.key o) (by decide)
+    (by rw [h7]; exact (BitVec.add_zero _).symm) h8 (by have := h.base.pl; omega) (by have := hL.wp_eq; omega)
+    he.rd (fun i hi x hx => he.sep i hi x (Nat.lt_of_lt_of_le hx hqZ))) fun s₁ ⟨⟨v4, top4, o1, a7⟩, k1⟩ => ?_)
+  have e1' : Env s₁ v.L.S v.L.qOff v.L.wp :=
+    ⟨en.hs.congr k1.2.2, a7, (k1.gpr (by decide)).trans en.s5, (k1.gpr (by decide)).trans en.t0, en.w2, en.w48,
+      en.hZ⟩
+  have A0 : wordsVal s₁.mem v.L.S (slot v.L.wp 0) v.L.wp = v.p := by
+    rw [o1.wordsVal (by omega) (by omega_arith)]; exact h.p0
+  refine WP.mono (elemRange_ok e1' top4) fun t ⟨⟨r0, _, o2, e2⟩, k2⟩ => ?_
+  rw [v4, A0, h.base.bytes ho] at r0
+  have k12 := k1.trans k2
+  exact ⟨h.elem k12 (by decide) (k12.gpr (by decide)) ⟨e2, (k12.gpr (by decide)).trans h.inp.s6⟩
+    (p_elem2 o1 o2), r0⟩
+
+/-- At the branch on y's range: `body`'s phase if it passes. -/
+abbrev MKs (v : VD) (u : State) : Prop := SK v u ∧ (u.gpr .a0 = 0 ↔ ERange v (2 * v.L.pl + v.L.ql))
+
+theorem midKs {v : VD} {s : State} (h : ΦKs v s) : WP isa (Code.seqL (FKs.take 28)) s (MKs v) := by
+  obtain ⟨c, km, eg, ky⟩ := onKs _ _ h
+  exact WP.of_flat (c := .seq (.block ptrY) (.seq (loadArr 4) elemRange)) rfl
+    (WP.seq ((ptr_CK c (ptrY_ok c.base.scr c.base.ok c.base.regs)).mono fun _ ⟨⟨c', a7, a8⟩, _⟩ =>
+      (yrange_CK c' (by omega) a7 a8).mono fun _ ⟨c'', a0⟩ => ⟨⟨c'', km, eg, ky⟩, a0⟩))
+
+theorem zeroKs : ∀ v s₁ s₂, At ΦKs FKs 28 v s₁ → At ΦKs FKs 28 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
+  zero_at (fun v => ERange v (2 * v.L.pl + v.L.ql)) fun _ _ h => (midKs h).mono fun _ h => h.2
+
+/-- `body`'s phase: the domain passed the checks, and y its range. -/
+abbrev SS (v : VD) (u : State) : Prop := SK v u ∧ ERange v (2 * v.L.pl + v.L.ql)
 
 theorem onBs : ∀ v u, ΦBs v u → SS v u := fun _ _ h =>
-  let m := at_sem (Φ := ΦKs) (F := FK) (n := 29) (M := MK) (fun _ _ h => midK onKs h) (atL rfl h.1)
+  let m := at_sem (Φ := ΦKs) (F := FKs) (n := 28) (M := MKs) (fun _ _ h => midKs h) h.1
   ⟨m.1, m.2.mp h.2⟩
 
 theorem oX1s : ∀ v u, ΦX1s v u → v.out = some (oOf v) := fun _ _ h => at_pure outS h.1
@@ -266,12 +307,10 @@ theorem Ks_rel : RelCT isa (Two ΦKs) RKs fun _ _ => True := by
   refine chain_start (chain_cons runKs (m := 1) (by decide)
     (two_taint _ (pinsL rfl (pinsK_0 onKs)) (by taint_decide)) ?_)
   refine chain_cons runKs (m := 28) (by decide) (two_taint _ (pinsL rfl (pinsK_1 onKs)) (by taint_decide)) ?_
-  refine chain_cons runKs (m := 29) (by decide) (rel_ite_at hFKys (zeroL rfl (zeroEy onKs))
-    (eo_rel runEys fun _ _ h => semEy onKs ⟨atL rfl h.1, h.2⟩) nil_rel) ?_
-  exact chain_cons runKs (m := 30) (by decide) (rel_ite_at hFKs (zeroL rfl (zeroK onKs)) hbody
+  exact chain_cons runKs (m := 29) (by decide) (rel_ite_at hFKs zeroKs hbody
     (szero_rel (run_else runKs hFKs)
-      (fun _ _ h => (at_sem (Φ := ΦKs) (F := FK) (n := 29) (M := MK) (fun _ _ h => midK onKs h)
-        (atL rfl h.1)).1.1.base) fun _ _ h => at_pure oKs h.1)) nil_rel
+      (fun _ _ h => (at_sem (Φ := ΦKs) (F := FKs) (n := 28) (M := MKs) (fun _ _ h => midKs h)
+        h.1).1.1.base) fun _ _ h => at_pure oKs h.1)) nil_rel
 
 theorem R3s_rel : RelCT isa (Two ΦR3s) R3s fun _ _ => True := by
   refine chain_start (chain_cons runR3s (m := 2) (by decide)
