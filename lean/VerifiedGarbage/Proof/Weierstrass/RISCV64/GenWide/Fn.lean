@@ -208,4 +208,172 @@ theorem slowIn_ok {k : Nat} {W : Addr} {s : State} (hw : WsW W s) (hk : 7 ≤ k)
   · rw [m6, ← u1.mem]
     exact (f2.mono (by simp)).trans (f3.mono (by simp))
 
+/-- The slow branch's copy out: `[o]` from `SO`. -/
+theorem slowOut_ok {k : Nat} {W : Addr} {s : State} (hw : WsW W s) (hk : 7 ≤ k) (hk' : k ≤ 30) {o : Nat}
+    (h1 : s.gpr .t1 = W + BitVec.ofNat 64 o) (ho : o + 8 * k ≤ 8192 - 64 * k) :
+    WP isa (.block (pack k .t1 (SO k) 0)) s fun t =>
+      Rest [.a4, .a5] s t ∧ Frame [⟨W + BitVec.ofNat 64 o, 8 * k⟩] s.mem t.mem ∧
+      xv t.mem (W + BitVec.ofNat 64 o) k = xv s.mem (W + BitVec.ofNat 64 6144 + BitVec.ofNat 64 (SO k)) k := by
+  obtain ⟨e6, eA, eB, eO, otop, -⟩ := layout_facts k (by omega) hk'
+  obtain ⟨hNT, -, -⟩ := N_facts k (by omega) hk'
+  have hnw := hw.nowrap
+  refine WP.mono (pack_ok (k := k) hw.ctx (p := .t1) (q := W + BitVec.ofNat 64 o) (by decide) h1 (a := SO k)
+    (dst := 0) (by omega) (by unfold SO SB SA N T; omega) (by omega) (fun j hj => by
+      rw [Nat.zero_add, off_add]
+      exact in_base (n := 4) hw.wr (by omega) (by omega))
+    (by
+      rw [off_add, Nat.add_zero, off_add]
+      exact Offset.disjoint W (.inl (by omega)) (by omega) (by omega)))
+    fun t ht => ⟨ht.rest, ?_, xv_of_wds (k := k) ht.outs⟩
+  have f := ht.frame
+  rw [off_add, Nat.add_zero, show 4 * (2 * k) = 8 * k by omega] at f
+  exact f
+
+/-! ## The functions -/
+
+/-- The registers the functions write. -/
+abbrev clobF : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7]
+
+/-- The regions the functions write: their own working space and the result. -/
+abbrev fnW (k : Nat) (W : Addr) (o : Nat) : List Region :=
+  [⟨W + BitVec.ofNat 64 (8192 - 64 * k), 64 * k⟩, ⟨W + BitVec.ofNat 64 o, 8 * k⟩]
+
+theorem fnW_sub (k : Nat) (hk : 1 ≤ k) (hk' : k ≤ 30) (W : Addr) (o : Nat) {d n : Nat} (hd : 8192 - 64 * k ≤ d)
+    (hn : d + n ≤ 8192) :
+    ∀ r ∈ [(⟨W + BitVec.ofNat 64 d, n⟩ : Region)], ∃ r' ∈ fnW k W o, Region.Sub r r' := fun r hr => by
+  rw [List.mem_singleton] at hr; subst hr
+  exact ⟨_, List.mem_cons_self .., Offset.sub W hd (by omega)⟩
+
+theorem core_fnW {k : Nat} (hk : 1 ≤ k) (hk' : k ≤ 30) (W : Addr) {o : Nat} (O : Addr)
+    (hO : O = W + BitVec.ofNat 64 o ∨ ∃ e, 8192 - 64 * k ≤ e ∧ e + 8 * k ≤ 8192 ∧ O = W + BitVec.ofNat 64 e) :
+    ∀ r ∈ [ownR k (W + BitVec.ofNat 64 6144), ⟨O, 8 * k⟩], ∃ r' ∈ fnW k W o, Region.Sub r r' := fun r hr => by
+  obtain ⟨e6, -, -, -, -, onk⟩ := layout_facts k hk hk'
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · refine ⟨_, List.mem_cons_self .., ?_⟩
+    rw [ownR, off_add]
+    exact Offset.sub W (by omega) (by unfold T at *; omega)
+  · rcases hO with rfl | ⟨e, he, he', rfl⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_self .., Offset.sub W he (by omega)⟩
+
+/-- `fn k core`, from the working space at `W` and offsets below the own working space. -/
+theorem fn_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : List Instr} {pre : Nat → Nat → Prop}
+    {res : Nat → Nat → Nat → Prop} (hcore : CoreSpec k core pre res) {W : Addr} {s : State}
+    (h0 : s.gpr .a0 = W) (hal : W.toNat % 8 = 0)
+    (hwr : (⟨W, 8192⟩ : Region) ∈ s.wr) (hfit : W.toNat + 8192 ≤ 2 ^ 64)
+    (ho : lo s .a1 + 8 * k ≤ 8192 - 64 * k) (ha : lo s .a2 + 8 * k ≤ 8192 - 64 * k)
+    (hb : lo s .a3 + 8 * k ≤ 8192 - 64 * k)
+    (hpre : pre (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)) :
+    WP isa (fn k core) s fun s' =>
+      res (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)
+        (xv s'.mem (W + BitVec.ofNat 64 (lo s .a1)) k) ∧
+      Frame (fnW k W (lo s .a1)) s.mem s'.mem ∧ (∀ r, r ∉ clobF → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  obtain ⟨e6, eA, eB, eO, otop, onk⟩ := layout_facts k (by omega) hk'
+  obtain ⟨hNT, -, -⟩ := N_facts k (by omega) hk'
+  obtain ⟨t8, -⟩ := T_facts k (by omega) hk'
+  unfold fn
+  refine WP.seq (WP.mono (zext_ok s) fun s0 ⟨z0, r0, m0⟩ => ?_)
+  refine WP.seq (WP.mono (ptrs_ok z0 h0) fun s1 ⟨p2, p4, p5, p3, p0, r1', m1'⟩ => ?_)
+  have r1 : Rest [.a1, .a2, .a3, .t0, .t2, .t4, .t5] s s1 := (r0.mono (by decide)).trans (r1'.mono (by decide))
+  have m1 : s1.mem = s.mem := by rw [m1', m0]
+  have hw1 : WsW W s1 := ⟨hal, by rw [r1.wr]; exact hwr, hfit, p3⟩
+  have sub1 : ∀ x ∈ [Reg.a1, .a2, .a3, .t0, .t2, .t4, .t5], x ∈ clobF := by decide
+  have subW : ∀ x ∈ clobW, x ∈ clobF := by decide
+  have hlt : ∀ x, x + 8 * k ≤ 8192 - 64 * k → (W + BitVec.ofNat 64 x).toNat = W.toNat + x := fun x hx => by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : x < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
+  -- Words at `W + x` are apart from the own working space.
+  have wdis : ∀ x, x + 8 * k ≤ 8192 - 64 * k → ∀ i < k,
+      Region.Disjoint ⟨W + BitVec.ofNat 64 x + BitVec.ofNat 64 (8 * i), 8⟩ (ownR k (W + BitVec.ofNat 64 6144)) :=
+    fun x hx i hi => by
+      rw [ownR, off_add, off_add]; exact Offset.disjoint W (.inl (by unfold T at *; omega)) (by omega) (by omega)
+  refine WP.ite (s1.gpr .t0 == 0) rfl (fun hz => ?_) (fun _ => ?_)
+  · -- The offsets are multiples of 8.
+    rw [p0] at hz
+    obtain ⟨al1, al2, al3⟩ := aligned_of (beq_iff_eq.mp hz)
+    have hC : CoreOk k (W + BitVec.ofNat 64 6144) (W + BitVec.ofNat 64 (lo s .a2)) (W + BitVec.ofNat 64 (lo s .a3))
+        (W + BitVec.ofNat 64 (lo s .a1)) s1 :=
+      { ctx := hw1.ctx
+        nowrap := hw1.bnowrap
+        a := p4
+        b' := p5
+        o := p2
+        aal := al2
+        bal := al3
+        oal := al1
+        ain := fun i hi => by
+          rw [off_add]
+          obtain ⟨r, hr, hc⟩ := in_base (n := 8) hw1.wr (d := lo s .a2 + 8 * i) (by omega) (by omega)
+          exact ⟨r, List.mem_append_right _ hr, hc⟩
+        bin := fun i hi => by
+          rw [off_add]
+          obtain ⟨r, hr, hc⟩ := in_base (n := 8) hw1.wr (d := lo s .a3 + 8 * i) (by omega) (by omega)
+          exact ⟨r, List.mem_append_right _ hr, hc⟩
+        ow := fun i hi => by rw [off_add]; exact in_base (n := 8) hw1.wr (by omega) (by omega)
+        onw := by rw [hlt _ ho]; omega
+        adis := wdis _ ha
+        bdis := wdis _ hb
+        odis := by
+          rw [ownR, off_add]; exact Offset.disjoint W (.inl (by unfold T at *; omega)) (by omega) (by omega)
+        k7 := hk
+        k30 := hk' }
+    refine WP.mono (hcore hC (by rw [m1]; exact hpre)) fun s2 ⟨v2, f2, g2, rd2, wr2, sp2⟩ =>
+      ⟨by rw [← m1]; exact v2, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [← m1]; exact f2.sub (core_fnW (by omega) hk' W _ (.inl rfl))
+    · intro r hr
+      rw [g2 r (fun h => hr (subW r h)), r1.gpr r (fun h => hr (sub1 r h))]
+    · rw [rd2, r1.rd]
+    · rw [wr2, r1.wr]
+    · rw [sp2, r1.sp]
+  · -- The byte-wise copies.
+    refine WP.seq (WP.mono (slowIn_ok hw1 hk hk' p4 p5 p2 ha hb) fun s2 ⟨hw2, q1, q4, q5, q2, v4, v5, f2, r2⟩ => ?_)
+    have bw := hw2.ctx
+    have hC : CoreOk k (W + BitVec.ofNat 64 6144) (W + BitVec.ofNat 64 6144 + BitVec.ofNat 64 (SA k))
+        (W + BitVec.ofNat 64 6144 + BitVec.ofNat 64 (SB k)) (W + BitVec.ofNat 64 6144 + BitVec.ofNat 64 (SO k)) s2 :=
+      { ctx := bw
+        nowrap := hw2.bnowrap
+        a := q4
+        b' := q5
+        o := q2
+        aal := al8 bw.al (by unfold SA N T; omega)
+        bal := al8 bw.al (by unfold SB SA N T; omega)
+        oal := al8 bw.al (by unfold SO SB SA N T; omega)
+        ain := fun i hi => by rw [off_add (W + _)]; exact bw.inR (by omega)
+        bin := fun i hi => by rw [off_add (W + _)]; exact bw.inR (by omega)
+        ow := fun i hi => by rw [off_add (W + _)]; exact bw.inW (by omega)
+        onw := by
+          have := hw2.bnowrap
+          rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : SO k < 2 ^ 64),
+            Nat.mod_eq_of_lt (by omega)]
+          omega
+        adis := fun i hi => by
+          rw [off_add (W + _), ownR]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+        bdis := fun i hi => by
+          rw [off_add (W + _), ownR]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+        odis := by rw [ownR]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+        k7 := hk
+        k30 := hk' }
+    refine WP.seq (WP.mono (hcore hC (by rw [v4, v5, m1]; exact hpre)) fun s3 ⟨v3, f3, g3, rd3, wr3, sp3⟩ => ?_)
+    have hw3 : WsW W s3 := ⟨hal, by rw [wr3]; exact hw2.wr, hfit, by rw [g3 _ (by decide), hw2.a3]⟩
+    refine WP.mono (slowOut_ok hw3 hk hk' (by rw [g3 _ (by decide), q1]) ho) fun s4 ⟨r4, f4, v4'⟩ =>
+      ⟨by rw [v4']; rw [v4, v5, m1] at v3; exact v3, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [← m1]
+      refine (f2.sub fun r hr => ?_).trans ((f3.sub (core_fnW (by omega) hk' W _ (.inr ⟨6144 + SO k, by omega,
+        by omega, by rw [off_add]⟩))).trans (f4.sub fun r hr => ?_))
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact ⟨_, List.mem_cons_self .., by rw [off_add]; exact Offset.sub W (by omega) (by omega)⟩
+        · exact ⟨_, List.mem_cons_self .., by rw [off_add]; exact Offset.sub W (by omega) (by omega)⟩
+      · rw [List.mem_singleton.mp hr]
+        exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+    · intro r hr
+      have s2' : ∀ x ∈ [Reg.t1, .t2, .t4, .t5, .a4, .a5], x ∈ clobF := by decide
+      have s4' : ∀ x ∈ [Reg.a4, .a5], x ∈ clobF := by decide
+      rw [r4.gpr r (fun h => hr (s4' r h)), g3 r (fun h => hr (subW r h)), r2.gpr r (fun h => hr (s2' r h)),
+        r1.gpr r (fun h => hr (sub1 r h))]
+    · rw [r4.rd, rd3, r2.rd, r1.rd]
+    · rw [r4.wr, wr3, r2.wr, r1.wr]
+    · rw [r4.sp, sp3, r2.sp, r1.sp]
+
 end VG.Proof.Weierstrass.RISCV64.GenWide
