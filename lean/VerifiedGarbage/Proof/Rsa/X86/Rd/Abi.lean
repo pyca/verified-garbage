@@ -1,4 +1,5 @@
 module
+-- separate module: the ABI, the failure path and the timing base build in parallel with the stages' proofs, which `Timing` also waits for
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Inputs
