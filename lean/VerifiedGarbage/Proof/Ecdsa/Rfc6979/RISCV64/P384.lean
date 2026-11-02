@@ -109,6 +109,7 @@ theorem core_rel {nm : String} (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) {
 /-- P-384's kit, for its group law `hL`. -/
 def kit (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) : Kit where
   nw := 6
+  Q := 48
   E := Spec.Ecdsa.P384.inst
   FN := Impl.Ecdsa.RISCV64.p384Order
   FNok := VG.Proof.Ecdsa.RISCV64.P384.order_ok
@@ -118,6 +119,7 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) : Kit where
   nbits := nBits_p384
   two := by decide
   nw4 := .inr rfl
+  Qw := .inl rfl
   coreC := Impl.Ecdsa.RISCV64.Sign.signP384
   K := Impl.Ecdsa.RISCV64.Comb.p384CombConsts
   core_call h _ hQ := core_call hL h hQ

@@ -389,7 +389,7 @@ structure T1 (P : Rfc) (s₀ : State) (i : Nat) (t : State) : Prop where
 
 /-- After `core`'s arguments. -/
 def T2 (P : Rfc) (s₀ : State) (i : Nat) (t : State) : Prop :=
-  T1 P s₀ i t ∧ CoreArgs (8 * P.kit.nw) P.kit.K t (out s₀) (dk s₀) (dg s₀) (sA s₀ fV) (scr s₀)
+  T1 P s₀ i t ∧ CoreArgs P.Q P.kit.K t (out s₀) (dk s₀) (dg s₀) (sA s₀ fV) (scr s₀)
 
 /-- After `core`. -/
 def T3 (P : Rfc) (s₀ : State) (i : Nat) (t : State) : Prop :=

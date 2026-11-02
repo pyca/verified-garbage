@@ -81,6 +81,7 @@ theorem core_rel {nm : String} (hL : VG.Proof.Weierstrass.Law Spec.Secp256k1.cur
 /-- secp256k1's kit, for its group law `hL`. -/
 def kit (hL : VG.Proof.Weierstrass.Law Spec.Secp256k1.curve) : Kit where
   nw := 4
+  Q := 32
   E := Spec.Ecdsa.Secp256k1.inst
   FN := Impl.Ecdsa.RISCV64.secp256k1Order
   FNok := VG.Proof.Ecdsa.RISCV64.Secp256k1.order_ok
@@ -90,6 +91,7 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.Secp256k1.curve) : Kit where
   nbits := nBits_secp256k1
   two := by decide
   nw4 := .inl rfl
+  Qw := .inl rfl
   coreC := Impl.Ecdsa.RISCV64.signSecp256k1
   K := []
   core_call h _ hQ := core_call hL h hQ
