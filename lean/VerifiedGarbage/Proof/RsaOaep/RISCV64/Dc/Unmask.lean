@@ -1,5 +1,7 @@
 module
 
+-- separate module: it builds in parallel with `Label`, `Scan`, `Buf`, `Shift` and `Out`, which `Correct` also needs.
+
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Priv
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Mgf
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Main

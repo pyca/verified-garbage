@@ -1,5 +1,7 @@
 module
 
+-- separate module: it builds in parallel with `CTLabel` and the proofs of correctness, which `Verified` also needs.
+
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.CTBase
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.CTBlocks
 import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCT
