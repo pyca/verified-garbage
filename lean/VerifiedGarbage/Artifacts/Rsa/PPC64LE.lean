@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Instances
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvVerified
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on PPC64LE -/
@@ -38,6 +39,9 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.PPC64LE.KeyCheck.cck_verified },
   Spec.Rsa.recoverPrimesApi.artifact PPC64LE.target {
     code := Impl.Rsa.PPC64LE.Recover.code
-    verified := Proof.Rsa.PPC64LE.Recover.rv_verified }]
+    verified := Proof.Rsa.PPC64LE.Recover.rv_verified },
+  Spec.Rsa.recoverPrimesDetApi.artifact PPC64LE.target {
+    code := Impl.Rsa.PPC64LE.RecoverDet.code
+    verified := Proof.Rsa.PPC64LE.RecDet.rd_verified }]
 
 end VG.Artifacts.Rsa.PPC64LE
