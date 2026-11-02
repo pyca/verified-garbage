@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.Instances
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvBatch
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Verified
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.Finiteness.Attr

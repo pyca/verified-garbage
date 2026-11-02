@@ -1,4 +1,5 @@
 module
+-- separate module: names no ISA and imports no Mathlib algebra, so any target's batched inverse can import it without the divstep algebra
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
