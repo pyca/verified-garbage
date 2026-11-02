@@ -101,6 +101,7 @@ theorem core_rel {nm : String} (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) {
 /-- P-256's kit, for its group law `hL`. -/
 def kit (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : Kit where
   nw := 4
+  Q := 32
   E := Spec.Ecdsa.P256.inst
   FN := Impl.Ecdsa.RISCV64.p256Order
   FNok := VG.Proof.Ecdsa.RISCV64.P256.order_ok
@@ -110,6 +111,7 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : Kit where
   nbits := VG.Proof.Ecdsa.Rfc6979.nBits_p256
   two := by decide
   nw4 := .inl rfl
+  Qw := .inl rfl
   coreC := Impl.Ecdsa.RISCV64.Sign.signP256
   K := Impl.Ecdsa.RISCV64.Comb.p256CombConsts
   core_call h _ hQ := core_call hL h hQ
