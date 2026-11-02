@@ -20,9 +20,10 @@ which has no rotation and faults on misaligned accesses:
   temporary) is `t6`.
 * The state is an argument buffer, whose alignment the contract does not
   state, so the rounds run on a copy in a frame on the stack (`alloc`,
-  16-byte aligned), which the prologue loads a byte at a time
-  (`loadLE64`) and the epilogue stores back a byte at a time
-  (`storeLE64`). The rounds alternate between the copy (`a0`) and a second
+  16-byte aligned), which the prologue loads and the epilogue stores back:
+  a doubleword at a time (`ld`, `sd`) if `state` is 8-byte aligned, as a
+  Rust `[u64; 25]` is, and a byte at a time (`loadLE64`, `storeLE64`)
+  otherwise, a branch on the pointer's low bits. The rounds alternate between the copy (`a0`) and a second
   state in the frame (`a1`): the first round of each iteration reads `a0`
   and writes `a1`, the second the other way round, so after the 24 rounds
   the result is back in the copy. `scratch` is not used.
@@ -42,8 +43,8 @@ The frame (`frameBytes`, 608 bytes) is laid out as:
 `s1` holds `state`. The round constant of round `2i + k` is at `8k(s0)`,
 where `s0` is the frame plus `16i`; the loop ends when `s0` reaches the
 copy of the state (`a0`), after 12 iterations. Every address is a pointer
-plus a constant, and the only branch is the round loop's, so only the
-pointers can affect timing.
+plus a constant, and the only branches are the round loop's and those on
+`state`'s alignment, so only the pointers can affect timing.
 -/
 
 @[expose] public section
@@ -195,7 +196,21 @@ def copyIn (i : Nat) : List Instr :=
 constants. -/
 def pointers : List Instr := [.addSp .a0 stOff, .addSp .a1 scrOff, .addi .s0 .t6 0]
 
-def setup : List Instr := save ++ rcStores ++ (List.range 25).flatMap copyIn ++ pointers
+/-- Lane `i` of an 8-byte aligned state into the copy, complemented if in
+`complLanes`: a doubleword load. -/
+def copyInA (i : Nat) : List Instr :=
+  ld (laneReg i) .s1 i ++ cmplLane (laneReg i) i ++
+    ([.store .d (laneReg i) .t6 (stOff + 8 * i)] : List Instr)
+
+/-- The registers saved, the round constants stored, and in `t0` the low bits
+of `state`: zero exactly when it is 8-byte aligned. -/
+def setup : List Instr := save ++ rcStores ++ ([.logicImm .and .t0 .s1 7] : List Instr)
+
+/-- The copy of the state into the frame, a doubleword at a time if `state` is
+8-byte aligned and a byte at a time otherwise, then the rounds' pointers. -/
+def copyIns : Prog isa :=
+  .ite (.zero .t0) (.block ((List.range 25).flatMap copyInA ++ pointers))
+    (.block ((List.range 25).flatMap copyIn ++ pointers))
 
 /-- Lane `i` of the copy back into the state, complemented back. -/
 def copyOut (i : Nat) : List Instr :=
@@ -204,10 +219,18 @@ def copyOut (i : Nat) : List Instr :=
 /-- Restore `s0` and `s1`, from the frame at `a0 - stOff`. -/
 def restore : List Instr := [.load .d .s0 .a0 (592 - stOff), .load .d .s1 .a0 (600 - stOff)]
 
-def epilogue : List Instr := (List.range 25).flatMap copyOut ++ restore
+/-- Lane `i` of the copy back into an 8-byte aligned state, complemented
+back: a doubleword store. -/
+def copyOutA (i : Nat) : List Instr := ld .t0 .a0 i ++ cmplLane .t0 i ++ st .s1 i .t0
+
+/-- The copy back, as `copyIns` chooses, and the registers restored. -/
+def epilogue : Prog isa :=
+  .seq (.block [.logicImm .and .t0 .s1 7])
+    (.ite (.zero .t0) (.block ((List.range 25).flatMap copyOutA ++ restore))
+      (.block ((List.range 25).flatMap copyOut ++ restore)))
 
 def main : Prog isa :=
-  .seq (.block setup) (.seq (.loop (.block body) (.ne .s0 .a0)) (.block epilogue))
+  .seq (.block setup) (.seq copyIns (.seq (.loop (.block body) (.ne .s0 .a0)) epilogue))
 
 def permute : Prog isa := .frame (.alloc frameBytes) main (.free frameBytes)
 
