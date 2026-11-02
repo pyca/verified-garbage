@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Ed25519.RISCV64.PointMul
 The PPC64LE code (`Impl/Ed25519/PPC64LE/Verify.lean`, ARMv7's): `S < L`,
 then `A` and `R` decoded by one loop of two iterations into the tables at
 7776 and 7904 (their results ANDed in `s4`; the pointers in `s9`–`s11`),
-then `[S] B` (to 8032), `[k] A`, the sum with `R` and the projective
+then `[S] B` (to 8032), `[k] A` (`challengeMul`), the sum with `R` and the projective
 comparison. The result, 1 or 0, is in `s3`, and returned in `a0`. The
 callee-saved registers and `ra` are saved in the working space at `SAVE`,
 which is aligned to 8 bytes. The tables lie beyond the immediates of loads
@@ -52,9 +52,20 @@ def verifyCombine : Prog isa :=
   .seq copyPointToQ (.seq (.block (pointTableRead 7904))
     (.seq addCall (.seq copyPointToQ (.block (pointTableRead 8032)))))
 
+/-- The bytes of the top half of the challenge (at `s11`), or-ed into `a4`: zero
+exactly when the challenge is below `2^256`. -/
+def challengeHigh : List Instr :=
+  [.li .a4 0] ++ (List.range 32).flatMap fun i => [.load .b .a5 .s11 (32 + i), .logic .or .a4 .a4 .a5]
+
+/-- `[k] A`: over the low 32 bytes of the challenge when it is below `2^256` (always,
+from `vg_ed25519_verify`, which reduces it modulo `L`), over all 64 otherwise. The
+challenge is public. -/
+def challengeMul : Prog isa :=
+  .seq (.block challengeHigh) (.ite (.zero .a4) (pointFromScalar 16) (pointFromScalar 32))
+
 def verifyRhs : Prog isa :=
   .seq (.block (pointTableRead 7776 ++ [.addi .s0 .s11 0]))
-    (.seq (pointFromScalar 32) (.seq verifyCombine pointEqual))
+    (.seq challengeMul (.seq verifyCombine pointEqual))
 
 def verifyEquationPoints : Prog isa := .seq verifyLhs verifyRhs
 
