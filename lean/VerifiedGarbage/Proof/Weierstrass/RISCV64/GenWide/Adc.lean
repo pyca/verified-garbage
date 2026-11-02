@@ -75,7 +75,7 @@ set_option linter.unusedSimpArgs false in
 /-- Step `j` of a sum. -/
 theorem adcStep_ok {Dst X Y : Addr} {xb yb db : Reg} {xo yo d n : Nat} {msk : Bool} {s0 : State}
     (hD : DstOk Dst db d n s0) (hX : OpOk Dst X xb xo d n s0) (hY : OpOk Dst Y yb yo d n s0)
-    (h2 : Reg.a2 ∉ clobB := by decide) {j : Nat} (hj : j < n) {s : State}
+    {j : Nat} (hj : j < n) {s : State}
     (h : AdcInv Dst X Y xo yo d msk s0 j s) :
     WP isa (.block (adcStep (mkOf msk) xb xo yb yo db d j)) s (AdcInv Dst X Y xo yo d msk s0 (j + 1)) := by
   have hxo := hX.hxo j hj
@@ -106,7 +106,7 @@ theorem adcStep_ok {Dst X Y : Addr} {xb yb db : Reg} {xo yo d n : Nat} {msk : Bo
   have a6 : (s3.gpr .a6).toNat = dw s0.mem X (xo + 8 * j) := by
     rw [g3 _ (by decide), u2.other _ (by decide), u1.gpr, ← hX0]; rfl
   have a7 : (s3.gpr .a7).toNat = yw msk (s0.gpr .a2) (dw s0.mem Y (yo + 8 * j)) := by
-    rw [e3, u2.other _ (by decide), u1.other _ (by decide), h.gpr _ h2, u2.gpr, u1.mem, ← hY0]; rfl
+    rw [e3, u2.other _ (by decide), u1.other _ (by decide), h.gpr _ (by decide), u2.gpr, u1.mem, ← hY0]; rfl
   have hm5 : s5.mem = s.mem.writeW (Dst + BitVec.ofNat 64 (d + 8 * j)) (s4.gpr .t0) := by
     rw [u5.mem, k4.2.1, m3, u2.mem, u1.mem]
   refine ⟨fun r hr => ?_, by rw [u5.rd, k4.2.2.1, rd3, u2.rd, u1.rd, h.rd],
@@ -150,6 +150,6 @@ theorem adcRow_ok {Dst X Y : Addr} {xb yb db : Reg} {xo yo d n : Nat} {msk : Boo
   | j + 1, hj => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
     exact WP.block_append (WP.mono (adcRow_ok hD hX hY hc0 j (by omega)) fun s h =>
-      adcStep_ok hD hX hY (j := j) (hj := by omega) h)
+      adcStep_ok hD hX hY (j := j) (by omega) h)
 
 end VG.Proof.Weierstrass.RISCV64.GenWide
