@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.MulVerified
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.MulLit
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.Window
 import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
@@ -516,7 +517,7 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
   have e₁ : ∀ i, i < 44 → sv base s₁ i = sv base s i := fun i hi =>
     sv_unch U₁ i (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; rw [sl_eq, FL]; omega)
       (by omega)
-  refine wsCallR_ok Impl.Ecdsa.RISCV64.mulP192_noFrames (mul_rv hL) hw₁ h3₁ (fun t r w a m => ?_)
+  refine wsCallR_ok Impl.Ecdsa.RISCV64.mulP192_noFrames (VG.Proof.Ecdsa.RISCV64.P192.Window.mul_rv hL) hw₁ h3₁ (fun t r w a m => ?_)
     fun s₂' s₂ K₂ mm₂ t a₂ m₂ hp₂ => ⟨K₂, ?_⟩
   · refine ⟨r, by rw [w, a], by rw [a]; exact hw₁.nowrap, by rw [a]; exact hw₁.al, ?_, ?_⟩
     · rw [a, m]

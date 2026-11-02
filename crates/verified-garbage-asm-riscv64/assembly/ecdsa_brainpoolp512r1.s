@@ -9575,204 +9575,24 @@ vg_ecdsa_brainpoolp512r1_verify:
 	sd t0, 1913(s0)
 	addi s0, s0, -2047
 	addi a0, s0, 0
-	addi a1, zero, 1536
+	addi a1, zero, 1152
 	addi a2, zero, 960
-	addi a3, zero, 960
+	addi a3, zero, 1088
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 1024
-	addi a3, zero, 1024
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1664
+	addi a1, zero, 1536
 	addi a2, zero, 1088
 	addi a3, zero, 1088
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 960
-	addi a3, zero, 1024
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 960
-	addi a3, zero, 1024
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 1728
-	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 1536
-	addi a3, zero, 1600
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 1728
-	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 960
-	addi a3, zero, 1088
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1856
-	addi a2, zero, 960
-	addi a3, zero, 1088
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 1792
-	addi a3, zero, 1856
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1856
-	addi a2, zero, 1536
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 1792
-	addi a3, zero, 1856
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1856
-	addi a2, zero, 1024
-	addi a3, zero, 1088
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1152
-	addi a2, zero, 1024
-	addi a3, zero, 1088
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1856
-	addi a2, zero, 1856
-	addi a3, zero, 1152
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1152
-	addi a2, zero, 1600
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1856
-	addi a2, zero, 1856
-	addi a3, zero, 1152
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1280
-	addi a2, zero, 448
-	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1152
-	addi a2, zero, 512
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1280
-	addi a2, zero, 1152
-	addi a3, zero, 1280
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1152
-	addi a2, zero, 1600
-	addi a3, zero, 1280
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1280
-	addi a2, zero, 1600
-	addi a3, zero, 1280
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
 	addi a1, zero, 1216
-	addi a2, zero, 1152
-	addi a3, zero, 1280
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 1536
+	addi a2, zero, 1024
 	addi a3, zero, 1536
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 1600
-	addi a3, zero, 1536
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1664
-	addi a2, zero, 448
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 512
-	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 1600
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1664
-	addi a2, zero, 1536
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1664
-	addi a2, zero, 448
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 1792
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 1600
-	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1216
-	addi a2, zero, 1216
-	addi a3, zero, 1536
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 1856
-	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1152
-	addi a2, zero, 1728
-	addi a3, zero, 1152
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1152
-	addi a2, zero, 1152
-	addi a3, zero, 1536
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 1728
-	addi a3, zero, 1600
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1280
-	addi a2, zero, 1856
-	addi a3, zero, 1280
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1280
-	addi a2, zero, 1280
-	addi a3, zero, 1536
+	addi a2, zero, 1088
+	addi a3, zero, 256
 	call {vg_brainpoolp512r1_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1536
@@ -9786,194 +9606,334 @@ vg_ecdsa_brainpoolp512r1_verify:
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1664
+	addi a2, zero, 1600
+	addi a3, zero, 1600
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1152
+	addi a3, zero, 1600
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1728
+	addi a3, zero, 1728
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1728
+	addi a3, zero, 1536
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1728
+	addi a3, zero, 1664
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1728
+	addi a3, zero, 1728
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1792
 	addi a2, zero, 1280
 	addi a3, zero, 1280
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 1152
-	addi a3, zero, 1216
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
 	addi a1, zero, 1792
-	addi a2, zero, 1152
-	addi a3, zero, 1216
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 1728
+	addi a2, zero, 1792
 	addi a3, zero, 1792
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
-	addi a2, zero, 1536
-	addi a3, zero, 1600
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 1728
+	addi a2, zero, 448
 	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_sub_mod_p}
+	call {vg_brainpoolp512r1_mul_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 1152
-	addi a3, zero, 1280
+	addi a1, zero, 1856
+	addi a2, zero, 1536
+	addi a3, zero, 1536
 	call {vg_brainpoolp512r1_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1856
-	addi a2, zero, 1152
-	addi a3, zero, 1280
+	addi a2, zero, 1856
+	addi a3, zero, 1536
 	call {vg_brainpoolp512r1_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1856
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1856
-	addi a2, zero, 1536
-	addi a3, zero, 1664
 	call {vg_brainpoolp512r1_add_mod_p}
 	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 1792
-	addi a3, zero, 1856
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1856
+	addi a1, zero, 1472
 	addi a2, zero, 1216
 	addi a3, zero, 1280
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1344
-	addi a2, zero, 1216
-	addi a3, zero, 1280
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1856
-	addi a2, zero, 1856
-	addi a3, zero, 1344
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1344
-	addi a2, zero, 1600
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1856
-	addi a2, zero, 1856
-	addi a3, zero, 1344
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1472
-	addi a2, zero, 448
-	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1344
-	addi a2, zero, 512
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1472
-	addi a2, zero, 1344
-	addi a3, zero, 1472
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1344
-	addi a2, zero, 1600
-	addi a3, zero, 1472
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1472
-	addi a2, zero, 1600
-	addi a3, zero, 1472
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1408
-	addi a2, zero, 1344
-	addi a3, zero, 1472
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 1536
-	addi a3, zero, 1536
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 1600
-	addi a3, zero, 1536
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1664
-	addi a2, zero, 448
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 512
-	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 1600
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1664
-	addi a2, zero, 1536
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1664
-	addi a2, zero, 448
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 1792
-	addi a3, zero, 1664
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 1600
-	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1408
-	addi a2, zero, 1408
-	addi a3, zero, 1536
-	call {vg_brainpoolp512r1_add_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 1856
-	addi a3, zero, 1792
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1344
-	addi a2, zero, 1728
-	addi a3, zero, 1344
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1344
-	addi a2, zero, 1344
-	addi a3, zero, 1536
-	call {vg_brainpoolp512r1_sub_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 1728
-	addi a3, zero, 1600
-	call {vg_brainpoolp512r1_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1472
-	addi a2, zero, 1856
-	addi a3, zero, 1472
 	call {vg_brainpoolp512r1_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1472
 	addi a2, zero, 1472
+	addi a3, zero, 1472
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1344
+	addi a2, zero, 1792
+	addi a3, zero, 1792
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1344
+	addi a2, zero, 1344
+	addi a3, zero, 1728
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1344
+	addi a2, zero, 1344
+	addi a3, zero, 1728
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1408
+	addi a2, zero, 1728
+	addi a3, zero, 1344
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1408
+	addi a2, zero, 1792
+	addi a3, zero, 1408
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1664
+	addi a3, zero, 1664
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1664
+	addi a3, zero, 1664
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1664
+	addi a3, zero, 1664
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1408
+	addi a2, zero, 1408
+	addi a3, zero, 1664
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1536
+	addi a2, zero, 1344
+	addi a3, zero, 1344
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1600
+	addi a2, zero, 1408
+	addi a3, zero, 1408
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1600
+	addi a3, zero, 1600
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1344
+	addi a3, zero, 1600
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1728
+	addi a3, zero, 1728
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1728
+	addi a3, zero, 1536
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1728
+	addi a3, zero, 1664
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1728
+	addi a2, zero, 1728
+	addi a3, zero, 1728
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1792
+	addi a2, zero, 1472
+	addi a3, zero, 1472
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1792
+	addi a2, zero, 1792
+	addi a3, zero, 1792
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1792
+	addi a2, zero, 448
+	addi a3, zero, 1792
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1856
+	addi a2, zero, 1536
 	addi a3, zero, 1536
 	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1856
+	addi a2, zero, 1856
+	addi a3, zero, 1536
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1792
+	addi a2, zero, 1792
+	addi a3, zero, 1856
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1280
+	addi a2, zero, 1408
+	addi a3, zero, 1472
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1280
+	addi a2, zero, 1280
+	addi a3, zero, 1280
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1152
+	addi a2, zero, 1792
+	addi a3, zero, 1792
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1152
+	addi a2, zero, 1152
+	addi a3, zero, 1728
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1152
+	addi a2, zero, 1152
+	addi a3, zero, 1728
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1216
+	addi a2, zero, 1728
+	addi a3, zero, 1152
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1216
+	addi a2, zero, 1792
+	addi a3, zero, 1216
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1664
+	addi a3, zero, 1664
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1664
+	addi a3, zero, 1664
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1664
+	addi a2, zero, 1664
+	addi a3, zero, 1664
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1216
+	addi a2, zero, 1216
+	addi a3, zero, 1664
+	call {vg_brainpoolp512r1_sub_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1344
+	addi a2, zero, 1152
+	addi a3, zero, 1280
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1536
+	addi a2, zero, 1280
+	addi a3, zero, 1280
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1472
+	addi a2, zero, 1536
+	addi a3, zero, 1280
+	call {vg_brainpoolp512r1_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1408
+	addi a2, zero, 1216
+	addi a3, zero, 256
+	call {vg_brainpoolp512r1_add_mod_p}
+	addi t3, zero, 0
+	ld t4, 1472(s0)
+	or t3, t3, t4
+	ld t4, 1480(s0)
+	or t3, t3, t4
+	ld t4, 1488(s0)
+	or t3, t3, t4
+	ld t4, 1496(s0)
+	or t3, t3, t4
+	ld t4, 1504(s0)
+	or t3, t3, t4
+	ld t4, 1512(s0)
+	or t3, t3, t4
+	ld t4, 1520(s0)
+	or t3, t3, t4
+	ld t4, 1528(s0)
+	or t3, t3, t4
+	addi t4, zero, 0
+	sub t4, t4, t3
+	or t4, t4, t3
+	srli t4, t4, 63
+	addi a7, t4, -1
+	ld t0, 1408(s0)
+	ld t1, 384(s0)
+	xor t1, t1, t0
+	and t1, t1, a7
+	xor t0, t0, t1
+	sd t0, 1408(s0)
+	ld t0, 1416(s0)
+	ld t1, 392(s0)
+	xor t1, t1, t0
+	and t1, t1, a7
+	xor t0, t0, t1
+	sd t0, 1416(s0)
+	ld t0, 1424(s0)
+	ld t1, 400(s0)
+	xor t1, t1, t0
+	and t1, t1, a7
+	xor t0, t0, t1
+	sd t0, 1424(s0)
+	ld t0, 1432(s0)
+	ld t1, 408(s0)
+	xor t1, t1, t0
+	and t1, t1, a7
+	xor t0, t0, t1
+	sd t0, 1432(s0)
+	ld t0, 1440(s0)
+	ld t1, 416(s0)
+	xor t1, t1, t0
+	and t1, t1, a7
+	xor t0, t0, t1
+	sd t0, 1440(s0)
+	ld t0, 1448(s0)
+	ld t1, 424(s0)
+	xor t1, t1, t0
+	and t1, t1, a7
+	xor t0, t0, t1
+	sd t0, 1448(s0)
+	ld t0, 1456(s0)
+	ld t1, 432(s0)
+	xor t1, t1, t0
+	and t1, t1, a7
+	xor t0, t0, t1
+	sd t0, 1456(s0)
+	ld t0, 1464(s0)
+	ld t1, 440(s0)
+	xor t1, t1, t0
+	and t1, t1, a7
+	xor t0, t0, t1
+	sd t0, 1464(s0)
 	addi a0, s0, 0
 	addi a1, zero, 1536
 	addi a2, zero, 1344

@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 # Montgomery squaring on RISC-V: the rows
 
 `macSteps_ok`, `macLoop_ok`, `macRun_ok`: a row of `Impl/Bignum/RISCV64/MontSqr.lean`'s
-`sqrMac` steps, `T += x Y + c` over `K` words, unrolled by four with the rest
+`sqrMac` steps, `T += x Y + c` over `K` words, unrolled by eight with the rest
 one at a time.
 -/
 
@@ -23,6 +23,38 @@ one at a time.
 namespace VG.Proof.Bignum.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum.RISCV64
+
+/-- The arithmetic of a step, in `sqrMac`'s order: `x` added into the
+product's low word first and `c` last, the two carries into its high word,
+make `x + p q + c`, below `2¹²⁸`. -/
+theorem sqr_chain (x p q c : BitVec 64) :
+    (p * q + x + c).toNat +
+      2 ^ 64 * (BitVec.ofNat 64 (p.toNat * q.toNat / 2 ^ 64) + (if p * q + x < x then 1 else 0) +
+        (if p * q + x + c < c then 1 else 0)).toNat =
+      x.toNat + p.toNat * q.toNat + c.toNat := by
+  have hx := x.isLt
+  have hp := p.isLt
+  have hq := q.isLt
+  have hc := c.isLt
+  have hP : p.toNat * q.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  simp only [BitVec.toNat_add (_ + _), BitVec.toNat_add (BitVec.ofNat 64 _), carry_toNat]
+  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat]
+  by_cases h1 : 2 ^ 64 ≤ p.toNat * q.toNat % 2 ^ 64 + x.toNat <;>
+    by_cases h2 : 2 ^ 64 ≤ (p.toNat * q.toNat % 2 ^ 64 + x.toNat) % 2 ^ 64 + c.toNat <;>
+    simp only [h1, h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
+
+theorem sqr_rem8 (n : Nat) (h : n < 2 ^ 64) :
+    BitVec.ofNat 64 n &&& BitVec.ofNat 64 7 = BitVec.ofNat 64 (n % 8) := by
+  apply BitVec.eq_of_toNat_eq
+  have a := Nat.and_two_pow_sub_one_eq_mod n 3
+  simp only [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceSub, Nat.reduceMod] at a ⊢
+  rw [Nat.mod_eq_of_lt h, a]
+  omega_arith
+
+theorem sqr_quot8 (n : Nat) (h : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 3 = BitVec.ofNat 64 (n / 8) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  omega_arith
 
 theorem sqrMac_writes (k : Nat) : writesOnly [.s1, .s2, .s3, .s4] (.block (sqrMac k)) = true := by
   rfl
@@ -42,7 +74,7 @@ theorem sqrMac_ok {s : State} {B : Addr} {Z dT dY k : Nat} (hs : Scr s B Z)
   unfold sqrMac
   brun [h4, h0, hk, hs.ld hT, hs.ld hY, hs.st hT, hs.al8 hT (by omega_arith), hs.al8 hY (by omega_arith)]
   refine ⟨_, rfl, ?_⟩
-  have h1 := fios_chain (word s.mem B (dT + k)) (s.gpr .s0) (word s.mem B (dY + k)) (s.gpr .s1)
+  have h1 := sqr_chain (word s.mem B (dT + k)) (s.gpr .s0) (word s.mem B (dY + k)) (s.gpr .s1)
   simp only [Nat.reducePow, word] at h1 ⊢
   omega_arith
 
@@ -213,24 +245,24 @@ theorem macRun_ok {B : Addr} {Z dT dY K : Nat} {s : State} (hs : Scr s B Z)
           wordsVal s.mem B dT K + (s.gpr .s0).toNat * wordsVal s.mem B dY K + (s.gpr .s1).toNat) ∧
       Keep macRunRegs s t := by
   have hnw := hs.nowrap
-  have hKd := Nat.mod_add_div K 4
-  generalize hN₁ : K % 4 = N₁ at hKd
-  generalize hN₂ : K / 4 = N₂ at hKd
+  have hKd := Nat.mod_add_div K 8
+  generalize hN₁ : K % 8 = N₁ at hKd
+  generalize hN₂ : K / 8 = N₂ at hKd
   unfold macRun
-  have hpre : WP isa (.block [.logicImm .and .t6 .t5 3, .shift .srl .d .t5 .t5 2]) s fun s₁ =>
+  have hpre : WP isa (.block [.logicImm .and .t6 .t5 7, .shift .srl .d .t5 .t5 3]) s fun s₁ =>
       (s₁.gpr .t6 = BitVec.ofNat 64 N₁ ∧ s₁.gpr .t5 = BitVec.ofNat 64 N₂ ∧ s₁.mem = s.mem) ∧
         Keep [.t5, .t6] s s₁ := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [h5, fios_rem K (by omega_arith), fios_quot K (by omega_arith), hN₁, hN₂]
+    brun [h5, sqr_rem8 K (by omega_arith), sqr_quot8 K (by omega_arith), hN₁, hN₂]
   refine WP.seq (WP.mono hpre fun s₁ ⟨⟨i6, i5, im⟩, k₁⟩ => ?_)
   have g₁ : ∀ r ∈ [Reg.t4, .a0, .s0, .s1], s₁.gpr r = s.gpr r := fun r hr => k₁.gpr (by revert r hr; decide)
-  refine WP.seq (WP.mono (macLoop?_ok (cr := .t5) (by decide) (U := 4) (N := N₂) (by decide) (hs.congr k₁.2.2)
+  refine WP.seq (WP.mono (macLoop?_ok (cr := .t5) (by decide) (U := 8) (N := N₂) (by decide) (hs.congr k₁.2.2)
     hT8 hY8 (by rw [g₁ .t4 (by decide), h4]) (by rw [g₁ .a0 (by decide), h0]) i5 (by omega_arith)
     (by omega_arith) (by omega_arith) (by omega_arith)) fun s₂ ⟨j4, j0, jout, jeq, k₂⟩ => ?_)
   have g₂ : s₂.gpr .t6 = s₁.gpr .t6 := k₂.gpr (by decide)
   have g₂' : s₂.gpr .s0 = s₁.gpr .s0 := k₂.gpr (by decide)
   refine WP.mono (macLoop?_ok (cr := .t6) (by decide) (U := 1) (N := N₁) (by decide) (hs.congr (k₁.trans k₂).2.2)
-    (dT := dT + 8 * (4 * N₂)) (dY := dY + 8 * (4 * N₂)) (by omega_arith) (by omega_arith) j4 j0
+    (dT := dT + 8 * (8 * N₂)) (dY := dY + 8 * (8 * N₂)) (by omega_arith) (by omega_arith) j4 j0
     (by rw [g₂, i6]) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t ⟨n4, n0, nout, neq, k₃⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   · rw [n4, Nat.one_mul, Nat.add_assoc, ← Nat.mul_add]; congr 2; omega_arith
@@ -239,17 +271,17 @@ theorem macRun_ok {B : Addr} {Z dT dY K : Nat} {s : State} (hs : Scr s B Z)
     exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans (nout.mono (by omega_arith) (by omega_arith))
   · rw [Nat.one_mul] at neq
     rw [im, g₁ .s0 (by decide), g₁ .s1 (by decide)] at jeq
-    have rY : wordsVal s₂.mem B (dY + 8 * (4 * N₂)) N₁ = wordsVal s.mem B (dY + 8 * (4 * N₂)) N₁ := by
+    have rY : wordsVal s₂.mem B (dY + 8 * (8 * N₂)) N₁ = wordsVal s.mem B (dY + 8 * (8 * N₂)) N₁ := by
       rw [← im]; exact jout.wordsVal (by omega_arith) (by omega_arith)
-    have rT : wordsVal s₂.mem B (dT + 8 * (4 * N₂)) N₁ = wordsVal s.mem B (dT + 8 * (4 * N₂)) N₁ := by
+    have rT : wordsVal s₂.mem B (dT + 8 * (8 * N₂)) N₁ = wordsVal s.mem B (dT + 8 * (8 * N₂)) N₁ := by
       rw [← im]; exact jout.wordsVal (by omega_arith) (by omega_arith)
     rw [rY, rT, g₂', k₁.gpr (r := .s0) (by decide)] at neq
     have e := mac_sum_group jeq neq
-    rw [← fios_wordsVal_append, ← fios_wordsVal_append, show 4 * N₂ + N₁ = K by omega_arith,
-      ← Nat.pow_add, ← Nat.mul_add, show 4 * N₂ + N₁ = K by omega_arith] at e
-    rw [show wordsVal s₂.mem B dT (4 * N₂) = wordsVal t.mem B dT (4 * N₂) by
+    rw [← fios_wordsVal_append, ← fios_wordsVal_append, show 8 * N₂ + N₁ = K by omega_arith,
+      ← Nat.pow_add, ← Nat.mul_add, show 8 * N₂ + N₁ = K by omega_arith] at e
+    rw [show wordsVal s₂.mem B dT (8 * N₂) = wordsVal t.mem B dT (8 * N₂) by
       exact (nout.wordsVal (by omega_arith) (by omega_arith)).symm, ← fios_wordsVal_append,
-      show 4 * N₂ + N₁ = K by omega_arith] at e
+      show 8 * N₂ + N₁ = K by omega_arith] at e
     exact e
 
 /-! ## The square as cross products and squares of words -/
