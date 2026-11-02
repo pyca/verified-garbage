@@ -98,17 +98,34 @@ theorem baseList_regs : baseList.map Prod.fst = baseSaved := by decide
 
 theorem baseList_not_a3 : ∀ p ∈ baseList, p.1 ≠ .a3 := by decide
 
-theorem scalarBase_ok {s : State} (hp : BasePre s) :
-    WP isa scalarBase s fun t =>
+/-- What an engine between `scalarBaseSetup` and `scalarBaseFinish` does, as the comb's: from the
+working space at `b` and the scalar at `p` in `s0`, the result `R` of the scalar's bytes at `FR`,
+writing only `baseR` and `combW b`. -/
+def EngineOk (e : Prog isa) (R : List Byte → List Byte) : Prop :=
+  ∀ {b : Addr} {s : State} {p T : Addr}, Ctx8 b s → WS b s → s.gpr .s0 = p →
+    (∀ i < 32, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 i) 1) →
+    (⟨p, 32⟩ : Region).Disjoint ⟨b, 8192⟩ → TblAt s T → s.syms combSym = T →
+    (TBL T).Disjoint ⟨b, 8192⟩ →
+    WP isa e s fun t => Rest baseR s t ∧ Frame (combW b) s.mem t.mem ∧
+      Spec.Ed25519.encodeLE 32 (V t.mem b FR) = R (bytesAt s.mem p 32)
+
+theorem scalarBaseEngine_ok' : EngineOk scalarBaseEngine Spec.Ed25519.scalarBase :=
+  fun hc hws h14 hin hpd hT hsym apart => scalarBaseEngine_ok hc hws h14 hin hpd hT hsym apart
+
+/-- `scalarBaseSetup`, an engine and `scalarBaseFinish`: the engine's result at `out`, and the
+callee-saved registers restored. -/
+theorem baseWrap_ok {e : Prog isa} {R : List Byte → List Byte} (he : EngineOk e R) {s : State}
+    (hp : BasePre s) :
+    WP isa (.seq (.block scalarBaseSetup) (.seq e (.block scalarBaseFinish))) s fun t =>
       (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.gpr .ra = s.gpr .ra ∧
-      bytesAt t.mem (s.gpr .a0) 32 = Spec.Ed25519.scalarBase (bytesAt s.mem (s.gpr .a1) 32) := by
+      bytesAt t.mem (s.gpr .a0) 32 = R (bytesAt s.mem (s.gpr .a1) 32) := by
   have hV : SAVE = 1024 := rfl
   have hX := FR_eq
   obtain ⟨b, hb⟩ : ∃ b, b = s.gpr .a2 := ⟨_, rfl⟩
   have hws : (⟨b, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr, hb]; simp
   have hout : (⟨s.gpr .a0, 32⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
   have hal : b.toNat % 8 = 0 := by rw [hb]; exact hp.al
-  unfold scalarBase scalarBaseSetup
+  unfold scalarBaseSetup
   rw [baseSave_eq]
   simp only [List.cons_append, List.nil_append]
   refine WP.seq (WP.of_syms (wp_mv fun s1 u1 => ?_))
@@ -165,7 +182,7 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
         exact hf2.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega))
           (by simp only [List.mem_singleton, forall_eq]; rw [hb]; exact hp.tbl_ws) (by decide)⟩
   have hsym4 : s4.syms combSym = s.syms combSym := congrFun sy4 combSym
-  refine WP.seq (WP.mono (scalarBaseEngine_ok hc4 hws4 e14 hin4 hpd hT4 hsym4 (hb ▸ hp.tbl_ws))
+  refine WP.seq (WP.mono (he hc4 hws4 e14 hin4 hpd hT4 hsym4 (hb ▸ hp.tbl_ws))
     fun s7 ⟨r7, f7, v7⟩ => ?_)
   rw [hsc] at v7
   -- The encoding to `out`, then the registers restored.
@@ -209,6 +226,12 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   · rw [ht.mem]
     rw [out_bytes (b := b) (a := FR) (fun j hj => by rw [← Nat.zero_add (4 * j)]; exact hw.outs j hj) rfl,
       uv.mem, v7]
+
+theorem scalarBase_ok {s : State} (hp : BasePre s) :
+    WP isa scalarBase s fun t =>
+      (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.gpr .ra = s.gpr .ra ∧
+      bytesAt t.mem (s.gpr .a0) 32 = Spec.Ed25519.scalarBase (bytesAt s.mem (s.gpr .a1) 32) :=
+  baseWrap_ok scalarBaseEngine_ok' hp
 
 theorem base_ok : BaseOk := fun _ hs => by
   obtain ⟨t, s', he, hg, hsp, hra, hb⟩ := scalarBase_ok hs
