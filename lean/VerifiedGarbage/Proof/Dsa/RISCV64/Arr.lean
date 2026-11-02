@@ -474,15 +474,14 @@ def storeRegs : List Reg := [.s0, .t3, .t4, .t5]
 
 /-- `storeBE j`: array `j`'s low `k` octets (`k` in `s8`), most significant
 first, to `O` (`s7`), a buffer apart from the working space. -/
-theorem storeBE_ok {s : State} {B O : Addr} {Z w k j : Nat} (h : Env s B Z w) (hj : j < 28) (ho : Scr s O k)
-    (h7 : s.gpr .s7 = O) (h8 : s.gpr .s8 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
+theorem storeBE_ok {s : State} {B O : Addr} {Z w k j : Nat} (h : Env s B Z w) (hj : j < 28)
+    (ho : ∀ i < k, InRegions s.wr (off O i) 1) (hno : O.toNat + k ≤ 2 ^ 64) (h7 : s.gpr .s7 = O) (h8 : s.gpr .s8 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
     (hsep : ∀ x, ofs O x < k → Z ≤ ofs B x) :
     WP isa (storeBE j) s fun t =>
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem O k) = (s.mem.read (off B (slot w j)) k).toNat ∧
         Outside O 0 k s.mem t.mem) ∧ Keep storeRegs s t := by
   have hs := h.hs
   have hnw := hs.nowrap
-  have hno := ho.nowrap
   have hZj := h.arr hj
   have hw48 := h.w48
   have hsl : 256 ≤ slot w j := by rw [Lay.slot_eq]; omega
@@ -512,7 +511,7 @@ theorem storeBE_ok {s : State} {B O : Addr} {Z w k j : Nat} (h : Env s B Z w) (h
           mem := t.mem.write (off O i) 1 (((t.mem.read (off B (slot w j + (k - 1) - i)) 1).setWidth 64).setWidth 8) } :
             State).write .t4 (off O (i + 1))).write .t3
               (off B (slot w j + (k - 1) - i) - BitVec.ofNat 64 1)).write .t5 (t.gpr .t5 - BitVec.ofNat 64 1) := by
-      brun [t3, t4, hrd, add_ofNat_zero, (ho.congr tk.2.2).st (d := i) (n := 1) (by omega_arith)]
+      brun [t3, t4, hrd, add_ofNat_zero, (show InRegions t.wr (off O i) 1 by rw [tk.2.2]; exact ho i (by omega_arith))]
     refine WP.mono hst fun t' e => ?_
     subst e
     have hw1 := write1_outside t.mem O (d := i)

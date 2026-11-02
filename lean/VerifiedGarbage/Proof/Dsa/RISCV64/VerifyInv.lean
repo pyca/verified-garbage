@@ -180,7 +180,9 @@ theorem qMinus2_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s 
   refine WP.seq (WP.mono (ptrBuf_ok Q1.scr hL Q1.regs) fun s₂ ⟨⟨a7, a8, m2⟩, k2⟩ => ?_)
   have e2 := Q1.inq.env.keep k2
   refine WP.mono (storeBE_ok (j := 6) (O := L.Buf) (k := L.ql) e2 (by decide)
-    (ScrL.bufN (s := s₂) (Q1.scr.congr k2.2.2) hL (by omega)) a7 a8 (by omega) (by omega) (m2_sep hL))
+    (by have := ScrL.bufSt (Q1.scr.congr k2.2.2) hL (o := 0) (k := L.ql) (by omega)
+        simpa only [off, BitVec.add_zero] using this)
+    (by have := buf_nowrap hL (o := 0) (k := L.ql) (by omega) (by omega); simpa only [off, BitVec.add_zero] using this) a7 a8 (by omega) (by omega) (m2_sep hL))
     fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
   rw [m2] at vt ot
   have qb : QBuf L s₁.mem t.mem := QBuf.ofBuf hL ot (by omega)
