@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreCore
+import VerifiedGarbage.Proof.RsaKeyGen.Bits
 
 /-!
 # A candidate on RISC-V: the working space's set-up
@@ -18,6 +21,10 @@ import VerifiedGarbage.Proof.Framework.Omega
 header's `scratch_len`, `w`, stride and the arrays' addresses (`Lay`), and
 zeroes the first `nArr` arrays; it writes nothing else (`setupRanges`), and
 keeps the body's state (`Ctx`).
+
+`loadC_ok`: the first `8 w` octets of `rand` into array 0, most significant
+first, its low bit and its two top bits set: array 0 holds
+`RsaKeyGen.candidate (64 w) x`, and the octets read are `8 w`.
 -/
 
 @[expose] public section
@@ -257,5 +264,194 @@ theorem setup_ok {s0 s : State} {w : Nat} (hc : Ctx s0 s) (h6 : s.gpr .s6 = stac
     simp only [ofs, sL] at this hsc ⊢
     rcases hr with rfl | rfl <;> dsimp only <;> omega_arith)
   exact ⟨⟨hc.step tsp K.2.1 K.2.2 (K.gpr (by decide)) (fS.mono (by simp)), he, hl, hz, hO⟩, K⟩
+
+
+/-! ## Drawing the candidate -/
+
+open VG.Proof.MillerRabin.RISCV64 (A)
+open VG.Impl.RsaKeyGen.RISCV64.Candidate (loadC stf oRand oRead)
+
+/-- What changes within `scratch` changes nothing outside it. -/
+theorem out_frame {s0 : State} {m m' : Mem} {d n : Nat} (hdn : d + n ≤ 8 * sL s0)
+    (o : Outside (stackArg s0 1) d n m m') : Frame [cS s0] m m' := fun x hx => o x (.inr (by
+  have := hx _ List.mem_cons_self
+  simp only [Region.Contains, sL, ofs] at this hdn ⊢
+  omega_arith))
+
+/-- A number of words of `scratch` survives what changes only regions apart
+from it. -/
+theorem wordsVal_frame {rs : List Region} {m m' : Mem} (f : Frame rs m m') {B : Addr} {Z : Nat}
+    (hn : B.toNat + Z ≤ 2 ^ 64) (hd : ∀ ρ ∈ rs, (⟨B, Z⟩ : Region).Disjoint ρ) :
+    ∀ k d, d + 8 * k ≤ Z → wordsVal m' B d k = wordsVal m B d k
+  | 0, _, _ => rfl
+  | k + 1, d, hk => by
+    rw [wordsVal, wordsVal, wordsVal_frame f hn hd k (d + 8) (by omega_arith)]
+    congr 2
+    exact f.readW (r := ⟨B, Z⟩) (Offset.contains_base B (by omega_arith) (by omega_arith)) hd (by decide)
+
+/-- The registers `loadC` writes. -/
+def lcRegs : List Reg := [.s7, .s8, .a0, .s0, .t2, .t3, .t4, .t5]
+
+theorem top2_eq : (BitVec.ofNat 64 3 <<< 62 : BitVec 64) = BitVec.ofNat 64 (3 * 2 ^ 62) := by decide
+
+/-- `loadC`: the candidate from `rand`'s first `8 w` octets into array 0. -/
+theorem loadC_ok {s0 s : State} {w : Nat} (hc : Ctx s0 s) (h : Env s (stackArg s0 1) (8 * sL s0) w)
+    (hw : oL s0 = 8 * w) (hrl : oL s0 ≤ rL s0) :
+    WP isa loadC s fun t =>
+      (Ctx s0 t ∧ Env t (stackArg s0 1) (8 * sL s0) w ∧
+        A t.mem (stackArg s0 1) w 0 = Spec.RsaKeyGen.candidate (64 * w)
+          (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a7) (8 * w))) ∧
+        t.mem.readW (fw s0 oRead) 64 = BitVec.ofNat 64 (8 * w) ∧
+        ∀ d, d + 8 ≤ 8 * sL s0 → (d + 8 ≤ slot w 0 ∨ slot w 0 + 8 * w ≤ d) →
+          word t.mem (stackArg s0 1) d = word s.mem (stackArg s0 1) d) ∧ Keep lcRegs s t := by
+  have hp := hc.fr.pre
+  have hf := hc.fr
+  generalize hB : stackArg s0 1 = B at h ⊢
+  generalize hZ : 8 * sL s0 = Z at h ⊢
+  generalize hR : s0.gpr .a7 = R
+  have hs := h.hs
+  have hnw := hs.nowrap
+  have hw4 := h.hw
+  have hw128 := h.hw'
+  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  have h0 : slot w 0 = 256 := by rw [es, Nat.zero_mul, Nat.add_zero]
+  have hZ' : 256 + 28 * (8 * (w + 2)) ≤ Z := by rw [← es]; exact h.hZ
+  have hw' : (s0.gpr .a1) = BitVec.ofNat 64 (8 * w) := by
+    rw [← hw, oL, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have al : ∀ o, o % 8 = 0 → (fb s0 + BitVec.ofNat 64 o).toNat % 8 = 0 := fun o h8 => fw_al hp h8
+  have inr : ∀ o, o + 8 ≤ 192 → InRegions (s.rd ++ s.wr) (fb s0 + BitVec.ofNat 64 o) 8 := fun o ho =>
+    ⟨kF s0, List.mem_append_right _ (by rw [hf.wr]; exact List.mem_cons_self), kF_contains ho⟩
+  have r160 : s.mem.readW (fb s0 + BitVec.ofNat 64 160) 64 = R := hR ▸ hf.wRand
+  have r112 : s.mem.readW (fb s0 + BitVec.ofNat 64 112) 64 = BitVec.ofNat 64 (8 * w) := hw' ▸ hf.wOutLen
+  -- `rand`'s octets are readable, and apart from `scratch`.
+  have hfr : R.toNat + rL s0 ≤ 2 ^ 64 := by rw [← hR]; exact hp.fr
+  have cRc : ∀ i < 8 * w, (cR s0).Contains (off R i) 1 := fun i hi => by
+    show (⟨s0.gpr .a7, (stackArg s0 0).toNat⟩ : Region).Contains _ _
+    rw [hR]; exact Offset.contains_base _ (by simp only [rL] at hrl; omega_arith) (by omega_arith)
+  have hN : ∀ i < 8 * w, InRegions (s.rd ++ s.wr) (off R i) 1 := fun i hi =>
+    ⟨cR s0, List.mem_append_left _ (by rw [hf.rd]; exact hp.rR), cRc i hi⟩
+  have hsep : ∀ i < 8 * w, ∀ x, ofs B x < Z → off R i ≠ x := fun i hi x hx he => by
+    refine hp.rS _ (cRc i hi) ?_
+    rw [he]
+    simp only [Region.Contains, ← hB, ofs] at hx ⊢
+    rw [← hZ] at hx; simp only [sL] at hx; omega_arith
+  have hbytes : Spec.Rsa.bytesAt s.mem R (8 * w) = Spec.Rsa.bytesAt s0.mem R (8 * w) := by
+    refine bytes_keep hf.out (by omega_arith) fun ρ hρ => ?_
+    have hsub : Region.Sub ⟨R, 8 * w⟩ (cR s0) := by
+      show Region.Sub _ ⟨s0.gpr .a7, _⟩
+      rw [hR]; intro x hx; simp only [Region.Contains, rL] at hx hrl ⊢; omega_arith
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hρ
+    rcases hρ with rfl | rfl | rfl | rfl
+    · exact (hp.oR.symm).sub_left hsub
+    · exact (hp.uR.symm).sub_left hsub
+    · exact hp.rS.sub_left hsub
+    · exact (hp.Fr.symm).sub_left hsub
+  unfold loadC
+  refine WP.seq ?_
+  have hpre : WP isa (.block [ldf .s7 oRand, ldf .s8 oOutLen]) s fun u =>
+      (u.gpr .s7 = off R 0 ∧ u.gpr .s8 = BitVec.ofNat 64 (8 * w) ∧ u.mem = s.mem) ∧ Keep [.s7, .s8] s u := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [ldf, oRand, oOutLen, hf.s11, al 160 (by decide), al 112 (by decide), inr 160 (by decide),
+      inr 112 (by decide), r160, r112]
+    exact (BitVec.add_zero _).symm
+  refine WP.mono (WP.rdwr hpre) fun u ⟨⟨⟨u7, u8, um⟩, ku⟩, urd, uwr, usp⟩ => ?_
+  have eu := h.keep ku (by decide)
+  refine WP.seq (WP.mono (WP.rdwr (loadN_ok (dA := slot w 0) eu.hs eu.a7 u7 u8 eu.t0 (by omega_arith)
+    (Nat.le_refl _) (by omega_arith) (by rw [h0]; decide) (by rw [h0]) (by rw [h0]; omega_arith)
+    (fun i hi => by rw [ku.2.1, ku.2.2]; exact hN i hi) hsep))
+    fun v ⟨⟨vv, vout, kv⟩, vrd, vwr, vsp⟩ => ?_)
+  rw [um] at vv vout
+  have ev := eu.keep kv (by decide)
+  have hsv := ev.hs
+  -- The candidate's bits.
+  have e5 : BitVec.ofNat 64 w <<< 3 = BitVec.ofNat 64 (8 * w) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+    omega_arith
+  have e6 : BitVec.ofNat 64 (8 * w) + off B (slot w 0) - BitVec.ofNat 64 8 = off B (slot w 0 + 8 * (w - 1)) := by
+    rw [BitVec.add_comm, off_add, off_sub _ (show 8 ≤ slot w 0 + 8 * w by omega_arith),
+      show slot w 0 + 8 * w - 8 = slot w 0 + 8 * (w - 1) by omega_arith]
+  have sepW : ∀ (m : Mem) (x : BitVec 64), (m.writeW (off B (slot w 0)) x).readW
+      (off B (slot w 0 + 8 * (w - 1))) 64 = m.readW (off B (slot w 0 + 8 * (w - 1))) 64 := fun m x =>
+    Mem.readW_writeW_sep (Offset.sep B (d := slot w 0 + 8 * (w - 1)) (n := 8) (e := slot w 0) (k := 8)
+      (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
+  have a0 := ev.al 0 0
+  have at' := ev.al 0 (w - 1)
+  simp only [Nat.mul_zero, Nat.add_zero] at a0
+  generalize hX0 : word v.mem B (slot w 0) ||| BitVec.ofNat 64 1 = X0
+  generalize hXt : word v.mem B (slot w 0 + 8 * (w - 1)) ||| BitVec.ofNat 64 (3 * 2 ^ 62) = Xt
+  have hA : WP isa (.block [.load .d .t2 .a7 0, .logicImm .or .t2 .t2 1, .store .d .t2 .a7 0,
+      .shift .sll .d .t3 .t0 3, .add .t3 .t3 .a7, .addi .t3 .t3 (-8), .load .d .t2 .t3 0, .li .t4 3,
+      .shift .sll .d .t4 .t4 62, .logic .or .t2 .t2 .t4, .store .d .t2 .t3 0]) v fun t =>
+      t.mem = (v.mem.writeW (off B (slot w 0)) X0).writeW (off B (slot w 0 + 8 * (w - 1))) Xt ∧
+        Keep [.t2, .t3, .t4] v t := by
+    refine WP.keep [.t2, .t3, .t4] (Q := fun t => t.mem = (v.mem.writeW (off B (slot w 0)) X0).writeW
+      (off B (slot w 0 + 8 * (w - 1))) Xt) ?_ (by rfl) (by rfl)
+    brun [ev.a7, ev.t0, e5, e6, sepW, top2_eq, hsv.ld (show slot w 0 + 8 ≤ Z by omega_arith),
+      hsv.st (d := slot w 0) (n := 8) (by omega_arith), hsv.al8 (show slot w 0 + 8 ≤ Z by omega_arith) a0,
+      hsv.ld (show slot w 0 + 8 * (w - 1) + 8 ≤ Z by omega_arith),
+      hsv.st (d := slot w 0 + 8 * (w - 1)) (n := 8) (by omega_arith),
+      hsv.al8 (show slot w 0 + 8 * (w - 1) + 8 ≤ Z by omega_arith) at', BitVec.add_zero, exec_li, ← hX0, ← hXt]
+  show WP isa (.block (([.load .d .t2 .a7 0, .logicImm .or .t2 .t2 1, .store .d .t2 .a7 0,
+      .shift .sll .d .t3 .t0 3, .add .t3 .t3 .a7, .addi .t3 .t3 (-8), .load .d .t2 .t3 0, .li .t4 3,
+      .shift .sll .d .t4 .t4 62, .logic .or .t2 .t2 .t4, .store .d .t2 .t3 0] : List Instr) ++
+      ([ldf .t2 oOutLen, stf .t2 oRead] : List Instr))) v _
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.rdwr hA) fun t₁ ⟨⟨m₁, k₁⟩, rd₁, wr₁, sp₁⟩ => ?_
+  -- What changed is in `scratch`.
+  have o1 := writeW_outside v.mem B (d := slot w 0) X0 (by omega_arith)
+  have o2 := writeW_outside (v.mem.writeW (off B (slot w 0)) X0) B (d := slot w 0 + 8 * (w - 1)) Xt
+    (by omega_arith)
+  have hout₁ : Outside B (slot w 0) (8 * w) s.mem t₁.mem := by
+    rw [m₁]; exact (vout.trans (o1.mono (by omega_arith) (by omega_arith))).trans (o2.mono (by omega_arith)
+      (by omega_arith))
+  have fS : Frame [cS s0] s.mem t₁.mem := out_frame (d := slot w 0) (n := 8 * w)
+    (by rw [hZ]; omega_arith) (hB ▸ hout₁)
+  have K₁ : Keep lcRegs s t₁ := Keep.trans' (Keep.trans' (ku.mono (by decide)) (kv.mono (by decide)))
+    (k₁.mono (by decide))
+  have hc₁ : Ctx s0 t₁ := hc.step (sp₁.trans (vsp.trans usp)) (rd₁.trans (vrd.trans urd))
+    (wr₁.trans (vwr.trans uwr)) (K₁.gpr (by decide)) (fS.mono (by simp))
+  have hf₁ := hc₁.fr
+  have r112' : t₁.mem.readW (fb s0 + BitVec.ofNat 64 112) 64 = BitVec.ofNat 64 (8 * w) := hw' ▸ hf₁.wOutLen
+  have inr₁ : ∀ o, o + 8 ≤ 192 → InRegions (t₁.rd ++ t₁.wr) (fb s0 + BitVec.ofNat 64 o) 8 := fun o ho =>
+    ⟨kF s0, List.mem_append_right _ (by rw [hf₁.wr]; exact List.mem_cons_self), kF_contains ho⟩
+  have inw₁ : InRegions t₁.wr (fb s0 + BitVec.ofNat 64 176) 8 :=
+    ⟨kF s0, by rw [hf₁.wr]; exact List.mem_cons_self, kF_contains (by decide)⟩
+  have hB2 : WP isa (.block [ldf .t2 oOutLen, stf .t2 oRead]) t₁ fun t =>
+      t.mem = t₁.mem.writeW (fw s0 oRead) (BitVec.ofNat 64 (8 * w)) ∧ Keep [.t2] t₁ t := by
+    refine WP.keep [.t2] (Q := fun t => t.mem = t₁.mem.writeW (fw s0 oRead) (BitVec.ofNat 64 (8 * w))) ?_
+      (by rfl) (by rfl)
+    brun [ldf, stf, oOutLen, oRead, hf₁.s11, al 112 (by decide), al 176 (by decide), inr₁ 112 (by decide),
+      inw₁, r112']
+  refine WP.mono (WP.rdwr hB2) fun t ⟨⟨tm, kt⟩, rdt, wrt, spt⟩ => ?_
+  have fR : Frame [rdW s0] t₁.mem t.mem := by
+    rw [tm]; exact (Frame.refl _ _).writeW (r := rdW s0) (w := 64) (by simp) _ (Region.contains_self _ _)
+  have hct : Ctx s0 t := hc₁.step spt rdt wrt (kt.gpr (by decide)) (fR.mono (by simp))
+  have dS : ∀ ρ ∈ [rdW s0], (⟨B, Z⟩ : Region).Disjoint ρ := fun ρ hρ => by
+    simp only [List.mem_singleton] at hρ; subst hρ
+    have e : (⟨B, Z⟩ : Region) = cS s0 := by rw [← hB, ← hZ]; simp only [cS, sL, Nat.mul_comm]
+    rw [e]; exact (hp.FS.symm).sub_right (fw_sub s0 (by decide))
+  have hword : ∀ d, d + 8 ≤ Z → word t.mem B d = word t₁.mem B d := fun d hd =>
+    fR.readW (r := ⟨B, Z⟩) (Offset.contains_base B (by omega_arith) (by omega_arith)) dS (by decide)
+  have kvt : Keep [.t2, .t3, .t4] v t := Keep.trans' k₁ (kt.mono (by decide))
+  refine ⟨⟨hct, ev.keep kvt (by decide), ?_, ?_, fun d hd hd' => ?_⟩, Keep.trans' K₁ (kt.mono (by decide))⟩
+  · -- The candidate.
+    have hA1 : A t.mem B w 0 = A t₁.mem B w 0 :=
+      wordsVal_frame fR hnw dS w (slot w 0) (by omega_arith)
+    have sep : ∀ d e : Nat, d + 8 ≤ e ∨ e + 8 ≤ d → d + 8 ≤ Z → e + 8 ≤ Z → ∀ (m : Mem) (x : BitVec 64),
+        (m.writeW (off B e) x).readW (off B d) 64 = m.readW (off B d) 64 := fun d e h1 h2 h3 m x =>
+      Mem.readW_writeW_sep (Offset.sep B h1 (by omega_arith) (by omega_arith)) (by decide)
+    rw [hA1, A, Pre.wordsVal_eq_wv, VG.Proof.RsaKeyGen.wv_candidate (m := v.mem) (by omega_arith) ?_ ?_ ?_,
+      ← Pre.wordsVal_eq_wv, vv, hbytes]
+    · show t₁.mem.readW _ 64 = _
+      rw [m₁, sep _ _ (by omega_arith) (by omega_arith) (by omega_arith), Mem.readW_writeW_self64, ← hX0]; rfl
+    · show t₁.mem.readW _ 64 = _
+      rw [m₁, Mem.readW_writeW_self64, ← hXt]
+    · intro j hj0 hj
+      show t₁.mem.readW _ 64 = v.mem.readW _ 64
+      rw [m₁, sep _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+        sep _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
+  · rw [tm]; exact Mem.readW_writeW_self64 _ _ _
+  · rw [hword d hd, hout₁.word (by omega_arith) (by omega_arith)]
 
 end VG.Proof.RsaKeyGen.RISCV64.Cand
