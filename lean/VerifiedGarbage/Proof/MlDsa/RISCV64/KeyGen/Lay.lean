@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.OmegaAll
 
 /-!
-# ML-DSA key generation on RISCV64: its parameters, precondition and buffers
+# ML-DSA key generation on RISC-V: its parameters, precondition and buffers
 
 As on PPC64LE (`Proof/MlDsa/PPC64LE/KeyGen/Lay.lean`): the facts about the
 parameter sets the proof uses (`PFacts`); the precondition of the shared
