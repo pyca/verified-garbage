@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RvVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.FusedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
+public import VerifiedGarbage.Proof.Rsa.Arm.RdTop
 
 /-! # RSA (RFC 8017) on ARMv7 -/
 
@@ -57,6 +58,10 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.Arm.umaalArithmetic Impl.Rsa.Arm.RecoverFused.code
     stack := 56
     verified := Proof.Rsa.Arm.Recover.recover_primes_fused_umaal_verified
-    features := ["umaal"] }]
+    features := ["umaal"] },
+  Spec.Rsa.recoverPrimesDetApi.artifact Arm.target {
+    code := Impl.Rsa.Arm.RecoverDet.code
+    stack := 56
+    verified := Proof.Rsa.Arm.Recover.recover_primes_det_verified }]
 
 end VG.Artifacts.Rsa.Arm
