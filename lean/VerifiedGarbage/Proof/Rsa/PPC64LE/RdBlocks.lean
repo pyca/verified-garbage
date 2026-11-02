@@ -53,6 +53,24 @@ open VG.Impl.Rsa.PPC64LE.RecoverDet (countN countS next twosFlags maskOf sU sX s
   sC2 sOk5)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
+/-- `rd_simp` with further lemmas, at a hypothesis. -/
+macro "rd_simp_at" h:ident " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (set_option linter.unusedSimpArgs false in
+  simp [VG.Proof.Rsa.PPC64LE.RecDet.upd, VG.Proof.Rsa.PPC64LE.RecDet.updV, VG.Proof.Rsa.b2n,
+    VG.Proof.Rsa.PPC64LE.RecDet.b2n_le1, VG.Proof.Rsa.PPC64LE.RecDet.ite_le1,
+    VG.Impl.Rsa.PPC64LE.RecoverDet.sB0, VG.Impl.Rsa.PPC64LE.RecoverDet.sB1, VG.Impl.Rsa.PPC64LE.RecoverDet.sU,
+    VG.Impl.Rsa.PPC64LE.RecoverDet.sX, VG.Impl.Rsa.PPC64LE.RecoverDet.sEven, VG.Impl.Rsa.PPC64LE.RecoverDet.sBoth,
+    VG.Impl.Rsa.PPC64LE.RecoverDet.sY, VG.Impl.Rsa.PPC64LE.RecoverDet.sLt, VG.Impl.Rsa.PPC64LE.RecoverDet.sExact,
+    VG.Impl.Rsa.PPC64LE.RecoverDet.sC1, VG.Impl.Rsa.PPC64LE.RecoverDet.sC2, VG.Impl.Rsa.PPC64LE.RecoverDet.sBb,
+    VG.Impl.Rsa.PPC64LE.RecoverDet.sOk5, VG.Impl.Rsa.PPC64LE.RecoverDet.sU1, VG.Impl.Rsa.PPC64LE.Recover.sMask,
+    VG.Impl.Rsa.PPC64LE.CrtValues.sMask, $ls,*] at $h:ident))
+
+open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
+open VG.Proof.Rsa.PPC64LE.Recover
+open VG.Proof.Rsa (b2n)
+open VG.Impl.Rsa.PPC64LE.RecoverDet (countN countS next twosFlags maskOf sU sX sEven sBoth sB0 sB1 sLt sExact sC1
+  sC2 sOk5)
+open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
+
 section
 variable {s0 s : State} {b : Bool} {A : Bool → Nat → Nat} {live : List (Bool × Nat)} {V : Nat → Nat}
   {ls : List Nat}
