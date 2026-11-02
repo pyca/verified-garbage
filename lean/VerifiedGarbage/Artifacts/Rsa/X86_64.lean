@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Instances
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedVerified
+public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
@@ -52,6 +53,9 @@ def artifacts : List Artifact := [
     stack := 8
     verified := Proof.Rsa.X86_64.RecoveryFolded.adx_verified
     features := ["bmi2", "adx"] },
+  Spec.Rsa.recoverPrimesDetApi.artifact X86_64.target {
+    code := Impl.Rsa.X86_64.Keys.RecoverDet.code
+    verified := Proof.Rsa.X86_64.Rd.recoverDet_verified },
   Spec.Rsa.checkKeyApi.artifact X86_64.target {
     code := Impl.Rsa.X86_64.CheckKey.code
     verified := Proof.Rsa.X86_64.Instances.checkKey_verified },
