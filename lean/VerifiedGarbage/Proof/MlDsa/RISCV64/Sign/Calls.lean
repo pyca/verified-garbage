@@ -149,7 +149,7 @@ theorem lbP_piece {r o g2 : Nat} (m : ∀ σ, KeyGen.BitsOk (slay2 p STK σ) sWb
 
 end
 
-/-! ## `r24 ← r24 ∧ r3` -/
+/-! ## `s4 ← s4 ∧ a0` -/
 
 /-- `1` if `a`, else `0`. -/
 abbrev bit (a : Prop) [Decidable a] : BitVec 64 := if a then 1 else 0

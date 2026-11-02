@@ -15,9 +15,9 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 
 As on PPC64LE (`Proof/MlDsa/PPC64LE/Sign/PhaseL.lean`). An iteration
 (`iter_ok`) either continues, with the next iteration's head (`IL`), or ends
-the loop (`XS`): with `r24 = 1` when it passed, as `signIteration` does
+the loop (`XS`): with `s4 = 1` when it passed, as `signIteration` does
 within `maxBounds` after the iterations before were rejected; with
-`r24 = 0` when `signLoop` returns nothing within `minBounds` (its
+`s4 = 0` when `signLoop` returns nothing within `minBounds` (its
 `SampleInBall` did not finish, or it was the 814th rejected). So the loop
 (`signLoop_ok`) ends in `XS`.
 -/
@@ -212,7 +212,7 @@ theorem ofNat_sub_one {k : Nat} (h : 1 ≤ k) (hk : k < 2 ^ 64) :
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   omega_arith
 
-/-- Iteration `t` passed: `c̃`, `z` and `h`, and `r25 = 1`. -/
+/-- Iteration `t` passed: `c̃`, `z` and `h`, and `s5 = 1`. -/
 structure EP (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop where
   k : IK p STK σ s
   ct : bytesAt s.mem ((slay2 p STK σ).A 0 oCT) (cLen p) = CTv p σ (p.ℓ * t)
@@ -225,7 +225,7 @@ structure EP (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop 
   t_lt : t < 814
   rej : RejT p σ t
 
-/-- Iteration `t` was rejected: `κ = ℓ(t + 1)`, `r25 = 814 - t`. -/
+/-- Iteration `t` was rejected: `κ = ℓ(t + 1)`, `s5 = 814 - t`. -/
 structure EF (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop where
   k : IK p STK σ s
   s7 : s.gpr .s7 = BitVec.ofNat 64 (p.ℓ * (t + 1))
@@ -236,7 +236,7 @@ structure EF (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop 
   t_lt : t < 814
   rej : RejT p σ t
 
-/-- `SampleInBall` did not finish within `minBounds`: `r24 = 0`, `r25 = 1`. -/
+/-- `SampleInBall` did not finish within `minBounds`: `s4 = 0`, `s5 = 1`. -/
 structure EB (p : Params) (STK : Nat) (σ : State) (t : Nat) (s : State) : Prop where
   k : IK p STK σ s
   none : sampleInBall p.τ minBounds.ball (CTv p σ (p.ℓ * t)) = none
