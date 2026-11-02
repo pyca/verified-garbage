@@ -174,10 +174,10 @@ theorem exec_addi_lit {s : State} {d n : Reg} {m : Nat} (h : m < 2048) :
     exec (.addi d n (OfNat.ofNat m : Int)) s = some (s.write d (s.gpr n + BitVec.ofNat 64 m)) :=
   exec_addi_nat h
 
-/-- `addi` of `-1`. -/
-theorem exec_addi_m1 {s : State} {d n : Reg} :
-    exec (.addi d n (-1)) s = some (s.write d (s.gpr n - 1)) :=
-  exec_addi_neg_nat (m := 1) (by decide)
+/-- `addi` of a negative numeral down to `-2048`, as an `Int` literal. -/
+theorem exec_addi_neg_lit {s : State} {d n : Reg} {m : Nat} (h : m ≤ 2048) :
+    exec (.addi d n (-(OfNat.ofNat m : Int))) s = some (s.write d (s.gpr n - BitVec.ofNat 64 m)) :=
+  exec_addi_neg_nat h
 
 /-- `brun`: symbolic execution of a block by `simp` (see the module doc),
 with extra lemmas (the block's accesses, …). -/
@@ -187,7 +187,8 @@ tactic_template "brun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(
                        simp only [runBlock_cons, runStep_some, runBlock_nil,
                          exec_load_b, exec_load_d, exec_store_b, exec_store_d, exec_add, exec_sub,
                          exec_sltu, exec_mul, exec_mulhu, exec_logic, ↓exec_li_nat, ↓exec_addi_nat,
-                         ↓exec_addi_neg_nat, exec_shift_d, exec_logicImm,
+                         ↓exec_addi_neg_nat, ↓exec_addi_lit, ↓exec_addi_neg_lit, exec_addi, BitVec.ofInt_neg,
+                         BitVec.ofInt_ofNat, ← BitVec.sub_eq_add_neg, exec_shift_d, exec_logicImm,
                          gpr_write, mem_write, rd_write, wr_write, sp_write, gpr_mem, mem_mem,
                          rd_mem, wr_mem, sp_mem, off_add, Nat.add_zero, Option.some.injEq,
                          exists_eq_left', ite_true, ite_false, reduceCtorEq, ↓reduceIte, ne_eq,
