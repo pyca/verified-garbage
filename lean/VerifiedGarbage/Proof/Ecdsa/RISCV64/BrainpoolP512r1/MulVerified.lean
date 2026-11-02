@@ -119,14 +119,14 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
   -- The saves and `s0 = a0`.
   suffices h : WP isa mulBrainpoolP512r1 s fun s' => abiPreserved s s' ∧ mulRVc.post s s' by
     obtain ⟨t, s', he, h⟩ := h; exact ⟨t, s', he, h⟩
-  rw [mulBrainpoolP512r1, Cfg.mulFn, show brainpoolp512r1.mulSave = 2224 from rfl]
+  rw [mulBrainpoolP512r1, Cfg.mulFn, show brainpoolp512r1.mulSave = 2944 from rfl]
   simp only [List.append_assoc]
-  rw [← List.append_nil (ldAt .s0 .s0 2224)]
-  refine WP.seq (sdAt_a0 hb hwr' hal (by decide) (d := 2224) (by decide) (by decide) fun s₁ u₁ => ?_)
-  refine sdAt_a0 (by rw [u₁.gpr]; exact hb) (by rw [u₁.wr]; exact hwr') hal (by decide) (d := 2232) (by decide)
+  rw [← List.append_nil (ldAt .s0 .s0 2944)]
+  refine WP.seq (sdAt_a0 hb hwr' hal (by decide) (d := 2944) (by decide) (by decide) fun s₁ u₁ => ?_)
+  refine sdAt_a0 (by rw [u₁.gpr]; exact hb) (by rw [u₁.wr]; exact hwr') hal (by decide) (d := 2952) (by decide)
     (by decide) fun s₂ u₂ => ?_
   refine sdAt_a0 (by rw [u₂.gpr, u₁.gpr]; exact hb) (by rw [u₂.wr, u₁.wr]; exact hwr') hal (by decide)
-    (d := 2240) (by decide) (by decide) fun s₃ u₃ => wp_mv fun s₄ u₄ => WP.block_nil ?_
+    (d := 2960) (by decide) (by decide) fun s₃ u₃ => wp_mv fun s₄ u₄ => WP.block_nil ?_
   have g₄ : ∀ r, r ≠ .s0 → s₄.gpr r = s.gpr r := fun r hr => by
     rw [u₄.other r hr, u₃.gpr, u₂.gpr, u₁.gpr]
   have hw₄ : WsReg s₄ base := ⟨by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr, hb],
@@ -184,11 +184,11 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
   have w04 : word s₅.mem base 2944 = s.gpr .s0 := by
     rw [far 2944 (by simp), m₄, (writeW_outside (d := 2960) _ base _ (by omega)).word (by omega) (by omega),
       (writeW_outside (d := 2952) _ base _ (by omega)).word (by omega) (by omega), word_writeW_self]
-  refine ldAt_ws hw₅ (d := 2240) (by decide) (by decide) fun s₆ u₆ => ?_
-  refine ldAt_ws (hw₅.of_kp (Kp.of_upd u₆)) (d := 2232) (by decide) (by decide) fun s₇ u₇ => ?_
+  refine ldAt_ws hw₅ (d := 2960) (by decide) (by decide) fun s₆ u₆ => ?_
+  refine ldAt_ws (hw₅.of_kp (Kp.of_upd u₆)) (d := 2952) (by decide) (by decide) fun s₇ u₇ => ?_
   have hw₇ : WsReg s₇ base := ⟨by rw [u₇.other .s0 (by decide), u₆.other .s0 (by decide)]; exact hw₅.s0,
     by rw [u₇.wr, u₆.wr]; exact hw₅.wr, hfit, hal⟩
-  refine ldAt_ws hw₇ (d := 2224) (by decide) (by decide) fun s₈ u₈ => WP.block_nil ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
+  refine ldAt_ws hw₇ (d := 2944) (by decide) (by decide) fun s₈ u₈ => WP.block_nil ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · have m₇ : s₇.mem = s₅.mem := by rw [u₇.mem, u₆.mem]
     by_cases h0 : r = .s0
     · subst h0; rw [u₈.gpr, m₇, w04]
