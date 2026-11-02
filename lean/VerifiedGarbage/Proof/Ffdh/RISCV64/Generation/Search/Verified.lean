@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Ffdh.RISCV64.Generation.Search
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Proof.Ffdh.RISCV64.ParameterCandidate.Verified
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.RISCV64.Generation.Search.Correct
 import VerifiedGarbage.Proof.Ffdh.RISCV64.Generation.Search.CT
@@ -16,7 +17,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 (`search_implies`); with correctness (`search_correct`) and constant time
 (`search_constantTime`), the search is verified for any candidate verified
 against `vg_ffdh_parameter_candidate`'s contract with `S` bytes of stack
-(`search_verified_of`), with `S + 32` bytes of its own.
+(`search_verified_of`), with `S + 32` bytes of its own; and for the
+candidate calling each shared Miller–Rabin round (`search_verified`), as
+`Generic/MillerRabin/RISCV64/Ffdh.lean` registers it.
 -/
 
 @[expose] public section
@@ -118,5 +121,24 @@ theorem search_verified_of (c : Cand) :
     Verified target (Impl.Ffdh.RISCV64.Generation.Search.code c.call)
       (parameterSearchContract abi (stackUse c.S)) :=
   Verified.of_correct (search_correct c) (search_constantTime c) (search_implies c.S c.small)
+
+/-- `vg_ffdh_parameter_candidate` calling the shared round `v`, as the search
+calls it, with the round's 96 bytes of stack. -/
+def Cand.ofRound (v : Proof.MillerRabin.RISCV64.RoundImpl) : Cand where
+  name := "vg_ffdh_parameter_candidate" ++ v.suffix
+  code := ParameterCandidate.candCode v
+  S := 96
+  pos := by decide
+  small := by decide
+  stack := ParameterCandidate.candidate_stack v
+  verified := ParameterCandidate.candidate_verified v
+
+/-- The search calling it. -/
+abbrev searchCode (v : Proof.MillerRabin.RISCV64.RoundImpl) : Prog isa :=
+  Impl.Ffdh.RISCV64.Generation.Search.code (Cand.ofRound v).call
+
+theorem search_verified (v : Proof.MillerRabin.RISCV64.RoundImpl) :
+    Verified target (searchCode v) (parameterSearchContract abi 128) :=
+  search_verified_of (Cand.ofRound v)
 
 end VG.Proof.Ffdh.RISCV64.Generation
