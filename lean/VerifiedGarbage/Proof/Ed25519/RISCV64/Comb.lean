@@ -1,6 +1,9 @@
 module
 
+-- separate module: its proofs (about 6 s) build in parallel with `Encode`'s and `VerifyFn`'s, which `ScalarBase` also imports
+
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Comb
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.BaseContract
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
 public import VerifiedGarbage.Proof.X25519.RISCV64.Instr
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -247,9 +250,6 @@ structure TblAt (s : State) (T : Addr) : Prop where
   fit : T.toNat + 49152 ≤ 2 ^ 64
   rd : InRegions (s.rd ++ s.wr) T 49152
   words : ∀ q < 64 * 96, s.mem.readW (T + BitVec.ofNat 64 (8 * q)) 64 = combWord q
-
-/-- The region of the comb's tables at `T`. -/
-abbrev TBL (T : Addr) : Region := ⟨T, 49152⟩
 
 theorem TblAt.of_frame {s t : State} {T : Addr} {L : List Region} (h : TblAt s T)
     (hr : t.rd ++ t.wr = s.rd ++ s.wr) (hf : Frame L s.mem t.mem) (hd : ∀ r ∈ L, (TBL T).Disjoint r) :
