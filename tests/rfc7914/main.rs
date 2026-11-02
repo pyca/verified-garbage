@@ -70,14 +70,32 @@ fn check(v: &Vector) {
     assert_eq!(dk, v.dk, "N={} r={} p={}", v.n, v.r, v.p);
 }
 
-/// Every vector (the last one needs 1 GiB).
+/// §12 has four vectors; each runs in a test of its own, so that the last
+/// (N = 2²⁰, 1 GiB) runs alongside the others.
 #[test]
-fn rfc7914_vectors() {
-    let vs = vectors();
-    assert_eq!(vs.len(), 4);
-    for v in &vs {
-        check(v);
-    }
+fn rfc7914_vector_count() {
+    assert_eq!(vectors().len(), 4);
+}
+
+#[test]
+fn rfc7914_vector_1() {
+    check(&vectors()[0]);
+}
+
+#[test]
+fn rfc7914_vector_2() {
+    check(&vectors()[1]);
+}
+
+#[test]
+fn rfc7914_vector_3() {
+    check(&vectors()[2]);
+}
+
+/// The last vector needs 1 GiB.
+#[test]
+fn rfc7914_vector_4() {
+    check(&vectors()[3]);
 }
 
 /// A key shorter or longer than the RFC's is a prefix of, or extends, its key
