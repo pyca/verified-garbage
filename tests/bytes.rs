@@ -29,7 +29,8 @@ pub fn all_equal(bytes: &[u8], value: u8) -> bool {
         target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "arm",
-        target_arch = "powerpc64"
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
     ),
     feature = "alloc"
 ))]
