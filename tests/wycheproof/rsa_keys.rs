@@ -1,7 +1,7 @@
 //! RSA private keys loaded from their components: from `(n, e, d, p, q)`
 //! (the CRT values by `vg_rsa_crt_values`) and from `(n, e, d)` (the primes
-//! recovered by `vg_rsa_recover_primes_det` on i686, and if it does not find
-//! them, by `vg_rsa_recover_primes`), with the two-prime private keys of
+//! recovered by `vg_rsa_recover_primes_det` on i686, and by
+//! `vg_rsa_recover_primes` on the other targets), with the two-prime private keys of
 //! the RSA test vector files (`rsa_*_test.json`; keys with other primes are
 //! skipped).
 //!
@@ -13,11 +13,10 @@
 //! is within BoringSSL's limits.)
 //!
 //! From each prime `p` and its CRT exponent `dP = e⁻¹ mod (p - 1)`, the key
-//! `(3 p, e, dP)` (`λ(3 p) = p - 1`) loads from its components too: one of
-//! its primes is 3, so `p + q - 1` is about `n / 3` and Appendix C.2's
-//! method, which `from_components` tries first on i686, does not find them
-//! (`vg_rsa_recover_primes_det` returns 0 on every such key here), and
-//! Appendix C.1's does.
+//! `(3 p, e, dP)` (`λ(3 p) = p - 1`) is valid, but one of its primes is 3,
+//! so `p + q - 1` is about `n / 3` and Appendix C.2's method does not find
+//! its primes: `from_components` refuses it on i686, and loads it by
+//! Appendix C.1 on the other targets.
 
 #![cfg(all(
     any(
@@ -63,45 +62,23 @@ fn triple(x: &[u8]) -> Vec<u8> {
     trim_zeros(&r).to_vec()
 }
 
-/// Whether Appendix C.2's method (`vg_rsa_recover_primes_det`) does not
-/// find the primes of `(n, e, d)`.
+/// The key `(3 p, e, dP)` of the prime `p` (of the file `name`) and its CRT
+/// exponent `dP`: Appendix C.2 does not find its primes, so
+/// `from_components` refuses it.
 #[cfg(target_arch = "x86")]
-fn det_fails(n: &[u8], e: &[u8], d: &[u8]) -> bool {
-    let (e, d) = (trim_zeros(e), trim_zeros(d));
-    let k = n.len();
-    let (mut p, mut q) = (vec![0; k], vec![0; k]);
-    let mut scratch = vec![0u64; 16 * k + 32];
-    // SAFETY: each pointer is valid for its length (`p`, `q` and `scratch`
-    // for writes), and none overlaps another, as they are distinct
-    // allocations; `n` is a modulus of 64 to 1024 bytes, `1 ≤ e_len ≤ 8`,
-    // `1 ≤ d_len ≤ n_len`, `p_len = q_len = n_len` and
-    // `scratch_len = 16 n_len + 32`.
-    let r = unsafe {
-        verified_garbage_asm_x86::rsa::vg_rsa_recover_primes_det(
-            p.as_mut_ptr(),
-            k,
-            q.as_mut_ptr(),
-            k,
-            n.as_ptr(),
-            k,
-            e.as_ptr(),
-            e.len(),
-            d.as_ptr(),
-            d.len(),
-            scratch.as_mut_ptr(),
-            scratch.len(),
-        )
-    };
-    r == 0
+fn check_triple(name: &str, e: &[u8], p: &[u8], dp: &[u8]) {
+    let key = PrivateKey::from_components(&triple(p), e, dp);
+    assert!(
+        matches!(key, Err(verified_garbage::rsa::Error::InvalidPrivateKey)),
+        "{name}: 3 p"
+    );
 }
 
 /// The key `(3 p, e, dP)` of the prime `p` (of the file `name`) and its CRT
-/// exponent `dP` loads from its components, by Appendix C.1 where
-/// Appendix C.2 does not find its primes.
+/// exponent `dP` loads from its components by Appendix C.1.
+#[cfg(not(target_arch = "x86"))]
 fn check_triple(name: &str, e: &[u8], p: &[u8], dp: &[u8]) {
     let n = triple(p);
-    #[cfg(target_arch = "x86")]
-    assert!(det_fails(&n, e, dp), "{name}: Appendix C.2 on 3 p");
     let key =
         PrivateKey::from_components(&n, e, dp).unwrap_or_else(|err| panic!("{name}: 3 p: {err}"));
     assert!(key.check_key(), "{name}: 3 p");
