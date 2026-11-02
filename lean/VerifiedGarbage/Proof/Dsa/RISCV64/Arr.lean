@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.ReverseEncoding
+import VerifiedGarbage.Proof.Bignum.RISCV64.PubOut
+import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -463,5 +466,90 @@ theorem rr_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w)
   · have o6 : Outside B (slot w 1) (24 * (8 * (w + 2))) s.mem s₆.mem := by
       rw [m6]; exact (out5.mono (by omega) (by omega)).trans (hw6.mono (by omega) (by omega))
     exact ((o6.trans (out7.mono (by omega) (by omega)))).trans (out8.mono (by omega) (by omega))
+
+/-! ## Numbers out of a working space -/
+
+/-- The registers `storeBE` writes. -/
+def storeRegs : List Reg := [.s0, .t3, .t4, .t5]
+
+/-- `storeBE j`: array `j`'s low `k` octets (`k` in `s8`), most significant
+first, to `O` (`s7`), a buffer apart from the working space. -/
+theorem storeBE_ok {s : State} {B O : Addr} {Z w k j : Nat} (h : Env s B Z w) (hj : j < 28) (ho : Scr s O k)
+    (h7 : s.gpr .s7 = O) (h8 : s.gpr .s8 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
+    (hsep : ∀ x, ofs O x < k → Z ≤ ofs B x) :
+    WP isa (storeBE j) s fun t =>
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem O k) = (s.mem.read (off B (slot w j)) k).toNat ∧
+        Outside O 0 k s.mem t.mem) ∧ Keep storeRegs s t := by
+  have hs := h.hs
+  have hnw := hs.nowrap
+  have hno := ho.nowrap
+  have hZj := h.arr hj
+  have hw48 := h.w48
+  have hsl : 256 ≤ slot w j := by rw [Lay.slot_eq]; omega
+  unfold storeBE
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (h.base (rd := .t3) (by decide) j) fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_
+  refine WP.mono (WP.keep [.t3, .t4, .t5] (Q := fun s₂ => s₂.gpr .t3 = off B (slot w j + (k - 1)) ∧
+    s₂.gpr .t4 = off O 0 ∧ s₂.gpr .t5 = BitVec.ofNat 64 k ∧ s₂.mem = s₁.mem)
+    (by brun [a3, (k1.gpr (r := .s8) (by decide)).trans h8, (k1.gpr (r := .s7) (by decide)).trans h7, off_add,
+        add_ofNat_zero]
+        rw [off_sub _ (by omega_arith)]; congr 2; omega_arith) (by rfl) (by rfl)) fun s₂ ⟨⟨b3, b4, b5, m2⟩, k2⟩ => ?_
+  have k12 := k1.trans k2
+  let Inv : Nat → State → Prop := fun i t =>
+    t.gpr .t3 = off B (slot w j + (k - 1) - i) ∧ t.gpr .t4 = off O i ∧ Outside O 0 i s.mem t.mem ∧
+      (∀ i' < i, t.mem (off O i') = s.mem (off B (slot w j + (k - 1 - i')))) ∧ Keep storeRegs s t
+  refine WP.mono (wp_countdown (body := .block ([.load .b .s0 .t3 0, .store .b .s0 .t4 0, .addi .t4 .t4 1,
+      .addi .t3 .t3 (-1)] ++ ([.addi .t5 .t5 (-1)] : List Instr)))
+    (cnt := .t5) (N := k) (by omega_arith) (by omega_arith) Inv (fun i hi t ⟨t3, t4, tout, tb, tk⟩ hc => ?_)
+    ⟨by rw [b3]; rfl, b4, by rw [m2, m1]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega_arith),
+      k12.mono (by decide)⟩ b5) fun t ⟨_, _, tout, tb, tk⟩ => ⟨⟨?_, tout⟩, tk⟩
+  · have hrd : InRegions (t.rd ++ t.wr) (off B (slot w j + (k - 1) - i)) 1 := by
+      rw [tk.2.1, tk.2.2]; exact hs.ld (show slot w j + (k - 1) - i + 1 ≤ Z by omega_arith)
+    have hst : WP isa (.block [.load .b .s0 .t3 0, .store .b .s0 .t4 0, .addi .t4 .t4 1, .addi .t3 .t3 (-1),
+        .addi .t5 .t5 (-1)]) t fun t' => t' = ((({ (t.write .s0
+          ((t.mem.read (off B (slot w j + (k - 1) - i)) 1).setWidth 64)) with
+          mem := t.mem.write (off O i) 1 (((t.mem.read (off B (slot w j + (k - 1) - i)) 1).setWidth 64).setWidth 8) } :
+            State).write .t4 (off O (i + 1))).write .t3
+              (off B (slot w j + (k - 1) - i) - BitVec.ofNat 64 1)).write .t5 (t.gpr .t5 - BitVec.ofNat 64 1) := by
+      brun [t3, t4, hrd, add_ofNat_zero, (ho.congr tk.2.2).st (d := i) (n := 1) (by omega_arith)]
+    refine WP.mono hst fun t' e => ?_
+    subst e
+    have hw1 := write1_outside t.mem O (d := i)
+      (((t.mem.read (off B (slot w j + (k - 1) - i)) 1).setWidth 64).setWidth 8) (by omega_arith)
+    have harr : t.mem (off B (slot w j + (k - 1) - i)) = s.mem (off B (slot w j + (k - 1) - i)) := by
+      refine tout _ (Or.inr ?_)
+      by_contra hc
+      have := hsep (off B (slot w j + (k - 1) - i)) (by omega_arith)
+      rw [show ofs B (off B (slot w j + (k - 1) - i)) = slot w j + (k - 1) - i from
+        Mem.sub_ofNat_toNat B (by omega_arith)] at this
+      omega_arith
+    refine ⟨⟨?_, by gsimp, ?_, ?_, ?_⟩, by gsimp⟩
+    · gsimp; rw [off_sub _ (by omega_arith),
+        show slot w j + (k - 1) - i - 1 = slot w j + (k - 1) - (i + 1) by omega_arith]
+    · gsimp; exact (tout.mono (Nat.le_refl _) (by omega_arith)).trans (hw1.mono (by omega_arith) (by omega_arith))
+    · intro i' hi'
+      gsimp
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hi' with hi' | rfl
+      · rw [hw1 _ (by rw [ofs_off0 O (by omega_arith)]; omega_arith)]; exact tb i' hi'
+      · rw [write1_self, read_one', show slot w j + (k - 1 - i') = slot w j + (k - 1) - i' by omega_arith, ← harr]
+    · exact Keep.trans' tk ((((((Keep.write _ _ _).trans (Keep.mem _ _)).trans (Keep.write _ _ _)).trans
+        (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono (by decide))
+  · refine (VG.Proof.Bignum.reversed_read t.mem s.mem O (off B (slot w j)) k fun i hi => ?_).symm
+    rw [off_add, tb (k - 1 - i) (by omega_arith), show k - 1 - (k - 1 - i) = i by omega_arith]
+
+/-- The low `k` octets of a number of `w` words below `2^(8 k)` are the number. -/
+theorem read_low (m : Mem) (B : Addr) {d w k : Nat} (hkw : k ≤ 8 * w)
+    (hlt : wordsVal m B d w < 2 ^ (8 * k)) :
+    (m.read (off B d) k).toNat = wordsVal m B d w := by
+  have e1 := read_eq_wordsVal m B w d
+  rw [show 8 * w = (8 * w - k) + k by omega_arith, read_toNat_add] at e1
+  have hl := (m.read (off B d) k).isLt
+  generalize (m.read (off B d) k).toNat = lo at e1 hl
+  generalize (m.read (off B d + BitVec.ofNat 64 k) (8 * w - k)).toNat = hi at e1
+  rcases Nat.eq_zero_or_pos hi with rfl | hp
+  · omega_arith
+  · have := Nat.le_mul_of_pos_right (2 ^ (8 * k)) hp
+    omega_arith
 
 end VG.Proof.Dsa.RISCV64
