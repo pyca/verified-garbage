@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.RISCV64.ScalarBase
 public import VerifiedGarbage.Impl.Ed448.RISCV64.Scalar
+public import VerifiedGarbage.Impl.Ed448.PublicTable
 
 /-!
 # Ed448 on RISC-V: verification's equation
@@ -11,26 +12,28 @@ scratch = a3) -> a0`: 1 if the public key `A` and `R` (the signature's first
 57 bytes) decode, `S` (its last 57) is below `L`, and
 `[4][S]B = [4]R + [4][k]A` for the 456-bit challenge `k`; 0 otherwise.
 
-The PPC64LE code (`Impl/Ed448/PPC64LE/VerifyEquation.lean`), register for
-register as X448's port is, with the working space rounded up to a multiple
-of 8 (`align`) and laid out for RISC-V's 12-bit offsets:
+The decoding and the checks are the PPC64LE code's
+(`Impl/Ed448/PPC64LE/VerifyEquation.lean`), register for register as X448's
+port is; the equation is a joint width-5 wNAF over `S` and `k`, as on
+AArch64 (`Impl/Ed448/AArch64/Sparse.lean`), with the working space rounded
+up to a multiple of 8 (`align`) and laid out for RISC-V's 12-bit offsets:
 
 * Field elements and their arithmetic are X448's on this target, as for
-  base-point multiplication (`ScalarBase.lean`), whose slots `Q` (its `R`),
-  `P`, `d`, `T` and the addition's temporaries are reused, and so is its
-  addition. `B`, the negations of `A` and `R`, `1`, the inputs (`PK`, `SG`
-  for `R`, `SGS` for `S` and `CH`, each copied a byte at a time and starting
-  at a multiple of 4, for the word loads), the checks `BAD` and the sign
-  `SIGN` are above X448's slots and below 2048, so that every slot is an
-  offset from `a3`.
+  base-point multiplication (`ScalarBase.lean`), whose slots `R`, `P`,
+  `(SX, SY)`, `d`, `T` and the temporaries are reused, and so are its
+  doubling, its affine addition and its projective addition. The negations
+  of `A` and `R`, `1`, the inputs (`PK`, `SG` for `R`, `SGS` for `S` and
+  `CH`, each copied a byte at a time and starting at a multiple of 4, for
+  the word loads), the checks `BAD` and the sign `SIGN` are above X448's
+  slots and below 2048, so that every slot is an offset from `a3`.
 * `a0` then points at `OUT`, at 2048, past the 2048 bytes X448 addresses
-  from `a3`, where X448's `freeze` writes a fully reduced element.
-* The table of masks `TAB` (1832 bytes) follows `OUT`, and its entries are
-  addressed from `a0` (`TAB - OUT` plus a counter).
+  from `a3`, where X448's `freeze` writes a fully reduced element. The bits
+  and digits `TB` follow it, addressed from `a0`, then the key table `KT`
+  and the base table `BT`, addressed from a pointer in `t2`.
 
-Everything is computed whatever the inputs, and the checks are accumulated
-in the doubleword `BAD`, which stays 0 exactly when every one passes: each
-check ORs into it a word that is 0 if and only if it passes.
+The checks are accumulated in the doubleword `BAD`, which stays 0 exactly
+when every one passes: each check ORs into it a word that is 0 if and only
+if it passes.
 
 * Decoding a point (RFC 8032 §5.2.3) from the 57 bytes at `p`: `y` from the
   first 56, which must equal their full reduction (so `y < p`), with bits
@@ -43,19 +46,24 @@ check ORs into it a word that is 0 if and only if it passes.
   if the low bit is the sign, else `x`. Its `Z` is 1 (`ONE`).
 * `S < L`: its byte 56 is 0 and its low 448 bits plus `2^448 - L` (scalar
   reduction's subtraction) do not carry out of 448 bits.
-* `Q = [4S]B + [4k](-A) + [4](-R)`, from the top bit down, four iterations
-  of the same code per bit `t < 458` of `4S` and `4k`: `T = Q + P` (the
-  addition of `ScalarBase.lean`), swapped into `Q` with the mask of the byte
-  `TAB[h]` for the iteration `h = 4t + i`. `P` is `Q` for `i = 3` (a
-  doubling, `TAB[h] = 1`), `B` for `i = 2` (`TAB[h]` bit `t` of `4S`), `-A`
-  for `i = 1` (bit `t` of `4k`) and `-R` for `i = 0` (bit `t` of `4`),
-  selected by masks of the two bits of `i`.
-* The equation holds exactly when `Q` is the neutral point: `X = 0` and
-  `Y - Z = 0`, fully reduced.
+* The digits: the bits of `S` and `k` a byte each (`bitsOf`), and from them
+  the 464 width-5 digits of each (`recode`, `WnafWide.digitAt false`),
+  each in `(-16, 16)`, odd or 0: at position `n`, the five bits there and
+  the carry give the digit and the next carry, without branches.
+* The tables: `[2i + 1](-A)` for `i < 8`, projective, from one doubling and
+  seven additions (`keyTable`), and `[2i + 1]B`, affine, the first eight
+  entries of `PublicTable` (`baseTable`).
+* `Q = [S]B + [k](-A)`, from the top position down (`jointLoop`): `Q` doubled,
+  then for each nonzero digit `d` the entry `|d| / 2` of its table, negated
+  if `d < 0`, added (`addBase` affine, `addKey` projective).
+* `[4](Q + (-R))` (`addNegR`) is the neutral point exactly when the equation
+  holds: `X = 0` and `Y - Z = 0`, fully reduced.
 
 The result is 1 if `BAD` is 0. The function uses only caller-saved
-registers and no stack, the only branches are on loop counters, and every
-address is a pointer plus a constant or a counter.
+registers and no stack. Its only branches are on loop counters and, in the
+joint loop, on the digits of `S` and `k`, and its addresses are pointers plus
+constants, counters or the digits' entries: the time depends on the inputs,
+which are public.
 -/
 
 @[expose] public section
@@ -68,9 +76,7 @@ open VG.Impl.X448.RISCV64.R64 (mul add sub cswap chain223 sqn T6)
 
 /-! ## The working space -/
 
-/-- `B` and the negations of `A` and `R`, with `Z = 1`, above the field slots. -/
-def BX : Nat := 1064
-def BY : Nat := 1120
+/-- The negations of `A` and `R`, with `Z = 1`, above the field slots. -/
 def NAX : Nat := 1176
 def NAY : Nat := 1232
 def NRX : Nat := 1288
@@ -183,51 +189,140 @@ def checkS : List Instr :=
   [.li .a5 1] ++ VG.Impl.X448.RISCV64.pass .a3 SD (scalarSubtractSrc DY) ++ orBad .a5 ++
   [.load .b .a4 .a3 (SGS + 56)] ++ orBad .a4
 
-/-! ## The masks -/
+/-! ## The digits -/
 
-/-- `TAB[4t + 3] = 1` and the others 0, then `TAB[8] = 1` (bit 2 of `4`). -/
-def tabFill : Prog isa :=
-  .seq (.block [.addi .a6 .a0 0, .li .t0 458, .li .a4 0, .li .a5 1])
-    (.seq (.loop (.block [.store .b .a4 .a6 (TAB - OUT), .store .b .a4 .a6 (TAB - OUT + 1),
-        .store .b .a4 .a6 (TAB - OUT + 2), .store .b .a5 .a6 (TAB - OUT + 3),
-        .addi .a6 .a6 4, .addi .t0 .t0 (-1)]) (.nonzero .t0))
-      (.block [.store .b .a5 .a0 (TAB - OUT + 8)]))
+/-- The bits and digits of `S` and `k`, from `a0`: entry `n < 465` is the
+four bytes at `TB + 4 n`, bit `n` of `S` (lane 0) and of `k` (lane 1), and
+the digits at `n` of `S` (lane 2) and of `k` (lane 3), for `n < 468`. -/
+def TB : Nat := 2104
 
-/-- The bits of the byte at `a1` into `TAB[4 (8i + j + 2) + e]` at
+/-- The 468 entries zeroed. -/
+def bitsZero : Prog isa :=
+  .seq (.block [.addi .a6 .a0 0, .li .t0 468, .li .a4 0])
+    (.loop (.block [.store .b .a4 .a6 (TB - OUT), .store .b .a4 .a6 (TB - OUT + 1), .store .b .a4 .a6 (TB - OUT + 2),
+      .store .b .a4 .a6 (TB - OUT + 3), .addi .a6 .a6 4, .addi .t0 .t0 (-1)]) (.nonzero .t0))
+
+/-- The bits of the byte at `a1` into lane `e` of the entries `8 i + j` at
 `a6 = OUT + 32 i`, advancing both. -/
-def tabBody (e : Nat) : List Instr :=
+def bitsBody (e : Nat) : List Instr :=
   [.load .b .a4 .a1 0] ++
   (List.range 8).flatMap (fun j => [.shift .sll .d .a5 .a4 (63 - j), .shift .srl .d .a5 .a5 63,
-    .store .b .a5 .a6 (TAB - OUT + 8 + 4 * j + e)]) ++
+    .store .b .a5 .a6 (TB - OUT + 4 * j + e)]) ++
   [.addi .a1 .a1 1, .addi .a6 .a6 32, .addi .t0 .t0 (-1)]
 
-/-- The bits of the 57 bytes at `src` into the entries `e`. -/
-def tabBits (src e : Nat) : Prog isa :=
-  .seq (.block [.addi .a6 .a0 0, .addi .a1 .a3 src, .li .t0 57]) (.loop (.block (tabBody e)) (.nonzero .t0))
+/-- The bits of the 57 bytes at `src` into lane `e`. -/
+def bitsOf (src e : Nat) : Prog isa :=
+  .seq (.block [.addi .a6 .a0 0, .addi .a1 .a3 src, .li .t0 57]) (.loop (.block (bitsBody e)) (.nonzero .t0))
+
+/-- The five bits at `n = (a6 - OUT) / 4` of lane `e`, `bits` into `a4`;
+the digit `rawDigit false (bits + c + 16)` of the carry `c` (in `a7`) into
+lane `e + 2`, and the next carry `(c + bits % 2 + 16 - digit) / 2`. -/
+def recodeBody (e : Nat) : List Instr :=
+  [.load .b .a4 .a6 (TB - OUT + e)] ++
+  (List.range 4).flatMap (fun j => [.load .b .a5 .a6 (TB - OUT + 4 * (j + 1) + e),
+    .shift .sll .d .a5 .a5 (j + 1), .logic .or .a4 .a4 .a5]) ++
+  [.add .a5 .a4 .a7, .addi .a5 .a5 16, .logicImm .and .a5 .a5 31,
+    .logicImm .and .t3 .a5 1, .shift .srl .d .t4 .a5 4, .shift .sll .d .t4 .t4 5, .sub .t4 .a5 .t4,
+    .li .t5 0, .sub .t5 .t5 .t3, .logic .and .t4 .t4 .t5,
+    .store .b .t4 .a6 (TB - OUT + e + 2),
+    .logicImm .and .t3 .a4 1, .add .a7 .a7 .t3, .addi .a7 .a7 16, .sub .a7 .a7 .t4, .shift .srl .d .a7 .a7 1,
+    .addi .a6 .a6 4, .addi .t0 .t0 (-1)]
+
+/-- The 464 width-5 digits of lane `e` into lane `e + 2`, from the carry 16
+(`WnafWide.digitAt false`). -/
+def recode (e : Nat) : Prog isa :=
+  .seq (.block [.addi .a6 .a0 0, .li .a7 16, .li .t0 464]) (.loop (.block (recodeBody e)) (.nonzero .t0))
+
+/-! ## The tables -/
+
+/-- The odd multiples `[2 i + 1](-A)`, `i < 8`, projective, 168 bytes each
+(`X`, `Y`, `Z`), from `a0`. -/
+def KT : Nat := 3976
+/-- The odd multiples `[2 i + 1]B`, `i < 8`, affine, 112 bytes each (`x`,
+`y`): `PublicTable.entry i`. -/
+def BT : Nat := 5320
+
+/-- The seven doublewords at `rs + so` to `rd + d`, through `a4`. -/
+def cp7 (rs : Reg) (so : Nat) (rd : Reg) (d : Nat) : List Instr :=
+  (List.range 7).flatMap fun k => [.load .d .a4 rs (so + 8 * k), .store .d .a4 rd (d + 8 * k)]
+
+/-- The element at `q` into `o`. -/
+def copySlot (o q : Nat) : List Instr := cp7 .a3 q .a3 o
+
+/-- The elements at `r + off + 56 j` into the slots `os[j]`. -/
+def ldSlots (r : Reg) (off : Nat) (os : List Nat) : List Instr :=
+  (List.range os.length).flatMap fun j => cp7 r (off + 56 * j) .a3 (os.getD j 0)
+
+/-- The slots `os[j]` into `r + off + 56 j`. -/
+def stSlots (r : Reg) (off : Nat) (os : List Nat) : List Instr :=
+  (List.range os.length).flatMap fun j => cp7 .a3 (os.getD j 0) r (off + 56 * j)
+
+/-- `-A` (with `Z = 1`) into `R` and the table's entry 0 (at `t2`), `R`
+doubled and into `P`, and `R` back from entry 0. -/
+def keyHead : Prog isa :=
+  .seq (.block (copySlot RX NAX ++ copySlot RY NAY ++ copySlot RZ ONE ++ [.addi .t2 .a0 (KT - OUT)] ++
+      stSlots .t2 0 [RX, RY, RZ]))
+    (.seq (opsProg dblOps) (.block (copySlot PX RX ++ copySlot PY RY ++ copySlot PZ RZ ++
+      ldSlots .t2 0 [RX, RY, RZ] ++ [.li .t1 7])))
+
+/-- The next entry: `T = R + 2(-A)`, stored and into `R`. -/
+def keyStep : Prog isa :=
+  .seq addition (.block ([.addi .t2 .t2 168] ++ stSlots .t2 0 [TX, TY, TZ] ++
+    copySlot RX TX ++ copySlot RY TY ++ copySlot RZ TZ ++ [.addi .t1 .t1 (-1)]))
+
+def keyTable : Prog isa := .seq keyHead (.loop keyStep (.nonzero .t1))
+
+/-- `PublicTable`'s first eight entries at `a3 + BT`, `a3` moved there and back. -/
+def baseTable : List Instr :=
+  [.addi .a3 .a3 2047, .addi .a3 .a3 2047, .addi .a3 .a3 (BT - 4094 : Nat)] ++
+  (List.range 8).flatMap (fun i => constField (112 * i) (Impl.Ed448.PublicTable.entry i).1.val ++
+    constField (112 * i + 56) (Impl.Ed448.PublicTable.entry i).2.val) ++
+  [.addi .a3 .a3 (-2048), .addi .a3 .a3 (-2048), .addi .a3 .a3 (-((BT - 4096 : Nat) : Int))]
 
 /-! ## The loop -/
 
-/-- `P` and `T` from `Q`, `B`, `-A` and `-R` for the iteration `h = t1`:
-`(-R or -A, by bit 0)` into `P` and `(B or Q, by bit 0)` into `T`, then `P`
-from these by bit 1. -/
-def vSelect : List Instr :=
-  [.shift .sll .d .a1 .t1 63, .shift .srl .d .a1 .a1 63, .li .t0 0, .sub .t0 .t0 .a1] ++
-    sel PX NRX NAX ++ sel PY NRY NAY ++ sel TX BX RX ++ sel TY BY RY ++ sel TZ ONE RZ ++
-  [.shift .sll .d .a1 .t1 62, .shift .srl .d .a1 .a1 63, .li .t0 0, .sub .t0 .t0 .a1] ++
-    sel PX PX TX ++ sel PY PY TY ++ sel PZ ONE TZ
+/-- The digit of lane `e` at `n = t1` into `a5`. -/
+def loadDigit (e : Nat) : List Instr :=
+  [.shift .sll .d .a1 .t1 2, .add .a1 .a0 .a1, .load .b .a5 .a1 (TB - OUT + e)]
 
-/-- `T` swapped into `Q` under the mask of `TAB[h]`. -/
-def vSwap : List Instr :=
-  [.add .a1 .a0 .t1, .load .b .a1 .a1 (TAB - OUT), .li .t0 0, .sub .t0 .t0 .a1] ++
-    cswap RX TX ++ cswap RY TY ++ cswap RZ TZ
+/-- The digit's byte in `a5` sign-extended: its sign mask (`-1` if negative)
+into `a6`, and `|d| / 2`, the index of its entry, into `a5`. -/
+def digitIndex : List Instr :=
+  [.shift .sll .d .a5 .a5 56, .shift .sra .d .a5 .a5 56, .shift .sra .d .a6 .a5 63,
+    .logic .xor .a5 .a5 .a6, .sub .a5 .a5 .a6, .shift .srl .d .a5 .a5 1]
 
-def vStep : Prog isa :=
-  .seq (.block ([.addi .t1 .t1 (-1)] ++ vSelect)) <| .seq addition (.block vSwap)
+/-- `R = R ± [|d|]B` for `S`'s digit `d ≠ 0` in `a5`: the entry into `(SX, SY)`,
+`SX` negated if `d < 0`, and the affine addition. -/
+def baseBody : Prog isa :=
+  .seq (.block (digitIndex ++ [.shift .sll .d .t0 .a5 7, .shift .sll .d .a5 .a5 4, .sub .t0 .t0 .a5,
+      .add .t0 .t0 .a0, .addi .t2 .t0 2047, .addi .t2 .t2 (BT - OUT - 2047 : Nat)] ++ ldSlots .t2 0 [SX, SY]))
+    (.seq (.ite (.nonzero .a6) (.block (sub U0 SX SX ++ sub SX U0 SX)) (.block [])) (opsProg addOps))
 
-/-- `Q = (0 : 1 : 1)`, and the 1832 iterations. -/
-def vLoop : Prog isa :=
-  .seq (.block (constField RX 0 ++ constField RY 1 ++ constField RZ 1 ++ [.li .t1 1832]))
-    (.loop vStep (.nonzero .t1))
+def addBase : Prog isa := .seq (.block (loadDigit 2)) (.ite (.nonzero .a5) baseBody (.block []))
+
+/-- `R = R ± [|d|](-A)` for `k`'s digit `d ≠ 0` in `a5`: the entry into `P`,
+`PX` negated if `d < 0`, the addition, and `T` into `R`. -/
+def keyBody : Prog isa :=
+  .seq (.block (digitIndex ++ [.shift .sll .d .t0 .a5 7, .shift .sll .d .a2 .a5 5, .add .t0 .t0 .a2,
+      .shift .sll .d .a2 .a5 3, .add .t0 .t0 .a2, .add .t0 .t0 .a0, .addi .t2 .t0 (KT - OUT)] ++
+      ldSlots .t2 0 [PX, PY, PZ]))
+    (.seq (.ite (.nonzero .a6) (.block (sub TA PX PX ++ sub PX TA PX)) (.block []))
+      (.seq addition (.block (copySlot RX TX ++ copySlot RY TY ++ copySlot RZ TZ))))
+
+def addKey : Prog isa := .seq (.block (loadDigit 3)) (.ite (.nonzero .a5) keyBody (.block []))
+
+/-- One position `n = t1 - 1`, from the top: `R = [2]R + [S_n]B + [k_n](-A)`. -/
+def jointStep : Prog isa :=
+  .seq (.block [.addi .t1 .t1 (-1)]) (.seq (opsProg dblOps) (.seq addBase addKey))
+
+/-- `R = (0 : 1 : 1)`, and the 464 positions. -/
+def jointLoop : Prog isa :=
+  .seq (.block (constField RX 0 ++ constField RY 1 ++ constField RZ 1 ++ [.li .t1 464]))
+    (.loop jointStep (.nonzero .t1))
+
+/-- `R = [4](R + (-R'))`, `R'` the signature's point. -/
+def addNegR : Prog isa :=
+  .seq (.block (copySlot SX NRX ++ copySlot SY NRY)) (.seq (opsProg addOps) (.seq (opsProg dblOps) (opsProg dblOps)))
 
 /-! ## The function -/
 
@@ -236,8 +331,7 @@ and the constants. -/
 def vSetup : List Instr :=
   align ++ copyBytes .a0 0 PK 57 ++ copyBytes .a1 0 SG 57 ++ copyBytes .a1 57 SGS 57 ++ copyBytes .a2 0 CH 57 ++
   [.addi .a0 .a3 2047, .addi .a0 .a0 1, .li .a4 0, .store .d .a4 .a3 BAD] ++
-  constField DK Spec.Ed448.d.val ++ constField BX Spec.Ed448.basePoint.X.val ++
-  constField BY Spec.Ed448.basePoint.Y.val ++ constField ONE 1
+  constField DK Spec.Ed448.d.val ++ constField ONE 1
 
 /-- `X = 0` and `Y - Z = 0` checked, and the result: 1 less the top bit of
 `BAD | -BAD`, which is set exactly when `BAD` is not 0. -/
@@ -246,9 +340,13 @@ def vFinish : List Instr :=
   [.load .d .a6 .a3 BAD, .li .a5 0, .sub .a5 .a5 .a6, .logic .or .a6 .a6 .a5, .shift .srl .d .a6 .a6 63, .li .a0 1,
     .sub .a0 .a0 .a6]
 
-def verifyEquation : Prog isa :=
+/-- Everything before the joint loop, whose branches are only on loop counters. -/
+def vPrefix : Prog isa :=
   .seq (.block vSetup) <| .seq (decode SG NRX NRY) <| .seq (decode PK NAX NAY) <|
-  .seq (.block checkS) <| .seq tabFill <| .seq (tabBits SGS 2) <| .seq (tabBits CH 1) <|
-  .seq vLoop (.block vFinish)
+  .seq (.block checkS) <| .seq bitsZero <| .seq (bitsOf SGS 0) <| .seq (bitsOf CH 1) <|
+  .seq (recode 0) <| .seq (recode 1) <| .seq keyTable (.block baseTable)
+
+def verifyEquation : Prog isa :=
+  .seq vPrefix <| .seq jointLoop <| .seq addNegR (.block vFinish)
 
 end VG.Impl.Ed448.RISCV64
