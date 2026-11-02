@@ -22,7 +22,8 @@ routines, restated on `KE` (as PPC64LE's `KS`): each updates `V` or `F`
 namespace VG.Proof.RsaKeyGen.RISCV64.Key
 
 open VG VG.RISCV64 VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
-open VG.Impl.Rsa.RISCV64.Keys (seqs copy sub3 sel eqS bitOf andS stBorrow aZero sOdd sB sC)
+open VG.Impl.Rsa.RISCV64.Keys (seqs copy sub3 sel eqS bitOf andS stBorrow sOdd sB sC)
+open VG.Impl.RsaKeyGen.RISCV64.Key (aZero)
 open VG.Impl.Rsa.RISCV64.Div (div)
 open VG.Impl.RsaKeyGen.RISCV64.Key (nArr aDv aT X0 X1 X2 X3 X4 X5 X6 X7 X8 notS andNotS selS ltS mulTo invOf)
 
@@ -105,8 +106,6 @@ theorem KE.fx {s0 s : State} {V F : Nat → Nat} {d x : Nat} (h : KE s0 V (upd F
 theorem flag_hdr : ∀ d ∈ flags, 96 ≤ d ∧ d + 8 ≤ hdr := by decide
 
 theorem flag_al : ∀ d ∈ flags, d % 8 = 0 := by decide
-
-theorem inv_flags : ∀ d ∈ invSlots, d ∉ flags := by decide
 
 theorem flag_sep : ∀ d ∈ flags, ∀ y ∈ flags, y ∉ [d] → ∀ d' ∈ [d], y + 8 ≤ d' ∨ d' + 8 ≤ y := by decide
 
@@ -349,27 +348,27 @@ theorem addE (e : KE s0 V F s) {o a b t : Nat} (ho : o < nArr := by decide) (ha 
   · simp only [or_true, ↓reduceIte]
     rw [v, e.arrs a ha, e.arrs b hb]
 
-/-- `invOf a m k`: `gcd` in array 1, the inverse in array 3. -/
-theorem invOfE (e : KE s0 V F s) {a m K : Nat} {k : List Instr} (ha : a < nArr := by decide)
+/-- `invOf a m k`, `k` setting `s8 := n`: `gcd` in array 1, the inverse in array 3. -/
+theorem invOfE [VG.Proof.Rsa.RISCV64.InvLaw] (e : KE s0 V F s) {a m n : Nat} {k : List Instr} (ha : a < nArr := by decide)
     (hm : m < nArr := by decide) (ha15 : 15 ≤ a := by decide) (hm15 : 15 ≤ m := by decide)
-    (hK : 0 < K) (hK' : K < 2 ^ 64)
+    (hw : 4 ≤ wOf s0) (hn1 : 1 ≤ n) (hnw : n ≤ 2 * wOf s0)
     (hk : ∀ u : State, (∀ r ∉ opRegs, u.gpr r = s.gpr r) →
-      WP isa (.block k) u fun v => (v.gpr .s7 = BitVec.ofNat 64 K ∧ v.mem = u.mem) ∧ Keep [.s7] u v)
-    (zero : V aZero = 0) (odd : V m % 2 = 1) (gt : 1 < V m) (fit : V a * V m < 2 ^ (2 * K)) :
+      WP isa (.block k) u fun v => (v.gpr .s8 = BitVec.ofNat 64 n ∧ v.mem = u.mem) ∧ Keep [.s8] u v)
+    (odd : V m % 2 = 1) (gt : 1 < V m) (xlt : V a < 2 ^ (32 * n)) (mlt : V m < 2 ^ (32 * n)) :
     WP isa (invOf a m k) s fun u => ∃ V', KE s0 V' F u ∧
       (∀ j < nArr, j ∉ invOfArrs → V' j = V j) ∧
       V' 1 = Nat.gcd (V a) (V m) ∧ ((V m : Nat) : Int) ∣ (V' 3 : Int) * V a - V' 1 ∧ V' 3 < V m := by
-  refine WP.mono (invOf_ok e.ws (by decide) (by decide) ha hm ha15 hm15 hK hK' hk)
+  refine WP.mono (invOf_ok e.ws (by decide) (by decide) hw ha hm ha15 hm15 hn1 hnw hk
+    (by rw [e.arrs a ha]; exact xlt) (by rw [e.arrs m hm]; exact mlt) (by rw [e.arrs m hm]; exact odd))
     fun u ⟨hu, fu, ku, hv⟩ => ?_
-  rw [e.arrs aZero (by decide), e.arrs m hm, e.arrs a ha] at hv
-  obtain ⟨g1, g2, g3⟩ := hv zero odd gt fit
+  rw [e.arrs m hm, e.arrs a ha] at hv
+  obtain ⟨g1, g2, g3⟩ := hv gt
   have hj : ∀ j ∈ invOfArrs, j < nArr := by decide
   refine ⟨fun j => if j ∈ invOfArrs then num u.mem (bOf s0) (wOf s0) j else V j, ?_, ?_, ?_, ?_, ?_⟩
-  · refine e.next hu fu hj (by decide) ku (by decide) (fun j _ hn => ?_) (fun j hj => ?_)
-      (fun _ _ _ => rfl) (fun d hd hf => ?_) (fun hd => absurd hd (by decide)) (by decide)
+  · refine e.next hu fu hj (by simp) ku (by decide) (fun j _ hn => ?_) (fun j hj => ?_)
+      (fun _ _ _ => rfl) (fun d hd => by simp at hd) (fun hd => absurd hd (by decide)) (by simp)
     · simp only [hn, ↓reduceIte]
     · simp only [hj, ↓reduceIte]
-    · exact absurd hf (inv_flags d hd)
   · intro j _ hn; simp only [hn, ↓reduceIte]
   · simp only [show (1 : Nat) ∈ invOfArrs by decide, ↓reduceIte]; exact g1
   · simp only [show (1 : Nat) ∈ invOfArrs by decide, show (3 : Nat) ∈ invOfArrs by decide, ↓reduceIte]

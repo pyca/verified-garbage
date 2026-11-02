@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Rsa.RISCV64.Instances
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on RISC-V -/
 

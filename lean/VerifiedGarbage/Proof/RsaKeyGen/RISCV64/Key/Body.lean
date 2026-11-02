@@ -24,7 +24,8 @@ arrays they come from holding `n = p q`, `d`, `p`, `q`, `dP`, `dQ` and
 namespace VG.Proof.RsaKeyGen.RISCV64.Key
 
 open VG VG.RISCV64 VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
-open VG.Impl.Rsa.RISCV64.Keys (seqs aZero)
+open VG.Impl.Rsa.RISCV64.Keys (seqs)
+open VG.Impl.RsaKeyGen.RISCV64.Key (aZero)
 open VG.Impl.RsaKeyGen.RISCV64.Key (body setup loads consts primes lcmPart dPart smallPart qinvPart crtPart
   nPart maskPart stores nArr aOne aTwo aThree aTop aC aC33 aE aP0 aQ0 aP aQ aPm aQm aL aDv aD aDP aDQ aQi aN
   X0 X1 X3 X5 X6 X7 X8)
@@ -86,7 +87,8 @@ theorem kQ_lt (s0 : State) : kQ s0 < 2 ^ (8 * pLen s0) := by
   have := pIn_lt s0; have := qIn_lt s0; simp only [kQ]; split <;> with_reducible assumption
 
 /-- From the entry to the constants, the primes and `L`: `KE` with the values the later phases need. -/
-theorem front_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
+theorem front_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
+    (ha7 : s.gpr .a7 = stackArg s0 7) :
     WP isa (seqs (setup :: loads :: (consts ++ [primes, lcmPart]))) s fun t =>
       St s0 allArrs t ∧ word t.mem (bOf s0) (arr (wOf s0) aDv + 8 * wOf s0) = 0 ∧
       num t.mem (bOf s0) (wOf s0) aOne = 1 ∧ num t.mem (bOf s0) (wOf s0) aTwo = 2 ∧ num t.mem (bOf s0) (wOf s0) aThree = 3 ∧ num t.mem (bOf s0) (wOf s0) aZero = 0 ∧
@@ -96,9 +98,9 @@ theorem front_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
       num t.mem (bOf s0) (wOf s0) aL = kLc s0 := by
   have w4 := h.wOf_eq
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (setup_ok h c) fun t1 c1 => ?_
+  refine WP.mono (setup_ok h c ha7) fun t1 ⟨c1, a71⟩ => ?_
   rw [wp_seqs_cons (by simp [consts])]
-  refine WP.mono (loads_ok h c1) fun t2 ⟨c2, eP, eQ, eE⟩ => ?_
+  refine WP.mono (loads_ok h c1 a71) fun t2 ⟨c2, eP, eQ, eE⟩ => ?_
   rw [wp_seqs_append (by simp [consts]) (List.cons_ne_nil _ _)]
   refine WP.mono (consts_ok h c2 (by decide)) fun t3 ⟨c3, k3, o3⟩ => ?_
   have zero3 : num t3.mem (bOf s0) (wOf s0) aZero = 0 := c3.zero (by decide) (by decide)
@@ -138,7 +140,8 @@ theorem front_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
   · rw [o5 _ (by decide) (by decide)]; exact vQm
   · rw [vL, vPm, vQm]
 
-theorem body_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
+theorem body_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
+    (ha7 : s.gpr .a7 = stackArg s0 7) :
     WP isa body s (BodyPost s0) := by
   have hpl := kP_lt s0
   have hql := kQ_lt s0
@@ -147,7 +150,7 @@ theorem body_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
     maskPart, stores]) = (setup :: loads :: (consts ++ [primes, lcmPart])) ++
       [dPart, smallPart, qinvPart, crtPart, nPart, maskPart, stores] by simp,
     wp_seqs_append (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)]
-  refine WP.mono (front_ok h c) fun t5 ⟨c5, dv, one5, two5, three5, zero5, c5', c335, top5, e5, p5, q5, pm5,
+  refine WP.mono (front_ok h c ha7) fun t5 ⟨c5, dv, one5, two5, three5, zero5, c5', c335, top5, e5, p5, q5, pm5,
     qm5, l5⟩ => ?_
   have k5 := KE.of_st c5 dv
   -- `d`.
