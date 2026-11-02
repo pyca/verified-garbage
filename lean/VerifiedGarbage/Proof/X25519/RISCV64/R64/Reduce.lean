@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Reduce
 
@@ -425,6 +426,67 @@ theorem reduce_ok {acc o : Nat} (hA : acc + 64 ≤ 2048) (hA8 : acc % 8 = 0) (ho
   rw [w2, e2] at e3
   rw [← hmod, ← hv1, B4_eq]
   exact fold_twice (hl s3) (hl s4) (by omega) e3 e4 (hl s1)
+
+/-! ## A product by `a24` -/
+
+/-- Two folds of a carry `c < 2⁵⁸` leave a number congruent to `v₁ + 2²⁵⁶ c`. -/
+theorem fold_twice' {v1 v2 v3 c c2 c3 : Nat} (hv2 : v2 < 2 ^ 256) (hv3 : v3 < 2 ^ 256) (hc : c < 2 ^ 58)
+    (e2 : v2 + 2 ^ 256 * c2 = v1 + 38 * c) (e3 : v3 + 2 ^ 256 * c3 = v2 + 38 * c2)
+    (hv1 : v1 < 2 ^ 256) : v3 % P = (v1 + 2 ^ 256 * c) % P := by
+  have hc2 : c2 ≤ 1 := by omega
+  have hc3 : c3 = 0 := by
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc2 with h | h <;> subst h <;> omega
+  subst hc3
+  rw [fold256, show v1 + 38 * c = v2 + 2 ^ 256 * c2 by omega, fold256]
+  congr 1
+
+/-- `[o] = 121665 · [x]` modulo `p`. -/
+theorem mulA24_ok {o x : Nat} (ho : o + 32 ≤ 2048) (hx : x + 56 ≤ 2048) (ho8 : o % 8 = 0)
+    (hx8 : x % 8 = 0) {s : State} (hc : Ctx b s) :
+    WP isa (.block (mulA24 o x)) s fun s' =>
+      Rest clob64 s s' ∧ Frame [⟨b + BitVec.ofNat 64 o, 32⟩] s.mem s'.mem ∧
+      V s'.mem b o % P = (121665 * V s.mem b x) % P := by
+  unfold mulA24
+  simp only [List.append_assoc, List.cons_append]
+  refine WP.append (ByteLoad.li32_ok (d := .a6) 121665) fun s0 e0 => ?_
+  have u0 : Upd s s0 .a6 (sext32 121665) := by rw [e0]; exact Upd.write _ _ _
+  have hK : (sext32 (121665 : BitVec 32)).toNat = 121665 := by decide
+  have hr0 : Rest clob64 s s0 := u0.rest (by decide)
+  have hc0 : Ctx b s0 := hc.of_rest hr0 (by decide)
+  have hm0 : s0.mem = s.mem := u0.mem
+  refine WP.append (VG.Proof.X448.RISCV64.R64.mulSmallSteps_ok hx hx8 (K := 121665) (by decide) (by decide)
+    hc0 (by rw [u0.gpr, hK]) 4 (by decide) (by decide)) fun s1 h1 => ?_
+  refine wp_li (by decide) fun s2 u2 => ?_
+  have a42 : s2.gpr .a4 = 38 := u2.gpr
+  refine WP.append (fold_ok a42) fun s3 ⟨e3, k3⟩ => ?_
+  have hcy := h1.cy
+  have c2 : s2.gpr .a5 = s1.gpr .a5 := u2.other _ (by decide)
+  rw [c2] at e3
+  have e3 := e3 (by omega)
+  have a43 : s3.gpr .a4 = 38 := by rw [k3.1 _ (by decide), a42]
+  refine WP.append (fold_ok a43) fun s4 ⟨e4, k4⟩ => ?_
+  have hl : ∀ v : State, rw4 v < 2 ^ 256 := fun v => by
+    rw [← B4_eq]; exact val4_lt fun i _ => (v.gpr (w i)).isLt
+  have hc3 : (s3.gpr .a5).toNat ≤ 1 := by
+    have := hl s2; have := hl s3; omega
+  have e4 := e4 (by omega)
+  have hr4 : Rest clob64 s s4 := hr0.trans (h1.rest.trans ((u2.rest (by decide)).trans
+    (Rest.mono (Keeps.rest (k3.trans k4)) (by decide))))
+  have hc4 : Ctx b s4 := hc.of_rest hr4 (by decide)
+  have hm4 : s4.mem = s.mem := by rw [k4.2.1, k3.2.1, u2.mem, h1.mem, hm0]
+  refine WP.mono (st4_ok ho ho8 hc4) fun s5 ⟨_, hr5, f5, hV⟩ =>
+    ⟨hr4.trans (hr5.mono (by decide)), by rw [← hm4]; exact f5, ?_⟩
+  rw [hV]
+  have w2 : rw4 s2 = rw4 s1 := by
+    simp only [rw4, val4, u2.other (w 0) (by decide), u2.other (w 1) (by decide), u2.other (w 2) (by decide),
+      u2.other (w 3) (by decide)]
+  rw [w2] at e3
+  have hv := h1.val
+  rw [colsV4, colsV4, B4_eq, hm0] at hv
+  have hx : val4 (fun i => dw s.mem b (x + 8 * i)) = V s.mem b x := (V_eq4 _ _ _).symm
+  rw [hx] at hv
+  rw [← hv]
+  exact fold_twice' (hl s3) (hl s4) (by omega) e3 e4 (hl s1)
 
 /-! ## A product -/
 

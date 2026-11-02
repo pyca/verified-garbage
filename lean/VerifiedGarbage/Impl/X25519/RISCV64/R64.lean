@@ -9,8 +9,9 @@ public import VerifiedGarbage.Impl.X448.RISCV64.R64
 `vg_x25519(out = a0, scalar = a1, point = a2, scratch = a3)`.
 
 The algorithm and layout of `Impl/X25519/RISCV64.lean` (its ladder, its
-inversion, its decoding, its bits of the scalar and its final reduction), but
-for the field arithmetic, which takes a field element's 32 bytes as four
+decoding, its bits of the scalar and its final reduction), but for the
+inversion, by ref10's addition chain in the ladder's temporaries `A`–`D`
+(`invertChain`), and for the field arithmetic, which takes a field element's 32 bytes as four
 64-bit words `x₀ + 2⁶⁴ x₁ + 2¹²⁸ x₂ + 2¹⁹² x₃` (the same number as its eight
 32-bit limbs) and multiplies them with `mul` and `mulhu`, the low and high
 words of a 128-bit product, carrying with `sltu` (the sum `d := d + x`
@@ -30,6 +31,7 @@ word of a sum, a difference and a swap, are X448's. The operations:
   (`fold`) before the words are stored.
 * `add`, `sub`: with carries (borrows), the carry folded in (the borrow taken
   out) as 38, twice each.
+* `mulA24`: the product by `a24 = 121665`, one word, as X448's by its `a24`.
 * `cswap`: with the mask `-swap` (in `t0`), a doubleword at a time.
 
 The only branches are on the loop counters, and every address is a pointer
@@ -40,7 +42,7 @@ plus a constant or a counter, so only the pointers can affect timing.
 
 namespace VG.Impl.X25519.RISCV64.R64
 
-open VG.RISCV64
+open VG.RISCV64 VG.Impl.Words.RISCV64
 open VG.Impl.X25519.RISCV64 (X1 X2 Z2 X3 Z3 A B C D AA BB E DA CB A24 R ACC BITS align setup bits
   freeze one)
 
@@ -153,6 +155,12 @@ def mulAt (acc o a b : Nat) : Prog isa :=
 /-- `[o] = [a] · [b]`, with the product at `ACC`. -/
 abbrev mul (o a b : Nat) : Prog isa := mulAt ACC o a b
 
+/-- `[o] = 121665 · [a]` (`a24`, one word, into `a6` by `li32`): X448's words of a product by
+a word (`mulSmallStep`), four of them, then the top word folded in as 38 twice. -/
+def mulA24 (o a : Nat) : List Instr :=
+  li32 .a6 121665 ++ (List.range 4).flatMap (VG.Impl.X448.RISCV64.R64.mulSmallStep a) ++
+    .li .a4 38 :: fold ++ fold ++ st4 o
+
 /-! ## Sums and differences -/
 
 /-- `[o] = [a] + [b]`. -/
@@ -171,7 +179,7 @@ a doubleword at a time (X448's `cswapStep`, named in full: the 32-bit one of
 def cswap (x y : Nat) : List Instr :=
   (List.range 4).flatMap (VG.Impl.X448.RISCV64.R64.cswapStep x y)
 
-/-! ## The ladder and the inversion, as in `Impl/X25519/RISCV64.lean` -/
+/-! ## The ladder, as in `Impl/X25519/RISCV64.lean`, and the inversion by ref10's chain -/
 
 /-- The mask `-swap` into `t0`. -/
 def mask : List Instr := [.li .t0 0, .sub .t0 .t0 .t2]
@@ -190,7 +198,7 @@ def step : Prog isa :=
   .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
   .seq (.block (sub D X3 Z3)) <| .seq (mul DA D A) <| .seq (mul CB C B) <|
   .seq (.block (add X3 DA CB)) <| .seq (mul X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
-  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (mul Z2 A24 E) <|
+  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (.block (mulA24 Z2 E)) <|
   .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [])
 
 /-- The 255 iterations, for `t` from 254 down to 0, with `swap = 0`. -/
@@ -200,20 +208,27 @@ def ladder : Prog isa :=
 /-- The swap after the loop. -/
 def lastSwap : List Instr := mask ++ cswap X2 X3 ++ cswap Z2 Z3
 
-/-- `R = R²`, then `R = R · Z2` unless `t = t1 - 1` is 4 or 2. -/
-def invStep : Prog isa :=
-  .seq (.block [.addi .t1 .t1 (-1)]) <| .seq (mul R R R) <|
-  .seq (.block [.addi .a2 .t1 (-4)]) <|
-  .seq (.ite (.zero .a2) (.block [])
-    (.seq (.block [.addi .a2 .t1 (-2)]) (.ite (.zero .a2) (.block []) (mul R R Z2))))
-    (.block [])
+/-- `[a]` squared `n` times into `[o]`, the squarings after the first in a loop counted by `t1`. -/
+def sqn (o a n : Nat) : Prog isa :=
+  .seq (mul o a a) <| .seq (.block [.li .t1 ((n - 1 : Nat) : Int)]) <|
+    .loop (.seq (mul o o o) (.block [.addi .t1 .t1 (-1)])) (.nonzero .t1)
 
-/-- `[R] = [Z2]^(p-2)`, square-and-multiply over the bits of `p - 2` from 254
-down to 0. -/
-def invert : Prog isa := .seq (.block (one ++ [.li .t1 255])) (.loop invStep (.nonzero .t1))
+/-- `[R] = [Z2]^(p-2)` by ref10's addition chain (`Proof/X25519/Chain250.lean`'s `chainF`, then
+five squarings and `z^11`), in `A`–`D`, free after the ladder. -/
+def invertChain : Prog isa :=
+  .seq (mul A Z2 Z2) <| .seq (mul B A A) <| .seq (mul B B B) <| .seq (mul B Z2 B) <|
+  .seq (mul A A B) <| .seq (mul C A A) <| .seq (mul B B C) <|
+  .seq (sqn C B 5) <| .seq (mul B C B) <|
+  .seq (sqn C B 10) <| .seq (mul C C B) <|
+  .seq (sqn D C 20) <| .seq (mul C D C) <|
+  .seq (sqn C C 10) <| .seq (mul B C B) <|
+  .seq (sqn C B 50) <| .seq (mul C C B) <|
+  .seq (sqn D C 100) <| .seq (mul C D C) <|
+  .seq (sqn C C 50) <| .seq (mul B C B) <|
+  .seq (sqn B B 5) (mul R B A)
 
 def x25519 : Prog isa :=
   .seq (.block (align ++ setup)) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <|
-    .seq invert <| .seq (mul X2 X2 R) (.block freeze)
+    .seq invertChain <| .seq (mul X2 X2 R) (.block freeze)
 
 end VG.Impl.X25519.RISCV64.R64
