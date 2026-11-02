@@ -329,6 +329,64 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage_asm_riscv64::rsa_proto::{vg_proto_mont_mul, vg_proto_mont_sqr};
 
     use crate::{OPENSSL, VG};
+    // Only the Miller–Rabin groups this run: the others' results are recorded
+    // in their pull requests (set to false to run them too).
+    const ONLY_MR: bool = true;
+    {
+        // The unproven Miller–Rabin pieces: the prime search (`Search.millerRabin`,
+        // after the sieve, the trial division by the shared table and `montPrep`)
+        // of a prime, with 1 and with 8 witnesses (so the difference is 7
+        // rounds), next to OpenSSL's `BN_is_prime_ex` with as many.
+        use verified_garbage_asm_riscv64::rsa_proto5::vg_mr_search_proto;
+        let mut ctx = BigNumContext::new().unwrap();
+        for checks in [1usize, 8] {
+            let mut g = c.benchmark_group(format!("rsa_proto_mr{checks}"));
+            for bits in [1024i32, 1536, 2048] {
+                let mut p = BigNum::new().unwrap();
+                p.generate_prime(bits, false, None, None).unwrap();
+                let pb = p.to_vec();
+                let w = pb.len().div_ceil(8).max(4);
+                let mut ws = vec![0u64; 32 + 30 * (w + 2)];
+                let top = {
+                    let t = pb.len().div_ceil(8) - 1;
+                    let mut x = 0u64;
+                    for &b in &pb[..pb.len() - 8 * t] {
+                        x = (x << 8) | u64::from(b);
+                    }
+                    if x >> 63 == 1 {
+                        u64::MAX
+                    } else {
+                        (1u64 << (64 - x.leading_zeros())) - 1
+                    }
+                };
+                // Witnesses: every draw of a prime passes; a tape of 64 draws.
+                let tape: Vec<u8> = (0..64 * pb.len()).map(|i| (i * 131 + 7) as u8).collect();
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    b.iter(|| unsafe {
+                        let r = vg_mr_search_proto(
+                            black_box(pb.as_ptr()),
+                            pb.len(),
+                            tape.as_ptr(),
+                            tape.len(),
+                            top,
+                            checks,
+                            ws.as_mut_ptr(),
+                            ws.len(),
+                        );
+                        assert_eq!(r, 1);
+                        r
+                    })
+                });
+                g.bench_function(BenchmarkId::new(OPENSSL, bits), |b| {
+                    b.iter(|| black_box(&p).is_prime(checks as i32, &mut ctx).unwrap())
+                });
+            }
+            g.finish();
+        }
+    }
+    if ONLY_MR {
+        return;
+    }
     {
         // The unproven private-key operation (CRT, checked against e), next to OpenSSL's.
         use openssl::rsa::{Padding, Rsa};
