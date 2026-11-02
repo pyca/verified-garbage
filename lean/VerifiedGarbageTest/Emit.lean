@@ -125,6 +125,22 @@ open VG.Emit
   \n\
   end\n"
 
+-- An `All` interface takes the list of every variant of its interface, once.
+#guard allOf "AllI.X86_64" == ("I.X86_64", true)
+#guard allOf "I.X86_64" == ("I.X86_64", false)
+#guard interfacesOf "VerifiedGarbage.Generic.I.AllJ.X86_64.A" == some ["I.X86_64", "AllJ.X86_64"]
+#guard instances ["VerifiedGarbage.Generic.I.AllJ.X86_64.A"]
+    [(false, ["VerifiedGarbage.Variants.I.X86_64.P", "VerifiedGarbage.Variants.I.X86_64.Q"]),
+     (true, ["VerifiedGarbage.Variants.J.X86_64.R", "VerifiedGarbage.Variants.J.X86_64.S"])] ==
+  "(List.flatMap (fun v => ((fun v2 => List.flatten [VG.Generic.I.AllJ.X86_64.A.artifacts v v2]) \
+    [VG.Variants.J.X86_64.R.variant, VG.Variants.J.X86_64.S.variant])) \
+    [VG.Variants.I.X86_64.P.variant, VG.Variants.I.X86_64.Q.variant])"
+#guard ((driver [] [(["I.X86_64", "AllJ.X86_64"], ["VerifiedGarbage.Generic.I.AllJ.X86_64.A"])]
+    [("I.X86_64", ["VerifiedGarbage.Variants.I.X86_64.P"]),
+     ("J.X86_64", ["VerifiedGarbage.Variants.J.X86_64.R", "VerifiedGarbage.Variants.J.X86_64.S"])]).splitOn
+  "((fun v2 => List.flatten [VG.Generic.I.AllJ.X86_64.A.artifacts v v2]) \
+    [VG.Variants.J.X86_64.R.variant, VG.Variants.J.X86_64.S.variant])").length == 2
+
 -- A generic function of two interfaces is applied to each pair of a variant
 -- of the first and a variant of the second, the first varying slowest.
 #guard driver []
