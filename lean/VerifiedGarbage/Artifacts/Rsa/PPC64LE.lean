@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Instances
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcVerified
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -37,9 +36,6 @@ def artifacts : List Artifact := [
   Spec.Rsa.checkCrtKeyApi.artifact PPC64LE.target {
     code := Impl.Rsa.PPC64LE.CheckCrtKey.code
     verified := Proof.Rsa.PPC64LE.KeyCheck.cck_verified },
-  Spec.Rsa.recoverPrimesApi.artifact PPC64LE.target {
-    code := Impl.Rsa.PPC64LE.Recover.code
-    verified := Proof.Rsa.PPC64LE.Recover.rv_verified },
   Spec.Rsa.recoverPrimesDetApi.artifact PPC64LE.target {
     code := Impl.Rsa.PPC64LE.RecoverDet.code
     verified := Proof.Rsa.PPC64LE.RecDet.rd_verified }]

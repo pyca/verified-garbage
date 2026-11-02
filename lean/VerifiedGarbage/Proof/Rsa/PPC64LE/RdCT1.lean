@@ -1,13 +1,11 @@
 module
 -- separate module: builds in parallel with the correctness proofs (`RdCorrect.lean`)
 
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCorrect
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdContract
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RdContract
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCorrect
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -33,8 +31,8 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvLoads
 /-!
 # `vg_rsa_recover_primes_det` on PPC64LE: constant time of the entry and the check of `n`
 
-As `RvCT1.lean` for `vg_rsa_recover_primes`, whose entry and check it shares,
-with the public data of `rdP` (`rdPub`: the argument registers, the stack
+The entry and the check of `n` are `vg_rsa_recover_primes`'s, with the public
+data of `rdP` (`rdPub`: the argument registers, the stack
 arguments and the bytes of `n` and `e`).
 -/
 

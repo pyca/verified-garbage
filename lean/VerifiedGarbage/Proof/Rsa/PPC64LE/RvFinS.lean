@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFinD
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFail
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBytes
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
