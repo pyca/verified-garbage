@@ -118,7 +118,7 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) : Kit where
   len := rfl
   nbits := nBits_p384
   two := by decide
-  nw4 := .inr rfl
+  nw9 := ⟨by decide, by decide⟩
   Qw := .inl rfl
   coreC := Impl.Ecdsa.RISCV64.Sign.signP384
   K := Impl.Ecdsa.RISCV64.Comb.p384CombConsts

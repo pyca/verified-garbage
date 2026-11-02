@@ -19,10 +19,11 @@ calling `core`, the signature with a given `k` (`vg_ecdsa_<curve>_sign`),
 which reads `Q` bytes of the digest and of `k`. One `V` makes a candidate,
 its leftmost `Q` bytes, so `core` reads the digest and `V` in place.
 
-It runs in a frame of `192 + 8 nw` bytes (`alloc`): our caller's `ra` and
-`s0`–`s5`, then `K` and `V` (64 bytes each, of which the first `D` are used,
-and the byte after `V` the separator of steps d, f and h.3) and `h` (`Q`
-bytes, in `8 nw`). Our
+It runs in a frame of `fH + 8 nw` bytes rounded up to 16 (`alloc`): our
+caller's `ra` and `s0`–`s5`, then `K` and `V` (64 bytes each, of which the
+first `D` are used, and the byte after `V` the separator of steps d, f and
+h.3) and `h` (`Q` bytes, in `8 nw`) at `fH`: 192, or 208 when `D` is 64 and
+the separator is byte 192. Our
 variables live in `s0`–`s5`, which the functions we call save and restore:
 `s0` = `scratch`, `s1` = the frame, `s2` = `out`, `s3` = `d`, `s4` =
 `digest` and `s5` = the candidates left. In `scratch`: HMAC's inner and
@@ -58,7 +59,6 @@ open VG.Impl.Hmac.Stream.RISCV64 (Hash mov)
 /-! Where things are in the frame. -/
 def fK : Nat := 64
 def fV : Nat := 128
-def fH : Nat := 192
 
 /-! Where things are in `scratch`: HMAC's states, and the first number of
 `bits2octets`. -/
@@ -102,9 +102,11 @@ namespace Cfg
 
 variable (c : Cfg)
 
-/-- The frame's size: `h`'s words after `fH`, a multiple of 16 for P-224's,
-P-256's and P-384's scalars. -/
-def frB : Nat := fH + 8 * c.nw
+/-- Where `h` is in the frame: after `V` and its separator. -/
+def fH : Nat := if c.H.D < 64 then 192 else 208
+
+/-- The frame's size: `h`'s words after `fH`, rounded up to a multiple of 16. -/
+def frB : Nat := (c.fH + 8 * c.nw + 15) / 16 * 16
 
 /-! The other numbers of `bits2octets` in `scratch`, after `sX`'s. -/
 def sZ : Nat := 8 * c.nw
@@ -130,7 +132,7 @@ def prologue : List Instr :=
 def reduce : Prog isa :=
   .seq (.block (c.loadQ sX .s4 0 ++ Ecdh.RISCV64.setConst c.nw c.sZ 0))
     (.seq (Weierstrass.RISCV64.addCall c.FN c.sY sX c.sZ)
-      (.block ([.li .a7 (-1)] ++ c.storeQ c.sY .s1 fH)))
+      (.block ([.li .a7 (-1)] ++ c.storeQ c.sY .s1 c.fH)))
 
 /-- `K = 0x00…`, `V = 0x01…`, `D` bytes each. -/
 def initKV : List Instr :=
@@ -173,7 +175,7 @@ def sep (b : Nat) : List Instr := Words.RISCV64.storeBytes .t0 .s1 (fV + c.H.D) 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
 def rekeyFull (b : Nat) : Prog isa :=
   .seq (.block (c.sep b))
-    (.seq (c.hmac [(.s1, fV, c.H.D + 1), (.s3, 0, c.Q), (.s1, fH, c.Q)] fK) c.hmacV)
+    (.seq (c.hmac [(.s1, fV, c.H.D + 1), (.s3, 0, c.Q), (.s1, c.fH, c.Q)] fK) c.hmacV)
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
 def rekey : Prog isa :=
@@ -206,7 +208,7 @@ def tryOne : Prog isa :=
     (.ite (.nonzero .t6) (.seq c.rekey (.block again)) (.block stop)))))
 
 /-- `K`, `V` and `h` cleared. -/
-def wipe : List Instr := .li .t0 0 :: (List.range (16 + c.nw)).map fun j => .store .d .t0 .s1 (fK + 8 * j)
+def wipe : List Instr := .li .t0 0 :: (List.range ((c.fH - fK) / 8 + c.nw)).map fun j => .store .d .t0 .s1 (fK + 8 * j)
 
 /-- Restore our caller's registers. -/
 def restore : List Instr := restList.map fun (r, d) => .load .d r .s1 d
