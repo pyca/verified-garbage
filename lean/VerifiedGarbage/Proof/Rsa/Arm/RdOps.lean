@@ -219,6 +219,15 @@ theorem KS.widen {j a : Nat} (h : KS P σ A live AW liveW V ls s) (hv : Ws s P.B
       simp only [List.mem_singleton] at ho; subst ho; have := hlW i hi; omega) (by simp) i
       ((List.mem_cons.mp hi).resolve_left e')
 
+/-- A narrow array recorded at the value it holds. -/
+theorem KS.addLive {j : Nat} (h : KS P σ A live AW liveW V ls s) (hj : j < nArr) :
+    KS P σ (upd A j (num s.mem P.B P.w j)) (j :: live) AW liveW V ls s := by
+  refine ⟨h.bs, h.r8, h.cnt, fun i hi => ?_, h.arrsW, h.sl,
+    fun i hi => (List.mem_cons.mp hi).elim (fun e => e ▸ hj) (h.live_lt i), h.liveW_lt, h.ls_ok⟩
+  by_cases e : i = j
+  · subst e; rw [upd_self]
+  · rw [upd_ne _ _ e]; exact h.arrs i ((List.mem_cons.mp hi).resolve_left e)
+
 /-! ## Values, differences and sums -/
 
 theorem KS.lt_w {j : Nat} (h : KS P σ A live AW liveW V ls s) (hj : j ∈ live) : A j < 2 ^ (32 * P.w) := by
