@@ -180,13 +180,17 @@ jobs:
       # The dependencies (aws-lc-sys, criterion, ...) are the same for every
       # configuration and shard of an architecture, and about a third of the
       # job; ci.yml's `rust` job saves them on main whenever the key changes.
+      # A branch that changes the benchmarks' manifest or lock file falls
+      # back to main's latest entry for the same compiler, and Cargo rebuilds
+      # only what changed.
       - id: cache-key
-        run: echo "key=$(sh head/ci/bench_cache_key.sh head/bench)" >> "$GITHUB_OUTPUT"
+        run: sh head/ci/bench_cache_key.sh head/bench >> "$GITHUB_OUTPUT"
       - name: Restore the dependencies' build
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: bench-target
           key: ${{ steps.cache-key.outputs.key }}
+          restore-keys: ${{ steps.cache-key.outputs.prefix }}
       - name: Benchmark base and head
         id: benchmark
         env:
