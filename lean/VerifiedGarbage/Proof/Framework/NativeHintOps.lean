@@ -68,6 +68,8 @@ def hint (chunkSize : Nat) : A.T → Prog M → Option (A.T × Hint A.T)
     (A.call τ).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.ret τ₂).map (·, .call h)
   | τ, .frame i body j =>
     (A.push τ i).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.pop τ₂ j).map (·, .frame h)
+  -- The taint analysis does not handle indirect calls.
+  | _, .icall .. => none
 where
   go (c : M.Cond) (body : A.T → Option (A.T × Hint A.T)) :
       Nat → A.T → Option (A.T × Hint A.T)
@@ -114,6 +116,7 @@ def hintWeak (chunkSize : Nat) (w : A.T → A.T) : A.T → Prog M → Option (A.
   | τ, .frame i body j =>
     (A.push τ i).bind fun τ₁ => (hintWeak chunkSize w τ₁ body).bind fun (τ₂, h) =>
       (A.pop τ₂ j).map (·, .frame h)
+  | _, .icall .. => none
 where
   go (c : M.Cond) (body : A.T → Option (A.T × Hint A.T)) :
       Nat → A.T → Option (A.T × Hint A.T)
@@ -246,6 +249,7 @@ def hintSumA (S : List A.Summary) (same : Prog M → Prog M → Bool) :
   | _, τ, .frame i body j => sumOr (findSumCode A same (.frame i body j) τ S 0) fun _ =>
     (A.push τ i).bind fun τ₁ => (hintSumA S same [] τ₁ body).bind fun (τ₂, h) =>
       (A.pop τ₂ j).map (·, .frame h)
+  | _, _, .icall .. => none
 where
   go (c : M.Cond) (body : A.T → Option (A.T × SHint A.T)) :
       Nat → A.T → Option (A.T × SHint A.T)
