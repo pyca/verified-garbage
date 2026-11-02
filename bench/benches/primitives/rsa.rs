@@ -337,6 +337,76 @@ pub fn bench(c: &mut Criterion) {
     // Only the private operation's and key loading's pieces this run (the
     // key-generation and Miller–Rabin groups are skipped).
     const ONLY_PIECES: bool = true;
+    // Only the Montgomery variants that may also write s5–s10 (Proto8) this run.
+    const ONLY_P8: bool = true;
+    if ONLY_P8 {
+        use verified_garbage_asm_riscv64::rsa_proto8 as p8;
+        type F = unsafe extern "C" fn(*mut u64, usize, usize);
+        let ws_of = |w: usize| {
+            let mut ws = vec![0u64; 32 + 8 * (w + 2)];
+            for (i, x) in ws.iter_mut().enumerate().skip(32) {
+                *x = (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+            }
+            ws[32] |= 1;
+            ws
+        };
+        let muls: [(&str, F); 4] = [
+            ("base", p8::vg_p8_mul_base),
+            ("c", p8::vg_p8_mul_c),
+            ("h", p8::vg_p8_mul_h),
+            ("hc", p8::vg_p8_mul_hc),
+        ];
+        let sqrs: [(&str, F); 5] = [
+            ("base", p8::vg_p8_sqr_base),
+            ("cu8", p8::vg_p8_sqr_cu8),
+            ("h", p8::vg_p8_sqr_h),
+            ("comba", p8::vg_p8_sqr_comba),
+            ("combab", p8::vg_p8_sqr_combab),
+        ];
+        for (v, f) in muls {
+            let mut g = c.benchmark_group(format!("rsa_p8_mul_{v}"));
+            for w in [16usize, 32] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe { f(black_box(ws.as_mut_ptr()), w, 1) })
+                });
+            }
+            g.finish();
+        }
+        for (v, f) in sqrs {
+            let mut g = c.benchmark_group(format!("rsa_p8_sqr_{v}"));
+            for w in [16usize, 32] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe { f(black_box(ws.as_mut_ptr()), w, 1) })
+                });
+            }
+            g.finish();
+        }
+        // 64 w squarings and 16 w multiplications (a 4-bit-window modexp's, no table).
+        let exps: [(&str, F, F); 6] = [
+            ("base", p8::vg_p8_mul_base, p8::vg_p8_sqr_base),
+            ("p7best", p8::vg_p8_mul_base, p8::vg_p8_sqr_cu8),
+            ("h", p8::vg_p8_mul_h, p8::vg_p8_sqr_h),
+            ("hc", p8::vg_p8_mul_hc, p8::vg_p8_sqr_h),
+            ("hcomba", p8::vg_p8_mul_h, p8::vg_p8_sqr_comba),
+            ("hccomba", p8::vg_p8_mul_hc, p8::vg_p8_sqr_comba),
+        ];
+        for (v, fm, fs) in exps {
+            let mut g = c.benchmark_group(format!("rsa_p8_exp_{v}"));
+            for w in [16usize, 24, 32] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe {
+                        fs(black_box(ws.as_mut_ptr()), w, 64 * w);
+                        fm(black_box(ws.as_mut_ptr()), w, 16 * w);
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     // Only the Montgomery multiplication and squaring variants this run.
     const ONLY_P7: bool = true;
     if ONLY_P7 {
