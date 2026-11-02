@@ -15,7 +15,8 @@
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use verified_garbage::ecdh::{BrainpoolP384r1, Error, PrivateKey};
