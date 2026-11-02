@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.P521Field
-public import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.RV
+public import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.Field
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.CT
 public import VerifiedGarbage.Proof.Weierstrass.MontContract
 public import VerifiedGarbage.TCB.RISCV64.Target
