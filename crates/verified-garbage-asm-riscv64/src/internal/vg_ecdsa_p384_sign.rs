@@ -1247,7 +1247,7 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_p384_sign() {
 .insn 4, 0x085430a3
 .insn 4, 0x80140413
 .insn 2, 0x8522
-call {vg_p384_mul}
+call {vg_p384_mul_g}
 .insn 2, 0x844e
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
@@ -4233,7 +4233,7 @@ call {vg_p384_mul_mod_n}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_p384_mul = sym crate::ec_p384::vg_p384_mul::vg_p384_mul,
+        vg_p384_mul_g = sym crate::ec_p384::vg_p384_mul_g::vg_p384_mul_g,
         vg_p384_mul_mod_p = sym crate::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
         vg_p384_add_mod_n = sym crate::ecdsa_p384::vg_p384_add_mod_n::vg_p384_add_mod_n,
         vg_p384_mul_mod_n = sym crate::ecdsa_p384::vg_p384_mul_mod_n::vg_p384_mul_mod_n,

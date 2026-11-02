@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.RecoverDet
 
 import Mathlib.Data.Nat.GCD.Basic
-import Mathlib.Tactic.Ring
 
 /-!
 # Appendix C.2 with fixed steps and masks: the model
@@ -193,8 +192,8 @@ theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤
     rw [tw, prod_iter _ _ _ (by rw [x3v]; exact lt_of_le_of_lt (Nat.mul_le_mul_left _ g_le) big)]
     simp only
     rw [Nat.mod_eq_of_lt (show Nat.gcd u x2 < 2 ^ nb by omega), x3v, hgcd]
-    rw [Nat.mod_eq_of_lt (by rw [hgcd] at big; ring_nf at big ⊢; exact big)]
-    ring
+    rw [Nat.mod_eq_of_lt (by rw [hgcd] at big; simp only [Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc] at big ⊢; exact big)]
+    grind
   generalize hA : (de - 1) * Nat.gcd (n - 1) (de - 1) = a at *
   have hm : mOf nb wb n de = a / n := by rw [mOf, ha]
   have hr : rOf nb wb n de = a % n := by rw [rOf, ha]
@@ -236,7 +235,7 @@ theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤
     rw [Nat.mod_eq_of_lt blt, Nat.mod_eq_of_lt bb]
   have f4 : fourN wb n = 4 * n := by
     unfold fourN
-    rw [Nat.mod_eq_of_lt (a := 2 * n) (by omega), Nat.mod_eq_of_lt (by omega)]; ring
+    rw [Nat.mod_eq_of_lt (a := 2 * n) (by omega), Nat.mod_eq_of_lt (by omega)]; grind
   -- `b² ≤ 4 n`: the third check fails.
   by_cases le4 : b * b ≤ 4 * n
   · have : ok4Of nb wb n b = false := by
@@ -308,7 +307,7 @@ theorem recoverDet_mul {n e d p q : Nat} (h : recoverDet n e d = some (p, q)) : 
     omega
   obtain ⟨δ, rfl⟩ : ∃ δ, b = γ + δ := ⟨b - γ, by omega⟩
   have e1 : (γ + δ) * (γ + δ) - 4 * n = γ * γ + δ * (δ + 2 * γ) - 4 * n := by
-    congr 1; ring
+    congr 1; grind
   rw [e1] at ex
   have prod : δ * (δ + 2 * γ) = 4 * n := by omega
   obtain ⟨k, rfl⟩ : ∃ k, δ = 2 * k := by
@@ -322,7 +321,7 @@ theorem recoverDet_mul {n e d p q : Nat} (h : recoverDet n e d = some (p, q)) : 
   have e2 : (γ + 2 * k + γ) / 2 = γ + k := by omega
   have e3 : (γ + 2 * k - γ) / 2 = k := by omega
   rw [e2, e3]
-  have : 2 * k * (2 * k + 2 * γ) = 4 * ((γ + k) * k) := by ring
+  have : 2 * k * (2 * k + 2 * γ) = 4 * ((γ + k) * k) := by grind
   omega
 
 end VG.Proof.Rsa.RecoverDet

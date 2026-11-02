@@ -77,12 +77,6 @@ def Q3Z := 57
 def EX := 58
 def EY := 59
 def EZ := 60
-/-- `rd = base + v`, for `v < 6141`: from 2048 on, through `2047`s. -/
-def addAt (rd base : Reg) (v : Nat) : List Instr :=
-  if v < 2048 then [.addi rd base v]
-  else if v < 4095 then [.addi rd base 2047, .addi rd rd ((v - 2047 : Nat) : Int)]
-  else [.addi rd base 2047, .addi rd rd 2047, .addi rd rd ((v - 4094 : Nat) : Int)]
-
 namespace Cfg
 
 variable (c : Cfg) (FN : Field)
@@ -114,8 +108,16 @@ def copyTo : Nat → Nat → Nat → List Instr
   | k + 1, o, a => (ldAt .t0 wb a ++ sdAt .t0 .a6 o) ++ copyTo k (o + 8) (a + 8)
 
 /-- `o = p + q` by the complete addition for `a = -3` (Algorithm 4 of Renes,
-Costello and Batina). -/
-def addPt (p q o : Pt) : Prog isa := fprog c.FP (rcb3 c.rcb3Slots p q o)
+Costello and Batina) if `c.am3`, else by the one for any `a` (their
+Algorithm 1, `rcb`, with `a` at `AP` and `3 b` at `B3P`). -/
+def addPt (p q o : Pt) : Prog isa :=
+  if c.am3 then fprog c.FP (rcb3 c.rcb3Slots p q o) else fprog c.FP (rcb c.rcbSlots p q o)
+
+theorem addPt_am3 (h : c.am3 = true) (p q o : Pt) : addPt c p q o = fprog c.FP (rcb3 c.rcb3Slots p q o) := by
+  simp only [addPt, h, ↓reduceIte]
+
+theorem addPt_gen (h : c.am3 = false) (p q o : Pt) : addPt c p q o = fprog c.FP (rcb c.rcbSlots p q o) := by
+  simp only [addPt, h, Bool.false_eq_true, ↓reduceIte]
 
 /-- The points `[a]G` and `[b]Q` (`a, b ∈ 1 … 3`) in slots. -/
 def gPt : Nat → Pt

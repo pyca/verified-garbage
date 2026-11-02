@@ -17,6 +17,7 @@ namespace VG.Generic.P384.RISCV64.EcP384
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := [
   Spec.EcKey.P384.publicKeyApi.artifact RISCV64.target {
     code := Impl.Ecdh.RISCV64.publicKeyP384
+    consts := Impl.Ecdsa.RISCV64.Comb.p384CombConsts
     verified := Proof.Ecdh.RISCV64.P384.pk_verified h.law }]
 
 end VG.Generic.P384.RISCV64.EcP384

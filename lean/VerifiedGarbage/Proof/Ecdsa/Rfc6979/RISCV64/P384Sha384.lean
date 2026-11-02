@@ -100,8 +100,38 @@ theorem implies :
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P384.inst, Spec.P384.curve, Spec.Ecdsa.scratchWords,
           RISCV64.abi, RISCV64.argRegs, rfcR] [satState 48 48] using satState 48 48 }
 
+/-- A state satisfying the precondition with the comb's table. -/
+def satC : State :=
+  { (satState 48 48) with
+    mem := VG.Proof.Ecdsa.RISCV64.P384.Comb.combSatMem
+    rd := (satState 48 48).rd ++ [⟨0x100000, 337920⟩]
+    syms := fun _ => 0x100000 }
+
+theorem sat : (Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p384CombConsts) 736).pre satC := by
+  have hl := VG.Proof.Ecdsa.RISCV64.P384.Comb.combWords_length
+  have held := VG.Proof.Ecdsa.RISCV64.P384.Comb.combSatMem_held
+  rw [show Impl.Ecdsa.RISCV64.Comb.p384CombConsts =
+    [(Impl.Ecdsa.RISCV64.Comb.p384Sym, Impl.Ecdsa.RISCV64.Comb.p384CombWords)] from rfl]
+  generalize Impl.Ecdsa.RISCV64.Comb.p384CombWords = W' at hl held ⊢
+  generalize e : satC = s
+  sig_pre [Spec.Ecdsa.Rfc6979.P384Sha384.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
+    Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P384.inst, Spec.P384.curve, Spec.Ecdsa.scratchWords,
+    RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+  subst e
+  rw [hl]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact fun i hi => held i (by rw [hl]; exact hi)
+    | (intro r hr
+       change r ∈ [⟨0x1000, 2 * 48⟩, ⟨0x8000, 8192⟩] at hr
+       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+       rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
 theorem sign_verified (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) :
-    Verified RISCV64.target (pack hL).c.sign (Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract RISCV64.abi 736) :=
-  RISCV64.sign_verified (P := pack hL) checks (stack_eq hL) (rfcR0_implies implies)
+    Verified RISCV64.target (pack hL).c.sign (Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p384CombConsts) 736) :=
+  RISCV64.sign_verified (P := pack hL) checks (stack_eq hL) (rfcRC_implies implies ⟨satC, sat⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P384Sha384

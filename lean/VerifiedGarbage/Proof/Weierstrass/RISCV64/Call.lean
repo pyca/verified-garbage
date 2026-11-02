@@ -108,6 +108,14 @@ theorem wp_liAt {d : Reg} {v : Nat} (h : v < 4095)
     have u := u₁.twice u₂
     rwa [u₁.gpr, ofNat_2047_add (by omega)] at u
 
+/-- `ldAt` below 2048 is the load itself. -/
+theorem ldAt_lo {rd base : Reg} {off : Nat} (h : off < 2048) : ldAt rd base off = [.load .d rd base off] := by
+  simp only [ldAt, h, ↓reduceIte]
+
+/-- `sdAt` below 2048 is the store itself. -/
+theorem sdAt_lo {t base : Reg} {off : Nat} (h : off < 2048) : sdAt t base off = [.store .d t base off] := by
+  simp only [sdAt, h, ↓reduceIte]
+
 /-- `ld t, off(n)` (`ldAt`), at `a`. -/
 theorem wp_ldAt {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4095)
     (ha : s.gpr n + BitVec.ofNat 64 off = a) (hal : a.toNat % 8 = 0)
