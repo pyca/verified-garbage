@@ -838,4 +838,88 @@ theorem final_ok {s : State} {S O : Addr} {ZX wX k : Nat} {b : Bool} (hx : Scr s
     fun t ⟨⟨hb, hout, ha⟩, kt⟩ => ⟨⟨fun i hi => by rw [hb i hi, m1], by rw [m1] at hout; exact hout, ha⟩,
       (k1.trans kt).mono (by decide)⟩
 
+/-! ## The blocks that load the header's words -/
+
+/-- `exportM2`'s first block: the bytes' pointers and their count. -/
+theorem ex1_ok {s : State} {BQ BX : Addr} {ZX wQ wX L : Nat} (hx : Scr s BX ZX)
+    (h7 : s.gpr .a7 = off BQ (slot wQ 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (wQ + 2)))
+    (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hL : word s.mem BX oQLen = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hZX : 64 ≤ ZX) :
+    WP isa (.block (base .t4 4 ++ [.load .d .t5 .s6 oQLen, .add .t4 .t4 .t5, .addi .t4 .t4 (-1)] ++ xb .t3 1)) s
+      fun t => (t.gpr .t4 = off BQ (slot wQ 4 + (L - 1)) ∧ t.gpr .t5 = BitVec.ofNat 64 L ∧
+        t.gpr .t3 = off BX (slot wX 1)) ∧ Keep [.t4, .t5, .t3] s t := by
+  have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
+  have e4 := e wQ 4
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (Pub.base_ok (rd := .t4) (by decide) h7 h5 4) fun s₁ ⟨⟨a4, m1⟩, k1⟩ => ?_
+  refine WP.mono (WP.keep [.t4, .t5] (Q := fun s₂ => s₂.gpr .t4 = off BQ (slot wQ 4 + (L - 1)) ∧
+    s₂.gpr .t5 = BitVec.ofNat 64 L) ?_ (by rfl) (by rfl)) fun s₂ ⟨⟨b4, b5⟩, k2⟩ => ?_
+  · have hL' : s₁.mem.readW (off BX 56) 64 = BitVec.ofNat 64 L := by rw [m1]; exact hL
+    brun [a4, (k1.gpr (r := .s6) (by decide)).trans h6, oQLen, (hx.congr k1.2.2).ld (show 56 + 8 ≤ ZX by omega_arith),
+      (hx.congr k1.2.2).al8 (show 56 + 8 ≤ ZX by omega_arith) (by decide), hL', off_add, BitVec.add_zero]
+    rw [off_sub _ (by omega_arith)]; congr 2; omega_arith
+  refine WP.mono (xb_ok (rd := .t3) (by decide) ((k1.trans k2).gpr (by decide) |>.trans h6)
+    ((k1.trans k2).gpr (by decide) |>.trans h11) 1) fun s₃ ⟨⟨b3, _⟩, k3⟩ =>
+      ⟨⟨(k3.gpr (by decide)).trans b4, (k3.gpr (by decide)).trans b5, b3⟩, ((k1.trans k2).trans k3).mono (by decide)⟩
+
+/-- `widen`'s first block: the prime's working space's registers, its array 4
+in `s9`, its words in `s8`, `X`'s array `xj` in `t3` and `W` in `t0`. -/
+theorem wd1_ok {s : State} {S Bp : Addr} {ZX wX l oB oLen xj : Nat} (hx : Scr s S ZX)
+    (h6 : s.gpr .s6 = S) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hB : oB + 8 ≤ ZX) (hB8 : oB % 8 = 0) (hB' : oB < 2048) (hL : oLen + 8 ≤ ZX) (hL8 : oLen % 8 = 0)
+    (hL' : oLen < 2048) (hbase : Mont.word s.mem S oB = Bp) (hlen : Mont.word s.mem S oLen = BitVec.ofNat 64 l)
+    (hl1 : 1 ≤ l) (hl' : l ≤ 1024) (hwX' : wX < 2 ^ 31) :
+    WP isa (.block (setupP oB oLen ++ base .s9 4 ++ [.addi .s8 .t0 0] ++ xb .t3 xj ++ Crt.wX)) s fun t =>
+      (t.gpr .a7 = off Bp (slot (wordsOf l) 0) ∧ t.gpr .ra = off Bp (slot (wordsOf l) 0) ∧
+        t.gpr .s5 = BitVec.ofNat 64 (8 * (wordsOf l + 2)) ∧ t.gpr .s9 = off Bp (slot (wordsOf l) 4) ∧
+        t.gpr .s8 = BitVec.ofNat 64 (wordsOf l) ∧ t.gpr .t3 = off S (slot wX xj) ∧ t.gpr .t0 = BitVec.ofNat 64 wX) ∧
+      Keep widenRegs s t := by
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (setupP_ok hx (h6.trans (BitVec.add_zero S).symm) hB hB8 hB' hL hL8 hL' hbase hlen hl1 hl')
+    fun s₁ ⟨⟨a7, ara, a5, a0, _, _⟩, k1⟩ => ?_
+  refine WP.mono (Pub.base_ok (rd := .s9) (by decide) a7 a5 4) fun s₂ ⟨⟨b9, _⟩, k2⟩ => ?_
+  have k12 := k1.trans k2
+  refine WP.mono (WP.keep [.s8] (Q := fun s₃ => s₃.gpr .s8 = BitVec.ofNat 64 (wordsOf l)) ?_
+    (by rfl) (by rfl)) fun s₃ ⟨b8, k3⟩ => ?_
+  · brun [(k2.gpr (by decide)).trans a0, add_ofNat_zero]
+  have k13 := k12.trans k3
+  refine WP.mono (xb_ok (rd := .t3) (by decide) ((k13.gpr (by decide)).trans h6) ((k13.gpr (by decide)).trans h11)
+    xj) fun s₄ ⟨⟨b3, _⟩, k4⟩ => ?_
+  have k14 := k13.trans k4
+  refine WP.mono (WP.keep [.t0] (Q := fun s₅ => s₅.gpr .t0 = BitVec.ofNat 64 wX) ?_
+    (by rfl) (by rfl)) fun s₅ ⟨c0, k5⟩ => ?_
+  · simp only [Crt.wX]
+    brun [(k14.gpr (by decide)).trans h11, wX_val hwX']
+  have k15 := k14.trans k5
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, c0⟩, k15.mono (by decide)⟩
+  · rw [(k2.trans (k3.trans (k4.trans k5))).gpr (by decide)]; exact a7
+  · rw [(k2.trans (k3.trans (k4.trans k5))).gpr (by decide)]; exact ara
+  · rw [(k2.trans (k3.trans (k4.trans k5))).gpr (by decide)]; exact a5
+  · rw [(k3.trans (k4.trans k5)).gpr (by decide)]; exact b9
+  · rw [(k4.trans k5).gpr (by decide)]; exact b8
+  · rw [k5.gpr (by decide)]; exact b3
+
+/-- The block before `output`: `X`'s array 0 and arrays' size, `out`, its
+length and the mask. -/
+theorem fin1_ok {s : State} {S O : Addr} {ZX wX k : Nat} (hx : Scr s S ZX)
+    (h6 : s.gpr .s6 = S) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hO : Mont.word s.mem S oOut = O) (hk : Mont.word s.mem S oNLen = BitVec.ofNat 64 k) (hZX : 96 ≤ ZX) :
+    WP isa (.block [.addi .a7 .s6 hdrBytes, .addi .s5 .s11 0, .load .d .s10 .s6 oOut,
+        .load .d .s11 .s6 oNLen, .load .d .s9 .s6 oMask]) s fun t =>
+      (t.gpr .a7 = off S (slot wX 0) ∧ t.gpr .s5 = BitVec.ofNat 64 (8 * (wX + 2)) ∧ t.gpr .s10 = off O 0 ∧
+        t.gpr .s11 = BitVec.ofNat 64 k ∧ t.gpr .s6 = S) ∧ Keep [.a7, .s5, .s10, .s11, .s9] s t := by
+  have hh : hdrBytes = 256 := rfl
+  have e0' : slot wX 0 = hdrBytes := by simp [slot]
+  have z : off S 0 = S := BitVec.add_zero S
+  have hO' : s.mem.readW S 64 = O := by rw [← z]; exact hO
+  have l0 : InRegions (s.rd ++ s.wr) S 8 := by rw [← z]; exact hx.ld (by omega_arith)
+  have hk' : s.mem.readW (off S 16) 64 = BitVec.ofNat 64 k := hk
+  refine WP.keep [.a7, .s5, .s10, .s11, .s9] (Q := fun s₁ => s₁.gpr .a7 = off S (slot wX 0) ∧
+      s₁.gpr .s5 = BitVec.ofNat 64 (8 * (wX + 2)) ∧ s₁.gpr .s10 = off O 0 ∧ s₁.gpr .s11 = BitVec.ofNat 64 k ∧
+      s₁.gpr .s6 = S) ?_ (by rfl) (by rfl)
+  rw [e0']
+  brun [exec_addi_nat (show hdrBytes < 2048 by decide), h6, h11, add_ofNat_zero, oOut, oNLen, oMask,
+    l0, hx.al, hx.ld (show 16 + 8 ≤ ZX by omega_arith), hx.al8 (show 16 + 8 ≤ ZX by omega_arith) (by decide),
+    hx.ld (show 88 + 8 ≤ ZX by omega_arith), hx.al8 (show 88 + 8 ≤ ZX by omega_arith) (by decide), hO', hk']
+
 end VG.Proof.Bignum.RISCV64.Crt
