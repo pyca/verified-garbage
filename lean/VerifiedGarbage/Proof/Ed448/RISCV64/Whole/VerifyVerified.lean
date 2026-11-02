@@ -50,15 +50,15 @@ theorem verC_pre {s : State} (h : verC.pre s) : VerPre s :=
   let ⟨a, b, c, d, e, f, g, h', i, j, k, al₁, al₂, al₃, l, m, n, o, p, q, r⟩ := h
   ⟨a, b, c, d, e, f, g, h', i, j, k, al₁, al₂, al₃, l, m, n, o, p, q, r⟩
 
-theorem ver_ok (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) (s : State) (hs : verC.pre s) :
+theorem ver_ok (hR : Proof.Ed448.RecoverOk) (s : State) (hs : verC.pre s) :
     ∃ t s', Exec isa verifyMessage s t s' ∧ abiPreserved s s' ∧ verC.post s s' := by
-  obtain ⟨t, s', he, hg, hsp, hra, hq⟩ := verifyMessage_wp hR hV (verC_pre hs)
+  obtain ⟨t, s', he, hg, hsp, hra, hq⟩ := verifyMessage_wp hR (verC_pre hs)
   exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hq⟩
 
-theorem ver_ct (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) :
+theorem ver_ct (hR : Proof.Ed448.RecoverOk) :
     ConstantTime isa verC.pre verC.pub verifyMessage :=
   fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
-    verifyMessage_ct hR hV s₁ s₂ t₁ t₂ s₁' s₂' (verC_pre h₁) (verC_pre h₂) hp.1 e₁ e₂
+    verifyMessage_ct hR s₁ s₂ t₁ t₂ s₁' s₂' (verC_pre h₁) (verC_pre h₂) hp e₁ e₂
 
 /-- A state satisfying the precondition. -/
 def verSat : State where
@@ -69,11 +69,11 @@ def verSat : State where
   rd := [⟨0x1000, 57⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 114⟩]
   wr := [⟨0x5000, 8192⟩, ⟨0x8000, 448⟩]
 
-theorem verify_verified (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) :
+theorem verify_verified (hR : Proof.Ed448.RecoverOk) :
     Verified RISCV64.target verifyMessage (Sig.scratchContract RISCV64.abi Spec.Ed448.verifySig "frame" .u64 56
       (Curry.const (fun _ => True) _) (Proof.Ed448.WholeLocal.verifyPost RISCV64.abi.ptrBits) true 1168
       (some (Proof.Ed448.WholeLocal.verifyLeak RISCV64.abi.ptrBits))) :=
-  Verified.of_correct (ver_ok hR hV) (ver_ct hR hV) (by
+  Verified.of_correct (ver_ok hR) (ver_ct hR) (by
     sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Spec.Ed448.verifySig,
       Spec.Ed448.scratchWords, Proof.Ed448.WholeLocal.verifyPost, Proof.Ed448.WholeLocal.verifyLeak, verC, VPub,
       verResult, vpkR, vcxR, vmsR, vsgR, vscR, vfR, vpkB, vctxB, vmsgB, vsigB, RISCV64.abi, RISCV64.argRegs]
@@ -87,11 +87,11 @@ theorem verFrameSat_pre : ∃ s, (Spec.Ed448.verifyContract RISCV64.abi (1168 + 
     RISCV64.argRegs] [verFrameSat, verSat] using verFrameSat
 
 /-- In its frame of 448 bytes. -/
-theorem verify_framed (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) :
+theorem verify_framed (hR : Proof.Ed448.RecoverOk) :
     Verified RISCV64.target verifyCode (Spec.Ed448.verifyContract RISCV64.abi (1168 + 448)) :=
   Verified.stackScratchL (sig := Spec.Ed448.verifySig) (nm := "frame") (e := .u64) (n := 56)
     (post := Proof.Ed448.WholeLocal.verifyPost RISCV64.abi.ptrBits) (wa := true) (stack := 1168) (bytes := 448)
-    (leak := some (Proof.Ed448.WholeLocal.verifyLeak RISCV64.abi.ptrBits)) (verify_verified hR hV) (by decide)
+    (leak := some (Proof.Ed448.WholeLocal.verifyLeak RISCV64.abi.ptrBits)) (verify_verified hR) (by decide)
     (by decide) verFrameSat_pre
 
 end VG.Proof.Ed448.RISCV64.Whole

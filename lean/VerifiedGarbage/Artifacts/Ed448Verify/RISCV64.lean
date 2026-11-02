@@ -22,6 +22,6 @@ def artifacts : List Artifact := [
   Spec.Ed448.verifyApi.artifact RISCV64.target {
     code := Impl.Ed448.RISCV64.Whole.verifyCode
     stack := 1616
-    verified := Proof.Ed448.RISCV64.Whole.verify_framed Proof.Ed448.recover_ok Proof.Ed448.verifyEq4_ok }]
+    verified := Proof.Ed448.RISCV64.Whole.verify_framed Proof.Ed448.recover_ok }]
 
 end VG.Artifacts.Ed448Verify.RISCV64

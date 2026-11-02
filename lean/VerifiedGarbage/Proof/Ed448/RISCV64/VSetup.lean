@@ -197,23 +197,18 @@ theorem copies_ok {s0 : State} (hc : Ctx b s0) {q : Addr}
 
 /-- The regions the constants write. -/
 abbrev constW (b : Addr) : List Region :=
-  [⟨b + BitVec.ofNat 64 BAD, 8⟩, ⟨b + BitVec.ofNat 64 DK, 56⟩, ⟨b + BitVec.ofNat 64 BX, 56⟩,
-    ⟨b + BitVec.ofNat 64 BY, 56⟩, ⟨b + BitVec.ofNat 64 ONE, 56⟩]
+  [⟨b + BitVec.ofNat 64 BAD, 8⟩, ⟨b + BitVec.ofNat 64 DK, 56⟩, ⟨b + BitVec.ofNat 64 ONE, 56⟩]
 
 /-- `a0 = OUT`, `BAD = 0`, and the constants. -/
 theorem consts_ok {s4 : State} (hc : Ctx b s4) :
     WP isa (.block (([.addi .a0 .a3 2047, .addi .a0 .a0 1, .li .a4 0, .store .d .a4 .a3 BAD] : List Instr) ++
-        constField DK Spec.Ed448.d.val ++ constField BX Spec.Ed448.basePoint.X.val ++
-        constField BY Spec.Ed448.basePoint.Y.val ++ constField ONE 1)) s4 fun t =>
+        constField DK Spec.Ed448.d.val ++ constField ONE 1)) s4 fun t =>
       Rest [.a0, .a4] s4 t ∧ t.gpr .a0 = b + BitVec.ofNat 64 OUT ∧ Frame (constW b) s4.mem t.mem ∧
-      bad t.mem b = 0 ∧ FS t.mem b DK = Spec.Ed448.d ∧ FS t.mem b BX = Spec.Ed448.basePoint.X ∧
-      FS t.mem b BY = Spec.Ed448.basePoint.Y ∧ FS t.mem b ONE = 1 := by
+      bad t.mem b = 0 ∧ FS t.mem b DK = Spec.Ed448.d ∧ FS t.mem b ONE = 1 := by
   obtain ⟨o1, o2, o3, o4⟩ := offs
   have hDK : DK = 336 := rfl
-  have hBX : BX = 1064 := rfl
-  have hBY : BY = 1120 := rfl
   have hON : ONE = 1400 := rfl
-  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  simp only [List.cons_append, List.nil_append]
   refine wp_addi (by decide) fun s5 u5 => wp_addi (by decide) fun s6 u6 => wp_li (by decide) fun s7 u7 => ?_
   have hr7 : Rest [.a0, .a4] s4 s7 := (u5.rest (by decide)).trans ((u6.rest (by decide)).trans (u7.rest (by decide)))
   have hc7 : Ctx b s7 := hc.of_rest hr7 (by decide)
@@ -224,42 +219,29 @@ theorem consts_ok {s4 : State} (hc : Ctx b s4) :
     rw [u8.mem, u7.gpr, u7.mem, u6.mem, u5.mem]
   refine WP.append (constField_ok hc8 (o := DK) (by decide) (by decide) (fe_lt _)) fun s9 ⟨r9, f9, v9⟩ => ?_
   have hc9 := hc8.of_rest r9 (by decide)
-  refine WP.append (constField_ok hc9 (o := BX) (by decide) (by decide) (fe_lt _)) fun s10 ⟨r10, f10, v10⟩ => ?_
-  have hc10 := hc9.of_rest r10 (by decide)
-  refine WP.append (constField_ok hc10 (o := BY) (by decide) (by decide) (fe_lt _)) fun s11 ⟨r11, f11, v11⟩ => ?_
-  have hc11 := hc10.of_rest r11 (by decide)
-  refine WP.mono (constField_ok hc11 (o := ONE) (by decide) (by decide) (v := 1) (by decide)) fun t ⟨rt, ft, vt⟩ => ?_
+  refine WP.mono (constField_ok hc9 (o := ONE) (by decide) (by decide) (v := 1) (by decide)) fun t ⟨rt, ft, vt⟩ => ?_
   have fB : Frame [⟨b + BitVec.ofNat 64 BAD, 8⟩] s4.mem s8.mem := by
     rw [hm8]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ (64 / 8))
-  refine ⟨hr7.trans ((u8.rest _).trans ((r9.mono (by decide)).trans ((r10.mono (by decide)).trans
-      ((r11.mono (by decide)).trans (rt.mono (by decide)))))), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [rt.gpr _ (by decide), r11.gpr _ (by decide), r10.gpr _ (by decide), r9.gpr _ (by decide), u8.gpr,
-      u7.other _ (by decide), u6.gpr, u5.gpr, hc.a3, Offset.add_add]
+  refine ⟨hr7.trans ((u8.rest _).trans ((r9.mono (by decide)).trans (rt.mono (by decide)))), ?_, ?_, ?_, ?_, ?_⟩
+  · rw [rt.gpr _ (by decide), r9.gpr _ (by decide), u8.gpr, u7.other _ (by decide), u6.gpr, u5.gpr, hc.a3,
+      Offset.add_add]
     rfl
-  · exact (fB.mono (by simp)).trans ((f9.mono (by simp)).trans ((f10.mono (by simp)).trans
-      ((f11.mono (by simp)).trans (ft.mono (by simp)))))
-  · have f8t : Frame (constW b |>.drop 1) s8.mem t.mem :=
-      (f9.mono (by simp)).trans ((f10.mono (by simp)).trans ((f11.mono (by simp)).trans (ft.mono (by simp))))
+  · exact (fB.mono (by simp)).trans ((f9.mono (by simp)).trans (ft.mono (by simp)))
+  · have f8t : Frame (constW b |>.drop 1) s8.mem t.mem := (f9.mono (by simp)).trans (ft.mono (by simp))
     unfold bad
     rw [f8t.readW (Region.contains_self _ (64 / 8)) (fun r hr => by
         simp only [List.drop, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
+        rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
         (by decide),
       hm8, Mem.readW_writeW_self64]
     rfl
-  · rw [FS, slot_keep ft (by omega_arith) (by omega_arith) (by omega_arith),
-      slot_keep f11 (by omega_arith) (by omega_arith) (by omega_arith),
-      slot_keep f10 (by omega_arith) (by omega_arith) (by omega_arith), v9, VG.Proof.X448.toFe_self]
-  · rw [FS, slot_keep ft (by omega_arith) (by omega_arith) (by omega_arith),
-      slot_keep f11 (by omega_arith) (by omega_arith) (by omega_arith), v10, VG.Proof.X448.toFe_self]
-  · rw [FS, slot_keep ft (by omega_arith) (by omega_arith) (by omega_arith), v11, VG.Proof.X448.toFe_self]
+  · rw [FS, slot_keep ft (by omega_arith) (by omega_arith) (by omega_arith), v9, VG.Proof.X448.toFe_self]
   · rw [FS, vt, VG.Proof.X448.toFe_one]
 
 theorem vSetup_eq : vSetup = Impl.X25519.RISCV64.align ++
     ((copyBytes .a0 0 PK 57 ++ copyBytes .a1 0 SG 57 ++ copyBytes .a1 57 SGS 57 ++ copyBytes .a2 0 CH 57) ++
     (([.addi .a0 .a3 2047, .addi .a0 .a0 1, .li .a4 0, .store .d .a4 .a3 BAD] : List Instr) ++
-        constField DK Spec.Ed448.d.val ++ constField BX Spec.Ed448.basePoint.X.val ++
-        constField BY Spec.Ed448.basePoint.Y.val ++ constField ONE 1)) := by
+        constField DK Spec.Ed448.d.val ++ constField ONE 1)) := by
   simp only [vSetup, List.append_assoc]; rfl
 
 theorem vSetup_ok {s : State} (hp : VPre s) :
@@ -271,8 +253,6 @@ theorem vSetup_ok {s : State} (hp : VPre s) :
         Spec.Ed448.bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 57) 57 ∧
       Spec.Ed448.bytesAt t.mem (base (s.gpr .a3) + BitVec.ofNat 64 CH) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .a2) 57 ∧
       bad t.mem (base (s.gpr .a3)) = 0 ∧ FS t.mem (base (s.gpr .a3)) DK = Spec.Ed448.d ∧
-      FS t.mem (base (s.gpr .a3)) BX = Spec.Ed448.basePoint.X ∧
-      FS t.mem (base (s.gpr .a3)) BY = Spec.Ed448.basePoint.Y ∧
       FS t.mem (base (s.gpr .a3)) ONE = 1 := by
   obtain ⟨q, hq⟩ : ∃ q, q = s.gpr .a3 := ⟨_, rfl⟩
   rw [← hq]
@@ -283,8 +263,6 @@ theorem vSetup_ok {s : State} (hp : VPre s) :
   have hSS : SGS = 1576 := rfl
   have hCH : CH = 1636 := rfl
   have hDK : DK = 336 := rfl
-  have hBX : BX = 1064 := rfl
-  have hBY : BY = 1120 := rfl
   have hON : ONE = 1400 := rfl
   rw [vSetup_eq]
   refine WP.append (Proof.Ed25519.RISCV64.align_ok (q := q) hq.symm hws) fun s0 ⟨hc, h0r, hm0⟩ => ?_
@@ -299,7 +277,7 @@ theorem vSetup_ok {s : State} (hp : VPre s) :
     (by rw [g0, hq]; exact hp.pk_ws) (by rw [g1, hq]; exact hp.sig_ws) (by rw [g2, hq]; exact hp.ch_ws))
     fun s4 ⟨r4, f4, ePK, eSG, eSS, eCH⟩ => ?_
   have hc4 : Ctx b s4 := hc.of_rest r4 (by decide)
-  refine WP.mono (consts_ok hc4) fun t ⟨rt, at0, ft, bt, dt, xt, yt, ot⟩ => ?_
+  refine WP.mono (consts_ok hc4) fun t ⟨rt, at0, ft, bt, dt, ot⟩ => ?_
   rw [hm0, g0] at ePK
   rw [hm0, g1] at eSG eSS
   rw [hm0, g2] at eCH
@@ -307,21 +285,21 @@ theorem vSetup_ok {s : State} (hp : VPre s) :
   have dc : ∀ {o : Nat}, 1456 ≤ o → o + 57 ≤ 1696 → ∀ r ∈ constW b, Region.Disjoint ⟨b + BitVec.ofNat 64 o, 57⟩ r :=
     fun h1 h2 r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;>
+      rcases hr with rfl | rfl | rfl <;>
         exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
   refine ⟨⟨hc4.of_rest rt (by decide), fun d n hd => by rw [hwt, hb]; exact base_in hws hd, at0⟩,
     (h0r.mono (by decide)).trans ((r4.mono (by decide)).trans (rt.mono (by decide))), ?_,
     by rw [bytes_keep ft (dc (by decide) (by decide)) (by decide), ePK],
     by rw [bytes_keep ft (dc (by decide) (by decide)) (by decide), eSG],
     by rw [bytes_keep ft (dc (by decide) (by decide)) (by decide), eSS],
-    by rw [bytes_keep ft (dc (by decide) (by decide)) (by decide), eCH], bt, dt, xt, yt, ot⟩
+    by rw [bytes_keep ft (dc (by decide) (by decide)) (by decide), eCH], bt, dt, ot⟩
   have sw : ∀ {rs : List Region}, (∀ r ∈ rs, Region.Sub r ⟨q, 8192⟩) → ∀ r ∈ rs, ∃ r' ∈ [(⟨q, 8192⟩ : Region)], Region.Sub r r' :=
     fun h r hr => ⟨_, List.mem_singleton_self _, h r hr⟩
   refine (f4.sub (sw fun r hr => ?_)).trans (ft.sub (sw fun r hr => ?_)) |> fun h => by rw [← hm0]; exact h
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact sub8 (by omega_arith)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact sub8 (by omega_arith)
+    rcases hr with rfl | rfl | rfl <;> exact sub8 (by omega_arith)
 
 end
 
