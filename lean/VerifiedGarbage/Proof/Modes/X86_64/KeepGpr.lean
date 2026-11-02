@@ -85,6 +85,7 @@ theorem keepsGpr_of_gprSafe {r : Reg} {c : Prog isa} (hc : gprSafe r c = true) :
   intro s t s' h
   revert hc
   induction h with
+  | icall | icallNext => intro hc; simp only [gprSafe, Bool.false_eq_true] at hc
   | block e => exact fun hc => execBlock_gprSafe hc e
   | seq _ _ ih₁ ih₂ =>
     intro hc

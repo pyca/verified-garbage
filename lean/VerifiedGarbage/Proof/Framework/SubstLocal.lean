@@ -44,6 +44,8 @@ theorem Exec.substLocal {a b : Prog M} (hab : Sim a b) {c : Prog M}
     simp only [Code.substLocal]; split
     · rename_i e; exact hab (e ▸ .frame hp h hq)
     · exact .frame hp ih hq
+  | icall hi hc h hr _ => exact .icall hi hc h hr
+  | icallNext hi hne h _ => exact .icallNext hi hne h
 
 /-- Call-free replacements cannot change any named call recorded by the emitter. -/
 theorem Code.calls_substLocal {a b c : Prog M} (ha : a.calls = []) (hb : b.calls = []) :
@@ -63,6 +65,7 @@ theorem Code.calls_substLocal {a b c : Prog M} (ha : a.calls = []) (hb : b.calls
     · rename_i equal; rw [← equal] at ha; exact hb.trans ha.symm
     · exact ih
   | call n x _ => rfl
+  | icall => rfl
   | frame i x j ih =>
     simp only [Code.substLocal]; split
     · rename_i equal; rw [← equal] at ha; exact hb.trans ha.symm

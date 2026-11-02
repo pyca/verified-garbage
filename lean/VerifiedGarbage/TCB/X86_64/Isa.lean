@@ -65,9 +65,12 @@ Modelling choices:
   which take secret data in `vg_sha512_compress_shani`: that they, like
   the `SHA1*` and `SHA256*` instructions it does list, take a time
   independent of their data is an assumption no vendor statement covers.
-* Calls (`call`) and returns (`ret`) are near and direct (SDM Vol. 2, "CALL",
-  "RET"). The return addresses are the next of the state's `unknowns`,
-  which nothing constrains (see `TCB/Code.lean`).
+* Calls (`call`) and returns (`ret`) are near (SDM Vol. 2, "CALL", "RET"),
+  direct, or indirect through a register (`callr`, `icall`, the instruction
+  of an indirect call, `Code.icall`). The return addresses are the next of
+  the state's `unknowns`, which nothing constrains (see `TCB/Code.lean`).
+  The function of each name is at the address of its symbol,
+  `State.syms name`, as a static is (`ISA.fnAddr`).
 * A `static` the code reads (`Artifact.consts`) is at the address
   `State.syms name`, where `name` is its name, which `leaSym` (`lea` of a
   RIP-relative operand, resolved by the linker) puts in a register. No
@@ -414,6 +417,11 @@ inductive Instr
   holds, the flags unchanged. `src` is a register or memory, read whether or
   not the condition holds. -/
   | cmov (cc : Cond) (dst : Reg) (src : Src)
+  /-- `call r64` (`FF /2` with a register operand): the near, absolute
+  indirect call of the function at the address in `r` (see `icall`). It
+  only occurs as the instruction of an indirect call (`Code.icall`): as a
+  straight-line instruction it faults. -/
+  | callr (r : Reg)
   /-- `push r64` (50+rd) for each `r` of `rs`, in order: the push of a frame
   (see `push`); `rs` must not be empty or contain `rsp` -/
   | push (rs : List Reg)
@@ -801,8 +809,9 @@ def exec : Instr → State → Option State
   | .adcx d src, s => execAdcx d src s
   | .adox d src, s => execAdox d src s
   | .cmov cc d src, s => execCmov cc d src s
-  -- Only the push and pop of a frame (`push`, `pop`).
-  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ => none
+  -- Only the push and pop of a frame (`push`, `pop`), and the instruction
+  -- of an indirect call (`icall`).
+  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .callr _, _ => none
 
 def addrs : Instr → State → List Addr
   | .mov _ src, s => srcAddrs s src
@@ -872,6 +881,8 @@ def addrs : Instr → State → List Addr
   | .push rs, s => (List.range rs.length).map fun i => s.gpr .rsp - BitVec.ofNat 64 (8 * (i + 1))
   | .pop _ k, s => (List.range k).map fun i => s.gpr .rsp + BitVec.ofNat 64 (8 * i)
   | .alloc _, _ | .free _, _ => []
+  -- The address it calls is observed as the indirect call's (`Code.icall`).
+  | .callr _, _ => []
 
 /-- SDM Vol. 2, "CALL", near call: `RSP := RSP − 8; Memory[RSP] := RIP`
 (`Push(RIP)`, where `RIP` is the address of the next instruction), then the
@@ -973,7 +984,17 @@ def Instr.dst : Instr → Option Reg
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .vpbroadcastdZ .. | .zbcstd .. | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..
-  | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none
+  | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ | .callr _ => none
+
+/-- The address an indirect call instruction calls: SDM Vol. 2, "CALL—Call
+Procedure", `FF /2`, "CALL r/m64": "Call near, absolute indirect, address
+given in r/m64"; for a near absolute call, `tempRIP := DEST; Push(RIP);
+RIP := tempRIP` (in 64-bit mode the operand is 64 bits). `Push(RIP)` and
+the rest of the call are the direct call's (`call`), the return `ret`. No
+flags are affected. -/
+def icall : Instr → State → Option Addr
+  | .callr r, s => some (s.gpr r)
+  | _, _ => none
 
 abbrev isa : ISA where
   State := State
@@ -994,5 +1015,8 @@ abbrev isa : ISA where
   push := push
   pop := pop
   requires := Instr.requires
+  icall := icall
+  -- A function's symbol, as a static's (`leaSym`).
+  fnAddr s name := s.syms name
 
 end VG.X86_64

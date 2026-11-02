@@ -58,6 +58,7 @@ theorem ctlOk_inline : ∀ {c : Prog isa}, ctlOk c = true → ctlOk c.inline = t
     simp only [ctlOk, Bool.and_eq_true] at h
     simp only [Code.inline, ctlOk, Bool.and_eq_true]
     exact ⟨⟨h.1.1, ctlOk_inline h.1.2⟩, h.2⟩
+  | .icall .., h => h
 
 omit [EdArith fld] [EdWindows win] in
 /-- The registered code, its calls inlined. -/

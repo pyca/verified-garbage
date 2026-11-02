@@ -38,6 +38,7 @@ def stackUse : Prog isa → Nat
   | .loop b _ => stackUse b
   | .call _ b => stackUse b + 4
   | .frame i b _ => stackUse b + frameBytes i
+  | .icall _ _ b nx => max (stackUse b + 4) (stackUse nx)
 
 /-- The `n` bytes below `sp`. -/
 abbrev below (sp : BitVec 32) (n : Nat) : Region := ⟨(sp - BitVec.ofNat 32 n).setWidth 64, n⟩
@@ -219,6 +220,8 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     (hc : NoSp c) (hd : stackUse c ≤ (s.gpr .esp).toNat) :
     Frame (s.wr ++ [below (s.gpr .esp) (stackUse c)]) s.mem s'.mem := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h => exact Frame.mono (execBlock_regions h).2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     have hc₁ : NoSp c₁ := fun i hi => hc i (List.mem_append_left _ hi)

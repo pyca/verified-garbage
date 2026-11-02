@@ -100,6 +100,8 @@ theorem execBlock_mxcsr : ∀ {is : List Instr} {s s' : State} {t : List Leak},
 theorem Exec.mxcsr {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s') :
     s'.mxcsr = s.mxcsr := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block e => exact execBlock_mxcsr e
   | seq _ _ ih₁ ih₂ => exact ih₂.trans ih₁
   | iteT _ _ ih | iteF _ _ ih => exact ih

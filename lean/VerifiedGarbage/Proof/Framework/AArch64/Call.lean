@@ -246,6 +246,8 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     (hd : 16 * c.aarch64Depth < 2 ^ 64) :
     Frame (s.wr ++ [below s.sp (16 * c.aarch64Depth)]) s.mem s'.mem := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [Code.aarch64Depth] at hd ⊢

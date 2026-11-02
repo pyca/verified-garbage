@@ -57,6 +57,9 @@ theorem noSp_of_allInstrs {c : Prog isa}
 theorem ctlOk_of_allInstrs {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) :
     ctlOk c = true := by
   induction c with
+  | icall _ _ _ _ ihb ihn =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [ctlOk, h.1.1, ihb h.1.2, ihn h.2, Bool.and_self]
   | block _ => exact h
   | seq _ _ iha ihb =>
     simp only [Code.allInstrs, Bool.and_eq_true] at h
@@ -74,6 +77,9 @@ theorem ctlOk_of_allInstrs {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr
 theorem ctlC_of_allInstrs {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) :
     ctlC c = true := by
   induction c with
+  | icall _ _ _ _ _ ihn =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [ctlC, h.1.1, ctlOk_of_allInstrs h.1.2, ihn h.2, Bool.and_self]
   | block _ => exact h
   | seq _ _ iha ihb =>
     simp only [Code.allInstrs, Bool.and_eq_true] at h

@@ -52,6 +52,7 @@ theorem vSafe_instrs {v : VReg} : ∀ {c : Prog isa}, vSafe v c = true → ∀ i
   | .loop b _, hc, i, hi => vSafe_instrs (c := b) hc i hi
   | .call _ b, hc, i, hi => vSafe_instrs (c := b) hc i hi
   | .frame _ _ _, hc, _, _ => by simp only [vSafe, Bool.false_eq_true] at hc
+  | .icall .., hc, _, _ => by simp only [vSafe, Bool.false_eq_true] at hc
 
 theorem keepsV_of_vSafe {v : VReg} {c : Prog isa} (hc : vSafe v c = true) :
     ∀ s t s', Exec isa c s t s' → s'.v v = s.v v :=
