@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarVerified
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Prune
 import VerifiedGarbage.Proof.Ed25519.Challenge
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

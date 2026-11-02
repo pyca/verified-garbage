@@ -9,6 +9,7 @@ namespace VG.Artifacts.Ed25519SignCached.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Ed25519.signCachedApi.artifact PPC64LE.target {
+    consts := Impl.Ed25519.PPC64LE.combConsts
     code := Impl.Ed25519.PPC64LE.Whole.signCachedCode
     stack := 368
     verified := Proof.Ed25519.PPC64LE.Whole.signCached_framed }]

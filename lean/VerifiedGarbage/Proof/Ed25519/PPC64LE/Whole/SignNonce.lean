@@ -1,9 +1,9 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.SignExpand
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBaseVerified
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarVerified
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.SignSetup
 
@@ -22,6 +22,7 @@ namespace VG.Proof.Ed25519.PPC64LE.Whole
 
 open VG VG.PPC64LE VG.Impl.Ed25519.PPC64LE.Whole VG.Proof.X25519.PPC64LE
 open VG.Spec.Ed25519 (bytesAt)
+open VG.Impl.Ed25519.PPC64LE (combSym)
 
 /-- The message's bytes. -/
 abbrev msgB (s : State) : List Byte := bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat
@@ -42,8 +43,8 @@ theorem sign_msg_cov {s t : State} (hp : SignPre s) (h : SignInv s t) : Covers [
 theorem sign_len {s : State} (hp : SignPre s) : (s.gpr .r7).toNat + 8192 ≤ 2 ^ 64 :=
   len_add_le (Nat.le_of_lt (s.gpr .r7).isLt) (by decide) hp.mC
 
-theorem signNonce_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s t) {P : List Byte}
-    (hP : bytesAt t.mem (s.gpr .r9 + BitVec.ofNat 64 32) 32 = P) :
+theorem signNonce_ok (C : ShaOK) (B : BaseOk) {s t : State} (hp : SignPre s) (h : SignInv s t) {P : List Byte}
+    (hP : bytesAt t.mem (s.gpr .r9 + BitVec.ofNat 64 32) 32 = P) (hsy : t.syms combSym = s.syms combSym) :
     WP isa signNonce t fun t' => SignInv s t' ∧
       Frame [⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9 + BitVec.ofNat 64 64, 128⟩, below s.sp 48, ⟨s.gpr .r3, 32⟩]
         t.mem t'.mem ∧
@@ -67,17 +68,17 @@ theorem signNonce_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s t
   have F64 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 64, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
   have F128 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 128, 64⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
   unfold signNonce
-  refine WP.seq (hashInit_ok C (sr := .r24) (by decide) (h.regs _ (by decide)) (sign_env hp h)
-    fun t₂ a b c f₂ g hr₂ => ?_)
+  refine WP.seq (WP.of_syms <| hashInit_ok C (sr := .r24) (by decide) (h.regs _ (by decide)) (sign_env hp h)
+    fun t₂ a b c f₂ g hr₂ sy₂ => ?_)
   have h₂ := signStep hp h a b c g f₂ (scW h)
-  refine WP.seq (hashUpdate_ok C (sr := .r24) (src := .r25) (off := 32) (len := 32) (by decide) (by decide)
+  refine WP.seq (WP.of_syms <| hashUpdate_ok C (sr := .r24) (src := .r25) (off := 32) (len := 32) (by decide) (by decide)
     (by decide) (by decide) (by decide) (h₂.regs _ (by decide)) (by rw [h₂.regs _ (by decide)]; rfl)
     (Sets.li (d := .r4) (k := 0) (by decide)) (Sets.li (d := .r6) (k := 32) (by decide))
     (fun _ _ _ => rfl) (fun _ _ _ => rfl) rfl (sign_env hp h₂)
     (Covers.of_sub fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact ⟨_, List.mem_append_right _ (sign_Fw hp h₂), 32, rfl, show 32 + 32 ≤ 288 by decide⟩)
-    (hp.cF.symm.sub_left F32) (by rw [h₂.sp]; exact hp.bF.sub_right F32) fun t₃ a b c f₃ g hr₃ => ?_)
+    (hp.cF.symm.sub_left F32) (by rw [h₂.sp]; exact hp.bF.sub_right F32) fun t₃ a b c f₃ g hr₃ sy₃ => ?_)
   have h₃ := signStep hp h₂ a b c g f₃ (scW h₂)
   have P₂ : bytesAt t₂.mem (s.gpr .r9 + BitVec.ofNat 64 32) 32 = P := by
     rw [← hP]
@@ -89,18 +90,18 @@ theorem signNonce_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s t
   have r₃ : Repr t₃.mem (s.gpr .r8) P := by
     have := hr₃ [] hr₂ rfl
     rwa [List.nil_append, P₂] at this
-  refine WP.seq (hashUpdate_ok C (sr := .r24) (src := .r22) (off := 0) (len := (s.gpr .r7).toNat) (by decide)
+  refine WP.seq (WP.of_syms <| hashUpdate_ok C (sr := .r24) (src := .r22) (off := 0) (len := (s.gpr .r7).toNat) (by decide)
     (by decide) (by decide) (by decide) (by decide) (h₃.regs _ (by decide))
     (by rw [h₃.regs _ (by decide), BitVec.add_zero]; rfl)
     (Sets.li (d := .r4) (k := 32) (by decide)) (Sets.addi (d := .r6) (n := .r23) (k := 0) (by decide) (by decide))
     (fun _ _ _ => rfl) (fun g g' hg => by rw [hg .r23 (by decide) (by decide) (by decide)])
     (by rw [BitVec.add_zero, h₃.regs _ (by decide)]; rfl) (sign_env hp h₃) (sign_msg_cov hp h₃)
-    hp.mC (by rw [h₃.sp]; exact hp.bM) fun t₄ a b c f₄ g hr₄ => ?_)
+    hp.mC (by rw [h₃.sp]; exact hp.bM) fun t₄ a b c f₄ g hr₄ sy₄ => ?_)
   have h₄ := signStep hp h₃ a b c g f₄ (scW h₃)
   have r₄ : Repr t₄.mem (s.gpr .r8) (P ++ msgB s) := by
     have := hr₄ P r₃ (by rw [hPl])
     rwa [sign_msg hp h₃] at this
-  refine WP.seq (hashFinalize_ok C (sr := .r24) (f := .r25) (o := 128) (out := s.gpr .r9 + BitVec.ofNat 64 128)
+  refine WP.seq (WP.of_syms <| hashFinalize_ok C (sr := .r24) (f := .r25) (o := 128) (out := s.gpr .r9 + BitVec.ofNat 64 128)
     (vc := fun g => g .r23 + BitVec.ofNat 64 32)
     (by decide) (by decide) (by decide) (by decide) (by decide) (h₄.regs _ (by decide))
     (by rw [h₄.regs _ (by decide)]; rfl)
@@ -108,7 +109,7 @@ theorem signNonce_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s t
     (sign_env hp h₄)
     (Covers.of_sub fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨_, sign_Fw hp h₄, 128, rfl, show 128 + 64 ≤ 288 by decide⟩)
-    (hp.cF.symm.sub_left F128) (by rw [h₄.sp]; exact hp.bF.sub_right F128) fun t₅ a b c f₅ g hd₅ => ?_)
+    (hp.cF.symm.sub_left F128) (by rw [h₄.sp]; exact hp.bF.sub_right F128) fun t₅ a b c f₅ g hd₅ sy₅ => ?_)
   have h₅ := signStep hp h₄ a b c g f₅ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -125,13 +126,13 @@ theorem signNonce_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s t
   have hCw : (⟨s.gpr .r8, 8192⟩ : Region) ∈ t₅.wr := (sign_env hp h₅).w
   have hOw : (⟨s.gpr .r3, 64⟩ : Region) ∈ t₅.wr := by rw [h₅.wr, hp.wr]; simp
   unfold mov
-  refine WP.seq (args3_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) fun t₆ k₆ c3 c4 c5 => ?_)
+  refine WP.seq (WP.of_syms <| args3_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) fun t₆ k₆ c3 c4 c5 sy₆ => ?_)
   rw [h₅.regs _ (by decide), signV_r25] at c3 c4
   rw [h₅.regs _ (by decide), BitVec.add_zero, signV_r24] at c5
   have ce : ∀ (u : State) q, q ∉ linkRegs → ∀ rd wr, (u.callEntry.withRegions rd wr).gpr q = u.gpr q :=
     fun _ q hq _ _ => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
-  refine WP.seq (WP.call (k := reducePPC) reduce_ok' (rd := [⟨s.gpr .r9 + BitVec.ofNat 64 128, 64⟩])
+  refine WP.seq (WP.of_syms <| WP.call (k := reducePPC) reduce_ok' (rd := [⟨s.gpr .r9 + BitVec.ofNat 64 128, 64⟩])
     (wr := [⟨s.gpr .r9 + BitVec.ofNat 64 64, 32⟩, ⟨s.gpr .r8, 8192⟩])
     ⟨by rw [State.withRegions_rd, ce _ _ (by decide), c4],
       by rw [State.withRegions_wr, ce _ _ (by decide), ce _ _ (by decide), c3, c5],
@@ -150,7 +151,7 @@ theorem signNonce_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s t
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, hFw, 64, rfl, show 64 + 32 ≤ 288 by decide⟩
-      · exact ⟨_, hCw, 0, by simp, by simp⟩) (fun t₇ a b c f₇ g _ hpost => ?_) (by decide +kernel))
+      · exact ⟨_, hCw, 0, by simp, by simp⟩) (fun t₇ a b c f₇ g _ hpost sy₇ => ?_) (by decide +kernel))
   simp only [reducePPC, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
     State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
     c3, c4, k₆.mem, dg] at hpost
@@ -161,24 +162,29 @@ theorem signNonce_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s t
       · exact .inr (.inr (.inr (.inr (.inr ⟨64, 32, by decide, rfl⟩))))
       · exact .inl rfl
   -- `R`: `scalar_base`.
-  refine WP.seq (args3_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) fun t₈ k₈ d3 d4 d5 => ?_)
+  refine WP.seq (WP.of_syms <| args3_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) fun t₈ k₈ d3 d4 d5 sy₈ => ?_)
   rw [h₇.regs _ (by decide), BitVec.add_zero] at d3 d5
   rw [signV_r20] at d3
   rw [signV_r24] at d5
   rw [h₇.regs _ (by decide), signV_r25] at d4
-  refine WP.call (k := basePPC) base_ok' (rd := [⟨s.gpr .r9 + BitVec.ofNat 64 64, 32⟩])
+  have sy : t₈.syms combSym = s.syms combSym := by rw [sy₈, sy₇, sy₆, sy₅, sy₄, sy₃, sy₂, hsy]
+  have wd₈ : ∀ q < 64 * 96, t₈.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 =
+      Impl.Ed25519.PPC64LE.combWord q := fun q hq => by
+    rw [← hp.words q hq, k₈.mem]
+    exact h₇.frame.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega)) hp.tW
+      (by decide)
+  refine WP.call (k := baseRV) B (rd := [⟨s.gpr .r9 + BitVec.ofNat 64 64, 32⟩, TBL (s.syms combSym)])
     (wr := [⟨s.gpr .r3, 32⟩, ⟨s.gpr .r8, 8192⟩])
-    ⟨by rw [State.withRegions_rd, ce _ _ (by decide), d4],
-      by rw [State.withRegions_wr, ce _ _ (by decide), ce _ _ (by decide), d3, d5],
-      by rw [ce _ _ (by decide), ce _ _ (by decide), d3, d5]; exact hp.oC.sub_left (Region.sub_prefix (by decide)),
-      by rw [ce _ _ (by decide), ce _ _ (by decide), d4, d5]; exact hp.cF.symm.sub_left F64⟩
+    (basePre_call d3 d4 d5 sy (hp.oC.sub_left (Region.sub_prefix (by decide))) (hp.cF.symm.sub_left F64)
+      hp.tfit wd₈ (hp.tW _ (by simp)))
     (Covers.of_sub fun r hr => by
       rw [k₈.rd, k₈.wr, h₇.wr, h₇.rd]
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl
       · exact ⟨⟨s.gpr .r9, 288⟩, List.mem_append_right _ (by rw [hp.wr]; simp), 64, rfl,
           show 64 + 32 ≤ 288 by decide⟩
+      · exact ⟨TBL (s.syms combSym), List.mem_append_left _ (by rw [hp.rd]; simp), 0, by simp, by simp⟩
       · exact ⟨⟨s.gpr .r3, 64⟩, List.mem_append_right _ (by rw [hp.wr]; simp), 0, by simp, by simp⟩
       · exact ⟨⟨s.gpr .r8, 8192⟩, List.mem_append_right _ (by rw [hp.wr]; simp), 0, by simp, by simp⟩)
     (Covers.of_sub fun r hr => by
@@ -187,7 +193,7 @@ theorem signNonce_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s t
       rcases hr with rfl | rfl
       · exact ⟨⟨s.gpr .r3, 64⟩, by simp, 0, by simp, by simp⟩
       · exact ⟨⟨s.gpr .r8, 8192⟩, by simp, 0, by simp, by simp⟩) (fun t₉ a b c f₉ g _ hpost' => ?_) (by decide +kernel)
-  simp only [basePPC, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
+  simp only [baseRV, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
     State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
     d3, d4, k₈.mem] at hpost'
   have h₉ := signStep hp h₇ (a.trans k₈.rd) (b.trans k₈.wr) (c.trans k₈.sp)

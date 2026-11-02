@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Verified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.KcVerified
-public import VerifiedGarbage.Proof.Rsa.X86.RvVerified
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Timing
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.X86.RtShape
 
@@ -17,10 +17,10 @@ public import VerifiedGarbage.Proof.Rsa.X86.RtShape
 namespace VG.Artifacts.Rsa.X86
 
 def artifacts : List Artifact := [
-  Spec.Rsa.recoverPrimesApi.artifact X86.target {
-    code := Impl.Rsa.X86.RecoverRt.code
-    verified := Proof.Rsa.X86.Recover.verified
-    spSafe := Proof.Rsa.X86.RtShape.recover_spSafe
+  Spec.Rsa.recoverPrimesDetApi.artifact X86.target {
+    code := Impl.Rsa.X86.RecoverDetRt.code
+    verified := Proof.Rsa.X86.Recover.verifiedD
+    spSafe := Proof.Rsa.X86.RtShape.recoverDet_spSafe
     stack := 96 },
   Spec.Rsa.checkKeyApi.artifact X86.target {
     code := Impl.Rsa.X86.KeyCheckRt.code true

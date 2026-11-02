@@ -24,9 +24,10 @@ public import VerifiedGarbage.Spec.Ed25519.Contract
 # Ed25519 on RISC-V: the two sides of the verification equation
 
 With `pk`, the signature and the challenge in `s9`–`s11` (`VCtx`), `A` and
-`R` decoded into the tables at 7776 and 7904: `[S] B` into the table at 8032
-(`verifyLhs_ok`), then `[k] A + R` and its comparison with `[S] B`
-(`verifyRhs_ok`, `pointEqual_ok`), the result in `s3`.
+`R` decoded into the tables at 7776 and 7904, and the static of `-[1]B …
+-[15]B` (`BStat`): the comparison of the points in slots 0–3 and 4–7
+(`pointEqual_ok`), the challenge's top half (`challengeHigh_ok`), and what
+the windows' proof gives (`RhsOk`), the result in `s3`.
 -/
 
 @[expose] public section
@@ -146,46 +147,6 @@ theorem scratchAddr_ok {s : State} (hc : Ctx8 b s) {o : Nat} (ho : o < 2 ^ 31) {
   refine wp_add fun s2 u2 => k s2 ((u1.rest (by decide)).trans (u2.rest (by decide))) (by rw [u2.mem, u1.mem]) ?_
   rw [u2.gpr, u1.gpr, u1.other .a3 (by decide), hc.a3]
 
-/-- **`[S] B`**, for `S` the signature's second half, into the table at 8032. -/
-theorem verifyLhs_ok {s : State} (h : VCtx b pk sig ch s) :
-    WP isa verifyLhs s fun t =>
-      Rest sideR s t ∧ Frame (sideW b 8032) s.mem t.mem ∧
-      tableAt t.mem b 8032 = Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem (sig + BitVec.ofNat 64 32) 32))
-        Spec.Ed25519.basePoint := by
-  unfold verifyLhs
-  refine WP.seq (wp_addi (by decide) fun s1 u1 => WP.block_nil ?_)
-  have e14 : s1.gpr .s0 = sig + BitVec.ofNat 64 32 := by rw [u1.gpr, h.s10]
-  have h1 : VCtx b pk sig ch s1 := h.of_rest (u1.rest (ws := [.s0]) (by decide)) (by decide)
-  unfold constPoint
-  refine WP.seq (WP.mono (fieldCode_ok _ h1.ctx.ctx h1.ctx.ws) fun s2 ⟨k2, e2⟩ => ?_)
-  have p2 := (env_constPoint (env s1.mem b) Spec.Ed25519.basePoint).1
-  rw [← e2] at p2
-  have h2 : VCtx b pk sig ch s2 := h1.of_rest k2.rest (by decide)
-  have hpd : (⟨sig + BitVec.ofNat 64 32, 2 * 16⟩ : Region).Disjoint ⟨b, 8192⟩ :=
-    h.sigD.sub_left (Offset.sub_base sig (by decide))
-  refine WP.seq (WP.mono (pointFromScalar_ok h2.ctx (count := 16) (by decide) (by decide)
-    (p := sig + BitVec.ofNat 64 32) (by rw [k2.rest.gpr _ (by decide), e14])
-    (fun i hi => by
-      rw [Offset.add_add]
-      exact in_base (List.mem_append_left _ h2.sigR) (by omega_arith) (by omega_arith)) hpd)
-    fun s3 ⟨r3, f3, p3, _⟩ => ?_)
-  have hb2 : bytesAt s2.mem (sig + BitVec.ofNat 64 32) (2 * 16) = bytesAt s.mem (sig + BitVec.ofNat 64 32) 32 := by
-    rw [← u1.mem]
-    exact bytesAt_ws k2.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith))
-      hpd (by decide)
-  rw [hb2, p2] at p3
-  have hc3 : Ctx8 b s3 := h2.ctx.of_rest r3 (by decide)
-  unfold pointTableWrite
-  refine scratchAddr_ok hc3 (o := 8032) (by decide) fun s4 r4' m4 e4 => ?_
-  refine WP.mono (pointToTable_ok (hc3.of_rest r4' (by decide)) (o := 8032)
-    e4 (by decide) (by decide)) fun t ⟨rt, ft, tt⟩ => ⟨?_, ?_, ?_⟩
-  · exact (u1.rest (by decide)).trans ((k2.rest.mono (by decide)).trans ((r3.mono (by decide)).trans
-      ((r4'.mono (by decide)).trans (rt.mono (by decide)))))
-  · rw [← u1.mem]
-    have ft' : Frame [⟨b + BitVec.ofNat 64 8032, 128⟩] s3.mem t.mem := by rw [← m4]; exact ft
-    exact (k2.frame.mono (by simp)).trans ((f3.mono (by simp)).trans (ft'.mono (by simp)))
-  · rw [tt, m4, p3]
-
 /-- A list of zero bytes is the integer 0. -/
 theorem decodeLE_zeros : ∀ (l : List (BitVec 8)), (∀ x ∈ l, x = 0) → decodeLE l = 0
   | [], _ => rfl
@@ -263,180 +224,37 @@ theorem challengeHigh_ok {ch : Addr} {s : State} (h11 : s.gpr .s11 = ch)
   rw [et, u1.gpr, u1.mem]
   simp
 
-/-- **`[k] A`** for the 64-byte challenge at `s0` (and `s11`), over 16 batches when its top
-half is zero and 32 otherwise. -/
-theorem challengeMul_ok {s : State} (hc : Ctx8 b s) {ch : Addr} (h14 : s.gpr .s0 = ch)
-    (h11 : s.gpr .s11 = ch) (hin : ∀ i < 64, InRegions (s.rd ++ s.wr) (ch + BitVec.ofNat 64 i) 1)
-    (hpd : (⟨ch, 64⟩ : Region).Disjoint ⟨b, 8192⟩) :
-    WP isa challengeMul s fun t =>
-      Rest (.s5 :: .a4 :: batchR) s t ∧ Frame (pmulW b) s.mem t.mem ∧
-      point (env t.mem b) 0 1 2 3 =
-        Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem ch 64)) (point (env s.mem b) 0 1 2 3) ∧
-      env t.mem b 16 = Spec.Ed25519.d := by
-  unfold challengeMul
-  refine WP.seq (WP.mono (challengeHigh_ok h11 fun i hi => hin (32 + i) (by omega))
-    fun s1 ⟨r1, m1, e1⟩ => ?_)
-  have hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
-  have h14' : s1.gpr .s0 = ch := by rw [r1.gpr _ (by decide), h14]
-  have hin1 : ∀ i < 64, InRegions (s1.rd ++ s1.wr) (ch + BitVec.ofNat 64 i) 1 := by
-    rw [r1.rd, r1.wr]; exact hin
-  refine WP.ite (s1.gpr .a4 == 0) (eval_zero s1 .a4) (fun h => ?_) (fun _ => ?_)
-  · have hz := e1.mp (beq_iff_eq.mp h)
-    refine WP.mono (pointFromScalar_ok hc1 (count := 16) (by decide) (by decide) h14'
-      (fun i hi => hin1 i (by omega)) (hpd.sub_left (Region.sub_prefix (by omega))))
-      fun t ⟨rt, ft, pt, dt⟩ => ⟨(r1.mono (by decide)).trans rt, by rw [← m1]; exact ft, ?_, dt⟩
-    rw [pt, m1, decodeLE_low s.mem ch hz]
-  · refine WP.mono (pointFromScalar_ok hc1 (count := 32) (by decide) (by decide) h14'
-      (fun i hi => hin1 i (by omega)) hpd)
-      fun t ⟨rt, ft, pt, dt⟩ => ⟨(r1.mono (by decide)).trans rt, by rw [← m1]; exact ft, ?_, dt⟩
-    rw [pt, m1]
+/-- The static of the cached `-[1]B … -[15]B` at `T`: readable, its words, not wrapping around,
+apart from the working space. -/
+structure BStat (b T : Addr) (s : State) : Prop where
+  rd : (⟨T, 1920⟩ : Region) ∈ s.rd
+  fit : T.toNat + 1920 ≤ 2 ^ 64
+  words : ∀ q < 240, s.mem.readW (T + BitVec.ofNat 64 (8 * q)) 64 = bWord q
+  ws : (⟨T, 1920⟩ : Region).Disjoint ⟨b, 8192⟩
 
-/-- `A` from the table at 7776 into slots 0–3, and the challenge's pointer into `s0`. -/
-theorem rhsLoad_ok {s : State} (h : VCtx b pk sig ch s) :
-    WP isa (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) s fun t =>
-      Rest [.a4, .a5, .s0] s t ∧ Frame [FA b] s.mem t.mem ∧ t.gpr .s0 = ch ∧ VCtx b pk sig ch t ∧
-      bytesAt t.mem ch 64 = bytesAt s.mem ch 64 := by
-  unfold pointTableRead
-  rw [List.append_assoc]
-  refine scratchAddr_ok h.ctx (o := 7776) (by decide) fun s1 r1 m1 e1 => ?_
-  have hc1 : Ctx8 b s1 := h.ctx.of_rest r1 (by decide)
-  refine WP.append (pointFromTable_ok hc1 (o := 7776) e1 (by decide) (by decide))
-    fun s2 ⟨r2, f2, _, _⟩ => ?_
-  refine wp_mv fun s3 u3 => WP.block_nil ?_
-  have r13 : Rest [.a4, .a5, .s0] s s3 :=
-    (r1.mono (by decide)).trans ((r2.mono (by decide)).trans (u3.rest (by decide)))
-  have hF3 : Frame [FA b] s.mem s3.mem := by
-    rw [u3.mem, ← m1]; exact f2.sub fun r hr => ⟨FA b, by simp, by
-      rw [List.mem_singleton.mp hr]; exact Offset.sub b (by decide) (by decide)⟩
-  refine ⟨r13, hF3, by rw [u3.gpr, r2.gpr _ (by decide), r1.gpr _ (by decide), h.s11],
-    h.of_rest r13 (by decide), ?_⟩
-  exact bytesAt_ws hF3 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith))
-    h.chD (by decide)
+/-- The static's facts through a frame within the working space. -/
+theorem BStat.of_frame {T : Addr} {s t : State} (h : BStat b T s) (hrd : t.rd = s.rd) {rs : List Region}
+    (hf : Frame rs s.mem t.mem) (hs : ∀ r ∈ rs, Region.Sub r ⟨b, 8192⟩) : BStat b T t where
+  rd := hrd ▸ h.rd
+  fit := h.fit
+  words q hq := by
+    rw [← h.words q hq]
+    exact hf.readW (r := ⟨T, 1920⟩) (Offset.contains_base T (by omega) (by omega))
+      (fun r hr x h₁ h₂ => h.ws x h₁ (hs r hr x h₂)) (by decide)
+  ws := h.ws
 
-/-- What `verifyRhs` runs before the comparison. -/
-def verifyRhsPre : Prog isa :=
-  .seq (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) (.seq challengeMul verifyCombine)
-
-/-- **`[k] A + R`** into slots 4–7 and `[S] B` into slots 0–3, from the tables at 7776, 7904 and 8032. -/
-theorem verifyRhsPre_ok {s : State} (h : VCtx b pk sig ch s) :
-    WP isa verifyRhsPre s fun t => Rest sideR s t ∧ Frame (sideW b 8032) s.mem t.mem ∧ Ctx8 b t ∧
-      point (env t.mem b) 0 1 2 3 = tableAt s.mem b 8032 ∧
-      point (env t.mem b) 4 5 6 7 = Spec.Ed25519.pointAdd (tableAt s.mem b 7904)
-        (Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem ch 64)) (tableAt s.mem b 7776)) := by
-  unfold verifyRhsPre pointTableRead
-  rw [List.append_assoc]
-  refine WP.seq (scratchAddr_ok h.ctx (o := 7776) (by decide) fun s1 r1 m1 e1 => ?_)
-  have hc1 : Ctx8 b s1 := h.ctx.of_rest r1 (by decide)
-  refine WP.append (pointFromTable_ok hc1 (o := 7776) e1 (by decide) (by decide))
-    fun s2 ⟨r2, f2, p2, _⟩ => ?_
-  refine wp_mv fun s3 u3 => WP.block_nil ?_
-  have r13 : Rest [.a4, .a5, .s0] s s3 := (r1.mono (by decide)).trans ((r2.mono (by decide)).trans (u3.rest (by decide)))
-  have h3 : VCtx b pk sig ch s3 := h.of_rest r13 (by decide)
-  have m3 : s3.mem = s2.mem := u3.mem
-  have hF3 : Frame [FA b] s.mem s3.mem := by
-    rw [m3, ← m1]; exact f2.sub fun r hr => ⟨FA b, by simp, by
-      rw [List.mem_singleton.mp hr]; exact Offset.sub b (by decide) (by decide)⟩
-  have hk3 : ∀ o, 1024 ≤ o → o + 128 ≤ 8192 → tableAt s3.mem b o = tableAt s.mem b o := fun o ho ho' => by
-    rw [← m1, m3]
-    exact tableAt_keep f2 fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-  have hpd : (⟨ch, 2 * 32⟩ : Region).Disjoint ⟨b, 8192⟩ := h.chD
-  refine WP.seq (WP.mono (challengeMul_ok h3.ctx (ch := ch)
-    (by rw [u3.gpr, r2.gpr _ (by decide), r1.gpr _ (by decide), h.s11]) h3.s11
-    (fun i hi => in_base (List.mem_append_left _ h3.chR) (by omega_arith) (by omega_arith)) hpd)
-    fun s4 ⟨r4, f4, p4, d4⟩ => ?_)
-  have hb3 : bytesAt s3.mem ch 64 = bytesAt s.mem ch 64 :=
-    bytesAt_ws hF3 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)) hpd (by decide)
-  rw [hb3, m3, p2, m1] at p4
-  have hc4 : Ctx8 b s4 := h3.ctx.of_rest r4 (by decide)
-  have hT4 : ∀ o, 7776 ≤ o → o + 128 ≤ 8192 → tableAt s4.mem b o = tableAt s.mem b o := fun o ho ho' => by
-    rw [← hk3 o (by omega_arith) ho']
-    exact tableAt_keep f4 fun r hr => by
-      have hB : BITSB = 32 := rfl
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-      · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-      · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-      · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-  -- `[k] A` to slots 4–7, `R` to 0–3, their sum, then it to 4–7 and `[S] B` to 0–3.
-  unfold verifyCombine copyPointToQ
-  refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps hc4.ctx hc4.ws) fun s5 ⟨k5, e5⟩ => ?_)
-  obtain ⟨q4, _, qk⟩ := env_copyPointToQ (env s4.mem b)
-  rw [← e5] at q4 qk
-  have hc5 : Ctx8 b s5 := hc4.of_keep k5
-  refine WP.seq ?_
-  unfold pointTableRead
-  refine scratchAddr_ok hc5 (o := 7904) (by decide) fun s6 r6' m6 e6 => ?_
-  have hc6 : Ctx8 b s6 := hc5.of_rest r6' (by decide)
-  refine WP.mono (pointFromTable_ok hc6 (o := 7904) e6 (by decide) (by decide))
-    fun s7 ⟨r7, f7, p7, k7⟩ => ?_
-  rw [m6, tableAt_keep k5.frame (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)),
-    hT4 7904 (by decide) (by decide)] at p7
-  have hc7 : Ctx8 b s7 := hc6.of_rest r7 (by decide)
-  have hd7 : env s7.mem b 16 = Spec.Ed25519.d := by rw [k7 16 (by decide), m6, qk 16 (by decide), d4]
-  have hq7 : point (env s7.mem b) 4 5 6 7 = point (env s4.mem b) 0 1 2 3 := by
-    simp only [point, k7 4 (by decide), k7 5 (by decide), k7 6 (by decide), k7 7 (by decide), m6]
-    exact q4
-  refine WP.seq (WP.mono (addCall_ok hc7 hd7) fun s8 ⟨k8, p8, _⟩ => ?_)
-  rw [p7, hq7, p4] at p8
-  have hc8 : Ctx8 b s8 := hc7.of_keep k8
-  refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps hc8.ctx hc8.ws) fun s9 ⟨k9, e9⟩ => ?_)
-  obtain ⟨q9, _, _⟩ := env_copyPointToQ (env s8.mem b)
-  rw [← e9, p8] at q9
-  have hc9 : Ctx8 b s9 := hc8.of_keep k9
-  refine scratchAddr_ok hc9 (o := 8032) (by decide) fun s10 r10' m10 e10 => ?_
-  have hc10 : Ctx8 b s10 := hc9.of_rest r10' (by decide)
-  refine WP.mono (pointFromTable_ok hc10 (o := 8032) e10 (by decide) (by decide))
-    fun s11 ⟨r11, f11, p11, k11⟩ => ?_
-  have hFA : Frame [FA b] s7.mem s9.mem := k8.frame.trans k9.frame
-  have hT9 : tableAt s9.mem b 8032 = tableAt s.mem b 8032 := by
-    rw [tableAt_keep hFA (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)),
-      tableAt_keep f7 (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)),
-      m6, tableAt_keep k5.frame (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)),
-      hT4 8032 (by decide) (by decide)]
-  rw [m10, hT9] at p11
-  have hq11 : point (env s11.mem b) 4 5 6 7 = point (env s9.mem b) 4 5 6 7 := by
-    simp only [point, k11 4 (by decide), k11 5 (by decide), k11 6 (by decide), k11 7 (by decide), m10]
-  have hc11 : Ctx8 b s11 := hc10.of_rest r11 (by decide)
-  refine ⟨?_, ?_, hc11, p11, by rw [hq11, q9]⟩
-  · exact (r13.mono (by decide)).trans ((r4.mono (by decide)).trans ((k5.rest.mono (by decide)).trans
-      ((r6'.mono (by decide)).trans ((r7.mono (by decide)).trans ((k8.rest.mono (by decide)).trans
-        ((k9.rest.mono (by decide)).trans ((r10'.mono (by decide)).trans (r11.mono (by decide)))))))))
-  · have fs : ∀ r ∈ [FA b], r ∈ sideW b 8032 := by simp
-    have fs' : ∀ r ∈ [(⟨b + BitVec.ofNat 64 64, 128⟩ : Region)], ∃ r' ∈ sideW b 8032, Region.Sub r r' :=
-      fun r hr => ⟨FA b, by simp, by rw [List.mem_singleton.mp hr]; exact Offset.sub b (by decide) (by decide)⟩
-    have fa : Frame (sideW b 8032) s.mem s4.mem := (hF3.mono fs).trans (f4.mono (by simp))
-    have fb : Frame (sideW b 8032) s4.mem s6.mem := by rw [m6]; exact k5.frame.mono fs
-    have fc : Frame (sideW b 8032) s6.mem s9.mem := (f7.sub fs').trans (hFA.mono fs)
-    have fd : Frame (sideW b 8032) s9.mem s11.mem := by rw [← m10]; exact f11.sub fs'
-    exact fa.trans (fb.trans (fc.trans fd))
-
-theorem verifyRhsPre_ok' {s : State} (h : VCtx b pk sig ch s) :
-    WP isa (.seq (.seq (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) challengeMul) verifyCombine) s
-      fun t => Rest sideR s t ∧ Frame (sideW b 8032) s.mem t.mem ∧ Ctx8 b t ∧
-        point (env t.mem b) 0 1 2 3 = tableAt s.mem b 8032 ∧
-        point (env t.mem b) 4 5 6 7 = Spec.Ed25519.pointAdd (tableAt s.mem b 7904)
-          (Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem ch 64)) (tableAt s.mem b 7776)) := by
-  have e := verifyRhsPre_ok h
-  unfold verifyRhsPre at e
-  exact WP.assoc' e
-
-/-- **`[k] A + R`** and its comparison with `[S] B`, from the tables at 7776, 7904 and 8032. -/
-theorem verifyRhs_ok {s : State} (h : VCtx b pk sig ch s) :
-    WP isa verifyRhs s fun t => Rest (.s3 :: sideR) s t ∧
-      Frame (sideW b 8032) s.mem t.mem ∧
-      t.gpr .s3 = if Spec.Ed25519.pointEqual (tableAt s.mem b 8032)
-        (Spec.Ed25519.pointAdd (tableAt s.mem b 7904)
-          (Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem ch 64)) (tableAt s.mem b 7776))) then 1 else 0 := by
-  unfold verifyRhs
-  refine WP.assoc (WP.assoc (WP.seq (WP.mono (WP.assoc' (verifyRhsPre_ok h)) fun u ⟨ru, fu, cu, pu, qu⟩ =>
-    WP.mono (pointEqual_ok cu) fun t ⟨kt, rt⟩ => ⟨(ru.mono (by decide)).trans (kt.rest.mono (by decide)),
-      fu.trans (kt.frame.mono (by simp)), by rw [rt, pu, qu]⟩)))
+/-- **`[k] A - [S] B` compared with `-R`**, for the decoded `A` and `R` in the tables at 7776 and
+7904 and the static at `s.syms bSym`, as the equation `[S] B = R + [k] A`: what the windows'
+proof gives (`Proof/Ed25519/RISCV64/WindowRhs.lean`, `rhs_ok`). -/
+def RhsOk : Prop := ∀ {b pk sig ch : Addr} {s : State} {PK RS : List Byte},
+  VCtx b pk sig ch s → BStat b (s.syms bSym) s →
+  Spec.Ed25519.decodePoint PK = some (tableAt s.mem b 7776) →
+  Spec.Ed25519.decodePoint RS = some (tableAt s.mem b 7904) →
+  WP isa verifyRhs s fun t => Rest (.s3 :: sideR) s t ∧ Frame (sideW b 8032) s.mem t.mem ∧
+    t.gpr .s3 = if Spec.Ed25519.pointEqual
+      (Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem (sig + BitVec.ofNat 64 32) 32)) Spec.Ed25519.basePoint)
+      (Spec.Ed25519.pointAdd (tableAt s.mem b 7904)
+        (Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem ch 64)) (tableAt s.mem b 7776))) then 1 else 0
 
 end
 

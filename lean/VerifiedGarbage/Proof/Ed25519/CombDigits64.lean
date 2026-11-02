@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.CombTable16
 public import VerifiedGarbage.Proof.Ed25519.CombDigits
-import Mathlib.Tactic.Ring.RingNF
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
 
 /-!
 # A comb of one table per digit
@@ -65,12 +62,14 @@ theorem combEntry64_ok (i n : Nat) (hi : i < 64) (hn : n < 16) :
   by_cases hlt : n < 8
   · refine ⟨negPoint q₀, by simp only [hlt, ↓reduceIte]; rw [hq₀, negCached_cache], hz, ?_⟩
     have e : ((n : ℤ) - 8) * 16 ^ i = -(((mag n * 16 ^ i : Nat) : ℤ)) := by
-      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : n ≤ 8)]; ring
+      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : n ≤ 8)]
+      rw [← Int.neg_mul]; congr 1; omega
     rw [e, neg_smul, natCast_zsmul]
     exact hr.neg
   · refine ⟨q₀, by simp only [hlt, ↓reduceIte]; exact hq₀, hz, ?_⟩
     have e : ((n : ℤ) - 8) * 16 ^ i = (((mag n * 16 ^ i : Nat) : ℤ)) := by
-      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : 8 ≤ n)]; ring
+      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : 8 ≤ n)]
+      rfl
     rw [e, natCast_zsmul]
     exact hr
 
@@ -88,7 +87,7 @@ def nibSum (S : Nat) : Nat → Nat
 
 theorem nibSum_eq (S : Nat) : ∀ n, nibSum S n = S % 16 ^ n
   | 0 => by simp [nibSum, Nat.mod_one]
-  | n + 1 => by rw [nibSum, nibSum_eq S n, pow_succ, Nat.mod_mul, nib]; ring
+  | n + 1 => by rw [nibSum, nibSum_eq S n, pow_succ, Nat.mod_mul, nib, Nat.mul_comm (S / 16 ^ n % 16)]
 
 /-- `Σ_{i < c} 16^i`. -/
 def geom16 : Nat → Nat
@@ -99,7 +98,9 @@ theorem digitSum64_eq (S : Nat) : ∀ c, digitSum64 S c = nibSum S c - 8 * geom1
   | 0 => rfl
   | c + 1 => by
     simp only [digitSum64, nibSum, geom16, digitSum64_eq S c, sdig]
-    push_cast; ring
+    push_cast
+    rw [Int.sub_mul, Int.mul_add]
+    omega
 
 theorem geom16_64 : 8 * geom16 64 = 17 * combGVal := by decide
 
@@ -107,6 +108,7 @@ theorem geom16_64 : 8 * geom16 64 = 17 * combGVal := by decide
 theorem comb64_total {S : Nat} (hS : S < 2 ^ 256) :
     ((17 * combGVal : Nat) : ℤ) + digitSum64 S 64 = S := by
   rw [digitSum64_eq, nibSum_eq, Nat.mod_eq_of_lt (by simpa using hS), ← geom16_64]
-  push_cast; ring
+  push_cast
+  omega
 
 end VG.Proof.Ed25519
