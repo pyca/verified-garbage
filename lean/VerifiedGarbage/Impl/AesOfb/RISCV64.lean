@@ -12,8 +12,7 @@ the same arguments and the first 2048 bytes of the scratch buffer, and
 bitslices the round keys once for all the blocks: each block, the output
 block `Oⱼ = CIPH_K(Oⱼ₋₁)` is XORed into the data block, and the last one
 written to `iv`. The call is wrapped as AES-CBC encryption's
-(`Impl.AesCbc.RISCV64.chainWrapped`). `ivArgs`, the arguments of the block
-function for the block at `iv`, is AES-CFB128 decryption's.
+(`Impl.AesCbc.RISCV64.chainWrapped`).
 
 Only the pointers, `rounds` and `n` can affect timing.
 -/
@@ -23,11 +22,7 @@ Only the pointers, `rounds` and `n` can affect timing.
 namespace VG.Impl.AesOfb.RISCV64
 
 open VG.RISCV64
-open VG.Impl.AesCbc.RISCV64 (mov chainWrapped)
-
-/-- The arguments of the block function for the block at `s3`: the
-schedule, the rounds, the block, `n = 1`, and the working space. -/
-def ivArgs : List Instr := [mov .a0 .s1, mov .a1 .s2, mov .a2 .s3, .li .a3 1, mov .a4 .s6]
+open VG.Impl.AesCbc.RISCV64 (chainWrapped)
 
 /-- Each output block `Oⱼ = CIPH_K(Oⱼ₋₁)` XORed into the data, by the OFB
 chain (`Impl.Aes.RISCV64.ofbChain`), which bitslices the round keys once

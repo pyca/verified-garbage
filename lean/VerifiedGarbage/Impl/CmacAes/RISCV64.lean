@@ -49,7 +49,7 @@ masked.
 namespace VG.Impl.CmacAes.RISCV64
 
 open VG.RISCV64 VG.Impl.Words.RISCV64
-open VG.Impl.AesCbc.RISCV64 (mov savePtr xorInto advance whole encCall)
+open VG.Impl.AesCbc.RISCV64 (mov savePtr xorInto encCall)
 open VG.Impl.Cmac.RISCV64 (dbl)
 
 /-! ## `vg_cmac_aes_subkeys` -/
@@ -74,10 +74,6 @@ def subkeysPost : List Instr :=
 def subkeys : Prog isa := .seq (.block subkeysPre) (.seq encCall (.block subkeysPost))
 
 /-! ## `vg_cmac_aes_update` -/
-
-/-- The arguments of `vg_aes_encrypt_blocks` on the state: the schedule, the
-rounds, the state, `n = 1`, and the working space. -/
-def updArgs : List Instr := [mov .a0 .s1, mov .a1 .s2, mov .a2 .s3, .li .a3 1, mov .a4 .s6]
 
 /-- The return address and `s1`, saved above the first 2048 bytes of the
 scratch buffer (with the scratch buffer in `a5`), and the scratch buffer kept in `s1`. -/

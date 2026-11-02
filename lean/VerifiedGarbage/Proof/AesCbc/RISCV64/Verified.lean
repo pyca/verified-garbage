@@ -4,14 +4,11 @@ public import VerifiedGarbage.Impl.AesCbc.RISCV64
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
 public import VerifiedGarbage.Spec.Cbc.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-import VerifiedGarbage.Proof.AesCbc.RISCV64.Body
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Chain
-import VerifiedGarbage.Proof.AesCbc.RISCV64.CT
-import VerifiedGarbage.Proof.AesCbc.RISCV64.Lit
+import VerifiedGarbage.Proof.Aes.RISCV64.WideCbc
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
-meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Cbc.Contract
@@ -22,8 +19,9 @@ meta import VerifiedGarbage.TCB.RISCV64.Target
 
 Correctness and constant time, of encryption from the chain's
 (`wrap_wp`, `wrap_ct`, `Chain.lean`: CBC encryption, the blocks enciphered
-and their last the chaining value) and of decryption block by block
-(`whole_wp`, `whole_ct`, `CT.lean`), a state satisfying the precondition,
+and their last the chaining value) and of decryption from the wide
+decryption's (`cbcDecWide_k`, `Proof/Aes/RISCV64/WideCbc.lean`, four blocks
+at a time) the same way, a state satisfying the precondition,
 and the shared contracts of
 `Spec/Cbc/Contract.lean` (with no stack: a call stores nothing in memory, and
 the return address is saved in the scratch buffer).
@@ -39,7 +37,7 @@ open VG VG.RISCV64 VG.Impl.AesCbc.RISCV64
 abbrev cbcRISCV64 (enc : Bool) : Contract isa := modeRISCV64 (cbcMode enc)
 
 /-- A mode's precondition, a chain's that writes the blocks (with the scratch buffer of 2176
-bytes). -/
+bytes), for encryption and decryption. -/
 theorem encrypt_wpre {M : Mode} {s : State} (hs : (modeRISCV64 M).pre s) : WPre true (16 * ·) s :=
   let ⟨a, b, c, _, e, f, g, h, i, j, k, l⟩ := hs
   ⟨a, b, c, e, f.symm, h, g, i, j, k, l⟩
@@ -55,8 +53,14 @@ theorem encrypt_ct : ConstantTime isa (cbcRISCV64 true).pre (cbcRISCV64 true).pu
 
 theorem decrypt_correct (s : State) (hs : (cbcRISCV64 false).pre s) :
     ∃ t s', Exec isa decrypt s t s' ∧ abiPreserved s s' ∧ (cbcRISCV64 false).post s s' := by
-  obtain ⟨t, s', he, hg, hra, hp⟩ := whole_wp decBody_ok hs
-  exact ⟨t, s', he, ⟨hg, Exec.sp he, hra⟩, hp⟩
+  obtain ⟨t, s', he, hg, hra, hsp, hp⟩ :=
+    wrap_wp Proof.Aes.RISCV64.cbcDecWide_k (name := "vg_aes_cbc_dec_wide") (encrypt_wpre hs)
+  exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hp⟩
+
+theorem decrypt_ct : ConstantTime isa (cbcRISCV64 false).pre (cbcRISCV64 false).pub decrypt :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ =>
+    wrap_ct Proof.Aes.RISCV64.cbcDecWide_k "vg_aes_cbc_dec_wide" _ _ _ _ _ _ (encrypt_wpre h₁)
+      (encrypt_wpre h₂) hq e₁ e₂
 
 /-- A state satisfying the precondition (with no blocks). -/
 def sat : State where
@@ -73,7 +77,7 @@ theorem encrypt_verified : Verified RISCV64.target encrypt (Spec.Cbc.aesEncryptC
       ciphOf, cbc, cts, RISCV64.abi, RISCV64.argRegs] [sat] using sat)
 
 theorem decrypt_verified : Verified RISCV64.target decrypt (Spec.Cbc.aesDecryptContract RISCV64.abi) :=
-  Verified.of_correct decrypt_correct (whole_ct decBody_ok decBody_ct) (by
+  Verified.of_correct decrypt_correct decrypt_ct (by
     sig_implies [Spec.Cbc.aesDecryptContract, Spec.Cbc.aesSig, cbcRISCV64, modeRISCV64, cbcMode,
       ciphOf, cbc, cts, RISCV64.abi, RISCV64.argRegs] [sat] using sat)
 

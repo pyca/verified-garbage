@@ -372,8 +372,9 @@ theorem B8Setup.masks_disj (hs : B8Setup s₂ X b D n R w) : ∀ r ∈ fRegions 
       Region.Disjoint ⟨b + BitVec.ofNat 64 512, 96⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact ⟨Offset.disjoint_base b (by omega) (by omega), Offset.disjoint_base b (by omega) (by omega)⟩
+  · exact ⟨Offset.disjoint b (by omega) (by omega) (by omega), Offset.disjoint b (by omega) (by omega) (by omega)⟩
   · exact ⟨Offset.disjoint b (by omega) (by omega) (by omega), Offset.disjoint b (by omega) (by omega) (by omega)⟩
   · exact ⟨Offset.disjoint b (by omega) (by omega) (by omega), Offset.disjoint b (by omega) (by omega) (by omega)⟩
   · exact ⟨(hs.sep.sub_right (hs.sub (by omega))).symm, (hs.sep.sub_right (hs.sub (by omega))).symm⟩
@@ -382,8 +383,9 @@ theorem B8Setup.keys_disj (hs : B8Setup s₂ X b D n R w) :
     ∀ r ∈ fRegions b D n, Region.Disjoint ⟨b + 1024, 960⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact keys_disjoint b
+  · exact Offset.disjoint b (d := 1024) (by omega) (by omega) (by omega)
   · exact Offset.disjoint b (d := 1024) (by omega) (by omega) (by omega)
   · exact Offset.disjoint b (d := 1024) (by omega) (by omega) (by omega)
   · exact (hs.sep.sub_right (hs.sub (d := 1024) (l := 960) (by omega))).symm

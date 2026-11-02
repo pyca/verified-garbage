@@ -19,9 +19,9 @@ public import VerifiedGarbage.TCB.RISCV64.Isa
 /-!
 # AES-CBC on RISC-V: the code between the calls, and the loop
 
-The straight-line pieces of the bodies (`xorInto`, `copy`, `callArgs`,
-`advance`), each run in continuation-passing style, the blocks a byte at a
-time (`Bytes.xorBytes_ok`, `Bytes.copyBytes_ok`).
+The straight-line pieces that AES-CTR, CMAC and XTS's data units share
+(`xorInto`, `copy`), each run in continuation-passing style, the blocks a
+byte at a time (`Bytes.xorBytes_ok`, `Bytes.copyBytes_ok`).
 
 The invariant after `k` blocks (`LInv`), for any mode on whole blocks, as on
 PPC64LE (`Proof/AesCbc/PPC64LE/Loop.lean`): `s1`–`s6` hold the arguments
@@ -114,55 +114,6 @@ theorem copy_wp {dst src : Reg} {s : State} {P Q : Addr} {rest : List Instr} {Φ
       h.rd h.wr h.sp
     have := h.copied j hj
     rwa [hp, hq, Nat.zero_add] at this
-
-/-- The registers `callArgs` writes. -/
-abbrev argRegs5 : List Reg := [.a0, .a1, .a2, .a3, .a4]
-
-/-- The arguments of the block function. -/
-theorem callArgs_wp {s : State} {Φ : State → Prop}
-    (k : ∀ s', s'.gpr .a0 = s.gpr .s1 → s'.gpr .a1 = s.gpr .s2 → s'.gpr .a2 = s.gpr .s4 →
-      s'.gpr .a3 = BitVec.ofNat 64 1 → s'.gpr .a4 = s.gpr .s6 →
-      (∀ r, r ∉ argRegs5 → s'.gpr r = s.gpr r) → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
-      s'.sp = s.sp → Φ s') :
-    WP isa (.block callArgs) s Φ := by
-  unfold callArgs mov
-  refine wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => wp_mv fun s₃ u₃ => wp_li (imm := 1) (by decide)
-    fun s₄ u₄ => wp_mv fun s₅ u₅ => WP.block_nil ?_
-  refine k s₅ ?_ ?_ ?_ ?_ ?_ (fun r hr => ?_) ?_ ?_ ?_ ?_
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
-      u₁.gpr]
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
-      u₁.other _ (by decide)]
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide),
-      u₁.other _ (by decide)]
-  · rw [u₅.other _ (by decide), u₄.gpr]
-  · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
-      u₁.other _ (by decide)]
-  · simp only [argRegs5, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    obtain ⟨h0, h1, h2, h3, h4⟩ := hr
-    rw [u₅.other _ h4, u₄.other _ h3, u₃.other _ h2, u₂.other _ h1, u₁.other _ h0]
-  · rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  · rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  · rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  · rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
-
-/-- On to the next block. -/
-theorem advance_wp {s : State} {Φ : State → Prop}
-    (k : ∀ s', s'.gpr .s4 = s.gpr .s4 + BitVec.ofNat 64 16 → s'.gpr .s5 = s.gpr .s5 - BitVec.ofNat 64 1 →
-      (∀ r, r ≠ .s4 → r ≠ .s5 → s'.gpr r = s.gpr r) → s'.mem = s.mem → s'.rd = s.rd →
-      s'.wr = s.wr → s'.sp = s.sp → Φ s') :
-    WP isa (.block advance) s Φ := by
-  unfold advance
-  refine wp_addi (imm := 16) (by decide) fun s₁ u₁ => wp_subi (imm := 1) (by decide) fun s₂ u₂ =>
-    WP.block_nil ?_
-  refine k s₂ ?_ ?_ (fun r h₁ h₂ => ?_) ?_ ?_ ?_ ?_
-  · rw [u₂.other _ (by decide), u₁.gpr]
-  · rw [u₂.gpr, u₁.other _ (by decide)]
-  · rw [u₂.other _ h₂, u₁.other _ h₁]
-  · rw [u₂.mem, u₁.mem]
-  · rw [u₂.rd, u₁.rd]
-  · rw [u₂.wr, u₁.wr]
-  · rw [u₂.sp, u₁.sp]
 
 /-- `addi 2047`, `addi 8` then `andi -8`: `x + 2048` rounded up. -/
 theorem sv_arith (x : Addr) :
@@ -412,18 +363,6 @@ theorem a1_ofNat (s₀ : State) : s₀.gpr .a1 = BitVec.ofNat 64 (R s₀) := by
 
 theorem a4_ofNat (s₀ : State) : s₀.gpr .a4 = BitVec.ofNat 64 (N s₀) := by
   apply BitVec.eq_of_toNat_eq; simp [N]
-
-/-- What `advance` leaves after block `k`: the registers of block `k + 1`. -/
-theorem advance_regs {s₀ : State} {k : Nat} (hk : k < N s₀) {s : State} {Φ : State → Prop}
-    (h4 : s.gpr .s4 = blk s₀ k) (h5 : s.gpr .s5 = BitVec.ofNat 64 (N s₀ - k))
-    (h : ∀ s', s'.gpr .s4 = blk s₀ (k + 1) → s'.gpr .s5 = BitVec.ofNat 64 (N s₀ - (k + 1)) →
-      (∀ r, r ≠ .s4 → r ≠ .s5 → s'.gpr r = s.gpr r) → s'.mem = s.mem → s'.rd = s.rd →
-      s'.wr = s.wr → s'.sp = s.sp → Φ s') :
-    WP isa (.block advance) s Φ := by
-  have hN := (s₀.gpr .a4).isLt
-  refine advance_wp fun s' r4' r5' keep mem' rd' wr' sp' => h s' ?_ ?_ keep mem' rd' wr' sp'
-  · rw [r4', h4, Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega_arith)]
-  · rw [r5', h5, Offset.ofNat_sub_ofNat (by omega_arith)]; rfl
 
 /-! ## The loop -/
 

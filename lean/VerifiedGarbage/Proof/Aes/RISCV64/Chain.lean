@@ -480,7 +480,7 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
             frame := c.frame.mono fun r hr => by
               simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
               rcases hr with rfl | rfl
-              exacts [.inl rfl, .inr (.inr (.inr rfl))]
+              exacts [.inl rfl, .inr (.inr (.inr (.inr rfl)))]
             res := ⟨c.st, c.data⟩ }
   · rcases hm with ⟨hn0, hmem⟩ | ⟨s, ⟨hst, hdat⟩, hmem⟩
     · refine ⟨?_, fun _ => ?_⟩
