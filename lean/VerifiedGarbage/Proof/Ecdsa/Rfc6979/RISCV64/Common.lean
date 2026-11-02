@@ -176,7 +176,7 @@ structure Kit where
   nbits : Spec.Ecdsa.nBits E.curve = 8 * Q
   two : 2 ^ (8 * Q) < 2 * E.curve.n
   nw9 : 4 ≤ nw ∧ nw ≤ 9
-  Qw : Q = 8 * nw ∨ (nw = 4 ∧ Q = 28)
+  Qw : Q = 8 * nw ∨ (nw = 4 ∧ Q = 28) ∨ (nw = 4 ∧ Q = 24)
   coreC : Prog isa
   K : List (String × List (BitVec 64))
   core_call : ∀ {nm : String} {s : State} {o d g k w : Addr}, CoreArgs Q K s o d g k w →
@@ -300,9 +300,9 @@ structure Sz (P : Rfc) : Prop where
   S : P.c.H.S = P.c.H.N + P.c.H.B
   S192 : P.c.H.S ≤ 192
   D : P.Q ≤ P.c.H.D ∧ P.c.H.D ≤ 64
-  Q : 28 ≤ P.Q ∧ P.Q ≤ 72 ∧ P.c.Q = P.Q ∧
+  Q : 24 ≤ P.Q ∧ P.Q ≤ 72 ∧ P.c.Q = P.Q ∧
     (P.c.fH + 8 * P.kit.nw ≤ P.c.frB ∧ P.c.frB ≤ P.c.fH + 8 * P.kit.nw + 15 ∧ P.c.frB % 16 = 0) ∧
-    P.Q ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ P.Q + 4 ∧ (32 ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ 72)
+    P.Q ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ P.Q + 8 ∧ (32 ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ 72)
   H : 128 + P.c.H.D + 1 ≤ P.c.fH ∧ 192 ≤ P.c.fH ∧ P.c.fH ≤ 208 ∧ P.c.fH % 8 = 0
   HF : P.c.H.F ≤ 1024
   X : P.c.H.ibytes + P.c.H.F ≤ P.X ∧ P.c.H.fbytes + P.c.H.F ≤ P.X ∧ P.c.H.F ≤ P.X ∧ P.X ≤ 4096
