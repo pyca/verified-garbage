@@ -5,22 +5,19 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-public import VerifiedGarbage.Spec.Ecdsa.P256
+public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Hash
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.Sign
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Call
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
-import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignLit
-import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
@@ -33,7 +30,9 @@ import VerifiedGarbage.Proof.Sha256.Stream
 The contract the proof is written against (`rfcR`), which each instance's
 shared contract implies; what the proof needs of an instance (`Rfc`): the
 hash function's streaming functions with HMAC's over them, constant time,
-the code's configuration, and the shared contract's instance. The proofs
+the code's configuration, the shared contract's instance, and the curve's
+(`Kit`: its scalars' words, the functions of its order, and the signature
+with a given `k` with its constant tables, if any). The proofs
 start from the state the frame's body starts in (`s₀`, with the stack
 pointer at the frame and `X` bytes of stack below it for the functions we
 call), whose precondition is `Pre`; `KR` is what holds from the end of the
@@ -44,10 +43,10 @@ frame, `out`, `scratch` and the stack below the frame (`wrs`).
 The calls of HMAC's `init` and `finalize` (against the contracts of their
 generic proofs, `WP.callAny`, since they allocate their working space on the
 stack), of the streaming `update` (`HashOK.callUpd_ok`) and of the signature
-with a given `k` (against `signRV`, `WP.call`, since it pushes no frames):
-what each needs of the state it is called from, and what holds when it
-returns; and, for HMAC's and the signature's, that two runs of the call with
-the same arguments leak the same trace (`RelCT.call`).
+with a given `k` (the kit's `core_call`): what each needs of the state it is
+called from, and what holds when it returns; and, for HMAC's and the
+signature's, that two runs of the call with the same arguments leak the
+same trace (`RelCT.call`, the kit's `core_rel`).
 -/
 
 @[expose] public section
@@ -60,7 +59,6 @@ open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 open VG.Proof.Hmac.Stream.RISCV64 (HashOK initG finG)
 open Spec.Hmac (xorPad ipad opad blockKey hmacBlockKey)
 open Spec.Sha256 (bytesAt)
-open VG.Proof.Ecdsa.RISCV64.Comb (tabRegion combWords_length)
 
 /-! ## The contract -/
 
@@ -95,15 +93,12 @@ def rfcR (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa where
     s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.gpr .a3 = s₂.gpr .a3 ∧
     (result I s₁.mem (s₁.gpr .a1) (s₁.gpr .a2)).2 = (result I s₂.mem (s₂.gpr .a1) (s₂.gpr .a2)).2
 
-/-- The comb's table, which the signature with a given `k` reads. -/
-abbrev tabK : List (String × List (BitVec 64)) := Impl.Ecdsa.RISCV64.Comb.p256CombConsts
-
-/-- `rfcR` with the comb's table (`abi.withConsts`): `rfcR` for the state
-without it, and what the table adds. -/
-def rfcRC (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa where
-  pre s := (rfcR I N).pre (stripConsts tabK s) ∧ ConstsOk tabK N s
+/-- `rfcR` with the tables `K` the signature with a given `k` reads
+(`abi.withConsts`): `rfcR` for the state without them, and what they add. -/
+def rfcRC (K : List (String × List (BitVec 64))) (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa where
+  pre s := (rfcR I N).pre (stripConsts K s) ∧ ConstsOk K N s
   post := (rfcR I N).post
-  pub s₁ s₂ := (rfcR I N).pub s₁ s₂ ∧ s₁.syms Impl.Ecdsa.RISCV64.Comb.p256Sym = s₂.syms Impl.Ecdsa.RISCV64.Comb.p256Sym
+  pub s₁ s₂ := (rfcR I N).pub s₁ s₂ ∧ ∀ c ∈ K, s₁.syms c.1 = s₂.syms c.1
 
 /-- A state satisfying the precondition, for scalars of `Q` bytes and a
 digest of `D` bytes. -/
@@ -123,26 +118,96 @@ abbrev hiK (H : Hash) (SH : Spec.Hmac.StreamingHash) : Contract isa := initG SH 
 /-- HMAC's `finalize`, with its frame and its callees' stack. -/
 abbrev hfK (H : Hash) (SH : Spec.Hmac.StreamingHash) : Contract isa := finG SH (H.fbytes + H.F)
 
-/-- What the proof needs of an instance: P-256 with a hash function. -/
+/-- What a call leaves: the regions, the stack pointer, the callee-saved
+registers, and memory outside `ws`. -/
+structure After (s : State) (ws : List Region) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  cs : ∀ r ∈ preserved, s'.gpr r = s.gpr r
+  frame : Frame ws s.mem s'.mem
+
+/-- What a call of the signature with a given `k`, of `Q` bytes scalars,
+needs: `out` at `o`, `d`, the digest and `k` at `d`, `g` and `k`, the working
+space at `w`, and the tables `K` apart from what it writes. -/
+structure CoreArgs (Q : Nat) (K : List (String × List (BitVec 64))) (s : State) (o d g k w : Addr) : Prop where
+  a0 : s.gpr .a0 = o
+  a1 : s.gpr .a1 = d
+  a2 : s.gpr .a2 = g
+  a3 : s.gpr .a3 = k
+  a4 : s.gpr .a4 = w
+  d_ow : Region.Disjoint ⟨o, 2 * Q⟩ ⟨w, 8192⟩
+  d_dw : Region.Disjoint ⟨d, Q⟩ ⟨w, 8192⟩
+  d_gw : Region.Disjoint ⟨g, Q⟩ ⟨w, 8192⟩
+  d_kw : Region.Disjoint ⟨k, Q⟩ ⟨w, 8192⟩
+  no : o.toNat + 2 * Q ≤ 2 ^ 64
+  nd : d.toNat + Q ≤ 2 ^ 64
+  ng : g.toNat + Q ≤ 2 ^ 64
+  nk : k.toNat + Q ≤ 2 ^ 64
+  nw : w.toNat + 8192 ≤ 2 ^ 64
+  wa : w.toNat % 8 = 0
+  held : Abi.constsHeld s.mem (fun name => s.syms name) K
+  tfit : ∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ 64
+  tal : ∀ t ∈ constRegs K s, t.base.toNat % 64 = 0
+  t_o : ∀ t ∈ constRegs K s, t.Disjoint ⟨o, 2 * Q⟩
+  t_w : ∀ t ∈ constRegs K s, t.Disjoint ⟨w, 8192⟩
+  hc : RISCV64.Covers ([⟨d, Q⟩, ⟨g, Q⟩, ⟨k, Q⟩] ++ constRegs K s ++ [⟨o, 2 * Q⟩, ⟨w, 8192⟩]) (s.rd ++ s.wr)
+  hw : RISCV64.Covers [⟨o, 2 * Q⟩, ⟨w, 8192⟩] s.wr
+
+/-- The signature of the digest at `g` with the key at `d` and the secret
+number at `k`, of `Q` bytes each, as the specification computes it. -/
+abbrev sgOf (E : Spec.Ecdsa.Instance) (Q : Nat) (m : Mem) (d g k : Addr) : Option (Nat × Nat) :=
+  Spec.Ecdsa.signWith E.curve (Spec.Weierstrass.ofBytes (bytesAt m d Q))
+    (Spec.Ecdsa.hashToInt E.curve (bytesAt m g Q)) (Spec.Weierstrass.ofBytes (bytesAt m k Q))
+
+/-- What the proof needs of the curve: its scalars' 64-bit words, its ECDSA
+instance, the functions of its order `n` (whose addition `bits2octets`
+calls), and the signature with a given `k`, the tables it reads, its
+correctness and its constant time by call. -/
+structure Kit where
+  nw : Nat
+  E : Spec.Ecdsa.Instance
+  FN : VG.Impl.Weierstrass.RISCV64.Field
+  FNok : VG.Proof.Weierstrass.RISCV64.FieldOk FN
+  FNk : FN.S.k = nw
+  FNm : FN.S.m = E.curve.n
+  len : E.curve.len = 8 * nw
+  nbits : Spec.Ecdsa.nBits E.curve = 64 * nw
+  two : 2 ^ (64 * nw) < 2 * E.curve.n
+  nw4 : nw = 4 ∨ nw = 6
+  coreC : Prog isa
+  K : List (String × List (BitVec 64))
+  core_call : ∀ {nm : String} {s : State} {o d g k w : Addr}, CoreArgs (8 * nw) K s o d g k w →
+    ∀ {Q : State → Prop}, (∀ s', After s [⟨o, 2 * (8 * nw)⟩, ⟨w, 8192⟩] s' →
+      (match sgOf E (8 * nw) s.mem d g k with
+        | some rs => s'.gpr .a0 = 1 ∧ bytesAt s'.mem o (2 * (8 * nw)) = Spec.Ecdsa.encode E.curve rs
+        | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem o (2 * (8 * nw)) = List.replicate (2 * (8 * nw)) 0) → Q s') →
+    WP isa (.call nm coreC) s Q
+  core_rel : ∀ {nm : String} {Q : State → State → Prop} {o d g k w : Addr} {f : String → BitVec 64},
+    (∀ s s', Q s s' → CoreArgs (8 * nw) K s o d g k w ∧ CoreArgs (8 * nw) K s' o d g k w ∧ s.sp = s'.sp ∧
+      ∀ c ∈ K, s.syms c.1 = f c.1 ∧ s'.syms c.1 = f c.1) →
+    RelCT isa Q (.call nm coreC) fun _ _ => True
+
+/-- What the proof needs of an instance: a curve's kit with a hash function. -/
 structure Rfc where
   c : Cfg
   hH : HashOK c.H
   hiCt : ConstantTime isa (hiK c.H hH.SH).pre (hiK c.H hH.SH).pub c.H.init
   hfCt : ConstantTime isa (hfK c.H hH.SH).pre (hfK c.H hH.SH).pub c.H.finalize
   I : Spec.Ecdsa.Rfc6979.Instance
-  hE : I.ecdsa = Spec.Ecdsa.P256.inst
+  kit : Kit
+  hE : I.ecdsa = kit.E
   hHash : I.hash = hH.SH.H
   hD : I.hashLen = c.H.D
-  hD32 : 32 ≤ c.H.D
+  hnw : c.nw = kit.nw
+  hDQ : 8 * kit.nw ≤ c.H.D
   hD48 : c.H.D ≤ 48
   hS : c.H.S ≤ 192
   hct : c.tries = I.tries
   hT : 1 ≤ c.tries
   hT' : c.tries < 2048
-  hFN : c.FN = Impl.Ecdsa.RISCV64.p256Order
-  hcC : c.coreC = Impl.Ecdsa.RISCV64.Sign.signP256
-  /-- P-256's group law, which the signature with a given `k` needs. -/
-  law : VG.Proof.Weierstrass.Law Spec.P256.curve
+  hFN : c.FN = kit.FN
+  hcC : c.coreC = kit.coreC
 
 namespace Rfc
 
@@ -152,7 +217,7 @@ variable (P : Rfc)
 def X : Nat := max P.c.H.ibytes P.c.H.fbytes + P.c.H.F
 
 /-- The stack the function uses. -/
-def N : Nat := frB + P.X
+def N : Nat := P.c.frB + P.X
 
 end Rfc
 
@@ -171,54 +236,57 @@ abbrev sR (o n : Nat) : Region := ⟨sA s₀ o, n⟩
 /-- An address in `scratch`, and a part of it. -/
 abbrev cA (o : Nat) : Addr := scr s₀ + BitVec.ofNat 64 o
 abbrev cR (o n : Nat) : Region := ⟨cA s₀ o, n⟩
-abbrev outR : Region := ⟨out s₀, 64⟩
-abbrev dR : Region := ⟨dk s₀, 32⟩
 abbrev scrR : Region := ⟨scr s₀, 8192⟩
-/-- The frame. -/
-abbrev frR : Region := ⟨s₀.sp, frB⟩
 /-- The save area. -/
 abbrev svR : Region := sR s₀ 0 64
 
 end
+
+/-- The scalars' bytes. -/
+abbrev Rfc.Q (P : Rfc) : Nat := 8 * P.kit.nw
+
+/-- `out`, `d`, and the frame. -/
+abbrev outR (P : Rfc) (s₀ : State) : Region := ⟨out s₀, 2 * P.Q⟩
+abbrev dR (P : Rfc) (s₀ : State) : Region := ⟨dk s₀, P.Q⟩
+abbrev frR (P : Rfc) (s₀ : State) : Region := ⟨s₀.sp, P.c.frB⟩
 
 /-- The digest. -/
 abbrev dgR (P : Rfc) (s₀ : State) : Region := ⟨dg s₀, P.c.H.D⟩
 /-- The stack below the frame the functions we call use. -/
 abbrev stk (P : Rfc) (s₀ : State) : Region := below s₀.sp P.X
 /-- Everything the code writes. -/
-abbrev wrs (P : Rfc) (s₀ : State) : List Region := [frR s₀, outR s₀, scrR s₀, stk P s₀]
+abbrev wrs (P : Rfc) (s₀ : State) : List Region := [frR P s₀, outR P s₀, scrR s₀, stk P s₀]
 
 /-- The state the frame's body starts in. -/
 structure Pre (P : Rfc) (s₀ : State) : Prop where
-  rd : s₀.rd = [dR s₀, dgR P s₀, tabRegion s₀]
-  wr : s₀.wr = [frR s₀, outR s₀, scrR s₀]
-  o_d : (outR s₀).Disjoint (dR s₀)
-  o_g : (outR s₀).Disjoint (dgR P s₀)
-  o_c : (outR s₀).Disjoint (scrR s₀)
-  d_c : (dR s₀).Disjoint (scrR s₀)
+  rd : s₀.rd = [dR P s₀, dgR P s₀] ++ constRegs P.kit.K s₀
+  wr : s₀.wr = [frR P s₀, outR P s₀, scrR s₀]
+  o_d : (outR P s₀).Disjoint (dR P s₀)
+  o_g : (outR P s₀).Disjoint (dgR P s₀)
+  o_c : (outR P s₀).Disjoint (scrR s₀)
+  d_c : (dR P s₀).Disjoint (scrR s₀)
   g_c : (dgR P s₀).Disjoint (scrR s₀)
-  f_o : (frR s₀).Disjoint (outR s₀)
-  f_d : (frR s₀).Disjoint (dR s₀)
-  f_g : (frR s₀).Disjoint (dgR P s₀)
-  f_c : (frR s₀).Disjoint (scrR s₀)
-  b_o : (stk P s₀).Disjoint (outR s₀)
-  b_d : (stk P s₀).Disjoint (dR s₀)
+  f_o : (frR P s₀).Disjoint (outR P s₀)
+  f_d : (frR P s₀).Disjoint (dR P s₀)
+  f_g : (frR P s₀).Disjoint (dgR P s₀)
+  f_c : (frR P s₀).Disjoint (scrR s₀)
+  b_o : (stk P s₀).Disjoint (outR P s₀)
+  b_d : (stk P s₀).Disjoint (dR P s₀)
   b_g : (stk P s₀).Disjoint (dgR P s₀)
   b_c : (stk P s₀).Disjoint (scrR s₀)
   al : s₀.sp.toNat % 16 = 0
   spX : P.X ≤ s₀.sp.toNat
-  top : s₀.sp.toNat + frB ≤ 2 ^ 64
-  no : (out s₀).toNat + 64 ≤ 2 ^ 64
-  nd : (dk s₀).toNat + 32 ≤ 2 ^ 64
+  top : s₀.sp.toNat + P.c.frB ≤ 2 ^ 64
+  no : (out s₀).toNat + 2 * P.Q ≤ 2 ^ 64
+  nd : (dk s₀).toNat + P.Q ≤ 2 ^ 64
   ng : (dg s₀).toNat + P.c.H.D ≤ 2 ^ 64
   nc : (scr s₀).toNat + 8192 ≤ 2 ^ 64
   ca : (scr s₀).toNat % 8 = 0
-  /-- The comb's table: its words, where, apart from what the code writes. -/
-  held : ∀ i < 18944, s₀.mem.readW (s₀.syms Impl.Ecdsa.RISCV64.Comb.p256Sym + BitVec.ofNat 64 (8 * i)) 64 =
-    Impl.Ecdsa.RISCV64.Comb.p256CombWords.getD i 0
-  tal : (s₀.syms Impl.Ecdsa.RISCV64.Comb.p256Sym).toNat % 64 = 0
-  tfit : (s₀.syms Impl.Ecdsa.RISCV64.Comb.p256Sym).toNat + 151552 ≤ 2 ^ 64
-  t_w : ∀ r ∈ wrs P s₀, (tabRegion s₀).Disjoint r
+  /-- The tables: their words, where, apart from what the code writes. -/
+  held : Abi.constsHeld s₀.mem (fun name => s₀.syms name) P.kit.K
+  tal : ∀ t ∈ constRegs P.kit.K s₀, t.base.toNat % 64 = 0
+  tfit : ∀ t ∈ constRegs P.kit.K s₀, t.base.toNat + t.len ≤ 2 ^ 64
+  t_w : ∀ t ∈ constRegs P.kit.K s₀, ∀ r ∈ wrs P s₀, t.Disjoint r
 
 /-! ## The sizes -/
 
@@ -228,14 +296,17 @@ structure Sz (P : Rfc) : Prop where
   B : P.c.H.B = 64 ∨ P.c.H.B = 128
   S : P.c.H.S = P.c.H.N + P.c.H.B
   S192 : P.c.H.S ≤ 192
-  D : 32 ≤ P.c.H.D ∧ P.c.H.D ≤ 48
+  D : P.Q ≤ P.c.H.D ∧ P.c.H.D ≤ 48
+  Q : (P.Q = 32 ∨ P.Q = 48) ∧ P.Q ≤ 48 ∧ P.c.Q = P.Q ∧ P.c.frB = 192 + P.Q
   HF : P.c.H.F ≤ 1024
   X : P.c.H.ibytes + P.c.H.F ≤ P.X ∧ P.c.H.fbytes + P.c.H.F ≤ P.X ∧ P.c.H.F ≤ P.X ∧ P.X ≤ 4096
 
 theorem sizes (P : Rfc) : Sz P := by
   have hl := P.hH.lay
   have hB := P.hH.hB64
-  refine ⟨P.hH.hN, hB, rfl, P.hS, ⟨P.hD32, P.hD48⟩, P.hH.hF, ?_⟩
+  have := P.kit.nw4
+  refine ⟨P.hH.hN, hB, rfl, P.hS, ⟨P.hDQ, P.hD48⟩, ⟨by simp only [Rfc.Q]; omega, by simp only [Rfc.Q]; omega, by
+    simp only [Cfg.Q, Rfc.Q, P.hnw], by simp only [Cfg.frB, Cfg.Q, fH, P.hnw]⟩, P.hH.hF, ?_⟩
   have := hl.ibytes; have := hl.fbytes; have := P.hH.hF
   simp only [Rfc.X]
   omega
@@ -245,7 +316,7 @@ variable {P : Rfc} {s₀ : State} (hp : Pre P s₀)
 include hp
 
 omit hp in
-theorem part_sub {o n : Nat} (h : o + n ≤ frB) : Region.Sub (sR s₀ o n) (frR s₀) :=
+theorem part_sub {o n : Nat} (h : o + n ≤ P.c.frB) : Region.Sub (sR s₀ o n) (frR P s₀) :=
   Offset.sub_base _ h
 
 omit hp in
@@ -261,20 +332,20 @@ theorem scr_disj {a m b n : Nat} (h : a + m ≤ b ∨ b + n ≤ a) (ha : a + m �
     Region.Disjoint (cR s₀ a m) (cR s₀ b n) :=
   Offset.disjoint _ h (by have := hp.nc; omega) (by have := hp.nc; omega)
 
-theorem fr_wr {s : State} (hwr : s.wr = s₀.wr) : frR s₀ ∈ s.wr := by rw [hwr, hp.wr]; simp
-theorem out_wr {s : State} (hwr : s.wr = s₀.wr) : outR s₀ ∈ s.wr := by rw [hwr, hp.wr]; simp
+theorem fr_wr {s : State} (hwr : s.wr = s₀.wr) : frR P s₀ ∈ s.wr := by rw [hwr, hp.wr]; simp
+theorem out_wr {s : State} (hwr : s.wr = s₀.wr) : outR P s₀ ∈ s.wr := by rw [hwr, hp.wr]; simp
 theorem scr_wr {s : State} (hwr : s.wr = s₀.wr) : scrR s₀ ∈ s.wr := by rw [hwr, hp.wr]; simp
 
-theorem in_fr {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ frB) :
+theorem in_fr {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ P.c.frB) :
     InRegions s.wr (sA s₀ o) n :=
-  ⟨_, fr_wr hp hwr, Offset.contains_base _ h (by simp only [frB] at h; omega)⟩
+  ⟨_, fr_wr hp hwr, Offset.contains_base _ h (by have := (sizes P).Q; omega)⟩
 
-theorem in_fr' {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ frB) :
+theorem in_fr' {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ P.c.frB) :
     InRegions (s.rd ++ s.wr) (sA s₀ o) n :=
-  ⟨_, List.mem_append_right _ (fr_wr hp hwr), Offset.contains_base _ h (by simp only [frB] at h; omega)⟩
+  ⟨_, List.mem_append_right _ (fr_wr hp hwr), Offset.contains_base _ h (by have := (sizes P).Q; omega)⟩
 
 /-- The frame is apart from the stack below it. -/
-theorem f_s : (frR s₀).Disjoint (stk P s₀) :=
+theorem f_s : (frR P s₀).Disjoint (stk P s₀) :=
   Offset.base_disjoint_below _ (by have := hp.top; have := hp.spX; have := s₀.sp.isLt; omega)
 
 /-- The stack below the stack pointer, within `stk`. -/
@@ -341,14 +412,14 @@ theorem KR.upd {s s' : State} (h : KR P s₀ s) {d : Reg} (hd : d ∉ kregs) {v 
 /-- A part of the frame after the save area, `out`, `scratch`, or the stack
 below the frame. -/
 def Wk (P : Rfc) (s₀ : State) (r : Region) : Prop :=
-  (∃ o n, r = sR s₀ o n ∧ 64 ≤ o ∧ o + n ≤ frB) ∨ Region.Sub r (outR s₀) ∨ Region.Sub r (scrR s₀) ∨
+  (∃ o n, r = sR s₀ o n ∧ 64 ≤ o ∧ o + n ≤ P.c.frB) ∨ Region.Sub r (outR P s₀) ∨ Region.Sub r (scrR s₀) ∨
     ∃ n, r = below s₀.sp n ∧ n ≤ P.X
 
 theorem Wk.ok (hp : Pre P s₀) {r : Region} (h : Wk P s₀ r) :
     Region.Disjoint (svR s₀) r ∧ ∃ r' ∈ wrs P s₀, Region.Sub r r' := by
-  have sv : Region.Sub (svR s₀) (frR s₀) := part_sub (by simp only [frB]; omega)
+  have sv : Region.Sub (svR s₀) (frR P s₀) := part_sub (by have := (sizes P).Q; omega)
   rcases h with ⟨o, n, rfl, h₁, h₂⟩ | h | h | ⟨n, rfl, hn⟩
-  · exact ⟨part_disj (s₀ := s₀) (.inl h₁) (by simp only [frB] at h₂; omega) (by simp only [frB] at h₂; omega),
+  · exact ⟨part_disj (s₀ := s₀) (.inl h₁) (by have := (sizes P).Q; omega) (by have := (sizes P).Q; omega),
       _, by simp, part_sub (s₀ := s₀) h₂⟩
   · exact ⟨(hp.f_o.sub_left sv).sub_right h, _, by simp, h⟩
   · exact ⟨(hp.f_c.sub_left sv).sub_right h, _, by simp, h⟩
@@ -368,14 +439,14 @@ theorem KR.bytes {s : State} (hk : KR P s₀ s) {p : Addr} {n : Nat}
   Proof.Sha256.Stream.bytesAt_congr fun _ hi => hk.frame.bytes (R := ⟨p, n⟩) hd hn hi
 
 theorem KR.dBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) :
-    bytesAt s.mem (dk s₀) 32 = bytesAt s₀.mem (dk s₀) 32 :=
+    bytesAt s.mem (dk s₀) P.Q = bytesAt s₀.mem (dk s₀) P.Q :=
   hk.bytes (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hp.f_d.symm
     · exact hp.o_d.symm
     · exact hp.d_c
-    · exact hp.b_d.symm) (by omega)
+    · exact hp.b_d.symm) (by have := (sizes P).Q; omega)
 
 theorem KR.dgBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) {n : Nat} (hn : n ≤ P.c.H.D) :
     bytesAt s.mem (dg s₀) n = bytesAt s₀.mem (dg s₀) n :=
@@ -391,15 +462,6 @@ theorem KR.dgBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) {n : Nat} (h
 end
 
 /-! ## The calls -/
-
-/-- What a call leaves: the regions, the stack pointer, the callee-saved
-registers, and memory outside `ws`. -/
-structure After (s : State) (ws : List Region) (s' : State) : Prop where
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-  sp : s'.sp = s.sp
-  cs : ∀ r ∈ preserved, s'.gpr r = s.gpr r
-  frame : Frame ws s.mem s'.mem
 
 section
 variable (P : Rfc)
@@ -602,117 +664,5 @@ theorem upd_call {P : Rfc} {s : State} {st dat : Addr} {len : Nat} (h : UpdArgs 
     WP isa P.c.H.callUpd s Q :=
   P.hH.callUpd_ok h.a0 h.a2 h.a3 h.d h.al h.sp h.b_s h.b_d h.hc h.hw
     fun s' a b c d e f => hQ s' ⟨a, b, c, e, d⟩ f
-
-/-! ## The signature with a given `k` -/
-
-open VG.Proof.Ecdsa.RISCV64.P256 (signRV signRVC sign_rv sign_ct sg) in
-/-- What a call of the signature needs: `out` at `o`, `d`, the digest and `k`
-at `d`, `g` and `k`, the working space at `w`, and the comb's table at `T`. -/
-structure CoreArgs (s : State) (o d g k w T : Addr) : Prop where
-  a0 : s.gpr .a0 = o
-  a1 : s.gpr .a1 = d
-  a2 : s.gpr .a2 = g
-  a3 : s.gpr .a3 = k
-  a4 : s.gpr .a4 = w
-  d_ow : Region.Disjoint ⟨o, 64⟩ ⟨w, 8192⟩
-  d_dw : Region.Disjoint ⟨d, 32⟩ ⟨w, 8192⟩
-  d_gw : Region.Disjoint ⟨g, 32⟩ ⟨w, 8192⟩
-  d_kw : Region.Disjoint ⟨k, 32⟩ ⟨w, 8192⟩
-  no : o.toNat + 64 ≤ 2 ^ 64
-  nd : d.toNat + 32 ≤ 2 ^ 64
-  ng : g.toNat + 32 ≤ 2 ^ 64
-  nk : k.toNat + 32 ≤ 2 ^ 64
-  nw : w.toNat + 8192 ≤ 2 ^ 64
-  wa : w.toNat % 8 = 0
-  sy : s.syms Impl.Ecdsa.RISCV64.Comb.p256Sym = T
-  held : ∀ i < 18944, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = Impl.Ecdsa.RISCV64.Comb.p256CombWords.getD i 0
-  tal : T.toNat % 64 = 0
-  tfit : T.toNat + 151552 ≤ 2 ^ 64
-  t_o : Region.Disjoint ⟨T, 151552⟩ ⟨o, 64⟩
-  t_w : Region.Disjoint ⟨T, 151552⟩ ⟨w, 8192⟩
-  hc : RISCV64.Covers ([⟨d, 32⟩, ⟨g, 32⟩, ⟨k, 32⟩, ⟨T, 151552⟩] ++ [⟨o, 64⟩, ⟨w, 8192⟩]) (s.rd ++ s.wr)
-  hw : RISCV64.Covers [⟨o, 64⟩, ⟨w, 8192⟩] s.wr
-
-section
-open VG.Proof.Ecdsa.RISCV64.P256 (signRV signRVC sign_rv sign_ct sg)
-
-/-- The callee's regions. -/
-abbrev coreRd (d g k T : Addr) : List Region := [⟨d, 32⟩, ⟨g, 32⟩, ⟨k, 32⟩, ⟨T, 151552⟩]
-
-theorem CoreArgs.pre {s : State} {o d g k w T : Addr} (h : CoreArgs s o d g k w T) :
-    signRVC.pre (s.callEntry.withRegions (coreRd d g k T) [⟨o, 64⟩, ⟨w, 8192⟩]) := by
-  refine ⟨?_, ?_⟩
-  · simp only [signRV, stripConsts, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-      State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.a4 ∉ linkRegs), h.a0, h.a1, h.a2, h.a3, h.a4]
-    exact ⟨rfl, trivial, h.d_ow, h.d_dw, h.d_gw, h.d_kw, h.no, h.nd, h.ng, h.nk, h.nw, h.wa⟩
-  · have hl := combWords_length
-    have esy : (s.callEntry.withRegions (coreRd d g k T) [⟨o, 64⟩, ⟨w, 8192⟩]).syms
-        Impl.Ecdsa.RISCV64.Comb.p256Sym = T := h.sy
-    refine ⟨?_, ?_, ?_, ?_⟩
-    · show List.drop (4 - 1) (coreRd d g k T) = [⟨_, 8 * Impl.Ecdsa.RISCV64.Comb.p256CombWords.length⟩]
-      dsimp only
-      rw [esy, hl]; rfl
-    · intro c hc i hi
-      simp only [Impl.Ecdsa.RISCV64.Comb.p256CombConsts, List.mem_singleton] at hc
-      subst hc
-      dsimp only
-      rw [esy]; exact h.held i (by rw [hl] at hi; exact hi)
-    · intro t ht
-      simp only [constRegs, Abi.constRegions, Impl.Ecdsa.RISCV64.Comb.p256CombConsts, List.map_cons,
-        List.map_nil, List.mem_singleton] at ht
-      subst ht
-      rw [esy, hl]
-      refine ⟨h.tfit, fun r hr => ?_, fun r hr => ?_⟩
-      · simp only [State.withRegions_wr, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact h.t_o
-        · exact h.t_w
-      · simp [RISCV64.abi, stackBelow] at hr
-    · intro t ht
-      simp only [constRegs, Abi.constRegions, Impl.Ecdsa.RISCV64.Comb.p256CombConsts, List.map_cons,
-        List.map_nil, List.mem_singleton] at ht
-      subst ht
-      rw [esy]; exact h.tal
-
-/-- The signature with `k` at `k`, of the digest at `g` with the key at `d`, to `o`. -/
-theorem core_call (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) {nm : String} {s : State} {o d g k w T : Addr}
-    (h : CoreArgs s o d g k w T) {Q : State → Prop}
-    (hQ : ∀ s', After s [⟨o, 64⟩, ⟨w, 8192⟩] s' →
-      (match sg s.mem d g k with
-        | some rs => s'.gpr .a0 = 1 ∧ bytesAt s'.mem o 64 = Spec.Ecdsa.encode Spec.P256.curve rs
-        | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem o 64 = List.replicate 64 0) → Q s') :
-    WP isa (.call nm Impl.Ecdsa.RISCV64.Sign.signP256) s Q := by
-  refine WP.call (k := signRVC) (sign_rv hL) (rd := coreRd d g k T) (wr := [⟨o, 64⟩, ⟨w, 8192⟩])
-    h.pre h.hc h.hw ?_ Impl.Ecdsa.RISCV64.Sign.signP256_noFrames
-  intro s' hrd hwr hsp' hf hcs _ hpost
-  simp only [signRVC, signRV, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
-    State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs),
-    h.a0, h.a1, h.a2, h.a3] at hpost
-  exact hQ s' ⟨hrd, hwr, hsp', hcs, hf⟩ hpost
-
-/-- Two runs of a call of the signature with the same arguments. -/
-theorem core_rel (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) {nm : String} {Q : State → State → Prop}
-    {o d g k w T : Addr}
-    (h : ∀ s s', Q s s' → CoreArgs s o d g k w T ∧ CoreArgs s' o d g k w T ∧ s.sp = s'.sp) :
-    RelCT isa Q (.call nm Impl.Ecdsa.RISCV64.Sign.signP256) fun _ _ => True := by
-  refine RelCT.call (sign_rv hL) sign_ct (coreRd d g k T) [⟨o, 64⟩, ⟨w, 8192⟩] fun s s' hp => ?_
-  obtain ⟨a, a', e⟩ := h s s' hp
-  refine ⟨a.pre, a'.pre, ⟨?_, ?_⟩, a.hc, a.hw, a'.hc, a'.hw⟩
-  · simp only [signRV, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
-      State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a0 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a1 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a2 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a3 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.a4 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a4 ∉ linkRegs),
-      a.a0, a'.a0, a.a1, a'.a1, a.a2, a'.a2, a.a3, a'.a3, a.a4, a'.a4]
-    simp only [and_true]
-    exact e
-  · show s.syms _ = s'.syms _
-    rw [a.sy, a'.sy]
-
-end
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64

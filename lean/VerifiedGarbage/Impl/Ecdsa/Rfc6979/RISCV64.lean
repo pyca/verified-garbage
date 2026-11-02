@@ -8,26 +8,28 @@ public import VerifiedGarbage.Impl.Words.RISCV64.Bytes
 # Deterministic ECDSA (RFC 6979) on RISC-V
 
 `sign(out = a0, d = a1, digest = a2, scratch = a3) -> a0`: RFC 6979 §3.2
-for a curve of 32-byte scalars whose order `n` has 256 bits (P-256), and a
-Merkle–Damgård hash function `H` whose output is `D ≥ 32` bytes, with HMAC
+for a curve of scalars of `Q = 8 nw` bytes whose order `n` has `8 Q` bits
+(P-256's 32, P-384's 48), and a
+Merkle–Damgård hash function `H` whose output is `D ≥ Q` bytes, with HMAC
 computed by calling `H`'s HMAC `init` and `finalize` and its streaming
 `update` (`Impl/Hmac/Stream/RISCV64.lean`), and each candidate tried by
 calling `core`, the signature with a given `k` (`vg_ecdsa_<curve>_sign`),
-which reads 32 bytes of the digest and of `k`. One `V` makes a candidate,
-its leftmost 32 bytes, so `core` reads the digest and `V` in place.
+which reads `Q` bytes of the digest and of `k`. One `V` makes a candidate,
+its leftmost `Q` bytes, so `core` reads the digest and `V` in place.
 
-It runs in a frame of 224 bytes (`alloc`): our caller's `ra` and `s0`–`s5`,
-then `K` and `V` (64 bytes each, of which the first `D` are used, and the
-byte after `V` the separator of steps d, f and h.3) and `h` (32 bytes). Our
+It runs in a frame of `192 + Q` bytes (`alloc`): our caller's `ra` and
+`s0`–`s5`, then `K` and `V` (64 bytes each, of which the first `D` are used,
+and the byte after `V` the separator of steps d, f and h.3) and `h` (`Q`
+bytes). Our
 variables live in `s0`–`s5`, which the functions we call save and restore:
 `s0` = `scratch`, `s1` = the frame, `s2` = `out`, `s3` = `d`, `s4` =
 `digest` and `s5` = the candidates left. In `scratch`: HMAC's inner and
 outer states (at 0 and 192), which `core` then overwrites. The functions we
 call use the stack below the frame.
 
-1. `h = bits2octets(digest)`: the leftmost 32 bytes, big-endian, read into
+1. `h = bits2octets(digest)`: the leftmost `Q` bytes, big-endian, read into
    `scratch` and reduced modulo `n` by a call of the order's addition with
-   zero (they are below `2^256 < 2n`), then written big-endian to `h`.
+   zero (they are below `2^(8 Q) < 2n`), then written big-endian to `h`.
 2. Steps b to g: `V = 0x01…`, `K = 0x00…`, `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`,
    `V = HMAC_K(V)`, `K = HMAC_K(V ‖ 0x01 ‖ d ‖ h)`, `V = HMAC_K(V)`, each
    message absorbed in parts from where they are (`V` and the separator, `d`,
@@ -55,21 +57,18 @@ open VG.Impl.Hmac.Stream.RISCV64 (Hash mov)
 def fK : Nat := 64
 def fV : Nat := 128
 def fH : Nat := 192
-/-- The frame's size, a multiple of 16. -/
-def frB : Nat := 224
 
-/-! Where things are in `scratch`: HMAC's states, and the numbers of
+/-! Where things are in `scratch`: HMAC's states, and the first number of
 `bits2octets`. -/
 def sIn : Nat := 0
 def sOut : Nat := 192
 def sX : Nat := 0
-def sZ : Nat := 32
-def sY : Nat := 64
 
 /-- What the code needs: the hash function's streaming functions with
 HMAC's `init` and `finalize` over them (`H`) and their names, the arithmetic
 modulo the order `n` (`FN`, whose addition `bits2octets` calls), the
-signature with a given `k` and its name, and the most candidates to try. -/
+signature with a given `k` and its name, the most candidates to try, and
+the scalars' 64-bit words. -/
 structure Cfg where
   H : Hash
   hiN : String
@@ -78,6 +77,7 @@ structure Cfg where
   coreN : String
   coreC : Prog isa
   tries : Nat
+  nw : Nat
 
 /-- Our caller's registers we save, and where, at the start of the frame. -/
 def saved : List (Reg × Nat) :=
@@ -99,18 +99,29 @@ namespace Cfg
 
 variable (c : Cfg)
 
+/-- The scalars' bytes. -/
+abbrev Q : Nat := 8 * c.nw
+
+/-- The frame's size: `h` after `fH`, a multiple of 16 for P-256's and
+P-384's scalars. -/
+def frB : Nat := fH + c.Q
+
+/-! The other numbers of `bits2octets` in `scratch`, after `sX`'s. -/
+def sZ : Nat := c.Q
+def sY : Nat := 2 * c.Q
+
 /-- Our caller's registers into the frame, which `s1` then holds; the
 arguments into the registers that keep them. -/
 def prologue : List Instr :=
   .addSp .t0 0 :: saved.map (fun (r, d) => .store .d r .t0 d) ++
     [mov .s1 .t0, mov .s2 .a0, mov .s3 .a1, mov .s4 .a2, mov .s0 .a3]
 
-/-- `h = bits2octets(digest)`: the digest's leftmost 32 bytes to `scratch`'s
+/-- `h = bits2octets(digest)`: the digest's leftmost `Q` bytes to `scratch`'s
 `sX`, zero to `sZ`, their sum modulo `n` to `sY`, and that to `h`. -/
 def reduce : Prog isa :=
-  .seq (.block (Ecdh.RISCV64.loadNum 4 sX .s4 0 ++ Ecdh.RISCV64.setConst 4 sZ 0))
-    (.seq (Weierstrass.RISCV64.addCall c.FN sY sX sZ)
-      (.block ([.li .a7 (-1)] ++ Ecdh.RISCV64.storeNum 4 sY .s1 fH)))
+  .seq (.block (Ecdh.RISCV64.loadNum c.nw sX .s4 0 ++ Ecdh.RISCV64.setConst c.nw c.sZ 0))
+    (.seq (Weierstrass.RISCV64.addCall c.FN c.sY sX c.sZ)
+      (.block ([.li .a7 (-1)] ++ Ecdh.RISCV64.storeNum c.nw c.sY .s1 fH)))
 
 /-- `K = 0x00…`, `V = 0x01…`, `D` bytes each. -/
 def initKV : List Instr :=
@@ -153,7 +164,7 @@ def sep (b : Nat) : List Instr := Words.RISCV64.storeBytes .t0 .s1 (fV + c.H.D) 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
 def rekeyFull (b : Nat) : Prog isa :=
   .seq (.block (c.sep b))
-    (.seq (c.hmac [(.s1, fV, c.H.D + 1), (.s3, 0, 32), (.s1, fH, 32)] fK) c.hmacV)
+    (.seq (c.hmac [(.s1, fV, c.H.D + 1), (.s3, 0, c.Q), (.s1, fH, c.Q)] fK) c.hmacV)
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
 def rekey : Prog isa :=
@@ -186,7 +197,7 @@ def tryOne : Prog isa :=
     (.ite (.nonzero .t6) (.seq c.rekey (.block again)) (.block stop)))))
 
 /-- `K`, `V` and `h` cleared. -/
-def wipe : List Instr := .li .t0 0 :: (List.range 20).map fun j => .store .d .t0 .s1 (fK + 8 * j)
+def wipe : List Instr := .li .t0 0 :: (List.range (16 + c.nw)).map fun j => .store .d .t0 .s1 (fK + 8 * j)
 
 /-- Restore our caller's registers. -/
 def restore : List Instr := restList.map fun (r, d) => .load .d r .s1 d
@@ -200,10 +211,10 @@ def main : Prog isa :=
   (.seq (c.rekeyFull 1)
   (.seq (.block c.initCnt)
   (.seq (.loop c.tryOne (.nonzero .t6))
-    (.block (wipe ++ restore))))))))
+    (.block (c.wipe ++ restore))))))))
 
 /-- `vg_ecdsa_<curve>_<hash>_sign`. -/
-def sign : Prog isa := .frame (.alloc frB) c.main (.free frB)
+def sign : Prog isa := .frame (.alloc c.frB) c.main (.free c.frB)
 
 end Cfg
 
