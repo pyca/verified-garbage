@@ -124,4 +124,81 @@ theorem roundCall_ct (R : RoundImpl) : RelCT isa (Two RC) (roundCall R.name R.co
   refine RelCT.assoc (RelCT.seq rcPre_ct (RelCT.seq (rcCall_ct R) ?_))
   exact two_taint _ pins_RCc (by taint_decide)
 
+/-! ## Candidates and witnesses that differ
+
+A search's candidates are secret: two runs call the round from the same
+working space, of the same width, on different candidates and witnesses
+(`RCw`). The round's public data is only the working space and its width
+(`rc_pubw`), so the call leaks the same (`roundCall_ctw`). -/
+
+/-- A round's call of `w` words in the working space `B` of `L` words. -/
+structure RcW where
+  B : Addr
+  L : Nat
+  w : Nat
+
+/-- Before the call of a witness's round, on some candidate and witness. -/
+def RCw (d : RcW) (s : State) : Prop := ∃ c a, RC ⟨d.B, d.L, d.w, c, a⟩ s
+
+/-- With the arguments in `a0` and `a1`. -/
+def RCmw (d : RcW) (s : State) : Prop := ∃ c a, RCm ⟨d.B, d.L, d.w, c, a⟩ s
+
+theorem pins_RCw : Pins RCw [.a7, .s5, .t0, .s6] := by
+  rintro d s₁ s₂ ⟨c₁, a₁, h₁⟩ ⟨c₂, a₂, h₂⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · rw [h₁.1.env.a7, h₂.1.env.a7]
+  · rw [h₁.1.env.s5, h₂.1.env.s5]
+  · rw [h₁.1.env.t0, h₂.1.env.t0]
+  · rw [h₁.1.env.s6, h₂.1.env.s6]
+
+theorem rcPre_ctw : RelCT isa (Two RCw)
+    (.seq (PublicChecked.montOp 5 4 1) (.block [.addi .a0 .s6 0, ldh .a1 hWsLen])) (Two RCmw) :=
+  two_post (two_taint _ pins_RCw (by taint_decide)) fun _ _ ⟨c, a, h⟩ =>
+    WP.mono (rcPre_ok h) fun _ ht => ⟨c, a, ht⟩
+
+theorem rc_pubw {B : Addr} {L w c₁ c₂ a₁ a₂ : Nat} {s₁ s₂ : State} (h₁ : RCm ⟨B, L, w, c₁, a₁⟩ s₁)
+    (h₂ : RCm ⟨B, L, w, c₂, a₂⟩ s₂) (hsp : s₁.sp = s₂.sp) :
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pub
+      (s₁.callEntry.withRegions [] [⟨B, 8 * L⟩]) (s₂.callEntry.withRegions [] [⟨B, 8 * L⟩]) := by
+  have e96 : (96 : Nat) = 95 + 1 := rfl
+  rw [e96]
+  sig_reduce [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, RISCV64.abi,
+    RISCV64.argRegs]
+  obtain ⟨p₁, -, a0₁, a1₁, -⟩ := h₁
+  obtain ⟨p₂, -, a0₂, a1₂, -⟩ := h₂
+  rw [a0₁, a1₁, a0₂, a1₂, p₁.width, p₂.width]
+  exact ⟨⟨hsp, rfl⟩, fun _ _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
+
+/-- After the call: the working space's address. -/
+def RCcw (d : RcW) (s : State) : Prop := s.gpr .s6 = d.B
+
+theorem rcCall_ctw (R : RoundImpl) : RelCT isa (Two RCmw) (.call R.name R.code) (Two RCcw) := by
+  refine two_post ?_ fun d s ⟨c, a, h⟩ => ?_
+  · intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+    obtain ⟨d, ⟨c₁, a₁, h₁⟩, ⟨c₂, a₂, h₂⟩, hsp⟩ := hp
+    exact RelCT.call (P := fun a b => a = s₁ ∧ b = s₂) R.verified.1 R.verified.2.1 [] [⟨d.B, 8 * d.L⟩]
+      (fun a b ⟨ha, hb⟩ => by
+        subst ha hb
+        exact ⟨rcm_pre h₁, rcm_pre h₂, rc_pubw h₁ h₂ hsp, scr_covers' h₁.1.env.hs, fun _ _ => scr_covers h₁.1.env.hs,
+          scr_covers' h₂.1.env.hs, fun _ _ => scr_covers h₂.1.env.hs⟩)
+      _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
+  · have h6 := h.1.env.s6
+    exact WP.callAny (k := Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96)
+      R.verified.1 (rd := []) (wr := [⟨d.B, 8 * d.L⟩]) (rcm_pre h) (scr_covers' h.1.env.hs)
+      (fun _ _ => scr_covers h.1.env.hs)
+      (fun s' _ _ _ _ hcs _ => (hcs .s6 (by decide)).trans h6) (by have := R.stack; omega_arith)
+
+theorem pins_RCcw : Pins RCcw [.s6] := by
+  rintro d s₁ s₂ h₁ h₂ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  subst hr; rw [h₁, h₂]
+
+/-- The round's call leaks the same from the same working space and width,
+whatever the candidates and witnesses. -/
+theorem roundCall_ctw (R : RoundImpl) : RelCT isa (Two RCw) (roundCall R.name R.code) fun _ _ => True := by
+  unfold roundCall
+  refine RelCT.assoc (RelCT.seq rcPre_ctw (RelCT.seq (rcCall_ctw R) ?_))
+  exact two_taint _ pins_RCcw (by taint_decide)
+
 end VG.Proof.MillerRabin.RISCV64.Search

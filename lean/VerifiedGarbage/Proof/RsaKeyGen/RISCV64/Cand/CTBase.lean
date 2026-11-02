@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
 import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.Framework.Omega
 
+-- separate module: the constant-time proofs (still to come) import what two runs share without the contract's
+-- proof
+
 /-!
 # A candidate on RISC-V: what two runs share
 
