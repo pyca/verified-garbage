@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed
-import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarBit
+import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarCompare
 import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarLoop
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
@@ -245,7 +245,7 @@ theorem bytes_keep {m m' : Mem} {rs : List Region} (hf : Frame rs m m')
 theorem mulAddEngine_ok {b : Addr} {s : State} (hc : Ctx b s) {R K Sc : Nat} (hVr : V s.mem b 64 = R)
     (hVk : V s.mem b 96 = K) (hVs : V s.mem b 128 = Sc) :
     WP isa scalarMulAddEngine s fun t =>
-      Rest [.a1, .a2, .a4, .a5, .a6, .a7, .t0, .t3, .t4, .t5] s t ∧ Frame [⟨b, 1024⟩] s.mem t.mem ∧
+      Rest [.a1, .a2, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6] s t ∧ Frame [⟨b, 1024⟩] s.mem t.mem ∧
       V t.mem b SR = (K * Sc + R) % L := by
   have hA := eACC_eq
   have hS := SR_eq
@@ -269,11 +269,7 @@ theorem mulAddEngine_ok {b : Addr} {s : State} (hc : Ctx b s) {R K Sc : Nat} (hV
       ∃ r' ∈ ([⟨b, 1024⟩] : List Region), r.Sub r' := fun o n ho r hr =>
     ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact lowsub b ho⟩
   refine WP.mono (engine_ok hc10 (p := b + BitVec.ofNat 64 512) e10
-    (fun i hi => by rw [Offset.add_add]; exact hc10.inR (by omega_arith))
-    (fun i hi => by
-      rw [Offset.add_add]
-      exact fun hc => Offset.disjoint b (d := 512 + i) (n := 1) (e := SR) (k := 64) (.inr (by omega_arith))
-        (by omega_arith) (by omega_arith) _ (Region.contains_self _ _) hc)) fun t ⟨rt, ft, vt⟩ => ⟨?_, ?_, ?_⟩
+    (fun k hk => by rw [Offset.add_add]; exact hc10.inR (by omega_arith))) fun t ⟨rt, ft, vt⟩ => ⟨?_, ?_, ?_⟩
   · exact (h8.rest.mono (by decide)).trans ((r9.mono (by decide)).trans ((r10.mono (by decide)).trans
       (rt.mono (by decide))))
   · exact (h8.frame.sub (sub1 ACC 64 (by omega_arith))).trans ((f9.sub (sub1 ACC 64 (by omega_arith))).trans
