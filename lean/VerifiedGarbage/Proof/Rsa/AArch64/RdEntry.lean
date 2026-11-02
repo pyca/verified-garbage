@@ -1,10 +1,24 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdArgs
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
+import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpMain
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
+import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
+import VerifiedGarbage.Proof.Rsa.AArch64.Div
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
-import VerifiedGarbage.Proof.Rsa.AArch64.RpOut
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
@@ -15,14 +29,81 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
-# `vg_rsa_recover_primes` on AArch64: correctness
+# `vg_rsa_recover_primes_det` on AArch64: the entry and the failure path
 
-`Recover.code mul`, from a state its contract allows, writes `primesKey` of
-its inputs (`rpCode_correct`), against `rpA`, which states the shared
-contract's precondition on the registers and the stack.
+`rpPre`: the precondition on the registers and the stack (`rdA`'s but for
+`e_len ≤ 8`), and `RpCtx`, what it gives (`rpCtx_of`). The entry and the
+check of the modulus (`rpHead_ok'`) leave `RpPre`; zeros and 0 if the key
+is refused (`rpFail_ok`).
 -/
 
 @[expose] public section
+
+namespace VG.Proof.Rsa.AArch64
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Impl.Rsa.AArch64.Recover
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+/-- `fail`: zeros to `p` and `q`, and 0 returned. -/
+theorem rpFail_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B) (hZ : 8 * 32 ≤ Z)
+    {k el dl : Nat} {pP pQ pN pE pD : Addr} (ha : RpArgs s.mem B k el dl pP pQ pN pE pD) (hk1 : 1 ≤ k)
+    (hk2 : k < 2 ^ 31) (oP : OutOk s B Z pP k) (oQ : OutOk s B Z pQ k) (a : Apart pP k pQ k) :
+    WP isa fail s fun t =>
+      (∀ i < k, t.mem (pP + BitVec.ofNat 64 i) = 0) ∧ (∀ i < k, t.mem (pQ + BitVec.ofNat 64 i) = 0) ∧
+      t.gpr .x0 = 0 ∧
+      (∀ x, (∀ i < k, x ≠ pP + BitVec.ofNat 64 i) → (∀ i < k, x ≠ pQ + BitVec.ofNat 64 i) → t.mem x = s.mem x) ∧
+      Keep (.x0 :: mmRegs) s t := by
+  have hn := hs.nowrap
+  have fw : ∀ {m m' : Mem} {op : Addr} {len : Nat}, (∀ j < len, Z ≤ ofs B (op + BitVec.ofNat 64 j)) →
+      (∀ x, (∀ j < len, x ≠ op + BitVec.ofNat 64 j) → m' x = m x) → ∀ i < 32, word m' B (8 * i) = word m B (8 * i) :=
+    fun hsep hx i hi => (frm_scr hsep hx).word_eq (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+  unfold fail
+  simp only [seqs]
+  refine WP.seq (WP.mono (zeroOut_ok hs h0 hZ (by decide) (by decide) ha.p ha.k hk1 hk2 oP)
+    fun s₁ ⟨z₁, x₁, k₁⟩ => ?_)
+  have w₁ := fw oP.sep x₁
+  have hs₁ := hs.congr k₁.wr
+  have h0₁ : s₁.gpr .x0 = B := (k₁.gpr .x0 (by decide)).trans h0
+  refine WP.seq (WP.mono (zeroOut_ok hs₁ h0₁ hZ (by decide) (by decide) (by rw [w₁ _ (by decide)]; exact ha.q)
+    (by rw [w₁ _ (by decide)]; exact ha.k) hk1 hk2 ⟨fun i hi => by rw [k₁.wr]; exact oQ.wr i hi, oQ.sep⟩)
+    fun s₂ ⟨z₂, x₂, k₂⟩ => ?_)
+  refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = 0 ∧ t.mem = s₂.mem) (by brun) (by decide) (by decide)
+    (by decide +kernel)) fun t ⟨⟨hx, hm⟩, k₃⟩ => ?_
+  have kk := (k₁.trans k₂).trans k₃
+  rw [hm]
+  refine ⟨fun i hi => ?_, z₂, hx, fun x n1 n2 => by rw [x₂ x n2, x₁ x n1], kk.mono (by decide)⟩
+  rw [x₂ _ (fun j hj => a i hi j hj)]
+  exact z₁ i hi
+
+end VG.Proof.Rsa.AArch64
+
+namespace VG.Proof.Rsa.AArch64
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Impl.Rsa.AArch64.Recover
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep eval_zero)
+open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt sMask)
+open VG.Proof.Rsa (pqOf)
+
+/-- The inputs as numbers. -/
+abbrev RpIn.N (I : RpIn) : Nat := Spec.Rsa.os2ip I.nb
+/-- What `main` needs on entry. -/
+structure RpPre (I : RpIn) (s : State) : Prop where
+  scr : Scr s I.B I.Z
+  x0 : s.gpr .x0 = I.B
+  args : RpArgs s.mem I.B I.k I.el I.dl I.pP I.pQ I.pN I.pE I.pD
+  n : Src s I.B I.Z I.pN I.nb
+  e : Src s I.B I.Z I.pE I.eb
+  d : Src s I.B I.Z I.pD I.db
+  L : RpLens I
+  oP : OutOk s I.B I.Z I.pP I.k
+  oQ : OutOk s I.B I.Z I.pQ I.k
+  a : Apart I.pP I.k I.pQ I.k
+  wr : s.wr = I.W
+
+end VG.Proof.Rsa.AArch64
 
 namespace VG.Proof.Rsa.AArch64
 
@@ -33,51 +114,32 @@ open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 
 /-! ## The contract on the registers and the stack -/
 
-/-- `vg_rsa_recover_primes(p = x0, p_len = x1, q = x2, q_len = x3, n = x4,
+/-- The precondition, on the registers and the stack, of
+`vg_rsa_recover_primes_det(p = x0, p_len = x1, q = x2, q_len = x3, n = x4,
 n_len = x5, e = x6, e_len = x7, d = [sp], d_len = [sp + 8],
-scratch = [sp + 16], scratch_len = [sp + 24])`. -/
-def rpA : Contract isa where
-  pre s :=
-    let p : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
-    let q : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
-    let n : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
-    let e : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
-    let d : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
-    let scr : Region := ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩
-    let args : Region := ⟨stackArgAddr s 0, 32⟩
-    s.sp.toNat + 32 ≤ 2 ^ 64 ∧
-      s.rd = [n, e, d, args] ∧ s.wr = [p, q, scr] ∧
-      p.Disjoint q ∧ p.Disjoint n ∧ p.Disjoint e ∧ p.Disjoint d ∧ p.Disjoint scr ∧ p.Disjoint args ∧
-      q.Disjoint n ∧ q.Disjoint e ∧ q.Disjoint d ∧ q.Disjoint scr ∧ q.Disjoint args ∧
-      n.Disjoint scr ∧ e.Disjoint scr ∧ d.Disjoint scr ∧ scr.Disjoint args ∧
-      (s.gpr .x0).toNat + (s.gpr .x1).toNat ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
-      (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧
-      (stackArg s 2).toNat + (stackArg s 3).toNat * 8 ≤ 2 ^ 64 ∧
-      Spec.Rsa.lenValid (s.gpr .x5).toNat ∧ (s.gpr .x1).toNat = (s.gpr .x5).toNat ∧
-      (s.gpr .x3).toNat = (s.gpr .x5).toNat ∧ 1 ≤ (s.gpr .x7).toNat ∧
-      (s.gpr .x7).toNat ≤ (s.gpr .x5).toNat ∧ 1 ≤ (stackArg s 1).toNat ∧
-      (stackArg s 1).toNat ≤ (s.gpr .x5).toNat ∧
-      Spec.Rsa.scratchWords (s.gpr .x5).toNat ≤ (stackArg s 3).toNat
-  post s s' :=
-    Spec.Rsa.writtenAll s'.mem [(s.gpr .x0, (s.gpr .x5).toNat), (s.gpr .x2, (s.gpr .x5).toNat)]
-      ((s'.gpr .x0).setWidth 32)
-      ((Spec.Rsa.primesKey (Spec.Rsa.bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat)
-        (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
-        (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)).1.map fun v => [v.1, v.2])
-  pub s₁ s₂ :=
-    (∀ r ∈ argRegs, s₁.gpr r = s₂.gpr r) ∧ s₁.sp = s₂.sp ∧
-      (List.range 4).map (stackArg s₁) = (List.range 4).map (stackArg s₂) ∧
-      Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat =
-        Spec.Rsa.bytesAt s₂.mem (s₂.gpr .x4) (s₂.gpr .x5).toNat ∧
-      Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x6) (s₁.gpr .x7).toNat =
-        Spec.Rsa.bytesAt s₂.mem (s₂.gpr .x6) (s₂.gpr .x7).toNat ∧
-      (Spec.Rsa.primesKey (Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat)
-        (Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x6) (s₁.gpr .x7).toNat)
-        (Spec.Rsa.bytesAt s₁.mem (stackArg s₁ 0) (stackArg s₁ 1).toNat)).2 =
-      (Spec.Rsa.primesKey (Spec.Rsa.bytesAt s₂.mem (s₂.gpr .x4) (s₂.gpr .x5).toNat)
-        (Spec.Rsa.bytesAt s₂.mem (s₂.gpr .x6) (s₂.gpr .x7).toNat)
-        (Spec.Rsa.bytesAt s₂.mem (stackArg s₂ 0) (stackArg s₂ 1).toNat)).2
+scratch = [sp + 16], scratch_len = [sp + 24])` but for `e_len ≤ 8`. -/
+def rpPre : State → Prop := fun s =>
+  let p : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
+  let q : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+  let n : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
+  let e : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
+  let d : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
+  let scr : Region := ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩
+  let args : Region := ⟨stackArgAddr s 0, 32⟩
+  s.sp.toNat + 32 ≤ 2 ^ 64 ∧
+    s.rd = [n, e, d, args] ∧ s.wr = [p, q, scr] ∧
+    p.Disjoint q ∧ p.Disjoint n ∧ p.Disjoint e ∧ p.Disjoint d ∧ p.Disjoint scr ∧ p.Disjoint args ∧
+    q.Disjoint n ∧ q.Disjoint e ∧ q.Disjoint d ∧ q.Disjoint scr ∧ q.Disjoint args ∧
+    n.Disjoint scr ∧ e.Disjoint scr ∧ d.Disjoint scr ∧ scr.Disjoint args ∧
+    (s.gpr .x0).toNat + (s.gpr .x1).toNat ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 2).toNat + (stackArg s 3).toNat * 8 ≤ 2 ^ 64 ∧
+    Spec.Rsa.lenValid (s.gpr .x5).toNat ∧ (s.gpr .x1).toNat = (s.gpr .x5).toNat ∧
+    (s.gpr .x3).toNat = (s.gpr .x5).toNat ∧ 1 ≤ (s.gpr .x7).toNat ∧
+    (s.gpr .x7).toNat ≤ (s.gpr .x5).toNat ∧ 1 ≤ (stackArg s 1).toNat ∧
+    (stackArg s 1).toNat ≤ (s.gpr .x5).toNat ∧
+    Spec.Rsa.scratchWords (s.gpr .x5).toNat ≤ (stackArg s 3).toNat
 
 /-! ## The entry -/
 
@@ -160,35 +222,6 @@ theorem rpEntry_ok {s : State} {B : Addr} (hB : stackArg s 2 = B)
       (stackArg s 0) (stackArg s 1)
   exact ⟨h0, h2, h3, hP, hQ, hN, hK, hE, hEl, hD, hDl, ho', (k12.trans k₃).mono (by decide)⟩
 
-/-! ## The result -/
-
-/-- What `Recover.code` leaves, from a valid modulus. -/
-theorem rpWritten_of {m : Mem} {pp pq : Addr} {x0 : BitVec 64} {nb eb db : List Byte}
-    {res : Option (Nat × Nat)}
-    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) nb.length = true)
-    (hres : (Spec.Rsa.recoverPrimes (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip eb) (Spec.Rsa.os2ip db)).1 = res)
-    (b1 : Spec.Rsa.bytesAt m pp nb.length = Spec.Rsa.i2osp (fstOr res) nb.length)
-    (b2 : Spec.Rsa.bytesAt m pq nb.length = Spec.Rsa.i2osp (sndOr res) nb.length)
-    (hr : x0 = BitVec.ofNat 64 res.isSome.toNat) :
-    Spec.Rsa.writtenAll m [(pp, nb.length), (pq, nb.length)] (x0.setWidth 32)
-      ((Spec.Rsa.primesKey nb eb db).1.map fun v => [v.1, v.2]) := by
-  simp only [Spec.Rsa.primesKey, hv, ite_true]
-  rw [hr, setWidth_flag]
-  subst hres
-  generalize Spec.Rsa.recoverPrimes (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip eb) (Spec.Rsa.os2ip db) = rp at b1 b2 ⊢
-  obtain ⟨r1, r2⟩ := rp
-  dsimp only at b1 b2 ⊢
-  cases r1 with
-  | none =>
-    simp only [fstOr, sndOr, Option.isSome_none, Bool.false_eq_true, ite_false, Option.map_none, Spec.Rsa.writtenAll,
-      List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at b1 b2 ⊢
-    exact ⟨trivial, by rw [b1, i2osp_zero'], by rw [b2, i2osp_zero']⟩
-  | some v =>
-    obtain ⟨p, q⟩ := v
-    simp only [fstOr, sndOr, Option.isSome_some, ite_true, Option.map_some, Spec.Rsa.writtenAll, List.map_cons,
-      List.map_nil] at b1 b2 ⊢
-    exact ⟨trivial, by rw [b1, b2]⟩
-
 /-! ## The precondition, as the code uses it -/
 
 /-- The inputs of `main`, from the entry state. -/
@@ -224,8 +257,8 @@ structure RpCtx (s : State) : Prop where
   oQ : OutOk s (stackArg s 2) ((stackArg s 3).toNat * 8) (s.gpr .x2) (s.gpr .x5).toNat
   a : Apart (s.gpr .x0) (s.gpr .x5).toNat (s.gpr .x2) (s.gpr .x5).toNat
 
-theorem rpCtx_of {s : State} (h : rpA.pre s) : RpCtx s := by
-  simp only [rpA] at h
+theorem rpCtx_of {s : State} (h : rpPre s) : RpCtx s := by
+  simp only [rpPre] at h
   obtain ⟨hsp, hrd, hwr, dpq, dpn, dpe, dpd, dps, dpa, dqn, dqe, dqd, dqs, dqa, dns, des, dds, dsa,
     wP, wQ, wN, wE, wD, wS, hk, hx1, hx3, hel1, hel2, hdl1, hdl2, hsl⟩ := h
   obtain ⟨hk1, hk2⟩ := hk
@@ -286,50 +319,5 @@ theorem rpPre_of {s t₁ t : State} (c : RpCtx s) (h : RpHeadPost s t₁) (hm : 
       oP := ⟨fun i hi => by rw [kk.wr]; exact c.oP.wr i hi, c.oP.sep⟩,
       oQ := ⟨fun i hi => by rw [kk.wr]; exact c.oQ.wr i hi, c.oQ.sep⟩,
       a := c.a, wr := kk.wr }
-
-/-- `vg_rsa_recover_primes` with the Montgomery multiplication `M`. -/
-theorem rpCode_correct [InvLaw] (M : Mont) (s : State) (h : rpA.pre s) :
-    ∃ t s', Exec isa (code M.mm) s t s' ∧ abiPreserved s s' ∧ rpA.post s s' := by
-  have c := rpCtx_of h
-  clear h
-  have hk1 : 64 ≤ (s.gpr .x5).toNat := c.L.k1
-  have hk2 : (s.gpr .x5).toNat ≤ 1024 := c.L.k2
-  suffices hwp : WP isa (code M.mm) s fun s' => abiPreserved s s' ∧ rpA.post s s' by
-    obtain ⟨t, s', he, hg, hp⟩ := hwp
-    exact ⟨t, s', he, hg, hp⟩
-  unfold code
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (rpHead_ok' c) fun t₁ h₁ => ?_
-  have hnb₁ := c.n.congrK h₁.inScr h₁.keep
-  have hnl : (rpIn s).nb.length = (s.gpr .x5).toNat := bytesAt_length _ _ _
-  refine WP.mono (WP.keep [.x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12] (invalid_ok h₁.x2 h₁.x3 hk1 hk2 hnl
-    (fun i hi => hnb₁.rd i (by rw [hnl]; exact hi)) (fun i hi => hnb₁.val i _))
-    (by decide) (by decide) (by decide +kernel)) fun t₂ ⟨⟨hz₂, hm₂, _⟩, k₂⟩ => ?_
-  have hpre := rpPre_of c h₁ hm₂ k₂
-  have kk := h₁.keep.trans k₂
-  refine WP.ite (!Spec.Rsa.modulusValid (rpIn s).N (s.gpr .x5).toNat)
-    (by rw [eval_zero, hz₂]; cases Spec.Rsa.modulusValid _ _ <;> rfl) (fun hb => ?_) (fun hb => ?_)
-  · have hv : Spec.Rsa.modulusValid (rpIn s).N (s.gpr .x5).toNat = false := by simpa using hb
-    have z : 128 * (s.gpr .x5).toNat ≤ (stackArg s 3).toNat * 8 := c.L.z
-    exact WP.mono (rpFail_ok hpre.scr hpre.x0 (show 8 * 32 ≤ (stackArg s 3).toNat * 8 by omega_arith) hpre.args
-      (show 1 ≤ (s.gpr .x5).toNat by omega_arith) (show (s.gpr .x5).toNat < 2 ^ 31 by omega_arith) hpre.oP hpre.oQ hpre.a)
-      fun t ⟨z1, z2, hax, _, kt⟩ => ⟨abiPreserved_of_keep ((kk.trans kt).mono (by decide)), by
-        show Spec.Rsa.writtenAll _ _ _ _
-        have hnone : (Spec.Rsa.primesKey (rpIn s).nb (rpIn s).eb (rpIn s).db).1 = none := by
-          simp only [Spec.Rsa.primesKey]
-          rw [hnl, hv]; simp
-        simp only [rpIn] at hnone
-        rw [hnone, hax]
-        simp only [Option.map_none, Spec.Rsa.writtenAll, List.mem_cons, List.not_mem_nil, or_false,
-          forall_eq_or_imp, forall_eq]
-        exact ⟨rfl, bytesAt_zero z1, bytesAt_zero z2⟩⟩
-  · have hv : Spec.Rsa.modulusValid (rpIn s).N (s.gpr .x5).toNat = true := by simpa using hb
-    refine WP.mono (rpMain_ok M hpre hv) fun t ⟨res, hres, b1, b2, hax, _, kt⟩ =>
-      ⟨abiPreserved_of_keep ((kk.trans kt).mono (by decide)), ?_⟩
-    have := rpWritten_of (m := t.mem) (pp := s.gpr .x0) (pq := s.gpr .x2) (by rw [hnl]; exact hv) hres
-      (by rw [hnl]; exact b1) (by rw [hnl]; exact b2) hax
-    rw [hnl] at this
-    exact this
 
 end VG.Proof.Rsa.AArch64

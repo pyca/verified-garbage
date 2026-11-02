@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
 import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpProd
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpProd
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PubValid

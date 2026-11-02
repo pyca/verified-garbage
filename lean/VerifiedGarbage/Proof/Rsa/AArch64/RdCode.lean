@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdMain
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpCode
-import VerifiedGarbage.Proof.Rsa.AArch64.RpOut
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdEntry
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
@@ -14,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 # `vg_rsa_recover_primes_det` on AArch64: correctness
 
 `RecoverDet.code`, from a state its contract allows, writes `primesKeyDet`
-of its inputs (`rdCode_correct`), against `rdA`: `vg_rsa_recover_primes`'
-contract on the registers and the stack (`rpA`) with `e` at most 8 bytes.
+of its inputs (`rdCode_correct`), against `rdA`: the precondition on the
+registers and the stack (`rpPre`) with `e` at most 8 bytes.
 -/
 
 @[expose] public section
@@ -29,7 +28,7 @@ open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 
 /-- `vg_rsa_recover_primes_det`'s contract on the registers and the stack. -/
 def rdA : Contract isa where
-  pre s := rpA.pre s ∧ (s.gpr .x7).toNat ≤ 8
+  pre s := rpPre s ∧ (s.gpr .x7).toNat ≤ 8
   post s s' :=
     Spec.Rsa.writtenAll s'.mem [(s.gpr .x0, (s.gpr .x5).toNat), (s.gpr .x2, (s.gpr .x5).toNat)]
       ((s'.gpr .x0).setWidth 32)

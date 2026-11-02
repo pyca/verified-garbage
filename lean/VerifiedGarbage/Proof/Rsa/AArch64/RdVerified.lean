@@ -25,7 +25,7 @@ open VG VG.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Proof.Bignum VG.Proof.Bignum.AArc
 theorem stackArgs_four (s : State) :
     List.map (stackArg s) (List.range 4) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3] := rfl
 
-/-- A state meeting `rpA.pre`: a 512-bit modulus, one-byte exponents, and
+/-- A state meeting `rdA.pre`: a 512-bit modulus, one-byte exponents, and
 the stack arguments at `0x6000`. -/
 def rpSatState : State where
   gpr r := match r with
@@ -42,12 +42,12 @@ theorem rd_implies : rdA.Implies (Spec.Rsa.recoverPrimesDetContract abi) where
   pre := by
     intro s h
     -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdA, rpA, stackArgs_four,
+    sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdA, rpPre, stackArgs_four,
       List.append_eq] at h
-    sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdA, rpA, stackArgs_four,
+    sig_pre [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdA, rpPre, stackArgs_four,
       List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdA, rpA, stackArgs_four,
+    sig_reduce [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdA, rpPre, stackArgs_four,
       List.append_eq]
     sig_and_intros
     sig_close
@@ -65,7 +65,7 @@ theorem rd_implies : rdA.Implies (Spec.Rsa.recoverPrimesDetContract abi) where
     refine ⟨?_, hsp, by rw [stackArgs_four, stackArgs_four, a0, a1, a2, a3], hn, he⟩
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩
-  sat := by sig_implies_sat [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdA, rpA,
+  sat := by sig_implies_sat [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rdA, rpPre,
     stackArgs_four, List.append_eq] [rpSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using rpSatState
 
 /-- `vg_rsa_recover_primes_det`. -/

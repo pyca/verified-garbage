@@ -4,7 +4,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
-import VerifiedGarbage.Proof.Rsa.AArch64.RpSkip
+import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

@@ -1,18 +1,39 @@
 module
-public import VerifiedGarbage.Impl.Rsa.AArch64.Recover
-public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
+public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Rsa.AArch64.Div
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Bignum.AArch64.Csub
+import VerifiedGarbage.Proof.Framework.Contract
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-!
-# `vg_rsa_recover_primes` on AArch64: `M = d e`
+# `vg_rsa_recover_primes_det` on AArch64: shared pieces
 
-`prod` zeroes `M`'s two arrays and adds `e_j d` at word `j` of `M` for each
-word `j` of `e`, by `mulRows` (`prod_ok`).
+`M = d e` by `Crt.mulRows` (`prod_ok`), the mask of a zero register
+(`zeroMask_ok`), and the subtraction loop (`subLoop_ok`, `subSet_ok`).
 -/
 
 @[expose] public section
@@ -142,5 +163,79 @@ theorem prod_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
   refine WP.mono (prodLoop_ok h₂ hel₂ he1 he2 (by rw [o12.wv (Or.inl (by omega_arith)) (by omega_arith)]; exact hE) hz)
     fun t ⟨hv, o, k₃⟩ => ⟨by rw [hv, o12.wv (Or.inl (by omega_arith)) (by omega_arith), o12.wv (Or.inl (by omega_arith)) (by omega_arith)],
       fun x hx => by rw [o x hx, o12 x hx], ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+
+end VG.Proof.Rsa.AArch64
+
+namespace VG.Proof.Rsa.AArch64
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Impl.Rsa.AArch64.Recover
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+/-- A word's low bit, as a word. -/
+theorem and_one (x : BitVec 64) : x &&& BitVec.setWidth 64 1#16 = BitVec.ofNat 64 (x.toNat % 2) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, show (BitVec.setWidth 64 1#16).toNat = 1 from rfl, Nat.and_one_is_mod, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (show x.toNat % 2 < 2 ^ 64 by omega_arith)]
+
+/-- The mask of an even word, from its low bit. -/
+theorem low_sub_one (x : BitVec 64) :
+    (x &&& BitVec.setWidth 64 1#16) - BitVec.ofNat 64 1 = mask (decide (x.toNat % 2 = 0)) := by
+  rw [and_one]
+  rcases Nat.mod_two_eq_zero_or_one x.toNat with h | h <;> rw [h] <;> decide
+
+/-- `zeroMask`: `x15` the mask of `x9 = 0`, and `x7 = 0`. -/
+theorem zeroMask_ok (s : State) :
+    WP isa (.block zeroMask) s fun t =>
+      (t.gpr .x15 = mask (decide (s.gpr .x9 = 0)) ∧ t.gpr .x7 = 0 ∧ t.mem = s.mem) ∧ Keep [.x3, .x4, .x7, .x15] s t :=
+  WP.keep [.x3, .x4, .x7, .x15] (by brun [zeroMask, borrowMask, csel_mask', subs_one_c, Bool.not_not])
+    (by decide) (by decide) (by decide +kernel)
+
+end VG.Proof.Rsa.AArch64
+
+namespace VG.Proof.Rsa.AArch64
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Impl.Rsa.AArch64.Recover
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt)
+
+/-- The bases of a subtraction `[c] := [a] - [b]` over `w` words, from the
+carry set. -/
+theorem subSet_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (a b c : Nat) :
+    WP isa (.block (ws ++ [movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7] ++ base a .x16 ++ base b .x17 ++
+      base c .x13)) s fun t =>
+      (t.gpr .x16 = off B (slot w a) ∧ t.gpr .x17 = off B (slot w b) ∧ t.gpr .x13 = off B (slot w c) ∧
+        t.gpr .x14 = BitVec.ofNat 64 w ∧ t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x7 = 0 ∧ t.c = true ∧
+        t.mem = s.mem) ∧ Keep [.x3, .x7, .x11, .x12, .x13, .x14, .x16, .x17] s t := by
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono h.ws_ok fun t₁ ⟨⟨h12, h11, m₁, _⟩, k₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.x3, .x7, .x14] (Q := fun t => t.gpr .x14 = BitVec.ofNat 64 w ∧ t.gpr .x7 = 0 ∧
+      t.c = true ∧ t.mem = t₁.mem) (by brun [h12]) (by decide) (by decide) (by decide +kernel))
+    fun t₂ ⟨⟨h14, h7, hc, m₂⟩, k₂⟩ => ?_
+  have h0₂ : t₂.gpr .x0 = B := ((k₁.trans k₂).gpr .x0 (by decide)).trans h.x0
+  rw [← List.append_assoc]
+  refine WP.mono (base3_ok a b c .x16 .x17 .x13 h0₂ ((k₂.gpr .x11 (by decide)).trans h11))
+    fun t ⟨⟨h16, h17, h13, m₃, c₃⟩, k₃⟩ => ⟨⟨h16, h17, h13, (k₃.gpr .x14 (by decide)).trans h14,
+      (k₃.gpr .x12 (by decide)).trans ((k₂.gpr .x12 (by decide)).trans h12), (k₃.gpr .x7 (by decide)).trans h7,
+      c₃.trans hc, by rw [m₃, m₂, m₁]⟩, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+
+/-- The loop of `subBody`: `[x13] := [x16] - [x17]` over `N` words, from the
+carry set. -/
+theorem subLoop_ok {s : State} {B : Addr} {Z N eA eN eT : Nat} (hs : Scr s B Z)
+    (h16 : s.gpr .x16 = off B eA) (h17 : s.gpr .x17 = off B eN) (h13 : s.gpr .x13 = off B eT)
+    (h14 : s.gpr .x14 = BitVec.ofNat 64 N) (hc : s.c = true) (hN1 : 1 ≤ N) (hN : N < 2 ^ 31)
+    (hA : eA + 8 * N ≤ Z) (hNz : eN + 8 * N ≤ Z) (hT : eT + 8 * N ≤ Z)
+    (sA : eT + 8 * N ≤ eA ∨ eA + 8 * N ≤ eT) (sN : eT + 8 * N ≤ eN ∨ eN + 8 * N ≤ eT) :
+    WP isa (countLoop .x14 subBody) s fun t =>
+      wv t.mem B eT N + wv s.mem B eN N = wv s.mem B eA N + 2 ^ (64 * N) * (!t.c).toNat ∧
+      Outside B eT (8 * N) s.mem t.mem ∧ Keep [.x3, .x4, .x13, .x14, .x16, .x17] s t := by
+  unfold countLoop subBody
+  refine WP.mono (wp_countdown (N := N) (by omega_arith) (by omega_arith) (SubInv s B Z eA eN eT)
+    (fun j hj t hI _ => subStep_ok hA hNz hT sA sN hj hI)
+    ⟨hs, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl, by rw [h13]; rfl, Outside.refl _ _ _ _,
+      by rw [hc]; rfl⟩ h14) fun t hI => ⟨hI.val, hI.out, hI.keep⟩
 
 end VG.Proof.Rsa.AArch64

@@ -9,12 +9,12 @@ import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpMont
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 public import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 public import VerifiedGarbage.Proof.Rsa.AArch64.Div
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpIn
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdArgs
 
 /-!
 # `vg_rsa_recover_primes_det` on AArch64: the widths
