@@ -308,7 +308,7 @@ theorem addPt_ok (hL : Law W) {base : Addr} {s : State} (hw : WsReg s base) (hK 
     WP isa (Cfg.addPt p256 p q o) s fun s' =>
       Kp s s' ∧ Unch base (addW o) s.mem s'.mem ∧ PtOk base s' o (Spec.Weierstrass.add P P') := by
   have hp0 : 0 < W.p := by decide
-  rw [Cfg.addPt_am3 _ rfl]
+  rw [Cfg.addPt]
   have hI : Inv 4 base W.p wS (rcbR S3 p q) (fun x => toM W.p (2 ^ (64 * 4)) (wordsVal s.mem base x 4)) s := by
     refine ⟨hw, fun x hx => hsl x (List.mem_append_right _ hx), fun x hx => ?_, fun x _ => rfl⟩
     simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
