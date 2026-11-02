@@ -848,6 +848,35 @@ class Interleaving(unittest.TestCase):
                          [('head', None, None), ('base', None, None)])
 
 
+class CpuFeatures(unittest.TestCase):
+    """`VG_CPU_FEATURES` less the features a checkout's src/cpu.rs does not
+    know, from its table of names and bits or an older list of names."""
+
+    def cpu_features(self, cpu, features):
+        with tempfile.TemporaryDirectory() as tmp:
+            pathlib.Path(tmp, 'src').mkdir()
+            pathlib.Path(tmp, 'src/cpu.rs').write_text(cpu)
+            with mock.patch.dict(os.environ, {'VG_CPU_FEATURES': features}):
+                return bench_compare.cpu_features(pathlib.Path(tmp))
+
+    def test_both_shapes(self):
+        for cpu in (CPU, CPU_BITS, CPU_BITS.replace('const NAMES', 'pub(crate) const NAMES')):
+            with self.subTest(cpu=cpu[:60]):
+                self.assertEqual(self.cpu_features(cpu, 'aes,avx512f,neon'), 'aes,neon')
+                self.assertEqual(self.cpu_features(cpu, 'avx512f'), 'none')
+                self.assertEqual(self.cpu_features(cpu, 'none'), 'none')
+                self.assertEqual(self.cpu_features(cpu, ''), '')
+
+    def test_this_checkout(self):
+        with mock.patch.dict(os.environ, {'VG_CPU_FEATURES': 'aes,sha,nonexistent,umaal'}):
+            self.assertEqual(bench_compare.cpu_features(pathlib.Path('.')), 'aes,sha,umaal')
+
+    def test_no_table_names_the_file(self):
+        with self.assertRaises(SystemExit) as raised:
+            self.cpu_features('const FEATURES: u32 = 0;', 'aes')
+        self.assertIn('src/cpu.rs', str(raised.exception))
+
+
 class Lacking(unittest.TestCase):
     """A benchmark run that src/cpu.rs stops for naming features the CPU
     does not have."""
