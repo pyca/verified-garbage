@@ -191,44 +191,38 @@ theorem in_st' {s : State} {p : Addr} (hw : sR p ∈ s.rd ++ s.wr) {d n : Nat} (
     InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 d) n :=
   ⟨_, hw, contains_off h (by omega)⟩
 
-theorem storeH_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.wr) :
+/-- The state plus a multiple of 8 is 8-byte aligned. -/
+theorem st_al8 {p : Addr} (ha : p.toNat % 8 = 0) {d : Nat} (hd : d % 8 = 0) :
+    (p + BitVec.ofNat 64 d).toNat % 8 = 0 := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+  have := p.isLt
+  omega
+
+theorem storeH_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.wr) (ha : (s.gpr .a0).toNat % 8 = 0) :
     WP isa (.block storeH) s fun s' =>
       s'.mem = storeHm s.mem (s.gpr .a0) (s.gpr H0) (s.gpr H1) (s.gpr H2) ∧
       (∀ r, r ≠ T1 → r ≠ T2 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  rw [storeH, List.append_assoc]
-  refine WP.block_append (WP.mono (Words64.storeLE64_ok (v := H0) (n := .a0) (off := 0)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (in_st hw (by decide)))
-    fun s₁ ⟨g₁, m₁, r₁, w₁, p₁⟩ => ?_)
-  have a₁ : s₁.gpr .a0 = s.gpr .a0 := g₁ _ (by decide) (by decide)
-  have i₁ : InRegions s₁.wr (s₁.gpr .a0 + BitVec.ofNat 64 8) 8 := by
-    rw [w₁, a₁]; exact in_st hw (by decide)
-  refine WP.block_append (WP.mono (Words64.storeLE64_ok (v := H1) (n := .a0) (off := 8)
-    (by decide) (by decide) (by decide) (by decide) (by decide) i₁)
-    fun s₂ ⟨g₂, m₂, r₂, w₂, p₂⟩ => ?_)
-  have a₂ : s₂.gpr .a0 = s.gpr .a0 := (g₂ _ (by decide) (by decide)).trans a₁
-  have i₂ : InRegions s₂.wr (s₂.gpr .a0 + BitVec.ofNat 64 16) 8 := by
-    rw [w₂, w₁, a₂]; exact in_st hw (by decide)
-  refine WP.mono (Words64.storeLE64_ok (v := H2) (n := .a0) (off := 16)
-    (by decide) (by decide) (by decide) (by decide) (by decide) i₂)
-    fun s₃ ⟨g₃, m₃, r₃, w₃, p₃⟩ => ?_
-  have ga : ∀ r, r ≠ T1 → r ≠ T2 → s₃.gpr r = s.gpr r := fun r h1 h2 => by
-    rw [g₃ r h1 h2, g₂ r h1 h2, g₁ r h1 h2]
-  refine ⟨?_, ga, ?_, ?_, ?_⟩
-  · rw [m₃, m₂, m₁, g₂ _ (by decide) (by decide), g₁ _ (by decide) (by decide),
-      g₂ _ (by decide) (by decide), g₁ _ (by decide) (by decide), g₁ _ (by decide) (by decide)]
-    rfl
-  · rw [r₃, r₂, r₁]
-  · rw [w₃, w₂, w₁]
-  · rw [p₃, p₂, p₁]
+  rw [storeH]
+  refine VG.RISCV64.Steps.wp_sd (a := off (s.gpr .a0) 0) (by decide) rfl (st_al8 ha (by decide))
+    (in_st hw (by decide)) fun s₁ g₁ => ?_
+  refine VG.RISCV64.Steps.wp_sd (a := off (s.gpr .a0) 8) (by decide) (by rw [g₁.gpr])
+    (st_al8 ha (by decide)) (by rw [g₁.wr]; exact in_st hw (by decide)) fun s₂ g₂ => ?_
+  refine VG.RISCV64.Steps.wp_sd (a := off (s.gpr .a0) 16) (by decide) (by rw [g₂.gpr, g₁.gpr])
+    (st_al8 ha (by decide)) (by rw [g₂.wr, g₁.wr]; exact in_st hw (by decide)) fun s₃ g₃ =>
+    WP.block_nil ⟨?_, fun r _ _ => by rw [g₃.gpr, g₂.gpr, g₁.gpr], by rw [g₃.rd, g₂.rd, g₁.rd],
+      by rw [g₃.wr, g₂.wr, g₁.wr], by rw [g₃.sp, g₂.sp, g₁.sp]⟩
+  rw [g₃.mem, g₂.mem, g₁.mem, g₂.gpr, g₁.gpr]
+  rfl
 
 /-! ## Loading the state -/
 
 /-- A doubleword of the state at `a0`, loaded into `d`. -/
 theorem ldSt_ok (s : State) (d : Reg) {off : Nat} (ho : off + 8 ≤ 128) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr)
-    (h₁ : d ≠ .a0 := by decide) (h₂ : d ≠ T1 := by decide) (h₃ : d ≠ T2 := by decide) :
-    WP isa (.block (Impl.Words64.RISCV64.loadLE64 d T1 T2 .a0 off)) s fun s' =>
+    (ha : (s.gpr .a0).toNat % 8 = 0) (h8 : off % 8 = 0 := by decide) :
+    WP isa (.block [.load .d d .a0 off]) s fun s' =>
       Words64.Upd3 s s' d T1 T2 (s.mem.readW (s.gpr .a0 + BitVec.ofNat 64 off) 64) :=
-  Words64.loadLE64_ok h₁ (by decide) h₂ (by decide) (by decide) h₃ (by omega) (in_st' hw ho)
+  VG.RISCV64.Steps.wp_ld (by omega) rfl (st_al8 ha h8) (in_st' hw ho) fun s' u =>
+    WP.block_nil ⟨u.gpr, fun r h _ _ => u.other r h, u.mem, u.rd, u.wr, u.sp⟩
 
 theorem upd3_regs {s s' : State} {d t₁ t₂ : Reg} {v : BitVec 64} (h : Words64.Upd3 s s' d t₁ t₂ v) :
     Keeps [d, t₁, t₂] s s' :=
@@ -281,25 +275,24 @@ theorem clampI_ok (s : State) :
       (by decide)).write _ (by decide)).write _ (by decide)
 
 theorem setup_eq : setup =
-    Impl.Words64.RISCV64.loadLE64 R0 T1 T2 .a0 24 ++ (Impl.Words64.RISCV64.loadLE64 R1 T1 T2 .a0 32 ++
+    [.load .d R0 .a0 24] ++ ([.load .d R1 .a0 32] ++
     (Impl.Words64.RISCV64.movImm64 T1 T2 M0 ++ (clampI ++
-    (Impl.Words64.RISCV64.loadLE64 H0 T1 T2 .a0 0 ++ (Impl.Words64.RISCV64.loadLE64 H1 T1 T2 .a0 8 ++
-    Impl.Words64.RISCV64.loadLE64 H2 T1 T2 .a0 16))))) := by
-  simp only [setup, clampI, List.append_assoc]
+    ([.load .d H0 .a0 0] ++ ([.load .d H1 .a0 8] ++ [.load .d H2 .a0 16]))))) := by
+  simp only [setup, clampI, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- The registers `setup` writes. -/
 abbrev setupRegs : List Reg := [R0, T1, T2, R1, S1, H0, H1, H2]
 
-theorem setup_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr) :
+theorem setup_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr) (ha : (s.gpr .a0).toNat % 8 = 0) :
     WP isa (.block setup) s fun s' =>
       Keys (Rk s.mem (s.gpr .a0)) s' ∧ (A0 s < P → hv s' = A0 s ∧ Bounds s') ∧
       Keeps setupRegs s s' := by
   rw [setup_eq]
-  refine WP.block_append (WP.mono (ldSt_ok s R0 (by decide) hw) fun s₁ u₁ => ?_)
+  refine WP.block_append (WP.mono (ldSt_ok s R0 (by decide) hw ha) fun s₁ u₁ => ?_)
   have k₁ := upd3_regs u₁
   have a₁ : s₁.gpr .a0 = s.gpr .a0 := k₁.gpr'
   have hw₁ : sR (s₁.gpr .a0) ∈ s₁.rd ++ s₁.wr := by rw [a₁, k₁.2.2.1, k₁.2.2.2.1]; exact hw
-  refine WP.block_append (WP.mono (ldSt_ok s₁ R1 (by decide) hw₁) fun s₂ u₂ => ?_)
+  refine WP.block_append (WP.mono (ldSt_ok s₁ R1 (by decide) hw₁ (by rw [a₁]; exact ha)) fun s₂ u₂ => ?_)
   have k₂ := k₁.trans (upd3_regs u₂)
   refine WP.block_append (WP.mono (Words64.movImm64_ok (d := T1) (tmp := T2) (s := s₂) (by decide) M0)
     fun s₃ ⟨t₃, o₃, m₃, rd₃, wr₃, sp₃⟩ => ?_)
@@ -310,15 +303,17 @@ theorem setup_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr) :
   have k₁₄ := (k₂.trans k₃).trans k₄
   have a₄ : s₄.gpr .a0 = s.gpr .a0 := k₁₄.gpr'
   have hw₄ : sR (s₄.gpr .a0) ∈ s₄.rd ++ s₄.wr := by rw [a₄, k₁₄.2.2.1, k₁₄.2.2.2.1]; exact hw
-  refine WP.block_append (WP.mono (ldSt_ok s₄ H0 (by decide) hw₄) fun s₅ u₅ => ?_)
+  refine WP.block_append (WP.mono (ldSt_ok s₄ H0 (by decide) hw₄ (by rw [a₄]; exact ha)) fun s₅ u₅ => ?_)
   have k₅ := upd3_regs u₅
   have hw₅ : sR (s₅.gpr .a0) ∈ s₅.rd ++ s₅.wr := by
     rw [k₅.gpr' (r := .a0), k₅.2.2.1, k₅.2.2.2.1]; exact hw₄
-  refine WP.block_append (WP.mono (ldSt_ok s₅ H1 (by decide) hw₅) fun s₆ u₆ => ?_)
+  refine WP.block_append (WP.mono (ldSt_ok s₅ H1 (by decide) hw₅
+    (by rw [k₅.gpr' (r := .a0), a₄]; exact ha)) fun s₆ u₆ => ?_)
   have k₆ := upd3_regs u₆
   have hw₆ : sR (s₆.gpr .a0) ∈ s₆.rd ++ s₆.wr := by
     rw [k₆.gpr' (r := .a0), k₆.2.2.1, k₆.2.2.2.1]; exact hw₅
-  refine WP.mono (ldSt_ok s₆ H2 (by decide) hw₆) fun s₇ u₇ => ?_
+  refine WP.mono (ldSt_ok s₆ H2 (by decide) hw₆
+    (by rw [k₆.gpr' (r := .a0), k₅.gpr' (r := .a0), a₄]; exact ha)) fun s₇ u₇ => ?_
   have k₇ := upd3_regs u₇
   have k₅₇ := (k₅.trans k₆).trans k₇
   have K := k₁₄.trans k₅₇
@@ -361,22 +356,23 @@ theorem setup_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr) :
 
 /-! ## The tag -/
 
-theorem addS_eq : addS = Impl.Words64.RISCV64.loadLE64 X0 T1 T2 .a0 40 ++
-    (Impl.Words64.RISCV64.loadLE64 X1 T1 T2 .a0 48 ++ Impl.Words.RISCV64.add2 H0 H1 X0 X1) := by
-  simp only [addS, List.append_assoc]
+theorem addS_eq : addS = [.load .d X0 .a0 40] ++
+    ([.load .d X1 .a0 48] ++ Impl.Words.RISCV64.add2 H0 H1 X0 X1) := by
+  simp only [addS, List.cons_append, List.nil_append]
 
-theorem addS_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr) :
+theorem addS_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr) (ha : (s.gpr .a0).toNat % 8 = 0) :
     WP isa (.block addS) s fun s' =>
       (s'.gpr H0).toNat + 2 ^ 64 * (s'.gpr H1).toNat =
         ((s.gpr H0).toNat + 2 ^ 64 * (s.gpr H1).toNat +
           (word s.mem (s.gpr .a0) 40 + 2 ^ 64 * word s.mem (s.gpr .a0) 48)) % 2 ^ 128 ∧
       Keeps [X0, T1, T2, X1, T1, T2, H0, H1, X0] s s' := by
   rw [addS_eq]
-  refine WP.block_append (WP.mono (ldSt_ok s X0 (by decide) hw) fun s₁ u₁ => ?_)
+  refine WP.block_append (WP.mono (ldSt_ok s X0 (by decide) hw ha) fun s₁ u₁ => ?_)
   have k₁ := upd3_regs u₁
   have hw₁ : sR (s₁.gpr .a0) ∈ s₁.rd ++ s₁.wr := by
     rw [k₁.gpr' (r := .a0), k₁.2.2.1, k₁.2.2.2.1]; exact hw
-  refine WP.block_append (WP.mono (ldSt_ok s₁ X1 (by decide) hw₁) fun s₂ u₂ => ?_)
+  refine WP.block_append (WP.mono (ldSt_ok s₁ X1 (by decide) hw₁
+    (by rw [k₁.gpr' (r := .a0)]; exact ha)) fun s₂ u₂ => ?_)
   have k₂ := upd3_regs u₂
   refine WP.mono add2_ok fun s₃ ⟨e₃, k₃⟩ => ⟨?_, (k₁.trans k₂).trans k₃⟩
   rw [e₃, (k₁.trans k₂).gpr' (r := H0), (k₁.trans k₂).gpr' (r := H1),

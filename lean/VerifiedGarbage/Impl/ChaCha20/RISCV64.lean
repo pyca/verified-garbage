@@ -82,12 +82,12 @@ def rounds : Prog isa :=
     (.loop (.seq doubleRound (.block [.addi U U (-1)])) (.nonzero U))
 
 /-- Load the state into the registers (`lwu`: `state` is 4-byte aligned). -/
-def load : List Instr := (List.range 16).map fun k => .load .w (wreg k) .a0 (4 * k)
+def load : List Instr := (List.range 16).flatMap fun k => [.load .w (wreg k) .a0 (4 * k)]
 
 /-- Add input word `k` (via `T`) and store output word `k` (`buf` is 4-byte
 aligned). -/
 def addWord (k : Nat) : List Instr :=
-  [.load .w T .a0 (4 * k), .add (wreg k) (wreg k) T, .store .w (wreg k) .a1 (4 * k)]
+  [.load .w T .a0 (4 * k)] ++ [.add (wreg k) (wreg k) T] ++ [.store .w (wreg k) .a1 (4 * k)]
 
 def finish : List Instr := (List.range 16).flatMap addWord
 

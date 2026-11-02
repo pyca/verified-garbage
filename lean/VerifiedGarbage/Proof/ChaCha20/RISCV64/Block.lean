@@ -33,7 +33,7 @@ meta import VerifiedGarbage.TCB.RISCV64.Target
 
 Untrusted: everything here is checked by Lean. The structure of the PPC64LE
 proof (`Proof/ChaCha20/PPC64LE/Block.lean`), with the state read and the
-result written a byte at a time (`Proof/Framework/RISCV64/ByteLoad.lean`),
+result written a word at a time (`lwu`, `sw`: both are 4-byte aligned),
 and the callee-saved registers saved at `buf + 64` rounded up to a multiple
 of 8 (`Proof/Framework/RISCV64/Align.lean`).
 -/
@@ -92,10 +92,38 @@ structure Pre (s₀ : State) : Prop where
   rd : s₀.rd = [stR s₀]
   wr : s₀.wr = [bufR s₀]
   buf_st : (bufR s₀).Disjoint (stR s₀)
+  st_al : (st s₀).toNat % 4 = 0
+  buf_al : (buf s₀).toNat % 4 = 0
 
 theorem pre_of (s₀ : State) (h : Proof.ChaCha20.blockRISCV64.pre s₀) : Pre s₀ := by
-  obtain ⟨h1, h2, h3⟩ := h
-  exact ⟨h1, h2, h3⟩
+  obtain ⟨h1, h2, h3, h4, h5⟩ := h
+  exact ⟨h1, h2, h3, h4, h5⟩
+
+/-- Word `k` of a 4-byte aligned pointer is 4-byte aligned. -/
+theorem al4 {p : Addr} (h : p.toNat % 4 = 0) (k : Nat) : (p + BitVec.ofNat 64 (4 * k)).toNat % 4 = 0 := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+  have := p.isLt
+  omega
+
+/-- `lwu d, off(n)`. -/
+theorem loadW_ok {s : State} {d n : Reg} {off : Nat} (ho : off < 2048)
+    (ha : (s.gpr n + BitVec.ofNat 64 off).toNat % 4 = 0)
+    (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 4) :
+    WP isa (.block [.load .w d n off]) s
+      (· = s.write d ((s.mem.readW (s.gpr n + BitVec.ofNat 64 off) 32).setWidth 64)) := by
+  apply WP.of_runBlock
+  rw [runBlock_cons, exec_load_w ho ha h, runStep_some, runBlock_nil]
+  exact ⟨_, rfl, rfl⟩
+
+/-- `sw v, off(n)`. -/
+theorem storeW_ok {s : State} {v n : Reg} {off : Nat} (ho : off < 2048)
+    (ha : (s.gpr n + BitVec.ofNat 64 off).toNat % 4 = 0)
+    (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 4) :
+    WP isa (.block [.store .w v n off]) s
+      (· = { s with mem := s.mem.writeW (s.gpr n + BitVec.ofNat 64 off) ((s.gpr v).setWidth 32) }) := by
+  apply WP.of_runBlock
+  rw [runBlock_cons, exec_store_w ho ha h, runStep_some, runBlock_nil]
+  exact ⟨_, rfl, rfl⟩
 
 namespace Pre
 variable {s₀ : State} (hp : Pre s₀)
@@ -224,23 +252,20 @@ structure LI (s₀ : State) (n : Nat) (s : State) : Prop where
   keep : ∀ r, ¬ Words r → s.gpr r = s₀.gpr r
 
 theorem load_step {s₀ : State} (hp : Pre s₀) {n : Nat} (hn : n < 16) {s : State} (h : LI s₀ n s) :
-    WP isa (.block (loadLE32 (wreg n) T .a0 (4 * n))) s (LI s₀ (n + 1)) := by
+    WP isa (.block [.load .w (wreg n) .a0 (4 * n)]) s (LI s₀ (n + 1)) := by
   have hr0 : s.gpr .a0 = st s₀ := h.keep _ not_words_a0
-  have hne := wreg_ne hn
-  refine WP.mono (loadLE32_ok hne.1 (by decide) (wreg_ne_T hn) (by omega)
+  refine WP.mono (loadW_ok (by omega) (by rw [hr0]; exact al4 hp.st_al n)
     (by rw [h.rd, h.wr, hr0]; exact hp.in_st hn _)) fun s' e => ?_
   subst e
   have hv : s.mem.readW (st s₀ + BitVec.ofNat 64 (4 * n)) 32 = (V s₀)[n] := by
     rw [h.mem]; exact hp.read_st (Frame.refl _ _) hn
   refine ⟨fun j hj hjn => ?_, h.mem, h.rd, h.wr, fun r hr => ?_⟩
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hjn with hjn | rfl
-    · rw [RegUpd.gpr_write_of_ne _ _ (fun e => absurd (wreg_inj hj hn e) (by omega)),
-        RegUpd.gpr_write_of_ne _ _ (wreg_ne_T hj)]
+    · rw [RegUpd.gpr_write_of_ne _ _ (fun e => absurd (wreg_inj hj hn e) (by omega))]
       exact h.loaded j hj hjn
     · dsimp only [lo]
       rw [RegUpd.gpr_write_self, lo32_ext, hr0, hv]
-  · rw [RegUpd.gpr_write_of_ne _ _ (fun e => hr (.inl ⟨n, hn, e⟩)),
-      RegUpd.gpr_write_of_ne _ _ (fun e => hr (.inr e))]
+  · rw [RegUpd.gpr_write_of_ne _ _ (fun e => hr (.inl ⟨n, hn, e⟩))]
     exact h.keep r hr
 
 /-! ## Adding the input state -/
@@ -266,17 +291,18 @@ theorem add_step {s₀ : State} (hp : Pre s₀) {R : CState} {i : Nat} (hi : i <
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨bufR s₀, List.mem_singleton_self _, outR_sub s₀⟩) hi
   unfold addWord
-  rw [List.append_assoc, List.singleton_append, WP.block_append_iff]
-  refine WP.mono (loadLE32_ok (by decide) (by decide) (by decide) (by omega)
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (loadW_ok (by omega) (by rw [hr0]; exact al4 hp.st_al i)
     (by rw [h.rd, h.wr, hr0]; exact hp.in_st hi _)) fun s₁ e₁ => ?_
-  have g₁ : ∀ r, r ≠ T → r ≠ U → s₁.gpr r = s.gpr r := fun r h₁ h₂ => by
-    rw [e₁, RegUpd.gpr_write_of_ne _ _ h₁, RegUpd.gpr_write_of_ne _ _ h₂]
+  have g₁ : ∀ r, r ≠ T → r ≠ U → s₁.gpr r = s.gpr r := fun r h₁ _ => by
+    rw [e₁, RegUpd.gpr_write_of_ne _ _ h₁]
   have t₁ : lo (s₁.gpr T) = (V s₀)[i] := by
     dsimp only [lo]
     rw [e₁, RegUpd.gpr_write_self, lo32_ext, hr0, hv]
   have m₁ : s₁.mem = s.mem := by rw [e₁]; rfl
   have rd₁ : s₁.rd = s.rd := by rw [e₁]; rfl
   have wr₁ : s₁.wr = s.wr := by rw [e₁]; rfl
+  rw [List.singleton_append]
   refine Steps.wp_add fun s₂ u₂ => ?_
   have g₂ : ∀ r, r ≠ wreg i → r ≠ T → r ≠ U → s₂.gpr r = s.gpr r := fun r h₁ h₂ h₃ => by
     rw [u₂.other r h₁, g₁ r h₂ h₃]
@@ -289,24 +315,23 @@ theorem add_step {s₀ : State} (hp : Pre s₀) {R : CState} {i : Nat} (hi : i <
     rw [g₂ _ (fun e => hne.2.1 e.symm) (by decide) (by decide), hr1]
   have ho : (outR s₀).Contains (buf s₀ + BitVec.ofNat 64 (4 * i)) 4 :=
     Offset.contains_base _ (by omega) (by omega)
-  refine WP.mono (storeLE32_ok (wreg_ne_T hi).symm (by decide) (by omega)
+  refine WP.mono (storeW_ok (by omega) (by rw [hr1₂]; exact al4 hp.buf_al i)
     (by rw [hr1₂, u₂.wr, wr₁, h.wr]; exact hp.out_out hi)) fun s' e => ?_
   subst e
   have hm : s₂.mem.writeW (s₂.gpr .a1 + BitVec.ofNat 64 (4 * i)) ((s₂.gpr (wreg i)).setWidth 32) =
       s.mem.writeW (buf s₀ + BitVec.ofNat 64 (4 * i)) (lo (s₂.gpr (wreg i))) := by
     rw [hr1₂, u₂.mem, m₁]
-  refine ⟨fun j hj hji => ?_, fun j hj hij => ?_, ?_, by rw [RegUpd.rd_write, u₂.rd, rd₁, h.rd],
-    by rw [RegUpd.wr_write, u₂.wr, wr₁, h.wr], fun r hr' hU => ?_⟩
-  · simp only [RegUpd.mem_write, hm]
+  refine ⟨fun j hj hji => ?_, fun j hj hij => ?_, ?_, by simp only [u₂.rd, rd₁, h.rd],
+    by simp only [u₂.wr, wr₁, h.wr], fun r hr' hU => ?_⟩
+  · simp only [hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hji with hji | rfl
     · rw [readW_writeW_out _ _ _ hj hi (by omega)]; exact h.done j hj hji
     · rw [Mem.readW_writeW_self32, hw]
-  · rw [RegUpd.gpr_write_of_ne _ _ (wreg_ne_T hj),
-      g₂ _ (fun e => absurd (wreg_inj hj hi e) (by omega)) (wreg_ne_T hj) (wreg_ne hj).2.2.1]
+  · rw [g₂ _ (fun e => absurd (wreg_inj hj hi e) (by omega)) (wreg_ne_T hj) (wreg_ne hj).2.2.1]
     exact h.rest j hj (by omega)
-  · simp only [RegUpd.mem_write, hm]; exact h.frame.writeW (List.mem_singleton_self _) _ ho
-  · rw [RegUpd.gpr_write_of_ne _ _ (fun e => hr' (.inr e)),
-      g₂ r (fun e => hr' (.inl ⟨i, hi, e⟩)) (fun e => hr' (.inr e)) hU]
+  · simp only [hm]; exact h.frame.writeW (List.mem_singleton_self _) _ ho
+  · show s₂.gpr r = _
+    rw [g₂ r (fun e => hr' (.inl ⟨i, hi, e⟩)) (fun e => hr' (.inr e)) hU]
     exact h.keep r hr' hU
 
 /-! ## Restoring the callee-saved registers -/
@@ -375,9 +400,9 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   refine WP.seq (WP.mono (save_ok hp) fun s₁ h₁ => ?_)
   have hg : ∀ r, r ≠ .t0 → s₁.gpr r = s₀.gpr r := h₁.gpr
   have hp₁ : Pre s₁ := by
-    refine ⟨?_, ?_, ?_⟩ <;>
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>
       simp only [stR, bufR, st, buf, hg .a0 (by decide), hg .a1 (by decide), h₁.rd, h₁.wr] <;>
-      first | exact hp.rd | exact hp.wr | exact hp.buf_st
+      first | exact hp.rd | exact hp.wr | exact hp.buf_st | exact hp.st_al | exact hp.buf_al
   have hbuf : buf s₁ = buf s₀ := hg .a1 (by decide)
   have hV : V s₁ = V s₀ := by
     apply Vector.ext
@@ -445,7 +470,6 @@ theorem block_verified :
     simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     exacts [h1, h2]
-  · refine ⟨satState, rfl, rfl, ?_⟩
-    exact Region.disjoint_of_sep (by decide)
+  · exact ⟨satState, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide⟩
 
 end VG.Proof.ChaCha20.RISCV64

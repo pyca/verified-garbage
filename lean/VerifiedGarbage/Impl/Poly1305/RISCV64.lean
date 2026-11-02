@@ -146,9 +146,7 @@ def body (wide : Bool) : Prog isa :=
 
 def blocks : Prog isa :=
   .seq (.block (.addi .a3 .a1 0 :: setup))
-  (.seq (.ite (.zero .a2) (.block [])
-    (.seq (.block [.logicImm .and T1 .a3 7])
-      (.ite (.zero T1) (.loop (body true) (.nonzero .a2)) (.loop (body false) (.nonzero .a2)))))
+  (.seq (.ite (.zero .a2) (.block []) (.loop (body false) (.nonzero .a2)))
     (.block (reduce ++ storeH)))
 
 /-! ## `update(state = a0, count = a1, data = a2, len = a3)`

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
 public import VerifiedGarbage.Spec.Poly1305
 public import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Poly1305.Limbs64
@@ -61,11 +62,16 @@ theorem Keeps.keys {rs : List Reg} {R : Nat} {s s' : State} (hk : Keys R s) (h :
 /-- `h2 += pad`. -/
 def padI (pad : Bool) : List Instr := if pad then [.addi H2 H2 1] else []
 
-theorem addBlock_eq (b : Reg) (off : Nat) (pad : Bool) : addBlock b off pad =
+theorem addBlock_eq (b : Reg) (off : Nat) (pad : Bool) : addBlock b off pad false =
     Impl.Words64.RISCV64.loadLE64 X0 T1 T2 b off ++
       (Impl.Words64.RISCV64.loadLE64 X1 T1 T2 b (off + 8) ++
       (Impl.Words.RISCV64.add3 H0 H1 H2 X0 X1 ++ padI pad)) := by
-  simp only [addBlock, padI, List.append_assoc]
+  simp only [addBlock, padI, List.append_assoc, Bool.false_eq_true, ite_false]
+
+theorem addBlock_eq_wide (b : Reg) (off : Nat) (pad : Bool) : addBlock b off pad true =
+    .load .d X0 b off :: .load .d X1 b (off + 8) ::
+      (Impl.Words.RISCV64.add3 H0 H1 H2 X0 X1 ++ padI pad) := by
+  simp only [addBlock, padI, ite_true, List.cons_append, List.nil_append]
 
 theorem padI_ok (s : State) (pad : Bool) :
     WP isa (.block (padI pad)) s fun s' =>
@@ -86,33 +92,23 @@ theorem upd3_keeps {s s' : State} {d t₁ t₂ : Reg} {v : BitVec 64} (h : Words
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     exact h.other r hr.1 hr.2.1 hr.2.2, h.mem, h.rd, h.wr, h.sp⟩
 
-theorem addBlock_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) (ho : off + 15 < 2048)
-    (h0 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 off) 8)
-    (h8 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 (off + 8)) 8)
-    (hb : b ∉ absorbRegs := by decide) :
-    WP isa (.block (addBlock b off pad)) s fun s' =>
+/-- A register write keeps everything else. -/
+theorem upd_keeps {s s' : State} {d : Reg} {v : BitVec 64} (h : VG.RISCV64.Steps.Upd s s' d v) : Keeps [d] s s' :=
+  ⟨fun r hr => h.other r (by simpa using hr), h.mem, h.rd, h.wr, h.sp⟩
+
+/-- The sum and the pad, after the block's words are in `X0` and `X1`. -/
+theorem addTail_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) {s₂ : State}
+    (x₀ : (s₂.gpr X0).toNat = word s.mem (s.gpr b) off)
+    (x₁ : (s₂.gpr X1).toNat = word s.mem (s.gpr b) (off + 8)) (k₂ : Keeps [X0, X1, T1, T2] s s₂) :
+    WP isa (.block (Impl.Words.RISCV64.add3 H0 H1 H2 X0 X1 ++ padI pad)) s₂ fun s' =>
       (hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
           2 ^ 128 * pad.toNat) < 2 ^ 192 →
         hv s' = hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
           2 ^ 128 * pad.toNat)) ∧
       Keeps [H0, H1, H2, X0, X1, T1, T2] s s' := by
-  simp only [absorbRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hb
-  obtain ⟨b0, b1, b2, b3, b4, b5, b6, b7, b8⟩ := hb
-  rw [addBlock_eq]
-  refine WP.block_append (WP.mono (Words64.loadLE64_ok (Ne.symm b3) (Ne.symm b7) (by decide)
-    (Ne.symm b8) (by decide) (by decide) (by omega) h0) fun s₁ u₁ => ?_)
-  have hb₁ : s₁.gpr b = s.gpr b := u₁.other b b3 b7 b8
-  refine WP.block_append (WP.mono (Words64.loadLE64_ok (Ne.symm b4) (Ne.symm b7) (by decide)
-    (Ne.symm b8) (by decide) (by decide) (by omega)
-    (by rw [hb₁, u₁.rd, u₁.wr]; exact h8)) fun s₂ u₂ => ?_)
   refine WP.block_append (WP.mono add3_ok fun s₃ ⟨e₃, k₃⟩ => ?_)
   refine WP.mono (padI_ok s₃ pad) fun s₄ ⟨e₄, k₄⟩ => ?_
-  have k₂ := (upd3_keeps u₁).trans (upd3_keeps u₂)
   refine ⟨fun hlt => ?_, ((k₂.trans k₃).trans k₄).mono⟩
-  have x₀ : (s₂.gpr X0).toNat = word s.mem (s.gpr b) off := by
-    rw [u₂.other _ (by decide) (by decide) (by decide), u₁.gpr]
-  have x₁ : (s₂.gpr X1).toNat = word s.mem (s.gpr b) (off + 8) := by
-    rw [u₂.gpr, u₁.mem, hb₁]
   have hv₂ : val3 s₂ H0 H1 H2 = hv s := by
     simp only [val3, hv, k₂.gpr' (r := H0), k₂.gpr' (r := H1), k₂.gpr' (r := H2)]
   rw [hv₂, x₀, x₁] at e₃
@@ -127,6 +123,42 @@ theorem addBlock_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) (ho : off + 1
   simp only [val3] at e₃
   have hvs : hv s = (s.gpr H0).toNat + 2 ^ 64 * (s.gpr H1).toNat + 2 ^ 128 * (s.gpr H2).toNat := rfl
   omega_using [e₃, hp, hvs]
+
+theorem addBlock_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) (wide : Bool) (ho : off + 15 < 2048)
+    (h0 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 off) 8)
+    (h8 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 (off + 8)) 8)
+    (hal : wide = true → (s.gpr b + BitVec.ofNat 64 off).toNat % 8 = 0)
+    (hb : b ∉ absorbRegs := by decide) :
+    WP isa (.block (addBlock b off pad wide)) s fun s' =>
+      (hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
+          2 ^ 128 * pad.toNat) < 2 ^ 192 →
+        hv s' = hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
+          2 ^ 128 * pad.toNat)) ∧
+      Keeps [H0, H1, H2, X0, X1, T1, T2] s s' := by
+  simp only [absorbRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hb
+  obtain ⟨b0, b1, b2, b3, b4, b5, b6, b7, b8⟩ := hb
+  cases wide
+  · rw [addBlock_eq]
+    refine WP.block_append (WP.mono (Words64.loadLE64_ok (Ne.symm b3) (Ne.symm b7) (by decide)
+      (Ne.symm b8) (by decide) (by decide) (by omega) h0) fun s₁ u₁ => ?_)
+    have hb₁ : s₁.gpr b = s.gpr b := u₁.other b b3 b7 b8
+    refine WP.block_append (WP.mono (Words64.loadLE64_ok (Ne.symm b4) (Ne.symm b7) (by decide)
+      (Ne.symm b8) (by decide) (by decide) (by omega)
+      (by rw [hb₁, u₁.rd, u₁.wr]; exact h8)) fun s₂ u₂ => ?_)
+    exact addTail_ok s b off pad (by rw [u₂.other _ (by decide) (by decide) (by decide), u₁.gpr])
+      (by rw [u₂.gpr, u₁.mem, hb₁]) ((upd3_keeps u₁).trans (upd3_keeps u₂)).mono
+  · have a0 := hal rfl
+    have a8 : (s.gpr b + BitVec.ofNat 64 (off + 8)).toNat % 8 = 0 := by
+      rw [← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc, BitVec.toNat_add, BitVec.toNat_ofNat]
+      have := (s.gpr b + BitVec.ofNat 64 off).isLt
+      omega
+    rw [addBlock_eq_wide]
+    refine VG.RISCV64.Steps.wp_ld (a := s.gpr b + BitVec.ofNat 64 off) (by omega) rfl a0 h0 fun s₁ u₁ => ?_
+    have hb₁ : s₁.gpr b = s.gpr b := u₁.other b b3
+    refine VG.RISCV64.Steps.wp_ld (a := s.gpr b + BitVec.ofNat 64 (off + 8)) (by omega) (by rw [hb₁]) a8
+      (by rw [u₁.rd, u₁.wr]; exact h8) fun s₂ u₂ => ?_
+    exact addTail_ok s b off pad (by rw [u₂.other _ (by decide), u₁.gpr])
+      (by rw [u₂.gpr, u₁.mem]) ((upd_keeps (d := X0) u₁).trans (upd_keeps (d := X1) u₂)).mono
 
 /-! ## The products, folded -/
 
@@ -266,20 +298,21 @@ theorem mul_ok (s₁ : State) {q : Nat}
   refine ⟨?_, hb⟩
   rw [hv, val3, m, hr1]
 
-theorem absorb_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) {q : Nat}
+theorem absorb_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) (wide : Bool) {q : Nat}
     (hr0 : (s.gpr R0).toNat < 2 ^ 60) (hr1 : (s.gpr R1).toNat = 4 * q) (hq : q < 2 ^ 58)
     (hs1 : (s.gpr S1).toNat = 5 * q) (ho : off + 15 < 2048)
     (h0 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 off) 8)
     (h8 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 (off + 8)) 8)
+    (hal : wide = true → (s.gpr b + BitVec.ofNat 64 off).toNat % 8 = 0)
     (hb : b ∉ absorbRegs := by decide) :
-    WP isa (.block (absorb b off pad)) s fun s' =>
+    WP isa (.block (absorb b off pad wide)) s fun s' =>
       ((s.gpr H2).toNat ≤ 4 →
         hv s' % P = ((hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
           2 ^ 128 * pad.toNat)) * ((s.gpr R0).toNat + 2 ^ 64 * (s.gpr R1).toNat)) % P ∧
         (s'.gpr H2).toNat ≤ 4) ∧ Keeps absorbRegs s s' := by
-  rw [show absorb b off pad = addBlock b off pad ++ (products ++ combine ++ fold) by
+  rw [show absorb b off pad wide = addBlock b off pad wide ++ (products ++ combine ++ fold) by
     simp only [absorb, List.append_assoc]]
-  refine WP.block_append (WP.mono (addBlock_ok s b off pad ho h0 h8 hb) fun s₁ ⟨e₁, k₁⟩ => ?_)
+  refine WP.block_append (WP.mono (addBlock_ok s b off pad wide ho h0 h8 hal hb) fun s₁ ⟨e₁, k₁⟩ => ?_)
   have r0₁ : s₁.gpr R0 = s.gpr R0 := k₁.gpr'
   have r1₁ : s₁.gpr R1 = s.gpr R1 := k₁.gpr'
   have s1₁ : s₁.gpr S1 = s.gpr S1 := k₁.gpr'

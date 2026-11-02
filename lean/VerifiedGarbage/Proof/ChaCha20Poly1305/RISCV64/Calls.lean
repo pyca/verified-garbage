@@ -77,7 +77,7 @@ theorem kept_of {c : Prog isa} (hc : KeepsA0 c) {rs : List Region} {s s' : State
 /-! ## `vg_chacha20_block` -/
 
 theorem block_call {s : State} {S B : Addr} (h0 : s.gpr .a0 = S) (h1 : s.gpr .a1 = B)
-    (hdj : (⟨B, 256⟩ : Region).Disjoint ⟨S, 64⟩)
+    (hdj : (⟨B, 256⟩ : Region).Disjoint ⟨S, 64⟩) (hSa : S.toNat % 4 = 0) (hBa : B.toNat % 4 = 0)
     (hc : Covers ([⟨S, 64⟩] ++ [⟨B, 256⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨B, 256⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨B, 256⟩] s s' →
@@ -89,7 +89,7 @@ theorem block_call {s : State} {S B : Addr} (h0 : s.gpr .a0 = S) (h1 : s.gpr .a1
     (rd := [⟨S, 64⟩]) (wr := [⟨B, 256⟩]) ?_ hc hw ?_ Proof.ChaCha20.RISCV64.Xor.block_noFrames
   · simp only [Proof.ChaCha20.blockRISCV64, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, c0, c1]
-    exact ⟨trivial, trivial, hdj⟩
+    exact ⟨trivial, trivial, hdj, hSa, hBa⟩
   · intro s' hrd hwr hsp hf hcs hk hpost
     refine hQ s' (kept_of block_a0 hrd hwr hsp hf hcs hk) ?_
     simpa only [Proof.ChaCha20.blockRISCV64, State.withRegions_gpr, State.withRegions_mem,
@@ -102,6 +102,7 @@ theorem xor_call {s : State} {S D B : Addr} {n : Nat} (h0 : s.gpr .a0 = S) (h1 :
     (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩)
     (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩)
     (hDB : (⟨D, n⟩ : Region).Disjoint ⟨B, 320⟩) (hD : D.toNat + n ≤ 2 ^ 64)
+    (hSa : S.toNat % 4 = 0) (hBa : B.toNat % 4 = 0)
     (hc : Covers ([] ++ [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩] s.wr)
     {Q : State → Prop}
@@ -120,7 +121,7 @@ theorem xor_call {s : State} {S D B : Addr} {n : Nat} (h0 : s.gpr .a0 = S) (h1 :
     (rd := []) (wr := [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) ?_ hc hw ?_ (by decide +kernel)
   · simp only [Proof.ChaCha20.xorRISCV64, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, c0, c1, c2, c3, hn']
-    exact ⟨trivial, trivial, hSD, hSB, hDB, hD⟩
+    exact ⟨trivial, trivial, hSD, hSB, hDB, hD, hSa, hBa⟩
   · intro s' hrd hwr hsp hf hcs hk hpost
     simp only [Proof.ChaCha20.xorRISCV64, State.withRegions_gpr, State.withRegions_mem,
       State.callEntry_mem, c0, c1, c2, hn'] at hpost
@@ -150,7 +151,7 @@ theorem init_call {s : State} {P K : Addr} (h0 : s.gpr .a0 = P) (h1 : s.gpr .a1 
 
 theorem update_call {s : State} {P D : Addr} {c : BitVec 64} {n : Nat} (h0 : s.gpr .a0 = P)
     (h1 : s.gpr .a1 = c) (h2 : s.gpr .a2 = D) (h3 : s.gpr .a3 = BitVec.ofNat 64 n) (hn : n < 2 ^ 64)
-    (hdj : (⟨P, 128⟩ : Region).Disjoint ⟨D, n⟩)
+    (hdj : (⟨P, 128⟩ : Region).Disjoint ⟨D, n⟩) (hPa : P.toNat % 8 = 0)
     (hc : Covers ([⟨D, n⟩] ++ [⟨P, 128⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨P, 128⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨P, 128⟩] s s' →
@@ -167,7 +168,7 @@ theorem update_call {s : State} {P D : Addr} {c : BitVec 64} {n : Nat} (h0 : s.g
     (rd := [⟨D, n⟩]) (wr := [⟨P, 128⟩]) ?_ hc hw ?_ (by lit_decide)
   · simp only [Proof.Poly1305.updateRISCV64, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, c0, c2, c3, hn']
-    exact ⟨trivial, trivial, hdj⟩
+    exact ⟨trivial, trivial, hdj, hPa⟩
   · intro s' hrd hwr hsp hf hcs hk hpost
     refine hQ s' (kept_of update_a0 hrd hwr hsp hf hcs hk) ?_
     simpa only [Proof.Poly1305.updateRISCV64, State.withRegions_gpr, State.withRegions_mem,
@@ -177,7 +178,7 @@ theorem update_call {s : State} {P D : Addr} {c : BitVec 64} {n : Nat} (h0 : s.g
 
 theorem finalize_call {s : State} {P O : Addr} {c : BitVec 64} (h0 : s.gpr .a0 = P)
     (h1 : s.gpr .a1 = c) (h2 : s.gpr .a2 = O)
-    (hPO : (⟨P, 128⟩ : Region).Disjoint ⟨O, 16⟩)
+    (hPO : (⟨P, 128⟩ : Region).Disjoint ⟨O, 16⟩) (hPa : P.toNat % 8 = 0)
     (hc : Covers ([] ++ [⟨P, 128⟩, ⟨O, 16⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨P, 128⟩, ⟨O, 16⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨P, 128⟩, ⟨O, 16⟩] s s' →
@@ -191,7 +192,7 @@ theorem finalize_call {s : State} {P O : Addr} {c : BitVec 64} (h0 : s.gpr .a0 =
     (rd := []) (wr := [⟨P, 128⟩, ⟨O, 16⟩]) ?_ hc hw ?_ (by lit_decide)
   · simp only [Proof.Poly1305.finalizeRISCV64, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, c0, c2]
-    exact ⟨trivial, trivial, hPO⟩
+    exact ⟨trivial, trivial, hPO, hPa⟩
   · intro s' hrd hwr hsp hf hcs hk hpost
     refine hQ s' (kept_of finalize_a0 hrd hwr hsp hf hcs hk) ?_
     simpa only [Proof.Poly1305.finalizeRISCV64, State.withRegions_gpr, State.withRegions_mem,
