@@ -56,7 +56,7 @@ def pack (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : Rfc where
   hnw := rfl
   hQ := rfl
   hDQ := (by decide : 8 * 4 ≤ cfg.H.D)
-  hD48 := by decide
+  hD64 := by decide
   hS := by decide
   hct := rfl
   hT := by decide
@@ -74,7 +74,7 @@ theorem stack_eq (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : (pack hL).N =
   simp only [Rfc.N, Rfc.X, pack, cfg, Cfg.frB, Proof.Hmac.Stream.RISCV64.Sha384.hash,
     Proof.Hmac.Stream.RISCV64.Sha512Family.hash, Impl.Hmac.Stream.RISCV64.Hash.ibytes,
     Impl.Hmac.Stream.RISCV64.Hash.fbytes, Impl.Hmac.Stream.RISCV64.Hash.iso, Impl.Hmac.Stream.RISCV64.Hash.fso,
-    Impl.Hmac.Stream.RISCV64.Hash.S, Impl.Hmac.Stream.RISCV64.Hash.B, fH]
+    Impl.Hmac.Stream.RISCV64.Hash.S, Impl.Hmac.Stream.RISCV64.Hash.B, Cfg.fH, Nat.reduceLT, ↓reduceIte]
   decide
 
 theorem implies :
