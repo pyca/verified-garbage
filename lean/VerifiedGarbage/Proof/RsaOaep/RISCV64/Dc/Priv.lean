@@ -4,10 +4,13 @@ public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Pre
 public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCall
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
+public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivVerified
+public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Covers
 
 /-!
 # RSAES-OAEP decryption on RISC-V: the private operation
@@ -366,6 +369,188 @@ theorem privArgs_ok {t : State} (E : Entered s t) :
         show Mem.readW _ (pb s + BitVec.ofNat 64 88) 64 = _
         rw [Mem.readW_writeW_self64]
         exact t88 }
+
+end
+
+
+/-! ## The call -/
+
+/-- `EM`'s place, the ciphertext as the call reads it, and the private
+operation's part of `scratch`. -/
+abbrev emR (s : State) : Region := ⟨Sd s, kk s⟩
+abbrev iD (s : State) : Region := ⟨stackArg s 11, kk s⟩
+abbrev rsR (s : State) : Region := ⟨Sd s + BitVec.ofNat 64 oRsa, ((stackArg s 14).toNat - 1024) * 8⟩
+
+/-- The regions the call reads and writes. -/
+abbrev callRd (s : State) : List Region := [nR s, eR s, iD s, pR s, qR s, dpR s, dqR s, qiR s, PB s]
+
+abbrev callWr (s : State) : List Region := [emR s, rsR s]
+
+/-- The call's narrowed entry state. -/
+abbrev callE (s t : State) : State := t.callEntry.withRegions (callRd s) (callWr s)
+
+theorem callE_gpr (s t : State) {r : Reg} (hr : r ∉ linkRegs := by decide) : (callE s t).gpr r = t.gpr r :=
+  State.callEntry_gpr t hr
+
+theorem callE_stackArg {s t : State} (A : AtPriv s t) {i : Nat} (hi : i < 12) :
+    stackArg (callE s t) i = psa s i := by
+  show t.mem.readW (stackArgAddr (callE s t) i) 64 = _
+  rw [stackArgAddr, show (callE s t).sp = pb s from A.sp]
+  exact A.psa i hi
+
+/-- The private operation's frame, below its stack arguments. -/
+abbrev pkR (s : State) : Region := ⟨kb s, Impl.Rsa.RISCV64.Priv.frameBytes⟩
+
+section
+variable {s : State} (P : PreD s)
+include P
+
+theorem em_sub : Region.Sub (emR s) (scR s) := by
+  have := P.hs; have := P.k2; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at *
+  exact Region.sub_prefix (by unfold kk; omega)
+
+theorem rs_sub : Region.Sub (rsR s) (scR s) := by
+  have := scLen P
+  exact Offset.sub_base _ (by unfold oRsa at *; omega)
+
+theorem i_sub : Region.Sub (iD s) (ctR s) := by
+  have := P.oc
+  exact Region.sub_prefix (by unfold kk; omega)
+
+omit P in
+theorem pk_sub : Region.Sub (pkR s) (kD s) := by
+  have := Offset.sub_base (kb s) (d := 0) (n := Impl.Rsa.RISCV64.Priv.frameBytes) (k := stackBytes) (by decide)
+  rwa [BitVec.add_zero] at this
+
+theorem em_rs : (emR s).Disjoint (rsR s) := by
+  have := P.wsc; have := P.k2; have := scLen P
+  exact Offset.base_disjoint _ (by unfold kk oRsa at *; omega) (by unfold oRsa at *; omega)
+
+theorem pk_PB : (pkR s).Disjoint (PB s) := by
+  show Region.Disjoint _ ⟨pb s, privBytes⟩
+  rw [pb_kb P]
+  exact Offset.base_disjoint _ (by decide) (by unfold privBytes; decide)
+
+theorem preP_at {t : State} (A : AtPriv s t) : Rsa.RISCV64.Priv.PreP (callE s t) := by
+  have hk := P.k2
+  have sa := fun i hi => callE_stackArg A (i := i) hi
+  have hsp : (callE s t).sp = pb s := A.sp
+  have g0 : (callE s t).gpr .a0 = Sd s := (callE_gpr s t).trans A.a0
+  have g1 : (callE s t).gpr .a1 = s.gpr .a4 := (callE_gpr s t).trans A.a1
+  have g2 : (callE s t).gpr .a2 = s.gpr .a3 := (callE_gpr s t).trans A.a2
+  have g3 : (callE s t).gpr .a3 = s.gpr .a4 := (callE_gpr s t).trans A.a3
+  have g4 : (callE s t).gpr .a4 = s.gpr .a5 := (callE_gpr s t).trans A.a4
+  have g5 : (callE s t).gpr .a5 = s.gpr .a6 := (callE_gpr s t).trans A.a5
+  have g6 : (callE s t).gpr .a6 = stackArg s 11 := (callE_gpr s t).trans A.a6
+  have g7 : (callE s t).gpr .a7 = s.gpr .a4 := (callE_gpr s t).trans A.a7
+  have s0 : stackArg (callE s t) 0 = s.gpr .a7 := sa 0 (by decide)
+  have s1 : stackArg (callE s t) 1 = stackArg s 0 := sa 1 (by decide)
+  have s2 : stackArg (callE s t) 2 = stackArg s 1 := sa 2 (by decide)
+  have s3 : stackArg (callE s t) 3 = stackArg s 2 := sa 3 (by decide)
+  have s4 : stackArg (callE s t) 4 = stackArg s 3 := sa 4 (by decide)
+  have s5 : stackArg (callE s t) 5 = stackArg s 4 := sa 5 (by decide)
+  have s6 : stackArg (callE s t) 6 = stackArg s 5 := sa 6 (by decide)
+  have s7 : stackArg (callE s t) 7 = stackArg s 6 := sa 7 (by decide)
+  have s8 : stackArg (callE s t) 8 = stackArg s 7 := sa 8 (by decide)
+  have s9 : stackArg (callE s t) 9 = stackArg s 8 := sa 9 (by decide)
+  have s10 : stackArg (callE s t) 10 = Sd s + BitVec.ofNat 64 oRsa := sa 10 (by decide)
+  have s11 : stackArg (callE s t) 11 = BitVec.ofNat 64 ((stackArg s 14).toNat - 1024) := sa 11 (by decide)
+  have hl : 1024 ≤ (stackArg s 14).toNat := by have := scLen P; unfold oRsa at this; omega
+  have l11 : (stackArg (callE s t) 11).toNat = (stackArg s 14).toNat - 1024 := by
+    rw [s11, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := (stackArg s 14).isLt; omega)
+  have hO : Rsa.RISCV64.Priv.oR (callE s t) = emR s := by simp only [Rsa.RISCV64.Priv.oR, g0, g1]
+  have hN : Rsa.RISCV64.Priv.nR (callE s t) = nR s := by simp only [Rsa.RISCV64.Priv.nR, g2, g3]
+  have hE : Rsa.RISCV64.Priv.eR (callE s t) = eR s := by simp only [Rsa.RISCV64.Priv.eR, g4, g5]
+  have hI : Rsa.RISCV64.Priv.iR (callE s t) = iD s := by simp only [Rsa.RISCV64.Priv.iR, g6, g7]
+  have hP : Rsa.RISCV64.Priv.pR (callE s t) = pR s := by simp only [Rsa.RISCV64.Priv.pR, s0, s1]
+  have hQ : Rsa.RISCV64.Priv.qR (callE s t) = qR s := by simp only [Rsa.RISCV64.Priv.qR, s2, s3]
+  have hDP : Rsa.RISCV64.Priv.dpR (callE s t) = dpR s := by simp only [Rsa.RISCV64.Priv.dpR, s4, s5]
+  have hDQ : Rsa.RISCV64.Priv.dqR (callE s t) = dqR s := by simp only [Rsa.RISCV64.Priv.dqR, s6, s7]
+  have hQI : Rsa.RISCV64.Priv.qiR (callE s t) = qiR s := by simp only [Rsa.RISCV64.Priv.qiR, s8, s9]
+  have hS : Rsa.RISCV64.Priv.sR (callE s t) = rsR s := by simp only [Rsa.RISCV64.Priv.sR, s10, l11]
+  have hA : Rsa.RISCV64.Priv.aR (callE s t) = PB s := by
+    simp only [Rsa.RISCV64.Priv.aR, stackArgAddr, hsp, Nat.mul_zero, BitVec.add_zero]; rfl
+  have hK : Rsa.RISCV64.Priv.kR (callE s t) = pkR s := by
+    show Region.mk ((callE s t).sp - BitVec.ofNat 64 Impl.Rsa.RISCV64.Priv.frameBytes) _ = _
+    rw [hsp, pb_kb P]; exact congrArg (Region.mk · _) (BitVec.add_sub_cancel _ _)
+  have es := em_sub P
+  have rs := rs_sub P
+  have is := i_sub P
+  have ks : Region.Sub (pkR s) (kD s) := pk_sub
+  have pbs := PB_sub P
+  have pt := kb_toNat P
+  have spl := s.sp.isLt
+  have st := P.sp1
+  rw [stackBytes_eq] at pt st
+  have pbt : (pb s).toNat = s.sp.toNat - 224 := by
+    have := pb_kb P
+    rw [this, Offset.toNat_add_ofNat, kb_toNat P, stackBytes_eq]; omega
+  have e13 : (Sd s).toNat = (stackArg s 13).toNat := rfl
+  have hsw := P.hs
+  unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsw
+  have sdt : (Sd s + BitVec.ofNat 64 oRsa).toNat = (Sd s).toNat + oRsa := by
+    rw [Offset.toNat_add_ofNat]; have := P.wsc; unfold oRsa at *; omega
+  exact {
+    sp16 := by rw [hsp]; exact pb_al P
+    sp1 := by rw [hsp, pbt]; unfold Impl.Rsa.RISCV64.Priv.frameBytes; omega
+    sp2 := by rw [hsp, pbt]; omega
+    hrd := by rw [hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]; rfl
+    hwr := by rw [hO, hS]; rfl
+    on := by rw [hO, hN]; exact (P.ns.sub_right es).symm
+    oe := by rw [hO, hE]; exact (P.es.sub_right es).symm
+    oi := by rw [hO, hI]; exact (P.cts.sub_left is |>.sub_right es).symm
+    op := by rw [hO, hP]; exact (P.ps.sub_right es).symm
+    oq := by rw [hO, hQ]; exact (P.qs.sub_right es).symm
+    odp := by rw [hO, hDP]; exact (P.dps.sub_right es).symm
+    odq := by rw [hO, hDQ]; exact (P.dqs.sub_right es).symm
+    oqi := by rw [hO, hQI]; exact (P.qis.sub_right es).symm
+    os := by rw [hO, hS]; exact em_rs P
+    oa := by rw [hO, hA]; exact (P.ks.sub_left pbs |>.sub_right es).symm
+    ns := by rw [hN, hS]; exact P.ns.sub_right rs
+    es := by rw [hE, hS]; exact P.es.sub_right rs
+    is := by rw [hI, hS]; exact P.cts.sub_left is |>.sub_right rs
+    ps := by rw [hP, hS]; exact P.ps.sub_right rs
+    qs := by rw [hQ, hS]; exact P.qs.sub_right rs
+    dps := by rw [hDP, hS]; exact P.dps.sub_right rs
+    dqs := by rw [hDQ, hS]; exact P.dqs.sub_right rs
+    qis := by rw [hQI, hS]; exact P.qis.sub_right rs
+    sa := by rw [hS, hA]; exact (P.ks.sub_left pbs |>.sub_right rs).symm
+    ko := by rw [hK, hO]; exact P.ks.sub_left ks |>.sub_right es
+    kn := by rw [hK, hN]; exact P.kn.sub_left ks
+    ke := by rw [hK, hE]; exact P.ke.sub_left ks
+    ki := by rw [hK, hI]; exact P.kct.sub_left ks |>.sub_right is
+    kp := by rw [hK, hP]; exact P.kp.sub_left ks
+    kq := by rw [hK, hQ]; exact P.kq.sub_left ks
+    kdp := by rw [hK, hDP]; exact P.kdp.sub_left ks
+    kdq := by rw [hK, hDQ]; exact P.kdq.sub_left ks
+    kqi := by rw [hK, hQI]; exact P.kqi.sub_left ks
+    ks := by rw [hK, hS]; exact P.ks.sub_left ks |>.sub_right rs
+    ka := by rw [hK, hA]; exact pk_PB P
+    wo := by rw [g0, g1]; have := P.wsc; omega
+    wn := by rw [g2, g3]; exact P.wn
+    we := by rw [g4, g5]; exact P.we
+    wi := by rw [g6, g7]; have := P.wct; have := P.oc; omega
+    wp := by rw [s0, s1]; exact P.wp
+    wq := by rw [s2, s3]; exact P.wq
+    wdp := by rw [s4, s5]; exact P.wdp
+    wdq := by rw [s6, s7]; exact P.wdq
+    wqi := by rw [s8, s9]; exact P.wqi
+    ws := by rw [s10, l11, sdt]; have := P.wsc; unfold oRsa; omega
+    k1 := by rw [g3]; exact P.k1
+    k2 := by rw [g3]; exact P.k2
+    h1 := by rw [g1, g3]
+    h7 := by rw [g7, g3]
+    e1 := by rw [g5]; exact P.e1
+    e2 := by rw [g5, g3]; exact P.e2
+    p1 := by rw [s1]; exact P.p1
+    p2 := by rw [s1, g3]; exact P.p2
+    q1 := by rw [s3]; exact P.q1
+    q2 := by rw [s3, g3]; exact P.q2
+    h5 := by rw [s5, s1]; exact P.h4
+    h9 := by rw [s9, s1]; exact P.h8
+    h7' := by rw [s7, s3]; exact P.h6
+    hs := by rw [g3, l11]; unfold Spec.Rsa.scratchWords; omega
+    al := by rw [s10, sdt]; have := P.als; unfold oRsa; omega }
 
 end
 
