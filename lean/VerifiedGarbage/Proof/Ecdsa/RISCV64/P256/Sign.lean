@@ -53,23 +53,22 @@ theorem n_odd : W.n % 2 = 1 := by decide
 
 theorem unitN : UnitMod W.n (2 ^ (64 * 4)) := unitMod_pow_two n_odd _
 
-theorem powNLay : PowLayR (Cfg.powN p256) 4 where
-  acc := by decide
-  tmp := by decide
-  base := by decide
-  one := by decide
-  short := by decide
-  nbits := by decide
+theorem chainNLay : ChainLayR (Cfg.chainN p256) 4 where
+  n := rfl
   k1 := by decide
-  acc_tmp := by decide
-  acc_one := by decide
-  base_acc := by decide
-  base_tmp := by decide
-  bits_w := by decide
+  acc := by decide
+  base := by decide
+  tbl := by decide
+  short := by decide
   acc8 := by decide
-  tmp8 := by decide
-  one8 := by decide
-  bits8 := by decide
+  base8 := by decide
+  tbl8 := by decide
+  acc_base := by decide
+  acc_tbl := by decide
+  base_tbl := by decide
+
+/-- The chain is `n - 2`'s. -/
+theorem chainN_ok : ChainOkR (Cfg.chainN p256) (W.n - 2) := ChainOkR.of_check (by lit_decide)
 
 /-- The signature of `digest` with the private key at `d` and the secret
 number at `k`, as the specification computes it. -/
@@ -311,7 +310,7 @@ theorem hs {i : Nat} (hi : i < 44) : p256.sl i < 4095 := by rw [sl_eq]; omega
 theorem nback_ok {base : Addr} {s : State} {k d e x : Nat} (hb : BackPre base s k d e x) :
     WP isa (.seq (addCall p256Order (p256.sl RR) (p256.sl XO) (p256.sl ZERO)) (Cfg.scalars p256 p256Order)) s
       fun s' => Kc s s' ∧
-        Unch base (cw RR ++ cw KM ++ powWx (Cfg.powN p256) 4 ++ cw EM ++ cw RM ++ cw DM ++ cw TT ++ cw SU ++
+        Unch base (cw RR ++ cw KM ++ chainWx (Cfg.chainN p256) 4 ++ cw EM ++ cw RM ++ cw DM ++ cw TT ++ cw SU ++
           cw SMM ++ cw SS) s.mem s'.mem ∧
         sv base s' RR = x % W.n ∧ sv base s' SS < W.n ∧
         Fin.ofNat W.n (sv base s' SS) =
@@ -354,16 +353,13 @@ theorem nback_ok {base : Addr} {s : State} {k d e x : Nat} (hb : BackPre base s 
   have on₂ : sv base s₂ ONEN = 2 ^ 256 % W.n := by
     show wordsVal _ _ _ _ = _
     rw [sv_unch U₂ ONEN (by decide), sv_unch U₁ ONEN (by decide)]; exact hb.onen
-  have ex₂ : sv base s₂ EXPN = W.n - 2 := by
-    show wordsVal _ _ _ _ = _
-    rw [sv_unch U₂ EXPN (by decide), sv_unch U₁ EXPN (by decide)]; exact hb.expn
-  refine WP.seq (WP.mono (pow_ok (P := Cfg.powN p256) (F := p256Order) order_ok rfl powNLay unitN hw₂ hn0
-    (by show sv base s₂ ONEN = _; rw [on₂]; rfl) (by show sv base s₂ EXPN < _; rw [ex₂]; decide))
+  refine WP.seq (WP.mono (chainPow_ok (P := Cfg.chainN p256) (F := p256Order) order_ok chainNLay unitN hw₂
+    (one := p256.sl ONEN) (by decide) (by decide) (by show sv base s₂ ONEN = _; rw [on₂]; rfl) chainN_ok)
     fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
   have hw₃ := hw₂.of_kc K₃
   have acc₃ : toM W.n (2 ^ 256) (sv base s₃ ACC) = Fin.ofNat W.n k ^ (W.n - 2) := by
-    have v : toM W.n (2 ^ 256) (sv base s₃ ACC) = toM W.n (2 ^ 256) (sv base s₂ KM) ^ sv base s₂ EXPN := v₃
-    rw [v, km, ex₂]
+    have v : toM W.n (2 ^ 256) (sv base s₃ ACC) = toM W.n (2 ^ 256) (sv base s₂ KM) ^ (W.n - 2) := v₃
+    rw [v, km]
   have acclt₃ : sv base s₃ ACC < W.n := lt₃
   -- A slot the steps so far keep.
   have k13 : ∀ i ∈ [EE, DD, R2N, ONE, RR], sv base s₃ i = sv base s₁ i := fun i hi => by

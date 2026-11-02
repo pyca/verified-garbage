@@ -95,7 +95,7 @@ def setup : List Instr :=
 
 /-- `w = (s R)^(n-2)`, `u = e w` and `v = r w` modulo `n`. -/
 def uv : Prog isa :=
-  progs [mulCall FN (c.sl KM) (c.sl VS) (c.sl R2N), pow (Sign.Cfg.powN c) FN,
+  progs [mulCall FN (c.sl KM) (c.sl VS) (c.sl R2N), chainPow (Sign.Cfg.chainN c) (c.sl Sign.ONEN) FN,
     mulCall FN (c.sl EM) (c.sl VE) (c.sl R2N), mulCall FN (c.sl UM) (c.sl EM) (c.sl ACC),
     mulCall FN (c.sl UU) (c.sl UM) (c.sl ONE), mulCall FN (c.sl RM) (c.sl VR) (c.sl R2N),
     mulCall FN (c.sl VM) (c.sl RM) (c.sl ACC), mulCall FN (c.sl VV) (c.sl VM) (c.sl ONE)]
@@ -194,7 +194,7 @@ def verify (checkName : String) (checkCode : Prog isa) : Prog isa :=
   .seq (.block ((Sign.Cfg.nConsts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x))) <|
   .seq (uv c FN) <|
   .seq (joint c) <|
-  .seq (pow (Ecdh.RISCV64.Cfg.powP c) c.FP) <|
+  .seq (chainPow (Ecdh.RISCV64.Cfg.chainP c) (c.sl ONEP) c.FP) <|
   .seq (Ecdh.RISCV64.Cfg.affineCoord c XM XO RX) <|
   .seq (compare c FN) (.block (finish c))
 

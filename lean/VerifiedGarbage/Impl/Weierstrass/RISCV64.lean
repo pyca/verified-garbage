@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Weierstrass.Chain
 public import VerifiedGarbage.Impl.Weierstrass.Slots
 public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 public import VerifiedGarbage.TCB.RISCV64.Isa
@@ -30,6 +31,12 @@ projective coordinates `(X : Y : Z)`. As on PPC64LE
   iteration does the same.
 * `pow`: `x^e` by square-and-multiply over the bits of a public exponent,
   also always multiplying and selecting by a mask.
+* `chainPow`: `x^e` for an exponent fixed when the code is generated, by its
+  chain of sliding windows (`ChainCfg`, `Impl/Weierstrass/Chain.lean`): the
+  table `x, x³, …, x¹⁵` and `x²` (`x` multiplied by `R mod m` first, so that
+  the table's numbers are below the modulus, as the multiplication's second
+  operand must be), then each step's squarings, by a loop
+  counting `s1` down, and its multiplication by the table.
 
 The bit of iteration `j` (the counter, in `s1`) is read from the number
 itself (`bitMask`): its word `j / 64`, at the slot plus `8 (j >>> 6)`,
@@ -172,5 +179,42 @@ def powBody (P : PowCfg) (F : Field) : Prog isa :=
 from its bit `nbits - 1`. -/
 def pow (P : PowCfg) (F : Field) : Prog isa :=
   .seq (.block (copy P.M.n P.acc P.one ++ [.li ctr P.nbits])) (.loop (powBody P F) more)
+
+/-! ## Powers by a chain -/
+
+namespace ChainR
+
+variable (P : ChainCfg) (F : Field)
+
+/-- The odd powers after `x`: `x^(2 i + 3) = x^(2 i + 1) x²`, for `i < c`. -/
+def odd : Nat → Prog isa
+  | 0 => .block []
+  | c + 1 => .seq (odd c) (mulCall F (P.slot (c + 1)) (P.slot c) (P.slot 8))
+
+/-- The table: `x` (reduced, by a multiplication by `R mod m`, at `one`),
+`x²`, then `x³ … x¹⁵`. -/
+def table (one : Nat) : Prog isa :=
+  .seq (mulCall F (P.slot 0) P.base one) (.seq (mulCall F (P.slot 8) (P.slot 0) (P.slot 0)) (odd P F 7))
+
+/-- `acc = acc^(2^s)`, by a loop counting `s1` from `s` down. -/
+def squares (s : Nat) : Prog isa :=
+  .seq (.block [.li ctr s]) (.loop (.seq (.block [decCounter]) (mulCall F P.acc P.acc P.acc)) more)
+
+/-- A step: `acc = acc^(2^s) x^d`. -/
+def step : Nat × Nat → Prog isa
+  | (s, d) => .seq (if s = 0 then .block [] else squares P F s)
+      (if d = 0 then .block [] else mulCall F P.acc P.acc (P.slot ((d - 1) / 2)))
+
+/-- The steps in order. -/
+def steps : List (Nat × Nat) → Prog isa
+  | [] => .block []
+  | st :: rest => .seq (step P F st) (steps rest)
+
+end ChainR
+
+/-- `[acc] = [base]^e` (in Montgomery form) for the chain of `e`, with
+`R mod m` at `one`. -/
+def chainPow (P : ChainCfg) (one : Nat) (F : Field) : Prog isa :=
+  .seq (ChainR.table P F one) (.seq (.block (copy P.M.n P.acc (P.slot ((P.first - 1) / 2)))) (ChainR.steps P F P.steps))
 
 end VG.Impl.Weierstrass.RISCV64

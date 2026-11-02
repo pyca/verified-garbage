@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 What follows the point's setup in both functions (`tail`): the masks of `d`
 in `[1, n-1]` into the flag (`range_ok`), `R = [d]P` by a call of
-`vg_p256_mul` (`mul_rv`), `Z^(p-2)` by `pow` (`pow_ok`), and `x = X Z^(p-2)`
+`vg_p256_mul` (`mul_rv`), `Z^(p-2)` by its chain (`chainPow_ok`), and `x = X Z^(p-2)`
 out of Montgomery's form (`affine_ok`). The callees' `Keeps` are frames
 (`unch_of_mulKeeps`).
 -/
@@ -281,23 +281,22 @@ theorem TailConsts.of_unch {base : Addr} {s s' : State} {W' : List (Nat × Nat)}
     (e ONE (by simp)).trans h.one, (e ONEP (by simp)).trans h.onep, (e AP (by simp)).trans h.ap,
     (e B3P (by simp)).trans h.b3p, (e EXPP (by simp)).trans h.expp⟩
 
-theorem powLay : PowLayR (powP p256) 4 where
-  acc := by decide
-  tmp := by decide
-  base := by decide
-  one := by decide
-  short := by decide
-  nbits := by decide
+theorem chainLay : ChainLayR (chainP p256) 4 where
+  n := rfl
   k1 := by decide
-  acc_tmp := by decide
-  acc_one := by decide
-  base_acc := by decide
-  base_tmp := by decide
-  bits_w := by decide
+  acc := by decide
+  base := by decide
+  tbl := by decide
+  short := by decide
   acc8 := by decide
-  tmp8 := by decide
-  one8 := by decide
-  bits8 := by decide
+  base8 := by decide
+  tbl8 := by decide
+  acc_base := by decide
+  acc_tbl := by decide
+  base_tbl := by decide
+
+/-- The chain is `p - 2`'s. -/
+theorem chainP_ok : ChainOkR (chainP p256) (W.p - 2) := ChainOkR.of_check (by lit_decide)
 
 /-- The coordinate `[o] = [a] Z^(p-2)` out of Montgomery's form, `Z^(p-2) R` in `ACC`. -/
 theorem affine_ok {s : State} {base : Addr} (hw : WsReg s base) {t o a : Nat} (ht : t < 44) (ho : o < 44)
@@ -354,7 +353,7 @@ theorem rep_of_represents {X Y Z : Fe W} {P : Point W} (h : Impl.Weierstrass.Mul
 
 /-- What `tail` writes. -/
 abbrev tailW : List (Nat × Nat) :=
-  [(FL, 8)] ++ mulKW ++ powWx (powP p256) 4 ++
+  [(FL, 8)] ++ mulKW ++ chainWx (chainP p256) 4 ++
     [(p256.sl XM, 32), (own 4, 256), (p256.sl XO, 32), (own 4, 256)]
 
 /-- `tail` with a call of `mulName`, whose code is `mulCode`, that computes
@@ -402,9 +401,9 @@ theorem tailWith_ok (hL : VG.Proof.Weierstrass.Law W) {mulName : String} {mulCod
   have hw₂ := hw₁.of_kp K₂
   have hc₂ := hc₁.of_unch U₂ (by decide)
   -- `Z^(p-2)`.
-  refine WP.seq (WP.mono (pow_ok (P := powP p256) (F := p256Field) field_ok rfl powLay unit hw₂ (by decide)
-    (by show sv base s₂ ONEP = _; rw [hc₂.onep]; rfl)
-    (by show sv base s₂ EXPP < _; rw [hc₂.expp]; decide)) fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
+  refine WP.seq (WP.mono (chainPow_ok (P := chainP p256) (F := p256Field) field_ok chainLay unit hw₂
+    (one := p256.sl ONEP) (by decide) (by decide)
+    (by show sv base s₂ ONEP = _; rw [hc₂.onep]; rfl) chainP_ok) fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
   have hw₃ := hw₂.of_kc K₃
   have hc₃ := hc₂.of_unch U₃ (by decide)
   -- `x`.
@@ -421,8 +420,6 @@ theorem tailWith_ok (hL : VG.Proof.Weierstrass.Law W) {mulName : String} {mulCod
   have k₁ : MC.scalar base s₁.mem = sv base s K := by
     rw [← e₁ K (by decide)]; exact coord_sv _ _ K
   have acc₄ : sv base s₄ ACC = sv base s₃ ACC := sv_unch U₄ ACC (by decide)
-  have he : wordsVal s₂.mem base (powP p256).bits p256Field.S.k = W.p - 2 := hc₂.expp
-  rw [he] at v₃
   have v₃' : toM W.p (2 ^ 256) (sv base s₃ ACC) = toM W.p (2 ^ 256) (sv base s₂ RZ) ^ (W.p - 2) := v₃
   refine ⟨K₁.kc.trans (K₂.kc.trans (K₃.trans K₄.kc)), ((U₁.trans U₂).trans U₃).trans U₄, by rw [fl₄, f₁], ?_, lt₄,
     ?_, by rw [acc₄]; exact lt₃, by rw [acc₄, v₃', e₄ RZ (by simp)]⟩

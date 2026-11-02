@@ -22,9 +22,10 @@ five on the caller's stack, computes scrypt (RFC 7914 §6) with
 
 The function runs in a frame of `locals` bytes, to which `s3` points
 throughout (the callees preserve it): our return address, our caller's
-`s3`, the password, its length, `r`, `b`, `blen`, `v` and the block ROMix
-works on next. Our stack arguments are above the frame, from
-`s3 + locals`.
+`s3`, the password, its length, `r`, `b`, `blen`, `v`, the block ROMix
+works on next, and the 168 bytes where scryptROMix and the functions it
+calls save their callers' registers (`save`). Our stack arguments are
+above the frame, from `s3 + locals`.
 
 Only the pointers and the lengths affect timing: the branches are on the
 pointers' low bits and on the bytes of `b` left, and every address is in
@@ -41,7 +42,7 @@ open VG.Impl.Scrypt.RISCV64 (mov roMix roMixName)
 /-! ## The frame -/
 
 /-- The size of the frame. -/
-def locals : Nat := 80
+def locals : Nat := 256
 
 def raOff : Nat := 0
 def s3Off : Nat := 8
@@ -52,6 +53,8 @@ def bOff : Nat := 40
 def blenOff : Nat := 48
 def vOff : Nat := 56
 def curOff : Nat := 64
+/-- scryptROMix's `save` (168 bytes). -/
+def saveOff : Nat := 80
 
 /-- Stack argument `i` (`vlen`, `scratch`, `slen`, `out`, `out_len`), on our
 caller's stack, above the frame. -/
@@ -86,9 +89,10 @@ def alignBits : List Instr :=
   [fld .t0 bOff, fld .t1 vOff, .logic .or .t0 .t0 .t1, fld .t1 (argOff scratchArg),
    .logic .or .t0 .t0 .t1, .logicImm .and .t0 .t0 7]
 
-/-- `romix(block, r, v, vlen, scratch)`. -/
+/-- `romix(block, r, v, vlen, scratch, save)`. -/
 def romixArgs : List Instr :=
-  [fld .a0 curOff, fld .a1 rOff, fld .a2 vOff, fld .a3 (argOff vlenArg), fld .a4 (argOff scratchArg)]
+  [fld .a0 curOff, fld .a1 rOff, fld .a2 vOff, fld .a3 (argOff vlenArg), fld .a4 (argOff scratchArg),
+   .addi .a5 .s3 saveOff]
 
 /-- The next block, `128 r` bytes on, and in `t0` the bytes of `b` after it
 (`b + 128 blen` less it). -/
