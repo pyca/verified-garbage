@@ -47,10 +47,11 @@ theorem KPre.arg_al {s0 : State} {B : Addr} {Z K oS na : Nat} (h : KPre s0 B Z K
   rw [e]; omega
 
 /-- A stack argument loaded through `t0 = sp`. -/
-theorem ldSp_ok {u : State} (h0 : u.gpr .t0 = u.sp) {r : Reg} {i : Nat} (hi : 8 * i < 2048)
+theorem ldSp_ok {u : State} (h0 : u.gpr .t0 = u.sp) {r : Reg} {i o : Nat} (ho : o = 8 * i) (hi : 8 * i < 2048)
     (hin : InRegions (u.rd ++ u.wr) (stackArgAddr u i) 8) (hal : (stackArgAddr u i).toNat % 8 = 0)
     {rest : List Instr} {Q : State → Prop} (k : WP isa (.block rest) (u.write r (stackArg u i)) Q) :
-    WP isa (.block (.load .d r .t0 (8 * i) :: rest)) u Q := by
+    WP isa (.block (.load .d r .t0 o :: rest)) u Q := by
+  subst ho
   have e : u.gpr .t0 + BitVec.ofNat 64 (8 * i) = stackArgAddr u i := by rw [h0]; rfl
   refine WP.block_cons_iff.mpr ⟨_, exec_load_d hi (by rw [e]; exact hal) (by rw [e]; exact hin), ?_⟩
   rw [e]
@@ -126,5 +127,31 @@ theorem fn_ok {s0 : State} {B : Addr} {Z K oS na : Nat} (hp : KPre s0 B Z K oS n
         rw [exec_li (by decide)]; rfl
       brun [ret0, e]) (by rfl) (by rfl)) fun u ⟨⟨a0, um⟩, ku⟩ => fin u (bt.of_regs ku um) ?_
     rw [a0, hok']; rfl
+
+/-- The checks keep `KBase`. -/
+theorem Stg.base {g : Geo} {s0 sS t : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g sS A live c t) (hb : KBase g.B g.Z s0 sS) : KBase g.B g.Z s0 t :=
+  hb.of_frame h.frame (fun j hj => h.ws.arr_fit (List.mem_range.mp hj)) (by decide) h.ws.hdr_le h.regs
+
+/-- `ret`: the mask's bit in `a0`. -/
+theorem ret_ok {g : Geo} {sS t : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g sS A live c t) :
+    WP isa (.block ret) t fun u => (u.gpr .a0 = BitVec.ofNat 64 (if c then 1 else 0) ∧ u.mem = t.mem) ∧
+      Keep [.a0] t u := by
+  have hs := h.ws.scr
+  have hz := h.ws.hdr_le
+  have e : word t.mem g.B sMask = BitVec.ofNat 64 (if c then 1 else 0) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by cases c <;> decide)]
+    exact h.mask
+  have ea : t.gpr .s11 + BitVec.ofNat 64 sMask = off g.B sMask := by rw [h.ws.s11]
+  have hin : InRegions (t.rd ++ t.wr) (t.gpr .s11 + BitVec.ofNat 64 sMask) 8 := by
+    rw [ea]; exact hs.ld (d := sMask) (n := 8) (by simp only [hdr_eq] at hz; unfold sMask; omega)
+  have hal : (t.gpr .s11 + BitVec.ofNat 64 sMask).toNat % 8 = 0 := by
+    rw [ea]; exact hs.al8 (d := sMask) (by simp only [hdr_eq] at hz; unfold sMask; omega) (by decide)
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  refine WP.block_cons_iff.mpr ⟨_, exec_load_d (by decide) hal hin, WP.block_nil ?_⟩
+  rw [ea]
+  exact ⟨by rw [gpr_write_self]; exact e, rfl⟩
 
 end VG.Proof.Rsa.RISCV64.KeyCheck
