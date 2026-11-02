@@ -275,9 +275,10 @@ theorem clampI_ok (s : State) :
       (by decide)).write _ (by decide)).write _ (by decide)
 
 theorem setup_eq : setup =
-    [.load .d R0 .a0 24] ++ ([.load .d R1 .a0 32] ++
+    ([.load .d R0 .a0 24] : List Instr) ++ (([.load .d R1 .a0 32] : List Instr) ++
     (Impl.Words64.RISCV64.movImm64 T1 T2 M0 ++ (clampI ++
-    ([.load .d H0 .a0 0] ++ ([.load .d H1 .a0 8] ++ [.load .d H2 .a0 16]))))) := by
+    (([.load .d H0 .a0 0] : List Instr) ++ (([.load .d H1 .a0 8] : List Instr) ++
+      ([.load .d H2 .a0 16] : List Instr)))))) := by
   simp only [setup, clampI, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- The registers `setup` writes. -/
@@ -356,8 +357,8 @@ theorem setup_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr) (ha : (s.gpr
 
 /-! ## The tag -/
 
-theorem addS_eq : addS = [.load .d X0 .a0 40] ++
-    ([.load .d X1 .a0 48] ++ Impl.Words.RISCV64.add2 H0 H1 X0 X1) := by
+theorem addS_eq : addS = ([.load .d X0 .a0 40] : List Instr) ++
+    (([.load .d X1 .a0 48] : List Instr) ++ Impl.Words.RISCV64.add2 H0 H1 X0 X1) := by
   simp only [addS, List.cons_append, List.nil_append]
 
 theorem addS_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr) (ha : (s.gpr .a0).toNat % 8 = 0) :
