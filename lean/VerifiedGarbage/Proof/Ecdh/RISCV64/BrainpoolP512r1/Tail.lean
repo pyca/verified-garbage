@@ -42,8 +42,8 @@ open VG.Impl.Ecdsa.RISCV64 VG.Impl.Ecdh.RISCV64 VG.Impl.Ecdh.RISCV64.Cfg
 open VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.RISCV64 VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1
 open VG.Proof.X25519.RISCV64 (Rest)
 
-/-- Constants to slots below 38, each its own. -/
-theorem consts_ok : ∀ (L : List (Nat × Nat)) {s : State} {base : Addr}, WsReg s base → (∀ e ∈ L, e.1 < 38) →
+/-- Constants to slots below 41, each its own. -/
+theorem consts_ok : ∀ (L : List (Nat × Nat)) {s : State} {base : Addr}, WsReg s base → (∀ e ∈ L, e.1 < 41) →
     (L.map Prod.fst).Nodup →
     WP isa (.block (L.flatMap fun e => setConst 8 (brainpoolp512r1.sl e.1) e.2)) s fun s' =>
       Rest [.t0, .t1] s s' ∧ Unch base (L.map fun e => (brainpoolp512r1.sl e.1, 64)) s.mem s'.mem ∧
@@ -74,7 +74,7 @@ theorem consts_ok : ∀ (L : List (Nat × Nat)) {s : State} {base : Addr}, WsReg
 theorem constCode_eq : constCode brainpoolp512r1 = (consts brainpoolp512r1).flatMap fun e => setConst 8 (brainpoolp512r1.sl e.1) e.2 := rfl
 
 /-- The constants' slots. -/
-theorem consts_slots : ∀ e ∈ consts brainpoolp512r1, e.1 < 38 := by decide
+theorem consts_slots : ∀ e ∈ consts brainpoolp512r1, e.1 < 41 := by decide
 
 theorem consts_nodup : ((consts brainpoolp512r1).map Prod.fst).Nodup := by decide
 
@@ -177,7 +177,7 @@ theorem unch_of_mulKeeps {base : Addr} {m m' : Mem} (h : MC.Keeps base m m') : U
 
 /-- What `vg_brainpoolp512r1_check_point` may write, as ranges of offsets. -/
 abbrev checkKW : List (Nat × Nat) :=
-  [(192, 64), (2432, 64), (2688, 64), (2752, 64), (3584, 512), (2240, 64), (2304, 64), (2496, 64), (2816, 64),
+  [(192, 64), (2432, 64), (2688, 64), (2752, 64), (7680, 512), (2240, 64), (2304, 64), (2496, 64), (2816, 64),
     (FL, 8), (8192, 2 ^ 64)]
 
 theorem unch_of_checkKeeps {base : Addr} {m m' : Mem} (h : CC.Keeps base m m') : Unch base checkKW m m' := by
@@ -190,12 +190,12 @@ theorem unch_of_checkKeeps {base : Addr} {m m' : Mem} (h : CC.Keeps base m m') :
     simp only [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rw [BitVec.add_comm, BitVec.sub_add_cancel]
   rw [ex]
   refine h _ hlt ?_ ?_
-  · simp only [Impl.Weierstrass.CheckPoint.Curve.Own, Impl.Weierstrass.CheckPoint.Curve.slot, CC,
+  · simp only [Impl.Weierstrass.CheckPoint.Curve.Own, Impl.Weierstrass.CheckPoint.Curve.slot,
       Impl.Weierstrass.CheckPoint.brainpoolp512r1, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes,
       List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left, not_or]
     omega
   · simp only [Impl.Weierstrass.CheckPoint.Curve.Out, Impl.Weierstrass.CheckPoint.Curve.slot,
-      Impl.Weierstrass.CheckPoint.Curve.flagAt, CC, Impl.Weierstrass.CheckPoint.brainpoolp512r1,
+      Impl.Weierstrass.CheckPoint.Curve.flagAt, Impl.Weierstrass.CheckPoint.brainpoolp512r1,
       List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left, not_or]
     omega
 
@@ -221,17 +221,17 @@ theorem sl_lt {i : Nat} (hi : i < 44) : brainpoolp512r1.sl i % 8 = 0 ∧ brainpo
   simp only [Cfg.sl, slot, show brainpoolp512r1.n = 8 from rfl, FL]; omega
 
 /-- The masks of `x < n` and `x ≠ 0` into the flag, for `x` at slot `i`. -/
-theorem rangeOf_ok {i : Nat} (hi : i < 38) {s : State} {base : Addr} (hw : WsReg s base) :
+theorem rangeOf_ok {i : Nat} (hi : i < 41) {s : State} {base : Addr} (hw : WsReg s base) :
     WP isa (.block (rangeOf brainpoolp512r1 i)) s fun s' =>
       Kp s s' ∧ Outside base FL 8 s.mem s'.mem ∧
       word s'.mem base FL = word s.mem base FL &&& maskOf (decide (sv base s i < sv base s MN)) &&&
         maskOf (!decide (sv base s i = 0)) := by
   obtain ⟨a8, -, aF⟩ := sl_lt (by omega : i < 44)
-  have a2 : brainpoolp512r1.sl i + 8 * 6 ≤ 2048 := by rw [sl_eq]; omega
-  rw [rangeOf, show brainpoolp512r1.n = 6 from rfl]
+  have a2 : brainpoolp512r1.sl i + 8 * 8 ≤ 4096 := by rw [sl_eq]; omega
+  rw [rangeOf, show brainpoolp512r1.n = 8 from rfl]
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (ltMask_ok hw (n := 8) (a := brainpoolp512r1.sl i) (m := brainpoolp512r1.sl MN) a8
-    (by decide) a2 (by decide)) fun s₁ ⟨r₁, m₁, g₁⟩ => ?_)
+    (by decide) (by omega) (by decide)) fun s₁ ⟨r₁, m₁, g₁⟩ => ?_)
   have hw₁ := hw.of_rest r₁
   refine WP.block_append (WP.mono (andFlag_ok hw₁) fun s₂ ⟨f₂, r₂, O₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
@@ -309,7 +309,7 @@ theorem affine_ok {s : State} {base : Addr} (hw : WsReg s base) {t o a : Nat} (h
       sv base s' o < W.p ∧
       Fin.ofNat W.p (sv base s' o) = toM W.p (2 ^ 512) (sv base s a) * toM W.p (2 ^ 512) (sv base s ACC) := by
   have hl : ∀ i, i < 44 → brainpoolp512r1.sl i + 8 * brainpoolp512r1Field.S.k ≤ own brainpoolp512r1Field.S.k := fun i hi => by
-    show 64 + 64 * i + 64 ≤ 3584 + 0 - 0 + 0; omega
+    show 64 + 64 * i + 64 ≤ 7680; omega
   have hs : ∀ i, i < 44 → brainpoolp512r1.sl i < 4095 := fun i hi => by rw [sl_eq]; omega
   have hk4 : brainpoolp512r1Field.S.k = 8 := rfl
   rw [affineCoord]
