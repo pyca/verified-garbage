@@ -14,14 +14,14 @@ import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 
 /-!
-# `vg_p521w_mul` by four-bit windows on RISC-V: the body
+# `vg_p521_mul` by four-bit windows on RISC-V: the body
 
 `WindowA.Cfg.body p521w dblJ` leaves in `R` a representative of
 `[k]Q` (`body_ok`), for `k` at `K`'s slot and `Q` affine in `R`'s first two:
 
 * `quad_ok`: `R = 16 R`: `R`'s representative of `P` into Jacobian
-  coordinates stands for `P` (`InvJ.of_toJ`), each doubling `dblJ` for
-  curve's `a` doubles it (`InvJ.dblA'`), and back in projective coordinates,
+  coordinates stands for `P` (`InvJ.of_toJ`), each doubling `dblJ`, for
+  `a = -3`, doubles it (`InvJ.dbl'`), and back in projective coordinates,
   with `Y = 1` where `Z` is zero, it is a representative of `16 P` again
   (`InvJ.out`);
 * `build_ok`: the table of `[e]Q` from byte 4096, stored through `a6` as
@@ -510,7 +510,7 @@ abbrev qOf (base : Addr) (s : State) : Point W := .affine (tmv W 9 base s (c.sl 
 /-- What the table's construction writes. -/
 abbrev buildW : List (Nat × Nat) := [(1288, 864), (4096, 3456), (7616, 576)]
 
-/-- What `vg_p521w_mul`'s body reads at the start. -/
+/-- What `vg_p521_mul`'s body reads at the start. -/
 structure WPre (base : Addr) (s : State) : Prop where
   ws : WsReg s base
   kc : KC base s
