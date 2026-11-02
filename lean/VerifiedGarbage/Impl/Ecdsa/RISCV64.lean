@@ -112,10 +112,10 @@ def mulBody : Prog isa :=
 /-- `vg_<curve>_mul(ws = a0)`: `s0`, `s1` and `ra` kept around the body,
 with the working space's base in `s0`. -/
 def mulFn : Prog isa :=
-  .seq (.block [.store .d .s0 .a0 c.mulSave, .store .d .s1 .a0 (c.mulSave + 8),
-    .store .d .ra .a0 (c.mulSave + 16), .addi .s0 .a0 0]) <|
-  .seq c.mulBody (.block [.load .d .ra .s0 (c.mulSave + 16), .load .d .s1 .s0 (c.mulSave + 8),
-    .load .d .s0 .s0 c.mulSave])
+  .seq (.block (sdAt .s0 .a0 c.mulSave ++ sdAt .s1 .a0 (c.mulSave + 8) ++ sdAt .ra .a0 (c.mulSave + 16) ++
+    [.addi .s0 .a0 0])) <|
+  .seq c.mulBody (.block (ldAt .ra .s0 (c.mulSave + 16) ++ ldAt .s1 .s0 (c.mulSave + 8) ++
+    ldAt .s0 .s0 c.mulSave))
 
 end Cfg
 

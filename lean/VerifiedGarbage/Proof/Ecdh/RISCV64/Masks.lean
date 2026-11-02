@@ -102,14 +102,14 @@ theorem ltMask_ok {n : Nat} {s : State} {base : Addr} (hw : WsReg s base) {a m :
 
 /-- The words or'ed into `t3`. -/
 theorem orWords_ok : ∀ (k : Nat) {s : State} {base : Addr} {a : Nat}, WsReg s base → a % 8 = 0 →
-    a + 8 * k ≤ 2048 →
+    a + 8 * k ≤ 4096 →
     WP isa (.block (orWords k a)) s fun s' =>
       Rest [.t3, .t4] s s' ∧ s'.mem = s.mem ∧
       (s'.gpr .t3 = 0 ↔ s.gpr .t3 = 0 ∧ wordsVal s.mem base a k = 0)
   | 0, s, _, _, _, _, _ => WP.block_nil ⟨Rest.refl _ _, rfl, by simp [wordsVal]⟩
   | k + 1, s, base, a, hw, ha, ha' => by
-    rw [orWords, List.cons_append, List.cons_append, List.nil_append]
-    refine ld_ws hw (by omega) ha fun s₁ u₁ => ?_
+    rw [orWords, List.append_assoc, List.singleton_append]
+    refine ldAt_ws hw (by omega) ha fun s₁ u₁ => ?_
     refine wp_or fun s₂ u₂ => ?_
     have r₂ : Rest [.t3, .t4] s s₂ := (u₁.rest (by decide)).trans (u₂.rest (by decide))
     have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
@@ -152,7 +152,7 @@ theorem top_or_neg (x : BitVec 64) : ((0 - x ||| x) >>> 63) + BitVec.ofInt 64 (-
 
 /-- The mask `a7` of `[a] = 0`. -/
 theorem zeroMask_ok {n : Nat} {s : State} {base : Addr} (hw : WsReg s base) {a : Nat} (ha : a % 8 = 0)
-    (ha' : a + 8 * n ≤ 2048) :
+    (ha' : a + 8 * n ≤ 4096) :
     WP isa (.block (zeroMask n a)) s fun s' =>
       Rest [.t3, .t4, .a7] s s' ∧ s'.mem = s.mem ∧
       s'.gpr .a7 = maskOf (decide (wordsVal s.mem base a n = 0)) := by

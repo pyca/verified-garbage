@@ -697,8 +697,7 @@ theorem dfin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s
   rw [par₄, yf₄'] at g₅
   refine WP.block_append (WP.mono (andFlag_ok hw₅) fun s₆ ⟨f₆, r₆, O₆⟩ => ?_)
   have hw₆ := hw₅.of_rest r₆
-  rw [List.singleton_append]
-  refine ld_ws hw₆ (d := p256.sl FLAG) (by decide) (by decide) fun s₇ u₇ => ?_
+  refine ldAt_ws hw₆ (d := p256.sl FLAG) (by decide) (by decide) fun s₇ u₇ => ?_
   have hw₇ := hw₆.of_kp (Kp.of_upd u₇)
   generalize hB : ((c && decide (sv base s DIF = 0)) && decide (y % 2 = pr)) = B
   have fl₆ : word s₆.mem base FL = maskOf B := by

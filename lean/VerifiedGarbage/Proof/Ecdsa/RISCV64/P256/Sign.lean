@@ -301,7 +301,7 @@ abbrev cw (o : Nat) : List (Nat × Nat) := [(p256.sl o, 8 * 4), (own 4, 64 * 4)]
 theorem hl {i : Nat} (hi : i < 44) : p256.sl i + 8 * p256Order.S.k ≤ own p256Order.S.k := by
   show 64 + 32 * i + 32 ≤ 3840 + 0 - 0 + 0; omega
 
-theorem hs {i : Nat} (hi : i < 44) : p256.sl i < 2048 := by rw [sl_eq]; omega
+theorem hs {i : Nat} (hi : i < 44) : p256.sl i < 4095 := by rw [sl_eq]; omega
 
 /-- `r = x mod n`, then `s = k^(n-2) (e + r d) mod n`. -/
 theorem nback_ok {base : Addr} {s : State} {k d e x : Nat} (hb : BackPre base s k d e x) :
@@ -499,7 +499,7 @@ theorem nzFlag_ok {i : Nat} (hi : i < 44) {s : State} {base : Addr} (hw : WsReg 
   obtain ⟨a8, a2, -⟩ := sl_lt hi
   rw [Cfg.nonzeroFlag, show p256.n = 4 from rfl]
   simp only [List.append_assoc]
-  refine WP.block_append (WP.mono (zeroMask_ok hw (n := 4) (a := p256.sl i) a8 a2) fun s₁ ⟨r₁, m₁, g₁⟩ => ?_)
+  refine WP.block_append (WP.mono (zeroMask_ok hw (n := 4) (a := p256.sl i) a8 (by omega)) fun s₁ ⟨r₁, m₁, g₁⟩ => ?_)
   rw [List.singleton_append]
   refine WP.cons (exec_logicImm (by decide)) ?_
   have r₁' := r₁.trans ((Upd.write s₁ .a7 (s₁.gpr .a7 ^^^ BitVec.ofInt 64 (-1))).rest (ws := [.t3, .t4, .a7])
@@ -536,8 +536,7 @@ theorem finish_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr 
   have hw₁ := hw.of_rest r₁
   refine WP.block_append (WP.mono (nzFlag_ok (i := SS) (by decide) hw₁) fun s₂ ⟨r₂, O₂, f₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
-  rw [List.singleton_append]
-  refine ld_ws hw₂ (d := p256.sl FLAG) (by decide) (by decide) fun s₃ u₃ => ?_
+  refine ldAt_ws hw₂ (d := p256.sl FLAG) (by decide) (by decide) fun s₃ u₃ => ?_
   have hw₃ := hw₂.of_kp (Kp.of_upd u₃)
   have ss₁ : sv base s₁ SS = sv base s SS := by
     show wordsVal _ _ _ _ = _; rw [O₁.wordsVal (by rw [sl_eq, FL]; decide) (by decide)]
