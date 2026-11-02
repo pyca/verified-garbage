@@ -140,12 +140,24 @@ def chainSetup : List Instr :=
   [.add .s3 .s3 .t1, .addi .t2 .s4 (-1), .shift .srl .d .s5 .t2 3, .shift .sll .d .t2 .s5 3,
    .sub .s4 .s4 .t2, .addi .a0 .s1 400, .addi .a1 .s1 408] ++ xorBytes .t0 .t1 .a0 .a1 8 ++ ecbArgs 400
 
-/-- One whole block of data XORed into the chaining value, enciphered. -/
-def chainBody : Prog isa :=
-  .seq (.block ([.addi .t3 .s1 400] ++ xorBytes .t0 .t1 .t3 .s3 8 ++ [.addi .s3 .s3 8, .addi .s5 .s5 (-1)] ++
-    ecbArgs 400)) ecbCall
+/-- CBC-MAC (SP 800-38B §6.2, step 6), one block at a time: `buf := Mⱼ ⊕
+C`, and `C := CIPH_K(buf)` to the chaining value; the data are only read. -/
+def macMode : Modes.Mode where
+  pre := Modes.xorBlk 2 .buf .dat .chn
+  post := Modes.copyBlk 2 .chn .buf
+  step := 8
+  ivOut := true
 
-def chainLoop : Prog isa := .ite (.zero .s5) (.block []) (.loop chainBody (.nonzero .s5))
+/-- The CBC-MAC of the `n = a3` blocks at `a2` into the chaining value at
+`a1`, under the schedules at `a0`: Triple DES's core for the modes
+(`dirCore .encrypt`), inlined, which copies the schedules once. -/
+def macChain : Prog isa := (Impl.TripleDes.RISCV64.dirCore .encrypt).seq macMode
+
+/-- The `s5` whole blocks of data at `s3` chained into the chaining value,
+and the data pointer past them. -/
+def chainLoop : Prog isa :=
+  .seq (.block [mov .a0 .s1, .addi .a1 .s1 400, mov .a2 .s3, mov .a3 .s5, .shift .sll .d .t0 .s5 3,
+    .add .s3 .s3 .t0]) macChain
 
 def chainPath : Prog isa :=
   .seq (.block ([.sub .s4 .a3 .t1] ++ toHeld .t1)) (.seq (copy .t6 .t4 .t3 .t5)
