@@ -12,8 +12,7 @@ import VerifiedGarbage.Proof.Ed25519.RISCV64.Freeze
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
-public import VerifiedGarbage.Proof.Framework.RISCV64.Call
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.BaseContract
 
 /-!
 # `vg_ed25519_scalar_base` on RISC-V: correctness
@@ -79,18 +78,6 @@ theorem combW_saves (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1152) :
   · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
 
 end
-
-/-- The precondition, by register: `out` in `a0`, `scalar` in `a1`, `scratch`, aligned, in `a2`. -/
-structure BasePre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .a1, 32⟩, TBL (s.syms combSym)]
-  wr : s.wr = [⟨s.gpr .a0, 32⟩, ⟨s.gpr .a2, 8192⟩]
-  al : (s.gpr .a2).toNat % 8 = 0
-  out_ws : (⟨s.gpr .a0, 32⟩ : Region).Disjoint ⟨s.gpr .a2, 8192⟩
-  sc_ws : (⟨s.gpr .a1, 32⟩ : Region).Disjoint ⟨s.gpr .a2, 8192⟩
-  tal : (s.syms combSym).toNat % 8 = 0
-  tfit : (s.syms combSym).toNat + 49152 ≤ 2 ^ 64
-  words : ∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q
-  tbl_ws : (TBL (s.syms combSym)).Disjoint ⟨s.gpr .a2, 8192⟩
 
 /-- The saved registers' slots. -/
 def baseList : List (Reg × Nat) := (List.range 7).map fun i => (baseSaved.getD i .s0, SAVE + 8 * i)
@@ -223,65 +210,7 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
     rw [out_bytes (b := b) (a := FR) (fun j hj => by rw [← Nat.zero_add (4 * j)]; exact hw.outs j hj) rfl,
       uv.mem, v7]
 
-theorem combWords_length : combWords.length = 64 * 96 := by simp [combWords]
-
-theorem combWords_getD {q : Nat} (hq : q < 64 * 96) : combWords.getD q 0 = combWord q := by
-  simp [combWords, hq]
-
-/-- What `abi.withConsts [(combSym, ws)]` says of the comb's table, for words `ws` of `combWord`. -/
-theorem tbl_of_consts' {st : Nat} {s : State} {ws : List (BitVec 64)} (hl : ws.length = 64 * 96)
-    (hg : ∀ q < 64 * 96, ws.getD q 0 = combWord q) (h : ConstsOk [(combSym, ws)] st s) :
-    TBL (s.syms combSym) ∈ s.rd ∧ (s.syms combSym).toNat % 8 = 0 ∧ (s.syms combSym).toNat + 49152 ≤ 2 ^ 64 ∧
-      (∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q) ∧
-      (∀ r ∈ s.wr, (TBL (s.syms combSym)).Disjoint r) ∧
-      ∀ r ∈ RISCV64.abi.reserved st s, (TBL (s.syms combSym)).Disjoint r := by
-  have hrd := h.rd1
-  have hfit := h.fit List.mem_cons_self
-  have hal := h.aligned List.mem_cons_self
-  have hd : (∀ r ∈ s.wr, Region.Disjoint ⟨s.syms combSym, 8 * ws.length⟩ r) ∧
-      ∀ r ∈ RISCV64.abi.reserved st s, Region.Disjoint ⟨s.syms combSym, 8 * ws.length⟩ r :=
-    (h.2.2.1 _ List.mem_cons_self).2
-  rw [hl] at hrd hfit hd
-  refine ⟨hrd, by omega, hfit, fun q hq => ?_, hd.1, hd.2⟩
-  rw [h.held1 q (by rw [hl]; exact hq), hg q hq]
-
-/-- What `abi.withConsts combConsts` says of the comb's table. -/
-theorem tbl_of_consts {st : Nat} {s : State} (h : ConstsOk combConsts st s) :
-    TBL (s.syms combSym) ∈ s.rd ∧ (s.syms combSym).toNat % 8 = 0 ∧ (s.syms combSym).toNat + 49152 ≤ 2 ^ 64 ∧
-      (∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q) ∧
-      (∀ r ∈ s.wr, (TBL (s.syms combSym)).Disjoint r) ∧
-      ∀ r ∈ RISCV64.abi.reserved st s, (TBL (s.syms combSym)).Disjoint r :=
-  tbl_of_consts' combWords_length (fun _ hq => combWords_getD hq) h
-
-/-- `BasePre` on entry to a call of `vg_ed25519_scalar_base`. -/
-theorem basePre_call {t : State} {o p w T : Addr} (h0 : t.gpr .a0 = o) (h1 : t.gpr .a1 = p)
-    (h2 : t.gpr .a2 = w) (hsy : t.syms combSym = T) (al : w.toNat % 8 = 0)
-    (oW : (⟨o, 32⟩ : Region).Disjoint ⟨w, 8192⟩) (pW : (⟨p, 32⟩ : Region).Disjoint ⟨w, 8192⟩)
-    (tal : T.toNat % 8 = 0) (tfit : T.toNat + 49152 ≤ 2 ^ 64)
-    (words : ∀ q < 64 * 96, t.mem.readW (T + BitVec.ofNat 64 (8 * q)) 64 = combWord q)
-    (tW : (TBL T).Disjoint ⟨w, 8192⟩) :
-    BasePre (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]) := by
-  have e0 : (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]).gpr .a0 = o := by
-    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), h0]
-  have e1 : (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]).gpr .a1 = p := by
-    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), h1]
-  have e2 : (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]).gpr .a2 = w := by
-    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), h2]
-  have es : (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]).syms combSym = T := hsy
-  have em : (t.callEntry.withRegions [⟨p, 32⟩, TBL T] [⟨o, 32⟩, ⟨w, 8192⟩]).mem = t.mem := rfl
-  exact ⟨by rw [e1, es]; rfl, by rw [e0, e2]; rfl, by rw [e2]; exact al, by rw [e0, e2]; exact oW,
-    by rw [e1, e2]; exact pW, by rw [es]; exact tal, by rw [es]; exact tfit,
-    fun q hq => by rw [em, es]; exact words q hq, by rw [es, e2]; exact tW⟩
-
-/-- `vg_ed25519_scalar_base`'s contract by register, an internal function's: `BasePre`. -/
-def baseRV : Contract isa where
-  pre := BasePre
-  post s s' := bytesAt s'.mem (s.gpr .a0) 32 = Spec.Ed25519.scalarBase (bytesAt s.mem (s.gpr .a1) 32)
-  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.sp = s₂.sp ∧
-    s₁.syms combSym = s₂.syms combSym
-
-theorem base_ok' (s : State) (hs : baseRV.pre s) :
-    ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ baseRV.post s s' := by
+theorem base_ok : BaseOk := fun _ hs => by
   obtain ⟨t, s', he, hg, hsp, hra, hb⟩ := scalarBase_ok hs
   exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hb⟩
 

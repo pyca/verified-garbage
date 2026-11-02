@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Common
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Frame
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.BaseContract
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -119,7 +119,7 @@ theorem pk_inW {s : State} : (⟨s.gpr .a2, 8192⟩ : Region) ∈ pkW s ∧ (⟨
 
 theorem sub_refl (r : Region) : Region.Sub r r := fun _ h => h
 
-theorem publicKey_wp (C : ShaOK) {s : State} (hp : PkPre s) :
+theorem publicKey_wp (C : ShaOK) (B : BaseOk) {s : State} (hp : PkPre s) :
     WP isa publicKey s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.gpr .ra = s.gpr .ra ∧
       bytesAt t.mem (s.gpr .a0) 32 = Spec.Ed25519.publicKey (bytesAt s.mem (s.gpr .a1) 32) := by
   obtain ⟨hsl₁, hsl₂, hsl₃, hsl₄⟩ := pk_slot hp
@@ -220,7 +220,7 @@ theorem publicKey_wp (C : ShaOK) {s : State} (hp : PkPre s) :
       rw [← hp.words q hq]
       exact h₅.frame.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega)) hp.tW
         (by decide)
-  refine WP.seq (WP.call (k := baseRV) base_ok' (rd := [⟨s.gpr .a3 + BitVec.ofNat 64 64, 32⟩, TBL (s.syms combSym)])
+  refine WP.seq (WP.call (k := baseRV) B (rd := [⟨s.gpr .a3 + BitVec.ofNat 64 64, 32⟩, TBL (s.syms combSym)])
     (wr := [⟨s.gpr .a0, 32⟩, ⟨s.gpr .a2, 8192⟩]) (basePre_call c3 c4 c5 sy hp.alC hp.oC
       (hp.cF.symm.sub_left sc4) hp.tal hp.tfit wd₅ (hp.tW _ (by simp)))
     (Covers.of_sub fun r hr => by
