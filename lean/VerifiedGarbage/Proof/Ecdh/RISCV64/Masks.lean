@@ -35,15 +35,15 @@ theorem Wide.Keeps.rest {rs : List Reg} {s s' : State} (h : VG.RISCV64.Wide.Keep
 /-- `[a] - [m]`, `k` words, with the borrow in `t5`: the difference `D`, and
 the borrow out. -/
 theorem ltWords_ok : ∀ (k : Nat) {s : State} {base : Addr} {a m : Nat}, WsReg s base → a % 8 = 0 → m % 8 = 0 →
-    a + 8 * k ≤ 2048 → m + 8 * k ≤ 2048 → (s.gpr .t5).toNat ≤ 1 →
+    a + 8 * k ≤ 4096 → m + 8 * k ≤ 4096 → (s.gpr .t5).toNat ≤ 1 →
     WP isa (.block (ltWords k a m)) s fun s' =>
       Rest [.t3, .t4, .t5, .t6, .a4] s s' ∧ s'.mem = s.mem ∧ (s'.gpr .t5).toNat ≤ 1 ∧
       ∃ D, D < 2 ^ (64 * k) ∧ D + wordsVal s.mem base m k + (s.gpr .t5).toNat =
         wordsVal s.mem base a k + 2 ^ (64 * k) * (s'.gpr .t5).toNat
   | 0, s, _, _, _, _, _, _, _, _, hc => WP.block_nil ⟨Rest.refl _ _, rfl, hc, 0, by simp [wordsVal]⟩
   | k + 1, s, base, a, m, hw, ha, hm, ha', hm', hc => by
-    rw [ltWords, ltWord, List.cons_append, List.cons_append]
-    refine ld_ws hw (by omega) ha fun s₁ u₁ => ld_ws (hw.of_rest (u₁.rest (ws := [.t3]) (by decide))) (by omega)
+    rw [ltWords, ltWord, List.append_assoc, List.append_assoc]
+    refine ldAt_ws hw (by omega) ha fun s₁ u₁ => ldAt_ws (hw.of_rest (u₁.rest (ws := [.t3]) (by decide))) (by omega)
       hm fun s₂ u₂ => ?_
     have r₂ : Rest [.t3, .t4] s s₂ := (u₁.rest (by decide)).trans (u₂.rest (by decide))
     have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
@@ -72,7 +72,7 @@ theorem ltWords_ok : ∀ (k : Nat) {s : State} {base : Addr} {a m : Nat}, WsReg 
 
 /-- The mask `a7` of `[a] < [m]`, numbers of `n ≥ 1` words. -/
 theorem ltMask_ok {n : Nat} {s : State} {base : Addr} (hw : WsReg s base) {a m : Nat} (ha : a % 8 = 0)
-    (hm : m % 8 = 0) (ha' : a + 8 * n ≤ 2048) (hm' : m + 8 * n ≤ 2048) :
+    (hm : m % 8 = 0) (ha' : a + 8 * n ≤ 4096) (hm' : m + 8 * n ≤ 4096) :
     WP isa (.block (ltMask n a m)) s fun s' =>
       Rest [.t3, .t4, .t5, .t6, .a4, .a7] s s' ∧ s'.mem = s.mem ∧
       s'.gpr .a7 = maskOf (decide (wordsVal s.mem base a n < wordsVal s.mem base m n)) := by
