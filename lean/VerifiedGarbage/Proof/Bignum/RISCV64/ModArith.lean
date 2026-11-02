@@ -368,4 +368,100 @@ theorem reduce64_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw 
     exact hsep i hi (off D i) (by simp only [ofs] at hc ⊢; omega_arith) rfl
   rw [tv, hbytes]
 
+/-! ## Masked sums -/
+
+/-- A word of `addMask64`: `x + (y & mask) + c` is the low word of the two
+additions and `2⁶⁴` times their carries, which are never both set. -/
+theorem add_arith (x y c : BitVec 64) (hc : c.toNat ≤ 1) :
+    (x + y + c).toNat + 2 ^ 64 * ((if x + y + c < c then (1 : BitVec 64) else 0) |||
+        (if x + y < y then 1 else 0)).toNat = x.toNat + y.toNat + c.toNat ∧
+      ((if x + y + c < c then (1 : BitVec 64) else 0) ||| (if x + y < y then 1 else 0)).toNat ≤ 1 := by
+  have hx := x.isLt
+  have hy := y.isLt
+  have hc' := c.isLt
+  have A : (x + y).toNat = (x.toNat + y.toNat) % 2 ^ 64 := BitVec.toNat_add x y
+  have Bq : (x + y + c).toNat = ((x + y).toNat + c.toNat) % 2 ^ 64 := BitVec.toNat_add _ _
+  have o00 : ((0 : BitVec 64) ||| 0).toNat = 0 := by decide
+  have o01 : ((0 : BitVec 64) ||| 1).toNat = 1 := by decide
+  have o10 : ((1 : BitVec 64) ||| 0).toNat = 1 := by decide
+  have o11 : ((1 : BitVec 64) ||| 1).toNat = 1 := by decide
+  by_cases h1 : x + y < y <;> by_cases h2 : x + y + c < c <;>
+    simp only [h1, h2, ite_true, ite_false, o00, o01, o10, o11] <;>
+    rw [BitVec.lt_def] at h1 h2 <;> omega
+
+theorem and_mask (y : BitVec 64) (b : Bool) :
+    y &&& (if b then BitVec.allOnes 64 else 0) = if b then y else 0 := by
+  cases b
+  · show y &&& 0 = 0; exact BitVec.and_zero
+  · show y &&& BitVec.allOnes 64 = y; exact BitVec.and_allOnes
+
+/-- `addMask64`: `[t3] := [t3] + ([t4] & mask) mod 2^(64 w)`, the mask in
+`s4` all ones (`b`) or zero, over `w` (`t0`) words. -/
+theorem addMask64_ok {s : State} {B : Addr} {Z dT dM w : Nat} {b : Bool} (hs : Scr s B Z)
+    (h3 : s.gpr .t3 = off B dT) (h4 : s.gpr .t4 = off B dM) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (hm : s.gpr .s4 = if b then BitVec.allOnes 64 else 0) (hT8 : dT % 8 = 0) (hM8 : dM % 8 = 0)
+    (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hT : dT + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
+    (dTM : dT + 8 * w ≤ dM ∨ dM + 8 * w ≤ dT) :
+    WP isa addMask64 s fun s' =>
+      wordsVal s'.mem B dT w =
+        (wordsVal s.mem B dT w + (if b then wordsVal s.mem B dM w else 0)) % 2 ^ (64 * w) ∧
+      Outside B dT (8 * w) s.mem s'.mem ∧ Keep [.t3, .t4, .t5, .s0, .s1, .s2, .s3] s s' := by
+  have hnw := hs.nowrap
+  unfold addMask64
+  have hpre : WP isa (.block [.addi .t5 .t0 0, .li .s1 0]) s
+      fun s₁ => (s₁.gpr .t5 = BitVec.ofNat 64 w ∧ s₁.gpr .s1 = 0 ∧ s₁.mem = s.mem) ∧
+        Keep [.t5, .s1] s s₁ := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [ht0, fin64_exec_li_zero, BitVec.add_zero]
+  refine WP.seq (WP.mono hpre fun s₁ ⟨⟨i5, i1, im⟩, k₁⟩ => ?_)
+  let Inv : Nat → State → Prop := fun i t =>
+    t.gpr .t3 = off B (dT + 8 * i) ∧ t.gpr .t4 = off B (dM + 8 * i) ∧ (t.gpr .s1).toNat ≤ 1 ∧
+      Outside B dT (8 * i) s.mem t.mem ∧
+      wordsVal t.mem B dT i + 2 ^ (64 * i) * (t.gpr .s1).toNat =
+        wordsVal s.mem B dT i + (if b then wordsVal s.mem B dM i else 0) ∧
+      Keep [.t3, .t4, .t5, .s0, .s1, .s2, .s3] s t
+  have body := fun (i : Nat) (hi : i < w) (t : State) (hI : Inv i t) =>
+    show WP isa (.block ([.load .d .s2 .t3 0, .load .d .s3 .t4 0, .logic .and .s3 .s3 .s4, .add .s2 .s2 .s3,
+      .sltu .s0 .s2 .s3, .add .s2 .s2 .s1, .sltu .s1 .s2 .s1, .logic .or .s1 .s1 .s0, .store .d .s2 .t3 0,
+      .addi .t3 .t3 8, .addi .t4 .t4 8] ++ ([.addi .t5 .t5 (-1)] : List Instr))) t
+        (fun t' => Inv (i + 1) t' ∧ t'.gpr .t5 = t.gpr .t5 - BitVec.ofNat 64 1) from by
+    obtain ⟨j3, j4, j1, jout, jv, jk⟩ := hI
+    have hs' := hs.congr jk.2.2
+    have j44 : t.gpr .s4 = if b then BitVec.allOnes 64 else 0 := (jk.gpr (by decide)).trans hm
+    have wT : word t.mem B (dT + 8 * i) = word s.mem B (dT + 8 * i) := jout.word (by omega) (by omega)
+    have wM : word t.mem B (dM + 8 * i) = word s.mem B (dM + 8 * i) := jout.word (by omega) (by omega)
+    refine WP.mono (WP.keep [.t3, .t4, .t5, .s0, .s1, .s2, .s3] (Q := fun t' =>
+        t'.gpr .t3 = off B (dT + 8 * i + 8) ∧ t'.gpr .t4 = off B (dM + 8 * i + 8) ∧
+        t'.gpr .t5 = t.gpr .t5 - BitVec.ofNat 64 1 ∧
+        let y := word t.mem B (dM + 8 * i) &&& t.gpr .s4
+        let x := word t.mem B (dT + 8 * i)
+        t'.gpr .s1 = ((if x + y + t.gpr .s1 < t.gpr .s1 then (1 : BitVec 64) else 0) |||
+          (if x + y < y then 1 else 0)) ∧
+        t'.mem = t.mem.writeW (off B (dT + 8 * i)) (x + y + t.gpr .s1)) ?_ (by rfl) (by rfl))
+      fun t' ⟨⟨u3, u4, u5, u1, um⟩, uk⟩ => ⟨⟨u3.trans (by rw [Nat.mul_succ, Nat.add_assoc]),
+        u4.trans (by rw [Nat.mul_succ, Nat.add_assoc]), ?_, ?_, ?_, Keep.trans' jk uk⟩, u5⟩
+    · brun [j3, j4, hs'.ld (show dT + 8 * i + 8 ≤ Z by omega), hs'.ld (show dM + 8 * i + 8 ≤ Z by omega),
+        hs'.st (show dT + 8 * i + 8 ≤ Z by omega),
+        hs'.al8 (show dT + 8 * i + 8 ≤ Z by omega) (by omega),
+        hs'.al8 (show dM + 8 * i + 8 ≤ Z by omega) (by omega), BitVec.add_zero]
+    · rw [u1]; exact (add_arith _ _ _ j1).2
+    · rw [um]
+      exact (jout.mono (Nat.le_refl _) (by omega)).trans
+        ((writeW_outside t.mem B (d := dT + 8 * i) _ (by omega)).mono (by omega) (by omega))
+    · have e := (add_arith (word t.mem B (dT + 8 * i)) (word t.mem B (dM + 8 * i) &&& t.gpr .s4) (t.gpr .s1) j1).1
+      rw [j44, and_mask, wT, wM] at e
+      rw [um, u1, j44, and_mask, wT, wM, fin64_wordsVal_write_top _ _ _ _ _ (by omega), Nat.mul_succ, Nat.pow_add,
+        wordsVal_succ_top s.mem B dT i, wordsVal_succ_top s.mem B dM i]
+      cases b <;> simp only [ite_true, ite_false, Bool.false_eq_true] at e jv ⊢ <;>
+        grind
+  refine WP.mono (wp_countdown (cnt := .t5) (N := w) (by omega) (by omega) Inv
+    (fun i hi t hI _ => body i hi t hI)
+    ⟨by rw [k₁.gpr (by decide), h3]; rfl, by rw [k₁.gpr (by decide), h4]; rfl, by rw [i1]; decide,
+      by rw [← im]; exact Outside.refl _ _ _ _, by simp [wordsVal, i1], k₁.mono (by decide)⟩ i5)
+    fun t ⟨_, _, t1, tout, tv, tk⟩ => ?_
+  refine ⟨?_, tout, tk⟩
+  have hlt := wordsVal_lt t.mem B dT w
+  rw [← tv]
+  rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt]
+
 end VG.Proof.Bignum.RISCV64.ModArith
