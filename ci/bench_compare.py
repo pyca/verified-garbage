@@ -112,7 +112,7 @@ import shutil
 import subprocess
 import sys
 
-from bench_arches import bench_catalog
+from bench_arches import NAMES, QUOTED, bench_catalog
 
 # Criterion filters (regexes over benchmark ids, which are
 # `<primitive>/<library>/<bytes>`, see bench/benches/primitives/main.rs).
@@ -265,16 +265,17 @@ def build_base(base, head):
     return None, "Base has no benchmarks that build, so head ran alone.", base
 
 
-NAMES = re.compile(r"const NAMES: \[&str; \d+\] = \[(.*?)\];", re.DOTALL)
-
-
 def cpu_features(checkout):
     """`VG_CPU_FEATURES` without the features `checkout`'s src/cpu.rs does
     not know (which it rejects)."""
     features = os.environ.get("VG_CPU_FEATURES", "")
     if features in ("", "none"):
         return features
-    known = re.findall(r'"([^"]+)"', NAMES.search((checkout / "src/cpu.rs").read_text())[1])
+    cpu = checkout / "src/cpu.rs"
+    names = NAMES.search(cpu.read_text())
+    if not names:
+        sys.exit(f"{cpu}: no `const NAMES` table of CPU feature names (ci/bench_arches.py's NAMES)")
+    known = QUOTED.findall(names[1])
     return ",".join(f for f in features.split(",") if f in known) or "none"
 
 
