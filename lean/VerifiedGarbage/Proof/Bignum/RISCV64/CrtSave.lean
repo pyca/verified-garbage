@@ -46,18 +46,18 @@ theorem saved_ne : ∀ i < 12, saved i ≠ .s6 := by decide
 
 theorem saved_12 : saved 12 = .s6 := rfl
 
-theorem sav_contains (w : Addr) {i : Nat} (hi : i < 13) : (savR w).Contains (off w (8 * i)) 8 :=
+theorem sav_contains (w : Addr) {i : Nat} (hi : i < 13) : (savR w).Contains (Mont.off w (8 * i)) 8 :=
   Offset.contains_base w (by omega_using [hi]) (by omega_using [hi])
 
 theorem sav_sep (w : Addr) {i j : Nat} (hi : i < 13) (hj : j < 13) (h : i ≠ j) :
-    Mem.Sep (off w (8 * i)) 8 (off w (8 * j)) 8 :=
+    Mem.Sep (Mont.off w (8 * i)) 8 (Mont.off w (8 * j)) 8 :=
   Offset.sep w (by omega_using [hi, hj, h]) (by omega_using [hi]) (by omega_using [hj])
 
 /-- The saved registers' words of the working space at `S`. -/
 abbrev savW (S : Addr) : Addr := S + BitVec.ofNat 64 112
 
-theorem savOff_eq (S : Addr) (i : Nat) : S + BitVec.ofNat 64 (savOff i) = off (savW S) (8 * i) := by
-  rw [off, Offset.add_add, savOff]
+theorem savOff_eq (S : Addr) (i : Nat) : S + BitVec.ofNat 64 (savOff i) = Mont.off (savW S) (8 * i) := by
+  rw [Mont.off, Offset.add_add, savOff]
 
 /-- The first `n` registers are saved, from `s₀` (whose `t0` is the working
 space). -/
@@ -67,10 +67,10 @@ structure SI (s₀ : State) (n : Nat) (s : State) : Prop where
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
   frame : Frame [savR (savW (s₀.gpr .t0))] s₀.mem s.mem
-  saved : ∀ i < n, s.mem.readW (off (savW (s₀.gpr .t0)) (8 * i)) 64 = s₀.gpr (saved i)
+  saved : ∀ i < n, s.mem.readW (Mont.off (savW (s₀.gpr .t0)) (8 * i)) 64 = s₀.gpr (saved i)
 
-theorem save_step (s₀ : State) (hin : ∀ i < 13, InRegions s₀.wr (off (savW (s₀.gpr .t0)) (8 * i)) 8)
-    (hal : ∀ i < 13, (off (savW (s₀.gpr .t0)) (8 * i)).toNat % 8 = 0)
+theorem save_step (s₀ : State) (hin : ∀ i < 13, InRegions s₀.wr (Mont.off (savW (s₀.gpr .t0)) (8 * i)) 8)
+    (hal : ∀ i < 13, (Mont.off (savW (s₀.gpr .t0)) (8 * i)).toNat % 8 = 0)
     {n : Nat} (hn : n < 13) {s : State}
     (h : SI s₀ n s) : WP isa (.block [.store .d (saved n) .t0 (savOff n)]) s (SI s₀ (n + 1)) := by
   have hw : s.gpr .t0 = s₀.gpr .t0 := by rw [h.gpr]
@@ -96,7 +96,7 @@ structure Saved (s₀ : State) (S : Addr) (s : State) : Prop where
   s6 : s.gpr .s6 = S
   t0 : s.gpr .t0 = S
   frame : Frame [savR (savW S)] s₀.mem s.mem
-  saved : ∀ i < 13, s.mem.readW (off (savW S) (8 * i)) 64 = s₀.gpr (saved i)
+  saved : ∀ i < 13, s.mem.readW (Mont.off (savW S) (8 * i)) 64 = s₀.gpr (saved i)
 
 theorem saved_ne_t0 : ∀ i < 13, saved i ≠ .t0 := by decide
 
@@ -105,8 +105,8 @@ aligned (as the stack pointer is), and its header's words 14–26 writable and
 aligned. -/
 theorem save_ok (s₀ : State) {S : Addr} (hS : stackArg s₀ 8 = S)
     (hst : InRegions (s₀.rd ++ s₀.wr) (stackArgAddr s₀ 8) 8) (hsp : s₀.sp.toNat % 8 = 0)
-    (hin : ∀ i < 13, InRegions s₀.wr (off (savW S) (8 * i)) 8)
-    (hal : ∀ i < 13, (off (savW S) (8 * i)).toNat % 8 = 0) :
+    (hin : ∀ i < 13, InRegions s₀.wr (Mont.off (savW S) (8 * i)) 8)
+    (hal : ∀ i < 13, (Mont.off (savW S) (8 * i)).toNat % 8 = 0) :
     WP isa (.block save) s₀ (Saved s₀ S) := by
   rw [save, List.append_assoc]
   have hst' : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 64) 8 := by
@@ -151,9 +151,9 @@ structure RI (sB : State) (S : Addr) (v : Nat → BitVec 64) (n : Nat) (s : Stat
   sp : s.sp = sB.sp
 
 theorem restore_step (sB : State) {S : Addr} {v : Nat → BitVec 64}
-    (hsin : ∀ i < 13, InRegions sB.wr (off (savW S) (8 * i)) 8)
-    (hal : ∀ i < 13, (off (savW S) (8 * i)).toNat % 8 = 0)
-    (hsav : ∀ i < 13, sB.mem.readW (off (savW S) (8 * i)) 64 = v i)
+    (hsin : ∀ i < 13, InRegions sB.wr (Mont.off (savW S) (8 * i)) 8)
+    (hal : ∀ i < 13, (Mont.off (savW S) (8 * i)).toNat % 8 = 0)
+    (hsav : ∀ i < 13, sB.mem.readW (Mont.off (savW S) (8 * i)) 64 = v i)
     {n : Nat} (hn : n < 12) {s : State} (h : RI sB S v n s) :
     WP isa (.block [.load .d (saved n) .s6 (savOff n)]) s (RI sB S v (n + 1)) := by
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .s6 + BitVec.ofNat 64 (savOff n)) 8 := by
@@ -182,9 +182,9 @@ theorem restore_step (sB : State) {S : Addr} {v : Nat → BitVec 64}
 
 /-- `restore`, from a state whose saved words, through `s6`, hold `v`. -/
 theorem restore_ok (sB : State) {S : Addr} {v : Nat → BitVec 64} (hw : sB.gpr .s6 = S)
-    (hsin : ∀ i < 13, InRegions sB.wr (off (savW S) (8 * i)) 8)
-    (hal : ∀ i < 13, (off (savW S) (8 * i)).toNat % 8 = 0)
-    (hsav : ∀ i < 13, sB.mem.readW (off (savW S) (8 * i)) 64 = v i) :
+    (hsin : ∀ i < 13, InRegions sB.wr (Mont.off (savW S) (8 * i)) 8)
+    (hal : ∀ i < 13, (Mont.off (savW S) (8 * i)).toNat % 8 = 0)
+    (hsav : ∀ i < 13, sB.mem.readW (Mont.off (savW S) (8 * i)) 64 = v i) :
     WP isa (.block restore) sB fun s =>
       (∀ i < 13, s.gpr (saved i) = v i) ∧ (∀ r, (∀ i < 13, r ≠ saved i) → s.gpr r = sB.gpr r) ∧
       s.mem = sB.mem ∧ s.rd = sB.rd ∧ s.wr = sB.wr ∧ s.sp = sB.sp := by
@@ -214,41 +214,41 @@ theorem restore_ok (sB : State) {S : Addr} {v : Nat → BitVec 64} (hw : sB.gpr 
 
 /-! ## The arguments -/
 
-/-- A word of the header after a write to another of its words. -/
+/-- A Mont.word of the header after a write to another of its words. -/
 theorem hdr_rw (m : Mem) (S : Addr) {d d' : Nat} (v : BitVec 64) (h : d' + 8 ≤ d ∨ d + 8 ≤ d')
-    (hd : d < 256) (hd' : d' < 256) : (m.writeW (off S d) v).readW (off S d') 64 = m.readW (off S d') 64 :=
+    (hd : d < 256) (hd' : d' < 256) : (m.writeW (Mont.off S d) v).readW (Mont.off S d') 64 = m.readW (Mont.off S d') 64 :=
   Mem.readW_writeW_sep (Offset.sep S h (by omega_arith) (by omega_arith)) (by decide)
 
-theorem out_wr (S : Addr) {m m' : Mem} (h : Outside S 0 88 m m') {d : Nat} (hd : d + 8 ≤ 88) (v : BitVec 64) :
-    Outside S 0 88 m (m'.writeW (off S d) v) :=
-  h.trans ((writeW_outside m' S v (by omega_arith)).mono (by omega_arith) (by omega_arith))
+theorem out_wr (S : Addr) {m m' : Mem} (h : Mont.Outside S 0 88 m m') {d : Nat} (hd : d + 8 ≤ 88) (v : BitVec 64) :
+    Mont.Outside S 0 88 m (m'.writeW (Mont.off S d) v) :=
+  h.trans ((Mont.writeW_outside m' S v (by omega_arith)).mono (by omega_arith) (by omega_arith))
 
 /-- The header's words that `args` writes: the arguments the code reads
 again. -/
 structure ArgsHdr (m : Mem) (S : Addr) (s : State) : Prop where
-  out : word m S oOut = s.gpr .a0
-  n : word m S oN = s.gpr .a2
-  nLen : word m S oNLen = s.gpr .a3
-  inp : word m S oIn = s.gpr .a4
-  p : word m S oP = s.gpr .a6
-  pLen : word m S oPLen = s.gpr .a7
-  q : word m S oQ = stackArg s 0
-  qLen : word m S oQLen = stackArg s 1
-  dp : word m S oDP = stackArg s 2
-  dq : word m S oDQ = stackArg s 4
-  qinv : word m S oQInv = stackArg s 6
+  out : Mont.word m S oOut = s.gpr .a0
+  n : Mont.word m S oN = s.gpr .a2
+  nLen : Mont.word m S oNLen = s.gpr .a3
+  inp : Mont.word m S oIn = s.gpr .a4
+  p : Mont.word m S oP = s.gpr .a6
+  pLen : Mont.word m S oPLen = s.gpr .a7
+  q : Mont.word m S oQ = stackArg s 0
+  qLen : Mont.word m S oQLen = stackArg s 1
+  dp : Mont.word m S oDP = stackArg s 2
+  dq : Mont.word m S oDQ = stackArg s 4
+  qinv : Mont.word m S oQInv = stackArg s 6
 
 /-- `args`: the arguments into the header's words 0–10, the working space at
 `s6` (writable, aligned), the stack arguments readable and apart from the
 header's first 88 bytes. -/
 theorem args_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 88 ≤ Z)
-    (h6 : s.gpr .s6 = off S 0) (hsp : s.sp.toNat % 8 = 0)
+    (h6 : s.gpr .s6 = Mont.off S 0) (hsp : s.sp.toNat % 8 = 0)
     (hstk : ∀ j < 7, InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8)
-    (hsep : ∀ j < 56, ∀ d < 88, Mem.Sep (s.sp + BitVec.ofNat 64 j) 8 (off S d) 8) :
+    (hsep : ∀ j < 56, ∀ d < 88, Mem.Sep (s.sp + BitVec.ofNat 64 j) 8 (Mont.off S d) 8) :
     WP isa (.block args) s fun t =>
-      (ArgsHdr t.mem S s ∧ Outside S 0 88 s.mem t.mem) ∧ Keep [.t2, .t3] s t := by
+      (ArgsHdr t.mem S s ∧ Mont.Outside S 0 88 s.mem t.mem) ∧ Keep [.t2, .t3] s t := by
   have hnw := hs.nowrap
-  have st : ∀ d, d + 8 ≤ 88 → d % 8 = 0 → InRegions s.wr (off S d) 8 ∧ (off S d).toNat % 8 = 0 :=
+  have st : ∀ d, d + 8 ≤ 88 → d % 8 = 0 → InRegions s.wr (Mont.off S d) 8 ∧ (Mont.off S d).toNat % 8 = 0 :=
     fun d h1 h2 => ⟨hs.st (by omega_arith), hs.al8 (by omega_arith) h2⟩
   have ld : ∀ j < 7, InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * j)) 8 ∧
       (s.sp + BitVec.ofNat 64 (8 * j)).toNat % 8 = 0 := fun j hj =>
@@ -256,7 +256,7 @@ theorem args_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 88 ≤ Z
   have sp0 : ∀ j, s.sp + BitVec.ofNat 64 0 + BitVec.ofNat 64 j = s.sp + BitVec.ofNat 64 j := fun j => by
     rw [add_ofNat_zero]
   have stk : ∀ (m : Mem) (v : BitVec 64) {j d : Nat}, j < 56 → d < 88 →
-      (m.writeW (off S d) v).readW (s.sp + BitVec.ofNat 64 j) 64 = m.readW (s.sp + BitVec.ofNat 64 j) 64 :=
+      (m.writeW (Mont.off S d) v).readW (s.sp + BitVec.ofNat 64 j) 64 = m.readW (s.sp + BitVec.ofNat 64 j) 64 :=
     fun m v j d hj hd => Mem.readW_writeW_sep (hsep j hj d hd) (by decide)
   refine WP.keep _ ?_ (by rfl) (by rfl)
   unfold args
@@ -275,10 +275,10 @@ theorem args_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 88 ≤ Z
     (ld 0 (by decide)).1, (ld 0 (by decide)).2, (ld 1 (by decide)).1, (ld 1 (by decide)).2, (ld 2 (by decide)).1,
     (ld 2 (by decide)).2, (ld 4 (by decide)).1, (ld 4 (by decide)).2, (ld 6 (by decide)).1, (ld 6 (by decide)).2]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
-  all_goals (try simp (disch := omega_arith) only [word, oOut, oN, oNLen, oIn, oP, oPLen, oQ, oQLen, oDP, oDQ,
+  all_goals (try simp (disch := omega_arith) only [Mont.word, oOut, oN, oNLen, oIn, oP, oPLen, oQ, oQLen, oDP, oDQ,
     oQInv, hdr_rw, Mem.readW_writeW_self64, stk, stackArg, stackArgAddr, Nat.reduceMul])
   iterate 11 refine out_wr S ?_ (by decide) _
-  exact Outside.refl _ _ _ _
+  exact Mont.Outside.refl _ _ _ _
 
 /-! ## The working spaces' registers -/
 
@@ -311,19 +311,19 @@ theorem wordsOf_bounds {l : Nat} (h1 : 1 ≤ l) (h : l ≤ 1024) : 2 ≤ wordsOf
 (after `X`'s eight arrays) and `Q` (after `P`'s header and 24 arrays of
 `wordsOf p_len` words) into the header. -/
 theorem setupX_ok {s : State} {S : Addr} {Z k pl : Nat} (hs : Scr s S Z) (hZ : 112 ≤ Z)
-    (h6 : s.gpr .s6 = off S 0) (h3 : s.gpr .a3 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k ≤ 1024)
-    (hpl : word s.mem S oPLen = BitVec.ofNat 64 pl) (hpl1 : 1 ≤ pl) (hpl' : pl ≤ 1024) :
+    (h6 : s.gpr .s6 = Mont.off S 0) (h3 : s.gpr .a3 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k ≤ 1024)
+    (hpl : Mont.word s.mem S oPLen = BitVec.ofNat 64 pl) (hpl1 : 1 ≤ pl) (hpl' : pl ≤ 1024) :
     WP isa (.block setupX) s fun t =>
-      (t.gpr .a7 = off S (slot (2 * ((k + 7) / 8)) 0) ∧ t.gpr .ra = off S (slot (2 * ((k + 7) / 8)) 0) ∧
+      (t.gpr .a7 = Mont.off S (slot (2 * ((k + 7) / 8)) 0) ∧ t.gpr .ra = Mont.off S (slot (2 * ((k + 7) / 8)) 0) ∧
         t.gpr .s5 = BitVec.ofNat 64 (8 * (2 * ((k + 7) / 8) + 2)) ∧
         t.gpr .s11 = BitVec.ofNat 64 (8 * (2 * ((k + 7) / 8) + 2)) ∧
         t.gpr .t0 = BitVec.ofNat 64 (2 * ((k + 7) / 8)) ∧
-        word t.mem S oBP = off S (slot (2 * ((k + 7) / 8)) 8) ∧
-        word t.mem S oBQ = off S (slot (2 * ((k + 7) / 8)) 8 + hdrBytes + 24 * (8 * (wordsOf pl + 2))) ∧
-        Outside S oBP 16 s.mem t.mem) ∧
+        Mont.word t.mem S oBP = Mont.off S (slot (2 * ((k + 7) / 8)) 8) ∧
+        Mont.word t.mem S oBQ = Mont.off S (slot (2 * ((k + 7) / 8)) 8 + hdrBytes + 24 * (8 * (wordsOf pl + 2))) ∧
+        Mont.Outside S oBP 16 s.mem t.mem) ∧
       Keep [.t2, .t3, .t4, .t5, .a7, .ra, .s5, .s11, .t0] s t := by
   have hnw := hs.nowrap
-  have hpl8 : word s.mem S 40 = BitVec.ofNat 64 pl := hpl
+  have hpl8 : Mont.word s.mem S 40 = BitVec.ofNat 64 pl := hpl
   have wv := words_val (x := (pl + 7) / 8) (by omega_arith) (by omega_arith)
   refine WP.keep _ ?_ (by rfl) (by rfl)
   unfold setupX area words
@@ -332,7 +332,7 @@ theorem setupX_ok {s : State} {S : Addr} {Z k pl : Nat} (hs : Scr s S Z) (hZ : 1
     ofNat_shl _ _ (show 3 < 64 by decide), Nat.reducePow, hs.st (show 96 + 8 ≤ Z by omega_arith),
     hs.al8 (show 96 + 8 ≤ Z by omega_arith) (by decide), hs.st (show 104 + 8 ≤ Z by omega_arith),
     hs.al8 (show 104 + 8 ≤ Z by omega_arith) (by decide), hs.ld (show 40 + 8 ≤ Z by omega_arith),
-    hs.al8 (show 40 + 8 ≤ Z by omega_arith) (by decide), word_writeW_self, hdr_rw (d := 96) (d' := 40) s.mem S _ (Or.inl (by decide)) (by decide) (by decide),
+    hs.al8 (show 40 + 8 ≤ Z by omega_arith) (by decide), Mont.word_writeW_self, hdr_rw (d := 96) (d' := 40) s.mem S _ (Or.inl (by decide)) (by decide) (by decide),
     hpl8, wv]
   refine ⟨by simp [slot, hdrBytes], by simp [slot, hdrBytes], congrArg _ (by omega_arith),
     congrArg _ (by omega_arith), ?_, ?_, ?_⟩
@@ -340,19 +340,19 @@ theorem setupX_ok {s : State} {S : Addr} {Z k pl : Nat} (hs : Scr s S Z) (hZ : 1
       Mem.readW_writeW_self64]
     exact congrArg _ (by unfold slot hdrBytes; omega_arith)
   · exact congrArg _ (by unfold wordsOf slot hdrBytes; split <;> omega_arith)
-  · exact ((writeW_outside _ S _ (by omega_arith)).mono (by decide) (by decide)).trans
-      ((writeW_outside _ S _ (by omega_arith)).mono (by decide) (by decide))
+  · exact ((Mont.writeW_outside _ S _ (by omega_arith)).mono (by decide) (by decide)).trans
+      ((Mont.writeW_outside _ S _ (by omega_arith)).mono (by decide) (by decide))
 
-/-- `setupP oB oLen`: a prime's working space at `Bp` (the header's word
-`oB`), of `wordsOf l` words for its length `l` (the header's word `oLen`):
+/-- `setupP oB oLen`: a prime's working space at `Bp` (the header's Mont.word
+`oB`), of `wordsOf l` words for its length `l` (the header's Mont.word `oLen`):
 its array 0 in `a7` and `ra`, the arrays' size in `s5` and the words in `t0`
 (and `t2`). -/
-theorem setupP_ok {s : State} {S Bp : Addr} {Z l oB oLen : Nat} (hs : Scr s S Z) (h6 : s.gpr .s6 = off S 0)
+theorem setupP_ok {s : State} {S Bp : Addr} {Z l oB oLen : Nat} (hs : Scr s S Z) (h6 : s.gpr .s6 = Mont.off S 0)
     (hB : oB + 8 ≤ Z) (hB8 : oB % 8 = 0) (hB' : oB < 2048) (hL : oLen + 8 ≤ Z) (hL8 : oLen % 8 = 0)
-    (hL' : oLen < 2048) (hbase : word s.mem S oB = Bp) (hlen : word s.mem S oLen = BitVec.ofNat 64 l)
+    (hL' : oLen < 2048) (hbase : Mont.word s.mem S oB = Bp) (hlen : Mont.word s.mem S oLen = BitVec.ofNat 64 l)
     (hl1 : 1 ≤ l) (hl' : l ≤ 1024) :
     WP isa (.block (setupP oB oLen)) s fun t =>
-      (t.gpr .a7 = off Bp (slot (wordsOf l) 0) ∧ t.gpr .ra = off Bp (slot (wordsOf l) 0) ∧
+      (t.gpr .a7 = Mont.off Bp (slot (wordsOf l) 0) ∧ t.gpr .ra = Mont.off Bp (slot (wordsOf l) 0) ∧
         t.gpr .s5 = BitVec.ofNat 64 (8 * (wordsOf l + 2)) ∧ t.gpr .t0 = BitVec.ofNat 64 (wordsOf l) ∧
         t.gpr .t2 = BitVec.ofNat 64 (wordsOf l) ∧ t.mem = s.mem) ∧
       Keep [.t2, .t3, .t4, .a7, .ra, .s5, .t0] s t := by
