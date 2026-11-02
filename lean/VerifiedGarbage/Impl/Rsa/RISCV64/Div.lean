@@ -5,20 +5,22 @@ public import VerifiedGarbage.Impl.Rsa.RISCV64.KeyWs
 /-!
 # Fixed-iteration division for the RSA key operations on RISC-V
 
-As on PPC64LE (`Impl/Rsa/PPC64LE/Div.lean`), in words of 64 bits: `div q r d
-t` runs `64 w` steps of bit-serial division (`Proof/Rsa/KeyMath.lean`'s
-`divStep`) of the dividend in array `q` (`w` words) by the divisor in array
-`d` (`w` words and an extra word 0), the remainder in array `r` (`w + 1`
-words) and array `t` a temporary (`w + 1` words). Each step shifts the
-quotient and the remainder left by one bit together, the quotient's top bit
-into the remainder, computes `[t] := [r] - [d]` and, if it did not borrow,
-keeps it as the remainder (a masked selection) and sets the quotient's new
-low bit. The quotient ends in array `q` and the remainder in `r`; a divisor
+In words of 64 bits: `div q r d t` runs `64 w` steps of non-restoring
+bit-serial division of the dividend in array `q` (`w` words) by the divisor
+in array `d` (`w` words and an extra word 0), the remainder in array `r`
+(`w + 1` words, in two's complement); `t` is not used. The dividend's bits
+are taken from the top, the next one from the top of its word, which is then
+shifted left with the new quotient bit in. Each step shifts the bit into the
+remainder and, in one pass over its words, subtracts the divisor (while the
+remainder is not negative, the mask `a4` all ones: `[d] ⊕ a4` and a carry of
+1) or adds it (`a4 = 0`); the remainder's sign gives the next mask and the
+quotient bit. At the end, a negative remainder has the divisor added back
+(`fix`). The quotient ends in array `q` and the remainder in `r`; a divisor
 of 0 still runs the same steps.
 
 The steps count down in `s7`, and the new quotient bit is in `a5`; every
-address is computed from the working space's base (`ptr`), so the addresses
-and branches depend only on `w` and the base.
+address is computed from the working space's base (`ptr`) and `s7`, so the
+addresses and branches depend only on `w` and the base.
 -/
 
 @[expose] public section
