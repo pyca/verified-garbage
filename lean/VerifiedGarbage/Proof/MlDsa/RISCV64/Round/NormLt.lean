@@ -32,7 +32,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.MlDsa.RISCV64.Round
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 
 public import VerifiedGarbage.TCB.RISCV64.Target
 /-!
@@ -193,8 +193,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa normLt s₀ (Post s₀) 
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.normLtContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.normLtContract, Spec.MlDsa.normLtSig, RISCV64.abi, RISCV64.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlDsa.normLtContract RISCV64.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5⟩ := h
   exact ⟨h1, h2, h3, h4, h5⟩
 
@@ -207,13 +207,13 @@ def satState : State where
   rd := [⟨0x1000, 1024⟩]
   wr := []
 
-theorem verified : Verified RISCV64.target normLt (Spec.MlDsa.normLtContract RISCV64.abi) := by
+theorem verified : Verified RISCV64.target normLt (Proof.MlDsa.normLtContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, VG.Proof.MlKem.RISCV64.Add.ctRegs [.a0] (fun s₁ s₂ h => ?_)
     (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, h⟩ := correct hp
     refine ⟨t, s', he, ⟨h.1, h.2.1, h.2.2.1⟩, ?_⟩
-    sig_post [Spec.MlDsa.normLtContract, Spec.MlDsa.normLtSig, RISCV64.abi, RISCV64.argRegs]
+    sig_post [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, RISCV64.abi, RISCV64.argRegs]
     rw [h.2.2.2]
     have e : AllOk s 256 ↔ normRq [polyAt s.mem (Fp s)] < (B s).toNat := by
       rw [normRq_lt]; rfl
@@ -225,16 +225,16 @@ theorem verified : Verified RISCV64.target normLt (Spec.MlDsa.normLtContract RIS
     by_cases hc : AllOk s 256
     · rw [ite_eq_left hc, ite_eq_left (e.mp hc)]; rfl
     · rw [ite_eq_right hc, ite_eq_right (fun h' => hc (e.mpr h'))]; rfl
-  · sig_pub [Spec.MlDsa.normLtContract, Spec.MlDsa.normLtSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, RISCV64.abi, RISCV64.argRegs] at h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h.2.1
-  · sig_pub [Spec.MlDsa.normLtContract, Spec.MlDsa.normLtSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, RISCV64.abi, RISCV64.argRegs] at h
     exact h.1
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.normLtContract, Spec.MlDsa.normLtSig, RISCV64.abi, RISCV64.argRegs]
+    · sig_reduce [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
         | trivial

@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.Common
 # ML-DSA on RISC-V: the contracts of the encodings, for the proofs
 
 For each function of this group, what its shared contract
-(`Spec/MlDsa/Poly.lean`) requires, spelled out for RISCV64 (`SbpPre`, `BpPre`,
+(`Proof/MlDsa/Contract.lean`) requires, spelled out for RISCV64 (`SbpPre`, `BpPre`,
 `BuPre`, `T1Pre`, from `pre_of`). A `u32` argument is the low 32 bits of its
 register (`lo`): the ABI leaves the others unspecified, and the contracts
 make only those public. So the branch of `sel` on a width compares the low

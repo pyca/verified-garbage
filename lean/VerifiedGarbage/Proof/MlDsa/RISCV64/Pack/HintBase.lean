@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
-public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.MlKem.RISCV64.Bytes
 public import VerifiedGarbage.Proof.Framework.RISCV64.Inline

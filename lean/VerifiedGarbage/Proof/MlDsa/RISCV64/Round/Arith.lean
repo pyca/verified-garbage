@@ -22,7 +22,8 @@ coefficient `a < q` and `γ₂` in `gamma2s`:
 namespace VG.Proof.MlDsa.RISCV64.Round
 
 open VG VG.RISCV64 VG.Impl.MlDsa.RISCV64.Round
-open VG.Spec.MlDsa (q gamma2s)
+open VG.Spec.MlDsa (q)
+open VG.Proof.MlDsa (gamma2s)
 open VG.Proof.MlDsa.Round (hbF hbM q_eq mem_gamma2s hbF_le hbF_eq)
 
 /-- What `fixup u t rk` leaves for `k` in `rk`. -/

@@ -167,13 +167,13 @@ theorem low_correct {s₀ : State} (hp : Pre s₀) : WP isa lowBits s₀ (Post (
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.highBitsContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.highBitsContract, Spec.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlDsa.highBitsContract RISCV64.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.highBitsContract, Proof.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
-theorem pre_of_low {s : State} (h : (Spec.MlDsa.lowBitsContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Spec.MlDsa.lowBitsContract, Spec.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs] at h
+theorem pre_of_low {s : State} (h : (Proof.MlDsa.lowBitsContract RISCV64.abi).pre s) : Pre s := by
+  sig_pre [Proof.MlDsa.lowBitsContract, Proof.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
@@ -186,17 +186,17 @@ def satState : State where
   rd := [⟨0x1000, 1024⟩]
   wr := [⟨0x2000, 1024⟩]
 
-theorem high_verified : Verified RISCV64.target highBits (Spec.MlDsa.highBitsContract RISCV64.abi) := by
+theorem high_verified : Verified RISCV64.target highBits (Proof.MlDsa.highBitsContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, sel_ct (rg := .a1) (by decide) [.a0, .a2] (by decide) (fun s₁ s₂ h => ?_)
     (by taint_decide) (by taint_decide) (by taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, h⟩ := high_correct hp
     refine ⟨t, s', he, ⟨h.1, h.2.1, h.2.2.1⟩, ?_⟩
-    sig_post [Spec.MlDsa.highBitsContract, Spec.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs]
+    sig_post [Proof.MlDsa.highBitsContract, Proof.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs]
     refine natPolyIs_of_toNat fun j hj => ?_
     rw [h.2.2.2 j hj]
     exact hbOut_toNat hp.g s hj
-  · sig_pub [Spec.MlDsa.highBitsContract, Spec.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlDsa.highBitsContract, Proof.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs] at h
     refine ⟨fun r hr => ?_, h.1, h.2.2.1⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -205,24 +205,24 @@ theorem high_verified : Verified RISCV64.target highBits (Spec.MlDsa.highBitsCon
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.highBitsContract, Spec.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs]
+    · sig_reduce [Proof.MlDsa.highBitsContract, Proof.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
         | trivial
         | exact reduced_zero _
         | decide +kernel
 
-theorem low_verified : Verified RISCV64.target lowBits (Spec.MlDsa.lowBitsContract RISCV64.abi) := by
+theorem low_verified : Verified RISCV64.target lowBits (Proof.MlDsa.lowBitsContract RISCV64.abi) := by
   refine ⟨fun s hs => ?_, sel_ct (rg := .a1) (by decide) [.a0, .a2] (by decide) (fun s₁ s₂ h => ?_)
     (by taint_decide) (by taint_decide) (by taint_decide), ?_⟩
   · have hp := pre_of_low hs
     obtain ⟨t, s', he, h⟩ := low_correct hp
     refine ⟨t, s', he, ⟨h.1, h.2.1, h.2.2.1⟩, ?_⟩
-    sig_post [Spec.MlDsa.lowBitsContract, Spec.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs]
+    sig_post [Proof.MlDsa.lowBitsContract, Proof.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs]
     refine polyIs_of_toNat fun j hj => ?_
     rw [h.2.2.2 j hj]
     exact lbOut_toNat _ s
-  · sig_pub [Spec.MlDsa.lowBitsContract, Spec.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs] at h
+  · sig_pub [Proof.MlDsa.lowBitsContract, Proof.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs] at h
     refine ⟨fun r hr => ?_, h.1, h.2.2.1⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -231,7 +231,7 @@ theorem low_verified : Verified RISCV64.target lowBits (Spec.MlDsa.lowBitsContra
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlDsa.lowBitsContract, Spec.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs]
+    · sig_reduce [Proof.MlDsa.lowBitsContract, Proof.MlDsa.bitsSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
         | trivial
