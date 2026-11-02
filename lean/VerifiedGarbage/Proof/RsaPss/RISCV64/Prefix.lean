@@ -40,7 +40,7 @@ open VG.Proof.Mgf1 (ifp ifn)
 abbrev mh (D : Nat) (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (s.gpr .a4) D
 
 /-- The registers the writes of `M'` change. -/
-abbrev mR : List Reg := [.a1, .a4, .a5, .t0, .t5]
+abbrev mpR : List Reg := [.a1, .a4, .a5, .t0, .t5]
 
 /-- `d := scratch + oY`. -/
 theorem wp_yBase {d : Reg} {t : State} {S : Addr} (h0 : t.gpr .s0 = S) {is : List Instr} {Q : State → Prop}
@@ -60,7 +60,7 @@ theorem prefix_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {nset : Lis
       (∀ u', Only [.t5] u u' → u'.gpr .t5 = BitVec.ofNat 64 n → WP isa (.block is) u' Q) →
       WP isa (.block (nset ++ is)) u Q)
     {t : State} (h : Base Sp (vP D) s t) :
-    WP isa (mPrefix H nset) t fun t' => Base Sp (vP D) s t' ∧ Kept mR t t' ∧
+    WP isa (mPrefix H nset) t fun t' => Base Sp (vP D) s t' ∧ Kept mpR t t' ∧
       ∀ o < oRsa, view t'.mem (Sp s) o = if oY + 8 ≤ o ∧ o < oY + 8 + D then (mh D s).getD (o - (oY + 8)) 0
         else if oY ≤ o ∧ o < oY + n then 0 else view t.mem (Sp s) o := by
   have F := L.F
@@ -75,7 +75,7 @@ theorem prefix_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {nset : Lis
   refine WP.seq (WP.seq (WP.mono hB fun t₃ ⟨k₃, a₃, n₃, z₃⟩ => ?_))
   refine WP.mono (fill_ok (p := off (Sp s) oY) (n := n) (b := 0) (by omega) (by omega) a₃ n₃
     (by rw [z₃]; rfl) (sc_w F (by rw [k₃.wr, h.wr]) (d := oY) (by omega))) fun t₄ ⟨hk₄, hm₄⟩ => ?_
-  have K₄ : Kept mR t t₄ := (k₃.keep.trans hk₄).mono
+  have K₄ : Kept mpR t t₄ := (k₃.keep.trans hk₄).mono
   have m₄ : t₄.mem = writeBytes t.mem (off (Sp s) oY) (List.replicate n 0) := by rw [hm₄, k₃.mem]
   have b₄ : Base Sp (vP D) s t₄ := h.wb F K₄ (by rw [List.length_replicate]; omega) m₄
   refine WP.seq (wp_mov fun t₅ o₅ e₅ => ?_)
@@ -90,7 +90,7 @@ theorem prefix_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {nset : Lis
     (by rw [o₈.get .a1, e₇, e₆]; exact off_off _ _ _) (by rw [o₈.get .a4, o₇.get .a4, o₆.get .a4, e₅, b₄.pdig])
     (by rw [e₈, hD]) (rd_in (by rw [k₈.rd, b₄.rd]) L.dr (by have := L.wd; omega) (Nat.le_refl _))
     (sc_w F (by rw [k₈.wr, b₄.wr]) (d := oY + 8) (by omega)) hdg) fun t' ⟨hk, hm⟩ => ?_
-  have K : Kept mR t₄ t' := (k₈.keep.trans hk).mono
+  have K : Kept mpR t₄ t' := (k₈.keep.trans hk).mono
   have hb : Spec.Rsa.bytesAt t₈.mem (s.gpr .a4) D = mh D s := by
     rw [k₈.mem]; exact bytes_entry b₄.mem L.dk L.dsc.symm (by omega)
   have m' : t'.mem = writeBytes t₄.mem (off (Sp s) (oY + 8)) (mh D s) := by rw [hm, hb, k₈.mem]
@@ -134,7 +134,7 @@ theorem copyIn_ok {t : State} (h : Base Sp (vP D) s t) {a b n : Nat} (hn : 0 < n
 /-- `copySalt`: the last `salt_len` bytes of `DB` after `mHash`. -/
 theorem salt_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State} (h : Base Sp (vP D) s t)
     (x : Xs s t) (hsl : (s.gpr .a7).toNat + 1 ≤ dN) :
-    WP isa (copySalt H) t fun t' => Base Sp (vP D) s t' ∧ Kept mR t t' ∧
+    WP isa (copySalt H) t fun t' => Base Sp (vP D) s t' ∧ Kept mpR t t' ∧
       ∀ o < oRsa, view t'.mem (Sp s) o = if oY + 8 + D ≤ o ∧ o < oY + 8 + D + (s.gpr .a7).toNat then
         view t.mem (Sp s) (lN + dN - (s.gpr .a7).toNat + (o - (oY + 8 + D))) else view t.mem (Sp s) o := by
   have F := L.F
@@ -169,7 +169,7 @@ theorem salt_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State} (
 
 /-- `copyDb`: `DB` after `mHash`. -/
 theorem copyDb_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State} (h : Base Sp (vP D) s t) :
-    WP isa (copyDb H) t fun t' => Base Sp (vP D) s t' ∧ Kept mR t t' ∧
+    WP isa (copyDb H) t fun t' => Base Sp (vP D) s t' ∧ Kept mpR t t' ∧
       ∀ o < oRsa, view t'.mem (Sp s) o = if oY + 8 + D ≤ o ∧ o < oY + 8 + D + dN then
         view t.mem (Sp s) (lN + (o - (oY + 8 + D))) else view t.mem (Sp s) o := by
   have F := L.F
