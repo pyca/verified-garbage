@@ -233,7 +233,7 @@ def headRegs : List Reg := enterRegs ++ [.s0, .s1, .s2, .s3, .t1] ++ [.s7, .t2, 
 buffer into `s9` and g's octets into `s7`. -/
 theorem combHead_ok {s : State} {L : Lay} {key sig : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
     (hr : Regs s L key sig) (hp0 : arrP s.mem L 0 = p) (hpo : p % 2 = 1) :
-    WP isa (.block (enterP ++ Precompute.minv ++ ptrBuf ++ [.addi .s9 .s7 0] ++ ptrG)) s fun t =>
+    WP isa (.block (enterP ++ Precompute.minv ++ ptrBuf ++ ([.addi .s9 .s7 0] : List Instr) ++ ptrG)) s fun t =>
       (InP t L ∧ PInv t L ∧ t.gpr .s7 = off key (L.pl + L.ql) ∧ t.gpr .s8 = BitVec.ofNat 64 L.pl ∧
         t.gpr .s9 = off L.Buf 0 ∧ t.mem = s.mem) ∧ Keep headRegs s t := by
   have hw := hL.wp_ge
@@ -265,7 +265,7 @@ def midRegs : List Reg := [.s7, .t2, .s8, .s9] ++ ptrRegs
 /-- `combine`'s second block: the buffer from `q_len` on into `s9` and y's
 octets into `s7`. -/
 theorem combMid_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (hs : ScrL s L) (hr : Regs s L key sig) :
-    WP isa (.block (ptrBuf2 ++ [.addi .s9 .s7 0] ++ ptrY)) s fun t =>
+    WP isa (.block (ptrBuf2 ++ ([.addi .s9 .s7 0] : List Instr) ++ ptrY)) s fun t =>
       (t.gpr .s7 = off key (2 * L.pl + L.ql) ∧ t.gpr .s9 = off L.Buf L.ql ∧ t.mem = s.mem) ∧
         Keep midRegs s t := by
   rw [WP.block_append_iff, WP.block_append_iff]

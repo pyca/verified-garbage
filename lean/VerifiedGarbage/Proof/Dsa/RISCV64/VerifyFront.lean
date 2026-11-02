@@ -55,8 +55,10 @@ def vContract : Contract isa where
       (Spec.Rsa.bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat)
       (Spec.Rsa.bytesAt s.mem (s.gpr .a6) (s.gpr .a7).toNat) then 1 else 0
   pub s₁ s₂ :=
-    (∀ r ∈ argRegs, s₁.gpr r = s₂.gpr r) ∧ s₁.sp = s₂.sp ∧
-      (List.range 2).map (stackArg s₁) = (List.range 2).map (stackArg s₂) ∧
+    s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+      s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧
+      s₁.gpr .a6 = s₂.gpr .a6 ∧ s₁.gpr .a7 = s₂.gpr .a7 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧
+      stackArg s₁ 1 = stackArg s₂ 1 ∧
       Spec.Dsa.publicBytesLeak (s₁.gpr .a2).toNat (s₁.gpr .a3).toNat
           (Spec.Rsa.bytesAt s₁.mem (s₁.gpr .a0) (s₁.gpr .a1).toNat) ++
         [if Spec.Dsa.verifyBytes (s₁.gpr .a2).toNat (s₁.gpr .a3).toNat

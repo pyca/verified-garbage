@@ -94,7 +94,7 @@ theorem save_ok (s₀ : State) {S : Addr} (hS : stackArg s₀ 0 = S)
     (hst : InRegions (s₀.rd ++ s₀.wr) (stackArgAddr s₀ 0) 8) (hsp : s₀.sp.toNat % 8 = 0)
     (hin : ∀ i < 13, InRegions s₀.wr (off (savW S) (8 * i)) 8)
     (hal : ∀ i < 13, (off (savW S) (8 * i)).toNat % 8 = 0) :
-    WP isa (.block ([.addSp .t2 0, .load .d .t2 .t2 0] ++ save .t2)) s₀ (Saved s₀ S) := by
+    WP isa (.block (([.addSp .t2 0, .load .d .t2 .t2 0] : List Instr) ++ save .t2)) s₀ (Saved s₀ S) := by
   rw [save, ← List.append_assoc]
   have hst' : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 0) 8 := by
     simpa only [stackArgAddr] using hst
