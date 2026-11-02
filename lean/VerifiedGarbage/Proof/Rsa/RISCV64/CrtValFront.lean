@@ -163,14 +163,19 @@ theorem arg_read {s : State} (h : PreC s) {m : Mem} (hm : ∀ x, zOf s ≤ ofs (
 theorem arg_succ (s : State) (j : Nat) : stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) = stackArgAddr s j := by
   simp only [stackArgAddr, Nat.mul_zero, add_ofNat_zero']
 
-/-- `entry`: the working space's header holds the saved registers, and the
-arguments are in the registers kept. -/
-theorem entry_ok {s0 : State} (h : PreC s0) : WP isa (.block entry) s0 (CB s0 s0.mem) := by
+/-- The moves of `entry`, after `save`. -/
+def cvMoves : List Instr :=
+  [mov .s1 .a6, mov .s2 .a7, mov .a6 .a4, mov .a3 .a2, mov .a2 .a0, .addSp .t0 0,
+    .load .d .s3 .t0 0, .load .d .s4 .t0 8, .load .d .s5 .t0 16, .load .d .s6 .t0 24,
+    .load .d .a0 .t0 32, .load .d .a1 .t0 40]
+
+theorem entry_eq : entry = save 48 ++ cvMoves := rfl
+
+/-- The moves, after `save`: the arguments are in the registers kept. -/
+theorem moves_ok {s0 e : State} (h : PreC s0) (F : Saved s0 (bOf s0) e) :
+    WP isa (.block cvMoves) e (CB s0 s0.mem) := by
   have hz := h.zk
   have hk := h.k1
-  rw [entry, WP.block_append_iff]
-  refine WP.mono (save_ok s0 (i := 6) (by decide) (arg_in (by rw [h.hrd]; simp) (by decide))
-    (arg_al h 6) h.scr (by omega_arith)) fun e F => ?_
   have fr : ∀ x, zOf s0 ≤ ofs (bOf s0) x → e.mem x = s0.mem x := fun x hx =>
     F.out x (.inr (Nat.le_trans (by omega_arith : 0 + 96 ≤ zOf s0) hx))
   have hrd : e.rd = s0.rd := F.keep.2.1
@@ -186,16 +191,14 @@ theorem entry_ok {s0 : State} (h : PreC s0) : WP isa (.block entry) s0 (CB s0 s0
   have a5 : stackArgAddr s0 0 + BitVec.ofNat 64 40 = stackArgAddr s0 5 := arg_succ s0 5
   have hg : ∀ r, r ≠ .t0 → r ≠ .s11 → e.gpr r = s0.gpr r := fun r h0 h11 =>
     F.keep.gpr (by simp [h0, h11])
-  have hb : WP isa (.block [mov .s1 .a6, mov .s2 .a7, mov .a6 .a4, mov .a3 .a2, mov .a2 .a0, .addSp .t0 0,
-      .load .d .s3 .t0 0, .load .d .s4 .t0 8, .load .d .s5 .t0 16, .load .d .s6 .t0 24,
-      .load .d .a0 .t0 32, .load .d .a1 .t0 40]) e fun u =>
+  have hb : WP isa (.block cvMoves) e fun u =>
       (u.gpr .s1 = s0.gpr .a6 ∧ u.gpr .s2 = s0.gpr .a7 ∧ u.gpr .a6 = s0.gpr .a4 ∧ u.gpr .a3 = s0.gpr .a2 ∧
         u.gpr .a2 = s0.gpr .a0 ∧ u.gpr .s3 = stackArg s0 0 ∧ u.gpr .s4 = stackArg s0 1 ∧
         u.gpr .s5 = stackArg s0 2 ∧ u.gpr .s6 = stackArg s0 3 ∧ u.gpr .a0 = stackArg s0 4 ∧
         u.gpr .a1 = stackArg s0 5 ∧ u.mem = e.mem ∧ u.sp = e.sp) ∧
       Keep [.s1, .s2, .a6, .a3, .a2, .t0, .s3, .s4, .s5, .s6, .a0, .a1] e u := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [mov, exec_addSp (d := .t0) (imm := 0) (by decide), F.sp, hg .a6 (by decide) (by decide),
+    brun [cvMoves, mov, exec_addSp (d := .t0) (imm := 0) (by decide), F.sp, hg .a6 (by decide) (by decide),
       hg .a7 (by decide) (by decide), hg .a4 (by decide) (by decide), hg .a2 (by decide) (by decide),
       hg .a0 (by decide) (by decide), add_ofNat_zero', a0, a1, a2, a3, a4, a5, l 0, l 1, l 2, l 3, l 4, l 5,
       hin 0 (by decide), hin 1 (by decide), hin 2 (by decide), hin 3 (by decide), hin 4 (by decide),
@@ -205,6 +208,14 @@ theorem entry_ok {s0 : State} (h : PreC s0) : WP isa (.block entry) s0 (CB s0 s0
   exact ⟨u1, u2, v3, v4, v5, v6, v0, v1, u2', u3, u6, (ku.gpr (by decide)).trans F.s11,
     (ku.gpr (by decide)).trans (hg .ra (by decide) (by decide)), ku.2.1.trans hrd,
     ku.2.2.trans F.keep.2.2, fun i hi => by rw [um]; exact F.saved i hi, fun x hx => by rw [um]; exact fr x hx⟩
+
+/-- `entry`: the working space's header holds the saved registers, and the
+arguments are in the registers kept. -/
+theorem entry_ok {s0 : State} (h : PreC s0) : WP isa (.block entry) s0 (CB s0 s0.mem) := by
+  have hz := h.zk
+  rw [entry_eq, WP.block_append_iff]
+  exact WP.mono (save_ok s0 (i := 6) (by decide) (arg_in (by rw [h.hrd]; simp) (by decide))
+    (arg_al h 6) h.scr (by omega_arith)) fun e F => moves_ok h F
 
 theorem inRegions_left {rs ws : List Region} {a : Addr} {n : Nat} (h : InRegions rs a n) :
     InRegions (rs ++ ws) a n :=
