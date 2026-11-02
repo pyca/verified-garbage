@@ -36,7 +36,8 @@ use crate::arch::x25519::vg_x25519;
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    target_arch = "x86_64"
+    target_arch = "x86_64",
+    target_arch = "riscv64"
 ))]
 use crate::arch::x25519::vg_x25519_base;
 #[cfg(target_arch = "x86_64")]
@@ -159,7 +160,8 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    target_arch = "x86_64"
+    target_arch = "x86_64",
+    target_arch = "riscv64"
 ))]
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
@@ -193,10 +195,7 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
 }
 
 /// `X25519(scalar, 9)`, by `x25519`.
-#[cfg(any(
-    target_arch = "riscv64",
-    all(target_arch = "powerpc64", target_endian = "little")
-))]
+#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     x25519(scalar, &BASE_POINT)
 }

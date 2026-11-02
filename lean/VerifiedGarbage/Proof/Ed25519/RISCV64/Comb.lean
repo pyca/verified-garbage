@@ -805,19 +805,15 @@ theorem wp_lla {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {nam
 /-- What `combMultiply` writes: the scalar's copy, the sign's mask and the field area. -/
 abbrev combW (b : Addr) : List Region := scalR b :: stepW b
 
-theorem combMultiply_ok {s : State} {b P T : Addr} (hc : Ctx8 b s) (hws : WS b s) (hp : s.gpr .s0 = P)
-    (hr : ∀ k < 32, InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 k) 1)
-    (hsep : (⟨P, 32⟩ : Region).Disjoint ⟨b, 8192⟩)
-    (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨b, 8192⟩) :
-    WP isa combMultiply s fun t => Rest stepR s t ∧ Frame (combW b) s.mem t.mem ∧
+/-- The comb after the scalar's copy: the accumulator's start, the counter, the tables' address
+and the 64 steps, for the scalar's copy at `scalAt b`. -/
+theorem combRun_ok {u : State} {b T : Addr} (cuu : Ctx8 b u) (wsu : WS b u) (hT : TblAt u T)
+    (hsym : u.syms combSym = T) (apart : (TBL T).Disjoint ⟨b, 8192⟩) :
+    WP isa (.seq combInit (.loop combStep (.nonzero .a4))) u fun t => Rest stepR u t ∧
+      Frame (stepW b) u.mem t.mem ∧
       Rep (point (env t.mem b) 0 1 2 3)
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem P 32) • baseAff) := by
-  have sub : (scalR b).Sub ⟨b, 8192⟩ := Offset.sub_base _ (by decide)
-  rw [combMultiply, combPrepare]
-  refine WP.seq (WP.seq (WP.mono_syms (combCopy_ok hc hp hr (hsep.sub_right sub)) fun u ⟨ru, fu, cu⟩ syu => ?_))
-  have cuu := hc.of_rest ru (by decide)
-  have wsu : WS b u := hws.of_rest ru
-  rw [combInit, WP.seq_iff]
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt u.mem (scalAt b) 32) • baseAff) := by
+  rw [combInit, WP.seq_iff, WP.seq_iff]
   refine WP.mono_syms (fieldCode_ok _ cuu.ctx wsu) fun v ⟨kv, ev⟩ syv => ?_
   let w₁ := v.write .s1 (BitVec.ofInt 64 0)
   let w := w₁.write .s2 (w₁.syms combSym)
@@ -828,29 +824,20 @@ theorem combMultiply_ok {s : State} {b P T : Addr} (hc : Ctx8 b s) (hws : WS b s
   have mw : w.mem = v.mem := by rw [u₂.mem, u₁.mem]
   have cw : Ctx8 b w := (cuu.of_keep kv).of_rest rw₂ (by decide)
   have wsw : WS b w := (wsu.of_rest kv.rest).of_rest rw₂
-  have fsw : Frame (combW b) s.mem w.mem := by
+  have fsw : Frame (stepW b) u.mem w.mem := by
     rw [mw]
-    exact (fu.mono (by simp)).trans (kv.frame.mono (by simp))
-  have hTw : TblAt w T := hT.of_frame (by rw [rw₂.rd, rw₂.wr, kv.rest.rd, kv.rest.wr, ru.rd, ru.wr]) fsw
+    exact kv.frame.mono (by simp)
+  have hTw : TblAt w T := hT.of_frame (by rw [rw₂.rd, rw₂.wr, kv.rest.rd, kv.rest.wr]) fsw
     fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact apart.sub_right sub
+      rcases hr with rfl | rfl
       · exact apart.sub_right (Offset.sub_base _ (by decide))
       · exact apart.sub_right (Offset.sub_base _ (by decide))
   have E : CombEnv w b T := ⟨hTw, apart⟩
-  have scal : Spec.Ed25519.bytesAt w.mem (scalAt b) 32 = Spec.Ed25519.bytesAt s.mem P 32 := by
-    rw [mw]
-    have h1 : Spec.Ed25519.bytesAt v.mem (scalAt b) 32 = Spec.Ed25519.bytesAt u.mem (scalAt b) 32 := by
-      have := scal_apart (b := b) (m := u.mem) (m' := v.mem) ((Frame.refl _ _).trans (kv.frame.mono (by simp)))
-      exact this
-    rw [h1]
-    unfold Spec.Ed25519.bytesAt
-    refine List.map_congr_left fun n hn => ?_
-    rw [scalAt, Offset.add_add]
-    exact cu n (List.mem_range.mp hn)
-  have syw : w₁.syms = s.syms := syv.trans syu
-  have I : CombInv w b T (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem P 32)) 0 w := by
+  have scal : Spec.Ed25519.bytesAt w.mem (scalAt b) 32 = Spec.Ed25519.bytesAt u.mem (scalAt b) 32 :=
+    scal_apart fsw
+  have syw : w₁.syms = u.syms := syv
+  have I : CombInv w b T (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt u.mem (scalAt b) 32)) 0 w := by
     refine ⟨by decide, cw, wsw, by rw [u₂.other _ (by decide), u₁.gpr]; rfl,
       by rw [u₂.gpr, syw, hsym, Nat.mul_zero, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero],
       ?_, ?_, Rest.refl _ _, Frame.refl _ _, by rw [scal]⟩
@@ -858,12 +845,35 @@ theorem combMultiply_ok {s : State} {b P T : Addr} (hc : Ctx8 b s) (hws : WS b s
       simp [constPointOps, evalOps, evalOp]
     · rw [mw, ev, evalOps, List.foldl_append, ← evalOps, ← evalOps, (env_constPoint _ _).1]
       simpa only [Proof.Ed25519.digitSum64, add_zero, natCast_zsmul] using combStart_ok
-  have hS := Proof.Ed25519.decodeLE_lt32 s.mem P
+  have hS := Proof.Ed25519.decodeLE_lt32 u.mem (scalAt b)
   refine WP.mono (combSteps_ok E I (by decide)) fun t ht => ⟨?_, ?_, ?_⟩
-  · exact (ru.mono (by decide)).trans ((kv.rest.mono (by decide)).trans ((rw₂.mono (by decide)).trans ht.rest))
+  · exact (kv.rest.mono (by decide)).trans ((rw₂.mono (by decide)).trans ht.rest)
   · exact (fsw.trans (ht.frame.mono (by simp)))
   · have := ht.acc
     rw [Proof.Ed25519.comb64_total (by simpa using hS), natCast_zsmul] at this
     exact this
+
+theorem combMultiply_ok {s : State} {b P T : Addr} (hc : Ctx8 b s) (hws : WS b s) (hp : s.gpr .s0 = P)
+    (hr : ∀ k < 32, InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 k) 1)
+    (hsep : (⟨P, 32⟩ : Region).Disjoint ⟨b, 8192⟩)
+    (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨b, 8192⟩) :
+    WP isa combMultiply s fun t => Rest stepR s t ∧ Frame (combW b) s.mem t.mem ∧
+      Rep (point (env t.mem b) 0 1 2 3)
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem P 32) • baseAff) := by
+  have sub : (scalR b).Sub ⟨b, 8192⟩ := Offset.sub_base _ (by decide)
+  rw [combMultiply, combPrepare]
+  refine WP.seq (WP.seq (WP.mono_syms (combCopy_ok hc hp hr (hsep.sub_right sub)) fun u ⟨ru, fu, cu⟩ syu => ?_))
+  have hTu : TblAt u T := hT.of_frame (by rw [ru.rd, ru.wr]) fu fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact apart.sub_right sub
+  have scal : Spec.Ed25519.bytesAt u.mem (scalAt b) 32 = Spec.Ed25519.bytesAt s.mem P 32 := by
+    unfold Spec.Ed25519.bytesAt
+    refine List.map_congr_left fun n hn => ?_
+    rw [scalAt, Offset.add_add]
+    exact cu n (List.mem_range.mp hn)
+  refine WP.seq_iff.mp (WP.mono (combRun_ok (hc.of_rest ru (by decide)) (hws.of_rest ru) hTu
+    (by rw [syu, hsym]) apart) fun t ⟨rt, ft, pt⟩ => ⟨?_, ?_, ?_⟩)
+  · exact (ru.mono (by decide)).trans rt
+  · exact (fu.mono (by simp)).trans (ft.mono (by simp))
+  · rw [← scal]; exact pt
 
 end VG.Proof.Ed25519.RISCV64

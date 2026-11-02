@@ -124,25 +124,4 @@ theorem sign_ok (B : BaseOk) (s : State) (hs : signC.pre s) :
       tal, tfit, words, tW⟩
   exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hq⟩
 
-/-- A contract by register `kR` without the comb's table implies the signature's contract under
-`abi`; so does it with the table, under `abi.withConsts combConsts`. -/
-theorem consts_implies {kR : Contract isa} {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
-    {post : sig.Post abi.ptrBits} {wa : Bool} {st : Nat}
-    (h : kR.Implies (sig.contract abi pre post wa st))
-    (hpost : ∀ s s', kR.post s s' → kR.post (stripConsts combConsts s) s')
-    (hpub : ∀ s₁ s₂, kR.pub (stripConsts combConsts s₁) (stripConsts combConsts s₂) → kR.pub s₁ s₂)
-    (hsat : ∃ s, (sig.contract (abi.withConsts combConsts) pre post wa st).pre s) :
-    Contract.Implies (M := isa)
-      { pre := fun s => kR.pre (stripConsts combConsts s) ∧ ConstsOk combConsts st s
-        post := kR.post
-        pub := fun s₁ s₂ => kR.pub s₁ s₂ ∧ s₁.syms combSym = s₂.syms combSym }
-      (sig.contract (abi.withConsts combConsts) pre post wa st) where
-  pre _ hs := ⟨h.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
-  post s s' hs hp := post_consts.mpr (post_stripConsts.mp (h.post (stripConsts combConsts s) s'
-    (pre_consts.mp hs).1 (hpost s s' hp)))
-  pub s₁ s₂ h₁ h₂ hp := ⟨hpub _ _ (h.pub (stripConsts combConsts s₁) (stripConsts combConsts s₂)
-      (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_stripConsts.mpr (pub_consts.mp hp).1)),
-    (pub_consts.mp hp).2 _ List.mem_cons_self⟩
-  sat := hsat
-
 end VG.Proof.Ed25519.RISCV64.Whole
