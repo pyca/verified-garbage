@@ -228,6 +228,8 @@ vg_keccak_f1600:
 	srli t1, t1, 32
 	or t0, t0, t1
 	sd t0, 184(t6)
+	andi t0, s1, 7
+	beqz t0, 20f
 	lbu t0, 0(s1)
 	lbu t1, 1(s1)
 	slli t1, t1, 8
@@ -812,7 +814,69 @@ vg_keccak_f1600:
 	addi a0, sp, 192
 	addi a1, sp, 392
 	addi s0, t6, 0
+	j 21f
 20:
+	ld t0, 0(s1)
+	sd t0, 192(t6)
+	ld t0, 8(s1)
+	xori t0, t0, -1
+	sd t0, 200(t6)
+	ld t0, 16(s1)
+	xori t0, t0, -1
+	sd t0, 208(t6)
+	ld t0, 24(s1)
+	sd t0, 216(t6)
+	ld t0, 32(s1)
+	sd t0, 224(t6)
+	ld t0, 40(s1)
+	sd t0, 232(t6)
+	ld t0, 48(s1)
+	sd t0, 240(t6)
+	ld t0, 56(s1)
+	sd t0, 248(t6)
+	ld t0, 64(s1)
+	xori t0, t0, -1
+	sd t0, 256(t6)
+	ld t0, 72(s1)
+	sd t0, 264(t6)
+	ld t0, 80(s1)
+	sd t0, 272(t6)
+	ld t0, 88(s1)
+	sd t0, 280(t6)
+	ld t0, 96(s1)
+	xori t0, t0, -1
+	sd t0, 288(t6)
+	ld t0, 104(s1)
+	sd t0, 296(t6)
+	ld t0, 112(s1)
+	sd t0, 304(t6)
+	ld t0, 120(s1)
+	sd t0, 312(t6)
+	ld t0, 128(s1)
+	sd t0, 320(t6)
+	ld t0, 136(s1)
+	xori t0, t0, -1
+	sd t0, 328(t6)
+	ld t0, 144(s1)
+	sd t0, 336(t6)
+	ld t0, 152(s1)
+	sd t0, 344(t6)
+	ld a2, 160(s1)
+	xori a2, a2, -1
+	sd a2, 352(t6)
+	ld a3, 168(s1)
+	sd a3, 360(t6)
+	ld a4, 176(s1)
+	sd a4, 368(t6)
+	ld a5, 184(s1)
+	sd a5, 376(t6)
+	ld a6, 192(s1)
+	sd a6, 384(t6)
+	addi a0, sp, 192
+	addi a1, sp, 392
+	addi s0, t6, 0
+21:
+22:
 	ld a7, 0(a0)
 	ld t0, 48(a0)
 	ld t1, 96(a0)
@@ -1360,7 +1424,9 @@ vg_keccak_f1600:
 	addi a6, a5, 0
 	addi a5, t4, 0
 	addi s0, s0, 16
-	bne s0, a0, 20b
+	bne s0, a0, 22b
+	andi t0, s1, 7
+	beqz t0, 23f
 	ld t0, 0(a0)
 	sb t0, 0(s1)
 	srli t1, t0, 8
@@ -1769,6 +1835,67 @@ vg_keccak_f1600:
 	sb t2, 199(s1)
 	ld s0, 400(a0)
 	ld s1, 408(a0)
+	j 24f
+23:
+	ld t0, 0(a0)
+	sd t0, 0(s1)
+	ld t0, 8(a0)
+	xori t0, t0, -1
+	sd t0, 8(s1)
+	ld t0, 16(a0)
+	xori t0, t0, -1
+	sd t0, 16(s1)
+	ld t0, 24(a0)
+	sd t0, 24(s1)
+	ld t0, 32(a0)
+	sd t0, 32(s1)
+	ld t0, 40(a0)
+	sd t0, 40(s1)
+	ld t0, 48(a0)
+	sd t0, 48(s1)
+	ld t0, 56(a0)
+	sd t0, 56(s1)
+	ld t0, 64(a0)
+	xori t0, t0, -1
+	sd t0, 64(s1)
+	ld t0, 72(a0)
+	sd t0, 72(s1)
+	ld t0, 80(a0)
+	sd t0, 80(s1)
+	ld t0, 88(a0)
+	sd t0, 88(s1)
+	ld t0, 96(a0)
+	xori t0, t0, -1
+	sd t0, 96(s1)
+	ld t0, 104(a0)
+	sd t0, 104(s1)
+	ld t0, 112(a0)
+	sd t0, 112(s1)
+	ld t0, 120(a0)
+	sd t0, 120(s1)
+	ld t0, 128(a0)
+	sd t0, 128(s1)
+	ld t0, 136(a0)
+	xori t0, t0, -1
+	sd t0, 136(s1)
+	ld t0, 144(a0)
+	sd t0, 144(s1)
+	ld t0, 152(a0)
+	sd t0, 152(s1)
+	ld t0, 160(a0)
+	xori t0, t0, -1
+	sd t0, 160(s1)
+	ld t0, 168(a0)
+	sd t0, 168(s1)
+	ld t0, 176(a0)
+	sd t0, 176(s1)
+	ld t0, 184(a0)
+	sd t0, 184(s1)
+	ld t0, 192(a0)
+	sd t0, 192(s1)
+	ld s0, 400(a0)
+	ld s1, 408(a0)
+24:
 	addi sp, sp, 608
 	ret
 	.option pop
