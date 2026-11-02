@@ -103,6 +103,8 @@ def aM : Nat := 34
 def aRlo : Nat := 36
 def aWN : Nat := 38
 def aOne : Nat := 42
+/-- `n - 1`, before it is copied into the zeroed wide `wU`. -/
+def aTu : Nat := 40
 def aGx : Nat := 0
 def aGm : Nat := 8
 def aG : Nat := 1
@@ -157,11 +159,11 @@ def deMinus : Prog isa := seqs [copy wOne wZ, .block (setOne wOne),
 
 /-! ## The halvings -/
 
-/-- `2^k x := x`, `x` and `u = n - 1` into zeroed wide arrays (through the
-narrow view), the multiplier's wide array zeroed, and `32 w` steps. -/
+/-- `2^k x := x`, `x` and `u = n - 1` copied into zeroed wide arrays (through
+the narrow view), the multiplier's wide array zeroed, and `32 w` steps. -/
 def twosInit : Prog isa := seqs [copy wX3 wX, copy wX2 wZero, copy wU wZero, copy wY wZero,
-  .block ctxw, copy aX2 aX, copy aOne aZero, .block (setOne aOne), sub3 aU aN aOne,
-  .block (countN ++ ctxW)]
+  .block ctxw, copy aX2 aX, copy aOne aZero, .block (setOne aOne), sub3 aTu aN aOne,
+  copy aU aTu, .block (countN ++ ctxW)]
 
 /-- The flags of a step: `even := ¬u₀` and `both := ¬u₀ ∧ ¬x₀`. -/
 def twosFlags : List Instr :=
