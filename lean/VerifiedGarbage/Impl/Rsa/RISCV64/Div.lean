@@ -32,40 +32,50 @@ def shlBody : List Instr :=
   [.load .d .t5 .t0 0, .shift .sll .d .t6 .t5 1, .logic .or .t6 .t6 .t4, .store .d .t6 .t0 0,
     .shift .srl .d .t4 .t5 63, .addi .t0 .t0 8]
 
-/-- The quotient (`w` words) and the remainder (`w + 1`) shifted left
-together. -/
-def shift (q r : Nat) : Prog isa :=
-  .seq (.block (ptr .t0 q ++ [.li .t4 0, mov .t3 .s9]))
-    (.seq (countLoop .t3 shlBody)
-      (.seq (.block (ptr .t0 r ++ [.addi .t3 .s9 1])) (countLoop .t3 shlBody)))
+/-- `t2 := ` the address of word `(s7 - 1) / 64` of array `q`: the word the
+dividend's next bit is in, and the quotient's next bit goes to. -/
+def qword (q : Nat) : List Instr :=
+  ptr .t2 q ++ [.addi .t5 .s7 (-1), .shift .srl .d .t5 .t5 6, .shift .sll .d .t5 .t5 3, .add .t2 .t2 .t5]
 
-/-- `[t] := [r] - [d]` over `w + 1` words, the borrow in `t4`. -/
-def subtract (r d t : Nat) : Prog isa := subN 1 t r d
+/-- One word of `[r] := 2 [r] + c + ([d] ⊕ mask) + c'`: the shift's carry in and
+out in `t3`, the addition's in `t4`, the mask in `a4`. -/
+def passBody : List Instr :=
+  [.load .d .t5 .t0 0, .shift .sll .d .t6 .t5 1, .logic .or .t6 .t6 .t3, .shift .srl .d .t3 .t5 63,
+    .load .d .t5 .t1 0, .logic .xor .t5 .t5 .a4, .add .t6 .t6 .t4, .sltu .a5 .t6 .t4,
+    .add .t6 .t6 .t5, .sltu .t4 .t6 .t5, .logic .or .t4 .t4 .a5, .store .d .t6 .t0 0,
+    .addi .t0 .t0 8, .addi .t1 .t1 8]
 
-/-- The new quotient bit `1 - borrow` into `a5`, and the mask `0 - a5` into
-`t4`. -/
-def bit : List Instr := [.logicImm .xor .a5 .t4 1, .li .t5 0, .sub .t4 .t5 .a5]
+/-- One step of non-restoring division: the dividend's next bit shifted into
+the remainder, which then has the divisor subtracted (a mask `a4` of all
+ones, while it is not negative) or added (`a4 = 0`); the new mask and
+quotient bit from its sign, the bit shifted into the dividend's word. -/
+def step (q r d : Nat) : Prog isa :=
+  .seq (.block (qword q ++ [.load .d .t5 .t2 0, .shift .srl .d .t3 .t5 63] ++ ptr .t0 r ++ ptr .t1 d ++
+      [.logicImm .and .t4 .a4 1, .addi .t2 .s9 1]))
+    (.seq (countLoop .t2 passBody)
+      (.block ([.shift .srl .d .t5 .t6 63, .addi .a4 .t5 (-1), .logicImm .and .a5 .a4 1] ++ qword q ++
+        [.load .d .t5 .t2 0, .shift .sll .d .t5 .t5 1, .logic .or .t5 .t5 .a5, .store .d .t5 .t2 0,
+          .addi .s7 .s7 (-1)])))
 
-/-- `[r] := mask ? [t] : [r]` over `w + 1` words. -/
-def keep (r t : Nat) : Prog isa :=
-  .seq (.block (ptrs r r t ++ [.addi .t3 .s9 1])) (countLoop .t3 selBody)
-
-/-- The quotient bit or'ed into the quotient's low word, and one step less. -/
-def setBit (q : Nat) : List Instr :=
-  ptr .t0 q ++ [.load .d .t5 .t0 0, .logic .or .t5 .t5 .a5, .store .d .t5 .t0 0,
-    .addi .s7 .s7 (-1)]
-
-/-- One step. -/
-def step (q r d t : Nat) : Prog isa :=
-  .seq (shift q r) (.seq (subtract r d t) (.seq (.block bit) (.seq (keep r t) (.block (setBit q)))))
-
-/-- The remainder zeroed, and `64 w` steps to count. -/
+/-- The remainder zeroed, `64 w` steps to count, and the mask to subtract. -/
 def init (r : Nat) : Prog isa :=
   .seq (.block (ptr .t0 r ++ [.addi .t3 .s9 1, .li .t5 0]))
-    (.seq (countLoop .t3 [.store .d .t5 .t0 0, .addi .t0 .t0 8]) (.block [.shift .sll .d .s7 .s9 6]))
+    (.seq (countLoop .t3 [.store .d .t5 .t0 0, .addi .t0 .t0 8])
+      (.block [.shift .sll .d .s7 .s9 6, .li .a4 (-1)]))
+
+/-- One word of `[r] := [r] + ([d] ∧ mask)`, the carry in and out in `t4`. -/
+def fixBody : List Instr :=
+  [.load .d .t5 .t0 0, .load .d .t6 .t1 0, .logic .and .t6 .t6 .a4, .add .t5 .t5 .t4, .sltu .a5 .t5 .t4,
+    .add .t5 .t5 .t6, .sltu .t4 .t5 .t6, .logic .or .t4 .t4 .a5, .store .d .t5 .t0 0, .addi .t0 .t0 8,
+    .addi .t1 .t1 8]
+
+/-- A negative remainder has the divisor added back. -/
+def fix (r d : Nat) : Prog isa :=
+  .seq (.block (ptr .t0 r ++ ptr .t1 d ++ [.logicImm .xor .a4 .a4 (-1), .li .t4 0, .addi .t3 .s9 1]))
+    (countLoop .t3 fixBody)
 
 /-- `64 w` division steps of `[q]` by `[d]`: the quotient in `[q]` and the
-remainder in `[r]`. -/
-def div (q r d t : Nat) : Prog isa := .seq (init r) (.loop (step q r d t) (.nonzero .s7))
+remainder in `[r]` (`t` is not used). -/
+def div (q r d _t : Nat) : Prog isa := .seq (init r) (.seq (.loop (step q r d) (.nonzero .s7)) (fix r d))
 
 end VG.Impl.Rsa.RISCV64.Div
