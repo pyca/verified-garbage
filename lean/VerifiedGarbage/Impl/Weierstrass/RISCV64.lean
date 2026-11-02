@@ -16,8 +16,13 @@ which the callees keep (a callee-saved register); a point is three slots,
 projective coordinates `(X : Y : Z)`. As on PPC64LE
 (`Impl/Weierstrass/PPC64LE.lean`):
 
+* `ldAt`, `sdAt`, `liAt`: a load, a store or an offset in a register, for
+  offsets up to 4094, past what an instruction's 12 bits (signed) reach: from
+  2048 on, through `base + 2047`. A load computes it in its own destination,
+  a store in its base, which it restores, so neither writes another
+  register, and below 2048 each is the one instruction.
 * `callOp`: `[o] = f([a], [b])` by a call of `f` with `a0 = s0` and the
-  offsets in `a1`–`a3` (`li`: every slot is below 2048); `fprog`: field
+  offsets in `a1`–`a3`; `fprog`: field
   operations on slots (`FOp`, `Impl/Weierstrass/Slots.lean`), such as the
   complete addition `rcb`, one after the other.
 * `ladder`: `[k]G` by double-and-add from the top bit: `D = R + R`,
@@ -53,12 +58,30 @@ structure Field where
   add : Prog isa
   sub : Prog isa
 
+/-! ## Offsets past 2047 -/
+
+/-- `ld rd, off(base)`, for `off < 4095`: from 2048 on, `rd = base + 2047`
+first. -/
+def ldAt (rd base : Reg) (off : Nat) : List Instr :=
+  if off < 2048 then [.load .d rd base off] else [.addi rd base 2047, .load .d rd rd (off - 2047)]
+
+/-- `sd t, off(base)`, for `off < 4095`: from 2048 on, `base` moved up by
+2047 around the store (`t` another register). -/
+def sdAt (t base : Reg) (off : Nat) : List Instr :=
+  if off < 2048 then [.store .d t base off]
+  else [.addi base base 2047, .store .d t base (off - 2047), .addi base base (-2047)]
+
+/-- `rd = v`, for `v < 4095`: from 2048 on, `2047` and then `v - 2047`
+added. -/
+def liAt (rd : Reg) (v : Nat) : List Instr :=
+  if v < 2048 then [.li rd v] else [.li rd 2047, .addi rd rd ((v - 2047 : Nat) : Int)]
+
 /-! ## Calls -/
 
 /-- `[o] = f([a], [b])` by a call of `f`, whose code is `body`, on the
 working space in `s0`. -/
 def callOp (f : String) (body : Prog isa) (o a b : Nat) : Prog isa :=
-  .seq (.block [.addi .a0 wb 0, .li .a1 o, .li .a2 a, .li .a3 b]) (.call f body)
+  .seq (.block (.addi .a0 wb 0 :: (liAt .a1 o ++ (liAt .a2 a ++ liAt .a3 b)))) (.call f body)
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
 def mulCall (F : Field) (o a b : Nat) : Prog isa := callOp (F.S.fn "mul") F.mul o a b
@@ -86,12 +109,17 @@ def fprog (F : Field) (ops : List FOp) : Prog isa := progs (ops.map (opCode F))
 
 /-! ## Copies and selections -/
 
+/-- A word of `[o] = [a]` if the mask `a7` is zero, `[b]` if it is all
+ones, through `t0` and `t1`. -/
+def selWord (o a b : Nat) : List Instr :=
+  ldAt .t0 wb a ++ ldAt .t1 wb b ++ [.logic .xor .t1 .t1 .t0, .logic .and .t1 .t1 .a7, .logic .xor .t0 .t0 .t1] ++
+    sdAt .t0 wb o
+
 /-- `[o] = [a]` if the mask `a7` is zero, `[b]` if it is all ones, `k`
 64-bit words, through `t0` and `t1`. -/
 def sel : Nat → Nat → Nat → Nat → List Instr
   | 0, _, _, _ => []
-  | k + 1, o, a, b => [.load .d .t0 wb a, .load .d .t1 wb b, .logic .xor .t1 .t1 .t0,
-      .logic .and .t1 .t1 .a7, .logic .xor .t0 .t0 .t1, .store .d .t0 wb o] ++ sel k (o + 8) (a + 8) (b + 8)
+  | k + 1, o, a, b => selWord o a b ++ sel k (o + 8) (a + 8) (b + 8)
 
 /-- `o = a` or `b`, a point of `n`-word coordinates, by the mask `a7`. -/
 def selPt (n : Nat) (o a b : Pt) : List Instr :=
@@ -100,7 +128,7 @@ def selPt (n : Nat) (o a b : Pt) : List Instr :=
 /-- `[o] = [a]`, `k` 64-bit words, through `t0`. -/
 def copy : Nat → Nat → Nat → List Instr
   | 0, _, _ => []
-  | k + 1, o, a => [.load .d .t0 wb a, .store .d .t0 wb o] ++ copy k (o + 8) (a + 8)
+  | k + 1, o, a => (ldAt .t0 wb a ++ sdAt .t0 wb o) ++ copy k (o + 8) (a + 8)
 
 /-- The mask `a7 = -bit` of bit `s1` of the number at `src`, through `t0`–`t2`:
 its word `s1 >>> 6` shifted right by `s1 mod 64`. -/

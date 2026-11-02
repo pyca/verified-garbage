@@ -108,8 +108,8 @@ theorem compress_ok {s : State} (hs : compRV.pre s) :
     rw [U₃.wordsVal (by decide) (by decide)]; exact hx
   -- The first byte.
   rw [show p256.n = 4 from rfl, retCode, restoreCode]
-  simp only [List.cons_append, List.nil_append]
-  refine ld_ws hw₃ (d := p256.sl FLAG) (by decide) (by decide) fun s₄ u₄ => ?_
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  refine ldAt_ws hw₃ (d := p256.sl FLAG) (by decide) (by decide) fun s₄ u₄ => ?_
   have hw₄ := hw₃.of_kp (Kp.of_upd u₄)
   refine ld_ws hw₄ (d := p256.sl CY) (by decide) (by decide) fun s₅ u₅ => ?_
   refine WP.cons (exec_logicImm (by decide)) ?_
@@ -179,7 +179,7 @@ theorem compress_ok {s : State} (hs : compRV.pre s) :
       rw [U₃₈.word (by decide) (by decide), U₃.word (by decide) (by decide), U₂.word (by decide) (by decide)]
   have fl₈ : word s₈.mem base FL = maskOf B := by
     rw [U₃₈.word (by decide) (by decide), fl₃]
-  refine ld_ws hw₈ (d := p256.sl FLAG) (by decide) (by decide) fun s₉ u₉ => ?_
+  refine ldAt_ws hw₈ (d := p256.sl FLAG) (by decide) (by decide) fun s₉ u₉ => ?_
   refine WP.cons (exec_logicImm (by decide)) ?_
   have u₉' := Upd.write s₉ .a0 (s₉.gpr .a0 &&& BitVec.ofInt 64 1)
   have hw₉ := (hw₈.of_kp (Kp.of_upd u₉)).of_kp (Kp.of_upd u₉')
@@ -323,7 +323,7 @@ structure DPost (s s' : State) : Prop where
 
 theorem dsetup_ok {s : State} (hs : DPre s) :
     WP isa (.block (saveCode .a2 ++ loadNum p256.n (p256.sl CX) .a1 1 ++ Cfg.parCode p256 .a1 ++
-      Cfg.tagMask .a1 ++ ([.store .d .a7 wb (p256.sl FLAG)] : List Instr) ++ constCode p256 ++
+      Cfg.tagMask .a1 ++ sdAt .a7 wb (p256.sl FLAG) ++ constCode p256 ++
       setConst p256.n (p256.sl EXPS) ((p256.C.p + 1) / 4) ++ ltMask p256.n (p256.sl CX) (p256.sl MP) ++
       andFlag p256)) s fun s' => DPost s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfo, hfp, hfs, hal⟩ := hs
@@ -364,8 +364,7 @@ theorem dsetup_ok {s : State} (hs : DPre s) :
       rw [a1₄, u₄.rd, u₄.wr, u₃a.rd, u₃a.wr, u₃.rd, u₃.wr]; exact in₂))
     fun s₅ ⟨r₅, m₅, g₅⟩ => ?_)
   have hw₅ := hw₄.of_rest r₅
-  rw [List.singleton_append]
-  refine sd_ws hw₅ (d := p256.sl FLAG) (by decide) (by decide) fun s₆ u₆ => ?_
+  refine sdAt_ws hw₅ (by decide) (d := p256.sl FLAG) (by decide) (by decide) fun s₆ u₆ => ?_
   have hw₆ := hw₅.of_kp (Kp.of_mupd u₆)
   -- The constants and the root's exponent.
   rw [constCode_eq]
@@ -646,7 +645,7 @@ theorem dfin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s
     (hpr : (word s.mem base (p256.sl PAR)).toNat % 2 = pr) :
     WP isa (.block (zeroMask p256.n (p256.sl DIF) ++ andFlag p256 ++ Cfg.parMask p256 Y1 ++
       sel p256.n (p256.sl YF) (p256.sl Y1) (p256.sl Y2) ++ Cfg.sameMask p256 YF ++ andFlag p256 ++
-      ([.load .d .a7 wb (p256.sl FLAG)] : List Instr) ++ pointOut p256 CX YF)) s fun s' =>
+      ldAt .a7 wb (p256.sl FLAG) ++ pointOut p256 CX YF)) s fun s' =>
       s'.gpr .a0 = (if (c && decide (sv base s DIF = 0)) &&
           decide ((if sv base s Y1 % 2 ≠ pr then sv base s Y2 else sv base s Y1) % 2 = pr) then 1 else 0) ∧
       bytesAt s'.mem out 65 = (if (c && decide (sv base s DIF = 0)) &&
@@ -697,8 +696,7 @@ theorem dfin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s
   rw [par₄, yf₄'] at g₅
   refine WP.block_append (WP.mono (andFlag_ok hw₅) fun s₆ ⟨f₆, r₆, O₆⟩ => ?_)
   have hw₆ := hw₅.of_rest r₆
-  rw [List.singleton_append]
-  refine ld_ws hw₆ (d := p256.sl FLAG) (by decide) (by decide) fun s₇ u₇ => ?_
+  refine ldAt_ws hw₆ (d := p256.sl FLAG) (by decide) (by decide) fun s₇ u₇ => ?_
   have hw₇ := hw₆.of_kp (Kp.of_upd u₇)
   generalize hB : ((c && decide (sv base s DIF = 0)) && decide (y % 2 = pr)) = B
   have fl₆ : word s₆.mem base FL = maskOf B := by

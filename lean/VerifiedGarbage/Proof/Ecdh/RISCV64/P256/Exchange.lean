@@ -271,8 +271,7 @@ theorem fin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s2
   have hw₁ := hw.of_rest r₁'
   refine WP.block_append (WP.mono (andFlag_ok hw₁) fun s₂ ⟨f₂, r₂, O₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
-  rw [List.singleton_append]
-  refine ld_ws hw₂ (d := p256.sl FLAG) (by decide) (by decide) fun s₃ u₃ => ?_
+  refine ldAt_ws hw₂ (d := p256.sl FLAG) (by decide) (by decide) fun s₃ u₃ => ?_
   have hw₃ := hw₂.of_kp (Kp.of_upd u₃)
   -- The flag.
   have hb : word s₂.mem base FL = maskOf (c && !decide (sv base s RZ = 0)) := by

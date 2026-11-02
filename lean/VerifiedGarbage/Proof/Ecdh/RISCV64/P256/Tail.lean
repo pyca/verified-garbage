@@ -232,7 +232,7 @@ theorem rangeOf_ok {i : Nat} (hi : i < 44) {s : State} {base : Addr} (hw : WsReg
   have hw₁ := hw.of_rest r₁
   refine WP.block_append (WP.mono (andFlag_ok hw₁) fun s₂ ⟨f₂, r₂, O₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
-  refine WP.block_append (WP.mono (zeroMask_ok hw₂ (n := 4) (a := p256.sl i) a8 a2)
+  refine WP.block_append (WP.mono (zeroMask_ok hw₂ (n := 4) (a := p256.sl i) a8 (by omega))
     fun s₃ ⟨r₃, m₃, g₃⟩ => ?_)
   refine WP.cons (exec_logicImm (by decide)) ?_
   have hw₃' := (hw₂.of_rest r₃).of_kp (Kp.of_upd (Upd.write s₃ .a7 (s₃.gpr .a7 ^^^ BitVec.ofInt 64 (-1))))
@@ -308,7 +308,7 @@ theorem affine_ok {s : State} {base : Addr} (hw : WsReg s base) {t o a : Nat} (h
       Fin.ofNat W.p (sv base s' o) = toM W.p (2 ^ 256) (sv base s a) * toM W.p (2 ^ 256) (sv base s ACC) := by
   have hl : ∀ i, i < 44 → p256.sl i + 8 * p256Field.S.k ≤ own p256Field.S.k := fun i hi => by
     show 64 + 32 * i + 32 ≤ 3840 + 0 - 0 + 0; omega
-  have hs : ∀ i, i < 44 → p256.sl i < 2048 := fun i hi => by rw [sl_eq]; omega
+  have hs : ∀ i, i < 44 → p256.sl i < 4095 := fun i hi => by rw [sl_eq]; omega
   have hk4 : p256Field.S.k = 4 := rfl
   rw [affineCoord]
   refine WP.seq (WP.mono (mulCall_ok field_ok hw (o := p256.sl t) (a := p256.sl a) (b := p256.sl ACC) (hl t ht)

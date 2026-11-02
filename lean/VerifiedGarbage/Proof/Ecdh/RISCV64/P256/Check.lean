@@ -295,8 +295,7 @@ theorem check_rv (s : State) (hs : checkRVc.pre s) :
   have hw₈ := hw₇.of_rest r₈
   refine WP.block_append (WP.mono (andFlag_ok hw₈) fun s₉ ⟨f₉, r₉, O₉⟩ => ?_)
   have hw₉ := hw₈.of_rest r₉
-  rw [List.singleton_append]
-  refine ld_ws hw₉ (d := p256.sl FLAG) (by decide) (by decide) fun s₁₀ u₁₀ => ?_
+  refine ldAt_ws hw₉ (d := p256.sl FLAG) (by decide) (by decide) fun s₁₀ u₁₀ => ?_
   have hw₁₀ := hw₉.of_kp (Kp.of_upd u₁₀)
   -- The flag's value.
   have U₃₇ := ((U₄.trans U₅).trans U₆).trans U₇
