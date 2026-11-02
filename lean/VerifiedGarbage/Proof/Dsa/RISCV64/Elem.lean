@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.Sizes
 public import VerifiedGarbage.Proof.Dsa.RISCV64.Arr
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 public import VerifiedGarbage.Proof.Bignum.RISCV64.ModArith
+public import VerifiedGarbage.Proof.Bignum.RISCV64.ModExpWin
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubPower
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
 import VerifiedGarbage.Proof.Framework.Offset
@@ -220,5 +221,82 @@ theorem setupP_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (hs : ScrL 
   · rw [o5.word (by omega) (by omega_arith), k5.gpr (by decide)]; exact i4
   · exact pbody_of_arrays o3 o5
 
+
+/-! ## The domain's elements -/
+
+theorem mask_clear (a b : Bool) : (mask a ||| mask b) ^^^ mask b = mask (a && !b) := by
+  cases a <;> cases b <;> rfl
+
+/-- `clear`: `a1 &= ¬a2`. -/
+theorem clear_ok (s : State) {a b : Bool} (h1 : s.gpr .a1 = mask a) (h2 : s.gpr .a2 = mask b) :
+    WP isa (.block clear) s fun t => (t.gpr .a1 = mask (a && !b) ∧ t.mem = s.mem) ∧ Keep [.a1] s t := by
+  refine WP.keep _ ?_ (by decide) (by rfl)
+  unfold clear
+  brun [h1, h2, mask_clear]
+
+/-- The registers `elemRange` writes. -/
+def elemRangeRegs : List Reg := [.s0, .t3, .t5] ++ belowRegs ++ eqRegs .a2 ++ [.a0, .a1]
+
+theorem slots_lt {w : Nat} : slot w 3 + 5 * (8 * (w + 2)) = slot w 8 := by simp only [Lay.slot_eq]; omega
+
+/-- `elemRange`: `a0 = 0` exactly when `1 < [4] < [0]`, with `[4]`'s word `w`
+zero; arrays 3, 5 and 7 change. -/
+theorem elemRange_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w)
+    (top : word s.mem B (slot w 4 + 8 * w) = 0) :
+    WP isa elemRange s fun t =>
+      ((t.gpr .a0 = 0 ↔ 1 < wordsVal s.mem B (slot w 4) w ∧ wordsVal s.mem B (slot w 4) w <
+          wordsVal s.mem B (slot w 0) w) ∧
+        Outside B (slot w 3) (5 * (8 * (w + 2))) s.mem t.mem ∧ Env t B Z w) ∧ Keep elemRangeRegs s t := by
+  have hs := h.hs
+  have hnw := hs.nowrap
+  have hZ := h.hZ
+  have hw2 := h.w2
+  have hw48 := h.w48
+  have e : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  have e0 := e 0; have e3 := e 3; have e4 := e 4; have e5 := e 5; have e7 := e 7; have e8 := e 8; have e28 := e 28
+  unfold elemRange
+  refine WP.seq (WP.mono (Pub.oneP_ok hs (by omega) (by omega) (by omega) h.a7 h.s5 h.t0)
+    fun s₁ ⟨⟨v7, o1'⟩, k1⟩ => ?_)
+  have o1 : Outside B (slot w 7) (8 * w) s.mem s₁.mem := o1'
+  have h1 := h.keep k1
+  refine WP.seq (WP.mono (zeroArr_ok h1 (j := 5) (by decide)) fun s₂ ⟨⟨z5, o2⟩, k2⟩ => ?_)
+  have h2 := h1.keep k2
+  have top2 : word s₂.mem B (slot w 4 + 8 * w) = 0 := by
+    rw [o2.word (by omega) (by omega_arith), o1.word (by omega) (by omega_arith)]; exact top
+  have A4 : wordsVal s₂.mem B (slot w 4) w = wordsVal s.mem B (slot w 4) w := by
+    rw [o2.wordsVal (by omega) (by omega_arith), o1.wordsVal (by omega) (by omega_arith)]
+  have A0 : wordsVal s₂.mem B (slot w 0) w = wordsVal s.mem B (slot w 0) w := by
+    rw [o2.wordsVal (by omega) (by omega_arith), o1.wordsVal (by omega) (by omega_arith)]
+  have A7 : wordsVal s₂.mem B (slot w 7) w = 1 := by rw [o2.wordsVal (by omega) (by omega_arith)]; exact v7
+  refine WP.seq (WP.mono (below_ok h2 (a := 4) (by decide) (by decide) top2) fun s₃ ⟨⟨b1, o3⟩, k3⟩ => ?_)
+  rw [A4, A0] at b1
+  have h3 := h2.keep k3
+  have A4' : wordsVal s₃.mem B (slot w 4) w = wordsVal s.mem B (slot w 4) w := by
+    rw [o3.wordsVal (by omega) (by omega_arith), A4]
+  have A5 : wordsVal s₃.mem B (slot w 5) w = 0 := by rw [o3.wordsVal (by omega) (by omega_arith), z5]
+  have A7' : wordsVal s₃.mem B (slot w 7) w = 1 := by rw [o3.wordsVal (by omega) (by omega_arith), A7]
+  refine WP.seq (WP.mono (eqMask_ok h3 (j := 4) (k := 5) (rd := .a2) (by decide) (by decide) (by decide))
+    fun s₄ ⟨⟨c2, m4⟩, k4⟩ => ?_)
+  rw [A4', A5] at c2
+  refine WP.seq (WP.mono (clear_ok s₄ ((k4.gpr (by decide)).trans b1) c2) fun s₅ ⟨⟨d1, m5⟩, k5⟩ => ?_)
+  have h5 := h3.keep (k4.trans k5)
+  have m35 : s₅.mem = s₃.mem := by rw [m5, m4]
+  refine WP.seq (WP.mono (eqMask_ok h5 (j := 4) (k := 7) (rd := .a2) (by decide) (by decide) (by decide))
+    fun s₆ ⟨⟨f2, m6⟩, k6⟩ => ?_)
+  rw [m35, A4', A7'] at f2
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (clear_ok s₆ ((k6.gpr (by decide)).trans d1) f2) fun s₇ ⟨⟨g1, m7⟩, k7⟩ => ?_
+  refine WP.mono (WP.keep [.a0] (Q := fun u => u.gpr .a0 = s₇.gpr .a1 ∧ u.mem = s₇.mem)
+    (by brun [BitVec.add_zero]) (by decide) (by rfl)) fun s₈ ⟨⟨a0, m8⟩, k8⟩ => ?_
+  refine WP.mono (unmask_ok s₈ (a0.trans g1)) fun t ⟨⟨t0, mt⟩, kt⟩ => ?_
+  have mt3 : t.mem = s₃.mem := by rw [mt, m8, m7, m6, m35]
+  refine ⟨⟨?_, ?_, h5.keep ((k6.trans k7).trans (k8.trans kt))⟩,
+    ((((k1.trans k2).trans k3).trans k4).trans (k5.trans ((k6.trans k7).trans (k8.trans kt)))).mono (by decide)⟩
+  · rw [t0]
+    simp only [Bool.and_eq_true, Bool.not_eq_true', decide_eq_true_eq, decide_eq_false_iff_not]
+    omega
+  · rw [mt3]
+    exact ((o1.mono (by omega) (by omega)).trans (o2.mono (by omega) (by omega))).trans
+      (o3.mono (by omega) (by omega))
 
 end VG.Proof.Dsa.RISCV64
