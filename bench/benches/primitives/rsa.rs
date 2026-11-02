@@ -388,6 +388,37 @@ pub fn bench(c: &mut Criterion) {
         g.finish();
     }
     {
+        // The unproven recovery of the primes by SP 800-56B's Appendix C.2.
+        {
+            use verified_garbage_asm_riscv64::rsa_proto4::vg_rsa_recover_primes_det;
+            let mut g = c.benchmark_group("rsa_proto_recover_det");
+            for bits in [2048u32, 3072, 4096] {
+                let key = openssl::rsa::Rsa::generate(bits).unwrap();
+                let k = key.size() as usize;
+                let (n, e, d) = (key.n().to_vec(), key.e().to_vec(), key.d().to_vec());
+                let (mut p, mut q) = (vec![0u8; k], vec![0u8; k]);
+                let mut scratch = vec![0u64; 16 * k + 32];
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    b.iter(|| unsafe {
+                        vg_rsa_recover_primes_det(
+                            p.as_mut_ptr(),
+                            k,
+                            q.as_mut_ptr(),
+                            k,
+                            n.as_ptr(),
+                            k,
+                            e.as_ptr(),
+                            e.len(),
+                            black_box(d.as_ptr()),
+                            d.len(),
+                            scratch.as_mut_ptr(),
+                            scratch.len(),
+                        )
+                    })
+                });
+            }
+            g.finish();
+        }
         // The unproven key functions: the CRT values, and the two key checks (next to OpenSSL's RSA_check_key).
         use openssl::rsa::Rsa;
         use verified_garbage_asm_riscv64::rsa_proto3::{
