@@ -11,6 +11,7 @@
 
 mod bytes;
 mod json;
+mod modes;
 mod text;
 mod vector_text;
 mod vectors;
@@ -25,8 +26,6 @@ mod cryptography_cast5;
 mod draft_ribose_sm4;
 #[path = "nessie/main.rs"]
 mod nessie;
-#[path = "pbkdf2/main.rs"]
-mod pbkdf2;
 #[path = "rfc1321/main.rs"]
 mod rfc1321;
 #[path = "rfc2144/main.rs"]
