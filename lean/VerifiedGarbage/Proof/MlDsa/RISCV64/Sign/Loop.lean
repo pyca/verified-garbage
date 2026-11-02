@@ -288,6 +288,20 @@ theorem kbranch_ok {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (
   WP.ite _ (Steps.eval_nonzero s .s4) (fun hb => WP.mono (kthen_ok h (by simpa using hb)) fun _ h => .inl h)
     fun hb => WP.mono (kelse_ok hl h (by simpa using hb)) fun _ h => .inr h
 
+/-- `IB` after the result is zero-extended. -/
+theorem IB.zx {p : Params} {STK : Nat} {σ : State} {t : Nat} {s s' : State} (h : IB p STK σ t s)
+    (w : s'.gpr .a0 = zx (s.gpr .a0) ∧ (∀ r, r ≠ .a0 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.sp = s.sp) : IB p STK σ t s' := by
+  obtain ⟨g3, go, m3, rd3, wr3, sp3⟩ := w
+  have k3 : Kept ((slay2 p STK σ).RL []) s s' :=
+    ⟨fun r hr => go r (by rintro rfl; simp [preserved] at hr), sp3, rd3, wr3, by rw [m3]; exact Frame.refl _ _⟩
+  have e32 : (s'.gpr .a0).setWidth 32 = (s.gpr .a0).setWidth 32 := by rw [g3, zx_set32]
+  exact ⟨⟨h.c.1.keep k3 rfl (go _ (by decide)) (go _ (by decide)), by rw [m3]; exact h.c.2⟩,
+    by rw [e32]; exact h.r01, fun h1 => by rw [m3]; exact h.ok (by rw [← e32]; exact h1),
+    fun h0 => h.bad (by rw [← e32]; exact h0)⟩
+
+theorem zx_zero {x : BitVec 64} (h : x.setWidth 32 = 0) : zx x = 0 := by rw [zx, h]; rfl
+
 theorem eb_ok {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State} (h : IB p STK σ t s)
     (h0 : (s.gpr .a0).setWidth 32 = 0) : WP isa (.block [.li .s4 0, .li .s5 1]) s (EB p STK σ t) := by
   rw [show ([.li .s4 0, .li .s5 1] : List Instr) = [.li .s4 0] ++ [.li .s5 1] from rfl, WP.block_append_iff]
@@ -378,13 +392,7 @@ theorem iter_ok (hp : ParamsOk p) {σ : State} (hpre : SPre p STK σ) {t : Nat} 
   refine WP.seq (WP.mono ((commit_piece hP hF hS).ok σ s hpre h) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (ball_ok hP hF hS h1) fun s2 h2 => ?_)
   refine WP.seq (WP.seq (WP.mono (zxBlk_ok s2) fun s3 ⟨g3, go, m3, rd3, wr3, sp3⟩ => ?_))
-  have k3 : Kept ((slay2 p STK σ).RL []) s2 s3 :=
-    ⟨fun r hr => go r (by rintro rfl; simp [preserved] at hr), sp3, rd3, wr3, by rw [m3]; exact Frame.refl _ _⟩
-  have e32 : (s3.gpr .a0).setWidth 32 = (s2.gpr .a0).setWidth 32 := by rw [g3, zx_set32]
-  have h3 : IB p STK σ t s3 :=
-    ⟨⟨h2.c.1.keep k3 rfl (go _ (by decide)) (go _ (by decide)), by rw [m3]; exact h2.c.2⟩,
-      by rw [e32]; exact h2.r01, fun h1 => by rw [m3]; exact h2.ok (by rw [← e32]; exact h1),
-      fun h0 => h2.bad (by rw [← e32]; exact h0)⟩
+  have h3 : IB p STK σ t s3 := h2.zx ⟨g3, go, m3, rd3, wr3, sp3⟩
   refine WP.ite _ (Steps.eval_nonzero s3 .a0) (fun hb => ?_) fun hb => ?_
   · have h1' : (s3.gpr .a0).setWidth 32 = 1 := by
       rcases h3.r01 with e | e
