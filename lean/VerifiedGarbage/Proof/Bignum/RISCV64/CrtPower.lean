@@ -554,7 +554,9 @@ theorem pm1_ok {t : State} {B : Addr} {Z w N : Nat} (hs : Scr t B Z) (hZ : slot 
     rw [← h8] at hodd
     simp only [wordsVal] at hodd
     omega_arith
-  generalize Mont.word t.mem B (slot (w' + 1) 8) = x at hlow ⊢
+  change (t.mem.readW (off B (slot (w' + 1) 8)) 64).toNat % 2 = 1 at hlow
+  change (t.mem.readW (off B (slot (w' + 1) 8)) 64 - 1#64).toNat + _ = (t.mem.readW (off B (slot (w' + 1) 8)) 64).toNat + _ - 1
+  generalize t.mem.readW (off B (slot (w' + 1) 8)) 64 = x at hlow ⊢
   have hx : (x - BitVec.ofNat 64 1).toNat = x.toNat - 1 := by
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; have := x.isLt; omega_arith
   rw [hx]
@@ -652,14 +654,14 @@ theorem reduceIn_ok {s : State} {B BX : Addr} {Z ZX w wX k N Cv : Nat} (h : WCtx
   refine WP.mono (xbase_ok (rd := .s9) (by decide) ((k28.gpr (by decide)).trans ((k12.gpr (by decide)).trans h6))
     ((k28.gpr (by decide)).trans ((k12.gpr (by decide)).trans h11)) 6) fun s₉ ⟨⟨a9, m9⟩, k9⟩ => ?_
   have hk8 : Mont.word s₉.mem BX 16 = BitVec.ofNat 64 k := by
-    rw [m9, Outside.word_sep o08 hsep (by omega_arith) (show 16 + 8 ≤ ZX by omega_arith) hxn]
+    rw [m9, Outside.word_sep o08 hsep (by rw [← e24]; exact h.hZ) (show 16 + 8 ≤ ZX by omega_arith) hxn]
     exact hkw
   have hx9 := hx.congr (k12.trans (k28.trans k9)).2.2
   refine WP.mono (WP.keep [.s10] (Q := fun u => u.gpr .s10 = BitVec.ofNat 64 K ∧ u.mem = s₉.mem)
     (by
-      brun [Crt.oNLen, (k9.gpr (by decide)).trans ((k28.gpr (by decide)).trans ((k12.gpr (by decide)).trans h6))]
-      trace_state
-      sorry)
+      brun [Crt.oNLen, (k9.gpr (by decide)).trans ((k28.gpr (by decide)).trans ((k12.gpr (by decide)).trans h6)),
+        hx9.ld (show 16 + 8 ≤ ZX by omega_arith), hx9.al8 (show 16 + 8 ≤ ZX by omega_arith) (by decide), hk8,
+        chunks_count k hk', hKd])
     (by rfl) (by rfl)) fun s₁₀ ⟨⟨a10, m10⟩, k10⟩ => ?_
   have hm10 : s₁₀.mem = s₈.mem := by rw [m10, m9]
   have k110 := (((k12.trans k28).trans k9).trans k10)
