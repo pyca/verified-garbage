@@ -113,6 +113,32 @@ def sqrV (mac : Nat → List Instr) (U : Nat) (dst : List Instr) : Prog isa :=
   .seq zeroT (.seq (crossV (macRunV mac U)) (.seq (diagV dst) (.seq (reduceV (macRunV mac U))
     (.seq (.block finishPre) (.seq subMod64 (.seq selectAcc64 (.block finishPost)))))))
 
+
+/-! ## Variant C: three operations on each carry chain per word: `t` (and `x`) added into the
+product's low word first, the carry `c` (and `d`) last. -/
+
+def fiosHeadC : List Instr :=
+  [.load .d .t6 .a3 0, .addi .a3 .a3 8, .load .d .s3 .a4 0, .load .d .s2 .a5 0,
+    .mul .s4 .t6 .s3, .mulhu .s0 .t6 .s3, .add .s2 .s2 .s4, .sltu .s4 .s2 .s4, .add .s0 .s0 .s4,
+    .mul .t2 .s2 .t1,
+    .load .d .s3 .a7 0, .mul .s4 .t2 .s3, .mulhu .s1 .t2 .s3, .add .s4 .s4 .s2, .sltu .s4 .s4 .s2,
+    .add .s1 .s1 .s4,
+    .addi .t3 .a5 0, .addi .t4 .a4 0, .addi .a0 .a7 0]
+
+def fiosStepC (k : Nat) : List Instr :=
+  [.load .d .s2 .t3 (k + 8), .load .d .s3 .t4 (k + 8),
+    .mul .s4 .t6 .s3, .mulhu .s3 .t6 .s3,
+    .add .s4 .s4 .s2, .sltu .s2 .s4 .s2, .add .s3 .s3 .s2,
+    .add .s4 .s4 .s0, .sltu .s2 .s4 .s0, .add .s0 .s3 .s2,
+    .load .d .s3 .a0 (k + 8), .mul .s2 .t2 .s3, .mulhu .s3 .t2 .s3,
+    .add .s2 .s2 .s4, .sltu .s4 .s2 .s4, .add .s3 .s3 .s4,
+    .add .s2 .s2 .s1, .sltu .s4 .s2 .s1, .add .s1 .s3 .s4, .store .d .s2 .t3 k]
+
+def sqrMacC (k : Nat) : List Instr :=
+  [.load .d .s4 .t4 k, .load .d .s2 .a0 k, .mul .s3 .s0 .s2, .mulhu .s2 .s0 .s2,
+    .add .s3 .s3 .s4, .sltu .s4 .s3 .s4, .add .s2 .s2 .s4,
+    .add .s3 .s3 .s1, .sltu .s4 .s3 .s1, .add .s1 .s2 .s4, .store .d .s3 .t4 k]
+
 /-! ## Micro-benchmarks: `count` iterations of 16 operations, the sources `a0` and `a1`. -/
 
 def dsts : List Reg := [.t2, .t3, .t4, .t5, .t6, .a3, .a4, .a5, .a6, .a7, .t0, .t1]
@@ -153,6 +179,10 @@ def main (args : List String) : IO Unit := do
     ("vg_p7_sqr_f", sqrLoop (sqrV sqrMacF 4 diagStepF)),
     ("vg_p7_sqr_u8", sqrLoop (sqrV sqrMac 8 diagStep)),
     ("vg_p7_sqr_fu8", sqrLoop (sqrV sqrMacF 8 diagStepF)),
+    ("vg_p7_mul_c", mulLoop (tailV fiosHeadC fiosStepC 4)),
+    ("vg_p7_mul_cu8", mulLoop (tailV fiosHeadC fiosStepC 8)),
+    ("vg_p7_sqr_c", sqrLoop (sqrV sqrMacC 4 diagStep)),
+    ("vg_p7_sqr_cu8", sqrLoop (sqrV sqrMacC 8 diagStep)),
     ("vg_p7_k_mul", microLoop kMul),
     ("vg_p7_k_fused", microLoop kFused),
     ("vg_p7_k_pair", microLoop kPair),

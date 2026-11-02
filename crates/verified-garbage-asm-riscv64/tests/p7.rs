@@ -25,8 +25,8 @@ fn out(ws: &[u64], w: usize) -> Vec<u64> { let st = w + 2; ws[32 + 5 * st..32 + 
 
 #[test]
 fn variants_match_base() {
-    let muls: [F; 3] = [p7::vg_p7_mul_f, p7::vg_p7_mul_u8, p7::vg_p7_mul_fu8];
-    let sqrs: [F; 3] = [p7::vg_p7_sqr_f, p7::vg_p7_sqr_u8, p7::vg_p7_sqr_fu8];
+    let muls: [F; 5] = [p7::vg_p7_mul_f, p7::vg_p7_mul_u8, p7::vg_p7_mul_fu8, p7::vg_p7_mul_c, p7::vg_p7_mul_cu8];
+    let sqrs: [F; 5] = [p7::vg_p7_sqr_f, p7::vg_p7_sqr_u8, p7::vg_p7_sqr_fu8, p7::vg_p7_sqr_c, p7::vg_p7_sqr_cu8];
     for w in [2usize, 3, 4, 5, 6, 7, 8, 9, 13, 16, 17, 24, 31, 32, 33, 48, 64] {
         for seed in 1..4u64 {
             for count in [1usize, 3] {

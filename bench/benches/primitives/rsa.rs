@@ -352,15 +352,15 @@ pub fn bench(c: &mut Criterion) {
         };
         let muls: [(&str, F); 4] = [
             ("base", p7::vg_p7_mul_base),
-            ("f", p7::vg_p7_mul_f),
             ("u8", p7::vg_p7_mul_u8),
-            ("fu8", p7::vg_p7_mul_fu8),
+            ("c", p7::vg_p7_mul_c),
+            ("cu8", p7::vg_p7_mul_cu8),
         ];
         let sqrs: [(&str, F); 4] = [
             ("base", p7::vg_p7_sqr_base),
-            ("f", p7::vg_p7_sqr_f),
             ("u8", p7::vg_p7_sqr_u8),
-            ("fu8", p7::vg_p7_sqr_fu8),
+            ("c", p7::vg_p7_sqr_c),
+            ("cu8", p7::vg_p7_sqr_cu8),
         ];
         for (v, f) in muls {
             let mut g = c.benchmark_group(format!("rsa_p7_mul_{v}"));
@@ -395,22 +395,6 @@ pub fn bench(c: &mut Criterion) {
                     })
                 });
             }
-            g.finish();
-        }
-        // 1000 iterations of 16 operations each.
-        let ks: [(&str, F); 5] = [
-            ("mul", p7::vg_p7_k_mul),
-            ("fused", p7::vg_p7_k_fused),
-            ("pair", p7::vg_p7_k_pair),
-            ("mulhu", p7::vg_p7_k_mulhu),
-            ("add", p7::vg_p7_k_add),
-        ];
-        for (v, f) in ks {
-            let mut g = c.benchmark_group(format!("rsa_p7_k_{v}"));
-            let mut ws = ws_of(4);
-            g.bench_function(BenchmarkId::new(VG, 16000), |b| {
-                b.iter(|| unsafe { f(black_box(ws.as_mut_ptr()), 3, 1000) })
-            });
             g.finish();
         }
         return;
