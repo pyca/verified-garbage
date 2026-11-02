@@ -57,7 +57,7 @@ theorem qM_odd (P : KP) (σ : State) : qM P σ % 2 = 1 ∧ 1 < qM P σ ∧ qM P 
     exact ⟨h.1, by omega, by omega⟩
   · exact ⟨rfl, by decide, by have := Nat.two_pow_pos (8 * P.K); omega⟩
 
-theorem qx_spec (pre : In P σ) : (qM P σ : Int) ∣ (qx P σ : Int) * qv P σ - qg P σ ∧ qx P σ < qM P σ ∧
+theorem qx_spec [VG.Proof.Rsa.Arm.Keys.InvLaw] (pre : In P σ) : (qM P σ : Int) ∣ (qx P σ : Int) * qv P σ - qg P σ ∧ qx P σ < qM P σ ∧
     qg P σ = Nat.gcd (qv P σ) (qM P σ) := by
   have := pre.k1
   have hm := qM_odd P σ
@@ -73,7 +73,7 @@ theorem qv_le_pv (P : KP) (σ : State) : qv P σ ≤ pv P σ := by
   unfold pv qv; split <;> omega
 
 /-- The result is `resv`. -/
-theorem res_spec (pre : In P σ) : res P σ = resv P σ := by
+theorem res_spec [VG.Proof.Rsa.Arm.Keys.InvLaw] (pre : In P σ) : res P σ = resv P σ := by
   have hx := qx_spec pre
   have key := keyFromPrimes_code (pLen := P.K) (e := P.e) (P₀ := P0 P σ) (Q₀ := Q0 P σ) (x := qx P σ)
     pre.k1 pre.k2 (P0_lt P σ) (Q0_lt P σ) pre.e_lt

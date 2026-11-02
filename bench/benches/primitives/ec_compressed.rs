@@ -24,7 +24,7 @@ macro_rules! ec_compressed_bench {
         use openssl::nid::Nid;
         use verified_garbage::ecdh::$curve;
 
-        use crate::{OPENSSL, VG};
+        use crate::{BenchDyn, OPENSSL, VG};
 
         let c: &mut criterion::Criterion = $c;
         let group = EcGroup::from_curve_name(Nid::$nid).unwrap();
@@ -40,10 +40,10 @@ macro_rules! ec_compressed_bench {
         let compressed = $curve::compress_public_key(&public).unwrap();
         assert_eq!($curve::decompress_public_key(&compressed), Some(public));
         let mut g = c.benchmark_group(concat!("ec_", $name, "_compress"));
-        g.bench_function(BenchmarkId::new(VG, $len + 1), |b| {
+        g.bench(BenchmarkId::new(VG, $len + 1), |b| {
             b.iter(|| $curve::compress_public_key(black_box(&public)).unwrap())
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, $len + 1), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, $len + 1), |b| {
             b.iter(|| {
                 let q = EcPoint::from_bytes(&group, black_box(&public), &mut ctx).unwrap();
                 assert!(q.is_on_curve(&group, &mut ctx).unwrap());
@@ -53,10 +53,10 @@ macro_rules! ec_compressed_bench {
         });
         g.finish();
         let mut g = c.benchmark_group(concat!("ec_", $name, "_decompress"));
-        g.bench_function(BenchmarkId::new(VG, 2 * $len + 1), |b| {
+        g.bench(BenchmarkId::new(VG, 2 * $len + 1), |b| {
             b.iter(|| $curve::decompress_public_key(black_box(&compressed)).unwrap())
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, 2 * $len + 1), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, 2 * $len + 1), |b| {
             b.iter(|| {
                 let q = EcPoint::from_bytes(&group, black_box(&compressed), &mut ctx).unwrap();
                 assert!(q.is_on_curve(&group, &mut ctx).unwrap());

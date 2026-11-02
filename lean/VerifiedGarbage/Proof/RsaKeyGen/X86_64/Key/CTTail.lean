@@ -242,11 +242,11 @@ theorem gcdIsOneK_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kO
 
 theorem qinvPart_eq2 : qinvPart = [zeroA aU, copyA aU aQa] ++ (constA 3 ++ (ltA aPa aC ++
     (([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ (ws ++ qBlk))] : List (Prog isa)) ++
-    ([zeroA aM, copyA aM aPa] ++ (selC aM ++ ((invFrom aM ++ [inverse aU aV aX₁ aX₂ aM aT]) ++ gcdIsOne)))))) := by
+    ([zeroA aM, copyA aM aPa] ++ (selC aM ++ ([inverse aU aV aX₂ aM] ++ gcdIsOne)))))) := by
   simp only [qinvPart, qBlk, oddMask, gcdIsOne, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- `qinvPart`, keeping a mask in `kOk`. -/
-theorem qinvPart_ct : RelCT isa (Two (KG fun I t => NF I t ∧ KokM I t)) (seqs qinvPart)
+theorem qinvPart_ct [InvLaw] : RelCT isa (Two (KG fun I t => NF I t ∧ KokM I t)) (seqs qinvPart)
     (Two (KG fun I t => NF I t ∧ KokM I t)) := by
   have sK : ∀ (cs : List Rc), cs.all Rc.ok = true → .hdr kOk ∉ cs →
       Stab (fun I t => NF I t ∧ KokM I t) cs allR := fun cs h1 h2 => stab_and (stab_nf _ _) (stab_kok _ h1 h2)
@@ -276,10 +276,9 @@ theorem qinvPart_ct : RelCT isa (Two (KG fun I t => NF I t ∧ KokM I t)) (seqs 
       (stab_rbp (by decide))) (by taint_decide))
       (copyA_ct (by decide) (by decide) (by decide) (stab_and (sKT [.arr aM] (by decide) (by decide)
         (by decide)).sub (stab_rbp (by decide))) (by taint_decide))) ?_
-  refine rs_app (by simp [selC]) (by simp [invFrom]) (selC_ct (by decide) (by decide)
+  refine rs_app (by simp [selC]) (by simp) (selC_ct (by decide) (by decide)
     (sKT [.arr aM] (by decide) (by decide) (by decide)).sub (by taint_decide)) ?_
-  refine rs_app (by simp [invFrom]) (by simp [gcdIsOne, constA]) (invFrom_ct (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (sK _ (by decide) (by decide)) (by taint_decide)
+  refine rs_app (by simp) (by simp [gcdIsOne, constA]) (invU_ct (by decide) (sK _ (by decide) (by decide))
     (by taint_decide)) ?_
   exact gcdIsOneK_ct (stab_nf _ _)
 

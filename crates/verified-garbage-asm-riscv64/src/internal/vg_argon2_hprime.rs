@@ -13,12 +13,12 @@ pub(crate) unsafe extern "C" fn vg_argon2_hprime() {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
+.insn 4, 0x36173823
 .insn 4, 0x34873423
 .insn 4, 0x34973823
 .insn 4, 0x35273c23
 .insn 4, 0x37373023
 .insn 4, 0x37473423
-.insn 4, 0x36173823
 .insn 2, 0x8a3a
 .insn 2, 0x842a
 .insn 2, 0x84ae
@@ -140,8 +140,7 @@ bnez a6, 29b
 .insn 2, 0x8082
 .option pop",
         vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
-        vg_blake2b_update_scratch = sym crate::argon2::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
-        vg_blake2b_finalize_scratch = sym crate::argon2::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
+        vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
+        vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
     )
-
 }

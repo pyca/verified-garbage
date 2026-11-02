@@ -33,7 +33,7 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::ecdsa::{BrainpoolP384r1, SigningKey};
     use verified_garbage::hashes::sha384::Sha384;
 
-    use crate::{OPENSSL, VG};
+    use crate::{BenchDyn, OPENSSL, VG};
 
     let d = [0x42; 48];
     hash::<Sha384>(c, "sha384", MessageDigest::sha384(), &d);
@@ -43,14 +43,14 @@ pub fn bench(c: &mut Criterion) {
     let group = EcGroup::from_curve_name(Nid::BRAINPOOL_P384R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let mut g = c.benchmark_group("ec_brainpoolp384r1_public_key");
-    g.bench_function(BenchmarkId::new(VG, 97), |b| {
+    g.bench(BenchmarkId::new(VG, 97), |b| {
         b.iter(|| {
             SigningKey::<BrainpoolP384r1>::from_bytes(black_box(&d))
                 .public_key()
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 97), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 97), |b| {
         b.iter(|| {
             let d = BigNum::from_slice(black_box(&d)).unwrap();
             let mut q = EcPoint::new(&group).unwrap();
@@ -88,7 +88,7 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Brain
     use openssl::sign::{Signer, Verifier};
     use verified_garbage::ecdsa::{BrainpoolP384r1, SigningKey, VerifyingKey};
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     let key = SigningKey::<BrainpoolP384r1>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::BRAINPOOL_P384R1).unwrap();
@@ -102,10 +102,10 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Brain
     let mut g = c.benchmark_group(format!("ecdsa_brainpoolp384r1_{name}_sign"));
     for size in SIZES {
         let message = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| key.sign::<H>(black_box(&message)).unwrap())
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 Signer::new(md, &openssl_key)
                     .unwrap()
@@ -121,10 +121,10 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Brain
     let digest = H::digest(&[0x5a; 32]);
     let ec_private = openssl_key.ec_key().unwrap();
     let mut g = c.benchmark_group(format!("ecdsa_brainpoolp384r1_{name}_sign_prehashed"));
-    g.bench_function(BenchmarkId::new(VG, H::OUTPUT_SIZE), |b| {
+    g.bench(BenchmarkId::new(VG, H::OUTPUT_SIZE), |b| {
         b.iter(|| key.sign_prehashed::<H>(black_box(&digest)).unwrap())
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, H::OUTPUT_SIZE), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, H::OUTPUT_SIZE), |b| {
         b.iter(|| EcdsaSig::sign(black_box(digest.as_ref()), &ec_private).unwrap())
     });
     g.finish();
@@ -136,14 +136,14 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Brain
     )
     .unwrap();
     let mut g = c.benchmark_group(format!("ecdsa_brainpoolp384r1_{name}_verify_prehashed"));
-    g.bench_function(BenchmarkId::new(VG, H::OUTPUT_SIZE), |b| {
+    g.bench(BenchmarkId::new(VG, H::OUTPUT_SIZE), |b| {
         b.iter(|| {
             verifying_key
                 .verify_prehashed::<H>(black_box(&digest), &sig)
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, H::OUTPUT_SIZE), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, H::OUTPUT_SIZE), |b| {
         b.iter(|| {
             let point = EcPoint::from_bytes(&group, black_box(&q), &mut ctx).unwrap();
             let ec = EcKey::from_public_key(&group, &point).unwrap();
@@ -164,14 +164,14 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Brain
         .unwrap()
         .to_der()
         .unwrap();
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 verifying_key
                     .verify::<H>(black_box(&message), &sig)
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let point = EcPoint::from_bytes(&group, black_box(&q), &mut ctx).unwrap();
                 let ec = EcKey::from_public_key(&group, &point).unwrap();

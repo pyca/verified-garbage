@@ -6812,5 +6812,4 @@ pub(crate) unsafe extern "C" fn vg_argon2_compress() {
 .insn 2, 0x8082
 .option pop",
     )
-
 }

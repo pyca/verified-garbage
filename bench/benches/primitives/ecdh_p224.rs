@@ -22,7 +22,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::PKey;
     use verified_garbage::ecdh::{P224, PrivateKey};
 
-    use crate::{OPENSSL, VG};
+    use crate::{BenchDyn, OPENSSL, VG};
 
     // Keys below P-224's order.
     let d = [0x42; 28];
@@ -43,14 +43,14 @@ pub fn bench(c: &mut Criterion) {
         PKey::from_ec_key(EcKey::from_private_components(&group, &d_bn, &public).unwrap()).unwrap();
     let mut g = c.benchmark_group("ecdh_p224");
     // The ids' size is the bytes of the shared secret.
-    g.bench_function(BenchmarkId::new(VG, 28), |b| {
+    g.bench(BenchmarkId::new(VG, 28), |b| {
         b.iter(|| {
             black_box(&vg_private)
                 .diffie_hellman(black_box(&peer))
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 28), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 28), |b| {
         b.iter(|| {
             let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
             let peer = PKey::from_ec_key(EcKey::from_public_key(&group, &point).unwrap()).unwrap();
@@ -64,10 +64,10 @@ pub fn bench(c: &mut Criterion) {
     #[cfg(target_arch = "x86_64")]
     {
         let mut g = c.benchmark_group("ec_validate_p224");
-        g.bench_function(BenchmarkId::new(VG, 57), |b| {
+        g.bench(BenchmarkId::new(VG, 57), |b| {
             b.iter(|| P224::validate_public_key(black_box(&peer)))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, 57), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, 57), |b| {
             b.iter(|| {
                 let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
                 // OpenSSL validates coordinates and the curve equation while decoding.
@@ -78,7 +78,7 @@ pub fn bench(c: &mut Criterion) {
         let mut one = [0; 28];
         one[27] = 1;
         let key = PrivateKey::<P224>::from_bytes(&one);
-        g.bench_function(BenchmarkId::new("scalar-multiply", 57), |b| {
+        g.bench(BenchmarkId::new("scalar-multiply", 57), |b| {
             b.iter(|| black_box(&key).diffie_hellman(black_box(&peer)).is_ok())
         });
         g.finish();

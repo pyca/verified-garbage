@@ -43,7 +43,7 @@ theorem inverse_cert : ∀ σ₁ σ₂ : State, RelCT isa
       trivial⟩
 
 /-- `inverse` from `(a, m, 1, 0)` in arrays 0–3. -/
-theorem St.pinverse {L0 : List Nat} (hZ : aZero ∈ L0) (hL0 : ∀ j ∈ L0, j ∉ invArrs) (hLS : ∀ d ∈ LS, d ∉ invSlots)
+theorem St.pinverse [VG.Proof.Rsa.Arm.Keys.InvLaw] {L0 : List Nat} (hZ : aZero ∈ L0) (hL0 : ∀ j ∈ L0, j ∉ invArrs) (hLS : ∀ d ∈ LS, d ∉ invSlots)
     (hv : ∀ σ s, St P E A (aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0) V LS σ s → A σ aZero = 0 ∧
       A σ aNM + A σ aM = 2 ^ (32 * P.W) ∧ A σ aM % 2 = 1 ∧ 1 < A σ aM ∧ A σ 1 = A σ aM ∧ A σ 2 = 1 ∧ A σ 3 = 0) :
     VP (St P E A (aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0) V LS) VG.Impl.Rsa.Arm.Keys.inverse
@@ -57,14 +57,13 @@ theorem St.pinverse {L0 : List Nat} (hZ : aZero ∈ L0) (hL0 : ∀ j ∈ L0, j �
     (by rw [g aM (by simp)]; exact vodd) (by rw [g aM (by simp)]; exact v1)
     (by simp only [bank]; rw [g 0 (by simp), g 1 (by simp), g 2 (by simp), g 3 (by simp), g aM (by simp), e1, e2, e3])
   rw [g 0 (by simp), g aM (by simp)] at bk
-  simp only [bank, Prod.ext_iff] at bk
   have hds : ∀ d ∈ invSlots, SlotOk d := by decide
   refine h.core k (by decide) hds r.sp r.rd r.wr (fun j hj => ?_) (h.sl_keep k hds hLS) (fun j hj => ?_) h.ls_ok
   · dsimp only
     simp only [List.mem_cons] at hj
     rcases hj with rfl | rfl | rfl | rfl | hj
-    · rw [upd_ne _ _ (by decide), upd_self]; exact bk.2.1
-    · rw [upd_self]; exact bk.2.2.2
+    · rw [upd_ne _ _ (by decide), upd_self]; exact bk.1
+    · rw [upd_self]; exact bk.2
     · rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), k.num (by decide) (fun d hd => (hds d hd).1)
         (h.pre.fit (by decide))]
       exact g aNM (by simp)
@@ -85,7 +84,7 @@ theorem St.pinverse {L0 : List Nat} (hZ : aZero ∈ L0) (hL0 : ∀ j ∈ L0, j �
     · exact h.live_lt j (by simp [hj])
 
 /-- `invOf a m`: `inverse` of `[a]` modulo `[m]`, which is odd and above 1. -/
-theorem St.pinv {a m : Nat} (cm : Cert (copy aM m)) (ca : Cert (copy 0 a)) (c2 : Cert (copy 2 aOne)) (ha : a ∈ L) (hm : m ∈ L)
+theorem St.pinv [VG.Proof.Rsa.Arm.Keys.InvLaw] {a m : Nat} (cm : Cert (copy aM m)) (ca : Cert (copy 0 a)) (c2 : Cert (copy 2 aOne)) (ha : a ∈ L) (hm : m ∈ L)
     (hZ : aZero ∈ L) (hO : aOne ∈ L) (hL : ∀ j ∈ L, j = aZero ∨ 15 ≤ j) (hLS : ∀ d ∈ LS, d ∉ invSlots)
     (hv : ∀ σ, E σ → A σ aZero = 0 ∧ A σ aOne = 1 ∧ A σ m % 2 = 1 ∧ 1 < A σ m) :
     VP (St P E A L V LS) (invOf a m)

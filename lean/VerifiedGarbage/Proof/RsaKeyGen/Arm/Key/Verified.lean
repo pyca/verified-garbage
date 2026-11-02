@@ -48,7 +48,7 @@ theorem resv_ok {P : KP} {σ : State} {ys : List (List Byte)} (h : resv P σ = .
 
 end
 
-theorem key_contract_correct (s : State) (h : (Spec.RsaKeyGen.keyContract abi 56).pre s) :
+theorem key_contract_correct [VG.Proof.Rsa.Arm.Keys.InvLaw] (s : State) (h : (Spec.RsaKeyGen.keyContract abi 56).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ (Spec.RsaKeyGen.keyContract abi 56).post s t := by
   have hc := cin_of_pre s h
   obtain ⟨tr, t, run, preserved, r0, outs⟩ := key_ok hc
@@ -94,7 +94,7 @@ theorem mkP_eq {s t : State} (sp : s.sp = t.sp) (p0 : s.gpr .r0 = t.gpr .r0) (p2
   unfold mkP
   rw [hst, he, sp, p0, p2, a0, a1, a2, a4, a6, a8, a10, a11, a12, a13]
 
-theorem key_contract_ct : ConstantTime isa (Spec.RsaKeyGen.keyContract abi 56).pre
+theorem key_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : ConstantTime isa (Spec.RsaKeyGen.keyContract abi 56).pre
     (Spec.RsaKeyGen.keyContract abi 56).pub code := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := cin_of_pre s hs
@@ -135,7 +135,7 @@ theorem key_contract_sat : ∃ s, (Spec.RsaKeyGen.keyContract abi 56).pre s := b
     using keySatState
 
 /-- `vg_rsa_keygen_key`. -/
-theorem key_verified : Verified target code (Spec.RsaKeyGen.keyContract abi 56) :=
+theorem key_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] : Verified target code (Spec.RsaKeyGen.keyContract abi 56) :=
   ⟨key_contract_correct, key_contract_ct, key_contract_sat⟩
 
 end VG.Proof.RsaKeyGen.Arm.Key

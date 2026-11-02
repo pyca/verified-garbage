@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+public import VerifiedGarbage.Proof.Rsa.X86_64.InvInstance
 public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx

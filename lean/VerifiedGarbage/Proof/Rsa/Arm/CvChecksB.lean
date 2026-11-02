@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 public import VerifiedGarbage.Proof.Rsa.Arm.CvChecksA
-import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
+public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 
 /-! # `vg_rsa_crt_values` on ARMv7: the inverse, the mask, and the division of `d` set up -/
 
@@ -36,18 +39,151 @@ structure StD (s0 : State) (X₁ X₂ : Nat) (s : State) : Prop where
       (cvM s0 : Int) ∣ (num s.mem (cvB s0) (cvW s0) 3 : Int) * cvQ s0 - V ∧
       num s.mem (cvB s0) (cvW s0) 3 < cvM s0)
 
-theorem checksB_ok {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X₂ s) :
+/-- `max` of two words below `2^31`, as `primeWidth` computes it. -/
+theorem max_word {x y : BitVec 32} (hx : x.toNat < 2 ^ 31) (hy : y.toNat < 2 ^ 31) :
+    y + ((x - y) &&& ((x - y) >>> 31 - 1)) = BitVec.ofNat 32 (max x.toNat y.toNat) := by
+  by_cases h : x.toNat < y.toNat
+  · have e : (x - y) >>> 31 = 1 := by
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
+      show _ = 1
+      omega
+    rw [e, show (1 : BitVec 32) - 1 = 0#32 from rfl, BitVec.and_zero, BitVec.add_zero, Nat.max_eq_right h.le]
+    apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; omega
+  · have e : (x - y) >>> 31 = 0 := by
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
+      show _ = 0
+      omega
+    rw [e, show (0 : BitVec 32) - 1 = BitVec.allOnes 32 from rfl, BitVec.and_allOnes, Nat.max_eq_left (by omega)]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
+    omega
+
+/-- `primeWidth`: `⌈max(p_len, q_len) / 4⌉` into `r9`. -/
+theorem primeWidth_ok {s0 s : State} (h : Base s0 s) {rest : List Instr} {Q : State → Prop}
+    (k : ∀ t, Base s0 t → t.gpr .r9 = BitVec.ofNat 32 ((max (cvPl s0) (cvQl s0) + 3) / 4) →
+      Rest [.r0, .r1, .r2, .r3, .r9] s t → t.mem = s.mem → WP isa (.block rest) t Q) :
+    WP isa (.block (primeWidth ++ rest)) s Q := by
+  have sp := h.pre.sp48
+  rw [h.sp.symm] at sp
+  have kb := h.pre.kb
+  have p2 := h.pre.pl2
+  have q2 := h.pre.ql2
+  unfold primeWidth
+  simp only [List.cons_append, List.nil_append]
+  refine wp_ldrSp h.rA_mem sp (i := 5) (by decide) fun s1 u1 => ?_
+  have b1 := h.of_rest (u1.rest (ws := [.r0]) (by simp)) u1.mem
+  refine wp_ldrSp b1.rA_mem (by rw [u1.sp]; exact sp) (i := 7) (by decide) fun s2 u2 => ?_
+  refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
+  refine wp_mov (op2_lsr (by decide)) fun s4 u4 => ?_
+  refine wp_dp (op2_imm (by decide)) fun s5 u5 => ?_
+  refine wp_dp (op2_reg _ _) fun s6 u6 => ?_
+  refine wp_dp (op2_reg _ _) fun s7 u7 => ?_
+  refine wp_dp (op2_imm (by decide)) fun s8 u8 => ?_
+  refine wp_mov (op2_lsr (by decide)) fun t u9 => ?_
+  have rest : Rest [.r0, .r1, .r2, .r3, .r9] s t := (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
+    ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans ((u5.rest (by simp)).trans ((u6.rest (by simp)).trans
+      ((u7.rest (by simp)).trans ((u8.rest (by simp)).trans (u9.rest (by simp)))))))))
+  have mt : t.mem = s.mem := by
+    rw [u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+  refine k t (h.of_rest rest mt) ?_ rest mt
+  have a5 : stackArg s 5 = stackArg s0 5 := h.arg (by decide)
+  have a7 : stackArg s1 7 = stackArg s0 7 := b1.arg (by decide)
+  have e0 : s2.gpr .r0 = stackArg s0 5 := by rw [u2.other _ (by decide), u1.gpr, a5]
+  have e1 : s2.gpr .r1 = stackArg s0 7 := by rw [u2.gpr, a7]
+  have e2 : s5.gpr .r2 = stackArg s0 5 - stackArg s0 7 := by
+    rw [u5.other _ (by decide), u4.other _ (by decide), u3.gpr, dpVal, e0, e1]
+  have e3 : s5.gpr .r3 = (stackArg s0 5 - stackArg s0 7) >>> 31 - 1 := by
+    rw [u5.gpr, dpVal, u4.gpr, u3.gpr, dpVal, e0, e1]
+  have e7 : s7.gpr .r9 = BitVec.ofNat 32 (max (cvPl s0) (cvQl s0)) := by
+    rw [u7.gpr, dpVal, u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide),
+      u3.other _ (by decide), e1, u6.gpr, dpVal, e2, e3]
+    exact max_word (by simp only [cvPl, cvK] at p2 kb ⊢; omega) (by simp only [cvQl, cvK] at q2 kb ⊢; omega)
+  rw [u9.gpr, u8.gpr, dpVal, e7]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_add, BitVec.toNat_ofNat,
+    BitVec.toNat_ofNat, show (3 : BitVec 32).toNat = 3 from rfl]
+  simp only [cvPl, cvQl, cvK] at p2 q2 kb ⊢
+  omega
+
+/-- A value below `2^(32 k)` read at `w ≥ k` words is its low `k` words. -/
+theorem val32_of_lt {m : Mem} {b : Addr} {d k w v : Nat} (hk : k ≤ w) (h : val32 m b d w = v)
+    (hv : v < 2 ^ (32 * k)) : val32 m b d k = v := by
+  have e := VG.Proof.Mont.val32_append m b d k (w - k)
+  rw [show k + (w - k) = w by omega, h] at e
+  have lo := val32_lt m b d k
+  generalize val32 m b (d + 4 * k) (w - k) = hi at e
+  generalize val32 m b d k = lo' at e lo ⊢
+  rcases Nat.eq_zero_or_pos hi with rfl | hp
+  · omega
+  · have : 2 ^ (32 * k) ≤ 2 ^ (32 * k) * hi := Nat.le_mul_of_pos_right _ hp
+    omega
+
+theorem checksB_ok [InvLaw] {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X₂ s) :
     WP isa (seqs checksB) s (StD s0 X₁ X₂) := by
   have pre := h.base.pre
   have hw := h.ws
   have fit := fun j (hj : j < nArr) => hw.fit64 (j := j) hj
   unfold checksB
+  -- `inverse` at the primes' width `kq`.
+  rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil primeWidth]
+  refine primeWidth_ok h.base fun t0 b0 e9 r0 m0 => WP.block_nil ?_
+  have w16 := pre.w16
+  have p1 := pre.pl1
+  have p2 := pre.pl2
+  have q1 := pre.ql1
+  have q2 := pre.ql2
+  generalize hkq : (max (cvPl s0) (cvQl s0) + 3) / 4 = kq at e9
+  have kq1 : 0 < kq := by omega
+  have kqw : kq ≤ cvW s0 := by simp only [cvW] at *; omega
+  have g0 : VG.Proof.Rsa.Arm.Inv.Gk t0 (cvB s0) (cvZ s0) (cvW s0) kq nArr :=
+    ⟨hw.nowrap, by rw [r0.wr]; exact hw.writable, hw.fits, kq1, kqw, hw.wle,
+      by rw [r0.gpr _ (by decide)]; exact hw.r7, by rw [r0.gpr _ (by decide)]; exact hw.r8, e9⟩
+  have lenQ : cvQ s0 < 2 ^ (32 * kq) := by
+    have := VG.Proof.Bignum.os2ip_lt (qBytes s0)
+    simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at this
+    refine lt_of_lt_of_le this ?_
+    rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+    exact Nat.pow_le_pow_right (by decide) (by omega)
+  have lenM : cvM s0 < 2 ^ (32 * kq) := by
+    have hP : cvP s0 < 2 ^ (8 * cvPl s0) := by
+      have := VG.Proof.Bignum.os2ip_lt (pBytes s0)
+      simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at this
+      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
+      exact this
+    have le : 2 ^ (8 * cvPl s0) ≤ 2 ^ (32 * kq) := Nat.pow_le_pow_right (by decide) (by omega)
+    have ev : 2 ^ (8 * cvPl s0) % 2 = 0 := by
+      rw [show 8 * cvPl s0 = (8 * cvPl s0 - 1) + 1 by omega, Nat.pow_succ]; simp
+    show 2 * (cvP s0 / 2) + 1 < _
+    generalize cvP s0 = P at hP
+    generalize 2 ^ (8 * cvPl s0) = E at hP le ev
+    omega
+  have vM : VG.Proof.Rsa.Arm.Inv.nk t0.mem (cvB s0) (cvW s0) aM kq = cvM s0 := by
+    rw [m0]; exact val32_of_lt kqw h.m lenM
+  have vQ : VG.Proof.Rsa.Arm.Inv.nk t0.mem (cvB s0) (cvW s0) 0 kq = cvQ s0 := by
+    rw [m0]; exact val32_of_lt kqw h.u lenQ
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (inverse_ok hw (by decide) (by decide)) fun t1 ⟨h1, k1, r1, inv⟩ => ?_
-  have I := fun (hM : 1 < cvM s0) => inv (by rw [h.m, h.nm]) h.zero (by rw [h.m]; simp only [cvM]; omega_arith)
-    (by rw [h.m]; exact hM) (by simp only [bank]; rw [h.u, h.v, h.x₁, h.x₂, h.m])
-  rw [h.m, h.u] at I
-  have b1 := h.base.keep k1 (by decide) (by decide) (by decide) r1.sp r1.rd r1.wr
+  refine WP.mono (InvLaw.inverseK_ok g0 (by decide) (by decide)) fun t1a ⟨g1, k1a, r1a, inv⟩ => ?_
+  rw [vM, vQ] at inv
+  rw [m0] at k1a
+  have R01 : Rest (.r6 :: .r7 :: .r8 :: .r9 :: opRegs) s t1a := (r0.mono (by simp)).trans (r1a.mono (by simp))
+  have b1a := h.base.keep k1a (by decide) (by decide) (by decide) R01.sp R01.rd R01.wr
+  rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil ctx]
+  refine ctx_ok b1a fun t1 b1 h1 r1c m1c => WP.block_nil ?_
+  have k1 : Keep (cvB s0) (cvW s0) invArrs invSlots s.mem t1.mem := m1c ▸ k1a
+  have r1 : Rest (.r6 :: .r7 :: .r8 :: .r9 :: opRegs) s t1 :=
+    R01.trans (r1c.mono (by simp))
+  have I : 1 < cvM s0 → num t1.mem (cvB s0) (cvW s0) 1 = Nat.gcd (cvQ s0) (cvM s0) ∧
+      (cvM s0 : Int) ∣ (num t1.mem (cvB s0) (cvW s0) 3 : Int) * cvQ s0 - num t1.mem (cvB s0) (cvW s0) 1 ∧
+      num t1.mem (cvB s0) (cvW s0) 3 < cvM s0 := fun hM => by
+    have hmo : cvM s0 % 2 = 1 := by simp only [cvM]; omega
+    obtain ⟨v1, v3⟩ := inv hmo hM
+    obtain ⟨d, l⟩ := InvLaw.inv30_spec hmo hM lenQ lenM
+    change VG.Proof.Rsa.Arm.Inv.nk t1.mem _ _ 1 _ = _ ∧ _ ∣ (VG.Proof.Rsa.Arm.Inv.nk t1.mem _ _ 3 _ : Int) * _ -
+      VG.Proof.Rsa.Arm.Inv.nk t1.mem _ _ 1 _ ∧ VG.Proof.Rsa.Arm.Inv.nk t1.mem _ _ 3 _ < _
+    rw [m1c, v1, v3]
+    exact ⟨rfl, d, l⟩
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (eqS_ok h1 (d := sE3) (a := 1) (b := aOne) (t := aT1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide)) fun t2 ⟨h2, k2, e2, r2⟩ => ?_
@@ -89,7 +225,7 @@ theorem checksB_ok {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X₂ s) :
   refine divHdr_ok h6 (by decide) (by decide) (by decide) (by decide) c6 fun t h7 k7 d7 r7 => WP.block_nil ?_
   have KK : Keep (cvB s0) (cvW s0) (invArrs ++ [aDQ, aDD]) (invSlots ++ [sT, sE3, sMask, 0, 4, 8, 12])
       s.mem t.mem := K.mono.trans k7.mono
-  have R : Rest (.r6 :: opRegs) s t := r1.trans ((r2.mono (by simp)).trans ((r3a.mono (by simp)).trans
+  have R : Rest (.r6 :: .r7 :: .r8 :: .r9 :: opRegs) s t := r1.trans ((r2.mono (by simp)).trans ((r3a.mono (by simp)).trans
     ((r3b.mono (by simp)).trans ((r3.mono (by simp)).trans ((r4.mono (by simp)).trans ((r5.mono (by simp)).trans
       ((r6.mono (by simp)).trans (r7.mono (by simp)))))))))
   have bt := h.base.keep KK (by decide) (by decide) (by decide) R.sp R.rd R.wr

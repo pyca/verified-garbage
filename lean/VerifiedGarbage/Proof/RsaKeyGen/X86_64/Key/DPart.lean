@@ -32,8 +32,8 @@ theorem dEven_eq : dEven = loadEv ++ ([zeroA aM, copyA aM aL] ++ (constA 0 ++ (e
       zeroA aQt, copyA aQt aE, divmod aQt aR aM aT, zeroA aU, copyA aU aR] : List (Prog isa)) ++ (constA 3 ++ (ltA aL aC ++
     (([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ oddMask aL ++
         ([.alu .and .rax (.reg .rcx), .store (hdr kOk) .rax, .mov .rbp (.reg .rax)] : List Instr)),
-      zeroA aM, copyA aM aL] : List (Prog isa)) ++ (selC aM ++ (invFrom aM ++ ([inverse aU aV aX₁ aX₂ aM aT] ++ (gcdIsOne ++
-    [zeroA aDd, copyA aDd aX₂]))))))))))))) := by
+      zeroA aM, copyA aM aL] : List (Prog isa)) ++ (selC aM ++ ([inverse aU aV aX₂ aM] ++ (gcdIsOne ++
+    [zeroA aDd, copyA aDd aX₂])))))))))))) := by
   simp only [dEven, List.append_assoc]
 
 theorem or_and1_mask (x : BitVec 64) (c : Bool) :
@@ -66,7 +66,7 @@ theorem av_or1 {I : KIn} {m : Mem} {j : Nat} (hw : 1 ≤ I.W) (hj : slot I.W j +
     rw [this, h1]; decide
 
 /-- `dEven`, for an even `e`. -/
-theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} (he64 : e < 2 ^ 64)
+theorem dEven_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} (he64 : e < 2 ^ 64)
     (hee : e % 2 = 0) (hev : word s.mem I.B (8 * kEv) = BitVec.ofNat 64 e) (hL : av I s.mem aL = L)
     (hLW : L < 2 ^ (64 * I.W)) :
     WP isa (seqs dEven) s fun t => KS I m₀ t ∧ KF I.B I.W csD s.mem t.mem ∧ DRes I e L t.mem := by
@@ -203,7 +203,7 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
     rw [f₁₉.av (by decide) (by decide) (by decide) hZ, f₁₈.av (by decide) (by decide) (by decide) hZ,
       f₁₇.av hokO (by decide) (by decide) hZ, hm₁₆, c3]
   rw [f₁₈.av (by decide) (by decide) (by decide) hZ, vL₁₇] at v₁₉
-  refine wp_seqs_append (by simp [selC]) (by simp [invFrom]) (WP.mono (selC_k h₁₉ (j := aM) (by decide) (by decide)
+  refine wp_seqs_append (by simp [selC]) (by simp) (WP.mono (selC_k h₁₉ (j := aM) (by decide) (by decide)
     (c := ok0) (by rw [k₁₉.gpr (by decide), k₁₈.gpr (by decide), hbp₁₇])) fun s₂₀ ⟨h₂₀, f₂₀, v₂₀, _, _⟩ => ?_)
   rw [v₁₉, vC₁₉] at v₂₀
   generalize hM : (if ok0 = true then L else 3) = M at v₂₀
@@ -214,36 +214,29 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
       simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not] at hok0
       omega_using [hok0]
   -- The inverse modulo `M`.
-  refine wp_seqs_append (by simp [invFrom]) (by simp) (WP.mono (invFrom_k h₂₀ (j := aM) (by decide) (by decide))
-    fun s₂₁ ⟨h₂₁, f₂₁, vV₂₁, vX₁₂₁, vX₂₂₁⟩ => ?_)
-  have hok21 : [Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂].all Rc.ok = true := by decide
   have hokM : [Rc.arr aM].all Rc.ok = true := by decide
-  have vM₂₁ : av I s₂₁.mem aM = M := by rw [f₂₁.av hok21 (by decide) (by decide) hZ, v₂₀]
   have presU : ∀ {m m' : Mem} {cs : List Rc}, KF I.B I.W cs m m' → cs.all Rc.ok = true → .arr aU ∉ cs →
       av I m' aU = av I m aU ∧ atop I m' aU = atop I m aU := fun f ok hn =>
     ⟨f.av ok (by decide) hn hZ, f.at ok (by decide) hn hZ⟩
-  have pU : av I s₂₁.mem aU = e % M₁ ∧ atop I s₂₁.mem aU = 0 := by
-    obtain ⟨a1, b1⟩ := presU f₂₁ hok21 (by decide)
-    obtain ⟨a2, b2⟩ := presU f₂₀ hokM (by decide)
-    obtain ⟨a3, b3⟩ := presU f₁₉ (by decide) (by decide)
-    obtain ⟨a4, b4⟩ := presU f₁₈ (by decide) (by decide)
-    obtain ⟨a5, b5⟩ := presU f₁₇ hokO (by decide)
-    obtain ⟨a6, b6⟩ := presU f₁₃ (by decide) (by decide)
-    rw [hm₁₆] at a5 b5
-    exact ⟨by rw [a1, a2, a3, a4, a5, a6, vU₁₂], by rw [b1, b2, b3, b4, b5, b6, tU₁₂]⟩
+  have pU : av I s₂₀.mem aU = e % M₁ := by
+    obtain ⟨a2, _⟩ := presU f₂₀ hokM (by decide)
+    obtain ⟨a3, _⟩ := presU f₁₉ (by decide) (by decide)
+    obtain ⟨a4, _⟩ := presU f₁₈ (by decide) (by decide)
+    obtain ⟨a5, _⟩ := presU f₁₇ hokO (by decide)
+    obtain ⟨a6, _⟩ := presU f₁₃ (by decide) (by decide)
+    rw [hm₁₆] at a5
+    rw [a2, a3, a4, a5, a6, vU₁₂]
   refine wp_seqs_append (by simp) (by simp [gcdIsOne, constA]) ?_
   simp only [seqs]
-  refine WP.mono (inverse_k h₂₁ (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aM) (iT := aT)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) pU.2 (by rw [vV₂₁, v₂₀, vM₂₁]) vX₁₂₁ vX₂₂₁) fun s₂₂ ⟨h₂₂, f₂₂, hinv⟩ => ?_
-  rw [vM₂₁, pU.1] at hinv
-  obtain ⟨hg₂₂, hdv₂₂, hx₂₂⟩ := hinv hMo.1 hMo.2
+  refine WP.mono (inverse_k h₂₀ (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aM) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₂₂ ⟨h₂₂, f₂₂, _, hinv⟩ => ?_
+  rw [v₂₀, pU] at hinv
+  obtain ⟨hg₂₂, hdv₂₂, hx₂₂⟩ := hinv hMo.1
   generalize hx : av I s₂₂.mem aX₂ = x at hdv₂₂ hx₂₂
   -- `kOk &= ` the mask of the gcd being 1.
-  have hokI : [Rc.arr aU, Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT, Rc.hdr sMo].all Rc.ok = true := by decide
+  have hokI : [Rc.arr aV, Rc.arr aX₂, Rc.priv].all Rc.ok = true := by decide
   have ok₂₂ : word s₂₂.mem I.B (8 * kOk) = mask ok0 := by
-    rw [f₂₂.word hokI (by decide) (by decide), f₂₁.word hok21 (by decide) (by decide),
+    rw [f₂₂.word hokI (by decide) (by decide),
       f₂₀.word hokM (by decide) (by decide), f₁₉.word (by decide) (by decide) (by decide),
       f₁₈.word (by decide) (by decide) (by decide), ok₁₇]
   refine wp_seqs_append (by simp [gcdIsOne, constA]) (by simp) (WP.mono (gcdIsOne_k h₂₂ ok₂₂)
@@ -258,9 +251,9 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
   have f₁₄₁₆ : KF I.B I.W [] s₁₃.mem s₁₆.mem := by rw [hm₁₆]; exact KF.refl _ _ _
   refine ⟨ht, ?_, ⟨_, okt, ?_, ?_⟩⟩
   · have f₆' : KF I.B I.W [.arr aC] s₃.mem s₆.mem := by rw [← m₄, ← m₅]; exact f₆
-    exact (((((((((((((((((((f₁.trans f₂).trans f₃).trans f₆').trans f₇).trans f₈).trans
+    exact ((((((((((((((((((f₁.trans f₂).trans f₃).trans f₆').trans f₇).trans f₈).trans
       f₉).trans f₁₀).trans f₁₁).trans f₁₂).trans f₁₃).trans f₁₄₁₆).trans f₁₇).trans f₁₈).trans f₁₉).trans f₂₀).trans
-      f₂₁).trans f₂₂).trans f₂₃).trans f₂₄).mono (by decide)
+      f₂₂).trans f₂₃).trans f₂₄).mono (by decide)
   · -- The inverse exists iff `L` is odd, at least 3, and the gcd is 1.
     constructor
     · rintro ⟨d, hd⟩
@@ -351,7 +344,7 @@ theorem dOne_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {L : Nat} (h
       exact av_of_full o₅ (two_le_pow h (by decide))
 
 /-- `dPart`, for `e < 2⁶⁴`. -/
-theorem dPart_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} (he64 : e < 2 ^ 64)
+theorem dPart_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} (he64 : e < 2 ^ 64)
     (hev : word s.mem I.B (8 * kEv) = BitVec.ofNat 64 e) (hL : av I s.mem aL = L) (hLW : L < 2 ^ (64 * I.W)) :
     WP isa dPart s fun t => KS I m₀ t ∧ KF I.B I.W csD s.mem t.mem ∧ DRes I e L t.mem := by
   have hld := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_arith)

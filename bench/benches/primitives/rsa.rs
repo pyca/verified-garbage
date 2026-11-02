@@ -22,7 +22,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::rsa::{Padding, Rsa};
     use verified_garbage::rsa::PrivateKey;
 
-    use crate::{OPENSSL, VG};
+    use crate::{BenchDyn, OPENSSL, VG};
     let mut g = c.benchmark_group("rsa_private");
     // The same sizes, each library holding the private key in the CRT form
     // `(p, q, dP, dQ, qInv)` (OpenSSL with its default blinding). Both check
@@ -45,14 +45,14 @@ pub fn bench(c: &mut Criterion) {
         let mut input = vec![0x42; k];
         input[0] = 0;
         let mut out = vec![0; k];
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 black_box(&vg_key)
                     .private_op(black_box(&input), &mut out)
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 black_box(&key)
                     .private_decrypt(black_box(&input), &mut out, Padding::NONE)
@@ -85,7 +85,7 @@ fn keys(c: &mut Criterion) {
     use openssl::rsa::Rsa;
     use verified_garbage::rsa::PrivateKey;
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     // OpenSSL has no function that brings `(n, e, d, p, q)` to the CRT form,
     // or that recovers `p` and `q` from `(n, e, d)`: its nearest is the same
@@ -192,14 +192,14 @@ fn keys(c: &mut Criterion) {
         ]
         .map(|x| x.to_vec());
         let k = v[0].len();
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 let v = black_box(&v);
                 PrivateKey::from_crt(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7])
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 let v = black_box(&v)
                     .clone()
@@ -208,7 +208,7 @@ fn keys(c: &mut Criterion) {
                 Rsa::from_private_components(n, e, d, p, q, dp, dq, qinv).unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, k), |b| {
             b.iter(|| {
                 let v = black_box(&v);
                 RsaKeyPair::from_components(&KeyPairComponents {
@@ -236,7 +236,7 @@ fn keys(c: &mut Criterion) {
         let (n, e, d) = (key.n().to_vec(), key.e().to_vec(), key.d().to_vec());
         let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
         let k = n.len();
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 PrivateKey::from_primes(
                     black_box(&n),
@@ -248,7 +248,7 @@ fn keys(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 openssl_crt(
                     black_box(key.n()),
@@ -276,12 +276,12 @@ fn keys(c: &mut Criterion) {
         };
         let (n, e, d) = (key.n().to_vec(), key.e().to_vec(), key.d().to_vec());
         let k = n.len();
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 PrivateKey::from_components(black_box(&n), black_box(&e), black_box(&d)).unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| openssl_recover(black_box(key.n()), black_box(key.e()), black_box(key.d())))
         });
     }
@@ -306,10 +306,10 @@ fn keys(c: &mut Criterion) {
             &key.iqmp().unwrap().to_vec(),
         )
         .unwrap();
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| assert!(black_box(&vg_key).check_key()))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| assert!(black_box(&key).check_key().unwrap()))
         });
     }

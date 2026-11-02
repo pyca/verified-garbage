@@ -38,7 +38,7 @@ theorem b2n_zero {p : Prop} [Decidable p] {z : Bool} (hz : z = decide (b2n (deci
   cases z <;> simp_all [b2n]
 
 /-- `d` and its flag, by `e`'s case. -/
-theorem dPart_vp {E : State → Prop} : VP (SE P E) dPart (G4 P E) := by
+theorem dPart_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] {E : State → Prop} : VP (SE P E) dPart (G4 P E) := by
   unfold dPart
   refine VP.seq (St.pisOne isE0_taint (by simp) fun _ _ => by rw [VE_0]; exact b2n_le' _) ?_
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [isa_eq, isa_eq, h₁.2, h₂.2]) ?_ ?_

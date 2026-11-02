@@ -43,7 +43,7 @@ theorem CIn.xCovers (h : CIn s) : Covers (xRegs s) (pcPushed s).wr := by
   · show cS s ∈ _; simp
 
 /-- The body's run, widened to the caller's regions. -/
-theorem body_wide (h : CIn s) :
+theorem body_wide [VG.Proof.Rsa.Arm.Keys.InvLaw] (h : CIn s) :
     ∃ tr v, Exec isa body (sx s) tr v ∧ Exec isa body (pcPushed s) tr (v.withRegions s.rd (pcPushed s).wr) ∧
       Res (mkP s) (sx s) v := by
   have pre := in_k h
@@ -55,7 +55,7 @@ theorem body_wide (h : CIn s) :
   exact ⟨tr, v, run, run', res⟩
 
 /-- A call's result. -/
-theorem key_ok (h : CIn s) : WP isa code s fun t => abiPreserved s t ∧ KPost s t := by
+theorem key_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (h : CIn s) : WP isa code s fun t => abiPreserved s t ∧ KPost s t := by
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
   unfold code

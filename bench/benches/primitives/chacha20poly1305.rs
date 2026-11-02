@@ -27,7 +27,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, decrypt_aead, encrypt_aead};
     use verified_garbage::chacha20poly1305::ChaCha20Poly1305;
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
     // The shared sizes, and more below 1 KiB and at 4 KiB, where the TLS
     // records of interactive traffic fall; and TLS 1.3's records of 512 and
     // 768 bytes, 1 KiB, 4 KiB and 16 KiB (the most a record carries) of
@@ -47,7 +47,7 @@ pub fn bench(c: &mut Criterion) {
     for size in SIZES {
         g.throughput(Throughput::Bytes(size as u64));
         let mut data = vec![0u8; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 ChaCha20Poly1305::new(black_box(&key))
                     .encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut data))
@@ -55,7 +55,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut tag = [0u8; 16];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 encrypt_aead(
                     Cipher::chacha20_poly1305(),
@@ -68,7 +68,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_key(black_box(&key))
                     .seal_in_place_separate_tag(
@@ -99,7 +99,7 @@ pub fn bench(c: &mut Criterion) {
             )
             .unwrap();
         assert_eq!((&aws_lc_ct, aws_lc_tag.as_ref()), (&ciphertext, &tag[..]));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 data.copy_from_slice(&ciphertext);
                 ChaCha20Poly1305::new(black_box(&key))
@@ -112,7 +112,7 @@ pub fn bench(c: &mut Criterion) {
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 decrypt_aead(
                     Cipher::chacha20_poly1305(),
@@ -125,7 +125,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 data.copy_from_slice(&ciphertext);
                 aws_lc_key(black_box(&key))
@@ -149,7 +149,7 @@ pub fn bench(c: &mut Criterion) {
         let data = vec![0u8; size - 1];
         let content_type = [0x17u8];
         let mut out = crate::InPlace::new(size, &data);
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 ChaCha20Poly1305::new(black_box(&key))
                     .encrypt(
@@ -163,7 +163,7 @@ pub fn bench(c: &mut Criterion) {
         });
         let whole = vec![0u8; size];
         let mut tag = [0u8; 16];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 encrypt_aead(
                     Cipher::chacha20_poly1305(),
@@ -179,7 +179,7 @@ pub fn bench(c: &mut Criterion) {
         // aws-lc-rs takes the last piece as its `extra_in`, and writes its
         // encryption, before the tag, to `extra_out_and_tag`.
         let mut extra_out_and_tag = [0u8; 17];
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_key(black_box(&key))
                     .seal_out_of_place_scatter(
@@ -204,7 +204,7 @@ pub fn bench(c: &mut Criterion) {
         let data = vec![0u8; size - 1];
         let content_type = [0x17u8];
         let mut out = crate::InPlace::new(size, &data);
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let (body, last) = out.split_at_mut(size - 1);
                 body.copy_from_slice(black_box(&data));
@@ -249,7 +249,7 @@ fn tls_records(c: &mut Criterion) {
     use verified_garbage::chacha20poly1305::ChaCha20Poly1305;
 
     use crate::aes_gcm::{Aligned, Offsets};
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     const TLS_SIZES: [usize; 10] = [16, 64, 128, 192, 193, 256, 448, 449, 639, 640];
     let offsets = Offsets::DEFAULT;
@@ -287,7 +287,7 @@ fn tls_records(c: &mut Criterion) {
 
         let mut g = c.benchmark_group("chacha20poly1305-tls-seal");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 vg_key
                     .encrypt(
@@ -299,7 +299,7 @@ fn tls_records(c: &mut Criterion) {
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 ossl.encrypt_init(None, None, Some(black_box(&nonce)))
                     .unwrap();
@@ -315,7 +315,7 @@ fn tls_records(c: &mut Criterion) {
                 t
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_key
                     .seal_in_place_separate_tag(
@@ -332,7 +332,7 @@ fn tls_records(c: &mut Criterion) {
         let mut buf = Aligned::new(&ct, offsets.input);
         let mut g = c.benchmark_group("chacha20poly1305-tls-open");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 buf.copy_from_slice(&ct);
                 vg_key
@@ -345,7 +345,7 @@ fn tls_records(c: &mut Criterion) {
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 ossl_dec
                     .decrypt_init(None, None, Some(black_box(&nonce)))
@@ -358,7 +358,7 @@ fn tls_records(c: &mut Criterion) {
                 ossl_dec.cipher_final(&mut ossl_out[n..]).unwrap();
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 buf.copy_from_slice(&ct);
                 aws_lc_key

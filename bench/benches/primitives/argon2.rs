@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use verified_garbage::argon2::{Params, Variant, derive, derive_keyed, verify, verify_keyed};
 
-    use crate::VG;
+    use crate::{BenchDyn, VG};
     for (variant, name) in [
         (Variant::Argon2d, "argon2d"),
         (Variant::Argon2i, "argon2i"),
@@ -35,7 +35,7 @@ pub fn bench(c: &mut Criterion) {
         g.sample_size(10);
         for memory in [1024u32, 16384] {
             let mut out = [0u8; 32];
-            g.bench_function(BenchmarkId::new(VG, memory), |b| {
+            g.bench(BenchmarkId::new(VG, memory), |b| {
                 b.iter(|| {
                     derive(
                         &Params {
@@ -59,7 +59,7 @@ pub fn bench(c: &mut Criterion) {
                     Variant::Argon2i => openssl::kdf::argon2i,
                     Variant::Argon2id => openssl::kdf::argon2id,
                 };
-                g.bench_function(BenchmarkId::new(crate::OPENSSL, memory), |b| {
+                g.bench(BenchmarkId::new(crate::OPENSSL, memory), |b| {
                     b.iter(|| {
                         openssl(
                             None,
@@ -90,7 +90,7 @@ pub fn bench(c: &mut Criterion) {
             };
             let mut expected = [0u8; 32];
             derive(&params, b"password", b"saltsalt", usize::MAX, &mut expected).unwrap();
-            g.bench_function(BenchmarkId::new(VG, memory), |b| {
+            g.bench(BenchmarkId::new(VG, memory), |b| {
                 b.iter(|| {
                     verify(
                         &params,
@@ -110,7 +110,7 @@ pub fn bench(c: &mut Criterion) {
                     Variant::Argon2id => openssl::kdf::argon2id,
                 };
                 let mut out = [0u8; 32];
-                g.bench_function(BenchmarkId::new(crate::OPENSSL, memory), |b| {
+                g.bench(BenchmarkId::new(crate::OPENSSL, memory), |b| {
                     b.iter(|| {
                         oracle(
                             None,
@@ -153,7 +153,7 @@ pub fn bench(c: &mut Criterion) {
             &mut expected,
         )
         .unwrap();
-        g.bench_function(BenchmarkId::new(VG, memory), |b| {
+        g.bench(BenchmarkId::new(VG, memory), |b| {
             b.iter(|| {
                 verify_keyed(
                     &params,
@@ -170,7 +170,7 @@ pub fn bench(c: &mut Criterion) {
         #[cfg(feature = "openssl-argon2")]
         {
             let mut out = [0u8; 32];
-            g.bench_function(BenchmarkId::new(crate::OPENSSL, memory), |b| {
+            g.bench(BenchmarkId::new(crate::OPENSSL, memory), |b| {
                 b.iter(|| {
                     openssl::kdf::argon2id(
                         None,

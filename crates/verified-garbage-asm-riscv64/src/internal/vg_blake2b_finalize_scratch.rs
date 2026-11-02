@@ -13,8 +13,6 @@ pub(crate) unsafe extern "C" fn vg_blake2b_finalize_scratch() {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 4, 0xdc010113
-.insn 2, 0x868a
 .insn 4, 0x00768293
 .insn 4, 0xff82f293
 .insn 4, 0x2012b023
@@ -189,10 +187,8 @@ call {vg_blake2b_compress}
 .insn 4, 0x218c3d03
 .insn 4, 0x220c3d83
 .insn 4, 0x228c3c03
-.insn 4, 0x24010113
 .insn 2, 0x8082
 .option pop",
         vg_blake2b_compress = sym crate::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
-
 }

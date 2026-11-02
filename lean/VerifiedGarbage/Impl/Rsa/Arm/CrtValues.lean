@@ -21,7 +21,8 @@ only branch on data). Then, with `w = ⌈n_len / 4⌉` words of 32 bits:
   (`Impl/Rsa/Arm/Div.lean`): `p q = n` is `p` odd, `n / p = q` and
   `n mod p = 0` (as `n` is odd).
 * `qInv` is the inverse of `q` modulo `p | 1` (`Impl/Rsa/Arm/Inverse.lean`),
-  which exists if the gcd it computes is 1.
+  which exists if the gcd it computes is 1, computed at the primes' width
+  `⌈max(p_len, q_len) / 4⌉`.
 * `dP` and `dQ` are `d` divided by `p` and by `q` with their low bits
   cleared: `p - 1` and `q - 1` for odd primes, which `p q = n` makes them.
 
@@ -136,11 +137,20 @@ def invSetup : List (Prog isa) := [
   copy 0 aQ, copy aM aP, .block (orOne aM), copy 1 aM, .block (setOne 2 ++ setOne aOne),
   sub3 aNM aZero aM]
 
-/-- The checks of `p q = n` and of the inverse, `qInv` computed, and the
-division of `d` by `p - 1` set up. -/
+/-- The primes' width `k = ⌈max(p_len, q_len) / 4⌉` into `r9`, at which
+`inverse` reads `q` and `m` (both below `2^(32 k)`): the maximum is
+`q_len + (p_len - q_len)`, the difference masked by `p_len ≥ q_len` (its top
+bit clear, as the lengths are below `n_len < 2^31`). -/
+def primeWidth : List Instr :=
+  [.ldrSp .r0 20, .ldrSp .r1 28, .dp .sub .r2 .r0 (.reg .r1), .mov .r3 (.shifted .r2 .lsr 31),
+   .dp .sub .r3 .r3 (.imm 1), .dp .and .r2 .r2 (.reg .r3), .dp .add .r9 .r1 (.reg .r2),
+   .dp .add .r9 .r9 (.imm 3), .mov .r9 (.shifted .r9 .lsr 2)]
+
+/-- The checks of `p q = n` and of the inverse, `qInv` computed at the
+primes' width, and the division of `d` by `p - 1` set up. -/
 def checks : Prog isa := seqs ([
   .block ctx, eqS sE1 aDQ aQ aT1, eqS sE2 aDR aZero aT1] ++ invSetup ++ [
-  inverse, eqS sE3 1 aOne aT1,
+  .block primeWidth, inverse, .block ctx, eqS sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ divHdr aDQ aDR2 aDD aDT)])
 

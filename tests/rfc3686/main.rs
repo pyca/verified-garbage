@@ -1,6 +1,7 @@
 //! The AES-CTR test vectors of RFC 3686 §6, read from the byte-for-byte
-//! vendored RFC, and the increment of the counter block across its words and
-//! past `2¹²⁸`, against AES-ECB on the counter blocks.
+//! vendored RFC; and the increment of the counter block across its words and
+//! past `2¹²⁸`, each block of a keystream being the one its counter block
+//! gives alone (`tests/modes.rs`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -14,7 +15,6 @@
 use crate::bytes::counter_add;
 use crate::text::{get, labelled};
 use verified_garbage::aes_ctr::{AesCtr, InvalidKeyLength};
-use verified_garbage::aes_ecb::AesEcb;
 
 /// Checks a message in one call, split at every block boundary, one call per
 /// block, and cut short at each length, with the counter block left after
@@ -87,8 +87,8 @@ fn rfc3686_test_vectors() {
 }
 
 /// The counter block's increment carries across its 32- and 64-bit words and
-/// wraps from `1¹²⁸` to `0¹²⁸`: the output blocks are AES (by AES-ECB) of
-/// the counter blocks counted with `u128`.
+/// wraps from `1¹²⁸` to `0¹²⁸` (`crate::modes::check_counter`), on messages
+/// of 5 blocks and a bit, at aligned and unaligned addresses.
 #[test]
 fn counter_carries_and_wraps() {
     let starts: [u128; 6] = [
@@ -102,14 +102,8 @@ fn counter_carries_and_wraps() {
     for key_len in [16, 24, 32] {
         let key: Vec<_> = crate::bytes::pattern(key_len, 29, 7);
         let ctx = AesCtr::new(&key).unwrap();
-        let ecb = AesEcb::new(&key).unwrap();
         for start in starts {
-            let ctr = start.to_be_bytes();
-            let message: Vec<_> = crate::bytes::pattern(16 * 5 + 7, 11, 5);
-            let mut stream = crate::bytes::counter_blocks(start, message.len().div_ceil(16));
-            ecb.encrypt(&mut stream).unwrap();
-            let expected: Vec<_> = crate::bytes::xor(&message, &stream);
-            check(&ctx, &ctr, &message, &expected);
+            crate::modes::check_counter(start.to_be_bytes(), 6, &|c, b| ctx.apply_keystream(c, b));
         }
     }
 }

@@ -77,7 +77,7 @@ theorem CIn.xCovers (h : CIn s) {σ : State} (pre : In (mkP s) σ) : Covers (xRe
       rw [pre.endM]; exact Nat.le_trans (arr_mono (show mBase + 8 ≤ nArr by decide)) pre.fits
 
 /-- The body's run, widened to the caller's regions. -/
-theorem body_wide (v : RoundImpl) (h : CIn s) :
+theorem body_wide [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
     ∃ tr w t, Exec isa (body v.name v.code) (pcPushed s) tr (w.withRegions s.rd (pcPushed s).wr) ∧
       Exec isa (body v.name v.code) (sx s) tr w ∧
       In (mkP s) t ∧ t.sp = (mkP s).sp ∧
@@ -104,7 +104,7 @@ theorem slot_disj {σ : State} (pre : In (mkP s) σ) {lo n : Nat} (h1 : 4 ≤ lo
   · exact Offset.disjoint_base _ (by omega) (by omega)
 
 /-- A call's result. -/
-theorem cand_ok (v : RoundImpl) (h : CIn s) :
+theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
     WP isa (code v.name v.code) s fun t => abiPreserved s t ∧ CPost s t := by
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega)

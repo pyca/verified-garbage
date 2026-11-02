@@ -28,7 +28,7 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::aes_ecb::AesEcb;
     use verified_garbage::chacha20::ChaCha20;
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     const SAMPLE: usize = 16;
     let key: Vec<_> = (0..32).map(|i| (17 * i + 3) as u8).collect();
@@ -42,7 +42,7 @@ pub fn bench(c: &mut Criterion) {
         let mut group = c.benchmark_group(format!("quic-hp-aes-{}", 8 * key_len));
         group.throughput(Throughput::Bytes(SAMPLE as u64));
         let vg = AesEcb::new(key).unwrap();
-        group.bench_function(BenchmarkId::new(VG, SAMPLE), |b| {
+        group.bench(BenchmarkId::new(VG, SAMPLE), |b| {
             b.iter(|| {
                 let mut block = *black_box(&sample);
                 vg.encrypt(&mut block).unwrap();
@@ -54,7 +54,7 @@ pub fn bench(c: &mut Criterion) {
         let mut ossl = Crypter::new(cipher, Mode::Encrypt, key, None).unwrap();
         ossl.pad(false);
         let mut out = [0u8; 2 * SAMPLE];
-        group.bench_function(BenchmarkId::new(OPENSSL, SAMPLE), |b| {
+        group.bench(BenchmarkId::new(OPENSSL, SAMPLE), |b| {
             b.iter(|| {
                 ossl.update(black_box(&sample), &mut out).unwrap();
                 let mut mask = [0u8; 5];
@@ -63,7 +63,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let aws = HeaderProtectionKey::new(algorithm, key).unwrap();
-        group.bench_function(BenchmarkId::new(AWS_LC, SAMPLE), |b| {
+        group.bench(BenchmarkId::new(AWS_LC, SAMPLE), |b| {
             b.iter(|| black_box(aws.new_mask(black_box(&sample)).unwrap()))
         });
         group.finish();
@@ -72,7 +72,7 @@ pub fn bench(c: &mut Criterion) {
     let key: [u8; 32] = key.try_into().unwrap();
     let mut group = c.benchmark_group("quic-hp-chacha20");
     group.throughput(Throughput::Bytes(SAMPLE as u64));
-    group.bench_function(BenchmarkId::new(VG, SAMPLE), |b| {
+    group.bench(BenchmarkId::new(VG, SAMPLE), |b| {
         b.iter(|| {
             let mut mask = [0u8; 5];
             ChaCha20::new(&key, black_box(&sample)).apply_keystream(&mut mask);
@@ -82,7 +82,7 @@ pub fn bench(c: &mut Criterion) {
     // OpenSSL's ChaCha20 takes the sample as its 16-byte IV (counter ‖
     // nonce), as RFC 9001 §5.4.4 does.
     let mut out = [0u8; 5 + 64];
-    group.bench_function(BenchmarkId::new(OPENSSL, SAMPLE), |b| {
+    group.bench(BenchmarkId::new(OPENSSL, SAMPLE), |b| {
         b.iter(|| {
             let mut c = Crypter::new(
                 Cipher::chacha20(),
@@ -98,7 +98,7 @@ pub fn bench(c: &mut Criterion) {
         })
     });
     let aws = HeaderProtectionKey::new(&CHACHA20, &key).unwrap();
-    group.bench_function(BenchmarkId::new(AWS_LC, SAMPLE), |b| {
+    group.bench(BenchmarkId::new(AWS_LC, SAMPLE), |b| {
         b.iter(|| black_box(aws.new_mask(black_box(&sample)).unwrap()))
     });
     group.finish();

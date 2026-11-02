@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top5
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -24,7 +25,7 @@ open VG VG.Arm
 open VG.Impl.RsaKeyGen.Arm.Candidate (code)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem cand_contract_correct (v : RoundImpl) (s : State) (h : (Spec.RsaKeyGen.candidateContract abi 112).pre s) :
+theorem cand_contract_correct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (s : State) (h : (Spec.RsaKeyGen.candidateContract abi 112).pre s) :
     ∃ tr t, Exec isa (code v.name v.code) s tr t ∧ abiPreserved s t ∧
       (Spec.RsaKeyGen.candidateContract abi 112).post s t := by
   have hc := cin_of_pre s h
@@ -65,7 +66,7 @@ theorem mkP_eq {s t : State} (hs : CIn s) (sp : s.sp = t.sp) (p0 : s.gpr .r0 = t
       (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hk) hl]
   · rw [VG.Proof.RsaKeyGen.ite_f hk, VG.Proof.RsaKeyGen.ite_f hk]
 
-theorem cand_contract_ct (v : RoundImpl) : ConstantTime isa (Spec.RsaKeyGen.candidateContract abi 112).pre
+theorem cand_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) : ConstantTime isa (Spec.RsaKeyGen.candidateContract abi 112).pre
     (Spec.RsaKeyGen.candidateContract abi 112).pub (code v.name v.code) := by
   intro s t tr1 tr2 u w hs ht hp e1 e2
   have is := cin_of_pre s hs
@@ -102,7 +103,7 @@ theorem cand_contract_sat : ∃ s, (Spec.RsaKeyGen.candidateContract abi 112).pr
     using candSatState
 
 /-- `vg_rsa_keygen_candidate`, calling the round `v`. -/
-theorem cand_verified (v : RoundImpl) :
+theorem cand_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
     Verified target (code v.name v.code) (Spec.RsaKeyGen.candidateContract abi 112) :=
   ⟨cand_contract_correct v, cand_contract_ct v, cand_contract_sat⟩
 

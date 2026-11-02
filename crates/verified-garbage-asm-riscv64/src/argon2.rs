@@ -15,8 +15,8 @@
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `secret` must be valid for reads of `secret_len` bytes.
 /// * `associated_data` must be valid for reads of `ad_len` bytes.
-/// * `memory` must be valid for reads and writes of `1024 * blocks` bytes.
-/// * `scratch` must be valid for reads and writes of 16320 bytes.
+/// * `memory` must be valid for reads and writes of `1024 * blocks` bytes, and aligned for `u64`.
+/// * `scratch` must be valid for reads and writes of 16384 bytes, and aligned for `u64`.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `kind` must be 0, 1 or 2; `iterations` must be positive; `lanes` and `threads` must be in 1..2^24-1; `memory_cost` must be at least `8 * lanes`.
 /// * All input lengths must be less than 2^32; `out_len` must be in 4..2^32-1.
@@ -47,8 +47,6 @@ pub unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, password_len:
 .insn 4, 0x0b12b823
 .insn 2, 0x8996
 .insn 4, 0x1789ba03
-.insn 2, 0x0a1d
-.insn 4, 0xff8a7a13
 .insn 4, 0x400a0413
 .insn 4, 0x40040413
 .insn 4, 0x0b09e503
@@ -2908,13 +2906,12 @@ call {vg_argon2_hprime}
 .insn 2, 0x6131
 .insn 2, 0x8082
 .option pop",
-        vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
-        vg_blake2b_update_scratch = sym crate::argon2::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
-        vg_blake2b_finalize_scratch = sym crate::argon2::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
-        vg_argon2_hprime = sym crate::argon2::vg_argon2_hprime::vg_argon2_hprime,
-        vg_argon2_compress = sym crate::argon2::vg_argon2_compress::vg_argon2_compress,
+        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
+        vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
+        vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
+        vg_argon2_hprime = sym super::argon2::vg_argon2_hprime::vg_argon2_hprime,
+        vg_argon2_compress = sym super::argon2::vg_argon2_compress::vg_argon2_compress,
     )
-
 }
 
 #[rustfmt::skip]
@@ -2924,11 +2921,3 @@ pub(crate) mod vg_argon2_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_argon2_hprime.rs"]
 pub(crate) mod vg_argon2_hprime;
-
-#[rustfmt::skip]
-#[path = "internal/vg_blake2b_update_scratch.rs"]
-pub(crate) mod vg_blake2b_update_scratch;
-
-#[rustfmt::skip]
-#[path = "internal/vg_blake2b_finalize_scratch.rs"]
-pub(crate) mod vg_blake2b_finalize_scratch;

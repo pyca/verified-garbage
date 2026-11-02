@@ -102,7 +102,7 @@ theorem rv_ctWith (body : Prog isa) (bodyProof : BodyVerified body) : RelCT isa 
           exact ⟨by rw [trE, trB, trR], trivial⟩
 
 /-- The original search also uses the shared ABI trace proof. -/
-theorem rv_ct : RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t ∧
+theorem rv_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t ∧
     stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1) code (fun _ _ => True) :=
   rv_ctWith (.ite .eq valid fail) body_vp
 

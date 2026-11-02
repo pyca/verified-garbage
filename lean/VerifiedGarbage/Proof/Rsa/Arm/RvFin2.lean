@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.RvFin1
 import VerifiedGarbage.Proof.Rsa.Arm.InverseCT
 import VerifiedGarbage.Proof.Rsa.Arm.RvTaint4
-import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
+public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `p = gcd(y - 1, n)` (`gcd_vp`) -/
@@ -66,7 +66,7 @@ theorem gcdSet_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E 
   · intro d hd; exact ⟨hd, rfl⟩
 
 /-- `inverse`: `[1] = gcd([0], n)`. -/
-theorem inverse_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E : State → Prop} (F : FinishInputs P := legacyFinish P) :
+theorem inverse_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E : State → Prop} (F : FinishInputs P := legacyFinish P) :
     VP (Sk P E (AG (F := F) P) LG (fun _ _ => 0) [] (fun σ => upd (fun _ => 0) sMask (b2n (okF (F := F) P σ))) [sMask] P.w nArr)
       inverse (Fp (F := F) P E) := by
   refine VP.of_ct (fun σ₁ σ₂ s t tr1 tr2 u v h e1 e2 =>

@@ -22,7 +22,7 @@ def ValidPost (s0 t : State) : Prop := ∃ X₁ X₂ V R₂ R₃ X : Nat,
   (0 < 2 * (cvQ s0 / 2) → R₃ = cvD s0 % (2 * (cvQ s0 / 2))) ∧
   Outs s0 t (maskOf (cvP s0) (cvQ s0) X₁ X₂ V) R₂ R₃ X
 
-theorem valid_ok {s0 s : State} (h : Base s0 s) : WP isa valid s (ValidPost s0) := by
+theorem valid_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 s : State} (h : Base s0 s) : WP isa valid s (ValidPost s0) := by
   unfold valid
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (loads_ok h) fun t1 h1 => ?_

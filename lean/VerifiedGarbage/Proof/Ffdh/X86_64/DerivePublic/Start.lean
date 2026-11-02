@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.DerivePublic.Entry
 import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 /-! # FFDH public-value derivation on x86-64: entry, and zeros in y -/

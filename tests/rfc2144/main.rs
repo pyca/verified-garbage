@@ -1,7 +1,7 @@
 //! CAST5 (CAST-128) ECB: the vectors of RFC 2144 Appendix B.1, read from the
-//! byte-for-byte vendored RFC, with Botan's published CAST-128 vectors and
-//! pyca/cryptography's CAST5-CBC vectors (chained here through ECB), each
-//! vendored under `vectors/` (see `vectors/sources/`).
+//! byte-for-byte vendored RFC, with Botan's published CAST-128 vectors,
+//! vendored under `vectors/` (see `vectors/sources/`). pyca/cryptography's
+//! CAST5-CBC vectors test CBC itself, in `tests/cryptography_cast5/`.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -87,37 +87,6 @@ fn botan() {
         count += 1;
     }
     assert_eq!(count, 48);
-}
-
-#[test]
-fn cryptography_cbc() {
-    let text = crate::vectors::text("vectors/cryptography-cast5/cast5-cbc.txt");
-    let mut count = 0;
-    for record in text.split("\n\n") {
-        let field = |name: &str| {
-            record
-                .lines()
-                .find_map(|l| l.strip_prefix(name)?.trim().strip_prefix('='))
-                .map(unhex_spaced)
-        };
-        let Some(key) = field("KEY") else { continue };
-        let iv = field("IV").unwrap();
-        let plaintext = field("PLAINTEXT").unwrap();
-        let ciphertext = field("CIPHERTEXT").unwrap();
-        let cipher = Cast5Ecb::new(&key).unwrap();
-        let mut chain = iv.clone();
-        for (p, c) in plaintext.chunks(8).zip(ciphertext.chunks(8)) {
-            let mut block: Vec<u8> = crate::bytes::xor(p, &chain);
-            cipher.encrypt(&mut block).unwrap();
-            assert_eq!(block, c);
-            cipher.decrypt(&mut block).unwrap();
-            let decrypted: Vec<u8> = crate::bytes::xor(&block, &chain);
-            assert_eq!(decrypted, p);
-            chain = c.to_vec();
-        }
-        count += 1;
-    }
-    assert_eq!(count, 20);
 }
 
 #[test]

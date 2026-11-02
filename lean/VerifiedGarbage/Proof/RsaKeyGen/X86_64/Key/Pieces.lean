@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
@@ -43,22 +44,27 @@ slot. -/
 inductive Rc where
   | arr (i : Nat)
   | hdr (i : Nat)
+  /-- The private arrays of `inverse`, 16 to 25. -/
+  | priv
   deriving DecidableEq
 
 /-- Its byte range, for arrays of `W + 2` words. -/
 def Rc.range (W : Nat) : Rc → Nat × Nat
   | .arr i => (slot W i, 8 * (W + 2))
   | .hdr i => (8 * i, 8)
+  | .priv => (slot W 16, 80 * (W + 2))
 
 /-- One of the sixteen arrays, or of the header's 32 slots. -/
 def Rc.ok : Rc → Bool
   | .arr i => decide (i < 16)
   | .hdr i => decide (i < 32)
+  | .priv => true
 
 /-- One the pieces may change: an array, or `sMo`, `kEv` or `kOk`. -/
 def Rc.mut : Rc → Bool
   | .arr i => decide (i < 16)
   | .hdr i => decide (29 ≤ i ∧ i < 32)
+  | .priv => true
 
 /-- Memory that changes only in the parts `cs`. -/
 def KF (B : Addr) (W : Nat) (cs : List Rc) (m m' : Mem) : Prop := Frm B (cs.map (Rc.range W)) m m'
@@ -91,7 +97,7 @@ theorem KF.of_outside {B : Addr} {W : Nat} {o n : Nat} {cs : List Rc} {m m' : Me
     rw [List.mem_singleton.mp hr]; exact ⟨c, hc, h1, h2⟩
 
 /-- An array's range, against a part other than it. -/
-theorem range_sep_arr {W j : Nat} {c : Rc} (hc : c.ok = true) (hne : c ≠ .arr j) {d k : Nat}
+theorem range_sep_arr {W j : Nat} (hj : j < 16) {c : Rc} (hc : c.ok = true) (hne : c ≠ .arr j) {d k : Nat}
     (hd : slot W j ≤ d) (hdk : d + 8 * k ≤ slot W j + 8 * (W + 2)) :
     d + 8 * k ≤ (c.range W).1 ∨ (c.range W).1 + (c.range W).2 ≤ d := by
   cases c with
@@ -102,6 +108,9 @@ theorem range_sep_arr {W j : Nat} {c : Rc} (hc : c.ok = true) (hne : c ≠ .arr 
   | hdr i =>
     simp only [Rc.ok, decide_eq_true_eq] at hc
     have := hdr_lt_slot W j hc
+    simp only [Rc.range]; omega_arith
+  | priv =>
+    have := slot_lt (w := W) hj
     simp only [Rc.range]; omega_arith
 
 /-- A header slot's word, against a part other than it. -/
@@ -115,6 +124,9 @@ theorem range_sep_hdr {W i : Nat} (hi : i < 32) {c : Rc} (hc : c.ok = true) (hne
   | hdr h =>
     have hij : h ≠ i := fun e => hne (e ▸ rfl)
     simp only [Rc.range]; omega_arith
+  | priv =>
+    have := hdr_lt_slot W 16 hi
+    simp only [Rc.range]; omega_arith
 
 /-- Words of an array the parts do not include. -/
 theorem KF.wv {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m m') (hok : cs.all Rc.ok = true)
@@ -124,7 +136,7 @@ theorem KF.wv {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m 
   have := slot_lt (w := W) hj
   refine Frm.wv_eq h (fun r hr => ?_) (by omega_arith)
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr
-  exact range_sep_arr (List.all_eq_true.mp hok c hc) (fun e => hn (e ▸ hc)) hd hdk
+  exact range_sep_arr hj (List.all_eq_true.mp hok c hc) (fun e => hn (e ▸ hc)) hd hdk
 
 /-- An array the parts do not include. -/
 theorem KF.arr {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m m') (hok : cs.all Rc.ok = true)
@@ -139,7 +151,7 @@ theorem KF.top {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m
   have := slot_lt (w := W) hj
   refine Frm.word_eq h (fun r hr => ?_) (by omega_arith)
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr
-  exact range_sep_arr (k := 1) (List.all_eq_true.mp hok c hc) (fun e => hn (e ▸ hc)) (by omega_arith) (by omega_arith)
+  exact range_sep_arr (k := 1) hj (List.all_eq_true.mp hok c hc) (fun e => hn (e ▸ hc)) (by omega_arith) (by omega_arith)
 
 /-- A header slot the parts do not include. -/
 theorem KF.word {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m m') (hok : cs.all Rc.ok = true)
@@ -214,6 +226,10 @@ structure KS (I : KIn) (m₀ : Mem) (s : State) : Prop where
   inScr : InScr I.B I.Z m₀ s.mem
   wr : s.wr = I.Wr
   rsp : s.gpr .rsp = I.sp
+  /-- Room for `inverse`'s private arrays. -/
+  z26 : slot I.W 26 ≤ I.Z
+  /-- The width `inverse` needs. -/
+  w20 : I.W < 2 ^ 20
 
 theorem Rc.ok_of_mut {c : Rc} (h : c.mut = true) : c.ok = true := by
   cases c <;> simp only [Rc.mut, Rc.ok, decide_eq_true_eq] at h ⊢ <;> omega_arith
@@ -245,11 +261,14 @@ theorem KS.step {I : KIn} {m₀ : Mem} {s t : State} (h : KS I m₀ s) {cs : Lis
       simp only [Rc.mut, decide_eq_true_eq] at this
       have := hdr_lt_slot I.W 16 (show 31 < 32 by decide)
       simp only [Rc.range]; omega_arith
+    | priv =>
+      have := h.z26
+      simp only [Rc.range]; unfold slot at *; omega_arith
   refine ⟨⟨h.ws.scr.congr k.2.2, (k.gpr hr.1).trans h.ws.rdi, (hhdr sW (by decide)).trans h.ws.hw,
       (hhdr sStride (by decide)).trans h.ws.hS, fun j hj => (hhdr (sArr j) (by unfold sArr; omega_arith)).trans
       (h.ws.harr j hj), hZ, h.ws.w1, h.ws.w2⟩,
     h.args.congr fun i hi => hhdr i (by omega_arith), h.p.congrK hi k, h.q.congrK hi k, h.e.congrK hi k,
-    h.inScr.trans hi, k.2.2.trans h.wr, (k.gpr hr.2).trans h.rsp⟩
+    h.inScr.trans hi, k.2.2.trans h.wr, (k.gpr hr.2).trans h.rsp, h.z26, h.w20⟩
 
 end VG.Proof.RsaKeyGen.X86_64.Key
 
@@ -573,39 +592,27 @@ theorem divmod_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {iQ iR iD 
       ⟨hm, by simp [e]⟩), k.2⟩
   exact ⟨h.step f (all_mut_arrs (js := [iQ, iR, iT]) (by simp [hQ, hR, hT])) k' (by decide), f, hv⟩
 
-/-- `inverse u v x₁ x₂ m t` from `v = m`, `x₁ = 1`, `x₂ = 0` and word `W`
-of `u` zero: for an odd `m > 1`, `v = gcd(u, m)` and `x₂ u ≡ v (mod m)`,
+/-- `inverse u v x₂ m`: for an odd `m`, `v = gcd(u, m)` and `x₂ u ≡ v (mod m)`,
 `x₂ < m`. -/
-theorem inverse_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {iU iV iX₁ iX₂ iM iT : Nat}
-    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
-    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
-    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
-    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT) (hU0 : atop I s.mem iU = 0)
-    (hVM : av I s.mem iV = av I s.mem iM) (hX1 : av I s.mem iX₁ = 1) (hX2 : av I s.mem iX₂ = 0) :
-    WP isa (inverse iU iV iX₁ iX₂ iM iT) s fun t => KS I m₀ t ∧
-      KF I.B I.W [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT, .hdr sMo] s.mem t.mem ∧
-      (av I s.mem iM % 2 = 1 → 1 < av I s.mem iM →
+theorem inverse_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {iU iV iX₂ iM : Nat}
+    (hU : iU < 16) (hV : iV < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (dVX₂ : iV ≠ iX₂) :
+    WP isa (inverse iU iV iX₂ iM) s fun t => KS I m₀ t ∧
+      KF I.B I.W [.arr iV, .arr iX₂, .priv] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t ∧
+      (av I s.mem iM % 2 = 1 →
         av I t.mem iV = Nat.gcd (av I s.mem iU) (av I s.mem iM) ∧
         ((av I s.mem iM : Nat) : Int) ∣ (av I t.mem iX₂ : Int) * av I s.mem iU - av I t.mem iV ∧
         av I t.mem iX₂ < av I s.mem iM) := by
-  refine WP.mono (inverse_ok h.ws.scr h.ws.rdi h.ws.hw h.ws.hS (by have := h.ws.w1; omega_arith) h.ws.w2 h.ws.hZ hU hV hX₁
-    hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M dX₂T dMT hU0 hVM hX1 hX2)
-    fun t ⟨hdi, hf, k, hv⟩ => ?_
-  have f : KF I.B I.W [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT, .hdr sMo] s.mem t.mem :=
+  refine WP.mono (InvLaw.inverse_ok h.ws h.z26 h.w20 hU hV hX₂ hM dVX₂) fun t ⟨_, hf, k, hv⟩ => ?_
+  have f : KF I.B I.W [.arr iV, .arr iX₂, .priv] s.mem t.mem :=
     KF.of_frm hf fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-      · exact ⟨.arr iU, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+      rcases hr with rfl | rfl | rfl
       · exact ⟨.arr iV, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
-      · exact ⟨.arr iX₁, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
       · exact ⟨.arr iX₂, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
-      · exact ⟨.arr iT, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-      · exact ⟨.hdr sMo, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-  have k' : Keep (List.filter (· != .rdi) (.r9 :: .r11 :: stepRegs)) s t :=
-    ⟨fun r hr => if e : r = .rdi then by rw [e, hdi, h.ws.rdi] else k.1 r fun hm => hr (List.mem_filter.mpr
-      ⟨hm, by simp [e]⟩), k.2⟩
-  refine ⟨h.step f ?_ k' (by decide), f, hv⟩
-  simp only [List.all_cons, List.all_nil, Rc.mut, sMo, sFn, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
+      · exact ⟨.priv, by simp, by simp [Rc.range], by simp [Rc.range]⟩
+  refine ⟨h.step f ?_ k (by decide), f, k, hv⟩
+  simp only [List.all_cons, List.all_nil, Rc.mut, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
   omega_arith
 
 end VG.Proof.RsaKeyGen.X86_64.Key

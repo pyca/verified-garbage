@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
 public import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
 public import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords

@@ -130,7 +130,7 @@ omit hp in
 theorem stageBlk_ok {s : State} (h : Inv s₀ s) {bx by' bo : Reg} {Bx By Bo x y o : Nat}
     (hx : Base s₀ s bx Bx) (hy : Base s₀ s by' By) (hob : Base s₀ s bo Bo)
     (hxi : x < 2048) (hyi : y < 2048) (hoi : o < 2048) :
-    WP isa (.block ([.addi .a0 bx x, .addi .a1 by' y, .addi .a2 bo o] ++
+    WP isa (.block (([.addi .a0 bx x, .addi .a1 by' y, .addi .a2 bo o] : List Instr) ++
       Impl.Argon2.RISCV64.Derive.gScratch)) s fun t =>
       Inv s₀ t ∧ t.gpr .a3 = gwP s₀ ∧ t.gpr .a0 = scrP s₀ + BitVec.ofNat 64 (Bx + x) ∧
       t.gpr .a1 = scrP s₀ + BitVec.ofNat 64 (By + y) ∧ t.gpr .a2 = scrP s₀ + BitVec.ofNat 64 (Bo + o) := by
@@ -187,8 +187,8 @@ theorem stage_rel {bx by' bo : Reg} {Bx By Bo x y o : Nat}
     (hxo : Bx + x + 1024 ≤ Bo + o ∨ Bo + o + 1024 ≤ Bx + x)
     (hy' : By + y + 1024 ≤ 4096) (hy8 : (By + y) % 8 = 0)
     (hyo : By + y + 1024 ≤ Bo + o ∨ Bo + o + 1024 ≤ By + y)
-    (hc : ∃ hc, (VG.Taint.check frameTaint (τF [] []) (.block ([.addi .a0 bx x, .addi .a1 by' y,
-      .addi .a2 bo o] ++ Impl.Argon2.RISCV64.Derive.gScratch)) hc).isSome = true) :
+    (hc : ∃ hc, (VG.Taint.check frameTaint (τF [] []) (.block (([.addi .a0 bx x, .addi .a1 by' y,
+      .addi .a2 bo o] : List Instr) ++ Impl.Argon2.RISCV64.Derive.gScratch)) hc).isSome = true) :
     RelCT isa (fun s₁ s₂ => Inv s₀₁ s₁ ∧ Inv s₀₂ s₂) (Impl.Argon2.RISCV64.Derive.stage (bx, x) (by', y) (bo, o))
       fun _ _ => True := by
   unfold Impl.Argon2.RISCV64.Derive.stage

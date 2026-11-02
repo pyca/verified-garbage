@@ -126,7 +126,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.DivShiftArray
 public import VerifiedGarbage.Proof.Rsa.Arm.DivShiftCT
 public import VerifiedGarbage.Proof.Rsa.Arm.DivStep
 public import VerifiedGarbage.Proof.Rsa.Arm.DivStepCT
-public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
+public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 public import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 public import VerifiedGarbage.Proof.Rsa.Arm.KcOps
 public import VerifiedGarbage.Proof.Rsa.Arm.KcStart
@@ -265,7 +265,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.DivShiftArray
 import VerifiedGarbage.Proof.Rsa.Arm.DivShiftCT
 import VerifiedGarbage.Proof.Rsa.Arm.DivStep
 import VerifiedGarbage.Proof.Rsa.Arm.DivStepCT
-import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
+import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Rsa.Arm.KcOps
 import VerifiedGarbage.Proof.Rsa.Arm.KcStart

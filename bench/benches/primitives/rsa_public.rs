@@ -21,7 +21,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::rsa::{Padding, Rsa};
     use verified_garbage::rsa::PublicKey;
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
     let mut g = c.benchmark_group("rsa_public");
     // Moduli of 2048, 3072 and 4096 bits with the exponent 65537; the ids'
     // size is the modulus' bytes. Each library loads the key once, outside
@@ -40,14 +40,14 @@ pub fn bench(c: &mut Criterion) {
         let mut input = vec![0x42; k];
         input[0] = 0;
         let mut out = vec![0; k];
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 black_box(&vg_key)
                     .public_op(black_box(&input), &mut out)
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 black_box(&openssl_key)
                     .public_encrypt(black_box(&input), &mut out, Padding::NONE)
@@ -65,10 +65,10 @@ pub fn bench(c: &mut Criterion) {
         let key = Rsa::generate(bits).unwrap();
         let (n, e) = (key.n().to_vec(), key.e().to_vec());
         let k = n.len();
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| PublicKey::new(black_box(&n), black_box(&e)).unwrap())
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 Rsa::from_public_components(
                     BigNum::from_slice(black_box(&n)).unwrap(),
@@ -77,7 +77,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, k), |b| {
             b.iter(|| {
                 let c = PublicKeyComponents {
                     n: black_box(&n),
@@ -99,7 +99,7 @@ pub fn bench(c: &mut Criterion) {
         let mut input = vec![0x42; k];
         input[0] = 0;
         let mut out = vec![0; k];
-        g.bench_function(BenchmarkId::new(VG, k), |b| {
+        g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 PublicKey::new(black_box(&n), black_box(&e))
                     .unwrap()
@@ -107,7 +107,7 @@ pub fn bench(c: &mut Criterion) {
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 Rsa::from_public_components(
                     BigNum::from_slice(black_box(&n)).unwrap(),

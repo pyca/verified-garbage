@@ -1,7 +1,7 @@
-//! Published SEED vectors; unmodified sources and provenance live under
-//! vectors/: RFC 4269's (ECB, with their round keys and intermediate values
-//! checked in `lean/VerifiedGarbageTest/Seed.lean`) and pyca/cryptography's
-//! CBC, OFB and CFB ones, whose modes are computed here from ECB.
+//! SEED-ECB: RFC 4269's vectors, unmodified under vectors/ (with their round
+//! keys and intermediate values checked in
+//! `lean/VerifiedGarbageTest/Seed.lean`). The modes' vectors are in
+//! `seed_cbc.rs`, `seed_cfb.rs` and `seed_ofb.rs`.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -14,8 +14,7 @@
 
 use verified_garbage::seed_ecb::{Error, SeedEcb};
 
-use crate::bytes::xor;
-use verified_garbage_test_vectors::{cavp_records, unhex};
+use verified_garbage_test_vectors::unhex;
 
 fn key16(key: &[u8]) -> [u8; 16] {
     key.try_into().unwrap()
@@ -74,70 +73,6 @@ fn rfc4269() {
         count += 1;
     }
     assert_eq!(count, 4);
-}
-
-#[test]
-fn cryptography_cbc() {
-    let mut count = 0;
-    for f in cavp_records(&crate::vectors::text(
-        "vectors/cryptography-seed-cbc/rfc-4196.txt",
-    )) {
-        let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));
-        let plaintext = unhex(f["PLAINTEXT"]);
-        let ciphertext = unhex(f["CIPHERTEXT"]);
-        let mut chain = unhex(f["IV"]);
-        let mut decrypted = ciphertext.clone();
-        ctx.decrypt(&mut decrypted).unwrap();
-        for ((p, c), d) in plaintext
-            .chunks(16)
-            .zip(ciphertext.chunks(16))
-            .zip(decrypted.chunks(16))
-        {
-            assert_eq!(encrypt_block(&ctx, &xor(p, &chain)), c);
-            assert_eq!(xor(d, &chain), p);
-            chain = c.to_vec();
-        }
-        count += 1;
-    }
-    assert!(count >= 2);
-}
-
-#[test]
-fn cryptography_ofb() {
-    let mut count = 0;
-    for f in cavp_records(&crate::vectors::text(
-        "vectors/cryptography-seed-ofb/seed-ofb.txt",
-    )) {
-        let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));
-        let mut stream = unhex(f["IV"]);
-        let plaintext = unhex(f["PLAINTEXT"]);
-        let ciphertext = unhex(f["CIPHERTEXT"]);
-        for (p, c) in plaintext.chunks(16).zip(ciphertext.chunks(16)) {
-            stream = encrypt_block(&ctx, &stream);
-            assert_eq!(xor(p, &stream), c);
-        }
-        count += 1;
-    }
-    assert!(count >= 2);
-}
-
-#[test]
-fn cryptography_cfb() {
-    let mut count = 0;
-    for f in cavp_records(&crate::vectors::text(
-        "vectors/cryptography-seed-cfb/seed-cfb.txt",
-    )) {
-        let ctx = SeedEcb::new(&key16(&unhex(f["KEY"])));
-        let mut chain = unhex(f["IV"]);
-        let plaintext = unhex(f["PLAINTEXT"]);
-        let ciphertext = unhex(f["CIPHERTEXT"]);
-        for (p, c) in plaintext.chunks(16).zip(ciphertext.chunks(16)) {
-            assert_eq!(xor(p, &encrypt_block(&ctx, &chain)), c);
-            chain = c.to_vec();
-        }
-        count += 1;
-    }
-    assert!(count >= 2);
 }
 
 /// Many blocks at once, at lengths around multiples of sixteen blocks, agree
