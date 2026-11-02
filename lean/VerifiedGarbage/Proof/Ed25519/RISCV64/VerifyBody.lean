@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
 import VerifiedGarbage.Proof.Ed25519.RISCV64.PointScalar
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
-import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarBit
+import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarCompare
 import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarReduce
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.X25519.RISCV64.Instr
