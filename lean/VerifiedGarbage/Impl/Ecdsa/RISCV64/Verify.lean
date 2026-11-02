@@ -207,12 +207,4 @@ def verify (checkName : String) (checkCode : Prog isa) : Prog isa :=
 
 end Cfg
 
-/-- `vg_ecdsa_p256_verify`. -/
-def verifyP256 : Prog isa :=
-  Cfg.verify p256 p256Order "vg_p256_check_point" Ecdh.RISCV64.checkP256
-
-/-- `vg_ecdsa_p384_verify`. -/
-def verifyP384 : Prog isa :=
-  Cfg.verify p384 p384Order "vg_p384_check_point" Ecdh.RISCV64.checkP384
-
 end VG.Impl.Ecdsa.RISCV64.Verify

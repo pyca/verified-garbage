@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Verify
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 public import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.CheckLit
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Order.Lit
 import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.Verify
+meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.CheckLit
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Order.Lit

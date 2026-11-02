@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Sign
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdsa.P256
-public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Verify
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignLit

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Verify
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 public import VerifiedGarbage.Impl.Ecdh.P192.RISCV64
 
 /-!
@@ -55,7 +55,7 @@ def verifyP192 : Prog isa :=
   .seq (Cfg.wsCall "vg_p192_check_point" checkP192) <|
   .seq (.block ((Sign.Cfg.nConsts p192).flatMap (fun (i, x) => setConst 4 (p192.sl i) x))) <|
   .seq (Verify.Cfg.uv p192 p192Order) <|
-  .seq (Verify.Cfg.joint p192) <|
+  .seq (VerifyJ.Cfg.joint p192 Impl.Weierstrass.dblJ) <|
   .seq (chainPow (Cfg.chainP p192) (p192.sl ONEP) p192.FP) <|
   .seq (Cfg.affineCoord p192 XM XO RX) <|
   .seq (Verify.Cfg.compare p192 p192Order) (.block (Verify.Cfg.finish p192))
