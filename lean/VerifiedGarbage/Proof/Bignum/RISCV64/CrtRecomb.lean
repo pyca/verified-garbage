@@ -845,7 +845,7 @@ theorem ex1_ok {s : State} {BQ BX : Addr} {ZX wQ wX L : Nat} (hx : Scr s BX ZX)
     (h7 : s.gpr .a7 = off BQ (slot wQ 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (wQ + 2)))
     (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
     (hL : word s.mem BX oQLen = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hZX : 64 ≤ ZX) :
-    WP isa (.block (base .t4 4 ++ [.load .d .t5 .s6 oQLen, .add .t4 .t4 .t5, .addi .t4 .t4 (-1)] ++ xb .t3 1)) s
+    WP isa (.block (base .t4 4 ++ ([.load .d .t5 .s6 oQLen, .add .t4 .t4 .t5, .addi .t4 .t4 (-1)] : List Instr) ++ xb .t3 1)) s
       fun t => (t.gpr .t4 = off BQ (slot wQ 4 + (L - 1)) ∧ t.gpr .t5 = BitVec.ofNat 64 L ∧
         t.gpr .t3 = off BX (slot wX 1)) ∧ Keep [.t4, .t5, .t3] s t := by
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
@@ -869,7 +869,7 @@ theorem wd1_ok {s : State} {S Bp : Addr} {ZX wX l oB oLen xj : Nat} (hx : Scr s 
     (hB : oB + 8 ≤ ZX) (hB8 : oB % 8 = 0) (hB' : oB < 2048) (hL : oLen + 8 ≤ ZX) (hL8 : oLen % 8 = 0)
     (hL' : oLen < 2048) (hbase : Mont.word s.mem S oB = Bp) (hlen : Mont.word s.mem S oLen = BitVec.ofNat 64 l)
     (hl1 : 1 ≤ l) (hl' : l ≤ 1024) (hwX' : wX < 2 ^ 31) :
-    WP isa (.block (setupP oB oLen ++ base .s9 4 ++ [.addi .s8 .t0 0] ++ xb .t3 xj ++ Crt.wX)) s fun t =>
+    WP isa (.block (setupP oB oLen ++ base .s9 4 ++ ([.addi .s8 .t0 0] : List Instr) ++ xb .t3 xj ++ Crt.wX)) s fun t =>
       (t.gpr .a7 = off Bp (slot (wordsOf l) 0) ∧ t.gpr .ra = off Bp (slot (wordsOf l) 0) ∧
         t.gpr .s5 = BitVec.ofNat 64 (8 * (wordsOf l + 2)) ∧ t.gpr .s9 = off Bp (slot (wordsOf l) 4) ∧
         t.gpr .s8 = BitVec.ofNat 64 (wordsOf l) ∧ t.gpr .t3 = off S (slot wX xj) ∧ t.gpr .t0 = BitVec.ofNat 64 wX) ∧

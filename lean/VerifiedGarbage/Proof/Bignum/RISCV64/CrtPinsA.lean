@@ -31,7 +31,7 @@ open VG.Proof.Bignum (slot)
 theorem wp_nil {s : State} {Q : State → Prop} (h : Q s) : WP isa (.block []) s Q := ⟨[], s, .block rfl, h⟩
 
 theorem wp_seqL_nil {l : List (Prog isa)} {s : State} {Q : State → Prop}
-    (h : WP isa (Code.seqL (l ++ [.block []])) s Q) : WP isa (Code.seqL l) s Q := by
+    (h : WP isa (Code.seqL (l ++ ([.block []] : List (Prog isa)))) s Q) : WP isa (Code.seqL l) s Q := by
   obtain ⟨t, s', e, hq⟩ := h
   obtain ⟨_, _, u, -, e₁, e₂⟩ := exec_seqL_append.mp e
   cases e₂ with
