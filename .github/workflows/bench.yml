@@ -116,8 +116,9 @@ jobs:
       options: ${{ matrix.options || '' }}
     env:
       # Selects the toolchain without `rustup default`, which refuses 32-bit
-      # toolchains on a 64-bit kernel.
-      RUSTUP_TOOLCHAIN: stable
+      # toolchains on a 64-bit kernel; `host` (empty here) is the runner's
+      # default, as in ci.yml's `rust` job.
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust != 'host' && 'stable' || '' }}
       # Restricts the CPU features the library uses, to benchmark other
       # implementations (see ci/bench_arches.py); empty restricts nothing.
       VG_CPU_FEATURES: ${{ matrix.cpu-features }}
@@ -163,8 +164,11 @@ jobs:
             sysctl -n machdep.cpu.brand_string hw.optional.arm
           fi
       - name: Install Rust
+        if: ${{ matrix.rust != 'host' }}
         # ci.yml's `rust` job lints the benchmarks, once per architecture.
         run: rustup toolchain install stable --profile minimal
+      - if: ${{ matrix.rust == 'host' }}
+        run: rustc -vV
       - name: Select the Thumb target
         if: ${{ matrix.target }}
         env:

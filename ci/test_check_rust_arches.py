@@ -232,8 +232,8 @@ class Workflow(unittest.TestCase):
         self.assertIn("/crates/verified-garbage-asm-*/Cargo.toml", job("rust"))
 
     def test_only_benchmarked_arches_cache_the_benchmarks_dependencies(self):
-        self.assertIn("if: ${{ matrix.bench && matrix.rust == 'stable' && runner.os == 'Linux' "
-                      "&& github.event_name == 'push' }}", job("rust"))
+        self.assertIn("if: ${{ matrix.bench && (matrix.rust == 'stable' || matrix.rust == 'host') "
+                      "&& runner.os == 'Linux' && github.event_name == 'push' }}", job("rust"))
 
     def test_jobs_read_their_matrices(self):
         for name, output in (("rust", "rust"), ("rust-thumb", "thumb"), ("rust-cpu-features", "cpu")):

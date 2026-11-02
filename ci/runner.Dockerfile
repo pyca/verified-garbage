@@ -1,4 +1,4 @@
-# The Linux userspaces CI runs its 32-bit, PPC64LE and RISC-V jobs and its
+# The Linux userspaces CI runs its 32-bit and PPC64LE jobs and its
 # lints in, built by .github/workflows/runner-images.yml, each natively on a
 # 64-bit runner:
 # * linux/386 (i686), on an x86-64 runner: x86's tests, natively;
@@ -8,8 +8,6 @@
 #   none, and can start no 32-bit container at all), and ARMv7's
 #   benchmarks, cross-compiled and run natively;
 # * linux/ppc64le (ppc64le), on a ppc64le runner: PPC64LE's tests, natively;
-# * linux/riscv64 (riscv64), on a riscv64 runner: RISC-V's tests and
-#   benchmarks, natively;
 # * linux/amd64 (lint), on an x86-64 runner: rustfmt and Clippy for every
 #   target the other jobs build (`rust-lint`, ci/rust_lint.py), with each
 #   Linux target's C cross compiler and OpenSSL, which the benchmarks' build
@@ -63,70 +61,17 @@ RUN printf '%s\n' \
 #   target's architecture;
 # * gcc and libc6-dev, rustc's linker and the benchmarks' C build scripts
 #   (with binutils' readelf);
-# * riscv64 excludes unused profiling/OpenMP libraries, binutils tools,
-#   character set converters and Git/Perl programs. Its tests' image
-#   (BENCH=false, the riscv64 tag) also leaves out what only compiling C
-#   uses: gcc's C compiler (cc1, and the libraries only cc1 loads), the
-#   headers, the assembler, and OpenSSL's development files and pkg-config.
-#   Its tests only link, and RISE's runners pull the image for every job at
-#   a few MB/s. The benchmarks' image (BENCH=true, the riscv64-bench tag)
-#   keeps them, for the build scripts that compile C;
 # * git and ca-certificates, for actions/checkout;
 # * python3, for the coverage export and the benchmark comparison;
 # * zstd, for actions/cache (through Swatinem/rust-cache);
 # * openssl, with which the benchmarks record OpenSSL's version (and which
 #   ca-certificates depends on);
 # * libssl-dev and pkg-config, for the benchmarks, which link OpenSSL
-#   (rust-openssl), but not in riscv64's tests' image.
-ARG BENCH=true
-RUN bench="libssl-dev pkg-config" && \
-    case "$(dpkg --print-architecture)" in \
+#   (rust-openssl).
+RUN case "$(dpkg --print-architecture)" in \
         i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
         arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
         ppc64el) foreign=; packages= ;; \
-        riscv64) foreign=; packages=; \
-            if [ "$BENCH" != true ]; then \
-                bench=; \
-                printf '%s\n' \
-                    'path-exclude=/usr/libexec/gcc/*/*/cc1' \
-                    'path-exclude=/usr/lib/*/libisl.so*' \
-                    'path-exclude=/usr/lib/*/libmpfr.so*' \
-                    'path-exclude=/usr/include/*' \
-                    'path-exclude=/usr/lib/gcc/*/*/include/*' \
-                    'path-exclude=/usr/bin/*-as' \
-                    'path-exclude=/usr/bin/as' \
-                    > /etc/dpkg/dpkg.cfg.d/excludes-riscv64-tests; \
-            fi; \
-            printf '%s\n' \
-                'path-exclude=/usr/libexec/gcc/*/*/cc1plus' \
-                'path-exclude=/usr/lib/gcc/*/*/libgomp*' \
-                'path-exclude=/usr/lib/*/libgomp*' \
-                'path-exclude=/usr/lib/gcc/*/*/libitm*' \
-                'path-exclude=/usr/lib/gcc/*/*/libbacktrace*' \
-                'path-exclude=/usr/lib/gcc/*/*/libgcov*' \
-                'path-exclude=/usr/bin/*gcov*' \
-                'path-exclude=/usr/lib/*/ldscripts/*' \
-                'path-exclude=/usr/bin/*objdump' \
-                'path-exclude=/usr/bin/*objcopy' \
-                'path-exclude=/usr/bin/*gprof*' \
-                'path-exclude=/usr/bin/*-nm' \
-                'path-exclude=/usr/bin/nm' \
-                'path-exclude=/usr/lib/*/libgprofng*' \
-                'path-exclude=/usr/lib/*/gconv/*' \
-                'path-exclude=/usr/lib/git-core/git-http-push' \
-                'path-exclude=/usr/lib/git-core/git-imap-send' \
-                'path-exclude=/usr/lib/git-core/git-http-fetch' \
-                'path-exclude=/usr/lib/git-core/git-http-backend' \
-                'path-exclude=/usr/lib/git-core/git-daemon' \
-                'path-exclude=/usr/lib/git-core/git-shell' \
-                'path-exclude=/usr/bin/git-shell' \
-                'path-exclude=/usr/lib/git-core/scalar' \
-                'path-exclude=/usr/bin/scalar' \
-                'path-exclude=/usr/share/gitweb/*' \
-                'path-exclude=/usr/lib/*/perl/*' \
-                'path-exclude=/usr/share/perl/*' \
-                'path-exclude=/usr/lib/*/libperl.so*' \
-                > /etc/dpkg/dpkg.cfg.d/excludes-riscv64 ;; \
         amd64) foreign="i386 arm64 armhf ppc64el riscv64"; \
             packages="gcc-i686-linux-gnu gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu"; \
             for a in $foreign; do packages="$packages libc6-dev:$a libssl-dev:$a"; done ;; \
@@ -141,7 +86,8 @@ RUN bench="libssl-dev pkg-config" && \
         ca-certificates \
         python3 \
         openssl \
-        $bench \
+        libssl-dev \
+        pkg-config \
         zstd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists
@@ -155,8 +101,7 @@ RUN bench="libssl-dev pkg-config" && \
 # images do. Of llvm-tools, CI runs only llvm-cov and llvm-profdata, and
 # rustc links with the C compiler, but for x86-64 Linux, the lint image's
 # host, with rust-lld (through gcc-ld/ld.lld): empty the others, which were
-# half of the compressed image (RISE's riscv64 runners, which keep no images,
-# pull it for every job at a few MB/s). Keep all files recorded in rustup's
+# half of the compressed image. Keep all files recorded in rustup's
 # component manifests, though: deleting even unused files prevents rustup
 # from uninstalling or updating the toolchain. Empty, too, the toolchain's
 # documentation and the shared libraries in its lib/ but rustc's own
@@ -170,7 +115,6 @@ RUN components=llvm-tools && \
         i386) host=i686-unknown-linux-gnu; targets= ;; \
         arm64) host=aarch64-unknown-linux-gnu; targets=armv7-unknown-linux-gnueabihf,thumbv7neon-unknown-linux-gnueabihf ;; \
         ppc64el) host=powerpc64le-unknown-linux-gnu; targets= ;; \
-        riscv64) host=riscv64gc-unknown-linux-gnu; targets= ;; \
         amd64) host=x86_64-unknown-linux-gnu; components=clippy,rustfmt,llvm-tools; \
             targets=i686-unknown-linux-gnu,aarch64-unknown-linux-gnu,armv7-unknown-linux-gnueabihf,thumbv7neon-unknown-linux-gnueabihf,powerpc64le-unknown-linux-gnu,riscv64gc-unknown-linux-gnu,aarch64-apple-darwin,x86_64-pc-windows-msvc ;; \
     esac && \
@@ -221,7 +165,6 @@ RUN components=llvm-tools && \
 # build script, which only reads its headers there: Clippy links nothing.
 FROM base AS image-386
 FROM base AS image-ppc64le
-FROM base AS image-riscv64
 FROM base AS image-arm64
 COPY arm32-run /usr/local/bin/arm32-run
 ENV CARGO_BUILD_TARGET=armv7-unknown-linux-gnueabihf \
