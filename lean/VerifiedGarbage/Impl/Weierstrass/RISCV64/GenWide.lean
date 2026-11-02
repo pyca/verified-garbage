@@ -148,27 +148,26 @@ def csub : List Instr :=
 
 /-! ## The sum and the difference -/
 
-/-- `[a3 + T + 8j] := [a] + [b] + a5`, the carry in and out in `a5` (P-256's
-`adc`). -/
-def adcStep (j : Nat) : List Instr :=
-  [.load .d .a6 .t4 (8 * j), .load .d .a7 .t5 (8 * j), .add .t0 .a6 .a7, .sltu .t3 .t0 .a7,
-    .add .t0 .t0 .a5, .sltu .a5 .t0 .a5, .add .a5 .a5 .t3, .store .d .t0 .a3 (T k + 8 * j)]
+/-- `t0 + 2⁶⁴ a5 := a6 + a7 + a5`, through `t3` (P-256's `adc`). -/
+def adcCore : List Instr :=
+  [.add .t0 .a6 .a7, .sltu .t3 .t0 .a7, .add .t0 .t0 .a5, .sltu .a5 .t0 .a5, .add .a5 .a5 .t3]
+
+/-- Word `j` of `[db + d] := [xb + xo] + mk([yb + yo]) + a5`, the carry in and out
+in `a5`, where `mk` transforms the word in `a7` (`[]`, or a mask). -/
+def adcStep (mk : List Instr) (xb : Reg) (xo : Nat) (yb : Reg) (yo : Nat) (db : Reg) (d j : Nat) :
+    List Instr :=
+  [.load .d .a6 xb (xo + 8 * j), .load .d .a7 yb (yo + 8 * j)] ++ mk ++ adcCore ++ [.store .d .t0 db (d + 8 * j)]
 
 /-- `T = [a] + [b]`, `k + 1` words. -/
 def addSum : List Instr :=
-  [.li .a5 0] ++ (List.range k).flatMap (adcStep k) ++ [.store .d .a5 .a3 (T k + 8 * k)]
-
-/-- Word `j` of `[o] = T + (m and the mask a2)`, the carry in and out in `a5`. -/
-def addMStep (j : Nat) : List Instr :=
-  [.load .d .a7 .a3 (T k + 8 * j), .load .d .a6 .a3 (N k + 8 * j), .logic .and .a6 .a6 .a2,
-    .add .t0 .a7 .a6, .sltu .t3 .t0 .a6, .add .t0 .t0 .a5, .sltu .a5 .t0 .a5, .add .a5 .a5 .t3,
-    .store .d .t0 .t2 (8 * j)]
+  [.li .a5 0] ++ (List.range k).flatMap (adcStep [] .t4 0 .t5 0 .a3 (T k)) ++ [.store .d .a5 .a3 (T k + 8 * k)]
 
 /-- `T = [a] - [b]` with borrows, the mask of the borrow into `a2`, then `m` added
 back under it, into `[o]`. -/
 def subDiff : List Instr :=
   [.li .a5 0] ++ (List.range k).flatMap (sbbStep .t4 0 .t5 0 (T k)) ++
-    [.li .a2 0, .sub .a2 .a2 .a5, .li .a5 0] ++ (List.range k).flatMap (addMStep k)
+    [.li .a2 0, .sub .a2 .a2 .a5, .li .a5 0] ++
+      (List.range k).flatMap (adcStep [.logic .and .a7 .a7 .a2] .a3 (T k) .a3 (N k) .t2 0)
 
 /-! ## The operations -/
 
