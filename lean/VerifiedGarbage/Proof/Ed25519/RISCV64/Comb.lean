@@ -14,7 +14,6 @@ public import VerifiedGarbage.Proof.Ed25519.CombDigits64
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.CombDigits
-import VerifiedGarbage.Proof.Ed25519.WindowNibble
 import VerifiedGarbage.Proof.Ed25519.RISCV64.PointAccumulate
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
