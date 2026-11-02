@@ -16,12 +16,12 @@ import all Init.Data.Nat.Bitwise.Basic
 
 public import VerifiedGarbage.TCB.RISCV64.Target
 /-!
-# ML-DSA key generation on RISCV64: masking a sampled polynomial
+# ML-DSA key generation on RISC-V: masking a sampled polynomial
 
 As on PPC64LE (`Proof/MlDsa/PPC64LE/KeyGen/Mask.lean`): after each sampler,
 its result (0 or 1, the low word of `a0`, which `and24` zero-extends) is
 ANDed into `s4`, and each coefficient of the polynomial it wrote with
-`-r3`: the polynomial is kept if the sampler succeeded, and zeroed if it
+`-a0`: the polynomial is kept if the sampler succeeded, and zeroed if it
 failed (`mask_ok`), without a branch (`mask_tr`).
 -/
 
