@@ -149,7 +149,6 @@ codec!(
     vg_ec_p192_decompress_public_key,
     []
 );
-#[cfg(not(target_arch = "riscv64"))]
 codec!(
     P224,
     28,
@@ -352,7 +351,6 @@ mod tests {
     }
     #[cfg(not(target_arch = "riscv64"))]
     cases!(p192, P192, 24);
-    #[cfg(not(target_arch = "riscv64"))]
     cases!(p224, P224, 28);
     cases!(p256, P256, 32);
     cases!(p384, P384, 48);
