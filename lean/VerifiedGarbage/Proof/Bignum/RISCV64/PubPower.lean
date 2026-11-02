@@ -416,4 +416,166 @@ theorem lastBit_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ctx s B Z w N) (hA 
       fun t ⟨⟨_, lt3, e3, _, o3⟩, k3⟩ => ⟨⟨_, e1, by rw [e3, m2, S1]; simp only [hb, ↓reduceIte]⟩, lt3,
         by rw [m2] at o3; exact o1.trans o3, (k12.trans k3).mono (by decide)⟩
 
+/-! ## The power -/
+
+theorem shl31_toNat (E : Nat) : (BitVec.ofNat 64 E <<< 31).toNat = E % 2 ^ 33 * 2 ^ 31 := by
+  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
+  omega_arith
+
+/-- `power`: `x^(E mod 2^33) mod n` into array 4, for the input `x` in array 4,
+`E 2^31` in `s7` and something below `n` in array 1: if it is `R² mod n`
+and `E mod 2^33` is not 0. -/
+theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (hZ : slot w 8 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
+    (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (hinv : ((word s.mem B (slot w 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0)
+    (hN : 2 ≤ wordsVal s.mem B (slot w 0) w) (hodd : wordsVal s.mem B (slot w 0) w % 2 = 1)
+    (hRRlt : wordsVal s.mem B (slot w 1) w < wordsVal s.mem B (slot w 0) w)
+    (hs7 : s.gpr .s7 = BitVec.ofNat 64 E <<< 31) :
+    WP isa power s fun t =>
+      ((0 < E % 2 ^ 33 →
+          wordsVal s.mem B (slot w 1) w = 2 ^ (64 * w) * 2 ^ (64 * w) % wordsVal s.mem B (slot w 0) w →
+          wordsVal t.mem B (slot w 4) w =
+            wordsVal s.mem B (slot w 4) w ^ (E % 2 ^ 33) % wordsVal s.mem B (slot w 0) w) ∧
+        Arrays B w powJs s.mem t.mem) ∧ Keep powRegs s t := by
+  have hnw := hs.nowrap
+  have h0 : Ctx s B Z w (wordsVal s.mem B (slot w 0) w) := ⟨hs, hw2, hw', hZ, h7, h5, ht0, hinv, rfl⟩
+  generalize hNd : wordsVal s.mem B (slot w 0) w = N at hN hodd hRRlt h0 ⊢
+  generalize hR : 2 ^ (64 * w) = R
+  have hcop : Nat.Coprime R N := by rw [← hR]; exact VG.Proof.Bignum.coprime_pow2 hodd _
+  have hN0 : 0 < N := by omega_arith
+  generalize hXd : wordsVal s.mem B (slot w 4) w = X
+  generalize hRRd : wordsVal s.mem B (slot w 1) w = RRv at hRRlt ⊢
+  generalize hv : E % 2 ^ 33 = v
+  have h7' : (s.gpr .s7).toNat = v * 2 ^ 31 := by rw [hs7, shl31_toNat, hv]
+  unfold power
+  -- 1 in array 7.
+  refine WP.seq (WP.mono (oneP_ok hs (by omega_arith) hw' hZ h7 h5 ht0) fun s₁ ⟨⟨h17, out1⟩, k1⟩ => ?_)
+  have o1 : Arrays B w [7] s.mem s₁.mem :=
+    Arrays.of_outside (j := 7) (by simp) out1 (Nat.le_refl _) (by omega_arith)
+  have c1 := h0.of k1 (by decide) (arrays_pow o1 (by decide))
+  have R1 : V s₁.mem B w 1 = RRv := (h0.vj (by decide) (by decide) o1).trans hRRd
+  have X1 : V s₁.mem B w 4 = X := (h0.vj (by decide) (by decide) o1).trans hXd
+  -- `x R mod n` into array 6.
+  refine WP.seq (WP.mono (c1.mont (o := 6) (a := 4) (b := 1) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [R1]; exact hRRlt))
+    fun s₂ ⟨⟨c2, lt2, e2, v2, o2⟩, k2⟩ => ?_)
+  rw [X1, R1, hR] at e2
+  have XM : RRv = R * R % N → V s₂.mem B w 6 % N = X * R % N := fun hE => by
+    refine VG.Proof.Bignum.mont_cancel hcop ?_
+    rw [e2, hE, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
+  have X2 : V s₂.mem B w 4 = X := (v2 4 (by decide) (by decide) (by decide) (by decide)).trans X1
+  have S2 : V s₂.mem B w 7 = 1 := (v2 7 (by decide) (by decide) (by decide) (by decide)).trans h17
+  have O2 : Arrays B w powJs s.mem s₂.mem := (arrays_pow o1 (by decide)).trans o2
+  have k12 := k1.trans k2
+  generalize hXMd : V s₂.mem B w 6 = XMv at lt2 XM
+  -- The leading zeros.
+  refine WP.seq (WP.mono (skip_ok (s := s₂) (v := v)
+    (by rw [k2.gpr (by decide), k1.gpr (by decide)]; exact h7'))
+    fun s₃ ⟨⟨i, hi, h8, hfound, m3⟩, k3⟩ => ?_)
+  have c3 := c2.of k3 (by decide) (by rw [m3]; exact fun _ _ => rfl)
+  -- `a := x R mod n`.
+  refine WP.seq (WP.mono (initA_ok c3) fun s₄ ⟨⟨c4, a4, v4, o4⟩, k4⟩ => ?_)
+  rw [m3] at a4 v4 o4
+  have k14 := (k12.trans k3).trans k4
+  -- What holds after `q` shifts of `s7`.
+  let Inv : Nat → State → Prop := fun q t =>
+    Ctx t B Z w N ∧ Arrays B w powJs s.mem t.mem ∧ V t.mem B w 6 = XMv ∧ V t.mem B w 7 = 1 ∧
+      V t.mem B w 4 = X ∧ V t.mem B w 5 < N ∧ Keep powRegs s t ∧
+      (0 < v → RRv = R * R % N →
+        ∃ c, c * 2 ^ 64 + (t.gpr .s7).toNat = v * 2 ^ 31 * 2 ^ q ∧ V t.mem B w 5 % N = X ^ c * R % N)
+  have I4 : Inv (i + 1) s₄ := ⟨c4, O2.trans o4, by rw [v4 6 (by decide) (by decide)]; exact hXMd,
+    by rw [v4 7 (by decide) (by decide), S2], by rw [v4 4 (by decide) (by decide), X2],
+    by rw [a4, hXMd]; exact lt2, k14.mono (by decide), fun hv0 hE => ⟨1, by
+      rw [k4.gpr (by decide), Nat.one_mul]; exact hfound hv0, by rw [a4, hXMd, Nat.pow_one]; exact XM hE⟩⟩
+  have h8' : s₄.gpr .s8 = BitVec.ofNat 64 (32 - i) := (k4.gpr (by decide)).trans h8
+  -- The rest of the bits.
+  have last : ∀ t, Inv 32 t → WP isa lastBit t fun u =>
+      ((0 < v → RRv = R * R % N → V u.mem B w 4 = X ^ v % N) ∧ Arrays B w powJs s.mem u.mem) ∧
+        Keep powRegs s u := by
+    intro t ⟨ct, ot, _, t7, t4, tA, kt, hc⟩
+    refine WP.mono (lastBit_ok ct tA t7) fun u ⟨⟨S, eS, eY⟩, uY, ou, ku⟩ =>
+      ⟨⟨fun hv0 hE => ?_, ot.trans ou⟩, (kt.trans ku).mono (by decide)⟩
+    obtain ⟨c, hc, hcA⟩ := hc hv0 hE
+    rw [t4, hR] at eY
+    rw [hR] at eS
+    have hY := last_step hcop hcA eS (decide (2 ^ 63 ≤ (t.gpr .s7).toNat)) (by
+      rw [eY]; simp only [decide_eq_true_eq])
+    have hlt := (t.gpr .s7).isLt
+    have hb : 2 * c + (if decide (2 ^ 63 ≤ (t.gpr .s7).toNat) then 1 else 0) = v := by
+      simp only [decide_eq_true_eq]
+      rw [show v * 2 ^ 31 * 2 ^ 32 = v * 2 ^ 63 by rw [Nat.mul_assoc]] at hc
+      split <;> omega_arith
+    rw [hb] at hY
+    rw [← hY, Nat.mod_eq_of_lt uY]
+  unfold bits
+  refine WP.ite (decide (32 - i ≠ 0)) (by rw [Steps.eval_nonzero, h8', ne_zero_iff, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega_arith)]) (fun hp => ?_) (fun hp => ?_)
+  · simp only [ne_eq, decide_eq_true_eq] at hp
+    refine WP.seq (WP.mono (dec_ok s₄ .s8) fun s₅ e5 => ?_)
+    subst e5
+    have h8'' : (s₄.write .s8 (s₄.gpr .s8 - BitVec.ofNat 64 1)).gpr .s8 = BitVec.ofNat 64 (31 - i) := by
+      gsimp
+      rw [h8']
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+      omega_arith
+    have I5 : Inv (i + 1) (s₄.write .s8 (s₄.gpr .s8 - BitVec.ofNat 64 1)) := by
+      obtain ⟨ct, ot, t6, t7, t4, tA, kt, hc⟩ := I4
+      exact ⟨ct.of (Keep.write _ _ _) (by decide) (by rw [mem_write]; exact fun _ _ => rfl),
+        by rw [mem_write]; exact ot,
+        by rw [mem_write]; exact t6, by rw [mem_write]; exact t7, by rw [mem_write]; exact t4,
+        by rw [mem_write]; exact tA, (kt.trans (Keep.write _ _ _)).mono (by decide),
+        by gsimp; exact hc⟩
+    refine WP.seq (WP.mono (?_ : WP isa _ _ (Inv 32)) fun t ht => last t ht)
+    refine WP.ite (decide (31 - i ≠ 0)) (by rw [Steps.eval_nonzero, h8'', ne_zero_iff, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by omega_arith)]) (fun hq => ?_) (fun hq => ?_)
+    · simp only [ne_eq, decide_eq_true_eq] at hq
+      refine WP.mono (wp_countdown (cnt := .s8) (N := 31 - i) (by omega_arith) (by omega_arith)
+        (fun j t => Inv (i + 1 + j) t)
+        (fun j _ t ⟨ct, ot, t6, t7, t4, tA, kt, hc⟩ _ => ?_) I5 h8'') fun t ht => by
+          rwa [show i + 1 + (31 - i) = 32 by omega_arith] at ht
+      refine WP.seq (WP.mono (bitStep_ok ct tA (by rw [t6]; exact lt2))
+        fun t₁ ⟨⟨c1', lt1', ⟨S, eS, eA⟩, v1', o1', a7⟩, k1'⟩ => ?_)
+      refine WP.mono (dec_ok t₁ .s8) fun t₂ e => ?_
+      subst e
+      refine ⟨⟨c1'.of (Keep.write _ _ _) (by decide) (by rw [mem_write]; exact fun _ _ => rfl),
+        by rw [mem_write]; exact ot.trans o1',
+        by rw [mem_write, v1' 6 (by decide) (by decide) (by decide) (by decide), t6],
+        by rw [mem_write, v1' 7 (by decide) (by decide) (by decide) (by decide), t7],
+        by rw [mem_write, v1' 4 (by decide) (by decide) (by decide) (by decide), t4],
+        by rw [mem_write]; exact lt1', ((kt.trans k1').trans (Keep.write _ _ _)).mono (by decide),
+        fun hv0 hE => ?_⟩,
+        by gsimp; rw [k1'.gpr (by decide)]⟩
+      obtain ⟨c, hc, hcA⟩ := hc hv0 hE
+      rw [hR] at eS eA
+      rw [t6] at eA
+      have hsh := r24_shift (t.gpr .s7)
+      rw [← a7] at hsh
+      obtain ⟨hc', hA'⟩ := bit_step (b := decide (2 ^ 63 ≤ (t.gpr .s7).toNat)) hcop hcA (XM hE)
+        eS (by simp only [decide_eq_true_eq]; exact eA) hc (by simp only [decide_eq_true_eq]; exact hsh)
+      refine ⟨_, ?_, by rw [mem_write]; exact hA'⟩
+      gsimp
+      rw [show i + 1 + (j + 1) = i + 1 + j + 1 by omega_arith]
+      exact hc'
+    · simp only [ne_eq, decide_eq_false_iff_not, Decidable.not_not] at hq
+      refine WP.block_nil ?_
+      rw [show (32 : Nat) = i + 1 by omega_arith]
+      exact I5
+  · simp only [ne_eq, decide_eq_false_iff_not, Decidable.not_not] at hp
+    -- `e = 1`: out of Montgomery form.
+    obtain ⟨ct, ot, _, t7, _, tA, kt, _⟩ := I4
+    refine WP.mono (ct.mont (o := 4) (a := 7) (b := 5) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) tA) fun u ⟨⟨_, uY, eY, _, ou⟩, ku⟩ =>
+      ⟨⟨fun hv0 hE => ?_, ot.trans ou⟩, (kt.trans ku).mono (by decide)⟩
+    have hf := hfound hv0
+    have hlt := (s₃.gpr .s7).isLt
+    have hv1 : v = 1 := by
+      rw [show i = 32 by omega_arith, show v * 2 ^ 31 * 2 ^ (32 + 1) = v * 2 ^ 64 by rw [Nat.mul_assoc]] at hf
+      omega_arith
+    subst hv1
+    rw [t7, Nat.one_mul, hR, a4, hXMd] at eY
+    refine (Nat.mod_eq_of_lt uY).symm.trans ?_
+    exact VG.Proof.Bignum.mont_cancel hcop (by rw [eY, XM hE, Nat.pow_one])
+
 end VG.Proof.Bignum.RISCV64.Pub
