@@ -1,0 +1,238 @@
+module
+
+public import VerifiedGarbage.Impl.Hmac.Stream.RISCV64
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.RISCV64.Frame
+
+/-!
+# RSAES-OAEP encryption (RFC 8017 §7.1.1) with a precomputed public key on RISC-V
+
+`vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed(out = a0, out_len = a1,
+n = a2, n_len = a3, e = a4, e_len = a5, label = a6, label_len = a7, msg,
+msg_len, seed, scratch, scratch_len, pre, pre_len)`, the last seven on the
+stack, for a hash function `H` (the label's) and MGF1's hash function `G`,
+each an `Impl.Hmac.Stream.RISCV64.Hash` (its streaming functions), which it
+calls, with `vg_rsa_public_precomputed_checked`. The steps are those of
+PPC64LE (`Impl/RsaOaep/PPC64LE.lean`).
+
+If `k < 2 hLen + 2` or `msg_len > k - 2 hLen - 2` (`k = n_len`, public), it
+writes zeros to `out` and returns 0. Otherwise it writes
+`EM = 0x00 ‖ seed ‖ DB` to `scratch` (`DB = lHash ‖ 0… ‖ 0x01 ‖ M`, the
+label hashed with `H`), masks `DB` with MGF1 of the seed and then the seed
+with MGF1 of `maskedDB` (`G`), and returns `vg_rsa_public_precomputed_checked`
+of `EM` into `out`, with `pre` and the rest of `scratch`.
+
+The function allocates a frame of `frameBytes` bytes: the call's stack
+arguments (at `sp`, `sp + 8`), then our caller's `s0`–`s11` and our return
+address (`saved`). Our own stack arguments are at `sp + frameBytes + 8 j`,
+from `t6` (`argBase`). The values the code keeps across the calls are in
+`s0`–`s11`, which every function it calls saves and restores: `s0` =
+`scratch`, `s1` = `k`, `s2` = `out`, `s3` = `e`, `s4` = `e_len`; and MGF1's
+`s6` = `src`, `s7` = `srcLen`, `s8` = `dst`, `s9` = `dstLen`, `s10` = the
+counter and `s11` = `done`, the bytes of the mask so far, with the label in
+`s6` and `s7` before MGF1. `pre`, `pre_len` and `scratch_len` are read from
+our stack arguments for the public operation. Before the first call, `t2`,
+`t3` and `t4` hold `msg`, `msg_len` and `seed`.
+
+The first `oRsa` = 8192 bytes of `scratch` are ours: `EM` (up to 1024
+bytes), then the streaming state, the digest and MGF1's counter. The public
+operation gets the rest, `scratch_len - 1024` words.
+
+A comparison `a < b` of values below `2⁶³` is the top bit of `a - b`. Every
+branch and address depends only on the pointers and the lengths.
+-/
+
+@[expose] public section
+
+namespace VG.Impl.RsaOaep.RISCV64
+
+open VG VG.RISCV64
+open VG.Impl.Hmac.Stream.RISCV64 (Hash mov)
+open VG.Impl.Bignum.RISCV64 (countLoop)
+open VG.Impl.RsaPkcs1Sig.RISCV64 (copyLoop fillLoop)
+
+/-! ## The frame -/
+
+/-- The size of the frame. -/
+def frameBytes : Nat := 128
+
+/-- Where our caller's `s0`–`s11` and our return address are saved. -/
+def saved : List (Reg × Nat) :=
+  [(.s0, 16), (.s1, 24), (.s2, 32), (.s3, 40), (.s4, 48), (.s5, 56), (.s6, 64), (.s7, 72), (.s8, 80),
+    (.s9, 88), (.s10, 96), (.s11, 104), (.ra, 112)]
+
+/-- `t6 :=` the address of our first stack argument. -/
+def argBase : Instr := .addSp .t6 frameBytes
+
+/-! ## Our part of `scratch` -/
+
+/-- `EM`: `k` bytes. -/
+def oEm : Nat := 0
+/-- The streaming state (at most 192 bytes). -/
+def oSt : Nat := 1024
+/-- The bytes `finalize` writes (at most 64). -/
+def oDig : Nat := 1280
+/-- MGF1's counter. -/
+def oCtr : Nat := 1344
+/-- Where the public operation's working space starts. -/
+def oRsa : Nat := 8192
+
+/-! ## The saves and the restores -/
+
+/-- `t0 := sp`; our caller's `s0`–`s11` and our return address into the
+frame. -/
+def save : List Instr := .addSp .t0 0 :: saved.map fun p => .store .d p.1 .t0 p.2
+
+/-- Our caller's `s0`–`s11` and our return address back from the frame. -/
+def restore : List Instr := .addSp .t0 0 :: saved.map fun p => .load .d p.1 .t0 p.2
+
+/-- The arguments into the registers that keep them; `msg`, `msg_len` and
+`seed` into `t2`, `t3` and `t4`. -/
+def prologue : List Instr :=
+  [argBase, .load .d .s0 .t6 24, mov .s1 .a3, mov .s2 .a0, mov .s3 .a4, mov .s4 .a5, mov .s6 .a6,
+    mov .s7 .a7, .load .d .t2 .t6 0, .load .d .t3 .t6 8, .load .d .t4 .t6 16]
+
+/-! ## Loops
+
+`copyLoop` (`a5` bytes from `a4` to `a1`) and `fillLoop` (`t5` bytes `t0`
+from `a1`) are RSASSA-PKCS1-v1_5's (`Impl/RsaPkcs1Sig/RISCV64/Encode.lean`). -/
+
+/-- `k` zeros to `out`. -/
+def zeroOut : Prog isa := .seq (.block [mov .a1 .s2, mov .t5 .s1, .li .t0 0]) fillLoop
+
+/-- Zeros to `out`, and 0. -/
+def encFail : Prog isa := .seq zeroOut (.block [.li .a0 0])
+
+variable (H G : Hash)
+
+/-! ## The checks -/
+
+/-- In `a0`, 1 if `k < 2 hLen + 2`, 0 if not. -/
+def chkK : List Instr := [.li .a0 (2 * H.D + 2), .sub .a0 .s1 .a0, .shift .srl .d .a0 .a0 63]
+
+/-- In `a0`, nonzero exactly when `msg_len > k - 2 hLen - 2`, for
+`k ≥ 2 hLen + 2`: the top bit of `msg_len`, or of
+`(k - 2 hLen - 2) - msg_len`. -/
+def chkMsg : List Instr :=
+  [.li .a0 (2 * H.D + 2), .sub .a1 .s1 .a0, .sub .a1 .a1 .t3, .shift .srl .d .a1 .a1 63,
+    .shift .srl .d .a0 .t3 63, .logic .or .a0 .a0 .a1]
+
+/-! ## `EM` before masking -/
+
+/-- `EM`'s place, the first 1024 bytes of `scratch`, cleared. -/
+def clearEm : Prog isa := .seq (.block [.addi .a1 .s0 oEm, .li .t5 1024, .li .t0 0]) fillLoop
+
+/-- The seed to `EM + 1`. -/
+def copySeed : Prog isa := .seq (.block [mov .a4 .t4, .addi .a1 .s0 ((oEm + 1 : Nat) : Int), .li .a5 H.D]) copyLoop
+
+/-- `0x01` at `EM + k - mLen - 1`, and the message after it, if it is not
+empty. -/
+def putMsg : Prog isa :=
+  .seq (.block [.add .a1 .s0 .s1, .sub .a1 .a1 .t3, .addi .a1 .a1 (-1), .li .t1 1, .store .b .t1 .a1 0,
+      .addi .a1 .a1 1, mov .a4 .t2, mov .a5 .t3])
+    (.ite (.nonzero .a5) copyLoop (.block []))
+
+/-- `H(label)` to `scratch + oDig`. -/
+def hashLabel : Prog isa :=
+  .seq (.block [.addi .a0 .s0 oSt]) (.seq H.callInit
+  (.seq (.block [.addi .a0 .s0 oSt, .li .a1 0, mov .a2 .s6, mov .a3 .s7]) (.seq H.callUpd
+  (.seq (.block [.addi .a0 .s0 oSt, mov .a1 .s7, .addi .a2 .s0 oDig]) H.callFin))))
+
+/-- `lHash` (the digest at `scratch + oDig`) to `EM + 1 + hLen`. -/
+def copyLh : Prog isa :=
+  .seq (.block [.addi .a4 .s0 oDig, .addi .a1 .s0 ((oEm + 1 + H.D : Nat) : Int), .li .a5 H.D]) copyLoop
+
+/-! ## MGF1
+
+`dst ⊕= MGF1(src, dstLen)` (RFC 8017 Appendix B.2.1), for `dstLen > 0`, with
+`src`, `srcLen`, `dst` and `dstLen` in `s6`–`s9`. For each counter `c`
+(`s10`) from 0, while `done = c hLen` (`s11`) is below `dstLen`: the state
+is set by `init`, `update` absorbs `src` and `I2OSP(c, 4)` (written
+big-endian to `scratch + oCtr`), `finalize` writes the digest to
+`scratch + oDig`, and its first `min(hLen, dstLen - done)` bytes are XORed
+into `dst + done`. -/
+
+/-- `update(state, srcLen, scratch + oCtr, 4)`, with the counter written
+there big-endian first. -/
+def updCtrArgs : List Instr :=
+  [.addi .a2 .s0 oCtr, mov .t1 .s10, .store .b .t1 .a2 3, .shift .srl .d .t1 .t1 8, .store .b .t1 .a2 2,
+    .shift .srl .d .t1 .t1 8, .store .b .t1 .a2 1, .shift .srl .d .t1 .t1 8, .store .b .t1 .a2 0,
+    .addi .a0 .s0 oSt, mov .a1 .s7, .li .a3 4]
+
+/-- The digest in `a4`, `dst + done` in `a5`, and in `a6`
+`min(hLen, dstLen - done)`: `hLen + ((rem - hLen) ∧ -(rem < hLen))` for
+`rem = dstLen - done`. -/
+def xorHead : List Instr :=
+  [.addi .a4 .s0 oDig, .add .a5 .s8 .s11, .sub .t1 .s9 .s11, .li .a6 G.D, .sub .t2 .t1 .a6,
+    .shift .srl .d .t3 .t2 63, .li .t4 0, .sub .t3 .t4 .t3, .logic .and .t2 .t2 .t3, .add .a6 .a6 .t2]
+
+/-- A byte of the digest XORed into `dst`. -/
+def xorBody : List Instr :=
+  [.load .b .t1 .a4 0, .load .b .t2 .a5 0, .logic .xor .t2 .t2 .t1, .store .b .t2 .a5 0, .addi .a4 .a4 1,
+    .addi .a5 .a5 1]
+
+/-- The first `min(hLen, dstLen - done)` bytes of the digest XORed into
+`dst + done`. -/
+def xorOut : Prog isa := .seq (.block (xorHead G)) (countLoop .a6 xorBody)
+
+/-- The next counter and `done`, and in `t1` 1 while `done < dstLen`, 0
+after. -/
+def nextCtr : List Instr :=
+  [.addi .s10 .s10 1, .addi .s11 .s11 G.D, .sub .t1 .s11 .s9, .shift .srl .d .t1 .t1 63]
+
+/-- One block: the digest of `src ‖ I2OSP(c, 4)`, XORed into `dst`. -/
+def round : Prog isa :=
+  .seq (.block [.addi .a0 .s0 oSt]) (.seq G.callInit
+  (.seq (.block [.addi .a0 .s0 oSt, .li .a1 0, mov .a2 .s6, mov .a3 .s7]) (.seq G.callUpd
+  (.seq (.block updCtrArgs) (.seq G.callUpd
+  (.seq (.block [.addi .a0 .s0 oSt, .addi .a1 .s7 4, .addi .a2 .s0 oDig]) (.seq G.callFin
+  (.seq (xorOut G) (.block (nextCtr G))))))))))
+
+/-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`. -/
+def mgfXor : Prog isa := .seq (.block [.li .s10 0, .li .s11 0]) (.loop (round G) (.nonzero .t1))
+
+/-- MGF1's registers for masking `DB` (`k - hLen - 1` bytes at
+`EM + 1 + hLen`) with the seed (`hLen` bytes at `EM + 1`). -/
+def dbArgs : List Instr :=
+  [.addi .s6 .s0 ((oEm + 1 : Nat) : Int), .li .s7 H.D, .addi .s8 .s0 ((oEm + 1 + H.D : Nat) : Int),
+    .addi .s9 .s1 (-(H.D + 1 : Nat))]
+
+/-- MGF1's registers for masking the seed with `maskedDB`. -/
+def seedArgs : List Instr :=
+  [.addi .s6 .s0 ((oEm + 1 + H.D : Nat) : Int), .addi .s7 .s1 (-(H.D + 1 : Nat)),
+    .addi .s8 .s0 ((oEm + 1 : Nat) : Int), .li .s9 H.D]
+
+/-! ## The public operation -/
+
+/-- The arguments of `vg_rsa_public_precomputed_checked`: `out` (`k`
+bytes), `pre` (our stack arguments 5 and 6), `e`, `EM` as the input (`k`
+bytes), and the rest of `scratch` on the stack (`scratch_len` is our stack
+argument 4). -/
+def pubArgs : List Instr :=
+  [.addSp .t0 0, argBase, .li .t1 1024, .shift .sll .d .t1 .t1 3, .add .t1 .s0 .t1, .store .d .t1 .t0 0,
+    .load .d .t1 .t6 32, .addi .t1 .t1 (-1024), .store .d .t1 .t0 8, mov .a0 .s2, mov .a1 .s1, .load .d .a2 .t6 40,
+    .load .d .a3 .t6 48, mov .a4 .s3, mov .a5 .s4, .addi .a6 .s0 oEm, mov .a7 .s1]
+
+/-! ## The function -/
+
+/-- `EM` before masking, but for `lHash`; the code before the first call. -/
+def encEm : Prog isa := .seq clearEm (.seq (copySeed H) putMsg)
+
+/-- After the checks. -/
+def encMain : Prog isa :=
+  .seq (encEm H) (.seq (hashLabel H) (.seq (copyLh H)
+  (.seq (.block (dbArgs H)) (.seq (mgfXor G)
+  (.seq (.block (seedArgs H)) (.seq (mgfXor G)
+  (.seq (.block pubArgs) Impl.RsaPkcs1Sig.RISCV64.pubCall)))))))
+
+/-- The checks, then `encMain`. -/
+def checks : Prog isa :=
+  .seq (.block (chkK H)) (.ite (.nonzero .a0) encFail
+    (.seq (.block (chkMsg H)) (.ite (.nonzero .a0) encFail (encMain H G))))
+
+/-- The frame's body. -/
+def body : Prog isa := .seq (.block (save ++ prologue)) (.seq (checks H G) (.block restore))
+
+/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`. -/
+def encrypt : Prog isa := .frame (.alloc frameBytes) (body H G) (.free frameBytes)
+
+end VG.Impl.RsaOaep.RISCV64
