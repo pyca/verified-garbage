@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
+import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -28,6 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
+meta import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -379,5 +381,177 @@ theorem cand_ct_of {trial : Prog isa} (D : DivOk trial) (R : RoundImpl)
     ⟨(pubOf s₁, s₁.sp), ⟨⟨(pre_facts h₁).1, (pre_facts h₁).2, rfl⟩, rfl⟩,
       ⟨⟨(pre_facts h₂).1, (pre_facts h₂).2, (pub_of hp).2.symm⟩, (pub_of hp).1.symm⟩, (pub_of hp).1⟩)
     fun _ _ h => h)
+
+/-! ## The main part's pieces, by correctness -/
+
+section
+open VG.Impl.MillerRabin.RISCV64.Search (sth hWsLen hW hStride)
+open VG.Impl.Bignum.RISCV64.PublicChecked (base)
+open VG.Impl.RsaKeyGen.RISCV64.Candidate (nArr aP)
+open VG.Proof.Mont (ofs Outside writeW_outside)
+
+/-- `setup`'s header: the lengths and the stride. -/
+def setupA : List Instr :=
+  [ldf .t2 oWsLen, sth .t2 hWsLen, ldf .t2 oOutLen, .shift .srl .d .t0 .t2 3, sth .t0 hW,
+    .addi .s5 .t0 2, .shift .sll .d .s5 .s5 3, sth .s5 hStride, .addi .a7 .s6 VG.Impl.Bignum.hdrBytes]
+
+/-- `setup`'s arrays' addresses and the count of its zeroing. -/
+def setupB : List Instr :=
+  (List.range 8).flatMap (fun j => base .t2 j ++ [sth .t2 (8 + j)]) ++
+    [.addi .t3 .a7 0, .li .t5 nArr, .mul .t5 .t5 .s5, .shift .srl .d .t5 .t5 3, .li .t2 0]
+
+theorem setup_eq : setup = .seq (.block (setupA ++ setupB))
+    (VG.Impl.Bignum.RISCV64.countLoop .t5 [.store .d .t2 .t3 0, .addi .t3 .t3 8]) := rfl
+
+/-- The registers `Env` reads, from the call. -/
+def EVs (s0 t : State) : Prop :=
+  t.gpr .a7 = off (stackArg s0 1) (slot (cw s0) 0) ∧ t.gpr .s5 = BitVec.ofNat 64 (8 * (cw s0 + 2)) ∧
+    t.gpr .t0 = BitVec.ofNat 64 (cw s0) ∧ t.gpr .s6 = stackArg s0 1
+
+theorem EVs.of_env {s0 t : State} (h : Env t (stackArg s0 1) (8 * sL s0) (cw s0)) : EVs s0 t :=
+  ⟨h.a7, h.s5, h.t0, h.s6⟩
+
+theorem setupA_ok {s0 s : State} (h : Fr s0 s) (h6 : s.gpr .s6 = stackArg s0 1) :
+    WP isa (.block setupA) s (EVs s0) := by
+  have hp := h.pre
+  obtain ⟨hw, -, -⟩ := cw_facts hp
+  generalize hwd : cw s0 = w at hw
+  rw [show EVs s0 = fun t => t.gpr .a7 = off (stackArg s0 1) (slot w 0) ∧
+    t.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)) ∧ t.gpr .t0 = BitVec.ofNat 64 w ∧ t.gpr .s6 = stackArg s0 1 by
+      rw [← hwd]; rfl]
+  generalize hB : stackArg s0 1 = B at h6
+  generalize hSL : sL s0 = SL
+  have hs : Scr s B (8 * SL) := hB ▸ hSL ▸ scr_of h
+  have hnw := hs.nowrap
+  have hw4 : 4 ≤ w := by have := hp.valid.1; simp only [oL] at hw; omega_arith
+  have hw64 : w ≤ 64 := by have := oL_le hp; simp only [oL] at this hw; omega_arith
+  have hsc : 16 * (8 * w) + 32 ≤ SL := by
+    have := hp.scr; simp only [Spec.Rsa.scratchWords] at this; simp only [oL] at hw; rw [← hSL]; simp only [sL]
+    omega_arith
+  have al : ∀ o, o % 8 = 0 → (fb s0 + BitVec.ofNat 64 o).toNat % 8 = 0 := fun o h8 => fw_al hp h8
+  have inr : ∀ o, o + 8 ≤ 192 → InRegions (s.rd ++ s.wr) (fb s0 + BitVec.ofNat 64 o) 8 := fun o ho =>
+    ⟨kF s0, List.mem_append_right _ (by rw [h.wr]; exact List.mem_cons_self), kF_contains ho⟩
+  have r184 : s.mem.readW (fb s0 + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 SL := by
+    rw [show fb s0 + BitVec.ofNat 64 184 = fw s0 oWsLen from rfl, h.wl, ← hSL, sL, BitVec.ofNat_toNat,
+      BitVec.setWidth_eq]
+  have r112 : s.mem.readW (fb s0 + BitVec.ofNat 64 112) 64 = BitVec.ofNat 64 (8 * w) := by
+    rw [show fb s0 + BitVec.ofNat 64 112 = fw s0 oOutLen from rfl, h.wOutLen, ← hw, oL, BitVec.ofNat_toNat,
+      BitVec.setWidth_eq]
+  have e3 : BitVec.ofNat 64 (8 * w) >>> 3 = BitVec.ofNat 64 w := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+    omega_arith
+  have e5 : (BitVec.ofNat 64 w + BitVec.ofNat 64 2) <<< 3 = BitVec.ofNat 64 (8 * (w + 2)) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+      Nat.shiftLeft_eq]
+    omega_arith
+  have r112' : (s.mem.writeW (off B 0) (BitVec.ofNat 64 SL)).readW (fb s0 + 112#64) 64 =
+      BitVec.ofNat 64 (8 * w) := by
+    rw [← r112]
+    refine ((Frame.refl [cS s0] s.mem).writeW (r := cS s0) List.mem_cons_self _ ?_).readW (r := ⟨fw s0 112, 8⟩)
+      (Region.contains_self _ _) (fun ρ hρ => ?_) (by decide)
+    · have hc0 := Offset.contains_base (stackArg s0 1) (d := 0) (n := 8) (k := (stackArg s0 2).toNat * 8)
+        (by simp only [sL] at hSL; omega_arith) (by decide)
+      rw [← hB]; exact hc0
+    · simp only [List.mem_singleton] at hρ; subst hρ; exact hp.FS.sub_left (fw_sub s0 (by decide))
+  unfold setupA
+  brun [ldf, sth, oWsLen, oOutLen, hWsLen, hW, hStride, h.s11, r112', al 184 (by decide), al 112 (by decide),
+    inr 184 (by decide), inr 112 (by decide), r184, r112, h6, e3, e5, hs.st (d := 0) (n := 8) (by omega_arith),
+    hs.st (d := 48) (n := 8) (by omega_arith), hs.st (d := 224) (n := 8) (by omega_arith),
+    hs.al8 (d := 0) (by omega_arith) (by decide), hs.al8 (d := 48) (by omega_arith) (by decide),
+    hs.al8 (d := 224) (by omega_arith) (by decide), (show VG.Impl.Bignum.hdrBytes < 2048 by decide)]
+  simp [slot, VG.Impl.Bignum.hdrBytes]
+
+/-- `loadP`'s first block: `p`'s array, `p` and `out_len`. -/
+def loadPA : List Instr := base .t2 aP ++ [.addi .a7 .t2 0, ldf .s7 oP, ldf .s8 oOutLen]
+
+theorem loadPA_ok {s0 s : State} (hf : Fr s0 s) (h : Env s (stackArg s0 1) (8 * sL s0) (cw s0)) :
+    WP isa (.block loadPA) s fun t => (t.gpr .s7 = s0.gpr .a5 ∧ t.gpr .s8 = s0.gpr .a1) ∧
+      t.gpr .a7 = off (stackArg s0 1) (slot (cw s0) aP) ∧ t.gpr .s5 = BitVec.ofNat 64 (8 * (cw s0 + 2)) ∧
+      t.gpr .t0 = BitVec.ofNat 64 (cw s0) ∧ t.gpr .s6 = stackArg s0 1 := by
+  have hp := hf.pre
+  have al : ∀ o, o % 8 = 0 → (fb s0 + BitVec.ofNat 64 o).toNat % 8 = 0 := fun o h8 => fw_al hp h8
+  have inr : ∀ o, o + 8 ≤ 192 → InRegions (s.rd ++ s.wr) (fb s0 + BitVec.ofNat 64 o) 8 := fun o ho =>
+    ⟨kF s0, List.mem_append_right _ (by rw [hf.wr]; exact List.mem_cons_self), kF_contains ho⟩
+  have r144 : s.mem.readW (fb s0 + BitVec.ofNat 64 144) 64 = s0.gpr .a5 := hf.wP
+  have r112 : s.mem.readW (fb s0 + BitVec.ofNat 64 112) 64 = s0.gpr .a1 := hf.wOutLen
+  unfold loadPA
+  rw [WP.block_append_iff]
+  refine WP.mono (h.base (rd := .t2) (by decide) aP) fun t₁ ⟨⟨a2, m₁⟩, k₁⟩ => ?_
+  have i1 : ∀ o, o + 8 ≤ 192 → InRegions (t₁.rd ++ t₁.wr) (fb s0 + BitVec.ofNat 64 o) 8 := fun o ho => by
+    rw [k₁.2.1, k₁.2.2]; exact inr o ho
+  have g5 : t₁.gpr .s5 = BitVec.ofNat 64 (8 * (cw s0 + 2)) := (k₁.gpr (by decide)).trans h.s5
+  have g0 : t₁.gpr .t0 = BitVec.ofNat 64 (cw s0) := (k₁.gpr (by decide)).trans h.t0
+  have g6 : t₁.gpr .s6 = stackArg s0 1 := (k₁.gpr (by decide)).trans h.s6
+  brun [a2, ldf, oP, oOutLen, (k₁.gpr (by decide)).trans hf.s11, al 144 (by decide), al 112 (by decide),
+    i1 144 (by decide), i1 112 (by decide), m₁, r144, r112, BitVec.add_zero, g5, g0, g6]
+
+end
+
+/-! ## The main part in constant time -/
+
+theorem pins_by {X : State → State → Prop} {rs : List Reg}
+    (hx : ∀ a s₁ s₂ x y, KR a x → KR a y → X x s₁ → X y s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) :
+    Pins (SG X) rs :=
+  fun a s₁ s₂ ⟨x, kx, h₁⟩ ⟨y, ky, h₂⟩ => hx a s₁ s₂ x y kx ky h₁ h₂
+
+theorem EVs.agree {a : KD} {x y s₁ s₂ : State} (kx : KR a x) (ky : KR a y) (hx : EVs x s₁) (hy : EVs y s₂) :
+    ∀ r ∈ ([.a7, .s5, .t0, .s6] : List Reg), s₁.gpr r = s₂.gpr r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · rw [hx.1, hy.1, kx.arg ky (by decide), kx.cw ky]
+  · rw [hx.2.1, hy.2.1, kx.cw ky]
+  · rw [hx.2.2.1, hy.2.2.1, kx.cw ky]
+  · rw [hx.2.2.2, hy.2.2.2, kx.arg ky (by decide)]
+
+theorem pins_ev {X : State → State → Prop} (h : ∀ s0 t, X s0 t → EVs s0 t) : Pins (SG X) [.a7, .s5, .t0, .s6] :=
+  pins_by fun _ _ _ _ _ kx ky h₁ h₂ => EVs.agree kx ky (h _ _ h₁) (h _ _ h₂)
+
+theorem EVs.write {s0 t : State} (h : EVs s0 t) {r : Reg} (hr : r ∉ ([.a7, .s5, .t0, .s6] : List Reg))
+    (v : BitVec 64) : EVs s0 (t.write r v) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  obtain ⟨h7, h5, h0, h6⟩ := hr
+  exact ⟨by rw [gpr_write_of_ne _ _ (Ne.symm h7)]; exact h.1, by rw [gpr_write_of_ne _ _ (Ne.symm h5)]; exact h.2.1,
+    by rw [gpr_write_of_ne _ _ (Ne.symm h0)]; exact h.2.2.1, by rw [gpr_write_of_ne _ _ (Ne.symm h6)]; exact h.2.2.2⟩
+
+theorem setup_rel : RelCT isa (Two (SG MIn)) setup (Two (SG M1)) := by
+  rw [setup_eq]
+  exact relCT_seq_block (cutW (Y := EVs) (X' := M1) (fun _ _ h => setupA_ok h.ctx.fr h.s6)
+    (fun _ _ h => wp_seq_block (setupS h))
+    (two_taint [.s11, .s6] (pins_by fun _ _ _ _ _ kx ky h₁ h₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [h₁.ctx.fr.s11, h₂.ctx.fr.s11, kx.fb ky]
+      · rw [h₁.s6, h₂.s6, kx.arg ky (by decide)]) (by taint_decide))
+    (toPost (wk (fun _ _ _ _ h => h.1) (two_taint _ (pins_ev fun _ _ h => h) (by taint_decide)))))
+
+/-- After `loadC`'s loads of `rand` and `out_len`. -/
+def YC (s0 t : State) : Prop :=
+  (t.gpr .s7 = s0.gpr .a7 ∧ t.gpr .s8 = s0.gpr .a1) ∧ EVs s0 t ∧ t.gpr .s11 = fb s0
+
+theorem pins_YC : Pins (SG YC) [.s11, .s7, .s8, .a7, .t0, .s6, .s5] :=
+  pins_by fun _ _ _ _ _ kx ky h₁ h₂ r hr => by
+    have ev := EVs.agree kx ky h₁.2.1 h₂.2.1
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [h₁.2.2, h₂.2.2, kx.fb ky]
+    · rw [h₁.1.1, h₂.1.1, kx.reg ky (by decide)]
+    · rw [h₁.1.2, h₂.1.2, kx.reg ky (by decide)]
+    all_goals exact ev _ (by simp)
+
+theorem loadC_rel : RelCT isa (Two (SG M1)) loadC (Two (SG M2)) := by
+  unfold loadC
+  refine cutW (Y := YC) (X' := M2) (fun s0 s h => ?_) (fun _ _ h => loadCS h)
+    (two_taint _ (pins_fr fun _ _ h => h.ctx.fr) (by taint_decide))
+    (toPost (wk (fun _ _ _ _ h => h.1) (two_taint _ pins_YC (by taint_decide))))
+  have hf := h.ctx.fr
+  have ev := EVs.of_env h.env
+  refine ldf_wp hf (by decide) (by decide) (ldf_wp (hf.write (by decide) _) (by decide) (by decide) (WP.block_nil ?_))
+  refine ⟨⟨?_, ?_⟩, (ev.write (by decide) _).write (by decide) _, ?_⟩
+  · rw [gpr_write_of_ne _ _ (by decide), gpr_write_self, hf.wRand]
+  · rw [gpr_write_self, mem_write, hf.wOutLen]
+  · rw [gpr_write_of_ne _ _ (by decide), gpr_write_of_ne _ _ (by decide), hf.s11]
 
 end VG.Proof.RsaKeyGen.RISCV64.Cand
