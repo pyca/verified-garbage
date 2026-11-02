@@ -72,7 +72,7 @@ theorem scanWord_ok {s : State} {base : Addr} (hw : WsReg s base) {q t : Nat} (h
     WP isa (.block (Impl.Ecdsa.RISCV64.Comb.Cfg.scanWord Impl.Ecdsa.RISCV64.p384 q)) s fun s' =>
       s'.mem = s.mem.writeW (off base (Impl.Ecdsa.RISCV64.p384.sl DX + 8 * q))
         (s.mem.readW (entAddr (s.gpr .a0) q (t % 64)) 64) ∧
-      Keep (treeRegs ++ [.a7]) s s' := by
+      Keep (treeRegs ++ ([.a7] : List Reg)) s s' := by
   have heb : Impl.Ecdsa.RISCV64.Comb.Cfg.eb Impl.Ecdsa.RISCV64.p384 = 96 := rfl
   have hDX : Impl.Ecdsa.RISCV64.p384.sl DX = 880 := rfl
   unfold Impl.Ecdsa.RISCV64.Comb.Cfg.scanWord
@@ -83,11 +83,11 @@ theorem scanWord_ok {s : State} {base : Addr} (hw : WsReg s base) {q t : Nat} (h
   have hne := treeRegs_ne
   have hmk : ∀ {s₁ : State} {rs : List Reg}, Keep rs s s₁ → (∀ c < 6, maskReg c ∉ rs) →
       ∀ c < 6, s₁.gpr (maskReg c) = maskOf (t.testBit c) := fun k h c hc => by rw [k.gpr (h c hc)]; exact hm c hc
-  have mr : ∀ c < 6, maskReg c ∉ treeRegs ++ [.a7] := by
+  have mr : ∀ c < 6, maskReg c ∉ treeRegs ++ ([.a7] : List Reg) := by
     intro c hc
     have : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4 ∨ c = 5 := by omega
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  have mr' : ∀ {rs : List Reg}, (∀ r ∈ rs, r ∈ treeRegs ++ [.a7]) → ∀ c < 6, maskReg c ∉ rs :=
+  have mr' : ∀ {rs : List Reg}, (∀ r ∈ rs, r ∈ treeRegs ++ ([.a7] : List Reg)) → ∀ c < 6, maskReg c ∉ rs :=
     fun h c hc hm' => mr c hc (h _ hm')
   have hgrp : ∀ {s₁ : State} (g : Nat), g < 4 → s₁.gpr .a0 = s.gpr .a0 → s₁.rd = s.rd → s₁.wr = s.wr →
       (g = 0 ∨ s₁.gpr .a7 = s.gpr .a0 + BitVec.ofNat 64 (1536 * g)) →
@@ -147,7 +147,7 @@ theorem scanWord_ok {s : State} {base : Addr} (hw : WsReg s base) {q t : Nat} (h
   have e0₅ : s₅.gpr .a0 = s.gpr .a0 := by rw [u₅.other .a0 (by decide), e0₄]
   have rd₅ : s₅.rd = s.rd := by rw [u₅.rd, k₄.2.1, k₃.2.1, rd₂]
   have wr₅ : s₅.wr = s.wr := by rw [u₅.wr, k₄.2.2, k₃.2.2, wr₂]
-  have K₅ : Keep (treeRegs ++ [.a7]) s s₅ :=
+  have K₅ : Keep (treeRegs ++ ([.a7] : List Reg)) s s₅ :=
     (((k₁.trans k₂).trans k₃).trans (k₄.trans (upd_keep u₅))).mono (by simp [treeRegs])
   have hm₅ := hmk K₅ mr
   have m₅ : s₅.mem = s.mem := by rw [u₅.mem, m₄, m₃, m₂]
@@ -168,7 +168,7 @@ theorem scanWord_ok {s : State} {base : Addr} (hw : WsReg s base) {q t : Nat} (h
   have e0₇ : s₇.gpr .a0 = s.gpr .a0 := by rw [u₇.other .a0 (by decide), e0₆]
   have rd₇ : s₇.rd = s.rd := by rw [u₇.rd, k₆.2.1, rd₅]
   have wr₇ : s₇.wr = s.wr := by rw [u₇.wr, k₆.2.2, wr₅]
-  have K₇ : Keep (treeRegs ++ [.a7]) s s₇ := ((K₅.trans k₆).trans (upd_keep u₇)).mono (by simp [treeRegs])
+  have K₇ : Keep (treeRegs ++ ([.a7] : List Reg)) s s₇ := ((K₅.trans k₆).trans (upd_keep u₇)).mono (by simp [treeRegs])
   have hm₇ := hmk K₇ mr
   have m₇ : s₇.mem = s.mem := by rw [u₇.mem, m₆, m₅]
   refine WP.block_append (WP.mono (tree_ok .a7 96 t 4 (8 * q) .t2 [.t3, .t4, .t5, .t6] s₇ (by decide)
@@ -195,7 +195,7 @@ theorem scanWord_ok {s : State} {base : Addr} (hw : WsReg s base) {q t : Nat} (h
   have t0₆ : s₆.gpr .t0 = s₄.gpr .t0 := by rw [k₆.gpr (by decide), u₅.other .t0 (by decide)]
   rw [t0₉, t0₆, v₄, v₉] at v₁₀
   -- The store.
-  have K₁₀ : Keep (treeRegs ++ [.a7]) s s₁₀ :=
+  have K₁₀ : Keep (treeRegs ++ ([.a7] : List Reg)) s s₁₀ :=
     ((((K₇.trans k₈).trans k₉).trans k₁₀)).mono (by simp [treeRegs])
   have hw₁₀ : WsReg s₁₀ base := ⟨by rw [K₁₀.gpr (by decide), hw.s0], by rw [K₁₀.2.2]; exact hw.wr, hw.nowrap, hw.al⟩
   refine sd_ws hw₁₀ (by omega) (by omega) fun s₁₁ u₁₁ => WP.block_nil ⟨?_, ?_⟩
@@ -446,13 +446,13 @@ theorem scans_ok {base T : Addr} {j t : Nat} (hj : j < 55) : ∀ n ≤ 12, ∀ {
     (∀ c < 6, s.gpr (maskReg c) = maskOf (t.testBit c)) →
     WP isa (.block ((List.range n).flatMap (Cfg.scanWord p384))) s fun s' =>
       (∀ q < n, word s'.mem base (880 + 8 * q) = s.mem.readW (entAddr (s.gpr .a0) q (t % 64)) 64) ∧
-      Outside base 880 (8 * n) s.mem s'.mem ∧ Keep (treeRegs ++ [.a7]) s s'
+      Outside base 880 (8 * n) s.mem s'.mem ∧ Keep (treeRegs ++ ([.a7] : List Reg)) s s'
   | 0, _, s, _, _, _, _ => WP.block_nil ⟨fun q hq => absurd hq (by omega), Outside.refl _ _ _ _, Keep.refl _ _⟩
   | n + 1, hn, s, hw, hT, h0, hm => by
     have hnw := hw.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
     refine WP.block_append (WP.mono (scans_ok hj n (by omega) hw hT h0 hm) fun s₁ ⟨v₁, O₁, k₁⟩ => ?_)
-    have ne : ∀ r ∈ [Reg.s0, .a0, .a1, .a2, .a3, .a4, .a5, .a6], r ∉ treeRegs ++ [.a7] := by decide
+    have ne : ∀ r ∈ [Reg.s0, .a0, .a1, .a2, .a3, .a4, .a5, .a6], r ∉ treeRegs ++ ([.a7] : List Reg) := by decide
     have e0 : s₁.gpr .a0 = s.gpr .a0 := k₁.gpr (ne _ (by simp))
     have hw₁ : WsReg s₁ base := ⟨by rw [k₁.gpr (ne _ (by simp)), hw.s0], by rw [k₁.2.2]; exact hw.wr, hw.nowrap, hw.al⟩
     have hT₁ : TabOk s₁ base T := hT.of_outside k₁.2.1 (by omega) O₁
@@ -565,7 +565,7 @@ theorem select_ok {s : State} {base T : Addr} (hw : WsReg s base) {j : Nat} (hj 
   -- The scans.
   refine WP.block_append (WP.mono (WP.rdwr (scans_ok hj 12 (Nat.le_refl _) hw₄ hT₄ a₄ hm₄))
     fun s₅ ⟨⟨v₅, O₅, k₅⟩, rd₅, wr₅, sp₅⟩ => ?_)
-  have r₅ : Rest (treeRegs ++ [.a7]) s₄ s₅ := ⟨k₅.1, rd₅, wr₅, sp₅⟩
+  have r₅ : Rest (treeRegs ++ ([.a7] : List Reg)) s₄ s₅ := ⟨k₅.1, rd₅, wr₅, sp₅⟩
   have hw₅ := hw₄.of_rest r₅
   -- `Z = 1`.
   refine WP.block_append (WP.mono (copy_ok 6 hw₅ (o := 976) (a := 304) (by decide) (by decide) (by decide)
