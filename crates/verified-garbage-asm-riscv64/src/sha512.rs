@@ -762,6 +762,24 @@ pub unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, dat
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
+.insn 4, 0x07f5f293
+.insn 4, 0x07f2c393
+bltu t2, a3, 20f
+beqz a3, 22f
+.insn 4, 0x00550e33
+.insn 4, 0x00d60eb3
+24:
+.insn 4, 0x00064303
+.insn 4, 0x046e0023
+.insn 2, 0x0605
+.insn 2, 0x0e05
+bne a2, t4, 24b
+23:
+21:
+.insn 2, 0x8082
+22:
+j 23b
+20:
 .insn 2, 0x7155
 .insn 2, 0x828a
 .insn 4, 0x0812b823
@@ -776,96 +794,96 @@ pub unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, dat
 .insn 2, 0x89b2
 .insn 2, 0x8a36
 .insn 4, 0x07f5fa93
-beqz s4, 20f
-22:
+beqz s4, 25f
+27:
 .insn 2, 0x4281
-beqz s5, 23f
+beqz s5, 28f
 .insn 4, 0x08000393
 .insn 4, 0x415383b3
 .insn 4, 0x007a5313
-beqz t1, 25f
-j 26f
-25:
+beqz t1, 210f
+j 211f
+210:
 .insn 4, 0x015a0333
 .insn 4, 0x00735313
-beqz t1, 27f
-j 28f
-27:
+beqz t1, 212f
+j 213f
+212:
 .insn 2, 0x83d2
-28:
-26:
+213:
+211:
 .insn 4, 0x407a0a33
-29:
+214:
 .insn 4, 0x0009c303
 .insn 4, 0x01548e33
 .insn 4, 0x046e0023
 .insn 2, 0x0985
 .insn 2, 0x0a85
 .insn 2, 0x13fd
-bnez t2, 29b
+bnez t2, 214b
 .insn 4, 0xf80a8313
-beqz t1, 210f
-j 211f
-210:
+beqz t1, 215f
+j 216f
+215:
 .insn 4, 0x04048593
 .insn 2, 0x4a81
 .insn 2, 0x4285
-211:
-j 24f
-23:
+216:
+j 29f
+28:
 .insn 4, 0x007a5313
-beqz t1, 212f
+beqz t1, 217f
 .insn 2, 0x85ce
 .insn 4, 0x08098993
 .insn 4, 0xf80a0a13
 .insn 2, 0x4285
-j 213f
-212:
+j 218f
+217:
 .insn 4, 0x08000393
 .insn 4, 0x415383b3
 .insn 4, 0x007a5313
-beqz t1, 214f
-j 215f
-214:
+beqz t1, 219f
+j 220f
+219:
 .insn 4, 0x015a0333
 .insn 4, 0x00735313
-beqz t1, 216f
-j 217f
-216:
+beqz t1, 221f
+j 222f
+221:
 .insn 2, 0x83d2
-217:
-215:
+222:
+220:
 .insn 4, 0x407a0a33
-218:
+223:
 .insn 4, 0x0009c303
 .insn 4, 0x01548e33
 .insn 4, 0x046e0023
 .insn 2, 0x0985
 .insn 2, 0x0a85
 .insn 2, 0x13fd
-bnez t2, 218b
+bnez t2, 223b
 .insn 4, 0xf80a8313
-beqz t1, 219f
-j 220f
-219:
+beqz t1, 224f
+j 225f
+224:
 .insn 4, 0x04048593
 .insn 2, 0x4a81
 .insn 2, 0x4285
-220:
-213:
-24:
-beqz t0, 221f
+225:
+218:
+29:
+beqz t0, 226f
 .insn 2, 0x8526
 .insn 2, 0x4605
 .insn 2, 0x86ca
 call {vg_sha512_compress}
-j 222f
-221:
-222:
-bnez s4, 22b
-j 21f
-20:
-21:
+j 227f
+226:
+227:
+bnez s4, 27b
+j 26f
+25:
+26:
 .insn 4, 0x09093083
 .insn 4, 0x09893483
 .insn 4, 0x0a893983
@@ -874,7 +892,7 @@ j 21f
 .insn 4, 0x0c093b03
 .insn 4, 0x0a093903
 .insn 2, 0x6169
-.insn 2, 0x8082
+j 21b
 .option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )

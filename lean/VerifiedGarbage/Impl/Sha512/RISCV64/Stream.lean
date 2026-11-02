@@ -11,16 +11,17 @@ implementation (`Impl/Sha512/PPC64LE/Stream.lean`) and of SHA-256's on RISC-V
 (`Impl/Sha256/RISCV64/Stream.lean`):
 
 * `initWith iv (state = a0)` stores the initial hash value `iv`.
-* `update(state = a0, count = a1, data = a2, len = a3)` processes one block
-  per iteration: straight from `data` while the buffer is empty and a whole
-  block remains, otherwise by copying bytes into the buffer, compressing it
-  once it is full.
+* `update(state = a0, count = a1, data = a2, len = a3)` copies the data
+  into the buffer, with no frame, when that does not fill it (`short`);
+  otherwise (`updateLong`) it processes one block per iteration: straight
+  from `data` while the buffer is empty and a whole block remains, otherwise
+  by copying bytes into the buffer, compressing it once it is full.
 * `finalize(state = a0, count = a1, out = a2)` pads the buffered bytes (one or
   two blocks), compresses them and writes the final hash value; SHA-384's,
   SHA-512/256's and SHA-512/224's `finalize` write its first 48, 32 and 28
   bytes.
 
-`update` and `finalize` run in a frame of `frameBytes` bytes on the stack
+`update`'s long path and `finalize` run in a frame of `frameBytes` bytes on the stack
 (`alloc`), whose first 144 bytes are the scratch space of the compression
 function (`vg_sha512_compress`, which they call), and in which they save the
 return address, which each call replaces, and our caller's values of the
@@ -33,7 +34,8 @@ Every argument buffer (`state`, `data`, `out`) is accessed a byte at a time,
 since its alignment is not stated: byte `r` of the buffer is addressed as
 `64(t3)` with `t3 = state + r` computed just before the access, and `data`
 is consumed through a pointer that advances. Every comparison is a shift
-(`len ≥ 128` iff `len >> 7 ≠ 0`) or a subtraction tested against zero. Every
+(`len ≥ 128` iff `len >> 7 ≠ 0`), a subtraction tested against zero, or one
+of pointers or of `len` with `127 - r`. Every
 address and branch depends only on the pointers, `count` and `len`.
 -/
 
@@ -119,7 +121,30 @@ def updateMain : Prog isa :=
   (.seq (.ite (.zero .s4) (.block []) (.loop updateBody (.nonzero .s4)))
     (.block restore))
 
-def update : Prog isa := .frame (.alloc frameBytes) updateMain (.free frameBytes)
+/-- `update`, in its frame, when a block may complete. -/
+def updateLong : Prog isa := .frame (.alloc frameBytes) updateMain (.free frameBytes)
+
+/-! ## `update`'s short path
+
+When no block can complete (`r + len < 128`, which includes `len = 0`), the
+bytes are copied into the buffer with caller-saved registers only, with no
+frame: `t3` = the buffer at `r`, less 64, then the next byte's; `a2` the
+next byte of `data`, up to `t4` = its end. -/
+
+/-- The short path's copy loop body. -/
+def shortBody : List Instr :=
+  [.load .b .t1 .a2 0, .store .b .t1 .t3 64, .addi .a2 .a2 1, .addi .t3 .t3 1]
+
+/-- Copy the `len` bytes of `data` into the buffer, which they do not fill. -/
+def short : Prog isa :=
+  Code.iteCold (.zero .a3) (.block [])
+    (.seq (.block [.add .t3 .a0 .t0, .add .t4 .a2 .a3]) (.loop (.block shortBody) (.ne .a2 .t4)))
+
+/-- `t0 := r = count mod 128`, `t2 := 127 - r`; a block can complete iff
+`127 - r < len`, and only then does `update` take its frame. -/
+def update : Prog isa :=
+  .seq (.block [.logicImm .and .t0 .a1 127, .logicImm .xor .t2 .t0 127])
+    (Code.iteCold (.ltu .t2 .a3) updateLong short)
 
 /-! ## `finalize`
 
