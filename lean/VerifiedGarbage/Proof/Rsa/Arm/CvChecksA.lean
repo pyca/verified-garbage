@@ -29,7 +29,7 @@ abbrev cvN (s0 : State) : Nat := Spec.Rsa.os2ip (nBytes s0)
 abbrev cvM (s0 : State) : Nat := 2 * (cvP s0 / 2) + 1
 
 def checksA : List (Prog isa) := [.block ctx, eqS sE1 aDQ aQ aT1, eqS sE2 aDR aZero aT1] ++ invSetup
-def checksB : List (Prog isa) := [inverse, eqS sE3 1 aOne aT1,
+def checksB : List (Prog isa) := [.block primeWidth, inverse, .block ctx, eqS sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ divHdr aDQ aDR2 aDD aDT)]
 

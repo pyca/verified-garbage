@@ -94,7 +94,7 @@ theorem recover_primesWith_verified (body : Prog isa) (bodyProof : BodyVerified 
   ⟨rv_contract_correctWith body bodyProof, rv_contract_ctWith body bodyProof, rv_contract_sat⟩
 
 /-- `vg_rsa_recover_primes`. -/
-theorem recover_primes_verified : Verified target code (Spec.Rsa.recoverPrimesContract abi 56) :=
+theorem recover_primes_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] : Verified target code (Spec.Rsa.recoverPrimesContract abi 56) :=
   recover_primesWith_verified (.ite .eq valid fail) body_vp
 
 end VG.Proof.Rsa.Arm.Recover

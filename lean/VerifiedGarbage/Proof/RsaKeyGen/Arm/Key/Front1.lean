@@ -124,7 +124,7 @@ theorem LS.st {E : State → Prop} {σ s : State} {A : State → Nat → Nat} {L
   exact VG.Proof.Rsa.Arm.CrtValues.val32_low2 lt
 
 theorem pow_mod_top (a : Nat) : 2 ^ a * ((0x80000000 : Nat) % 2 ^ 32) = 2 ^ (a + 31) := by
-  rw [Nat.pow_add]
+  rw [Nat.pow_add]; rfl
 
 /-- The constants. -/
 theorem consts_vp {E : State → Prop} :

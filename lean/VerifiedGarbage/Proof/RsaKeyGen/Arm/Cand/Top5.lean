@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Loads
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top2
@@ -28,7 +29,7 @@ section
 variable {s : State}
 
 /-- The body's run from its start, in its two parts. -/
-theorem body_parts (v : RoundImpl) (h : CIn s) :
+theorem body_parts [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
     ∃ tr1 tr2 t w, Exec isa (.block entry) (sx s) tr1 t ∧
       Exec isa (seqs [.block lenCheck, .ite .eq finNone (main v.name v.code)]) t tr2 w ∧
       In (mkP s) t ∧ Bk (mkP s) t t ∧ Bk (mkP s) t w := by
@@ -37,7 +38,7 @@ theorem body_parts (v : RoundImpl) (h : CIn s) :
   exact ⟨tr1, tr2, t, w, e1, e2, pre, ⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, rf.2.1⟩
 
 /-- Two calls with the same public parameters. -/
-theorem cand_ct (v : RoundImpl) :
+theorem cand_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
     RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t) (code v.name v.code) (fun _ _ => True) := by
   unfold code
   apply RelCT.frame (fun _ _ h => h.2.2.1)

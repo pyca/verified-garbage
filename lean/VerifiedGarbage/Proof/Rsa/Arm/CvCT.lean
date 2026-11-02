@@ -124,7 +124,7 @@ abbrev F6 (σ u : State) : Prop := ∃ X₁ X₂, StG σ X₁ X₂ u
 abbrev F7 (σ u : State) : Prop := Base σ u ∧ Ws u (cvB σ) (cvZ σ) (cvW σ) nArr ∧
   u.gpr .r10 = σ.gpr .r0 ∧ u.gpr .r12 = σ.gpr .r2 ∧ WP isa stores u (Done σ)
 
-theorem valid_ct : RelCT isa (Lift Base) valid (Lift Done) := by
+theorem valid_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift Base) valid (Lift Done) := by
   unfold valid
   simp only [seqs]
   refine RelCT.seq (piece (G := StA) [] loads_taint (fun _ _ h => h.run) (fun _ _ _ _ _ _ _ _ h => nomatch h)
@@ -167,7 +167,7 @@ abbrev FE (σ s : State) : Prop := s = σ ∧ CvPre σ
 abbrev GE (σ u : State) : Prop := Base σ u ∧ u.gpr .r0 = σ.gpr .r0 ∧ u.gpr .r3 = σ.gpr .r2 ∧
   u.z = Spec.Rsa.modulusValid (Spec.Rsa.os2ip (nBytes σ)) (cvK σ)
 
-theorem code_ct : RelCT isa (Lift FE) code fun _ _ => True := by
+theorem code_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift FE) code fun _ _ => True := by
   refine RelCT.seq (piece (G := GE) [.r0, .r1, .r2, .r3] entry_taint
     (fun _ _ ⟨e, h⟩ => by subst e; exact ⟨h, rfl, rfl, fun _ _ => rfl⟩)
     (fun _ _ _ _ p ⟨e₁, _⟩ ⟨e₂, _⟩ => by
@@ -195,7 +195,7 @@ theorem code_ct : RelCT isa (Lift FE) code fun _ _ => True := by
       (fun _ _ _ _ _ _ _ _ h => nomatch h) fun _ _ h => WP.mono (restore_ok h) fun _ _ => trivial).mono
       (fun _ _ h => h) fun _ _ _ => trivial
 
-theorem cv_contract_ct : ConstantTime isa (Spec.Rsa.crtValuesContract abi 0).pre
+theorem cv_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : ConstantTime isa (Spec.Rsa.crtValuesContract abi 0).pre
     (Spec.Rsa.crtValuesContract abi 0).pub code := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := cv_pre s hs

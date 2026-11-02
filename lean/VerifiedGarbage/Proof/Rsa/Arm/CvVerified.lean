@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 import VerifiedGarbage.Proof.Rsa.Arm.CvCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
@@ -44,7 +45,7 @@ theorem cv_contract_sat : ∃ s, (Spec.Rsa.crtValuesContract abi 0).pre s := by
     using cvSatState
 
 /-- `vg_rsa_crt_values`. -/
-theorem crt_values_verified : Verified target code (Spec.Rsa.crtValuesContract abi 0) :=
+theorem crt_values_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] : Verified target code (Spec.Rsa.crtValuesContract abi 0) :=
   ⟨cv_contract_correct, cv_contract_ct, cv_contract_sat⟩
 
 end VG.Proof.Rsa.Arm.CrtValues

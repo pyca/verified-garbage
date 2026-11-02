@@ -32,7 +32,7 @@ section
 variable {P : RP}
 
 /-- Shared factor extraction for either recovery search. -/
-theorem finWith_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
+theorem finWith_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
     {E : State → Prop} (F : FinishInputs P) :
     VP (FinishStart P E F) fin (Fe (F := F) P E) := by
   have hn0 : 0 < P.n := by omega
@@ -41,7 +41,7 @@ theorem finWith_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
     (VP.seq (inverse_vp hn nl F) (VP.seq (divSet_vp F)
       (VP.seq (div_vp hn0 F) (VP.seq (order_vp hn0 nl F) (stores_vp hn0 F))))))
 
-theorem fin_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E : State → Prop} :
+theorem fin_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E : State → Prop} :
     VP (Cf P E (Jl P)) fin (Fe P E) := by
   have hn0 : 0 < P.n := by omega
   simp only [fin, seqs]
@@ -201,7 +201,7 @@ theorem valid_facts (hv : Spec.Rsa.modulusValid P.n P.K = true) (hk : 2 ≤ P.K)
 abbrev E1 (P : RP) (σ : State) : Prop := In P σ ∧ goOn P σ = true
 
 /-- From `m = 2^t r` to the factors. -/
-theorem rest_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) :
+theorem rest_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hv : Spec.Rsa.modulusValid P.n P.K = true) :
     VP (fun σ s => E1 P σ ∧ KS P σ (Aload P σ) [aN] (AWs P σ) [wM, wZ] (Vs P σ) [sBit] s ∧ Ws s P.B P.Z P.W 22)
       rest (Fe P (Ej P (E1 P) (Jl P))) := by
   refine VP.of_imp (p := Sizes P ∧ 1 ≤ P.nt ∧ P.nt ≤ 100 ∧ 0 < P.c ∧ P.c < 2 ^ 31 ∧ P.n < 2 ^ (32 * P.w) ∧

@@ -17,7 +17,7 @@ open VG.Impl.Rsa.Arm.RecoverFused
 section
 variable {P : RP}
 
-theorem fusedFin_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
+theorem fusedFin_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
     {E : State → Prop} :
     VP (FCF P E (Jl P)) fin (Fe (F := fusedFinish P (Jl P)) P E) := by
   refine (finWith_vp hn nl (fusedFinish P (Jl P))).mono
@@ -27,7 +27,7 @@ theorem fusedFin_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))
   simp only [List.mem_singleton] at hd; subst hd
   exact ⟨by decide, rfl⟩
 
-theorem fusedRest_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) :
+theorem fusedRest_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hv : Spec.Rsa.modulusValid P.n P.K = true) :
     VP (RestStart P) VG.Impl.Rsa.Arm.RecoverFused.rest (Res P) := by
   refine VP.of_imp (p := Sizes P ∧ 1 ≤ P.nt ∧ P.nt ≤ 100 ∧ P.B.toNat + P.Z ≤ 2 ^ 32 ∧
     P.el + P.dl ≤ 2 * P.K ∧ 0 < P.el + P.dl ∧ P.n < 2 ^ (32 * P.w) ∧ 2 ≤ P.K)
@@ -68,7 +68,7 @@ theorem fusedRest_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) :
     _ = Spec.Rsa.recoverStep P.n (tv P σ) (rv P σ) (Jl P + 2) :=
       fusedResult_eq pre go large (Jl P)
 
-theorem fused_body_vp : BodyVerified VG.Impl.Rsa.Arm.RecoverFused.body := by
+theorem fused_body_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] : BodyVerified VG.Impl.Rsa.Arm.RecoverFused.body := by
   intro P
   exact bodyWith_vp VG.Impl.Rsa.Arm.RecoverFused.valid
     (fun hv => validWith_vp hv VG.Impl.Rsa.Arm.RecoverFused.rest (fusedRest_vp hv))

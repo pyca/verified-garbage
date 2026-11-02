@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Inv
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import VerifiedGarbage.Proof.RsaKeyGen.KeyInv
 import VerifiedGarbage.Proof.Rsa.Arm.RvProd
+import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-! # An RSA key on ARMv7: the numbers the body computes
 
@@ -115,7 +116,7 @@ theorem hv_lt (P : KP) (σ : State) : (hv P σ).1 < 2 ^ (32 * P.W) ∧ (hv P σ)
   omega_arith
 
 /-- `lv = lcm(pm, qm)`. -/
-theorem lv_eq (P : KP) (σ : State) : lv P σ = Nat.lcm (pm P σ) (qm P σ) := by
+theorem lv_eq [VG.Proof.Rsa.Arm.Keys.InvLaw] (P : KP) (σ : State) : lv P σ = Nat.lcm (pm P σ) (qm P σ) := by
   have L := lcm_eq (K := 8 * P.K) (pm_lt P σ) (qm_lt P σ)
   have lt := hv_lt P σ
   unfold lv gv u2 v2
@@ -149,7 +150,7 @@ theorem sub32_le {W a b : Nat} (hb : b ≤ a) (ha : a < 2 ^ (32 * W)) : sub32 W 
   rw [show a + 2 ^ (32 * W) - b = (a - b) + 2 ^ (32 * W) by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- `d` and its flag are the inverse of the specification. -/
-theorem dv_spec (pre : In P σ) :
+theorem dv_spec [VG.Proof.Rsa.Arm.Keys.InvLaw] (pre : In P σ) :
     (okv P σ = true → Spec.Rsa.inverse P.e (lv P σ) = some (dv P σ)) ∧
       (okv P σ = false → Spec.Rsa.inverse P.e (lv P σ) = none) := by
   have he := pre.e_lt

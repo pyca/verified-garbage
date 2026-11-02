@@ -40,7 +40,7 @@ theorem outR_rej {σ : State} (h : res P σ = some (.rejected, (rB P σ).drop P.
     outR P σ = List.replicate P.L 0 := by unfold outR; rw [h]
 
 /-- After the candidate's octets: the branches. -/
-theorem main_vp (v : RoundImpl) {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.L ≤ P.rl) :
+theorem main_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.L ≤ P.rl) :
     VP (fun σ s => E σ ∧ Bk P σ s) (main v.name v.code) (RF P E (stR P) (outR P) (usedR P)) := by
   unfold main
   rw [List.append_assoc]
@@ -115,7 +115,7 @@ theorem main_vp (v : RoundImpl) {E : State → Prop} (hE : ∀ σ, E σ → In P
     simp (config := {decide := true}) only [V2, V1, V0, upd, ↓reduceIte]
 
 /-- The body after the entry. -/
-theorem candBody_vp (v : RoundImpl) :
+theorem candBody_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
     VP (fun σ s => In P σ ∧ Bk P σ s) (seqs [.block lenCheck, .ite .eq finNone (main v.name v.code)])
       (RF P (In P) (stR P) (outR P) (usedR P)) := by
   simp only [seqs]

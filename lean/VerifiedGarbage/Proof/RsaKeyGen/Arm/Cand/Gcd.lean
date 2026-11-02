@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Close
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint3
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Inv
@@ -103,7 +104,7 @@ theorem toS3 {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V 
   h.mono hA hV
 
 /-- `c − 1`, `e`, and whether `gcd(c − 1, e) = 1`: Z iff it is. -/
-theorem gcdCheck_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
+theorem gcdCheck_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
     VP (S2 P E) (seqs gcdCheck) (fun σ s => S3 P E σ s ∧ s.z = decide (V3 P σ sG = 1)) := by
   simp only [gcdCheck, seqs]
   refine VP.seq (St.psub3 subCm1_taint (by decide) (by simp) (by simp) (by decide) (by decide)) ?_

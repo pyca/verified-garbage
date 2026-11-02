@@ -70,7 +70,7 @@ abbrev S3 (P : KP) (E : State → Prop) : State → State → Prop :=
 section
 variable {P : KP}
 
-theorem gcdUV_vp {E : State → Prop} : VP (S2 P E) gcdUV
+theorem gcdUV_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] {E : State → Prop} : VP (S2 P E) gcdUV
     (St P E (fun σ => upd (AH P σ (8 * P.K)) aG (gv P σ)) (aG :: LH) (fun _ _ => 0) []) := by
   simp only [gcdUV, List.cons_append, List.nil_append]
   refine VP.seq (VP.block_append (St.pbitOf bitVe_taint (by simp) (by decide))
@@ -114,7 +114,7 @@ theorem gcdUV_vp {E : State → Prop} : VP (S2 P E) gcdUV
   · rw [ite_eq_left h2, ite_eq_left h2]
   · rw [ite_eq_right h2, ite_eq_right h2, ite_eq_right h2]
 
-theorem gv_pos (P : KP) (σ : State) : 0 < gv P σ := by
+theorem gv_pos [VG.Proof.Rsa.Arm.Keys.InvLaw] (P : KP) (σ : State) : 0 < gv P σ := by
   unfold gv
   split
   · decide
@@ -126,7 +126,7 @@ theorem gv_pos (P : KP) (σ : State) : 0 < gv P σ := by
     exact Nat.gcd_pos_of_pos_right _ (by omega)
 
 /-- `L = lcm(p − 1, q − 1)`. -/
-theorem lcm_vp {E : State → Prop} : VP (S1 P E) lcmPart (S3 P E) := by
+theorem lcm_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] {E : State → Prop} : VP (S1 P E) lcmPart (S3 P E) := by
   simp only [lcmPart, seqs]
   refine VP.seq halving_vp (VP.seq gcdUV_vp (VP.seq (St.pcopy lF_taint (by decide) (by simp) (by decide)) ?_))
   refine (St.pdivBy dvG_taint hdrL_taint (by decide) (by simp) (by simp) (by decide) fun σ _ => ?_).mono

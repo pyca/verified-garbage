@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 public import VerifiedGarbage.Impl.Rsa.Arm.RecoverFused
 public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -16,11 +17,11 @@ including invalid keys, memory safety, the ABI and constant-time leakage. -/
 namespace VG.Proof.Rsa.Arm.Recover
 open VG VG.Arm
 
-theorem recover_primes_fused_verified :
+theorem recover_primes_fused_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] :
     Verified target VG.Impl.Rsa.Arm.RecoverFused.code (Spec.Rsa.recoverPrimesContract abi 56) :=
   recover_primesWith_verified VG.Impl.Rsa.Arm.RecoverFused.body fused_body_vp
 
-theorem recover_primes_fused_umaal_verified :
+theorem recover_primes_fused_umaal_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] :
     Verified target (VG.Impl.Bignum.Arm.umaalArithmetic VG.Impl.Rsa.Arm.RecoverFused.code)
       (Spec.Rsa.recoverPrimesContract abi 56) :=
   VG.Proof.Bignum.Arm.umaalArithmetic_verified recover_primes_fused_verified

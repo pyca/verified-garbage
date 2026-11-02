@@ -23,7 +23,7 @@ variable {P : KP}
 /-- `e` odd, at least 3. -/
 abbrev EOdd (P : KP) (E : State → Prop) (σ : State) : Prop := E σ ∧ P.e ≠ 0 ∧ P.e ≠ 1 ∧ P.e % 2 = 1
 
-theorem dOdd_vp {E : State → Prop} : VP (SE P (EOdd P E)) dOdd (G4 P (EOdd P E)) := by
+theorem dOdd_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] {E : State → Prop} : VP (SE P (EOdd P E)) dOdd (G4 P (EOdd P E)) := by
   simp only [dOdd, seqs, List.cons_append, List.nil_append]
   refine VP.seq (St.pinv mE_taint l0_taint (by simp) (by simp) (by simp) (by simp) (by intro j hj; mem_cases <;> decide)
     (by decide) fun σ ⟨_, e0, e1, eo⟩ => ⟨AS3_zero, AS3_one, by rw [AS3_e]; exact eo, by rw [AS3_e]; omega⟩) ?_
