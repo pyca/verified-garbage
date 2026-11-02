@@ -57,8 +57,8 @@ abbrev jSl : List Nat :=
     secp256k1.sl RX, secp256k1.sl RY, secp256k1.sl RZ, secp256k1.sl DX, secp256k1.sl DY, secp256k1.sl DZ, secp256k1.sl TX, secp256k1.sl TY, secp256k1.sl TZ,
     secp256k1.sl GX, secp256k1.sl GY, secp256k1.sl ONEP, secp256k1.sl CPX, secp256k1.sl CPY,
     secp256k1.sl G2X, secp256k1.sl G2Y, secp256k1.sl G2Z, secp256k1.sl G3X, secp256k1.sl G3Y, secp256k1.sl G3Z,
-    secp256k1.sl Q2X, secp256k1.sl Q2Y, secp256k1.sl Q2Z, secp256k1.sl Q3X, secp256k1.sl Q3Y, secp256k1.sl Q3Z,
-    secp256k1.sl EX, secp256k1.sl EY, secp256k1.sl EZ]
+    secp256k1.sl Q2X, secp256k1.sl Q2Y, secp256k1.sl Q2Z, secp256k1.sl secp256k1.Q3X, secp256k1.sl secp256k1.Q3Y, secp256k1.sl secp256k1.Q3Z,
+    secp256k1.sl secp256k1.EX, secp256k1.sl secp256k1.EY, secp256k1.sl secp256k1.EZ]
 
 theorem jLay : Lay secp256k1.MP' (own 4) (· ∈ jSl) :=
   ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ jSl, ∀ y ∈ jSl, x ≠ y → x + 8 * 4 ≤ y ∨ y + 8 * 4 ≤ x)
@@ -293,7 +293,7 @@ structure JPre (base : Addr) (s : State) (Q : Point W) : Prop where
 abbrev gqSl : List Nat :=
   [secp256k1.sl GX, secp256k1.sl GY, secp256k1.sl ONEP, secp256k1.sl CPX, secp256k1.sl CPY,
     secp256k1.sl G2X, secp256k1.sl G2Y, secp256k1.sl G2Z, secp256k1.sl G3X, secp256k1.sl G3Y, secp256k1.sl G3Z,
-    secp256k1.sl Q2X, secp256k1.sl Q2Y, secp256k1.sl Q2Z, secp256k1.sl Q3X, secp256k1.sl Q3Y, secp256k1.sl Q3Z]
+    secp256k1.sl Q2X, secp256k1.sl Q2Y, secp256k1.sl Q2Z, secp256k1.sl secp256k1.Q3X, secp256k1.sl secp256k1.Q3Y, secp256k1.sl secp256k1.Q3Z]
 
 theorem gPt_sl : ∀ a ∈ [1, 2, 3], (Cfg.gPt secp256k1 a).x ∈ gqSl ∧ (Cfg.gPt secp256k1 a).y ∈ gqSl ∧
     (Cfg.gPt secp256k1 a).z ∈ gqSl := by decide
@@ -540,7 +540,7 @@ abbrev selRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, 
 theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : j < 128)
     (h1 : s.gpr .s1 = BitVec.ofNat 64 j) {G Q : Point W} (hT : JTab base s G Q) :
     WP isa (.block (Cfg.select secp256k1)) s fun s' =>
-      PtOk base s' (secp256k1.pt EX EY EZ) (ent G Q ((wordsVal s.mem base (secp256k1.sl UU) 4 >>> (2 * j)) % 4)
+      PtOk base s' (secp256k1.pt secp256k1.EX secp256k1.EY secp256k1.EZ) (ent G Q ((wordsVal s.mem base (secp256k1.sl UU) 4 >>> (2 * j)) % 4)
         ((wordsVal s.mem base (secp256k1.sl VV) 4 >>> (2 * j)) % 4)) ∧
       Outside base 1920 96 s.mem s'.mem ∧ Rest selRegs s s' := by
   have hn := hw.nowrap
@@ -567,7 +567,7 @@ theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
     simp [show c < 64 by omega]
   refine WP.mono (WP.rdwr (scansJ_ok secp256k1 (by decide) (by decide) (by decide) (by decide) (by decide) 12
     (Nat.le_refl _) hw₄ h0 hm)) fun s₅ ⟨⟨v₅, O₅, k₅⟩, rd₅, wr₅, sp₅⟩ => ?_
-  simp only [show secp256k1.jt = 2048 from rfl, show secp256k1.sl EX = 1920 from rfl, show secp256k1.n = 4 from rfl,
+  simp only [show secp256k1.jt = 2048 from rfl, show secp256k1.sl secp256k1.EX = 1920 from rfl, show secp256k1.n = 4 from rfl,
     Nat.reduceMul] at v₅ O₅
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, m₂, m₁]
   rw [m₄] at v₅ O₅

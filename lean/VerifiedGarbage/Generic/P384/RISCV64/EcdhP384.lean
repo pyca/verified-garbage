@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdh.P384.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.P384.RISCV64Window
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.EcdhVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P384

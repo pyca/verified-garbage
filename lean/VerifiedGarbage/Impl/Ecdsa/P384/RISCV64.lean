@@ -26,7 +26,4 @@ def p384Order : Weierstrass.RISCV64.Field :=
 /-- P-384 as the code has it. -/
 def p384 : Cfg := { n := 6, C := Spec.P384.curve, FP := p384Field, jt := 4096 }
 
-/-- `vg_p384_mul`. -/
-def mulP384 : Prog isa := p384.mulFn
-
 end VG.Impl.Ecdsa.RISCV64
