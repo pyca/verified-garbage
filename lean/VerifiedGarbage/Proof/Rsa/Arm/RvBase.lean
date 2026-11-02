@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-! # `vg_rsa_recover_primes` on ARMv7: the public parameters and the base of every stage
 
 `RP`: what two runs share (the stack pointer in the frame, the pointers,
-the lengths, `n`, `e` and the number of candidates tried). `In P σ`: the
+the lengths, `n`, `e` and the number of candidates tried, which
+`vg_rsa_recover_primes`' stages take as public, `Tries`). `In P σ`: the
 state `σ` the body starts from, after the push of the frame and the entry,
 with the regions widened by Montgomery multiplication's working space
 (`rM`). `Bs P σ s`: what every later state keeps of `σ`: the stack pointer,
@@ -129,7 +130,10 @@ structure In (P : RP) (σ : State) : Prop where
   aS : fw σ.mem P aoS = P.B
   nB : Spec.Rsa.bytesAt σ.mem (State.addr P.nP) P.K = P.nB
   eB : Spec.Rsa.bytesAt σ.mem (State.addr P.eP) P.el = P.eB
-  tries : (Spec.Rsa.primesKey P.nB P.eB (dB P σ)).2 = P.nt
+
+/-- The number of candidates `vg_rsa_recover_primes` tries for `σ`'s `d`,
+which its stages take as public. -/
+abbrev Tries (P : RP) (σ : State) : Prop := (Spec.Rsa.primesKey P.nB P.eB (dB P σ)).2 = P.nt
 
 /-- What every state of the body keeps of `σ`. -/
 structure Bs (P : RP) (σ s : State) : Prop where

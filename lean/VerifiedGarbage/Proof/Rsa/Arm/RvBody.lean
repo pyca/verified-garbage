@@ -26,7 +26,7 @@ def Res (P : RP) (σ s : State) : Prop :=
     ((Spec.Rsa.primesKey P.nB P.eB (dB P σ)).1.map fun v => [v.1, v.2])
 
 abbrev BodyVerified (body : Prog isa) : Prop :=
-  ∀ {P : RP}, VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K) body (Res P)
+  ∀ {P : RP}, VP (fun σ s => (Bs P σ s ∧ Tries P σ) ∧ s.z = Spec.Rsa.modulusValid P.n P.K) body (Res P)
 
 section
 variable {P : RP}
@@ -38,15 +38,15 @@ theorem numbers_vp {E : State → Prop} :
   exact loads_vp.seq ((prod_vp.mono (fun σ s ⟨e, h⟩ => ⟨e, h.ks⟩) fun _ _ h => h).seq skip_vp)
 
 /-- Whether candidates are tried: whether any is. -/
-theorem goOn_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (pre : In P σ) :
+theorem goOn_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (pre : In P σ) (tr : Tries P σ) :
     goOn P σ = decide (0 < P.nt) := by
   by_cases hg : goOn P σ = true
-  · obtain ⟨-, -, -, hnt⟩ := rest_facts hv pre hg
+  · obtain ⟨-, -, -, hnt⟩ := rest_facts hv pre hg tr
     rw [hg, eq_comm, decide_eq_true_eq, ← hnt]
     exact VG.Proof.Rsa.go_pos _ _ _ _ (Nat.le_refl _)
   · have h1 : dv P σ * P.e < 2 ∨ (dv P σ * P.e - 1) % 2 = 1 := by
       simp only [goOn, decide_eq_true_eq, mv, Mv] at hg; omega
-    have := pre.tries
+    have : (Spec.Rsa.primesKey P.nB P.eB (dB P σ)).2 = P.nt := tr
     rw [primesKey_snd hv pre, VG.Proof.Rsa.recoverPrimes_none h1] at this
     rw [Bool.eq_false_iff.mpr hg, ← this]; rfl
 
@@ -95,16 +95,16 @@ theorem finish_resWith {E : State → Prop} {F : FinishInputs P} {σ s : State}
     · rw [bq]; simp [outQ, okF, no]
 
 abbrev RestStart (P : RP) : State → State → Prop := fun σ s =>
-  (In P σ ∧ goOn P σ = true) ∧ KS P σ (Aload P σ) [aN] (AWs P σ) [wM, wZ] (Vs P σ) [sBit] s ∧ Ws s P.B P.Z P.W 22
+  (In P σ ∧ goOn P σ = true ∧ Tries P σ) ∧ KS P σ (Aload P σ) [aN] (AWs P σ) [wM, wZ] (Vs P σ) [sBit] s ∧ Ws s P.B P.Z P.W 22
 
 /-- Validate and form the exponent using the shared entry path. -/
 theorem validWith_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) (work : Prog isa)
     (run : VP (RestStart P) work (Res P)) :
-    VP (fun σ s => True ∧ Bs P σ s) (validWith work) (Res P) := by
-  refine (numbers_vp (E := fun _ => True)).seq (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) ?_ ?_)
+    VP (fun σ s => Tries P σ ∧ Bs P σ s) (validWith work) (Res P) := by
+  refine (numbers_vp (E := Tries P)).seq (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) ?_ ?_)
   · show some s₁.z = some s₂.z
-    rw [h₁.2.2.2, h₂.2.2.2, goOn_eq hv h₁.2.1.bs.pre, goOn_eq hv h₂.2.1.bs.pre]
-  · refine run.mono (fun σ s ⟨⟨_, h, hw, z⟩, ev⟩ => ⟨⟨h.bs.pre, ?_⟩, h, hw⟩) (fun _ _ h => h)
+    rw [h₁.2.2.2, h₂.2.2.2, goOn_eq hv h₁.2.1.bs.pre h₁.1, goOn_eq hv h₂.2.1.bs.pre h₂.1]
+  · refine run.mono (fun σ s ⟨⟨tr, h, hw, z⟩, ev⟩ => ⟨⟨h.bs.pre, ?_, tr⟩, h, hw⟩) (fun _ _ h => h)
     have condition : some s.z = some true := ev
     rw [← z]; simpa using condition
   · refine (fail_vp (E := fun σ => In P σ ∧ goOn P σ = false)).mono
@@ -116,17 +116,17 @@ theorem validWith_vp (hv : Spec.Rsa.modulusValid P.n P.K = true) (work : Prog is
 
 /-- The original search supplies the same shared entry path. -/
 theorem valid_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hv : Spec.Rsa.modulusValid P.n P.K = true) :
-    VP (fun σ s => True ∧ Bs P σ s) valid (Res P) := by
+    VP (fun σ s => Tries P σ ∧ Bs P σ s) valid (Res P) := by
   refine validWith_vp hv rest ((rest_vp hv).mono (fun _ _ h => h) ?_)
   intro σ s h
-  obtain ⟨pre, go⟩ := h.1.1
+  obtain ⟨pre, go, tr⟩ := h.1.1
   have tries : 1 ≤ P.nt := by
-    have equation := goOn_eq hv pre
+    have equation := goOn_eq hv pre tr
     rw [go] at equation
     have positive : 0 < P.nt := of_decide_eq_true equation.symm
     omega
   exact finish_resWith h (result_eq hv (valid_facts hv (by have := pre.k1; omega)).2.1
-    (n_lt pre) pre go h.1.2 tries)
+    (n_lt pre) pre go tr h.1.2 tries)
 
 theorem primesKey_invalid (hv : Spec.Rsa.modulusValid P.n P.K = false) {σ : State} (pre : In P σ) :
     (Spec.Rsa.primesKey P.nB P.eB (dB P σ)).1 = none := by
@@ -136,23 +136,24 @@ theorem primesKey_invalid (hv : Spec.Rsa.modulusValid P.n P.K = false) {σ : Sta
 /-- The body after the entry: Z iff `n` is valid. -/
 theorem bodyWith_vp (checked : Prog isa)
     (run : Spec.Rsa.modulusValid P.n P.K = true →
-      VP (fun σ s => True ∧ Bs P σ s) checked (Res P)) : VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K) (.ite .eq checked fail) (Res P) := by
+      VP (fun σ s => Tries P σ ∧ Bs P σ s) checked (Res P)) :
+    VP (fun σ s => (Bs P σ s ∧ Tries P σ) ∧ s.z = Spec.Rsa.modulusValid P.n P.K) (.ite .eq checked fail) (Res P) := by
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) ?_ ?_
   · show some s₁.z = some s₂.z
     rw [h₁.2, h₂.2]
   · refine VP.of_imp (p := Spec.Rsa.modulusValid P.n P.K = true) (fun σ s ⟨⟨_, z⟩, ev⟩ => ?_)
-      fun hv => (run hv).mono (fun σ s ⟨⟨h, _⟩, _⟩ => ⟨trivial, h⟩) fun _ _ h => h
+      fun hv => (run hv).mono (fun σ s ⟨⟨⟨h, tr⟩, _⟩, _⟩ => ⟨tr, h⟩) fun _ _ h => h
     have : some s.z = some true := ev
     rw [← z]; simpa using this
   · refine (fail_vp (E := fun σ => In P σ ∧ Spec.Rsa.modulusValid P.n P.K = false)).mono
-      (fun σ s ⟨⟨h, z⟩, ev⟩ => ⟨⟨h.pre, ?_⟩, h.bo⟩)
+      (fun σ s ⟨⟨⟨h, _⟩, z⟩, ev⟩ => ⟨⟨h.pre, ?_⟩, h.bo⟩)
       fun σ s h => fail_res (E := fun σ => In P σ ∧ Spec.Rsa.modulusValid P.n P.K = false)
         (fun σ e => primesKey_invalid e.2 e.1) h
     have : some s.z = some false := ev
     rw [← z]; simpa using this
 
 
-theorem body_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] : VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K)
+theorem body_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] : VP (fun σ s => (Bs P σ s ∧ Tries P σ) ∧ s.z = Spec.Rsa.modulusValid P.n P.K)
     (.ite .eq valid fail) (Res P) := bodyWith_vp valid valid_vp
 
 end

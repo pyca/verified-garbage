@@ -16,26 +16,6 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
-#[cfg(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "powerpc64"
-))]
-use crate::arch::rsa::vg_rsa_recover_primes_det;
-use crate::arch::rsa::{
-    vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
-};
-// The targets without Appendix C.2 recover the primes by Appendix C.1.
-#[cfg(not(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "powerpc64"
-)))]
-use crate::arch::rsa::vg_rsa_recover_primes;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa::{vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma};
 #[cfg(all(
     target_arch = "arm",
     any(
@@ -46,7 +26,13 @@ use crate::arch::rsa::{vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma};
         target_os = "openbsd"
     )
 ))]
-use crate::arch::rsa::{vg_rsa_private_checked_umaal, vg_rsa_recover_primes_umaal};
+use crate::arch::rsa::vg_rsa_private_checked_umaal;
+use crate::arch::rsa::vg_rsa_recover_primes_det;
+use crate::arch::rsa::{
+    vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa::{vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma};
 use crate::cpu::detected;
 
 /// `x` (big-endian) in `len` bytes, if it fits.
@@ -67,12 +53,6 @@ fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
 ///
 /// `64 ≤ n.len() ≤ 1024`, `1 ≤ e.len() ≤ 5`, `1 ≤ d.len() ≤ n.len()`,
 /// `p.len() = q.len() = n.len()` and `scratch.len() = scratch_words(n.len())`.
-#[cfg(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "powerpc64"
-))]
 unsafe fn recover(
     p: &mut [u8],
     q: &mut [u8],
@@ -87,65 +67,6 @@ unsafe fn recover(
     // needs no CPU feature.
     let r = unsafe {
         vg_rsa_recover_primes_det(
-            p.as_mut_ptr(),
-            p.len(),
-            q.as_mut_ptr(),
-            q.len(),
-            n.as_ptr(),
-            n.len(),
-            e.as_ptr(),
-            e.len(),
-            d.as_ptr(),
-            d.len(),
-            scratch.as_mut_ptr(),
-            scratch.len(),
-        )
-    };
-    r == 1
-}
-
-/// The same by Appendix C.1 (`vg_rsa_recover_primes`), on the targets
-/// without Appendix C.2: whether it finds the primes, trying the candidates
-/// `g = 2, 3, …` up to 100 of them.
-///
-/// # Safety
-///
-/// As for the Appendix C.2 version.
-#[cfg(not(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "powerpc64"
-)))]
-unsafe fn recover(
-    p: &mut [u8],
-    q: &mut [u8],
-    n: &[u8],
-    e: &[u8],
-    d: &[u8],
-    scratch: &mut [u64],
-) -> bool {
-    let f = match Backend::select(detected()) {
-        Backend::Baseline => vg_rsa_recover_primes,
-        // `select` chose it because the CPU has the features it needs.
-        #[cfg(all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        ))]
-        Backend::Umaal => vg_rsa_recover_primes_umaal,
-    };
-    // SAFETY: each pointer is valid for its length (`p`, `q` and `scratch`
-    // for writes), and none overlaps another or wraps around, as they are
-    // distinct Rust slices; the caller gives the lengths; and the CPU has
-    // the features of the function `select` chose.
-    let r = unsafe {
-        f(
             p.as_mut_ptr(),
             p.len(),
             q.as_mut_ptr(),
@@ -374,19 +295,15 @@ impl PrivateKey {
     /// byte, `e` odd, from 3 to `2^33 - 1`, and `d` 1 to `n.len()` bytes long
     /// without its leading zeros.
     ///
-    /// On i686, x86-64, AArch64 and 64-bit PowerPC it recovers the primes by
-    /// SP 800-56B Rev. 2 Appendix C.2's deterministic method, and refuses a
-    /// key it does not factor. Its step 1 makes `a = K φ(n)`, with `K ≤ k²`
-    /// for `k = (d e - 1) / λ(n)`
-    /// (so `K < e²` for the least private exponent), and the method finds
-    /// the primes whenever `K (p + q - 1) ≤ n`: it refuses only keys with a
-    /// tiny prime factor (a few dozen bits at most) and those that are not
-    /// valid two-prime keys. (Every valid `d < n` of Wycheproof's two-prime
-    /// keys factors, as do larger `d`, `e = 3` and `e = 2^33 - 1`, and
-    /// primes as unbalanced as 24 bits.) On the other targets it recovers
-    /// them by Appendix C.1, trying the candidates `g = 2, 3, …` up to 100
-    /// of them, which finds them for a valid RSA key but for a negligible
-    /// fraction of keys.
+    /// It recovers the primes by SP 800-56B Rev. 2 Appendix C.2's
+    /// deterministic method, and refuses a key it does not factor. Its step 1
+    /// makes `a = K φ(n)`, with `K ≤ k²` for `k = (d e - 1) / λ(n)` (so
+    /// `K < e²` for the least private exponent), and the method finds the
+    /// primes whenever `K (p + q - 1) ≤ n`: it refuses only keys with a tiny
+    /// prime factor (a few dozen bits at most) and those that are not valid
+    /// two-prime keys. (Every valid `d < n` of Wycheproof's two-prime keys
+    /// factors, as do larger `d`, `e = 3` and `e = 2^33 - 1`, and primes as
+    /// unbalanced as 24 bits.)
     pub fn from_components(n: &[u8], e: &[u8], d: &[u8]) -> Result<Self, Error> {
         let k = n.len();
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
