@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Scrypt.RISCV64.BlockMix
 public import VerifiedGarbage.Impl.Words.RISCV64.CopyFast
+public import VerifiedGarbage.Impl.Words.RISCV64.Bytes
 
 /-!
 # scryptROMix: RISC-V implementation
@@ -88,12 +89,10 @@ def rmMid : List Instr :=
   [.load .d .s7 .s10 64, .addi .s8 .s7 (-1)]
 
 /-- `t0 ← j`: the low 8 bytes of `X`'s last 64-byte block (one `ld`, or
-eight `lbu` through `t2`), masked with `N - 1`. -/
+eight `lbu`, `loadLE64` through `t2` and `t3`), masked with `N - 1`. -/
 def jBlock (wide : Bool) : List Instr :=
   [.add .t1 .s4 .s6, .addi .t1 .t1 (-64)] ++
-    (if wide then [.load .d .t0 .t1 0] else
-      .load .b .t0 .t1 0 :: (List.range 7).flatMap fun i =>
-        [.load .b .t2 .t1 (i + 1), .shift .sll .d .t2 .t2 (8 * (i + 1)), .logic .or .t0 .t0 .t2]) ++
+    (if wide then [.load .d .t0 .t1 0] else Impl.Words.RISCV64.loadLE64 .t0 .t2 .t3 .t1 0) ++
     ([.logic .and .t0 .t0 .s8] : List Instr)
 
 /-- Step 3, once: `j`; `t1 = V[j]`; `T = X xor V[j]`; `X = scryptBlockMix (T)`. -/
