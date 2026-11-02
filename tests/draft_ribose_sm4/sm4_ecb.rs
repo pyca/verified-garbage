@@ -86,30 +86,54 @@ fn single_blocks() {
     }
 }
 
-/// A block encrypted 1,000,000 times, sixteen copies at a time, and the
-/// whole buffer decrypted back. The two examples run independently.
-fn repeated(from: &str, to: &str) {
+/// A block encrypted 1,000,000 times, sixteen copies at a time
+/// (`decrypt`: the whole buffer of ciphertexts decrypted back as many
+/// times). The two directions and the two examples run independently.
+fn repeated(from: &str, to: &str, decrypt: bool) {
     let e = example(&section(from, to));
     let ctx = Sm4Ecb::new(&e.key);
-    let mut buffer = e.plaintext.repeat(16);
+    let (input, expected) = if decrypt {
+        (&e.ciphertext, &e.plaintext)
+    } else {
+        (&e.plaintext, &e.ciphertext)
+    };
+    let mut buffer = input.repeat(16);
     for _ in 0..1_000_000 {
-        ctx.encrypt(&mut buffer).unwrap();
+        if decrypt {
+            ctx.decrypt(&mut buffer).unwrap();
+        } else {
+            ctx.encrypt(&mut buffer).unwrap();
+        }
     }
-    assert_eq!(buffer, e.ciphertext.repeat(16));
-    for _ in 0..1_000_000 {
-        ctx.decrypt(&mut buffer).unwrap();
-    }
-    assert_eq!(buffer, e.plaintext.repeat(16));
+    assert_eq!(buffer, expected.repeat(16));
 }
 
 #[test]
-fn repeated_example_3() {
-    repeated("A.1.3.  Example 3 (", "A.1.4.  Example 4");
+fn repeated_example_3_encrypt() {
+    repeated("A.1.3.  Example 3 (", "A.1.4.  Example 4", false);
 }
 
 #[test]
-fn repeated_example_6() {
-    repeated("A.1.6.  Example 6", "A.2.  Examples For Various Modes");
+fn repeated_example_3_decrypt() {
+    repeated("A.1.3.  Example 3 (", "A.1.4.  Example 4", true);
+}
+
+#[test]
+fn repeated_example_6_encrypt() {
+    repeated(
+        "A.1.6.  Example 6",
+        "A.2.  Examples For Various Modes",
+        false,
+    );
+}
+
+#[test]
+fn repeated_example_6_decrypt() {
+    repeated(
+        "A.1.6.  Example 6",
+        "A.2.  Examples For Various Modes",
+        true,
+    );
 }
 
 #[test]
