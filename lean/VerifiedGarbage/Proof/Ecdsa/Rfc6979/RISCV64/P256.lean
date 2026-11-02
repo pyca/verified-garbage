@@ -109,7 +109,7 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : Kit where
   len := rfl
   nbits := VG.Proof.Ecdsa.Rfc6979.nBits_p256
   two := by decide
-  nw4 := .inl rfl
+  nw9 := ⟨by decide, by decide⟩
   coreC := Impl.Ecdsa.RISCV64.Sign.signP256
   K := Impl.Ecdsa.RISCV64.Comb.p256CombConsts
   core_call h _ hQ := core_call hL h hQ
