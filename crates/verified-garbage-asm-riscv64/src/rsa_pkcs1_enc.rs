@@ -134,7 +134,7 @@ bnez t5, 25b
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_rsa_public_precomputed_checked = sym super::rsa_pkcs1_enc::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -479,51 +479,11 @@ bnez t2, 27b
 .insn 2, 0x6129
 .insn 2, 0x8082
 .option pop",
-        vg_rsa_private_checked = sym super::rsa_pkcs1_enc::vg_rsa_private_checked::vg_rsa_private_checked,
-        vg_sha256_init = sym super::rsa_pkcs1_enc::vg_sha256_init::vg_sha256_init,
-        vg_sha256_update = sym super::rsa_pkcs1_enc::vg_sha256_update::vg_sha256_update,
-        vg_sha256_finalize = sym super::rsa_pkcs1_enc::vg_sha256_finalize::vg_sha256_finalize,
-        vg_hmac_sha256_init = sym super::rsa_pkcs1_enc::vg_hmac_sha256_init::vg_hmac_sha256_init,
-        vg_hmac_sha256_finalize = sym super::rsa_pkcs1_enc::vg_hmac_sha256_finalize::vg_hmac_sha256_finalize,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update = sym super::sha256::vg_sha256_update,
+        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
+        vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
+        vg_hmac_sha256_finalize = sym super::hmac_sha256::vg_hmac_sha256_finalize,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_hmac_sha256_finalize.rs"]
-pub(crate) mod vg_hmac_sha256_finalize;
-
-#[rustfmt::skip]
-#[path = "internal/vg_hmac_sha256_init.rs"]
-pub(crate) mod vg_hmac_sha256_init;
-
-#[rustfmt::skip]
-#[path = "internal/vg_rsa_private_checked.rs"]
-pub(crate) mod vg_rsa_private_checked;
-
-#[rustfmt::skip]
-#[path = "internal/vg_rsa_private_crt.rs"]
-pub(crate) mod vg_rsa_private_crt;
-
-#[rustfmt::skip]
-#[path = "internal/vg_rsa_public_precompute.rs"]
-pub(crate) mod vg_rsa_public_precompute;
-
-#[rustfmt::skip]
-#[path = "internal/vg_rsa_public_precomputed_checked.rs"]
-pub(crate) mod vg_rsa_public_precomputed_checked;
-
-#[rustfmt::skip]
-#[path = "internal/vg_sha256_compress.rs"]
-pub(crate) mod vg_sha256_compress;
-
-#[rustfmt::skip]
-#[path = "internal/vg_sha256_finalize.rs"]
-pub(crate) mod vg_sha256_finalize;
-
-#[rustfmt::skip]
-#[path = "internal/vg_sha256_init.rs"]
-pub(crate) mod vg_sha256_init;
-
-#[rustfmt::skip]
-#[path = "internal/vg_sha256_update.rs"]
-pub(crate) mod vg_sha256_update;
