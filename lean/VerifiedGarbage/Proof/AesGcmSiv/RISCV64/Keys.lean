@@ -245,8 +245,7 @@ theorem hkey_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
 /-- What `keys` writes: the keys, GHASH's key and accumulator, the blocks
 the calls use, the encryption key's schedule and the working spaces. -/
 abbrev keyR (W : Addr) : List Region :=
-  [⟨W + BitVec.ofNat 64 16, 112⟩, ⟨W + BitVec.ofNat 64 240, 16⟩, ⟨W + BitVec.ofNat 64 256, 240⟩,
-    ⟨W + BitVec.ofNat 64 1792, 2048⟩]
+  [⟨W + BitVec.ofNat 64 16, 112⟩, ⟨W + BitVec.ofNat 64 240, 1280⟩, ⟨W + BitVec.ofNat 64 1792, 2048⟩]
 
 /-- What `keys` leaves, from `σ`. -/
 structure KeysPost (c : Cx) (σ t : State) : Prop where
@@ -267,15 +266,13 @@ theorem keys_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) : WP isa keys �
   unfold keys
   refine WP.seq (WP.mono (derive_wp L E) fun t₂ I => ?_)
   have k0 : (⟨c.W + BitVec.ofNat 64 16, 112⟩ : Region) ∈ keyR c.W := List.mem_cons_self
-  have k1 : (⟨c.W + BitVec.ofNat 64 240, 16⟩ : Region) ∈ keyR c.W := List.mem_cons_of_mem _ List.mem_cons_self
-  have k2 : (⟨c.W + BitVec.ofNat 64 256, 240⟩ : Region) ∈ keyR c.W := by simp
+  have k1 : (⟨c.W + BitVec.ofNat 64 240, 1280⟩ : Region) ∈ keyR c.W := List.mem_cons_of_mem _ List.mem_cons_self
   have k3 : (⟨c.W + BitVec.ofNat 64 1792, 2048⟩ : Region) ∈ keyR c.W := by simp
   have f₂ : Frame (keyR c.W) σ.mem t₂.mem := I.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact ⟨_, k0, Offset.sub _ (by decide) (by decide)⟩
-    · exact ⟨_, k0, Offset.sub _ (by decide) (by decide)⟩
-    · exact ⟨_, k1, fun _ h => h⟩
+    · exact ⟨_, k1, Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨_, k3, fun _ h => h⟩
   refine WP.seq (WP.mono (expand_wp L I.env) fun t₃ X => ?_)
   have E₃ := I.env.of_pk X.pk
@@ -288,7 +285,7 @@ theorem keys_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) : WP isa keys �
   have f₃ : Frame (keyR c.W) t₂.mem t₃.mem := X.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, k2, fun _ h => h⟩
+    · exact ⟨_, k1, Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨_, k3, Offset.sub _ (by decide) (by decide)⟩
   have f₄ : Frame (keyR c.W) t₃.mem t₄.mem := by
     rw [hm₄]; exact (hkeyMem_frame _ _).sub fun r hr => by

@@ -54,7 +54,8 @@ theorem buf_cryR {c : Cx} {P : Addr} {len : Nat} (hw : (⟨P, len⟩ : Region).D
     (hd : (⟨P, len⟩ : Region).Disjoint ⟨c.D, c.n⟩) : ∀ r ∈ cryR c.W c.D c.n, (⟨P, len⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
@@ -88,8 +89,9 @@ theorem open_wp' (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) :
   have dC : ∀ {d : Nat}, d + 16 ≤ 96 → ∀ r ∈ cryR c.W c.D c.n, (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r :=
     fun hd r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact L.w_w (.inl hd) (by omega) (by decide)
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact (L.d_w' (by omega)).symm
@@ -112,7 +114,8 @@ theorem open_wp' (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) :
       bytesAt_keep fK (buf_keep L.n_w (by decide)) (by decide), n₂]
   have dN : ∀ r ∈ cryR c.W c.D c.n, (⟨nP c.W, 12⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
