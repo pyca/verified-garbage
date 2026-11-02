@@ -306,9 +306,13 @@ theorem mask_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (bit : s
   have hz := h.hdr_le
   have nw := h.nowrap
   refine WP.keep _ ?_ (by rfl) (by rfl)
-  brun [mask, h.s11, fin64_exec_li_zero, add_ofNat_zero', h.scr.al8 (d := sMask) (by simp only [hdr_eq] at hz; omega_arith) (by decide),
-    h.scr.ld (d := sMask) (n := 8) (by simp only [hdr_eq] at hz; omega_arith), show sMask < 2048 by decide]
+  have hz' : sMask + 8 ≤ Z := by simp only [hdr_eq, sMask] at hz ⊢; omega_arith
+  brun [mask, h.s11, fin64_exec_li_zero, add_ofNat_zero', h.scr.al8 (d := sMask) (by omega_arith) (by decide),
+    h.scr.ld (d := sMask) (n := 8) hz', show sMask < 2048 by decide]
   exact mask_of_slot _ bit
+
+theorem mul_le_one' {a b : Nat} (ha : a ≤ 1) (hb : b ≤ 1) : a * b ≤ 1 :=
+  Nat.le_trans (Nat.mul_le_mul ha hb) (by decide)
 
 theorem bit_ite {c : Prop} [Decidable c] : (if c then 1 else 0 : Nat) ≤ 1 := by split <;> decide
 
@@ -320,23 +324,23 @@ theorem maskBlk_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
       Ws t B Z w N ∧ Keys.Frame B w [] [sMask] s.mem t.mem ∧
       slot t.mem B sMask = slot s.mem B sPodd * slot s.mem B sE1 * slot s.mem B sE2 * slot s.mem B sE3 ∧
       t.gpr .t4 = (if decide (slot t.mem B sMask ≠ 0) then BitVec.allOnes 64 else 0) ∧ Keep opRegs s t := by
-  rw [WP.block_append_iff]
+  rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (andS_ok h (d := sMask) (a := sPodd) (b := sE1) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) b1 b2) fun t1 ⟨w1, f1, v1, k1⟩ => ?_
   rw [WP.block_append_iff]
   have e2 : slot t1.mem B sE2 = slot s.mem B sE2 := f1.slot (by decide) (by decide)
   have e3 : slot t1.mem B sE3 = slot s.mem B sE3 := f1.slot (by decide) (by decide)
   refine WP.mono (andS_ok w1 (d := sMask) (a := sMask) (b := sE2) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [v1]; exact Nat.mul_le_one b1 b2) (by rw [e2]; exact b3))
+    (by decide) (by decide) (by rw [v1]; exact mul_le_one' b1 b2) (by rw [e2]; exact b3))
     fun t2 ⟨w2, f2, v2, k2⟩ => ?_
   rw [WP.block_append_iff]
   have e3' : slot t2.mem B sE3 = slot s.mem B sE3 := by rw [f2.slot (by decide) (by decide), e3]
   refine WP.mono (andS_ok w2 (d := sMask) (a := sMask) (b := sE3) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [v2, v1, e2]; exact Nat.mul_le_one (Nat.mul_le_one b1 b2) b3)
+    (by decide) (by decide) (by rw [v2, v1, e2]; exact mul_le_one' (mul_le_one' b1 b2) b3)
     (by rw [e3']; exact b4)) fun t3 ⟨w3, f3, v3, k3⟩ => ?_
   have V : slot t3.mem B sMask = slot s.mem B sPodd * slot s.mem B sE1 * slot s.mem B sE2 * slot s.mem B sE3 := by
     rw [v3, v2, v1, e2, e3']
-  refine WP.mono (mask_ok w3 (by rw [V]; exact Nat.mul_le_one (Nat.mul_le_one (Nat.mul_le_one b1 b2) b3) b4))
+  refine WP.mono (mask_ok w3 (by rw [V]; exact mul_le_one' (mul_le_one' (mul_le_one' b1 b2) b3) b4))
     fun t ⟨⟨u4, um⟩, k4⟩ => ?_
   rw [← um] at V u4
   exact ⟨w3.of_keep k4, by rw [um]; exact (f1.trans f2).trans f3, V, u4,
