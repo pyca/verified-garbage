@@ -239,8 +239,7 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
       isa.eval (.nonzero .a0) t = some false) [.s7] := fun a t₁ t₂ h₁ h₂ => by
     obtain ⟨s₁, P₁, p₁, E₁, -⟩ := e2 h₁
     obtain ⟨s₂, P₂, p₂, E₂, -⟩ := e2 h₂
-    refine ⟨(pk_pins (an := id) (Φ := fun a t => ∃ s, PreP Gs.len s ∧ PubK a s ∧ Base Sp (vP Gs.len) s t)
-      (fun _ _ h => h) [] a t₁ t₂ ⟨s₁, P₁, p₁, E₁.base⟩ ⟨s₂, P₂, p₂, E₂.base⟩).1, fun r hr => ?_⟩
+    refine ⟨by rw [E₁.base.sv.sp, E₂.base.sv.sp, fb, fb, p₁.1.sp, p₂.1.sp], fun r hr => ?_⟩
     rw [List.mem_singleton.mp hr, E₁.xs.s7, E₂.xs.s7, p₁.1.pAny, p₂.1.pAny]
   refine two_seq (Ψ := E3) (expLen_taint pin7) (fun a t h => ?_) ?_
   · obtain ⟨s, P, p, E, h0, hem⟩ := e2 h
