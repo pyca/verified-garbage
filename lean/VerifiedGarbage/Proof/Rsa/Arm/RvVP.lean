@@ -116,6 +116,13 @@ theorem loop {I : Nat → State → State → Prop} {body : Prog isa} {c : Cond}
       obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
       exact ⟨k, by omega, σ₁, σ₂, i₁ hp, i₂ hp⟩
 
+/-- A piece whose stages imply a fact about the public parameters. -/
+theorem of_imp {F G : State → State → Prop} {c : Prog isa} {p : Prop} (hp : ∀ σ s, F σ s → p)
+    (h : p → VP F c G) : VP F c G :=
+  ⟨fun σ s hs => (h (hp σ s hs)).wp σ s hs, fun s₁ s₂ t₁ t₂ s₁' s₂' hs e₁ e₂ =>
+    match hs with
+    | ⟨σ₁, σ₂, h₁, h₂⟩ => (h (hp _ _ h₁)).ct s₁ s₂ t₁ t₂ s₁' s₂' ⟨σ₁, σ₂, h₁, h₂⟩ e₁ e₂⟩
+
 end VP
 
 end VG.Proof.Rsa.Arm.Recover

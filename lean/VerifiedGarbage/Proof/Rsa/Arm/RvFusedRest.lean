@@ -31,9 +31,9 @@ theorem fusedRest_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hv : Spec.Rsa.modulusValid 
     VP (RestStart P) VG.Impl.Rsa.Arm.RecoverFused.rest (Res P) := by
   refine VP.of_imp (p := Sizes P ∧ 1 ≤ P.nt ∧ P.nt ≤ 100 ∧ P.B.toNat + P.Z ≤ 2 ^ 32 ∧
     P.el + P.dl ≤ 2 * P.K ∧ 0 < P.el + P.dl ∧ P.n < 2 ^ (32 * P.w) ∧ 2 ≤ P.K)
-      (fun σ s ⟨⟨pre, go⟩, _⟩ => ?_)
+      (fun σ s ⟨⟨pre, go, tr⟩, _⟩ => ?_)
       fun ⟨sz, nt1, nt100, nowrap, lengths, positive, nl, hk⟩ => ?_
-  · obtain ⟨_, _, _, tries⟩ := rest_facts hv pre go
+  · obtain ⟨_, _, _, tries⟩ := rest_facts hv pre go tr
     have el := pre.el2; have dl := pre.dl2; have ep := pre.el1; have kp := pre.k1
     refine ⟨pre.sizes, ?_, ?_, pre.fS, by omega, by omega, n_lt pre, by omega⟩
     · rw [← tries]; exact VG.Proof.Rsa.go_pos _ _ _ _ (Nat.le_refl _)
@@ -42,7 +42,7 @@ theorem fusedRest_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hv : Spec.Rsa.modulusValid 
   have hn : P.n % 2 = 1 ∧ 1 < P.n := ⟨odd, large⟩
   simp only [VG.Impl.Rsa.Arm.RecoverFused.rest, seqs]
   have setup : VP (RestStart P) mont
-      (fun σ s => (In P σ ∧ goOn P σ = true) ∧
+      (fun σ s => (In P σ ∧ goOn P σ = true ∧ Tries P σ) ∧
         KM P σ (fusedAW P σ) [wM] (fun _ => 0) [] s) := by
     refine (montFull_vp hn sz false).mono (fun σ s ⟨e, h, hw⟩ => ⟨e, ?_, hw⟩)
       (fun σ s ⟨e, h, hm, hw⟩ => ⟨e, ?_, hm, hw⟩)
@@ -57,10 +57,10 @@ theorem fusedRest_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (hv : Spec.Rsa.modulusValid 
         (fun d hd => by simp at hd)
   refine (VP.seq setup
     (VP.seq (fusedCandidates_vp hn above sz nowrap lengths positive nt1 nt100
-      (fun σ e => ⟨e.1, e.2, (rest_facts hv e.1 e.2).2.2.2⟩))
+      (fun σ e => ⟨e.1, e.2.1, (rest_facts hv e.1 e.2.1 e.2.2).2.2.2⟩))
       (fusedFin_vp hn nl))).mono (fun _ _ h => h) fun σ s h => ?_
-  obtain ⟨⟨pre, go⟩, previous⟩ := h.1
-  refine finish_resWith h (resultWith_eq hv large nl pre go previous nt1 (fusedFinish P (Jl P)) ?_)
+  obtain ⟨⟨pre, go, tr⟩, previous⟩ := h.1
+  refine finish_resWith h (resultWith_eq hv large nl pre go tr previous nt1 (fusedFinish P (Jl P)) ?_)
   calc
     (if (fusedFinish P (Jl P)).ok σ then some ((fusedFinish P (Jl P)).value σ) else none) =
         fusedResult P σ (Jl P) := by
