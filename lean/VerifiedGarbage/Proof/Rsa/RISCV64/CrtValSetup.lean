@@ -15,6 +15,9 @@ arrays zeroed and `n`, `p`, `q` and `d` read (`Ld`); `checks_ok`: `p`'s low
 bit, and whether `n / p = q` and `n mod p = 0` (`Ck`).
 -/
 
+-- separate module: its proofs (the reads and the checks of `p q = n`) are not re-checked with every
+-- change to the inverse's
+
 @[expose] public section
 
 namespace VG.Proof.Rsa.RISCV64.CrtValues
