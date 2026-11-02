@@ -511,22 +511,26 @@ theorem maskB_eq (b : Bool) : maskB b = 0 - BitVec.ofNat 64 b.toNat := by cases 
 
 theorem magOf_eq (n : Nat) : magOf n = Proof.Ed25519.mag n := rfl
 
-/-- Nibble `i` of the scalar's bytes is the decoded scalar's. -/
-theorem nibAt_eq (m : Mem) (p : Addr) {i : Nat} (hi : i < 64) :
-    nibAt m p i = Proof.Ed25519.nib (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m p 32)) i := by
-  have hb := Proof.Ed25519.decodeLE_byte (Spec.Ed25519.bytesAt m p 32) (i / 2)
-  have hg : (Spec.Ed25519.bytesAt m p 32).getD (i / 2) 0 = m (p + BitVec.ofNat 64 (i / 2)) := by
-    simp [Spec.Ed25519.bytesAt, List.getD_eq_getElem?_getD, show i / 2 < 32 by omega]
-  rw [hg] at hb
+/-- Nibble `i` of a little-endian number is that of byte `i / 2` of its bytes. -/
+theorem nib_decodeLE (bs : List Byte) (i : Nat) :
+    Proof.Ed25519.nib (Spec.Ed25519.decodeLE bs) i = (bs.getD (i / 2) 0).toNat / 16 ^ (i % 2) % 16 := by
+  have hb := Proof.Ed25519.decodeLE_byte bs (i / 2)
   have e16 : 16 ^ i = 256 ^ (i / 2) * 16 ^ (i % 2) := by
     conv_lhs => rw [← Nat.div_add_mod i 2, pow_add, pow_mul]
     rfl
-  rw [Proof.Ed25519.nib, nibAt, e16, ← Nat.div_div_eq_div_mul]
-  generalize Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m p 32) / 256 ^ (i / 2) = y at hb
-  generalize (m (p + BitVec.ofNat 64 (i / 2))).toNat = b at hb ⊢
+  rw [Proof.Ed25519.nib, e16, ← Nat.div_div_eq_div_mul]
+  generalize Spec.Ed25519.decodeLE bs / 256 ^ (i / 2) = y at hb
+  generalize (bs.getD (i / 2) 0).toNat = b at hb ⊢
   rcases Nat.mod_two_eq_zero_or_one i with h | h
   · rw [h, pow_zero, Nat.div_one, Nat.div_one]; omega
   · rw [h, pow_one]; omega
+
+/-- Nibble `i` of the scalar's bytes is the decoded scalar's. -/
+theorem nibAt_eq (m : Mem) (p : Addr) {i : Nat} (hi : i < 64) :
+    nibAt m p i = Proof.Ed25519.nib (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m p 32)) i := by
+  have hg : (Spec.Ed25519.bytesAt m p 32).getD (i / 2) 0 = m (p + BitVec.ofNat 64 (i / 2)) := by
+    simp [Spec.Ed25519.bytesAt, List.getD_eq_getElem?_getD, show i / 2 < 32 by omega]
+  rw [nib_decodeLE, hg, nibAt]
 
 /-- The sign's mask in the working space. -/
 abbrev SGNR (b : Addr) : Region := ⟨b + BitVec.ofNat 64 SGN, 8⟩
