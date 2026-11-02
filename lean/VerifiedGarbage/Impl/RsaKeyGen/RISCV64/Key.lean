@@ -37,7 +37,9 @@ Then, step for step as PPC64LE computes the key
      `d = Q t + (R t + 1) / e` (`Proof/RsaKeyGen/OddInverseQuotient.lean`);
    * `e = 1`: `d = 1`, for `L ≠ 1`;
    * `e` even: `d = e⁻¹ mod L` by `invOf` (`8 p_len + 32` iterations) for an
-     odd `L ≥ 3` (the modulus 3 otherwise), which `e = 0` never has.
+     odd `L ≥ 3` (the modulus 3 otherwise), which `e = 0` never has. This
+     inverse runs only for an even `e` (a branch on `e`'s parity, which the
+     contract's leak includes).
 4. Whether `d` exists and `d ≤ 2^(8 p_len)`: the status 2.
 5. `qInv` by `invOf` (modulo `p`, or 3 for a `p` even or below 3; `8 p_len`
    iterations), `dP = d mod (p - 1)` and `dQ = d mod (q - 1)` by the
@@ -50,7 +52,8 @@ Then, step for step as PPC64LE computes the key
 
 Every choice is a selection (`sel`, `selS`) or a flag computed with `and`
 and `xor`; addresses and loop counts depend only on the pointers and the
-lengths, and there is no branch but the loops'.
+lengths, and the only branches are the loops' and the one on `e`'s parity
+(public: the contract's leak includes `e`).
 -/
 
 @[expose] public section
@@ -226,8 +229,14 @@ def dEven : Prog isa := seqs ([.block (bitOf X0 aL)] ++ ltS X1 aL aThree ++
   [.block (andNotS X2 X1 X0), sel aMl aThree aL X2, invOf aE aMl nW, eqS X0 1 aOne,
     .block (andS X1 X2 X0 ++ selS X6 X1 X6 X3), sel aD 3 aS X3])
 
+/-- `e` odd: `[aD] := [aS]` (what `dEven` gives for an odd `e`, without its
+inverse); `e` even: `dEven`. The branch is on `e`'s parity, which the
+contract's leak includes. -/
+def dPar : Prog isa :=
+  .seq (.block [.load .d .t5 .s11 X3]) (.ite (.nonzero .t5) (copy aD aS) dEven)
+
 /-- `d` and `X6`. -/
-def dPart : Prog isa := seqs [eFlags, dOdd, dOne, dEven]
+def dPart : Prog isa := seqs [eFlags, dOdd, dOne, dPar]
 
 /-- `X7` := `X6` and `d ≤ 2^(8 p_len)` (`d < 2^(8 p_len) + 1`). -/
 def smallPart : Prog isa := seqs (ltS X0 aD aC ++ [.block (andS X7 X0 X6)])
