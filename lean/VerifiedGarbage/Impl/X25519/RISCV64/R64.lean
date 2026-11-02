@@ -153,6 +153,17 @@ def mulAt (acc o a b : Nat) : Prog isa :=
 /-- `[o] = [a] · [b]`, with the product at `ACC`. -/
 abbrev mul (o a b : Nat) : Prog isa := mulAt ACC o a b
 
+/-- Word `k` of `[a] · a24` (`a24` in `a2`, one word) into `w k`: the low word of `a_k a24`
+plus the carry in `a5`, the high word plus the carry out into `a5`. -/
+def mulSmallStep (a k : Nat) : List Instr :=
+  if k = 0 then [.load .d .a7 .a3 a, .mul (w 0) .a7 .a2, .mulhu .a5 .a7 .a2]
+  else [.load .d .a7 .a3 (a + 8 * k), .mul (w k) .a7 .a2, .mulhu .a6 .a7 .a2, .add (w k) (w k) .a5,
+    .sltu .a7 (w k) .a5, .add .a5 .a6 .a7]
+
+/-- `[o] = [a] · a24`, by the one word of `A24`: five words, the top one folded in as 38 twice. -/
+def mulA24 (o a : Nat) : List Instr :=
+  .load .d .a2 .a3 A24 :: (List.range 4).flatMap (mulSmallStep a) ++ .li .a4 38 :: fold ++ fold ++ st4 o
+
 /-! ## Sums and differences -/
 
 /-- `[o] = [a] + [b]`. -/
@@ -190,7 +201,7 @@ def step : Prog isa :=
   .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
   .seq (.block (sub D X3 Z3)) <| .seq (mul DA D A) <| .seq (mul CB C B) <|
   .seq (.block (add X3 DA CB)) <| .seq (mul X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
-  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (mul Z2 A24 E) <|
+  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (.block (mulA24 Z2 E)) <|
   .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [])
 
 /-- The 255 iterations, for `t` from 254 down to 0, with `swap = 0`. -/
@@ -212,8 +223,27 @@ def invStep : Prog isa :=
 down to 0. -/
 def invert : Prog isa := .seq (.block (one ++ [.li .t1 255])) (.loop invStep (.nonzero .t1))
 
+/-- `[a]` squared `n` times into `[o]`, the squarings after the first in a loop counted by `t1`. -/
+def sqn (o a n : Nat) : Prog isa :=
+  .seq (mul o a a) <| .seq (.block [.li .t1 ((n - 1 : Nat) : Int)]) <|
+    .loop (.seq (mul o o o) (.block [.addi .t1 .t1 (-1)])) (.nonzero .t1)
+
+/-- `[R] = [Z2]^(p-2)` by ref10's addition chain (`Proof/X25519/Chain250.lean`'s `chainF`, then
+five squarings and `z^11`), in `A`–`D`, free after the ladder. -/
+def invertChain : Prog isa :=
+  .seq (mul A Z2 Z2) <| .seq (mul B A A) <| .seq (mul B B B) <| .seq (mul B Z2 B) <|
+  .seq (mul A A B) <| .seq (mul C A A) <| .seq (mul B B C) <|
+  .seq (sqn C B 5) <| .seq (mul B C B) <|
+  .seq (sqn C B 10) <| .seq (mul C C B) <|
+  .seq (sqn D C 20) <| .seq (mul C D C) <|
+  .seq (sqn C C 10) <| .seq (mul B C B) <|
+  .seq (sqn C B 50) <| .seq (mul C C B) <|
+  .seq (sqn D C 100) <| .seq (mul C D C) <|
+  .seq (sqn C C 50) <| .seq (mul B C B) <|
+  .seq (sqn B B 5) (mul R B A)
+
 def x25519 : Prog isa :=
   .seq (.block (align ++ setup)) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <|
-    .seq invert <| .seq (mul X2 X2 R) (.block freeze)
+    .seq invertChain <| .seq (mul X2 X2 R) (.block freeze)
 
 end VG.Impl.X25519.RISCV64.R64
