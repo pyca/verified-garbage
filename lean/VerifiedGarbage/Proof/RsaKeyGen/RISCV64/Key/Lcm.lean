@@ -185,4 +185,184 @@ theorem primes_ok {s0 s : State} {used : List Nat} (c : St s0 used s)
   · rw [vt, s6, e6, o5, z6, q5, vQ]
     exact pred_sel
 
+/-! ## The halving -/
+
+section
+variable {s : State} {B : Addr} {Z w : Nat}
+
+theorem li_t4_zero (u : State) :
+    WP isa (.block [.li .t4 0]) u fun v => (v.gpr .t4 = 0#64 ∧ v.mem = u.mem) ∧ Keep [.t4] u v := by
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  have e : exec (.li .t4 0) u = some (u.write .t4 (BitVec.ofNat 64 0)) := exec_li_small (x := 0) (by decide)
+  brun [e]
+
+theorem halfSel_eq (j : Nat) : seqs (halfSel j) =
+    .seq (copy aT j) (.seq (.block [.li .t4 0]) (.seq (half aT) (sel j j aT X2))) := rfl
+
+/-- `halfSel j`: `[j]` halved under `X2`. -/
+theorem halfSel_ok (h : Ws s B Z w nArr) {j : Nat} (hj : j < nArr) (hjT : j ≠ aT)
+    (bit : slot s.mem B X2 ≤ 1) :
+    WP isa (seqs (halfSel j)) s fun t => Ws t B Z w nArr ∧
+      VG.Proof.Rsa.RISCV64.Keys.Frame B w [aT, j] [] s.mem t.mem ∧
+      num t.mem B w j = (if slot s.mem B X2 = 0 then num s.mem B w j else num s.mem B w j / 2) ∧
+      Keep opRegs s t := by
+  have hX2 : X2 + 8 ≤ hdr := by decide
+  rw [halfSel_eq]
+  refine WP.seq (WP.mono (copy_ok h (o := aT) (a := j) (by decide) hj (by decide) (Ne.symm hjT))
+    fun t1 ⟨h1, f1, v1, k1, _⟩ => ?_)
+  refine WP.seq (WP.mono (li_t4_zero t1) fun t2 ⟨⟨z2, m2⟩, k2⟩ => ?_)
+  have h2 := h1.of_keep k2
+  refine WP.seq (WP.mono (half_ok h2 (j := aT) (by decide) (by decide) (by rw [z2]; decide))
+    fun t3 ⟨h3, f3, v3, _, k3⟩ => ?_)
+  have sl3 : slot t3.mem B X2 = slot s.mem B X2 := by
+    rw [f3.slot hX2 (by simp), m2, f1.slot hX2 (by simp)]
+  refine WP.mono (sel_self_ok h3 (o := j) (b := aT) (sl := X2) hj (by decide) (by decide) hjT hX2
+    (by decide) (by rw [sl3]; exact bit)) fun t ⟨ht, ft, vt, kt⟩ => ?_
+  have fj := h.fit64 hj
+  have jS : num t3.mem B w j = num s.mem B w j := by
+    rw [f3.num (by simpa using Ne.symm hjT) (by simp) fj, m2, f1.num (by simpa using Ne.symm hjT) (by simp) fj]
+  refine ⟨ht, ?_, ?_, ?_⟩
+  · have f2 : VG.Proof.Rsa.RISCV64.Keys.Frame B w [aT, j] [] t1.mem t2.mem := by
+      rw [m2]; exact VG.Proof.Rsa.RISCV64.Keys.Frame.refl _ _ _ _ _
+    exact ((f1.mono.trans f2.mono).trans f3.mono).trans ft.mono
+  · rw [vt, sl3, jS, v3, z2, m2, v1]
+    simp
+  · exact (((k1.trans k2).trans k3).trans kt).mono (by simp)
+
+/-- `halfStep`'s instructions, re-associated. -/
+theorem halfStep_eq : halfStep = seqs (.block (VG.Impl.Rsa.RISCV64.Keys.bitOf X0 aU ++
+    (VG.Impl.Rsa.RISCV64.Keys.bitOf X1 aV ++ (notS X1 X1 ++ andNotS X2 X0 X1))) ::
+    (halfSel aU ++ (halfSel aV ++ (halfSel aF ++ [.block [.addi .s7 .s7 (-1)]])))) := rfl
+
+/-- One step of the halving. -/
+theorem halfStep_ok (h : Ws s B Z w nArr) :
+    WP isa halfStep s fun t => Ws t B Z w nArr ∧
+      VG.Proof.Rsa.RISCV64.Keys.Frame B w [aT, aU, aV, aF] [X0, X1, X2] s.mem t.mem ∧
+      (num t.mem B w aU, num t.mem B w aV, num t.mem B w aF) =
+        halveStep (num s.mem B w aU, num s.mem B w aV, num s.mem B w aF) ∧
+      Keep (.s7 :: opRegs) s t ∧ t.gpr .s7 = s.gpr .s7 - BitVec.ofNat 64 1 := by
+  have hX0 : X0 + 8 ≤ hdr := by decide
+  have hX1 : X1 + 8 ≤ hdr := by decide
+  have hX2 : X2 + 8 ≤ hdr := by decide
+  have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  rw [halfStep_eq, wp_seqs_cons (by simp [halfSel]), WP.block_append_iff]
+  refine WP.mono (bitOf_ok h (sl := X0) (j := aU) (by decide) (by decide) hX0 (by decide))
+    fun t1 ⟨h1, f1, v1, k1⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (bitOf_ok h1 (sl := X1) (j := aV) (by decide) (by decide) hX1 (by decide))
+    fun t2 ⟨h2, f2, v2, k2⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (notS_ok h2 (d := X1) (a := X1) hX1 (by decide) hX1 (by decide)
+    (by rw [v2]; omega)) fun t3 ⟨h3, f3, v3, k3⟩ => ?_
+  have x0 : slot t3.mem B X0 = num s.mem B w aU % 2 := by
+    rw [f3.slot hX0 (by simp [X0, X1]), f2.slot hX0 (by simp [X0, X1]), v1]
+  refine WP.mono (andNotS_ok h3 (d := X2) (a := X0) (b := X1) hX2 (by decide) hX0 (by decide) hX1 (by decide)
+    (by rw [x0]; omega) (by rw [v3]; omega)) fun t4 ⟨h4, f4, v4, k4⟩ => ?_
+  have uV : num t1.mem B w aV = num s.mem B w aV := f1.num (by simp) (by simp [X0, hdr_eq]) (fit _ (by decide))
+  have x2 : slot t4.mem B X2 = if num s.mem B w aU % 2 = 0 ∧ num s.mem B w aV % 2 = 0 then 1 else 0 := by
+    rw [v4, x0, v3, v2, uV]
+    rcases Nat.mod_two_eq_zero_or_one (num s.mem B w aU) with a | a <;>
+      rcases Nat.mod_two_eq_zero_or_one (num s.mem B w aV) with b | b <;> simp [a, b]
+  have b4 : slot t4.mem B X2 ≤ 1 := by rw [x2]; split <;> omega
+  -- The frame of the block, on arrays: none.
+  have F4 : VG.Proof.Rsa.RISCV64.Keys.Frame B w [] [X0, X1, X2] s.mem t4.mem :=
+    ((f1.mono.trans f2.mono).trans f3.mono).trans f4.mono
+  have n4 : ∀ j < nArr, num t4.mem B w j = num s.mem B w j :=
+    fun j hj => F4.num (by simp) (by simp [X0, X1, X2, hdr_eq]) (fit j hj)
+  rw [wp_seqs_append (by simp [halfSel]) (by simp [halfSel])]
+  refine WP.mono (halfSel_ok h4 (j := aU) (by decide) (by decide) b4) fun t5 ⟨h5, f5, v5, k5⟩ => ?_
+  have s5 : slot t5.mem B X2 = slot t4.mem B X2 := f5.slot hX2 (by simp)
+  rw [wp_seqs_append (by simp [halfSel]) (by simp [halfSel])]
+  refine WP.mono (halfSel_ok h5 (j := aV) (by decide) (by decide) (by rw [s5]; exact b4))
+    fun t6 ⟨h6, f6, v6, k6⟩ => ?_
+  have s6 : slot t6.mem B X2 = slot t4.mem B X2 := by rw [f6.slot hX2 (by simp), s5]
+  rw [wp_seqs_append (by simp [halfSel]) (by simp)]
+  refine WP.mono (halfSel_ok h6 (j := aF) (by decide) (by decide) (by rw [s6]; exact b4))
+    fun t7 ⟨h7, f7, v7, k7⟩ => ?_
+  rw [show seqs [Code.block [.addi .s7 .s7 (-1)]] = (.block [.addi .s7 .s7 (-1)] : Prog isa) from rfl]
+  have hb : WP isa (.block [.addi .s7 .s7 (-1)]) t7 fun u =>
+      (u.gpr .s7 = t7.gpr .s7 - BitVec.ofNat 64 1 ∧ u.mem = t7.mem) ∧ Keep [.s7] t7 u := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun
+  refine WP.mono hb fun t ⟨⟨c8, m8⟩, k8⟩ => ?_
+  have K7 : Keep opRegs s t7 :=
+    (((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).mono (by simp))
+  have nF : ∀ {m m' : Mem} {js : List Nat}, VG.Proof.Rsa.RISCV64.Keys.Frame B w js [] m m' →
+      ∀ {j}, j < nArr → (∀ k ∈ js, k ≠ j) → num m' B w j = num m B w j := by
+    intro m m' js f j hj hk; exact f.num hk (by simp) (fit j hj)
+  refine ⟨h7.of_keep k8, ?_, ?_, ?_, ?_⟩
+  · have f8 : VG.Proof.Rsa.RISCV64.Keys.Frame B w [] [] t7.mem t.mem := by
+      rw [m8]; exact VG.Proof.Rsa.RISCV64.Keys.Frame.refl _ _ _ _ _
+    exact (((F4.mono.trans f5.mono).trans f6.mono).trans f7.mono).trans f8.mono
+  · rw [m8]
+    have eU : num t7.mem B w aU = num t5.mem B w aU := by
+      rw [nF f7 (by decide) (by decide), nF f6 (by decide) (by decide)]
+    have eV : num t7.mem B w aV = num t6.mem B w aV := nF f7 (by decide) (by decide)
+    have aV5 : num t5.mem B w aV = num s.mem B w aV := by rw [nF f5 (by decide) (by decide), n4 _ (by decide)]
+    have aF6 : num t6.mem B w aF = num s.mem B w aF := by
+      rw [nF f6 (by decide) (by decide), nF f5 (by decide) (by decide), n4 _ (by decide)]
+    rw [eU, eV, v7, s6, v6, s5, v5, aV5, aF6, n4 _ (by decide), x2, halveStep]
+    by_cases e : num s.mem B w aU % 2 = 0 ∧ num s.mem B w aV % 2 = 0 <;> simp [e]
+  · exact Keep.mono (K7.trans k8) (by simp)
+  · rw [c8, K7.gpr (by decide)]
+
+/-- The halving's invariant after `i` steps from `s0`. -/
+def HalveI (s0 : State) (B : Addr) (Z w : Nat) (st : Nat × Nat × Nat) (i : Nat) (t : State) : Prop :=
+  Ws t B Z w nArr ∧ VG.Proof.Rsa.RISCV64.Keys.Frame B w [aT, aU, aV, aF] [X0, X1, X2] s0.mem t.mem ∧
+    (num t.mem B w aU, num t.mem B w aV, num t.mem B w aF) = halveIter i st ∧ Keep (.s7 :: opRegs) s0 t
+
+/-- The halving's loop. -/
+theorem halveLoop_ok {N : Nat} (hN : 0 < N) (hN' : N < 2 ^ 64) {st : Nat × Nat × Nat}
+    (h0 : HalveI s B Z w st 0 s) (hc : s.gpr .s7 = BitVec.ofNat 64 N) :
+    WP isa (.loop halfStep (.nonzero .s7)) s (HalveI s B Z w st N) := by
+  refine wp_countdown (N := N) hN' hN _ (fun i _ t ⟨ht, ft, vt, kt⟩ _ => ?_) h0 hc
+  refine WP.mono (halfStep_ok ht) fun u ⟨hu, fu, vu, ku, cu⟩ =>
+    ⟨⟨hu, ft.trans fu, by rw [vu, vt, halveIter_succ'], Keep.trans' kt ku⟩, cu⟩
+
+/-- The arrays the halving writes. -/
+abbrev halvingArrs : List Nat := [aT, aU, aV, aF]
+
+theorem halving_eq : halving = .seq (mulTo aF aPm aQm) (.seq (copy aU aPm) (.seq (copy aV aQm)
+    (.seq (.block cnt8) (.loop halfStep (.nonzero .s7))))) := rfl
+
+/-- `φ`, and `8 p_len` steps of the halving. -/
+theorem halving_ok (h : Ws s B Z w nArr) {L : Nat} (hl : s.gpr .a1 = BitVec.ofNat 64 L) (hL : 0 < L)
+    (hL' : 8 * L < 2 ^ 64) (zero : num s.mem B w aZero = 0) :
+    WP isa halving s fun t => Ws t B Z w nArr ∧
+      VG.Proof.Rsa.RISCV64.Keys.Frame B w halvingArrs [X0, X1, X2] s.mem t.mem ∧
+      (num t.mem B w aU, num t.mem B w aV, num t.mem B w aF) = halveIter (8 * L)
+        (num s.mem B w aPm, num s.mem B w aQm, num s.mem B w aPm * num s.mem B w aQm % 2 ^ (64 * w)) ∧
+      Keep stRegs s t := by
+  have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  have nF : ∀ {m m' : Mem} {js : List Nat}, VG.Proof.Rsa.RISCV64.Keys.Frame B w js [] m m' →
+      ∀ {j}, j < nArr → (∀ k ∈ js, k ≠ j) → num m' B w j = num m B w j := by
+    intro m m' js f j hj hk; exact f.num hk (by simp) (fit j hj)
+  rw [halving_eq]
+  refine WP.seq (WP.mono (mulTo_ok h (o := aF) (a := aPm) (b := aQm) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) zero) fun t1 ⟨h1, f1, _, v1, k1⟩ => ?_)
+  refine WP.seq (WP.mono (copy_ok h1 (o := aU) (a := aPm) (by decide) (by decide) (by decide) (by decide))
+    fun t2 ⟨h2, f2, v2, k2, _⟩ => ?_)
+  refine WP.seq (WP.mono (copy_ok h2 (o := aV) (a := aQm) (by decide) (by decide) (by decide) (by decide))
+    fun t3 ⟨h3, f3, v3, k3, _⟩ => ?_)
+  have K3 : Keep stRegs s t3 := (((k1.trans k2).trans k3).mono (by simp))
+  refine WP.seq (WP.mono (nP_ok t3 (L := L) (by rw [K3.gpr (by decide), hl])) fun t4 ⟨⟨c4, m4⟩, k4⟩ => ?_)
+  have h4 : Ws t4 B Z w nArr := h3.of_keep k4
+  have i0 : HalveI t4 B Z w (num t4.mem B w aU, num t4.mem B w aV, num t4.mem B w aF) 0 t4 :=
+    ⟨h4, VG.Proof.Rsa.RISCV64.Keys.Frame.refl _ _ _ _ _, rfl, Keep.refl _ _⟩
+  refine WP.mono (halveLoop_ok (by omega) hL' i0 c4) fun t ⟨ht, ft, vt, kt⟩ => ⟨ht, ?_, ?_, ?_⟩
+  · have f4 : VG.Proof.Rsa.RISCV64.Keys.Frame B w [] [] t3.mem t4.mem := by
+      rw [m4]; exact VG.Proof.Rsa.RISCV64.Keys.Frame.refl _ _ _ _ _
+    exact (((f1.mono.trans f2.mono).trans f3.mono).trans f4.mono).trans ft.mono
+  · rw [vt, m4]
+    have u3 : num t3.mem B w aU = num s.mem B w aPm := by
+      rw [nF f3 (by decide) (by decide), v2, nF f1 (by decide) (by decide)]
+    have v3' : num t3.mem B w aV = num s.mem B w aQm := by
+      rw [v3, nF f2 (by decide) (by decide), nF f1 (by decide) (by decide)]
+    have f3' : num t3.mem B w aF = num s.mem B w aPm * num s.mem B w aQm % 2 ^ (64 * w) := by
+      rw [nF f3 (by decide) (by decide), nF f2 (by decide) (by decide), v1]
+    rw [u3, v3', f3']
+  · exact ((K3.trans k4).trans kt).mono (by simp)
+
+end
+
 end VG.Proof.RsaKeyGen.RISCV64.Key
