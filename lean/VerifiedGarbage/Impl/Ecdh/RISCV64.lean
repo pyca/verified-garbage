@@ -76,8 +76,8 @@ def TB := 46
 /-- Word `j` of `[a] - [m]` with the borrow in `t5` (into and out of it),
 through `t3`, `t4`, `t6` and `a4`. -/
 def ltWord (a m : Nat) : List Instr :=
-  [.load .d .t3 wb a, .load .d .t4 wb m,
-    .sltu .t6 .t3 .t4, .sub .t3 .t3 .t4, .sltu .a4 .t3 .t5, .sub .t3 .t3 .t5, .add .t5 .t6 .a4]
+  ldAt .t3 wb a ++ ldAt .t4 wb m ++
+    [.sltu .t6 .t3 .t4, .sub .t3 .t3 .t4, .sltu .a4 .t3 .t5, .sub .t3 .t3 .t5, .add .t5 .t6 .a4]
 
 /-- The words of `[a] - [m]`, `k` of them, the borrow in `t5`. -/
 def ltWords : Nat → Nat → Nat → List Instr
@@ -138,21 +138,21 @@ doubleword at a time through `t0` and `t1`, from its most significant. -/
 def loadNum : Nat → Nat → Reg → Nat → List Instr
   | 0, _, _, _ => []
   | k + 1, o, p, off =>
-    Impl.Words.RISCV64.loadBE64 .t0 .t1 p off ++ [.store .d .t0 wb (o + 8 * k)] ++ loadNum k o p (off + 8)
+    Impl.Words.RISCV64.loadBE64 .t0 .t1 p off ++ sdAt .t0 wb (o + 8 * k) ++ loadNum k o p (off + 8)
 
 /-- The `n`-word number at `a` under the mask `a7`, to `q + off` big-endian,
 through `t0` and `t1`, from its most significant word. -/
 def storeNum : Nat → Nat → Reg → Nat → List Instr
   | 0, _, _, _ => []
   | k + 1, a, q, off =>
-    [.load .d .t0 wb (a + 8 * k), .logic .and .t0 .t0 .a7] ++ Impl.Words.RISCV64.storeBE 8 .t0 .t1 q off ++
+    ldAt .t0 wb (a + 8 * k) ++ [.logic .and .t0 .t0 .a7] ++ Impl.Words.RISCV64.storeBE 8 .t0 .t1 q off ++
       storeNum k a q (off + 8)
 
 /-- `[o] = x mod 2^(64 n)`, `n` words, from immediates through `t0` and `t1`. -/
 def setConst : Nat → Nat → Nat → List Instr
   | 0, _, _ => []
   | k + 1, o, x =>
-    Impl.Words.RISCV64.li64 .t0 .t1 (BitVec.ofNat 64 x) ++ [.store .d .t0 wb o] ++ setConst k (o + 8) (x >>> 64)
+    Impl.Words.RISCV64.li64 .t0 .t1 (BitVec.ofNat 64 x) ++ sdAt .t0 wb o ++ setConst k (o + 8) (x >>> 64)
 
 /-- The mask `a7` of the byte at `[q]` being `04`, through `t0`: all ones iff
 `byte ^ 4 = 0`, the top bit of `(byte ^ 4) - 1`, negated. -/
