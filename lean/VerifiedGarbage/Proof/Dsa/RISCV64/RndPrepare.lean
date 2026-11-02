@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.RISCV64.RndEnv
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Dsa.RISCV64.Sizes
+import VerifiedGarbage.Proof.Dsa.RISCV64.RndMath
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
