@@ -58,8 +58,8 @@ theorem cck_same {s t : State} (h : cckData s = cckData t) :
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he⟩
 
 theorem cck_ok : cckKC.Ok 6 8 VG.Impl.Rsa.RISCV64.CheckCrtKey.moves
-    ([setup, .block eArr] ++ VG.Impl.Rsa.RISCV64.CheckCrtKey.loads ++ (start ++ crtChecks) ++
-      [.block ret]) cckRegs where
+    (([setup, .block eArr] : List (Prog isa)) ++ VG.Impl.Rsa.RISCV64.CheckCrtKey.loads ++ (start ++ crtChecks) ++
+      ([.block ret] : List (Prog isa))) cckRegs where
   hk s h := cck_kpre (cckP_of h)
   hm s h := cck_moves_ok (cckP_of h)
   hL s h := by

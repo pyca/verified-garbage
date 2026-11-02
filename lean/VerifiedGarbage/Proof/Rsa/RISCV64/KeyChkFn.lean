@@ -81,7 +81,7 @@ theorem fn_ok {s0 : State} {B : Addr} {Z K oS na : Nat} (hp : KPre s0 B Z K oS n
       t.gpr .a4 = BitVec.ofNat 64 (sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem E L))) <<< 31 →
       Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem E L)) = true →
       Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem N K)) K = true →
-      WP isa (seqs ([setup, .block eArr] ++ loads ++ body ++ [.block ret])) t fun u =>
+      WP isa (seqs (([setup, .block eArr] : List (Prog isa)) ++ loads ++ body ++ ([.block ret] : List (Prog isa)))) t fun u =>
         KBase B Z s0 u ∧ u.gpr .a0 = BitVec.ofNat 64 (if ok then 1 else 0)) :
     WP isa (fn (8 * oS) moves loads body) s0 fun t =>
       (∀ i < 12, t.gpr (saved i) = s0.gpr (saved i)) ∧ t.gpr .a0 = BitVec.ofNat 64 (if ok then 1 else 0) := by

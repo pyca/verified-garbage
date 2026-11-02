@@ -103,9 +103,30 @@ theorem dDiv_ok {s0 s : State} (h : PreC s0) {M : Mem} (c : CB s0 M s) (ws : Ws 
   refine ⟨c4, ws4, ?_, ?_, fun hp => ?_⟩
   · refine (f1.mono (by simp) (by simp)).trans ((f2.mono (by simp) (by simp)).trans
       ((f3.mono (by simp) (by simp)).trans (f4.mono (by simp) (by simp))))
-  · rw [f4.word (i := wOf s0) (by omega_arith) (by simp [Ne.symm hr'.2.2.1]; cvx) (by simp) fD]
+  · have hjD : ∀ k ∈ [aDQ, r, aDT], k ≠ aDD := by
+      simp only [List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true]
+      exact ⟨by decide, hr'.2.2.1, by decide⟩
+    rw [f4.word (i := wOf s0) (by omega_arith) hjD (by simp) fD]
     exact z3
   · have := (v4 (by rw [v3]; exact hp)).2.2.1
     rw [this, q3, v3]
+
+theorem dParts_eq : dParts = seqs ([copy aDQ aD, copy aDD aP, .block (clrLow aDD), div aDQ aDR2 aDD aDT] ++
+    [copy aDQ aD, copy aDD aQ, .block (clrLow aDD), div aDQ aDR3 aDD aDT]) := rfl
+
+theorem dParts_ok {s0 s : State} (h : PreC s0) {X₁ X₂ V X : Nat} (iv : Iv s0 X₁ X₂ V X s) :
+    WP isa dParts s (Dd s0 X₁ X₂ V s.mem) := by
+  have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => iv.ws.fit64 hj
+  rw [dParts_eq, wp_seqs_append (by simp) (by simp)]
+  refine WP.mono (dDiv_ok h iv.cb iv.ws (a := aP) (r := aDR2) (.inl rfl) (.inl rfl) iv.d iv.ddz)
+    fun t1 ⟨c1, w1, f1, z1, v1⟩ => ?_
+  have d1 : num t1.mem (bOf s0) (wOf s0) aD = Dv s0 := by rw [f1.num (j := aD) (by decide) (by simp) (fit _ (by decide)), iv.d]
+  have q1 : num t1.mem (bOf s0) (wOf s0) aQ = Qv s0 := by rw [f1.num (j := aQ) (by decide) (by simp) (fit _ (by decide)), iv.q]
+  refine WP.mono (dDiv_ok h c1 w1 (a := aQ) (r := aDR3) (.inr rfl) (.inr rfl) d1 z1)
+    fun t ⟨c2, w2, f2, _, v2⟩ => ⟨c2, w2, ?_, fun hp => ?_, fun hq => ?_⟩
+  · rw [f2.slot (by decide) (by simp), f1.slot (by decide) (by simp)]; exact iv.mask
+  · rw [f2.num (j := aDR2) (by decide) (by simp) (fit _ (by decide)), v1 (by rw [iv.p]; omega_arith), iv.p,
+      Nat.mul_comm]
+  · rw [v2 (by rw [q1]; omega_arith), q1, Nat.mul_comm]
 
 end VG.Proof.Rsa.RISCV64.CrtValues

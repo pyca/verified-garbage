@@ -58,8 +58,8 @@ theorem ck_same {s t : State} (h : ckData s = ckData t) :
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he⟩
 
 theorem ck_ok : ckKC.Ok 8 10 VG.Impl.Rsa.RISCV64.CheckKey.moves
-    ([setup, .block eArr] ++ VG.Impl.Rsa.RISCV64.CheckKey.loads ++ (start ++ crtChecks ++ dChecks) ++
-      [.block ret]) ckRegs where
+    (([setup, .block eArr] : List (Prog isa)) ++ VG.Impl.Rsa.RISCV64.CheckKey.loads ++ (start ++ crtChecks ++ dChecks) ++
+      ([.block ret] : List (Prog isa))) ckRegs where
   hk s h := ck_kpre (ckP_of h)
   hm s h := ck_moves_ok (ckP_of h)
   hL s h := by

@@ -88,7 +88,7 @@ theorem cck_moves_ok {s0 : State} (h0 : CckP s0) (u : State) (hu : Saved s0 (sta
   simp only [y1, y2, stackArg_write, sx, sa _ (by decide : 0 < 8), sa _ (by decide : 2 < 8),
     sa _ (by decide : 4 < 8)]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, xm, kx.2.1, kx.2.2, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp (config := { decide := true }) only [gpr_write, x1, x2, x3, x4, x5, x6, x4', x5',
+    simp only [gpr_write, reduceCtorEq, x1, x2, x3, x4, x5, x6, x4', x5',
       g .a0 (by decide) (by decide), g .a1 (by decide) (by decide), g .a2 (by decide) (by decide),
       g .a3 (by decide) (by decide), g .a4 (by decide) (by decide), g .a5 (by decide) (by decide),
       g .a6 (by decide) (by decide), g .a7 (by decide) (by decide), ↓reduceIte,

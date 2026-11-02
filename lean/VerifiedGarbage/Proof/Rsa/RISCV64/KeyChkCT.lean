@@ -58,7 +58,7 @@ def save2 : List Instr :=
   (List.range 12).flatMap (fun i => [.store .d (saved i) .t0 (8 * i)]) ++ [mov .s11 .t0]
 
 theorem save_eq (o : Nat) (moves : List Instr) :
-    save o ++ moves = [.addSp .t0 0, .load .d .t0 .t0 o] ++ (save2 ++ moves) := by
+    save o ++ moves = ([.addSp .t0 0, .load .d .t0 .t0 o] : List Instr) ++ (save2 ++ moves) := by
   simp only [save, save2, List.append_assoc]
 
 /-- `save`'s first part: the working space's address, the stack argument `i`, into `t0`. -/
@@ -214,12 +214,12 @@ theorem ne_of_eval {s : State} (h : isa.eval (.zero .t0) s = some false) : s.gpr
 
 /-- `KeyCheck.fn` is constant time, from the function's pieces. -/
 theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)} {mvRegs : List Reg}
-    (H : F.Ok oS na moves ([setup, .block eArr] ++ loads ++ body ++ [.block ret]) mvRegs) (hoS : 8 * oS < 2048)
+    (H : F.Ok oS na moves (([setup, .block eArr] : List (Prog isa)) ++ loads ++ body ++ ([.block ret] : List (Prog isa))) mvRegs) (hoS : 8 * oS < 2048)
     {hc1 hc2 hc3 : VG.Taint.Hint taint.T}
     (hS1 : (taint.check (Taint.ofRegs []) (.block [.addSp .t0 0, .load .d .t0 .t0 (8 * oS)]) hc1).isSome = true)
     (hS2 : (taint.check (Taint.ofRegs (.t0 :: argRegs)) (.block (save2 ++ moves)) hc2).isSome = true)
     (hT : (taint.check (Taint.ofRegs (.s11 :: mvRegs))
-      (seqs ([setup, .block eArr] ++ loads ++ body ++ [.block ret])) hc3).isSome = true) :
+      (seqs (([setup, .block eArr] : List (Prog isa)) ++ loads ++ body ++ ([.block ret] : List (Prog isa)))) hc3).isSome = true) :
     RelCT isa (Two F.C0) (fn (8 * oS) moves loads body) fun _ _ => True := by
   have same : ∀ {a : β} {x y : State}, F.C0 a x → F.C0 a y → F.B x = F.B y ∧ F.E x = F.E y ∧ F.N x = F.N y ∧
       F.L x = F.L y ∧ F.K x = F.K y ∧
