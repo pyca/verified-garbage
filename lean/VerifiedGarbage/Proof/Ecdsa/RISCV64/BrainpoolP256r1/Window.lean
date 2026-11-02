@@ -42,7 +42,6 @@ open VG.Proof.Ecdsa.RISCV64.WindowA
 open VG.Proof.X25519.RISCV64 (Rest)
 open VG.Spec.Weierstrass (Point Fe mul onCurve)
 open VG.Impl.Ecdsa.RISCV64.Window (windows)
-open VG.Impl.Ecdsa.RISCV64.Verify (EX EY EZ)
 
 /-- The curve as the code has it. -/
 abbrev c : Cfg := brainpoolp256r1
@@ -495,7 +494,7 @@ open VG.Impl.Ecdsa.RISCV64.Comb (maskReg treeRegs) in
 theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : j < 64)
     (h1 : s.gpr .s1 = BitVec.ofNat 64 j) {Q : Point W} (hT : TabTo base s Q 15) :
     WP isa (.block (Cfg.select c)) s fun s' =>
-      PtOk base s' (c.pt EX EY EZ) (mul ((wordsVal s.mem base (c.sl K) 4 >>> (4 * j)) % 16) Q) ∧
+      PtOk base s' (c.pt c.EX c.EY c.EZ) (mul ((wordsVal s.mem base (c.sl K) 4 >>> (4 * j)) % 16) Q) ∧
       Outside base 1920 96 s.mem s'.mem ∧ Rest selRegs s s' := by
   have hn := hw.nowrap
   rw [Cfg.select]
@@ -519,7 +518,7 @@ theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
     simp [show b < 64 by omega]
   refine WP.mono (WP.rdwr (scansJ_ok c (by decide) (by decide) (by decide) (by decide) (by decide) 12
     (Nat.le_refl _) hw₄ h0 hm)) fun s₅ ⟨⟨v₅, O₅, k₅⟩, rd₅, wr₅, sp₅⟩ => ?_
-  simp only [show c.jt = 2048 from rfl, show c.sl EX = 1920 from rfl, show c.n = 4 from rfl,
+  simp only [show c.jt = 2048 from rfl, show c.sl c.EX = 1920 from rfl, show c.n = 4 from rfl,
     Nat.reduceMul] at v₅ O₅
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, m₂, m₁]
   rw [m₄] at v₅ O₅
@@ -601,7 +600,7 @@ theorem step_ok (hL : Law W) {base : Addr} {s₀ : State} {Q : Point W} {k : Nat
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl <;> exact k₃ _ (by decide) (by decide)
   -- `T = R + E`.
-  refine WP.seq (WP.mono (addPt_ok hL hw₃ hK₃.ap hK₃.bp (p := c.pt RX RY RZ) (q := c.pt EX EY EZ)
+  refine WP.seq (WP.mono (addPt_ok hL hw₃ hK₃.ap hK₃.bp (p := c.pt RX RY RZ) (q := c.pt c.EX c.EY c.EZ)
     (o := c.pt TX TY TZ) ⟨by decide, by decide⟩ (by decide) h16 hE pR₃ pE₃) fun s₄ ⟨K₄, U₄, pT⟩ => ?_)
   have hw₄ := hw₃.of_kp K₄
   -- `R = T`.
