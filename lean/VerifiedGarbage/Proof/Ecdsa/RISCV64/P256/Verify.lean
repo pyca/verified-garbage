@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.Sign
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Exchange
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Verify
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.Joint
 public import VerifiedGarbage.Spec.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.CheckVerified
@@ -22,8 +23,8 @@ import VerifiedGarbage.Proof.EcKey.PublicKey
 the group law (`verify_rv`): the setup (`vsetup_ok`: the saves, the public
 key's point and first byte, the constants, `r`, `s` and `e`, and the
 ranges of `r` and `s`), the check of the key (`check_ok`), `u` and `v`
-(`uv_ok`), `[u]G` and `[v]Q` by the ladder (`points_ok`), their sum
-(`sum_ok`), `x` and the comparison, and the result; the specification's
+(`uv_ok`), `[u]G + [v]Q` by the joint ladder (`Joint.joint_ok`,
+`Proof/Ecdsa/RISCV64/P256/Joint.lean`), `x` and the comparison, and the result; the specification's
 answer is `verify_eq`'s (`Proof/Ecdsa/Verify.lean`).
 -/
 
@@ -375,221 +376,6 @@ theorem uv_ok {base : Addr} {s : State} {r sg e : Nat} (hb : UvPre base s r sg e
     ((((((U₂.trans U₃).trans U₄).trans U₅).trans U₆).trans U₇).trans U₈).trans U₉,
     by rw [uu₉]; exact lt₆, by rw [uu₉]; exact uu, lt₉, vv⟩
 
-/-! ## `[u]G` and `[v]Q` -/
-
-/-- Three copies, of the coordinates or the scalar and the point. -/
-theorem copy3_ok {s : State} {base : Addr} (hw : WsReg s base) {o₁ a₁ o₂ a₂ o₃ a₃ : Nat}
-    (h1 : o₁ < 44 ∧ a₁ < 44 ∧ o₁ ≠ a₁) (h2 : o₂ < 44 ∧ a₂ < 44 ∧ o₂ ≠ a₂) (h3 : o₃ < 44 ∧ a₃ < 44 ∧ o₃ ≠ a₃)
-    (h12 : o₁ ≠ a₂ ∧ o₁ ≠ a₃ ∧ o₂ ≠ a₃) (hd : o₁ ≠ o₂ ∧ o₁ ≠ o₃ ∧ o₂ ≠ o₃) :
-    WP isa (.block (copy 4 (p256.sl o₁) (p256.sl a₁) ++ copy 4 (p256.sl o₂) (p256.sl a₂) ++
-      copy 4 (p256.sl o₃) (p256.sl a₃))) s fun s' =>
-      WsReg s' base ∧ Kp s s' ∧ Unch base [(p256.sl o₁, 8 * 4), (p256.sl o₂, 8 * 4), (p256.sl o₃, 8 * 4)] s.mem s'.mem ∧
-      sv base s' o₁ = sv base s a₁ ∧ sv base s' o₂ = sv base s a₂ ∧ sv base s' o₃ = sv base s a₃ := by
-  have sl8 : ∀ i, p256.sl i % 8 = 0 := fun i => by rw [sl_eq]; omega
-  have sl32 : ∀ {i}, i < 44 → p256.sl i + 8 * 4 ≤ 2048 := fun hi => by rw [sl_eq]; omega
-  have ap : ∀ {i j}, i ≠ j → p256.sl i ≤ p256.sl j ∨ p256.sl j + 8 * 4 ≤ p256.sl i := fun h => by
-    rw [sl_eq, sl_eq]; omega
-  have ap' : ∀ {i j}, i ≠ j → p256.sl i + 32 ≤ p256.sl j ∨ p256.sl j + 8 * 4 ≤ p256.sl i := fun h => by
-    rw [sl_eq, sl_eq]; omega
-  simp only [List.append_assoc]
-  refine WP.block_append (WP.mono (copy_ok 4 hw (o := p256.sl o₁) (a := p256.sl a₁) (sl8 _) (sl8 _) (sl32 h1.1)
-    (sl32 h1.2.1) (ap h1.2.2)) fun s₁ ⟨v₁, r₁, O₁⟩ => ?_)
-  have hw₁ := hw.of_rest r₁
-  refine WP.block_append (WP.mono (copy_ok 4 hw₁ (o := p256.sl o₂) (a := p256.sl a₂) (sl8 _) (sl8 _) (sl32 h2.1)
-    (sl32 h2.2.1) (ap h2.2.2)) fun s₂ ⟨v₂, r₂, O₂⟩ => ?_)
-  have hw₂ := hw₁.of_rest r₂
-  refine WP.mono (copy_ok 4 hw₂ (o := p256.sl o₃) (a := p256.sl a₃) (sl8 _) (sl8 _) (sl32 h3.1)
-    (sl32 h3.2.1) (ap h3.2.2)) fun s₃ ⟨v₃, r₃, O₃⟩ => ?_
-  have U := (O₁.unch.trans O₂.unch).trans O₃.unch
-  refine ⟨hw₂.of_rest r₃, (Kp.of_rest r₁).trans ((Kp.of_rest r₂).trans (Kp.of_rest r₃)),
-    U.mono (by intro w hw; simpa using hw), ?_, ?_, ?_⟩
-  · show wordsVal _ _ _ _ = _
-    rw [O₃.wordsVal (by rw [sl_eq, sl_eq]; omega) (by rw [sl_eq]; omega),
-      O₂.wordsVal (by rw [sl_eq, sl_eq]; omega) (by rw [sl_eq]; omega), v₁]
-  · show wordsVal _ _ _ _ = _
-    rw [O₃.wordsVal (by rw [sl_eq, sl_eq]; omega) (by rw [sl_eq]; omega), v₂,
-      O₁.wordsVal (by rw [sl_eq, sl_eq]; omega) (by rw [sl_eq]; omega)]
-  · show wordsVal _ _ _ _ = _
-    rw [v₃, O₂.wordsVal (by rw [sl_eq, sl_eq]; omega) (by rw [sl_eq]; omega),
-      O₁.wordsVal (by rw [sl_eq, sl_eq]; omega) (by rw [sl_eq]; omega)]
-
-/-- What `points` reads. -/
-structure PtsPre (base : Addr) (s : State) (u v : Nat) (Q : Point W) : Prop where
-  ws : WsReg s base
-  tc : TailConsts base s
-  gx : sv base s GX = W.gx * 2 ^ 256 % W.p
-  gy : sv base s GY = W.gy * 2 ^ 256 % W.p
-  uv : sv base s UU = u
-  vv : sv base s VV = v
-  qx : sv base s CPX < W.p
-  qy : sv base s CPY < W.p
-  q : Point.affine (toM W.p (2 ^ 256) (sv base s CPX)) (toM W.p (2 ^ 256) (sv base s CPY)) = Q
-  on : Spec.Weierstrass.onCurve W Q = true
-
-/-- What `points` writes. -/
-abbrev ptsW : List (Nat × Nat) :=
-  [(p256.sl K, 8 * 4), (p256.sl RX, 8 * 4), (p256.sl RY, 8 * 4)] ++ mulBW ++
-    [(p256.sl UX, 8 * 4), (p256.sl UY, 8 * 4), (p256.sl UZ, 8 * 4)] ++
-    [(p256.sl K, 8 * 4), (p256.sl RX, 8 * 4), (p256.sl RY, 8 * 4)] ++ mulBW
-
-/-- `[u]G` to `U`, and `[v]Q` to `R`. -/
-theorem points_ok (hL : VG.Proof.Weierstrass.Law W) {base : Addr} {s : State} {u v : Nat} {Q : Point W}
-    (hb : PtsPre base s u v Q) :
-    WP isa (Verify.Cfg.points p256) s fun s' => Kc s s' ∧ Unch base ptsW s.mem s'.mem ∧
-      Rep W (tmv W 4 base s' (p256.sl UX)) (tmv W 4 base s' (p256.sl UY)) (tmv W 4 base s' (p256.sl UZ))
-        (Spec.Weierstrass.mul u (Spec.Weierstrass.G W)) ∧
-      (∀ x ∈ [p256.sl UX, p256.sl UY, p256.sl UZ], wordsVal s'.mem base x 4 < W.p) ∧
-      Rep W (tmv W 4 base s' (p256.sl RX)) (tmv W 4 base s' (p256.sl RY)) (tmv W 4 base s' (p256.sl RZ))
-        (Spec.Weierstrass.mul v Q) ∧
-      (∀ x ∈ [p256.sl RX, p256.sl RY, p256.sl RZ], wordsVal s'.mem base x 4 < W.p) := by
-  have hp0 : 0 < W.p := by decide
-  have tc := hb.tc
-  rw [Verify.Cfg.points, show p256.n = 4 from rfl]
-  -- `u` and `G`.
-  refine WP.seq (WP.mono (copy3_ok hb.ws (o₁ := K) (a₁ := UU) (o₂ := RX) (a₂ := GX) (o₃ := RY) (a₃ := GY)
-    (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₁ ⟨hw₁, K₁, U₁, k₁, x₁, y₁⟩ => ?_)
-  have tc₁ := tc.of_unch U₁ (by decide)
-  have ap : toM W.p (2 ^ 256) (sv base s₁ AP) = Fin.ofNat W.p W.a := by rw [tc₁.ap, toM_mont unit]
-  have bp : toM W.p (2 ^ 256) (sv base s₁ B3P) = Fin.ofNat W.p (3 * W.b) := by rw [tc₁.b3p, toM_mont unit]
-  have hG : Point.affine (toM W.p (2 ^ 256) (sv base s₁ RX)) (toM W.p (2 ^ 256) (sv base s₁ RY)) =
-      Spec.Weierstrass.G W := by
-    rw [x₁, y₁, hb.gx, hb.gy, toM_mont unit, toM_mont unit]; rfl
-  refine WP.seq (WP.mono (mulBody_ok hL hw₁ tc₁.zero (by rw [tc₁.onep, Nat.one_mul]) ap bp
-    (by rw [tc₁.ap]; exact Nat.mod_lt _ hp0) (by rw [tc₁.b3p]; exact Nat.mod_lt _ hp0)
-    (by rw [x₁, hb.gx]; exact Nat.mod_lt _ hp0) (by rw [y₁, hb.gy]; exact Nat.mod_lt _ hp0)
-    (by rw [hG]; exact VG.Proof.P256.onCurve_G)) fun s₂ ⟨K₂, U₂, lt₂, rep₂⟩ => ?_)
-  rw [hG, k₁, hb.uv] at rep₂
-  have hw₂ := hw₁.of_kc K₂
-  -- `U`, then `v` and `Q`.
-  have e1 : ∀ (A B C D E F : List Instr), A ++ B ++ C ++ D ++ E ++ F = (A ++ B ++ C) ++ (D ++ E ++ F) := by
-    intros; simp only [List.append_assoc]
-  rw [e1]
-  refine WP.seq (WP.block_append (WP.mono (copy3_ok hw₂ (o₁ := UX) (a₁ := RX) (o₂ := UY) (a₂ := RY) (o₃ := UZ)
-    (a₃ := RZ) (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₃ ⟨hw₃, K₃, U₃, ux₃, uy₃, uz₃⟩ =>
-    WP.mono (copy3_ok hw₃ (o₁ := K) (a₁ := VV) (o₂ := RX) (a₂ := CPX) (o₃ := RY) (a₃ := CPY)
-    (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₄ ⟨hw₄, K₄, U₄, k₄, x₄, y₄⟩ => ?_))
-  have U₂₃ : Unch base _ s₂.mem s₃.mem := U₃
-  have U₁₄ := (U₂.trans U₃).trans U₄
-  have tc₄ := tc₁.of_unch U₁₄ (by decide)
-  have ap₄ : toM W.p (2 ^ 256) (sv base s₄ AP) = Fin.ofNat W.p W.a := by rw [tc₄.ap, toM_mont unit]
-  have bp₄ : toM W.p (2 ^ 256) (sv base s₄ B3P) = Fin.ofNat W.p (3 * W.b) := by rw [tc₄.b3p, toM_mont unit]
-  have e₁ : ∀ i ∈ [VV, CPX, CPY], sv base s₃ i = sv base s i := fun i hi => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    show wordsVal _ _ _ _ = _
-    rcases hi with rfl | rfl | rfl <;>
-      exact (sv_unch (U₂.trans U₃) _ (by decide)).trans (sv_unch U₁ _ (by decide))
-  have hQ : Point.affine (toM W.p (2 ^ 256) (sv base s₄ RX)) (toM W.p (2 ^ 256) (sv base s₄ RY)) = Q := by
-    rw [x₄, y₄, e₁ CPX (by simp), e₁ CPY (by simp), hb.q]
-  refine WP.mono (mulBody_ok hL hw₄ tc₄.zero (by rw [tc₄.onep, Nat.one_mul]) ap₄ bp₄
-    (by rw [tc₄.ap]; exact Nat.mod_lt _ hp0) (by rw [tc₄.b3p]; exact Nat.mod_lt _ hp0)
-    (by rw [x₄, e₁ CPX (by simp)]; exact hb.qx) (by rw [y₄, e₁ CPY (by simp)]; exact hb.qy)
-    (by rw [hQ]; exact hb.on)) fun s₅ ⟨K₅, U₅, lt₅, rep₅⟩ => ?_
-  rw [hQ, k₄, e₁ VV (by simp), hb.vv] at rep₅
-  -- `U` is kept.
-  have eu : ∀ i ∈ [UX, UY, UZ], wordsVal s₅.mem base (p256.sl i) 4 = wordsVal s₃.mem base (p256.sl i) 4 :=
-    fun i hi => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-      rcases hi with rfl | rfl | rfl <;> exact (sv_unch (U₄.trans U₅) _ (by decide))
-  have ux : wordsVal s₃.mem base (p256.sl UX) 4 = wordsVal s₂.mem base (p256.sl RX) 4 := ux₃
-  have uy : wordsVal s₃.mem base (p256.sl UY) 4 = wordsVal s₂.mem base (p256.sl RY) 4 := uy₃
-  have uz : wordsVal s₃.mem base (p256.sl UZ) 4 = wordsVal s₂.mem base (p256.sl RZ) 4 := uz₃
-  refine ⟨K₁.kc.trans (K₂.trans (K₃.kc.trans (K₄.kc.trans K₅))),
-    (((U₁.trans U₂).trans U₃).trans U₄).trans U₅, ?_, ?_, rep₅, lt₅⟩
-  · show Rep W (toM _ _ (wordsVal s₅.mem base (p256.sl UX) 4)) (toM _ _ (wordsVal s₅.mem base (p256.sl UY) 4))
-      (toM _ _ (wordsVal s₅.mem base (p256.sl UZ) 4)) _
-    rw [eu UX (by simp), eu UY (by simp), eu UZ (by simp), ux, uy, uz]
-    exact rep₂
-  · intro x hx
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl
-    · rw [eu UX (by simp), ux]; exact lt₂ _ (by simp)
-    · rw [eu UY (by simp), uy]; exact lt₂ _ (by simp)
-    · rw [eu UZ (by simp), uz]; exact lt₂ _ (by simp)
-
-/-! ## The sum -/
-
-/-- The slots of the sum. -/
-abbrev sumSl : List Nat :=
-  [p256.sl AP, p256.sl B3P, p256.sl T0, p256.sl T1, p256.sl T2, p256.sl T3, p256.sl T4, p256.sl T5,
-    p256.sl UX, p256.sl UY, p256.sl UZ, p256.sl RX, p256.sl RY, p256.sl RZ, p256.sl DX, p256.sl DY, p256.sl DZ]
-
-theorem sumLay : VG.Proof.Mont.Lay p256.MP' (own 4) (· ∈ sumSl) :=
-  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ sumSl, ∀ y ∈ sumSl, x ≠ y →
-      x + 8 * p256.MP'.n ≤ y ∨ y + 8 * p256.MP'.n ≤ x) x hx y hy, by decide, by decide⟩
-
-theorem sumShort : Short (· ∈ sumSl) := by decide
-
-/-- `R = U + R`, by the complete addition through `D`. -/
-theorem sum_ok (hL : VG.Proof.Weierstrass.Law W) {base : Addr} {s : State} (hw : WsReg s base)
-    (hap : sv base s AP = W.a * 2 ^ 256 % W.p) (hbp : sv base s B3P = 3 * W.b * 2 ^ 256 % W.p)
-    {P Q : Point W} (hP : Spec.Weierstrass.onCurve W P = true) (hQ : Spec.Weierstrass.onCurve W Q = true)
-    (hRP : Rep W (tmv W 4 base s (p256.sl UX)) (tmv W 4 base s (p256.sl UY)) (tmv W 4 base s (p256.sl UZ)) P)
-    (hRQ : Rep W (tmv W 4 base s (p256.sl RX)) (tmv W 4 base s (p256.sl RY)) (tmv W 4 base s (p256.sl RZ)) Q)
-    (hlU : ∀ x ∈ [p256.sl UX, p256.sl UY, p256.sl UZ], wordsVal s.mem base x 4 < W.p)
-    (hlR : ∀ x ∈ [p256.sl RX, p256.sl RY, p256.sl RZ], wordsVal s.mem base x 4 < W.p) :
-    WP isa (Verify.Cfg.sum p256) s fun s' => Kp s s' ∧
-      Unch base ((rcbW p256.rcbSlots (p256.pt DX DY DZ)).map (fun w => (w, 8 * 4)) ++ [(own 4, 64 * 4)] ++
-        [(p256.sl RX, 8 * 4), (p256.sl RY, 8 * 4), (p256.sl RZ, 8 * 4)]) s.mem s'.mem ∧
-      Rep W (tmv W 4 base s' (p256.sl RX)) (tmv W 4 base s' (p256.sl RY)) (tmv W 4 base s' (p256.sl RZ))
-        (Spec.Weierstrass.add P Q) ∧
-      (∀ x ∈ [p256.sl RX, p256.sl RY, p256.sl RZ], wordsVal s'.mem base x 4 < W.p) := by
-  have hp0 : 0 < W.p := by decide
-  rw [Verify.Cfg.sum]
-  have hI : Inv 4 base W.p (· ∈ sumSl) (rcbR p256.rcbSlots (p256.pt UX UY UZ) (p256.pt RX RY RZ))
-      (fun x => toM W.p (2 ^ (64 * 4)) (wordsVal s.mem base x 4)) s := by
-    refine ⟨hw, by decide, fun x hx => ?_, fun x _ => rfl⟩
-    simp only [rcbR, Cfg.rcbSlots, Cfg.pt, List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · show sv base s AP < W.p; rw [hap]; exact Nat.mod_lt _ hp0
-    · show sv base s B3P < W.p; rw [hbp]; exact Nat.mod_lt _ hp0
-    · exact hlU _ (by simp)
-    · exact hlU _ (by simp)
-    · exact hlU _ (by simp)
-    · exact hlR _ (by simp)
-    · exact hlR _ (by simp)
-    · exact hlR _ (by simp)
-  refine WP.seq (WP.mono (rcb_ok (F := p256Field) field_ok rfl sumLay sumShort unit ⟨by decide, by decide⟩
-    (by decide) hI (fun x hx => hx)) fun s₁ ⟨k₁, I₁, t₁, n₁⟩ => ?_)
-  have ea : toM W.p (2 ^ (64 * 4)) (wordsVal s.mem base (p256.sl AP) 4) = Fin.ofNat W.p W.a := by
-    show toM _ _ (sv base s AP) = _; rw [hap, toM_mont unit]
-  have eb : toM W.p (2 ^ (64 * 4)) (wordsVal s.mem base (p256.sl B3P) 4) = Fin.ofNat W.p (3 * W.b) := by
-    show toM _ _ (sv base s B3P) = _; rw [hbp, toM_mont unit]
-  generalize hE : (fun x => toM W.p (2 ^ (64 * 4)) (wordsVal s.mem base x 4)) = E at I₁ t₁ n₁
-  have hrep := hL.add hP hQ hRP hRQ (X3 := runOps (rcb p256.rcbSlots (p256.pt UX UY UZ) (p256.pt RX RY RZ)
-      (p256.pt DX DY DZ)) E (p256.sl DX))
-    (Y3 := runOps (rcb p256.rcbSlots (p256.pt UX UY UZ) (p256.pt RX RY RZ) (p256.pt DX DY DZ)) E (p256.sl DY))
-    (Z3 := runOps (rcb p256.rcbSlots (p256.pt UX UY UZ) (p256.pt RX RY RZ) (p256.pt DX DY DZ)) E (p256.sl DZ))
-    (by
-      subst hE
-      show rcbAdd (Fin.ofNat W.p W.a) (Fin.ofNat W.p (3 * W.b)) _ _ _ _ _ _ = _
-      rw [← ea, ← eb]
-      exact t₁.symm)
-  have hw₁ := I₁.ws
-  rw [show p256.n = 4 from rfl]
-  refine WP.mono (copy3_ok hw₁ (o₁ := RX) (a₁ := DX) (o₂ := RY) (a₂ := DY) (o₃ := RZ) (a₃ := DZ)
-    (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₂ ⟨hw₂, K₂, U₂, x₂, y₂, z₂⟩ => ?_
-  have vD : ∀ x ∈ [p256.sl DX, p256.sl DY, p256.sl DZ],
-      toM W.p (2 ^ 256) (wordsVal s₁.mem base x 4) =
-        runOps (rcb p256.rcbSlots (p256.pt UX UY UZ) (p256.pt RX RY RZ) (p256.pt DX DY DZ)) E x ∧
-      wordsVal s₁.mem base x 4 < W.p := fun x hx => by
-    have hm : x ∈ rcbW p256.rcbSlots (p256.pt DX DY DZ) ++ rcbR p256.rcbSlots (p256.pt UX UY UZ) (p256.pt RX RY RZ) := by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl <;> decide
-    exact ⟨I₁.val x hm, I₁.lt x hm⟩
-  have U₁ : Unch base ((rcbW p256.rcbSlots (p256.pt DX DY DZ)).map (fun w => (w, 8 * 4)) ++ [(own 4, 64 * 4)])
-      s.mem s₁.mem := k₁.mem
-  refine ⟨k₁.kp.trans K₂, U₁.trans U₂, ?_, ?_⟩
-  · show Rep W (toM _ _ (sv base s₂ RX)) (toM _ _ (sv base s₂ RY)) (toM _ _ (sv base s₂ RZ)) _
-    rw [x₂, y₂, z₂]
-    rw [(vD _ (by simp)).1, (vD _ (by simp)).1, (vD _ (by simp)).1]
-    exact hrep
-  · intro x hx
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl
-    · show sv base s₂ RX < _; rw [x₂]; exact (vD _ (by simp)).2
-    · show sv base s₂ RY < _; rw [y₂]; exact (vD _ (by simp)).2
-    · show sv base s₂ RZ < _; rw [z₂]; exact (vD _ (by simp)).2
-
 /-! ## The comparison and the end -/
 
 /-- `x mod n`, `r mod n`, and their difference modulo `n`, zero exactly if `x ≡ r`. -/
@@ -800,16 +586,20 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
       exact VG.Proof.P256.onCurve_G
     · rw [ite_eq_right h0, ite_eq_right h0, toM_mont unit, toM_mont unit]
       exact (hval h0).2.2
-  -- `[u]G` and `[v]Q`.
-  refine WP.seq (WP.mono (points_ok hL ⟨hw₄, tc₄, (e₁₄ GX (by simp)).trans gx₁, (e₁₄ GY (by simp)).trans gy₁,
-    rfl, rfl, lt_qx, lt_qy, hQ, hon⟩) fun s₅ ⟨K₅, U₅, repU, ltU, repV, ltV⟩ => ?_)
-  have hw₅ := hw₄.of_kc K₅
-  have tc₅ := tc₄.of_unch U₅ (by decide)
-  -- The sum.
-  refine WP.seq (WP.mono (sum_ok hL hw₅ tc₅.ap tc₅.b3p (hL.onCurve_mul VG.Proof.P256.onCurve_G _)
-    (hL.onCurve_mul hon _) repU repV ltU ltV) fun s₆ ⟨K₆, U₆, rep₆, lt₆⟩ => ?_)
-  have hw₆ := hw₅.of_kp K₆
-  have tc₆ := tc₅.of_unch U₆ (by decide)
+  -- `[u]G + [v]Q`, by the joint ladder.
+  refine WP.seq (WP.mono (VG.Proof.Ecdsa.RISCV64.Joint.joint_ok hL ⟨hw₄, tc₄.ap, tc₄.b3p, tc₄.zero, tc₄.onep,
+    (e₁₄ GX (by simp)).trans gx₁, (e₁₄ GY (by simp)).trans gy₁, lt_qx, lt_qy, hQ, hon⟩)
+    fun s₆ ⟨K₆, U₆, pR₆⟩ => ?_)
+  have hw₆ := hw₄.of_kc K₆
+  have tc₆ := tc₄.of_unch U₆ (by decide)
+  have rep₆ : Rep W (tmv W 4 base s₆ (p256.sl RX)) (tmv W 4 base s₆ (p256.sl RY)) (tmv W 4 base s₆ (p256.sl RZ))
+      (Spec.Weierstrass.add (Spec.Weierstrass.mul (sv base s₄ UU) (Spec.Weierstrass.G W))
+        (Spec.Weierstrass.mul (sv base s₄ VV) Q)) := pR₆.rep
+  have lt₆ : ∀ x ∈ [p256.sl RX, p256.sl RY, p256.sl RZ], wordsVal s₆.mem base x 4 < W.p := by
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl
+    exacts [pR₆.x, pR₆.y, pR₆.z]
   -- `Z^(p-2)` and `x`.
   refine WP.seq (WP.mono (pow_ok (P := powP p256) (F := p256Field) field_ok rfl powLay unit hw₆ (by decide)
     (by show sv base s₆ ONEP = _; rw [tc₆.onep]; rfl)
@@ -823,7 +613,7 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
   -- The comparison and the end.
   refine WP.seq (WP.mono (compare_ok hw₈ lt₈ tc₈.zero) fun s₉ ⟨K₉, U₉, cmp⟩ => ?_)
   have hw₉ := hw₈.of_kc K₉
-  have U₂₉ := ((((((U₃.trans U₄).trans U₅).trans U₆).trans U₇).trans U₈).trans U₉)
+  have U₂₉ := (((((U₃.trans U₄).trans U₆).trans U₇).trans U₈).trans U₉)
   refine WP.mono (vfinish_ok hw₉ (c := (((((decide (s.mem (s.gpr .a0) = 4) &&
       decide (ofBytes (bytesAt s.mem (s.gpr .a2) 32) < W.n)) && !decide (ofBytes (bytesAt s.mem (s.gpr .a2) 32) = 0)) &&
       decide (ofBytes (bytesAt s.mem (s.gpr .a2 + BitVec.ofNat 64 32) 32) < W.n)) &&
@@ -835,9 +625,9 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl | rfl <;>
       rw [U₉.word (by decide) (by decide), U₈.word (by decide) (by decide), U₇.word (by decide) (by decide),
-        U₆.word (by decide) (by decide), U₅.word (by decide) (by decide), U₄.word (by decide) (by decide),
+        U₆.word (by decide) (by decide), U₄.word (by decide) (by decide),
         U₃.word (by decide) (by decide), U₂.word (by decide) (by decide)]
-  refine ⟨⟨fun r hr => ?_, by rw [sp', K₉.sp, K₈.sp, K₇.sp, K₆.sp, K₅.sp, K₄.sp, r₃.sp, K₂.sp, S.sp],
+  refine ⟨⟨fun r hr => ?_, by rw [sp', K₉.sp, K₈.sp, K₇.sp, K₆.sp, K₄.sp, r₃.sp, K₂.sp, S.sp],
     by rw [ra', w19 24 (by simp), S.sv3]⟩, ?_⟩
   · by_cases h0 : r = .s0
     · subst h0; rw [s0', w19 0 (by simp), S.sv0]
@@ -850,7 +640,7 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
     have ht : r ∉ [Reg.t0, .t1] := by
       rintro h; simp only [List.mem_cons, List.not_mem_nil, or_false] at h
       rcases h with rfl | rfl <;> exact absurd hr (by decide)
-    rw [regs' r hr h0 h1 h2' h3', K₉.gpr r hr h1, K₈.gpr r hr, K₇.gpr r hr h1, K₆.gpr r hr, K₅.gpr r hr h1,
+    rw [regs' r hr h0 h1 h2' h3', K₉.gpr r hr h1, K₈.gpr r hr, K₇.gpr r hr h1, K₆.gpr r hr h1,
       K₄.gpr r hr h1, r₃.gpr r ht, K₂.gpr r hr, S.regs r h0 h2' h3' hr]
   -- The specification.
   have hsplit : bytesAt s.mem (s.gpr .a2) 64 =
@@ -870,7 +660,7 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
     rw [← Srv]
     show wordsVal _ _ _ _ = _
     rw [sv_unch U₈ VR (by decide), sv_unch U₇ VR (by decide), sv_unch U₆ VR (by decide),
-      sv_unch U₅ VR (by decide), sv_unch U₄ VR (by decide), sv_unch U₁₃ VR (by decide)]
+      sv_unch U₄ VR (by decide), sv_unch U₁₃ VR (by decide)]
   rw [rz₉] at a0'
   unfold verifyRV
   show s'.gpr .a0 = if vf s.mem (s.gpr .a0) (s.gpr .a1) (s.gpr .a2) then 1 else 0
