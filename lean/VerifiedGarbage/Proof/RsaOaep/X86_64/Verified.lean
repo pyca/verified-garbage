@@ -95,7 +95,7 @@ theorem dec_sat (H : Spec.Mgf1.Hash) {vs : List MdHash} {w : MdHash} (hw : w ∈
   have hA : ∀ j < 18, (stackArgAddr decSatBase j).toNat + 8 ≤ 0x300000 := by decide
   simp only [withTable_arg _ vs w (hA 0 (by decide)), withTable_arg _ vs w (hA 1 (by decide)), withTable_arg _ vs w (hA 2 (by decide)), withTable_arg _ vs w (hA 3 (by decide)), withTable_arg _ vs w (hA 4 (by decide)), withTable_arg _ vs w (hA 5 (by decide)), withTable_arg _ vs w (hA 6 (by decide)), withTable_arg _ vs w (hA 7 (by decide)), withTable_arg _ vs w (hA 8 (by decide)), withTable_arg _ vs w (hA 9 (by decide)), withTable_arg _ vs w (hA 10 (by decide)), withTable_arg _ vs w (hA 11 (by decide)), withTable_arg _ vs w (hA 12 (by decide)), withTable_arg _ vs w (hA 13 (by decide)), withTable_arg _ vs w (hA 14 (by decide)), withTable_arg _ vs w (hA 15 (by decide)), withTable_arg _ vs w (hA 16 (by decide)), withTable_arg _ vs w (hA 17 (by decide))]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-    List.getD_cons_zero, Option.some.injEq, exists_eq_left', ite_false, withTable_addr]
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', withTable_addr]
   sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
     Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
     argRegs, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq]
@@ -150,7 +150,7 @@ theorem enc_sat {H : Spec.Mgf1.Hash} (hH : H ∈ Pbkdf2.Md.X86_64.mdHashes) {vs 
       argRegs, encStack, Pc.stackArgs_ten, List.append_eq, List.range, List.range.loop]
     simp only [withTable_arg _ vs w (hA _ 0 (by decide)), withTable_arg _ vs w (hA _ 1 (by decide)), withTable_arg _ vs w (hA _ 2 (by decide)), withTable_arg _ vs w (hA _ 3 (by decide)), withTable_arg _ vs w (hA _ 4 (by decide)), withTable_arg _ vs w (hA _ 5 (by decide)), withTable_arg _ vs w (hA _ 6 (by decide)), withTable_arg _ vs w (hA _ 7 (by decide)), withTable_arg _ vs w (hA _ 8 (by decide)), withTable_arg _ vs w (hA _ 9 (by decide))]
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq, exists_eq_left', ite_false, withTable_addr]
+      List.getD_cons_zero, Option.some.injEq, exists_eq_left', withTable_addr]
     sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
       argRegs, encStack, Pc.stackArgs_ten, List.append_eq, List.range, List.range.loop]

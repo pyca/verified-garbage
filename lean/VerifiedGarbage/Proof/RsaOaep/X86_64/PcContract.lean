@@ -46,7 +46,7 @@ theorem implies (hsat : ∃ s, (encC H ts).pre s) : (contract H ts).Implies (enc
       Abi.withTables, Sig.wordIndex, abi, argRegs, contract, postT, post, Consistent, encK, encStack, stackArgs_ten,
       List.append_eq, tabFnsE] at h
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq, ite_false] at h
+      List.getD_cons_zero, Option.some.injEq] at h
     obtain ⟨hsp, hsy, htab, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := h
     obtain ⟨hb, hq⟩ := List.append_inj hl (by simp [Spec.Rsa.bytesAt, hcx, h9])
     have hq' := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hq
