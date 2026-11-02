@@ -197,14 +197,14 @@ def setupP (oB oLen : Nat) : List Instr :=
 `w` words in array 0, with `-m⁻¹ mod 2⁶⁴` in `t1` and the bases of arrays 2
 and 3 in `a5` and `a6`: `x := 1`; `64 w + w` doublings to `2^w R mod m`
 (`Precompute.doubleMod64`, counted by `a1`); then six Montgomery squares
-(`sqrTail`, with array 4 its temporary) to `2^(64 w) R mod m`, counted by
+(`sqrTail`, with array `tmp` its temporary) to `2^(64 w) R mod m`, counted by
 `s7`, as PPC64LE's `Precompute.r2Prime`. -/
-def r2Prime : Prog isa :=
+def r2Prime (tmp : Nat) : Prog isa :=
   .seq (.block [.addi .t3 .a2 0]) (.seq Precompute.zeroWords
   (.seq (.block [.li .s0 1, .store .d .s0 .a2 0, .shift .sll .d .a1 .t0 6, .add .a1 .a1 .t0])
   (.seq (.loop (.seq Precompute.doubleMod64 (.block [.addi .a1 .a1 (-1)])) (.nonzero .a1))
   (.seq (.block [.li .s7 6])
-    (.loop (.seq (ModExp.sqrOp 1 1 4) (.block [.addi .s7 .s7 (-1)])) (.nonzero .s7))))))
+    (.loop (.seq (ModExp.sqrOp 1 1 tmp) (.block [.addi .s7 .s7 (-1)])) (.nonzero .s7))))))
 
 /-- The input into `X`'s array 6 (`checks` used it for `p q`), for the
 reductions modulo the primes. -/
@@ -243,7 +243,7 @@ length at `oLen` (`ModExp.powWin`, with its table in arrays 8 to 23). -/
 def power (xj oD oLen : Nat) : Prog isa :=
   .seq (.block ([.addi .t3 .a7 0] ++ xb .t4 xj)) (.seq copyN
   (.seq (.block (Precompute.minv ++ base .a2 1 ++ base .a5 2 ++ base .a6 3))
-  (.seq r2Prime (.seq reduceIn
+  (.seq (r2Prime 4) (.seq reduceIn
   (.seq (.block [.load .d .s9 .s6 oD, .load .d .s10 .s6 oLen]) ModExp.powWin)))))
 
 /-- `m₂`'s `q_len` bytes, most significant first, from `Q`'s array 4 into
@@ -255,10 +255,10 @@ def exportM2 : Prog isa :=
 /-- In `P`: `h = (m₁ - m₂ mod p) qInv mod p` into array 4, from `m₁` in array
 4. -/
 def recombineP : Prog isa :=
-  -- `q_len` first; `-p⁻¹ mod 2⁶⁴`; `R² mod p` (which `powWin` overwrote) into array 7; `m₂ mod p`
-  -- into array 1.
+  -- `q_len` first; `-p⁻¹ mod 2⁶⁴`; `R² mod p` (which `powWin` overwrote) into array 7, its squares'
+  -- temporary array 5 (array 4 holds `m₁`); `m₂ mod p` into array 1.
   .seq (.block [.load .d .s10 .s6 oQLen])
-  (.seq (.block (Precompute.minv ++ base .a2 1 ++ base .a5 2 ++ base .a6 3)) (.seq r2Prime
+  (.seq (.block (Precompute.minv ++ base .a2 1 ++ base .a5 2 ++ base .a6 3)) (.seq (r2Prime 5)
   (.seq (.block (base .t3 7 ++ base .t4 1)) (.seq copyN
   (.seq (.block (xb .s9 1)) (.seq ModArith.reduce64
   -- `m₁ - m₂ mod p` into array 3, `p` added back under the borrow.
