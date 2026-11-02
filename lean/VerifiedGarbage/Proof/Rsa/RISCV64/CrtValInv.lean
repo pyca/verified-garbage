@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValSetup
-public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyInv
+public import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
@@ -10,20 +10,18 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
-# `vg_rsa_crt_values` on RISC-V: the inverse, in the working space of the primes' words
+# `vg_rsa_crt_values` on RISC-V: the inverse
 
-`narrow_ok`, `widen_ok`: the working space of the primes' words and back;
-`invSetup_ok`: the inverse's start (`IS`); `invCore_ok`: the inverse and the
-gcd's check (`IC`); `wide_at`, `wordsVal_of_out`: what the narrowed working
-space and the store of `qInv` keep of the working space of `w` words;
+`nCalc_ok`: the primes' digits `nP = ⌈max(p_len, q_len) / 4⌉` into `s8`;
+`invSetup_ok`: the inverse's start (`IS`); `invCore_ok`: the batched inverse
+(`Proof/Rsa/RISCV64/IbInverse.lean`) and the gcd's check (`IC`);
 `maskBlk_ok`: the checks' mask. `invPart_ok`: from the checks of `p q = n`
-(`Ck`), the whole phase: the mask of every check in `sMask`, `qInv` written
-under it, and the working space of `w` words back, its arrays from 16 on as
-they were (`Iv`).
+(`Ck`), the whole phase: the mask of every check in `sMask` and `qInv`
+written under it, the arrays from 16 on as they were (`Iv`).
 -/
 
--- separate module: its proofs (the narrowed working space, the inverse and `invPart_ok`) are not
--- re-checked with every change to the divisions', the stores' or the constant-time proofs
+-- separate module: its proofs (the inverse and `invPart_ok`) are not re-checked with every change to the
+-- divisions', the stores' or the constant-time proofs
 
 @[expose] public section
 
@@ -31,14 +29,14 @@ namespace VG.Proof.Rsa.RISCV64.CrtValues
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
 open VG.Impl.Rsa.RISCV64.Keys (seqs mov)
-open VG.Impl.Rsa.RISCV64.Keys (zeroArrays load orOne copy setOne sub3 aM aNM aZero inverse eqS sOdd sB sC)
+open VG.Impl.Rsa.RISCV64.Keys (orOne copy setOne eqS sOdd sB sC)
 open VG.Impl.Rsa.RISCV64.Keys (andS)
-open VG.Impl.Rsa.RISCV64.CrtValues (narrow widen invSetup nInv aOne sE3 sPodd sE1 sE2 sMask mask)
+open VG.Impl.Rsa.RISCV64.CrtValues (nCalc invSetup nArr aOne aP aQ sE3 sPodd sE1 sE2 sMask mask)
 
-/-- The primes' words. -/
-abbrev wP (s0 : State) : Nat := (max (pL s0) (qL s0) + 7) / 8
+/-- The primes' digits. -/
+abbrev nP (s0 : State) : Nat := (max (pL s0) (qL s0) + 3) / 4
 
-/-- The branch-free maximum of `narrow`. -/
+/-- The branch-free maximum of `nCalc`. -/
 theorem max_sel (a b : BitVec 64) :
     (a - (a - b &&& 0 - if a < b then 1 else 0)) = BitVec.ofNat 64 (max a.toNat b.toNat) := by
   have ha := a.isLt
@@ -55,159 +53,105 @@ theorem max_sel (a b : BitVec 64) :
     rw [BitVec.lt_def] at hab
     rw [Nat.max_eq_left (Nat.le_of_not_lt hab), BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
-theorem shl2_add (a b : Nat) (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
-    (BitVec.ofNat 64 a + BitVec.ofNat 64 b) <<< 2 = BitVec.ofNat 64 (4 * (a + b)) := by
-  have := ha; have := hb
+theorem add3_shr2 (k : Nat) (hk : k < 2 ^ 32) :
+    (BitVec.ofNat 64 k + BitVec.ofNat 64 3) >>> 2 = BitVec.ofNat 64 ((k + 3) / 4) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.shiftLeft_eq]
-  omega_arith
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (a := k) (by omega_arith), Nat.mod_eq_of_lt (a := 3) (by decide),
+    Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
-theorem narrow_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) (h9 : s.gpr .s9 = BitVec.ofNat 64 (wOf s0)) :
-    WP isa (.block narrow) s fun t =>
-      (t.gpr .s0 = BitVec.ofNat 64 (wOf s0) ∧ t.gpr .s9 = BitVec.ofNat 64 (wP s0) ∧
-        t.gpr .s10 = BitVec.ofNat 64 (S (wP s0)) ∧ t.gpr .s7 = BitVec.ofNat 64 (4 * (pL s0 + qL s0)) ∧
-        t.mem = s.mem) ∧ Keep [.s0, .t6, .t5, .s9, .s10, .s7] s t := by
+theorem nCalc_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
+    WP isa (.block nCalc) s fun t => (t.gpr .s8 = BitVec.ofNat 64 (nP s0) ∧ t.mem = s.mem) ∧
+      Keep [.t6, .t5, .s8] s t := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
   have ⟨lp, lq⟩ := lt32 h
   have e4 : stackArg s0 1 = BitVec.ofNat 64 (pL s0) := toNat_ofNat_eq _
   have e6 : stackArg s0 3 = BitVec.ofNat 64 (qL s0) := toNat_ofNat_eq _
   have hm : max (pL s0) (qL s0) < 2 ^ 32 := by simp only [pL, qL]; omega_arith
-  brun [narrow, mov, h9, c.s4, c.s6, fin64_exec_li_zero]
-  refine ⟨BitVec.add_zero _, ?_, ?_, ?_⟩
-  · rw [max_sel, add7_shr3 _ hm]
-  · rw [max_sel, add7_shr3 _ hm, add2_shl3]
-  · rw [e4, e6, shl2_add _ _ lp lq]
-
-theorem widen_ok {s : State} {w : Nat} (h0 : s.gpr .s0 = BitVec.ofNat 64 w) :
-    WP isa (.block widen) s fun t =>
-      (t.gpr .s9 = BitVec.ofNat 64 w ∧ t.gpr .s10 = BitVec.ofNat 64 (S w) ∧ t.mem = s.mem) ∧
-        Keep [.s9, .s10] s t := by
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  brun [widen, mov, h0, add2_shl3]
-  exact BitVec.add_zero _
+  brun [nCalc, c.s4, c.s6, fin64_exec_li_zero]
+  rw [max_sel, add3_shr2 _ hm]
 
 /-! ## The inverse's start -/
 
 /-- `m = p | 1`. -/
 abbrev Mv (s0 : State) : Nat := Pv s0 / 2 * 2 + 1
 
-theorem PreC.wP_bounds {s0 : State} (h : PreC s0) :
-    1 ≤ wP s0 ∧ wP s0 ≤ wOf s0 ∧ pL s0 ≤ 8 * wP s0 ∧ qL s0 ≤ 8 * wP s0 := by
+theorem PreC.nP_bounds {s0 : State} (h : PreC s0) :
+    1 ≤ nP s0 ∧ nP s0 ≤ 2 * wOf s0 ∧ pL s0 ≤ 4 * nP s0 ∧ qL s0 ≤ 4 * nP s0 := by
   have := h.p1; have := h.p2; have := h.q1; have := h.q2
-  simp only [wP, wOf, kOf, pL, qL]
+  simp only [nP, wOf, kOf, pL, qL]
   refine ⟨?_, ?_, ?_, ?_⟩ <;> omega_arith
 
 /-- The inverse's arrays after its start. -/
 structure IS (s0 : State) (t : State) : Prop where
-  n0 : num t.mem (bOf s0) (wP s0) 0 = Qv s0
-  n1 : num t.mem (bOf s0) (wP s0) 1 = Mv s0
-  n2 : num t.mem (bOf s0) (wP s0) 2 = 1
-  n3 : num t.mem (bOf s0) (wP s0) 3 = 0
-  nM : num t.mem (bOf s0) (wP s0) aM = Mv s0
-  nNM : num t.mem (bOf s0) (wP s0) aNM + Mv s0 = 2 ^ (64 * wP s0)
-  nZ : num t.mem (bOf s0) (wP s0) aZero = 0
-  nOne : num t.mem (bOf s0) (wP s0) aOne = 1
+  nx : num t.mem (bOf s0) (wOf s0) Impl.Rsa.RISCV64.InvBatch.aX = Qv s0
+  nm : num t.mem (bOf s0) (wOf s0) Impl.Rsa.RISCV64.InvBatch.aMin = Mv s0
+  nOne : num t.mem (bOf s0) (wOf s0) aOne = 1
+  s8 : t.gpr .s8 = BitVec.ofNat 64 (nP s0)
 
-theorem invSetup_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
-    (ws : Ws s (bOf s0) (zOf s0) (wP s0) nInv) :
-    WP isa (seqs invSetup) s fun t => CB s0 s0.mem t ∧ Ws t (bOf s0) (zOf s0) (wP s0) nInv ∧
-      Keys.Frame (bOf s0) (wP s0) (List.range nInv) [] s.mem t.mem ∧ IS s0 t ∧ Keep opRegs s t := by
-  have ⟨b1, b2, b3, b4⟩ := h.wP_bounds
+/-- The arrays `invSetup` writes. -/
+abbrev setupArrs : List Nat := [Impl.Rsa.RISCV64.InvBatch.aX, Impl.Rsa.RISCV64.InvBatch.aMin, aOne]
+
+theorem invSetup_ok {s0 s : State} {X₁ X₂ : Nat} (h : PreC s0) (ck : Ck s0 X₁ X₂ s) :
+    WP isa (seqs invSetup) s fun t => CB s0 s0.mem t ∧ Ws t (bOf s0) (zOf s0) (wOf s0) nArr ∧
+      Keys.Frame (bOf s0) (wOf s0) setupArrs [] s.mem t.mem ∧ IS s0 t ∧ Keep (.s8 :: InvBatch.kRegs) s t := by
+  have ⟨b1, b2, b3, b4⟩ := h.nP_bounds
+  have ⟨w1, w2⟩ := h.w_bounds
   have hz := h.zk
-  have fitZ : ∀ j < nInv, arr (wP s0) j + S (wP s0) ≤ zOf s0 := fun j hj =>
+  have c := ck.cb
+  have ws := ck.ws
+  have fitZ : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ zOf s0 := fun j hj =>
     Nat.le_trans (arr_end hj) ws.fits
-  have fit : ∀ j < nInv, arr (wP s0) j + S (wP s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
+  have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
   have step : ∀ {u v : State} {js ds : List Nat}, CB s0 s0.mem u →
-      Keys.Frame (bOf s0) (wP s0) js ds u.mem v.mem → (∀ j ∈ js, j < nInv) → (∀ d ∈ ds, 96 ≤ d ∧ d + 8 ≤ Keys.hdr) →
+      Keys.Frame (bOf s0) (wOf s0) js ds u.mem v.mem → (∀ j ∈ js, j < nArr) → (∀ d ∈ ds, 96 ≤ d ∧ d + 8 ≤ Keys.hdr) →
       ∀ {rs : List Reg}, Keep rs u v → (∀ r ∈ cbRegs, r ∉ rs) → CB s0 s0.mem v :=
     fun cu f hjs hds _ k hr => cu.of_frame f (fun j hj => fitZ j (hjs j hj)) hds
       (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k hr
-  have ⟨lp, lq⟩ := lt32 h
   unfold invSetup
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (zeroArrays_ok ws (by decide) (by decide) (by decide)) fun t1 ⟨w1, f1, z1, k1⟩ => ?_
-  have c1 := step c f1 (fun j hj => List.mem_range.mp hj) (by simp) k1 (by decide)
-  have z1' : ∀ j < nInv, num t1.mem (bOf s0) (wP s0) j = 0 := fun j hj =>
-    wordsVal_zero_part (a := 0) (z1 j hj) (by omega_arith)
+  refine WP.mono (copy_ok ws (o := Impl.Rsa.RISCV64.InvBatch.aX) (a := aQ) (by decide) (by decide) (by decide) (by decide))
+    fun t1 ⟨w1', f1, v1, k1, _⟩ => ?_
+  have c1 := step c f1 (by decide) (by simp) k1 (by decide)
+  rw [ck.q] at v1
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (load_ok w1 (j := 0) (by decide) (by decide) (by decide) c1.s5
-    (by rw [c1.s6]; exact toNat_ofNat_eq _) h.q1 b4
-    (fun i hi => by rw [c1.rd]; exact inRegions_left (bytes_in h.qR_rd (by have := h.wq; omega_arith) i hi))
-    (bytes_sep h.qs (by have := h.wq; omega_arith)) (z1' 0 (by decide)))
-    fun t2 ⟨w2, f2, v2, k2, _⟩ => ?_
+  refine WP.mono (copy_ok w1' (o := Impl.Rsa.RISCV64.InvBatch.aMin) (a := aP) (by decide) (by decide) (by decide) (by decide))
+    fun t2 ⟨w2', f2, v2, k2, _⟩ => ?_
   have c2 := step c1 f2 (by decide) (by simp) k2 (by decide)
-  rw [c1.bytes h.qs (by have := h.wq; omega_arith)] at v2
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (load_ok w2 (j := aM) (by decide) (by decide) (by decide) c2.s3
-    (by rw [c2.s4]; exact toNat_ofNat_eq _) h.p1 b3
-    (fun i hi => by rw [c2.rd]; exact inRegions_left (bytes_in h.pR_rd (by have := h.wp; omega_arith) i hi))
-    (bytes_sep h.ps (by have := h.wp; omega_arith))
-    (by rw [f2.num (j := aM) (by decide) (by simp) (fit _ (by decide))]; exact z1' aM (by decide)))
-    fun t3 ⟨w3, f3, v3, k3, _⟩ => ?_
-  have c3 := step c2 f3 (by decide) (by simp) k3 (by decide)
-  rw [c2.bytes h.ps (by have := h.wp; omega_arith)] at v3
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (orOne_ok w3 (j := aM) (by decide) (by decide)) fun t4 ⟨w4, f4, v4, k4⟩ => ?_
-  have c4 := step c3 f4 (by decide) (by simp) k4 (by decide)
-  rw [v3] at v4
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (copy_ok w4 (o := 1) (a := aM) (by decide) (by decide) (by decide) (by decide))
-    fun t5 ⟨w5, f5, v5, k5, _⟩ => ?_
-  have c5 := step c4 f5 (by decide) (by simp) k5 (by decide)
-  rw [v4] at v5
+  rw [f1.num (j := aP) (by decide) (by simp) (fit _ (by decide)), ck.p] at v2
   rw [wp_seqs_cons (List.cons_ne_nil _ _), WP.block_append_iff]
-  refine WP.mono (setOne_ok w5 (j := 2) (by decide) (by decide)) fun t6 ⟨w6, f6, v6, k6⟩ => ?_
+  refine WP.mono (orOne_ok w2' (j := Impl.Rsa.RISCV64.InvBatch.aMin) (by decide) (by decide)) fun t3 ⟨w3, f3, v3, k3⟩ => ?_
+  have c3 := step c2 f3 (by decide) (by simp) k3 (by decide)
+  rw [v2] at v3
+  refine WP.mono (nCalc_ok h c3) fun t4 ⟨⟨u8, um⟩, k4⟩ => ?_
+  have c4 := c3.of_keep k4 um
+  have w4 := w3.of_keep k4
+  have ctx : InvBatch.Ctx t4 (bOf s0) (zOf s0) (wOf s0) nArr (nP s0) := ⟨w4, u8, b1, b2, by decide, by omega_arith⟩
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (InvBatch.zeroW_ok ctx (j := aOne) (by decide) (by decide)) fun t5 ⟨h5, f5, _, z5, k5⟩ => ?_
+  have c5 := step c4 f5 (by decide) (by simp) (k5.mono (rs' := InvBatch.kRegs) (by decide)) (by decide)
+  have n5 : num t5.mem (bOf s0) (wOf s0) aOne = 0 := by
+    rw [InvBatch.num_eq]
+    exact InvBatch.val32_zero fun i hi => z5 i (by omega_arith)
+  refine WP.mono (setOne_ok h5.ws (j := aOne) (by decide) (by decide)) fun t ⟨w6, f6, v6, k6⟩ => ?_
   have c6 := step c5 f6 (by decide) (by simp) k6 (by decide)
-  refine WP.mono (setOne_ok w6 (j := aOne) (by decide) (by decide)) fun t7 ⟨w7, f7, v7, k7⟩ => ?_
-  have c7 := step c6 f7 (by decide) (by simp) k7 (by decide)
-  refine WP.mono (sub3_ok w7 (o := aNM) (a := aZero) (b := aM) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide)) fun t ⟨w8, f8, v8, b8, k8⟩ => ?_
-  have c8 := step c7 f8 (by decide) (by simp) k8 (by decide)
-  -- The values, through the frames.
-  have z5 : ∀ j < nInv, j ≠ 0 → j ≠ aM → j ≠ 1 → num t5.mem (bOf s0) (wP s0) j = 0 := fun j hj a0 aM' a1 => by
-    rw [f5.num (fun _ hk => by rw [List.mem_singleton.mp hk]; exact Ne.symm a1) (by simp) (fit _ hj),
-      f4.num (fun _ hk => by rw [List.mem_singleton.mp hk]; exact Ne.symm aM') (by simp) (fit _ hj),
-      f3.num (fun _ hk => by rw [List.mem_singleton.mp hk]; exact Ne.symm aM') (by simp) (fit _ hj),
-      f2.num (fun _ hk => by rw [List.mem_singleton.mp hk]; exact Ne.symm a0) (by simp) (fit _ hj), z1' j hj]
-  have M5 : num t5.mem (bOf s0) (wP s0) aM = Mv s0 := by
-    rw [f5.num (j := aM) (by decide) (by simp) (fit _ (by decide)), v4]
-  have M7 : num t7.mem (bOf s0) (wP s0) aM = Mv s0 := by
-    rw [f7.num (j := aM) (by decide) (by simp) (fit _ (by decide)),
-      f6.num (j := aM) (by decide) (by simp) (fit _ (by decide)), M5]
-  have Z7 : num t7.mem (bOf s0) (wP s0) aZero = 0 := by
-    rw [f7.num (j := aZero) (by decide) (by simp) (fit _ (by decide)),
-      f6.num (j := aZero) (by decide) (by simp) (fit _ (by decide))]
-    exact z5 aZero (by decide) (by decide) (by decide) (by decide)
-  rw [M7, Z7, Nat.zero_add] at v8
-  have hM : 0 < Mv s0 := Nat.succ_pos _
-  have hb8 : (t.gpr .t4).toNat = 1 := by
-    have := wordsVal_lt t.mem (bOf s0) (arr (wP s0) aNM) (wP s0)
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b8 with e | e
-    · rw [e] at v8; simp only [Nat.mul_zero] at v8; omega_arith
-    · exact e
-  rw [hb8, Nat.mul_one] at v8
-  have R : ∀ {m m' : Mem} {js : List Nat}, Keys.Frame (bOf s0) (wP s0) js [] m m' → (∀ j ∈ js, j < nInv) →
-      Keys.Frame (bOf s0) (wP s0) (List.range nInv) [] m m' :=
-    fun f hj => f.mono (fun j h => List.mem_range.mpr (hj j h)) (by simp)
-  refine ⟨c8, w8, f1.trans ((R f2 (by decide)).trans ((R f3 (by decide)).trans ((R f4 (by decide)).trans
-    ((R f5 (by decide)).trans ((R f6 (by decide)).trans ((R f7 (by decide)).trans (R f8 (by decide)))))))), ⟨?_, ?_, ?_, ?_, ?_, v8, ?_, ?_⟩,
-    Keep.trans' k1 (Keep.trans' (Keep.mono k2 (by decide)) (Keep.trans' (Keep.mono k3 (by decide))
-      (Keep.trans' k4 (Keep.trans' k5 (Keep.trans' k6 (Keep.trans' k7 k8))))))⟩
-  · rw [f8.num (j := 0) (by decide) (by simp) (fit _ (by decide)), f7.num (j := 0) (by decide) (by simp) (fit _ (by decide)),
-      f6.num (j := 0) (by decide) (by simp) (fit _ (by decide)), f5.num (j := 0) (by decide) (by simp) (fit _ (by decide)),
-      f4.num (j := 0) (by decide) (by simp) (fit _ (by decide)), f3.num (j := 0) (by decide) (by simp) (fit _ (by decide)), v2]
-  · rw [f8.num (j := 1) (by decide) (by simp) (fit _ (by decide)), f7.num (j := 1) (by decide) (by simp) (fit _ (by decide)),
-      f6.num (j := 1) (by decide) (by simp) (fit _ (by decide)), v5]
-  · rw [f8.num (j := 2) (by decide) (by simp) (fit _ (by decide)), f7.num (j := 2) (by decide) (by simp) (fit _ (by decide)),
-      v6, z5 2 (by decide) (by decide) (by decide) (by decide)]
-  · rw [f8.num (j := 3) (by decide) (by simp) (fit _ (by decide)), f7.num (j := 3) (by decide) (by simp) (fit _ (by decide)),
-      f6.num (j := 3) (by decide) (by simp) (fit _ (by decide)), z5 3 (by decide) (by decide) (by decide) (by decide)]
-  · rw [f8.num (j := aM) (by decide) (by simp) (fit _ (by decide)), M7]
-  · rw [f8.num (j := aZero) (by decide) (by simp) (fit _ (by decide)), Z7]
-  · rw [f8.num (j := aOne) (by decide) (by simp) (fit _ (by decide)), v7,
-      f6.num (j := aOne) (by decide) (by simp) (fit _ (by decide)),
-      z5 aOne (by decide) (by decide) (by decide) (by decide)]
+  rw [n5] at v6
+  have K : Keys.Frame (bOf s0) (wOf s0) setupArrs [] s.mem t.mem :=
+    (f1.mono (by simp) (by simp)).trans ((f2.mono (by simp) (by simp)).trans ((f3.mono (by simp) (by simp)).trans
+      ((show Keys.Frame (bOf s0) (wOf s0) setupArrs [] t3.mem t4.mem by rw [um]; exact Keys.Frame.refl _ _ _ _ _).trans
+        ((f5.mono (by simp) (by simp)).trans (f6.mono (by simp) (by simp))))))
+  refine ⟨c6, w6, K, ⟨?_, ?_, by rw [v6], ?_⟩,
+    Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (k1.mono (by decide)) (k2.mono (by decide)))
+      (k3.mono (by decide))) (k4.mono (by decide))) (k5.mono (by decide))) (k6.mono (by decide))⟩
+  · rw [f6.num (j := Impl.Rsa.RISCV64.InvBatch.aX) (by decide) (by simp) (fit _ (by decide)),
+      f5.num (j := Impl.Rsa.RISCV64.InvBatch.aX) (by decide) (by simp) (fit _ (by decide)),
+      show num t4.mem (bOf s0) (wOf s0) Impl.Rsa.RISCV64.InvBatch.aX = num t3.mem (bOf s0) (wOf s0) Impl.Rsa.RISCV64.InvBatch.aX by rw [um],
+      f3.num (j := Impl.Rsa.RISCV64.InvBatch.aX) (by decide) (by simp) (fit _ (by decide)),
+      f2.num (j := Impl.Rsa.RISCV64.InvBatch.aX) (by decide) (by simp) (fit _ (by decide)), v1]
+  · rw [f6.num (j := Impl.Rsa.RISCV64.InvBatch.aMin) (by decide) (by simp) (fit _ (by decide)),
+      f5.num (j := Impl.Rsa.RISCV64.InvBatch.aMin) (by decide) (by simp) (fit _ (by decide)),
+      show num t4.mem (bOf s0) (wOf s0) Impl.Rsa.RISCV64.InvBatch.aMin = num t3.mem (bOf s0) (wOf s0) Impl.Rsa.RISCV64.InvBatch.aMin by rw [um], v3]
+  · rw [k6.gpr (by decide), k5.gpr (by decide)]; exact u8
 
 /-! ## The inverse and the gcd's check -/
 
@@ -222,107 +166,57 @@ theorem Mv_lt (s0 : State) : Mv s0 < 2 ^ (8 * pL s0) ∨ pL s0 = 0 := by
     simp only [Mv, Pv, pB]
     omega_arith
 
-theorem QM_lt {s0 : State} (h : PreC s0) : Qv s0 * Mv s0 < 2 ^ (2 * (4 * (pL s0 + qL s0))) := by
-  have hq := os2ip_bytes_lt s0.mem (stackArg s0 2) (qL s0)
-  have hm := (Mv_lt s0).resolve_right (by have := h.p1; simp only [pL]; omega_arith)
-  have e : 2 ^ (2 * (4 * (pL s0 + qL s0))) = 2 ^ (8 * qL s0) * 2 ^ (8 * pL s0) := by
-    rw [← Nat.pow_add]; congr 1; omega_arith
-  rw [e]
-  exact Nat.mul_lt_mul'' hq hm
-
 /-- After the inverse: `V` the gcd and `X` the inverse it found. -/
 structure IC (s0 : State) (V X : Nat) : Prop where
   vx : 1 < Mv s0 → V = Nat.gcd (Qv s0) (Mv s0) ∧ (Mv s0 : Int) ∣ (X : Int) * Qv s0 - V ∧ X < Mv s0
 
-/-- The arrays and slots the inverse's phase writes. -/
-abbrev invDs : List Nat := [sOdd, sB, sC, sE3]
+/-- The arrays the inverse writes, and those of its start. -/
+abbrev invArrs' : List Nat := setupArrs ++ InvBatch.invArrs
 
-theorem invCore_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
-    (ws : Ws s (bOf s0) (zOf s0) (wP s0) nInv) (is : IS s0 s)
-    (h7 : s.gpr .s7 = BitVec.ofNat 64 (4 * (pL s0 + qL s0))) :
-    WP isa (.seq inverse (eqS sE3 1 aOne)) s fun t => CB s0 s0.mem t ∧ Ws t (bOf s0) (zOf s0) (wP s0) nInv ∧
-      Keys.Frame (bOf s0) (wP s0) (List.range nInv) invDs s.mem t.mem ∧
-      IC s0 (num t.mem (bOf s0) (wP s0) 1) (num t.mem (bOf s0) (wP s0) 3) ∧
-      slot t.mem (bOf s0) sE3 = (if num t.mem (bOf s0) (wP s0) 1 = 1 then 1 else 0) ∧
-      Keep (.s7 :: opRegs) s t := by
+theorem invCore_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
+    (ws : Ws s (bOf s0) (zOf s0) (wOf s0) nArr) (is : IS s0 s) :
+    WP isa (.seq Impl.Rsa.RISCV64.InvBatch.inverse (eqS sE3 1 aOne)) s fun t => CB s0 s0.mem t ∧
+      Ws t (bOf s0) (zOf s0) (wOf s0) nArr ∧
+      Keys.Frame (bOf s0) (wOf s0) InvBatch.invArrs [sE3] s.mem t.mem ∧
+      IC s0 (num t.mem (bOf s0) (wOf s0) 1) (num t.mem (bOf s0) (wOf s0) 3) ∧
+      slot t.mem (bOf s0) sE3 = (if num t.mem (bOf s0) (wOf s0) 1 = 1 then 1 else 0) ∧
+      Keep InvBatch.invRegs s t := by
+  have ⟨b1, b2, b3, b4⟩ := h.nP_bounds
+  have ⟨w1, w2⟩ := h.w_bounds
   have hz := h.zk
   have hp1 := h.p1
-  have hq1 := h.q1
-  have ⟨lp, lq⟩ := lt32 h
-  have fitZ : ∀ j < nInv, arr (wP s0) j + S (wP s0) ≤ zOf s0 := fun j hj =>
+  have fitZ : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ zOf s0 := fun j hj =>
     Nat.le_trans (arr_end hj) ws.fits
-  have fit : ∀ j < nInv, arr (wP s0) j + S (wP s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
-  rw [WP.seq_iff]
-  refine WP.mono (inverse_ok ws (by decide) (by decide) h7 (by simp only [pL]; omega_arith)
-    (by simp only [pL, qL]; omega_arith)) fun t1 ⟨w1, f1, k1, v1⟩ => ?_
-  have c1 := c.of_frame f1 (fun j hj => fitZ j (by revert j hj; decide)) (by decide)
-    (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k1 (by decide)
-  have hodd : Mv s0 % 2 = 1 := by simp only [Mv]; omega_arith
-  have D := fun h1M => inverse_done (t := t1.mem) (K := 4 * (pL s0 + qL s0))
-    (by rw [is.nM]; exact hodd) (by rw [is.nM]; exact h1M) (by rw [is.n0, is.nM]; exact QM_lt h)
-    (by simp only [bank, is.n0, is.n1, is.n2, is.n3, is.nM]) (v1 (by rw [is.nM]; exact is.nNM)
-      is.nZ (by rw [is.nM]; exact hodd) (by rw [is.nM]; exact h1M)
-      (by simp only [bank, is.n0, is.n1, is.n2, is.n3, is.nM]))
-  rw [is.n0, is.nM] at D
-  refine WP.mono (eqS_ok w1 (d := sE3) (a := 1) (b := aOne) (by decide) (by decide) (by decide) (by decide)
-    (by decide)) fun t ⟨w2, f2, v2, k2⟩ => ?_
-  have c2 := c1.of_frame f2 (by simp) (by decide) (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k2 (by decide)
-  have o1 : num t1.mem (bOf s0) (wP s0) aOne = 1 := by
-    rw [f1.num (j := aOne) (by decide) (by decide) (fit _ (by decide)), is.nOne]
-  have n1 : num t.mem (bOf s0) (wP s0) 1 = num t1.mem (bOf s0) (wP s0) 1 :=
-    f2.num (j := 1) (by simp) (by decide) (fit _ (by decide))
-  have n3 : num t.mem (bOf s0) (wP s0) 3 = num t1.mem (bOf s0) (wP s0) 3 :=
-    f2.num (j := 3) (by simp) (by decide) (fit _ (by decide))
-  refine ⟨c2, w2, (f1.mono (fun j hj => List.mem_range.mpr (by revert j hj; decide)) (by decide)).trans
-      (f2.mono (by simp) (by decide)), ⟨fun h1M => by rw [n1, n3]; exact D h1M⟩, by rw [v2, o1, n1],
-    Keep.trans' k1 (Keep.mono k2 (by decide))⟩
-
-/-! ## Back to the working space of `w` words -/
-
-/-- An array from 16 on of the working space of `w` words, past the narrowed one's 16 arrays. -/
-theorem wide_words {B : Addr} {w w' : Nat} {ds : List Nat} {m m' : Mem}
-    (f : Keys.Frame B w' (List.range nInv) ds m m') (hw : w' ≤ w) (hds : ∀ d ∈ ds, d + 8 ≤ Keys.hdr)
-    {j k : Nat} (hj : nInv ≤ j) (hk : k ≤ w + 2) (fit : arr w j + S w ≤ 2 ^ 64) :
-    wordsVal m' B (arr w j) k = wordsVal m B (arr w j) k := by
-  refine f.words (fun j' hj' => .inr ?_) (fun d hd => .inr ?_) (by simp only [S] at fit; omega_arith)
-  · have := List.mem_range.mp hj'
-    have e1 := arr_end (w := w') this
-    have e2 : arr w' nInv ≤ arr w nInv := by simp only [arr, S]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ (by omega_arith)) _
-    have e3 := arr_mono (w := w) hj
+  have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
+  have ctx : InvBatch.Ctx s (bOf s0) (zOf s0) (wOf s0) nArr (nP s0) := ⟨ws, is.s8, b1, b2, by decide, by omega_arith⟩
+  have hq : Qv s0 < 2 ^ (32 * nP s0) := by
+    have := os2ip_bytes_lt s0.mem (stackArg s0 2) (qL s0)
+    have : 2 ^ (8 * qL s0) ≤ 2 ^ (32 * nP s0) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+    simp only [Qv, qB] at *; omega_arith
+  have hm : Mv s0 < 2 ^ (32 * nP s0) := by
+    have := (Mv_lt s0).resolve_right (by simp only [pL]; omega_arith)
+    have : 2 ^ (8 * pL s0) ≤ 2 ^ (32 * nP s0) := Nat.pow_le_pow_right (by decide) (by omega_arith)
     omega_arith
-  · have := hds d hd; have := hdr_le_arr w j; omega_arith
-
-/-- Words past the narrowed working space's 16 arrays. -/
-theorem wide_at {B : Addr} {w' : Nat} {ds : List Nat} {m m' : Mem}
-    (f : Keys.Frame B w' (List.range nInv) ds m m') (hds : ∀ d ∈ ds, d + 8 ≤ Keys.hdr)
-    {d k : Nat} (hd : arr w' nInv ≤ d) (fit : d + 8 * k ≤ 2 ^ 64) :
-    wordsVal m' B d k = wordsVal m B d k := by
-  refine f.words (fun j' hj' => .inr ?_) (fun e he => .inr ?_) fit
-  · have := arr_end (w := w') (List.mem_range.mp hj'); omega_arith
-  · have := hds e he; have := hdr_le_arr w' nInv; omega_arith
-
-theorem arr_wide {w' w j : Nat} (hw : w' ≤ w) (hj : nInv ≤ j) : arr w' nInv ≤ arr w j := by
-  have e2 : arr w' nInv ≤ arr w nInv := by
-    simp only [arr, S]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ (by omega_arith)) _
-  exact Nat.le_trans e2 (arr_mono hj)
-
-/-- A slot, past a frame of arrays. -/
-theorem slot_of_arrs {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (f : Keys.Frame B w js [] m m') {e : Nat}
-    (he : e + 8 ≤ Keys.hdr) : slot m' B e = slot m B e := f.slot he (by simp)
-
-/-- Words of the working space, past a write apart from it. -/
-theorem wordsVal_of_out {O B : Addr} {L Z : Nat} {m m' : Mem} (hd : (⟨O, L⟩ : Region).Disjoint ⟨B, Z⟩)
-    (ho : Outside O 0 L m m') {d k : Nat} (hdk : d + 8 * k ≤ Z) (hZ : Z ≤ 2 ^ 64) :
-    wordsVal m' B d k = wordsVal m B d k := by
-  induction k generalizing d with
-  | zero => rfl
-  | succ k ih =>
-    simp only [wordsVal]
-    have hw : word m' B d = word m B d := Mem.readW_congr fun i hi => by
-      refine out_of_scr hd ho ?_
-      rw [off_add]
-      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
-    rw [hw, ih (by omega_arith)]
+  have hodd : Mv s0 % 2 = 1 := by simp only [Mv]; omega_arith
+  rw [WP.seq_iff]
+  refine WP.mono (InvLaw.inverse_ok ctx (by decide) is.nx hq is.nm hm hodd) fun t1 ⟨w1', f1, k1, v1⟩ => ?_
+  have c1 := c.of_frame f1 (fun j hj => fitZ j (by revert j hj; decide)) (by simp)
+    (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k1 (by decide)
+  refine WP.mono (eqS_ok w1' (d := sE3) (a := 1) (b := aOne) (by decide) (by decide) (by decide) (by decide)
+    (by decide)) fun t ⟨w2', f2, v2, k2⟩ => ?_
+  have c2 := c1.of_frame f2 (by simp) (by decide) (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k2 (by decide)
+  have o1 : num t1.mem (bOf s0) (wOf s0) aOne = 1 := by
+    rw [f1.num (j := aOne) (by decide) (by simp) (fit _ (by decide)), is.nOne]
+  have n1 : num t.mem (bOf s0) (wOf s0) 1 = num t1.mem (bOf s0) (wOf s0) 1 :=
+    f2.num (j := 1) (by simp) (by decide) (fit _ (by decide))
+  have n3 : num t.mem (bOf s0) (wOf s0) 3 = num t1.mem (bOf s0) (wOf s0) 3 :=
+    f2.num (j := 3) (by simp) (by decide) (fit _ (by decide))
+  refine ⟨c2, w2', (f1.mono (by simp) (by simp)).trans (f2.mono (by simp) (by simp)),
+    ⟨fun h1M => by
+      rw [n1, n3]
+      obtain ⟨g, d, l⟩ := v1 h1M
+      exact ⟨by rw [g, Nat.gcd_comm], d, l⟩⟩, by rw [v2, o1, n1],
+    Keep.trans' k1 (k2.mono (by decide))⟩
 
 /-! ## The mask -/
 
@@ -379,8 +273,8 @@ end VG.Proof.Rsa.RISCV64.CrtValues
 namespace VG.Proof.Rsa.RISCV64.CrtValues
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
-open VG.Impl.Rsa.RISCV64.Keys (seqs inverse eqS storeBytes andS sOdd sB sC)
-open VG.Impl.Rsa.RISCV64.CrtValues (narrow widen invSetup invPart nInv nArr aOne aP aQ aD aDD sE3 sPodd sE1
+open VG.Impl.Rsa.RISCV64.Keys (seqs eqS storeBytes andS sOdd sB sC)
+open VG.Impl.Rsa.RISCV64.CrtValues (invSetup invPart nArr aOne aP aQ aD aDD sE3 sPodd sE1
   sE2 sMask mask)
 open VG.Proof.Rsa.CrtValues (maskOf)
 
@@ -404,38 +298,45 @@ theorem mask_prod (P Q X₁ X₂ V : Nat) :
   rcases Nat.mod_two_eq_zero_or_one P with e | e <;>
     by_cases a : X₁ = Q <;> by_cases b : X₂ = 0 <;> by_cases c : V = 1 <;> simp [maskOf, e, a, b, c]
 
-/-- The slots that the inverse's phase writes, in the narrowed working space. -/
-abbrev phaseDs : List Nat := [sOdd, sB, sC, sE3, sMask]
+/-- Words of the working space, past a write apart from it. -/
+theorem wordsVal_of_out {O B : Addr} {L Z : Nat} {m m' : Mem} (hd : (⟨O, L⟩ : Region).Disjoint ⟨B, Z⟩)
+    (ho : Outside O 0 L m m') {d k : Nat} (hdk : d + 8 * k ≤ Z) (hZ : Z ≤ 2 ^ 64) :
+    wordsVal m' B d k = wordsVal m B d k := by
+  induction k generalizing d with
+  | zero => rfl
+  | succ k ih =>
+    simp only [wordsVal]
+    have hw : word m' B d = word m B d := Mem.readW_congr fun i hi => by
+      refine out_of_scr hd ho ?_
+      rw [off_add]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+    rw [hw, ih (by omega_arith)]
 
-theorem invPart_ok {s0 s : State} (h : PreC s0) {X₁ X₂ : Nat} (ck : Ck s0 X₁ X₂ s) :
+/-- The arrays and slots that the inverse's phase writes. -/
+abbrev phaseArrs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 15]
+
+theorem invPart_ok [InvLaw] {s0 s : State} (h : PreC s0) {X₁ X₂ : Nat} (ck : Ck s0 X₁ X₂ s) :
     WP isa invPart s fun t => ∃ V X, Iv s0 X₁ X₂ V X t := by
-  have ⟨b1, b2, b3, b4⟩ := h.wP_bounds
+  have ⟨b1, b2, b3, b4⟩ := h.nP_bounds
   have ⟨w1, w2⟩ := h.w_bounds
   have hz := h.zk
   have hp1 := h.p1
   have ⟨lp, lq⟩ := lt32 h
-  have c := ck.cb
   have fitW : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => ck.ws.fit64 hj
+  have hpw : pL s0 ≤ 8 * wOf s0 := by have := h.p2; simp only [pL, wOf, kOf]; omega_arith
+  have lt16 : ∀ k ∈ phaseArrs, k < 16 := by decide
   unfold invPart
-  rw [wp_seqs_append (by simp) (by simp), wp_seqs_append (by simp) (by unfold invSetup; simp)]
-  -- The narrowed working space.
-  refine WP.mono (narrow_ok h c ck.ws.s9) fun t1 ⟨⟨u0, u9, u10, u7, um⟩, k1⟩ => ?_
-  have c1 := c.of_keep k1 um
-  have ws1 : Ws t1 (bOf s0) (zOf s0) (wP s0) nInv :=
-    ⟨Scr.of_mem (by rw [c1.wr]; exact h.sR_wr) h.ws h.al,
-      Nat.le_trans (arr_wide b2 (by decide : nInv ≤ nArr)) h.fits,
-      b1, by omega_arith, u9, u10, c1.s11⟩
-  refine WP.mono (invSetup_ok h c1 ws1) fun t2 ⟨c2, ws2, f2, is2, k2⟩ => ?_
+  rw [wp_seqs_append (by unfold invSetup; simp) (by simp)]
+  refine WP.mono (invSetup_ok h ck) fun t2 ⟨c2, ws2, f2, is2, k2⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (WP.seq_iff.mp (invCore_ok h c2 ws2 is2 (by rw [k2.gpr (by decide), u7])))
-    fun t3 h3 => ?_
+  refine WP.mono (WP.seq_iff.mp (invCore_ok h c2 ws2 is2)) fun t3 h3 => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono h3 fun t4 ⟨c4, ws4, f4, ic4, e4, k4⟩ => ?_
   -- The checks' slots, kept.
   have sl : ∀ e ∈ [sPodd, sE1, sE2], slot t4.mem (bOf s0) e = slot s.mem (bOf s0) e := by
     intro e he
     have h8 : e + 8 ≤ Keys.hdr := by revert e; decide
-    rw [f4.slot h8 (by revert e; decide), f2.slot h8 (by simp), um]
+    rw [f4.slot h8 (by revert e; decide), f2.slot h8 (by simp)]
   have sp4 := sl sPodd (by simp)
   have se1 := sl sE1 (by simp)
   have se2 := sl sE2 (by simp)
@@ -447,52 +348,49 @@ theorem invPart_ok {s0 s : State} (h : PreC s0) {X₁ X₂ : Nat} (ck : Ck s0 X�
     (by rw [se2]; exact bit_ite) (by rw [e4]; exact bit_ite)) fun t5 ⟨ws5, f5, v5, m5, k5⟩ => ?_
   rw [sp4, se1, se2, e4, mask_prod] at v5
   have c5 := c4.of_frame f5 (by simp) (by decide) (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k5
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   have wqi : (s0.gpr .a4).toNat + pL s0 ≤ 2 ^ 64 := by have := h.wqi; rw [h.h5] at this; exact this
   have qiw : (⟨s0.gpr .a4, pL s0⟩ : Region) ∈ s0.wr := by rw [← h.qiR_eq, h.hwr]; simp
   have qis : (⟨s0.gpr .a4, pL s0⟩ : Region).Disjoint (sR s0) := by rw [← h.qiR_eq]; exact h.qis
   refine WP.mono (storeBytes_ok ws5 (j := 3) (by decide) (by decide) c5.a6
-    (by rw [c5.s4]; exact toNat_ofNat_eq _) (by decide) (by decide) (by decide) m5 hp1 b3
+    (by rw [c5.s4]; exact toNat_ofNat_eq _) (by decide) (by decide) (by decide) m5 hp1 hpw
     (fun i hi => by rw [c5.wr]; exact bytes_in qiw (by omega_arith) i hi) (bytes_sep qis (by omega_arith)) wqi)
-    fun t6 ⟨ws6, by6, o6, k6⟩ => ?_
+    fun t ⟨ws6, by6, o6, k6⟩ => ?_
   have c6 := c5.of_out k6 o6 qis (by omega_arith)
-  have s06 : t6.gpr .s0 = BitVec.ofNat 64 (wOf s0) := by
-    rw [k6.gpr (by decide), k5.gpr (by decide), k4.gpr (by decide), k2.gpr (by decide), u0]
-  refine WP.mono (widen_ok s06) fun t ⟨⟨t9, t10, m7⟩, k7⟩ => ?_
-  have c7 := c6.of_keep k7 m7
-  rw [← m7] at c7
-  -- Memory past the narrowed working space, and the slot `sMask`.
-  have Fw : Keys.Frame (bOf s0) (wP s0) (List.range nInv) phaseDs s.mem t5.mem := by
-    rw [← um]
-    exact (f2.mono (by simp) (by simp)).trans ((f4.mono (by simp) (by decide)).trans (f5.mono (by simp) (by decide)))
+  -- Memory past the inverse's arrays, and the slot `sMask`.
+  have Fw : Keys.Frame (bOf s0) (wOf s0) phaseArrs [sE3, sMask] s.mem t5.mem :=
+    (f2.mono (by decide) (by simp)).trans ((f4.mono (by decide) (by simp)).trans (f5.mono (by simp) (by simp)))
   have Z64 : zOf s0 ≤ 2 ^ 64 := by have := h.ws; simp only [zOf]; omega_arith
-  have past : ∀ {d k : Nat}, arr (wP s0) nInv ≤ d → d + 8 * k ≤ zOf s0 →
-      wordsVal t.mem (bOf s0) d k = wordsVal s.mem (bOf s0) d k := fun hd hk => by
-    rw [m7, wordsVal_of_out qis o6 hk Z64, wide_at Fw (by decide) hd (by omega_arith)]
-  have nW : ∀ j, nInv ≤ j → j < nArr → num t.mem (bOf s0) (wOf s0) j = num s.mem (bOf s0) (wOf s0) j :=
-    fun j hj hj' => past (arr_wide b2 hj) (by have := Nat.le_trans (arr_end hj') h.fits; simp only [S] at this; omega_arith)
+  have nW : ∀ j, 16 ≤ j → j < nArr → num t.mem (bOf s0) (wOf s0) j = num s.mem (bOf s0) (wOf s0) j :=
+    fun j hj hj' => by
+      have e1 : num t.mem (bOf s0) (wOf s0) j = num t5.mem (bOf s0) (wOf s0) j :=
+        wordsVal_of_out qis o6 (Nat.le_trans (Nat.add_le_add_left (show 8 * wOf s0 ≤ S (wOf s0) by simp only [S]; omega) _)
+          (Nat.le_trans (arr_end hj') h.fits)) Z64
+      rw [e1]
+      exact Fw.num (fun k hk => by have := lt16 k hk; omega) (by decide) (fitW _ hj')
   have W1 : ∀ {m : Mem} {d : Nat}, wordsVal m (bOf s0) d 1 = (word m (bOf s0) d).toNat := by
     intro m d; simp [wordsVal]
-  refine ⟨num t4.mem (bOf s0) (wP s0) 1, num t4.mem (bOf s0) (wP s0) 3, c7,
-    ⟨Scr.of_mem (by rw [c7.wr]; exact h.sR_wr) h.ws h.al, h.fits, by omega_arith, by omega_arith, t9, t10, c7.s11⟩,
+  refine ⟨num t4.mem (bOf s0) (wOf s0) 1, num t4.mem (bOf s0) (wOf s0) 3, c6, ws6,
     by rw [nW aP (by decide) (by decide), ck.p], by rw [nW aQ (by decide) (by decide), ck.q],
     by rw [nW aD (by decide) (by decide), ck.d], ?_, ck.x, ic4, ?_, ?_⟩
-  · have e := past (d := arr (wOf s0) aDD + 8 * wOf s0) (k := 1)
-      (Nat.le_trans (arr_wide b2 (by decide)) (Nat.le_add_right _ _))
-      (by have := Nat.le_trans (arr_end (by decide : aDD < nArr)) h.fits; simp only [S] at this; omega_arith)
+  · have hDD : arr (wOf s0) aDD + 8 * wOf s0 + 8 * 1 ≤ zOf s0 := by
+      have := Nat.le_trans (arr_end (show aDD < nArr by decide)) h.fits
+      simp only [S] at this; omega_arith
+    have e : wordsVal t.mem (bOf s0) (arr (wOf s0) aDD + 8 * wOf s0) 1 =
+        wordsVal t5.mem (bOf s0) (arr (wOf s0) aDD + 8 * wOf s0) 1 := wordsVal_of_out qis o6 hDD Z64
     rw [W1, W1] at e
-    rw [BitVec.eq_of_toNat_eq e]; exact ck.ddz
+    rw [BitVec.eq_of_toNat_eq e, Fw.word (j := aDD) (i := wOf s0) (by omega_arith)
+      (fun k hk => by have := lt16 k hk; unfold aDD; omega) (by decide) (fitW _ (by decide))]
+    exact ck.ddz
   · have e : wordsVal t.mem (bOf s0) sMask 1 = wordsVal t5.mem (bOf s0) sMask 1 := by
-      rw [m7, wordsVal_of_out qis o6 (by simp only [zOf, sMask] at hz ⊢; omega_arith) Z64]
+      rw [wordsVal_of_out qis o6 (by simp only [zOf, sMask] at hz ⊢; omega_arith) Z64]
     rw [W1, W1] at e
     change (word t.mem (bOf s0) sMask).toNat = _
     rw [e]; exact v5
-  · rw [m7]
-    by_cases hm : maskOf (Pv s0) (Qv s0) X₁ X₂ (num t4.mem (bOf s0) (wP s0) 1) = true
+  · by_cases hm : maskOf (Pv s0) (Qv s0) X₁ X₂ (num t4.mem (bOf s0) (wOf s0) 1) = true
     · simp only [hm, ↓reduceIte] at v5 ⊢
-      have n3 : num t5.mem (bOf s0) (wP s0) 3 = num t4.mem (bOf s0) (wP s0) 3 :=
+      have n3 : num t5.mem (bOf s0) (wOf s0) 3 = num t4.mem (bOf s0) (wOf s0) 3 :=
         f5.num (j := 3) (by simp) (by decide) (ws4.fit64 (by decide))
-      rw [bytes_of_store b3 (fun c hc => by rw [by6 c hc, v5]; rfl), n3]
+      rw [bytes_of_store hpw (fun c hc => by rw [by6 c hc, v5]; rfl), n3]
     · simp only [hm, ↓reduceIte, Bool.false_eq_true] at v5 ⊢
       exact bytesAt_zero fun c hc => by rw [by6 c hc, v5]; rfl
 

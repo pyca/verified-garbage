@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.RISCV64.PubVerified
 public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtVerified
 public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivVerified
 public import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValVerified
+public import VerifiedGarbage.Proof.Rsa.RISCV64.Instances
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkCkV
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkCckV
 public import VerifiedGarbage.Proof.Rsa.RISCV64.RdVerified

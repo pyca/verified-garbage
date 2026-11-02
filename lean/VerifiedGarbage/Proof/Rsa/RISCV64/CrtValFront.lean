@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyBytes
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
-import VerifiedGarbage.Proof.Rsa.RISCV64.KeyInv
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega

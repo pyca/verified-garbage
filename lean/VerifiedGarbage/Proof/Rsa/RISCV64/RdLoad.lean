@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValFront
 import VerifiedGarbage.Proof.Rsa.RISCV64.KeyMulMod
-import VerifiedGarbage.Proof.Rsa.RISCV64.KeyInv
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 

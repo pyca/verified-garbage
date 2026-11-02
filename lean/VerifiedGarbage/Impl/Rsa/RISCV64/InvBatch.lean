@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.RISCV64.KeyWs
-public import VerifiedGarbage.Impl.Bignum.RISCV64.Precompute
 
 /-!
 # The batched inverse modulo an odd number, on RISC-V
@@ -9,16 +8,17 @@ public import VerifiedGarbage.Impl.Bignum.RISCV64.Precompute
 `inverse`: the inverse of `x` modulo an odd `m`, and `gcd(x, m)`, by batches
 of 30 divsteps (Bernstein and Yang), as PPC64LE's
 (`Impl/Rsa/PPC64LE/InvBatch.lean`), on numbers of `n` digits of 32 bits,
-`n = 2 w` for the working space's `w` words (`s9`), in the key operations'
-arrays (`KeyWs.lean`), whose words are pairs of digits: `x` in array 0 and
-`m` in array 8, both below `2^(32 n)`. Array 1 ends as `gcd(x, m)` and
-array 3 as `y < m` with `y x ≡ gcd(x, m) (mod m)` (for `m > 1`).
+`n` read at run time (`s8`, at most twice the working space's `w` words), in
+the key operations' arrays (`KeyWs.lean`), whose words are pairs of digits:
+`x` in array 0 and `m` in array 8, both below `2^(32 n)`. Array 1 ends as
+`gcd(x, m)` and array 3 as `y < m` with `y x ≡ gcd(x, m) (mod m)` (for
+`m > 1`), `w` words each.
 
 The state of `Proof/Divstep/Alg32Def.lean`'s `invRun 30`: `f` and `g` in
 arrays 4 and 5, `n + 1` digits in two's complement; the coefficients `a`,
 `b` in arrays 6 and 7, `n + 1` digits below `m`; `m` with a zero digit `n` in
-array 2; `d`, the batch's matrix and `-m⁻¹ mod 2^32` in 64-bit words of the
-window, array 9 (and 10, where the arrays are shorter than its 48 bytes).
+array 2; `d`, the batch's matrix and `-m⁻¹ mod 2^32` in 64-bit words of
+array 9 (the window, `w ≥ 4`).
 Each batch runs 30 divsteps on the low digits of `f` and `g`
 (`Proof/Divstep/WordDef.lean`'s `wstep`, unrolled, in `t0`–`t6`, `a4`, `a5`
 and `a7`), then:
@@ -31,7 +31,7 @@ and `a7`), then:
   carry, `m` added (the result is then in `(0, 3m)`) and subtracted twice
   where it does not borrow (`csub`).
 
-`n` is in `s8` and the count of the batches left in `s7`, so every loop's
+`n` stays in `s8` and the count of the batches left in `s7`, so every loop's
 count and every address depends only on `w` and the base, all in
 registers, and every choice is a masked selection. After `3 (n + 1)`
 batches, `a` is negated if `f < 0` and doubled `6 (n + 1)` times modulo `m`
@@ -198,13 +198,14 @@ def mred (t o : Nat) : Prog isa := seqs [
   countLoop .t3 macBody,
   csub aT3 aT3 t, csub o aT3 t]
 
-/-- The new `f`, `g`, `a` and `b`. -/
-def update : Prog isa := seqs [
-  lin wU wV aT1 aF aG, lin wQ wR aT2 aF aG, shr aF aT1, shr aG aT2,
-  lin wU wV aT1 aA aB, lin wQ wR aT2 aA aB, mred aT1 aA, mred aT2 aB]
-
-/-- The new `f` and `g` alone. -/
+/-- The new `f` and `g`. -/
 def updateG : Prog isa := seqs [lin wU wV aT1 aF aG, lin wQ wR aT2 aF aG, shr aF aT1, shr aG aT2]
+
+/-- The new `a` and `b`. -/
+def updateAB : Prog isa := seqs [lin wU wV aT1 aA aB, lin wQ wR aT2 aA aB, mred aT1 aA, mred aT2 aB]
+
+/-- The new `f`, `g`, `a` and `b`. -/
+def update : Prog isa := .seq updateG updateAB
 
 /-- A batch, and the count of those left decremented. -/
 def batch : Prog isa := seqs [.block (start ++ wsteps 30 ++ save), update, .block [.addi .s7 .s7 (-1)]]
@@ -218,23 +219,31 @@ def batchG : Prog isa := seqs [.block (start ++ wsteps 30 ++ save), updateG, .bl
 def setTop (j v : Nat) : List Instr :=
   ptr .t1 j ++ [.shift .sll .d .t3 .s8 2, .add .t1 .t1 .t3, .li .t5 v, .store .w .t5 .t1 0]
 
-/-- `n := 2 w`; `[2] = m`, its digit `n` zero; `b = 1`; `m` replaced by 3
-where it is 1 (the modulus of the batches, `p`); `-p⁻¹ mod 2^32` to the
-window; `f = p`, `g = x + p` if `x` is even, else `x`; `a = 0`, `d = 1`; and
-`3 (n + 1)` batches to run. `Precompute.minv` uses `s0`–`s3`,
-saved in the window meanwhile. -/
-def init : Prog isa := seqs [
-  .seq (.block ([.add .s8 .s9 .s9] ++ ptr .t0 aMz ++ ptr .t1 aMin ++ cntN)) (countLoop .t3 copyBody),
+/-- `init`'s first part: `[2] = m` with a zero digit `n`, `b = 1`, and `m`
+replaced by 3 where it is 1. -/
+def initA : Prog isa := seqs [
+  .seq (.block (ptr .t0 aMz ++ ptr .t1 aMin ++ cntN)) (countLoop .t3 copyBody),
   .seq (.block (setTop aMz 0 ++ ptr .t0 aB ++ cntN1)) zeros,
   .seq (.block (ptr .t0 aB ++ [.li .t5 1, .store .w .t5 .t0 0] ++ ptr .t1 aMz ++ ptr .t2 aB ++ cntN1 ++
     [.li .t4 0])) (countLoop .t3 eqBody),
   .block ([.li .t5 0, .sub .t5 .t5 .t4, .shift .srl .d .t5 .t5 63, .logicImm .xor .t5 .t5 1,
     .shift .sll .d .t5 .t5 1] ++
-    ptr .t0 aMz ++ [.load .w .t6 .t0 0, .logic .or .t6 .t6 .t5, .store .w .t6 .t0 0]),
-  .block (ptr .a4 aW ++ [.store .d .s0 .a4 0, .store .d .s1 .a4 8, .store .d .s2 .a4 16, .store .d .s3 .a4 24] ++
-    ptr .a7 aMz ++ Precompute.minv ++
-    ptr .a4 aW ++ [.load .d .s0 .a4 0, .load .d .s1 .a4 8, .load .d .s2 .a4 16, .load .d .s3 .a4 24,
-      .store .d .t1 .a4 wIv]),
+    ptr .t0 aMz ++ [.load .w .t6 .t0 0, .logic .or .t6 .t6 .t5, .store .w .t6 .t0 0])]
+
+/-- A Newton step of the inverse modulo powers of 2: `x := x (2 - m x)`, `m` in
+`t5` and `x` in `t6`, through `a5` and `t4`. -/
+def newton : List Instr := [.mul .a5 .t5 .t6, .li .t4 2, .sub .a5 .t4 .a5, .mul .t6 .t6 .a5]
+
+/-- `init`'s second part: `-p⁻¹ mod 2^32` to the window, from `p`'s low digit
+`p₀`: `p₀` is its own inverse modulo `2^3` (an odd square is 1 modulo 8),
+and four Newton steps make it right modulo `2^48`. -/
+def initB : Prog isa :=
+  .block (ptr .a4 aMz ++ [.load .w .t5 .a4 0, mov .t6 .t5] ++ newton ++ newton ++ newton ++ newton ++
+    [.li .a5 0, .sub .t1 .a5 .t6] ++ ptr .a4 aW ++ [.store .d .t1 .a4 wIv])
+
+/-- `init`'s third part: `f = p`, `g = x + p` if `x` is even, else `x`, `a = 0`,
+`d = 1`, and `3 (n + 1)` batches to run. -/
+def initC : Prog isa := seqs [
   .seq (.block (ptr .t0 aF ++ ptr .t1 aMz ++ cntN1)) (countLoop .t3 copyBody),
   .block (ptr .t0 aX ++ [.load .w .a5 .t0 0, .logicImm .and .a5 .a5 1, .logicImm .xor .a5 .a5 1]),
   mac aG aX aMz cntN,
@@ -242,6 +251,12 @@ def init : Prog isa := seqs [
   .seq (.block (ptr .t0 aA ++ cntN1)) zeros,
   .block (ptr .t0 aW ++ [.li .t5 1, .store .d .t5 .t0 wD,
     .addi .s7 .s8 1, .add .t5 .s7 .s7, .add .s7 .s7 .t5])]
+
+/-- The start: `[2] = m`, its digit `n` zero; `b = 1`; `m` replaced by 3
+where it is 1 (the modulus of the batches, `p`); `-p⁻¹ mod 2^32` to the
+window; `f = p`, `g = x + p` if `x` is even, else `x`; `a = 0`, `d = 1`; and
+`3 (n + 1)` batches to run. -/
+def init : Prog isa := .seq initA (.seq initB initC)
 
 /-! ## The end -/
 
@@ -268,22 +283,22 @@ def doublings : Prog isa :=
   .seq (.block [.addi .s7 .s8 1, .add .t5 .s7 .s7, .add .s7 .s7 .t5, .add .s7 .s7 .s7])
     (.loop (.seq double (.block [.addi .s7 .s7 (-1)])) (.nonzero .s7))
 
-/-- `[j]`'s `n + 2` digits zeroed. -/
-def zeroW (j : Nat) : Prog isa := .seq (.block (ptr .t0 j ++ [.addi .t3 .s8 2])) zeros
-
-/-- `[1] = |f|` and `[3] = a`. -/
-def finish : Prog isa := seqs [
-  zeroW aGcd,
-  .block (ptr .t0 aT1 ++ ptr .t1 aGcd ++ ptr .t2 aF ++ cntN1 ++ [.li .t4 0]), countLoop .t3 subBody,
-  signSel aGcd aF aT1,
-  zeroW aY,
-  .block (ptr .t0 aY ++ ptr .t1 aA ++ cntN1), countLoop .t3 copyBody]
+/-- `[j]`'s `w + 1` words (`2 w + 2` digits) zeroed. -/
+def zeroW (j : Nat) : Prog isa := .seq (.block (ptr .t0 j ++ [.add .t3 .s9 .s9, .addi .t3 .t3 2])) zeros
 
 /-- `[1] = |f|`. -/
 def finishG : Prog isa := seqs [
   zeroW aGcd,
   .block (ptr .t0 aT1 ++ ptr .t1 aGcd ++ ptr .t2 aF ++ cntN1 ++ [.li .t4 0]), countLoop .t3 subBody,
   signSel aGcd aF aT1]
+
+/-- `[3] = a`. -/
+def finishY : Prog isa := seqs [
+  zeroW aY,
+  .block (ptr .t0 aY ++ ptr .t1 aA ++ cntN1), countLoop .t3 copyBody]
+
+/-- `[1] = |f|` and `[3] = a`. -/
+def finish : Prog isa := .seq finishG finishY
 
 /-- `gcd(x, m)` alone into array 1. -/
 def gcd : Prog isa := seqs [init, .loop batchG (.nonzero .s7), finishG]
