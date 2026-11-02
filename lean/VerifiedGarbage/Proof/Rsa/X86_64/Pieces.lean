@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # RSA private keys on x86-64: the working space and its pieces
 
-`Ws`: the working space `vg_rsa_crt_values` and `vg_rsa_recover_primes` set
+`Ws`: the working space `vg_rsa_crt_values` and `vg_rsa_recover_primes_det` set
 up, the header giving `w`, the stride and the bases of arrays 0 to 7, and 16
 arrays fitting in it; kept by code that changes only arrays and the header
 slots `sMask` and `sMo` (`Ws.congr`). The pieces of the functions that load,

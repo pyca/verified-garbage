@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
-public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
+public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverDet
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Rsa.RecoverMath
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
@@ -9,10 +9,10 @@ import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
-# `vg_rsa_recover_primes` on x86-64: `M = d e`
+# `vg_rsa_recover_primes_det` on x86-64: `M = d e`
 
-`prod` zeroes `M`'s two arrays and adds `e_j d` at word `j` of `M`, by
-`mulAddRow`, for each word `j` of `e` (`prod_ok`).
+`Recover.prod` zeroes `M`'s two arrays and adds `e_j d` at word `j` of `M`,
+by `mulAddRow`, for each word `j` of `e` (`prod_ok`).
 -/
 
 @[expose] public section
@@ -207,25 +207,5 @@ theorem prod_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
     rw [m₃]; exact o12.wv (Or.inl (by omega_using [eDM, eEM])) (by omega_using [hn, hZ, sM, eM1, eDM, eEM])
   refine ⟨?_, fun x hx => by rw [hI.out x hx, m₃]; exact o12 x hx, k03.mono (by decide)⟩
   rw [hI.val, hDs, wv_low_of_lt (v := (el + 7) / 8) (w := w) (by omega_using [he2]) (by rw [hEs]; exact hE), hEs]
-
-/-- `prod`'s loop, from `M = 0`. -/
-theorem prodLoop_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
-    (hel : word s.mem B (8 * Impl.Bignum.X86_64.Public.sElen) = BitVec.ofNat 64 el) (he1 : 1 ≤ el)
-    (he2 : el ≤ 8 * w) (hE : wv s.mem B (slot w aE) w < 2 ^ (64 * ((el + 7) / 8)))
-    (hz : wv s.mem B (slot w aM) (2 * (w + 2)) = 0) :
-    WP isa (.seq (.block prodInit) (.loop (.seq (.block rowHead) (.seq mulAddRow (.block rowNext))) .ne)) s fun t =>
-      wv t.mem B (slot w aM) (2 * (w + 2)) = wv s.mem B (slot w aD) w * wv s.mem B (slot w aE) w ∧
-      Outside B (slot w aM) (16 * (w + 2)) s.mem t.mem ∧
-      Keep [.r12, .r9, .r8, .rax, .r14, .rbx, .r10, .r15, .r11, .r13, .rdx, .rbp, .rcx] s t := by
-  have hZ := h.hZ
-  have hw1 := h.w1
-  have hw2 := h.w2
-  refine WP.seq (WP.mono (prodInit_ok h hel (by omega_using [he2, hw2])) fun s₃ ⟨h12, hbx, h10, h15, h11, h13, hdi, m₃, k₃⟩ => ?_)
-  have hs₃ := h.scr.congr k₃.2.2
-  refine wp_upto (a := 0) (N := (el + 7) / 8) (by omega_using [he1]) (ProdInv s₃ B Z w)
-    (fun j _ hj t hI => prodStep_ok hI (by omega_using [hw1]) (by omega_using [hw2]) hZ (by omega_using [he2]) hj h12 hbx h10 h15 h11)
-    (fun t hI => ?_) ⟨hs₃, Keep.refl _ _, h13, Outside.refl _ _ _ _, by rw [m₃, hz, wv, Nat.mul_zero]⟩
-  refine ⟨?_, fun x hx => by rw [hI.out x hx, m₃], (k₃.trans hI.keep).mono (by decide)⟩
-  rw [hI.val, m₃, wv_low_of_lt (v := (el + 7) / 8) (w := w) (by omega_using [he2]) hE]
 
 end VG.Proof.Rsa.X86_64

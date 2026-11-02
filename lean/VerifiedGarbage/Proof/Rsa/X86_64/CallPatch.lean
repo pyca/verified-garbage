@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
@@ -21,7 +20,7 @@ keeps off the 8 bytes below `rsp`.
 
 namespace VG.Proof.Bignum.X86_64
 
-open VG VG.X86_64 VG.Proof.Rsa.X86_64
+open VG VG.X86_64
 
 theorem pc_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : pcContract.pre s)
     (hc : Clear (hole (s.gpr .rsp)) s) (hp : pcContract.post s b) :
@@ -40,22 +39,6 @@ theorem crt_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : crtCont
   have hm := Clear.miss_wr hc (by rw [hwr]; simp) hn (Nat.le_of_eq hl.symm)
   simp only [crtContract, State.patch_gpr] at hp ⊢
   rw [patch_mem, written_overlay hm]
-  exact hp
-
-theorem rp_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : rpContract.pre s)
-    (hc : Clear (hole (s.gpr .rsp)) s) (hp : rpContract.post s b) :
-    rpContract.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
-  have hn₁ : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64 := hs.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have hn₂ : (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 := hs.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  obtain ⟨-, -, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, h1, h2, -⟩ := hs
-  have hm₁ := Clear.miss_wr hc (by rw [hwr]; simp) hn₁ (Nat.le_of_eq h1.symm)
-  have hm₂ := Clear.miss_wr hc (by rw [hwr]; simp) hn₂ (Nat.le_of_eq h2.symm)
-  simp only [rpContract, State.patch_gpr] at hp ⊢
-  rw [patch_mem, writtenAll_overlay fun o ho => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-    rcases ho with rfl | rfl
-    · exact hm₁
-    · exact hm₂]
   exact hp
 
 end VG.Proof.Bignum.X86_64

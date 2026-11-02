@@ -4,35 +4,35 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Pieces
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Twos
 import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Sqrt
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
+public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTFail
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Div
-import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
+import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Prod
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Pieces
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Twos
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Sqrt
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
-meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTFail
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Div
-meta import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Prod
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_recover_primes_det` on x86-64: constant time, the pieces
 
-The public data is `vg_rsa_recover_primes`' (`RpP`) of the inputs with `d`
+The public data is `RpP` of the inputs with `d`
 replaced by zeros of its length (`pubD`): its working space, pointers and
 lengths, `n` and `e`. Between the pieces of `main`, `GD w F p` holds: `DS`
 at the width `w`, the mask a mask, and the facts `F`. Every piece leaks the

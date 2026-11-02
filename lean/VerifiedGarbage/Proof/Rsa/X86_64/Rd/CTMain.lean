@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTLoops
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Code
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT8
+import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTFail
 import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
+import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Entry
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
@@ -14,9 +14,9 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTLoops
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Code
-meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT8
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTFail
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
-meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Entry
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
@@ -29,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 # `vg_rsa_recover_primes_det` on x86-64: constant time but for `n` and `e`
 
 `main`, piece by piece (`main_ct`), then the entry, the modulus' check and
-the failure that `vg_rsa_recover_primes` shares (`rdCode_ct`), and the
+the failure path (`rdCode_ct`), and the
 contract's `ConstantTime` (`rdCode_constantTime`).
 -/
 
@@ -331,8 +331,7 @@ theorem rdCode_constantTime [InvLaw] : ConstantTime isa rdContract.pre rdContrac
   have w₂ := h₂.1.2.2.1
   simp only [pubD, fk, RpIn.pub, rpIn, RpP.mk.injEq]
   refine ⟨a4.symm, by rw [a5], by rw [r .r9 (by decide)], by rw [a1], by rw [a3], r .rdi (by decide),
-    r .rdx (by decide), r .r8 (by decide), a0.symm, a2.symm, hn.symm, he.symm, ?_, r .rsp (by decide),
-    by rw [hn, he, a3]⟩
+    r .rdx (by decide), r .r8 (by decide), a0.symm, a2.symm, hn.symm, he.symm, ?_, r .rsp (by decide)⟩
   rw [w₁, w₂, r .rdi (by decide), r .rsi (by decide), r .rdx (by decide), r .rcx (by decide), a4, a5]
 
 end VG.Proof.Rsa.X86_64.Rd

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
+import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Prod
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Omega
@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-meta import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Prod
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Framework.Omega

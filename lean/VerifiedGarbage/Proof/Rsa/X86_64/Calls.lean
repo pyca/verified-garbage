@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
-public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
@@ -11,15 +10,14 @@ import VerifiedGarbage.Proof.Rsa.X86_64.CallPatch
 import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
 import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 import VerifiedGarbage.Proof.Bignum.Amm52
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT8
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # The x86-64 RSA functions, with Montgomery multiplication by calls
 
-Each of `vg_rsa_public_precompute`, `vg_rsa_private_crt` and
-`vg_rsa_recover_primes` (and their variants) calls
+Each of `vg_rsa_public_precompute` and `vg_rsa_private_crt` (and their
+variants) calls
 `vg_rsa_mont_mul` or `vg_rsa_mont_mul_adx` where it used to run their code
 inlined. Its code `c` has the inlined code proven before as `c.inline`
 (`hin`, which the registration evaluates); `Verified.of_inline` gives it
@@ -77,14 +75,5 @@ theorem crt_call_ct {c : Prog isa} (hc : c.InlineOk = true)
     (hct : ConstantTime isa crtContract.pre crtContract.pub c.inline) :
     ConstantTime isa crtContract.clear.pre crtContract.pub c :=
   ct_of_inline hc (fun s h => let ⟨t, s', e, _⟩ := hcor s h; ⟨t, s', e⟩) (fun _ _ h => h.1 .rsp (by simp)) hct
-
-/-! ## `vg_rsa_recover_primes` -/
-
-theorem rp_call_verified [InvLaw] (M : Mont) {c : Prog isa} (hc : c.InlineOk = true)
-    (hin : c.inline = Keys.Recover.code M.mm)
-    (hmx : (Keys.Recover.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target c (Spec.Rsa.recoverPrimesContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ rpCode_correct M hmx) (hin ▸ rpCode_constantTime M) rp_implies8
-    (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h) rp_patch
 
 end VG.Proof.Rsa.X86_64

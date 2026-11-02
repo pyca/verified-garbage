@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverDet
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvHead
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpIn
+public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Args
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.X86_64.Div
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
