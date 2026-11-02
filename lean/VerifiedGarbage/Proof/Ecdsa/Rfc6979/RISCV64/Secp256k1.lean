@@ -90,7 +90,7 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.Secp256k1.curve) : Kit where
   len := rfl
   nbits := nBits_secp256k1
   two := by decide
-  nw4 := .inl rfl
+  nw9 := ⟨by decide, by decide⟩
   Qw := .inl rfl
   coreC := Impl.Ecdsa.RISCV64.signSecp256k1
   K := []
