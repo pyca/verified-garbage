@@ -44,6 +44,7 @@ theorem scalCode_inline : ∀ {c : Prog isa}, scalCode c = true → scalCode c.i
     simp only [scalCode] at h
     exact h
   | .frame .., h => by simp only [scalCode, Bool.false_eq_true] at h
+  | .icall .., h => by simp only [scalCode, Bool.false_eq_true] at h
 
 /-- What code run between the operations keeps: the registers but `clob`, the
 memory and the regions. -/

@@ -97,6 +97,7 @@ theorem WP.hkeep {is : List Instr} {s : State} {Q : State → Prop}
 theorem HKeep.code {c : Prog isa} {s t : State} {tr : List Leak} (he : Exec isa c s tr t)
     (hn : c.noCalls = true) (hi : c.all Instr.keepsH = true) : HKeep s t := by
   induction he with
+  | icall | icallNext => simp [Code.noCalls] at hn
   | block hb =>
     rename_i is s t tr
     have hw : WP isa (.block is) s (fun u => u = t) := ⟨tr, t, .block hb, rfl⟩

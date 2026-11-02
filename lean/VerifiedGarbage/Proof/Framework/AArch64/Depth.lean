@@ -22,5 +22,6 @@ def Code.aarch64Depth : Prog AArch64.isa → Nat
   | .loop b _ => b.aarch64Depth
   | .call _ b => b.aarch64Depth
   | .frame i b _ => b.aarch64Depth + i.frameUnits
+  | .icall _ _ b n => max b.aarch64Depth n.aarch64Depth
 
 end VG

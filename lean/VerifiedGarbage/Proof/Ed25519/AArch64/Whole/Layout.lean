@@ -130,6 +130,9 @@ theorem ck_frame {E : Addr} {d n : Nat} (h : d + n â‰¤ 304) : (CK E).Disjoint âŸ
 /-- Code without frames uses no stack. -/
 theorem depth_zero_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth = 0 := by
   induction c with
+  | icall _ _ _ _ ihb ihn =>
+    simp only [Code.noFrames, Bool.and_eq_true] at h
+    simp only [Code.aarch64Depth, ihb h.1, ihn h.2, Nat.max_self]
   | block _ => rfl
   | seq a b iha ihb =>
     simp only [Code.noFrames, Bool.and_eq_true] at h

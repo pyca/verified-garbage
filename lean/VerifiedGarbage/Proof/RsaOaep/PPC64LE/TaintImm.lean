@@ -35,6 +35,7 @@ def zImm : Prog isa → Prog isa
   | .loop b c => .loop (zImm b) c
   | .call n b => .call n (zImm b)
   | .frame p b q => .frame p (zImm b) q
+  | .icall i n b nx => .icall i n b nx
 
 theorem step_zImm (τ : VG.PPC64LE.Taint.T) (i : Instr) :
     VG.PPC64LE.Taint.step τ (Instr.zImm i) = VG.PPC64LE.Taint.step τ i := by
@@ -59,6 +60,7 @@ theorem checkChunks_zImm {chunkSize : Nat} (τ : taint.T) (is : List isa.Instr) 
 theorem check_zImm (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T) :
     taint.check τ (zImm c) h = taint.check τ c h := by
   induction c generalizing τ h with
+  | icall => cases h <;> rfl
   | block is => cases h <;> first | rfl | exact checkChunks_zImm τ is _
   | seq a b iha ihb => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, iha, ihb]
   | ite c t e iht ihe => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, iht, ihe]

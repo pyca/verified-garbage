@@ -61,6 +61,14 @@ theorem Exec.subst {a b : Prog M} (hab : Sim a b) {c : Prog M} {s s' : M.State} 
     simp only [Code.subst]; split
     · rename_i e; exact hab (e ▸ .frame hp h hq)
     · exact .frame hp ih hq
+  | icall hi hc h hr _ =>
+    simp only [Code.subst]; split
+    · rename_i e; exact hab (e ▸ .icall hi hc h hr)
+    · exact .icall hi hc h hr
+  | icallNext hi hne h _ =>
+    simp only [Code.subst]; split
+    · rename_i e; exact hab (e ▸ .icallNext hi hne h)
+    · exact .icallNext hi hne h
 
 /-- A `Verified` proof carries over to code whose runs include every run of
 the proven code. -/

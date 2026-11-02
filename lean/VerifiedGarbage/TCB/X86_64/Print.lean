@@ -332,6 +332,7 @@ def Instr.asm : Instr → List String
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
   | .mul r => [s!"mul {r.name}"]
+  | .callr r => [s!"call {r.name}"]
   | .imul d r => [s!"imul {d.name}, {r.name}"]
   | .imul3 d r v => [s!"imul {d.name}, {r.name}, {v.toInt}"]
   | .shld d r n => [s!"shld {d.name}, {r.name}, {n}"]
@@ -378,7 +379,7 @@ def Instr.memOps : Instr → List MemOp
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
   | .vpmovmskb .. | .zop _ | .eop _
   | .lfence | .mul _ | .imul .. | .imul3 .. | .shld .. | .btr ..
-  | .push _ | .pop .. | .alloc _ | .free _ => []
+  | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => []
 
 /-- The lines of an instruction: each of its instructions' text (`asm`) as a
 comment, then that instruction's bytes (`encode`); its text if it has no

@@ -311,6 +311,14 @@ structure Artifact where
   same way without being listed here: the model reads its words from the
   instruction, not from memory the contract describes. -/
   consts : List (String × List (BitVec 64)) := []
+  /-- The tables of functions the function takes (`Abi.withTables`): for
+  each of its parameters that is one, the parameter's name and every table
+  it may point to. The emitter checks that each names a read-only array of
+  `u64` of the tables' length, and that it lists every table of their
+  interface on the target, of which the Rust caller may pass any
+  (`Rust.checkFnTables`). So `contract` is one for the calling convention
+  `(target.abi.withConsts consts).withTables sig tables`. -/
+  tables : List (String × List FnTable) := []
   code : Prog target.isa
   contract : Contract target.isa
   verified : Verified target code contract
@@ -323,7 +331,8 @@ structure Artifact where
   them for `sig`, and requires what `Sig.layoutDoc` documents of where the
   buffers are. -/
   ofSig : ∃ pre post leak,
-      contract = sig.contract (target.abi.withConsts consts) pre post writeArgs stack leak := by
+      contract = sig.contract ((target.abi.withConsts consts).withTables sig tables) pre post writeArgs
+        stack leak := by
     exact ⟨_, _, _, rfl⟩
   /-- The contract of the function on every target, which an artifact made
   from an `Api` (`{ api with … }`) takes from it with its `name` and `sig`
@@ -333,7 +342,8 @@ structure Artifact where
   /-- `contract` is `contracts` on the target, for `stack`: an artifact made
   from an `Api` is proven against the contract `Spec/` gives the function,
   not one chosen where the artifact is built. -/
-  ofApi : contracts.elim True fun f => contract = f (target.abi.withConsts consts) stack := by
+  ofApi : contracts.elim True fun f =>
+      contract = f ((target.abi.withConsts consts).withTables sig tables) stack := by
     first | exact True.intro | exact rfl
   /-- The code changes the stack pointer only by calls and returns and by
   the pushes and pops of frames, which are nested: no other instruction of

@@ -34,6 +34,7 @@ def Code.x86_64Depth : Prog X86_64.isa → Nat
   | .loop b _ => b.x86_64Depth
   | .call _ b => b.x86_64Depth + 8
   | .frame i b _ => b.x86_64Depth + i.frameBytes
+  | .icall _ _ b n => max (b.x86_64Depth + 8) n.x86_64Depth
 
 /-- `Code.all p` holds of every instruction. -/
 theorem Code.all_instrs {I C : Type} {p : I → Bool} {c : Code I C} (h : c.all p = true) :
@@ -59,6 +60,12 @@ theorem Code.all_instrs {I C : Type} {p : I → Bool} {c : Code I C} (h : c.all 
       or_false] at hi
     rcases hi with rfl | hi | rfl
     exacts [h.1.1, ih h.1.2 i hi, h.2]
+  | icall x _ b n ihb ihn =>
+    simp only [Code.all, Bool.and_eq_true] at h
+    intro i hi
+    simp only [instrs, List.mem_cons, List.mem_append] at hi
+    rcases hi with (rfl | hi) | hi
+    exacts [h.1.1, ihb h.1.2 i hi, ihn h.2 i hi]
 
 end VG
 
@@ -80,7 +87,7 @@ theorem exec_rsp {i : Instr} {s s' : State} (hw : isa.writesSp i = false) (h : e
     simp only [Bool.or_eq_false_iff, beq_eq_false_iff_ne, ne_eq] at hw
     simp only [Taint.clobbers, Bool.or_eq_false_iff, beq_eq_false_iff_ne, ne_eq]
     exact ⟨fun h => hw.1 h.symm, fun h => hw.2 h.symm⟩
-  case push | pop | alloc | free => simp only [exec, reduceCtorEq] at h
+  case push | pop | alloc | free | callr => simp only [exec, reduceCtorEq] at h
   all_goals first | exact hw | decide
 
 /-- A frame restores `rsp`. -/
@@ -196,5 +203,31 @@ theorem Exec.stackFrame {c : Prog isa} (hc : SpSafe c) {s s' : State} {t : List 
         · simp only [List.mem_singleton] at hr; subst hr
           exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_callee _ _⟩
     rw [hm]; exact Frame.trans f₀ f₁'
+  | @icall _ _ b nx s₀ s₁ s₂ s₃ _ _ hc₁ hb hr ih =>
+    have hcb : SpSafe b := fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))
+    have hd' : b.x86_64Depth + 8 < 2 ^ 64 := by simp only [Code.x86_64Depth] at hd; omega
+    have e₁ : s₁ = s₀.callEntry := (Option.some.inj ((call_callEntry s₀).symm.trans hc₁)).symm
+    subst e₁
+    have hm : s₃.mem = s₂.mem := by
+      simp only [isa, ret] at hr; split at hr <;> cases hr; rfl
+    have f₀ : Frame (s₀.wr ++ [below (s₀.gpr .rsp) (b.x86_64Depth + 8)]) s₀.mem s₀.callEntry.mem :=
+      Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
+        (below_call _ (by omega) (by omega))
+    have f₁ := ih hcb (by omega)
+    simp only [State.callEntry_wr, State.callEntry_rsp] at f₁
+    have f₁' : Frame (s₀.wr ++ [below (s₀.gpr .rsp) (b.x86_64Depth + 8)]) s₀.callEntry.mem s₂.mem :=
+      Frame.sub f₁ fun r hr => by
+        rcases List.mem_append.mp hr with hr | hr
+        · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+        · simp only [List.mem_singleton] at hr; subst hr
+          exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_callee _ _⟩
+    rw [hm]
+    exact Frame.below_mono (Frame.trans f₀ f₁') (Nat.le_max_left _ _) hd
+  | @icallNext i nm bd n' b' nn _ _ _ _ _ _ _ ih =>
+    have hcn : SpSafe (.icall i n' b' nn) :=
+      fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi))
+    have hle : (Code.icall i n' b' nn).x86_64Depth ≤ (Code.icall i nm bd (.icall i n' b' nn)).x86_64Depth :=
+      Nat.le_max_right _ _
+    exact Frame.below_mono (ih hcn (by omega)) hle hd
 
 end VG.X86_64

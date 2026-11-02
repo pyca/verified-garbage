@@ -86,7 +86,7 @@ theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms 
     simp only [Taint.execAluW_eq, Option.map_eq_some_iff] at h
     obtain ⟨_, _, rfl⟩ := h; split <;> rfl
   | vmovdquTbl d m n ws | movdquTbl d m n ws => simp only [reduceExec] at h; split at h <;> cases h; rfl
-  | push | pop | alloc | free => simp only [reduceExec, reduceCtorEq] at h
+  | push | pop | alloc | free | callr => simp only [reduceExec, reduceCtorEq] at h
   | _ => simp only [reduceExec, Option.some.injEq] at h; subst h; rfl
 
 theorem pushRegs_syms (t : State) (rs : List Reg) : (pushRegs t rs).syms = t.syms := by
@@ -132,6 +132,12 @@ theorem Exec.syms {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c 
     split at e₂ <;> [cases e₂; cases e₂]
     subst e₁; exact ih
   | frame e₁ _ e₂ ih => exact (pop_syms e₂).trans (ih.trans (push_syms e₁))
+  | icall _ e₁ _ e₂ ih =>
+    simp only [isa, call, Option.some.injEq] at e₁
+    simp only [isa, ret] at e₂
+    split at e₂ <;> [cases e₂; cases e₂]
+    subst e₁; exact ih
+  | icallNext _ _ _ ih => exact ih
 
 /-- The state after `c` names the same addresses of statics as before it. -/
 theorem WP.mono_syms {c : Prog isa} {s : State} {Q R : State → Prop} (h : WP isa c s Q)

@@ -60,6 +60,9 @@ theorem generationSafe.mx {c : Prog isa} (h : generationSafe c) : ctlOk c = true
     exact List.all_eq_true.mpr fun i hi => ((Bool.and_eq_true _ _).mp (List.all_eq_true.mp h i hi)).1
   clear h
   induction c with
+  | icall _ _ _ _ ihb ihn =>
+    simp only [Code.all, Bool.and_eq_true] at hn
+    simp only [ctlOk, hn.1.1, ihb hn.1.2, ihn hn.2, Bool.and_self]
   | block is => simpa only [ctlOk, ← KList.all_eq, Code.all] using hn
   | seq a b iha ihb =>
     simp only [Code.all, Bool.and_eq_true] at hn

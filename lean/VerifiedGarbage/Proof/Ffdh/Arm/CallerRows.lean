@@ -17,6 +17,8 @@ open VG.Proof.Bignum.Arm
 theorem exec {c : Prog isa} {s s' : State} {trace : List Leak}
     (h : Exec isa c s trace s') : Exec isa (callerRows c) s trace s' := by
   induction h with
+  | icall hi => nomatch hi
+  | icallNext hi => nomatch hi
   | block h =>
     simp only [callerRows]
     split
@@ -76,6 +78,7 @@ theorem verified {c : Prog isa} {contract : Contract isa} (h : Verified target c
 
 theorem stack (c : Prog isa) : FrameStack.armStack (callerRows c) ≤ FrameStack.armStack c := by
   induction c with
+  | icall => exact Nat.le_refl _
   | block _ =>
     simp only [callerRows]; split
     · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]

@@ -24,6 +24,7 @@ theorem erase_band_congr {a b c d : Bool} (h₁ : a = b) (h₂ : c = d) : (a && 
 theorem Code.allInstrs_erase {p : Instr → Bool} (hp : ∀ i, p i.erase = p i) (c : Prog isa) :
     (Code.erase c).allInstrs p = c.allInstrs p := by
   induction c with
+  | icall => rfl
   | block is =>
     show List.rec (motive := fun _ => Bool) true (fun i _ ih => p i && ih) (KList.map Instr.erase is) =
       List.rec (motive := fun _ => Bool) true (fun i _ ih => p i && ih) is
@@ -39,6 +40,7 @@ theorem Code.allInstrs_erase {p : Instr → Bool} (hp : ∀ i, p i.erase = p i) 
 
 theorem Code.noCalls_erase (c : Prog isa) : (Code.erase c).noCalls = c.noCalls := by
   induction c with
+  | icall => rfl
   | block => rfl
   | seq a b iha ihb => exact erase_band_congr iha ihb
   | ite _ t e iht ihe => exact erase_band_congr iht ihe
@@ -58,6 +60,7 @@ theorem Instr.loadsMxcsr_erase (i : Instr) : loadsMxcsr i.erase = loadsMxcsr i :
 
 theorem Code.InlineOk_erase (c : Prog isa) : (Code.erase c).InlineOk = c.InlineOk := by
   induction c with
+  | icall => rfl
   | block is =>
     show KList.all (KList.map Instr.erase is) _ = KList.all is _
     rw [KList.map_eq, KList.all_eq, KList.all_eq, List.all_map]

@@ -43,6 +43,7 @@ def Code.eraseOff : Prog isa → Prog isa
   | .loop b c => .loop (eraseOff b) c
   | .call n b => .call n (eraseOff b)
   | .frame p b q => .frame p (eraseOff b) q
+  | .icall i n b nx => .icall i n b nx
 
 namespace Taint
 
@@ -68,6 +69,7 @@ theorem checkChunks_eraseOff {chunkSize : Nat} (τ : taint.T) (is : List isa.Ins
 theorem check_eraseOff (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T) :
     taint.check τ (Code.eraseOff c) h = taint.check τ c h := by
   induction c generalizing τ h with
+  | icall => cases h <;> rfl
   | block is => cases h <;> first | rfl | exact checkChunks_eraseOff τ is _
   | seq a b iha ihb =>
     cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, iha, ihb]
@@ -89,6 +91,7 @@ theorem Taint.isSome_check_of_eraseOff {c c' : Prog isa} (he : Code.eraseOff c =
 theorem Code.allInstrs_eraseOff {p : Instr → Bool} (hp : ∀ i, p i.eraseOff = p i)
     (c : Prog isa) : (Code.eraseOff c).allInstrs p = c.allInstrs p := by
   induction c with
+  | icall => rfl
   | block is =>
     show Code.allInstrs p (.block (is.map Instr.eraseOff)) = Code.allInstrs p (.block is)
     rw [Code.allInstrs_eq, Code.allInstrs_eq]

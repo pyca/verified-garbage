@@ -34,6 +34,7 @@ def Code.eraseImm : Prog isa → Prog isa
   | .loop b c => .loop (eraseImm b) c
   | .call n b => .call n (eraseImm b)
   | .frame p b q => .frame p (eraseImm b) q
+  | .icall i n b nx => .icall i n b nx
 
 namespace Taint
 
@@ -59,6 +60,7 @@ theorem checkChunks_eraseImm {chunkSize : Nat} (τ : taint.T) (is : List isa.Ins
 theorem check_eraseImm (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T) :
     taint.check τ (Code.eraseImm c) h = taint.check τ c h := by
   induction c generalizing τ h with
+  | icall => cases h <;> rfl
   | block is => cases h <;> first | rfl | exact checkChunks_eraseImm τ is _
   | seq a b iha ihb =>
     cases h <;> first | rfl | simp only [Code.eraseImm, VG.Taint.check, iha, ihb]
