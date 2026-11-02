@@ -224,7 +224,6 @@ codec!(
         VG_EC_SECP256K1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
     ]
 );
-#[cfg(not(target_arch = "riscv64"))]
 codec!(
     BrainpoolP256r1,
     32,
@@ -353,7 +352,6 @@ mod tests {
     #[cfg(not(target_arch = "riscv64"))]
     cases!(p521, P521, 66);
     cases!(secp256k1, Secp256k1, 32);
-    #[cfg(not(target_arch = "riscv64"))]
     cases!(brainpoolp256r1, BrainpoolP256r1, 32);
     #[cfg(not(target_arch = "riscv64"))]
     cases!(brainpoolp384r1, BrainpoolP384r1, 48);
