@@ -26,7 +26,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::idea_cfb::IdeaCfb64;
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     // IDEA is in OpenSSL 3's legacy provider, if OpenSSL was built with it;
     // retain the default provider for the other algorithms benchmarked by
@@ -44,7 +44,7 @@ pub fn bench(c: &mut Criterion) {
             group.throughput(Throughput::Bytes(size as u64));
             let data = vec![0x5a; size];
             let mut buffer = crate::InPlace::new(size, &data);
-            group.bench_function(BenchmarkId::new(VG, size), |b| {
+            group.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
                     let ctx = IdeaCfb64::new(black_box(&key)).unwrap();
                     let mut chain = black_box(iv);
@@ -59,7 +59,7 @@ pub fn bench(c: &mut Criterion) {
             });
             let Some(cipher) = cipher else { continue };
             let mut output = vec![0; size + 8];
-            group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            group.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
                     let mut ctx =
                         Crypter::new(cipher, mode, black_box(&key), Some(black_box(&iv))).unwrap();

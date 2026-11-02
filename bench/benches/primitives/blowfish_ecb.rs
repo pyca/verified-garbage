@@ -21,7 +21,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor};
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     // Blowfish is in OpenSSL 3's legacy provider; retain the default
     // provider for the other algorithms benchmarked by this process.
@@ -38,7 +38,7 @@ pub fn bench(c: &mut Criterion) {
             // Both libraries write into a buffer allocated once, outside the
             // timed code.
             let mut output = vec![0; size + 8];
-            g.bench_function(BenchmarkId::new(VG, size), |b| match mode {
+            g.bench(BenchmarkId::new(VG, size), |b| match mode {
                 Mode::Encrypt => b.iter(|| {
                     let mut ctx = BlowfishEcbEncryptor::new(black_box(&key)).unwrap();
                     let n = ctx.update(black_box(&data), &mut output).unwrap();
@@ -52,7 +52,7 @@ pub fn bench(c: &mut Criterion) {
                     black_box(&output[..n]);
                 }),
             });
-            g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
                     let mut ctx =
                         Crypter::new(Cipher::bf_ecb(), mode, black_box(&key), None).unwrap();

@@ -23,7 +23,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::cipher_ctx::CipherCtx;
     use verified_garbage::aes_ccm::AesCcm;
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     let key = [0x42; 16];
     let nonce = [0x24; 12];
@@ -41,7 +41,7 @@ pub fn bench(c: &mut Criterion) {
 
         let mut g = c.benchmark_group("aes-128-ccm-encrypt");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let k = AesCcm::new(black_box(&key)).unwrap();
                 k.encrypt_in_place::<16>(black_box(&nonce), black_box(&aad), black_box(&mut buf))
@@ -49,7 +49,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut t = [0u8; 16];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut ctx = CipherCtx::new().unwrap();
                 ctx.encrypt_init(Some(cipher), None, None).unwrap();
@@ -68,7 +68,7 @@ pub fn bench(c: &mut Criterion) {
 
         let mut g = c.benchmark_group("aes-128-ccm-decrypt");
         g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 buf.copy_from_slice(&ct);
                 let k = AesCcm::new(black_box(&key)).unwrap();
@@ -81,7 +81,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut ctx = CipherCtx::new().unwrap();
                 ctx.decrypt_init(Some(cipher), None, None).unwrap();

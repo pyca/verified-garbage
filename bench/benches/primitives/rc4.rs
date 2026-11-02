@@ -20,7 +20,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::rc4::Rc4;
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     // Retain the default provider for the process's other benchmarks.
     let _legacy = Provider::try_load(None, "legacy", true).unwrap();
@@ -29,7 +29,7 @@ pub fn bench(c: &mut Criterion) {
     for size in SIZES {
         g.throughput(Throughput::Bytes(size as u64));
         let mut data = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let mut ctx = Rc4::new(black_box(&key)).unwrap();
                 ctx.apply_keystream(black_box(&mut data));
@@ -37,7 +37,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut output = vec![0; size + Cipher::rc4().block_size()];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut ctx =
                     Crypter::new(Cipher::rc4(), Mode::Encrypt, black_box(&key), None).unwrap();

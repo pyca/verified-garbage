@@ -35,7 +35,7 @@ macro_rules! mlkem_bench {
         use criterion::BenchmarkId;
         use verified_garbage::$module::{$DecapsulationKey, $EncapsulationKey};
 
-        use crate::{AWS_LC, VG};
+        use crate::{AWS_LC, BenchDyn, VG};
         let c: &mut criterion::Criterion = $c;
         let seed = [0x42; 64];
         let dk = $DecapsulationKey::from_seed(&seed).unwrap();
@@ -97,11 +97,11 @@ macro_rules! mlkem_bench {
             dk.decapsulate(&invalid).unwrap()
         );
         let mut g = c.benchmark_group(concat!(stringify!($module), "_keygen"));
-        g.bench_function(BenchmarkId::new(VG, $EncapsulationKey::SIZE + 64), |b| {
+        g.bench(BenchmarkId::new(VG, $EncapsulationKey::SIZE + 64), |b| {
             b.iter(|| $DecapsulationKey::from_seed(black_box(&seed)).unwrap())
         });
         #[cfg(feature = "openssl-mlkem")]
-        g.bench_function(
+        g.bench(
             BenchmarkId::new(crate::OPENSSL, $EncapsulationKey::SIZE + 64),
             |b| {
                 b.iter(|| {
@@ -117,7 +117,7 @@ macro_rules! mlkem_bench {
                 })
             },
         );
-        g.bench_function(
+        g.bench(
             BenchmarkId::new(AWS_LC, $EncapsulationKey::SIZE + 64),
             |b| {
                 b.iter(|| {
@@ -128,12 +128,12 @@ macro_rules! mlkem_bench {
         );
         g.finish();
         let mut g = c.benchmark_group(concat!(stringify!($module), "_encaps"));
-        g.bench_function(
+        g.bench(
             BenchmarkId::new(VG, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
             |b| b.iter(|| black_box(ek).encapsulate_internal(black_box(&m)).unwrap()),
         );
         #[cfg(feature = "openssl-mlkem")]
-        g.bench_function(
+        g.bench(
             BenchmarkId::new(crate::OPENSSL, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
             |b| {
                 b.iter(|| {
@@ -143,7 +143,7 @@ macro_rules! mlkem_bench {
                 })
             },
         );
-        g.bench_function(
+        g.bench(
             BenchmarkId::new(AWS_LC, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
             |b| b.iter(|| black_box(&aws_lc_public).encapsulate().unwrap()),
         );
@@ -152,7 +152,7 @@ macro_rules! mlkem_bench {
         // encapsulate to it (`_encaps` times encapsulation alone).
         let ek_bytes = *ek.as_bytes();
         let mut g = c.benchmark_group(concat!(stringify!($module), "_encaps_from_bytes"));
-        g.bench_function(
+        g.bench(
             BenchmarkId::new(VG, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
             |b| {
                 b.iter(|| {
@@ -164,7 +164,7 @@ macro_rules! mlkem_bench {
             },
         );
         #[cfg(feature = "openssl-mlkem")]
-        g.bench_function(
+        g.bench(
             BenchmarkId::new(crate::OPENSSL, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
             |b| {
                 b.iter(|| {
@@ -181,7 +181,7 @@ macro_rules! mlkem_bench {
                 })
             },
         );
-        g.bench_function(
+        g.bench(
             BenchmarkId::new(AWS_LC, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
             |b| {
                 b.iter(|| {
@@ -194,14 +194,14 @@ macro_rules! mlkem_bench {
         );
         g.finish();
         let mut g = c.benchmark_group(concat!(stringify!($module), "_decaps"));
-        g.bench_function(BenchmarkId::new(VG, 32), |b| {
+        g.bench(BenchmarkId::new(VG, 32), |b| {
             b.iter(|| dk.decapsulate(black_box(&ct)).unwrap())
         });
         #[cfg(feature = "openssl-mlkem")]
-        g.bench_function(BenchmarkId::new(crate::OPENSSL, 32), |b| {
+        g.bench(BenchmarkId::new(crate::OPENSSL, 32), |b| {
             b.iter(|| crate::mlkem::openssl_decapsulate(black_box(&openssl_key), black_box(&ct)))
         });
-        g.bench_function(BenchmarkId::new(AWS_LC, 32), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, 32), |b| {
             b.iter(|| {
                 black_box(&aws_lc_key)
                     .decapsulate(black_box(&ct[..]).into())

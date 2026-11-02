@@ -82,16 +82,16 @@ fn xof_group(
     use criterion::{BenchmarkId, Throughput};
     use openssl::hash::Hasher;
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
     let mut g = c.benchmark_group(name);
     for size in SIZES {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
         let mut out = [0u8; 32];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| vg(black_box(&data), &mut out))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut h = Hasher::new(md).unwrap();
                 h.update(black_box(&data)).unwrap();

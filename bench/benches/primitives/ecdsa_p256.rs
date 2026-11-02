@@ -87,7 +87,7 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>
     use openssl::sign::{Signer, Verifier};
     use verified_garbage::ecdsa::{P256, SigningKey, VerifyingKey};
 
-    use crate::{AWS_LC, OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
     let key = SigningKey::<P256>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::X9_62_PRIME256V1).unwrap();
@@ -107,10 +107,10 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>
     let mut g = c.benchmark_group(format!("ecdsa_p256_{name}_sign"));
     for size in SIZES {
         let message = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| key.sign::<H>(black_box(&message)).unwrap())
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 Signer::new(md, &openssl_key)
                     .unwrap()
@@ -123,7 +123,7 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>
             verifying_key
                 .verify::<H>(&message, sig.as_ref().try_into().unwrap())
                 .unwrap();
-            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, size), |b| {
                 b.iter(|| aws_lc_key.sign(&rng, black_box(&message)).unwrap())
             });
         }
@@ -141,14 +141,14 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>
         .unwrap()
         .to_der()
         .unwrap();
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 verifying_key
                     .verify::<H>(black_box(&message), &sig)
                     .unwrap()
             })
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let point = EcPoint::from_bytes(&group, black_box(&q), &mut ctx).unwrap();
                 let ec = EcKey::from_public_key(&group, &point).unwrap();
@@ -161,7 +161,7 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>
         UnparsedPublicKey::new(aws_lc_verify, &q)
             .verify(&message, &der)
             .unwrap();
-        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 UnparsedPublicKey::new(aws_lc_verify, black_box(&q))
                     .verify(black_box(&message), &der)

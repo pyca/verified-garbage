@@ -23,7 +23,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::camellia_cfb::CamelliaCfb128;
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     let key: Vec<_> = (0..32).map(|i| (17 * i + 3) as u8).collect();
     let iv = [0x3c; 16];
@@ -43,7 +43,7 @@ pub fn bench(c: &mut Criterion) {
                 group.throughput(Throughput::Bytes(size as u64));
                 let data = vec![0x5a; size];
                 let mut buffer = crate::InPlace::new(size, &data);
-                group.bench_function(BenchmarkId::new(VG, size), |b| {
+                group.bench(BenchmarkId::new(VG, size), |b| {
                     b.iter(|| {
                         let ctx = CamelliaCfb128::new(black_box(key)).unwrap();
                         let mut chain = black_box(iv);
@@ -57,7 +57,7 @@ pub fn bench(c: &mut Criterion) {
                     })
                 });
                 let mut output = vec![0; size + 16];
-                group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+                group.bench(BenchmarkId::new(OPENSSL, size), |b| {
                     b.iter(|| {
                         let mut ctx =
                             Crypter::new(cipher, mode, black_box(key), Some(black_box(&iv)))
