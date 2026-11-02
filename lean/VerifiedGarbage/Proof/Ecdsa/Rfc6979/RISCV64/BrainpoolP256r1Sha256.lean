@@ -55,8 +55,9 @@ def pack (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve) : Rfc where
   hHash := rfl
   hD := rfl
   hnw := rfl
+  hQ := rfl
   hDQ := (by decide : 8 * 4 ≤ cfg.H.D)
-  hD48 := by decide
+  hD64 := by decide
   hS := by decide
   hct := rfl
   hT := by decide
@@ -71,9 +72,9 @@ theorem checks : Checks cfg := by
 
 /-- The stack the function uses: its frame and its callees'. -/
 theorem stack_eq (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve) : (pack hL).N = 544 := by
-  simp only [Rfc.N, Rfc.X, pack, cfg, Cfg.frB, Cfg.Q, hash256, Impl.Hmac.Stream.RISCV64.Hash.ibytes,
+  simp only [Rfc.N, Rfc.X, pack, cfg, Cfg.frB, hash256, Impl.Hmac.Stream.RISCV64.Hash.ibytes,
     Impl.Hmac.Stream.RISCV64.Hash.fbytes, Impl.Hmac.Stream.RISCV64.Hash.iso, Impl.Hmac.Stream.RISCV64.Hash.fso,
-    Impl.Hmac.Stream.RISCV64.Hash.S, Impl.Hmac.Stream.RISCV64.Hash.B, fH]
+    Impl.Hmac.Stream.RISCV64.Hash.S, Impl.Hmac.Stream.RISCV64.Hash.B, Cfg.fH, Nat.reduceLT, ↓reduceIte]
   decide
 
 theorem implies :
