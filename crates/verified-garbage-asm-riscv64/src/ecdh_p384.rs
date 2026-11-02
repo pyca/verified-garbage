@@ -2497,7 +2497,11 @@ call {vg_p384_mul_mod_p}
 .insn 2, 0x8082
 .option pop",
         vg_p384_check_point = sym super::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
-        vg_p384_mul = sym super::ec_p384::vg_p384_mul::vg_p384_mul,
+        vg_p384_mul = sym super::ecdh_p384::vg_p384_mul::vg_p384_mul,
         vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_mul.rs"]
+pub(crate) mod vg_p384_mul;

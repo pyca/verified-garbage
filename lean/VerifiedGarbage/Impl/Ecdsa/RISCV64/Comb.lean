@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.P256.RISCV64
 public import VerifiedGarbage.Impl.Ecdh.RISCV64
 public import VerifiedGarbage.Impl.P256.CombTable7
+public import VerifiedGarbage.Impl.Ecdsa.P384.RISCV64
+public import VerifiedGarbage.Impl.P384.CombTable7
 public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 
 /-!
@@ -69,8 +71,9 @@ def KC := 46
 /-- The width of a window. -/
 def w : Nat := 7
 
-/-- The number of windows. -/
-def J : Nat := 37
+/-- The number of windows of `n` words: `⌈64 n / 7⌉` (37 for four, 55 for
+six). -/
+def nwin (n : Nat) : Nat := (64 * n + 6) / 7
 
 /-- The entries of a table: `2^(w-1)`. -/
 def H : Nat := 64
@@ -113,19 +116,29 @@ variable (c : Cfg)
 /-- The bytes of an entry. -/
 def eb : Nat := 16 * c.n
 
-/-- Quadword `q` of the entry selected, into `t0`, then to `D` at `8 q`: the
-32 entries at `a0` and the 32 at `a7`, then by the mask of bit 5. -/
+/-- Quadword `q` of the entry selected, into `t0`, then to `D` at `8 q`.
+For four words, the 32 entries at `a0` and the 32 at `a7`, then by the mask
+of bit 5. For more (whose 32 entries pass offset 2047), four groups of 16:
+at `a0`, then at `a7` set to `a0` plus 16, 32 and 48 entries, by the masks
+of bits 0 to 3, then the pairs by bit 4's and the two by bit 5's. -/
 def scanWord (q : Nat) : List Instr :=
-  tree .a0 (eb c) 5 (8 * q) treeRegs ++ tree .a7 (eb c) 5 (8 * q) treeRegs.tail ++ pick .t0 .t1 (maskReg 5) ++
-    [.store .d .t0 wb (c.sl DX + 8 * q)]
+  if c.n = 4 then
+    tree .a0 (eb c) 5 (8 * q) treeRegs ++ tree .a7 (eb c) 5 (8 * q) treeRegs.tail ++ pick .t0 .t1 (maskReg 5) ++
+      [.store .d .t0 wb (c.sl DX + 8 * q)]
+  else
+    tree .a0 (eb c) 4 (8 * q) treeRegs ++
+      addAt .a7 .a0 (16 * eb c) ++ tree .a7 (eb c) 4 (8 * q) treeRegs.tail ++ pick .t0 .t1 (maskReg 4) ++
+      addAt .a7 .a0 (32 * eb c) ++ tree .a7 (eb c) 4 (8 * q) treeRegs.tail ++
+      addAt .a7 .a0 (48 * eb c) ++ tree .a7 (eb c) 4 (8 * q) treeRegs.tail.tail ++
+      pick .t1 .t2 (maskReg 4) ++ pick .t0 .t1 (maskReg 5) ++ sdAt .t0 wb (c.sl DX + 8 * q)
 
 /-- The window `k_j` into `t2`, for `j` in `s1`: the funnel shift of the
 words `7j >>> 6` and the next of the copy of `k`, by `7j mod 64`. -/
 def window : List Instr :=
   [.shift .sll .d .t0 ctr 3, .sub .t0 .t0 ctr,
-   .shift .srl .d .t1 .t0 6, .shift .sll .d .t1 .t1 3, .add .t1 .t1 wb,
-   .load .d .t2 .t1 (c.sl KC), .load .d .t3 .t1 (c.sl KC + 8),
-   .shiftReg .srl .d .t2 .t2 .t0, .logicImm .xor .t4 .t0 63,
+   .shift .srl .d .t1 .t0 6, .shift .sll .d .t1 .t1 3, .add .t1 .t1 wb] ++
+  ldAt .t2 .t1 (c.sl KC) ++ ldAt .t3 .t1 (c.sl KC + 8) ++
+  [.shiftReg .srl .d .t2 .t2 .t0, .logicImm .xor .t4 .t0 63,
    .shift .sll .d .t3 .t3 1, .shiftReg .sll .d .t3 .t3 .t4,
    .logic .or .t2 .t2 .t3, .logicImm .and .t2 .t2 127]
 
@@ -141,15 +154,17 @@ def digit : List Instr :=
 def maskOfBit (b : Nat) : List Instr :=
   [.shift .sll .d (maskReg b) .t2 (63 - b), .shift .sra .d (maskReg b) (maskReg b) 63]
 
-/-- The table's row `j` (for `j` in `s1`, the table's address in `s4`): `a0`
-and `a7 = a0 + 2048`. -/
+/-- The table's row `j` (for `j` in `s1`, the table's address in `s4`), of
+`64` entries of `16 n` bytes: for four words, `a0` and `a7 = a0 + 2048`; for
+six, `a0` (`6144 j` as `4096 j + 2048 j`). -/
 def row : List Instr :=
-  [.shift .sll .d .t0 ctr 12, .add .a0 .s4 .t0, .addi .a7 .a0 2047, .addi .a7 .a7 1]
+  if c.n = 4 then [.shift .sll .d .t0 ctr 12, .add .a0 .s4 .t0, .addi .a7 .a0 2047, .addi .a7 .a7 1]
+  else [.shift .sll .d .t0 ctr 12, .shift .sll .d .t1 ctr 11, .add .t0 .t0 .t1, .add .a0 .s4 .t0]
 
 /-- The entry: the window, the digit, the masks, the row, the `2 n`
 quadwords, then `Z = 1`, and `(0 : 1 : 0)` if `|d| = 0`. -/
 def select : List Instr :=
-  (window c) ++ (digit c) ++ (List.range 6).flatMap maskOfBit ++ row ++
+  (window c) ++ (digit c) ++ (List.range 6).flatMap maskOfBit ++ row c ++
     (List.range (2 * c.n)).flatMap (scanWord c) ++ copy c.n (c.sl DZ) (c.sl ONEP) ++
     [.load .d .a7 wb (c.sl PT + 8)] ++
     sel c.n (c.sl DX) (c.sl DX) (c.sl ZERO) ++ sel c.n (c.sl DY) (c.sl DY) (c.sl ONEP) ++
@@ -170,20 +185,20 @@ def step : Prog isa :=
 /-- The comb's body: the copy of `k` and its zero word, `R = S` (`start`,
 affine, in Montgomery's form), then the steps. -/
 def body (start : Nat × Nat) : Prog isa :=
-  .seq (.block (copy c.n (c.sl KC) (c.sl K) ++ [.li .t0 0, .store .d .t0 wb (c.sl KC + 8 * c.n)] ++
+  .seq (.block (copy c.n (c.sl KC) (c.sl K) ++ [.li .t0 0] ++ sdAt .t0 wb (c.sl KC + 8 * c.n) ++
     Ecdh.RISCV64.setConst c.n (c.sl RX) (Ecdh.RISCV64.Cfg.mont c start.1) ++
     Ecdh.RISCV64.setConst c.n (c.sl RY) (Ecdh.RISCV64.Cfg.mont c start.2) ++ copy c.n (c.sl RZ) (c.sl ONEP) ++
-    [.li ctr J]))
+    [.li ctr (nwin c.n)]))
     (.loop (step c) more)
 
 /-- `vg_<curve>_mul_g(ws = a0)`: the table's address (`lla`, first, into
 `t0`, then `s4`), `s0`, `s1`, `s4` and `ra` kept around the body, with the
 working space's base in `s0`. -/
 def combFn (sym : String) (start : Nat × Nat) : Prog isa :=
-  .seq (.block [.lla .t0 sym, .store .d .s0 .a0 c.mulSave, .store .d .s1 .a0 (c.mulSave + 8),
-    .store .d .ra .a0 (c.mulSave + 16), .store .d .s4 .a0 (c.mulSave + 24), .addi .s0 .a0 0, .addi .s4 .t0 0]) <|
-  .seq (body c start) (.block [.load .d .ra .s0 (c.mulSave + 16), .load .d .s4 .s0 (c.mulSave + 24),
-    .load .d .s1 .s0 (c.mulSave + 8), .load .d .s0 .s0 c.mulSave])
+  .seq (.block ([.lla .t0 sym] ++ sdAt .s0 .a0 c.mulSave ++ sdAt .s1 .a0 (c.mulSave + 8) ++
+    sdAt .ra .a0 (c.mulSave + 16) ++ sdAt .s4 .a0 (c.mulSave + 24) ++ [.addi .s0 .a0 0, .addi .s4 .t0 0])) <|
+  .seq (body c start) (.block (ldAt .ra .s0 (c.mulSave + 16) ++ ldAt .s4 .s0 (c.mulSave + 24) ++
+    ldAt .s1 .s0 (c.mulSave + 8) ++ ldAt .s0 .s0 c.mulSave))
 
 end Cfg
 
@@ -204,5 +219,23 @@ def mulGP256 : Prog isa := Cfg.combFn p256 p256Sym Impl.P256.p256Comb7Start
 
 /-- The name of `vg_p256_mul_g`. -/
 def mulGP256Name : String := "vg_p256_mul_g"
+
+/-! ## P-384 -/
+
+/-- The table's symbol. -/
+def p384Sym : String := "VG_P384_COMB"
+
+/-- The words of P-384's tables (`Impl/P384/CombTable7.lean`), in
+Montgomery's form. -/
+@[irreducible] def p384CombWords : List (BitVec 64) :=
+  tcombWords 6 (2 ^ 384) Spec.P384.curve.p Impl.P384.p384Comb7
+
+def p384CombConsts : List (String × List (BitVec 64)) := [(p384Sym, p384CombWords)]
+
+/-- `vg_p384_mul_g`. -/
+def mulGP384 : Prog isa := Cfg.combFn p384 p384Sym Impl.P384.p384Comb7Start
+
+/-- The name of `vg_p384_mul_g`. -/
+def mulGP384Name : String := "vg_p384_mul_g"
 
 end VG.Impl.Ecdsa.RISCV64.Comb

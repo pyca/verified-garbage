@@ -25,3 +25,7 @@ pub use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
 #[rustfmt::skip]
 mod vg_p256_comb;
 pub use vg_p256_comb::VG_P256_COMB;
+
+#[rustfmt::skip]
+mod vg_p384_comb;
+pub use vg_p384_comb::VG_P384_COMB;
