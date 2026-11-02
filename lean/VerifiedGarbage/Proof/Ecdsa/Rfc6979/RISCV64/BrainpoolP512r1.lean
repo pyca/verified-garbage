@@ -28,7 +28,7 @@ open VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1 (signRV sign_rv sign_ct sg)
 
 theorem nBits_brainpoolp512r1 : Spec.Ecdsa.nBits Spec.BrainpoolP512r1.curve = 512 := by
   show Spec.BrainpoolP512r1.curve.n.log2 + 1 = 512
-  have h₁ : 383 ≤ Spec.BrainpoolP512r1.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
+  have h₁ : 511 ≤ Spec.BrainpoolP512r1.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.BrainpoolP512r1.curve.n.log2 < 512 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
@@ -80,7 +80,7 @@ theorem core_rel {nm : String} (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP512
 
 /-- brainpoolp512r1's kit, for its group law `hL`. -/
 def kit (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) : Kit where
-  nw := 6
+  nw := 8
   E := Spec.Ecdsa.BrainpoolP512r1.inst
   FN := Impl.Ecdsa.RISCV64.brainpoolp512r1Order
   FNok := VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.order_ok
@@ -89,7 +89,7 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) : Kit where
   len := rfl
   nbits := nBits_brainpoolp512r1
   two := by decide
-  nw4 := .inr rfl
+  nw9 := ⟨by decide, by decide⟩
   coreC := Impl.Ecdsa.RISCV64.signBrainpoolP512r1
   K := []
   core_call h _ hQ := core_call hL h hQ
