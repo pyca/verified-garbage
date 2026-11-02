@@ -113,6 +113,18 @@ theorem tcall_good {ts : List (String × Prog isa)} (h : FnsGood ts) (j : Nat) :
   · simp only [tcall, Code.allInstrs, this.1, Bool.and_true]; rfl
   · simp only [tcall, Code.depth, Nat.max_le]; omega
 
+theorem mgfT_good {f : Fns} (hgi : FnsGood f.init) (hgu : FnsGood f.upd) (hgf : FnsGood f.fin) (sArg : Nat) :
+    Good (Impl.Mgf1.X86_64.Table.mgfXor lay sArg sTab sD f) := by
+  have hi := tcall_good hgi 0; have hu := tcall_good hgu 1; have hf := tcall_good hgf 2
+  refine ⟨?_, ?_⟩
+  · simp only [Impl.Mgf1.X86_64.Table.mgfXor, Impl.Mgf1.X86_64.Table.round, Impl.Mgf1.X86_64.Table.xorOut, seqs,
+      Code.allInstrs, hi.1, hu.1, hf.1, Bool.and_true, Bool.true_and]
+    rfl
+  · have := hi.2; have := hu.2; have := hf.2
+    simp only [Impl.Mgf1.X86_64.Table.mgfXor, Impl.Mgf1.X86_64.Table.round, Impl.Mgf1.X86_64.Table.xorOut, seqs,
+      Code.depth, Impl.Mgf1.X86_64.byteLoop, Nat.max_le]
+    omega
+
 /-- The indirect call of the table's function `j`, at the address `p`'s word
 `j` holds, of `n`. -/
 theorem tcall_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}

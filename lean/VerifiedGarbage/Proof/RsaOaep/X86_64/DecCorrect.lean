@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
+public import VerifiedGarbage.Proof.HashTable.X86_64
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPriv
@@ -28,6 +29,8 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash Stream)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 open VG.Proof.RsaPkcs1Enc.X86_64 (PrivImpl privStack)
+open VG.Proof.Pbkdf2.Md.X86_64 (MdHash)
+open VG.Proof.HashTable.X86_64 (tables fnsOf Coh tabOK_of held_tableOf hashAt_tableOf fnsGood_of)
 
 /-- The private operation's result to its slot, zero-extended, and the
 check of `k`. -/
@@ -86,41 +89,49 @@ theorem decEnd_ok {s s₂ : State} (hp : DPre s) (he : EnvD s s₂) {o : Spec.Rs
     · exact hp.dRM
     · exact hp.dRs
 
-variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
-  (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
+variable {Hl : Hash} (hH : HashOK Hl) (KH : Callees Hl) (mH : MgfLink Hl hH) {vs : List MdHash} (hc : Coh vs)
 
-include hH KH hG KG mH mG in
-theorem dec_correct (v : PrivImpl) (s : State) (h : (decK mH.G mG.G).pre s) :
-    ∃ t s', Exec isa (decrypt Hl.stream Gm.stream v.name v.code) s t s' ∧ abiPreserved s s' ∧
-      (decK mH.G mG.G).post s s' := by
-  have hp : DPre s := DPre.of mH.G mG.G h
+include hH KH mH hc in
+theorem dec_correct (v : PrivImpl) (s : State) (h : (decK mH.G (tables vs)).pre s) :
+    ∃ t s', Exec isa (decrypt Hl.stream (fnsOf vs) v.name v.code) s t s' ∧ abiPreserved s s' ∧
+      (decK mH.G (tables vs)).post s s' := by
+  have hp : DPre s := DPre.of mH.G _ h
+  obtain ⟨⟨T, hT, hheld⟩, hd⟩ := DPre.tab mH.G _ h
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
+  obtain ⟨hm, hidx, hDm⟩ := held_tableOf hheld
+  have ok := tabOK_of hc hd hw
+  obtain ⟨hgi, hgu, hgf⟩ := fnsGood_of vs
+  have hGa : Spec.HashTable.hashAt s.mem (stackArg s 17) = some w.mgf.G := hashAt_tableOf hidx
   have hk1 := hp.lv.1; have hk2 := hp.lv.2
   have hD := hH.hD0; have hDN := hH.hDN; have hN := hH.N_le
   have hlen : mH.G.len = Hl.D := mH.len
   have hsD : Hl.stream.D = Hl.D := rfl
-  suffices hw : WP isa (decrypt Hl.stream Gm.stream v.name v.code) s
-      fun s' => abiPreserved s s' ∧ (decK mH.G mG.G).post s s' by
+  suffices hw : WP isa (decrypt Hl.stream (fnsOf vs) v.name v.code) s
+      fun s' => abiPreserved s s' ∧ (decK mH.G (tables vs)).post s s' by
     obtain ⟨t, s', he, hq⟩ := hw; exact ⟨t, s', he, hq⟩
   refine wp_alloc (by have := hp.sp1; unfold decStack privStack at this; unfold frameBytes at *; omega) ?_
   have hct : (Spec.Rsa.bytesAt s.mem (stackArg s 13) (s.gpr .r8).toNat).length =
       (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat).length := by simp [Spec.Rsa.bytesAt]
   have fin : ∀ s₂, EnvD s s₂ → Spec.RsaOaep.writtenDecrypt s₂.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat
       ((s₂.gpr .rax).setWidth 32)
-      (decOut mH.G mG.G (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 12).toNat) (privOutD s)) →
+      (decOut mH.G w.mgf.G (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 12).toNat) (privOutD s)) →
       s₂.gpr .rsp = fb s ∧ s₂.wr = (allocState frameBytes s).wr ∧
-        (abiPreserved s (freed frameBytes s₂) ∧ (decK mH.G mG.G).post s (freed frameBytes s₂)) :=
+        (abiPreserved s (freed frameBytes s₂) ∧ (decK mH.G (tables vs)).post s (freed frameBytes s₂)) :=
     fun s₂ he hw => by
-      refine decEnd_ok hp he ?_
-      rw [decrypt_eq hct]; exact hw
+      obtain ⟨a, b, c, d⟩ := decEnd_ok hp he hw
+      refine ⟨a, b, c, fun G hG' => ?_⟩
+      rw [hGa] at hG'
+      obtain rfl := Option.some.inj hG'
+      rw [decrypt_eq hct]; exact d
   unfold decBody seqs seqs seqs
-  refine WP.seq (WP.mono (decHead_ok hp) fun t0 h0 => ?_)
-  refine WP.seq (WP.mono (privD_call v hp h0) fun t1 ⟨he1, L1, R1, hw1⟩ => ?_)
+  refine WP.seq (WP.mono_syms (decHead_ok hp) fun t0 h0 sy0 => ?_)
+  refine WP.seq (WP.mono_syms (privD_call v hp h0) fun t1 ⟨he1, L1, R1, hw1⟩ sy1 => ?_)
   have hW1 : ArgsD s (privW s) := ArgsD_privW s
   obtain ⟨-, w21, -, w23, -, -, -, -, -, w29⟩ := hW1.w
   have w23' : privW s 23 = BitVec.ofNat 64 (s.gpr .r8).toNat := by
     rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.seq (WP.mono (wp_good (block_good _ rfl) (resK_ok (Hm := Hl.stream) L1 R1 w23' (by omega) (by omega)))
-    fun t2 ⟨⟨k2, L2, R2, hcf2⟩, sp2, mx2, f2⟩ => ?_)
+  refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (resK_ok (Hm := Hl.stream) L1 R1 w23' (by omega) (by omega)))
+    fun t2 ⟨⟨k2, L2, R2, hcf2⟩, sp2, mx2, f2⟩ sy2 => ?_)
   have he2 : EnvD s t2 := he1.step k2.2.1 k2.2.2 sp2 (keep_cs3 k2 (by decide)) mx2 f2
   generalize hW2 : upd (privW s) 30 (((t1.gpr .rax).setWidth 32).setWidth 64) = W2 at R2
   have hA2 : ArgsD s W2 := hW1.of fun j hj => by
@@ -171,7 +182,7 @@ theorem dec_correct (v : PrivImpl) (s : State) (h : (decK mH.G mG.G).pre s) :
       intro hr _
       refine ⟨by rw [hax3, faultW, show W2 30 = 2 from hr]; rfl, hz3, hm3⟩
   · rw [decide_eq_false_iff_not] at hb
-    exact WP.mono (decMain_ok hH KH hG KG mH mG hp he2 L2 R2 hA2 (by omega) hres) fun t3 ⟨he3, hw3⟩ =>
-      fin t3 he3 hw3
+    exact WP.mono (decMain_ok hH KH w.ok mH w.mgf hgi hgu hgf hp he2 (sy2.trans (sy1.trans sy0)) ok hm hDm L2 R2 hA2
+      (by omega) hres) fun t3 ⟨he3, hw3⟩ => fin t3 he3 hw3
 
 end VG.Proof.RsaOaep.X86_64
