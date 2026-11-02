@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Instances
-public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
@@ -44,7 +43,7 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.X86_64.Instances.crtValues_verified },
   Spec.Rsa.recoverPrimesDetApi.artifact X86_64.target {
     code := Impl.Rsa.X86_64.Keys.RecoverDet.code
-    verified := Proof.Rsa.X86_64.Rd.recoverDet_verified },
+    verified := Proof.Rsa.X86_64.Instances.recoverDet_verified },
   Spec.Rsa.checkKeyApi.artifact X86_64.target {
     code := Impl.Rsa.X86_64.CheckKey.code
     verified := Proof.Rsa.X86_64.Instances.checkKey_verified },

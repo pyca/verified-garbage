@@ -1,4 +1,5 @@
 module
+-- separate module: it builds in parallel with the batched inverse's proofs (`InvInstance`, which imports the divstep algebra), which only `Instances` brings in
 
 import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTMain
 import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
@@ -6,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Code
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
-public import VerifiedGarbage.Proof.Rsa.X86_64.InvInstance
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -62,10 +62,5 @@ the registration file evaluates). -/
 theorem rd_verified [InvLaw] (hmx : RecoverDet.code.allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified target RecoverDet.code (Spec.Rsa.recoverPrimesDetContract abi) :=
   Verified.of_correct (rdCode_correct hmx) rdCode_constantTime rd_implies
-
-/-- `vg_rsa_recover_primes_det`, with the batched inverse's instance. -/
-theorem recoverDet_verified :
-    Verified target RecoverDet.code (Spec.Rsa.recoverPrimesDetContract abi) :=
-  rd_verified (by decide +kernel)
 
 end VG.Proof.Rsa.X86_64.Rd
