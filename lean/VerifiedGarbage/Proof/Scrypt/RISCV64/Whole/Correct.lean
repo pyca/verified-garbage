@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Scrypt.RISCV64.Whole.Steps
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Contract
 public import VerifiedGarbage.Proof.Scrypt.RISCV64.Common
 import VerifiedGarbage.Proof.Scrypt.RISCV64.RoMix
+import VerifiedGarbage.Proof.Scrypt.RISCV64.RoMixLoops
 import VerifiedGarbage.Proof.Scrypt.RISCV64.Lit
 import VerifiedGarbage.Proof.Scrypt.Whole
 import VerifiedGarbage.Proof.Scrypt.BlockMix

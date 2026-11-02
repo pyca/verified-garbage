@@ -1395,7 +1395,7 @@ theorem rel_jb (wide : Bool) {P : State → State → Prop}
   · exact RelCT.taint (A := taint) _ hP (by taint_decide)
 
 theorem rel_mx (wide : Bool) {P : State → State → Prop}
-    (hP : ∀ s s', P s s' → VG.RISCV64.Taint.Agree (VG.RISCV64.Taint.ofRegs ([.t0] ++ kRegs)) s s') :
+    (hP : ∀ s s', P s s' → VG.RISCV64.Taint.Agree (VG.RISCV64.Taint.ofRegs (([.t0] : List Reg) ++ kRegs)) s s') :
     RelCT isa P (.seq (.block [.mul .t1 .t0 .s6, .add .t1 .t1 .s5, mov .t0 .s4, mov .t2 .s9,
         if wide then .shift .srl .d .t3 .s6 3 else mov .t3 .s6]) (xorLoop wide)) fun _ _ => True := by
   cases wide
