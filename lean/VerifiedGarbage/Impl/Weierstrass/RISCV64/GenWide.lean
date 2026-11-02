@@ -128,11 +128,11 @@ def mulInit : List Instr :=
 
 /-! ## The final subtraction -/
 
-/-- `[db + d] := [xb + xo] - [yb + yo] - a5`, the borrow in and out in `a5`,
-through `a6`, `a7`, `t0`, `t3` and `a1` (P-256's `sbb`). -/
-def sbbStep (xb : Reg) (xo : Nat) (yb : Reg) (yo : Nat) (db : Reg) (d : Nat) : List Instr :=
-  [.load .d .a7 xb xo, .load .d .a6 yb yo, .sltu .t3 .a7 .a6, .sub .t0 .a7 .a6, .sltu .a1 .t0 .a5,
-    .sub .t0 .t0 .a5, .add .a5 .t3 .a1, .store .d .t0 db d]
+/-- Word `j` of `[a3 + d] := [xb + xo] - [yb + yo] - a5`, the borrow in and out in
+`a5`, through `a6`, `a7`, `t0`, `t3` and `a1` (P-256's `sbb`). -/
+def sbbStep (xb : Reg) (xo : Nat) (yb : Reg) (yo d j : Nat) : List Instr :=
+  [.load .d .a7 xb (xo + 8 * j), .load .d .a6 yb (yo + 8 * j), .sltu .t3 .a7 .a6, .sub .t0 .a7 .a6,
+    .sltu .a1 .t0 .a5, .sub .t0 .t0 .a5, .add .a5 .t3 .a1, .store .d .t0 .a3 (d + 8 * j)]
 
 /-- Word `j` of `[o]`: `N`'s (the difference) if the mask `a7` is zero, `T`'s if
 it is all ones, through `t0` and `a6`. -/
@@ -143,7 +143,7 @@ def selStep (j : Nat) : List Instr :=
 /-- `[o] = T mod m`, for `T < 2 m`: `T - m` over `N`, the mask `T_k - borrow`
 into `a7`, and the selection. -/
 def csub : List Instr :=
-  [.li .a5 0] ++ (List.range k).flatMap (fun j => sbbStep .a3 (T k + 8 * j) .a3 (N k + 8 * j) .a3 (N k + 8 * j)) ++
+  [.li .a5 0] ++ (List.range k).flatMap (sbbStep .a3 (T k) .a3 (N k) (N k)) ++
     [.load .d .a7 .a3 (T k + 8 * k), .sub .a7 .a7 .a5] ++ (List.range k).flatMap (selStep k)
 
 /-! ## The sum and the difference -/
@@ -167,7 +167,7 @@ def addMStep (j : Nat) : List Instr :=
 /-- `T = [a] - [b]` with borrows, the mask of the borrow into `a2`, then `m` added
 back under it, into `[o]`. -/
 def subDiff : List Instr :=
-  [.li .a5 0] ++ (List.range k).flatMap (fun j => sbbStep .t4 (8 * j) .t5 (8 * j) .a3 (T k + 8 * j)) ++
+  [.li .a5 0] ++ (List.range k).flatMap (sbbStep .t4 0 .t5 0 (T k)) ++
     [.li .a2 0, .sub .a2 .a2 .a5, .li .a5 0] ++ (List.range k).flatMap (addMStep k)
 
 /-! ## The operations -/
