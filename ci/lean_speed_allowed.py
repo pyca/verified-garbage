@@ -144,6 +144,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/MlDsa/RISCV64/KeyGen/Lay.lean": 1,
     "VerifiedGarbage/Proof/MlDsa/RISCV64/Sign/Decode.lean": 1,
     "VerifiedGarbage/Proof/MlDsa/RISCV64/Sign/Lay.lean": 1,
+    "VerifiedGarbage/Proof/MlDsa/RISCV64/Verify/Lay.lean": 1,
     "VerifiedGarbage/Proof/MlDsa/X86/KeyGen/Lay.lean": 1,
     "VerifiedGarbage/Proof/MlDsa/X86/Message/HashMu.lean": 3,
     "VerifiedGarbage/Proof/MlDsa/X86/Pack/HintBase.lean": 1,
