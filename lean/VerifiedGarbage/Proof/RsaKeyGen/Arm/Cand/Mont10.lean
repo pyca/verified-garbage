@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint6
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Inv
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools

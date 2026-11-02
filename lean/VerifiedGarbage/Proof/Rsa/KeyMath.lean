@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 # RSA keys: the mathematics of the constant-time algorithms
 
 Target-independent models, on naturals, of what the code of
-`vg_rsa_crt_values` and `vg_rsa_recover_primes` computes, and their
+`vg_rsa_crt_values` computes, and their
 relation to the specification:
 
 * The binary extended Euclidean algorithm with a fixed number of steps

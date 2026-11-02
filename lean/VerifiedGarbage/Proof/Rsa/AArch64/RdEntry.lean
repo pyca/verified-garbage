@@ -8,25 +8,18 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 import VerifiedGarbage.Proof.Rsa.AArch64.Div
-public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
 # `vg_rsa_recover_primes_det` on AArch64: the entry and the failure path
@@ -85,7 +78,6 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Key
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt sMask)
-open VG.Proof.Rsa (pqOf)
 
 /-- The inputs as numbers. -/
 abbrev RpIn.N (I : RpIn) : Nat := Spec.Rsa.os2ip I.nb

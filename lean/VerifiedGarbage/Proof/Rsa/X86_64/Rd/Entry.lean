@@ -8,7 +8,7 @@ import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtFrame

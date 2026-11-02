@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MillerRabin.Arm.Win
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools

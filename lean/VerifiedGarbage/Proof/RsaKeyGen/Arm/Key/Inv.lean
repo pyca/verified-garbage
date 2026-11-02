@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 import VerifiedGarbage.Proof.Rsa.Arm.InverseCT
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Rsa.Sub32
 
 /-! # An RSA key on ARMv7: inverses
 

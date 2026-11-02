@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.Arm.Stage.MM
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint2
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+public import VerifiedGarbage.Proof.Rsa.BoolNat
+import VerifiedGarbage.Proof.Rsa.Sub32
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads

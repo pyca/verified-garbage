@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 
-/-! # Subtraction in the recovery algorithm's fixed-width arrays -/
+/-! # Subtraction of 32-bit words with a borrow, on naturals -/
 
 @[expose] public section
+
 namespace VG.Proof.Rsa
 
 def sub32 (w a b : Nat) : Nat := (a + 2 ^ (32 * w) - b) % 2 ^ (32 * w)

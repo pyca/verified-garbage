@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairFirst
 import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.Words

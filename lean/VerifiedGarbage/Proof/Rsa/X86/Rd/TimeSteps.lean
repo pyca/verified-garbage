@@ -4,13 +4,13 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Inputs
-public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+public import VerifiedGarbage.Proof.Rsa.Sub32
 public import Init.Data.Fin.Basic
 public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.TCB.X86.State
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Proof.Rsa.RecoverDet
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Twos
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Product

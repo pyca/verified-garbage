@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontData
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
 public import VerifiedGarbage.Spec.Rsa
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 

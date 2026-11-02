@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Omega
 /-! # Exact multiplication through a sufficiently large power-of-two modulus -/
 
 @[expose] public section
+
 namespace VG.Proof.Rsa
 
 theorem recover_product_exact {d e db eb top : Nat}

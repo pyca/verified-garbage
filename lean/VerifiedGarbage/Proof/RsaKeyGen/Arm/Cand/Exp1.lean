@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint5
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 
 /-! # A candidate on ARMv7: the exponent of 2 in `c − 1` (`halving_vp`)
 

@@ -10,43 +10,20 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBase
 import VerifiedGarbage.Proof.Mont.RangeCover
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
-import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
-public import VerifiedGarbage.Proof.Rsa.KeyWorkspace
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyHalf
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyOps
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyHalf
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvCheck
-import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
-import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBase
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCk
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBytes
-import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
-import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBase
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvStores
 import VerifiedGarbage.Proof.Bignum.ByteWords
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_recover_primes_det` on PPC64LE: the frame, the entry, the check of `n` and the loads

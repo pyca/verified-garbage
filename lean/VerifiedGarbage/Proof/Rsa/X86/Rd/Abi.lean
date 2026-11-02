@@ -25,8 +25,8 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
-public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+public import VerifiedGarbage.Proof.Rsa.BoolNat
+public import VerifiedGarbage.Proof.Rsa.Sub32
 public import Init.Data.Fin.Basic
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Words

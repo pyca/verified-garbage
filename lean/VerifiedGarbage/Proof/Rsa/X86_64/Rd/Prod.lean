@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverDet
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.Ranges

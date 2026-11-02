@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Seqs
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools

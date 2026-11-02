@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
-import VerifiedGarbage.Proof.Rsa.RecoverExp
+import VerifiedGarbage.Proof.Rsa.BoolNat
 
 /-! # A candidate on ARMv7: the results (`finNone_vp`, `finUsed_vp`, `finPrime_vp`)
 

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Rsa.Sub32
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
 
 /-! # A candidate on ARMv7: too close to `p` (`closeCheck_vp`)

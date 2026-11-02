@@ -26,8 +26,8 @@ import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Rsa.KeyMath
-public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.Sub32
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Spec.Weierstrass

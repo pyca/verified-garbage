@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract

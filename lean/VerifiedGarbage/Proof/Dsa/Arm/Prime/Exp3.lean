@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint5
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools

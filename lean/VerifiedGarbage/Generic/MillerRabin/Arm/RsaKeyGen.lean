@@ -167,7 +167,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivArgsCT
 public import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
-public import VerifiedGarbage.Proof.Rsa.RecoverMath
+public import VerifiedGarbage.Proof.Rsa.TwosMath
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools
@@ -175,7 +175,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.Stage.MM
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint2
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ctx
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
@@ -194,10 +194,10 @@ public import VerifiedGarbage.Proof.Rsa.KeyBits32
 public import VerifiedGarbage.Proof.Rsa.KeyViews
 public import VerifiedGarbage.Proof.Rsa.MulModArithmetic
 public import VerifiedGarbage.Proof.Rsa.Octets
-public import VerifiedGarbage.Proof.Rsa.RecoverHalving
-public import VerifiedGarbage.Proof.Rsa.RecoverProduct
-public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
-public import VerifiedGarbage.Proof.Rsa.RecoverTries
+public import VerifiedGarbage.Proof.Rsa.ProductExact
+public import VerifiedGarbage.Proof.Rsa.Sub32
+public import VerifiedGarbage.Spec.Rsa
+public import Aesop.BuiltinRules
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp2
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp3
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin2
@@ -233,213 +233,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mul
 public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Proof.RsaKeyGen.Primes
-import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
-import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
-import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
-import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
-import VerifiedGarbage.Proof.Bignum.Arm.CopyByteStep
-import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
-import VerifiedGarbage.Proof.Bignum.Arm.CsubValue
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleBody
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleCore
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBody
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoop
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopBody
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleProduct
-import VerifiedGarbage.Proof.Bignum.Arm.ExportArray
-import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ExportEncoding
-import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
-import VerifiedGarbage.Proof.Bignum.Arm.InitInverse
-import VerifiedGarbage.Proof.Bignum.Arm.InitInverseCT
-import VerifiedGarbage.Proof.Bignum.Arm.InverseArgs
-import VerifiedGarbage.Proof.Bignum.Arm.InverseReady
-import VerifiedGarbage.Proof.Bignum.Arm.KeepsBridge
-import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
-import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
-import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
-import VerifiedGarbage.Proof.Bignum.Arm.LoadBE
-import VerifiedGarbage.Proof.Bignum.Arm.LoadBEArgs
-import VerifiedGarbage.Proof.Bignum.Arm.LoadBECT
-import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFn
-import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnArgs
-import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnCT
-import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
-import VerifiedGarbage.Proof.Bignum.Arm.MaskByteStep
-import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
-import VerifiedGarbage.Proof.Bignum.Arm.MaskOutputArgs
-import VerifiedGarbage.Proof.Bignum.Arm.Minv64
-import VerifiedGarbage.Proof.Bignum.Arm.Minv64Steps
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckBounds
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCalc
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckFinish
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckMath
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckRead
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusReady
-import VerifiedGarbage.Proof.Bignum.Arm.MontBody
-import VerifiedGarbage.Proof.Bignum.Arm.MontCore
-import VerifiedGarbage.Proof.Bignum.Arm.MontFinish
-import VerifiedGarbage.Proof.Bignum.Arm.MontFnBody
-import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
-import VerifiedGarbage.Proof.Bignum.Arm.MontOp
-import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
-import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-import VerifiedGarbage.Proof.Bignum.Arm.Mul64
-import VerifiedGarbage.Proof.Bignum.Arm.Mul64Math
-import VerifiedGarbage.Proof.Bignum.Arm.Newton64Math
-import VerifiedGarbage.Proof.Bignum.Arm.Newton64Steps
-import VerifiedGarbage.Proof.Bignum.Arm.PcBody
-import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
-import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
-import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
-import VerifiedGarbage.Proof.Bignum.Arm.PcEntryReady
-import VerifiedGarbage.Proof.Bignum.Arm.PcFail
-import VerifiedGarbage.Proof.Bignum.Arm.PcFailArgs
-import VerifiedGarbage.Proof.Bignum.Arm.PcHead
-import VerifiedGarbage.Proof.Bignum.Arm.PcValid
-import VerifiedGarbage.Proof.Bignum.Arm.Precompute
-import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
-import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
-import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOut
-import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
-import VerifiedGarbage.Proof.Bignum.Arm.R2CT
-import VerifiedGarbage.Proof.Bignum.Arm.R2Constants
-import VerifiedGarbage.Proof.Bignum.Arm.R2CountInit
-import VerifiedGarbage.Proof.Bignum.Arm.R2Init
-import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
-import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
-import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
-import VerifiedGarbage.Proof.Bignum.Arm.ReverseBuffer
-import VerifiedGarbage.Proof.Bignum.Arm.ReverseByteStep
-import VerifiedGarbage.Proof.Bignum.Arm.ReverseEncoding
-import VerifiedGarbage.Proof.Bignum.Arm.ReverseRegion
-import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
-import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasBody
-import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasRow
-import VerifiedGarbage.Proof.Bignum.Arm.SelectBody
-import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
-import VerifiedGarbage.Proof.Bignum.Arm.SelectRow
-import VerifiedGarbage.Proof.Bignum.Arm.SelectStep
-import VerifiedGarbage.Proof.Bignum.Arm.SelectWord
-import VerifiedGarbage.Proof.Bignum.Arm.SetBaseStep
-import VerifiedGarbage.Proof.Bignum.Arm.SetBases
-import VerifiedGarbage.Proof.Bignum.Arm.SetSmall
-import VerifiedGarbage.Proof.Bignum.Arm.SetSmallArgs
-import VerifiedGarbage.Proof.Bignum.Arm.SetSmallCT
-import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
-import VerifiedGarbage.Proof.Bignum.Arm.Setup
-import VerifiedGarbage.Proof.Bignum.Arm.SetupArgs
-import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
-import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftStep
-import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
-import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
-import VerifiedGarbage.Proof.Bignum.Arm.SquareBody
-import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
-import VerifiedGarbage.Proof.Bignum.Arm.SquareFinish
-import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
-import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
-import VerifiedGarbage.Proof.Bignum.Arm.Stack
-import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.Store64
-import VerifiedGarbage.Proof.Bignum.Arm.StoreBE
-import VerifiedGarbage.Proof.Bignum.Arm.Sub
-import VerifiedGarbage.Proof.Bignum.Arm.Sub64
-import VerifiedGarbage.Proof.Bignum.Arm.Sub64Math
-import VerifiedGarbage.Proof.Bignum.Arm.SubAdvance
-import VerifiedGarbage.Proof.Bignum.Arm.SubBody
-import VerifiedGarbage.Proof.Bignum.Arm.SubRow
-import VerifiedGarbage.Proof.Bignum.Arm.SubStep
-import VerifiedGarbage.Proof.Bignum.Arm.SubtractIfGe
-import VerifiedGarbage.Proof.Bignum.Arm.SubtractIfGeCT
-import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.MillerRabin.Arm.Body
-import VerifiedGarbage.Proof.MillerRabin.Arm.Mont
-import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
-import VerifiedGarbage.Proof.MillerRabin.Arm.Run
-import VerifiedGarbage.Proof.MillerRabin.Arm.Verified
-import VerifiedGarbage.Proof.Rc2.Memory32
-import VerifiedGarbage.Proof.Rc2.PairMem
-import VerifiedGarbage.Proof.Rsa.AcceptanceMask32
-import VerifiedGarbage.Proof.Rsa.Arm.AddMod
-import VerifiedGarbage.Proof.Rsa.Arm.CvChecksB
-import VerifiedGarbage.Proof.Rsa.Arm.CvFin
-import VerifiedGarbage.Proof.Rsa.Arm.CvLoads
-import VerifiedGarbage.Proof.Rsa.Arm.CvStore
-import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
-import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
-import VerifiedGarbage.Proof.Rsa.Arm.DivBit
-import VerifiedGarbage.Proof.Rsa.Arm.DivBitCT
-import VerifiedGarbage.Proof.Rsa.Arm.DivCT
-import VerifiedGarbage.Proof.Rsa.Arm.DivInit
-import VerifiedGarbage.Proof.Rsa.Arm.DivInitCT
-import VerifiedGarbage.Proof.Rsa.Arm.DivLoop
-import VerifiedGarbage.Proof.Rsa.Arm.DivReduceCT
-import VerifiedGarbage.Proof.Rsa.Arm.DivShift
-import VerifiedGarbage.Proof.Rsa.Arm.DivShiftArray
-import VerifiedGarbage.Proof.Rsa.Arm.DivShiftCT
-import VerifiedGarbage.Proof.Rsa.Arm.DivStep
-import VerifiedGarbage.Proof.Rsa.Arm.DivStepCT
-import VerifiedGarbage.Proof.Rsa.Arm.InvParts
-import VerifiedGarbage.Proof.Rsa.Arm.InverseCT
-import VerifiedGarbage.Proof.Rsa.Arm.KcOps
-import VerifiedGarbage.Proof.Rsa.Arm.KcStart
-import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
-import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-import VerifiedGarbage.Proof.Rsa.Arm.PrivArgsCT
-import VerifiedGarbage.Proof.Rsa.Arm.ShiftRight
-import VerifiedGarbage.Proof.Rsa.KeyBits32
-import VerifiedGarbage.Proof.Rsa.KeyViews
-import VerifiedGarbage.Proof.Rsa.MulModArithmetic
-import VerifiedGarbage.Proof.Rsa.Octets
-import VerifiedGarbage.Proof.Rsa.RecoverHalving
-import VerifiedGarbage.Proof.Rsa.RecoverProduct
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
-import VerifiedGarbage.Proof.Rsa.RecoverTries
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp2
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp3
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin2
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin5
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Front
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Inv
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Math
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont3
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont6
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont7
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont8
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont9
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr11
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr2
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr7
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr9
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Seqs
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint2
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint3
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint4
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint5
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint6
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top3
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top4
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top5
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial2
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.TrialP
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Words
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mul
-import VerifiedGarbage.Proof.RsaKeyGen.MrMont
-import VerifiedGarbage.Proof.RsaKeyGen.Primes
 
 /-! # RSA candidates on ARMv7 call each shared Miller–Rabin implementation -/
 

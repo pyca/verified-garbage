@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Rsa.Sub32
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
 

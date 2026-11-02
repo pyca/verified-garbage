@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Front3
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Div
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Stores
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
@@ -12,8 +12,8 @@ import VerifiedGarbage.Proof.Rsa.Arm.Stage.MM
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint2
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
-import VerifiedGarbage.Proof.Rsa.RecoverExp
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Rsa.BoolNat
+import VerifiedGarbage.Proof.Rsa.Sub32
 
 /-! # An RSA key on ARMv7: `L = lcm(p − 1, q − 1)` (`lcm_vp`) -/
 

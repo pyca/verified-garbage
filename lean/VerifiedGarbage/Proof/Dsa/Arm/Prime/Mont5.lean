@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals

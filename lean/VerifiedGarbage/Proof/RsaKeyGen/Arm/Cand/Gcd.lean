@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Rsa.Sub32
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
 
 /-! # A candidate on ARMv7: `gcd(c − 1, e)` (`gcdCheck_vp`)

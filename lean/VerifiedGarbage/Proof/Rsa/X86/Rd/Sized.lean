@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Twos

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint0
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.Stage.MM
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint2
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
-import VerifiedGarbage.Proof.Rsa.RecoverExp
+import VerifiedGarbage.Proof.Rsa.BoolNat
 
 /-! # An RSA key on ARMv7: the operations as pieces
 

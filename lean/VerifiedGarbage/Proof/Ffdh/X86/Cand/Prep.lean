@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ffdh.X86.Cand.Halve
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num2
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Base

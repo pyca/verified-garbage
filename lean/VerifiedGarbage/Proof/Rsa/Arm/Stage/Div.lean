@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Sk
 public import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
-public import VerifiedGarbage.Proof.Rsa.RecoverMath
+public import VerifiedGarbage.Proof.Rsa.TwosMath
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.Stage.MM
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint2
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
 import VerifiedGarbage.Proof.Rsa.Arm.CvDivN

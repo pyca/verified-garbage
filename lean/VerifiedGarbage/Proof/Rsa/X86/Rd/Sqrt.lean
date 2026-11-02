@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Proof.Rsa.RecoverDet
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
-public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+public import VerifiedGarbage.Proof.Rsa.BoolNat
+public import VerifiedGarbage.Proof.Rsa.Sub32
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Count

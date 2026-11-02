@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Div
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 meta import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Rsa.RecoverMath
+public import VerifiedGarbage.Proof.Rsa.TwosMath
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Args
@@ -32,7 +32,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Rsa.RecoverMath
+meta import VerifiedGarbage.Proof.Rsa.TwosMath
 meta import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Args

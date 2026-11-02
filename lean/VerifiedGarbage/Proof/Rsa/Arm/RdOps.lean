@@ -17,8 +17,8 @@ import VerifiedGarbage.Proof.Rsa.Arm.Stage.Views
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.Sub32
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 
 /-! # `vg_rsa_recover_primes_det` on ARMv7: the operations Appendix C.2 adds
 

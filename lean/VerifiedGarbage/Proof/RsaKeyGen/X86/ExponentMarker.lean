@@ -8,7 +8,7 @@ public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairTwos
 import VerifiedGarbage.Proof.RsaKeyGen.X86.LowBit
 import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The native alignment marker is exactly 2^(v2(N) mod 64) -/

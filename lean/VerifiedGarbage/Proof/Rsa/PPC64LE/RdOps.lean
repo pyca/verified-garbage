@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyHalf
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.DivLoop
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Shifts
 import VerifiedGarbage.Proof.Rsa.PPC64LE.EvenW
 import VerifiedGarbage.Proof.Rsa.PPC64LE.WordLoops

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSOps
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
-import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+public import VerifiedGarbage.Proof.Rsa.BoolNat
+import VerifiedGarbage.Proof.Rsa.Sub32
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT

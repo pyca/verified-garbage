@@ -2,10 +2,9 @@ module
 -- separate module: the proof of Appendix C.2's body is split in a chain of modules, so that a change rebuilds only the modules after it
 
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Prod
-import VerifiedGarbage.Proof.Rsa.RecoverProduct
+import VerifiedGarbage.Proof.Rsa.ProductExact
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.MM
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
-import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ctx
 import VerifiedGarbage.Proof.Rsa.Arm.MulMod
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
@@ -14,7 +13,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RdOps
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 public import VerifiedGarbage.Proof.Rsa.Arm.RdTaint
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Tools
-import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # `vg_rsa_recover_primes_det` on ARMv7: `d e - 1` and the halvings

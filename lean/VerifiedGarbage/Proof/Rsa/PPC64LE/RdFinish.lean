@@ -7,31 +7,24 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBase
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBytes
-import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
-import VerifiedGarbage.Proof.Rsa.PPC64LE.CvStores
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Rsa.BoolNat
 import VerifiedGarbage.Proof.Rsa.PPC64LE.MulMod
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
-import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
-import VerifiedGarbage.Proof.Rsa.RecoverProduct
+import VerifiedGarbage.Proof.Rsa.ProductExact
 import VerifiedGarbage.Proof.Rsa.Octets
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
-public import VerifiedGarbage.Proof.Rsa.RecoverFusedBounds
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
+public import Init.Data.Int.Order
+public import Init.Omega.Constraint
+public import Init.Omega.Int
+public import Init.Omega.LinearCombo
+public import VerifiedGarbage.Spec.Rsa
+public import Aesop.BuiltinRules
+public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
 
 /-!
 # `vg_rsa_recover_primes_det` on PPC64LE: `d e`, and the factors or zeros written out

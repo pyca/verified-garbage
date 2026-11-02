@@ -4,8 +4,8 @@ public import VerifiedGarbage.Impl.Rsa.Arm.KeyFrame
 
 /-! # RSA prime recovery by SP 800-56B Rev. 2 Appendix C.2 on ARMv7
 
-`vg_rsa_recover_primes_det` has `vg_rsa_recover_primes`' signature, frame,
-entry and exits (`Recover.codeWith`), its loads and the product `M = d e`
+`vg_rsa_recover_primes_det`'s frame, entry and exits (`Recover.codeWith`,
+`KeyFrame.lean`), its loads and the product `M = d e`
 (`Recover.loads`, `Recover.prod`), and its stores of the factors under the
 mask (`Recover.stores`), in the key working space with `w` words
 (narrow) and `W = 2 w + 2` words (wide, whose array `j` is the narrow arrays

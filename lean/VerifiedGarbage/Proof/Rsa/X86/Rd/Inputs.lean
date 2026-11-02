@@ -15,7 +15,7 @@ import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.MulMod
-import VerifiedGarbage.Proof.Rsa.RecoverProduct
+import VerifiedGarbage.Proof.Rsa.ProductExact
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Algebra.GroupWithZero.Nat
