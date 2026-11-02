@@ -17,17 +17,15 @@ public import VerifiedGarbage.Proof.Weierstrass.Law3
 /-!
 # ECDSA verification over brainpoolP384r1 on RISC-V: the joint ladder
 
-`joint` (`Impl/Ecdsa/RISCV64/Verify.lean`) leaves in `R` a representative of
-`[u]G + [v]Q` (`joint_ok`):
+The pieces of the joint ladder of `Impl/Ecdsa/RISCV64/Verify.lean`, which
+`JointJ.lean` puts together (`jointJ_ok`), with each step's `4 R` by Jacobian
+doublings:
 
 * `copyTo_ok`, `storePt_ok`: a point's slots to an entry of the table, through
   `a6 = s0 + JT`;
 * `build_ok`: the table (`JTab`: entry `4 a + b` represents `[a]G + [b]Q`);
 * `window_ok`, `select_ok`: the window's entry number `4 u_j + v_j`, its
   masks, and the entry to `E`, by the comb's tree (`tree_ok`);
-* `step_ok`: `R = 4 R + E`, from `[u >>> 2 (j + 1)]G + [v >>> 2 (j + 1)]Q` to
-  `[u >>> 2 j]G + [v >>> 2 j]Q` (`jstep`);
-* `joint_ok`: the table, `R = O`, and the 192 steps.
 -/
 
 @[expose] public section
@@ -584,169 +582,12 @@ theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
     ⟨fun r hr => k₅.1 r (fun h => hr ((by decide : ∀ r ∈ treeRegs, r ∈ selRegs) r h)),
       rd₅, wr₅, sp₅⟩)))
 
-/-! ## The steps -/
-
-/-- What the steps read, as the loop's start `s₀` holds it. -/
-structure LPre (base : Addr) (s₀ : State) (G Q : Point W) (u v : Nat) : Prop where
-  ap : wordsVal s₀.mem base (brainpoolp384r1.sl AP) 6 = W.a * 2 ^ 384 % W.p
-  bp : wordsVal s₀.mem base (brainpoolp384r1.sl B3P) 6 = 3 * W.b * 2 ^ 384 % W.p
-  uu : wordsVal s₀.mem base (brainpoolp384r1.sl UU) 6 = u
-  vv : wordsVal s₀.mem base (brainpoolp384r1.sl VV) 6 = v
-  tab : JTab base s₀ G Q
-  g : onCurve W G = true
-  q : onCurve W Q = true
-
-/-- What the steps write. -/
-abbrev stepW : List (Nat × Nat) := [(736, 720), (2848, 144), (3712, 384)]
-
-/-- The loop's invariant at `s1 = j`: `R` represents `[u >>> 2 j]G + [v >>> 2 j]Q`. -/
-structure LInv (base : Addr) (s₀ s : State) (G Q : Point W) (u v j : Nat) : Prop where
-  ws : WsReg s base
-  ctr : s.gpr .s1 = BitVec.ofNat 64 j
-  keep : Kc s₀ s
-  unch : Unch base stepW s₀.mem s.mem
-  rep : PtOk base s (brainpoolp384r1.pt RX RY RZ) (jp G Q u v j)
+/-! ## The table, kept -/
 
 /-- The table, kept by memory unchanged there. -/
 theorem JTab.of_eq {base : Addr} {s s' : State} {G Q : Point W} (h : JTab base s G Q)
     (he : ∀ d, 4096 ≤ d → d + 48 ≤ 6400 → wordsVal s'.mem base d 6 = wordsVal s.mem base d 6) : JTab base s' G Q :=
   fun e hlt => (h e hlt).of_eq (he (4096 + 144 * e) (by omega) (by omega)) (he (4096 + 144 * e + 48) (by omega) (by omega))
     (he (4096 + 144 * e + 96) (by omega) (by omega))
-
-/-- A step: from `[u >>> 2 j]G + [v >>> 2 j]Q` to `[u >>> 2 (j - 1)]G + [v >>> 2 (j - 1)]Q`. -/
-theorem step_ok (hL : Law W) {base : Addr} {s₀ : State} {G Q : Point W} {u v : Nat} (hP : LPre base s₀ G Q u v)
-    {j : Nat} (hj1 : 1 ≤ j) (hj : j ≤ 192) {s : State} (hI : LInv base s₀ s G Q u v j) :
-    WP isa (Cfg.step brainpoolp384r1) s fun s' => LInv base s₀ s' G Q u v (j - 1) := by
-  have hn := hI.ws.nowrap
-  have uS : ∀ d, (d + 48 ≤ 736 ∨ 1456 ≤ d) → (d + 48 ≤ 2848 ∨ 2992 ≤ d) → (d + 48 ≤ 3712 ∨ 4096 ≤ d) → d + 48 ≤ 6400 →
-      wordsVal s.mem base d 6 = wordsVal s₀.mem base d 6 := fun d h1 h2 h3 h4 =>
-    hI.unch.wordsVal (by simp; omega) (by omega)
-  have hT : JTab base s G Q := hP.tab.of_eq fun d h1 h2 => uS d (by omega) (by omega) (.inr h1) h2
-  rw [Cfg.step]
-  refine WP.seq (wp_decCounter hj1 hI.ctr fun s₁ u₁ => ?_)
-  have hw₁ := hI.ws.of_kc (Kc.of_rest (u₁.rest (ws := [.s1]) (by decide)))
-  refine WP.mono (select_ok hw₁ (j := j - 1) (by omega) u₁.gpr (hT.of_eq fun d _ _ => by rw [u₁.mem]))
-    fun s₂ ⟨pE, O₂, r₂⟩ => ?_
-  rw [u₁.mem, uS _ (by decide) (by decide) (by decide) (by decide), uS _ (by decide) (by decide) (by decide) (by decide), hP.uu, hP.vv] at pE
-  rw [u₁.mem] at O₂
-  have hw₂ := hw₁.of_rest r₂
-  have e₂ : ∀ d, (d + 48 ≤ 736 ∨ 1456 ≤ d) → (d + 48 ≤ 2848 ∨ 2992 ≤ d) → (d + 48 ≤ 3712 ∨ 4096 ≤ d) → d + 48 ≤ 6400 →
-      wordsVal s₂.mem base d 6 = wordsVal s₀.mem base d 6 := fun d h1 h2 h3 h4 => by
-    rw [O₂.wordsVal (by omega) (by omega), uS d h1 h2 h3 h4]
-  have pR₂ : PtOk base s₂ (brainpoolp384r1.pt RX RY RZ) (jp G Q u v j) :=
-    hI.rep.of_eq (O₂.wordsVal (by decide) (by decide)) (O₂.wordsVal (by decide) (by decide))
-      (O₂.wordsVal (by decide) (by decide))
-  have ap₂ : wordsVal s₂.mem base (brainpoolp384r1.sl AP) 6 = W.a * 2 ^ 384 % W.p := by
-    rw [e₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hP.ap
-  have bp₂ : wordsVal s₂.mem base (brainpoolp384r1.sl B3P) 6 = 3 * W.b * 2 ^ 384 % W.p := by
-    rw [e₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hP.bp
-  have hX := ent_curve hL hP.g hP.q (u >>> (2 * j)) (v >>> (2 * j))
-  have hD := hL.onCurve_add hX hX
-  have hT4 := hL.onCurve_add hD hD
-  have hE := ent_curve hL hP.g hP.q ((u >>> (2 * (j - 1))) % 4) ((v >>> (2 * (j - 1))) % 4)
-  -- `D = R + R`.
-  refine WP.seq (WP.mono (addPt_ok hL hw₂ ap₂ bp₂ (p := brainpoolp384r1.pt RX RY RZ) (q := brainpoolp384r1.pt RX RY RZ)
-    (o := brainpoolp384r1.pt DX DY DZ) ⟨by decide, by decide⟩ (by decide) hX hX pR₂ pR₂) fun s₃ ⟨K₃, U₃, pD⟩ => ?_)
-  have hw₃ := hw₂.of_kp K₃
-  have k₃ : ∀ d ∈ [brainpoolp384r1.sl AP, brainpoolp384r1.sl B3P, brainpoolp384r1.sl brainpoolp384r1.EX, brainpoolp384r1.sl brainpoolp384r1.EY, brainpoolp384r1.sl brainpoolp384r1.EZ],
-      wordsVal s₃.mem base d 6 = wordsVal s₂.mem base d 6 := keepU U₃ (by decide)
-  -- `T = D + D`.
-  refine WP.seq (WP.mono (addPt_ok hL hw₃ ((k₃ _ (by decide)).trans ap₂) ((k₃ _ (by decide)).trans bp₂)
-    (p := brainpoolp384r1.pt DX DY DZ) (q := brainpoolp384r1.pt DX DY DZ) (o := brainpoolp384r1.pt TX TY TZ) ⟨by decide, by decide⟩ (by decide)
-    hD hD pD pD) fun s₄ ⟨K₄, U₄, pT⟩ => ?_)
-  have hw₄ := hw₃.of_kp K₄
-  have k₄ : ∀ d ∈ [brainpoolp384r1.sl AP, brainpoolp384r1.sl B3P, brainpoolp384r1.sl brainpoolp384r1.EX, brainpoolp384r1.sl brainpoolp384r1.EY, brainpoolp384r1.sl brainpoolp384r1.EZ],
-      wordsVal s₄.mem base d 6 = wordsVal s₃.mem base d 6 := keepU U₄ (by decide)
-  have pE₄ := pE.of_eq ((k₄ _ (by decide)).trans (k₃ _ (by decide))) ((k₄ _ (by decide)).trans (k₃ _ (by decide)))
-    ((k₄ _ (by decide)).trans (k₃ _ (by decide)))
-  -- `R = T + E`.
-  refine WP.mono (addPt_ok hL hw₄ (((k₄ _ (by decide)).trans (k₃ _ (by decide))).trans ap₂)
-    (((k₄ _ (by decide)).trans (k₃ _ (by decide))).trans bp₂)
-    (p := brainpoolp384r1.pt TX TY TZ) (q := brainpoolp384r1.pt brainpoolp384r1.EX brainpoolp384r1.EY brainpoolp384r1.EZ) (o := brainpoolp384r1.pt RX RY RZ) ⟨by decide, by decide⟩ (by decide)
-    hT4 hE pT pE₄) fun s₅ ⟨K₅, U₅, pR₅⟩ => ?_
-  refine ⟨hw₄.of_kp K₅, ?_, ?_, ?_, ?_⟩
-  · rw [K₅.gpr _ (by decide), K₄.gpr _ (by decide), K₃.gpr _ (by decide), r₂.gpr _ (by decide), u₁.gpr]
-  · exact ((hI.keep.trans (Kc.of_rest (u₁.rest (ws := [.s1]) (by decide)))).trans (Kc.of_rest r₂)).trans
-      (K₃.kc.trans (K₄.kc.trans K₅.kc))
-  · exact ((((hI.unch.trans (show Unch base [(2848, 144)] s.mem s₂.mem from O₂.unch)).trans U₃).trans U₄).trans
-      U₅).cover (by decide)
-  · have e := jstep hL hP.g hP.q u v (j - 1)
-    rw [show j - 1 + 1 = j by omega] at e
-    rw [← e]
-    exact pR₅
-
-/-! ## The joint ladder -/
-
-/-- What `joint` writes. -/
-abbrev jointW : List (Nat × Nat) := [(736, 720), (2272, 720), (4096, 2304), (3712, 384)]
-
-/-- `R = [u]G + [v]Q`, for `u` and `v` in their slots and `Q` in the check's. -/
-theorem joint_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : JPre base s Q) :
-    WP isa (Cfg.joint brainpoolp384r1) s fun s' => Kc s s' ∧ Unch base jointW s.mem s'.mem ∧
-      PtOk base s' (brainpoolp384r1.pt RX RY RZ) (Spec.Weierstrass.add (mul (wordsVal s.mem base (brainpoolp384r1.sl UU) 6)
-        (Spec.Weierstrass.G W)) (mul (wordsVal s.mem base (brainpoolp384r1.sl VV) 6) Q)) := by
-  have hn := hp.ws.nowrap
-  have hp0 : 0 < W.p := by decide
-  rw [Cfg.joint]
-  refine WP.seq (WP.mono (build_ok hL hp) fun s₁ ⟨K₁, U₁, T₁⟩ => ?_)
-  have hw₁ := hp.ws.of_kp K₁
-  have e₁ : ∀ d ∈ [brainpoolp384r1.sl ZERO, brainpoolp384r1.sl ONEP, brainpoolp384r1.sl AP, brainpoolp384r1.sl B3P, brainpoolp384r1.sl UU, brainpoolp384r1.sl VV],
-      wordsVal s₁.mem base d 6 = wordsVal s.mem base d 6 := keepU U₁ (by decide)
-  rw [show brainpoolp384r1.n = 6 from rfl]
-  simp only [List.append_assoc]
-  refine WP.seq (WP.block_append (WP.mono (copy_ok 6 hw₁ (o := brainpoolp384r1.sl RX) (a := brainpoolp384r1.sl ZERO) (by decide)
-    (by decide) (by decide) (by decide) (by decide)) fun s₂ ⟨x₂, r₂, O₂⟩ => ?_))
-  have hw₂ := hw₁.of_rest r₂
-  refine WP.block_append (WP.mono (copy_ok 6 hw₂ (o := brainpoolp384r1.sl RY) (a := brainpoolp384r1.sl ONEP) (by decide)
-    (by decide) (by decide) (by decide) (by decide)) fun s₃ ⟨y₃, r₃, O₃⟩ => ?_)
-  have hw₃ := hw₂.of_rest r₃
-  refine WP.block_append (WP.mono (copy_ok 6 hw₃ (o := brainpoolp384r1.sl RZ) (a := brainpoolp384r1.sl ZERO) (by decide)
-    (by decide) (by decide) (by decide) (by decide)) fun s₄ ⟨z₄, r₄, O₄⟩ => ?_)
-  have hw₄ := hw₃.of_rest r₄
-  refine wp_li (imm := 192) (by decide) fun s₅ u₅ => WP.block_nil ?_
-  have r₅ : Rest [.t0, .s1] s₁ s₅ :=
-    ((r₂.trans (r₃.trans r₄)).mono (by decide)).trans (u₅.rest (by decide))
-  have hw₅ : WsReg s₅ base := hw₄.of_kc (Kc.of_rest (u₅.rest (ws := [.s1]) (by decide)))
-  have U₅ : Unch base [(736, 144)] s₁.mem s₅.mem := by
-    rw [u₅.mem]
-    exact ((O₂.unch.trans O₃.unch).trans O₄.unch).cover (by decide)
-  have e₅ : ∀ d ∈ [brainpoolp384r1.sl ZERO, brainpoolp384r1.sl ONEP, brainpoolp384r1.sl AP, brainpoolp384r1.sl B3P, brainpoolp384r1.sl UU, brainpoolp384r1.sl VV],
-      wordsVal s₅.mem base d 6 = wordsVal s.mem base d 6 := fun d hd =>
-    (keepU U₅ (D := [brainpoolp384r1.sl ZERO, brainpoolp384r1.sl ONEP, brainpoolp384r1.sl AP, brainpoolp384r1.sl B3P, brainpoolp384r1.sl UU, brainpoolp384r1.sl VV]) (by decide) d hd).trans
-      (e₁ d hd)
-  have T₅ : JTab base s₅ (Spec.Weierstrass.G W) Q := T₁.of_eq fun d h1 h2 => U₅.wordsVal (by simp; omega) (by omega)
-  -- The start: `R = O`.
-  generalize hu : wordsVal s.mem base (brainpoolp384r1.sl UU) 6 = u
-  generalize hv : wordsVal s.mem base (brainpoolp384r1.sl VV) 6 = v
-  have hu' : u < 2 ^ 384 := hu ▸ wordsVal_lt _ _ _ _
-  have hv' : v < 2 ^ 384 := hv ▸ wordsVal_lt _ _ _ _
-  have hP : LPre base s₅ (Spec.Weierstrass.G W) Q u v :=
-    ⟨(e₅ _ (by decide)).trans hp.ap, (e₅ _ (by decide)).trans hp.bp, (e₅ _ (by decide)).trans hu,
-      (e₅ _ (by decide)).trans hv, T₅, VG.Proof.BrainpoolP384r1.onCurve_G, hp.on⟩
-  have rx : wordsVal s₅.mem base (brainpoolp384r1.sl RX) 6 = 0 := by
-    rw [u₅.mem, O₄.wordsVal (by decide) (by decide), O₃.wordsVal (by decide) (by decide), x₂,
-      e₁ _ (by decide), hp.zero]
-  have ry : wordsVal s₅.mem base (brainpoolp384r1.sl RY) 6 = 1 * 2 ^ 384 % W.p := by
-    rw [u₅.mem, O₄.wordsVal (by decide) (by decide), y₃, O₂.wordsVal (by decide) (by decide),
-      e₁ _ (by decide), hp.onep]
-  have rz : wordsVal s₅.mem base (brainpoolp384r1.sl RZ) 6 = 0 := by
-    rw [u₅.mem, z₄, O₃.wordsVal (by decide) (by decide), O₂.wordsVal (by decide) (by decide),
-      e₁ _ (by decide), hp.zero]
-  have hI : LInv base s₅ s₅ (Spec.Weierstrass.G W) Q u v 192 := by
-    refine ⟨hw₅, u₅.gpr, ⟨fun _ _ _ => rfl, rfl, rfl, rfl⟩, Unch.refl _ _ _, ⟨?_, ?_, ?_, ?_⟩⟩
-    · rw [jp_top (n := 6) _ _ hu' hv']
-      show Rep W (tmv W 6 base s₅ (brainpoolp384r1.sl RX)) (tmv W 6 base s₅ (brainpoolp384r1.sl RY)) (tmv W 6 base s₅ (brainpoolp384r1.sl RZ)) _
-      simp only [tmv]
-      rw [rx, ry, rz, toM_zero, Nat.one_mul, toM_one unit]
-      exact rep_infinity' hL
-    · show wordsVal _ _ (brainpoolp384r1.sl RX) 6 < _; rw [rx]; exact hp0
-    · show wordsVal _ _ (brainpoolp384r1.sl RY) 6 < _; rw [ry]; exact Nat.mod_lt _ hp0
-    · show wordsVal _ _ (brainpoolp384r1.sl RZ) 6 < _; rw [rz]; exact hp0
-  -- The steps.
-  refine countLoop_ok (Inv := fun j s' => LInv base s₅ s' (Spec.Weierstrass.G W) Q u v j) (n := 192)
-    (fun j s' hi => hi.ctr) (fun j s' h1 h2 hi => step_ok hL hP h1 h2 hi) (fun s' hi => ?_) (by decide) (by decide) hI
-  refine ⟨(K₁.kc.trans (Kc.of_rest r₅)).trans hi.keep, ((U₁.trans U₅).trans hi.unch).cover (by decide), ?_⟩
-  rw [← jp_zero]
-  exact hi.rep
 
 end VG.Proof.Ecdsa.RISCV64.BrainpoolP384r1.Joint
