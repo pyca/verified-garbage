@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.Tail
-public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.Bytes
+public import VerifiedGarbage.Proof.Ecdh.RISCV64.Num4
 public import VerifiedGarbage.Spec.EcKey
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Framework.Omega

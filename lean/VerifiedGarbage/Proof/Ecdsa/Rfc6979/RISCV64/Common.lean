@@ -166,27 +166,29 @@ calls), and the signature with a given `k`, the tables it reads, its
 correctness and its constant time by call. -/
 structure Kit where
   nw : Nat
+  Q : Nat := 8 * nw
   E : Spec.Ecdsa.Instance
   FN : VG.Impl.Weierstrass.RISCV64.Field
   FNok : VG.Proof.Weierstrass.RISCV64.FieldOk FN
   FNk : FN.S.k = nw
   FNm : FN.S.m = E.curve.n
-  len : E.curve.len = 8 * nw
-  nbits : Spec.Ecdsa.nBits E.curve = 64 * nw
-  two : 2 ^ (64 * nw) < 2 * E.curve.n
+  len : E.curve.len = Q
+  nbits : Spec.Ecdsa.nBits E.curve = 8 * Q
+  two : 2 ^ (8 * Q) < 2 * E.curve.n
   nw4 : nw = 4 ∨ nw = 6
+  Qw : Q = 8 * nw ∨ (nw = 4 ∧ Q = 28)
   coreC : Prog isa
   K : List (String × List (BitVec 64))
-  core_call : ∀ {nm : String} {s : State} {o d g k w : Addr}, CoreArgs (8 * nw) K s o d g k w →
-    ∀ {Q : State → Prop}, (∀ s', After s [⟨o, 2 * (8 * nw)⟩, ⟨w, 8192⟩] s' →
-      (match sgOf E (8 * nw) s.mem d g k with
-        | some rs => s'.gpr .a0 = 1 ∧ bytesAt s'.mem o (2 * (8 * nw)) = Spec.Ecdsa.encode E.curve rs
-        | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem o (2 * (8 * nw)) = List.replicate (2 * (8 * nw)) 0) → Q s') →
-    WP isa (.call nm coreC) s Q
-  core_rel : ∀ {nm : String} {Q : State → State → Prop} {o d g k w : Addr} {f : String → BitVec 64},
-    (∀ s s', Q s s' → CoreArgs (8 * nw) K s o d g k w ∧ CoreArgs (8 * nw) K s' o d g k w ∧ s.sp = s'.sp ∧
+  core_call : ∀ {nm : String} {s : State} {o d g k w : Addr}, CoreArgs Q K s o d g k w →
+    ∀ {R : State → Prop}, (∀ s', After s [⟨o, 2 * Q⟩, ⟨w, 8192⟩] s' →
+      (match sgOf E Q s.mem d g k with
+        | some rs => s'.gpr .a0 = 1 ∧ bytesAt s'.mem o (2 * Q) = Spec.Ecdsa.encode E.curve rs
+        | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem o (2 * Q) = List.replicate (2 * Q) 0) → R s') →
+    WP isa (.call nm coreC) s R
+  core_rel : ∀ {nm : String} {R : State → State → Prop} {o d g k w : Addr} {f : String → BitVec 64},
+    (∀ s s', R s s' → CoreArgs Q K s o d g k w ∧ CoreArgs Q K s' o d g k w ∧ s.sp = s'.sp ∧
       ∀ c ∈ K, s.syms c.1 = f c.1 ∧ s'.syms c.1 = f c.1) →
-    RelCT isa Q (.call nm coreC) fun _ _ => True
+    RelCT isa R (.call nm coreC) fun _ _ => True
 
 /-- What the proof needs of an instance: a curve's kit with a hash function. -/
 structure Rfc where
@@ -200,7 +202,8 @@ structure Rfc where
   hHash : I.hash = hH.SH.H
   hD : I.hashLen = c.H.D
   hnw : c.nw = kit.nw
-  hDQ : 8 * kit.nw ≤ c.H.D
+  hQ : c.Q = kit.Q
+  hDQ : kit.Q ≤ c.H.D
   hD48 : c.H.D ≤ 48
   hS : c.H.S ≤ 192
   hct : c.tries = I.tries
@@ -243,7 +246,7 @@ abbrev svR : Region := sR s₀ 0 64
 end
 
 /-- The scalars' bytes. -/
-abbrev Rfc.Q (P : Rfc) : Nat := 8 * P.kit.nw
+abbrev Rfc.Q (P : Rfc) : Nat := P.kit.Q
 
 /-- `out`, `d`, and the frame. -/
 abbrev outR (P : Rfc) (s₀ : State) : Region := ⟨out s₀, 2 * P.Q⟩
@@ -297,7 +300,8 @@ structure Sz (P : Rfc) : Prop where
   S : P.c.H.S = P.c.H.N + P.c.H.B
   S192 : P.c.H.S ≤ 192
   D : P.Q ≤ P.c.H.D ∧ P.c.H.D ≤ 48
-  Q : (P.Q = 32 ∨ P.Q = 48) ∧ P.Q ≤ 48 ∧ P.c.Q = P.Q ∧ P.c.frB = 192 + P.Q
+  Q : (P.Q = 28 ∨ P.Q = 32 ∨ P.Q = 48) ∧ P.Q ≤ 48 ∧ P.c.Q = P.Q ∧ P.c.frB = 192 + 8 * P.kit.nw ∧
+    P.Q ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ P.Q + 4 ∧ (8 * P.kit.nw = 32 ∨ 8 * P.kit.nw = 48)
   HF : P.c.H.F ≤ 1024
   X : P.c.H.ibytes + P.c.H.F ≤ P.X ∧ P.c.H.fbytes + P.c.H.F ≤ P.X ∧ P.c.H.F ≤ P.X ∧ P.X ≤ 4096
 
@@ -305,8 +309,10 @@ theorem sizes (P : Rfc) : Sz P := by
   have hl := P.hH.lay
   have hB := P.hH.hB64
   have := P.kit.nw4
-  refine ⟨P.hH.hN, hB, rfl, P.hS, ⟨P.hDQ, P.hD48⟩, ⟨by simp only [Rfc.Q]; omega, by simp only [Rfc.Q]; omega, by
-    simp only [Cfg.Q, Rfc.Q, P.hnw], by simp only [Cfg.frB, Cfg.Q, fH, P.hnw]⟩, P.hH.hF, ?_⟩
+  have := P.kit.Qw
+  refine ⟨P.hH.hN, hB, rfl, P.hS, ⟨P.hDQ, P.hD48⟩, ⟨by simp only [Rfc.Q]; omega, by simp only [Rfc.Q]; omega,
+    by simp only [Rfc.Q, P.hQ], by simp only [Cfg.frB, fH, P.hnw], by simp only [Rfc.Q]; omega,
+    by simp only [Rfc.Q]; omega, by omega⟩, P.hH.hF, ?_⟩
   have := hl.ibytes; have := hl.fbytes; have := P.hH.hF
   simp only [Rfc.X]
   omega

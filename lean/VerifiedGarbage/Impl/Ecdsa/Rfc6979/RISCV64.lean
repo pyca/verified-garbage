@@ -2,14 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.Hmac.Stream.RISCV64
 public import VerifiedGarbage.Impl.Ecdh.RISCV64
+public import VerifiedGarbage.Impl.Ecdh.RISCV64.Num4
 public import VerifiedGarbage.Impl.Words.RISCV64.Bytes
 
 /-!
 # Deterministic ECDSA (RFC 6979) on RISC-V
 
 `sign(out = a0, d = a1, digest = a2, scratch = a3) -> a0`: RFC 6979 §3.2
-for a curve of scalars of `Q = 8 nw` bytes whose order `n` has `8 Q` bits
-(P-256's 32, P-384's 48), and a
+for a curve of scalars of `Q` bytes in `nw` 64-bit words (`Q = 8 nw`, or
+`8 nw - 4` with a top word of four bytes: P-256's 32, P-384's 48, P-224's
+28) whose order `n` has `8 Q` bits, and a
 Merkle–Damgård hash function `H` whose output is `D ≥ Q` bytes, with HMAC
 computed by calling `H`'s HMAC `init` and `finalize` and its streaming
 `update` (`Impl/Hmac/Stream/RISCV64.lean`), and each candidate tried by
@@ -17,10 +19,10 @@ calling `core`, the signature with a given `k` (`vg_ecdsa_<curve>_sign`),
 which reads `Q` bytes of the digest and of `k`. One `V` makes a candidate,
 its leftmost `Q` bytes, so `core` reads the digest and `V` in place.
 
-It runs in a frame of `192 + Q` bytes (`alloc`): our caller's `ra` and
+It runs in a frame of `192 + 8 nw` bytes (`alloc`): our caller's `ra` and
 `s0`–`s5`, then `K` and `V` (64 bytes each, of which the first `D` are used,
 and the byte after `V` the separator of steps d, f and h.3) and `h` (`Q`
-bytes). Our
+bytes, in `8 nw`). Our
 variables live in `s0`–`s5`, which the functions we call save and restore:
 `s0` = `scratch`, `s1` = the frame, `s2` = `out`, `s3` = `d`, `s4` =
 `digest` and `s5` = the candidates left. In `scratch`: HMAC's inner and
@@ -28,7 +30,7 @@ outer states (at 0 and 192), which `core` then overwrites. The functions we
 call use the stack below the frame.
 
 1. `h = bits2octets(digest)`: the leftmost `Q` bytes, big-endian, read into
-   `scratch` and reduced modulo `n` by a call of the order's addition with
+   `scratch` (`loadNum`, or `loadNum4` for a top word of four bytes) and reduced modulo `n` by a call of the order's addition with
    zero (they are below `2^(8 Q) < 2n`), then written big-endian to `h`.
 2. Steps b to g: `V = 0x01…`, `K = 0x00…`, `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`,
    `V = HMAC_K(V)`, `K = HMAC_K(V ‖ 0x01 ‖ d ‖ h)`, `V = HMAC_K(V)`, each
@@ -67,8 +69,8 @@ def sX : Nat := 0
 /-- What the code needs: the hash function's streaming functions with
 HMAC's `init` and `finalize` over them (`H`) and their names, the arithmetic
 modulo the order `n` (`FN`, whose addition `bits2octets` calls), the
-signature with a given `k` and its name, the most candidates to try, and
-the scalars' 64-bit words. -/
+signature with a given `k` and its name, the most candidates to try, the
+scalars' 64-bit words and their bytes. -/
 structure Cfg where
   H : Hash
   hiN : String
@@ -78,6 +80,7 @@ structure Cfg where
   coreC : Prog isa
   tries : Nat
   nw : Nat
+  Q : Nat := 8 * nw
 
 /-- Our caller's registers we save, and where, at the start of the frame. -/
 def saved : List (Reg × Nat) :=
@@ -99,16 +102,22 @@ namespace Cfg
 
 variable (c : Cfg)
 
-/-- The scalars' bytes. -/
-abbrev Q : Nat := 8 * c.nw
-
-/-- The frame's size: `h` after `fH`, a multiple of 16 for P-256's and
-P-384's scalars. -/
-def frB : Nat := fH + c.Q
+/-- The frame's size: `h`'s words after `fH`, a multiple of 16 for P-224's,
+P-256's and P-384's scalars. -/
+def frB : Nat := fH + 8 * c.nw
 
 /-! The other numbers of `bits2octets` in `scratch`, after `sX`'s. -/
-def sZ : Nat := c.Q
-def sY : Nat := 2 * c.Q
+def sZ : Nat := 8 * c.nw
+def sY : Nat := 2 * (8 * c.nw)
+
+/-- The `Q`-byte number at `p + off` big-endian to `[o]`. -/
+def loadQ (o : Nat) (p : Reg) (off : Nat) : List Instr :=
+  if c.Q = 8 * c.nw then Ecdh.RISCV64.loadNum c.nw o p off else Ecdh.RISCV64.loadNum4 (c.nw - 1) o p off
+
+/-- The number at `[a]` under the mask `a7`, to `q + off` big-endian in `Q`
+bytes. -/
+def storeQ (a : Nat) (q : Reg) (off : Nat) : List Instr :=
+  if c.Q = 8 * c.nw then Ecdh.RISCV64.storeNum c.nw a q off else Ecdh.RISCV64.storeNum4 (c.nw - 1) a q off
 
 /-- Our caller's registers into the frame, which `s1` then holds; the
 arguments into the registers that keep them. -/
@@ -119,9 +128,9 @@ def prologue : List Instr :=
 /-- `h = bits2octets(digest)`: the digest's leftmost `Q` bytes to `scratch`'s
 `sX`, zero to `sZ`, their sum modulo `n` to `sY`, and that to `h`. -/
 def reduce : Prog isa :=
-  .seq (.block (Ecdh.RISCV64.loadNum c.nw sX .s4 0 ++ Ecdh.RISCV64.setConst c.nw c.sZ 0))
+  .seq (.block (c.loadQ sX .s4 0 ++ Ecdh.RISCV64.setConst c.nw c.sZ 0))
     (.seq (Weierstrass.RISCV64.addCall c.FN c.sY sX c.sZ)
-      (.block ([.li .a7 (-1)] ++ Ecdh.RISCV64.storeNum c.nw c.sY .s1 fH)))
+      (.block ([.li .a7 (-1)] ++ c.storeQ c.sY .s1 fH)))
 
 /-- `K = 0x00…`, `V = 0x01…`, `D` bytes each. -/
 def initKV : List Instr :=
