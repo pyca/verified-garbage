@@ -279,7 +279,7 @@ theorem invU_ok {s : State} {B : Addr} {Z w N A D : Nat} (h : Ws s B Z w N)
   · rw [k9.slot hsOdd (by simp), k7.slot hsOdd (by simp), od6]
   · rw [k9.slot hsC (by simp), k7.slot hsC (by simp), k6.slot hsC (by simp), k5.slot hsC (by simp), cs4]
   · rw [k9.num (by idx) (by simp) fD1, k7.num (by idx) (by simp) fD1, k6.num (by idx) (by simp) fD1, e5]
-    by_cases c : u % 2 = 1 ∧ u < v <;> simp only [c, ↓reduceIte, Nat.one_ne_zero]
+    by_cases c : u % 2 = 1 ∧ u < v <;> simp [c]
   · rw [e9, e7, show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero]
     exact invU_arith d2 b2 (wordsVal_lt _ _ _ _) d4 b4 (wordsVal_lt _ _ _ _)
   · exact Keep.trans' r1 (Keep.trans' r2 (Keep.trans' (Keep.mono r3' (by decide)) (Keep.trans' r3
