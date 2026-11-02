@@ -563,4 +563,555 @@ theorem bm_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s : State} {A :
         rw [cs' r hr, k r n1 n2 n3])
       (by rw [hm, rmul] at f'; exact f') (by rw [b', hm])
 
+/-! ## The units of the copies -/
+
+/-- The number of units in `128 r` bytes. -/
+abbrev cnt (wide : Bool) (r : Nat) : Nat := if wide then 16 * r else 128 * r
+
+theorem cnt_mul (wide : Bool) (r : Nat) : unitB wide * cnt wide r = 128 * r := by
+  cases wide <;> simp [unitB, cnt] <;> omega
+
+theorem cnt_pos {wide : Bool} {r : Nat} (hr : 0 < r) : 0 < cnt wide r := by
+  cases wide <;> simp [cnt] <;> omega
+
+theorem cnt_lt {wide : Bool} {r : Nat} (hr : 128 * r < 2 ^ 64) : cnt wide r < 2 ^ 64 := by
+  cases wide <;> simp [cnt] <;> omega
+
+theorem unit_le {wide : Bool} {r k : Nat} (hk : k < cnt wide r) :
+    unitB wide * k + unitB wide ≤ 128 * r := by
+  rw [← cnt_mul wide r, ← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hk
+
+/-- `t ← ` the number of units in `128 r` bytes, from `s6 = 128 r`. -/
+theorem count_ok {wide : Bool} {t : Reg} {s : State} {r : Nat} (h6 : s.gpr .s6 = BitVec.ofNat 64 (128 * r))
+    (hlt : 128 * r < 2 ^ 64) {is : List Instr} {Q : State → Prop}
+    (k : ∀ s', Upd s s' t (BitVec.ofNat 64 (cnt wide r)) → WP isa (.block is) s' Q) :
+    WP isa (.block ((if wide then .shift .srl .d t .s6 3 else mov t .s6) :: is)) s Q := by
+  cases wide with
+  | true =>
+    refine wp_srl (by decide) fun s' u => k s' ?_
+    have e : s.gpr .s6 >>> 3 = BitVec.ofNat 64 (cnt true r) := by
+      rw [h6, shr_ofNat _ hlt]; exact congrArg (BitVec.ofNat _) (by simp [cnt]; omega)
+    exact ⟨by rw [u.gpr, e], u.other, u.mem, u.rd, u.wr, u.sp⟩
+  | false =>
+    refine wp_mv fun s' u => k s' ?_
+    exact ⟨by rw [u.gpr, h6]; rfl, u.other, u.mem, u.rd, u.wr, u.sp⟩
+
+theorem unitCount_eq (wide : Bool) :
+    unitCount wide = (if wide then .shift .srl .d .t2 .s6 3 else mov .t2 .s6) := by
+  cases wide <;> rfl
+
+section
+variable {wide : Bool} {s₀ : State} (hp : Pre wide s₀)
+include hp
+
+theorem vAt_nw {i : Nat} (hi : i < NN s₀) : (vAt s₀ i).toNat + 128 * rr s₀ ≤ 2 ^ 64 := by
+  have := v_lt hp
+  have hv := hp.v_nw
+  have e := vl_mul hp
+  have := v_le hi
+  have := hp.pos
+  rw [toNat_add_ofNat _ (by omega)]
+  omega
+
+theorem vAt_in {i : Nat} (hi : i < NN s₀) : InRegions s₀.wr (vAt s₀ i) (128 * rr s₀) := by
+  rw [hp.wr]
+  have e := vl_mul hp
+  have := v_le hi
+  have lt := v_lt hp
+  exact InRegions.of_mem (R := vR s₀) (by simp) (contains_off (by rw [e]; omega) (by omega))
+
+/-- `V[i]` and the other regions. -/
+theorem vAt_b {i : Nat} (hi : i < NN s₀) : Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ (bR s₀) :=
+  hp.b_v.symm.sub_left (vAt_sub hp hi)
+theorem vAt_t {i : Nat} (hi : i < NN s₀) : Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ (tR s₀) :=
+  hp.v_t.sub_left (vAt_sub hp hi)
+theorem vAt_s {i : Nat} (hi : i < NN s₀) : Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ (svR s₀) :=
+  hp.v_s.sub_left (vAt_sub hp hi)
+
+omit hp in
+/-- The frame of a call writing `b`, from the one we keep. -/
+theorem call_frame {m m' : Mem} (hf : Frame [⟨bP s₀, 128 * rr s₀⟩, bsvR s₀] m m') :
+    Frame [bR s₀, vR s₀, tR s₀, svR s₀] m m' :=
+  hf.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨bR s₀, by simp, b_sub'⟩
+    · exact ⟨svR s₀, by simp, bsv_sub s₀⟩
+
+/-- What a call writing `b` keeps: `V[k]`. -/
+theorem call_keeps_v {m m' : Mem} (hf : Frame [⟨bP s₀, 128 * rr s₀⟩, bsvR s₀] m m')
+    {k : Nat} (hk : k < NN s₀) :
+    bytesAt m' (vAt s₀ k) (128 * rr s₀) = bytesAt m (vAt s₀ k) (128 * rr s₀) := by
+  refine frame_bytesAt hf (fun r hr => ?_) (by have := r_lt hp; omega)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact (vAt_b hp hk).sub_right b_sub'
+  · exact (vAt_s hp hk).sub_right (bsv_sub s₀)
+
+theorem call_kept {m m' : Mem} (hf : Frame [⟨bP s₀, 128 * rr s₀⟩, bsvR s₀] m m')
+    (h : Kept s₀ m) : Kept s₀ m' :=
+  h.frame hf fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact (keep_b hp).sub_right b_sub'
+    · exact keep_bsv s₀
+
+/-- The memory after iteration `i` of step 2. -/
+theorem mem2_ok {i : Nat} (hi : i < NN s₀) {s : State} (h : Inv2 s₀ i s) {m₃ : Mem}
+    (f₃ : Frame [⟨bP s₀, 128 * rr s₀⟩, bsvR s₀]
+      (writeBytes s.mem (vAt s₀ i) (bytesAt s.mem (bP s₀) (128 * rr s₀))) m₃)
+    (b₃ : bytesAt m₃ (bP s₀) (128 * rr s₀) = blockMix (rr s₀)
+      (bytesAt (writeBytes s.mem (vAt s₀ i) (bytesAt s.mem (bP s₀) (128 * rr s₀))) (vAt s₀ i)
+        (128 * rr s₀))) :
+    Frame [bR s₀, vR s₀, tR s₀, svR s₀] s₀.mem m₃ ∧ Kept s₀ m₃ ∧
+    bytesAt m₃ (bP s₀) (128 * rr s₀) = Nat.repeat (blockMix (rr s₀)) (i + 1) (B s₀) ∧
+    ∀ k < i + 1, bytesAt m₃ (vAt s₀ k) (128 * rr s₀) = Nat.repeat (blockMix (rr s₀)) k (B s₀) := by
+  have lt := r_lt hp
+  have hl : (bytesAt s.mem (bP s₀) (128 * rr s₀)).length = 128 * rr s₀ := bytesAt_length _ _ _
+  have hself : bytesAt (writeBytes s.mem (vAt s₀ i) (bytesAt s.mem (bP s₀) (128 * rr s₀))) (vAt s₀ i)
+      (128 * rr s₀) = Nat.repeat (blockMix (rr s₀)) i (B s₀) := by
+    have := bytesAt_writeBytes_self s.mem (vAt s₀ i) (bytesAt s.mem (bP s₀) (128 * rr s₀))
+      (by rw [hl]; exact lt)
+    rw [hl] at this
+    rw [this, h.x]
+  have f₂ : Frame [⟨vAt s₀ i, 128 * rr s₀⟩] s.mem
+      (writeBytes s.mem (vAt s₀ i) (bytesAt s.mem (bP s₀) (128 * rr s₀))) :=
+    writeBytes_frame _ _ _ (by rw [hl]; exact Region.contains_self _ _)
+  have f₂' : Frame [bR s₀, vR s₀, tR s₀, svR s₀] s.mem
+      (writeBytes s.mem (vAt s₀ i) (bytesAt s.mem (bP s₀) (128 * rr s₀))) :=
+    f₂.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨vR s₀, by simp, vAt_sub hp hi⟩
+  refine ⟨(h.frame.trans f₂').trans (call_frame f₃), call_kept hp f₃ (h.kept.frame f₂ fun r hr => ?_),
+    by rw [b₃, hself]; rfl, fun k hk => ?_⟩
+  · simp only [List.mem_singleton] at hr; subst hr
+    exact (keep_v hp).sub_right (vAt_sub hp hi)
+  · rw [call_keeps_v hp f₃ (by omega)]
+    by_cases hki : k = i
+    · subst hki; exact hself
+    · rw [bytesAt_writeBytes_sep _ _ (by rw [hl]; exact vAt_disj hp (by omega) hi hki) lt]
+      exact h.done k (by omega)
+
+theorem b_unit {k : Nat} (hk : k < cnt wide (rr s₀)) :
+    InRegions (s₀.rd ++ s₀.wr) (bP s₀ + BitVec.ofNat 64 (unitB wide * k)) (unitB wide) := by
+  have := r_lt hp
+  have := unit_le hk
+  rw [hp.rd, hp.wr]
+  exact InRegions.of_mem (R := bR s₀) (by simp) (contains_off (by omega) (by omega))
+
+theorem v_unit {i k : Nat} (hi : i < NN s₀) (hk : k < cnt wide (rr s₀)) :
+    InRegions s₀.wr (vAt s₀ i + BitVec.ofNat 64 (unitB wide * k)) (unitB wide) := by
+  rw [hp.wr]
+  have e := vl_mul hp
+  have := v_le hi
+  have lt := v_lt hp
+  have := unit_le hk
+  show InRegions _ (vP s₀ + BitVec.ofNat 64 (128 * rr s₀ * i) + BitVec.ofNat 64 (unitB wide * k)) _
+  rw [add_ofNat]
+  exact InRegions.of_mem (R := vR s₀) (by simp) (contains_off (by rw [e]; omega) (by omega))
+
+theorem t_unit {k : Nat} (hk : k < cnt wide (rr s₀)) :
+    InRegions s₀.wr (tP s₀ + BitVec.ofNat 64 (unitB wide * k)) (unitB wide) := by
+  have := r_lt hp
+  have := unit_le hk
+  rw [hp.wr]
+  exact InRegions.of_mem (R := tR s₀) (by simp) (contains_off (by omega) (by omega))
+
+end
+
+theorem vAt_succ (s₀ : State) (i : Nat) :
+    vAt s₀ i + BitVec.ofNat 64 (128 * rr s₀) = vAt s₀ (i + 1) := by
+  show _ = vP s₀ + BitVec.ofNat 64 (128 * rr s₀ * (i + 1))
+  rw [add_ofNat, Nat.mul_succ]
+
+/-- One iteration of step 2. -/
+theorem step2_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {i : Nat}
+    (hi : i < NN s₀) {s : State} (h : Inv2 s₀ i s) :
+    WP isa (step2 wide) s fun s' => Inv2 s₀ (i + 1) s' ∧ (s'.gpr .s7 != 0) = decide (i + 1 ≠ NN s₀) := by
+  have lt := r_lt hp
+  have pos := hp.pos
+  have hN := NN_lt hp
+  unfold step2
+  rw [unitCount_eq]
+  refine WP.seq (wp_mv fun a ua => wp_mv fun b ub => count_ok (wide := wide)
+    (by rw [ub.other _ (by decide), ua.other _ (by decide), h.s6]) lt fun d ud => WP.block_nil ?_)
+  have ke : ∀ r, r ≠ .t0 → r ≠ .t1 → r ≠ .t2 → d.gpr r = s.gpr r := fun r h1 h2 h3 => by
+    rw [ud.other _ h3, ub.other _ h2, ua.other _ h1]
+  have erd : d.rd = s₀.rd := by rw [ud.rd, ub.rd, ua.rd, h.rd]
+  have ewr : d.wr = s₀.wr := by rw [ud.wr, ub.wr, ua.wr, h.wr]
+  have esp : d.sp = s₀.sp := by rw [ud.sp, ub.sp, ua.sp, h.sp]
+  have hme : d.mem = s.mem := by rw [ud.mem, ub.mem, ua.mem]
+  have e8 := cnt_mul wide (rr s₀)
+  refine WP.seq (WP.mono (copyLoop_ok (wide := wide) (src := bP s₀) (dst := vAt s₀ i)
+    (n := cnt wide (rr s₀)) (cnt_pos pos) (by rw [e8]; exact lt)
+    (fun hw => ⟨(hp.al hw).1, vAt_al hp hw i⟩)
+    (by rw [ud.other _ (by decide), ub.other _ (by decide), ua.gpr, h.s4])
+    (by rw [ud.other _ (by decide), ub.gpr, ua.other _ (by decide), h.s8])
+    ud.gpr
+    (fun k hk => by rw [erd, ewr]; exact b_unit hp hk)
+    (fun k hk => by rw [ewr]; exact v_unit hp hi hk)
+    (by rw [e8]; exact (vAt_b hp hi).symm.sub_left b_sub'))
+    fun t ⟨rdt, wrt, spt, gt, mt⟩ => ?_)
+  rw [hme, e8] at mt
+  have kt : ∀ r ∈ preserved, t.gpr r = s.gpr r := fun r hr => by
+    obtain ⟨-, -, -, -, h0, h1, h2, h3, -⟩ := pres_ne r hr
+    rw [gt r h0 h1 h2 h3, ke r h0 h1 h2]
+  rw [blockMixTo_eq]
+  refine WP.seq (WP.seq (wp_mv fun f uf => ?_))
+  have kf : ∀ r ∈ preserved, f.gpr r = s.gpr r := fun r hr => by
+    rw [uf.other _ (pres_ne r hr).1, kt r hr]
+  refine bm_ok hp (A := vAt s₀ i) (by rw [uf.gpr, kt _ (by decide), h.s8])
+    (by rw [kf _ (by decide), h.s4]) (by rw [kf _ (by decide), h.s10])
+    (by rw [kf _ (by decide), h.s6]) (by rw [uf.rd, rdt, erd]) (by rw [uf.wr, wrt, ewr])
+    ((vAt_b hp hi).sub_right b_sub') ((vAt_s hp hi).sub_right (bsv_sub s₀))
+    (vAt_nw hp hi) (fun hw => vAt_al hp hw i) (InRegions.right (vAt_in hp hi))
+    fun s4 rd4 wr4 sp4 cs4 f4 b4 => ?_
+  rw [uf.mem, mt] at f4 b4
+  obtain ⟨F, K, X, D⟩ := mem2_ok hp hi h f4 b4
+  have k4 : ∀ r ∈ preserved, s4.gpr r = s.gpr r := fun r hr => by
+    rw [cs4 r hr, kf r hr]
+  refine wp_add fun s5 u5 => wp_subi (imm := 1) (by decide) fun s6 u6 => WP.block_nil ?_
+  have k6 : ∀ r ∈ preserved, r ≠ .s7 → r ≠ .s8 → s6.gpr r = s.gpr r :=
+    fun r hr h1 h2 => by rw [u6.other _ h1, u5.other _ h2, k4 r hr]
+  have e7 : s6.gpr .s7 = BitVec.ofNat 64 (NN s₀ - (i + 1)) := by
+    rw [u6.gpr, u5.other _ (by decide), k4 _ (by decide), h.s7, dec_count hi]
+  refine ⟨⟨by omega, by rw [u6.rd, u5.rd, rd4, uf.rd, rdt, erd], by rw [u6.wr, u5.wr, wr4, uf.wr, wrt, ewr],
+    by rw [u6.sp, u5.sp, sp4, uf.sp, spt, esp],
+    by rw [k6 _ (by decide) (by decide) (by decide), h.s4],
+    by rw [k6 _ (by decide) (by decide) (by decide), h.s5],
+    by rw [k6 _ (by decide) (by decide) (by decide), h.s9],
+    by rw [k6 _ (by decide) (by decide) (by decide), h.s10],
+    by rw [k6 _ (by decide) (by decide) (by decide), h.s6], e7, ?_,
+    by rw [u6.mem, u5.mem]; exact F, by rw [u6.mem, u5.mem]; exact K,
+    by rw [u6.mem, u5.mem]; exact X, by rw [u6.mem, u5.mem]; exact D,
+    fun r hr => by
+      rw [k6 r (mid_pres hr) (mid_ne hr (by decide)) (mid_ne hr (by decide)), h.keep r hr]⟩, ?_⟩
+  · rw [u6.other _ (by decide), u5.gpr, k4 _ (by decide), k4 _ (by decide), h.s8, h.s6, vAt_succ]
+  · rw [e7, dec_ne hi hN]
+
+theorem loop2_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s : State}
+    (h : Inv2 s₀ 0 s) : WP isa (.loop (step2 wide) (.nonzero .s7)) s (Inv2 s₀ (NN s₀)) :=
+  count_loop (NN_pos hp) (Inv2 s₀) (fun _ hi _ h => step2_ok hp hi h) h
+
+/-! ## Step 3 -/
+
+/-- After `i` iterations of step 3. -/
+structure Inv3 (s₀ : State) (i : Nat) (s : State) : Prop where
+  i_le : i ≤ NN s₀
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  s4 : s.gpr .s4 = bP s₀
+  s5 : s.gpr .s5 = vP s₀
+  s9 : s.gpr .s9 = tP s₀
+  s10 : s.gpr .s10 = sv s₀
+  s6 : s.gpr .s6 = BitVec.ofNat 64 (128 * rr s₀)
+  s7 : s.gpr .s7 = BitVec.ofNat 64 (NN s₀ - i)
+  s8 : s.gpr .s8 = BitVec.ofNat 64 (NN s₀ - 1)
+  frame : Frame [bR s₀, vR s₀, tR s₀, svR s₀] s₀.mem s.mem
+  kept : Kept s₀ s.mem
+  v : ∀ k < NN s₀, bytesAt s.mem (vAt s₀ k) (128 * rr s₀) = Nat.repeat (blockMix (rr s₀)) k (B s₀)
+  x : (Spec.Scrypt.mixLoop (rr s₀) (NN s₀) (vList (rr s₀) (NN s₀) (B s₀)) (NN s₀ - i)
+    (bytesAt s.mem (bP s₀) (128 * rr s₀))).1 = roMix (rr s₀) (NN s₀) (B s₀)
+  /-- The indices still to come. -/
+  js : (Spec.Scrypt.mixLoop (rr s₀) (NN s₀) (vList (rr s₀) (NN s₀) (B s₀)) (NN s₀ - i)
+    (bytesAt s.mem (bP s₀) (128 * rr s₀))).2 =
+      (Spec.Scrypt.roMixIndices (rr s₀) (NN s₀) (B s₀)).drop i
+  keep : ∀ r ∈ mid, s.gpr r = s₀.gpr r
+
+theorem mid_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s : State} (h : Inv2 s₀ (NN s₀) s) :
+    WP isa (.block rmMid) s (Inv3 s₀ 0) := by
+  have n1 := NN_pos hp
+  unfold rmMid
+  refine wp_ld (a := sv s₀ + BitVec.ofNat 64 64) (by decide) (by rw [h.s10])
+    (Spill.al8 hp.s_al (by decide))
+    (by rw [h.rd, h.wr, hp.rd, hp.wr]
+        exact InRegions.of_mem (R := svR s₀) (by simp) (in_s s₀ (by omega)))
+    fun a ua => wp_subi (imm := 1) (by decide) fun b ub => WP.block_nil ?_
+  have ka : a.gpr .s7 = BitVec.ofNat 64 (NN s₀) := by rw [ua.gpr, h.kept.2]
+  have k : ∀ r, r ≠ .s7 → r ≠ .s8 → b.gpr r = s.gpr r := fun r h1 h2 => by
+    rw [ub.other _ h2, ua.other _ h1]
+  have hm : b.mem = s.mem := by rw [ub.mem, ua.mem]
+  refine ⟨Nat.zero_le _, by rw [ub.rd, ua.rd, h.rd], by rw [ub.wr, ua.wr, h.wr],
+    by rw [ub.sp, ua.sp, h.sp], by rw [k _ (by decide) (by decide), h.s4],
+    by rw [k _ (by decide) (by decide), h.s5], by rw [k _ (by decide) (by decide), h.s9],
+    by rw [k _ (by decide) (by decide), h.s10],
+    by rw [k _ (by decide) (by decide), h.s6], by rw [ub.other _ (by decide), ka]; rfl, ?_,
+    by rw [hm]; exact h.frame, by rw [hm]; exact h.kept, fun k hk => by rw [hm]; exact h.done k hk,
+    ?_, ?_, fun r hr => by rw [k _ (mid_ne hr (by decide)) (mid_ne hr (by decide)), h.keep r hr]⟩
+  · rw [ub.gpr, ka]
+    have := dec_count (n := NN s₀) (k := 0) n1
+    simpa using this
+  · rw [hm, h.x, Nat.sub_zero]
+    exact (roMix_eq _ _ _).symm
+  · rw [hm, h.x, Nat.sub_zero, List.drop_zero]
+    exact (roMixIndices_eq _ _ _).symm
+
+/-- The index `j`. -/
+abbrev jOf (s₀ : State) (m : Mem) : Nat :=
+  Spec.Scrypt.integerify (rr s₀) (bytesAt m (bP s₀) (128 * rr s₀)) % NN s₀
+
+theorem jOf_lt {wide : Bool} {s₀ : State} (hp : Pre wide s₀) (m : Mem) : jOf s₀ m < NN s₀ :=
+  Nat.mod_lt _ (NN_pos hp)
+
+/-- `j` as the code computes it. -/
+theorem jOf_eq {wide : Bool} {s₀ : State} (hp : Pre wide s₀) (m : Mem) :
+    m.readW (bP s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64)) 64 &&& BitVec.ofNat 64 (NN s₀ - 1) =
+      BitVec.ofNat 64 (jOf s₀ m) := by
+  obtain ⟨e, he⟩ := hp.pow
+  have hN := NN_lt hp
+  have he' : e ≤ 64 := by
+    by_contra hc
+    have : 2 ^ 64 < 2 ^ e := Nat.pow_lt_pow_right (by decide) (by omega)
+    omega
+  apply BitVec.eq_of_toNat_eq
+  rw [toNat_ofNat_lt (by have := jOf_lt hp m; omega), he, and_mask _ he', jOf, he,
+    integerify_mod _ _ hp.pos he']
+
+/-- The address of the low word of `X`'s last 64-byte block. -/
+theorem j_addr {wide : Bool} {s₀ : State} (hp : Pre wide s₀) :
+    bP s₀ + BitVec.ofNat 64 (128 * rr s₀) - BitVec.ofNat 64 64 =
+      bP s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64) :=
+  add_sub64 _ (by have := hp.pos; omega)
+
+theorem t_b {wide : Bool} {s₀ : State} (hp : Pre wide s₀) :
+    Region.Disjoint ⟨tP s₀, 128 * rr s₀⟩ ⟨bP s₀, 128 * rr s₀⟩ :=
+  (hp.b_t.symm.sub_left t_sub').sub_right b_sub'
+
+theorem t_nw {wide : Bool} {s₀ : State} (hp : Pre wide s₀) : (tP s₀).toNat + 128 * rr s₀ ≤ 2 ^ 64 := by
+  have := hp.t_nw; omega
+
+theorem t_in {wide : Bool} {s₀ : State} (hp : Pre wide s₀) : InRegions s₀.wr (tP s₀) (128 * rr s₀) := by
+  rw [hp.wr]
+  refine InRegions.of_mem (R := tR s₀) (by simp) ?_
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; have := r_lt hp; omega
+
+/-- The memory after iteration `i` of step 3. -/
+theorem mem3_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {i : Nat} (hi : i < NN s₀) {s : State}
+    (h : Inv3 s₀ i s) {m₄ : Mem}
+    (f₄ : Frame [⟨bP s₀, 128 * rr s₀⟩, bsvR s₀]
+      (writeBytes s.mem (tP s₀) (Spec.Pbkdf2.xorBytes (bytesAt s.mem (bP s₀) (128 * rr s₀))
+        (bytesAt s.mem (vAt s₀ (jOf s₀ s.mem)) (128 * rr s₀)))) m₄)
+    (b₄ : bytesAt m₄ (bP s₀) (128 * rr s₀) = blockMix (rr s₀)
+      (bytesAt (writeBytes s.mem (tP s₀) (Spec.Pbkdf2.xorBytes (bytesAt s.mem (bP s₀) (128 * rr s₀))
+        (bytesAt s.mem (vAt s₀ (jOf s₀ s.mem)) (128 * rr s₀)))) (tP s₀) (128 * rr s₀))) :
+    Frame [bR s₀, vR s₀, tR s₀, svR s₀] s₀.mem m₄ ∧ Kept s₀ m₄ ∧
+    (∀ k < NN s₀, bytesAt m₄ (vAt s₀ k) (128 * rr s₀) = Nat.repeat (blockMix (rr s₀)) k (B s₀)) ∧
+    (Spec.Scrypt.mixLoop (rr s₀) (NN s₀) (vList (rr s₀) (NN s₀) (B s₀)) (NN s₀ - (i + 1))
+      (bytesAt m₄ (bP s₀) (128 * rr s₀))).1 = roMix (rr s₀) (NN s₀) (B s₀) ∧
+    (Spec.Scrypt.mixLoop (rr s₀) (NN s₀) (vList (rr s₀) (NN s₀) (B s₀)) (NN s₀ - (i + 1))
+      (bytesAt m₄ (bP s₀) (128 * rr s₀))).2 =
+        (Spec.Scrypt.roMixIndices (rr s₀) (NN s₀) (B s₀)).drop (i + 1) := by
+  have lt := r_lt hp
+  have hj := jOf_lt hp s.mem
+  set T := Spec.Pbkdf2.xorBytes (bytesAt s.mem (bP s₀) (128 * rr s₀))
+    (bytesAt s.mem (vAt s₀ (jOf s₀ s.mem)) (128 * rr s₀)) with hT
+  have hl : T.length = 128 * rr s₀ := by
+    rw [hT, xorBytes_length _ _ (by simp [bytesAt_length]), bytesAt_length]
+  have hself : bytesAt (writeBytes s.mem (tP s₀) T) (tP s₀) (128 * rr s₀) = T := by
+    have := bytesAt_writeBytes_self s.mem (tP s₀) T (by rw [hl]; exact lt)
+    rwa [hl] at this
+  have f₂ : Frame [⟨tP s₀, 128 * rr s₀⟩] s.mem (writeBytes s.mem (tP s₀) T) :=
+    writeBytes_frame _ _ _ (by rw [hl]; exact Region.contains_self _ _)
+  have f₂' : Frame [bR s₀, vR s₀, tR s₀, svR s₀] s.mem (writeBytes s.mem (tP s₀) T) :=
+    f₂.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨tR s₀, by simp, t_sub'⟩
+  have hv : ∀ k < NN s₀, bytesAt m₄ (vAt s₀ k) (128 * rr s₀) = Nat.repeat (blockMix (rr s₀)) k (B s₀) :=
+    fun k hk => by
+      rw [call_keeps_v hp f₄ hk, bytesAt_writeBytes_sep _ _
+        (by rw [hl]; exact (vAt_t hp hk).sub_right t_sub') lt]
+      exact h.v k hk
+  have e : NN s₀ - i = NN s₀ - (i + 1) + 1 := by omega
+  refine ⟨(h.frame.trans f₂').trans (call_frame f₄),
+    call_kept hp f₄ (h.kept.frame f₂ fun r hr => ?_), hv, ?_, ?_⟩
+  · simp only [List.mem_singleton] at hr; subst hr
+    exact (keep_t hp).sub_right t_sub'
+  · rw [← h.x, e, mixLoop_succ_fst, b₄, hself, hT, vList_getD _ hj, h.v _ hj]
+  · have hs := h.js
+    rw [e, mixLoop_succ_snd, vList_getD _ hj, ← h.v _ hj] at hs
+    rw [← List.tail_drop, ← hs, b₄, hself, hT]
+    rfl
+
+/-- `jBlock`: `t0 = j`. -/
+theorem j_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s : State} (h4 : s.gpr .s4 = bP s₀)
+    (h6 : s.gpr .s6 = BitVec.ofNat 64 (128 * rr s₀)) (h8 : s.gpr .s8 = BitVec.ofNat 64 (NN s₀ - 1))
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
+    WP isa (.block (jBlock wide)) s fun s' => s'.gpr .t0 = BitVec.ofNat 64 (jOf s₀ s.mem) ∧
+      (∀ r, r ≠ .t0 → r ≠ .t1 → r ≠ .t2 → r ≠ .t3 → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  have lt := r_lt hp
+  have := hp.pos
+  have hX : bP s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64) =
+      bP s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64) + BitVec.ofNat 64 0 := (BitVec.add_zero _).symm
+  have hin : ∀ o, o + 4 ≤ 64 → InRegions (s.rd ++ s.wr)
+      (bP s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64) + BitVec.ofNat 64 o) 4 := fun o ho => by
+    rw [hrd, hwr, hp.rd, hp.wr, add_ofNat]
+    exact InRegions.of_mem (R := bR s₀) (by simp) (contains_off (by omega) (by omega))
+  unfold jBlock
+  rw [List.append_assoc, WP.block_append_iff]
+  refine wp_add fun a ua => wp_subi (imm := 64) (by decide) fun b ub => WP.block_nil ?_
+  have e1 : b.gpr .t1 = bP s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64) := by
+    rw [ub.gpr, ua.gpr, h4, h6, j_addr hp]
+  have kb : ∀ r, r ≠ .t1 → b.gpr r = s.gpr r := fun r hr => by rw [ub.other _ hr, ua.other _ hr]
+  -- The doubleword, then the mask.
+  suffices key : WP isa (.block ((if wide then [.load .d .t0 .t1 0] else
+        Impl.Words.RISCV64.loadLE64 .t0 .t2 .t3 .t1 0) ++ ([.logic .and .t0 .t0 .s8] : List Instr))) b
+      fun s' => s'.gpr .t0 = b.mem.readW (bP s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64)) 64 &&&
+          BitVec.ofNat 64 (NN s₀ - 1) ∧
+        (∀ r, r ≠ .t0 → r ≠ .t2 → r ≠ .t3 → s'.gpr r = b.gpr r) ∧
+        s'.mem = b.mem ∧ s'.rd = b.rd ∧ s'.wr = b.wr ∧ s'.sp = b.sp by
+    refine WP.mono key fun s' ⟨g0, go, gm, grd, gwr, gsp⟩ => ⟨?_, fun r h0 h1 h2 h3 => ?_, ?_, ?_, ?_, ?_⟩
+    · rw [g0, ub.mem, ua.mem, jOf_eq hp]
+    · rw [go r h0 h2 h3, kb r h1]
+    · rw [gm, ub.mem, ua.mem]
+    · rw [grd, ub.rd, ua.rd]
+    · rw [gwr, ub.wr, ua.wr]
+    · rw [gsp, ub.sp, ua.sp]
+  have h8b : b.gpr .s8 = BitVec.ofNat 64 (NN s₀ - 1) := by rw [kb _ (by decide), h8]
+  have hbr : b.rd = s.rd := by rw [ub.rd, ua.rd]
+  have hbw : b.wr = s.wr := by rw [ub.wr, ua.wr]
+  cases wide with
+  | true =>
+    simp only [↓reduceIte, List.cons_append, List.nil_append]
+    refine wp_ld (a := bP s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64)) (by decide)
+      (by rw [e1]; exact BitVec.add_zero _) (Spill.al8 (hp.al rfl).1 (by omega))
+      (by
+        rw [hbr, hbw, hrd, hwr, hp.rd, hp.wr]
+        exact InRegions.of_mem (R := bR s₀) (by simp) (contains_off (by omega) (by omega)))
+      fun d ud => wp_and fun e ue => WP.block_nil ?_
+    refine ⟨?_, fun r h0 _ _ => ?_, by rw [ue.mem, ud.mem], by rw [ue.rd, ud.rd],
+      by rw [ue.wr, ud.wr], by rw [ue.sp, ud.sp]⟩
+    · rw [ue.gpr, ud.gpr, ud.other _ (by decide), h8b]
+    · rw [ue.other _ h0, ud.other _ h0]
+  | false =>
+    simp only [Bool.false_eq_true, ↓reduceIte]
+    rw [WP.block_append_iff]
+    refine WP.mono (VG.RISCV64.Bytes.loadLE64_ok (s := b) (d := .t0) (tmp := .t2) (hi := .t3) (n := .t1) (off := 0)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by rw [e1, hbr, hbw]; exact hX ▸ hin 0 (by decide))
+      (by rw [e1, hbr, hbw]; exact hin 4 (by decide)))
+      fun d ⟨d0, dk, dm, drd, dwr, dsp⟩ => wp_and fun e ue => WP.block_nil ?_
+    refine ⟨?_, fun r h0 h2 h3 => ?_, by rw [ue.mem, dm], by rw [ue.rd, drd],
+      by rw [ue.wr, dwr], by rw [ue.sp, dsp]⟩
+    · rw [ue.gpr, d0, e1, dk _ (by decide) (by decide) (by decide), h8b, BitVec.add_zero]
+    · rw [ue.other _ h0, dk r h0 h2 h3]
+
+/-- The address of `V[j]`. -/
+theorem vAt_mul (s₀ : State) (j : Nat) :
+    BitVec.ofNat 64 j * BitVec.ofNat 64 (128 * rr s₀) + vP s₀ = vAt s₀ j := by
+  rw [← BitVec.ofNat_mul, BitVec.add_comm, Nat.mul_comm]
+
+/-- One iteration of step 3. -/
+theorem step3_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {i : Nat}
+    (hi : i < NN s₀) {s : State} (h : Inv3 s₀ i s) :
+    WP isa (step3 wide) s fun s' => Inv3 s₀ (i + 1) s' ∧ (s'.gpr .s7 != 0) = decide (i + 1 ≠ NN s₀) := by
+  have lt := r_lt hp
+  have pos := hp.pos
+  have hN := NN_lt hp
+  have hj := jOf_lt hp s.mem
+  have e8 := cnt_mul wide (rr s₀)
+  unfold step3
+  refine WP.seq (WP.mono (j_ok hp h.s4 h.s6 h.s8 h.rd h.wr) fun a ⟨a0, ak, am, ard, awr, asp⟩ => ?_)
+  refine WP.seq (wp_mul fun b ub => wp_add fun c uc => wp_mv fun d ud => wp_mv fun e ue =>
+    count_ok (wide := wide) (t := .t3) (r := rr s₀)
+      (by rw [ue.other _ (by decide), ud.other _ (by decide), uc.other _ (by decide),
+        ub.other _ (by decide), ak _ (by decide) (by decide) (by decide) (by decide), h.s6]) lt
+      fun f uf => WP.block_nil ?_)
+  have rdf : f.rd = s₀.rd := by rw [uf.rd, ue.rd, ud.rd, uc.rd, ub.rd, ard, h.rd]
+  have wrf : f.wr = s₀.wr := by rw [uf.wr, ue.wr, ud.wr, uc.wr, ub.wr, awr, h.wr]
+  have spf : f.sp = s₀.sp := by rw [uf.sp, ue.sp, ud.sp, uc.sp, ub.sp, asp, h.sp]
+  have mf : f.mem = s.mem := by rw [uf.mem, ue.mem, ud.mem, uc.mem, ub.mem, am]
+  have kf : ∀ r ∈ preserved, f.gpr r = s.gpr r := fun r hr => by
+    obtain ⟨-, -, -, -, h0, h1, h2, h3, -⟩ := pres_ne r hr
+    rw [uf.other _ h3, ue.other _ h2, ud.other _ h0, uc.other _ h1, ub.other _ h1, ak r h0 h1 h2 h3]
+  have h1 : f.gpr .t1 = vAt s₀ (jOf s₀ s.mem) := by
+    rw [uf.other _ (by decide), ue.other _ (by decide), ud.other _ (by decide), uc.gpr, ub.gpr,
+      ub.other _ (by decide), a0, ak _ (by decide) (by decide) (by decide) (by decide),
+      ak _ (by decide) (by decide) (by decide) (by decide), h.s5, h.s6, vAt_mul]
+  refine WP.seq (WP.mono (xorLoop_ok (wide := wide) (x := bP s₀) (y := vAt s₀ (jOf s₀ s.mem))
+    (d := tP s₀) (n := cnt wide (rr s₀)) (cnt_pos pos) (by rw [e8]; exact lt)
+    (fun hw => ⟨(hp.al hw).1, vAt_al hp hw _, (hp.al hw).2.2⟩)
+    (by rw [uf.other _ (by decide), ue.other _ (by decide), ud.gpr, uc.other _ (by decide),
+      ub.other _ (by decide), ak _ (by decide) (by decide) (by decide) (by decide), h.s4])
+    h1
+    (by rw [uf.other _ (by decide), ue.gpr, ud.other _ (by decide), uc.other _ (by decide),
+      ub.other _ (by decide), ak _ (by decide) (by decide) (by decide) (by decide), h.s9])
+    uf.gpr
+    (fun k hk => by rw [rdf, wrf]; exact b_unit hp hk)
+    (fun k hk => by rw [rdf, wrf]; exact InRegions.right (v_unit hp hj hk))
+    (fun k hk => by rw [wrf]; exact t_unit hp hk)
+    (by rw [e8]; exact t_b hp) (by rw [e8]; exact (vAt_t hp hj).symm.sub_left t_sub'))
+    fun t ⟨rdt, wrt, spt, gt, mt⟩ => ?_)
+  rw [mf, e8] at mt
+  have kt : ∀ r ∈ preserved, t.gpr r = s.gpr r := fun r hr => by
+    obtain ⟨-, -, -, -, h0, h1, h2, h3, h4, h5⟩ := pres_ne r hr
+    rw [gt r h0 h1 h2 h3 h4 h5, kf r hr]
+  rw [blockMixTo_eq]
+  refine WP.seq (WP.seq (wp_mv fun q1 v1 => ?_))
+  have kq : ∀ r ∈ preserved, q1.gpr r = s.gpr r := fun r hr => by
+    rw [v1.other _ (pres_ne r hr).1, kt r hr]
+  refine bm_ok hp (A := tP s₀) (by rw [v1.gpr, kt _ (by decide), h.s9])
+    (by rw [kq _ (by decide), h.s4]) (by rw [kq _ (by decide), h.s10])
+    (by rw [kq _ (by decide), h.s6]) (by rw [v1.rd, rdt, rdf]) (by rw [v1.wr, wrt, wrf])
+    (t_b hp) ((hp.t_s.sub_left t_sub').sub_right (bsv_sub s₀)) (t_nw hp)
+    (fun hw => (hp.al hw).2.2) (InRegions.right (t_in hp)) fun s4 rd4 wr4 sp4 cs4 f4 b4 => ?_
+  rw [v1.mem, mt] at f4 b4
+  obtain ⟨F, K, V, X, J⟩ := mem3_ok hp hi h f4 b4
+  have k4 : ∀ r ∈ preserved, s4.gpr r = s.gpr r := fun r hr => by
+    rw [cs4 r hr, kq r hr]
+  refine wp_subi (imm := 1) (by decide) fun s5 u5 => WP.block_nil ?_
+  have k5 : ∀ r ∈ preserved, r ≠ .s7 → s5.gpr r = s.gpr r := fun r hr h1 => by
+    rw [u5.other _ h1, k4 r hr]
+  have e7 : s5.gpr .s7 = BitVec.ofNat 64 (NN s₀ - (i + 1)) := by
+    rw [u5.gpr, k4 _ (by decide), h.s7, dec_count hi]
+  refine ⟨⟨by omega, by rw [u5.rd, rd4, v1.rd, rdt, rdf], by rw [u5.wr, wr4, v1.wr, wrt, wrf],
+    by rw [u5.sp, sp4, v1.sp, spt, spf],
+    by rw [k5 _ (by decide) (by decide), h.s4],
+    by rw [k5 _ (by decide) (by decide), h.s5],
+    by rw [k5 _ (by decide) (by decide), h.s9],
+    by rw [k5 _ (by decide) (by decide), h.s10],
+    by rw [k5 _ (by decide) (by decide), h.s6], e7,
+    by rw [k5 _ (by decide) (by decide), h.s8],
+    by rw [u5.mem]; exact F, by rw [u5.mem]; exact K, by rw [u5.mem]; exact V,
+    by rw [u5.mem]; exact X, by rw [u5.mem]; exact J,
+    fun r hr => by
+      rw [k5 r (mid_pres hr) (mid_ne hr (by decide)), h.keep r hr]⟩,
+    by rw [e7, dec_ne hi hN]⟩
+
+theorem loop3_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s : State}
+    (h : Inv3 s₀ 0 s) : WP isa (.loop (step3 wide) (.nonzero .s7)) s (Inv3 s₀ (NN s₀)) :=
+  count_loop (NN_pos hp) (Inv3 s₀) (fun _ hi _ h => step3_ok hp hi h) h
+
+/-! ## The epilogue -/
+
+theorem restore_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s : State} (h : Inv3 s₀ (NN s₀) s) :
+    WP isa (.block rmEpilogue) s fun s' => s'.mem = s.mem ∧ s'.sp = s.sp ∧
+      (∀ p ∈ rmSaved, s'.gpr p.1 = s₀.gpr p.1) ∧
+      ∀ r, r ∉ rmSaved.map Prod.fst → s'.gpr r = s.gpr r :=
+  WP.mono (Spill.restore_wp (b := .s10) hp.s_al h.s10 (by decide) (by decide) (fun p hp' => by
+      rw [h.rd, h.wr, hp.rd, hp.wr]
+      exact InRegions.of_mem (R := svR s₀) (by simp) (in_s s₀ (by revert p; decide)))
+    h.kept.1) fun _ h' => ⟨h'.mem, h'.sp, h'.gpr, h'.other⟩
+
+/-! ## The whole function -/
+
+theorem correct {wide : Bool} {s₀ : State} (hp : Pre wide s₀) :
+    WP isa (Impl.Scrypt.RISCV64.roMix wide) s₀ fun s' =>
+      (∀ p ∈ rmSaved, s'.gpr p.1 = s₀.gpr p.1) ∧ s'.sp = s₀.sp ∧
+      (∀ r ∈ mid, s'.gpr r = s₀.gpr r) ∧ (Proof.Scrypt.roMixRISCV64 wide).post s₀ s' := by
+  unfold Impl.Scrypt.RISCV64.roMix
+  refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (nloop_ok hp h₁) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (setup2_ok hp h₂) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (loop2_ok hp h₃) fun s₄ h₄ => ?_)
+  refine WP.seq (WP.mono (mid_ok hp h₄) fun s₅ h₅ => ?_)
+  refine WP.seq (WP.mono (loop3_ok hp h₅) fun s₆ h₆ => ?_)
+  refine WP.mono (restore_ok hp h₆) fun s' ⟨hm', hsp', hg', ho'⟩ => ⟨hg', hsp'.trans h₆.sp,
+    fun r hr => by
+      rw [ho' r (by revert r; decide), h₆.keep r hr], ?_⟩
+  show bytesAt s'.mem (bP s₀) (128 * rr s₀) = roMix (rr s₀) (NN s₀) (B s₀)
+  rw [hm', ← h₆.x, Nat.sub_self]
+  rfl
+
 end VG.Proof.Scrypt.RISCV64.RoMix
