@@ -86,7 +86,7 @@ for the kernel to decide once per range rather than once per byte. -/
 def covers (C : CP) (a l : Nat) : Bool :=
   [2, 37, 41, 42].any (fun j => Nat.ble (C.slot j) a && Nat.ble (a + l) (C.slot j + 8 * C.k)) ||
     [34, 35, 38, 43].any (fun j => Nat.ble (C.slot j) a && Nat.ble (a + l) (C.slot j + 8 * C.k)) ||
-    (Nat.ble (Impl.Weierstrass.Mont.ownAt C.k) a && Nat.ble (a + l) 4096) ||
+    (Nat.ble C.montOwn a && Nat.ble (a + l) C.montOwnEnd) ||
     (Nat.ble C.flagAt a && Nat.ble (a + l) (C.flagAt + 8))
 
 theorem own_or_out_of_covers {C : CP} {a l : Nat} (h : covers C a l = true) :

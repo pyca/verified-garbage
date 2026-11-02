@@ -206,8 +206,8 @@ structure LadLayR (L : LadderCfg) : Prop where
   nbits' : L.nbits < 2048
   n0 : 1 ≤ L.M.n
 
-theorem own_add (n : Nat) (h : 8 * n ≤ own n) : own n + 64 * n = 4096 := by
-  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes] at h ⊢; omega
+theorem own_add (n : Nat) (h : 8 * n ≤ own n) : own n + 64 * n ≤ 8192 := by
+  have := rvOwn_cases n; simp only [own] at h ⊢; omega
 
 /-- A slot the ladder does not write is apart from what it writes. -/
 theorem LadLayR.apart_wx {L : LadderCfg} (hL : LadLayR L) {x : Nat} (hx : x ∈ ladSlots L)
@@ -352,8 +352,10 @@ theorem ladderBody_ok {Q : Nat → Fe C → Fe C → Fe C → Prop} {F : Field} 
   have hro : ∀ x ∈ ladRo L, wordsVal s.mem base x L.M.n = wordsVal s₀.mem base x L.M.n :=
     fun x hx => hI.unch.wordsVal
       (hL.apart_wx (ladR_slots L x (mem_ladRo_ladR hx)) (hL.lay.ro x hx))
-      (by have := hL.lay.lay.le x (ladR_slots L x (mem_ladRo_ladR hx)); simp only [own,
-        Impl.Weierstrass.Mont.ownAt] at this; omega)
+      (by
+        have h1 := hL.lay.lay.le x (ladR_slots L x (mem_ladRo_ladR hx))
+        have h2 := rvOwn_cases L.M.n
+        simp only [own] at h1; omega)
   have hE : ∀ x ∈ ladRo L, tmv C L.M.n base s x = tmv C L.M.n base s₀ x := fun x hx => by
     rw [tmv, hro x hx]
   -- `s1 -= 1`.
@@ -503,7 +505,7 @@ theorem powBody_ok {P : PowCfg} {F : Field} [NeZero F.S.m] (hF : FieldOk F)
   have hat := hL.acc_tmp
   have hba := hL.base_acc
   have hbt := hL.base_tmp
-  have ho : own F.S.k + 64 * F.S.k = 4096 := own_add F.S.k (by omega)
+  have ho : own F.S.k + 64 * F.S.k ≤ 8192 := own_add F.S.k (by omega)
   have hBs : wordsVal s.mem base P.base F.S.k = wordsVal s₀.mem base P.base F.S.k :=
     hI.unch.wordsVal (fun w hw => by
       simp only [powWx, List.mem_cons, List.not_mem_nil, or_false] at hw

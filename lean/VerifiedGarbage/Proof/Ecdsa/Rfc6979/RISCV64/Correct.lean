@@ -672,7 +672,8 @@ theorem reduce_ok {s : State} (h : KR P s₀ s) :
   have hzD := hz.D
   have hw := ws_of hp h
   have hk := P.kit.FNk
-  have hown : VG.Proof.Weierstrass.RISCV64.own P.kit.nw = 4096 - 64 * P.kit.nw := rfl
+  have hown : VG.Proof.Weierstrass.RISCV64.own P.kit.nw = 4096 - 64 * P.kit.nw :=
+    VG.Proof.Weierstrass.RISCV64.rvOwn_le (by omega)
   unfold Cfg.reduce
   rw [P.hFN]
   simp only [Cfg.sZ, Cfg.sY, Cfg.Q, P.hnw]

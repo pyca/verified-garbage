@@ -28,7 +28,7 @@ namespace VG.Proof.Weierstrass.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Weierstrass.RISCV64
 open VG.Proof.Mont
-open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus ownAt ownBytes)
+open VG.Impl.Weierstrass.Mont (numAt Keeps Modulus)
 
 /-- The working space: its base in `s0`, aligned, its `8192` bytes writable,
 not wrapping around. -/
@@ -70,7 +70,7 @@ theorem WsReg.of_kp {s s' : State} {base : Addr} (h : WsReg s base) (k : Kp s s'
   ⟨(k.gpr _ (by decide)).trans h.s0, k.wr ▸ h.wr, h.nowrap, h.al⟩
 
 /-- The own working space of `k`-word functions, as a range of offsets. -/
-abbrev own (k : Nat) : Nat := ownAt k
+abbrev own (k : Nat) : Nat := rvOwn k
 
 /-- What a call writing `[o]` keeps: `Kp`, and the memory but `[o]` and the
 functions' own working space. -/
@@ -164,19 +164,20 @@ theorem numAt_ofNat (m : Mem) (base : Addr) {o : Nat} (ho : o < 2 ^ 32) (k : Nat
 
 /-- `Keeps` of the working space, and nothing written outside it, as `Outs`. -/
 theorem outs_of_keeps {k : Nat} {base : Addr} {o : Nat} (ho : o < 2 ^ 32)
-    {m m' : Mem} (hk : Keeps k base ((BitVec.ofNat 64 o).setWidth 32) m m')
-    (hf : Frame [⟨base, 8192⟩] m m') (hk4 : 64 * k ≤ 4096) :
+    {m m' : Mem} (hk : Keeps k base ((BitVec.ofNat 64 o).setWidth 32) m m' (rvOwn k) (rvOwnEnd k))
+    (hf : Frame [⟨base, 8192⟩] m m') (hk4 : 64 * k ≤ 8192) :
     Outs base [(o, 8 * k), (own k, 64 * k)] m m' := by
   intro x hx
   have h1 := hx _ (List.mem_cons_self ..)
   have h2 := hx _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
-  simp only [own, ownAt, ownBytes] at h1 h2
+  have hc := rvOwn_cases k
+  simp only [own] at h1 h2
   by_cases hi : ofs base x < 8192
   · have e : x = base + BitVec.ofNat 64 (ofs base x) := by
       simp only [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rw [BitVec.add_comm, BitVec.sub_add_cancel]
     rw [e]
     refine hk _ hi ?_ ?_
-    · simp only [ownAt, ownBytes]; omega
+    · omega
     · rw [toNat_lo ho]; omega
   · refine hf x fun r hr => ?_
     rw [List.mem_singleton] at hr; subst hr
@@ -198,7 +199,7 @@ theorem callOp_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFram
         offArg t .a2 = (BitVec.ofNat 64 a).setWidth 32 → offArg t .a3 = (BitVec.ofNat 64 b).setWidth 32 →
         t.mem = s.mem → K.post t (s'.withRegions [] [⟨base, 8192⟩]) → Q s') :
     WP isa (callOp f body o a b) s Q := by
-  have hk : 64 * S.k ≤ 4096 := by simp only [own, ownAt, ownBytes] at ho; omega
+  have hk : 64 * S.k ≤ 8192 := by have := rvOwn_cases S.k; simp only [own] at ho; omega
   rw [callOp, ← List.append_nil (liAt .a3 b)]
   refine WP.seq (wp_mv fun s₁ u₁ => wp_liAt ho' fun s₂ u₂ => wp_liAt ha' fun s₃ u₃ => wp_liAt hb' fun s₄ u₄ =>
     WP.block_nil ?_)
@@ -222,10 +223,10 @@ theorem callOp_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFram
   have e3 : offArg e .a3 = (BitVec.ofNat 64 b).setWidth 32 := by
     simp only [e, offArg, State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), g3]
   have em : e.mem = s.mem := by simp only [e, State.withRegions_mem, State.callEntry_mem, m₄]
-  have fit : ∀ x, x + 8 * S.k ≤ own S.k → Impl.Weierstrass.Mont.Fits S.k ((BitVec.ofNat 64 x).setWidth 32) :=
+  have fit : ∀ x, x + 8 * S.k ≤ own S.k → Impl.Weierstrass.Mont.Fits S.k ((BitVec.ofNat 64 x).setWidth 32) (rvOwn S.k) :=
     fun x hx => by
       simp only [Impl.Weierstrass.Mont.Fits]
-      rw [toNat_lo (by simp only [own, ownAt, ownBytes] at hx; omega)]
+      rw [toNat_lo (by have := rvOwn_cases S.k; simp only [own] at hx; omega)]
       exact hx
   have hpe : rvPre S e := ⟨rfl, by simp only [e, State.withRegions_wr, e0], by rw [e0]; exact hw.nowrap,
     ⟨by rw [e1]; exact fit o ho, by rw [e2]; exact fit a ha, by rw [e3]; exact fit b hb⟩,
@@ -244,9 +245,9 @@ theorem mulCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
       wordsVal s'.mem base o F.S.k < F.S.m ∧
       wordsVal s'.mem base o F.S.k * 2 ^ (64 * F.S.k) % F.S.m =
         wordsVal s.mem base a F.S.k * wordsVal s.mem base b F.S.k % F.S.m := by
-  have hk : 64 * F.S.k ≤ 4096 := by simp only [own, ownAt, ownBytes] at ho; omega
+  have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega
   have h32 : ∀ x, x + 8 * F.S.k ≤ own F.S.k → x < 2 ^ 32 := fun x hx => by
-    simp only [own, ownAt, ownBytes] at hx; omega
+    have := rvOwn_cases F.S.k; simp only [own] at hx; omega
   refine callOp_ok (S := F.S) hF.nmul hF.mul hw ho ha hb ho' ha' hb'
     (fun t ht h0 h1 h2 h3 hm => ⟨ht, by simp only [arg]; rw [h3, h0, hm, numAt_ofNat _ _ (h32 b hb)]; exact hB⟩)
     fun s' K Fr t h0 h1 h2 h3 hm ⟨v1, v2, v3⟩ => ?_
@@ -261,9 +262,9 @@ theorem addCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
     (hAB : wordsVal s.mem base a F.S.k + wordsVal s.mem base b F.S.k < 2 * F.S.m) :
     WP isa (addCall F o a b) s fun s' => CallKeep F.S.k base o s s' ∧
       wordsVal s'.mem base o F.S.k = (wordsVal s.mem base a F.S.k + wordsVal s.mem base b F.S.k) % F.S.m := by
-  have hk : 64 * F.S.k ≤ 4096 := by simp only [own, ownAt, ownBytes] at ho; omega
+  have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega
   have h32 : ∀ x, x + 8 * F.S.k ≤ own F.S.k → x < 2 ^ 32 := fun x hx => by
-    simp only [own, ownAt, ownBytes] at hx; omega
+    have := rvOwn_cases F.S.k; simp only [own] at hx; omega
   refine callOp_ok (S := F.S) hF.nadd hF.add hw ho ha hb ho' ha' hb'
     (fun t ht h0 h1 h2 h3 hm => ⟨ht, by
       simp only [arg]; rw [h2, h3, h0, hm, numAt_ofNat _ _ (h32 a ha), numAt_ofNat _ _ (h32 b hb)]; exact hAB⟩)
@@ -279,9 +280,9 @@ theorem subCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
     (hA : wordsVal s.mem base a F.S.k < F.S.m) (hB : wordsVal s.mem base b F.S.k < F.S.m) :
     WP isa (subCall F o a b) s fun s' => CallKeep F.S.k base o s s' ∧
       wordsVal s'.mem base o F.S.k = (wordsVal s.mem base a F.S.k + F.S.m - wordsVal s.mem base b F.S.k) % F.S.m := by
-  have hk : 64 * F.S.k ≤ 4096 := by simp only [own, ownAt, ownBytes] at ho; omega
+  have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega
   have h32 : ∀ x, x + 8 * F.S.k ≤ own F.S.k → x < 2 ^ 32 := fun x hx => by
-    simp only [own, ownAt, ownBytes] at hx; omega
+    have := rvOwn_cases F.S.k; simp only [own] at hx; omega
   refine callOp_ok (S := F.S) hF.nsub hF.sub hw ho ha hb ho' ha' hb'
     (fun t ht h0 h1 h2 h3 hm => ⟨ht, by simp only [arg]; rw [h2, h0, hm, numAt_ofNat _ _ (h32 a ha)]; exact hA,
       by simp only [arg]; rw [h3, h0, hm, numAt_ofNat _ _ (h32 b hb)]; exact hB⟩)
