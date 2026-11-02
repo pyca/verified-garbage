@@ -97,7 +97,7 @@ theorem FS.frame {s t : State} {pass slice lane index ctr : Nat} {st : FillState
 filling state. -/
 theorem FS.store {s t : State} {pass slice lane index ctr : Nat} {st : FillState}
     (h : FS s₀ pass slice lane index ctr st s) (it : Inv s₀ t) {d : Nat} (hd : 248 ≤ d)
-    (hd' : d + 8 ≤ 296) {v : BitVec 64} (hm : t.mem = s.mem.writeW (E s₀ + BitVec.ofNat 64 d) v) :
+    (hd' : d + 8 ≤ 320) {v : BitVec 64} (hm : t.mem = s.mem.writeW (E s₀ + BitVec.ofNat 64 d) v) :
     FS s₀ pass slice lane index ctr st t := by
   refine h.frame hp it (rs := [⟨E s₀ + BitVec.ofNat 64 d, 8⟩]) (by rw [hm]; exact frame_loc v)
     fun r hr => ?_
