@@ -56,6 +56,7 @@ pub mod rsa_proto5;
 pub mod rsa_proto6;
 #[rustfmt::skip]
 pub mod rsa_proto7;
+pub mod rsa_proto10;
 pub mod rsa_proto8;
 pub mod rsa_proto9;
 

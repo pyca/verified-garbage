@@ -10,6 +10,7 @@ use std::collections::BTreeMap;
 use verified_garbage_asm_riscv64::rsa_proto9::{
     vg_rsa_keygen_key_odd_proto, vg_rsa_keygen_key_proto,
 };
+use verified_garbage_asm_riscv64::rsa_proto10::vg_rsa_keygen_key_ib_proto;
 
 fn hex(s: &str) -> Vec<u8> {
     (0..s.len())
@@ -172,6 +173,7 @@ fn keys_from_primes() {
             for f in [
                 vg_rsa_keygen_key_proto as Fn,
                 vg_rsa_keygen_key_odd_proto as Fn,
+                vg_rsa_keygen_key_ib_proto as Fn,
             ] {
                 let (r, o) = run(f, e, a, b);
                 assert_eq!(r, 1, "len {len}");
@@ -187,7 +189,7 @@ fn keys_from_primes() {
         }
     }
     // One key's `d` is not the least (it is the least plus 12 `lcm`).
-    assert_eq!(same_d, 4 * (keys.len() - 1), "{} keys", keys.len());
+    assert_eq!(same_d, 6 * (keys.len() - 1), "{} keys", keys.len());
     eprintln!("{} keys checked", keys.len());
 }
 
@@ -203,18 +205,23 @@ fn rejected() {
         let e2 = [2u8];
         // p = q: L = p - 1, so d < p - 1 < 2^(8 p_len), the status 2.
         // An even p: not a key, whether d exists (0) or is small (2).
-        for (ee, a, b, ok) in [
-            (&e[..], &pe, q, [0, 2]),
-            (&e2[..], p, q, [0, 0]),
-            (&e[..], p, p, [2, 2]),
+        for f in [
+            vg_rsa_keygen_key_proto as Fn,
+            vg_rsa_keygen_key_ib_proto as Fn,
         ] {
-            let (r, o) = run(vg_rsa_keygen_key_proto, ee, a, b);
-            assert!(ok.contains(&r), "{r}");
-            assert!(zeros(&o));
+            for (ee, a, b, ok) in [
+                (&e[..], &pe, q, [0, 2]),
+                (&e2[..], p, q, [0, 0]),
+                (&e[..], p, p, [2, 2]),
+            ] {
+                let (r, o) = run(f, ee, a, b);
+                assert!(ok.contains(&r), "{r}");
+                assert!(zeros(&o));
+            }
+            // Repeated calls agree.
+            let a = run(f, e, p, q);
+            let b = run(f, e, p, q);
+            assert_eq!(a, b);
         }
-        // Repeated calls agree.
-        let a = run(vg_rsa_keygen_key_proto, e, p, q);
-        let b = run(vg_rsa_keygen_key_proto, e, p, q);
-        assert_eq!(a, b);
     }
 }

@@ -337,8 +337,8 @@ pub fn bench(c: &mut Criterion) {
     // Only the private operation's and key loading's pieces this run (the
     // key-generation and Miller–Rabin groups are skipped).
     const ONLY_PIECES: bool = true;
-    // Only `vg_rsa_keygen_key` (Proto9) this run: the key from its two primes,
-    // and the variant without the inverse of an even `e` (timing only).
+    // Only `vg_rsa_keygen_key` this run: the key from its two primes (Proto9),
+    // and the variant with its inverses by the batched divsteps (Proto10).
     const ONLY_P9: bool = true;
     if ONLY_P9 {
         use openssl::rsa::Rsa;
@@ -366,8 +366,8 @@ pub fn bench(c: &mut Criterion) {
         let fs: [(&str, F); 2] = [
             ("rsa_proto_keygen_key", p9::vg_rsa_keygen_key_proto as F),
             (
-                "rsa_proto_keygen_key_odd",
-                p9::vg_rsa_keygen_key_odd_proto as F,
+                "rsa_proto_keygen_key_ib",
+                verified_garbage_asm_riscv64::rsa_proto10::vg_rsa_keygen_key_ib_proto as F,
             ),
         ];
         let keys: Vec<(u32, Vec<u8>, Vec<u8>)> = [2048u32, 3072, 4096]
