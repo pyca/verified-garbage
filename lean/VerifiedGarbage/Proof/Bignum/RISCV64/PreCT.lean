@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.RISCV64.PreDefs
+public import VerifiedGarbage.Proof.Bignum.RISCV64.PreFn
 public import VerifiedGarbage.Impl.Bignum.RISCV64.Precompute
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreDefs
+meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreFn
 meta import VerifiedGarbage.Impl.Bignum.RISCV64.Precompute
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -81,11 +81,6 @@ theorem two_taint {α : Type} {Φ : α → State → Prop} {c : Prog isa} (rs : 
 
 /-! ## The states of a run -/
 
-/-- The data of a state on entry. -/
-def dataOf (s : State) : PD :=
-  ⟨s.gpr .a0, s.gpr .a2, s.gpr .a4, (s.gpr .a3).toNat, (s.gpr .a5).toNat * 8,
-    Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat⟩
-
 theorem getD_of_lt {l : List Byte} {i : Nat} (h : i < l.length) : l.getD i 0 = l[i] := by
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h, Option.getD_some]
 
@@ -159,61 +154,9 @@ theorem pins_C5 : Pins C5 [.s6] := by
 
 /-! ## The steps, by correctness -/
 
-/-- The saved words are in the working space. -/
-theorem ct_sav_in {S : Addr} {Z : Nat} (hZ : 200 ≤ Z) {i : Nat} (hi : i < 9) :
-    (⟨S, Z⟩ : Region).Contains (off (savW S) (8 * i)) 8 := by
-  rw [off, Offset.add_add]
-  exact Offset.contains_base S (by omega_arith) (by omega_arith)
-
 theorem T01 {d : PD} {s : State} (h : C0 d s) : WP isa (.block (Precompute.save ++ setup)) s (C1 d) := by
-  obtain ⟨⟨hrd, hwr, dPN, dPS, dNS, nwP, nwN, nwS, ⟨hk, hk'⟩, hpl, hsl, alP, alS⟩, rfl⟩ := h
-  simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.Rsa.publicScratchWords] at hpl hsl
-  have hs : Scr s (s.gpr .a4) ((s.gpr .a5).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) nwS alS
-  have hin : ∀ i < 9, InRegions s.wr (off (savW (s.gpr .a4)) (8 * i)) 8 := fun i hi =>
-    ⟨scrR s, by rw [hwr]; simp, ct_sav_in (by omega_arith) hi⟩
-  have hal : ∀ i < 9, (off (savW (s.gpr .a4)) (8 * i)).toNat % 8 = 0 := fun i hi => by
-    rw [show off (savW (s.gpr .a4)) (8 * i) = off (s.gpr .a4) (128 + 8 * i) by
-      rw [off, off, Offset.add_add]]
-    exact hs.al8 (by omega_arith) (by omega_arith)
-  refine WP.block_append (WP.mono (save_ok s hin hal) fun s₁ hS => ?_)
-  have hk1 := hS.keep
-  have e3 : s.gpr .a3 = BitVec.ofNat 64 (s.gpr .a3).toNat := BitVec.eq_of_toNat_eq (by simp)
-  refine WP.mono (setup_ok (P := s.gpr .a0) (N := s.gpr .a2) (k := (s.gpr .a3).toNat) (hs.congr hk1.2.2)
-    (hk1.gpr (by decide)) (hk1.gpr (by decide)) ((hk1.gpr (by decide)).trans e3) hS.s6 (by omega_arith)
-    hk' (by omega_arith)) fun s₂ ⟨⟨j5, j7, j8, j0, ja7, ja2, ja5, ja6, jm⟩, k₂⟩ => ?_
-  have k12 := hk1.trans k₂
-  have hlen : 16 * (((s.gpr .a3).toNat + 7) / 8) = (s.gpr .a1).toNat * 8 := by omega_arith
-  have hmem : (⟨s.gpr .a0, 16 * (((s.gpr .a3).toNat + 7) / 8)⟩ : Region) ∈ s₂.wr := by
-    rw [k12.2.2, hwr, hlen]; simp
-  -- Only the working space changed.
-  have fr₂ : Frame [scrR s] s.mem s₂.mem := by
-    rw [jm]
-    refine (hS.frame.sub fun r hr => ⟨scrR s, List.mem_singleton_self _, ?_⟩).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by simp; omega_arith) (by decide))
-    simp only [List.mem_singleton] at hr
-    subst hr
-    exact Offset.sub_base _ (by omega_arith)
-  simp only [dataOf]
-  refine ⟨⟨hs.congr k12.2.2, Scr.of_mem hmem (by dsimp only [PD.w]; omega_arith) alP, hk, hk',
-    by dsimp only [PD.w]; unfold slot hdrBytes; omega_arith,
-    fun x hx => ?_, VG.Proof.Bignum.bytesAt_length _ _ _, j5, ja7, ja2, ja5, ja6, j0,
-    (k₂.gpr (by decide)).trans hS.s6, j8, j7⟩,
-    fun i hi => by
-      dsimp only at hi ⊢
-      exact ⟨nR s, by rw [k12.2.1, hrd]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
-    fun i hi x hx e => ?_, fun i hi => ?_⟩
-  · dsimp only [PD.w] at hx ⊢
-    by_contra hc
-    exact dPS x (by simp only [Region.Contains]; simp only [ofs] at hc; omega_arith)
-      (by simp only [Region.Contains]; simp only [ofs] at hx; omega_arith)
-  · dsimp only at hi hx
-    subst e
-    exact dNS _ (Offset.contains_base (d := i) _ (by omega_arith) (by omega_arith))
-      (by simp only [Region.Contains]; simp only [ofs, off] at hx; omega_arith)
-  · dsimp only at hi ⊢
-    simp only [VG.Proof.Bignum.bytesAt_length] at hi
-    simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
-    exact fr₂.bytes (R := nR s) (by simpa using dNS) (by show (s.gpr .a3).toNat ≤ 2 ^ 64; omega_arith) hi
+  obtain ⟨hp, rfl⟩ := h
+  exact WP.mono (front_ok hp) fun _ h => h.1
 
 theorem T12 {d : PD} {s : State} (h : C1 d s) : WP isa loadN s (C2 d) := by
   have hb := h.base

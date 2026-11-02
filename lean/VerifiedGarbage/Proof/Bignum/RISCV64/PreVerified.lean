@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.RISCV64.PreFn
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

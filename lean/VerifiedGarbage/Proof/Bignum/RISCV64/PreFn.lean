@@ -46,7 +46,7 @@ theorem ofNat_toNat64 (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by simp
 
 /-- `save` and `setup`: `C1`, with the callee-saved registers saved. -/
 theorem front_ok {s : State} (h : fnContract.pre s) :
-    WP isa (.block (Precompute.save ++ setup)) s fun s₂ =>
+    WP isa (.block (VG.Impl.Bignum.RISCV64.Precompute.save ++ setup)) s fun s₂ =>
       C1 (dataOf s) s₂ ∧ (∀ i < 9, s₂.mem.readW (off (savW (s.gpr .a4)) (8 * i)) 64 = s.gpr (saved i)) ∧
         Keep (([.s6] : List Reg) ++ ([.a1, .a2, .a5, .a6, .a7, .s5, .s7, .s8, .t0] : List Reg)) s s₂ := by
   obtain ⟨hrd, hwr, dPN, dPS, dNS, nwP, nwN, nwS, ⟨hk, hk'⟩, hpl, hsl, alP, alS⟩ := h
@@ -78,7 +78,7 @@ theorem front_ok {s : State} (h : fnContract.pre s) :
   refine ⟨⟨⟨hs.congr k12.2.2, Scr.of_mem hmem (by dsimp only [PD.w]; omega_arith) alP, hk, hk',
     by dsimp only [PD.w]; unfold slot hdrBytes; omega_arith,
     fun x hx => ?_, VG.Proof.Bignum.bytesAt_length _ _ _, j5, ja7, ja2, ja5, ja6, j0,
-    (k₂.gpr (r := .s6) (by decide)).trans hS.s6, (k12.gpr (r := .s8) (by decide)).trans e3, j7⟩,
+    (k₂.gpr (r := .s6) (by decide)).trans hS.s6, j8, j7⟩,
     fun i hi => by
       dsimp only at hi ⊢
       exact ⟨nR s, by rw [k12.2.1, hrd]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
