@@ -29,7 +29,7 @@ namespace VG.Proof.Rsa.RISCV64.RecDet
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
 open VG.Proof.Rsa.RecoverDet (deX wsub wsub_of_le wsub_of_lt)
-open VG.Impl.Rsa.RISCV64.Keys (seqs ptr setOne stBorrow sub3 load zeroArrays)
+open VG.Impl.Rsa.RISCV64.Keys (seqs ptr setOne stBorrow sub3 load zeroArrays sB sC)
 open VG.Impl.Rsa.RISCV64.RecoverDet (setup loads prod deMinus ctxInit ctxW nArr aN wZ wE wD wM wMod wT wX
   wOne wT2 sB0 sB1)
 
@@ -166,8 +166,8 @@ theorem top_val {m : Mem} {B : Addr} {d W : Nat} (hW : 0 < W) (fit : d + 8 * W �
 
 theorem top_ok {s : State} {B : Addr} {Z W N j : Nat} (h : Ws s B Z W N) (hj : j < N) (hN : N ≤ 2048)
     (hz : wordsVal s.mem B (arr W j) W = 0) :
-    WP isa (.block (ptr .t0 j ++ [.shift .sll .d .t5 .s9 3, .add .t0 .t0 .t5, .addi .t0 .t0 (-8),
-      .li .t5 1, .shift .sll .d .t5 .t5 63, .store .d .t5 .t0 0])) s fun t =>
+    WP isa (.block (ptr .t0 j ++ ([.shift .sll .d .t5 .s9 3, .add .t0 .t0 .t5, .addi .t0 .t0 (-8),
+      .li .t5 1, .shift .sll .d .t5 .t5 63, .store .d .t5 .t0 0] : List Instr))) s fun t =>
       Ws t B Z W N ∧ Keys.Frame B W [j] [] s.mem t.mem ∧ num t.mem B W j = 2 ^ (64 * W - 1) ∧
         Keep opRegs s t := by
   have fit := h.arr_fit hj
@@ -269,5 +269,157 @@ theorem loads_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) (ws : Ws s (b
       fr3.toNarrow.num (by rdx) (by simp) (fit _ (by rdx)), v1]
   · rw [fr5.num (by rdx) (by simp) (w5.fit64 (by rdx)), fr4.num (by rdx) (by simp) (w4.fit64 (by rdx)), v3]
   · rw [fr5.num (by rdx) (by simp) (w5.fit64 (by rdx)), v4]
+
+/-! ## `d e` -/
+
+/-- The narrow arrays written by now: `n`, and the wide arrays 1–8. -/
+abbrev prUsed : List Nat := [aN, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+
+/-- After `d e`, in the wide view. -/
+structure Pr (s0 t : State) : Prop where
+  cb : CB s0 s0.mem t
+  ws : Ws t (bOf s0) (zOf s0) (WOf s0) nWide
+  n : num t.mem (bOf s0) (wOf s0) aN = Nv s0
+  de : num t.mem (bOf s0) (WOf s0) wM = deOf s0
+  free : ∀ j < nArr, j ∉ prUsed → wordsVal t.mem (bOf s0) (arr (wOf s0) j) (wOf s0 + 2) = 0
+
+theorem two_pow_pred {x : Nat} (hx : 1 ≤ x) : 2 * 2 ^ (x - 1) = 2 ^ x := by
+  rw [← Nat.pow_succ']; congr 1; omega_arith
+
+theorem prod_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) : WP isa prod s (Pr s0) := by
+  have he1 := h.e1
+  have he2 := h.e2
+  have hd2 : (stackArg s0 1).toNat ≤ kOf s0 := h.d2
+  have ⟨_, hde, hnw, _, _⟩ := bounds h
+  have hw := nb_ge s0
+  have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  have e6 : s.gpr .s6 = BitVec.ofNat 64 (s0.gpr .a7).toNat := by
+    rw [l.cb.s6, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  rw [prod, WP.seq_iff]
+  have hb : WP isa (.block [.shift .sll .d .s7 .s6 3]) s fun u =>
+      (u.gpr .s7 = BitVec.ofNat 64 (8 * (s0.gpr .a7).toNat) ∧ u.mem = s.mem) ∧ Keep [.s7] s u := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [e6, shl3_ofNat]
+  refine WP.mono hb fun u ⟨⟨u7, um⟩, ku⟩ => ?_
+  have wu := l.ws.of_keep ku
+  have cu := l.cb.of_keep ku um
+  refine WP.mono (mulMod_ok wu (by decide) (show MulIdx nWide wZ wE wD wM wMod wT by decide)
+    (by omega_arith) (by omega_arith) u7) fun t ⟨wt, ft, kt, _, vt⟩ => ?_
+  have zZ : num u.mem (bOf s0) (WOf s0) wZ = 0 := by
+    rw [um]; exact num_zero (wide_zero (l.free _ (by rdx) (by rdx)) (l.free _ (by rdx) (by rdx)))
+  have zM : num u.mem (bOf s0) (WOf s0) wM = 0 := by
+    rw [um]; exact num_zero (wide_zero (l.free _ (by rdx) (by rdx)) (l.free _ (by rdx) (by rdx)))
+  have mM : num u.mem (bOf s0) (WOf s0) wMod = 2 ^ (wbOf s0 - 1) := by rw [um]; exact l.m
+  have dD : num u.mem (bOf s0) (WOf s0) wD = Dv s0 := by rw [um]; exact l.d
+  have eE : num u.mem (bOf s0) (WOf s0) wE = Ev s0 := by rw [um]; exact l.e
+  have wb1 : 1 ≤ wbOf s0 := by have := W_eq s0; show 1 ≤ 64 * WOf s0; omega_arith
+  have pw : 2 ^ nbOf s0 ≤ 2 ^ (wbOf s0 - 1) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  have bD : Dv s0 < 2 ^ nbOf s0 := Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _)
+    (Nat.pow_le_pow_right (by decide) (by omega_arith))
+  have bE : Ev s0 < 2 ^ (8 * (s0.gpr .a7).toNat) := os2ip_bytes_lt _ _ _
+  have v := vt zZ (by rw [zM, mM]; exact Nat.two_pow_pos _) (by rw [dD, mM]; omega_arith)
+    (by rw [mM, two_pow_pred wb1])
+  rw [zM, eE, dD, mM, Nat.zero_add, Nat.mod_eq_of_lt bE,
+    Nat.mod_eq_of_lt (by rw [Nat.mul_comm]; exact Nat.lt_of_lt_of_le hde pw)] at v
+  refine ⟨cu.step wt ft (by rdx) (by decide) kt, wt, ?_, by rw [v, Nat.mul_comm], ?_⟩
+  · rw [ft.toNarrow.num (by rdx) (by decide) (fit _ (by rdx)), um]; exact l.n
+  · exact free_step (U := ldUsed) (U' := prUsed) (js := halves (mulArrs wE wD wM wT)) ft.toNarrow
+      (by decide) fit (by decide) (by decide) (by rw [um]; exact l.free)
+
+/-! ## `d e - 1` -/
+
+/-- A subtraction of one and its borrow, as `RecoverDet.wsub`. -/
+theorem sub1_arith {b X D c : Nat} (hb : 0 < b) (hX : X < 2 ^ b) (hD : D < 2 ^ b) (hc : c ≤ 1)
+    (e : X + 1 = D + 2 ^ b * c) : X = wsub b D 1 ∧ c = if D < 1 then 1 else 0 := by
+  have p : 2 ≤ 2 ^ b := by
+    calc 2 = 2 ^ 1 := rfl
+      _ ≤ 2 ^ b := Nat.pow_le_pow_right (by decide) hb
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with rfl | rfl
+  · have : 1 ≤ D := by omega_arith
+    refine ⟨?_, by split <;> omega_arith⟩
+    rw [wsub_of_le hD this]; omega_arith
+  · have : D = 0 := by omega_arith
+    subst this
+    refine ⟨?_, by split <;> omega_arith⟩
+    rw [wsub_of_lt (by omega_arith) (by omega_arith)]; omega_arith
+
+/-- The narrow arrays written by now: also `x`, one and the temporary. -/
+abbrev dmUsed : List Nat := prUsed ++ [18, 19, 20, 21, 32, 33]
+
+/-- After `deMinus`, in the wide view: zero, one, `d e`, `x = d e - 1`, and
+the borrows of `d e - 1` and `x - 1` (`RecoverDet.okDE`'s tests). -/
+structure Dm (s0 t : State) : Prop where
+  cb : CB s0 s0.mem t
+  ws : Ws t (bOf s0) (zOf s0) (WOf s0) nWide
+  n : num t.mem (bOf s0) (wOf s0) aN = Nv s0
+  zero : num t.mem (bOf s0) (WOf s0) wZ = 0
+  one : num t.mem (bOf s0) (WOf s0) wOne = 1
+  de : num t.mem (bOf s0) (WOf s0) wM = deOf s0
+  x : num t.mem (bOf s0) (WOf s0) wX = deX (wbOf s0) (deOf s0)
+  b0 : slot t.mem (bOf s0) sB0 = if deOf s0 < 1 then 1 else 0
+  b1 : slot t.mem (bOf s0) sB1 = if deX (wbOf s0) (deOf s0) < 1 then 1 else 0
+  free : ∀ j < nArr, j ∉ dmUsed → wordsVal t.mem (bOf s0) (arr (wOf s0) j) (wOf s0 + 2) = 0
+
+theorem deMinus_ok {s0 s : State} (h : PreC s0) (p : Pr s0 s) : WP isa deMinus s (Dm s0) := by
+  have ⟨_, hde, hnw, _, _⟩ := bounds h
+  have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  have wpos : 0 < wbOf s0 := by have := W_eq s0; show 0 < 64 * WOf s0; omega_arith
+  have deb : deOf s0 < 2 ^ wbOf s0 :=
+    Nat.lt_of_lt_of_le hde (Nat.pow_le_pow_right (by decide) (by omega_arith))
+  have xb : deX (wbOf s0) (deOf s0) < 2 ^ wbOf s0 := Nat.mod_lt _ (Nat.two_pow_pos _)
+  unfold deMinus
+  -- One.
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (setOne_ok p.ws (j := wOne) (by rdx) (by decide)) fun t1 ⟨w1, f1, v1, k1⟩ => ?_
+  have c1 := p.cb.step w1 f1 (by rdx) (by simp) k1
+  rw [num_zero (wide_zero (p.free _ (by rdx) (by rdx)) (p.free _ (by rdx) (by rdx))), Nat.zero_div,
+    Nat.mul_zero, Nat.add_zero] at v1
+  have de1 : num t1.mem (bOf s0) (WOf s0) wM = deOf s0 := by
+    rw [f1.num (by rdx) (by simp) (w1.fit64 (by rdx)), p.de]
+  -- `x = d e - 1`.
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (sub3_ok w1 (o := wX) (a := wM) (b := wOne) (by rdx) (by rdx) (by rdx) (by decide) (by rdx)
+    (by rdx)) fun t2 ⟨w2, f2, v2, b2, k2⟩ => ?_
+  have c2 := c1.step w2 f2 (by rdx) (by simp) k2
+  rw [de1, v1] at v2
+  have ⟨x2, t42⟩ := sub1_arith wpos (wordsVal_lt _ _ _ _) deb b2 v2
+  -- The borrow of `d e - 1`.
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (stBorrow_ok w2 (sl := sB0) (by rdx) (by rdx)) fun t3 ⟨w3, f3, v3, k3⟩ => ?_
+  have c3 := c2.step w3 f3 (by simp) (by rdx) k3
+  rw [t42] at v3
+  have x3 : num t3.mem (bOf s0) (WOf s0) wX = deX (wbOf s0) (deOf s0) := by
+    rw [f3.num (by simp) (by rdx) (w3.fit64 (by rdx))]; exact x2
+  have o3 : num t3.mem (bOf s0) (WOf s0) wOne = 1 := by
+    rw [f3.num (by simp) (by rdx) (w3.fit64 (by rdx)), f2.num (by rdx) (by simp) (w2.fit64 (by rdx)), v1]
+  -- `x - 1`, for its borrow.
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (sub3_ok w3 (o := wT2) (a := wX) (b := wOne) (by rdx) (by rdx) (by rdx) (by decide) (by rdx)
+    (by rdx)) fun t4 ⟨w4, f4, v4, b4, k4⟩ => ?_
+  have c4 := c3.step w4 f4 (by rdx) (by simp) k4
+  rw [x3, o3] at v4
+  have ⟨_, t44⟩ := sub1_arith wpos (wordsVal_lt _ _ _ _) xb b4 v4
+  -- Its borrow.
+  refine WP.mono (stBorrow_ok w4 (sl := sB1) (by rdx) (by rdx)) fun t ⟨w5, f5, v5, k5⟩ => ?_
+  have c5 := c4.step w5 f5 (by simp) (by rdx) k5
+  rw [t44] at v5
+  have keepW : ∀ j < nWide, j ≠ wOne → j ≠ wX → j ≠ wT2 →
+      num t.mem (bOf s0) (WOf s0) j = num s.mem (bOf s0) (WOf s0) j := fun j hj a1 a2 a3 => by
+    rw [f5.num (by simp) (by rdx) (w5.fit64 hj), f4.num (by simp [Ne.symm a3]) (by simp) (w4.fit64 hj),
+      f3.num (by simp) (by rdx) (w3.fit64 hj), f2.num (by simp [Ne.symm a2]) (by simp) (w2.fit64 hj),
+      f1.num (by simp [Ne.symm a1]) (by simp) (w1.fit64 hj)]
+  have fr := free_step (U' := dmUsed) f1.toNarrow (by simp) fit (by rdx) (by rdx) p.free
+  have fr := free_step (U' := dmUsed) f2.toNarrow (by simp) fit (by rdx) (by rdx) fr
+  have fr := free_step (U' := dmUsed) f3.toNarrow (by rdx) fit (by rdx) (by rdx) fr
+  have fr := free_step (U' := dmUsed) f4.toNarrow (by simp) fit (by rdx) (by rdx) fr
+  have fr := free_step (U' := dmUsed) f5.toNarrow (by rdx) fit (by rdx) (by rdx) fr
+  refine ⟨c5, w5, ?_, num_zero (wide_zero (fr _ (by rdx) (by rdx)) (fr _ (by rdx) (by rdx))), ?_,
+    by rw [keepW _ (by rdx) (by rdx) (by rdx) (by rdx), p.de], ?_, ?_, v5, fr⟩
+  · rw [f5.toNarrow.num (by rdx) (by rdx) (fit _ (by rdx)), f4.toNarrow.num (by rdx) (by simp) (fit _ (by rdx)),
+      f3.toNarrow.num (by rdx) (by rdx) (fit _ (by rdx)), f2.toNarrow.num (by rdx) (by simp) (fit _ (by rdx)),
+      f1.toNarrow.num (by rdx) (by simp) (fit _ (by rdx)), p.n]
+  · rw [f5.num (by simp) (by rdx) (w5.fit64 (by rdx)), f4.num (by rdx) (by simp) (w4.fit64 (by rdx)), o3]
+  · rw [f5.num (by simp) (by rdx) (w5.fit64 (by rdx)), f4.num (by rdx) (by simp) (w4.fit64 (by rdx)), x3]
+  · rw [f5.slot (by rdx) (by rdx), f4.slot (by rdx) (by simp), v3]
 
 end VG.Proof.Rsa.RISCV64.RecDet
