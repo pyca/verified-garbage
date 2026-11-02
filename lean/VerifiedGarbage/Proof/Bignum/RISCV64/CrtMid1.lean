@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtPower
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreCore
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite
 import VerifiedGarbage.Proof.Bignum.CrtResult
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -250,10 +251,54 @@ structure M1 (s₀ s t : State) : Prop where
   fr : Frm (cS s₀) (midR (cZ s₀)) s.mem t.mem
   keep : Keep crtRegs s t
 
-theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
-    (hc : ∀ t, M1 s₀ s t → WP isa c t Q) :
-    WP isa (.seq loadX (.seq checks (.seq loadIn (.seq (.block (setupP oBP oPLen)) (.seq (power 4 oDP oPLen)
-      (.seq (.block (setupP oBQ oQLen)) (.seq (power 5 oDQ oQLen) c))))))) s Q := by
+/-! ## The stages -/
+
+/-- `X` after its checks, from the state `s` the front leaves. -/
+structure XS (s₀ s t : State) : Prop where
+  F : Frm (cS s₀) (midR (cZ s₀)) s.mem t.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  s6 : t.gpr .s6 = cS s₀
+  s11 : t.gpr .s11 = BitVec.ofNat 64 (8 * (cwX s₀ + 2))
+  x0 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 0) (cwX s₀) = 2 ^ (64 * cwX s₀) - 1
+  x4 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 4) (cwX s₀) = mP s₀
+  x5 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 5) (cwX s₀) = mQ s₀
+  x7 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 7) (cwX s₀) = mQI s₀
+  msk : Mont.word t.mem (cS s₀) oMask = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if cb s₀ then 1 else 0)
+
+theorem XS.hdr {s₀ s t : State} (hP : PF s₀) (X : XS s₀ s t) {d : Nat}
+    (hd : d + 8 ≤ oMask ∨ (oMask + 8 ≤ d ∧ d + 8 ≤ 256)) : Mont.word t.mem (cS s₀) d = Mont.word s.mem (cS s₀) d :=
+  hdr_mid X.F (by have := hP.room; unfold slot at this; omega_arith) hd
+
+theorem XS.scr {s₀ s t : State} (hF : Front s₀ s) (X : XS s₀ s t) : Scr t (cS s₀) (cZ s₀) := hF.scr.congr X.wr
+
+/-- `XS` through code that changes `X`'s array 6, or only past `X`. -/
+theorem XS.step {s₀ s t u : State} (hP : PF s₀) (X : XS s₀ s t) {rs : List Reg} (k : Keep rs t u)
+    (h6 : Reg.s6 ∉ rs) (h11 : Reg.s11 ∉ rs) {o n : Nat} (O : Mont.Outside (cS s₀) o n t.mem u.mem)
+    (ho : o = slot (cwX s₀) 6 ∧ n ≤ 8 * (cwX s₀ + 2) ∨ slot (cwX s₀) 8 ≤ o) (hn : o + n ≤ cZ s₀) :
+    XS s₀ s u := by
+  have hn' := hP.nw; have room := hP.room
+  have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
+  have eX0 := e (cwX s₀) 0; have eX4 := e (cwX s₀) 4; have eX5 := e (cwX s₀) 5
+  have eX6 := e (cwX s₀) 6; have eX7 := e (cwX s₀) 7; have eX8 := e (cwX s₀) 8
+  have hm : oMask = 88 := rfl
+  have wv : ∀ j, (slot (cwX s₀) j + 8 * cwX s₀ ≤ o ∨ o + n ≤ slot (cwX s₀) j) → j < 8 →
+      wordsVal u.mem (cS s₀) (slot (cwX s₀) j) (cwX s₀) = wordsVal t.mem (cS s₀) (slot (cwX s₀) j) (cwX s₀) :=
+    fun j hj hj8 => Mont.Outside.wordsVal O hj (by have := VG.Proof.Bignum.slot_le (w := cwX s₀) hj8; omega_arith)
+  refine ⟨X.F.trans (frm_mid O (by omega_arith) hn), k.2.1.trans X.rd, k.2.2.trans X.wr, (k.gpr h6).trans X.s6,
+    (k.gpr h11).trans X.s11, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [wv 0 (by omega_arith) (by decide)]; exact X.x0
+  · rw [wv 4 (by omega_arith) (by decide)]; exact X.x4
+  · rw [wv 5 (by omega_arith) (by decide)]; exact X.x5
+  · rw [wv 7 (by omega_arith) (by decide)]; exact X.x7
+  · rw [Mont.Outside.word O (Or.inl (by omega_arith)) (by omega_arith)]; exact X.msk
+
+/-- `loadX` and `checks`, after the front. -/
+theorem stA_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
+    (hc : ∀ t, XS s₀ s t → t.gpr .a7 = Mont.off (cS s₀) (slot (cwX s₀) 0) →
+      t.gpr .ra = Mont.off (cS s₀) (slot (cwX s₀) 0) → t.gpr .s5 = BitVec.ofNat 64 (8 * (cwX s₀ + 2)) →
+      t.gpr .t0 = BitVec.ofNat 64 (cwX s₀) → WP isa c t Q) :
+    WP isa (.seq loadX (.seq checks c)) s Q := by
   have hn := hP.nw
   have room := hP.room
   have k64 := hP.k64; have k1024 := hP.k1024; have p1 := hP.p1; have pk := hP.pk; have q1 := hP.q1
@@ -278,6 +323,7 @@ theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s�
   have hwX : cwX s₀ < 2 ^ 31 := by omega_arith
   have hZ256 : 256 ≤ cZ s₀ := by omega_arith
   have hS256 : (cS s₀).toNat + 256 ≤ 2 ^ 64 := by omega_arith
+  have hm : oMask = 88 := rfl
   obtain ⟨mP1, mPo, mQ1, mQo, mPb, mQb, mQIP, mQIb⟩ := masked_facts hP
   have k0 := hF.keep
   have rd0 : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [k0.2.1, k0.2.2]
@@ -317,129 +363,379 @@ theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s�
     fun t₂ ⟨X2, k2⟩ => ?_)
   rw [v6, v4, v5, v7] at X2
   have k12 := k1.trans k2
-  have F2 : Frm (cS s₀) (midR (cZ s₀)) s.mem t₂.mem := F1.trans (frm_mid_chk X2.fr (by omega_arith))
-  have I2 := inscr_of hF F2 hZ256
-  have hd2 : ∀ d, d + 8 ≤ oMask ∨ (oMask + 8 ≤ d ∧ d + 8 ≤ 256) → Mont.word t₂.mem (cS s₀) d = Mont.word s.mem (cS s₀) d :=
-    fun d hd => hdr_mid F2 hZ256 hd
-  have hwo : ∀ {m m' : Mem} {o n : Nat}, Mont.Outside (cS s₀) o n m m' → ∀ {j}, j < 8 →
-      (slot (cwX s₀) j + 8 * cwX s₀ ≤ o ∨ o + n ≤ slot (cwX s₀) j) →
-      wordsVal m' (cS s₀) (slot (cwX s₀) j) (cwX s₀) = wordsVal m (cS s₀) (slot (cwX s₀) j) (cwX s₀) :=
-    fun h j hj hd => Mont.Outside.wordsVal h hd (by have := VG.Proof.Bignum.slot_le (w := cwX s₀) hj; omega_arith)
-  -- The input again.
-  refine WP.seq (WP.mono (loadOne_ok (j := 6) (A := s₀.gpr .a4) (L := ck s₀) (oA := oIn) (oL := oNLen)
-    (hF.scr.congr k12.2.2) (by omega_arith) (by decide) hwX (by rw [k12.gpr (by decide), hF.s6]; exact z0 _) X2.a7
+  refine hc t₂ ⟨F1.trans (frm_mid_chk X2.fr (by omega_arith)), k12.2.1, k12.2.2, (k12.gpr (by decide)).trans hF.s6,
+    (k12.gpr (by decide)).trans hF.s11, ?_, by rw [X2.v4, v4], by rw [X2.v5, v5], by rw [X2.v7, v7], X2.msk⟩ X2.a7
     ((k12.gpr (by decide)).trans hF.ra) ((k12.gpr (by decide)).trans hF.s5) ((k12.gpr (by decide)).trans hF.t0)
-    (by decide) (by decide) (by rw [hd2 _ (by unfold oIn oMask; omega_arith)]; exact hF.hIn)
-    (by rw [hd2 _ (by unfold oNLen oMask; omega_arith)]; exact hF.hNL) (by omega_arith) (by omega_arith)
-    ⟨by rw [k12.2.1, k12.2.2, rd0]; exact hP.rI, hP.sI⟩)
-    fun t₃ ⟨⟨v6', _, O3, a7₃⟩, k3⟩ => ?_)
-  rw [inscr_bytes I2 hP.sI] at v6'
-  have k13 := k12.trans k3
-  have F3 : Frm (cS s₀) (midR (cZ s₀)) s.mem t₃.mem := F2.trans (frm_mid O3 (by omega_arith) (by omega_arith))
-  have I3 := inscr_of hF F3 hZ256
-  have hd3 : ∀ d, d + 8 ≤ oMask ∨ (oMask + 8 ≤ d ∧ d + 8 ≤ 256) → Mont.word t₃.mem (cS s₀) d = Mont.word s.mem (cS s₀) d :=
-    fun d hd => hdr_mid F3 hZ256 hd
-  -- `p`'s working space.
-  refine WP.seq (WP.mono (setupP_ok (l := cpL s₀) (Bp := Mont.off (cS s₀) (oPa s₀)) (hF.scr.congr k13.2.2)
-    (by rw [k13.gpr (by decide), hF.s6]; exact z0 _) (by unfold oBP; omega_arith) (by decide) (by decide)
-    (by unfold oPLen; omega_arith) (by decide) (by decide) (by rw [hd3 _ (by unfold oBP oMask; omega_arith)]; exact hF.hBP)
-    (by rw [hd3 _ (by unfold oPLen oMask; omega_arith)]; exact hF.hPL) p1 (by omega_arith))
-    fun t₄ ⟨⟨p7, pra, p5, p0', _, m4⟩, k4⟩ => ?_)
-  have k14 := k13.trans k4
+  rw [frm_wordsVal X2.fr (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)]
+  exact v0
+
+/-- `loadIn`, after the checks. -/
+theorem stB_ok {s₀ s t : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
+    (X : XS s₀ s t) (h7 : t.gpr .a7 = Mont.off (cS s₀) (slot (cwX s₀) 0))
+    (hra : t.gpr .ra = Mont.off (cS s₀) (slot (cwX s₀) 0)) (h5 : t.gpr .s5 = BitVec.ofNat 64 (8 * (cwX s₀ + 2)))
+    (h0 : t.gpr .t0 = BitVec.ofNat 64 (cwX s₀))
+    (hc : ∀ u, XS s₀ s u → wordsVal u.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀ →
+      u.gpr .a7 = Mont.off (cS s₀) (slot (cwX s₀) 0) → u.gpr .ra = Mont.off (cS s₀) (slot (cwX s₀) 0) →
+      u.gpr .s5 = BitVec.ofNat 64 (8 * (cwX s₀ + 2)) → u.gpr .t0 = BitVec.ofNat 64 (cwX s₀) → WP isa c u Q) :
+    WP isa (.seq loadIn c) t Q := by
+  have hn := hP.nw
+  have room := hP.room
+  have k64 := hP.k64; have k1024 := hP.k1024; have p1 := hP.p1; have pk := hP.pk; have q1 := hP.q1
+  have qk := hP.qk
+  have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
+  have eX0 := e (cwX s₀) 0; have eX1 := e (cwX s₀) 1; have eX4 := e (cwX s₀) 4; have eX5 := e (cwX s₀) 5
+  have eX6 := e (cwX s₀) 6; have eX7 := e (cwX s₀) 7; have eX8 := e (cwX s₀) 8; have eX2 := e (cwX s₀) 2
+  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP24 := e (cwP s₀) 24
+  have eQ0 := e (cwQ s₀) 0; have eQ4 := e (cwQ s₀) 4; have eQ24 := e (cwQ s₀) 24
+  have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
+  have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
+  have dP : cwP s₀ = wordsOf (cpL s₀) := rfl
+  have dQ : cwQ s₀ = wordsOf (cqL s₀) := rfl
+  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 24 := rfl
+  have room' : oPa s₀ + slot (cwP s₀) 24 + slot (cwQ s₀) 24 ≤ cZ s₀ := room
+  have hwP2 : 2 ≤ cwP s₀ := two_le_wordsOf
+  have hwQ2 : 2 ≤ cwQ s₀ := two_le_wordsOf
+  have hwPK : cwP s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt pk) (by omega_arith)
+  have hwQK : cwQ s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt qk) (by omega_arith)
+  have hpw : cpL s₀ ≤ 8 * cwP s₀ := by have := wordsOf_ge (l := cpL s₀); omega_arith
+  have hqw : cqL s₀ ≤ 8 * cwQ s₀ := by have := wordsOf_ge (l := cqL s₀); omega_arith
+  have hwX : cwX s₀ < 2 ^ 31 := by omega_arith
+  have hZ256 : 256 ≤ cZ s₀ := by omega_arith
+  have hS256 : (cS s₀).toNat + 256 ≤ 2 ^ 64 := by omega_arith
+  have hm : oMask = 88 := rfl
+  have rd0 : t.rd ++ t.wr = s₀.rd ++ s₀.wr := by rw [X.rd, X.wr, hF.keep.2.1, hF.keep.2.2]
+  unfold loadIn
+  refine WP.seq (WP.mono (loadOne_ok (j := 6) (A := s₀.gpr .a4) (L := ck s₀) (oA := oIn) (oL := oNLen)
+    (X.scr hF) (by omega_arith) (by decide) hwX (by rw [X.s6]; exact z0 _) h7 hra h5 h0
+    (by decide) (by decide) (by rw [X.hdr hP (by unfold oIn; omega_arith)]; exact hF.hIn)
+    (by rw [X.hdr hP (by unfold oNLen; omega_arith)]; exact hF.hNL) (by omega_arith) (by omega_arith)
+    ⟨by rw [rd0]; exact hP.rI, hP.sI⟩)
+    fun u ⟨⟨v6', _, O3, a7₃⟩, k3⟩ => ?_)
+  rw [inscr_bytes (inscr_of hF X.F hZ256) hP.sI] at v6'
+  exact hc u (X.step hP k3 (by decide) (by decide) O3 (Or.inl ⟨rfl, by omega_arith⟩) (by omega_arith)) v6' a7₃
+    ((k3.gpr (by decide)).trans hra) ((k3.gpr (by decide)).trans h5) ((k3.gpr (by decide)).trans h0)
+
+/-- A prime's working space at `o`, of `wordsOf l` words: its registers. -/
+structure PR (s₀ : State) (o l : Nat) (u : State) : Prop where
+  a7 : u.gpr .a7 = Mont.off (Mont.off (cS s₀) o) (slot (wordsOf l) 0)
+  ra : u.gpr .ra = Mont.off (Mont.off (cS s₀) o) (slot (wordsOf l) 0)
+  s5 : u.gpr .s5 = BitVec.ofNat 64 (8 * (wordsOf l + 2))
+  t0 : u.gpr .t0 = BitVec.ofNat 64 (wordsOf l)
+
+/-- `setupP oB oLen`, for a prime's working space at `o` of `l` bytes. -/
+theorem stC_ok {s₀ s t : State} {c : Prog isa} {Q : State → Prop} {oB oLen o l : Nat} (hP : PF s₀)
+    (hF : Front s₀ s) (X : XS s₀ s t) (hoB : oMask + 8 ≤ oB ∧ oB + 8 ≤ 256 ∧ oB % 8 = 0)
+    (hoL : oLen + 8 ≤ oMask ∧ oLen % 8 = 0) (hB : Mont.word s.mem (cS s₀) oB = Mont.off (cS s₀) o)
+    (hL : Mont.word s.mem (cS s₀) oLen = BitVec.ofNat 64 l) (hl1 : 1 ≤ l) (hl : l ≤ 1024)
+    (hc : ∀ u, XS s₀ s u → PR s₀ o l u → u.gpr .t2 = BitVec.ofNat 64 (wordsOf l) → u.mem = t.mem →
+      WP isa c u Q) :
+    WP isa (.seq (.block (setupP oB oLen)) c) t Q := by
+  have hm : oMask = 88 := rfl
+  have hZ : 256 ≤ cZ s₀ := by have := hP.room; unfold slot at this; omega_arith
+  refine WP.seq (WP.mono (setupP_ok (l := l) (Bp := Mont.off (cS s₀) o) (X.scr hF) (by rw [X.s6]; exact z0 _)
+    (by omega_arith) hoB.2.2 (by omega_arith) (by omega_arith) hoL.2 (by omega_arith)
+    (by rw [X.hdr hP (Or.inr ⟨hoB.1, hoB.2.1⟩)]; exact hB) (by rw [X.hdr hP (Or.inl hoL.1)]; exact hL) hl1 hl)
+    fun u ⟨⟨p7, pra, p5, p0', p2, m⟩, k⟩ => hc u ?_ ⟨p7, pra, p5, p0'⟩ p2 m)
+  exact X.step hP k (by decide) (by decide) (o := cZ s₀) (n := 0) (by rw [m]; exact Mont.Outside.refl _ _ _ _)
+    (Or.inr (by have := hP.room; omega_arith)) (by omega_arith)
+
+/-- A prime's `power` in its working space at `o` (`l` bytes, from `X`'s
+array `xj`), the exponent at `oD` (`D`, `l` bytes): `c^d mod p` in its array
+4, `p` in its array 0, `X` kept. -/
+theorem stD_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF s₀) (hF : Front s₀ s)
+    (X : XS s₀ s t) (v6 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀) (R : PR s₀ o l t)
+    (hoX : slot (cwX s₀) 8 ≤ o) (hol : o + slot (wordsOf l) 24 ≤ cZ s₀) (ho8 : o % 8 = 0)
+    (hxj : xj < 6) (hPv : wordsVal t.mem (cS s₀) (slot (cwX s₀) xj) (cwX s₀) = Pv) (hPb : Pv < 256 ^ l)
+    (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1) (hl1 : 1 ≤ l) (hlk : l < ck s₀)
+    (hoD : oD + 8 ≤ oMask ∧ oD % 8 = 0) (hoL : oLen + 8 ≤ oMask ∧ oLen % 8 = 0)
+    (hD : Mont.word s.mem (cS s₀) oD = D) (hL : Mont.word s.mem (cS s₀) oLen = BitVec.ofNat 64 l)
+    (rD : ∀ i < l, InRegions (s₀.rd ++ s₀.wr) (Mont.off D i) 1)
+    (sD : ∀ i < l, ∀ x, ofs (cS s₀) x < cZ s₀ → Mont.off D i ≠ x) :
+    WP isa (power xj oD oLen) t fun u => XS s₀ s u ∧ wordsVal u.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀ ∧
+      wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 4) (wordsOf l) =
+        vC s₀ ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₀.mem D l) % Pv ∧
+      wordsVal u.mem (Mont.off (cS s₀) o) (slot (wordsOf l) 0) (wordsOf l) = Pv ∧
+      Mont.Outside (cS s₀) (o + slot (wordsOf l) 0) (24 * (8 * (wordsOf l + 2))) t.mem u.mem ∧
+      u.gpr .a7 = Mont.off (Mont.off (cS s₀) o) (slot (wordsOf l) 0) ∧
+      u.gpr .s5 = BitVec.ofNat 64 (8 * (wordsOf l + 2)) ∧ Keep Win.powerRegs t u := by
+  have hn := hP.nw
+  have room := hP.room
+  have k64 := hP.k64; have k1024 := hP.k1024; have p1 := hP.p1; have pk := hP.pk; have q1 := hP.q1
+  have qk := hP.qk
+  have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
+  have eX0 := e (cwX s₀) 0; have eX1 := e (cwX s₀) 1; have eX4 := e (cwX s₀) 4; have eX5 := e (cwX s₀) 5
+  have eX6 := e (cwX s₀) 6; have eX7 := e (cwX s₀) 7; have eX8 := e (cwX s₀) 8; have eX2 := e (cwX s₀) 2
+  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP24 := e (cwP s₀) 24
+  have eQ0 := e (cwQ s₀) 0; have eQ4 := e (cwQ s₀) 4; have eQ24 := e (cwQ s₀) 24
+  have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
+  have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
+  have dP : cwP s₀ = wordsOf (cpL s₀) := rfl
+  have dQ : cwQ s₀ = wordsOf (cqL s₀) := rfl
+  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 24 := rfl
+  have room' : oPa s₀ + slot (cwP s₀) 24 + slot (cwQ s₀) 24 ≤ cZ s₀ := room
+  have hwP2 : 2 ≤ cwP s₀ := two_le_wordsOf
+  have hwQ2 : 2 ≤ cwQ s₀ := two_le_wordsOf
+  have hwPK : cwP s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt pk) (by omega_arith)
+  have hwQK : cwQ s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt qk) (by omega_arith)
+  have hpw : cpL s₀ ≤ 8 * cwP s₀ := by have := wordsOf_ge (l := cpL s₀); omega_arith
+  have hqw : cqL s₀ ≤ 8 * cwQ s₀ := by have := wordsOf_ge (l := cqL s₀); omega_arith
+  have hwX : cwX s₀ < 2 ^ 31 := by omega_arith
+  have hZ256 : 256 ≤ cZ s₀ := by omega_arith
+  have hS256 : (cS s₀).toNat + 256 ≤ 2 ^ 64 := by omega_arith
+  have hm : oMask = 88 := rfl
+  have rd0 : t.rd ++ t.wr = s₀.rd ++ s₀.wr := by rw [X.rd, X.wr, hF.keep.2.1, hF.keep.2.2]
+  have hwl2 : 2 ≤ wordsOf l := two_le_wordsOf
+  have hwlK : wordsOf l ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt hlk) (by omega_arith)
+  have hlw : l ≤ 8 * wordsOf l := by have := wordsOf_ge (l := l); omega_arith
+  have el24 := e (wordsOf l) 24
+  have el0 := e (wordsOf l) 0
   have hK : 1 ≤ (ck s₀ + 7) / 8 := by omega_arith
-  have nP1 := le_nChunks_mul (K := (ck s₀ + 7) / 8) (w := cwP s₀) (by omega_arith)
-  have nP2 := nChunks_mul_lt (K := (ck s₀ + 7) / 8) (w := cwP s₀) (by omega_arith) hK
-  have nQ1 := le_nChunks_mul (K := (ck s₀ + 7) / 8) (w := cwQ s₀) (by omega_arith)
-  have nQ2 := nChunks_mul_lt (K := (ck s₀ + 7) / 8) (w := cwQ s₀) (by omega_arith) hK
-  rw [Nat.mul_comm] at nP1 nP2 nQ1 nQ2
+  have n1 := le_nChunks_mul (K := (ck s₀ + 7) / 8) (w := wordsOf l) (by omega_arith)
+  have n2 := nChunks_mul_lt (K := (ck s₀ + 7) / 8) (w := wordsOf l) (by omega_arith) hK
+  rw [Nat.mul_comm] at n1 n2
   have hCb : vC s₀ < 2 ^ (64 * ((ck s₀ + 7) / 8)) :=
     Nat.lt_of_lt_of_le (os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _)) (pow256_le (by omega_arith))
-  have hS4 : Scr t₄ (Mont.off (cS s₀) (oPa s₀)) (slot (cwP s₀) 24) :=
-    Scr.sub (hF.scr.congr k14.2.2) (by omega_arith) (slot_al _ _) (by omega_arith)
-  -- `m₁`.
-  refine WP.seq (WP.mono (power_ok (xj := 4) (k := ck s₀) (L := cpL s₀) (Pv := mP s₀) (Cv := vC s₀)
-    (D := stackArg s₀ 2) hS4 hwP2 (by omega_arith) (Nat.le_refl _) p7 pra p5 p0'
-    (Scr.le (hF.scr.congr k14.2.2) (show slot (cwX s₀) 8 ≤ cZ s₀ by omega_arith))
-    (sepXB (Nat.le_refl _) (by omega_arith) (by omega_arith)) ((k14.gpr (by decide)).trans hF.s6)
-    ((k14.gpr (by decide)).trans hF.s11) (by omega_arith)
-    (wordsVal_trunc (by rw [m4, hwo O3 (j := 4) (by decide) (Or.inl (by omega_arith)), X2.v4, v4])
-      (Nat.lt_of_lt_of_le mPb (pow256_le hpw)) (by omega_arith)) mP1 mPo
-    (by rw [m4, hd3 _ (by unfold oNLen oMask; omega_arith)]; exact hF.hNL) (by omega_arith) (by omega_arith)
-    (by omega_arith)
-    (wordsVal_trunc (by rw [m4]; exact v6') (Nat.lt_of_lt_of_le hCb (Nat.pow_le_pow_right (by decide)
-      (by omega_arith))) (by omega_arith))
-    (by unfold oDP; omega_arith) (by decide) (by decide) (by unfold oPLen; omega_arith) (by decide) (by decide)
-    (by rw [m4, hd3 _ (by unfold oDP oMask; omega_arith)]; exact hF.hDP)
-    (by rw [m4, hd3 _ (by unfold oPLen oMask; omega_arith)]; exact hF.hPL) p1 (by omega_arith)
-    (by rw [k14.2.1, k14.2.2, rd0]; exact hP.rDP)
-    (fun i hi x hx => hP.sDP i hi x (sepIn (show oPa s₀ + slot (cwP s₀) 24 ≤ cZ s₀ by omega_arith) (by omega_arith)
-      (by omega_arith) x hx)))
-    fun t₅ ⟨⟨m1v, p0v, PF5, a7₅⟩, k5⟩ => ?_)
-  rw [m4, inscr_bytes I3 hP.sDP] at m1v
-  have k15 := k14.trans k5
-  have O5 : Mont.Outside (cS s₀) (oPa s₀ + slot (cwP s₀) 0) (24 * (8 * (cwP s₀ + 2))) t₄.mem t₅.mem :=
-    out_reb PF5 (by omega_arith) (by omega_arith)
-  rw [m4] at O5
-  have F5 : Frm (cS s₀) (midR (cZ s₀)) s.mem t₅.mem := F3.trans (frm_mid O5 (by omega_arith) (by omega_arith))
-  have I5 := inscr_of hF F5 hZ256
-  have hd5 : ∀ d, d + 8 ≤ oMask ∨ (oMask + 8 ≤ d ∧ d + 8 ≤ 256) → Mont.word t₅.mem (cS s₀) d = Mont.word s.mem (cS s₀) d :=
-    fun d hd => hdr_mid F5 hZ256 hd
-  -- `q`'s working space.
-  refine WP.seq (WP.mono (setupP_ok (l := cqL s₀) (Bp := Mont.off (cS s₀) (oQa s₀)) (hF.scr.congr k15.2.2)
-    (by rw [k15.gpr (by decide), hF.s6]; exact z0 _) (by unfold oBQ; omega_arith) (by decide) (by decide)
-    (by unfold oQLen; omega_arith) (by decide) (by decide) (by rw [hd5 _ (by unfold oBQ oMask; omega_arith)]; exact hF.hBQ)
-    (by rw [hd5 _ (by unfold oQLen oMask; omega_arith)]; exact hF.hQL) q1 (by omega_arith))
-    fun t₆ ⟨⟨q7, qra, q5, q0', _, m6⟩, k6⟩ => ?_)
-  have k16 := k15.trans k6
-  have hS6 : Scr t₆ (Mont.off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 24) :=
-    Scr.sub (hF.scr.congr k16.2.2) (by omega_arith) (by have := slot_al (cwX s₀) 8; have := slot_al (cwP s₀) 24; omega_arith)
-      (by omega_arith)
-  -- `m₂`.
-  refine WP.seq (WP.mono (power_ok (xj := 5) (k := ck s₀) (L := cqL s₀) (Pv := mQ s₀) (Cv := vC s₀)
-    (D := stackArg s₀ 4) hS6 hwQ2 (by omega_arith) (Nat.le_refl _) q7 qra q5 q0'
-    (Scr.le (hF.scr.congr k16.2.2) (show slot (cwX s₀) 8 ≤ cZ s₀ by omega_arith))
-    (sepXB (by omega_arith) (by omega_arith) (by omega_arith)) ((k16.gpr (by decide)).trans hF.s6)
-    ((k16.gpr (by decide)).trans hF.s11) (by omega_arith)
-    (wordsVal_trunc (by rw [m6, hwo O5 (j := 5) (by decide) (Or.inl (by omega_arith)),
-        hwo O3 (j := 5) (by decide) (Or.inl (by omega_arith)), X2.v5, v5])
-      (Nat.lt_of_lt_of_le mQb (pow256_le hqw)) (by omega_arith)) mQ1 mQo
-    (by rw [m6, hd5 _ (by unfold oNLen oMask; omega_arith)]; exact hF.hNL) (by omega_arith) (by omega_arith)
-    (by omega_arith)
-    (wordsVal_trunc (by rw [m6, hwo O5 (j := 6) (by decide) (Or.inl (by omega_arith))]; exact v6')
-      (Nat.lt_of_lt_of_le hCb (Nat.pow_le_pow_right (by decide) (by omega_arith))) (by omega_arith))
-    (by unfold oDQ; omega_arith) (by decide) (by decide) (by unfold oQLen; omega_arith) (by decide) (by decide)
-    (by rw [m6, hd5 _ (by unfold oDQ oMask; omega_arith)]; exact hF.hDQ)
-    (by rw [m6, hd5 _ (by unfold oQLen oMask; omega_arith)]; exact hF.hQL) q1 (by omega_arith)
-    (by rw [k16.2.1, k16.2.2, rd0]; exact hP.rDQ)
-    (fun i hi x hx => hP.sDQ i hi x (sepIn (show oQa s₀ + slot (cwQ s₀) 24 ≤ cZ s₀ by omega_arith) (by omega_arith)
-      (by omega_arith) x hx)))
-    fun t₇ ⟨⟨m2v, _, PF7, a7₇⟩, k7⟩ => ?_)
-  rw [m6, inscr_bytes I5 hP.sDQ] at m2v
-  have k17 := k16.trans k7
-  have O7 : Mont.Outside (cS s₀) (oQa s₀ + slot (cwQ s₀) 0) (24 * (8 * (cwQ s₀ + 2))) t₆.mem t₇.mem :=
-    out_reb PF7 (by omega_arith) (by omega_arith)
-  rw [m6] at O7
-  have F7 : Frm (cS s₀) (midR (cZ s₀)) s.mem t₇.mem := F5.trans (frm_mid O7 (by omega_arith) (by omega_arith))
+  have hS : Scr t (Mont.off (cS s₀) o) (slot (wordsOf l) 24) := Scr.sub (X.scr hF) hol ho8 (by omega_arith)
+  have hX : Scr t (cS s₀) (slot (cwX s₀) 8) := Scr.le (X.scr hF) (show slot (cwX s₀) 8 ≤ cZ s₀ by omega_arith)
+  have hsep : ∀ x, ofs (cS s₀) x < slot (cwX s₀) 8 → slot (wordsOf l) 24 ≤ ofs (Mont.off (cS s₀) o) x :=
+    sepXB hoX (by omega_arith) (by omega_arith)
+  have hPw : wordsVal t.mem (cS s₀) (slot (cwX s₀) xj) (wordsOf l) = Pv :=
+    wordsVal_trunc hPv (Nat.lt_of_lt_of_le hPb (pow256_le hlw)) (by omega_arith)
+  have hCw : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (wordsOf l * nChunks ((ck s₀ + 7) / 8) (wordsOf l)) = vC s₀ :=
+    wordsVal_trunc v6 (Nat.lt_of_lt_of_le hCb (Nat.pow_le_pow_right (by decide) (by omega_arith))) (by omega_arith)
+  have hDsep : ∀ i < l, ∀ x, ofs (Mont.off (cS s₀) o) x < slot (wordsOf l) 24 → Mont.off D i ≠ x :=
+    fun i hi x hx => sD i hi x (sepIn hol (by omega_arith) (by omega_arith) x hx)
+  refine WP.mono (power_ok (xj := xj) (k := ck s₀) (L := l) (Pv := Pv) (Cv := vC s₀) (D := D) hS hwl2 (by omega_arith) (Nat.le_refl _)
+    R.a7 R.ra R.s5 R.t0 hX hsep X.s6 X.s11 (by have := VG.Proof.Bignum.slot_le (w := cwX s₀) (show xj < 8 by omega_arith); omega_arith)
+    hPw hP2 hodd (by rw [X.hdr hP (by unfold oNLen; omega_arith)]; exact hF.hNL) (by omega_arith) (by omega_arith)
+    (by omega_arith) hCw (by omega_arith) hoD.2 (by omega_arith) (by omega_arith) hoL.2 (by omega_arith)
+    (by rw [X.hdr hP (Or.inl hoD.1)]; exact hD) (by rw [X.hdr hP (Or.inl hoL.1)]; exact hL) hl1 (by omega_arith)
+    (by rw [rd0]; exact rD) hDsep) fun u ⟨⟨mv, p0v, PF, a7u⟩, k⟩ => ?_
+  rw [inscr_bytes (inscr_of hF X.F hZ256) sD] at mv
+  have O : Mont.Outside (cS s₀) (o + slot (wordsOf l) 0) (24 * (8 * (wordsOf l + 2))) t.mem u.mem :=
+    out_reb PF (by omega_using [hol, el24, el0, hn]) (by omega_using [])
+  refine ⟨X.step hP k (by decide) (by decide) O (Or.inr (by omega_using [hoX])) (by omega_using [hol, el24, el0]),
+    by rw [Mont.Outside.wordsVal O (Or.inl (by omega_using [hoX, eX6, eX8])) (by omega_using [eX6, eX8, room', doP, hn])]
+       exact v6, mv, p0v, O, a7u,
+    (k.gpr (by decide)).trans R.s5, k⟩
+
+/-- `power` up to its chunks: the registers. -/
+theorem stD134_ok {s₀ s t : State} {o l xj Pv : Nat} (hP : PF s₀) (hF : Front s₀ s)
+    (X : XS s₀ s t) (v6 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀) (R : PR s₀ o l t)
+    (hoX : slot (cwX s₀) 8 ≤ o) (hol : o + slot (wordsOf l) 24 ≤ cZ s₀) (ho8 : o % 8 = 0)
+    (hxj : xj < 6) (hPv : wordsVal t.mem (cS s₀) (slot (cwX s₀) xj) (cwX s₀) = Pv) (hPb : Pv < 256 ^ l)
+    (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1) (hlk : l < ck s₀) :
+    WP isa (Win.powerP xj (Win.reduceInP (.block []))) t fun u =>
+      PR s₀ o l u ∧ u.gpr .s6 = cS s₀ ∧ u.gpr .s11 = BitVec.ofNat 64 (8 * (cwX s₀ + 2)) ∧
+      u.gpr .s9 = Mont.off (cS s₀) (slot (cwX s₀) 6 + 8 * (wordsOf l * 0)) ∧
+      u.gpr .s10 = BitVec.ofNat 64 ((ck s₀ + 7) / 8) - BitVec.ofNat 64 (wordsOf l * 0) := by
+  have hn := hP.nw
+  have room := hP.room
+  have k64 := hP.k64; have k1024 := hP.k1024; have p1 := hP.p1; have pk := hP.pk; have q1 := hP.q1
+  have qk := hP.qk
+  have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
+  have eX0 := e (cwX s₀) 0; have eX1 := e (cwX s₀) 1; have eX4 := e (cwX s₀) 4; have eX5 := e (cwX s₀) 5
+  have eX6 := e (cwX s₀) 6; have eX7 := e (cwX s₀) 7; have eX8 := e (cwX s₀) 8; have eX2 := e (cwX s₀) 2
+  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP24 := e (cwP s₀) 24
+  have eQ0 := e (cwQ s₀) 0; have eQ4 := e (cwQ s₀) 4; have eQ24 := e (cwQ s₀) 24
+  have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
+  have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
+  have dP : cwP s₀ = wordsOf (cpL s₀) := rfl
+  have dQ : cwQ s₀ = wordsOf (cqL s₀) := rfl
+  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 24 := rfl
+  have room' : oPa s₀ + slot (cwP s₀) 24 + slot (cwQ s₀) 24 ≤ cZ s₀ := room
+  have hwP2 : 2 ≤ cwP s₀ := two_le_wordsOf
+  have hwQ2 : 2 ≤ cwQ s₀ := two_le_wordsOf
+  have hwPK : cwP s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt pk) (by omega_arith)
+  have hwQK : cwQ s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt qk) (by omega_arith)
+  have hpw : cpL s₀ ≤ 8 * cwP s₀ := by have := wordsOf_ge (l := cpL s₀); omega_arith
+  have hqw : cqL s₀ ≤ 8 * cwQ s₀ := by have := wordsOf_ge (l := cqL s₀); omega_arith
+  have hwX : cwX s₀ < 2 ^ 31 := by omega_arith
+  have hZ256 : 256 ≤ cZ s₀ := by omega_arith
+  have hS256 : (cS s₀).toNat + 256 ≤ 2 ^ 64 := by omega_arith
   have hm : oMask = 88 := rfl
-  refine hc t₇ ⟨(k17.gpr (by decide)).trans hF.s6, (k17.gpr (by decide)).trans hF.s11, a7₇,
-    (k7.gpr (by decide)).trans q5, ?_, ?_, ?_, ?_, ?_, m2v, ?_, F7, k17.mono (by decide)⟩
-  · rw [hwo O7 (j := 0) (by decide) (Or.inl (by omega_arith)), hwo O5 (j := 0) (by decide) (Or.inl (by omega_arith)),
-      hwo O3 (j := 0) (by decide) (Or.inl (by omega_arith)),
-      frm_wordsVal X2.fr (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)]
-    exact v0
-  · rw [hwo O7 (j := 5) (by decide) (Or.inl (by omega_arith)), hwo O5 (j := 5) (by decide) (Or.inl (by omega_arith)),
-      hwo O3 (j := 5) (by decide) (Or.inl (by omega_arith)), X2.v5, v5]
-  · rw [hwo O7 (j := 7) (by decide) (Or.inl (by omega_arith)), hwo O5 (j := 7) (by decide) (Or.inl (by omega_arith)),
-      hwo O3 (j := 7) (by decide) (Or.inr (by omega_arith)), X2.v7, v7]
+  have rd0 : t.rd ++ t.wr = s₀.rd ++ s₀.wr := by rw [X.rd, X.wr, hF.keep.2.1, hF.keep.2.2]
+  have hwl2 : 2 ≤ wordsOf l := two_le_wordsOf
+  have hwlK : wordsOf l ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt hlk) (by omega_arith)
+  have hlw : l ≤ 8 * wordsOf l := by have := wordsOf_ge (l := l); omega_arith
+  have el24 := e (wordsOf l) 24
+  have el0 := e (wordsOf l) 0
+  have hK : 1 ≤ (ck s₀ + 7) / 8 := by omega_arith
+  have n1 := le_nChunks_mul (K := (ck s₀ + 7) / 8) (w := wordsOf l) (by omega_arith)
+  have n2 := nChunks_mul_lt (K := (ck s₀ + 7) / 8) (w := wordsOf l) (by omega_arith) hK
+  rw [Nat.mul_comm] at n1 n2
+  have hCb : vC s₀ < 2 ^ (64 * ((ck s₀ + 7) / 8)) :=
+    Nat.lt_of_lt_of_le (os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _)) (pow256_le (by omega_arith))
+  have hS : Scr t (Mont.off (cS s₀) o) (slot (wordsOf l) 24) := Scr.sub (X.scr hF) hol ho8 (by omega_arith)
+  have hX : Scr t (cS s₀) (slot (cwX s₀) 8) := Scr.le (X.scr hF) (show slot (cwX s₀) 8 ≤ cZ s₀ by omega_arith)
+  have hsep : ∀ x, ofs (cS s₀) x < slot (cwX s₀) 8 → slot (wordsOf l) 24 ≤ ofs (Mont.off (cS s₀) o) x :=
+    sepXB hoX (by omega_arith) (by omega_arith)
+  have hPw : wordsVal t.mem (cS s₀) (slot (cwX s₀) xj) (wordsOf l) = Pv :=
+    wordsVal_trunc hPv (Nat.lt_of_lt_of_le hPb (pow256_le hlw)) (by omega_arith)
+  have hCw : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (wordsOf l * nChunks ((ck s₀ + 7) / 8) (wordsOf l)) = vC s₀ :=
+    wordsVal_trunc v6 (Nat.lt_of_lt_of_le hCb (Nat.pow_le_pow_right (by decide) (by omega_arith))) (by omega_arith)
+  refine Win.powerA_ok hS hwl2 (by omega_arith) (Nat.le_refl _) R.a7 R.s5 R.t0 hX hsep X.s6 X.s11
+    (by have := VG.Proof.Bignum.slot_le (w := cwX s₀) (show xj < 8 by omega_arith); omega_arith) hPw hP2 hodd
+    fun s₈ c8 r8 F8 k18 => ?_
+  refine Win.reduceInA_ok (k := ck s₀) c8 ((k18.gpr (by decide)).trans R.ra) (hX.congr k18.2.2) hsep
+    ((k18.gpr (by decide)).trans X.s6) ((k18.gpr (by decide)).trans X.s11)
+    (by rw [VG.Proof.Bignum.RISCV64.Outside.word_sep F8 hsep (by omega_using [el24, el0])
+      (show Crt.oNLen + 8 ≤ slot (cwX s₀) 8 by unfold Crt.oNLen; omega_using [eX8])
+      (by omega_using [hn, eX8, room', doP]), X.hdr hP (by unfold oNLen oMask; omega_using [])]; exact hF.hNL)
+    (by omega_arith) (by omega_arith) (by omega_arith) hP2 hodd r8 fun u I => ⟨[], u, .block rfl, ?_⟩
+  have kk := (k18.trans I.keep)
+  exact ⟨⟨I.ctx.a7, I.ra, I.ctx.s5, I.ctx.t0⟩, (kk.gpr (by decide)).trans X.s6, (kk.gpr (by decide)).trans X.s11,
+    I.s9, I.s10⟩
+
+/-- `power` up to the exponentiation: the registers. -/
+theorem stD136_ok {s₀ s t : State} {o l xj oD oLen Pv : Nat} {D : Addr} (hP : PF s₀) (hF : Front s₀ s)
+    (X : XS s₀ s t) (v6 : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (cwX s₀) = vC s₀) (R : PR s₀ o l t)
+    (hoX : slot (cwX s₀) 8 ≤ o) (hol : o + slot (wordsOf l) 24 ≤ cZ s₀) (ho8 : o % 8 = 0)
+    (hxj : xj < 6) (hPv : wordsVal t.mem (cS s₀) (slot (cwX s₀) xj) (cwX s₀) = Pv) (hPb : Pv < 256 ^ l)
+    (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1) (hlk : l < ck s₀)
+    (hoD : oD + 8 ≤ oMask ∧ oD % 8 = 0) (hoL : oLen + 8 ≤ oMask ∧ oLen % 8 = 0)
+    (hD : Mont.word s.mem (cS s₀) oD = D) (hL : Mont.word s.mem (cS s₀) oLen = BitVec.ofNat 64 l)
+ :
+    WP isa (Win.powerP xj (.seq Crt.reduceIn (.block [.load .d .s9 .s6 oD, .load .d .s10 .s6 oLen]))) t fun u =>
+      PR s₀ o l u ∧ u.gpr .s6 = cS s₀ ∧ u.gpr .s11 = BitVec.ofNat 64 (8 * (cwX s₀ + 2)) ∧
+      u.gpr .s9 = Mont.off D 0 ∧ u.gpr .s10 = BitVec.ofNat 64 l := by
+  have hn := hP.nw
+  have room := hP.room
+  have k64 := hP.k64; have k1024 := hP.k1024; have p1 := hP.p1; have pk := hP.pk; have q1 := hP.q1
+  have qk := hP.qk
+  have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
+  have eX0 := e (cwX s₀) 0; have eX1 := e (cwX s₀) 1; have eX4 := e (cwX s₀) 4; have eX5 := e (cwX s₀) 5
+  have eX6 := e (cwX s₀) 6; have eX7 := e (cwX s₀) 7; have eX8 := e (cwX s₀) 8; have eX2 := e (cwX s₀) 2
+  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP24 := e (cwP s₀) 24
+  have eQ0 := e (cwQ s₀) 0; have eQ4 := e (cwQ s₀) 4; have eQ24 := e (cwQ s₀) 24
+  have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
+  have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
+  have dP : cwP s₀ = wordsOf (cpL s₀) := rfl
+  have dQ : cwQ s₀ = wordsOf (cqL s₀) := rfl
+  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 24 := rfl
+  have room' : oPa s₀ + slot (cwP s₀) 24 + slot (cwQ s₀) 24 ≤ cZ s₀ := room
+  have hwP2 : 2 ≤ cwP s₀ := two_le_wordsOf
+  have hwQ2 : 2 ≤ cwQ s₀ := two_le_wordsOf
+  have hwPK : cwP s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt pk) (by omega_arith)
+  have hwQK : cwQ s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt qk) (by omega_arith)
+  have hpw : cpL s₀ ≤ 8 * cwP s₀ := by have := wordsOf_ge (l := cpL s₀); omega_arith
+  have hqw : cqL s₀ ≤ 8 * cwQ s₀ := by have := wordsOf_ge (l := cqL s₀); omega_arith
+  have hwX : cwX s₀ < 2 ^ 31 := by omega_arith
+  have hZ256 : 256 ≤ cZ s₀ := by omega_arith
+  have hS256 : (cS s₀).toNat + 256 ≤ 2 ^ 64 := by omega_arith
+  have hm : oMask = 88 := rfl
+  have rd0 : t.rd ++ t.wr = s₀.rd ++ s₀.wr := by rw [X.rd, X.wr, hF.keep.2.1, hF.keep.2.2]
+  have hwl2 : 2 ≤ wordsOf l := two_le_wordsOf
+  have hwlK : wordsOf l ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt hlk) (by omega_arith)
+  have hlw : l ≤ 8 * wordsOf l := by have := wordsOf_ge (l := l); omega_arith
+  have el24 := e (wordsOf l) 24
+  have el0 := e (wordsOf l) 0
+  have hK : 1 ≤ (ck s₀ + 7) / 8 := by omega_arith
+  have n1 := le_nChunks_mul (K := (ck s₀ + 7) / 8) (w := wordsOf l) (by omega_arith)
+  have n2 := nChunks_mul_lt (K := (ck s₀ + 7) / 8) (w := wordsOf l) (by omega_arith) hK
+  rw [Nat.mul_comm] at n1 n2
+  have hCb : vC s₀ < 2 ^ (64 * ((ck s₀ + 7) / 8)) :=
+    Nat.lt_of_lt_of_le (os2ip_lt' _ (VG.Proof.Bignum.bytesAt_length _ _ _)) (pow256_le (by omega_arith))
+  have hS : Scr t (Mont.off (cS s₀) o) (slot (wordsOf l) 24) := Scr.sub (X.scr hF) hol ho8 (by omega_arith)
+  have hX : Scr t (cS s₀) (slot (cwX s₀) 8) := Scr.le (X.scr hF) (show slot (cwX s₀) 8 ≤ cZ s₀ by omega_arith)
+  have hsep : ∀ x, ofs (cS s₀) x < slot (cwX s₀) 8 → slot (wordsOf l) 24 ≤ ofs (Mont.off (cS s₀) o) x :=
+    sepXB hoX (by omega_arith) (by omega_arith)
+  have hPw : wordsVal t.mem (cS s₀) (slot (cwX s₀) xj) (wordsOf l) = Pv :=
+    wordsVal_trunc hPv (Nat.lt_of_lt_of_le hPb (pow256_le hlw)) (by omega_arith)
+  have hCw : wordsVal t.mem (cS s₀) (slot (cwX s₀) 6) (wordsOf l * nChunks ((ck s₀ + 7) / 8) (wordsOf l)) = vC s₀ :=
+    wordsVal_trunc v6 (Nat.lt_of_lt_of_le hCb (Nat.pow_le_pow_right (by decide) (by omega_arith))) (by omega_arith)
+  refine Win.powerA_ok hS hwl2 (by omega_arith) (Nat.le_refl _) R.a7 R.s5 R.t0 hX hsep X.s6 X.s11
+    (by have := VG.Proof.Bignum.slot_le (w := cwX s₀) (show xj < 8 by omega_arith); omega_arith) hPw hP2 hodd
+    fun s₈ c8 r8 F8 k18 => ?_
+  have hxn := (X.scr hF).nowrap
+  refine WP.seq (WP.mono (Win.reduceIn_ok (k := ck s₀) (Cv := vC s₀) c8 ((k18.gpr (by decide)).trans R.ra)
+    (hX.congr k18.2.2) hsep ((k18.gpr (by decide)).trans X.s6) ((k18.gpr (by decide)).trans X.s11)
+    (by rw [VG.Proof.Bignum.RISCV64.Outside.word_sep F8 hsep (by omega_using [el24, el0])
+      (show Crt.oNLen + 8 ≤ slot (cwX s₀) 8 by unfold Crt.oNLen; omega_using [eX8])
+      (by omega_using [hn, eX8, room', doP]), X.hdr hP (by unfold oNLen oMask; omega_using [])]; exact hF.hNL)
+    (by omega_arith) (by omega_arith) (by omega_arith) hP2 hodd r8
+    (by rw [Win.x_wv' F8 hsep (by omega_using [el24, el0]) (by omega_using [hn, eX8, room', doP])
+      (by omega_using [eX6, eX8, n2, hwlK, dX])]; exact hCw))
+    fun s₉ ⟨⟨c9, r9, _, _, _, o9⟩, k9⟩ => ?_)
+  have F9 : PFr (Mont.off (cS s₀) o) (wordsOf l) t.mem s₉.mem := F8.trans (PFr.of_win o9)
+  have k19 := k18.trans k9
+  have hx9 := hX.congr k19.2.2
+  have hxn := (X.scr hF).nowrap
+  refine WP.mono (WP.keep [.s9, .s10] (Q := fun u => u.gpr .s9 = Mont.off D 0 ∧ u.gpr .s10 = BitVec.ofNat 64 l)
+    (by
+      brun [(k19.gpr (by decide)).trans X.s6, show oD < 2048 by omega_arith, show oLen < 2048 by omega_arith,
+        hx9.ld (show oD + 8 ≤ slot (cwX s₀) 8 by omega_arith), hx9.ld (show oLen + 8 ≤ slot (cwX s₀) 8 by omega_arith),
+        hx9.al8 (show oD + 8 ≤ slot (cwX s₀) 8 by omega_arith) hoD.2,
+        hx9.al8 (show oLen + 8 ≤ slot (cwX s₀) 8 by omega_arith) hoL.2,
+        VG.Proof.Bignum.RISCV64.Outside.word_sep F9 hsep (by omega_using [el24, el0])
+          (show oD + 8 ≤ slot (cwX s₀) 8 by omega_arith) (by omega_using [hn, eX8, room', doP]),
+        VG.Proof.Bignum.RISCV64.Outside.word_sep F9 hsep (by omega_using [el24, el0])
+          (show oLen + 8 ≤ slot (cwX s₀) 8 by omega_arith) (by omega_using [hn, eX8, room', doP]),
+        X.hdr hP (Or.inl hoD.1), X.hdr hP (Or.inl hoL.1), hD, hL, BitVec.add_zero])
+    (by rfl) (by rfl)) fun u ⟨⟨a9, a10⟩, k10⟩ => ?_
+  have kk := k19.trans k10
+  exact ⟨⟨(k10.gpr (by decide)).trans c9.a7, (kk.gpr (by decide)).trans R.ra, (k10.gpr (by decide)).trans c9.s5,
+    (k10.gpr (by decide)).trans c9.t0⟩, (kk.gpr (by decide)).trans X.s6, (kk.gpr (by decide)).trans X.s11,
+    a9, a10⟩
+
+
+theorem keep_crt {s t : State} (h6 : t.gpr .s6 = s.gpr .s6) (h11 : t.gpr .s11 = s.gpr .s11) (hrd : t.rd = s.rd)
+    (hwr : t.wr = s.wr) : Keep crtRegs s t :=
+  ⟨fun r hr => by cases r <;> first | exact h6 | exact h11 | exact absurd (by decide) hr, hrd, hwr⟩
+
+/-- The powers' code, then `c`. -/
+abbrev mid1C (c : Prog isa) : Prog isa :=
+  .seq loadX (.seq checks (.seq loadIn (.seq (.block (setupP oBP oPLen)) (.seq (power 4 oDP oPLen)
+    (.seq (.block (setupP oBQ oQLen)) (.seq (power 5 oDQ oQLen) c))))))
+
+theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s₀) (hF : Front s₀ s)
+    (hc : ∀ t, M1 s₀ s t → WP isa c t Q) : WP isa (mid1C c) s Q := by
+  have hn := hP.nw
+  have room := hP.room
+  have k64 := hP.k64; have k1024 := hP.k1024; have p1 := hP.p1; have pk := hP.pk; have q1 := hP.q1
+  have qk := hP.qk
+  have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
+  have eX0 := e (cwX s₀) 0; have eX1 := e (cwX s₀) 1; have eX4 := e (cwX s₀) 4; have eX5 := e (cwX s₀) 5
+  have eX6 := e (cwX s₀) 6; have eX7 := e (cwX s₀) 7; have eX8 := e (cwX s₀) 8; have eX2 := e (cwX s₀) 2
+  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP24 := e (cwP s₀) 24
+  have eQ0 := e (cwQ s₀) 0; have eQ4 := e (cwQ s₀) 4; have eQ24 := e (cwQ s₀) 24
+  have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
+  have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
+  have dP : cwP s₀ = wordsOf (cpL s₀) := rfl
+  have dQ : cwQ s₀ = wordsOf (cqL s₀) := rfl
+  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 24 := rfl
+  have room' : oPa s₀ + slot (cwP s₀) 24 + slot (cwQ s₀) 24 ≤ cZ s₀ := room
+  have hwP2 : 2 ≤ cwP s₀ := two_le_wordsOf
+  have hwQ2 : 2 ≤ cwQ s₀ := two_le_wordsOf
+  have hwPK : cwP s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt pk) (by omega_arith)
+  have hwQK : cwQ s₀ ≤ (ck s₀ + 7) / 8 := wordsOf_le_of (Nat.le_of_lt qk) (by omega_arith)
+  have hpw : cpL s₀ ≤ 8 * cwP s₀ := by have := wordsOf_ge (l := cpL s₀); omega_arith
+  have hqw : cqL s₀ ≤ 8 * cwQ s₀ := by have := wordsOf_ge (l := cqL s₀); omega_arith
+  have hwX : cwX s₀ < 2 ^ 31 := by omega_arith
+  have hZ256 : 256 ≤ cZ s₀ := by omega_arith
+  have hS256 : (cS s₀).toNat + 256 ≤ 2 ^ 64 := by omega_arith
+  have hm : oMask = 88 := rfl
+  obtain ⟨mP1, mPo, mQ1, mQo, mPb, mQb, mQIP, mQIb⟩ := masked_facts hP
+  refine stA_ok hP hF fun t₂ X2 a7 ra s5 t0 => stB_ok hP hF X2 a7 ra s5 t0 fun t₃ X3 v6 _ _ _ _ => ?_
+  refine stC_ok (o := oPa s₀) (l := cpL s₀) hP hF X3 (by decide) (by decide) hF.hBP hF.hPL p1 (by omega_arith)
+    fun t₄ X4 R4 _ m4 => ?_
+  refine WP.seq (WP.mono (stD_ok (xj := 4) (D := stackArg s₀ 2) hP hF X4 (by rw [m4]; exact v6) R4 (Nat.le_refl _)
+    (by omega_arith) (slot_al _ _) (by decide) X4.x4 mPb mP1 mPo p1 pk (by decide) (by decide) hF.hDP hF.hPL
+    hP.rDP hP.sDP) fun t₅ ⟨X5, v6', m1v, p0v, O5, _, _, _⟩ => ?_)
+  refine stC_ok (o := oQa s₀) (l := cqL s₀) hP hF X5 (by decide) (by decide) hF.hBQ hF.hQL q1 (by omega_arith)
+    fun t₆ X6 R6 _ m6 => ?_
+  refine WP.seq (WP.mono (stD_ok (xj := 5) (D := stackArg s₀ 4) hP hF X6 (by rw [m6]; exact v6') R6
+    (by omega_arith) (by omega_arith) (by have := slot_al (cwX s₀) 8; have := slot_al (cwP s₀) 24; omega_arith)
+    (by decide) X6.x5 mQb mQ1 mQo q1 qk (by decide) (by decide) hF.hDQ hF.hQL hP.rDQ hP.sDQ)
+    fun t₇ ⟨X7, _, m2v, _, O7, a7₇, s5₇, _⟩ => ?_)
+  rw [m6] at O7
+  refine hc t₇ ⟨X7.s6, X7.s11, a7₇, s5₇, X7.x0, X7.x5, X7.x7, ?_, ?_, m2v, X7.msk, X7.F,
+    keep_crt (X7.s6.trans hF.s6.symm) (X7.s11.trans hF.s11.symm) X7.rd X7.wr⟩
   · rw [wordsVal_off, Mont.Outside.wordsVal O7 (Or.inl (by omega_arith)) (by omega_arith), ← wordsVal_off]
     exact p0v
   · rw [wordsVal_off, Mont.Outside.wordsVal O7 (Or.inl (by omega_arith)) (by omega_arith), ← wordsVal_off]
     exact m1v
-  · rw [Mont.Outside.word O7 (Or.inl (by omega_arith)) (by omega_arith),
-      Mont.Outside.word O5 (Or.inl (by omega_arith)) (by omega_arith),
-      Mont.Outside.word O3 (Or.inl (by omega_arith)) (by omega_arith)]
-    exact X2.msk
 
 end VG.Proof.Bignum.RISCV64.Crt
