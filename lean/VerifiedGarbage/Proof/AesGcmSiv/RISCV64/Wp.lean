@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Env
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Callee
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Loops
+public import VerifiedGarbage.Proof.AesOcb.RISCV64.Callee
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Gcm.Stream
@@ -17,7 +18,9 @@ Untrusted: everything here is checked by Lean. As on PPC64LE
 numbers as 64-bit words; and the arguments of `vg_aes_ctr32` from the
 environment (`cargs`): the encryption key's schedule at `W + 256` or the
 key-generating key's at `K`, the counter block at `W + 112`, `k` blocks at
-`Q` and the working space at `W + 1792`.
+`Q` and the working space at `W + 1792`; and those of
+`vg_aes_encrypt_blocks` (`bargs`): a schedule, `k` blocks at `W + 496` and
+the same working space.
 -/
 
 @[expose] public section
@@ -109,5 +112,28 @@ theorem cargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {K' : Addr}
     (Covers.cons (E.perm.wCR (by decide)) (Covers.cons (Covers.right hqw) (Covers.cons (E.perm.wCR (by decide))
       Covers.nil)))
   writes := Covers.cons (E.perm.wC (by decide)) (Covers.cons hqw (Covers.cons (E.perm.wC (by decide)) Covers.nil))
+
+/-- The arguments of `vg_aes_encrypt_blocks`: the schedule of `R` rounds at
+`K'`, `k` blocks at `W + 496` and the working space at `W + 1792`. -/
+theorem bargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {K' : Addr}
+    (hK : Covers [⟨K', 240⟩] (s.rd ++ s.wr)) {k : Nat} (hk : k ≤ 64)
+    (hKd : (⟨K', 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 496, 16 * k⟩)
+    (hKs : (⟨K', 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 1792, 2048⟩)
+    (a0 : s.gpr .a0 = K') (a1 : s.gpr .a1 = BitVec.ofNat 64 c.R) (a2 : s.gpr .a2 = c.W + BitVec.ofNat 64 496)
+    (a3 : s.gpr .a3 = BitVec.ofNat 64 k) (a4 : s.gpr .a4 = c.W + BitVec.ofNat 64 1792) :
+    Proof.AesOcb.RISCV64.BCall s K' (c.W + BitVec.ofNat 64 496) (c.W + BitVec.ofNat 64 1792) c.R k where
+  a0 := a0
+  a1 := a1
+  a2 := a2
+  a3 := a3
+  a4 := a4
+  rounds := by rcases L.rounds with h | h <;> simp [h]
+  wrap := by rw [L.wrapW (by decide)]; have := L.ww; omega
+  kd := hKd
+  ks := hKs
+  ds := L.w_w (.inl (by omega)) (by omega) (by decide)
+  reads := Covers.append_left (Covers.cons hK Covers.nil)
+    (Covers.cons (E.perm.wCR (by omega)) (Covers.cons (E.perm.wCR (by decide)) Covers.nil))
+  writes := Covers.cons (E.perm.wC (by omega)) (Covers.cons (E.perm.wC (by decide)) Covers.nil)
 
 end VG.Proof.AesGcmSiv.RISCV64

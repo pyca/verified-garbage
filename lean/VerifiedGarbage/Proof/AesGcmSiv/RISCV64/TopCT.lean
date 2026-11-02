@@ -176,14 +176,16 @@ theorem open_rel {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Ar
     have dC : ∀ {d : Nat}, d + 16 ≤ 96 → ∀ r ∈ cryR c.W c.D c.n,
         (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact (L.d_w' (by omega)).symm
     have dN : ∀ r ∈ cryR c.W c.D c.n, (⟨nP c.W, 12⟩ : Region).Disjoint r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact L.w_w (.inr (by decide)) (by decide) (by decide)
       · exact L.w_w (.inr (by decide)) (by decide) (by decide)
       · exact L.w_w (.inr (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)

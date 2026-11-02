@@ -61,33 +61,36 @@ vg_aes_gcm_siv_seal:
 	lbu t0, 11(s1)
 	sb t0, 1531(s0)
 	addi s11, zero, 0
+	addi a5, s0, 496
+	srli a2, s3, 1
+	addi a2, a2, -1
 20:
 	lwu a0, 1520(s0)
 	lwu a1, 1524(s0)
-	lwu a2, 1528(s0)
-	sw s11, 112(s0)
-	sw a0, 116(s0)
-	sw a1, 120(s0)
-	sw a2, 124(s0)
-	addi t0, zero, 0
-	sd t0, 240(s0)
-	sd t0, 248(s0)
+	lwu a3, 1528(s0)
+	sw s11, 0(a5)
+	sw a0, 4(a5)
+	sw a1, 8(a5)
+	sw a3, 12(a5)
+	addi s11, s11, 1
+	addi a5, a5, 16
+	addi a2, a2, -1
+	bnez a2, 20b
 	addi a0, s2, 0
 	addi a1, s3, 0
-	addi a2, s0, 112
-	addi a3, s0, 240
-	addi a4, zero, 1
-	addi a5, s0, 1792
-	call {vg_aes_ctr32}
-	ld a0, 240(s0)
-	slli a1, s11, 3
-	add a1, s0, a1
-	sd a0, 16(a1)
-	addi s11, s11, 1
-	srli a2, s3, 1
-	addi a2, a2, -1
-	sub a2, a2, s11
-	bnez a2, 20b
+	addi a2, s0, 496
+	addi a3, s11, 0
+	addi a4, s0, 1792
+	call {vg_aes_encrypt_blocks}
+	addi a5, s0, 496
+	addi a1, s0, 16
+21:
+	ld a0, 0(a5)
+	sd a0, 0(a1)
+	addi a5, a5, 16
+	addi a1, a1, 8
+	addi s11, s11, -1
+	bnez s11, 21b
 	addi a0, s0, 32
 	addi a1, s3, -6
 	slli a1, a1, 2
@@ -145,18 +148,18 @@ vg_aes_gcm_siv_seal:
 	addi s9, s4, 0
 	addi s10, s5, 0
 	srli a7, s10, 4
-	beqz a7, 21f
-23:
-	srli s11, s10, 10
-	beqz s11, 24f
-	addi s11, zero, 64
-	j 25f
+	beqz a7, 22f
 24:
-	srli s11, s10, 4
+	srli s11, s10, 10
+	beqz s11, 25f
+	addi s11, zero, 64
+	j 26f
 25:
+	srli s11, s10, 4
+26:
 	addi a1, s0, 496
 	addi a0, s11, 0
-26:
+27:
 	lbu a2, 8(s9)
 	slli a2, a2, 8
 	lbu t0, 9(s9)
@@ -206,7 +209,7 @@ vg_aes_gcm_siv_seal:
 	addi s9, s9, 16
 	addi a1, a1, 16
 	addi a0, a0, -1
-	bnez a0, 26b
+	bnez a0, 27b
 	slli a2, s11, 4
 	sub s10, s10, a2
 	addi a0, s0, 64
@@ -216,36 +219,36 @@ vg_aes_gcm_siv_seal:
 	addi a4, s0, 1536
 	call {vg_ghash}
 	srli a7, s10, 4
-	bnez a7, 23b
-	j 22f
-21:
+	bnez a7, 24b
+	j 23f
 22:
-	beqz s10, 27f
+23:
+	beqz s10, 28f
 	addi t0, zero, 0
 	sd t0, 240(s0)
 	sd t0, 248(s0)
 	addi a0, s9, 0
 	addi a1, s0, 240
 	addi a2, s10, 0
-29:
+210:
 	lbu t0, 0(a0)
 	sb t0, 0(a1)
 	addi a0, a0, 1
 	addi a1, a1, 1
 	addi a2, a2, -1
-	bnez a2, 29b
+	bnez a2, 210b
 	addi s9, s0, 240
 	addi s10, zero, 16
 	srli s11, s10, 10
-	beqz s11, 210f
+	beqz s11, 211f
 	addi s11, zero, 64
-	j 211f
-210:
-	srli s11, s10, 4
+	j 212f
 211:
+	srli s11, s10, 4
+212:
 	addi a1, s0, 496
 	addi a0, s11, 0
-212:
+213:
 	lbu a2, 8(s9)
 	slli a2, a2, 8
 	lbu t0, 9(s9)
@@ -295,7 +298,7 @@ vg_aes_gcm_siv_seal:
 	addi s9, s9, 16
 	addi a1, a1, 16
 	addi a0, a0, -1
-	bnez a0, 212b
+	bnez a0, 213b
 	slli a2, s11, 4
 	sub s10, s10, a2
 	addi a0, s0, 64
@@ -305,24 +308,24 @@ vg_aes_gcm_siv_seal:
 	addi a4, s0, 1536
 	call {vg_ghash}
 	srli a7, s10, 4
-	j 28f
-27:
+	j 29f
 28:
+29:
 	addi s9, s6, 0
 	addi s10, s7, 0
 	srli a7, s10, 4
-	beqz a7, 213f
-215:
-	srli s11, s10, 10
-	beqz s11, 216f
-	addi s11, zero, 64
-	j 217f
+	beqz a7, 214f
 216:
-	srli s11, s10, 4
+	srli s11, s10, 10
+	beqz s11, 217f
+	addi s11, zero, 64
+	j 218f
 217:
+	srli s11, s10, 4
+218:
 	addi a1, s0, 496
 	addi a0, s11, 0
-218:
+219:
 	lbu a2, 8(s9)
 	slli a2, a2, 8
 	lbu t0, 9(s9)
@@ -372,7 +375,7 @@ vg_aes_gcm_siv_seal:
 	addi s9, s9, 16
 	addi a1, a1, 16
 	addi a0, a0, -1
-	bnez a0, 218b
+	bnez a0, 219b
 	slli a2, s11, 4
 	sub s10, s10, a2
 	addi a0, s0, 64
@@ -382,36 +385,36 @@ vg_aes_gcm_siv_seal:
 	addi a4, s0, 1536
 	call {vg_ghash}
 	srli a7, s10, 4
-	bnez a7, 215b
-	j 214f
-213:
+	bnez a7, 216b
+	j 215f
 214:
-	beqz s10, 219f
+215:
+	beqz s10, 220f
 	addi t0, zero, 0
 	sd t0, 240(s0)
 	sd t0, 248(s0)
 	addi a0, s9, 0
 	addi a1, s0, 240
 	addi a2, s10, 0
-221:
+222:
 	lbu t0, 0(a0)
 	sb t0, 0(a1)
 	addi a0, a0, 1
 	addi a1, a1, 1
 	addi a2, a2, -1
-	bnez a2, 221b
+	bnez a2, 222b
 	addi s9, s0, 240
 	addi s10, zero, 16
 	srli s11, s10, 10
-	beqz s11, 222f
+	beqz s11, 223f
 	addi s11, zero, 64
-	j 223f
-222:
-	srli s11, s10, 4
+	j 224f
 223:
+	srli s11, s10, 4
+224:
 	addi a1, s0, 496
 	addi a0, s11, 0
-224:
+225:
 	lbu a2, 8(s9)
 	slli a2, a2, 8
 	lbu t0, 9(s9)
@@ -461,7 +464,7 @@ vg_aes_gcm_siv_seal:
 	addi s9, s9, 16
 	addi a1, a1, 16
 	addi a0, a0, -1
-	bnez a0, 224b
+	bnez a0, 225b
 	slli a2, s11, 4
 	sub s10, s10, a2
 	addi a0, s0, 64
@@ -471,9 +474,9 @@ vg_aes_gcm_siv_seal:
 	addi a4, s0, 1536
 	call {vg_ghash}
 	srli a7, s10, 4
-	j 220f
-219:
+	j 221f
 220:
+221:
 	slli a0, s5, 3
 	sd a0, 240(s0)
 	slli a0, s7, 3
@@ -481,15 +484,15 @@ vg_aes_gcm_siv_seal:
 	addi s9, s0, 240
 	addi s10, zero, 16
 	srli s11, s10, 10
-	beqz s11, 225f
+	beqz s11, 226f
 	addi s11, zero, 64
-	j 226f
-225:
-	srli s11, s10, 4
+	j 227f
 226:
+	srli s11, s10, 4
+227:
 	addi a1, s0, 496
 	addi a0, s11, 0
-227:
+228:
 	lbu a2, 8(s9)
 	slli a2, a2, 8
 	lbu t0, 9(s9)
@@ -539,7 +542,7 @@ vg_aes_gcm_siv_seal:
 	addi s9, s9, 16
 	addi a1, a1, 16
 	addi a0, a0, -1
-	bnez a0, 227b
+	bnez a0, 228b
 	slli a2, s11, 4
 	sub s10, s10, a2
 	addi a0, s0, 64
@@ -625,30 +628,55 @@ vg_aes_gcm_siv_seal:
 	sd a0, 96(s0)
 	sd a1, 104(s0)
 	srli a7, s10, 4
-	beqz a7, 228f
-230:
-	ld a0, 96(s0)
-	ld a1, 104(s0)
-	sd a0, 112(s0)
-	sd a1, 120(s0)
+	beqz a7, 229f
+231:
+	srli s11, s10, 10
+	beqz s11, 232f
+	addi s11, zero, 64
+	j 233f
+232:
+	srli s11, s10, 4
+233:
+	addi a5, s0, 496
+	addi a1, s11, 0
+234:
+	ld a2, 96(s0)
+	ld a3, 104(s0)
+	sd a2, 0(a5)
+	sd a3, 8(a5)
+	lwu a2, 96(s0)
+	addi a2, a2, 1
+	sw a2, 96(s0)
+	addi a5, a5, 16
+	addi a1, a1, -1
+	bnez a1, 234b
 	addi a0, s0, 256
 	addi a1, s3, 0
-	addi a2, s0, 112
-	addi a5, s0, 1792
-	addi a3, s9, 0
-	addi a4, zero, 1
-	call {vg_aes_ctr32}
-	lwu a0, 96(s0)
+	addi a2, s0, 496
+	addi a3, s11, 0
+	addi a4, s0, 1792
+	call {vg_aes_encrypt_blocks}
+	addi a0, s0, 496
+	addi a1, s9, 0
+	slli a2, s11, 4
+235:
+	lbu t0, 0(a1)
+	lbu a3, 0(a0)
+	xor t0, t0, a3
+	sb t0, 0(a1)
 	addi a0, a0, 1
-	sw a0, 96(s0)
-	addi s9, s9, 16
-	addi s10, s10, -16
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 235b
+	addi s9, a1, 0
+	slli a2, s11, 4
+	sub s10, s10, a2
 	srli a7, s10, 4
-	bnez a7, 230b
-	j 229f
-228:
+	bnez a7, 231b
+	j 230f
 229:
-	beqz s10, 231f
+230:
+	beqz s10, 236f
 	ld a0, 96(s0)
 	ld a1, 104(s0)
 	sd a0, 112(s0)
@@ -666,7 +694,7 @@ vg_aes_gcm_siv_seal:
 	addi a0, s0, 240
 	addi a1, s9, 0
 	addi a2, s10, 0
-233:
+238:
 	lbu t0, 0(a1)
 	lbu a3, 0(a0)
 	xor t0, t0, a3
@@ -674,10 +702,10 @@ vg_aes_gcm_siv_seal:
 	addi a0, a0, 1
 	addi a1, a1, 1
 	addi a2, a2, -1
-	bnez a2, 233b
-	j 232f
-231:
-232:
+	bnez a2, 238b
+	j 237f
+236:
+237:
 	lbu t0, 0(s0)
 	sb t0, 0(s8)
 	lbu t0, 1(s0)
@@ -818,33 +846,36 @@ vg_aes_gcm_siv_open:
 	lbu t0, 15(s8)
 	sb t0, 15(s0)
 	addi s11, zero, 0
+	addi a5, s0, 496
+	srli a2, s3, 1
+	addi a2, a2, -1
 20:
 	lwu a0, 1520(s0)
 	lwu a1, 1524(s0)
-	lwu a2, 1528(s0)
-	sw s11, 112(s0)
-	sw a0, 116(s0)
-	sw a1, 120(s0)
-	sw a2, 124(s0)
-	addi t0, zero, 0
-	sd t0, 240(s0)
-	sd t0, 248(s0)
+	lwu a3, 1528(s0)
+	sw s11, 0(a5)
+	sw a0, 4(a5)
+	sw a1, 8(a5)
+	sw a3, 12(a5)
+	addi s11, s11, 1
+	addi a5, a5, 16
+	addi a2, a2, -1
+	bnez a2, 20b
 	addi a0, s2, 0
 	addi a1, s3, 0
-	addi a2, s0, 112
-	addi a3, s0, 240
-	addi a4, zero, 1
-	addi a5, s0, 1792
-	call {vg_aes_ctr32}
-	ld a0, 240(s0)
-	slli a1, s11, 3
-	add a1, s0, a1
-	sd a0, 16(a1)
-	addi s11, s11, 1
-	srli a2, s3, 1
-	addi a2, a2, -1
-	sub a2, a2, s11
-	bnez a2, 20b
+	addi a2, s0, 496
+	addi a3, s11, 0
+	addi a4, s0, 1792
+	call {vg_aes_encrypt_blocks}
+	addi a5, s0, 496
+	addi a1, s0, 16
+21:
+	ld a0, 0(a5)
+	sd a0, 0(a1)
+	addi a5, a5, 16
+	addi a1, a1, 8
+	addi s11, s11, -1
+	bnez s11, 21b
 	addi a0, s0, 32
 	addi a1, s3, -6
 	slli a1, a1, 2
@@ -909,30 +940,55 @@ vg_aes_gcm_siv_open:
 	sd a0, 96(s0)
 	sd a1, 104(s0)
 	srli a7, s10, 4
-	beqz a7, 21f
-23:
-	ld a0, 96(s0)
-	ld a1, 104(s0)
-	sd a0, 112(s0)
-	sd a1, 120(s0)
+	beqz a7, 22f
+24:
+	srli s11, s10, 10
+	beqz s11, 25f
+	addi s11, zero, 64
+	j 26f
+25:
+	srli s11, s10, 4
+26:
+	addi a5, s0, 496
+	addi a1, s11, 0
+27:
+	ld a2, 96(s0)
+	ld a3, 104(s0)
+	sd a2, 0(a5)
+	sd a3, 8(a5)
+	lwu a2, 96(s0)
+	addi a2, a2, 1
+	sw a2, 96(s0)
+	addi a5, a5, 16
+	addi a1, a1, -1
+	bnez a1, 27b
 	addi a0, s0, 256
 	addi a1, s3, 0
-	addi a2, s0, 112
-	addi a5, s0, 1792
-	addi a3, s9, 0
-	addi a4, zero, 1
-	call {vg_aes_ctr32}
-	lwu a0, 96(s0)
+	addi a2, s0, 496
+	addi a3, s11, 0
+	addi a4, s0, 1792
+	call {vg_aes_encrypt_blocks}
+	addi a0, s0, 496
+	addi a1, s9, 0
+	slli a2, s11, 4
+28:
+	lbu t0, 0(a1)
+	lbu a3, 0(a0)
+	xor t0, t0, a3
+	sb t0, 0(a1)
 	addi a0, a0, 1
-	sw a0, 96(s0)
-	addi s9, s9, 16
-	addi s10, s10, -16
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 28b
+	addi s9, a1, 0
+	slli a2, s11, 4
+	sub s10, s10, a2
 	srli a7, s10, 4
-	bnez a7, 23b
-	j 22f
-21:
+	bnez a7, 24b
+	j 23f
 22:
-	beqz s10, 24f
+23:
+	beqz s10, 29f
 	ld a0, 96(s0)
 	ld a1, 104(s0)
 	sd a0, 112(s0)
@@ -950,7 +1006,7 @@ vg_aes_gcm_siv_open:
 	addi a0, s0, 240
 	addi a1, s9, 0
 	addi a2, s10, 0
-26:
+211:
 	lbu t0, 0(a1)
 	lbu a3, 0(a0)
 	xor t0, t0, a3
@@ -958,25 +1014,25 @@ vg_aes_gcm_siv_open:
 	addi a0, a0, 1
 	addi a1, a1, 1
 	addi a2, a2, -1
-	bnez a2, 26b
-	j 25f
-24:
-25:
+	bnez a2, 211b
+	j 210f
+29:
+210:
 	addi s9, s4, 0
 	addi s10, s5, 0
 	srli a7, s10, 4
-	beqz a7, 27f
-29:
+	beqz a7, 212f
+214:
 	srli s11, s10, 10
-	beqz s11, 210f
+	beqz s11, 215f
 	addi s11, zero, 64
-	j 211f
-210:
+	j 216f
+215:
 	srli s11, s10, 4
-211:
+216:
 	addi a1, s0, 496
 	addi a0, s11, 0
-212:
+217:
 	lbu a2, 8(s9)
 	slli a2, a2, 8
 	lbu t0, 9(s9)
@@ -1026,7 +1082,7 @@ vg_aes_gcm_siv_open:
 	addi s9, s9, 16
 	addi a1, a1, 16
 	addi a0, a0, -1
-	bnez a0, 212b
+	bnez a0, 217b
 	slli a2, s11, 4
 	sub s10, s10, a2
 	addi a0, s0, 64
@@ -1036,36 +1092,36 @@ vg_aes_gcm_siv_open:
 	addi a4, s0, 1536
 	call {vg_ghash}
 	srli a7, s10, 4
-	bnez a7, 29b
-	j 28f
-27:
-28:
-	beqz s10, 213f
+	bnez a7, 214b
+	j 213f
+212:
+213:
+	beqz s10, 218f
 	addi t0, zero, 0
 	sd t0, 240(s0)
 	sd t0, 248(s0)
 	addi a0, s9, 0
 	addi a1, s0, 240
 	addi a2, s10, 0
-215:
+220:
 	lbu t0, 0(a0)
 	sb t0, 0(a1)
 	addi a0, a0, 1
 	addi a1, a1, 1
 	addi a2, a2, -1
-	bnez a2, 215b
+	bnez a2, 220b
 	addi s9, s0, 240
 	addi s10, zero, 16
 	srli s11, s10, 10
-	beqz s11, 216f
+	beqz s11, 221f
 	addi s11, zero, 64
-	j 217f
-216:
+	j 222f
+221:
 	srli s11, s10, 4
-217:
+222:
 	addi a1, s0, 496
 	addi a0, s11, 0
-218:
+223:
 	lbu a2, 8(s9)
 	slli a2, a2, 8
 	lbu t0, 9(s9)
@@ -1115,7 +1171,7 @@ vg_aes_gcm_siv_open:
 	addi s9, s9, 16
 	addi a1, a1, 16
 	addi a0, a0, -1
-	bnez a0, 218b
+	bnez a0, 223b
 	slli a2, s11, 4
 	sub s10, s10, a2
 	addi a0, s0, 64
@@ -1125,24 +1181,24 @@ vg_aes_gcm_siv_open:
 	addi a4, s0, 1536
 	call {vg_ghash}
 	srli a7, s10, 4
-	j 214f
-213:
-214:
+	j 219f
+218:
+219:
 	addi s9, s6, 0
 	addi s10, s7, 0
 	srli a7, s10, 4
-	beqz a7, 219f
-221:
+	beqz a7, 224f
+226:
 	srli s11, s10, 10
-	beqz s11, 222f
+	beqz s11, 227f
 	addi s11, zero, 64
-	j 223f
-222:
+	j 228f
+227:
 	srli s11, s10, 4
-223:
+228:
 	addi a1, s0, 496
 	addi a0, s11, 0
-224:
+229:
 	lbu a2, 8(s9)
 	slli a2, a2, 8
 	lbu t0, 9(s9)
@@ -1192,7 +1248,7 @@ vg_aes_gcm_siv_open:
 	addi s9, s9, 16
 	addi a1, a1, 16
 	addi a0, a0, -1
-	bnez a0, 224b
+	bnez a0, 229b
 	slli a2, s11, 4
 	sub s10, s10, a2
 	addi a0, s0, 64
@@ -1202,36 +1258,36 @@ vg_aes_gcm_siv_open:
 	addi a4, s0, 1536
 	call {vg_ghash}
 	srli a7, s10, 4
-	bnez a7, 221b
-	j 220f
-219:
-220:
-	beqz s10, 225f
+	bnez a7, 226b
+	j 225f
+224:
+225:
+	beqz s10, 230f
 	addi t0, zero, 0
 	sd t0, 240(s0)
 	sd t0, 248(s0)
 	addi a0, s9, 0
 	addi a1, s0, 240
 	addi a2, s10, 0
-227:
+232:
 	lbu t0, 0(a0)
 	sb t0, 0(a1)
 	addi a0, a0, 1
 	addi a1, a1, 1
 	addi a2, a2, -1
-	bnez a2, 227b
+	bnez a2, 232b
 	addi s9, s0, 240
 	addi s10, zero, 16
 	srli s11, s10, 10
-	beqz s11, 228f
+	beqz s11, 233f
 	addi s11, zero, 64
-	j 229f
-228:
+	j 234f
+233:
 	srli s11, s10, 4
-229:
+234:
 	addi a1, s0, 496
 	addi a0, s11, 0
-230:
+235:
 	lbu a2, 8(s9)
 	slli a2, a2, 8
 	lbu t0, 9(s9)
@@ -1281,7 +1337,7 @@ vg_aes_gcm_siv_open:
 	addi s9, s9, 16
 	addi a1, a1, 16
 	addi a0, a0, -1
-	bnez a0, 230b
+	bnez a0, 235b
 	slli a2, s11, 4
 	sub s10, s10, a2
 	addi a0, s0, 64
@@ -1291,9 +1347,9 @@ vg_aes_gcm_siv_open:
 	addi a4, s0, 1536
 	call {vg_ghash}
 	srli a7, s10, 4
-	j 226f
-225:
-226:
+	j 231f
+230:
+231:
 	slli a0, s5, 3
 	sd a0, 240(s0)
 	slli a0, s7, 3
@@ -1301,15 +1357,15 @@ vg_aes_gcm_siv_open:
 	addi s9, s0, 240
 	addi s10, zero, 16
 	srli s11, s10, 10
-	beqz s11, 231f
+	beqz s11, 236f
 	addi s11, zero, 64
-	j 232f
-231:
+	j 237f
+236:
 	srli s11, s10, 4
-232:
+237:
 	addi a1, s0, 496
 	addi a0, s11, 0
-233:
+238:
 	lbu a2, 8(s9)
 	slli a2, a2, 8
 	lbu t0, 9(s9)
@@ -1359,7 +1415,7 @@ vg_aes_gcm_siv_open:
 	addi s9, s9, 16
 	addi a1, a1, 16
 	addi a0, a0, -1
-	bnez a0, 233b
+	bnez a0, 238b
 	slli a2, s11, 4
 	sub s10, s10, a2
 	addi a0, s0, 64
@@ -1452,17 +1508,17 @@ vg_aes_gcm_siv_open:
 	sub a2, a2, s11
 	addi a0, s6, 0
 	addi a1, s7, 0
-	beqz a1, 234f
-236:
+	beqz a1, 239f
+241:
 	lbu t0, 0(a0)
 	and t0, t0, a2
 	sb t0, 0(a0)
 	addi a0, a0, 1
 	addi a1, a1, -1
-	bnez a1, 236b
-	j 235f
-234:
-235:
+	bnez a1, 241b
+	j 240f
+239:
+240:
 	addi a0, s11, 0
 	addi t1, s0, 0
 	ld s0, 128(t1)
