@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubPower
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite
+import VerifiedGarbage.Proof.Bignum.RISCV64.PubOut
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
 public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtR2
 public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtSave
@@ -795,5 +796,46 @@ theorem recombineX_ok {s : State} {S BP BQ : Addr} {ZX ZP ZQ wX lp lq qv : Nat}
     rw [← m3] at r12
     exact ((r12.mono (js' := [2, 3, 4, 6, 7]) (by decide)).trans (r4.mono (by decide))).trans
       ((Arrays.of_outside (js := [4]) (j := 4) (by simp) o8 (Nat.le_refl _) (by omega_arith)).mono (by decide))
+
+/-! ## The output -/
+
+/-- The registers `final` writes. -/
+def outRegs : List Reg := [.a7, .s5, .s9, .s10, .s11, .s0, .a0, .t4, .t3, .t5]
+
+/-- The block before `output`, then `output`: `X`'s array 4 (`k = n_len`
+bytes of it, most significant first) to `out` under the header's mask, and
+`a0 :=` 1 if it is set, else 0. -/
+theorem final_ok {s : State} {S O : Addr} {ZX wX k : Nat} {b : Bool} (hx : Scr s S ZX)
+    (ho : ∀ i < k, InRegions s.wr (off O i) 1) (hno : O.toNat + k ≤ 2 ^ 64)
+    (h6 : s.gpr .s6 = S) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hO : Mont.word s.mem S oOut = O) (hk : Mont.word s.mem S oNLen = BitVec.ofNat 64 k)
+    (hm : Mont.word s.mem S oMask = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0))
+    (hk1 : 1 ≤ k) (hkw : k ≤ 8 * wX) (hZX : slot wX 8 ≤ ZX)
+    (hsep : ∀ x, ofs O x < k → ZX ≤ ofs S x) :
+    WP isa (.seq (.block [.addi .a7 .s6 hdrBytes, .addi .s5 .s11 0, .load .d .s10 .s6 oOut,
+        .load .d .s11 .s6 oNLen, .load .d .s9 .s6 oMask]) output) s fun t =>
+      ((∀ i < k, t.mem (off O i) = if b then s.mem (off S (slot wX 4 + (k - 1 - i))) else 0) ∧
+        Mont.Outside O 0 k s.mem t.mem ∧ t.gpr .a0 = BitVec.ofNat 64 (if b then 1 else 0)) ∧
+      Keep outRegs s t := by
+  have hnx := hx.nowrap
+  have x8 : slot wX 8 = hdrBytes + 8 * (8 * (wX + 2)) := rfl
+  have hh : hdrBytes = 256 := rfl
+  have e0' : slot wX 0 = hdrBytes := by simp [slot]
+  have z : off S 0 = S := BitVec.add_zero S
+  have hO' : s.mem.readW S 64 = O := by rw [← z]; exact hO
+  have l0 : InRegions (s.rd ++ s.wr) S 8 := by rw [← z]; exact hx.ld (by omega_arith)
+  have hk' : s.mem.readW (off S 16) 64 = BitVec.ofNat 64 k := hk
+  have hm' : s.mem.readW (off S 88) 64 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0) := hm
+  refine WP.seq (WP.mono (WP.keep [.a7, .s5, .s10, .s11, .s9] (Q := fun s₁ => s₁.gpr .a7 = off S (slot wX 0) ∧
+      s₁.gpr .s5 = BitVec.ofNat 64 (8 * (wX + 2)) ∧ s₁.gpr .s10 = off O 0 ∧ s₁.gpr .s11 = BitVec.ofNat 64 k ∧
+      s₁.gpr .s9 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0) ∧ s₁.mem = s.mem) ?_ (by rfl) (by rfl))
+    fun s₁ ⟨⟨c7, c5, c10, c11, c9, m1⟩, k1⟩ => ?_)
+  · rw [e0']
+    brun [exec_addi_nat (show hdrBytes < 2048 by decide), h6, h11, add_ofNat_zero, oOut, oNLen, oMask,
+      l0, hx.al, hx.ld (show 16 + 8 ≤ ZX by omega_arith), hx.al8 (show 16 + 8 ≤ ZX by omega_arith) (by decide),
+      hx.ld (show 88 + 8 ≤ ZX by omega_arith), hx.al8 (show 88 + 8 ≤ ZX by omega_arith) (by decide), hO', hk', hm']
+  refine WP.mono (Pub.output_ok (hx.congr k1.2.2) (by rw [k1.2.2]; exact ho) hno c7 c5 c11 c10 c9 hk1 hkw hZX hsep)
+    fun t ⟨⟨hb, hout, ha⟩, kt⟩ => ⟨⟨fun i hi => by rw [hb i hi, m1], by rw [m1] at hout; exact hout, ha⟩,
+      (k1.trans kt).mono (by decide)⟩
 
 end VG.Proof.Bignum.RISCV64.Crt
