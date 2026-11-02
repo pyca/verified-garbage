@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MillerRabin.RISCV64.CT
+import VerifiedGarbage.Proof.MillerRabin.RISCV64.Core
 
 /-!
 # The Miller–Rabin round on RISC-V: verified against the shared contract
@@ -11,7 +12,8 @@ import VerifiedGarbage.Proof.MillerRabin.RISCV64.CT
 `fnContract` states the shared contract's postcondition on the registers
 (`fnPost`, `round_implies`); with correctness (`fn_correct`, given the core's
 `CoreOk`) and constant time (`round_ct`), `round` is verified for the
-`frameBytes` bytes of stack its frame uses (`round_verified_of`).
+`frameBytes` bytes of stack its frame uses (`round_verified_of`), and with
+`Core.lean`'s `core_ok`, unconditionally (`round_verified`).
 -/
 
 @[expose] public section
@@ -84,5 +86,9 @@ theorem round_implies : fnContract.Implies (roundContract RISCV64.abi compact fr
 theorem round_verified_of (hcore : CoreOk) :
     Verified RISCV64.target round (roundContract RISCV64.abi compact frameBytes) :=
   Verified.of_correct (fn_correct hcore) round_ct round_implies
+
+/-- `vg_miller_rabin_round`, verified against the shared contract. -/
+theorem round_verified : Verified RISCV64.target round (roundContract RISCV64.abi compact frameBytes) :=
+  round_verified_of core_ok
 
 end VG.Proof.MillerRabin.RISCV64
