@@ -133,6 +133,27 @@ theorem wp_stscrd {s : State} (h : Inv s₀ s) {o : Nat} (ho : o + 8 ≤ 16384) 
   simp only [List.mem_singleton] at hr; subst hr
   exact ⟨scrR s₀, by simp, scr_sub (by omega)⟩
 
+/-- `sd r, o(b)`, to `scratch`, through a register `b` pointing `B` bytes into it. -/
+theorem wp_stscrb {s : State} (h : Inv s₀ s) {b : Reg} {B : Nat}
+    (hb : s.gpr b = scrP s₀ + BitVec.ofNat 64 B) {o : Nat} (ho : B + o + 8 ≤ 16384) (ho' : o < 2048)
+    (ho8 : (B + o) % 8 = 0) {r : Reg} {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, Inv s₀ t → t.mem = s.mem.writeW (scrP s₀ + BitVec.ofNat 64 (B + o)) (s.gpr r) →
+      t.gpr = s.gpr → (∀ d, d + 8 ≤ 320 → lw s₀ t d = lw s₀ s d) →
+      Frame [⟨scrP s₀ + BitVec.ofNat 64 (B + o), 8⟩] s.mem t.mem → WP isa (.block is) t Q) :
+    WP isa (.block (.store .d r b o :: is)) s Q := by
+  have hc : (scrR s₀).Contains (scrP s₀ + BitVec.ofNat 64 (B + o)) 8 :=
+    Offset.contains_base _ (by omega) (by omega)
+  refine wp_sd (a := scrP s₀ + BitVec.ofNat 64 (B + o)) ho'
+    (by rw [hb, BitVec.add_assoc, BitVec.ofNat_add_ofNat]) (h.scr_al (by decide) ho8)
+    (by rw [h.wr]; exact ⟨scrR s₀, scr_mem hp, hc⟩) fun t u => ?_
+  have f : Frame [⟨scrP s₀ + BitVec.ofNat 64 (B + o), 8⟩] s.mem t.mem := by
+    rw [u.mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  refine k t (h.mupd u ((Frame.refl _ _).writeW (r := scrR s₀) (by simp) _ hc)) u.mem u.gpr
+    (fun d h₂ => lw_keep hp f (fun r hr => ?_) h₂) f
+  simp only [List.mem_singleton] at hr; subst hr
+  exact ⟨scrR s₀, by simp, scr_sub (by omega)⟩
+
 /-- A store to the frame is outside `scratch`. -/
 theorem loc_scr {d : Nat} (h₂ : d + 8 ≤ 320) {o n : Nat} (ho : o + n ≤ 16384) :
     Region.Disjoint ⟨E s₀ + BitVec.ofNat 64 d, 8⟩ ⟨scrP s₀ + BitVec.ofNat 64 o, n⟩ :=
