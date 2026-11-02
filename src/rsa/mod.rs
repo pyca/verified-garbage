@@ -52,7 +52,8 @@
 //! `_ifma` ones of `vg_rsa_public_precomputed_checked` and
 //! `vg_rsa_private_checked` (with the `_adx` ones of the others), then the
 //! `_adx` ones; on ARMv7 under Linux, Android and the BSDs, the `_umaal`
-//! ones.
+//! ones (ARMv7 has no `vg_rsa_recover_primes`: it recovers primes by
+//! Appendix C.2, which has no variants).
 //!
 //! This module only checks the lengths, the form of the modulus and the
 //! public exponent, and allocates the memory they work in.
