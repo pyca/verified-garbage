@@ -107,8 +107,8 @@ theorem pins_nil {α : Type} {X : α → State → Prop} : Pins X [] := fun _ _ 
 
 /-- A weaker stage. -/
 theorem wk {X X' : State → State → Prop} {c : Prog isa} {Q : State → State → Prop}
-    (hX : ∀ s0 t, X s0 t → X' s0 t) (h : RelCT isa (Two (SG X')) c Q) : RelCT isa (Two (SG X)) c Q :=
-  h.mono (fun _ _ ⟨a, ⟨s0, k, x⟩, ⟨s0', k', x'⟩, hsp⟩ => ⟨a, ⟨s0, k, hX _ _ x⟩, ⟨s0', k', hX _ _ x'⟩, hsp⟩)
+    (hX : ∀ a s0 t, KR a s0 → X s0 t → X' s0 t) (h : RelCT isa (Two (SG X')) c Q) : RelCT isa (Two (SG X)) c Q :=
+  h.mono (fun _ _ ⟨a, ⟨s0, k, x⟩, ⟨s0', k', x'⟩, hsp⟩ => ⟨a, ⟨s0, k, hX _ _ _ k x⟩, ⟨s0', k', hX _ _ _ k' x'⟩, hsp⟩)
     fun _ _ h => h
 
 /-- A cut after `c₁`: what `c₁` leaves (`Y`), and that the rest still runs
@@ -147,8 +147,8 @@ theorem iteK {Y X' : State → State → Prop} {cond : isa.Cond} {th el : Prog i
     (he : RelCT isa (Two (SG fun s0 t => (Y s0 t ∧ isa.eval cond t = some false) ∧ WP isa el t (X' s0))) el Q) :
     RelCT isa (Two (SG fun s0 t => Y s0 t ∧ WP isa (.ite cond th el) t (X' s0))) (.ite cond th el) Q :=
   iteW (fun a s₁ s₂ ⟨x, kx, y₁, _⟩ ⟨x', kx', y₂, _⟩ => hc a s₁ s₂ ⟨x, kx, y₁⟩ ⟨x', kx', y₂⟩)
-    (wk (fun _ _ ⟨⟨y, w⟩, hb⟩ => ⟨⟨y, hb⟩, WP.ite_true w hb⟩) ht)
-    (wk (fun _ _ ⟨⟨y, w⟩, hb⟩ => ⟨⟨y, hb⟩, WP.ite_false w hb⟩) he)
+    (wk (fun _ _ _ _ ⟨⟨y, w⟩, hb⟩ => ⟨⟨y, hb⟩, WP.ite_true w hb⟩) ht)
+    (wk (fun _ _ _ _ ⟨⟨y, w⟩, hb⟩ => ⟨⟨y, hb⟩, WP.ite_false w hb⟩) he)
 
 /-- `a; (b; c)` as `(a; b); c`. -/
 theorem relCT_assocR {P Q : State → State → Prop} {a b c : Prog isa}
@@ -258,7 +258,7 @@ theorem finA_ok {s0 s : State} (h : Fr s0 s) :
   refine ldf_wp h (by decide) (by decide) (ldf_wp (h.write (by decide) _) (by decide) (by decide) (WP.block_nil ?_))
   rw [gpr_write_self, mem_write, h.wUsed]
 
-theorem finish_rel (r : Nat) (hr : r = 0 ∨ r = 2 ∨ r = 3) :
+theorem finish_rel (r : Nat) (hr : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) :
     RelCT isa (Two (SG fun s0 t => Fr s0 t)) (finish r) fun _ _ => True := by
   have hr' : r < 2048 := by omega
   have hw : ∀ s0 s, Fr s0 s → WP isa (.seq (.block [ldf .t2 oRead, ldf .t3 oUsed])
@@ -271,9 +271,113 @@ theorem finish_rel (r : Nat) (hr : r = 0 ∨ r = 2 ∨ r = 3) :
     pins_of (argPair .t3 .a2 .t3 .a2) (argPair_agree (by decide) (by decide) _)
       fun s0 t h r hr => by simp only [List.mem_singleton] at hr; subst hr; simp only [argPair, ite_true]; exact h
   show RelCT isa _ (.block ([ldf .t2 oRead, ldf .t3 oUsed] ++ [.store .d .t2 .t3 0, .li .a0 r])) _
-  rcases hr with rfl | rfl | rfl <;>
+  rcases hr with rfl | rfl | rfl | rfl <;>
   exact RelCT.block_append (cutW (Y := fun s0 t => t.gpr .t3 = s0.gpr .a2) (X' := fun _ _ => True)
     (fun _ _ h => finA_ok h) hw (two_taint _ (pins_fr fun _ _ h => h) (by taint_decide))
-    (wk (fun _ _ h => h.1) (two_taint [.t3] pin (by taint_decide))))
+    (wk (fun _ _ _ _ h => h.1) (two_taint [.t3] pin (by taint_decide))))
+
+/-- `finNone`'s store of the octets read, 0. -/
+theorem liStf_ok {s0 s : State} (h : Fr s0 s) : WP isa (.block [.li .t2 0, stf .t2 oRead]) s (Fr s0) := by
+  refine WP.block_cons_iff.mpr ⟨_, exec_li (imm := 0) (by decide), WP.block_cons_iff.mpr
+    ⟨_, (h.write (r := .t2) (by decide) _).store (by decide) (by decide), WP.block_nil ?_⟩⟩
+  exact (h.write (r := .t2) (by decide) _).step rfl rfl rfl rfl (rdW_frame _ _)
+
+theorem finNone_rel : RelCT isa (Two (SG fun s0 t => Fr s0 t)) finNone fun _ _ => True :=
+  cutW (Y := fun s0 t => Fr s0 t) (X' := fun _ _ => True) (fun _ _ h => liStf_ok h)
+    (fun _ _ h => WP.seq (WP.mono (liStf_ok h) fun _ ht => WP.mono (finish_ok 0 ht (by decide)) fun _ _ => trivial))
+    (two_taint _ (pins_fr fun _ _ h => h) (by taint_decide)) (wk (fun _ _ _ _ h => h.1) (finish_rel 0 (by decide)))
+
+/-! ## The body -/
+
+/-- After the entry. -/
+def XE (s0 t : State) : Prop := Fr s0 t ∧ t.gpr .s6 = stackArg s0 1 ∧ t.syms = s0.syms
+
+/-- After `out`'s zeroing. -/
+def XZ (s0 t : State) : Prop := Ctx s0 t ∧ t.gpr .s6 = stackArg s0 1 ∧ t.syms = s0.syms
+
+/-- After the test of `rand`'s length. -/
+def XF (s0 t : State) : Prop :=
+  XZ s0 t ∧ t.gpr .t2 = BitVec.ofNat 64 (if oL s0 ≤ rL s0 then 1 else 0)
+
+theorem zA_ok {s0 s : State} (h : Fr s0 s) :
+    WP isa (.block [ldf .t3 oOut, ldf .t5 oOutLen, .li .t2 0]) s fun t =>
+      t.gpr .t3 = s0.gpr .a0 ∧ t.gpr .t5 = s0.gpr .a1 := by
+  refine ldf_wp h (by decide) (by decide) (ldf_wp (h.write (by decide) _) (by decide) (by decide)
+    (WP.block_cons_iff.mpr ⟨_, exec_li (imm := 0) (by decide), WP.block_nil ?_⟩))
+  simp only [gpr_write_self, gpr_write_of_ne _ _ (show ¬ Reg.t3 = Reg.t2 by decide),
+    gpr_write_of_ne _ _ (show ¬ Reg.t3 = Reg.t5 by decide), gpr_write_of_ne _ _ (show ¬ Reg.t5 = Reg.t2 by decide),
+    mem_write, h.wOut, h.wOutLen]
+  exact ⟨trivial, trivial⟩
+
+theorem pins_args {X : State → State → Prop} {r₁ q₁ r₂ q₂ : Reg} (h₁ : q₁ ∈ argRegs) (h₂ : q₂ ∈ argRegs)
+    (hne : r₂ ≠ r₁) (hx : ∀ s0 t, X s0 t → t.gpr r₁ = s0.gpr q₁ ∧ t.gpr r₂ = s0.gpr q₂) : Pins (SG X) [r₁, r₂] :=
+  pins_of (argPair r₁ q₁ r₂ q₂) (argPair_agree h₁ h₂ _) fun s0 t h r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · simp only [argPair, ite_true]; exact (hx s0 t h).1
+    · simp only [argPair, hne, ite_false]; exact (hx s0 t h).2
+
+theorem zero_rel : RelCT isa (Two (SG XE)) zeroOut (Two (SG XZ)) := by
+  unfold zeroOut
+  exact cutW (Y := fun s0 t => t.gpr .t3 = s0.gpr .a0 ∧ t.gpr .t5 = s0.gpr .a1) (X' := XZ)
+    (fun _ _ h => zA_ok h.1)
+    (fun _ _ ⟨hf, s6, sy⟩ => WP.mono_syms (zeroOut_ok hf) fun _ ⟨c, _, k⟩ sy' =>
+      ⟨c, (k.gpr (by decide)).trans s6, sy'.trans sy⟩)
+    (two_taint _ (pins_fr fun _ _ h => h.1) (by taint_decide))
+    (toPost (wk (fun _ _ _ _ h => h.1)
+      (two_taint _ (pins_args (by decide) (by decide) (by decide) fun _ _ h => h) (by taint_decide))))
+
+theorem flag_rel : RelCT isa (Two (SG XZ))
+    (.block ([ldf .t3 oRandLen, ldf .t4 oOutLen] ++ VG.Impl.MillerRabin.RISCV64.Search.geFlag .t2 .t3 .t4))
+    (Two (SG XF)) :=
+  two_post (two_taint _ (pins_fr fun _ _ h => h.1.fr) (by taint_decide)) fun _ _ ⟨s0, k, c, s6, sy⟩ =>
+    WP.mono_syms (WP.rdwr (WP.keep [.t3, .t4, .t2] (flagI c.fr) (by rfl) (by rfl)))
+      fun _ ⟨⟨⟨f₂, m₂⟩, k₂⟩, _, _, sp₂⟩ sy₂ => ⟨s0, k, ⟨c.keep k₂ m₂ sp₂, (k₂.gpr (by decide)).trans s6, sy₂.trans sy⟩, f₂⟩
+
+theorem len_eval : ∀ (a : KD) (s₁ s₂ : State), SG XF a s₁ → SG XF a s₂ →
+    isa.eval (.zero .t2) s₁ = isa.eval (.zero .t2) s₂ := by
+  rintro a s₁ s₂ ⟨x, kx, -, hx⟩ ⟨y, ky, -, hy⟩
+  rw [VG.RISCV64.Steps.eval_zero, VG.RISCV64.Steps.eval_zero, hx, hy, kx.1.oL_eq ky.1, kx.1.rL_eq ky.1]
+
+theorem hav_of {s0 t : State} (f : t.gpr .t2 = BitVec.ofNat 64 (if oL s0 ≤ rL s0 then 1 else 0))
+    (ev : isa.eval (.zero .t2) t = some false) : oL s0 ≤ rL s0 := by
+  rw [VG.RISCV64.Steps.eval_zero_ofNat _ _ (by split <;> decide) f] at ev
+  by_contra hc; simp only [hc, ↓reduceIte] at ev; exact absurd ev (by decide)
+
+theorem body_rel {trial : Prog isa} (D : DivOk trial) (R : RoundImpl)
+    (hmain : RelCT isa (Two (SG MIn)) (main trial R.name R.code) fun _ _ => True) :
+    RelCT isa (Two (SG fun s0 u => u = allocd 192 s0)) (body trial R.name R.code) fun _ _ => True := by
+  unfold body
+  simp only [seqs]
+  refine RelCT.seq (two_post (Ψ := SG XE) (two_taint [] pins_nil (by taint_decide)) fun _ u ⟨s0, k, hu⟩ => by
+    subst hu; exact WP.mono (entry_ok k.1.1) fun _ ⟨f, s6, _, sy⟩ => ⟨s0, k, f, s6, sy⟩)
+    (RelCT.seq zero_rel (RelCT.seq flag_rel (RelCT.seq (two_post (Ψ := SG fun _ _ => True)
+      (iteW len_eval (wk (fun _ _ _ _ h => h.1.1.1.fr) finNone_rel)
+        (wk (fun _ _ _ k ⟨⟨⟨c, s6, sy⟩, f⟩, ev⟩ => ⟨c, s6, hav_of f ev, sy, k.1.2.1⟩) hmain))
+      fun _ s ⟨s0, k, ⟨c, s6, sy⟩, f⟩ => ?_) (two_taint [] pins_nil (by taint_decide)))))
+  have hp := c.fr.pre
+  refine WP.ite _ (VG.RISCV64.Steps.eval_zero_ofNat _ _ (by split <;> decide) f) (fun hz => ?_) (fun hz => ?_)
+  · have hav : ¬ oL s0 ≤ rL s0 := by
+      intro hc; simp only [hc, ↓reduceIte] at hz; exact absurd hz (by decide)
+    exact WP.mono (finNone_post c (cOp_none hp hav)) fun _ _ => ⟨s0, k, trivial⟩
+  · have hav : oL s0 ≤ rL s0 := by
+      by_contra hc; simp only [hc, ↓reduceIte] at hz; exact absurd hz (by decide)
+    exact WP.mono (main_ok D R ⟨c, s6, hav, sy, k.1.2.1⟩) fun _ _ => ⟨s0, k, trivial⟩
+
+/-- The whole function, from the main part. -/
+theorem code_rel {trial : Prog isa} (D : DivOk trial) (R : RoundImpl)
+    (hmain : RelCT isa (Two (SG MIn)) (main trial R.name R.code) fun _ _ => True) :
+    RelCT isa (Two KR) (code trial R.name R.code) fun _ _ => True :=
+  relCT_alloc ((body_rel D R hmain).mono (fun _ _ ⟨s, t, ⟨a, h₁, h₂, hsp⟩, e₁, e₂⟩ =>
+    ⟨a, ⟨s, h₁, e₁⟩, ⟨t, h₂, e₂⟩, by rw [e₁, e₂]; simp only [allocd, hsp]⟩) fun _ _ h => h)
+
+/-- Constant time, from the main part's. -/
+theorem cand_ct_of {trial : Prog isa} (D : DivOk trial) (R : RoundImpl)
+    (hmain : RelCT isa (Two (SG MIn)) (main trial R.name R.code) fun _ _ => True) :
+    ConstantTime isa contract.pre contract.pub (code trial R.name R.code) :=
+  RelCT.constantTime ((code_rel D R hmain).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
+    ⟨(pubOf s₁, s₁.sp), ⟨⟨(pre_facts h₁).1, (pre_facts h₁).2, rfl⟩, rfl⟩,
+      ⟨⟨(pre_facts h₂).1, (pre_facts h₂).2, (pub_of hp).2.symm⟩, (pub_of hp).1.symm⟩, (pub_of hp).1⟩)
+    fun _ _ h => h)
 
 end VG.Proof.RsaKeyGen.RISCV64.Cand
