@@ -28,11 +28,15 @@
 //! primes `(n, e, d, p, q)`, whose CRT values `dP`, `dQ` and `qInv` the
 //! verified `vg_rsa_crt_values` (contract `VG.Spec.Rsa.crtValuesContract`)
 //! computes, or from `(n, e, d)` alone, whose primes the verified
+//! `vg_rsa_recover_primes_det` (contract
+//! `VG.Spec.Rsa.recoverPrimesDetContract`) recovers on i686 and x86-64 by
+//! SP 800-56B Rev. 2 Appendix C.2's deterministic method, and the verified
 //! `vg_rsa_recover_primes` (contract `VG.Spec.Rsa.recoverPrimesContract`)
-//! recovers by SP 800-56B Rev. 2 Appendix C.1. The timing of the first may
-//! depend on `n` but not on the private key; that of the second on `n`, `e`
-//! and the number of candidates the recovery tried (1 or 2 for most keys),
-//! but not otherwise on `d`.
+//! on the other targets by Appendix C.1. The timing of the first may depend
+//! on `n` but not on the private key; that of Appendix C.2's recovery on
+//! `n` and `e` but not on `d`, and that of Appendix C.1's on `n`, `e` and the
+//! number of candidates it tried (1 or 2 for most keys), but not otherwise
+//! on `d`.
 //!
 //! [`PrivateKey::check_key`] checks a loaded key as BoringSSL's
 //! `RSA_check_key` does, by the verified `vg_rsa_check_key` (contract
@@ -43,8 +47,9 @@
 //! not run it.
 //!
 //! The variants of `vg_rsa_public_precompute`,
-//! `vg_rsa_public_precomputed_checked`, `vg_rsa_private_checked` and
-//! `vg_rsa_recover_primes`, with the same contracts, are chosen with
+//! `vg_rsa_public_precomputed_checked`, `vg_rsa_private_checked` and (on
+//! the targets that recover primes by Appendix C.1) `vg_rsa_recover_primes`,
+//! with the same contracts, are chosen with
 //! `Backend::select`, on CPUs with the features their `_FEATURES` constants
 //! (and those of the functions built on them) name: on x86-64, the
 //! `_ifma` ones of `vg_rsa_public_precomputed_checked` and
@@ -96,8 +101,8 @@ use crate::arch::rsa::vg_rsa_public_precomputed_checked_umaal;
 use crate::arch::rsa::{
     VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
     VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
-    VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES, VG_RSA_RECOVER_PRIMES_ADX_FEATURES,
-    vg_rsa_public_precomputed_checked_adx, vg_rsa_public_precomputed_checked_ifma,
+    VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES, vg_rsa_public_precomputed_checked_adx,
+    vg_rsa_public_precomputed_checked_ifma,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES;
@@ -156,7 +161,6 @@ impl Backend {
         let adx = f.contains(VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES)
             && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES)
             && f.contains(VG_RSA_PRIVATE_CHECKED_ADX_FEATURES)
-            && f.contains(VG_RSA_RECOVER_PRIMES_ADX_FEATURES)
             && f.contains(VG_RSA_PKCS1_SIGN_ADX_FEATURES)
             && f.contains(VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES);
         if adx
@@ -539,13 +543,8 @@ pub(crate) mod tests {
             Backend::Baseline
         );
         assert_eq!(
-            Backend::select(VG_RSA_RECOVER_PRIMES_ADX_FEATURES),
-            Backend::Baseline
-        );
-        assert_eq!(
             Backend::select(Features::all(&[
                 VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
-                VG_RSA_RECOVER_PRIMES_ADX_FEATURES,
                 Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2),
             ])),
             Backend::Adx
