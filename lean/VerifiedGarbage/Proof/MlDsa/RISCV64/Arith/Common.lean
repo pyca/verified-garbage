@@ -89,6 +89,21 @@ theorem m_lui : (sext32 ((0x20080 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofIn
 
 theorem inv_lui : sext32 ((0x7F6 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 33 = 8347681 := by decide
 
+/-! ## Words -/
+
+/-- A word sign-extended and cut back. -/
+theorem setWidth_sext32 (v : BitVec 32) : (sext32 v).setWidth 32 = v := by
+  apply BitVec.eq_of_getElem_eq; intro i hi
+  simp only [sext32, BitVec.getElem_setWidth, BitVec.getLsbD_signExtend]
+  simp [hi]; omega
+
+/-- A word sign-extended is zero exactly when it is. -/
+theorem sext32_beq_zero (v : BitVec 32) : (sext32 v == 0) = (v == 0) := by
+  by_cases h : v = 0
+  · subst h; simp [sext32]
+  · have : sext32 v ≠ 0 := fun e => h (by rw [← setWidth_sext32 v, e]; rfl)
+    rw [beq_false_of_ne this, beq_false_of_ne h]
+
 /-! ## Reduction modulo `q` -/
 
 /-- What `fixup` leaves: `u + q` if `u` is negative, `u` otherwise. -/
