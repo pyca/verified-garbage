@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Gen4
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.BrainpoolP256r1Field
+public import VerifiedGarbage.Impl.Weierstrass.RISCV64.BrainpoolP256r1Order
 public import VerifiedGarbage.Spec.BrainpoolP256r1
 
 /-! # brainpoolp256r1 on RISC-V: four-word field elements and scalars, and `vg_brainpoolp256r1_mul` -/
@@ -20,11 +21,12 @@ def brainpoolp256r1Field : Weierstrass.RISCV64.Field :=
 
 /-- The functions of brainpoolP256r1's `n`. -/
 def brainpoolp256r1Order : Weierstrass.RISCV64.Field :=
-  ⟨Impl.Weierstrass.Mont.brainpoolp256r1n, Weierstrass.RISCV64.Gen4.mulFn Spec.BrainpoolP256r1.n,
-    Weierstrass.RISCV64.Gen4.addFn Spec.BrainpoolP256r1.n, Weierstrass.RISCV64.Gen4.subFn Spec.BrainpoolP256r1.n⟩
+  ⟨Impl.Weierstrass.Mont.brainpoolp256r1n, Weierstrass.RISCV64.BrainpoolP256r1Order.mulFn,
+    Weierstrass.RISCV64.BrainpoolP256r1Order.addFn, Weierstrass.RISCV64.BrainpoolP256r1Order.subFn⟩
 
-/-- brainpoolp256r1 as the code has it. -/
-def brainpoolp256r1 : Cfg := { n := 4, C := Spec.BrainpoolP256r1.curve, FP := brainpoolp256r1Field }
+/-- brainpoolP256r1 as the code has it: `a ≠ -3`, so verification adds by the
+complete addition for any `a` (`am3 := false`). -/
+def brainpoolp256r1 : Cfg := { n := 4, C := Spec.BrainpoolP256r1.curve, FP := brainpoolp256r1Field, am3 := false }
 
 /-- `vg_brainpoolp256r1_mul`. -/
 def mulBrainpoolP256r1 : Prog isa := brainpoolp256r1.mulFn

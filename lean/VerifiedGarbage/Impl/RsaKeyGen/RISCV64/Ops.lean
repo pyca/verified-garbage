@@ -1,0 +1,60 @@
+module
+
+public import VerifiedGarbage.Impl.Rsa.RISCV64.Inverse
+public import VerifiedGarbage.Impl.Rsa.RISCV64.RecoverDet
+
+/-!
+# Operations of `vg_rsa_keygen_key` on RISC-V, beyond the key routines'
+
+On the working space of the RSA key operations (`Impl/Rsa/RISCV64/KeyWs.lean`),
+whose slots are words holding 0 or 1:
+
+* slot operations: `notS d a` (`d := 1 - a`), `andNotS d a b`
+  (`d := (1 - a) b`) and `selS d a b c` (`d := c ? b : a`);
+* `setLow j x`: the low word of `[j]` := `x`;
+* `mulTo o a b`: `[o] := [a] [b]` modulo `2^(64 w)`, by `[o] := 0` and the
+  schoolbook product of `vg_rsa_recover_primes_det` (`RecoverDet.mulLow`);
+* `invOf a m k`: the inverse's start, `(u, v, x₁, x₂) = ([a], [m], 1, 0)` in
+  arrays 0–3 with `[aM] = [m]` and `[aNM] = 2^(64 w) - [m]`, and `k` steps
+  of two of it (`Impl/Rsa/RISCV64/Inverse.lean`), counted in `s7`: for an
+  odd `[m] > 1` and `[a] [m] < 2^(2 k)`, `gcd([a], [m])` in array 1 and
+  the inverse in array 3.
+
+They use `t0`–`t6` and `a4` as the key routines do; `mulTo` also `a2`, `a3`,
+`a6` and `s8`, and `invOf` `s7`.
+-/
+
+@[expose] public section
+
+namespace VG.Impl.RsaKeyGen.RISCV64.Key
+
+open VG.RISCV64 VG.Impl.Rsa.RISCV64.Keys
+
+/-- The slot `d` := 1 - the slot `a`. -/
+def notS (d a : Nat) : List Instr :=
+  [.load .d .t5 .s11 a, .logicImm .xor .t5 .t5 1, .store .d .t5 .s11 d]
+
+/-- The slot `d` := (1 - the slot `a`) and the slot `b`. -/
+def andNotS (d a b : Nat) : List Instr :=
+  [.load .d .t5 .s11 a, .logicImm .xor .t5 .t5 1, .load .d .t6 .s11 b,
+    .logic .and .t5 .t5 .t6, .store .d .t5 .s11 d]
+
+/-- The slot `d` := the slot `b` if the slot `c` is 1, the slot `a` if it is 0:
+`a ^ ((a ^ b) & c)`. -/
+def selS (d a b c : Nat) : List Instr :=
+  [.load .d .t5 .s11 a, .load .d .t6 .s11 b, .logic .xor .t6 .t6 .t5, .load .d .t4 .s11 c,
+    .logic .and .t6 .t6 .t4, .logic .xor .t5 .t5 .t6, .store .d .t5 .s11 d]
+
+/-- The low word of `[j]` := `x`. -/
+def setLow (j : Nat) (x : Int) : List Instr := ptr .t0 j ++ [.li .t5 x, .store .d .t5 .t0 0]
+
+/-- `[o] := [a] [b]` modulo `2^(64 w)`. -/
+def mulTo (o a b : Nat) : Prog isa := .seq (copy o aZero) (VG.Impl.Rsa.RISCV64.RecoverDet.mulLow o a b)
+
+/-- `[a]` modulo `[m]` by `inverse`, `k` the instructions setting its count
+in `s7`. -/
+def invOf (a m : Nat) (k : List Instr) : Prog isa := seqs [
+  copy aM m, copy 0 a, copy 1 aM, copy 2 aZero, .block (setOne 2), copy 3 aZero,
+  sub3 aNM aZero aM, .block k, inverse]
+
+end VG.Impl.RsaKeyGen.RISCV64.Key
