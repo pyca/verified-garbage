@@ -64,7 +64,7 @@ theorem cv_implies : cvContract.Implies (Spec.Rsa.crtValuesContract abi) where
 
 /-- `vg_rsa_crt_values`, given that its code never loads MXCSR (which the
 registration file evaluates). -/
-theorem cv_verified (hmx : CrtValues.code.allInstrs (fun i => !loadsMxcsr i) = true) :
+theorem cv_verified [InvLaw] (hmx : CrtValues.code.allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified target CrtValues.code (Spec.Rsa.crtValuesContract abi) :=
   Verified.of_correct (cvCode_correct hmx) cvCode_constantTime cv_implies
 

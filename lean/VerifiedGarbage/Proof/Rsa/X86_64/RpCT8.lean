@@ -43,7 +43,7 @@ open VG.Spec.Rsa (recoverPrimes)
 namespace Rp
 
 /-- After the halvings, Montgomery form, the candidates and the factors. -/
-theorem rest_ct (M : Mont) : RelCT isa (Two GR0) (rest M.mm) fun _ _ => True := by
+theorem rest_ct [InvLaw] (M : Mont) : RelCT isa (Two GR0) (rest M.mm) fun _ _ => True := by
   rw [show rest M.mm = seqs ([halving] ++ (mont M.mm ++ ([candLoop M.mm] ++ fin M.mm))) by
     simp only [rest, List.append_assoc]]
   exact (ct_app (Ξ := fun (_ : RpP) (_ : State) => True) (by simp) (by simp [mont]) halving_ct (ct_app (by simp [mont]) (by simp [fin]) (mont_ct M)
@@ -152,7 +152,7 @@ theorem gmp_eval {p : RpP} {s : State} (h : GMP p s) : isa.eval .ne s = some (de
   · simp_all; omega_arith
 
 /-- `main` leaks the same in runs that agree on the public data. -/
-theorem rpMain_ct (M : Mont) : RelCT isa (Two GM) (main M.mm) fun _ _ => True := by
+theorem rpMain_ct [InvLaw] (M : Mont) : RelCT isa (Two GM) (main M.mm) fun _ _ => True := by
   rw [rpMain_eq']
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two GMP) (two_post (prefix_ct.mono (fun _ _ h => h) fun _ _ _ => trivial)
     fun p s ⟨I, e, h, hv⟩ => WP.mono (rpPrefix_ok h hv) fun t ⟨S, hz, vM, vN, hi, hDE⟩ =>
@@ -208,7 +208,7 @@ def RP3 (p : RpP) (t : State) : Prop :=
 
 /-- `vg_rsa_recover_primes` leaks the same in runs that agree on the public
 data. -/
-theorem rpCode_ct (M : Mont) : RelCT isa (Two RPRel) (code M.mm) fun _ _ => True := by
+theorem rpCode_ct [InvLaw] (M : Mont) : RelCT isa (Two RPRel) (code M.mm) fun _ _ => True := by
   unfold code
   refine RelCT.seq (R := Two RP3) (RelCT.block_append (RelCT.seq (R := Two RP2) ?_ ?_)) ?_
   · rw [rpEntry_split]
@@ -264,7 +264,7 @@ theorem rpCode_ct (M : Mont) : RelCT isa (Two RPRel) (code M.mm) fun _ _ => True
 
 /-- `vg_rsa_recover_primes` is constant time but for `n`, `e` and the number
 of tries. -/
-theorem rpCode_constantTime (M : Mont) : ConstantTime isa rpContract.pre rpContract.pub (code M.mm) := by
+theorem rpCode_constantTime [InvLaw] (M : Mont) : ConstantTime isa rpContract.pre rpContract.pub (code M.mm) := by
   refine RelCT.constantTime ((rpCode_ct M).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨(rpIn s₁).pub, ⟨h₁, rfl⟩, ⟨h₂, ?_⟩⟩)
     fun _ _ h => h)
   obtain ⟨hr, a0, a1, a2, a3, a4, a5, hn, he, hc⟩ := hp

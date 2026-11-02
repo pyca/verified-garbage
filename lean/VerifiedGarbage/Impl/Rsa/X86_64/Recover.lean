@@ -55,8 +55,8 @@ def sC3 : Nat := sFn 15
 
 /-- Arrays, after `vg_rsa_public`'s 0 to 7: `e` (8), `d` (9), `M` over 10
 and 11, `g R mod n` (12), `R mod n` (13), `n - R mod n` (14), and the
-halvings' temporary over 14 and 15. At the end: `gcd`'s `u`, `v`, `x₁`,
-`x₂` and working array (8, 9, 12, 13, 15), and `n / p` (14) and
+halvings' temporary over 14 and 15. At the end: `gcd`'s `u`, `v` and
+`x₂` (8, 9, 13), `divmod`'s working array (15), and `n / p` (14) and
 `n mod p` (10). -/
 def aE : Nat := 8
 def aD : Nat := 9
@@ -332,7 +332,7 @@ def fin : List (Prog isa) :=
     mul aY aY aOne, zeroA fU,
     .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
     wordLoop 0 subBody,
-    zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁), zeroA fX₂, inverse fU fV fX₁ fX₂ aN fT,
+    inverse fU fV fX₂ aN,
     zeroA fQ, copyA fQ aN, divmod fQ fR fV fT,
     .block (ws ++ base fV .rbx ++ base fQ .r10 ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
     wordLoop 0 ltBody, .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody] ++

@@ -203,7 +203,7 @@ def twos : List (Prog isa) := [.block (divInit aT), .loop twoStep .ne]
 
 /-- `[aV] := gcd(u, v)`, or 1 for `v ≤ 1`, after the halving: `v` made odd
 by a swap, `inverse` modulo `v` (3 for `v ≤ 1`), and the result 1 for
-`v ≤ 1` (whose mask `kOk` holds, as `inverse` uses `sMo`). -/
+`v ≤ 1` (its mask kept in `kOk` across `inverse`). -/
 def gcdUV : List (Prog isa) :=
   ([.block (oddMask aV ++ ([.mov .r15 (.reg .rax), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++
     base aU .rbx ++
@@ -212,7 +212,7 @@ def gcdUV : List (Prog isa) :=
   constA 2 ++ ltA aV aC ++ ([.block [.store (hdr kOk) .rbp,
       .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++
   constA 3 ++ selC aV ++
-  [zeroA aM, copyA aM aV, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂, inverse aU aV aX₁ aX₂ aM aT] ++
+  [zeroA aM, copyA aM aV, inverse aU aV aX₂ aM] ++
   constA 1 ++ ([.block [.mov .rbp (.mem (hdr kOk)),
       .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++ selC aV
 
@@ -239,11 +239,6 @@ def dOne : List (Prog isa) :=
   constA 1 ++ eqMask aL aC ++ ([.block [.alu .xor .rbp (.imm (BitVec.ofInt 32 (-1))), .store (hdr kOk) .rbp],
     zeroA aDd, .block (setOneA aDd)] : List (Prog isa))
 
-/-- `inverse`'s start for `[aU]` modulo `[j]`: `v := [j]`, `x₁ := 1`,
-`x₂ := 0`. -/
-def invFrom (j : Nat) : List (Prog isa) :=
-  [zeroA aV, copyA aV j, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂]
-
 /-- `kOk &= ` the mask of `[aV] = 1`. -/
 def gcdIsOne : List (Prog isa) :=
   constA 1 ++ eqMask aV aC ++ ([.block [.alu .and .rbp (.mem (hdr kOk)), .store (hdr kOk) .rbp]] : List (Prog isa))
@@ -251,8 +246,8 @@ def gcdIsOne : List (Prog isa) :=
 /-- `e` odd, at least 3: `L = e Q + R`, `x = R⁻¹ mod e`, `t = e − x`, then
 `d = Q t + c` with `c = (1 + R t) e⁻¹ mod 2⁶⁴`. -/
 def dOdd : List (Prog isa) :=
-  loadEv ++ [zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR] ++ invFrom aE ++
-  [inverse aU aV aX₁ aX₂ aE aT] ++ lGe2 ++ gcdIsOne ++
+  loadEv ++ [zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR] ++
+  [inverse aU aV aX₂ aE] ++ lGe2 ++ gcdIsOne ++
   ([.block (([.mov .rbx (.mem (hdr kEv))] : List Instr) ++ minv),
     .block (ws ++ base aX₂ .rbx ++ base aR .r10 ++
       ([.mov .rsi (.mem (hdr kEv)), .alu .sub .rsi (.mem (at0 .rbx)), .mov .rax (.mem (at0 .r10)), .mul .rsi,
@@ -275,8 +270,8 @@ def dEven : List (Prog isa) :=
   constA 3 ++ ltA aL aC ++
   ([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ oddMask aL ++
       ([.alu .and .rax (.reg .rcx), .store (hdr kOk) .rax, .mov .rbp (.reg .rax)] : List Instr)),
-    zeroA aM, copyA aM aL] : List (Prog isa)) ++ selC aM ++ invFrom aM ++
-  [inverse aU aV aX₁ aX₂ aM aT] ++ gcdIsOne ++
+    zeroA aM, copyA aM aL] : List (Prog isa)) ++ selC aM ++
+  [inverse aU aV aX₂ aM] ++ gcdIsOne ++
   [zeroA aDd, copyA aDd aX₂]
 
 /-- `d` and `kOk`, by `e`. -/
@@ -302,7 +297,7 @@ def qinvPart : List (Prog isa) :=
   [zeroA aU, copyA aU aQa] ++ constA 3 ++ ltA aPa aC ++
   ([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ oddMask aPa ++
       ([.alu .and .rax (.reg .rcx), .mov .rbp (.reg .rax)] : List Instr)),
-    zeroA aM, copyA aM aPa] : List (Prog isa)) ++ selC aM ++ invFrom aM ++ [inverse aU aV aX₁ aX₂ aM aT] ++
+    zeroA aM, copyA aM aPa] : List (Prog isa)) ++ selC aM ++ [inverse aU aV aX₂ aM] ++
   constA 1 ++ eqMask aV aC ++ ([.block [.alu .and .rbp (.mem (hdr kOk)), .store (hdr kOk) .rbp]] : List (Prog isa))
 
 /-- `[aM] := [j]`, or 1 for `[j] = 0`. -/

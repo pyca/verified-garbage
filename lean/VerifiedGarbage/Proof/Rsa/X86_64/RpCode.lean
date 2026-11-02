@@ -351,7 +351,7 @@ theorem rpGpr_of {s t₂ t : State} (c : RpCtx s) (hsv : ∀ i < 6, t.gpr (saved
 
 /-- `vg_rsa_recover_primes` with Montgomery multiplication `M`, given that
 its code never loads MXCSR (which the registration file evaluates). -/
-theorem rpCode_correct (M : Mont) (hmx : (code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
+theorem rpCode_correct [InvLaw] (M : Mont) (hmx : (code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : rpContract.pre s) :
     ∃ t s', Exec isa (code M.mm) s t s' ∧ abiPreserved s s' ∧ rpContract.post s s' := by
   have c := rpCtx_of h

@@ -31,7 +31,7 @@ theorem rpMain_eq' (mul : Nat → Nat → Nat → Prog isa) :
     Folded.main mul = seqs (prefixList ++ ([.ite .ne fail (Folded.rest mul)] : List (Prog isa))) := by
   simp only [Folded.main, prefixList, List.append_assoc, List.cons_append, List.nil_append]
 
-theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
+theorem rpMain_ok [InvLaw] (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
     (hv : Spec.Rsa.modulusValid I.N I.k = true) :
     WP isa (Folded.main M.mm) s fun t => ∃ res : Option (Nat × Nat),
       (recoverPrimes I.N I.E I.D).1 = res ∧

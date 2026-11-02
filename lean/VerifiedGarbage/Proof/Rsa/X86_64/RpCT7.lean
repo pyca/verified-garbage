@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Framework.Offset
@@ -20,6 +21,7 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+meta import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -147,64 +149,23 @@ theorem finA_ct (M : Mont) : RelCT isa (Two GR3) (seqs [.block [.mov .rax (.mem 
 
 /-! ## `p = gcd(u, n)` and `q = n / p` -/
 
-/-- `v = n`. -/
-def XV (I : RpIn) (s : State) : Prop :=
-  XT I s ∧ wv s.mem I.B (slot (wk I.k) fV) (wk I.k) = wv s.mem I.B (slot (wk I.k) aN) (wk I.k)
-
-/-- `x₁ = 0` (`o`) or `x₁ = 1`, and `x₂ = 0` if `z`. -/
-def XW (o z : Bool) (I : RpIn) (s : State) : Prop :=
-  XV I s ∧ (o = false → wv s.mem I.B (slot (wk I.k) fX₁) (wk I.k + 2) = 0) ∧
-    (o = true → wv s.mem I.B (slot (wk I.k) fX₁) (wk I.k) = 1) ∧
-    (z = true → wv s.mem I.B (slot (wk I.k) fX₂) (wk I.k + 2) = 0)
-
-/-- The facts after a piece that writes only array `j`. -/
-theorem xv_keep {I : RpIn} {s t : State} (hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64) {js : List Nat}
-    (hf : Frm I.B (rg (wk I.k) js []) s.mem t.mem) (hU : fU ∉ js) (hV : fV ∉ js) (hN : aN ∉ js)
-    (h : XV I s) : XV I t := by
-  obtain ⟨ht, hv⟩ := h
-  refine ⟨?_, ?_⟩
-  · show word t.mem I.B (slot (wk I.k) fU + 8 * wk I.k) = 0
-    rw [hf.rg_wordA hZ16 (by simp) (by decide) hU (by omega_arith)]; exact ht
-  · rw [hf.rg_wv hZ16 (by simp) (by decide) hV (by omega_arith), hf.rg_wv hZ16 (by simp) (by decide) hN (by omega_arith)]
-    exact hv
-
-theorem inverse_gct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (([.mov .r11 (.reg .r12)] : List Instr) ++
-      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr))))
-      (.loop (VG.Impl.Rsa.X86_64.Keys.invStep fU fV fX₁ fX₂ aN fT) .ne)) hc).isSome = true) :
-    RelCT isa (Two (FX (XW true true))) (inverse fU fV fX₁ fX₂ aN fT) (Two (FX fun _ _ => True)) := by
-  have e : inverse fU fV fX₁ fX₂ aN fT = .seq (.block (ws ++ ([.mov .r11 (.reg .r12)] ++
-      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ [.mov32 .r13 (.imm 0)]))))
-      (.loop (VG.Impl.Rsa.X86_64.Keys.invStep fU fV fX₁ fX₂ aN fT) .ne) := by
-    simp only [inverse, invInit, List.append_assoc]
+theorem inverse_gct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r13 (.reg .r12)] : List Instr))
+      (inverseN fU fV fX₂ aN)) hc).isSome = true) :
+    RelCT isa (Two (FX XT)) (inverse fU fV fX₂ aN) (Two (FX fun _ _ => True)) := by
+  have e : inverse fU fV fX₂ aN = .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr)))
+      (inverseN fU fV fX₂ aN) := rfl
   rw [e]
   refine ws_ct RpP.B RpP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun p s h => ?_
   rw [← e]
-  have hw := h.ws
-  have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
-  have h' := h
-  obtain ⟨I, m₀, c, e, S, L, O, hmk, ⟨u0, vm⟩, -, x1, x2⟩ := h'
-  subst e
-  dsimp only [RpIn.pub] at hw hZ16
-  have hw1 := hw.w1
-  have hw2 := hw.w2
-  have vX₂ : wv s.mem I.B (slot (wk I.k) fX₂) (wk I.k) = 0 := by
-    have := wv_add s.mem I.B (slot (wk I.k) fX₂) (wk I.k) 2; have := x2 rfl; omega_arith
-  refine WP.mono (inverse_ok hw.scr hw.rdi hw.hw hw.hS (by omega_arith) hw2 hw.hZ
-    (iU := fU) (iV := fV) (iX₁ := fX₁) (iX₂ := fX₂) (iM := aN) (iT := fT) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    u0 vm (x1 rfl) vX₂) fun u ⟨_, f', k, _⟩ => ?_
-  have f : Frm I.B (rg (wk I.k) [fU, fV, fX₁, fX₂, fT] [sMo]) s.mem u.mem := f'.widen (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl | rfl | rfl)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _)
-    · exact rg_cover_hdr _ (by decide))
-  exact h.step f (by decide) (by decide) (by decide) k (by decide) fun _ _ _ => trivial
+  obtain ⟨I, m₀, c, rfl, S, L, O, hmk, -⟩ := h
+  have hZ26 : slot (wk I.k) 26 ≤ I.Z := by have := L.z; have := L.k1; unfold slot hdrBytes wk; omega
+  have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega
+  refine WP.mono (InvLaw.inverse_ok S.ws hZ26 hw20 (iU := fU) (iV := fV) (iX₂ := fX₂) (iM := aN) (by decide)
+    (by decide) (by decide) (by decide) (by decide)) fun u ⟨_, f', k, _⟩ => ?_
+  have f := frm_inv f'
+  exact ⟨I, m₀, c, rfl, S.step26 f hZ26 (by decide) (by simp) k (by decide), L, O,
+    by rw [f.rg_word (by decide) (by simp)]; exact hmk, trivial⟩
 
 theorem divmod_gct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base fR .r8 ++ (([.mov .r11 (.reg .r12)] : List Instr) ++
@@ -230,78 +191,10 @@ theorem divmod_gct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
   exact h.step f (by decide) (by simp) (by simp) k (by decide) fun _ _ _ => trivial
 
-theorem finB_ct : RelCT isa (Two (FX XT)) (seqs [zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁),
-    zeroA fX₂, inverse fU fV fX₁ fX₂ aN fT, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT])
+theorem finB_ct [InvLaw] : RelCT isa (Two (FX XT)) (seqs [inverse fU fV fX₂ aN, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT])
     (Two (FX fun _ _ => True)) := by
   have hB : ∀ (X : RpIn → State → Prop) p s, FX X p s → Ws s p.B p.Z (wk p.k) := fun _ _ _ h => h.ws
   simp only [seqs]
-  -- `v = n`.
-  refine RelCT.seq (R := Two (FX XT)) (zeroA_gct RpP.B RpP.Z (fun p => wk p.k) (hB _) (by taint_decide)
-    fun p s h => WP.mono (zeroA_ok h.ws (j := fV) (by decide)) fun u ⟨_, o, k⟩ =>
-      h.step (Frm.rg_of_out o (Nat.le_refl _) [fV] [] (by decide)) (by decide) (by simp) (by simp) k (by decide)
-        fun I e ht => by
-          subst e
-          have hw := h.ws
-          dsimp only [RpIn.pub] at o hw
-          have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
-          show word u.mem I.B (slot (wk I.k) fU + 8 * wk I.k) = 0
-          rw [(Frm.rg_of_out o (Nat.le_refl _) [fV] [] (by decide)).rg_wordA hZ16 (by simp) (by decide) (by decide)
-            (by omega_arith)]
-          exact ht) ?_
-  refine RelCT.seq (R := Two (FX XV)) (copyA_gct RpP.B RpP.Z (fun p => wk p.k) (hB _) (by taint_decide)
-    fun p s h => ?_) ?_
-  · have hw := h.ws
-    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
-    refine WP.mono (copyA_ok hw (o := fV) (a := aN) (by decide) (by decide) (by decide)) fun u ⟨cv, o, k⟩ => ?_
-    have hf : Frm p.B (rg (wk p.k) [fV] []) s.mem u.mem := Frm.rg_of_out o (by omega_arith) _ _ (by decide)
-    refine h.step hf (by decide) (by simp) (by simp) k (by decide) fun I e ht => ?_
-    subst e; dsimp only [RpIn.pub] at hf cv hZ16
-    refine ⟨?_, ?_⟩
-    · show word u.mem I.B (slot (wk I.k) fU + 8 * wk I.k) = 0
-      rw [hf.rg_wordA hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact ht
-    · rw [cv, hf.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]
-  -- `x₁ = 1`, `x₂ = 0`.
-  refine RelCT.seq (R := Two (FX (XW false false))) (zeroA_gct RpP.B RpP.Z (fun p => wk p.k) (hB _)
-    (by taint_decide) fun p s h => ?_) ?_
-  · have hw := h.ws
-    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
-    refine WP.mono (zeroA_ok hw (j := fX₁) (by decide)) fun u ⟨z, o, k⟩ => ?_
-    have hf : Frm p.B (rg (wk p.k) [fX₁] []) s.mem u.mem := Frm.rg_of_out o (Nat.le_refl _) _ _ (by decide)
-    refine h.step hf (by decide) (by simp) (by simp) k (by decide) fun I e hv => ?_
-    subst e; dsimp only [RpIn.pub] at hf z hZ16
-    refine ⟨xv_keep hZ16 hf (by decide) (by decide) (by decide) hv, fun _ => z, ?_, ?_⟩ <;> intro e <;> cases e
-  refine RelCT.seq (R := Two (FX (XW true false))) ?_ ?_
-  · have e : setOneA fX₁ = ws ++ (base fX₁ .rbx ++ ([.mov32 .rax (.imm 1), .store (at0 .rbx) .rax] :
-        List Instr)) := by
-      simp only [setOneA, List.append_assoc]
-    rw [e]
-    refine ws_block_ct RpP.B RpP.Z (fun p => wk p.k) (hB _) (by taint_decide) fun p s h => ?_
-    rw [← e]
-    have hw := h.ws
-    have hn := hw.scr.nowrap
-    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.hZ; omega_arith
-    have sX₁ := hw.sl (j := fX₁) (by decide)
-    have hw1 := hw.w1
-    refine WP.mono (setOneA_ok hw (j := fX₁) (by decide)) fun u ⟨m, k⟩ => ?_
-    have hf : Frm p.B (rg (wk p.k) [fX₁] []) s.mem u.mem := by
-      rw [m]; exact Frm.rg_of_out (writeW_outside _ _ _ (by omega_arith)) (by omega_arith) _ _ (by decide)
-    refine h.step hf (by decide) (by simp) (by simp) k (by decide) fun I e hv => ?_
-    subst e; dsimp only [RpIn.pub] at hf m hZ16 hn sX₁ hw1
-    refine ⟨xv_keep hZ16 hf (by decide) (by decide) (by decide) hv.1, ?_, fun _ => ?_, ?_⟩
-    · intro e; cases e
-    · rw [m]; exact wv_set_one (by omega_arith) (hv.2.1 rfl) (by omega_arith)
-    · intro e; cases e
-  refine RelCT.seq (R := Two (FX (XW true true))) (zeroA_gct RpP.B RpP.Z (fun p => wk p.k) (hB _)
-    (by taint_decide) fun p s h => ?_) ?_
-  · have hw := h.ws
-    have hZ16 : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
-    refine WP.mono (zeroA_ok hw (j := fX₂) (by decide)) fun u ⟨z, o, k⟩ => ?_
-    have hf : Frm p.B (rg (wk p.k) [fX₂] []) s.mem u.mem := Frm.rg_of_out o (Nat.le_refl _) _ _ (by decide)
-    refine h.step hf (by decide) (by simp) (by simp) k (by decide) fun I e hv => ?_
-    subst e; dsimp only [RpIn.pub] at hf z hZ16
-    refine ⟨xv_keep hZ16 hf (by decide) (by decide) (by decide) hv.1, ?_, fun _ => ?_, fun _ => z⟩
-    · intro e; cases e
-    rw [hf.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact hv.2.2.1 rfl
   -- The inverse, and `q = n / v`.
   refine RelCT.seq (inverse_gct (by taint_decide)) (RelCT.seq (R := Two (FX fun _ _ => True))
     (zeroA_gct RpP.B RpP.Z (fun p => wk p.k) (hB _) (by taint_decide) fun p s h =>
@@ -379,11 +272,10 @@ theorem storeR_ct {j sPtr : Nat} (hj : j < 16) (hP : sPtr < 32) (ptr : RpP → A
         (fw _ (by decide)).trans hm⟩
 
 /-- `fin` leaks the same in runs that agree on the public data. -/
-theorem fin_ct (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) fun _ _ => True := by
+theorem fin_ct [InvLaw] (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) fun _ _ => True := by
   rw [show fin M.mm = [.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax], M.mm aY aY aOne, zeroA fU,
       .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ [.mov32 .rbp (.imm 0)]),
-      wordLoop 0 subBody] ++ ([zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁), zeroA fX₂,
-        inverse fU fV fX₁ fX₂ aN fT, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT] ++
+      wordLoop 0 subBody] ++ ([inverse fU fV fX₂ aN, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT] ++
       ([.block (ws ++ base fV .rbx ++ base fQ .r10 ++ [.mov32 .rbp (.imm 0)]), wordLoop 0 ltBody,
         .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody] ++
       (storeA fV sP Impl.Bignum.X86_64.Public.sK sMask ++ (storeA fQ sQ Impl.Bignum.X86_64.Public.sK sMask ++

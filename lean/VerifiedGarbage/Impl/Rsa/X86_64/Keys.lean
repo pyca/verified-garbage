@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 
 /-!
 # RSA private keys on x86-64: the shared routines and `vg_rsa_crt_values`
@@ -18,14 +19,10 @@ depend only on `rdi`, `w` and the stride, all public.
   shifted left a bit, then `[t] = [r] - [d]` over `w + 1` words and `[r]`
   replaced by `[t]` and `[q]`'s low bit set if it does not borrow. `[r]`
   ends as the remainder and `[q]` as the quotient.
-* `inverse u v x₁ x₂ m t`: `128 w` steps of the binary extended Euclidean
-  algorithm modulo the odd `[m]`: from `([u], [v], [x₁], [x₂]) =
-  (a, m, 1, 0)`, `[v]` ends as `gcd(a, m)` and `[x₂]` with
-  `[x₂] a ≡ [v] (mod m)`. Each step, under masks from the low bit of `[u]`
-  and the borrow of `[u] - [v]`: `(u, v, x₁, x₂)` swapped to
-  `(v, u, x₂, x₁)` if `u` is odd and below `v`, then
-  `u -= v` and `x₁ -= x₂ (mod m)` if `u` is odd, then `u` and `x₁` halved
-  (`x₁ + m` if `x₁` is odd).
+* `inverse u v x₂ m`: `[v] = gcd(a, m)` and `[x₂]` with `[x₂] a ≡ [v]
+  (mod m)` for `a` in `[u]` and an odd `m` in `[m]`, by batches of divsteps
+  at a width `n` read at run time (`inverseN`), in arrays of its own from
+  16 on (see "The inverse" below).
 
 `vg_rsa_crt_values(dp, dp_len, dq, dq_len, qinv, qinv_len, n, n_len, p,
 p_len, q, q_len, d, d_len, scratch, scratch_len)`: the first six arguments
@@ -168,64 +165,8 @@ def divInit (iR : Nat) : List Instr :=
 def divmod (iQ iR iD iT : Nat) : Prog isa :=
   seqs [.block (divInit iR), zeroAccLoop, .loop (divStep iQ iR iD iT) .ne]
 
-/-! ## The binary extended Euclidean algorithm -/
-
-/-- The mask of `u` odd into `sMo`, the mask of `u < v` into `rbp`, and the
-swaps of `(u, v)` and `(x₁, x₂)` under both. -/
-def invSwapP (iU iV iX₁ iX₂ : Nat) : List (Prog isa) := [
-  .block (base iU .rbx ++ ([.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0),
-    .alu .sub .rdx (.reg .rax), .store (hdr sMo) .rdx] : List Instr) ++ base iV .r10 ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
-  wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp],
-  .block [.mov .r15 (.reg .rbp), .alu .and .r15 (.mem (hdr sMo))],
-  wordLoop 0 cswapBody,
-  .block (base iX₁ .rbx ++ base iX₂ .r10),
-  wordLoop 0 cswapBody]
-
-/-- `u -= v`, if `u` is odd. -/
-def invSubUP (iU iV : Nat) : List (Prog isa) := [
-  .block (([.mov .r15 (.mem (hdr sMo)), .mov32 .rbp (.imm 0)] : List Instr) ++ base iU .r8 ++ base iV .r10 ++ base iU .rsi),
-  wordLoop 0 subMBody]
-
-/-- `x₁ -= x₂ (mod m)`, if `u` is odd (the mask in `r15`). -/
-def invSubXP (iX₁ iX₂ iM iT : Nat) : List (Prog isa) := [
-  .block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base iX₁ .r8 ++ base iX₂ .r10 ++ base iT .rsi),
-  wordLoop 0 subMBody,
-  .block (([.mov .r15 (.reg .rbp), .mov32 .rbp (.imm 0)] : List Instr) ++ base iT .r8 ++ base iM .r10 ++ base iX₁ .rbx),
-  wordLoop 0 addMBody]
-
-/-- `u -= v` and `x₁ -= x₂ (mod m)`, if `u` is odd. -/
-def invSubP (iU iV iX₁ iX₂ iM iT : Nat) : List (Prog isa) := invSubUP iU iV ++ invSubXP iX₁ iX₂ iM iT
-
-/-- `u /= 2`. -/
-def invHalfUP (iU : Nat) : List (Prog isa) := [.block (base iU .r8 ++ base iU .rsi), wordLoop 0 shrBody]
-
-/-- `x₁ := x₁ / 2 (mod m)`: `t := x₁ + m` if `x₁` is odd (`w + 1` words),
-then `x₁ := t / 2`. -/
-def invHalfXP (iX₁ iM iT : Nat) : List (Prog isa) := [
-  .block (base iX₁ .r8 ++ ([.mov .rax (.mem (at0 .r8)), .alu .and .rax (.imm 1), .mov32 .r15 (.imm 0),
-    .alu .sub .r15 (.reg .rax), .mov32 .rbp (.imm 0)] : List Instr) ++ base iM .r10 ++ base iT .rbx),
-  wordLoop 0 addMBody,
-  .block (([.mov32 .rax (.imm 0), cfFromRbp, .alu .adc .rax (.imm 0), .store (ix .rbx .r12) .rax] : List Instr) ++ base iT .r8 ++
-    base iX₁ .rsi),
-  wordLoop 0 shrBody]
-
-/-- `u /= 2` and `x₁ := x₁ / 2 (mod m)`. -/
-def invHalfP (iU iX₁ iM iT : Nat) : List (Prog isa) := invHalfUP iU ++ invHalfXP iX₁ iM iT
-
 /-- The step counter `r13` against `r11`. -/
 def countP : List Instr := [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.reg .r11)]
-
-/-- One step of `inverse`. -/
-def invStep (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
-  seqs (invSwapP iU iV iX₁ iX₂ ++ (invSubP iU iV iX₁ iX₂ iM iT ++ (invHalfP iU iX₁ iM iT ++ [.block countP])))
-
-/-- `w` and the stride, `r11 := 128 w`, `r13 := 0`. -/
-def invInit : List Instr :=
-  ws ++ ([.mov .r11 (.reg .r12)] : List Instr) ++ List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr)
-
-/-- `128 w` steps of the binary extended Euclidean algorithm. -/
-def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
-  .seq (.block invInit) (.loop (invStep iU iV iX₁ iX₂ iM iT) .ne)
 
 /-! ## Masks -/
 
@@ -240,6 +181,249 @@ def setOneA (j : Nat) : List Instr := ws ++ base j .rbx ++ ([.mov32 .rax (.imm 1
 is not zero). -/
 def decA (j : Nat) : List Instr :=
   ws ++ base j .rbx ++ ([.mov .rax (.mem (at0 .rbx)), .alu .sub .rax (.imm 1), .store (at0 .rbx) .rax] : List Instr)
+
+/-! ## The inverse: batches of divsteps
+
+`inverse u v x₂ m` (`n` in `r13`, `w` and the stride from `ws`): from `a` in
+`[u]` and the odd `m` in `[m]`, both below `2^(64 n)`, `[v] = gcd(a, m)` and
+`[x₂] a ≡ [v] (mod m)`, `[x₂] < m`, by Bernstein–Yang divsteps in batches of
+59 on the low words (`pchunk`, as `Impl/Weierstrass/X86_64/Inv.lean`'s) at
+the width `n` read at run time: `f = m`, `g = a` or `a + m` if `a` is even
+(odd, so its first divstep swaps it below `m` if it is larger), `n + 1`
+words each in two's complement, `(a, b) = (0, 1)` reduced by one word of
+Montgomery reduction per batch (`mred`) modulo `m` with its low bit set (so
+that the batches run on an odd modulus whatever `m` is), `3 n + 2` batches (`177 n + 118`
+divsteps, enough for numbers below `2^(64 n + 32)`). Then `g = 0` and
+`f = ±gcd`, `x₂ = ±a 2^(5 B) mod m` by `5 B` modular doublings, and
+`v = |f|`.
+
+Its working space is arrays of its own, from 16 on: a window (`aWin`, three
+arrays), `f`, `g`, `a`, `b`, a product `t` (`n + 2` words), a staging array
+and `m` (`aP`, its words above `n` zero). In a batch `rdi` points at the
+window, whose words are the low words of `f` and `g` and the chunks'
+temporary (at 0, 8, 16: `pchunk`'s), `d`, the matrix `u, v, q, r`, the two
+masks of the coefficients' signs and `-m⁻¹ mod 2^64`; the other arrays'
+bases are `rdi` plus multiples of the stride in `r9`. `n` is in `r15`, the
+count of batches in `rsi`, and the stride in `r14` across the divsteps,
+which write `r9`–`r13`. Every branch and address depends only on `rdi`,
+the stride, `n` and the counts. -/
+
+namespace Inv
+
+open VG.Impl.Weierstrass.X86_64 (pchunk)
+
+/-- The arrays (`aWin` is three: `16`–`18`). -/
+def aWin : Nat := 16
+def aF : Nat := 19
+def aG : Nat := 20
+def aA : Nat := 21
+def aB : Nat := 22
+def aT : Nat := 23
+def aS : Nat := 24
+def aP : Nat := 25
+
+/-- The window's slots (bytes). -/
+def oD : Nat := 24
+def oU : Nat := 32
+def oV : Nat := 40
+def oQ : Nat := 48
+def oR : Nat := 56
+def oMu : Nat := 64
+def oMv : Nat := 72
+def oMi : Nat := 80
+
+/-- A word of the window. -/
+def wm (d : Nat) : MemOp := { base := .rdi, disp := d }
+
+/-- `r12 := w` from the stride in `r9` (`8 (w + 2)`), rather than from the
+header as `ws` does: the inverse reads no memory for its counts, so a single
+check of its taint covers it. -/
+def wsR : List Instr := [.mov .r12 (.reg .r9), .shift .shr .r12 3, .alu .sub .r12 (.imm 2)]
+
+/-- `zeroA`, with `wsR`. -/
+def zeroI (j : Nat) : Prog isa := .seq (.block (wsR ++ base j .r8)) zeroAccLoop
+
+/-- `copyA`, with `wsR`. -/
+def copyI (o a : Nat) : Prog isa := .seq (.block (wsR ++ base a .rsi ++ base o .rbx)) copyWords
+
+/-- `setOneA`, with `wsR`. -/
+def setOneI (j : Nat) : List Instr :=
+  wsR ++ base j .rbx ++ ([.mov32 .rax (.imm 1), .store (at0 .rbx) .rax] : List Instr)
+
+/-- `r := rdi + k r9`: array `16 + k`'s base, from the window's. -/
+def wa (k : Nat) (r : Reg) : List Instr :=
+  ([.mov r (.reg .rdi)] : List Instr) ++ List.replicate k (.alu .add r (.reg .r9))
+
+/-! ### The start (`rdi` the working space's base) -/
+
+/-- `g := a + (m if a is even)` over `w + 1` words, from `a` in `aT` and `m` in `aP`. -/
+def gInit : List (Prog isa) := [
+  .block (wsR ++ base aT .r8 ++ ([.mov .rax (.mem (at0 .r8)), .alu .and .rax (.imm 1), .alu .sub .rax (.imm 1),
+    .mov .r15 (.reg .rax), .alu .add .r12 (.imm 1), .mov32 .rbp (.imm 0)] : List Instr) ++ base aG .rbx ++
+    base aP .r10),
+  wordLoop 0 addMBody]
+
+/-- `d = 1` and `-m⁻¹ mod 2^64` into the window, `r15 := n`, the count of
+batches `3 n + 2` into `rsi`, and `rdi` to the window. -/
+def setup : List Instr :=
+  wsR ++ base aP .r8 ++ ([.mov .rbx (.mem (at0 .r8))] : List Instr) ++ minv ++ base aWin .r8 ++
+  ([.store { base := .r8, disp := oMi } .r15, .mov32 .rax (.imm 1), .store { base := .r8, disp := oD } .rax,
+    .mov .r15 (.reg .r13), .mov .rsi (.reg .r13), .alu .add .rsi (.reg .r13), .alu .add .rsi (.reg .r13),
+    .alu .add .rsi (.imm 2)] : List Instr) ++ base aWin .rdi
+
+/-- `m`'s low bit set in `aP`: an odd modulus for the batches whatever `m` is
+(`m` itself when it is odd). -/
+def setOdd : List Instr :=
+  wsR ++ base aP .r8 ++ ([.mov .rax (.mem (at0 .r8)), .shift .shr .rax 1, .alu .add .rax (.reg .rax),
+    .alu .add .rax (.imm 1), .store (at0 .r8) .rax] : List Instr)
+
+/-- The start: the arrays zeroed, `m` into `aP` (made odd) and `f`, `a` into
+`aT`, `g`, `(a, b) = (0, 1)`, then `setup`. -/
+def start (iU iM : Nat) : List (Prog isa) :=
+  [zeroI aF, zeroI aG, zeroI aA, zeroI aB, zeroI aT, zeroI aS, zeroI aP, copyI aP iM, .block setOdd, copyI aF aP,
+    copyI aT iU] ++
+  gInit ++ [.block (setOneI aB), .block setup]
+
+/-! ### A batch (`rdi` the window, `r9` the stride, `r15` `n`) -/
+
+/-- The low words of `f` and `g` into the window, `~d` into `rbx`, the stride into `r14`. -/
+def bStart : List Instr :=
+  wa 3 .rax ++ ([.mov .rax (.mem (at0 .rax)), .store (wm 0) .rax] : List Instr) ++ wa 4 .rax ++
+  ([.mov .rax (.mem (at0 .rax)), .store (wm 8) .rax, .mov .rbx (.mem (wm oD)), .alu .xor .rbx (.imm (-1)),
+    .mov .r14 (.reg .r9)] : List Instr)
+
+/-- 59 divsteps: `d` and the matrix in `rbx`, `r9`–`r12`. -/
+def bWords : List Instr :=
+  pchunk 0 15 true false ++ pchunk 0 15 false false ++ pchunk 0 15 false false ++ pchunk 0 14 false true ++
+    ([.alu .xor .rbx (.imm (-1))] : List Instr)
+
+/-- `d` and the matrix into the window, the stride back into `r9`, `r12 := n + 1`. -/
+def bSave : List Instr :=
+  [.store (wm oD) .rbx, .store (wm oU) .r9, .store (wm oV) .r10, .store (wm oQ) .r11, .store (wm oR) .r12,
+    .mov .r9 (.reg .r14), .mov .r12 (.reg .r15), .alu .add .r12 (.imm 1)]
+
+/-- `a = |c|` for the coefficient at `[c]`, and the mask of its sign into `[m]`. -/
+def absM (c m : Nat) (a : Reg) : List Instr :=
+  [.mov a (.mem (wm c)), .mov .rax (.reg a), .shift .shr .rax 63, .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax),
+    .store (wm m) .rdx, .alu .xor a (.reg .rdx), .alu .sub a (.reg .rdx)]
+
+/-- Column `i` (`r14`) of `[r11] = u [rbx] + v [r10]`: the two products of
+`|u|` (`rcx`) and `|v|` (`rbp`) by the words complemented under the masks
+added to the accumulator `r8`, `r13`, whose low word is stored. -/
+def linBody : List Instr :=
+  [.mov .rax (.mem (ix .rbx .r14)), .alu .xor .rax (.mem (wm oMu)), .mul .rcx, .alu .add .r8 (.reg .rax),
+    .alu .adc .r13 (.reg .rdx), .mov .rax (.mem (ix .r10 .r14)), .alu .xor .rax (.mem (wm oMv)), .mul .rbp,
+    .alu .add .r8 (.reg .rax), .alu .adc .r13 (.reg .rdx), .store (ix .r11 .r14) .r8, .mov .r8 (.reg .r13),
+    .mov32 .r13 (.imm 0)]
+
+/-- `[t] = c [16 + kX] + c' [16 + kY]` for the coefficients at `[cu]`, `[cv]`,
+over `n + 1` words (`r12`), modulo `2^(64 (n + 1))`. -/
+def lin (cu cv kX kY : Nat) : List (Prog isa) := [
+  .block (absM cu oMu .rcx ++ absM cv oMv .rbp ++
+    ([.mov .r8 (.reg .rcx), .alu .and .r8 (.mem (wm oMu)), .mov .rax (.reg .rbp), .alu .and .rax (.mem (wm oMv)),
+      .alu .add .r8 (.reg .rax), .mov32 .r13 (.imm 0)] : List Instr) ++ wa kX .rbx ++ wa kY .r10 ++ wa 7 .r11),
+  wordLoop 0 linBody]
+
+/-- Word `i` (`r14`) of `[r10] = [rbx] / 2^59`, from words `i` and `i + 1`. -/
+def shrBody : List Instr :=
+  [.mov .rax (.mem (ix .rbx .r14)), .shift .shr .rax 59, .mov .r8 (.mem (ix .rbx .r14 8)), .shift .shl .r8 5,
+    .alu .add .rax (.reg .r8), .store (ix .r10 .r14) .rax]
+
+/-- `[16 + kD] = [t] / 2^59`, arithmetic, `n + 1` words: `n` from pairs of
+words, then the top one from its sign. -/
+def shr (kD : Nat) : List (Prog isa) := [
+  .block (wa 7 .rbx ++ wa kD .r10 ++ ([.mov .r12 (.reg .r15)] : List Instr)),
+  wordLoop 0 shrBody,
+  .block [.mov .rdx (.mem (ix .rbx .r14)), .mov .r8 (.reg .rdx), .shift .shr .r8 63, .mov32 .rax (.imm 0),
+    .alu .sub .rax (.reg .r8), .mov .r8 (.reg .rax), .mov .rax (.reg .rdx), .shift .shr .rax 59, .shift .shl .r8 5,
+    .alu .add .rax (.reg .r8), .store (ix .r10 .r14) .rax, .alu .add .r12 (.imm 1)]]
+
+/-- `[16 + kD] = ([t] + k m) / 2^64` (`n + 1` words), for `k = [t]₀ (-m⁻¹)
+mod 2^64` and `[t]` sign-extended to `n + 2` words: `[t]`'s word `n + 1`
+zeroed, `k m` added by `mulAddRow` (with `m`'s base in `r9`, the stride
+kept in `r13`), and the mask of `[t]`'s sign (kept at `oMu`) added to its
+word `n + 1`; then its words `1 … n + 1`. -/
+def mred (kD : Nat) : List (Prog isa) := [
+  .block (wa 7 .r8 ++ wa 9 .r10 ++ wa kD .r11 ++
+    ([.mov .rax (.mem (at0 .r8)), .mov .rcx (.mem (wm oMi)), .mul .rcx, .mov .rcx (.reg .rax),
+      .mov .rax (.mem (ix .r8 .r15)), .shift .shr .rax 63, .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax),
+      .store (wm oMu) .rdx, .mov32 .rax (.imm 0), .store (ix .r8 .r15 8) .rax, .mov .r13 (.reg .r9),
+      .mov .r9 (.reg .r10), .mov .r12 (.reg .r15)] : List Instr)),
+  mulAddRow,
+  .block [.mov .r9 (.reg .r13), .mov .rax (.mem (ix .r8 .r15 8)), .alu .add .rax (.mem (wm oMu)),
+    .store (ix .r8 .r15 8) .rax, .alu .add .r12 (.imm 1)],
+  wordLoop 0 [.mov .rax (.mem (ix .r8 .r14 8)), .store (ix .r11 .r14) .rax]]
+
+/-- `[16 + kD] = [16 + kS]`, `n + 1` words. -/
+def copyW (kS kD : Nat) : List (Prog isa) :=
+  [.block (wa kS .rbx ++ wa kD .r10), wordLoop 0 [.mov .rax (.mem (ix .rbx .r14)), .store (ix .r10 .r14) .rax]]
+
+/-- A batch: the divsteps, `(f, g) := (u f + v g, q f + r g) / 2^59` (`f`
+staged), `(a, b)` likewise by `mred`, and the count less one. -/
+def batch : Prog isa := seqs ([.block (bStart ++ bWords ++ bSave)] ++ lin oU oV 3 4 ++ shr 8 ++ lin oQ oR 3 4 ++
+  shr 4 ++ copyW 8 3 ++ lin oU oV 5 6 ++ mred 8 ++ lin oQ oR 5 6 ++ mred 6 ++ copyW 8 5 ++
+  [.block [.alu .sub .rsi (.imm 1)]])
+
+/-! ### The end (`rdi` the working space's base again) -/
+
+/-- `rdi` back to the working space's base, `r13 := n`, `r12 := n + 1`. -/
+def unwin : List Instr :=
+  ([.alu .sub .rdi (.imm (BitVec.ofNat 32 hdrBytes))] : List Instr) ++ List.replicate aWin (.alu .sub .rdi (.reg .r9)) ++
+  ([.mov .r13 (.reg .r15)] : List Instr)
+
+/-- `r12 := n + 1`. -/
+def countN : List Instr := [.mov .r12 (.reg .r13), .alu .add .r12 (.imm 1)]
+
+/-- `rbp` the mask of `[j] ≥ 0` (its word `n`'s top bit clear). -/
+def nonNeg (j : Nat) : List Instr :=
+  base j .rbx ++ ([.mov .rax (.mem (ix .rbx .r13)), .shift .shr .rax 63, .alu .sub .rax (.imm 1),
+    .mov .rbp (.reg .rax)] : List Instr)
+
+/-- `rbp` the mask of `[j] < 0` (its word `n`'s top bit set). -/
+def isNeg (j : Nat) : List Instr :=
+  base j .rbx ++ ([.mov .rax (.mem (ix .rbx .r13)), .shift .shr .rax 63, .mov32 .rbp (.imm 0),
+    .alu .sub .rbp (.reg .rax)] : List Instr)
+
+/-- `[t] := [t] - m` if that does not borrow (`n + 1` words). -/
+def csubT : List (Prog isa) :=
+  [.block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aT .r8 ++ base aP .r10 ++ base aS .rsi), wordLoop 0 subBody,
+    wordLoop 0 selBody]
+
+/-- `[t] := 2 [t] mod m`. -/
+def dbl : Prog isa :=
+  seqs ([.block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aT .rbx), wordLoop 0 shlBody] ++ csubT ++
+    [.block [.alu .sub .r11 (.imm 1)]])
+
+/-- The end: `t := a mod m` (`a + m` if `a < 0`, less `m` if not below
+it), `t := m - t` if `f < 0`, `5 B` doublings and a last subtraction, so
+`t = ±a 2^(5 B) mod m`; `|f|` into the cleared `aA` (`f` if `f ≥ 0`, then
+`-f` if `f < 0`), so its words above `n` are zero; then `[v] = |f|` and
+`[x₂] = t`. -/
+def finish (iV iX₂ : Nat) : List (Prog isa) := [
+  .block unwin, zeroI aT,
+  .block (countN ++ base aA .r8 ++ ([.mov .rax (.mem (ix .r8 .r13)), .shift .shr .rax 63, .mov32 .r15 (.imm 0),
+    .alu .sub .r15 (.reg .rax), .mov32 .rbp (.imm 0)] : List Instr) ++ base aT .rbx ++ base aP .r10),
+  wordLoop 0 addMBody] ++ csubT ++ [
+  .block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aP .r8 ++ base aT .r10 ++ base aS .rsi), wordLoop 0 subBody,
+  .block (nonNeg aF ++ base aT .r8 ++ base aS .rsi), wordLoop 0 selBody,
+  .block [.mov .r11 (.reg .r13), .shift .shl .r11 4, .alu .sub .r11 (.reg .r13), .alu .add .r11 (.imm 10)],
+  .loop dbl .ne] ++ csubT ++ [
+  zeroI aA,
+  .block (countN ++ ([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi),
+  wordLoop 0 subBody,
+  .block (isNeg aF ++ base aA .r8 ++ base aF .rsi), wordLoop 0 selBody,
+  .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
+  copyI iV aA, copyI iX₂ aT]
+
+end Inv
+
+/-- The inverse at the width `n` in `r13`. -/
+def inverseN (iU iV iX₂ iM : Nat) : Prog isa :=
+  seqs (Inv.start iU iM ++ [.loop Inv.batch .ne] ++ Inv.finish iV iX₂)
+
+/-- The inverse at the width `w`. -/
+def inverse (iU iV iX₂ iM : Nat) : Prog isa :=
+  .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr))) (inverseN iU iV iX₂ iM)
 
 /-! ## Bytes -/
 
@@ -340,13 +524,8 @@ def pqCheck : List (Prog isa) :=
   [zeroA aU, copyA aU aN, divmod aU aV aP aT] ++ eqA aU aQ ++ [.block andZero, zeroA aC] ++ eqA aV aC ++
     [.block andZero, .block (andOdd aP)]
 
-/-- `inverse`'s start: `(u, v, x₁, x₂) := (q, p, 1, 0)`. -/
-def invSetup : List (Prog isa) :=
-  [zeroA aU, copyA aU aQ, zeroA aV, copyA aV aP, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂]
-
-/-- `qInv = q⁻¹ mod p` into `aX₂`, and `gcd(q, p) = 1` and'ed into `sMask`. -/
 def invPart : List (Prog isa) :=
-  invSetup ++ ([inverse aU aV aX₁ aX₂ aP aT, zeroA aC, .block (setOneA aC)] ++ (eqA aV aC ++ [.block andZero]))
+  ([inverse aQ aV aX₂ aP, zeroA aC, .block (setOneA aC)] ++ (eqA aV aC ++ [.block andZero]))
 
 /-- `[aC] := [j] - 1` (for an odd `[j]`, whose low word is not zero), then `[aU] := d`. -/
 def divisor (j : Nat) : List (Prog isa) :=

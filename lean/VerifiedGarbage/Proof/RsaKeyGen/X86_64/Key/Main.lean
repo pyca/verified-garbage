@@ -256,7 +256,7 @@ theorem lt_of_os2ip_len {bs : List Byte} {n : Nat} (h : bs.length = n) : Spec.Rs
   exact this
 
 /-- From the loads to `smallMask`. -/
-theorem front_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLens I) :
+theorem front_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLens I) :
     WP isa (seqs ((loadA aPa kPp kPl ++ (loadA aQa kQp kPl ++ (loadE ++ ([.block [.store (hdr kEv) .rbx]] : List (Prog isa))))) ++
       (order ++ (decTo aPm aPa ++ (decTo aQm aQa ++ (lcmPart ++ ([dPart] ++ smallMask))))))) s
       fun t => Front I m₀ t ∧ InScr I.B I.Z s.mem t.mem := by
@@ -297,7 +297,7 @@ theorem front_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLens 
     (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hQw))
     fun s₅ ⟨h₅, f₅, vL₅⟩ => ?_)
   have hokL : [Rc.arr aL, Rc.arr aU, Rc.arr aV, Rc.arr aC, Rc.arr aM, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT, Rc.arr aR,
-    Rc.hdr sMo, Rc.hdr kOk].all Rc.ok = true := by decide
+    Rc.hdr sMo, Rc.hdr kOk, Rc.priv].all Rc.ok = true := by decide
   have hokE : [Rc.arr aPa, Rc.arr aQa, Rc.hdr kEv].all Rc.ok = true := by decide
   have ev₅ : word s₅.mem I.B (8 * kEv) = BitVec.ofNat 64 I.E := by
     rw [f₅.word hokL (by decide) (by decide), f₄.word hok4 (by decide) (by decide),
@@ -324,7 +324,7 @@ theorem front_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLens 
   have hokD : csD.all Rc.ok = true := by decide
   have hok7 : [Rc.arr aC].all Rc.ok = true := by decide
   have pres : ∀ j, j < 16 → Rc.arr j ∉ csD → Rc.arr j ∉ [Rc.arr aC] → Rc.arr j ∉ [Rc.arr aL, Rc.arr aU, Rc.arr aV,
-      Rc.arr aC, Rc.arr aM, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT, Rc.arr aR, Rc.hdr sMo, Rc.hdr kOk] →
+      Rc.arr aC, Rc.arr aM, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT, Rc.arr aR, Rc.hdr sMo, Rc.hdr kOk, Rc.priv] →
       av I t.mem j = av I s₄.mem j := fun j hj h1 h2 h3 => by
     rw [f₇.av hok7 hj h2 hZ, f₆.av hokD hj h1 hZ, f₅.av hokL hj h3 hZ]
   have okt : word t.mem I.B (8 * kOk) = mask ok := by rw [f₇.word hok7 (by decide) (by decide), ok₆]

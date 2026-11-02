@@ -42,7 +42,7 @@ open VG.Spec.Rsa (recoverPrimes)
 open VG.Impl.Rsa.X86_64.Keys.Recover.Folded
 open Rp
 
-theorem rpMain_ct (M : Mont) : RelCT isa (Two GM) (Folded.main M.mm) fun _ _ => True := by
+theorem rpMain_ct [InvLaw] (M : Mont) : RelCT isa (Two GM) (Folded.main M.mm) fun _ _ => True := by
   rw [rpMain_eq']
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two GMP) (two_post (prefix_ct.mono (fun _ _ h => h) fun _ _ _ => trivial)
     fun p s ⟨I, e, h, hv⟩ => WP.mono (rpPrefix_ok h hv) fun t ⟨S, hz, vM, vN, hi, hDE⟩ =>
@@ -68,7 +68,7 @@ theorem rpMain_ct (M : Mont) : RelCT isa (Two GM) (Folded.main M.mm) fun _ _ => 
     exact ⟨I, σ.mem, rfl, ⟨S, L, hNo, hlo', vN, hi, by rw [vM]; omega_arith, by omega_arith, by omega_arith, by omega_arith,
       ⟨fun i hi => by rw [S.wr, ← hp.wr]; exact hp.oP.wr i hi, hp.oP.sep⟩,
       ⟨fun i hi => by rw [S.wr, ← hp.wr]; exact hp.oQ.wr i hi, hp.oQ.sep⟩, hp.a⟩, hp.outs, hv⟩
-theorem rpCode_ct (M : Mont) : RelCT isa (Two RPRel) (Folded.code M.mm) fun _ _ => True := by
+theorem rpCode_ct [InvLaw] (M : Mont) : RelCT isa (Two RPRel) (Folded.code M.mm) fun _ _ => True := by
   unfold Folded.code
   refine RelCT.seq (R := Two RP3) (RelCT.block_append (RelCT.seq (R := Two RP2) ?_ ?_)) ?_
   · rw [rpEntry_split]
@@ -124,7 +124,7 @@ theorem rpCode_ct (M : Mont) : RelCT isa (Two RPRel) (Folded.code M.mm) fun _ _ 
 
 /-- `vg_rsa_recover_primes` is constant time but for `n`, `e` and the number
 of tries. -/
-theorem rpCode_constantTime (M : Mont) : ConstantTime isa rpContract.pre rpContract.pub (Folded.code M.mm) := by
+theorem rpCode_constantTime [InvLaw] (M : Mont) : ConstantTime isa rpContract.pre rpContract.pub (Folded.code M.mm) := by
   refine RelCT.constantTime ((rpCode_ct M).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨(rpIn s₁).pub, ⟨h₁, rfl⟩, ⟨h₂, ?_⟩⟩)
     fun _ _ h => h)
   obtain ⟨hr, a0, a1, a2, a3, a4, a5, hn, he, hc⟩ := hp

@@ -109,6 +109,17 @@ theorem RpS.step {I : RpIn} {m₀ : Mem} {s t : State} (h : RpS I m₀ s) {js hs
   ⟨h.ws.congrG hf hhs k hr.1, h.args.congr (rArg_frm hf hhs), h.n.congrK hi k, h.e.congrK hi k,
     h.d.congrK hi k, h.inScr.trans hi, k.2.2.trans h.wr, (k.gpr hr.2).trans h.rsp⟩
 
+/-- `RpS.step` for arrays up to 25, in a working space with room for them. -/
+theorem RpS.step26 {I : RpIn} {m₀ : Mem} {s t : State} (h : RpS I m₀ s) {js hs : List Nat}
+    (hf : Frm I.B (rg (wk I.k) js hs) s.mem t.mem) (hz : slot (wk I.k) 26 ≤ I.Z) (hjs : ∀ j ∈ js, j < 26)
+    (hhs : ∀ i ∈ hs, rSlot i = true) {regs : List Reg} (k : Keep regs s t) (hr : .rdi ∉ regs ∧ .rsp ∉ regs) :
+    RpS I m₀ t :=
+  have h32 : ∀ i ∈ hs, i < 32 := fun i hi => by
+    have := hhs i hi; simp only [rSlot, Bool.or_eq_true, beq_iff_eq] at this; omega
+  have hi : InScr I.B I.Z s.mem t.mem := InScr.of_frm hf (rg_le26 hz hjs h32)
+  ⟨h.ws.congrG hf hhs k hr.1, h.args.congr (rArg_frm hf hhs), h.n.congrK hi k, h.e.congrK hi k,
+    h.d.congrK hi k, h.inScr.trans hi, k.2.2.trans h.wr, (k.gpr hr.2).trans h.rsp⟩
+
 /-- The lengths, as `vg_rsa_recover_primes`'s contract bounds them. -/
 structure RpLens (I : RpIn) : Prop where
   k1 : 64 ≤ I.k

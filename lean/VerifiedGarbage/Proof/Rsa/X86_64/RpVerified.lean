@@ -75,7 +75,7 @@ theorem rp_implies : rpContract.Implies (Spec.Rsa.recoverPrimesContract abi) whe
 
 /-- `vg_rsa_recover_primes` with the Montgomery multiplication `M`, given that
 its code never loads MXCSR (which the registration file evaluates). -/
-theorem rp_verified (M : Mont) (hmx : (Recover.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+theorem rp_verified [InvLaw] (M : Mont) (hmx : (Recover.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified target (Recover.code M.mm) (Spec.Rsa.recoverPrimesContract abi) :=
   Verified.of_correct (rpCode_correct M hmx) (rpCode_constantTime M) rp_implies
 

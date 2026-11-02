@@ -496,16 +496,11 @@ jobs:
             clone=$!
           fi
           source ci/rust_test_timing.sh
-          cargo test --locked --no-run ${{ matrix.arch == 'riscv64' && '--timings' || '' }}
+          cargo test --locked --no-run
           if [ "$TESTS" = true ]; then
             wait "$clone"
             cargo test --locked -- -Z unstable-options --report-time | vg_hide_zero_times
           fi
-      - if: ${{ matrix.arch == 'riscv64' }}
-        uses: ./.github/actions/upload-artifact
-        with:
-          name: cargo-timings-riscv64
-          path: target/cargo-timings/
       - name: Export coverage
         if: ${{ env.TESTS == 'true' }}
         shell: bash
