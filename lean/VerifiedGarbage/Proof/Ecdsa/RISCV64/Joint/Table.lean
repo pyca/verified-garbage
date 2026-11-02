@@ -368,15 +368,15 @@ theorem treeAt_ok (base : Reg) (stride : Nat) (t : Nat) (L : Nat) :
 /-- Quadword `q` of entry `t % 16`, to `E`'s word `q`. -/
 theorem scanWordJ_ok (c : Cfg) {s : State} {base : Addr} (hw : WsReg s base) {q t : Nat} (hq : q < 3 * c.n)
     (hJ : c.jt % 8 = 0) (hJ8 : c.jt + 24 * c.n * 16 ≤ 8192) (hT : 24 * c.n * 15 + 8 * q < 4095)
-    (hE : c.sl EX + 8 * q < 4095)
+    (hE : c.sl c.EX + 8 * q < 4095)
     (hm : ∀ c < 4, s.gpr (maskReg c) = maskOf (t.testBit c)) (h0 : s.gpr .a0 = base + BitVec.ofNat 64 c.jt) :
     WP isa (.block (Cfg.scanWord c q)) s fun s' =>
-      s'.mem = s.mem.writeW (off base (c.sl EX + 8 * q)) (word s.mem base (c.jt + 8 * q + 24 * c.n * (t % 16))) ∧
+      s'.mem = s.mem.writeW (off base (c.sl c.EX + 8 * q)) (word s.mem base (c.jt + 8 * q + 24 * c.n * (t % 16))) ∧
       Keep treeRegs s s' := by
   have hn := hw.nowrap
   have hal := hw.al
   have hjb : Cfg.jb c = 24 * c.n := rfl
-  have hEX8 : c.sl EX % 8 = 0 := by simp only [Cfg.sl, slot, EX]; omega
+  have hEX8 : c.sl c.EX % 8 = 0 := by simp only [Cfg.sl, slot]; rw [Nat.mul_assoc]; omega
   unfold Cfg.scanWord
   rw [hjb]
   have hne : ∀ r ∈ treeRegs, r ≠ .a0 ∧ ∀ c < 4, r ≠ maskReg c := by
@@ -408,13 +408,13 @@ theorem scanWordJ_ok (c : Cfg) {s : State} {base : Addr} (hw : WsReg s base) {q 
 
 /-- The entry's `n` first quadwords to `E`. -/
 theorem scansJ_ok (c : Cfg) {base : Addr} {t : Nat} (hJ : c.jt % 8 = 0) (hJ8 : c.jt + 24 * c.n * 16 ≤ 8192)
-    (hT : 24 * c.n * 15 + 8 * (3 * c.n) ≤ 4095) (hE : c.sl EX + 8 * (3 * c.n) ≤ 4095)
-    (hEJ : c.sl EX + 8 * (3 * c.n) ≤ c.jt) :
+    (hT : 24 * c.n * 15 + 8 * (3 * c.n) ≤ 4095) (hE : c.sl c.EX + 8 * (3 * c.n) ≤ 4095)
+    (hEJ : c.sl c.EX + 8 * (3 * c.n) ≤ c.jt) :
     ∀ n ≤ 3 * c.n, ∀ {s : State}, WsReg s base →
     s.gpr .a0 = base + BitVec.ofNat 64 c.jt → (∀ c < 4, s.gpr (maskReg c) = maskOf (t.testBit c)) →
     WP isa (.block ((List.range n).flatMap (Cfg.scanWord c))) s fun s' =>
-      (∀ q < n, word s'.mem base (c.sl EX + 8 * q) = word s.mem base (c.jt + 8 * q + 24 * c.n * (t % 16))) ∧
-      Outside base (c.sl EX) (8 * n) s.mem s'.mem ∧ Keep treeRegs s s'
+      (∀ q < n, word s'.mem base (c.sl c.EX + 8 * q) = word s.mem base (c.jt + 8 * q + 24 * c.n * (t % 16))) ∧
+      Outside base (c.sl c.EX) (8 * n) s.mem s'.mem ∧ Keep treeRegs s s'
   | 0, _, s, _, _, _ => WP.block_nil ⟨fun q hq => absurd hq (by omega), Outside.refl _ _ _ _, Keep.refl _ _⟩
   | n + 1, hn, s, hw, h0, hm => by
     have hnw := hw.nowrap
@@ -435,7 +435,7 @@ theorem scansJ_ok (c : Cfg) {base : Addr} {t : Nat} (hJ : c.jt % 8 = 0) (hJ8 : c
         word s.mem base (c.jt + 8 * n + 24 * c.n * (t % 16)) := by
       have : 24 * c.n * (t % 16) ≤ 24 * c.n * 15 := Nat.mul_le_mul_left _ (by omega)
       exact O₁.word (by omega) (by omega)
-    have O₂ : Outside base (c.sl EX + 8 * n) 8 s₁.mem s₂.mem := by rw [m₂]; exact writeW_outside _ _ _ (by omega)
+    have O₂ : Outside base (c.sl c.EX + 8 * n) 8 s₁.mem s₂.mem := by rw [m₂]; exact writeW_outside _ _ _ (by omega)
     refine ⟨fun q hq => ?_, ?_, k₁.trans k₂ |>.mono (by simp [treeRegs])⟩
     · by_cases hqn : q < n
       · rw [O₂.word (by omega) (by omega), v₁ q hqn]
