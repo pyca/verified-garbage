@@ -13958,16 +13958,8 @@ call {vg_gf25519_r32_mul}
 .insn 4, 0x4306b083
 .insn 2, 0x8082
 .option pop",
-        vg_gf25519_r32_pow250 = sym super::x25519::vg_gf25519_r32_pow250::vg_gf25519_r32_pow250,
-        vg_gf25519_r32_mul = sym super::x25519::vg_gf25519_r32_mul::vg_gf25519_r32_mul,
+        vg_gf25519_r32_pow250 = sym super::ed25519::vg_gf25519_r32_pow250::vg_gf25519_r32_pow250,
+        vg_gf25519_r32_mul = sym super::ed25519::vg_gf25519_r32_mul::vg_gf25519_r32_mul,
         VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_gf25519_r32_mul.rs"]
-pub(crate) mod vg_gf25519_r32_mul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_gf25519_r32_pow250.rs"]
-pub(crate) mod vg_gf25519_r32_pow250;
