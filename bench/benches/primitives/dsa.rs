@@ -9,7 +9,8 @@ pub const USES: &[&str] = &["dsa", "rsa_mont"];
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 #[path = "../../../tests/cavp/dsa_vectors.rs"]
 mod vectors;
@@ -19,7 +20,8 @@ mod vectors;
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 #[path = "../../../tests/dsa_legacy.rs"]
 mod legacy_vectors;
@@ -29,7 +31,8 @@ mod legacy_vectors;
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
     use crate::{BenchDyn, OPENSSL, VG, fixed_tape};
@@ -300,6 +303,7 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
