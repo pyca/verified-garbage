@@ -14,6 +14,16 @@ pub const USES: &[&str] = &["x448"];
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
+    #[cfg(target_arch = "riscv64")]
+    {
+        let x: [u64; 8] = core::array::from_fn(|i| 0x9e37_79b9_7f4a_7c15u64.wrapping_mul(i as u64 + 1));
+        let mut g = c.benchmark_group("c910_probe");
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, "k64"), |b| b.iter(|| probe::k64(black_box(1000), black_box(&x))));
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, "k56"), |b| b.iter(|| probe::k56(black_box(1000), black_box(&x))));
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, "klo"), |b| b.iter(|| probe::klo(black_box(1000), black_box(&x))));
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, "kalu"), |b| b.iter(|| probe::kalu(black_box(1000), black_box(&x))));
+        g.finish();
+    }
 
     use criterion::BenchmarkId;
     use openssl::derive::Deriver;
@@ -113,3 +123,92 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little")
 )))]
 pub fn bench(_: &mut Criterion) {}
+
+// THROWAWAY PROBE (never merged): the C910 multiplier's throughput, to choose
+// between radix 2^64 (mul + mulhu + 6 ALU per product) and radix 2^56
+// (mul + mulhu + 4 ALU per product) for X448's field.
+#[cfg(target_arch = "riscv64")]
+mod probe {
+/// Throughput kernels: `n` iterations of 8 products each, accumulated the
+/// way each radix does. Operands vary each iteration (one add each).
+#[inline(never)]
+pub fn k64(n: u64, x: &[u64; 8]) -> u64 {
+    let mut a = *x;
+    let (mut l0, mut h0, mut t0) = (0u64, 0u64, 0u64);
+    let (mut l1, mut h1, mut t1) = (0u64, 0u64, 0u64);
+    for _ in 0..n {
+        for i in 0..4 {
+            let p = (a[i] as u128) * (a[i + 4] as u128);
+            let (lo, hi) = (p as u64, (p >> 64) as u64);
+            let (s, c) = l0.overflowing_add(lo);
+            l0 = s;
+            let (s, c2) = h0.overflowing_add(hi + c as u64);
+            h0 = s;
+            t0 += c2 as u64;
+            let p = (a[i + 4] as u128) * (a[(i + 1) % 4] as u128);
+            let (lo, hi) = (p as u64, (p >> 64) as u64);
+            let (s, c) = l1.overflowing_add(lo);
+            l1 = s;
+            let (s, c2) = h1.overflowing_add(hi + c as u64);
+            h1 = s;
+            t1 += c2 as u64;
+        }
+        for j in 0..8 {
+            a[j] = a[j].wrapping_add(if j < 4 { l0 } else { l1 });
+        }
+    }
+    l0 ^ h0 ^ t0 ^ l1 ^ h1 ^ t1
+}
+
+#[inline(never)]
+pub fn k56(n: u64, x: &[u64; 8]) -> u64 {
+    let mut a = *x;
+    let (mut c0, mut c1) = (0u128, 0u128);
+    for _ in 0..n {
+        for i in 0..4 {
+            c0 += (a[i] as u128) * (a[i + 4] as u128);
+            c1 += (a[i + 4] as u128) * (a[(i + 1) % 4] as u128);
+        }
+        for j in 0..8 {
+            a[j] = a[j].wrapping_add(if j < 4 { c0 as u64 } else { c1 as u64 });
+        }
+    }
+    (c0 ^ c1) as u64 ^ ((c0 ^ c1) >> 64) as u64
+}
+
+/// Only `mul` (the low half), as many as `k64`'s pairs.
+#[inline(never)]
+pub fn klo(n: u64, x: &[u64; 8]) -> u64 {
+    let mut a = *x;
+    let (mut c0, mut c1) = (0u64, 0u64);
+    for _ in 0..n {
+        for i in 0..4 {
+            c0 = c0.wrapping_add(a[i].wrapping_mul(a[i + 4]));
+            c1 = c1.wrapping_add(a[i + 4].wrapping_mul(a[(i + 1) % 4]));
+        }
+        for j in 0..8 {
+            a[j] = a[j].wrapping_add(if j < 4 { c0 } else { c1 });
+        }
+    }
+    c0 ^ c1
+}
+
+/// ALU only, for calibration: 24 dependent-in-pairs adds/xors/ors.
+#[inline(never)]
+pub fn kalu(n: u64, x: &[u64; 8]) -> u64 {
+    let mut a = *x;
+    let (mut c0, mut c1) = (0u64, 0u64);
+    for _ in 0..n {
+        for i in 0..4 {
+            c0 = c0.wrapping_add(a[i] ^ a[i + 4]);
+            c1 = c1.wrapping_add(a[i + 4] | a[(i + 1) % 4]);
+            c0 ^= c1;
+        }
+        for j in 0..8 {
+            a[j] = a[j].wrapping_add(if j < 4 { c0 } else { c1 });
+        }
+    }
+    c0 ^ c1
+}
+
+}
