@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Scalar
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Freeze
-public import VerifiedGarbage.Impl.Ed25519.PPC64LE.PointMul
+public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Comb
 
 /-!
 # `vg_ed25519_scalar_base(out = r3, scalar = r4, scratch = r5)` on PPC64LE
 
-ARMv7's (`Impl/Ed25519/Arm/ScalarBase.lean`): the base point in slots 0–3,
-`[s] B` by `pointFromScalar 16` (all 256 bits), and its encoding into
-`out` (whose pointer is in `r27`). `r14`–`r19` and `r26`–`r31` are saved at
-`SAVE` and `lr` at `LRS`.
+`[s] B` by the comb (`combMultiply`, `Comb.lean`), which reads the static
+`combSym`, and its encoding into `out` (whose pointer is in `r27`).
+`r14`–`r19` and `r26`–`r31` are saved at `SAVE` and `lr`, which the comb's
+`adrSym` changes, at `LRS`.
 -/
 
 @[expose] public section
@@ -19,8 +19,7 @@ namespace VG.Impl.Ed25519.PPC64LE
 open VG.PPC64LE
 
 def scalarBaseEngine : Prog isa :=
-  .seq (.block initFields) (.seq (constPoint Spec.Ed25519.basePoint)
-    (.seq (pointFromScalar 16) pointEncode))
+  .seq (.block initFields) (.seq combMultiply pointEncode)
 
 def scalarBaseSetup : List Instr :=
   scalarSave .r5 ++ [.addi .r6 .r5 0, .addi .r27 .r3 0, .mflr .r7, .store .d .r7 .r6 LRS,

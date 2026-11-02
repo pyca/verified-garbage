@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.SignNonce
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.SignExpand
 

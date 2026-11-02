@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointMul
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Encode
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Comb
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarMulAdd
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.ScalarBase
-import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Field
@@ -18,9 +20,9 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 # `vg_ed25519_scalar_base` on PPC64LE: correctness
 
 The function saves the nonvolatile registers it uses and the link register
-in `scratch`, puts the base point in slots 0–3, multiplies it by the 256-bit
-scalar (`pointFromScalar_ok`), encodes the product at `FR`
-(`pointEncode_ok`), and copies it to `out`.
+in `scratch`, multiplies the base point by the 256-bit scalar with the comb
+(`combMultiply_ok`), which reads the static `combSym`, encodes the product at
+`FR` (`pointEncode_ok`), and copies it to `out`.
 -/
 
 @[expose] public section
@@ -33,126 +35,48 @@ open VG.Spec.Ed25519 (decodeLE bytesAt)
 section
 variable {b : Addr}
 
-theorem initFields_ok {s : State} (hc : Ctx b s) :
-    WP isa (.block initFields) s fun t => Rest [.r7] s t ∧ Frame [FA b] s.mem t.mem := by
-  unfold initFields
-  refine wp_li (by decide) fun s1 u1 => ?_
-  refine WP.mono (stores_ok (r := .r7) (o := 64) (n := 176) (by omega_arith)
-    (hc.of_rest (u1.rest (ws := [.r7]) (by decide)) (by decide))) fun t ⟨_, h2, _, h4⟩ =>
-      ⟨(u1.rest (by decide)).trans (h4.mono (by decide)), ?_⟩
-  rw [← u1.mem]
-  exact h2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-    rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_arith)⟩
-
-theorem env_const16 (e : Env) : point (evalOps [.const 16 Spec.Ed25519.d] e) 0 1 2 3 = point e 0 1 2 3 ∧
-    evalOps [.const 16 Spec.Ed25519.d] e 16 = Spec.Ed25519.d := ⟨rfl, rfl⟩
-
-/-- **`[S] P`** for the `2 count` bytes at `r14`. -/
-theorem pointFromScalar_ok {s : State} (hc : Ctx8 b s) {count : Nat} (hc1 : 1 ≤ count) (hc32 : count ≤ 32)
-    {p : Addr} (h14 : s.gpr .r14 = p) (hin : ∀ i < 2 * count, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 i) 1)
-    (hpd : (⟨p, 2 * count⟩ : Region).Disjoint ⟨b, 8192⟩) :
-    WP isa (pointFromScalar count) s fun t =>
-      Rest (.r19 :: .r7 :: batchR) s t ∧ Frame (mulW b) s.mem t.mem ∧
-      point (env t.mem b) 0 1 2 3 =
-        Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem p (2 * count))) (point (env s.mem b) 0 1 2 3) ∧
-      env t.mem b 16 = Spec.Ed25519.d := by
-  unfold pointFromScalar
-  refine WP.seq (wp_addi (by decide) (by decide) fun s1 u1 => WP.block_nil ?_)
-  have hc1' : Ctx8 b s1 := hc.of_rest (u1.rest (ws := [.r19]) (by decide)) (by decide)
-  refine WP.seq (WP.mono (fieldCode_ok _ hc1'.ctx) fun s2 ⟨k2, e2⟩ => ?_)
-  obtain ⟨p2, d2⟩ := env_const16 (env s1.mem b)
-  rw [← e2] at p2 d2
-  have hc2 : Ctx8 b s2 := hc1'.of_keep k2
-  have hb2 : bytesAt s2.mem p (2 * count) = bytesAt s.mem p (2 * count) := by
-    simp only [Spec.Ed25519.bytesAt, List.map_inj_left]
-    intro i hi
-    rw [← u1.mem]
-    exact bytes_ws k2.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)) hpd
-      (by omega_arith) (List.mem_range.mp hi)
-  refine WP.mono (pointMultiply_ok hc2 d2 (p := p) hc1 hc32
-    (by rw [k2.rest.gpr _ (by decide), u1.gpr, h14, BitVec.add_zero])
-    (fun i hi => by rw [k2.rest.rd, k2.rest.wr, u1.rd, u1.wr]; exact hin i hi) hpd) fun t ⟨rt, ft, pt, dt⟩ =>
-      ⟨?_, ?_, ?_, dt⟩
-  · exact (u1.rest (by decide)).trans ((k2.rest.mono (by decide)).trans (rt.mono (by decide)))
-  · rw [← u1.mem]
-    exact (k2.frame.mono (by simp)).trans ft
-  · rw [pt, hb2, p2, u1.mem]
-
 /-- The registers the engine writes. -/
-abbrev baseR : List Reg := .r17 :: .r19 :: .r7 :: batchR
+abbrev baseR : List Reg := .r7 :: .r8 :: .r9 :: stepR
 
-theorem scalarBaseEngine_ok {s : State} (hc : Ctx8 b s) {p : Addr} (h14 : s.gpr .r14 = p)
+theorem scalarBaseEngine_ok {s : State} (hc : Ctx8 b s) {p T : Addr} (h14 : s.gpr .r14 = p)
     (hin : ∀ i < 32, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 i) 1)
-    (hpd : (⟨p, 32⟩ : Region).Disjoint ⟨b, 8192⟩) :
+    (hpd : (⟨p, 32⟩ : Region).Disjoint ⟨b, 8192⟩) (hT : TblAt s T) (hsym : s.syms combSym = T)
+    (apart : (TBL T).Disjoint ⟨b, 8192⟩) :
     WP isa scalarBaseEngine s fun t =>
-      Rest baseR s t ∧ Frame (mulW b) s.mem t.mem ∧
-      V t.mem b FR = encodeNum (Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem p 32)) Spec.Ed25519.basePoint) := by
+      Rest baseR s t ∧ Frame (combW b) s.mem t.mem ∧
+      Spec.Ed25519.encodeLE 32 (V t.mem b FR) = Spec.Ed25519.scalarBase (bytesAt s.mem p 32) := by
   unfold scalarBaseEngine
-  refine WP.seq (WP.mono (initFields_ok hc.ctx) fun s1 ⟨r1, f1⟩ => ?_)
+  refine WP.seq (WP.mono_syms (initFields_ok hc.ctx) fun s1 ⟨r1, f1⟩ sy1 => ?_)
   have hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
-  unfold constPoint
-  refine WP.seq (WP.mono (fieldCode_ok _ hc1.ctx) fun s2 ⟨k2, e2⟩ => ?_)
-  have p2 := (env_constPoint (env s1.mem b) Spec.Ed25519.basePoint).1
-  rw [← e2] at p2
-  have hc2 : Ctx8 b s2 := hc1.of_keep k2
-  have hF2 : Frame [FA b] s.mem s2.mem := f1.trans k2.frame
-  have hb2 : bytesAt s2.mem p 32 = bytesAt s.mem p 32 := by
+  have hb1 : bytesAt s1.mem p 32 = bytesAt s.mem p 32 := by
     simp only [Spec.Ed25519.bytesAt, List.map_inj_left]
     intro i hi
-    exact bytes_ws hF2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)) hpd (by decide)
-      (List.mem_range.mp hi)
-  have hR2 : Rest baseR s s2 := (r1.mono (by decide)).trans (k2.rest.mono (by decide))
-  have hR2' : Rest fclob s s2 := (r1.mono (by decide)).trans k2.rest
-  refine WP.seq (WP.mono (pointFromScalar_ok hc2 (count := 16) (by decide) (by decide) (p := p)
-    (by rw [hR2'.gpr _ (by decide), h14])
-    (fun i hi => by rw [hR2.rd, hR2.wr]; exact hin i hi) hpd) fun s3 ⟨r3, f3, p3, _⟩ => ?_)
-  rw [hb2, p2] at p3
-  have hc3 : Ctx8 b s3 := hc2.of_rest r3 (by decide)
+    exact bytes_ws f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)) hpd
+      (by decide) (List.mem_range.mp hi)
+  have hT1 : TblAt s1 T := hT.of_frame (by rw [r1.rd, r1.wr]) f1 fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact apart.sub_right (Offset.sub_base _ (by decide))
+  refine WP.seq (WP.mono_syms (combMultiply_ok hc1 (by rw [r1.gpr _ (by decide), h14])
+    (fun i hi => by rw [r1.rd, r1.wr]; exact hin i hi) hpd hT1 (by rw [sy1, hsym]) apart)
+    fun s3 ⟨r3, f3, p3⟩ _ => ?_)
+  rw [hb1] at p3
+  have hc3 : Ctx8 b s3 := hc1.of_rest r3 (by decide)
   refine WP.mono (pointEncode_ok hc3) fun t ⟨rt, ft, vt⟩ => ⟨?_, ?_, ?_⟩
-  · exact hR2.trans ((r3.mono (by decide)).trans (rt.mono (by decide)))
-  · exact (hF2.mono (by simp)).trans (f3.trans (ft.mono (by simp)))
-  · rw [vt, p3]
+  · exact (r1.mono (by decide)).trans ((r3.mono (by decide)).trans (rt.mono (by decide)))
+  · exact (f1.mono (by simp)).trans (f3.trans (ft.mono (by simp)))
+  · rw [vt, ← encodePoint_eq, encodePoint_rep p3, Spec.Ed25519.scalarBase,
+      encodePoint_rep (pointMul_rep _ basePoint_rep)]
 
-/-- A block that writes no link register keeps it. -/
-theorem WP.keep_lr {is : List Instr} {s : State} {Q : State → Prop} (h : WP isa (.block is) s Q)
-    (hl : (instrs (.block is : Prog isa)).all (fun i => !i.writesLr) = true) :
-    WP isa (.block is) s fun t => Q t ∧ t.lr = s.lr := by
-  obtain ⟨tr, t, he, hq⟩ := h
-  exact ⟨tr, t, he, hq, Exec.lr he rfl hl⟩
-
-theorem wp_mflr {d : Reg} {is : List Instr} {s : State} {Q : State → Prop}
-    (k : ∀ s', Upd s s' d s.lr → s'.lr = s.lr → WP isa (.block is) s' Q) : WP isa (.block (.mflr d :: is)) s Q :=
-  WP.cons exec_mflr (k _ (Upd.write _ _ _) rfl)
-
-/-- `addi`, keeping the link register. -/
-theorem wp_addiL {d n : Reg} {imm : Nat} (hn : n ≠ .r0) (h : imm < 2 ^ 15) {is : List Instr} {s : State}
-    {Q : State → Prop} (k : ∀ s', Upd s s' d (s.gpr n + BitVec.ofNat 64 imm) → s'.lr = s.lr → WP isa (.block is) s' Q) :
-    WP isa (.block (.addi d n imm :: is)) s Q :=
-  WP.cons (exec_addi hn h) (k _ (Upd.write _ _ _) rfl)
-
-theorem wp_mtlr {r : Reg} {is : List Instr} {s : State} {Q : State → Prop}
-    (k : WP isa (.block is) { s with lr := s.gpr r } Q) : WP isa (.block (.mtlr r :: is)) s Q :=
-  WP.cons exec_mtlr k
-
-theorem LRS_eq : LRS = 1120 := rfl
-
-/-- The precondition, by register: `out` in `r3`, `scalar` in `r4`, `scratch` in `r5`. -/
-structure BasePre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r4, 32⟩]
-  wr : s.wr = [⟨s.gpr .r3, 32⟩, ⟨s.gpr .r5, 8192⟩]
-  out_ws : (⟨s.gpr .r3, 32⟩ : Region).Disjoint ⟨s.gpr .r5, 8192⟩
-  sc_ws : (⟨s.gpr .r4, 32⟩ : Region).Disjoint ⟨s.gpr .r5, 8192⟩
-
-theorem mulW_saves {B : Addr} (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1632) :
-    ∀ r ∈ mulW B, Region.Disjoint ⟨B + BitVec.ofNat 64 lo, n⟩ r := by
+/-- What the engine writes misses the saved registers' slots. -/
+theorem combW_saves (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1152) :
+    ∀ r ∈ combW b, Region.Disjoint ⟨b + BitVec.ofNat 64 lo, n⟩ r := by
   intro r hr
-  have hB : BITSB = 32 := rfl
+  have hS : SCAL = 1152 := rfl
+  have hG : SGN = 56 := rfl
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
-  · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-  · exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
-  · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+  rcases hr with rfl | rfl | rfl
+  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
 
 theorem scalarBase_ok {s : State} (hp : BasePre s) :
     WP isa scalarBase s fun t =>
@@ -168,7 +92,7 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   have hsin : ∀ p ∈ saveList, InRegions s.wr (s.gpr .r5 + BitVec.ofNat 64 p.2) 8 := fun p hpl => by
     have := saveList_in p hpl
     rw [← hb]; exact in_base hws (by omega_arith) (by omega_arith)
-  refine WP.seq (Spill.save_ok (b := .r5) (by decide) saveList_fits hsin ?_)
+  refine WP.seq (WP.of_syms (Spill.save_ok (b := .r5) (by decide) saveList_fits hsin ?_))
   generalize hs1 : ({ s with mem := Spill.saveMem s.mem (s.gpr .r5) s.gpr saveList } : State) = s1
   have hsv : Spill.Saved b s.gpr saveList s1.mem := by rw [← hs1, hb]; exact Spill.saveMem_saved (by decide) _ _ _
   have hf1 : Frame [⟨b, 8192⟩] s.mem s1.mem := by
@@ -201,7 +125,7 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   have hrd5 : s5.rd = s4.rd := by rw [← hs5]
   have hwr5 : s5.wr = s4.wr := by rw [← hs5]
   have hsp5 : s5.sp = s4.sp := by rw [← hs5]
-  refine wp_addiL (by decide) (by decide) fun s6 u6 _ => WP.block_nil ?_
+  refine wp_addiL (by decide) (by decide) fun s6 u6 _ => WP.block_nil fun sy6 => ?_
   have hR6 : Rest [.r6, .r7, .r14, .r27] s s6 := by
     refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
     · rw [u6.other _ (by revert hr; cases r <;> decide), hg5, hr4.gpr _ (by revert hr; cases r <;> decide), hg1]
@@ -227,10 +151,25 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   have hin6 : ∀ i < 32, InRegions (s6.rd ++ s6.wr) (s.gpr .r4 + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [hR6.rd, hR6.wr, hp.rd]
-    exact in_base (List.mem_append_left _ (List.mem_singleton_self _)) (by omega_arith) (by omega_arith)
+    exact in_base (List.mem_append_left _ List.mem_cons_self) (by omega_arith) (by omega_arith)
+  have hT6 : TblAt s6 (s.syms combSym) :=
+    ⟨hp.tfit, ⟨TBL (s.syms combSym), by rw [hR6.rd, hp.rd]; simp, by
+      simpa only [BitVec.add_zero] using Offset.contains_base (s.syms combSym) (d := 0) (n := 49152) (k := 49152)
+        (by omega) (by omega)⟩,
+      fun q hq => by
+        have tw : (TBL (s.syms combSym)).Disjoint ⟨b, 8192⟩ := hb ▸ hp.tbl_ws
+        rw [hm6, ← hp.words q hq,
+          hf5.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega))
+            (by simp only [List.mem_singleton, forall_eq]; exact tw.sub_right (Offset.sub_base _ (by decide)))
+            (by decide),
+          (show s4.mem = s1.mem by rw [u4.mem, u3.mem, u2.mem])]
+        exact hf1.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega))
+          (by simp only [List.mem_singleton, forall_eq]; exact tw) (by decide)⟩
+  have hsym6 : s6.syms combSym = s.syms combSym := congrFun sy6 combSym
   have e27 : s6.gpr .r27 = s.gpr .r3 := by
     rw [u6.other _ (by decide), hg5, u4.other _ (by decide), u3.gpr, u2.other _ (by decide), hg1, BitVec.add_zero]
-  refine WP.seq (WP.mono (scalarBaseEngine_ok hc6 e14 hin6 hpd) fun s7 ⟨r7, f7, v7⟩ => ?_)
+  refine WP.seq (WP.mono (scalarBaseEngine_ok hc6 e14 hin6 hpd hT6 hsym6 (hb ▸ hp.tbl_ws))
+    fun s7 ⟨r7, f7, v7⟩ => ?_)
   rw [hsc] at v7
   -- The link register restored, then the result and the registers.
   unfold scalarBaseFinish
@@ -240,7 +179,7 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
   have hsvL7 : Spill.Saved b s4.gpr [(.r7, LRS)] s7.mem := by
     rw [← hm6] at hsvL
     exact hsvL.frame_in (lo := LRS) (n := 8) (fun p hpl => by rw [List.mem_singleton.mp hpl]; omega_arith) f7
-      (mulW_saves LRS 8 (by omega_arith) (by omega_arith))
+      (combW_saves LRS 8 (by omega_arith) (by omega_arith))
   have hc7 : Ctx8 b s7 := hc6.of_rest r7 (by decide)
   refine Spill.restore_ok (b := .r6) (B := b) (by decide) hc7.r6 (by decide) (by decide)
     (fun p hpl => by rw [List.mem_singleton.mp hpl]; exact hc7.inR (by omega_arith)) hsvL7 fun s8 h8 => ?_
@@ -259,7 +198,7 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
     have h5 := h4.frame_in (lo := SAVE) (n := 96) saveList_in hf5 fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
     rw [← hm6] at h5
-    exact h5.frame_in (lo := SAVE) (n := 96) saveList_in f7 (mulW_saves SAVE 96 (by omega_arith) (by omega_arith))
+    exact h5.frame_in (lo := SAVE) (n := 96) saveList_in f7 (combW_saves SAVE 96 (by omega_arith) (by omega_arith))
   have hcu : Ctx b u := ⟨by rw [hgu, h8.other _ (by decide), hc7.r6], 8192, by decide, by rw [hwru]; exact hws⟩
   refine WP.mono (WP.keep_lr (scalarOut_ok hcu (a := FR) (by decide) (P := .r27) (by decide)
     (by rw [hgu, h8.other _ (by decide), r7.gpr _ (by decide), e27]) (by rw [hwru]; exact hout) (hb ▸ hp.out_ws)
@@ -273,8 +212,12 @@ theorem scalarBase_ok {s : State} (hp : BasePre s) :
         (by revert hr hm; cases r <;> decide)]
   · rw [hsp, hspu]
   · rw [hlr, hlu]
-  · rw [hbytes, hmu, v7]; rfl
+  · rw [hbytes, hmu, v7]
 
 end
+
+theorem base_ok : BaseOk := fun _ hs => by
+  obtain ⟨t, s', he, hg, hsp, hlr, hb⟩ := scalarBase_ok hs
+  exact ⟨t, s', he, ⟨hg, hsp, hlr⟩, hb⟩
 
 end VG.Proof.Ed25519.PPC64LE

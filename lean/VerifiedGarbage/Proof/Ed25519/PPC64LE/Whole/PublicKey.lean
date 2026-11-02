@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBaseVerified
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Prune
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -22,10 +22,14 @@ namespace VG.Proof.Ed25519.PPC64LE.Whole
 
 open VG VG.PPC64LE VG.Impl.Ed25519.PPC64LE.Whole VG.Proof.X25519.PPC64LE
 open VG.Spec.Ed25519 (bytesAt decodeLE)
+open VG.Impl.Ed25519.PPC64LE (combSym combWord)
+
+/-- What the body may write. -/
+abbrev pkW (s : State) : List Region := [⟨s.gpr .r3, 32⟩, ⟨s.gpr .r5, 8192⟩, ⟨s.gpr .r6, 144⟩, below s.sp 48]
 
 /-- The precondition, by register. -/
 structure PkPre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r4, 32⟩]
+  rd : s.rd = [⟨s.gpr .r4, 32⟩, TBL (s.syms combSym)]
   wr : s.wr = [⟨s.gpr .r3, 32⟩, ⟨s.gpr .r5, 8192⟩, ⟨s.gpr .r6, 144⟩]
   oS : Region.Disjoint ⟨s.gpr .r3, 32⟩ ⟨s.gpr .r4, 32⟩
   oC : Region.Disjoint ⟨s.gpr .r3, 32⟩ ⟨s.gpr .r5, 8192⟩
@@ -38,9 +42,9 @@ structure PkPre (s : State) : Prop where
   bS : (below s.sp 48).Disjoint ⟨s.gpr .r4, 32⟩
   bC : (below s.sp 48).Disjoint ⟨s.gpr .r5, 8192⟩
   bF : (below s.sp 48).Disjoint ⟨s.gpr .r6, 144⟩
-
-/-- What the body may write. -/
-abbrev pkW (s : State) : List Region := [⟨s.gpr .r3, 32⟩, ⟨s.gpr .r5, 8192⟩, ⟨s.gpr .r6, 144⟩, below s.sp 48]
+  tfit : (s.syms combSym).toNat + 49152 ≤ 2 ^ 64
+  words : ∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q
+  tW : ∀ r ∈ pkW s, (TBL (s.syms combSym)).Disjoint r
 
 /-- The values in `r20`–`r23`. -/
 def pkV (s : State) : Reg → BitVec 64
@@ -116,7 +120,7 @@ theorem pk_inW {s : State} : (⟨s.gpr .r5, 8192⟩ : Region) ∈ pkW s ∧ (⟨
 
 theorem sub_refl (r : Region) : Region.Sub r r := fun _ h => h
 
-theorem publicKey_wp (C : ShaOK) {s : State} (hp : PkPre s) :
+theorem publicKey_wp (C : ShaOK) (B : BaseOk) {s : State} (hp : PkPre s) :
     WP isa publicKey s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.lr = s.lr ∧
       bytesAt t.mem (s.gpr .r3) 32 = Spec.Ed25519.publicKey (bytesAt s.mem (s.gpr .r4) 32) := by
   obtain ⟨hsl₁, hsl₂, hsl₃, hsl₄⟩ := pk_slot hp
@@ -139,31 +143,31 @@ theorem publicKey_wp (C : ShaOK) {s : State} (hp : PkPre s) :
         · exact hsl₂
         · rw [h.sp]; exact hsl₃
   unfold publicKey
-  refine WP.seq (WP.mono (pkSetup_ok hp) fun t₁ h₁ => ?_)
+  refine WP.seq (WP.mono_syms (pkSetup_ok hp) fun t₁ h₁ sy₁ => ?_)
   -- `init`.
-  refine WP.seq (hashInit_ok C (sr := .r22) (by decide) (h₁.regs _ (by decide)) (env t₁ h₁)
-    fun t₂ a b c f g hr₂ => ?_)
+  refine WP.seq (WP.of_syms <| hashInit_ok C (sr := .r22) (by decide) (h₁.regs _ (by decide)) (env t₁ h₁)
+    fun t₂ a b c f g hr₂ sy₂ => ?_)
   have h₂ : PkInv s t₂ := scStep h₁ a b c g f
   -- `update` with the seed.
-  refine WP.seq (hashUpdate_ok C (sr := .r22) (src := .r21) (off := 0) (len := 32) (by decide) (by decide)
+  refine WP.seq (WP.of_syms <| hashUpdate_ok C (sr := .r22) (src := .r21) (off := 0) (len := 32) (by decide) (by decide)
     (by decide) (by decide) (by decide) (h₂.regs _ (by decide)) (by rw [h₂.regs _ (by decide), BitVec.add_zero]; rfl)
     (Sets.li (d := .r4) (k := 0) (by decide)) (Sets.li (d := .r6) (k := 32) (by decide))
     (fun _ _ _ => rfl) (fun _ _ _ => rfl) rfl (env t₂ h₂)
     (fun a n hi => by obtain ⟨r, hr, hc⟩ := hi; rw [h₂.rd, hp.rd]
-                      exact ⟨r, List.mem_append_left _ (by simpa using hr), hc⟩)
-    hp.sC (by rw [h₂.sp]; exact hp.bS) fun t₃ a b c f g hr₃ => ?_)
+                      exact ⟨r, List.mem_append_left _ (by simp at hr; simp [hr]), hc⟩)
+    hp.sC (by rw [h₂.sp]; exact hp.bS) fun t₃ a b c f g hr₃ sy₃ => ?_)
   have h₃ : PkInv s t₃ := scStep h₂ a b c g f
   have r₃ : Repr t₃.mem (s.gpr .r5) (bytesAt s.mem (s.gpr .r4) 32) := by
     have := hr₃ [] hr₂ rfl
     rwa [List.nil_append, pk_seed hp h₂] at this
   -- `finalize` into `F`.
-  refine WP.seq (hashFinalize_ok C (sr := .r22) (f := .r23) (o := 0) (out := s.gpr .r6) (by decide) (by decide)
+  refine WP.seq (WP.of_syms <| hashFinalize_ok C (sr := .r22) (f := .r23) (o := 0) (out := s.gpr .r6) (by decide) (by decide)
     (by decide) (by decide) (by decide) (h₃.regs _ (by decide)) (by rw [h₃.regs _ (by decide), BitVec.add_zero]; rfl)
     (Sets.li (d := .r4) (k := 32) (by decide)) (fun _ _ _ => rfl) (env t₃ h₃)
     (Covers.of_sub fun r hr => by
       rw [List.mem_singleton.mp hr, h₃.wr]; exact ⟨_, hFw, 0, by simp, by simp⟩)
     (hp.cF.symm.sub_left (Region.sub_prefix (by decide)))
-    (by rw [h₃.sp]; exact hp.bF.sub_right (Region.sub_prefix (by decide))) fun t₄ a b c f g hd₄ => ?_)
+    (by rw [h₃.sp]; exact hp.bF.sub_right (Region.sub_prefix (by decide))) fun t₄ a b c f g hd₄ sy₄ => ?_)
   have h₄ : PkInv s t₄ := h₃.step pkRegs_pres a b c g f (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -182,12 +186,12 @@ theorem publicKey_wp (C : ShaOK) {s : State} (hp : PkPre s) :
     rw [h₄.wr]; exact in_base (List.mem_append_right _ hFw) hd (by omega)
   have hFw' : ∀ d, d + 8 ≤ 144 → InRegions t₄.wr (s.gpr .r6 + BitVec.ofNat 64 d) 8 := fun d hd => by
     rw [h₄.wr]; exact in_base hFw hd (by omega)
-  refine WP.seq (prune_ok (f := .r23) (F := s.gpr .r6) (d := 0) (o := 64) (by decide) (by decide) (h₄.regs _ (by decide))
+  refine WP.seq (WP.of_syms <| prune_ok (f := .r23) (F := s.gpr .r6) (d := 0) (o := 64) (by decide) (by decide) (h₄.regs _ (by decide))
     (by decide) (by decide) (by decide) (fun k hk => hFr _ (by omega)) (fun k hk => hFw' _ (by omega))
     fun u hu hfu hpr => ?_)
   unfold mov
   refine wp_addi (by decide) (by decide) fun v₁ e₁ => wp_addi (by decide) (by decide) fun v₂ e₂ =>
-    wp_addi (by decide) (by decide) fun t₅ e₃ => WP.block_nil ?_
+    wp_addi (by decide) (by decide) fun t₅ e₃ => WP.block_nil fun sy₅ => ?_
   have g₅ : ∀ r ∈ preserved, t₅.gpr r = t₄.gpr r := fun r hr => by
     obtain ⟨p3, p4, p5, -, -⟩ := pres_args hr
     rw [e₃.other _ p5, e₂.other _ p4, e₁.other _ p3, hu.gpr _ (by revert hr; cases r <;> decide)]
@@ -211,16 +215,21 @@ theorem publicKey_wp (C : ShaOK) {s : State} (hp : PkPre s) :
   have ce : ∀ q, q ∉ linkRegs → ∀ rd wr, (t₅.callEntry.withRegions rd wr).gpr q = t₅.gpr q :=
     fun q hq _ _ => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
   have sc4 : Region.Sub ⟨s.gpr .r6 + BitVec.ofNat 64 64, 32⟩ ⟨s.gpr .r6, 144⟩ := Offset.sub_base _ (by decide)
-  refine WP.seq (WP.call (k := basePPC) base_ok' (rd := [⟨s.gpr .r6 + BitVec.ofNat 64 64, 32⟩])
-    (wr := [⟨s.gpr .r3, 32⟩, ⟨s.gpr .r5, 8192⟩]) ⟨by rw [State.withRegions_rd, ce _ (by decide), c4],
-      by rw [State.withRegions_wr, ce _ (by decide), ce _ (by decide), c3, c5],
-      by rw [ce _ (by decide), ce _ (by decide), c3, c5]; exact hp.oC,
-      by rw [ce _ (by decide), ce _ (by decide), c4, c5]; exact hp.cF.symm.sub_left sc4⟩
+  have sy : t₅.syms combSym = s.syms combSym := by rw [sy₅, sy₄, sy₃, sy₂, sy₁]
+  have wd₅ : ∀ q < 64 * 96, t₅.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q :=
+    fun q hq => by
+      rw [← hp.words q hq]
+      exact h₅.frame.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega)) hp.tW
+        (by decide)
+  refine WP.seq (WP.call (k := baseRV) B (rd := [⟨s.gpr .r6 + BitVec.ofNat 64 64, 32⟩, TBL (s.syms combSym)])
+    (wr := [⟨s.gpr .r3, 32⟩, ⟨s.gpr .r5, 8192⟩]) (basePre_call c3 c4 c5 sy hp.oC
+      (hp.cF.symm.sub_left sc4) hp.tfit wd₅ (hp.tW _ (by simp)))
     (Covers.of_sub fun r hr => by
       rw [h₅.rd, h₅.wr]
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl
       · exact ⟨_, List.mem_append_right _ hFw, 64, rfl, show 64 + 32 ≤ 144 by decide⟩
+      · exact ⟨TBL (s.syms combSym), List.mem_append_left _ (by rw [hp.rd]; simp), 0, by simp, by simp⟩
       · exact ⟨_, List.mem_append_right _ hOw, 0, by simp, by simp⟩
       · exact ⟨_, List.mem_append_right _ hCw, 0, by simp, by simp⟩)
     (fun a n ⟨r, hr, hc⟩ => by
@@ -229,7 +238,7 @@ theorem publicKey_wp (C : ShaOK) {s : State} (hp : PkPre s) :
       rcases hr with rfl | rfl
       · exact ⟨_, hOw, hc⟩
       · exact ⟨_, hCw, hc⟩) (fun t₆ a b c hf hg _ hpost => ?_) (by decide +kernel))
-  simp only [basePPC, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
+  simp only [baseRV, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
     State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
     c3, c4] at hpost
   have h₆ : PkInv s t₆ := h₅.step pkRegs_pres a b c hg hf (fun r hr => by

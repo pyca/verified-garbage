@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
