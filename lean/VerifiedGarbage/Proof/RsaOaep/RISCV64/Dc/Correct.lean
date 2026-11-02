@@ -1,5 +1,8 @@
 module
 
+-- separate module: it builds in parallel with the constant-time proofs (`CTBase` to `CTLabel`), which
+-- `Verified` also needs.
+
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Out
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Mgf
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
