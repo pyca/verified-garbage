@@ -111,7 +111,7 @@ theorem compress_ok {s : State} (hs : compRV.pre s) :
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine ldAt_ws hw₃ (d := p256.sl FLAG) (by decide) (by decide) fun s₄ u₄ => ?_
   have hw₄ := hw₃.of_kp (Kp.of_upd u₄)
-  refine ld_ws hw₄ (d := p256.sl CY) (by decide) (by decide) fun s₅ u₅ => ?_
+  refine ldAt_ws hw₄ (d := p256.sl CY) (by decide) (by decide) fun s₅ u₅ => ?_
   refine WP.cons (exec_logicImm (by decide)) ?_
   have u₅a := Upd.write s₅ .t0 (s₅.gpr .t0 &&& BitVec.ofInt 64 1)
   refine WP.cons (exec_addi (by decide)) ?_
