@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Main
+public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Framework.Offset
@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-meta import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Main
+meta import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -149,7 +149,7 @@ theorem finA_ct (M : Mont) : RelCT isa (Two GR3) (seqs [.block [.mov .rax (.mem 
 
 /-! ## `p = gcd(u, n)` and `q = n / p` -/
 
-theorem inverse_gct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+theorem inverse_gct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r13 (.reg .r12)] : List Instr))
       (inverseN fU fV fX₂ aN)) hc).isSome = true) :
     RelCT isa (Two (FX XT)) (inverse fU fV fX₂ aN) (Two (FX fun _ _ => True)) := by
@@ -161,7 +161,7 @@ theorem inverse_gct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   obtain ⟨I, m₀, c, rfl, S, L, O, hmk, -⟩ := h
   have hZ26 : slot (wk I.k) 26 ≤ I.Z := by have := L.z; have := L.k1; unfold slot hdrBytes wk; omega
   have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega
-  refine WP.mono (InvB.inverse_ok S.ws hZ26 hw20 (iU := fU) (iV := fV) (iX₂ := fX₂) (iM := aN) (by decide)
+  refine WP.mono (InvLaw.inverse_ok S.ws hZ26 hw20 (iU := fU) (iV := fV) (iX₂ := fX₂) (iM := aN) (by decide)
     (by decide) (by decide) (by decide) (by decide)) fun u ⟨_, f', k, _⟩ => ?_
   have f := frm_inv f'
   exact ⟨I, m₀, c, rfl, S.step26 f hZ26 (by decide) (by simp) k (by decide), L, O,
@@ -191,7 +191,7 @@ theorem divmod_gct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
   exact h.step f (by decide) (by simp) (by simp) k (by decide) fun _ _ _ => trivial
 
-theorem finB_ct : RelCT isa (Two (FX XT)) (seqs [inverse fU fV fX₂ aN, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT])
+theorem finB_ct [InvLaw] : RelCT isa (Two (FX XT)) (seqs [inverse fU fV fX₂ aN, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT])
     (Two (FX fun _ _ => True)) := by
   have hB : ∀ (X : RpIn → State → Prop) p s, FX X p s → Ws s p.B p.Z (wk p.k) := fun _ _ _ h => h.ws
   simp only [seqs]
@@ -272,7 +272,7 @@ theorem storeR_ct {j sPtr : Nat} (hj : j < 16) (hP : sPtr < 32) (ptr : RpP → A
         (fw _ (by decide)).trans hm⟩
 
 /-- `fin` leaks the same in runs that agree on the public data. -/
-theorem fin_ct (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) fun _ _ => True := by
+theorem fin_ct [InvLaw] (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) fun _ _ => True := by
   rw [show fin M.mm = [.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax], M.mm aY aY aOne, zeroA fU,
       .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ [.mov32 .rbp (.imm 0)]),
       wordLoop 0 subBody] ++ ([inverse fU fV fX₂ aN, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT] ++

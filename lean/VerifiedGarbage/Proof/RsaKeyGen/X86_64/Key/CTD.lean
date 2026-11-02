@@ -129,7 +129,7 @@ theorem gcdIsOne_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kOk
 /-- What `inverse … j` changes. -/
 abbrev csI : List Rc := [.arr aV, .arr aX₂, .priv]
 
-theorem invU_ct {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hF : Stab F csI allR)
+theorem invU_ct [InvLaw] {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hF : Stab F csI allR)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r13 (.reg .r12)] : List Instr))
       (inverseN aU aV aX₂ j)) hc).isSome = true) :
@@ -289,7 +289,7 @@ theorem dOdd_eq2 : dOdd = loadEv ++ ([zeroA aQt, copyA aQt aL, divmod aQt aR aE 
   simp only [dOdd, dBlk2, dBlk3, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- `dOdd`, for an odd `e` in `kEv`. -/
-theorem dOdd_ct : RelCT isa (Two (KG fun I t => EvOK I t ∧ OddE I t)) (seqs dOdd) (Two (KG NF)) := by
+theorem dOdd_ct [InvLaw] : RelCT isa (Two (KG fun I t => EvOK I t ∧ OddE I t)) (seqs dOdd) (Two (KG NF)) := by
   have sF : ∀ (cs : List Rc), cs.all Rc.ok = true → .hdr kEv ∉ cs →
       Stab (fun I t => EvOK I t ∧ OddE I t) cs allR := fun cs hok hn => stab_and (stab_ev _ hok hn) (stab_oddE _ _)
   rw [dOdd_eq2]
@@ -372,7 +372,7 @@ theorem dEven_eq2 : dEven = loadEv ++ ([zeroA aM, copyA aM aL] ++ (constA 0 ++ (
   simp only [dEven, mBlk, oBlk, oddMask, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- `dEven`. -/
-theorem dEven_ct : RelCT isa (Two (KG NF)) (seqs dEven) (Two (KG NF)) := by
+theorem dEven_ct [InvLaw] : RelCT isa (Two (KG NF)) (seqs dEven) (Two (KG NF)) := by
   have sN : ∀ (cs : List Rc) (rs : List Reg), Stab NF cs rs := stab_nf
   have sT : ∀ (cs : List Rc), cs.all Rc.ok = true → .arr aU ∉ cs → Stab (fun I t => NF I t ∧ TopZ aU I t) cs allR :=
     fun cs h1 h2 => stab_and (sN _ _) (stab_top _ (by decide) h1 h2)
@@ -437,7 +437,7 @@ theorem two_kg {F G : KIn → State → Prop} {P : State → Prop} (h : ∀ I s,
     ∀ s₁ s₂, Two (fun p s => KG F p s ∧ P s) s₁ s₂ → Two (KG G) s₁ s₂ :=
   fun _ _ ⟨p, ⟨h₁, q₁⟩, ⟨h₂, q₂⟩⟩ => ⟨p, h₁.imp fun I f => h I _ f q₁, h₂.imp fun I f => h I _ f q₂⟩
 
-theorem dPart_ct : RelCT isa (Two (KG EvOK)) dPart (Two (KG NF)) := by
+theorem dPart_ct [InvLaw] : RelCT isa (Two (KG EvOK)) dPart (Two (KG NF)) := by
   unfold dPart
   refine RelCT.seq (kg_rdi (G := fun I t => EvOK I t ∧ t.cf = some (decide (I.E < 1)) ∧
       t.zf = some (decide (I.E = 1))) (by taint_decide) fun I _ s h L hev => ?_) ?_

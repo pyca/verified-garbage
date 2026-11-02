@@ -157,7 +157,7 @@ theorem word0_of_lt {I : KIn} {m : Mem} {j v : Nat} (hw : 1 ≤ I.W) (h : av I m
   rw [← wv_mod64 _ _ _ hw, show wv m I.B (slot I.W j) I.W = av I m j from rfl, h, Nat.mod_eq_of_lt hv]
 
 /-- `dOdd`, for an odd `e ≥ 3`. -/
-theorem dOdd_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} (he3 : 3 ≤ e) (he64 : e < 2 ^ 64)
+theorem dOdd_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} (he3 : 3 ≤ e) (he64 : e < 2 ^ 64)
     (heo : e % 2 = 1) (hev : word s.mem I.B (8 * kEv) = BitVec.ofNat 64 e) (hL : av I s.mem aL = L)
     (hLW : L < 2 ^ (64 * I.W)) :
     WP isa (seqs dOdd) s fun t => KS I m₀ t ∧ KF I.B I.W csD s.mem t.mem ∧ DRes I e L t.mem := by

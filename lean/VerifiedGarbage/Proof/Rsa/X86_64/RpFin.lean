@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Main
+public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Order.RelClasses
@@ -143,22 +143,22 @@ theorem frm_inv {B : Addr} {w a b : Nat} {m m' : Mem}
     have a7 := hx (slot w 23, 8 * (w + 2)) (by simp [rg, privJs])
     have a8 := hx (slot w 24, 8 * (w + 2)) (by simp [rg, privJs])
     have a9 := hx (slot w 25, 8 * (w + 2)) (by simp [rg, privJs])
-    have e16 := InvB.slot_eq w 16
-    have e17 := InvB.slot_eq w 17
-    have e18 := InvB.slot_eq w 18
-    have e19 := InvB.slot_eq w 19
-    have e20 := InvB.slot_eq w 20
-    have e21 := InvB.slot_eq w 21
-    have e22 := InvB.slot_eq w 22
-    have e23 := InvB.slot_eq w 23
-    have e24 := InvB.slot_eq w 24
-    have e25 := InvB.slot_eq w 25
-    have e26 := InvB.slot_eq w 26
+    have e16 := slot_lin w 16
+    have e17 := slot_lin w 17
+    have e18 := slot_lin w 18
+    have e19 := slot_lin w 19
+    have e20 := slot_lin w 20
+    have e21 := slot_lin w 21
+    have e22 := slot_lin w 22
+    have e23 := slot_lin w 23
+    have e24 := slot_lin w 24
+    have e25 := slot_lin w 25
+    have e26 := slot_lin w 26
     dsimp only at *
     omega
 
 /-- `p = gcd(u, n)` and `q = n / p`. -/
-theorem finB_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w) (hZ26 : slot w 26 ≤ Z) (hw20 : w < 2 ^ 20)
+theorem finB_ok [InvLaw] {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w) (hZ26 : slot w 26 ≤ Z) (hw20 : w < 2 ^ 20)
     (hn : wv s.mem B (slot w aN) w = N) (hodd : N % 2 = 1) :
     WP isa (seqs [inverse fU fV fX₂ aN, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT]) s fun u =>
       Frm B (rg w ([fV, fX₂, fQ, fR, fT] ++ privJs) []) s.mem u.mem ∧ Keep mmRegs s u ∧ Ws u B Z w ∧
@@ -172,7 +172,7 @@ theorem finB_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w) (hZ26 : sl
   have hnw := h.scr.nowrap
   simp only [seqs]
   -- The inverse: `v = gcd(u, n)`.
-  refine WP.seq (WP.mono (InvB.inverse_ok h hZ26 hw20 (iU := fU) (iV := fV) (iX₂ := fX₂) (iM := aN) (by decide)
+  refine WP.seq (WP.mono (InvLaw.inverse_ok h hZ26 hw20 (iU := fU) (iV := fV) (iX₂ := fX₂) (iM := aN) (by decide)
     (by decide) (by decide) (by decide) (by decide)) fun u₆ ⟨_, f₆', k₆, hv₆⟩ => ?_)
   have f₆ : Frm B (rg w ([fV, fX₂] ++ privJs) []) s.mem u₆.mem := frm_inv f₆'
   have h₆ := h.congrG f₆ (by simp) k₆ (by decide)

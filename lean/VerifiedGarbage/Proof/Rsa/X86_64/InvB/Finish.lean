@@ -1,4 +1,5 @@
 module
+-- separate module: the inverse's proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvB.FinPieces
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
@@ -42,7 +43,8 @@ theorem subRep_ok {B : Addr} {X : Nat} : ∀ (k : Nat) (t : State), t.gpr .rdi =
   | 0, t, h, _ => WP.block_nil ⟨by rw [h, Nat.zero_mul]; exact BitVec.add_zero _, rfl, Keep.refl _ _⟩
   | k + 1, t, h, h9 => by
     rw [List.replicate_succ, show (Instr.alu .sub .rdi (.reg .r9) :: List.replicate k (.alu .sub .rdi (.reg .r9))) =
-      [.alu .sub .rdi (.reg .r9)] ++ List.replicate k (.alu .sub .rdi (.reg .r9)) from rfl, WP.block_append_iff]
+      ([.alu .sub .rdi (.reg .r9)] : List Instr) ++ List.replicate k (.alu .sub .rdi (.reg .r9)) from rfl,
+      WP.block_append_iff]
     refine WP.mono (WP.keep [.rdi] (Q := fun t₁ => t₁.gpr .rdi = B + BitVec.ofNat 64 (k * X) ∧ t₁.mem = t.mem)
       (by
         xrun [h, h9]

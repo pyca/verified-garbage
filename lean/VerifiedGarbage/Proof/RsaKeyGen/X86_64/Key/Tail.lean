@@ -102,7 +102,7 @@ def TailPost (I : KIn) (s t : State) (ok : Bool) : Prop :=
     t.gpr .rsp = I.sp
 
 /-- `keyPart`. -/
-theorem keyPart_k {I : KIn} {m₀ : Mem} {s : State} (h : Front I m₀ s) (L : KLens I) (O : KOuts I) {ok : Bool}
+theorem keyPart_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : Front I m₀ s) (L : KLens I) (O : KOuts I) {ok : Bool}
     (hok : word s.mem I.B (8 * kOk) = mask ok) :
     WP isa keyPart s (fun t => TailPost I s t ok) := by
   have hk := h.ks

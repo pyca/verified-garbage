@@ -83,7 +83,7 @@ theorem gcdUV_eq : gcdUV = ([.block (oddMask aV ++ ([.mov .r15 (.reg .rax), .alu
 
 /-- `gcdUV`: `v` made odd by a swap, then `[aV] := gcd(u, v)`, or 1 for
 `v ≤ 1`, for an odd `v` unless `v ≤ 1`. -/
-theorem gcdUV_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop I s.mem aU = 0)
+theorem gcdUV_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop I s.mem aU = 0)
     (hodd : let v := if av I s.mem aV % 2 = 0 then av I s.mem aU else av I s.mem aV; 2 ≤ v → v % 2 = 1) :
     WP isa (seqs gcdUV) s fun t => KS I m₀ t ∧
       KF I.B I.W [.arr aU, .arr aV, .arr aC, .arr aM, .arr aX₁, .arr aX₂, .arr aT, .hdr sMo, .hdr kOk, .priv]
@@ -242,7 +242,7 @@ theorem lcmPart_eq : lcmPart = phi ++ ([zeroA aU, copyA aU aPm, zeroA aV, copyA 
 
 /-- `lcmPart`: `[aL] := lcm(a, b)` for `[aPm] = a` and `[aQm] = b`, below
 `2^(64 w)`, `W = 2 w`. -/
-theorem lcm_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w : Nat} (hW : I.W = 2 * w)
+theorem lcm_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w : Nat} (hW : I.W = 2 * w)
     {a b : Nat} (ha : av I s.mem aPm = a) (hb : av I s.mem aQm = b) (ha' : a < 2 ^ (64 * w))
     (hb' : b < 2 ^ (64 * w)) :
     WP isa (seqs lcmPart) s fun t => KS I m₀ t ∧

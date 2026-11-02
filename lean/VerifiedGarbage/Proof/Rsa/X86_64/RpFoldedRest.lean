@@ -42,7 +42,7 @@ theorem rest_eq (mul : Nat → Nat → Nat → Prog isa) : Folded.rest mul = seq
 
 /-- `rest`: `recoverPrimes.go`'s result, and `p` and `q` written masked by
 it. -/
-theorem rpRest_ok (M : Mont) {I : RpIn} {m₀ : Mem} {N m : Nat} {s : State} (h : RestPre I m₀ N m s) :
+theorem rpRest_ok [InvLaw] (M : Mont) {I : RpIn} {m₀ : Mem} {N m : Nat} {s : State} (h : RestPre I m₀ N m s) :
     WP isa (Folded.rest M.mm) s fun u => ∃ res : Option Nat, ∃ cnt : Nat,
       recoverPrimes.go N (splitTwos m).1 (splitTwos m).2 recoverTries = (res.map (pqOf N), cnt) ∧
       (List.range I.k).map (fun i => u.mem (I.pP + BitVec.ofNat 64 i)) =

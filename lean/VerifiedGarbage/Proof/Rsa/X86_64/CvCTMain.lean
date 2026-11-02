@@ -19,8 +19,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # `vg_rsa_crt_values` on x86-64: constant time, `main`
 
 The pieces of `CvCT.lean` in sequence (`loads_ct`, `pqCheck_ct`,
-`invPart_ct`, `divs_ct`), the stores (`stores_ct`, from `GS`), and `main`
-(`cvMain_ct`).
+`divs_ct`), the stores (`stores_ct`, from `GS`); `invPart_ct` and `main`
+(`cvMain_ct`) are in `CvCTInv.lean`.
 -/
 
 @[expose] public section
@@ -99,14 +99,6 @@ theorem pqCheck_ct : RelCT isa (Two GA) (seqs pqCheck) (Two GA) := by
         (ct_cons (by simp) andZero_ct (ct_one (zeroA_ct (by decide) (by taint_decide)))))
       (eqA_ct (by decide) (by decide) (by taint_decide)))
     (ct_cons (by simp) andZero_ct (ct_one (andOdd_ct (by decide) (by taint_decide))))
-
-theorem invPart_ct : RelCT isa (Two GA) (seqs invPart) (Two GA) := by
-  unfold invPart
-  exact ct_app (by simp) (by simp [eqA])
-    (ct_cons (by simp) (inverse_ct (by taint_decide))
-      (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
-        (ct_one (setOneA_ct (by decide) (by taint_decide)))))
-    (ct_app (by simp [eqA]) (by simp) (eqA_ct (by decide) (by decide) (by taint_decide)) (ct_one andZero_ct))
 
 theorem divisor_ct {j : Nat} (hj : j < 16) (hjC : aC ≠ j) {hc₁ : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base j .rsi ++ base aC .rbx)) copyWords)
@@ -234,26 +226,5 @@ theorem CvPre.outs {I : CvIn} {s : State} (h : CvPre I s) : CvOuts I :=
 theorem head_ct : RelCT isa (Two GM) (.block head) (Two GA) :=
   two_piece [.rdi] pins_GM (by taint_decide) fun _ s ⟨I, e, h⟩ =>
     WP.mono (cvHeadS_ok h) fun _ ⟨ht, hm⟩ => ⟨I, s.mem, true, e, ht, h.L, h.outs, hm⟩
-
-/-- `main` leaks the same in two runs with the same public data. -/
-theorem cvMain_ct : RelCT isa (Two GM) main fun _ _ => True := by
-  rw [main_eq]
-  exact (ct_app (by simp) (by simp [loadA]) (ct_one head_ct)
-    (ct_app (by simp [loadA]) (by simp [pqCheck]) loads_ct
-    (ct_app (by simp [pqCheck]) (by simp [invPart]) pqCheck_ct
-    (ct_app (by simp [invPart]) (by simp [divisor]) invPart_ct
-    (ct_app (by simp [divisor]) (by simp)
-      (ct_app (by simp [divisor]) (by simp) (divisor_ct (by decide) (by decide) (by taint_decide))
-        (ct_one (divmod_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-          (by decide) (by decide) (by decide) (by taint_decide))))
-    (ct_app (by simp) (by simp [divisor])
-      (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
-        (ct_one (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))))
-    (ct_app (by simp [divisor]) (by simp [storeA])
-      (ct_app (by simp [divisor]) (by simp) (divisor_ct (by decide) (by decide) (by taint_decide))
-        (ct_one (divmod_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-          (by decide) (by decide) (by decide) (by taint_decide))))
-      (stores_ct.mono (fun _ _ h => two_mono (fun _ _ h => h.gs) h) fun _ _ h => h)))))))).mono
-    (fun _ _ h => h) fun _ _ _ => trivial
 
 end VG.Proof.Rsa.X86_64

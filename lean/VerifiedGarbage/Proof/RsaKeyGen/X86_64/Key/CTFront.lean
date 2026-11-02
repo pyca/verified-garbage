@@ -119,7 +119,7 @@ theorem keyPost_of {s t₃ t : State} (c : KCtx s) (hi : InScr (arg s 10) ((arg 
     exact R
 
 /-- `code` computes `keyOp`. -/
-theorem keyCode_wp (s : State) (h : keyPre s) : WP isa code s fun t => gprPreserved s t ∧ keyPost s t := by
+theorem keyCode_wp [InvLaw] (s : State) (h : keyPre s) : WP isa code s fun t => gprPreserved s t ∧ keyPost s t := by
   have c := keyCtx_of h
   rw [code_eq]
   refine wp_seqs_append (by simp) (by simp) (WP.mono (keyStart_k c) fun t₁ k₁ => ?_)
@@ -505,7 +505,7 @@ theorem divmod_ct {F : KIn → State → Prop} {iQ iR iD iT : Nat} (hQ : iQ < 16
 theorem inverse_eq (iU iV iX₂ iM : Nat) : inverse iU iV iX₂ iM =
     .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr))) (inverseN iU iV iX₂ iM) := rfl
 
-theorem inverse_ct {F : KIn → State → Prop} {iU iV iX₂ iM : Nat}
+theorem inverse_ct [InvLaw] {F : KIn → State → Prop} {iU iV iX₂ iM : Nat}
     (hU : iU < 16) (hV : iV < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (dVX₂ : iV ≠ iX₂)
     (hF : Stab F [.arr iV, .arr iX₂, .priv] allR)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}

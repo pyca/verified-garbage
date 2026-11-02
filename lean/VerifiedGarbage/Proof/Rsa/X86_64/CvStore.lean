@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvHead
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_rsa_crt_values` on x86-64: the results
@@ -85,6 +86,10 @@ structure OutOk (s : State) (B : Addr) (Z : Nat) (out : Addr) (len : Nat) : Prop
 /-- Two outputs with no byte in common. -/
 def Apart (o₁ : Addr) (l₁ : Nat) (o₂ : Addr) (l₂ : Nat) : Prop :=
   ∀ i < l₁, ∀ j < l₂, o₁ + BitVec.ofNat 64 i ≠ o₂ + BitVec.ofNat 64 j
+
+theorem apart_of {o₁ o₂ : Addr} {l₁ l₂ : Nat} (hd : (⟨o₁, l₁⟩ : Region).Disjoint ⟨o₂, l₂⟩) (h₁ : l₁ ≤ 2 ^ 64)
+    (h₂ : l₂ ≤ 2 ^ 64) : Apart o₁ l₁ o₂ l₂ := fun i hi j hj he =>
+  hd _ (contains_byte o₁ hi h₁) (by rw [he]; exact contains_byte o₂ hj h₂)
 
 /-- The stores of `qInv` (`aX₂`), `dP` (`aX₁`) and `dQ` (`aV`), and the
 exit. -/

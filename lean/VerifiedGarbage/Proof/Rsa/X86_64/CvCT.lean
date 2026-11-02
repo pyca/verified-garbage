@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Main
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
@@ -13,7 +12,6 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-meta import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Main
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -246,39 +244,6 @@ theorem decA_ct {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   exact ws_block_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun _ _ h => by
     rw [← e]
     exact WP.mono (decA_ok h.ws hj) fun _ ⟨hm, k⟩ => h.word hj hm k (by decide)
-
-theorem inverse_ct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r13 (.reg .r12)] : List Instr))
-      (inverseN aQ aV aX₂ aP)) hc).isSome = true) :
-    RelCT isa (Two GA) (inverse aQ aV aX₂ aP) (Two GA) := by
-  have e : inverse aQ aV aX₂ aP = .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr)))
-      (inverseN aQ aV aX₂ aP) := rfl
-  rw [e]
-  exact ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun _ _ h => by
-    rw [← e]
-    obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
-    have hn := h'.ws.scr.nowrap
-    have hZ26 : slot (wk I.k) 26 ≤ I.Z := by
-      have := InvB.slot_eq (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega
-    have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega
-    have e16 := InvB.slot_eq (wk I.k) 16
-    exact WP.mono (InvB.inverse_ok h'.ws hZ26 hw20 (iU := aQ) (iV := aV) (iX₂ := aX₂) (iM := aP)
-      (by decide) (by decide) (by decide) (by decide) (by decide)) fun t ⟨_, f, k, _⟩ =>
-      ⟨I, m₀, c, rfl, h'.step f (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> dsimp only
-        · have := h'.ws.sl (j := aV) (by decide); omega_arith
-        · have := h'.ws.sl (j := aX₂) (by decide); omega_arith
-        · have := InvB.slot_eq (wk I.k) 26; omega_arith) k (by decide), L, O,
-        (f.word_eq (fun r hr => by
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl <;> dsimp only
-          · have := hdr_lt_slot (wk I.k) aV (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith
-          · have := hdr_lt_slot (wk I.k) aX₂ (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith
-          · have := hdr_lt_slot (wk I.k) 16 (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith)
-          (by simp only [Impl.Bignum.X86_64.Public.sMask, sFn]; omega_arith)).trans hm⟩
 
 /-! ## The loads -/
 

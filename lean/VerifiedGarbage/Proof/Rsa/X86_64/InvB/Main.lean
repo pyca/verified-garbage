@@ -1,4 +1,5 @@
 module
+-- separate module: its proofs import algebra, which `InvInstance` alone supplies to the registrations through `InvLaw`
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Finish
 import VerifiedGarbage.Proof.Divstep.TcSBounds

@@ -1,4 +1,5 @@
 module
+-- separate module: the inverse's proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Loops
 public import VerifiedGarbage.Proof.Divstep.TcS
@@ -442,9 +443,10 @@ structure BS (B : Addr) (Z w n p mi : Nat) (I : Divstep.IState) (s : State) : Pr
   a : (wv s.mem B (slot w 21) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = I.a % 2 ^ (64 * (n + 1))
   b : (wv s.mem B (slot w 22) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = I.b % 2 ^ (64 * (n + 1))
 
-theorem batch_eq : batch = seqs ([.block (bStart ++ bWords ++ bSave)] ++
+theorem batch_eq : batch = seqs (([.block (bStart ++ bWords ++ bSave)] : List (Prog isa)) ++
     (lin oU oV 3 4 ++ shr 8 ++ lin oQ oR 3 4 ++ shr 4 ++ copyW 8 3) ++
-    (lin oU oV 5 6 ++ mred 8 ++ lin oQ oR 5 6 ++ mred 6 ++ copyW 8 5) ++ [.block [.alu .sub .rsi (.imm 1)]]) := by
+    (lin oU oV 5 6 ++ mred 8 ++ lin oQ oR 5 6 ++ mred 6 ++ copyW 8 5) ++
+    ([.block ([.alu .sub .rsi (.imm 1)] : List Instr)] : List (Prog isa))) := by
   simp only [batch, List.append_assoc]
 
 /-- A batch: `Divstep.batchS 59`, and the count of batches less one. -/

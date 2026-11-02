@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Main
+public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
@@ -594,7 +594,7 @@ theorem divmod_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {iQ iR iD 
 
 /-- `inverse u v x₂ m`: for an odd `m`, `v = gcd(u, m)` and `x₂ u ≡ v (mod m)`,
 `x₂ < m`. -/
-theorem inverse_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {iU iV iX₂ iM : Nat}
+theorem inverse_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {iU iV iX₂ iM : Nat}
     (hU : iU < 16) (hV : iV < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (dVX₂ : iV ≠ iX₂) :
     WP isa (inverse iU iV iX₂ iM) s fun t => KS I m₀ t ∧
       KF I.B I.W [.arr iV, .arr iX₂, .priv] s.mem t.mem ∧
@@ -603,7 +603,7 @@ theorem inverse_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {iU iV iX
         av I t.mem iV = Nat.gcd (av I s.mem iU) (av I s.mem iM) ∧
         ((av I s.mem iM : Nat) : Int) ∣ (av I t.mem iX₂ : Int) * av I s.mem iU - av I t.mem iV ∧
         av I t.mem iX₂ < av I s.mem iM) := by
-  refine WP.mono (InvB.inverse_ok h.ws h.z26 h.w20 hU hV hX₂ hM dVX₂) fun t ⟨_, hf, k, hv⟩ => ?_
+  refine WP.mono (InvLaw.inverse_ok h.ws h.z26 h.w20 hU hV hX₂ hM dVX₂) fun t ⟨_, hf, k, hv⟩ => ?_
   have f : KF I.B I.W [.arr iV, .arr iX₂, .priv] s.mem t.mem :=
     KF.of_frm hf fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

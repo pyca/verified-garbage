@@ -246,7 +246,7 @@ theorem qinvPart_eq2 : qinvPart = [zeroA aU, copyA aU aQa] ++ (constA 3 ++ (ltA 
   simp only [qinvPart, qBlk, oddMask, gcdIsOne, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- `qinvPart`, keeping a mask in `kOk`. -/
-theorem qinvPart_ct : RelCT isa (Two (KG fun I t => NF I t ∧ KokM I t)) (seqs qinvPart)
+theorem qinvPart_ct [InvLaw] : RelCT isa (Two (KG fun I t => NF I t ∧ KokM I t)) (seqs qinvPart)
     (Two (KG fun I t => NF I t ∧ KokM I t)) := by
   have sK : ∀ (cs : List Rc), cs.all Rc.ok = true → .hdr kOk ∉ cs →
       Stab (fun I t => NF I t ∧ KokM I t) cs allR := fun cs h1 h2 => stab_and (stab_nf _ _) (stab_kok _ h1 h2)

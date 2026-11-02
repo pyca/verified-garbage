@@ -1,4 +1,5 @@
 module
+-- separate module: the inverse's proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words

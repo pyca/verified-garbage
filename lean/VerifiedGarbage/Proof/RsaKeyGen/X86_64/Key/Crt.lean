@@ -141,7 +141,7 @@ abbrev csQ : List Rc :=
   [.arr aU, .arr aC, .arr aM, .arr aV, .arr aX₁, .arr aX₂, .arr aT, .hdr sMo, .hdr kOk, .priv]
 
 /-- `qinvPart`, for `[aPa] = P` and `[aQa] = Q`. -/
-theorem qinvPart_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {P Q : Nat} {ok : Bool}
+theorem qinvPart_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {P Q : Nat} {ok : Bool}
     (hP : av I s.mem aPa = P) (hQ : av I s.mem aQa = Q) (hok : word s.mem I.B (8 * kOk) = mask ok) :
     WP isa (seqs qinvPart) s fun t => KS I m₀ t ∧ KF I.B I.W csQ s.mem t.mem ∧
       word t.mem I.B (8 * kOk) = mask (decide (Nat.gcd Q (qMod P) = 1) && ok) ∧

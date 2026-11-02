@@ -1,4 +1,5 @@
 module
+-- separate module: its lemmas name no ISA, for any target's batched inverse over 64-bit words
 public import VerifiedGarbage.Proof.Divstep.TcS
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
 

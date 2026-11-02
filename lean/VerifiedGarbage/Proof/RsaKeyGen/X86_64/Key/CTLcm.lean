@@ -407,7 +407,7 @@ theorem gcdUV_eq2 : gcdUV = ([.block (ws ++ gcdBlk), wordLoop 0 cswapBody] : Lis
 /-- What `gcdUV` changes. -/
 abbrev csG : List Rc := [.arr aU, .arr aV, .arr aC, .arr aM, .arr aX₁, .arr aX₂, .arr aT, .hdr sMo, .hdr kOk, .priv]
 
-theorem gcdUV_ct {F : KIn → State → Prop} (hF : Stab F csG allR) :
+theorem gcdUV_ct [InvLaw] {F : KIn → State → Prop} (hF : Stab F csG allR) :
     RelCT isa (Two (KG fun I t => F I t ∧ TopZ aU I t)) (seqs gcdUV) (Two (KG F)) := by
   have sF : ∀ (cs : List Rc), (∀ c ∈ cs, c ∈ csG) → Stab F cs allR := fun _ hc => hF.mono hc (by simp)
   have sT : ∀ (cs : List Rc), cs.all Rc.ok = true → .arr aU ∉ cs → Stab (TopZ aU) cs allR :=
@@ -466,7 +466,7 @@ theorem phi_ct : RelCT isa (Two (KG EvOK)) (seqs phi) (Two (KG EvOK)) := by
     (by taint_decide) (by taint_decide)
 
 /-- `lcmPart`, keeping `e` in `kEv`. -/
-theorem lcmPart_ct : RelCT isa (Two (KG EvOK)) (seqs lcmPart) (Two (KG EvOK)) := by
+theorem lcmPart_ct [InvLaw] : RelCT isa (Two (KG EvOK)) (seqs lcmPart) (Two (KG EvOK)) := by
   have sE : ∀ (cs : List Rc), cs.all Rc.ok = true → .hdr kEv ∉ cs → Stab EvOK cs allR :=
     fun _ hok hn => stab_ev _ hok hn
   rw [lcmPart_eq]

@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTLcm
 
+import VerifiedGarbage.Proof.Rsa.X86_64.InvInstance
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Implies
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTD

@@ -1,6 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
+
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
+import VerifiedGarbage.Proof.Rsa.X86_64.CvMainOk
 import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -241,10 +244,6 @@ theorem stkAddr_add (s : State) (j b : Nat) :
     stackArgAddr s j + BitVec.ofNat 64 b = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j + b) := by
   rw [stkAddr_eq, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
-theorem apart_of {o₁ o₂ : Addr} {l₁ l₂ : Nat} (hd : (⟨o₁, l₁⟩ : Region).Disjoint ⟨o₂, l₂⟩) (h₁ : l₁ ≤ 2 ^ 64)
-    (h₂ : l₂ ≤ 2 ^ 64) : Apart o₁ l₁ o₂ l₂ := fun i hi j hj he =>
-  hd _ (contains_byte o₁ hi h₁) (by rw [he]; exact contains_byte o₂ hj h₂)
-
 /-- The inputs of `main`, from the entry state. -/
 def cvIn (s : State) : CvIn where
   B := stackArg s 8
@@ -409,7 +408,7 @@ theorem cvGpr_of {s t₂ t : State} (c : CvCtx s) (hsv : ∀ i < 6, t.gpr (saved
 
 /-- `vg_rsa_crt_values`, given that its code never loads MXCSR (which the
 registration file evaluates). -/
-theorem cvCode_correct (hmx : CrtValues.code.allInstrs (fun i => !loadsMxcsr i) = true)
+theorem cvCode_correct [InvLaw] (hmx : CrtValues.code.allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : cvContract.pre s) :
     ∃ t s', Exec isa CrtValues.code s t s' ∧ abiPreserved s s' ∧ cvContract.post s s' := by
   have c := cvCtx_of h

@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
 
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+import VerifiedGarbage.Proof.Rsa.X86_64.CvCTInv
 import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Bignum.X86_64.Valid
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTInv
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
@@ -134,7 +136,7 @@ theorem fail_ct : RelCT isa (Two GF) fail fun _ _ => True := by
 
 /-- `vg_rsa_crt_values` leaks the same in runs that agree on the public
 data. -/
-theorem cvCode_ct : RelCT isa (Two CVRel) CrtValues.code fun _ _ => True := by
+theorem cvCode_ct [InvLaw] : RelCT isa (Two CVRel) CrtValues.code fun _ _ => True := by
   unfold CrtValues.code
   refine RelCT.seq (R := Two CV3) (RelCT.block_append (RelCT.seq (R := Two CV2) ?_ ?_)) ?_
   · rw [cvEntry_split]
@@ -184,7 +186,7 @@ theorem cvCode_ct : RelCT isa (Two CVRel) CrtValues.code fun _ _ => True := by
       ⟨cvIn s, hs.2, cvPre_of (cvCtx_of hs.1) h hm k⟩) h) fun _ _ h => h
 
 /-- `vg_rsa_crt_values` is constant time but for `n`. -/
-theorem cvCode_constantTime : ConstantTime isa cvContract.pre cvContract.pub CrtValues.code := by
+theorem cvCode_constantTime [InvLaw] : ConstantTime isa cvContract.pre cvContract.pub CrtValues.code := by
   refine RelCT.constantTime (cvCode_ct.mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨(cvIn s₁).pub, ⟨h₁, rfl⟩, ⟨h₂, ?_⟩⟩)
     fun _ _ h => h)
   obtain ⟨hr, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, hn⟩ := hp
