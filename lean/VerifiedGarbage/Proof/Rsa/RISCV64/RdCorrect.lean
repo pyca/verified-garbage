@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.RISCV64.RdLoad
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Rsa.RISCV64.RdTwos
@@ -37,15 +38,15 @@ open VG.Proof.Rsa.RecoverDet (deX okDE wsub wsub_of_le twoStep twosOut aOf ltOf 
   rootOf stage2 twos_iter prod_iter)
 open VG.Impl.Rsa.RISCV64.Keys (seqs)
 open VG.Impl.Rsa.RISCV64.RecoverDet (twos gcd divA divB minus4n sqrt factors nArr aN aOne aZero aU aX2 aT
-  gU gV gT1 gT2 gT3 aNeg1 aM1 aD aRem aDt aRm aSy aTy aDf aP aQ aNy wZ wE wD wM wMod wT wX wOne wX3 wA wR wN
+  aNeg1 aM1 aD aRem aDt aRm aSy aTy aDf aP aQ aNy wZ wE wD wM wMod wT wX wOne wX3 wA wR wN
   wDt wT2 wG wB wSq sB0 sB1 sU sX sEven sBoth sLt sExact sC1 sC2 sBb sOk5 sMask)
 open VG.Impl.Rsa.RISCV64.Keys (sOdd sB sC)
 open VG.Proof.Rsa.RISCV64.CrtValues (bit_ite bytes_in bytes_sep bytesAt_congr zeros_keep bytesAt_zero
   wordsVal_of_out)
 
 /-- Index side conditions. -/
-macro "rdc" : tactic => `(tactic| ((try simp only [nArr, nWide, aN, aOne, aZero, aU, aX2, aT, gU, gV, gT1,
-  gT2, gT3, aNeg1, aM1, aD, aRem, aDt, aRm, aSy, aTy, aDf, aP, aQ, aNy, wZ, wE, wD, wM, wMod, wT, wX, wOne,
+macro "rdc" : tactic => `(tactic| ((try simp only [nArr, nWide, aN, aOne, aZero, aU, aX2, aT,
+  Impl.Rsa.RISCV64.RecoverDet.sU1, aNeg1, aM1, aD, aRem, aDt, aRm, aSy, aTy, aDf, aP, aQ, aNy, wZ, wE, wD, wM, wMod, wT, wX, wOne,
   wX3, wA, wR, wN, wDt, wT2, wG, wB, wSq, sB0, sB1, sU, sX, sEven, sBoth, sLt, sExact, sC1, sC2, sBb, sOk5,
   sMask, sOdd, sB, sC, halves, hdr_eq, List.flatMap_cons, List.flatMap_nil, List.cons_append,
   List.nil_append, List.append_nil, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true,
@@ -147,7 +148,7 @@ theorem mask_eq {nb wb n de q rem B0 B1 Lt Ex C1 C2 Ok : Nat}
 
 /-- The narrow arrays written by each stage. -/
 abbrev u1 : List Nat := dmUsed ++ [22, 23, 41, 43, 44, 45]
-abbrev u2 : List Nat := u1 ++ [46, 47, 48, 49, 50, 34]
+abbrev u2 : List Nat := u1 ++ [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 34]
 abbrev u3 : List Nat := u2 ++ [28, 29, 24, 25, 26, 27, 30, 31]
 abbrev u4 : List Nat := u3 ++ [51, 52, 53, 54, 55]
 abbrev u5 : List Nat := u4 ++ [36, 37, 38, 39]
@@ -168,7 +169,7 @@ structure St3 (s0 t : State) : Prop where
   lt : slot t.mem (bOf s0) sLt = if aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) / Nv s0 < Nv s0 then 1 else 0
   free : ∀ j < nArr, j ∉ u3 → wordsVal t.mem (bOf s0) (arr (wOf s0) j) (wOf s0 + 2) = 0
 
-theorem stA_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (dm : Dm s0 s) :
+theorem stA_ok [InvLaw] {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (dm : Dm s0 s) :
     WP isa (seqs [twos, gcd, divA]) s (St3 s0) := by
   have ⟨b8, _, _, _, nk⟩ := bounds h
   have ⟨f1, f2⟩ := h.fits
@@ -193,18 +194,16 @@ theorem stA_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (dm : Dm s0 s)
     rw [← tw]; rfl
   -- The GCD.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (gcd_ok w1 (L := kOf s0) (by decide) (by decide)
-    (by rw [c1.s2, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_arith)) fun t2 ⟨w2, F2, hi2, g2, k2⟩ => ?_
+  have hw4 : 4 ≤ wOf s0 := by have := h.k1; rw [w_eq]; simp only [kOf]; omega_arith
+  refine WP.mono (gcd_ok w1 (by decide) (by decide) hw4 one1 (by rw [u1v]; exact uo))
+    fun t2 ⟨w2, F2, hi2, g2, k2⟩ => ?_
   have c2 := c1.step w2 F2 (by rdc) (by rdc) k2
   have fr2 := free_step (U' := u2) F2 (by rdc) fit (by rdc) (by rdc) fr1
   have n2 : num t2.mem (bOf s0) (wOf s0) aN = Nv s0 := by rw [F2.num (by rdc) (by rdc) (fit _ (by rdc)), n1]
-  have bnd : num t1.mem (bOf s0) (wOf s0) aX2 * num t1.mem (bOf s0) (wOf s0) aU < 2 ^ (64 * wOf s0 + 8 * kOf s0) := by
-    rw [x21, u1v, Nat.pow_add]
-    exact Nat.mul_lt_mul'' x2l (by omega_arith)
   have G : num t2.mem (bOf s0) (WOf s0) wG =
       Nat.gcd (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).2.1 (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).1 := by
     rw [numW_low (by rw [hi2]; exact hiW_zero (fr1 _ (by rdc) (by rdc)) (fr1 _ (by rdc) (by rdc))),
-      g2 (by rw [u1v]; exact uo) bnd, x21, u1v]
+      g2, x21, u1v]
   have X3 : num t2.mem (bOf s0) (WOf s0) wX3 = (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).2.2 := by
     rw [numW_of F2 (by rdc) (by rdc) (fit _ (by rdc)), x31]
   have aof : aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) =
@@ -451,7 +450,7 @@ theorem nv_facts {s0 : State} (hmv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = tr
   obtain ⟨⟨⟨o, b⟩, _⟩, _⟩ := hmv
   exact ⟨o, Nat.le_trans (show 3 ≤ 2 ^ 2 by decide) (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by decide)) b)⟩
 
-theorem valid_ok {s0 s : State} (h : PreC s0) (hmv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true)
+theorem valid_ok [InvLaw] {s0 s : State} (h : PreC s0) (hmv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true)
     (c : CB s0 s0.mem s) : WP isa VG.Impl.Rsa.RISCV64.RecoverDet.valid s (VP s0) := by
   have three := (nv_facts hmv).2
   unfold VG.Impl.Rsa.RISCV64.RecoverDet.valid
@@ -541,7 +540,7 @@ theorem post_fail {s0 u v : State} (hv : ¬ Spec.Rsa.modulusValid (Nv s0) (kOf s
   rw [hm, ha]
   exact hw
 
-theorem rd_correct (s : State) (hpre : (Spec.Rsa.recoverPrimesDetContract RISCV64.abi).pre s) :
+theorem rd_correct [InvLaw] (s : State) (hpre : (Spec.Rsa.recoverPrimesDetContract RISCV64.abi).pre s) :
     ∃ tr t, Exec isa VG.Impl.Rsa.RISCV64.RecoverDet.code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa VG.Impl.Rsa.RISCV64.RecoverDet.code s fun t => abiPreserved s t ∧ fnPost s t
   have h := preC_of hpre

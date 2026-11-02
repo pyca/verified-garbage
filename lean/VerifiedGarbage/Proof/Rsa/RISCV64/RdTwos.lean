@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.RdOps
 public import VerifiedGarbage.Proof.Rsa.RecoverDet
 public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
 public import VerifiedGarbage.Proof.Rsa.KeyMath
+public import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
-import VerifiedGarbage.Proof.Rsa.RISCV64.KeyInv
 import VerifiedGarbage.Proof.Rsa.RISCV64.KeyDiv
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Framework.Block
@@ -19,538 +19,137 @@ import VerifiedGarbage.Proof.Framework.Omega
   (wide, `wX`), `64 w` steps of `RecoverDet.twoStep` with `b = 64 W` on
   `(u, x, 2^k x)` (`twosSt`: narrow `aU`, narrow `aX2`, wide `wX3`), from
   `(n - 1, x mod 2^(64 w), x)`;
-* `gcdStep_ok`, `gcd_ok`: the binary GCD on `([gU], [gV])` is `uvStep`, the
-  `(u, v)` part of `KeyMath.invStep` (`invIter_uv`), so from `(x, u)`, `u`
-  odd, it ends at `(0, gcd(x, u))` (`uv_done`), copied into the low half of
-  the wide `wG`.
+* `gcd_ok`: from `(x, u)`, `u` odd, `gcd(x, u)` by the batched GCD
+  (`Proof/Rsa/RISCV64/IbInverse.lean`'s `gcd_ok`), 1 where `u = 1`, copied
+  into the low half of the wide `wG`.
 -/
 
 @[expose] public section
-
-namespace VG.Proof.Rsa
-
-/-- `KeyMath.invStep`'s `(u, v)` part. -/
-def uvStep (s : Nat × Nat) : Nat × Nat :=
-  if s.1 % 2 = 1 then (if s.1 < s.2 then ((s.2 - s.1) / 2, s.1) else ((s.1 - s.2) / 2, s.2))
-  else (s.1 / 2, s.2)
-
-theorem invStep_uv (m : Nat) (st : Nat × Nat × Nat × Nat) :
-    ((invStep m st).1, (invStep m st).2.1) = uvStep (st.1, st.2.1) := by
-  obtain ⟨u, v, x₁, x₂⟩ := st
-  simp only [invStep, uvStep]
-  split <;> (try split) <;> rfl
-
-/-- The `(u, v)` part of `invIter` ignores the cofactors. -/
-theorem invIter_uv (m : Nat) (st : Nat × Nat × Nat × Nat) : ∀ k,
-    ((invIter m k st).1, (invIter m k st).2.1) = uvStep^[k] (st.1, st.2.1)
-  | 0 => rfl
-  | k + 1 => by
-    rw [Function.iterate_succ_apply', ← invIter_uv m st k]
-    exact invStep_uv m _
-
-/-- From `(a, m)` with `m` odd and `a m < 2^K`: `(0, gcd a m)`. -/
-theorem uv_done {a m K : Nat} (hm : m % 2 = 1) (ha : a * m < 2 ^ K) :
-    uvStep^[K] (a, m) = (0, Nat.gcd a m) := by
-  have D := invIter_done (a := a) (K := K) hm ha
-  dsimp only at D
-  rw [← invIter_uv m (a, m, 1 % m, 0) K, D.1, D.2.1]
-
-end VG.Proof.Rsa
 
 namespace VG.Proof.Rsa.RISCV64.Keys
 
 open VG VG.RISCV64 VG.Proof.Mont VG.Proof.Bignum.RISCV64
 open VG.Impl.Rsa.RISCV64.Keys (seqs sub3 sel bitOf stBorrow andS half copy sOdd sB sC)
-open VG.Impl.Rsa.RISCV64.RecoverDet (gcdStep gcd next gU gV gT1 gT2 gT3 aU aX2 wG cmpBody gcdBody)
+open VG.Impl.Rsa.RISCV64.RecoverDet (gcd next aU aX2 aOne wG)
 open VG.Impl.Bignum.RISCV64 (countLoop)
 open VG.Impl.Rsa.RISCV64.Keys (ptr mov)
 open VG.Proof.Rsa.RISCV64.Loops (loopRegs Ahead out_step half64_arith)
-open VG.Proof.Rsa (uvStep uv_done invU_arith borrow_iff)
 
 /-- Index side conditions. -/
-macro "rdidx" : tactic => `(tactic| ((try simp only [gU, gV, gT1, gT2, gT3, aU, aX2, wG, sOdd, sB, sC,
+macro "rdidx" : tactic => `(tactic| ((try simp only [aU, aX2, aOne, wG, sOdd, sB, sC,
+  Impl.Rsa.RISCV64.InvBatch.aX, Impl.Rsa.RISCV64.InvBatch.aMin, Impl.Rsa.RISCV64.InvBatch.aGcd,
+  Impl.Rsa.RISCV64.InvBatch.aY, Impl.Rsa.RISCV64.RecoverDet.sU1,
   hdr_eq, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true, true_and,
   ne_eq]) <;> omega_arith))
 
 /-! ## The GCD -/
 
-/-- The registers of the GCD's steps. -/
-abbrev gcdRegs : List Reg := .a5 :: opRegs
-
-/-- The registers the GCD's pass changes. -/
-abbrev gcdLRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6]
-
-/-- The borrow of `[t1] - [t2]` over `n` words (`countLoop .t3 cmpBody`), from the borrow in `t4`. -/
-theorem cmpLoop_ok {s : State} {B : Addr} {Z dA dB n : Nat} (hs : Scr s B Z)
-    (h1 : s.gpr .t1 = off B dA) (h2 : s.gpr .t2 = off B dB) (h3 : s.gpr .t3 = BitVec.ofNat 64 n)
-    (h4 : (s.gpr .t4).toNat ≤ 1) (hn : 1 ≤ n) (hn' : n < 2 ^ 32) (hA8 : dA % 8 = 0) (hB8 : dB % 8 = 0)
-    (hA : dA + 8 * n ≤ Z) (hB : dB + 8 * n ≤ Z) :
-    WP isa (countLoop .t3 cmpBody) s fun t =>
-      (t.gpr .t4).toNat ≤ 1 ∧ t.mem = s.mem ∧
-      (∃ x < 2 ^ (64 * n), x + wordsVal s.mem B dB n + (s.gpr .t4).toNat =
-        wordsVal s.mem B dA n + 2 ^ (64 * n) * (t.gpr .t4).toNat) ∧ Keep loopRegs s t := by
-  have hnw := hs.nowrap
-  let Inv : Nat → State → Prop := fun i t =>
-    t.gpr .t1 = off B (dA + 8 * i) ∧ t.gpr .t2 = off B (dB + 8 * i) ∧ (t.gpr .t4).toNat ≤ 1 ∧
-      t.mem = s.mem ∧
-      (∃ x < 2 ^ (64 * i), x + wordsVal s.mem B dB i + (s.gpr .t4).toNat =
-        wordsVal s.mem B dA i + 2 ^ (64 * i) * (t.gpr .t4).toNat) ∧
-      Keep loopRegs s t
-  refine WP.mono (wp_countdown (body := .block (cmpBody ++ ([.addi .t3 .t3 (-1)] : List Instr)))
-    (cnt := .t3) (N := n) (by omega_arith) (by omega_arith) Inv
-    (fun i hi t ⟨j1, j2, j4, jm, ⟨x, hx, jeq⟩, jk⟩ hc => ?_)
-    ⟨by rw [h1]; rfl, by rw [h2]; rfl, h4, rfl, ⟨0, by simp, by simp [wordsVal]⟩, Keep.refl _ _⟩ h3)
-    fun t ⟨_, _, j4, jm, jx, jk⟩ => ⟨j4, jm, jx, jk⟩
-  have hs' := hs.congr jk.2.2
-  have hst : WP isa (.block (cmpBody ++ ([.addi .t3 .t3 (-1)] : List Instr))) t fun t' =>
-      (t'.gpr .t1 = off B (dA + 8 * i + 8) ∧ t'.gpr .t2 = off B (dB + 8 * i + 8) ∧
-        t'.gpr .t3 = t.gpr .t3 - BitVec.ofNat 64 1 ∧ t'.mem = t.mem ∧
-        t'.gpr .t4 = ((if word t.mem B (dA + 8 * i) < word t.mem B (dB + 8 * i) then (1 : BitVec 64) else 0) |||
-          (if word t.mem B (dA + 8 * i) - word t.mem B (dB + 8 * i) < t.gpr .t4 then 1 else 0))) ∧
-      Keep loopRegs t t' := by
-    refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [cmpBody, j1, j2, hs'.ld (show dA + 8 * i + 8 ≤ Z by omega_arith),
-      hs'.ld (show dB + 8 * i + 8 ≤ Z by omega_arith),
-      hs'.al8 (show dA + 8 * i + 8 ≤ Z by omega_arith) (by omega_arith),
-      hs'.al8 (show dB + 8 * i + 8 ≤ Z by omega_arith) (by omega_arith)]
-  refine WP.mono hst fun t' ⟨⟨l1, l2, l3, lm, lb⟩, lk⟩ =>
-    ⟨⟨?_, ?_, ?_, by rw [lm, jm], ?_, Keep.trans' jk lk⟩, l3⟩
-  · rw [l1, show dA + 8 * i + 8 = dA + 8 * (i + 1) by omega_arith]
-  · rw [l2, show dB + 8 * i + 8 = dB + 8 * (i + 1) by omega_arith]
-  · rw [lb]; exact (sub64_arith _ _ _ j4).2
-  · have k := (sub64_arith (word t.mem B (dA + 8 * i)) (word t.mem B (dB + 8 * i)) (t.gpr .t4) j4).1
-    rw [← lb, jm] at k
-    refine ⟨x + 2 ^ (64 * i) * (word s.mem B (dA + 8 * i) - word s.mem B (dB + 8 * i) - t.gpr .t4).toNat,
-      ?_, ?_⟩
-    · have := (word s.mem B (dA + 8 * i) - word s.mem B (dB + 8 * i) - t.gpr .t4).isLt
-      rw [Nat.mul_succ, Nat.pow_add]
-      have : 2 ^ (64 * i) * ((word s.mem B (dA + 8 * i) - word s.mem B (dB + 8 * i) - t.gpr .t4).toNat + 1) ≤
-          2 ^ (64 * i) * 2 ^ 64 := Nat.mul_le_mul_left _ this
-      rw [Nat.mul_add, Nat.mul_one] at this
-      omega
-    · rw [wordsVal_succ_top s.mem B dB i, wordsVal_succ_top s.mem B dA i, Nat.mul_succ, Nat.pow_add]
-      have e : 2 ^ (64 * i) * (word s.mem B (dA + 8 * i) - word s.mem B (dB + 8 * i) - t.gpr .t4).toNat +
-          2 ^ (64 * i) * (word s.mem B (dB + 8 * i)).toNat + 2 ^ (64 * i) * (t.gpr .t4).toNat =
-          2 ^ (64 * i) * (word s.mem B (dA + 8 * i)).toNat + 2 ^ (64 * i) * 2 ^ 64 * (t'.gpr .t4).toNat := by
-        rw [← Nat.mul_add, ← Nat.mul_add, Nat.mul_assoc, ← Nat.mul_add, k]
-      grind
-
-/-- A word of `x ∧ mask`. -/
-theorem and_mask64 (y : BitVec 64) (b : Bool) :
-    (y &&& (if b then BitVec.allOnes 64 else 0)).toNat = if b then y.toNat else 0 := by
-  cases b
-  · show (y &&& 0#64).toNat = 0; rw [BitVec.and_zero]; rfl
-  · show (y &&& BitVec.allOnes 64).toNat = y.toNat; rw [BitVec.and_allOnes]
+open VG.Impl.Rsa.RISCV64.RecoverDet (sU1)
 
 /-- A word of a masked selection, `x ⊕ ((h ⊕ x) ∧ mask)`. -/
 theorem xsel64 (x h : BitVec 64) (b : Bool) :
     x ^^^ ((h ^^^ x) &&& (if b then BitVec.allOnes 64 else 0)) = if b then h else x := by
   rw [BitVec.xor_comm]; exact select64_arith x h b
 
-/-- Memory that agrees outside two ranges. -/
-def Out2 (B : Addr) (a n b k : Nat) (m m' : Mem) : Prop :=
-  ∀ x, (ofs B x < a ∨ a + n ≤ ofs B x) → (ofs B x < b ∨ b + k ≤ ofs B x) → m' x = m x
-
-theorem Out2.word {m m' : Mem} {B : Addr} {a n b k d : Nat} (h : Out2 B a n b k m m')
-    (h1 : d + 8 ≤ a ∨ a + n ≤ d) (h2 : d + 8 ≤ b ∨ b + k ≤ d) (hd : d + 8 ≤ 2 ^ 64) :
-    word m' B d = word m B d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off B (by omega_arith)]; omega_arith)
-    (by rw [ofs_off B (by omega_arith)]; omega_arith)).symm).symm
-
-theorem Out2.wordsVal {m m' : Mem} {B : Addr} {a n b k : Nat} (h : Out2 B a n b k m m') :
-    ∀ {d j : Nat}, (d + 8 * j ≤ a ∨ a + n ≤ d) → (d + 8 * j ≤ b ∨ b + k ≤ d) → d + 8 * j ≤ 2 ^ 64 →
-      VG.Proof.Mont.wordsVal m' B d j = VG.Proof.Mont.wordsVal m B d j
-  | _, 0, _, _, _ => rfl
-  | d, j + 1, h1, h2, h3 => by
-    simp only [VG.Proof.Mont.wordsVal]
-    rw [h.word (by omega_arith) (by omega_arith) (by omega_arith),
-      h.wordsVal (d := d + 8) (j := j) (by omega_arith) (by omega_arith) (by omega_arith)]
-
-/-- `x ⊕ ((x ⊕ y) ∧ mask)`. -/
-theorem xsel64' (x y : BitVec 64) (b : Bool) :
-    x ^^^ ((x ^^^ y) &&& (if b then BitVec.allOnes 64 else 0)) = if b then y else x := by
-  rw [BitVec.xor_comm x y]; exact xsel64 x y b
-
-/-- The step's pass over `n` words (`countLoop .t3 gcdBody`), `u` at `t0` and `v` at `t1`, the
-masks of `c` and `odd` in `a4` and `a5`: `[v] := c ? [u] : [v]` and
-`[u] := (c ? [v] : [u]) - (odd ? [v'] : 0)`, the borrow in and out in `t4`. -/
-theorem gcdLoop_ok {s : State} {B : Addr} {Z dU dV n : Nat} (hs : Scr s B Z) {c o : Bool}
-    (h0 : s.gpr .t0 = off B dU) (h1 : s.gpr .t1 = off B dV) (h3 : s.gpr .t3 = BitVec.ofNat 64 n)
-    (h4 : (s.gpr .t4).toNat ≤ 1) (ha4 : s.gpr .a4 = if c then BitVec.allOnes 64 else 0)
-    (ha5 : s.gpr .a5 = if o then BitVec.allOnes 64 else 0) (hn : 1 ≤ n) (hn' : n < 2 ^ 32)
-    (hU8 : dU % 8 = 0) (hV8 : dV % 8 = 0) (hU : dU + 8 * n ≤ Z) (hV : dV + 8 * n ≤ Z)
-    (dUV : dU + 8 * n ≤ dV ∨ dV + 8 * n ≤ dU) :
-    WP isa (countLoop .t3 gcdBody) s fun t =>
-      (t.gpr .t4).toNat ≤ 1 ∧
-      wordsVal t.mem B dV n = (if c then wordsVal s.mem B dU n else wordsVal s.mem B dV n) ∧
-      wordsVal t.mem B dU n + (if o then wordsVal t.mem B dV n else 0) + (s.gpr .t4).toNat =
-        (if c then wordsVal s.mem B dV n else wordsVal s.mem B dU n) + 2 ^ (64 * n) * (t.gpr .t4).toNat ∧
-      Out2 B dU (8 * n) dV (8 * n) s.mem t.mem ∧ Keep gcdLRegs s t := by
-  have hnw := hs.nowrap
-  let Inv : Nat → State → Prop := fun i t =>
-    t.gpr .t0 = off B (dU + 8 * i) ∧ t.gpr .t1 = off B (dV + 8 * i) ∧ (t.gpr .t4).toNat ≤ 1 ∧
-      Out2 B dU (8 * i) dV (8 * i) s.mem t.mem ∧
-      wordsVal t.mem B dV i = (if c then wordsVal s.mem B dU i else wordsVal s.mem B dV i) ∧
-      wordsVal t.mem B dU i + (if o then wordsVal t.mem B dV i else 0) + (s.gpr .t4).toNat =
-        (if c then wordsVal s.mem B dV i else wordsVal s.mem B dU i) + 2 ^ (64 * i) * (t.gpr .t4).toNat ∧
-      Keep gcdLRegs s t
-  refine WP.mono (wp_countdown (body := .block (gcdBody ++ ([.addi .t3 .t3 (-1)] : List Instr)))
-    (cnt := .t3) (N := n) (by omega_arith) (by omega_arith) Inv
-    (fun i hi t ⟨j0, j1, j4, jout, jv, ju, jk⟩ hc => ?_)
-    ⟨by rw [h0]; rfl, by rw [h1]; rfl, h4, fun _ _ _ => rfl, by cases c <;> simp [wordsVal],
-      by cases c <;> cases o <;> simp [wordsVal], Keep.refl _ _⟩ h3)
-    fun t ⟨_, _, j4, jout, jv, ju, jk⟩ => ⟨j4, jv, ju, jout, jk⟩
-  have hs' := hs.congr jk.2.2
-  have ja4 : t.gpr .a4 = if c then BitVec.allOnes 64 else 0 := (jk.gpr (r := .a4) (by decide)).trans ha4
-  have ja5 : t.gpr .a5 = if o then BitVec.allOnes 64 else 0 := (jk.gpr (r := .a5) (by decide)).trans ha5
-  generalize hu : word t.mem B (dU + 8 * i) = u
-  generalize hv : word t.mem B (dV + 8 * i) = v
-  have hst : WP isa (.block (gcdBody ++ ([.addi .t3 .t3 (-1)] : List Instr))) t fun t' =>
-      (t'.gpr .t0 = off B (dU + 8 * i + 8) ∧ t'.gpr .t1 = off B (dV + 8 * i + 8) ∧
-        t'.gpr .t3 = t.gpr .t3 - BitVec.ofNat 64 1 ∧
-        t'.mem = (t.mem.writeW (off B (dV + 8 * i)) (v ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0)))).writeW
-          (off B (dU + 8 * i)) ((u ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) -
-            ((v ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) &&& (if o then BitVec.allOnes 64 else 0)) -
-              t.gpr .t4) ∧
-        t'.gpr .t4 = ((if u ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0)) <
-              (v ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) &&& (if o then BitVec.allOnes 64 else 0)
-            then (1 : BitVec 64) else 0) |||
-          (if (u ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) -
-              ((v ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) &&& (if o then BitVec.allOnes 64 else 0)) <
-              t.gpr .t4 then 1 else 0))) ∧
-      Keep gcdLRegs t t' := by
-    refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [gcdBody, j0, j1, ja4, ja5, hu, hv, hs'.ld (show dU + 8 * i + 8 ≤ Z by omega_arith),
-      hs'.ld (show dV + 8 * i + 8 ≤ Z by omega_arith),
-      hs'.st (show dU + 8 * i + 8 ≤ Z by omega_arith), hs'.st (show dV + 8 * i + 8 ≤ Z by omega_arith),
-      hs'.al8 (show dU + 8 * i + 8 ≤ Z by omega_arith) (by omega_arith),
-      hs'.al8 (show dV + 8 * i + 8 ≤ Z by omega_arith) (by omega_arith)]
-  refine WP.mono hst fun t' ⟨⟨l0, l1, l3, lm, lb⟩, lk⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, Keep.trans' jk lk⟩, l3⟩
-  · rw [l0, show dU + 8 * i + 8 = dU + 8 * (i + 1) by omega_arith]
-  · rw [l1, show dV + 8 * i + 8 = dV + 8 * (i + 1) by omega_arith]
-  · rw [lb]; exact (sub64_arith _ _ _ j4).2
-  · -- The frame: the two words written.
-    intro x hx1 hx2
-    have o1 := writeW_outside t.mem B (d := dV + 8 * i)
-      (v ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) (by omega_arith)
-    have o2 := writeW_outside (t.mem.writeW (off B (dV + 8 * i))
-      (v ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0)))) B (d := dU + 8 * i)
-      ((u ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) -
-        ((v ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) &&& (if o then BitVec.allOnes 64 else 0)) -
-          t.gpr .t4) (by omega_arith)
-    rw [lm, o2 x (by omega_arith), o1 x (by omega_arith)]
-    exact jout x (by omega_arith) (by omega_arith)
-  all_goals
-    have wu : u = word s.mem B (dU + 8 * i) := by
-      rw [← hu]; exact jout.word (by omega_arith) (by omega_arith) (by omega_arith)
-    have wv : v = word s.mem B (dV + 8 * i) := by
-      rw [← hv]; exact jout.word (by omega_arith) (by omega_arith) (by omega_arith)
-    have o2 := writeW_outside (t.mem.writeW (off B (dV + 8 * i))
-      (v ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0)))) B (d := dU + 8 * i)
-      ((u ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) -
-        ((v ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) &&& (if o then BitVec.allOnes 64 else 0)) -
-          t.gpr .t4) (by omega_arith)
-    have o1 := writeW_outside t.mem B (d := dV + 8 * i)
-      (v ^^^ ((u ^^^ v) &&& (if c then BitVec.allOnes 64 else 0))) (by omega_arith)
-    have eV : wordsVal t'.mem B dV (i + 1) = wordsVal t.mem B dV i + 2 ^ (64 * i) * (if c then u else v).toNat := by
-      rw [lm, o2.wordsVal (d := dV) (k := i + 1) (by omega_arith) (by omega_arith),
-        fin64_wordsVal_write_top _ _ _ _ _ (by omega_arith), xsel64]
-    rw [xsel64, xsel64'] at lb lm
-    have eU : wordsVal t'.mem B dU (i + 1) = wordsVal t.mem B dU i +
-        2 ^ (64 * i) * ((if c then v else u) - ((if c then u else v) &&& (if o then BitVec.allOnes 64 else 0)) -
-          t.gpr .t4).toNat := by
-      rw [lm, fin64_wordsVal_write_top _ _ _ _ _ (by omega_arith),
-        (writeW_outside t.mem B (d := dV + 8 * i) (if c then u else v) (by omega_arith)).wordsVal (d := dU) (k := i)
-          (by omega_arith) (by omega_arith)]
-  · rw [eV, jv, wordsVal_succ_top s.mem B dU i, wordsVal_succ_top s.mem B dV i, wu, wv]
-    cases c <;> rfl
-  · have k := (sub64_arith (if c then v else u) ((if c then u else v) &&& (if o then BitVec.allOnes 64 else 0))
-      (t.gpr .t4) j4).1
-    rw [← lb, and_mask64] at k
-    rw [eU, eV, wordsVal_succ_top s.mem B dU i, wordsVal_succ_top s.mem B dV i, Nat.mul_succ, Nat.pow_add, ← wu, ← wv]
-    generalize ((if c then v else u) - ((if c then u else v) &&& (if o then BitVec.allOnes 64 else 0)) -
-      t.gpr .t4).toNat = r at k ⊢
-    generalize 2 ^ (64 * i) = P at ju ⊢
-    rw [jv] at ju
-    cases c <;> cases o <;> simp only [Bool.false_eq_true, ite_true, ite_false] at k ju ⊢ <;> grind
-
-/-- The mask of a word's low bit. -/
-theorem odd_mask (x : BitVec 64) :
-    BitVec.ofNat 64 0 - (x &&& BitVec.ofNat 64 1) = if decide (x.toNat % 2 = 1) then BitVec.allOnes 64 else 0 := by
-  have e := and_one_toNat x
-  change (x &&& 1#64).toNat = _ at e
-  rw [show BitVec.ofNat 64 1 = 1#64 from rfl, mask_of_slot _ (by rw [e]; omega_arith), e]
-  rcases Nat.mod_two_eq_zero_or_one x.toNat with z | z <;> simp [z]
-
-theorem mask_and_mask (a b : Bool) :
-    (if a then BitVec.allOnes 64 else (0 : BitVec 64)) &&& (if b then BitVec.allOnes 64 else 0) =
-      if (a && b) then BitVec.allOnes 64 else 0 := by
-  cases a <;> cases b <;> decide
-
-/-- Two adjacent arrays' first `w` words changed: a frame of the two. -/
-theorem Frame.of_out2 {B : Addr} {w j : Nat} {m m' : Mem}
-    (h : Out2 B (arr w j) (8 * w) (arr w (j + 1)) (8 * w) m m') : Frame B w [j, j + 1] [] m m' := by
-  intro x hx
-  have h1 := hx (arr w j, S w) (by simp [ranges])
-  have h2 := hx (arr w (j + 1), S w) (by simp [ranges])
-  have hS : S w = 8 * (w + 2) := rfl
-  exact h x (by omega_arith) (by omega_arith)
-
-/-- `gcdStep`: `uvStep` on `([gU], [gV])`: the borrow of `u - v`, then one pass, then the halving. -/
-theorem gcdStep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
-    (hN : 63 ≤ N) (hN' : N ≤ 2048) :
-    WP isa gcdStep s fun t => Ws t B Z w N ∧
-      Frame B w [gU, gV, gT1, gT2, gT3] [sOdd, sB, sC] s.mem t.mem ∧
-      (num t.mem B w gU, num t.mem B w gV) = uvStep (num s.mem B w gU, num s.mem B w gV) ∧
-      Keep gcdRegs s t := by
-  have fU := h.arr_fit (j := gU) (by rdidx)
-  have fV := h.arr_fit (j := gV) (by rdidx)
-  have nw := h.nowrap
-  have hS : S w = 8 * (w + 2) := rfl
-  have := h.wpos
-  have := h.wle
-  have aUV : arr w gV = arr w gU + S w := arr_succ w gU
-  generalize hu : num s.mem B w gU = u
-  generalize hv : num s.mem B w gV = v
-  unfold gcdStep
-  -- 1: the pointers, and the borrow of `u - v`.
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine ptr2_ok h (r := .t1) (r' := .t2) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (show gU < 2048 by decide) (show gV < 2048 by decide) fun x p1 p2 kx mx => ?_
-  have hx := h.of_keep kx
-  have hb : WP isa (.block [.li .t4 0, mov .t3 .s9]) x fun y =>
-      (y.gpr .t1 = off B (arr w gU) ∧ y.gpr .t2 = off B (arr w gV) ∧ y.gpr .t3 = BitVec.ofNat 64 w ∧
-        y.gpr .t4 = 0 ∧ y.mem = x.mem) ∧ Keep [.t3, .t4] x y := by
-    refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [mov, fin64_exec_li_zero, hx.s9, add_ofNat_zero', p1, p2]
-  refine WP.mono hb fun y ⟨⟨y1, y2, y3, y4, my⟩, ky⟩ => ?_
-  have hy := hx.of_keep ky
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (cmpLoop_ok hy.scr y1 y2 y3 (by rw [y4]; decide) (by omega_arith) (by omega_arith)
-    (arr_al _ _) (arr_al _ _) (by omega_arith) (by omega_arith)) fun z ⟨z4, mz, ⟨dx, hdx, zeq⟩, kz⟩ => ?_
-  rw [y4, my, mx] at zeq
-  change dx + num s.mem B w gV + 0 = num s.mem B w gU + _ at zeq
-  rw [hu, hv, Nat.add_zero] at zeq
-  have lt : (z.gpr .t4).toNat = 1 ↔ u < v := by
-    have := borrow_iff zeq hdx z4; omega_arith
-  have kyz : Keep loopRegs s z := Keep.trans' ((kx.trans ky).mono (by decide)) kz
-  have hz := h.of_keep kyz
-  -- 2: the masks of `odd` and `c = odd ∧ u < v`, and the pointers.
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  simp only [List.append_assoc]
-  refine ptr_ok hz (by decide) (by decide) (show gU < 2048 by decide) ?_
-  rw [WP.block_append_iff]
-  have mz' : z.mem = s.mem := by rw [mz, my, mx]
-  have u0 : (word s.mem B (arr w gU)).toNat % 2 = u % 2 := by
-    rw [← hu]; exact (wordsVal_mod2 s.mem B (d := arr w gU) (k := w) (by omega_arith)).symm
-  have hb2 : WP isa (.block [.load .d .t5 .t0 0, .logicImm .and .t5 .t5 1, .li .t6 0, .sub .a5 .t6 .t5,
-      .sub .a4 .t6 .t4, .logic .and .a4 .a4 .a5]) (z.write .t0 (off B (arr w gU))) fun y =>
-        (y.gpr .a5 = (if decide (u % 2 = 1) then BitVec.allOnes 64 else 0) ∧
-          y.gpr .a4 = (if (decide ((z.gpr .t4).toNat = 1) && decide (u % 2 = 1)) then BitVec.allOnes 64 else 0) ∧
-          y.mem = z.mem) ∧ Keep [.t5, .t6, .a4, .a5] (z.write .t0 (off B (arr w gU))) y := by
-    refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [add_ofNat_zero', fin64_exec_li_zero, hz.scr.ld (d := arr w gU) (n := 8) (by omega_arith),
-      hz.scr.al8 (d := arr w gU) (by omega_arith) (arr_al _ _), mz']
-    refine ⟨?_, ?_⟩
-    · rw [show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, odd_mask, u0]; rfl
-    · rw [show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, odd_mask, u0, mask_of_slot _ z4, mask_and_mask]
-      congr 1
-      rcases (show (z.gpr .t4).toNat = 0 ∨ (z.gpr .t4).toNat = 1 by omega_arith) with e | e <;> simp [e]
-  refine WP.mono hb2 fun y2' ⟨⟨a5v, a4v, m2⟩, k2⟩ => ?_
-  have k2' : Keep [.t0, .t5, .t6, .a4, .a5] z y2' := ((Keep.write _ _ _).trans k2).mono (by decide)
-  have hy2 := hz.of_keep k2'
-  refine ptr_ok hy2 (by decide) (by decide) (show gV < 2048 by decide) ?_
-  have hb3 : WP isa (.block [.li .t4 0, mov .t3 .s9]) (y2'.write .t1 (off B (arr w gV))) fun y =>
-      (y.gpr .t0 = off B (arr w gU) ∧ y.gpr .t1 = off B (arr w gV) ∧ y.gpr .t3 = BitVec.ofNat 64 w ∧
-        y.gpr .t4 = 0 ∧ y.gpr .a4 = y2'.gpr .a4 ∧ y.gpr .a5 = y2'.gpr .a5 ∧ y.mem = y2'.mem) ∧
-        Keep [.t3, .t4] (y2'.write .t1 (off B (arr w gV))) y := by
-    refine WP.keep _ ?_ (by rfl) (by rfl)
-    have y20 : y2'.gpr .t0 = off B (arr w gU) := by rw [k2.gpr (by decide)]; simp [VG.RISCV64.RegUpd.gpr_write]
-    brun [mov, fin64_exec_li_zero, hy2.s9, add_ofNat_zero', y20]
-  refine WP.mono hb3 fun y3' ⟨⟨q0, q1, q3, q4, q44, q45, m3⟩, k3⟩ => ?_
-  have k3' : Keep [.t1, .t3, .t4] y2' y3' := ((Keep.write _ _ _).trans k3).mono (by decide)
-  have hy3 := hy2.of_keep k3'
-  -- 3: the pass.
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (gcdLoop_ok hy3.scr (c := decide ((z.gpr .t4).toNat = 1) && decide (u % 2 = 1))
-    (o := decide (u % 2 = 1)) q0 q1 q3 (by rw [q4]; decide) (by rw [q44, a4v]) (by rw [q45, a5v])
-    (by omega_arith) (by omega_arith) (arr_al _ _) (arr_al _ _) (by omega_arith) (by omega_arith)
-    (by omega_arith)) fun t4 ⟨b4, ev, eu, o4, kp⟩ => ?_
-  have m3' : y3'.mem = s.mem := by rw [m3, m2, mz']
-  rw [m3'] at ev o4
-  rw [m3', q4] at eu
-  change _ = if _ then num s.mem B w gU else num s.mem B w gV at ev
-  change _ + _ + 0 = (if _ then num s.mem B w gV else num s.mem B w gU) + _ at eu
-  rw [hu, hv] at ev eu
-  have k4 : Keep gcdRegs s t4 :=
-    Keep.trans' (Keep.trans' (kyz.mono (by decide)) (k2'.mono (by decide))) (Keep.trans' (k3'.mono (by decide))
-      (kp.mono (by decide)))
-  have h4 := h.of_keep k4
-  -- 4: the halving.
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have hzb : WP isa (.block [.li .t4 0]) t4 fun t5 =>
-      (t5.gpr .t4 = 0 ∧ t5.mem = t4.mem) ∧ Keep [.t4] t4 t5 := by
-    refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [fin64_exec_li_zero]
-  refine WP.mono hzb fun t5 ⟨⟨z5, m5⟩, k5⟩ => ?_
-  have h5 := h4.of_keep k5
-  refine WP.mono (half_ok h5 (by rdidx) hN' (by rw [z5]; decide)) fun t ⟨h6, k6, e6, _, r6⟩ => ?_
-  rw [z5, m5, show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero] at e6
-  rw [m5] at k6
-  have F4 : Frame B w [gU, gV] [] s.mem t4.mem := by
-    exact (Frame.of_out2 (j := gU) o4).mono (by decide) (by simp)
-  refine ⟨h6, (F4.trans k6.mono).mono, ?_, Keep.trans' k4 (Keep.trans' (k5.mono (by decide)) (r6.mono (by decide)))⟩
-  have vt : num t.mem B w gV = num t4.mem B w gV := k6.num (by rdidx) (by simp) (h.fit64 (by rdidx))
-  rw [vt, e6]
-  change (wordsVal t4.mem B (arr w gU) w / 2, wordsVal t4.mem B (arr w gV) w) = _
-  generalize hP : 2 ^ (64 * w) = P at eu
-  have hR := wordsVal_lt t4.mem B (arr w gU) w
-  have hU : u < P := hP ▸ hu ▸ wordsVal_lt _ _ _ _
-  have hV : v < P := hP ▸ hv ▸ wordsVal_lt _ _ _ _
-  rw [hP] at hR
-  have hβ : (t4.gpr .t4).toNat = 0 ∨ (t4.gpr .t4).toNat = 1 := by omega_arith
-  generalize (t4.gpr .t4).toNat = β at eu hβ
-  generalize wordsVal t4.mem B (arr w gU) w = R at eu hR ⊢
-  generalize wordsVal t4.mem B (arr w gV) w = V' at eu ev ⊢
-  simp only [uvStep]
-  rcases Nat.mod_two_eq_zero_or_one u with f | f
-  · have c0 : (decide ((z.gpr .t4).toNat = 1) && decide (u % 2 = 1)) = false := by simp [f]
-    have o0 : decide (u % 2 = 1) = false := by simp [f]
-    rw [c0] at ev eu
-    rw [o0] at eu
-    simp only [Bool.false_eq_true, ite_false, Nat.add_zero] at ev eu
-    have : R = u := by rcases hβ with e | e <;> rw [e] at eu <;> simp only [Nat.mul_zero, Nat.mul_one] at eu <;> omega
-    simp [f, this, ev]
-  · by_cases g : u < v
-    · have cz : (z.gpr .t4).toNat = 1 := lt.mpr g
-      simp only [cz, f, decide_true, Bool.and_self, ite_true, Nat.add_zero] at ev eu
-      rw [ev] at eu
-      have : R = v - u := by
-        rcases hβ with e | e <;> rw [e] at eu <;> simp only [Nat.mul_zero, Nat.mul_one] at eu <;> omega
-      simp [f, g, this, ev]
-    · have cz : ¬(z.gpr .t4).toNat = 1 := fun e => g (lt.mp e)
-      simp only [cz, f, decide_true, decide_false, Bool.false_and, Bool.false_eq_true, ite_false, ite_true,
-        Nat.add_zero] at ev eu
-      rw [ev] at eu
-      have : R = u - v := by
-        rcases hβ with e | e <;> rw [e] at eu <;> simp only [Nat.mul_zero, Nat.mul_one] at eu <;> omega
-      simp [f, g, this, ev]
-
 theorem shlk_ofNat (a k : Nat) : BitVec.ofNat 64 a <<< k = BitVec.ofNat 64 (2 ^ k * a) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mul_comm,
     Nat.mul_mod_mod]
 
-/-- The GCD's count: `s7 := 32 w + 4 L`. -/
-theorem gcdCount_ok {s : State} {B : Addr} {Z w N L : Nat} (h : Ws s B Z w N)
-    (hl : s.gpr .s2 = BitVec.ofNat 64 L) :
-    WP isa (.block [.shift .sll .d .s7 .s9 5, .shift .sll .d .t5 .s2 2, .add .s7 .s7 .t5]) s fun t =>
-      (t.gpr .s7 = BitVec.ofNat 64 (32 * w + 4 * L) ∧ t.mem = s.mem) ∧ Keep [.s7, .t5] s t := by
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  brun [h.s9, hl, shlk_ofNat]
-  exact (BitVec.ofNat_add _ _).symm
+/-- The narrow arrays the GCD writes. -/
+abbrev gcdArrs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 2 * wG]
 
-/-- The GCD's state after `i` iterations of two steps from `s0`. -/
-structure GcdI (s0 : State) (B : Addr) (Z w N : Nat) (i : Nat) (t : State) : Prop where
-  ws : Ws t B Z w N
-  keep : Frame B w [gU, gV, gT1, gT2, gT3] [sOdd, sB, sC] s0.mem t.mem
-  regs : Keep (.s7 :: gcdRegs) s0 t
-  value : (num t.mem B w gU, num t.mem B w gV) = uvStep^[2 * i] (num s0.mem B w gU, num s0.mem B w gV)
+/-- The registers the GCD changes. -/
+abbrev gcdRegs : List Reg := .s8 :: InvBatch.invRegs
 
-theorem gcdBody_ok {s0 t : State} {B : Addr} {Z w N i : Nat} (hN : 63 ≤ N) (hN' : N ≤ 2048)
-    (inv : GcdI s0 B Z w N i t) :
-    WP isa (seqs [gcdStep, gcdStep, .block next]) t fun u =>
-      GcdI s0 B Z w N (i + 1) u ∧ u.gpr .s7 = t.gpr .s7 - BitVec.ofNat 64 1 := by
-  have h := inv.ws
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (gcdStep_ok h hN hN') fun t1 ⟨h1, k1, e1, r1⟩ => ?_
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (gcdStep_ok h1 hN hN') fun t2 ⟨h2, k2, e2, r2⟩ => ?_
-  have hs : WP isa (.block next) t2 fun u =>
-      (u.gpr .s7 = t2.gpr .s7 - BitVec.ofNat 64 1 ∧ u.mem = t2.mem) ∧ Keep [.s7] t2 u := by
-    refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [next]
-  refine WP.mono hs fun u ⟨⟨u7, m2⟩, k3⟩ => ?_
-  have r7 : t2.gpr .s7 = t.gpr .s7 := (r2.gpr (by decide)).trans (r1.gpr (by decide))
-  refine ⟨⟨h2.of_keep k3, ?_, ?_, ?_⟩, by rw [u7, r7]⟩
-  · rw [m2]; exact inv.keep.trans (k1.trans k2)
-  · exact Keep.trans' inv.regs (Keep.mono ((r1.trans r2).trans k3) (by decide))
-  · rw [m2, e2, e1, inv.value, show 2 * (i + 1) = 2 * i + 1 + 1 by omega_arith,
-      Function.iterate_succ_apply', Function.iterate_succ_apply']
-
-/-- `gcd`, narrow: `gcd(x, u)` from `x` in `aX2` and an odd `u` in `aU`, with
-`x u < 2^(64 w + 8 L)` (`s2 = L = n_len`), into the low half of the wide `wG`,
-its upper half kept (`hiW`, so a zero upper half makes the wide `wG` the GCD). -/
-theorem gcd_ok {s : State} {B : Addr} {Z w N L : Nat} (h : Ws s B Z w N)
-    (hN : 63 ≤ N) (hN' : N ≤ 2048) (hl : s.gpr .s2 = BitVec.ofNat 64 L) (hL : L < 2 ^ 32) :
-    WP isa gcd s fun t => Ws t B Z w N ∧
-      Frame B w [gU, gV, gT1, gT2, gT3, 2 * wG] [sOdd, sB, sC] s.mem t.mem ∧
+/-- `gcd`: from `(x, u)` (narrow `aX2`, `aU`), `u` odd, `gcd(x, u)` into the low
+half of the wide `wG`, by the batched GCD (`InvLaw.gcd_ok`) and 1 where
+`u = 1`. -/
+theorem gcd_ok [InvLaw] {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
+    (hN : 63 ≤ N) (hN' : N ≤ 256) (hw : 4 ≤ w) (h1 : num s.mem B w aOne = 1)
+    (hodd : num s.mem B w aU % 2 = 1) :
+    WP isa gcd s fun t => Ws t B Z w N ∧ Frame B w gcdArrs [sU1] s.mem t.mem ∧
       hiW t.mem B w wG = hiW s.mem B w wG ∧
-      (num s.mem B w aU % 2 = 1 →
-        num s.mem B w aX2 * num s.mem B w aU < 2 ^ (64 * w + 8 * L) →
-        num t.mem B w (2 * wG) = Nat.gcd (num s.mem B w aX2) (num s.mem B w aU)) ∧
-      Keep (.s7 :: gcdRegs) s t := by
+      num t.mem B w (2 * wG) = Nat.gcd (num s.mem B w aX2) (num s.mem B w aU) ∧
+      Keep gcdRegs s t := by
   have := h.wle
-  have := h.wpos
   have hS : S w = 8 * (w + 2) := rfl
   have nw := h.nowrap
-  have fit := h.fits
-  have fX := h.fit64 (j := aX2) (by rdidx)
-  have fU := h.fit64 (j := aU) (by rdidx)
-  have fV := h.fit64 (j := gV) (by rdidx)
-  have a34 : arr w (2 * wG) + 8 * w + 8 * (w + 2) ≤ arr w gU := by
-    simp only [arr, S, hdr_eq, wG, gU]; omega
+  have fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
   have fG : arr w (2 * wG) + 8 * w + 8 * (w + 2) ≤ 2 ^ 64 := by
-    have := arr_mono (w := w) (show gU ≤ N by rdidx); omega
-  generalize hx : num s.mem B w aX2 = x
-  generalize hu : num s.mem B w aU = u
+    have := fit (2 * wG + 1) (by rdidx); have := arr_succ w (2 * wG); omega
+  generalize hx : num s.mem B w aX2 = x at *
+  generalize hu : num s.mem B w aU = u at *
   unfold gcd
-  -- The copies.
+  -- The inputs.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (copy_ok h (by rdidx) (by rdidx) hN' (by rdidx)) fun t1 ⟨h1, k1, e1, r1, _⟩ => ?_
+  refine WP.mono (copy_ok h (o := Impl.Rsa.RISCV64.InvBatch.aX) (a := aX2) (by rdidx) (by rdidx) (by omega)
+    (by rdidx)) fun t1 ⟨h1', k1, e1, r1, _⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (copy_ok h1 (by rdidx) (by rdidx) hN' (by rdidx)) fun t2 ⟨h2, k2, e2, r2, _⟩ => ?_
-  rw [k1.num (by rdidx) (by simp) fU, hu] at e2
+  refine WP.mono (copy_ok h1' (o := Impl.Rsa.RISCV64.InvBatch.aMin) (a := aU) (by rdidx) (by rdidx) (by omega)
+    (by rdidx)) fun t2 ⟨h2, k2, e2, r2, _⟩ => ?_
+  rw [k1.num (by decide) (by simp) (fit _ (by rdidx)), hu] at e2
   rw [hx] at e1
-  have e1' : num t2.mem B w gU = x := by rw [k2.num (by rdidx) (by simp) (h1.fit64 (by rdidx)), e1]
-  -- The count.
+  have e1' : num t2.mem B w Impl.Rsa.RISCV64.InvBatch.aX = x := by
+    rw [k2.num (by decide) (by simp) (fit _ (by rdidx)), e1]
+  -- `n = 2 w`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have hl2 : t2.gpr .s2 = BitVec.ofNat 64 L := by rw [r2.gpr (by decide), r1.gpr (by decide), hl]
-  refine WP.mono (gcdCount_ok h2 hl2) fun t3 ⟨⟨c3, m3⟩, k3⟩ => ?_
+  refine WP.mono (WP.keep [.s8] (Q := fun y => y.gpr .s8 = BitVec.ofNat 64 (2 * w) ∧ y.mem = t2.mem) ?_
+    (by rfl) (by rfl)) fun t3 ⟨⟨s83, m3⟩, k3⟩ => ?_
+  · brun [h2.s9]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
   have h3 := h2.of_keep k3
-  -- The loop.
+  have ctx : InvBatch.Ctx t3 B Z w N (2 * w) := ⟨h3, s83, by omega, by omega, by omega, hw⟩
+  -- The GCD.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have hK : 32 * w + 4 * L < 2 ^ 64 := by omega_arith
-  refine WP.mono (wp_countdown (body := seqs [gcdStep, gcdStep, .block next]) (cnt := .s7)
-    (N := 32 * w + 4 * L) hK (by omega_arith) (GcdI t3 B Z w N)
-    (fun i _ t inv _ => gcdBody_ok hN hN' inv)
-    ⟨h3, Frame.refl _ _ _ _ _, Keep.refl _ _, rfl⟩ c3) fun t4 inv => ?_
-  -- The copy into `wG`.
-  refine WP.mono (copy_ok inv.ws (by rdidx) (by rdidx) hN' (by rdidx)) fun t ⟨h5, k5, e5, r5, o5⟩ => ?_
-  have F4 : Frame B w [gU, gV, gT1, gT2, gT3] [sOdd, sB, sC] s.mem t4.mem := by
-    have F2 : Frame B w [gU, gV, gT1, gT2, gT3] [sOdd, sB, sC] s.mem t2.mem := Frame.join k1 k2
-    have F3 := inv.keep
-    rw [m3] at F3
-    exact F2.trans F3
-  refine ⟨h5, Frame.join F4 k5, ?_, fun hodd hlt => ?_, ?_⟩
+  refine WP.mono (InvLaw.gcd_ok ctx hN' (x := x) (m := u) (by rw [m3]; exact e1')
+    (by rw [← e1, show 32 * (2 * w) = 64 * w by omega]; exact wordsVal_lt _ _ _ _) (by rw [m3]; exact e2)
+    (by rw [← hu, show 32 * (2 * w) = 64 * w by omega]; exact wordsVal_lt _ _ _ _)
+    hodd) fun t4 ⟨h4, K4, k4, g4⟩ => ?_
+  have u4 : num t4.mem B w Impl.Rsa.RISCV64.InvBatch.aMin = u := by
+    rw [K4.num (by decide) (by simp) (fit _ (by rdidx)), m3, e2]
+  have o4 : num t4.mem B w aOne = 1 := by
+    rw [K4.num (by decide) (by simp) (fit _ (by rdidx)), m3, k2.num (by decide) (by simp) (fit _ (by rdidx)),
+      k1.num (by decide) (by simp) (fit _ (by rdidx)), h1]
+  -- 1 where `u = 1`.
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (eqS_ok h4 (d := sU1) (a := Impl.Rsa.RISCV64.InvBatch.aMin) (b := aOne) (by rdidx) (by rdidx)
+    (by omega) (by rdidx) (by decide)) fun t5 ⟨h5, K5, v5, k5⟩ => ?_
+  rw [u4, o4] at v5
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (sel_ok h5 (o := Impl.Rsa.RISCV64.InvBatch.aY) (a := Impl.Rsa.RISCV64.InvBatch.aGcd) (b := aOne)
+    (sl := sU1) (by rdidx) (by rdidx) (by rdidx) (by omega) (by decide) (by rdidx) (by rdidx) (by decide)
+    (by rw [v5]; split <;> decide)) fun t6 ⟨h6, K6, v6, k6⟩ => ?_
+  -- Into `wG`.
+  refine WP.mono (copy_ok h6 (o := 2 * wG) (a := Impl.Rsa.RISCV64.InvBatch.aY) (by rdidx) (by rdidx)
+    (by omega) (by rdidx)) fun t ⟨h7, K7, v7, k7, o7⟩ => ?_
+  have F6 : Frame B w (gcdArrs.take 12) [sU1] s.mem t6.mem :=
+    (k1.mono (by decide) (by simp)).trans ((k2.mono (by decide) (by simp)).trans
+      ((show Frame B w (gcdArrs.take 12) [sU1] t2.mem t3.mem by rw [m3]; exact Frame.refl _ _ _ _ _).trans
+        ((K4.mono (by decide) (by simp)).trans ((K5.mono (by simp) (by simp)).trans (K6.mono (by decide) (by simp))))))
+  refine ⟨h7, F6.join K7 (by simp) (by simp) (by simp) (by simp), ?_, ?_, ?_⟩
   · simp only [hiW]
-    rw [o5.wordsVal (.inr (by omega_arith)) fG]
-    refine F4.words (fun j hj => ?_) (fun e he => ?_) fG
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      have := arr_mono (w := w) (show gU ≤ j by rcases hj with rfl | rfl | rfl | rfl | rfl <;> rdidx)
-      omega_arith
+    rw [o7.wordsVal (.inr (by omega)) fG]
+    refine F6.words (fun j hj => ?_) (fun e he => ?_) fG
+    · have := (show ∀ j ∈ gcdArrs.take 12, j < 13 by decide) j hj
+      have := arr_end (w := w) (show j < 2 * wG by unfold wG; omega)
+      omega
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      subst he
       have := hdr_le_arr w (2 * wG)
-      rcases he with rfl | rfl | rfl <;> simp only [sOdd, sB, sC, hdr_eq] at * <;> omega_arith
-  · rw [e5]
-    have v := inv.value
-    rw [m3, e1', show num t2.mem B w gV = u from e2] at v
-    have D := uv_done (a := x) (m := u) (K := 2 * (32 * w + 4 * L)) hodd
-      (by rw [show 2 * (32 * w + 4 * L) = 64 * w + 8 * L by omega_arith]; exact hlt)
-    rw [D] at v
-    exact (Prod.mk.inj v).2
-  · exact Keep.trans' (Keep.trans' (Keep.mono r1 (by decide)) (Keep.trans' (Keep.mono r2 (by decide))
-      (Keep.mono k3 (by decide)))) (Keep.trans' inv.regs (Keep.mono r5 (by decide)))
+      simp only [sU1, hdr_eq] at *; omega
+  · rw [v7, v6, v5]
+    by_cases e : u = 1
+    · simp only [e, ↓reduceIte, Nat.one_ne_zero]
+      rw [K5.num (by decide) (by simp [sU1, hdr_eq]) (fit _ (by rdidx)), o4, Nat.gcd_one_right]
+    · simp only [e, ↓reduceIte]
+      rw [K5.num (by decide) (by simp [sU1, hdr_eq]) (fit _ (by rdidx))]
+      exact g4 (by omega)
+  · exact Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (r1.mono (by decide))
+      (r2.mono (by decide))) (k3.mono (by decide))) (k4.mono (by decide))) (k5.mono (by decide)))
+      (k6.mono (by decide))) (k7.mono (by decide))
 
 /-! ## The halvings -/
 

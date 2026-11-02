@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValFront
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyDiv
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.Rsa.RISCV64.KeyInv
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -23,8 +22,8 @@ bit, and whether `n / p = q` and `n mod p = 0` (`Ck`).
 namespace VG.Proof.Rsa.RISCV64.CrtValues
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
-open VG.Impl.Rsa.RISCV64.Keys (seqs setW zeroArrays load copy bitOf eqS aZero)
-open VG.Impl.Rsa.RISCV64.CrtValues (setup loads checks nArr aOne aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD
+open VG.Impl.Rsa.RISCV64.Keys (seqs setW zeroArrays load copy bitOf eqS)
+open VG.Impl.Rsa.RISCV64.CrtValues (setup loads checks nArr aOne aZero aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD
   sPodd sE1 sE2 sE3 sMask)
 
 /-! ## The values -/

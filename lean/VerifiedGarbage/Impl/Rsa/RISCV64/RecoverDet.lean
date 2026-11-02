@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.RISCV64.MulMod
 public import VerifiedGarbage.Impl.Rsa.RISCV64.Div
+public import VerifiedGarbage.Impl.Rsa.RISCV64.InvBatch
 public import VerifiedGarbage.Impl.Bignum.RISCV64.Precompute
 
 /-!
@@ -28,10 +29,9 @@ is that wide number.
 * `64 w` steps that halve `u = n - 1` while it is even, and while `x` is
   even too halve it and double `2^k x` (`u` and `x` narrow, `2^k x` wide),
   each a masked pass (`halfIf`, `dblIf`);
-* `gcd(u, x)` by the binary GCD (`gcdStep`: `Proof/Rsa/KeyMath.lean`'s
-  `invStep` without the cofactors), `u` odd, in `32 w + 4 n_len`
-  iterations of two steps, each the borrow of `u - v` (`cmpBody`), one
-  masked pass for both (`gcdBody`) and a halving;
+* `gcd(u, x)`, `u` odd, by batches of divsteps on `f` and `g` alone
+  (`InvBatch.gcd`, on narrow arrays, `2 w` digits), with 1 where `u = 1`,
+  which it leaves to its caller;
 * `a = gcd(u, x) · 2^k x` modulo `2^(64 W)` by a schoolbook product of words
   (`mulLow`, `mul` and `mulhu`), `m = ⌊a / n⌋`, `r = a mod n` (`Div.divK`,
   the quotient wide and the remainder `w + 1` words), and whether `m < n`;
@@ -59,8 +59,11 @@ open VG.RISCV64 VG.Impl.Bignum.RISCV64 VG.Impl.Rsa.RISCV64.Keys VG.Impl.Rsa.RISC
 
 /-! ## The header
 
-Bytes 0–95 hold the caller's `s0`–`s11`, 128–144 the shared routines'
-slots, and from 152 this function's. -/
+Bytes 0–95 hold the caller's `s0`–`s11`, 96 whether `u = 1` for the GCD,
+128–144 the shared routines' slots, and from 152 this function's. -/
+
+/-- Whether `u = 1`, which the GCD leaves to its caller. -/
+def sU1 : Nat := 96
 
 /-- `d e < 1` and `d e - 1 < 1`. -/
 def sB0 : Nat := 152
@@ -120,11 +123,6 @@ def aZero : Nat := 42
 def aU : Nat := 43
 def aX2 : Nat := 44
 def aT : Nat := 45
-def gU : Nat := 46
-def gV : Nat := 47
-def gT1 : Nat := 48
-def gT2 : Nat := 49
-def gT3 : Nat := 50
 def aNeg1 : Nat := 51
 def aM1 : Nat := 52
 def aD : Nat := 53
@@ -266,34 +264,11 @@ def twos : Prog isa := seqs [twosInit, .loop twosBody (.nonzero .s7)]
 
 /-! ## The GCD (narrow) -/
 
-/-- One word of the borrow of `[t1] - [t2]`, in and out in `t4`. -/
-def cmpBody : List Instr :=
-  [.load .d .t5 .t1 0, .load .d .t6 .t2 0, .sltu .a4 .t5 .t6, .sub .t5 .t5 .t6, .sltu .t6 .t5 .t4,
-    .logic .or .t4 .a4 .t6, .addi .t1 .t1 8, .addi .t2 .t2 8]
-
-/-- One word of a step: with `m = (u ⊕ v) ∧ c`, `v := v ⊕ m` and `u := (u ⊕ m) - (v' ∧ odd)`, the
-borrow in `t4`, `u` at `t0` and `v` at `t1`, the masks of `c` and `odd` in `a4` and `a5`. -/
-def gcdBody : List Instr :=
-  [.load .d .t5 .t0 0, .load .d .t6 .t1 0, .logic .xor .t2 .t5 .t6, .logic .and .t2 .t2 .a4,
-    .logic .xor .t6 .t6 .t2, .logic .xor .t5 .t5 .t2, .store .d .t6 .t1 0, .logic .and .t6 .t6 .a5,
-    .sltu .t2 .t5 .t6, .sub .t5 .t5 .t6, .sltu .t6 .t5 .t4, .sub .t5 .t5 .t4, .logic .or .t4 .t2 .t6,
-    .store .d .t5 .t0 0, .addi .t0 .t0 8, .addi .t1 .t1 8]
-
-/-- A step of the binary GCD on `(u, v) = ([gU], [gV])`, `v` odd: with `odd`
-the low bit of `u` and `c = odd ∧ u < v`, `v := c ? u : v` and `u := (odd ?
-(c ? v - u : u - v) : u) / 2`. -/
-def gcdStep : Prog isa := seqs [
-  .block (ptr .t1 gU ++ ptr .t2 gV ++ [.li .t4 0, mov .t3 .s9]), countLoop .t3 cmpBody,
-  .block (ptr .t0 gU ++ [.load .d .t5 .t0 0, .logicImm .and .t5 .t5 1, .li .t6 0, .sub .a5 .t6 .t5,
-    .sub .a4 .t6 .t4, .logic .and .a4 .a4 .a5] ++ ptr .t1 gV ++ [.li .t4 0, mov .t3 .s9]),
-  countLoop .t3 gcdBody, .block [.li .t4 0], half gU]
-
-/-- `gcd(x, u)` into `[gV]`, from `(x, u)`: `32 w + 4 n_len` iterations of
-two steps, `x u < 2^(64 w + 8 n_len)`; then into the low half of the wide
-`wG`. -/
-def gcd : Prog isa := seqs [copy gU aX2, copy gV aU,
-  .block [.shift .sll .d .s7 .s9 5, .shift .sll .d .t5 .s2 2, .add .s7 .s7 .t5],
-  .loop (seqs [gcdStep, gcdStep, .block next]) (.nonzero .s7), copy (2 * wG) gV]
+/-- `gcd(x, u)` into the low half of the wide `wG`, from `(x, u)`, by
+`InvBatch.gcd` on the inverse's arrays with `n = 2 w` digits, and 1 where
+`u = 1`. -/
+def gcd : Prog isa := seqs [copy InvBatch.aX aX2, copy InvBatch.aMin aU, .block [.add .s8 .s9 .s9], InvBatch.gcd,
+  eqS sU1 InvBatch.aMin aOne, sel InvBatch.aY InvBatch.aGcd aOne sU1, copy (2 * wG) InvBatch.aY]
 
 /-! ## `a`, `m` and `r` (wide) -/
 

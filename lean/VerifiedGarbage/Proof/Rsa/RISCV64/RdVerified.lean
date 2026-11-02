@@ -18,7 +18,7 @@ namespace VG.Proof.Rsa.RISCV64.RecDet
 open VG VG.RISCV64
 
 /-- `vg_rsa_recover_primes_det`. -/
-theorem rd_verified :
+theorem rd_verified [InvLaw] :
     Verified RISCV64.target VG.Impl.Rsa.RISCV64.RecoverDet.code (Spec.Rsa.recoverPrimesDetContract RISCV64.abi) :=
   Verified.of_correct rd_correct code_ct rd_implies
 

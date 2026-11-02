@@ -211,7 +211,7 @@ theorem Same.mv {x y : State} (sm : Same x y) :
     (Spec.Rsa.modulusValid (Nv x) (kOf x) = true ↔ Spec.Rsa.modulusValid (Nv y) (kOf y) = true) := by
   simp only [Nv, sm.n, kOf, sm.regs .a7 (by decide)]
 
-theorem code_rel : RelCT isa (Two C0) code fun _ _ => True := by
+theorem code_rel [InvLaw] : RelCT isa (Two C0) code fun _ _ => True := by
   unfold code
   rw [entry_eq, save_eq]
   refine RelCT.seq (R := Two S2) (RelCT.block_append (RelCT.seq (R := Two S1) ?_ ?_)) ?_
@@ -298,13 +298,13 @@ theorem code_rel : RelCT isa (Two C0) code fun _ _ => True := by
         subst hr
         rw [ex.s11, ey.s11, bOf, bOf, (hx.same hy).args 6 (by decide)]
 
-theorem code_ct : ConstantTime isa (Spec.Rsa.crtValuesContract RISCV64.abi).pre
+theorem code_ct [InvLaw] : ConstantTime isa (Spec.Rsa.crtValuesContract RISCV64.abi).pre
     (Spec.Rsa.crtValuesContract RISCV64.abi).pub code :=
   RelCT.constantTime (code_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
     ⟨dataOf s, ⟨hs, rfl⟩, ⟨ht, (pub_data hp).symm⟩, (same_of (pub_data hp)).sp⟩) fun _ _ h => h)
 
 /-- `vg_rsa_crt_values`. -/
-theorem crtValues_verified : Verified RISCV64.target code (Spec.Rsa.crtValuesContract RISCV64.abi) :=
+theorem crtValues_verified [InvLaw] : Verified RISCV64.target code (Spec.Rsa.crtValuesContract RISCV64.abi) :=
   Verified.of_correct code_correct code_ct cv_implies
 
 end VG.Proof.Rsa.RISCV64.CrtValues

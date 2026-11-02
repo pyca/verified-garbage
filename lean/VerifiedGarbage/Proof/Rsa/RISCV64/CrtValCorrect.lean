@@ -260,7 +260,7 @@ def VP (s0 u : State) : Prop :=
     IC s0 V X ∧ (0 < 2 * (Pv s0 / 2) → R₂ = Dv s0 % (2 * (Pv s0 / 2))) ∧
     (0 < 2 * (Qv s0 / 2) → R₃ = Dv s0 % (2 * (Qv s0 / 2)))
 
-theorem valid_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) : WP isa valid s (VP s0) := by
+theorem valid_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) : WP isa valid s (VP s0) := by
   unfold valid
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (setup_ok h c) fun t1 ⟨c1, w1, z1⟩ => ?_
@@ -322,7 +322,7 @@ theorem post_fail {s0 u v : State} (hv : ¬ Spec.Rsa.modulusValid (Nv s0) (kOf s
   rw [e, hm, ha]
   exact hw
 
-theorem code_correct (s : State) (hpre : (Spec.Rsa.crtValuesContract RISCV64.abi).pre s) :
+theorem code_correct [InvLaw] (s : State) (hpre : (Spec.Rsa.crtValuesContract RISCV64.abi).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa code s fun t => abiPreserved s t ∧ fnPost s t
   have h := preC_of hpre

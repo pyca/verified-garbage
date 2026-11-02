@@ -35,23 +35,6 @@ open VG.Impl.Rsa.RISCV64.Keys (seqs sub3 sel bitOf stBorrow andS half subModP in
 open VG.Proof.Rsa (subMod halfMod subMod_impl halfMod_impl invU_arith borrow_iff invStep_arith invIter InvI
   invI_start')
 
-theorem wp_seqs_cons {c : Prog isa} {l : List (Prog isa)} (hl : l ≠ []) {s : State} {Q : State → Prop} :
-    WP isa (seqs (c :: l)) s Q ↔ WP isa c s (fun t => WP isa (seqs l) t Q) := by
-  match l, hl with
-  | _ :: _, _ => exact WP.seq_iff
-
-theorem wp_seqs_append {l₁ l₂ : List (Prog isa)} (h₁ : l₁ ≠ []) (h₂ : l₂ ≠ []) {s : State}
-    {Q : State → Prop} :
-    WP isa (seqs (l₁ ++ l₂)) s Q ↔ WP isa (seqs l₁) s (fun t => WP isa (seqs l₂) t Q) := by
-  induction l₁ generalizing s with
-  | nil => exact absurd rfl h₁
-  | cons c l ih =>
-    rcases l with _ | ⟨d, l⟩
-    · exact wp_seqs_cons h₂
-    · rw [List.cons_append, wp_seqs_cons (by simp), wp_seqs_cons (by simp)]
-      exact ⟨fun h => WP.mono h fun t ht => (ih (by simp)).mp ht,
-        fun h => WP.mono h fun t ht => (ih (by simp)).mpr ht⟩
-
 /-- Index side conditions. -/
 macro "idx" : tactic => `(tactic| ((try simp only [aM, aNM, aZero, aT1, aT2, aT3, aT4, sOdd, sB, sC,
   hdr_eq, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true, true_and,
@@ -104,13 +87,6 @@ theorem subModP_ok {s : State} {B : Addr} {Z w N o a b : Nat} (h : Ws s B Z w N)
 def halfModP (o : Nat) : List (Prog isa) := [
   .block (bitOf sB aT3), sel aT4 aZero aNM sB, sub3 o aT3 aT4,
   .block [.load .d .t5 .s11 sB, .logic .xor .t4 .t4 .t5], half o]
-
-/-- The exclusive or of two bits. -/
-theorem xor_bits {x y : BitVec 64} (hx : x.toNat ≤ 1) (hy : y.toNat ≤ 1) :
-    (x ^^^ y).toNat = (x.toNat + y.toNat) % 2 := by
-  rw [BitVec.toNat_xor]
-  rcases (show x.toNat = 0 ∨ x.toNat = 1 by omega_arith) with e | e <;>
-    rcases (show y.toNat = 0 ∨ y.toNat = 1 by omega_arith) with f | f <;> rw [e, f] <;> decide
 
 theorem halfModP_ok {s : State} {B : Addr} {Z w N o : Nat} (h : Ws s B Z w N)
     (hN15 : 15 ≤ N) (hN : N ≤ 2048) (ho : o < N) (hoT3 : o ≠ aT3) (hoT4 : o ≠ aT4) :

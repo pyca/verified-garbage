@@ -275,4 +275,34 @@ theorem ptr2_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) {r r' : 
   exact k _ (by simp [gpr_write, hne]) (by simp [gpr_write])
     ((Keep.write _ _ _).trans (Keep.write _ _ _)) rfl
 
+/-! ## Bits -/
+
+/-- The exclusive or of two bits. -/
+theorem xor_bits {x y : BitVec 64} (hx : x.toNat ≤ 1) (hy : y.toNat ≤ 1) :
+    (x ^^^ y).toNat = (x.toNat + y.toNat) % 2 := by
+  rw [BitVec.toNat_xor]
+  rcases (show x.toNat = 0 ∨ x.toNat = 1 by omega_arith) with e | e <;>
+    rcases (show y.toNat = 0 ∨ y.toNat = 1 by omega_arith) with f | f <;> rw [e, f] <;> decide
+
+/-! ## Sequences -/
+
+theorem wp_seqs_cons {c : Prog isa} {l : List (Prog isa)} (hl : l ≠ []) {s : State} {Q : State → Prop} :
+    WP isa (VG.Impl.Rsa.RISCV64.Keys.seqs (c :: l)) s Q ↔
+      WP isa c s (fun t => WP isa (VG.Impl.Rsa.RISCV64.Keys.seqs l) t Q) := by
+  match l, hl with
+  | _ :: _, _ => exact WP.seq_iff
+
+theorem wp_seqs_append {l₁ l₂ : List (Prog isa)} (h₁ : l₁ ≠ []) (h₂ : l₂ ≠ []) {s : State}
+    {Q : State → Prop} :
+    WP isa (VG.Impl.Rsa.RISCV64.Keys.seqs (l₁ ++ l₂)) s Q ↔
+      WP isa (VG.Impl.Rsa.RISCV64.Keys.seqs l₁) s (fun t => WP isa (VG.Impl.Rsa.RISCV64.Keys.seqs l₂) t Q) := by
+  induction l₁ generalizing s with
+  | nil => exact absurd rfl h₁
+  | cons c l ih =>
+    rcases l with _ | ⟨d, l⟩
+    · exact wp_seqs_cons h₂
+    · rw [List.cons_append, wp_seqs_cons (by simp), wp_seqs_cons (by simp)]
+      exact ⟨fun h => WP.mono h fun t ht => (ih (by simp)).mp ht,
+        fun h => WP.mono h fun t ht => (ih (by simp)).mpr ht⟩
+
 end VG.Proof.Rsa.RISCV64.Keys
