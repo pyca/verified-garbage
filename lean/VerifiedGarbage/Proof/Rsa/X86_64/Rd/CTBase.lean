@@ -1,6 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Main
+public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Pieces
+public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Twos
+import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Sqrt
+public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
@@ -11,7 +14,10 @@ import VerifiedGarbage.Proof.Rsa.X86_64.Div
 import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Main
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Pieces
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Twos
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Sqrt
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain

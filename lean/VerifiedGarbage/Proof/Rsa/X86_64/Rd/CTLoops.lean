@@ -259,10 +259,10 @@ end
 
 theorem twosBody_eq : twosBody = seqs [.block twosFlags,
     .seq (.block (ws ++ base 7 .r8 ++ base 14 .rsi)) (wordLoop 0 shrBody),
-    .seq (.block (ws ++ base 7 .r8 ++ base 14 .rsi ++ [.mov .rbp (.mem (hdr sU))])) (wordLoop 0 selBody),
+    .seq (.block (ws ++ base 7 .r8 ++ base 14 .rsi ++ ([.mov .rbp (.mem (hdr sU))] : List Instr))) (wordLoop 0 selBody),
     .seq (.block (ws ++ base 6 .r8 ++ base 14 .rsi)) (wordLoop 0 shrBody),
-    .seq (.block (ws ++ base 6 .r8 ++ base 14 .rsi ++ [.mov .rbp (.mem (hdr sB2)),
-      .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))])) (wordLoop 0 selBody),
+    .seq (.block (ws ++ base 6 .r8 ++ base 14 .rsi ++ ([.mov .rbp (.mem (hdr sB2)),
+      .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))] : List Instr))) (wordLoop 0 selBody),
     .seq (.block (ws ++ wideR ++ ([.mov .r15 (.mem (hdr sB2)), .mov32 .rbp (.imm 0)] : List Instr) ++ base 4 .r10 ++
       base 4 .r8 ++ base 14 .rbx)) (wordLoop 0 addMBody),
     .seq (.block (ws ++ wideR ++ base 4 .r8 ++ base 14 .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)))

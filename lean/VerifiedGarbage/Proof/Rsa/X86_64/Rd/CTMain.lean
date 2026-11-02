@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTLoops
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Code
 import VerifiedGarbage.Proof.Rsa.X86_64.RpCT8
+import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
 import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
@@ -14,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTLoops
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Code
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT8
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
@@ -212,13 +214,13 @@ theorem factors_ct : RelCT isa (Two (GD nv FT)) (seqs factors) fun _ _ => True :
 
 /-! ## `main` -/
 
-theorem main_eq' : RecoverDet.main = seqs ([.block RecoverDet.head] ++
+theorem main_eq' : RecoverDet.main = seqs (([.block RecoverDet.head] : List (Prog isa)) ++
     ((loadA Impl.Bignum.X86_64.Public.aN Impl.Bignum.X86_64.Public.sN Impl.Bignum.X86_64.Public.sK ++
-      ([zeroA 1] ++ (loadA Recover.aE Impl.Bignum.X86_64.Public.sE Impl.Bignum.X86_64.Public.sElen ++
+      (([zeroA 1] : List (Prog isa)) ++ (loadA Recover.aE Impl.Bignum.X86_64.Public.sE Impl.Bignum.X86_64.Public.sElen ++
         loadA Recover.aD Recover.sD Recover.sDl))) ++
-    (Recover.prod ++ ([.block (width true)] ++ (deMinus ++ ([.block (width false)] ++ (twosInit ++
-    ([.loop twosBody .ne, inverse 6 12 15 7] ++ ([.block (width true)] ++ (divA ++ ([.block (width false)] ++
-    (divB ++ ([.block (width true)] ++ (minus4n ++ ([.block (width false)] ++
+    (Recover.prod ++ (([.block (width true)] : List (Prog isa)) ++ (deMinus ++ (([.block (width false)] : List (Prog isa)) ++ (twosInit ++
+    (([.loop twosBody .ne, inverse 6 12 15 7] : List (Prog isa)) ++ (([.block (width true)] : List (Prog isa)) ++ (divA ++ (([.block (width false)] : List (Prog isa)) ++
+    (divB ++ (([.block (width true)] : List (Prog isa)) ++ (minus4n ++ (([.block (width false)] : List (Prog isa)) ++
     (RecoverDet.sqrt ++ factors)))))))))))))))) := by
   simp only [RecoverDet.main, List.append_assoc]
 

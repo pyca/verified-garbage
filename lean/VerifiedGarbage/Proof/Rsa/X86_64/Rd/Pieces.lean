@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverDet
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvHead
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpIn
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.X86_64.Div
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
@@ -412,5 +413,71 @@ theorem loadA2_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sL
   rw [e, hv, wv_zero (n := w + 2 - (len + 7) / 8) fun q hq => by
       rw [o.word (by omega_arith) (by omega_arith), Nat.add_assoc, ← Nat.mul_add]; exact hz' _ (by omega_arith)]
   simp
+
+/-! ## What every piece of `main` keeps -/
+
+/-- What every piece of `main` keeps, from the memory `m₀` on entry to
+`main`, at the width `w`. -/
+structure DS (I : RpIn) (m₀ : Mem) (w : Nat) (s : State) : Prop where
+  ws : Ws s I.B I.Z w
+  p : word s.mem I.B (8 * Recover.sP) = I.pP
+  q : word s.mem I.B (8 * Recover.sQ) = I.pQ
+  k : word s.mem I.B (8 * Impl.Bignum.X86_64.Public.sK) = BitVec.ofNat 64 I.k
+  sv : ∀ i < 6, word s.mem I.B (8 * i) = I.sv i
+  inScr : InScr I.B I.Z m₀ s.mem
+  wr : s.wr = I.W
+  rsp : s.gpr .rsp = I.sp
+
+/-- `DS` after code that changes only offsets that `DOk` allows, below `Z`. -/
+theorem DS.step {I : RpIn} {m₀ : Mem} {w : Nat} {s t : State} (h : DS I m₀ w s) {P : Nat → Prop}
+    (hf : FrmP I.B P s.mem t.mem) (hP : ∀ y, P y → DOk y ∧ y < I.Z) {regs : List Reg} (k : Keep regs s t)
+    (hr : .rdi ∉ regs ∧ .rsp ∉ regs) : DS I m₀ w t := by
+  have hn := h.ws.scr.nowrap
+  have h256 := h.ws.h256
+  have hw : ∀ i, i < 6 ∨ i = 16 ∨ i = 18 ∨ i = 21 → word t.mem I.B (8 * i) = word s.mem I.B (8 * i) := fun i hi =>
+    hf.word_eq (fun y h1 h2 hy => by have := (hP y hy).1; unfold DOk at this; omega_arith) (by omega_arith)
+  refine ⟨h.ws.congrP hf (fun y hy => (hP y hy).1) k hr.1, (hw _ (by simp [Recover.sP,
+    Impl.Bignum.X86_64.Public.sOut, sFn])).trans h.p, (hw _ (by simp [Recover.sQ, Impl.Bignum.X86_64.Public.sIn,
+    sFn])).trans h.q, (hw _ (by simp [Impl.Bignum.X86_64.Public.sK, sFn])).trans h.k,
+    fun i hi => (hw i (.inl hi)).trans (h.sv i hi), fun x hx => ?_, k.2.2.trans h.wr, (k.gpr hr.2).trans h.rsp⟩
+  rw [hf x fun hy => absurd hx (Nat.not_le.mpr (hP _ hy).2)]
+  exact h.inScr x hx
+
+/-- The lengths, as `vg_rsa_recover_primes_det`'s contract bounds them. -/
+theorem rd_bounds {k Z : Nat} (hk1 : 64 ≤ k) (hk2 : k ≤ 1024) (hZ : 128 * k ≤ Z) :
+    slot (wW k) 16 ≤ Z ∧ slot (nv k) 26 ≤ Z ∧ nv k < 2 ^ 20 ∧ 9 ≤ nv k := by
+  simp only [Bignum.slot, hdrBytes, wW, nv, wk]
+  omega_arith
+
+/-- `width wide`, keeping `DS`. -/
+theorem DS.width {I : RpIn} {m₀ : Mem} {w : Nat} {s : State} (h : DS I m₀ w s) (wide : Bool) (L : RpLens I) :
+    WP isa (.block (width wide)) s fun t => DS I m₀ (widthOf wide I.k) t ∧ t.mem = t.mem ∧
+      FrmP I.B (fun y => 48 ≤ y ∧ y < 128 ∨ 224 ≤ y ∧ y < 232) s.mem t.mem ∧ Keep [.rax, .rdx, .r12] s t := by
+  have hn := h.ws.scr.nowrap
+  have h256 := h.ws.h256
+  refine WP.mono (width_ok wide h.ws.scr h.ws.rdi L.k1 L.k2 L.z h.k) fun t ⟨hw, hf, k⟩ => ?_
+  have hf' : FrmP I.B (fun y => 48 ≤ y ∧ y < 128 ∨ 224 ≤ y ∧ y < 232) s.mem t.mem := FrmP.of_frm hf fun r hr y h1 h2 => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp only [sW, sArr, sStride, sFn] at h1 h2 ⊢ <;> omega_arith
+  have hwd : ∀ i, i < 6 ∨ i = 16 ∨ i = 18 ∨ i = 21 → word t.mem I.B (8 * i) = word s.mem I.B (8 * i) := fun i hi =>
+    hf'.word_eq (fun y h1 h2 hy => by omega_arith) (by omega_arith)
+  refine ⟨⟨hw, (hwd _ (by simp [Recover.sP, Impl.Bignum.X86_64.Public.sOut, sFn])).trans h.p,
+    (hwd _ (by simp [Recover.sQ, Impl.Bignum.X86_64.Public.sIn, sFn])).trans h.q,
+    (hwd _ (by simp [Impl.Bignum.X86_64.Public.sK, sFn])).trans h.k,
+    fun i hi => (hwd i (.inl hi)).trans (h.sv i hi), fun x hx => ?_, k.2.2.trans h.wr,
+    (k.gpr (by decide)).trans h.rsp⟩, rfl, hf', k⟩
+  rw [hf' x fun hy => absurd hx (by have := h.ws.h256; simp only at hy; omega_arith)]
+  exact h.inScr x hx
+
+/-- `RpArgs` after a piece that changes only bytes from offset 256 on. -/
+theorem _root_.VG.Proof.Rsa.X86_64.RpArgs.out {m m' : Mem} {B : Addr} {k el dl : Nat} {pP pQ pN pE pD : Addr} {sv : Nat → BitVec 64}
+    (h : RpArgs m B k el dl pP pQ pN pE pD sv) {o n : Nat} (ho : Outside B o n m m') (h256 : 256 ≤ o) :
+    RpArgs m' B k el dl pP pQ pN pE pD sv :=
+  h.congr fun i hi => ho.word (.inl (by unfold rArg at hi; omega_arith)) (by unfold rArg at hi; omega_arith)
+
+macro "p1_omega" : tactic =>
+  `(tactic| (simp only [DOk, Bignum.slot, hdrBytes, Impl.Bignum.X86_64.Public.sMask, sFn, nv, wk, Recover.aE,
+    Recover.aD, Recover.aM, Impl.Bignum.X86_64.Public.aN]; omega_arith))
+
 
 end VG.Proof.Rsa.X86_64.Rd
