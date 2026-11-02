@@ -1,4 +1,5 @@
 module
+-- separate module: built in parallel with `Sign/Inst` and `Verify/Inst`, which `Inst` also imports
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Message.SignCT
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Message.VerifyCT

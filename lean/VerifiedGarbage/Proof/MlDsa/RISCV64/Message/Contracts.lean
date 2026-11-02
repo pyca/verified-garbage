@@ -1,4 +1,5 @@
 module
+-- separate module: the contracts' preconditions, built in parallel with `Steps`, which `Sign` also imports
 
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
