@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Sign
 public import VerifiedGarbage.Impl.Ecdh.P256.RISCV64
+public import VerifiedGarbage.Impl.Ecdh.P384.RISCV64
 
 /-!
 # ECDSA signature verification on RISC-V
@@ -22,12 +23,13 @@ with the pieces of ECDH (`Impl/Ecdh/RISCV64.lean`) and of signing
    Montgomery's form;
 4. `[u]G + [v]Q` by a joint ladder over two-bit windows of `u` and `v`
    (Straus): a table of the sixteen points `[a]G + [b]Q` (`a, b < 4`, entry
-   `4 a + b`, `x`, `y` and `z` of `n` words each, `24 n` bytes) at `JT`, from
+   `4 a + b`, `x`, `y` and `z` of `n` words each, `24 n` bytes) at `c.jt`, from
    `G`, `Q`, `2G`, `3G`, `2Q` and `3Q` in slots (`build`), by the complete
-   addition; then from `R = O`, for the windows `j` from 127 down to 0 (the
-   counter `s1`), the window's entry `4 u_j + v_j` selected from the sixteen
-   without a secret address (the comb's tree of masks, `Comb.tree`, over
-   entries at `a0 = s0 + JT`), and `R = 4 R + E` by three complete additions
+   addition; then from `R = O`, for the windows `j` from `32 n - 1` down to 0
+   (the counter `s1`), the window's entry `4 u_j + v_j` selected from the
+   sixteen without a secret address (the comb's tree of masks, `Comb.treeAt`,
+   over entries at `a0 = s0 + c.jt`), and `R = 4 R + E` by three complete
+   additions
    (`D = R + R`, `T = D + D`, `R = T + E`);
 5. `Z^(p-2)` and `x = X Z^(p-2)`;
 6. `x mod n` and `r mod n` (by additions of zero, both operands below `2n`),
@@ -58,9 +60,8 @@ def XN := 19
 def RN := 20
 def WD := 21
 
-/-! The joint ladder's slots, past the numbered ones but below byte 2048 (the
-field's functions take offsets that `li` loads): `2G`, `3G`, `2Q`, `3Q`, and
-the window's entry `E`; and the table's offset. -/
+/-! The joint ladder's slots, past the numbered ones: `2G`, `3G`, `2Q`, `3Q`,
+and the window's entry `E`. -/
 def G2X := 46
 def G2Y := 47
 def G2Z := 48
@@ -76,14 +77,18 @@ def Q3Z := 57
 def EX := 58
 def EY := 59
 def EZ := 60
-/-- The table's offset in the working space. -/
-def JT : Nat := 2048
-/-- The number of windows. -/
-def NW : Nat := 128
+/-- `rd = base + v`, for `v < 6141`: from 2048 on, through `2047`s. -/
+def addAt (rd base : Reg) (v : Nat) : List Instr :=
+  if v < 2048 then [.addi rd base v]
+  else if v < 4095 then [.addi rd base 2047, .addi rd rd ((v - 2047 : Nat) : Int)]
+  else [.addi rd base 2047, .addi rd rd 2047, .addi rd rd ((v - 4094 : Nat) : Int)]
 
 namespace Cfg
 
 variable (c : Cfg) (FN : Field)
+
+/-- The number of windows of two bits. -/
+def NW : Nat := 32 * c.n
 
 /-- The saves, the public key's point and the flag, the constants, `r`, `s`
 and `e`, and the masks of `r` and `s` in `[1, n-1]`. -/
@@ -106,7 +111,7 @@ def jb : Nat := 24 * c.n
 /-- `[a6 + o] = [s0 + a]`, `k` 64-bit words, through `t0`. -/
 def copyTo : Nat → Nat → Nat → List Instr
   | 0, _, _ => []
-  | k + 1, o, a => [.load .d .t0 wb a, .store .d .t0 .a6 o] ++ copyTo k (o + 8) (a + 8)
+  | k + 1, o, a => (ldAt .t0 wb a ++ sdAt .t0 .a6 o) ++ copyTo k (o + 8) (a + 8)
 
 /-- `o = p + q` by the complete addition. -/
 def addPt (p q o : Pt) : Prog isa := fprog c.FP (rcb c.rcbSlots p q o)
@@ -124,7 +129,7 @@ def qPt : Nat → Pt
 
 /-- Entry `e` from the point `p` in slots. -/
 def storePt (e : Nat) (p : Pt) : List Instr :=
-  [.addi .a6 wb 2047, .addi .a6 .a6 1] ++ copyTo c.n (jb c * e) p.x ++
+  addAt .a6 wb c.jt ++ copyTo c.n (jb c * e) p.x ++
     copyTo c.n (jb c * e + 8 * c.n) p.y ++ copyTo c.n (jb c * e + 16 * c.n) p.z
 
 /-- Entry `4 a + b` (`a, b ∈ 1 … 3`): `T = [a]G + [b]Q`, stored. -/
@@ -153,12 +158,12 @@ def window : List Instr :=
 /-- Quadword `q` of the entry, selected by the masks of the entry number's
 four bits from the sixteen at `a0`, to `E`'s word `q`. -/
 def scanWord (q : Nat) : List Instr :=
-  Comb.tree .a0 (jb c) 4 (8 * q) Comb.treeRegs ++ [.store .d .t0 wb (c.sl EX + 8 * q)]
+  Comb.treeAt .a0 (jb c) 4 (8 * q) Comb.treeRegs ++ sdAt .t0 wb (c.sl EX + 8 * q)
 
 /-- The window's entry to `E`: the number, the masks of its four bits, the
 table's address in `a0`, and the `3 n` quadwords. -/
 def select : List Instr :=
-  window c ++ (List.range 4).flatMap Comb.Cfg.maskOfBit ++ [.addi .a0 wb 2047, .addi .a0 .a0 1] ++
+  window c ++ (List.range 4).flatMap Comb.Cfg.maskOfBit ++ addAt .a0 wb c.jt ++
     (List.range (3 * c.n)).flatMap (scanWord c)
 
 /-- One step: `s1 -= 1`, the entry `E`, `D = R + R`, `T = D + D`, `R = T + E`. -/
@@ -172,7 +177,7 @@ def step : Prog isa :=
 def joint : Prog isa :=
   .seq (build c) <|
   .seq (.block (copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO) ++
-    [.li ctr NW]))
+    [.li ctr (NW c)]))
     (.loop (step c) more)
 
 /-- `x mod n`, `r mod n` and their difference. -/
@@ -202,5 +207,9 @@ end Cfg
 /-- `vg_ecdsa_p256_verify`. -/
 def verifyP256 : Prog isa :=
   Cfg.verify p256 p256Order "vg_p256_check_point" Ecdh.RISCV64.checkP256
+
+/-- `vg_ecdsa_p384_verify`. -/
+def verifyP384 : Prog isa :=
+  Cfg.verify p384 p384Order "vg_p384_check_point" Ecdh.RISCV64.checkP384
 
 end VG.Impl.Ecdsa.RISCV64.Verify

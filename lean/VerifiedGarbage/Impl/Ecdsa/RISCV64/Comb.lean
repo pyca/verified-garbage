@@ -96,6 +96,15 @@ def tree (base : Reg) (stride : Nat) : Nat → Nat → List Reg → List Instr
       pick a b (maskReg L)
   | _, _, _ => []
 
+/-- `tree` with its loads by `ldAt`, for offsets up to 4094: the same code
+where they are below 2048. -/
+def treeAt (base : Reg) (stride : Nat) : Nat → Nat → List Reg → List Instr
+  | 0, o, a :: _ => ldAt a base o
+  | L + 1, o, a :: b :: rs =>
+    treeAt base stride L o (a :: b :: rs) ++ treeAt base stride L (o + stride * 2 ^ L) (b :: rs) ++
+      pick a b (maskReg L)
+  | _, _, _ => []
+
 namespace Cfg
 
 variable (c : Cfg)

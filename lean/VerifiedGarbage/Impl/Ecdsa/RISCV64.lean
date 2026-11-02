@@ -72,6 +72,10 @@ structure Cfg where
   FP : Field
   /-- `-p⁻¹ mod 2⁶⁴`, which no code here reads (`Mod`'s). -/
   minv : Nat := 0
+  /-- Where verification's table of points is in the working space
+  (`Impl/Ecdsa/RISCV64/Verify.lean`): after the slots and the field
+  functions' own space if it does not fit between them. -/
+  jt : Nat := 2048
 
 namespace Cfg
 
