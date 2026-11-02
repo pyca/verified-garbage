@@ -189,20 +189,21 @@ theorem Mid.only (h : Mid S s a b c d e t) (o : Only rs t w) (hrs : ∀ r ∈ rs
     Mid S s a b c d e w :=
   h.keep o.keep (by rw [o.mem]; exact h.mem) (by rw [o.mem]; exact h.sv) hrs
 
-/-- Writes of the frame above the slots keep `Mid`'s memory. -/
+/-- Writes of the frame apart from the slots keep `Mid`'s memory. -/
 theorem Mid.frameMem (h : Mid S s a b c d e t) {f n : Nat} {m : Mem}
-    (he : oRa + 8 ≤ f) (hen : f + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 f, n⟩] t.mem m) :
+    (he : oRa + 8 ≤ f ∨ f + n ≤ oSave) (hen : f + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 f, n⟩] t.mem m) :
     Frame (kR s :: S) s.mem m ∧ Spill.Saved (fb s) s.gpr saved m := by
   refine ⟨h.mem.trans (hm.sub fun r hr => ?_), h.sv.frame hm fun p hp r hr => ?_⟩
   · rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_sub s hen⟩
   · have := saved_offs p hp
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inl (by omega)) (by unfold oRa at *; omega) (by unfold frameBytes at hen; omega)
+    exact Offset.disjoint _ (by unfold oRa oSave at *; omega) (by unfold oRa at *; omega)
+      (by unfold frameBytes at hen; omega)
 
 /-- `Mid` is kept by code writing registers other than those it keeps and the
-frame above the slots. -/
+frame apart from the slots. -/
 theorem Mid.frameW (h : Mid S s a b c d e t) (o : Kept rs t w) {f n : Nat}
-    (he : oRa + 8 ≤ f) (hen : f + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 f, n⟩] t.mem w.mem)
+    (he : oRa + 8 ≤ f ∨ f + n ≤ oSave) (hen : f + n ≤ frameBytes) (hm : Frame [⟨fb s + BitVec.ofNat 64 f, n⟩] t.mem w.mem)
     (hrs : ∀ r ∈ rs, r ∉ kept := by decide) : Mid S s a b c d e w :=
   have hf := h.frameMem he hen hm
   h.keep o hf.1 hf.2 hrs

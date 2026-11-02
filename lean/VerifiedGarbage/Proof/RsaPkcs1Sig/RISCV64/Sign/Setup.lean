@@ -190,7 +190,7 @@ theorem enc_ok {s t : State} (h : SPre s) (A : AtEnc s t) :
         eo.1, ?_⟩
       rw [eo.2, ← hl]; exact Proof.RsaPkcs1Sig.bytesAt_writeBytes _ _ _ (by omega)
   obtain ⟨hf, he⟩ := hf
-  have hm := A.frameMem (f := oEM) (n := (s.gpr .a3).toNat) (by decide) (by unfold oEM frameBytes; omega) hf
+  have hm := A.frameMem (f := oEM) (n := (s.gpr .a3).toNat) (.inl (by decide)) (by unfold oEM frameBytes; omega) hf
   exact ⟨A.keep kp hm.1 hm.2, (kp.get .t6).trans A.t6, he⟩
 
 end VG.Proof.RsaPkcs1Sig.RISCV64.Sign
