@@ -81,6 +81,7 @@ theorem core_rel {nm : String} (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP384
 /-- brainpoolp384r1's kit, for its group law `hL`. -/
 def kit (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP384r1.curve) : Kit where
   nw := 6
+  Q := 48
   E := Spec.Ecdsa.BrainpoolP384r1.inst
   FN := Impl.Ecdsa.RISCV64.brainpoolp384r1Order
   FNok := VG.Proof.Ecdsa.RISCV64.BrainpoolP384r1.order_ok
@@ -89,7 +90,8 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP384r1.curve) : Kit where
   len := rfl
   nbits := nBits_brainpoolp384r1
   two := by decide
-  nw4 := .inr rfl
+  nw9 := ⟨by decide, by decide⟩
+  Qw := .inl rfl
   coreC := Impl.Ecdsa.RISCV64.signBrainpoolP384r1
   K := []
   core_call h _ hQ := core_call hL h hQ
