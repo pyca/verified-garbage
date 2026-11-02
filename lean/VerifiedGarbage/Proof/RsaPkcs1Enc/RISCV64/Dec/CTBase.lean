@@ -47,7 +47,7 @@ structure Same (s₁ s₂ : State) : Prop where
   e : Spec.Rsa.bytesAt s₁.mem (s₁.gpr .a5) (s₁.gpr .a6).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .a5) (s₂.gpr .a6).toNat
 
 theorem same_of {s₁ s₂ : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pub s₁ s₂) :
-    Same s₂ s₁ := by
+    Same s₁ s₂ := by
   have e : stackBytes = 3439 + 1 := rfl
   rw [e] at h
   sig_pub [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, RISCV64.abi, RISCV64.argRegs,
@@ -57,17 +57,16 @@ theorem same_of {s₁ s₂ : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV
     a14⟩ := h
   rw [List.map_append, List.map_append] at hl
   obtain ⟨hn, he⟩ := List.append_inj hl (by simp [Proof.Rsa.bytesAt_length', h7])
-  refine ⟨fun r hr => ?_, fun i hi => ?_, hsp.symm,
-    ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hn).symm,
-    ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he).symm⟩
+  refine ⟨fun r hr => ?_, fun i hi => ?_, hsp,
+    ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hn),
+    ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he)⟩
   · simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    exacts [h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h9.symm, h10.symm]
+    exacts [h3, h4, h5, h6, h7, h8, h9, h10]
   · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
       i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
-      a11.symm, a12.symm, a13.symm, a14.symm]
+    exacts [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14]
 
 /-- Two entry states with the same public data. -/
 structure Env where
