@@ -28,6 +28,7 @@ theorem ite_le1 (p : Prop) [Decidable p] : (if p then 1 else 0) ≤ 1 := by spli
 macro "rd_simp" : tactic => `(tactic| (set_option linter.unusedSimpArgs false in
   simp [VG.Proof.Rsa.PPC64LE.RecDet.upd, VG.Proof.Rsa.PPC64LE.RecDet.updV, VG.Proof.Rsa.b2n,
     VG.Proof.Rsa.PPC64LE.RecDet.b2n_le1, VG.Proof.Rsa.PPC64LE.RecDet.ite_le1,
+    VG.Proof.Rsa.PPC64LE.RecDet.vw_false, VG.Proof.Rsa.PPC64LE.RecDet.vw_true,
     VG.Impl.Rsa.PPC64LE.RecoverDet.sB0, VG.Impl.Rsa.PPC64LE.RecoverDet.sB1, VG.Impl.Rsa.PPC64LE.RecoverDet.sU,
     VG.Impl.Rsa.PPC64LE.RecoverDet.sX, VG.Impl.Rsa.PPC64LE.RecoverDet.sEven, VG.Impl.Rsa.PPC64LE.RecoverDet.sBoth,
     VG.Impl.Rsa.PPC64LE.RecoverDet.sY, VG.Impl.Rsa.PPC64LE.RecoverDet.sLt, VG.Impl.Rsa.PPC64LE.RecoverDet.sExact,
@@ -39,6 +40,7 @@ macro "rd_simp" : tactic => `(tactic| (set_option linter.unusedSimpArgs false in
 macro "rd_simp" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (set_option linter.unusedSimpArgs false in
   simp [VG.Proof.Rsa.PPC64LE.RecDet.upd, VG.Proof.Rsa.PPC64LE.RecDet.updV, VG.Proof.Rsa.b2n,
     VG.Proof.Rsa.PPC64LE.RecDet.b2n_le1, VG.Proof.Rsa.PPC64LE.RecDet.ite_le1,
+    VG.Proof.Rsa.PPC64LE.RecDet.vw_false, VG.Proof.Rsa.PPC64LE.RecDet.vw_true,
     VG.Impl.Rsa.PPC64LE.RecoverDet.sB0, VG.Impl.Rsa.PPC64LE.RecoverDet.sB1, VG.Impl.Rsa.PPC64LE.RecoverDet.sU,
     VG.Impl.Rsa.PPC64LE.RecoverDet.sX, VG.Impl.Rsa.PPC64LE.RecoverDet.sEven, VG.Impl.Rsa.PPC64LE.RecoverDet.sBoth,
     VG.Impl.Rsa.PPC64LE.RecoverDet.sY, VG.Impl.Rsa.PPC64LE.RecoverDet.sLt, VG.Impl.Rsa.PPC64LE.RecoverDet.sExact,
@@ -57,6 +59,7 @@ open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 macro "rd_simp_at" h:ident " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (set_option linter.unusedSimpArgs false in
   simp [VG.Proof.Rsa.PPC64LE.RecDet.upd, VG.Proof.Rsa.PPC64LE.RecDet.updV, VG.Proof.Rsa.b2n,
     VG.Proof.Rsa.PPC64LE.RecDet.b2n_le1, VG.Proof.Rsa.PPC64LE.RecDet.ite_le1,
+    VG.Proof.Rsa.PPC64LE.RecDet.vw_false, VG.Proof.Rsa.PPC64LE.RecDet.vw_true,
     VG.Impl.Rsa.PPC64LE.RecoverDet.sB0, VG.Impl.Rsa.PPC64LE.RecoverDet.sB1, VG.Impl.Rsa.PPC64LE.RecoverDet.sU,
     VG.Impl.Rsa.PPC64LE.RecoverDet.sX, VG.Impl.Rsa.PPC64LE.RecoverDet.sEven, VG.Impl.Rsa.PPC64LE.RecoverDet.sBoth,
     VG.Impl.Rsa.PPC64LE.RecoverDet.sY, VG.Impl.Rsa.PPC64LE.RecoverDet.sLt, VG.Impl.Rsa.PPC64LE.RecoverDet.sExact,
