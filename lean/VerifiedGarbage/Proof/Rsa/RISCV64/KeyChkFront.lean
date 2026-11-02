@@ -34,7 +34,7 @@ and `n` checked, `t0 = 0` exactly when both are valid. `setup_ok`,
 namespace VG.Proof.Rsa.RISCV64.KeyCheck
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
-open VG.Impl.Rsa.RISCV64.Keys (seqs saved mov load setW zeroArrays)
+open VG.Impl.Rsa.RISCV64.Keys (seqs saved mov load setW zeroArrays save)
 open VG.Impl.Rsa.RISCV64.KeyCheck
 open VG.Proof.Rsa.KeyWorkspace (upd upd_ne upd_self)
 open VG.Proof.Bignum.RISCV64.Pub (sat)
@@ -70,7 +70,7 @@ theorem KBase.of_regs {B : Addr} {Z : Nat} {s0 s t : State} (h : KBase B Z s0 s)
 /-- A step that writes only arrays and slots from 96 on keeps `KBase`. -/
 theorem KBase.of_frame {B : Addr} {Z : Nat} {s0 s t : State} (h : KBase B Z s0 s) {w : Nat}
     {js ds : List Nat} (k : Keys.Frame B w js ds s.mem t.mem)
-    (hjs : ∀ j ∈ js, arr w j + S w ≤ Z) (hds : ∀ d ∈ ds, 96 ≤ d ∧ d + 8 ≤ hdr) (hZ : hdr ≤ Z)
+    (hjs : ∀ j ∈ js, arr w j + S w ≤ Z) (hds : ∀ d ∈ ds, 96 ≤ d ∧ d + 8 ≤ Keys.hdr) (hZ : Keys.hdr ≤ Z)
     {rs : List Reg} (kr : Keep rs s t) (hr : .s11 ∉ rs := by decide) : KBase B Z s0 t := by
   refine ⟨kr.2.1.trans h.rd, kr.2.2.trans h.wr, fun x hx => ?_, fun i hi => ?_, (kr.gpr hr).trans h.s11⟩
   · rw [← h.frame x hx]
@@ -91,9 +91,9 @@ theorem past_of_disjoint {B : Addr} {Z : Nat} {r : Region} (hd : r.Disjoint ⟨B
 
 /-- What `e` and `n` are read and checked into. -/
 def tail : Prog isa :=
-  .seq PublicChecked.readE
-    (.seq (.block (PublicChecked.checkE ++ [mov .a5 .s9, mov .a4 .s7, mov .s7 .s1, mov .s8 .s2]))
-      (.seq Precompute.check (.block [.addi .t0 .a5 1, .logic .or .t0 .t0 .s0])))
+  .seq VG.Impl.Bignum.RISCV64.PublicChecked.readE
+    (.seq (.block (VG.Impl.Bignum.RISCV64.PublicChecked.checkE ++ [mov .a5 .s9, mov .a4 .s7, mov .s7 .s1, mov .s8 .s2]))
+      (.seq VG.Impl.Bignum.RISCV64.Precompute.check (.block [.addi .t0 .a5 1, .logic .or .t0 .t0 .s0])))
 
 theorem entry_eq (oS : Nat) (moves : List Instr) : entry oS moves = .seq (.block (save oS ++ moves)) tail := rfl
 
@@ -113,7 +113,17 @@ theorem mask_add_one (b : Bool) (x : BitVec 64) :
     rw [show BitVec.ofNat 64 0 - BitVec.ofNat 64 0 + BitVec.ofNat 64 1 = BitVec.ofNat 64 1 by decide]
     exact or_one_ne x
   · simp only [↓reduceIte, true_and]
-    rw [show BitVec.ofNat 64 0 - BitVec.ofNat 64 1 + BitVec.ofNat 64 1 = 0 by decide, BitVec.zero_or]
+    rw [show BitVec.ofNat 64 0 - BitVec.ofNat 64 1 + BitVec.ofNat 64 1 = 0 by decide]
+    simp
+
+theorem exponentValid_sat (v : Nat) : Spec.Rsa.exponentValid (sat v) = Spec.Rsa.exponentValid v := by
+  unfold sat
+  by_cases h : v < 2 ^ 33
+  · rw [Nat.min_eq_left (Nat.le_of_lt h)]
+  · rw [Nat.min_eq_right (by omega)]
+    have h2 : (decide (v < 2 ^ 33)) = false := decide_eq_false h
+    simp only [Spec.Rsa.exponentValid, h2, Bool.and_false]
+    decide
 
 theorem tail_ok {v : State} {E N : Addr} {L K : Nat} (h4 : v.gpr .a4 = off E 0)
     (h5 : v.gpr .a5 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L ≤ 1024)
@@ -148,7 +158,7 @@ theorem tail_ok {v : State} {E N : Addr} {L K : Nat} (h4 : v.gpr .a4 = off E 0)
   refine WP.mono (WP.keep [.t0] (Q := fun t => t.gpr .t0 = (z.gpr .a5 + BitVec.ofNat 64 1) ||| z.gpr .s0 ∧
     t.mem = z.mem) (by brun []) (by rfl) (by rfl)) fun t ⟨⟨t0, tm⟩, kt⟩ => ?_
   refine ⟨?_, ?_, by rw [tm, zm, yv], ?_⟩
-  · rw [t0, z5, mask_add_one, Pub.exponentValid_sat, z0]
+  · rw [t0, z5, mask_add_one, exponentValid_sat, z0]
   · rw [kt.gpr (by decide), kz.gpr (by decide), y4, x7]
   · exact ((((ku.trans kx).trans ky).trans kz).trans kt).mono (by decide)
 
