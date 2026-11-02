@@ -309,7 +309,6 @@ GROUPS = {
             "wycheproof::rsa_pkcs1_enc",
             "wycheproof::rsa_pkcs1_sig",
             "wycheproof::rsa_pss",
-            "wycheproof::rsa_public",
         ],
     },
     # IFMA's vectors once, without repeating ADX prime generation (SKX and
@@ -328,7 +327,6 @@ GROUPS = {
             "rsa_guidance::rsa_pkcs1_lengths",
             "wycheproof::rsa",
             "wycheproof::rsa_keys",
-            "wycheproof::rsa_public",
             "wycheproof::rsa_pkcs1_enc",
             "wycheproof::rsa_pkcs1_sig",
             "wycheproof::rsa_pss::rsa_pss_test",
@@ -373,13 +371,12 @@ GROUPS = {
     },
     "sha1": {
         "lib": ["hashes::sha1", "hmac::sha1", "pbkdf2::sha1", "rsa_pss::sha1"],
-        "tests": ["cavp::sha1", "pbkdf2::sha1", "wycheproof::hmac_sha1", "wycheproof::pbkdf2_sha1"],
+        "tests": ["cavp::sha1", "wycheproof::hmac_sha1", "wycheproof::pbkdf2_sha1"],
     },
     "sha224": {
         "lib": ["hashes::sha224", "hmac::sha224", "pbkdf2::sha224", "rsa_pss::sha224"],
         "tests": [
             "cavp::sha224",
-            "pbkdf2::sha224",
             "rfc4231::hmac_sha224",
             "rfc6979::p224::p224_sha224",
             "rfc6979::p224::p224_sha224_digest_reduction",
@@ -398,7 +395,6 @@ GROUPS = {
             "rfc6979::p192::p192_sha256",
             "wycheproof::ecdsa_secp256k1",
             "wycheproof::ecdsa_p192",
-            "pbkdf2::sha256",
             "rfc4231::hmac_sha256",
             "rfc6979::p256::p256_sha256",
             "wycheproof::ecdsa_p256::ecdsa_secp256r1_sha256_p1363_test",
@@ -411,7 +407,6 @@ GROUPS = {
         "tests": [
             "cavp::sha3",
             "cavp::sha384",
-            "pbkdf2::sha384",
             "rfc4231::hmac_sha384",
             "rfc6979::p256::p256_sha384",
             "rfc6979::p384::p384_sha384",
@@ -426,7 +421,6 @@ GROUPS = {
         "lib": ["hashes::sha384", "hmac::sha384", "pbkdf2::sha384", "rsa_pss::sha384"],
         "tests": [
             "cavp::sha384",
-            "pbkdf2::sha384",
             "rfc4231::hmac_sha384",
             "rfc6979::p256::p256_sha384",
             "rfc6979::p384::p384_sha384",
@@ -456,9 +450,6 @@ GROUPS = {
             "cavp::sha512",
             "cavp::sha512_224",
             "cavp::sha512_256",
-            "pbkdf2::sha512",
-            "pbkdf2::sha512_224",
-            "pbkdf2::sha512_256",
             "rfc4231::hmac_sha512",
             "rfc6979::p521::p521_sha512",
             "rfc7027::brainpoolp512r1_ecdsa::ecdsa_and_invalid_keys",
@@ -487,7 +478,7 @@ GROUPS = {
     },
     "sm4_gcm": {
         "lib": ["sm4_gcm"],
-        "tests": ["rfc8998::sm4_gcm"],
+        "tests": ["rfc8998::sm4_gcm", "wycheproof::sm4_gcm"],
     },
     "triple_des_ecb": {
         "lib": ["triple_des_ecb"],

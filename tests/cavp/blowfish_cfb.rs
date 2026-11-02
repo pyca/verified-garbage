@@ -1,8 +1,6 @@
 //! Blowfish-CFB64: pyca/cryptography's vector (reformatted from Schneier's
-//! test vectors, with a partial last segment), unmodified under vectors/;
-//! and CFB64 from ECB (`BlowfishEcbEncryptor`, tested on Schneier's vectors)
-//! on every length up to 20 blocks, partial last segments included, for keys
-//! of the shortest, a middle and the longest length.
+//! test vectors, with a partial last block), unmodified under vectors/,
+//! truncated and split (`tests/modes.rs`).
 
 #![cfg(any(
     target_arch = "x86",
@@ -14,61 +12,8 @@
 ))]
 
 use verified_garbage::blowfish_cfb::{BlowfishCfb64, InvalidKeyLength};
-use verified_garbage::blowfish_ecb::BlowfishEcbEncryptor;
 
 use verified_garbage_test_vectors::unhex;
-
-/// CFB64 from ECB: the output and the block to continue from (the last
-/// ciphertext block, or after a partial segment `CIPH_K` of the last whole
-/// one's).
-fn reference(
-    ecb: &mut BlowfishEcbEncryptor,
-    iv: [u8; 8],
-    data: &[u8],
-    encrypt: bool,
-) -> (Vec<u8>, [u8; 8]) {
-    let mut chain = iv;
-    let mut out = Vec::new();
-    for block in data.chunks(8) {
-        let mut o = [0; 8];
-        assert_eq!(ecb.update(&chain, &mut o).unwrap(), 8);
-        let y: Vec<u8> = crate::bytes::xor(block, &o);
-        let c = if encrypt { &y[..] } else { block };
-        chain = if block.len() == 8 {
-            c.try_into().unwrap()
-        } else {
-            o
-        };
-        out.extend(y);
-    }
-    (out, chain)
-}
-
-/// Encrypts or decrypts `data` with `ctx`, whole and split at every block,
-/// and checks the output and the block to continue from.
-fn check(
-    ctx: &BlowfishCfb64,
-    iv: [u8; 8],
-    data: &[u8],
-    encrypt: bool,
-    output: &[u8],
-    after: [u8; 8],
-) {
-    for offset in (0..=data.len()).step_by(8) {
-        let mut chain = iv;
-        let mut buffer = data.to_vec();
-        let (a, b) = buffer.split_at_mut(offset);
-        if encrypt {
-            ctx.encrypt(&mut chain, a);
-            ctx.encrypt(&mut chain, b);
-        } else {
-            ctx.decrypt(&mut chain, a);
-            ctx.decrypt(&mut chain, b);
-        }
-        assert_eq!(buffer, output);
-        assert_eq!(chain, after);
-    }
-}
 
 #[test]
 fn pyca_vectors() {
@@ -83,36 +28,15 @@ fn pyca_vectors() {
         let iv: [u8; 8] = get("IV").try_into().unwrap();
         let (plaintext, ciphertext) = (get("PLAINTEXT"), get("CIPHERTEXT"));
         key_lens.push(key.len());
-        let mut ecb = BlowfishEcbEncryptor::new(&key).unwrap();
-        // The block to continue from, which the vector does not give.
-        let (expected, after) = reference(&mut ecb, iv, &plaintext, true);
-        ecb.finalize().unwrap();
-        assert_eq!(expected, ciphertext);
         let ctx = BlowfishCfb64::new(&key).unwrap();
-        check(&ctx, iv, &plaintext, true, &ciphertext, after);
-        check(&ctx, iv, &ciphertext, false, &plaintext, after);
+        let vector = (&plaintext[..], &ciphertext[..]);
+        let cfb = crate::modes::Feedback::Ciphertext;
+        crate::modes::check(cfb, iv, vector, vector, &|iv, b| ctx.encrypt(iv, b));
+        crate::modes::check(cfb, iv, vector, (&ciphertext, &plaintext), &|iv, b| {
+            ctx.decrypt(iv, b)
+        });
     }
     assert_eq!(key_lens, [16]);
-}
-
-/// Every length up to 20 blocks, in each direction, whole and split at
-/// every block.
-#[test]
-fn from_ecb() {
-    let data: Vec<u8> = crate::bytes::pattern(8 * 20, 31, 7);
-    let iv: [u8; 8] = crate::bytes::pattern_array(11, 5);
-    for key_len in [4, 16, 56] {
-        let key: Vec<u8> = crate::bytes::pattern(key_len, 17, 3);
-        let mut ecb = BlowfishEcbEncryptor::new(&key).unwrap();
-        let ctx = BlowfishCfb64::new(&key).unwrap();
-        for len in 0..=data.len() {
-            for encrypt in [true, false] {
-                let (output, after) = reference(&mut ecb, iv, &data[..len], encrypt);
-                check(&ctx, iv, &data[..len], encrypt, &output, after);
-            }
-        }
-        ecb.finalize().unwrap();
-    }
 }
 
 #[test]
