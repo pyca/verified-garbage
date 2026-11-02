@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::PKey;
     use verified_garbage::ecdh::{P256, PrivateKey};
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     let d = [0x42; 32];
     let peer = PrivateKey::<P256>::from_bytes(&[0x24; 32])
@@ -60,14 +60,14 @@ pub fn bench(c: &mut Criterion) {
     );
     let mut g = c.benchmark_group("ecdh_p256");
     // The ids' size is the bytes of the shared secret.
-    g.bench_function(BenchmarkId::new(VG, 32), |b| {
+    g.bench(BenchmarkId::new(VG, 32), |b| {
         b.iter(|| {
             black_box(&vg_private)
                 .diffie_hellman(black_box(&peer))
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 32), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
             let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
             let peer = PKey::from_ec_key(EcKey::from_public_key(&group, &point).unwrap()).unwrap();
@@ -76,7 +76,7 @@ pub fn bench(c: &mut Criterion) {
             d.derive_to_vec().unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(AWS_LC, 32), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 32), |b| {
         b.iter(|| aws_lc_agree(black_box(&aws_lc_private), black_box(&peer)))
     });
     g.finish();
@@ -84,14 +84,14 @@ pub fn bench(c: &mut Criterion) {
     // The public key of a private key, uncompressed: in OpenSSL, `[d]G` and
     // its encoding. The ids' size is the bytes of the public key.
     let mut g = c.benchmark_group("ec_p256_public_key");
-    g.bench_function(BenchmarkId::new(VG, 65), |b| {
+    g.bench(BenchmarkId::new(VG, 65), |b| {
         b.iter(|| {
             PrivateKey::<P256>::from_bytes(black_box(&d))
                 .public_key()
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(OPENSSL, 65), |b| {
+    g.bench(BenchmarkId::new(OPENSSL, 65), |b| {
         b.iter(|| {
             let d = BigNum::from_slice(black_box(&d)).unwrap();
             let mut q = EcPoint::new(&group).unwrap();
@@ -110,7 +110,7 @@ pub fn bench(c: &mut Criterion) {
             .as_ref(),
         PrivateKey::<P256>::from_bytes(&d).public_key().unwrap()
     );
-    g.bench_function(BenchmarkId::new(AWS_LC, 65), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 65), |b| {
         b.iter(|| {
             agreement::PrivateKey::from_private_key(&agreement::ECDH_P256, black_box(&d))
                 .unwrap()
@@ -123,10 +123,10 @@ pub fn bench(c: &mut Criterion) {
     #[cfg(target_arch = "x86_64")]
     {
         let mut g = c.benchmark_group("ec_validate_p256");
-        g.bench_function(BenchmarkId::new(VG, 65), |b| {
+        g.bench(BenchmarkId::new(VG, 65), |b| {
             b.iter(|| P256::validate_public_key(black_box(&peer)))
         });
-        g.bench_function(BenchmarkId::new(OPENSSL, 65), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, 65), |b| {
             b.iter(|| {
                 let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
                 // OpenSSL validates coordinates and the curve equation while decoding.
@@ -137,7 +137,7 @@ pub fn bench(c: &mut Criterion) {
         let mut one = [0; 32];
         one[31] = 1;
         let key = PrivateKey::<P256>::from_bytes(&one);
-        g.bench_function(BenchmarkId::new("scalar-multiply", 65), |b| {
+        g.bench(BenchmarkId::new("scalar-multiply", 65), |b| {
             b.iter(|| black_box(&key).diffie_hellman(black_box(&peer)).is_ok())
         });
         g.finish();

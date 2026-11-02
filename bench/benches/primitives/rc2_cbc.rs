@@ -20,7 +20,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::rc2_cbc::{Rc2CbcDecryptor, Rc2CbcEncryptor};
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
     // RC2 is in OpenSSL 3's legacy provider; retain the default provider
     // for the other algorithms benchmarked by this process.
@@ -38,7 +38,7 @@ pub fn bench(c: &mut Criterion) {
             // Both libraries write into a buffer allocated once, outside the
             // timed code.
             let mut output = vec![0; size + 8];
-            g.bench_function(BenchmarkId::new(VG, size), |b| match mode {
+            g.bench(BenchmarkId::new(VG, size), |b| match mode {
                 Mode::Encrypt => b.iter(|| {
                     let mut ctx = Rc2CbcEncryptor::new(black_box(&key), black_box(&iv)).unwrap();
                     let n = ctx.update(black_box(&data), &mut output).unwrap();
@@ -57,7 +57,7 @@ pub fn bench(c: &mut Criterion) {
                     black_box(&output[..n]);
                 }),
             });
-            g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
                     let mut ctx = Crypter::new(
                         Cipher::rc2_cbc(),

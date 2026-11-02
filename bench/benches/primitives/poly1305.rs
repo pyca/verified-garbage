@@ -23,7 +23,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::sign::Signer;
     use verified_garbage::poly1305::Poly1305;
 
-    use crate::{OPENSSL, VG};
+    use crate::{BenchDyn, OPENSSL, VG};
     // The shared sizes, and TLS 1.3's records of 1 KiB and 4 KiB of payload,
     // whose plaintext is one byte longer (the content type): a partial last
     // block, which ChaCha20-Poly1305 authenticates at these sizes too; and
@@ -34,11 +34,11 @@ pub fn bench(c: &mut Criterion) {
     for size in SIZES {
         g.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| Poly1305::mac(black_box(&key), black_box(&data)))
         });
         let mut out = [0u8; 16];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let pkey = PKey::private_key_from_raw_bytes(black_box(&key), Id::POLY1305).unwrap();
                 let mut s = Signer::new_without_digest(&pkey).unwrap();
@@ -58,7 +58,7 @@ pub fn bench(c: &mut Criterion) {
         let mut signer = Signer::new_without_digest(&pkey).unwrap();
         assert_eq!(signer.sign_oneshot(&mut reference, &data).unwrap(), 16);
         assert_eq!(reference, tag);
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
+        g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let mut p = Poly1305::new(black_box(&key));
                 p.update(black_box(&data));
@@ -66,7 +66,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut out = [0u8; 16];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let pkey = PKey::private_key_from_raw_bytes(black_box(&key), Id::POLY1305).unwrap();
                 let mut s = Signer::new_without_digest(&pkey).unwrap();

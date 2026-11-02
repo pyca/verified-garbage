@@ -74,7 +74,7 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::rsa::{PrivateKey, PublicKey};
     use verified_garbage::rsa_pss::{Hash, SaltLength, sign, sign_with_rng, verify};
 
-    use crate::{AWS_LC, OPENSSL, VG, fixed_tape};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
 
     // Each supported hash function, by the name its modules have and
     // OpenSSL's, and, if aws-lc-rs has it, its hash function, signing
@@ -193,7 +193,7 @@ pub fn bench(c: &mut Criterion) {
             sizes.iter().zip(&sigs).zip(&aws_public)
         {
             let k = sig.len();
-            g.bench_function(BenchmarkId::new(VG, k), |b| {
+            g.bench(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
                     let mut tape = fixed_tape(k as u64);
                     sign_with_rng(
@@ -212,7 +212,7 @@ pub fn bench(c: &mut Criterion) {
             });
             let mut c = ctx(pkey, &md, |c| c.sign_init().unwrap());
             let mut out = vec![0; k];
-            g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, k), |b| {
                 b.iter(|| c.sign(black_box(&digest), Some(&mut out)).unwrap())
             });
             if let (Some((alg, encoding, _)), Some(aws_public)) = (aws_lc, aws_public) {
@@ -232,7 +232,7 @@ pub fn bench(c: &mut Criterion) {
                     hash,
                     SaltLength::Len(digest.len())
                 ));
-                g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+                g.bench(BenchmarkId::new(AWS_LC, k), |b| {
                     b.iter(|| aws_sign(black_box(&digest), &mut out))
                 });
             }
@@ -244,7 +244,7 @@ pub fn bench(c: &mut Criterion) {
             sizes.iter().zip(&sigs).zip(&aws_public)
         {
             let k = sig.len();
-            g.bench_function(BenchmarkId::new(VG, k), |b| {
+            g.bench(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
                     assert!(verify(
                         black_box(vg_public),
@@ -257,11 +257,11 @@ pub fn bench(c: &mut Criterion) {
                 })
             });
             let mut c = ctx(pkey, &md, |c| c.verify_init().unwrap());
-            g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, k), |b| {
                 b.iter(|| assert!(c.verify(black_box(&digest), black_box(sig)).unwrap()))
             });
             if let (Some((alg, ..)), Some(aws_public)) = (aws_lc, aws_public) {
-                g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+                g.bench(BenchmarkId::new(AWS_LC, k), |b| {
                     b.iter(|| {
                         let digest = Digest::import_less_safe(black_box(&digest), alg).unwrap();
                         black_box(aws_public)

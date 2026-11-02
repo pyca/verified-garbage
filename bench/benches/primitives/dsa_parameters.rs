@@ -11,7 +11,7 @@ pub const USES: &[&str] = &["dsa", "rsa_mont", "miller_rabin", "sha1", "sha256"]
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub fn bench(c: &mut Criterion) {
-    use crate::{OPENSSL, VG, fixed_tape};
+    use crate::{BenchDyn, OPENSSL, VG, fixed_tape};
     use criterion::BenchmarkId;
     use openssl::dsa::Dsa;
     use std::hint::black_box;
@@ -29,7 +29,7 @@ pub fn bench(c: &mut Criterion) {
         let check = Dsa::generate_params(bits as u32).unwrap();
         assert_eq!(check.p().num_bits(), bits as i32);
         assert_eq!(check.q().num_bits(), if bits == 1024 { 160 } else { 256 });
-        group.bench_function(BenchmarkId::new(VG, bits), |b| {
+        group.bench(BenchmarkId::new(VG, bits), |b| {
             b.iter(|| {
                 let mut tape = fixed_tape(bits as u64);
                 Parameters::generate_with_rng(black_box(bits), |buf| {
@@ -39,7 +39,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, bits), |b| {
+        group.bench(BenchmarkId::new(OPENSSL, bits), |b| {
             b.iter(|| Dsa::generate_params(black_box(bits as u32)).unwrap())
         });
     }

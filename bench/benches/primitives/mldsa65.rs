@@ -43,7 +43,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use verified_garbage::mldsa65::SigningKey65;
 
-    use crate::{AWS_LC, VG};
+    use crate::{AWS_LC, BenchDyn, VG};
 
     let seed = [0x42; 32];
     let key = SigningKey65::from_seed(&seed).unwrap();
@@ -89,11 +89,11 @@ pub fn bench(c: &mut Criterion) {
         (openssl_key, openssl_public)
     };
     let mut g = c.benchmark_group("mldsa65_keygen");
-    g.bench_function(BenchmarkId::new(VG, 1952 + 32), |b| {
+    g.bench(BenchmarkId::new(VG, 1952 + 32), |b| {
         b.iter(|| SigningKey65::from_seed(black_box(&seed)).unwrap())
     });
     #[cfg(feature = "openssl-mldsa")]
-    g.bench_function(BenchmarkId::new(crate::OPENSSL, 1984), |b| {
+    g.bench(BenchmarkId::new(crate::OPENSSL, 1984), |b| {
         b.iter(|| {
             openssl::pkey::PKey::private_key_from_seed(
                 None,
@@ -107,20 +107,20 @@ pub fn bench(c: &mut Criterion) {
         })
     });
     // aws-lc-rs encodes the public key when it constructs the key pair.
-    g.bench_function(BenchmarkId::new(AWS_LC, 1984), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 1984), |b| {
         b.iter(|| PqdsaKeyPair::from_seed(&ML_DSA_65_SIGNING, black_box(&seed)).unwrap())
     });
     g.finish();
     let mut g = c.benchmark_group("mldsa65_sign");
     let mut i = 0;
-    g.bench_function(BenchmarkId::new(VG, 3309), |b| {
+    g.bench(BenchmarkId::new(VG, 3309), |b| {
         b.iter(|| {
             i = (i + 1) % MESSAGES;
             key.sign(black_box(&msgs[i]), b"").unwrap()
         })
     });
     #[cfg(feature = "openssl-mldsa")]
-    g.bench_function(BenchmarkId::new(crate::OPENSSL, 3309), |b| {
+    g.bench(BenchmarkId::new(crate::OPENSSL, 3309), |b| {
         b.iter(|| {
             i = (i + 1) % MESSAGES;
             openssl::sign::Signer::new_without_digest(&openssl_key)
@@ -129,7 +129,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
         })
     });
-    g.bench_function(BenchmarkId::new(AWS_LC, 3309), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 3309), |b| {
         b.iter(|| {
             i = (i + 1) % MESSAGES;
             aws_lc_key
@@ -139,7 +139,7 @@ pub fn bench(c: &mut Criterion) {
     });
     g.finish();
     let mut g = c.benchmark_group("mldsa65_sign_deterministic");
-    g.bench_function(BenchmarkId::new(VG, 3309), |b| {
+    g.bench(BenchmarkId::new(VG, 3309), |b| {
         b.iter(|| {
             i = (i + 1) % MESSAGES;
             key.sign_deterministic(black_box(&msgs[i]), b"").unwrap()
@@ -147,7 +147,7 @@ pub fn bench(c: &mut Criterion) {
     });
     g.finish();
     let mut g = c.benchmark_group("mldsa65_verify");
-    g.bench_function(BenchmarkId::new(VG, 64), |b| {
+    g.bench(BenchmarkId::new(VG, 64), |b| {
         b.iter(|| {
             key.verifying_key()
                 .verify(black_box(&msg), b"", &sig)
@@ -155,7 +155,7 @@ pub fn bench(c: &mut Criterion) {
         })
     });
     #[cfg(feature = "openssl-mldsa")]
-    g.bench_function(BenchmarkId::new(crate::OPENSSL, 64), |b| {
+    g.bench(BenchmarkId::new(crate::OPENSSL, 64), |b| {
         b.iter(|| {
             assert!(
                 openssl::sign::Verifier::new_without_digest(&openssl_public)
@@ -165,7 +165,7 @@ pub fn bench(c: &mut Criterion) {
             )
         })
     });
-    g.bench_function(BenchmarkId::new(AWS_LC, 64), |b| {
+    g.bench(BenchmarkId::new(AWS_LC, 64), |b| {
         b.iter(|| {
             aws_lc_public
                 .verify_sig(black_box(&msg), black_box(&sig))
@@ -178,12 +178,12 @@ pub fn bench(c: &mut Criterion) {
     let rnd = [0x42; 32];
     let mu_sig = key.sign_mu(&mu, &rnd).unwrap();
     let mut g = c.benchmark_group("mldsa65_sign_mu");
-    g.bench_function(BenchmarkId::new(VG, mu_sig.len()), |b| {
+    g.bench(BenchmarkId::new(VG, mu_sig.len()), |b| {
         b.iter(|| key.sign_mu(black_box(&mu), black_box(&rnd)).unwrap())
     });
     g.finish();
     let mut g = c.benchmark_group("mldsa65_verify_mu");
-    g.bench_function(BenchmarkId::new(VG, 64), |b| {
+    g.bench(BenchmarkId::new(VG, 64), |b| {
         b.iter(|| {
             key.verifying_key()
                 .verify_mu(black_box(&mu), black_box(&mu_sig))

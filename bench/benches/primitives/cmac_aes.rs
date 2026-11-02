@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::Cipher;
     use verified_garbage::cmac::aes::AesCmac;
 
-    use crate::{AWS_LC, OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
     for (bits, key_len, cipher, alg) in [
         (128, 16, Cipher::aes_128_cbc(), cmac::AES_128),
@@ -38,11 +38,11 @@ pub fn bench(c: &mut Criterion) {
         for size in SIZES {
             g.throughput(Throughput::Bytes(size as u64));
             let data = vec![0x5a; size];
-            g.bench_function(BenchmarkId::new(VG, size), |b| {
+            g.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| AesCmac::mac(black_box(&key), black_box(&data)).unwrap())
             });
             let mut out = [0u8; 16];
-            g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
                     let mut s = Signer::new_without_digest(&pkey).unwrap();
                     s.sign_oneshot(&mut out, black_box(&data)).unwrap()
@@ -50,7 +50,7 @@ pub fn bench(c: &mut Criterion) {
             });
             let tag = cmac::sign(&cmac::Key::new(alg, &key).unwrap(), &data).unwrap();
             assert_eq!(tag.as_ref(), AesCmac::mac(&key, &data).unwrap());
-            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, size), |b| {
                 b.iter(|| {
                     let k = cmac::Key::new(alg, black_box(&key)).unwrap();
                     cmac::sign(&k, black_box(&data)).unwrap()
@@ -68,7 +68,7 @@ pub fn bench(c: &mut Criterion) {
             let mut signer = Signer::new_without_digest(&pkey).unwrap();
             assert_eq!(signer.sign_oneshot(&mut reference, &data).unwrap(), 16);
             assert_eq!(reference, mac);
-            g.bench_function(BenchmarkId::new(VG, size), |b| {
+            g.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
                     let mut m = AesCmac::new(black_box(&key)).unwrap();
                     m.update(black_box(&data));
@@ -76,7 +76,7 @@ pub fn bench(c: &mut Criterion) {
                 })
             });
             let mut out = [0u8; 16];
-            g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            g.bench(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
                     let mut s = Signer::new_without_digest(&pkey).unwrap();
                     let n = s.sign_oneshot(&mut out, black_box(&data)).unwrap();
@@ -84,7 +84,7 @@ pub fn bench(c: &mut Criterion) {
                 })
             });
             cmac::verify(&cmac::Key::new(alg, &key).unwrap(), &data, &mac).unwrap();
-            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            g.bench(BenchmarkId::new(AWS_LC, size), |b| {
                 b.iter(|| {
                     let k = cmac::Key::new(alg, black_box(&key)).unwrap();
                     cmac::verify(&k, black_box(&data), black_box(&mac)).unwrap()
