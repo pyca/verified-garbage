@@ -96,7 +96,7 @@ theorem Inv.update {M : Mod} {base : Addr} {m : Nat} [NeZero m] {Sl : Nat → Pr
     (hr : wordsVal s'.mem base o M.n < m) {v : Fin m}
     (hv : toM m (2 ^ (64 * M.n)) (wordsVal s'.mem base o M.n) = v) :
     Inv M.n base m Sl (o :: V) (Function.update E o v) s' := by
-  have hown : own M.n ≤ 4096 := Nat.sub_le _ _
+  have hown : own M.n ≤ 8192 := by have := rvOwn_cases M.n; simp only [own]; omega
   have heq : ∀ x ∈ V, x ≠ o → wordsVal s'.mem base x M.n = wordsVal s.mem base x M.n := by
     intro x hx hxo
     have hxS := hI.sl x hx
