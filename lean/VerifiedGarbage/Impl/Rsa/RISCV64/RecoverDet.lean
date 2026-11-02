@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.RISCV64.MulMod
 public import VerifiedGarbage.Impl.Rsa.RISCV64.Div
+public import VerifiedGarbage.Impl.Rsa.RISCV64.InvBatch
 public import VerifiedGarbage.Impl.Bignum.RISCV64.Precompute
 
 /-!
@@ -63,6 +64,7 @@ Bytes 0–95 hold the caller's `s0`–`s11`, 128–144 the shared routines'
 slots, and from 152 this function's. -/
 
 /-- `d e < 1` and `d e - 1 < 1`. -/
+def sU1 : Nat := 96
 def sB0 : Nat := 152
 def sB1 : Nat := 160
 /-- A step of the halvings: the low bits of `u` and `x`, `u` even, and both even. -/
@@ -291,9 +293,8 @@ def gcdStep : Prog isa := seqs [
 /-- `gcd(x, u)` into `[gV]`, from `(x, u)`: `32 w + 4 n_len` iterations of
 two steps, `x u < 2^(64 w + 8 n_len)`; then into the low half of the wide
 `wG`. -/
-def gcd : Prog isa := seqs [copy gU aX2, copy gV aU,
-  .block [.shift .sll .d .s7 .s9 5, .shift .sll .d .t5 .s2 2, .add .s7 .s7 .t5],
-  .loop (seqs [gcdStep, gcdStep, .block next]) (.nonzero .s7), copy (2 * wG) gV]
+def gcd : Prog isa := seqs [copy InvBatch.aX aX2, copy InvBatch.aMin aU, InvBatch.gcd,
+  eqS sU1 InvBatch.aMin aOne, sel InvBatch.aGcd InvBatch.aGcd aOne sU1, copy (2 * wG) InvBatch.aGcd]
 
 /-! ## `a`, `m` and `r` (wide) -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.RISCV64.Div
 public import VerifiedGarbage.Impl.Rsa.RISCV64.Inverse
+public import VerifiedGarbage.Impl.Rsa.RISCV64.InvBatch
 public import VerifiedGarbage.Impl.Bignum.RISCV64.Precompute
 
 /-!
@@ -123,8 +124,7 @@ def widen : List Instr := [mov .s9 .s0, .addi .s10 .s9 2, .shift .sll .d .s10 .s
 zeroed: `(u, v, x₁, x₂) = (q, m, 1, 0)` with `m = p | 1`, `[aOne] = 1`,
 and `[aNM] = 2^(64 w') - m`. -/
 def invSetup : List (Prog isa) := [
-  zeroArrays nInv, load 0 .s5 .s6, load aM .s3 .s4, .block (orOne aM), copy 1 aM,
-  .block (setOne 2 ++ setOne aOne), sub3 aNM aZero aM]
+  zeroArrays nInv, load 0 .s5 .s6, load InvBatch.aMin .s3 .s4, .block (orOne InvBatch.aMin ++ setOne aOne)]
 
 /-- The mask `0 - [sMask]` into `t4`. -/
 def mask : List Instr := [.load .d .t4 .s11 sMask, .li .t5 0, .sub .t4 .t5 .t4]
@@ -133,7 +133,7 @@ def mask : List Instr := [.load .d .t4 .s11 sMask, .li .t5 0, .sub .t4 .t5 .t4]
 primes' words, which `inverse`'s arrays fit in: the arrays from 16 on, at
 `w`'s stride, are past them. -/
 def invPart : Prog isa := seqs ([.block narrow] ++ invSetup ++ [
-  inverse, eqS sE3 1 aOne,
+  InvBatch.inverse, eqS sE3 1 aOne,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3 ++ mask),
   storeBytes 3 .a6 .s4, .block widen])
 
