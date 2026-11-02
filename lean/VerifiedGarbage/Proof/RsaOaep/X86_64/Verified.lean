@@ -1,28 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCtx
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcContract
-public import VerifiedGarbage.Proof.HashTable.X86_64
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCT
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCT
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# RSAES-OAEP on x86-64: the contracts with tables are satisfiable
+# RSAES-OAEP on x86-64 with MGF1's hash function as a table: the instances
 
-A state meeting the precondition of decryption (`dec_sat`) and of encryption
-with a precomputed key (`enc_sat`), with the tables of `vs`: the states of
-the contracts with MGF1's hash function fixed, with the table of a variant
-`w` of `vs` at `0x300000` (the stack argument's value), its functions at
-distinct addresses (`symsOf`).
+The contracts with tables are satisfiable (`dec_sat`, `enc_sat`): by the
+states of the contracts with MGF1's hash function fixed, with the table of
+a variant `w` of `vs` at `0x300000` (the stack argument's value) and its
+functions at distinct addresses (`symsOf`). So for the variants `vs` of
+`MdHash` that pass the checks the registrations make (`OK`: their functions
+of the same name have the same code, there are some, and not too many
+names), decryption and encryption with a precomputed key, taking the tables
+of `vs`, meet their contracts (`dec_ok`, `enc_ok`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG VG.X86_64
+open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
+open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink MdHash)
+open VG.Proof.RsaPkcs1Enc.X86_64 (PrivImpl)
+open VG.Proof.Rsa.X86_64 (PublicImpl)
+open VG.Proof.HashTable.X86_64 (tables fnsOf names Coh tableOf symsOf symsOf_distinct put5 put5_held
+  put5_below)
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaPkcs1Enc.X86_64 (privStack)
-open VG.Proof.Pbkdf2.Md.X86_64 (MdHash)
-open VG.Proof.HashTable.X86_64 (tableOf tables names symsOf symsOf_distinct put5 put5_held put5_below)
 
 /-- The words of `w`'s table, at the addresses `symsOf` gives `vs`' functions. -/
 def tw (vs : List MdHash) (w : MdHash) : List (BitVec 64) :=
@@ -87,7 +94,7 @@ theorem dec_sat (H : Spec.Mgf1.Hash) {vs : List MdHash} {w : MdHash} (hw : w ∈
     argRegs, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq]
   have hA : ∀ j < 18, (stackArgAddr decSatBase j).toNat + 8 ≤ 0x300000 := by decide
   simp only [withTable_arg _ vs w (hA 0 (by decide)), withTable_arg _ vs w (hA 1 (by decide)), withTable_arg _ vs w (hA 2 (by decide)), withTable_arg _ vs w (hA 3 (by decide)), withTable_arg _ vs w (hA 4 (by decide)), withTable_arg _ vs w (hA 5 (by decide)), withTable_arg _ vs w (hA 6 (by decide)), withTable_arg _ vs w (hA 7 (by decide)), withTable_arg _ vs w (hA 8 (by decide)), withTable_arg _ vs w (hA 9 (by decide)), withTable_arg _ vs w (hA 10 (by decide)), withTable_arg _ vs w (hA 11 (by decide)), withTable_arg _ vs w (hA 12 (by decide)), withTable_arg _ vs w (hA 13 (by decide)), withTable_arg _ vs w (hA 14 (by decide)), withTable_arg _ vs w (hA 15 (by decide)), withTable_arg _ vs w (hA 16 (by decide)), withTable_arg _ vs w (hA 17 (by decide))]
-  simp (config := { decide := true }) only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', ite_false, withTable_addr]
   sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
     Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
@@ -142,7 +149,7 @@ theorem enc_sat {H : Spec.Mgf1.Hash} (hH : H ∈ Pbkdf2.Md.X86_64.mdHashes) {vs 
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
       argRegs, encStack, Pc.stackArgs_ten, List.append_eq, List.range, List.range.loop]
     simp only [withTable_arg _ vs w (hA _ 0 (by decide)), withTable_arg _ vs w (hA _ 1 (by decide)), withTable_arg _ vs w (hA _ 2 (by decide)), withTable_arg _ vs w (hA _ 3 (by decide)), withTable_arg _ vs w (hA _ 4 (by decide)), withTable_arg _ vs w (hA _ 5 (by decide)), withTable_arg _ vs w (hA _ 6 (by decide)), withTable_arg _ vs w (hA _ 7 (by decide)), withTable_arg _ vs w (hA _ 8 (by decide)), withTable_arg _ vs w (hA _ 9 (by decide))]
-    simp (config := { decide := true }) only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left', ite_false, withTable_addr]
     sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
@@ -160,5 +167,31 @@ theorem enc_sat {H : Spec.Mgf1.Hash} (hH : H ∈ Pbkdf2.Md.X86_64.mdHashes) {vs 
          set_option linter.unusedSimpArgs false in
          sig_simp_only [Region.Contains, encSatBase, stackArg, stackArgAddr, Mem.readW, Mem.read] at h₁ h₂
          bv_omega)
+
+
+/-! ## The instances -/
+
+/-- What the registrations check of the variants whose tables a function
+takes. -/
+def OK (vs : List MdHash) : Prop := Coh vs ∧ (names vs).length < 2 ^ 32 ∧ vs ≠ []
+
+instance (vs : List MdHash) : Decidable (OK vs) := by unfold OK; infer_instance
+
+theorem OK.mem {vs : List MdHash} (h : OK vs) : ∃ w, w ∈ vs := List.exists_mem_of_ne_nil _ h.2.2
+
+variable {Hl : Hash} (hH : HashOK Hl) (KH : Callees Hl) (mH : MgfLink Hl hH)
+
+include hH KH mH in
+/-- `vg_rsa_oaep_<H>_decrypt`, with the tables of `vs`. -/
+theorem dec_ok (vs : List MdHash) (h : OK vs) (v : PrivImpl) :
+    Verified target (Impl.RsaOaep.X86_64.decrypt Hl.stream (fnsOf vs) v.name v.code) (decC mH.G (tables vs)) :=
+  dec_verified hH KH mH h.1 v (let ⟨_, hw⟩ := h.mem; dec_sat mH.G hw h.2.1)
+
+include hH KH mH in
+/-- `vg_rsa_oaep_<H>_encrypt_precomputed`, with the tables of `vs`. -/
+theorem enc_ok (vs : List MdHash) (h : OK vs) (v : PublicImpl) :
+    Verified target (Impl.RsaOaep.X86_64.Precomputed.encrypt Hl.stream (fnsOf vs) v.name v.code)
+      (Pc.encC mH.G (tables vs)) :=
+  Pc.code_verified hH KH mH h.1 v (let ⟨_, hw⟩ := h.mem; enc_sat mH.mem hw h.2.1)
 
 end VG.Proof.RsaOaep.X86_64

@@ -6,9 +6,10 @@
 //! again; an `invalid` one is refused, as of the wrong length if its
 //! ciphertext is, and otherwise with the one error for every failure of
 //! the ciphertext and its decoding. The pairs of hash functions the module
-//! does not support (some of `rsa_oaep_misc_test.json`'s) are refused as
-//! such. The files of three-prime keys are not this module's. And every
-//! pair the module supports encrypts and decrypts with a key of the vectors
+//! does not support (some of `rsa_oaep_misc_test.json`'s, but on x86-64,
+//! where MGF1 is over any of the hash functions) are refused as such. The
+//! files of three-prime keys are not this module's. And every pair the
+//! module supports encrypts and decrypts with a key of the vectors
 //! (`rsa_oaep_every_pair`).
 
 #![cfg(all(
@@ -138,7 +139,8 @@ fn rsa_oaep_test() {
         assert!(refused > 0 || name == "rsa_oaep_misc_test.json", "{name}");
         unsupported += u;
     }
-    assert!(unsupported > 0);
+    // On x86-64 every pair of the vectors is supported.
+    assert_eq!(unsupported == 0, cfg!(target_arch = "x86_64"));
 }
 
 /// Every pair of hash functions the module supports, with a 2048-bit key of
@@ -159,13 +161,17 @@ fn rsa_oaep_every_pair() {
     let n = trim_zeros(&file.test_groups[0].params.private_key.modulus.0);
     let k = public.modulus_len();
     assert_eq!(n.len(), k);
-    // Each hash function with MGF1 over itself and over SHA-1.
+    // Each hash function with MGF1 over any of them on x86-64, and over
+    // itself and over SHA-1 elsewhere.
     let mut pairs: Vec<(Hash, Hash)> = Vec::new();
     for (_, h) in HASHES {
-        pairs.extend([(h, h), (h, Hash::Sha1)]);
+        for (_, g) in HASHES {
+            if cfg!(target_arch = "x86_64") || g == h || g == Hash::Sha1 {
+                pairs.push((h, g));
+            }
+        }
     }
-    pairs.dedup();
-    assert_eq!(pairs.len(), 13);
+    assert_eq!(pairs.len(), if cfg!(target_arch = "x86_64") { 49 } else { 13 });
     for (i, &(h, g)) in pairs.iter().enumerate() {
         let msg: Vec<u8> = (0..k - 2 * h.digest_len() - 2).map(|i| i as u8).collect();
         let ct = encrypt(&public, &msg, h, g, b"label").unwrap();

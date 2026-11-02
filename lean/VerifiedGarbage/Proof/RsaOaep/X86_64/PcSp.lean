@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.HashTable.X86_64
 public import VerifiedGarbage.Impl.RsaOaep.X86_64.Precomputed
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl

@@ -280,7 +280,7 @@ theorem dec_implies (hsat : ∃ s, (decC H ts).pre s) : (decK H ts).Implies (dec
     sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
       decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns] at h
-    simp (config := { decide := true }) only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
     sig_split h
     sig_reduce [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
@@ -297,7 +297,7 @@ theorem dec_implies (hsat : ∃ s, (decC H ts).pre s) : (decK H ts).Implies (dec
     sig_pub [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
       decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns] at h
-    simp (config := { decide := true }) only [Option.map_some, ↓reduceIte, Nat.reduceAdd, List.getD_cons_succ,
+    simp only [String.reduceEq, ↓reduceIte, Option.map_some, ↓reduceIte, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq] at h
     obtain ⟨hsp, hsy, htab, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
       a13, a14, a15, a16, a17⟩ := h

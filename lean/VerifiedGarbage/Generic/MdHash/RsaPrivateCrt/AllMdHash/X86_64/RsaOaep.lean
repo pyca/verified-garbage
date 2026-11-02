@@ -58,26 +58,31 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Verified
+public import VerifiedGarbage.Proof.HashTable.X86_64
 
-/-! # RSAES-OAEP decryption on x86-64 -/
+/-! # RSAES-OAEP decryption on x86-64, with MGF1's hash function as a table -/
 
 @[expose] public section
 
-namespace VG.Generic.MdHash.MdHash.RsaPrivateCrt.X86_64.RsaOaep
+namespace VG.Generic.MdHash.RsaPrivateCrt.AllMdHash.X86_64.RsaOaep
 
-open VG.Proof.RsaOaep.X86_64 (decStack dec_verified dec_spSafe)
-open VG.Proof.RsaOaep.X86_64.Inst (emitted parts features)
+open VG.Proof.RsaOaep.X86_64 (decStack dec_ok dec_spSafe OK)
+open VG.Proof.RsaOaep.X86_64.Inst (emitted parts)
 open VG.Proof.RsaPkcs1Enc.X86_64 (privOf)
+open VG.Proof.HashTable.X86_64 (tables fnsOf)
 
-def artifacts (v v2 : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
-  if emitted v v2 then [
-    (Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G).artifact X86_64.target {
-      suffix := Emit.qualifiedName "" (parts v v2 ++ [("crt", c.suffix)])
-      code := Impl.RsaOaep.X86_64.decrypt v.H.stream v2.H.stream (privOf c).name (privOf c).code
+def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtImpl)
+    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+  if h : emitted v = true ∧ OK vs then [
+    (Spec.RsaOaep.decryptTableApi v.mgf.G).artifact X86_64.target {
+      suffix := Emit.qualifiedName "" (parts v ++ [("crt", c.suffix)])
+      tables := [("mgf1", tables vs)]
+      code := Impl.RsaOaep.X86_64.decrypt v.H.stream (fnsOf vs) (privOf c).name (privOf c).code
       stack := decStack
-      verified := dec_verified v.ok v.K v2.ok v2.K v.mgf v2.mgf (privOf c)
-      spSafe := dec_spSafe v.ok v.K v2.ok v2.K (privOf c)
-      features := features v v2 ++ c.features.filter (!(features v v2).contains ·) }]
+      verified := dec_ok v.ok v.K v.mgf vs h.2 (privOf c)
+      spSafe := dec_spSafe v.ok v.K vs (privOf c)
+      features := v.features ++ c.features.filter (!v.features.contains ·) }]
   else []
 
-end VG.Generic.MdHash.MdHash.RsaPrivateCrt.X86_64.RsaOaep
+end VG.Generic.MdHash.RsaPrivateCrt.AllMdHash.X86_64.RsaOaep

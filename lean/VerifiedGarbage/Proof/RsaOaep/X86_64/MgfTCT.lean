@@ -282,8 +282,7 @@ theorem roundT_ct (hn : n = 2 ∨ n = 3) (hgi : FnsGood f.init) (hgu : FnsGood f
     (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun a t h => ?_) ?_
   · obtain ⟨V, W, R, A, h19, h20⟩ := h.rw.rep
     have := h.rw.fit.fd
-    exact WP.mono (wp_gs ⟨rfl, by simp [Impl.Mgf1.X86_64.Table.xorOut, seqs, Code.depth,
-        Impl.Mgf1.X86_64.byteLoop]⟩ (xorOutT_ok (G := G) h.rw.L R (dst := a.1.dst) (dstLen := a.1.dstLen)
+    exact WP.mono (wp_gs xorOutT_good (xorOutT_ok (G := G) h.rw.L R (dst := a.1.dst) (dstLen := a.1.dstLen)
         (done := a.2 * G.D) (by omega) hzD (by omega) (h.w36' R) A.hdst A.hdl h20 h.rw.lt))
       fun t' ⟨⟨L', k, R'⟩, fr, sy⟩ => h.after L' k.2.1 k.2.2 R R' A h19 h20 fr sy
   exact two_taintF [] [] (fun a => a.1.F) (fun a => a.1.ws) (fun a => mwT G.D a.1 a.2)

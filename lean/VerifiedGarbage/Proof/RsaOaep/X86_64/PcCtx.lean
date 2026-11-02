@@ -98,7 +98,7 @@ theorem preT_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encC 
   sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
     Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
     encStack, stackArgs_ten, List.append_eq, List.range, List.range.loop] at h
-  simp (config := { decide := true }) only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', ite_false] at h
   obtain ⟨sp1, sp3, tab, fnd, hrd, hwr, dOn, dOe, dOl, dOm, dOsd, dOs, dOq, dOt, dOa, dns, des, dls, dms, dsds, dsq,
     dst, dsa, dRo, dRn, dRe, dRl, dRm, dRsd, dRs, -, -, dRa, dKo, dKn, dKe, dKl, dKm, dKsd, dKs, dKq, dKt, dKa,

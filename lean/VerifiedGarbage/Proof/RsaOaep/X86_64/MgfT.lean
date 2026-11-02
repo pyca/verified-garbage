@@ -113,6 +113,9 @@ theorem tcall_good {ts : List (String × Prog isa)} (h : FnsGood ts) (j : Nat) :
   · simp only [tcall, Code.allInstrs, this.1, Bool.and_true]; rfl
   · simp only [tcall, Code.depth, Nat.max_le]; omega
 
+theorem xorOutT_good : Good (Impl.Mgf1.X86_64.Table.xorOut lay sD) :=
+  ⟨rfl, by simp [Impl.Mgf1.X86_64.Table.xorOut, seqs, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+
 theorem mgfT_good {f : Fns} (hgi : FnsGood f.init) (hgu : FnsGood f.upd) (hgf : FnsGood f.fin) (sArg : Nat) :
     Good (Impl.Mgf1.X86_64.Table.mgfXor lay sArg sTab sD f) := by
   have hi := tcall_good hgi 0; have hu := tcall_good hgu 1; have hf := tcall_good hgf 2
@@ -403,8 +406,7 @@ theorem roundT_ok (hgi : FnsGood f.init) (hgu : FnsGood f.upd) (hgf : FnsGood f.
   -- Into `dst`.
   have hlt : c * G.D < dstLen := hc
   have wr8 : u8.wr = u₀.wr := wr8.trans wr7
-  refine WP.seq (WP.mono (wp_gs ⟨rfl, by simp [Impl.Mgf1.X86_64.Table.xorOut, seqs, Code.depth,
-      Impl.Mgf1.X86_64.byteLoop]⟩ (xorOutT_ok (G := G) L8 R8 (dst := dst) (dstLen := dstLen) (done := c * G.D)
+  refine WP.seq (WP.mono (wp_gs xorOutT_good (xorOutT_ok (G := G) L8 R8 (dst := dst) (dstLen := dstLen) (done := c * G.D)
       hfd hzD (by omega_using [hzF, hzDF]) w36 A1.hdst A1.hdl h20 hlt))
     fun u9 ⟨⟨L9, k9, R9⟩, f9, s9⟩ => ?_)
   have J9 := J8.step wr8 L8.rsp f9 s9
