@@ -361,6 +361,43 @@ theorem DS.wrS (h : DS s0 b A live V ls s) (ws : Ws t (rvB s0) (rvZ s0) (vw s0 b
     · exact hd
     · exact h.ls_ok e (hl e he).1
 
+/-- A write of two slots. -/
+theorem DS.wrS2 (h : DS s0 b A live V ls s) (ws : Ws t (rvB s0) (rvZ s0) (vw s0 b) (vN b))
+    {d₁ d₂ x₁ x₂ : Nat} (hd₁ : d₁ + 4 ≤ 160) (hd₂ : d₂ + 4 ≤ 160) (sep : d₁ + 4 ≤ d₂)
+    (k : KeyWorkspace.Keep (rvB s0) (vw s0 b) [] [d₁, d₂] s.mem t.mem)
+    (v₁ : slot t.mem (rvB s0) d₁ = x₁) (v₂ : slot t.mem (rvB s0) d₂ = x₂) {ls' : List Nat}
+    (hl : ∀ e ∈ ls', e ∈ ls ∧ (e + 4 ≤ d₁ ∨ d₁ + 4 ≤ e) ∧ (e + 4 ≤ d₂ ∨ d₂ + 4 ≤ e))
+    {rs : List Reg} (kr : Keep rs s t) (h21 : .r21 ∉ rs := by decide) (h23 : .r23 ∉ rs := by decide)
+    (h25 : .r25 ∉ rs := by decide) (h31 : .r31 ∉ rs := by decide) :
+    DS s0 b A live (updV (updV V d₁ x₁) d₂ x₂) (d₂ :: d₁ :: ls') t := by
+  have hd' : ∀ e ∈ [d₁, d₂], e + 4 ≤ KeyWorkspace.hdr := fun e he => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl <;> simp only [KeyWorkspace.hdr] <;> omega
+  have base := h.base.of_keep k (by simp) hd' kr h31
+  refine ⟨base, ws, (kr.gpr _ h21).trans h.r21, (kr.gpr _ h23).trans h.r23, (kr.gpr _ h25).trans h.r25,
+    fun e he => ?_, h.live_lt, fun e he => ?_, fun e he => ?_⟩
+  · rw [← h.arrs e he]
+    exact (keep_view (w' := vw s0 e.1) k).num (by simp) hd' (h.fit e.1 (h.live_lt e he))
+  · simp only [List.mem_cons] at he
+    rcases he with rfl | rfl | he
+    · simp only [updV, ↓reduceIte]; exact v₂
+    · have : e ≠ d₂ := by omega
+      simp only [updV, this, ↓reduceIte]; exact v₁
+    · obtain ⟨he', hs1, hs2⟩ := hl e he
+      have : e ≠ d₁ := by omega
+      have : e ≠ d₂ := by omega
+      simp only [updV, *, ↓reduceIte]
+      rw [← h.sl e he']
+      exact k.slot (by have := h.ls_ok e he'; simp only [KeyWorkspace.hdr]; omega)
+        (fun e' he' => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at he'
+          rcases he' with rfl | rfl <;> omega)
+  · simp only [List.mem_cons] at he
+    rcases he with rfl | rfl | he
+    · exact hd₂
+    · exact hd₁
+    · exact h.ls_ok e (hl e he).1
+
 /-- A step on registers only. -/
 theorem DS.regs (h : DS s0 b A live V ls s) {rs : List Reg} (kr : Keep rs s t) (m : t.mem = s.mem)
     (h21 : .r21 ∉ rs := by decide) (h23 : .r23 ∉ rs := by decide) (h25 : .r25 ∉ rs := by decide)
