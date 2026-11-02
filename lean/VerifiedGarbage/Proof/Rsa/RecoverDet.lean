@@ -206,6 +206,19 @@ theorem twos_proj (b : Nat) : ∀ k u x y y', ((twoStep b)^[k] (u, x, y)).1 = ((
       · exact twos_proj b k _ _ _ _
     · exact twos_proj b k _ _ _ _
 
+/-- The halvings never increase `u` or `x`. -/
+theorem twos_le (b : Nat) : ∀ k (s : Nat × Nat × Nat), ((twoStep b)^[k] s).1 ≤ s.1 ∧ ((twoStep b)^[k] s).2.1 ≤ s.2.1
+  | 0, _ => ⟨Nat.le_refl _, Nat.le_refl _⟩
+  | k + 1, s => by
+    rw [Function.iterate_succ_apply]
+    obtain ⟨h1, h2⟩ := twos_le b k (twoStep b s)
+    have : (twoStep b s).1 ≤ s.1 ∧ (twoStep b s).2.1 ≤ s.2.1 := by
+      unfold twoStep
+      split
+      · split <;> exact ⟨Nat.div_le_self _ _, by first | exact Nat.div_le_self _ _ | exact Nat.le_refl _⟩
+      · exact ⟨Nat.le_refl _, Nat.le_refl _⟩
+    exact ⟨h1.trans this.1, h2.trans this.2⟩
+
 /-! ## Products -/
 
 /-- A step of the product: the multiplier `y` halved, the multiplicand `x` doubled and the
