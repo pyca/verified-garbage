@@ -20,17 +20,9 @@ namespace VG.Proof.Rsa.PPC64LE.RecDet
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
 open VG.Proof.Rsa.PPC64LE.Recover
 open VG.Proof.Rsa (b2n)
-open VG.Proof.Rsa.RecoverDet (wsub prodStep)
+open VG.Proof.Rsa.RecoverDet (wsub wsub_neg prodStep)
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 open VG.Impl.Rsa.PPC64LE.RecoverDet (product productStep aProduct sB0 sB1 sY)
-
-/-- An addition by two subtractions: `a - (0 - c) = a + c`. -/
-theorem wsub_neg {b a c : Nat} (ha : a < 2 ^ b) (hc : c < 2 ^ b) : wsub b a (wsub b 0 c) = (a + c) % 2 ^ b := by
-  unfold wsub
-  rcases Nat.eq_zero_or_pos c with rfl | pos
-  · simp [Nat.mod_eq_of_lt ha]
-  · rw [show 0 + 2 ^ b - c = 2 ^ b - c by omega, Nat.mod_eq_of_lt (show 2 ^ b - c < 2 ^ b by omega),
-      show a + 2 ^ b - (2 ^ b - c) = a + c by omega]
 
 /-- The arrays a product keeps, but its own: for the first, one and `n`; for the second, one,
 `n` (wide) and `b`. -/

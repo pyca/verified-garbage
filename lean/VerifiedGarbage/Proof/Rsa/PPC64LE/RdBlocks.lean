@@ -162,6 +162,15 @@ theorem DS.not9 (h : DS s0 b A live V ls s) {d : Nat} (hd : d ∈ ls) {c : Bool}
     ws.scr.ld (show d + 4 ≤ rvZ s0 by have := ws.hdr_le; simp only [KeyWorkspace.hdr] at this; omega),
     exec_li (show 1 < 2 ^ 15 by decide), exec_logic, h.slotRd hd hc, b64_eq, b64_xor]
 
+/-- `r9 := 1 - slot`, for a slot holding 0 or 1. -/
+theorem DS.not9' (h : DS s0 b A live V ls s) {d : Nat} (hd : d ∈ ls) (hb : V d ≤ 1) :
+    WP isa (.block [.load .w .r9 .r31 d, .li .r0 1, .logic .xor .r9 .r9 .r0]) s fun u =>
+      DS s0 b A live V ls u ∧ (u.gpr .r9).toNat = 1 - V d ∧ Keep [.r0, .r9] s u := by
+  have e : V d = b2n (decide (V d = 1)) := by
+    rcases (show V d = 0 ∨ V d = 1 by omega) with e | e <;> simp [e, b2n]
+  refine WP.mono (h.not9 hd e) fun u ⟨hu, r, k⟩ => ⟨hu, ?_, k⟩
+  rw [r]; rcases (show V d = 0 ∨ V d = 1 by omega) with e' | e' <;> simp [e', b2n]
+
 /-- `twosFlags`' slots, after the low bits: `even := ¬u₀` and `both := ¬u₀ ∧ ¬x₀`. -/
 theorem DS.twosTail (h : DS s0 b A live V ls s) (hu : sU ∈ ls) (hx : sX ∈ ls) {cu cx : Bool}
     (vu : V sU = b2n cu) (vx : V sX = b2n cx) {ls' : List Nat}
