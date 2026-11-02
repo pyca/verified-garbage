@@ -177,12 +177,12 @@ theorem setupS_ok {s : State} (hs : signRV.pre (stripConsts Impl.Ecdsa.RISCV64.C
   have hw₄ := hw₃.of_rest r₄
   have r₂₄ := r₂₃.trans r₄
   -- The flag.
-  rw [List.cons_append, List.cons_append, List.cons_append, List.nil_append]
+  rw [List.cons_append, List.cons_append, List.nil_append]
   refine wp_li (imm := 0) (by decide) fun s₄a u₄a => ?_
   refine WP.cons (exec_addi (by decide)) ?_
   have u₄b := Upd.write s₄a .t0 (s₄a.gpr .t0 + BitVec.ofInt 64 (-1))
   have hw₄b := (hw₄.of_kp (Kp.of_upd u₄a)).of_kp (Kp.of_upd u₄b)
-  refine sd_ws hw₄b (d := p256.sl FLAG) (by decide) (by decide) fun s₅ u₅ => ?_
+  refine sdAt_ws hw₄b (by decide) (d := p256.sl FLAG) (by decide) (by decide) fun s₅ u₅ => ?_
   have hw₅ := hw₄b.of_kp (Kp.of_mupd u₅)
   have fl₅ : word s₅.mem base FL = maskOf true := by
     rw [u₅.mem, sl_FLAG, word_writeW_self, u₄b.gpr, u₄a.gpr]; decide
