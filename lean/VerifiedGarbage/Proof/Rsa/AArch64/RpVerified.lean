@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.AArch64.RpCT8
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCode
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -68,7 +69,7 @@ theorem rp_implies : rpA.Implies (Spec.Rsa.recoverPrimesContract abi) where
     stackArgs_four, List.append_eq] [rpSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using rpSatState
 
 /-- `vg_rsa_recover_primes` with the Montgomery multiplication `M`. -/
-theorem rp_verified (M : Mont) :
+theorem rp_verified [InvLaw] (M : Mont) :
     Verified target (VG.Impl.Rsa.AArch64.Recover.code M.mm) (Spec.Rsa.recoverPrimesContract abi) :=
   Verified.of_correct (rpCode_correct M) (rpCode_constantTime M) rp_implies
 

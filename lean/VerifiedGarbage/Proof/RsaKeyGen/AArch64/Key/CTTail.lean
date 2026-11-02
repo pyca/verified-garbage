@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.NFin
 
@@ -153,7 +154,7 @@ theorem qinvBlkT_ct : RelCT isa (Two (KG fun I t => (KokM I t ∧ TopZ aU I t) �
     (by taint_decide)
 
 /-- `qinvPart`, with no postcondition, from a mask in `kOk`. -/
-theorem qinvPartT_ct0 : RelCT isa (Two (KG KokM)) (seqs qinvPart) fun _ _ => True := by
+theorem qinvPartT_ct0 [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG KokM)) (seqs qinvPart) fun _ _ => True := by
   have sK : ∀ (cs : List Rc) (rs : List Reg), cs.all Rc.ok = true → .hdr kOk ∉ cs → Stab KokM cs rs :=
     fun _ rs hok hn => stab_kok rs hok hn
   have sT : ∀ (cs : List Rc) (rs : List Reg), cs.all Rc.ok = true → .arr aU ∉ cs → Stab (TopZ aU) cs rs :=
@@ -200,7 +201,7 @@ theorem qinvPartT_ct0 : RelCT isa (Two (KG KokM)) (seqs qinvPart) fun _ _ => Tru
     fun _ _ h => h) gcdIsOneT_ct0
 
 /-- `qinvPart` keeps `TF`. -/
-theorem qinvPart_ct : RelCT isa (Two (KG TF)) (seqs qinvPart) (Two (KG TF)) :=
+theorem qinvPart_ct [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG TF)) (seqs qinvPart) (Two (KG TF)) :=
   kg_ct (qinvPartT_ct0.mono (fun _ _ h => two_kg (fun _ _ h => h.2) h) fun _ _ h => h)
     fun I _ s h _ ⟨hf, _, hok⟩ => WP.mono (qinvPart_k h hf.1 hf.2.1 hok) fun _ ⟨ht, f, ok, _⟩ =>
       ⟨ht, PF.frame (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) h.hZ hf f, _, ok⟩
@@ -296,7 +297,7 @@ theorem finalMask_ct : RelCT isa (Two (KG TF)) (.block finalMask) (Two (KG TF)) 
 
 /-! ## `keyPart` -/
 
-theorem keyPart_ct : RelCT isa (Two (KG TF)) keyPart fun _ _ => True := by
+theorem keyPart_ct [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG TF)) keyPart fun _ _ => True := by
   rw [keyPart]
   simp only [List.append_assoc]
   refine rs_app (by simp [qinvPart]) (by simp [crtPart, divisorOf]) qinvPart_ct ?_

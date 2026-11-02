@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.CarrySelect
+public import VerifiedGarbage.Impl.Rsa.AArch64.InvBatch
 public import VerifiedGarbage.Impl.Rsa.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 
 /-!
 # RSA private keys on AArch64: the shared routines and `vg_rsa_crt_values`
@@ -234,11 +236,138 @@ def invStep (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
     [.block [.subImm .x .x6 .x6 1]])))
 
 /-- `x6 := 128 w`. -/
-def invInit : List Instr := ws ++ ([.lsl .x .x6 .x12 7] : List Instr)
+def invInit : List Instr := [.lsl .x .x6 .x12 7]
 
-/-- `128 w` steps of the binary extended Euclidean algorithm. -/
-def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+/-- `128 w` steps of the binary extended Euclidean algorithm, for the width `w` in `x12`. -/
+def inverseBits (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
   .seq (.block invInit) (.loop (invStep iU iV iX₁ iX₂ iM iT) (.nonzero .x .x6))
+
+/-! ## The batched inverse
+
+`inverse`'s arrays, at the width `n` in `x12` (`n + 1` words of each signed
+number, two's complement): `f` in `v`, `g` in `u`, `a` in `x₂`, `b` in `x₁`,
+the products in `t`; `m` is read only. `d`, `-m⁻¹ mod 2^64`, the matrix of
+a batch and the saved `x1`, `x2` are in the lanes of `v16`–`v19`, which the
+caller's convention does not preserve; the public counts stay in registers
+(`x15` the batches, `x11` and `x12` packed into `x14` through the
+divsteps). -/
+
+open InvBatch
+
+/-- `x14 := n + 1`. -/
+def cntL : Instr := .addImm .x .x14 .x12 1
+
+/-- `r := ` the address of word `n` of array `j` (through `x3`). -/
+def topAt (j : Nat) (r : Reg) : List Instr := base j r ++ [.lsl .x .x3 .x12 3, .add .x r r .x3]
+
+/-- Word `n` of array `j` := 0. -/
+def zeroTop (j : Nat) : List Instr := topAt j .x16 ++ [movi .x3 0, st .x3 .x16]
+
+/-- `x15 :=` the sign mask of word `n` of array `j`, and `x7 := 0`. -/
+def signMask (j : Nat) : List Instr :=
+  topAt j .x16 ++ [ld .x3 .x16, .lsr .x .x3 .x3 63, movi .x7 0, .sub .x .x15 .x7 .x3]
+
+/-- `[o] := x4 [x] + x5 [y]` modulo `2^(64 (n + 1))`, the coefficients
+from the lanes of `cv`. -/
+def rowP (cv : VReg) (iX iY iO : Nat) : Prog isa :=
+  .seq (.block ([.umov .x .x4 cv 0, .umov .x .x5 cv 1] ++ coefMasks ++ base iX .x16 ++ base iY .x17 ++
+      base iO .x8 ++ ([cntL, movi .x13 0] : List Instr)))
+    (countLoop .x14 rowBody)
+
+/-- `[o] := [s] >> 59`, `n + 1` words. -/
+def shrP (iS iO : Nat) : Prog isa :=
+  .seq (.block (base iS .x16 ++ base iO .x17 ++ ([mov .x14 .x12] : List Instr)))
+    (.seq (countLoop .x14 shr59Body) (.block shrTop))
+
+/-- `[o] := ([a] + k m) / 2^64` for `k = a₀ (-m⁻¹) mod 2^64`, `[a]` of `n + 1`
+words sign-extended to `n + 2`. -/
+def mredP (iA iM iO : Nat) : List (Prog isa) := [
+  .block ([.umov .x .x5 .v18 1] ++ base iA .x8 ++ ([ld .x3 .x8, .mul .x .x1 .x3 .x5, .lsl .x .x6 .x12 3,
+    .add .x .x6 .x8 .x6, ld .x3 .x6, .lsr .x .x3 .x3 63, movi .x7 0, .sub .x .x3 .x7 .x3, st .x3 .x6 8] : List Instr) ++
+    base iM .x9),
+  mulAddRow,
+  .block (base iA .x16 ++ ([next .x16] : List Instr) ++ base iO .x17 ++ ([cntL] : List Instr)),
+  countLoop .x14 copyBody]
+
+/-- A batch's start: `d` and the low words of `f` and `g`, `59` divsteps,
+`d` and the matrix into `v18`, `v16`, `v17`, and the batch counted. -/
+def batchHead (iF iG : Nat) : List Instr :=
+  base iF .x2 ++ [ld .x2 .x2] ++ base iG .x3 ++ [ld .x3 .x3, .umov .x .x1 .v18 0] ++ packW ++ VG.Impl.Weierstrass.AArch64.pwords ++
+  [.vop (.ins .d2 .v18 0 .x1), .vop (.ins .d2 .v16 0 .x4), .vop (.ins .d2 .v16 1 .x5),
+    .vop (.ins .d2 .v17 0 .x6), .vop (.ins .d2 .v17 1 .x7)] ++ unpackW ++ [.subImm .x .x15 .x15 1]
+
+/-- A batch: `(f, g) := (u f + v g, q f + r g) / 2^59` and
+`(a, b) := (mredRaw (u a + v b), mredRaw (q a + r b))`. -/
+def batch (iF iG iA iB iT iM : Nat) : Prog isa := seqs ([
+  .block (batchHead iF iG),
+  rowP .v16 iF iG iT, rowP .v17 iF iG iG, shrP iT iF, shrP iG iG,
+  rowP .v16 iA iB iT, rowP .v17 iA iB iB] ++ mredP iT iM iA ++ mredP iB iM iB)
+
+/-- The start: `x1`, `x2` saved, `f = m` (its word `n` cleared),
+`g = a + (m if a is even)`, `a = 0`, `b = 1`, `-m⁻¹` and `d = 1` into
+`v18`, and `x15 := 3 n + 2`. `m`'s word 0 is or'ed with 1 for `-m⁻¹`, and
+`f`'s with 1, so that the divsteps start from an odd `f` and every batch
+runs as for an odd `m` whatever `m` is: an even `m` changes the result
+alone, never what the code writes or reads. -/
+def batchInit (iF iG iA iB iM : Nat) : List (Prog isa) := [
+  .block ([.vop (.ins .d2 .v19 0 .x1), .vop (.ins .d2 .v19 1 .x2)] ++ zeroTop iF ++ zeroTop iG ++ base iG .x8 ++
+    ([ld .x3 .x8, movi .x4 1, .logic .and .x .x3 .x3 .x4, .subImm .x .x15 .x3 1, movi .x7 0, mov .x14 .x12,
+      .adds .x .x3 .x7 .x7] : List Instr) ++ base iM .x10 ++ base iG .x5),
+  countLoop .x14 addMBody,
+  .block [.adc .x .x3 .x7 .x7, st .x3 .x5],
+  .seq (.block (base iA .x8 ++ ([movi .x7 0] : List Instr))) zeroAcc,
+  .seq (.block (base iB .x8 ++ ([movi .x7 0] : List Instr))) zeroAcc,
+  .block (base iB .x16 ++ ([movi .x3 1, st .x3 .x16] : List Instr) ++ base iM .x3 ++
+    ([ld .x3 .x3, movi .x4 1, .logic .orr .x .x3 .x3 .x4] : List Instr) ++ minv ++
+    [.vop (.ins .d2 .v18 1 .x15), movi .x3 1, .vop (.ins .d2 .v18 0 .x3)] ++ base iF .x16 ++
+    ([ld .x4 .x16, .logic .orr .x .x4 .x4 .x3, st .x4 .x16] : List Instr) ++ batchCount)]
+
+/-- `[x] := -[x]` (`n + 1` words) where the mask `x15` is all ones. -/
+def cnegP (iX : Nat) : Prog isa :=
+  .seq (.block (base iX .x16 ++ ([cntL, movi .x7 0, .adds .x .x3 .x15 .x15] : List Instr))) (countLoop .x14 cnegBody)
+
+/-- `[a] += m` (`n + 1` words, `m`'s word `n` zero) if `[a]` is negative. -/
+def addIfNeg (iA iM : Nat) : List (Prog isa) := [
+  .block (signMask iA ++ ([mov .x14 .x12, .adds .x .x3 .x7 .x7] : List Instr) ++ base iM .x10 ++ base iA .x8 ++
+    base iA .x5),
+  countLoop .x14 addMBody,
+  .block [ld .x3 .x5, .adc .x .x3 .x3 .x7, st .x3 .x5]]
+
+/-- `[a] := [a] - m` if `[a] ≥ m` (`[a] < 2 m`), through `[t]`, and its word
+`n` cleared. -/
+def csubP (iA iM iT : Nat) : List (Prog isa) := [
+  .block (base iA .x8 ++ base iM .x10 ++ base iT .x6 ++ base iA .x5 ++ ([movi .x7 0] : List Instr)),
+  subMod, selectAcc, .block (zeroTop iA)]
+
+/-- `[a] := 2 [a] mod m`, the double in `[t]` and the difference in `[s]`. -/
+def dblP (iA iM iT iS : Nat) : Prog isa :=
+  .seq (.block (base iA .x5 ++ base iM .x10 ++ base iT .x8 ++ base iS .x6 ++
+      ([movi .x7 0, mov .x17 .x5, mov .x16 .x8, mov .x14 .x12, .adds .x .x3 .x7 .x7] : List Instr)))
+    (.seq (countLoop .x14 dblBody) (.seq (.block [.adc .x .x3 .x7 .x7, st .x3 .x16]) (.seq subMod selectAcc)))
+
+/-- The end: `v := |f|`, `x₂ := ±a 2^(5 B) mod m` (`B = 3 n + 2`), and `x1`,
+`x2` restored. -/
+def batchFinish (iF iG iA iM iT : Nat) : List (Prog isa) :=
+  [.block (signMask iF), cnegP iF, cnegP iA] ++ addIfNeg iA iM ++ addIfNeg iA iM ++ csubP iA iM iT ++
+  [.seq (.block dblCount) (.loop (.seq (dblP iA iM iT iG) (.block [.subImm .x .x15 .x15 1])) (.nonzero .x .x15)),
+   .block [.umov .x .x1 .v19 0, .umov .x .x2 .v19 1]]
+
+/-- The batched inverse at the width in `x12`. -/
+def inverseB (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+  seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iT iM) (.nonzero .x .x15)] ++
+    batchFinish iV iU iX₂ iM iT)
+
+/-- The inverse at the width in `x12` (`x11` the stride): by batches of
+divsteps for a width below `2^21`, else bit by bit at the header's width. -/
+def inverseN (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+  .seq (.block [.lsr .x .x3 .x12 21])
+    (.ite (.zero .x .x3) (inverseB iU iV iX₁ iX₂ iM iT) (inverseBits iU iV iX₁ iX₂ iM iT))
+
+/-- `inverse u v x₁ x₂ m t`: `[v] = gcd(a, m)` and `[x₂] a ≡ [v] (mod m)`
+for `[u] = a` and the odd `[m] = [v]`. -/
+def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+  .seq (.block (ws ++ [.lsr .x .x3 .x12 21]))
+    (.ite (.zero .x .x3) (inverseB iU iV iX₁ iX₂ iM iT) (inverseBits iU iV iX₁ iX₂ iM iT))
 
 /-! ## Masks -/
 

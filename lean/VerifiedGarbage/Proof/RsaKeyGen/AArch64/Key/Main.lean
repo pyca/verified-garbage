@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
 
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
@@ -25,7 +26,7 @@ open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Impl.RsaKeyGen.AArch64.Candidate (loadE kE kElen)
 
 /-- From `KPrimes` to `KFront`: `lcmPart`, `dPart` and `smallMask`. -/
-theorem front2_k {I : KIn} {s₀ s : State} (h : KPrimes I s₀ s) (L : KLens I) :
+theorem front2_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KPrimes I s₀ s) (L : KLens I) :
     WP isa (seqs (lcmPart ++ ([dPart] ++ smallMask))) s (KFront I s₀) := by
   have hk := h.ks
   have hZ := hk.hZ

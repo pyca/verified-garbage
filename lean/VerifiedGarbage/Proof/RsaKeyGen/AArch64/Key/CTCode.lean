@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTSmall
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTTail
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTFront
@@ -30,7 +31,7 @@ theorem code_ct_eq : code = seqs (([.block (entry ++ VG.Impl.Rsa.AArch64.Keys.he
   simp only [code, frontL, List.append_assoc]
 
 /-- The branch on a small `d`, status 2 (the leak's). -/
-theorem branch_ct : RelCT isa (Two (KG FF)) (.ite (.nonzero .x .x15) (zeros 2) keyPart) fun _ _ => True :=
+theorem branch_ct [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG FF)) (.ite (.nonzero .x .x15) (zeros 2) keyPart) fun _ _ => True :=
   kg_ite (kg_nonzero_eq (g := fun p => mask (decide (p.st = 2))) fun _ _ hf => hf.x15)
     (zeros2_ct.mono (fun _ _ ⟨p, h₁, h₂, hsp⟩ =>
       ⟨p, EG.of_kg (h₁.imp fun _ _ => trivial), EG.of_kg (h₂.imp fun _ _ => trivial), hsp⟩)
@@ -38,7 +39,7 @@ theorem branch_ct : RelCT isa (Two (KG FF)) (.ite (.nonzero .x .x15) (zeros 2) k
     (keyPart_ct.mono (fun _ _ h => two_kg (fun _ _ ⟨⟨hp, _, ok, hok, _⟩, _⟩ => ⟨hp, ok, hok⟩) h) fun _ _ h => h)
 
 /-- `vg_rsa_keygen_key` leaks the same in runs with the same public data. -/
-theorem keyCode_ct : RelCT isa (Two KRel) code fun _ _ => True := by
+theorem keyCode_ct [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two KRel) code fun _ _ => True := by
   rw [code_ct_eq]
   refine rs_app (by simp) (by simp [frontL, loadA]) Key.start_ct ?_
   refine rs_app (by simp [frontL, loadA]) (by simp [lcmPart, phi, mulTo]) front_ct ?_
@@ -48,6 +49,6 @@ theorem keyCode_ct : RelCT isa (Two KRel) code fun _ _ => True := by
 
 /-- `vg_rsa_keygen_key` is constant time but for the lengths, `e`, and
 whether `d` is too small. -/
-theorem keyCode_constantTime : ConstantTime isa keyA.pre keyA.pub code := keyCT_of keyCode_ct
+theorem keyCode_constantTime [VG.Proof.Rsa.AArch64.InvLaw] : ConstantTime isa keyA.pre keyA.pub code := keyCT_of keyCode_ct
 
 end VG.Proof.RsaKeyGen.AArch64.Key

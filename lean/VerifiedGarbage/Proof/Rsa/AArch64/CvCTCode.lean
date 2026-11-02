@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
 
@@ -63,7 +64,7 @@ theorem head_ct : RelCT isa (Two GM) (.block head) (Two GA) :=
     WP.mono (cvHeadS_ok h) fun _ ⟨ht, hm⟩ => ⟨I, s.mem, true, e, ht, h.L, h.outs, hm⟩
 
 /-- `main` leaks the same in two runs with the same public data. -/
-theorem cvMain_ct : RelCT isa (Two GM) main fun _ _ => True := by
+theorem cvMain_ct [InvLaw] : RelCT isa (Two GM) main fun _ _ => True := by
   rw [main_eq]
   exact (ct_app (by simp) (by simp [loadA]) (ct_one head_ct)
     (ct_app (by simp [loadA]) (by simp [pqCheck]) loads_ct
@@ -210,7 +211,7 @@ theorem cvEntry_ct : RelCT isa (Two CVRel) (.block entry) (Two CV2) := by
 
 /-- `vg_rsa_crt_values` leaks the same in runs that agree on the public
 data. -/
-theorem cvCode_ct : RelCT isa (Two CVRel) CrtValues.code fun _ _ => True := by
+theorem cvCode_ct [InvLaw] : RelCT isa (Two CVRel) CrtValues.code fun _ _ => True := by
   unfold CrtValues.code
   refine RelCT.seq (R := Two CV3) (RelCT.block_append (RelCT.seq cvEntry_ct ?_)) ?_
   -- The modulus' check.
@@ -239,7 +240,7 @@ theorem cvCode_ct : RelCT isa (Two CVRel) CrtValues.code fun _ _ => True := by
       ⟨cvIn s, hs.2, cvPre_of (cvCtx_of hs.1) h hm k⟩) h) fun _ _ h => h
 
 /-- `vg_rsa_crt_values` is constant time but for `n`. -/
-theorem cvCode_constantTime : ConstantTime isa cvA.pre cvA.pub CrtValues.code := by
+theorem cvCode_constantTime [InvLaw] : ConstantTime isa cvA.pre cvA.pub CrtValues.code := by
   refine RelCT.constantTime (cvCode_ct.mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨(cvIn s₁).pub, ⟨h₁, rfl⟩, ⟨h₂, ?_⟩,
     hp.2.1⟩) fun _ _ h => h)
   obtain ⟨hr, hsp, ha, hn⟩ := hp

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpIn
 
@@ -163,7 +164,7 @@ theorem rpPrefix_ok {I : RpIn} {s : State} (h : RpPre I s) (hv : Spec.Rsa.modulu
 
 /-- `main`, from a valid modulus: `recoverPrimes`'s factors written, or
 zeros. -/
-theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
+theorem rpMain_ok [InvLaw] (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
     (hv : Spec.Rsa.modulusValid I.N I.k = true) :
     WP isa (main M.mm) s fun t => ∃ res : Option (Nat × Nat),
       (recoverPrimes I.N I.E I.D).1 = res ∧

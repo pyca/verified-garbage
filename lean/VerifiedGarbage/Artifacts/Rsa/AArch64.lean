@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvBatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareHelper
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified

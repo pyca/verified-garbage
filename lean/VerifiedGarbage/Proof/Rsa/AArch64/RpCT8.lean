@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.AArch64.RpCT7
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCode
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT2
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
@@ -50,7 +51,7 @@ open VG.Spec.Rsa (recoverPrimes)
 namespace Rp
 
 /-- After the halvings, Montgomery form, the candidates and the factors. -/
-theorem rest_ct (M : Mont) : RelCT isa (Two GR0) (rest M.mm) fun _ _ => True := by
+theorem rest_ct [InvLaw] (M : Mont) : RelCT isa (Two GR0) (rest M.mm) fun _ _ => True := by
   rw [show rest M.mm = seqs ([halving] ++ (mont M.mm ++ ([candLoop M.mm] ++ fin M.mm))) by
     simp only [rest, List.append_assoc]]
   exact (ct_app (by simp) (by simp [mont, VG.Impl.Rsa.AArch64.r2Steps]) (ct_one halving_ct)
@@ -161,7 +162,7 @@ theorem gmp_eval {p : RpP} {s : State} (h : GMP p s) : isa.eval (.zero .x .x10) 
   simp only [Bool.not_eq_true', decide_eq_false_iff_not, this, Classical.not_not]
 
 /-- `main` leaks the same in runs that agree on the public data. -/
-theorem rpMain_ct (M : Mont) : RelCT isa (Two GM) (main M.mm) fun _ _ => True := by
+theorem rpMain_ct [InvLaw] (M : Mont) : RelCT isa (Two GM) (main M.mm) fun _ _ => True := by
   rw [rpMain_eq']
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two GMP) (two_post (prefix_ct.mono
     (fun _ _ h => h) fun _ _ _ => trivial) fun p s ⟨I, e, h, hv⟩ => WP.mono (rpPrefix_ok h hv)
@@ -244,7 +245,7 @@ theorem rpEntry_ct : RelCT isa (Two RPRel) (.block entry) (Two RP2) := by
 
 /-- `vg_rsa_recover_primes` leaks the same in runs that agree on the public
 data. -/
-theorem rpCode_ct (M : Mont) : RelCT isa (Two RPRel) (code M.mm) fun _ _ => True := by
+theorem rpCode_ct [InvLaw] (M : Mont) : RelCT isa (Two RPRel) (code M.mm) fun _ _ => True := by
   unfold code
   refine RelCT.seq (R := Two RP3) (RelCT.block_append (RelCT.seq rpEntry_ct ?_)) ?_
   -- The modulus' check.
@@ -282,7 +283,7 @@ theorem rpCode_ct (M : Mont) : RelCT isa (Two RPRel) (code M.mm) fun _ _ => True
 
 /-- `vg_rsa_recover_primes` is constant time but for `n`, `e` and the number
 of tries. -/
-theorem rpCode_constantTime (M : Mont) : ConstantTime isa rpA.pre rpA.pub (code M.mm) := by
+theorem rpCode_constantTime [InvLaw] (M : Mont) : ConstantTime isa rpA.pre rpA.pub (code M.mm) := by
   refine RelCT.constantTime ((rpCode_ct M).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨(rpIn s₁).pub, ⟨h₁, rfl⟩, ⟨h₂, ?_⟩,
     hp.2.1⟩) fun _ _ h => h)
   obtain ⟨hr, hsp, ha, hn, he, hc⟩ := hp

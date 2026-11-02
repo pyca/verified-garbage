@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 
 /-!
 # `vg_rsa_crt_values` on AArch64: the loads and the check of `p q = n`
@@ -355,7 +356,7 @@ theorem invSetup_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : 
 
 /-- `invPart`: `qInv` into `aX₂` and `gcd(q, p) = 1` and'ed into `sMask`,
 for a mask that is set only if `p` is odd and above 1. -/
-theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
+theorem cvInv_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
     (hc : mword s.mem I.B = mask c)
     (hcP : c = true → wv s.mem I.B (slot (wk I.k) aP) (wk I.k) % 2 = 1 ∧ 1 < wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) :
     WP isa (seqs invPart) s fun t =>
@@ -398,7 +399,7 @@ theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvL
   have vD₇ := p₇ aD (.inr (.inr rfl))
   simp only [List.cons_append, List.nil_append]
   -- The inverse.
-  refine WP.seq (WP.mono (inverse_ok h₇.ws
+  refine WP.seq (WP.mono (InvLaw.inverse_ok h₇.ws
     (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) vU0 vV₇ vX₁ vX₂)

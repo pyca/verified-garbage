@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RpMont
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
@@ -178,9 +179,9 @@ theorem xv_keep {I : RpIn} {s t : State} (hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64) {j
   · rw [hf.rg_wv hZ16 (by simp) (by decide) hV (by omega_arith), hf.rg_wv hZ16 (by simp) (by decide) hN (by omega_arith)]
     exact hv
 
-theorem inverse_gct {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block [.lsl .x .x6 .x12 7])
-      (.loop (VG.Impl.Rsa.AArch64.Keys.invStep fU fV fX₁ fX₂ aN fT) (.nonzero .x .x6))) hc).isSome = true) :
+theorem inverse_gct [InvLaw] {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block ([.lsr .x .x3 .x12 21] : List Instr))
+      (.ite (.zero .x .x3) (VG.Impl.Rsa.AArch64.Keys.inverseB fU fV fX₁ fX₂ aN fT) (VG.Impl.Rsa.AArch64.Keys.inverseBits fU fV fX₁ fX₂ aN fT))) hc).isSome = true) :
     RelCT isa (Two (FX (XW true true))) (inverse fU fV fX₁ fX₂ aN fT) (Two (FX fun _ _ => True)) := by
   refine ws_ct RpP.B RpP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun p s h => ?_
   have hw := h.ws
@@ -193,18 +194,14 @@ theorem inverse_gct {hc : VG.Taint.Hint VG.AArch64.Taint.T}
   have hw2 := hw.w2
   have vX₂ : wv s.mem I.B (slot (wk I.k) fX₂) (wk I.k) = 0 := by
     have := wv_add s.mem I.B (slot (wk I.k) fX₂) (wk I.k) 2; have := x2 rfl; omega_arith
-  refine WP.mono (inverse_ok hw (iU := fU) (iV := fV) (iX₁ := fX₁) (iX₂ := fX₂) (iM := aN) (iT := fT)
+  refine WP.mono (InvLaw.inverse_ok hw (iU := fU) (iV := fV) (iX₁ := fX₁) (iX₂ := fX₂) (iM := aN) (iT := fT)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) u0 vm (x1 rfl) vX₂) fun u ⟨_, f', k, _⟩ => ?_
   have f : Frm I.B (rg (wk I.k) [fU, fV, fX₁, fX₂, fT] []) s.mem u.mem := f'.widen (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
+    all_goals exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
   exact h.step f (by decide) (by simp) (by simp) k (by decide) fun _ _ _ => trivial
 
 theorem divmod_gct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
@@ -235,7 +232,7 @@ theorem divmod_gct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
       · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
     exact h.step f (by decide) (by simp) (by simp) k (by decide) fun _ _ _ => trivial
 
-theorem finB_ct : RelCT isa (Two (FX XT)) (seqs [zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁),
+theorem finB_ct [InvLaw] : RelCT isa (Two (FX XT)) (seqs [zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁),
     zeroA fX₂, inverse fU fV fX₁ fX₂ aN fT, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT])
     (Two (FX fun _ _ => True)) := by
   have hB : ∀ (X : RpIn → State → Prop) p s, FX X p s → Ws s p.B p.Z (wk p.k) := fun _ _ _ h => h.ws
@@ -378,7 +375,7 @@ theorem storeR_ct {j sPtr : Nat} (hj : j < 16) (hP : sPtr < 32) (ptr : RpP → A
         (fw _ (by decide)).trans hm⟩
 
 /-- `fin` leaks the same in runs that agree on the public data. -/
-theorem fin_ct (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) (Two fun (_ : RpP) (_ : State) => True) := by
+theorem fin_ct [InvLaw] (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) (Two fun (_ : RpP) (_ : State) => True) := by
   rw [show fin M.mm = [.block [ldh .x3 sC3, sth .x3 sMask], M.mm aY aY aOne, zeroA fU,
       .block (ws ++ [movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7] ++ base aY .x16 ++ base aOne .x17 ++
         base fU .x13), countLoop .x14 subBody] ++ ([zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁),

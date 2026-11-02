@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
@@ -111,7 +112,7 @@ theorem invSetup_ct : RelCT isa (Two GA) (seqs invSetup) (Two GI) := by
     exact WP.mono (invSetup_ok h' L) fun t ⟨ht, mt, u0, _, vm, x1, x2, _⟩ =>
       ⟨⟨I, m₀, c, rfl, ht, L, O, mt.trans hm⟩, u0, vm, x1, x2⟩
 
-theorem invPart_ct : RelCT isa (Two GA) (seqs invPart) (Two GA) := by
+theorem invPart_ct [InvLaw] : RelCT isa (Two GA) (seqs invPart) (Two GA) := by
   unfold invPart
   exact ct_app (by simp [invSetup]) (by simp) invSetup_ct
     (ct_app (by simp) (by simp [eqA])

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpMain
 public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
@@ -287,7 +288,7 @@ theorem rpPre_of {s t₁ t : State} (c : RpCtx s) (h : RpHeadPost s t₁) (hm : 
       a := c.a, wr := kk.wr }
 
 /-- `vg_rsa_recover_primes` with the Montgomery multiplication `M`. -/
-theorem rpCode_correct (M : Mont) (s : State) (h : rpA.pre s) :
+theorem rpCode_correct [InvLaw] (M : Mont) (s : State) (h : rpA.pre s) :
     ∃ t s', Exec isa (code M.mm) s t s' ∧ abiPreserved s s' ∧ rpA.post s s' := by
   have c := rpCtx_of h
   clear h

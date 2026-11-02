@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RpMont
 import VerifiedGarbage.Proof.Rsa.AArch64.RpHalf
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -125,7 +126,7 @@ theorem wv_set_one {m : Mem} {B : Addr} {e w : Nat} (hw : 1 ≤ w) (hz : wv m B 
   rfl
 
 /-- `p = gcd(u, n)` and `q = n / p`. -/
-theorem finB_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w) (hn : wv s.mem B (slot w aN) w = N)
+theorem finB_ok [InvLaw] {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w) (hn : wv s.mem B (slot w aN) w = N)
     (hodd : N % 2 = 1) (hN1 : 1 < N) (hU0 : word s.mem B (slot w fU + 8 * w) = 0) :
     WP isa (seqs [zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁), zeroA fX₂, inverse fU fV fX₁ fX₂ aN fT,
       zeroA fQ, copyA fQ aN, divmod fQ fR fV fT]) s fun u =>
@@ -179,18 +180,14 @@ theorem finB_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w) (hn : wv s
   have vU0₅ : word u₅.mem B (slot w fU + 8 * w) = 0 := by
     rw [f15.rg_wordA hZ16 (by simp) (by decide) (by decide) (by omega_arith)]; exact hU0
   -- The inverse: `v = gcd(u, n)`.
-  refine WP.seq (WP.mono (inverse_ok h₅ (iU := fU) (iV := fV) (iX₁ := fX₁) (iX₂ := fX₂) (iM := aN) (iT := fT)
+  refine WP.seq (WP.mono (InvLaw.inverse_ok h₅ (iU := fU) (iV := fV) (iX₁ := fX₁) (iX₂ := fX₂) (iM := aN) (iT := fT)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) vU0₅ (by rw [vV₅, vN₅]) vX₁₅ vX₂₅) fun u₆ ⟨_, f₆', k₆, hv₆⟩ => ?_)
   have f₆ : Frm B (rg w [fU, fV, fX₁, fX₂, fT] []) u₅.mem u₆.mem := f₆'.widen (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
-    · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
+    all_goals exact rg_cover_arr _ (by decide) (Nat.le_refl _) (Nat.le_refl _))
   have h₆ := h₅.congrG f₆ (by simp) k₆ (by decide)
   rw [vN₅, vU₅] at hv₆
   obtain ⟨hg₆, -, -⟩ := hv₆ hodd hN1

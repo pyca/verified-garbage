@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCheck
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 import VerifiedGarbage.Proof.Rsa.KeyMath
@@ -116,7 +117,7 @@ theorem cvHeadS_ok {I : CvIn} {s : State} (h : CvPre I s) :
     h.n.congrK hi₁ k₁, h.p.congrK hi₁ k₁, h.q.congrK hi₁ k₁, h.d.congrK hi₁ k₁, hi₁, k₁.wr.trans h.wr⟩
 
 /-- `main`, from a valid modulus. -/
-theorem cvMain_ok {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusValid I.N I.k = true) :
+theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusValid I.N I.k = true) :
     WP isa main s fun t => ∃ X : Nat, (I.ok = true → Spec.Rsa.inverse I.Q I.P = some X) ∧
       (List.range I.pl).map (fun i => t.mem (I.pQi + BitVec.ofNat 64 i)) =
         Spec.Rsa.i2osp (if I.ok then X else 0) I.pl ∧
