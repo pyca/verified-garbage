@@ -125,43 +125,58 @@ theorem Scr.le {s : State} {B : Addr} {Z n : Nat} (hs : Scr s B Z) (h : n ≤ Z)
     by have := hs.nowrap; omega_arith, hs.al⟩
 
 theorem ofs_reb (S x : Addr) {b : Nat} (hb : b < 2 ^ 64) :
-    (b ≤ ofs S x ∧ ofs (Mont.off S b) x = ofs S x - b) ∨ (ofs S x < b ∧ 2 ^ 64 - b ≤ ofs (Mont.off S b) x) :=
+    (b ≤ (x - S).toNat ∧ (x - Mont.off S b).toNat = (x - S).toNat - b) ∨
+      ((x - S).toNat < b ∧ 2 ^ 64 - b ≤ (x - Mont.off S b).toNat) :=
   VG.Proof.Bignum.ofs_rebase S x hb
 
 /-- The scratch's first `n` bytes are apart from its `k` at `b`. -/
 theorem sepXB {S : Addr} {n b k : Nat} (h : n ≤ b) (hb : b + k ≤ 2 ^ 64) (hk : 0 < k) :
     ∀ x, ofs S x < n → k ≤ ofs (Mont.off S b) x := fun x hx => by
-  rcases ofs_reb S x (b := b) (by omega_arith) with ⟨_, _⟩ | ⟨_, h2⟩ <;> omega_arith
+  change (x - S).toNat < n at hx
+  change k ≤ (x - Mont.off S b).toNat
+  rcases ofs_reb S x (b := b) (by omega) with ⟨_, _⟩ | ⟨_, h2⟩ <;> omega
 
 theorem sepBX {S : Addr} {n b k : Nat} (h : n ≤ b) (hb : b + k ≤ 2 ^ 64) (hk : 0 < k) :
     ∀ x, ofs (Mont.off S b) x < k → n ≤ ofs S x := fun x hx => by
-  rcases ofs_reb S x (b := b) (by omega_arith) with ⟨_, _⟩ | ⟨_, h2⟩ <;> omega_arith
+  change (x - Mont.off S b).toNat < k at hx
+  change n ≤ (x - S).toNat
+  rcases ofs_reb S x (b := b) (by omega) with ⟨_, _⟩ | ⟨_, h2⟩ <;> omega
 
 theorem sepBB {S : Addr} {a n b k : Nat} (h : a + n ≤ b) (hb : b + k ≤ 2 ^ 64) (hk : 0 < k) :
     ∀ x, ofs (Mont.off S a) x < n → k ≤ ofs (Mont.off S b) x := fun x hx => by
-  rcases ofs_reb S x (b := a) (by omega_arith) with ⟨_, h1⟩ | ⟨_, h1⟩ <;>
-    rcases ofs_reb S x (b := b) (by omega_arith) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith
+  change (x - Mont.off S a).toNat < n at hx
+  change k ≤ (x - Mont.off S b).toNat
+  rcases ofs_reb S x (b := a) (by omega) with ⟨_, h1⟩ | ⟨_, h1⟩ <;>
+    rcases ofs_reb S x (b := b) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega
+
+theorem sepBB' {S : Addr} {a n b k : Nat} (h : a + n ≤ b) (hb : b + k ≤ 2 ^ 64) (hk : 0 < k) :
+    ∀ x, ofs (Mont.off S b) x < k → n ≤ ofs (Mont.off S a) x := fun x hx => by
+  change (x - Mont.off S b).toNat < k at hx
+  change n ≤ (x - Mont.off S a).toNat
+  rcases ofs_reb S x (b := a) (by omega) with ⟨_, h1⟩ | ⟨_, h1⟩ <;>
+    rcases ofs_reb S x (b := b) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega
 
 /-- A byte within `k` of `b` is within the scratch's `Z`. -/
 theorem sepIn {S : Addr} {b k Z : Nat} (h : b + k ≤ Z) (hZ : Z ≤ 2 ^ 64) (hk : 0 < k) :
     ∀ x, ofs (Mont.off S b) x < k → ofs S x < Z := fun x hx => by
-  rcases ofs_reb S x (b := b) (by omega_arith) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith
+  change (x - Mont.off S b).toNat < k at hx
+  change (x - S).toNat < Z
+  rcases ofs_reb S x (b := b) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega
 
 theorem out_reb {S : Addr} {a o n : Nat} {m m' : Mem} (h : Mont.Outside (Mont.off S a) o n m m')
     (h' : a + o + n ≤ 2 ^ 64) (hn : 0 < n) : Mont.Outside S (a + o) n m m' := fun x hx => h x (by
-  rcases ofs_reb S x (b := a) (by omega_arith) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith)
+  change (x - S).toNat < a + o ∨ a + o + n ≤ (x - S).toNat at hx
+  change (x - Mont.off S a).toNat < o ∨ o + n ≤ (x - Mont.off S a).toNat
+  rcases ofs_reb S x (b := a) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega)
+
+theorem word_off' (m : Mem) (S : Addr) (a d : Nat) : Mont.word m (Mont.off S a) d = Mont.word m S (a + d) := by
+  simp only [Mont.word, Mont.off, BitVec.add_assoc, BitVec.ofNat_add]
 
 theorem wordsVal_off (m : Mem) (S : Addr) (a : Nat) : ∀ d k,
     wordsVal m (Mont.off S a) d k = wordsVal m S (a + d) k
   | _, 0 => rfl
   | d, k + 1 => by
-    simp only [wordsVal]
-    rw [wordsVal_off m S a (d + 8) k, show a + (d + 8) = a + d + 8 by omega_arith]
-    congr 3
-    simp only [Mont.off, BitVec.add_assoc, BitVec.ofNat_add]
-
-theorem word_off' (m : Mem) (S : Addr) (a d : Nat) : Mont.word m (Mont.off S a) d = Mont.word m S (a + d) := by
-  simp only [Mont.word, Mont.off, BitVec.add_assoc, BitVec.ofNat_add]
+    rw [wordsVal, wordsVal, word_off', wordsVal_off m S a (d + 8) k, show a + (d + 8) = a + d + 8 by omega]
 
 theorem wordsOf_le_of {l k : Nat} (h : l ≤ k) (hk : 9 ≤ k) : wordsOf l ≤ (k + 7) / 8 := by
   unfold wordsOf; split <;> omega_arith
