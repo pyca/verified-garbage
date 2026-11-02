@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.RISCV64.Inverse
 public import VerifiedGarbage.Impl.Rsa.RISCV64.InvBatch
 public import VerifiedGarbage.Impl.Rsa.RISCV64.RecoverDet
 
@@ -15,14 +14,12 @@ whose slots are words holding 0 or 1:
 * `setLow j x`: the low word of `[j]` := `x`;
 * `mulTo o a b`: `[o] := [a] [b]` modulo `2^(64 w)`, by `[o] := 0` and the
   schoolbook product of `vg_rsa_recover_primes_det` (`RecoverDet.mulLow`);
-* `invOf a m k`: the inverse's start, `(u, v, x₁, x₂) = ([a], [m], 1, 0)` in
-  arrays 0–3 with `[aM] = [m]` and `[aNM] = 2^(64 w) - [m]`, and `k` steps
-  of two of it (`Impl/Rsa/RISCV64/Inverse.lean`), counted in `s7`: for an
-  odd `[m] > 1` and `[a] [m] < 2^(2 k)`, `gcd([a], [m])` in array 1 and
-  the inverse in array 3.
+* `invOf a m k`: the batched divsteps (`Impl/Rsa/RISCV64/InvBatch.lean`) on
+  `[a]` and the odd `[m]`, `k` setting the digit count in `s8`:
+  `gcd([a], [m])` in array 1 and the inverse in array 3.
 
 They use `t0`–`t6` and `a4` as the key routines do; `mulTo` also `a2`, `a3`,
-`a6` and `s8`, and `invOf` `s7`.
+`a6` and `s8`, and `invOf` `a5`, `a7`, `s7` and `s8`.
 -/
 
 @[expose] public section
@@ -30,6 +27,9 @@ They use `t0`–`t6` and `a4` as the key routines do; `mulTo` also `a2`, `a3`,
 namespace VG.Impl.RsaKeyGen.RISCV64.Key
 
 open VG.RISCV64 VG.Impl.Rsa.RISCV64.Keys
+
+/-- The array holding zero, which the inverse leaves (`InvBatch.invArrs` has not 10). -/
+def aZero : Nat := 10
 
 /-- The slot `d` := 1 - the slot `a`. -/
 def notS (d a : Nat) : List Instr :=

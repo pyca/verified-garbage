@@ -19,7 +19,8 @@ the mask of the checks).
 namespace VG.Proof.RsaKeyGen.RISCV64.Key
 
 open VG VG.RISCV64 VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys VG.Proof.RsaKeyGen
-open VG.Impl.Rsa.RISCV64.Keys (seqs copy sub3 sel eqS bitOf andS aZero)
+open VG.Impl.Rsa.RISCV64.Keys (seqs copy sub3 sel eqS bitOf andS)
+open VG.Impl.RsaKeyGen.RISCV64.Key (aZero)
 open VG.Impl.Rsa.RISCV64.Div (div)
 open VG.Impl.RsaKeyGen.RISCV64.Key (nArr aDv aT aS aOne aThree aE aP aQ aPm aQm aD aC33 aTop aN aQi aMq
   aDP aDQ aQd aDt X0 X1 X2 X3 X4 X5 X6 X7 X8 ltS andNotS invOf qinvPart crtOf crtPart nPart maskPart nP)
@@ -57,7 +58,7 @@ theorem qinvPart_eq : qinvPart = seqs (([.block (bitOf X0 aP ++ ([] : List Instr
       eqS X1 1 aOne, copy aQi 3] : List (Prog isa)))) := rfl
 
 /-- `qInv` modulo `mL p`, `X0` `p` odd, `X1` `gcd(q, mL p) = 1`. -/
-theorem qinvPart_ok (hp : PreC s0) (e : KE s0 V F s) (one : V aOne = 1) (three : V aThree = 3)
+theorem qinvPart_ok [VG.Proof.Rsa.RISCV64.InvLaw] (hp : PreC s0) (e : KE s0 V F s) (one : V aOne = 1) (three : V aThree = 3)
     (zero : V aZero = 0) (hpl : V aP < 2 ^ (8 * pLen s0)) (hql : V aQ < 2 ^ (8 * pLen s0)) :
     WP isa qinvPart s fun t => ∃ V' F', KE s0 V' F' t ∧ (∀ j < nArr, j ∉ qinvArrs → V' j = V j) ∧
       (∀ d, d ≠ X0 → d ≠ X1 → d ≠ X2 → F' d = F d) ∧
@@ -99,14 +100,12 @@ theorem qinvPart_ok (hp : PreC s0) (e : KE s0 V F s) (one : V aOne = 1) (three :
     · exact hpl
     · exact Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (by decide) (by omega_arith : 2 ≤ 8 * pLen s0))
   rw [wp_seqs_cons (by simp)]
-  refine WP.mono (invOfE e4 (a := aQ) (m := aMq) (K := 8 * pLen s0) (hK := by omega_arith)
-    (hK' := by omega_arith)
-    (hk := fun u hu => nP_ok u (by rw [hu .a1 (by decide), pLen_ofNat e4.st.cb])) (zero := zero4)
+  have e32 : 32 * (pLen s0 / 4) = 8 * pLen s0 := by omega_arith
+  refine WP.mono (invOfE e4 (a := aQ) (m := aMq) (n := pLen s0 / 4) (hw := by omega_arith)
+    (hn1 := by omega_arith) (hnw := by omega_arith)
+    (hk := fun u hu => nP_ok u (by rw [hu .a1 (by decide), pLen_ofNat e4.st.cb]) (by omega_arith))
     (odd := by rw [vMq]; exact mo.1) (gt := by rw [vMq]; exact mo.2)
-    (fit := by
-      rw [vQ4, vMq]
-      calc V aQ * mL (V aP) < 2 ^ (8 * pLen s0) * 2 ^ (8 * pLen s0) := Nat.mul_lt_mul'' hql mlt
-        _ = 2 ^ (2 * (8 * pLen s0)) := by rw [← Nat.pow_add]; exact congrArg (2 ^ ·) (by omega_arith)))
+    (xlt := by rw [vQ4, e32]; exact hql) (mlt := by rw [vMq, e32]; exact mlt))
     fun t5 ⟨V5, e5, o5, g5, d5, l5⟩ => ?_
   simp only [vMq, vQ4] at g5 d5 l5
   have one5 : V5 aOne = 1 := by rw [o5 aOne (by decide) (by decide), one4]

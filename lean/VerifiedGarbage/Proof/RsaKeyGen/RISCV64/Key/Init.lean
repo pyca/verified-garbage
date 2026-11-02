@@ -77,7 +77,8 @@ theorem pLen_ofNat {s0 : State} {s : State} (c : CB s0 s0.mem s) :
     s.gpr .a1 = BitVec.ofNat 64 (pLen s0) := by
   rw [c.a1, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
-theorem setup_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) : WP isa setup s (St s0 []) := by
+theorem setup_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) (ha7 : s.gpr .a7 = stackArg s0 7) :
+    WP isa setup s fun t => St s0 [] t ∧ t.gpr .a7 = stackArg s0 7 := by
   have ⟨f1, w1, w2⟩ := h.fits
   have hp := h.p512
   have hz := h.zk
@@ -94,8 +95,9 @@ theorem setup_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) : WP isa setu
   have wv : Ws v (bOf s0) (zOf s0) (wOf s0) nArr :=
     ⟨Scr.of_mem (by rw [cv.wr]; exact h.sR_wr) h.ws h.al, f1, by omega_arith, by omega_arith, v9, v10, cv.s11⟩
   refine WP.mono (zeroArrays_ok wv (by decide) (by decide) (by decide)) fun t ⟨wt, ft, zt, kt⟩ => ?_
-  refine ⟨cv.of_frame ft (fun j hj => Nat.le_trans (arr_end (List.mem_range.mp hj)) f1) (by simp)
-    wv.hdr_le kt, wt, fun j hj _ => zt j hj⟩
+  refine ⟨⟨cv.of_frame ft (fun j hj => Nat.le_trans (arr_end (List.mem_range.mp hj)) f1) (by simp)
+    wv.hdr_le kt, wt, fun j hj _ => zt j hj⟩, ?_⟩
+  rw [kt.gpr (by decide), kv.gpr (by decide), ku.gpr (by decide), ha7]
 
 /-! ## The reads -/
 
@@ -119,15 +121,16 @@ theorem ld1_ok {s0 t : State} {used : List Nat} (c : St s0 used t)
     (hs : t.gpr src = P) (hl : t.gpr len = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hLw : L ≤ 8 * wOf s0) :
     WP isa (load j src len) t fun u => St s0 (j :: used) u ∧
       VG.Proof.Rsa.RISCV64.Keys.Frame (bOf s0) (wOf s0) [j] [] t.mem u.mem ∧
-      num u.mem (bOf s0) (wOf s0) j = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem P L) := by
+      num u.mem (bOf s0) (wOf s0) j = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem P L) ∧
+      u.gpr .a7 = t.gpr .a7 := by
   refine WP.mono (load_ok c.ws hj (by decide) hl1 hs hl hL hLw
     (fun i hi => by rw [c.cb.rd, c.cb.wr]; exact hr i hi) (bytes_sep hd hL64) (c.zero hj hju))
     fun u ⟨wu, fu, vu, ku, _⟩ => ?_
-  refine ⟨c.step wu fu (by simpa using hj) (by simp) ku, fu, ?_⟩
+  refine ⟨c.step wu fu (by simpa using hj) (by simp) ku, fu, ?_, ku.gpr (by decide)⟩
   rw [vu, c.cb.bytes hd hL64]
 
 /-- After the reads: `[aP0] = p`, `[aQ0] = q`, `[aE] = e`. -/
-theorem loads_ok {s0 s : State} (h : PreC s0) (c : St s0 [] s) :
+theorem loads_ok {s0 s : State} (h : PreC s0) (c : St s0 [] s) (ha7 : s.gpr .a7 = stackArg s0 7) :
     WP isa loads s fun t => St s0 [aE, aQ0, aP0] t ∧
       num t.mem (bOf s0) (wOf s0) aP0 = Spec.Rsa.os2ip (pB s0) ∧
       num t.mem (bOf s0) (wOf s0) aQ0 = Spec.Rsa.os2ip (qB s0) ∧
@@ -146,17 +149,17 @@ theorem loads_ok {s0 s : State} (h : PreC s0) (c : St s0 [] s) :
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (ld1_ok c (j := aP0) (by decide) (by simp) (by decide)
     (fun i hi => inRegions_right (bytes_in h.pR_wr (by omega_arith) i hi)) h.ps (by omega_arith)
-    c.cb.s2 (pLen_ofNat c.cb) (by omega_arith) (by omega_arith)) fun t1 ⟨c1, f1, v1⟩ => ?_
+    c.cb.s2 (pLen_ofNat c.cb) (by omega_arith) (by omega_arith)) fun t1 ⟨c1, f1, v1, r1⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (ld1_ok c1 (j := aQ0) (by decide) (by simp [aP0, aQ0]) (by decide)
     (fun i hi => inRegions_right (bytes_in (by rw [qR']; exact h.qR_wr) (by omega_arith) i hi))
     (by rw [qR']; exact h.qs) (by omega_arith)
-    c1.cb.s3 (pLen_ofNat c1.cb) (by omega_arith) (by omega_arith)) fun t2 ⟨c2, f2, v2⟩ => ?_
+    c1.cb.s3 (pLen_ofNat c1.cb) (by omega_arith) (by omega_arith)) fun t2 ⟨c2, f2, v2, r2⟩ => ?_
   simp only [seqs]
   refine WP.mono (ld1_ok c2 (j := aE) (by decide) (by simp [aP0, aQ0, aE]) (by decide)
     (fun i hi => inRegions_left (bytes_in h.eR_rd (by have := h.we; omega_arith) i hi)) h.es
-    (by have := h.we; omega_arith) c2.cb.a0 (by rw [c2.cb.a7, BitVec.ofNat_toNat, BitVec.setWidth_eq])
-    he1 (by omega_arith)) fun t ⟨c3, f3, v3⟩ => ?_
+    (by have := h.we; omega_arith) c2.cb.a0 (by rw [r2, r1, ha7, BitVec.ofNat_toNat, BitVec.setWidth_eq])
+    he1 (by omega_arith)) fun t ⟨c3, f3, v3, _⟩ => ?_
   refine ⟨c3, ?_, ?_, v3⟩
   · rw [f3.num (by simp [aP0, aE]) (by simp) (c2.fit (by decide)),
       f2.num (by simp [aP0, aQ0]) (by simp) (c1.fit (by decide)), v1]
@@ -352,24 +355,36 @@ theorem consts_ok {s0 s : State} {used : List Nat} (h : PreC s0) (c : St s0 used
       keepNum f3 _ hj (Ne.symm (ne _ (by simp))), keepNum f2 _ hj (Ne.symm (ne _ (by simp))),
       keepNum f1 _ hj (Ne.symm (ne _ (by simp)))]
 
-/-! ## The counts of `invOf` -/
+/-! ## The digit counts of `invOf` -/
 
-theorem nP_ok (s : State) {L : Nat} (hl : s.gpr .a1 = BitVec.ofNat 64 L) :
-    WP isa (.block nP) s fun v => (v.gpr .s7 = BitVec.ofNat 64 (8 * L) ∧ v.mem = s.mem) ∧ Keep [.s7] s v := by
+/-- `cnt8`, the halving's count: `s7 := 8 p_len`. -/
+theorem cnt8_ok (s : State) {L : Nat} (hl : s.gpr .a1 = BitVec.ofNat 64 L) :
+    WP isa (.block cnt8) s fun v => (v.gpr .s7 = BitVec.ofNat 64 (8 * L) ∧ v.mem = s.mem) ∧ Keep [.s7] s v := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
-  brun [nP, cnt8, hl, shl3_ofNat]
+  brun [cnt8, hl, shl3_ofNat]
+
+theorem srl_ofNat (L k : Nat) (hL : L < 2 ^ 64) :
+    BitVec.ofNat 64 L >>> k = BitVec.ofNat 64 (L / 2 ^ k) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt hL, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hL)]
+
+theorem nP_ok (s : State) {L : Nat} (hl : s.gpr .a1 = BitVec.ofNat 64 L) (hL : L < 2 ^ 64) :
+    WP isa (.block nP) s fun v => (v.gpr .s8 = BitVec.ofNat 64 (L / 4) ∧ v.mem = s.mem) ∧
+      Keep [.s8] s v := by
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  brun [nP, hl, srl_ofNat L 2 hL]
 
 theorem nTwo_ok (s : State) :
-    WP isa (.block nTwo) s fun v => (v.gpr .s7 = BitVec.ofNat 64 64 ∧ v.mem = s.mem) ∧ Keep [.s7] s v := by
+    WP isa (.block nTwo) s fun v => (v.gpr .s8 = BitVec.ofNat 64 2 ∧ v.mem = s.mem) ∧ Keep [.s8] s v := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
-  have e : exec (.li .s7 64) s = some (s.write .s7 (BitVec.ofNat 64 64)) := exec_li_small (x := 64) (by decide)
+  have e : exec (.li .s8 2) s = some (s.write .s8 (BitVec.ofNat 64 2)) := exec_li_small (x := 2) (by decide)
   brun [nTwo, e]
 
-theorem nW_ok (s : State) {L : Nat} (hl : s.gpr .a1 = BitVec.ofNat 64 L) :
-    WP isa (.block nW) s fun v => (v.gpr .s7 = BitVec.ofNat 64 (8 * L + 32) ∧ v.mem = s.mem) ∧
-      Keep [.s7] s v := by
+theorem nW_ok (s : State) {L : Nat} (hl : s.gpr .a1 = BitVec.ofNat 64 L) (hL : L < 2 ^ 64) :
+    WP isa (.block nW) s fun v => (v.gpr .s8 = BitVec.ofNat 64 (L / 2) ∧ v.mem = s.mem) ∧
+      Keep [.s8] s v := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
-  brun [nW, cnt8, hl, shl3_ofNat]
-  exact (BitVec.ofNat_add _ _).symm
+  brun [nW, hl, srl_ofNat L 1 hL]
 
 end VG.Proof.RsaKeyGen.RISCV64.Key

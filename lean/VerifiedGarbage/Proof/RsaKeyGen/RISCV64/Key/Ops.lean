@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.Ops
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyOps
-public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyInv
+public import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.RISCV64.RdOps
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Block
@@ -17,9 +17,10 @@ On the RSA key operations' working space (`Proof/Rsa/RISCV64/KeyLayout.lean`):
 * `notS_ok`, `andNotS_ok`, `selS_ok`: slots holding bits;
 * `setLow_ok`: the low word of an array := a small constant;
 * `mulTo_ok`: `[o] := [a] [b] mod 2^(64 w)`;
-* `invOf_ok`: the inverse's start and `inverse`: `gcd([a], [m])` in array 1
-  and the inverse in array 3;
-* `nP_ok`, `nTwo_ok`, `nW_ok`: the counts `invOf` takes.
+* `invOf_ok`: `[a]` and `[m]` into the batched inverse's arrays 0 and 8, and
+  `InvBatch.inverse` (through `InvLaw`): `gcd([a], [m])` in array 1 and the
+  inverse in array 3;
+* `nP_ok`, `nTwo_ok`, `nW_ok`: the digit counts `invOf` takes.
 -/
 
 @[expose] public section
@@ -27,7 +28,8 @@ On the RSA key operations' working space (`Proof/Rsa/RISCV64/KeyLayout.lean`):
 namespace VG.Proof.Rsa.RISCV64.Keys
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Loops
-open VG.Impl.Rsa.RISCV64.Keys (copy sub3 setOne seqs aM aNM aZero)
+open VG.Impl.Rsa.RISCV64.Keys (copy sub3 setOne seqs)
+open VG.Impl.RsaKeyGen.RISCV64.Key (aZero)
 
 /-! ## Bits -/
 
@@ -167,128 +169,60 @@ theorem mulTo_ok {s : State} {B : Addr} {Z w N o a b : Nat} (h : Ws s B Z w N)
 
 /-! ## The inverse -/
 
-/-- The arrays `invOf` writes. -/
-abbrev invOfArrs : List Nat := aM :: aNM :: invArrs
+/-- The arrays `invOf` writes: the batched inverse's input arrays and the ones it writes. -/
+abbrev invOfArrs : List Nat := 0 :: 8 :: VG.Proof.Rsa.RISCV64.InvBatch.invArrs
 
-/-- The arrays the inverse's start writes. -/
-abbrev startArrs : List Nat := [aM, 0, 1, 2, 3, aNM]
+/-- The registers `invOf` changes. -/
+abbrev invOfRegs : List Reg := .s8 :: VG.Proof.Rsa.RISCV64.InvBatch.invRegs
 
-/-- The inverse's start: `(u, v, x₁, x₂) = ([a], [m], 1, 0)`, `[aM] = [m]` and
-`[aNM] = 2^(64 w) - [m]`. -/
-abbrev invStart (a m : Nat) : List (Prog isa) :=
-  [copy aM m, copy 0 a, copy 1 aM, copy 2 aZero, .block (setOne 2), copy 3 aZero, sub3 aNM aZero aM]
-
-/-- A copy's frame, widened to the start's arrays, and the other arrays kept. -/
-theorem copy_step {m m' : Mem} {B : Addr} {w o : Nat} (f : Frame B w [o] [] m m') (ho : o ∈ startArrs)
-    {N : Nat} (fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64) :
-    Frame B w startArrs [] m m' ∧ ∀ j < N, j ≠ o → num m' B w j = num m B w j :=
-  ⟨f.mono (by simpa using ho), fun j hj hjo =>
-    f.num (fun _ hk => by rw [List.mem_singleton.mp hk]; exact Ne.symm hjo) (by simp) (fit j hj)⟩
-
-theorem invStart_ok {s : State} {B : Addr} {Z w N a m : Nat} (h : Ws s B Z w N)
-    (hN15 : 15 ≤ N) (hN : N ≤ 2048) (ha : a < N) (hm : m < N) (ha15 : 15 ≤ a) (hm15 : 15 ≤ m) :
-    WP isa (seqs (invStart a m)) s fun t => Ws t B Z w N ∧ Frame B w startArrs [] s.mem t.mem ∧
-      Keep opRegs s t ∧
-      (num s.mem B w aZero = 0 → 0 < num s.mem B w m →
-        bank t.mem B w 0 = (num s.mem B w a, num s.mem B w m, 1, 0) ∧
-        num t.mem B w aM = num s.mem B w m ∧ num t.mem B w aZero = 0 ∧
-        num t.mem B w aNM + num t.mem B w aM = 2 ^ (64 * w)) := by
-  have fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
-  have hMa : aM < N := by simp only [aM]; omega
-  have hNa : aNM < N := by simp only [aNM]; omega
-  have hZa : aZero < N := by simp only [aZero]; omega
-  have h0 : 0 < N := by omega
-  have h1 : 1 < N := by omega
-  have h2 : 2 < N := by omega
-  have h3 : 3 < N := by omega
-  have hmM : m ≠ aM := by simp only [aM]; omega
-  have haM : a ≠ aM := by simp only [aM]; omega
-  have ha0 : a ≠ 0 := by omega
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (copy_ok h hMa hm hN (Ne.symm hmM)) fun t1 ⟨w1, f1, v1, k1, _⟩ => ?_
-  obtain ⟨F1, n1⟩ := copy_step f1 (by decide) fit
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (copy_ok w1 h0 ha hN (Ne.symm ha0)) fun t2 ⟨w2, f2, v2, k2, _⟩ => ?_
-  obtain ⟨F2, n2⟩ := copy_step f2 (by decide) fit
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (copy_ok w2 h1 hMa hN (by decide)) fun t3 ⟨w3, f3, v3, k3, _⟩ => ?_
-  obtain ⟨F3, n3⟩ := copy_step f3 (by decide) fit
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (copy_ok w3 h2 hZa hN (by decide)) fun t4 ⟨w4, f4, v4, k4, _⟩ => ?_
-  obtain ⟨F4, n4⟩ := copy_step f4 (by decide) fit
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (setOne_ok w4 h2 hN) fun t5 ⟨w5, f5, v5, k5⟩ => ?_
-  obtain ⟨F5, n5⟩ := copy_step f5 (by decide) fit
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (copy_ok w5 h3 hZa hN (by decide)) fun t6 ⟨w6, f6, v6, k6, _⟩ => ?_
-  obtain ⟨F6, n6⟩ := copy_step f6 (by decide) fit
-  simp only [seqs]
-  refine WP.mono (sub3_ok w6 hNa hZa hMa hN (by decide) (by decide)) fun t ⟨w7, f7, v7, b7, k7⟩ => ?_
-  obtain ⟨F7, n7⟩ := copy_step f7 (by decide) fit
-  refine ⟨w7, F1.trans (F2.trans (F3.trans (F4.trans (F5.trans (F6.trans F7))))),
-    Keep.trans' k1 (Keep.trans' k2 (Keep.trans' k3 (Keep.trans' k4 (Keep.trans' k5 (Keep.trans' k6 k7))))),
-    fun hz0 hpos => ?_⟩
-  have z6 : num t6.mem B w aZero = 0 := by
-    rw [n6 _ hZa (by decide), n5 _ hZa (by decide), n4 _ hZa (by decide), n3 _ hZa (by decide),
-      n2 _ hZa (by decide), n1 _ hZa (by decide), hz0]
-  have m6 : num t6.mem B w aM = num s.mem B w m := by
-    rw [n6 _ hMa (by decide), n5 _ hMa (by decide), n4 _ hMa (by decide), n3 _ hMa (by decide),
-      n2 _ hMa (by decide), v1]
-  have e0 : num t.mem B w 0 = num s.mem B w a := by
-    rw [n7 _ h0 (by decide), n6 _ h0 (by decide), n5 _ h0 (by decide), n4 _ h0 (by decide),
-      n3 _ h0 (by decide), v2, n1 _ ha haM]
-  have e1 : num t.mem B w 1 = num s.mem B w m := by
-    rw [n7 _ h1 (by decide), n6 _ h1 (by decide), n5 _ h1 (by decide), n4 _ h1 (by decide), v3,
-      n2 _ hMa (by decide), v1]
-  have e2 : num t.mem B w 2 = 1 := by
-    have z3 : num t3.mem B w aZero = 0 := by
-      rw [n3 _ hZa (by decide), n2 _ hZa (by decide), n1 _ hZa (by decide), hz0]
-    rw [n7 _ h2 (by decide), n6 _ h2 (by decide), v5, v4, z3]
-  have e3 : num t.mem B w 3 = 0 := by
-    rw [n7 _ h3 (by decide), v6, n5 _ hZa (by decide), n4 _ hZa (by decide), n3 _ hZa (by decide),
-      n2 _ hZa (by decide), n1 _ hZa (by decide), hz0]
-  have eM : num t.mem B w aM = num s.mem B w m := by rw [n7 _ hMa (by decide), m6]
-  have eZ : num t.mem B w aZero = 0 := by rw [n7 _ hZa (by decide), z6]
-  rw [z6, m6] at v7
-  have hlt : num s.mem B w m < 2 ^ (64 * w) := wordsVal_lt _ _ _ _
-  have hb1 : (t.gpr .t4).toNat = 1 ∨ (t.gpr .t4).toNat = 0 := by omega
-  refine ⟨by simp only [bank, e0, e1, e2, e3], eM, eZ, ?_⟩
-  rw [eM]
-  rcases hb1 with e | e <;> rw [e] at v7 <;> omega
-
-/-- `invOf a m k`: with `k` setting `s7 := K` from registers the start keeps (`hk`), the
-inverse's result: `gcd` in array 1 and the inverse in array 3, for an odd `[m] > 1` and
-`[a] [m] < 2^(2K)`. `a` and `m` are past the inverse's arrays. -/
-theorem invOf_ok {s : State} {B : Addr} {Z w N a m K : Nat} {k : List Instr} (h : Ws s B Z w N)
-    (hN15 : 15 ≤ N) (hN : N ≤ 2048) (ha : a < N) (hm : m < N) (ha15 : 15 ≤ a) (hm15 : 15 ≤ m)
-    (hK : 0 < K) (hK' : K < 2 ^ 64)
+/-- `invOf a m k`: with `k` setting `s8 := n` (the digit count) from registers the copies
+keep (`hk`), for `[a]` and an odd `[m]` below `2^(32 n)`, `gcd([a], [m])` in array 1 and,
+for `[m] > 1`, the inverse in array 3. `a` and `m` are past the inverse's arrays. -/
+theorem invOf_ok [InvLaw] {s : State} {B : Addr} {Z w N a m n : Nat} {k : List Instr}
+    (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256) (hw : 4 ≤ w) (ha : a < N) (hm : m < N)
+    (ha15 : 15 ≤ a) (hm15 : 15 ≤ m) (hn1 : 1 ≤ n) (hnw : n ≤ 2 * w)
     (hk : ∀ u : State, (∀ r ∉ opRegs, u.gpr r = s.gpr r) →
-      WP isa (.block k) u fun v => (v.gpr .s7 = BitVec.ofNat 64 K ∧ v.mem = u.mem) ∧ Keep [.s7] u v) :
+      WP isa (.block k) u fun v => (v.gpr .s8 = BitVec.ofNat 64 n ∧ v.mem = u.mem) ∧ Keep [.s8] u v)
+    (hxn : num s.mem B w a < 2 ^ (32 * n)) (hmn : num s.mem B w m < 2 ^ (32 * n))
+    (hodd : num s.mem B w m % 2 = 1) :
     WP isa (Impl.RsaKeyGen.RISCV64.Key.invOf a m k) s fun t => Ws t B Z w N ∧
-      Frame B w invOfArrs invSlots s.mem t.mem ∧ Keep invRegs s t ∧
-      (num s.mem B w aZero = 0 → num s.mem B w m % 2 = 1 → 1 < num s.mem B w m →
-        num s.mem B w a * num s.mem B w m < 2 ^ (2 * K) →
+      Frame B w invOfArrs [] s.mem t.mem ∧ Keep invOfRegs s t ∧
+      (1 < num s.mem B w m →
         num t.mem B w 1 = Nat.gcd (num s.mem B w a) (num s.mem B w m) ∧
         (num s.mem B w m : Int) ∣ (num t.mem B w 3 : Int) * num s.mem B w a - num t.mem B w 1 ∧
         num t.mem B w 3 < num s.mem B w m) := by
+  have fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  have h0 : 0 < N := by omega
+  have h8 : 8 < N := by omega
+  have hN' : N ≤ 2048 := by omega
+  have ha0 : a ≠ 0 := by omega
+  have hm8 : m ≠ 8 := by omega
+  have hm0 : m ≠ 0 := by omega
   have e : Impl.RsaKeyGen.RISCV64.Key.invOf a m k =
-      seqs (invStart a m ++ [.block k, VG.Impl.Rsa.RISCV64.Keys.inverse]) := rfl
-  rw [e, wp_seqs_append (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)]
-  refine WP.mono (invStart_ok h hN15 hN ha hm ha15 hm15) fun t1 ⟨w1, f1, k1, v1⟩ => ?_
+      seqs [copy VG.Impl.Rsa.RISCV64.InvBatch.aX a, copy VG.Impl.Rsa.RISCV64.InvBatch.aMin m, .block k,
+        VG.Impl.Rsa.RISCV64.InvBatch.inverse] := rfl
+  rw [e, wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (copy_ok h h0 ha hN' (Ne.symm ha0)) fun t1 ⟨w1, f1, v1, k1, _⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (hk t1 fun r hr => k1.gpr hr) fun t2 ⟨⟨c2, m2⟩, k2⟩ => ?_
-  have w2 := w1.of_keep k2
+  refine WP.mono (copy_ok w1 h8 hm hN' (Ne.symm hm8)) fun t2 ⟨w2, f2, v2, k2, _⟩ => ?_
+  have m1 : num t1.mem B w m = num s.mem B w m :=
+    f1.num (j := m) (fun _ hk => by rw [List.mem_singleton.mp hk]; exact Ne.symm hm0) (by simp) (fit m hm)
+  have a2 : num t2.mem B w VG.Impl.Rsa.RISCV64.InvBatch.aX = num s.mem B w a := by
+    rw [f2.num (j := VG.Impl.Rsa.RISCV64.InvBatch.aX) (fun _ hk => by rw [List.mem_singleton.mp hk]; decide)
+      (by simp) (fit 0 h0), v1]
+  have K2 : Keep opRegs s t2 := Keep.trans' k1 k2 |>.mono (by decide)
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (hk t2 fun r hr => K2.gpr hr) fun t3 ⟨⟨c3, m3⟩, k3⟩ => ?_
+  have w3 := w2.of_keep k3
+  have ctx : VG.Proof.Rsa.RISCV64.InvBatch.Ctx t3 B Z w N n := ⟨w3, c3, hn1, hnw, hN15, hw⟩
+  have x3 : num t3.mem B w VG.Impl.Rsa.RISCV64.InvBatch.aX = num s.mem B w a := by rw [m3, a2]
+  have mm3 : num t3.mem B w VG.Impl.Rsa.RISCV64.InvBatch.aMin = num s.mem B w m := by
+    rw [m3, v2, m1]
   simp only [seqs]
-  refine WP.mono (inverse_ok w2 hN15 hN c2 hK hK') fun t ⟨wt, ft, kt, vt⟩ => ?_
-  rw [m2] at ft vt
-  refine ⟨wt, (f1.mono (by decide) (by simp)).trans (ft.mono (by decide) (by simp)),
-    Keep.trans' (Keep.trans' (k1.mono (by decide)) (k2.mono (by decide))) kt, fun hz0 hodd h1 hlt => ?_⟩
-  obtain ⟨b1, eM, eZ, eNM⟩ := v1 hz0 (by omega)
-  have e0 : num t1.mem B w 0 = num s.mem B w a := congrArg Prod.fst b1
-  have hst : bank t1.mem B w 0 = (num t1.mem B w 0, num t1.mem B w aM, 1, 0) := by rw [b1, eM, e0]
-  have v := vt eNM eZ (by rw [eM]; exact hodd) (by rw [eM]; exact h1) hst
-  have D := inverse_done (by rw [eM]; exact hodd) (by rw [eM]; exact h1) (by rw [e0, eM]; exact hlt) hst v
-  rw [e0, eM] at D
-  exact D
+  refine WP.mono (InvLaw.inverse_ok ctx hN x3 hxn mm3 hmn hodd) fun t ⟨wt, ft, kt, vt⟩ => ?_
+  rw [m3] at ft
+  refine ⟨wt, ((f1.mono (by decide) (by simp)).trans (f2.mono (by decide) (by simp))).trans
+      (ft.mono (by decide) (by simp)),
+    Keep.trans' (Keep.trans' (K2.mono (by decide)) (k3.mono (by decide))) (kt.mono (by decide)), vt⟩
 
 end VG.Proof.Rsa.RISCV64.Keys

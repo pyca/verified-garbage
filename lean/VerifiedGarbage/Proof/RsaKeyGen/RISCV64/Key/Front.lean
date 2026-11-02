@@ -159,10 +159,12 @@ theorem PreC.scr {s : State} (h : PreC s) : Scr s (bOf s) (zOf s) :=
 /-! ## The body's state -/
 
 /-- The registers the body keeps. -/
-abbrev cbRegs : List Reg := [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .a0, .a1, .a7, .s11, .ra]
+abbrev cbRegs : List Reg := [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .a0, .a1, .s11, .ra]
 
 /-- After `entry`: the arguments in the registers kept, the caller's registers in the
-header's first twelve words, memory outside the working space `M`'s. -/
+header's first twelve words, memory outside the working space `M`'s. `e_len`, in `a7`
+until the reads (`entry_ok`, `setup_ok`, `loads_ok`), is not kept: the inverses write
+`a7`. -/
 structure CB (s0 : State) (M : Mem) (s : State) : Prop where
   rs0 : s.gpr .s0 = s0.gpr .a0
   s1 : s.gpr .s1 = s0.gpr .a2
@@ -173,7 +175,6 @@ structure CB (s0 : State) (M : Mem) (s : State) : Prop where
   s5 : s.gpr .s5 = stackArg s0 2
   s6 : s.gpr .s6 = stackArg s0 4
   a0 : s.gpr .a0 = stackArg s0 6
-  a7 : s.gpr .a7 = stackArg s0 7
   s11 : s.gpr .s11 = bOf s0
   ra : s.gpr .ra = s0.gpr .ra
   rd : s.rd = s0.rd
@@ -187,7 +188,7 @@ theorem CB.of_keep {s0 s t : State} {M : Mem} (h : CB s0 M s) {rs : List Reg} (k
     (k.gpr (hr _ (by decide))).trans h.s2, (k.gpr (hr _ (by decide))).trans h.s3,
     (k.gpr (hr _ (by decide))).trans h.a1, (k.gpr (hr _ (by decide))).trans h.s4,
     (k.gpr (hr _ (by decide))).trans h.s5, (k.gpr (hr _ (by decide))).trans h.s6,
-    (k.gpr (hr _ (by decide))).trans h.a0, (k.gpr (hr _ (by decide))).trans h.a7,
+    (k.gpr (hr _ (by decide))).trans h.a0,
     (k.gpr (hr _ (by decide))).trans h.s11, (k.gpr (hr _ (by decide))).trans h.ra,
     k.2.1.trans h.rd, k.2.2.trans h.wr,
     fun i hi => by rw [hm]; exact h.hdr i hi, fun x hx => by rw [hm]; exact h.frame x hx⟩
@@ -283,7 +284,7 @@ theorem entry_eq : VG.Impl.RsaKeyGen.RISCV64.Key.entry = save 64 ++ kMoves := rf
 
 /-- The moves, after `save`: the arguments are in the registers kept. -/
 theorem moves_ok {s0 e : State} (h : PreC s0) (F : Saved s0 (bOf s0) e) :
-    WP isa (.block kMoves) e (CB s0 s0.mem) := by
+    WP isa (.block kMoves) e fun u => CB s0 s0.mem u ∧ u.gpr .a7 = stackArg s0 7 := by
   have hz := h.zk
   have hk := h.hn
   have fr : ∀ x, zOf s0 ≤ ofs (bOf s0) x → e.mem x = s0.mem x := fun x hx =>
@@ -313,13 +314,14 @@ theorem moves_ok {s0 e : State} (h : PreC s0) (F : Saved s0 (bOf s0) e) :
       hin 0 (by decide), hin 2 (by decide), hin 4 (by decide), hin 6 (by decide), hin 7 (by decide),
       r 0 (by decide), r 2 (by decide), r 4 (by decide), r 6 (by decide), r 7 (by decide)]
   refine WP.mono hb fun u ⟨⟨u0, u1, u2, u3, ua1, v4, v5, v6, v0, v7, um, usp⟩, ku⟩ => ?_
-  exact ⟨u0, u1, u2, u3, ua1, v4, v5, v6, v0, v7, (ku.gpr (by decide)).trans F.s11,
+  exact ⟨⟨u0, u1, u2, u3, ua1, v4, v5, v6, v0, (ku.gpr (by decide)).trans F.s11,
     (ku.gpr (by decide)).trans (hg .ra (by decide) (by decide)), ku.2.1.trans hrd,
-    ku.2.2.trans F.keep.2.2, fun i hi => by rw [um]; exact F.saved i hi, fun x hx => by rw [um]; exact fr x hx⟩
+    ku.2.2.trans F.keep.2.2, fun i hi => by rw [um]; exact F.saved i hi, fun x hx => by rw [um]; exact fr x hx⟩, v7⟩
 
 /-- `entry`: the working space's header holds the saved registers, and the
 arguments are in the registers kept. -/
-theorem entry_ok {s0 : State} (h : PreC s0) : WP isa (.block VG.Impl.RsaKeyGen.RISCV64.Key.entry) s0 (CB s0 s0.mem) := by
+theorem entry_ok {s0 : State} (h : PreC s0) : WP isa (.block VG.Impl.RsaKeyGen.RISCV64.Key.entry) s0
+    fun u => CB s0 s0.mem u ∧ u.gpr .a7 = stackArg s0 7 := by
   have hz := h.zk
   rw [entry_eq, WP.block_append_iff]
   exact WP.mono (save_ok s0 (i := 8) (by decide) (arg_in (by rw [h.hrd]; simp) (by decide))

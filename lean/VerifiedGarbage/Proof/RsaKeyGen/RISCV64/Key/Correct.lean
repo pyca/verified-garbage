@@ -178,16 +178,16 @@ theorem post_of {s0 t : State} (h : PreC s0) (bp : BodyPost s0 t) : fnPost s0 t 
     · simp only [hm, hs, ↓reduceIte]
       exact ⟨rfl, z⟩
 
-theorem code_correct (s : State) (hpre : (Spec.RsaKeyGen.keyContract RISCV64.abi).pre s) :
+theorem code_correct [VG.Proof.Rsa.RISCV64.InvLaw] (s : State) (hpre : (Spec.RsaKeyGen.keyContract RISCV64.abi).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa code s fun t => abiPreserved s t ∧ fnPost s t
   have h := preC_of hpre
   refine WP.mono (WP.rdwr (Q := fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.gpr .ra = s.gpr .ra ∧
     fnPost s t) ?_) fun t ⟨⟨hp, hra, hpost⟩, _, _, hsp⟩ => ⟨⟨hp, hsp, hra⟩, hpost⟩
   rw [show code = .seq (.block entry) (.seq body (.block restore)) from rfl, WP.seq_iff]
-  refine WP.mono (entry_ok h) fun e c => ?_
+  refine WP.mono (entry_ok h) fun e ⟨c, a7⟩ => ?_
   rw [WP.seq_iff]
-  refine WP.mono (body_ok h c) fun t bp => ?_
+  refine WP.mono (body_ok h c a7) fun t bp => ?_
   obtain ⟨-, -, -, ce, -⟩ := id bp
   refine WP.mono (restore_ok h ce) fun v ⟨vp, vra, vm, va⟩ => ⟨vp, vra, ?_⟩
   have po := post_of h bp
@@ -196,7 +196,7 @@ theorem code_correct (s : State) (hpre : (Spec.RsaKeyGen.keyContract RISCV64.abi
   exact po
 
 /-- `vg_rsa_keygen_key`, given its constant time. -/
-theorem key_verified_of (hct : ConstantTime isa (Spec.RsaKeyGen.keyContract RISCV64.abi).pre
+theorem key_verified_of [VG.Proof.Rsa.RISCV64.InvLaw] (hct : ConstantTime isa (Spec.RsaKeyGen.keyContract RISCV64.abi).pre
     (Spec.RsaKeyGen.keyContract RISCV64.abi).pub code) :
     Verified RISCV64.target code (Spec.RsaKeyGen.keyContract RISCV64.abi) :=
   Verified.of_correct (k := fnContract) code_correct hct key_implies

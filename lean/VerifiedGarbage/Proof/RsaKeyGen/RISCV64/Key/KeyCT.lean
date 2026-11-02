@@ -53,7 +53,8 @@ namespace VG.Proof.RsaKeyGen.RISCV64.Key
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.RISCV64.Taint VG.Proof.Mont VG.Proof.Bignum.RISCV64
   VG.Proof.Rsa.RISCV64.Keys
-open VG.Impl.Rsa.RISCV64.Keys (saved save restore mov seqs copy aZero)
+open VG.Impl.Rsa.RISCV64.Keys (saved save restore mov seqs copy)
+open VG.Impl.RsaKeyGen.RISCV64.Key (aZero)
 open VG.Impl.RsaKeyGen.RISCV64.Key (code entry body setup loads consts primes lcmPart eFlags dOdd dOne
   dPar dPart dEven smallPart qinvPart crtPart nPart maskPart stores X3 X4 X5 X6 aD aS nArr aOne aTwo aThree aE
   aP aQ aPm aQm aDv aP0 aQ0)
@@ -167,8 +168,8 @@ theorem RelCT.ite_seq' {P Q : State → State → Prop} {c : Cond} {t e r : Prog
 def S1 (d : Dt) (t : State) : Prop :=
   ∃ s0, C0 d s0 ∧ (t.gpr .t0 = bOf s0 ∧ t.mem = s0.mem ∧ t.sp = s0.sp) ∧ Keep [.t0] s0 t
 
-/-- After `entry`. -/
-def S2 (d : Dt) (v : State) : Prop := ∃ s0, C0 d s0 ∧ CB s0 s0.mem v
+/-- After `entry`: `CB`, and `e_len` in `a7`. -/
+def S2 (d : Dt) (v : State) : Prop := ∃ s0, C0 d s0 ∧ CB s0 s0.mem v ∧ v.gpr .a7 = stackArg s0 7
 
 /-- Before `dPar`: the flag `X3` is `e mod 2`. -/
 def S3 (d : Dt) (t : State) : Prop :=
@@ -178,8 +179,11 @@ def S3 (d : Dt) (t : State) : Prop :=
 def S4 (d : Dt) (t : State) : Prop :=
   ∃ s0, C0 d s0 ∧ ∃ V F, KE s0 V F t ∧ (t.gpr .t5).toNat = Spec.Rsa.os2ip (eB s0) % 2
 
-/-- The registers `entry` leaves public: the pointers, the lengths and the working space's address. -/
-abbrev cbPins : List Reg := [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .a0, .a1, .a7, .s11]
+/-- The registers the body keeps public: the pointers, `p_len` and the working space's address. -/
+abbrev cbPins : List Reg := [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .a0, .a1, .s11]
+
+/-- And, after `entry`, `e_len`. -/
+abbrev entryPins : List Reg := .a7 :: cbPins
 
 /-- And the working space's `w` and stride. -/
 abbrev bodyPins : List Reg := cbPins ++ [.s9, .s10]
@@ -188,7 +192,7 @@ theorem CB.pins {s0 s1 x y : State} (sm : Same s0 s1) (cx : CB s0 s0.mem x) (cy 
     ∀ r ∈ cbPins, x.gpr r = y.gpr r := by
   intro r hr
   simp only [cbPins, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rw [cx.rs0, cy.rs0, sm.regs _ (by decide)]
   · rw [cx.s1, cy.s1, sm.regs _ (by decide)]
   · rw [cx.s2, cy.s2, sm.regs _ (by decide)]
@@ -198,7 +202,6 @@ theorem CB.pins {s0 s1 x y : State} (sm : Same s0 s1) (cx : CB s0 s0.mem x) (cy 
   · rw [cx.s6, cy.s6, sm.args 4 (by decide)]
   · rw [cx.a0, cy.a0, sm.args 6 (by decide)]
   · rw [cx.a1, cy.a1, sm.regs _ (by decide)]
-  · rw [cx.a7, cy.a7, sm.args 7 (by decide)]
   · rw [cx.s11, cy.s11, bOf, bOf, sm.args 8 (by decide)]
 
 theorem St.pins {s0 s1 x y : State} {u u' : List Nat} (sm : Same s0 s1) (cx : St s0 u x) (cy : St s1 u' y) :
@@ -212,7 +215,10 @@ theorem St.pins {s0 s1 x y : State} {u u' : List Nat} (sm : Same s0 s1) (cx : St
     · rw [cx.ws.s9, cy.ws.s9, hw]
     · rw [cx.ws.s10, cy.ws.s10, hw]
 
-theorem pins_S2 : Pins S2 cbPins := fun _ _ _ ⟨_x, hx, cx⟩ ⟨_y, hy, cy⟩ => CB.pins (hx.same hy) cx cy
+theorem pins_S2 : Pins S2 entryPins := fun _ _ _ ⟨_x, hx, cx, ax⟩ ⟨_y, hy, cy, ay⟩ r hr => by
+  rcases List.mem_cons.mp hr with rfl | hr
+  · rw [ax, ay, (hx.same hy).args 7 (by decide)]
+  · exact CB.pins (hx.same hy) cx cy r hr
 
 theorem pins_S3 : Pins S3 bodyPins := fun _ _ _ ⟨_x, hx, _, _, ex, _⟩ ⟨_y, hy, _, _, ey, _⟩ =>
   St.pins (hx.same hy) ex.st ey.st
@@ -222,7 +228,8 @@ theorem pins_S4 : Pins S4 bodyPins := fun _ _ _ ⟨_x, hx, _, _, ex, _⟩ ⟨_y,
 
 /-! ## Everything before the branch, by correctness -/
 
-theorem pre_ok {s0 v : State} (h : PreC s0) (c : CB s0 s0.mem v) :
+theorem pre_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 v : State} (h : PreC s0) (c : CB s0 s0.mem v)
+    (ha7 : v.gpr .a7 = stackArg s0 7) :
     WP isa pre v fun t => ∃ V F, KE s0 V F t ∧ F X3 = Spec.Rsa.os2ip (eB s0) % 2 := by
   have hpw : Spec.Rsa.os2ip (pB s0) < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
   have hqw : Spec.Rsa.os2ip (qB s0) < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
@@ -230,8 +237,8 @@ theorem pre_ok {s0 v : State} (h : PreC s0) (c : CB s0 s0.mem v) :
     Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _) (Nat.pow_le_pow_right (by decide) (by have := h.e2; omega))
   unfold pre
   simp only [seqs]
-  refine WP.seq (WP.mono (setup_ok h c) fun t1 c1 => ?_)
-  refine WP.seq (WP.mono (loads_ok h c1) fun t2 ⟨c2, p2, q2, e2⟩ => ?_)
+  refine WP.seq (WP.mono (setup_ok h c ha7) fun t1 ⟨c1, a71⟩ => ?_)
+  refine WP.seq (WP.mono (loads_ok h c1 a71) fun t2 ⟨c2, p2, q2, e2⟩ => ?_)
   refine WP.seq (WP.mono (consts_ok h c2 (by decide)) fun t3 ⟨c3, k3, o3⟩ => ?_)
   have z3 : nm s0 t3.mem aZero = 0 := c3.zero (j := aZero) (by decide) (by decide)
   refine WP.seq (WP.mono (primes_ok c3 k3.one z3) fun t4 ⟨c4, o4, p4, q4, pm4, qm4⟩ => ?_)
@@ -281,15 +288,15 @@ theorem pre_ok {s0 v : State} (h : PreC s0) (c : CB s0 s0.mem v) :
 
 /-! ## The two runs -/
 
-theorem pre_rel : RelCT isa (Two S2) pre (Two S3) :=
-  two_post (two_taint cbPins pins_S2 (by taint_decide)) fun _ v ⟨s0, c0, c⟩ =>
-    WP.mono (pre_ok (preC_of c0.1) c) fun _ ⟨V, F, e, x3⟩ => ⟨s0, c0, V, F, e, x3⟩
+theorem pre_rel [VG.Proof.Rsa.RISCV64.InvLaw] : RelCT isa (Two S2) pre (Two S3) :=
+  two_post (two_taint entryPins pins_S2 (by taint_decide)) fun _ v ⟨s0, c0, c, a7⟩ =>
+    WP.mono (pre_ok (preC_of c0.1) c a7) fun _ ⟨V, F, e, x3⟩ => ⟨s0, c0, V, F, e, x3⟩
 
 theorem ld_rel : RelCT isa (Two S3) ldX3 (Two S4) :=
   two_post (two_taint bodyPins pins_S3 (by taint_decide)) fun _ _ ⟨s0, c0, V, F, e, x3⟩ =>
     WP.mono (ldX3_ok e) fun _ ⟨e', t5⟩ => ⟨s0, c0, V, F, e', t5.trans x3⟩
 
-theorem shaped_rel : RelCT isa (Two S2) shaped fun _ _ => True := by
+theorem shaped_rel [VG.Proof.Rsa.RISCV64.InvLaw] : RelCT isa (Two S2) shaped fun _ _ => True := by
   refine RelCT.seq (R := Two S3) pre_rel (RelCT.seq (R := Two S4) ld_rel (RelCT.ite_seq' (RelCT.ite ?_ ?_ ?_)))
   · rintro s₁ s₂ ⟨a, ⟨x, hx, -, -, -, x5⟩, ⟨y, hy, -, -, -, y5⟩, -⟩
     rw [Steps.eval_nonzero, Steps.eval_nonzero, BitVec.eq_of_toNat_eq (x5.trans (by rw [(hx.same hy).e, y5]))]
@@ -300,7 +307,7 @@ theorem shaped_rel : RelCT isa (Two S2) shaped fun _ _ => True := by
 
 theorem argRegs_ne_t0 : ∀ r ∈ argRegs, r ∉ ([.t0] : List Reg) := by decide
 
-theorem key_rel : RelCT isa (Two C0) code fun _ _ => True := by
+theorem key_rel [VG.Proof.Rsa.RISCV64.InvLaw] : RelCT isa (Two C0) code fun _ _ => True := by
   unfold code
   rw [entry_eq, save_eq]
   refine RelCT.seq (R := Two S2) (RelCT.block_append (RelCT.seq (R := Two S1) ?_ ?_))
@@ -321,10 +328,10 @@ theorem key_rel : RelCT isa (Two C0) code fun _ _ => True := by
     have h := preC_of c0.1
     have hz := h.zk
     rw [WP.block_append_iff]
-    exact WP.mono (save2_ok s0 h.scr (by omega_arith) ht) fun u hu => WP.mono (moves_ok h hu) fun v c =>
-      ⟨s0, c0, c⟩
+    exact WP.mono (save2_ok s0 h.scr (by omega_arith) ht) fun u hu => WP.mono (moves_ok h hu) fun v ⟨c, a7⟩ =>
+      ⟨s0, c0, c, a7⟩
 
-theorem key_ct : ConstantTime isa (Spec.RsaKeyGen.keyContract RISCV64.abi).pre
+theorem key_ct [VG.Proof.Rsa.RISCV64.InvLaw] : ConstantTime isa (Spec.RsaKeyGen.keyContract RISCV64.abi).pre
     (Spec.RsaKeyGen.keyContract RISCV64.abi).pub code :=
   RelCT.constantTime (key_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
     ⟨dataOf s, ⟨hs, rfl⟩, ⟨ht, (pub_data hp).symm⟩, (same_of (pub_data hp)).sp⟩) fun _ _ h => h)

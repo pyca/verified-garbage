@@ -13,9 +13,10 @@ The numbers live in the working space of the RSA key operations at
 `scratch` (`Impl/Rsa/RISCV64/KeyWs.lean`) with `w = p_len / 4` words of 64
 bits: room for `n`, of `16 p_len` bits, and for every other number. The
 pointers and lengths stay in registers no routine here writes: `s0` `n`,
-`s1` `d`, `s2` `p`, `s3` `q`, `s4` `dp`, `s5` `dq`, `s6` `qinv`, `a0` `e`,
-`a1` `p_len` and `a7` `e_len` (`n_len` is `2 p_len`); `s9`–`s11` are the
-working space's, and `s7` counts. The caller's `s0`–`s11` are saved in the
+`s1` `d`, `s2` `p`, `s3` `q`, `s4` `dp`, `s5` `dq`, `s6` `qinv`, `a0` `e`
+and `a1` `p_len` (`n_len` is `2 p_len`), and `a7` `e_len` until `e` is read
+(the inverses write it); `s9`–`s11` are the working space's, `s7` counts the
+halving and `s8` the inverses' digits. The caller's `s0`–`s11` are saved in the
 header, as `vg_rsa_crt_values` saves them (`Impl/Rsa/RISCV64/CrtValues.lean`).
 
 Then, step for step as PPC64LE computes the key
@@ -27,22 +28,22 @@ Then, step for step as PPC64LE computes the key
    product); `8 p_len` steps that halve `u`, `v` (copies of `p - 1` and
    `q - 1`) and `φ` while `u` and `v` are both even; `v` made odd by a swap
    (if it is even); `gcd(u, v)` by `invOf` (modulo `v`, or 3 for `v < 2`;
-   `8 p_len` iterations) and 1 for `v < 2`; and `φ` divided by it
+   `p_len / 4` digits) and 1 for `v < 2`; and `φ` divided by it
    (`Impl/Rsa/RISCV64/Div.lean`).
 3. `d = e⁻¹ mod L`, and the flag of its existence, for every case of `e`,
    selected by masks of whether `e` is odd and whether it is 1, without
    branches:
    * `e` odd and at least 3 (with the modulus 3 otherwise): `L = e Q + R`,
-     `x = R⁻¹ mod e` by `invOf` (64 iterations), `t = e - x` and
+     `x = R⁻¹ mod e` by `invOf` (2 digits), `t = e - x` and
      `d = Q t + (R t + 1) / e` (`Proof/RsaKeyGen/OddInverseQuotient.lean`);
    * `e = 1`: `d = 1`, for `L ≠ 1`;
-   * `e` even: `d = e⁻¹ mod L` by `invOf` (`8 p_len + 32` iterations) for an
+   * `e` even: `d = e⁻¹ mod L` by `invOf` (`p_len / 2` digits) for an
      odd `L ≥ 3` (the modulus 3 otherwise), which `e = 0` never has. This
      inverse runs only for an even `e` (a branch on `e`'s parity, which the
      contract's leak includes).
 4. Whether `d` exists and `d ≤ 2^(8 p_len)`: the status 2.
-5. `qInv` by `invOf` (modulo `p`, or 3 for a `p` even or below 3; `8 p_len`
-   iterations), `dP = d mod (p - 1)` and `dQ = d mod (q - 1)` by the
+5. `qInv` by `invOf` (modulo `p`, or 3 for a `p` even or below 3; `p_len / 4`
+   digits), `dP = d mod (p - 1)` and `dQ = d mod (q - 1)` by the
    division (by 1 for `p - 1` or `q - 1` zero, which the mask then rules
    out), and `n = p q` by `mulTo`; the mask of the existence of `d`,
    `gcd(q, p) = 1`, `n ≥ 2^(16 p_len - 1)`, `p` and `q` odd and `e` valid
@@ -64,7 +65,7 @@ open VG.RISCV64 VG.Impl.Rsa.RISCV64.Keys VG.Impl.Rsa.RISCV64.Div
 
 /-! ## The arrays
 
-0–14 are the inverse's (`aM` its modulus; `aZero` zero, which it leaves);
+0–14 are the inverse's (`InvBatch`'s, but `aZero`, zero, which it leaves);
 then the constants, the inputs and the numbers. `aDv` is the division's
 divisor: only copies write it, so its extra word stays 0. -/
 

@@ -33,7 +33,8 @@ does; `smallPart_ok`: `X7` := `X6` and `d < [aC]`.
 namespace VG.Proof.RsaKeyGen.RISCV64.Key
 
 open VG VG.RISCV64 VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys VG.Proof.RsaKeyGen
-open VG.Impl.Rsa.RISCV64.Keys (seqs copy sub3 sel eqS bitOf andS aZero)
+open VG.Impl.Rsa.RISCV64.Keys (seqs copy sub3 sel eqS bitOf andS)
+open VG.Impl.RsaKeyGen.RISCV64.Key (aZero)
 open VG.Impl.Rsa.RISCV64.Div (div)
 open VG.Impl.RsaKeyGen.RISCV64.Key (nArr aDv aT aS aOne aTwo aThree aE aL aME aQd aDr aDt aTt aQt aRt aNc
   aRp aDo aMl aD aC X0 X1 X2 X3 X4 X5 X6 X7 notS ltS andNotS selS eFlags dOdd dOne dEven dPar dPart smallPart
@@ -154,7 +155,7 @@ theorem dOdd_eq : dOdd = seqs (([.block (andNotS X0 X5 X3), sel aME aThree aE X0
     (ltS X2 aL aTwo ++ ([.block (andNotS X6 X2 X1)] : List (Prog isa)))) := rfl
 
 /-- The odd case: `[aDo] = Q t + (R t + 1) / mE` and `X6` := `L ≥ 2` and `gcd(R, mE) = 1`. -/
-theorem dOdd_ok (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
+theorem dOdd_ok [VG.Proof.Rsa.RISCV64.InvLaw] (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
     (one : V aOne = 1) (two : V aTwo = 2) (three : V aThree = 3) (zero : V aZero = 0)
     (b3 : F X3 = V aE % 2) (b5 : F X5 = if V aE < 3 then 1 else 0) :
     WP isa dOdd s fun t => ∃ V' F', KE s0 V' F' t ∧ (∀ j < nArr, j ∉ dOddArrs → V' j = V j) ∧
@@ -197,13 +198,11 @@ theorem dOdd_ok (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
     fun j hj a b c d f => by rw [o5 j hj b d f, o4 j c, o3 j b, o2 j a]
   have vM5 : V5 aME = mE (V aE) := by vsimp [o5, o4, o3, vME]
   have rlt : V5 aRm < 2 ^ 64 := by rw [vR]; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) mlt
-  refine WP.seq (WP.mono (invOfE e5 (a := aRm) (m := aME) (K := 64) (hK := by decide) (hK' := by decide)
-    (hk := fun u _ => nTwo_ok u) (zero := by rw [c5 aZero (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide), zero]) (odd := by rw [vM5]; exact mo.1) (gt := by rw [vM5]; exact mo.2)
-    (fit := by
-      rw [vM5]
-      calc V5 aRm * mE (V aE) < 2 ^ 64 * 2 ^ 64 := Nat.mul_lt_mul'' rlt mlt
-        _ = 2 ^ (2 * 64) := by rw [← Nat.pow_add]))
+  refine WP.seq (WP.mono (invOfE e5 (a := aRm) (m := aME) (n := 2)
+    (hw := by have := hp.fits.2.1; omega_arith) (hn1 := by decide)
+    (hnw := by have := hp.fits.2.1; omega_arith)
+    (hk := fun u _ => nTwo_ok u) (odd := by rw [vM5]; exact mo.1) (gt := by rw [vM5]; exact mo.2)
+    (xlt := rlt) (mlt := by rw [vM5]; exact mlt))
     fun t6 ⟨V6, e6, o6, g6, d6, l6⟩ => ?_)
   simp only [vM5, vR] at g6 d6 l6
   -- `X1` := `gcd(R, mE) = 1`, `t = mE - x`.
@@ -314,7 +313,7 @@ theorem dEven_eq : dEven = seqs (([.block (bitOf X0 aL ++ ([] : List Instr))] : 
       List (Prog isa)))) := rfl
 
 /-- `e` even: `x = e⁻¹ mod mL`; `[aD]` and `X6` by whether `e` is odd. -/
-theorem dEven_ok (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
+theorem dEven_ok [VG.Proof.Rsa.RISCV64.InvLaw] (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
     (one : V aOne = 1) (three : V aThree = 3) (zero : V aZero = 0) (b3 : F X3 = V aE % 2) (b6 : F X6 ≤ 1) :
     WP isa dEven s fun t => ∃ V' F', KE s0 V' F' t ∧ (∀ j < nArr, j ∉ dEvenArrs → V' j = V j) ∧
       (∀ d, d ≠ X0 → d ≠ X1 → d ≠ X2 → d ≠ X6 → F' d = F d) ∧
@@ -353,15 +352,15 @@ theorem dEven_ok (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
   have w128 := hp.fits.2.2
   have wl := hp.wOf_eq
   rw [wp_seqs_cons (by simp)]
-  refine WP.mono (invOfE e4 (a := aE) (m := aMl) (K := 8 * pLen s0 + 32) (hK := by omega_arith)
-    (hK' := by omega_arith)
-    (hk := fun u hu => nW_ok u (by rw [hu .a1 (by decide), pLen_ofNat e4.st.cb])) (zero := zero4)
+  have e32 : 32 * (pLen s0 / 2) = 64 * wOf s0 := by omega_arith
+  refine WP.mono (invOfE e4 (a := aE) (m := aMl) (n := pLen s0 / 2) (hw := by omega_arith)
+    (hn1 := by omega_arith) (hnw := by omega_arith)
+    (hk := fun u hu => nW_ok u (by rw [hu .a1 (by decide), pLen_ofNat e4.st.cb]) (by omega_arith))
     (odd := by rw [vMl]; exact mo.1) (gt := by rw [vMl]; exact mo.2)
-    (fit := by
-      rw [vE4]
-      calc V aE * V4 aMl < 2 ^ 64 * 2 ^ (64 * wOf s0) := Nat.mul_lt_mul'' he (e4.lt (by decide))
-        _ = 2 ^ (2 * (8 * pLen s0 + 32)) := by
-          rw [← Nat.pow_add]; exact congrArg (2 ^ ·) (by omega_arith)))
+    (xlt := by
+      rw [vE4, e32]
+      exact Nat.lt_of_lt_of_le he (Nat.pow_le_pow_right (by decide) (by omega_arith)))
+    (mlt := by rw [e32]; exact e4.lt (by decide)))
     fun t5 ⟨V5, e5, o5, g5, d5, l5⟩ => ?_
   simp only [vMl, vE4] at g5 d5 l5
   have one5 : V5 aOne = 1 := by rw [o5 aOne (by decide) (by decide), one4]
@@ -413,7 +412,7 @@ theorem ldX3_ok (e : KE s0 V F s) :
   rw [v, ← e.flg X3 (by decide)]
 
 /-- The branch on `e`'s parity: for an odd `e`, `[aD] := [aS]`; for an even `e`, `dEven`. -/
-theorem dPar_ok (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
+theorem dPar_ok [VG.Proof.Rsa.RISCV64.InvLaw] (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
     (one : V aOne = 1) (three : V aThree = 3) (zero : V aZero = 0) (b3 : F X3 = V aE % 2) (b6 : F X6 ≤ 1) :
     WP isa dPar s fun t => ∃ V' F', KE s0 V' F' t ∧ (∀ j < nArr, j ∉ dEvenArrs → V' j = V j) ∧
       (∀ d, d ≠ X0 → d ≠ X1 → d ≠ X2 → d ≠ X6 → F' d = F d) ∧
@@ -441,7 +440,7 @@ theorem dPar_ok (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
 abbrev dPartArrs : List Nat := [aT, aS] ++ dOddArrs ++ dEvenArrs
 
 /-- `X6` whether `d` exists, and then `[aD] = d`; `X3` `e` odd, `X5` `e < 3`. -/
-theorem dPart_ok (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
+theorem dPart_ok [VG.Proof.Rsa.RISCV64.InvLaw] (hp : PreC s0) (e : KE s0 V F s) (he : V aE < 2 ^ 64)
     (one : V aOne = 1) (two : V aTwo = 2) (three : V aThree = 3) (zero : V aZero = 0) :
     WP isa dPart s fun t => ∃ V' F', KE s0 V' F' t ∧ (∀ j < nArr, j ∉ dPartArrs → V' j = V j) ∧
       (∀ d, d ≠ X0 → d ≠ X1 → d ≠ X2 → d ≠ X3 → d ≠ X4 → d ≠ X5 → d ≠ X6 → d ≠ X7 → F' d = F d) ∧
