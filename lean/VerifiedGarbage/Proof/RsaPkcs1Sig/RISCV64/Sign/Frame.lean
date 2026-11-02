@@ -225,7 +225,7 @@ theorem save_ok {s u : State} (hsp : u.sp = fb s) (hwr : u.wr = frR s :: s.wr) (
     (k : ∀ v, Kept [.t0] u v → v.gpr .t0 = fb s → Frame [kR s] s.mem v.mem →
       Spill.Saved (fb s) s.gpr saved v.mem → WP isa (.block rest) v Q) :
     WP isa (.block (spill ++ rest)) u Q := by
-  simp only [spill, List.append_assoc, List.cons_append, List.nil_append]
+  simp only [spill, List.cons_append, List.nil_append]
   refine wp_addSp fun u₁ o₁ e₁ => ?_
   rw [hsp, BitVec.add_zero] at e₁
   refine Spill.save_ok (b := .t0) (l := saved) (by rw [e₁]; exact hal) saved_ho (fun p hp => ?_) ?_
