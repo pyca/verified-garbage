@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Sign.Setup
 public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPre
+public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCall
 public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivVerified
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Covers
@@ -17,30 +17,11 @@ Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaPkcs1Sig/PPC64LE/SignArgs.lean`, `SignCall.lean`): the call's
 twelve stack arguments copied from ours and its arguments in registers
 (`callArgs_ok`, into `AtCall`); the regions the call is narrowed to
-(`callRd`, `callWr`) and its precondition (`preP_entry`, `pre_of_preP`); and
+(`callRd`, `callWr`) and its precondition (`preP_entry`); and
 what it writes (`call_ok`, into `AtRet`).
 -/
 
 @[expose] public section
-
-namespace VG.Proof.Rsa.RISCV64.Priv
-
-open VG VG.RISCV64 VG.Impl.Rsa.RISCV64.Priv
-
-theorem pre_of_preP {s : State} (h : PreP s) :
-    (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s := by
-  obtain ⟨sp16, sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
-    ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h1, h7, e1,
-    e2, p1, p2, q1, q2, h5, h9, h7', hs, al⟩ := h
-  have e : frameBytes = 3247 + 1 := rfl
-  rw [e]
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, RISCV64.abi, RISCV64.argRegs,
-    stackArgs_twelve, List.append_eq, List.range, List.range.loop]
-  exact ⟨sp16, sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps,
-    qs, dps, dqs, qis, sa, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi,
-    ws, ⟨k1, k2⟩, h1, h7, e1, e2, p1, p2, q1, q2, h5, h9, h7', hs, al⟩
-
-end VG.Proof.Rsa.RISCV64.Priv
 
 namespace VG.Proof.RsaPkcs1Sig.RISCV64.Sign
 
