@@ -578,22 +578,25 @@ theorem chunks_count (k : Nat) (hk : k < 2 ^ 40) :
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   omega_arith
 
-/-- `reduceIn`, in `p`'s working space at `B` (`WCtx`, with `ra` array 0's
-base too), for `c` the first `w n` words of `X`'s array 6 (`n` chunks of the
-`⌈k / 8⌉` words; `X` at `BX`, in `s6`, apart from `B`, its arrays' size in
-`s11`, `k` in its header): `c mod p` into array 4, changing only arrays
-2–8. -/
-theorem reduceIn_ok {s : State} {B BX : Addr} {Z ZX w wX k N Cv : Nat} (h : WCtx s B Z w N)
+/-- `reduceIn` with `c` in place of its loop of chunks. -/
+abbrev reduceInP (c : Prog isa) : Prog isa :=
+  .seq (.block (base .t3 8 ++ [.addi .t4 .a7 0])) (.seq Crt.copyN
+  (.seq (.block (base .t3 8 ++ [.load .d .s0 .t3 0, .addi .s0 .s0 (-1), .store .d .s0 .t3 0]))
+  (.seq (montOp 5 1 8) (.seq (.block (base .t3 4)) (.seq Precompute.zeroWords
+  (.seq (.block (Crt.xb .s9 6 ++ [.load .d .s10 .s6 Crt.oNLen, .addi .s10 .s10 7, .shift .srl .d .s10 .s10 3])) c))))))
+
+theorem reduceInP_loop : reduceInP (.loop Crt.chunkStep (.nonzero .t2)) = Crt.reduceIn := rfl
+
+/-- `reduceIn` up to its chunks: the first chunk's invariant. -/
+theorem reduceInA_ok {s : State} {B BX : Addr} {Z ZX w wX k N : Nat} (h : WCtx s B Z w N)
     (hra : s.gpr .ra = off B (slot w 0)) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
     (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
     (hkw : Mont.word s.mem BX Crt.oNLen = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
     (hXZ : slot wX 6 + 8 * (w * nChunks ((k + 7) / 8) w) ≤ ZX) (hN : 2 ≤ N) (hodd : N % 2 = 1)
     (hR2 : A s.mem B w 1 = 2 ^ (128 * w) % N)
-    (hC : wordsVal s.mem BX (slot wX 6) (w * nChunks ((k + 7) / 8) w) = Cv) :
-    WP isa Crt.reduceIn s fun t =>
-      (WCtx t B Z w N ∧ t.gpr .ra = off B (slot w 0) ∧ A t.mem B w 4 = Cv % N ∧
-        A t.mem B w 1 = A s.mem B w 1 ∧ (∀ j < 24, 8 < j → A t.mem B w j = A s.mem B w j) ∧
-        WinO B w s.mem t.mem) ∧ Keep redRegs s t := by
+    {c : Prog isa} {Q : State → Prop}
+    (hc : ∀ u, ChunkI s B BX Z w wX ((k + 7) / 8) N (A s.mem B w 1) 0 u → WP isa c u Q) :
+    WP isa (reduceInP c) s Q := by
   have hn := h.nw
   have hw := h.w2
   have hw' := h.w31
@@ -606,10 +609,10 @@ theorem reduceIn_ok {s : State} {B BX : Addr} {Z ZX w wX k N Cv : Nat} (h : WCtx
   have hX0 : 256 ≤ slot wX 6 := by unfold slot hdrBytes; omega_arith
   have hR2' : 2 ^ (128 * w) % N % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N := by
     rw [Nat.mod_mod, ← Nat.pow_add]; congr 2; omega_arith
-  generalize hKd : (k + 7) / 8 = K at hXZ hC
+  generalize hKd : (k + 7) / 8 = K at hXZ hc
   have hK1 : 1 ≤ K := by omega_arith
   have hK' : K < 2 ^ 40 := by omega_arith
-  unfold Crt.reduceIn
+  unfold reduceInP
   -- `p` into array 8.
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -696,8 +699,34 @@ theorem reduceIn_ok {s : State} {B BX : Addr} {Z ZX w wX k N Cv : Nat} (h : WCtx
         (Keep.within (Keep.within (Keep.within (Keep.refl redRegs s) k1 (by decide)) k2 (by decide)) k3 (by decide))
         k4 (by decide)) k5 (by decide)) k6 (by decide)) k7 (by decide)) k8 (by decide)) k9 (by decide)) k10
         (by decide)
+  exact hc s₁₀ I0
+
+/-- `reduceIn`, in `p`'s working space at `B` (`WCtx`, with `ra` array 0's
+base too), for `c` the first `w n` words of `X`'s array 6 (`n` chunks of the
+`⌈k / 8⌉` words; `X` at `BX`, in `s6`, apart from `B`, its arrays' size in
+`s11`, `k` in its header): `c mod p` into array 4, changing only arrays
+2–8. -/
+theorem reduceIn_ok {s : State} {B BX : Addr} {Z ZX w wX k N Cv : Nat} (h : WCtx s B Z w N)
+    (hra : s.gpr .ra = off B (slot w 0)) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
+    (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hkw : Mont.word s.mem BX Crt.oNLen = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
+    (hXZ : slot wX 6 + 8 * (w * nChunks ((k + 7) / 8) w) ≤ ZX) (hN : 2 ≤ N) (hodd : N % 2 = 1)
+    (hR2 : A s.mem B w 1 = 2 ^ (128 * w) % N)
+    (hC : wordsVal s.mem BX (slot wX 6) (w * nChunks ((k + 7) / 8) w) = Cv) :
+    WP isa Crt.reduceIn s fun t =>
+      (WCtx t B Z w N ∧ t.gpr .ra = off B (slot w 0) ∧ A t.mem B w 4 = Cv % N ∧
+        A t.mem B w 1 = A s.mem B w 1 ∧ (∀ j < 24, 8 < j → A t.mem B w j = A s.mem B w j) ∧
+        WinO B w s.mem t.mem) ∧ Keep redRegs s t := by
+  have hw := h.w2
+  have hK1 : 1 ≤ (k + 7) / 8 := by omega_arith
+  have hK' : (k + 7) / 8 < 2 ^ 40 := by omega_arith
+  have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
+  have hR2' : 2 ^ (128 * w) % N % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N := by
+    rw [Nat.mod_mod, ← Nat.pow_add]; congr 2; omega_arith
+  rw [← reduceInP_loop]
+  refine reduceInA_ok h hra hx hsep h6 h11 hkw hk hk' hXZ hN hodd hR2 fun u I0 => ?_
   refine WP.mono (count_loop (cr := .t2) (nChunks_pos (by omega_arith) hK1)
-    (fun j u => ChunkI s B BX Z w wX K N (A s.mem B w 1) j u)
+    (fun j u => ChunkI s B BX Z w wX ((k + 7) / 8) N (A s.mem B w 1) j u)
     (fun j hj u I => chunkStep_ok hx hsep hXZ hK1 hK' hodd (by rw [hR2]; exact Nat.mod_lt _ (by omega_arith))
       (by rw [hR2]; exact hR2') hj I) I0)
     fun t I => ⟨⟨I.ctx, I.ra, ?_, I.p1, I.fix, I.out⟩, I.keep⟩
@@ -735,38 +764,28 @@ theorem low_odd {m : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) (h : wordsVal m 
   simp only [wordsVal] at h
   omega_arith
 
-/-- `power xj oD oLen`, in a prime's working space at `B` of 24 arrays of `w`
-words (array 0's base in `a7` and `ra`, the arrays' size in `s5`, `w` in
-`t0`), for the prime `p` (`Pv`, odd, at least 2) in `X`'s array `xj` (`X` at
-`BX`, in `s6`, apart from `B`, its arrays' size in `s11`), `c` the first
-`w n` words of `X`'s array 6 (`n` chunks of the `⌈k / 8⌉` words, `k` in
-`X`'s header) and the exponent's `L ≥ 1` bytes at `D`, and `L`, in `X`'s
-header words `oD` and `oLen`: `c^d mod p` in array 4, as a number of the
-exponent's bytes, most significant first; nothing but the working space
-written. -/
-theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : Nat} (hs : Scr s B Z)
-    (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
-    (hra : s.gpr .ra = off B (slot w 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
+/-- `power` with `c` in place of its reduction and exponentiation. -/
+abbrev powerP (xj : Nat) (c : Prog isa) : Prog isa :=
+  .seq (.block ([.addi .t3 .a7 0] ++ Crt.xb .t4 xj)) (.seq Crt.copyN
+  (.seq (.block (Precompute.minv ++ base .a2 1 ++ base .a5 2 ++ base .a6 3)) (.seq (Crt.r2Prime 4) c)))
+
+/-- `power` up to the reduction: `p` in array 0, `-p⁻¹ mod 2⁶⁴` and `R² mod
+p`. -/
+theorem powerA_ok {s : State} {B BX : Addr} {Z ZX w wX xj Pv : Nat} {c : Prog isa} {Q : State → Prop}
+    (hs : Scr s B Z) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
+    (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
     (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
     (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2))) (hxj : slot wX xj + 8 * w ≤ ZX)
     (hP : wordsVal s.mem BX (slot wX xj) w = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
-    (hkw : Mont.word s.mem BX Crt.oNLen = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
-    (hXZ : slot wX 6 + 8 * (w * nChunks ((k + 7) / 8) w) ≤ ZX)
-    (hC : wordsVal s.mem BX (slot wX 6) (w * nChunks ((k + 7) / 8) w) = Cv)
-    (hoD : oD + 8 ≤ ZX) (hoD8 : oD % 8 = 0) (hoD' : oD < 2048) (hoL : oLen + 8 ≤ ZX) (hoL8 : oLen % 8 = 0)
-    (hoL' : oLen < 2048) (hDw : Mont.word s.mem BX oD = D) (hLw : Mont.word s.mem BX oLen = BitVec.ofNat 64 L)
-    (hL : 1 ≤ L) (hL' : L < 2 ^ 63) (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
-    (hDsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
-    WP isa (Crt.power xj oD oLen) s fun t =>
-      (wordsVal t.mem B (slot w 4) w = Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
-        wordsVal t.mem B (slot w 0) w = Pv ∧ PFr B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0)) ∧
-      Keep powerRegs s t := by
+    (hc : ∀ u, WCtx u B Z w Pv → A u.mem B w 1 = 2 ^ (128 * w) % Pv → PFr B w s.mem u.mem →
+      Keep powerRegs s u → WP isa c u Q) :
+    WP isa (powerP xj c) s Q := by
   have hn : B.toNat + slot w 24 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
   have hxn := hx.nowrap
   have e24 := slot24' w
   have s01 := slot_lt (w := w) (show 0 < 1 by decide)
   have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
-  unfold Crt.power
+  unfold powerP
   -- The prime into array 0.
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -811,6 +830,42 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
     rw [← hm7] at o3
     exact (o3.mono (Nat.le_refl _) (by omega_arith)).trans (PFr.of_win o8)
   have k18 := (k13.trans k37).trans k8
+  exact hc s₈ c8 r8 F8 (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within
+    (Keep.within (Keep.within (Keep.refl powerRegs s) k1 (by decide)) k2 (by decide)) k3 (by decide))
+    k4 (by decide)) k5 (by decide)) k6 (by decide)) k7 (by decide)) k8 (by decide))
+
+/-- `power xj oD oLen`, in a prime's working space at `B` of 24 arrays of `w`
+words (array 0's base in `a7` and `ra`, the arrays' size in `s5`, `w` in
+`t0`), for the prime `p` (`Pv`, odd, at least 2) in `X`'s array `xj` (`X` at
+`BX`, in `s6`, apart from `B`, its arrays' size in `s11`), `c` the first
+`w n` words of `X`'s array 6 (`n` chunks of the `⌈k / 8⌉` words, `k` in
+`X`'s header) and the exponent's `L ≥ 1` bytes at `D`, and `L`, in `X`'s
+header words `oD` and `oLen`: `c^d mod p` in array 4, as a number of the
+exponent's bytes, most significant first; nothing but the working space
+written. -/
+theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : Nat} (hs : Scr s B Z)
+    (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
+    (hra : s.gpr .ra = off B (slot w 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
+    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
+    (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2))) (hxj : slot wX xj + 8 * w ≤ ZX)
+    (hP : wordsVal s.mem BX (slot wX xj) w = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
+    (hkw : Mont.word s.mem BX Crt.oNLen = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
+    (hXZ : slot wX 6 + 8 * (w * nChunks ((k + 7) / 8) w) ≤ ZX)
+    (hC : wordsVal s.mem BX (slot wX 6) (w * nChunks ((k + 7) / 8) w) = Cv)
+    (hoD : oD + 8 ≤ ZX) (hoD8 : oD % 8 = 0) (hoD' : oD < 2048) (hoL : oLen + 8 ≤ ZX) (hoL8 : oLen % 8 = 0)
+    (hoL' : oLen < 2048) (hDw : Mont.word s.mem BX oD = D) (hLw : Mont.word s.mem BX oLen = BitVec.ofNat 64 L)
+    (hL : 1 ≤ L) (hL' : L < 2 ^ 63) (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hDsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
+    WP isa (Crt.power xj oD oLen) s fun t =>
+      (wordsVal t.mem B (slot w 4) w = Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
+        wordsVal t.mem B (slot w 0) w = Pv ∧ PFr B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0)) ∧
+      Keep powerRegs s t := by
+  have hn : B.toNat + slot w 24 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
+  have hxn := hx.nowrap
+  have e24 := slot24' w
+  rw [show Crt.power xj oD oLen = powerP xj (.seq Crt.reduceIn (.seq (.block [.load .d .s9 .s6 oD,
+    .load .d .s10 .s6 oLen]) ModExp.powWin)) from rfl]
+  refine powerA_ok hs hw2 hw' hZ h7 h5 ht0 hx hsep h6 h11 hxj hP hP2 hodd fun s₈ c8 r8 F8 k18 => ?_
   -- `c mod p`.
   refine WP.seq (WP.mono (reduceIn_ok (k := k) (Cv := Cv) c8 ((k18.gpr (by decide)).trans hra) (hx.congr k18.2.2) hsep
     ((k18.gpr (by decide)).trans h6) ((k18.gpr (by decide)).trans h11)
@@ -844,9 +899,6 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
   · rw [← m10] at F9
     exact F9.trans (PFr.of_win ot)
   · exact (kt.gpr (by decide)).trans c10.a7
-  · exact Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within (Keep.within
-      (Keep.within (Keep.within (Keep.within (Keep.refl powerRegs s) k1 (by decide)) k2 (by decide)) k3 (by decide))
-      k4 (by decide)) k5 (by decide)) k6 (by decide)) k7 (by decide)) k8 (by decide)) k9 (by decide)) k10
-      (by decide)) kt (by decide)
+  · exact Keep.within (Keep.within (Keep.within k18 k9 (by decide)) k10 (by decide)) kt (by decide)
 
 end VG.Proof.Bignum.RISCV64.Win
