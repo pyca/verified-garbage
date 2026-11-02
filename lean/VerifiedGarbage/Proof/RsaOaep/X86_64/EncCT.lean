@@ -202,8 +202,10 @@ section
 variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
   (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
 
-/-- In the frame, after the checks. -/
-def EK (D : Nat) (s t : State) : Prop := EW s t ∧ 2 * D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat
+/-- In the frame, after the checks, with the entry state's addresses of
+statics. -/
+def EK (D : Nat) (s t : State) : Prop :=
+  EW s t ∧ 2 * D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat ∧ t.syms = s.syms
 
 /-- Before MGF1. -/
 def EKM (D : Nat) (src srcLen dst dstLen : State → Nat) (s t : State) : Prop :=
@@ -223,11 +225,11 @@ theorem encEm_ct : RelCT isa (Two (EAt mH.G mG.G P (EK Hl.D))) (encEm Hl.stream)
   have hD65 : Hl.D < 65 := by omega
   unfold encEm seqs seqs seqs seqs
   refine RelCT.seq (e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14] (by decide) nopin ⟨_, by taint_decide⟩)
-    fun s t hs h => WP.mono (ew_clearEm h.1) fun _ e => ⟨e, h.2⟩) ?_
+    fun s t hs h => WP.mono_syms (ew_clearEm h.1) fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
   refine RelCT.seq (e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14, 31] (by decide) nopin
       ⟨_, copySeed_taint Hl.D hD65⟩)
-    fun s t hs h => WP.mono (ew_copySeed hs (Hm := Hl.stream) mH.len (by omega) (by omega) h.1)
-      fun _ e => ⟨e, h.2⟩) ?_
+    fun s t hs h => WP.mono_syms (ew_copySeed hs (Hm := Hl.stream) mH.len (by omega) (by omega) h.1)
+      fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
   refine RelCT.seq (e_post (J' := EK Hl.D) (two_map lq (fun a t ⟨s, S, e, _⟩ => by
       have hp := S.1
       obtain ⟨V, W, R, hW⟩ := e.rep
@@ -235,12 +237,13 @@ theorem encEm_ct : RelCT isa (Two (EAt mH.G mG.G P (EK Hl.D))) (encEm Hl.stream)
       simp only [lq] at this ⊢
       rwa [S.fb, S.out_eq, S.scr_eq, S.arg (i := 5) (by decide), S.arg (i := 0) (by decide),
         S.arg (i := 1) (by decide)] at this) (hashLabel_ct hH.stream 2 (.inl rfl) (Or.inl rfl)))
-    fun s t hs h => WP.mono (ew_hashLabel hs hH KH mH h.1) fun _ e => ⟨e, h.2⟩) ?_
+    fun s t hs h => WP.mono_syms (ew_hashLabel hs hH KH mH h.1) fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
   refine RelCT.seq (e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14] (by decide) nopin
       ⟨_, copyLh_taint Hl.D hD65⟩)
-    fun s t hs h => WP.mono (ew_copyLh (Hm := Hl.stream) (by omega) (by omega) h.1) fun _ e => ⟨e, h.2⟩) ?_
+    fun s t hs h => WP.mono_syms (ew_copyLh (Hm := Hl.stream) (by omega) (by omega) h.1)
+      fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
   exact e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14, 23, 29, 30] (by decide) nopin ⟨_, by taint_decide⟩)
-    fun s t hs h => WP.mono (ew_putMsg hs h.2 h.1) fun _ e => ⟨e, h.2⟩
+    fun s t hs h => WP.mono_syms (ew_putMsg hs h.2.1 h.1) fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩
 
 
 theorem fit_db {D : Nat} {s : State} {Hs : Spec.Mgf1.Hash} (hp : EPre Hs s)
@@ -269,42 +272,6 @@ theorem me_of {src srcLen dst dstLen : Nat → Nat} {a s t : State} (S : ESib H 
     src (s.gpr .rcx).toNat, srcLen (s.gpr .rcx).toNat, dst (s.gpr .rcx).toNat, dstLen (s.gpr .rcx).toNat⟩ t)
   rwa [S.fb, S.out_eq, S.scr_eq, S.arg (i := 5) (by decide), S.k] at this
 
-include hH KH hG KG mH mG in
-/-- `EM` built and masked, then `rest`, constant time if `rest` is. -/
-theorem encMask_ct {rest : Prog isa} (hrest : RelCT isa (Two (EAt mH.G mG.G P (EK Hl.D))) rest fun _ _ => True) :
-    RelCT isa (Two (EAt mH.G mG.G P (EK Hl.D))) (.seq (encEm Hl.stream) (.seq (.block (dbArgs Hl.stream))
-      (.seq (mgfXor lay Gm.stream) (.seq (.block (seedArgs Hl.stream)) (.seq (mgfXor lay Gm.stream) rest)))))
-      fun _ _ => True := by
-  have hz := sizes hH.stream
-  have hsD : Hl.stream.D = Hl.D := rfl
-  have hD65 : Hl.D < 65 := by omega
-  have hD0 := hH.hD0
-  refine RelCT.seq (encEm_ct (hH := hH) (KH := KH) (mH := mH) (mG := mG)) ?_
-  -- `DB` masked.
-  refine RelCT.seq (e_post (J' := fun s t => EWM s t (oEm + 1) Hl.D (oEm + 1 + Hl.D)
-      ((s.gpr .rcx).toNat - (Hl.D + 1)) ∧ 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat)
-    (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin ⟨_, dbArgs_taint Hl.D hD65⟩)
-    fun s t hs h => WP.mono (ew_dbArgs (Hm := Hl.stream) (by omega) (by have := h.2; omega) h.1) fun _ e => ⟨e, h.2⟩) ?_
-  refine RelCT.seq (e_post (J' := EK Hl.D) (two_map (fun a => (⟨fb a, stackArg a 5, [outR a, scrR a], oEm + 1, Hl.D,
-      oEm + 1 + Hl.D, (a.gpr .rcx).toNat - (Hl.D + 1)⟩ : MQ))
-      (fun a t ⟨s, S, e, hk⟩ => me_of (src := fun _ => oEm + 1) (srcLen := fun _ => Hl.D)
-        (dst := fun _ => oEm + 1 + Hl.D) (dstLen := fun k => k - (Hl.D + 1)) S e (fit_db S.1 hk))
-      (mgf_ct hG.stream 2 mG.hash mG.len (valid_of_link hG mG) (.inl rfl)))
-    fun s t hs h => WP.mono (ew_mgf hG KG mG (fit_db hs h.2) h.1) fun _ e => ⟨e, h.2⟩) ?_
-  -- The seed masked.
-  refine RelCT.seq (e_post (J' := fun s t => EWM s t (oEm + 1 + Hl.D) ((s.gpr .rcx).toNat - (Hl.D + 1)) (oEm + 1)
-      Hl.D ∧ 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat)
-    (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin ⟨_, seedArgs_taint Hl.D hD65⟩)
-    fun s t hs h => WP.mono (ew_seedArgs (Hm := Hl.stream) (by omega) (by have := h.2; omega) h.1) fun _ e => ⟨e, h.2⟩) ?_
-  refine RelCT.seq (e_post (J' := EK Hl.D) (two_map (fun a => (⟨fb a, stackArg a 5, [outR a, scrR a],
-      oEm + 1 + Hl.D, (a.gpr .rcx).toNat - (Hl.D + 1), oEm + 1, Hl.D⟩ : MQ))
-      (fun a t ⟨s, S, e, hk⟩ => me_of (src := fun _ => oEm + 1 + Hl.D) (srcLen := fun k => k - (Hl.D + 1))
-        (dst := fun _ => oEm + 1) (dstLen := fun _ => Hl.D) S e (fit_seed S.1 hk hD0))
-      (mgf_ct hG.stream 2 mG.hash mG.len (valid_of_link hG mG) (.inl rfl)))
-    fun s t hs h => WP.mono (ew_mgf hG KG mG (fit_seed hs h.2 hD0) h.1) fun _ e => ⟨e, h.2⟩) ?_
-  exact hrest
-
-
 /-! ## The checks -/
 
 omit hH KH hG KG mH mG in
@@ -313,16 +280,17 @@ theorem zeroOut_ct : RelCT isa (Two (EAt H G P EW)) zeroOut fun _ _ => True :=
 
 /-- After the check of `k`. -/
 def J2 (D : Nat) (s t : State) : Prop :=
-  EW s t ∧ t.gpr .rax = BitVec.ofNat 64 (s.gpr .rcx).toNat ∧ t.cf = some (decide ((s.gpr .rcx).toNat < 2 * D + 2))
+  EW s t ∧ t.gpr .rax = BitVec.ofNat 64 (s.gpr .rcx).toNat ∧ t.cf = some (decide ((s.gpr .rcx).toNat < 2 * D + 2)) ∧
+    t.syms = s.syms
 
 /-- After the check of `k`, which passed. -/
 def J2' (D : Nat) (s t : State) : Prop :=
-  EW s t ∧ t.gpr .rax = BitVec.ofNat 64 (s.gpr .rcx).toNat ∧ 2 * D + 2 ≤ (s.gpr .rcx).toNat
+  EW s t ∧ t.gpr .rax = BitVec.ofNat 64 (s.gpr .rcx).toNat ∧ 2 * D + 2 ≤ (s.gpr .rcx).toNat ∧ t.syms = s.syms
 
 /-- After the check of the message's length. -/
 def J3 (D : Nat) (s t : State) : Prop :=
   EW s t ∧ 2 * D + 2 ≤ (s.gpr .rcx).toNat ∧
-    t.cf = some (decide ((s.gpr .rcx).toNat - (2 * D + 2) < (stackArg s 3).toNat))
+    t.cf = some (decide ((s.gpr .rcx).toNat - (2 * D + 2) < (stackArg s 3).toNat)) ∧ t.syms = s.syms
 
 theorem cf_false {t : State} {p : Prop} [Decidable p] (h : t.cf = some (decide p))
     (e : isa.eval .b t = some false) : ¬ p := by
@@ -337,14 +305,14 @@ theorem chkMsg_step {s t : State} (hs : EPre mH.G s) (h : J2' Hl.D s t) :
   have hk1 := hp.k1; have hk2 := hp.k2
   have hz := sizes hH.stream
   have hsD : Hl.stream.D = Hl.D := rfl
-  obtain ⟨e, hax, hk⟩ := h
+  obtain ⟨e, hax, hk, hsy⟩ := h
   obtain ⟨V, W, R, hW⟩ := e.rep
   obtain ⟨-, -, -, -, -, -, -, -, -, -, w30, -⟩ := hW.w
-  refine WP.mono (wp_good (block_good _ rfl) (chkMsg_ok (Hm := Hl.stream) e.L R (k := (s.gpr .rcx).toNat)
+  refine WP.mono_syms (wp_good (block_good _ rfl) (chkMsg_ok (Hm := Hl.stream) e.L R (k := (s.gpr .rcx).toNat)
     (mLen := (stackArg s 3).toNat) (by rw [w30, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hax (by omega)
     (by omega) (stackArg s 3).isLt (by omega)))
-    fun t3 ⟨⟨k3, hm3, hcf3⟩, sp3, mx3, f3⟩ => ⟨⟨e.he.step k3.2.1 k3.2.2 sp3 (keep_cs3 k3 (by decide)) mx3 f3,
-      e.L.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3]), V, W, hm3 ▸ R, hW⟩, hk, by rw [hcf3, hsD]⟩
+    fun t3 ⟨⟨k3, hm3, hcf3⟩, sp3, mx3, f3⟩ sy => ⟨⟨e.he.step k3.2.1 k3.2.2 sp3 (keep_cs3 k3 (by decide)) mx3 f3,
+      e.L.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3]), V, W, hm3 ▸ R, hW⟩, hk, by rw [hcf3, hsD], sy.trans hsy⟩
 
 /-- After the prologue. -/
 def JA (s t : State) : Prop := t = allocState frameBytes s
@@ -362,17 +330,18 @@ theorem encBodyWith_ct {main : Prog isa}
       (head_taint Hl.D hD65))
     fun s t hs h => by
       subst h
-      exact WP.mono (encHead_ok (Hm := Hl.stream) hs (by omega))
-        fun t2 ⟨he2, L2, R2, hax2, hcf2⟩ => ⟨⟨he2, L2, _, _, R2, fun _ _ => rfl⟩, hax2, hcf2⟩) ?_
-  refine e_ite (fun s => some (decide ((s.gpr .rcx).toNat < 2 * Hl.D + 2))) (fun s t h => h.2.2)
+      exact WP.mono_syms (encHead_ok (Hm := Hl.stream) hs (by omega))
+        fun t2 ⟨he2, L2, R2, hax2, hcf2⟩ sy => ⟨⟨he2, L2, _, _, R2, fun _ _ => rfl⟩, hax2, hcf2, sy⟩) ?_
+  refine e_ite (fun s => some (decide ((s.gpr .rcx).toNat < 2 * Hl.D + 2))) (fun s t h => h.2.2.1)
     (fun a s S => by rw [S.k]) (e_branch (J' := EW) (fun _ _ _ h _ => h.1) zeroOut_ct)
-    (e_branch (J' := J2' Hl.D) (fun s t _ h e => ⟨h.1, h.2.1, by have := cf_false h.2.2 e; omega⟩) ?_)
+    (e_branch (J' := J2' Hl.D) (fun s t _ h e => ⟨h.1, h.2.1, by have := cf_false h.2.2.1 e; omega, h.2.2.2⟩) ?_)
   refine RelCT.seq (e_post (J' := J3 Hl.D) (two_taint [.rsp] (e_pins_rsp fun s t _ h => h.1.he.rsp)
       (chkMsg_taint Hl.D hD65)) fun s t hs h => chkMsg_step (hH := hH) (mH := mH) hs h) ?_
   refine e_ite (fun s => some (decide ((s.gpr .rcx).toNat - (2 * Hl.D + 2) < (stackArg s 3).toNat)))
-    (fun s t h => h.2.2) (fun a s S => by rw [S.k, S.arg (i := 3) (by decide)])
+    (fun s t h => h.2.2.1) (fun a s S => by rw [S.k, S.arg (i := 3) (by decide)])
     (e_branch (J' := EW) (fun _ _ _ h _ => h.1) zeroOut_ct)
-    (e_branch (J' := EK Hl.D) (fun s t _ h e => ⟨h.1, by have := cf_false h.2.2 e; have := h.2.1; omega⟩) hmain)
+    (e_branch (J' := EK Hl.D) (fun s t _ h e => ⟨h.1, by have := cf_false h.2.2.1 e; have := h.2.1; omega,
+      h.2.2.2⟩) hmain)
 
 /-! ## The frame -/
 
