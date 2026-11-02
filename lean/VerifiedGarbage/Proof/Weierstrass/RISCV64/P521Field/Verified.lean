@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.P521Field
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.Field
+public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Mersenne
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.CT
 public import VerifiedGarbage.Proof.Weierstrass.MontContract
 public import VerifiedGarbage.TCB.RISCV64.Target
@@ -18,7 +19,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.CT
 # Arithmetic modulo P-521's prime on RISC-V: verified
 
 Each function meets a contract by register (`mulRV`, `addRV`, `subRV`), from
-the functions of any wide modulus (`Proof/Weierstrass/RISCV64/GenWide/RV.lean`),
+the functions of any wide modulus (`Proof/Weierstrass/RISCV64/GenWide/RV.lean`)
+and, for the product, its Mersenne form (`Proof/Weierstrass/RISCV64/P521Mersenne.lean`),
 which the shared contracts of `Proof/Weierstrass/MontContract.lean` imply with
 their own working space the top 576 bytes of `ws`, from 7616 to 8192. They are
 constant time: the zero-extension is related by its results, after which only
@@ -43,7 +45,7 @@ theorem wide : WideOk p521p := ⟨by decide, by decide, by decide, by decide⟩
 
 theorem mul_rv (s : State) (hs : (mulRV p521p).pre s) :
     ∃ t s', Exec isa mulFn s t s' ∧ abiPreserved s s' ∧ (mulRV p521p).post s s' :=
-  GenWide.mul_rv wide s hs
+  P521Mersenne.mul_rv s hs
 
 theorem add_rv (s : State) (hs : (addRV p521p).pre s) :
     ∃ t s', Exec isa addFn s t s' ∧ abiPreserved s s' ∧ (addRV p521p).post s s' :=
