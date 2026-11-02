@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.RISCV64.Inverse
+public import VerifiedGarbage.Impl.Rsa.RISCV64.InvBatch
 public import VerifiedGarbage.Impl.Rsa.RISCV64.RecoverDet
 
 /-!
@@ -51,10 +52,12 @@ def setLow (j : Nat) (x : Int) : List Instr := ptr .t0 j ++ [.li .t5 x, .store .
 /-- `[o] := [a] [b]` modulo `2^(64 w)`. -/
 def mulTo (o a b : Nat) : Prog isa := .seq (copy o aZero) (VG.Impl.Rsa.RISCV64.RecoverDet.mulLow o a b)
 
-/-- `[a]` modulo `[m]` by `inverse`, `k` the instructions setting its count
-in `s7`. -/
-def invOf (a m : Nat) (k : List Instr) : Prog isa := seqs [
-  copy aM m, copy 0 a, copy 1 aM, copy 2 aZero, .block (setOne 2), copy 3 aZero,
-  sub3 aNM aZero aM, .block k, inverse]
+/-- `[a]` modulo the odd `[m]` by the batched divsteps
+(`Impl/Rsa/RISCV64/InvBatch.lean`): `x = [a]` in array 0, `m = [m]` in array
+8, `n` the instructions setting the digit count in `s8`; `gcd([a], [m])` in
+array 1 and the inverse in array 3. -/
+def invOf (a m : Nat) (n : List Instr) : Prog isa := seqs [
+  copy VG.Impl.Rsa.RISCV64.InvBatch.aX a, copy VG.Impl.Rsa.RISCV64.InvBatch.aMin m, .block n,
+  VG.Impl.Rsa.RISCV64.InvBatch.inverse]
 
 end VG.Impl.RsaKeyGen.RISCV64.Key

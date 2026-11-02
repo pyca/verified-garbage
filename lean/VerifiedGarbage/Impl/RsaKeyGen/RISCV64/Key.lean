@@ -182,15 +182,15 @@ def halfStep : Prog isa := seqs ([.block (bitOf X0 aU ++ bitOf X1 aV ++ notS X1 
 def halving : Prog isa :=
   seqs [mulTo aF aPm aQm, copy aU aPm, copy aV aQm, .block cnt8, .loop halfStep (.nonzero .s7)]
 
-/-- The count of an inverse of numbers below `2^(8 p_len)`: `8 p_len`. -/
-def nP : List Instr := cnt8
+/-- The digits of an inverse of numbers below `2^(8 p_len)`: `p_len / 4`. -/
+def nP : List Instr := [.shift .srl .d .s8 .a1 2]
 
-/-- The count of an inverse of numbers below `2^64`: 64. -/
-def nTwo : List Instr := [.li .s7 64]
+/-- The digits of an inverse of numbers below `2^64`: 2. -/
+def nTwo : List Instr := [.li .s8 2]
 
-/-- The count of an inverse of a number below `2^64` modulo one below
-`2^(16 p_len)`: `8 p_len + 32`. -/
-def nW : List Instr := cnt8 ++ [.addi .s7 .s7 32]
+/-- The digits of an inverse of a number below `2^64` modulo one below
+`2^(16 p_len)`: `p_len / 2`. -/
+def nW : List Instr := [.shift .srl .d .s8 .a1 1]
 
 /-- `v` odd by a swap, `[aG] := gcd(u, v)` (1 for `v < 2`). -/
 def gcdUV : Prog isa := seqs ([.block (bitOf X0 aV ++ notS X0 X0), sel aU2 aU aV X0, sel aV2 aV aU X0] ++
