@@ -150,6 +150,22 @@ theorem dw_mgf {Gm : Hash} (hG : HashOK Gm) (KG : Callees Gm) (mG : MgfLink Gm h
         rw [hW1 k (decKs_lt k hk) (by omega) (by omega)]
         exact hW k hk⟩
 
+omit hp in
+theorem dw_mgfT {Gm : Hash} (hG : HashOK Gm) (mG : MgfLink Gm hG) {f : Impl.Mgf1.X86_64.Table.Fns}
+    (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin)
+    {src srcLen dst dstLen : Nat} (hf : MFit src srcLen dst dstLen) {t : State}
+    (h : DWM s t src srcLen dst dstLen)
+    (T : Table.Tab Gm.stream f (fb s) (stackArg s 17) (frameBytes + 8 + 8 * 17) t) :
+    WP isa (mgfT f 17) t (DW s) := by
+  obtain ⟨V, W, R, hW, A⟩ := h.rep
+  exact WP.mono (wp_good (Table.mgfT_good hgi hgu hgf _) (Table.mgfXorT_ok hG.stream hgi hgu hgf mG.hash mG.len
+    (valid_of_link hG mG) T h.L R hf A))
+    fun t1 ⟨⟨L1, rd1, wr1, cs1, V1, W1, R1, hW1, _⟩, sp1, mx1, f1⟩ =>
+      ⟨h.he.step rd1 wr1 sp1 (fun r hr _ => cs1 r hr) mx1 f1, L1, V1, W1, R1, fun k hk => by
+        have := decKs_iff hk
+        rw [hW1 k (decKs_lt k hk) (by omega) (by omega) (by omega) (by omega)]
+        exact hW k hk⟩
+
 /-- `lHash'`'s check, the scan, and `T` shifted into the buffer. -/
 def tail1 (Hm : Stream) : Prog isa := .seq (.seq (.seq (.seq (accLh Hm) (scan Hm)) (clearBuf Hm)) copyT) shift
 

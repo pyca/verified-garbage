@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 public import VerifiedGarbage.Proof.RsaOaep.Encode
 public import VerifiedGarbage.Proof.Mgf1.Basic
@@ -174,11 +175,15 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
       FrE.byte he4.fr hp.d_stk_ms hp.d_out_ms hp.d_ms_scr.symm (by have := hp.wM; omega_using []) hi,
       bytesAt_getD _ _ hi]
 
-include hH KH hG KG mH mG in
-/-- `EM` built and masked, then `rest`, from the state with the arguments of
-the public operation's call to make: `EnvE`, the slots, and `EM` in the
-working space. -/
-theorem encMask_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 5))
+include hH KH hG mH mG in
+/-- `EM` built and masked, with MGF1's hash function the one of the table
+that the stack argument 9 points to (`hT`), then `rest`, from the state with
+the arguments of the public operation's call to make: `EnvE`, the slots, and
+`EM` in the working space. -/
+theorem encMask_ok {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd)
+    (hgf : Table.FnsGood f.fin) {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (hsy : t.syms = s.syms)
+    (hT : ∀ t, EnvE s t → t.syms = s.syms → Table.Tab Gm.stream f (fb s) (stackArg s 9) (frameBytes + 8 + 8 * 9) t)
+    (L : Lay t (fb s) (stackArg s 5))
     {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 5) V W) (hW : ArgsW s W)
     (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) {rest : Prog isa} {Q : State → Prop}
     (hrest : ∀ t9 V9 W9, EnvE s t9 → Lay t9 (fb s) (stackArg s 5) → Rep t9.mem (fb s) (stackArg s 5) V9 W9 →
@@ -187,8 +192,8 @@ theorem encMask_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (
         emOf mG.G Hl.D (s.gpr .rcx).toNat (stackArg s 3).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len)
           (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
           (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) → WP isa rest t9 Q) :
-    WP isa (.seq (encEm Hl.stream) (.seq (.block (dbArgs Hl.stream)) (.seq (mgfXor lay Gm.stream)
-      (.seq (.block (seedArgs Hl.stream)) (.seq (mgfXor lay Gm.stream) rest))))) t Q := by
+    WP isa (.seq (encEm Hl.stream) (.seq (.block (dbArgs Hl.stream)) (.seq (mgfT f 9)
+      (.seq (.block (seedArgs Hl.stream)) (.seq (mgfT f 9) rest))))) t Q := by
   obtain ⟨w14, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, w31⟩ := hW.w
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD := hH.hD0
@@ -198,34 +203,35 @@ theorem encMask_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (
   have cS : oSt = 3072 := rfl
   have w23' : W 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   -- `EM` before masking.
-  refine WP.seq (WP.mono (encEm_ok hH KH mH hp he L R hW hk) fun t5 ⟨he5, L5, V5, R5, E⟩ => ?_)
+  refine WP.seq (WP.mono_syms (encEm_ok hH KH mH hp he L R hW hk) fun t5 ⟨he5, L5, V5, R5, E⟩ sy5 => ?_)
   -- `DB` masked.
-  refine WP.seq (WP.mono (wp_good (dbArgs_good _) (dbArgs_ok (H := Hl.stream) L5 R5 w23' (by omega_using [hk, hk2, hsD])
-      (by omega_using [hk, hsD])))
-    fun t6 ⟨⟨L6, k6, R6⟩, sp6, mx6, f6⟩ => ?_)
+  refine WP.seq (WP.mono_syms (wp_good (dbArgs_good _) (dbArgs_ok (H := Hl.stream) L5 R5 w23'
+      (by omega_using [hk, hk2, hsD]) (by omega_using [hk, hsD])))
+    fun t6 ⟨⟨L6, k6, R6⟩, sp6, mx6, f6⟩ sy6 => ?_)
   have he6 : EnvE s t6 := he5.step k6.2.1 k6.2.2 sp6 (keep_cs3 k6 (by decide)) mx6 f6
-  refine WP.seq (WP.mono (wp_good (mgfXor_good (HGood.of hG KG)) (mgfXor_ok hG.stream mG.hash mG.len
-    (valid_of_link hG mG)
+  refine WP.seq (WP.mono_syms (wp_good (Table.mgfT_good hgi hgu hgf _) (Table.mgfXorT_ok hG.stream hgi hgu hgf
+    mG.hash mG.len (valid_of_link hG mG) (hT t6 he6 (sy6.trans (sy5.trans hsy)))
         L6 R6 ⟨by unfold oEm oSt; omega_using [hk, hk2, hsD], by unfold oEm oSt; omega_using [hk, hk2, hsD], by omega_using [], by omega_using [hk, hsD], by omega_using [hk2]⟩
-    (mW_args _ _ _ _ _ _))) fun t7 ⟨⟨L7, rd7, wr7, cs7, V7, W7, R7, hW7, hV7⟩, sp7, mx7, f7⟩ => ?_)
+    (mW_args _ _ _ _ _ _))) fun t7 ⟨⟨L7, rd7, wr7, cs7, V7, W7, R7, hW7, hV7⟩, sp7, mx7, f7⟩ sy7 => ?_)
   have he7 : EnvE s t7 := he6.step rd7 wr7 sp7 (fun r hr _ => cs7 r hr) mx7 f7
-  have W7e : ∀ k, (k < 15 ∨ 18 < k) → k < nW → k ≠ 19 → k ≠ 20 → W7 k = W k := fun k h1 h2 h3 h4 =>
-    (hW7 k h2 h3 h4).trans (mW_other h1)
+  have W7e : ∀ k, (k < 15 ∨ (18 < k ∧ k < 35)) → k < nW → k ≠ 19 → k ≠ 20 → W7 k = W k := fun k h1 h2 h3 h4 =>
+    (hW7 k h2 h3 h4 (by omega) (by omega)).trans (mW_other (by omega))
   -- The seed masked.
-  refine WP.seq (WP.mono (wp_good (seedArgs_good _) (seedArgs_ok (H := Hl.stream) L7 R7
+  refine WP.seq (WP.mono_syms (wp_good (seedArgs_good _) (seedArgs_ok (H := Hl.stream) L7 R7
     ((W7e 23 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w23')
         (by omega_using [hk, hk2, hsD]) (by omega_using [hk, hsD])))
-    fun t8 ⟨⟨L8, k8, R8⟩, sp8, mx8, f8⟩ => ?_)
+    fun t8 ⟨⟨L8, k8, R8⟩, sp8, mx8, f8⟩ sy8 => ?_)
   have he8 : EnvE s t8 := he7.step k8.2.1 k8.2.2 sp8 (keep_cs3 k8 (by decide)) mx8 f8
-  refine WP.seq (WP.mono (wp_good (mgfXor_good (HGood.of hG KG)) (mgfXor_ok hG.stream mG.hash mG.len
-    (valid_of_link hG mG)
+  refine WP.seq (WP.mono (wp_good (Table.mgfT_good hgi hgu hgf _) (Table.mgfXorT_ok hG.stream hgi hgu hgf
+    mG.hash mG.len (valid_of_link hG mG) (hT t8 he8 (sy8.trans (sy7.trans (sy6.trans (sy5.trans hsy)))))
         L8 R8 ⟨by unfold oEm oSt; omega_using [hk, hk2, hsD], by unfold oEm oSt; omega_using [hk, hk2, hsD], by omega_using [], by omega_using [hD, hsD], by omega_using [hk, hk2, hsD]⟩
     (mW_args _ _ _ _ _ _))) fun t9 ⟨⟨L9, rd9, wr9, cs9, V9, W9, R9, hW9, hV9⟩, sp9, mx9, f9⟩ => ?_)
   have he9 : EnvE s t9 := he8.step rd9 wr9 sp9 (fun r hr _ => cs9 r hr) mx9 f9
   -- The call.
   have W9e : ∀ k, 21 ≤ k → k ≤ 26 → W9 k = encW s k := fun k h1 h2 => by
-    rw [hW9 k (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h1]) (by omega_using [h1]), mW_other (by omega_using [h1]),
-      W7e k (by omega_using [h1]) (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h1]) (by omega_using [h1])]
+    rw [hW9 k (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h1]) (by omega_using [h1])
+      (by omega_using [h2]) (by omega_using [h2]), mW_other (by omega_using [h1]),
+      W7e k (by omega_using [h1, h2]) (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h1]) (by omega_using [h1])]
     exact hW k (.inr ⟨h1, by omega_using [h2]⟩)
   have e1 : (s.gpr .rcx).toNat - (Hl.D + 1) = (s.gpr .rcx).toNat - Hl.D - 1 := by omega_using []
   rw [hsD, e1] at hV7 hV9

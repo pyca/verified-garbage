@@ -1,46 +1,50 @@
 module
 
-public import VerifiedGarbage.Impl.Mgf1.X86_64
+public import VerifiedGarbage.Impl.Mgf1.X86_64.Table
 
 /-!
 # RSAES-OAEP (RFC 8017 §7.1) on x86-64
 
-`encrypt` and `decrypt`, for a hash function `H` (the label's) and MGF1's
-hash function `G`, each an `Impl.Pbkdf2.Md.X86_64.Stream` (the streaming
+Encryption with a precomputed public key
+(`Impl/RsaOaep/X86_64/Precomputed.lean`) and `decrypt`, for a hash function
+`H` (the label's), an `Impl.Pbkdf2.Md.X86_64.Stream` (the streaming
 functions of MD5, SHA-1, SHA-224, SHA-256 or the SHA-512 family), calling
-those functions, MGF1 (`Impl/Mgf1/X86_64.lean`), and the RSA operation: the
-public-key operation within BoringSSL's limits (`vg_rsa_public_checked`)
-when encrypting, the private-key operation checked against `e`
-(`vg_rsa_private_checked`) when decrypting.
+those functions, MGF1 with the hash function of the table of the interface
+`Hash` that the last argument points to (`Impl/Mgf1/X86_64/Table.lean`,
+among the functions `f : Fns`), and the RSA operation: the public-key
+operation within BoringSSL's limits when encrypting, the private-key
+operation checked against `e` (`vg_rsa_private_checked`) when decrypting.
 
 Everything runs in a frame of `frameBytes` bytes: at `rsp`, the stack
 arguments of the RSA operation; then the slots, which hold the arguments
-and the values the code computes (the callees keep no caller-saved
+and the values the code computes (MGF1 its table's address and digest
+length too) (the callees keep no caller-saved
 register). The first `oRsa` = 8192 bytes of `scratch` are ours; the RSA
 operation gets the rest, `scratch_len - 1024` words.
 
 ## Encryption
 
 `encrypt(out = rdi, out_len = rsi, n = rdx, n_len = rcx, e = r8,
-e_len = r9, label, label_len, msg, msg_len, seed, scratch, scratch_len)`,
-the last seven on the stack. If `k < 2 hLen + 2` or `msg_len > k - 2 hLen
+e_len = r9, label, label_len, msg, msg_len, seed, scratch, scratch_len, …)`,
+the last seven (and what follows them) on the stack. If `k < 2 hLen + 2` or `msg_len > k - 2 hLen
 - 2` (public), it writes zeros to `out` and returns 0. Otherwise it writes
 `EM = 0x00 ‖ seed ‖ DB` to `scratch` (`DB = lHash ‖ 0… ‖ 0x01 ‖ M`, the
 label hashed with `H`), masks `DB` with MGF1 of the seed and then the seed
-with MGF1 of `maskedDB` (`G`), and returns `vg_rsa_public_checked` of `EM`
-into `out`.
+with MGF1 of `maskedDB` (the table's hash function), and returns the
+public-key operation of `EM` into `out`.
 
 ## Decryption
 
 `decrypt(out = rdi, out_len = rsi, msg_len = rdx, n = rcx, n_len = r8,
 e = r9, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len,
 label, label_len, ct, ct_len, scratch, scratch_len)`, the last seventeen
-on the stack. `vg_rsa_private_checked` writes `EM` (or zeros) to `scratch`
+on the stack, then `mgf1`. `vg_rsa_private_checked` writes `EM` (or zeros) to `scratch`
 and returns `r` (1, 0 or 2), which only selects values without a branch.
 If `k < 2 hLen + 2` (public), the result is `r = 2 ? 2 : 0`, with zeros to
 `out` and `*msg_len`. Otherwise, as BoringSSL's
 `RSA_padding_check_PKCS1_OAEP_mgf1` without a branch on anything secret:
-the label is hashed (`H`), the seed and `DB` unmasked in place (`G`); an
+the label is hashed (`H`), the seed and `DB` unmasked in place (with the
+table's hash function); an
 accumulator `acc` ORs together `EM`'s first byte and `lHash' ⊕ lHash`; the
 scan over `T = DB[hLen..]` (`t = k - 2 hLen - 1` bytes) finds the index
 `idx` of its first nonzero byte with masks, and ORs into `acc` a mask if a
@@ -60,7 +64,8 @@ namespace VG.Impl.RsaOaep.X86_64
 
 open VG.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
-open VG.Impl.Mgf1.X86_64 (seqs sp ix at_ step byteLoop Layout mgfXor)
+open VG.Impl.Mgf1.X86_64 (seqs sp ix at_ step byteLoop Layout)
+open VG.Impl.Mgf1.X86_64.Table (Fns)
 
 /-! ## The frame -/
 
@@ -98,6 +103,9 @@ def sAcc : Nat := 248
 def sIdx : Nat := 256
 def sOk : Nat := 264
 def sA : Nat := 272
+/-- MGF1's table's address and its digest length. -/
+def sTab : Nat := 280
+def sD : Nat := 288
 
 /-! ## Our part of `scratch` -/
 
@@ -133,7 +141,11 @@ def argSlot (j d : Nat) : List Instr := [.mov .rax (.mem (arg j)), .store (sp d)
 /-- `imm32 n`. -/
 def im (n : Nat) : Src := .imm (BitVec.ofNat 32 n)
 
-variable (H G : Stream)
+variable (H : Stream) (f : Fns)
+
+/-- `dst ⊕= MGF1(src, dstLen)` with the hash function of the table that the
+function's stack argument `j` points to. -/
+def mgfT (j : Nat) : Prog isa := Impl.Mgf1.X86_64.Table.mgfXor lay (frameBytes + 8 + 8 * j) sTab sD f
 
 /-! ## Common pieces -/
 
@@ -217,21 +229,9 @@ def pubArgs : List Instr :=
 /-- `EM`, before masking. -/
 def encEm : Prog isa := seqs [clearEm, copySeed H, hashLabel H oDig, copyLh H, putMsg]
 
-variable (pubN : String) (pubC : Prog isa)
-
-/-- After the checks. -/
-def encMain : Prog isa :=
-  seqs [encEm H, .block (dbArgs H), mgfXor lay G, .block (seedArgs H), mgfXor lay G, .block pubArgs,
-    .call pubN pubC]
-
 /-- The prologue and the checks, then `main`. -/
 def encBodyWith (main : Prog isa) : Prog isa :=
   seqs [.block (encPrologue ++ chkK H), .ite .b encFail (seqs [.block (chkMsg H), .ite .b encFail main])]
-
-def encBody : Prog isa := encBodyWith H (encMain H G pubN pubC)
-
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`. -/
-def encrypt : Prog isa := .frame (.alloc frameBytes) (encBody H G pubN pubC) (.free frameBytes)
 
 /-! ## Decryption -/
 
@@ -347,7 +347,7 @@ def decRet : List Instr :=
 
 /-- After the private operation and the check of `k`: the decoding. -/
 def decMain : Prog isa :=
-  seqs [hashLabel H oLh, .block (seedArgs H), mgfXor lay G, .block (dbArgs H), mgfXor lay G, accLh H, scan H,
+  seqs [hashLabel H oLh, .block (seedArgs H), mgfT f 17, .block (dbArgs H), mgfT f 17, accLh H, scan H,
     clearBuf H, copyT, shift, .block okMask, outLoop, .block (decRet H)]
 
 variable (privN : String) (privC : Prog isa)
@@ -355,9 +355,9 @@ variable (privN : String) (privC : Prog isa)
 def decBody : Prog isa :=
   seqs [.block (decPrologue ++ privArgs), .call privN privC,
     .block ([.mov32 .rax (.reg .rax), .store (sp sR) .rax] ++ chkK H),
-    .ite .b decFail (decMain H G)]
+    .ite .b decFail (decMain H f)]
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`. -/
-def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody H G privN privC) (.free frameBytes)
+/-- `vg_rsa_oaep_<H>_decrypt`. -/
+def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody H f privN privC) (.free frameBytes)
 
 end VG.Impl.RsaOaep.X86_64

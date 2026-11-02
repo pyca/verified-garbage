@@ -209,6 +209,22 @@ theorem ew_mgf {Gm : Hash} (hG : HashOK Gm) (KG : Callees Gm) (mG : MgfLink Gm h
         exact hW k hk⟩
 
 omit hp in
+theorem ew_mgfT {Gm : Hash} (hG : HashOK Gm) (mG : MgfLink Gm hG) {f : Impl.Mgf1.X86_64.Table.Fns}
+    (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin)
+    {src srcLen dst dstLen : Nat} (hf : MFit src srcLen dst dstLen) {t : State}
+    (h : EWM s t src srcLen dst dstLen)
+    (T : Table.Tab Gm.stream f (fb s) (stackArg s 9) (frameBytes + 8 + 8 * 9) t) :
+    WP isa (mgfT f 9) t (EW s) := by
+  obtain ⟨V, W, R, hW, A⟩ := h.rep
+  exact WP.mono (wp_good (Table.mgfT_good hgi hgu hgf _) (Table.mgfXorT_ok hG.stream hgi hgu hgf mG.hash mG.len
+    (valid_of_link hG mG) T h.L R hf A))
+    fun t1 ⟨⟨L1, rd1, wr1, cs1, V1, W1, R1, hW1, _⟩, sp1, mx1, f1⟩ =>
+      ⟨h.he.step rd1 wr1 sp1 (fun r hr _ => cs1 r hr) mx1 f1, L1, V1, W1, R1, fun k hk => by
+        rw [hW1 k (by rcases hk with rfl | hk <;> unfold nW frameBytes <;> omega) (by omega) (by omega) (by omega)
+          (by omega)]
+        exact hW k hk⟩
+
+omit hp in
 theorem ew_pubArgs {t : State} (h : EW s t) : WP isa (.block pubArgs) t (EWP s) := by
   obtain ⟨V, W, R, hW⟩ := h.rep
   exact WP.mono (wp_good pubArgs_good (pubArgs_ok h.L R fun k h1 h2 => hW k (.inr ⟨h1, by omega⟩)))
