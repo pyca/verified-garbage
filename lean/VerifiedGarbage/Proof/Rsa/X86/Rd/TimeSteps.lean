@@ -2,8 +2,12 @@ module
 -- separate module: its stages build in parallel with the correctness proofs, `Sized`, and the taint checks, `TimeCheck`
 
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
-public import VerifiedGarbage.Proof.Rsa.X86.RvBase
-public import VerifiedGarbage.Proof.Rsa.X86.RvResult
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Inputs
+public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+public import Init.Data.Fin.Basic
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.TCB.X86.State
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Proof.Rsa.RecoverDet
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
@@ -17,9 +21,6 @@ import VerifiedGarbage.Proof.Rsa.X86.Rd.Gcd
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Stages
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Stages2
 import VerifiedGarbage.Proof.Rsa.RecoverDetModel
-import VerifiedGarbage.Proof.Rsa.X86.RvLoads
-import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
-import VerifiedGarbage.Proof.Rsa.X86.RvArguments
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Appendix C.2 on i686: each run's stages, for its timing

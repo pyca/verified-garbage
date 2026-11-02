@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Comp
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds2
-public import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
+public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatchRt.Init
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatchRt.Shr
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Comp
 meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds2
-meta import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
+meta import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Step
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob

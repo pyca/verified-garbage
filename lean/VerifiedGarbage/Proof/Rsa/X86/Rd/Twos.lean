@@ -1,17 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Proof.Rsa.RecoverDet
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Count
-import VerifiedGarbage.Proof.Rsa.X86.RvOps
-import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
-import VerifiedGarbage.Proof.Rsa.X86.RvSlots
-import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
-import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
 public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

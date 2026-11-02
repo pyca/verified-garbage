@@ -1,16 +1,14 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
-public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
-import VerifiedGarbage.Proof.Rsa.X86.RvBatchGcd
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
-import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The batched GCD in prime recovery by Appendix C.2 (i686)
 
-`RvBatchGcd`'s `batchGcd_ok` for the arrays of Appendix C.2: `gcd(m, x)` of
+`batchGcd_ok` (`Rd/Frame.lean`) for the arrays of Appendix C.2: `gcd(m, x)` of
 `m` (odd) in narrow array 8 and `x` in narrow array 0 into narrow array 1,
 narrow array 10 zero, keeping `n`, the wide `2^k x` and the flag of `d e ≥ 2`.
 -/

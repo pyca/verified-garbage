@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
@@ -10,13 +10,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.Rd.Sqrt
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Product
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Count
-import VerifiedGarbage.Proof.Rsa.X86.RvOps
-import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
-import VerifiedGarbage.Proof.Rsa.X86.RvSlots
-import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
-import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
-import VerifiedGarbage.Proof.Rsa.X86.RvDivSet
-import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Appendix C.2 on i686: the second division, `b² - 4 n` and the factors -/

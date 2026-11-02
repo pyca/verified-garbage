@@ -1,6 +1,14 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
+public import VerifiedGarbage.Impl.Rsa.X86.MulMod
+public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
+public import VerifiedGarbage.Impl.Mont.X86.Context
+public import VerifiedGarbage.Impl.Mont.X86.Window
+public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Impl.Rsa.X86.GcdBatchRt
+import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
+public import VerifiedGarbage.Impl.Mont.X86.Sse2
+public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
 
 /-! # RSA prime recovery by SP 800-56B Rev. 2 Appendix C.2 at a run-time width (i686)
 
@@ -24,11 +32,92 @@ Every loop's count is a public length.
 -/
 
 @[expose] public section
+
+namespace VG.Impl.Rsa.X86.Recover
+open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Rsa.X86.Keys
+open VG.Impl.Bignum.X86
+
+def sMask : Nat := 132
+def aN : Nat := 32
+def aW : Nat := 37
+def nArr : Nat := 44
+
+def wZ : Nat := 0
+def wE : Nat := 1
+def wD : Nat := 2
+def wM : Nat := 3
+def wMod : Nat := 4
+def wT : Nat := 5
+def width (n : Nat) : Nat := 2 * n + 2
+def wide (n : Nat) : Nat := 2 * width n + 2
+
+def entry : List Instr := [.mov .eax (.mem (PublicFn.argument 10))] ++
+  PublicFn.save ++ [.mov .edi (.reg .eax)]
+
+def failure : Prog isa := seqs [CrtValues.clear 0, CrtValues.clear 2,
+  .block [.mov .eax (.imm 0)]]
+
+def prodCount : List Instr := [.mov .esi (.mem (PublicFn.argument 7)),
+  .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi)]
+
+end VG.Impl.Rsa.X86.Recover
+
+namespace VG.Impl.Rsa.X86.RecoverRt
+open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Bignum.X86
+open VG.Impl.Rsa.X86.Keys (aM aNM aZero hdr seqs)
+open VG.Impl.Rsa.X86.KeyRt (Lay Shape arrPtr bytesB sub3 copy sel half bitOf setOne clrLow eqSFast zeroArrays
+  mulMod gcd div load restoreEdi)
+open VG.Impl.Rsa.X86.Recover (sMask aN aW nArr wZ wE wD wM wMod wT entry prodCount)
+
+/-- The modulus's length (argument 5) and the working space (argument 10), with `k` words pushed. -/
+def lay (shape : Shape) (k : Nat := 0) : Lay := { len := 5 + k, ws := 10 + k, shape, doubling := true }
+
+/-- The numbers modulo `n`. -/
+abbrev nar : Lay := lay .narrow
+/-- The product and its halvings. -/
+abbrev wid : Lay := lay .wide
+
+/-- Narrow array `j`'s wide index: `2 j`. -/
+def w (j : Nat) : Nat := 2 * j
+
+/-! ## The numbers -/
+
+def loads : Prog isa := seqs [zeroArrays nar nArr, load nar 4 aN, load nar 6 (w wE), load nar 8 (w wD)]
+
+/-- The top bit of the wide `[wMod]`: the modulus `2^(32 W - 1)` of the product. -/
+def setTop : List Instr :=
+  arrPtr wid .eax wMod .edx ++ [.alu .add .eax (.reg .edx), .alu .sub .eax (.imm 12),
+    .mov .ecx (.imm 0x80000000), .store (at_ .eax 0) .ecx]
+
+def prod : Prog isa := .seq (.block (setTop ++ prodCount)) (mulMod wid wZ wE wD wM wMod wT)
+
+/-! ## The factors -/
+
+/-- `[j]` under the mask into the big-endian bytes at argument `arg`, as many as argument `arg + 1`. -/
+def store (arg j : Nat) : Prog isa := seqs [
+  sel nar j aZero j sMask,
+  .block ([.mov .ebx (.mem (PublicFn.argument arg)), .mov .ecx (.mem (PublicFn.argument (arg + 1)))] ++
+    arrPtr nar .esi j .edx ++ [.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)]),
+  reverseBytes]
+
+def stores : Prog isa := seqs [store 0 5, store 2 6, .block [.mov .eax (.mem (sc sMask))]]
+
+/-! ## Fused exponentiation and root search -/
+
+/-- Boolean header operations, with zero or one in each input slot. -/
+def flagNot (d a : Nat) : Prog isa := .block [
+  .mov .eax (.mem (sc a)), .alu .xor .eax (.imm 1), .store (sc d) .eax]
+
+def flagBin (op : AluOp) (d a b : Nat) : Prog isa := .block [
+  .mov .eax (.mem (sc a)), .alu op .eax (.mem (sc b)), .store (sc d) .eax]
+
+end VG.Impl.Rsa.X86.RecoverRt
+
 namespace VG.Impl.Rsa.X86.RecoverDetRt
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86
 open VG.Impl.Rsa.X86.Keys (seqs aZero)
-open VG.Impl.Rsa.X86.KeyRt (arrPtr bytesB copy sel sub3 half bitOf setOne orOne chain addLow
-  zeroWide eqSFast div bits)
+open VG.Impl.Rsa.X86.KeyRt (arrPtr bytesB copy sel sub3 half bitOf setOne orOne chain addLow zeroWide eqSFast
+  div bits)
 open VG.Impl.Rsa.X86.RecoverRt (nar wid flagNot flagBin)
 
 /-! ## Header words

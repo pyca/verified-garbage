@@ -1,10 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Rsa.X86.RvViews
-import VerifiedGarbage.Proof.Rsa.X86.RvWrite
-import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
@@ -18,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Array arithmetic for prime recovery by Appendix C.2 (i686)
 
-`RvOps`' operations on the two views of the recovery's working space, and
+The operations (`Rd/Frame.lean`) on the two views of the recovery's working space, and
 those Appendix C.2 adds: sums with their carry (`KS.add_w`, `KS.add_W`),
 halving and the low word of narrow arrays, a wide array zeroed with its
 extra word (`KS.zeroWide_W`), a narrow number widened into it (`KS.widen`),
