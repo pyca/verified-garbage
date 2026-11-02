@@ -139,7 +139,7 @@ theorem KB.of_eq {p : Params} {STK : Nat} {σ : State} {t : Nat} {s s' : State} 
 
 /-! ## `z` -/
 
-/-- The checks of `z[j]` for `j < nz`; `y[j]` for `ys ≤ j < ℓ`, `r26 = 0`. -/
+/-- The checks of `z[j]` for `j < nz`; `y[j]` for `ys ≤ j < ℓ`, `s6 = 0`. -/
 structure IZ (p : Params) (STK : Nat) (σ : State) (t nz ys : Nat) (s : State) : Prop where
   b : KB p STK σ t s
   z : ∀ r < nz, PolyIs s.mem (SL p STK σ (yBase p + r)) (Zv p σ (p.ℓ * t) r)
@@ -171,7 +171,7 @@ theorem IZ.weak {p : Params} {STK : Nat} {σ : State} {t r : Nat} {s : State} (h
 
 /-! ## `r₀` -/
 
-/-- The checks of `r₀[j]` for `j < nr` (`w[j]` is `w[j] - cs₂[j]`); `w[j]` for `ws ≤ j < k`; `z` checked, `r26 = 0`. -/
+/-- The checks of `r₀[j]` for `j < nr` (`w[j]` is `w[j] - cs₂[j]`); `w[j]` for `ws ≤ j < k`; `z` checked, `s6 = 0`. -/
 structure IQ (p : Params) (STK : Nat) (σ : State) (t nr ws : Nat) (s : State) : Prop where
   b : KB p STK σ t s
   z : ∀ r < p.ℓ, PolyIs s.mem (SL p STK σ (yBase p + r)) (Zv p σ (p.ℓ * t) r)
@@ -573,7 +573,7 @@ theorem hR_piece {t i : Nat} (hi : i < p.k) :
     rw [e1, e2] at hq he
     exact ⟨⟨⟨h.keep hF k' (by csep hF), polyIs_keepW h.b.l.k.sc.site.ok k'.frame (by csep hF) (by decide) rfl hw⟩,
       hq⟩, he⟩
-  -- `r26 ← r26 + |h[i]|`
+  -- `s6 ← s6 + |h[i]|`
   have p9 : SPiece p STK (fun σ s => ((IH p STK σ t (i + 1) i (i + 1) s ∧
         PolyIs s.mem (SL p STK σ (wBase p + i)) (W''v p σ (p.ℓ * t) i)) ∧
         HintIs s.mem (SL p STK σ (5 + i)) 1 [Hv p σ (p.ℓ * t) i]) ∧

@@ -396,7 +396,7 @@ theorem srel2p {I : State → State → Prop} (hI : ∀ σ s, I σ s → SC2 p S
 
 /-! ## A branch on `s4` -/
 
-/-- `ifOkElse t e`: `t` if `r24 ≠ 0` and `e` otherwise, where `s4` is `v σ`,
+/-- `ifOkElse t e`: `t` if `s4 ≠ 0` and `e` otherwise, where `s4` is `v σ`,
 a function of the public data. -/
 theorem ifOkElse_piece {I J : State → State → Prop} {t e : Prog isa} {v : State → BitVec 64}
     (hv : ∀ σ s, SPre p STK σ → I σ s → s.gpr .s4 = v σ)
