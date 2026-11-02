@@ -20,6 +20,8 @@ the restore of the saved registers, `code` meets `fnPost`. `key_verified_of`:
 (`Proof/RsaKeyGen/PPC64LE/Key/{Result,Correct,Verified}.lean`).
 -/
 
+-- separate module: the correctness proof is not re-checked with every change to the constant-time proof
+
 @[expose] public section
 
 namespace VG.Proof.RsaKeyGen.RISCV64.Key

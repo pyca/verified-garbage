@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 the mask of the checks).
 -/
 
+-- separate module: the tail's proofs are not re-checked with every change to the body's chaining
+
 @[expose] public section
 
 namespace VG.Proof.RsaKeyGen.RISCV64.Key
