@@ -332,6 +332,86 @@ pub fn bench(c: &mut Criterion) {
     // Only the Miller–Rabin groups this run: the others' results are recorded
     // in their pull requests (set to false to run them too).
     const ONLY_MR: bool = true;
+    // Only the key generation groups this run (set to false for the others).
+    const ONLY_KEYGEN: bool = true;
+    {
+        // The unproven RSA key generation candidate: one accepted candidate
+        // (a known prime, so all its witnesses run), and a whole prime's
+        // generation (candidates from random octets until one is accepted),
+        // next to OpenSSL's `BN_generate_prime_ex`.
+        use verified_garbage_asm_riscv64::rsa_proto6::vg_rsa_keygen_candidate_proto;
+        let cand = |len: usize, rand: &[u8], s: &mut [u64]| -> (u32, u64) {
+            let mut out = vec![0u8; len];
+            let mut used = 0u64;
+            let e = [1u8, 0, 1];
+            let r = unsafe {
+                vg_rsa_keygen_candidate_proto(
+                    out.as_mut_ptr(),
+                    len,
+                    &mut used,
+                    e.as_ptr(),
+                    3,
+                    core::ptr::null(),
+                    0,
+                    black_box(rand.as_ptr()),
+                    rand.len(),
+                    s.as_mut_ptr(),
+                    s.len(),
+                )
+            };
+            (r, used)
+        };
+        let mut g = c.benchmark_group("rsa_proto_keygen_accept");
+        for bits in [1024i32, 1536, 2048] {
+            let mut p = BigNum::new().unwrap();
+            p.generate_prime(bits, false, None, None).unwrap();
+            while p.to_vec()[0] >> 6 != 3 {
+                p.generate_prime(bits, false, None, None).unwrap();
+            }
+            let len = (bits / 8) as usize;
+            let mut rand = p.to_vec();
+            rand.extend((0..64 * len).map(|i| (i * 131 + 7) as u8));
+            let mut s = vec![0u64; 16 * len + 32];
+            assert_eq!(cand(len, &rand, &mut s).0, 1);
+            g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                b.iter(|| cand(len, &rand, &mut s))
+            });
+        }
+        g.finish();
+        let mut g = c.benchmark_group("rsa_proto_keygen_prime");
+        for bits in [1024i32, 2048] {
+            let len = (bits / 8) as usize;
+            let mut s = vec![0u64; 16 * len + 32];
+            let mut rand = vec![0u8; 200 * len];
+            let mut x = 0x9e3779b97f4a7c15u64;
+            g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                b.iter(|| {
+                    loop {
+                        for v in rand.iter_mut() {
+                            x ^= x << 13;
+                            x ^= x >> 7;
+                            x ^= x << 17;
+                            *v = (x >> 24) as u8;
+                        }
+                        if cand(len, &rand, &mut s).0 == 1 {
+                            break;
+                        }
+                    }
+                })
+            });
+            g.bench_function(BenchmarkId::new(OPENSSL, bits), |b| {
+                b.iter(|| {
+                    let mut p = BigNum::new().unwrap();
+                    p.generate_prime(bits, false, None, None).unwrap();
+                    p
+                })
+            });
+        }
+        g.finish();
+    }
+    if ONLY_KEYGEN {
+        return;
+    }
     {
         // The unproven Miller–Rabin pieces: the prime search (`Search.millerRabin`,
         // after the sieve, the trial division by the shared table and `montPrep`)
