@@ -1,5 +1,7 @@
 module
 
+-- separate module: it builds in parallel with `Correct`, which `Verified` also needs.
+
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.CTHash
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Post
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Verified

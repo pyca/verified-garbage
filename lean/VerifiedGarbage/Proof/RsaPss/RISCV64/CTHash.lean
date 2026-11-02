@@ -1,5 +1,8 @@
 module
 
+-- separate module: it builds in parallel with the correctness proofs after the scan (`Finish` to `Post`),
+-- which `CTPost` also needs.
+
 import VerifiedGarbage.Proof.RsaPss.RISCV64.CTBlocks
 import VerifiedGarbage.Proof.RsaPss.RISCV64.Select
 import VerifiedGarbage.Proof.RsaPss.RISCV64.Prefix

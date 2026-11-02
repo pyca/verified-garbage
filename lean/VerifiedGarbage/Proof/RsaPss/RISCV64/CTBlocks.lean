@@ -114,7 +114,8 @@ theorem select_taint (h : Pins Φ [.s0]) : RelCT isa (Two Φ) (select H) fun _ _
     (c := select H) (c' := select Hd) (by rfl) (by taint_decide))
 
 theorem fixUpd_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block ([.li .a1 0] ++ yBase .a2 ++ [.addi .a3 .s6 ((8 + H.D : Nat) : Int)])) fun _ _ => True :=
+    (.block (([.li .a1 0] : List Instr) ++ yBase .a2 ++ ([.addi .a3 .s6 ((8 + H.D : Nat) : Int)] : List Instr)))
+    fun _ _ => True :=
   two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
     (c := .block ([.li .a1 0] ++ yBase .a2 ++ [.addi .a3 .s6 ((8 + H.D : Nat) : Int)]))
     (c' := .block ([.li .a1 0] ++ yBase .a2 ++ [.addi .a3 .s6 0])) (by rfl) (by taint_decide))
@@ -126,7 +127,7 @@ theorem fixFin_taint (h : Pins Φ []) : RelCT isa (Two Φ)
     (by taint_decide))
 
 theorem anyUpd_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block ([.li .a1 0] ++ yBase .a2 ++ [.li .a3 (8 + H.D)])) fun _ _ => True :=
+    (.block (([.li .a1 0] : List Instr) ++ yBase .a2 ++ ([.li .a3 (8 + H.D)] : List Instr))) fun _ _ => True :=
   two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
     (c := .block ([.li .a1 0] ++ yBase .a2 ++ [.li .a3 (8 + H.D)]))
     (c' := .block ([.li .a1 0] ++ yBase .a2 ++ [.li .a3 0])) (by rfl) (by taint_decide))
@@ -141,8 +142,8 @@ theorem lr1_taint (h : Pins Φ []) : RelCT isa (Two Φ)
     (by taint_decide))
 
 theorem lr2_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block ([.addi .a1 .s8 ((8 + H.D : Nat) : Int)] ++ yBase .a2 ++
-      [.addi .a2 .a2 ((8 + H.D : Nat) : Int), .add .a2 .a2 .s8, .li .a3 1])) fun _ _ => True :=
+    (.block (([.addi .a1 .s8 ((8 + H.D : Nat) : Int)] : List Instr) ++ yBase .a2 ++
+      ([.addi .a2 .a2 ((8 + H.D : Nat) : Int), .add .a2 .a2 .s8, .li .a3 1] : List Instr))) fun _ _ => True :=
   two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
     (c := .block ([.addi .a1 .s8 ((8 + H.D : Nat) : Int)] ++ yBase .a2 ++
       [.addi .a2 .a2 ((8 + H.D : Nat) : Int), .add .a2 .a2 .s8, .li .a3 1]))

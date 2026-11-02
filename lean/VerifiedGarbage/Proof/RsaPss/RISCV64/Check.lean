@@ -1,5 +1,7 @@
 module
 
+-- separate module: it builds in parallel with `Unmask`, `Scan` and `Finish`, which `Post` also needs.
+
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Mid
 public import VerifiedGarbage.Impl.RsaPss.RISCV64
 import VerifiedGarbage.Proof.Framework.Offset

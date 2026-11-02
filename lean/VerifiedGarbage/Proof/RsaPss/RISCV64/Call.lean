@@ -1,5 +1,8 @@
 module
 
+-- separate module: it builds in parallel with the proofs after the call (`Mid` to `Post`), which `Correct`
+-- also needs.
+
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Pre
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.VerifyCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem

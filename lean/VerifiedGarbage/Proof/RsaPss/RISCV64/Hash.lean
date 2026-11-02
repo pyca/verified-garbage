@@ -1,5 +1,7 @@
 module
 
+-- separate module: it builds in parallel with `Select`, `Shift` and `Cmp`, which `Finish` also needs.
+
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Base
 public import VerifiedGarbage.Impl.RsaPss.RISCV64
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Pre
