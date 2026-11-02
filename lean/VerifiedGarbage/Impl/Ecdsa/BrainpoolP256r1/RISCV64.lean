@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.WindowA
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Gen4
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.BrainpoolP256r1Field
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.BrainpoolP256r1Order
@@ -28,7 +29,8 @@ def brainpoolp256r1Order : Weierstrass.RISCV64.Field :=
 complete addition for any `a` (`am3 := false`). -/
 def brainpoolp256r1 : Cfg := { n := 4, C := Spec.BrainpoolP256r1.curve, FP := brainpoolp256r1Field, am3 := false }
 
-/-- `vg_brainpoolp256r1_mul`. -/
-def mulBrainpoolP256r1 : Prog isa := brainpoolp256r1.mulFn
+/-- `vg_brainpoolp256r1_mul`, by four-bit windows with the Jacobian doubling for
+any `a` (`Impl/Ecdsa/RISCV64/WindowA.lean`). -/
+def mulBrainpoolP256r1 : Prog isa := WindowA.Cfg.mulFn brainpoolp256r1 WindowA.dblJa
 
 end VG.Impl.Ecdsa.RISCV64
