@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Proof.Rsa.X86.RvABI
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 public import VerifiedGarbage.Proof.Rsa.X86.RvPair
-public import VerifiedGarbage.Proof.Rsa.X86.RvTimeSized
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Base
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -17,8 +18,8 @@ import VerifiedGarbage.Proof.Rsa.X86.RvReturn
 import VerifiedGarbage.Proof.Rsa.X86.RvBuffers
 import VerifiedGarbage.Proof.Rsa.X86.RvResources
 import VerifiedGarbage.Proof.Rsa.X86.RvArgumentsEq
+import VerifiedGarbage.Proof.Rsa.X86.RvArguments
 import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
@@ -26,8 +27,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeCheck
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeSteps
-import VerifiedGarbage.Proof.Rsa.X86.RvTimeRest
-import VerifiedGarbage.Proof.Rsa.X86.GcdBatchRt.Time
+public import VerifiedGarbage.Proof.Rsa.X86.GcdBatchRt.Time
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Product
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Stages
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Stages2
@@ -53,6 +53,91 @@ them: `sizedD_relCT` from states whose writable regions are narrowed to the
 working space and the outputs, and `sizedNarrowD_relCT` from the states
 themselves.
 -/
+/-! ## What the timing shares with Appendix C.1's
+
+The writable regions the pieces' checks narrow to, and the GCD's timing
+from a stage (formerly in C.1's `RvTimeSized` and `RvTimeRest`, which only
+C.1's timing used besides).
+-/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.Recover
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
+open VG.Proof.Bignum.X86
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Proof.Rsa.X86.Keys
+
+/-- What the body writes but the stack: the working space and the outputs. -/
+def narrowW (g : CallGeometry) : List Region := [⟨g.B, g.Z⟩, g.buffer 0, g.buffer 2]
+
+/-- The geometry with its writable regions narrowed to `narrowW`. -/
+def narrowG (g : CallGeometry) : CallGeometry := ⟨{ g.toGeo with wr := narrowW g }⟩
+
+theorem inputs_agree {g : CallGeometry} {s t : State} (pg : PubG g.toGeo) (h : Inputs g s) (j : Inputs g t) :
+    VG.X86.Taint.Agree τA s t := by
+  have a₁ : ArgsOk s := by unfold ArgsOk; rw [h.esp, h.wrEq]; exact pg
+  have a₂ : ArgsOk t := by unfold ArgsOk; rw [j.esp, j.wrEq]; exact pg
+  have f₁ := a₁.1
+  have f₂ := a₂.1
+  have sp : s.gpr .esp = t.gpr .esp := h.esp.trans j.esp.symm
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, τA_wf a₁, τA_wf a₂,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => sp, fun k h4 hk => ?_⟩
+  · simp only [τA, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact BitVec.eq_of_toNat_eq (h.ws.workspace.edi_toNat.trans j.ws.workspace.edi_toNat.symm)
+    · exact sp
+  · simp only [τA] at hk
+    have C₁ := h.arguments ((k - 4) / 4) (by omega)
+    have C₂ := j.arguments ((k - 4) / 4) (by omega)
+    rw [show VG.X86.Taint.depth τA.stk = 0 from rfl, Nat.zero_add,
+      VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
+      Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
+    exact congrArg _ (show arg s _ = arg t _ from C₁.value.trans C₂.value.symm)
+
+/-- A stage's state is what the batched GCD's timing starts from, in the wide layout. -/
+theorem KS.gcdPre {g : Geo} (pg : PubG g) {s0 s : State} {A : Nat → Nat} {live : List Nat}
+    {AW : Nat → Nat} {liveW : List Nat} {V : Nat → Nat} {ls : List Nat}
+    (h : KS g s0 A live AW liveW V ls s) :
+    VG.Proof.Rsa.X86.InvBatchRt.Time.Pre0 VG.Impl.Rsa.X86.RecoverRt.wid g.B g.Z (16 * g.n + 24) 22 g.args g.sp s :=
+  ⟨h.rtW, by decide, ⟨h.argsOk pg, h.sp, fun i hi => h.arg (h.start.2 i hi).1 (by
+    change i < 12 at hi; omega)⟩⟩
+
+theorem gcdFits {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
+    {AW : Nat → Nat} {liveW : List Nat} {V : Nat → Nat} {ls : List Nat}
+    (h : KS g s0 A live AW liveW V ls s) :
+    VG.Proof.Rsa.X86.GcdBatchRt.Time.GFits g.Z (16 * g.n + 24) := by
+  have lo := h.lower; have up := h.upper
+  have f := h.rtW.ws.fits
+  have en : VG.Proof.Rsa.X86.InvBatchRt.nw (16 * g.n + 24) = 2 * g.n + 3 := by
+    simp only [VG.Proof.Rsa.X86.InvBatchRt.nw, VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega
+  have ek := VG.Proof.Rsa.X86.InvBatchRt.kw_eq (16 * g.n + 24)
+  simp only [arr, S, hdr] at f
+  rw [en] at ek
+  rw [ek] at f
+  refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_⟩ <;> rw [en]
+  · generalize 2 * g.n + 3 = q at *; omega
+  all_goals omega
+
+theorem narrow_inputs {g : CallGeometry} {s : State} (h : Inputs g s) :
+    Inputs (narrowG g) (s.withRegions (s.rd ++ s.wr) (narrowW g)) := by
+  refine ⟨⟨⟨h.ws.workspace.edi, by simp [State.withRegions, narrowW, narrowG], h.ws.workspace.nowrap,
+      h.ws.workspace.stk⟩, h.ws.fits, h.ws.wpos, h.ws.wle⟩, h.lower, h.upper, h.esp, h.room, h.top,
+    fun i hi => ⟨⟨?_, (h.arguments i hi).stack.apart⟩, (h.arguments i hi).value⟩, h.stackApart, h.inputPositive,
+    h.inputBound, h.inputFit, fun j => ?_, h.inputApart, h.outputPositive, h.outputBound, h.outputFit,
+    fun j => ?_, h.outputScratch, h.outputSeparate, rfl⟩
+  · obtain ⟨r, hr, hc⟩ := (h.arguments i hi).stack.read
+    exact ⟨r, List.mem_append_left _ hr, hc⟩
+  · obtain ⟨r, hr, hc⟩ := h.inputRead j
+    exact ⟨r, List.mem_append_left _ hr, hc⟩
+  · refine ⟨g.buffer (2 * j.val), ?_, Region.contains_self _ _⟩
+    show _ ∈ narrowW g
+    match j with
+    | ⟨0, _⟩ => simp [narrowW]
+    | ⟨1, _⟩ => simp [narrowW]
+
+end VG.Proof.Rsa.X86.Recover
+end
+
 @[expose] public section
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
