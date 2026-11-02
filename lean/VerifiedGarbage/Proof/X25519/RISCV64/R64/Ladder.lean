@@ -177,6 +177,24 @@ theorem mulS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = tr
   · rw [upd_of_ne _ _ hqo]
     exact slots_after hq1 ho hf hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
 
+/-- The product by `a24`, by one word. -/
+theorem mulA24S {o y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
+    (ho : o + 32 ≤ ACC) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
+    (hS : SlotsOk s.mem b qs v) :
+    WP isa (.block (mulA24 o y)) s fun s' => Rest clob64 s s' ∧ Frame [FA b] s.mem s'.mem ∧
+      SlotsOk s'.mem b (o :: qs) (upd v o (Spec.X25519.a24 * v y)) := by
+  have hq1 := sep8_sep1 hq
+  have hy' := sep1_get hq1 hy
+  have hA := ACC_eq
+  refine WP.mono (mulA24_ok (by omega) (by omega) (sep8_o hq) (sep8_get hq hy) hc)
+    fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
+  by_cases hqo : q = o
+  · subst hqo
+    rw [upd_self, ← hS y hy, show Spec.X25519.a24 = toFe 121665 from rfl]
+    exact toFe_mul hv
+  · rw [upd_of_ne _ _ hqo]
+    exact slots_after hq1 ho (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
+
 theorem addS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
     (ho : o + 32 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b qs v) :
@@ -330,7 +348,7 @@ end
 
 /-- A field operation's code. -/
 def fcode : FOp → Prog isa
-  | .mul o x y => Impl.X25519.RISCV64.R64.mul o x y
+  | .mul o x y => if x = A24 then .block (mulA24 o y) else Impl.X25519.RISCV64.R64.mul o x y
   | .add o x y => .block (Impl.X25519.RISCV64.R64.add o x y)
   | .sub o x y => .block (Impl.X25519.RISCV64.R64.sub o x y)
 
@@ -344,26 +362,34 @@ known. -/
 def opsOk : List FOp → List Nat → Bool
   | [], _ => true
   | op :: ops, qs => Sep8 op.out qs && op.out + 32 ≤ ACC && qs.contains op.x &&
-      qs.contains op.y && opsOk ops (op.out :: qs)
+      qs.contains op.y && op.out != A24 && opsOk ops (op.out :: qs)
 
 theorem op_ok {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe} (op : FOp)
     (hq : Sep8 op.out qs = true) (ho : op.out + 32 ≤ ACC) (hx : op.x ∈ qs) (hy : op.y ∈ qs)
-    {s : State} (h : Cur b s0 a c qs v s) :
+    (hA : v A24 = Spec.X25519.a24) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (fcode op) s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
   cases op with
-  | mul o x y => exact opMul hq ho hx hy h
+  | mul o x y =>
+    by_cases hxA : x = A24
+    · subst hxA
+      rw [fcode, ite_eq_left rfl, FOp.val, hA]
+      exact WP.mono (mulA24S hq ho hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+    · rw [fcode, ite_eq_right hxA]
+      exact opMul hq ho hx hy h
   | add o x y => exact opAdd hq ho hx hy h
   | sub o x y => exact opSub hq ho hx hy h
 
 theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : State → Prop} :
     ∀ (ops : List FOp) (qs : List Nat) (v : Nat → Fe) (s : State), opsOk ops qs = true →
+      v A24 = Spec.X25519.a24 →
       Cur b s0 a c qs v s → (∀ s', Cur b s0 a c (outsQ ops qs) (runOps ops v) s' → WP isa k s' Q) →
       WP isa (opsCode ops k) s Q
-  | [], _, _, s, _, h, hk => hk s h
-  | op :: ops, qs, v, s, hok, h, hk => by
-    simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem] at hok
-    obtain ⟨⟨⟨⟨h1, h3⟩, h4⟩, h5⟩, h6⟩ := hok
-    exact WP.seq (WP.mono (op_ok op h1 h3 h4 h5 h) fun s' h' => ops_ok ops _ _ s' h6 h' hk)
+  | [], _, _, s, _, _, h, hk => hk s h
+  | op :: ops, qs, v, s, hok, hA, h, hk => by
+    simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem, bne_iff_ne, ne_eq] at hok
+    obtain ⟨⟨⟨⟨⟨h1, h3⟩, h4⟩, h5⟩, h7⟩, h6⟩ := hok
+    exact WP.seq (WP.mono (op_ok op h1 h3 h4 h5 hA h) fun s' h' =>
+      ops_ok ops _ _ s' h6 (by rw [upd_of_ne _ _ (Ne.symm h7), hA]) h' hk)
 
 /-! ## One iteration -/
 
@@ -439,7 +465,7 @@ theorem step_ok {b : Addr} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b k sL
     WP isa step s fun s' => LadInv b k x1 sL (n - 1) s' ∧ (s'.gpr .t1 != 0) = decide (n - 1 ≠ 0) := by
   rw [step_eq]
   refine WP.seq (WP.mono (head_ok hbits hn hn' h) fun s1 h1 =>
-    ops_ok ladOps LQ _ s1 ladOps_ok h1 fun s2 h2 => ?_)
+    ops_ok ladOps LQ _ s1 ladOps_ok rfl h1 fun s2 h2 => ?_)
   refine WP.block_nil ⟨⟨h2.ctx, h2.stp, ?_, h2.t1, ?_⟩, ?_⟩
   · rw [h2.t2, ladderAfter_step k x1 (show n - 1 < 255 by omega_arith), Nat.sub_add_cancel hn,
       ladderStep_eq]

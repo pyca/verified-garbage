@@ -213,7 +213,6 @@ codec!(
         VG_EC_P521_COMPRESS_PUBLIC_KEY_ADX_FEATURES
     ]
 );
-#[cfg(not(target_arch = "riscv64"))]
 codec!(
     Secp256k1,
     32,
@@ -358,7 +357,6 @@ mod tests {
     cases!(p384, P384, 48);
     #[cfg(not(target_arch = "riscv64"))]
     cases!(p521, P521, 66);
-    #[cfg(not(target_arch = "riscv64"))]
     cases!(secp256k1, Secp256k1, 32);
     cases!(brainpoolp256r1, BrainpoolP256r1, 32);
     #[cfg(not(target_arch = "riscv64"))]

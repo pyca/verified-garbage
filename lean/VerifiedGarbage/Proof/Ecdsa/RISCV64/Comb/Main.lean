@@ -203,6 +203,7 @@ theorem scanWord_ok {s : State} {base : Addr} (hw : WsReg s base) {q t : Nat} (h
       Keep treeRegs s s' := by
   have heb : Impl.Ecdsa.RISCV64.Comb.Cfg.eb Impl.Ecdsa.RISCV64.p256 = 64 := rfl
   unfold Impl.Ecdsa.RISCV64.Comb.Cfg.scanWord
+  simp only [show Impl.Ecdsa.RISCV64.p256.n = 4 from rfl, ↓reduceIte]
   rw [heb, List.append_assoc, List.append_assoc]
   have hne : ∀ (b : Reg), b = .a0 ∨ b = .a7 → ∀ r ∈ treeRegs, r ≠ b ∧ ∀ c < 5, r ≠ maskReg c := by
     intro b hb r hr
@@ -336,6 +337,8 @@ theorem window_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
   have hal := hw.al
   have hq : 7 * j / 64 ≤ 3 := by omega
   rw [Cfg.window, kc_eq] at *
+  rw [VG.Proof.Weierstrass.RISCV64.ldAt_lo (by decide), VG.Proof.Weierstrass.RISCV64.ldAt_lo (by decide)]
+  simp only [List.cons_append, List.nil_append]
   refine wp_sll (by decide) fun s₁ u₁ => wp_sub fun s₂ u₂ => ?_
   have e₂ : s₂.gpr .t0 = BitVec.ofNat 64 (7 * j) := by
     rw [u₂.gpr, u₁.gpr, u₁.other .s1 (by decide), h1, seven_mul hj]
@@ -522,10 +525,10 @@ theorem masks_ok {s : State} :
 
 /-- The row: `a0 = s4 + 4096 j`, `a7 = a0 + 2048`. -/
 theorem row_ok {s : State} {j : Nat} (hj : j < 37) (h1 : s.gpr .s1 = BitVec.ofNat 64 j) :
-    WP isa (.block Cfg.row) s fun s' =>
+    WP isa (.block (Cfg.row p256)) s fun s' =>
       s'.gpr .a0 = s.gpr .s4 + BitVec.ofNat 64 (4096 * j) ∧
       s'.gpr .a7 = s'.gpr .a0 + BitVec.ofNat 64 2048 ∧ Rest [.t0, .a0, .a7] s s' ∧ s'.mem = s.mem := by
-  rw [Cfg.row]
+  simp only [Cfg.row, show p256.n = 4 from rfl, ↓reduceIte]
   refine wp_sll (by decide) fun s₁ u₁ => wp_add fun s₂ u₂ => wp_addi (imm := 2047) (by decide) fun s₃ u₃ => ?_
   refine wp_addi (imm := 1) (by decide) fun s₄ u₄ => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
   · rw [u₄.other .a0 (by decide), u₃.other .a0 (by decide), u₂.gpr, u₁.gpr, u₁.other .s4 (by decide), h1]
@@ -1137,7 +1140,8 @@ theorem body_ok (hL : Law W) {s : State} {base T : Addr} (hw : WsReg s base) (h2
   refine WP.block_append (WP.mono (copy_ok 4 hw (o := 1536) (a := 1056) (by decide) (by decide) (by decide)
     (by decide) (by decide)) fun s₁ ⟨e₁, r₁, O₁⟩ => ?_)
   have hw₁ := hw.of_rest r₁
-  rw [List.cons_append, List.cons_append, List.nil_append]
+  rw [VG.Proof.Weierstrass.RISCV64.sdAt_lo (by decide)]
+  simp only [List.cons_append, List.nil_append]
   refine wp_li (imm := 0) (by decide) fun s₂ u₂ => ?_
   have hw₂ := hw₁.of_rest (u₂.rest (ws := [.t0]) (by decide))
   refine sd_ws hw₂ (d := 1568) (by decide) (by decide) fun s₃ u₃ => ?_

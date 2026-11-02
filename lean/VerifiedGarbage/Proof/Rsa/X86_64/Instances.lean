@@ -7,6 +7,9 @@ import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvInstance
+import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Verified
+public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverDet
+public import VerifiedGarbage.Spec.Rsa.RecoverDet
 public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
@@ -106,5 +109,10 @@ theorem checkCrtKey_verified :
     Verified target (Impl.Rsa.X86_64.CheckCrtKey.code)
       (Spec.Rsa.checkCrtKeyContract abi) :=
   Key.ck_verified (by decide +kernel)
+
+/-- `vg_rsa_recover_primes_det`, with the batched inverse's instance. -/
+theorem recoverDet_verified :
+    Verified target Impl.Rsa.X86_64.Keys.RecoverDet.code (Spec.Rsa.recoverPrimesDetContract abi) :=
+  Rd.rd_verified (by decide +kernel)
 
 end VG.Proof.Rsa.X86_64.Instances

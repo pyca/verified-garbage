@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyVerified
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdVerified
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
 import Mathlib.Tactic.Finiteness.Attr
@@ -30,9 +30,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.crtValuesApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Keys.CrtValues.code
     verified := Proof.Rsa.AArch64.cv_verified },
-  Spec.Rsa.recoverPrimesApi.artifact AArch64.target {
-    code := Impl.Rsa.AArch64.Recover.code Proof.Bignum.AArch64.Mont.calledProductEight.mm
-    verified := Proof.Rsa.AArch64.rp_verified _ },
+  Spec.Rsa.recoverPrimesDetApi.artifact AArch64.target {
+    code := Impl.Rsa.AArch64.RecoverDet.code
+    verified := Proof.Rsa.AArch64.Rd.rd_verified },
   Spec.Rsa.checkKeyApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.CheckKey.code
     verified := Proof.Rsa.AArch64.ck_verified },

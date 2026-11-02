@@ -115,7 +115,7 @@ end Cfg
 /-- `vg_ecdsa_p256_sign`, with `[k]G` by the comb, `vg_p256_mul_g`. -/
 def signP256 : Prog isa := Cfg.sign p256 p256Order Comb.mulGP256Name Comb.mulGP256
 
-/-- `vg_ecdsa_p384_sign`, with `[k]G` by the ladder, `vg_p384_mul`. -/
-def signP384 : Prog isa := Cfg.sign p384 p384Order "vg_p384_mul" mulP384
+/-- `vg_ecdsa_p384_sign`, with `[k]G` by the comb, `vg_p384_mul_g`. -/
+def signP384 : Prog isa := Cfg.sign p384 p384Order Comb.mulGP384Name Comb.mulGP384
 
 end VG.Impl.Ecdsa.RISCV64.Sign

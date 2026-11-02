@@ -17,7 +17,7 @@ def artifacts : List Artifact := [
     verified := Proof.Seed.RISCV64.Modes.cfbEncrypt_verified },
   Spec.Seed.cfbDecryptApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.cfbDecrypt
-    stack := 1104
+    stack := 1344
     verified := Proof.Seed.RISCV64.Modes.cfbDecrypt_verified }]
 
 end VG.Artifacts.SeedCfb.RISCV64

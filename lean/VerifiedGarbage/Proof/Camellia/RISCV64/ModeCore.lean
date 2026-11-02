@@ -192,7 +192,7 @@ theorem word_disjoint {d : Dir} {R : Nat} {B : Addr} {k : Nat} (hk : (48 ≤ k �
     exact VG.Offset.sub_base _ (by omega)
   · refine Region.Disjoint.sub_right ?_ h
     show Region.Disjoint ⟨B + BitVec.ofNat 64 48 + BitVec.ofNat 64 (8 * k), 8⟩
-      ⟨B + BitVec.ofNat 64 (8 * 102), 4 * 4 * 1⟩
+      ⟨B + BitVec.ofNat 64 (8 * 102), 4 * 4 * 8⟩
     rw [VG.Offset.add_add]
     exact VG.Offset.disjoint B (by rw [keySlot_eq] at hk; omega) (by omega) (by omega)
 
@@ -461,9 +461,9 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
     (hr : ReadyAt d R s.mem (ecbA B) w) :
     WP isa (cryptBlocks R) s fun s' => s'.gpr Impl.Modes.RISCV64.sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
       ReadyAt d R s'.mem (ecbA B) w ∧ Frame [⟨ecbA B, 8 * slots⟩] s.mem s'.mem ∧
-      Spec.Camellia.blockAt s'.mem (ecbA B + BitVec.ofNat 64 (8 * tailSlot)) =
+      (∀ j < 8, Spec.Camellia.blockAt s'.mem (ecbA B + BitVec.ofNat 64 (8 * tailSlot + 16 * j)) =
         blockFn (Spec.Camellia.subkeysOfWords R w) (specDir d)
-          (Spec.Camellia.blockAt s.mem (ecbA B + BitVec.ofNat 64 (8 * tailSlot))) ∧
+          (Spec.Camellia.blockAt s.mem (ecbA B + BitVec.ofNat 64 (8 * tailSlot + 16 * j)))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   generalize hb : ecbA B = b at hal hw hfit hr
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
@@ -554,15 +554,15 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
   have r₅ : ∀ r, r ∉ sboxWrites → r ≠ kp → r ≠ .a0 → r ≠ .a4 → r ≠ sb → s₅.gpr r = s₁.gpr r :=
     fun r a b' c e f => by rw [c₅.keep r a b' c, o₄ r e, g₃, o₂ r f]
   -- The tail buffer, on entry to the rounds.
-  have tail₄ : Spec.Camellia.blockAt s₄.mem (b + BitVec.ofNat 64 (8 * tailSlot)) =
-      Spec.Camellia.blockAt s.mem (b + BitVec.ofNat 64 (8 * tailSlot)) := by
+  have tail₄ : ∀ j < 8, Spec.Camellia.blockAt s₄.mem (b + BitVec.ofNat 64 (8 * tailSlot + 16 * j)) =
+      Spec.Camellia.blockAt s.mem (b + BitVec.ofNat 64 (8 * tailSlot + 16 * j)) := fun j hj => by
     rw [m₄, blockAt_frame f₃ fun r hr => ?_, blockAt_frame F₁ fun r hr => ?_]
     · simp only [List.mem_singleton] at hr; subst hr
       rw [raA, hb]
-      exact VG.Offset.disjoint b (.inr (by rw [raSlot_eq, tailSlot_eq]; decide)) (by rw [tailSlot_eq]; decide)
+      exact VG.Offset.disjoint b (.inr (by rw [raSlot_eq, tailSlot_eq]; omega)) (by rw [tailSlot_eq]; omega)
         (by rw [raSlot_eq]; decide)
     · simp only [savedRegion, List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint b (.inr (by rw [savedSlot_eq, tailSlot_eq]; decide)) (by rw [tailSlot_eq]; decide)
+      exact VG.Offset.disjoint b (.inr (by rw [savedSlot_eq, tailSlot_eq]; omega)) (by rw [tailSlot_eq]; omega)
         (by rw [savedSlot_eq]; decide)
   refine ⟨s4₇, kept_of hB (s₄ := s₅) (s₀ := s₂)
       (by rw [r₅ _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact a2₁)
@@ -609,9 +609,10 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, by rw [raA, hb]; exact VG.Offset.sub_base b (by rw [slots_eq]; decide)⟩
     exact (F₁'.trans F₃).trans F₅
-  · have := k₅ 0 (by decide)
-    simp only [blk, b₅, b₄, Nat.mul_zero, Nat.add_zero] at this
-    rw [mem₇, this, tail₄]
+  · intro j hj
+    have := k₅ j hj
+    simp only [blk, b₅, b₄] at this
+    rw [mem₇, this, tail₄ j hj]
     simp only [E]
     rw [← hgR, crypt_spec d hR]
 
@@ -681,14 +682,16 @@ theorem crypt_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B : A
   refine WP.narrow w₀ (VG.Covers.append VG.Covers.nil (VG.Covers.one (ecb_in hS))) (VG.Covers.one (ecb_in hS))
     (fun s' rd' wr' _ f' ⟨b', k', r', _, blk', _, _⟩ => ⟨b', fun r hr => k' r hr, r', f', fun j hj => ?_, rd', wr'⟩)
     (crypt_noFrames d R)
-  obtain rfl : j = 0 := by have : (dirCore d R).G = 1 := rfl; omega
-  have ha : blkAddr (dirCore d R) B 0 = ecbA B + BitVec.ofNat 64 (8 * tailSlot) := by
-    show B + BitVec.ofNat 64 (8 * 102) + BitVec.ofNat 64 (16 * 0) = B + BitVec.ofNat 64 48 + BitVec.ofNat 64 768
+  have hj8 : j < 8 := hj
+  have ha : blkAddr (dirCore d R) B j = ecbA B + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := by
+    show B + BitVec.ofNat 64 (8 * 102) + BitVec.ofNat 64 (16 * j) =
+      B + BitVec.ofNat 64 48 + BitVec.ofNat 64 (8 * 96 + 16 * j)
     rw [VG.Offset.add_add, VG.Offset.add_add]
-  show Spec.Aes.bytesAt s'.mem (blkAddr (dirCore d R) B 0) 16 =
-    dirCipher d _ (Spec.Aes.bytesAt s.mem (blkAddr (dirCore d R) B 0) 16)
+    congr 2; omega
+  show Spec.Aes.bytesAt s'.mem (blkAddr (dirCore d R) B j) 16 =
+    dirCipher d _ (Spec.Aes.bytesAt s.mem (blkAddr (dirCore d R) B j) 16)
   rw [dirCipher_bytes, bytesAt_eq_blockAt, ha]
-  exact congrArg Vector.toList blk'
+  exact congrArg Vector.toList (blk' j hj8)
 
 /-- Camellia's core meets what the modes need. -/
 def dirCoreSpec (d : Dir) (R : Nat) (hR : R = 18 ∨ R = 24) : CoreSpec (dirCore d R) where

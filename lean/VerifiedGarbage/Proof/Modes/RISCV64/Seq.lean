@@ -23,6 +23,10 @@ caller expects preserved, the stack pointer and the return address. Each
 mode's and cipher's contract follows from it. `seq_changes_wp`: besides,
 memory changes only in the frame (below the stack pointer), the data and the
 IV, and the frame is zeroed (`Changes`).
+
+Both are `seqWith_changes_wp` for the loops of `Core.seq`, `Core.steps M`
+(`steps_ok`): the function around any loops that take all the steps
+(`LoopsOk`), as `Core.seq2`'s do too (`Wide.lean`).
 -/
 
 @[expose] public section
@@ -465,12 +469,18 @@ structure Changes (c : Core) (M : Mode) (s₀ s' : State) : Prop where
   frame : Frame [scrRegion c (Fb s₀ c), dataRegion (Dp s₀) M.step (N s₀), ivR s₀ c] s₀.mem s'.mem
   zeroed : ∀ j < c.total, s'.mem.readW (slotA (Fb s₀ c) j) 64 = 0#64
 
-/-- `seq_wp`, and what the function changes (`Changes`). -/
-theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c M s₀)
-    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step))
-    (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step))
-    (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
-    WP isa (c.seq M) s₀ fun s' => abiPreserved s₀ s' ∧
+/-- What the code `loops` must do, from the state after the key, with the
+mode's first step to take: all of them (`Done`). -/
+def LoopsOk (cs : CoreSpec c) (M : Mode) (F : StepFn) (s₀ : State) (k : cs.Key) (loops : Prog isa) : Prop :=
+  ∀ s₂, Fixed c s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step (4 * c.bw) (wrs0 c M s₀) (N s₀) 1 →
+    Inv cs s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step (wrs0 c M s₀) (N s₀) 1 k F (iv0 c s₀) (xs0 M s₀) 0 s₂ →
+    WP isa loops s₂ (Done (c := c) s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step F (iv0 c s₀) (xs0 M s₀))
+
+/-- The function around the loops `loops`: `seqWith_wp`, and what it changes
+(`Changes`). -/
+theorem seqWith_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} {loops : Prog isa}
+    (hp : SeqPre c M s₀) (hloops : LoopsOk cs M F s₀ k loops) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
+    WP isa (c.seqWith loops M.ivOut) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt M.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 ∧
       (M.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = (run F (iv0 c s₀) (xs0 M s₀)).2) ∧
       Changes c M s₀ s' := by
@@ -483,13 +493,12 @@ theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} 
   have hspf := hp.spFit
   have hsp := s₀.sp.isLt
   have hfit : (Fb s₀ c).toNat + 8 * c.total ≤ 2 ^ 64 := by omega_arith
-  have hlen : (xs0 M s₀).length = N s₀ := chunksAt_length _ _ _ _
   have modeScr : Region.Sub (modeR (Fb s₀ c)) (scrRegion c (Fb s₀ c)) := Region.sub_prefix (by omega_arith)
   have coreScr : Region.Sub (coreRegion c (Fb s₀ c)) (scrRegion c (Fb s₀ c)) :=
     VG.Offset.sub_base _ (by omega_arith)
   have chnScr : Region.Sub (chnRegion c (Fb s₀ c)) (scrRegion c (Fb s₀ c)) := VG.Offset.sub_base _ (by slot_omega)
   have m1 : ∀ {a b : Region} {l : List Region}, b ∈ a :: b :: l := List.mem_cons_of_mem _ List.mem_cons_self
-  unfold Core.seq
+  unfold Core.seqWith
   refine bigFrame_wp (by simp only [Core.frameBytes]; have := hL.even; omega_arith)
     (by simp only [Core.frameBytes]; omega_arith) fun t ht hw => ?_
   have hS := scrIn_of hp ht hw
@@ -516,13 +525,16 @@ theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} 
       simp only [List.mem_singleton] at hr; subst hr
       exact (VG.Offset.disjoint_base _ (by slot_omega) (by omega_arith)).symm.sub_left hsub
   have wr₂' : s₂.wr = ws ++ s₀.wr := by rw [wr₂, wr₁]
-  have hFx : Fixed c s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step :=
-    ⟨hS.congr (by rw [wr₂, h₁.wr]), by rw [wr₂']; exact List.mem_append_right _ hp.dataW, hp.dataFit,
-      hp.dataScr, (s₀.gpr .a3).isLt, hp.step, hL⟩
-  have hI : Inv cs s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step k F (iv0 c s₀) (xs0 M s₀) 0 s₂ := by
+  have hFx : Fixed c s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step (4 * c.bw) (wrs0 c M s₀) (N s₀) 1 :=
+    ⟨hS.congr (by rw [wr₂, h₁.wr]), fun o w hw ho => by rw [wr₂']; exact dataW_of_mem (List.mem_append_right _ hp.dataW) hp.dataFit hw ho,
+      hp.dataFit,
+      hp.dataScr, (s₀.gpr .a3).isLt, by omega_arith, by decide, ⟨hp.step.1, by have := hp.step.2; omega_arith⟩,
+      ⟨by rcases hL.bw with h | h <;> omega_using [h], Nat.le_mul_of_pos_right _ hL.G_pos⟩,
+      ⟨_, List.mem_cons_self, fun _ h => h⟩, List.mem_cons_of_mem _ List.mem_cons_self, hL⟩
+  have hI : Inv cs s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step (wrs0 c M s₀) (N s₀) 1 k F (iv0 c s₀) (xs0 M s₀) 0 s₂ := by
     refine ⟨b₂, fun _ _ _ _ => rfl, rfl, rfl, ?_, ?_, ready₂, ?_, ?_, Frame.refl _ _⟩
     · rw [kp _ (by decide), h₁.s2, Nat.mul_zero]; exact (BitVec.add_zero _).symm
-    · rw [kp _ (by decide), h₁.s3, Nat.sub_zero]; simp only [N, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    · rw [kp _ (by decide), h₁.s3, Nat.mul_zero, Nat.sub_zero]; simp only [N, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · rw [chunksAt_frame f₀₂ dataOut (by have := hp.dataFit; omega_arith)]
       simp only [List.take_zero, run, List.nil_append, List.drop_zero]
     · simp only [List.take_zero, run]
@@ -535,7 +547,7 @@ theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} 
     rw [← h₁.saved i hi]
     exact f₂.readW (Region.contains_self _ _) (modeOut (VG.Offset.sub_base _ (by slot_omega))) (by decide)
   -- The steps.
-  refine WP.seq (WP.mono (loop_wp cs hFx rfl hpre hpost hcomp hlen hI) fun s₄ h₄ => ?_)
+  refine WP.seq (WP.mono (hloops s₂ hFx hI) fun s₄ h₄ => ?_)
   have slotOut : ∀ i < 4, ∀ r ∈ big c (Fb s₀ c) (Dp s₀) (N s₀) M.step,
       Region.Disjoint ⟨slotA (Fb s₀ c) (Core.savedSlot i), 64 / 8⟩ r := fun i hi r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -547,8 +559,7 @@ theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} 
       s₀.gpr (Core.savedRegs.getD i .s1) := fun i hi => by
     rw [← sv₂ i hi]
     exact h₄.frame.readW (Region.contains_self _ _) (slotOut i hi) (by decide)
-  have data₄ : chunksAt M.step s₄.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 := by
-    rw [h₄.data, List.take_of_length_le (by omega_arith), List.drop_of_length_le (by omega_arith), List.append_nil]
+  have data₄ : chunksAt M.step s₄.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 := h₄.data
   have keep₄ : ∀ r ∈ kept, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → s₄.gpr r = s₀.gpr r :=
     fun r hr h1 h2 h3 h4 => by rw [h₄.keep r hr h3 h2, kp r hr, h₁.keep r hr h1 h2 h3 h4]
   have s1₄ : s₄.gpr .s1 = P s₀ := by rw [h₄.keep _ (by decide) (by decide) (by decide), kp _ (by decide), h₁.s1]
@@ -637,7 +648,6 @@ theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} 
         chunksAt_frame f₆ (ivOnly (hp.ivData hiv).symm) (by have := hp.dataFit; omega_arith), data₄]
     · show bytesAt s'.mem (P s₀) (4 * c.bw) = _
       have hc := h₄.chn
-      rw [List.take_of_length_le (by omega_arith)] at hc
       rw [← hc]
       refine List.map_congr_left fun i hi => ?_
       have hi := List.mem_range.mp hi
@@ -655,9 +665,28 @@ theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} 
       simp only [areaRegions, ivAreas, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; exact ⟨_, by simp, fun _ h => h⟩
 
+/-- One step at a time. -/
+theorem steps_ok (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key}
+    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step (4 * c.bw)))
+    (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step (4 * c.bw)))
+    (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) : LoopsOk cs M F s₀ k (c.steps M) := fun _ hFx hI =>
+  WP.mono (loop_wp cs hFx rfl hpre hpost hcomp (chunksAt_length _ _ _ _) hI) fun _ h =>
+    h.done (chunksAt_length _ _ _ _)
+
+/-- `seq_wp`, and what the function changes (`Changes`). -/
+theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c M s₀)
+    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step (4 * c.bw)))
+    (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step (4 * c.bw)))
+    (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
+    WP isa (c.seq M) s₀ fun s' => abiPreserved s₀ s' ∧
+      chunksAt M.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 ∧
+      (M.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = (run F (iv0 c s₀) (xs0 M s₀)).2) ∧
+      Changes c M s₀ s' :=
+  seqWith_changes_wp cs hp (steps_ok cs hpre hpost hcomp) hk
+
 theorem seq_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c M s₀)
-    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step))
-    (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step))
+    (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step (4 * c.bw)))
+    (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step (4 * c.bw)))
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
     WP isa (c.seq M) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt M.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 ∧

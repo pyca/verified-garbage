@@ -5,9 +5,6 @@ public import Mathlib.Logic.Function.Iterate
 
 import Mathlib.Data.Nat.GCD.Basic
 import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.IntervalCases
 
 /-!
 # Prime recovery by SP 800-56B Rev. 2 Appendix C.2: the mathematics
@@ -43,8 +40,8 @@ theorem isqrt_spec (x : Nat) : isqrt x * isqrt x ≤ x ∧ x < (isqrt x + 1) * (
     split
     · rename_i h
       constructor
-      · interval_cases x <;> decide
-      · interval_cases x <;> decide
+      · rcases (show x = 0 ∨ x = 1 by omega) with rfl | rfl <;> decide
+      · rcases (show x = 0 ∨ x = 1 by omega) with rfl | rfl <;> decide
     · rename_i h
       have h4 : x / 4 < x := by omega
       obtain ⟨lo, hi⟩ := ih (x / 4) h4
@@ -52,10 +49,10 @@ theorem isqrt_spec (x : Nat) : isqrt x * isqrt x ≤ x ∧ x < (isqrt x + 1) * (
       generalize isqrt (x / 4) = s at lo hi
       have q := Nat.div_add_mod x 4
       have r := Nat.mod_lt x (show 0 < 4 by decide)
-      have e1 : 2 * s * (2 * s) = 4 * (s * s) := by ring
-      have e2 : (2 * s + 1) * (2 * s + 1) = 4 * (s * s) + 4 * s + 1 := by ring
-      have e3 : (2 * s + 1 + 1) * (2 * s + 1 + 1) = 4 * ((s + 1) * (s + 1)) := by ring
-      have e4 : (s + 1) * (s + 1) = s * s + 2 * s + 1 := by ring
+      have e1 : 2 * s * (2 * s) = 4 * (s * s) := by grind
+      have e2 : (2 * s + 1) * (2 * s + 1) = 4 * (s * s) + 4 * s + 1 := by grind
+      have e3 : (2 * s + 1 + 1) * (2 * s + 1 + 1) = 4 * ((s + 1) * (s + 1)) := by grind
+      have e4 : (s + 1) * (s + 1) = s * s + 2 * s + 1 := by grind
       split
       · rename_i c
         refine ⟨c, ?_⟩
@@ -89,12 +86,12 @@ theorem sqrt_step {t y r δ : Nat} (hy : y = isqrt t) (hr : r + y * y = t) (hδ 
         2 * isqrt (4 * t + δ) := by
   have hi := lt_succ_isqrt_sq t
   rw [← hy] at hi
-  have e1 : (y + 1) * (y + 1) = y * y + 2 * y + 1 := by ring
+  have e1 : (y + 1) * (y + 1) = y * y + 2 * y + 1 := by grind
   have hr2 : r ≤ 2 * y := by omega
-  have e2 : (2 * y + 1) * (2 * y + 1) = 4 * (y * y) + 4 * y + 1 := by ring
-  have e3 : (2 * y + 1 + 1) * (2 * y + 1 + 1) = 4 * (y * y) + 8 * y + 4 := by ring
-  have e4 : 2 * y * (2 * y) = 4 * (y * y) := by ring
-  have e5 : (2 * y + 1) * (2 * y + 1) = 4 * (y * y) + 4 * y + 1 := by ring
+  have e2 : (2 * y + 1) * (2 * y + 1) = 4 * (y * y) + 4 * y + 1 := by grind
+  have e3 : (2 * y + 1 + 1) * (2 * y + 1 + 1) = 4 * (y * y) + 8 * y + 4 := by grind
+  have e4 : 2 * y * (2 * y) = 4 * (y * y) := by grind
+  have e5 : (2 * y + 1) * (2 * y + 1) = 4 * (y * y) + 4 * y + 1 := by grind
   split
   · rename_i c
     have e : isqrt (4 * t + δ) = 2 * y + 1 := isqrt_eq (by omega) (by omega)
@@ -144,7 +141,7 @@ theorem twoInv_step {b N x i : Nat} {s : Nat × Nat × Nat} (h : TwoInv b N x i 
         have dx := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero ex)
         conv_lhs => rw [← du, ← dx]
         rw [Nat.gcd_mul_right]
-        ring
+        grind
     · simp only [ex, ↓reduceIte]
       refine ⟨g, e + 1, hx, h3, ?_, .inr (by simp only; omega), hu', by simp only; omega⟩
       simp only
@@ -217,7 +214,31 @@ theorem twos_le (b : Nat) : ∀ k (s : Nat × Nat × Nat), ((twoStep b)^[k] s).1
       split
       · split <;> exact ⟨Nat.div_le_self _ _, by first | exact Nat.div_le_self _ _ | exact Nat.le_refl _⟩
       · exact ⟨Nat.le_refl _, Nat.le_refl _⟩
-    exact ⟨h1.trans this.1, h2.trans this.2⟩
+    exact ⟨Nat.le_trans h1 this.1, Nat.le_trans h2 this.2⟩
+
+/-- A step of the halvings halves `u` if it is even, whatever `x` and `x'` are. -/
+theorem twoStep_fst (b : Nat) (s : Nat × Nat × Nat) :
+    (twoStep b s).1 = if s.1 % 2 = 0 then s.1 / 2 else s.1 := by
+  unfold twoStep
+  split
+  · split <;> rfl
+  · rfl
+
+/-- `u` after the halvings does not depend on `x` or `x'`. -/
+theorem twos_fst (b : Nat) : ∀ k (s s' : Nat × Nat × Nat), s.1 = s'.1 →
+    ((twoStep b)^[k] s).1 = ((twoStep b)^[k] s').1
+  | 0, _, _, h => h
+  | k + 1, s, s', h => by
+    rw [Function.iterate_succ_apply', Function.iterate_succ_apply', twoStep_fst, twoStep_fst,
+      twos_fst b k s s' h]
+
+/-- After as many steps as `N` has bits, `u` is odd and at most `N`, whatever
+`x` and `x'` are. -/
+theorem twos_odd {b N k : Nat} (x y : Nat) (pos : 0 < N) (hk : N < 2 ^ k) :
+    ((twoStep b)^[k] (N, x, y)).1 % 2 = 1 ∧ ((twoStep b)^[k] (N, x, y)).1 ≤ N := by
+  rw [twos_fst b k (N, x, y) (N, 0, 0) rfl]
+  obtain ⟨h1, h2, -⟩ := twos_iter (b := b) (x := 0) pos hk (Nat.two_pow_pos b)
+  exact ⟨h1, h2⟩
 
 /-! ## Products -/
 
@@ -242,7 +263,7 @@ theorem prod_iter (b y x : Nat) (hx : x < 2 ^ b) : ∀ k, (prodStep b)^[k] (y, x
       · rename_i c; rw [c]; simp
       · rename_i c
         have c1 : y / 2 ^ k % 2 = 1 := by omega
-        have e : (y % 2 ^ k + 2 ^ k * 1) * x = y % 2 ^ k * x + x * 2 ^ k := by ring
+        have e : (y % 2 ^ k + 2 ^ k * 1) * x = y % 2 ^ k * x + x * 2 ^ k := by grind
         rw [c1, e, Nat.add_mod (y % 2 ^ k * x) (x * 2 ^ k)]
 
 end VG.Proof.Rsa.RecoverDet
@@ -280,7 +301,7 @@ theorem two_bits {xs P : Nat} (hP : 0 < P) (hx : xs < 4 * P) :
   have mP : (q * P + r) % P = r := by
     rw [Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hr]
   rw [dP, mP]
-  interval_cases q
+  rcases (show q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3 by omega) with rfl | rfl | rfl | rfl
   all_goals
     have d : ∀ a c, c * (4 * P) ≤ a → a < (c + 1) * (4 * P) → a / (4 * P) = c := fun a c h1 h2 =>
       Nat.div_eq_of_lt_le h1 h2
@@ -332,7 +353,7 @@ theorem sqrtInv_step {nb K X i : Nat} {s : Nat × Nat × Nat} (hi : i < K)
     rw [hx, Nat.mul_div_mul_right _ _ Ipos, Nat.mod_mul_right_div_self]
   have rest : 4 * (xs % (A * I)) = X % A * (I * 4) := by
     rw [hx, Nat.mul_mod_mul_right, Nat.mod_mul_right_mod]
-    ring
+    grind
   have next : X / A = 4 * (X / (A * 4)) + X / A % 4 := by
     rw [← Nat.div_div_eq_div_mul]; omega
   have yle : y ≤ isqrt X := by
@@ -345,7 +366,7 @@ theorem sqrtInv_step {nb K X i : Nat} {s : Nat × Nat × Nat} (hi : i < K)
     omega
   have hr2 : r ≤ 2 * y := by
     have := lt_succ_isqrt_sq (X / (A * 4)); rw [← hy] at this
-    have e : (y + 1) * (y + 1) = y * y + 2 * y + 1 := by ring
+    have e : (y + 1) * (y + 1) = y * y + 2 * y + 1 := by grind
     omega
   have M8 : 8 * (2 ^ nb / 8) ≤ 2 ^ nb := Nat.mul_div_le _ _
   generalize hd : X / A % 4 = δ at *
@@ -358,8 +379,8 @@ theorem sqrtInv_step {nb K X i : Nat} {s : Nat × Nat × Nat} (hi : i < K)
   have m4 : 2 * (2 * y) % 2 ^ nb = 2 * (2 * y) := Nat.mod_eq_of_lt (by omega)
   have R : 2 * (2 * r + 2 * xs / (4 * (A * I))) + 2 * (2 * xs % (4 * (A * I))) / (4 * (A * I)) =
       4 * r + δ := by omega
-  have q1 : 2 * y * (2 * y) = 4 * (y * y) := by ring
-  have q2 : (2 * y + 1) * (2 * y + 1) = 4 * (y * y) + 4 * y + 1 := by ring
+  have q1 : 2 * y * (2 * y) = 4 * (y * y) := by grind
+  have q2 : (2 * y + 1) * (2 * y + 1) = 4 * (y * y) + 4 * y + 1 := by grind
   unfold sqrtStep SqrtInv
   simp only [wb, m1, m2, m3, m4, R, km', shifted, hA]
   rw [next]
