@@ -80,12 +80,27 @@ structure Cfg where
   complete addition for `a = -3` (`rcb3`, `Impl/Ecdsa/RISCV64/Verify.lean`);
   otherwise by the one for any `a` (`rcb`). -/
   am3 : Bool := true
+  /-- The first of the slots of verification's `3Q` and of the entry `E` of
+  its window and of `[k]Q`'s (`Impl/Ecdsa/RISCV64/Verify.lean`,
+  `Impl/Ecdsa/RISCV64/WindowA.lean`), three each: past the numbered slots and
+  `2G`, `3G` and `2Q`; or, for nine words, whose slots from 56 on are past
+  `ld`'s offsets, slots free when they are used. -/
+  q3 : Nat := 55
+  ve : Nat := 58
 
 namespace Cfg
 
 variable (c : Cfg)
 
 def sl (i : Nat) : Nat := slot c.n i
+
+/-! Verification's slots of `3Q`, and of the windows' entry `E`. -/
+def Q3X : Nat := c.q3
+def Q3Y : Nat := c.q3 + 1
+def Q3Z : Nat := c.q3 + 2
+def EX : Nat := c.ve
+def EY : Nat := c.ve + 1
+def EZ : Nat := c.ve + 2
 
 def MP' : Mod := { n := c.n, mo := c.sl MP, tmp := c.sl TMP, minv := BitVec.ofNat 64 c.minv }
 
