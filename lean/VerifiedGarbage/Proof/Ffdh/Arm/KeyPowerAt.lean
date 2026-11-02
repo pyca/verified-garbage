@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Block
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeyPower
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure ArgsInput (p : Inputs) (slots : List Nat) (bs es M : Nat) (P : State → Prop)

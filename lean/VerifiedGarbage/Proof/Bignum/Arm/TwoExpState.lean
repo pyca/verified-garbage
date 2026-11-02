@@ -18,7 +18,7 @@ product. The exponent length and scalar distribution are unchanged.
 
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 structure Power (base : BitVec 32) (len w M E : Nat) (s : State) : Prop where
@@ -49,13 +49,13 @@ theorem Power.after_y {s t : State} {base : BitVec 32} {len w M E F : Nat}
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
   refine ⟨ready, modulus, h.coprime, bound, value, ?_, ?_, ?_⟩
   · rw [keeps_array_num keeps fits (q := 5)
-      (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)]
+      (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]
     exact h.two
   · rw [keeps_array_num keeps fits (q := 7)
-      (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)]
+      (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]
     exact h.one
   · rw [keeps_array_num keeps fits (q := 4)
-      (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)]
+      (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]
     exact h.r2
 
 theorem Power.of_mem {s t : State} {base : BitVec 32} {len w M E : Nat} {rs : List Reg}

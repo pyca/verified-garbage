@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Block
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Keeps Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Keeps Operand)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
  theorem layoutReady {s : State} {base : BitVec 32} {len w : Nat}

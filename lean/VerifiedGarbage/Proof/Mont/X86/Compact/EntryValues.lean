@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Compact.Entry
 
 @[expose] public section
 namespace VG.Proof.Mont.X86.Compact
-open VG VG.X86 VG.Proof.Mont VG.Spec.Rsa.Mont
+open VG VG.X86 VG.Proof.Mont VG.Proof.Rsa.Mont
 
 theorem layout_pointer_low {m : Mem} {W : Addr} {wsLen j : Nat}
     (layout : Layout m W wsLen) (index : j < 8) :

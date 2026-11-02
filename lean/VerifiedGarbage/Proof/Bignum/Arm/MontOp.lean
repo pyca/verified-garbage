@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand numAt Keeps)
+open VG.Proof.Rsa.Mont (Operand numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem montOp_ok (s : State) {base : BitVec 32} {len w o a b : Nat}

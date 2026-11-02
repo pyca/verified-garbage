@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 open VG.Proof.X25519.Arm (Rest wp_str wp_mov op2_imm)
 
 /-- The exponent's pointer and count are kept. -/
@@ -44,7 +44,7 @@ theorem windowByteSave_ok (s : State) {base : BitVec 32} {len w : Nat} {v : BitV
       t.mem = (s.mem.writeW (off (State.addr base) 200) v).writeW (off (State.addr base) 192)
         (BitVec.ofNat 32 8) ∧ Rest [.r1] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have addr (d : Nat) (hd : d ≤ 252) : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
     rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
   unfold expByteSave
@@ -70,7 +70,7 @@ theorem windowByteHead_ok (s : State) {base ep : BitVec 32} {len w M x A p q : N
       KeepsPtr base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.fits
   have nowrap := h.power.ready.workspace.nowrap
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
   rw [expByteHead, WP.block_append_iff]
   refine WP.mono (expByteLoad_ok s h.power.ready.workspace (by omega) h.power.ready.ptr pointer read) ?_
   rintro u ⟨byte, mem, rest⟩
@@ -113,7 +113,7 @@ theorem windowRound_ok (s : State) {base : BitVec 32} {len w M x A p q V c : Nat
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.fits
   have nowrap := h.power.ready.workspace.nowrap
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
   rw [windowRound, WP.seq_iff]
   refine WP.mono (windowBit_ok s h hv byte) ?_
   rintro u ⟨⟨A', p', stateU, sum⟩, keepsU, frameU, restU⟩

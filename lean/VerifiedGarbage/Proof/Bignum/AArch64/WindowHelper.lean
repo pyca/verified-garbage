@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowHelper
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
-open VG.Spec.Rsa.Mont (numAt wOf wordAt arrAt aM minvWord)
+open VG.Proof.Rsa.Mont (numAt wOf wordAt arrAt aM minvWord)
 open SquareHelper (numAt_eq)
 
 theorem fn_correct (M : Mont) (S : WindowFive.Selector) (s : State)
@@ -23,7 +23,7 @@ theorem fn_correct (M : Mont) (S : WindowFive.Selector) (s : State)
   obtain ⟨mi,X,Xc,v,hc,ht,hy,hw,hw',hv,hd⟩ := hp
   have hx : X = numAt s.mem (s.gpr .x0) (wOf s.mem (s.gpr .x0)) aM :=
     hc.n.symm.trans (numAt_eq _ _ _ _).symm
-  have hd' : Spec.Rsa.MontWindow.digit s.mem (s.gpr .x0) = v := by
+  have hd' : Proof.Rsa.MontWindow.digit s.mem (s.gpr .x0) = v := by
     change (word s.mem (s.gpr .x0) (8 * Crt.sNib)).toNat = v
     rw [hd, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   obtain ⟨tr,t,he,_,hlt,heq,hnb,hbt,hf,hk,_⟩ :=
@@ -62,7 +62,7 @@ theorem fn_ct (M : Mont) (S : WindowFive.Selector) :
 
 theorem verified (M : Mont) (S : WindowFive.Selector) :
     Verified target (VG.Impl.Rsa.AArch64.WindowFive.windowBody M.mm S.code)
-      (Spec.Rsa.MontWindow.windowContract abi) :=
+      (Proof.Rsa.MontWindow.windowContract abi) :=
   Verified.of_correct (fn_correct M S) (fn_ct M S) fn_implies
 
 end VG.Proof.Bignum.AArch64.WindowHelper

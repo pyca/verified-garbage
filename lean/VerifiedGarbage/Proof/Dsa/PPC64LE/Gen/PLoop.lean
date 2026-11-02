@@ -125,7 +125,7 @@ theorem pStop_vp {c : Cfg} {HO : HashOk Gh} {k u0 N r j v C : Nat} {d : Cfg} (hj
     ⟨by rw [e]; rfl, fun _ => ⟨fin σ s h, x⟩, fun h0 => absurd h0 (by decide)⟩
 
 /-- What the search for p needs of its test, beyond `PrimeOk`. -/
-structure PLay (G : GP) (g : Geo) (Lp : Spec.Dsa.ProbablePrime.Layout) : Prop where
+structure PLay (G : GP) (g : Geo) (Lp : Impl.Dsa.ProbablePrime.Layout) : Prop where
   bits : Lp.bits = 8 * G.pLen
   cand : Lp.candidate = g.pCand
   size : Lp.size ≤ 8 * wWords G.pLen
@@ -133,7 +133,7 @@ structure PLay (G : GP) (g : Geo) (Lp : Spec.Dsa.ProbablePrime.Layout) : Prop wh
   candFit : Lp.candidate + Lp.bits / 8 ≤ 8 * wWords G.pLen
   cand15 : wB G.pLen + Lp.candidate < 2 ^ 15
 
-theorem pBody_vp {g : Geo} (HO : HashOk g.G) {Lp : Spec.Dsa.ProbablePrime.Layout} (okp : PrimeOk Lp g.pCode)
+theorem pBody_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout} (okp : PrimeOk Lp g.pCode)
     (lay : PLay G g Lp)
     (hlq : (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32))
     (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen) (hk4 : 4 * g.G.k = G.qLen) (hsb : G.seedsB.length = G.seedsLen)
@@ -254,7 +254,7 @@ theorem pBody_vp {g : Geo} (HO : HashOk g.G) {Lp : Spec.Dsa.ProbablePrime.Layout
       exact ⟨by simp [pRes, testCfg, ho], by simp [pRes, testCfg, upd, m1, m2, m3, m4, m5]⟩
 
 /-- The search for p from the seed at `k`, with `u0` witnesses read. -/
-theorem pPart_vp {g : Geo} (HO : HashOk g.G) {Lp : Spec.Dsa.ProbablePrime.Layout} (okp : PrimeOk Lp g.pCode)
+theorem pPart_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout} (okp : PrimeOk Lp g.pCode)
     (lay : PLay G g Lp)
     (hlq : (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32))
     (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen) (hk4 : 4 * g.G.k = G.qLen) (hsb : G.seedsB.length = G.seedsLen)

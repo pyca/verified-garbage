@@ -16,10 +16,10 @@ open VG.Proof.MlKem.X86_64
 
 private theorem call_header (w j : Nat) (hj : j < 16) :
     ∀ r ∈ callRanges w, 8 * j + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * j := by
-  simp only [callRanges, mutRanges, Spec.MillerRabin.extended, List.map_cons, List.map_nil,
+  simp only [callRanges, mutRanges, Proof.MillerRabin.Round.extended, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, pad, slot, hdrBytes, aR1,
-    Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+    Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
   and_intros <;> left <;> omega_arith
 
 private theorem call_array (w j : Nat) (hj : j ∈ [0, 24, 25, 26]) :
@@ -27,18 +27,18 @@ private theorem call_array (w j : Nat) (hj : j ∈ [0, 24, 25, 26]) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl | rfl
   all_goals
-    simp only [callRanges, mutRanges, Spec.MillerRabin.extended, List.map_cons, List.map_nil,
+    simp only [callRanges, mutRanges, Proof.MillerRabin.Round.extended, List.map_cons, List.map_nil,
       List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, pad, slot, hdrBytes, aR1,
-      Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+      Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
     and_intros <;> omega_arith
 
 private theorem call_exponent (w : Nat) :
     ∀ r ∈ callRanges w, slot w aE + 8 * (w + 1) ≤ r.1 ∨ r.1 + r.2 ≤ slot w aE := by
-  simp only [callRanges, mutRanges, Spec.MillerRabin.extended, List.map_cons, List.map_nil,
+  simp only [callRanges, mutRanges, Proof.MillerRabin.Round.extended, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, pad, slot, hdrBytes, aR1, aE,
-    Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+    Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
   and_intros <;> omega_arith
 
 theorem call_result_ok (v : RoundImpl) {s : State} {B : Addr} {Z w c bm b : Nat} {mi : BitVec 64}
@@ -48,7 +48,7 @@ theorem call_result_ok (v : RoundImpl) {s : State} {B : Addr} {Z w c bm b : Nat}
     (hx : wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c) :
     WP isa (call v.name v.code) s fun t =>
       (∃ bm', MrCtx t B Z w mi c bm') ∧ ECtx t.mem B w c ∧
-      word t.mem B (8 * kFlag) = mask (Spec.MillerRabin.round c b) ∧
+      word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
       WorkFrame B (callRanges w) [below (s.gpr .rsp) 128] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hc.good.scr.nowrap
   have hz := hZ

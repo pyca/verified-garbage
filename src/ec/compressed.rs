@@ -182,7 +182,6 @@ codec!(
         VG_EC_P256_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
     ]
 );
-#[cfg(not(target_arch = "riscv64"))]
 codec!(
     P384,
     48,
@@ -357,7 +356,6 @@ mod tests {
     #[cfg(not(target_arch = "riscv64"))]
     cases!(p224, P224, 28);
     cases!(p256, P256, 32);
-    #[cfg(not(target_arch = "riscv64"))]
     cases!(p384, P384, 48);
     #[cfg(not(target_arch = "riscv64"))]
     cases!(p521, P521, 66);

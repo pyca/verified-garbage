@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.X448.RISCV64.R64
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
+import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 
 /-!
 # X448 on RISC-V, 64-bit limbs: sums and differences
@@ -306,6 +307,175 @@ theorem sub_ok {o x y : Nat} (ho : o + 56 ≤ 2048) (hx : x + 56 ≤ 2048) (hy :
   rw [colsV7, colsV7, colsV7, B7_eq] at hv
   rw [hV, V_eq, V_eq]
   exact unfold_twice (l s1) (l s2) (l s3) hcy hv e2 e3
+
+
+/-! ## Multiplication by a one-word constant -/
+
+/-- Two folds of a carry `c < 2³²` leave a number congruent to `v₁ + 2⁴⁴⁸ c`. -/
+theorem fold_twice32 {v1 v2 v3 c c2 c3 : Nat} (hv1 : v1 < 2 ^ 224 * 2 ^ 224)
+    (hv2 : v2 < 2 ^ 224 * 2 ^ 224) (hv3 : v3 < 2 ^ 224 * 2 ^ 224) (hc : c < 2 ^ 32)
+    (e2 : v2 + 2 ^ 224 * 2 ^ 224 * c2 = v1 + c + 2 ^ 224 * c)
+    (e3 : v3 + 2 ^ 224 * 2 ^ 224 * c3 = v2 + c2 + 2 ^ 224 * c2) :
+    v3 % P = (v1 + 2 ^ 224 * 2 ^ 224 * c) % P := by
+  have hc2 : c2 ≤ 1 := by omega
+  have hc3 : c3 = 0 := by
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc2 with h | h
+    · subst h; omega
+    · subst h
+      have : v2 < 2 ^ 257 := by omega
+      omega
+  subst hc3
+  rw [VG.Proof.X448.Limbs32.fold448, show v1 + (2 ^ 224 + 1) * c = v2 + 2 ^ 224 * 2 ^ 224 * c2 by omega,
+    VG.Proof.X448.Limbs32.fold448]
+  congr 1
+  omega
+
+/-- After `k` words of `K · [x]`, `K` in `a6`, from `s0`. -/
+structure MulSInv (b : Addr) (s0 : State) (x K : Nat) (k : Nat) (s : State) : Prop where
+  ctx : Ctx b s
+  rest : Rest clob64 s0 s
+  mem : s.mem = s0.mem
+  a6 : (s.gpr .a6).toNat = K
+  val : colsV (regsV s) k + (2 ^ 64) ^ k * (s.gpr .a5).toNat =
+    K * colsV (fun i => dw s0.mem b (x + 8 * i)) k
+  cy : (s.gpr .a5).toNat ≤ K
+
+theorem ms_regs : ∀ k < 7, w k ≠ .a7 ∧ w k ≠ .a5 ∧ w k ≠ .a6 ∧ w k ≠ .t0 ∧ w k ∈ clob64 := by
+  decide
+
+theorem ms_below' : ∀ k ∈ List.range 7, ∀ c ∈ List.range k,
+    w c ≠ w k ∧ w c ≠ .a5 ∧ w c ≠ .a7 ∧ w c ≠ .t0 := by decide
+
+/-- The high word of `x · K` with `x < 2⁶⁴` is below `K`. -/
+theorem hi_lt {x K lo hi : Nat} (hx : x < 2 ^ 64) (hK : 0 < K) (e : lo + 2 ^ 64 * hi = x * K) :
+    hi < K := by
+  have : 2 ^ 64 * hi < 2 ^ 64 * K := by
+    have := Nat.mul_lt_mul_of_pos_right hx hK
+    rw [Nat.mul_comm (2 ^ 64) K]; omega
+  exact Nat.lt_of_mul_lt_mul_left this
+
+theorem mulSmallStep_eq (x k : Nat) (hk : k ≠ 0) : mulSmallStep x k =
+    .load .d .t0 .a3 (x + 8 * k) :: (Impl.Words.RISCV64.mulWide (w k) .a7 .t0 .a6 ++
+      (([.add (w k) (w k) .a5, .sltu .a5 (w k) .a5] : List Instr) ++
+        ([.add .a5 .a5 .a7] : List Instr))) := by
+  simp only [mulSmallStep, hk, ite_false]; rfl
+
+/-- Word 0 of `K · [x]`. -/
+theorem mulSmallStep0_ok {x K : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hK : 0 < K)
+    {s : State} (hc : Ctx b s) (h6 : (s.gpr .a6).toNat = K) :
+    WP isa (.block (mulSmallStep x 0)) s (MulSInv b s x K 1) := by
+  rw [show mulSmallStep x 0 = .load .d .t0 .a3 x :: Impl.Words.RISCV64.mulWide (w 0) .a5 .t0 .a6 by
+    simp only [mulSmallStep, ite_true]; rfl]
+  refine ld_ok hc (by omega) hx8 fun s1 u1 => ?_
+  refine WP.mono mulWide_ok fun s2 ⟨e2, k2⟩ => ?_
+  have hr : Rest clob64 s s2 := (u1.rest (by decide)).trans (Rest.mono (Keeps.rest k2) (by decide))
+  have v1 : (s1.gpr .t0).toNat = dw s.mem b (x + 8 * 0) := by rw [u1.gpr]; rfl
+  have v6 : (s1.gpr .a6).toNat = K := by rw [u1.other _ (by decide), h6]
+  rw [v1, v6] at e2
+  refine ⟨hc.of_rest hr (by decide), hr, by rw [k2.2.1, u1.mem], by rw [k2.1 _ (by decide), v6],
+    ?_, ?_⟩
+  · simp only [colsV, regsV, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.pow_one, Nat.mul_zero]
+    rw [Nat.mul_comm K]; omega
+  · exact Nat.le_of_lt (hi_lt (dw_lt s.mem b (x + 8 * 0)) hK e2)
+
+/-- Word `k > 0` of `K · [x]`. -/
+theorem mulSmallStepS_ok {s0 : State} {x K : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0)
+    (hK : 0 < K) (hK' : K < 2 ^ 63) {k : Nat} (hk : k < 7) (hk0 : k ≠ 0) {s : State}
+    (h : MulSInv b s0 x K k s) :
+    WP isa (.block (mulSmallStep x k)) s (MulSInv b s0 x K (k + 1)) := by
+  obtain ⟨h7, h5, h6, h0, wc⟩ := ms_regs k hk
+  have hc := h.ctx
+  rw [mulSmallStep_eq x k hk0]
+  refine ld_ok hc (by omega) (by omega) fun s1 u1 => ?_
+  refine WP.append (mulWide_ok h0 h6 h7) fun s2 ⟨e2, k2⟩ => ?_
+  refine WP.append (addOut_ok h5 h5) fun s3 ⟨e3, k3⟩ => ?_
+  refine WP.mono addSmall_ok fun s4 ⟨e4, k4⟩ => ?_
+  have kp : Keeps [.t0, w k, .a7, .a5] s s4 :=
+    ((((Keeps.rest_mono_of_upd u1).trans k2).trans k3).trans k4).mono fun r hr => by
+      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      grind
+  have hr : Rest clob64 s s4 := Rest.mono (Keeps.rest kp) fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    exacts [by decide, wc, by decide, by decide]
+  have v1 : (s1.gpr .t0).toNat = dw s0.mem b (x + 8 * k) := by rw [u1.gpr, h.mem]; rfl
+  have v6 : (s1.gpr .a6).toNat = K := by rw [u1.other _ (by decide), h.a6]
+  rw [v1, v6] at e2
+  have c2 : s2.gpr .a5 = s.gpr .a5 := by rw [k2.1 _ (by simp [Ne.symm h5]), u1.other _ (by decide)]
+  rw [c2] at e3
+  have a3 : s3.gpr .a7 = s2.gpr .a7 := k3.1 _ (by simp [Ne.symm h7])
+  rw [a3] at e4
+  have w4 : s4.gpr (w k) = s3.gpr (w k) := k4.1 _ (by simp [h5])
+  have hcy := h.cy
+  have hhi := hi_lt (dw_lt s0.mem b (x + 8 * k)) hK e2
+  have := (s2.gpr (w k)).isLt; have := (s3.gpr (w k)).isLt
+  have e4 := e4 (by omega)
+  refine ⟨hc.of_rest hr (by decide), h.rest.trans hr, by rw [kp.2.1, h.mem],
+    by rw [kp.1 _ (by simp [Ne.symm h6]), h.a6], ?_, by omega⟩
+  have hfin : colsV (regsV s4) (k + 1) = colsV (regsV s) k + (2 ^ 64) ^ k * (s4.gpr (w k)).toNat := by
+    rw [colsV, colsV_congr (g := regsV s) fun c hc => by
+      obtain ⟨n1, n2, n3, n4⟩ := ms_below' k (List.mem_range.mpr hk) c (List.mem_range.mpr hc)
+      simp only [regsV]; rw [kp.1 _ (by simp [n1, n2, n3, n4])]]
+  rw [hfin, colsV, w4, Nat.pow_succ (n := 2 ^ 64)]
+  have hv := h.val
+  generalize (2 ^ 64) ^ k = Q at *
+  generalize colsV (fun i => dw s0.mem b (x + 8 * i)) k = X at *
+  generalize dw s0.mem b (x + 8 * k) = d at *
+  have : Q * (s3.gpr (w k)).toNat + Q * 2 ^ 64 * (s4.gpr .a5).toNat =
+      Q * (d * K) + Q * (s.gpr .a5).toNat := by
+    rw [Nat.mul_assoc, ← Nat.mul_add, ← Nat.mul_add, e4, ← e2]
+    congr 1; omega
+  rw [Nat.mul_add K, Nat.mul_comm K (Q * d), Nat.mul_assoc Q d K]
+  omega
+
+/-- The words of `K · [x]`. -/
+theorem mulSmallSteps_ok {x K : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hK : 0 < K)
+    (hK' : K < 2 ^ 63) {s0 : State} (hc : Ctx b s0) (h6 : (s0.gpr .a6).toNat = K) :
+    ∀ n, 1 ≤ n → n ≤ 7 →
+      WP isa (.block ((List.range n).flatMap (mulSmallStep x))) s0 (MulSInv b s0 x K n)
+  | 0, h, _ => absurd h (by decide)
+  | 1, _, _ => by simpa using mulSmallStep0_ok hx hx8 hK hc h6
+  | n + 2, _, hn => by
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
+    exact WP.append (mulSmallSteps_ok hx hx8 hK hK' hc h6 (n + 1) (by omega) (by omega))
+      fun s1 h1 => mulSmallStepS_ok hx hx8 hK hK' (by omega) (by omega) h1
+
+/-- `[o] = c · [x]` modulo `p`, for a constant `c` whose `li32` is below `2³¹`. -/
+theorem mulSmall_ok {o x : Nat} {c : BitVec 32} (hcK : 0 < (sext32 c).toNat)
+    (hcK' : (sext32 c).toNat < 2 ^ 31) (ho : o + 56 ≤ 2048) (hx : x + 56 ≤ 2048)
+    (ho8 : o % 8 = 0) (hx8 : x % 8 = 0) {s : State} (hc : Ctx b s) :
+    WP isa (.block (mulSmall o x c)) s fun s' =>
+      Rest clob64 s s' ∧ Frame [⟨b + BitVec.ofNat 64 o, 56⟩] s.mem s'.mem ∧
+      V s'.mem b o % P = ((sext32 c).toNat * V s.mem b x) % P := by
+  unfold mulSmall
+  simp only [List.append_assoc]
+  refine WP.append (ByteLoad.li32_ok (d := .a6) c) fun s0 e0 => ?_
+  have u0 : Upd s s0 .a6 (sext32 c) := by rw [e0]; exact Upd.write _ _ _
+  have hr0 : Rest clob64 s s0 := u0.rest (by decide)
+  have hc0 : Ctx b s0 := hc.of_rest hr0 (by decide)
+  have hm0 : s0.mem = s.mem := u0.mem
+  refine WP.append (mulSmallSteps_ok hx hx8 hcK (by omega) hc0 (by rw [u0.gpr]) 7 (by decide)
+    (Nat.le_refl _)) fun s1 h1 => ?_
+  refine WP.append foldR_ok fun s2 ⟨e2, k2⟩ => ?_
+  have hcy := h1.cy
+  have e2 := e2 (by omega)
+  refine WP.append foldR_ok fun s3 ⟨e3, k3⟩ => ?_
+  have l v := val7_lt (f := fun i => (State.gpr v (w i)).toNat) fun i _ => (v.gpr (w i)).isLt
+  rw [B7_eq] at l
+  simp only [rw7, B7_eq] at e2 e3
+  have hc2 : (s2.gpr .a5).toNat ≤ 1 := by have := l s1; have := l s2; omega
+  have e3 := e3 (by omega)
+  have hr3 : Rest clob64 s s3 :=
+    hr0.trans (h1.rest.trans (Rest.mono (Keeps.rest (k2.trans k3)) (by decide)))
+  have hc3 : Ctx b s3 := hc.of_rest hr3 (by decide)
+  have hm3 : s3.mem = s.mem := by rw [k3.2.1, k2.2.1, h1.mem, hm0]
+  refine WP.mono (sts_ok ho ho8 7 (Nat.le_refl _) s3 hc3) fun s4 ⟨h4, g4, r4, w4, p4, f4⟩ =>
+    ⟨hr3.trans ⟨fun r _ => by rw [g4], r4, w4, p4⟩, by rw [← hm3]; exact f4, ?_⟩
+  have hV : V s4.mem b o = val7 fun i => (s3.gpr (w i)).toNat := by
+    rw [V_eq]; exact val7_congr fun i hi => h4 i hi
+  have hv := h1.val
+  rw [colsV7, colsV7, B7_eq, hm0] at hv
+  rw [hV, fold_twice32 (l s1) (l s2) (l s3) (by omega) e2 e3, V_eq, hv]
 
 end
 

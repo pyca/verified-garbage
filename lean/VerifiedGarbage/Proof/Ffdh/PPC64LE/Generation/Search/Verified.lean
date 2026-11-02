@@ -44,7 +44,7 @@ theorem candidate_stack (v : RoundImpl) : sdepth (code v.name v.code) ≤ 176 :=
 /-- `vg_ffdh_parameter_candidate` calling the shared round `v`, as the search
 calls it. -/
 def Cand.ofRound (v : RoundImpl) : Cand where
-  name := Spec.Ffdh.parameterCandidateApi.name ++ v.suffix
+  name := "vg_ffdh_parameter_candidate" ++ v.suffix
   code := Impl.Ffdh.PPC64LE.ParameterCandidate.code v.name v.code
   stack := candidate_stack v
   correct := ParameterCandidate.code_correct v

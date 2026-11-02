@@ -6,14 +6,14 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import Init.Data.BitVec.Basic
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # The reviewed Montgomery contract on entry to an i686 call -/
 
 @[expose] public section
 namespace VG.Proof.Mont.X86.Compact
-open VG VG.X86 VG.Proof.Mont VG.Spec.Rsa.Mont
+open VG VG.X86 VG.Proof.Mont VG.Proof.Rsa.Mont
 
 abbrev wsOf (s : State) : Addr := (arg s 0).setWidth 64
 abbrev lenOf (s : State) : Nat := (arg s 1).toNat * 8

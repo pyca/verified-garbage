@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.ModArith
@@ -16,14 +16,14 @@ permutes all residues of the candidate. -/
 namespace VG.Proof.MillerRabin
 
 theorem round_mod (c b : Nat) :
-    Spec.MillerRabin.round c (b % c) = Spec.MillerRabin.round c b := by
-  simp only [Spec.MillerRabin.round, Spec.RsaKeyGen.mrIteration,
+    Proof.MillerRabin.Round.round c (b % c) = Proof.MillerRabin.Round.round c b := by
+  simp only [Proof.MillerRabin.Round.round, Spec.RsaKeyGen.mrIteration,
     VG.Proof.Bignum.powMod_eq, Nat.pow_mod, Nat.mod_mod]
 
 /-- Congruent Montgomery witnesses have the same round result. -/
 theorem round_eq_of_mont {c R b b' : Nat} (hc : 0 < c) (hR : Nat.Coprime R c)
     (h : b % c * R % c = b' % c * R % c) :
-    Spec.MillerRabin.round c b = Spec.MillerRabin.round c b' := by
+    Proof.MillerRabin.Round.round c b = Proof.MillerRabin.Round.round c b' := by
   have hm := VG.Proof.RsaKeyGen.mont_inj hR (Nat.mod_lt b hc) (Nat.mod_lt b' hc) h
   rw [← round_mod c b, ← round_mod c b', hm]
 

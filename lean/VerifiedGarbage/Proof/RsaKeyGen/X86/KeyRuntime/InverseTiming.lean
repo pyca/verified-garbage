@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseLoad
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 
 /-! # The key's calls of `vg_rsa_keygen_inverse` leak only public data
 
@@ -56,7 +57,7 @@ theorem CallAt.pub {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a : Nat
     change (pushed invArgs u₁).callEntry.gpr .esp = (pushed invArgs u₂).callEntry.gpr .esp
     rw [callEntry_esp', callEntry_esp', C₁.sp, C₂.sp]
   sig_pub [VG.Proof.RsaKeyGen.X86.Inverse.contract, VG.Proof.RsaKeyGen.X86.Inverse.inverseStack,
-    Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig, abi, argSlots, argVal, argBytes]
+    Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig, abi, argSlots, argVal, argBytes]
   simp only [sa (by decide : 0 < 3), sa (by decide : 1 < 3), sa (by decide : 2 < 3),
     ta (by decide : 0 < 3), ta (by decide : 1 < 3), ta (by decide : 2 < 3), ↓reduceIte]
   exact ⟨sp, trivial, trivial, trivial⟩

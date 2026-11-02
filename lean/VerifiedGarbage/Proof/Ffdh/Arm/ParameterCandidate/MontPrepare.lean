@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
 
 import VerifiedGarbage.Proof.Ffdh.Arm.CandidatePrepare
@@ -36,7 +36,7 @@ section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.Rsa.Arm.Keys (num)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem montKeySetup_ok {s : State} {base : BitVec 32} {capacity k : Nat}
     (workspace : Workspace s base (8 * capacity))
@@ -79,7 +79,7 @@ theorem montKeySetup_ok {s : State} {base : BitVec 32} {capacity k : Nat}
     subst r
     refine ⟨⟨State.addr base, 8 * capacity⟩, by simp, Offset.sub_base _ ?_⟩
     have fit := readyU.arrayFit (j := 0) (by decide)
-    simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
     omega
   have valueV (j : Nat) (bound : j < 35) : numAt v.mem (State.addr base) (Spec.Rsa.modulusWords k) j =
       numAt s.mem (State.addr base) (Spec.Rsa.modulusWords k) j := by rw [valuesV j bound, memU]
@@ -113,7 +113,7 @@ representation of one. -/
 section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem montOne_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
@@ -127,7 +127,7 @@ theorem montOne_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
       Frame [⟨State.addr base, 8 * capacity⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * capacity := ready.width ▸ ready.layout.2.2.1
   have op (j : Nat) (bound : j = 0 ∨ j = 1 ∨ j = 4) : Operand j := by
-    rcases bound with rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases bound with rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   rw [WP.seq_iff]
   refine WP.mono (smallConst_ok s 1 ready (o := 1) (by decide) (by decide) (by decide) (by decide)) ?_
   rintro u ⟨readyU, oneU, _, keepsU, frameU, restU⟩
@@ -150,7 +150,7 @@ end
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure MontPrepInput (base src : BitVec 32) (capacity k : Nat) (s : State) : Prop where
   workspace : Workspace s base (8 * capacity)

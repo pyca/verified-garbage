@@ -50,7 +50,7 @@ theorem candidate_noFrames (v : RoundImpl) : (code v.mont.mm v.kernel.run).noFra
 /-- `vg_ffdh_parameter_candidate` calling the shared round `v`, as the search
 calls it. -/
 def Cand.ofRound (v : RoundImpl) : Cand where
-  name := Spec.Ffdh.parameterCandidateApi.name ++ v.suffix
+  name := "vg_ffdh_parameter_candidate" ++ v.suffix
   code := Impl.Ffdh.AArch64.ParameterCandidate.code v.mont.mm v.kernel.run
   noFrames := candidate_noFrames v
   correct := ParameterCandidate.code_correct v.mont v.kernel

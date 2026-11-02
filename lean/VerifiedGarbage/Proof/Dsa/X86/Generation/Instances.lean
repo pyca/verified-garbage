@@ -30,11 +30,11 @@ def geo (pLen qLen : Nat) (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) 
   e := (8 * pLen - 8 * qLen) / 32 + 1
   H := H
   iv := iv
-  qName := (Spec.Dsa.ProbablePrime.api (Impl.Dsa.X86.ProbablePrime.layout (8 * qLen))).name ++ v.suffix
+  qName := s!"vg_dsa_probable_prime_{(Impl.Dsa.X86.ProbablePrime.layout (8 * qLen)).bits}" ++ v.suffix
   qCode := Impl.Dsa.X86.ProbablePrime.code (8 * qLen) montName montCode v.name v.code
-  pName := (Spec.Dsa.ProbablePrime.api (Impl.Dsa.X86.ProbablePrime.layout (8 * pLen))).name ++ v.suffix
+  pName := s!"vg_dsa_probable_prime_{(Impl.Dsa.X86.ProbablePrime.layout (8 * pLen)).bits}" ++ v.suffix
   pCode := Impl.Dsa.X86.ProbablePrime.code (8 * pLen) montName montCode v.name v.code
-  checkName := Spec.Dsa.checkParametersApi.name
+  checkName := "vg_dsa_check_parameters"
   checkCode := Impl.Dsa.X86.Generate.checkParameters
 
 theorem check_noSp : NoSp Impl.Dsa.X86.Generate.checkParameters := NoSp.of_all (by decide +kernel)

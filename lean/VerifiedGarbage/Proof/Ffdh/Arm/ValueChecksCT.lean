@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.ChecksCT
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 theorem isOne_ct {base : BitVec 32} {len w a : Nat} (ha : Operand a) :
     RelCT isa (fun s t => ArithmeticReady base len w s ∧ ArithmeticReady base len w t ∧ s.sp = t.sp)
@@ -33,7 +33,7 @@ theorem isOne_ct {base : BitVec 32} {len w a : Nat} (ha : Operand a) :
     (by decide : 7 < 8) (by decide) (by decide))
     (fun s h => WP.mono (smallConst_ok s 1 h (by decide : 7 < 8) (by decide) (by decide) (by decide)) fun _ k => k.1)
     (fun s h => WP.mono (smallConst_ok s 1 h (by decide : 7 < 8) (by decide) (by decide) (by decide)) fun _ k => k.1)
-    (equal_ct ha (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]))
+    (equal_ct ha (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]))
 
 theorem negateFlag_ct : RelCT isa (fun _ _ => True)
     (.block [.dp .eor .r11 .r11 (.imm 1)]) (fun _ _ => True) := by

@@ -11,11 +11,11 @@ import VerifiedGarbage.Proof.Framework.Block
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombExp
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 private theorem operand (q : Nat) (h : q=1 ∨ q=4 ∨ q=6 ∨ q=7) : Operand q := by
-  rcases h with rfl | rfl | rfl | rfl <;> simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]
+  rcases h with rfl | rfl | rfl | rfl <;> simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
 
 theorem square_ok {base : BitVec 32} {len w M g E : Nat} {P : State→Prop} {regions : List Region}
     (A : TwoExp.Montgomery base len w P regions) (s : State)

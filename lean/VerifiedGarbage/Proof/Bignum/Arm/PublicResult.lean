@@ -20,7 +20,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem expPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
@@ -47,7 +47,7 @@ end
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure PublicResult (base dst np ep xp : BitVec 32) (len k eLen : Nat)

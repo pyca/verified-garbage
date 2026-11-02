@@ -30,7 +30,7 @@ section
 section
 namespace VG.Proof.Bignum.Arm.SharedWindow
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.Bignum.Arm.TwoExp (Montgomery MontgomeryTiming)
 section
 variable {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
@@ -114,7 +114,7 @@ end
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.SharedWindow
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.Bignum.Arm.TwoExp (Montgomery MontgomeryTiming OpInput)
 
 theorem phase_ct {base ep : BitVec 32} {len w M1 M2 x1 x2 : Nat} {eb1 eb2 : List Byte}
@@ -171,8 +171,8 @@ theorem phase_ct {base ep : BitVec 32} {len w M1 M2 x1 x2 : Nat} {eb1 eb2 : List
     (fun s h => WP.mono (sharedWindowBytes_ok K s h.1 h.2 (by omega) separate2) fun _ k => ⟨k.1, k.2.1⟩) ?_
   exact relCT_chain applying (fun s h => finishReady s h) (fun s h => finishReady s h)
     (ct.op_ct 6 6 7
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]))
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]))
 
 end VG.Proof.Bignum.Arm.SharedWindow

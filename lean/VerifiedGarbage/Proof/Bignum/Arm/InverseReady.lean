@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wOf numAt Layout)
+open VG.Proof.Rsa.Mont (arrAt wOf numAt Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem inverse_outside_layout {m m' : Mem} {base : Addr} {len : Nat}
@@ -46,7 +46,7 @@ theorem initInverse_ready_r2 (s : State) {base : BitVec 32} {len w : Nat}
   have hw : 2 ≤ w := width ▸ layout.1
   have fits : arrAt w 8 ≤ 8 * len := width ▸ layout.2.2.1
   have bound := Nat.le_trans (array_end_le (w := w) (j := 0) (k := 8) (by decide)) fits
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   refine WP.mono (initInverse_ok s ws (by omega) (by omega) ptr baseReg odd) ?_
   rintro t ⟨inv, inverse, mem, result, rest⟩
   have outside : VG.Proof.Mont.Outside (State.addr base) 56 8 s.mem t.mem := by
@@ -54,14 +54,14 @@ theorem initInverse_ready_r2 (s : State) {base : BitVec 32} {len w : Nat}
     exact VG.Proof.Mont.writeW_outside s.mem (State.addr base) inv (by decide)
   have number : numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 := by
     rw [numAt_native, numAt_native]
-    exact outside.val32 (by right; simp [arrAt, Spec.Rsa.Mont.hdrBytes]) (by have := ws.nowrap; omega)
+    exact outside.val32 (by right; simp [arrAt, Proof.Rsa.Mont.hdrBytes]) (by have := ws.nowrap; omega)
   have kl := inverse_outside_layout outside layout
   have frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by
     rw [mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by decide))
   refine ⟨⟨ws.congr rest.wr, kl.2, kl.1.trans width, result, ?_, ?_, ?_, ?_, ?_⟩,
     number, frame, rest.mono (by decide), ?_⟩
-  · rw [outside.word (d := arrAt w 0) (by right; simp [arrAt, Spec.Rsa.Mont.hdrBytes]) (by have := ws.nowrap; omega)]
+  · rw [outside.word (d := arrAt w 0) (by right; simp [arrAt, Proof.Rsa.Mont.hdrBytes]) (by have := ws.nowrap; omega)]
     change (_ * (t.mem.readW (off (State.addr base) 56) 64).toNat + 1) % 2 ^ 64 = 0
     rw [mem, Mem.readW_writeW_self64]
     exact inverse
@@ -72,7 +72,7 @@ theorem initInverse_ready_r2 (s : State) {base : BitVec 32} {len w : Nat}
 
   · have bound4 := Nat.le_trans (array_end_le (w := w) (j := 4) (k := 8) (by decide)) fits
     rw [numAt_native, numAt_native]
-    exact outside.val32 (by right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)
+    exact outside.val32 (by right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega)
       (by have := ws.nowrap; omega)
 
 

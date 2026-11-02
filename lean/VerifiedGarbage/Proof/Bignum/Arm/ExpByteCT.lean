@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 structure ExpByteInput (base ep : BitVec 32) (len w M x E : Nat) (b : Byte) (s : State) : Prop where
   power : ExpState base len w M x E s

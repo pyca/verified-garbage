@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsBridge
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem montFnBody_ok (s : State) {base : BitVec 32} {len o a b : Nat}
@@ -27,7 +27,7 @@ theorem montFnBody_ok (s : State) {base : BitVec 32} {len o a b : Nat}
     (ptr : s.gpr .r0 = base) (po : s.gpr .r2 = BitVec.ofNat 32 o)
     (pa : s.gpr .r3 = BitVec.ofNat 32 a) (pb : s.gpr .r12 = BitVec.ofNat 32 b)
     (inverse : ((word s.mem (State.addr base) (arrAt (wOf s.mem (State.addr base)) 0)).toNat *
-      (wordAt s.mem (State.addr base) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0)
+      (wordAt s.mem (State.addr base) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0)
     (operand : numAt s.mem (State.addr base) (wOf s.mem (State.addr base)) b <
       numAt s.mem (State.addr base) (wOf s.mem (State.addr base)) 0) :
     WP isa MontFn.body s fun t =>
@@ -44,7 +44,7 @@ theorem montFnBody_ok (s : State) {base : BitVec 32} {len o a b : Nat}
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   obtain ⟨ctx, finish⟩ := layout_context ws hw fits ho ha hb
   have bound : 128 ≤ 8 * len := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   rw [MontFn.body, WP.seq_iff]
   refine WP.mono (bases_ok s ws bound header ho.1 ha.1 hb.1 ptr po pa pb) ?_

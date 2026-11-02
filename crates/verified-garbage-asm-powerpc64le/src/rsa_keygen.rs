@@ -4527,7 +4527,7 @@ b 22f
 .base64 "AACAOwAAmfsAAGA4"
 22:
 .base64 "AABhOSAAy+koAOvpMAAL6jgAK+pAAEvqSABr6lAAi+pYAKvqYADL6mgA6+pwAAvreAAr64AAS+uIAGvrkACL65gAq+ugAMvrqADr67AAITggAAHoMAAhOKYDCHwgAIBO""#,
-        vg_miller_rabin_round = sym super::miller_rabin::vg_miller_rabin_round,
+        vg_miller_rabin_round = sym super::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
         VG_RSA_KEYGEN_TRIAL32 = sym super::consts::VG_RSA_KEYGEN_TRIAL32,
     )
 }

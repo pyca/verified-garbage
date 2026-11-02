@@ -127,7 +127,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm.CachedPower
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem significant_below {p : Inputs} {l : ScalarLayout p} {s : State}
@@ -270,7 +270,7 @@ section
 section
 namespace VG.Proof.Bignum.Arm.CombExp
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 structure PhaseInput (base source table : BitVec 32) (len w bytes N M : Nat)
     (P : State→Prop) (s : State) : Prop where
@@ -317,9 +317,9 @@ theorem phase_ct {base source table : BitVec 32} {len w bytes N M g x1 x2 : Nat}
     (fun s h => rowsInput_ok K1 positive fits s h)
     (fun s h => by simpa only [ct.same] using rowsInput_ok K2 positive fits s h)
     (ct.op_ct 6 6 7
-      (by simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp])
-      (by simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp])
-      (by simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]))
+      (by simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp])
+      (by simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp])
+      (by simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]))
 
 end VG.Proof.Bignum.Arm.CombExp
 end
@@ -334,7 +334,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure EnvironmentPowerLaw (env : SampleEnvironment) (layout : (p : Inputs) → ScalarLayout p) (code : Prog isa) : Prop where
@@ -373,7 +373,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem cachedPrepareAt_ok (s : State) {p : Inputs} {slots : List Nat}
@@ -567,7 +567,7 @@ full output encoding and its public-width significant suffix. -/
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem environmentSample_ok (env : SampleEnvironment) (layout : (p : Inputs) → ScalarLayout p) (bound : Prog isa)
@@ -610,7 +610,7 @@ theorem environmentSample_ok (env : SampleEnvironment) (layout : (p : Inputs) �
     · exact (Offset.disjoint_base _ (by decide) (by decide)).symm
     · exact outputs.privateStack.sub_left (Region.sub_prefix (by decide))
   have readyT := ready.after_external frame workspaceSep baseSep rest context.ptr
-  have fits : Spec.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
+  have fits : Proof.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
   have scalar : Octets p.base p.privateValue p.len ((layout p).encode rb) t := by
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [(layout p).encode_length size]; exact outputs.privateBuffer.fits
@@ -745,7 +745,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm.CachedPower
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem vetted_correct (backend : MontBackend) (s : State) {p : Inputs}
@@ -821,7 +821,7 @@ section
 section
 namespace VG.Proof.Bignum.Arm.CombExp
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 theorem arithmetic_ct (backend : MontBackend) (base source table sp : BitVec 32)
     (len w M g N : Nat) (bs : List Byte) (o a b : Nat)
@@ -978,7 +978,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem environmentCallTail_ok {env : SampleEnvironment} {layout : (p : Inputs) → ScalarLayout p}
@@ -1002,18 +1002,18 @@ theorem environmentCallTail_ok {env : SampleEnvironment} {layout : (p : Inputs) 
       Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k =
         (if keyAccepted p xb then Spec.Rsa.i2osp (keyPower p xb) p.k else List.replicate p.k 0) ∧
       Frame (keyCallWrites p s) s.mem t.mem := by
-  have fits : Spec.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
+  have fits : Proof.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
   rw [VG.Impl.Ffdh.Arm.KeyGenerate.tail, WP.seq_iff]
   refine WP.mono (law.correct s h environment calls stable h52 h56 h32 ready modulus odd r2 significant significantSize (by rw [significantValue]; exact scalarFits)) ?_
   rintro u ⟨contextU, readyU, powerU, modU, _, _, frameU, restU⟩
   rw [significantValue] at powerU
   change numAt u.mem (State.addr p.base) p.w 6 = keyPower p xb at powerU
   rw [WP.seq_iff]
-  refine WP.mono (inRange_ok u readyU (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6)
+  refine WP.mono (inRange_ok u readyU (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6)
     (by decide) (by rw [modU]; exact odd)) ?_
   rintro v ⟨readyV, flag, arraysV, frameV, restV⟩
   have contextV := contextU.after_workspace frameV restV readyV.ptr (fun d hd => (stableSlots_at stable hd).1)
-  have powerV := (arraysV 6 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerU
+  have powerV := (arraysV 6 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerU
   have flagV : v.gpr .r11 = if keyAccepted p xb then 1 else 0 := by
     rw [powerU, modU] at flag
     simpa only [keyAccepted, decide_eq_true_eq] using flag
@@ -1085,7 +1085,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 theorem environmentCallPower_next {env : SampleEnvironment} {layout : (p : Inputs) → ScalarLayout p}
     {power : Prog isa} (law : EnvironmentPowerLaw env layout power) (s : State)
@@ -1117,7 +1117,7 @@ theorem environmentCallTail_ct {env : SampleEnvironment} {layout : (p : Inputs) 
     RelCT isa (fun s t => ((SamplePowerInput p (layout p) slots eb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
       ((SamplePowerInput p (layout p) slots eb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.KeyGenerate.tail power) (fun _ _ => True) := by
-  have range := (inRange_ct (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
+  have range := (inRange_ct (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
     (P' := fun (s t : State) => KeyRangeInput p slots s ∧ KeyRangeInput p slots t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.ready, h.2.1.ready, h.2.2⟩) (fun _ _ h => h)
   unfold VG.Impl.Ffdh.Arm.KeyGenerate.tail

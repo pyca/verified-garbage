@@ -27,7 +27,9 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 meta import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+public import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_crt_ifma` on x86-64, any size: verified against the shared contract
@@ -172,7 +174,7 @@ theorem verified (M : Mont)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hcrt : (seqs (qPhase M.mm (CrtExpL.w4 M).code ++ pPhase M.mm (CrtExpL.w4 M).code)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (CrtIfma.code M.mm) (Spec.Rsa.privateCrtContract abi) :=
+    Verified target (CrtIfma.code M.mm) (Proof.Rsa.privateCrtContract abi) :=
   Verified.of_correct (code_correct M hfront hpre hpost hcrt) (code_constantTime M hpost) crt_implies
 
 end

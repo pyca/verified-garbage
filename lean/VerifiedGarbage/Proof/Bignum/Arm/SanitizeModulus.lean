@@ -3,7 +3,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SanitizeModulus
 public import Batteries.Logic
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.SanitizeBit
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt wOf Layout Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf Layout Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem sanitizeModulus_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -37,16 +37,16 @@ theorem sanitizeModulus_ok (s : State) {base : BitVec 32} {len w : Nat}
       Outs (State.addr base) [(arrAt w 7, 8 * w), (arrAt w 0, 8 * w)] s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t ∧ t.gpr .r0 = base := by
   have fits : arrAt w 8 ≤ 8 * len := width ▸ layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   rw [sanitizeModulus, WP.seq_iff]
   refine WP.mono (smallConstLayout_ok s 3 ws layout width ptr (by decide : 7 < 8)
     (by decide) (by decide) stackRead stackSep saved) ?_
   rintro u ⟨layoutU, widthU, number, outsideU, frameU, restU, ptrU⟩
   have oldBit := outside_read32 outsideU (d := 212)
-    (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) (by decide)
+    (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) (by decide)
   have keeps := outside_array_keeps outsideU (len := len) (by have := ws.nowrap; omega)
   have oldM := keeps_array_num keeps fits
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 0) (by decide : 0 ≠ 7)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 0) (by decide : 0 ≠ 7)
   rw [WP.seq_iff]
   refine WP.mono (sanitizeBit_ok u (ws.congr restU.wr) (by omega) ptrU) ?_
   rintro v ⟨loaded, memV, restV⟩

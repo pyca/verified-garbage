@@ -10,12 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Generic.MillerRabin.PPC64LE.Ffdh
 
 def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
-  Spec.Ffdh.parameterCandidateApi.artifact PPC64LE.target {
-    suffix := v.suffix
-    code := Impl.Ffdh.PPC64LE.ParameterCandidate.code v.name v.code
-    stack := 176
-    verified := Proof.Ffdh.PPC64LE.ParameterCandidate.pc_verified v
-    features := v.features },
   Spec.Ffdh.parameterSearchApi.artifact PPC64LE.target {
     suffix := v.suffix
     stack := 336

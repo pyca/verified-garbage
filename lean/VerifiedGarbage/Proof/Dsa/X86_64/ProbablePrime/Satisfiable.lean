@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # A state meets the probable-prime test's precondition
 
@@ -83,7 +84,7 @@ theorem sat_length {bits : Nat} (hb : Supported bits) :
 
 theorem satisfiable : ∃ s, contract.pre s := by
   refine ⟨satState 160, ?_⟩
-  sig_pre [contract, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi, argRegs]
+  sig_pre [contract, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig, abi, argRegs]
   sig_and_intros
   all_goals first
     | exact sat_odd (bits := 160) (Or.inl rfl)

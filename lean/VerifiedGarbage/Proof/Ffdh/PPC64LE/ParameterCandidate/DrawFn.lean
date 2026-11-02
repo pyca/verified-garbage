@@ -35,10 +35,10 @@ open VG.Impl.Bignum.PPC64LE.Precompute (loadN copyWords)
 
 /-- `hStat` after a draw of `a`, from 4. -/
 def dStat (N K i a : Nat) : Nat :=
-  if 2 ≤ a ∧ a < N - 1 then (if Spec.MillerRabin.round N a then (if i + 1 < K then 4 else 1) else 2) else 4
+  if 2 ≤ a ∧ a < N - 1 then (if Proof.MillerRabin.Round.round N a then (if i + 1 < K then 4 else 1) else 2) else 4
 
 /-- `hIdx` after a draw of `a`. -/
-def dIdx (N i a : Nat) : Nat := if 2 ≤ a ∧ a < N - 1 ∧ Spec.MillerRabin.round N a = true then i + 1 else i
+def dIdx (N i a : Nat) : Nat := if 2 ≤ a ∧ a < N - 1 ∧ Proof.MillerRabin.Round.round N a = true then i + 1 else i
 
 theorem wp_then3 {a b c d e : Prog isa} {s : State} {P Q : State → Prop}
     (h : WP isa (.seq a (.seq b (.seq c d))) s P) (k : ∀ t, P t → WP isa e t Q) :
@@ -239,7 +239,7 @@ theorem drawTail_ok (R : RoundImpl) {p : PP} {mb N u i : Nat} {t₄ : State} (h 
     (keeps_hdr (i := 19) hv.keeps (by decide) (by decide) (by omega_arith)).trans u₄
   simp only [word, off] at u₅ ⊢
   have ht2 : 2 ≤ wA mb p.r u ∧ wA mb p.r u < N - 1 := ⟨ha2, haN⟩
-  cases hr : Spec.MillerRabin.round N (wA mb p.r u) <;> simp only [hr, Bool.false_eq_true, ↓reduceIte] at tm <;>
+  cases hr : Proof.MillerRabin.Round.round N (wA mb p.r u) <;> simp only [hr, Bool.false_eq_true, ↓reduceIte] at tm <;>
     rw [tm] <;> refine ⟨?_, ?_, ?_⟩
   · rw [rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact u₅
   · rw [rw_self, dStat, ite_eq_left ht2, hr]; rfl

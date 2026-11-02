@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
@@ -43,7 +44,7 @@ structure Callee (k : Nat → Contract isa) where
   features : List String
 
 /-- `vg_rsa_public_checked`. -/
-abbrev PubChecked := Callee fun K => Spec.Rsa.publicCheckedContract abi K
+abbrev PubChecked := Callee fun K => Proof.Rsa.publicCheckedContract abi K
 
 theorem stackArgs_two (s : State) :
     List.map (stackArg s) (List.range 2) = [stackArg s 0, stackArg s 1] := rfl
@@ -116,10 +117,10 @@ structure PubOk (K : Nat) (t : State) : Prop where
   hs : Spec.Rsa.publicScratchWords (t.gpr .x3).toNat ≤ (stackArg t 1).toNat
 
 theorem PubOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PubOk K t) :
-    (Spec.Rsa.publicCheckedContract abi K).pre (t.callEntry.withRegions (pubRd t) (pubWr t)) := by
+    (Proof.Rsa.publicCheckedContract abi K).pre (t.callEntry.withRegions (pubRd t) (pubWr t)) := by
   obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
   have hl := h.hl
-  sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop]
+  sig_pre [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop]
   simp only [sa0]
   exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa,
     hl.ko, hl.kn, hl.ke, hl.ki, hl.ks, hl.ka, hl.wo, hl.wn, hl.we, hl.wi, hl.ws, h.hk, h.h1, h.h7, h.he1,
@@ -136,11 +137,11 @@ theorem pubCall (c : PubChecked) {t : State} {Q : State → Prop} (h : PubOk c.s
           (Spec.Rsa.bytesAt t.mem (t.gpr .x4) (t.gpr .x5).toNat)
           (Spec.Rsa.bytesAt t.mem (t.gpr .x6) (t.gpr .x3).toNat)) → Q s') :
     WP isa (.call c.name c.code) t Q := by
-  refine WP.callFV (k := Spec.Rsa.publicCheckedContract abi c.stack) c.verified.1 (h.pre c.pos)
+  refine WP.callFV (k := Proof.Rsa.publicCheckedContract abi c.stack) c.verified.1 (h.pre c.pos)
     (Covers.append_left (Covers.trans h.hrd (Covers.refl _)) (Covers.right h.hwr)) h.hwr ?_
     (by have := c.le; have := c.depth; omega)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
-  sig_post [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop] at hpost
+  sig_post [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop] at hpost
   exact hQ s' hrd' hwr' hsp' hf hpres hvs hpost
 
 /-- What two runs agree on at a call of an RSA operation: the stack
@@ -172,7 +173,7 @@ theorem pubCallCT (c : PubChecked) {P : State → State → Prop}
   refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
     Covers.append_left (Covers.trans h₂.hrd (Covers.refl _)) (Covers.right h₂.hwr), h₂.hwr⟩
-  sig_pub [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop]
+  sig_pub [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop]
   obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := argsEq_regs he
   exact ⟨he.sp, by rw [hn, hE], e0, e1, e2, e3, e4, e5, e6, e7, he.args 0 (by decide), he.args 1 (by decide)⟩
 

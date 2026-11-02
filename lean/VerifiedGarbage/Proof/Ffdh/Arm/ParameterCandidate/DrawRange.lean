@@ -25,7 +25,7 @@ preservation of the shared primality round's extended-array constants. -/
 section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 private theorem greaterOne_data {s : State} {base : BitVec 32} {capacity w n : Nat}
     (ready : ArithmeticReady base capacity w s) (data : RoundData base capacity w n s.mem) :
@@ -96,7 +96,7 @@ theorem inRangeWitness_ok {s : State} {base : BitVec 32} {capacity w n witness :
       t.gpr .r11 = (if 1 < witness ∧ witness < n - 1 then 1 else 0) ∧
       numAt t.mem (State.addr base) w 1 = witness ∧
       Frame [⟨State.addr base, 8 * capacity⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have operand : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have operand : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine WP.mono ((VG.Proof.Ffdh.Arm.inRange_ok s ready operand (by decide)
     (by rw [data.modulus]; exact data.odd)).and (inRange_data ready data)) ?_
   rintro t ⟨⟨readyT, flag, arrays, frame, rest⟩, dataT⟩
@@ -111,7 +111,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem drawRange_ok {s : State} {p : WitnessParams} {used passed : Nat}
     (h : WitnessState p used passed s) (enough : used + (p.bits + 7) / 8 ≤ p.bytes.length) :

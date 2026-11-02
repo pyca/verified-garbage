@@ -21,7 +21,7 @@ theorem ranges_apart {g : Geometry} {d bytes : Nat} (safe : protectedHeader d by
     | (rcases mem with mem | mem)
     | (rcases mem with rfl)
   all_goals
-    simp only [Geometry.array, Geometry.words, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes,
+    simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
       VG.Impl.RsaKeyGen.X86.Exponent.markerOffset]
     unfold protectedHeader at safe
     omega

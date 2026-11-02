@@ -14,7 +14,7 @@ open VG VG.Proof.Mont VG.Impl.Dsa.X86.Comb VG.Impl.Mont.X86.Dynamic
 
 theorem canonical_outs {n e p g : Nat} {base : Addr} {m m' : Mem} {rs : List (Nat × Nat)}
     (h : Supported n e) (C : canonical n e p g base m) (O : Outs base rs m m')
-    (apart : ∀ r∈rs, context n+8*Spec.Dsa.FixedBaseComb.contextWords (layout n e)≤r.1 ∨
+    (apart : ∀ r∈rs, context n+8*Proof.Dsa.FixedBaseComb.contextWords (layout n e)≤r.1 ∨
       r.1+r.2≤context n) : canonical n e p g base m' := by
   unfold canonical at C ⊢
   rw [wordsAt_canonical,wordsVal_eq_val32,

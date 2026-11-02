@@ -73,7 +73,7 @@ def RB (q : RQ) (s : State) : Prop :=
 
 /-- After the kernel. -/
 def RF (q : RQ) (s : State) : Prop :=
-  Ws s q.L.B q.L.Z q.L.w ∧ word s.mem q.L.B (8 * kFlag) = mask (Spec.MillerRabin.round q.N q.a)
+  Ws s q.L.B q.L.Z q.L.w ∧ word s.mem q.L.B (8 * kFlag) = mask (Proof.MillerRabin.Round.round q.N q.a)
 
 theorem roundMm_ok (M : Mont) {q : RQ} {s : State} (h : RA q s) : WP isa (M.mm aXm aX aR2) s (RB q) := by
   obtain ⟨h4, h128, hEZ, hodd, hc3, ha, ⟨bm, hc⟩, he, hR2, hx⟩ := h
@@ -118,13 +118,13 @@ theorem roundEnd_ct : RelCT isa (Two RF) (seqs [.block [ldh .x3 kFlag],
   have pw : ∀ {Φ : RQ → State → Prop}, (∀ q s, Φ q s → Ws s q.L.B q.L.Z q.L.w) → Pins Φ [.x0] :=
     fun h => pins_ws' (fun q : RQ => q.L.B) (fun q : RQ => q.L.Z) (fun q : RQ => q.L.w) h
   refine RelCT.seq (two_piece (Ψ := fun q t => Ws t q.L.B q.L.Z q.L.w ∧
-      isa.eval (.zero .x .x3) t = some (!Spec.MillerRabin.round q.N q.a)) [.x0] (pw fun _ _ h => h.1)
+      isa.eval (.zero .x .x3) t = some (!Proof.MillerRabin.Round.round q.N q.a)) [.x0] (pw fun _ _ h => h.1)
       (by taint_decide) fun q s ⟨hw, hF⟩ => ?_) (two_ite (fun _ _ _ h₁ h₂ => by rw [h₁.2, h₂.2])
       (two_taint [.x0] (pw fun _ _ h => h.1.1) (by taint_decide))
       (two_taint [.x0] (pw fun _ _ h => h.1.1) (by taint_decide)))
   have hn := hw.scr.nowrap
   have h256 := hw.h256
-  refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = mask (Spec.MillerRabin.round q.N q.a) ∧ t.mem = s.mem)
+  refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = mask (Proof.MillerRabin.Round.round q.N q.a) ∧ t.mem = s.mem)
     (by brun [hw.x0, hdr_enc (show kFlag < 32 by decide),
       hw.scr.ld (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega_arith), hF])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h3, hm⟩, k⟩ => ⟨?_, ?_⟩

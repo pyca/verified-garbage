@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # The generation's prime-test parameters, from the function's arguments
 
@@ -34,7 +35,7 @@ theorem Supported.le {bits : Nat} (hb : Supported bits) : 160 ≤ bits ∧ bits 
 
 /-- The candidate. -/
 abbrev candidateOf (bits : Nat) (s : State) : Nat :=
-  Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (s.gpr .x0)
+  Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (s.gpr .x0)
 
 /-- `ws`'s region. -/
 abbrev wsRegion (s : State) : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩

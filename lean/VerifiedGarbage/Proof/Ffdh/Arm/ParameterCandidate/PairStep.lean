@@ -73,10 +73,10 @@ theorem pairActiveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat
   refine WP.block_nil ⟨⟨ctxA.after_memory memT restT,by omega,?_,?_,?_,?_,?_,
     (inv.rest.trans through).trans (restT.mono (by simp [sieveRegs]))⟩,?_⟩
   · rw [cursorT,restA.gpr .r10 (by simp),restV.gpr .r10 (by simp),inv.cursor]
-    change (base+BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*i))+BitVec.ofNat 32 4 = _
+    change (base+BitVec.ofNat 32 (Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*i))+BitVec.ofNat 32 4 = _
     rw [BitVec.add_assoc,BitVec.ofNat_add_ofNat]
-    have offset : Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*i+4 =
-        Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*(i+1) := by omega
+    have offset : Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*i+4 =
+        Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*(i+1) := by omega
     rw [offset]
   · simpa only [show trialCount n-i-1=trialCount n-(i+1) by omega] using countT
   · rw [divides,←pairAny_succ] at badA
@@ -124,11 +124,11 @@ theorem pairStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
     refine ⟨⟨invU.context.after_memory mem restT, Nat.le_refl _, ?_, ?_, ?_, ?_, ?_,
       invU.rest.trans (restT.mono (by simp [sieveRegs]))⟩, last⟩
     · rw [cursor, invU.cursor, invU.count, BitVec.shiftLeft_eq_mul_twoPow]
-      change (base + BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*i)) +
+      change (base + BitVec.ofNat 32 (Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*i)) +
         BitVec.ofNat 32 (trialCount n-i)*BitVec.ofNat 32 4 = _
       rw [BitVec.ofNat_mul_ofNat,BitVec.add_assoc,BitVec.ofNat_add_ofNat]
-      have offset : Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*i+(trialCount n-i)*4 =
-          Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*trialCount n := by
+      have offset : Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*i+(trialCount n-i)*4 =
+          Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*trialCount n := by
         have := inv.index
         omega
       rw [offset]

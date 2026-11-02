@@ -94,8 +94,8 @@ def AQ (E : Env) (g : Geo) (a : Nat × Nat) (t : State) : Prop := ∃ s, AIn E a
 /-- q a probable prime: before p. -/
 def AQp (E : Env) (g : Geo) (a : Nat × Nat) (t : State) : Prop :=
   CmpAfter (fun a t => CmpAfter (AQ E g) a t ∧
-    decide (Spec.Dsa.ProbablePrime.status (qRes E g a) = 0) = false) a t ∧
-    decide (Spec.Dsa.ProbablePrime.status (qRes E g a) = 1) = true
+    decide (Proof.Dsa.ProbablePrime.status (qRes E g a) = 0) = false) a t ∧
+    decide (Proof.Dsa.ProbablePrime.status (qRes E g a) = 1) = true
 
 /-- After p. -/
 def AP (E : Env) (g : Geo) (a : Nat × Nat) (t : State) : Prop :=
@@ -225,11 +225,11 @@ theorem attempt_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen 
     fun a s h => WP.mono (qPart_ok G v hp hq h.1.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.1 h.1.2.2.2.2)
       fun t Q => ⟨s, h, Q⟩) ?_
   refine cmpF_ct (o := fRes) (v := 0) (by simp only [fRes, hdr]; omega) (by decide)
-    (fun a => Spec.Dsa.ProbablePrime.status (qRes E g a)) (fun a t h => h.base)
+    (fun a => Proof.Dsa.ProbablePrime.status (qRes E g a)) (fun a t h => h.base)
     (fun a t h => by obtain ⟨_, _, Q⟩ := h; exact Q.res) (fun a => status_lt _)
     (stImm_ct (fun a t h => h.1.base fun _ _ h => h.base) _ _) ?_
   refine cmpF_ct (o := fRes) (v := 1) (by simp only [fRes, hdr]; omega) (by decide)
-    (fun a => Spec.Dsa.ProbablePrime.status (qRes E g a)) (fun a t h => h.1.base fun _ _ h => h.base)
+    (fun a => Proof.Dsa.ProbablePrime.status (qRes E g a)) (fun a t h => h.1.base fun _ _ h => h.base)
     (fun a t h => by obtain ⟨u, ⟨s₀, -, Q⟩, m, -⟩ := h.1.elim; rw [m]; exact Q.res) (fun a => status_lt _)
     ?_ (RelCT.block_nil fun _ _ _ => trivial)
   -- p.

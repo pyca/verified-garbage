@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.ContextBody
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
+public import VerifiedGarbage.Proof.Dsa.MontContextContract
 
 /-! # The shared context helper against its public arithmetic contract -/
 
@@ -9,7 +11,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 namespace VG.Proof.Dsa.Arm.Context
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm.Context
-open VG.Spec.Dsa.ModPow (numAt Keeps)
+open VG.Proof.Dsa.ModPow (numAt Keeps)
 
 /-- A four-byte integer is the word used by the arithmetic. -/
 theorem numAt_word (m : Mem) (base : Addr) (d : Nat) : numAt m base d 4 = w32 m base d := rfl
@@ -61,19 +63,19 @@ def satState : State where
   wr := [⟨0x1000, 4960⟩]
 
 theorem setupArm_implies {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
-    (setupArm n).Implies (Spec.Dsa.MontContext.setupContract (layout n) Arm.abi) where
+    (setupArm n).Implies (Proof.Dsa.MontContext.setupContract (layout n) Arm.abi) where
   pre := by
-    sig_implies_pre [Spec.Dsa.MontContext.setupContract, Spec.Dsa.MontContext.sig, Spec.Dsa.ModPow.sig,
+    sig_implies_pre [Proof.Dsa.MontContext.setupContract, Proof.Dsa.MontContext.sig, Proof.Dsa.ModPow.sig,
       setupArm, layout, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   post := by
-    sig_implies_post [Spec.Dsa.MontContext.setupContract, Spec.Dsa.MontContext.sig, Spec.Dsa.ModPow.sig,
+    sig_implies_post [Proof.Dsa.MontContext.setupContract, Proof.Dsa.MontContext.sig, Proof.Dsa.ModPow.sig,
       setupArm, layout, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   pub := by
-    sig_implies_pub [Spec.Dsa.MontContext.setupContract, Spec.Dsa.MontContext.sig, Spec.Dsa.ModPow.sig,
+    sig_implies_pub [Proof.Dsa.MontContext.setupContract, Proof.Dsa.MontContext.sig, Proof.Dsa.ModPow.sig,
       setupArm, layout, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
   sat := by
     refine ⟨satState, ?_⟩
-    sig_pre [Spec.Dsa.MontContext.setupContract, Spec.Dsa.MontContext.sig, Spec.Dsa.ModPow.sig,
+    sig_pre [Proof.Dsa.MontContext.setupContract, Proof.Dsa.MontContext.sig, Proof.Dsa.ModPow.sig,
       layout, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     sig_and_intros
     · decide
@@ -89,7 +91,7 @@ theorem setupArm_implies {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
     · exact Nat.lt_of_lt_of_le (by decide) (Pow.read_ones _ k).2
 
 theorem verified (n : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) :
-    Verified Arm.target (body n) (Spec.Dsa.MontContext.setupContract (layout n) Arm.abi) :=
+    Verified Arm.target (body n) (Proof.Dsa.MontContext.setupContract (layout n) Arm.abi) :=
   Verified.of_correct (setupArm_correct hn hn48) (setupArm_ct n) (setupArm_implies hn hn48)
 
 end VG.Proof.Dsa.Arm.Context

@@ -22,7 +22,7 @@ probable prime and 3 for a composite, and `sUsed` the octets read.
 namespace VG.Proof.Dsa.Arm.Prime
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Operand)
 open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Proof.Rsa (b2n)
 open VG.Proof.RsaKeyGen (goS shapeOf itersOf)

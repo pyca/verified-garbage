@@ -27,7 +27,7 @@ open VG.Impl.Bignum VG.Impl.Bignum.Public VG.Impl.RsaKeyGen.X86_64.Candidate
 open VG.Impl.MillerRabin.X86_64 VG.Proof.MlKem.X86_64
 
 def inputPub (s : State) : BodyPub :=
-  ⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8, Spec.Rsa.Mont.wOf s.mem (s.gpr .rdi),
+  ⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8, Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi),
     [⟨s.gpr .rsp - 112#64, 8⟩, ⟨s.gpr .rsp - 104#64, 104⟩,
       ⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8⟩], s.gpr .rsp - 112#64⟩
 
@@ -43,8 +43,8 @@ theorem stage_frame_call_ok {s : State} (h : roundPre s) :
   obtain ⟨hrd, hwr, hn, hs, hret, hstack, hL, hP⟩ := h
   let B := s.gpr .rdi
   let Z := (s.gpr .rsi).toNat * 8
-  let w := Spec.Rsa.Mont.wOf s.mem B
-  let c := Spec.Rsa.Mont.numAt s.mem B w 0
+  let w := Proof.Rsa.Mont.wOf s.mem B
+  let c := Proof.Rsa.Mont.numAt s.mem B w 0
   obtain ⟨b, _, hb⟩ := witness_exists (coprime_pow2 ho (64 * w)) hx
   have hX : wv s.mem B (slot w aXm) w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * w) % c := by
     simpa only [VG.Proof.Bignum.powMod_eq, Nat.pow_one] using hb

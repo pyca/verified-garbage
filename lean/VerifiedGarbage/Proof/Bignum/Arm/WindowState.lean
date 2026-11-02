@@ -17,7 +17,7 @@ words (below byte 128) and every array. -/
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt wordAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt numAt wordAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- Only header bytes 128 to 255 differ. -/
@@ -33,7 +33,7 @@ theorem ctl_write2 (m : Mem) (base : BitVec 32) {d e : Nat} (v u : BitVec 32)
   (ctl_write m base v hd hd').trans (ctl_write _ base u he he')
 
 theorem arrAt_le {w a b : Nat} (h : a ≤ b) : arrAt w a ≤ arrAt w b := by
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
   exact Nat.add_le_add_left (Nat.mul_le_mul_right _ h) _
 
 /-- The number of any array of the first sixteen is unchanged. -/
@@ -43,7 +43,7 @@ theorem ctl_num {m m' : Mem} {base : BitVec 32} {len w q : Nat} (ctl : CtlOnly b
   have := array_end_le (w := w) (show q < q + 1 by omega)
   rw [numAt_native, numAt_native]
   apply ctl.val32
-  · right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+  · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
   · omega
 
 theorem ctl_readW {m m' : Mem} {base : BitVec 32} {d : Nat} (ctl : CtlOnly base m m') (hd : d + 4 ≤ 128) :
@@ -56,7 +56,7 @@ theorem ArithmeticReady.after_ctl {s t : State} {base : BitVec 32} {len w : Nat}
     ArithmeticReady base len w t ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by
   have nowrap := h.workspace.nowrap
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have width : wOf t.mem (State.addr base) = wOf s.mem (State.addr base) :=
     congrArg BitVec.toNat (ctl.word (d := 48) (by omega) (by decide))
   have layout : Layout t.mem (State.addr base) len := by
@@ -72,7 +72,7 @@ theorem ArithmeticReady.after_ctl {s t : State} {base : BitVec 32} {len w : Nat}
     ctl_num ctl (Nat.le_trans (arrAt_le (by decide)) fits) nowrap
   refine ⟨⟨h.workspace.congr rest.wr, layout, width.trans h.width, ptr, ?_, ?_, ?_, ?_, ?_⟩, frame⟩
   · have fit0 := Nat.le_trans (array_end_le (w := w) (j := 0) (k := 8) (by decide)) fits
-    rw [ctl.word (d := arrAt w 0) (by right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) (by omega)]
+    rw [ctl.word (d := arrAt w 0) (by right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) (by omega)]
     change (_ * (word t.mem (State.addr base) 56).toNat + 1) % 2 ^ 64 = 0
     rw [ctl.word (d := 56) (by omega) (by decide)]
     exact h.inverse
@@ -109,10 +109,10 @@ theorem TableHolds.after_ctl {m m' : Mem} {base : BitVec 32} {len w M x k : Nat}
 keeps the exponentiation's state. -/
 theorem ExpState.after_other {s t : State} {base : BitVec 32} {len w M x E o : Nat}
     (h : ExpState base len w M x E s) (ready : ArithmeticReady base len w t)
-    (keeps : VG.Spec.Rsa.Mont.Keeps (State.addr base) len w o s.mem t.mem)
+    (keeps : VG.Proof.Rsa.Mont.Keeps (State.addr base) len w o s.mem t.mem)
     (h0 : o ≠ 0) (h4 : o ≠ 4) (h5 : o ≠ 5) (h6 : o ≠ 6) (h7 : o ≠ 7) : ExpState base len w M x E t := by
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have op (q : Nat) (hq : q < 8) (h2 : q ≠ 2) (h3 : q ≠ 3) : VG.Spec.Rsa.Mont.Operand q :=
+  have op (q : Nat) (hq : q < 8) (h2 : q ≠ 2) (h3 : q ≠ 3) : VG.Proof.Rsa.Mont.Operand q :=
     ⟨hq, h2, h3⟩
   have num (q : Nat) (hq : q < 8) (h2 : q ≠ 2) (h3 : q ≠ 3) (ne : q ≠ o) :=
     keeps_array_num keeps fits (op q hq h2 h3) ne

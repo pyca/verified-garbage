@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.Bignum.Arm.ExportArray
 import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Bignum.Arm.ExportArray
 import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
 import VerifiedGarbage.Proof.Bignum.ByteWords
@@ -26,7 +26,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wOf Layout numAt)
+open VG.Proof.Rsa.Mont (arrAt wOf Layout numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem exportPadded_ok (s : State) {base : BitVec 32} {len w o d k : Nat}
@@ -70,7 +70,7 @@ end
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem crt_padModulus_ok (s : State) {base : BitVec 32} {size len w d : Nat}

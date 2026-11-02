@@ -23,7 +23,7 @@ theorem saveDigit_ok {base source table : BitVec 32} {len w bytes N M g E i : Na
       Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have size : 256≤8*len := by
     have fits := h.ready.width ▸ h.ready.layout.2.2.1
-    simp only [Spec.Rsa.Mont.arrAt,Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes] at fits
     omega
   refine wp_str (a:=off (State.addr base) 196) (by decide)
     (by rw [h.ready.ptr]; exact addr_add (by have := h.ready.workspace.nowrap; omega))

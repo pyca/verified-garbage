@@ -15,7 +15,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
 theorem Geometry.Valid.markerFit {g : Geometry} (v : g.Valid) :
     g.array aExponent + 4 * g.words + 8 ≤ g.L := by
   have fit := v.arraysFit
-  unfold Geometry.array Geometry.words aExponent Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes at *
+  unfold Geometry.array Geometry.words aExponent Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at *
   omega
 
 theorem markerPointer_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :

@@ -10,8 +10,10 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Classify
 meta import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
+public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
 meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
+meta import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # Two runs of an attempt (x86)
 
@@ -63,7 +65,7 @@ theorem callee_pub {o₁ o₂ t₁ t₂ : State} {ds₁ ds₂ : List Nat} {f₁ 
   have A₂ := h₂.abi
   have hu₂ : used < (arg o₂ 6).toNat := by rw [← args_eq e (i := 6) (by omega)]; exact hu
   have sp : o₁.gpr .esp = o₂.gpr .esp := congrArg PPub.sp e
-  sig_pub [Cand.contract, Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig, abi,
+  sig_pub [Cand.contract, Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
   have c₁ := fun j (hj : j < 9) => ce_arg A₁ h₁.esp a₁ rd wr hj
   have c₂ := fun j (hj : j < 9) => ce_arg A₂ h₂.esp a₂ rd wr hj
@@ -112,7 +114,7 @@ abbrev callWrK (p : PPub) : List Region :=
 
 theorem call_ct (q : Lp) :
     RelCT isa (fun t₁ t₂ => CallAt q t₁ ∧ CallAt q t₂)
-      (.call Spec.Ffdh.sievedParameterCandidateApi.name Impl.Ffdh.X86.Candidate.code) fun _ _ => True := by
+      (.call "vg_ffdh_parameter_candidate_sieved" Impl.Ffdh.X86.Candidate.code) fun _ _ => True := by
   refine RelCT.call Cand.verified.1 Cand.verified.2.1 (callRdK q.1 q.2.1) (callWrK q.1)
     fun t₁ t₂ ⟨⟨o₁, e₁, F₁, a₁, hu₁⟩, ⟨o₂, e₂, F₂, a₂, hu₂⟩⟩ => ?_
   obtain ⟨p, used, n⟩ := q

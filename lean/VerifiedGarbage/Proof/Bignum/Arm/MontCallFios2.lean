@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithContract
 public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmeticCaller
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! The two-row round supplies the shared callable Montgomery backend. -/

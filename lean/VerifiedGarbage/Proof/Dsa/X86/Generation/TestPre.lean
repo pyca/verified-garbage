@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
@@ -172,7 +172,7 @@ abbrev testRegs : List Reg := [.ebp, .ebx, .edx, .ecx, .eax]
 /-- The test's contract, as `Generic/MillerRabin/X86/DsaProbablePrime.lean`
 registers it. -/
 abbrev ppContract (bits : Nat) : Contract isa :=
-  Spec.Dsa.ProbablePrime.contract (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
+  Proof.Dsa.ProbablePrime.contract (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
     (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) 152
 
 /-- The regions the test is given: the witnesses left and the table, and the
@@ -267,13 +267,13 @@ theorem testEntry_mem {E : Env} {used : Nat} {s : State} (fit : 24 ≤ (s.gpr .e
 theorem cand_frame {E : Env} (v : E.Valid) {bits : Nat}
     (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords) {k : Nat} (hk : k ≤ 200)
     {m m' : Mem} (F : Frame [below E.sp k] m m') :
-    Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m' (off E.base sPP) =
-      Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m (off E.base sPP) := by
+    Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m' (off E.base sPP) =
+      Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m (off E.base sPP) := by
   have sz := v.size_ge
   have low := v.low
   have lay' : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).candidate + bits / 8 ≤ ppWords * 8 := by
     simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay ⊢; omega
-  unfold Spec.Dsa.ProbablePrime.candidateAt
+  unfold Proof.Dsa.ProbablePrime.candidateAt
   refine congrArg Spec.Dsa.decodeBE ?_
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
@@ -293,9 +293,9 @@ theorem cand_frame {E : Env} (v : E.Valid) {bits : Nat}
 theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base E s₀) {used : Nat}
     (A : TestArgs E.base (E.wit.setWidth 32) E.witLen used s₀ s) (hu : used ≤ E.witLen)
     (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords)
-    (odd : Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
+    (odd : Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
       (off E.base sPP) % 2 = 1)
-    (len : Spec.Dsa.bitLength (Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
+    (len : Spec.Dsa.bitLength (Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
       s.mem (off E.base sPP)) = bits) :
     (ppContract bits).pre (testEntry E used s) := by
   have sp := B.sp
@@ -334,7 +334,7 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
   have umem : Frame [below (s.gpr .esp) (4 * testRegs.length + 4)] s.mem (testEntry E used s).mem :=
     callEntry_frame fit hrs
   generalize eu : testEntry E used s = u at *
-  sig_pre [ppContract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi,
+  sig_pre [ppContract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow]
   have hs := B.scr
   have sz := v.size_ge
@@ -387,8 +387,8 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
     Offset.disjoint E.base (by simp only [sPP, ppWords, fUsedOut, hdr]; omega_arith) (by simp only [sPP, ppWords]; omega_arith)
       (by simp only [fUsedOut, hdr]; omega_arith)
   have candEq : ∀ m : Mem, Frame [below (s.gpr .esp) (4 * testRegs.length + 4)] s.mem m →
-      Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m (off E.base sPP) =
-        Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP) :=
+      Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m (off E.base sPP) =
+        Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP) :=
     fun m F => cand_frame v lay (k := 24) (by decide) (by simpa [spU] using F)
   refine ⟨by omega_arith, by omega_arith, by rw [symT]; rfl, ?_, ?_, fun t ht => by
     simp only [List.mem_singleton] at ht; subst ht; dsimp only; rw [symT]; exact v.tableAligned, trivial, by rw [Nat.mul_comm 8 ppWords],

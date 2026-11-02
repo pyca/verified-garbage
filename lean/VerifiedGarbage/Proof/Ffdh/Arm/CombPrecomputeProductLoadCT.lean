@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (wp_mov op2_imm)
 
 private theorem loadEntry_ct {p : Inputs} {sp : BitVec 32} {digit o : Nat} (ho : o<8) :
@@ -35,7 +35,7 @@ private theorem loadEntry_ct {p : Inputs} {sp : BitVec 32} {digit o : Nat} (ho :
         [.mov .r2 (.imm (BitVec.ofNat 32 o))])) s Ready := by
     have fit := h.1.ready.layout.2.2.1
     rw [h.1.ready.width] at fit
-    have size : 52≤8*p.len := by simp only [arrAt,Spec.Rsa.Mont.hdrBytes] at fit; omega
+    have size : 52≤8*p.len := by simp only [arrAt,Proof.Rsa.Mont.hdrBytes] at fit; omega
     have header := nativeHeader_of_layout s.mem p.base h.1.ready.workspace.nowrap
       (Nat.le_refl _) h.1.ready.layout
     rw [h.1.ready.width] at header

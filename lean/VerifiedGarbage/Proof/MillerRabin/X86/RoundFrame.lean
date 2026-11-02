@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 
 /-! # The round's write footprint is within the reviewed compact contract -/
 
@@ -16,7 +16,7 @@ def roundWrites (g : Geometry) : List (Nat × Nat) :=
 
 theorem roundFrame_keeps {g : Geometry} {capacity : Nat} {m m' : Mem}
     (length : g.L = 8 * capacity) (F : WorkspaceFrame g (roundWrites g) m m') :
-    Spec.MillerRabin.Keeps Spec.MillerRabin.compact g.W capacity g.w m m' := by
+    Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact g.W capacity g.w m m' := by
   intro i index header arrays table
   apply F i (by omega)
   intro r mem
@@ -38,15 +38,15 @@ theorem roundFrame_keeps {g : Geometry} {capacity : Nat} {m m' : Mem}
   · exact h29
   · exact h30
   · dsimp only
-    unfold Geometry.array VG.Spec.Rsa.Mont.arrAt VG.Spec.Rsa.Mont.hdrBytes at *
+    unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes at *
     omega
   · dsimp only
-    unfold Geometry.array VG.Spec.Rsa.Mont.arrAt VG.Spec.Rsa.Mont.hdrBytes at *
+    unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes at *
     omega
   · exact a8
   · change i < g.array 11 ∨ g.array 11 + 128 * (g.w + 2) ≤ i
     have endOffset : g.array 11 + 128 * (g.w + 2) = g.array 27 := by
-      unfold Geometry.array VG.Spec.Rsa.Mont.arrAt VG.Spec.Rsa.Mont.hdrBytes
+      unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes
       omega
     rw [endOffset]
     exact table

@@ -19,7 +19,7 @@ open VG VG.X86_64
 
 /-- `vg_rsa_public_checked`. -/
 def pubChecked : PubImpl where
-  name := Spec.Rsa.publicCheckedApi.name
+  name := "vg_rsa_public_checked"
   code := Impl.Rsa.X86_64.Checked.publicChecked
   ok := Proof.Rsa.X86_64.publicChecked_correct
   ct := Proof.Rsa.X86_64.publicChecked_constantTime

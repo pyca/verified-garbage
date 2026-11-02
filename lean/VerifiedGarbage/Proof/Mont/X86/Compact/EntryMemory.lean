@@ -21,7 +21,7 @@ theorem Entry.ws_toNat {s : State} (_ : Entry s) : (wsOf s).toNat = (arg s 0).to
 
 theorem Entry.headerFit {s : State} (A : Entry s) : 128 ≤ lenOf s := by
   have fit := A.layout.2.2.1
-  unfold Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes at fit
+  unfold Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at fit
   unfold lenOf
   omega
 

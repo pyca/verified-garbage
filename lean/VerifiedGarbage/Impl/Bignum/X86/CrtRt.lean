@@ -238,7 +238,7 @@ def mulArgs (c : Ctx) (o a b : Nat) : List Instr :=
 `c`, by a call of `vg_rsa_mont_mul_at` in a frame of 36 bytes, which keeps
 `ebx`, `esi`, `ebp` and `edi`. -/
 def mul (c : Ctx) (o a b : Nat) : Prog isa :=
-  .frame (.alloc 36) (.seq (.block (mulArgs c o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) (.free 36)
+  .frame (.alloc 36) (.seq (.block (mulArgs c o a b)) (.call "vg_rsa_mont_mul_at" Sse2.atBody)) (.free 36)
 
 /-- `T = 2 T mod M` for `T` in slot 4: the sum into slot 1 with its carry in the
 word after it, the sum minus `M` into slot 4, and the sum back where it is

@@ -57,7 +57,7 @@ theorem body_ok {n e m : Nat} {base : Addr} {s : State}
     fun hd hk => Ou.val32 (by omega) hk
   have bounds : 24≤slot n 0 ∧ slot n 0+8*n≤2^64 ∧ 24≤slot n 5 ∧ slot n 5+8*n≤2^64 ∧
       24≤slot n 8 ∧ slot n 8+4*e≤2^64 ∧ 24≤context n ∧
-      context n+8*Spec.Dsa.FixedBaseComb.contextWords (layout n e)≤2^64 := by
+      context n+8*Proof.Dsa.FixedBaseComb.contextWords (layout n e)≤2^64 := by
     rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide
   have V : wordsVal u.mem base (slot n 0) n=m := by
     rw [wordsVal_eq_val32,vals bounds.1 (by have := bounds.2.1; omega),←wordsVal_eq_val32,hv]

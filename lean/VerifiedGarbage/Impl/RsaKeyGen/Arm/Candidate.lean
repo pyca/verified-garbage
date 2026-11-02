@@ -19,11 +19,11 @@ and the Miller–Rabin round take it. The stack arguments start at byte 56.
 The numbers live in the key working space at `scratch`
 (`Impl/Rsa/Arm/KeyWs.lean`) with `W = 2 w + 2` words of 32 bits, for
 `w = out_len / 8`: its stride is that of Montgomery multiplication's working
-space (`Spec/Rsa/Mont.lean`) for numbers of `w` words of 64 bits, which is
+space (`Proof/Rsa/MontContract.lean`) for numbers of `w` words of 64 bits, which is
 placed so that its arrays are the key arrays from `mBase` = 21 on (its array
 `j` is the key array `21 + j`), and its header lies in the key arrays 15–20,
 which nothing else uses. That working space is also the one the shared
-Miller–Rabin round (`Spec/MillerRabin.lean`, the compact representation)
+Miller–Rabin round (`Proof/MillerRabin/Contract.lean`, the compact representation)
 takes, from the candidate `c` in its array 0.
 
 1. If `rand` is shorter than `out_len`, the result is 0.

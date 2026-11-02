@@ -33,7 +33,7 @@ theorem productStoreArgs_ok (s : State) {base : BitVec 32} {len high low : Nat}
 theorem productStore_ok (s : State) {p : Inputs} {sp : BitVec 32} {high low exponent : Nat}
     (h : Core p sp s) (power : Power5 p exponent s)
     (table : TablePrefix p (high+low) s.mem) (bound : high+low < 32)
-    (value : VG.Spec.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 6 = entryValue p (high+low))
+    (value : VG.Proof.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 6 = entryValue p (high+low))
     (highSaved : s.mem.readW (off (State.addr s.sp) 36) 32 = BitVec.ofNat 32 high)
     (lowSaved : s.mem.readW (off (State.addr s.sp) 40) 32 = BitVec.ofNat 32 low) :
     WP isa VG.Impl.Ffdh.Arm.CombPrecompute.productStore s fun t =>
@@ -51,7 +51,7 @@ theorem productStore_ok (s : State) {p : Inputs} {sp : BitVec 32} {high low expo
   have coreT := coreU.after_workspace memory workspace
   have powerT := (power.of_mem mem).after_workspace coreU workspace
   have tableU : TablePrefix p (high+low) u.mem := by rw [mem]; exact table
-  have valueU : VG.Spec.Rsa.Mont.numAt u.mem (State.addr p.base) p.w 6 = entryValue p (high+low) := by rw [mem]; exact value
+  have valueU : VG.Proof.Rsa.Mont.numAt u.mem (State.addr p.base) p.w 6 = entryValue p (high+low) := by rw [mem]; exact value
   have tableT := tableU.extend coreU.memory bound frame (written.trans valueU)
   have header := headEq_store coreU.memory bound frame
   rw [mem] at frame header

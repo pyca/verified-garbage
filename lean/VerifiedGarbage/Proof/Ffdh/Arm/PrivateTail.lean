@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 def privateTailFlag (p : Inputs) (yb xb : List Byte) : BitVec 32 :=
   if p.hasQ = true then

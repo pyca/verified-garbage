@@ -14,7 +14,7 @@ import VerifiedGarbage.Impl.Bignum.Arm.Zero
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 structure CrtSetupInput (base : BitVec 32) (len w : Nat) (s : State) : Prop where
   context : CrtSetupContext base len w s

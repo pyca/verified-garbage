@@ -24,9 +24,9 @@ def clob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi]
 def ranges (g : Geometry) : List (Nat × Nat) := WitnessMont.ranges g ++ roundWrites g ++ [(uniformOffset, 4)]
 
 theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Prepare.Data g c capacity p s) {input : Import.Geometry}
@@ -40,7 +40,7 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
     WP isa (codeAt draw k g.w montName mont roundName round) s fun t =>
       let sampled := Spec.RsaKeyGen.witness (c - 1)
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (input.src.setWidth 64) draw))
-      Prepare.Data g c capacity p t ∧ (t.gpr .eax).toNat = (if Spec.MillerRabin.round c sampled.1 then 1 else 0) ∧
+      Prepare.Data g c capacity p t ∧ (t.gpr .eax).toNat = (if Proof.MillerRabin.Round.round c sampled.1 then 1 else 0) ∧
       t.mem.readW (off g.W uniformOffset) 32 = cmask sampled.2 ∧
       WorkspaceFrame g (ranges g) s.mem t.mem ∧
       Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem ∧ Keeps clob s t := by
@@ -59,7 +59,7 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
     Wd.read32 (by have := v.headerFit; unfold uniformOffset; omega) (fun r mem => by
       simp only [WitnessMont.ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with (rfl | rfl | rfl) | rfl <;>
-        exact Or.inl (by simp only [uniformOffset, Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]; omega))
+        exact Or.inl (by simp only [uniformOffset, Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega))
   refine WP.mono (RoundCall.code_ok (b := (Spec.RsaKeyGen.witness (c - 1)
     (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (input.src.setWidth 64) draw))).1)
     roundVerified roundNoSp roundStack v length D odd large
@@ -68,7 +68,7 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
     Wt.read32 (by have := v.headerFit; unfold uniformOffset; omega) (fun r mem => by
       simp only [roundWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [uniformOffset, Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] <;> omega)
+        simp only [uniformOffset, Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega)
   have Wa : WorkspaceFrame g (ranges g) s.mem a.mem :=
     WorkspaceFrame.of_outs S.ready.scratch.nowrap (Outs.of_outside
       (Oa.mono (o' := g.array 6) (n' := 8 * (g.w + 2)) (Nat.le_refl _) (by unfold Geometry.words; omega))
@@ -91,9 +91,9 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
     (((Ka.mono (by unfold clob WitnessLoad.clob; decide)).widen Kb).widen Kd).widen Kt⟩
 
 theorem code_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Prepare.Data g c capacity p s) {input : Import.Geometry}
@@ -106,7 +106,7 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
     WP isa (code g.w montName mont roundName round) s fun t =>
       let sampled := Spec.RsaKeyGen.witness (c - 1)
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (input.src.setWidth 64) (8 * g.w)))
-      Prepare.Data g c capacity p t ∧ (t.gpr .eax).toNat = (if Spec.MillerRabin.round c sampled.1 then 1 else 0) ∧
+      Prepare.Data g c capacity p t ∧ (t.gpr .eax).toNat = (if Proof.MillerRabin.Round.round c sampled.1 then 1 else 0) ∧
       t.mem.readW (off g.W uniformOffset) 32 = cmask sampled.2 ∧
       WorkspaceFrame g (ranges g) s.mem t.mem ∧
       Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem ∧ Keeps clob s t :=

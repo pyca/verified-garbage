@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 private theorem tableStride (n : Nat) (bound : n ≤ 1024) :
     (((BitVec.ofNat 32 n + 7) >>> 3) + 2) <<< 3 = BitVec.ofNat 32 (8 * ((n + 7) / 8 + 2)) := by
@@ -33,7 +33,7 @@ private theorem tableAddress (base : BitVec 32) (n : Nat) :
   change (BitVec.ofNat 32 34 * BitVec.ofNat 32 (8 * ((n + 7) / 8 + 2)) + base) + BitVec.ofNat 32 256 = _
   rw [BitVec.ofNat_mul_ofNat, BitVec.add_comm _ base, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   have equal : 34 * (8 * ((n + 7) / 8 + 2)) + 256 = arrAt ((n + 7) / 8) 34 := by
-    simp only [arrAt, VG.Spec.Rsa.Mont.hdrBytes]
+    simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes]
     omega
   exact congrArg (fun d : Nat => base + BitVec.ofNat 32 d) equal
 

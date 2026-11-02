@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem crt_saveMain_ready (s : State) {base : BitVec 32} {size w : Nat}

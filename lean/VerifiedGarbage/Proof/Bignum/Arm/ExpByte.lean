@@ -18,7 +18,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_dp wp_str wp_subs op2_imm dpVal ofNat_beq_zero)
 
 theorem expByteNext_ok (s : State) {base ep : BitVec 32} {len w M x E c : Nat}
@@ -31,7 +31,7 @@ theorem expByteNext_ok (s : State) {base ep : BitVec 32} {len w M x E c : Nat}
       t.z = decide (c = 1) ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest [.r1] s t := by
   have size : 256 ≤ 8 * len := by
     have := h.ready.layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega
   have addr (d : Nat) (hd : d ≤ 252) : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
     rw [h.ready.ptr]; exact addr_add (by have := h.ready.workspace.nowrap; omega)

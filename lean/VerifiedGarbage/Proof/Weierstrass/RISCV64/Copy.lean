@@ -62,21 +62,38 @@ theorem sd_a0 (h0 : s.gpr .a0 = base)
   wp_sd (by omega) (by rw [h0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
     ⟨_, hwr, Offset.contains_base base (by omega) (by omega)⟩ k
 
+/-- `ld t, d(s0)` (`ldAt`) in the working space. -/
+theorem ldAt_ws (hw : WsReg s base) {t : Reg} {d : Nat} (hd : d < 4095) (hd8 : d % 8 = 0)
+    (k : ∀ s', Upd s s' t (word s.mem base d) → WP isa (.block is) s' Q) :
+    WP isa (.block (ldAt t .s0 d ++ is)) s Q := by
+  have := hw.nowrap
+  refine wp_ldAt hd (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega)
+    ⟨_, List.mem_append_right _ hw.wr, Offset.contains_base base (by omega) (by omega)⟩ k
+
+/-- `sd t, d(s0)` (`sdAt`) in the working space, `t` not `s0`. -/
+theorem sdAt_ws (hw : WsReg s base) {t : Reg} (ht : t ≠ .s0) {d : Nat} (hd : d < 4095) (hd8 : d % 8 = 0)
+    (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) (s.gpr t)) → WP isa (.block is) s' Q) :
+    WP isa (.block (sdAt t .s0 d ++ is)) s Q := by
+  have := hw.nowrap
+  exact wp_sdAt hd ht (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega)
+    ⟨_, hw.wr, Offset.contains_base base (by omega) (by omega)⟩ k
+
 end
 
 /-- A word of `[a]` to `[o]`. -/
-theorem copyWord_ok {s : State} {base : Addr} (hw : WsReg s base) {o a : Nat} (ho : o < 2048) (ha : a < 2048)
+theorem copyWord_ok {s : State} {base : Addr} (hw : WsReg s base) {o a : Nat} (ho : o < 4095) (ha : a < 4095)
     (ho8 : o % 8 = 0) (ha8 : a % 8 = 0) :
-    WP isa (.block [.load .d .t0 wb a, .store .d .t0 wb o]) s fun u =>
+    WP isa (.block (ldAt .t0 wb a ++ sdAt .t0 wb o)) s fun u =>
       u.mem = s.mem.writeW (off base o) (word s.mem base a) ∧ Rest [.t0] s u := by
-  refine ld_ws hw ha ha8 fun s₁ u₁ => ?_
+  rw [← List.append_nil (sdAt .t0 wb o)]
+  refine ldAt_ws hw ha ha8 fun s₁ u₁ => ?_
   have K₁ := u₁.rest (ws := [.t0]) (by decide)
-  refine sd_ws (hw.of_rest K₁) ho ho8 fun s₂ u₂ => WP.block_nil ⟨?_, K₁.trans (u₂.rest _)⟩
+  refine sdAt_ws (hw.of_rest K₁) (by decide) ho ho8 fun s₂ u₂ => WP.block_nil ⟨?_, K₁.trans (u₂.rest _)⟩
   rw [u₂.mem, u₁.mem, u₁.gpr]
 
 /-- `[o] = [a]`, for `o` at or below `a` or apart from it. -/
 theorem copy_ok : ∀ (k : Nat) {s : State} {base : Addr} {o a : Nat},
-    WsReg s base → o % 8 = 0 → a % 8 = 0 → o + 8 * k ≤ 2048 → a + 8 * k ≤ 2048 →
+    WsReg s base → o % 8 = 0 → a % 8 = 0 → o + 8 * k ≤ 4096 → a + 8 * k ≤ 4096 →
     (o ≤ a ∨ a + 8 * k ≤ o) →
     WP isa (.block (copy k o a)) s fun s' =>
       wordsVal s'.mem base o k = wordsVal s.mem base a k ∧ Rest [.t0] s s' ∧
@@ -84,7 +101,7 @@ theorem copy_ok : ∀ (k : Nat) {s : State} {base : Addr} {o a : Nat},
   | 0, _, _, _, _, _, _, _, _, _, _ => WP.block_nil ⟨rfl, Rest.refl _ _, Outside.refl _ _ _ _⟩
   | k + 1, s, base, o, a, hw, ho8, ha8, ho, ha, hsep => by
     have hn := hw.nowrap
-    rw [copy, show ∀ (x y : Instr) (l : List Instr), [x, y] ++ l = [x, y] ++ l from fun _ _ _ => rfl]
+    rw [copy]
     refine WP.block_append (WP.mono (copyWord_ok hw (by omega) (by omega) ho8 ha8) fun s₁ ⟨m₁, K₁⟩ => ?_)
     have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
     refine WP.mono (copy_ok k (hw.of_rest K₁) (o := o + 8) (a := a + 8) (by omega) (by omega)
@@ -105,18 +122,18 @@ theorem sel_mask' (x e : BitVec 64) (c : Bool) :
     rw [← BitVec.xor_assoc, BitVec.xor_comm x e, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
 
 /-- A word of `[a]` or `[b]` to `[o]` by the mask `a7`. -/
-theorem selWord_ok {s : State} {base : Addr} (hw : WsReg s base) {o a b : Nat} (ho : o < 2048) (ha : a < 2048)
-    (hb : b < 2048) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0) (hb8 : b % 8 = 0) :
-    WP isa (.block [.load .d .t0 wb a, .load .d .t1 wb b, .logic .xor .t1 .t1 .t0, .logic .and .t1 .t1 .a7,
-      .logic .xor .t0 .t0 .t1, .store .d .t0 wb o]) s fun u =>
+theorem selWord_ok {s : State} {base : Addr} (hw : WsReg s base) {o a b : Nat} (ho : o < 4095) (ha : a < 4095)
+    (hb : b < 4095) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0) (hb8 : b % 8 = 0) :
+    WP isa (.block (selWord o a b)) s fun u =>
       u.mem = s.mem.writeW (off base o) (word s.mem base a ^^^
         ((word s.mem base b ^^^ word s.mem base a) &&& s.gpr .a7)) ∧ Rest [.t0, .t1] s u := by
-  refine ld_ws hw ha ha8 fun s₁ u₁ => ?_
-  refine ld_ws (hw.of_rest (u₁.rest (ws := [.t0]) (by decide))) hb hb8 fun s₂ u₂ => ?_
+  rw [selWord, List.append_assoc, List.append_assoc, ← List.append_nil (sdAt .t0 wb o)]
+  refine ldAt_ws hw ha ha8 fun s₁ u₁ => ?_
+  refine ldAt_ws (hw.of_rest (u₁.rest (ws := [.t0]) (by decide))) hb hb8 fun s₂ u₂ => ?_
   refine wp_xor fun s₃ u₃ => wp_and fun s₄ u₄ => wp_xor fun s₅ u₅ => ?_
   have K₅ : Rest [.t0, .t1] s s₅ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans
     ((u₄.rest (by decide)).trans (u₅.rest (by decide)))))
-  refine sd_ws (hw.of_rest K₅) ho ho8 fun s₆ u₆ => WP.block_nil ⟨?_, K₅.trans (u₆.rest _)⟩
+  refine sdAt_ws (hw.of_rest K₅) (by decide) ho ho8 fun s₆ u₆ => WP.block_nil ⟨?_, K₅.trans (u₆.rest _)⟩
   have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
   rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, m₂]
   simp only [u₅.gpr, u₄.other .t0 (by decide), u₄.gpr, u₃.other .t0 (by decide), u₃.other .a7 (by decide),
@@ -127,7 +144,7 @@ theorem selWord_ok {s : State} {base : Addr} (hw : WsReg s base) {o a b : Nat} (
 at or below `a` and `b`, or apart from them. -/
 theorem sel_ok (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr} {o a b : Nat},
     WsReg s base → s.gpr .a7 = (if c then BitVec.allOnes 64 else 0) →
-    o % 8 = 0 → a % 8 = 0 → b % 8 = 0 → o + 8 * k ≤ 2048 → a + 8 * k ≤ 2048 → b + 8 * k ≤ 2048 →
+    o % 8 = 0 → a % 8 = 0 → b % 8 = 0 → o + 8 * k ≤ 4096 → a + 8 * k ≤ 4096 → b + 8 * k ≤ 4096 →
     (o ≤ a ∨ a + 8 * k ≤ o) → (o ≤ b ∨ b + 8 * k ≤ o) →
     WP isa (.block (sel k o a b)) s fun s' =>
       wordsVal s'.mem base o k = (if c then wordsVal s.mem base b k else wordsVal s.mem base a k) ∧
@@ -136,8 +153,7 @@ theorem sel_ok (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr} {o a b : Nat
       Outside.refl _ _ _ _⟩
   | k + 1, s, base, o, a, b, hw, hc, ho8, ha8, hb8, ho, ha, hb, hsa, hsb => by
     have hn := hw.nowrap
-    rw [sel, show ∀ (x₁ x₂ x₃ x₄ x₅ x₆ : Instr) (l : List Instr), [x₁, x₂, x₃, x₄, x₅, x₆] ++ l =
-      [x₁, x₂, x₃, x₄, x₅, x₆] ++ l from fun _ _ _ _ _ _ _ => rfl]
+    rw [sel]
     refine WP.block_append (WP.mono (selWord_ok hw (by omega) (by omega) (by omega) ho8 ha8 hb8)
       fun s₁ ⟨m₁, K₁⟩ => ?_)
     rw [hc, sel_mask'] at m₁
@@ -154,13 +170,13 @@ theorem sel_ok (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr} {o a b : Nat
     cases c <;> simp [wordsVal]
 
 /-- `o = b` if the mask `a7` is all ones (`c`), `a` if it is zero, for points
-whose slots (`n` 64-bit words, at multiples of 8) are in the first 2048 bytes
+whose slots (`n` 64-bit words, at multiples of 8) are in the first 4096 bytes
 of the working space, with `o`'s apart from each other and from `a`'s and
 `b`'s. -/
 theorem selPt_ok {s : State} {base : Addr} (hw : WsReg s base)
     (c : Bool) (hc : s.gpr .a7 = (if c then BitVec.allOnes 64 else 0)) {n : Nat} {o a b : Pt}
     (h4 : ∀ d ∈ [o.x, o.y, o.z, a.x, a.y, a.z, b.x, b.y, b.z], d % 8 = 0)
-    (hin : ∀ d ∈ [o.x, o.y, o.z, a.x, a.y, a.z, b.x, b.y, b.z], d + 8 * n ≤ 2048)
+    (hin : ∀ d ∈ [o.x, o.y, o.z, a.x, a.y, a.z, b.x, b.y, b.z], d + 8 * n ≤ 4096)
     (hoo : (o.x + 8 * n ≤ o.y ∨ o.y + 8 * n ≤ o.x) ∧ (o.x + 8 * n ≤ o.z ∨ o.z + 8 * n ≤ o.x) ∧
       (o.y + 8 * n ≤ o.z ∨ o.z + 8 * n ≤ o.y))
     (hab : ∀ d ∈ [o.x, o.y, o.z], ∀ e ∈ [a.x, a.y, a.z, b.x, b.y, b.z], d + 8 * n ≤ e ∨ e + 8 * n ≤ d) :

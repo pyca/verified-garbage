@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem PdAccepted.after_arrays {s t : State} {base dst np ep xp : BitVec 32} {len k eLen N R : Nat}

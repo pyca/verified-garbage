@@ -31,8 +31,8 @@ structure PubE (a s : State) : Prop where
 theorem PubE.refl (s : State) : PubE s s := ⟨rfl, fun _ _ => rfl⟩
 
 theorem pubE_of (G : Spec.Mgf1.Hash) {S : Nat} {s₁ s₂ : State}
-    (h : (Spec.RsaPss.encodeContract G G abi S).pub s₁ s₂) : PubE s₁ s₂ := by
-  sig_pub [Spec.RsaPss.encodeContract, Spec.RsaPss.encodeSig, abi, argRegs, List.append_eq] at h
+    (h : (Proof.RsaPss.encodeContract G G abi S).pub s₁ s₂) : PubE s₁ s₂ := by
+  sig_pub [Proof.RsaPss.encodeContract, Proof.RsaPss.encodeSig, abi, argRegs, List.append_eq] at h
   obtain ⟨hsp, h0, h1, h2, h3, h4, h5, h6, h7⟩ := h
   refine ⟨hsp.symm, fun r hr => ?_⟩
   simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CombScanSelect
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombScan
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem body_ok (s : State) {base table : BitVec 32} {len w M g N d j : Nat}
@@ -53,7 +53,7 @@ theorem body_ok (s : State) {base table : BitVec 32} {len w M g N d j : Nat}
   have tableY := table_after_frame h.table h.separate frameY allRestY
   have hdr (e : Nat) (he : e+4≤256) :
       y.mem.readW (off (State.addr base) e) 32=s.mem.readW (off (State.addr base) e) 32 :=
-    outside_read32 outside (Or.inl (by simp only [arrAt,Spec.Rsa.Mont.hdrBytes]; omega)) (by omega)
+    outside_read32 outside (Or.inl (by simp only [arrAt,Proof.Rsa.Mont.hdrBytes]; omega)) (by omega)
   refine WP.mono (next_ok y readyY hj ((hdr 220 (by decide)).trans h.entry)
     ((hdr 228 (by decide)).trans h.index)) ?_
   rintro t ⟨memT,zero,restT⟩

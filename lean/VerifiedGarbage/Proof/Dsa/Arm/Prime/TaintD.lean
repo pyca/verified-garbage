@@ -9,7 +9,7 @@ meta import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # DSA's probable-prime test on ARMv7: the taint analysis of the pieces RSA's candidate lacks -/
 

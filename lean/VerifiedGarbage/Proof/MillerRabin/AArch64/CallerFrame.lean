@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerSave
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 
 /-! # The shared caller changes only the round and two padding words -/
 
@@ -20,7 +21,7 @@ open VG.Impl.RsaKeyGen.AArch64.Candidate VG.Impl.MillerRabin.AArch64
 open VG.Impl.MillerRabin.AArch64.Caller
 open VG.Proof.MlKem.AArch64 (Keep)
 
-def callRanges (w : Nat) : List (Nat × Nat) := [(pad w, 16)] ++ mutRanges Spec.MillerRabin.compact w
+def callRanges (w : Nat) : List (Nat × Nat) := [(pad w, 16)] ++ mutRanges Proof.MillerRabin.Round.compact w
 
 private theorem preserved_of_not_mm (r : Reg) (h : r ∉ mmRegs) (h0 : r ≠ .x0) : r ∈ preserved := by
   cases r <;> simp_all [mmRegs, preserved]
@@ -32,7 +33,7 @@ theorem call_frame_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = 
     (ho : c % 2 = 1) (h3 : 3 ≤ c)
     (hx : wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c) :
     WP isa (call name (round M.mm)) s fun t =>
-      word t.mem B (8 * kFlag) = mask (Spec.MillerRabin.round c b) ∧
+      word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
       Frm B (callRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   obtain ⟨tr, t, hExec, hB, ha, hf, m, hk, hm⟩ := call_ok M name hnf hc he h4 h128 hEZ ho h3 hx
   have hn : 8 * (32 + 28 * (w + 2)) ≤ 2 ^ 64 := by omega_arith
@@ -50,7 +51,7 @@ theorem call_frame_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = 
     all_goals simp only [pad, slot, hdrBytes, aOne] <;> omega_arith
   have hsReverse : Frame [⟨B, 8 * (32 + 28 * (w + 2))⟩] (savedMem s B w) s.mem :=
     fun x h => (hsFrame x h).symm
-  have hkt : Spec.MillerRabin.Keeps Spec.MillerRabin.compact B (32 + 28 * (w + 2)) w
+  have hkt : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B (32 + 28 * (w + 2)) w
       (savedMem s B w) t.mem := by
     rw [hm]
     exact keeps_write_flag hk hn (by decide) _

@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 structure CrtLoadPInput (base pp qp : BitVec 32) (len w k : Nat) (pb qb : List Byte) (s : State) : Prop where
@@ -38,8 +38,8 @@ theorem crt_loadPBody_ok (s : State) {base pp qp : BitVec 32} {len w k : Nat} {p
       Frame [⟨State.addr base, 8 * len⟩, ⟨off (State.addr s.sp) 48, 4⟩] s.mem t.mem ∧
       Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   rw [CrtFn.loadPBody, WP.seq_iff]
   refine WP.mono (savedOperandLayout_ok s h.ready h.prime (by decide : 0 < 8) h.positive h.fits) ?_
   rintro u ⟨readyU, prime, _, frameU, restU⟩

@@ -27,10 +27,10 @@ private theorem ready_sp {L : Public} {s : State} (h : Ready L s) :
   exact hsp
 
 private theorem ready_width {L : Public} {s : State} (h : Ready L s) :
-    Spec.Rsa.Mont.wOf (narrowed s L.ws.B L.ws.w).mem L.ws.B = L.ws.w := by
+    Proof.Rsa.Mont.wOf (narrowed s L.ws.B L.ws.w).mem L.ws.B = L.ws.w := by
   obtain ⟨⟨mi, c, bm, b, hc, he, hd, hz, hr, _⟩, _⟩ := h
   obtain ⟨hce, _⟩ := entry_context hc he hd hr.disjoint
-  change Spec.Rsa.Mont.wOf s.callEntry.mem L.ws.B = L.ws.w
+  change Proof.Rsa.Mont.wOf s.callEntry.mem L.ws.B = L.ws.w
   exact ctx_width hce hd.w128
 
 private theorem ready_pub {L : Public} {s t : State} (hs : Ready L s) (ht : Ready L t) :

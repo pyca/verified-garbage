@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 
 theorem val32_numAt_offset (m : Mem) (base child : Addr) (d w j : Nat)
     (address : child = base + BitVec.ofNat 64 d) :

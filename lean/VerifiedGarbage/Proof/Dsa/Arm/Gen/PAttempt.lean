@@ -92,9 +92,9 @@ theorem pDecide_vp {c0 : Cfg} {wl : Nat} (res : Option (Bool × Spec.RsaKeyGen.R
         (VG.Impl.Rsa.Arm.Keys.seqs [.block (cmpF fRes 1), .ite .eq (.block (stImm fP 1)) (.block [])])])
       (St G (pRes c0 wl res) X) := by
   have vres : ∀ σ s, St G (testCfg c0 c0.cl wl res) X σ s →
-      fw s.mem G fRes = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res) := fun σ s h => by
+      fw s.mem G fRes = BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status res) := fun σ s h => by
     rw [h.1.slotV (by unfold testCfg; split <;> simp)]
-    unfold testCfg Spec.Dsa.ProbablePrime.status
+    unfold testCfg Proof.Dsa.ProbablePrime.status
     split
     · simp [upd]
     · rename_i b r
@@ -109,21 +109,21 @@ theorem pDecide_vp {c0 : Cfg} {wl : Nat} (res : Option (Bool × Spec.RsaKeyGen.R
         fun σ s t h h' _ => ⟨h', h.1.1.2⟩
     · refine VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => ?_
       rw [e] at z
-      unfold Spec.Dsa.ProbablePrime.status at z
+      unfold Proof.Dsa.ProbablePrime.status at z
       cases b <;> simp at z
   · rcases res with _ | ⟨b, r⟩
-    · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp [Spec.Dsa.ProbablePrime.status] at z
+    · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp [Proof.Dsa.ProbablePrime.status] at z
     refine VP.seq (cmpF_vp (fun σ s h => h.1.1.1) (by decide) (by decide) (by decide)
       (fun σ s h => vres σ s h.1.1) fun σ s t h R m e => (⟨⟨h.1.1.1.of_rest R m, h.1.1.2⟩, e⟩ :
         St G (testCfg c0 c0.cl wl (some (b, r))) X σ t ∧ _)) ?_
     refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_ ?_
     · cases b
-      · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp [Spec.Dsa.ProbablePrime.status] at z
+      · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp [Proof.Dsa.ProbablePrime.status] at z
       · exact stImm_vp (c := fun _ => testCfg c0 c0.cl wl (some (true, r))) (fun σ s h => h.1.1.1) (by decide)
           varOk_fP fun σ s t h h' _ => ⟨h', h.1.1.2⟩
     · cases b
       · exact VP.block_nil fun σ s h => h.1.1
-      · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp [Spec.Dsa.ProbablePrime.status] at z
+      · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp [Proof.Dsa.ProbablePrime.status] at z
 
 /-- The claims kept through a candidate p: the padding and q. -/
 abbrev pRest {B N L : Nat} (md : MdStream.Md B N L) (G : GP) (k : Nat) : Claims :=

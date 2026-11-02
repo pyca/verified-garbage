@@ -27,7 +27,7 @@ its exact selected name and body, and its existing 56-byte stack bound. -/
 section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (numAt wOf)
+open VG.Proof.Rsa.Mont (numAt wOf)
 open VG.Proof.MillerRabin.Arm (RoundImpl LayoutLite PreparedLite KeepsLite roundPre roundPost)
 
 theorem sharedRoundCall_ok (v : RoundImpl) {s : State} {base : BitVec 32} {capacity w witness : Nat}
@@ -41,7 +41,7 @@ theorem sharedRoundCall_ok (v : RoundImpl) {s : State} {base : BitVec 32} {capac
     (encoded : numAt s.mem (State.addr base) w 5 =
       witness % numAt s.mem (State.addr base) w 0 * 2 ^ (64 * w) % numAt s.mem (State.addr base) w 0) :
     WP isa (.call v.name v.code) s fun t =>
-      (t.gpr .r0).toNat = (if Spec.MillerRabin.round (numAt s.mem (State.addr base) w 0) witness then 1 else 0) ∧
+      (t.gpr .r0).toNat = (if Proof.MillerRabin.Round.round (numAt s.mem (State.addr base) w 0) witness then 1 else 0) ∧
       KeepsLite (State.addr base) capacity w s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * capacity⟩, FrameStack.belowA s.sp 56] s.mem t.mem ∧
       Rest roundClobbers s t := by
@@ -86,7 +86,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 theorem roundArgs_ok {s : State} {base : BitVec 32} {capacity w : Nat}
@@ -110,11 +110,11 @@ theorem roundKernel_ok (v : RoundImpl) {s : State} {base : BitVec 32} {capacity 
     (input : numAt s.mem (State.addr base) w 1 = witness) :
     WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel v.name v.code) s fun t =>
       RoundData base capacity w n t.mem ∧
-      (t.gpr .r0).toNat = (if Spec.MillerRabin.round n witness then 1 else 0) ∧
+      (t.gpr .r0).toNat = (if Proof.MillerRabin.Round.round n witness then 1 else 0) ∧
       Frame [⟨State.addr base, 8 * capacity⟩, FrameStack.belowA s.sp 56] s.mem t.mem ∧
       Rest roundClobbers s t := by
   have operand (j : Nat) (member : j = 1 ∨ j = 5) : Operand j := by
-    rcases member with rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases member with rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   simp only [VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel, VG.Impl.Ffdh.Arm.ParameterCandidate.seqs]
   refine WP.seq (WP.mono (montEncode_ok s ready (operand 5 (by simp)) (operand 1 (by simp)) (by decide)
     data.modulus data.odd data.r2) ?_)

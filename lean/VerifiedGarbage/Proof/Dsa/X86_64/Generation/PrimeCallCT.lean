@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
@@ -14,6 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # Calling the probable-prime test in constant time
 
@@ -70,12 +72,12 @@ def PrimeTestReady (bits : Nat) (a : PrimeTestPublic bits) (u : State) : Prop :=
 
 /-- The test's status. -/
 def PrimeTestPublic.status {bits : Nat} (a : PrimeTestPublic bits) : Nat :=
-  Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime a.N (a.rand.drop a.used))
+  Proof.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime a.N (a.rand.drop a.used))
 
 theorem PrimeTestPublic.status_lt {bits : Nat} (a : PrimeTestPublic bits) : a.status < 3 := by
   unfold PrimeTestPublic.status
   rcases Spec.Dsa.probablePrime a.N (a.rand.drop a.used) with _ | ⟨_ | _, _⟩ <;>
-    simp only [Spec.Dsa.ProbablePrime.status] <;> decide
+    simp only [Proof.Dsa.ProbablePrime.status] <;> decide
 
 def PrimeTestDone (bits : Nat) (a : PrimeTestPublic bits) (t : State) : Prop :=
   t.gpr .rsp = a.F ∧ (t.gpr .rax).setWidth 32 = BitVec.ofNat 32 a.status
@@ -105,7 +107,7 @@ theorem primeCallTest_ct (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppor
   have E₁ := primeCall_entry hb i₁ a.geometry hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁ hm₁ hsp₁ hrd₁ hwr₁
   have E₂ := primeCall_entry hb i₂ a.geometry hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂ hm₂ hsp₂ hrd₂ hwr₂
   refine ⟨_, _, _, _, E₁.pre, E₂.pre, ?_, E₁.reads, E₁.writes, E₂.reads, E₂.writes, hsp₁.trans hsp₂.symm⟩
-  sig_pub [ProbablePrime.contract, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig,
+  sig_pub [ProbablePrime.contract, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig,
     abi, argRegs]
   have hl : (BitVec.ofNat 64 (a.rand.length - a.used)).toNat = a.rand.length - a.used := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := i₁.tapeSize; omega)]

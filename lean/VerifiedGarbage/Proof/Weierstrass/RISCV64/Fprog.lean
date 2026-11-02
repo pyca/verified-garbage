@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 the field `F` (`fprog_ok`), as on PPC64LE
 (`Proof/Weierstrass/PPC64LE/Fprog.lean`): on slots that are apart from each
 other, below the functions' own working space (`Proof.Mont.Lay` of
-`own M.n` bytes) and at offsets `li` reaches (below 2048), what the slots
+`own M.n` bytes) and at offsets `liAt` reaches (below 4095), what the slots
 stand for (`toM`) follows `runOps ops`, the program on environments (`Inv`).
 A slot is read only once it holds a number below `m`: either it did at the
 start (`V`) or an earlier operation wrote it (`readsOk`). Only the slots
@@ -72,8 +72,8 @@ theorem outs_wordsVal {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : O
   rw [wordsVal_eq_val32, wordsVal_eq_val32]
   exact h.val32 (fun r hr => by have := hd r hr; omega) (by omega)
 
-/-- Slots `li` reaches. -/
-abbrev Short (Sl : Nat → Prop) : Prop := ∀ x, Sl x → x < 2048
+/-- Slots `liAt` reaches. -/
+abbrev Short (Sl : Nat → Prop) : Prop := ∀ x, Sl x → x < 4095
 
 /-- The state holds the environment `E` in Montgomery's form in the slots
 `V` (of `Sl`), below `m`, and the working space is at `s0`. -/

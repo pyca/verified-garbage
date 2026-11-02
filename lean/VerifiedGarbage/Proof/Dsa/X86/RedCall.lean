@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Spec.Dsa
 
 /-! # Calls of the IA-32 DSA reduction
 

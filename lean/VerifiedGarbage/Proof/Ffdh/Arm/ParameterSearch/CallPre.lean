@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.ArgumentWords
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallFacts
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallParams
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
@@ -21,7 +22,7 @@ open VG VG.Arm
 theorem call_pre {p : SearchParams} {used : Nat} {s : State} {m : Mem}
     (facts : CallFacts p used s.sp) (context : ArgumentContext p used s)
     (memory : s.mem = callMem p used m s.sp) (room : used + p.c.length ≤ p.c.bytes.length) :
-    (Spec.Ffdh.sievedParameterCandidateContract abi 184).pre (callState p used s) := by
+    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre (callState p used s) := by
   let q := p.candidateParams used room
   have a0 := call_stackArg (j := 0) facts.argsFits memory (by decide)
   have a1 := call_stackArg (j := 1) facts.argsFits memory (by decide)
@@ -39,7 +40,7 @@ theorem call_pre {p : SearchParams} {used : Nat} {s : State} {m : Mem}
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.c.tapeCount; omega)]
   have capNat : (BitVec.ofNat 32 p.c.capacity).toNat = p.c.capacity := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.capacity_fits]
-  sig_pre [Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+  sig_pre [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
   simp only [context.out, context.width, context.usedPtr, context.bits,
     a0, a1, a2, a3, a4, widthNat, bitsNat, genNat, tapeNat, capNat]

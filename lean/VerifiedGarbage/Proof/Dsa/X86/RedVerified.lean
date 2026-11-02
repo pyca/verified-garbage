@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
+public import VerifiedGarbage.Proof.Dsa.ModArithContract
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86.Red
@@ -27,9 +29,9 @@ theorem argAddr_off (s : State) (i : Nat) (h : (s.gpr .esp).toNat + 4 + 4 * i + 
 
 /-- The facts of the contract's precondition. -/
 theorem in_of {n : Nat} {s : State}
-    (h : (Spec.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pre s) :
+    (h : (Proof.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pre s) :
     BodyIn n (bytes s) s ∧ Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨ws s, bytes s⟩ ∧ 20 ≤ (s.gpr .esp).toNat := by
-  sig_pre [Spec.Dsa.ModArith.reduceContract, Spec.Dsa.ModArith.reduceSig, reduceLayout, abi, argSlots, argVal,
+  sig_pre [Proof.Dsa.ModArith.reduceContract, Proof.Dsa.ModArith.reduceSig, reduceLayout, abi, argSlots, argVal,
     argBytes, stackBelow] at h
   obtain ⟨low, high, rd, wr, wsData, wsArgs, retWs, _, _, belowWs, _, _, wsFit, dataFit, size, odd, large⟩ := h
   have H : (ws s).toNat + bytes s ≤ 2 ^ 32 := by
@@ -94,14 +96,14 @@ theorem run {n size : Nat} (hn : 0 < n) (hn48 : n ≤ 48) {s : State} (B : BodyI
       exact ret) (by decide)
 
 theorem correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48)
-    (s : State) (h : (Spec.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pre s) :
+    (s : State) (h : (Proof.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pre s) :
     ∃ tr t, Exec isa (reduceBody n) s tr t ∧ abiPreserved s t ∧
-      (Spec.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).post s t := by
+      (Proof.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).post s t := by
   obtain ⟨B, ret, _⟩ := in_of h
   have bound := B.input.entry.nowrap
   obtain ⟨tr, t, E, A, V, O⟩ := run hn hn48 B ret
   refine ⟨tr, t, E, A, ?_⟩
-  sig_post [Spec.Dsa.ModArith.reduceContract, Spec.Dsa.ModArith.reduceSig, reduceLayout, abi, argSlots, argVal,
+  sig_post [Proof.Dsa.ModArith.reduceContract, Proof.Dsa.ModArith.reduceSig, reduceLayout, abi, argSlots, argVal,
     argBytes]
   refine ⟨?_, ?_⟩
   · simpa only [numAt_eq8] using V
@@ -111,9 +113,9 @@ theorem correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48)
     exact O _ (fun r hr => by rw [e]; exact hj r hr)
 
 theorem publicArgs {n : Nat} {s t : State}
-    (H : (Spec.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pub s t) :
+    (H : (Proof.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ ∀ i < 4, arg s i = arg t i := by
-  sig_pub [Spec.Dsa.ModArith.reduceContract, Spec.Dsa.ModArith.reduceSig, abi, argSlots, argVal, argBytes] at H
+  sig_pub [Proof.Dsa.ModArith.reduceContract, Proof.Dsa.ModArith.reduceSig, abi, argSlots, argVal, argBytes] at H
   sig_split H
   refine ⟨by with_reducible assumption, fun i hi => ?_⟩
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;>
@@ -126,8 +128,8 @@ theorem readArg {n size : Nat} {s : State} (B : BodyIn n size s) :
   rfl
 
 theorem constantTime {n : Nat} (hn : 0 < n) :
-    ConstantTime isa (Spec.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pre
-      (Spec.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pub (reduceBody n) := by
+    ConstantTime isa (Proof.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pre
+      (Proof.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pub (reduceBody n) := by
   intro s t tr ur sf tf hs ht hp E F
   have A := publicArgs hp
   have B₁ := (in_of hs).1
@@ -169,13 +171,13 @@ theorem satMem_read {n : Nat} (hn48 : n ≤ 48) :
     omega
 
 theorem satisfiable {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
-    ∃ s, (Spec.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pre s := by
+    ∃ s, (Proof.Dsa.ModArith.reduceContract (reduceLayout n) abi 20).pre s := by
   refine ⟨satState, ?_⟩
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x1000 := by decide
   have a2 : arg satState 2 = 0x100000 := by decide
   have a3 : arg satState 3 = 0 := by decide
-  sig_pre [Spec.Dsa.ModArith.reduceContract, Spec.Dsa.ModArith.reduceSig, reduceLayout, abi, argSlots, argVal,
+  sig_pre [Proof.Dsa.ModArith.reduceContract, Proof.Dsa.ModArith.reduceSig, reduceLayout, abi, argSlots, argVal,
     argBytes, stackBelow]
   simp only [a0, a1, a2, a3]
   sig_and_intros
@@ -184,7 +186,7 @@ theorem satisfiable {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
   · rw [show BitVec.toNat (4096 : BitVec 32) = 4096 from rfl]
     simp only [contextBytes, slot, stride]; omega
   all_goals
-    unfold Spec.Dsa.ModPow.numAt
+    unfold Proof.Dsa.ModPow.numAt
     rw [satMem_read hn48]
     obtain ⟨k, hk⟩ : ∃ k, 8 * n = k + 2 := ⟨8 * n - 2, by omega⟩
     rw [hk]
@@ -192,7 +194,7 @@ theorem satisfiable {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
   · exact (Pow.read_ones _ k).2
 
 theorem verified (n : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) :
-    Verified target (reduceBody n) (Spec.Dsa.ModArith.reduceContract (reduceLayout n) abi 20) :=
+    Verified target (reduceBody n) (Proof.Dsa.ModArith.reduceContract (reduceLayout n) abi 20) :=
   ⟨correct hn hn48, constantTime hn, satisfiable hn hn48⟩
 
 end VG.Proof.Dsa.X86.Red

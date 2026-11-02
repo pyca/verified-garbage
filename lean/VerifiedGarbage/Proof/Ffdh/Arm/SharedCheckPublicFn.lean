@@ -43,7 +43,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem sharedCheckPublicSubgroup_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat} (slot : Nat) {bb : List Byte}
@@ -69,14 +69,14 @@ theorem sharedCheckPublicSubgroup_ok (backend : MontBackend) (s : State) {p : In
       exact calls.domainSlice h (by have := p.minLength; omega)
         (by rw [p.domainLength, hasQ]; simp only [ite_true]; omega))) ?_
   rintro u ⟨contextU, readyU, power, modU, r2U, _, frameU, restU⟩
-  refine WP.mono (isOne_ok u readyU (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6) (by decide)) ?_
+  refine WP.mono (isOne_ok u readyU (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)) ?_
   rintro t ⟨readyT, flag, arraysT, frameT, restT⟩
   rw [power] at flag
   have frame := frameU.trans (frameT.mono (by simp))
   have rest := restU.trans restT
   exact ⟨h.after_arithmetic calls frame rest readyT.ptr (fun d hd => (stableSlots_at stable hd).1), readyT,
-    flag, (arraysT 0 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans modU,
-    (arraysT 4 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans r2U,
+    flag, (arraysT 0 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans modU,
+    (arraysT 4 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans r2U,
     frame, rest⟩
 
 end VG.Proof.Ffdh.Arm
@@ -92,7 +92,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem sharedCheckPublicTail_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat} {yb : List Byte}
     (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
@@ -145,7 +145,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 theorem sharedCheckPublicMain_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat} {yb : List Byte}
     (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
@@ -156,9 +156,9 @@ theorem sharedCheckPublicMain_ok (backend : MontBackend) (s : State) {p : Inputs
     (valueStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩) :
     WP isa (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
       t.gpr .r0 = publicFlag p (Spec.Rsa.os2ip yb) ∧ Frame (domainPrepareWrites p s) s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (domainPrepareWrites p s) m m' :=
     f.mono (by intro r hr; rw [List.mem_singleton] at hr; subst r; simp [domainPrepareWrites, prepareAtWrites, prepareWrites])
   rw [VG.Impl.Ffdh.Arm.SharedCheckPublic.main, WP.seq_iff]

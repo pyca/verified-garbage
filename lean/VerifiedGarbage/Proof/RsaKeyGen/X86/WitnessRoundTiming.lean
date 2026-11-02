@@ -38,7 +38,7 @@ theorem input_mul {g : Geometry} {capacity : Nat} {p : BitVec 32} {s : State}
   exact ⟨A.ready.context, ⟨c, A.ready.modulus, odd, by rw [A.r2]; exact Nat.mod_lt _ positive⟩, A.ready.caller⟩
 
 theorem code_raw {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (InputPair g capacity p) (VG.Impl.RsaKeyGen.X86.WitnessMont.code name mont)
@@ -46,7 +46,7 @@ theorem code_raw {mont : Prog isa} {name : String}
   unfold VG.Impl.RsaKeyGen.X86.WitnessMont.code
   refine RelCT.seq ?_ (copy_relCT v 5 6 (by decide) (by decide))
   exact (mulY_relCT (p := p) (b := 4) verified noSp stack v length
-    (by unfold Spec.Rsa.Mont.Operand; decide)).mono
+    (by unfold Proof.Rsa.Mont.Operand; decide)).mono
     (fun _ _ H => ⟨H.1, input_mul H.2.1, input_mul H.2.2⟩) (fun _ _ H => H)
 
 end VG.Proof.RsaKeyGen.X86.WitnessMont
@@ -112,7 +112,7 @@ theorem store_pair {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
   exact ⟨trace, ⟨Du.ready.context, Dz.ready.context, agree⟩, ⟨cu, Du, ou, lu⟩, ⟨cz, Dz, oz, lz⟩⟩
 
 theorem convert_pair {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (WorkPair g capacity p) (VG.Impl.RsaKeyGen.X86.WitnessMont.code name mont) (RoundCall.InputPair g capacity p) := by
@@ -130,9 +130,9 @@ theorem convert_pair {mont : Prog isa} {name : String}
   exact ⟨trace, pair, wp_result (post H.2.1) E, wp_result (post H.2.2) G⟩
 
 theorem codeAt_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {input : Import.Geometry}
     {draw k : Nat} (width : 4 * input.count = draw) (two : 2 ≤ k) (narrow : k ≤ input.count)
@@ -147,9 +147,9 @@ theorem codeAt_trace {mont round : Prog isa} {montName roundName : String}
       (RoundCall.code_trace roundVerified roundNoSp roundStack v length fit far lengthFar)))
 
 theorem code_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {input : Import.Geometry}
     (width : input.count = g.words) (length : g.L = 8 * capacity) (fit : 108 ≤ p.toNat)

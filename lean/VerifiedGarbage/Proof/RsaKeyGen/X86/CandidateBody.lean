@@ -34,9 +34,9 @@ theorem Outputs.keepFlags {E : Environment} {status count : Nat} {bytes : List B
   exact O
 
 theorem available_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (I : Input E eBytes pBytes entropy s)
@@ -117,9 +117,9 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X8
 open VG.Impl.Mont.X86
 
 theorem front_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (I : Input E eBytes pBytes entropy s) :
@@ -191,9 +191,9 @@ theorem enter_input_ok {E : Environment} (v : E.Valid) {eBytes pBytes entropy : 
     I.usedWrite.of_keeps K, I.memory.keep v K frame (by rw [syms])⟩, frame, K⟩
 
 theorem body_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (I : EntryInput E eBytes pBytes entropy s) :

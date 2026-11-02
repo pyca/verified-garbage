@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Impl.Bignum.Arm.R2
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Native private-CRT arguments satisfy the shared API's buffer contract -/
 
@@ -32,9 +33,9 @@ def crtCallGeometry (s : State) : CrtGeometry where
 def crtCallBytes (s : State) (i : Fin 7) : List Byte :=
   Spec.Rsa.bytesAt s.mem (State.addr ((crtCallGeometry s).source i)) ((crtCallGeometry s).sourceLength i)
 
-theorem crt_contract_pre (s : State) (h : (Spec.Rsa.privateCrtContract abi 56).pre s) :
+theorem crt_contract_pre (s : State) (h : (Proof.Rsa.privateCrtContract abi 56).pre s) :
     CrtFnInput (crtCallGeometry s) (crtCallBytes s) s := by
-  sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
+  sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have argAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   rw [argAddr] at h
   obtain ⟨stackFit, argFit, rd, wr, _, _, _, _, _, _, _, outWs, _,

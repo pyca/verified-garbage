@@ -14,7 +14,7 @@ the order, divisibility, and subgroup checks run in native code. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 def domainTailFlag (p : Inputs) : BitVec 32 := if p.hasQ = true then domainQFlag p else 1
 

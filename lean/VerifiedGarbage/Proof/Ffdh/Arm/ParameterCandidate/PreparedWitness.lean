@@ -25,7 +25,7 @@ Miller–Rabin kernel. Only the phase's scratch and two local counters change. -
 section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 
 private theorem oddThree {n : Nat} (large : 1 < n) (odd : n % 2 = 1) : 3 ≤ n := by omega
 

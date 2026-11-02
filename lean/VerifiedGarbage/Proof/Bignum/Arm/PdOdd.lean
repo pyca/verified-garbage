@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem pdOdd_ok (s : State) {base : BitVec 32} {len w : Nat} {accepted : Bool}
@@ -31,7 +31,7 @@ theorem pdOdd_ok (s : State) {base : BitVec 32} {len w : Nat} {accepted : Bool}
   rintro u ⟨byte, saved, memU, restU⟩
   refine WP.mono (pdOddFinish_ok u) ?_
   rintro t ⟨value, zero, memT, restT⟩
-  have parity : (s.mem (off (State.addr base) (Spec.Rsa.Mont.arrAt w 0))).setWidth 32 &&& 1 =
+  have parity : (s.mem (off (State.addr base) (Proof.Rsa.Mont.arrAt w 0))).setWidth 32 &&& 1 =
       BitVec.ofNat 32 (numAt s.mem (State.addr base) w 0 % 2) := numAt_parity_word s.mem _ positive
   rw [byte, saved, flag, parity] at value zero
   have bit : BitVec.ofNat 32 accepted.toNat &&& BitVec.ofNat 32 (numAt s.mem (State.addr base) w 0 % 2) =

@@ -15,7 +15,7 @@ import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Operand Keeps)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem reduceOperand_ok (s : State) {base : BitVec 32} {len w o M : Nat}
@@ -28,7 +28,7 @@ theorem reduceOperand_ok (s : State) {base : BitVec 32} {len w o M : Nat}
       numAt t.mem (State.addr base) w o = numAt s.mem (State.addr base) w o % M ∧
       Keeps (State.addr base) len w o s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have op7 : Operand 7 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   rw [reduceOperand, WP.seq_iff]
   refine WP.mono (montEncode_ok s h ho ho ho0 modulus odd r2) ?_

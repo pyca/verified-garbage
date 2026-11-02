@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.PPC64LE.ProbablePrime
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-!
 # DSA's probable-prime test on PPC64LE: the contract's precondition
@@ -43,12 +44,12 @@ structure CIn (bits : Nat) (s : State) : Prop where
   fr : (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64
   fu : (s.gpr .r7).toNat + 8 ≤ 2 ^ 64
   size : keyOff + 8 * keyWords bits ≤ 8 * (s.gpr .r4).toNat
-  odd : Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (s.gpr .r3) % 2 = 1
-  bl : Spec.Dsa.bitLength (Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (s.gpr .r3)) = bits
+  odd : Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (s.gpr .r3) % 2 = 1
+  bl : Spec.Dsa.bitLength (Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (s.gpr .r3)) = bits
 
-theorem cin_of_pre (bits : Nat) (s : State) (h : (Spec.Dsa.ProbablePrime.contract (layout bits) abi 176).pre s) :
+theorem cin_of_pre (bits : Nat) (s : State) (h : (Proof.Dsa.ProbablePrime.contract (layout bits) abi 176).pre s) :
     CIn bits s := by
-  sig_pre [Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs] at h
+  sig_pre [Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argRegs] at h
   obtain ⟨spLo, rd, wr, wR, wU, rU, sW, sR, sU, fw, fr, fu, size, odd, bl⟩ := h
   exact ⟨spLo, by rw [rd]; exact List.mem_singleton_self _, wr, wR, wU, rU, sW, sR, sU, fw, fr, fu, size, odd, bl⟩
 

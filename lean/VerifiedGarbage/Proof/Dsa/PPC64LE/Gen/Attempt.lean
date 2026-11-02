@@ -202,7 +202,7 @@ theorem pCand_spec (HO : HashOk Gh) {k : Nat}
   rw [hX, HO.hash _ (by rw [VG.Proof.Dsa.encodeBE_length]; omega), HO.md.digest_length, HO.hN, hk4]
 
 /-- The search for p, then g and the check, after q. -/
-theorem attemptP_vp {g : Geo} (HO : HashOk g.G) {Lp : Spec.Dsa.ProbablePrime.Layout} (okp : PrimeOk Lp g.pCode)
+theorem attemptP_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout} (okp : PrimeOk Lp g.pCode)
     (lay : PLay G g Lp) (gcert : CertC G.pLen G.qLen) (hck : CheckOk g.checkCode)
     (hlq : (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32))
     (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen) (hk4 : 4 * g.G.k = G.qLen) (hsb : G.seedsB.length = G.seedsLen)
@@ -288,7 +288,7 @@ theorem attemptP_vp {g : Geo} (HO : HashOk g.G) {Lp : Spec.Dsa.ProbablePrime.Lay
       (VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp at z)
 
 /-- Where the test of q puts its candidate and working ranges. -/
-structure QLay (G : GP) (g : Geo) (Lq : Spec.Dsa.ProbablePrime.Layout) : Prop where
+structure QLay (G : GP) (g : Geo) (Lq : Impl.Dsa.ProbablePrime.Layout) : Prop where
   bits : Lq.bits = 8 * G.qLen
   cand : Lq.candidate = g.qCand
   size : Lq.size ≤ 8 * wWords G.pLen
@@ -297,7 +297,7 @@ structure QLay (G : GP) (g : Geo) (Lq : Spec.Dsa.ProbablePrime.Layout) : Prop wh
   cand15 : wB G.pLen + Lq.candidate < 2 ^ 15
 
 /-- A seed: q, its test, then p, g and the check. -/
-theorem attempt_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Spec.Dsa.ProbablePrime.Layout} (okq : PrimeOk Lq g.qCode)
+theorem attempt_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Impl.Dsa.ProbablePrime.Layout} (okq : PrimeOk Lq g.qCode)
     (qlay : QLay G g Lq) (okp : PrimeOk Lp g.pCode) (lay : PLay G g Lp) (gcert : CertC G.pLen G.qLen)
     (hck : CheckOk g.checkCode)
     (hlq : (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32))

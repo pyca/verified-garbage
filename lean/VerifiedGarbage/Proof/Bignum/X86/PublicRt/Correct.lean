@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Bignum.X86.PublicResources
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Functional correctness and cdecl preservation of public RSA at a run-time width
 
@@ -105,12 +106,12 @@ theorem operation_ok {s : State} (A : TopABI s) :
   rw [N, E, X] at V
   exact V
 
-theorem correct (s : State) (h : (Spec.Rsa.publicCheckedContract abi 96).pre s) :
+theorem correct (s : State) (h : (Proof.Rsa.publicCheckedContract abi 96).pre s) :
     ∃ trace t, Exec isa PublicRt.code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.publicCheckedContract abi 96).post s t := by
+      (Proof.Rsa.publicCheckedContract abi 96).post s t := by
   obtain ⟨trace, t, E, V, A⟩ := operation_ok (topABI_of h)
   refine ⟨trace, t, E, A, ?_⟩
-  sig_post [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argSlots, argVal, argBytes]
+  sig_post [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argSlots, argVal, argBytes]
   rw [BitVec.setWidth_append_eq_right]
   exact V
 

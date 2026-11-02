@@ -13,7 +13,7 @@ namespace VG.Proof.MillerRabin.Arm
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.MillerRabin.Arm VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 
 section
 variable {s : State}
@@ -102,7 +102,7 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
       have l := pre.len
       have : j * (8 * ((mkP s).w + 2)) ≤ 27 * (8 * ((mkP s).w + 2)) := Nat.mul_le_mul_right _ (by omega_arith)
       have : 8 * (mkP s).w ≤ 8 * ((mkP s).w + 2) := by omega_arith
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
+      simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
       generalize 8 * ((mkP s).w + 2) = S at *
       omega_arith
     have nE : ∀ j < 11, numAt (bodyIn s).mem (State.addr (s.gpr .r0)) (mkP s).w j =
@@ -113,7 +113,7 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
     have c3 := pre.c3
     have codd := pre.codd
     have cR := pre.c_lt
-    have key : fl (mkP s) (bodyIn s) = Spec.MillerRabin.round (cOf (mkP s) (bodyIn s).mem) b := by
+    have key : fl (mkP s) (bodyIn s) = Proof.MillerRabin.Round.round (cOf (mkP s) (bodyIn s).mem) b := by
       have e1 : rEnd (mkP s) (bodyIn s) = 4 - VG.Proof.RsaKeyGen.sigOf
           (VG.Proof.RsaKeyGen.mrA (cOf (mkP s) (bodyIn s).mem)) := by
         simp only [rEnd, tOf]; rw [VG.Proof.RsaKeyGen.sigOf_mod]
@@ -122,9 +122,9 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
       rw [e1]
       exact final_eq codd c3 cR (by rw [hX, hc]; exact hb) pre.one pre.m1
     rw [key, hc]
-    show (BitVec.ofNat 32 (Spec.MillerRabin.round (numAt s.mem (State.addr (s.gpr .r0))
+    show (BitVec.ofNat 32 (Proof.MillerRabin.Round.round (numAt s.mem (State.addr (s.gpr .r0))
       (wOf s.mem (State.addr (s.gpr .r0))) 0) b).toNat).toNat = _
-    generalize Spec.MillerRabin.round (numAt s.mem (State.addr (s.gpr .r0)) (wOf s.mem (State.addr (s.gpr .r0))) 0) b = r
+    generalize Proof.MillerRabin.Round.round (numAt s.mem (State.addr (s.gpr .r0)) (wOf s.mem (State.addr (s.gpr .r0))) 0) b = r
     cases r <;> rfl
   · -- What changed.
     have eσ := h.pushedWs

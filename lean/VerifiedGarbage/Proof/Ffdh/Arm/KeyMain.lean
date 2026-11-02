@@ -25,7 +25,7 @@ exponentiation, and output rejection entirely in native ARMv7 code. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 def keyScalarValid (p : Inputs) (rb : List Byte) : Prop :=
   0 < Spec.Rsa.os2ip (scalarOctets p rb) ∧ Spec.Rsa.os2ip (scalarOctets p rb) < scalarBound p
@@ -55,8 +55,8 @@ theorem keyMain_ok (s : State) {p : Inputs} {slots : List Nat} {rb : List Byte}
       Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k =
         (if keySuccess p rb then Spec.Rsa.i2osp (keyPower p (scalarOctets p rb)) p.k else List.replicate p.k 0) ∧
       Frame (keyWrites p s) s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (keyWrites p s) m m' :=
     f.mono (by simp [keyWrites])
   have pStack : Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=

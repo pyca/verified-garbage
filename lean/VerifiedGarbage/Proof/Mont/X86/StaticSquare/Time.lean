@@ -80,8 +80,8 @@ theorem aliasChoice_relCT : RelCT isa (VG.X86.Taint.Agree rtTaint) (.block alias
         (selectSize_relCT 128 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square128_check) oldSquare_relCT))))).mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
   · exact scalar_relCT.mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
 
- theorem constantTime : ConstantTime isa (Spec.Rsa.MontMul.mulContract abi 0).pre
-    (Spec.Rsa.MontMul.mulContract abi 0).pub Impl.Mont.X86.Rt.StaticSquare.dispatch := by
+ theorem constantTime : ConstantTime isa (Proof.Rsa.MontMul.mulContract abi 0).pre
+    (Proof.Rsa.MontMul.mulContract abi 0).pub Impl.Mont.X86.Rt.StaticSquare.dispatch := by
   apply VG.RelCT.constantTime
   exact dispatch_relCT.mono (fun _ _ ⟨h1,h2,hp⟩ =>
     rtTaint_agree (rtAbi_of h1) (rtAbi_of h2) (rt_publicArgs hp).1 (rt_publicArgs hp).2) (fun _ _ _ => trivial)

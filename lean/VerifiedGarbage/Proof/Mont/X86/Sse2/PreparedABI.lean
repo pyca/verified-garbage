@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Time
 public import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Mont.X86.ArgWs
 import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Sse2.Body
 
 /-! # `vg_rsa_mont_mul`'s entry
 
-`PrABI s`: the facts of `Spec.Rsa.Mont.mulContract abi 56`'s precondition;
+`PrABI s`: the facts of `Proof.Rsa.Mont.mulContract abi 56`'s precondition;
 from them, the numbers of the arrays (`w = wOf`, `N = 2 w` words of 32 bits,
 the scratch at array 2, which runs on into array 3) and what `body
 preparedParams` takes (`prReady`): the arrays' addresses from the header.
@@ -26,7 +26,7 @@ preparedParams` takes (`prReady`): the arrays' addresses from the header.
 namespace VG.Proof.Mont.X86.Sse2
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont.X86.Sse2 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Mont.X86.Rt
-open VG.Spec.Rsa.Mont (Layout Operand wOf arrAt aM minvWord wordAt)
+open VG.Proof.Rsa.Mont (Layout Operand wOf arrAt aM minvWord wordAt)
 open VG.Proof.Mont.X86.Dynamic (ofs_far)
 
 structure PrABI (s : State) : Prop where
@@ -44,11 +44,11 @@ structure PrABI (s : State) : Prop where
   right : Operand (arg s 4).toNat
   inverse : ((s.mem.readW (wsOf s + BitVec.ofNat 64 (arrAt (wOf s.mem (wsOf s)) aM)) 64).toNat *
       (wordAt s.mem (wsOf s) minvWord).toNat + 1) % 2 ^ 64 = 0
-  rightLt : Spec.Rsa.Mont.numAt s.mem (wsOf s) (wOf s.mem (wsOf s)) (arg s 4).toNat <
-      Spec.Rsa.Mont.numAt s.mem (wsOf s) (wOf s.mem (wsOf s)) aM
+  rightLt : Proof.Rsa.Mont.numAt s.mem (wsOf s) (wOf s.mem (wsOf s)) (arg s 4).toNat <
+      Proof.Rsa.Mont.numAt s.mem (wsOf s) (wOf s.mem (wsOf s)) aM
 
-theorem prAbi_of {s : State} (h : (Spec.Rsa.Mont.mulContract abi 56).pre s) : PrABI s := by
-  sig_pre [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argSlots, argVal, argBytes, stackBelow] at h
+theorem prAbi_of {s : State} (h : (Proof.Rsa.Mont.mulContract abi 56).pre s) : PrABI s := by
+  sig_pre [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
 
@@ -90,10 +90,10 @@ theorem PrABI.lay {s : State} (A : PrABI s) :
   have pa := Compact.operand_apart (w := wOf s.mem (wsOf s)) A.left
   have pb := Compact.operand_apart (w := wOf s.mem (wsOf s)) A.right
   generalize wOf s.mem (wsOf s) = w at *
-  have e0 : arrAt w 0 = 256 := by simp [arrAt, Spec.Rsa.Mont.hdrBytes]
-  have e2 : arrAt w 2 = 256 + 16 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
-  have e4 : arrAt w 4 = 256 + 32 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
-  have e8 : arrAt w 8 = 256 + 64 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
+  have e0 : arrAt w 0 = 256 := by simp [arrAt, Proof.Rsa.Mont.hdrBytes]
+  have e2 : arrAt w 2 = 256 + 16 * (w + 2) := by unfold arrAt Proof.Rsa.Mont.hdrBytes; omega_arith
+  have e4 : arrAt w 4 = 256 + 32 * (w + 2) := by unfold arrAt Proof.Rsa.Mont.hdrBytes; omega_arith
+  have e8 : arrAt w 8 = 256 + 64 * (w + 2) := by unfold arrAt Proof.Rsa.Mont.hdrBytes; omega_arith
   have l1 : (arg s 1).toNat < 2 ^ 32 := (arg s 1).isLt
   simp only [lenOf] at *
   constructor <;> omega_arith
@@ -165,9 +165,9 @@ theorem PrABI.header {s t : State} (A : PrABI s) (h : PrSt s t) {r : Reg} {x d j
       v.toNat = ((wsOf s).toNat + arrAt (wOf s.mem (wsOf s)) j) % 2 ^ 32 := by
   have fit := A.fit
   have := Compact.array_mono (wOf s.mem (wsOf s)) (i := 0) (j := 8) (by decide)
-  refine ⟨_, readSrc_ptr (h.ws A) hp (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega_arith), ?_⟩
+  refine ⟨_, readSrc_ptr (h.ws A) hp (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega_arith), ?_⟩
   show w32 t.mem (wsOf s) (x + d) = _
-  rw [h.2.2.1, A.pushed_w32 (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega_arith), he]
+  rw [h.2.2.1, A.pushed_w32 (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega_arith), he]
   exact Compact.layout_pointer_low A.layout hj
 
 /-- The header word 6's low half, `w`. -/
@@ -176,10 +176,10 @@ theorem PrABI.width {s t : State} (A : PrABI s) (h : PrSt s t) {r : Reg} (hp : P
   have fit := A.fit
   have := Compact.array_mono (wOf s.mem (wsOf s)) (i := 0) (j := 8) (by decide)
   have w31 := A.layout.2.1
-  refine ⟨_, readSrc_ptr (h.ws A) hp (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega_arith), ?_⟩
+  refine ⟨_, readSrc_ptr (h.ws A) hp (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega_arith), ?_⟩
   show w32 t.mem (wsOf s) (0 + 48) = _
-  rw [h.2.2.1, A.pushed_w32 (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega_arith),
-    show 0 + 48 = 8 * Spec.Rsa.Mont.wWord from rfl, Compact.header_low]
+  rw [h.2.2.1, A.pushed_w32 (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega_arith),
+    show 0 + 48 = 8 * Proof.Rsa.Mont.wWord from rfl, Compact.header_low]
   exact Nat.mod_eq_of_lt (by show wOf s.mem (wsOf s) < _; omega_arith)
 
 /-- `prPtr r i`: `r` at array `arg s i`. -/
@@ -251,7 +251,7 @@ theorem preparedParams_ok {s : State} (A : PrABI s) :
     rw [g q ha hb, u6.other q hc, u5.other q hs, u4.other q hb]
   have fit := A.fit
   have bnd := A.bound
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes, lenOf] at fit
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes, lenOf] at fit
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, h11.1, h11.2.2.1, h11.2.1, h11.2.2.2⟩
   · show (t11.gpr .ebp).toNat = _
     rw [g3 _ (by decide) (by decide) (by decide) (by decide), g3' .ebp (by decide) (by decide),

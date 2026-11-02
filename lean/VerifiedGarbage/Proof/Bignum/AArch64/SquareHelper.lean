@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Spec.Rsa.MontSquare
+public import VerifiedGarbage.Proof.Rsa.MontSquareContract
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -11,8 +11,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareHelper
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
-open VG.Spec.Rsa.Mont (numAt wOf wordAt Layout Keeps arrAt aM minvWord)
-open VG.Spec.Rsa.MontSquare (Slot)
+open VG.Proof.Rsa.Mont (numAt wOf wordAt Layout Keeps arrAt aM minvWord)
+open VG.Proof.Rsa.MontSquare (Slot)
 
 /-- The shared ABI specialized to its two arguments. -/
 def fnContract (o : Nat) : Contract isa where
@@ -52,17 +52,17 @@ def satState : State where
   wr := [⟨0x1000, 512⟩]
 
 theorem fn_implies (slot : Slot) :
-    (fnContract slot.index).Implies (Spec.Rsa.MontSquare.squareContract slot abi) where
-  pre := by sig_implies_pre [Spec.Rsa.MontSquare.squareContract, Spec.Rsa.MontSquare.sig, fnContract, abi, argRegs]
-  post := by sig_implies_post [Spec.Rsa.MontSquare.squareContract, Spec.Rsa.MontSquare.sig, fnContract, abi, argRegs]
+    (fnContract slot.index).Implies (Proof.Rsa.MontSquare.squareContract slot abi) where
+  pre := by sig_implies_pre [Proof.Rsa.MontSquare.squareContract, Proof.Rsa.MontSquare.sig, fnContract, abi, argRegs]
+  post := by sig_implies_post [Proof.Rsa.MontSquare.squareContract, Proof.Rsa.MontSquare.sig, fnContract, abi, argRegs]
   pub := by
     rintro s t _ _ h
-    sig_pub [Spec.Rsa.MontSquare.squareContract, Spec.Rsa.MontSquare.sig, fnContract, abi, argRegs] at h
+    sig_pub [Proof.Rsa.MontSquare.squareContract, Proof.Rsa.MontSquare.sig, fnContract, abi, argRegs] at h
     obtain ⟨hsp, hw, h0, h1⟩ := h
     exact ⟨hsp, h0, h1, List.singleton_inj.mp hw⟩
   sat := by
     cases slot <;>
-      sig_implies_sat [Spec.Rsa.MontSquare.squareContract, Spec.Rsa.MontSquare.sig, fnContract, abi, argRegs]
+      sig_implies_sat [Proof.Rsa.MontSquare.squareContract, Proof.Rsa.MontSquare.sig, fnContract, abi, argRegs]
         [satState] using satState
 
 theorem read_eq_wv (m : Mem) (B : Addr) (d : Nat) :
@@ -85,8 +85,8 @@ theorem fn_good {o : Nat} {s : State} (h : (fnContract o).pre s) :
   obtain ⟨_, hwr, hnw, ⟨h2, h31, h8, harr⟩, _⟩ := h
   refine ⟨⟨Scr.of_mem (by rw [hwr]; simp) hnw, rfl, ⟨?_, rfl, fun j hj => harr j hj⟩⟩,
     ?_, h2, h31⟩
-  · simp [word, wOf, wordAt, Spec.Rsa.Mont.wWord, sW, off]
-  · simpa only [slot, hdrBytes, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, Nat.mul_comm] using h8
+  · simp [word, wOf, wordAt, Proof.Rsa.Mont.wWord, sW, off]
+  · simpa only [slot, hdrBytes, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.mul_comm] using h8
 
 theorem fn_correct (M : Mont) (o : Nat) (ho : o = 4 ∨ o = 6) (s : State)
     (h : (fnContract o).pre s) :
@@ -122,7 +122,7 @@ theorem fn_ct (M : Mont) (o : Nat) (ho : o = 4 ∨ o = 6) :
 
 theorem verified (M : Mont) (slot : Slot) :
     Verified target (M.mm slot.index slot.index slot.index)
-      (Spec.Rsa.MontSquare.squareContract slot abi) :=
+      (Proof.Rsa.MontSquare.squareContract slot abi) :=
   Verified.of_correct (fn_correct M slot.index (by cases slot <;> simp [Slot.index]))
     (fn_ct M slot.index (by cases slot <;> simp [Slot.index])) (fn_implies slot)
 

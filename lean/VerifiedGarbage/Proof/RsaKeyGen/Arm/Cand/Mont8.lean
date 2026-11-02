@@ -25,7 +25,7 @@ array cleared.
 namespace VG.Proof.RsaKeyGen.Arm.Cand
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 open VG.Proof.Rsa.Arm.Recover (VP)
 
 section
@@ -50,18 +50,18 @@ theorem MS.of_keeps {σ s t : State} (pre : In P σ) (h : MS P σ s) {o : Nat} (
     have e1 := a 1; have e2 := a 2; have e3 := a 3; have e4 := a 4; have e5 := a 5; have eo := a o
     have m1 : o * (8 * (P.w + 2)) ≥ 1 * (8 * (P.w + 2)) := Nat.mul_le_mul_right _ (by omega_arith)
     rcases hj with hj | hj | hj <;> rw [hj]
-    · simp only [Spec.Rsa.Mont.aAcc]; omega_arith
-    · simp only [Spec.Rsa.Mont.aTmp]; omega_arith
+    · simp only [Proof.Rsa.Mont.aAcc]; omega_arith
+    · simp only [Proof.Rsa.Mont.aTmp]; omega_arith
     · rcases (by omega_arith : o < 4 ∨ 4 < o) with c | c
       · have : (o + 1) * (8 * (P.w + 2)) ≤ 4 * (8 * (P.w + 2)) := Nat.mul_le_mul_right _ (by omega_arith)
         rw [Nat.add_mul] at this; omega_arith
       · have : 5 * (8 * (P.w + 2)) ≤ o * (8 * (P.w + 2)) := Nat.mul_le_mul_right _ (by omega_arith)
         omega_arith
-  have lm : arrAt P.w 8 = 8 * P.lenM := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes, CP.lenM]; omega_arith
+  have lm : arrAt P.w 8 = 8 * P.lenM := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega_arith
   have a28 : arrAt P.w 4 + 8 * P.w ≤ arrAt P.w 8 := by simp only [arrAt]; omega_arith
   refine h.of_read (fun d n hd => ?_) ?_ ?_ sp rd wr
   · have hb : d + n ≤ arrAt P.w 1 := by
-      have : 232 ≤ arrAt P.w 0 := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith
+      have : 232 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith
       rcases hd with (h1 | ⟨_, h1⟩) | ⟨_, h1⟩ <;> simp only [mHd, arrAt] at * <;> omega_arith
     refine Mem.read_congr fun i hi => ?_
     simp only [off]; rw [Offset.add_add]
@@ -99,7 +99,7 @@ theorem St.pmontOp {o a b : Nat} (ho : Operand o) (ha : Operand a) (hb : Operand
       (fun σ s => (E σ ∧ KS P σ (A σ) L' (V σ) LS s) ∧ MS P σ s ∧
         numAt s.mem (State.addr P.M0) P.w o < cv P σ ∧
         numAt s.mem (State.addr P.M0) P.w o * 2 ^ (64 * P.w) % cv P σ = na σ * nb σ % cv P σ) := by
-  have fitM : arrAt P.w 3 + 32 ≤ 8 * P.lenM := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes, CP.lenM]; omega_arith
+  have fitM : arrAt P.w 3 + 32 ≤ 8 * P.lenM := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega_arith
   refine VP.of_ct (fun σ₁ σ₂ => (montOp_ct (base := P.M0) (len := P.lenM) (w := P.w) ho ha hb fitM).mono
     (fun s t ⟨⟨⟨⟨e₁, h₁, w₁⟩, m₁⟩, r₁⟩, ⟨⟨⟨e₂, h₂, w₂⟩, m₂⟩, r₂⟩⟩ => ⟨⟨m₁.ready h₁.pre r₁, ?_⟩, ⟨m₂.ready h₂.pre r₂, ?_⟩,
       by rw [h₁.sp, h₁.pre.sp, h₂.sp, h₂.pre.sp]⟩) fun _ _ _ => trivial) fun σ s ⟨⟨⟨e, h, hw⟩, m⟩, r0⟩ => ?_

@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand numAt)
+open VG.Proof.Rsa.Mont (Operand numAt)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 theorem montOpArgs_ok (s : State) {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8) :

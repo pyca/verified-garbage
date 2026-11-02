@@ -75,9 +75,9 @@ def pRes (c0 : Cfg) (wl : Nat) : Option (Bool × Spec.RsaKeyGen.Rand) → Cfg
 
 theorem testCfg_fRes (c0 : Cfg) (cl : Claims) (wl : Nat) (res : Option (Bool × Spec.RsaKeyGen.Rand)) :
     fRes ∈ (testCfg c0 cl wl res).LS ∧
-      (testCfg c0 cl wl res).V fRes = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status res) := by
+      (testCfg c0 cl wl res).V fRes = BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status res) := by
   rcases res with _ | ⟨b, r⟩
-  · exact ⟨List.mem_cons_self, by simp [testCfg, Spec.Dsa.ProbablePrime.status]⟩
+  · exact ⟨List.mem_cons_self, by simp [testCfg, Proof.Dsa.ProbablePrime.status]⟩
   · refine ⟨List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩
     simp only [testCfg, Cfg.setV]
     rw [upd_ne _ _ (by decide), upd_self]
@@ -92,7 +92,7 @@ theorem pDecide_vp {c0 : Cfg} {wl : Nat} (res : Option (Bool × Spec.RsaKeyGen.R
       (St G (pRes c0 wl res) X) := by
   obtain ⟨fl, fv⟩ := testCfg_fRes c0 c0.cl wl res
   have vres : ∀ σ s, St G (testCfg c0 c0.cl wl res) X σ s →
-      fw s.mem G fRes = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status res) := fun σ s h => by
+      fw s.mem G fRes = BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status res) := fun σ s h => by
     rw [h.1.gi.slotV fl, fv]
   refine VP.seq (cmpF_vp (fun σ s h => h.1) (by decide) (by decide) (by decide) vres
     fun σ s t h h' _ e => (⟨⟨h', h.2⟩, e⟩ : St G (testCfg c0 c0.cl wl res) X σ t ∧ _)) ?_
@@ -102,24 +102,24 @@ theorem pDecide_vp {c0 : Cfg} {wl : Nat} (res : Option (Bool × Spec.RsaKeyGen.R
         fun σ s t h h' _ => ⟨h', h.1.1.2⟩
     · refine VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => ?_
       rw [e] at z
-      unfold Spec.Dsa.ProbablePrime.status at z
+      unfold Proof.Dsa.ProbablePrime.status at z
       cases b <;> simp at z <;> contradiction
   · rcases res with _ | ⟨b, r⟩
     · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by
-        rw [e] at z; simp [Spec.Dsa.ProbablePrime.status] at z <;> contradiction
+        rw [e] at z; simp [Proof.Dsa.ProbablePrime.status] at z <;> contradiction
     refine VP.seq (cmpF_vp (fun σ s h => h.1.1.1) (by decide) (by decide) (by decide)
       (fun σ s h => vres σ s h.1.1) fun σ s t h h' _ e => (⟨⟨h', h.1.1.2⟩, e⟩ :
         St G (testCfg c0 c0.cl wl (some (b, r))) X σ t ∧ _)) ?_
     refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_ ?_
     · cases b
       · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by
-          rw [e] at z; simp [Spec.Dsa.ProbablePrime.status] at z <;> contradiction
+          rw [e] at z; simp [Proof.Dsa.ProbablePrime.status] at z <;> contradiction
       · exact stImm_vp (c := fun _ => testCfg c0 c0.cl wl (some (true, r))) (fun σ s h => h.1.1.1) (by decide)
           varOk_fP fun σ s t h h' _ => ⟨h', h.1.1.2⟩
     · cases b
       · exact VP.block_nil fun σ s h => h.1.1
       · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by
-          rw [e] at z; simp [Spec.Dsa.ProbablePrime.status] at z <;> contradiction
+          rw [e] at z; simp [Proof.Dsa.ProbablePrime.status] at z <;> contradiction
 
 /-- The claims kept through a candidate p: the padding and q. -/
 abbrev pRest {B N L : Nat} (md : MdStream.Md B N L) (G : GP) (k : Nat) : Claims :=
@@ -131,7 +131,7 @@ def pAttCfg (c : Cfg) (G : GP) (xv qv : Nat) (rest : Claims) (u : Nat) : Cfg :=
   if pVal xv qv < 2 ^ (8 * G.pLen - 1) then pOut c G xv qv rest
   else pRes (pOut c G xv qv rest) G.witLen (Spec.Dsa.probablePrime (pVal xv qv) (G.witB.drop u))
 
-theorem pAttempt_vp {g : Geo} (HO : HashOk g.G) {Lp : Spec.Dsa.ProbablePrime.Layout} (okp : PrimeOk Lp g.pCode)
+theorem pAttempt_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout} (okp : PrimeOk Lp g.pCode)
     (hLb : Lp.bits = 8 * G.pLen) (hLc : Lp.candidate = g.pCand) (hsize : Lp.size ≤ 8 * wWords G.pLen)
     (hL : ∀ r ∈ Lp.scratch, r.1 + r.2 ≤ 8 * wWords G.pLen)
     (hcand : Lp.candidate + Lp.bits / 8 ≤ 8 * wWords G.pLen) (hcand15 : wB G.pLen + Lp.candidate < 2 ^ 15)

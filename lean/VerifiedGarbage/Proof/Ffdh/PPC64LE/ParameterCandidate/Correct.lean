@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Exit
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.GeFlag
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-!
 # An FFDH parameter candidate on PPC64LE: correctness
@@ -78,8 +79,8 @@ theorem r3_cases : ∀ i < 18, Reg.r3 ≠ Impl.Ffdh.PPC64LE.ParameterCandidate.s
 theorem small_setWidth {k : Nat} (hk : k < 2 ^ 32) : ((BitVec.ofNat 64 k).setWidth 32).toNat = k := by
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
 
-theorem status_le (res : Option (Option Nat × Spec.RsaKeyGen.Rand)) : Spec.Ffdh.candidateStatus res ≤ 2 := by
-  rcases res with _ | ⟨_ | _, _⟩ <;> simp [Spec.Ffdh.candidateStatus]
+theorem status_le (res : Option (Option Nat × Spec.RsaKeyGen.Rand)) : Proof.Ffdh.candidateStatus res ≤ 2 := by
+  rcases res with _ | ⟨_ | _, _⟩ <;> simp [Proof.Ffdh.candidateStatus]
 
 /-- `vg_ffdh_parameter_candidate`, for any implementation of the round. -/
 theorem code_correct (R : RoundImpl) (s : State) (h : pcContract.pre s) :

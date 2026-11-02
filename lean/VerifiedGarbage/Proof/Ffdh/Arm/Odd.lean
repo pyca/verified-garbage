@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_ldrb wp_dp op2_imm dpVal)
 
 theorem odd_ok (s : State) {base : BitVec 32} {len w a : Nat}
@@ -25,7 +25,7 @@ theorem odd_ok (s : State) {base : BitVec 32} {len w a : Nat}
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have bound := array_end_le (w := w) ha
   have size : 64 + 8 * a + 4 ≤ 8 * len := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header

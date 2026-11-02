@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayArgs
 import VerifiedGarbage.Proof.Bignum.Arm.ImportArraySwap
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Impl.Bignum.Arm.ImportArray
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_reg)
 
 theorem importArray_ok (s : State) {base src : BitVec 32} {len w o : Nat}
@@ -33,7 +33,7 @@ theorem importArray_ok (s : State) {base src : BitVec 32} {len w o : Nat}
   have hw : 2 ≤ w := width ▸ layout.1
   have fits : arrAt w 8 ≤ 8 * len := width ▸ layout.2.2.1
   have bound := Nat.le_trans (array_end_le ho) fits
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   let dst := base + BitVec.ofNat 32 (arrAt w o)
   have dstAddr : State.addr dst = off (State.addr base) (arrAt w o) := addr_add (by omega)
   have dstNat : dst.toNat = base.toNat + arrAt w o := by

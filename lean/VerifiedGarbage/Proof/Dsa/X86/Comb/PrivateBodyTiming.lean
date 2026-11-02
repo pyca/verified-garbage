@@ -48,8 +48,8 @@ theorem publicArgs {n e : Nat} {s t : State} (prepare : Bool)
     (H : (contract prepare n e).pub s t) : s.gpr .esp=t.gpr .esp ∧ arg s 0=arg t 0 := by
   cases prepare
   all_goals
-    sig_pub [contract,Spec.Dsa.FixedBaseComb.prepareContract,Spec.Dsa.FixedBaseComb.powerContract,
-      Spec.Dsa.ModPow.sig,abi,argSlots,argVal,argBytes] at H
+    sig_pub [contract,Proof.Dsa.FixedBaseComb.prepareContract,Proof.Dsa.FixedBaseComb.powerContract,
+      Proof.Dsa.ModPow.sig,abi,argSlots,argVal,argBytes] at H
     sig_split H
     constructor <;> with_reducible assumption
 

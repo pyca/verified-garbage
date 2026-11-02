@@ -229,8 +229,7 @@ theorem finPk_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .
   have hw₁ := hw.of_rest r₁'
   refine WP.block_append (WP.mono (andFlag_ok hw₁) fun s₂ ⟨f₂, r₂, O₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
-  rw [List.singleton_append]
-  refine ld_ws hw₂ (d := p256.sl FLAG) (by decide) (by decide) fun s₃ u₃ => ?_
+  refine ldAt_ws hw₂ (d := p256.sl FLAG) (by decide) (by decide) fun s₃ u₃ => ?_
   have hw₃ := hw₂.of_kp (Kp.of_upd u₃)
   generalize hB : (c && !decide (sv base s RZ = 0)) = B
   have hb : word s₂.mem base FL = maskOf B := by
@@ -292,12 +291,12 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRVC.pre s) :
     fun s₂ ⟨r₂, O₂, e₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
   -- The flag.
-  rw [List.cons_append, List.cons_append, List.cons_append, List.nil_append]
+  rw [List.cons_append, List.cons_append, List.nil_append]
   refine wp_li (imm := 0) (by decide) fun s₂a u₂a => ?_
   refine WP.cons (exec_addi (by decide)) ?_
   have u₂b := Upd.write s₂a .t0 (s₂a.gpr .t0 + BitVec.ofInt 64 (-1))
   have hw₂b := (hw₂.of_kp (Kp.of_upd u₂a)).of_kp (Kp.of_upd u₂b)
-  refine sd_ws hw₂b (d := p256.sl FLAG) (by decide) (by decide) fun s₃ u₃ => ?_
+  refine sdAt_ws hw₂b (by decide) (d := p256.sl FLAG) (by decide) (by decide) fun s₃ u₃ => ?_
   have hw₃ := hw₂b.of_kp (Kp.of_mupd u₃)
   have fl₃ : word s₃.mem base FL = maskOf true := by
     rw [u₃.mem, sl_FLAG, word_writeW_self, u₂b.gpr, u₂a.gpr]; decide

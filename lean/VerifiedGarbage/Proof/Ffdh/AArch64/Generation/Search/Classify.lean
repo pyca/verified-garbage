@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # After a candidate: p, the next candidate, or an exit (AArch64) -/
 

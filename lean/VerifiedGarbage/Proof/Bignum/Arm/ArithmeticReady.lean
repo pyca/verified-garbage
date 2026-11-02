@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.SetSmallFn
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 structure ArithmeticReady (base : BitVec 32) (len w : Nat) (s : State) : Prop where
@@ -24,7 +24,7 @@ structure ArithmeticReady (base : BitVec 32) (len w : Nat) (s : State) : Prop wh
   width : wOf s.mem (State.addr base) = w
   ptr : s.gpr .r0 = base
   inverse : ((word s.mem (State.addr base) (arrAt w 0)).toNat *
-    (wordAt s.mem (State.addr base) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
+    (wordAt s.mem (State.addr base) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
   modulus : 1 < numAt s.mem (State.addr base) w 0
   stackRead : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4
   stackSep : Region.Disjoint ⟨State.addr s.sp, 4⟩ ⟨State.addr base, 8 * len⟩
@@ -38,8 +38,8 @@ theorem ArithmeticReady.after_array {s t : State} {base : BitVec 32} {len w o : 
     ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 := by
   have hw : 2 ≤ w := h.width ▸ h.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have kl := keeps_layout h.layout (by rw [h.width]; exact keeps)
   have oldM := keeps_array_num keeps fits op0 (Ne.symm ho)
   have oldLow := keeps_array_word (d := 0) (bits := 64) keeps fits op0 (Ne.symm ho) (by omega)

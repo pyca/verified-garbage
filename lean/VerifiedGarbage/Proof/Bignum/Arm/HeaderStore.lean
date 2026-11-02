@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem control_outside_layout {m m' : Mem} {base : Addr} {len d : Nat}
@@ -37,7 +37,7 @@ theorem ArithmeticReady.after_header {s t : State} {base : BitVec 32} {len w d :
       ∀ q < 8, numAt t.mem (State.addr base) w q = numAt s.mem (State.addr base) w q := by
   have nowrap := h.workspace.nowrap
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have outside := writeW32_outside s.mem (State.addr base) (d := d) value (by omega)
   rw [← mem] at outside
   have arrays (q : Nat) (hq : q < 8) :
@@ -45,7 +45,7 @@ theorem ArithmeticReady.after_header {s t : State} {base : BitVec 32} {len w d :
     have bound := Nat.le_trans (array_end_le hq) fits
     rw [numAt_native, numAt_native]
     apply outside.val32
-    · right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+    · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
     · omega
   have kl := control_outside_layout hd outside h.layout
   have frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by
@@ -53,7 +53,7 @@ theorem ArithmeticReady.after_header {s t : State} {base : BitVec 32} {len w d :
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
   refine ⟨⟨h.workspace.congr rest.wr, kl.2, kl.1.trans h.width, ptr, ?_, ?_, ?_, ?_, ?_⟩, frame, arrays⟩
   · have fit0 := Nat.le_trans (array_end_le (w := w) (j := 0) (k := 8) (by decide)) fits
-    rw [outside.word (d := arrAt w 0) (by right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) (by omega)]
+    rw [outside.word (d := arrAt w 0) (by right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) (by omega)]
     change (_ * (word t.mem (State.addr base) 56).toNat + 1) % 2 ^ 64 = 0
     rw [outside.word (d := 56) (by omega) (by decide)]
     exact h.inverse

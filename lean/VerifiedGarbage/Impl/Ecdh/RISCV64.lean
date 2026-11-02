@@ -88,7 +88,7 @@ def ltMask (n a m : Nat) : List Instr :=
 /-- The words of `[a]` or'ed into `t3`, through `t4`. -/
 def orWords : Nat → Nat → List Instr
   | 0, _ => []
-  | k + 1, a => [.load .d .t4 wb a, .logic .or .t3 .t3 .t4] ++ orWords k (a + 8)
+  | k + 1, a => ldAt .t4 wb a ++ [.logic .or .t3 .t3 .t4] ++ orWords k (a + 8)
 
 /-- The mask `a7` of `[a] = 0` (all ones if it is), `n` words: the words
 or'ed, the top bit of `x | -x` (set iff `x ≠ 0`), less one. -/
@@ -102,7 +102,7 @@ variable (c : Cfg)
 
 /-- The flag `&=` the mask `a7`, through `t0`. -/
 def andFlag : List Instr :=
-  [.load .d .t0 wb (c.sl FLAG), .logic .and .t0 .t0 .a7, .store .d .t0 wb (c.sl FLAG)]
+  ldAt .t0 wb (c.sl FLAG) ++ [.logic .and .t0 .t0 .a7] ++ sdAt .t0 wb (c.sl FLAG)
 
 /-- `y² - (x³ + a x + b)`, from `x R` and `y R`, to `W1`. -/
 def curveOps : List FOp :=
@@ -121,7 +121,7 @@ def checkFn : Prog isa :=
   .seq (mulCall c.FP (c.sl CXM) (c.sl CX) (c.sl R2P)) <|
   .seq (mulCall c.FP (c.sl CYM) (c.sl CY) (c.sl R2P)) <|
   .seq (fprog c.FP (curveOps c)) <|
-  .block (zeroMask c.n (c.sl W1) ++ andFlag c ++ [.load .d .a7 wb (c.sl FLAG)] ++
+  .block (zeroMask c.n (c.sl W1) ++ andFlag c ++ ldAt .a7 wb (c.sl FLAG) ++
     sel c.n (c.sl CPX) (c.sl GX) (c.sl CXM) ++ sel c.n (c.sl CPY) (c.sl GY) (c.sl CYM) ++
     [.load .d .ra .s0 (checkSave c + 8), .load .d .s0 .s0 (checkSave c)])
 
@@ -220,10 +220,10 @@ def tail (mulName : String) (mulCode : Prog isa) : Prog isa :=
 
 /-- The flag `&=` the mask of `Z ≠ 0`, and the flag to `a7`. -/
 def zCode : List Instr :=
-  zeroMask c.n (c.sl RZ) ++ [.logicImm .xor .a7 .a7 (-1)] ++ andFlag c ++ [.load .d .a7 wb (c.sl FLAG)]
+  zeroMask c.n (c.sl RZ) ++ [.logicImm .xor .a7 .a7 (-1)] ++ andFlag c ++ ldAt .a7 wb (c.sl FLAG)
 
 /-- The flag's low bit to `a0`, and the registers restored. -/
-def retCode : List Instr := [.load .d .a0 wb (c.sl FLAG), .logicImm .and .a0 .a0 1] ++ restoreCode
+def retCode : List Instr := ldAt .a0 wb (c.sl FLAG) ++ [.logicImm .and .a0 .a0 1] ++ restoreCode
 
 /-- `04 ‖ x ‖ y` (or zeros, by the mask `a7`) to `out` (in `s2`), from the
 slots `xo` and `yo`, the flag's low bit returned and the registers
@@ -235,7 +235,7 @@ def pointOut (xo yo : Nat) : List Instr :=
 /-- `vg_ecdh_<curve>(out = a0, d = a1, peer = a2, scratch = a3)`. -/
 def ecdhFn (checkName mulName : String) (checkCode mulCode : Prog isa) : Prog isa :=
   .seq (.block (saveCode .a3 ++ loadNum c.n (c.sl K) .a1 0 ++ loadNum c.n (c.sl CX) .a2 1 ++
-    loadNum c.n (c.sl CY) .a2 (1 + 8 * c.n) ++ leadMask .a2 ++ [.store .d .a7 wb (c.sl FLAG)] ++ constCode c)) <|
+    loadNum c.n (c.sl CY) .a2 (1 + 8 * c.n) ++ leadMask .a2 ++ sdAt .a7 wb (c.sl FLAG) ++ constCode c)) <|
   .seq (wsCall checkName checkCode) <|
   .seq (.block (copy c.n (c.sl RX) (c.sl CPX) ++ copy c.n (c.sl RY) (c.sl CPY))) <|
   .seq (tail c mulName mulCode) <|
@@ -244,7 +244,7 @@ def ecdhFn (checkName mulName : String) (checkCode mulCode : Prog isa) : Prog is
 /-- `vg_ec_<curve>_public_key(out = a0, d = a1, scratch = a2)`. -/
 def publicKeyFn (mulName : String) (mulCode : Prog isa) : Prog isa :=
   .seq (.block (saveCode .a2 ++ loadNum c.n (c.sl K) .a1 0 ++
-    [.li .t0 0, .addi .t0 .t0 (-1), .store .d .t0 wb (c.sl FLAG)] ++ constCode c ++
+    [.li .t0 0, .addi .t0 .t0 (-1)] ++ sdAt .t0 wb (c.sl FLAG) ++ constCode c ++
     copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY))) <|
   .seq (tail c mulName mulCode) <|
   .seq (affineCoord c YM YO RY) <|

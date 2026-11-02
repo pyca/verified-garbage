@@ -33,7 +33,7 @@ theorem pubChkK_eq : pubChkK = pubChkContract := rfl
 
 /-- `vg_rsa_public_checked`, as encryption's callee. -/
 def pubImpl : PubImpl where
-  name := Spec.Rsa.publicCheckedApi.name
+  name := "vg_rsa_public_checked"
   code := Impl.Rsa.X86_64.Checked.publicChecked
   ok := pubChkK_eq ▸ publicChecked_correct
   ct := pubChkK_eq ▸ publicChecked_constantTime

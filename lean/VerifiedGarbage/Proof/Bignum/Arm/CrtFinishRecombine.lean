@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulus
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -23,7 +23,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 
 theorem val32_prefix_of_eq {m : Mem} {base : Addr} {d n k value : Nat}
     (h : val32 m base d (n + k) = value) (fit : value < 2 ^ (32 * n)) :
@@ -50,7 +50,7 @@ end
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure CrtFinishInput (base : BitVec 32) (size len w o d : Nat) (s : State) : Prop where

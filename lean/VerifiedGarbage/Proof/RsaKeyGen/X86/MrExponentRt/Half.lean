@@ -115,7 +115,7 @@ theorem half_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) (S : 
   have Pb : PtrAt b g.W .ebp (g.array 27) := by rw [PtrAt, Kb.1 .ebp (by decide)]; exact P
   have M : b.mem = s.mem := Mb.trans Ma
   refine WP.mono (halfLoop_ok (choice := choice) (S.of_keeps K (by decide)) (by unfold Geometry.words; omega)
-    (by simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]; omega)
+    (by simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega)
     (by unfold Geometry.words; omega) (by rw [M]; exact top) Pb count
     (by rw [K.1 .ecx (by decide)]; exact mask)) fun t ⟨O, V, Pt, Kt⟩ => ?_
   rw [M] at O V

@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
 import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
 import VerifiedGarbage.Proof.Framework.X86.CallReturn
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 /-! # Two runs of the domain check of the same p||q||g leak the same -/
 
@@ -132,7 +133,7 @@ theorem check_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
         obtain ⟨esp₂, a0₂, a1₂, a2₂, a3₂, a4₂, a5₂, by₂⟩ := chkEntry_facts G v h₂.1 A₂
         generalize (pushed chkRegs t₁).callEntry.withRegions (chkRd E) (chkWrSp E) = w₁ at esp₁ a0₁ a1₁ a2₁ a3₁ a4₁ a5₁ by₁ ⊢
         generalize (pushed chkRegs t₂).callEntry.withRegions (chkRd E) (chkWrSp E) = w₂ at esp₂ a0₂ a1₂ a2₂ a3₂ a4₂ a5₂ by₂ ⊢
-        sig_pub [chkContract, Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argSlots, argVal,
+        sig_pub [chkContract, Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argSlots, argVal,
           argBytes]
         have l1 : (BitVec.ofNat 32 (2 * g.pLen + g.qLen)).toNat = 2 * g.pLen + g.qLen := by
           have := G.bounds; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]

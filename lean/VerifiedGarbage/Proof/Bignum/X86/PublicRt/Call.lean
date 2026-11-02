@@ -23,7 +23,7 @@ namespace VG.Proof.Bignum.X86.PublicRt
 
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.PublicRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
-open VG.Spec.Rsa.MontMul (scratchBytes)
+open VG.Proof.Rsa.MontMul (scratchBytes)
 
 section
 variable {s g : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -97,7 +97,7 @@ theorem rtBody_noSp : NoSp Sse2.atBody := VG.Proof.Mont.X86.Sse2.atBody_NoSp
 theorem rtBody_stackUse : stackUse Sse2.atBody = 56 := VG.Proof.Mont.X86.Sse2.atBody_stack
 
 theorem mulBody_noSp (o a b : Nat) (wl : Nat := 9) :
-    NoSp (.seq (.block (mulArgs o a b wl)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) := by
+    NoSp (.seq (.block (mulArgs o a b wl)) (.call "vg_rsa_mont_mul_at" Sse2.atBody)) := by
   apply NoSp.of_all
   have e : (!Taint.clobbers (Instr.alu AluOp.add Reg.eax (Src.reg Reg.edx)) Reg.esp) = true := rfl
   rw [Code.allInstrs_eq]
@@ -148,7 +148,7 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
     rw [Kg.2.2, allocFrame_wr]; exact List.mem_cons_of_mem _ h.scratch.wr
   have argA : argAddr g.callEntry 0 = (g.gpr .esp).setWidth 64 := by rw [argAddr_callEntry]; simp
   have low96 := R.low
-  refine WP.call (k := Spec.Rsa.MontMul.mulContract abi 56) (rd := [⟨argAddr g.callEntry 0, 36⟩])
+  refine WP.call (k := Proof.Rsa.MontMul.mulContract abi 56) (rd := [⟨argAddr g.callEntry 0, 36⟩])
     (wr := [⟨base, bytes⟩]) VG.Proof.Mont.X86.Sse2.at_correct rtBody_noSp (by rw [rtBody_stackUse]; omega_arith)
     (callee_pre A R gEsp)
     (Covers.of_mem fun r hr => ?_) (Covers.of_mem fun r hr => ?_) fun s' rd' wr' cs' F _ ⟨s₂, m₂, _, post⟩ => ?_
@@ -156,8 +156,8 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
     · rw [argA]; exact List.mem_append_right _ hframe
     · exact List.mem_append_right _ hscr
   · rw [List.mem_singleton.mp hr]; exact hscr
-  change (Spec.Rsa.MontMul.mulContract abi 56).post (calleeOf g base bytes) s₂ at post
-  sig_post [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes] at post
+  change (Proof.Rsa.MontMul.mulContract abi 56).post (calleeOf g base bytes) s₂ at post
+  sig_post [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes] at post
   obtain ⟨L₂, C₂, K₂⟩ := post
   have hw := wb_le h.upper
   have dims := h.dimensions

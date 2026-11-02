@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.Baseline
 public import VerifiedGarbage.Proof.MillerRabin.X86.Entry
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingEntry
@@ -22,10 +22,10 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.MillerRabin.X86 VG.Proof.Dsa.X86
 
 theorem publicInputs {s t : State}
-    (H : (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pub s t) :
+    (H : (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧
-      Spec.Rsa.Mont.wOf s.mem (wsOf s) = Spec.Rsa.Mont.wOf t.mem (wsOf t) := by
-  sig_pub [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argSlots, argVal, argBytes] at H
+      Proof.Rsa.Mont.wOf s.mem (wsOf s) = Proof.Rsa.Mont.wOf t.mem (wsOf t) := by
+  sig_pub [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argSlots, argVal, argBytes] at H
   sig_split H
   refine ⟨by with_reducible assumption, by with_reducible assumption, by with_reducible assumption, ?_⟩
   apply List.singleton_inj.mp
@@ -50,8 +50,8 @@ private theorem pair_of_context {g : Geometry} {s t : State}
   · exact ptr_agree S.base T.base
 
 theorem constantTime : ConstantTime isa
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pre
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pub (code montName montCode) := by
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pre
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pub (code montName montCode) := by
   apply RelCT.constantTime
   unfold code
   refine VG.X86.RelCT.frame (rs := Compact.savedRegisters) (R := fun _ _ => True)

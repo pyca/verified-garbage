@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.Stack
 namespace VG.Proof.Rsa.Arm.Recover
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.Recover VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 
 section
 variable {P : RP} {σ s t : State} {A : Nat → Nat} {live : List Nat} {AW : Nat → Nat} {liveW : List Nat}
@@ -116,7 +116,7 @@ theorem mmul_vp {o a b : Nat} (hi : MIdx o a b) (hodd : P.n % 2 = 1)
         exact hbv
       refine (selectedMontOp_ct (base := P.M0) (len := P.lenM) (w := P.w6) opd.1 opd.2.1 opd.2.2 ?_).mono
         (fun s₁ s₂ ⟨h₁, h₂⟩ => ⟨sz₁ _ _ h₁, sz₁ _ _ h₂, ?_⟩) fun _ _ h => h
-      · simp only [arrAt, Spec.Rsa.Mont.hdrBytes, RP.lenM]; omega
+      · simp only [arrAt, Proof.Rsa.Mont.hdrBytes, RP.lenM]; omega
       · rw [h₁.1.2.1.bs.sp, h₁.1.2.1.bs.pre.sp, h₂.1.2.1.bs.sp, h₂.1.2.1.bs.pre.sp]
     · obtain ⟨hav, hbv, hT, hTv⟩ := hv σ e
       exact WP.mono (montOp_after h hm ptr hi hodd ha hb hav hbv hT hTv hl2 hl3 hlW) fun t ht => ⟨e, ht⟩

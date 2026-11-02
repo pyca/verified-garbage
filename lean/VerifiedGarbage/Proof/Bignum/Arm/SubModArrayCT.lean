@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem subModArray_ct {base : BitVec 32} {len w o a b : Nat}
     (ho : o < 8) (ha : a < 8) (hb : b < 8) (ho0 : o ≠ 0) (fit : 128 ≤ 8 * len) :

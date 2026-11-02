@@ -15,9 +15,9 @@ open VG.Proof.RsaKeyGen
 def ranges (g : Geometry) : List (Nat × Nat) := Prepare.ranges g ++ MillerRabinLoop.ranges g
 
 theorem core_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (bound : P.g.w ≤ 64) {s : State}
     (S : Prepare.Input P.g P.candidate P.capacity P.p s P.seed)

@@ -45,7 +45,7 @@ theorem metadata_ok (s : State) {p : Inputs} (ready : ArithmeticReady p.base p.l
     simpa only [List.getD_cons_succ,List.getD_cons_zero,bits] using context.header32 2 (by decide)
   have size : 256≤8*p.len := by
     have fits := ready.width ▸ ready.layout.2.2.1
-    simp only [Spec.Rsa.Mont.arrAt,Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes] at fits
     omega
   unfold VG.Impl.Ffdh.Arm.CachedPower.metadata
   refine wp_ldr (a:=State.addr p.cachedContext) (by decide) addr0 read0 fun a one => ?_

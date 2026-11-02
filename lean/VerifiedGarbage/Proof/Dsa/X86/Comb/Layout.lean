@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Comb
+public import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
 
 /-! Bounds for the five supported DSA comb layouts, including the padded
 2048/160 domain. The retained context never overlaps arithmetic scratch. -/
@@ -15,8 +16,8 @@ def Supported (n e : Nat) : Prop :=
     (n = 32 ∧ e = 8) ∨ (n = 48 ∧ e = 8)
 
 theorem layout_valid {n e : Nat} (h : Supported n e) :
-    VG.Spec.Dsa.FixedBaseComb.LayoutValid (layout n e) := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> unfold VG.Spec.Dsa.FixedBaseComb.LayoutValid <;> decide
+    VG.Proof.Dsa.FixedBaseComb.LayoutValid (layout n e) := by
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> unfold VG.Proof.Dsa.FixedBaseComb.LayoutValid <;> decide
 
 /-- The table and prefix fit in the existing key-generation allocation. -/
 theorem workspace_fits {n e : Nat} (h : Supported n e) :

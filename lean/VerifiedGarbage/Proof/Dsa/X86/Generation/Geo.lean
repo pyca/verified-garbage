@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Hash
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestPre
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.Contract
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # What parameter generation needs of the functions it calls
@@ -27,7 +28,7 @@ structure GeoOk (g : Geo) where
   pv : Verified target g.pCode (ppContract (8 * g.pLen))
   pNoSp : NoSp g.pCode
   pStack : stackUse g.pCode ≤ 152
-  cv : Verified target g.checkCode (Spec.Dsa.checkParametersContract abi 108)
+  cv : Verified target g.checkCode (Proof.Dsa.checkParametersContract abi 108)
   cNoSp : NoSp g.checkCode
   cStack : stackUse g.checkCode ≤ 108
   /-- The hash's blocks: their traces depend only on `esp` and `edi`, and

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpKernel
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! # Shared Montgomery operations used by generator-two exponentiation
 
@@ -12,7 +12,7 @@ the initialization, bit loop, and final Montgomery conversion.
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (numAt Keeps Operand)
+open VG.Proof.Rsa.Mont (numAt Keeps Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 structure Montgomery (base : BitVec 32) (len w : Nat) (P : State → Prop) (regions : List Region) where
@@ -37,9 +37,9 @@ def Montgomery.kernel {base : BitVec 32} {len w : Nat} {P : State → Prop} {reg
   kernelOfSquare (A.op 6 6 6) A.workspace A.stable (by
     intro s E M h hp
     refine WP.mono (A.op_ok s 6 6 6 h.ready hp
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
       (by rw [h.modulus]; exact h.bound)) ?_
     rintro t ⟨ready, modulus, bound, value, keeps, pt, frame, rest⟩
     rw [h.modulus] at modulus bound value

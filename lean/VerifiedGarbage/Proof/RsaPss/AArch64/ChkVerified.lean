@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.ChkCT
 /-!
 # EMSA-PSS's check of an encoding on AArch64: `Verified`
 
-The shared contract (`Spec.RsaPss.checkEncodingContract`, with the stack of
+The shared contract (`Proof.RsaPss.checkEncodingContract`, with the stack of
 the frame and the hash functions' calls, `chkStack`) from correctness
 (`code_ok`), constant time (`code_ct`) and a state meeting the precondition
 (`chk_sat`).
@@ -33,26 +33,26 @@ variable {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x 
   (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D)
 
 include hH hGh hGl hG in
-theorem code_correct (s : State) (h : (Spec.RsaPss.checkEncodingContract G G abi chkStack).pre s) :
+theorem code_correct (s : State) (h : (Proof.RsaPss.checkEncodingContract G G abi chkStack).pre s) :
     ∃ t s', Exec isa (checkEncoding H) s t s' ∧ abiPreserved s s' ∧
-      (Spec.RsaPss.checkEncodingContract G G abi chkStack).post s s' := by
+      (Proof.RsaPss.checkEncodingContract G G abi chkStack).post s s' := by
   have hp := preC_of G h
   rw [hGl] at hp
   obtain ⟨t, s', he, habi, hr⟩ := code_ok hH hGh hGl hG hp
   refine ⟨t, s', he, habi, ?_⟩
-  sig_post [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, List.append_eq]
+  sig_post [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, List.append_eq]
   exact hr
 
 include hH hGh hGl hG hc in
 theorem code_constantTime :
-    ConstantTime isa (Spec.RsaPss.checkEncodingContract G G abi chkStack).pre
-      (Spec.RsaPss.checkEncodingContract G G abi chkStack).pub (checkEncoding H) :=
+    ConstantTime isa (Proof.RsaPss.checkEncodingContract G G abi chkStack).pre
+      (Proof.RsaPss.checkEncodingContract G G abi chkStack).pub (checkEncoding H) :=
   RelCT.constantTime ((code_ct hH hGh hGl hG hc).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
     ⟨s₁, ⟨hGl ▸ preC_of G h₁, PubC.refl s₁⟩, hGl ▸ preC_of G h₂, pubC_of G hp⟩) fun _ _ h => h)
 
 include hH hGh hGl hG hc in
-theorem code_verified (hsat : ∃ s, (Spec.RsaPss.checkEncodingContract G G abi chkStack).pre s) :
-    Verified AArch64.target (checkEncoding H) (Spec.RsaPss.checkEncodingContract G G abi chkStack) :=
+theorem code_verified (hsat : ∃ s, (Proof.RsaPss.checkEncodingContract G G abi chkStack).pre s) :
+    Verified AArch64.target (checkEncoding H) (Proof.RsaPss.checkEncodingContract G G abi chkStack) :=
   ⟨code_correct hH hGh hGl hG, code_constantTime hH hGh hGl hG hc, hsat⟩
 
 end
@@ -73,24 +73,24 @@ def satState (G : Spec.Mgf1.Hash) : State where
 /-- `checkEncodingContract` is satisfiable for each of `MdHash`'s hash
 functions. -/
 theorem chk_sat {G : Spec.Mgf1.Hash} (hG : G ∈ mdHashes) :
-    ∃ s, (Spec.RsaPss.checkEncodingContract G G abi chkStack).pre s := by
+    ∃ s, (Proof.RsaPss.checkEncodingContract G G abi chkStack).pre s := by
   simp only [mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hG
   rcases hG with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
       List.append_eq] [satState, Mem.readW, Mem.read] using satState Spec.Mgf1.md5
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
       List.append_eq] [satState, Mem.readW, Mem.read] using satState Spec.Mgf1.sha1
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
       List.append_eq] [satState, Mem.readW, Mem.read] using satState Spec.Mgf1.sha224
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
       List.append_eq] [satState, Mem.readW, Mem.read] using satState Spec.Mgf1.sha256
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
       List.append_eq] [satState, Mem.readW, Mem.read] using satState Spec.Mgf1.sha384
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
       List.append_eq] [satState, Mem.readW, Mem.read] using satState Spec.Mgf1.sha512
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
       List.append_eq] [satState, Mem.readW, Mem.read] using satState Spec.Mgf1.sha512_224
-  · sig_implies_sat [Spec.RsaPss.checkEncodingContract, Spec.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
+  · sig_implies_sat [Proof.RsaPss.checkEncodingContract, Proof.RsaPss.checkEncodingSig, abi, argRegs, chkStack, stk, frameBytes,
       List.append_eq] [satState, Mem.readW, Mem.read] using satState Spec.Mgf1.sha512_256
 
 end VG.Proof.RsaPss.AArch64.Chk

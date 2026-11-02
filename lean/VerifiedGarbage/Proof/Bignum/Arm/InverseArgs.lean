@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Bignum.Words
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest wp_mov wp_ldr op2_reg)
 
 theorem inverseArgs_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -24,7 +24,7 @@ theorem inverseArgs_ok (s : State) {base : BitVec 32} {len w : Nat}
       t.gpr .r0 = base + BitVec.ofNat 32 (arrAt w 0) ∧ t.gpr .r12 = base ∧
       t.mem = s.mem ∧ Rest [.r0, .r12] s t := by
   have fits := layout.2.2.1
-  have size : 68 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 68 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   rw [width] at header
   unfold inverseArgs

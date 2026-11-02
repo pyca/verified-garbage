@@ -77,9 +77,9 @@ theorem call_restore_pre (M : Mont) (name : String) (hnf : (round M.mm).noFrames
   have hN : (narrowed s L.B L.w).gpr .x1 = BitVec.ofNat 64 (callWords L.w) := (s.callEntry_gpr (by decide)).trans h1
   rw [hB, hN, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by unfold callWords; omega_arith)] at hpost
   dsimp only at hpost
-  have hWidth : Spec.Rsa.Mont.wOf (narrowed s L.B L.w).mem L.B = L.w := ctx_width (s := s) hc
+  have hWidth : Proof.Rsa.Mont.wOf (narrowed s L.B L.w).mem L.B = L.w := ctx_width (s := s) hc
   rw [hWidth] at hpost
-  have hkeep : Spec.MillerRabin.Keeps Spec.MillerRabin.compact L.B (callWords L.w) L.w s.mem t.mem := hpost.2
+  have hkeep : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact L.B (callWords L.w) L.w s.mem t.mem := hpost.2
   refine ⟨hc.ws.scr.congr hwr, hc.good.2,
     (hregs .x19 (by simp [preserved]) (by decide)).trans h19, ?_, ?_⟩
   · exact (kept_header hkeep (by unfold callWords; omega_arith) (by decide) (by decide)).trans hc.ws.hw

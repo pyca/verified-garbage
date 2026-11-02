@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 
 /-! # Inputs and reusable prepared data for all of a candidate's witnesses -/
 
@@ -24,7 +24,7 @@ structure Data (g : Geometry) (c capacity : Nat) (p : BitVec 32) (s : State) : P
   r2 : val32 s.mem g.W (g.array 4) g.words = 2 ^ (64 * g.w) * 2 ^ (64 * g.w) % c
   one : val32 s.mem g.W (g.array 9) g.words = 2 ^ (64 * g.w) % c
   minusOne : val32 s.mem g.W (g.array 10) g.words = c - 2 ^ (64 * g.w) % c
-  exponent : val32 s.mem g.W (g.array 27) g.words = Spec.MillerRabin.exponent c
+  exponent : val32 s.mem g.W (g.array 27) g.words = Proof.MillerRabin.Round.exponent c
   marker : word s.mem g.W (g.array 27 + 8 * g.w) = BitVec.twoPow 64 ((Spec.Rsa.splitTwos (c - 1)).1 % 64)
 
   stride : word s.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2))

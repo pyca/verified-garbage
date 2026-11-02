@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # Copies of bytes into `scratch` -/
 

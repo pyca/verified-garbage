@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 
 structure ReduceOperandReady (base : BitVec 32) (len w : Nat) (s : State) : Prop where
   ready : ArithmeticReady base len w s
@@ -28,8 +28,8 @@ theorem reduceOperand_ct {base : BitVec 32} {len w o : Nat}
   let P := ReduceOperandReady base len w
   let Q := fun s : State => ArithmeticReady base len w s ∧
     numAt s.mem (State.addr base) w 7 < numAt s.mem (State.addr base) w 0
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op7 : Operand 7 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have encode : RelCT isa (fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
       (montOp o o 4) (fun _ _ => True) :=
     (montOp_ct ho ho op4 fit).mono (fun _ _ h => ⟨⟨h.1.ready, h.1.r2bound⟩,

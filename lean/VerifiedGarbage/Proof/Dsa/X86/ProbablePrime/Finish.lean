@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Environment
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinish
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
@@ -16,7 +16,7 @@ open VG.Impl.Dsa.X86.ProbablePrime
 /-- The outputs of a test with result `res`: its status in EAX and, when the
 tape sufficed, the octets read in `used`. -/
 def Outputs (E : Environment) (res : Option (Bool × Spec.RsaKeyGen.Rand)) (s : State) : Prop :=
-  (s.gpr .eax).toNat = Spec.Dsa.ProbablePrime.status res ∧
+  (s.gpr .eax).toNat = Proof.Dsa.ProbablePrime.status res ∧
   ∀ b rest, res = some (b, rest) →
     Spec.Rsa.wordsAt s.mem (E.used.setWidth 64) 1 = [BitVec.ofNat 64 (E.randLength - rest.length)]
 
@@ -65,7 +65,7 @@ theorem finish_ok {E : Environment} {c : Nat} {entropy : List Byte} {s : State} 
   have pointer : b.mem.readW (off E.base 44) 32 = E.used := by rw [M]; exact I.usedPtr
   have countB : b.mem.readW (off E.base 152) 32 = s.mem.readW (off E.base 152) 32 := by rw [M]
   have value : b.gpr .eax = BitVec.ofNat 32 (tag res) := by rw [(B.keeps []).1 .eax (by decide), A.gpr, statusWord]
-  have usedBranch (n : Nat) (h : res ≠ none) (st : n = Spec.Dsa.ProbablePrime.status res) {q : State} (Kq : Keeps [.eax] s q)
+  have usedBranch (n : Nat) (h : res ≠ none) (st : n = Proof.Dsa.ProbablePrime.status res) {q : State} (Kq : Keeps [.eax] s q)
       (Mq : q.mem = s.mem) :
       WP isa (VG.Impl.RsaKeyGen.X86.CandidateFinish.used n) q fun t =>
         Outputs E res t ∧ Frame [E.usedRegion] s.mem t.mem ∧ Keeps [.eax, .edx] s t := by
@@ -77,7 +77,7 @@ theorem finish_ok {E : Environment} {c : Nat} {entropy : List Byte} {s : State} 
         rw [st]
         rcases res with _ | ⟨_ | _, _⟩
         · exact absurd rfl h
-        all_goals simp only [Spec.Dsa.ProbablePrime.status]; decide
+        all_goals simp only [Proof.Dsa.ProbablePrime.status]; decide
       rw [eax, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small]
       exact st
     · rw [mem, Mq]

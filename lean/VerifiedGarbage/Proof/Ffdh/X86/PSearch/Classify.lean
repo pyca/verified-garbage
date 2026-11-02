@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Call
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # After an attempt (x86)
 

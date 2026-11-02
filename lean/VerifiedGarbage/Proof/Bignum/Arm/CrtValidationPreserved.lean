@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 def crtValidationWrites (w : Nat) : List (Nat × Nat) :=
@@ -91,7 +91,7 @@ theorem CrtShared.validation_main {s t : State} {g : CrtGeometry} {bs : Fin 7 �
   apply outside.val32
   · intro r hr
     rcases lower r hr with rfl | bound
-    · right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+    · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
     · left; change 3 * (8 * workspaceWords g.words) ≤ r.1 at bound; omega
   · have := h.buffers.context.main.nowrap; omega
 

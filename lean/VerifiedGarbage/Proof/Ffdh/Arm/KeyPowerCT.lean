@@ -121,7 +121,7 @@ section
 section
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 
 theorem init_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
     (A : Montgomery base len w P regions) (ct : MontgomeryTiming A) :
@@ -138,9 +138,9 @@ theorem init_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions :
   have multiply (s : State) (h : OpInput base len w P 7 s) :
       WP isa (A.op 6 4 7) s fun t => ArithmeticReady base len w t ∧ P t := by
     refine WP.mono (A.op_ok s 6 4 7 h.1 h.2.1
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide) h.2.2) ?_
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide) h.2.2) ?_
     rintro t ⟨ready, _, _, _, _, pt, _, _⟩
     exact ⟨ready, pt⟩
   unfold Montgomery.init
@@ -149,9 +149,9 @@ theorem init_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions :
       (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h)) one one ?_
   exact relCT_chain
     (ct.op_ct 6 4 7
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])) multiply multiply
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])) multiply multiply
     ((smallConst_ct (2 : BitVec 32) (o := 5) (by decide) (by decide) (by decide)).mono
       (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h))
 
@@ -160,9 +160,9 @@ theorem finish_ct {base : BitVec 32} {len w M1 M2 E1 E2 : Nat} {P : State → Pr
     RelCT isa (fun s t => (Power base len w M1 E1 s ∧ P s) ∧
       (Power base len w M2 E2 t ∧ P t) ∧ s.sp = t.sp) (A.op 6 6 7) (fun _ _ => True) :=
   (ct.op_ct 6 6 7
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])).mono
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])).mono
     (fun _ _ h => ⟨⟨h.1.1.ready, h.1.2, by rw [h.1.1.one]; exact h.1.1.ready.modulus⟩,
       ⟨h.2.1.1.ready, h.2.1.2, by rw [h.2.1.1.one]; exact h.2.1.1.ready.modulus⟩, h.2.2⟩)
     (fun _ _ h => h)
@@ -206,7 +206,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 theorem detectTwo_ct {base : BitVec 32} {len w : Nat} :
     RelCT isa (fun s t => ArithmeticReady base len w s ∧ ArithmeticReady base len w t ∧ s.sp = t.sp)
@@ -217,8 +217,8 @@ theorem detectTwo_ct {base : BitVec 32} {len w : Nat} :
   unfold VG.Impl.Ffdh.Arm.detectTwo
   exact relCT_chain (smallConst_ct 2 (o := 5) (by decide) (by decide) (by decide)) ready ready
     (equal_ct
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 1)
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 5))
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 1)
+      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 5))
 
 end VG.Proof.Ffdh.Arm
 end
@@ -233,7 +233,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm.KeyPower
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem Detected.of_mem {base ep : BitVec 32} {len w M x : Nat} {P : State → Prop}
@@ -282,7 +282,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeyPower
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem import_ct {base src ep : BitVec 32} {len w M1 M2 : Nat} {bb eb1 eb2 : List Byte}
     (_length : eb1.length = eb2.length) :

@@ -24,7 +24,7 @@ array (`numAt_eq`).
 namespace VG.Proof.Rsa.Arm.Recover
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.Recover VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps)
 
 /-- Ready for a multiplication, but for `r0`. -/
 structure MR (P : RP) (s : State) : Prop where
@@ -32,7 +32,7 @@ structure MR (P : RP) (s : State) : Prop where
   layout : Layout s.mem (State.addr P.M0) P.lenM
   width : wOf s.mem (State.addr P.M0) = P.w6
   inverse : ((word s.mem (State.addr P.M0) (arrAt P.w6 0)).toNat *
-    (wordAt s.mem (State.addr P.M0) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
+    (wordAt s.mem (State.addr P.M0) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
   modulus : 1 < numAt s.mem (State.addr P.M0) P.w6 0
   stackRead : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4
   stackSep : Region.Disjoint ⟨State.addr s.sp, 4⟩ ⟨State.addr P.M0, 8 * P.lenM⟩
@@ -54,7 +54,7 @@ theorem MR.of_read {P : RP} {s t : State} (h : MR P s)
     (sv : t.mem.readW (State.addr t.sp) 32 = s.mem.readW (State.addr s.sp) 32)
     (sp : t.sp = s.sp) (rd : t.rd = s.rd) (wr : t.wr = s.wr) : MR P t := by
   have hw : 2 ≤ P.w6 := h.width ▸ h.layout.1
-  have hb : 128 ≤ mHd P := by simp only [mHd, arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+  have hb : 128 ≤ mHd P := by simp only [mHd, arrAt, Proof.Rsa.Mont.hdrBytes]; omega
   have ew : ∀ d, d + 8 ≤ mHd P → t.mem.readW (off (State.addr P.M0) d) 64 = s.mem.readW (off (State.addr P.M0) d) 64 :=
     fun d hd => by simp only [Mem.readW, e d 8 hd]
   have width : wOf t.mem (State.addr P.M0) = wOf s.mem (State.addr P.M0) :=
@@ -65,7 +65,7 @@ theorem MR.of_read {P : RP} {s t : State} (h : MR P s)
     rw [width]
     refine ⟨layout.1, layout.2.1, layout.2.2.1, fun j hj => ?_⟩
     unfold wordAt
-    rw [ew _ (by simp only [Spec.Rsa.Mont.arrWord]; omega)]
+    rw [ew _ (by simp only [Proof.Rsa.Mont.arrWord]; omega)]
     exact layout.2.2.2 j hj
   · change ((t.mem.readW (off (State.addr P.M0) (arrAt P.w6 0)) 64).toNat *
       (t.mem.readW (off (State.addr P.M0) 56) 64).toNat + 1) % 2 ^ 64 = 0
@@ -91,7 +91,7 @@ theorem M0_addr {P : RP} (sz : Sizes P) (hf : P.B.toNat + P.Z ≤ 2 ^ 32) :
 /-- Montgomery multiplication's offsets are those of the key working space, past `oM`. -/
 theorem oM_arrAt {P : RP} (sz : Sizes P) (j : Nat) : P.oM + arrAt P.w6 j = arr P.w (mBase + j) := by
   have := sz.hdrM; have sw := sz.sw
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes, RP.oM, arr, Nat.add_mul] at *
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes, RP.oM, arr, Nat.add_mul] at *
   rw [← sw]; omega
 
 theorem M0_off {P : RP} (sz : Sizes P) (hf : P.B.toNat + P.Z ≤ 2 ^ 32) (d : Nat) :

@@ -16,9 +16,9 @@ theorem primeRanges_bound {w : Nat} (hw : w ≤ 48) :
     ∀ r ∈ primeRanges w, r.1 + r.2 ≤ VG.Impl.Dsa.Generation.Layout.arithmeticBytes := by
   simp only [primeRanges, primeTrialRanges, modulusRanges, mpRanges, mpTail,
     drawRoundRanges, sampleRoundRanges, testRanges, witnessRoundRanges, witnessMontRanges, Caller.callRanges,
-    mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil,
+    mutRanges, Proof.MillerRabin.Round.compact, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
-    forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes,
+    forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
     aX, aTab, aAcc, aTmp, aY, aXm, aOne, aR2, aR1, aRm1, aE,
     kElen, kP, kUsed, kI, kUni, kStat, kU, sMinv, sCnt, sFn,
     VG.Impl.Dsa.Generation.Layout.arithmeticBytes]

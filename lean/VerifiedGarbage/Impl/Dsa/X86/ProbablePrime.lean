@@ -6,7 +6,8 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateSieve
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateFinish
 public import VerifiedGarbage.Impl.Mont.X86.Compact
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
+public import VerifiedGarbage.Spec.Dsa
 
 /-! # DSA's probable-prime test on baseline i686
 
@@ -29,7 +30,7 @@ def width (bits : Nat) : Nat := max 4 ((bits + 63) / 64)
 /-- The bytes of the header and the arrays; the candidate follows them. -/
 def scratchBytes (w : Nat) : Nat := slot w 28
 
-def layout (bits : Nat) : Spec.Dsa.ProbablePrime.Layout where
+def layout (bits : Nat) : Impl.Dsa.ProbablePrime.Layout where
   bits := bits
   candidate := scratchBytes (width bits)
   scratch := [(0, scratchBytes (width bits))]

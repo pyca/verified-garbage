@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
@@ -22,7 +22,7 @@ section
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt wOf Layout)
+open VG.Proof.Rsa.Mont (numAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 def PrecomputeLaw (code : Prog isa) : Prop := ∀ (s : State) {base src : BitVec 32} {len w k : Nat}
@@ -53,7 +53,7 @@ end
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt wOf Layout)
+open VG.Proof.Rsa.Mont (numAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem precomputeWith_ok (kernel : R2Kernel) : PrecomputeLaw (precomputeWith kernel.code) := by

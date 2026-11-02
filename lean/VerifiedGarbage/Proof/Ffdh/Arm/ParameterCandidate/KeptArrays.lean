@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Contract
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -13,7 +13,7 @@ protect constants in arrays above the eight Montgomery arithmetic arrays. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Proof.Mont VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 open VG.Proof.MillerRabin.Arm (KeepsLite wJs)
 
 theorem operand_keeps_extended {m m' : Mem} {base : Addr} {capacity w o q d n : Nat}
@@ -65,7 +65,7 @@ theorem round_keeps_header {m m' : Mem} {base : Addr} {capacity w d bits : Nat}
     omega) (by
     intro j _
     left
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
     omega)]
 
 theorem round_keeps_array {m m' : Mem} {base : Addr} {capacity w q d n : Nat}
@@ -78,7 +78,7 @@ theorem round_keeps_array {m m' : Mem} {base : Addr} {capacity w q d n : Nat}
     have upper : ∀ k ∈ [23, 26, 29, 30], k ≤ 30 := by decide
     have := upper k hk
     right
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
     omega
   · intro j hj
     have different : q ≠ j := fun same => unwritten (same ▸ hj)

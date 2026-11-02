@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Environment
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # The tape, the table and the candidate outlive every stage -/
 

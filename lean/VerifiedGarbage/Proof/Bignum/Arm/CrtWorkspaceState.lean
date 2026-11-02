@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (Layout wOf arrAt)
+open VG.Proof.Rsa.Mont (Layout wOf arrAt)
 
 structure CrtLayoutState (base : BitVec 32) (len w : Nat) (mem : Mem) : Prop where
   layout : Layout mem (State.addr base) len
@@ -33,7 +33,7 @@ structure CrtPrimeState (base parent : BitVec 32) (len w : Nat) (mem : Mem) : Pr
 theorem CrtLayoutState.size {base : BitVec 32} {len w : Nat} {mem : Mem}
     (h : CrtLayoutState base len w mem) : 256 ≤ 8 * len := by
   have := h.layout.2.2.1
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
   omega
 
 theorem CrtLayoutState.congr {base : BitVec 32} {len w : Nat} {m m' : Mem}

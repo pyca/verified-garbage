@@ -22,7 +22,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem sanitizeModulus_ready (s : State) {base : BitVec 32} {len w : Nat}
     (h : PrimeInput base len w s) : WP isa sanitizeModulus s (PrecomputeModulus base len w) := by

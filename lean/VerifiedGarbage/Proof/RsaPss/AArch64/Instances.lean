@@ -34,7 +34,7 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (privOf pdOf)
 
 /-- `encode` made with `v`'s compression function. -/
 def encOf (v : Proof.Pbkdf2.Md.AArch64.MdHash) : EncImpl v.mgf.G where
-  name := (Spec.RsaPss.encodeApi v.mgf.G v.mgf.G).name ++ v.suffix
+  name := s!"vg_rsa_pss_{v.mgf.G.rust}_mgf1_{v.mgf.G.rust}_encode" ++ v.suffix
   code := Impl.RsaPss.AArch64.encode v.H
   stack := Enc.encStack
   verified := Enc.code_verified v.ok v.mgf.hash v.mgf.len (Enc.mgf_valid v.mgf) v.pss (Enc.enc_sat v.mgf.mem)
@@ -46,7 +46,7 @@ def encOf (v : Proof.Pbkdf2.Md.AArch64.MdHash) : EncImpl v.mgf.G where
 
 /-- `checkEncoding` made with `v`'s compression function. -/
 def chkOf (v : Proof.Pbkdf2.Md.AArch64.MdHash) : ChkImpl v.mgf.G where
-  name := (Spec.RsaPss.checkEncodingApi v.mgf.G v.mgf.G).name ++ v.suffix
+  name := s!"vg_rsa_pss_{v.mgf.G.rust}_mgf1_{v.mgf.G.rust}_check_encoding" ++ v.suffix
   code := Impl.RsaPss.AArch64.checkEncoding v.H
   stack := Chk.chkStack
   verified := Chk.code_verified v.ok v.mgf.hash v.mgf.len (Enc.mgf_valid v.mgf) v.pss (Chk.chk_sat v.mgf.mem)

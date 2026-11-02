@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
-public import VerifiedGarbage.Spec.Dsa.ProbablePrime
+public import VerifiedGarbage.Impl.Dsa.HelperLayout
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-!
 # DSA's probable-prime test on ARMv7
@@ -68,7 +70,7 @@ def keyWords (bits : Nat) : Nat := Spec.Rsa.scratchWords (8 * words bits)
 
 /-- The candidate at byte 0 of `ws`, and the key working space the only bytes
 the test changes. -/
-def layout (bits : Nat) : Spec.Dsa.ProbablePrime.Layout where
+def layout (bits : Nat) : Impl.Dsa.ProbablePrime.Layout where
   bits := bits
   candidate := 0
   scratch := [(keyOff, 8 * keyWords bits)]

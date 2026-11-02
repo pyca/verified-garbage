@@ -14,7 +14,7 @@ import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 def crtProductA (w : Nat) (coefficient : Bool) : Nat := pOffset w + arrAt w (if coefficient then 5 else 0)
 def crtProductB (w : Nat) : Nat := qOffset w + arrAt w 0
@@ -37,8 +37,8 @@ theorem CrtShared.product_input {s : State} {g : CrtGeometry} {bs : Fin 7 → Li
     have size0 : 3 * stride w + 4 * (4 * w + 2) + 4 * (4 * w + 2) + 4 * (4 * w + 2) + stride w ≤ g.size := size
     omega
   have stridePos : 384 ≤ stride w := by simp only [VG.Impl.Bignum.Arm.Crt.stride, workspaceWords]; omega
-  have aHeader : 256 ≤ arrAt w j := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
-  have bHeader : 256 ≤ arrAt w 0 := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+  have aHeader : 256 ≤ arrAt w j := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
+  have bHeader : 256 ≤ arrAt w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
   have wide : WideProductCtx s g.base g.size (productOffset w) (crtProductA w coefficient) (crtProductB w) (2 * w) (2 * w) := by
     refine ⟨h.buffers.workspace, by omega, by omega, by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
       ready.stackRead, h.stack.separate.sub_left (Region.sub_prefix (by decide)), ready.saved⟩

@@ -20,22 +20,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
 namespace VG.Artifacts.Rsa.Arm
 
 def artifacts : List Artifact := [
-  Spec.Rsa.publicCheckedApi.artifact Arm.target {
-    code := Impl.Bignum.Arm.PublicFn.code
-    stack := 56
-    verified := Proof.Bignum.Arm.public_verified },
-
-
-  Spec.Rsa.privateCrtApi.artifact Arm.target {
-    code := Impl.Bignum.Arm.CrtFn.code
-    stack := 56
-    verified := Proof.Bignum.Arm.crt_verified },
-  Spec.Rsa.privateCrtApi.artifact Arm.target {
-    suffix := "_umaal"
-    code := Impl.Bignum.Arm.CrtFios.code
-    stack := 56
-    verified := Proof.Bignum.Arm.crtUmaal_verified
-    features := ["umaal"] },
   Spec.Rsa.crtValuesApi.artifact Arm.target {
     code := Impl.Rsa.Arm.CrtValues.code
     stack := 0

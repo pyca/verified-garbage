@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -40,7 +40,7 @@ def satState : State where
 theorem sat_arg0 : arg satState 0 = 0x1000#32 := by decide +kernel
 theorem sat_arg1 : arg satState 1 = 200#32 := by decide +kernel
 
-theorem sat_layout : Spec.MillerRabin.Layout Spec.MillerRabin.compact satMem 0x1000 200 := by
+theorem sat_layout : Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact satMem 0x1000 200 := by
   refine ⟨Or.inr rfl, ⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   case refine_4 =>
     intro j hj
@@ -48,15 +48,15 @@ theorem sat_layout : Spec.MillerRabin.Layout Spec.MillerRabin.compact satMem 0x1
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
   all_goals first
     | decide +kernel
-    | change Spec.Rsa.Mont.wordAt satMem 0x1000 28 = BitVec.ofNat 64 (8 * (Spec.Rsa.Mont.wOf satMem 0x1000 + 2)); decide +kernel
+    | change Proof.Rsa.Mont.wordAt satMem 0x1000 28 = BitVec.ofNat 64 (8 * (Proof.Rsa.Mont.wOf satMem 0x1000 + 2)); decide +kernel
 
-theorem sat_prepared : Spec.MillerRabin.Prepared Spec.MillerRabin.compact satMem 0x1000 := by
-  unfold Spec.MillerRabin.Prepared
+theorem sat_prepared : Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact satMem 0x1000 := by
+  unfold Proof.MillerRabin.Round.Prepared
   decide +kernel
 
-theorem satisfiable : ∃ s, (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96).pre s := by
+theorem satisfiable : ∃ s, (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pre s := by
   refine ⟨satState, ?_⟩
-  sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sat_arg0, sat_arg1]
   sig_and_intros
   all_goals first

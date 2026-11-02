@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Mont.X86.Compact.Layout
 @[expose] public section
 namespace VG.Proof.Mont.X86.Compact
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
-open VG.Spec.Rsa.Mont
+open VG.Proof.Rsa.Mont
 
 /-- Values outside the five arguments are irrelevant and fixed at zero. -/
 def args5 (s : State) (i : Nat) : BitVec 32 := if i < 5 then arg s i else 0

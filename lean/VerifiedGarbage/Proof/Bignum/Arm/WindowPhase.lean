@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.CallLay
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_dp wp_str wp_subs op2_imm dpVal ofNat_beq_zero)
 
 /-- `expByteNext`'s two header writes. -/
@@ -29,7 +29,7 @@ theorem expByteNext_mem (s : State) {base ep : BitVec 32} {len w c : Nat}
       t.mem = (s.mem.writeW (off (State.addr base) 128) (ep + 1)).writeW (off (State.addr base) 132)
         (BitVec.ofNat 32 (c - 1)) ∧ t.z = decide (c = 1) ∧ Rest [.r1] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega_arith
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_arith
   have addr (d : Nat) (hd : d ≤ 252) : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
     rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_arith)
   unfold expByteNext
@@ -250,11 +250,11 @@ theorem windowExpPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {e
   rintro t ⟨final, value, keeps, frameT, restT⟩
   have fits8 : arrAt w 8 ≤ 8 * len := powerR.ready.width ▸ powerR.ready.layout.2.2.1
   have modulus := (keeps_array_num keeps fits8 (q := 0)
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerR.modulus
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerR.modulus
   have r2 := (keeps_array_num keeps fits8 (q := 4)
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerR.r2
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerR.r2
   have one := (keeps_array_num keeps fits8 (q := 7)
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerR.one
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerR.one
   exact ⟨final, value, modulus, r2, one,
     frameU.trans (frameV.trans (frameZ.trans (frameY.trans (frameR.trans frameT)))),
     restU.trans (restV.trans (restZ.trans (restY.trans (restR.trans restT))))⟩

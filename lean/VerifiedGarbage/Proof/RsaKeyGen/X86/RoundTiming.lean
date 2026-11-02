@@ -18,7 +18,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof
 open VG.Impl.RsaKeyGen.X86.RoundCall VG.Impl.Mont.X86
 
 theorem call_trace {round : Prog isa} {name : String}
-    (verified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (verified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (fit : 108 ≤ p.toNat)
     (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108)) :
@@ -50,7 +50,7 @@ def InputPair (g : Geometry) (capacity : Nat) (p : BitVec 32) (s t : State) : Pr
   Pair g [.edi] s t ∧ Input g capacity p s ∧ Input g capacity p t
 
 theorem code_trace {round : Prog isa} {name : String}
-    (verified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (verified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (noSp : NoSp round) (stack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (fit : 108 ≤ p.toNat)

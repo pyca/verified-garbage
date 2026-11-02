@@ -19,7 +19,7 @@ open VG.Impl.RsaKeyGen.X86.PrepareRt (r2)
 open VG.Proof.RsaKeyGen.X86.PreparedR2 (Ready phaseRanges coreRanges ranges)
 
 theorem r2_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Ready g c capacity p s)

@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # `vg_ffdh_parameter_candidate_sieved` on i686, verified -/
 
@@ -91,7 +92,7 @@ theorem sat_table : Abi.constsHeld satState.mem (fun name => (satState.syms name
 
 theorem satisfiable : ∃ s, contract.pre s := by
   refine ⟨satState, ?_⟩
-  sig_pre [contract, Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig, abi,
+  sig_pre [contract, Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow]
   simp only [sat_arguments 0 (by decide), sat_arguments 1 (by decide), sat_arguments 2 (by decide),
     sat_arguments 3 (by decide), sat_arguments 4 (by decide), sat_arguments 5 (by decide),

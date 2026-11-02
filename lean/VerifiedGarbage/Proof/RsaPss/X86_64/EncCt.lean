@@ -14,7 +14,7 @@ The prologue, the checks of `emLen` and the salt's length (their branches
 are on public values), the encoding (`enc_signEnc_ct`), its copy to `em` and
 the epilogue, in two runs whose entry states agree on the public data
 (`enc_ct`). With `enc_correct`, `encode` meets
-`Spec.RsaPss.encodeContract` (`enc_verified`).
+`Proof.RsaPss.encodeContract` (`enc_verified`).
 -/
 
 @[expose] public section
@@ -171,8 +171,8 @@ theorem enc_ct : ConstantTime isa (encK lk.G).pre (encK lk.G).pub (encode H) :=
       ⟨s₂, ⟨h₁, hpub, h₂⟩, e₂⟩⟩) fun _ _ h => h))
 
 include K hc in
-/-- `encode` meets `Spec.RsaPss.encodeContract`. -/
-theorem enc_verified : Verified X86_64.target (encode H) (Spec.RsaPss.encodeContract lk.G lk.G abi encStack) :=
+/-- `encode` meets `Proof.RsaPss.encodeContract`. -/
+theorem enc_verified : Verified X86_64.target (encode H) (Proof.RsaPss.encodeContract lk.G lk.G abi encStack) :=
   Verified.of_correct (k := encK lk.G) (enc_correct hH K lk) (enc_ct hH K lk hc) (enc_implies lk.G (enc_sat lk.G lk.mem))
 
 end VG.Proof.RsaPss.X86_64.Enc

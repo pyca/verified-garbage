@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem r2PublicPrepare_ct {base : BitVec 32} {len w : Nat} :
     RelCT isa (fun s t => ArithmeticReady base len w s ∧ ArithmeticReady base len w t ∧ s.sp = t.sp)

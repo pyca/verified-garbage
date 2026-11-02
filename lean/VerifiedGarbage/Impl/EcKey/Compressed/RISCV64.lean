@@ -80,9 +80,9 @@ def sameMask (a : Nat) : List Instr :=
 /-- `vg_ec_<curve>_compress_public_key(out = a0, public = a1, scratch = a2)`. -/
 def compressFn (checkName : String) (checkCode : Prog isa) : Prog isa :=
   .seq (.block (saveCode .a2 ++ loadNum c.n (c.sl CX) .a1 1 ++ loadNum c.n (c.sl CY) .a1 (1 + 8 * c.n) ++
-    leadMask .a1 ++ [.store .d .a7 wb (c.sl FLAG)] ++ constCode c)) <|
+    leadMask .a1 ++ sdAt .a7 wb (c.sl FLAG) ++ constCode c)) <|
   .seq (wsCall checkName checkCode) <|
-  .block ([.load .d .a7 wb (c.sl FLAG), .load .d .t0 wb (c.sl CY), .logicImm .and .t0 .t0 1, .addi .t0 .t0 2,
+  .block (ldAt .a7 wb (c.sl FLAG) ++ [.load .d .t0 wb (c.sl CY), .logicImm .and .t0 .t0 1, .addi .t0 .t0 2,
       .logic .and .t0 .t0 .a7, .store .b .t0 .s2 0] ++ storeNum c.n (c.sl CX) .s2 1 ++ retCode c)
 
 /-- The power `rhs^((p+1)/4)`, into `ACC`. -/
@@ -102,13 +102,13 @@ def rootOps : List FOp :=
 /-- `vg_ec_<curve>_decompress_public_key(out = a0, public = a1, scratch = a2)`. -/
 def decompressFn : Prog isa :=
   .seq (.block (saveCode .a2 ++ loadNum c.n (c.sl CX) .a1 1 ++ parCode c .a1 ++ tagMask .a1 ++
-    [.store .d .a7 wb (c.sl FLAG)] ++ constCode c ++ setConst c.n (c.sl EXPS) ((c.C.p + 1) / 4) ++
+    sdAt .a7 wb (c.sl FLAG) ++ constCode c ++ setConst c.n (c.sl EXPS) ((c.C.p + 1) / 4) ++
     ltMask c.n (c.sl CX) (c.sl MP) ++ andFlag c)) <|
   .seq (fprog c.FP (rhsOps c)) <|
   .seq (pow (sqrtP c) c.FP) <|
   .seq (fprog c.FP (rootOps c)) <|
   .block (zeroMask c.n (c.sl DIF) ++ andFlag c ++ parMask c Y1 ++ sel c.n (c.sl YF) (c.sl Y1) (c.sl Y2) ++
-    sameMask c YF ++ andFlag c ++ [.load .d .a7 wb (c.sl FLAG)] ++ pointOut c CX YF)
+    sameMask c YF ++ andFlag c ++ ldAt .a7 wb (c.sl FLAG) ++ pointOut c CX YF)
 
 end Cfg
 

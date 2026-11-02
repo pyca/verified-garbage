@@ -923,7 +923,7 @@ theorem addR_ok {s : State} {base : Addr} (hw : WsReg s base) (hlt : ∀ x ∈ a
   have hI : Inv 4 base W.p (· ∈ combSl) addV (fun x => tmv W 4 base s x) s :=
     ⟨hw, by decide, hlt, fun _ _ => rfl⟩
   refine WP.seq (WP.mono (rcb_ok (M := p256.MP') (F := p256Field) field_ok rfl combLay
-    (fun x hx => by have := (by decide : ∀ x ∈ combSl, x < 2048) x hx; exact this) unit
+    (fun x hx => by have := (by decide : ∀ x ∈ combSl, x < 4095) x hx; exact this) unit
     (S := p256.rcbSlots) (p := p256.pt RX RY RZ) (q := p256.pt DX DY DZ) (o := p256.pt TX TY TZ)
     ⟨by decide, by decide⟩ (by decide) hI (by decide)) fun s₁ ⟨K₁, I₁, v₁, _⟩ => ?_)
   have hw₁ := hw.of_kp K₁.kp

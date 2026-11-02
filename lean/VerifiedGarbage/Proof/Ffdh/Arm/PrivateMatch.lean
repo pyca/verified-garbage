@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 def privateMatchFlag (p : Inputs) (yb xb : List Byte) : BitVec 32 :=
   if Spec.Rsa.powMod p.G (Spec.Rsa.os2ip xb) p.P = Spec.Rsa.os2ip yb then 1 else 0
@@ -32,8 +32,8 @@ theorem privateMatch_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : Lis
     (count : p.slotValue 44 = BitVec.ofNat 32 xb.length) :
     WP isa VG.Impl.Ffdh.Arm.Domain.CheckPrivate.matchPublic s fun t =>
       t.gpr .r0 = privateMatchFlag p yb xb ∧ Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem := by
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op6 : Operand 6 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op6 : Operand 6 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   rw [VG.Impl.Ffdh.Arm.Domain.CheckPrivate.matchPublic, WP.seq_iff]
   refine WP.mono (powerAt_ok s 56 40 44 h stable h56 h40 h44 h32 ready modulus odd r2
     h.gBytes p.gLength scalar positive fits count) ?_

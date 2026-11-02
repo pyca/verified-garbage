@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # The public environment of DSA's probable-prime test on i686
 

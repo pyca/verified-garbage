@@ -19,31 +19,13 @@ public import VerifiedGarbage.Proof.Framework.Registration
 
 namespace VG.Artifacts.Rsa.AArch64
 
-/-- The two repeated squares are shared by all RSA callers. -/
-def squareHelper (slot : Spec.Rsa.MontSquare.Slot) : Artifact :=
-  let M := match slot with
-    | .r2 => Proof.Bignum.AArch64.Mont.blocked
-    | .y => Proof.Bignum.AArch64.Mont.squareEight
-  (Spec.Rsa.MontSquare.squareApi slot).artifact AArch64.target {
-    code := M.mm slot.index slot.index slot.index
-    verified := Proof.Bignum.AArch64.SquareHelper.verified M slot }
-
-/-- Share the repeated five-square window body across all CRT callers. -/
-def windowHelper : Artifact :=
-  Spec.Rsa.MontWindow.windowApi.artifact AArch64.target {
-    code := Proof.Bignum.AArch64.WindowFive.body.code
-    verified := Proof.Bignum.AArch64.WindowShared.verified }
-
-def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelper,
+def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Precompute.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Bignum.AArch64.precompute_verified _ },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Folded.checked Proof.Bignum.AArch64.Mont.productEight.mm
     verified := Proof.Rsa.AArch64.FoldedPublic.checked_verified _ },
-  Spec.Rsa.privateCrtApi.artifact AArch64.target {
-    code := Proof.Bignum.AArch64.WindowFive.code
-    verified := Proof.Bignum.AArch64.WindowFive.base_verified },
   Spec.Rsa.crtValuesApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Keys.CrtValues.code
     verified := Proof.Rsa.AArch64.cv_verified },

@@ -35,12 +35,12 @@ check ORs into it a word that is 0 if and only if it passes.
 * Decoding a point (RFC 8032 §5.2.3) from the 57 bytes at `p`: `y` from the
   first 56, which must equal their full reduction (so `y < p`), with bits
   0–6 of the last byte 0 and bit 7 the sign; `u = y² - 1`, `v = d y² - 1`,
-  `t = u³v`, the candidate `x = t (t (uv)²)^((p-3)/4)` (`root`, square and
-  multiply over the bits of `(p-3)/4`), the check `v x² = u`, the check that
-  `x = 0` comes with the sign 0, and the negation of the decoded point,
-  `(-x', y)` for `x' = x` if its low bit is the sign and `-x` otherwise:
-  `-x` (as `(x - x) - x`) if the low bit is the sign, else `x`. Its `Z` is 1
-  (`ONE`).
+  `t = u³v`, the candidate `x = t (t (uv)²)^((p-3)/4)` (`root`, X448's
+  addition chain for the inversion as far as `z^(2²²³ - 1)`, then 223
+  squarings), the check `v x² = u`, the check that `x = 0` comes with the
+  sign 0, and the negation of the decoded point, `(-x', y)` for `x' = x`
+  if its low bit is the sign and `-x` otherwise: `-x` (as `(x - x) - x`)
+  if the low bit is the sign, else `x`. Its `Z` is 1 (`ONE`).
 * `S < L`: its byte 56 is 0 and its low 448 bits plus `2^448 - L` (scalar
   reduction's subtraction) do not carry out of 448 bits.
 * `Q = [4S]B + [4k](-A) + [4](-R)`, from the top bit down, four iterations
@@ -64,7 +64,7 @@ namespace VG.Impl.Ed448.RISCV64
 
 open VG.RISCV64
 open VG.Impl.X448.RISCV64 (freeze one align R X2 Z2 Y)
-open VG.Impl.X448.RISCV64.R64 (mul add sub cswap)
+open VG.Impl.X448.RISCV64.R64 (mul add sub cswap chain223 sqn T6)
 
 /-! ## The working space -/
 
@@ -131,14 +131,10 @@ def copy (o q : Nat) : List Instr := .li .t0 0 :: sel o q q
 
 /-! ## The square root's power -/
 
-/-- `[R] = [Z2]^((p-3)/4)`, square and multiply over the bits of
-`(p - 3) / 4 = 2⁴⁴⁶ - 2²²² - 1` from 445 down to 0 (`t = t1 - 1`): `R = R²`,
-then `R = R · Z2` unless `t` is 222. -/
-def rootStep : Prog isa :=
-  .seq (.block [.addi .t1 .t1 (-1)]) <| .seq (mul R R R) <|
-  .seq (.block [.addi .a2 .t1 (-222)]) (.ite (.zero .a2) (.block []) (mul R R Z2))
-
-def root : Prog isa := .seq (.block (one ++ [.li .t1 446])) (.loop rootStep (.nonzero .t1))
+/-- `[R] = [Z2]^((p-3)/4)`, by X448's addition chain as far as
+`z^(2²²³ - 1)` (in `R`, and `z^(2²²² - 1)` in `T6`), then 223 squarings and
+the product with `z^(2²²² - 1)`: `(p-3)/4 = (2²²³ - 1) 2²²³ + (2²²² - 1)`. -/
+def root : Prog isa := .seq (chain223 Z2) (.seq (sqn R R 223) (mul R R T6))
 
 /-! ## Decoding -/
 

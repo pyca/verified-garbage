@@ -18,11 +18,11 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeState
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 private theorem operand (a : Nat) (ha : a=0 ∨ a=4) : Operand a := by
-  rcases ha with rfl|rfl <;> simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]
+  rcases ha with rfl|rfl <;> simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
 
 theorem initialValues_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 32}
     (h : Memory p sp s) (modulus : numAt s.mem (State.addr p.base) p.w 0=p.P)

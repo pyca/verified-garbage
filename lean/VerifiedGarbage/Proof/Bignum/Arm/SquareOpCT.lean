@@ -29,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem sqFinishHeader_cert : SqCert [.r0] (.block sqFinishHeader) := ⟨_, by taint_decide⟩
@@ -124,7 +124,7 @@ theorem squareBases_ready {base : BitVec 32} {len w o a : Nat} (ho : Operand o) 
   have fits : arrAt (wOf s.mem (State.addr base)) 8 ≤ 8 * len := layout.2.2.1
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   have bound : 128 ≤ 8 * len := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
     omega
   refine WP.mono (bases_ok s ws bound header ho.1 ha.1 ha.1 ptr po pa pb) ?_
   rintro u ⟨regs, mem, keep⟩

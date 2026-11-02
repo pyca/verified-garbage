@@ -21,7 +21,7 @@ namespace VG.Proof.MillerRabin.Arm
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.MillerRabin.Arm VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 
 /-- The witness, Montgomery one and minus one, from `σ`. -/
 abbrev xOf (P : MP) (σ : State) : Nat := numAt σ.mem (State.addr P.ws) P.w 5

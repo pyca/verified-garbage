@@ -142,7 +142,7 @@ def MulIn (Ex : List Region → List Region → Prop) (base : Addr) (bytes len :
 /-- The state of the call: the callee's precondition, its arguments and the regions it is given. -/
 def CallOk (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (o a b : Nat)
     (g : State) : Prop :=
-  (Spec.Rsa.MontMul.mulContract abi 56).pre (calleeOf g base bytes) ∧ g.gpr .esp = sp - BitVec.ofNat 32 36 ∧
+  (Proof.Rsa.MontMul.mulContract abi 56).pre (calleeOf g base bytes) ∧ g.gpr .esp = sp - BitVec.ofNat 32 36 ∧
     (∀ i < 9, arg (calleeOf g base bytes) i = callArg (BitVec.ofNat 32 base.toNat) (args wsLenArg)
       (bc len c / 8) numBase invOff (lo len (.slot c 1)) (lo len (.slot c o)) (lo len (.slot c a))
       (lo len (.slot c b)) i) ∧
@@ -201,7 +201,7 @@ theorem mul_relCT (sp : BitVec 32) {c : Ctx} {o a b : Nat} (ho3 : 3 ≤ o) (ho :
       subst q₁ q₂
       exact ⟨mulArgs_call ho3 ho ha3 ha hb3 hb I₁, mulArgs_call ho3 ho ha3 ha hb3 hb I₂⟩)
   refine VG.RelCT.seq blk ?_
-  refine RelCT.call (k := Spec.Rsa.MontMul.mulContract abi 56) VG.Proof.Mont.X86.Sse2.at_correct
+  refine RelCT.call (k := Proof.Rsa.MontMul.mulContract abi 56) VG.Proof.Mont.X86.Sse2.at_correct
     VG.Proof.Mont.X86.Sse2.at_constantTime
     [⟨(sp - BitVec.ofNat 32 36).setWidth 64, 36⟩] [⟨base, bytes⟩] ?_
   rintro g₁ g₂ ⟨-, ⟨A₁, sp₁, arg₁, fr₁, sc₁⟩, ⟨A₂, sp₂, arg₂, fr₂, sc₂⟩⟩

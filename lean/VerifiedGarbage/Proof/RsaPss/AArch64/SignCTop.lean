@@ -50,11 +50,11 @@ section
 variable {D K : Nat} {s : State} (hp : PreS D K s) (h0 : s.mem (s.gpr .x2) ≠ 0)
 include hp h0
 
-theorem eb_bounds : 1 ≤ ebS s ∧ ebS s ≤ Spec.RsaPss.maxEmBits ∧ loS s + elS s = (s.gpr .x3).toNat ∧ loS s ≤ 1 := by
+theorem eb_bounds : 1 ≤ ebS s ∧ ebS s ≤ Proof.RsaPss.maxEmBits ∧ loS s + elS s = (s.gpr .x3).toNat ∧ loS s ≤ 1 := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have h0' : (s.mem (s.gpr .x2)).toNat ≠ 0 := fun h => h0 (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
   have hl8 := RsaPss.log2_lt8 (s.mem (s.gpr .x2))
-  unfold loS elS ebS Spec.RsaPss.emLength ebV Spec.RsaPss.maxEmBits
+  unfold loS elS ebS Spec.RsaPss.emLength ebV Proof.RsaPss.maxEmBits
   omega
 
 /-- `emBits`, `emLen` and `lo`, and `encode`'s arguments. -/

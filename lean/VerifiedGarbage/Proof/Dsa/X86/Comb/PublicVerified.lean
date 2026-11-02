@@ -22,7 +22,7 @@ theorem publicValues {n e : Nat} {s t : State} (H : (contract true n e).pub s t)
     wordsVal s.mem (ws s) (slot n 0) n=wordsVal t.mem (ws t) (slot n 0) n ∧
     wordsVal s.mem (ws s) (slot n 5) n=wordsVal t.mem (ws t) (slot n 5) n ∧
     val32 s.mem (ws s) (slot n 8) e=val32 t.mem (ws t) (slot n 8) e := by
-  sig_pub [contract,Spec.Dsa.FixedBaseComb.prepareContract,Spec.Dsa.ModPow.sig,
+  sig_pub [contract,Proof.Dsa.FixedBaseComb.prepareContract,Proof.Dsa.ModPow.sig,
     layout,VG.Impl.Dsa.X86.Pow.layout,abi,argSlots,argVal,argBytes] at H
   sig_split H
   simp only [numAt_eq8,numAt_eq4,List.cons.injEq,and_true] at *
@@ -67,7 +67,7 @@ theorem public_constantTime {n e : Nat} (h : Supported n e) :
   · simpa only [narrowState,State.withRegions_mem,Base] using X.symm
 
 theorem public_verified {n e : Nat} (h : Supported n e) :
-    Verified target (body true n e) (Spec.Dsa.FixedBaseComb.prepareContract (layout n e) abi 20) :=
+    Verified target (body true n e) (Proof.Dsa.FixedBaseComb.prepareContract (layout n e) abi 20) :=
   ⟨correct h true,public_constantTime h,satisfiable h true⟩
 
 end VG.Proof.Dsa.X86.Comb

@@ -45,7 +45,7 @@ variable {P : CP} {E : State → Prop}
 /-- Whether the witness passes, from the branches. -/
 theorem rv_pass {σ : State} (pre : In P σ) (hm : EM P σ) {k n : Nat}
     (h : MrAt (cv P σ) (chP P) (taP P σ) (tmP P σ) P.L (rB P σ) k n) (hav : P.L * (k + 1) + P.L ≤ P.rl) :
-    Spec.MillerRabin.round (cv P σ) (wf P σ k).1 = passS P.L P.rl P.sch.mr (P.L * (k + 1)) := by
+    Proof.MillerRabin.Round.round (cv P σ) (wf P σ k).1 = passS P.L P.rl P.sch.mr (P.L * (k + 1)) := by
   obtain ⟨hs, hwb, -, -⟩ := mr_facts pre hm
   have hL := pre.k1
   have := VG.Proof.RsaKeyGen.mr_pass (c := cv P σ) (ch := chP P) (a := taP P σ) (m := tmP P σ) (r := rB P σ)

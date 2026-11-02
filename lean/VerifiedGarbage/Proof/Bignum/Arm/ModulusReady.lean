@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Mont.Words
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -16,7 +16,7 @@ import VerifiedGarbage.TCB.Arm.Isa
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf Layout)
 
 theorem numAt_low_odd (mem : Mem) (base : Addr) {w o : Nat} (hw : 0 < w)
     (odd : numAt mem base w o % 2 = 1) :
@@ -33,7 +33,7 @@ theorem numAt_low_odd (mem : Mem) (base : Addr) {w o : Nat} (hw : 0 < w)
 theorem array_outside_layout {m m' : Mem} {base : Addr} {len w o : Nat}
     (outside : VG.Proof.Mont.Outside base (arrAt w o) (8 * w) m m')
     (layout : Layout m base len) : wOf m' base = wOf m base ∧ Layout m' base len := by
-  have start : 256 ≤ arrAt w o := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+  have start : 256 ≤ arrAt w o := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
   have width : wOf m' base = wOf m base :=
     congrArg BitVec.toNat (outside.word (d := 48) (by omega) (by decide))
   refine ⟨width, ?_⟩

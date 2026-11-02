@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # The CRT call's narrowed regions satisfy the shared cdecl signature -/
 
@@ -30,13 +31,13 @@ theorem crtArgs_values {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
 
 theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : CrtArgs g s) :
-    (Spec.Rsa.privateCrtContract abi 96).pre (s.callEntry.withRegions (crtRd g) (crtWr g)) := by
+    (Proof.Rsa.privateCrtContract abi 96).pre (s.callEntry.withRegions (crtRd g) (crtWr g)) := by
   have sa := fun {j} (hj : j < 18) => crtArgs_values h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega
   have qfit : g.qLength < 2 ^ 32 := by have := h.valid.qFits; omega
   have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega
-  sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa (by decide : 0 < 18), sa (by decide : 1 < 18), sa (by decide : 2 < 18),
     sa (by decide : 3 < 18), sa (by decide : 4 < 18), sa (by decide : 5 < 18),
     sa (by decide : 6 < 18), sa (by decide : 7 < 18), sa (by decide : 8 < 18),

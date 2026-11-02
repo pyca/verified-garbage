@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationABI
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationBody
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
+public import VerifiedGarbage.Proof.Dsa.PublicValidationContract
 
 /-! # Functional correctness against the public validation contract -/
 
@@ -10,8 +12,8 @@ import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationBody
 namespace VG.Proof.Dsa.Arm.PublicValidation
 open VG VG.Arm VG.Proof.Mont VG.Proof.Mont.Arm
 open VG.Impl.Dsa.Arm.PublicValidation
-open VG.Spec.Dsa.PublicValidation (component)
-open VG.Spec.Dsa.ModPow (numAt)
+open VG.Proof.Dsa.PublicValidation (component)
+open VG.Proof.Dsa.ModPow (numAt)
 
 theorem correct {pLen qLen nP nQ : Nat} (wp : Width pLen nP) (wq : Width qLen nQ)
     (qp : qLen ≤ pLen) (q32 : qLen ≤ 32) (s : State) (H : (armContract pLen qLen).pre s) :

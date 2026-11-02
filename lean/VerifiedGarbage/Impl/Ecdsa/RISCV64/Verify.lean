@@ -20,9 +20,16 @@ with the pieces of ECDH (`Impl/Ecdh/RISCV64.lean`) and of signing
    equation into the flag; its point, or `G`, to `CPX` and `CPY`);
 3. modulo `n`: `w = (s R)^(n-2)`, `u = e w` and `v = r w`, out of
    Montgomery's form;
-4. `[u]G` by the ladder of `vg_<curve>_mul`'s body, inline (its contract
-   needs a scalar in `[1, n-1]`, and `u` may be 0), saved; then `[v]Q`;
-5. their sum by the complete addition, `Z^(p-2)` and `x = X Z^(p-2)`;
+4. `[u]G + [v]Q` by a joint ladder over two-bit windows of `u` and `v`
+   (Straus): a table of the sixteen points `[a]G + [b]Q` (`a, b < 4`, entry
+   `4 a + b`, `x`, `y` and `z` of `n` words each, `24 n` bytes) at `JT`, from
+   `G`, `Q`, `2G`, `3G`, `2Q` and `3Q` in slots (`build`), by the complete
+   addition; then from `R = O`, for the windows `j` from 127 down to 0 (the
+   counter `s1`), the window's entry `4 u_j + v_j` selected from the sixteen
+   without a secret address (the comb's tree of masks, `Comb.tree`, over
+   entries at `a0 = s0 + JT`), and `R = 4 R + E` by three complete additions
+   (`D = R + R`, `T = D + D`, `R = T + E`);
+5. `Z^(p-2)` and `x = X Z^(p-2)`;
 6. `x mod n` and `r mod n` (by additions of zero, both operands below `2n`),
    their difference modulo `n`, the masks of `Z ≠ 0` and of that difference
    being zero into the flag, whose low bit is returned.
@@ -38,9 +45,8 @@ namespace VG.Impl.Ecdsa.RISCV64.Verify
 open VG.RISCV64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64 VG.Impl.Ecdsa.RISCV64
 open VG.Impl.Ecdh.RISCV64 VG.Impl.Ecdsa.RISCV64.Sign
 
-/-! Slots: `e`, `r` and `s`, which the check keeps; `u` and `v`, and `[u]G`,
-in the check's slots, which the ladder keeps; and the values of the
-comparison. -/
+/-! Slots: `e`, `r` and `s`, which the check keeps; `u` and `v`, in the
+check's slots; and the values of the comparison. -/
 def VE := 32
 def VR := 10
 def VS := 11
@@ -48,12 +54,32 @@ def UM := 22
 def UU := 33
 def VM := 24
 def VV := 36
-def UX := 41
-def UY := 42
-def UZ := 34
 def XN := 19
 def RN := 20
 def WD := 21
+
+/-! The joint ladder's slots, past the numbered ones but below byte 2048 (the
+field's functions take offsets that `li` loads): `2G`, `3G`, `2Q`, `3Q`, and
+the window's entry `E`; and the table's offset. -/
+def G2X := 46
+def G2Y := 47
+def G2Z := 48
+def G3X := 49
+def G3Y := 50
+def G3Z := 51
+def Q2X := 52
+def Q2Y := 53
+def Q2Z := 54
+def Q3X := 55
+def Q3Y := 56
+def Q3Z := 57
+def EX := 58
+def EY := 59
+def EZ := 60
+/-- The table's offset in the working space. -/
+def JT : Nat := 2048
+/-- The number of windows. -/
+def NW : Nat := 128
 
 namespace Cfg
 
@@ -74,18 +100,80 @@ def uv : Prog isa :=
     mulCall FN (c.sl UU) (c.sl UM) (c.sl ONE), mulCall FN (c.sl RM) (c.sl VR) (c.sl R2N),
     mulCall FN (c.sl VM) (c.sl RM) (c.sl ACC), mulCall FN (c.sl VV) (c.sl VM) (c.sl ONE)]
 
-/-- `R = [u]G`, saved to `U`, then `R = [v]Q`. -/
-def points : Prog isa :=
-  .seq (.block (copy c.n (c.sl K) (c.sl UU) ++ copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY))) <|
-  .seq c.mulBody <|
-  .seq (.block (copy c.n (c.sl UX) (c.sl RX) ++ copy c.n (c.sl UY) (c.sl RY) ++ copy c.n (c.sl UZ) (c.sl RZ) ++
-    copy c.n (c.sl K) (c.sl VV) ++ copy c.n (c.sl RX) (c.sl CPX) ++ copy c.n (c.sl RY) (c.sl CPY)))
-    c.mulBody
+/-- The bytes of an entry of the joint table. -/
+def jb : Nat := 24 * c.n
 
-/-- `R = U + R`, through `D`. -/
-def sum : Prog isa :=
-  .seq (fprog c.FP (rcb c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
-    (.block (copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ)))
+/-- `[a6 + o] = [s0 + a]`, `k` 64-bit words, through `t0`. -/
+def copyTo : Nat → Nat → Nat → List Instr
+  | 0, _, _ => []
+  | k + 1, o, a => [.load .d .t0 wb a, .store .d .t0 .a6 o] ++ copyTo k (o + 8) (a + 8)
+
+/-- `o = p + q` by the complete addition. -/
+def addPt (p q o : Pt) : Prog isa := fprog c.FP (rcb c.rcbSlots p q o)
+
+/-- The points `[a]G` and `[b]Q` (`a, b ∈ 1 … 3`) in slots. -/
+def gPt : Nat → Pt
+  | 1 => c.pt GX GY ONEP
+  | 2 => c.pt G2X G2Y G2Z
+  | _ => c.pt G3X G3Y G3Z
+
+def qPt : Nat → Pt
+  | 1 => c.pt CPX CPY ONEP
+  | 2 => c.pt Q2X Q2Y Q2Z
+  | _ => c.pt Q3X Q3Y Q3Z
+
+/-- Entry `e` from the point `p` in slots. -/
+def storePt (e : Nat) (p : Pt) : List Instr :=
+  [.addi .a6 wb 2047, .addi .a6 .a6 1] ++ copyTo c.n (jb c * e) p.x ++
+    copyTo c.n (jb c * e + 8 * c.n) p.y ++ copyTo c.n (jb c * e + 16 * c.n) p.z
+
+/-- Entry `4 a + b` (`a, b ∈ 1 … 3`): `T = [a]G + [b]Q`, stored. -/
+def mixed (a b : Nat) : Prog isa :=
+  .seq (addPt c (gPt c a) (qPt c b) (c.pt TX TY TZ)) (.block (storePt c (4 * a + b) (c.pt TX TY TZ)))
+
+/-- The table: `O`, `G` and `Q`; `2G`, `3G`, `2Q` and `3Q`, to their slots
+and stored; then the nine entries of both. -/
+def build : Prog isa :=
+  .seq (.block (storePt c 0 (c.pt ZERO ONEP ZERO) ++ storePt c 4 (gPt c 1) ++ storePt c 1 (qPt c 1))) <|
+  .seq (addPt c (gPt c 1) (gPt c 1) (gPt c 2)) <| .seq (.block (storePt c 8 (gPt c 2))) <|
+  .seq (addPt c (gPt c 2) (gPt c 1) (gPt c 3)) <| .seq (.block (storePt c 12 (gPt c 3))) <|
+  .seq (addPt c (qPt c 1) (qPt c 1) (qPt c 2)) <| .seq (.block (storePt c 2 (qPt c 2))) <|
+  .seq (addPt c (qPt c 2) (qPt c 1) (qPt c 3)) <| .seq (.block (storePt c 3 (qPt c 3))) <|
+  progs ((List.range 3).flatMap fun a => (List.range 3).map fun b => mixed c (a + 1) (b + 1))
+
+/-- The window's entry number `4 u_j + v_j` into `t2`, for `j` in `s1`: the
+two bits `2j`, `2j + 1` of `u` and of `v`, from their words `j >>> 5`. -/
+def window : List Instr :=
+  [.shift .srl .d .t1 ctr 5, .shift .sll .d .t1 .t1 3, .add .t1 .t1 wb,
+   .load .d .t2 .t1 (c.sl UU), .load .d .t3 .t1 (c.sl VV),
+   .shift .sll .d .t0 ctr 1, .shiftReg .srl .d .t2 .t2 .t0, .shiftReg .srl .d .t3 .t3 .t0,
+   .logicImm .and .t2 .t2 3, .logicImm .and .t3 .t3 3,
+   .shift .sll .d .t2 .t2 2, .logic .or .t2 .t2 .t3]
+
+/-- Quadword `q` of the entry, selected by the masks of the entry number's
+four bits from the sixteen at `a0`, to `E`'s word `q`. -/
+def scanWord (q : Nat) : List Instr :=
+  Comb.tree .a0 (jb c) 4 (8 * q) Comb.treeRegs ++ [.store .d .t0 wb (c.sl EX + 8 * q)]
+
+/-- The window's entry to `E`: the number, the masks of its four bits, the
+table's address in `a0`, and the `3 n` quadwords. -/
+def select : List Instr :=
+  window c ++ (List.range 4).flatMap Comb.Cfg.maskOfBit ++ [.addi .a0 wb 2047, .addi .a0 .a0 1] ++
+    (List.range (3 * c.n)).flatMap (scanWord c)
+
+/-- One step: `s1 -= 1`, the entry `E`, `D = R + R`, `T = D + D`, `R = T + E`. -/
+def step : Prog isa :=
+  .seq (.block (decCounter :: select c)) <|
+  .seq (addPt c (c.pt RX RY RZ) (c.pt RX RY RZ) (c.pt DX DY DZ)) <|
+  .seq (addPt c (c.pt DX DY DZ) (c.pt DX DY DZ) (c.pt TX TY TZ))
+    (addPt c (c.pt TX TY TZ) (c.pt EX EY EZ) (c.pt RX RY RZ))
+
+/-- `R = [u]G + [v]Q`: the table, `R = O`, then the steps. -/
+def joint : Prog isa :=
+  .seq (build c) <|
+  .seq (.block (copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO) ++
+    [.li ctr NW]))
+    (.loop (step c) more)
 
 /-- `x mod n`, `r mod n` and their difference. -/
 def compare : Prog isa :=
@@ -104,8 +192,7 @@ def verify (checkName : String) (checkCode : Prog isa) : Prog isa :=
   .seq (Ecdh.RISCV64.Cfg.wsCall checkName checkCode) <|
   .seq (.block ((Sign.Cfg.nConsts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x))) <|
   .seq (uv c FN) <|
-  .seq (points c) <|
-  .seq (sum c) <|
+  .seq (joint c) <|
   .seq (pow (Ecdh.RISCV64.Cfg.powP c) c.FP) <|
   .seq (Ecdh.RISCV64.Cfg.affineCoord c XM XO RX) <|
   .seq (compare c FN) (.block (finish c))

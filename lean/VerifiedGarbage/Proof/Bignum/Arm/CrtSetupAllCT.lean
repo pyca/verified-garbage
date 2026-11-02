@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem crt_setupP_ct {base : BitVec 32} {len w : Nat} (fit : 256 ≤ 8 * len) :
     RelCT isa (fun s t => CrtAtMain base len w s ∧ CrtAtMain base len w t) (setupPrime 224)
@@ -64,7 +64,7 @@ theorem crt_leavePrime_ct {base child : BitVec 32} {len w : Nat} :
 theorem crt_setupAll_ct {base : BitVec 32} {len w : Nat} (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     (fits : arrAt w 8 ≤ 8 * len) :
     RelCT isa (fun s t => CrtSetupInput base len w s ∧ CrtSetupInput base len w t) setupAll (fun _ _ => True) := by
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have first := (crt_setupMain_ct (base := base) hw hw' fits).mono
     (P' := fun s t => CrtSetupInput base len w s ∧ CrtSetupInput base len w t)
     (fun _ _ h => ⟨⟨h.1.context.main, h.1.ptr, h.1.count, h.1.zero⟩,

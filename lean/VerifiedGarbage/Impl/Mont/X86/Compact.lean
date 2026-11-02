@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.MulRt
-import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.TCB.Code
 
 /-! # Compact prepared Montgomery multiplication for x86 key generation
 
 The multiplication uses the same paired-word rows as `vg_rsa_mont_mul_at`.
-Its prepared workspace follows `Spec.Rsa.Mont`: arrays 2 and 3 contain the
+Its prepared workspace follows `Proof.Rsa.Mont`: arrays 2 and 3 contain the
 product, and subtraction writes the result array directly after every input
 has been consumed. Saving registers on the stack leaves room for the full
 product in those two arrays and avoids copying the operands to another

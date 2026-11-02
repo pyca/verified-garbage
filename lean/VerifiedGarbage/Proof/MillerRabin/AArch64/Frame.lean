@@ -14,18 +14,18 @@ open VG.Impl.RsaKeyGen.AArch64.Candidate VG.Impl.Bignum.Public
 
 theorem core_keeps {B : Addr} {n w : Nat} {m m' : Mem}
     (hn : 8 * n ≤ 2 ^ 64) (hf : Frm B (coreRanges w) m m') :
-    Spec.MillerRabin.Keeps Spec.MillerRabin.compact B n w m m' := by
+    Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B n w m m' := by
   intro i hi hh ha ht
-  have h23h := hh 23 (by simp [Spec.MillerRabin.compact])
-  have h26h := hh 26 (by simp [Spec.MillerRabin.compact])
-  have h29h := hh 29 (by simp [Spec.MillerRabin.compact])
-  have h30h := hh 30 (by simp [Spec.MillerRabin.compact])
-  have h1h := hh 1 (by simp [Spec.MillerRabin.compact])
-  have h2a := ha 2 (by simp [Spec.MillerRabin.compact])
-  have h3a := ha 3 (by simp [Spec.MillerRabin.compact])
-  have h5a := ha 5 (by simp [Spec.MillerRabin.compact])
-  have h6a := ha 6 (by simp [Spec.MillerRabin.compact])
-  have h8a := ha 8 (by simp [Spec.MillerRabin.compact])
+  have h23h := hh 23 (by simp [Proof.MillerRabin.Round.compact])
+  have h26h := hh 26 (by simp [Proof.MillerRabin.Round.compact])
+  have h29h := hh 29 (by simp [Proof.MillerRabin.Round.compact])
+  have h30h := hh 30 (by simp [Proof.MillerRabin.Round.compact])
+  have h1h := hh 1 (by simp [Proof.MillerRabin.Round.compact])
+  have h2a := ha 2 (by simp [Proof.MillerRabin.Round.compact])
+  have h3a := ha 3 (by simp [Proof.MillerRabin.Round.compact])
+  have h5a := ha 5 (by simp [Proof.MillerRabin.Round.compact])
+  have h6a := ha 6 (by simp [Proof.MillerRabin.Round.compact])
+  have h8a := ha 8 (by simp [Proof.MillerRabin.Round.compact])
   apply hf
   simp only [ofs, Mem.sub_ofNat_toNat B (by omega : i < 2 ^ 64)]
   intro r hr
@@ -33,8 +33,8 @@ theorem core_keeps {B : Addr} {n w : Nat} {m m' : Mem}
     List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl | rfl | rfl | rfl | rfl) | ((rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) | rfl)
   all_goals
-    simp only [Spec.MillerRabin.compact, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at ht
-    simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at h2a h3a h5a h6a h8a
+    simp only [Proof.MillerRabin.Round.compact, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at ht
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at h2a h3a h5a h6a h8a
     simp only [slot, hdrBytes, aT0, aAcc, aTmp, aY, aXm, kG, kFlag, kPlen,
       kV, kT0, kBits, kT2, kWords, kT1, sFn, sCnt]
     omega_arith

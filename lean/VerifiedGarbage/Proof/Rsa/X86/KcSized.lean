@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KcLoad
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Complete key validation at the selected public word width -/
 

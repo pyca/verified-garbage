@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 /-! # The key's calls of `vg_rsa_keygen_inverse`, at the width of each inversion -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Inverse/Post.lean`, which only this module imported.
@@ -33,7 +34,7 @@ open VG.Proof.Rsa.X86.KeyRt (kw)
 open VG.Proof.Rsa.X86.Keys (num)
 
 theorem post_of {s t : State} (post : contract.post s t) :
-    (∀ i, i < size s → ¬ Spec.RsaKeyGen.inverseWrites (len s) i →
+    (∀ i, i < size s → ¬ Proof.RsaKeyGen.inverseWrites (len s) i →
       t.mem (base s + BitVec.ofNat 64 i) = s.mem (base s + BitVec.ofNat 64 i)) ∧
     num t.mem (base s) (kw (len s)) 1 =
       Nat.gcd (num s.mem (base s) (kw (len s)) 0) (num s.mem (base s) (kw (len s)) 8) ∧
@@ -41,7 +42,7 @@ theorem post_of {s t : State} (post : contract.post s t) :
       (num t.mem (base s) (kw (len s)) 3 : Int) * num s.mem (base s) (kw (len s)) 0 -
         num t.mem (base s) (kw (len s)) 1 ∧
     num t.mem (base s) (kw (len s)) 3 < num s.mem (base s) (kw (len s)) 8 := by
-  sig_post [contract, inverseStack, Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig,
+  sig_post [contract, inverseStack, Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig,
     abi, argSlots, argVal, argBytes] at post
   simp only [← inverseNum_num]
   exact post
@@ -132,7 +133,7 @@ theorem invEntry_pre {s : State} {B : Addr} {Z a words : Nat}
   have F := invEntry_frame (B := B) (L := 8 * words) (s := s) (by omega)
   generalize eu : invEntry B (8 * words) s = u at *
   sig_pre [VG.Proof.RsaKeyGen.X86.Inverse.contract, VG.Proof.RsaKeyGen.X86.Inverse.inverseStack,
-    Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig, abi, argSlots, argVal, argBytes, stackBelow]
+    Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa0, sa1, sa2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt wordsBound, Nat.mod_eq_of_lt ptrBound,
     Nat.mod_eq_of_lt aBound, ptr, rd, wr, sp, ar]
   have espBound := (s.gpr .esp).isLt
@@ -168,7 +169,7 @@ theorem invEntry_pre {s : State} {B : Addr} {Z a words : Nat}
   have arrFit {j : Nat} (hj : j < 15) :
       VG.Proof.Rsa.X86.Keys.arr (kw a) j + VG.Proof.Rsa.X86.Keys.S (kw a) ≤ Z :=
     Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_end hj) fits
-  have value {j : Nat} (hj : j < 15) : Spec.RsaKeyGen.inverseNum u.mem B a j = num s.mem B (kw a) j := by
+  have value {j : Nat} (hj : j < 15) : Proof.RsaKeyGen.inverseNum u.mem B a j = num s.mem B (kw a) j := by
     rw [VG.Proof.RsaKeyGen.X86.Inverse.inverseNum_num]
     exact frame_num F frameFar nowrap (arrFit hj)
   refine ⟨by rw [e16]; omega, by rw [e16]; omega, trivial, by rw [Nat.mul_comm], ws.sub_right argSub,
@@ -177,7 +178,7 @@ theorem invEntry_pre {s : State} {B : Addr} {Z a words : Nat}
     (ws.sub_right resSub).symm,
     by rw [reserved]; exact Offset.disjoint_of_le (by simp only [nat52, nat12]; omega) (by simp only [nat12]; omega),
     by omega, lenLow, lenHigh, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · unfold Spec.RsaKeyGen.inverseBytes; omega
+  · unfold Proof.RsaKeyGen.inverseBytes; omega
   · rw [value (by decide)]; exact odd
   · rw [value (by decide)]; exact large
   · rw [value (by decide), value (by decide)]; exact v
@@ -186,7 +187,7 @@ theorem invEntry_pre {s : State} {B : Addr} {Z a words : Nat}
   · rw [value (by decide), value (by decide)]
     unfold aNM aM at negated
     rw [negated]
-    simp only [kw, Spec.Rsa.modulusWords, Spec.RsaKeyGen.inverseBytes]
+    simp only [kw, Spec.Rsa.modulusWords, Proof.RsaKeyGen.inverseBytes]
     congr 1; omega
   · rw [value (by decide)]; exact zero
 
@@ -259,14 +260,14 @@ theorem code_noSp : NoSp VG.Impl.RsaKeyGen.X86.Inverse.code := by
 theorem code_stack : stackUse VG.Impl.RsaKeyGen.X86.Inverse.code = 16 := rfl
 
 /-- The bytes the callee may write lie in the ranges an inversion's frame names. -/
-theorem writes_ranges {a W i : Nat} (hka : kw a = W) (hw : Spec.RsaKeyGen.inverseWrites a i) :
+theorem writes_ranges {a W i : Nat} (hka : kw a = W) (hw : Proof.RsaKeyGen.inverseWrites a i) :
     ¬ ∀ r ∈ VG.Proof.RsaKeyGen.X86.Key.inverseRanges W invSlots, i < r.1 ∨ r.1 + r.2 ≤ i := by
   intro out
   simp only [VG.Proof.RsaKeyGen.X86.Key.inverseRanges, invSlots, VG.Impl.Rsa.X86.Keys.sOdd,
     VG.Impl.Rsa.X86.Keys.sB, VG.Impl.Rsa.X86.Keys.sC, VG.Impl.Rsa.X86.Keys.hdr, List.map_cons, List.map_nil,
     List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at out
   simp only [kw, Spec.Rsa.modulusWords] at hka
-  unfold Spec.RsaKeyGen.inverseWrites Spec.RsaKeyGen.inverseBytes at hw
+  unfold Proof.RsaKeyGen.inverseWrites Proof.RsaKeyGen.inverseBytes at hw
   rcases hw with ⟨lo, hi⟩ | ⟨j, hj, lo, hi⟩
   · omega
   · have le := Nat.mul_le_mul_right (8 * ((a + 7) / 8) + 8) (show j + 1 ≤ 15 by omega)

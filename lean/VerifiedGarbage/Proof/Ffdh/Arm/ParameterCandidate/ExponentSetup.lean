@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
@@ -148,7 +148,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.Rsa.Arm.Keys (num opRegs)
 
 private theorem local60_preserved {s t : State} {base : BitVec 32} {capacity : Nat} {rs : List Reg}
@@ -175,7 +175,7 @@ theorem expSetup_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
     (large : 1 < n) (odd : n % 2 = 1) (small : n < 2 ^ (64 * w)) :
     WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.expSetup s fun t =>
       KeyReady base capacity w t ∧ MontData base capacity w t.mem ∧
-      numAt t.mem (State.addr base) w 27 = Spec.MillerRabin.exponent n ∧
+      numAt t.mem (State.addr base) w 27 = Proof.MillerRabin.Round.exponent n ∧
       t.mem.readW (off (State.addr base) (arrAt w 27 + 8 * w)) 64 =
         BitVec.twoPow 64 ((Spec.Rsa.splitTwos (n - 1)).1 % 64) ∧
       (∀ j, j < 30 → j ≠ 27 → j ≠ 29 → num t.mem (base + 96#32) (2 * w + 2) j =
@@ -246,7 +246,7 @@ theorem expSetup_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
   have lowB : numAt b.mem (State.addr base) w 27 = n / 2 ^ sigma := by
     rw [keyView_number_low b.mem base w 27 (readyB.baseShiftFits workspaceB) (by rw [valueB]; exact quotientSmall), valueB]
   rw [memC, lowB] at exponentT
-  have exponent : n / 2 ^ sigma = Spec.MillerRabin.exponent n := by
+  have exponent : n / 2 ^ sigma = Proof.MillerRabin.Round.exponent n := by
     change _ = (n - 1) / 2 ^ sigma
     exact (VG.Proof.Bignum.odd_div odd (by omega : 1 ≤ sigma)).symm
   have rest : Rest opRegs s t := restU.trans (restUB.trans
@@ -264,7 +264,7 @@ theorem expSetup_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
       key_number_of_workspaceEq workspaceU readyU equalV bound, arraysU j bound not29]
   · intro d bound
     have fit := readyU.arrayFit (j := 0) (by decide)
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
     rw [key_keep_header workspaceC readyC (by simp) bound keepT, memC, headerB d bound,
       key_keep_header workspaceV readyV (by simp) bound keepA, equalV.word (bits := 64) (by omega), headerU d bound]
 

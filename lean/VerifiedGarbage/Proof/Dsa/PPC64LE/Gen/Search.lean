@@ -21,7 +21,7 @@ open VG.Impl.Dsa.PPC64LE.Generation
 section
 variable {G : GP} {X : State → Prop}
 
-theorem search_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Spec.Dsa.ProbablePrime.Layout} (O : GenOk G g HO Lq Lp)
+theorem search_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Layout} (O : GenOk G g HO Lq Lp)
     (hlb : HO.md.lenBytes G.qLen =
       [0, 0, 0, 0, 0, 0, BitVec.ofNat 8 (8 * G.qLen / 256), BitVec.ofNat 8 (8 * G.qLen % 256)])
     {V : Nat → BitVec 64} {LS : List Nat} (hS : fSeed ∈ LS) (hSv : V fSeed = G.seeds)

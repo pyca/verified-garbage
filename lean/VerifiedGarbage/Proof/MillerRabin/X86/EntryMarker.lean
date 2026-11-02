@@ -36,9 +36,9 @@ theorem Entry.marker {s : State} (E : Entry s) :
   apply marker_halves (Nat.mod_lt _ (by decide))
   have fit : (geometry s).array 27 + 4 * (geometry s).words + 8 ≤ lenOf s := by
     have arrays := E.valid.arraysFit
-    change Spec.Rsa.Mont.arrAt (geometry s).w 28 ≤ lenOf s at arrays
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes
-    unfold Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes at arrays
+    change Proof.Rsa.Mont.arrAt (geometry s).w 28 ≤ lenOf s at arrays
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes
+    unfold Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at arrays
     omega
   rw [E.pushed_read fit]
   rw [show 4 * (geometry s).words = 8 * (geometry s).w by unfold Geometry.words; omega]

@@ -14,7 +14,7 @@ import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 structure CrtDifferenceInput (base : BitVec 32) (len w M : Nat) (s : State) : Prop where
@@ -34,7 +34,7 @@ theorem crt_difference_ok (s : State) {base : BitVec 32} {len w M : Nat}
       numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % M ∧ numAt t.mem (State.addr base) w 7 = 1 ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have op (q : Nat) (hq : q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7) : Operand q := by
-    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
   have positive : 0 < M := by have := h.ready.modulus; rw [h.modulus] at this; omega
   rw [difference, WP.seq_iff]

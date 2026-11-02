@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Parameters
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Finish
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Memory
-public import VerifiedGarbage.Spec.MillerRabin
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.MillerRabin.Contract
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStep
 public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
@@ -36,9 +36,9 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 open VG.Proof.RsaKeyGen
 
 theorem code_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (bound : P.g.w ≤ 64) {s : State}
     (S : Scr s P.g.W P.g.L) (capacity : w32 s.mem P.g.W 40 = P.capacity)
@@ -126,9 +126,9 @@ theorem Memory.entropyLength {E : Environment} {c : Nat} {entropy : List Byte} {
   exact VG.Proof.Bignum.bytesAt_length _ _ _
 
 theorem tested_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (L : Loaded E c entropy s) (odd : c % 2 = 1) (length : Spec.Dsa.bitLength c = E.bits) :
@@ -192,9 +192,9 @@ theorem tested_ok {mont round : Prog isa} {montName roundName : String}
   exact ⟨Ia, tagged.1, tagged.2, WF, T, K⟩
 
 theorem test_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (L : Loaded E c entropy s) (odd : c % 2 = 1) (length : Spec.Dsa.bitLength c = E.bits) :

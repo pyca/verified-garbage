@@ -53,7 +53,7 @@ theorem body_ok (M : Mont) {s : State} {B S : Addr} {Z w c bm b : Nat} {mi : Bit
     (hsp : s.gpr .rsp = S) (hd : Region.Disjoint ⟨B, Z⟩ ⟨S, 112⟩)
     (hl : ∀ d, 8 ≤ d → d + 8 ≤ 112 → InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 d) 8) :
     WP isa (VG.Impl.MillerRabin.X86_64.body M.mm) s fun t =>
-      t.gpr .rax = BitVec.ofNat 64 (Spec.MillerRabin.round c b).toNat ∧
+      t.gpr .rax = BitVec.ofNat 64 (Proof.MillerRabin.Round.round c b).toNat ∧
       t.gpr .rbx = s.mem.readW (S + 104#64) 64 ∧
       t.gpr .r12 = s.mem.readW (S + 96#64) 64 ∧
       t.gpr .r13 = s.mem.readW (S + 88#64) 64 ∧

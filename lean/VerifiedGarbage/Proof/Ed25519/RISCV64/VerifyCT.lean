@@ -224,6 +224,68 @@ theorem sideW_tables {o : Nat} (ho : 7776 ≤ o) (ho' : o + 128 ≤ 8032) :
   · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
   · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
 
+theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
+    (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
+  simp [Spec.Ed25519.bytesAt, hi]
+
+/-- `[k] A + R`, before the comparison: the taint analysis checks each piece, and the
+branch on the challenge's top half is taken on the same bytes `CH` in both runs. -/
+theorem rhsPre_ct {pk sig ch : Addr} {CH : List (BitVec 8)} {A : State → Prop}
+    (hA : ∀ t, A t → VCtx b pk sig ch t ∧ t.sp = sp ∧ bytesAt t.mem ch 64 = CH) :
+    RelCT isa (Both A)
+      (.seq (.seq (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) challengeMul)
+        verifyCombine) fun _ _ => True := by
+  let M1 (t : State) : Prop := VCtx b pk sig ch t ∧ t.sp = sp ∧ t.gpr .s0 = ch ∧ bytesAt t.mem ch 64 = CH
+  let M2 (t : State) : Prop := M1 t ∧ (t.gpr .a4 = 0 ↔ ∀ i < 32, CH.getD (32 + i) 0 = 0)
+  let Mid (t : State) : Prop := Ctx8 b t ∧ t.sp = sp
+  have hX : RelCT isa (Both A) (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) (Both M1) :=
+    ctBoth (ctRegs [.a3, .s11] (A := A) (fun _ _ h₁ h₂ => ⟨(hA _ h₁).2.1.trans (hA _ h₂).2.1.symm,
+      fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [(hA _ h₁).1.ctx.ctx.a3, (hA _ h₂).1.ctx.ctx.a3]
+        · rw [(hA _ h₁).1.s11, (hA _ h₂).1.s11]⟩) (by taint_decide))
+      fun s h => WP.mono (rhsLoad_ok (hA s h).1) fun t ⟨rt, _, e0, vt, bt⟩ =>
+        ⟨vt, by rw [rt.sp, (hA s h).2.1], e0, by rw [bt, (hA s h).2.2]⟩
+  have hCH : RelCT isa (Both M1) (.block challengeHigh) (Both M2) :=
+    ctBoth (ctRegs [.a3, .s0, .s11] (A := M1) (fun _ _ h₁ h₂ => ⟨h₁.2.1.trans h₂.2.1.symm,
+      fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · rw [h₁.1.ctx.ctx.a3, h₂.1.ctx.ctx.a3]
+        · rw [h₁.2.2.1, h₂.2.2.1]
+        · rw [h₁.1.s11, h₂.1.s11]⟩) (by taint_decide))
+      fun s h => WP.mono (challengeHigh_ok (ch := ch) h.1.s11
+        (fun i hi => in_base (List.mem_append_left _ h.1.chR) (by omega) (by omega)))
+        fun t ⟨rt, mt, et⟩ => ⟨⟨h.1.of_rest rt (by decide), by rw [rt.sp, h.2.1],
+          by rw [rt.gpr _ (by decide), h.2.2.1], by rw [mt, h.2.2.2]⟩, by
+          rw [et, ← h.2.2.2]
+          exact forall_congr' fun i => imp_congr_right fun hi => by rw [bytesAt_getD _ _ (by omega)]⟩
+  have pub2 : ∀ s₁ s₂, M2 s₁ → M2 s₂ → s₁.sp = s₂.sp ∧ ∀ r ∈ [Reg.a3, .s0], s₁.gpr r = s₂.gpr r :=
+    fun _ _ h₁ h₂ => ⟨h₁.1.2.1.trans h₂.1.2.1.symm, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [h₁.1.1.ctx.ctx.a3, h₂.1.1.ctx.ctx.a3]
+      · rw [h₁.1.2.2.1, h₂.1.2.2.1]⟩
+  have post : ∀ n, 1 ≤ n → n ≤ 32 → ∀ s, M2 s → WP isa (pointFromScalar n) s Mid := fun n h1 h32 s h =>
+    WP.mono (pointFromScalar_ok h.1.1.ctx (count := n) h1 h32 h.1.2.2.1
+      (fun i hi => in_base (List.mem_append_left _ h.1.1.chR) (by omega) (by omega))
+      (h.1.1.chD.sub_left (Region.sub_prefix (by omega))))
+      fun t ⟨rt, _, _, _⟩ => ⟨h.1.1.ctx.of_rest rt (by decide), by rw [rt.sp, h.1.2.1]⟩
+  have h16 : RelCT isa (Both M2) (pointFromScalar 16) (Both Mid) :=
+    ctBoth (ctRegs [.a3, .s0] (A := M2) pub2 (by taint_decide)) (post 16 (by decide) (by decide))
+  have h32 : RelCT isa (Both M2) (pointFromScalar 32) (Both Mid) :=
+    ctBoth (ctRegs [.a3, .s0] (A := M2) pub2 (by taint_decide)) (post 32 (by decide) (by decide))
+  have hite : RelCT isa (Both M2) (.ite (.zero .a4) (pointFromScalar 16) (pointFromScalar 32)) (Both Mid) :=
+    RelCT.ite (fun _ _ h => eval_zero_agree h.1.2 h.2.2) (h16.mono (fun _ _ h => h.1) fun _ _ h => h)
+      (h32.mono (fun _ _ h => h.1) fun _ _ h => h)
+  have hVC : RelCT isa (Both Mid) verifyCombine fun _ _ => True :=
+    ctRegs [.a3] (A := Mid) (fun _ _ h₁ h₂ => ⟨h₁.2.trans h₂.2.symm, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      subst hr; rw [h₁.1.a3, h₂.1.a3]⟩) (by taint_decide)
+  unfold challengeMul
+  exact RelCT.seq (RelCT.seq hX (RelCT.seq hCH hite)) hVC
+
 /-- The equation, for the decoded points `a` and `r`. -/
 theorem verifyEquationPoints_ct {a r : Spec.Ed25519.Point} (ha : Spec.Ed25519.decodePoint PK = some a)
     (hr : Spec.Ed25519.decodePoint (SG.take 32) = some r) :
@@ -254,13 +316,7 @@ theorem verifyEquationPoints_ct {a r : Spec.Ed25519.Point} (ha : Spec.Ed25519.de
     · rw [bytesAt_ws ft (sideW_sub (by decide)) d.ctx.chD (by decide),
         bytesAt_ws d.frame decW_sub d.ctx.chD (by decide), v.2.2.2.2]
   let sum := Spec.Ed25519.pointAdd r (Spec.Ed25519.pointMul (decodeLE CH) a)
-  have hpre := ctBoth (ctRegs [.a3, .s11] (A := L1)
-    (c := .seq (.seq (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) (pointFromScalar 32)) verifyCombine)
-    (fun _ _ h₁ h₂ => ⟨h₁.2.1.trans h₂.2.1.symm, fun x hx => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl
-      · rw [h₁.1.ctx.a3, h₂.1.ctx.a3]
-      · rw [h₁.1.s11, h₂.1.s11]⟩) (by taint_decide)) (B := EqPre b sp lhs sum) fun s h =>
+  have hpre := ctBoth (rhsPre_ct (A := L1) (CH := CH) fun t h => ⟨h.1, h.2.1, h.2.2.2.2.2⟩) (B := EqPre b sp lhs sum) fun s h =>
       WP.mono (verifyRhsPre_ok' h.1) fun t ⟨rt, _, ct, pt, qt⟩ =>
         ⟨⟨ct, by rw [rt.sp, h.2.1]⟩, by rw [pt, h.2.2.1], by rw [qt, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2]⟩
   unfold verifyEquationPoints verifyRhs

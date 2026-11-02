@@ -24,7 +24,7 @@ finish both key encodings with a branch-free validity mask. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 def keyPower (p : Inputs) (xb : List Byte) : Nat := Spec.Rsa.powMod p.G (Spec.Rsa.os2ip xb) p.P
@@ -54,7 +54,7 @@ theorem keyTail_ok (s : State) {p : Inputs} {slots : List Nat} {xb eb : List Byt
       Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k =
         (if keyAccepted p xb then Spec.Rsa.i2osp (keyPower p xb) p.k else List.replicate p.k 0) ∧
       Frame (keyWrites p s) s.mem t.mem := by
-  have fits : Spec.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
+  have fits : Proof.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
   rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.tail, WP.seq_iff]
   refine WP.mono (powerAt_ok s 56 16 20 h stable h56 h16 h20 h32 ready modulus odd r2 h.gBytes p.gLength
     significant (by rw [significantSize]; exact p.scalarWidthBounds.1)
@@ -64,11 +64,11 @@ theorem keyTail_ok (s : State) {p : Inputs} {slots : List Nat} {xb eb : List Byt
   rw [significantValue] at powerU
   change numAt u.mem (State.addr p.base) p.w 6 = keyPower p xb at powerU
   rw [WP.seq_iff]
-  refine WP.mono (inRange_ok u readyU (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6)
+  refine WP.mono (inRange_ok u readyU (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6)
     (by decide) (by rw [modU]; exact odd)) ?_
   rintro v ⟨readyV, flag, arraysV, frameV, restV⟩
   have contextV := contextU.after_workspace frameV restV readyV.ptr (fun d hd => (stableSlots_at stable hd).1)
-  have powerV := (arraysV 6 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerU
+  have powerV := (arraysV 6 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerU
   have flagV : v.gpr .r11 = if keyAccepted p xb then 1 else 0 := by
     rw [powerU, modU] at flag
     simpa only [keyAccepted, decide_eq_true_eq] using flag

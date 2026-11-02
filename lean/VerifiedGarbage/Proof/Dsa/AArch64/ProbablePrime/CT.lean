@@ -15,11 +15,13 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 public meta import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Body
 public meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrimeCT
 public meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # The probable-prime test's timing depends only on its public inputs -/
 
@@ -57,7 +59,7 @@ theorem map_toNat_inj : ∀ {l₁ l₂ : List Byte}, l₁.map (·.toNat) = l₂.
 
 theorem view_of_pub {bits : Nat} {s₁ s₂ : State} (h : (contract bits).pub s₁ s₂) :
     view bits s₁ = view bits s₂ := by
-  sig_pub [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs] at h
+  sig_pub [contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argRegs] at h
   obtain ⟨hsp, hl, h0, h1, h2, h3, h4⟩ := h
   obtain ⟨hN, hr⟩ := List.cons.inj hl
   have hr' := map_toNat_inj hr

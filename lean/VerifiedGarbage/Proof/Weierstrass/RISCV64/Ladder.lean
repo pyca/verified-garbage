@@ -324,7 +324,7 @@ theorem ladSel_ok {L : LadderCfg} {base : Addr} (hL : LadLayR L) {s : State} (hw
   obtain ⟨rxy, rxz, ryz⟩ := hL.lay.rne
   refine WP.mono (selPt_ok (hw.of_rest k₄) _ c₄ (n := L.M.n) (o := L.R) (a := L.D) (b := L.T)
     (fun d hd => hL.al d (ladPts_slots L d hd))
-    (fun d hd => hL.short d (ladPts_slots L d hd))
+    (fun d hd => by have := hL.short d (ladPts_slots L d hd); omega)
     ⟨hap L.R.x (by simp) L.R.y (by simp) rxy, hap L.R.x (by simp) L.R.z (by simp) rxz,
       hap L.R.y (by simp) L.R.z (by simp) ryz⟩
     (fun d hd e he => hap d (List.mem_append_left [L.D.x, L.D.y, L.D.z, L.T.x, L.T.y, L.T.z] hd) e

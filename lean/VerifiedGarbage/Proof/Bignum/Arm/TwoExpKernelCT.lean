@@ -16,7 +16,7 @@ power, exponent prefix, and modulus. -/
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem twice_ct {base : BitVec 32} {len w M1 M2 E1 E2 : Nat}
     (fit : arrAt w 3 + 32 ≤ 8 * len) (hn : 0 < 2 * w) :
@@ -31,9 +31,9 @@ theorem twice_ct {base : BitVec 32} {len w M1 M2 E1 E2 : Nat}
     (fun s t h => ⟨twiceArgs_ready s h.1, twiceArgs_ready t h.2.1⟩)
   have body := (doubleFnRestore_ct (base := base) (len := len) (w := w)
     (o := 1) (a := 5) (b := 6)
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) fit hn).mono
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) fit hn).mono
       (P' := fun (s t : State) => s.sp = t.sp ∧ DoubleFnReady base len w 1 5 6 s ∧ DoubleFnReady base len w 1 5 6 t)
       (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ h => h)
   exact (ready.seq body).mono (fun _ _ h => h) (fun _ _ _ => trivial)

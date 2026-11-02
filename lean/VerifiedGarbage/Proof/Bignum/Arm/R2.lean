@@ -22,7 +22,7 @@ modulus `m`, cancelling `R = 2^(64 w)`), so that the last leaves
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- A modulus with an inverse modulo `2^64` is odd. -/
@@ -68,9 +68,9 @@ theorem r2Square_ok (s : State) {base : BitVec 32} {len w m k : Nat} (h : R2Sq b
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have hw : 2 ≤ w := h.ready.width ▸ h.ready.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op7 : Operand 7 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have odd : m % 2 = 1 := h.modulus ▸ numAt_odd_of_inverse s.mem _ (by omega) h.ready.inverse
   refine WP.mono (squareOp_ok s h.ready op4 op4 (by decide) (by rw [h.modulus]; exact h.operand)) ?_
   rintro t ⟨ready, modulus, bound, value, keeps, frame, rest⟩

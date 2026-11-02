@@ -15,11 +15,7 @@ loops over random tapes, allocation and encoding:
 * `vg_ffdh_check_public`: `publicValid` of an imported y;
 * `vg_ffdh_check_private`: `privateFrom` of an imported (y, x);
 * `vg_ffdh_generate_key`: one attempt of `generate`, from random octets;
-* `vg_ffdh_exchange`: `exchange`, padded to the modulus' length;
-* `vg_ffdh_parameter_candidate`: one element of `generateParameters`' list,
-  with its Miller–Rabin witnesses, from random octets
-  (`parameterCandidate`);
-* `vg_ffdh_choose`: a word selected by a secret bit.
+* `vg_ffdh_exchange`: `exchange`, padded to the modulus' length.
 
 The domain is one buffer, `domain`: p, g and, if `domain_len` is `3 p_len`,
 q, each `p_len` octets, most significant first (with leading zeros: g and q
@@ -46,7 +42,7 @@ whether an imported key is consistent, whether the shared value is
 degenerate). The exponentiation of an imported x may run over its `x_len`
 octets, its public encoding length, leading zeros included. Parameter
 generation computes only public values (the candidates and their witnesses),
-so its timing may depend on all of them.
+so its timing may depend on all of them (`GenerationContract.lean`).
 
 `scratch` is working space of at least `16 p_len + 32` `u64`s, whose contents
 on return are unspecified. `stack` is the number of bytes below the stack
@@ -352,83 +348,5 @@ def exchangeApi : Api where
     "`x_len` must be in 1..=`p_len`.", checkedSafety,
     "For the result to be specified, `peer` must also be a value that \
       `vg_ffdh_check_public` accepted for this domain."] ++ scratchSafety
-
-/-! ## `vg_ffdh_parameter_candidate` -/
-
-/-- The status `vg_ffdh_parameter_candidate` returns: 0 if `rand` ran out,
-1 for an accepted p, 2 for a rejected candidate. -/
-def candidateStatus : Option (Option Nat × Rand) → Nat
-  | none => 0
-  | some (some _, _) => 1
-  | some (none, _) => 2
-
-/-- `vg_ffdh_parameter_candidate(out: *mut u8, out_len: usize, used: *mut [u64; 1],
-bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64,
-scratch_len: usize) -> u32`. -/
-def parameterCandidateSig : Sig where
-  params := [("out", .slice true .u8 "out_len"), ("used", .array true .u64 1),
-    ("bits", .int .usize true), ("generator", .int .u32 true),
-    ("rand", .slice false .u8 "rand_len"), ("scratch", .slice true .u64 "scratch_len")]
-  ret := some .u32
-
-/-- One candidate for p (`parameterCandidate`): `candidateStatus`, p at `out`
-for 1 (zeros otherwise), and the number of octets of `rand` read at `used`
-(0 for status 0). Everything is public: timing may depend on `rand`. -/
-def parameterCandidateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  parameterCandidateSig.contract A
-    (pre := fun _out outLen _used bits generator _rand _randLen _scratch scratchLen _ =>
-      512 ≤ bits.toNat ∧ bits.toNat ≤ 8192 ∧ outLen.toNat = (bits.toNat + 7) / 8 ∧
-        (generator.toNat = 2 ∨ generator.toNat = 5) ∧
-        scratchWords outLen.toNat ≤ scratchLen.toNat)
-    (post := fun out outLen used bits generator rand randLen _scratch _scratchLen m m' r =>
-      let res := parameterCandidate bits.toNat generator.toNat (bytesAt m rand randLen.toNat)
-      r.toNat = candidateStatus res ∧
-        bytesAt m' out outLen.toNat =
-          (match res with
-            | some (some p, _) => i2osp p outLen.toNat
-            | _ => List.replicate outLen.toNat 0) ∧
-        wordsAt m' used 1 =
-          [BitVec.ofNat 64 (match res with
-            | some (_, rest) => randLen.toNat - rest.length
-            | none => 0)])
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _out _outLen _used _bits _generator rand randLen _scratch _scratchLen m =>
-      (bytesAt m rand randLen.toNat).map (·.toNat))
-
-def parameterCandidateApi : Api where
-  module := "ffdh"
-  name := "vg_ffdh_parameter_candidate"
-  sig := parameterCandidateSig
-  writeArgs := true
-  contracts := some fun A stack => parameterCandidateContract A stack
-  summary := "One candidate for the probable safe prime p of finite-field Diffie–Hellman \
-    parameters of `bits` bits with the generator 2 or 5 (PKCS #3 §6, with OpenSSL's \
-    congruences). Reads from the front of `rand` `out_len` bytes, most significant first, \
-    cut to `bits` bits with the most and least significant bits set, as p, and \
-    `q = (p − 1) / 2`. Rejects p unless `p mod 24 = 11` (generator 2) or \
-    `p mod 10 ∈ {3, 7}` (generator 5) and no odd prime below 256 divides p or q but \
-    itself. Then runs Miller–Rabin on q and, if it passes, on p, with 64 witnesses \
-    (128 above 2048 bits) for each, every witness for w read from `rand` as the bytes \
-    of `w − 1`, cut to its bit length, and read again until it is in `2..w − 1`; the \
-    first witness that proves a number composite is the last read for it. \
-    Returns 1 and writes p to `out` if both pass, 2 if p is rejected, and writes the \
-    number of bytes of `rand` read to `used`; or returns 0 if `rand` is too short, for \
-    which the caller calls it again with `rand` extended by more random bytes. `out` is \
-    zeros but for 1, and `used` is 0 for 0.\n\n\
-    Contract: `VG.Spec.Ffdh.parameterCandidateContract`. Every value is public: timing \
-    may depend on `rand`."
-  safety := ["`bits` must be in 512..=8192, and `out_len` must be `⌈bits / 8⌉`.",
-    "`generator` must be 2 or 5.",
-    "`scratch_len` must be at least `16 * out_len + 32`.",
-    "The contents of `scratch` on return are unspecified."]
-
-/-! ## `vg_ffdh_choose` -/
-
-def chooseSig : Sig where
-  params := [("a", .int .u64 false), ("b", .int .u64 false), ("bit", .int .u64 false)]
-  ret := some .u64
-
-def chooseContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  chooseSig.contract A (post := fun a b bit m m' r => r = choose a b bit ∧ m' = m) (stack := stack)
 
 end VG.Spec.Ffdh

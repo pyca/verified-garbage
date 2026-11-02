@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # The interface `RsaPrivateCrt` on AArch64
@@ -28,7 +29,7 @@ structure CrtImpl where
   /-- Its symbol and code. -/
   name : String
   code : Prog isa
-  verified : Verified AArch64.target code (Spec.Rsa.privateCrtContract AArch64.abi 0)
+  verified : Verified AArch64.target code (Proof.Rsa.privateCrtContract AArch64.abi 0)
   noFrames : code.noFrames = true
   /-- `vg_rsa_public_precompute` (`pc`) and
   `vg_rsa_public_precomputed_checked` (`pd`), by their symbols. -/

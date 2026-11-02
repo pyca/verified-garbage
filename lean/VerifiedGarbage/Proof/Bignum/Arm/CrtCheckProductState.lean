@@ -24,7 +24,7 @@ theorem crt_padComparison_ready (s : State) {base : BitVec 32} {size len o a d w
     (h : CrtCheckProductInput base size len o a d w s) :
     WP isa padModulus s fun t => CrtCompareInput base size o a d w t ∧
       val32 t.mem (State.addr base) a (4 * w + 2) = val32 s.mem (State.addr base) a (4 * w + 2) ∧
-      val32 t.mem (State.addr base) d (4 * w + 2) = Spec.Rsa.Mont.numAt s.mem (State.addr base) w 0 ∧
+      val32 t.mem (State.addr base) d (4 * w + 2) = Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0 ∧
       Outside (State.addr base) d (4 * (4 * w + 2)) s.mem t.mem ∧ Rest roundClobbers s t := by
   have small := h.padding.layout.size
   have separate := h.padding.separate

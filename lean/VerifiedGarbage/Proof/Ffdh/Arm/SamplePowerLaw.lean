@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeyPowerAt
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure SamplePowerInput (p : Inputs) (l : ScalarLayout p) (slots : List Nat)

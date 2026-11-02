@@ -1,5 +1,5 @@
 name = "Finite-field Diffie–Hellman (FFDH)"
 family = "Key agreement"
-specs = ["Ffdh", "MillerRabin"]
+specs = ["Ffdh"]
 modules = ["src/ffdh.rs"]
-asm = ["ffdh", "rsa_mont"]
+asm = ["ffdh"]

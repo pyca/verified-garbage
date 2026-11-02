@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem r2Constants_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -27,8 +27,8 @@ theorem r2Constants_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (smallConst_ok u (o := 7) 2 ready (by decide) (by decide) (by decide) (by decide)) ?_
   rintro t ⟨next, _, two, keeps2, frame2, rest2⟩
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have oldOne := keeps_array_num keeps2 fits op4 (by decide)
   have oldM1 := keeps_array_num keeps1 fits op0 (by decide)
   have oldM2 := keeps_array_num keeps2 fits op0 (by decide)

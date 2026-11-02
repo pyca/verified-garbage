@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Mont.Words
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.Offset
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout)
 
 structure WorkspaceEq (base : Addr) (size : Nat) (mem mem' : Mem) : Prop where
   read : ∀ d n, d + n ≤ size → mem'.read (off base d) n = mem.read (off base d) n
@@ -36,7 +36,7 @@ theorem WorkspaceEq.layout {base : Addr} {len : Nat} {mem mem' : Mem}
     (h : WorkspaceEq base (8 * len) mem mem') (layout : Layout mem base len) : Layout mem' base len := by
   have fit := layout.2.2.1
   have small : 128 ≤ 8 * len := by
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit
     omega
   have width := h.width (by omega)
   unfold Layout
@@ -44,7 +44,7 @@ theorem WorkspaceEq.layout {base : Addr} {len : Nat} {mem mem' : Mem}
   refine ⟨layout.1, layout.2.1, layout.2.2.1, ?_⟩
   intro j hj
   unfold wordAt
-  rw [h.word (bits := 64) (by simp only [Spec.Rsa.Mont.arrWord]; omega)]
+  rw [h.word (bits := 64) (by simp only [Proof.Rsa.Mont.arrWord]; omega)]
   exact layout.2.2.2 j hj
 
 theorem WorkspaceEq.number {base : Addr} {len w j : Nat} {mem mem' : Mem}

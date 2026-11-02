@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 /-! # Key generation's call of the domain check -/
 
@@ -19,7 +20,7 @@ namespace VG.Proof.Dsa.AArch64
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Impl.Dsa.AArch64
 
-def keygenCheckName (v : Backend) : String := Spec.Dsa.checkParametersApi.name ++ v.suffix
+def keygenCheckName (v : Backend) : String := "vg_dsa_check_parameters" ++ v.suffix
 def keygenDeriveName (v : Backend) : String := Spec.Dsa.deriveKeyApi.name ++ v.suffix
 
 theorem keygenStackBase_toNat {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
@@ -88,10 +89,10 @@ theorem keygen_check_pre {extra : Nat} {s t : State} (h : GenerateKeyABI extra s
     (hsp : t.sp = randomBase s)
     (hdi : t.gpr .x0 = s.gpr .x3) (hsi : t.gpr .x1 = s.gpr .x4) (hdx : t.gpr .x2 = s.gpr .x5)
     (hcx : t.gpr .x3 = s.gpr .x6) (h8 : t.gpr .x4 = stackArg s 1) (h9 : t.gpr .x5 = stackArg s 2) :
-    (Spec.Dsa.checkParametersContract abi extra).pre
+    (Proof.Dsa.checkParametersContract abi extra).pre
       (t.callEntry.withRegions (keygenCheckRd s) (keygenCheckWr s)) := by
-  sig_pre [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
-  sig_pre [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
+  sig_pre [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
+  sig_pre [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
   simp only [hdi, hsi, hdx, hcx, h8, h9, hsp, keygenCheckRd, keygenCheckWr]
   have hl := h.stackLower
   have hb := (s.sp).isLt
@@ -131,7 +132,7 @@ theorem keygen_check_call (v : Backend) {s t : State} (h : GenerateKeyABI v.stac
   have hb := v.stackBound
   refine WP.callFV v.parametersVerified.1 (keygen_check_pre h hsp hdi hsi hdx hcx h8 h9)
     hc hcw (fun u hur huw husp hf huc hv hp => ?_) (by omega)
-  sig_post [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero] at hp
+  sig_post [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero] at hp
   simp only [hdi, hsi, hdx, hcx] at hp
   refine ⟨hur, huw, husp, huc, ?_, hp, hv⟩
   rw [hsp] at hf

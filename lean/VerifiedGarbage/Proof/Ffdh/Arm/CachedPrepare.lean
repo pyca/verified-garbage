@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Bignum.Arm.PdImport
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
 
 /-! Reuse RSA's packed precomputation importer for a cached FFDH domain. -/
@@ -22,7 +22,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem cachedPrepareSource_ok (s : State) {p : Inputs} {slots : List Nat}

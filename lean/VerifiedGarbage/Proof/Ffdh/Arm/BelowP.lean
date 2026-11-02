@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Checks
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem belowP_ok (s : State) {base : BitVec 32} {len w a : Nat}
@@ -27,7 +27,7 @@ theorem belowP_ok (s : State) {base : BitVec 32} {len w a : Nat}
       t.mem.readW (off (State.addr base) 136) 32 = s.mem.readW (off (State.addr base) 136) 32 ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   rw [VG.Impl.Ffdh.Arm.belowP, WP.seq_iff]
   refine WP.mono (copy_ok s h (by decide : 7 < 8) ha (by decide)) ?_
   rintro u ⟨readyU, valueU, keepsU, frameU, restU⟩
@@ -39,7 +39,7 @@ theorem belowP_ok (s : State) {base : BitVec 32} {len w a : Nat}
   refine WP.mono (compare_ok v readyV (by decide : 7 < 8) (by decide : 0 < 8) (by decide) (by decide)) ?_
   rintro t ⟨ready, flag, keepsT, frameT, restT⟩
   refine ⟨ready, ?_, ?_, ?_, frameU.trans (frameV.trans frameT), restU.trans (restV.trans restT)⟩
-  · rw [valueV, valueU, arraysUV 0 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)] at flag
+  · rw [valueV, valueU, arraysUV 0 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)] at flag
     simp only [belowOdd _ _ odd] at flag
     exact flag
   · intro q hq nq

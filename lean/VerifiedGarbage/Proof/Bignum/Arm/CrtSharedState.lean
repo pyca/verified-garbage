@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure CrtShared (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : Prop where

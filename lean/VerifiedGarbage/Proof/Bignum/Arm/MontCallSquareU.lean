@@ -2,7 +2,7 @@ module
 
 public import Init.Prelude
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCallSquareU
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithLaw
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -25,7 +25,7 @@ section
 section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt Operand)
+open VG.Proof.Rsa.Mont (arrAt Operand)
 
 theorem montCallSquareUArithmetic_ct {base : BitVec 32} {len w o a b : Nat}
     (ho : Operand o) (ha : Operand a) (hb : Operand b)
@@ -82,7 +82,7 @@ theorem montCallSquareU_law : CallArithmeticLaw MontCallSquareU.arithmetic where
   stack := rfl
 
 theorem montCallSquareU_verified :
-    Verified target MontCallSquareU.code (Spec.Rsa.Mont.mulContract abi 40) :=
+    Verified target MontCallSquareU.code (Proof.Rsa.Mont.mulContract abi 40) :=
   montCallWith_verified _ montCallSquareU_law
 
 theorem montCallSquareU_stack : FrameStack.armStack MontCallSquareU.code ≤ 40 :=

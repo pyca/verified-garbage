@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchArguments
 
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # Translate a candidate invocation to the complete search's byte stream -/
 
@@ -21,7 +22,7 @@ def candidateUsed (p : SearchPublic) (used : Nat) : Nat :=
   | none => 0
 
 def SearchCandidatePost (p : SearchPublic) (used : Nat) (t : State) : Prop :=
-  ((t.gpr .rax).setWidth 32).toNat = Spec.Ffdh.candidateStatus (searchCandidate p used) ∧
+  ((t.gpr .rax).setWidth 32).toNat = Proof.Ffdh.candidateStatus (searchCandidate p used) ∧
     Spec.Rsa.bytesAt t.mem p.c.op p.c.k =
       (match searchCandidate p used with
         | some (some n, _) => Spec.Rsa.i2osp n p.c.k

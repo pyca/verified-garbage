@@ -189,7 +189,7 @@ section
 variable {G : GP} {c : Cfg} {X : State → Prop}
 
 /-- q from the seed at `k`, tested with the witnesses from `u`. -/
-theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Spec.Dsa.ProbablePrime.Layout} (ok : PrimeOk L g.qCode)
+theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout} (ok : PrimeOk L g.qCode)
     (hlq : (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32))
     (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen) (hk4 : 4 * g.G.k = G.qLen)
     (hH : ∀ m, HO.H m = Spec.Dsa.seedHash (8 * G.qLen) m) (hwl : G.witB.length = G.witLen)

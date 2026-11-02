@@ -84,12 +84,12 @@ theorem CSib.vex {a s : State} (S : CSib (G := G) a s) : vex s = vex a := by
 theorem CSib.pre {a s : State} (S : CSib (G := G) a s) : Pre G s := S.2.2.2.2.1
 
 theorem veb_ok {s : State} (hp : VPre G s) :
-    vclo s ≤ 1 ∧ 1 ≤ veb s ∧ veb s ≤ Spec.RsaPss.maxEmBits ∧ vclo s + vel s = (s.gpr .rsi).toNat := by
+    vclo s ≤ 1 ∧ 1 ≤ veb s ∧ veb s ≤ Proof.RsaPss.maxEmBits ∧ vclo s + vel s = (s.gpr .rsi).toNat := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hl8 : Nat.log2 (n0v s) < 8 := RsaPss.log2_lt8 (s.mem (s.gpr .rdi))
   refine ⟨lo_le hl8 (by omega), ?_, ?_, ?_⟩
   · unfold veb ebV; omega
-  · unfold veb ebV Spec.RsaPss.maxEmBits; omega
+  · unfold veb ebV Proof.RsaPss.maxEmBits; omega
   · unfold vclo vel veb ebV Spec.RsaPss.emLength; omega
 
 /-! ## The pieces -/

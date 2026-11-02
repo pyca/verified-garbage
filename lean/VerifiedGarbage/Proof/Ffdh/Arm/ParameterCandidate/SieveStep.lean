@@ -97,11 +97,11 @@ theorem sieveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
     refine ⟨⟨invU.context.after_memory mem restT, Nat.le_refl _, ?_, ?_, ?_, ?_, ?_,
       invU.rest.trans (restT.mono (by simp [sieveRegs]))⟩, last⟩
     · rw [cursor, invU.cursor, invU.count, BitVec.shiftLeft_eq_mul_twoPow]
-      change (base + BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*i)) +
+      change (base + BitVec.ofNat 32 (Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*i)) +
         BitVec.ofNat 32 (trialCount n-i)*BitVec.ofNat 32 4 = _
       rw [BitVec.ofNat_mul_ofNat,BitVec.add_assoc,BitVec.ofNat_add_ofNat]
-      have offset : Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*i+(trialCount n-i)*4 =
-          Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*trialCount n := by
+      have offset : Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*i+(trialCount n-i)*4 =
+          Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*trialCount n := by
         have := inv.index
         omega
       rw [offset]

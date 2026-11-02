@@ -46,7 +46,7 @@ theorem pdFinish_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R 
     (restU.mono (by decide)).trans restT⟩
 
   intro good bound
-  have valueFit : Spec.Rsa.Mont.numAt s.mem (State.addr base) (Spec.Rsa.modulusWords k) 6 < 2 ^ (8 * k) := by
+  have valueFit : Proof.Rsa.Mont.numAt s.mem (State.addr base) (Spec.Rsa.modulusWords k) 6 < 2 ^ (8 * k) := by
     rw [h.value good, VG.Proof.Bignum.powMod_eq]
     exact Nat.lt_trans (Nat.mod_lt _ h.positive) bound
   rw [Nat.mod_eq_of_lt valueFit, h.value good] at bytes

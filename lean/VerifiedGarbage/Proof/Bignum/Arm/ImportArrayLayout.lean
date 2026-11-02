@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem importArrayLayout_ok (s : State) {base src : BitVec 32} {len w o : Nat}

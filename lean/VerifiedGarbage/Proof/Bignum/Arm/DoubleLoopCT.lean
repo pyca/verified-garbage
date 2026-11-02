@@ -29,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt Operand)
+open VG.Proof.Rsa.Mont (arrAt Operand)
 
 theorem doubleIndices_ready (s : State) {base : BitVec 32} {len w c : Nat}
     (h : DoubleLoopReady base len w c s) :
@@ -56,8 +56,8 @@ theorem doubleLoopMultiply_ct {base : BitVec 32} {len w c : Nat}
     exact Taint.agree_ofRegs (by simp)
   have setup := (relCT_keep_sp indices (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨doubleIndices_ready s h.1, doubleIndices_ready t h.2.1⟩)
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op7 : Operand 7 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   exact (setup.mono (fun _ _ h => h) (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩)).seq
     (doubleFnRestore_ct op4 op7 op4 fit hn)
 

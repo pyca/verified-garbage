@@ -97,8 +97,7 @@ def sealApi : Api where
   contracts := some fun A stack => sealContract A stack
   summary := "ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce \
     `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext \
-    and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of \
-    `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.\n\n\
+    and the `aad_len` bytes of additional data at `aad` to `*tag`.\n\n\
     Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the \
     lengths may affect timing, not the key, the nonce or the data. The block counter wraps around \
     beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the \

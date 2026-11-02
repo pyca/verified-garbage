@@ -17,8 +17,8 @@ open VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Dsa.X86.Pow (ws bytes numAt_eq8 numAt_eq4)
 
 def contract (prepare : Bool) (n e : Nat) : Contract isa :=
-  if prepare then Spec.Dsa.FixedBaseComb.prepareContract (layout n e) abi 20
-  else Spec.Dsa.FixedBaseComb.powerContract (layout n e) abi 20
+  if prepare then Proof.Dsa.FixedBaseComb.prepareContract (layout n e) abi 20
+  else Proof.Dsa.FixedBaseComb.powerContract (layout n e) abi 20
 
 theorem abi_of {n e : Nat} {s : State} (supported : Supported n e) (prepare : Bool)
     (h : (contract prepare n e).pre s) :
@@ -30,8 +30,8 @@ theorem abi_of {n e : Nat} {s : State} (supported : Supported n e) (prepare : Bo
   change contextBytes n≤context n+272*n at sz
   cases prepare
   all_goals
-    sig_pre [contract,Spec.Dsa.FixedBaseComb.prepareContract,Spec.Dsa.FixedBaseComb.powerContract,
-      Spec.Dsa.FixedBaseComb.arithmeticPre,Spec.Dsa.ModPow.sig,layout,VG.Impl.Dsa.X86.Pow.layout,
+    sig_pre [contract,Proof.Dsa.FixedBaseComb.prepareContract,Proof.Dsa.FixedBaseComb.powerContract,
+      Proof.Dsa.FixedBaseComb.arithmeticPre,Proof.Dsa.ModPow.sig,layout,VG.Impl.Dsa.X86.Pow.layout,
       abi,argSlots,argVal,argBytes,stackBelow] at h
     sig_split h
     refine ⟨?_,?_,?_⟩
@@ -41,7 +41,7 @@ theorem abi_of {n e : Nat} {s : State} (supported : Supported n e) (prepare : Bo
       omega
   · intro _
     unfold canonical
-    simpa only [Spec.Dsa.FixedBaseComb.contextAt,layout,VG.Impl.Dsa.X86.Pow.layout,numAt_eq8] using h
+    simpa only [Proof.Dsa.FixedBaseComb.contextAt,layout,VG.Impl.Dsa.X86.Pow.layout,numAt_eq8] using h
   · intro eq; cases eq
 
 end VG.Proof.Dsa.X86.Comb

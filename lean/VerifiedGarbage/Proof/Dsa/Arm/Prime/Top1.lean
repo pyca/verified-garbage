@@ -5,6 +5,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # DSA's probable-prime test on ARMv7: the contract's arguments
 
@@ -31,7 +32,7 @@ def mkP (bits : Nat) (s : State) : CP where
   rl := (s.gpr .r3).toNat
   SL := keyWords bits
   bits := bits
-  cand := Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0))
+  cand := Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0))
   rnd := Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
 
 /-- The arguments' regions, and the stack below the caller's. -/
@@ -49,7 +50,7 @@ theorem bits_iff {bits : Nat} : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes ↔ Bi
 
 /-- The test's contract. -/
 abbrev primeK : Contract isa :=
-  Spec.Dsa.ProbablePrime.sizedContract layout Impl.Dsa.Arm.ProbablePrime.sizes abi 144
+  Proof.Dsa.ProbablePrime.sizedContract layout Impl.Dsa.Arm.ProbablePrime.sizes abi 144
 
 /-- The contract's precondition, for the size `bits`. -/
 structure CIn (bits : Nat) (s : State) : Prop where
@@ -72,11 +73,11 @@ structure CIn (bits : Nat) (s : State) : Prop where
   fr : (s.gpr .r2).toNat + (s.gpr .r3).toNat ≤ 2 ^ 32
   fu : (stackArg s 0).toNat + 8 ≤ 2 ^ 32
   size : keyOff + 8 * keyWords bits ≤ 8 * (s.gpr .r1).toNat
-  odd : Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0)) % 2 = 1
-  bl : Spec.Dsa.bitLength (Spec.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0))) = bits
+  odd : Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0)) % 2 = 1
+  bl : Spec.Dsa.bitLength (Proof.Dsa.ProbablePrime.candidateAt (layout bits) s.mem (State.addr (s.gpr .r0))) = bits
 
 theorem cin_of_pre (s : State) (h : primeK.pre s) : CIn (stackArg s 1).toNat s := by
-  sig_pre [Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi, argRegs, reduceClassify,
+  sig_pre [Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig, abi, argRegs, reduceClassify,
     Loc.val] at h
   obtain ⟨spLo, spHi, rd, wr, wR, wU, wA, rU, uA, FW, FR, FU, FA, fw, fr, fu, hb, size, odd, bl⟩ := h
   exact ⟨bits_iff.1 hb, by simp, spLo, spHi, rd, wr, wR, wU, wA, rU, uA, FW, FR, FU, FA, fw, fr, fu, size, odd, bl⟩

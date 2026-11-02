@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! Common argument and memory invariants of the native FFDH operations. -/
 
@@ -83,7 +83,7 @@ theorem publicSpace (p : Inputs) : Spec.Rsa.publicScratchWords p.k ≤ p.len := 
   omega
 
 theorem width (p : Inputs) : 2 ≤ p.w ∧ p.w < 2 ^ 31 ∧
-    Spec.Rsa.Mont.arrAt p.w 16 ≤ 8 * p.len ∧ p.k ≤ 8 * p.w ∧ 128 * p.w < 2 ^ 32 := by
+    Proof.Rsa.Mont.arrAt p.w 16 ≤ 8 * p.len ∧ p.k ≤ 8 * p.w ∧ 128 * p.w < 2 ^ 32 := by
   have dims := pc_dimensions (k := p.k) (len := p.len) p.minLength p.maxLength (by
     have := p.space
     have := p.minLength
@@ -93,8 +93,8 @@ theorem width (p : Inputs) : 2 ≤ p.w ∧ p.w < 2 ^ 31 ∧
   refine ⟨dims.1, dims.2.1, ?_, dims.2.2.2.1, dims.2.2.2.2⟩
   have := p.space
   have := p.minLength
-  simp only [Spec.Rsa.scratchWords, Spec.Rsa.Mont.arrAt, w,
-    Spec.Rsa.modulusWords, Spec.Rsa.Mont.hdrBytes] at *
+  simp only [Spec.Rsa.scratchWords, Proof.Rsa.Mont.arrAt, w,
+    Spec.Rsa.modulusWords, Proof.Rsa.Mont.hdrBytes] at *
   omega
 
 theorem pLength (p : Inputs) : (p.dom.take p.k).length = p.k := by

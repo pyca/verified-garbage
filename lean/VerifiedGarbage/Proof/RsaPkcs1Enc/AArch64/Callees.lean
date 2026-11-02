@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
 import Mathlib.Data.List.Basic
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_public_checked` as encryption's callee on AArch64
@@ -27,13 +28,13 @@ namespace VG.Proof.RsaPkcs1Enc.AArch64
 
 open VG VG.AArch64
 
-theorem public_stack (n : Nat) (hsat : ∃ s, (Spec.Rsa.publicCheckedContract AArch64.abi n).pre s) :
-    (Spec.Rsa.publicCheckedContract AArch64.abi).Implies (Spec.Rsa.publicCheckedContract AArch64.abi n) where
+theorem public_stack (n : Nat) (hsat : ∃ s, (Proof.Rsa.publicCheckedContract AArch64.abi n).pre s) :
+    (Proof.Rsa.publicCheckedContract AArch64.abi).Implies (Proof.Rsa.publicCheckedContract AArch64.abi n) where
   pre := by
     intro s h
-    sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
+    sig_pre [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
       Proof.Rsa.AArch64.stackArgs_two, List.append_eq] at h
-    sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
+    sig_pre [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
       Proof.Rsa.AArch64.stackArgs_two, List.append_eq]
     obtain ⟨-, a, b, c, d, e, f, -, rest⟩ := h
     exact ⟨a, b, c, d, e, f, rest⟩
@@ -41,14 +42,14 @@ theorem public_stack (n : Nat) (hsat : ∃ s, (Spec.Rsa.publicCheckedContract AA
   pub _ _ _ _ h := h
   sat := hsat
 
-theorem public_sat : ∃ s, (Spec.Rsa.publicCheckedContract AArch64.abi 1).pre s := by
-  sig_implies_sat [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
+theorem public_sat : ∃ s, (Proof.Rsa.publicCheckedContract AArch64.abi 1).pre s := by
+  sig_implies_sat [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
     Proof.Rsa.AArch64.stackArgs_two, List.append_eq] [Proof.Rsa.AArch64.pubSatState, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using Proof.Rsa.AArch64.pubSatState
 
 /-- `vg_rsa_public_checked`, as encryption's callee. -/
 def pubImpl : PubImpl where
-  name := Spec.Rsa.publicCheckedApi.name
+  name := "vg_rsa_public_checked"
   code := Impl.Rsa.AArch64.Checked.publicChecked
   stack := 1
   verified := Verified.of_implies Proof.Rsa.AArch64.publicChecked_verified (public_stack 1 public_sat)

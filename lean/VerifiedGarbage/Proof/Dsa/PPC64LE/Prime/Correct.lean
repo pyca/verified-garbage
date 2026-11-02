@@ -75,8 +75,8 @@ theorem table_wr {σ : State} (hk : ConstsOk K 176 σ) :
 /-- What the function leaves. -/
 structure COut (bits : Nat) (σ f : State) : Prop where
   abi : abiPreserved σ f
-  r3 : f.gpr .r3 = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status (res bits σ))
-  keeps : Spec.Dsa.ModPow.Keeps (σ.gpr .r3) (σ.gpr .r4).toNat (layout bits).scratch σ.mem f.mem
+  r3 : f.gpr .r3 = BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status (res bits σ))
+  keeps : Proof.Dsa.ModPow.Keeps (σ.gpr .r3) (σ.gpr .r4).toNat (layout bits).scratch σ.mem f.mem
   used : ∀ b rest, res bits σ = some (b, rest) →
     Spec.Rsa.wordsAt f.mem (σ.gpr .r7) 1 = [BitVec.ofNat 64 ((σ.gpr .r6).toNat - rest.length)]
 
@@ -89,7 +89,7 @@ def Kept (bits : Nat) (σ : State) (m : Mem) : Prop :=
 registers, and the bytes of `ws` kept. -/
 theorem after_loadC {bits : Nat} (hb : Bits bits) {σ s₁ s₂ : State} (h : CIn bits σ) (hk : ConstsOk K 176 σ)
     (ep : EntryPost bits σ s₁) (sy₁ : s₁.syms = σ.syms)
-    (hl : (arr s₂.mem (wsB σ) (words bits) 0 = Spec.Dsa.ProbablePrime.candidateAt (layout bits) σ.mem (σ.gpr .r3) ∧
+    (hl : (arr s₂.mem (wsB σ) (words bits) 0 = Proof.Dsa.ProbablePrime.candidateAt (layout bits) σ.mem (σ.gpr .r3) ∧
         Outside (wsB σ) (slot (words bits) 0) (8 * words bits) s₁.mem s₂.mem) ∧
       Keep [.r0, .r6, .r12, .r14, .r15, .r16, .r17] s₁ s₂) (sy₂ : s₂.syms = s₁.syms) :
     BIn bits σ s₂ ∧ Spill.Saved (σ.gpr .r3) (σ.write .r0 σ.lr).gpr savedSlots s₂.mem ∧ Kept bits σ s₂.mem := by

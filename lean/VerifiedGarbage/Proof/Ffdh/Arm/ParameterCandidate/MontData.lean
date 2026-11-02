@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.Omega
@@ -13,13 +13,13 @@ modulus, inverse, and immutable part of the Montgomery header. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (Layout wOf numAt wordAt arrAt arrWord)
+open VG.Proof.Rsa.Mont (Layout wOf numAt wordAt arrAt arrWord)
 
 structure MontData (base : BitVec 32) (capacity w : Nat) (m : Mem) : Prop where
   layout : Layout m (State.addr base) capacity
   width : wOf m (State.addr base) = w
   inverse : ((word m (State.addr base) (arrAt w 0)).toNat *
-    (wordAt m (State.addr base) VG.Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
+    (wordAt m (State.addr base) VG.Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
   modulus : 1 < numAt m (State.addr base) w 0
 
 theorem MontData.of_ready {s : State} {base : BitVec 32} {capacity w : Nat}
@@ -44,7 +44,7 @@ theorem MontData.after_reads {base : BitVec 32} {capacity w : Nat} {m m' : Mem}
   have wmin : 2 ≤ w := h.width ▸ h.layout.1
   have widthEq : wOf m' (State.addr base) = wOf m (State.addr base) := by
     unfold wOf wordAt
-    rw [readHeader (8 * VG.Spec.Rsa.Mont.wWord) (by decide)]
+    rw [readHeader (8 * VG.Proof.Rsa.Mont.wWord) (by decide)]
   have layout' : Layout m' (State.addr base) capacity := by
     unfold Layout
     rw [widthEq]
@@ -60,7 +60,7 @@ theorem MontData.after_reads {base : BitVec 32} {capacity w : Nat} {m m' : Mem}
   refine ⟨⟨layout', widthEq.trans h.width, ?_, ?_⟩, numberEq⟩
   · rw [wordEq]
     unfold wordAt
-    rw [readHeader (8 * VG.Spec.Rsa.Mont.minvWord) (by decide)]
+    rw [readHeader (8 * VG.Proof.Rsa.Mont.minvWord) (by decide)]
     exact h.inverse
   · rw [numberEq]
     exact h.modulus

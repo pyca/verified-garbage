@@ -23,7 +23,7 @@ result's array holds the number `T < n` with `T R ≡ [a] [b] (mod n)`, given
 namespace VG.Proof.Rsa.Arm.Recover
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.Recover VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 
 /-- Montgomery multiplication's number of array `i` through a step that does
 not write the key array `mBase + i`. -/
@@ -63,7 +63,7 @@ abbrev MIdx (o a b : Nat) : Prop :=
 
 theorem MIdx.operand {o a b : Nat} (h : MIdx o a b) : Operand o ∧ Operand a ∧ Operand b := by
   obtain ⟨ho, ha, hb⟩ := h
-  refine ⟨?_, ?_, ?_⟩ <;> simp only [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] <;> omega
+  refine ⟨?_, ?_, ?_⟩ <;> simp only [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] <;> omega
 
 /-- The product, from `r0 = M0`. -/
 theorem montOp_after {P : RP} {σ s : State} {o a b T : Nat} {A : Nat → Nat} {live : List Nat}

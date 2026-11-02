@@ -26,7 +26,7 @@ open VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
 def variant : Proof.Rsa.Arm.CrtImpl :=
   { Base.variant with
-    name := Spec.Rsa.privateCrtApi.name ++ "_umaal"
+    name := "vg_rsa_private_crt" ++ "_umaal"
     code := CrtFios.code
     verified := crtUmaal_verified
     stack := by decide +kernel

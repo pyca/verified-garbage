@@ -58,13 +58,13 @@ section
 section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Proof.Mont VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt)
+open VG.Proof.Rsa.Mont (numAt arrAt)
 
 theorem RoundData.after_workspaceEq {base : BitVec 32} {capacity w n : Nat} {m m' : Mem}
     (h : RoundData base capacity w n m) (equal : WorkspaceEq (VG.Arm.State.addr base) (8 * capacity) m m') :
     RoundData base capacity w n m' := by
   have headerFits : 128 ≤ 8 * capacity := Nat.le_trans (by
-    simp only [arrAt, VG.Spec.Rsa.Mont.hdrBytes]
+    simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes]
     omega : 128 ≤ arrAt w 28) h.fits
   refine h.after_reads (fun _ fit => equal.word (bits := 64) (by omega)) ?_ ?_
   · intro q member

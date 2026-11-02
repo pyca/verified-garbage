@@ -29,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 theorem r2Constants_ct {base : BitVec 32} {len w : Nat} :
     RelCT isa (fun s t => ArithmeticReady base len w s ∧ ArithmeticReady base len w t ∧ s.sp = t.sp)
@@ -66,7 +66,7 @@ def R2SqRel (base : BitVec 32) (len w k : Nat) (s t : State) : Prop :=
 
 theorem r2Square_ct {base : BitVec 32} {len w k : Nat} :
     RelCT isa (R2SqRel base len w k) (squareOp 4 4) (R2SqRel base len w (2 * k)) := by
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have ct := relCT_keep_sp ((squareOp_ct (base := base) (len := len) (w := w) op4 op4).mono
     (P' := R2SqRel base len w k)
     (fun _ _ h => by

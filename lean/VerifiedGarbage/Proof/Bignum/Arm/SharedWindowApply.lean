@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.WindowBuild
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps Operand)
 open VG.Proof.X25519.Arm (Rest)
 theorem sharedWindowApply_ok {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len w P regions) (s : State) {M x A d : Nat}
@@ -27,7 +27,7 @@ theorem sharedWindowApply_ok {base : BitVec 32} {len w : Nat} {P : State → Pro
       t.mem.readW (off (State.addr base) 204) 32 = BitVec.ofNat 32 0 ∧
       KeepsExp base s.mem t.mem ∧ P t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have nowrap := h.ready.workspace.nowrap
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
   rw [SharedWindow.apply, WP.seq_iff]
   refine WP.mono (scan_ok s h table fits hd digit) ?_
   rintro u ⟨powerU, tableU, selected, _, keepsU, frameU, restU⟩
@@ -36,9 +36,9 @@ theorem sharedWindowApply_ok {base : BitVec 32} {len w : Nat} {P : State → Pro
   have pU := K.stable frameU restU hp
   rw [WP.seq_iff]
   refine WP.mono (K.op_ok u 6 6 1 powerU.ready pU
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
     (by rw [powerU.modulus]; exact entry.1)) ?_
   rintro v ⟨ready, modulus, bound, value, keeps, pV, frameV, restV⟩
   rw [powerU.modulus] at modulus bound value

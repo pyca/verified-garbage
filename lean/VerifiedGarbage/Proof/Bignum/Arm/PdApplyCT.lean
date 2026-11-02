@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 structure PdControlled (base dst np ep xp : BitVec 32) (len k eLen N R : Nat)
     (eb xb : List Byte) (s : State) : Prop where

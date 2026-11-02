@@ -31,7 +31,7 @@ and the stack changed. -/
 structure TestPost (E : Env) (bits used c : Nat) (s t : State) : Prop where
   base : Base E t
   res : t.mem.readW (off E.base fRes) 32 =
-    BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime c (E.witT.drop used)))
+    BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime c (E.witT.drop used)))
   used : t.mem.readW (off E.base fUsed) 32 =
     BitVec.ofNat 32 (nextUsed E.witLen used (Spec.Dsa.probablePrime c (E.witT.drop used)))
   chg : E.Chg [(sPP, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits)),
@@ -58,7 +58,7 @@ word for `used`, and the stack. -/
 theorem call_chg {E : Env} (v : E.Valid) {bits : Nat} {t w u : State} (hsp : t.gpr .esp = E.sp)
     (Fm : Frame [below E.sp 24] t.mem w.mem)
     {k : Nat} (hk : k ≤ 200) (Fu : Frame (testWr E t ++ [below (t.gpr .esp) k]) t.mem u.mem)
-    (K : Spec.Dsa.ModPow.Keeps (off E.base sPP) ppWords
+    (K : Proof.Dsa.ModPow.Keeps (off E.base sPP) ppWords
       [(0, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits))] w.mem u.mem) :
     E.Chg [(sPP, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits)),
       (fUsedOut, 8)] t.mem u.mem := by
@@ -97,7 +97,7 @@ theorem call_chg {E : Env} (v : E.Valid) {bits : Nat} {t w u : State} (hsp : t.g
 in: the status of the candidate `c` in `eax`, the octets read in `fUsedOut`,
 and only the test's working space and the stack changed. -/
 structure TestRet (E : Env) (bits used c : Nat) (s u : State) : Prop where
-  eax : u.gpr .eax = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime c (E.witT.drop used)))
+  eax : u.gpr .eax = BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime c (E.witT.drop used)))
   edi : u.gpr .edi = s.gpr .edi
   esp : u.gpr .esp = E.sp
   esi : u.gpr .esi = s.gpr .esi
@@ -113,9 +113,9 @@ structure TestRet (E : Env) (bits used c : Nat) (s u : State) : Prop where
 theorem testCallPre {bits : Nat} {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {used : Nat}
     (A : TestArgs E.base (E.wit.setWidth 32) E.witLen used s t) (hu : used ≤ E.witLen)
     (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords)
-    (odd : Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
+    (odd : Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
       (off E.base sPP) % 2 = 1)
-    (len : Spec.Dsa.bitLength (Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
+    (len : Spec.Dsa.bitLength (Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
       s.mem (off E.base sPP)) = bits) :
     CallPre (ppContract bits) testRegs (testRd E used) (testWr E t) t := by
   have sz := v.size_ge
@@ -162,9 +162,9 @@ theorem testEntry_facts {bits : Nat} {E : Env} (v : E.Valid) {s t : State} (B : 
       arg (testEntry E used t) 2 = randPtr (E.wit.setWidth 32) E.witLen used ∧
       arg (testEntry E used t) 3 = BitVec.ofNat 32 (E.witLen - used) ∧
       arg (testEntry E used t) 4 = s.gpr .edi + BitVec.ofNat 32 fUsedOut ∧
-      Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) (testEntry E used t).mem
+      Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) (testEntry E used t).mem
         (off E.base sPP) =
-        Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP) ∧
+        Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP) ∧
       Spec.Rsa.bytesAt (testEntry E used t).mem (randAddr E used) (E.witLen - used) = E.witT.drop used := by
   have sz := v.size_ge
   have spT : t.gpr .esp = E.sp := by
@@ -203,12 +203,12 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
     {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {used : Nat}
     (A : TestArgs E.base (E.wit.setWidth 32) E.witLen used s t) (hu : used ≤ E.witLen)
     (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords)
-    (odd : Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
+    (odd : Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
       (off E.base sPP) % 2 = 1)
-    (len : Spec.Dsa.bitLength (Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
+    (len : Spec.Dsa.bitLength (Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
       s.mem (off E.base sPP)) = bits) :
     WP isa (.frame (.push testRegs) (.call name callee) (.pop .ecx 5)) t (TestRet E bits used
-      (Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP)) s) := by
+      (Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP)) s) := by
   have sz := v.size_ge
   have spT : t.gpr .esp = E.sp := by
     rw [A.other _ (by decide) (by decide) (by decide) (by decide) (by decide), B.sp]
@@ -223,7 +223,7 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
     (by rw [spT]; simp only [List.length_cons, List.length_nil]; omega_arith) cp fun u rdu wru csu Fu post usy => ?_)
   obtain ⟨s₂, m₂, ax₂, post⟩ := post
   generalize ew : (pushed testRegs t).callEntry.withRegions (testRd E used) (testWr E t) = w at e0 e1 e2 e3 e4 Fm post
-  sig_post [ppContract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argSlots, argVal,
+  sig_post [ppContract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow] at post
   simp only [e0, e1, e2, e3, e4, ret32] at post
   have wsW := Scr.wide B.scr (d := sPP) (by simp only [sPP]; omega_arith)
@@ -249,10 +249,10 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
   obtain ⟨P1, P2, P3⟩ := post
   rw [m₂] at P2 P3
   have tdi : t.gpr .edi = s.gpr .edi := A.other _ (by decide) (by decide) (by decide) (by decide) (by decide)
-  generalize hres : Spec.Dsa.probablePrime (Spec.Dsa.ProbablePrime.candidateAt
+  generalize hres : Spec.Dsa.probablePrime (Proof.Dsa.ProbablePrime.candidateAt
     (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP)) (E.witT.drop used) = res at P1 P3 ⊢
-  have stLt : Spec.Dsa.ProbablePrime.status res < 2 ^ 32 := by
-    unfold Spec.Dsa.ProbablePrime.status; split <;> decide
+  have stLt : Proof.Dsa.ProbablePrime.status res < 2 ^ 32 := by
+    unfold Proof.Dsa.ProbablePrime.status; split <;> decide
   refine ⟨?_, (csu .edi (by decide)).trans tdi, (csu .esp (by decide)).trans spT,
     (csu .esi (by decide)).trans (A.other _ (by decide) (by decide) (by decide) (by decide) (by decide)),
     rdu.trans A.rd, wru.trans A.wr, usy.trans A.syms, ?_, ?_⟩
@@ -279,21 +279,21 @@ theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
     {E : Env} (v : E.Valid) {s : State} (B : Base E s) {used : Nat}
     (hU : s.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used) (hu : used ≤ E.witLen)
     (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords)
-    (odd : Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
+    (odd : Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
       (off E.base sPP) % 2 = 1)
-    (len : Spec.Dsa.bitLength (Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
+    (len : Spec.Dsa.bitLength (Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits)
       s.mem (off E.base sPP)) = bits) :
     WP isa (test name callee) s (TestPost E bits used
-      (Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP)) s) := by
+      (Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP)) s) := by
   have sz := v.size_ge
   unfold test
   simp only [seqs]
   refine testArgs_ok B.scr (by simp only [sPP]; omega_arith) B.witW B.witLenW hU hu v.lens.2.2 fun t A =>
     WP.seq (WP.mono (testCall_ok verified noSp stack v B A hu lay odd len) fun u R => ?_)
   have hsU : Scr u E.base E.size := Scr.of_eq B.scr R.edi (R.esp.trans B.sp.symm) R.wr
-  generalize hres : Spec.Dsa.probablePrime (Spec.Dsa.ProbablePrime.candidateAt
+  generalize hres : Spec.Dsa.probablePrime (Proof.Dsa.ProbablePrime.candidateAt
     (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP)) (E.witT.drop used) = res
-  have uax : u.gpr .eax = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res) := by rw [R.eax, hres]
+  have uax : u.gpr .eax = BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status res) := by rw [R.eax, hres]
   have Apt : E.Apart [(sPP, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits)),
       (fRes, 4), (fUsed, 4), (fUsedOut, 8)] := by
     have lay' := lay
@@ -318,7 +318,7 @@ theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
   have m₂' : x₂.mem = u.mem.writeW (off E.base fRes) (u.gpr .eax) := by rw [F₂.mem, M₁.mem]
   have g₂ : x₂.gpr = u.gpr := by rw [F₂.gpr, M₁.gpr]
   have hsX : Scr x₂ E.base E.size := Scr.of_eq hsU (by rw [g₂]) (by rw [g₂]) (by rw [F₂.wr, M₁.wr])
-  have resX : x₂.mem.readW (off E.base fRes) 32 = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res) := by
+  have resX : x₂.mem.readW (off E.base fRes) 32 = BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status res) := by
     rw [m₂', Mem.readW_writeW_self32, uax]
   have usedX : x₂.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used := by
     rw [m₂', word_store_other v _ (by simp only [fUsed, hdr]; omega_arith) (by simp only [fRes, hdr]; omega_arith)
@@ -330,9 +330,9 @@ theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
       y.rd = s.rd → y.wr = s.wr → y.syms = s.syms →
       E.Chg [(sPP, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits)),
         (fRes, 4), (fUsed, 4), (fUsedOut, 8)] s.mem y.mem →
-      y.mem.readW (off E.base fRes) 32 = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res) →
+      y.mem.readW (off E.base fRes) 32 = BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status res) →
       y.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 (nextUsed E.witLen used res) →
-      TestPost E bits used (Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
+      TestPost E bits used (Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem
         (off E.base sPP)) s y := by
     intro y yd ysp ysi yrd ywr ysy yc yr yu
     refine ⟨B.keep v yc Apt yd (ysp.trans B.sp.symm) yrd ywr ysy, ?_, ?_, yc, ysi, yrd, ywr, ysy⟩
@@ -348,7 +348,7 @@ theorem test_ok {bits : Nat} {name : String} {callee : Prog isa}
   | some p =>
     obtain ⟨b, rest⟩ := p
     refine WP.ite false (by
-        change x₂.zf = _; rw [z₂, M₁.gpr, uax]; cases b <;> simp [Spec.Dsa.ProbablePrime.status])
+        change x₂.zf = _; rw [z₂, M₁.gpr, uax]; cases b <;> simp [Proof.Dsa.ProbablePrime.status])
       (fun h => by cases h) (fun _ => ?_)
     have wl : E.witT.length = E.witLen := by rw [← B.wit]; simp [Spec.Rsa.bytesAt]
     have restLe : rest.length ≤ E.witLen - used := by

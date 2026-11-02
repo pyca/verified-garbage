@@ -105,7 +105,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wOf numAt Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt wOf numAt Operand Keeps)
 
 theorem montFn_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
     (h : FnInput base len w o a b s) (ho : Operand o) (ha : Operand a) (hb : Operand b) :
@@ -192,7 +192,7 @@ section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt Operand)
+open VG.Proof.Rsa.Mont (arrAt Operand)
 
 theorem montFn_ct {base : BitVec 32} {len w o a b : Nat}
     (ho : Operand o) (ha : Operand a) (hb : Operand b) :
@@ -237,15 +237,15 @@ end
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (wOf Operand)
+open VG.Proof.Rsa.Mont (wOf Operand)
 
 abbrev stackB (s : State) : BitVec 32 := s.mem.readW (State.addr s.sp) 32
 
-theorem mont_contract_pre (s : State) (h : (Spec.Rsa.Mont.mulContract abi 36).pre s) :
+theorem mont_contract_pre (s : State) (h : (Proof.Rsa.Mont.mulContract abi 36).pre s) :
     FnInput (s.gpr .r0) (s.gpr .r1).toNat (wOf s.mem (State.addr (s.gpr .r0)))
       (s.gpr .r2).toNat (s.gpr .r3).toNat (stackB s).toNat s ∧
       Operand (s.gpr .r2).toNat ∧ Operand (s.gpr .r3).toNat ∧ Operand (stackB s).toNat := by
-  sig_pre [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
+  sig_pre [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have argAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   have argValue : stackArg s 0 = stackB s := by simp [stackArg, argAddr]
   rw [argAddr, argValue] at h
@@ -267,23 +267,23 @@ theorem mont_contract_pre (s : State) (h : (Spec.Rsa.Mont.mulContract abi 36).pr
     exact stackArgSep
 
 
-theorem mont_contract_correct (s : State) (h : (Spec.Rsa.Mont.mulContract abi 36).pre s) :
+theorem mont_contract_correct (s : State) (h : (Proof.Rsa.Mont.mulContract abi 36).pre s) :
     ∃ tr t, Exec isa MontFn.mul s tr t ∧ abiPreserved s t ∧
-      (Spec.Rsa.Mont.mulContract abi 36).post s t := by
+      (Proof.Rsa.Mont.mulContract abi 36).post s t := by
   obtain ⟨input, ho, ha, hb⟩ := mont_contract_pre s h
   obtain ⟨tr, t, run, preserved, post⟩ := montFn_ok s input ho ha hb
   refine ⟨tr, t, run, preserved, ?_⟩
-  sig_post [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  sig_post [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   have argValue : stackArg s 0 = stackB s := by simp [stackArg, stackArgAddr, stackB]
   rw [argValue]
   exact post
 
-theorem mont_contract_ct : ConstantTime isa (Spec.Rsa.Mont.mulContract abi 36).pre
-    (Spec.Rsa.Mont.mulContract abi 36).pub MontFn.mul := by
+theorem mont_contract_ct : ConstantTime isa (Proof.Rsa.Mont.mulContract abi 36).pre
+    (Proof.Rsa.Mont.mulContract abi 36).pub MontFn.mul := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   obtain ⟨is, ho, ha, hb⟩ := mont_contract_pre s hs
   obtain ⟨it, _, _, _⟩ := mont_contract_pre t ht
-  sig_pub [Spec.Rsa.Mont.mulContract, Spec.Rsa.Mont.sig, abi, argRegs, reduceClassify, Loc.val, State.addr] at hp
+  sig_pub [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argRegs, reduceClassify, Loc.val, State.addr] at hp
   obtain ⟨sp, width, p0, p1, p2, p3, pb⟩ := hp
   change [wOf s.mem (State.addr (s.gpr .r0))] = [wOf t.mem (State.addr (t.gpr .r0))] at width
   have wb := List.singleton_inj.mp width

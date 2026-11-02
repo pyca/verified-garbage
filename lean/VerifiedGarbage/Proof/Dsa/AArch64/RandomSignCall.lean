@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Dsa.AArch64
 open VG VG.AArch64 VG.Impl.Dsa.AArch64
 
-def randomSignerName (v : Backend) : String := Spec.Dsa.signApi.name ++ v.suffix
+def randomSignerName (v : Backend) : String := "vg_dsa_sign" ++ v.suffix
 
 theorem random_signer_call (v : Backend) {s : State} {rd wr : List Region}
     (hp : (Spec.Dsa.signContract abi v.stack).pre (s.callEntry.withRegions rd wr))

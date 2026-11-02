@@ -20,11 +20,6 @@ def artifacts : List Artifact := [
     stack := 68
     code := Impl.RsaKeyGen.X86.KeyRuntime.code
     verified := Proof.RsaKeyGen.X86.KeyRuntime.verified
-    spSafe := Proof.RsaKeyGen.X86.KeyRuntime.code_sp },
-  Spec.RsaKeyGen.inverseApi.artifact X86.target {
-    stack := 36
-    code := Impl.RsaKeyGen.X86.Inverse.code
-    verified := Proof.RsaKeyGen.X86.Inverse.verified
-    spSafe := Proof.RsaKeyGen.X86.Inverse.code_sp }]
+    spSafe := Proof.RsaKeyGen.X86.KeyRuntime.code_sp }]
 
 end VG.Artifacts.RsaKeyGen.X86

@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombScan
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.Rsa.Mont (arrAt numAt)
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_dp wp_mov wp_str wp_cmp op2_reg op2_imm op2_lsl op2_lsr dpVal)
 
 private theorem mask32 : ∀ d<32, ∀ j<32,
@@ -36,7 +36,7 @@ theorem bit_ok (s : State) {base : BitVec 32} {len w d j : Nat}
     WP isa (.block scanBit) s fun t =>
       t.gpr .r11 = (if d = j then 1 else 0) ∧ t.mem = s.mem ∧ Rest [.r1, .r2, .r11] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :
       State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
     rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
@@ -65,7 +65,7 @@ theorem next_ok (s : State) {base table : BitVec 32} {len w j : Nat}
           (off (State.addr base) 228) (BitVec.ofNat 32 (j + 1)) ∧
       t.z = decide (j + 1 = 32) ∧ Rest [.r1, .r2] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :
@@ -121,7 +121,7 @@ theorem init_ok (s : State) {base table : BitVec 32} {len w : Nat}
       t.mem=(s.mem.writeW (off (State.addr base) 220) table).writeW
         (off (State.addr base) 228) (BitVec.ofNat 32 0) ∧ Rest [.r1,.r12] s t := by
   have fits : arrAt w 8≤8*len := h.width ▸ h.layout.2.2.1
-  have size : 256≤8*len := by simp only [arrAt,Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256≤8*len := by simp only [arrAt,Proof.Rsa.Mont.hdrBytes] at fits; omega
   have addr (d : Nat) (hd : d+4≤8*len) :
       State.addr (s.gpr .r0+BitVec.ofNat 32 d)=off (State.addr base) d := by
     rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
@@ -145,7 +145,7 @@ theorem args_ok (s : State) {base entryPtr : BitVec 32} {len w : Nat}
       t.gpr .r12 = entryPtr ∧ t.gpr .lr = BitVec.ofNat 32 (2 * w) ∧
       t.mem = s.mem ∧ Rest [.r0, .r10, .r12, .lr] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :

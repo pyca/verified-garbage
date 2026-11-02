@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt wOf Layout)
+open VG.Proof.Rsa.Mont (numAt wOf Layout)
 
 structure PrecomputeWorkspace (base : BitVec 32) (len w : Nat) (s : State) : Prop where
   workspace : Workspace s base (8 * len)

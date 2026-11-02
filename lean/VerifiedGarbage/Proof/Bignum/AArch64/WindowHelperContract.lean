@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Rsa.MontWindow
+public import VerifiedGarbage.Proof.Rsa.MontWindowContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Taint
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Taint
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowHelper
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
-open VG.Spec.Rsa.Mont (numAt wOf wordAt Layout Keeps arrAt aM minvWord)
+open VG.Proof.Rsa.Mont (numAt wOf wordAt Layout Keeps arrAt aM minvWord)
 
 
 /-- The shared ABI specialized to its two arguments. -/
@@ -25,11 +25,11 @@ def fnContract : Contract isa where
     let n := (s.gpr .x1).toNat
     let w := wOf s.mem ws
     s.rd = [] ∧ s.wr = [⟨ws, n * 8⟩] ∧ ws.toNat + n * 8 ≤ 2 ^ 64 ∧
-      Spec.Rsa.MontWindow.WindowLayout s.mem ws n ∧
+      Proof.Rsa.MontWindow.WindowLayout s.mem ws n ∧
       ((s.mem.readW (ws + BitVec.ofNat 64 (arrAt w aM)) 64).toNat *
         (wordAt s.mem ws minvWord).toNat + 1) % 2 ^ 64 = 0 ∧
       numAt s.mem ws w 6 < numAt s.mem ws w aM ∧
-      Spec.Rsa.MontWindow.digit s.mem ws < 32 ∧
+      Proof.Rsa.MontWindow.digit s.mem ws < 32 ∧
       ∀ j < 32, numAt s.mem ws w (8 + j) < numAt s.mem ws w aM
   post s t :=
     let ws := s.gpr .x0
@@ -37,9 +37,9 @@ def fnContract : Contract isa where
     let M := numAt s.mem ws w aM
     numAt t.mem ws w 6 < M ∧
       numAt t.mem ws w 6 * (2 ^ (64 * w)) ^ 32 % M =
-        numAt s.mem ws w 6 ^ 32 * numAt s.mem ws w (8 + Spec.Rsa.MontWindow.digit s.mem ws) % M ∧
+        numAt s.mem ws w 6 ^ 32 * numAt s.mem ws w (8 + Proof.Rsa.MontWindow.digit s.mem ws) % M ∧
       wordAt t.mem ws 20 = 0 ∧ wordAt t.mem ws 27 = 0 ∧
-      Spec.Rsa.MontWindow.Keeps ws (s.gpr .x1).toNat w s.mem t.mem
+      Proof.Rsa.MontWindow.Keeps ws (s.gpr .x1).toNat w s.mem t.mem
   pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧
     wOf s.mem (s.gpr .x0) = wOf t.mem (t.gpr .x0)
 
@@ -60,16 +60,16 @@ def satState : State where
   wr := [⟨0x1000, 1536⟩]
 
 theorem fn_implies :
-    fnContract.Implies (Spec.Rsa.MontWindow.windowContract abi) where
-  pre := by sig_implies_pre [Spec.Rsa.MontWindow.windowContract, Spec.Rsa.MontWindow.sig, fnContract, Spec.Rsa.MontWindow.aY, Spec.Rsa.MontWindow.pendingWord, Spec.Rsa.MontWindow.digitWord, abi, argRegs]
-  post := by sig_implies_post [Spec.Rsa.MontWindow.windowContract, Spec.Rsa.MontWindow.sig, fnContract, Spec.Rsa.MontWindow.aY, Spec.Rsa.MontWindow.pendingWord, Spec.Rsa.MontWindow.digitWord, abi, argRegs]
+    fnContract.Implies (Proof.Rsa.MontWindow.windowContract abi) where
+  pre := by sig_implies_pre [Proof.Rsa.MontWindow.windowContract, Proof.Rsa.MontWindow.sig, fnContract, Proof.Rsa.MontWindow.aY, Proof.Rsa.MontWindow.pendingWord, Proof.Rsa.MontWindow.digitWord, abi, argRegs]
+  post := by sig_implies_post [Proof.Rsa.MontWindow.windowContract, Proof.Rsa.MontWindow.sig, fnContract, Proof.Rsa.MontWindow.aY, Proof.Rsa.MontWindow.pendingWord, Proof.Rsa.MontWindow.digitWord, abi, argRegs]
   pub := by
     rintro s t _ _ h
-    sig_pub [Spec.Rsa.MontWindow.windowContract, Spec.Rsa.MontWindow.sig, fnContract, Spec.Rsa.MontWindow.aY, Spec.Rsa.MontWindow.pendingWord, Spec.Rsa.MontWindow.digitWord, abi, argRegs] at h
+    sig_pub [Proof.Rsa.MontWindow.windowContract, Proof.Rsa.MontWindow.sig, fnContract, Proof.Rsa.MontWindow.aY, Proof.Rsa.MontWindow.pendingWord, Proof.Rsa.MontWindow.digitWord, abi, argRegs] at h
     obtain ⟨hsp, hw, h0, h1⟩ := h
     exact ⟨hsp, h0, h1, List.singleton_inj.mp hw⟩
   sat := by
-    sig_implies_sat [Spec.Rsa.MontWindow.windowContract, Spec.Rsa.MontWindow.sig, fnContract, Spec.Rsa.MontWindow.aY, Spec.Rsa.MontWindow.pendingWord, Spec.Rsa.MontWindow.digitWord, abi, argRegs]
+    sig_implies_sat [Proof.Rsa.MontWindow.windowContract, Proof.Rsa.MontWindow.sig, fnContract, Proof.Rsa.MontWindow.aY, Proof.Rsa.MontWindow.pendingWord, Proof.Rsa.MontWindow.digitWord, abi, argRegs]
         [satState] using satState
 
 

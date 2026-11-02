@@ -17,7 +17,7 @@ full output encoding and its public-width significant suffix. -/
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem keySample_ok (s : State) {p : Inputs} {slots : List Nat} {rb : List Byte}
@@ -58,7 +58,7 @@ theorem keySample_ok (s : State) {p : Inputs} {slots : List Nat} {rb : List Byte
     · exact (Offset.disjoint_base _ (by decide) (by decide)).symm
     · exact outputs.privateStack.sub_left (Region.sub_prefix (by decide))
   have readyT := ready.after_external frame workspaceSep baseSep rest context.ptr
-  have fits : Spec.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
+  have fits : Proof.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
   have scalar : Octets p.base p.privateValue p.len (scalarOctets p rb) t := by
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [scalarOctets_length size]; exact outputs.privateBuffer.fits

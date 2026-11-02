@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.StreamStep
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.StreamBytes
 /-! # IA-32 DSA reductions with their callee-saved registers restored -/
 

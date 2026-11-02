@@ -12,7 +12,7 @@ namespace VG.Proof.Bignum.Arm.ConditionalExp
 
 variable {ok : Prop}
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 structure ExpPhaseInput (ok : Prop) (base ep : BitVec 32) (len w M x : Nat) (eb : List Byte) (s : State) : Prop where
   ready : ArithmeticReady base len w s

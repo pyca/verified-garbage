@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # The precondition gives a valid environment and the body's entry state -/
 
@@ -157,7 +158,7 @@ theorem CallFacts.valid {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
     exact (F.stackAll r mem).sub_right F.bodyStackSub
 
 theorem candidateAt_eq (bits : Nat) (s : State) (m : Mem) :
-    Spec.Dsa.ProbablePrime.candidateAt (layout bits) m ((arg s 0).setWidth 64) =
+    Proof.Dsa.ProbablePrime.candidateAt (layout bits) m ((arg s 0).setWidth 64) =
       (callEnvironment bits s).candidate m := rfl
 
 theorem CallFacts.pushedArgument {bits : Nat} {s : State} (F : CallFacts bits s) {i : Nat} (index : i < 5) :

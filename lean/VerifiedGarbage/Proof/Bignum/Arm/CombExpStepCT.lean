@@ -15,10 +15,10 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.CombExpStep
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombExp
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 private theorem operand (q : Nat) (h : q=1 ∨ q=6) : Operand q := by
-  rcases h with rfl | rfl <;> simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]
+  rcases h with rfl | rfl <;> simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
 
 private theorem squareRow_ok {base source table : BitVec 32} {len w bytes N M g E i : Nat}
     {P : State→Prop} {regions : List Region} (A : TwoExp.Montgomery base len w P regions)

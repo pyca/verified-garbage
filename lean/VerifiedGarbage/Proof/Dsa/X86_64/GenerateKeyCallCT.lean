@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyGenerate
 import VerifiedGarbage.Proof.Dsa.X86_64.DeriveVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallLayout
 import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 /-! # Key generation's calls, by their callees' leakage contracts -/
 
@@ -35,7 +36,7 @@ theorem keygen_check_ct (v : Backend) : RelCT isa (KeygenCheckRelated v)
   refine ⟨keygenCheckRd s, keygenCheckWr s, keygenCheckRd t, keygenCheckWr t,
     keygen_check_pre hs ha.sp a1 a2 a3 a4 a5 a6, keygen_check_pre ht hb.sp b1 b2 b3 b4 b5 b6, ?_,
     hca, hwa, hcb, hwb, ha.sp.trans (hp.base.trans hb.sp.symm)⟩
-  sig_pub [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
+  sig_pub [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
   rw [show a.mem.writeW (a.gpr .rsp - 8) (a.unknowns 0) = a.callEntry.mem from rfl,
     show b.mem.writeW (b.gpr .rsp - 8) (b.unknowns 0) = b.callEntry.mem from rfl, a1, a2, b1, b2,
     keygen_callEntry_bytes hs ha.sp hs.stackParams (s.gpr .r8).isLt,

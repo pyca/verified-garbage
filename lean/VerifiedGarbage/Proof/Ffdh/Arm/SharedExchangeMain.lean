@@ -28,7 +28,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.SharedExchange
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand)
+open VG.Proof.Rsa.Mont (numAt Operand)
 
 theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat} {yb xb : List Byte}
     (h : Context p slots s) (calls : CallMemory p xb.length s) (stable : stableSlots slots = true)
@@ -50,8 +50,8 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
       Spec.Rsa.bytesAt t.mem (State.addr p.output) p.k =
         (if sharedAccepted p yb xb then Spec.Rsa.i2osp (sharedValue p yb xb) p.k else List.replicate p.k 0) ∧
       Frame (writes p s) s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op6 : Operand 6 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op6 : Operand 6 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩, FrameStack.belowA s.sp 48] m m') : Frame (writes p s) m m' :=
     f.mono (by simp [writes, exchangeWrites])
   rw [VG.Impl.Ffdh.Arm.SharedExchange.main, WP.seq_iff]

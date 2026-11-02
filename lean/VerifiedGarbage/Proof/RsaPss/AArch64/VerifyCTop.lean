@@ -116,7 +116,7 @@ theorem chk_ok {G : Spec.Mgf1.Hash} (e : ChkImpl G) {K : Nat} {s t : State} (hp 
       have he : (BitVec.ofNat 64 (elS s)).toNat = elS s := by
         rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show elS s < 2 ^ 64 by omega)]
       have hb : (BitVec.ofNat 64 (ebS s)).toNat = ebS s := by
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show ebS s < 2 ^ 64 by unfold Spec.RsaPss.maxEmBits at hb2; omega)]
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show ebS s < 2 ^ 64 by unfold Proof.RsaPss.maxEmBits at hb2; omega)]
       rw [hpost, ht.x0, ht.x1, ht.x2, ht.x3, hx4, hdg, he, hb, ← ht.res hc, bytesAt_drop,
         show (s.gpr .x1).toNat - loS s = elS s by omega] }
 

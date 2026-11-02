@@ -35,7 +35,7 @@ namespace VG.Proof.RsaKeyGen.X86.Prepare
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.Dsa.X86
 
 theorem r2_pairAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) {e : Nat} (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
@@ -54,7 +54,7 @@ theorem r2_pairAt {mont : Prog isa} {name : String}
   exact ⟨trace, pair, wp_result (post H.2.1) E, wp_result (post H.2.2) G⟩
 
 theorem r2_pair {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :
@@ -225,7 +225,7 @@ namespace VG.Proof.RsaKeyGen.X86.Prepare
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.Dsa.X86
 
 theorem code_rawAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) {e : Nat} (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
@@ -239,7 +239,7 @@ theorem code_rawAt {mont : Prog isa} {name : String}
     (fun _ _ H => H.2.2) (fun _ _ H => H)
 
 theorem code_raw {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :
@@ -249,7 +249,7 @@ theorem code_raw {mont : Prog isa} {name : String}
     (by have := v.minWidth; omega) (by have := v.minWidth; omega)
 
 theorem code_traceAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) {e : Nat} (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
@@ -264,7 +264,7 @@ theorem code_traceAt {mont : Prog isa} {name : String}
   exact ⟨trace, wp_result (post H.2.1) E, wp_result (post H.2.2) G, agree⟩
 
 theorem code_trace {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :
@@ -288,7 +288,7 @@ def CorePair (P : MillerRabinLoop.Parameters) (other : Nat) (entropy : Spec.RsaK
     P.iterations = (P.withSecret other entropy).iterations
 
 theorem prepare_pair {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (bound : P.g.w ≤ 64)
     {other : Nat} {entropy : Spec.RsaKeyGen.Rand} (w : (P.withSecret other entropy).Valid) :
@@ -304,9 +304,9 @@ theorem prepare_pair {mont : Prog isa} {name : String}
     ⟨Z.prepared, Z.readable, Z.entropy, Z.randPtr, Z.randLength, Z.used⟩, H.2.2.2⟩
 
 theorem core_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : MillerRabinLoop.Parameters} (v : P.Valid) (bound : P.g.w ≤ 64)
     {other : Nat} {entropy : Spec.RsaKeyGen.Rand} (w : (P.withSecret other entropy).Valid)

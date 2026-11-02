@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopGuards
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchIterationCT
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.Contract
 /-! # Complete native parameter generation has the specified public-tape leakage -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/Generation/SearchCTStep.lean`, which only this module imported.
@@ -28,10 +29,10 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Proof.Ffdh.X86_64.ParameterCandidate VG.Impl.Ffdh.X86_64.Generation.Search
 
 def searchContinues (p : SearchPoint) : Prop := p.remaining ≠ 0 ∧
-  Spec.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 2
+  Proof.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 2
 
 instance (p : SearchPoint) : Decidable (searchContinues p) := inferInstanceAs
-  (Decidable (p.remaining ≠ 0 ∧ Spec.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 2))
+  (Decidable (p.remaining ≠ 0 ∧ Proof.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 2))
 
 def nextSearchPoint (p : SearchPoint) : SearchPoint :=
   { p with used := p.used + candidateUsed p.inputs p.used, remaining := p.remaining - 1 }
@@ -58,7 +59,7 @@ theorem search_ct_step (v : RoundImpl) (p : SearchPoint) (s : State) (h : Search
     | none =>
       simp only [SearchClassified, hc] at ht
       refine WP.mono (done_loop_guard ht) fun q ⟨hq, _⟩ => ?_
-      simp only [SearchCTStep, show ¬searchContinues p by simp [searchContinues, hc, Spec.Ffdh.candidateStatus], ite_false]
+      simp only [SearchCTStep, show ¬searchContinues p by simp [searchContinues, hc, Proof.Ffdh.candidateStatus], ite_false]
       exact hq
     | some pair =>
       obtain ⟨value, rest⟩ := pair
@@ -66,12 +67,12 @@ theorem search_ct_step (v : RoundImpl) (p : SearchPoint) (s : State) (h : Search
       | some prime =>
         simp only [SearchClassified, hc] at ht
         refine WP.mono (done_loop_guard ht) fun q ⟨hq, _⟩ => ?_
-        simp only [SearchCTStep, show ¬searchContinues p by simp [searchContinues, hc, Spec.Ffdh.candidateStatus], ite_false]
+        simp only [SearchCTStep, show ¬searchContinues p by simp [searchContinues, hc, Proof.Ffdh.candidateStatus], ite_false]
         exact hq
       | none =>
         simp only [SearchClassified, hc] at ht
         refine WP.mono (live_loop_guard ht.1 ht.2) fun q ⟨hq, hlive⟩ => ?_
-        simp only [SearchCTStep, show searchContinues p by simp [searchContinues, hr, hc, Spec.Ffdh.candidateStatus], ite_true]
+        simp only [SearchCTStep, show searchContinues p by simp [searchContinues, hr, hc, Proof.Ffdh.candidateStatus], ite_true]
         exact ⟨hq, original, by simpa only [nextSearchPoint, candidateUsed, hc] using hlive⟩
 
 end VG.Proof.Ffdh.X86_64.Generation

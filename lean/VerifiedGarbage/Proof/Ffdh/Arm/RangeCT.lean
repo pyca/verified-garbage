@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ChecksCT
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 theorem belowP_ready (s : State) {base : BitVec 32} {len w a : Nat}
     (h : ArithmeticReady base len w s) (ha : a < 8) :

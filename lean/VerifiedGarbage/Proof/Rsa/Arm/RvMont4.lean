@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 namespace VG.Proof.Rsa.Arm.Recover
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.Recover VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf Layout)
 
 /-- `R² mod n`. -/
 abbrev R2v (P : RP) : Nat := 2 ^ (128 * P.w6) % P.n
@@ -55,7 +55,7 @@ theorem Bs.nB {σ s : State} (h : Bs P σ s) : Spec.Rsa.bytesAt s.mem (State.add
         fun d => by simpa using d)) (by have := pre.k2; omega), pre.nB]
 
 theorem fitsM : arrAt P.w6 8 ≤ 8 * P.lenM := by
-  simp only [arrAt, Spec.Rsa.Mont.hdrBytes, RP.lenM]; omega
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes, RP.lenM]; omega
 
 /-- `setup`. -/
 theorem setup_vp {E : State → Prop} (keepHalves : Bool := true) :

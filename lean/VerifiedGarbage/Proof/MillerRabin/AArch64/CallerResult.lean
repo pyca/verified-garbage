@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerFrame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtExp
 import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.MillerRabin.Contract
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! # Recover the arithmetic context after a shared-round call -/
 
@@ -19,18 +21,18 @@ open VG.Impl.MillerRabin.AArch64.Caller
 open VG.Proof.MlKem.AArch64 (Keep)
 
 private theorem call_mut (w : Nat) : ∀ r ∈ callRanges w, KMut r := by
-  simp only [callRanges, mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil,
+  simp only [callRanges, mutRanges, Proof.MillerRabin.Round.compact, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, KMut, pad, slot, hdrBytes, aOne,
-    Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, sW, sMinv, sArr, sStride, sFn]
+    Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, sW, sMinv, sArr, sStride, sFn]
   and_intros <;> omega_arith
 
 private theorem call_minv (w : Nat) :
     ∀ r ∈ callRanges w, 8 * sMinv + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * sMinv := by
-  simp only [callRanges, mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil,
+  simp only [callRanges, mutRanges, Proof.MillerRabin.Round.compact, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, pad, slot, hdrBytes, aOne, sMinv,
-    Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+    Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
   and_intros <;> omega_arith
 
 private theorem call_array (w j : Nat) (hj : j ∈ [0, 4, 9, 10, 27]) :
@@ -38,10 +40,10 @@ private theorem call_array (w j : Nat) (hj : j ∈ [0, 4, 9, 10, 27]) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl | rfl | rfl
   all_goals
-    simp only [callRanges, mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil,
+    simp only [callRanges, mutRanges, Proof.MillerRabin.Round.compact, List.map_cons, List.map_nil,
       List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, pad, slot, hdrBytes, aOne,
-      Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+      Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
     and_intros <;> omega_arith
 
 theorem call_result_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
@@ -52,7 +54,7 @@ theorem call_result_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames =
     (hx : wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c) :
     WP isa (call name (round M.mm)) s fun t =>
       (∃ bm', MrCtx t B Z w c bm') ∧ ECtx t.mem B w c ∧
-      word t.mem B (8 * kFlag) = mask (Spec.MillerRabin.round c b) ∧
+      word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
       Frm B (callRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   refine WP.mono (call_frame_ok M name hnf hc he h4 h128 hEZ ho h3 hx) ?_
   rintro t ⟨hflag, hf, hk⟩

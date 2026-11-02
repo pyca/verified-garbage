@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Mont.X86.ExponentMask
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
 import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+public import VerifiedGarbage.Proof.Rsa.MontMulContract
 
 /-! # The pieces of DSA's exponentiation, between calls
 
@@ -28,7 +29,7 @@ namespace VG.Proof.Dsa.X86.Pow
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Mont.X86.Dynamic VG.Impl.Dsa.X86.Pow
-open VG.Spec.Rsa.MontMul (scratchBytes)
+open VG.Proof.Rsa.MontMul (scratchBytes)
 
 /-- The bytes the exponentiation's core may change: the inverse and the mask
 in the header, and every slot but the modulus's. -/

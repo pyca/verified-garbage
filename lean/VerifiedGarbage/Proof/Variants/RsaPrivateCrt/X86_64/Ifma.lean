@@ -299,7 +299,7 @@ namespace VG.Proof.Variants.RsaPrivateCrt.X86_64.Ifma
 open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : CrtImpl where
-  name := Spec.Rsa.privateCrtApi.name ++ "_ifma"
+  name := "vg_rsa_private_crt" ++ "_ifma"
   code := Impl.Rsa.X86_64.CrtIfma.code CallMont.adx.mm
   depth := by lit_decide
   ok := crt_call_ok (by lit_decide) (Ifma.code_correct Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))

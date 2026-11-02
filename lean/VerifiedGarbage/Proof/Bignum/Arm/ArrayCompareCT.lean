@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem arrayCompare_ct {base : BitVec 32} {len w a b : Nat} (ha : a < 8) (hb : b < 8) :
     RelCT isa (fun s t => LayoutFrameReady base len w s ∧ LayoutFrameReady base len w t ∧ s.sp = t.sp)
@@ -38,7 +38,7 @@ theorem arrayCompare_ct {base : BitVec 32} {len w a b : Nat} (ha : a < 8) (hb : 
     exact h.1.ptr.trans h.2.ptr.symm
   have wp (s : State) (h : P s) : WP isa (.block (arrayCompareArgs a b)) s Q := by
     have fits := h.layout.2.2.1
-    have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
     exact WP.mono (arrayCompareArgs_ok s h.workspace size ha hb header h.ptr)

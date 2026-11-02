@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 
 @[expose] public section
 namespace VG.Proof.Mont.X86.Compact
-open VG VG.X86 VG.Proof.Mont VG.Spec.Rsa.Mont
+open VG VG.X86 VG.Proof.Mont VG.Proof.Rsa.Mont
 
 theorem Entry.pushed_byte {s : State} (A : Entry s) {i : Nat} (index : i < lenOf s) :
     (entered s).mem (wsOf s + BitVec.ofNat 64 i) = s.mem (wsOf s + BitVec.ofNat 64 i) := by
@@ -26,7 +26,7 @@ theorem Entry.keeps {s : State} (A : Entry s) {m : Mem}
       [(arrAt (wOf s.mem (wsOf s)) 2, 8 * (2 * wOf s.mem (wsOf s)) + 28),
        (arrAt (wOf s.mem (wsOf s)) (arg s 2).toNat, 4 * (2 * wOf s.mem (wsOf s)))]
       (entered s).mem m) :
-    Spec.Rsa.Mont.Keeps (wsOf s) (arg s 1).toNat (wOf s.mem (wsOf s)) (arg s 2).toNat s.mem m := by
+    Proof.Rsa.Mont.Keeps (wsOf s) (arg s 1).toNat (wOf s.mem (wsOf s)) (arg s 2).toNat s.mem m := by
   intro i index far
   have two := far 2 (by change 2 ∈ [2, 3, (arg s 2).toNat]; simp)
   have three := far 3 (by change 3 ∈ [2, 3, (arg s 2).toNat]; simp)

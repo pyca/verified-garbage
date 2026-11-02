@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 def privateMainFlag (p : Inputs) (yb xb : List Byte) : BitVec 32 :=
   if 0 < Spec.Rsa.os2ip xb ∧ Spec.Rsa.os2ip xb < scalarBound p then privatePublicFlag p yb xb else 2
@@ -34,8 +34,8 @@ theorem privateMain_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : List
     (scalarStack : Region.Disjoint ⟨State.addr p.privateValue, xb.length⟩ ⟨State.addr s.sp, 72⟩) :
     WP isa VG.Impl.Ffdh.Arm.Domain.CheckPrivate.main s fun t =>
       t.gpr .r0 = privateMainFlag p yb xb ∧ Frame (prepareAtWrites p s) s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (prepareAtWrites p s) m m' :=
     f.mono (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact List.mem_cons_self)
   have pStack : Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=

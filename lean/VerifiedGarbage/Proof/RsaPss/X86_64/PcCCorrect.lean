@@ -190,8 +190,8 @@ theorem codeC_ok {chkN : String} {chkC : Prog isa}
   have heb : Spec.RsaPss.bitLength (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) k)) - 1 = eb := by
     rw [hnB, RsaPss.emBits_eq rest h0, hrl]; rfl
   have heb1 : 1 ≤ eb := by rw [heb_def]; unfold ebV; omega_arith
-  have heb2 : eb ≤ Spec.RsaPss.maxEmBits := by
-    rw [heb_def]; unfold ebV Spec.RsaPss.maxEmBits; omega_arith
+  have heb2 : eb ≤ Proof.RsaPss.maxEmBits := by
+    rw [heb_def]; unfold ebV Proof.RsaPss.maxEmBits; omega_arith
   have hlok : lo + el = k := by
     rw [hlo_def, hel_def, heb_def]; unfold Spec.RsaPss.emLength ebV; omega_arith
   -- `emBits` and the public-key operation's arguments.

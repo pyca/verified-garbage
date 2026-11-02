@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusReady
 import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFn
 import VerifiedGarbage.Proof.Framework.Block
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt wOf Layout)
+open VG.Proof.Rsa.Mont (numAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 
 theorem importModulus_ok (s : State) {base src : BitVec 32} {len w k : Nat}

@@ -30,7 +30,7 @@ namespace VG.Proof.MillerRabin.PPC64LE
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE
 open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.MillerRabin.PPC64LE
 open VG.Proof.Bignum (slot)
-open VG.Spec.Rsa.Mont (wOf)
+open VG.Proof.Rsa.Mont (wOf)
 open VG.Proof.Bignum.PPC64LE (Two Pins two_post two_taint)
 
 /-- The public data of a run. -/
@@ -69,9 +69,9 @@ theorem pins_C1 : Pins C1 [.r10, .r11, .r21, .r29, .r31] := by
 theorem front_C1 {d : FD} {s : State} (h : C0 d s) : WP isa (.block (Impl.MillerRabin.PPC64LE.save ++ setup)) s (C1 d) := by
   obtain ⟨⟨-, hwr, hdis, hnw, hL, hp⟩, rfl⟩ := h
   have hsin : Save.savR (s.gpr .r5) ∈ s.wr := by rw [hwr]; simp
-  dsimp only [Spec.MillerRabin.Layout, Spec.MillerRabin.compact] at hL
+  dsimp only [Proof.MillerRabin.Round.Layout, Proof.MillerRabin.Round.compact] at hL
   obtain ⟨-, ⟨-, -, -, -⟩, h4, h128, hspace, -⟩ := hL
-  dsimp only [Spec.MillerRabin.Prepared, Spec.MillerRabin.compact] at hp
+  dsimp only [Proof.MillerRabin.Round.Prepared, Proof.MillerRabin.Round.compact] at hp
   obtain ⟨-, -, hinv, -⟩ := hp
   simp only [wsR] at hdis
   simp only [fdOf]
@@ -89,7 +89,7 @@ theorem front_C1 {d : FD} {s : State} (h : C0 d s) : WP isa (.block (Impl.Miller
   have wd₁ : ∀ {d}, d + 8 ≤ Z → s₁.mem.readW (off B d) 64 = s.mem.readW (off B d) 64 :=
     fun hd => hout₁.word (by omega) (by omega)
   refine WP.mono (setup_ok (hs.congr hS.keep.wr) (by rw [hS.keep.gpr .r3 (by decide), hBd])
-    (by rw [wd₁ (by omega), ← hwd]; simp [wOf, VG.Spec.Rsa.Mont.wordAt, Spec.Rsa.Mont.wWord])
+    (by rw [wd₁ (by omega), ← hwd]; simp [wOf, VG.Proof.Rsa.Mont.wordAt, Proof.Rsa.Mont.wWord])
     h4 h128 hZ (by
       rw [w32_eq_mod, w32_eq_mod]
       simp only [VG.Proof.Bignum.word]

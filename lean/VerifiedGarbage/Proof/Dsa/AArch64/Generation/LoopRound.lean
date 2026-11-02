@@ -26,15 +26,15 @@ theorem loopRound_ok (M : Mont) (K : Kernel) {P : PrimeParams} {s₀ s : State}
     (Spec.Rsa.splitTwos (P.N - 1)).2 P.drawBytes P.rand i uni used h.go P.drawWidth (by have := P.drawMin; omega)
   have hut : (if wt.2 then 1 else 0) = wt.2.toNat := by cases wt.2 <;> rfl
   change primeRest P i uni used = if used + P.drawBytes ≤ P.rand.length then
-    if Spec.MillerRabin.round P.N wt.1 then primeRest P (i + 1) (uni + if wt.2 then 1 else 0) (used + P.drawBytes)
+    if Proof.MillerRabin.Round.round P.N wt.1 then primeRest P (i + 1) (uni + if wt.2 then 1 else 0) (used + P.drawBytes)
     else some (false, P.rand.drop (used + P.drawBytes)) else none at hr
   rw [ite_eq_left hroom, hut] at hr
   have hres := h.rest.symm.trans hr
   refine WP.seq (WP.mono (drawRound_ok M K h.state hroom h.ki h.kuni h.counter_bound.1 h.counter_bound.2)
     fun u ⟨hu, hstat, hcount, hfu, ku⟩ => ?_)
   change word u.mem P.B (8 * kStat) = BitVec.ofNat 64
-    (if Spec.MillerRabin.round P.N wt.1 then (if i + 1 < 17 ∨ uni + wt.2.toNat < P.checks then 4 else 1) else 3) at hstat
-  change (Spec.MillerRabin.round P.N wt.1 = true → word u.mem P.B (8 * kI) = BitVec.ofNat 64 (i + 1) ∧
+    (if Proof.MillerRabin.Round.round P.N wt.1 then (if i + 1 < 17 ∨ uni + wt.2.toNat < P.checks then 4 else 1) else 3) at hstat
+  change (Proof.MillerRabin.Round.round P.N wt.1 = true → word u.mem P.B (8 * kI) = BitVec.ofNat 64 (i + 1) ∧
     word u.mem P.B (8 * kUni) = BitVec.ofNat 64 (uni + wt.2.toNat)) at hcount
   refine WP.mono (statCmp_ok hu.ready.ws (by split <;> (try split) <;> decide) hstat)
     fun t ⟨hz, hm, kt⟩ => ?_
@@ -43,8 +43,8 @@ theorem loopRound_ok (M : Mont) (K : Kernel) {P : PrimeParams} {s₀ s : State}
   have hf : WorkFrame P.B (drawRoundRanges P.w) (primeExtras P) s₀.mem t.mem := by rw [hm]; exact h.frame.trans hfu
   have hk : Keep mmRegs s₀ t := ((h.keep.trans ku).trans k).mono (by decide)
   have hstat' : word t.mem P.B (8 * kStat) = BitVec.ofNat 64
-    (if Spec.MillerRabin.round P.N wt.1 then (if i + 1 < 17 ∨ uni + wt.2.toNat < P.checks then 4 else 1) else 3) := by rw [hm]; exact hstat
-  by_cases hpass : Spec.MillerRabin.round P.N wt.1 = true
+    (if Proof.MillerRabin.Round.round P.N wt.1 then (if i + 1 < 17 ∨ uni + wt.2.toNat < P.checks then 4 else 1) else 3) := by rw [hm]; exact hstat
+  by_cases hpass : Proof.MillerRabin.Round.round P.N wt.1 = true
   · rw [ite_eq_left hpass] at hres hstat' hz
     by_cases hgo : i + 1 < 17 ∨ uni + wt.2.toNat < P.checks
     · have hki := (hcount hpass).1

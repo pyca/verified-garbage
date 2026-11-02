@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 theorem transferArray_ct {base src : BitVec 32} {len slen w o a : Nat} (ho : o < 8) (ha : a < 8) :
     RelCT isa (fun s t => TransferArrayInput base src len slen w s ∧
@@ -37,7 +37,7 @@ theorem transferArray_ct {base src : BitVec 32} {len slen w o a : Nat} (ho : o <
     · exact h.1.ptr.trans h.2.ptr.symm
   have wp (s : State) (h : P s) : WP isa (.block (transferArrayArgs o a)) s Q := by
     have fits := h.destination.layout.2.2.1
-    have small : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+    have small : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
     have header := nativeHeader_of_layout s.mem base h.destination.workspace.nowrap (Nat.le_refl _) h.destination.layout
     rw [h.destination.width] at header
     refine WP.mono (transferArrayArgs_ok s h.destination.workspace small ho ha h.destination.ptr h.ptr (header.array o ho)) ?_

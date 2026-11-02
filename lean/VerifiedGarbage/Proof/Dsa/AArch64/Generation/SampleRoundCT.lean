@@ -62,7 +62,7 @@ theorem witnessRound_ct (M : Mont) (K : Kernel) :
       (fun _ _ h => h) K.ct)
 
 def roundTailPublic (p : RoundPublic) : RoundTailPublic :=
-  ⟨p.prime, Spec.MillerRabin.round p.prime.N p.witness⟩
+  ⟨p.prime, Proof.MillerRabin.Round.round p.prime.N p.witness⟩
 
 theorem roundTail_ready (M : Mont) (K : Kernel) {p : RoundPublic} {s : State} (h : BeforeRound p s) :
     WP isa (Impl.Dsa.AArch64.Generation.witnessRound M.mm K.run) s (RoundTailState (roundTailPublic p)) :=

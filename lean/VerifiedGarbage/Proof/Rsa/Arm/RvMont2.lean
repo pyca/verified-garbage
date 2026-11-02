@@ -19,7 +19,7 @@ multiplication writes the key arrays of its own and its result's arrays;
 namespace VG.Proof.Rsa.Arm.Recover
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.Recover VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 
 theorem mHd_eq {P : RP} (sz : Sizes P) : P.oM + mHd P = arr P.w (mBase + 1) := oM_arrAt sz 1
 

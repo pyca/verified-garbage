@@ -31,7 +31,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 structure ExpBitInput (base : BitVec 32) (len w M x E V : Nat) (s : State) : Prop where
   power : ExpState base len w M x E s
@@ -43,7 +43,7 @@ theorem ExpBitInput.square (s : State) {base : BitVec 32} {len w M x E V : Nat}
   rintro t ⟨power, keeps, _, _⟩
   have size : 256 ≤ 8 * len := by
     have := h.power.ready.layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega
   exact ⟨power, (keeps_header_readW keeps size (d := 200) (bits := 32) (by decide)).trans h.byte⟩
 
@@ -52,7 +52,7 @@ theorem ExpBitInput.test (s : State) {base : BitVec 32} {len w M x E V : Nat}
     WP isa (.block expBitTest) s fun t => ExpState base len w M x E t ∧ t.z = decide (V / 128 % 2 = 0) := by
   have size : 204 ≤ 8 * len := by
     have := h.power.ready.layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega
   refine WP.mono (expBitTest_ok s h.power.ready.workspace size h.power.ready.ptr hv h.byte) ?_
   rintro t ⟨zero, mem, rest⟩

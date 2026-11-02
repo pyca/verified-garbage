@@ -13,7 +13,7 @@ namespace VG.Proof.Bignum.Arm.ConditionalExp
 
 variable {ok : Prop}
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem expPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}

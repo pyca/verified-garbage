@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem equalFlags (a b : Nat) :
@@ -32,7 +32,7 @@ theorem equalFinish_ok (s : State) {base : BitVec 32} {len w : Nat}
       t.mem = s.mem) ∧ Rest [.r3, .r11] s t := by
   have size : 256 ≤ 8 * len := by
     have := h.layout.2.2.1
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega
   have addr : State.addr (base + BitVec.ofNat 32 136) = off (State.addr base) 136 :=
     VG.Arm.addr_add (by have := h.workspace.nowrap; omega)
@@ -47,7 +47,7 @@ theorem equal_ok (s : State) {base : BitVec 32} {len w a b : Nat}
       (∀ q, Operand q → numAt t.mem (State.addr base) w q = numAt s.mem (State.addr base) w q) ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   rw [VG.Impl.Ffdh.Arm.equal, WP.seq_iff]
   refine WP.mono (compare_ok s h ha.1 hb.1 ha.2.2 hb.2.2) ?_
   rintro u ⟨readyU, less, keepsU, frameU, restU⟩

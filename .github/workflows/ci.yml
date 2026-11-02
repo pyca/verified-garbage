@@ -486,7 +486,7 @@ jobs:
       # not those of the architectures it does not measure (`bench`, see
       # ci/rust_arches.py).
       - id: bench-cache-key
-        if: ${{ matrix.bench && matrix.rust == 'stable' && runner.os == 'Linux' && github.event_name == 'push' }}
+        if: ${{ matrix.bench && (matrix.rust == 'stable' || matrix.rust == 'host') && runner.os == 'Linux' && github.event_name == 'push' }}
         run: echo "key=$(sh ci/bench_cache_key.sh bench)" >> "$GITHUB_OUTPUT"
       - id: bench-cache
         if: ${{ steps.bench-cache-key.outputs.key }}

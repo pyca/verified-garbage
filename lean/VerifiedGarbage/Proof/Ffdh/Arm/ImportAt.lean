@@ -15,7 +15,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
-open VG.Spec.Rsa.Mont (numAt Keeps)
+open VG.Proof.Rsa.Mont (numAt Keeps)
 
 theorem importArgs_ok (s : State) {p : Inputs} {slots : List Nat} (slot countSlot : Nat)
     (h : Context p slots s) (stable : stableSlots slots = true)

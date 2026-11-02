@@ -34,7 +34,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 theorem privateMatch_ct {p : Inputs} {slots : List Nat} {yb xb1 xb2 : List Byte}
     (stable : stableSlots slots = true) (h32 : 32 ∈ slots) (h36 : 36 ∈ slots)
@@ -65,8 +65,8 @@ theorem privateMatch_ct {p : Inputs} {slots : List Nat} {yb xb1 xb2 : List Byte}
       (by rw [peerLength]; have := p.minLength; omega) (by rw [peerLength]; exact p.width.2.2.2.1)
       (by change BitVec.ofNat 32 p.k = _; rw [peerLength])) fun _ j => j.2.1
   have equal := equal_ct (base := p.base) (len := p.len) (w := p.w)
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6)
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 1)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6)
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 1)
   unfold VG.Impl.Ffdh.Arm.Domain.CheckPrivate.matchPublic
   exact relCT_chain powers (fun s h => wpPower s h positive fits count)
     (fun s h => wpPower s h (by rw [← length]; exact positive)
@@ -161,7 +161,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 structure PrivateImported (p : Inputs) (slots : List Nat) (yb xb : List Byte) (s : State) : Prop extends
     PrivateReady p slots yb xb s where
@@ -181,8 +181,8 @@ theorem privateImport_public (s : State) {p : Inputs} {slots : List Nat} {yb xb 
     (h : PrivateReady p slots yb xb s) (stable : stableSlots slots = true) (h36 : 36 ∈ slots) (h32 : 32 ∈ slots)
     (length : yb.length = p.k) :
     WP isa (VG.Impl.Ffdh.Arm.Domain.importAt 1 36 32) s (PrivateImported p slots yb xb) := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine WP.mono (importAt_ok s 1 36 32 h.context stable h36 h32 h.ready (by decide) (by decide) h.value
     (by rw [length]; have := p.minLength; omega) (by rw [length]; exact p.width.2.2.2.1)
     (by change BitVec.ofNat 32 p.k = _; rw [length])) ?_
@@ -195,9 +195,9 @@ theorem privateImport_public (s : State) {p : Inputs} {slots : List Nat} {yb xb 
 theorem privateRange_public (s : State) {p : Inputs} {slots : List Nat} {yb xb : List Byte}
     (h : PrivateImported p slots yb xb s) (stable : stableSlots slots = true) (odd : p.P % 2 = 1) :
     WP isa (VG.Impl.Ffdh.Arm.inRange 1) s (PrivateRanged p slots yb xb) := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine WP.mono (inRange_ok s h.ready op1 (by decide) (by rw [h.modulus]; exact odd)) ?_
   rintro u ⟨ready, flag, arrays, frame, rest⟩
   rw [h.imported, h.modulus] at flag
@@ -216,7 +216,7 @@ theorem privatePublic_ct {p : Inputs} {slots : List Nat} {yb xb1 xb2 : List Byte
     (P' := fun (s t : State) => PrivateReady p slots yb xb1 s ∧ PrivateReady p slots yb xb2 t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.context, h.1.ready⟩, ⟨h.2.1.context, h.2.1.ready⟩, h.2.2⟩) (fun _ _ h => h)
   have ranges := (inRange_ct (base := p.base) (len := p.len) (w := p.w)
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 1) (by decide)).mono
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 1) (by decide)).mono
     (P' := fun (s t : State) => PrivateImported p slots yb xb1 s ∧ PrivateImported p slots yb xb2 t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.ready, h.2.1.ready, h.2.2⟩) (fun _ _ h => h)
   have branches : RelCT isa (fun s t => PrivateRanged p slots yb xb1 s ∧ PrivateRanged p slots yb xb2 t ∧ s.sp = t.sp)
@@ -245,7 +245,7 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 structure PrivateMainInput (p : Inputs) (slots : List Nat) (yb xb : List Byte) (s : State) : Prop where
   context : Context p slots s
@@ -291,8 +291,8 @@ theorem privateImport_scalar (s : State) {p : Inputs} {slots : List Nat} {yb xb 
     (h : PrivateReady p slots yb xb s) (stable : stableSlots slots = true) (h40 : 40 ∈ slots) (h44 : 44 ∈ slots)
     (positive : 0 < xb.length) (length : xb.length ≤ p.k) (count : p.slotValue 44 = BitVec.ofNat 32 xb.length) :
     WP isa (VG.Impl.Ffdh.Arm.Domain.importAt 1 40 44) s (PrivateScalarImported p slots yb xb) := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   refine WP.mono (importAt_ok s 1 40 44 h.context stable h40 h44 h.ready (by decide) (by decide) h.scalar
     positive (Nat.le_trans length p.width.2.2.2.1) count) ?_
   rintro u ⟨context, ready, value, keeps, frame, rest⟩

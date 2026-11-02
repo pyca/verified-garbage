@@ -19,7 +19,7 @@ hold the same safe modulus.
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 structure NarrowPrimeInput (base pp : BitVec 32) (len v k ps : Nat) (pb : List Byte) (s : State) : Prop

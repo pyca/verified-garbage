@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Inverse
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
@@ -55,11 +56,11 @@ theorem os2ip_reverse_bytesAt (m : Mem) : ∀ (n : Nat) (a : Addr),
     omega
 
 theorem inverseNum_eq (m : Mem) (ws : Addr) (len j : Nat) :
-    Spec.RsaKeyGen.inverseNum m ws len j =
-      val32 m ws (160 + j * (Spec.RsaKeyGen.inverseBytes len + 8)) (2 * ((len + 7) / 8)) := by
-  unfold Spec.RsaKeyGen.inverseNum
-  rw [os2ip_reverse_bytesAt, show Spec.RsaKeyGen.inverseBytes len = 4 * (2 * ((len + 7) / 8)) by
-    unfold Spec.RsaKeyGen.inverseBytes; omega]
+    Proof.RsaKeyGen.inverseNum m ws len j =
+      val32 m ws (160 + j * (Proof.RsaKeyGen.inverseBytes len + 8)) (2 * ((len + 7) / 8)) := by
+  unfold Proof.RsaKeyGen.inverseNum
+  rw [os2ip_reverse_bytesAt, show Proof.RsaKeyGen.inverseBytes len = 4 * (2 * ((len + 7) / 8)) by
+    unfold Proof.RsaKeyGen.inverseBytes; omega]
   exact VG.Proof.Bignum.read_eq_val32 m ws _ _
 
 end VG.Proof.RsaKeyGen
@@ -76,7 +77,7 @@ open VG.Proof.Bignum.X86 (CallArgument)
 /-- The frame's sixteen bytes, and below them the twenty the workspace keeps apart from (`StkOk`). -/
 def inverseStack : Nat := 36
 
-def contract : Contract isa := Spec.RsaKeyGen.inverseContract abi inverseStack
+def contract : Contract isa := Proof.RsaKeyGen.inverseContract abi inverseStack
 
 def base (s : State) : Addr := (arg s 0).setWidth 64
 def size (s : State) : Nat := 8 * (arg s 1).toNat
@@ -96,18 +97,18 @@ structure Entry (s : State) : Prop where
   wsFit : (arg s 0).toNat + size s ≤ 2 ^ 32
   lenLow : 1 ≤ len s
   lenHigh : len s ≤ 1024
-  room : 160 + 15 * (Spec.RsaKeyGen.inverseBytes (len s) + 8) ≤ size s
-  odd : Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 8 % 2 = 1
-  large : 1 < Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 8
-  v : Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 1 = Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 8
-  x₁ : Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 2 = 1
-  x₂ : Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 3 = 0
-  negated : Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 9 + Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 8 =
-    2 ^ (8 * Spec.RsaKeyGen.inverseBytes (len s))
-  zero : Spec.RsaKeyGen.inverseNum s.mem (base s) (len s) 10 = 0
+  room : 160 + 15 * (Proof.RsaKeyGen.inverseBytes (len s) + 8) ≤ size s
+  odd : Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 8 % 2 = 1
+  large : 1 < Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 8
+  v : Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 1 = Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 8
+  x₁ : Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 2 = 1
+  x₂ : Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 3 = 0
+  negated : Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 9 + Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 8 =
+    2 ^ (8 * Proof.RsaKeyGen.inverseBytes (len s))
+  zero : Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 10 = 0
 
 theorem entry {s : State} (h : contract.pre s) : Entry s := by
-  sig_pre [contract, inverseStack, Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig,
+  sig_pre [contract, inverseStack, Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig,
     abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor
@@ -197,7 +198,7 @@ theorem start_ok {s : State} (A : Entry s) :
       exact A.stkOk
   refine ⟨⟨⟨scr, ?_, ?_, ?_⟩, ⟨len s, lenHigh, rfl, ?_⟩, ?_, by omega, by decide⟩, U.mem, U.keeps⟩
   · unfold VG.Proof.Rsa.X86.Keys.arr VG.Proof.Rsa.X86.Keys.S VG.Impl.Rsa.X86.Keys.hdr
-    unfold Spec.RsaKeyGen.inverseBytes at room
+    unfold Proof.RsaKeyGen.inverseBytes at room
     simp only [kw, Spec.Rsa.modulusWords]
     omega
   · simp only [kw, Spec.Rsa.modulusWords]; omega
@@ -210,10 +211,10 @@ theorem start_ok {s : State} (A : Entry s) :
     rwa [A.base_toNat, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 theorem inverseNum_num (m : Mem) (B : Addr) (len j : Nat) :
-    Spec.RsaKeyGen.inverseNum m B len j = VG.Proof.Rsa.X86.Keys.num m B (kw len) j := by
+    Proof.RsaKeyGen.inverseNum m B len j = VG.Proof.Rsa.X86.Keys.num m B (kw len) j := by
   rw [VG.Proof.RsaKeyGen.inverseNum_eq]
   unfold VG.Proof.Rsa.X86.Keys.num VG.Proof.Rsa.X86.Keys.arr VG.Proof.Rsa.X86.Keys.S VG.Impl.Rsa.X86.Keys.hdr
-    Spec.RsaKeyGen.inverseBytes
+    Proof.RsaKeyGen.inverseBytes
   simp only [kw, Spec.Rsa.modulusWords]
   rw [show 4 * (2 * ((len + 7) / 8) + 2) = 8 * ((len + 7) / 8) + 8 by omega]
 
@@ -232,7 +233,7 @@ theorem Entry.entered_num {s : State} (A : Entry s) {j : Nat} (hj : j < 15) :
   intro i hi
   have inside : VG.Proof.Rsa.X86.Keys.arr (kw (len s)) j + 4 * i + 4 ≤ size s := by
     unfold VG.Proof.Rsa.X86.Keys.arr VG.Proof.Rsa.X86.Keys.S VG.Impl.Rsa.X86.Keys.hdr
-    unfold Spec.RsaKeyGen.inverseBytes at room
+    unfold Proof.RsaKeyGen.inverseBytes at room
     simp only [kw, Spec.Rsa.modulusWords] at hi ⊢
     have : j * (4 * (2 * ((len s + 7) / 8) + 2)) + 4 * (2 * ((len s + 7) / 8) + 2) ≤
         15 * (8 * ((len s + 7) / 8) + 8) := by

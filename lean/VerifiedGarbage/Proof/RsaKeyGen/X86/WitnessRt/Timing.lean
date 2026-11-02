@@ -17,7 +17,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
 public import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRoundTiming
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 
 /-! # The witness loop at the run-time width reveals only its consumed entropy length
 
@@ -77,9 +77,9 @@ theorem availableRt_pair {P : Parameters} (v : P.Valid) (Fx : Fixed P) {other : 
   exact ⟨trace, ⟨⟨U.prepared.ready.context, Z.prepared.ready.context, agree⟩, U, Z⟩, Cu, Cz⟩
 
 theorem round_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {input : Import.Geometry}
     (count : input.count = g.words) (length : g.L = 8 * capacity) (fit : 108 ≤ p.toNat)
@@ -129,9 +129,9 @@ theorem advance_pair {g : Geometry} (v : g.Valid) {capacity used randLen : Nat} 
     ⟨cu, Du, ou, lu, hu, Cu, su, du⟩, ⟨cz, Dz, oz, lz, hz, Cz, sz, dz⟩⟩
 
 theorem body_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {g : Geometry} (v : g.Valid) {capacity used randLen : Nat} {p rand : BitVec 32}
     (length : g.L = 8 * capacity)
@@ -161,9 +161,9 @@ theorem body_trace {mont round : Prog isa} {montName roundName : String}
   exact ⟨trace, wp_result (post H.2.1) E, wp_result (post H.2.2) G, agree⟩
 
 theorem branchRt_raw {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) (Fx : Fixed P) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
@@ -189,9 +189,9 @@ theorem branchRt_raw {mont round : Prog isa} {montName roundName : String}
   exact ⟨trace, pair.2.2⟩
 
 theorem stepRt_raw {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) (Fx : Fixed P) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
@@ -202,9 +202,9 @@ theorem stepRt_raw {mont round : Prog isa} {montName roundName : String}
     (RelCT.seq (branchRt_raw montVerified montNoSp montStack roundVerified roundNoSp roundStack v Fx w k n) again_raw)
 
 theorem stepRt_pair {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) (Fx : Fixed P) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
@@ -219,9 +219,9 @@ theorem stepRt_pair {mont round : Prog isa} {montName roundName : String}
   exact ⟨trace, ⟨U.ready.context, Z.ready.context, agree⟩, Ou, Oz⟩
 
 theorem loopRt_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) (Fx : Fixed P) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (k n : Nat) :
@@ -264,9 +264,9 @@ theorem initRt_pair {P : Parameters} (v : P.Valid) (Fx : Fixed P) {other : Nat} 
   exact ⟨trace, ⟨U.prepared.ready.context, Z.prepared.ready.context, agree⟩, U, Z⟩
 
 theorem codeRt_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) (Fx : Fixed P) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
     (w : (P.withSecret other entropy).Valid) (enough : P.start ≤ P.randLen) :

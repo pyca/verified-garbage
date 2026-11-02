@@ -284,6 +284,57 @@ theorem copyIns_ok {s₀ : State} (hp : Pre s₀) (s : State) (hs : CInv s₀ 0 
       rw [u₂.other _ hne, u₁.other _ hne hrn.1 hrn.2]
       exact hrow x hx (by omega)
 
+/-- A lane of an 8-byte aligned state is aligned. -/
+theorem al_lane {p : Addr} (h : p.toNat % 8 = 0) (i : Nat) : (laneAddr p i).toNat % 8 = 0 := by
+  rw [laneAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+
+/-- `x & 7` is zero exactly when `x` is 8-byte aligned. -/
+theorem and7 (x : BitVec 64) : (x &&& BitVec.ofInt 64 7 == 0) = decide (x.toNat % 8 = 0) := by
+  have e : (x &&& BitVec.ofInt 64 7).toNat = x.toNat % 8 := by
+    rw [BitVec.toNat_and, show (BitVec.ofInt 64 7).toNat = 2 ^ 3 - 1 from rfl,
+      Nat.and_two_pow_sub_one_eq_mod]
+  by_cases h : x.toNat % 8 = 0
+  · rw [decide_eq_true h, beq_iff_eq]; exact BitVec.eq_of_toNat_eq (by rw [e, h]; rfl)
+  · rw [decide_eq_false h]
+    exact beq_false_of_ne fun h' => h (by rw [← e, h']; rfl)
+
+/-- The copies into the frame of an 8-byte aligned state. -/
+theorem copyInsA_ok {s₀ : State} (hp : Pre s₀) (hal : (st s₀).toNat % 8 = 0) (s : State) (hs : CInv s₀ 0 s) :
+    WP isa (.block ((List.range 25).flatMap copyInA)) s (CInv s₀ 25) := by
+  refine wp_range_flatMap (M := isa) (CInv s₀)
+    (fun i s' hi ⟨h6, h1, hrd, hwr, hsp, haux, hf, hl, hrow⟩ => ?_) 25 (Nat.le_refl _) s hs
+  obtain ⟨n1, n2, ns, n6⟩ := laneReg_ne i hi
+  unfold copyInA ld
+  rw [List.cons_append]
+  refine wp_ld (by omega) (a := laneAddr (st s₀) i) (by rw [h1]) (al_lane hal i)
+    (by rw [hrd, hwr]; exact in_st s₀ hi) fun s₁ u₁ => ?_
+  refine cmplLane_ok fun s₂ u₂ => ?_
+  have hv : s₂.gpr (laneReg i) = (cmpl (A₀ s₀))[i] := by
+    rw [u₂.gpr, u₁.gpr, lane₀ s₀ hp hf hi, Round.cmpl_get _ hi]
+  have g6 : s₂.gpr .t6 = F s₀ := by
+    rw [u₂.other _ (Ne.symm n6), u₁.other _ (Ne.symm n6), h6]
+  refine wp_sd (by simp only [stOff]; omega) (a := off s₀ (192 + 8 * i)) (by rw [g6]; rfl) (hp.al_off (by omega) (by omega))
+    (by rw [u₂.wr, u₁.wr, hwr]; exact in_fr s₀ (by omega)) fun s₃ g₃ => WP.block_nil ?_
+  have m₂ : s₂.mem = s'.mem := by rw [u₂.mem, u₁.mem]
+  refine ⟨by rw [g₃.gpr, g6], by rw [g₃.gpr, u₂.other _ (Ne.symm ns), u₁.other _ (Ne.symm ns), h1],
+    by rw [g₃.rd, u₂.rd, u₁.rd, hrd], by rw [g₃.wr, u₂.wr, u₁.wr, hwr],
+    by rw [g₃.sp, u₂.sp, u₁.sp, hsp], ?_, ?_, fun j hj hji => ?_, fun x hx hxi => ?_⟩
+  · rw [g₃.mem, m₂]
+    exact haux.frame (fun d h₁ h₂ => copy_disjoint s₀ (.inl rfl) h₁ h₂ |>.sub_right
+      (Offset.sub _ (by omega) (by omega))) ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+        (Region.contains_self _ _))
+  · rw [g₃.mem, m₂]; exact frame_off hf (by omega) _
+  · rw [g₃.mem, m₂]
+    by_cases e : j = i
+    · subst e; rw [Mem.readW_writeW_self64, hv]
+    · rw [rw_off s₀ _ (by omega) (by omega) (by omega)]; exact hl j hj (by omega)
+  · rw [g₃.gpr]
+    by_cases e : 20 + x = i
+    · subst e; rw [← laneReg_row x hx]; exact hv
+    · have hne : rowReg x ≠ laneReg i := fun h => laneReg_ne_row i hi x hx (by omega) h.symm
+      rw [u₂.other _ hne, u₁.other _ hne]
+      exact hrow x hx (by omega)
+
 /-! ## The rounds -/
 
 /-- The rounds' invariant, before iteration `j` (round `2j`): the state,
@@ -447,14 +498,46 @@ theorem copyOuts_ok {s₀ : State} (hp : Pre s₀) {sL : State} (hL : LInv s₀ 
     · rw [Mem.readW_writeW_sep (Proof.Sha3.lane_sep _ hj hi e) (by decide)]
       exact hl j hj (by omega)
 
-theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {sL : State} (hL : LInv s₀ 12 sL) :
-    WP isa (.block epilogue) sL fun s' =>
+/-- The copies back into an 8-byte aligned state. -/
+theorem copyOutsA_ok {s₀ : State} (hp : Pre s₀) (hal : (st s₀).toNat % 8 = 0) {sL : State}
+    (hL : LInv s₀ 12 sL) (s : State) (hs : EInv s₀ sL 0 s) :
+    WP isa (.block ((List.range 25).flatMap copyOutA)) s (EInv s₀ sL 25) := by
+  have hX : Lanes sL.mem (off s₀ 192) (cmpl (keccakF (A₀ s₀))) := hL.state
+  refine wp_range_flatMap (M := isa) (EInv s₀ sL)
+    (fun i s' hi ⟨h0, h1, hrd, hwr, hsp, hf, hl⟩ => ?_) 25 (Nat.le_refl _) s hs
+  unfold copyOutA ld
+  rw [List.cons_append]
+  refine wp_ld (by omega) (a := off s₀ (192 + 8 * i)) (by rw [h0, off_add])
+    (hp.al_off (by omega) (by omega)) (by rw [hrd, hwr]; exact in_fr s₀ (by omega)) fun s₁ u₁ => ?_
+  refine cmplLane_ok fun s₂ u₂ => ?_
+  have hv : s₂.gpr .t0 = (keccakF (A₀ s₀))[i] := by
+    rw [u₂.gpr, u₁.gpr, ← laneAddr_off, hf.readW (lane_contains _ hi) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hp.fr_st.sub_left (Offset.sub_base (F s₀) (d := 192) (n := 200) (k := 608) (by omega)))
+      (by decide), hX i hi, cmpl_msk _ hi]
+  have g1 : s₂.gpr .s1 = st s₀ := by rw [u₂.other _ (by decide), u₁.other _ (by decide), h1]
+  refine wp_sd (by omega) (a := laneAddr (st s₀) i) (by rw [g1]) (al_lane hal i)
+    (by rw [u₂.wr, u₁.wr, hwr]; exact in_st s₀ hi) fun s₃ g₃ => WP.block_nil ?_
+  have m₂ : s₂.mem = s'.mem := by rw [u₂.mem, u₁.mem]
+  refine ⟨by rw [g₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h0],
+    by rw [g₃.gpr, g1], by rw [g₃.rd, u₂.rd, u₁.rd, hrd],
+    by rw [g₃.wr, u₂.wr, u₁.wr, hwr], by rw [g₃.sp, u₂.sp, u₁.sp, hsp], ?_, fun j hj hji => ?_⟩
+  · rw [g₃.mem, m₂]
+    exact hf.writeW (List.mem_singleton_self _) _ (lane_contains _ hi)
+  · rw [g₃.mem, m₂]
+    by_cases e : j = i
+    · subst e; rw [Mem.readW_writeW_self64, hv]
+    · rw [Mem.readW_writeW_sep (Proof.Sha3.lane_sep _ hj hi e) (by decide)]
+      exact hl j hj (by omega)
+
+/-- The copies back, by either of the copies `outs`, then the registers restored. -/
+theorem epiTail_ok {s₀ : State} (hp : Pre s₀) {sL : State} (hL : LInv s₀ 12 sL) {outs : List Instr}
+    (hc : WP isa (.block outs) sL (EInv s₀ sL 25)) :
+    WP isa (.block (outs ++ restore)) sL fun s' =>
       s'.gpr .s0 = s₀.gpr .s0 ∧ s'.gpr .s1 = s₀.gpr .s1 ∧ s'.sp = F s₀ ∧ s'.wr = W s₀ ∧
         stateAt s'.mem (st s₀) = keccakF (A₀ s₀) := by
-  unfold epilogue
   rw [WP.block_append_iff]
-  refine WP.mono (copyOuts_ok hp hL sL ⟨hL.a0, hL.s1, hL.rd, hL.wr, hL.sp, Frame.refl _ _,
-    fun _ _ h => absurd h (Nat.not_lt_zero _)⟩) fun s₁ ⟨h0, h1, hrd, hwr, hsp, hf, hl⟩ => ?_
+  refine WP.mono hc fun s₁ ⟨h0, h1, hrd, hwr, hsp, hf, hl⟩ => ?_
   have hfr : ∀ d, d + 8 ≤ 608 → s₁.mem.readW (off s₀ d) 64 = sL.mem.readW (off s₀ d) 64 := fun d hd =>
     hf.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -474,6 +557,26 @@ theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {sL : State} (hL : LInv s₀ 
     simp only [Spec.Sha3.stateAt, Vector.getElem_ofFn, u₃.mem, u₂.mem]
     exact hl i hi hi
 
+theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {sL : State} (hL : LInv s₀ 12 sL) :
+    WP isa epilogue sL fun s' =>
+      s'.gpr .s0 = s₀.gpr .s0 ∧ s'.gpr .s1 = s₀.gpr .s1 ∧ s'.sp = F s₀ ∧ s'.wr = W s₀ ∧
+        stateAt s'.mem (st s₀) = keccakF (A₀ s₀) := by
+  unfold epilogue
+  refine WP.seq (Wp.WP.cons (exec_logicImm (imm := 7) (by decide)) (WP.block_nil ?_))
+  let s₁ := sL.write .t0 (sL.gpr .s1 &&& BitVec.ofInt 64 7)
+  have hL₁ : LInv s₀ 12 s₁ := ⟨by simp [s₁, State.write, hL.a0], by simp [s₁, State.write, hL.a1],
+    by simp [s₁, State.write, hL.s0], by simp [s₁, State.write, hL.s1], hL.rd, hL.wr, hL.sp, hL.state,
+    fun x hx => by
+      have : rowReg x ≠ .t0 := by revert x; decide
+      simp only [s₁, State.write, this, ite_false]; exact hL.row x hx, hL.aux, hL.frame⟩
+  have e0 : EInv s₀ s₁ 0 s₁ := ⟨hL₁.a0, hL₁.s1, hL₁.rd, hL₁.wr, hL₁.sp, Frame.refl _ _,
+    fun _ _ h => absurd h (Nat.not_lt_zero _)⟩
+  refine WP.ite (M := isa) (decide ((st s₀).toNat % 8 = 0))
+    (by show some (s₁.gpr .t0 == 0) = _; simp only [s₁, State.write, ite_true, hL.s1]; rw [and7])
+    (fun h => ?_) (fun _ => ?_)
+  · exact WP.mono (epiTail_ok hp hL₁ (copyOutsA_ok hp (of_decide_eq_true h) hL₁ s₁ e0)) fun _ h => h
+  · exact WP.mono (epiTail_ok hp hL₁ (copyOuts_ok hp hL₁ s₁ e0)) fun _ h => h
+
 /-- Registers that no instruction of code without calls writes keep their
 values, as a postcondition. -/
 theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) {rs : List Reg}
@@ -482,7 +585,8 @@ theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s
   obtain ⟨t, s', he, hq⟩ := h
   exact ⟨t, s', he, hq, fun r hr => Exec.gpr (hc r hr) he (.inl hn)⟩
 
-theorem setup_ok {s₀ : State} (hp : Pre s₀) : WP isa (.block setup) (allocd 608 s₀) (LInv s₀ 0) := by
+theorem setup_ok {s₀ : State} (hp : Pre s₀) :
+    WP isa (.block setup) (allocd 608 s₀) fun s => CInv s₀ 0 s ∧ s.gpr .t0 = st s₀ &&& BitVec.ofInt 64 7 := by
   unfold setup
   simp only [List.append_assoc]
   refine save_ok hp (s := allocd 608 s₀) rfl hp.rd (by simp only [allocd, hp.wr]) rfl rfl
@@ -490,17 +594,30 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) : WP isa (.block setup) (allocd 
   rw [WP.block_append_iff]
   refine WP.mono (rcs_ok hp s₁ ⟨h6, h1, hrd, hwr, hsp, v₁, v₂, fun _ h => absurd h (Nat.not_lt_zero _),
     hf⟩) fun s₂ ⟨g6, g1, grd, gwr, gsp, w₁, w₂, wc, gf⟩ => ?_
-  rw [WP.block_append_iff]
-  exact WP.mono (copyIns_ok hp s₂ ⟨g6, g1, grd, gwr, gsp, ⟨w₁, w₂, wc⟩, gf,
-    fun _ _ h => absurd h (Nat.not_lt_zero _), fun _ _ h => absurd h (by omega)⟩) fun s₃ h₃ =>
-    pointers_ok h₃
+  refine Wp.WP.cons (exec_logicImm (imm := 7) (by decide)) (WP.block_nil ⟨⟨?_, ?_, grd, gwr, gsp, ⟨w₁, w₂, wc⟩, gf,
+    fun _ _ h => absurd h (Nat.not_lt_zero _), fun _ _ h => absurd h (by omega)⟩, ?_⟩)
+  · simp [State.write, g6]
+  · simp [State.write, g1]
+  · simp [State.write, g1]
+
+/-- The copy into the frame, by either copy, and the rounds' pointers. -/
+theorem copyIns'_ok {s₀ : State} (hp : Pre s₀) {s : State} (hs : CInv s₀ 0 s)
+    (h0 : s.gpr .t0 = st s₀ &&& BitVec.ofInt 64 7) : WP isa copyIns s (LInv s₀ 0) := by
+  unfold copyIns
+  refine WP.ite (M := isa) (decide ((st s₀).toNat % 8 = 0))
+    (by show some (s.gpr .t0 == 0) = _; rw [h0, and7]) (fun h => ?_) (fun _ => ?_)
+  · rw [WP.block_append_iff]
+    exact WP.mono (copyInsA_ok hp (of_decide_eq_true h) s hs) fun _ h => pointers_ok h
+  · rw [WP.block_append_iff]
+    exact WP.mono (copyIns_ok hp s hs) fun _ h => pointers_ok h
 
 theorem main_ok {s₀ : State} (hp : Pre s₀) :
     WP isa main (allocd 608 s₀) fun s' =>
       s'.gpr .s0 = s₀.gpr .s0 ∧ s'.gpr .s1 = s₀.gpr .s1 ∧ s'.sp = F s₀ ∧ s'.wr = W s₀ ∧
         stateAt s'.mem (st s₀) = keccakF (A₀ s₀) := by
   unfold main
-  refine WP.seq (WP.mono (setup_ok hp) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (setup_ok hp) fun s₀' ⟨hc, h0⟩ => ?_)
+  refine WP.seq (WP.mono (copyIns'_ok hp hc h0) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (Q := LInv s₀ 12) ?_ fun s₂ h₂ => epilogue_ok hp h₂)
   let Inv : Nat → State → Prop := fun n s => ∃ j, n = 12 - j ∧ j < 12 ∧ LInv s₀ j s
   refine WP.loop (M := isa) Inv (fun n s ⟨j, hn, hj, hL⟩ => ?_) 12 s₁ ⟨0, rfl, by omega, h₁⟩

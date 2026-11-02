@@ -209,7 +209,7 @@ theorem mmul_relCT {g : Geo} (pg : PubG g) {o a b : Nat} (ho : MontIndex o) (ha 
         obtain ⟨_, _, _, _, _, _, _, _, h₂, mr₂, _, hb₂, _, hB₂, _⟩ := I₂
         exact ⟨h₁.callOk mr₁ ho ha hb ho0 hb₁ hB₁, h₂.callOk mr₂ ho ha hb ho0 hb₂ hB₂⟩)
     refine VG.RelCT.seq blk ?_
-    refine RelCT.call (k := Spec.Rsa.MontMul.mulContract abi 56) VG.Proof.Mont.X86.Sse2.at_correct
+    refine RelCT.call (k := Proof.Rsa.MontMul.mulContract abi 56) VG.Proof.Mont.X86.Sse2.at_correct
       VG.Proof.Mont.X86.Sse2.at_constantTime
       [⟨(g.sp - BitVec.ofNat 32 36).setWidth 64, 36⟩] [⟨g.B, g.Z⟩] ?_
     rintro g₁ g₂ ⟨-, ⟨A₁, sp₁, arg₁, fr₁, sc₁⟩, ⟨A₂, sp₂, arg₂, fr₂, sc₂⟩⟩

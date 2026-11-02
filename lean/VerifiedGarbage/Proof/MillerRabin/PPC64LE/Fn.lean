@@ -27,7 +27,7 @@ open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE
 open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.MillerRabin.PPC64LE
 open VG.Proof.Bignum (slot slot_sep)
 open VG.Proof.RsaKeyGen (mrE mrA)
-open VG.Spec.Rsa.Mont (numAt wOf wordAt arrAt)
+open VG.Proof.Rsa.Mont (numAt wOf wordAt arrAt)
 
 /-- The working space: `ws_len` words at `r3`. -/
 abbrev wsR (s : State) : Region := ⟨s.gpr .r3, (s.gpr .r4).toNat * 8⟩
@@ -39,15 +39,15 @@ def fnContract : Contract isa where
     let ws := s.gpr .r3
     let n := (s.gpr .r4).toNat
     s.rd = [] ∧ s.wr = [wsR s, Save.savR (s.gpr .r5)] ∧ (wsR s).Disjoint (Save.savR (s.gpr .r5)) ∧
-      ws.toNat + n * 8 ≤ 2 ^ 64 ∧ Spec.MillerRabin.Layout Spec.MillerRabin.compact s.mem ws n ∧
-      Spec.MillerRabin.Prepared Spec.MillerRabin.compact s.mem ws
+      ws.toNat + n * 8 ≤ 2 ^ 64 ∧ Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact s.mem ws n ∧
+      Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact s.mem ws
   post s t :=
     let ws := s.gpr .r3
     let w := wOf s.mem ws
     let c := numAt s.mem ws w 0
     (∀ b, numAt s.mem ws w 5 = b % c * 2 ^ (64 * w) % c →
-      ((t.gpr .r3).setWidth 32).toNat = if Spec.MillerRabin.round c b then 1 else 0) ∧
-      Spec.MillerRabin.Keeps Spec.MillerRabin.compact ws (s.gpr .r4).toNat w s.mem t.mem
+      ((t.gpr .r3).setWidth 32).toNat = if Proof.MillerRabin.Round.round c b then 1 else 0) ∧
+      Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact ws (s.gpr .r4).toNat w s.mem t.mem
   pub s₁ s₂ :=
     s₁.sp = s₂.sp ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
       wOf s₁.mem (s₁.gpr .r3) = wOf s₂.mem (s₂.gpr .r3)
@@ -134,9 +134,9 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
   have hsin : Save.savR (s.gpr .r5) ∈ s.wr := by rw [hwr]; simp
   show WP isa Impl.MillerRabin.PPC64LE.round s fun t => abiPreserved s t ∧ fnContract.post s t
   -- the layout and the prepared values
-  dsimp only [Spec.MillerRabin.Layout, Spec.MillerRabin.compact] at hL
+  dsimp only [Proof.MillerRabin.Round.Layout, Proof.MillerRabin.Round.compact] at hL
   obtain ⟨-, ⟨-, -, -, -⟩, h4, h128, hspace, -⟩ := hL
-  dsimp only [Spec.MillerRabin.Prepared, Spec.MillerRabin.compact] at hp
+  dsimp only [Proof.MillerRabin.Round.Prepared, Proof.MillerRabin.Round.compact] at hp
   obtain ⟨h3, hodd, hinv, hx5, h9, h10, he, hl⟩ := hp
   simp only [wsR] at hdis
   generalize hBd : s.gpr .r3 = B at hdis hnw hspace h4 h128 h3 hodd hinv hx5 h9 h10 he hl
@@ -161,7 +161,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
   have h0 := slot_lt (w := w) (show 0 < 28 by decide)
   have h0' : slot w 0 = 256 := by simp [slot, Impl.Bignum.hdrBytes]
   refine WP.mono (setup_ok (hs.congr hS.keep.wr) (by rw [hS.keep.gpr .r3 (by decide), hBd])
-    (by rw [wd₁ (by omega_arith), ← hwd]; simp [wOf, wordAt, Spec.Rsa.Mont.wWord])
+    (by rw [wd₁ (by omega_arith), ← hwd]; simp [wOf, wordAt, Proof.Rsa.Mont.wWord])
     h4 h128 hZ (by
       rw [w32_eq_mod, w32_eq_mod]
       simp only [VG.Proof.Bignum.word]
@@ -187,7 +187,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
   refine WP.seq (WP.mono (core_ok hm2 hc2 h3 hodd h52) fun t ⟨_, t23, tmut, kt⟩ => ?_)
   rw [WP.block_append_iff]
   have hret : WP isa (.block [.li .r3 1, .logic .and .r3 .r3 .r23]) t fun t' =>
-      (t'.gpr .r3 = BitVec.ofNat 64 1 &&& mask (Spec.MillerRabin.round c b) ∧ t'.mem = t.mem) ∧ Keep [.r3] t t' := by
+      (t'.gpr .r3 = BitVec.ofNat 64 1 &&& mask (Proof.MillerRabin.Round.round c b) ∧ t'.mem = t.mem) ∧ Keep [.r3] t t' := by
     refine WP.keep _ ?_ (by decide)
     prun [t23]
   refine WP.mono hret fun t₃ ⟨⟨r3v, m3⟩, k3⟩ => ?_
@@ -228,7 +228,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
     · exact ha 5 (by simp)
     · exact ha 6 (by simp)
     · have e : slot w 11 + 16 * (8 * (w + 2)) = arrAt w (11 + 16) := by
-        simp only [slot, arrAt, Impl.Bignum.hdrBytes, Spec.Rsa.Mont.hdrBytes]; omega_arith
+        simp only [slot, arrAt, Impl.Bignum.hdrBytes, Proof.Rsa.Mont.hdrBytes]; omega_arith
       rw [e]; exact ht
 
 end VG.Proof.MillerRabin.PPC64LE

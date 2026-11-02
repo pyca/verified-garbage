@@ -85,7 +85,7 @@ structure QPost (E : Env) (g : Geo) (k used : Nat) (s t : State) : Prop where
   base : Base E t
   q : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem (off E.base (sPk + g.pLen)) g.qLen) =
     Spec.Dsa.qCandidate (8 * g.qLen) (chunk E k)
-  res : t.mem.readW (off E.base fRes) 32 = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status
+  res : t.mem.readW (off E.base fRes) 32 = BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status
     (Spec.Dsa.probablePrime (Spec.Dsa.qCandidate (8 * g.qLen) (chunk E k)) (E.witT.drop used)))
   used : t.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 (nextUsed E.witLen used
     (Spec.Dsa.probablePrime (Spec.Dsa.qCandidate (8 * g.qLen) (chunk E k)) (E.witT.drop used)))
@@ -235,7 +235,7 @@ theorem q4_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₃ : State} (
       VG.Proof.Ffdh.ParameterCandidate.shapedOctets (Spec.Dsa.seedHash (8 * g.qLen) (chunk E k)) 7) :
     WP isa (copyS (sPP + (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).candidate) (sPk + g.pLen) g.qLen) t₃
       fun t => QAt E g s t ∧
-        Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)) t.mem
+        Proof.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)) t.mem
           (off E.base sPP) = Spec.Dsa.qCandidate (8 * g.qLen) (chunk E k) ∧
         Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem (off E.base (sPk + g.pLen)) g.qLen) =
           Spec.Dsa.qCandidate (8 * g.qLen) (chunk E k) := by
@@ -265,7 +265,7 @@ theorem q4_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₃ : State} (
   · have qval : Spec.Dsa.decodeBE (VG.Proof.Ffdh.ParameterCandidate.shapedOctets D 7) =
         Spec.Dsa.qCandidate (8 * g.qLen) (chunk E k) :=
       VG.Proof.Dsa.Generation.qCandidate_octets (by omega_arith) _ (by rw [← hD, Dl, hN])
-    unfold Spec.Dsa.ProbablePrime.candidateAt
+    unfold Proof.Dsa.ProbablePrime.candidateAt
     have b8 : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).bits / 8 = g.qLen := by
       show 8 * g.qLen / 8 = g.qLen; omega_arith
     rw [b8, VG.Offset.add_add, R₄, ← hN, shaped, qval, hN]

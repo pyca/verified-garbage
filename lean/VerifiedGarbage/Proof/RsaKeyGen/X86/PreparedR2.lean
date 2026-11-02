@@ -18,7 +18,7 @@ open VG.Impl.Bignum.X86.PublicContext
 def ranges (g : Geometry) : List (Nat × Nat) := coreRanges g ++ [(g.array 4, 4 * g.words)]
 
 theorem code_okAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Ready g c capacity p s) (bound : g.w ≤ 64)
@@ -50,7 +50,7 @@ theorem code_okAt {mont : Prog isa} {name : String}
       (Ot.mono (fun r mem => List.mem_append_right _ mem))⟩
 
 theorem code_ok {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (S : Ready g c capacity p s) (bound : g.w ≤ 64)

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 /-! # The AArch64 DSA domain check verified against the shared contract -/
 
@@ -27,8 +28,8 @@ structure ParametersABI (s : State) : Prop where
   paramsLength : (s.gpr .x1).toNat = 2 * (s.gpr .x2).toNat + (s.gpr .x3).toNat
   scratchLength : Spec.Dsa.scratchWords (s.gpr .x2).toNat ≤ (s.gpr .x5).toNat
 
-theorem parametersABI_of {s : State} (h : (Spec.Dsa.checkParametersContract abi).pre s) : ParametersABI s := by
-  sig_pre [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero] at h
+theorem parametersABI_of {s : State} (h : (Proof.Dsa.checkParametersContract abi).pre s) : ParametersABI s := by
+  sig_pre [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero] at h
   sig_split h
   constructor <;> with_reducible assumption
 
@@ -60,23 +61,23 @@ theorem parametersPreserved {s t : State} (h : ParametersABI s) (hp : Parameters
   exact abiPreserved_of_keep hp.2.2
 
 theorem parametersSharedPost {s t : State} (h : ParametersABI s) (hp : ParametersPost h.input s t) :
-    (Spec.Dsa.checkParametersContract abi).post s t := by
-  sig_post [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
+    (Proof.Dsa.checkParametersContract abi).post s t := by
+  sig_post [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
   rw [hp.1]
   change _ = if Spec.Dsa.checkParametersBytes h.input.pLen h.input.qLen h.input.params = true then 1 else 0
   cases Spec.Dsa.checkParametersBytes h.input.pLen h.input.qLen h.input.params <;> rfl
 
 theorem parametersCorrect (M : Mont)
-    (s : State) (h : (Spec.Dsa.checkParametersContract abi).pre s) :
+    (s : State) (h : (Proof.Dsa.checkParametersContract abi).pre s) :
     ∃ trace t, Exec isa (Generate.checkParameters M.mm) s trace t ∧ abiPreserved s t ∧
-      (Spec.Dsa.checkParametersContract abi).post s t := by
+      (Proof.Dsa.checkParametersContract abi).post s t := by
   have ha := parametersABI_of h
   obtain ⟨trace, t, he, hp⟩ := parametersMain_ok M ha.pre
   exact ⟨trace, t, he, parametersPreserved ha hp, parametersSharedPost ha hp⟩
 
 theorem parametersPublicRelated {s₁ s₂ : State} (h₁ : ParametersABI s₁) (h₂ : ParametersABI s₂)
-    (h : (Spec.Dsa.checkParametersContract abi).pub s₁ s₂) : Two ParametersStart s₁ s₂ := by
-  sig_pub [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero] at h
+    (h : (Proof.Dsa.checkParametersContract abi).pub s₁ s₂) : Two ParametersStart s₁ s₂ := by
+  sig_pub [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero] at h
   obtain ⟨hsp, hl, hdi, _, hdx, hcx, h8, _⟩ := h
   have hb := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl
   have hp : h₁.input.pLen = h₂.input.pLen := congrArg BitVec.toNat hdx
@@ -104,8 +105,8 @@ theorem parametersPublicRelated {s₁ s₂ : State} (h₁ : ParametersABI s₁) 
   exact ⟨h₂.call, ⟨h₁.call, ⟨hlayout, hpb⟩, rfl⟩, ⟨h₂.call, ⟨rfl, rfl⟩, rfl⟩, hsp⟩
 
 theorem parametersConstantTime (M : Mont) :
-    ConstantTime isa (Spec.Dsa.checkParametersContract abi).pre
-      (Spec.Dsa.checkParametersContract abi).pub (Generate.checkParameters M.mm) := by
+    ConstantTime isa (Proof.Dsa.checkParametersContract abi).pre
+      (Proof.Dsa.checkParametersContract abi).pub (Generate.checkParameters M.mm) := by
   intro s₁ s₂ trace₁ trace₂ t₁ t₂ h₁ h₂ hp e₁ e₂
   exact (parametersMain_ct M _ _ _ _ _ _
     (parametersPublicRelated (parametersABI_of h₁) (parametersABI_of h₂) hp) e₁ e₂).1
@@ -121,13 +122,13 @@ def parametersSatState : State where
   rd := [⟨0x2000, 276⟩]
   wr := [⟨0x8000, 16384⟩]
 
-theorem parametersSatisfiable : ∃ s, (Spec.Dsa.checkParametersContract abi).pre s := by
-  sig_implies_sat [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
+theorem parametersSatisfiable : ∃ s, (Proof.Dsa.checkParametersContract abi).pre s := by
+  sig_implies_sat [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
     [parametersSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using parametersSatState
 
 theorem parameters_verified (M : Mont)
     :
-    Verified target (Generate.checkParameters M.mm) (Spec.Dsa.checkParametersContract abi) :=
+    Verified target (Generate.checkParameters M.mm) (Proof.Dsa.checkParametersContract abi) :=
   ⟨parametersCorrect M, parametersConstantTime M, parametersSatisfiable⟩
 
 end VG.Proof.Dsa.AArch64

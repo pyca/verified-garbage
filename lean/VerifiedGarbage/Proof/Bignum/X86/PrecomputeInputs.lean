@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Mont.X86.OutsZ
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 
 /-! # Six-argument geometry for the public RSA precomputation call -/

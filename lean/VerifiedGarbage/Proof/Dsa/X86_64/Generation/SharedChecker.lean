@@ -5,13 +5,13 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
 import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateSafety
 public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Spec.Dsa.GenerationCheck
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 /-! # The domain checker parameter generation calls
 
@@ -27,7 +27,7 @@ open VG VG.X86_64 VG.Proof.MillerRabin.X86_64
 /-- The Montgomery multiplication generation's own arithmetic uses. -/
 abbrev arith : RoundImpl := Proof.Variants.MillerRabin.X86_64.Base.variant
 
-def name : String := Spec.Dsa.generationCheckApi.name
+def name : String := "vg_dsa_generation_check_parameters"
 
 def code : Prog isa :=
   Impl.Dsa.X86_64.Generate.checkParameters arith.inlineMont.toS.mm arith.inlineMont.mm
@@ -35,7 +35,7 @@ def code : Prog isa :=
 theorem safe : generationSafe code :=
   checkParameters_safe _ _ (arith.inlineSafe _ _ _) arith.inlineSafe
 
-theorem verified : Verified target code (Spec.Dsa.checkParametersContract abi) :=
+theorem verified : Verified target code (Proof.Dsa.checkParametersContract abi) :=
   parameters_verified _ _ (by
     rw [Code.allInstrs_eq]
     apply List.all_eq_true.mpr

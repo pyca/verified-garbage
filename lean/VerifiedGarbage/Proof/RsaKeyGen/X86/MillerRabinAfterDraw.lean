@@ -22,9 +22,9 @@ namespace VG.Proof.RsaKeyGen.X86.MillerRabinLoop
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.RsaKeyGen
 
 theorem draw_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s)
     (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :
@@ -64,9 +64,9 @@ def Outcome (P : Parameters) (k n : Nat) (t : State) : Prop :=
     (isa.eval .e t = some true ∧ 0 < n ∧ StateAt P (k + 1) (n - 1) t)
 
 theorem draw_again_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
     (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
     {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s)
     (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :

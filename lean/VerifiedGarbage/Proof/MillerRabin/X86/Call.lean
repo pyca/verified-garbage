@@ -15,11 +15,11 @@ namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
 
 theorem mulCall_ok {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     {capacity b c : Nat} (length : g.L = 8 * capacity) (M : Modulus g c s.mem)
-    (A : MulArguments g capacity b s) (right : Spec.Rsa.Mont.Operand b)
+    (A : MulArguments g capacity b s) (right : Proof.Rsa.Mont.Operand b)
     (odd : c % 2 = 1) (rightLt : val32 s.mem g.W (g.array b) g.words < c)
     (fit : 80 ≤ (s.gpr .esp).toNat)
     (far : (⟨g.W, g.L⟩ : Region).Disjoint (below (s.gpr .esp) 80)) :
@@ -34,7 +34,7 @@ theorem mulCall_ok {code : Prog isa} {name : String}
     unfold rd
     rw [callEntry_argAddr0]
     rfl
-  have cp : CallPre (Spec.Rsa.Mont.mulContract abi 56) mulArgs rd [⟨g.W, g.L⟩] s := by
+  have cp : CallPre (Proof.Rsa.Mont.mulContract abi 56) mulArgs rd [⟨g.W, g.L⟩] s := by
     refine ⟨mulEntry_pre v C length M A right rightLt fit far, ?_, ?_⟩
     · rw [rdEq]
       apply Covers.of_mem

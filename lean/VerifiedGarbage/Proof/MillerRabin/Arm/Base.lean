@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.Arm.Round
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Bignum.ByteWords
@@ -29,7 +29,7 @@ the low `2 w` words of the key arrays (`numAt_val32`).
 namespace VG.Proof.MillerRabin.Arm
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.MillerRabin.Arm VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout)
 
 structure MP where
   ws : BitVec 32
@@ -74,16 +74,16 @@ structure In (P : MP) (σ : State) : Prop where
   w4 : 4 ≤ P.w
   w128 : P.w ≤ 128
   fits : arrAt P.w nArr ≤ 8 * P.len
-  layout : Layout σ.mem (State.addr P.ws) P.len
+  layout : Proof.Rsa.Mont.Layout σ.mem (State.addr P.ws) P.len
   width : wOf σ.mem (State.addr P.ws) = P.w
   inverse : ((word σ.mem (State.addr P.ws) (arrAt P.w 0)).toNat *
-    (wordAt σ.mem (State.addr P.ws) Spec.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
+    (wordAt σ.mem (State.addr P.ws) Proof.Rsa.Mont.minvWord).toNat + 1) % 2 ^ 64 = 0
   c3 : 3 ≤ cOf P σ.mem
   codd : cOf P σ.mem % 2 = 1
   x5 : numAt σ.mem (State.addr P.ws) P.w 5 < cOf P σ.mem
   one : numAt σ.mem (State.addr P.ws) P.w 9 = P.R % cOf P σ.mem
   m1 : numAt σ.mem (State.addr P.ws) P.w 10 = cOf P σ.mem - P.R % cOf P σ.mem
-  exp : numAt σ.mem (State.addr P.ws) P.w aE = Spec.MillerRabin.exponent (cOf P σ.mem)
+  exp : numAt σ.mem (State.addr P.ws) P.w aE = Proof.MillerRabin.Round.exponent (cOf P σ.mem)
   low : σ.mem.readW (State.addr P.ws + BitVec.ofNat 64 (arrAt P.w aE + 8 * P.w)) 64 =
     BitVec.twoPow 64 ((Spec.Rsa.splitTwos (cOf P σ.mem - 1)).1 % 64)
   saved : σ.mem.readW (State.addr P.sp) 32 = P.ws
@@ -96,7 +96,7 @@ variable {P : MP} {σ : State}
 theorem In.S_eq (_ : In P σ) : S P.W = 8 * (P.w + 2) := by simp only [S, MP.W]; omega_arith
 
 theorem In.len (h : In P σ) : 256 + 28 * (8 * (P.w + 2)) ≤ 8 * P.len := by
-  have := h.fits; simp only [arrAt, Spec.Rsa.Mont.hdrBytes, nArr] at this; omega_arith
+  have := h.fits; simp only [arrAt, Proof.Rsa.Mont.hdrBytes, nArr] at this; omega_arith
 
 theorem In.Z_le (h : In P σ) : P.Z ≤ 2 ^ 32 := by have := h.fit; have := h.len; simp only [MP.Z, kOff]; omega_arith
 
@@ -112,7 +112,7 @@ theorem In.nowrapB (h : In P σ) : P.B.toNat + P.Z ≤ 2 ^ 32 := by
 
 /-- The key view's arrays are the working space's. -/
 theorem In.arr_eq (h : In P σ) (j : Nat) : kOff + arr P.W j = arrAt P.w j := by
-  have := h.S_eq; simp only [arr, arrAt, hdr, kOff, Spec.Rsa.Mont.hdrBytes] at *; rw [this]; omega_arith
+  have := h.S_eq; simp only [arr, arrAt, hdr, kOff, Proof.Rsa.Mont.hdrBytes] at *; rw [this]; omega_arith
 
 /-- Offsets from `B` of addresses at least 96 bytes past `ws`. -/
 theorem In.ofsB (h : In P σ) {x : Addr} (hx : kOff ≤ ofs (State.addr P.ws) x) :
@@ -259,14 +259,14 @@ theorem KS.mem_hdr (h : KS P σ A live V ls s) {d : Nat} (hd : d + 1 ≤ arrAt P
   · obtain ⟨e, rfl⟩ : ∃ e, d = kOff + e := ⟨d - kOff, by omega_arith⟩
     rw [← pre.off_eq]
     refine h.keep _ fun r hr => ?_
-    rw [ofs_off0 _ (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes, kOff] at hd; omega_arith)]
+    rw [ofs_off0 _ (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, kOff] at hd; omega_arith)]
     simp only [ranges, List.mem_append, List.mem_map] at hr
     rcases hr with ⟨j, hj, rfl⟩ | ⟨d', hd', rfl⟩
     · have := pre.arr_eq 1
       have := arr_mono (w := P.W) (show 1 ≤ j by have := (wJs_lt j hj).1; omega_arith)
       dsimp only; omega_arith
     · have := wDs_ok d' hd'
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes, kOff] at hd hd2
+      simp only [arrAt, Proof.Rsa.Mont.hdrBytes, kOff] at hd hd2
       dsimp only; omega_arith
 
 /-- Reads of the header but words 23 to 31, and of array 0. -/
@@ -280,7 +280,7 @@ theorem KS.read_hdr (h : KS P σ A live V ls s) {d n : Nat} (hdn : d + n ≤ arr
 /-- `w`, from the header. -/
 theorem KS.width (h : KS P σ A live V ls s) : wOf s.mem (State.addr P.ws) = P.w := by
   have e : s.mem.readW (off (State.addr P.ws) 48) 64 = σ.mem.readW (off (State.addr P.ws) 48) 64 := by
-    simp only [Mem.readW, h.read_hdr (d := 48) (n := 8) (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith) (.inl (by decide))]
+    simp only [Mem.readW, h.read_hdr (d := 48) (n := 8) (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith) (.inl (by decide))]
   exact (congrArg BitVec.toNat e).trans h.pre.width
 
 /-- Montgomery multiplication is ready. -/
@@ -289,8 +289,8 @@ theorem KS.ready (h : KS P σ A live V ls s) (r0 : s.gpr .r0 = P.ws) : Arithmeti
   have hS := pre.S_eq
   have len := pre.len
   have fit := pre.fit
-  have a0 : arrAt P.w 0 = 256 := by simp [arrAt, Spec.Rsa.Mont.hdrBytes]
-  have a1 : arrAt P.w 1 = 256 + 8 * (P.w + 2) := by simp [arrAt, Spec.Rsa.Mont.hdrBytes]
+  have a0 : arrAt P.w 0 = 256 := by simp [arrAt, Proof.Rsa.Mont.hdrBytes]
+  have a1 : arrAt P.w 1 = 256 + 8 * (P.w + 2) := by simp [arrAt, Proof.Rsa.Mont.hdrBytes]
   have hr : ∀ d n, d + n ≤ arrAt P.w 1 → (d + n ≤ 184 ∨ 256 ≤ d) →
       s.mem.read (off (State.addr P.ws) d) n = σ.mem.read (off (State.addr P.ws) d) n :=
     fun d n h1 h2 => h.read_hdr h1 h2
@@ -301,11 +301,11 @@ theorem KS.ready (h : KS P σ A live V ls s) (r0 : s.gpr .r0 = P.ws) : Arithmeti
     congrArg BitVec.toNat (hw 48 (by omega_arith))
   refine ⟨⟨fit, by rw [h.wr, pre.wr]; simp⟩, ?_, width.trans pre.width, r0, ?_, ?_, ?_, ?_, ?_⟩
   · have layout := pre.layout
-    unfold Layout at layout ⊢
+    unfold Proof.Rsa.Mont.Layout at layout ⊢
     rw [width]
     refine ⟨layout.1, layout.2.1, layout.2.2.1, fun j hj => ?_⟩
     unfold wordAt
-    rw [hw _ (by simp only [Spec.Rsa.Mont.arrWord]; omega_arith)]
+    rw [hw _ (by simp only [Proof.Rsa.Mont.arrWord]; omega_arith)]
     exact layout.2.2.2 j hj
   · change ((s.mem.readW (off (State.addr P.ws) (arrAt P.w 0)) 64).toNat *
       (s.mem.readW (off (State.addr P.ws) 56) 64).toNat + 1) % 2 ^ 64 = 0

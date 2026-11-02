@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeControl
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeState
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeState
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.CombBuilder
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt arrAt Keeps Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Keeps Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 structure Core (p : Inputs) (sp : BitVec 32) (s : State) : Prop where
@@ -36,7 +36,7 @@ theorem Core.after_array {p : Inputs} {sp : BitVec 32} {s t : State} {o : Nat}
     (h0 : 0 ≠ o) (h4 : 4 ≠ o) (h7 : 7 ≠ o) : Core p sp t := by
   have fit := h.memory.ready.width ▸ h.memory.ready.layout.2.2.1
   have operand (a : Nat) (ha : a=0 ∨ a=4 ∨ a=7) : Operand a := by
-    rcases ha with rfl|rfl|rfl <;> simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]
+    rcases ha with rfl|rfl|rfl <;> simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
   exact ⟨memory,(keeps_array_num keep fit (operand 0 (by simp)) h0).trans h.modulus,h.odd,
     (keeps_array_num keep fit (operand 4 (by simp)) h4).trans h.r2,
     (keeps_array_num keep fit (operand 7 (by simp)) h7).trans h.one⟩

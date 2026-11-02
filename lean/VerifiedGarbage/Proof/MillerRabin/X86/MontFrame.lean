@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! # Montgomery's reviewed write footprint preserves prepared round data -/
 
@@ -14,7 +14,7 @@ def montWrites (g : Geometry) (out : Nat) : List (Nat × Nat) :=
 
 theorem montFrame {g : Geometry} {out capacity : Nat} {m m' : Mem}
     (length : g.L = 8 * capacity)
-    (K : Spec.Rsa.Mont.Keeps g.W capacity g.w out m m') :
+    (K : Proof.Rsa.Mont.Keeps g.W capacity g.w out m m') :
     WorkspaceFrame g (montWrites g out) m m' := by
   intro i hi apart
   apply K i (by omega)

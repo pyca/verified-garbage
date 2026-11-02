@@ -17,7 +17,7 @@ namespace VG.Proof.Bignum.X86_64.MontFn
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.Bignum VG.Impl.Bignum.X86_64.MontFn
 open VG.Impl.Bignum.X86_64.Public (aN aAcc aTmp)
-open VG.Spec.Rsa.Mont (numAt wOf wordAt Layout Operand Keeps arrAt aM minvWord)
+open VG.Proof.Rsa.Mont (numAt wOf wordAt Layout Operand Keeps arrAt aM minvWord)
 
 theorem fnAdx_correct (s : State) (h : fnContract.pre s) :
     ∃ t s', Exec isa mulAdx s t s' ∧ abiPreserved s s' ∧ fnContract.post s s' := by
@@ -82,7 +82,7 @@ theorem fnAdx_ct : ConstantTime isa fnContract.pre fnContract.pub mulAdx :=
         by simp only [idx, h8]⟩⟩) fun _ _ h => h)
 
 /-- `vg_rsa_mont_mul_adx` on x86-64. -/
-theorem fnAdx_verified : Verified target mulAdx (Spec.Rsa.Mont.mulContract abi) :=
+theorem fnAdx_verified : Verified target mulAdx (Proof.Rsa.Mont.mulContract abi) :=
   Verified.of_correct fnAdx_correct fnAdx_ct fn_implies
 
 end VG.Proof.Bignum.X86_64.MontFn

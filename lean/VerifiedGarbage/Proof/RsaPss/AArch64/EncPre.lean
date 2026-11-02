@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Encoding
+public import VerifiedGarbage.Proof.RsaPss.EncodingContract
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -50,16 +50,16 @@ structure PreE (D : Nat) (s : State) : Prop where
   wsa : (s.gpr .x3).toNat + (s.gpr .x4).toNat ≤ 2 ^ 64
   ws : (s.gpr .x6).toNat + (s.gpr .x7).toNat * 8 ≤ 2 ^ 64
   b1 : 1 ≤ (s.gpr .x5).toNat
-  b2 : (s.gpr .x5).toNat ≤ Spec.RsaPss.maxEmBits
+  b2 : (s.gpr .x5).toNat ≤ Proof.RsaPss.maxEmBits
   hel : (s.gpr .x1).toNat = Spec.RsaPss.emLength (s.gpr .x5).toNat
   hs : 1024 ≤ (s.gpr .x7).toNat
 
-theorem preE_of (G : Spec.Mgf1.Hash) {s : State} (h : (Spec.RsaPss.encodeContract G G abi encStack).pre s) :
+theorem preE_of (G : Spec.Mgf1.Hash) {s : State} (h : (Proof.RsaPss.encodeContract G G abi encStack).pre s) :
     PreE G.len s := by
   have e : encStack = (frameBytes + 16 - 1) + 1 := by unfold encStack stk frameBytes; omega
   rw [e] at h
-  sig_pre [Spec.RsaPss.encodeContract, Spec.RsaPss.encodeSig, abi, argRegs, List.append_eq] at h
-  sig_pre [Spec.RsaPss.encodeContract, Spec.RsaPss.encodeSig, abi, argRegs, List.append_eq] at h
+  sig_pre [Proof.RsaPss.encodeContract, Proof.RsaPss.encodeSig, abi, argRegs, List.append_eq] at h
+  sig_pre [Proof.RsaPss.encodeContract, Proof.RsaPss.encodeSig, abi, argRegs, List.append_eq] at h
   obtain ⟨sp1, hrd, hwr, ed, esa, es, ds, sas, ke, kd, ksa, ks, we, wd, wsa, ws, b1, b2, hel, hs⟩ := h
   rw [← e] at sp1 ke kd ksa ks
   exact ⟨sp1, hrd, hwr, ed, esa, es, ds, sas, ke, kd, ksa, ks, we, wd, wsa, ws, b1, b2, hel, hs⟩
@@ -70,7 +70,7 @@ theorem PreE.k1 (hp : PreE D s) : 1 ≤ (s.gpr .x1).toNat := by
   have := hp.hel; have := hp.b1; unfold Spec.RsaPss.emLength at *; omega
 
 theorem PreE.k2 (hp : PreE D s) : (s.gpr .x1).toNat ≤ 1024 := by
-  have := hp.hel; have := hp.b2; unfold Spec.RsaPss.emLength Spec.RsaPss.maxEmBits at *; omega
+  have := hp.hel; have := hp.b2; unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega
 
 /-- `z = 8 emLen - emBits`, the bits of `em` above `emBits`, is below 8. -/
 theorem PreE.z (hp : PreE D s) : (s.gpr .x5).toNat ≤ 8 * (s.gpr .x1).toNat ∧

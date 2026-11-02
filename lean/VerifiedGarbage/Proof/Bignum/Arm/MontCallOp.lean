@@ -29,7 +29,7 @@ the RSA workspace and its fifth argument. -/
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Arm.FrameStack
-open VG.Spec.Rsa.Mont (numAt Operand Keeps)
+open VG.Proof.Rsa.Mont (numAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 def CallResult (base : BitVec 32) (len w o a b : Nat) (s t : State) : Prop :=
@@ -80,7 +80,7 @@ section
 section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 theorem ArithmeticReady.after_call {s t : State} {base : BitVec 32} {len w o : Nat}
     (h : ArithmeticReady base len w s) (cs : CallStack base len s) (ho : o ≠ 0)
@@ -90,8 +90,8 @@ theorem ArithmeticReady.after_call {s t : State} {base : BitVec 32} {len w o : N
     ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 := by
   have hw : 2 ≤ w := h.width ▸ h.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have kl := keeps_layout h.layout (by rw [h.width]; exact keeps)
   have oldM := keeps_array_num keeps fits op0 (Ne.symm ho)
   have oldLow := keeps_array_word (d := 0) (bits := 64) keeps fits op0 (Ne.symm ho) (by omega)
@@ -122,7 +122,7 @@ end
 @[expose] public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Arm.FrameStack VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Operand Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem montCallOp_ok (name : String) (callee : Prog isa)
@@ -142,7 +142,7 @@ theorem montCallOp_ok (name : String) (callee : Prog isa)
       Keeps (State.addr base) len w o s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩, belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have endM := array_end_le (w := w) (j := 0) (k := 8) (by decide)
   let A := allocated 8 s
   have fit8 : 8 ≤ s.sp.toNat := by have := cs.fit; omega

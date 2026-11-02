@@ -2,19 +2,19 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Spec.Rsa.MontMulFixed
+public import VerifiedGarbage.Proof.Rsa.MontMulFixedContract
 public import VerifiedGarbage.Impl.Bignum.AArch64.MulFixedCall
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Callable Montgomery products against the fixed-index contract
-(`Spec.Rsa.MontMulFixed`), for the indices of `MulFixedCall.shared`. -/
+(`Proof.Rsa.MontMulFixed`), for the indices of `MulFixedCall.shared`. -/
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.MulFixedHelper
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
-open VG.Spec.Rsa.Mont (numAt wOf wordAt Layout Keeps arrAt aM minvWord Operand)
-open VG.Spec.Rsa.MontMulFixed (Indices)
+open VG.Proof.Rsa.Mont (numAt wOf wordAt Layout Keeps arrAt aM minvWord Operand)
+open VG.Proof.Rsa.MontMulFixed (Indices)
 open VG.Impl.Bignum.AArch64.MulFixedCall (shared)
 
 /-- The shared ABI specialized to its two arguments. -/
@@ -74,8 +74,8 @@ theorem fn_good {o a b : Nat} {s : State} (h : (fnContract o a b).pre s) :
   obtain ⟨_, hwr, hnw, ⟨h2, h31, h8, harr⟩, _⟩ := h
   refine ⟨⟨Scr.of_mem (by rw [hwr]; simp) hnw, rfl, ⟨?_, rfl, fun j hj => harr j hj⟩⟩,
     ?_, h2, h31⟩
-  · simp [word, wOf, wordAt, Spec.Rsa.Mont.wWord, sW, off]
-  · simpa only [slot, hdrBytes, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes, Nat.mul_comm] using h8
+  · simp [word, wOf, wordAt, Proof.Rsa.Mont.wWord, sW, off]
+  · simpa only [slot, hdrBytes, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.mul_comm] using h8
 
 /-- The shared indices are operands, with a constant-time product. -/
 theorem shared_ok {o a b : Nat} (h : (o, a, b) ∈ shared) :
@@ -86,14 +86,14 @@ theorem shared_ok {o a b : Nat} (h : (o, a, b) ∈ shared) :
   · unfold Operand MmUse; decide
 
 theorem fn_implies (ix : Indices) (h : (ix.o, ix.a, ix.b) ∈ shared) :
-    (fnContract ix.o ix.a ix.b).Implies (Spec.Rsa.MontMulFixed.mulContract ix abi) where
+    (fnContract ix.o ix.a ix.b).Implies (Proof.Rsa.MontMulFixed.mulContract ix abi) where
   pre := by
-    sig_implies_pre [Spec.Rsa.MontMulFixed.mulContract, Spec.Rsa.MontMulFixed.sig, fnContract, abi, argRegs]
+    sig_implies_pre [Proof.Rsa.MontMulFixed.mulContract, Proof.Rsa.MontMulFixed.sig, fnContract, abi, argRegs]
   post := by
-    sig_implies_post [Spec.Rsa.MontMulFixed.mulContract, Spec.Rsa.MontMulFixed.sig, fnContract, abi, argRegs]
+    sig_implies_post [Proof.Rsa.MontMulFixed.mulContract, Proof.Rsa.MontMulFixed.sig, fnContract, abi, argRegs]
   pub := by
     rintro s t _ _ h
-    sig_pub [Spec.Rsa.MontMulFixed.mulContract, Spec.Rsa.MontMulFixed.sig, fnContract, abi, argRegs] at h
+    sig_pub [Proof.Rsa.MontMulFixed.mulContract, Proof.Rsa.MontMulFixed.sig, fnContract, abi, argRegs] at h
     obtain ⟨hsp, hw, h0, h1⟩ := h
     exact ⟨hsp, h0, h1, List.singleton_inj.mp hw⟩
   sat := by
@@ -101,7 +101,7 @@ theorem fn_implies (ix : Indices) (h : (ix.o, ix.a, ix.b) ∈ shared) :
     simp only [shared, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
     rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
       ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
-    sig_implies_sat [Spec.Rsa.MontMulFixed.mulContract, Spec.Rsa.MontMulFixed.sig, fnContract, abi, argRegs,
+    sig_implies_sat [Proof.Rsa.MontMulFixed.mulContract, Proof.Rsa.MontMulFixed.sig, fnContract, abi, argRegs,
       Operand] [satState] using satState
 
 theorem fn_correct (M : Mont) {o a b : Nat} (hix : (o, a, b) ∈ shared) (s : State)
@@ -134,7 +134,7 @@ theorem fn_ct (M : Mont) {o a b : Nat} (hix : (o, a, b) ∈ shared) :
   exact ⟨_, gt, zt⟩
 
 theorem verified (M : Mont) (ix : Indices) (h : (ix.o, ix.a, ix.b) ∈ shared := by decide) :
-    Verified target (M.mm ix.o ix.a ix.b) (Spec.Rsa.MontMulFixed.mulContract ix abi) :=
+    Verified target (M.mm ix.o ix.a ix.b) (Proof.Rsa.MontMulFixed.mulContract ix abi) :=
   Verified.of_correct (fn_correct M h) (fn_ct M h) (fn_implies ix h)
 
 end VG.Proof.Bignum.AArch64.MulFixedHelper

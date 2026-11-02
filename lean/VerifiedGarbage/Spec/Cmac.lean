@@ -181,9 +181,7 @@ The state is 304 bytes (`[u64; 38]`):
 * bytes 272–287: the chaining value `Cᵢ` (§6.2 step 6) of the blocks
   chained so far, from `C₀ = 0¹²⁸` (step 5);
 * bytes 288–303: the bytes held back, of which the first
-  `msg.length - chainedLen 16 msg.length` are specified.
-
-Bytes 0–271 are laid out as `vg_cmac_aes_finalize`'s `key` reads them. -/
+  `msg.length - chainedLen 16 msg.length` are specified. -/
 
 /-- The number of bytes of a message of `len` bytes, in blocks of `b`
 bytes, that §6.2 chains before its last block: those of the complete blocks

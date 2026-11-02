@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarLoop
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
 public import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarBit
+import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarCompare
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Scalar
 
@@ -42,11 +42,6 @@ theorem finish_ok {B o : Addr} {s : State} (hc : Ctx B s) (h0 : s.gpr .a0 = o)
     (by decide) (fun k hk => in_base hout (by omega) (by omega)) (by rw [BitVec.add_zero]; exact hd))
     fun t ht => out_bytes (b := B) (a := SR) (fun j hj => by rw [← Nat.zero_add (4 * j)]; exact ht.outs j hj) hv
 
-/-- A byte apart from `scratch` is in none of the rounded working space's parts. -/
-theorem not_in_base {x q : Addr} {d n : Nat} (hd : d + n ≤ 2048)
-    (h : ¬ (⟨q, 8192⟩ : Region).Contains x 1) : ¬ (⟨base q + BitVec.ofNat 64 d, n⟩ : Region).Contains x 1 :=
-  fun hc => h (base_sub q hd x hc)
-
 theorem reduce_ok {s : State} (hp : ReducePre s) :
     WP isa scalarReduce s fun t =>
       bytesAt t.mem (s.gpr .a0) 32 = Spec.Ed25519.scalarReduce (bytesAt s.mem (s.gpr .a1) 64) := by
@@ -63,11 +58,9 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
   have hc3 : Ctx (base (s.gpr .a2)) s3 := hc2.of_rest (u3.rest (ws := [.t3]) (by decide)) (by decide)
   have e14 : s3.gpr .t3 = s.gpr .a1 := by
     rw [u3.gpr, hr2.gpr _ (by decide), u1.other _ (by decide)]
-  have hwb : ∀ i < 64, ¬ (⟨s.gpr .a2, 8192⟩ : Region).Contains (s.gpr .a1 + BitVec.ofNat 64 i) 1 :=
-    fun i hi => hp.wide_ws _ (Offset.contains_base _ (by omega) (by omega))
   refine WP.seq (WP.mono (engine_ok hc3 e14
-    (fun i hi => by rw [hr3.rd, hr3.wr]; exact in_base (List.mem_append_left _ hwide) (by omega) (by omega))
-    (fun i hi => not_in_base (by omega) (hwb i hi))) fun s4 ⟨hr4, _, hv4⟩ => ?_)
+    (fun k hk => by rw [hr3.rd, hr3.wr]; exact in_base (List.mem_append_left _ hwide) (by omega) (by omega)))
+    fun s4 ⟨hr4, _, hv4⟩ => ?_)
   rw [hm3] at hv4
   exact finish_ok (hc3.of_rest hr4 (by decide)) (by rw [hr4.gpr _ (by decide), hr3.gpr _ (by decide)])
     (by rw [hr4.wr, hr3.wr]; exact hout) (hp.out_ws.sub_right (base_sub _ (by omega))) hv4

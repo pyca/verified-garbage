@@ -105,7 +105,7 @@ theorem mrS_snd (c L : Nat) (r : Spec.RsaKeyGen.Rand) (k : Nat) : (mrS c L r k).
   rw [← VG.Proof.RsaKeyGen.mrSB_eq_mrS]; exact VG.Proof.RsaKeyGen.mrSB_uniform_le _ _ _ _ _
 
 theorem round_eq (c x : Nat) :
-    Spec.MillerRabin.round c x =
+    Proof.MillerRabin.Round.round c x =
       Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2 x := rfl
 
 theorem statOf_eq {c L ch : Nat} {r : Spec.RsaKeyGen.Rand} {k : Nat} (b : Bool) :

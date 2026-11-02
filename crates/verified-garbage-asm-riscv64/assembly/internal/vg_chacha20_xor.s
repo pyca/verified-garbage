@@ -27,7 +27,11 @@ vg_chacha20_xor:
 24:
 	sub s6, s6, a2
 	addi t2, a1, 0
-25:
+	or t3, s5, t2
+	or t3, t3, a2
+	andi t3, t3, 7
+	beqz t3, 25f
+27:
 	lbu t3, 0(s5)
 	lbu t4, 0(t2)
 	xor t3, t3, t4
@@ -35,25 +39,22 @@ vg_chacha20_xor:
 	addi s5, s5, 1
 	addi t2, t2, 1
 	addi a2, a2, -1
-	bnez a2, 25b
-	lbu t1, 48(a0)
-	lbu t3, 49(a0)
-	slli t3, t3, 8
-	or t1, t1, t3
-	lbu t3, 50(a0)
-	slli t3, t3, 16
-	or t1, t1, t3
-	lbu t3, 51(a0)
-	slli t3, t3, 24
-	or t1, t1, t3
+	bnez a2, 27b
+	j 26f
+25:
+28:
+	ld t3, 0(s5)
+	ld t4, 0(t2)
+	xor t3, t3, t4
+	sd t3, 0(s5)
+	addi s5, s5, 8
+	addi t2, t2, 8
+	addi a2, a2, -8
+	bnez a2, 28b
+26:
+	lwu t1, 48(a0)
 	addi t1, t1, 1
-	sb t1, 48(a0)
-	srli t3, t1, 8
-	sb t3, 49(a0)
-	srli t3, t1, 16
-	sb t3, 50(a0)
-	srli t3, t1, 24
-	sb t3, 51(a0)
+	sw t1, 48(a0)
 	bnez s6, 22b
 	j 21f
 20:

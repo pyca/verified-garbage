@@ -12,7 +12,7 @@ import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt Operand Keeps)
+open VG.Proof.Rsa.Mont (numAt Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem montEncode_ok (s : State) {base : BitVec 32} {len w o a M : Nat}
@@ -26,7 +26,7 @@ theorem montEncode_ok (s : State) {base : BitVec 32} {len w o a M : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have positive : 0 < M := by have := h.modulus; rw [modulus] at this; omega
   refine WP.mono (montOp_ok s h ho ha
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) ho0
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) ho0
     (by rw [modulus, r2]; exact Nat.mod_lt _ positive)) ?_
   rintro t ⟨ready, modT, bound, value, keeps, frame, rest⟩
   rw [modulus] at modT bound value

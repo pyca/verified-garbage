@@ -53,7 +53,7 @@ theorem os2ip_ones : ∀ (n acc : Nat),
     grind
 
 theorem sat_candidate {bits : Nat} (hb : Bits bits) :
-    Spec.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) 0x10000#64 = 2 ^ bits - 1 := by
+    Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) 0x10000#64 = 2 ^ bits - 1 := by
   have hs := shape_of hb
   have hl := hs.hlen8
   have h384 : bits / 8 ≤ 384 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
@@ -67,14 +67,14 @@ theorem sat_candidate {bits : Nat} (hb : Bits bits) :
     simp only [List.length_map, List.length_range] at hi
     unfold satMemory
     rw [ite_eq_left (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega)]
-  unfold Spec.Dsa.ProbablePrime.candidateAt
+  unfold Proof.Dsa.ProbablePrime.candidateAt
   rw [bytes, VG.Proof.Dsa.decodeBE_os2ip]
   unfold Spec.Rsa.os2ip
   rw [os2ip_ones, Nat.zero_mul, Nat.zero_add]
   rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul, show 8 * (bits / 8) = bits by rw [← hs.hlen]; omega]
 
 theorem sat_odd {bits : Nat} (hb : Bits bits) :
-    Spec.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) 0x10000#64 % 2 = 1 := by
+    Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) 0x10000#64 % 2 = 1 := by
   rw [sat_candidate hb]
   have : 2 ^ bits % 2 = 0 := by
     rw [show bits = (bits - 1) + 1 by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide, Nat.pow_succ]; omega
@@ -82,7 +82,7 @@ theorem sat_odd {bits : Nat} (hb : Bits bits) :
   omega
 
 theorem sat_length {bits : Nat} (hb : Bits bits) :
-    Spec.Dsa.bitLength (Spec.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) 0x10000#64) = bits := by
+    Spec.Dsa.bitLength (Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) 0x10000#64) = bits := by
   rw [sat_candidate hb]
   have low : 1 ≤ bits := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   have half : 2 ^ bits = 2 ^ (bits - 1) * 2 := by
@@ -123,9 +123,9 @@ theorem satisfiable {bits : Nat} (hb : Bits bits) : ∃ s, (contract bits).pre s
   have hs := shape_of hb
   have hkw : keyOff + 8 * keyWords bits ≤ 16000 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   refine ⟨satState bits, ?_⟩
-  unfold contract Spec.Dsa.ProbablePrime.contract
+  unfold contract Proof.Dsa.ProbablePrime.contract
   refine pre_consts.mpr ⟨?_, ?_⟩
-  · sig_pre [Spec.Dsa.ProbablePrime.sig, abi, argRegs, stripConsts]
+  · sig_pre [Proof.Dsa.ProbablePrime.sig, abi, argRegs, stripConsts]
     sig_and_intros
     all_goals first
       | exact sat_odd hb

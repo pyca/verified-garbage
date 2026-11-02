@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (wp_ldr)
 
 theorem setLowBit_ct {base : BitVec 32} {len w : Nat} :
@@ -31,7 +31,7 @@ theorem setLowBit_ct {base : BitVec 32} {len w : Nat} :
   have wp (s : State) (h : ArithmeticReady base len w s) :
       WP isa (.block [.ldr .r4 .r0 120]) s fun t => t.gpr .r4 = base + BitVec.ofNat 32 (arrAt w 7) := by
     have fit : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-    have size : 124 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega
+    have size : 124 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
     refine wp_ldr (by decide) (a := off (State.addr base) 120)

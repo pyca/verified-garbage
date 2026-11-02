@@ -23,16 +23,16 @@ namespace VG.Proof.Bignum.X86.PublicRt
 
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.PublicRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
-open VG.Spec.Rsa.MontMul (Apart scratchBytes)
+open VG.Proof.Rsa.MontMul (Apart scratchBytes)
 
 /-- The callee's precondition from its facts and the 56 bytes of stack below
 its `esp`, apart from the working space and the arguments. -/
 theorem rtPre_of {s : State} (A : RtABI s) (stackLo : 56 ≤ (s.gpr .esp).toNat)
     (stkScratch : (⟨(s.gpr .esp).setWidth 64 - 56#64, 56⟩ : Region).Disjoint ⟨wsOf s, lenOf s⟩)
     (stkArgs : (⟨(s.gpr .esp).setWidth 64 - 56#64, 56⟩ : Region).Disjoint ⟨argAddr s 0, 36⟩) :
-    (Spec.Rsa.MontMul.mulContract abi 56).pre s := by
+    (Proof.Rsa.MontMul.mulContract abi 56).pre s := by
   cases A
-  sig_pre [Spec.Rsa.MontMul.mulContract, Spec.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes, stackBelow]
   sig_and_intros
   all_goals with_reducible assumption
 
@@ -99,9 +99,9 @@ theorem callee_abi {s g : State} {base : Addr} {bytes len : Nat} {args : Nat →
     · rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, below_sub (by decide) (by omega_arith)⟩
     · rw [List.mem_singleton.mp hr, hesp]
       exact ⟨_, List.mem_singleton_self _, below_inner (by decide) (by omega_arith)⟩
-  have numc : ∀ d k, d + k ≤ bytes → Spec.Rsa.MontMul.numAt (calleeOf g base bytes).mem base d k =
-      Spec.Rsa.MontMul.numAt s.mem base d k := fun d k hdk => by
-    unfold Spec.Rsa.MontMul.numAt
+  have numc : ∀ d k, d + k ≤ bytes → Proof.Rsa.MontMul.numAt (calleeOf g base bytes).mem base d k =
+      Proof.Rsa.MontMul.numAt s.mem base d k := fun d k hdk => by
+    unfold Proof.Rsa.MontMul.numAt
     rw [Fc.read (r := ⟨base, bytes⟩) (Offset.contains_base _ hdk (by omega_arith))
       (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega_arith)]
   have argAddr0 : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
@@ -156,7 +156,7 @@ theorem callee_abi {s g : State} {base : Addr} {bytes len : Nat} {args : Nat →
 of stack are among the 96 of the call's room. -/
 theorem callee_pre {s g : State} {base : Addr} {bytes : Nat} (A : RtABI (calleeOf g base bytes))
     (R : CallRoom (s.gpr .esp) base bytes) (hesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36) :
-    (Spec.Rsa.MontMul.mulContract abi 56).pre (calleeOf g base bytes) := by
+    (Proof.Rsa.MontMul.mulContract abi 56).pre (calleeOf g base bytes) := by
   have low := R.low
   have hsp := (s.gpr .esp).isLt
   have eW : (⟨wsOf (calleeOf g base bytes), lenOf (calleeOf g base bytes)⟩ : Region) = ⟨base, bytes⟩ := by

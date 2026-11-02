@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.TwoExpKernelCT
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.TwoExp
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (numAt arrAt Operand)
+open VG.Proof.Rsa.Mont (numAt arrAt Operand)
 
 abbrev OpInput (base : BitVec 32) (len w : Nat) (P : State → Prop) (b : Nat) (s : State) : Prop :=
   ArithmeticReady base len w s ∧ P s ∧
@@ -26,9 +26,9 @@ theorem MontgomeryTiming.kernelTiming {base : BitVec 32} {len w : Nat}
     (ct : MontgomeryTiming A) (fit : arrAt w 3 + 32 ≤ 8 * len) (hn : 0 < 2 * w) : Timing A.kernel := by
   apply timing_of_square A.kernel rfl fit hn
   exact (ct.op_ct 6 6 6
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])).mono
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
+    (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])).mono
     (fun _ _ h => by
       obtain ⟨⟨M1, E1, p1, q1⟩, ⟨M2, E2, p2, q2⟩, sp⟩ := h
       exact ⟨⟨p1.ready, q1, by rw [p1.modulus]; exact p1.bound⟩,

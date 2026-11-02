@@ -14,6 +14,9 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Scalar
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.RecoverSign
 public import VerifiedGarbage.Spec.Ed25519.Contract
 
@@ -183,9 +186,136 @@ theorem verifyLhs_ok {s : State} (h : VCtx b pk sig ch s) :
     exact (k2.frame.mono (by simp)).trans ((f3.mono (by simp)).trans (ft'.mono (by simp)))
   · rw [tt, m4, p3]
 
+/-- A list of zero bytes is the integer 0. -/
+theorem decodeLE_zeros : ∀ (l : List (BitVec 8)), (∀ x ∈ l, x = 0) → decodeLE l = 0
+  | [], _ => rfl
+  | x :: l, h => by
+    rw [Proof.Ed25519.decodeLE_cons, h x List.mem_cons_self,
+      decodeLE_zeros l fun y hy => h y (List.mem_cons_of_mem _ hy)]
+    rfl
+
+/-- A challenge whose top 32 bytes are zero is its low 32 bytes. -/
+theorem decodeLE_low (m : Mem) (p : Addr) (h : ∀ i < 32, m (p + BitVec.ofNat 64 (32 + i)) = 0) :
+    decodeLE (bytesAt m p 64) = decodeLE (bytesAt m p 32) := by
+  have hs : bytesAt m p (32 + 32) = bytesAt m p 32 ++ bytesAt m (p + BitVec.ofNat 64 32) 32 :=
+    Proof.X25519.bytesAt_add m p 32 32
+  rw [show 64 = 32 + 32 from rfl, hs, Proof.Ed25519.decodeLE_append,
+    decodeLE_zeros (bytesAt m (p + BitVec.ofNat 64 32) 32) ?_, Nat.mul_zero, Nat.add_zero]
+  intro x hx
+  simp only [bytesAt, List.mem_map, List.mem_range] at hx
+  obtain ⟨i, hi, rfl⟩ := hx
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact h i hi
+
+theorem or_eq_zero (x y : BitVec 64) : x ||| y = 0 ↔ x = 0 ∧ y = 0 := by
+  constructor
+  · intro h
+    have h' := congrArg BitVec.toNat h
+    rw [BitVec.toNat_or] at h'
+    have := Nat.or_eq_zero_iff.mp h'
+    exact ⟨BitVec.eq_of_toNat_eq this.1, BitVec.eq_of_toNat_eq this.2⟩
+  · rintro ⟨rfl, rfl⟩; rfl
+
+/-- The first `n` bytes of the challenge's top half, or-ed into `a4`. -/
+theorem challengeOr_ok {ch : Addr} :
+    ∀ n ≤ 32, ∀ s : State, s.gpr .s11 = ch →
+      (∀ i < 32, InRegions (s.rd ++ s.wr) (ch + BitVec.ofNat 64 (32 + i)) 1) →
+      WP isa (.block ((List.range n).flatMap fun i =>
+          [.load .b .a5 .s11 (32 + i), .logic .or .a4 .a4 .a5])) s fun t =>
+        Rest [.a4, .a5] s t ∧ t.mem = s.mem ∧
+        (t.gpr .a4 = 0 ↔ s.gpr .a4 = 0 ∧ ∀ i < n, s.mem (ch + BitVec.ofNat 64 (32 + i)) = 0)
+  | 0, _, s, _, _ => WP.block_nil ⟨Rest.refl _ _, rfl, by simp⟩
+  | n + 1, hn, s, h11, hin => by
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
+    refine WP.append (challengeOr_ok n (by omega) s h11 hin) fun s1 ⟨r1, m1, e1⟩ => ?_
+    refine wp_lbu (a := ch + BitVec.ofNat 64 (32 + n)) (by omega)
+      (by rw [r1.gpr _ (by decide), h11]) (by rw [r1.rd, r1.wr]; exact hin n (by omega)) fun s2 u2 => ?_
+    refine wp_or fun s3 u3 => WP.block_nil ⟨r1.trans ((u2.rest (by decide)).trans (u3.rest (by decide))),
+      by rw [u3.mem, u2.mem, m1], ?_⟩
+    rw [u3.gpr, u2.gpr, u2.other _ (by decide), or_eq_zero, e1, m1]
+    have hz : ((s.mem (ch + BitVec.ofNat 64 (32 + n))).setWidth 64 = 0) ↔
+        s.mem (ch + BitVec.ofNat 64 (32 + n)) = 0 := by
+      constructor
+      · intro h
+        apply BitVec.eq_of_toNat_eq
+        have := congrArg BitVec.toNat h
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide))] at this
+        exact this
+      · intro h; rw [h]; rfl
+    rw [hz]
+    constructor
+    · rintro ⟨⟨h0, hl⟩, hb⟩
+      exact ⟨h0, fun i hi => if e : i = n then e ▸ hb else hl i (by omega)⟩
+    · rintro ⟨h0, hl⟩
+      exact ⟨⟨h0, fun i hi => hl i (by omega)⟩, hl n (by omega)⟩
+
+/-- **`challengeHigh`**: `a4` zero exactly when the challenge's top 32 bytes are. -/
+theorem challengeHigh_ok {ch : Addr} {s : State} (h11 : s.gpr .s11 = ch)
+    (hin : ∀ i < 32, InRegions (s.rd ++ s.wr) (ch + BitVec.ofNat 64 (32 + i)) 1) :
+    WP isa (.block challengeHigh) s fun t =>
+      Rest [.a4, .a5] s t ∧ t.mem = s.mem ∧
+      (t.gpr .a4 = 0 ↔ ∀ i < 32, s.mem (ch + BitVec.ofNat 64 (32 + i)) = 0) := by
+  unfold challengeHigh
+  refine wp_li (by decide) fun s1 u1 => ?_
+  refine WP.mono (challengeOr_ok (ch := ch) 32 (Nat.le_refl _) s1 (by rw [u1.other _ (by decide), h11])
+    (by rw [u1.rd, u1.wr]; exact hin)) fun t ⟨rt, mt, et⟩ =>
+      ⟨(u1.rest (by decide)).trans rt, by rw [mt, u1.mem], ?_⟩
+  rw [et, u1.gpr, u1.mem]
+  simp
+
+/-- **`[k] A`** for the 64-byte challenge at `s0` (and `s11`), over 16 batches when its top
+half is zero and 32 otherwise. -/
+theorem challengeMul_ok {s : State} (hc : Ctx8 b s) {ch : Addr} (h14 : s.gpr .s0 = ch)
+    (h11 : s.gpr .s11 = ch) (hin : ∀ i < 64, InRegions (s.rd ++ s.wr) (ch + BitVec.ofNat 64 i) 1)
+    (hpd : (⟨ch, 64⟩ : Region).Disjoint ⟨b, 8192⟩) :
+    WP isa challengeMul s fun t =>
+      Rest (.s5 :: .a4 :: batchR) s t ∧ Frame (pmulW b) s.mem t.mem ∧
+      point (env t.mem b) 0 1 2 3 =
+        Spec.Ed25519.pointMul (decodeLE (bytesAt s.mem ch 64)) (point (env s.mem b) 0 1 2 3) ∧
+      env t.mem b 16 = Spec.Ed25519.d := by
+  unfold challengeMul
+  refine WP.seq (WP.mono (challengeHigh_ok h11 fun i hi => hin (32 + i) (by omega))
+    fun s1 ⟨r1, m1, e1⟩ => ?_)
+  have hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
+  have h14' : s1.gpr .s0 = ch := by rw [r1.gpr _ (by decide), h14]
+  have hin1 : ∀ i < 64, InRegions (s1.rd ++ s1.wr) (ch + BitVec.ofNat 64 i) 1 := by
+    rw [r1.rd, r1.wr]; exact hin
+  refine WP.ite (s1.gpr .a4 == 0) (eval_zero s1 .a4) (fun h => ?_) (fun _ => ?_)
+  · have hz := e1.mp (beq_iff_eq.mp h)
+    refine WP.mono (pointFromScalar_ok hc1 (count := 16) (by decide) (by decide) h14'
+      (fun i hi => hin1 i (by omega)) (hpd.sub_left (Region.sub_prefix (by omega))))
+      fun t ⟨rt, ft, pt, dt⟩ => ⟨(r1.mono (by decide)).trans rt, by rw [← m1]; exact ft, ?_, dt⟩
+    rw [pt, m1, decodeLE_low s.mem ch hz]
+  · refine WP.mono (pointFromScalar_ok hc1 (count := 32) (by decide) (by decide) h14'
+      (fun i hi => hin1 i (by omega)) hpd)
+      fun t ⟨rt, ft, pt, dt⟩ => ⟨(r1.mono (by decide)).trans rt, by rw [← m1]; exact ft, ?_, dt⟩
+    rw [pt, m1]
+
+/-- `A` from the table at 7776 into slots 0–3, and the challenge's pointer into `s0`. -/
+theorem rhsLoad_ok {s : State} (h : VCtx b pk sig ch s) :
+    WP isa (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) s fun t =>
+      Rest [.a4, .a5, .s0] s t ∧ Frame [FA b] s.mem t.mem ∧ t.gpr .s0 = ch ∧ VCtx b pk sig ch t ∧
+      bytesAt t.mem ch 64 = bytesAt s.mem ch 64 := by
+  unfold pointTableRead
+  rw [List.append_assoc]
+  refine scratchAddr_ok h.ctx (o := 7776) (by decide) fun s1 r1 m1 e1 => ?_
+  have hc1 : Ctx8 b s1 := h.ctx.of_rest r1 (by decide)
+  refine WP.append (pointFromTable_ok hc1 (o := 7776) e1 (by decide) (by decide))
+    fun s2 ⟨r2, f2, _, _⟩ => ?_
+  refine wp_mv fun s3 u3 => WP.block_nil ?_
+  have r13 : Rest [.a4, .a5, .s0] s s3 :=
+    (r1.mono (by decide)).trans ((r2.mono (by decide)).trans (u3.rest (by decide)))
+  have hF3 : Frame [FA b] s.mem s3.mem := by
+    rw [u3.mem, ← m1]; exact f2.sub fun r hr => ⟨FA b, by simp, by
+      rw [List.mem_singleton.mp hr]; exact Offset.sub b (by decide) (by decide)⟩
+  refine ⟨r13, hF3, by rw [u3.gpr, r2.gpr _ (by decide), r1.gpr _ (by decide), h.s11],
+    h.of_rest r13 (by decide), ?_⟩
+  exact bytesAt_ws hF3 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith))
+    h.chD (by decide)
+
 /-- What `verifyRhs` runs before the comparison. -/
 def verifyRhsPre : Prog isa :=
-  .seq (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) (.seq (pointFromScalar 32) verifyCombine)
+  .seq (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) (.seq challengeMul verifyCombine)
 
 /-- **`[k] A + R`** into slots 4–7 and `[S] B` into slots 0–3, from the tables at 7776, 7904 and 8032. -/
 theorem verifyRhsPre_ok {s : State} (h : VCtx b pk sig ch s) :
@@ -211,11 +341,11 @@ theorem verifyRhsPre_ok {s : State} (h : VCtx b pk sig ch s) :
     exact tableAt_keep f2 fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   have hpd : (⟨ch, 2 * 32⟩ : Region).Disjoint ⟨b, 8192⟩ := h.chD
-  refine WP.seq (WP.mono (pointFromScalar_ok h3.ctx (count := 32) (by decide) (by decide) (p := ch)
-    (by rw [u3.gpr, r2.gpr _ (by decide), r1.gpr _ (by decide), h.s11])
+  refine WP.seq (WP.mono (challengeMul_ok h3.ctx (ch := ch)
+    (by rw [u3.gpr, r2.gpr _ (by decide), r1.gpr _ (by decide), h.s11]) h3.s11
     (fun i hi => in_base (List.mem_append_left _ h3.chR) (by omega_arith) (by omega_arith)) hpd)
     fun s4 ⟨r4, f4, p4, d4⟩ => ?_)
-  have hb3 : bytesAt s3.mem ch (2 * 32) = bytesAt s.mem ch 64 :=
+  have hb3 : bytesAt s3.mem ch 64 = bytesAt s.mem ch 64 :=
     bytesAt_ws hF3 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)) hpd (by decide)
   rw [hb3, m3, p2, m1] at p4
   have hc4 : Ctx8 b s4 := h3.ctx.of_rest r4 (by decide)
@@ -287,7 +417,7 @@ theorem verifyRhsPre_ok {s : State} (h : VCtx b pk sig ch s) :
     exact fa.trans (fb.trans (fc.trans fd))
 
 theorem verifyRhsPre_ok' {s : State} (h : VCtx b pk sig ch s) :
-    WP isa (.seq (.seq (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) (pointFromScalar 32)) verifyCombine) s
+    WP isa (.seq (.seq (.block (pointTableRead 7776 ++ ([.addi .s0 .s11 0] : List Instr))) challengeMul) verifyCombine) s
       fun t => Rest sideR s t ∧ Frame (sideW b 8032) s.mem t.mem ∧ Ctx8 b t ∧
         point (env t.mem b) 0 1 2 3 = tableAt s.mem b 8032 ∧
         point (env t.mem b) 4 5 6 7 = Spec.Ed25519.pointAdd (tableAt s.mem b 7904)

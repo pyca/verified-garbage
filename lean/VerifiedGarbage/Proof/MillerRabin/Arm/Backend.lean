@@ -26,10 +26,10 @@ structure RoundImpl where
   features : List String
 
 def RoundImpl.name (v : RoundImpl) : String :=
-  (Spec.MillerRabin.roundApi Spec.MillerRabin.compact).name ++ v.suffix
+  "vg_miller_rabin_round" ++ v.suffix
 
 theorem RoundImpl.verifiedSpec (v : RoundImpl) : Verified target v.code
-    (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56) :=
+    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 56) :=
   v.verified.of_implies round_implies
 
 end VG.Proof.MillerRabin.Arm

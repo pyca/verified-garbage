@@ -27,7 +27,7 @@ remaining words were cleared, so it holds the same number at its own width.
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 structure TransferPaddedCtx (base src : BitVec 32) (len slen w v : Nat) (s : State) : Prop where
@@ -63,7 +63,7 @@ theorem transferPadded_ok (s : State) {base src : BitVec 32} {len slen w v o a :
   have narrower := h.narrower
   have arraysFit : arrAt w 8 ≤ 8 * len := dst.width ▸ dst.layout.2.2.1
   have bound := Nat.le_trans (array_end_le ho) arraysFit
-  have small : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at arraysFit; omega
+  have small : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at arraysFit; omega
   let output := base + BitVec.ofNat 32 (arrAt w o)
   have outAddr : State.addr output = off (State.addr base) (arrAt w o) := addr_add (by omega)
   have outNat : output.toNat = base.toNat + arrAt w o := by

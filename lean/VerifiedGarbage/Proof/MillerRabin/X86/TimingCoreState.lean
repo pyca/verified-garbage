@@ -122,7 +122,7 @@ theorem windowFour_relCT {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitV
   exact WP.mono (fourSquares_ok v S) fun _ R => ⟨R.1, math⟩
 
 theorem windowSquares_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (Two g (WindowFour g capacity p)) (squareLoop name code) (Two g (WindowSquared g capacity p)) := by
@@ -169,7 +169,7 @@ theorem WindowScanned.mulInput {g : Geometry} {capacity : Nat} {p : BitVec 32}
   exact H.2.2.2.2.1 (windowDigit σ.V) (digit_lt _)
 
 theorem window_trace {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (Two g (WindowStart g capacity p)) (window name code) (VG.X86.Taint.Agree (roundTaint [.edi])) := by
@@ -193,7 +193,7 @@ theorem WindowInput.context {g : Geometry} {capacity q : Nat} {p : BitVec 32} {s
   exact S.data.context
 
 theorem WindowInput.step {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32} {s : State}
     (I : WindowInput g capacity p q s) (length : g.L = 8 * capacity) (positive : 0 < q) :
@@ -215,7 +215,7 @@ theorem WindowInput.step {code : Prog isa} {name : String}
     exact tableLt j digit
 
 theorem windowLoop_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (positive : 0 < q) :
@@ -375,7 +375,7 @@ theorem WordInput.load {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitV
     ⟨St, math.1, math.2.1, math.2.2.1, math.2.2.2.1, math.2.2.2.2⟩, rfl, by decide⟩
 
 theorem wordStep_trace {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (positive : 0 < q) :
@@ -392,7 +392,7 @@ theorem wordStep_trace {code : Prog isa} {name : String}
   · exact (checkedBlockInvariant rfl rfl).mono (fun _ _ H => H.2.2) (fun _ _ H => H)
 
 theorem WordInput.step {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32} {s : State}
     (I : WordInput g capacity p q s) (length : g.L = 8 * capacity) (positive : 0 < q) :
@@ -415,7 +415,7 @@ theorem WordInput.step {code : Prog isa} {name : String}
     exact tableLt j digit
 
 theorem wordLoop_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity q : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (positive : 0 < q) :
@@ -480,7 +480,7 @@ def CoreFinal (g : Geometry) (capacity : Nat) (p : BitVec 32) (σ : CoreSecret) 
   Stage g capacity σ.c p (endA g σ) runArrays (finalV g σ) ([sThreshold, sSquares] ++ wordFields) s ∧ CoreMath g σ
 
 theorem CoreStart.prepare {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {σ : CoreSecret} {s : State}
     (H : CoreStart g capacity p σ s) (length : g.L = 8 * capacity) :
@@ -505,7 +505,7 @@ theorem CoreRun.wordInput {g : Geometry} {capacity : Nat} {p : BitVec 32} {σ : 
   ⟨⟨σ.c, runValues σ.A σ.c g.w, runV g σ, false⟩, H.1, H.2.1.run_window, rfl, Nat.le_refl _⟩
 
 theorem CoreRun.words {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {σ : CoreSecret} {s : State}
     (H : CoreRun g capacity p σ s) (length : g.L = 8 * capacity) :

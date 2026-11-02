@@ -20,11 +20,11 @@ theorem prepared_preserve {g : Geometry} (v : g.Valid) {s t : Mem} (O : Outs g.W
   · intro r mem
     simp only [preparedRanges, ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases index with rfl | rfl | rfl | rfl <;> rcases mem with rfl | rfl | rfl <;>
-      simp only [Geometry.array, Geometry.words, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes,
+      simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
         VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega
   · have bound := v.maxWidth
     rcases index with rfl | rfl | rfl | rfl <;>
-      simp only [Geometry.array, Geometry.words, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] <;> omega
+      simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega
 
 /-- `Ready` kept by writes to the exponent's ranges. -/
 theorem ready_keep {g : Geometry} (v : g.Valid) {s t : State} {c capacity : Nat} {p : BitVec 32}
@@ -62,7 +62,7 @@ theorem ready_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p 
     (S : Ready g c capacity p s) (minusOne : val32 s.mem g.W (g.array 5) g.words = c - 1)
     (odd : c % 2 = 1) (large : 1 < c) :
     WP isa (VG.Impl.RsaKeyGen.X86.Exponent.code g.w (g.array 5) (g.array 0) (g.array 27)) s fun t =>
-      Ready g c capacity p t ∧ val32 t.mem g.W (g.array 27) g.words = Spec.MillerRabin.exponent c ∧
+      Ready g c capacity p t ∧ val32 t.mem g.W (g.array 27) g.words = Proof.MillerRabin.Round.exponent c ∧
       word t.mem g.W (g.array 27 + 8 * g.w) = BitVec.twoPow 64 ((Spec.Rsa.splitTwos (c - 1)).1 % 64) ∧
       Outs g.W (preparedRanges g) s.mem t.mem ∧ Keeps clob s t := by
   have srcFit := Prepared.paddedFit v (j := 0) (by decide)

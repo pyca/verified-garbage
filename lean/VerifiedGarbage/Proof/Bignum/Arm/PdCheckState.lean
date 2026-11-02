@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps Operand)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps Operand)
 open VG.Proof.X25519.Arm (Rest)
 
 structure PdCheckState (base : BitVec 32) (len w N R : Nat) (s : State) : Prop where
@@ -39,8 +39,8 @@ theorem PdCheckState.after_array {base : BitVec 32} {len w N R o : Nat} {s t : S
     PdCheckState base len w N R t := by
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
   exact h.after ready rest
-    ((keeps_array_num keeps fits (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) n0).trans h.modulus)
-    ((keeps_array_num keeps fits (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) n4).trans h.r2)
+    ((keeps_array_num keeps fits (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) n0).trans h.modulus)
+    ((keeps_array_num keeps fits (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) n4).trans h.r2)
 
 theorem PdCheckState.after_flag {base : BitVec 32} {len w N R : Nat} {s t : State} {rs : List Reg}
     (h : PdCheckState base len w N R s) (ready : LayoutFrameReady base len w t) (rest : Rest rs s t)

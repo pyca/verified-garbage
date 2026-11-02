@@ -3,780 +3,6 @@
 //! `assembly/rsa_pss_sha1_mgf1_sha1.s`.
 #![allow(dead_code)]
 
-/// EMSA-PSS-ENCODE (RFC 8017 §9.1.1) with SHA-1 and MGF1 with SHA-1, of the 20-byte digest `*digest` with the salt `salt`, into `em_bits` bits: writes the `em_len` bytes of the encoding to `em` and returns 1, or returns 0 if the salt does not fit (`em_len < 22 + salt_len`), leaving `em` unspecified. The step of RSASSA-PSS signing (`vg_rsa_pss_sha1_mgf1_sha1_sign`) before the RSA primitive.
-///
-/// Contract: `VG.Spec.RsaPss.encodeContract` of `VG.Spec.Mgf1.sha1` and `VG.Spec.Mgf1.sha1`. Constant time but for the pointers and lengths: timing does not depend on the digest or the salt.
-///
-/// # Safety
-///
-/// * `em` must be valid for reads and writes of `em_len` bytes.
-/// * `digest` must be valid for reads of 20 bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `em_bits` must be in 1..=8191.
-/// * `em_len` must be `⌈em_bits / 8⌉`.
-/// * `scratch_len` must be at least 1024; the contents of `scratch` on return are unspecified.
-/// * `em` and `scratch` must not overlap each other, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `em`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pss_sha1_mgf1_sha1_encode(em: *mut u8, em_len: usize, digest: *const [u8; 20], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkgAAAAEiJtCSIAAAASImUJCgBAABIiYwkOAEAAEyJhCRAAQAASIuEJJABAABIiYQkqAAAAEiLhCSIAAAASMHgA0wpyEiJwbj/AAAASNPoSImEJMgAAAC4AAAAAEiJhCTQAAAASIuEJIgAAABIg/gW"
-jb 20f
-.base64 "SIuUJEABAABIg+gWSDnQ"
-jb 22f
-.base64 "SIPAAUiJhCTAAAAASIuEJKgAAABIBQAKAABIi5Qk0AAAAEgB0EiJhCS4AAAASIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-24:
-.base64 "SokEAUmDwAhJgfgACAAA"
-jne 24b
-.base64 "SIu0JCgBAABBuAAAAAA="
-25:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gU"
-jne 25b
-.base64 "SIu0JDgBAABMi5QkQAEAAEG4AAAAAE2F0g=="
-je 26f
-28:
-.base64 "Qg+2BAZCiEQBHEmDwAFNOdA="
-jne 28b
-jmp 27f
-26:
-27:
-.base64 "SIuEJEABAABIg8AcSImEJNgAAABIg8AISMHoBkiDwAFIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_sha1_init}
-.base64 "SIuMJKgAAABIgcEADgAASIuUJNgAAABMi5Qk4AAAAEnByjpBuAAAAAA="
-29:
-.base64 "TInASDHQSIP4AUgZwEglgAAAAEYPtgwBSQnBRogMAUmDwAFNOdA="
-jne 29b
-.base64 "SIucJKgAAABIgcP0CAAATIukJNgAAABMieBIAcBIAcBIAcBID8hIiUNMSIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIuMJKgAAABIgcE4DgAASIu0JKgAAABIgcZACQAASIuUJPAAAABMi5Qk4AAAAEG4AAAAAA=="
-210:
-.base64 "TYnDSTHTSYP7AU0Z20G5AAAAAA=="
-211:
-.base64 "Qg+2BA5MIdhCD7Y8CUgJx0KIPAlJg8EBSYP5CA=="
-jne 211b
-.base64 "SIPBQEmDwAFNOdA="
-jne 210b
-.base64 "uAAAAABIiYQk6AAAAA=="
-212:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_sha1_compress}
-.base64 "SIuMJKgAAABIi4Qk6AAAAEgzhCTwAAAASIP4AU0Z20G4AAAAAA=="
-213:
-.base64 "Qg+2hAEACAAAQg+2lAHACAAASDHQTCHYSDHCQoiUAcAIAABJg8ABSYP4FA=="
-jne 213b
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 212b
-.base64 "SIucJKgAAABIgcPACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACgAATIuUJIgAAAC4AAAAAEG4AAAAAA=="
-214:
-.base64 "QogEAUmDwAFNOdA="
-jne 214b
-.base64 "SIu8JLgAAABIi4QkwAAAAEgBx0iLhCRAAQAASCnHSIPvAbgBAAAAiAdIi7QkOAEAAEyLlCRAAQAAQbgAAAAATYXS"
-je 215f
-217:
-.base64 "Qg+2BAZCiEQHAUmDwAFNOdA="
-jne 217b
-jmp 216f
-215:
-216:
-.base64 "SIu8JLgAAABIi4QkwAAAAEgBx0iLtCSoAAAASIHGAAkAAEG4AAAAAA=="
-218:
-.base64 "Qg+2BAZCiAQHSYPAAUmD+BQ="
-jne 218b
-.base64 "SIu8JKgAAABIgccACgAASIuEJIgAAABIAcdIg+8BuLwAAACIB7gAAAAASImEJPgAAABIiYQkAAEAAA=="
-219:
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-220:
-.base64 "SokEAUmDwAhJg/hA"
-jne 220b
-.base64 "SIu0JLgAAABMi4QkwAAAAEwBxkG4AAAAAA=="
-221:
-.base64 "Qg+2BAZCiAQBSYPAAUmD+BQ="
-jne 221b
-.base64 "SIuEJPgAAACIQRdIwegIiEEWSMHoCIhBFUjB6AiIQRS4GAAAAEiJhCTYAAAAuAEAAABIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_sha1_init}
-.base64 "SIuMJKgAAABIgcEADgAAD7ZBGEgNgAAAAIhBGEiLnCSoAAAASIHD9AgAAEyLpCTYAAAATIngSAHASAHASAHASA/ISIlDTEiLhCTYAAAASIPACEjB6AZIiYQk8AAAAEiLtCSoAAAASIHGQAkAAEiLjCSoAAAASIHBOA4AAEiLBkiJAbgAAAAASImEJOgAAABIi7wkqAAAAEiBxwAIAABIi4wkqAAAAEiLtCToAAAASMHOOkgBzkiBxgAOAAC6AQAAAA=="
-call {vg_sha1_compress}
-.base64 "SIucJKgAAABIgcMACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACQAASIuUJAABAABIi7wkuAAAAEgB10iLhCTAAAAASCnQQboUAAAATDnQ"
-jb 222f
-jmp 223f
-222:
-.base64 "SYnC"
-223:
-.base64 "QbgAAAAA"
-224:
-.base64 "Qg+2BAFCD7YUB0gxwkKIFAdJg8ABTTnQ"
-jne 224b
-.base64 "SIuEJPgAAABIg8ABSImEJPgAAABIi4QkAAEAAEiDwBRIiYQkAAEAAEiLlCTAAAAASDnQ"
-jb 219b
-.base64 "SIu8JLgAAAAPtgdII4QkyAAAAIgHSIu0JKgAAABIgcYACgAASIu8JIAAAABMi5QkiAAAAEG4AAAAAA=="
-225:
-.base64 "Qg+2BAZCiAQHSYPAAU050A=="
-jne 225b
-.base64 "uAEAAAA="
-jmp 23f
-22:
-.base64 "uAAAAAA="
-23:
-jmp 21f
-20:
-.base64 "uAAAAAA="
-21:
-.base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
-.p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
-    )
-}
-
-/// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with SHA-1 and MGF1 with SHA-1, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 20-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_sha1_mgf1_sha1_verify`) after the RSA primitive.
-///
-/// Contract: `VG.Spec.RsaPss.checkEncodingContract` of `VG.Spec.Mgf1.sha1` and `VG.Spec.Mgf1.sha1`. Constant time but for the pointers and lengths: timing does not depend on the digest or the encoding.
-///
-/// # Safety
-///
-/// * `digest` must be valid for reads of 20 bytes.
-/// * `em` must be valid for reads of `em_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `em_bits` must be in 1..=8191.
-/// * `em_len` must be `⌈em_bits / 8⌉`.
-/// * `scratch_len` must be at least 1024; the contents of `scratch` on return are unspecified.
-/// * `scratch` must not overlap `digest`, `em` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `digest`, `em` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pss_sha1_mgf1_sha1_check_encoding(digest: *const [u8; 20], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkKAEAAEiJtCQwAQAASImUJIgAAABMiYQkIAEAAEiLhCSQAQAASImEJKgAAABIi4QkiAAAAEjB4ANIKchIicG4/wAAAEjT6EiJhCTIAAAAuAAAAABIiYQk0AAAAEiLjCSoAAAASIHBAAoAAEiLtCQwAQAATIuUJIgAAABBuAAAAAA="
-20:
-.base64 "Qg+2BAZCiAQBSYPAAU050A=="
-jne 20b
-.base64 "RInISIXA"
-je 21f
-.base64 "uAEAAABIiYQkGAEAALoAAAAA"
-jmp 22f
-21:
-.base64 "uAAAAABIiYQkGAEAAEiLlCQgAQAA"
-22:
-.base64 "SIuEJIgAAABIg/gW"
-jb 23f
-.base64 "SIuEJIgAAABMi4Qk0AAAAEwpwEiD6BZIOdA="
-jb 25f
-.base64 "SIPAAUiJhCTAAAAASIuEJKgAAABIBQAKAABIi5Qk0AAAAEgB0EiJhCS4AAAASIuMJKgAAABIgcEACgAASIu8JIgAAABIAc9Ig+8BD7YHSDW8AAAARA+2CUyLlCTQAAAAQbsAAAAATSnTTSHZTAnISIu8JLgAAABED7YPTIucJMgAAABJgfP/AAAATSHZTAnISImEJAgBAAC4AAAAAEiJhCT4AAAASImEJAABAAA="
-27:
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-28:
-.base64 "SokEAUmDwAhJg/hA"
-jne 28b
-.base64 "SIu0JLgAAABMi4QkwAAAAEwBxkG4AAAAAA=="
-29:
-.base64 "Qg+2BAZCiAQBSYPAAUmD+BQ="
-jne 29b
-.base64 "SIuEJPgAAACIQRdIwegIiEEWSMHoCIhBFUjB6AiIQRS4GAAAAEiJhCTYAAAAuAEAAABIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_sha1_init}
-.base64 "SIuMJKgAAABIgcEADgAAD7ZBGEgNgAAAAIhBGEiLnCSoAAAASIHD9AgAAEyLpCTYAAAATIngSAHASAHASAHASA/ISIlDTEiLhCTYAAAASIPACEjB6AZIiYQk8AAAAEiLtCSoAAAASIHGQAkAAEiLjCSoAAAASIHBOA4AAEiLBkiJAbgAAAAASImEJOgAAABIi7wkqAAAAEiBxwAIAABIi4wkqAAAAEiLtCToAAAASMHOOkgBzkiBxgAOAAC6AQAAAA=="
-call {vg_sha1_compress}
-.base64 "SIucJKgAAABIgcMACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACQAASIuUJAABAABIi7wkuAAAAEgB10iLhCTAAAAASCnQQboUAAAATDnQ"
-jb 210f
-jmp 211f
-210:
-.base64 "SYnC"
-211:
-.base64 "QbgAAAAA"
-212:
-.base64 "Qg+2BAFCD7YUB0gxwkKIFAdJg8ABTTnQ"
-jne 212b
-.base64 "SIuEJPgAAABIg8ABSImEJPgAAABIi4QkAAEAAEiDwBRIiYQkAAEAAEiLlCTAAAAASDnQ"
-jb 27b
-.base64 "SIu8JLgAAAAPtgdII4QkyAAAAIgHSIuEJBgBAABIhcA="
-je 213f
-.base64 "SIu8JLgAAABMi5QkwAAAAEG4AAAAALoAAAAAvgAAAABBuwAAAAA="
-215:
-.base64 "Qg+2BAdJicFJg/kBTRnJSYPx/0iJ0UiD8f9JIclMicFMIclICc5MIchJCcNMCcpJg8ABTTnQ"
-jne 215b
-.base64 "SYPzAUiD8v9JCdNIi4QkCAEAAEwJ2EiJtCQQAQAASIuMJMAAAABIKfFIg+kBTIuMJBgBAABNhck="
-je 216f
-jmp 217f
-216:
-.base64 "SYnJTDOMJCABAABMCcg="
-217:
-.base64 "SImEJAgBAABIg8EcSImMJNgAAAA="
-jmp 214f
-213:
-.base64 "SIuEJCABAABIO4QkwAAAAA=="
-jb 218f
-.base64 "SIu8JLgAAABMi5QkwAAAAEG4AAAAALoAAAAAvgAAAABBuwAAAAA="
-220:
-.base64 "Qg+2BAdJicFJg/kBTRnJSYPx/0iJ0UiD8f9JIclMicFMIclICc5MIchJCcNMCcpJg8ABTTnQ"
-jne 220b
-.base64 "SYPzAUiD8v9JCdNIi4QkCAEAAEwJ2EiJtCQQAQAASIuMJMAAAABIKfFIg+kBTIuMJBgBAABNhck="
-je 221f
-jmp 222f
-221:
-.base64 "SYnJTDOMJCABAABMCcg="
-222:
-.base64 "SImEJAgBAABIg8EcSImMJNgAAAA="
-jmp 219f
-218:
-.base64 "SIu8JLgAAABIi7QkwAAAAEiLlCQgAQAASCnWSIPuAUiJ8UjB6QNIweEDSIuEJAgBAABBuAAAAABIhck="
-je 223f
-225:
-.base64 "SgsEB0mDwAhJOcg="
-jne 225b
-jmp 224f
-223:
-224:
-.base64 "STnw"
-je 226f
-228:
-.base64 "Qg+2FAdICdBJg8ABSTnw"
-jne 228b
-jmp 227f
-226:
-227:
-.base64 "D7YUN0iD8gFICdBIibQkEAEAAEiJhCQIAQAASIuEJCABAABIg8AcSImEJNgAAAA="
-219:
-214:
-.base64 "SIuEJBgBAABIhcA="
-je 229f
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-231:
-.base64 "SokEAUmDwAhJgfgACAAA"
-jne 231b
-.base64 "SIu0JCgBAABBuAAAAAA="
-232:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gU"
-jne 232b
-.base64 "SIu0JLgAAABMi5QkwAAAAEG4AAAAAA=="
-233:
-.base64 "Qg+2BAZCiEQBHEmDwAFNOdA="
-jne 233b
-.base64 "SIuEJBABAABIg8ABSImEJGgBAAC4AQAAAEiJhCRwAQAAuAoAAABIiYQkYAEAAA=="
-234:
-.base64 "SIuMJKgAAABIgcEcDgAASIu0JHABAABIAc5Mi5wkaAEAAEmD4wFBuQAAAABNKdlMi5QkwAAAAEG4AAAAAA=="
-235:
-.base64 "Qg+2BAFCD7Y8Bkgxx0whz0gx+EKIBAFJg8ABTTnQ"
-jne 235b
-.base64 "SIuEJGgBAABI0ehIiYQkaAEAAEiLhCRwAQAASAHASImEJHABAABIi4QkYAEAAEiD6AFIiYQkYAEAAA=="
-jne 234b
-.base64 "SIuEJMAAAABIg8AjSMHoBkiDwAFIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_sha1_init}
-.base64 "SIuMJKgAAABIgcEADgAASIuUJNgAAABMi5Qk4AAAAEnByjpBuAAAAAA="
-236:
-.base64 "TInASDHQSIP4AUgZwEglgAAAAEYPtgwBSQnBRogMAUmDwAFNOdA="
-jne 236b
-.base64 "SIucJKgAAABIgcP0CAAATIukJNgAAABMieBIAcBIAcBIAcBID8hIiUNMSIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIuMJKgAAABIgcE4DgAASIu0JKgAAABIgcZACQAASIuUJPAAAABMi5Qk4AAAAEG4AAAAAA=="
-237:
-.base64 "TYnDSTHTSYP7AU0Z20G5AAAAAA=="
-238:
-.base64 "Qg+2BA5MIdhCD7Y8CUgJx0KIPAlJg8EBSYP5CA=="
-jne 238b
-.base64 "SIPBQEmDwAFNOdA="
-jne 237b
-.base64 "uAAAAABIiYQk6AAAAA=="
-239:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_sha1_compress}
-.base64 "SIuMJKgAAABIi4Qk6AAAAEgzhCTwAAAASIP4AU0Z20G4AAAAAA=="
-240:
-.base64 "Qg+2hAEACAAAQg+2lAHACAAASDHQTCHYSDHCQoiUAcAIAABJg8ABSYP4FA=="
-jne 240b
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 239b
-.base64 "SIucJKgAAABIgcPACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACQAASIu8JLgAAABIi5QkwAAAAEgB10iLlCQIAQAAQbgAAAAA"
-241:
-.base64 "Qg+2BAFGD7YMB0wxyEgJwkmDwAFJg/gU"
-jne 241b
-.base64 "SIP6AUgZwEiD4AE="
-jmp 230f
-229:
-.base64 "SIuEJCABAABIO4QkwAAAAA=="
-jb 242f
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-244:
-.base64 "SokEAUmDwAhJgfgACAAA"
-jne 244b
-.base64 "SIu0JCgBAABBuAAAAAA="
-245:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gU"
-jne 245b
-.base64 "SIu0JLgAAABMi5QkwAAAAEG4AAAAAA=="
-246:
-.base64 "Qg+2BAZCiEQBHEmDwAFNOdA="
-jne 246b
-.base64 "SIuEJBABAABIg8ABSImEJGgBAAC4AQAAAEiJhCRwAQAAuAoAAABIiYQkYAEAAA=="
-247:
-.base64 "SIuMJKgAAABIgcEcDgAASIu0JHABAABIAc5Mi5wkaAEAAEmD4wFBuQAAAABNKdlMi5QkwAAAAEG4AAAAAA=="
-248:
-.base64 "Qg+2BAFCD7Y8Bkgxx0whz0gx+EKIBAFJg8ABTTnQ"
-jne 248b
-.base64 "SIuEJGgBAABI0ehIiYQkaAEAAEiLhCRwAQAASAHASImEJHABAABIi4QkYAEAAEiD6AFIiYQkYAEAAA=="
-jne 247b
-.base64 "SIuEJMAAAABIg8AjSMHoBkiDwAFIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_sha1_init}
-.base64 "SIuMJKgAAABIgcEADgAASIuUJNgAAABMi5Qk4AAAAEnByjpBuAAAAAA="
-249:
-.base64 "TInASDHQSIP4AUgZwEglgAAAAEYPtgwBSQnBRogMAUmDwAFNOdA="
-jne 249b
-.base64 "SIucJKgAAABIgcP0CAAATIukJNgAAABMieBIAcBIAcBIAcBID8hIiUNMSIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIuMJKgAAABIgcE4DgAASIu0JKgAAABIgcZACQAASIuUJPAAAABMi5Qk4AAAAEG4AAAAAA=="
-250:
-.base64 "TYnDSTHTSYP7AU0Z20G5AAAAAA=="
-251:
-.base64 "Qg+2BA5MIdhCD7Y8CUgJx0KIPAlJg8EBSYP5CA=="
-jne 251b
-.base64 "SIPBQEmDwAFNOdA="
-jne 250b
-.base64 "uAAAAABIiYQk6AAAAA=="
-252:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_sha1_compress}
-.base64 "SIuMJKgAAABIi4Qk6AAAAEgzhCTwAAAASIP4AU0Z20G4AAAAAA=="
-253:
-.base64 "Qg+2hAEACAAAQg+2lAHACAAASDHQTCHYSDHCQoiUAcAIAABJg8ABSYP4FA=="
-jne 253b
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 252b
-.base64 "SIucJKgAAABIgcPACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACQAASIu8JLgAAABIi5QkwAAAAEgB10iLlCQIAQAAQbgAAAAA"
-254:
-.base64 "Qg+2BAFGD7YMB0wxyEgJwkmDwAFJg/gU"
-jne 254b
-.base64 "SIP6AUgZwEiD4AE="
-jmp 243f
-242:
-.base64 "SIuEJCABAABIg8AcSImEJNgAAABIg8AISMHoBkiDwAFIiYQk4AAAAEiLjCSoAAAASIHBAA4AAEyLlCTgAAAAScHKOrgAAAAAQbgAAAAA"
-255:
-.base64 "SokEAUmDwAhNOdA="
-jne 255b
-.base64 "SIu0JCgBAABBuAAAAAA="
-256:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gU"
-jne 256b
-.base64 "SIu0JLgAAABIi4QkwAAAAEgBxkyLlCQgAQAATCnWQbgAAAAATYXS"
-je 257f
-259:
-.base64 "Qg+2BAZCiEQBHEmDwAFNOdA="
-jne 259b
-jmp 258f
-257:
-258:
-.base64 "SIuMJKgAAABIgcEADgAASIuUJCABAAC4gAAAAIhEERxIi7wkqAAAAEiBxwAIAAA="
-call {vg_sha1_init}
-.base64 "SIucJKgAAABIgcP0CAAATIukJNgAAABMieBIAcBIAcBIAcBID8hIiUNMSIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIu0JKgAAABIgcZACQAASIuMJKgAAABIi4Qk4AAAAEjByDpIAcFIgcH4DQAASIsGSIkBuAAAAABIiYQk6AAAAA=="
-260:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_sha1_compress}
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 260b
-.base64 "SIucJKgAAABIgcMACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACQAASIu8JLgAAABIi5QkwAAAAEgB10iLlCQIAQAAQbgAAAAA"
-261:
-.base64 "Qg+2BAFGD7YMB0wxyEgJwkmDwAFJg/gU"
-jne 261b
-.base64 "SIP6AUgZwEiD4AE="
-243:
-230:
-jmp 26f
-25:
-.base64 "uAAAAAA="
-26:
-jmp 24f
-23:
-.base64 "uAAAAAA="
-24:
-.base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
-.p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
-    )
-}
-
-/// The CPU features `vg_rsa_pss_sha1_mgf1_sha1_encode_shani` requires (`Artifact.features`).
-pub const VG_RSA_PSS_SHA1_MGF1_SHA1_ENCODE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// EMSA-PSS-ENCODE (RFC 8017 §9.1.1) with SHA-1 and MGF1 with SHA-1, of the 20-byte digest `*digest` with the salt `salt`, into `em_bits` bits: writes the `em_len` bytes of the encoding to `em` and returns 1, or returns 0 if the salt does not fit (`em_len < 22 + salt_len`), leaving `em` unspecified. The step of RSASSA-PSS signing (`vg_rsa_pss_sha1_mgf1_sha1_sign`) before the RSA primitive.
-///
-/// Contract: `VG.Spec.RsaPss.encodeContract` of `VG.Spec.Mgf1.sha1` and `VG.Spec.Mgf1.sha1`. Constant time but for the pointers and lengths: timing does not depend on the digest or the salt.
-///
-/// # Safety
-///
-/// * `em` must be valid for reads and writes of `em_len` bytes.
-/// * `digest` must be valid for reads of 20 bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `em_bits` must be in 1..=8191.
-/// * `em_len` must be `⌈em_bits / 8⌉`.
-/// * `scratch_len` must be at least 1024; the contents of `scratch` on return are unspecified.
-/// * `em` and `scratch` must not overlap each other, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `em`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pss_sha1_mgf1_sha1_encode_shani(em: *mut u8, em_len: usize, digest: *const [u8; 20], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkgAAAAEiJtCSIAAAASImUJCgBAABIiYwkOAEAAEyJhCRAAQAASIuEJJABAABIiYQkqAAAAEiLhCSIAAAASMHgA0wpyEiJwbj/AAAASNPoSImEJMgAAAC4AAAAAEiJhCTQAAAASIuEJIgAAABIg/gW"
-jb 20f
-.base64 "SIuUJEABAABIg+gWSDnQ"
-jb 22f
-.base64 "SIPAAUiJhCTAAAAASIuEJKgAAABIBQAKAABIi5Qk0AAAAEgB0EiJhCS4AAAASIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-24:
-.base64 "SokEAUmDwAhJgfgACAAA"
-jne 24b
-.base64 "SIu0JCgBAABBuAAAAAA="
-25:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gU"
-jne 25b
-.base64 "SIu0JDgBAABMi5QkQAEAAEG4AAAAAE2F0g=="
-je 26f
-28:
-.base64 "Qg+2BAZCiEQBHEmDwAFNOdA="
-jne 28b
-jmp 27f
-26:
-27:
-.base64 "SIuEJEABAABIg8AcSImEJNgAAABIg8AISMHoBkiDwAFIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_sha1_init}
-.base64 "SIuMJKgAAABIgcEADgAASIuUJNgAAABMi5Qk4AAAAEnByjpBuAAAAAA="
-29:
-.base64 "TInASDHQSIP4AUgZwEglgAAAAEYPtgwBSQnBRogMAUmDwAFNOdA="
-jne 29b
-.base64 "SIucJKgAAABIgcP0CAAATIukJNgAAABMieBIAcBIAcBIAcBID8hIiUNMSIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIuMJKgAAABIgcE4DgAASIu0JKgAAABIgcZACQAASIuUJPAAAABMi5Qk4AAAAEG4AAAAAA=="
-210:
-.base64 "TYnDSTHTSYP7AU0Z20G5AAAAAA=="
-211:
-.base64 "Qg+2BA5MIdhCD7Y8CUgJx0KIPAlJg8EBSYP5CA=="
-jne 211b
-.base64 "SIPBQEmDwAFNOdA="
-jne 210b
-.base64 "uAAAAABIiYQk6AAAAA=="
-212:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_sha1_compress_shani}
-.base64 "SIuMJKgAAABIi4Qk6AAAAEgzhCTwAAAASIP4AU0Z20G4AAAAAA=="
-213:
-.base64 "Qg+2hAEACAAAQg+2lAHACAAASDHQTCHYSDHCQoiUAcAIAABJg8ABSYP4FA=="
-jne 213b
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 212b
-.base64 "SIucJKgAAABIgcPACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACgAATIuUJIgAAAC4AAAAAEG4AAAAAA=="
-214:
-.base64 "QogEAUmDwAFNOdA="
-jne 214b
-.base64 "SIu8JLgAAABIi4QkwAAAAEgBx0iLhCRAAQAASCnHSIPvAbgBAAAAiAdIi7QkOAEAAEyLlCRAAQAAQbgAAAAATYXS"
-je 215f
-217:
-.base64 "Qg+2BAZCiEQHAUmDwAFNOdA="
-jne 217b
-jmp 216f
-215:
-216:
-.base64 "SIu8JLgAAABIi4QkwAAAAEgBx0iLtCSoAAAASIHGAAkAAEG4AAAAAA=="
-218:
-.base64 "Qg+2BAZCiAQHSYPAAUmD+BQ="
-jne 218b
-.base64 "SIu8JKgAAABIgccACgAASIuEJIgAAABIAcdIg+8BuLwAAACIB7gAAAAASImEJPgAAABIiYQkAAEAAA=="
-219:
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-220:
-.base64 "SokEAUmDwAhJg/hA"
-jne 220b
-.base64 "SIu0JLgAAABMi4QkwAAAAEwBxkG4AAAAAA=="
-221:
-.base64 "Qg+2BAZCiAQBSYPAAUmD+BQ="
-jne 221b
-.base64 "SIuEJPgAAACIQRdIwegIiEEWSMHoCIhBFUjB6AiIQRS4GAAAAEiJhCTYAAAAuAEAAABIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_sha1_init}
-.base64 "SIuMJKgAAABIgcEADgAAD7ZBGEgNgAAAAIhBGEiLnCSoAAAASIHD9AgAAEyLpCTYAAAATIngSAHASAHASAHASA/ISIlDTEiLhCTYAAAASIPACEjB6AZIiYQk8AAAAEiLtCSoAAAASIHGQAkAAEiLjCSoAAAASIHBOA4AAEiLBkiJAbgAAAAASImEJOgAAABIi7wkqAAAAEiBxwAIAABIi4wkqAAAAEiLtCToAAAASMHOOkgBzkiBxgAOAAC6AQAAAA=="
-call {vg_sha1_compress_shani}
-.base64 "SIucJKgAAABIgcMACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACQAASIuUJAABAABIi7wkuAAAAEgB10iLhCTAAAAASCnQQboUAAAATDnQ"
-jb 222f
-jmp 223f
-222:
-.base64 "SYnC"
-223:
-.base64 "QbgAAAAA"
-224:
-.base64 "Qg+2BAFCD7YUB0gxwkKIFAdJg8ABTTnQ"
-jne 224b
-.base64 "SIuEJPgAAABIg8ABSImEJPgAAABIi4QkAAEAAEiDwBRIiYQkAAEAAEiLlCTAAAAASDnQ"
-jb 219b
-.base64 "SIu8JLgAAAAPtgdII4QkyAAAAIgHSIu0JKgAAABIgcYACgAASIu8JIAAAABMi5QkiAAAAEG4AAAAAA=="
-225:
-.base64 "Qg+2BAZCiAQHSYPAAU050A=="
-jne 225b
-.base64 "uAEAAAA="
-jmp 23f
-22:
-.base64 "uAAAAAA="
-23:
-jmp 21f
-20:
-.base64 "uAAAAAA="
-21:
-.base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
-.p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
-    )
-}
-
-/// The CPU features `vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani` requires (`Artifact.features`).
-pub const VG_RSA_PSS_SHA1_MGF1_SHA1_CHECK_ENCODING_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with SHA-1 and MGF1 with SHA-1, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 20-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_sha1_mgf1_sha1_verify`) after the RSA primitive.
-///
-/// Contract: `VG.Spec.RsaPss.checkEncodingContract` of `VG.Spec.Mgf1.sha1` and `VG.Spec.Mgf1.sha1`. Constant time but for the pointers and lengths: timing does not depend on the digest or the encoding.
-///
-/// # Safety
-///
-/// * `digest` must be valid for reads of 20 bytes.
-/// * `em` must be valid for reads of `em_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `em_bits` must be in 1..=8191.
-/// * `em_len` must be `⌈em_bits / 8⌉`.
-/// * `scratch_len` must be at least 1024; the contents of `scratch` on return are unspecified.
-/// * `scratch` must not overlap `digest`, `em` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `digest`, `em` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani(digest: *const [u8; 20], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkKAEAAEiJtCQwAQAASImUJIgAAABMiYQkIAEAAEiLhCSQAQAASImEJKgAAABIi4QkiAAAAEjB4ANIKchIicG4/wAAAEjT6EiJhCTIAAAAuAAAAABIiYQk0AAAAEiLjCSoAAAASIHBAAoAAEiLtCQwAQAATIuUJIgAAABBuAAAAAA="
-20:
-.base64 "Qg+2BAZCiAQBSYPAAU050A=="
-jne 20b
-.base64 "RInISIXA"
-je 21f
-.base64 "uAEAAABIiYQkGAEAALoAAAAA"
-jmp 22f
-21:
-.base64 "uAAAAABIiYQkGAEAAEiLlCQgAQAA"
-22:
-.base64 "SIuEJIgAAABIg/gW"
-jb 23f
-.base64 "SIuEJIgAAABMi4Qk0AAAAEwpwEiD6BZIOdA="
-jb 25f
-.base64 "SIPAAUiJhCTAAAAASIuEJKgAAABIBQAKAABIi5Qk0AAAAEgB0EiJhCS4AAAASIuMJKgAAABIgcEACgAASIu8JIgAAABIAc9Ig+8BD7YHSDW8AAAARA+2CUyLlCTQAAAAQbsAAAAATSnTTSHZTAnISIu8JLgAAABED7YPTIucJMgAAABJgfP/AAAATSHZTAnISImEJAgBAAC4AAAAAEiJhCT4AAAASImEJAABAAA="
-27:
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-28:
-.base64 "SokEAUmDwAhJg/hA"
-jne 28b
-.base64 "SIu0JLgAAABMi4QkwAAAAEwBxkG4AAAAAA=="
-29:
-.base64 "Qg+2BAZCiAQBSYPAAUmD+BQ="
-jne 29b
-.base64 "SIuEJPgAAACIQRdIwegIiEEWSMHoCIhBFUjB6AiIQRS4GAAAAEiJhCTYAAAAuAEAAABIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_sha1_init}
-.base64 "SIuMJKgAAABIgcEADgAAD7ZBGEgNgAAAAIhBGEiLnCSoAAAASIHD9AgAAEyLpCTYAAAATIngSAHASAHASAHASA/ISIlDTEiLhCTYAAAASIPACEjB6AZIiYQk8AAAAEiLtCSoAAAASIHGQAkAAEiLjCSoAAAASIHBOA4AAEiLBkiJAbgAAAAASImEJOgAAABIi7wkqAAAAEiBxwAIAABIi4wkqAAAAEiLtCToAAAASMHOOkgBzkiBxgAOAAC6AQAAAA=="
-call {vg_sha1_compress_shani}
-.base64 "SIucJKgAAABIgcMACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACQAASIuUJAABAABIi7wkuAAAAEgB10iLhCTAAAAASCnQQboUAAAATDnQ"
-jb 210f
-jmp 211f
-210:
-.base64 "SYnC"
-211:
-.base64 "QbgAAAAA"
-212:
-.base64 "Qg+2BAFCD7YUB0gxwkKIFAdJg8ABTTnQ"
-jne 212b
-.base64 "SIuEJPgAAABIg8ABSImEJPgAAABIi4QkAAEAAEiDwBRIiYQkAAEAAEiLlCTAAAAASDnQ"
-jb 27b
-.base64 "SIu8JLgAAAAPtgdII4QkyAAAAIgHSIuEJBgBAABIhcA="
-je 213f
-.base64 "SIu8JLgAAABMi5QkwAAAAEG4AAAAALoAAAAAvgAAAABBuwAAAAA="
-215:
-.base64 "Qg+2BAdJicFJg/kBTRnJSYPx/0iJ0UiD8f9JIclMicFMIclICc5MIchJCcNMCcpJg8ABTTnQ"
-jne 215b
-.base64 "SYPzAUiD8v9JCdNIi4QkCAEAAEwJ2EiJtCQQAQAASIuMJMAAAABIKfFIg+kBTIuMJBgBAABNhck="
-je 216f
-jmp 217f
-216:
-.base64 "SYnJTDOMJCABAABMCcg="
-217:
-.base64 "SImEJAgBAABIg8EcSImMJNgAAAA="
-jmp 214f
-213:
-.base64 "SIuEJCABAABIO4QkwAAAAA=="
-jb 218f
-.base64 "SIu8JLgAAABMi5QkwAAAAEG4AAAAALoAAAAAvgAAAABBuwAAAAA="
-220:
-.base64 "Qg+2BAdJicFJg/kBTRnJSYPx/0iJ0UiD8f9JIclMicFMIclICc5MIchJCcNMCcpJg8ABTTnQ"
-jne 220b
-.base64 "SYPzAUiD8v9JCdNIi4QkCAEAAEwJ2EiJtCQQAQAASIuMJMAAAABIKfFIg+kBTIuMJBgBAABNhck="
-je 221f
-jmp 222f
-221:
-.base64 "SYnJTDOMJCABAABMCcg="
-222:
-.base64 "SImEJAgBAABIg8EcSImMJNgAAAA="
-jmp 219f
-218:
-.base64 "SIu8JLgAAABIi7QkwAAAAEiLlCQgAQAASCnWSIPuAUiJ8UjB6QNIweEDSIuEJAgBAABBuAAAAABIhck="
-je 223f
-225:
-.base64 "SgsEB0mDwAhJOcg="
-jne 225b
-jmp 224f
-223:
-224:
-.base64 "STnw"
-je 226f
-228:
-.base64 "Qg+2FAdICdBJg8ABSTnw"
-jne 228b
-jmp 227f
-226:
-227:
-.base64 "D7YUN0iD8gFICdBIibQkEAEAAEiJhCQIAQAASIuEJCABAABIg8AcSImEJNgAAAA="
-219:
-214:
-.base64 "SIuEJBgBAABIhcA="
-je 229f
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-231:
-.base64 "SokEAUmDwAhJgfgACAAA"
-jne 231b
-.base64 "SIu0JCgBAABBuAAAAAA="
-232:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gU"
-jne 232b
-.base64 "SIu0JLgAAABMi5QkwAAAAEG4AAAAAA=="
-233:
-.base64 "Qg+2BAZCiEQBHEmDwAFNOdA="
-jne 233b
-.base64 "SIuEJBABAABIg8ABSImEJGgBAAC4AQAAAEiJhCRwAQAAuAoAAABIiYQkYAEAAA=="
-234:
-.base64 "SIuMJKgAAABIgcEcDgAASIu0JHABAABIAc5Mi5wkaAEAAEmD4wFBuQAAAABNKdlMi5QkwAAAAEG4AAAAAA=="
-235:
-.base64 "Qg+2BAFCD7Y8Bkgxx0whz0gx+EKIBAFJg8ABTTnQ"
-jne 235b
-.base64 "SIuEJGgBAABI0ehIiYQkaAEAAEiLhCRwAQAASAHASImEJHABAABIi4QkYAEAAEiD6AFIiYQkYAEAAA=="
-jne 234b
-.base64 "SIuEJMAAAABIg8AjSMHoBkiDwAFIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_sha1_init}
-.base64 "SIuMJKgAAABIgcEADgAASIuUJNgAAABMi5Qk4AAAAEnByjpBuAAAAAA="
-236:
-.base64 "TInASDHQSIP4AUgZwEglgAAAAEYPtgwBSQnBRogMAUmDwAFNOdA="
-jne 236b
-.base64 "SIucJKgAAABIgcP0CAAATIukJNgAAABMieBIAcBIAcBIAcBID8hIiUNMSIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIuMJKgAAABIgcE4DgAASIu0JKgAAABIgcZACQAASIuUJPAAAABMi5Qk4AAAAEG4AAAAAA=="
-237:
-.base64 "TYnDSTHTSYP7AU0Z20G5AAAAAA=="
-238:
-.base64 "Qg+2BA5MIdhCD7Y8CUgJx0KIPAlJg8EBSYP5CA=="
-jne 238b
-.base64 "SIPBQEmDwAFNOdA="
-jne 237b
-.base64 "uAAAAABIiYQk6AAAAA=="
-239:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_sha1_compress_shani}
-.base64 "SIuMJKgAAABIi4Qk6AAAAEgzhCTwAAAASIP4AU0Z20G4AAAAAA=="
-240:
-.base64 "Qg+2hAEACAAAQg+2lAHACAAASDHQTCHYSDHCQoiUAcAIAABJg8ABSYP4FA=="
-jne 240b
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 239b
-.base64 "SIucJKgAAABIgcPACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACQAASIu8JLgAAABIi5QkwAAAAEgB10iLlCQIAQAAQbgAAAAA"
-241:
-.base64 "Qg+2BAFGD7YMB0wxyEgJwkmDwAFJg/gU"
-jne 241b
-.base64 "SIP6AUgZwEiD4AE="
-jmp 230f
-229:
-.base64 "SIuEJCABAABIO4QkwAAAAA=="
-jb 242f
-.base64 "SIuMJKgAAABIgcEADgAAuAAAAABBuAAAAAA="
-244:
-.base64 "SokEAUmDwAhJgfgACAAA"
-jne 244b
-.base64 "SIu0JCgBAABBuAAAAAA="
-245:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gU"
-jne 245b
-.base64 "SIu0JLgAAABMi5QkwAAAAEG4AAAAAA=="
-246:
-.base64 "Qg+2BAZCiEQBHEmDwAFNOdA="
-jne 246b
-.base64 "SIuEJBABAABIg8ABSImEJGgBAAC4AQAAAEiJhCRwAQAAuAoAAABIiYQkYAEAAA=="
-247:
-.base64 "SIuMJKgAAABIgcEcDgAASIu0JHABAABIAc5Mi5wkaAEAAEmD4wFBuQAAAABNKdlMi5QkwAAAAEG4AAAAAA=="
-248:
-.base64 "Qg+2BAFCD7Y8Bkgxx0whz0gx+EKIBAFJg8ABTTnQ"
-jne 248b
-.base64 "SIuEJGgBAABI0ehIiYQkaAEAAEiLhCRwAQAASAHASImEJHABAABIi4QkYAEAAEiD6AFIiYQkYAEAAA=="
-jne 247b
-.base64 "SIuEJMAAAABIg8AjSMHoBkiDwAFIiYQk4AAAAEiLvCSoAAAASIHHAAgAAA=="
-call {vg_sha1_init}
-.base64 "SIuMJKgAAABIgcEADgAASIuUJNgAAABMi5Qk4AAAAEnByjpBuAAAAAA="
-249:
-.base64 "TInASDHQSIP4AUgZwEglgAAAAEYPtgwBSQnBRogMAUmDwAFNOdA="
-jne 249b
-.base64 "SIucJKgAAABIgcP0CAAATIukJNgAAABMieBIAcBIAcBIAcBID8hIiUNMSIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIuMJKgAAABIgcE4DgAASIu0JKgAAABIgcZACQAASIuUJPAAAABMi5Qk4AAAAEG4AAAAAA=="
-250:
-.base64 "TYnDSTHTSYP7AU0Z20G5AAAAAA=="
-251:
-.base64 "Qg+2BA5MIdhCD7Y8CUgJx0KIPAlJg8EBSYP5CA=="
-jne 251b
-.base64 "SIPBQEmDwAFNOdA="
-jne 250b
-.base64 "uAAAAABIiYQk6AAAAA=="
-252:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_sha1_compress_shani}
-.base64 "SIuMJKgAAABIi4Qk6AAAAEgzhCTwAAAASIP4AU0Z20G4AAAAAA=="
-253:
-.base64 "Qg+2hAEACAAAQg+2lAHACAAASDHQTCHYSDHCQoiUAcAIAABJg8ABSYP4FA=="
-jne 253b
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 252b
-.base64 "SIucJKgAAABIgcPACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACQAASIu8JLgAAABIi5QkwAAAAEgB10iLlCQIAQAAQbgAAAAA"
-254:
-.base64 "Qg+2BAFGD7YMB0wxyEgJwkmDwAFJg/gU"
-jne 254b
-.base64 "SIP6AUgZwEiD4AE="
-jmp 243f
-242:
-.base64 "SIuEJCABAABIg8AcSImEJNgAAABIg8AISMHoBkiDwAFIiYQk4AAAAEiLjCSoAAAASIHBAA4AAEyLlCTgAAAAScHKOrgAAAAAQbgAAAAA"
-255:
-.base64 "SokEAUmDwAhNOdA="
-jne 255b
-.base64 "SIu0JCgBAABBuAAAAAA="
-256:
-.base64 "Qg+2BAZCiEQBCEmDwAFJg/gU"
-jne 256b
-.base64 "SIu0JLgAAABIi4QkwAAAAEgBxkyLlCQgAQAATCnWQbgAAAAATYXS"
-je 257f
-259:
-.base64 "Qg+2BAZCiEQBHEmDwAFNOdA="
-jne 259b
-jmp 258f
-257:
-258:
-.base64 "SIuMJKgAAABIgcEADgAASIuUJCABAAC4gAAAAIhEERxIi7wkqAAAAEiBxwAIAAA="
-call {vg_sha1_init}
-.base64 "SIucJKgAAABIgcP0CAAATIukJNgAAABMieBIAcBIAcBIAcBID8hIiUNMSIuEJNgAAABIg8AISMHoBkiJhCTwAAAASIu0JKgAAABIgcZACQAASIuMJKgAAABIi4Qk4AAAAEjByDpIAcFIgcH4DQAASIsGSIkBuAAAAABIiYQk6AAAAA=="
-260:
-.base64 "SIu8JKgAAABIgccACAAASIuMJKgAAABIi7Qk6AAAAEjBzjpIAc5IgcYADgAAugEAAAA="
-call {vg_sha1_compress_shani}
-.base64 "SIuEJOgAAABIg8ABSImEJOgAAABIi5Qk4AAAAEg50A=="
-jne 260b
-.base64 "SIucJKgAAABIgcMACAAASIusJKgAAABIgcUACQAAiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSIuMJKgAAABIgcEACQAASIu8JLgAAABIi5QkwAAAAEgB10iLlCQIAQAAQbgAAAAA"
-261:
-.base64 "Qg+2BAFGD7YMB0wxyEgJwkmDwAFJg/gU"
-jne 261b
-.base64 "SIP6AUgZwEiD4AE="
-243:
-230:
-jmp 26f
-25:
-.base64 "uAAAAAA="
-26:
-jmp 24f
-23:
-.base64 "uAAAAAA="
-24:
-.base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
-.p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
-    )
-}
-
 /// The CPU features `vg_rsa_pss_sha1_mgf1_sha1_sign_crt_adx` requires (`Artifact.features`).
 pub const VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_CRT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
@@ -834,7 +60,7 @@ jne 25b
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_pss_sha1_mgf1_sha1_encode = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode,
+        vg_rsa_pss_sha1_mgf1_sha1_encode = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode::vg_rsa_pss_sha1_mgf1_sha1_encode,
         vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
     )
 }
@@ -892,7 +118,7 @@ jne 25b
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_pss_sha1_mgf1_sha1_encode = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode,
+        vg_rsa_pss_sha1_mgf1_sha1_encode = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode::vg_rsa_pss_sha1_mgf1_sha1_encode,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }
@@ -954,7 +180,7 @@ jne 25b
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_pss_sha1_mgf1_sha1_encode = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode,
+        vg_rsa_pss_sha1_mgf1_sha1_encode = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode::vg_rsa_pss_sha1_mgf1_sha1_encode,
         vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
     )
 }
@@ -1016,7 +242,7 @@ jne 25b
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_pss_sha1_mgf1_sha1_encode_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode_shani,
+        vg_rsa_pss_sha1_mgf1_sha1_encode_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode_shani::vg_rsa_pss_sha1_mgf1_sha1_encode_shani,
         vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
     )
 }
@@ -1078,7 +304,7 @@ jne 25b
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_pss_sha1_mgf1_sha1_encode_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode_shani,
+        vg_rsa_pss_sha1_mgf1_sha1_encode_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode_shani::vg_rsa_pss_sha1_mgf1_sha1_encode_shani,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }
@@ -1140,7 +366,7 @@ jne 25b
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_pss_sha1_mgf1_sha1_encode_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode_shani,
+        vg_rsa_pss_sha1_mgf1_sha1_encode_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_encode_shani::vg_rsa_pss_sha1_mgf1_sha1_encode_shani,
         vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
     )
 }
@@ -1191,7 +417,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_rsa_public_precomputed_checked_adx = sym super::rsa::vg_rsa_public_precomputed_checked_adx,
-        vg_rsa_pss_sha1_mgf1_sha1_check_encoding = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding,
+        vg_rsa_pss_sha1_mgf1_sha1_check_encoding = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding::vg_rsa_pss_sha1_mgf1_sha1_check_encoding,
     )
 }
 
@@ -1237,7 +463,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
-        vg_rsa_pss_sha1_mgf1_sha1_check_encoding = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding,
+        vg_rsa_pss_sha1_mgf1_sha1_check_encoding = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding::vg_rsa_pss_sha1_mgf1_sha1_check_encoding,
     )
 }
 
@@ -1287,7 +513,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma,
-        vg_rsa_pss_sha1_mgf1_sha1_check_encoding = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding,
+        vg_rsa_pss_sha1_mgf1_sha1_check_encoding = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding::vg_rsa_pss_sha1_mgf1_sha1_check_encoding,
     )
 }
 
@@ -1337,7 +563,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_rsa_public_precomputed_checked_adx = sym super::rsa::vg_rsa_public_precomputed_checked_adx,
-        vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani,
+        vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani::vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani,
     )
 }
 
@@ -1387,7 +613,7 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
-        vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani,
+        vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani::vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani,
     )
 }
 
@@ -1437,6 +663,22 @@ jmp 21f
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
         vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma,
-        vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani,
+        vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani = sym super::rsa_pss_sha1_mgf1_sha1::vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani::vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pss_sha1_mgf1_sha1_check_encoding.rs"]
+pub(crate) mod vg_rsa_pss_sha1_mgf1_sha1_check_encoding;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani.rs"]
+pub(crate) mod vg_rsa_pss_sha1_mgf1_sha1_check_encoding_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pss_sha1_mgf1_sha1_encode.rs"]
+pub(crate) mod vg_rsa_pss_sha1_mgf1_sha1_encode;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pss_sha1_mgf1_sha1_encode_shani.rs"]
+pub(crate) mod vg_rsa_pss_sha1_mgf1_sha1_encode_shani;

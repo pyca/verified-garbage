@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.CrtEnterPrime
 import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (Layout wOf arrAt)
+open VG.Proof.Rsa.Mont (Layout wOf arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem crt_setupPrime_ok (s : State) {base child : BitVec 32} {size len slot w : Nat}
@@ -30,7 +30,7 @@ theorem crt_setupPrime_ok (s : State) {base child : BitVec 32} {size len slot w 
       Layout t.mem (State.addr child) len ∧ wOf t.mem (State.addr child) = w ∧ t.gpr .r0 = child ∧
       t.mem.readW (off (State.addr child) 216) 32 = base ∧
       Frame [⟨State.addr child, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have childFit : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at arraysFit; omega
+  have childFit : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at arraysFit; omega
   rw [WP.seq_iff]
   refine WP.mono (crt_enterPrime_ok s ws childWs fit slotFit hs (by omega) ptr count link) ?_
   rintro u ⟨ptrU, widthU, zeroU, linkU, _, frameU, restU⟩

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Ffdh.X86.Cand.Halve
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
 public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
+public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-!
 # The FFDH candidate on i686: p's checks and tests
@@ -236,7 +237,7 @@ def candOut (len : Nat) : Option (Option Nat × Spec.RsaKeyGen.Rand) → List By
   | _ => List.replicate len 0
 
 theorem res_map (T : List Byte) (p len : Nat) (A : Option (Bool × Spec.RsaKeyGen.Rand)) :
-    resStatus A = Spec.Ffdh.candidateStatus (A.map fun x => (if x.1 then some p else none, x.2)) ∧
+    resStatus A = Proof.Ffdh.candidateStatus (A.map fun x => (if x.1 then some p else none, x.2)) ∧
       resUsed T A = candUsed T (A.map fun x => (if x.1 then some p else none, x.2)) ∧
       resOut p len A = candOut len (A.map fun x => (if x.1 then some p else none, x.2)) := by
   rcases A with _ | ⟨⟨⟩ | ⟨⟩, r⟩ <;> exact ⟨rfl, rfl, rfl⟩
@@ -306,7 +307,7 @@ theorem main_ok (h : In Ex base bytes len args s) {T : List Byte}
     (hg25 : g = 2 ∨ g = 5) {Tb : BitVec 32} (TT : Table Tb (s.gpr .esp) s)
     (TA : Region.Disjoint ⟨Tb.setWidth 64, 8192⟩ ⟨base, bytes⟩) :
     WP isa main s (Fin base len args up s
-      (Spec.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate bits g T))
+      (Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candUsed T (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candOut len (Spec.Ffdh.sievedParameterCandidate bits g T))) := by
   have hL' : (bits + 7) / 8 ≤ T.length := by omega_arith
@@ -326,7 +327,7 @@ theorem main_ok (h : In Ex base bytes len args s) {T : List Byte}
         !VG.Proof.RsaKeyGen.trialPrefix p (sieveCount bits) &&
         !VG.Proof.RsaKeyGen.trialPrefix ((p - 1) / 2) (sieveCount bits)) = false →
       WP isa reject u (Fin base len args up s
-        (Spec.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate bits g T))
+        (Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate bits g T))
         (candUsed T (Spec.Ffdh.sievedParameterCandidate bits g T))
         (candOut len (Spec.Ffdh.sievedParameterCandidate bits g T))) := by
     intro u Su hc hu' e
@@ -334,7 +335,7 @@ theorem main_ok (h : In Ex base bytes len args s) {T : List Byte}
     refine WP.mono (reject_ok Su.inp (by rw [Su.esp]; exact Ox.keep rfl Su.keeps)
       (by rw [Su.esp]; exact U.keep rfl Su.keeps) hu' hc) fun t R => ?_
     have := R.after Su
-    simp only [Spec.Ffdh.candidateStatus, candUsed, candOut, List.length_drop,
+    simp only [Proof.Ffdh.candidateStatus, candUsed, candOut, List.length_drop,
       show T.length - (T.length - (bits + 7) / 8) = len by omega_arith]
     exact this
   unfold main

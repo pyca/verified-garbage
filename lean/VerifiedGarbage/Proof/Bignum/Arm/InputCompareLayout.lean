@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.Rsa.Mont (arrAt numAt Keeps)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem inputCompareLayout_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -28,7 +28,7 @@ theorem inputCompareLayout_ok (s : State) {base : BitVec 32} {len w : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have hw : 2 ≤ w := h.width ▸ h.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have f0 := Nat.le_trans (array_end_le (w := w) (by decide : 0 < 8)) fits
   have f1 := Nat.le_trans (array_end_le (w := w) (by decide : 1 < 8)) fits
   have f3 := Nat.le_trans (array_end_le (w := w) (by decide : 3 < 8)) fits

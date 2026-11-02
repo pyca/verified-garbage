@@ -11,14 +11,14 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernel
 public import VerifiedGarbage.Impl.Bignum.Arm.CombScan
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.FixedBaseComb
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 /-! The concrete gather and complete readonly scan supply the evaluator kernel. -/
 
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.CombExp
 open VG VG.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem choose_ok (backend : MontBackend) (base source table sp : BitVec 32)

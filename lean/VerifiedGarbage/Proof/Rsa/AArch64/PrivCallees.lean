@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Rsa.Scratch
 import VerifiedGarbage.Proof.Framework.Sig
@@ -88,23 +89,23 @@ theorem stackArgs_ten (s : State) :
     List.map (stackArg s) (List.range 10) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9] := rfl
 
-theorem crt_pre {s : State} (h : crtA.pre s) : (Spec.Rsa.privateCrtContract abi 0).pre s := by
-  sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, stackArgs_ten,
+theorem crt_pre {s : State} (h : crtA.pre s) : (Proof.Rsa.privateCrtContract abi 0).pre s := by
+  sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, stackArgs_ten,
     List.append_eq]
-  sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, stackArgs_ten,
+  sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, stackArgs_ten,
     List.append_eq]
   simp only [crtA] at h
   sig_split h
   sig_and_intros
   all_goals with_reducible assumption
 
-theorem crt_post {s s' : State} (h : (Spec.Rsa.privateCrtContract abi 0).post s s') : crtA.post s s' := by
-  sig_post [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, stackArgs_ten,
+theorem crt_post {s s' : State} (h : (Proof.Rsa.privateCrtContract abi 0).post s s') : crtA.post s s' := by
+  sig_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, stackArgs_ten,
     List.append_eq] at h
   exact h
 
-theorem crt_pub {s₁ s₂ : State} (h : crtA.pub s₁ s₂) : (Spec.Rsa.privateCrtContract abi 0).pub s₁ s₂ := by
-  sig_pub [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, stackArgs_ten,
+theorem crt_pub {s₁ s₂ : State} (h : crtA.pub s₁ s₂) : (Proof.Rsa.privateCrtContract abi 0).pub s₁ s₂ := by
+  sig_pub [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, stackArgs_ten,
     List.append_eq]
   obtain ⟨hr, hsp, ha, hn⟩ := h
   simp only [stackArgs_ten, List.cons.injEq, and_true] at ha

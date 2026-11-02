@@ -44,9 +44,9 @@ theorem MulInput.setup {g : Geometry} {capacity b : Nat} {p : BitVec 32} {s : St
   · exact (K.1 .esp (by decide)).trans I.caller.sp
 
 theorem mulY_trace {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     {g : Geometry} (v : g.Valid) {capacity b : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (right : Spec.Rsa.Mont.Operand b) :
+    (length : g.L = 8 * capacity) (right : Proof.Rsa.Mont.Operand b) :
     RelCT isa (fun s t => Pair g [.edi] s t ∧ MulInput g capacity b p s ∧ MulInput g capacity b p t)
       (mulY name code b) (fun _ _ => True) := by
   unfold mulY
@@ -56,10 +56,10 @@ theorem mulY_trace {code : Prog isa} {name : String}
   exact ⟨trace, wp_result S.setup E, wp_result T.setup G⟩
 
 theorem mulY_relCT {code : Prog isa} {name : String}
-    (verified : Verified target code (Spec.Rsa.Mont.mulContract abi 56))
+    (verified : Verified target code (Proof.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp code) (stack : stackUse code ≤ 56)
     {g : Geometry} (v : g.Valid) {capacity b : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (right : Spec.Rsa.Mont.Operand b) :
+    (length : g.L = 8 * capacity) (right : Proof.Rsa.Mont.Operand b) :
     RelCT isa (fun s t => Pair g [.edi] s t ∧ MulInput g capacity b p s ∧ MulInput g capacity b p t)
       (mulY name code b) (Pair g [.edi]) := by
   intro s t tr ur u z ⟨H, S, T⟩ E G

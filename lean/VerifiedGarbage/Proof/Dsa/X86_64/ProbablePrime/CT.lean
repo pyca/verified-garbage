@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytesCT
 import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 public meta import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Body
 public meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytesCT
+public meta import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
@@ -14,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # The probable-prime test's timing depends only on its public inputs -/
 
@@ -47,7 +49,7 @@ theorem map_toNat_inj : ∀ {l₁ l₂ : List Byte}, l₁.map (·.toNat) = l₂.
   | _ :: _, [], h => by simp at h
 
 theorem view_of_pub {s₁ s₂ : State} (h : contract.pub s₁ s₂) : view s₁ = view s₂ := by
-  sig_pub [contract, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi,
+  sig_pub [contract, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig, abi,
     argRegs] at h
   obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9⟩ := h
   obtain ⟨-, hl⟩ := List.cons.inj hl

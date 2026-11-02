@@ -120,7 +120,7 @@ theorem sum_ok {g : Geometry} (v : g.Valid) {a : State} {T : Nat} (C : Context g
   have bound := v.maxWidth
   have nowrap := C.ws.nowrap
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
   unfold sum
   refine WP.seq (WP.mono (doubleArgs_ok v C) fun b ⟨ebxB, ebpB, edxB, ecxB, Mb, Kb⟩ => ?_)
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.doubleLoop_ok (C.ws.of_keeps Kb) (x := g.array 6)
@@ -158,7 +158,7 @@ theorem reduce_ok {g : Geometry} (v : g.Valid) {e : State} (C : Context g e) :
   obtain ⟨fit6, -, many, words⟩ := WitnessRt.fits v
   have bound := v.maxWidth
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
   have a02 : g.array 0 + 4 * g.words ≤ g.array 2 := g.arrayBefore (by decide)
   unfold reduce
   refine WP.seq (WP.mono (reduceArgs_ok v C) fun f ⟨ebpF, ebxF, ediF, edxF, ecxF, Mf, Lf⟩ => ?_)
@@ -202,7 +202,7 @@ theorem select_ok {g : Geometry} (v : g.Valid) {i : State} {q : BitVec 32} {k : 
   obtain ⟨fit6, -, many, words⟩ := WitnessRt.fits v
   have bound := v.maxWidth
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
   unfold select
   refine WP.seq (WP.mono (selectArgs_ok v C) fun j ⟨ebpJ, ebxJ, ediJ, Mj, Kij⟩ => ?_)
   have ecxJ : j.gpr .ecx = cmask b := by rw [Kij.1 .ecx (by decide)]; exact mask
@@ -242,7 +242,7 @@ theorem double_ok {g : Geometry} (v : g.Valid) {a : State} {c T k : Nat} {q : Bi
   obtain ⟨fit6, -, many, words⟩ := WitnessRt.fits v
   have nowrap := C.ws.nowrap
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega
   have a02 : g.array 0 + 4 * g.words ≤ g.array 2 := g.arrayBefore (by decide)
   have h0 := v.arrayHeader 0
   have h2 := v.arrayHeader 2

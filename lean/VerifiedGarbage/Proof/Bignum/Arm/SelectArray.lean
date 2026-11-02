@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.SelectArray
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Rsa.MontContract
 
 import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayArgs
 import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasRow
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (arrAt numAt wOf Layout)
+open VG.Proof.Rsa.Mont (arrAt numAt wOf Layout)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem array_select_separate (w o a : Nat) :
@@ -43,7 +43,7 @@ theorem selectArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t ∧ t.gpr .r0 = base := by
   have hw : 2 ≤ w := width ▸ layout.1
   have fits : arrAt w 8 ≤ 8 * len := width ▸ layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
   have fo := Nat.le_trans (array_end_le (w := w) ho) fits
   have fa := Nat.le_trans (array_end_le (w := w) ha) fits
   have fb := Nat.le_trans (array_end_le (w := w) hb) fits

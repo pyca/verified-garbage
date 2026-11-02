@@ -27,15 +27,15 @@ open VG.Proof.Bignum (word off slot)
 /-- What the exit leaves. -/
 structure XOut (bits : Nat) (σ t f : State) : Prop where
   abi : abiPreserved σ f
-  r3 : f.gpr .r3 = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status (res bits σ))
+  r3 : f.gpr .r3 = BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status (res bits σ))
   frame : Frame [cU σ] t.mem f.mem
   used : ∀ b rest, res bits σ = some (b, rest) →
     Spec.Rsa.wordsAt f.mem (σ.gpr .r7) 1 = [BitVec.ofNat 64 ((σ.gpr .r6).toNat - rest.length)]
 
-theorem status_le (x : Option (Bool × Spec.RsaKeyGen.Rand)) : Spec.Dsa.ProbablePrime.status x ≤ 2 := by
-  rcases x with _ | ⟨_ | _, _⟩ <;> simp [Spec.Dsa.ProbablePrime.status]
+theorem status_le (x : Option (Bool × Spec.RsaKeyGen.Rand)) : Proof.Dsa.ProbablePrime.status x ≤ 2 := by
+  rcases x with _ | ⟨_ | _, _⟩ <;> simp [Proof.Dsa.ProbablePrime.status]
 
-theorem status_eq_zero {x : Option (Bool × Spec.RsaKeyGen.Rand)} (h : Spec.Dsa.ProbablePrime.status x = 0) :
+theorem status_eq_zero {x : Option (Bool × Spec.RsaKeyGen.Rand)} (h : Proof.Dsa.ProbablePrime.status x = 0) :
     x = none := by
   rcases x with _ | ⟨_ | _, _⟩ <;> first | rfl | cases h
 
@@ -52,7 +52,7 @@ theorem tail_regs : savedSlots.tail.map Prod.fst =
 /-- After the exit's first block: the calling convention's registers back,
 the status in `r3`, `hUsed` in `r5` and `used` in `r7`. -/
 def XMid (bits : Nat) (σ t f : State) : Prop :=
-  abiPreserved σ f ∧ f.gpr .r3 = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status (res bits σ)) ∧
+  abiPreserved σ f ∧ f.gpr .r3 = BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status (res bits σ)) ∧
     f.gpr .r5 = word t.mem (wsB σ) (8 * hUsed) ∧ f.gpr .r7 = σ.gpr .r7 ∧ f.mem = t.mem ∧ f.wr = t.wr
 
 theorem exitA_ok {bits : Nat} {σ s t : State} (h : CIn bits σ) (o : BOut bits σ s t)
@@ -116,7 +116,7 @@ theorem exit_ok {bits : Nat} {σ s t : State} (h : CIn bits σ) (o : BOut bits �
   unfold exit
   refine WP.seq (WP.mono (exitA_ok h o svd) fun f ⟨fa, f3, f5, f7, fm, fwr⟩ => ?_)
   refine WP.ite _ (eval_zero_ofNat f .r3 (by omega) f3) (fun hz => ?_) (fun hz => ?_)
-  · have h0 : Spec.Dsa.ProbablePrime.status (res bits σ) = 0 := by simpa using hz
+  · have h0 : Proof.Dsa.ProbablePrime.status (res bits σ) = 0 := by simpa using hz
     exact WP.block_nil ⟨fa, f3, by rw [fm]; exact Frame.refl _ _, fun b rest hr => by
       rw [status_eq_zero h0] at hr; cases hr⟩
   · have hU : InRegions f.wr (f.gpr .r7 + BitVec.ofNat 64 0) 8 := ⟨cU σ, by rw [fwr, o.wr, h.wr]; simp, by

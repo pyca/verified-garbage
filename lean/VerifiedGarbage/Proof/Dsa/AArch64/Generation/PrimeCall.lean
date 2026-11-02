@@ -20,6 +20,7 @@ import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 
 /-! # Calling the probable-prime test, which returns its cursor and status to the generation frame -/
 
@@ -149,11 +150,11 @@ theorem primeCall_pre {bits : Nat} {F S A rp : Addr} {rand : List Byte}
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have hFw := h.layout.geo.Fw
   have rest := primeCall_rest_sub rp h.usedBound
-  have hval : Spec.Dsa.ProbablePrime.candidateAt (Impl.Dsa.AArch64.ProbablePrime.layout bits) u.mem A = N := by
-    unfold Spec.Dsa.ProbablePrime.candidateAt
+  have hval : Proof.Dsa.ProbablePrime.candidateAt (Impl.Dsa.AArch64.ProbablePrime.layout bits) u.mem A = N := by
+    unfold Proof.Dsa.ProbablePrime.candidateAt
     rw [hm]
     exact h.candidate
-  sig_pre [ProbablePrime.contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+  sig_pre [ProbablePrime.contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argRegs]
   sig_and_intros
   all_goals try simp only [h0, h1, h2, h3, h4, hsp, hdc, hl]
   · exact g.stackSize
@@ -188,7 +189,7 @@ structure PrimeCalled (bits : Nat) (F A : Addr) (rand : List Byte) (N used : Nat
   wr : t.wr = u.wr
   sp : t.sp = F
   status : (t.gpr .x0).setWidth 32 =
-    BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime N (rand.drop used)))
+    BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime N (rand.drop used)))
   read : ∀ b rest, Spec.Dsa.probablePrime N (rand.drop used) = some (b, rest) →
     word t.mem F 152 = BitVec.ofNat 64 (rand.length - used - rest.length)
   frame : Frame [⟨off A arithmetic, arithmeticBytes⟩, ⟨off A witness, bits / 8⟩, below F callStack,
@@ -201,7 +202,7 @@ structure PrimeEntry (bits : Nat) (F A rp : Addr) (rand : List Byte) (N used : N
     (u.callEntry.withRegions (primeCallRd rp rand used) (primeCallWr F A))
   reads : Covers (primeCallRd rp rand used ++ primeCallWr F A) (u.rd ++ u.wr)
   writes : Covers (primeCallWr F A) u.wr
-  candidate : Spec.Dsa.ProbablePrime.candidateAt (Impl.Dsa.AArch64.ProbablePrime.layout bits) u.mem A = N
+  candidate : Proof.Dsa.ProbablePrime.candidateAt (Impl.Dsa.AArch64.ProbablePrime.layout bits) u.mem A = N
   tape : Spec.Rsa.bytesAt u.mem (rp + BitVec.ofNat 64 used) (rand.length - used) = rand.drop used
 
 theorem primeCall_entry {bits : Nat}
@@ -213,8 +214,8 @@ theorem primeCall_entry {bits : Nat}
     (hrd : u.rd = s.rd) (hwr : u.wr = s.wr) :
     PrimeEntry bits F A rp rand N used u := by
   have hu := h.usedBound
-  have hval : Spec.Dsa.ProbablePrime.candidateAt (Impl.Dsa.AArch64.ProbablePrime.layout bits) u.mem A = N := by
-    unfold Spec.Dsa.ProbablePrime.candidateAt
+  have hval : Proof.Dsa.ProbablePrime.candidateAt (Impl.Dsa.AArch64.ProbablePrime.layout bits) u.mem A = N := by
+    unfold Proof.Dsa.ProbablePrime.candidateAt
     rw [hm]
     exact h.candidate
   have htape : Spec.Rsa.bytesAt u.mem (rp + BitVec.ofNat 64 used) (rand.length - used) = rand.drop used := by
@@ -261,14 +262,14 @@ theorem primeCall_call_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppo
   refine WP.callF (T.verified bits hb).1 E.pre E.reads E.writes ?_
     (by have : ProbablePrime.stack = 272 := rfl; omega)
   intro t hrd' hwr' hsp' hf _ hpost
-  sig_post [ProbablePrime.contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+  sig_post [ProbablePrime.contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argRegs]
     at hpost
   simp only [h0, h1, h2, h3, h4, hl] at hpost
   rw [hval, htape] at hpost
   obtain ⟨hr, hkeeps, hused⟩ := hpost
-  have hst : Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime N (rand.drop used)) < 3 := by
+  have hst : Proof.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime N (rand.drop used)) < 3 := by
     rcases Spec.Dsa.probablePrime N (rand.drop used) with _ | ⟨_ | _, _⟩ <;>
-      simp only [Spec.Dsa.ProbablePrime.status] <;> decide
+      simp only [Proof.Dsa.ProbablePrime.status] <;> decide
   refine ⟨hrd', hwr', hsp'.trans hsp, ?_, ?_, ?_⟩
   · apply BitVec.eq_of_toNat_eq
     rw [hr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
@@ -429,9 +430,9 @@ theorem primeCall_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported 
         · exact (primeCall_frame_below F).sub_left hf
         · exact fused hk h19
   have Lt : Lay t F S := lay_of_rep L R Rt (by simp [upd]) (C.sp.trans L.sp.symm) (C.wr.trans ku.wr)
-  have hk : Spec.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime N (rand.drop used)) < 3 := by
+  have hk : Proof.Dsa.ProbablePrime.status (Spec.Dsa.probablePrime N (rand.drop used)) < 3 := by
     rcases Spec.Dsa.probablePrime N (rand.drop used) with _ | ⟨_ | _, _⟩ <;>
-      simp only [Spec.Dsa.ProbablePrime.status] <;> decide
+      simp only [Proof.Dsa.ProbablePrime.status] <;> decide
   refine WP.mono (primeCallResult_ok Lt Rt hk C.status) fun t' ⟨Lt', Rt', ft', rdt', wrt'⟩ => ?_
   have hn := h.tapeSize
   have hframe : Frame (primeCallChanged bits F A) s.mem t'.mem := by
@@ -446,7 +447,7 @@ theorem primeCall_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported 
   have hwr : t'.wr = s.wr := wrt'.trans (C.wr.trans ku.wr)
   cases hres : Spec.Dsa.probablePrime N (rand.drop used) with
   | none =>
-    simp only [hres, Spec.Dsa.ProbablePrime.status] at Rt'
+    simp only [hres, Proof.Dsa.ProbablePrime.status] at Rt'
     refine ⟨used, BitVec.ofNat 64 0, h.usedBound, Lt', ?_, fun _ => rfl, fun _ _ h' => absurd h' (by simp),
       hframe, hrd, hwr⟩
     have e : upd (upd W 16 (BitVec.ofNat 64 used)) 19 (BitVec.ofNat 64 0) =
@@ -466,19 +467,19 @@ theorem primeCall_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported 
       rw [← BitVec.ofNat_add]; congr 1; omega
     refine ⟨rand.length - rest.length, BitVec.ofNat 64 (if b then 1 else 3), by omega, Lt', ?_, fun h' => by simp at h',
       fun b' rest' h' => ?_, hframe, hrd, hwr⟩
-    · have hk0 : Spec.Dsa.ProbablePrime.status (some (b, rest)) ≠ 0 := by
-        cases b <;> simp [Spec.Dsa.ProbablePrime.status]
+    · have hk0 : Proof.Dsa.ProbablePrime.status (some (b, rest)) ≠ 0 := by
+        cases b <;> simp [Proof.Dsa.ProbablePrime.status]
       simp only [hres, hk0, ite_false] at Rt'
       have e : upd (upd W 16 (BitVec.ofNat 64 (rand.length - rest.length))) 19
             (BitVec.ofNat 64 (if b then 1 else 3)) =
           upd (upd (upd W 19 (word t.mem F 152)) 16
             (upd W 19 (word t.mem F 152) 19 + upd W 19 (word t.mem F 152) 16)) 19
-            (BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status (some (b, rest)) +
-              Spec.Dsa.ProbablePrime.status (some (b, rest)) / 2)) := by
+            (BitVec.ofNat 64 (Proof.Dsa.ProbablePrime.status (some (b, rest)) +
+              Proof.Dsa.ProbablePrime.status (some (b, rest)) / 2)) := by
         funext i
         simp only [upd]
         by_cases h19 : i = 19
-        · subst h19; simp only [ite_true]; cases b <;> simp [Spec.Dsa.ProbablePrime.status]
+        · subst h19; simp only [ite_true]; cases b <;> simp [Proof.Dsa.ProbablePrime.status]
         · by_cases h16 : i = 16
           · subst h16
             simp only [show (16 : Nat) ≠ 19 by decide, ite_false, ite_true, hw19, h.usedSlot, hsum]

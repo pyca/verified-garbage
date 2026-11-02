@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 /-! # The domain check: `vg_dsa_check_parameters` on p||q||g -/
 
@@ -26,7 +27,7 @@ open VG.Impl.Dsa.X86.Generation
 abbrev chkRegs : List Reg := [.ebp, .esi, .ebx, .edx, .ecx, .eax]
 
 /-- The check's contract, as its registration gives it. -/
-abbrev chkContract : Contract isa := Spec.Dsa.checkParametersContract abi 108
+abbrev chkContract : Contract isa := Proof.Dsa.checkParametersContract abi 108
 
 /-- The regions the check is given: p||q||g, its working space and its
 arguments. -/
@@ -112,7 +113,7 @@ theorem check_pre {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
   have umem : Frame [below (s.gpr .esp) (4 * chkRegs.length + 4)] s.mem (chkEntry E s).mem :=
     callEntry_frame fit hrs
   generalize eu : chkEntry E s = u at *
-  sig_pre [chkContract, Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argSlots, argVal,
+  sig_pre [chkContract, Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argSlots, argVal,
     argBytes, stackBelow]
   have hs := B.scr
   have sz := v.size_ge
@@ -231,7 +232,7 @@ theorem checkMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen
     (by rw [spT]; simp only [List.length_cons, List.length_nil]; omega_arith) cp fun u rdu wru csu Fu post usy => ?_))
   obtain ⟨s₂, m₂, ax₂, post⟩ := post
   generalize ew : (pushed chkRegs t).callEntry.withRegions (chkRd E) (chkWr E t) = w at e0 e1 e2 e3 e4 e5 Fm post
-  sig_post [chkContract, Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argSlots, argVal,
+  sig_post [chkContract, Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argSlots, argVal,
     argBytes, stackBelow] at post
   simp only [e0, e1, ret32] at post
   have hs := B.scr

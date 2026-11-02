@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.Contract
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
@@ -31,7 +32,7 @@ structure Backend where
   signSp : (SignVerify.sign sq mul).all (fun i => !isa.writesSp i) = true
   verifySp : (SignVerify.verify sq mul).all (fun i => !isa.writesSp i) = true
   signDepth : (SignVerify.sign sq mul).x86_64Depth ≤ stack
-  parametersVerified : Verified target (Generate.checkParameters sq mul) (Spec.Dsa.checkParametersContract abi stack)
+  parametersVerified : Verified target (Generate.checkParameters sq mul) (Proof.Dsa.checkParametersContract abi stack)
   deriveVerified : Verified target (Generate.deriveKey sq mul) (Spec.Dsa.deriveKeyContract abi stack)
   parametersSp : (Generate.checkParameters sq mul).all (fun i => !isa.writesSp i) = true
   deriveSp : (Generate.deriveKey sq mul).all (fun i => !isa.writesSp i) = true

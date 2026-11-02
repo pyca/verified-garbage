@@ -35,7 +35,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Syms
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
 
 theorem environmentKeyGenerateMain_ok (prepare sample tail : Prog isa) (env : SampleEnvironment) (layout : (p : Inputs) → ScalarLayout p)
     (prep : EnvironmentPrepareLaw env prepare) (sampler : EnvironmentSampleLaw env layout sample) (law : EnvironmentTailLaw env layout tail)
@@ -60,8 +60,8 @@ theorem environmentKeyGenerateMain_ok (prepare sample tail : Prog isa) (env : Sa
       Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k =
         (if sampleSuccess p (layout p) rb then Spec.Rsa.i2osp (keyPower p ((layout p).encode rb)) p.k else List.replicate p.k 0) ∧
       Frame (keyCallWrites p s) s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (keyCallWrites p s) m m' :=
     f.mono (by simp [keyCallWrites, keyWrites])
   rw [VG.Impl.Ffdh.Arm.SampleKeyGenerate.main, WP.seq_iff]

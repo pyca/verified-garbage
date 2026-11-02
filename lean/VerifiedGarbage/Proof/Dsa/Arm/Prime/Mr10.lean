@@ -45,13 +45,13 @@ section
 variable {P : CP} {E : State → Prop}
 
 /-- Whether witness `k` passes, from the public candidate and tape. -/
-def passQ (P : CP) (k : Nat) : Bool := Spec.MillerRabin.round P.cand (dwit P.cand P.D P.rnd (P.D * k)).1
+def passQ (P : CP) (k : Nat) : Bool := Proof.MillerRabin.Round.round P.cand (dwit P.cand P.D P.rnd (P.D * k)).1
 
 theorem rv_pass {σ : State} (pre : In P σ) (k : Nat) :
-    Spec.MillerRabin.round (cv P σ) (wf P σ k).1 = passQ P k := by
+    Proof.MillerRabin.Round.round (cv P σ) (wf P σ k).1 = passQ P k := by
   unfold passQ wf; rw [pre.cand, pre.rnd]
 
-theorem round_eq (c b : Nat) : Spec.MillerRabin.round c b =
+theorem round_eq (c b : Nat) : Proof.MillerRabin.Round.round c b =
     Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2 b := rfl
 
 /-- The values of the header words in an iteration. -/

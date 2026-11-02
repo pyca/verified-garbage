@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Front
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Dsa.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Dsa.Contract
 
 /-!
 # `vg_dsa_check_parameters` on PPC64LE: the contract on the registers
@@ -27,8 +29,8 @@ def paramsSatState : State where
   rd := [⟨0x1000, 276⟩]
   wr := [⟨0x10000, 16384⟩]
 
-theorem checkParameters_implies : pcContract.Implies (Spec.Dsa.checkParametersContract abi) := by
-  sig_implies [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, pcContract,
+theorem checkParameters_implies : pcContract.Implies (Proof.Dsa.checkParametersContract abi) := by
+  sig_implies [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, pcContract,
     List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts, List.filterMap_cons,
     List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false, List.cons_append,
     List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append]

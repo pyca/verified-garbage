@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
-public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.Contract
 
 /-! # A witness sampled in array 6 at the run-time width
 

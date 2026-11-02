@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
@@ -10,7 +11,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 
 Encryption calls `vg_rsa_public_checked`. A `PubImpl` is any implementation
 of it verified against its shared contract
-`Spec.Rsa.publicCheckedContract` with `stack` bytes of stack, whose frames
+`Proof.Rsa.publicCheckedContract` with `stack` bytes of stack, whose frames
 fit in them; the proof of encryption is written for any of them.
 
 `pubK S` is that contract spelt out on the registers and the stack
@@ -32,7 +33,7 @@ structure PubImpl where
   name : String
   code : Prog isa
   stack : Nat
-  verified : Verified AArch64.target code (Spec.Rsa.publicCheckedContract AArch64.abi stack)
+  verified : Verified AArch64.target code (Proof.Rsa.publicCheckedContract AArch64.abi stack)
   pos : 0 < stack
   depth : 16 * code.aarch64Depth ≤ stack
   spSafe : code.all (fun i => !isa.writesSp i) = true
@@ -74,8 +75,8 @@ def pubK (S : Nat) : Contract isa where
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x4) (s₁.gpr .x5).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .x4) (s₂.gpr .x5).toNat
 
 theorem pub_pre {S : Nat} {s : State} (h : (pubK S).pre s) :
-    (Spec.Rsa.publicCheckedContract AArch64.abi (S + 1)).pre s := by
-  sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
+    (Proof.Rsa.publicCheckedContract AArch64.abi (S + 1)).pre s := by
+  sig_pre [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq]
   simp only [pubK] at h
   sig_split h
@@ -85,16 +86,16 @@ theorem pub_pre {S : Nat} {s : State} (h : (pubK S).pre s) :
     | with_reducible exact Region.Disjoint.symm ‹_›
 
 theorem pub_post {S : Nat} {s s' : State}
-    (h : (Spec.Rsa.publicCheckedContract AArch64.abi (S + 1)).post s s') : (pubK S).post s s' := by
-  sig_post [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
+    (h : (Proof.Rsa.publicCheckedContract AArch64.abi (S + 1)).post s s') : (pubK S).post s s' := by
+  sig_post [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   exact h
 
 theorem bytes_map_eq {a b : List Byte} (h : a = b) : a.map (·.toNat) = b.map (·.toNat) := by rw [h]
 
 theorem pub_pub {S : Nat} {s₁ s₂ : State} (h : (pubK S).pub s₁ s₂) :
-    (Spec.Rsa.publicCheckedContract AArch64.abi (S + 1)).pub s₁ s₂ := by
-  sig_pub [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
+    (Proof.Rsa.publicCheckedContract AArch64.abi (S + 1)).pub s₁ s₂ := by
+  sig_pub [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq]
   obtain ⟨hsp, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, hn, he⟩ := h
   exact ⟨hsp, by rw [List.map_append, List.map_append, hn, he], h0, h1, h2, h3, h4, h5, h6, h7, a0, a1⟩
@@ -108,7 +109,7 @@ def S : Nat := v.stack - 1
 
 theorem stack_eq : v.stack = v.S + 1 := by have := v.pos; unfold S; omega
 
-theorem verified' : Verified AArch64.target v.code (Spec.Rsa.publicCheckedContract AArch64.abi (v.S + 1)) :=
+theorem verified' : Verified AArch64.target v.code (Proof.Rsa.publicCheckedContract AArch64.abi (v.S + 1)) :=
   v.stack_eq ▸ v.verified
 
 theorem correct (s : State) (h : (pubK v.S).pre s) :

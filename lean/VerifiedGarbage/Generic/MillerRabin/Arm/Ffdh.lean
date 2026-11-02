@@ -15,13 +15,7 @@ open VG
 
 def artifacts (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact :=
   let b := Proof.Ffdh.Arm.parameterBackend v
-  [Spec.Ffdh.sievedParameterCandidateApi.artifact VG.Arm.target {
-    suffix := b.suffix
-    features := b.features
-    stack := 184
-    code := b.candidate
-    verified := b.candidate_verified },
-   Spec.Ffdh.sievedParameterSearchApi.artifact VG.Arm.target {
+  [Spec.Ffdh.sievedParameterSearchApi.artifact VG.Arm.target {
     suffix := b.suffix
     features := b.features
     stack := 232

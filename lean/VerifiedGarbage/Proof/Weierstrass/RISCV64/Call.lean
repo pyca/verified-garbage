@@ -78,6 +78,73 @@ structure CallKeep (k : Nat) (base : Addr) (o : Nat) (s s' : State) : Prop where
   kp : Kp s s'
   mem : Outs base [(o, 8 * k), (own k, 64 * k)] s.mem s'.mem
 
+/-! ## Offsets past 2047 (`ldAt`, `sdAt`, `liAt`) -/
+
+section At
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+theorem ofNat_2047_add {v : Nat} (h : 2047 ≤ v) :
+    BitVec.ofNat 64 2047 + BitVec.ofNat 64 (v - 2047) = BitVec.ofNat 64 v := by
+  rw [BitVec.ofNat_add_ofNat, show 2047 + (v - 2047) = v by omega]
+
+theorem add_2047_add (x : BitVec 64) {v : Nat} (h : 2047 ≤ v) :
+    x + BitVec.ofNat 64 2047 + BitVec.ofNat 64 (v - 2047) = x + BitVec.ofNat 64 v := by
+  rw [BitVec.add_assoc, ofNat_2047_add h]
+
+/-- Two writes of the same register are one. -/
+theorem _root_.VG.RISCV64.Steps.Upd.twice {s₁ s₂ : State} {d : Reg} {v w : BitVec 64} (u₁ : Upd s s₁ d v) (u₂ : Upd s₁ s₂ d w) :
+    Upd s s₂ d w :=
+  ⟨u₂.gpr, fun r hr => by rw [u₂.other r hr, u₁.other r hr], by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd],
+    by rw [u₂.wr, u₁.wr], by rw [u₂.sp, u₁.sp]⟩
+
+/-- `rd = v` (`liAt`). -/
+theorem wp_liAt {d : Reg} {v : Nat} (h : v < 4095)
+    (k : ∀ s', Upd s s' d (BitVec.ofNat 64 v) → WP isa (.block is) s' Q) :
+    WP isa (.block (liAt d v ++ is)) s Q := by
+  unfold liAt
+  split
+  · exact wp_li (by omega) k
+  · refine wp_li (imm := 2047) (by decide) fun s₁ u₁ => wp_addi (by omega) fun s₂ u₂ => k s₂ ?_
+    have u := u₁.twice u₂
+    rwa [u₁.gpr, ofNat_2047_add (by omega)] at u
+
+/-- `ld t, off(n)` (`ldAt`), at `a`. -/
+theorem wp_ldAt {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4095)
+    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hal : a.toNat % 8 = 0)
+    (hin : InRegions (s.rd ++ s.wr) a 8)
+    (k : ∀ s', Upd s s' t (s.mem.readW a 64) → WP isa (.block is) s' Q) :
+    WP isa (.block (ldAt t n off ++ is)) s Q := by
+  unfold ldAt
+  split
+  · exact wp_ld (by omega) ha hal hin k
+  · refine wp_addi (imm := 2047) (by decide) fun s₁ u₁ => ?_
+    refine wp_ld (by omega) (by rw [u₁.gpr, add_2047_add _ (by omega), ha]) hal
+      (by rw [u₁.rd, u₁.wr]; exact hin) fun s₂ u₂ => k s₂ ?_
+    rw [u₁.mem] at u₂
+    exact u₁.twice u₂
+
+/-- `sd t, off(n)` (`sdAt`), at `a`, for `t` another register than `n`. -/
+theorem wp_sdAt {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4095) (htn : t ≠ n)
+    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hal : a.toNat % 8 = 0) (hout : InRegions s.wr a 8)
+    (k : ∀ s', Mupd s s' (s.mem.writeW a (s.gpr t)) → WP isa (.block is) s' Q) :
+    WP isa (.block (sdAt t n off ++ is)) s Q := by
+  unfold sdAt
+  split
+  · exact wp_sd (by omega) ha hal hout k
+  · refine wp_addi (imm := 2047) (by decide) fun s₁ u₁ => ?_
+    refine wp_sd (by omega) (by rw [u₁.gpr, add_2047_add _ (by omega), ha]) hal
+      (by rw [u₁.wr]; exact hout) fun s₂ u₂ => ?_
+    refine wp_subi (imm := 2047) (by decide) fun s₃ u₃ => k s₃ ⟨funext fun r => ?_, ?_, ?_, ?_, ?_⟩
+    · by_cases hr : r = n
+      · subst hr; rw [u₃.gpr, u₂.gpr, u₁.gpr, BitVec.add_sub_cancel]
+      · rw [u₃.other r hr, u₂.gpr, u₁.other r hr]
+    · rw [u₃.mem, u₂.mem, u₁.other t htn, u₁.mem]
+    · rw [u₃.rd, u₂.rd, u₁.rd]
+    · rw [u₃.wr, u₂.wr, u₁.wr]
+    · rw [u₃.sp, u₂.sp, u₁.sp]
+
+end At
+
 /-- A number of the working space, as the contracts read it. -/
 theorem toNat_lo {o : Nat} (ho : o < 2 ^ 32) : ((BitVec.ofNat 64 o).setWidth 32).toNat = o := by
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide)]
@@ -113,7 +180,7 @@ working space in `s0` and the offsets `o`, `a`, `b`. -/
 theorem callOp_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFrames = true)
     {K : Contract isa} (hK : Meets body K) {s : State} {base : Addr} (hw : WsReg s base)
     {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k) (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
-    (ho' : o < 2048) (ha' : a < 2048) (hb' : b < 2048)
+    (ho' : o < 4095) (ha' : a < 4095) (hb' : b < 4095)
     (hpre : ∀ t : State, rvPre S t → t.gpr .a0 = base → offArg t .a1 = (BitVec.ofNat 64 o).setWidth 32 →
       offArg t .a2 = (BitVec.ofNat 64 a).setWidth 32 → offArg t .a3 = (BitVec.ofNat 64 b).setWidth 32 →
       t.mem = s.mem → K.pre t)
@@ -124,8 +191,8 @@ theorem callOp_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFram
         t.mem = s.mem → K.post t (s'.withRegions [] [⟨base, 8192⟩]) → Q s') :
     WP isa (callOp f body o a b) s Q := by
   have hk : 64 * S.k ≤ 4096 := by simp only [own, ownAt, ownBytes] at ho; omega
-  rw [callOp]
-  refine WP.seq (wp_mv fun s₁ u₁ => wp_li ho' fun s₂ u₂ => wp_li ha' fun s₃ u₃ => wp_li hb' fun s₄ u₄ =>
+  rw [callOp, ← List.append_nil (liAt .a3 b)]
+  refine WP.seq (wp_mv fun s₁ u₁ => wp_liAt ho' fun s₂ u₂ => wp_liAt ha' fun s₃ u₃ => wp_liAt hb' fun s₄ u₄ =>
     WP.block_nil ?_)
   have K₄ : Kp s s₄ := (Kp.of_upd u₁).trans ((Kp.of_upd u₂).trans ((Kp.of_upd u₃).trans (Kp.of_upd u₄)))
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
@@ -163,7 +230,7 @@ theorem callOp_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFram
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call. -/
 theorem mulCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : WsReg s base) {o a b : Nat}
     (ho : o + 8 * F.S.k ≤ own F.S.k) (ha : a + 8 * F.S.k ≤ own F.S.k) (hb : b + 8 * F.S.k ≤ own F.S.k)
-    (ho' : o < 2048) (ha' : a < 2048) (hb' : b < 2048)
+    (ho' : o < 4095) (ha' : a < 4095) (hb' : b < 4095)
     (hB : wordsVal s.mem base b F.S.k < F.S.m) :
     WP isa (mulCall F o a b) s fun s' => CallKeep F.S.k base o s s' ∧
       wordsVal s'.mem base o F.S.k < F.S.m ∧
@@ -182,7 +249,7 @@ theorem mulCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
 /-- `[o] = [a] + [b] mod m` by a call. -/
 theorem addCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : WsReg s base) {o a b : Nat}
     (ho : o + 8 * F.S.k ≤ own F.S.k) (ha : a + 8 * F.S.k ≤ own F.S.k) (hb : b + 8 * F.S.k ≤ own F.S.k)
-    (ho' : o < 2048) (ha' : a < 2048) (hb' : b < 2048)
+    (ho' : o < 4095) (ha' : a < 4095) (hb' : b < 4095)
     (hAB : wordsVal s.mem base a F.S.k + wordsVal s.mem base b F.S.k < 2 * F.S.m) :
     WP isa (addCall F o a b) s fun s' => CallKeep F.S.k base o s s' ∧
       wordsVal s'.mem base o F.S.k = (wordsVal s.mem base a F.S.k + wordsVal s.mem base b F.S.k) % F.S.m := by
@@ -200,7 +267,7 @@ theorem addCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
 /-- `[o] = [a] - [b] mod m` by a call. -/
 theorem subCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : WsReg s base) {o a b : Nat}
     (ho : o + 8 * F.S.k ≤ own F.S.k) (ha : a + 8 * F.S.k ≤ own F.S.k) (hb : b + 8 * F.S.k ≤ own F.S.k)
-    (ho' : o < 2048) (ha' : a < 2048) (hb' : b < 2048)
+    (ho' : o < 4095) (ha' : a < 4095) (hb' : b < 4095)
     (hA : wordsVal s.mem base a F.S.k < F.S.m) (hB : wordsVal s.mem base b F.S.k < F.S.m) :
     WP isa (subCall F o a b) s fun s' => CallKeep F.S.k base o s s' ∧
       wordsVal s'.mem base o F.S.k = (wordsVal s.mem base a F.S.k + F.S.m - wordsVal s.mem base b F.S.k) % F.S.m := by

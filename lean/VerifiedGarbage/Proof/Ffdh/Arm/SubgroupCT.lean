@@ -27,7 +27,7 @@ section
 section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.Rsa.Mont (numAt)
 
 theorem publicPowerAt_ct {p : Inputs} {slots : List Nat} {bs es ec M : Nat} {bb eb : List Byte}
     (stable : stableSlots slots = true) (hb : bs ∈ slots) (he : es ∈ slots) (hc : ec ∈ slots) (hk : 32 ∈ slots)
@@ -39,9 +39,9 @@ theorem publicPowerAt_ct {p : Inputs} {slots : List Nat} {bs es ec M : Nat} {bb 
   have leadLt := VG.Proof.Ffdh.lead_lt (bs := eb) (by intro empty; rw [empty] at positive; simp at positive)
   have trimmedPositive : 0 < (eb.drop (VG.Proof.Ffdh.lead eb)).length := by
     simp only [List.length_drop]; omega
-  have tableFit : Spec.Rsa.Mont.arrAt p.w 3 + 32 ≤ 8*p.len := by
+  have tableFit : Proof.Rsa.Mont.arrAt p.w 3 + 32 ≤ 8*p.len := by
     have fit := p.width.2.2.1
-    simp only [Spec.Rsa.Mont.arrAt,Spec.Rsa.Mont.hdrBytes] at *
+    simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes] at *
     omega
   have scan := (PublicScan.code_ct positive fits).mono
     (P' := fun (s t : State) => PowerInput p.base (p.slotValue bs) (p.slotValue es) p.len p.w M bb eb s ∧
@@ -66,21 +66,21 @@ end
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Spec.Rsa.Mont (Operand)
+open VG.Proof.Rsa.Mont (Operand)
 
 structure SubgroupInput (p : Inputs) (slots : List Nat) (slot : Nat) (bb : List Byte) (s : State) : Prop where
   context : Context p slots s
   ready : ArithmeticReady p.base p.len p.w s
-  modulus : Spec.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 0 = p.P
-  r2 : Spec.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P
+  modulus : Proof.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 0 = p.P
+  r2 : Proof.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P
   source : Octets p.base (p.slotValue slot) p.len bb s
 
 theorem SubgroupInput.after_workspace {p : Inputs} {slots : List Nat} {slot : Nat} {bb : List Byte}
     {s t : State} {rs : List Reg} (h : SubgroupInput p slots slot bb s)
     (stable : stableSlots slots = true) (frame : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem)
     (rest : VG.Proof.X25519.Arm.Rest rs s t) (ready : ArithmeticReady p.base p.len p.w t)
-    (modulus : Spec.Rsa.Mont.numAt t.mem (State.addr p.base) p.w 0 = p.P)
-    (r2 : Spec.Rsa.Mont.numAt t.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P) :
+    (modulus : Proof.Rsa.Mont.numAt t.mem (State.addr p.base) p.w 0 = p.P)
+    (r2 : Proof.Rsa.Mont.numAt t.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P) :
     SubgroupInput p slots slot bb t :=
   ⟨h.context.after_workspace frame rest ready.ptr (fun d hd => (stableSlots_at (d := d) stable hd).1),
     ready, modulus, r2, h.source.after_workspace frame rest⟩
@@ -115,6 +115,6 @@ theorem subgroup_ct {p : Inputs} {slots : List Nat} {slot : Nat} {bb : List Byte
     WP.mono (publicPowerAt_ok s slot 60 32 h.context stable hb h60 h32 h32 h.ready h.modulus odd h.r2
       h.source baseLength (h.context.qBytes hasQ) positive fits count) fun _ j => j.2.1
   unfold VG.Impl.Ffdh.Arm.Domain.subgroup
-  exact relCT_chain powers wp wp (isOne_ct (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 6))
+  exact relCT_chain powers wp wp (isOne_ct (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6))
 
 end VG.Proof.Ffdh.Arm

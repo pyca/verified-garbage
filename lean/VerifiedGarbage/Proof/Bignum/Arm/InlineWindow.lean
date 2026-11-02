@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.InlineWindow
 open VG VG.Arm VG.Impl.Bignum.Arm
-open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.Rsa.Mont (arrAt)
 
 variable (round : Prog isa) (law : MontPipeline.LoopLaw round)
 

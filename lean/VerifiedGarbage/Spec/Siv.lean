@@ -219,7 +219,8 @@ theorem macFull_eq (ciph : Cipher) (m : List Byte) :
 * bytes 0 to `16 (Nr + 1) − 1`: the AES key schedule of `K1` for `Nr`
   rounds, as `vg_aes_expand_key` writes it;
 * bytes 240–271: the CMAC subkeys of `K1`, `K1' ‖ K2'` (SP 800-38B §6.1);
-  bytes 0–271 are laid out as `vg_cmac_aes_finalize`'s `key` reads them;
+  bytes 0–271 are laid out as those of AES-CMAC's streaming state
+  (`VG.Spec.Cmac.Repr`);
 * bytes 272 to `272 + 16 (Nr + 1) − 1`: the AES key schedule of `K2`.
 
 The bytes between them (for 10 or 12 rounds) are unspecified. The functions
