@@ -126,8 +126,15 @@ def zeroOut : Prog isa :=
   .seq (.block ([.load .d .t4 .s6 hOut] ++ getQ .t5 ++ [.add .t5 .t5 .t5, .li .s0 0]))
     (.seq (countLoop .t5 [.store .b .s0 .t4 0, .addi .t4 .t4 1]) (.block [.li .a0 0]))
 
+/-- The check of the key for signing: the domain's (`checkParams`), then
+`1 < y < p` (`elemRange`). `y^q mod p = 1` needs no power of its own: with
+`g^q mod p = 1` (the domain's check), it follows from `g^x mod p = y`, which
+`keyPair` checks. -/
+def checkSignKey (rest fail : Prog isa) : Prog isa :=
+  checkParams (andThen (.seq (.block ptrY) (.seq (loadArr 4) elemRange)) rest fail) fail
+
 /-- `vg_dsa_sign`. -/
 def sign : Prog isa :=
-  .seq (.block entry) (.seq (checkKey body zeroOut) (.block restore))
+  .seq (.block entry) (.seq (checkSignKey body zeroOut) (.block restore))
 
 end VG.Impl.Dsa.RISCV64.Sign
