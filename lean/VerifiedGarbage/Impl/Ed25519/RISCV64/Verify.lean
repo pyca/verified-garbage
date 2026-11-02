@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Recover
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.PointMul
+public import VerifiedGarbage.Impl.Ed25519.RISCV64.VerifyWindow
 
 /-!
 # `vg_ed25519_verify_equation(pk = a0, signature = a1, challenge = a2, scratch = a3)` on RISC-V
@@ -43,10 +44,8 @@ def scalarCompare : List Instr := [.li .a5 1] ++ VG.Impl.X25519.RISCV64.pass .a3
 
 def verifyScalar : List Instr := [.addi .s0 .s10 32] ++ unpackField .s0 SR 0 ++ scalarCompare
 
-def verifyLhs : Prog isa :=
-  .seq (.block [.addi .s0 .s10 32])
-    (.seq (constPoint Spec.Ed25519.basePoint)
-      (.seq (pointFromScalar 16) (.block (pointTableWrite 8032))))
+/-- The identity at 8032, which `pointEqual` compares `[k]A - [S]B + R` with. -/
+def verifyLhs : Prog isa := .seq (constPoint Spec.Ed25519.identity) (.block (pointTableWrite 8032))
 
 def verifyCombine : Prog isa :=
   .seq copyPointToQ (.seq (.block (pointTableRead 7904))
@@ -57,15 +56,15 @@ exactly when the challenge is below `2^256`. -/
 def challengeHigh : List Instr :=
   [.li .a4 0] ++ (List.range 32).flatMap fun i => [.load .b .a5 .s11 (32 + i), .logic .or .a4 .a4 .a5]
 
-/-- `[k] A`: over the low 32 bytes of the challenge when it is below `2^256` (always,
-from `vg_ed25519_verify`, which reduces it modulo `L`), over all 64 otherwise. The
-challenge is public. -/
-def challengeMul : Prog isa :=
-  .seq (.block challengeHigh) (.ite (.zero .a4) (pointFromScalar 16) (pointFromScalar 32))
+/-- The windows' count: 64 when the challenge is below `2^256` (always, from
+`vg_ed25519_verify`, which reduces it modulo `L`), 128 otherwise. The challenge is public. -/
+def windowCount : Prog isa :=
+  .seq (.block challengeHigh) (.ite (.zero .a4) (.block [.li .s1 64]) (.block [.li .s1 128]))
 
+/-- `[k]A - [S]B` (`strausPrep`, `windowCount`, `windows`), plus `R`, compared with the identity. -/
 def verifyRhs : Prog isa :=
-  .seq (.block (pointTableRead 7776 ++ [.addi .s0 .s11 0]))
-    (.seq challengeMul (.seq verifyCombine pointEqual))
+  .seq (.block (pointTableRead 7776))
+    (.seq strausPrep (.seq windowCount (.seq windows (.seq verifyCombine pointEqual))))
 
 def verifyEquationPoints : Prog isa := .seq verifyLhs verifyRhs
 
