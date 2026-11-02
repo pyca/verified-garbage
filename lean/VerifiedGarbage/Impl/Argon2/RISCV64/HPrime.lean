@@ -36,21 +36,20 @@ def initCode : Prog isa := Impl.Blake2.RISCV64.Stream.init Spec.Blake2.b
 def updateCode : Prog isa := Impl.Blake2.RISCV64.Stream.updateScratch Spec.Blake2.b
 def finalizeCode : Prog isa := Impl.Blake2.RISCV64.Stream.finalizeScratch Spec.Blake2.b
 
-/-- The callee-saved registers we use, and where they are saved. -/
+/-- The return address and the callee-saved registers we use, and where
+they are saved: `s4`, the base of the restores, last. -/
 def saved : List (Reg × Nat) :=
-  [(.s0, 840), (.s1, 848), (.s2, 856), (.s3, 864), (.s4, 872)]
+  [(.ra, 880), (.s0, 840), (.s1, 848), (.s2, 856), (.s3, 864), (.s4, 872)]
 
-/-- Save the caller's registers and return address in `scratch`, and keep the
-arguments in `s0`–`s4` and the length prefix in `scratch`. -/
+/-- Save the return address and the caller's registers in `scratch`, and
+keep the arguments in `s0`–`s4` and the length prefix in `scratch`. -/
 def setup : List Instr :=
   saved.map (fun (r, d) => .store .d r .a4 d) ++
-    ([.store .d .ra .a4 880, mov .s4 .a4, mov .s0 .a0, mov .s1 .a1, mov .s2 .a2,
-      mov .s3 .a3, .store .w .a3 .s4 832] : List Instr)
+    ([mov .s4 .a4, mov .s0 .a0, mov .s1 .a1, mov .s2 .a2, mov .s3 .a3, .store .w .a3 .s4 832] :
+      List Instr)
 
 /-- Restore the return address and the caller's registers, `s4` last. -/
-def restore : List Instr :=
-  [.load .d .ra .s4 880, .load .d .s0 .s4 840, .load .d .s1 .s4 848,
-    .load .d .s2 .s4 856, .load .d .s3 .s4 864, .load .d .s4 .s4 872]
+def restore : List Instr := saved.map fun (r, d) => .load .d r .s4 d
 
 /-- Point the empty key into the workspace, keeping the digest length. -/
 def initArgs : List Instr := [mov .a0 .s4, .addi .a2 .s4 832, .li .a3 0]
