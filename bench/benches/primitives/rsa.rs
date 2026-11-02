@@ -316,11 +316,56 @@ fn keys(c: &mut Criterion) {
     g.finish();
 }
 
+#[cfg(target_arch = "riscv64")]
+pub fn bench(c: &mut Criterion) {
+    // Prototype (bench branch only): one unproven Montgomery multiplication
+    // or squaring of `w` words, next to OpenSSL's RSA operations.
+    use criterion::BenchmarkId;
+    use openssl::rsa::{Padding, Rsa};
+    use std::hint::black_box;
+    use verified_garbage_asm_riscv64::rsa_proto::{vg_proto_mont_mul, vg_proto_mont_sqr};
+    let mut g = c.benchmark_group("rsa_proto");
+    for w in [16usize, 24, 32, 48, 64] {
+        let mut ws = vec![0u64; 32 + 8 * (w + 2)];
+        for (i, x) in ws.iter_mut().enumerate().skip(32) {
+            *x = (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+        }
+        ws[32] |= 1;
+        g.bench_function(BenchmarkId::new("mont_mul", 64 * w), |b| {
+            b.iter(|| unsafe { vg_proto_mont_mul(black_box(ws.as_mut_ptr()), w, 1) })
+        });
+        g.bench_function(BenchmarkId::new("mont_sqr", 64 * w), |b| {
+            b.iter(|| unsafe { vg_proto_mont_sqr(black_box(ws.as_mut_ptr()), w, 1) })
+        });
+    }
+    for bits in [2048, 3072, 4096] {
+        let key = Rsa::generate(bits).unwrap();
+        let k = key.size() as usize;
+        let mut input = vec![0x42; k];
+        input[0] = 0;
+        let mut out = vec![0; k];
+        g.bench_function(BenchmarkId::new("openssl_private", bits), |b| {
+            b.iter(|| {
+                key.private_decrypt(black_box(&input), &mut out, Padding::NONE)
+                    .unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new("openssl_public", bits), |b| {
+            b.iter(|| {
+                key.public_encrypt(black_box(&input), &mut out, Padding::NONE)
+                    .unwrap()
+            })
+        });
+    }
+    g.finish();
+}
+
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}
