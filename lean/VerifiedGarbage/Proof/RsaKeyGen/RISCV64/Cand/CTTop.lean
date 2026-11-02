@@ -610,4 +610,76 @@ theorem close_rel : RelCT isa (Two (SG M2)) closeCheck (Two (SG M3)) := by
     (by decide)⟩, ?_⟩)
   rw [gpr_write_self, hf.wPLen]
 
+/-! ### `gcdCheck` -/
+
+section
+open VG.Impl.Bignum.RISCV64 (countLoop)
+
+/-- `e` in `s10`, and `Env`'s registers. -/
+def Y6 (s0 t : State) : Prop := t.gpr .s10 = BitVec.ofNat 64 (eV s0) ∧ EVs s0 t
+
+/-- `loadE`'s loop and its move into `s10`. -/
+abbrev loadE2 : Prog isa :=
+  .seq (countLoop .t5 [.shift .sll .d .t2 .t2 8, .load .b .t4 .t3 0, .add .t2 .t2 .t4, .addi .t3 .t3 1])
+    (.block [.addi .s10 .t2 0])
+
+/-- After `loadE`'s loads of `e` and `e_len`. -/
+def Y5 (s0 t : State) : Prop := (t.gpr .t3 = s0.gpr .a3 ∧ t.gpr .t5 = s0.gpr .a4) ∧ WP isa loadE2 t (Y6 s0)
+
+/-- After `e`'s low bit. -/
+def Y7 (s0 t : State) : Prop := t.gpr .t2 = BitVec.ofNat 64 (eV s0) &&& BitVec.ofInt 64 1 ∧ Y6 s0 t
+
+/-- After `e − 1`. -/
+def Y8 (s0 t : State) : Prop := t.gpr .t2 = BitVec.ofNat 64 (eV s0) + BitVec.ofInt 64 (-1) ∧ EVs s0 t
+
+/-- `gcdCheck` from the state before it. -/
+def X0 (s0 t : State) : Prop :=
+  M3 s0 t ∧ Spec.RsaKeyGen.tooClose (64 * cw s0) (Spec.RsaKeyGen.otherPrime (pB s0)) (candOf s0) = false
+
+theorem eA_ok {s0 s : State} (hf : Fr s0 s) :
+    WP isa (.block [.li .t2 0, ldf .t3 oE, ldf .t5 oELen]) s fun t =>
+      t.gpr .t3 = s0.gpr .a3 ∧ t.gpr .t5 = s0.gpr .a4 := by
+  refine WP.block_cons_iff.mpr ⟨_, exec_li (imm := 0) (by decide), ?_⟩
+  have h1 := hf.write (r := .t2) (by decide) (BitVec.ofInt 64 0)
+  refine ldf_wp h1 (by decide) (by decide) (ldf_wp (h1.write (by decide) _) (by decide) (by decide) (WP.block_nil ?_))
+  refine ⟨?_, ?_⟩
+  · rw [gpr_write_of_ne _ _ (by decide), gpr_write_self, mem_write, hf.wE]
+  · rw [gpr_write_self, mem_write, mem_write, hf.wELen]
+
+theorem gcd_rel0 : RelCT isa (Two (SG X0)) gcdCheck fun _ _ => True := by
+  show RelCT isa _ (.seq (.seq (.block [.li .t2 0, ldf .t3 oE, ldf .t5 oELen]) loadE2) _) _
+  refine relCT_assocR (cutW (Y := Y5) (X' := fun _ _ => True) (fun s0 s ⟨h, _⟩ => ?_)
+    (fun _ _ ⟨h, ncl⟩ => WP.mono (WP.assoc (gcdS h ncl)) fun _ _ => trivial)
+    (two_taint _ (pins_fr fun _ _ h => h.1.ctx.fr) (by taint_decide))
+    (cutW (Y := Y6) (X' := fun _ _ => True) (fun _ _ h => h.1.2) (fun _ _ h => h.2)
+      (wk (fun _ _ _ _ h => h.1.1)
+        (two_taint _ (pins_args (by decide) (by decide) (by decide) fun _ _ h => h) (by taint_decide)))
+      (cutW (Y := Y7) (X' := fun _ _ => True) (fun s0 t ⟨⟨h10, ev⟩, _⟩ => ?_) (fun _ _ h => h.2)
+        (two_taint [] pins_nil (by taint_decide))
+        (iteK (fun a s₁ s₂ ⟨x, kx, h₁⟩ ⟨y, ky, h₂⟩ => by
+            rw [VG.RISCV64.Steps.eval_zero, VG.RISCV64.Steps.eval_zero, h₁.1, h₂.1, kx.eV ky])
+          (two_taint [] pins_nil (by taint_decide))
+          (cutW (Y := Y8) (X' := fun _ _ => True) (fun s0 t ⟨⟨⟨_, h10, ev⟩, _⟩, _⟩ => ?_) (fun _ _ h => h.2)
+            (two_taint [] pins_nil (by taint_decide))
+            (iteK (fun a s₁ s₂ ⟨x, kx, h₁⟩ ⟨y, ky, h₂⟩ => by
+                rw [VG.RISCV64.Steps.eval_zero, VG.RISCV64.Steps.eval_zero, h₁.1, h₂.1, kx.eV ky])
+              (two_taint [] pins_nil (by taint_decide))
+              (wk (fun _ _ _ _ h => h.1.1.2) (two_taint _ (pins_ev fun _ _ h => h) (by taint_decide)))))))))
+  · have hf := h.ctx.fr
+    have ev := EVs.of_env h.env
+    exact WP.and (eA_ok hf) (WP.seq_iff.mp (WP.mono (loadE_ok hf) fun _ ⟨⟨h10, _⟩, k⟩ =>
+      ⟨h10, EVs.of_env (h.env.keep k (by decide))⟩))
+  · refine WP.block_cons_iff.mpr ⟨_, exec_logicImm (op := .and) (d := .t2) (n := .s10) (imm := 1) (by decide),
+      WP.block_nil ⟨?_, ?_, ev.write (r := .t2) (by decide) _⟩⟩
+    · simp only [gpr_write_self, h10]
+    · rw [gpr_write_of_ne _ _ (by decide), h10]
+  · refine WP.block_cons_iff.mpr ⟨_, exec_addi (d := .t2) (n := .s10) (imm := -1) (by decide),
+      WP.block_nil ⟨?_, ev.write (r := .t2) (by decide) _⟩⟩
+    rw [gpr_write_self, h10]
+
+theorem gcd_rel : RelCT isa (Two (SG X0)) gcdCheck (Two (SG M4)) :=
+  two_post gcd_rel0 fun _ _ ⟨s0, k, h, ncl⟩ => WP.mono (gcdS h ncl) fun _ ht => ⟨s0, k, ht⟩
+
+end
+
 end VG.Proof.RsaKeyGen.RISCV64.Cand
