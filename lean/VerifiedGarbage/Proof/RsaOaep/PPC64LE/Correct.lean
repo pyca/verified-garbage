@@ -117,22 +117,30 @@ theorem code_ok : WP isa (encrypt H f) s (Post Hs Gs s) := by
 
 end
 
+/-- MGF1's table, on entry, if it is `w`'s: what MGF1 needs of it. -/
+theorem tabS_entry {Hs : Spec.Mgf1.Hash} {vs : List TVar} (hc : Coh vs) {s : State}
+    (h : (encSpec Hs (tables vs)).pre s) {w : TVar} (hw : w ∈ vs)
+    (hh : Abi.tableHeld 64 s.mem (stackArg s 7) (FnTable.words isa s (Proof.HashTable.PPC64LE.tableOf w))) :
+    TabS w.H (fnsOf vs) 7 S s (stackArg s 7) := by
+  have P := preO_of h
+  refine Proof.HashTable.PPC64LE.tabS_of (by decide) rfl (A := aR s) (by rw [P.hrd]; simp)
+    (in_aR (by decide)) ?_ P.ka (P.sa.sub_left (sc_sub P))
+    (by rw [P.hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))))))) P.kt
+    (P.st.sub_left (sc_sub P)) hc (spec_tab h).2 hw hh
+  rw [stackArgAddr_eq]
+  exact Offset.sub_base _ (by omega)
+
 /-- MGF1's table, on entry: one of the tables of `vs`, which holds what MGF1
 needs of it and names its hash function. -/
 theorem tab_of {Hs : Spec.Mgf1.Hash} {vs : List TVar} (hc : Coh vs) {s : State}
     (h : (encSpec Hs (tables vs)).pre s) :
     ∃ w ∈ vs, TabS w.H (fnsOf vs) 7 S s (stackArg s 7) ∧
       Spec.HashTable.hashAt 64 s.mem (stackArg s 7) = some w.l.G := by
-  have P := preO_of h
-  obtain ⟨⟨T, hT, hh⟩, hd⟩ := spec_tab h
+  obtain ⟨⟨T, hT, hh⟩, -⟩ := spec_tab h
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
-  refine ⟨w, hw, Proof.HashTable.PPC64LE.tabS_of (by decide) rfl (A := aR s) (by rw [P.hrd]; simp)
-    (in_aR (by decide)) ?_ P.ka (P.sa.sub_left (sc_sub P))
-    (by rw [P.hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
-      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))))))) P.kt (P.st.sub_left (sc_sub P))
-    hc hd hw hh, Proof.HashTable.PPC64LE.hashAt_tableOf (Proof.HashTable.PPC64LE.held_tableOf hh).2.1⟩
-  rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by omega)
+  exact ⟨w, hw, tabS_entry hc h hw hh,
+    Proof.HashTable.PPC64LE.hashAt_tableOf (Proof.HashTable.PPC64LE.held_tableOf hh).2.1⟩
 
 section
 variable {H : Hash} (hH : HashOK H) {Hs : Spec.Mgf1.Hash}
