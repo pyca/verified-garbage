@@ -4,6 +4,12 @@ public import VerifiedGarbage.Impl.Gcm.RISCV64
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Holes
 public import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
+import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-!
 # GHASH on RISC-V: the straight-line code
@@ -244,5 +250,323 @@ theorem pm_ok (s : State) {X : Reg} (hX : X ∉ pmRegs) (off : Nat) (hK : Masks 
     simp only [pmRegs, holesRegs]; decide
   · rw [m7, m6, m5, m4, m3, m2, m1]
   · rw [p7, p6, p5, p4, p3, p2, p1]
+
+/-! ## The frame's slots -/
+
+theorem slot_sep (b : Addr) {j k : Nat} (hj : 8 * j < 2 ^ 64) (hk : 8 * k < 2 ^ 64) (h : j ≠ k) :
+    Mem.Sep (b + BitVec.ofNat 64 (8 * j)) 8 (b + BitVec.ofNat 64 (8 * k)) 8 := by
+  intro x h₁ h₂
+  simp only [Offset.sub_add_eq, Offset.toNat_sub_ofNat] at h₁ h₂
+  have := (x - b).isLt
+  omega
+
+/-- A store to slot `k` keeps every other slot. -/
+theorem fw_writeW {s : State} {m : Mem} (v : BitVec 64) {j k : Nat} (hj : j < 256) (hk : k < 256) (h : j ≠ k) :
+    (m.writeW (s.gpr FP + BitVec.ofNat 64 (8 * k)) v).readW (s.gpr FP + BitVec.ofNat 64 (8 * j)) 64 =
+      m.readW (s.gpr FP + BitVec.ofNat 64 (8 * j)) 64 :=
+  Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) h) (by decide)
+
+/-- The stores of `st2 k`: `PL` and `Z₀` to slots `k` and `k + 1`. -/
+def st2 (k : Nat) : List Instr := [.store .d PL FP (slot k), .store .d (Z 0) FP (slot (k + 1))]
+
+/-- The doubleword at `FP + d`, writable and aligned. -/
+def Wr8 (s : State) (d : Nat) : Prop :=
+  d < 2048 ∧ (s.gpr FP + BitVec.ofNat 64 d).toNat % 8 = 0 ∧ InRegions s.wr (s.gpr FP + BitVec.ofNat 64 d) 8
+
+theorem st2_ok (s : State) (k : Nat) (h0 : Wr8 s (slot k)) (h1 : Wr8 s (slot (k + 1))) :
+    WP isa (.block (st2 k)) s fun t => t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
+      t.mem = (s.mem.writeW (s.gpr FP + BitVec.ofNat 64 (slot k)) (s.gpr PL)).writeW
+        (s.gpr FP + BitVec.ofNat 64 (slot (k + 1))) (s.gpr (Z 0)) := by
+  obtain ⟨a0, b0, c0⟩ := h0
+  obtain ⟨a1, b1, c1⟩ := h1
+  unfold st2
+  simp only [FP, PL, Z] at *
+  mrun [a0, a1, b0, b1, c0, c1]
+
+/-! ## Two big-endian words -/
+
+/-- Two big-endian words read a byte at a time: `loadBE64` twice, into `d₀`
+and `d₁` through `tmp`, from `n`. -/
+theorem ld2_ok {d₀ d₁ tmp n : Reg} (h0n : d₀ ≠ n) (h1n : d₁ ≠ n) (htn : tmp ≠ n) (h0t : d₀ ≠ tmp)
+    (h1t : d₁ ≠ tmp) (h01 : d₀ ≠ d₁) (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr n) 16) :
+    WP isa (.block (Impl.Words.RISCV64.loadBE64 d₀ tmp n 0 ++ Impl.Words.RISCV64.loadBE64 d₁ tmp n 8)) s
+      fun t => t.gpr d₀ = ByteLoad.be64 s.mem (s.gpr n) 0 ∧ t.gpr d₁ = ByteLoad.be64 s.mem (s.gpr n) 8 ∧
+        Keep [d₀, d₁, tmp] s t ∧ t.mem = s.mem ∧ t.sp = s.sp := by
+  have hin8 : ∀ off, off + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 8 :=
+    fun off ho => CallLay.inRegions_sub hin ho (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (ByteLoad.loadBE64_ok h0n htn h0t (by decide) (hin8 0 (by decide))) fun s₁ e₁ => ?_
+  subst e₁
+  refine WP.mono (ByteLoad.loadBE64_ok h1n htn h1t (by decide) ?_) fun s₂ e₂ => ?_
+  · simpa [RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, Ne.symm htn, Ne.symm h0n] using hin8 8 (by decide)
+  · subst e₂
+    refine ⟨?_, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_⟩
+    · simp [RegUpd.gpr_write, h01, h0t, Ne.symm h0n, Ne.symm htn]
+    · simp [RegUpd.gpr_write, RegUpd.mem_write, Ne.symm h0n, Ne.symm htn]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2]
+    · simp [RegUpd.rd_write]
+    · simp [RegUpd.wr_write]
+    · simp [RegUpd.mem_write]
+    · simp [RegUpd.sp_write]
+
+/-! ## A block -/
+
+/-- The block's last instructions: the spilled products back, the four words
+of the product and its reduction. -/
+def bTail : List Instr :=
+  [.load .d .t0 FP (slot 36), .load .d .t1 FP (slot 37), .load .d .t2 FP (slot 38), .load .d .t3 FP (slot 39),
+   .logic .xor B (Z 0) .t1, .logic .xor B B .t3, .logic .xor B .t0 B,
+   .logic .xor T PL .t0, .logic .xor T T .t2, .logic .xor T T .t3,
+   .shift .sll .d .t4 .t2 63, .logic .xor T T .t4, .shift .sll .d .t4 .t2 62, .logic .xor T T .t4,
+   .shift .sll .d .t4 .t2 57, .logic .xor T T .t4,
+   .logic .xor B B .t2, .shift .srl .d .t4 .t2 1, .logic .xor B B .t4, .shift .srl .d .t4 .t2 2,
+   .logic .xor B B .t4, .shift .srl .d .t4 .t2 7, .logic .xor B B .t4,
+   .logic .xor Y0 .t1 T, .shift .srl .d .t4 T 1, .logic .xor Y0 Y0 .t4, .shift .srl .d .t4 T 2,
+   .logic .xor Y0 Y0 .t4, .shift .srl .d .t4 T 7, .logic .xor Y0 Y0 .t4,
+   .shift .sll .d .t4 T 63, .logic .xor Y1 B .t4, .shift .sll .d .t4 T 62, .logic .xor Y1 Y1 .t4,
+   .shift .sll .d .t4 T 57, .logic .xor Y1 Y1 .t4,
+   .addi DP DP 16, .addi N N (-1)]
+
+/-- The block's first instructions: `x` loaded and `Y ⊕ X`. -/
+def bXor : List Instr := [.logic .xor Y0 Y0 .t0, .logic .xor Y1 Y1 .t1]
+
+theorem blockCode_eq : blockCode = Impl.Words.RISCV64.loadBE64 .t0 .t2 DP 0 ++
+    Impl.Words.RISCV64.loadBE64 .t1 .t2 DP 8 ++ (bXor ++ (pmCode Y0 (slot 0) ++ (st2 36 ++
+    (pmCode Y1 (slot 12) ++ (st2 38 ++ ([.logic .xor Y0 Y0 Y1] ++ (pmCode Y0 (slot 24) ++ bTail))))))) := by
+  simp only [blockCode, bXor, st2, bTail, List.append_assoc, List.cons_append, List.nil_append]
+
+/-- The registers `bTail` writes. -/
+def tailRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .a6, .a7, .a4, .a5, .a2, .a3]
+
+theorem bTail_ok (s : State) (h0 : Rd8 s (slot 36)) (h1 : Rd8 s (slot 37)) (h2 : Rd8 s (slot 38))
+    (h3 : Rd8 s (slot 39)) :
+    WP isa (.block bTail) s fun t =>
+      t.gpr Y0 ++ t.gpr Y1 = Holes.reduce (fw s (slot 37))
+        (fw s (slot 36) ^^^ (s.gpr (Z 0) ^^^ fw s (slot 37) ^^^ fw s (slot 39)))
+        ((s.gpr PL ^^^ fw s (slot 36) ^^^ fw s (slot 38)) ^^^ fw s (slot 39)) (fw s (slot 38)) ∧
+      t.gpr DP = s.gpr DP + 16 ∧ t.gpr N = s.gpr N - 1 ∧
+      Keep tailRegs s t ∧ t.mem = s.mem ∧ t.sp = s.sp := by
+  obtain ⟨a0, b0, c0⟩ := h0
+  obtain ⟨a1, b1, c1⟩ := h1
+  obtain ⟨a2, b2, c2⟩ := h2
+  obtain ⟨a3, b3, c3⟩ := h3
+  unfold bTail
+  simp only [FP, PL, Z, B, T, Y0, Y1, DP, N, slot, fw] at *
+  mrun [a0, a1, a2, a3, b0, b1, b2, b3, c0, c1, c2, c3]
+  simp only [Holes.reduce, Holes.foldLo, Holes.foldHi, tailRegs]
+  glue_close
+
+theorem bXor_ok (s : State) :
+    WP isa (.block bXor) s fun t => t.gpr Y0 = s.gpr Y0 ^^^ s.gpr .t0 ∧ t.gpr Y1 = s.gpr Y1 ^^^ s.gpr .t1 ∧
+      Keep [.a4, .a5] s t ∧ t.mem = s.mem ∧ t.sp = s.sp := by
+  unfold bXor
+  simp only [Y0, Y1]
+  mrun
+  glue_close
+
+theorem bY_ok (s : State) :
+    WP isa (.block [.logic .xor Y0 Y0 Y1]) s fun t => t.gpr Y0 = s.gpr Y0 ^^^ s.gpr Y1 ∧
+      Keep [.a4] s t ∧ t.mem = s.mem ∧ t.sp = s.sp := by
+  simp only [Y0, Y1]
+  mrun
+  glue_close
+
+/-- The product of a block, the table given by the doubleword at each
+offset of the frame. -/
+def mulT (y0 y1 : BitVec 64) (f : ℕ → BitVec 64) : BitVec 128 :=
+  let l := pmT y0 (fun j => f (slot 0 + 8 * j)) (fun j => f (slot 0 + 32 + 8 * j)) (fun j => f (slot 0 + 64 + 8 * j))
+  let h := pmT y1 (fun j => f (slot 12 + 8 * j)) (fun j => f (slot 12 + 32 + 8 * j))
+    (fun j => f (slot 12 + 64 + 8 * j))
+  let m := pmT (y0 ^^^ y1) (fun j => f (slot 24 + 8 * j)) (fun j => f (slot 24 + 32 + 8 * j))
+    (fun j => f (slot 24 + 64 + 8 * j))
+  Holes.reduce l.2 (l.1 ^^^ (m.2 ^^^ l.2 ^^^ h.2)) ((m.1 ^^^ l.1 ^^^ h.1) ^^^ h.2) h.1
+
+/-- What a block needs of its state. -/
+structure BlkPre (s : State) : Prop where
+  masks : Masks s
+  rd : ∀ k < 40, Rd8 s (8 * k)
+  wr : ∀ k, 36 ≤ k → k < 40 → Wr8 s (8 * k)
+  dat : InRegions (s.rd ++ s.wr) (s.gpr DP) 16
+
+/-- The registers a block writes. -/
+def blockRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .s8, .a6, .a7, .s4, .s5, .s6, .s7, .a4, .a5, .a2, .a3]
+
+theorem Keep.wr8 {rs : List Reg} {s t : State} (h : Keep rs s t) (hr : FP ∉ rs) {d : Nat} (hd : Wr8 s d) :
+    Wr8 t d := by
+  obtain ⟨a, b, c⟩ := hd
+  refine ⟨a, ?_, ?_⟩
+  · rw [h.gpr hr]; exact b
+  · rw [h.gpr hr, h.2.2]; exact c
+
+theorem holes_congr (a : BitVec 64) {f g : ℕ → BitVec 64} (h : ∀ j < 4, f j = g j) : holes a f = holes a g := by
+  simp only [holes, Holes.zc, h 0 (by decide), h 1 (by decide), h 2 (by decide), h 3 (by decide)]
+
+theorem pmT_congr (x : BitVec 64) {a b c a' b' c' : ℕ → BitVec 64} (ha : ∀ j < 4, a j = a' j)
+    (hb : ∀ j < 4, b j = b' j) (hc : ∀ j < 4, c j = c' j) : pmT x a b c = pmT x a' b' c' := by
+  simp only [pmT, holes_congr _ ha, holes_congr _ hb, holes_congr _ hc]
+
+/-- The doubleword at `FP + 8 j` after stores to two other slots. -/
+theorem fw_st2 {s t : State} {k j : Nat} (hm : t.mem = (s.mem.writeW (s.gpr FP + BitVec.ofNat 64 (slot k)) (s.gpr PL)).writeW
+    (s.gpr FP + BitVec.ofNat 64 (slot (k + 1))) (s.gpr (Z 0))) (hf : t.gpr FP = s.gpr FP) (hk : k + 1 < 256)
+    (hj : j < 256) (h0 : j ≠ k) (h1 : j ≠ k + 1) : fw t (8 * j) = fw s (8 * j) := by
+  simp only [fw, hm, hf, slot]
+  rw [fw_writeW (s := s) _ hj hk h1, fw_writeW (s := s) _ hj (by omega) h0]
+
+theorem fw_st2_self {s t : State} {k : Nat} (hm : t.mem = (s.mem.writeW (s.gpr FP + BitVec.ofNat 64 (slot k)) (s.gpr PL)).writeW
+    (s.gpr FP + BitVec.ofNat 64 (slot (k + 1))) (s.gpr (Z 0))) (hf : t.gpr FP = s.gpr FP) (hk : k + 1 < 256) :
+    fw t (slot k) = s.gpr PL ∧ fw t (slot (k + 1)) = s.gpr (Z 0) := by
+  simp only [fw, hm, hf, slot]
+  refine ⟨?_, Mem.readW_writeW_self64 _ _ _⟩
+  rw [fw_writeW (s := s) _ (by omega) hk (by omega), Mem.readW_writeW_self64]
+
+theorem slot_contains (b : Addr) {k : Nat} (hk : 36 ≤ k) (hk' : k < 40) :
+    (⟨b + BitVec.ofNat 64 288, 32⟩ : Region).Contains (b + BitVec.ofNat 64 (8 * k)) (64 / 8) := by
+  simp only [Region.Contains]
+  rw [Offset.sub_add_eq, Offset.add_sub_cancel_left, Offset.toNat_sub_ofNat]
+  simp only [BitVec.toNat_ofNat]
+  omega
+
+theorem block_ok (s : State) (hp : BlkPre s) :
+    WP isa (.block blockCode) s fun t =>
+      t.gpr Y0 ++ t.gpr Y1 = mulT (s.gpr Y0 ^^^ ByteLoad.be64 s.mem (s.gpr DP) 0)
+        (s.gpr Y1 ^^^ ByteLoad.be64 s.mem (s.gpr DP) 8) (fw s) ∧
+      t.gpr DP = s.gpr DP + 16 ∧ t.gpr N = s.gpr N - 1 ∧ Keep blockRegs s t ∧ t.sp = s.sp ∧
+      (∀ k < 36, fw t (8 * k) = fw s (8 * k)) ∧
+      Frame [⟨s.gpr FP + BitVec.ofNat 64 288, 32⟩] s.mem t.mem := by
+  obtain ⟨hK, hR, hW, hD⟩ := hp
+  have mk : ∀ (rs : List Reg), Reg.s0 ∉ rs → Reg.s1 ∉ rs → Reg.s2 ∉ rs → Reg.s3 ∉ rs →
+      ∀ i < 4, Impl.Gcm.RISCV64.K i ∉ rs := by
+    intro rs a b c d i hi; interval_cases i <;> assumption
+  have mk' : ∀ (rs : List Reg), Reg.s0 ∉ rs → Reg.s1 ∉ rs → Reg.s2 ∉ rs → Reg.s3 ∉ rs → Reg.s9 ∉ rs →
+      ∀ {u v : State}, Keep rs u v → v.mem = u.mem → Masks u → (∀ k < 40, Rd8 u (8 * k)) →
+        (∀ k, 36 ≤ k → k < 40 → Wr8 u (8 * k)) →
+        Masks v ∧ (∀ k < 40, Rd8 v (8 * k)) ∧ (∀ k, 36 ≤ k → k < 40 → Wr8 v (8 * k)) ∧
+          (∀ d, fw v d = fw u d) := by
+    intro rs a b c d e u v hk hm hKu hRu hWu
+    exact ⟨Keep.masks hk hKu (mk rs a b c d), fun k hk' => Keep.rd8 hk e (hRu k hk'),
+      fun k h1 h2 => Keep.wr8 hk e (hWu k h1 h2), fw_congr hm (Keep.gpr hk e)⟩
+  have hR12 : ∀ {u : State} (o : Nat), (∀ k < 40, Rd8 u (8 * k)) → o + 12 ≤ 40 →
+      ∀ k < 12, Rd8 u (slot o + 8 * k) := fun o h ho k hk => by
+    rw [show slot o + 8 * k = 8 * (o + k) by simp only [slot]; omega]; exact h _ (by omega)
+  rw [blockCode_eq, WP.block_append_iff]
+  refine WP.mono (ld2_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) s hD)
+    fun u1 ⟨x0, x1, k1, m1, p1⟩ => ?_
+  obtain ⟨K1, R1, W1, F1⟩ := mk' _ (by decide) (by decide) (by decide) (by decide) (by decide) k1 m1 hK hR hW
+  rw [WP.block_append_iff]
+  refine WP.mono (bXor_ok u1) fun u2 ⟨y0, y1, k2, m2, p2⟩ => ?_
+  obtain ⟨K2, R2, W2, F2⟩ := mk' _ (by decide) (by decide) (by decide) (by decide) (by decide) k2 m2 K1 R1 W1
+  rw [WP.block_append_iff]
+  refine WP.mono (pm_ok u2 (X := Y0) (by decide) (slot 0) K2 (hR12 0 R2 (by decide)))
+    fun u3 ⟨l1, l2, k3, m3, p3⟩ => ?_
+  obtain ⟨K3, R3, W3, F3⟩ := mk' _ (by decide) (by decide) (by decide) (by decide) (by decide) k3 m3 K2 R2 W2
+  rw [WP.block_append_iff]
+  refine WP.mono (st2_ok u3 36 (W3 36 (by decide) (by decide)) (W3 37 (by decide) (by decide)))
+    fun u4 ⟨g4, rd4, wr4, p4, m4⟩ => ?_
+  have k4 : Keep [] u3 u4 := ⟨fun r _ => by rw [g4], rd4, wr4⟩
+  have fp4 : u4.gpr FP = u3.gpr FP := by rw [g4]
+  have K4 : Masks u4 := Keep.masks k4 K3 (mk _ (by decide) (by decide) (by decide) (by decide))
+  have R4 : ∀ k < 40, Rd8 u4 (8 * k) := fun k hk => Keep.rd8 k4 (by decide) (R3 k hk)
+  have W4 : ∀ k, 36 ≤ k → k < 40 → Wr8 u4 (8 * k) := fun k h1 h2 => Keep.wr8 k4 (by decide) (W3 k h1 h2)
+  rw [WP.block_append_iff]
+  refine WP.mono (pm_ok u4 (X := Y1) (by decide) (slot 12) K4 (hR12 12 R4 (by decide)))
+    fun u5 ⟨h1, h2, k5, m5, p5⟩ => ?_
+  obtain ⟨K5, R5, W5, F5⟩ := mk' _ (by decide) (by decide) (by decide) (by decide) (by decide) k5 m5 K4 R4 W4
+  rw [WP.block_append_iff]
+  refine WP.mono (st2_ok u5 38 (W5 38 (by decide) (by decide)) (W5 39 (by decide) (by decide)))
+    fun u6 ⟨g6, rd6, wr6, p6, m6⟩ => ?_
+  have k6 : Keep [] u5 u6 := ⟨fun r _ => by rw [g6], rd6, wr6⟩
+  have fp6 : u6.gpr FP = u5.gpr FP := by rw [g6]
+  have K6 : Masks u6 := Keep.masks k6 K5 (mk _ (by decide) (by decide) (by decide) (by decide))
+  have R6 : ∀ k < 40, Rd8 u6 (8 * k) := fun k hk => Keep.rd8 k6 (by decide) (R5 k hk)
+  rw [WP.block_append_iff]
+  refine WP.mono (bY_ok u6) fun u7 ⟨e7, k7, m7, p7⟩ => ?_
+  obtain ⟨K7, R7, -, F7⟩ := mk' _ (by decide) (by decide) (by decide) (by decide) (by decide) k7 m7 K6 R6
+    (fun k h1 h2 => Keep.wr8 k6 (by decide) (W5 k h1 h2))
+  rw [WP.block_append_iff]
+  refine WP.mono (pm_ok u7 (X := Y0) (by decide) (slot 24) K7 (hR12 24 R7 (by decide)))
+    fun u8 ⟨n1, n2, k8, m8, p8⟩ => ?_
+  obtain ⟨-, R8, -, F8⟩ := mk' _ (by decide) (by decide) (by decide) (by decide) (by decide) k8 m8 K7 R7
+    (fun k h1 h2 => Keep.wr8 k7 (by decide) (Keep.wr8 k6 (by decide) (W5 k h1 h2)))
+  refine WP.mono (bTail_ok u8 (R8 36 (by decide)) (R8 37 (by decide)) (R8 38 (by decide)) (R8 39 (by decide)))
+    fun t ⟨e, d, n, kt, mt, pt⟩ => ?_
+  -- The frame pointer and the other registers through the steps.
+  have fpS : ∀ {u v : State} {rs : List Reg}, Keep rs u v → Reg.s9 ∉ rs → v.gpr FP = u.gpr FP :=
+    fun h hr => Keep.gpr h hr
+  have f3 : u3.gpr FP = s.gpr FP := by
+    rw [fpS k3 (by decide), fpS k2 (by decide), fpS k1 (by decide)]
+  have f5 : u5.gpr FP = s.gpr FP := by rw [fpS k5 (by decide), fp4, f3]
+  -- The slots after the stores.
+  obtain ⟨s36, s37⟩ := fw_st2_self (k := 36) m4 fp4 (by decide)
+  obtain ⟨s38, s39⟩ := fw_st2_self (k := 38) m6 fp6 (by decide)
+  have st4 : ∀ j < 256, j ≠ 36 → j ≠ 37 → fw u4 (8 * j) = fw u3 (8 * j) :=
+    fun j hj a b => fw_st2 (k := 36) m4 fp4 (by decide) hj a b
+  have st6 : ∀ j < 256, j ≠ 38 → j ≠ 39 → fw u6 (8 * j) = fw u5 (8 * j) :=
+    fun j hj a b => fw_st2 (k := 38) m6 fp6 (by decide) hj a b
+  have F86 : ∀ d, fw u8 d = fw u6 d := fun d => by rw [F8, F7]
+  have g36 : fw u8 (slot 36) = u3.gpr PL := by
+    rw [F86, show slot 36 = 8 * 36 from rfl, st6 36 (by decide) (by decide) (by decide), F5, ← s36]; rfl
+  have g37 : fw u8 (slot 37) = u3.gpr (Z 0) := by
+    rw [F86, show slot 37 = 8 * 37 from rfl, st6 37 (by decide) (by decide) (by decide), F5, ← s37]; rfl
+  have g38 : fw u8 (slot 38) = u5.gpr PL := by rw [F86, s38]
+  have g39 : fw u8 (slot 39) = u5.gpr (Z 0) := by rw [F86, s39]
+  -- `Y` through the steps.
+  have ya : u2.gpr Y0 = s.gpr Y0 ^^^ ByteLoad.be64 s.mem (s.gpr DP) 0 := by
+    rw [y0, Keep.gpr k1 (by decide), x0]
+  have yb : u2.gpr Y1 = s.gpr Y1 ^^^ ByteLoad.be64 s.mem (s.gpr DP) 8 := by
+    rw [y1, Keep.gpr k1 (by decide), x1]
+  have y4 : u4.gpr Y1 = u2.gpr Y1 := by rw [g4, Keep.gpr k3 (by decide)]
+  have y6a : u6.gpr Y0 = u2.gpr Y0 := by
+    rw [g6, Keep.gpr k5 (by decide), g4, Keep.gpr k3 (by decide)]
+  have y6b : u6.gpr Y1 = u2.gpr Y1 := by rw [g6, Keep.gpr k5 (by decide), y4]
+  -- The tables.
+  have T0 : ∀ o j, fw u2 (o + j) = fw s (o + j) := fun o j => by rw [F2, F1]
+  have T12 : ∀ j < 12, fw u4 (slot 12 + 8 * j) = fw s (slot 12 + 8 * j) := fun j hj => by
+    rw [show slot 12 + 8 * j = 8 * (12 + j) by simp only [slot]; omega, st4 _ (by omega) (by omega) (by omega),
+      F3, F2, F1]
+  have T24 : ∀ j < 12, fw u7 (slot 24 + 8 * j) = fw s (slot 24 + 8 * j) := fun j hj => by
+    rw [show slot 24 + 8 * j = 8 * (24 + j) by simp only [slot]; omega, F7, st6 _ (by omega) (by omega) (by omega),
+      F5, st4 _ (by omega) (by omega) (by omega), F3, F2, F1]
+  have hl : pmT (u2.gpr Y0) (fun j => fw u2 (slot 0 + 8 * j)) (fun j => fw u2 (slot 0 + 32 + 8 * j))
+      (fun j => fw u2 (slot 0 + 64 + 8 * j)) = pmT (s.gpr Y0 ^^^ ByteLoad.be64 s.mem (s.gpr DP) 0)
+      (fun j => fw s (slot 0 + 8 * j)) (fun j => fw s (slot 0 + 32 + 8 * j)) (fun j => fw s (slot 0 + 64 + 8 * j)) := by
+    rw [ya]; exact pmT_congr _ (fun j _ => T0 _ _) (fun j _ => T0 _ _) (fun j _ => T0 _ _)
+  have hh : pmT (u4.gpr Y1) (fun j => fw u4 (slot 12 + 8 * j)) (fun j => fw u4 (slot 12 + 32 + 8 * j))
+      (fun j => fw u4 (slot 12 + 64 + 8 * j)) = pmT (s.gpr Y1 ^^^ ByteLoad.be64 s.mem (s.gpr DP) 8)
+      (fun j => fw s (slot 12 + 8 * j)) (fun j => fw s (slot 12 + 32 + 8 * j))
+      (fun j => fw s (slot 12 + 64 + 8 * j)) := by
+    rw [y4, yb]
+    refine pmT_congr _ (fun j hj => T12 j (by omega)) (fun j hj => ?_) (fun j hj => ?_)
+    · rw [show slot 12 + 32 + 8 * j = slot 12 + 8 * (4 + j) by simp only [slot]; omega]; exact T12 _ (by omega)
+    · rw [show slot 12 + 64 + 8 * j = slot 12 + 8 * (8 + j) by simp only [slot]; omega]; exact T12 _ (by omega)
+  have hm : pmT (u7.gpr Y0) (fun j => fw u7 (slot 24 + 8 * j)) (fun j => fw u7 (slot 24 + 32 + 8 * j))
+      (fun j => fw u7 (slot 24 + 64 + 8 * j)) = pmT ((s.gpr Y0 ^^^ ByteLoad.be64 s.mem (s.gpr DP) 0) ^^^
+        (s.gpr Y1 ^^^ ByteLoad.be64 s.mem (s.gpr DP) 8))
+      (fun j => fw s (slot 24 + 8 * j)) (fun j => fw s (slot 24 + 32 + 8 * j))
+      (fun j => fw s (slot 24 + 64 + 8 * j)) := by
+    rw [e7, y6a, y6b, ya, yb]
+    refine pmT_congr _ (fun j hj => T24 j (by omega)) (fun j hj => ?_) (fun j hj => ?_)
+    · rw [show slot 24 + 32 + 8 * j = slot 24 + 8 * (4 + j) by simp only [slot]; omega]; exact T24 _ (by omega)
+    · rw [show slot 24 + 64 + 8 * j = slot 24 + 8 * (8 + j) by simp only [slot]; omega]; exact T24 _ (by omega)
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [e, g36, g37, g38, g39, n1, n2, l1, l2, h1, h2, hl, hh, hm]
+    rfl
+  · rw [d, Keep.gpr k8 (by decide), Keep.gpr k7 (by decide), g6, Keep.gpr k5 (by decide), g4,
+      Keep.gpr k3 (by decide), Keep.gpr k2 (by decide), Keep.gpr k1 (by decide)]
+  · rw [n, Keep.gpr k8 (by decide), Keep.gpr k7 (by decide), g6, Keep.gpr k5 (by decide), g4,
+      Keep.gpr k3 (by decide), Keep.gpr k2 (by decide), Keep.gpr k1 (by decide)]
+  · refine Keep.mono (Keep.trans k1 (Keep.trans k2 (Keep.trans k3 (Keep.trans k4 (Keep.trans k5
+      (Keep.trans k6 (Keep.trans k7 (Keep.trans k8 kt)))))))) ?_
+    simp only [pmRegs, holesRegs, tailRegs, blockRegs]; decide
+  · rw [pt, p8, p7, p6, p5, p4, p3, p2, p1]
+  · intro k hk
+    rw [fw_congr mt (Keep.gpr kt (by decide)), F86, st6 k (by omega) (by omega) (by omega), F5,
+      st4 k (by omega) (by omega) (by omega), F3, F2, F1]
+  · rw [mt, m8, m7, m6, m5, m4, m3, m2, m1, f5, f3]
+    have c : ∀ k, 36 ≤ k → k < 40 → (⟨s.gpr FP + BitVec.ofNat 64 288, 32⟩ : Region).Contains
+        (s.gpr FP + BitVec.ofNat 64 (slot k)) (64 / 8) := fun k a b => slot_contains _ a b
+    exact (((Frame.refl _ _).writeW List.mem_cons_self _ (c 36 (by decide) (by decide))).writeW
+      List.mem_cons_self _ (c (36 + 1) (by decide) (by decide))).writeW List.mem_cons_self _ (c 38 (by decide) (by decide))
+      |>.writeW List.mem_cons_self _ (c (38 + 1) (by decide) (by decide))
 
 end VG.Proof.Gcm.RISCV64
