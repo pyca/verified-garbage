@@ -41,21 +41,29 @@ theorem vp_unassoc {F G : State → State → Prop} {a b c : Prog isa} (h : VP F
     VP F (.seq (.seq a b) c) G :=
   ⟨fun σ s hs => WP.assoc' (h.wp σ s hs), relCT_unassoc h.ct⟩
 
-variable (h g : OHash)
+variable (h : OHash)
 
-/-- After the checks, when the message fits. -/
-theorem main_vp (P : EP) (c : PdImpl) : VP (E0 h P) (encMain h.H g.H c.name c.code) (Fin h g P) := by
-  show VP _ (.seq (encEm h.H) (.seq (.block (dbArgs h.H 3)) (.seq (mgfXor g.H) (.seq (.block (seedArgs h.H 3))
-    (.seq (mgfXor g.H) (.seq (.block pubArgs) (.call c.name c.code))))))) _
-  refine (em_vp h P).seq (VP.assoc (VP.assoc (VP.assoc ?_)))
-  exact (vp_unassoc (vp_unassoc (mask_vp h g P))).seq ((pa_vp h g P).seq (call_vp h g P c))
+/-- A stage, with what follows it, keeping the addresses of the statics. -/
+abbrev Sy (F : State → State → Prop) (σ s : State) : Prop := F σ s ∧ s.syms = σ.syms
+
+/-- After the checks, when the message fits, with MGF1's hash function `g`. -/
+theorem main_vp (P : EP) (g : OHash) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab P.ai P.au P.af σ)
+    (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) (c : PdImpl) :
+    VP (Sy (E0 h P)) (encMain h.H f c.name c.code) (Sy (Fin h g P)) := by
+  show VP _ (.seq (encEm h.H) (.seq (.block (dbArgs h.H 3)) (.seq (mgfXor f 15) (.seq (.block (seedArgs h.H 3))
+    (.seq (mgfXor f 15) (.seq (.block pubArgs) (.call c.name c.code))))))) _
+  refine (VP.syms (em_vp h P)).seq (VP.assoc (VP.assoc (VP.assoc ?_)))
+  exact (vp_unassoc (vp_unassoc (mask_vp h g P hT fne))).seq (VP.syms ((pa_vp h g P).seq (call_vp h g P c)))
 
 /-- The body. -/
-theorem body_vp (P : EP) (c : PdImpl) : VP (S h P) (encBody h.H g.H c.name c.code) (Fin h g P) := by
-  show VP _ (.seq (.block (encChk h.H)) (.ite .ne encFail (encMain h.H g.H c.name c.code))) _
-  refine (chk_vp h P).seq (VP.ite (fun _ _ _ _ h₁ h₂ => by
-    rw [VG.Proof.X25519.Arm.eval_ne, VG.Proof.X25519.Arm.eval_ne, h₁.2.2, h₂.2.2]) (fail_vp h g P) ?_)
-  refine (main_vp h g P c).mono (fun σ s ⟨⟨hc, hi, z⟩, e⟩ => ⟨hc, hi, ?_⟩) fun _ _ hh => hh
+theorem body_vp (P : EP) (g : OHash) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab P.ai P.au P.af σ)
+    (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) (c : PdImpl) :
+    VP (Sy (S h P)) (encBody h.H f c.name c.code) (Sy (Fin h g P)) := by
+  show VP _ (.seq (.block (encChk h.H)) (.ite .ne encFail (encMain h.H f c.name c.code))) _
+  refine (VP.syms (chk_vp h P)).seq (VP.ite (fun _ _ _ _ h₁ h₂ => by
+    rw [VG.Proof.X25519.Arm.eval_ne, VG.Proof.X25519.Arm.eval_ne, h₁.1.2.2, h₂.1.2.2])
+    ((VP.syms (fail_vp h g P)).mono (fun _ _ ⟨⟨a, b⟩, c⟩ => ⟨⟨a, c⟩, b⟩) fun _ _ x => x) ?_)
+  refine (main_vp h P g hT fne c).mono (fun σ s ⟨⟨⟨hc, hi, z⟩, sy⟩, e⟩ => ⟨⟨hc, hi, ?_⟩, sy⟩) fun _ _ hh => hh
   rw [VG.Proof.X25519.Arm.eval_ne, z] at e
   simpa using e
 
