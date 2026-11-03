@@ -40,7 +40,8 @@
         target_arch = "x86_64",
         target_arch = "aarch64",
         target_arch = "arm",
-        target_arch = "powerpc64"
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
     ),
     feature = "alloc"
 ))]
@@ -262,7 +263,8 @@ type DecryptFn = unsafe extern "sysv64" fn(
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 type DecryptFn = unsafe extern "C" fn(
     *mut u8,
@@ -501,7 +503,7 @@ mod tests {
             [Sha256Backend::Scalar, Sha256Backend::Sha2].as_slice(),
             [Backend::Baseline].as_slice(),
         );
-        #[cfg(target_arch = "powerpc64")]
+        #[cfg(any(target_arch = "powerpc64", target_arch = "riscv64"))]
         let (shas, crts) = (
             [Sha256Backend::Scalar].as_slice(),
             [Backend::Baseline].as_slice(),
