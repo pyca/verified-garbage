@@ -12,221 +12,95 @@ vg_keccak_f1600:
 	sd s0, 592(t6)
 	sd s1, 600(t6)
 	addi s1, a0, 0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 0
-	addiw t1, t1, 1
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	lui t3, 8
+	addi t4, zero, 1
+	slli t4, t4, 31
+	slli t5, t4, 32
+	addi t0, zero, 1
 	sd t0, 0(t6)
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 8
-	addiw t1, t1, 130
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 130
+	or t0, t0, t3
 	sd t0, 8(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 8
-	addiw t1, t1, 138
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 138
+	or t0, t0, t3
+	or t0, t0, t5
 	sd t0, 16(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 524296
-	addiw t1, t1, 0
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 0
+	or t0, t0, t3
+	or t0, t0, t4
+	or t0, t0, t5
 	sd t0, 24(t6)
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 8
-	addiw t1, t1, 139
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 139
+	or t0, t0, t3
 	sd t0, 32(t6)
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 524288
-	addiw t1, t1, 1
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 1
+	or t0, t0, t4
 	sd t0, 40(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 524296
-	addiw t1, t1, 129
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 129
+	or t0, t0, t3
+	or t0, t0, t4
+	or t0, t0, t5
 	sd t0, 48(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 8
-	addiw t1, t1, 9
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 9
+	or t0, t0, t3
+	or t0, t0, t5
 	sd t0, 56(t6)
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 0
-	addiw t1, t1, 138
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 138
 	sd t0, 64(t6)
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 0
-	addiw t1, t1, 136
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 136
 	sd t0, 72(t6)
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 524296
-	addiw t1, t1, 9
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 9
+	or t0, t0, t3
+	or t0, t0, t4
 	sd t0, 80(t6)
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 524288
-	addiw t1, t1, 10
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 10
+	or t0, t0, t4
 	sd t0, 88(t6)
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 524296
-	addiw t1, t1, 139
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 139
+	or t0, t0, t3
+	or t0, t0, t4
 	sd t0, 96(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 0
-	addiw t1, t1, 139
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 139
+	or t0, t0, t5
 	sd t0, 104(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 8
-	addiw t1, t1, 137
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 137
+	or t0, t0, t3
+	or t0, t0, t5
 	sd t0, 112(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 8
-	addiw t1, t1, 3
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 3
+	or t0, t0, t3
+	or t0, t0, t5
 	sd t0, 120(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 8
-	addiw t1, t1, 2
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 2
+	or t0, t0, t3
+	or t0, t0, t5
 	sd t0, 128(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 0
-	addiw t1, t1, 128
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 128
+	or t0, t0, t5
 	sd t0, 136(t6)
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 8
-	addiw t1, t1, 10
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 10
+	or t0, t0, t3
 	sd t0, 144(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 524288
-	addiw t1, t1, 10
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 10
+	or t0, t0, t4
+	or t0, t0, t5
 	sd t0, 152(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 524296
-	addiw t1, t1, 129
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 129
+	or t0, t0, t3
+	or t0, t0, t4
+	or t0, t0, t5
 	sd t0, 160(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 8
-	addiw t1, t1, 128
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 128
+	or t0, t0, t3
+	or t0, t0, t5
 	sd t0, 168(t6)
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 524288
-	addiw t1, t1, 1
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 1
+	or t0, t0, t4
 	sd t0, 176(t6)
-	lui t0, 524288
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui t1, 524296
-	addiw t1, t1, 8
-	slli t1, t1, 32
-	srli t1, t1, 32
-	or t0, t0, t1
+	addi t0, zero, 8
+	or t0, t0, t3
+	or t0, t0, t4
+	or t0, t0, t5
 	sd t0, 184(t6)
 	andi t0, s1, 7
 	beqz t0, 20f

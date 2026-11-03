@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 import VerifiedGarbage.Proof.Framework.RISCV64.Inline
+import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -186,23 +187,106 @@ theorem save_ok {s₀ : State} (hp : Pre s₀) {rest : List Instr} {Q : State �
   · rw [u₄.mem, g₃.mem, g₂.mem, u₁.mem, hm]
     exact frame_off (frame_off (Frame.refl _ _) (by omega) _) (by omega) _
 
+/-! ## The round constants -/
+
+/-- The fold of `Spec.Sha3.RC` on any seven bits, as `rcBuild` builds it. -/
+theorem rc_fold (b0 b1 b2 b3 b4 b5 b6 : Bool) :
+    (List.range 7).foldl (fun RC j => if [b0, b1, b2, b3, b4, b5, b6].getD j false then
+        RC ||| (1#64 <<< (2 ^ j - 1)) else RC) 0 =
+      ((BitVec.ofNat 64 ((if b0 then 1 else 0) + (if b1 then 2 else 0) + (if b2 then 8 else 0) +
+          (if b3 then 128 else 0)) |||
+        (if b4 then 1#64 <<< 15 else 0)) ||| (if b5 then 1#64 <<< 31 else 0)) |||
+        (if b6 then 1#64 <<< 63 else 0) := by
+  cases b0 <;> cases b1 <;> cases b2 <;> cases b3 <;> cases b4 <;> cases b5 <;> cases b6 <;> decide
+
+/-- `RC k` as `rcBuild` builds it: the four low bits as a number, then bits
+15, 31 and 63. -/
+theorem rc_eq (k : Nat) :
+    RC k = ((BitVec.ofNat 64 (rcLo k) ||| (if rcBit k 4 then 1#64 <<< 15 else 0)) |||
+      (if rcBit k 5 then 1#64 <<< 31 else 0)) ||| (if rcBit k 6 then 1#64 <<< 63 else 0) :=
+  rc_fold (rcBit k 0) (rcBit k 1) (rcBit k 2) (rcBit k 3) (rcBit k 4) (rcBit k 5) (rcBit k 6)
+
+theorem rcLo_lt (k : Nat) : rcLo k < 2048 := by
+  unfold rcLo; split <;> split <;> split <;> split <;> omega
+
+/-- `orIf`: `t0 |= r` if `b`. -/
+theorem orIf_ok {b : Bool} {r : Reg} {s : State} {is : List Instr} {Q : State → Prop}
+    (k : ∀ s', Upd s s' .t0 (s.gpr .t0 ||| (if b then s.gpr r else 0)) → WP isa (.block is) s' Q) :
+    WP isa (.block (orIf b r ++ is)) s Q := by
+  cases b
+  · exact k s ⟨by simp, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  · exact WP.cons exec_logic (by simpa using k _ (Upd.write _ _ _))
+
+/-- `rcHigh`: bits 15, 31 and 63 in `t3`, `t4` and `t5`. -/
+theorem rcHigh_ok {s : State} {is : List Instr} {Q : State → Prop}
+    (k : ∀ s', s'.gpr .t3 = 1#64 <<< 15 → s'.gpr .t4 = 1#64 <<< 31 → s'.gpr .t5 = 1#64 <<< 63 →
+      (∀ r, r ≠ .t3 → r ≠ .t4 → r ≠ .t5 → s'.gpr r = s.gpr r) → s'.mem = s.mem → s'.rd = s.rd →
+      s'.wr = s.wr → s'.sp = s.sp → WP isa (.block is) s' Q) :
+    WP isa (.block (rcHigh ++ is)) s Q := by
+  simp only [rcHigh, List.cons_append, List.nil_append]
+  refine WP.cons exec_lui ?_
+  have u₁ := Upd.write s .t3 (sext32 ((8 : BitVec 20) ++ (0 : BitVec 12)))
+  generalize s.write .t3 _ = s₁ at u₁ ⊢
+  refine wp_li (imm := 1) (by decide) fun s₂ u₂ => Steps.wp_sll (by decide) fun s₃ u₃ =>
+    Steps.wp_sll (by decide) fun s₄ u₄ => ?_
+  have e4 : s₄.gpr .t4 = 1#64 <<< 31 := by
+    rw [u₄.other _ (by decide), u₃.gpr, u₂.gpr]
+  refine k s₄ ?_ e4 ?_ (fun r h3 h4 h5 => ?_) ?_ ?_ ?_ ?_
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]; decide
+  · rw [u₄.gpr, u₃.gpr, u₂.gpr]; decide
+  · rw [u₄.other r h5, u₃.other r h4, u₂.other r h4, u₁.other r h3]
+  · rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  · rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  · rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  · rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp]
+
+/-- `rcBuild k`: `RC k` in `t0`, from bits 15, 31 and 63 in `t3`–`t5`. -/
+theorem rcBuild_ok (k : Nat) {s : State} (h3 : s.gpr .t3 = 1#64 <<< 15) (h4 : s.gpr .t4 = 1#64 <<< 31)
+    (h5 : s.gpr .t5 = 1#64 <<< 63) {is : List Instr} {Q : State → Prop}
+    (kk : ∀ s', s'.gpr .t0 = RC k → (∀ r, r ≠ .t0 → s'.gpr r = s.gpr r) → s'.mem = s.mem →
+      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → WP isa (.block is) s' Q) :
+    WP isa (.block (rcBuild k ++ is)) s Q := by
+  simp only [rcBuild, List.cons_append, List.append_assoc]
+  refine wp_li (rcLo_lt k) fun s₁ u₁ => orIf_ok fun s₂ u₂ => orIf_ok fun s₃ u₃ =>
+    orIf_ok fun s₄ u₄ => kk s₄ ?_ (fun r h => ?_) ?_ ?_ ?_ ?_
+  · rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr, u₃.other _ (by decide), u₂.other _ (by decide),
+      u₁.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), u₁.other _ (by decide),
+      h3, h4, h5, rc_eq]
+  · rw [u₄.other r h, u₃.other r h, u₂.other r h, u₁.other r h]
+  · rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  · rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  · rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  · rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp]
+
 /-- During the stores of the round constants. -/
 def RcInv (s₀ : State) (k : Nat) (s : State) : Prop :=
   s.gpr .t6 = F s₀ ∧ s.gpr .s1 = st s₀ ∧ s.rd = [] ∧ s.wr = W s₀ ∧ s.sp = F s₀ ∧
     s.mem.readW (off s₀ 592) 64 = s₀.gpr .s0 ∧ s.mem.readW (off s₀ 600) 64 = s₀.gpr .s1 ∧
     (∀ j < k, s.mem.readW (off s₀ (8 * j)) 64 = RC j) ∧ Frame [frR s₀] s₀.mem s.mem
 
+/-- `t3`–`t5` hold bits 15, 31 and 63. -/
+def High (s : State) : Prop :=
+  s.gpr .t3 = 1#64 <<< 15 ∧ s.gpr .t4 = 1#64 <<< 31 ∧ s.gpr .t5 = 1#64 <<< 63
+
 theorem rcs_ok {s₀ : State} (hp : Pre s₀) (s : State) (hs : RcInv s₀ 0 s) :
     WP isa (.block rcStores) s (RcInv s₀ 24) := by
-  refine wp_range_flatMap (M := isa) (RcInv s₀) (fun k s' hk ⟨h6, h1, hrd, hwr, hsp, v₁, v₂, hv, hf⟩ => ?_)
-    24 (Nat.le_refl _) s hs
-  rw [WP.block_append_iff]
-  refine WP.mono (Words64.movImm64_ok (show Reg.t0 ≠ .t1 by decide) (RC k)) fun s₁ ⟨g₁, o₁, m₁, rd₁, wr₁, sp₁⟩ => ?_
-  refine wp_sd (by omega) (a := off s₀ (8 * k)) (by rw [o₁ _ (by decide) (by decide), h6])
+  unfold rcStores
+  refine rcHigh_ok fun s₁ e3 e4 e5 o m rd wr sp => ?_
+  obtain ⟨h6, h1, hrd, hwr, hsp, v₁, v₂, _, hf⟩ := hs
+  refine WP.mono (wp_range_flatMap (M := isa) (fun k s => RcInv s₀ k s ∧ High s)
+    (fun k s' hk ⟨⟨h6, h1, hrd, hwr, hsp, v₁, v₂, hv, hf⟩, e3, e4, e5⟩ => ?_) 24 (Nat.le_refl _) s₁
+    ⟨⟨by rw [o _ (by decide) (by decide) (by decide), h6],
+      by rw [o _ (by decide) (by decide) (by decide), h1], by rw [rd, hrd], by rw [wr, hwr],
+      by rw [sp, hsp], by rw [m, v₁], by rw [m, v₂], fun j hj => absurd hj (Nat.not_lt_zero _),
+      by rw [m]; exact hf⟩, e3, e4, e5⟩) fun _ h => h.1
+  refine rcBuild_ok k e3 e4 e5 fun s₁ g₁ o₁ m₁ rd₁ wr₁ sp₁ => ?_
+  refine wp_sd (by omega) (a := off s₀ (8 * k)) (by rw [o₁ _ (by decide), h6])
     (hp.al_off (by omega) (by omega)) (by rw [wr₁, hwr]; exact in_fr s₀ (by omega)) fun s₂ g₂ => ?_
-  refine WP.block_nil ⟨by rw [g₂.gpr, o₁ _ (by decide) (by decide), h6],
-    by rw [g₂.gpr, o₁ _ (by decide) (by decide), h1], by rw [g₂.rd, rd₁, hrd],
-    by rw [g₂.wr, wr₁, hwr], by rw [g₂.sp, sp₁, hsp], ?_, ?_, fun j hj => ?_, ?_⟩
+  refine WP.block_nil ⟨⟨by rw [g₂.gpr, o₁ _ (by decide), h6],
+    by rw [g₂.gpr, o₁ _ (by decide), h1], by rw [g₂.rd, rd₁, hrd],
+    by rw [g₂.wr, wr₁, hwr], by rw [g₂.sp, sp₁, hsp], ?_, ?_, fun j hj => ?_, ?_⟩,
+    by rw [g₂.gpr, o₁ _ (by decide), e3], by rw [g₂.gpr, o₁ _ (by decide), e4],
+    by rw [g₂.gpr, o₁ _ (by decide), e5]⟩
   · rw [g₂.mem, rw_off s₀ _ (by omega) (by omega) (by omega), m₁, v₁]
   · rw [g₂.mem, rw_off s₀ _ (by omega) (by omega) (by omega), m₁, v₂]
   · rw [g₂.mem]
