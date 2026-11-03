@@ -342,6 +342,34 @@ pub fn bench(c: &mut Criterion) {
     // Only Proto17 this run: main's `tail` and `sqrTail` next to the two-row multiplication
     // (`two`), the squaring with a two-row reduction (`two`) and the square by the two-row
     // multiplication (`bymul`), and exponentiation proxies of each pairing.
+    // Only Proto18 this run: the multiplier's throughput and latency, 64 instructions per
+    // iteration, 1000 iterations per call.
+    const ONLY_P18: bool = true;
+    if ONLY_P18 {
+        use verified_garbage_asm_riscv64::rsa_proto18 as p18;
+        let fs: [(&str, unsafe extern "C" fn(usize)); 12] = [
+            ("add8", p18::vg_p18_add8),
+            ("mul_ind", p18::vg_p18_mul_ind),
+            ("mulhu_ind", p18::vg_p18_mulhu_ind),
+            ("alt_ind", p18::vg_p18_alt_ind),
+            ("pair_ind", p18::vg_p18_pair_ind),
+            ("mul_acc4", p18::vg_p18_mul_acc4),
+            ("mul_acc8", p18::vg_p18_mul_acc8),
+            ("mulhu_acc4", p18::vg_p18_mulhu_acc4),
+            ("mulhu_acc8", p18::vg_p18_mulhu_acc8),
+            ("mul_dep", p18::vg_p18_mul_dep),
+            ("mulhu_dep", p18::vg_p18_mulhu_dep),
+            ("mix_1to3", p18::vg_p18_mix_1to3),
+        ];
+        let mut g = c.benchmark_group("rsa_p18");
+        for (v, f) in fs {
+            g.bench_function(BenchmarkId::new(VG, v), |b| {
+                b.iter(|| unsafe { f(black_box(1000)) })
+            });
+        }
+        g.finish();
+        return;
+    }
     const ONLY_P17: bool = true;
     if ONLY_P17 {
         use verified_garbage_asm_riscv64::rsa_proto17 as p17;
