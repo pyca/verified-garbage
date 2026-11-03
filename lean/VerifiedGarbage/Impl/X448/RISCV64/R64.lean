@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.X448.RISCV64
+public import VerifiedGarbage.Impl.Words.RISCV64.Wide
 
 /-!
 # X448: RISC-V implementation with 64-bit limbs
@@ -20,13 +21,14 @@ space) stay where they are:
 
 * `product`: the fourteen words of `[a] · [b]` at `ACC`, by columns (product
   scanning): column `k` adds every `a_i b_j` with `i + j = k` into a
-  three-word accumulator, whose low word is word `k` of the product. `b₀–b₅`
-  are in registers, `a_i` is loaded for each product, and `b₆` takes `b₀`'s
-  register in column 6, after `a₆ b₀`, the last product with `b₀`. The
-  accumulator rotates through `a4`–`a6` (`rr`).
+  three-word accumulator, whose low word is word `k` of the product; the
+  accumulator rotates through `a4`–`a6` (`rr`). The terms are
+  software-pipelined (`pipe`): each term's `mul`/`mulhu` (into `a7`, `t0` and
+  `t3`, `t6` in turn) and the next term's two operand loads (into `a1`, `a2`)
+  are issued a term ahead of its sums, so that an in-order core does not
+  wait for them.
 * `square`: the same for the cross products `a_i a_j` (`i < j`), once each,
-  with `a₀–a₅` in registers and `a₆` loaded, then the words of twice their
-  sum plus the squares `a_i²` (`dblStep`).
+  then the words of twice their sum plus the squares `a_i²` (`dblStep`).
 * `reduce`: the product `L + 2⁴⁴⁸ H` becomes `L + H + (H - H mod 2²²⁴) +
   rot(H)` (`rot(H)` is `H` rotated by 224 bits, its words 32 bits off `H`'s),
   since `2⁴⁴⁸ ≡ 2²²⁴ + 1`, in registers, and its top word `c < 4` is folded in
@@ -85,36 +87,12 @@ descending. -/
 def colPairs (k : Nat) : List (Nat × Nat) :=
   ((List.range 7).reverse.filter fun i => i ≤ k ∧ k - i < 7).map fun i => (i, k - i)
 
-/-- The register of `b_j`: `b₆` replaces `b₀`. -/
-def bReg (j : Nat) : Reg := w (j % 6)
-
-/-- A term `a_i b_j` of a product: `a_i` loaded into `t0`; `b₆` is loaded
-after `a₆ b₀`. -/
-def mulTerm (a b k : Nat) (p : Nat × Nat) : List Instr :=
-  (.load .d .t0 .a3 (a + 8 * p.1) :: macc (rr k) (rr (k + 1)) (rr (k + 2)) .t0 (bReg p.2)) ++
-    (if p.1 = 6 ∧ p.2 = 0 then [.load .d (w 0) .a3 (b + 48)] else [])
-
 /-- The end of column `k`: its low word stored at `ACC + 8k`, and the
 register zeroed, which becomes the top word of column `k + 1`'s accumulator. -/
 def colEnd (k : Nat) : List Instr := [.store .d (rr k) .a3 (ACC + 8 * k), .li (rr k) 0]
 
-/-- Column `k` of `[a] · [b]`. -/
-def mulCol (a b k : Nat) : List Instr := (colPairs k).flatMap (mulTerm a b k) ++ colEnd k
-
 /-- The accumulator zeroed. -/
 def zero3 : List Instr := [.li .a4 0, .li .a5 0, .li .a6 0]
-
-/-- The fourteen words of `[a] · [b]` at `ACC`. -/
-def product (a b : Nat) : List Instr := ld6 b ++ zero3 ++ (List.range 14).flatMap (mulCol a b)
-
-/-- A cross term `a_j a_i` (`j < i`) of a square: `a₆` loaded into `t0`. -/
-def sqTerm (a k : Nat) (p : Nat × Nat) : List Instr :=
-  if p.1 = 6 then .load .d .t0 .a3 (a + 48) :: macc (rr k) (rr (k + 1)) (rr (k + 2)) (w p.2) .t0
-  else macc (rr k) (rr (k + 1)) (rr (k + 2)) (w p.2) (w p.1)
-
-/-- Column `k` of the cross products of `[a]`. -/
-def sqCol (a k : Nat) : List Instr :=
-  ((colPairs k).filter fun p => p.2 < p.1).flatMap (sqTerm a k) ++ colEnd k
 
 /-- Word `k` of `2 X + Σ a_i² 2¹²⁸ⁱ`, for the cross products' sum `X` at
 `ACC`, into `ACC + 8k`: `a5` holds `X`'s word `k - 1` (then `k`), `a4` the
@@ -128,9 +106,59 @@ def dblStep (a k : Nat) : List Instr :=
    else [.add .a6 .a6 .t3, .sltu .a7 .a6 .t3]) ++
   [.add .a6 .a6 .a4, .sltu .t0 .a6 .a4, .add .a4 .a7 .t0, .store .d .a6 .a3 (ACC + 8 * k)]
 
-/-- The fourteen words of `[a]²` at `ACC`. -/
+/-- The registers of term `n`'s product, low and high: `a7`, `t0` and `t3`,
+`t6` in turn. -/
+def PR (n : Nat) : Reg × Reg := if n % 2 = 0 then (.a7, .t0) else (.t3, .t6)
+
+/-- A product's terms `(k, i, j)`, column by column, from each column's pairs. -/
+def terms (ps : Nat → List (Nat × Nat)) : List (Nat × Nat × Nat) :=
+  (List.range 14).flatMap fun k => (ps k).map fun p => (k, p.1, p.2)
+
+/-- Term `n` of `ts`. -/
+def tm (ts : List (Nat × Nat × Nat)) (n : Nat) : Nat × Nat × Nat := ts.getD n (0, 0, 0)
+
+/-- The index of column `k`'s first term, for `cs c` terms in column `c`. -/
+def pstart (cs : Nat → Nat) (k : Nat) : Nat := ((List.range k).map cs).sum
+
+/-- Term `n`'s operands, `a_i` into `a1` and `b_j` into `a2`, if it is one. -/
+def ldN (a b : Nat) (ts : List (Nat × Nat × Nat)) (n : Nat) : List Instr :=
+  if n < ts.length then [.load .d .a1 .a3 (a + 8 * (tm ts n).2.1), .load .d .a2 .a3 (b + 8 * (tm ts n).2.2)]
+  else []
+
+/-- Term `n`'s product, from `a1` and `a2`, if it is one. -/
+def mulN (ts : List (Nat × Nat × Nat)) (n : Nat) : List Instr :=
+  if n < ts.length then mulWide (PR n).1 (PR n).2 .a1 .a2 else []
+
+/-- Term `n`'s product added to column `k`'s three-word accumulator. -/
+def accum (k n : Nat) : List Instr :=
+  [.add (rr k) (rr k) (PR n).1, .sltu (PR n).1 (rr k) (PR n).1, .add (PR n).2 (PR n).2 (PR n).1,
+    .add (rr (k + 1)) (rr (k + 1)) (PR n).2, .sltu (PR n).2 (rr (k + 1)) (PR n).2,
+    .add (rr (k + 2)) (rr (k + 2)) (PR n).2]
+
+/-- Term `n`, of column `k`: the next term's product and the operands of the
+one after it, issued before this one's sums, which they do not depend on. -/
+def pstep (a b : Nat) (ts : List (Nat × Nat × Nat)) (k n : Nat) : List Instr :=
+  mulN ts (n + 1) ++ ldN a b ts (n + 2) ++ accum k n
+
+/-- Column `k`: its `cs k` terms, then its end. -/
+def pcol (a b : Nat) (ts : List (Nat × Nat × Nat)) (cs : Nat → Nat) (k : Nat) : List Instr :=
+  (List.range' (pstart cs k) (cs k)).flatMap (pstep a b ts k) ++ colEnd k
+
+/-- The terms `ts` of `[a]` and `[b]` into the fourteen columns at `ACC`,
+software-pipelined: the first term's product and the second's operands ahead. -/
+def pipe (a b : Nat) (ts : List (Nat × Nat × Nat)) (cs : Nat → Nat) : List Instr :=
+  zero3 ++ ldN a b ts 0 ++ mulN ts 0 ++ ldN a b ts 1 ++ (List.range 14).flatMap (pcol a b ts cs)
+
+/-- The cross terms `(i, j)` (`j < i`) of a square's column `k`. -/
+def sqPairs (k : Nat) : List (Nat × Nat) := (colPairs k).filter fun p => p.2 < p.1
+
+/-- The fourteen words of `[a] · [b]` at `ACC`. -/
+def product (a b : Nat) : List Instr := pipe a b (terms colPairs) fun k => (colPairs k).length
+
+/-- The fourteen words of `[a]²` at `ACC`: the cross products, then twice
+their sum plus the squares. -/
 def square (a : Nat) : List Instr :=
-  ld6 a ++ zero3 ++ (List.range 14).flatMap (sqCol a) ++ [.li .a5 0, .li .a4 0] ++
+  pipe a a (terms sqPairs) (fun k => (sqPairs k).length) ++ [.li .a5 0, .li .a4 0] ++
     (List.range 14).flatMap (dblStep a)
 
 /-! ## Reduction -/
