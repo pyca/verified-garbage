@@ -108,7 +108,7 @@ def VerPost (s₀ : State) (a ct : List Byte) (s : State) : Prop :=
         (s₀.gpr .a5).toNat then s.gpr .a0 = 1
     else s.gpr .a0 = 0
 
-theorem ver_run {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.length % 16 = (s₀.gpr .a2).toNat % 16)
+theorem ver_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.length % 16 = (s₀.gpr .a2).toNat % 16)
     (hP : (s₀.gpr .a3).toNat = ct.length) :
     WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ VerPost s₀ a ct s' := by
   have L₀ := verLay h

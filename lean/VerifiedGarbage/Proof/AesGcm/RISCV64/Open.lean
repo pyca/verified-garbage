@@ -206,7 +206,7 @@ end
 
 /-- `open`, once the tag length is allowed, up to the comparison of the tags,
 followed by any `T`. -/
-theorem open_head {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₄)
+theorem open_head [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₄)
     (h19 : s₄.gpr .s8 = stackArg s₀ 1) (hok : Spec.Gcm.tagLenOk (stackArg s₀ 1).toNat = true) {T : Prog isa}
     {Q : State → Prop} (k : ∀ s₉, OpenMid s₀ s₄ s₉ → WP isa T s₉ Q) :
     WP isa (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112) (.seq (.block [mov .s8 .a0]) T))))) s₄ Q := by

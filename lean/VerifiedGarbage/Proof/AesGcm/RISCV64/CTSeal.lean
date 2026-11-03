@@ -135,7 +135,7 @@ variable (L : Lay c (W + BitVec.ofNat 64 16) W) (hR : R = 10 ∨ R = 12 ∨ R = 
 include L hR hTW
 
 /-- `seal` after its entry. -/
-theorem sealBody_ct : CT (fun s => OneT c W sp R Np n Ad A D Ln T s ∧ s.gpr .s4 = Np ∧
+theorem sealBody_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => OneT c W sp R Np n Ad A D Ln T s ∧ s.gpr .s4 = Np ∧
     s.gpr .s5 = BitVec.ofNat 64 n)
     (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore))))) := by
   -- `oneAad`

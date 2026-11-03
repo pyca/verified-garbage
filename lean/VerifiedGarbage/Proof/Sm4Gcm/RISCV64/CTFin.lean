@@ -70,7 +70,7 @@ section
 variable {c st w sp : Addr} (L : Lay c st w)
 include L
 
-theorem tag_ct {o : Nat} (ho : o = 0 ∨ o = 112) :
+theorem tag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) :
     CT (EnvB c st w sp) (tag o) := by
   refine CT.seq (J := EnvB c st w sp)
     ((lens_ct L (yo := 16) (.inr rfl)).mono fun s ⟨V, a, b, d, he, _⟩ => ⟨V, a, b, d, he⟩)
@@ -101,7 +101,7 @@ theorem tag_ct {o : Nat} (ho : o = 0 ∨ o = 112) :
 else of the additional data. -/
 abbrev finQ (A T : BitVec 64) : Nat := if T.toNat = 0 then A.toNat % 16 else T.toNat % 16
 
-theorem finTag_ct {o : Nat} (ho : o = 0 ∨ o = 112) {A T : BitVec 64} :
+theorem finTag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) {A T : BitVec 64} :
     CT (FTI c st w sp A T) (finTag o) := by
   have hq : finQ A T < 16 := by simp only [finQ]; split <;> exact Nat.mod_lt _ (by decide)
   let J : State → Prop := fun s => FTI c st w sp A T s ∧ s.gpr .s6 = BitVec.ofNat 64 (finQ A T)
@@ -179,7 +179,7 @@ theorem finEntry_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint
 theorem tagOut_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s9, .s0]) (.block tagOut)
     h).isSome = true := ⟨_, by taint_decide⟩
 
-theorem streamFinish_ct : ConstantTime isa streamFinishRISCV64.pre streamFinishRISCV64.pub streamFinish := by
+theorem streamFinish_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa streamFinishRISCV64.pre streamFinishRISCV64.pub streamFinish := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, qsp⟩ := hq
   have h₁' : finPre σ₁ := h₁
