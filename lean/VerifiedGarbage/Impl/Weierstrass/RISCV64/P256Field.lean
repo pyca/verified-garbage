@@ -21,15 +21,13 @@ public import VerifiedGarbage.Impl.Ed25519.RISCV64.MulFn
    operation runs there with its result to `SO`, and the result is copied a
    byte at a time to `[o]`, whose pointer the copies keep in `t1`;
 3. the operation:
-   * `mulCore`: the operands copied (doublewords) to `MA` and `MB`, their
-     eight-word product at `ACC` by X25519's columns of `mul` and `mulhu`
-     (its square, from `MA` alone, if the two pointers are equal: six cross
-     products rather than twelve), then Montgomery's reduction (`reduce`),
-     whose quotient words need no multiplication: for `p ≡ -1 (mod 2⁶⁴)`,
-     the quotient word of a round is the low word `q` itself, and
-     `q (p + 1) / 2⁶⁴ = q 2³² + q (2⁶⁴ - 2³² + 1) 2¹²⁸` is shifts and
-     subtractions (`quot`); the four rounds leave a number below `2p`,
-     which `csub` reduces;
+   * `mulCore`: `fused`, the product of `[t5]` and `[t4]` by columns of
+     `mul` and `mulhu` in registers, with Montgomery's reduction added into
+     the columns, whose quotient words need no multiplication: for
+     `p ≡ -1 (mod 2⁶⁴)`, the quotient word `q` of column `i < 4` is its low
+     word itself, and `q (p + 1) / 2⁶⁴ = q 2³² + q (2⁶⁴ - 2³² + 1) 2¹²⁸` is
+     shifts and subtractions (`qShift`, `qMul`); columns 4 to 7 leave a
+     number below `2p`, which `csub` reduces;
    * `addCore`: the sum with carries, then `csub`;
    * `subCore`: the difference with borrows, and `p` added back under the
      mask of the borrow.
@@ -122,7 +120,11 @@ def csubTail : List Instr :=
 below `2p`. -/
 def csub : List Instr := sumP ++ csubTail
 
-/-! ## Montgomery's reduction -/
+/-! ## Montgomery's reduction of a product at `ACC`
+
+The words and quotient of a round of the reductions of the four-word moduli
+that keep their product at `ACC` (`Impl/Weierstrass/RISCV64/P256Order.lean`,
+`Impl/Weierstrass/RISCV64/Gen4.lean`). -/
 
 /-- The words of a round, rotating: round `i` reads `q = rw i` and adds into
 `rw (i + 1)`–`rw (i + 4)`. -/
@@ -136,23 +138,6 @@ with its borrow, `q - (q >> 32)` less it), through `t0`. -/
 def quot (i : Nat) : List Instr :=
   [.shift .sll .d .a4 (rw i) 32, .shift .srl .d .a5 (rw i) 32, .sub .a6 (rw i) .a4,
     .sltu .a7 (rw i) .a4, .sub .t0 (rw i) .a5, .sub .a7 .t0 .a7]
-
-/-- Round `i`: word `i + 4` of the product loaded, then `rw (i + 1)`–`rw (i + 4)`
-plus `quot i` and the carry `a2` of the round before into word `i + 4`, the
-carry out of it into `a2`. -/
-def round (i : Nat) : List Instr :=
-  [.load .d (rw (i + 4)) .a3 (ACC + 8 * (i + 4))] ++ quot i ++
-  [.add (rw (i + 1)) (rw (i + 1)) .a4, .sltu .t0 (rw (i + 1)) .a4,
-   .add .a5 .a5 .t0, .add (rw (i + 2)) (rw (i + 2)) .a5, .sltu .t0 (rw (i + 2)) .a5,
-   .add (rw (i + 3)) (rw (i + 3)) .a6, .sltu .a4 (rw (i + 3)) .a6, .add (rw (i + 3)) (rw (i + 3)) .t0,
-   .sltu .t0 (rw (i + 3)) .t0, .add .t0 .t0 .a4,
-   .add .a7 .a7 .t0, .add .a7 .a7 .a2, .add (rw (i + 4)) (rw (i + 4)) .a7, .sltu .a2 (rw (i + 4)) .a7]
-
-/-- The product at `ACC` reduced: its low four words loaded, the carry zero,
-the four rounds, leaving `rw 4`–`rw 7` (`X0`–`X3`) and `a2` (`XC`). -/
-def reduce : List Instr :=
-  (List.range 4).map (fun j => .load .d (rw j) .a3 (ACC + 8 * j)) ++ [.li .a2 0] ++
-    (List.range 4).flatMap round
 
 /-! ## The operations -/
 
@@ -170,8 +155,102 @@ def prodCode : Prog isa :=
 /-- The product, reduced by `red` and `sum ++ csubTail`. -/
 def mulWith (red sum : List Instr) : Prog isa := .seq prodCode (.block (red ++ (sum ++ csubTail)))
 
+/-! ## The product, reduced as it is computed
+
+`fused` (`mulCore`) computes `([t5] [t4] + Q p) / 2²⁵⁶` by columns, as
+`product` does, but in registers, and adds Montgomery's reduction into the
+columns: the quotient word `qᵢ` is the low word of column `i < 4` (for
+`p ≡ -1 (mod 2⁶⁴)`), whose `qᵢ p` cancels the word and adds `qᵢ 2³²` into
+column `i + 1` (`qShift`) and `qᵢ (2⁶⁴ - 2³² + 1)` into column `i + 3`
+(`qMul`), so that columns 4 to 7 are the result. Every term is two words
+`x + 2⁶⁴ y`, with `y < 2⁶⁴ - 1`, added into the column's three words
+(`acc3`), or, while the column's higher words are still zero, into two words
+and a new third (`accF`) or one word and a new second (`acc1`). The words of
+`[t4]` stay in registers; those of `[t5]` are loaded for each term. -/
+
+/-- `x + 2⁶⁴ y = a b`. -/
+def prodW (x y a b : Reg) : List Instr := [.mulhu y a b, .mul x a b]
+
+/-- `x + 2⁶⁴ y = q 2³²`. -/
+def qShift (x y q : Reg) : List Instr := [.shift .sll .d x q 32, .shift .srl .d y q 32]
+
+/-- `x + 2⁶⁴ y = q (2⁶⁴ - 2³² + 1)`: `x = q - (q << 32)` with its borrow,
+`y = q - (q >> 32)` less it; `q` is lost. -/
+def qMul (x y q : Reg) : List Instr :=
+  [.shift .sll .d x q 32, .sltu y q x, .sub x q x, .sub y q y, .shift .srl .d q q 32, .sub y y q]
+
+/-- `r₀ + 2⁶⁴ r₁ + 2¹²⁸ r₂ += x + 2⁶⁴ y`. -/
+def acc3 (r0 r1 r2 x y : Reg) : List Instr :=
+  [.add r0 r0 x, .sltu x r0 x, .add y y x, .add r1 r1 y, .sltu y r1 y, .add r2 r2 y]
+
+/-- `r₀ + 2⁶⁴ r₁ += x + 2⁶⁴ y`, the carry out into `y`. -/
+def accF (r0 r1 x y : Reg) : List Instr :=
+  [.add r0 r0 x, .sltu x r0 x, .add y y x, .add r1 r1 y, .sltu y r1 y]
+
+/-- `r₀ += x + 2⁶⁴ y`, the high word into `y`. -/
+def acc1 (r0 x y : Reg) : List Instr := [.add r0 r0 x, .sltu x r0 x, .add y y x]
+
+/-- `a b` added by `acc3`, through `x` and `y`. -/
+def pa3 (r0 r1 r2 x y a b : Reg) : List Instr := prodW x y a b ++ acc3 r0 r1 r2 x y
+
+/-- `a b` added by `accF`. -/
+def paF (r0 r1 x y a b : Reg) : List Instr := prodW x y a b ++ accF r0 r1 x y
+
+/-- `a b` added by `acc1`. -/
+def pa1 (r0 x y a b : Reg) : List Instr := prodW x y a b ++ acc1 r0 x y
+
+/-- `q 2³²` added by `acc3`. -/
+def qs3 (r0 r1 r2 x y q : Reg) : List Instr := qShift x y q ++ acc3 r0 r1 r2 x y
+
+/-- `q (2⁶⁴ - 2³² + 1)` added by `accF`. -/
+def qmF (r0 r1 x y q : Reg) : List Instr := qMul x y q ++ accF r0 r1 x y
+
+/-- Word `i` of `[t5]` times `b`, loaded into `x`, added by `pa3`. -/
+def term3 (r0 r1 r2 x y : Reg) (i : Nat) (b : Reg) : List Instr :=
+  .load .d x .t5 (8 * i) :: pa3 r0 r1 r2 x y x b
+
+/-- Columns 0 and 1: `b₀`, `b₁` into `a0`, `a4`; the column words
+`a5` (`q₀`), `a6` (`q₁`), and `t0`, `t6` for column 2. -/
+def col01 : List Instr :=
+  [.load .d .a0 .t4 0, .load .d .a4 .t4 8, .load .d .a5 .t5 0] ++ prodW .a5 .a6 .a5 .a0 ++
+  .load .d .a7 .t5 8 :: pa1 .a6 .a7 .t0 .a7 .a0 ++
+  .load .d .a7 .t5 0 :: paF .a6 .t0 .a7 .t6 .a7 .a4 ++
+  qs3 .a6 .t0 .t6 .a7 .a1 .a5
+
+/-- Column 2: `b₂` into `a7`; `q₂` in `t0`, then `t6`, `a1` for column 3. -/
+def col2 : List Instr :=
+  .load .d .a7 .t4 16 :: .load .d .t3 .t5 16 :: paF .t0 .t6 .t3 .a1 .t3 .a0 ++
+  term3 .t0 .t6 .a1 .t3 .a2 1 .a4 ++ term3 .t0 .t6 .a1 .t3 .a2 0 .a7 ++
+  qs3 .t0 .t6 .a1 .t3 .a2 .a6
+
+/-- Column 3: `q₀`'s second term, `b₃` into `a0` once `b₀` is used; `q₃` in
+`t6`, then `a1`, `t3` for column 4. -/
+def col3 : List Instr :=
+  qmF .t6 .a1 .a2 .t3 .a5 ++
+  term3 .t6 .a1 .t3 .a5 .a2 3 .a0 ++ .load .d .a0 .t4 24 ::
+  term3 .t6 .a1 .t3 .a5 .a2 2 .a4 ++ term3 .t6 .a1 .t3 .a5 .a2 1 .a7 ++
+  term3 .t6 .a1 .t3 .a5 .a2 0 .a0 ++ qs3 .t6 .a1 .t3 .a5 .a2 .t0
+
+/-- Column 4: word 3 of `[t5]` kept in `a6`; the result's word 0 in `a1`,
+then `t3`, `t4` for column 5. -/
+def col4 : List Instr :=
+  qmF .a1 .t3 .a5 .t4 .a6 ++
+  .load .d .a6 .t5 24 :: pa3 .a1 .t3 .t4 .a5 .a2 .a6 .a4 ++
+  term3 .a1 .t3 .t4 .a5 .a2 2 .a7 ++ term3 .a1 .t3 .t4 .a5 .a2 1 .a0 ++
+  qs3 .a1 .t3 .t4 .a5 .a2 .t6
+
+/-- Columns 5 and 6: the result's words 1 to 3 in `t3`, `t4`, `t5`, its top
+bit in `a2`. -/
+def col56 : List Instr :=
+  .load .d .a5 .t5 16 :: qmF .t3 .t4 .a4 .t5 .t0 ++
+  pa3 .t3 .t4 .t5 .a5 .a2 .a5 .a0 ++ pa3 .t3 .t4 .t5 .a5 .a2 .a6 .a7 ++
+  qmF .t4 .t5 .a4 .a2 .t6 ++ pa3 .t4 .t5 .a2 .a4 .a5 .a6 .a0
+
+/-- `X0`–`X3` and `XC`: `([t5] [t4] + Q p) / 2²⁵⁶` for some `Q < 2²⁵⁶`. -/
+def fused : List Instr := col01 ++ col2 ++ col3 ++ col4 ++ col56
+
 /-- `[t2] = [t4] [t5] R⁻¹ mod p`. -/
-def mulCore : Prog isa := mulWith reduce sumP
+def mulCore : Prog isa := .block (fused ++ csub)
 
 /-- The words of `[t4]` and `[t5]` into `a1`, `t3`, `t6`, `a4` and `a5`, `a6`,
 `a7`, `t0`. -/
