@@ -7,7 +7,10 @@ public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha256
 public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha512
 public import VerifiedGarbage.Spec.HashTable
 public import VerifiedGarbage.Proof.HashTable.Basic
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
 import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Tables of the interface `Hash` on x86
@@ -21,7 +24,12 @@ of a variant (`tableOf`) holds the addresses of its streaming `init`,
 32 bits wide; an indirect call of the functions of every variant
 (`fnsOf`) to one of them reaches it (`tabOK_of`), when the functions of
 distinct names are at distinct addresses and the variants' functions of the
-same name have the same code (`Coh`).
+same name have the same code (`Coh`). In the state a function's entry
+(`entered`) leaves, a table among its buffers only read holds what MGF1
+needs of it (`tabFacts_entered`); and the functions of `fnsOf vs` write `esp`
+only through their frames (`fnsOf_noSp`). For the contracts'
+satisfiability, a state holding the table of `w` at `0x300000`
+(`withTable`).
 -/
 
 @[expose] public section
@@ -30,8 +38,9 @@ namespace VG.Proof.HashTable.X86
 
 open VG VG.X86
 open VG.Impl.RsaOaep.X86 (Fns)
-open VG.Proof.RsaOaep.X86 (OHash TabOK TabMem)
-open VG.Proof.HashTable (pw_ne find_name)
+open VG.Proof.RsaOaep.X86 (OHash TabOK TabMem TabFacts)
+open VG.Proof.RsaPkcs1Sig.X86 (layOf entered save_eq)
+open VG.Proof.HashTable (pw_ne find_name symsOf32 put5w put5w_held put5w_below)
 
 /-- A variant of a hash function: the hash function, the suffix of its
 functions' names and the CPU features it needs, and its place in
@@ -137,5 +146,81 @@ theorem hashAt_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 20 ≤ 2 ^ 32) 
       simp only [Spec.HashTable.index, Spec.Mgf1.hashes, List.length_cons, List.length_nil] at this ⊢
       omega)]
   exact w.idx
+
+/-- The functions of `fnsOf vs`, by kind, write `esp` only through their frames. -/
+theorem fnsOf_noSp (vs : List TVar) :
+    (∀ q ∈ (fnsOf vs).init, NoSp q.2) ∧ (∀ q ∈ (fnsOf vs).upd, NoSp q.2) ∧ (∀ q ∈ (fnsOf vs).fin, NoSp q.2) := by
+  simp only [fnsOf, List.mem_map]
+  refine ⟨?_, ?_, ?_⟩ <;> rintro _ ⟨w, -, rfl⟩
+  exacts [w.g.ok.initSp, w.g.ok.updSp, w.g.ok.finSp]
+
+section
+variable {F C : Nat} {argv : List (BitVec 32)} {ro rw : List Region} {s : State}
+
+/-- A word of a buffer only read, after the entry, as before it. -/
+theorem entered_roW (hsp : 16 + F ≤ (s.gpr .esp).toNat) (h : (layOf F argv ro rw s C).Ok (entered F s))
+    {R : Region} (hR : R ∈ ro) {a : Addr} (hc : R.Contains a 4) :
+    (entered F s).mem.readW a 32 = s.mem.readW a 32 := by
+  have hf : Frame [Proof.RsaPkcs1Sig.X86.saveRegion s] s.mem (entered F s).mem := by
+    rw [Proof.RsaPkcs1Sig.X86.entered_mem]
+    have := pushed_frame (s := s) Proof.RsaPkcs1Sig.X86.pushRegs_noSp
+      (by simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega)
+    simpa [Impl.RsaPkcs1Sig.X86.savedRegs, below] using this
+  refine hf.readW hc (fun r hr => ?_) (by decide)
+  simp only [List.mem_singleton] at hr; subst hr
+  rw [save_eq (argv := argv) (ro := ro) (rw := rw) (C := C) hsp]
+  exact ((h.stk R (List.mem_append_left _ hR)).sub_left
+    (Proof.RsaPkcs1Sig.X86.Lay.sub_stk (by simp only [layOf]; omega))).symm
+
+/-- What MGF1 needs of the table of `w` at `p`, one of the buffers only
+read, after the entry. -/
+theorem tabFacts_entered (hsp : 16 + F ≤ (s.gpr .esp).toNat) (h : (layOf F argv ro rw s C).Ok (entered F s))
+    {p : BitVec 32} (hR : Sig.tableRegion 32 (p.setWidth 64) 5 ∈ ro) (hp : p.toNat + 20 ≤ 2 ^ 32)
+    {vs : List TVar} (hc : Coh vs)
+    (hd64 : (names vs).Pairwise fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) {w : TVar}
+    (hw : w ∈ vs) (hh : Abi.tableHeld 32 s.mem (p.setWidth 64) (FnTable.words isa s (tableOf w))) :
+    TabFacts w.g.H (fnsOf vs) p (s.syms w.g.H.initN) (s.syms w.g.H.updN) (s.syms w.g.H.finN) (entered F s) := by
+  have sy : (entered F s).syms = s.syms := pushRegs_syms s _
+  have e : ∀ o, o + 4 ≤ 20 → (entered F s).mem.readW (VG.X86.addr p o) 32 = s.mem.readW (VG.X86.addr p o) 32 :=
+    fun o ho => entered_roW hsp h hR (by
+      show (⟨p.setWidth 64, 5 * (32 / 8)⟩ : Region).Contains (VG.X86.addr p o) 4
+      rw [addr_eq (by omega)]
+      exact Offset.contains_base _ (by omega) (by omega))
+  obtain ⟨⟨m0, m1, m2⟩, -, hD⟩ := held_tableOf hp hh
+  refine ⟨?_, ⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
+  · rw [sy]; exact tabOK_of hc hd64 hw
+  · rw [e 0 (by decide), m0, sy]
+  · rw [e 4 (by decide), m1, sy]
+  · rw [e 8 (by decide), m2, sy]
+  · rw [e 16 (by decide), hD]
+  all_goals rw [sy]
+end
+
+/-! ## States holding a table, for the contracts' satisfiability -/
+
+/-- The words of `w`'s table, at the addresses `symsOf32` gives `vs`' functions. -/
+def tw (vs : List TVar) (w : TVar) : List (BitVec 64) :=
+  [(symsOf32 (names vs) w.g.H.initN).setWidth 64, (symsOf32 (names vs) w.g.H.updN).setWidth 64,
+    (symsOf32 (names vs) w.g.H.finN).setWidth 64, BitVec.ofNat 64 (Spec.HashTable.index w.g.G),
+    BitVec.ofNat 64 w.g.G.len]
+
+/-- A state with `s`'s registers and regions, `w`'s table at `0x300000`,
+and `vs`' functions at distinct addresses. -/
+def withTable (s : State) (vs : List TVar) (w : TVar) : State :=
+  { s with
+    mem := put5w s.mem 0x300000 (((tw vs w).getD 0 0).setWidth 32) (((tw vs w).getD 1 0).setWidth 32)
+      (((tw vs w).getD 2 0).setWidth 32) (((tw vs w).getD 3 0).setWidth 32) (((tw vs w).getD 4 0).setWidth 32)
+    syms := symsOf32 (names vs) }
+
+theorem withTable_arg (s : State) (vs : List TVar) (w : TVar) {j : Nat}
+    (hj : (VG.X86.argAddr s j).toNat + 4 ≤ 0x300000) : VG.X86.arg (withTable s vs w) j = VG.X86.arg s j :=
+  put5w_below hj _ _ _ _ _
+
+/-- The table of `w`, at `0x300000`. -/
+theorem withTable_held (s : State) (vs : List TVar) (w : TVar) :
+    Abi.tableHeld 32 (withTable s vs w).mem ((0x300000 : BitVec 32).setWidth 64)
+      (FnTable.words isa (withTable s vs w) (tableOf w)) := by
+  rw [show ((0x300000 : BitVec 32).setWidth 64) = 0x300000 by decide]
+  exact put5w_held (ws := tw vs w) rfl
 
 end VG.Proof.HashTable.X86
