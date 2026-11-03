@@ -339,6 +339,79 @@ pub fn bench(c: &mut Criterion) {
     const ONLY_PIECES: bool = true;
     // Only Proto12 this run: #4083's `tail` and three other orders of its step, and the
     // exponentiation proxy with #4083's `sqrTail`.
+    // Only Proto14 this run: #4091's check_key and main's crt_values next to the ones with
+    // the division on the divisor's words (a), with a shorter carry chain (b), and both (c).
+    const ONLY_P14: bool = true;
+    if ONLY_P14 {
+        use openssl::rsa::Rsa;
+        use verified_garbage_asm_riscv64::rsa_proto14 as p14;
+        type Key = unsafe extern "C" fn(
+            *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize,
+            *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize,
+            *mut u64, usize,
+        ) -> u32;
+        type Crt = unsafe extern "C" fn(
+            *mut u8, usize, *mut u8, usize, *mut u8, usize, *const u8, usize, *const u8, usize,
+            *const u8, usize, *const u8, usize, *mut u64, usize,
+        ) -> u32;
+        let keys: Vec<_> = [2048u32, 3072, 4096].iter().map(|&b| (b, Rsa::generate(b).unwrap())).collect();
+        let ks: [(&str, Key); 4] = [
+            ("base", p14::vg_p14_check_key_base),
+            ("a", p14::vg_p14_check_key_a),
+            ("b", p14::vg_p14_check_key_b),
+            ("c", p14::vg_p14_check_key_c),
+        ];
+        let cs: [(&str, Crt); 4] = [
+            ("base", p14::vg_p14_crt_values_base),
+            ("a", p14::vg_p14_crt_values_a),
+            ("b", p14::vg_p14_crt_values_b),
+            ("c", p14::vg_p14_crt_values_c),
+        ];
+        let pad = |b: Vec<u8>, l: usize| {
+            let mut v = vec![0u8; l - b.len()];
+            v.extend(b);
+            v
+        };
+        for which in 0..8 {
+            let (kind, v) = if which < 4 { ("check_key", ks[which].0) } else { ("crt_values", cs[which - 4].0) };
+            let mut g = c.benchmark_group(format!("rsa_p14_{kind}_{v}"));
+            for (bits, key) in &keys {
+                let k = key.size() as usize;
+                let (n, e, d) = (key.n().to_vec(), key.e().to_vec(), pad(key.d().to_vec(), k));
+                let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
+                let (pl, ql) = (p.len(), q.len());
+                let dp = pad(key.dmp1().unwrap().to_vec(), pl);
+                let dq = pad(key.dmq1().unwrap().to_vec(), ql);
+                let qi = pad(key.iqmp().unwrap().to_vec(), pl);
+                let mut s = vec![0u64; 16 * k + 64];
+                let (mut odp, mut odq, mut oqi) = (vec![0u8; pl], vec![0u8; ql], vec![0u8; pl]);
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    if which < 4 {
+                        let f = ks[which].1;
+                        b.iter(|| unsafe {
+                            let r = f(n.as_ptr(), k, e.as_ptr(), e.len(), black_box(d.as_ptr()), k,
+                                p.as_ptr(), pl, q.as_ptr(), ql, dp.as_ptr(), pl, dq.as_ptr(), ql,
+                                qi.as_ptr(), pl, s.as_mut_ptr(), s.len());
+                            assert_eq!(r, 1);
+                        })
+                    } else {
+                        let f = cs[which - 4].1;
+                        b.iter(|| unsafe {
+                            let r = f(odp.as_mut_ptr(), pl, odq.as_mut_ptr(), ql, oqi.as_mut_ptr(), pl,
+                                n.as_ptr(), k, black_box(p.as_ptr()), pl, q.as_ptr(), ql, d.as_ptr(), k,
+                                s.as_mut_ptr(), s.len());
+                            assert_eq!(r, 1);
+                        })
+                    }
+                });
+                if which >= 4 {
+                    assert_eq!((&odp, &odq, &oqi), (&dp, &dq, &qi));
+                }
+            }
+            g.finish();
+        }
+        return;
+    }
     // Only Proto13 this run: main's two key checks next to the ones with Montgomery products.
     const ONLY_P13: bool = true;
     if ONLY_P13 {
