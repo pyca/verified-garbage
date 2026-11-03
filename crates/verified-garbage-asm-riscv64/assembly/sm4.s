@@ -4116,908 +4116,157 @@ vg_sm4_expand_key:
 	xor t0, t0, t1
 	sd t0, 760(a5)
 	addi a3, a3, 256
-	ld t3, 360(a5)
-	ld t4, 368(a5)
-	ld t5, 376(a5)
-	ld t6, 384(a5)
-	ld a6, 392(a5)
-	ld a7, 400(a5)
-	ld s0, 704(a5)
-	ld s1, 712(a5)
-	ld s2, 720(a5)
-	ld s3, 728(a5)
-	ld s4, 736(a5)
-	ld s5, 744(a5)
-	ld s6, 752(a5)
-	ld s7, 760(a5)
-	srli t0, s0, 1
-	xor t0, t0, s1
-	and t0, t0, t6
-	xor s1, s1, t0
-	slli t0, t0, 1
-	xor s0, s0, t0
-	srli t0, s2, 1
-	xor t0, t0, s3
-	and t0, t0, t6
-	xor s3, s3, t0
-	slli t0, t0, 1
-	xor s2, s2, t0
-	srli t0, s4, 1
-	xor t0, t0, s5
-	and t0, t0, t6
-	xor s5, s5, t0
-	slli t0, t0, 1
-	xor s4, s4, t0
-	srli t0, s6, 1
-	xor t0, t0, s7
-	and t0, t0, t6
-	xor s7, s7, t0
-	slli t0, t0, 1
-	xor s6, s6, t0
-	srli t0, s0, 2
-	xor t0, t0, s2
-	and t0, t0, a6
-	xor s2, s2, t0
-	slli t0, t0, 2
-	xor s0, s0, t0
-	srli t0, s1, 2
-	xor t0, t0, s3
-	and t0, t0, a6
-	xor s3, s3, t0
-	slli t0, t0, 2
-	xor s1, s1, t0
-	srli t0, s4, 2
-	xor t0, t0, s6
-	and t0, t0, a6
-	xor s6, s6, t0
-	slli t0, t0, 2
-	xor s4, s4, t0
-	srli t0, s5, 2
-	xor t0, t0, s7
-	and t0, t0, a6
-	xor s7, s7, t0
-	slli t0, t0, 2
-	xor s5, s5, t0
-	srli t0, s0, 4
-	xor t0, t0, s4
-	and t0, t0, a7
-	xor s4, s4, t0
-	slli t0, t0, 4
-	xor s0, s0, t0
-	srli t0, s1, 4
-	xor t0, t0, s5
-	and t0, t0, a7
-	xor s5, s5, t0
-	slli t0, t0, 4
-	xor s1, s1, t0
-	srli t0, s2, 4
-	xor t0, t0, s6
-	and t0, t0, a7
-	xor s6, s6, t0
-	slli t0, t0, 4
-	xor s2, s2, t0
-	srli t0, s3, 4
-	xor t0, t0, s7
-	and t0, t0, a7
-	xor s7, s7, t0
-	slli t0, t0, 4
-	xor s3, s3, t0
-	sd s0, 768(a5)
-	sd s1, 784(a5)
-	sd s2, 800(a5)
-	sd s3, 816(a5)
-	sd s4, 832(a5)
-	sd s5, 848(a5)
-	sd s6, 864(a5)
-	sd s7, 880(a5)
-	ld s0, 640(a5)
-	ld s1, 648(a5)
-	ld s2, 656(a5)
-	ld s3, 664(a5)
-	ld s4, 672(a5)
-	ld s5, 680(a5)
-	ld s6, 688(a5)
-	ld s7, 696(a5)
-	srli t0, s0, 1
-	xor t0, t0, s1
-	and t0, t0, t6
-	xor s1, s1, t0
-	slli t0, t0, 1
-	xor s0, s0, t0
-	srli t0, s2, 1
-	xor t0, t0, s3
-	and t0, t0, t6
-	xor s3, s3, t0
-	slli t0, t0, 1
-	xor s2, s2, t0
-	srli t0, s4, 1
-	xor t0, t0, s5
-	and t0, t0, t6
-	xor s5, s5, t0
-	slli t0, t0, 1
-	xor s4, s4, t0
-	srli t0, s6, 1
-	xor t0, t0, s7
-	and t0, t0, t6
-	xor s7, s7, t0
-	slli t0, t0, 1
-	xor s6, s6, t0
-	srli t0, s0, 2
-	xor t0, t0, s2
-	and t0, t0, a6
-	xor s2, s2, t0
-	slli t0, t0, 2
-	xor s0, s0, t0
-	srli t0, s1, 2
-	xor t0, t0, s3
-	and t0, t0, a6
-	xor s3, s3, t0
-	slli t0, t0, 2
-	xor s1, s1, t0
-	srli t0, s4, 2
-	xor t0, t0, s6
-	and t0, t0, a6
-	xor s6, s6, t0
-	slli t0, t0, 2
-	xor s4, s4, t0
-	srli t0, s5, 2
-	xor t0, t0, s7
-	and t0, t0, a6
-	xor s7, s7, t0
-	slli t0, t0, 2
-	xor s5, s5, t0
-	srli t0, s0, 4
-	xor t0, t0, s4
-	and t0, t0, a7
-	xor s4, s4, t0
-	slli t0, t0, 4
-	xor s0, s0, t0
-	srli t0, s1, 4
-	xor t0, t0, s5
-	and t0, t0, a7
-	xor s5, s5, t0
-	slli t0, t0, 4
-	xor s1, s1, t0
-	srli t0, s2, 4
-	xor t0, t0, s6
-	and t0, t0, a7
-	xor s6, s6, t0
-	slli t0, t0, 4
-	xor s2, s2, t0
-	srli t0, s3, 4
-	xor t0, t0, s7
-	and t0, t0, a7
-	xor s7, s7, t0
-	slli t0, t0, 4
-	xor s3, s3, t0
-	sd s0, 896(a5)
-	sd s1, 912(a5)
-	sd s2, 928(a5)
-	sd s3, 944(a5)
-	sd s4, 960(a5)
-	sd s5, 976(a5)
-	sd s6, 992(a5)
-	sd s7, 1008(a5)
-	ld s0, 576(a5)
-	ld s1, 584(a5)
-	ld s2, 592(a5)
-	ld s3, 600(a5)
-	ld s4, 608(a5)
-	ld s5, 616(a5)
-	ld s6, 624(a5)
-	ld s7, 632(a5)
-	srli t0, s0, 1
-	xor t0, t0, s1
-	and t0, t0, t6
-	xor s1, s1, t0
-	slli t0, t0, 1
-	xor s0, s0, t0
-	srli t0, s2, 1
-	xor t0, t0, s3
-	and t0, t0, t6
-	xor s3, s3, t0
-	slli t0, t0, 1
-	xor s2, s2, t0
-	srli t0, s4, 1
-	xor t0, t0, s5
-	and t0, t0, t6
-	xor s5, s5, t0
-	slli t0, t0, 1
-	xor s4, s4, t0
-	srli t0, s6, 1
-	xor t0, t0, s7
-	and t0, t0, t6
-	xor s7, s7, t0
-	slli t0, t0, 1
-	xor s6, s6, t0
-	srli t0, s0, 2
-	xor t0, t0, s2
-	and t0, t0, a6
-	xor s2, s2, t0
-	slli t0, t0, 2
-	xor s0, s0, t0
-	srli t0, s1, 2
-	xor t0, t0, s3
-	and t0, t0, a6
-	xor s3, s3, t0
-	slli t0, t0, 2
-	xor s1, s1, t0
-	srli t0, s4, 2
-	xor t0, t0, s6
-	and t0, t0, a6
-	xor s6, s6, t0
-	slli t0, t0, 2
-	xor s4, s4, t0
-	srli t0, s5, 2
-	xor t0, t0, s7
-	and t0, t0, a6
-	xor s7, s7, t0
-	slli t0, t0, 2
-	xor s5, s5, t0
-	srli t0, s0, 4
-	xor t0, t0, s4
-	and t0, t0, a7
-	xor s4, s4, t0
-	slli t0, t0, 4
-	xor s0, s0, t0
-	srli t0, s1, 4
-	xor t0, t0, s5
-	and t0, t0, a7
-	xor s5, s5, t0
-	slli t0, t0, 4
-	xor s1, s1, t0
-	srli t0, s2, 4
-	xor t0, t0, s6
-	and t0, t0, a7
-	xor s6, s6, t0
-	slli t0, t0, 4
-	xor s2, s2, t0
-	srli t0, s3, 4
-	xor t0, t0, s7
-	and t0, t0, a7
-	xor s7, s7, t0
-	slli t0, t0, 4
-	xor s3, s3, t0
-	sd s0, 776(a5)
-	sd s1, 792(a5)
-	sd s2, 808(a5)
-	sd s3, 824(a5)
-	sd s4, 840(a5)
-	sd s5, 856(a5)
-	sd s6, 872(a5)
-	sd s7, 888(a5)
-	ld s0, 512(a5)
-	ld s1, 520(a5)
-	ld s2, 528(a5)
-	ld s3, 536(a5)
-	ld s4, 544(a5)
-	ld s5, 552(a5)
-	ld s6, 560(a5)
-	ld s7, 568(a5)
-	srli t0, s0, 1
-	xor t0, t0, s1
-	and t0, t0, t6
-	xor s1, s1, t0
-	slli t0, t0, 1
-	xor s0, s0, t0
-	srli t0, s2, 1
-	xor t0, t0, s3
-	and t0, t0, t6
-	xor s3, s3, t0
-	slli t0, t0, 1
-	xor s2, s2, t0
-	srli t0, s4, 1
-	xor t0, t0, s5
-	and t0, t0, t6
-	xor s5, s5, t0
-	slli t0, t0, 1
-	xor s4, s4, t0
-	srli t0, s6, 1
-	xor t0, t0, s7
-	and t0, t0, t6
-	xor s7, s7, t0
-	slli t0, t0, 1
-	xor s6, s6, t0
-	srli t0, s0, 2
-	xor t0, t0, s2
-	and t0, t0, a6
-	xor s2, s2, t0
-	slli t0, t0, 2
-	xor s0, s0, t0
-	srli t0, s1, 2
-	xor t0, t0, s3
-	and t0, t0, a6
-	xor s3, s3, t0
-	slli t0, t0, 2
-	xor s1, s1, t0
-	srli t0, s4, 2
-	xor t0, t0, s6
-	and t0, t0, a6
-	xor s6, s6, t0
-	slli t0, t0, 2
-	xor s4, s4, t0
-	srli t0, s5, 2
-	xor t0, t0, s7
-	and t0, t0, a6
-	xor s7, s7, t0
-	slli t0, t0, 2
-	xor s5, s5, t0
-	srli t0, s0, 4
-	xor t0, t0, s4
-	and t0, t0, a7
-	xor s4, s4, t0
-	slli t0, t0, 4
-	xor s0, s0, t0
-	srli t0, s1, 4
-	xor t0, t0, s5
-	and t0, t0, a7
-	xor s5, s5, t0
-	slli t0, t0, 4
-	xor s1, s1, t0
-	srli t0, s2, 4
-	xor t0, t0, s6
-	and t0, t0, a7
-	xor s6, s6, t0
-	slli t0, t0, 4
-	xor s2, s2, t0
-	srli t0, s3, 4
-	xor t0, t0, s7
-	and t0, t0, a7
-	xor s7, s7, t0
-	slli t0, t0, 4
-	xor s3, s3, t0
-	sd s0, 904(a5)
-	sd s1, 920(a5)
-	sd s2, 936(a5)
-	sd s3, 952(a5)
-	sd s4, 968(a5)
-	sd s5, 984(a5)
-	sd s6, 1000(a5)
-	sd s7, 1016(a5)
-	ld s0, 768(a5)
-	ld s4, 896(a5)
-	ld s1, 784(a5)
-	ld s5, 912(a5)
-	ld s2, 800(a5)
-	ld s6, 928(a5)
-	ld s3, 816(a5)
-	ld s7, 944(a5)
-	srli t0, s0, 8
-	xor t0, t0, s4
+	ld t3, 352(a5)
+	ld t4, 336(a5)
+	ld t5, 344(a5)
+	ld t2, 640(a5)
+	and t2, t2, t3
+	ld t1, 648(a5)
+	and t1, t1, t3
+	slli t1, t1, 1
+	xor t2, t2, t1
+	ld t1, 656(a5)
+	and t1, t1, t3
+	slli t1, t1, 2
+	xor t2, t2, t1
+	ld t1, 664(a5)
+	and t1, t1, t3
+	slli t1, t1, 3
+	xor t2, t2, t1
+	ld t1, 672(a5)
+	and t1, t1, t3
+	slli t1, t1, 4
+	xor t2, t2, t1
+	ld t1, 680(a5)
+	and t1, t1, t3
+	slli t1, t1, 5
+	xor t2, t2, t1
+	ld t1, 688(a5)
+	and t1, t1, t3
+	slli t1, t1, 6
+	xor t2, t2, t1
+	ld t1, 696(a5)
+	and t1, t1, t3
+	slli t1, t1, 7
+	xor t2, t2, t1
+	srli t1, t2, 8
+	xor t2, t2, t1
+	and t2, t2, t4
+	srli t1, t2, 16
+	xor t2, t2, t1
+	slli t2, t2, 32
+	ld t0, 704(a5)
+	and t0, t0, t3
+	ld t1, 712(a5)
+	and t1, t1, t3
+	slli t1, t1, 1
+	xor t0, t0, t1
+	ld t1, 720(a5)
+	and t1, t1, t3
+	slli t1, t1, 2
+	xor t0, t0, t1
+	ld t1, 728(a5)
+	and t1, t1, t3
+	slli t1, t1, 3
+	xor t0, t0, t1
+	ld t1, 736(a5)
+	and t1, t1, t3
+	slli t1, t1, 4
+	xor t0, t0, t1
+	ld t1, 744(a5)
+	and t1, t1, t3
+	slli t1, t1, 5
+	xor t0, t0, t1
+	ld t1, 752(a5)
+	and t1, t1, t3
+	slli t1, t1, 6
+	xor t0, t0, t1
+	ld t1, 760(a5)
+	and t1, t1, t3
+	slli t1, t1, 7
+	xor t0, t0, t1
+	srli t1, t0, 8
+	xor t0, t0, t1
+	and t0, t0, t4
+	srli t1, t0, 16
+	xor t0, t0, t1
 	and t0, t0, t5
-	xor s4, s4, t0
-	slli t0, t0, 8
-	xor s0, s0, t0
-	srli t0, s1, 8
-	xor t0, t0, s5
+	xor t0, t0, t2
+	sd t0, 768(a5)
+	ld t2, 512(a5)
+	and t2, t2, t3
+	ld t1, 520(a5)
+	and t1, t1, t3
+	slli t1, t1, 1
+	xor t2, t2, t1
+	ld t1, 528(a5)
+	and t1, t1, t3
+	slli t1, t1, 2
+	xor t2, t2, t1
+	ld t1, 536(a5)
+	and t1, t1, t3
+	slli t1, t1, 3
+	xor t2, t2, t1
+	ld t1, 544(a5)
+	and t1, t1, t3
+	slli t1, t1, 4
+	xor t2, t2, t1
+	ld t1, 552(a5)
+	and t1, t1, t3
+	slli t1, t1, 5
+	xor t2, t2, t1
+	ld t1, 560(a5)
+	and t1, t1, t3
+	slli t1, t1, 6
+	xor t2, t2, t1
+	ld t1, 568(a5)
+	and t1, t1, t3
+	slli t1, t1, 7
+	xor t2, t2, t1
+	srli t1, t2, 8
+	xor t2, t2, t1
+	and t2, t2, t4
+	srli t1, t2, 16
+	xor t2, t2, t1
+	slli t2, t2, 32
+	ld t0, 576(a5)
+	and t0, t0, t3
+	ld t1, 584(a5)
+	and t1, t1, t3
+	slli t1, t1, 1
+	xor t0, t0, t1
+	ld t1, 592(a5)
+	and t1, t1, t3
+	slli t1, t1, 2
+	xor t0, t0, t1
+	ld t1, 600(a5)
+	and t1, t1, t3
+	slli t1, t1, 3
+	xor t0, t0, t1
+	ld t1, 608(a5)
+	and t1, t1, t3
+	slli t1, t1, 4
+	xor t0, t0, t1
+	ld t1, 616(a5)
+	and t1, t1, t3
+	slli t1, t1, 5
+	xor t0, t0, t1
+	ld t1, 624(a5)
+	and t1, t1, t3
+	slli t1, t1, 6
+	xor t0, t0, t1
+	ld t1, 632(a5)
+	and t1, t1, t3
+	slli t1, t1, 7
+	xor t0, t0, t1
+	srli t1, t0, 8
+	xor t0, t0, t1
+	and t0, t0, t4
+	srli t1, t0, 16
+	xor t0, t0, t1
 	and t0, t0, t5
-	xor s5, s5, t0
-	slli t0, t0, 8
-	xor s1, s1, t0
-	srli t0, s2, 8
-	xor t0, t0, s6
-	and t0, t0, t5
-	xor s6, s6, t0
-	slli t0, t0, 8
-	xor s2, s2, t0
-	srli t0, s3, 8
-	xor t0, t0, s7
-	and t0, t0, t5
-	xor s7, s7, t0
-	slli t0, t0, 8
-	xor s3, s3, t0
-	srli t0, s0, 8
-	xor t0, t0, s0
-	and t0, t0, t4
-	xor s0, s0, t0
-	slli t0, t0, 8
-	xor s0, s0, t0
-	srli t0, s1, 8
-	xor t0, t0, s1
-	and t0, t0, t4
-	xor s1, s1, t0
-	slli t0, t0, 8
-	xor s1, s1, t0
-	srli t0, s2, 8
-	xor t0, t0, s2
-	and t0, t0, t4
-	xor s2, s2, t0
-	slli t0, t0, 8
-	xor s2, s2, t0
-	srli t0, s3, 8
-	xor t0, t0, s3
-	and t0, t0, t4
-	xor s3, s3, t0
-	slli t0, t0, 8
-	xor s3, s3, t0
-	srli t0, s4, 8
-	xor t0, t0, s4
-	and t0, t0, t4
-	xor s4, s4, t0
-	slli t0, t0, 8
-	xor s4, s4, t0
-	srli t0, s5, 8
-	xor t0, t0, s5
-	and t0, t0, t4
-	xor s5, s5, t0
-	slli t0, t0, 8
-	xor s5, s5, t0
-	srli t0, s6, 8
-	xor t0, t0, s6
-	and t0, t0, t4
-	xor s6, s6, t0
-	slli t0, t0, 8
-	xor s6, s6, t0
-	srli t0, s7, 8
-	xor t0, t0, s7
-	and t0, t0, t4
-	xor s7, s7, t0
-	slli t0, t0, 8
-	xor s7, s7, t0
-	srli t0, s0, 16
-	xor t0, t0, s0
-	and t0, t0, t3
-	xor s0, s0, t0
-	slli t0, t0, 16
-	xor s0, s0, t0
-	srli t0, s1, 16
-	xor t0, t0, s1
-	and t0, t0, t3
-	xor s1, s1, t0
-	slli t0, t0, 16
-	xor s1, s1, t0
-	srli t0, s2, 16
-	xor t0, t0, s2
-	and t0, t0, t3
-	xor s2, s2, t0
-	slli t0, t0, 16
-	xor s2, s2, t0
-	srli t0, s3, 16
-	xor t0, t0, s3
-	and t0, t0, t3
-	xor s3, s3, t0
-	slli t0, t0, 16
-	xor s3, s3, t0
-	srli t0, s4, 16
-	xor t0, t0, s4
-	and t0, t0, t3
-	xor s4, s4, t0
-	slli t0, t0, 16
-	xor s4, s4, t0
-	srli t0, s5, 16
-	xor t0, t0, s5
-	and t0, t0, t3
-	xor s5, s5, t0
-	slli t0, t0, 16
-	xor s5, s5, t0
-	srli t0, s6, 16
-	xor t0, t0, s6
-	and t0, t0, t3
-	xor s6, s6, t0
-	slli t0, t0, 16
-	xor s6, s6, t0
-	srli t0, s7, 16
-	xor t0, t0, s7
-	and t0, t0, t3
-	xor s7, s7, t0
-	slli t0, t0, 16
-	xor s7, s7, t0
-	sd s0, 768(a5)
-	sd s4, 896(a5)
-	sd s1, 784(a5)
-	sd s5, 912(a5)
-	sd s2, 800(a5)
-	sd s6, 928(a5)
-	sd s3, 816(a5)
-	sd s7, 944(a5)
-	ld s0, 832(a5)
-	ld s4, 960(a5)
-	ld s1, 848(a5)
-	ld s5, 976(a5)
-	ld s2, 864(a5)
-	ld s6, 992(a5)
-	ld s3, 880(a5)
-	ld s7, 1008(a5)
-	srli t0, s0, 8
-	xor t0, t0, s4
-	and t0, t0, t5
-	xor s4, s4, t0
-	slli t0, t0, 8
-	xor s0, s0, t0
-	srli t0, s1, 8
-	xor t0, t0, s5
-	and t0, t0, t5
-	xor s5, s5, t0
-	slli t0, t0, 8
-	xor s1, s1, t0
-	srli t0, s2, 8
-	xor t0, t0, s6
-	and t0, t0, t5
-	xor s6, s6, t0
-	slli t0, t0, 8
-	xor s2, s2, t0
-	srli t0, s3, 8
-	xor t0, t0, s7
-	and t0, t0, t5
-	xor s7, s7, t0
-	slli t0, t0, 8
-	xor s3, s3, t0
-	srli t0, s0, 8
-	xor t0, t0, s0
-	and t0, t0, t4
-	xor s0, s0, t0
-	slli t0, t0, 8
-	xor s0, s0, t0
-	srli t0, s1, 8
-	xor t0, t0, s1
-	and t0, t0, t4
-	xor s1, s1, t0
-	slli t0, t0, 8
-	xor s1, s1, t0
-	srli t0, s2, 8
-	xor t0, t0, s2
-	and t0, t0, t4
-	xor s2, s2, t0
-	slli t0, t0, 8
-	xor s2, s2, t0
-	srli t0, s3, 8
-	xor t0, t0, s3
-	and t0, t0, t4
-	xor s3, s3, t0
-	slli t0, t0, 8
-	xor s3, s3, t0
-	srli t0, s4, 8
-	xor t0, t0, s4
-	and t0, t0, t4
-	xor s4, s4, t0
-	slli t0, t0, 8
-	xor s4, s4, t0
-	srli t0, s5, 8
-	xor t0, t0, s5
-	and t0, t0, t4
-	xor s5, s5, t0
-	slli t0, t0, 8
-	xor s5, s5, t0
-	srli t0, s6, 8
-	xor t0, t0, s6
-	and t0, t0, t4
-	xor s6, s6, t0
-	slli t0, t0, 8
-	xor s6, s6, t0
-	srli t0, s7, 8
-	xor t0, t0, s7
-	and t0, t0, t4
-	xor s7, s7, t0
-	slli t0, t0, 8
-	xor s7, s7, t0
-	srli t0, s0, 16
-	xor t0, t0, s0
-	and t0, t0, t3
-	xor s0, s0, t0
-	slli t0, t0, 16
-	xor s0, s0, t0
-	srli t0, s1, 16
-	xor t0, t0, s1
-	and t0, t0, t3
-	xor s1, s1, t0
-	slli t0, t0, 16
-	xor s1, s1, t0
-	srli t0, s2, 16
-	xor t0, t0, s2
-	and t0, t0, t3
-	xor s2, s2, t0
-	slli t0, t0, 16
-	xor s2, s2, t0
-	srli t0, s3, 16
-	xor t0, t0, s3
-	and t0, t0, t3
-	xor s3, s3, t0
-	slli t0, t0, 16
-	xor s3, s3, t0
-	srli t0, s4, 16
-	xor t0, t0, s4
-	and t0, t0, t3
-	xor s4, s4, t0
-	slli t0, t0, 16
-	xor s4, s4, t0
-	srli t0, s5, 16
-	xor t0, t0, s5
-	and t0, t0, t3
-	xor s5, s5, t0
-	slli t0, t0, 16
-	xor s5, s5, t0
-	srli t0, s6, 16
-	xor t0, t0, s6
-	and t0, t0, t3
-	xor s6, s6, t0
-	slli t0, t0, 16
-	xor s6, s6, t0
-	srli t0, s7, 16
-	xor t0, t0, s7
-	and t0, t0, t3
-	xor s7, s7, t0
-	slli t0, t0, 16
-	xor s7, s7, t0
-	sd s0, 832(a5)
-	sd s4, 960(a5)
-	sd s1, 848(a5)
-	sd s5, 976(a5)
-	sd s2, 864(a5)
-	sd s6, 992(a5)
-	sd s3, 880(a5)
-	sd s7, 1008(a5)
-	ld s0, 776(a5)
-	ld s4, 904(a5)
-	ld s1, 792(a5)
-	ld s5, 920(a5)
-	ld s2, 808(a5)
-	ld s6, 936(a5)
-	ld s3, 824(a5)
-	ld s7, 952(a5)
-	srli t0, s0, 8
-	xor t0, t0, s4
-	and t0, t0, t5
-	xor s4, s4, t0
-	slli t0, t0, 8
-	xor s0, s0, t0
-	srli t0, s1, 8
-	xor t0, t0, s5
-	and t0, t0, t5
-	xor s5, s5, t0
-	slli t0, t0, 8
-	xor s1, s1, t0
-	srli t0, s2, 8
-	xor t0, t0, s6
-	and t0, t0, t5
-	xor s6, s6, t0
-	slli t0, t0, 8
-	xor s2, s2, t0
-	srli t0, s3, 8
-	xor t0, t0, s7
-	and t0, t0, t5
-	xor s7, s7, t0
-	slli t0, t0, 8
-	xor s3, s3, t0
-	srli t0, s0, 8
-	xor t0, t0, s0
-	and t0, t0, t4
-	xor s0, s0, t0
-	slli t0, t0, 8
-	xor s0, s0, t0
-	srli t0, s1, 8
-	xor t0, t0, s1
-	and t0, t0, t4
-	xor s1, s1, t0
-	slli t0, t0, 8
-	xor s1, s1, t0
-	srli t0, s2, 8
-	xor t0, t0, s2
-	and t0, t0, t4
-	xor s2, s2, t0
-	slli t0, t0, 8
-	xor s2, s2, t0
-	srli t0, s3, 8
-	xor t0, t0, s3
-	and t0, t0, t4
-	xor s3, s3, t0
-	slli t0, t0, 8
-	xor s3, s3, t0
-	srli t0, s4, 8
-	xor t0, t0, s4
-	and t0, t0, t4
-	xor s4, s4, t0
-	slli t0, t0, 8
-	xor s4, s4, t0
-	srli t0, s5, 8
-	xor t0, t0, s5
-	and t0, t0, t4
-	xor s5, s5, t0
-	slli t0, t0, 8
-	xor s5, s5, t0
-	srli t0, s6, 8
-	xor t0, t0, s6
-	and t0, t0, t4
-	xor s6, s6, t0
-	slli t0, t0, 8
-	xor s6, s6, t0
-	srli t0, s7, 8
-	xor t0, t0, s7
-	and t0, t0, t4
-	xor s7, s7, t0
-	slli t0, t0, 8
-	xor s7, s7, t0
-	srli t0, s0, 16
-	xor t0, t0, s0
-	and t0, t0, t3
-	xor s0, s0, t0
-	slli t0, t0, 16
-	xor s0, s0, t0
-	srli t0, s1, 16
-	xor t0, t0, s1
-	and t0, t0, t3
-	xor s1, s1, t0
-	slli t0, t0, 16
-	xor s1, s1, t0
-	srli t0, s2, 16
-	xor t0, t0, s2
-	and t0, t0, t3
-	xor s2, s2, t0
-	slli t0, t0, 16
-	xor s2, s2, t0
-	srli t0, s3, 16
-	xor t0, t0, s3
-	and t0, t0, t3
-	xor s3, s3, t0
-	slli t0, t0, 16
-	xor s3, s3, t0
-	srli t0, s4, 16
-	xor t0, t0, s4
-	and t0, t0, t3
-	xor s4, s4, t0
-	slli t0, t0, 16
-	xor s4, s4, t0
-	srli t0, s5, 16
-	xor t0, t0, s5
-	and t0, t0, t3
-	xor s5, s5, t0
-	slli t0, t0, 16
-	xor s5, s5, t0
-	srli t0, s6, 16
-	xor t0, t0, s6
-	and t0, t0, t3
-	xor s6, s6, t0
-	slli t0, t0, 16
-	xor s6, s6, t0
-	srli t0, s7, 16
-	xor t0, t0, s7
-	and t0, t0, t3
-	xor s7, s7, t0
-	slli t0, t0, 16
-	xor s7, s7, t0
-	sd s0, 776(a5)
-	sd s4, 904(a5)
-	sd s1, 792(a5)
-	sd s5, 920(a5)
-	sd s2, 808(a5)
-	sd s6, 936(a5)
-	sd s3, 824(a5)
-	sd s7, 952(a5)
-	ld s0, 840(a5)
-	ld s4, 968(a5)
-	ld s1, 856(a5)
-	ld s5, 984(a5)
-	ld s2, 872(a5)
-	ld s6, 1000(a5)
-	ld s3, 888(a5)
-	ld s7, 1016(a5)
-	srli t0, s0, 8
-	xor t0, t0, s4
-	and t0, t0, t5
-	xor s4, s4, t0
-	slli t0, t0, 8
-	xor s0, s0, t0
-	srli t0, s1, 8
-	xor t0, t0, s5
-	and t0, t0, t5
-	xor s5, s5, t0
-	slli t0, t0, 8
-	xor s1, s1, t0
-	srli t0, s2, 8
-	xor t0, t0, s6
-	and t0, t0, t5
-	xor s6, s6, t0
-	slli t0, t0, 8
-	xor s2, s2, t0
-	srli t0, s3, 8
-	xor t0, t0, s7
-	and t0, t0, t5
-	xor s7, s7, t0
-	slli t0, t0, 8
-	xor s3, s3, t0
-	srli t0, s0, 8
-	xor t0, t0, s0
-	and t0, t0, t4
-	xor s0, s0, t0
-	slli t0, t0, 8
-	xor s0, s0, t0
-	srli t0, s1, 8
-	xor t0, t0, s1
-	and t0, t0, t4
-	xor s1, s1, t0
-	slli t0, t0, 8
-	xor s1, s1, t0
-	srli t0, s2, 8
-	xor t0, t0, s2
-	and t0, t0, t4
-	xor s2, s2, t0
-	slli t0, t0, 8
-	xor s2, s2, t0
-	srli t0, s3, 8
-	xor t0, t0, s3
-	and t0, t0, t4
-	xor s3, s3, t0
-	slli t0, t0, 8
-	xor s3, s3, t0
-	srli t0, s4, 8
-	xor t0, t0, s4
-	and t0, t0, t4
-	xor s4, s4, t0
-	slli t0, t0, 8
-	xor s4, s4, t0
-	srli t0, s5, 8
-	xor t0, t0, s5
-	and t0, t0, t4
-	xor s5, s5, t0
-	slli t0, t0, 8
-	xor s5, s5, t0
-	srli t0, s6, 8
-	xor t0, t0, s6
-	and t0, t0, t4
-	xor s6, s6, t0
-	slli t0, t0, 8
-	xor s6, s6, t0
-	srli t0, s7, 8
-	xor t0, t0, s7
-	and t0, t0, t4
-	xor s7, s7, t0
-	slli t0, t0, 8
-	xor s7, s7, t0
-	srli t0, s0, 16
-	xor t0, t0, s0
-	and t0, t0, t3
-	xor s0, s0, t0
-	slli t0, t0, 16
-	xor s0, s0, t0
-	srli t0, s1, 16
-	xor t0, t0, s1
-	and t0, t0, t3
-	xor s1, s1, t0
-	slli t0, t0, 16
-	xor s1, s1, t0
-	srli t0, s2, 16
-	xor t0, t0, s2
-	and t0, t0, t3
-	xor s2, s2, t0
-	slli t0, t0, 16
-	xor s2, s2, t0
-	srli t0, s3, 16
-	xor t0, t0, s3
-	and t0, t0, t3
-	xor s3, s3, t0
-	slli t0, t0, 16
-	xor s3, s3, t0
-	srli t0, s4, 16
-	xor t0, t0, s4
-	and t0, t0, t3
-	xor s4, s4, t0
-	slli t0, t0, 16
-	xor s4, s4, t0
-	srli t0, s5, 16
-	xor t0, t0, s5
-	and t0, t0, t3
-	xor s5, s5, t0
-	slli t0, t0, 16
-	xor s5, s5, t0
-	srli t0, s6, 16
-	xor t0, t0, s6
-	and t0, t0, t3
-	xor s6, s6, t0
-	slli t0, t0, 16
-	xor s6, s6, t0
-	srli t0, s7, 16
-	xor t0, t0, s7
-	and t0, t0, t3
-	xor s7, s7, t0
-	slli t0, t0, 16
-	xor s7, s7, t0
-	sd s0, 840(a5)
-	sd s4, 968(a5)
-	sd s1, 856(a5)
-	sd s5, 984(a5)
-	sd s2, 872(a5)
-	sd s6, 1000(a5)
-	sd s3, 888(a5)
-	sd s7, 1016(a5)
+	xor t0, t0, t2
+	sd t0, 776(a5)
 	ld t0, 776(a5)
 	srli t1, t0, 56
 	sb t1, 0(a1)

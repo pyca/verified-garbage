@@ -19,7 +19,8 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.LayersLit
 # The loop of the SM4 key schedule on RISCV64
 
 Each iteration runs four rounds of the key schedule (`rounds4_ok .key`),
-puts the state's words in the tail buffer as a block (`fromBs_step`), and
+puts the state's words of the first copy in the tail buffer as a block
+(`fromBs0_step`), and
 stores them to the schedule as little-endian words (`extract_ok`): the
 first block's 64-bit words, byte-reversed (stored big-endian a byte at a
 time, `storeBE`). As on PPC64LE (`Proof/Sm4/PPC64LE/KeyLoop.lean`).
@@ -181,7 +182,7 @@ theorem ekIter_ok {s₀ : State} {b S : Addr} {key : Spec.Sm4.Block} (hp : EkPre
   have X₂ : StRel s₂ (fun _ => quads .key Spec.Sm4.ck (m + 1) (keyInit key)) :=
     X₁.congr fun k => by simp only [slotW, m₂, o₂ sb (by decide)]
   -- The words to the tail buffer.
-  obtain ⟨s₃, e₃, c₃, kr₃, X₃, T₃⟩ := fromBs_step hi.keys c₂ X₂
+  obtain ⟨s₃, e₃, c₃, kr₃, X₃, T₃⟩ := fromBs0_step hi.keys c₂ X₂
   have base₃ : s₃.gpr sb = b := by rw [c₃.base, hi.base]
   have a1₃ : s₃.gpr .a1 = S + BitVec.ofNat 64 (16 * m) := by rw [c₃.keep _ (by decide) (by decide), hi.a1]
   have wr₃ : s₃.wr = s₀.wr := by rw [c₃.wr, hi.wr]
@@ -241,7 +242,7 @@ theorem ekIter_ok {s₀ : State} {b S : Addr} {key : Spec.Sm4.Block} (hp : EkPre
     · have ht : 4 * (i - 4 * m) + c < 16 := by omega_arith
       have hB := B₄ _ ht j hj
       rw [show 16 * m + (4 * (i - 4 * m) + c) = 4 * i + c by omega_arith] at hB
-      rw [mem₆, hB, T₃ 0 (by decide), getLsbD_outBlock' _ _ hj]
+      rw [mem₆, hB, T₃, getLsbD_outBlock' _ _ hj]
       simp only [rkOf]
       rw [show i / 4 + 1 = m + 1 by omega_arith, show 3 - (15 - (4 * (i - 4 * m) + c)) / 4 = i % 4 by omega_arith,
         show 8 * (3 - (15 - (4 * (i - 4 * m) + c)) % 4) + j = 8 * c + j by omega_arith]

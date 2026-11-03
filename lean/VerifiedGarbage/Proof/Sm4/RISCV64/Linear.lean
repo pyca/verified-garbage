@@ -212,6 +212,15 @@ theorem fromBs_check :
       (linPostG 11 [] fromBsOuts (keyMaskSlots ++ stateSlots) fromBsEnv) = true := by
   lit_decide
 
+/-- `fromBs0`'s outputs: the tail buffer's words of block 0, as `fromBs`'s. -/
+def fromBs0Outs : List (Nat × (Nat → List Nat)) :=
+  (List.range 2).map fun t => (tailSlot + t, fromBsG t)
+
+theorem fromBs0_check :
+    check (lanes 64 11) bsCfg (linExt 0) fromBs0 fromBsEnv
+      (linPostG 11 [] fromBs0Outs (keyMaskSlots ++ stateSlots) fromBsEnv) = true := by
+  lit_decide
+
 /-! ## The round keys' planes -/
 
 /-- The masks' slots; the schedule's word at `a0`. -/
