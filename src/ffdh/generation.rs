@@ -17,49 +17,35 @@ use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved as vg_ffdh_generate_pa
 use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved_umaal as vg_ffdh_generate_parameters_umaal;
 use crate::arch::ffdh::vg_ffdh_parameter_generation_init;
 use crate::cpu::detected;
+use crate::entropy::{self, Step, Stop};
 use crate::rsa::Scratch;
-use crate::zeroize::zeroize;
-use alloc::{vec, vec::Vec};
+use alloc::vec;
 
-/// A random tape, wiped when dropped: a controller may keep secrets in it.
-struct Tape(Vec<u8>);
-impl Drop for Tape {
-    fn drop(&mut self) {
-        zeroize(&mut self.0);
+/// The step a verified FFDH controller's status (1 done, 3 out of
+/// attempts, 0 for more entropy), consumption and next request stand for.
+fn step((status, used, requested): (u32, usize, usize)) -> Step {
+    match status {
+        1 => Step::Done,
+        3 => Step::Failed,
+        0 => Step::More { used, requested },
+        // The verified controllers return only 0, 1 or 3.
+        // NO-COVERAGE-START
+        _ => unreachable!(),
+        // NO-COVERAGE-END
     }
 }
 
-/// Run a verified controller to completion over a random tape of
-/// `requested` bytes from `fill`. `step` runs it on the tape and returns
-/// its status (1 done, 3 out of attempts, 0 for more entropy), the bytes
-/// it consumed and its next request. For 0, the unconsumed rest of the
-/// tape is kept and extended with fresh bytes to the request, as the
-/// controllers' contracts say.
+/// Run a verified controller to completion over random tapes from `fill`,
+/// the first of `requested` bytes (`crate::entropy::serve`).
 pub(super) fn serve<E>(
     requested: usize,
-    mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
-    mut step: impl FnMut(&[u8]) -> (u32, usize, usize),
+    fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+    mut search: impl FnMut(&[u8]) -> (u32, usize, usize),
 ) -> Result<(), Error> {
-    let mut tape = Tape(vec![0; requested]);
-    fill(&mut tape.0).map_err(|_| Error::Randomness)?;
-    loop {
-        let (status, used, requested) = step(&tape.0);
-        match status {
-            1 => return Ok(()),
-            3 => return Err(Error::TooManyIterations),
-            0 => {
-                let rest = &tape.0[used..];
-                let mut next = Tape(vec![0; requested]);
-                next.0[..rest.len()].copy_from_slice(rest);
-                fill(&mut next.0[rest.len()..]).map_err(|_| Error::Randomness)?;
-                tape = next;
-            }
-            // The verified controllers return only 0, 1 or 3.
-            // NO-COVERAGE-START
-            _ => unreachable!(),
-            // NO-COVERAGE-END
-        }
-    }
+    entropy::serve(requested, fill, |tape| step(search(tape))).map_err(|stop| match stop {
+        Stop::Failed => Error::TooManyIterations,
+        Stop::Fill(_) => Error::Randomness,
+    })
 }
 
 /// The parameter-generation controller's 16 words: the attempts left, the
@@ -163,6 +149,7 @@ fn parameters_limit<E>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec::Vec;
     #[test]
     fn parameter_failure_is_bounded() {
         assert_eq!(

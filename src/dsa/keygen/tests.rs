@@ -48,9 +48,12 @@ fn generated_key_rejection_and_replay() {
     let v = &cases[0];
     let (p, q, g) = domain(v);
     let x = hex(&v["X"], q.len());
+    // Three rejected batches, each a refill that keeps the tape so far and
+    // asks only for the bytes after it, then the published scalar.
     let mut draws = 0;
     let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
-        if draws == 0 {
+        assert_eq!(buf.len(), DRAW_BATCH * q.len());
+        if draws < 3 {
             buf.fill(0);
         } else {
             for chunk in buf.chunks_exact_mut(q.len()) {
@@ -61,7 +64,7 @@ fn generated_key_rejection_and_replay() {
         Ok(())
     })
     .unwrap();
-    assert_eq!(draws, 2);
+    assert_eq!(draws, 4);
     assert_eq!(&key.packed.0[3 * p.len() + q.len()..], &x[..]);
     let digest = [0x42; 32];
     let signature = key.sign(&digest).unwrap();
