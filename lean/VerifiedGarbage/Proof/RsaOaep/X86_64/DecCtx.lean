@@ -279,13 +279,15 @@ theorem dec_implies (hsat : ∃ s, (decC H ts).pre s) : (decK H ts).Implies (dec
       decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns] at h
     sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns] at h
+      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns,
+      Sig.tableRegion] at h
     simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
     sig_split h
     sig_reduce [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns]
+      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns,
+      Sig.tableRegion]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption

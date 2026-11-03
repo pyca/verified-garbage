@@ -111,8 +111,8 @@ theorem preT_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encC 
     dKa.sub_right ha, wO, wN, wE, wL, wM, wSd, wS, k1, k2, hsi, L1, L2,
     by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl; omega⟩,
     by omega, ?_, ?_, (dOa.sub_right hb).symm, (dsa.sub_right hb).symm, (dKa.sub_right hb).symm, dOq.symm,
-    dsq.symm, dKq.symm, wQ, pl⟩, sp3, hA, ⟨_, by rw [hrd]; simp, Region.contains_self _ _⟩, dOa.symm, dsa.symm,
-    dKa.symm, dOt.symm, dst.symm, dKt.symm, wT⟩, tab, fnd⟩
+    dsq.symm, dKq.symm, wQ, pl⟩, sp3, hA, ⟨_, by rw [hrd]; simp [Sig.tableRegion], Region.contains_self _ _⟩,
+    dOa.symm, dsa.symm, dKa.symm, dOt.symm, dst.symm, dKt.symm, wT⟩, tab, fnd⟩
   · rw [hrd]
     apply Covers.of_sub
     intro r hr
