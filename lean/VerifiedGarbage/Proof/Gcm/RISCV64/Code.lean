@@ -742,4 +742,112 @@ theorem prepWord_ok (s : State) {w : Reg} (hw : w ∉ [.t6, .a6, .s4, .a7]) {p :
   · exact prepWord1_ok s hw hK hW
   · exact prepWord2_ok s hw hK hW
 
+/-! ## The prepared key -/
+
+/-- The table of the prepared key `k₀, k₁`. -/
+def Tab (k0 k1 : BitVec 64) (f : ℕ → BitVec 64) : Prop :=
+  ∀ i < 9, ∀ j < 4, f (8 * (4 * i + j)) = opK k0 k1 i &&& Holes.K j
+
+set_option linter.unusedSimpArgs false in
+theorem mulT_tab {k0 k1 : BitVec 64} {f : ℕ → BitVec 64} (h : Tab k0 k1 f) (y0 y1 : BitVec 64) :
+    mulT y0 y1 f = Holes.mulK y0 y1 k0 k1 := by
+  have t : ∀ i < 9, ∀ j < 4, f (slot (4 * i) + 8 * j) = opK k0 k1 i &&& Holes.K j := fun i hi j hj => by
+    rw [show slot (4 * i) + 8 * j = 8 * (4 * i + j) by simp only [slot]; omega]; exact h i hi j hj
+  have e : ∀ (x : BitVec 64) (p : Nat), p < 3 → ∀ w, w = (if p = 0 then k0 else if p = 1 then k1 else k0 ^^^ k1) →
+      pmT x (fun j => f (slot (12 * p) + 8 * j)) (fun j => f (slot (12 * p) + 32 + 8 * j))
+        (fun j => f (slot (12 * p) + 64 + 8 * j)) = pm x w := by
+    intro x p hp w hw
+    rw [← pmT_eq]
+    refine pmT_congr _ (fun j hj => ?_) (fun j hj => ?_) (fun j hj => ?_)
+    · rw [show slot (12 * p) = slot (4 * (3 * p + 0)) by simp only [slot]; omega, t _ (by omega) _ hj]
+      simp only [opK, show (3 * p + 0) / 3 = p by omega, show (3 * p + 0) % 3 = 0 by omega, ↓reduceIte, hw]
+      all_goals (try (interval_cases p <;> simp))
+    · rw [show slot (12 * p) + 32 = slot (4 * (3 * p + 1)) by simp only [slot]; omega, t _ (by omega) _ hj]
+      simp only [opK, show (3 * p + 1) / 3 = p by omega, show (3 * p + 1) % 3 = 1 by omega, ↓reduceIte, hw]
+      all_goals (try (interval_cases p <;> simp))
+    · rw [show slot (12 * p) + 64 = slot (4 * (3 * p + 2)) by simp only [slot]; omega, t _ (by omega) _ hj]
+      simp only [opK, show (3 * p + 2) / 3 = p by omega, show (3 * p + 2) % 3 = 2 by omega, ↓reduceIte, hw]
+      all_goals (try (interval_cases p <;> simp))
+  have e0 := e y0 0 (by decide) k0 (by simp)
+  have e1 := e y1 1 (by decide) k1 (by simp)
+  have e2 := e (y0 ^^^ y1) 2 (by decide) (k0 ^^^ k1) (by simp)
+  simp only [Nat.mul_zero, Nat.reduceMul] at e0 e1 e2
+  simp only [mulT, Holes.mulK, e0, e1, e2]
+
+theorem prep_eq : prep = Impl.Words.RISCV64.loadBE64 .t0 .t2 HP 0 ++ Impl.Words.RISCV64.loadBE64 .t1 .t2 HP 8 ++
+    (keyArith ++ (maskCode ++ (prepWord .t3 0 ++ (prepWord .t5 1 ++ ([.logic .xor .t4 .t3 .t5] ++ prepWord .t4 2))))) := by
+  simp only [prep, keyCode_eq, List.append_assoc]
+
+theorem x45_ok (s : State) :
+    WP isa (.block [.logic .xor .t4 .t3 .t5]) s fun t => t.gpr .t4 = s.gpr .t3 ^^^ s.gpr .t5 ∧
+      Keep [.t4] s t ∧ t.mem = s.mem ∧ t.sp = s.sp := by
+  mrun
+  glue_close
+
+/-- The registers `prep` writes. -/
+def prepRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .a7, .a6, .s4]
+
+theorem prep_ok (s : State) (hH : InRegions (s.rd ++ s.wr) (s.gpr HP) 16) (hW : ∀ k < 36, Wr8 s (8 * k)) :
+    WP isa (.block prep) s fun t => Masks t ∧
+      Tab (Holes.key0 (ByteLoad.be64 s.mem (s.gpr HP) 0) (ByteLoad.be64 s.mem (s.gpr HP) 8))
+        (Holes.key1 (ByteLoad.be64 s.mem (s.gpr HP) 0) (ByteLoad.be64 s.mem (s.gpr HP) 8)) (fw t) ∧
+      Keep prepRegs s t ∧ t.sp = s.sp ∧ Frame [⟨s.gpr FP, 288⟩] s.mem t.mem := by
+  rw [prep_eq, WP.block_append_iff]
+  refine WP.mono (ld2_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) s hH)
+    fun u1 ⟨h0, h1, k1, m1, p1⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (keyArith_ok u1) fun u2 ⟨e0, e1, k2, m2, p2⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (maskCode_ok u2) fun u3 ⟨K3, k3, m3, p3⟩ => ?_
+  have k13 := Keep.trans k1 (Keep.trans k2 k3)
+  have fp3 : u3.gpr FP = s.gpr FP := Keep.gpr k13 (by decide)
+  have W3 : ∀ k < 36, Wr8 u3 (8 * k) := fun k hk => Keep.wr8 k13 (by decide) (hW k hk)
+  have W12 : ∀ {u : State}, (∀ k < 36, Wr8 u (8 * k)) → ∀ p < 3, ∀ k < 12, Wr8 u (8 * (12 * p + k)) :=
+    fun h p hp k hk => h _ (by omega)
+  rw [WP.block_append_iff]
+  refine WP.mono (prepWord_ok u3 (w := .t3) (by decide) (p := 0) (by decide) K3 (W12 W3 0 (by decide)))
+    fun u4 ⟨t4, o4, k4, p4, f4⟩ => ?_
+  have K4 := Keep.masks k4 K3 (fun i hi => by interval_cases i <;> decide)
+  have W4 : ∀ k < 36, Wr8 u4 (8 * k) := fun k hk => Keep.wr8 k4 (by decide) (W3 k hk)
+  rw [WP.block_append_iff]
+  refine WP.mono (prepWord_ok u4 (w := .t5) (by decide) (p := 1) (by decide) K4 (W12 W4 1 (by decide)))
+    fun u5 ⟨t5, o5, k5, p5, f5⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (x45_ok u5) fun u6 ⟨e6, k6, m6, p6⟩ => ?_
+  have K6 := Keep.masks (Keep.trans k5 k6) K4 (fun i hi => by interval_cases i <;> decide)
+  have W6 : ∀ k < 36, Wr8 u6 (8 * k) := fun k hk => Keep.wr8 (Keep.trans k5 k6) (by decide) (W4 k hk)
+  refine WP.mono (prepWord_ok u6 (w := .t4) (by decide) (p := 2) (by decide) K6 (W12 W6 2 (by decide)))
+    fun t ⟨t7, o7, k7, p7, f7⟩ => ?_
+  have K7 := Keep.masks k7 K6 (fun i hi => by interval_cases i <;> decide)
+  -- The key words.
+  have w3 : u3.gpr .t3 = Holes.key0 (ByteLoad.be64 s.mem (s.gpr HP) 0) (ByteLoad.be64 s.mem (s.gpr HP) 8) := by
+    rw [Keep.gpr k3 (by decide), e0, h0, h1]
+  have w5 : u4.gpr .t5 = Holes.key1 (ByteLoad.be64 s.mem (s.gpr HP) 0) (ByteLoad.be64 s.mem (s.gpr HP) 8) := by
+    rw [Keep.gpr k4 (by decide), Keep.gpr k3 (by decide), e1, h0, h1]
+  have w4 : u6.gpr .t4 = u3.gpr .t3 ^^^ u4.gpr .t5 := by
+    rw [e6, Keep.gpr k5 (by decide), Keep.gpr k4 (by decide), Keep.gpr k5 (by decide)]
+  have F6 : ∀ d, fw u6 d = fw u5 d := fw_congr m6 (Keep.gpr k6 (by decide))
+  refine ⟨K7, fun i hi j hj => ?_, ?_, ?_, ?_⟩
+  · have hq : i = 3 * (i / 3) + i % 3 := by omega
+    have hp : i / 3 < 3 := by omega
+    have hr : i % 3 < 3 := Nat.mod_lt _ (by decide)
+    rcases (by omega : i / 3 = 0 ∨ i / 3 = 1 ∨ i / 3 = 2) with h | h | h
+    · rw [o7 _ (by omega) (Or.inl (by omega)), F6, o5 _ (by omega) (Or.inl (by omega)),
+        show 4 * i + j = 4 * (3 * 0 + i % 3) + j by omega, t4 _ hr _ hj, w3]
+      simp only [opK, opW, h, ↓reduceIte]
+    · rw [o7 _ (by omega) (Or.inl (by omega)), F6,
+        show 4 * i + j = 4 * (3 * 1 + i % 3) + j by omega, t5 _ hr _ hj, w5]
+      simp only [opK, opW, h, ↓reduceIte, show (1 : Nat) ≠ 0 by decide]
+    · rw [show 4 * i + j = 4 * (3 * 2 + i % 3) + j by omega, t7 _ hr _ hj, w4, w3, w5]
+      simp only [opK, opW, h, ↓reduceIte, show (2 : Nat) ≠ 0 by decide, show (2 : Nat) ≠ 1 by decide]
+  · refine Keep.mono (Keep.trans k13 (Keep.trans k4 (Keep.trans k5 (Keep.trans k6 k7)))) ?_
+    simp only [prepRegs]; decide
+  · rw [p7, p6, p5, p4, p3, p2, p1]
+  · have fA : u4.gpr FP = s.gpr FP := by rw [Keep.gpr k4 (by decide), fp3]
+    have fB : u6.gpr FP = s.gpr FP := by rw [Keep.gpr k6 (by decide), Keep.gpr k5 (by decide), fA]
+    rw [fp3] at f4; rw [fA] at f5; rw [fB] at f7
+    rw [m3, m2, m1] at f4
+    rw [← m6] at f5
+    exact f4.trans (f5.trans f7)
+
 end VG.Proof.Gcm.RISCV64
