@@ -339,6 +339,39 @@ pub fn bench(c: &mut Criterion) {
     const ONLY_PIECES: bool = true;
     // Only Proto12 this run: #4083's `tail` and three other orders of its step, and the
     // exponentiation proxy with #4083's `sqrTail`.
+    // Only Proto16 this run: main's public precompute next to the doublings started at
+    // n's top bit (top), the squares by sqrTail (sqr), and both.
+    const ONLY_P16: bool = true;
+    if ONLY_P16 {
+        use openssl::rsa::Rsa;
+        use verified_garbage_asm_riscv64::rsa_proto16 as p16;
+        type Pre = unsafe extern "C" fn(*mut u64, usize, *const u8, usize, *mut u64, usize) -> u32;
+        let keys: Vec<_> = [2048u32, 3072, 4096].iter().map(|&b| (b, Rsa::generate(b).unwrap())).collect();
+        let fs: [(&str, Pre); 4] = [
+            ("base", p16::vg_p16_precompute_base),
+            ("top", p16::vg_p16_precompute_top),
+            ("sqr", p16::vg_p16_precompute_sqr),
+            ("both", p16::vg_p16_precompute_both),
+        ];
+        for (v, f) in fs {
+            let mut g = c.benchmark_group(format!("rsa_p16_precompute_{v}"));
+            for (bits, key) in &keys {
+                let n = key.n().to_vec();
+                let w = n.len().div_ceil(8);
+                let mut s = vec![0u64; 8 * w + 48];
+                let mut p = vec![0u64; 2 * w];
+                // The outputs are compared with main's under qemu (tests/p16.rs).
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    b.iter(|| unsafe {
+                        let r = f(p.as_mut_ptr(), p.len(), black_box(n.as_ptr()), n.len(), s.as_mut_ptr(), s.len());
+                        assert_eq!(r, 1);
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     // Only Proto15 this run: #4096's crt_values next to the one with `p q = n` by `mulLow`.
     const ONLY_P15: bool = true;
     if ONLY_P15 {
