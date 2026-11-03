@@ -372,65 +372,70 @@ vg_brainpoolp256r1_mul_mod_n:
 	add a4, a7, t0
 	sd a6, 1912(a3)
 21:
+	sd s7, 1792(a3)
+	sd s8, 1800(a3)
+	sd s9, 1808(a3)
+	sd s10, 1816(a3)
+	sd s11, 1824(a3)
+	lui s7, 1032188
+	addiw s7, s7, -322
+	slli s7, s7, 32
+	lui a0, 834369
+	addiw a0, a0, -279
+	add s7, s7, a0
+	lui s8, 590305
+	addiw s8, s8, -381
+	slli s8, s8, 32
+	lui a0, 619653
+	addiw a0, a0, 1703
+	add s8, s8, a0
+	lui s9, 574360
+	addiw s9, s9, -1372
+	slli s9, s9, 32
+	lui a0, 742938
+	addiw a0, a0, 1783
+	add s9, s9, a0
+	lui s10, 255585
+	addiw s10, s10, -1391
+	slli s10, s10, 32
+	lui a0, 645177
+	addiw a0, a0, -655
+	add s10, s10, a0
+	lui s11, 696245
+	addiw s11, s11, 2012
+	slli s11, s11, 32
+	lui a0, 663275
+	addiw a0, a0, -1604
+	add s11, s11, a0
 	ld t3, 1856(a3)
 	ld t4, 1864(a3)
 	ld t5, 1872(a3)
 	ld t6, 1880(a3)
 	addi a2, zero, 0
 	ld a1, 1888(a3)
-	lui t0, 1032188
-	addiw t0, t0, -322
-	slli t0, t0, 32
-	lui a0, 834369
-	addiw a0, a0, -279
-	add t0, t0, a0
-	mul t3, t3, t0
-	lui a4, 590305
-	addiw a4, a4, -381
-	slli a4, a4, 32
-	lui a0, 619653
-	addiw a0, a0, 1703
-	add a4, a4, a0
-	mulhu a4, t3, a4
+	mul t3, t3, s7
+	mulhu a4, t3, s8
 	addi a0, zero, 0
 	sltu a0, a0, t3
 	add a4, a4, a0
-	lui a6, 574360
-	addiw a6, a6, -1372
-	slli a6, a6, 32
-	lui a0, 742938
-	addiw a0, a0, 1783
-	add a6, a6, a0
-	mul a5, t3, a6
-	mulhu a6, t3, a6
+	mul a5, t3, s9
+	mulhu a6, t3, s9
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t4, t4, a5
 	sltu a7, t4, a5
 	add a4, a6, a7
-	lui a6, 255585
-	addiw a6, a6, -1391
-	slli a6, a6, 32
-	lui a0, 645177
-	addiw a0, a0, -655
-	add a6, a6, a0
-	mul a5, t3, a6
-	mulhu a6, t3, a6
+	mul a5, t3, s10
+	mulhu a6, t3, s10
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t5, t5, a5
 	sltu a7, t5, a5
 	add a4, a6, a7
-	lui a6, 696245
-	addiw a6, a6, 2012
-	slli a6, a6, 32
-	lui a0, 663275
-	addiw a0, a0, -1604
-	add a6, a6, a0
-	mul a5, t3, a6
-	mulhu a6, t3, a6
+	mul a5, t3, s11
+	mulhu a6, t3, s11
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
@@ -443,59 +448,29 @@ vg_brainpoolp256r1_mul_mod_n:
 	sltu a2, a1, a2
 	add a2, a2, a7
 	ld t3, 1896(a3)
-	lui t0, 1032188
-	addiw t0, t0, -322
-	slli t0, t0, 32
-	lui a0, 834369
-	addiw a0, a0, -279
-	add t0, t0, a0
-	mul t4, t4, t0
-	lui a4, 590305
-	addiw a4, a4, -381
-	slli a4, a4, 32
-	lui a0, 619653
-	addiw a0, a0, 1703
-	add a4, a4, a0
-	mulhu a4, t4, a4
+	mul t4, t4, s7
+	mulhu a4, t4, s8
 	addi a0, zero, 0
 	sltu a0, a0, t4
 	add a4, a4, a0
-	lui a6, 574360
-	addiw a6, a6, -1372
-	slli a6, a6, 32
-	lui a0, 742938
-	addiw a0, a0, 1783
-	add a6, a6, a0
-	mul a5, t4, a6
-	mulhu a6, t4, a6
+	mul a5, t4, s9
+	mulhu a6, t4, s9
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t5, t5, a5
 	sltu a7, t5, a5
 	add a4, a6, a7
-	lui a6, 255585
-	addiw a6, a6, -1391
-	slli a6, a6, 32
-	lui a0, 645177
-	addiw a0, a0, -655
-	add a6, a6, a0
-	mul a5, t4, a6
-	mulhu a6, t4, a6
+	mul a5, t4, s10
+	mulhu a6, t4, s10
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t6, t6, a5
 	sltu a7, t6, a5
 	add a4, a6, a7
-	lui a6, 696245
-	addiw a6, a6, 2012
-	slli a6, a6, 32
-	lui a0, 663275
-	addiw a0, a0, -1604
-	add a6, a6, a0
-	mul a5, t4, a6
-	mulhu a6, t4, a6
+	mul a5, t4, s11
+	mulhu a6, t4, s11
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
@@ -508,59 +483,29 @@ vg_brainpoolp256r1_mul_mod_n:
 	sltu a2, t3, a2
 	add a2, a2, a7
 	ld t4, 1904(a3)
-	lui t0, 1032188
-	addiw t0, t0, -322
-	slli t0, t0, 32
-	lui a0, 834369
-	addiw a0, a0, -279
-	add t0, t0, a0
-	mul t5, t5, t0
-	lui a4, 590305
-	addiw a4, a4, -381
-	slli a4, a4, 32
-	lui a0, 619653
-	addiw a0, a0, 1703
-	add a4, a4, a0
-	mulhu a4, t5, a4
+	mul t5, t5, s7
+	mulhu a4, t5, s8
 	addi a0, zero, 0
 	sltu a0, a0, t5
 	add a4, a4, a0
-	lui a6, 574360
-	addiw a6, a6, -1372
-	slli a6, a6, 32
-	lui a0, 742938
-	addiw a0, a0, 1783
-	add a6, a6, a0
-	mul a5, t5, a6
-	mulhu a6, t5, a6
+	mul a5, t5, s9
+	mulhu a6, t5, s9
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t6, t6, a5
 	sltu a7, t6, a5
 	add a4, a6, a7
-	lui a6, 255585
-	addiw a6, a6, -1391
-	slli a6, a6, 32
-	lui a0, 645177
-	addiw a0, a0, -655
-	add a6, a6, a0
-	mul a5, t5, a6
-	mulhu a6, t5, a6
+	mul a5, t5, s10
+	mulhu a6, t5, s10
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add a1, a1, a5
 	sltu a7, a1, a5
 	add a4, a6, a7
-	lui a6, 696245
-	addiw a6, a6, 2012
-	slli a6, a6, 32
-	lui a0, 663275
-	addiw a0, a0, -1604
-	add a6, a6, a0
-	mul a5, t5, a6
-	mulhu a6, t5, a6
+	mul a5, t5, s11
+	mulhu a6, t5, s11
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
@@ -573,59 +518,29 @@ vg_brainpoolp256r1_mul_mod_n:
 	sltu a2, t4, a2
 	add a2, a2, a7
 	ld t5, 1912(a3)
-	lui t0, 1032188
-	addiw t0, t0, -322
-	slli t0, t0, 32
-	lui a0, 834369
-	addiw a0, a0, -279
-	add t0, t0, a0
-	mul t6, t6, t0
-	lui a4, 590305
-	addiw a4, a4, -381
-	slli a4, a4, 32
-	lui a0, 619653
-	addiw a0, a0, 1703
-	add a4, a4, a0
-	mulhu a4, t6, a4
+	mul t6, t6, s7
+	mulhu a4, t6, s8
 	addi a0, zero, 0
 	sltu a0, a0, t6
 	add a4, a4, a0
-	lui a6, 574360
-	addiw a6, a6, -1372
-	slli a6, a6, 32
-	lui a0, 742938
-	addiw a0, a0, 1783
-	add a6, a6, a0
-	mul a5, t6, a6
-	mulhu a6, t6, a6
+	mul a5, t6, s9
+	mulhu a6, t6, s9
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add a1, a1, a5
 	sltu a7, a1, a5
 	add a4, a6, a7
-	lui a6, 255585
-	addiw a6, a6, -1391
-	slli a6, a6, 32
-	lui a0, 645177
-	addiw a0, a0, -655
-	add a6, a6, a0
-	mul a5, t6, a6
-	mulhu a6, t6, a6
+	mul a5, t6, s10
+	mulhu a6, t6, s10
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t3, t3, a5
 	sltu a7, t3, a5
 	add a4, a6, a7
-	lui a6, 696245
-	addiw a6, a6, 2012
-	slli a6, a6, 32
-	lui a0, 663275
-	addiw a0, a0, -1604
-	add a6, a6, a0
-	mul a5, t6, a6
-	mulhu a6, t6, a6
+	mul a5, t6, s11
+	mulhu a6, t6, s11
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
@@ -637,6 +552,11 @@ vg_brainpoolp256r1_mul_mod_n:
 	add t5, t5, a2
 	sltu a2, t5, a2
 	add a2, a2, a7
+	ld s7, 1792(a3)
+	ld s8, 1800(a3)
+	ld s9, 1808(a3)
+	ld s10, 1816(a3)
+	ld s11, 1824(a3)
 	lui t0, 458271
 	addiw t0, t0, 381
 	slli t0, t0, 32
