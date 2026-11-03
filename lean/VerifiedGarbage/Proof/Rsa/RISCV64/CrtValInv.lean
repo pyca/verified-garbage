@@ -341,12 +341,10 @@ theorem invPart_ok [InvLaw] {s0 s : State} (h : PreC s0) {X₁ X₂ : Nat} (ck :
   have se1 := sl sE1 (by simp)
   have se2 := sl sE2 (by simp)
   rw [ck.podd] at sp4
-  rw [ck.e1] at se1
-  rw [ck.e2] at se2
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (maskBlk_ok ws4 (by rw [sp4]; omega_arith) (by rw [se1]; exact bit_ite)
-    (by rw [se2]; exact bit_ite) (by rw [e4]; exact bit_ite)) fun t5 ⟨ws5, f5, v5, m5, k5⟩ => ?_
-  rw [sp4, se1, se2, e4, mask_prod] at v5
+  refine WP.mono (maskBlk_ok ws4 (by rw [sp4]; omega_arith) (by rw [se1]; exact ck.b1)
+    (by rw [se2]; exact ck.b2) (by rw [e4]; exact bit_ite)) fun t5 ⟨ws5, f5, v5, m5, k5⟩ => ?_
+  rw [sp4, se1, se2, ck.e12, e4, mask_prod] at v5
   have c5 := c4.of_frame f5 (by simp) (by decide) (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k5
   have wqi : (s0.gpr .a4).toNat + pL s0 ≤ 2 ^ 64 := by have := h.wqi; rw [h.h5] at this; exact this
   have qiw : (⟨s0.gpr .a4, pL s0⟩ : Region) ∈ s0.wr := by rw [← h.qiR_eq, h.hwr]; simp

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValFront
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyDiv
+public import VerifiedGarbage.Proof.Rsa.RISCV64.RdOps
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
@@ -12,7 +13,9 @@ import VerifiedGarbage.Proof.Rsa.Octets
 
 `setup_ok`, `loads_ok`: the working space of `w = ⌈n_len / 8⌉` words, its
 arrays zeroed and `n`, `p`, `q` and `d` read (`Ld`); `checks_ok`: `p`'s low
-bit, and whether `n / p = q` and `n mod p = 0` (`Ck`).
+bit, and two bits whose product, for an odd `p`, is whether `n / p = q` and
+`n mod p = 0` (`Ck`): `p q mod 2^(64 w) = n` and 1 when `p_len + q_len ≤ 8 w`
+(`mulChecks_ok`), else the two checks by the division (`divChecks_ok`).
 -/
 
 -- separate module: its proofs (the reads and the checks of `p q = n`) are not re-checked with every
@@ -23,8 +26,8 @@ bit, and whether `n / p = q` and `n mod p = 0` (`Ck`).
 namespace VG.Proof.Rsa.RISCV64.CrtValues
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
-open VG.Impl.Rsa.RISCV64.Keys (seqs setW zeroArrays load copy bitOf eqS)
-open VG.Impl.Rsa.RISCV64.CrtValues (setup loads checks nArr aOne aZero aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD
+open VG.Impl.Rsa.RISCV64.Keys (seqs setW zeroArrays load copy bitOf eqS mov)
+open VG.Impl.Rsa.RISCV64.CrtValues (setup loads checks divChecks mulChecks lenTest nArr aOne aZero aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD
   sPodd sE1 sE2 sE3 sMask)
 
 /-! ## The values -/
@@ -176,7 +179,8 @@ theorem loads_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) (ws : Ws s (b
 
 /-! ## The checks of `p q = n` -/
 
-/-- After the checks: `X₁` and `X₂` are `n / p` and `n mod p` for `p > 0`. -/
+/-- After the checks: `X₁` and `X₂` are `n / p` and `n mod p` for `p > 0`, and the two
+checks' bits, with `p`'s, give whether `X₁ = q` and `X₂ = 0`. -/
 structure Ck (s0 : State) (X₁ X₂ : Nat) (t : State) : Prop where
   cb : CB s0 s0.mem t
   ws : Ws t (bOf s0) (zOf s0) (wOf s0) nArr
@@ -185,8 +189,10 @@ structure Ck (s0 : State) (X₁ X₂ : Nat) (t : State) : Prop where
   d : num t.mem (bOf s0) (wOf s0) aD = Dv s0
   x : 0 < Pv s0 → X₁ = Nv s0 / Pv s0 ∧ X₂ = Nv s0 % Pv s0
   podd : slot t.mem (bOf s0) sPodd = Pv s0 % 2
-  e1 : slot t.mem (bOf s0) sE1 = if X₁ = Qv s0 then 1 else 0
-  e2 : slot t.mem (bOf s0) sE2 = if X₂ = 0 then 1 else 0
+  b1 : slot t.mem (bOf s0) sE1 ≤ 1
+  b2 : slot t.mem (bOf s0) sE2 ≤ 1
+  e12 : Pv s0 % 2 * slot t.mem (bOf s0) sE1 * slot t.mem (bOf s0) sE2 =
+    Pv s0 % 2 * (if X₁ = Qv s0 then 1 else 0) * (if X₂ = 0 then 1 else 0)
   ddz : word t.mem (bOf s0) (arr (wOf s0) aDD + 8 * wOf s0) = 0
 
 theorem word_w_zero {m : Mem} {B : Addr} {w j : Nat} (h : wordsVal m B (arr w j) (w + 2) = 0) :
@@ -204,12 +210,22 @@ theorem CB.step {s0 s t : State} (h : PreC s0) {M : Mem} (c : CB s0 M s) {js ds 
   exact c.of_frame f (fun j hj => Nat.le_trans (arr_end (hjs j hj)) h.fits) hds
     (by simp only [hdr_eq, zOf] at hz ⊢; omega_arith) k hr
 
-theorem checks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
-    WP isa checks s fun t => ∃ X₁ X₂, Ck s0 X₁ X₂ t := by
+/-- `Ck` from the two checks' exact bits. -/
+theorem Ck.of_bits {s0 t : State} {X₁ X₂ : Nat} (cb : CB s0 s0.mem t) (ws : Ws t (bOf s0) (zOf s0) (wOf s0) nArr)
+    (p : num t.mem (bOf s0) (wOf s0) aP = Pv s0) (q : num t.mem (bOf s0) (wOf s0) aQ = Qv s0)
+    (d : num t.mem (bOf s0) (wOf s0) aD = Dv s0) (x : 0 < Pv s0 → X₁ = Nv s0 / Pv s0 ∧ X₂ = Nv s0 % Pv s0)
+    (podd : slot t.mem (bOf s0) sPodd = Pv s0 % 2)
+    (e1 : slot t.mem (bOf s0) sE1 = if X₁ = Qv s0 then 1 else 0)
+    (e2 : slot t.mem (bOf s0) sE2 = if X₂ = 0 then 1 else 0)
+    (ddz : word t.mem (bOf s0) (arr (wOf s0) aDD + 8 * wOf s0) = 0) : Ck s0 X₁ X₂ t :=
+  ⟨cb, ws, p, q, d, x, podd, by rw [e1]; split <;> simp, by rw [e2]; split <;> simp, by rw [e1, e2], ddz⟩
+
+theorem divChecks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
+    WP isa divChecks s fun t => ∃ X₁ X₂, Ck s0 X₁ X₂ t := by
   have ws := l.ws
   have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
   have ⟨w1, w2⟩ := h.w_bounds
-  unfold checks
+  unfold divChecks
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok ws (o := aDD) (a := aP) (by cvx) (by cvx) (by decide) (by cvx))
     fun t1 ⟨w1', f1, v1, k1, o1⟩ => ?_
@@ -251,11 +267,11 @@ theorem checks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
     rw [f5.num (by simp) (by cvx) (fit _ hj), f4.num (by simp) (by cvx) (fit _ hj),
       f3.num (by simp [Ne.symm a2, Ne.symm a3]) (by simp) (fit _ hj),
       f2.num (by simp) (by cvx) (fit _ hj), f1.num (by simp [Ne.symm a1]) (by simp) (fit _ hj)]
-  refine ⟨num t3.mem (bOf s0) (wOf s0) aDQ, num t3.mem (bOf s0) (wOf s0) aDR, c5, w5,
-    by rw [keepA _ (by cvx) (by cvx) (by cvx) (by cvx) (by cvx), l.p],
-    by rw [keepA _ (by cvx) (by cvx) (by cvx) (by cvx) (by cvx), l.q],
-    by rw [keepA _ (by cvx) (by cvx) (by cvx) (by cvx) (by cvx), l.d],
-    fun hp => ⟨(v3 hp).1, (v3 hp).2.2.1⟩, ?_, ?_, ?_, ?_⟩
+  refine ⟨num t3.mem (bOf s0) (wOf s0) aDQ, num t3.mem (bOf s0) (wOf s0) aDR, Ck.of_bits c5 w5
+    (by rw [keepA _ (by cvx) (by cvx) (by cvx) (by cvx) (by cvx), l.p])
+    (by rw [keepA _ (by cvx) (by cvx) (by cvx) (by cvx) (by cvx), l.q])
+    (by rw [keepA _ (by cvx) (by cvx) (by cvx) (by cvx) (by cvx), l.d])
+    (fun hp => ⟨(v3 hp).1, (v3 hp).2.2.1⟩) ?_ ?_ ?_ ?_⟩
   · rw [f5.slot (by cvx) (by cvx), f4.slot (by cvx) (by cvx), f3.slot (by cvx) (by simp), v2]
   · have q3 : num t3.mem (bOf s0) (wOf s0) aQ = Qv s0 := by
       rw [f3.num (j := aQ) (by cvx) (by simp) (fit _ (by cvx)), f2.num (j := aQ) (by simp) (by cvx) (fit _ (by cvx)),
@@ -270,5 +286,153 @@ theorem checks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
       f4.word (i := wOf s0) (by omega_arith) (by simp) (by cvx) (fit _ (by cvx)),
       f3.word (i := wOf s0) (by omega_arith) (by cvx) (by simp) (fit _ (by cvx))]
     exact z2
+
+/-! ## The checks of `p q = n` by the product -/
+
+/-- For `p q < R`, an odd `p`'s bit times `p q mod R = n` is its bit times
+`n / p = q` and `n mod p = 0`. -/
+theorem pq_bits {P Q N R : Nat} (hR : P * Q < R) :
+    P % 2 * (if P * Q % R = N then 1 else 0) * 1 =
+      P % 2 * (if N / P = Q then 1 else 0) * (if N % P = 0 then 1 else 0) := by
+  rcases Nat.mod_two_eq_zero_or_one P with e | e
+  · simp [e]
+  have hP : 0 < P := by omega
+  rw [Nat.mod_eq_of_lt hR]
+  by_cases hq : P * Q = N
+  · subst hq
+    simp [Nat.mul_div_cancel_left _ hP]
+  · have : ¬ (N / P = Q ∧ N % P = 0) := fun ⟨a, b⟩ => hq (by
+      have := Nat.div_add_mod N P
+      rw [a, b, Nat.add_zero] at this; exact this)
+    by_cases a : N / P = Q <;> by_cases b : N % P = 0 <;> simp_all
+
+theorem Ld.of_keep {s0 s t : State} (l : Ld s0 s) {rs : List Reg} (k : Keep rs s t) (hm : t.mem = s.mem)
+    (hr : ∀ r ∈ cbRegs, r ∉ rs := by decide) (h9 : .s9 ∉ rs := by decide) (h10 : .s10 ∉ rs := by decide)
+    (h11 : .s11 ∉ rs := by decide) : Ld s0 t :=
+  ⟨l.cb.of_keep k hm hr, l.ws.of_keep k h9 h10 h11, by rw [hm]; exact l.n, by rw [hm]; exact l.p,
+    by rw [hm]; exact l.q, by rw [hm]; exact l.d, fun j hj a b c d => by rw [hm]; exact l.zero j hj a b c d⟩
+
+/-- `t5 := [8 w < p_len + q_len]`: zero when the lengths fit `w` words. -/
+theorem lenTest_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
+    WP isa (.block lenTest) s fun t => ((t.gpr .t5 = 0 ↔ pL s0 + qL s0 ≤ 8 * wOf s0) ∧ t.mem = s.mem) ∧
+      Keep [.t5, .t6] s t := by
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  have ⟨lp, lq⟩ := lt32 h
+  have ⟨w1, w2⟩ := h.w_bounds
+  have hlt : (BitVec.ofNat 64 (wOf s0) <<< 3 < stackArg s0 1 + stackArg s0 3) ↔
+      8 * wOf s0 < pL s0 + qL s0 := by
+    rw [BitVec.lt_def, BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+    simp only [pL, qL] at *
+    omega_arith
+  brun [lenTest, l.cb.s4, l.cb.s6, l.ws.s9]
+  by_cases hc : BitVec.ofNat 64 (wOf s0) <<< 3 < stackArg s0 1 + stackArg s0 3
+  · have := hlt.mp hc
+    simp only [hc, ↓reduceIte]
+    exact ⟨fun e => absurd e (by decide), fun e => by omega⟩
+  · have := mt hlt.mpr hc
+    simp only [hc, ↓reduceIte]
+    exact ⟨fun _ => by omega, fun _ => trivial⟩
+
+/-- `a2`, `a3`, `a6` into `s0`, `s7`, `a5`. -/
+theorem save3_ok (s : State) :
+    WP isa (.block [mov .s0 .a2, mov .s7 .a3, mov .a5 .a6]) s fun u =>
+      (u.gpr .s0 = s.gpr .a2 ∧ u.gpr .s7 = s.gpr .a3 ∧ u.gpr .a5 = s.gpr .a6 ∧ u.mem = s.mem) ∧
+        Keep [.s0, .s7, .a5] s u := by
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  brun [mov, add_ofNat_zero']
+
+/-- And back. -/
+theorem restore3_ok (s : State) :
+    WP isa (.block [mov .a2 .s0, mov .a3 .s7, mov .a6 .a5]) s fun u =>
+      (u.gpr .a2 = s.gpr .s0 ∧ u.gpr .a3 = s.gpr .s7 ∧ u.gpr .a6 = s.gpr .a5 ∧ u.mem = s.mem) ∧
+        Keep [.a2, .a3, .a6] s u := by
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  brun [mov, add_ofNat_zero']
+
+theorem mulChecks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) (hlen : pL s0 + qL s0 ≤ 8 * wOf s0) :
+    WP isa mulChecks s fun t => ∃ X₁ X₂, Ck s0 X₁ X₂ t := by
+  have ws := l.ws
+  have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => ws.fit64 hj
+  have ⟨w1, w2⟩ := h.w_bounds
+  unfold mulChecks
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (bitOf_ok ws (j := aP) (sl := sPodd) (by cvx) (by decide) (by cvx) (by cvx))
+    fun t1 ⟨w1', f1, v1, k1⟩ => ?_
+  have c1 := l.cb.step h f1 (by simp) (by cvx) k1
+  rw [l.p] at v1
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (save3_ok t1) fun t2 ⟨⟨e0, e7, e5, m2⟩, k2⟩ => ?_
+  have c2 := c1.of_keep k2 m2
+  have w2' := w1'.of_keep k2
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  have z2 : num t2.mem (bOf s0) (wOf s0) aDR = 0 := by
+    clear hlen
+    have hz0 := l.zero aDR (by cvx) (by cvx) (by cvx) (by cvx) (by cvx)
+    rw [m2, f1.num (by simp) (by cvx) (fit _ (by cvx))]
+    have e := wordsVal_zero_part (a := 0) (c := wOf s0) hz0 (by omega_arith)
+    rw [Nat.mul_zero, Nat.add_zero] at e
+    exact e
+  refine WP.mono (mulLow_ok w2' (o := aDR) (y := aP) (x := aQ) (by cvx) (by cvx) (by cvx) (by decide)
+    (by cvx) (by cvx) z2) fun t3 ⟨w3, f3, _, v3, k3⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (restore3_ok t3) fun t4 ⟨⟨r2, r3, r6, m4⟩, k4⟩ => ?_
+  -- `CB` back: the registers of `CB` are `t2`'s.
+  have k24 : Keep [.s0, .s7, .a5, .t0, .t1, .t2, .t3, .t4, .t5, .t6, .a4, .s8] t2 t4 := by
+    refine ⟨fun r hr => ?_, k4.2.1.trans k3.2.1, k4.2.2.trans k3.2.2⟩
+    by_cases a2 : r = .a2
+    · subst a2; rw [r2, k3.gpr (by decide), e0, k2.gpr (by decide)]
+    by_cases a3 : r = .a3
+    · subst a3; rw [r3, k3.gpr (by decide), e7, k2.gpr (by decide)]
+    by_cases a6 : r = .a6
+    · subst a6; rw [r6, k3.gpr (by decide), e5, k2.gpr (by decide)]
+    rw [k4.gpr (by revert a2 a3 a6; cases r <;> decide), k3.gpr (by revert hr a2 a3 a6; cases r <;> decide)]
+  have f3' : Keys.Frame (bOf s0) (wOf s0) [aDR] [] t2.mem t4.mem := by rw [m4]; exact f3
+  have c4 := c2.step h f3' (by cvx) (by simp) k24
+  have w4 := w3.of_keep k4
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (eqS_ok w4 (d := sE1) (a := aDR) (b := aDQ) (by cvx) (by cvx) (by decide) (by cvx) (by cvx))
+    fun t5 ⟨w5, f5, v5, k5⟩ => ?_
+  have c5 := c4.step h f5 (by simp) (by cvx) k5
+  refine WP.mono (eqS_ok w5 (d := sE2) (a := aZero) (b := aZero) (by cvx) (by cvx) (by decide) (by cvx) (by cvx))
+    fun t ⟨w6, f6, v6, k6⟩ => ?_
+  have c6 := c5.step h f6 (by simp) (by cvx) k6
+  -- The arrays but `aDR`, through the frames.
+  have keepA : ∀ j < nArr, j ≠ aDR →
+      num t.mem (bOf s0) (wOf s0) j = num s.mem (bOf s0) (wOf s0) j := fun j hj a1 => by
+    rw [f6.num (by simp) (by cvx) (fit _ hj), f5.num (by simp) (by cvx) (fit _ hj),
+      f3'.num (by simp [Ne.symm a1]) (by simp) (fit _ hj), m2, f1.num (by simp) (by cvx) (fit _ hj)]
+  have pq : num t4.mem (bOf s0) (wOf s0) aDR = Pv s0 * Qv s0 % 2 ^ (64 * wOf s0) := by
+    rw [m4, v3, m2, f1.num (by simp) (by cvx) (fit _ (by cvx)), f1.num (j := aQ) (by simp) (by cvx) (fit _ (by cvx)),
+      l.p, l.q]
+  have n4 : num t4.mem (bOf s0) (wOf s0) aDQ = Nv s0 := by
+    rw [f3'.num (by cvx) (by simp) (fit _ (by cvx)), m2, f1.num (by simp) (by cvx) (fit _ (by cvx)), l.n]
+  have hR : Pv s0 * Qv s0 < 2 ^ (64 * wOf s0) := by
+    have := Nat.mul_lt_mul'' (pv_lt s0) (qv_lt s0)
+    rw [← Nat.pow_add] at this
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_arith))
+  have se1 : slot t.mem (bOf s0) sE1 = if Pv s0 * Qv s0 % 2 ^ (64 * wOf s0) = Nv s0 then 1 else 0 := by
+    rw [f6.slot (by cvx) (by cvx), v5, pq, n4]
+  have se2 : slot t.mem (bOf s0) sE2 = 1 := by rw [v6]; simp
+  refine ⟨Nv s0 / Pv s0, Nv s0 % Pv s0, c6, w6,
+    by rw [keepA _ (by cvx) (by cvx), l.p], by rw [keepA _ (by cvx) (by cvx), l.q],
+    by rw [keepA _ (by cvx) (by cvx), l.d], fun _ => ⟨rfl, rfl⟩, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [f6.slot (by cvx) (by cvx), f5.slot (by cvx) (by cvx), f3'.slot (by cvx) (by simp), m2, v1]
+  · rw [se1]; split <;> simp
+  · rw [se2]
+  · rw [se1, se2]; exact pq_bits hR
+  · rw [f6.word (i := wOf s0) (by omega_arith) (by simp) (by cvx) (fit _ (by cvx)),
+      f5.word (i := wOf s0) (by omega_arith) (by simp) (by cvx) (fit _ (by cvx)),
+      f3'.word (i := wOf s0) (by omega_arith) (by cvx) (by simp) (fit _ (by cvx)), m2,
+      f1.word (i := wOf s0) (by omega_arith) (by simp) (by cvx) (fit _ (by cvx))]
+    exact word_w_zero (l.zero _ (by cvx) (by cvx) (by cvx) (by cvx) (by cvx))
+
+theorem checks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
+    WP isa checks s fun t => ∃ X₁ X₂, Ck s0 X₁ X₂ t := by
+  unfold checks
+  rw [WP.seq_iff]
+  refine WP.mono (lenTest_ok h l) fun u ⟨⟨e, m⟩, k⟩ => ?_
+  have lu := l.of_keep k m
+  refine WP.ite _ (Steps.eval_zero u .t5) (fun hz => ?_) (fun _ => divChecks_ok h lu)
+  exact mulChecks_ok h lu (e.mp (by simpa using hz))
 
 end VG.Proof.Rsa.RISCV64.CrtValues
