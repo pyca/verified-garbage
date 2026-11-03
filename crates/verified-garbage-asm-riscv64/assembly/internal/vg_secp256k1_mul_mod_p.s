@@ -567,261 +567,73 @@ vg_secp256k1_mul_mod_p:
 	ld t5, 1872(a3)
 	ld t6, 1880(a3)
 	addi a2, zero, 0
-	ld a1, 1888(a3)
 	lui t0, 885633
 	addiw t0, t0, -1762
 	slli t0, t0, 32
 	lui a0, 860755
 	addiw a0, a0, 1329
 	add t0, t0, a0
+	lui a6, 0
+	addiw a6, a6, 1
+	slli a6, a6, 32
+	lui a0, 0
+	addiw a0, a0, 977
+	add a6, a6, a0
+	ld a1, 1888(a3)
 	mul t3, t3, t0
-	lui a4, 0
-	addiw a4, a4, -1
-	slli a4, a4, 32
-	lui a0, 0
-	addiw a0, a0, -977
-	add a4, a4, a0
-	mulhu a4, t3, a4
-	addi a0, zero, 0
-	sltu a0, a0, t3
-	add a4, a4, a0
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t3, a6
-	mulhu a6, t3, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t4, t4, a5
-	sltu a7, t4, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t3, a6
-	mulhu a6, t3, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t5, t5, a5
+	mulhu a4, t3, a6
+	sltu a5, t4, a4
+	sub t4, t4, a4
 	sltu a7, t5, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t3, a6
-	mulhu a6, t3, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t6, t6, a5
-	sltu a7, t6, a5
-	add a4, a6, a7
+	sub t5, t5, a5
+	sltu a5, t6, a7
+	sub t6, t6, a7
+	sub a4, t3, a5
 	add a1, a1, a4
 	sltu a7, a1, a4
 	add a1, a1, a2
 	sltu a2, a1, a2
 	add a2, a2, a7
 	ld t3, 1896(a3)
-	lui t0, 885633
-	addiw t0, t0, -1762
-	slli t0, t0, 32
-	lui a0, 860755
-	addiw a0, a0, 1329
-	add t0, t0, a0
 	mul t4, t4, t0
-	lui a4, 0
-	addiw a4, a4, -1
-	slli a4, a4, 32
-	lui a0, 0
-	addiw a0, a0, -977
-	add a4, a4, a0
-	mulhu a4, t4, a4
-	addi a0, zero, 0
-	sltu a0, a0, t4
-	add a4, a4, a0
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t4, a6
-	mulhu a6, t4, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t5, t5, a5
-	sltu a7, t5, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t4, a6
-	mulhu a6, t4, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t6, t6, a5
+	mulhu a4, t4, a6
+	sltu a5, t5, a4
+	sub t5, t5, a4
 	sltu a7, t6, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t4, a6
-	mulhu a6, t4, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add a1, a1, a5
-	sltu a7, a1, a5
-	add a4, a6, a7
+	sub t6, t6, a5
+	sltu a5, a1, a7
+	sub a1, a1, a7
+	sub a4, t4, a5
 	add t3, t3, a4
 	sltu a7, t3, a4
 	add t3, t3, a2
 	sltu a2, t3, a2
 	add a2, a2, a7
 	ld t4, 1904(a3)
-	lui t0, 885633
-	addiw t0, t0, -1762
-	slli t0, t0, 32
-	lui a0, 860755
-	addiw a0, a0, 1329
-	add t0, t0, a0
 	mul t5, t5, t0
-	lui a4, 0
-	addiw a4, a4, -1
-	slli a4, a4, 32
-	lui a0, 0
-	addiw a0, a0, -977
-	add a4, a4, a0
-	mulhu a4, t5, a4
-	addi a0, zero, 0
-	sltu a0, a0, t5
-	add a4, a4, a0
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t5, a6
-	mulhu a6, t5, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t6, t6, a5
-	sltu a7, t6, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t5, a6
-	mulhu a6, t5, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add a1, a1, a5
+	mulhu a4, t5, a6
+	sltu a5, t6, a4
+	sub t6, t6, a4
 	sltu a7, a1, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t5, a6
-	mulhu a6, t5, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t3, t3, a5
-	sltu a7, t3, a5
-	add a4, a6, a7
+	sub a1, a1, a5
+	sltu a5, t3, a7
+	sub t3, t3, a7
+	sub a4, t5, a5
 	add t4, t4, a4
 	sltu a7, t4, a4
 	add t4, t4, a2
 	sltu a2, t4, a2
 	add a2, a2, a7
 	ld t5, 1912(a3)
-	lui t0, 885633
-	addiw t0, t0, -1762
-	slli t0, t0, 32
-	lui a0, 860755
-	addiw a0, a0, 1329
-	add t0, t0, a0
 	mul t6, t6, t0
-	lui a4, 0
-	addiw a4, a4, -1
-	slli a4, a4, 32
-	lui a0, 0
-	addiw a0, a0, -977
-	add a4, a4, a0
-	mulhu a4, t6, a4
-	addi a0, zero, 0
-	sltu a0, a0, t6
-	add a4, a4, a0
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t6, a6
-	mulhu a6, t6, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add a1, a1, a5
-	sltu a7, a1, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t6, a6
-	mulhu a6, t6, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t3, t3, a5
+	mulhu a4, t6, a6
+	sltu a5, a1, a4
+	sub a1, a1, a4
 	sltu a7, t3, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t6, a6
-	mulhu a6, t6, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t4, t4, a5
-	sltu a7, t4, a5
-	add a4, a6, a7
+	sub t3, t3, a5
+	sltu a5, t4, a7
+	sub t4, t4, a7
+	sub a4, t6, a5
 	add t5, t5, a4
 	sltu a7, t5, a4
 	add t5, t5, a2
@@ -835,39 +647,12 @@ vg_secp256k1_mul_mod_p:
 	add t0, t0, a0
 	add t6, a1, t0
 	sltu a7, t6, t0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a4, t3, t0
-	sltu a0, a4, t0
-	add a4, a4, a7
+	add a4, t3, a7
 	sltu a7, a4, a7
-	add a7, a7, a0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a5, t4, t0
-	sltu a0, a5, t0
-	add a5, a5, a7
+	add a5, t4, a7
 	sltu a7, a5, a7
-	add a7, a7, a0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a6, t5, t0
-	sltu a0, a6, t0
-	add a6, a6, a7
+	add a6, t5, a7
 	sltu a7, a6, a7
-	add a7, a7, a0
 	or a7, a7, a2
 	addi t0, zero, 0
 	sub t0, t0, a7
@@ -1318,261 +1103,73 @@ vg_secp256k1_mul_mod_p:
 	ld t5, 1872(a3)
 	ld t6, 1880(a3)
 	addi a2, zero, 0
-	ld a1, 1888(a3)
 	lui t0, 885633
 	addiw t0, t0, -1762
 	slli t0, t0, 32
 	lui a0, 860755
 	addiw a0, a0, 1329
 	add t0, t0, a0
+	lui a6, 0
+	addiw a6, a6, 1
+	slli a6, a6, 32
+	lui a0, 0
+	addiw a0, a0, 977
+	add a6, a6, a0
+	ld a1, 1888(a3)
 	mul t3, t3, t0
-	lui a4, 0
-	addiw a4, a4, -1
-	slli a4, a4, 32
-	lui a0, 0
-	addiw a0, a0, -977
-	add a4, a4, a0
-	mulhu a4, t3, a4
-	addi a0, zero, 0
-	sltu a0, a0, t3
-	add a4, a4, a0
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t3, a6
-	mulhu a6, t3, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t4, t4, a5
-	sltu a7, t4, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t3, a6
-	mulhu a6, t3, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t5, t5, a5
+	mulhu a4, t3, a6
+	sltu a5, t4, a4
+	sub t4, t4, a4
 	sltu a7, t5, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t3, a6
-	mulhu a6, t3, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t6, t6, a5
-	sltu a7, t6, a5
-	add a4, a6, a7
+	sub t5, t5, a5
+	sltu a5, t6, a7
+	sub t6, t6, a7
+	sub a4, t3, a5
 	add a1, a1, a4
 	sltu a7, a1, a4
 	add a1, a1, a2
 	sltu a2, a1, a2
 	add a2, a2, a7
 	ld t3, 1896(a3)
-	lui t0, 885633
-	addiw t0, t0, -1762
-	slli t0, t0, 32
-	lui a0, 860755
-	addiw a0, a0, 1329
-	add t0, t0, a0
 	mul t4, t4, t0
-	lui a4, 0
-	addiw a4, a4, -1
-	slli a4, a4, 32
-	lui a0, 0
-	addiw a0, a0, -977
-	add a4, a4, a0
-	mulhu a4, t4, a4
-	addi a0, zero, 0
-	sltu a0, a0, t4
-	add a4, a4, a0
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t4, a6
-	mulhu a6, t4, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t5, t5, a5
-	sltu a7, t5, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t4, a6
-	mulhu a6, t4, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t6, t6, a5
+	mulhu a4, t4, a6
+	sltu a5, t5, a4
+	sub t5, t5, a4
 	sltu a7, t6, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t4, a6
-	mulhu a6, t4, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add a1, a1, a5
-	sltu a7, a1, a5
-	add a4, a6, a7
+	sub t6, t6, a5
+	sltu a5, a1, a7
+	sub a1, a1, a7
+	sub a4, t4, a5
 	add t3, t3, a4
 	sltu a7, t3, a4
 	add t3, t3, a2
 	sltu a2, t3, a2
 	add a2, a2, a7
 	ld t4, 1904(a3)
-	lui t0, 885633
-	addiw t0, t0, -1762
-	slli t0, t0, 32
-	lui a0, 860755
-	addiw a0, a0, 1329
-	add t0, t0, a0
 	mul t5, t5, t0
-	lui a4, 0
-	addiw a4, a4, -1
-	slli a4, a4, 32
-	lui a0, 0
-	addiw a0, a0, -977
-	add a4, a4, a0
-	mulhu a4, t5, a4
-	addi a0, zero, 0
-	sltu a0, a0, t5
-	add a4, a4, a0
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t5, a6
-	mulhu a6, t5, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t6, t6, a5
-	sltu a7, t6, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t5, a6
-	mulhu a6, t5, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add a1, a1, a5
+	mulhu a4, t5, a6
+	sltu a5, t6, a4
+	sub t6, t6, a4
 	sltu a7, a1, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t5, a6
-	mulhu a6, t5, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t3, t3, a5
-	sltu a7, t3, a5
-	add a4, a6, a7
+	sub a1, a1, a5
+	sltu a5, t3, a7
+	sub t3, t3, a7
+	sub a4, t5, a5
 	add t4, t4, a4
 	sltu a7, t4, a4
 	add t4, t4, a2
 	sltu a2, t4, a2
 	add a2, a2, a7
 	ld t5, 1912(a3)
-	lui t0, 885633
-	addiw t0, t0, -1762
-	slli t0, t0, 32
-	lui a0, 860755
-	addiw a0, a0, 1329
-	add t0, t0, a0
 	mul t6, t6, t0
-	lui a4, 0
-	addiw a4, a4, -1
-	slli a4, a4, 32
-	lui a0, 0
-	addiw a0, a0, -977
-	add a4, a4, a0
-	mulhu a4, t6, a4
-	addi a0, zero, 0
-	sltu a0, a0, t6
-	add a4, a4, a0
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t6, a6
-	mulhu a6, t6, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add a1, a1, a5
-	sltu a7, a1, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t6, a6
-	mulhu a6, t6, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t3, t3, a5
+	mulhu a4, t6, a6
+	sltu a5, a1, a4
+	sub a1, a1, a4
 	sltu a7, t3, a5
-	add a4, a6, a7
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add a6, a6, a0
-	mul a5, t6, a6
-	mulhu a6, t6, a6
-	add a5, a5, a4
-	sltu a7, a5, a4
-	add a6, a6, a7
-	add t4, t4, a5
-	sltu a7, t4, a5
-	add a4, a6, a7
+	sub t3, t3, a5
+	sltu a5, t4, a7
+	sub t4, t4, a7
+	sub a4, t6, a5
 	add t5, t5, a4
 	sltu a7, t5, a4
 	add t5, t5, a2
@@ -1586,39 +1183,12 @@ vg_secp256k1_mul_mod_p:
 	add t0, t0, a0
 	add t6, a1, t0
 	sltu a7, t6, t0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a4, t3, t0
-	sltu a0, a4, t0
-	add a4, a4, a7
+	add a4, t3, a7
 	sltu a7, a4, a7
-	add a7, a7, a0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a5, t4, t0
-	sltu a0, a5, t0
-	add a5, a5, a7
+	add a5, t4, a7
 	sltu a7, a5, a7
-	add a7, a7, a0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a6, t5, t0
-	sltu a0, a6, t0
-	add a6, a6, a7
+	add a6, t5, a7
 	sltu a7, a6, a7
-	add a7, a7, a0
 	or a7, a7, a2
 	addi t0, zero, 0
 	sub t0, t0, a7

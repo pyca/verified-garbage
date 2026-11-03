@@ -239,39 +239,21 @@ vg_secp256k1_sub_mod_p:
 	add a1, a1, t6
 	sltu a7, a1, t6
 	sd a1, 0(t2)
-	lui t6, 0
-	addiw t6, t6, 0
-	slli t6, t6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add t6, t6, a0
-	and t6, t6, t0
+	addi t6, t0, 0
 	add t3, t3, t6
 	sltu a0, t3, t6
 	add t3, t3, a7
 	sltu a7, t3, a7
 	add a7, a7, a0
 	sd t3, 8(t2)
-	lui t6, 0
-	addiw t6, t6, 0
-	slli t6, t6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add t6, t6, a0
-	and t6, t6, t0
+	addi t6, t0, 0
 	add t4, t4, t6
 	sltu a0, t4, t6
 	add t4, t4, a7
 	sltu a7, t4, a7
 	add a7, a7, a0
 	sd t4, 16(t2)
-	lui t6, 0
-	addiw t6, t6, 0
-	slli t6, t6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add t6, t6, a0
-	and t6, t6, t0
+	addi t6, t0, 0
 	add t5, t5, t6
 	sltu a0, t5, t6
 	add t5, t5, a7
@@ -381,39 +363,21 @@ vg_secp256k1_sub_mod_p:
 	add a1, a1, t6
 	sltu a7, a1, t6
 	sd a1, 0(t2)
-	lui t6, 0
-	addiw t6, t6, 0
-	slli t6, t6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add t6, t6, a0
-	and t6, t6, t0
+	addi t6, t0, 0
 	add t3, t3, t6
 	sltu a0, t3, t6
 	add t3, t3, a7
 	sltu a7, t3, a7
 	add a7, a7, a0
 	sd t3, 8(t2)
-	lui t6, 0
-	addiw t6, t6, 0
-	slli t6, t6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add t6, t6, a0
-	and t6, t6, t0
+	addi t6, t0, 0
 	add t4, t4, t6
 	sltu a0, t4, t6
 	add t4, t4, a7
 	sltu a7, t4, a7
 	add a7, a7, a0
 	sd t4, 16(t2)
-	lui t6, 0
-	addiw t6, t6, 0
-	slli t6, t6, 32
-	lui a0, 0
-	addiw a0, a0, -1
-	add t6, t6, a0
-	and t6, t6, t0
+	addi t6, t0, 0
 	add t5, t5, t6
 	sltu a0, t5, t6
 	add t5, t5, a7
