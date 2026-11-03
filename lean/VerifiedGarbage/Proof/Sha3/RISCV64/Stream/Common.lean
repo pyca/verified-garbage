@@ -5,12 +5,15 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.RISCV64.Isa
+public import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 
 /-!
 # The SHA-3 sponge on RISC-V: the frame of `absorb` and `squeeze`
@@ -263,5 +266,112 @@ theorem epilogue_ok {s : State} {g : Reg → BitVec 64} (hal : s.sp.toNat % 16 =
     obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hr
     rw [u₇.other _ h6, u₆.other _ h5, u₅.other _ h4, u₄.other _ h3, u₃.other _ h2, u₂.other _ h1,
       u₁.other _ ht, u₀.other _ h0]
+
+/-! ## The test for a lane -/
+
+section
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+private theorem wp_or {d n m : Reg} (k : ∀ s', Upd s s' d (s.gpr n ||| s.gpr m) → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .or d n m :: is)) s Q :=
+  WP.cons exec_logic (k _ (Upd.write _ _ _))
+
+private theorem wp_andi7 {d n : Reg} (k : ∀ s', Upd s s' d (s.gpr n &&& 7) → WP isa (.block is) s' Q) :
+    WP isa (.block (.logicImm .and d n 7 :: is)) s Q :=
+  WP.cons (exec_logicImm (by decide)) (k _ (Upd.write _ _ _))
+
+private theorem wp_sltu {d n m : Reg}
+    (k : ∀ s', Upd s s' d (if s.gpr n < s.gpr m then 1 else 0) → WP isa (.block is) s' Q) :
+    WP isa (.block (.sltu d n m :: is)) s Q :=
+  WP.cons exec_sltu (k _ (Upd.write _ _ _))
+
+end
+
+private theorem and7_eq_zero {x : BitVec 64} (h : x &&& 7 = 0) : x.toNat % 8 = 0 := by
+  have h' := congrArg BitVec.toNat h
+  rwa [BitVec.toNat_and, show (7 : BitVec 64).toNat = 2 ^ 3 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod] at h'
+
+/-- `laneCheck`, from `s2` = `st`, `s4` = `j` and `s6` = `n`: it changes only
+`t1`–`t4`, leaves `st + j` in `t2`, leaves `t1 = 0` only if `j` and `st + j`
+are multiples of 8 and `n ≥ 8`, and `t4 = 0` only if `s5` is a multiple of 8. -/
+theorem laneCheck_ok {s : State} {st : Addr} {j n : Nat} (h2 : s.gpr .s2 = st)
+    (h4 : s.gpr .s4 = BitVec.ofNat 64 j) (h6 : s.gpr .s6 = BitVec.ofNat 64 n) (hj : j < 2 ^ 64)
+    (hn : n < 2 ^ 64) :
+    WP isa (.block laneCheck) s fun s' =>
+      (∀ r, r ≠ .t1 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s'.gpr r = s.gpr r) ∧
+      s'.gpr .t2 = st + BitVec.ofNat 64 j ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.sp = s.sp ∧
+      (s'.gpr .t1 = 0 → j % 8 = 0 ∧ (st + BitVec.ofNat 64 j).toNat % 8 = 0 ∧ 8 ≤ n) ∧
+      (s'.gpr .t4 = 0 → (s.gpr .s5).toNat % 8 = 0) := by
+  unfold laneCheck
+  refine wp_add fun s₁ u₁ => wp_or fun s₂ u₂ => wp_andi7 fun s₃ u₃ =>
+    wp_li (by decide) fun s₄ u₄ => wp_sltu fun s₅ u₅ => wp_or fun s₆ u₆ =>
+    wp_andi7 fun s₇ u₇ => WP.block_nil ?_
+  have g : ∀ r, r ≠ .t1 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₇.gpr r = s.gpr r :=
+    fun r h1 h2 h3 h4 => by
+      rw [u₇.other r h4, u₆.other r h1, u₅.other r h3, u₄.other r h4, u₃.other r h1,
+        u₂.other r h1, u₁.other r h2]
+  have ht2 : s₇.gpr .t2 = st + BitVec.ofNat 64 j := by
+    rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
+      u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h2, h4]
+  refine ⟨g, ht2, by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem],
+    by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+    by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr],
+    by rw [u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp], fun hz => ?_, fun hz => ?_⟩
+  · have e6 : s₄.gpr .s6 = BitVec.ofNat 64 n := by
+      rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+        u₁.other _ (by decide), h6]
+    have e4 : s₁.gpr .s4 = BitVec.ofNat 64 j := by rw [u₁.other _ (by decide), h4]
+    have e2 : s₁.gpr .t2 = st + BitVec.ofNat 64 j := by rw [u₁.gpr, h2, h4]
+    rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₅.gpr, u₄.gpr,
+      u₄.other _ (by decide), u₃.gpr, u₂.gpr, e6, e4, e2] at hz
+    obtain ⟨ha, hb⟩ := BitVec.or_eq_zero_iff.mp hz
+    rw [BitVec.and_or_distrib_right] at ha
+    obtain ⟨h₁, h₃⟩ := BitVec.or_eq_zero_iff.mp ha
+    have h₃' := and7_eq_zero h₃
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj] at h₃'
+    refine ⟨h₃', and7_eq_zero h₁, ?_⟩
+    by_cases hl : BitVec.ofNat 64 n < 8#64
+    · rw [ite_eq_left hl] at hb; exact absurd hb (by decide)
+    · rw [BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn] at hl
+      exact Nat.le_of_not_lt hl
+  · rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)] at hz
+    exact and7_eq_zero hz
+
+/-- `loadData`: the lane at `a` (`s5`) into `t1`, changing only `t1`, `t3` and
+`t4`. -/
+theorem loadData_ok {al : Bool} {rest : List Instr} {s : State} {Q : State → Prop} {a : Addr}
+    (h5 : s.gpr .s5 = a) (hal : al = true → a.toNat % 8 = 0) (hin : InRegions (s.rd ++ s.wr) a 8)
+    (k : ∀ s', Words64.Upd3 s s' .t1 .t3 .t4 (s.mem.readW a 64) → WP isa (.block rest) s' Q) :
+    WP isa (.block (loadData al ++ rest)) s Q := by
+  cases al
+  · rw [loadData, ite_eq_right (by decide), WP.block_append_iff]
+    have ea : s.gpr .s5 + BitVec.ofNat 64 0 = a := by rw [h5]; simp
+    refine WP.mono (Words64.loadLE64_ok (d := .t1) (tmp := .t3) (tmp2 := .t4) (n := .s5) (off := 0)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by rw [ea]; exact hin)) fun s' u => k s' ?_
+    rw [ea] at u; exact u
+  · rw [loadData, ite_eq_left rfl]
+    exact wp_ld (a := a) (by decide) (by rw [h5]; simp) (hal rfl) hin fun s' u =>
+      k s' ⟨u.gpr, fun r h1 _ _ => u.other r h1, u.mem, u.rd, u.wr, u.sp⟩
+
+/-- `storeData`: `t1` to the lane at `a` (`s5`), changing only `t3` and `t4`. -/
+theorem storeData_ok {al : Bool} {rest : List Instr} {s : State} {Q : State → Prop} {a : Addr}
+    (h5 : s.gpr .s5 = a) (hal : al = true → a.toNat % 8 = 0) (hout : InRegions s.wr a 8)
+    (k : ∀ s', (∀ r, r ≠ .t3 → r ≠ .t4 → s'.gpr r = s.gpr r) →
+      s'.mem = s.mem.writeW a (s.gpr .t1) → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
+      WP isa (.block rest) s' Q) :
+    WP isa (.block (storeData al ++ rest)) s Q := by
+  cases al
+  · rw [storeData, ite_eq_right (by decide), WP.block_append_iff]
+    have ea : s.gpr .s5 + BitVec.ofNat 64 0 = a := by rw [h5]; simp
+    refine WP.mono (Words64.storeLE64_ok (v := .t1) (tmp := .t3) (tmp2 := .t4) (n := .s5) (off := 0)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [ea]; exact hout))
+      fun s' ⟨g, m, rd, wr, sp⟩ => k s' g (by rw [m, ea]) rd wr sp
+  · rw [storeData, ite_eq_left rfl]
+    exact wp_sd (a := a) (by decide) (by rw [h5]; simp) (hal rfl) hout fun s' u =>
+      k s' (fun r _ _ => by rw [u.gpr]) u.mem u.rd u.wr u.sp
 
 end VG.Proof.Sha3.RISCV64.Stream
