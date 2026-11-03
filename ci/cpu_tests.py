@@ -309,6 +309,7 @@ GROUPS = {
             "wycheproof::rsa_pkcs1_enc",
             "wycheproof::rsa_pkcs1_sig",
             "wycheproof::rsa_pss",
+            "wycheproof::rsa_shared_key",
         ],
     },
     # IFMA's vectors once, without repeating ADX prime generation (SKX and
@@ -334,7 +335,7 @@ GROUPS = {
             "wycheproof::rsa_pss::rsa_pss_large_keys",
             "wycheproof::rsa_oaep::rsa_oaep_test",
             "wycheproof::rsa_oaep::rsa_oaep_every_pair",
-            "wycheproof::rsa_oaep::rsa_shared_key_leases_smoke",
+            "wycheproof::rsa_shared_key::rsa_shared_key_leases_smoke",
         ],
     },
     # Extra SHA-256 implementations with the same RSA arithmetic: every
