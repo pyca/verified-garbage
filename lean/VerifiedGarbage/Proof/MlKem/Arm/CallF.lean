@@ -100,8 +100,25 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     (hd : stackUse c ≤ s.sp.toNat) :
     Frame (s.wr ++ [belowA s.sp (stackUse c)]) s.mem s'.mem := by
   induction h with
-  | icall hi => nomatch hi
-  | icallNext hi => nomatch hi
+  | icall _ hc _ hr ih =>
+    simp only [stackUse] at hd ⊢
+    obtain ⟨-, w₁, p₁, m₁, -⟩ := call_eq hc
+    rw [ret_eq hr]
+    have := ih (by rw [p₁]; omega)
+    rw [w₁, p₁, m₁] at this
+    refine this.sub fun r hr => ?_
+    rcases List.mem_append.mp hr with hr | hr
+    · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+    · rw [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega)⟩
+  | icallNext _ _ _ ih =>
+    simp only [stackUse] at hd ⊢
+    refine (ih (by simp only [stackUse]; omega)).sub fun r hr => ?_
+    rcases List.mem_append.mp hr with hr | hr
+    · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+    · rw [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+        belowA_sub (by simp only [stackUse]; omega)⟩
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [stackUse] at hd ⊢

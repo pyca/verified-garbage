@@ -120,8 +120,16 @@ theorem push_any {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
 theorem Exec.frameAny {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s')
     (hd : sdepth c < 2 ^ 64) : Frame (s.wr ++ [below s.sp (sdepth c)]) s.mem s'.mem := by
   induction h with
-  | icall hi => nomatch hi
-  | icallNext hi => nomatch hi
+  | icall _ hc _ hr ih =>
+    simp only [sdepth] at hd ⊢
+    obtain ⟨-, w₁, p₁, m₁, -⟩ := call_eq hc
+    rw [ret_eq hr]
+    have := ih (by omega)
+    rw [w₁, p₁, m₁] at this
+    exact Frame.below_mono this (by omega) (by omega)
+  | icallNext _ _ _ ih =>
+    simp only [sdepth] at hd ⊢
+    exact Frame.below_mono (ih (by simp only [sdepth]; omega)) (by simp only [sdepth]; omega) (by omega)
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [sdepth] at hd ⊢

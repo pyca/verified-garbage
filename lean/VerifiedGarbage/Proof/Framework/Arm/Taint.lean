@@ -187,7 +187,7 @@ def step (τ : T) : Instr → Option T
   | .ldrSp t off =>
     if off + 4 ≤ τ.argLen then some { τ with regs := set τ t true, bases := spBases τ t off } else none
   -- Frames are not analysed.
-  | .push _ | .pop .. | .alloc _ | .free _ => none
+  | .push _ | .pop .. | .alloc _ | .free _ | .blx _ => none
 
 def meet (τ₁ τ₂ : T) : T where
   regs := τ₁.regs.inter τ₂.regs
@@ -570,7 +570,7 @@ do not; a frame's pop writes its register). -/
 def dst : Instr → Option Reg
   | .mov d _ | .mvn d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
   | .addSp d _ | .mul d _ _ | .mla d _ _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _ => some d
-  | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ | .umaal .. => none
+  | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ | .umaal .. | .blx _ => none
 
 theorem exec_dst {i : Instr} {d : Reg} (hd : dst i = some d) {s s' : State}
     (h : exec i s = some s') :
@@ -631,7 +631,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free | umaal => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | blx | umaal => simp only [step, reduceCtorEq] at hs
   | mov d o =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
@@ -979,7 +979,7 @@ def stepK (τ : T) : Instr → Option T
   | .ldrSp t off =>
     bif Nat.ble (off + 4) τ.argLen then some { τ with regs := setK τ t true, bases := spBasesK τ t off }
     else none
-  | .push _ | .pop .. | .alloc _ | .free _ => none
+  | .push _ | .pop .. | .alloc _ | .free _ | .blx _ => none
 
 /-- `l.contains a`, for a known base address. -/
 def memB (a : Reg × Nat) (l : List (Reg × Nat)) : Bool := any l fun b => regEq a.1 b.1 && Nat.beq a.2 b.2
@@ -1150,7 +1150,7 @@ def stepKDFn : Instr → Step
   | .ldrSp t off => ⟨fun τ =>
     bif Nat.ble (off + 4) τ.argLen then some { τ with regs := setK τ t true, bases := spBasesK τ t off }
     else none⟩
-  | .push _ | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
+  | .push _ | .pop .. | .alloc _ | .free _ | .blx _ => ⟨fun _ => none⟩
 
 /-- Apply the preclassified instruction to the incoming taint. -/
 def stepKD (τ : T) (i : Instr) : Option T := (stepKDFn i).run τ
