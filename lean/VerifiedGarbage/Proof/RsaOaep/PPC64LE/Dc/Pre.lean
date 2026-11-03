@@ -62,7 +62,7 @@ abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 128⟩
 /-- The stack the function uses. -/
 abbrev kD (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 stackBytes, stackBytes⟩
 
-/-- What the code needs of `decryptContract.pre`, by name. -/
+/-- What the code needs of `decryptTableContract.pre`, by name. -/
 structure PreD (s : State) : Prop where
   sp1 : stackBytes ≤ s.sp.toNat
   sp2 : s.sp.toNat + 216 ≤ 2 ^ 64

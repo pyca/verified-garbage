@@ -42,7 +42,7 @@ The prologue and the check of `k` (`head_ct`), from two entry states whose
 public data agree; the failure (`encFail_tr`); the check of the message's
 length; and `encMain_tr`, put together (`enc_ct`): the two branches are on
 `k` and the message's length, which are public. With correctness
-(`enc_ok`), `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, for any
+(`enc_ok`), `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`, for any
 implementation of the hash functions and `c` of a precomputed public
 operation, is verified against the shared contract with the stack it and its
 callee use (`enc_verified`), given that the contract is satisfiable for it

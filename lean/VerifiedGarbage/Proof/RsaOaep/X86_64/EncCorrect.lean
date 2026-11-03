@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 
 The frame, the prologue and the checks of `k` and the message's length
 (zeros to `out` if either fails, then the rest of the function):
-`encBodyWith_ok`, for `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`
+`encBodyWith_ok`, for `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`
 (`PcCorrect`).
 -/
 
