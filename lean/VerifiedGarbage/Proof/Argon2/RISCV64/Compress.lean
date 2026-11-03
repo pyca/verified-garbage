@@ -75,17 +75,17 @@ theorem blockAt_frame {m m' : Mem} {rs : List Region} {x : Addr} (hf : Frame rs 
 abbrev saveB (p : Addr) : Addr := p + BitVec.ofNat 64 2040
 
 /-- The save area, past the two blocks. -/
-abbrev saveR (p : Addr) : Region := ⟨p + BitVec.ofNat 64 2048, 40⟩
+abbrev saveR (p : Addr) : Region := ⟨p + BitVec.ofNat 64 2048, 48⟩
 
 theorem saveB_off (p : Addr) (d : Nat) :
     saveB p + BitVec.ofNat 64 d = p + BitVec.ofNat 64 (2040 + d) := by
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
 
-theorem saved_in : ∀ q ∈ Impl.Argon2.RISCV64.saved, 8 ≤ q.2 ∧ q.2 + 8 ≤ 8 + 40 := by decide
+theorem saved_in : ∀ q ∈ Impl.Argon2.RISCV64.saved, 8 ≤ q.2 ∧ q.2 + 8 ≤ 8 + 48 := by decide
 
 theorem saved_fits : ∀ q ∈ Impl.Argon2.RISCV64.saved, q.2 % 8 = 0 ∧ q.2 < 2048 := by decide
 
-theorem saveR_eq (p : Addr) : (⟨saveB p + BitVec.ofNat 64 8, 40⟩ : Region) = saveR p := by
+theorem saveR_eq (p : Addr) : (⟨saveB p + BitVec.ofNat 64 8, 48⟩ : Region) = saveR p := by
   rw [saveB_off]
 
 theorem preserved_split : ∀ r ∈ .ra :: preserved, r ∈ Impl.Argon2.RISCV64.saved.map Prod.fst ∨
@@ -155,7 +155,7 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   rintro s₃ ⟨hcol, hf3, hk3⟩
   have scr3 := (scr1.of_keeps hk2).of_keeps hk3
   have d1024 : ∀ r ∈ [(⟨off p 1024, 1024⟩ : Region)],
-      Region.Disjoint ⟨saveB p + BitVec.ofNat 64 8, 40⟩ r := by
+      Region.Disjoint ⟨saveB p + BitVec.ofNat 64 8, 48⟩ r := by
     rw [saveR_eq]; simpa using Offset.disjoint p (by omega) (by omega) (by omega)
   have sv₃ : Spill.Saved (saveB p) s.gpr Impl.Argon2.RISCV64.saved s₃.mem :=
     (sv₁.frame_in saved_in hf2 d1024).frame_in saved_in hf3 d1024
@@ -169,7 +169,7 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   have sv₄ : Spill.Saved (saveB p) s.gpr Impl.Argon2.RISCV64.saved s₄.mem :=
     sv₃.frame_in saved_in hf4 (by
       rw [saveR_eq]
-      simpa using (hout.sub_right (Offset.sub_base p (d := 2048) (n := 40) (by omega))).symm)
+      simpa using (hout.sub_right (Offset.sub_base p (d := 2048) (n := 48) (by omega))).symm)
   have scr4 := scr3.of_copy hk4
   rw [show Impl.Argon2.RISCV64.restore = .addi .t0 .a3 2040 ::
     Spill.restoreCode .t0 Impl.Argon2.RISCV64.saved from rfl]
