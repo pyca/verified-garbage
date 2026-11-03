@@ -233,7 +233,7 @@ theorem ver_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : verPre s₀)
   have := vp iv hs hl
   rw [h3]; exact this
 
-theorem streamVerify_wp {s₀ : State} (h : streamVerifyRISCV64.pre s₀) :
+theorem streamVerify_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamVerifyRISCV64.pre s₀) :
     WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ streamVerifyRISCV64.post s₀ s' := by
   have h' : verPre s₀ := h
   have h₀ := ver_run h' (a := List.replicate ((s₀.gpr .a3).toNat % 16) 0)

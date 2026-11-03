@@ -215,10 +215,10 @@ theorem open_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} {σ₁ σ₂ : State} 
     (Runs.of_wp (tag_wp L E₅' (o := 240) (.inr rfl))) fun s₆ t₆ T T' => ?_
   exact rel_env [] (E₅.of_pk T.pk) (E₅'.of_pk T'.pk) (by rw [T.pk.sp, T'.pk.sp, h₅]) (by simp) ⟨_, by taint_decide⟩
 
-theorem seal_ct : ConstantTime isa sealRISCV64.pre sealRISCV64.pub «seal» :=
+theorem seal_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa sealRISCV64.pre sealRISCV64.pub «seal» :=
   ct_of fun _ _ h₁ h₂ hq => seal_rel (args_of_seal h₁).1 (args_two (args_of_seal h₂).1 hq) hq.2.2.2.2.2.2.2.2.1
 
-theorem open_ct : ConstantTime isa openRISCV64.pre openRISCV64.pub «open» :=
+theorem open_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa openRISCV64.pre openRISCV64.pub «open» :=
   ct_of fun _ _ h₁ h₂ hq => open_rel (args_of_open h₁) (args_two (args_of_open h₂) hq) hq.2.2.2.2.2.2.2.2.1
 
 end VG.Proof.AesGcmSiv.RISCV64
