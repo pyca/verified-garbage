@@ -424,68 +424,23 @@ vg_p521_sub_mod_p:
 	addi t4, a3, 1632
 	addi t5, a3, 1704
 	addi t2, a3, 1776
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1560(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1568(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1576(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1584(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1592(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1600(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1608(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1616(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, 511
-	add a6, a6, a7
+	addi a6, zero, 511
 	sd a6, 1624(a3)
 	addi a5, zero, 0
 	ld a7, 0(t4)
@@ -790,68 +745,23 @@ vg_p521_sub_mod_p:
 	sb a5, 71(t1)
 	j 21f
 20:
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1560(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1568(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1576(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1584(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1592(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1600(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1608(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, -1
-	add a6, a6, a7
+	addi a6, zero, -1
 	sd a6, 1616(a3)
-	lui a6, 0
-	addiw a6, a6, 0
-	slli a6, a6, 32
-	lui a7, 0
-	addiw a7, a7, 511
-	add a6, a6, a7
+	addi a6, zero, 511
 	sd a6, 1624(a3)
 	addi a5, zero, 0
 	ld a7, 0(t4)

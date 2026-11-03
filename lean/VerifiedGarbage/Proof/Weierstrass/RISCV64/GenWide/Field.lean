@@ -1365,7 +1365,7 @@ end VG.Proof.Weierstrass.RISCV64.GenWide
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.RISCV64.Wide VG.Impl.Weierstrass.RISCV64.GenWide
-open VG.Impl.Words.RISCV64 (li64)
+open VG.Impl.Words.RISCV64 (li64 liW)
 open VG.Proof.X25519.RISCV64 (Ctx)
 open VG.Proof.X448.RISCV64.R64 (dw dw_lt ld_ok sd_ok dw_write_self dw_write_other dw_frame al8 colsV)
 
@@ -1377,6 +1377,18 @@ theorem wp_li64 {is : List Instr} {s : State} {Q : State → Prop} {d tmp : Reg}
     subst h
     exact k _ (RegUpd.gpr_write_self _ _ _)
       (((Keeps.refl [d, tmp] s).write _ (by simp)).write _ (by simp)))
+
+/-- `liW d tmp v`. -/
+theorem wp_liW {is : List Instr} {s : State} {Q : State → Prop} {d tmp : Reg} (hdt : d ≠ tmp) (v : BitVec 64)
+    (k : ∀ s', s'.gpr d = v → Keeps [d, tmp] s s' → WP isa (.block is) s' Q) :
+    WP isa (.block (liW d tmp v ++ is)) s Q := by
+  unfold liW
+  split
+  · rename_i h
+    rw [List.singleton_append]
+    refine WP.cons (exec_li h) (k _ ?_ ((Keeps.refl [d, tmp] s).write _ (by simp)))
+    rw [RegUpd.gpr_write_self, BitVec.ofInt_toInt]
+  · exact wp_li64 hdt v k
 
 /-- A number's `n` words. -/
 theorem colsV_wordOf (m : Nat) : ∀ n, colsV (fun j => (wordOf m j).toNat) n = m % (2 ^ 64) ^ n
@@ -1397,13 +1409,13 @@ structure FillInv (k : Nat) (b : Addr) (m : Nat) (s0 : State) (j : Nat) (s : Sta
 
 theorem fill_ok {k : Nat} {b : Addr} {m : Nat} {s0 : State} (hc : Ctx b s0) (hk : 1 ≤ k) (hk' : k ≤ 30) :
     ∀ j ≤ k, WP isa (.block ((List.range j).flatMap fun j =>
-      li64 .a6 .a7 (wordOf m j) ++ ([.store .d .a6 .a3 (N k + 8 * j)] : List Instr))) s0 (FillInv k b m s0 j)
+      liW .a6 .a7 (wordOf m j) ++ ([.store .d .a6 .a3 (N k + 8 * j)] : List Instr))) s0 (FillInv k b m s0 j)
   | 0, _ => WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | j + 1, hj => by
     obtain ⟨hNT, n8, ntop⟩ := N_facts k hk hk'
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
     refine WP.block_append (WP.mono (fill_ok hc hk hk' j (by omega)) fun s h => ?_)
-    refine wp_li64 (by decide) _ fun s1 e1 k1 => ?_
+    refine wp_liW (by decide) _ fun s1 e1 k1 => ?_
     have hc1 : Ctx b s1 := ctx_of hc (by rw [k1.1 _ (by decide), h.gpr _ (by decide)]) (by rw [k1.2.2.2.1, h.wr])
     refine sd_ok hc1 (by omega) (by omega) fun s2 u2 => WP.block_nil ?_
     have hm2 : s2.mem = s.mem.writeW (b + BitVec.ofNat 64 (N k + 8 * j)) (wordOf m j) := by
