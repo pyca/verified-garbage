@@ -16588,3 +16588,7 @@ j 25f
 .option pop",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_ctr32.rs"]
+pub(crate) mod vg_sm4_ctr32;
