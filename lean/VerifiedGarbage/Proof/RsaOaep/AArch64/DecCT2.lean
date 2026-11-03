@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfTCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
@@ -15,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfTCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
@@ -50,6 +52,8 @@ open VG.Impl.RsaOaep.AArch64.Mgf1 (seqs)
 open VG.Proof.Mgf1 (ifp ifn)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
+open VG.Impl.Pbkdf2.Md.AArch64 (Stream)
+open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)
 
 /-- Where the label, `out` and `*msg_len` are, and `k` in its slot. -/
 def DecX (F S : Addr) (k : Nat) (lab : Addr) (labLen : Nat) (o ml : Addr) (W : Nat → BitVec 64) (t : State) :
@@ -179,7 +183,7 @@ end
 
 /-! ## The decoding -/
 
-variable {Hl Gm : Hash} (hH : StreamOK Hl.stream) (hG : StreamOK Gm.stream)
+variable {Hl : Hash} {Gm : Stream} (hH : StreamOK Hl.stream) (hG : StreamOK Gm) {f : Fns}
 
 /-- Each run's index from the scan. -/
 def IdxX (W : Nat → BitVec 64) : Prop := ∃ idx, W 30 = BitVec.ofNat 64 idx ∧ idx + 1 < 1024
@@ -191,8 +195,9 @@ include hH hG in
 theorem decMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D) (hGv : Proof.Mgf1.Valid Gs)
     {F S : Addr} {k : Nat} {lab : Addr} {labLen : Nat} {o ml : Addr} (hD : 2 * Hl.D + 2 ≤ k) (hk' : k ≤ 1024)
-    (hlen : labLen < 2 ^ 64) :
-    RelCT isa (LR F S (DecX F S k lab labLen o ml)) (decMain Hl Gm) fun _ _ => True := by
+    (hlen : labLen < 2 ^ 64) {p ai au af : Addr} :
+    RelCT isa (LR F S fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t) (decMain Hl f)
+      fun _ _ => True := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
   have hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
   replace hD0 : 0 < Hl.D := hD0
@@ -205,31 +210,40 @@ theorem decMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     ⟨by rw [cSt]; omega_arith, by rw [cSt]; omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
   unfold decMain seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   -- The label's hash.
-  refine (lr_wp (X' := DecX F S k lab labLen o ml) (hashLabel_tr hH hlen (.inr rfl) fun _ _ h => h.1)
-    fun t V W L R hx => WP.mono (hashLabel_ok hH (Hs := Hs) hHh L R hx.1 (.inr rfl))
-      fun u ⟨Lu, Su, V', Ru, _, _⟩ => ⟨V', W, Lu, Ru, hx.step Su fun _ _ => rfl⟩).seq ?_
+  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t)
+    (hashLabel_tr hH hlen (.inr rfl) fun _ _ h => h.1.1)
+    fun t V W L R hx => WP.mono (Table.wp_sy (hashLabel_ok hH (Hs := Hs) hHh L R hx.1.1 (.inr rfl)))
+      fun u ⟨⟨Lu, Su, V', Ru, _, _⟩, sy⟩ => ⟨V', W, Lu, Ru, hx.1.step Su fun _ _ => rfl, hx.2.step Su sy⟩).seq ?_
   -- The seed unmasked.
-  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ MArgs W S (1 + Hl.D) (k - Hl.D - 1) 1 Hl.D)
+  refine (lr_wp (X' := fun W t => (DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t) ∧
+      MArgs W S (1 + Hl.D) (k - Hl.D - 1) 1 Hl.D)
     (lr_taint [] (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (seedArgs gH)) (by rfl)
       (by taint_decide)) nopin)
-    fun t V W L R hx => WP.mono (seedArgs_ok L R hx.2.2 hD (by omega_arith) hk' [])
-      fun u ⟨Lu, Su, Ru⟩ => ⟨V, _, Lu, Ru, hx.step Su (fun j hj => mW_eq _ _ _ _ _ _ (by omega_arith)),
-        mW_args _ _ _ _ _ _⟩).seq ?_
-  refine (lr_wp (X' := DecX F S k lab labLen o ml) (mgfXor_tr hG f2 fun _ _ h => h.2)
-    fun t V W L R hx => WP.mono (mgfXor_ok hG hGh hGl hGv L R f2 hx.2)
-      fun u ⟨Lu, Su, V', W', Ru, hW', _⟩ => ⟨V', W', Lu, Ru, hx.1.step Su fun j hj =>
-        hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)⟩).seq ?_
+    fun t V W L R hx => WP.mono (Table.wp_sy (seedArgs_ok L R hx.1.2.2 hD (by omega_arith) hk' []))
+      fun u ⟨⟨Lu, Su, Ru⟩, sy⟩ => ⟨V, _, Lu, Ru, ⟨hx.1.step Su (fun j hj => mW_eq _ _ _ _ _ _ (by omega_arith)),
+        hx.2.step Su sy⟩, mW_args _ _ _ _ _ _⟩).seq ?_
+  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t)
+    (Table.mgfXorT_tr hG (by decide) f2 (fun _ _ h => ⟨h.2, h.1.2.1, h.1.2.2.1, h.1.2.2.2.1, h.1.2.2.2.2⟩)
+      (by taint_decide))
+    fun t V W L R hx => WP.mono (Table.wp_sy (Table.mgfXorT_ok hG hGh hGl hGv (by decide) hx.1.2.1 L R f2 hx.2))
+      fun u ⟨⟨Lu, Su, V', W', Ru, hW', _⟩, sy⟩ => ⟨V', W', Lu, Ru, hx.1.1.step Su fun j hj =>
+        hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+          (by omega_arith), hx.1.2.step Su sy⟩).seq ?_
   -- `DB` unmasked.
-  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ MArgs W S 1 Hl.D (1 + Hl.D) (k - Hl.D - 1))
+  refine (lr_wp (X' := fun W t => (DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t) ∧
+      MArgs W S 1 Hl.D (1 + Hl.D) (k - Hl.D - 1))
     (lr_taint [] (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (dbArgs gH)) (by rfl)
       (by taint_decide)) nopin)
-    fun t V W L R hx => WP.mono (dbArgs_ok L R hx.2.2 hD (by omega_arith) hk' [])
-      fun u ⟨Lu, Su, Ru⟩ => ⟨V, _, Lu, Ru, hx.step Su (fun j hj => mW_eq _ _ _ _ _ _ (by omega_arith)),
-        mW_args _ _ _ _ _ _⟩).seq ?_
-  refine (lr_wp (X' := DecX F S k lab labLen o ml) (mgfXor_tr hG f4 fun _ _ h => h.2)
-    fun t V W L R hx => WP.mono (mgfXor_ok hG hGh hGl hGv L R f4 hx.2)
-      fun u ⟨Lu, Su, V', W', Ru, hW', _⟩ => ⟨V', W', Lu, Ru, hx.1.step Su fun j hj =>
-        hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)⟩).seq ?_
+    fun t V W L R hx => WP.mono (Table.wp_sy (dbArgs_ok L R hx.1.2.2 hD (by omega_arith) hk' []))
+      fun u ⟨⟨Lu, Su, Ru⟩, sy⟩ => ⟨V, _, Lu, Ru, ⟨hx.1.step Su (fun j hj => mW_eq _ _ _ _ _ _ (by omega_arith)),
+        hx.2.step Su sy⟩, mW_args _ _ _ _ _ _⟩).seq ?_
+  refine (lr_wp (X' := DecX F S k lab labLen o ml)
+    (Table.mgfXorT_tr hG (by decide) f4 (fun _ _ h => ⟨h.2, h.1.2.1, h.1.2.2.1, h.1.2.2.2.1, h.1.2.2.2.2⟩)
+      (by taint_decide))
+    fun t V W L R hx => WP.mono (Table.mgfXorT_ok hG hGh hGl hGv (by decide) hx.1.2.1 L R f4 hx.2)
+      fun u ⟨Lu, Su, V', W', Ru, hW', _⟩ => ⟨V', W', Lu, Ru, hx.1.1.step Su fun j hj =>
+        hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+          (by omega_arith)⟩).seq ?_
   -- `lHash'` against `lHash`.
   refine (lr_wp (X' := DecX F S k lab labLen o ml) (RelCT.seq_block_append (lr_seq_tr [.x11, .x12, .x13]
       (fun r => ([(Reg.x11, off S oLh), (.x12, off S (oEm + 1 + Hl.D)), (.x13, off S oEm)].lookup r).getD 0)

@@ -348,7 +348,7 @@ def step (τ : T) : Instr → Option T
   | .adcx d src | .adox d src => adxStep τ d src
   | .cmov _ d src => cmovStep τ d src
   -- Frames are not analysed.
-  | .push _ | .pop .. | .alloc _ | .free _ => none
+  | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => none
 
 def meet (τ₁ τ₂ : T) : T where
   regs := τ₁.regs.inter τ₂.regs
@@ -843,7 +843,7 @@ def dstOf : Instr → Option Reg
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpbroadcastdZ .. | .zbcstd .. | .vpmadd52Load ..
   | .stmxcsr _ | .ldmxcsr _
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 .. | .lfence
-  | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ => none
+  | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => none
 
 /-- An SSE instruction on registers changes only the SSE registers. -/
 theorem XOp.exec_eq (op : XOp) (s : State) : op.exec s = { s with xmm := (op.exec s).xmm } := by
@@ -1267,7 +1267,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | callr => simp only [step, reduceCtorEq] at hs
   | mov d src =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -2176,7 +2176,7 @@ def stepK (τ : T) : Instr → Option T
   | .mulx hi lo src => bif srcOkK τ src then some (mulxStepK τ hi lo src) else none
   | .adcx d src | .adox d src => adxStepK τ d src
   | .cmov _ d src => cmovStepK τ d src
-  | .push _ | .pop .. | .alloc _ | .free _ => none
+  | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => none
 
 /-- `l.contains a`, for a known base address. -/
 def memB (a : Reg × Nat × Nat) (l : List (Reg × Nat × Nat)) : Bool :=
@@ -2473,7 +2473,7 @@ def stepKDFn : Instr → Step
   | .mulx hi lo src => ⟨fun τ => bif srcOkK τ src then some (mulxStepK τ hi lo src) else none⟩
   | .adcx d src | .adox d src => ⟨fun τ => adxStepK τ d src⟩
   | .cmov _ d src => ⟨fun τ => cmovStepK τ d src⟩
-  | .push _ | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
+  | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => ⟨fun _ => none⟩
 
 /-- Apply the preclassified instruction to the incoming taint. -/
 def stepKD (τ : T) (i : Instr) : Option T := (stepKDFn i).run τ

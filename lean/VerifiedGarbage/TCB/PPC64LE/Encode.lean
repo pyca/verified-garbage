@@ -199,6 +199,10 @@ def Instr.encode : Instr → Option (List Nat)
   | .alloc bytes => (ds 62 1 sp sp (-(bytes : Int))).map ([·])
   | .free bytes => (si16 bytes).map fun v => [d 14 sp sp v]
   | .addSp t imm => (si16 imm).map fun v => [d 14 t.index sp v]
+  -- "mtspr" (XFX, 467) with `SPR = 9` (CTR, its halves swapped: `0b01001
+  -- 00000`) and `RS = 12`, then "bcctr" (XL, 528) with `BO = 20`, `BI = 0`,
+  -- `LK = 1`.
+  | .bctrl => some [0x7C0003A6 ||| 12 <<< 21 ||| 9 <<< 16, 0x4C000420 ||| 20 <<< 21 ||| 1]
   | .adrSym .. => none
 
 /-- The comparison of a branch's condition with zero: "cmpli" (D, 10) into

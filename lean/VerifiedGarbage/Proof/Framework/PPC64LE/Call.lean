@@ -214,6 +214,7 @@ def pushFrames : Prog isa → Bool
   | .loop b _ => pushFrames b
   | .call _ b => pushFrames b
   | .frame i b _ => i.isPush && pushFrames b
+  | .icall _ _ b n => pushFrames b && pushFrames n
 
 theorem push_mem {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) (hi : i.isPush = true) :
     ∃ v, s₁.mem = (s.mem.write (s.sp - 48) 8 s.sp).write (s.sp - 48 + 32) 8 v ∧
@@ -232,6 +233,20 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     (hd : 48 * c.fdepth < 2 ^ 64) (hpf : pushFrames c = true) :
     Frame (s.wr ++ [below s.sp (48 * c.fdepth)]) s.mem s'.mem := by
   induction h with
+  | icall _ hc _ hr ih =>
+    simp only [Code.fdepth] at hd ⊢
+    obtain ⟨-, w₁, p₁, m₁, -⟩ := call_eq hc
+    rw [ret_eq hr]
+    simp only [pushFrames, Bool.and_eq_true] at hpf
+    have := ih (by omega) hpf.1
+    rw [w₁, p₁, m₁] at this
+    exact Frame.below_mono this (by omega) (by omega)
+  | icallNext _ _ _ ih =>
+    simp only [Code.fdepth] at hd ⊢
+    simp only [pushFrames, Bool.and_eq_true] at hpf
+    exact Frame.below_mono (ih (by simp only [Code.fdepth]; omega)
+      (by simp only [pushFrames, Bool.and_eq_true]; exact hpf.2)) (by simp only [Code.fdepth]; omega)
+      (by omega)
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [Code.fdepth] at hd ⊢

@@ -88,6 +88,9 @@ memory on entry: its descriptors, and the slices they list (`Sig.lists`),
 which may overlap each other and the other read-only buffers, but no
 writable buffer (a `&[&[T]]` and a `&mut` are distinct Rust objects). What
 its descriptors say is public (`Sig.descs`): two runs agree on their bytes.
+A table of functions (`Param.table`) adds read-only memory too: its words,
+of the target's pointer width (`Sig.lists`); `Abi.withTables` says what they
+hold.
 
 `leak`, if given, declares what the function may leak beyond its public
 arguments: a list of numbers computed from the arguments and the memory on
@@ -155,17 +158,20 @@ def Sig.bufNames : List (String × Param) → List (String × Bool)
   | (n, .array w ..) :: ps => (s!"`{n}`", w) :: Sig.bufNames ps
   | (n, .slice w ..) :: ps => (s!"`{n}`", w) :: Sig.bufNames ps
   | (n, .slices ..) :: ps => (s!"`{n}`", false) :: (s!"the slices `{n}` lists", false) :: Sig.bufNames ps
+  | (n, .table _) :: ps => (s!"`{n}`", false) :: Sig.bufNames ps
 
 /-- The size in bytes of the buffer a parameter stands for, as the
 documentation states it: that of `Sig.bufs`, a number for an array and
 `` `len` `` or `` `k * len` `` for a slice of `len` elements of `k` bytes, and
-`` `2 * size_of::<usize>() * count` `` for the descriptors of a list of `count` slices;
+`` `2 * size_of::<usize>() * count` `` for the descriptors of a list of `count` slices,
+`` `n * size_of::<usize>()` `` for a table of `n` words;
 `none` for an integer. -/
 def Param.sizeDoc : Param → Option String
   | .int .. => none
   | .array _ e n => some s!"{n * e.size}"
   | .slice _ e len => some (if e.size = 1 then s!"`{len}`" else s!"`{e.size} * {len}`")
   | .slices _ count => some s!"`2 * size_of::<usize>() * {count}`"
+  | .table n => some s!"`{n} * size_of::<usize>()`"
 
 /-- The `# Safety` items stating the memory each buffer of `sig` must be
 valid for, in order: the region `Sig.contract` lets the function read
@@ -311,6 +317,14 @@ structure Artifact where
   same way without being listed here: the model reads its words from the
   instruction, not from memory the contract describes. -/
   consts : List (String × List (BitVec 64)) := []
+  /-- The tables of functions the function takes (`Abi.withTables`): for
+  each of its parameters that is one, the parameter's name and every table
+  it may point to. The emitter checks that each names a read-only array of
+  `u64` of the tables' length, and that it lists every table of their
+  interface on the target, of which the Rust caller may pass any
+  (`Rust.checkFnTables`). So `contract` is one for the calling convention
+  `(target.abi.withConsts consts).withTables sig tables`. -/
+  tables : List (String × List FnTable) := []
   code : Prog target.isa
   contract : Contract target.isa
   verified : Verified target code contract
@@ -323,7 +337,8 @@ structure Artifact where
   them for `sig`, and requires what `Sig.layoutDoc` documents of where the
   buffers are. -/
   ofSig : ∃ pre post leak,
-      contract = sig.contract (target.abi.withConsts consts) pre post writeArgs stack leak := by
+      contract = sig.contract ((target.abi.withConsts consts).withTables sig tables) pre post writeArgs
+        stack leak := by
     exact ⟨_, _, _, rfl⟩
   /-- The contract of the function on every target, which an artifact made
   from an `Api` (`{ api with … }`) takes from it with its `name` and `sig`
@@ -333,7 +348,8 @@ structure Artifact where
   /-- `contract` is `contracts` on the target, for `stack`: an artifact made
   from an `Api` is proven against the contract `Spec/` gives the function,
   not one chosen where the artifact is built. -/
-  ofApi : contracts.elim True fun f => contract = f (target.abi.withConsts consts) stack := by
+  ofApi : contracts.elim True fun f =>
+      contract = f ((target.abi.withConsts consts).withTables sig tables) stack := by
     first | exact True.intro | exact rfl
   /-- The code changes the stack pointer only by calls and returns and by
   the pushes and pops of frames, which are nested: no other instruction of

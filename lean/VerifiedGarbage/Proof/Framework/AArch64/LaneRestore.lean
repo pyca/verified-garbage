@@ -75,6 +75,7 @@ theorem straight_exec : ∀ {c : Prog isa} {is : List Instr}, straight c = some 
   | .loop _ _, _, h, _, _, _, _ => by simp [straight] at h
   | .call _ _, _, h, _, _, _, _ => by simp [straight] at h
   | .frame _ _ _, _, h, _, _, _, _ => by simp [straight] at h
+  | .icall .., _, h, _, _, _, _ => by simp [straight] at h
 
 /-- A run of instructions that keep `r` keeps it. -/
 theorem keepsReg_ok {r : Reg} : ∀ {is : List Instr}, is.all (keepsReg r) = true →

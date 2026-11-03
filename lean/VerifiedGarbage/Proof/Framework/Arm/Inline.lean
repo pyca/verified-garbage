@@ -44,7 +44,7 @@ def dstOf : Instr → Option Reg
   | .mov d _ | .mvn d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
   | .addSp d _ | .mul d _ _ | .mla d _ _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _
   | .umaal d _ _ _ => some d
-  | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ => none
+  | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ | .blx _ => none
 
 /-- The registers instruction `i` writes. -/
 def dsts (i : Instr) : List Reg :=
@@ -142,7 +142,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     rename_i hi
     simp only [hi, ite_true, Option.some.injEq] at h ⊢
     subst h; rfl
-  | push _ | pop _ _ | alloc _ | free _ => simp only [reduceExec, reduceCtorEq] at h
+  | push _ | pop _ _ | alloc _ | free _ | blx _ => simp only [reduceExec, reduceCtorEq] at h
   | umaal lo hi n m =>
     simp only [reduceExec] at h ⊢
     split at h <;> [cases h; rename_i hne]
@@ -300,6 +300,7 @@ def regionModel : RegionModel isa where
     exact ⟨rfl, rfl, fun _ _ => (ite_eq_left hc).trans rfl⟩
   push_widen := push_widen
   pop_widen h := ⟨(pop_eq h).1, (pop_eq h).2.1, (pop_eq h).2.2.1, fun _ _ hw => pop_widen h _ hw⟩
+  icall_with i _ _ _ := by cases i <;> rfl
 /-- Calls change no memory, and returns nothing. -/
 theorem callsKeepMem : regionModel.CallsKeepMem := fun _ _ _ _ hc hr =>
   ⟨(call_eq hc).2.2.2.1, by rw [ret_eq hr]⟩

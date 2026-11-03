@@ -11,7 +11,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.RsaPss.RISCV64
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Pre
-public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Verified
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTMgf
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Hashes
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Md5
 public import VerifiedGarbage.Spec.RsaPss.Precomputed
 
@@ -24,7 +25,7 @@ Untrusted: everything here is checked by Lean. As on PPC64LE
 `PubP`); a state meeting the precondition for each hash function the other
 targets verify with (`verify_sat`); MD5's streaming functions constant time
 for the contracts the proofs call them by (`md5CT`), as SHA-1's and the SHA-2
-family's are (`Proof/RsaOaep/RISCV64/Verified.lean`); and a hash function's
+family's are (`Proof/RsaOaep/RISCV64/Hashes.lean`); and a hash function's
 streaming functions with what the proofs need of them (`Link`), for which
 `link_verified` is verification, which the registration files bind.
 -/

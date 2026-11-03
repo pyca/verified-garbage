@@ -38,6 +38,7 @@ def stackUse : Prog isa → Nat
   | .loop b _ => stackUse b
   | .call _ b => stackUse b + 4
   | .frame i b _ => stackUse b + frameBytes i
+  | .icall _ _ b nx => max (stackUse b + 4) (stackUse nx)
 
 /-- The `n` bytes below `sp`. -/
 abbrev below (sp : BitVec 32) (n : Nat) : Region := ⟨(sp - BitVec.ofNat 32 n).setWidth 64, n⟩
@@ -219,6 +220,33 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     (hc : NoSp c) (hd : stackUse c ≤ (s.gpr .esp).toNat) :
     Frame (s.wr ++ [below (s.gpr .esp) (stackUse c)]) s.mem s'.mem := by
   induction h with
+  | @icall _ _ b nx s₀ s₁ s₂ s₃ _ _ hc₁ _ hr ih =>
+    have hcb : NoSp b := fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))
+    have hd' : stackUse b + 4 ≤ (s₀.gpr .esp).toNat := by simp only [stackUse] at hd; omega
+    have e₁ : s₁ = s₀.callEntry := (Option.some.inj ((call_callEntry s₀).symm.trans hc₁)).symm
+    subst e₁
+    have hm : s₃.mem = s₂.mem := by
+      simp only [isa, ret] at hr; split at hr <;> cases hr; rfl
+    have f₀ : Frame (s₀.wr ++ [below (s₀.gpr .esp) (stackUse b + 4)]) s₀.mem s₀.callEntry.mem :=
+      Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
+        (below_top (k := 4) (by omega) hd' (by decide))
+    have e4 : (s₀.gpr .esp - 4).toNat = (s₀.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega)
+    have f₁ := ih hcb (by rw [State.callEntry_esp, e4]; omega)
+    simp only [State.callEntry_wr, State.callEntry_esp] at f₁
+    rw [hm]
+    refine Frame.below_mono (Frame.trans f₀ (Frame.sub f₁ fun r hr => ?_))
+      (by simp only [stackUse]; omega) hd
+    rcases List.mem_append.mp hr with hr | hr
+    · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+        below_inner (k := 4) (Nat.le_refl _) hd'⟩
+  | @icallNext i nm bd n' b' nn _ _ _ _ _ _ _ ih =>
+    have hcn : NoSp (.icall i n' b' nn) :=
+      fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi))
+    have hle : stackUse (Code.icall i n' b' nn) ≤ stackUse (Code.icall i nm bd (.icall i n' b' nn)) :=
+      Nat.le_max_right _ _
+    exact Frame.below_mono (ih hcn (by omega)) hle hd
   | block h => exact Frame.mono (execBlock_regions h).2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     have hc₁ : NoSp c₁ := fun i hi => hc i (List.mem_append_left _ hi)

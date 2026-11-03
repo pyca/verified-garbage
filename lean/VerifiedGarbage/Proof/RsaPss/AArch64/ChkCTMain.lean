@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import VerifiedGarbage.Proof.Framework.RelSplit
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.ChkCTBase
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.ChkCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
@@ -25,7 +25,7 @@ meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+meta import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp

@@ -52,6 +52,7 @@ def regionModel : RegionModel isa where
     rw [← (List.cons.inj hw').1] at he
     exact he
   pop_widen h := ⟨(pop_eq h).1, (pop_eq h).2.1, (pop_eq h).2.2.1, fun _ _ hw => pop_widen h _ hw⟩
+  icall_with i _ _ _ := by cases i <;> rfl
 
 /-- The trace of a run of verified code, with more permissions than its
 contract gives it, is that of the run its contract describes. -/

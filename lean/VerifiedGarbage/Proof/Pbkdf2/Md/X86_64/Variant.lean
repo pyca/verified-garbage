@@ -71,6 +71,7 @@ structure StreamFn where
 /-- `f` as a registration of its `Api` (`Api.artifact`). -/
 def StreamFn.reg (f : StreamFn) : Registration f.api X86_64.target where
   consts := []
+  tables := []
   code := f.code
   contract := f.contract
   stack := f.stack

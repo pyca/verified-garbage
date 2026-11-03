@@ -16,7 +16,8 @@ the calls, checked by the taint analysis from the stack pointer and the
 registers that hold public values (`two_taint`). The blocks that use a hash
 length are checked on their copy for one hash function (`Hd`), which has the
 same code but for the immediates of `li` and `addi` (`zImm`), which the
-analysis does not read (`check_zImm`). Every address and branch depends only
+analysis does not read (`check_zImm`), and the blocks that read MGF1's table
+on their copy with the offsets of their `addSp` and loads zeroed. Every address and branch depends only
 on the pointers and lengths; the seed, the message, the label and the
 digests are only copied and XORed.
 -/
@@ -30,10 +31,13 @@ open VG.Impl.Hmac.Stream.RISCV64 (Hash mov)
 
 /-! ## Code without its immediates -/
 
-/-- The instruction with the immediate of an `li` or `addi` zeroed. -/
+/-- The instruction with the immediate of an `li` or `addi`, the offset of
+an `addSp` or that of a load zeroed. -/
 def Instr.zImm : Instr → Instr
   | .li d _ => .li d 0
   | .addi d n _ => .addi d n 0
+  | .addSp d _ => .addSp d 0
+  | .load wd t n _ => .load wd t n 0
   | i => i
 
 /-- The code with those immediates zeroed. -/
@@ -44,6 +48,7 @@ def zImm : Prog isa → Prog isa
   | .loop b c => .loop (zImm b) c
   | .call n b => .call n (zImm b)
   | .frame p b q => .frame p (zImm b) q
+  | .icall i n b nx => .icall i n b nx
 
 theorem step_zImm (τ : VG.RISCV64.Taint.T) (i : Instr) :
     VG.RISCV64.Taint.step τ (Instr.zImm i) = VG.RISCV64.Taint.step τ i := by
@@ -74,6 +79,7 @@ theorem check_zImm (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T) :
   | loop b c ih => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, ih]
   | call n b ih => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, ih]
   | frame p b q ih => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, ih]
+  | icall => cases h <;> rfl
 
 /-- The analysis of `c` from that of `c'`, which has the same code without
 those immediates. -/
@@ -150,6 +156,41 @@ theorem xorOut_taint (h : Pins Φ [.s0, .s8, .s9, .s11]) : RelCT isa (Two Φ) (x
 theorem nextCtr_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (nextCtr G)) fun _ _ => True :=
   two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
     (c := .block (nextCtr G)) (c' := .block (nextCtr Hd)) (by rfl) (by taint_decide))
+
+/-- The first two loads of a table's word, through our stack argument `j`. -/
+theorem twA_taint {d : Reg} (j : Nat) (hd : d = .a6 ∨ d = .t1) (h : Pins Φ []) :
+    RelCT isa (Two Φ) (.block [.addSp d (frameBytes + 8 * j), .load .d d d 0]) fun _ _ => True := by
+  rcases hd with rfl | rfl
+  · exact two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
+      (c := .block [.addSp .a6 (frameBytes + 8 * j), .load .d .a6 .a6 0])
+      (c' := .block [.addSp .a6 0, .load .d .a6 .a6 0]) (by rfl) (by taint_decide))
+  · exact two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
+      (c := .block [.addSp .t1 (frameBytes + 8 * j), .load .d .t1 .t1 0])
+      (c' := .block [.addSp .t1 0, .load .d .t1 .t1 0]) (by rfl) (by taint_decide))
+
+/-- The load of the table's word, through its address in `d`. -/
+theorem twB_taint {d : Reg} (o : Nat) (hd : d = .a6 ∨ d = .t1) (h : Pins Φ [d]) :
+    RelCT isa (Two Φ) (.block [.load .d d d o]) fun _ _ => True := by
+  rcases hd with rfl | rfl
+  · exact two_taint [.a6] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.a6])
+      (c := .block [.load .d .a6 .a6 o]) (c' := .block [.load .d .a6 .a6 0]) (by rfl) (by taint_decide))
+  · exact two_taint [.t1] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.t1])
+      (c := .block [.load .d .t1 .t1 o]) (c' := .block [.load .d .t1 .t1 0]) (by rfl) (by taint_decide))
+
+/-- `xorOutT` after the load of `hLen` into `a6`. -/
+abbrev xorRest : List Instr :=
+  [.addi .a4 .s0 oDig, .add .a5 .s8 .s11, .sub .t1 .s9 .s11, .sub .t2 .t1 .a6,
+    .shift .srl .d .t3 .t2 63, .li .t4 0, .sub .t3 .t4 .t3, .logic .and .t2 .t2 .t3, .add .a6 .a6 .t2]
+
+theorem xorRest_taint (h : Pins Φ [.a6, .s0, .s8, .s9, .s11]) :
+    RelCT isa (Two Φ) (.seq (.block xorRest) (Impl.Bignum.RISCV64.countLoop .a6 xorBody)) fun _ _ => True :=
+  two_taint [.a6, .s0, .s8, .s9, .s11] h (by taint_decide)
+
+/-- `nextCtrT` after the load of `hLen` into `t1`. -/
+abbrev nextRest : List Instr := [.addi .s10 .s10 1, .add .s11 .s11 .t1, .sub .t1 .s11 .s9, .shift .srl .d .t1 .t1 63]
+
+theorem nextRest_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block nextRest) fun _ _ => True :=
+  two_taint [] h (by taint_decide)
 
 theorem pubArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block pubArgs) fun _ _ => True :=
   two_taint [] h (by taint_decide)

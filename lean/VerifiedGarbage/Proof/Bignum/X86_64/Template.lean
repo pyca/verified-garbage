@@ -63,6 +63,7 @@ theorem map_inline_of_noCalls {l : List (Code Instr Cond)} (h : l.all Code.noCal
 
 theorem allInstrs_inline (p : Instr → Bool) (c : Prog isa) : c.inline.allInstrs p = c.allInstrs p := by
   induction c with
+  | icall => rfl
   | block _ => rfl
   | seq a b iha ihb => simp only [Code.inline, Code.allInstrs, iha, ihb]
   | ite _ t e iht ihe => simp only [Code.inline, Code.allInstrs, iht, ihe]

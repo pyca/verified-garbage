@@ -58,6 +58,12 @@ structure RegionModel (M : ISA) where
   eval_with (c : M.Cond) (s : M.State) (r w : List Region) : M.eval c (withRegions s r w) = M.eval c s
   callAddrs_with (s : M.State) (r w : List Region) : M.callAddrs (withRegions s r w) = M.callAddrs s
   retAddrs_with (s : M.State) (r w : List Region) : M.retAddrs (withRegions s r w) = M.retAddrs s
+  /-- An indirect call calls the same address, and each function is at the
+  same address, with other permissions. -/
+  icall_with (i : M.Instr) (s : M.State) (r w : List Region) :
+    M.icall i (withRegions s r w) = M.icall i s := by intros; rfl
+  fnAddr_with (s : M.State) (r w : List Region) (n : String) :
+    M.fnAddr (withRegions s r w) n = M.fnAddr s n := by intros; rfl
   call_widen {s s' : M.State} : M.call s = some s' →
     rd s' = rd s ∧ wr s' = wr s ∧ ∀ r w, M.call (withRegions s r w) = some (withRegions s' r w)
   ret_widen {s₁ s₂ s' : M.State} : M.ret s₁ s₂ = some s' →
@@ -125,6 +131,15 @@ theorem Exec.keep {α : Type} (get : M.State → α) {ok : M.Instr → Prop}
     rcases hcall with hn | hk
     · simp [Code.noCalls] at hn
     · exact hframe (hc _ (by simp [instrs])) hp hq (ih (fun i hi => hc i (by simp [instrs, hi])) (.inr hk))
+  | icall _ hc₁ _ hr ih =>
+    rcases hcall with hn | hk
+    · simp [Code.noCalls] at hn
+    · exact hk _ _ _ _ hc₁ hr
+        (ih (fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))) (.inr hk))
+  | icallNext _ _ _ ih =>
+    rcases hcall with hn | hk
+    · simp [Code.noCalls] at hn
+    · exact ih (fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi))) (.inr hk)
 
 namespace RegionModel
 
@@ -201,6 +216,20 @@ theorem regions {c : Prog M} {s s' : M.State} {t : List Leak} (h : Exec M c s t 
     refine ⟨r₂.trans (r.trans r₁), w₂.trans (w.trans w₁), ?_⟩
     rw [m₂, ← m₁, ← w₁]; exact f
   | frame => simp [Code.noFrames] at hn
+  | icall _ hc _ hr ih =>
+    rcases hcall with hcall | hk
+    · simp [Code.noCalls] at hcall
+    simp only [Code.noFrames, Bool.and_eq_true] at hn
+    obtain ⟨r₁, w₁, -⟩ := R.call_widen hc
+    obtain ⟨r₂, w₂, -⟩ := R.ret_widen hr
+    obtain ⟨m₁, m₂⟩ := hk _ _ _ _ hc hr
+    obtain ⟨r, w, f⟩ := ih hn.1 (.inr hk)
+    refine ⟨r₂.trans (r.trans r₁), w₂.trans (w.trans w₁), ?_⟩
+    rw [m₂, ← m₁, ← w₁]; exact f
+  | icallNext _ _ _ ih =>
+    rcases hcall with hcall | hk
+    · simp [Code.noCalls] at hcall
+    exact ih (by simp only [Code.noFrames, Bool.and_eq_true] at hn ⊢; exact hn.2) (.inr hk)
 
 theorem execBlock_widen {is : List M.Instr} {s s' : M.State} {t : List Leak} {r w : List Region}
     (hc : Covers (R.rd s ++ R.wr s) (r ++ w)) (hw : Covers (R.wr s) w)
@@ -251,6 +280,15 @@ theorem widen {c : Prog M} {s s' : M.State} {t : List Leak} {r w : List Region}
       (by rw [w₁]; exact Covers.push (xs := []) (xs' := []) f hw)
     have := Exec.frame (hp' r w) hb (hq' r (f :: w) (by rw [w₁]; rfl))
     rwa [R.addrs_with, R.addrs_with, List.tail_cons] at this
+  | @icall i n _ nx s₀ _ _ _ _ hi hc₁ _ hr ih =>
+    obtain ⟨r₁, w₁, hc'⟩ := R.call_widen hc₁
+    obtain ⟨-, -, hr'⟩ := R.ret_widen hr
+    have hi' : M.icall i (R.withRegions s₀ r w) = some (M.fnAddr (R.withRegions s₀ r w) n) := by
+      rw [R.icall_with, R.fnAddr_with]; exact hi
+    have := Exec.icall (next := nx) hi' (hc' r w) (ih (by rwa [r₁, w₁]) (by rwa [w₁])) (hr' r w)
+    rwa [R.addrs_with, R.fnAddr_with, R.callAddrs_with, R.retAddrs_with] at this
+  | icallNext hi hne _ ih =>
+    exact .icallNext (by rw [R.icall_with]; exact hi) (by rw [R.fnAddr_with]; exact hne) (ih hc hw)
 
 /-- Inlining: a run from `s` with its permissions narrowed to `r` and `w`,
 which those of `s` cover, is a run from `s`, to the same state with the

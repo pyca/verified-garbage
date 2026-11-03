@@ -37,32 +37,40 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 structure PubD (a s : State) : Prop where
   sp : s.sp = a.sp
   g : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10], s.gpr r = a.gpr r
-  args : ∀ i < 15, stackArg s i = stackArg a i
+  args : ∀ i < 16, stackArg s i = stackArg a i
   n : Spec.Rsa.bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .r6) (a.gpr .r7).toNat
   e : Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .r8) (a.gpr .r9).toNat
 
-theorem pubD_of {H G : Spec.Mgf1.Hash} {s₁ s₂ : State}
-    (h : (Spec.RsaOaep.decryptContract H G abi stackBytes).pub s₁ s₂) : PubD s₁ s₂ := by
+/-- The contract's public data: `PubD`, the tables' functions at the same
+addresses, and the same tables held at MGF1's table's address. -/
+theorem pubD_of {Hs : Spec.Mgf1.Hash} {ts : List FnTable} {s₁ s₂ : State} (h : (decSpec Hs ts).pub s₁ s₂) :
+    PubD s₁ s₂ ∧ (∀ f ∈ (ts.map (fun T : FnTable => T.fns)).flatten, s₁.syms f = s₂.syms f) ∧
+      ∀ T ∈ ts, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 15) (FnTable.words isa s₁ T) ↔
+        Abi.tableHeld 64 s₂.mem (stackArg s₂ 15) (FnTable.words isa s₂ T)) := by
   have e : stackBytes = 3775 + 1 := rfl
+  unfold decSpec at h
   rw [e] at h
-  sig_pub [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, abi, argRegs, stackArgs_fifteen,
-    List.append_eq] at h
-  simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-  obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-    a14⟩ := h
-  rw [List.map_append, List.map_append] at hl
+  sig_pub [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    stackArgs_sixteen, List.append_eq, List.range, List.range.loop] at h
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq] at h
+  obtain ⟨hsp, hsy, htab, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+    a13, a14, a15⟩ := h
+  simp only [List.map_append] at hl
   obtain ⟨hn, he⟩ := List.append_inj hl (by simp [bytesAt_length, h7])
   have inj := fun {x y : List Byte} (h : x.map (·.toNat) = y.map (·.toNat)) =>
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
-  refine ⟨hsp.symm, fun r hr => ?_, fun i hi => ?_, (inj hn).symm, (inj he).symm⟩
+  refine ⟨⟨hsp.symm, fun r hr => ?_, fun i hi => ?_, (inj hn).symm, (inj he).symm⟩, hsy,
+    fun T hT => htab _ _ rfl rfl T hT⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h9.symm, h10.symm]
   · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
-      i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
-      a11.symm, a12.symm, a13.symm, a14.symm]
+      a11.symm, a12.symm, a13.symm, a14.symm, a15.symm]
 
 theorem pubD_refl (s : State) : PubD s s := ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl⟩
 
@@ -91,7 +99,7 @@ variable {s : State} (P : PreD s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) (
 include P hm
 
 /-- The stack arguments, in the base state. -/
-theorem stackArg_bx {i : Nat} (hi : i < 15) : stackArg (bx s m rc) i = stackArg s i := by
+theorem stackArg_bx {i : Nat} (hi : i < 16) : stackArg (bx s m rc) i = stackArg s i := by
   show m.readW (stackArgAddr s i) 64 = s.mem.readW (stackArgAddr s i) 64
   exact hm.readW (in_aR hi) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -99,7 +107,7 @@ theorem stackArg_bx {i : Nat} (hi : i < 15) : stackArg (bx s m rc) i = stackArg 
     · exact P.ka.symm
     · exact P.sa.symm) (by decide)
 
-theorem stackArg_wm {i : Nat} (hi : i < 15) : stackArg (withMem s m) i = stackArg s i :=
+theorem stackArg_wm {i : Nat} (hi : i < 16) : stackArg (withMem s m) i = stackArg s i :=
   stackArg_bx P hm 0 hi
 
 /-- `Base` for the shared code, from the decoding's. -/

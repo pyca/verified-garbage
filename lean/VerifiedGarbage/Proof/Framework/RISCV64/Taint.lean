@@ -54,7 +54,7 @@ def step (τ : T) : Instr → Option T
   -- (`taintSym`).
   | .lla d _ => some (set τ d false)
   -- Frames are analysed by `push` and `pop`.
-  | .push .. | .pop .. | .alloc .. | .free .. => none
+  | .push .. | .pop .. | .alloc .. | .free .. | .jalr .. => none
 
 def condPub (τ : T) : Cond → Bool
   | .zero r | .nonzero r => pub τ r
@@ -83,7 +83,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | jalr => simp only [step, reduceCtorEq] at hs
   | lla d name =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
