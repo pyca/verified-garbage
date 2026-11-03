@@ -19,10 +19,12 @@ shared contract's precondition (`Spec.RsaPss.signContract`, with the stack of
 the frames and of `vg_rsa_private_checked`, `stackBytes`), by name
 (`preS_of`), for a digest of `D` bytes; the working space `Ss s` and the
 values `Base` fixes in `s1`–`s4` (`vS s`: `k`, `out`, `lo` and `salt_len`),
-all public; `fits`; and `entry_ok`: the saves and the prologue leave our
-caller's registers and return address in their slots, `Base`, the modulus'
-first byte in `t1`, and `n`, `e`, `e_len`, `p` and `p_len` in the five words
-at `scratch + oP`, with the mask `c` of `DB`'s top bits (`Spilled`).
+all public; `fits`; `pro_ok`: the saves and the prologue leave our caller's
+registers and return address in their slots and the arguments in the
+registers that keep them (`Pro`); and `spill_ok`: then `spill` leaves
+`Base`, the modulus' first byte in `t1`, and `n`, `e`, `e_len`, `p`, `p_len`
+and the mask `c` of `DB`'s top bits in the six words at `scratch + oP`
+(`Spilled`).
 -/
 
 @[expose] public section
@@ -31,7 +33,7 @@ namespace VG.Proof.RsaPss.RISCV64.Sg
 
 open VG VG.RISCV64
 open VG.Impl.RsaOaep.RISCV64 (frameBytes oRsa save)
-open VG.Impl.RsaPss.RISCV64.Sign (privBytes prologue oP)
+open VG.Impl.RsaPss.RISCV64.Sign (privBytes prologue spill oP)
 open VG.Proof.RsaOaep.RISCV64 (Base Fits SC off fx kR fb fr save_ok Saves fb_al stackArgAddr_eq sc_inW sc_in)
 open VG.Proof.RsaPss.RISCV64 (loB)
 open VG.Proof.RsaPkcs1Sig.RISCV64 (Only Kept MemTo wp_ld wp_sd wp_mov wp_addSp wp_nil wp_lbu wp_srl wp_or wp_subi
@@ -206,7 +208,7 @@ end
 theorem in_aR {s : State} {j : Nat} (hj : j < 13) : (aR s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
 
-/-- `n`, `e`, `e_len`, `p` and `p_len` in the five words at `scratch + oP`. -/
+/-- `n`, `e`, `e_len`, `p`, `p_len` and the mask `c` in the six words at `scratch + oP`. -/
 structure Spilled (s : State) (m : Mem) : Prop where
   n : m.readW (off (Ss s) oP) 64 = s.gpr .a2
   e : m.readW (off (Ss s) (oP + 8)) 64 = s.gpr .a4
@@ -267,8 +269,18 @@ omit P in
 theorem sc_c8 (j : Nat) (hj : j < 6) : (SC Ss s).Contains (off (Ss s) (oP + 8 * j)) (64 / 8) :=
   Offset.contains_base (Ss s) (by unfold oP oRsa; omega) (by unfold oP; omega)
 
-theorem entry_ok : WP isa (.block (save ++ prologue)) (allocd frameBytes s) (Entered s) := by
-  have F := fits P
+/-- After the saves and the prologue. -/
+structure Pro (s t : State) : Prop where
+  sv : Saves s t
+  rd : t.rd = s.rd
+  s0 : t.gpr .s0 = Ss s
+  s1 : t.gpr .s1 = s.gpr .a3
+  s2 : t.gpr .s2 = s.gpr .a0
+  s4 : t.gpr .s4 = stackArg s 10
+  args : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7], t.gpr r = s.gpr r
+  mem : Frame [kR s, SC Ss s] s.mem t.mem
+
+theorem pro_ok : WP isa (.block (save ++ prologue)) (allocd frameBytes s) (Pro s) := by
   refine save_ok (u := allocd frameBytes s) rfl rfl (fb_al8 P) (Frame.refl _ _) (fun r _ => rfl)
     fun v kv h0 hm hsv => ?_
   have hrd : v.rd = s.rd := kv.rd
@@ -276,22 +288,33 @@ theorem entry_ok : WP isa (.block (save ++ prologue)) (allocd frameBytes s) (Ent
   have hm2 : Frame [kR s, SC Ss s] s.mem v.mem := hm.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp
   have gs : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7], v.gpr r = s.gpr r := fun r hr => by
     rw [kv.gpr r (by revert r; decide)]; rfl
-  simp only [prologue, Impl.RsaOaep.RISCV64.argBase, Impl.RsaPss.RISCV64.Sign.smear, List.cons_append,
-    List.nil_append]
+  simp only [prologue, Impl.RsaOaep.RISCV64.argBase]
   refine wp_addSp fun v₁ o₁ e₁ => ?_
   have g6 : v₁.gpr .t6 = s.sp := by rw [e₁, hsp, BitVec.sub_add_cancel]
   refine wp_arg P (j := 11) (by decide) g6 (o₁.rd.trans hrd) (by rw [o₁.mem]; exact hm2) fun v₂ o₂ e₂ => ?_
   refine wp_mov fun v₃ o₃ e₃ => wp_mov fun v₄ o₄ e₄ => ?_
   refine wp_arg P (j := 10) (by decide) (by rw [o₄.get .t6, o₃.get .t6, o₂.get .t6, g6])
     (by rw [o₄.rd, o₃.rd, o₂.rd, o₁.rd, hrd]) (by rw [o₄.mem, o₃.mem, o₂.mem, o₁.mem]; exact hm2)
-    fun v₅ o₅ e₅ => ?_
+    fun v₅ o₅ e₅ => wp_nil ?_
   have k₅ : Only [.t6, .s0, .s1, .s2, .s4] v v₅ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans o₅)))).mono
-  have a5 : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7], v₅.gpr r = s.gpr r := fun r hr => by
-    rw [k₅.gpr r (by revert r; decide), gs r hr]
-  have g0 : v₅.gpr .s0 = Ss s := by rw [o₅.get .s0, o₄.get .s0, o₃.get .s0, e₂]
+  have sv0 : Saves s v := ⟨hsp, by rw [kv.wr]; rfl, hsv⟩
+  exact ⟨sv0.keep k₅.keep (R := []) (by rw [k₅.mem]; exact Frame.refl _ _) (by simp), by rw [k₅.rd, hrd],
+    by rw [o₅.get .s0, o₄.get .s0, o₃.get .s0, e₂],
+    by rw [o₅.get .s1, o₄.get .s1, e₃, o₂.get .a3, o₁.get .a3, gs .a3 (by decide)],
+    by rw [o₅.get .s2, e₄, o₃.get .a0, o₂.get .a0, o₁.get .a0, gs .a0 (by decide)], e₅,
+    fun r hr => by rw [k₅.gpr r (by revert r; decide), gs r hr], by rw [k₅.mem]; exact hm2⟩
+
+theorem spill_ok {v₅ : State} (E : Pro s v₅) : WP isa (.block spill) v₅ (Entered s) := by
+  have F := fits P
+  have hrd : v₅.rd = s.rd := E.rd
+  have hm2 : Frame [kR s, SC Ss s] s.mem v₅.mem := E.mem
+  have a5 := E.args
+  have g0 : v₅.gpr .s0 = Ss s := E.s0
+  simp only [spill, Impl.RsaPss.RISCV64.Sign.smear, Impl.RsaPss.RISCV64.Sign.cMask, List.cons_append,
+    List.nil_append]
   have w8 : ∀ {u : State} (j : Nat), u.wr = v₅.wr → j < 6 → InRegions u.wr (off (Ss s) (oP + 8 * j)) 8 :=
     fun j hu hj => by
-      rw [hu, k₅.wr, kv.wr]; exact sc_inW F (by unfold oP oRsa; omega)
+      rw [hu, E.sv.wr]; exact sc_inW F (by unfold oP oRsa; omega)
   refine wp_sd (a := off (Ss s) oP) (by rw [g0]) (by simpa using oP_al P 0) (by simpa using w8 0 rfl (by decide))
     fun v₆ m₆ => ?_
   refine wp_sd (a := off (Ss s) (oP + 8)) (by rw [m₆.gpr, g0]) (oP_al P 1) (w8 1 m₆.wr (by decide))
@@ -314,10 +337,9 @@ theorem entry_ok : WP isa (.block (save ++ prologue)) (allocd frameBytes s) (Ent
     exact (((((Frame.refl _ _).writeW hS _ (by simpa using sc_c8 0 (by decide))).writeW hS _
       (sc_c8 1 (by decide))).writeW hS _ (sc_c8 2 (by decide))).writeW hS _ (sc_c8 3 (by decide))).writeW hS _
       (sc_c8 4 (by decide))
-  have hf : Frame [kR s, SC Ss s] s.mem v₁₀.mem :=
-    (by rw [k₅.mem]; exact hm2 : Frame [kR s, SC Ss s] s.mem v₅.mem).trans (hf1.mono (by simp))
+  have hf : Frame [kR s, SC Ss s] s.mem v₁₀.mem := hm2.trans (hf1.mono (by simp))
   refine wp_lbu (a := s.gpr .a2) (by rw [kg, a5 .a2 (by decide), BitVec.add_zero])
-    (by rw [m₁₀.rd, m₉.rd, m₈.rd, m₇.rd, m₆.rd, k₅.rd, hrd]; exact ⟨nR s, List.mem_append_left _ hn, hc⟩)
+    (by rw [m₁₀.rd, m₉.rd, m₈.rd, m₇.rd, m₆.rd, hrd]; exact ⟨nR s, List.mem_append_left _ hn, hc⟩)
     fun v₁₁ o₁₁ e₁₁ => ?_
   refine wp_srl fun v₁₂ o₁₂ e₁₂ => wp_srl fun v₁₃ o₁₃ e₁₃ => wp_or fun v₁₄ o₁₄ e₁₄ => wp_srl fun v₁₅ o₁₅ e₁₅ =>
     wp_or fun v₁₆ o₁₆ e₁₆ => wp_srl fun v₁₇ o₁₇ e₁₇ => wp_or fun v₁₈ o₁₈ e₁₈ =>
@@ -345,17 +367,14 @@ theorem entry_ok : WP isa (.block (save ++ prologue)) (allocd frameBytes s) (Ent
     (w8 5 (by rw [kw.wr, m₁₀.wr, m₉.wr, m₈.wr, m₇.wr, m₆.wr]) (by decide)) fun y m => wp_nil ?_
   have hm : y.mem = v₁₀.mem.writeW (off (Ss s) (oP + 40)) (Proof.RsaPss.RISCV64.cmB (s.mem (s.gpr .a2))) := by
     rw [m.mem, c5, kw.mem]
-  have kK : Kept [.t6, .s0, .s1, .s2, .s4, .t1, .t2, .t3, .s3, .t4] v y :=
-    (k₅.keep.trans (m₆.keep.trans (m₇.keep.trans (m₈.keep.trans (m₉.keep.trans (m₁₀.keep.trans
-      (kw.keep.trans m.keep))))))).mono
+  have kK : Kept [.t1, .t2, .t3, .s3, .t4] v₅ y :=
+    (m₆.keep.trans (m₇.keep.trans (m₈.keep.trans (m₉.keep.trans (m₁₀.keep.trans
+      (kw.keep.trans m.keep)))))).mono
   have hS : SC Ss s ∈ [SC Ss s] := List.mem_singleton_self _
   have hfy : Frame [SC Ss s] v₅.mem y.mem := by rw [hm]; exact hf1.writeW hS _ (sc_c8 5 (by decide))
-  have hfw : Frame [SC Ss s] v.mem y.mem := by rw [k₅.mem] at hfy; exact hfy
-  have sv0 : Saves s v := ⟨hsp, by rw [kv.wr]; rfl, hsv⟩
-  have sv : Saves s y := sv0.keep kK hfw fun r hr => by
+  have sv : Saves s y := E.sv.keep kK hfy fun r hr => by
     rw [List.mem_singleton.mp hr]; exact Proof.RsaOaep.RISCV64.slR_sc F
-  have hfa : Frame [kR s, SC Ss s] s.mem y.mem :=
-    (by rw [k₅.mem]; exact hm2 : Frame [kR s, SC Ss s] s.mem v₅.mem).trans (hfy.mono (by simp))
+  have hfa : Frame [kR s, SC Ss s] s.mem y.mem := hm2.trans (hfy.mono (by simp))
   have sp : Spilled s y.mem := by
     rw [hm, m₁₀.mem, m₉.mem, m₈.mem, m₇.mem, m₆.mem]
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -380,16 +399,16 @@ theorem entry_ok : WP isa (.block (save ++ prologue)) (allocd frameBytes s) (Ent
     · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oP; omega)) (by unfold oP; omega) (by unfold oP; omega)) (by decide),
         Mem.readW_writeW_self64, m₉.gpr, m₈.gpr, m₇.gpr, m₆.gpr, a5 .a7 (by decide)]
     · rw [Mem.readW_writeW_self64]
-  refine ⟨⟨sv, by rw [m.rd, kw.rd, m₁₀.rd, m₉.rd, m₈.rd, m₇.rd, m₆.rd, k₅.rd, hrd],
+  refine ⟨⟨sv, by rw [m.rd, kw.rd, m₁₀.rd, m₉.rd, m₈.rd, m₇.rd, m₆.rd, hrd],
     by rw [m.gpr, kw.get .s0, kg, g0], fun r hr => ?_, hfa⟩,
     by rw [m.gpr, (o₁₂.trans (o₁₃.trans (o₁₄.trans (o₁₅.trans (o₁₆.trans (o₁₇.trans (o₁₈.trans (o₁₉.trans
       (ow.trans (p₁.trans (p₂.trans (p₃.trans (p₄.trans p₅))))))))))))).get .t1, hb], sp⟩
   simp only [Proof.RsaOaep.RISCV64.fx, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> simp only [vS] <;> rw [m.gpr]
-  · rw [kw.get .s1, kg, o₅.get .s1, o₄.get .s1, e₃, o₂.get .a3, o₁.get .a3, gs .a3 (by decide)]
-  · rw [kw.get .s2, kg, o₅.get .s2, e₄, o₃.get .a0, o₂.get .a0, o₁.get .a0, gs .a0 (by decide)]
+  · rw [kw.get .s1, kg]; exact E.s1
+  · rw [kw.get .s2, kg]; exact E.s2
   · rw [p₅.get .s3, p₄.get .s3, p₃.get .s3, p₂.get .s3, p₁.get .s3]; exact m20
-  · rw [kw.get .s4, kg, e₅]
+  · rw [kw.get .s4, kg]; exact E.s4
 
 end
 

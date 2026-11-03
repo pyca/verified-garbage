@@ -81,9 +81,9 @@ theorem checks_done {t : State} (E : Entered s t) : WP isa (checks H) t (Done Gs
 
 theorem code_ok : WP isa (sign H) s (Post Gs s) := by
   refine WP.alloc (by decide) (by have := P.sp1; rw [stackBytes_eq] at this; unfold frameBytes; omega) ?_
-  refine WP.seq (WP.mono (entry_ok P) fun t E => WP.seq (WP.mono
+  refine WP.seq (WP.mono (pro_ok P) fun t₀ E₀ => WP.seq (WP.mono (spill_ok P E₀) fun t E => WP.seq (WP.mono
     (checks_done P hH hF hGh hGl hGv E) fun t' ⟨sv, res⟩ =>
-      WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ => ⟨habi, ?_⟩))
+      WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ => ⟨habi, ?_⟩)))
   show Spec.Rsa.writtenOutcome w.mem _ _ ((w.gpr .a0).setWidth 32) _
   rw [hm, h3]
   exact res

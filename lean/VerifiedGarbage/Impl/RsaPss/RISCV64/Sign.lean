@@ -69,12 +69,14 @@ def cMask : List Instr :=
   [.li .t3 0, .sub .t3 .t3 .s3, .li .t4 0xFF, .logic .and .t3 .t3 .t4, .logic .or .t2 .t2 .t3,
     .store .d .t2 .s0 (oP + 40)]
 
-/-- The arguments into the registers that keep them, and `n`, `e`, `e_len`,
-`p` and `p_len` to `scratch + oP`; then `n₀` into `t1`, `lo` into `s3` and
-`c` to `scratch + oP + 40`. -/
-def prologue : List Instr :=
-  [argBase, .load .d .s0 .t6 88, mov .s1 .a3, mov .s2 .a0, .load .d .s4 .t6 80, .store .d .a2 .s0 oP,
-    .store .d .a4 .s0 (oP + 8), .store .d .a5 .s0 (oP + 16), .store .d .a6 .s0 (oP + 24),
+/-- The arguments into the registers that keep them. -/
+def prologue : List Instr := [argBase, .load .d .s0 .t6 88, mov .s1 .a3, mov .s2 .a0, .load .d .s4 .t6 80]
+
+/-- `n`, `e`, `e_len`, `p` and `p_len` to `scratch + oP`; then `n₀` into
+`t1`, `lo` into `s3` and `c` to `scratch + oP + 40`. A block of its own, as
+it addresses through `s0`, which `prologue` loads. -/
+def spill : List Instr :=
+  [.store .d .a2 .s0 oP, .store .d .a4 .s0 (oP + 8), .store .d .a5 .s0 (oP + 16), .store .d .a6 .s0 (oP + 24),
     .store .d .a7 .s0 (oP + 32), .load .b .t1 .a2 0] ++ smear ++ cMask
 
 variable (H : Hash)
@@ -174,7 +176,7 @@ def checks : Prog isa :=
       (.seq (.block (chkSalt H)) (.ite (.nonzero .a0) encFail (signMain H)))))
 
 /-- The frame's body. -/
-def body : Prog isa := .seq (.block (save ++ prologue)) (.seq (checks H) (.block restore))
+def body : Prog isa := .seq (.block (save ++ prologue)) (.seq (.block spill) (.seq (checks H) (.block restore)))
 
 /-- `vg_rsa_pss_<H>_mgf1_<H>_sign`. -/
 def sign : Prog isa := .frame (.alloc frameBytes) (body H) (.free frameBytes)
