@@ -72,7 +72,7 @@ theorem srcB {c : Cx} (L : Lay c) {s : State} (P : Perm c s) : Src c s (c.W + Bi
   b := L.b_w' (by decide)
 
 /-- One chunk of the 16 bytes at `W + 240`: their field element absorbed. -/
-theorem chunkB_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t)
+theorem chunkB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t)
     (h9 : t.gpr .s9 = c.W + BitVec.ofNat 64 240) (h10 : t.gpr .s10 = BitVec.ofNat 64 16) :
     WP isa chunk t (Absorbed c (absR c) [Spec.GcmSiv.ofBytes (bytesAt t.mem (c.W + BitVec.ofNat 64 240) 16)] t) :=
   WP.mono (chunk_wp L E (m := 16) (by decide) (by decide) (srcB L E.perm) h9 h10) fun t' C => by
@@ -148,7 +148,7 @@ theorem absTailPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} 
   rw [u₉.other _ (by decide), u₈.gpr, (E₆.of_pk pk₇).s0]; rfl
 
 /-- `absTail`: the last `r` (1 to 15) bytes at `P`, padded with zeros, absorbed. -/
-theorem absTail_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} {r : Nat}
+theorem absTail_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨P, r⟩] (t.rd ++ t.wr))
     (hd : (⟨P, r⟩ : Region).Disjoint ⟨c.W, 3840⟩) (h9 : t.gpr .s9 = P) (h10 : t.gpr .s10 = BitVec.ofNat 64 r) :
     WP isa absTail t (AbsPost c [Spec.GcmSiv.ofBytes (bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r))] t) := by
@@ -181,7 +181,7 @@ theorem elems_pad16_bytesAt (m : Mem) (Q : Addr) (n : Nat) :
     GcmSiv.elems_bytesAt]
 
 /-- The whole blocks of `absorb`, once `a7` holds their number. -/
-theorem absMid_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
+theorem absMid_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
     (hm : m < 2 ^ 64) (hQ : Src c t Q m) (h9 : t.gpr .s9 = Q) (h10 : t.gpr .s10 = BitVec.ofNat 64 m)
     (h7 : t.gpr .a7 = BitVec.ofNat 64 (m / 16)) :
     WP isa (.ite (.zero .a7) (.block []) (.loop chunk (.nonzero .a7))) t fun t₂ =>
@@ -195,7 +195,7 @@ theorem absMid_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m :
   · have h0 : m / 16 ≠ 0 := by simpa using hf
     exact chunks_wp L E hm (by omega_arith) (hQ.take (by omega_arith)) h9 h10
 
-theorem absorb_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat} (hm : m < 2 ^ 64)
+theorem absorb_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat} (hm : m < 2 ^ 64)
     (hQ : Src c t Q m) (hd : (⟨Q, m⟩ : Region).Disjoint ⟨c.W, 3840⟩) (h9 : t.gpr .s9 = Q)
     (h10 : t.gpr .s10 = BitVec.ofNat 64 m) :
     WP isa absorb t (AbsPost c (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem Q m))) t) := by
@@ -258,7 +258,7 @@ theorem lensBlk_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
       E.s0]; rfl
 
 /-- `lensBlock` and its chunk: the lengths block absorbed. -/
-theorem lens_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
+theorem lens_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
     WP isa lens t (AbsPost c [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * c.al) ++ Spec.GcmSiv.le64 (8 * c.n))] t) := by
   unfold lens
   refine WP.seq (WP.mono (lensBlk_wp L E) fun t₆ ⟨pk₆, hm₆, s9₆, s10₆⟩ => ?_)
@@ -379,7 +379,7 @@ theorem absorbR_nP {c : Cx} (L : Lay c) : ∀ r ∈ absorbR c, (⟨nP c.W, 12⟩
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.b_w' (by decide)).symm
 
-theorem polyval_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t)
+theorem polyval_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t)
     (hG : Spec.Gcm.blockAt t.mem (c.W + BitVec.ofNat 64 64) =
       hkeyOf (Spec.GcmSiv.ofBytes (bytesAt t.mem (c.W + BitVec.ofNat 64 16) 16)))
     (hY : Spec.Gcm.blockAt t.mem (c.W + BitVec.ofNat 64 80) = 0)

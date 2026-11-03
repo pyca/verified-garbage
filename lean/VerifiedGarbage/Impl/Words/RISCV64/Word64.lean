@@ -49,4 +49,9 @@ up, plus the sign-extended low word (`li32`). `d` and `tmp` are different. -/
 def li64 (d tmp : Reg) (v : BitVec 64) : List Instr :=
   li32 d (hiAdj v) ++ [.shift .sll .d d d 32] ++ li32 tmp (v.setWidth 32) ++ [.add d d tmp]
 
+/-- `d := v` by one `li` if `v` is a sign-extended 12-bit immediate (as the
+all-ones words of a Mersenne-like modulus are), else by `li64`. -/
+def liW (d tmp : Reg) (v : BitVec 64) : List Instr :=
+  if -2048 ≤ v.toInt ∧ v.toInt < 2048 then [.li d v.toInt] else li64 d tmp v
+
 end VG.Impl.Words.RISCV64

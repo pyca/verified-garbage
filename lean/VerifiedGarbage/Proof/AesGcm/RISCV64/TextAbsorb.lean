@@ -82,7 +82,7 @@ section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0))
 include L
 
-theorem textAbsorb_ok {s : State} {H : Block} {a ct : List Byte} (he : Env V sp s)
+theorem textAbsorb_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {s : State} {H : Block} {a ct : List Byte} (he : Env V sp s)
     (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H)
     (hd : DataOk (V .s1) (V .s0) s (V .s9) (V .s8).toNat)
     (ha : a.length % 16 = (V .s10).toNat % 16) (hP : (V .s11).toNat = ct.length) :

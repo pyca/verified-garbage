@@ -1,14 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.RISCV64
+public import VerifiedGarbage.Impl.Words64.RISCV64
 
 /-!
 # The SHA-3 sponge: RISC-V implementation
 
-The PPC64LE implementation (`Impl/Sha3/PPC64LE/Stream.lean`), a byte at a
-time. The streaming state is the Keccak state (`[u64; 25]` at `state`),
-with the bytes of a partial block XORed into it as they arrive (see
-`VG.Spec.Sha3.Repr`); the position in the block is kept by the caller.
+The PPC64LE implementation (`Impl/Sha3/PPC64LE/Stream.lean`): a lane at a
+time when it can, a byte at a time otherwise. The streaming state is the
+Keccak state (`[u64; 25]` at `state`), with the bytes of a partial block
+XORed into it as they arrive (see `VG.Spec.Sha3.Repr`); the position in the
+block is kept by the caller.
 
 * `absorb(state = a0, rate = a1, pos = a2, data = a3, len = a4)` XORs the
   bytes of `data` into the state from byte `pos`, permuting the state
@@ -19,11 +21,17 @@ with the bytes of a partial block XORed into it as they arrive (see
   the state to `out` from byte `pos`, permuting it whenever a block has been
   used up and more output is needed, and returns the position after them.
 
-The state, the data and the output are argument buffers, whose alignment
-the contracts do not state, so they are accessed a byte at a time (`lbu`,
-`sb`); byte `pos` of the state is addressed as `0(t2)` with `t2 = state +
-pos` computed just before the access. A lane at a time, as on PPC64LE,
-would assemble each lane from its bytes, which costs about as much.
+The contracts do not state the alignment of the state, the data or the
+output, and the model faults on a misaligned access, so each step first
+tests (`laneCheck`) whether the position and its address in the state are
+multiples of 8 and at least 8 bytes are left. If so it moves a lane (`ld`,
+`sd` in the state): every rate being a whole number of lanes, the lane is
+then within the block; the data or output is read or written as a
+doubleword if its pointer is a multiple of 8 too, and a byte at a time
+(`loadLE64`, `storeLE64`) if not, so that data at any offset from the
+position still moves a lane at a time. Otherwise it moves a byte (`lbu`,
+`sb`). Byte `pos` of the state is addressed as `0(t2)` with `t2 = state +
+pos` computed just before the access.
 
 Each function runs in a frame on the stack (`alloc`), whose first 512 bytes
 are the permutation's scratch space (`vg_keccak_f1600`,
@@ -37,8 +45,8 @@ it would leave values loaded from memory in those): their variables live there (
 the saves and restores are aligned doubleword accesses.
 
 The comparison of the position with the rate is a subtraction tested against
-zero. Every address and branch depends only on the pointers, `rate`, `pos`
-and the lengths.
+zero. Every address and branch, the choice of a lane or a byte included,
+depends only on the pointers, `rate`, `pos` and the lengths.
 -/
 
 @[expose] public section
@@ -46,6 +54,7 @@ and the lengths.
 namespace VG.Impl.Sha3.RISCV64.Stream
 
 open VG.RISCV64
+open VG.Impl.Words64.RISCV64 (loadLE64 storeLE64)
 
 /-- `mv d, n` (`addi d, n, 0`). -/
 def mov (d n : Reg) : Instr := .addi d n 0
@@ -92,7 +101,30 @@ def absorbByte : List Instr :=
   [.load .b .t1 .s5 0, .add .t2 .s2 .s4, .load .b .t3 .t2 0, .logic .xor .t1 .t1 .t3,
     .store .b .t1 .t2 0, .addi .s5 .s5 1, .addi .s4 .s4 1, .addi .s6 .s6 (-1)]
 
-def absorbBody : Prog isa := .seq (.block absorbByte) permuteIfFull
+/-- `t1 := 0` exactly when a lane can be taken: the position `s4` (so that
+the lane is within the block, every rate being a whole number of lanes) and
+its address `t2 = state + pos` are multiples of 8, and at least 8 bytes are
+left; and `t4 := 0` exactly when the pointer `s5` is a multiple of 8 too. -/
+def laneCheck : List Instr :=
+  [.add .t2 .s2 .s4, .logic .or .t1 .t2 .s4, .logicImm .and .t1 .t1 7, .li .t4 8,
+    .sltu .t3 .s6 .t4, .logic .or .t1 .t1 .t3, .logicImm .and .t4 .s5 7]
+
+/-- A lane of data into `t1`: a doubleword if `s5` is aligned (`al`), else
+a byte at a time. -/
+def loadData (al : Bool) : List Instr :=
+  if al then [.load .d .t1 .s5 0] else loadLE64 .t1 .t3 .t4 .s5 0
+
+/-- A lane of data XORed into the state at `t2`. -/
+def absorbLane (al : Bool) : List Instr :=
+  loadData al ++ [.load .d .t3 .t2 0, .logic .xor .t1 .t1 .t3, .store .d .t1 .t2 0,
+    .addi .s5 .s5 8, .addi .s4 .s4 8, .addi .s6 .s6 (-8)]
+
+/-- A lane if `t1 = 0` (aligned data if `t4 = 0` too), else a byte. -/
+def step (lane : Bool → List Instr) (byte : List Instr) : Prog isa :=
+  .ite (.zero .t1) (.ite (.zero .t4) (.block (lane true)) (.block (lane false))) (.block byte)
+
+def absorbBody : Prog isa :=
+  .seq (.block laneCheck) (.seq (step absorbLane absorbByte) permuteIfFull)
 
 def absorb : Prog isa := withLoop absorbBody
 
@@ -122,7 +154,17 @@ def squeezeByte : List Instr :=
   [.add .t2 .s2 .s4, .load .b .t1 .t2 0, .store .b .t1 .s5 0, .addi .s5 .s5 1,
     .addi .s4 .s4 1, .addi .s6 .s6 (-1)]
 
-def squeezeBody : Prog isa := .seq permuteIfFull (.block squeezeByte)
+/-- `t1` to `out`: a doubleword if `s5` is aligned (`al`), else a byte at a
+time. -/
+def storeData (al : Bool) : List Instr :=
+  if al then [.store .d .t1 .s5 0] else storeLE64 .t1 .t3 .t4 .s5 0
+
+/-- A lane of the state at `t2` to `out`. -/
+def squeezeLane (al : Bool) : List Instr :=
+  [.load .d .t1 .t2 0] ++ storeData al ++ [.addi .s5 .s5 8, .addi .s4 .s4 8, .addi .s6 .s6 (-8)]
+
+def squeezeBody : Prog isa :=
+  .seq permuteIfFull (.seq (.block laneCheck) (step squeezeLane squeezeByte))
 
 def squeeze : Prog isa := withLoop squeezeBody
 

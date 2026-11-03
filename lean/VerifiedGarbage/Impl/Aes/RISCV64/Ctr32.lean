@@ -126,35 +126,42 @@ def encrypt4 : Prog isa :=
   .seq (.block (toBs ++ [movR kp .a0] ++ addRoundKey))
     (.seq (.loop (.block roundBody) (.nonzero t0)) (.block (lastRound ++ fromBs)))
 
-/-- XOR the keystream block `b` into data block `b`. -/
-def xorBlock (b : Nat) : List Instr :=
-  loadLE64 t0 t1 t2 .a3 (16 * b) ++ [xorR t0 t0 (q b)] ++ storeLE64 t0 t1 t2 .a3 (16 * b) ++
-  loadLE64 t0 t1 t2 .a3 (16 * b + 8) ++ [xorR t0 t0 (q (b + 4))] ++
-  storeLE64 t0 t1 t2 .a3 (16 * b + 8)
+/-- XOR the keystream block `b` into data block `b`, by doublewords if `w`
+(the data aligned), else a byte at a time. -/
+def xorBlock (w : Bool) (b : Nat) : List Instr :=
+  loadLE64W w t0 t1 t2 .a3 (16 * b) ++ [xorR t0 t0 (q b)] ++ storeLE64W w t0 t1 t2 .a3 (16 * b) ++
+  loadLE64W w t0 t1 t2 .a3 (16 * b + 8) ++ [xorR t0 t0 (q (b + 4))] ++
+  storeLE64W w t0 t1 t2 .a3 (16 * b + 8)
 
 /-- Four blocks, and on to the next four. -/
-def xorFull : List Instr :=
-  (List.range 4).flatMap xorBlock ++ ([.addi .a3 .a3 64, .addi .a4 .a4 (-4)] : List Instr)
+def xorFull (w : Bool) : List Instr :=
+  (List.range 4).flatMap (xorBlock w) ++ ([.addi .a3 .a3 64, .addi .a4 .a4 (-4)] : List Instr)
 
 /-- The last one to three blocks (and none left). -/
-def xorTail : Prog isa :=
-  .seq (.block (xorBlock 0 ++ ([.addi t0 .a4 (-1)] : List Instr)))
-    (.seq (.ite (.nonzero t0) (.seq (.block (xorBlock 1 ++ ([.addi t0 .a4 (-3)] : List Instr)))
-        (.ite (.zero t0) (.block (xorBlock 2)) (.block [])))
+def xorTail (w : Bool) : Prog isa :=
+  .seq (.block (xorBlock w 0 ++ ([.addi t0 .a4 (-1)] : List Instr)))
+    (.seq (.ite (.nonzero t0) (.seq (.block (xorBlock w 1 ++ ([.addi t0 .a4 (-3)] : List Instr)))
+        (.ite (.zero t0) (.block (xorBlock w 2)) (.block [])))
       (.block []))
     (.block [.li .a4 0]))
 
-/-- One group of (up to) four blocks. -/
-def group : Prog isa :=
+/-- One group of (up to) four blocks, by doublewords if `w`. -/
+def group (w : Bool) : Prog isa :=
   .seq (.block ctrBlocks)
     (.seq encrypt4
-      (.seq (.block [shrI t0 .a4 2]) (.ite (.nonzero t0) (.block xorFull) xorTail)))
+      (.seq (.block [shrI t0 .a4 2]) (.ite (.nonzero t0) (.block (xorFull w)) (xorTail w))))
+
+/-- The groups: by doublewords if the data's address is a multiple of 8
+(`t0 = a3 ∧ 7`, of a public address), else a byte at a time. -/
+def ctrGroups : Prog isa :=
+  .seq (.block [.logicImm .and t0 .a3 7])
+    (.ite (.zero t0) (.loop (group true) (.nonzero .a4)) (.loop (group false) (.nonzero .a4)))
 
 def ctr32 : Prog isa :=
   .seq (.block (roundSb ++ saveRegs ++ maskInit ++ ctrSetup ++ keySetup))
     (.seq (.loop (.block keyBody) (.nonzero .a1))
       (.seq (.block keyDone)
-        (.seq (.ite (.zero .a4) (.block []) (.loop group (.nonzero .a4)))
+        (.seq (.ite (.zero .a4) (.block []) ctrGroups)
           (.block restoreRegs))))
 
 end VG.Impl.Aes.RISCV64

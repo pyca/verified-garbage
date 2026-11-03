@@ -143,13 +143,15 @@ BUILT = re.compile(r"\bBuilt (\S+) \((\d+(?:\.\d+)?)(ms|s)\)")
 NATIVE_FACETS = ("c.o", "dynlib")
 
 
-def modules() -> dict[str, pathlib.Path]:
+def modules(lean: pathlib.Path | None = None) -> dict[str, pathlib.Path]:
+    """Each module of the project under `lean` (default: lean/), by name."""
+    lean = lean or LEAN
     mods = {}
-    depth = len(LEAN.parts)
+    depth = len(lean.parts)
     for lib, root in LIBRARIES.items():
-        if root and (LEAN / f"{lib}.lean").is_file():
-            mods[lib] = LEAN / f"{lib}.lean"
-        for f in (LEAN / lib).rglob("*.lean"):
+        if root and (lean / f"{lib}.lean").is_file():
+            mods[lib] = lean / f"{lib}.lean"
+        for f in (lean / lib).rglob("*.lean"):
             # rglob supplies paths below LEAN; slicing their components
             # avoids pathlib's repeated ancestor checks for every file.
             mods[".".join(f.parts[depth:])[:-5]] = f

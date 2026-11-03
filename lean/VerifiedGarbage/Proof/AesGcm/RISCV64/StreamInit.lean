@@ -89,7 +89,7 @@ theorem si_entry {s : State} (hs : streamInitRISCV64.pre s) :
   exact ⟨by rw [en.keeps.rd, en.keeps.wr, hrd]; exact covers_mem (by simp), hlt, wn, dns, dnw,
     by rw [en.keeps.sp]; exact hstk.buf (by simp)⟩
 
-theorem streamInit_wp {s : State} (hs : streamInitRISCV64.pre s) :
+theorem streamInit_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s : State} (hs : streamInitRISCV64.pre s) :
     WP isa streamInit s fun s' => abiPreserved s s' ∧ streamInitRISCV64.post s s' := by
   have L₀ : Lay (s.gpr .a0) (s.gpr .a3) (s.gpr .a4) := by
     obtain ⟨-, -, dcs, dcw, -, -, dsw, wc, -, ws, ww, -, a0, a3, a4⟩ := hs

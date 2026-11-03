@@ -16,11 +16,13 @@ remainder is not negative, the mask `a4` all ones: `[d] ⊕ a4` and a carry of
 1) or adds it (`a4 = 0`); the remainder's sign gives the next mask and the
 quotient bit. At the end, a negative remainder has the divisor added back
 (`fix`). The quotient ends in array `q` and the remainder in `r`; a divisor
-of 0 still runs the same steps.
+of 0 still runs the same steps. `divK` passes over a register's count `k`
+of the divisor's words and one more instead of `w + 1`, for a divisor below
+`2^(64 k)`; `divL` takes `k` from a length in bytes.
 
 The steps count down in `s7`, and the new quotient bit is in `a5`; every
 address is computed from the working space's base (`ptr`) and `s7`, so the
-addresses and branches depend only on `w` and the base.
+addresses and branches depend only on `w`, `k` and the base.
 -/
 
 @[expose] public section
@@ -83,5 +85,12 @@ def divK (q r d : Nat) (k : Reg) : Prog isa :=
 
 /-- `divK` with `k = w`, the remainder in `[r]` (`t` is not used). -/
 def div (q r d _t : Nat) : Prog isa := divK q r d .s9
+
+/-- `s8 := ⌈[len] / 8⌉`, the words of a number of `[len]` bytes. -/
+def wordsOf (len : Reg) : List Instr := [.addi .s8 len 7, .shift .srl .d .s8 .s8 3]
+
+/-- `divK` by a divisor below `2^(8 [len])`: its steps' passes over the
+divisor's `⌈[len] / 8⌉` words (in `s8`) and one more, not `w + 1`. -/
+def divL (q r d : Nat) (len : Reg) : Prog isa := .seq (.block (wordsOf len)) (divK q r d .s8)
 
 end VG.Impl.Rsa.RISCV64.Div

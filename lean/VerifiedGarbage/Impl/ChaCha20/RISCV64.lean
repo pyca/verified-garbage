@@ -14,8 +14,11 @@ rotates and faults on misaligned accesses:
   double rounds, using `U` (`s4`) as its public counter. The additions act
   on all 64 bits, so the high words hold carries, which the word shifts and
   the byte stores ignore.
-* A rotation left by `k` is `slliw` by `k` into `T` (`s3`), `srliw` by
-  `32 - k` and `or` (`rotl_shifts`).
+* A rotation left by `k` is `slliw` by `k` into a temporary, `srliw` by
+  `32 - k` and `or` (`rotl_shifts`). A round's four quarter rounds touch
+  disjoint words, so each of their four steps runs for all four at once
+  (`qstep4`), so that the four chains of dependent operations are side by
+  side; the rotations share `T` (`s3`), which the core renames.
 * `state` and `buf` are argument buffers, whose alignment the contract does
   not state: the words are loaded and stored a byte at a time
   (`Impl/Words/RISCV64.lean`). The input state is re-read from `state` to
@@ -58,23 +61,26 @@ def save : List Instr :=
 def restore : List Instr :=
   savePtr ++ (List.range 5).flatMap fun i => [.load .d (saved i) .t0 (8 * i)]
 
-/-- `a += b; d ^= a; d <<<= k` on the low words (`0 < k < 32`). -/
-def qstep (a b d : Reg) (k : Nat) : List Instr :=
-  [.add a a b, .logic .xor d d a, .shift .sll .w T d k, .shift .srl .w d d (32 - k),
-   .logic .or d d T]
+/-- Step `k` of four quarter rounds at once: `a += b; d ^= a; d <<<= k` for
+each `(a, b, d)` of `ls`, the additions and XORs operation by operation, then
+the rotations, each through `T`. -/
+def qstep4 (ls : List (Reg × Reg × Reg)) (k : Nat) : List Instr :=
+  ls.map (fun (a, b, _) => .add a a b) ++ ls.map (fun (a, _, d) => .logic .xor d d a) ++
+  ls.flatMap fun (_, _, d) => [.shift .sll .w T d k, .shift .srl .w d d (32 - k), .logic .or d d T]
 
-/-- The quarter round (RFC 8439 §2.1) on the low words of `a, b, c, d`. -/
-def qr (a b c d : Reg) : List Instr :=
-  qstep a b d 16 ++ qstep c d b 12 ++ qstep a b d 8 ++ qstep c d b 7
+/-- The four quarter rounds `QUARTERROUND(x, y, z, w)` (RFC 8439 §2.2) of `qs`, at once. -/
+def round4 (qs : List (Nat × Nat × Nat × Nat)) : List Instr :=
+  qstep4 (qs.map fun (x, y, _, w) => (wreg x, wreg y, wreg w)) 16 ++
+  qstep4 (qs.map fun (_, y, z, w) => (wreg z, wreg w, wreg y)) 12 ++
+  qstep4 (qs.map fun (x, y, _, w) => (wreg x, wreg y, wreg w)) 8 ++
+  qstep4 (qs.map fun (_, y, z, w) => (wreg z, wreg w, wreg y)) 7
 
-/-- `QUARTERROUND(x, y, z, w)` (RFC 8439 §2.2). -/
-def quarter (x y z w : Nat) : Prog isa := .block (qr (wreg x) (wreg y) (wreg z) (wreg w))
+/-- The column round's quarter rounds, and the diagonal round's. -/
+def columns : List (Nat × Nat × Nat × Nat) := [(0, 4, 8, 12), (1, 5, 9, 13), (2, 6, 10, 14), (3, 7, 11, 15)]
+def diagonals : List (Nat × Nat × Nat × Nat) := [(0, 5, 10, 15), (1, 6, 11, 12), (2, 7, 8, 13), (3, 4, 9, 14)]
 
 /-- `inner_block` (RFC 8439 §2.3.1): a column round and a diagonal round. -/
-def doubleRound : Prog isa :=
-  .seq (quarter 0 4 8 12) <| .seq (quarter 1 5 9 13) <| .seq (quarter 2 6 10 14) <|
-  .seq (quarter 3 7 11 15) <| .seq (quarter 0 5 10 15) <| .seq (quarter 1 6 11 12) <|
-  .seq (quarter 2 7 8 13) (quarter 3 4 9 14)
+def doubleRound : Prog isa := .block (round4 columns ++ round4 diagonals)
 
 /-- Ten double rounds, with one copy of the round body and a public counter. -/
 def rounds : Prog isa :=

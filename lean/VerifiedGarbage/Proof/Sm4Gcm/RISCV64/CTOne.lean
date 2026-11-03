@@ -112,7 +112,7 @@ theorem OneI.frame {s s' : State} (h : OneI c W sp Np n Ad A D Ln s) {V : Reg �
   h.keep hV he hrd hwr hsp (slot_keep hf (hs (by decide))) (slot_keep hf (hs (by decide)))
 
 /-- Before `oneAad`: the nonce's address and length in `s4` and `s5`. -/
-theorem oneAad_ct : CT (fun s => OneI c W sp Np n Ad A D Ln s ∧ s.gpr .s4 = Np ∧
+theorem oneAad_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => OneI c W sp Np n Ad A D Ln s ∧ s.gpr .s4 = Np ∧
     s.gpr .s5 = BitVec.ofNat 64 n) oneAad := by
   -- `j0`
   refine CT.seq (J := fun s => OneI c W sp Np n Ad A D Ln s ∧
@@ -226,7 +226,7 @@ theorem oneCrypt_ct : CT (OneI c W sp Np n Ad A D Ln) oneCrypt := by
       h24, h25, h26⟩ => ⟨V, blockAt s.mem (V .s1 + BitVec.ofNat 64 48), 0, a, b, d, rfl,
         ⟨he, h24, h25, h26, e.1, e.2, by rw [a, b, d]; exact hD⟩⟩)
 
-theorem oneTag_ct {o : Nat} (ho : o = 0 ∨ o = 112) :
+theorem oneTag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) :
     CT (OneI c W sp Np n Ad A D Ln) (oneTag o) := by
   refine CT.seq dataArgs_ct (fun s h => dataArgs_one L h) ?_
   refine CT.seq (J := OneI c W sp Np n Ad A D Ln)

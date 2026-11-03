@@ -94,7 +94,7 @@ theorem GhCall.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S 
     h.a0, h.a1, h.a2, h.a3, h.a4, toNat64 h.n_lt]
   exact ⟨trivial, trivial, h.yd, h.kh, h.ky, h.kd, h.yfit, h.dfit, h.spal, h.spge⟩
 
-theorem gh_call {name : String} {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
+theorem gh_call [VG.Proof.Gcm.RISCV64.GhashLaw] {name : String} {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
     WP isa (.call name Impl.Gcm.RISCV64.ghash) s (GhPost s H Y D S n) := by
   refine WP.callAny (k := Proof.Gcm.RISCV64.ghashX) Proof.Gcm.RISCV64.ghash_correct
     (rd := [⟨H, 16⟩, ⟨D, 16 * n⟩]) (wr := [⟨Y, 16⟩, ⟨S, 256⟩]) h.pre h.reads h.writes ?_
@@ -108,7 +108,7 @@ theorem gh_call {name : String} {s : State} {H Y D S : Addr} {n : Nat} (h : GhCa
   exact hpost
 
 /-- Calls of `vg_ghash` with the same arguments in both runs are constant time. -/
-theorem gh_rel {name : String} {P : State → State → Prop}
+theorem gh_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {name : String} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ H Y D S n, GhCall s₁ H Y D S n ∧ GhCall s₂ H Y D S n ∧ s₁.sp = s₂.sp) :
     RelCT isa P (.call name Impl.Gcm.RISCV64.ghash) fun _ _ => True := by
   refine RelCT.exists_ (P := fun (x : Addr × Addr × Addr × Addr × Nat) (s₁ s₂ : State) =>

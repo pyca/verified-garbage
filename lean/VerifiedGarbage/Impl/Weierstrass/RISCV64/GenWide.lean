@@ -22,7 +22,8 @@ Too few registers hold `k` words, so the running value lives in memory, at
    time into the own working space when a pointer is not a multiple of 8
    (`fn`), the result copied back to `[o]`, whose pointer the copies keep in
    `t1`;
-2. `m`'s words are stored at `N` (`fillN`, each built by `li64`);
+2. `m`'s words are stored at `N` (`fillN`, each built by `liW`: one `li`
+   if it is a 12-bit immediate, else `li64`);
 3. the operation:
    * `mulCore`: Montgomery's multiplication by operand scanning (CIOS): for
      each word `bᵢ`, `T += a bᵢ` (`macStep` with `a`'s words), then the
@@ -52,7 +53,7 @@ no stack, and write only `[o]` and their own working space.
 namespace VG.Impl.Weierstrass.RISCV64.GenWide
 
 open VG.RISCV64
-open VG.Impl.Words.RISCV64 (li64)
+open VG.Impl.Words.RISCV64 (li64 liW)
 
 /-- Word `j` of `x`. -/
 def wordOf (x j : Nat) : BitVec 64 := BitVec.ofNat 64 (x >>> (64 * j))
@@ -96,7 +97,7 @@ def ptrsA : List Instr :=
 
 /-- `m`'s words at `N`, through `a6` and `a7`. -/
 def fillN : List Instr :=
-  (List.range k).flatMap fun j => li64 .a6 .a7 (wordOf m j) ++ [.store .d .a6 .a3 (N k + 8 * j)]
+  (List.range k).flatMap fun j => liW .a6 .a7 (wordOf m j) ++ [.store .d .a6 .a3 (N k + 8 * j)]
 
 /-! ## Montgomery's multiplication -/
 

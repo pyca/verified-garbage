@@ -552,11 +552,18 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
     · have hn0 : n = 0 := by simpa using h0
       exact WP.block_nil ⟨hb₆, rfl, rfl, rfl, rfl, Frame.refl _ _, fun i hi => by omega_arith⟩
     · have hn0 : n ≠ 0 := by simpa using h0
-      refine groups_ok hs ⟨by omega_arith, ?_, ?_, hb₆, hK0, rfl, rfl, rfl, rfl, Frame.refl _ _, ?_,
-        data₆⟩
-      · rw [a3₆]; simp
-      · rw [a4₆]; simp [n]
-      · rw [num₆, icb_lo]; simp [icb]
+      have hi₆ : GInv s₀.mem s₆ b D n R w icb 0 s₆ :=
+        ⟨by omega_arith, by rw [a3₆]; simp, by rw [a4₆]; simp [n], hb₆, hK0, rfl, rfl, rfl, rfl,
+          Frame.refl _ _, by rw [num₆, icb_lo]; simp [icb], data₆⟩
+      -- By doublewords if the data is aligned.
+      unfold ctrGroups
+      refine WP.seq (wp_andi (imm := 7) (by decide) fun s₇ u₇ => WP.block_nil ?_)
+      have hi₇ := hi₆.of_t0 u₇
+      have ev : isa.eval (.zero t0) s₇ = some (decide (D.toNat % 8 = 0)) := by
+        rw [Steps.eval_zero, u₇.gpr, a3₆, and7, Steps.ofNat_beq_zero (by omega)]
+      exact WP.ite (decide (D.toNat % 8 = 0)) ev
+        (fun h => groups_ok hs (fun _ => by simpa using h) hi₇)
+        (fun _ => groups_ok hs (fun h => Bool.noConfusion h) hi₇)
   -- The epilogue.
   have sv : Spill.Saved b s₁.gpr savedOffs s₇.mem := by
     have dS : ∀ r ∈ [(⟨b + BitVec.ofNat 64 416, 48⟩ : Region), ⟨b + BitVec.ofNat 64 512, 96⟩],
