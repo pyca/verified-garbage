@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -263,5 +265,77 @@ theorem epilogue_ok {s : State} {g : Reg → BitVec 64} (hal : s.sp.toNat % 16 =
     obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hr
     rw [u₇.other _ h6, u₆.other _ h5, u₅.other _ h4, u₄.other _ h3, u₃.other _ h2, u₂.other _ h1,
       u₁.other _ ht, u₀.other _ h0]
+
+/-! ## The test for a lane -/
+
+section
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+private theorem wp_or {d n m : Reg} (k : ∀ s', Upd s s' d (s.gpr n ||| s.gpr m) → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .or d n m :: is)) s Q :=
+  WP.cons exec_logic (k _ (Upd.write _ _ _))
+
+private theorem wp_andi7 {d n : Reg} (k : ∀ s', Upd s s' d (s.gpr n &&& 7) → WP isa (.block is) s' Q) :
+    WP isa (.block (.logicImm .and d n 7 :: is)) s Q :=
+  WP.cons (exec_logicImm (by decide)) (k _ (Upd.write _ _ _))
+
+private theorem wp_sltu {d n m : Reg}
+    (k : ∀ s', Upd s s' d (if s.gpr n < s.gpr m then 1 else 0) → WP isa (.block is) s' Q) :
+    WP isa (.block (.sltu d n m :: is)) s Q :=
+  WP.cons exec_sltu (k _ (Upd.write _ _ _))
+
+end
+
+private theorem and7_eq_zero {x : BitVec 64} (h : x &&& 7 = 0) : x.toNat % 8 = 0 := by
+  have h' := congrArg BitVec.toNat h
+  rwa [BitVec.toNat_and, show (7 : BitVec 64).toNat = 2 ^ 3 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod] at h'
+
+/-- `laneCheck`, from `s2` = `st`, `s4` = `j` and `s6` = `n`: it changes only
+`t1`–`t4`, leaves `st + j` in `t2`, and leaves `t1 = 0` only if `j`, `st + j`
+and `s5` are multiples of 8 and `n ≥ 8`. -/
+theorem laneCheck_ok {s : State} {st : Addr} {j n : Nat} (h2 : s.gpr .s2 = st)
+    (h4 : s.gpr .s4 = BitVec.ofNat 64 j) (h6 : s.gpr .s6 = BitVec.ofNat 64 n) (hj : j < 2 ^ 64)
+    (hn : n < 2 ^ 64) :
+    WP isa (.block laneCheck) s fun s' =>
+      (∀ r, r ≠ .t1 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s'.gpr r = s.gpr r) ∧
+      s'.gpr .t2 = st + BitVec.ofNat 64 j ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.sp = s.sp ∧
+      (s'.gpr .t1 = 0 → j % 8 = 0 ∧ (st + BitVec.ofNat 64 j).toNat % 8 = 0 ∧
+        (s.gpr .s5).toNat % 8 = 0 ∧ 8 ≤ n) := by
+  unfold laneCheck
+  refine wp_add fun s₁ u₁ => wp_or fun s₂ u₂ => wp_or fun s₃ u₃ => wp_andi7 fun s₄ u₄ =>
+    wp_li (by decide) fun s₅ u₅ => wp_sltu fun s₆ u₆ => wp_or fun s₇ u₇ => WP.block_nil ?_
+  have g : ∀ r, r ≠ .t1 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₇.gpr r = s.gpr r :=
+    fun r h1 h2 h3 h4 => by
+      rw [u₇.other r h1, u₆.other r h3, u₅.other r h4, u₄.other r h1, u₃.other r h1,
+        u₂.other r h1, u₁.other r h2]
+  have ht2 : s₇.gpr .t2 = st + BitVec.ofNat 64 j := by
+    rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
+      u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h2, h4]
+  refine ⟨g, ht2, by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem],
+    by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+    by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr],
+    by rw [u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp], fun hz => ?_⟩
+  have e6 : s₅.gpr .s6 = BitVec.ofNat 64 n := by
+    rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
+      u₂.other _ (by decide), u₁.other _ (by decide), h6]
+  have e4 : s₂.gpr .s4 = BitVec.ofNat 64 j := by
+    rw [u₂.other _ (by decide), u₁.other _ (by decide), h4]
+  have e5 : s₁.gpr .s5 = s.gpr .s5 := u₁.other _ (by decide)
+  have e2 : s₁.gpr .t2 = st + BitVec.ofNat 64 j := by rw [u₁.gpr, h2, h4]
+  rw [u₇.gpr, u₆.other _ (by decide), u₆.gpr, u₅.gpr, u₅.other _ (by decide), u₄.gpr,
+    u₃.gpr, u₂.gpr, e6, e4, e5, e2] at hz
+  obtain ⟨ha, hb⟩ := BitVec.or_eq_zero_iff.mp hz
+  rw [BitVec.and_or_distrib_right, BitVec.and_or_distrib_right] at ha
+  obtain ⟨ha, h₃⟩ := BitVec.or_eq_zero_iff.mp ha
+  obtain ⟨h₁, h₂⟩ := BitVec.or_eq_zero_iff.mp ha
+  have h₃' := and7_eq_zero h₃
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj] at h₃'
+  refine ⟨h₃', and7_eq_zero h₁, and7_eq_zero h₂, ?_⟩
+  by_cases hl : BitVec.ofNat 64 n < 8#64
+  · rw [ite_eq_left hl] at hb; exact absurd hb (by decide)
+  · rw [BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn] at hl
+    exact Nat.le_of_not_lt hl
 
 end VG.Proof.Sha3.RISCV64.Stream

@@ -34,6 +34,14 @@ pub unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: usize, po
 .insn 2, 0x8b3a
 beqz s6, 20f
 22:
+.insn 4, 0x014903b3
+.insn 4, 0x0153e333
+.insn 4, 0x01436333
+.insn 4, 0x00737313
+.insn 2, 0x4ea1
+.insn 4, 0x01db3e33
+.insn 4, 0x01c36333
+beqz t1, 23f
 .insn 4, 0x000ac303
 .insn 4, 0x014903b3
 .insn 4, 0x0003ce03
@@ -42,15 +50,25 @@ beqz s6, 20f
 .insn 2, 0x0a85
 .insn 2, 0x0a05
 .insn 2, 0x1b7d
-.insn 4, 0x413a0333
-beqz t1, 23f
 j 24f
 23:
+.insn 4, 0x000ab303
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+24:
+.insn 4, 0x413a0333
+beqz t1, 25f
+j 26f
+25:
 .insn 2, 0x4a01
 .insn 2, 0x854a
 .insn 2, 0x858a
 call {vg_keccak_f1600}
-24:
+26:
 bnez s6, 22b
 j 21f
 20:
@@ -148,11 +166,27 @@ j 24f
 call {vg_keccak_f1600}
 24:
 .insn 4, 0x014903b3
+.insn 4, 0x0153e333
+.insn 4, 0x01436333
+.insn 4, 0x00737313
+.insn 2, 0x4ea1
+.insn 4, 0x01db3e33
+.insn 4, 0x01c36333
+beqz t1, 25f
+.insn 4, 0x014903b3
 .insn 4, 0x0003c303
 .insn 4, 0x006a8023
 .insn 2, 0x0a85
 .insn 2, 0x0a05
 .insn 2, 0x1b7d
+j 26f
+25:
+.insn 4, 0x0003b303
+.insn 4, 0x006ab023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+26:
 bnez s6, 22b
 j 21f
 20:
@@ -171,3 +205,7 @@ j 21f
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600.rs"]
+pub(crate) mod vg_keccak_f1600;

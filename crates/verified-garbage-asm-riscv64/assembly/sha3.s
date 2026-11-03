@@ -22,6 +22,14 @@ vg_keccak_absorb:
 	addi s6, a4, 0
 	beqz s6, 20f
 22:
+	add t2, s2, s4
+	or t1, t2, s5
+	or t1, t1, s4
+	andi t1, t1, 7
+	addi t4, zero, 8
+	sltu t3, s6, t4
+	or t1, t1, t3
+	beqz t1, 23f
 	lbu t1, 0(s5)
 	add t2, s2, s4
 	lbu t3, 0(t2)
@@ -30,15 +38,25 @@ vg_keccak_absorb:
 	addi s5, s5, 1
 	addi s4, s4, 1
 	addi s6, s6, -1
-	sub t1, s4, s3
-	beqz t1, 23f
 	j 24f
 23:
+	ld t1, 0(s5)
+	ld t3, 0(t2)
+	xor t1, t1, t3
+	sd t1, 0(t2)
+	addi s5, s5, 8
+	addi s4, s4, 8
+	addi s6, s6, -8
+24:
+	sub t1, s4, s3
+	beqz t1, 25f
+	j 26f
+25:
 	addi s4, zero, 0
 	addi a0, s2, 0
 	addi a1, sp, 0
 	call {vg_keccak_f1600}
-24:
+26:
 	bnez s6, 22b
 	j 21f
 20:
@@ -106,11 +124,27 @@ vg_keccak_squeeze:
 	call {vg_keccak_f1600}
 24:
 	add t2, s2, s4
+	or t1, t2, s5
+	or t1, t1, s4
+	andi t1, t1, 7
+	addi t4, zero, 8
+	sltu t3, s6, t4
+	or t1, t1, t3
+	beqz t1, 25f
+	add t2, s2, s4
 	lbu t1, 0(t2)
 	sb t1, 0(s5)
 	addi s5, s5, 1
 	addi s4, s4, 1
 	addi s6, s6, -1
+	j 26f
+25:
+	ld t1, 0(t2)
+	sd t1, 0(s5)
+	addi s5, s5, 8
+	addi s4, s4, 8
+	addi s6, s6, -8
+26:
 	bnez s6, 22b
 	j 21f
 20:

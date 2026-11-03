@@ -5,10 +5,11 @@ public import VerifiedGarbage.Impl.Sha3.RISCV64
 /-!
 # The SHA-3 sponge: RISC-V implementation
 
-The PPC64LE implementation (`Impl/Sha3/PPC64LE/Stream.lean`), a byte at a
-time. The streaming state is the Keccak state (`[u64; 25]` at `state`),
-with the bytes of a partial block XORed into it as they arrive (see
-`VG.Spec.Sha3.Repr`); the position in the block is kept by the caller.
+The PPC64LE implementation (`Impl/Sha3/PPC64LE/Stream.lean`): a lane at a
+time when it can, a byte at a time otherwise. The streaming state is the
+Keccak state (`[u64; 25]` at `state`), with the bytes of a partial block
+XORed into it as they arrive (see `VG.Spec.Sha3.Repr`); the position in the
+block is kept by the caller.
 
 * `absorb(state = a0, rate = a1, pos = a2, data = a3, len = a4)` XORs the
   bytes of `data` into the state from byte `pos`, permuting the state
@@ -19,11 +20,14 @@ with the bytes of a partial block XORed into it as they arrive (see
   the state to `out` from byte `pos`, permuting it whenever a block has been
   used up and more output is needed, and returns the position after them.
 
-The state, the data and the output are argument buffers, whose alignment
-the contracts do not state, so they are accessed a byte at a time (`lbu`,
-`sb`); byte `pos` of the state is addressed as `0(t2)` with `t2 = state +
-pos` computed just before the access. A lane at a time, as on PPC64LE,
-would assemble each lane from its bytes, which costs about as much.
+The contracts do not state the alignment of the state, the data or the
+output, and the model faults on a misaligned access, so each step first
+tests (`laneCheck`) whether the position, its address in the state and the
+data or output pointer are all multiples of 8 and at least 8 bytes are
+left. If so it moves a lane (`ld`, `sd`): every rate being a whole number of
+lanes, the lane is then within the block. Otherwise it moves a byte (`lbu`,
+`sb`). Byte `pos` of the state is addressed as `0(t2)` with `t2 = state +
+pos` computed just before the access.
 
 Each function runs in a frame on the stack (`alloc`), whose first 512 bytes
 are the permutation's scratch space (`vg_keccak_f1600`,
@@ -37,8 +41,8 @@ it would leave values loaded from memory in those): their variables live there (
 the saves and restores are aligned doubleword accesses.
 
 The comparison of the position with the rate is a subtraction tested against
-zero. Every address and branch depends only on the pointers, `rate`, `pos`
-and the lengths.
+zero. Every address and branch, the choice of a lane or a byte included,
+depends only on the pointers, `rate`, `pos` and the lengths.
 -/
 
 @[expose] public section
@@ -92,11 +96,13 @@ def absorbByte : List Instr :=
   [.load .b .t1 .s5 0, .add .t2 .s2 .s4, .load .b .t3 .t2 0, .logic .xor .t1 .t1 .t3,
     .store .b .t1 .t2 0, .addi .s5 .s5 1, .addi .s4 .s4 1, .addi .s6 .s6 (-1)]
 
-/-- `t1 := 0` exactly when a lane can be taken: `t2 = state + pos` and the
-data pointer `s5` are multiples of 8 and at least 8 bytes are left. -/
+/-- `t1 := 0` exactly when a lane can be taken: the position `s4` (so that
+the lane is within the block, every rate being a whole number of lanes), its
+address `t2 = state + pos` and the pointer `s5` are multiples of 8, and at
+least 8 bytes are left. -/
 def laneCheck : List Instr :=
-  [.add .t2 .s2 .s4, .logic .or .t1 .t2 .s5, .logicImm .and .t1 .t1 7, .li .t4 8, .sltu .t3 .s6 .t4,
-    .logic .or .t1 .t1 .t3]
+  [.add .t2 .s2 .s4, .logic .or .t1 .t2 .s5, .logic .or .t1 .t1 .s4, .logicImm .and .t1 .t1 7,
+    .li .t4 8, .sltu .t3 .s6 .t4, .logic .or .t1 .t1 .t3]
 
 /-- A lane of data XORed into the state at `t2`. -/
 def absorbLane : List Instr :=
