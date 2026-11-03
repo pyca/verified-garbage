@@ -15,8 +15,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 Untrusted: everything here is checked by Lean. `PreO D s`: the contract's
 precondition (`Spec.RsaOaep.encryptTableContract`, with the stack of the
 frame and of the streaming hash functions, `stackBytes`), by name
-(`preO_of`), and what it says of MGF1's table (`spec_tab`). `entry_ok`: from the state after the allocation, the saves
-and the prologue leave `Base` with the label in `s6` and `s7`, and `msg`,
+(`preO_of`), and what it says of MGF1's table (`spec_tab`). `entry_ok`: from
+the state after the allocation, the saves and the prologue leave `Base` with the label in `s6` and `s7`, and `msg`,
 `msg_len` and `seed` in `t2`, `t3` and `t4` (`Entered`).
 -/
 

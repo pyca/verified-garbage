@@ -192,7 +192,7 @@ theorem Sig.alignedBufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Na
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    exact Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)
+    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)]
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h

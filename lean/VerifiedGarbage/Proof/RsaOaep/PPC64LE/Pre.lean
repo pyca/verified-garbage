@@ -13,10 +13,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # RSAES-OAEP encryption on PPC64LE: the precondition
 
-Untrusted: everything here is checked by Lean. `PreO Hs s`: the shared
-contract's precondition (`Spec.RsaOaep.encryptPrecomputedContract`, with the
-stack of the frame and of the streaming hash functions, 304 bytes), by name
-(`preO_of`).
+Untrusted: everything here is checked by Lean. `PreO Hs s`: the contract's
+precondition (`Spec.RsaOaep.encryptTableContract`, with the stack of the
+frame and of the streaming hash functions, 304 bytes), by name (`preO_of`),
+and what it says of MGF1's table (`spec_tab`).
 -/
 
 @[expose] public section
