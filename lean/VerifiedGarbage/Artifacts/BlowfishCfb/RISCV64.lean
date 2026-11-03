@@ -17,7 +17,7 @@ def artifacts : List Artifact := [
     verified := Proof.Blowfish.RISCV64.Modes.cfbEncrypt_verified },
   Spec.Blowfish.cfbDecryptApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.cfbDecrypt
-    stack := 4224
+    stack := 4320
     verified := Proof.Blowfish.RISCV64.Modes.cfbDecrypt_verified }]
 
 end VG.Artifacts.BlowfishCfb.RISCV64

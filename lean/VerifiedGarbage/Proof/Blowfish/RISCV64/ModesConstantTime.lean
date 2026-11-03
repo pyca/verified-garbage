@@ -15,9 +15,11 @@ meta import VerifiedGarbage.Proof.Blowfish.RISCV64.ModesLit
 # Constant-time Blowfish modes on RISC-V
 
 Only the pointers and the count (`a0`–`a3`) and the stack pointer are
-public. The modes keep their state in `s1`–`s4`, which the block function
-never writes, and zero the frame through `t3`, a copy of its base made
-before the caller's `s1`–`s4` come back from memory.
+public. The modes keep their state in `s1`–`s4`, which the one-block
+function never writes and the two-block core parks in registers and
+recomputes (`park2`, `unpark2`), never in memory, and zero the frame through
+`t3`, a copy of its base made before the caller's `s1`–`s4` come back from
+memory.
 -/
 
 @[expose] public section

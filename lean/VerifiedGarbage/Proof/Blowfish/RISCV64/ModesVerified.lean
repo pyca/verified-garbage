@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.Blowfish.Cfb
 public import VerifiedGarbage.Spec.Blowfish.Ofb
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Modes.RISCV64.Modes
+import VerifiedGarbage.Proof.Modes.RISCV64.Wide
 public import VerifiedGarbage.Proof.Modes.RISCV64.Seq
 public import VerifiedGarbage.Proof.Modes.Steps
 import VerifiedGarbage.Proof.Framework.Contract
@@ -26,7 +27,9 @@ meta import VerifiedGarbage.TCB.RISCV64.Target
 `cbcEncryptChained_verified`, `ofb_verified`, … : the modes of
 `Proof/Modes/RISCV64/` over Blowfish's core (`Mode.dirCoreSpec`) meet the
 shared contracts, with `stack := 4224`: the mode's frame of 528 slots below
-the stack pointer, which it zeroes before returning (`seq_changes_wp`).
+the stack pointer, which it zeroes before returning (`seq_changes_wp`); CBC
+and CFB decryption, two blocks a step over `Mode.dirCoreSpec2`, with
+`stack := 4320` (540 slots).
 The proofs are written against `modeContract`, which states the frame.
 -/
 
@@ -36,11 +39,13 @@ namespace VG.Proof.Blowfish.RISCV64.Modes
 
 open VG VG.RISCV64 VG.Impl.Blowfish.RISCV64 VG.Impl.Modes
 open VG.Proof.Modes.RISCV64 (SeqPre ivR scrRegion Fb)
-open VG.Proof.Blowfish.RISCV64.Mode (dirCoreSpec KeyArgs layout)
+open VG.Proof.Blowfish.RISCV64.Mode (dirCoreSpec dirCoreSpec2 KeyArgs layout layout2)
 open VG.Proof.Blowfish.RISCV64 (modePub)
 
-/-- The frame's bytes. -/
+/-- The frame's bytes: 528 slots, and 540 for the modes over the two-block
+core (`dirCore2`). -/
 abbrev frameBytes : Nat := 4224
+abbrev frameBytes2 : Nat := 4320
 
 /-- Blowfish under the schedule at `a0`, and its inverse. -/
 abbrev ciph (s : State) : Spec.Cbc.Cipher := Spec.Blowfish.cipher (Spec.Blowfish.scheduleAt s.mem (s.gpr .a0))
@@ -68,9 +73,9 @@ def cfbDecPost (s s' : State) : Prop :=
   dataAt s'.mem s = Spec.Cfb.decrypt (ciph s) (ivAt s.mem s) (dataAt s.mem s) ∧
     ivAt s'.mem s = Spec.Cbc.next (ivAt s.mem s) (dataAt s.mem s)
 
-/-- A mode's function on RISC-V, with its frame below the stack pointer,
-and the postcondition `post`. -/
-def modeContract (post : State → State → Prop) : Contract isa where
+/-- A mode's function on RISC-V, with its frame of `frameBytes` below the
+stack pointer, and the postcondition `post`. -/
+def modeContract (frameBytes : Nat) (post : State → State → Prop) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .a0, 4168⟩
     let iv : Region := ⟨s.gpr .a1, 8⟩
@@ -86,7 +91,7 @@ def modeContract (post : State → State → Prop) : Contract isa where
 
 /-- `modeContract`'s precondition gives the modes'. -/
 theorem seqPre_of {post : State → State → Prop} {M : Mode} (up : Bool) (hstep : M.step = 8) {s : State}
-    (h : (modeContract post).pre s) : SeqPre (dirCore up) M s := by
+    (h : (modeContract frameBytes post).pre s) : SeqPre (dirCore up) M s := by
   obtain ⟨-, hwr, -, -, dVD, fV, fD, al, sp, -, dSV, dSD⟩ := h
   have e8 : 4 * (dirCore up).bw = 8 := rfl
   have eS : scrRegion (dirCore up) (Fb s (dirCore up)) = ⟨s.sp - frameBytes, frameBytes⟩ := rfl
@@ -97,8 +102,32 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (up : Bool) (hste
     layout up⟩
 
 theorem keyArgs_of {post : State → State → Prop} {M : Mode} (up : Bool) (hstep : M.step = 8) {s : State}
-    (h : (modeContract post).pre s) :
+    (h : (modeContract frameBytes post).pre s) :
     KeyArgs s (Proof.Modes.RISCV64.wrs0 (dirCore up) M s) (Spec.Blowfish.scheduleAt s.mem (s.gpr .a0)) := by
+  obtain ⟨hrd, -, -, dKD, -, -, -, -, -, dSK, -, -⟩ := h
+  refine ⟨rfl, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _), fun r hr => ?_⟩
+  simp only [Proof.Modes.RISCV64.wrs0, Proof.Modes.RISCV64.wrs, List.mem_cons, List.not_mem_nil,
+    or_false] at hr
+  rcases hr with rfl | rfl
+  · show (Region.mk (s.gpr .a0) 4168).Disjoint ⟨s.gpr .a2, M.step * (s.gpr .a3).toNat⟩
+    rw [hstep]; exact dKD
+  · exact dSK.symm
+
+/-- `seqPre_of` for the two-block core. -/
+theorem seqPre2_of {post : State → State → Prop} {M : Mode} (up : Bool) (hstep : M.step = 8) {s : State}
+    (h : (modeContract frameBytes2 post).pre s) : SeqPre (dirCore2 up) M s := by
+  obtain ⟨-, hwr, -, -, dVD, fV, fD, al, sp, -, dSV, dSD⟩ := h
+  have e8 : 4 * (dirCore2 up).bw = 8 := rfl
+  have eS : scrRegion (dirCore2 up) (Fb s (dirCore2 up)) = ⟨s.sp - frameBytes2, frameBytes2⟩ := rfl
+  have eV : ivR s (dirCore2 up) = ⟨s.gpr .a1, 8⟩ := rfl
+  refine ⟨al, sp, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp, by rw [e8]; exact fV,
+    by rw [hwr, hstep]; simp, by rw [hstep]; exact fD, by rw [hstep, eS]; exact dSD.symm,
+    by rw [eV, eS]; exact dSV.symm, fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega, by rw [e8]; omega⟩,
+    layout2 up⟩
+
+theorem keyArgs2_of {post : State → State → Prop} {M : Mode} (up : Bool) (hstep : M.step = 8) {s : State}
+    (h : (modeContract frameBytes2 post).pre s) :
+    KeyArgs s (Proof.Modes.RISCV64.wrs0 (dirCore2 up) M s) (Spec.Blowfish.scheduleAt s.mem (s.gpr .a0)) := by
   obtain ⟨hrd, -, -, dKD, -, -, -, -, -, dSK, -, -⟩ := h
   refine ⟨rfl, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _), fun r hr => ?_⟩
   simp only [Proof.Modes.RISCV64.wrs0, Proof.Modes.RISCV64.wrs, List.mem_cons, List.not_mem_nil,
@@ -115,38 +144,40 @@ theorem cbcBlocksAt_eq (m : Mem) (p : Addr) (n : Nat) :
 
 /-! ## Correctness -/
 
-theorem cbcEncryptChained_correct (s : State) (hs : (modeContract cbcEncPost).pre s) :
-    ∃ t s', Exec isa cbcEncryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcEncPost).post s s' :=
+theorem cbcEncryptChained_correct (s : State) (hs : (modeContract frameBytes cbcEncPost).pre s) :
+    ∃ t s', Exec isa cbcEncryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract frameBytes cbcEncPost).post s s' :=
   WP.mono (Proof.Modes.RISCV64.cbcEncChained_wp (dirCoreSpec true)
     (seqPre_of true (M := Mode.cbcEncChained 2) rfl hs) (keyArgs_of true (M := Mode.cbcEncChained 2) rfl hs))
     fun _ ⟨h1, h2, h3⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
       by rw [dataAt, cbcBlocksAt_eq]; exact h3⟩
 
-theorem cbcDecryptChained_correct (s : State) (hs : (modeContract cbcDecPost).pre s) :
-    ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcDecPost).post s s' :=
-  WP.mono (Proof.Modes.RISCV64.cbcDecChained_wp (dirCoreSpec false)
-    (seqPre_of false (M := Mode.cbcDecChained 2) rfl hs) (keyArgs_of false (M := Mode.cbcDecChained 2) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
+theorem cbcDecryptChained_correct (s : State) (hs : (modeContract frameBytes2 cbcDecPost).pre s) :
+    ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract frameBytes2 cbcDecPost).post s s' :=
+  WP.mono (Proof.Modes.RISCV64.cbcDecWide_wp (lg := 1) (dirCoreSpec2 false) (by decide) (by decide)
+    (by decide) (seqPre2_of false (M := Mode.cbcDecChained 2) rfl hs)
+    (keyArgs2_of false (M := Mode.cbcDecChained 2) rfl hs))
+    fun _ ⟨h1, h2, h3, _⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
       by rw [dataAt, cbcBlocksAt_eq]; exact h3⟩
 
-theorem ofb_correct (s : State) (hs : (modeContract ofbPost).pre s) :
-    ∃ t s', Exec isa ofb s t s' ∧ abiPreserved s s' ∧ (modeContract ofbPost).post s s' :=
+theorem ofb_correct (s : State) (hs : (modeContract frameBytes ofbPost).pre s) :
+    ∃ t s', Exec isa ofb s t s' ∧ abiPreserved s s' ∧ (modeContract frameBytes ofbPost).post s s' :=
   WP.mono (Proof.Modes.RISCV64.ofb_wp (dirCoreSpec true)
     (seqPre_of true (M := Mode.ofb 2) rfl hs) (keyArgs_of true (M := Mode.ofb 2) rfl hs))
     fun _ ⟨h1, h2, h3⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2, h3⟩
 
-theorem cfbEncrypt_correct (s : State) (hs : (modeContract cfbEncPost).pre s) :
-    ∃ t s', Exec isa cfbEncrypt s t s' ∧ abiPreserved s s' ∧ (modeContract cfbEncPost).post s s' :=
+theorem cfbEncrypt_correct (s : State) (hs : (modeContract frameBytes cfbEncPost).pre s) :
+    ∃ t s', Exec isa cfbEncrypt s t s' ∧ abiPreserved s s' ∧ (modeContract frameBytes cfbEncPost).post s s' :=
   WP.mono (Proof.Modes.RISCV64.cfbEnc_wp (dirCoreSpec true)
     (seqPre_of true (M := Mode.cfbEnc 2) rfl hs) (keyArgs_of true (M := Mode.cfbEnc 2) rfl hs))
     fun _ ⟨h1, h2, h3⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
       by rw [dataAt, cbcBlocksAt_eq]; exact h3⟩
 
-theorem cfbDecrypt_correct (s : State) (hs : (modeContract cfbDecPost).pre s) :
-    ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContract cfbDecPost).post s s' :=
-  WP.mono (Proof.Modes.RISCV64.cfbDec_wp (dirCoreSpec true)
-    (seqPre_of true (M := Mode.cfbDec 2) rfl hs) (keyArgs_of true (M := Mode.cfbDec 2) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
+theorem cfbDecrypt_correct (s : State) (hs : (modeContract frameBytes2 cfbDecPost).pre s) :
+    ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContract frameBytes2 cfbDecPost).post s s' :=
+  WP.mono (Proof.Modes.RISCV64.cfbDecWide_wp (lg := 1) (dirCoreSpec2 true) (by decide) (by decide)
+    (by decide) (seqPre2_of true (M := Mode.cfbDecEarly 2) rfl hs)
+    (keyArgs2_of true (M := Mode.cfbDecEarly 2) rfl hs))
+    fun _ ⟨h1, h2, h3, _⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
       by rw [dataAt, cbcBlocksAt_eq]; exact h3⟩
 
 /-! ## The contracts -/
@@ -173,7 +204,7 @@ theorem cbcEncryptChained_verified :
     RISCV64.argRegs, modeContract, cbcEncPost, modePub_iff] [modeSat] using modeSat
 
 theorem cbcDecryptChained_verified :
-    Verified RISCV64.target cbcDecryptChained (Spec.Blowfish.cbcDecryptChainedContract RISCV64.abi frameBytes) := by
+    Verified RISCV64.target cbcDecryptChained (Spec.Blowfish.cbcDecryptChainedContract RISCV64.abi frameBytes2) := by
   refine Verified.of_correct cbcDecryptChained_correct (cbcDecryptChained_constantTime _) ?_
   contract_implies [Spec.Blowfish.cbcDecryptChainedContract, Spec.Blowfish.cbcChainedSig, RISCV64.abi,
     RISCV64.argRegs, modeContract, cbcDecPost, modePub_iff] [modeSat] using modeSat
@@ -190,7 +221,7 @@ theorem cfbEncrypt_verified :
     modeContract, cfbEncPost, modePub_iff] [modeSat] using modeSat
 
 theorem cfbDecrypt_verified :
-    Verified RISCV64.target cfbDecrypt (Spec.Blowfish.cfbDecryptContract RISCV64.abi frameBytes) := by
+    Verified RISCV64.target cfbDecrypt (Spec.Blowfish.cfbDecryptContract RISCV64.abi frameBytes2) := by
   refine Verified.of_correct cfbDecrypt_correct (cfbDecrypt_constantTime _) ?_
   contract_implies [Spec.Blowfish.cfbDecryptContract, Spec.Blowfish.cfbSig, RISCV64.abi, RISCV64.argRegs,
     modeContract, cfbDecPost, modePub_iff] [modeSat] using modeSat
