@@ -756,6 +756,48 @@ vg_brainpoolp384r1_mul_mod_n:
 	add a4, a7, t0
 	sd a6, 1848(a3)
 21:
+	sd s6, 1664(a3)
+	sd s7, 1672(a3)
+	sd s8, 1680(a3)
+	sd s9, 1688(a3)
+	sd s10, 1696(a3)
+	sd s11, 1704(a3)
+	lui s6, 380910
+	addiw s6, s6, -726
+	slli s6, s6, 32
+	lui a5, 379740
+	addiw a5, a5, -1133
+	add s6, s6, a5
+	lui s7, 243843
+	addiw s7, s7, 515
+	slli s7, s7, 32
+	lui a5, 954438
+	addiw a5, a5, 1381
+	add s7, s7, a5
+	lui s8, 848811
+	addiw s8, s8, 1711
+	slli s8, s8, 32
+	lui a5, 440316
+	addiw a5, a5, 784
+	add s8, s8, a5
+	lui s9, 127335
+	addiw s9, s9, -403
+	slli s9, s9, 32
+	lui a5, 704578
+	addiw a5, a5, 1447
+	add s9, s9, a5
+	lui s10, 86775
+	addiw s10, s10, 266
+	slli s10, s10, 32
+	lui a5, 972101
+	addiw a5, a5, 1715
+	add s10, s10, a5
+	lui s11, 62935
+	addiw s11, s11, -130
+	slli s11, s11, 32
+	lui a5, 331364
+	addiw a5, a5, 479
+	add s11, s11, a5
 	ld t5, 1760(a3)
 	ld t6, 1768(a3)
 	ld t3, 1776(a3)
@@ -763,73 +805,37 @@ vg_brainpoolp384r1_mul_mod_n:
 	ld a1, 1792(a3)
 	ld a0, 1800(a3)
 	addi a2, zero, 0
-	lui t0, 380910
-	addiw t0, t0, -726
-	slli t0, t0, 32
-	lui a5, 379740
-	addiw a5, a5, -1133
-	add t0, t0, a5
-	mul t5, t5, t0
-	lui a4, 243843
-	addiw a4, a4, 515
-	slli a4, a4, 32
-	lui a5, 954438
-	addiw a5, a5, 1381
-	add a4, a4, a5
-	mulhu a4, t5, a4
+	mul t5, t5, s6
+	mulhu a4, t5, s7
 	addi a5, zero, 0
 	sltu a5, a5, t5
 	add a4, a4, a5
-	lui a6, 848811
-	addiw a6, a6, 1711
-	slli a6, a6, 32
-	lui a7, 440316
-	addiw a7, a7, 784
-	add a6, a6, a7
-	mul a5, t5, a6
-	mulhu a6, t5, a6
+	mul a5, t5, s8
+	mulhu a6, t5, s8
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t6, t6, a5
 	sltu a7, t6, a5
 	add a4, a6, a7
-	lui a6, 127335
-	addiw a6, a6, -403
-	slli a6, a6, 32
-	lui a7, 704578
-	addiw a7, a7, 1447
-	add a6, a6, a7
-	mul a5, t5, a6
-	mulhu a6, t5, a6
+	mul a5, t5, s9
+	mulhu a6, t5, s9
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t3, t3, a5
 	sltu a7, t3, a5
 	add a4, a6, a7
-	lui a6, 86775
-	addiw a6, a6, 266
-	slli a6, a6, 32
-	lui a7, 972101
-	addiw a7, a7, 1715
-	add a6, a6, a7
-	mul a5, t5, a6
-	mulhu a6, t5, a6
+	mul a5, t5, s10
+	mulhu a6, t5, s10
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t4, t4, a5
 	sltu a7, t4, a5
 	add a4, a6, a7
-	lui a6, 62935
-	addiw a6, a6, -130
-	slli a6, a6, 32
-	lui a7, 331364
-	addiw a7, a7, 479
-	add a6, a6, a7
-	mul a5, t5, a6
-	mulhu a6, t5, a6
+	mul a5, t5, s11
+	mulhu a6, t5, s11
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
@@ -856,73 +862,37 @@ vg_brainpoolp384r1_mul_mod_n:
 	add t5, t5, a2
 	sltu a2, t5, a2
 	add a2, a2, a7
-	lui t0, 380910
-	addiw t0, t0, -726
-	slli t0, t0, 32
-	lui a5, 379740
-	addiw a5, a5, -1133
-	add t0, t0, a5
-	mul t6, t6, t0
-	lui a4, 243843
-	addiw a4, a4, 515
-	slli a4, a4, 32
-	lui a5, 954438
-	addiw a5, a5, 1381
-	add a4, a4, a5
-	mulhu a4, t6, a4
+	mul t6, t6, s6
+	mulhu a4, t6, s7
 	addi a5, zero, 0
 	sltu a5, a5, t6
 	add a4, a4, a5
-	lui a6, 848811
-	addiw a6, a6, 1711
-	slli a6, a6, 32
-	lui a7, 440316
-	addiw a7, a7, 784
-	add a6, a6, a7
-	mul a5, t6, a6
-	mulhu a6, t6, a6
+	mul a5, t6, s8
+	mulhu a6, t6, s8
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t3, t3, a5
 	sltu a7, t3, a5
 	add a4, a6, a7
-	lui a6, 127335
-	addiw a6, a6, -403
-	slli a6, a6, 32
-	lui a7, 704578
-	addiw a7, a7, 1447
-	add a6, a6, a7
-	mul a5, t6, a6
-	mulhu a6, t6, a6
+	mul a5, t6, s9
+	mulhu a6, t6, s9
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t4, t4, a5
 	sltu a7, t4, a5
 	add a4, a6, a7
-	lui a6, 86775
-	addiw a6, a6, 266
-	slli a6, a6, 32
-	lui a7, 972101
-	addiw a7, a7, 1715
-	add a6, a6, a7
-	mul a5, t6, a6
-	mulhu a6, t6, a6
+	mul a5, t6, s10
+	mulhu a6, t6, s10
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add a1, a1, a5
 	sltu a7, a1, a5
 	add a4, a6, a7
-	lui a6, 62935
-	addiw a6, a6, -130
-	slli a6, a6, 32
-	lui a7, 331364
-	addiw a7, a7, 479
-	add a6, a6, a7
-	mul a5, t6, a6
-	mulhu a6, t6, a6
+	mul a5, t6, s11
+	mulhu a6, t6, s11
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
@@ -949,73 +919,37 @@ vg_brainpoolp384r1_mul_mod_n:
 	add t6, t6, a2
 	sltu a2, t6, a2
 	add a2, a2, a7
-	lui t0, 380910
-	addiw t0, t0, -726
-	slli t0, t0, 32
-	lui a5, 379740
-	addiw a5, a5, -1133
-	add t0, t0, a5
-	mul t3, t3, t0
-	lui a4, 243843
-	addiw a4, a4, 515
-	slli a4, a4, 32
-	lui a5, 954438
-	addiw a5, a5, 1381
-	add a4, a4, a5
-	mulhu a4, t3, a4
+	mul t3, t3, s6
+	mulhu a4, t3, s7
 	addi a5, zero, 0
 	sltu a5, a5, t3
 	add a4, a4, a5
-	lui a6, 848811
-	addiw a6, a6, 1711
-	slli a6, a6, 32
-	lui a7, 440316
-	addiw a7, a7, 784
-	add a6, a6, a7
-	mul a5, t3, a6
-	mulhu a6, t3, a6
+	mul a5, t3, s8
+	mulhu a6, t3, s8
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t4, t4, a5
 	sltu a7, t4, a5
 	add a4, a6, a7
-	lui a6, 127335
-	addiw a6, a6, -403
-	slli a6, a6, 32
-	lui a7, 704578
-	addiw a7, a7, 1447
-	add a6, a6, a7
-	mul a5, t3, a6
-	mulhu a6, t3, a6
+	mul a5, t3, s9
+	mulhu a6, t3, s9
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add a1, a1, a5
 	sltu a7, a1, a5
 	add a4, a6, a7
-	lui a6, 86775
-	addiw a6, a6, 266
-	slli a6, a6, 32
-	lui a7, 972101
-	addiw a7, a7, 1715
-	add a6, a6, a7
-	mul a5, t3, a6
-	mulhu a6, t3, a6
+	mul a5, t3, s10
+	mulhu a6, t3, s10
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add a0, a0, a5
 	sltu a7, a0, a5
 	add a4, a6, a7
-	lui a6, 62935
-	addiw a6, a6, -130
-	slli a6, a6, 32
-	lui a7, 331364
-	addiw a7, a7, 479
-	add a6, a6, a7
-	mul a5, t3, a6
-	mulhu a6, t3, a6
+	mul a5, t3, s11
+	mulhu a6, t3, s11
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
@@ -1042,73 +976,37 @@ vg_brainpoolp384r1_mul_mod_n:
 	add t3, t3, a2
 	sltu a2, t3, a2
 	add a2, a2, a7
-	lui t0, 380910
-	addiw t0, t0, -726
-	slli t0, t0, 32
-	lui a5, 379740
-	addiw a5, a5, -1133
-	add t0, t0, a5
-	mul t4, t4, t0
-	lui a4, 243843
-	addiw a4, a4, 515
-	slli a4, a4, 32
-	lui a5, 954438
-	addiw a5, a5, 1381
-	add a4, a4, a5
-	mulhu a4, t4, a4
+	mul t4, t4, s6
+	mulhu a4, t4, s7
 	addi a5, zero, 0
 	sltu a5, a5, t4
 	add a4, a4, a5
-	lui a6, 848811
-	addiw a6, a6, 1711
-	slli a6, a6, 32
-	lui a7, 440316
-	addiw a7, a7, 784
-	add a6, a6, a7
-	mul a5, t4, a6
-	mulhu a6, t4, a6
+	mul a5, t4, s8
+	mulhu a6, t4, s8
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add a1, a1, a5
 	sltu a7, a1, a5
 	add a4, a6, a7
-	lui a6, 127335
-	addiw a6, a6, -403
-	slli a6, a6, 32
-	lui a7, 704578
-	addiw a7, a7, 1447
-	add a6, a6, a7
-	mul a5, t4, a6
-	mulhu a6, t4, a6
+	mul a5, t4, s9
+	mulhu a6, t4, s9
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add a0, a0, a5
 	sltu a7, a0, a5
 	add a4, a6, a7
-	lui a6, 86775
-	addiw a6, a6, 266
-	slli a6, a6, 32
-	lui a7, 972101
-	addiw a7, a7, 1715
-	add a6, a6, a7
-	mul a5, t4, a6
-	mulhu a6, t4, a6
+	mul a5, t4, s10
+	mulhu a6, t4, s10
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t5, t5, a5
 	sltu a7, t5, a5
 	add a4, a6, a7
-	lui a6, 62935
-	addiw a6, a6, -130
-	slli a6, a6, 32
-	lui a7, 331364
-	addiw a7, a7, 479
-	add a6, a6, a7
-	mul a5, t4, a6
-	mulhu a6, t4, a6
+	mul a5, t4, s11
+	mulhu a6, t4, s11
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
@@ -1135,73 +1033,37 @@ vg_brainpoolp384r1_mul_mod_n:
 	add t4, t4, a2
 	sltu a2, t4, a2
 	add a2, a2, a7
-	lui t0, 380910
-	addiw t0, t0, -726
-	slli t0, t0, 32
-	lui a5, 379740
-	addiw a5, a5, -1133
-	add t0, t0, a5
-	mul a1, a1, t0
-	lui a4, 243843
-	addiw a4, a4, 515
-	slli a4, a4, 32
-	lui a5, 954438
-	addiw a5, a5, 1381
-	add a4, a4, a5
-	mulhu a4, a1, a4
+	mul a1, a1, s6
+	mulhu a4, a1, s7
 	addi a5, zero, 0
 	sltu a5, a5, a1
 	add a4, a4, a5
-	lui a6, 848811
-	addiw a6, a6, 1711
-	slli a6, a6, 32
-	lui a7, 440316
-	addiw a7, a7, 784
-	add a6, a6, a7
-	mul a5, a1, a6
-	mulhu a6, a1, a6
+	mul a5, a1, s8
+	mulhu a6, a1, s8
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add a0, a0, a5
 	sltu a7, a0, a5
 	add a4, a6, a7
-	lui a6, 127335
-	addiw a6, a6, -403
-	slli a6, a6, 32
-	lui a7, 704578
-	addiw a7, a7, 1447
-	add a6, a6, a7
-	mul a5, a1, a6
-	mulhu a6, a1, a6
+	mul a5, a1, s9
+	mulhu a6, a1, s9
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t5, t5, a5
 	sltu a7, t5, a5
 	add a4, a6, a7
-	lui a6, 86775
-	addiw a6, a6, 266
-	slli a6, a6, 32
-	lui a7, 972101
-	addiw a7, a7, 1715
-	add a6, a6, a7
-	mul a5, a1, a6
-	mulhu a6, a1, a6
+	mul a5, a1, s10
+	mulhu a6, a1, s10
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t6, t6, a5
 	sltu a7, t6, a5
 	add a4, a6, a7
-	lui a6, 62935
-	addiw a6, a6, -130
-	slli a6, a6, 32
-	lui a7, 331364
-	addiw a7, a7, 479
-	add a6, a6, a7
-	mul a5, a1, a6
-	mulhu a6, a1, a6
+	mul a5, a1, s11
+	mulhu a6, a1, s11
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
@@ -1228,73 +1090,37 @@ vg_brainpoolp384r1_mul_mod_n:
 	add a1, a1, a2
 	sltu a2, a1, a2
 	add a2, a2, a7
-	lui t0, 380910
-	addiw t0, t0, -726
-	slli t0, t0, 32
-	lui a5, 379740
-	addiw a5, a5, -1133
-	add t0, t0, a5
-	mul a0, a0, t0
-	lui a4, 243843
-	addiw a4, a4, 515
-	slli a4, a4, 32
-	lui a5, 954438
-	addiw a5, a5, 1381
-	add a4, a4, a5
-	mulhu a4, a0, a4
+	mul a0, a0, s6
+	mulhu a4, a0, s7
 	addi a5, zero, 0
 	sltu a5, a5, a0
 	add a4, a4, a5
-	lui a6, 848811
-	addiw a6, a6, 1711
-	slli a6, a6, 32
-	lui a7, 440316
-	addiw a7, a7, 784
-	add a6, a6, a7
-	mul a5, a0, a6
-	mulhu a6, a0, a6
+	mul a5, a0, s8
+	mulhu a6, a0, s8
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t5, t5, a5
 	sltu a7, t5, a5
 	add a4, a6, a7
-	lui a6, 127335
-	addiw a6, a6, -403
-	slli a6, a6, 32
-	lui a7, 704578
-	addiw a7, a7, 1447
-	add a6, a6, a7
-	mul a5, a0, a6
-	mulhu a6, a0, a6
+	mul a5, a0, s9
+	mulhu a6, a0, s9
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t6, t6, a5
 	sltu a7, t6, a5
 	add a4, a6, a7
-	lui a6, 86775
-	addiw a6, a6, 266
-	slli a6, a6, 32
-	lui a7, 972101
-	addiw a7, a7, 1715
-	add a6, a6, a7
-	mul a5, a0, a6
-	mulhu a6, a0, a6
+	mul a5, a0, s10
+	mulhu a6, a0, s10
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
 	add t3, t3, a5
 	sltu a7, t3, a5
 	add a4, a6, a7
-	lui a6, 62935
-	addiw a6, a6, -130
-	slli a6, a6, 32
-	lui a7, 331364
-	addiw a7, a7, 479
-	add a6, a6, a7
-	mul a5, a0, a6
-	mulhu a6, a0, a6
+	mul a5, a0, s11
+	mulhu a6, a0, s11
 	add a5, a5, a4
 	sltu a7, a5, a4
 	add a6, a6, a7
@@ -1322,6 +1148,12 @@ vg_brainpoolp384r1_mul_mod_n:
 	sltu a2, a0, a2
 	add a2, a2, a7
 	addi a4, a0, 0
+	ld s6, 1664(a3)
+	ld s7, 1672(a3)
+	ld s8, 1680(a3)
+	ld s9, 1688(a3)
+	ld s10, 1696(a3)
+	ld s11, 1704(a3)
 	addi a7, zero, 0
 	lui t0, 804733
 	addiw t0, t0, -515

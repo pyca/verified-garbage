@@ -30,8 +30,14 @@ built by `li64` where they are used.
 * The difference: P-384's `subWith`, with `m`'s words under the mask of the
   borrow (`subKs`).
 
+For aligned offsets (`mulFnA`), the multiplication builds most of the
+reduction's constants once rather than in each round (`mulCoreR`): the
+quotient constant and `m`'s words 0–4 in `s6`–`s11`, which it keeps in its
+own working space and loads back.
+
 The functions are otherwise as P-384's: constant time, caller-saved
-registers only, and writes only to `[o]` and their own working space.
+registers only (but `s6`–`s11`, as they were on return), and writes only to
+`[o]` and their own working space.
 -/
 
 @[expose] public section
@@ -111,8 +117,57 @@ def addFn : Prog isa := fn (.block (addCore m))
 /-- The function subtracting modulo `m`. -/
 def subFn : Prog isa := fn (.block (subCore m))
 
+/-! ## The multiplication for aligned offsets, with the modulus in registers
+
+`mulCoreR` is `mulCore` with its reduction (`reduceR`) reading the quotient
+constant from `s6` and `m`'s words 0–4 from `s7`–`s11` (`MR`), which it
+builds once (`constsR`) rather than in each round (word 5 still by `li64`,
+as no seventh callee-saved register is free in every caller): it keeps
+`s6`–`s11` in the copy `MA`, free once the product is at `ACC`, and loads
+them back after the rounds. -/
+
+/-- The register of `m`'s word `j < 5`. -/
+def MR (j : Nat) : Reg := [.s7, .s8, .s9, .s10, .s11].getD j .s7
+
+/-- The registers of the constants: `s6`, then `MR 0`–`MR 4`. -/
+def KR : List Reg := [.s6, .s7, .s8, .s9, .s10, .s11]
+
+/-- `s6`–`s11` to `[a3 + MA]`. -/
+def saveM : List Instr := (List.range 6).flatMap fun j => [.store .d (KR.getD j .s6) .a3 (MA + 8 * j)]
+
+/-- `s6`–`s11` from `[a3 + MA]`. -/
+def restoreM : List Instr := (List.range 6).flatMap fun j => [.load .d (KR.getD j .s6) .a3 (MA + 8 * j)]
+
+/-- The quotient constant to `s6`, `m`'s words 0–4 to `s7`–`s11`. -/
+def constsR : List Instr :=
+  li64 .s6 .a5 (BitVec.ofNat 64 (negInv m)) ++ (List.range 5).flatMap fun j => li64 (MR j) .a5 (wordOf m j)
+
+/-- `qword` with the constants in registers. -/
+def qwordR (i : Nat) : List Instr :=
+  [.mul (gw i) (gw i) .s6, .mulhu .a4 (gw i) (MR 0), .li .a5 0, .sltu .a5 .a5 (gw i), .add .a4 .a4 .a5]
+
+/-- `mac` with `m`'s word `j` in `MR j`. -/
+def macR (i j : Nat) : List Instr :=
+  mulWide .a5 .a6 (gw i) (MR j) ++
+  [.add .a5 .a5 .a4, .sltu .a7 .a5 .a4, .add .a6 .a6 .a7,
+    .add (gw (i + j)) (gw (i + j)) .a5, .sltu .a7 (gw (i + j)) .a5, .add .a4 .a6 .a7]
+
+/-- `round` with the constants in registers but word 5. -/
+def roundR (i : Nat) : List Instr :=
+  qwordR i ++ macR i 1 ++ macR i 2 ++ macR i 3 ++ macR i 4 ++ mac m i 5 ++
+    [.load .d (gw i) .a3 (ACC + 8 * (i + 6))] ++ top (gw i)
+
+/-- `reduce` with the constants in registers: `s6`–`s11` kept, the
+constants, the rounds, the top word, and `s6`–`s11` back. -/
+def reduceR : List Instr :=
+  saveM ++ (constsR m ++ ((List.range 6).map (fun j => .load .d (gw j) .a3 (ACC + 8 * j)) ++ [.li .a2 0] ++
+    (List.range 6).flatMap (roundR m) ++ [.addi .a4 .a0 0] ++ restoreM))
+
+/-- `[t2] = [t4] [t5] R⁻¹ mod m`, with the constants in registers. -/
+def mulCoreR : Prog isa := mulWith (reduceR m) (sumWith (sumKs m))
+
 /-- The function multiplying modulo `m`, for aligned offsets. -/
-def mulFnA : Prog isa := fnA (mulCore m)
+def mulFnA : Prog isa := fnA (mulCoreR m)
 
 /-- The function adding modulo `m`, for aligned offsets. -/
 def addFnA : Prog isa := fnA (.block (addCore m))
