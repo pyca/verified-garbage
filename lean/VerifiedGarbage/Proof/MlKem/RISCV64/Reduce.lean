@@ -12,11 +12,9 @@ import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 
 /-!
-# ML-KEM on RISC-V: Barrett reduction and the tables
+# ML-KEM on RISC-V: the tables
 
-`reduce` computes `x mod q` of any `x < 2²⁵` (`red_toNat`), through
-`barrett32` (`Proof/MlKem/Arith.lean`), its product by `q` four subtractions
-of shifts (`bar_eq`); `table` stores a table of 128 `u32`s (`table_ok`), and
+`liq` loads `q` (`q_val`); `table` stores a table of 128 `u32`s (`table_ok`), and
 the tables of the code are those of the standard (`zetaTable_eq`,
 `gammaTable_eq`). As on PPC64LE (`Proof/MlKem/PPC64LE/Reduce.lean`), but the
 functions save no registers: they write none that their caller keeps
@@ -30,65 +28,11 @@ namespace VG.Proof.MlKem.RISCV64
 open VG VG.RISCV64 VG.Impl.MlKem.RISCV64
 open VG.Spec.MlKem
 
-/-! ## Barrett reduction -/
-
-/-- The constant of `consts`. -/
-def C : BitVec 64 := 161270
-
-theorem consts_val : sext32 ((0x27 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 1526 = C := by
-  decide
-
 theorem q_val : sext32 ((1 : BitVec 20) ++ (0 : BitVec 12)) + BitVec.ofInt 64 (-767) = 3329 := by
   decide
 
-/-- The quotient's estimate in `barrett d t u`. -/
-def quot (x : BitVec 64) : BitVec 64 := (x >>> 11 * C) >>> 18
-
-/-- What `barrett d t u` leaves in `d`. -/
-def bar (x : BitVec 64) : BitVec 64 :=
-  x - quot x - quot x <<< 8 - quot x <<< 10 - quot x <<< 11
-
-theorem bar_eq (x : BitVec 64) : bar x = x - quot x * 3329 := by
-  unfold bar
-  generalize quot x = T
-  rw [BitVec.shiftLeft_eq_mul_twoPow, BitVec.shiftLeft_eq_mul_twoPow, BitVec.shiftLeft_eq_mul_twoPow]
-  bv_omega
-
-/-- What `reduce d t u` leaves in `d`. -/
-def red (x : BitVec 64) : BitVec 64 := fixq (bar x - 3329)
-
-theorem bar_toNat {x : BitVec 64} (hx : x.toNat < 2 ^ 25) : (bar x).toNat = barrett32 x.toNat := by
-  obtain ⟨b1, b2⟩ := barrett32_bounds hx
-  have hT : (quot x).toNat = barrett32Quot x.toNat := by
-    rw [quot, BitVec.toNat_ushiftRight, BitVec.toNat_mul, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
-      Nat.shiftRight_eq_div_pow, show C.toNat = 161270 from rfl, Nat.mod_eq_of_lt (by omega)]
-    rfl
-  rw [bar_eq]
-  unfold barrett32
-  generalize quot x = T at hT
-  rw [q_eq] at b2 ⊢
-  bv_omega
-
-theorem red_toNat {x : BitVec 64} (hx : x.toNat < 2 ^ 25) : (red x).toNat = x.toNat % q := by
-  have h1 := barrett32_lt hx
-  unfold red
-  rw [fixq_subq (by rw [bar_toNat hx]; exact h1), bar_toNat hx, ← reduce32 hx, condSub_eq h1]
-
-theorem red_lt {x : BitVec 64} (hx : x.toNat < 2 ^ 25) : (red x).toNat < q := by
-  rw [red_toNat hx]; exact Nat.mod_lt _ (by decide)
-
 theorem toNat_val64 (x : Zq) : (BitVec.ofNat 64 x.val).toNat = x.val := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
-
-/-- A product of reduced values, reduced. -/
-theorem red_mul {a b : Zq} :
-    (red (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val)).toNat = (a * b).val := by
-  have ha := val_lt a
-  have hb := val_lt b
-  have hp : (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val).toNat = a.val * b.val := by
-    rw [BitVec.toNat_mul, toNat_val64, toNat_val64]
-    exact Nat.mod_eq_of_lt (by have := mul_lt_q2 ha hb; omega)
-  rw [red_toNat (by rw [hp]; have := mul_lt_q2 ha hb; omega), hp, val_mul]
 
 /-! ## Tables -/
 
