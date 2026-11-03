@@ -109,7 +109,7 @@ def main (args : List String) : IO UInt32 := do
   let gens := (← VG.Emit.genericGroups VG.Emit.genericDir).filter fun g =>
     names.contains (groupName g.1)
   let vars := (← VG.Emit.grouped VG.Emit.variantDir).filter fun v =>
-    gens.any (·.1.contains v.1)
+    gens.any (·.1.any fun i => (VG.Emit.allOf i).1 == v.1)
   for n in names do
     unless regs.contains s!"VerifiedGarbage.Artifacts.{n}" || gens.any (groupName ·.1 == n) do
       IO.eprintln s!"{n}: no registration file VerifiedGarbage/Artifacts/{n.replace "." "/"}.lean \
