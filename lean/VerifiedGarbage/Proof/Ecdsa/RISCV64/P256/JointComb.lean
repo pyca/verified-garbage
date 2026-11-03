@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Tail
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulVerified
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Verified
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Copy
@@ -15,6 +16,8 @@ import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Lit
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.WindowLit
 
 /-!
 # ECDSA verification over P-256 on RISC-V: `[u]G` by the comb and `[v]Q` by windows
@@ -39,7 +42,7 @@ open VG VG.RISCV64 VG.RISCV64.Steps VG.Proof.Mont VG.Impl.Ecdsa.RISCV64 VG.Impl.
 open VG.Impl.Ecdsa.RISCV64.VerifyComb
 open VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64 VG.Impl.Ecdh.RISCV64
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.RISCV64
-open VG.Proof.Ecdsa.RISCV64.P256 (W unit)
+open VG.Proof.Ecdsa.RISCV64.P256 (W unit mulRVc MC)
 open VG.Proof.Ecdsa.RISCV64.Joint (PtOk addPt_ok JPre jSl addW mul_zero')
 open VG.Proof.Ecdh.RISCV64.P256 (TailConsts sv_unch sl_eq FL mulKW unch_of_mulKeeps coord_sv point_eq dq
   rep_of_represents wsCallR_ok)
@@ -157,5 +160,100 @@ theorem zeroR_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (hz 
       rw [hz'] at ex ey ez
       simp only [Bool.false_eq_true, ↓reduceIte] at ex ey ez
       exact (hR h0).of_eq ex ey ez
+
+/-! ## The calls -/
+
+/-- The result of a call, as the contracts give it, in `R`'s slots. -/
+theorem ptOk_of_result (hL : Law W) {base : Addr} {m : Mem} {s' : State} {k : Nat} {P : Point W}
+    (hR : MC.ResultInRange k P base m s'.mem) (h1 : 1 ≤ k) (hn : k < W.n) :
+    PtOk base s' (p256.pt RX RY RZ) (mul k P) := by
+  obtain ⟨⟨bx, by', bz⟩, hrep⟩ := hR.1 h1 hn
+  simp only [Impl.Weierstrass.Point.Curve.pointAt] at bx by' bz hrep
+  have c0 : MC.toPoint.coordAt s'.mem base MC.pAt = sv base s' RX := coord_sv _ _ RX
+  have c1 : MC.toPoint.coordAt s'.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
+    sv base s' RY := coord_sv _ _ RY
+  have c2 : MC.toPoint.coordAt s'.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
+    sv base s' RZ := coord_sv _ _ RZ
+  rw [c0, c1, c2] at hrep
+  rw [c0] at bx; rw [c1] at by'; rw [c2] at bz
+  rw [dq hL, dq hL, dq hL] at hrep
+  exact ⟨rep_of_represents hrep, bx, by', bz⟩
+
+/-- `R = [k]Q` by the call of `vg_p256_mul`, for `k` at `K` and `Q` in `R`'s
+first two slots. -/
+theorem mulCall_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base)
+    (hc : TailConsts base s) (hx : sv base s RX < W.p) (hy : sv base s RY < W.p)
+    (hon : onCurve W (.affine (toM W.p (2 ^ 256) (sv base s RX)) (toM W.p (2 ^ 256) (sv base s RY))) = true) :
+    WP isa (Cfg.wsCall "vg_p256_mul" Window.mulP256) s fun s' => Kp s s' ∧
+      MC.ResultInRange (sv base s K)
+        (.affine (toM W.p (2 ^ 256) (sv base s RX)) (toM W.p (2 ^ 256) (sv base s RY))) base s.mem s'.mem := by
+  refine wsCallR_ok Impl.Ecdsa.RISCV64.Window.mulP256_noFrames (VG.Proof.Ecdsa.RISCV64.Window.mul_rv hL) hw h3
+    (fun t r w a m => ?_) fun s₂' s₂ K₂ mm₂ t a₂ m₂ hp₂ => ⟨K₂, ?_⟩
+  · refine ⟨r, by rw [w, a], by rw [a]; exact hw.nowrap, by rw [a]; exact hw.al, ?_, ?_⟩
+    · rw [a, m]
+      exact ⟨(coord_sv _ _ MP).trans hc.mp, (coord_sv _ _ ZERO).trans hc.zero,
+        (coord_sv _ _ ONEP).trans hc.onep, (coord_sv _ _ AP).trans hc.ap, (coord_sv _ _ B3P).trans hc.b3p⟩
+    · rw [a, m]
+      refine ⟨?_, ?_, ?_⟩
+      · show MC.toPoint.coordAt s.mem base (p256.sl RX) < W.p
+        rw [coord_sv _ _ RX]; exact hx
+      · show MC.toPoint.coordAt s.mem base (p256.sl RY) < W.p
+        rw [coord_sv _ _ RY]; exact hy
+      rw [point_eq hL]; exact hon
+  · have := hp₂
+    simp only [mulRVc, State.withRegions_mem] at this
+    rw [a₂, m₂, ← mm₂] at this
+    have hk : MC.scalar base s.mem = sv base s K := coord_sv _ _ K
+    rw [hk, point_eq hL] at this
+    exact this
+
+/-- `R = [k]G` by the call of `vg_p256_mul_g`, for `k` at `K`, with the
+table its readable region. -/
+theorem combCall_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base)
+    (hc : TailConsts base s)
+    (hbp : sv base s BP = W.b * 2 ^ 256 % W.p) (hT : TabAt base s) :
+    WP isa (Cfg.wsCall Comb.mulGP256Name Comb.mulGP256) s fun s' => Kp s s' ∧
+      MC.ResultInRange (sv base s K) (Spec.Weierstrass.G W) base s.mem s'.mem := by
+  rw [Cfg.wsCall]
+  refine WP.seq (WP.seq (WP.cons (exec_addi (by decide)) (WP.block_nil ?_)))
+  generalize hs₂ : s.write .a0 (s.gpr wb + BitVec.ofInt 64 0) = s₂
+  have u₂ : Upd s s₂ .a0 (s.gpr wb + BitVec.ofInt 64 0) := hs₂ ▸ Upd.write _ _ _
+  have sy₂ : s₂.syms = s.syms := by rw [← hs₂]; rfl
+  have K₂ : Kp s s₂ := Kp.of_upd u₂
+  have a0₂ : s₂.gpr .a0 = base := by rw [u₂.gpr, hw.s0]; simp
+  have hcov : Covers [⟨base, 8192⟩] s₂.wr := VG.Covers.of_mem fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; rw [K₂.wr]; exact hw.wr
+  have htab : Covers [Comb.tabRegion s₂] s₂.rd := VG.Covers.of_mem fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; rw [K₂.rd, Comb.tabRegion, sy₂]; exact hT.rd
+  have e0 : (s₂.callEntry.withRegions [Comb.tabRegion s₂] [⟨base, 8192⟩]).gpr .a0 = base := by
+    simp only [State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), a0₂]
+  have em : (s₂.callEntry.withRegions [Comb.tabRegion s₂] [⟨base, 8192⟩]).mem = s.mem := by
+    simp only [State.withRegions_mem, State.callEntry_mem, u₂.mem]
+  have esy : (s₂.callEntry.withRegions [Comb.tabRegion s₂] [⟨base, 8192⟩]).syms = s.syms := sy₂
+  refine WP.call (Comb.mulG_rv hL) (rd := [Comb.tabRegion s₂]) (wr := [⟨base, 8192⟩]) ?_ (Covers.append htab hcov)
+    hcov (fun s₃ r₃ w₃ p₃ _ G₃ _ hp => ?_) Impl.Ecdsa.RISCV64.Comb.mulGP256_noFrames
+  · refine ⟨rfl, by rw [e0]; rfl, by rw [e0]; exact hw.nowrap, by rw [e0]; exact hw.al, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [e0, em]
+      exact ⟨(coord_sv _ _ MP).trans hc.mp, (coord_sv _ _ ZERO).trans hc.zero,
+        (coord_sv _ _ ONEP).trans hc.onep, (coord_sv _ _ AP).trans hc.ap, (coord_sv _ _ B3P).trans hc.b3p⟩
+    · rw [e0, em]; exact hbp
+    · rw [em, esy]; exact hT.held
+    · rw [esy]; exact hT.al
+    · rw [esy]; exact hT.fit
+    · rw [e0]; simp only [Comb.tabRegion]; rw [esy]; exact hT.disj
+  -- `s0` from `s3`.
+  refine wp_mv fun s₄ u₄ => WP.block_nil ⟨⟨fun r hr => ?_, by rw [u₄.rd, r₃, K₂.rd], by rw [u₄.wr, w₃, K₂.wr],
+    by rw [u₄.sp, p₃, K₂.sp]⟩, ?_⟩
+  · by_cases h : r = .s0
+    · subst h; rw [u₄.gpr, G₃ _ (by decide), K₂.gpr _ (by decide), h3, hw.s0]
+    · rw [u₄.other _ h, G₃ _ hr, K₂.gpr _ hr]
+  · have := hp
+    simp only [Comb.mulGRVc, State.withRegions_mem] at this
+    rw [e0] at this
+    rw [show s₂.callEntry.mem = s.mem by rw [State.callEntry_mem, u₂.mem]] at this
+    have hk : MC.scalar base s.mem = sv base s K := coord_sv _ _ K
+    rw [hk] at this
+    rw [u₄.mem]
+    exact this
 
 end VG.Proof.Ecdsa.RISCV64.P256.JointComb
