@@ -163,7 +163,7 @@ theorem sealFrameSat_pre : ∃ s, (Spec.GcmSiv.sealContract RISCV64.abi 5904).pr
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
-theorem seal_framed (hti : TagInputEq) :
+theorem seal_framed [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 «seal»)
       (Spec.GcmSiv.sealContract RISCV64.abi 5904) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
@@ -183,7 +183,7 @@ theorem openFrameSat_pre : ∃ s, (Spec.GcmSiv.openContract RISCV64.abi 5904).pr
     List.getD, List.range, List.range.loop] [openFrameSat, sealSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
-theorem open_framed (hti : TagInputEq) :
+theorem open_framed [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 «open»)
       (Spec.GcmSiv.openContract RISCV64.abi 5904) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)

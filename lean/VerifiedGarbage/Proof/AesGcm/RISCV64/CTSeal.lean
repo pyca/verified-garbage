@@ -189,7 +189,7 @@ theorem sealBody_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => OneT c W sp R
 
 end
 
-theorem seal_ct : ConstantTime isa sealRISCV64.pre sealRISCV64.pub «seal» := by
+theorem seal_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa sealRISCV64.pre sealRISCV64.pub «seal» := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp, qa⟩ := hq
   have h₁' : sealPre σ₁ := h₁

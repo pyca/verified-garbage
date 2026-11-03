@@ -120,7 +120,7 @@ theorem verOk_wp [VG.Proof.Gcm.RISCV64.GhashLaw] (t1 : 1 ≤ tl) (t16 : tl ≤ 1
 
 end
 
-theorem streamVerify_ct : ConstantTime isa streamVerifyRISCV64.pre streamVerifyRISCV64.pub streamVerify := by
+theorem streamVerify_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa streamVerifyRISCV64.pre streamVerifyRISCV64.pub streamVerify := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp⟩ := hq
   have h₁' : verPre σ₁ := h₁
