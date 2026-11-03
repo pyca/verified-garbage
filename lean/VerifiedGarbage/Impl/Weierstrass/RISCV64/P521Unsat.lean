@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Words.RISCV64.Wide
 
 An element is nine words `l₀ … l₈`, its limbs, standing for
 `Σ lᵢ 2⁵⁸ⁱ`; it is *tight* if `lᵢ < 2⁵⁹` for `i < 8` and `l₈ < 2⁵⁸`. The
-functions, with GenWide's entry and copies (`GenWide.fnP`, so
+functions, with GenWide's entry and copies (`GenWide.fnWith`, `GenWide.fn`, so
 `vg_<name>(ws, o, a, b)` as GenWide's), take tight elements to tight
 elements, equal modulo `p = 2⁵²¹ - 1`, for which `2⁵²² ≡ 2`
 (`Proof/Weierstrass/RISCV64/P521Unsat/`):
@@ -42,7 +42,7 @@ branches are on the pointers: GenWide's, and whether they are equal.
 namespace VG.Impl.Weierstrass.RISCV64.P521Unsat
 
 open VG.RISCV64
-open VG.Impl.Weierstrass.RISCV64.GenWide (T fnP)
+open VG.Impl.Weierstrass.RISCV64.GenWide (T fnWith fn)
 open VG.Impl.Words.RISCV64 (mulWide add2)
 
 /-- The nine limbs of a result, from `a3`. -/
@@ -226,19 +226,20 @@ def packC : List Instr := mask ++ canon ++ (List.range 9).flatMap packStep
 
 /-! ## The functions -/
 
-/-- The function multiplying modulo `p`. -/
-def mulFn : Prog isa := fnP 9 core
+/-- The function multiplying modulo `p`: on the byte-wise copies, which are
+never the same pointer, the product. -/
+def mulFn : Prog isa := fnWith 9 core mulC
 
 /-- The function adding modulo `p`. -/
-def addFn : Prog isa := fnP 9 (.block (addC false))
+def addFn : Prog isa := fn 9 (addC false)
 
 /-- The function subtracting modulo `p`. -/
-def subFn : Prog isa := fnP 9 (.block (addC true))
+def subFn : Prog isa := fn 9 (addC true)
 
 /-- The function unpacking a number into limbs. -/
-def unpackFn : Prog isa := fnP 9 (.block unpackC)
+def unpackFn : Prog isa := fn 9 unpackC
 
 /-- The function packing an element's residue into words. -/
-def packFn : Prog isa := fnP 9 (.block packC)
+def packFn : Prog isa := fn 9 packC
 
 end VG.Impl.Weierstrass.RISCV64.P521Unsat

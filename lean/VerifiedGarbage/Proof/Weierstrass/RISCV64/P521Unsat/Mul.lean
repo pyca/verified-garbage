@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # Arithmetic modulo P-521's prime in 58-bit limbs, on RISC-V: the product
 
 `core` (`Impl/Weierstrass/RISCV64/P521Unsat.lean`) meets GenWide's
-specification of an operation (`GenWide.CoreSpecP`): tight operands to a
+specification of an operation (`GenWide.CoreSpec`): tight operands to a
 tight result, the product modulo `p` (`core_spec`). An operand's doubled
 limbs at `Y` (`dbl_ok`), the columns (`pipe_ok`, with `tab_mul`, `tab_sq`)
 and their values (`mulCol_eq`, `sqCol_eq`), and what is left past `2⁵²²`,
@@ -26,7 +26,7 @@ set_option exponentiation.threshold 600
 namespace VG.Proof.Weierstrass.RISCV64.P521Unsat
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.RISCV64.Wide VG.Impl.Weierstrass.RISCV64.P521Unsat
-open VG.Proof.Weierstrass.RISCV64.GenWide (CoreOk CoreSpecP ownR clobW xv ov)
+open VG.Proof.Weierstrass.RISCV64.GenWide (CoreOk CoreSpec FastSpec ownR_sub ownR clobW xv ov)
 open VG.Proof.X25519.RISCV64 (Ctx)
 open VG.Proof.X448.RISCV64.R64 (dw dw_lt ld_ok sd_ok dw_write_self dw_write_other dw_frame al8)
 
@@ -290,16 +290,33 @@ theorem sqC_ok {b A O : Addr} {s : State} (hC : CoreOk 9 b A A O s) (hA : TightF
   · show dw s₂.mem (s₂.gpr .t4) (8 * i) = _; rw [h₂.core.a, h₂.as i hi]
   · show dw s₂.mem (s₂.gpr .a3) (Y + 8 * j) = _; rw [h₂.core.ctx.a3, h₂.ys j hj]
 
+/-- The kernel's result, as GenWide's specifications state it. -/
+theorem mul_post {b A B O : Addr} {s : State} (s' : State)
+    (h : MulPost b O (lv (fun i => dw s.mem A (8 * i)) 9 * lv (fun j => dw s.mem B (8 * j)) 9) s s') :
+    (Tight (ov s'.mem O 9) ∧ uv (ov s'.mem O 9) % p = uv (xv s.mem A 9) * uv (xv s.mem B 9) % p) ∧
+      Frame [ownR 9 b, ⟨O, 8 * 9⟩] s.mem s'.mem ∧ (∀ r, r ∉ clobW → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp :=
+  let ⟨K, t, v⟩ := h
+  ⟨⟨tight_xv.mpr t, by rw [uv_xv, uv_xv, uv_xv]; exact v⟩, K.frame, K.gpr, K.rd, K.wr, K.sp⟩
+
+/-- `mulC`, on the byte-wise copies. -/
+theorem mulC_spec :
+    CoreSpec 9 mulC (fun A B => Tight A ∧ Tight B) (fun A B r => Tight r ∧ uv r % p = uv A * uv B % p) := by
+  intro b A B O s hC ⟨hA, hB⟩
+  rw [tight_xv] at hA hB
+  exact WP.mono (mulC_ok hC hA hB) mul_post
+
 /-- `core`: the square if the pointers are equal, else the product. -/
 theorem core_spec :
-    CoreSpecP 9 core (fun A B => Tight A ∧ Tight B) (fun A B r => Tight r ∧ uv r % p = uv A * uv B % p) := by
-  intro b A B O s hC ⟨hA, hB⟩
+    FastSpec 9 core (fun A B => Tight A ∧ Tight B) (fun A B r => Tight r ∧ uv r % p = uv A * uv B % p) := by
+  intro b A B O s hC _ _ _ ⟨hA, hB⟩
   rw [tight_xv] at hA hB
   have post : ∀ s', MulPost b O (lv (fun i => dw s.mem A (8 * i)) 9 * lv (fun j => dw s.mem B (8 * j)) 9) s s' →
       (Tight (ov s'.mem O 9) ∧ uv (ov s'.mem O 9) % p = uv (xv s.mem A 9) * uv (xv s.mem B 9) % p) ∧
-      Frame [ownR 9 b, ⟨O, 8 * 9⟩] s.mem s'.mem ∧ (∀ r, r ∉ clobW → s'.gpr r = s.gpr r) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := fun s' ⟨K, t, v⟩ =>
-    ⟨⟨tight_xv.mpr t, by rw [uv_xv, uv_xv, uv_xv]; exact v⟩, K.frame, K.gpr, K.rd, K.wr, K.sp⟩
+      Frame [GenWide.ownA 9 b, ⟨O, 8 * 9⟩] s.mem s'.mem ∧ (∀ r, r ∉ clobW → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := fun s' h =>
+    let ⟨v, f, r⟩ := mul_post s' h
+    ⟨v, f.sub (ownR_sub 9 (by decide) _), r⟩
   unfold core
   refine WP.ite (s.gpr .t4 == s.gpr .t5) rfl (fun he => ?_) (fun _ => ?_)
   · have hAB : A = B := by rw [← hC.a, ← hC.b']; exact beq_iff_eq.mp he

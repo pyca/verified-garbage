@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # Arithmetic modulo P-521's prime in 58-bit limbs, on RISC-V: words to limbs
 
 `unpackC` (`Impl/Weierstrass/RISCV64/P521Unsat.lean`) meets GenWide's
-specification of an operation (`GenWide.CoreSpecP`): a number below
+specification of an operation (`GenWide.CoreSpec`): a number below
 `2⁵²²` as nine words to its limbs, tight, of the same number
 (`unpack_spec`). Limb `k` from the words it has bits of (`ulimb`, by
 `unpackStep_ok`), which are the number's bits `58 k …` (`ulimb_eq`).
@@ -25,7 +25,7 @@ set_option exponentiation.threshold 600
 namespace VG.Proof.Weierstrass.RISCV64.P521Unsat
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.RISCV64.Wide VG.Impl.Weierstrass.RISCV64.P521Unsat
-open VG.Proof.Weierstrass.RISCV64.GenWide (CoreOk CoreSpecP ownR clobW xv ov)
+open VG.Proof.Weierstrass.RISCV64.GenWide (CoreOk CoreSpec FastSpec ownR_sub ownR clobW xv ov)
 open VG.Proof.X25519.RISCV64 (Ctx)
 open VG.Proof.X448.RISCV64.R64 (dw dw_lt ld_ok sd_ok dw_write_self dw_write_other dw_frame al8)
 
@@ -121,7 +121,7 @@ theorem unpackStep_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {
 
 /-- `unpackC`: the limbs of a number below `2⁵²²`. -/
 theorem unpack_spec :
-    CoreSpecP 9 (.block unpackC) (fun A _ => A < 2 ^ 522) (fun A _ r => Tight r ∧ uv r = A) := by
+    CoreSpec 9 unpackC (fun A _ => A < 2 ^ 522) (fun A _ r => Tight r ∧ uv r = A) := by
   intro b A B O s hC hA
   unfold unpackC
   rw [List.append_assoc]

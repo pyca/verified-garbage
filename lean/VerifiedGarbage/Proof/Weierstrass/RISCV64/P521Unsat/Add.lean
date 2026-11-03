@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # Arithmetic modulo P-521's prime in 58-bit limbs, on RISC-V: sums and differences
 
 `addC false` and `addC true` (`Impl/Weierstrass/RISCV64/P521Unsat.lean`)
-meet GenWide's specification of an operation (`GenWide.CoreSpecP`): tight
+meet GenWide's specification of an operation (`GenWide.CoreSpec`): tight
 operands to a tight result, `[a] + [b]` and `[a] + 4p - [b]` modulo `p`
 (`add_spec`, `sub_spec`). Limb by limb with the carries (`addStep_ok`),
 `4p`'s limbs in `a7` and `t6` for the difference, then the last carry,
@@ -26,7 +26,7 @@ set_option exponentiation.threshold 600
 namespace VG.Proof.Weierstrass.RISCV64.P521Unsat
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.RISCV64.Wide VG.Impl.Weierstrass.RISCV64.P521Unsat
-open VG.Proof.Weierstrass.RISCV64.GenWide (CoreOk CoreSpecP ownR clobW xv ov)
+open VG.Proof.Weierstrass.RISCV64.GenWide (CoreOk CoreSpec FastSpec ownR_sub ownR clobW xv ov)
 open VG.Proof.X25519.RISCV64 (Ctx)
 open VG.Proof.X448.RISCV64.R64 (dw dw_lt ld_ok sd_ok dw_write_self dw_write_other dw_frame al8)
 
@@ -266,7 +266,7 @@ theorem addC_ok (sub : Bool) {b A B O : Addr} {s : State} (hC : CoreOk 9 b A B O
 
 /-- The sum, as a specification. -/
 theorem add_spec :
-    CoreSpecP 9 (.block (addC false)) (fun A B => Tight A ∧ Tight B)
+    CoreSpec 9 (addC false) (fun A B => Tight A ∧ Tight B)
       (fun A B r => Tight r ∧ uv r % p = (uv A + uv B) % p) := by
   intro b A B O s hC ⟨hA, hB⟩
   rw [tight_xv] at hA hB
@@ -277,7 +277,7 @@ theorem add_spec :
 
 /-- The difference, as a specification. -/
 theorem sub_spec :
-    CoreSpecP 9 (.block (addC true)) (fun A B => Tight A ∧ Tight B)
+    CoreSpec 9 (addC true) (fun A B => Tight A ∧ Tight B)
       (fun A B r => Tight r ∧ uv r % p = (uv A + 4 * p - uv B) % p) := by
   intro b A B O s hC ⟨hA, hB⟩
   rw [tight_xv] at hA hB

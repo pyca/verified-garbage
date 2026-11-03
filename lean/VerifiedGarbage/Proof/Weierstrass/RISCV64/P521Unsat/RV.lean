@@ -4,12 +4,13 @@ public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Mul
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Add
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Unpack
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Pack
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.Sqr
 
 /-!
 # Arithmetic modulo P-521's prime in 58-bit limbs, on RISC-V: the contracts by register
 
 The five functions of `Impl/Weierstrass/RISCV64/P521Unsat.lean`, with
-GenWide's entry and copies (`GenWide.fnP_rv`), meet contracts by register
+GenWide's entry and copies (`GenWide.fnWith_rv`, `GenWide.fn_rv`), meet contracts by register
 as GenWide's do (`ws` in `a0`, the offsets in `a1`–`a3`, nine words each,
 their own working space the top 576 bytes of `ws`):
 
@@ -26,7 +27,7 @@ namespace VG.Proof.Weierstrass.RISCV64.P521Unsat
 open VG VG.RISCV64 VG.Impl.Weierstrass.RISCV64.P521Unsat
 open VG.Impl.Weierstrass.Mont (p521p Keeps)
 open VG.Proof.Weierstrass.RISCV64 (rvPre rvPub arg res offArg rvOwn rvOwnEnd)
-open VG.Proof.Weierstrass.RISCV64.GenWide (fnP_rv)
+open VG.Proof.Weierstrass.RISCV64.GenWide (fnWith_rv fn_rv)
 
 /-- What the five contracts keep. -/
 abbrev ukeeps (s s' : State) : Prop :=
@@ -67,27 +68,28 @@ def packRV : Contract isa where
 
 theorem umul_rv (s : State) (hs : umulRV.pre s) :
     ∃ t s', Exec isa mulFn s t s' ∧ abiPreserved s s' ∧ umulRV.post s s' := by
-  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnP_rv (S := p521p) (by decide) (by decide) @core_spec hs.1 hs.2
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnWith_rv (S := p521p) (by decide) (by decide) @core_spec @mulC_spec hs.1
+    hs.2
   exact ⟨t, s', he, a, v1, v2, k⟩
 
 theorem uadd_rv (s : State) (hs : uaddRV.pre s) :
     ∃ t s', Exec isa addFn s t s' ∧ abiPreserved s s' ∧ uaddRV.post s s' := by
-  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnP_rv (S := p521p) (by decide) (by decide) @add_spec hs.1 hs.2
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fn_rv (S := p521p) (by decide) (by decide) @add_spec hs.1 hs.2
   exact ⟨t, s', he, a, v1, v2, k⟩
 
 theorem usub_rv (s : State) (hs : usubRV.pre s) :
     ∃ t s', Exec isa subFn s t s' ∧ abiPreserved s s' ∧ usubRV.post s s' := by
-  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnP_rv (S := p521p) (by decide) (by decide) @sub_spec hs.1 hs.2
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fn_rv (S := p521p) (by decide) (by decide) @sub_spec hs.1 hs.2
   exact ⟨t, s', he, a, v1, v2, k⟩
 
 theorem unpack_rv (s : State) (hs : unpackRV.pre s) :
     ∃ t s', Exec isa unpackFn s t s' ∧ abiPreserved s s' ∧ unpackRV.post s s' := by
-  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnP_rv (S := p521p) (by decide) (by decide) @unpack_spec hs.1 hs.2
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fn_rv (S := p521p) (by decide) (by decide) @unpack_spec hs.1 hs.2
   exact ⟨t, s', he, a, v1, v2, k⟩
 
 theorem pack_rv (s : State) (hs : packRV.pre s) :
     ∃ t s', Exec isa packFn s t s' ∧ abiPreserved s s' ∧ packRV.post s s' := by
-  obtain ⟨t, s', he, a, v, k⟩ := fnP_rv (S := p521p) (by decide) (by decide) @pack_spec hs.1 hs.2
+  obtain ⟨t, s', he, a, v, k⟩ := fn_rv (S := p521p) (by decide) (by decide) @pack_spec hs.1 hs.2
   exact ⟨t, s', he, a, v, k⟩
 
 end VG.Proof.Weierstrass.RISCV64.P521Unsat

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # Arithmetic modulo P-521's prime in 58-bit limbs, on RISC-V: the residue as words
 
 `packC` (`Impl/Weierstrass/RISCV64/P521Unsat.lean`) meets GenWide's
-specification of an operation (`GenWide.CoreSpecP`): a tight element to the
+specification of an operation (`GenWide.CoreSpec`): a tight element to the
 nine words of its residue modulo `p` (`pack_spec`). The carries through the
 limbs (`carryPass_ok`), the bits from 521 on (`topCut_ok`), the carries of
 `v + 1` (`probe_ok`), which make the limbs at `Z` the residue (`canon_ok`),
@@ -26,7 +26,7 @@ set_option exponentiation.threshold 600
 namespace VG.Proof.Weierstrass.RISCV64.P521Unsat
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.RISCV64.Wide VG.Impl.Weierstrass.RISCV64.P521Unsat
-open VG.Proof.Weierstrass.RISCV64.GenWide (CoreOk CoreSpecP ownR clobW xv ov)
+open VG.Proof.Weierstrass.RISCV64.GenWide (CoreOk CoreSpec FastSpec ownR_sub ownR clobW xv ov)
 open VG.Proof.X25519.RISCV64 (Ctx)
 open VG.Proof.X448.RISCV64.R64 (dw dw_lt ld_ok sd_ok dw_write_self dw_write_other dw_frame al8 colsV)
 
@@ -518,7 +518,7 @@ structure PackInv (b O : Addr) (s0 sc : State) (j : Nat) (s : State) : Prop wher
   outs : ∀ i < j, dw s.mem O (8 * i) = pw (zl sc.mem b) i
 
 /-- `packC`: the residue modulo `p` of a tight element, as nine words. -/
-theorem pack_spec : CoreSpecP 9 (.block packC) (fun A _ => Tight A) (fun A _ r => r = uv A % p) := by
+theorem pack_spec : CoreSpec 9 packC (fun A _ => Tight A) (fun A _ r => r = uv A % p) := by
   intro b A B O s hC hA
   rw [tight_xv] at hA
   have hb := hC.nowrap
