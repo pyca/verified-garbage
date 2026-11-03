@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecPriv
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+public import VerifiedGarbage.Proof.HashTable.AArch64
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -25,7 +26,10 @@ namespace VG.Proof.RsaOaep.AArch64.Dec
 
 open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Proof.Mgf1 (ifp ifn)
-open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
+open VG.Impl.Pbkdf2.Md.AArch64 (Hash Stream)
+open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)
+open VG.Proof.Pbkdf2.Md.AArch64 (MdHash)
+open VG.Proof.HashTable.AArch64 (tables fnsOf Coh tabOK_of held_tableOf hashAt_tableOf)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
 open VG.Proof.RsaPkcs1Enc.AArch64 (PrivImpl)
 open VG.Proof.RsaPkcs1Enc.AArch64.Enc (popped_mem popped_sp popped_v popped_gpr_self popped_gpr_ne freed_mem freed_sp
@@ -97,22 +101,24 @@ theorem resD_len {V : Nat → Byte} {W : Nat → BitVec 64} {k : Nat} {o : Spec.
   subst ho
   rw [← h.2]; simp
 
-variable {Hl Gm : Hash} (hH : StreamOK Hl.stream) (hG : StreamOK Gm.stream)
+variable {Hl : Hash} {Gm : Stream} (hH : StreamOK Hl.stream) (hG : StreamOK Gm) {f : Fns}
 
 theorem decBody_eq (privN : String) (privC : Prog isa) :
-    decBody Hl Gm privN privC = .seq (.block (decPrologue ++ privArgs)) (.seq (.call privN privC)
+    decBody Hl f privN privC = .seq (.block (decPrologue ++ privArgs)) (.seq (.call privN privC)
       (.seq (.block (([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0, .str .x .x0 .x9 sR] : List Instr) ++ chkK Hl))
-        (.ite (.nonzero .x .x11) decFail (decMain Hl Gm)))) := rfl
+        (.ite (.nonzero .x .x11) decFail (decMain Hl f)))) := rfl
 
 include hH hG in
 theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
     (hHv : Proof.Mgf1.Valid Hs) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
     (hGv : Proof.Mgf1.Valid Gs) (pv : PrivImpl) {L : DLay} (hL : L.Ok) (hP : L.P = pv.S + 1)
     {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State} (hc : Ctx L g vv m₀ t)
-    (h9 : t.gpr .x9 = L.Q) (hpw : Prologued L (fun j => word t.mem L.Q (8 * j))) :
+    (h9 : t.gpr .x9 = L.Q) (hpw : Prologued L (fun j => word t.mem L.Q (8 * j)))
+    (ok : Table.TabOK Gm f t.syms) (hm : Table.TabMem Gm t.syms L.tab m₀)
+    (hD : m₀.readW (L.tab + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 Gm.D) :
     WP isa (.block privArgs) t fun u => WP isa (.seq (.call pv.name pv.code)
       (.seq (.block (([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0, .str .x .x0 .x9 sR] : List Instr) ++ chkK Hl))
-        (.ite (.nonzero .x .x11) decFail (decMain Hl Gm)))) u (Fin Hs Gs L g vv m₀) := by
+        (.ite (.nonzero .x .x11) decFail (decMain Hl f)))) u (Fin Hs Gs L g vv m₀) := by
   have hS15 := pv.S15
   have hP16 : 16 ≤ L.P := by omega_arith
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
@@ -122,21 +128,22 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
   rw [privArgs_eq, WP.block_append_iff]
   have R₀ : Rep t.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (fun j => word t.mem L.Q (8 * j)) :=
     ⟨fun _ _ => rfl, fun _ _ => rfl⟩
-  refine WP.mono (privW_ok hL hP16 hc h9 R₀ hpw.slots) fun u1 ⟨hc1, _, R1⟩ => ?_
+  refine WP.mono (Table.wp_sy (privW_ok hL hP16 hc h9 R₀ hpw.slots)) fun u1 ⟨⟨hc1, _, R1⟩, sy1⟩ => ?_
   have hS1 : Slots L (privW L fun j => word t.mem L.Q (8 * j)) :=
     hpw.slots.of fun j _ _ h3 => by simp only [privW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]
-  refine WP.mono (privR_ok hL hP16 hc1 R1 hS1) fun u2 ⟨hc2, hm2, hr2⟩ => ?_
+  refine WP.mono (Table.wp_sy (privR_ok hL hP16 hc1 R1 hS1)) fun u2 ⟨⟨hc2, hm2, hr2⟩, sy2⟩ => ?_
   have R2 : Rep u2.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (privW L fun j => word t.mem L.Q (8 * j)) :=
     hm2 ▸ R1
   have hA : CallArgs L (privW L fun j => word t.mem L.Q (8 * j)) :=
     ⟨by simp only [privW, upd]; exact hpw.p, fun j hj => by
       simp only [privW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]; exact hpw.args j hj,
       by simp [privW, upd], by simp [privW, upd]⟩
-  refine WP.seq (WP.mono (priv_call pv hL hP hc2 hr2 R2 hA) fun u3 hcl => ?_)
+  refine WP.seq (WP.mono (Table.wp_sy (priv_call pv hL hP hc2 hr2 R2 hA)) fun u3 ⟨hcl, sy3⟩ => ?_)
   have Ly3 := hcl.ctx.lay hL hP16 hcl.rep hS1.scr
   have hk3 : (privW L fun j => word t.mem L.Q (8 * j)) 21 = BitVec.ofNat 64 L.k.toNat := by
     rw [hS1.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.seq (WP.mono (resK_ok (H := Hl) Ly3 hcl.rep hk3 hk1024 (by omega_arith)) fun u4 ⟨Ly4, S4, R4, x11⟩ => ?_)
+  refine WP.seq (WP.mono (Table.wp_sy (resK_ok (H := Hl) Ly3 hcl.rep hk3 hk1024 (by omega_arith)))
+    fun u4 ⟨⟨Ly4, S4, R4, x11⟩, sy4⟩ => ?_)
   have hc4 := hcl.ctx.step hL hP16 S4 fun r h => absurd h List.not_mem_nil
   generalize hW4 : upd (privW L fun j => word t.mem L.Q (8 * j)) 28 (((u3.gpr .x0).setWidth 32).setWidth 64) = W4
     at R4
@@ -162,7 +169,9 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
   · -- The decoding.
     have hkD : 2 * Hl.D + 2 ≤ L.k.toNat := by
       by_contra hc; rw [x11, ifn (by omega_arith)] at hb; exact absurd hb (by decide)
-    refine WP.mono (decMain_ok hH hG hHh hHl hHv hGh hGl hGv Ly4 R4 hk4 hkD hk1024 (hc4.labAt hL hP16 hS4) O4 hres)
+    have sy : u4.syms = t.syms := sy4.trans (sy3.trans (sy2.trans sy1))
+    have T4 := hc4.tab hL hP16 (sy ▸ ok) (sy ▸ hm) hD
+    refine WP.mono (decMain_ok hH hG hHh hHl hHv hGh hGl hGv T4 Ly4 R4 hk4 hkD hk1024 (hc4.labAt hL hP16 hS4) O4 hres)
       fun u5 ⟨_, S5, hw5⟩ => ⟨hc4.step hL hP16 S5 hws, ?_⟩
     have hlab := hc4.bytes_ro hL (ro_LAB L)
     simp only at hlab
@@ -172,45 +181,57 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
 /-! ## The whole function -/
 
 /-- The stack the contract gives. -/
-theorem spec_sp {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec Hs Gs P).pre s) :
+theorem spec_sp {Hs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (decSpec Hs ts P).pre s) :
     P + 288 ≤ s.sp.toNat := by
-  sig_pre [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, AArch64.abi, AArch64.argRegs,
-    _root_.List.range, _root_.List.range.loop, List.append_eq] at h
+  dec_pre at h
   exact h.1
 
-/-- The postcondition, from what the body wrote. -/
-theorem result_ok {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} {t : State}
+/-- The postcondition, from what the body wrote with `Gs`, the hash function
+the table names. -/
+theorem result_ok {Hs Gs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} {t : State}
+    (hG : Spec.HashTable.hashAt 64 s.mem (stackArg s 15) = some Gs)
     (hw : Spec.RsaOaep.writtenDecrypt t.mem (lay P s).out (lay P s).ml (lay P s).k.toNat ((t.gpr .x0).setWidth 32)
       (decOut Hs Gs (Spec.Rsa.bytesAt s.mem (lay P s).lab (lay P s).labl.toNat) (privOut (lay P s) s.mem))) :
-    (decSpec Hs Gs P).post s t := by
-  sig_post [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, AArch64.abi, AArch64.argRegs,
-    _root_.List.range, _root_.List.range.loop, List.append_eq]
+    (decSpec Hs ts P).post s t := by
+  sig_post [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
+  intro G' hG'
+  obtain rfl : Gs = G' := Option.some.inj (hG.symm.trans hG')
   rw [decrypt_eq (by simp [Spec.Rsa.bytesAt])]
   exact hw
 
-include hH hG in
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_decrypt` meets the shared contract and the calling convention. -/
-theorem dec_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
-    (hHv : Proof.Mgf1.Valid Hs) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
-    (hGv : Proof.Mgf1.Valid Gs) (pv : PrivImpl) {s : State} (h : (decSpec Hs Gs (pv.S + 1)).pre s) :
-    WP isa (decrypt Hl Gm pv.name pv.code) s fun s' =>
-      abiPreserved s s' ∧ (decSpec Hs Gs (pv.S + 1)).post s s' := by
+include hH in
+/-- `vg_rsa_oaep_<H>_mgf1_decrypt` meets the shared contract and the calling
+convention, with MGF1's hash function the table of one of `vs`. -/
+theorem dec_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
+    (hHv : Proof.Mgf1.Valid Hs) {vs : List MdHash} (hc : Coh vs) (pv : PrivImpl) {s : State}
+    (h : (decSpec Hs (tables vs) (pv.S + 1)).pre s) :
+    WP isa (decrypt Hl (fnsOf vs) pv.name pv.code) s fun s' =>
+      abiPreserved s s' ∧ (decSpec Hs (tables vs) (pv.S + 1)).post s s' := by
   have hL := lay_ok h
   have hnQ := hL.nQ
   have hpQ := hL.pQ
   have hS := pv.S15
   have hsp := spec_sp h
+  obtain ⟨⟨T, hT, hheld⟩, hpw⟩ := spec_tab h
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
+  obtain ⟨hm, hix, hD⟩ := held_tableOf hheld
+  have ok := tabOK_of hc hpw hw
+  have hGa := hashAt_tableOf hix
   refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
   · show 272 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 272 ≤ s.sp.toNat - 16
     omega_arith
-  · show WP isa (decBody Hl Gm pv.name pv.code) (entered s) _
+  · show WP isa (decBody Hl (fnsOf vs) pv.name pv.code) (entered s) _
     rw [decBody_eq]
     refine WP.seq ?_
     rw [WP.block_append_iff]
-    refine WP.mono (prologue_ok h) fun t ⟨hc, h9, hpw⟩ => ?_
-    refine WP.mono (rest_ok hH hG hHh hHl hHv hGh hGl hGv pv hL rfl hc h9 hpw) fun u hu => ?_
+    refine WP.mono (Table.wp_sy (prologue_ok h)) fun t ⟨⟨hc, h9, hpw⟩, sy⟩ => ?_
+    have sy' : t.syms = s.syms := sy
+    refine WP.mono (rest_ok hH w.ok.stream hHh hHl hHv w.mgf.hash w.mgf.len (mgf_valid w.mgf) pv hL rfl hc h9 hpw
+      (sy' ▸ ok) (sy' ▸ hm) hD) fun u hu => ?_
     refine WP.mono hu fun u' ⟨hc', hw'⟩ => ?_
     have hsp' : (freed frameBytes u').sp = (lay (pv.S + 1) s).Q + BitVec.ofNat 64 272 := by
       rw [freed_sp, hc'.sp]; rfl
@@ -225,7 +246,7 @@ theorem dec_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x
       rw [add_add]; exact lay_Q _ s
     · rw [popped_v, freed_v]
       exact hc'.vs r hr
-    · refine result_ok ?_
+    · refine result_ok hGa ?_
       rw [popped_mem, freed_mem, popped_gpr_ne _ (by decide), freed_gpr]
       exact hw'
 

@@ -67,6 +67,12 @@ structure Tab (G : Stream) (f : Fns) (F S p : Addr) (sArg : Nat) (u : State) : P
   mem : ∀ m, Frame (mgfRs F S) u.mem m → TabMem G u.syms p m ∧
     m.readW (off p 32) 64 = BitVec.ofNat 64 G.D ∧ m.readW (off F sArg) 64 = p
 
+/-- The table, from a later state of the same frame. -/
+theorem Tab.step {G : Stream} {f : Fns} {F S p : Addr} {sArg : Nat} {u v : State} (T : Tab G f F S p sArg u)
+    (st : Step F S [] u v) (sy : v.syms = u.syms) : Tab G f F S p sArg v :=
+  ⟨by rw [sy]; exact T.ok, by rw [st.rd, st.wr]; exact T.rd, by rw [st.rd, st.wr]; exact T.rdD,
+    by rw [st.rd, st.wr]; exact T.rdA, fun m hm => by rw [sy]; exact T.mem m (st.frame.trans hm)⟩
+
 /-- The table at `p`, in the state `t`. -/
 structure TabAt (G : Stream) (f : Fns) (p : Addr) (t : State) : Prop where
   ok : TabOK G f t.syms

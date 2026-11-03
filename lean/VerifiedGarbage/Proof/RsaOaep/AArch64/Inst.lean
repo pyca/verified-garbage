@@ -11,7 +11,6 @@ import Mathlib.Data.Nat.Basic
 
 Which pairs of `MdHash` variants encryption and decryption are emitted for,
 and their names and CPU features, as on x86-64 (`Proof/RsaOaep/X86_64/Sp.lean`);
-that the hash function of a variant is a valid one for MGF1 (`mgf_valid`);
 and states meeting both contracts, for the registration files.
 -/
 
@@ -22,14 +21,6 @@ namespace VG.Proof.RsaOaep.AArch64
 open VG VG.AArch64
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK MgfLink MdHash mdHashes)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
-
-/-- MGF1's hash function, as a hash function of `MdHash` takes it, is valid. -/
-theorem mgf_valid {H : Hash} {hH : HashOK H} (lk : MgfLink H hH) : Proof.Mgf1.Valid lk.G := by
-  have hD := hH.sizes.D0
-  refine ⟨by rw [lk.len]; exact hD, fun x => ?_⟩
-  rw [lk.hash, hH.hash, List.length_take, MdStream.Md.hash, hH.md.digest_length, lk.len]
-  have := hH.sizes.DN
-  omega
 
 namespace Inst
 
