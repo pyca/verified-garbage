@@ -179,7 +179,7 @@ pub struct <Iface> {
 unsafe impl Sync for <Iface> {}
 
 impl <Iface> {
-    pub const fn words(&'static self) -> *const [u64; <k>] { … }
+    pub const fn as_ptr(&'static self) -> *const [u64; <k>] { … }
 }
 
 /// The CPU features `<NAME>` requires (`VG.FnTable`).
@@ -198,7 +198,7 @@ at offset `8 i`, the address of each function, the linker's resolution of
 its symbol (`ISA.fnAddr`), then the data. `checkFnTables` checks that each
 parameter that takes tables is a read-only array of `u64` of their length,
 that it lists every table of their interface on the target (the Rust caller
-may pass the `words()` of any static of the type), that tables of one name
+may pass the `as_ptr()` of any static of the type), that tables of one name
 are one table and tables of one interface have one shape, and that every
 function a table names is emitted, as an artifact or an internal function,
 with the code the model runs for every call of it, indirect calls included
@@ -665,7 +665,7 @@ must hold the words of one of the tables of its interface (`Abi.withTables`),
 and the CPU must have the features its functions need. -/
 def fnTablesDoc (a : Artifact) : List String :=
   a.tables.filterMap fun (x, ts) => ts.head?.map fun T =>
-    s!"`{x}` must be the `words()` of one of the `{T.iface}` tables of functions of this crate \
+    s!"`{x}` must be the `as_ptr()` of one of the `{T.iface}` tables of functions of this crate \
       (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` \
       gives, if it has one."
 
@@ -1373,8 +1373,9 @@ def fnTablesMod (t : String) (ts : List FnTable) : String :=
       data: [u64; {T.data.length}],\n}\n" ++
     s!"\n// SAFETY: a `{i}` is immutable, and the functions it holds the addresses of may be \
       called from any thread.\nunsafe impl Sync for {i} \{}\n" ++
-    s!"\nimpl {i} \{\n    /// The table's words, as the verified functions that take it read them.\n    \
-      pub const fn words(&'static self) -> *const [u64; {k}] \{\n        \
+    s!"\nimpl {i} \{\n    /// A pointer to the table's words, as the verified functions that take it read \
+      them.\n    \
+      pub const fn as_ptr(&'static self) -> *const [u64; {k}] \{\n        \
       core::ptr::from_ref(self).cast()\n    }\n}\n") ++
   String.join (ts.map fun T =>
     s!"\n#[rustfmt::skip]\nmod {fnTableModule T.name};\npub use {fnTableModule T.name}::*;\n")
