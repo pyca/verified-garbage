@@ -149,7 +149,7 @@ theorem mulN_ok (ts : List Tm) (n : Nat) {s : State} :
   · exact WP.block_nil ⟨fun h => absurd h ‹_›, Keeps.refl _ _⟩
 
 /-- The operands are the code's. -/
-def SrcsOk (ts : List Tm) : Prop := ∀ n < ts.length, srcOk (tm ts n).2.1 = true ∧ srcOk (tm ts n).2.2 = true
+abbrev SrcsOk (ts : List Tm) : Prop := ∀ n < ts.length, srcOk (tm ts n).2.1 = true ∧ srcOk (tm ts n).2.2 = true
 
 /-- Term `n`'s operands, if it is one. -/
 theorem ldN_ok {b A B O : Addr} {s1 : State} (hC : CoreOk 9 b A B O s1) {ts : List Tm} (hsrc : SrcsOk ts)
@@ -234,22 +234,35 @@ theorem pstep_ok {b A B O : Addr} {s1 : State} (hC : CoreOk 9 b A B O s1) {ts : 
 theorem tsum_snoc {α : Type} (f : α → Nat) (l : List α) (a : α) : tsum f (l ++ [a]) = tsum f l + f a := by
   simp [tsum]
 
+/-- Two pairs of operands are the same (a test `decide` evaluates cheaply). -/
+def srcEq (x y : Src × Src) : Bool := x.1.1 == y.1.1 && x.1.2 == y.1.2 && x.2.1 == y.2.1 && x.2.2 == y.2.2
+
+theorem srcEq_eq {x y : Src × Src} (h : srcEq x y = true) : x = y := by
+  obtain ⟨⟨a, b⟩, ⟨c, d⟩⟩ := x
+  obtain ⟨⟨a', b'⟩, ⟨c', d'⟩⟩ := y
+  simp only [srcEq, Bool.and_eq_true, beq_iff_eq] at h
+  obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩ := h
+  rfl
+
 /-- What the code of a table of terms `ts` needs: its terms are column `c`'s
 pairs `ps c` in order, from `pstart` on, at least one and at most nine. -/
 structure Tab (ts : List Tm) (ps : Nat → List (Src × Src)) : Prop where
-  take : ∀ c < 9, ∀ m < (ps c).length,
-    (ps c).take (m + 1) = (ps c).take m ++ [(tm ts (pstart (fun c => (ps c).length) c + m)).2]
+  get : ∀ c < 9, ∀ m < 9, m < (ps c).length →
+    srcEq ((ps c).getD m ((.t4, 0), (.t4, 0))) (tm ts (pstart (fun c => (ps c).length) c + m)).2 = true
   le : ∀ c < 9, pstart (fun c => (ps c).length) c + (ps c).length ≤ ts.length
   src : SrcsOk ts
   len : ∀ c < 9, 0 < (ps c).length ∧ (ps c).length ≤ 9
 
-theorem Tab.get {ts : List Tm} {ps : Nat → List (Src × Src)} (ht : Tab ts ps) {c : Nat} (hc : c < 9) {k : Nat}
+theorem Tab.get' {ts : List Tm} {ps : Nat → List (Src × Src)} (ht : Tab ts ps) {c : Nat} (hc : c < 9) {k : Nat}
     (hk : k < (ps c).length) : (ps c)[k] = (tm ts (pstart (fun c => (ps c).length) c + k)).2 := by
-  have e := congrArg (fun l => l[k]?) (ht.take c hc k hk)
-  simp only [List.getElem?_take, Nat.lt_succ_self, ↓reduceIte, List.getElem?_append_right
-    (by rw [List.length_take]; omega : ((ps c).take k).length ≤ k), List.length_take, Nat.min_eq_left (Nat.le_of_lt hk),
-    Nat.sub_self, List.getElem?_cons_zero, List.getElem?_eq_getElem hk, Option.some.injEq] at e
-  exact e
+  have e := srcEq_eq (ht.get c hc k (by have := (ht.len c hc).2; omega) hk)
+  rwa [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hk, Option.getD_some] at e
+
+theorem Tab.take {ts : List Tm} {ps : Nat → List (Src × Src)} (ht : Tab ts ps) {c : Nat} (hc : c < 9) {m : Nat}
+    (hm : m < (ps c).length) :
+    (ps c).take (m + 1) = (ps c).take m ++ [(tm ts (pstart (fun c => (ps c).length) c + m)).2] := by
+  rw [List.take_add_one, List.getElem?_eq_getElem hm, ht.get' hc hm]
+  rfl
 
 /-- A term of a column is below `2¹²⁰`. -/
 theorem Tab.term_le {ts : List Tm} {ps : Nat → List (Src × Src)} (ht : Tab ts ps) {s1 : State}
@@ -257,7 +270,7 @@ theorem Tab.term_le {ts : List Tm} {ps : Nat → List (Src × Src)} (ht : Tab ts
     ∀ q ∈ ps c, sv s1 q.1 * sv s1 q.2 ≤ 2 ^ 120 := fun q hq => by
   obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem hq
   obtain ⟨l1, l2⟩ := hlt (pstart (fun c => (ps c).length) c + k) (by have := ht.le c hc; omega)
-  rw [ht.get hc hk]
+  rw [ht.get' hc hk]
   exact Nat.le_of_lt (Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt l1 l2) (by decide))
 
 theorem pstart_succ (cs : Nat → Nat) (c : Nat) : pstart cs (c + 1) = pstart cs c + cs c := by
@@ -293,7 +306,7 @@ theorem pterms_ok {b A B O : Addr} {s1 : State} (hC : CoreOk 9 b A B O s1) {ts :
     have h9 : ((ps c).take m).length * 2 ^ 120 ≤ 9 * 2 ^ 120 := Nat.mul_le_mul_right _ hlen
     refine WP.mono (pstep_ok hC ht.src hn hI₁ hp₁ (by rw [hv₁]; omega))
       fun s₂ ⟨hI₂, m₂, hp₂, hv₂⟩ => ⟨hI₂, m₂.trans m₁, by rw [← Nat.add_assoc]; exact hp₂, ?_⟩
-    rw [hv₂, hv₁, ht.take c hc m (by omega), tsum_snoc]
+    rw [hv₂, hv₁, ht.take hc (by omega), tsum_snoc]
     omega
 
 /-- The end of column `c`: `Z[c]` the accumulator's low 58 bits, the accumulator shifted right by 58. -/
