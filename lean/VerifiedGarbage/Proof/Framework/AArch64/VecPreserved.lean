@@ -93,7 +93,7 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     split <;> rfl
-  | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [exec, reduceCtorEq] at h
   | ldp t1 t2 n off => obtain ⟨_, _, rfl⟩ := exec_ldp_eq h; rfl
   | stp t1 t2 n off => obtain ⟨_, rfl⟩ := exec_stp_eq h; rfl
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
@@ -138,8 +138,8 @@ theorem pop_vec {i : Instr} {s₁ s₂ s' : State} (h : isa.pop i s₁ s₂ = so
 theorem Exec.vec {c : Prog isa} {r : VReg} (hc : ∀ i ∈ instrs c, vdstOf i ≠ some r)
     {s s' : State} {t : List Leak} (h : Exec isa c s t s') : s'.v r = s.v r := by
   induction h with
-  | icall hi => nomatch hi
-  | icallNext hi => nomatch hi
+  | icall _ hc₁ _ hr ih => rw [ret_eq hr, ih (fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))), call_vec hc₁]
+  | icallNext _ _ _ ih => exact ih (fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi)))
   | block h => exact execBlock_vec hc h
   | seq _ _ ih₁ ih₂ =>
     rw [ih₂ (fun i hi => hc i (List.mem_append_right _ hi)),

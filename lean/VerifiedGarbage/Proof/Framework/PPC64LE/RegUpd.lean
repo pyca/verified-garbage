@@ -132,8 +132,7 @@ theorem lrSafeBlock_of_all {is : List Instr}
 theorem Exec.lr_safe {c : Prog isa} {s s' : State} {t : List Leak}
     (h : VG.Exec isa c s t s') (hc : lrSafe c = true) : s'.lr = s.lr := by
   induction h with
-  | icall hi => nomatch hi
-  | icallNext hi => nomatch hi
+  | icall | icallNext => simp only [lrSafe, Bool.false_eq_true] at hc
   | block e => exact execBlock_lr_safe e hc
   | seq _ _ ih₁ ih₂ =>
     simp only [lrSafe, Bool.and_eq_true] at hc
