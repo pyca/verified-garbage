@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.RISCV64.Div
 public import VerifiedGarbage.Impl.Rsa.RISCV64.InvBatch
+public import VerifiedGarbage.Impl.Rsa.RISCV64.RecoverDet
 public import VerifiedGarbage.Impl.Bignum.RISCV64.Precompute
 
 /-!
@@ -15,9 +16,12 @@ scratch_len)`, the last eight on the stack. As on PPC64LE
 * `n` is checked as `vg_rsa_public_precompute` checks it
   (`Precompute.check`), the only branch on data; an invalid modulus writes
   zeros to the three outputs and returns 0.
-* `p q = n`: `p` odd, `n / p = q` and `n mod p = 0`, by the fixed-iteration
-  division (`Impl/Rsa/RISCV64/Div.lean`), whose steps pass over the
-  divisor's `⌈p_len / 8⌉` words (`Div.divL`).
+* `p q = n` and `p` odd. When `p_len + q_len ≤ 8 w` (a branch on the
+  lengths), `p q < 2^(64 w)`, so `p q = n` is `p q mod 2^(64 w) = n`
+  (`RecoverDet.mulLow`, with `a2`, `a3` and `a6`, which it writes, kept in
+  `s0`, `s7` and `a5`). Otherwise `n / p = q` and `n mod p = 0`, by the
+  fixed-iteration division (`Impl/Rsa/RISCV64/Div.lean`), whose steps pass
+  over the divisor's `⌈p_len / 8⌉` words (`Div.divL`).
 * `qInv` is the inverse of `q` modulo `p | 1` (`Impl/Rsa/RISCV64/InvBatch.lean`,
   by batches of divsteps), which exists if the gcd it computes is 1, on
   numbers of the primes' digits of 32 bits `⌈max(p_len, q_len) / 4⌉` (`s8`,
@@ -29,7 +33,7 @@ scratch_len)`, the last eight on the stack. As on PPC64LE
 
 The results are written under the mask of the checks, which is returned.
 
-Registers kept throughout: `s1` `n`, `s2` `n_len`, `s3` `p`, `s4` `p_len`,
+Registers kept throughout (but `a2`, `a3`, `a6` around the product): `s1` `n`, `s2` `n_len`, `s3` `p`, `s4` `p_len`,
 `s5` `q`, `s6` `q_len`, `a0` `d`, `a1` `d_len`, `a2` `dp`, `a3` `dq`, `a6`
 `qinv`; `s9`–`s11` the working space's (`Impl/Rsa/RISCV64/KeyWs.lean`), `s7`
 the count of the divisions and the inverse, and `s8` the inverse's digits,
@@ -101,8 +105,23 @@ def setup : Prog isa := .seq (.block (setW .s2)) (zeroArrays nArr)
 def loads : Prog isa := seqs [load aDQ .s1 .s2, load aP .s3 .s4, load aQ .s5 .s6, load aD .a0 .a1]
 
 /-- `p` odd, `n` divided by `p`, and the checks `n / p = q` and `n mod p = 0`. -/
-def checks : Prog isa := seqs [
+def divChecks : Prog isa := seqs [
   copy aDD aP, .block (bitOf sPodd aP), divL aDQ aDR aDD .s4, eqS sE1 aDQ aQ, eqS sE2 aDR aZero]
+
+/-- `p` odd, and `p q mod 2^(64 w) = n` into `sE1` (`sE2` := 1, as `0 = 0`), for
+`p q < 2^(64 w)`; `a2`, `a3`, `a6` kept in `s0`, `s7`, `a5` around the product. -/
+def mulChecks : Prog isa := seqs [
+  .block (bitOf sPodd aP), .block [mov .s0 .a2, mov .s7 .a3, mov .a5 .a6],
+  RecoverDet.mulLow aDR aP aQ,
+  .block [mov .a2 .s0, mov .a3 .s7, mov .a6 .a5],
+  eqS sE1 aDR aDQ, eqS sE2 aZero aZero]
+
+/-- `t5 := [8 w < p_len + q_len]`. -/
+def lenTest : List Instr := [.add .t5 .s4 .s6, .shift .sll .d .t6 .s9 3, .sltu .t5 .t6 .t5]
+
+/-- The checks of `p q = n`: by the product when `p_len + q_len ≤ 8 w`, else by
+the division. -/
+def checks : Prog isa := .seq (.block lenTest) (.ite (.zero .t5) mulChecks divChecks)
 
 /-- `s8 := ⌈max(p_len, q_len) / 4⌉`, the primes' digits, without a branch:
 `p_len - ((p_len - q_len) & mask)`, the mask all ones where `p_len < q_len`. -/
