@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.Batch
-public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
-public import VerifiedGarbage.TCB.RISCV64.Target
-import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
-import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.Pass
+public import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.Transpose
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
+import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -12,11 +14,23 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Loops
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.TripleDes.Schedule
+public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
+public import VerifiedGarbage.TCB.RISCV64.Target
+import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
+import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 
 /-!
 # Bitsliced Triple DES ECB on RISC-V
+
+Blocks as little-endian words (`readW_bit`, `blockAt_of_readW`: a block's
+little-endian word holds bit `i` of the block, big-endian as `decodeBlock`
+reads it, at bit `i ^^^ 56`).
+
+A batch of `k = min(n, 64)` blocks (`kOf`) is copied into the state words a
+byte at a time, transposed (lane `b` is then IP of block `b`), put through
+the three passes, transposed back and copied out; then the data pointer
+`a1` moves past it and the count `a2` drops by `k`: each block becomes its
+TDEA encryption or decryption (`batch_ok`).
 
 `ecb_wp`: in a frame of 1056 bytes below the stack pointer, the caller's
 `s1`–`s11`, `ra` and `s0` saved, the schedules copied and the masks stored
@@ -27,6 +41,352 @@ registers and the registers restored (`finish_ok`).
 @[expose] public section
 
 namespace VG.Proof.TripleDes.RISCV64.Bitsliced
+
+open VG VG.Spec.TripleDes
+
+theorem xor56_eq : ∀ p < 64, p ^^^ 56 = 8 * (7 - p / 8) + p % 8 := by decide
+
+/-- Bit `j` of the little-endian word at `p`: bit `j % 8` of byte `j / 8`. -/
+theorem readW_getLsbD (m : Mem) (p : Addr) {j : Nat} (hj : j < 64) :
+    (m.readW p 64).getLsbD j = (m (p + BitVec.ofNat 64 (j / 8))).getLsbD (j % 8) := by
+  rw [← Mem.extractLsb'_read m p (n := 8) (j := j / 8) (by omega), BitVec.getLsbD_extractLsb']
+  simp only [Mem.readW, BitVec.setWidth_eq, show j % 8 < 8 from Nat.mod_lt _ (by decide),
+    decide_true, Bool.true_and]
+  congr 1; omega
+
+/-- Bit `8 (7 - q) + r` of a block's big-endian word: bit `r` of byte `q`. -/
+theorem catBlock_bit (b : Block) {q r : Nat} (hq : q < 8) (hr : r < 8) :
+    (VG.Proof.TripleDes.catBlock b).getLsbD (8 * (7 - q) + r) = b[q].getLsbD r := by
+  have hcases : ∀ k < 8, k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by decide
+  rcases hcases q hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [VG.Proof.TripleDes.catBlock, BitVec.getLsbD_append] <;>
+      (repeat' split) <;> first | omega | (congr 1; omega)
+
+/-- The little-endian word of a block, bit by bit. -/
+theorem readW_bit (m : Mem) (p : Addr) {j : Nat} (hj : j < 64) :
+    (m.readW p 64).getLsbD j = (decodeBlock (blockAt m p)).getLsbD (j ^^^ 56) := by
+  rw [VG.Proof.TripleDes.decodeBlock_cat, xor56_eq j hj,
+    catBlock_bit _ (by omega) (Nat.mod_lt _ (by decide)), readW_getLsbD m p hj]
+  simp [blockAt]
+
+/-- A word whose bits are those of `x` at `j ^^^ 56` is the little-endian word of
+the block `encodeBlock x`. -/
+theorem blockAt_of_readW (m : Mem) (p : Addr) (x : BitVec 64)
+    (h : ∀ j < 64, (m.readW p 64).getLsbD j = x.getLsbD (j ^^^ 56)) :
+    blockAt m p = encodeBlock x := by
+  apply Vector.ext
+  intro i hi
+  simp only [blockAt, encodeBlock, Vector.getElem_ofFn]
+  apply BitVec.eq_of_getLsbD_eq
+  intro r hr
+  have hj : 8 * i + r < 64 := by omega
+  have e := h (8 * i + r) hj
+  rw [readW_getLsbD m p hj, xor56_eq _ hj, show (8 * i + r) / 8 = i by omega,
+    show (8 * i + r) % 8 = r by omega] at e
+  rw [e]
+  simp only [BitVec.getLsbD_setWidth, hr, decide_true, Bool.true_and, BitVec.getLsbD_ushiftRight]
+
+
+
+open VG VG.RISCV64 VG.Impl.TripleDes.RISCV64.Bitslice VG.Spec.TripleDes VG.Impl.Words.RISCV64
+open VG.Proof.TripleDes.Bitslice (ipLane transposeW tdeaW blockOut wAt)
+
+/-- The batch's blocks: `min(n, 64)`. -/
+def kOf (s : State) : Nat := min (s.gpr .a2).toNat 64
+
+theorem kOf_le (s : State) : kOf s ≤ 64 := Nat.min_le_right _ _
+
+/-! ## The batch's bytes -/
+
+theorem batchBytes_ok (s : State) :
+    WP isa batchBytes s fun s' => s'.gpr .s5 = BitVec.ofNat 64 (8 * kOf s) ∧
+      (∀ r, r ≠ .t0 → r ≠ .s5 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.wr = s.wr := by
+  unfold batchBytes
+  have e₁ := exec_shift_d (s := s) (op := .srl) (d := .t0) (n := .a2) (sh := 6) (by decide)
+  let s₁ := s.write .t0 (s.gpr .a2 >>> 6)
+  apply WP.seq
+  refine WP.of_runBlock ⟨s₁, by rw [runBlock_cons, e₁, runStep_some, runBlock_nil], ?_⟩
+  have z : (s₁.gpr .t0 == 0) = decide ((s.gpr .a2).toNat < 64) := by
+    simp only [s₁, RegUpd.gpr_write_self]
+    by_cases h : (s.gpr .a2).toNat < 64
+    · simp only [h, decide_true, beq_iff_eq]
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+      show _ = 0
+      omega
+    · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
+      intro e
+      have := congrArg BitVec.toNat e
+      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] at this
+      change _ = 0 at this
+      omega
+  refine WP.ite _ (by rw [Steps.eval_zero, z]) (fun hlt => ?_) (fun hge => ?_)
+  · have hlt : (s.gpr .a2).toNat < 64 := by simpa using hlt
+    have e₂ := exec_shift_d (s := s₁) (op := .sll) (d := .s5) (n := .a2) (sh := 3) (by decide)
+    refine WP.of_runBlock ⟨s₁.write .s5 (s₁.gpr .a2 <<< 3),
+      by rw [runBlock_cons, e₂, runStep_some, runBlock_nil], ?_, ?_, rfl, rfl⟩
+    · simp only [RegUpd.gpr_write_self, s₁, RegUpd.gpr_write, reduceCtorEq, ite_false]
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, kOf, Nat.min_eq_left (by omega),
+        Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      omega
+    · intro r h0 h5
+      simp only [s₁, RegUpd.gpr_write, h0, h5, ite_false]
+  · have hge : ¬ (s.gpr .a2).toNat < 64 := by simpa using hge
+    have e₂ := exec_li (s := s₁) (d := .s5) (imm := 512) (by decide)
+    refine WP.of_runBlock ⟨s₁.write .s5 (BitVec.ofInt 64 512),
+      by rw [runBlock_cons, e₂, runStep_some, runBlock_nil], ?_, ?_, rfl, rfl⟩
+    · rw [RegUpd.gpr_write_self, kOf, Nat.min_eq_right (by omega)]; rfl
+    · intro r h0 h5
+      simp only [s₁, RegUpd.gpr_write, h0, h5, ite_false]
+
+/-! ## Copies -/
+
+theorem sep_of_disjoint {a b : Addr} {n k : Nat} (h : (⟨a, n⟩ : Region).Disjoint ⟨b, k⟩) :
+    Mem.Sep a n b k := fun x h₁ h₂ =>
+  h x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+
+/-- Copy `s5 = N` bytes from `src` to `dst`. -/
+theorem copyBytes_ok {src dst : Reg}
+    (hd : dst ≠ .t2 ∧ dst ≠ .t3 ∧ dst ≠ .t4) (s : State) {N : Nat} (hN : 0 < N) (hN' : N < 2 ^ 64)
+    (hc : s.gpr .s5 = BitVec.ofNat 64 N)
+    (hr : ∀ i < N, InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 i) 1)
+    (hw : ∀ i < N, InRegions s.wr (s.gpr dst + BitVec.ofNat 64 i) 1)
+    (hsep : Mem.Sep (s.gpr dst) N (s.gpr src) N) :
+    WP isa (copyBytes src dst) s fun t =>
+      (∀ i < N, t.mem (s.gpr dst + BitVec.ofNat 64 i) = s.mem (s.gpr src + BitVec.ofNat 64 i)) ∧
+      Frame [⟨s.gpr dst, N⟩] s.mem t.mem ∧ (∀ r, r ≠ .t1 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → t.gpr r = s.gpr r) ∧
+      t.wr = s.wr := by
+  unfold copyBytes
+  have e₁ := exec_addi (s := s) (d := .t2) (n := src) (imm := 0) (by decide)
+  let s₁ := s.write .t2 (s.gpr src + BitVec.ofInt 64 0)
+  have e₂ := exec_addi (s := s₁) (d := .t3) (n := dst) (imm := 0) (by decide)
+  let s₂ := s₁.write .t3 (s₁.gpr dst + BitVec.ofInt 64 0)
+  have e₃ := exec_addi (s := s₂) (d := .t4) (n := .s5) (imm := 0) (by decide)
+  let s₃ := s₂.write .t4 (s₂.gpr .s5 + BitVec.ofInt 64 0)
+  have z : BitVec.ofInt 64 0 = 0#64 := rfl
+  have g : ∀ r, r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₃.gpr r = s.gpr r := fun r a b c => by
+    simp only [s₃, s₂, s₁, RegUpd.gpr_write, a, b, c, ite_false]
+  have t2 : s₃.gpr .t2 = s.gpr src := by
+    simp only [s₃, s₂, s₁, RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, z, BitVec.add_zero]
+  have t3 : s₃.gpr .t3 = s.gpr dst := by
+    simp only [s₃, s₂, s₁, RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, z, BitVec.add_zero, hd.1]
+  have t4 : s₃.gpr .t4 = BitVec.ofNat 64 N := by
+    simp only [s₃, s₂, s₁, RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, z, BitVec.add_zero, hc]
+  apply WP.seq
+  refine WP.of_runBlock ⟨s₃, by
+    rw [runBlock_cons, e₁, runStep_some, runBlock_cons, e₂, runStep_some, runBlock_cons, e₃, runStep_some,
+      runBlock_nil], ?_⟩
+  refine WP.mono (copyLoop_ok (tmp := .t1) (src := .t2) (dst := .t3) (cnt := .t4) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) s₃ hN hN' t4 (fun i hi => by rw [t2]; exact hr i hi)
+    (fun i hi => by rw [t3]; exact hw i hi) (by rw [t2, t3]; exact hsep)) fun t ⟨tc, tf, tk⟩ => ?_
+  refine ⟨fun i hi => by rw [← t3, tc i hi, t2]; rfl, by rw [← t3]; exact tf, fun r a b c e => ?_, tk.2.2⟩
+  rw [tk.1 r (by simp [a, b, c, e]), g r b c e]
+
+/-- A little-endian word from its bytes. -/
+theorem readW_of_bytes {m m' : Mem} {a b : Addr} (h : ∀ i < 8, m' (b + BitVec.ofNat 64 i) = m (a + BitVec.ofNat 64 i)) :
+    m'.readW b 64 = m.readW a 64 := by
+  simp only [Mem.readW, BitVec.setWidth_eq]
+  exact Mem.read_eq_of_bytes fun i hi => by rw [h i hi, Mem.extractLsb'_read m a hi]
+
+/-! ## The batch -/
+
+/-- The data: the `n` blocks at `D`, writable, apart from the frame and not
+wrapping around. -/
+structure Data (s : State) (D : Addr) (n : Nat) : Prop where
+  wr : ∀ i < 8 * n, InRegions s.wr (D + BitVec.ofNat 64 i) 1
+  fit : D.toNat + 8 * n ≤ 2 ^ 64
+  sep : (⟨D, 8 * n⟩ : Region).Disjoint (frameR s)
+
+theorem Data.congr {s s' : State} {D : Addr} {n : Nat} (h : Data s D n) (hb : s'.gpr .s0 = s.gpr .s0)
+    (hw : s'.wr = s.wr) : Data s' D n :=
+  ⟨by rw [hw]; exact h.wr, h.fit, by simp only [frameR, hb]; exact h.sep⟩
+
+theorem Data.byte {s : State} {D : Addr} {n : Nat} (h : Data s D n) {i : Nat} (hi : i < 8 * n) :
+    InRegions s.wr (D + BitVec.ofNat 64 i) 1 :=
+  h.wr i hi
+
+/-- What a batch needs: the frame, the masks, a block left, and the data. -/
+structure BatchPre (s : State) : Prop where
+  room : Room s
+  masks : MasksAt s
+  pos : 1 ≤ (s.gpr .a2).toNat
+  data : Data s (s.gpr .a1) (s.gpr .a2).toNat
+
+structure BatchPost (d : Direction) (s s' : State) : Prop where
+  s0 : s'.gpr .s0 = s.gpr .s0
+  a1 : s'.gpr .a1 = wAt (s.gpr .a1) (kOf s)
+  a2 : s'.gpr .a2 = s.gpr .a2 - BitVec.ofNat 64 (kOf s)
+  wr : s'.wr = s.wr
+  out : ∀ b < kOf s, blockAt s'.mem (wAt (s.gpr .a1) b) =
+    blockOut (scheduleAt s.mem (schedA s)) d (blockAt s.mem (wAt (s.gpr .a1) b))
+  frame : Frame [stR s, ⟨s.gpr .a1, 8 * kOf s⟩] s.mem s'.mem
+
+/-- The state words' region is inside the frame. -/
+theorem stR_sub (s : State) : Region.Sub (stR s) (frameR s) := Region.sub_prefix (by decide)
+
+theorem sched_frame {s : State} (h : Room s) {m : Mem} (hf : Frame [stR s] s.mem m) :
+    scheduleAt m (schedA s) = scheduleAt s.mem (schedA s) :=
+  VG.Proof.TripleDes.scheduleAt_eq_of_frame _ hf fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    have := h.fit
+    exact Offset.disjoint_base _ (by unfold schedOff; omega) (by unfold schedOff frameBytes at *; omega)
+
+theorem frame_in {rs : List Region} {m m' : Mem} {r : Region} (h : Frame [r] m m') (hr : r ∈ rs) :
+    Frame rs m m' :=
+  h.mono fun r' h' => by simp only [List.mem_singleton] at h'; subst h'; exact hr
+
+theorem shr3 : ∀ k ≤ 64, BitVec.ofNat 64 (8 * k) >>> 3 = BitVec.ofNat 64 k := by decide
+
+theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d) s (BatchPost d s) := by
+  have hpos := h.pos
+  have fit := h.data.fit
+  generalize hk : kOf s = k
+  have hk1 : 1 ≤ k := by rw [← hk, kOf]; omega
+  have hk64 : k ≤ 64 := hk ▸ kOf_le s
+  have hkn : k ≤ (s.gpr .a2).toNat := by rw [← hk, kOf]; omega
+  let D := s.gpr .a1
+  let K := scheduleAt s.mem (schedA s)
+  let L : List Region := [stR s, ⟨D, 8 * k⟩]
+  have inS : stR s ∈ L := List.mem_cons_self
+  have inD : (⟨D, 8 * k⟩ : Region) ∈ L := List.mem_cons_of_mem _ List.mem_cons_self
+  have hdisj : (⟨D, 8 * k⟩ : Region).Disjoint (stR s) :=
+    (h.data.sep.sub_left (Region.sub_prefix (by omega))).sub_right (stR_sub s)
+  unfold batch
+  -- the batch's bytes
+  apply WP.seq
+  refine WP.mono (WP.rdwr (batchBytes_ok s)) fun s₁ ⟨⟨b₁, g₁, m₁, _⟩, rd₁, wr₁, _⟩ => ?_
+  rw [hk] at b₁
+  have s0₁ : s₁.gpr .s0 = s.gpr .s0 := g₁ _ (by decide) (by decide)
+  have a1₁ : s₁.gpr .a1 = D := g₁ _ (by decide) (by decide)
+  have a2₁ : s₁.gpr .a2 = s.gpr .a2 := g₁ _ (by decide) (by decide)
+  have h₁ : Room s₁ := h.room.congr s0₁ wr₁
+  -- the copy in
+  apply WP.seq
+  refine WP.mono (copyBytes_ok (src := .a1) (dst := .s0) (by decide) s₁ (N := 8 * k) (by omega) (by omega) b₁
+    (fun i hi => by
+      rw [a1₁, rd₁, wr₁]
+      obtain ⟨r, hr, hc⟩ := h.data.byte (i := i) (by omega)
+      exact ⟨r, List.mem_append_right _ hr, hc⟩)
+    (fun i hi => by
+      rw [s0₁, wr₁]
+      exact ⟨_, h.room.frame, Offset.contains_base _ (by unfold frameBytes; omega) (by omega)⟩)
+    (by
+      rw [s0₁, a1₁]
+      exact sep_of_disjoint ((hdisj.sub_right (Region.sub_prefix (by omega))).symm))) fun s₂ ⟨c₂, f₂, g₂, wr₂⟩ => ?_
+  have s0₂ : s₂.gpr .s0 = s.gpr .s0 := (g₂ _ (by decide) (by decide) (by decide) (by decide)).trans s0₁
+  have a1₂ : s₂.gpr .a1 = D := (g₂ _ (by decide) (by decide) (by decide) (by decide)).trans a1₁
+  have a2₂ : s₂.gpr .a2 = s.gpr .a2 := (g₂ _ (by decide) (by decide) (by decide) (by decide)).trans a2₁
+  have h₂ : Room s₂ := h.room.congr s0₂ (wr₂.trans wr₁)
+  have fs₂ : Frame [stR s] s.mem s₂.mem := by
+    rw [← m₁]
+    refine f₂.sub fun r hr => ⟨stR s, List.mem_singleton_self _, ?_⟩
+    simp only [List.mem_singleton] at hr; subst hr
+    rw [s0₁]; exact Region.sub_prefix (by omega)
+  have w₂ : ∀ b < k, words s₂ b = s.mem.readW (wAt D b) 64 := by
+    intro b hb
+    simp only [words, sl, Straight.wordAddr, s0₂]
+    refine readW_of_bytes fun i hi => ?_
+    have e := c₂ (8 * b + i) (by omega)
+    rw [s0₁, a1₁, m₁] at e
+    rw [Offset.add_add, e, ← Offset.add_add]
+  -- the transposition
+  apply WP.seq
+  obtain ⟨s₃, run₃, w₃, -, wr₃, -, s0₃, a1₃, a2₃, f₃⟩ :=
+    transpose_ok h₂ (masksAt_frame s0₂ h.room fs₂ h.masks)
+  refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
+  have s0₃' : s₃.gpr .s0 = s.gpr .s0 := s0₃.trans s0₂
+  have wr₃' : s₃.wr = s.wr := wr₃.trans (wr₂.trans wr₁)
+  have h₃ : Room s₃ := h.room.congr s0₃' wr₃'
+  have fs₃ : Frame [stR s] s.mem s₃.mem := fs₂.trans (by rw [← stR_congr s0₂]; exact f₃)
+  -- the passes
+  apply WP.seq
+  refine WP.mono (WP.rdwr (passes_ok d h₃)) fun s₄ ⟨⟨w₄, k₄, _, wr₄, _, f₄⟩, _⟩ => ?_
+  have s0₄ : s₄.gpr .s0 = s.gpr .s0 := (k₄ _ (by decide)).trans s0₃'
+  have wr₄' : s₄.wr = s.wr := wr₄.trans wr₃'
+  have h₄ : Room s₄ := h.room.congr s0₄ wr₄'
+  have fs₄ : Frame [stR s] s.mem s₄.mem := fs₃.trans (by rw [← stR_congr s0₃']; exact f₄)
+  have K₃ : scheduleAt s₃.mem (schedA s₃) = K := by
+    rw [show schedA s₃ = schedA s by simp only [schedA, s0₃']]; exact sched_frame h.room fs₃
+  -- the transposition back
+  apply WP.seq
+  obtain ⟨s₅, run₅, w₅, -, wr₅, -, s0₅, a1₅, a2₅, f₅⟩ :=
+    transpose_ok h₄ (masksAt_frame s0₄ h.room fs₄ h.masks)
+  refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
+  have s0₅' : s₅.gpr .s0 = s.gpr .s0 := s0₅.trans s0₄
+  have wr₅' : s₅.wr = s.wr := wr₅.trans wr₄'
+  have fs₅ : Frame [stR s] s.mem s₅.mem := fs₄.trans (by rw [← stR_congr s0₄]; exact f₅)
+  have a1₅' : s₅.gpr .a1 = D := a1₅.trans ((k₄ _ (by decide)).trans (a1₃.trans a1₂))
+  have a2₅' : s₅.gpr .a2 = s.gpr .a2 := a2₅.trans ((k₄ _ (by decide)).trans (a2₃.trans a2₂))
+  -- the batch's bytes again
+  apply WP.seq
+  refine WP.mono (WP.rdwr (batchBytes_ok s₅))
+    fun s₆ ⟨⟨b₆, g₆, m₆, _⟩, rd₆, wr₆, _⟩ => ?_
+  rw [show kOf s₅ = k by rw [← hk, kOf, kOf, a2₅']] at b₆
+  have s0₆ : s₆.gpr .s0 = s.gpr .s0 := (g₆ _ (by decide) (by decide)).trans s0₅'
+  have a1₆ : s₆.gpr .a1 = D := (g₆ _ (by decide) (by decide)).trans a1₅'
+  have a2₆ : s₆.gpr .a2 = s.gpr .a2 := (g₆ _ (by decide) (by decide)).trans a2₅'
+  have wr₆' : s₆.wr = s.wr := wr₆.trans wr₅'
+  -- the copy out
+  apply WP.seq
+  refine WP.mono (copyBytes_ok (src := .s0) (dst := .a1) (by decide) s₆ (N := 8 * k) (by omega) (by omega) b₆
+    (fun i hi => by
+      rw [s0₆]
+      exact ⟨_, List.mem_append_right _ (wr₆' ▸ h.room.frame),
+        Offset.contains_base _ (by unfold frameBytes; omega) (by omega)⟩)
+    (fun i hi => by rw [a1₆, wr₆']; exact h.data.byte (by omega))
+    (by
+      rw [s0₆, a1₆]
+      exact sep_of_disjoint (hdisj.sub_right (Region.sub_prefix (by omega)))))
+    fun s₇ ⟨c₇, f₇, g₇, wr₇⟩ => ?_
+  have s0₇ : s₇.gpr .s0 = s.gpr .s0 := (g₇ _ (by decide) (by decide) (by decide) (by decide)).trans s0₆
+  have a1₇ : s₇.gpr .a1 = D := (g₇ _ (by decide) (by decide) (by decide) (by decide)).trans a1₆
+  have a2₇ : s₇.gpr .a2 = s.gpr .a2 := (g₇ _ (by decide) (by decide) (by decide) (by decide)).trans a2₆
+  have s5₇ : s₇.gpr .s5 = BitVec.ofNat 64 (8 * k) := (g₇ _ (by decide) (by decide) (by decide) (by decide)).trans b₆
+  -- the end
+  have e₁ := exec_add (s := s₇) (d := .a1) (n := .a1) (m := .s5)
+  let t₁ := s₇.write .a1 (s₇.gpr .a1 + s₇.gpr .s5)
+  have e₂ := exec_shift_d (s := t₁) (op := .srl) (d := .t0) (n := .s5) (sh := 3) (by decide)
+  let t₂ := t₁.write .t0 (t₁.gpr .s5 >>> 3)
+  have e₃ := exec_sub (s := t₂) (d := .a2) (n := .a2) (m := .t0)
+  refine WP.of_runBlock ⟨t₂.write .a2 (t₂.gpr .a2 - t₂.gpr .t0), by
+    rw [runBlock_cons, e₁, runStep_some, runBlock_cons, e₂, runStep_some, runBlock_cons, e₃, runStep_some,
+      runBlock_nil], ?_⟩
+  have frame : Frame L s.mem s₇.mem := by
+    have a : Frame L s.mem s₅.mem := frame_in fs₅ inS
+    have b : Frame L s₅.mem s₇.mem := by
+      rw [← m₆]
+      refine f₇.mono fun r hr => ?_
+      simp only [List.mem_singleton] at hr; subst hr; rw [a1₆]; exact inD
+    exact a.trans b
+  subst hk
+  refine ⟨?_, ?_, ?_, wr₇.trans wr₆', fun b hb => ?_, frame⟩
+  · simp only [t₂, t₁, RegUpd.gpr_write, reduceCtorEq, ite_false, s0₇]
+  · simp only [t₂, t₁, RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, a1₇, s5₇, wAt, D]
+  · simp only [t₂, t₁, RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, a2₇, s5₇, shr3 _ hk64]
+  · -- every block of the batch
+    have hb64 : b < 64 := by omega
+    show blockAt s₇.mem (wAt D b) = blockOut K d (blockAt s.mem (wAt D b))
+    have lane₃ : ipLane (words s₃) b = permute ip (decodeBlock (blockAt s.mem (wAt D b))) := by
+      rw [VG.Proof.TripleDes.Bitslice.ipLane_congr w₃ b]
+      refine VG.Proof.TripleDes.Bitslice.ipLane_transpose _ _ hb64 fun j hj => ?_
+      rw [w₂ b hb]
+      exact readW_bit s.mem (wAt D b) hj
+    have word₇ : s₇.mem.readW (wAt D b) 64 = transposeW (words s₄) b := by
+      rw [← w₅ b hb64]
+      simp only [words, sl, Straight.wordAddr, s0₅']
+      refine readW_of_bytes fun i hi => ?_
+      have e := c₇ (8 * b + i) (by omega)
+      rw [s0₆, a1₆, m₆] at e
+      rw [wAt, Offset.add_add, e, ← Offset.add_add]
+    rw [VG.Proof.TripleDes.Bitslice.blockOut_cores]
+    apply blockAt_of_readW
+    intro j hj
+    rw [word₇, VG.Proof.TripleDes.Bitslice.transpose_out _ _ j hj,
+      VG.Proof.TripleDes.Bitslice.ipLane_congr w₄ b, VG.Proof.TripleDes.Bitslice.tdeaW_lane _ _ _ hb64,
+      lane₃, K₃]
+
+
 
 open VG VG.RISCV64 VG.Impl.TripleDes.RISCV64.Bitslice VG.Spec.TripleDes VG.Impl.Words.RISCV64
 open VG.Proof.TripleDes.Bitslice (blockOut wAt wAt_wAt blockAt_frame)

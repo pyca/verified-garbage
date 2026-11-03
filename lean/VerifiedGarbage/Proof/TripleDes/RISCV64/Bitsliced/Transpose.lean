@@ -25,6 +25,8 @@ it transposes any 64 words. `transpose_ok` adds the `addi` that points `a0`
 at the masks.
 -/
 
+-- separate module: builds in parallel with `Pass`, which does not import it
+
 @[expose] public section
 
 namespace VG.Proof.TripleDes.RISCV64.Bitsliced

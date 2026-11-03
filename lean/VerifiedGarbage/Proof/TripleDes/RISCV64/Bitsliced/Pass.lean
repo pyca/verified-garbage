@@ -23,6 +23,8 @@ does with the component schedule. `passes_ok`: the three passes do what
 `tdeaW` does.
 -/
 
+-- separate module: builds in parallel with `Transpose`, which does not import it
+
 @[expose] public section
 
 namespace VG.Proof.TripleDes.RISCV64.Bitsliced
