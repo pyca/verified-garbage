@@ -22,10 +22,11 @@ meta import VerifiedGarbage.Proof.Blowfish.RISCV64.Lit
 /-!
 # Blowfish ECB on RISC-V meets its contract
 
-The proof is written against `ecbC`, which states the frame of 4176 bytes
-below the stack pointer, and moved to the shared contracts of
-`Spec/Blowfish/Contract.lean` with `stack := 4176`. The code writes only
-temporaries and argument registers.
+The proof is written against `ecbC`, which states the 4256 bytes below the
+stack pointer (the saved registers' frame and the schedule's), and moved to
+the shared contracts of `Spec/Blowfish/Contract.lean` with `stack := 4256`.
+The code writes temporaries, argument registers and the callee-saved
+registers it saves and restores (`saved`).
 -/
 
 @[expose] public section
@@ -41,10 +42,10 @@ def ecbC (up : Bool) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .a0, 4168⟩
     let data : Region := ⟨s.gpr .a1, 8 * (s.gpr .a2).toNat⟩
-    let stack : Region := ⟨s.sp - 4176, 4176⟩
+    let stack : Region := ⟨s.sp - 4256, 4256⟩
     s.rd = [key] ∧ s.wr = [data] ∧ key.Disjoint data ∧
       (s.gpr .a1).toNat + 8 * (s.gpr .a2).toNat ≤ 2 ^ 64 ∧
-      s.sp.toNat % 16 = 0 ∧ 4176 ≤ s.sp.toNat ∧ stack.Disjoint key ∧ stack.Disjoint data
+      s.sp.toNat % 16 = 0 ∧ 4256 ≤ s.sp.toNat ∧ stack.Disjoint key ∧ stack.Disjoint data
   post s s' :=
     blocksAt s'.mem (s.gpr .a1) (s.gpr .a2).toNat =
       Spec.Blowfish.ecb (scheduleAt s.mem (s.gpr .a0)) (dir up) (blocksAt s.mem (s.gpr .a1) (s.gpr .a2).toNat)
@@ -60,15 +61,23 @@ theorem ecb_blocks (K : Schedule) (up : Bool) (m m' : Mem) (D : Addr) (n : Nat)
   rw [Function.comp_apply, h b (List.mem_range.mp hb)]
   cases up <;> rfl
 
-/-- The registers ECB writes: no preserved register, nor `ra`. -/
-def ecbRegs : List Reg := [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6]
+/-- The registers ECB writes: no preserved register but those it restores
+(`saved`), nor `ra`. -/
+def ecbRegs : List Reg := [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6,
+  .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10]
+
+theorem ecbRegs_saved : ∀ r ∈ preserved, r ∈ ecbRegs → r ∈ saved.map Prod.fst := by decide
 
 theorem ecb_ok (up : Bool) (hw : writesOnly ecbRegs (Impl.Blowfish.RISCV64.ecb up) = true)
     (hn : callFree (Impl.Blowfish.RISCV64.ecb up) = true) (s : State) (hs : (ecbC up).pre s) :
     ∃ t s', Exec isa (Impl.Blowfish.RISCV64.ecb up) s t s' ∧ abiPreserved s s' ∧ (ecbC up).post s s' := by
   obtain ⟨rd, wr, kd, fit, al, sp, sk, sd⟩ := hs
   obtain ⟨t, s', he, hp, hk⟩ := WP.keep ecbRegs (ecb_wp up ⟨rd, wr, kd, fit, al, sp, sk, sd⟩) hw hn
-  exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), ecb_blocks _ _ _ _ _ _ hp.1⟩
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, hk.gpr (by decide)⟩, ecb_blocks _ _ _ _ _ _ hp.1⟩
+  by_cases hm : r ∈ ecbRegs
+  · obtain ⟨p, hp', rfl⟩ := List.mem_map.mp (ecbRegs_saved r hr hm)
+    exact hp.2 p hp'
+  · exact hk.gpr hm
 
 theorem ecb_agree (up : Bool) : ∀ s₁ s₂, (ecbC up).pre s₁ → (ecbC up).pre s₂ → (ecbC up).pub s₁ s₂ →
     taint.Agree (Taint.ofRegs [.a0, .a1, .a2]) s₁ s₂ := by
@@ -94,12 +103,12 @@ def ecbSat : State where
   rd := [⟨0x1000, 4168⟩]
   wr := [⟨0x3000, 0⟩]
 
-theorem encrypt_verified : Verified RISCV64.target encrypt (Spec.Blowfish.ecbEncryptContract RISCV64.abi 4176) := by
+theorem encrypt_verified : Verified RISCV64.target encrypt (Spec.Blowfish.ecbEncryptContract RISCV64.abi 4256) := by
   refine Verified.of_correct (k := ecbC true) (ecb_ok true (by lit_decide) (by lit_decide)) encrypt_ct ?_
   contract_implies [Spec.Blowfish.ecbEncryptContract, Spec.Blowfish.ecbContract, Spec.Blowfish.ecbSig,
     Spec.Blowfish.ecbPost, RISCV64.abi, RISCV64.argRegs, ecbC, dir] [ecbSat] using ecbSat
 
-theorem decrypt_verified : Verified RISCV64.target decrypt (Spec.Blowfish.ecbDecryptContract RISCV64.abi 4176) := by
+theorem decrypt_verified : Verified RISCV64.target decrypt (Spec.Blowfish.ecbDecryptContract RISCV64.abi 4256) := by
   refine Verified.of_correct (k := ecbC false) (ecb_ok false (by lit_decide) (by lit_decide)) decrypt_ct ?_
   contract_implies [Spec.Blowfish.ecbDecryptContract, Spec.Blowfish.ecbContract, Spec.Blowfish.ecbSig,
     Spec.Blowfish.ecbPost, RISCV64.abi, RISCV64.argRegs, ecbC, dir] [ecbSat] using ecbSat
