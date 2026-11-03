@@ -9,7 +9,7 @@ public import VerifiedGarbage.TCB.Sig
 **Trusted** (as every file in `Spec/`). A function generic over a hash
 function takes it as a table of functions (`FnTable`, `Abi.withTables`) of
 the interface `Hash`: a read-only array of `wordCount` `u64`s (`param`),
-the `words()` of one of the statics of the type `Hash` that the generated
+the `as_ptr()` of one of the statics of the type `Hash` that the generated
 crate declares (`fn_tables`), holding the addresses of `fns` functions (the
 hash function's streaming functions, which the function calls indirectly,
 `Code.icall`), then two words of data (`dataOf`): the index of the hash
