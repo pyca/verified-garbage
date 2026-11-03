@@ -55,7 +55,9 @@ def pack (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) : Rfc where
   hD := rfl
   hnw := rfl
   hQ := rfl
-  hDQ := (by decide : 8 * 6 ≤ cfg.H.D)
+  hG := rfl
+  hsh := fun _ => rfl
+  hQD := (by decide : 48 ≤ cfg.H.D + 8)
   hD64 := by decide
   hS := by decide
   hct := rfl
@@ -66,7 +68,7 @@ def pack (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) : Rfc where
 
 theorem checks : Checks cfg := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, trivial⟩, ⟨?_, trivial⟩, ⟨?_, trivial⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, ?_, ?_⟩ <;> refine ⟨?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ⟨?_, trivial⟩, ?_⟩ <;> refine ⟨?_, ?_⟩
   taint_decide_all
 
 /-- The stack the function uses: its frame and its callees'. -/

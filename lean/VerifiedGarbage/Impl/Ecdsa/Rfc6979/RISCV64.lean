@@ -50,6 +50,17 @@ call use the stack below the frame.
 `core` writes the signature or zeros to `out`, and its result is ours. `K`,
 `V` and `h` are cleared before the frame is freed. Every address depends
 only on the pointers.
+
+If the scalars are longer than the hash's output (`wide`: P-521's 66 bytes
+with SHA-512's 64), `core` reads the digest's `D` bytes and the candidate's
+leftmost `Q` bytes, and takes the leftmost bits of each as `e` and `k`, as
+the specification's `bits2int` does; the frame has the candidate's `Q`
+bytes after `h`, at `fT`:
+
+1. `h` is the digest after `Q - D` zero bytes: its number is below
+   `2^(8 D) < n`, which `bits2octets` keeps.
+2. A candidate is `T = V₁ ‖ V₂`, two `V = HMAC_K(V)`: `V₁` to `fT`, `V₂`
+   from it to `V`'s place, and the first `Q - D` bytes of `V₂` after `V₁`.
 -/
 
 @[expose] public section
@@ -108,8 +119,19 @@ variable (c : Cfg)
 /-- Where `h` is in the frame: after `V` and its separator. -/
 def fH : Nat := if c.H.D < 64 then 192 else 208
 
-/-- The frame's size: `h`'s words after `fH`, rounded up to a multiple of 16. -/
-def frB : Nat := (c.fH + 8 * c.nw + 15) / 16 * 16
+/-- Whether the scalars are longer than the hash's output. -/
+def wide : Bool := decide (c.H.D < c.Q)
+
+/-- If `wide`: the candidate, after `h`. -/
+def fT : Nat := c.fH + 8 * c.nw
+
+/-- The numbers in the frame from `fH` on: `h`, and if `wide` the
+candidate. -/
+def nums : Nat := if c.wide then 2 else 1
+
+/-- The frame's size: the numbers' words after `fH`, rounded up to a
+multiple of 16. -/
+def frB : Nat := (c.fH + 8 * c.nw * c.nums + 15) / 16 * 16
 
 /-! The other numbers of `bits2octets` in `scratch`, after `sX`'s. -/
 def sZ : Nat := 8 * c.nw
@@ -134,9 +156,16 @@ def prologue : List Instr :=
   .addSp .t0 0 :: saved.map (fun (r, d) => .store .d r .t0 d) ++
     [mov .s1 .t0, mov .s2 .a0, mov .s3 .a1, mov .s4 .a2, mov .s0 .a3]
 
+/-- If `wide`: `h`, the digest after `Q - D` zero bytes. -/
+def reduceW : List Instr :=
+  Words.RISCV64.storeBytes .t0 .s1 c.fH (List.replicate (c.Q - c.H.D) 0) ++
+    Words.RISCV64.copyBytes .t0 .s4 .s1 0 (c.fH + (c.Q - c.H.D)) c.H.D
+
 /-- `h = bits2octets(digest)`: the digest's leftmost `Q` bytes to `scratch`'s
-`sX`, zero to `sZ`, their sum modulo `n` to `sY`, and that to `h`. -/
+`sX`, zero to `sZ`, their sum modulo `n` to `sY`, and that to `h`; or, if
+`wide`, `reduceW`. -/
 def reduce : Prog isa :=
+  if c.wide then .block c.reduceW else
   .seq (.block (c.loadQ sX .s4 0 ++ Ecdh.RISCV64.setConst c.nw c.sZ 0))
     (.seq (Weierstrass.RISCV64.addCall c.FN c.sY sX c.sZ)
       (.block ([.li .a7 (-1)] ++ c.storeQ c.sY .s1 c.fH)))
@@ -194,6 +223,16 @@ def initCnt : List Instr := [.li .s5 c.tries]
 /-- `core(out, d, digest, k = V, scratch)`. -/
 def coreArgs : List Instr := [mov .a0 .s2, mov .a1 .s3, mov .a2 .s4, .addi .a3 .s1 fV, mov .a4 .s0]
 
+/-- If `wide`: `core(out, d, digest, k = fT, scratch)`. -/
+def coreArgsW : List Instr := [mov .a0 .s2, mov .a1 .s3, mov .a2 .s4, .addi .a3 .s1 c.fT, mov .a4 .s0]
+
+/-- If `wide`, the candidate: `V₁ = HMAC_K(V)` to `fT`, `V₂ = HMAC_K(V₁)` to
+`V`'s place, and `V₂`'s first `Q - D` bytes after `V₁`. -/
+def candW : Prog isa :=
+  .seq (c.hmac [(.s1, fV, c.H.D)] c.fT)
+  (.seq (c.hmac [(.s1, c.fT, c.H.D)] fV)
+    (.block (Words.RISCV64.copyBytes .t0 .s1 .s1 fV (c.fT + c.H.D) (c.Q - c.H.D))))
+
 /-- One candidate fewer, and `t6 ≠ 0` iff the signature failed (the low bit
 of `a0` is 0) and candidates are left: `t6 = ((a0 & 1) - 1) & s5`. -/
 def goOn : List Instr :=
@@ -205,17 +244,18 @@ def again : List Instr := [.li .t6 1]
 /-- Stop. -/
 def stop : List Instr := [.li .t6 0]
 
-/-- One candidate: `V = HMAC_K(V)`, `core` with it, then, if it failed and
-candidates are left, step h.3. -/
+/-- One candidate: `V = HMAC_K(V)` (or, if `wide`, `candW`), `core` with
+it, then, if it failed and candidates are left, step h.3. -/
 def tryOne : Prog isa :=
-  .seq c.hmacV
-  (.seq (.block coreArgs)
+  .seq (if c.wide then c.candW else c.hmacV)
+  (.seq (.block (if c.wide then c.coreArgsW else coreArgs))
   (.seq (.call c.coreN c.coreC)
   (.seq (.block goOn)
     (.ite (.nonzero .t6) (.seq c.rekey (.block again)) (.block stop)))))
 
-/-- `K`, `V` and `h` cleared. -/
-def wipe : List Instr := .li .t0 0 :: (List.range ((c.fH - fK) / 8 + c.nw)).map fun j => .store .d .t0 .s1 (fK + 8 * j)
+/-- `K`, `V` and the numbers cleared. -/
+def wipe : List Instr :=
+  .li .t0 0 :: (List.range ((c.fH - fK) / 8 + c.nw * c.nums)).map fun j => .store .d .t0 .s1 (fK + 8 * j)
 
 /-- Restore our caller's registers. -/
 def restore : List Instr := restList.map fun (r, d) => .load .d r .s1 d

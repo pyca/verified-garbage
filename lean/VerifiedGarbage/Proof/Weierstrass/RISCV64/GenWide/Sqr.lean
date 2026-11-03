@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Ring
 
 /-!
 # Montgomery's square modulo a wide modulus on RISC-V
@@ -182,7 +181,7 @@ theorem sumN_congr {g h : Nat → Nat} : ∀ {n}, (∀ i < n, g i = h i) → sum
 
 theorem sumN_cols (a : Nat → Nat) (c : Nat) : ∀ n, sumN (fun i => a i * (2 ^ 64) ^ i * c) n = colsV a n * c
   | 0 => by simp [sumN, colsV]
-  | n + 1 => by simp only [sumN]; rw [sumN_cols a c n, colsV_succ]; ring
+  | n + 1 => by simp only [sumN]; rw [sumN_cols a c n, colsV_succ]; grind
 
 theorem rows_sum (a : Nat → Nat) :
     ∀ k, sumN (rowTerm a k) k = sumN (fun j => a j * (2 ^ 64) ^ j * colsV a j) k
@@ -200,13 +199,13 @@ theorem rows_sum (a : Nat → Nat) :
         generalize ((2 : Nat) ^ 64) ^ (k - 1 - i) = Y at e
         generalize ((2 : Nat) ^ 64) ^ i = U at e
         generalize ((2 : Nat) ^ 64) ^ k = V at e
-        calc a i * X * (C + Y * a k) = a i * X * C + a i * (X * Y) * a k := by ring
-          _ = _ := by rw [e]; ring
+        calc a i * X * (C + Y * a k) = a i * X * C + a i * (X * Y) * a k := by grind
+          _ = _ := by rw [e]; grind
     have hk : rowTerm a (k + 1) k = 0 := by simp [rowTerm, colsV]
     show sumN (rowTerm a (k + 1)) k + rowTerm a (k + 1) k = sumN _ k + _
     rw [hk, Nat.add_zero, sumN_congr h, sumN_add, rows_sum a k, sumN_cols]
     simp only [colsV, Nat.zero_add]
-    ring
+    grind
 
 /-- The square as its rows, doubled, and its squares. -/
 theorem sq_sum (a : Nat → Nat) :
@@ -222,7 +221,7 @@ theorem sq_sum (a : Nat → Nat) :
     generalize colsV a k = A at ih ⊢
     generalize ((2 : Nat) ^ 64) ^ k = E
     rw [Nat.add_mul, Nat.mul_add, Nat.mul_add, ih]
-    ring
+    grind
 
 /-! ## The square's product -/
 
@@ -451,7 +450,7 @@ theorem rows_ok {k : Nat} {b A : Addr} {s0 : State} (h : SqOk k b A s0)
       generalize colsV (fun j => dw s.mem b (SQ k + 8 * (0 + (2 * r + 1 + j)))) (k - 1 - r + 1) = Mi
       generalize colsV (fun j => dw s.mem b (SQ k + 8 * (0 + (2 * r + 1 + (k - 1 - r + 1) + j)))) (k - 1 - r) = Rt
       generalize colsV (fun j => dw s0.mem A (8 * (r + 1 + j))) (k - 1 - r) = Cn
-      ring
+      grind
     · intro j hj hj'
       rw [out _ (.inr (by omega)) hj']; exact hs.zero j (by omega) hj'
 
@@ -666,10 +665,10 @@ theorem diags_ok {k : Nat} {b A : Addr} {sR : State} (h : SqOk k b A sR) (h2 : s
     rw [E1, E0]
     generalize ((2 : Nat) ^ 64) ^ (2 * i) = P at hv ⊢
     generalize (2 : Nat) ^ 64 = E at e ⊢
-    calc X + P * r0 + P * E * r1 + P * (E * E) * c' = X + P * (r0 + E * r1 + E * E * c') := by ring
+    calc X + P * r0 + P * E * r1 + P * (E * E) * c' = X + P * (r0 + E * r1 + E * E * c') := by grind
       _ = X + P * (2 * (w0 + E * w1) + c + ai * ai) := by rw [e]
-      _ = (X + P * c) + 2 * (P * w0 + P * E * w1) + ai * ai * P := by ring
-      _ = _ := by rw [hv]; ring
+      _ = (X + P * c) + 2 * (P * w0 + P * E * w1) + ai * ai * P := by grind
+      _ = _ := by rw [hv]; grind
 
 /-- `P = a²`. -/
 theorem sqr_ok {k : Nat} {b A : Addr} {s : State} (h : SqOk k b A s) :
@@ -912,15 +911,15 @@ theorem sred_ok {k : Nat} {b : Addr} {m' : Nat} {s : State} (h : RedOk k b m' s)
     generalize ((2 : Nat) ^ 64) ^ j = X at hv ⊢
     generalize (2 : Nat) ^ 64 = E at hv hC0 e10 e12 ⊢
     calc E * (R8 + X * t12 + X * E * (c13 + t3))
-        = E * R8 + E * X * (t12 + E * c13) + E * X * E * t3 := by ring
+        = E * R8 + E * X * (t12 + E * c13) + E * X * E * t3 := by grind
       _ = E * R8 + E * X * (t10 + a2) + E * X * E * t3 := by rw [e12]
-      _ = E * R8 + E * X * (t10 + E * t3) + E * X * a2 := by ring
+      _ = E * R8 + E * X * (t10 + E * t3) + E * X * a2 := by grind
       _ = E * R8 + E * X * (PK + a58) + E * X * a2 := by rw [e10]
-      _ = E * (R8 + X * a58) + E * X * PK + E * X * a2 := by ring
+      _ = E * (R8 + X * a58) + E * X * PK + E * X * a2 := by grind
       _ = E * (Pl + Nr * q + a57) + E * X * PK + E * X * a2 := by rw [hv]
-      _ = E * a57 + E * Pl + E * Nr * q + E * X * PK + E * X * a2 := by ring
+      _ = E * a57 + E * Pl + E * Nr * q + E * X * PK + E * X * a2 := by grind
       _ = (P0 + q * N0) + E * Pl + E * Nr * q + E * X * PK + E * X * a2 := by rw [hC0]
-      _ = _ := by ring
+      _ = _ := by grind
 
 /-- After `i` rounds of the reduction from `s0`, of `V` (the product) modulo `M`. -/
 structure SRedInv (k : Nat) (b : Addr) (M V : Nat) (s0 : State) (i : Nat) (s : State) : Prop where
@@ -1002,11 +1001,11 @@ theorem srounds_ok {k : Nat} {b : Addr} {m' M V : Nat} {s0 : State} (h : RedOk k
       generalize ((2 : Nat) ^ 64) ^ i = Ei at hv ⊢
       generalize ((2 : Nat) ^ 64) ^ k = Ek at hv e' ⊢
       generalize (2 : Nat) ^ 64 = E at hv e' ⊢
-      calc Ei * E * (R' + Ek * Up + Ek * c') = Ei * (E * (R' + Ek * c')) + Ei * E * Ek * Up := by ring
+      calc Ei * E * (R' + Ek * Up + Ek * c') = Ei * (E * (R' + Ek * c')) + Ei * E * Ek * Up := by grind
         _ = Ei * (P0 + E * R + Ek * c + q * M) + Ei * E * Ek * Up := by rw [e']
-        _ = Ei * (P0 + E * R + Ek * E * Up + Ek * c) + Ei * q * M := by ring
+        _ = Ei * (P0 + E * R + Ek * E * Up + Ek * c) + Ei * q * M := by grind
         _ = V + Q * M + Ei * q * M := by rw [hv]
-        _ = _ := by ring
+        _ = _ := by grind
 
 /-! ## The result into `T` -/
 
@@ -1187,7 +1186,7 @@ theorem sqrCore_ok {k m : Nat} {b A O : Addr} {s : State} (hC : CoreOk k b A A O
     have f24 : Frame [ownA k b, ⟨O, 8 * k⟩] s.mem s4.mem := by
       rw [m4]
       exact (f1.sub (sub (by omega) (by omega))).trans (f2.sub (sub (by omega) (by omega)))
-    exact ((f24.trans (h5.frame.sub (sub (by omega) (by omega)))).trans (f6.sub (sub (le_refl _) (by omega)))).trans
+    exact ((f24.trans (h5.frame.sub (sub (by omega) (by omega)))).trans (f6.sub (sub (Nat.le_refl _) (by omega)))).trans
       (f7.sub sub7)
 
 /-- The fast path of `mulSqFn`: the square when the operands are the same
