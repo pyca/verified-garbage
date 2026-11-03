@@ -228,7 +228,7 @@ def expected : String := "/// Returns the word of data of its table, which the t
 /// * `t` must be valid for reads of 16 bytes.
 /// * `t` must not overlap the return address on the stack or the 8 bytes of stack below it, \
 or wrap around the end of the address space (no Rust object does).
-/// * `t` must be the `words()` of one of the `TestFns` tables of functions of this crate \
+/// * `t` must be the `as_ptr()` of one of the `TestFns` tables of functions of this crate \
 (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, \
 if it has one.
 #[unsafe(naked)]
