@@ -318,6 +318,46 @@ fn keys(c: &mut Criterion) {
 
 #[cfg(target_arch = "riscv64")]
 pub fn bench(c: &mut Criterion) {
+    // Only Proto25 this run: main's sqrTail next to a one-level Karatsuba squaring, alone and in
+    // the 4-bit-window exponentiation's mix (64 w squarings, 16 w multiplications by main's tail).
+    const ONLY_P25: bool = true;
+    if ONLY_P25 {
+        use verified_garbage_asm_riscv64::rsa_proto25 as p25;
+        type F = unsafe extern "C" fn(*mut u64, usize, usize);
+        let ws_of = |w: usize| {
+            let mut ws = vec![0u64; 32 + 12 * (w + 2) + 8];
+            for (i, x) in ws.iter_mut().enumerate().skip(32) {
+                *x = (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+            }
+            ws[32] |= 1;
+            ws
+        };
+        let fs: [(&str, F); 2] = [("sqr_base", p25::vg_p25_sqr_base), ("sqr_kara", p25::vg_p25_sqr_kara)];
+        for (v, f) in fs {
+            let mut g = c.benchmark_group(format!("rsa_p25_{v}"));
+            for w in [16usize, 32, 48, 64] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe { f(black_box(ws.as_mut_ptr()), w, 1) })
+                });
+            }
+            g.finish();
+        }
+        for (v, fs_) in fs {
+            let mut g = c.benchmark_group(format!("rsa_p25_exp_{v}"));
+            for w in [16usize, 32, 48, 64] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe {
+                        fs_(black_box(ws.as_mut_ptr()), w, 64 * w);
+                        p25::vg_p25_mul_base(black_box(ws.as_mut_ptr()), w, 16 * w);
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     // Only Proto24 this run: main's vg_rsa_private_crt next to windows of 4 (re-expressed), 5 and 6 bits,
     // on Wycheproof's keys of 2048, 4096 and 8192 bits (bench branch only).
     const ONLY_P24: bool = true;
