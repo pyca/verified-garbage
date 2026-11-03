@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkCk
 public import VerifiedGarbage.Impl.Rsa.RISCV64.CheckCrtKey
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
+import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
@@ -187,20 +188,24 @@ theorem cck_valid {s0 t : State} (h0 : CckP s0)
     simp only [live0, List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       exact (l9.arrs.get (List.mem_range.mpr (by decide))).trans rfl
-  rw [List.nil_append, kc_seqs_append (l₁ := start) (by simp [start]) (by simp [crtChecks, eqA])]
-  refine WP.mono (start_ok (g := g) (v := v) l9.ws a9 (l9.top _ (by decide))) fun t10 ⟨X₁, X₂, hX, g10⟩ => ?_
-  rw [kc_seqs_append (l₁ := crtChecks) (by simp [crtChecks, eqA]) (by simp)]
-  refine WP.mono (crtChecks_ok g10 ⟨(s0.gpr .a7).toNat, q1, by omega, lt_pow8_of_len _ (len_bytes _ _ _),
-    R9.s6.trans (ofNat_toNat' _)⟩) fun t11 ⟨R₁, R₂, R₃, hR₁, hR₂, hR₃, g11⟩ => ?_
+  have hw2 : 2 ≤ g.w := by have := hp.k64; show 2 ≤ ((s0.gpr .a1).toNat + 7) / 8; omega
+  rw [List.nil_append, kc_seqs_append (l₁ := start) (by simp [start]) (by simp [crtChecks, pqChecks, setM])]
+  refine WP.mono (start_ok (g := g) (v := v) l9.ws a9 (l9.top _ (by decide))) fun t10 g10 => ?_
+  rw [kc_seqs_append (l₁ := crtChecks) (by simp [crtChecks, pqChecks, setM]) (by simp)]
+  refine WP.mono (crtChecks_ok g10 hw2) fun t11 ⟨Z, L, M₁, M₂, R₁, R₂, hZ, hL, hM₁, hM₂, hR₁, hR₂, g11⟩ => ?_
   rw [show seqs [.block ret] = .block ret from rfl]
+  have hnk : v.n < 256 ^ (s0.gpr .a1).toNat := by
+    have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a0) (s0.gpr .a1).toNat)
+    rwa [len_bytes] at this
+  have e : Spec.Rsa.crtKeyValid (s0.gpr .a1).toNat v.n v.e v.p v.q v.dP v.dQ v.qI =
+      crtBitsM v.n v.p v.q v.dP v.dQ v.qI Z L M₁ M₂ R₁ R₂ :=
+    crtKeyValid_mont hmv hev (lt_pow_of_len _ (by rw [len_bytes]; exact p2))
+      (lt_pow_of_len _ (by rw [len_bytes]; exact q2)) hnk (by have := hp.k64; omega) (pow_kw _) hZ hL hM₁ hM₂
+      hR₁ hR₂
+  have e' : cckOk s0 = crtBitsM v.n v.p v.q v.dP v.dQ v.qI Z L M₁ M₂ R₁ R₂ := by
+    rw [← e]; simp only [cckOk, Spec.Rsa.checkCrtKey, len_bytes]; rfl
   refine WP.mono (ret_ok g11) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨(g11.base l9.base).of_regs kt tm, ?_⟩
-  rw [t3]
-  congr 2
-  have e := cck_bits (k := (s0.gpr .a1).toNat) (w := g.w) hmv hev
-    (lt_pow_of_len _ (by rw [len_bytes]; exact p2)) (lt_pow_of_len _ (by rw [len_bytes]; exact q2))
-    (by have := hp.k64; omega) (pow_kw _) hX hR₁ hR₂ hR₃
-  rw [show cckOk s0 = Spec.Rsa.crtKeyValid (s0.gpr .a1).toNat _ _ _ _ _ _ _ by
-    simp only [cckOk, Spec.Rsa.checkCrtKey, len_bytes]; rfl, e]
+  rw [t3, e']
 
 theorem cckOk_valid {s0 : State} (h : cckOk s0 = true) :
     Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a2) (s0.gpr .a3).toNat)) = true ∧

@@ -73,8 +73,12 @@ def vals (v : Vals) : Nat → Nat :=
 /-- The header words the checks write. -/
 abbrev bodySlots : List Nat := [sOdd, sB, sC, sF, sMask]
 
-/-- The registers the checks may change. -/
-abbrev bodyRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a4, .a5, .s7]
+/-- The registers the checks may change: all but `s5`, `s6` and `s9`–`s11`
+(`MontMul.tail`, `Precompute.minv` and `RecoverDet.mulLow` write the
+argument registers and `s0`–`s4`, `s8`, which hold nothing the checks read). -/
+abbrev bodyRegs : List Reg :=
+  [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .s0, .s1, .s2, .s3, .s4,
+    .s7, .s8]
 
 theorem bodySlots_hdr : ∀ d ∈ bodySlots, d + 8 ≤ hdr := by decide
 
