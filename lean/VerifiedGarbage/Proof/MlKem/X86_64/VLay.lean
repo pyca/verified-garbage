@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Blocks
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -56,22 +57,6 @@ theorem vbfly_spec : VBflyOk canW vbfly (fun x y z => (x + z * y, x - z * y)) :=
 theorem vibfly_spec : VBflyOk canW vibfly (fun x y z => (x + y, z * (y - x))) :=
   fun _ hc _ _ _ hx hy hz => vibfly_ok hc hx hy hz
 
-/-- The first `t` butterflies of a block of the specification do `op` to
-`(j, j + len)`. -/
-structure BlkOk {α : Type} [Inhabited α] (blk : Vector α n → Nat → Nat → Nat → Nat → Vector α n)
-    (op : α → α → Zq → α × α) : Prop where
-  zero : ∀ f len k st, blk f len k st 0 = f
-  add : ∀ f len k st t t', blk f len k st (t + t') = blk (blk f len k st t) len k (st + t) t'
-  get : ∀ f len k st t, 0 < len → t ≤ len → st + len + t ≤ n → ∀ i < n,
-    (blk f len k st t)[i]! = if st ≤ i ∧ i < st + t then (op f[i]! f[i + len]! (zeta k)).1
-      else if st + len ≤ i ∧ i < st + len + t then (op f[i - len]! f[i]! (zeta k)).2 else f[i]!
-
-theorem nttBlk_ok : BlkOk nttBlockN (fun x y z => (x + z * y, x - z * y)) :=
-  ⟨nttBlockN_zero, nttBlockN_add, fun f _ _ _ _ hl ht hs _ hi => nttBlockN_get' f hl ht hs hi⟩
-
-theorem nttInvBlk_ok : BlkOk nttInvBlockN (fun x y z => (x + y, z * (y - x))) :=
-  ⟨nttInvBlockN_zero, nttInvBlockN_add, fun f _ _ _ _ hl ht hs _ hi => nttInvBlockN_get' f hl ht hs hi⟩
-
 /-! ## A block -/
 
 /-- The words of the polynomial, 256 bytes into the working space. -/
@@ -125,12 +110,6 @@ theorem wp_rcxLoop {body : List Instr} {N : Nat} (hN : 0 < N) (hN' : N < 2 ^ 31)
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_arith⟩) fun s ⟨o, hc⟩ => ?_)
   exact wp_countdown (by omega_arith) hN Inv (fun i hi s hI _ => hbody i hi s hI) (fun _ h => h) (h0 s o hc) hc
-
-/-- The first `b` blocks of the layer with `len`, block `c` with the zeta
-`zeta (zi c)`. -/
-def layF {α : Type} (blk : Vector α n → Nat → Nat → Nat → Nat → Vector α n) (F : Vector α n) (len : Nat)
-    (zi : Nat → Nat) (b : Nat) : Vector α n :=
-  (List.range b).foldl (fun f c => blk f len (zi c) (2 * len * c) len) F
 
 /-- The facts a block keeps. -/
 structure BInv (sP : Addr) (s₀ s : State) : Prop where

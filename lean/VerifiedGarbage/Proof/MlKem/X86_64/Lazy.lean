@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Blocks
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
 
 import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
@@ -36,65 +37,6 @@ def invW (a b : BitVec 16) (ζ : Zq) : BitVec 16 × BitVec 16 := (a + b, montW (
 
 /-- `2¹⁶ mod q`: `montW d rW ≡ d (mod q)`. -/
 def rW : BitVec 16 := 2285
-
-/-! ## Blocks of butterflies on any values -/
-
-section
-variable {α : Type} [Inhabited α]
-
-theorem vget_set_self (f : Vector α n) {i : Nat} (hi : i < n) (x : α) : (f.set! i x)[i]! = x := by
-  rw [getElem!_pos _ i hi, Vector.getElem_set!, ite_eq_left rfl]
-
-theorem vget_set_ne (f : Vector α n) {i j : Nat} (hj : j < n) (h : i ≠ j) (x : α) :
-    (f.set! i x)[j]! = f[j]! := by
-  rw [getElem!_pos _ j hj, getElem!_pos _ j hj, Vector.getElem_set!, ite_eq_right h]
-
-/-- The butterfly `op` on `f[j]` and `f[j + len]`. -/
-def wbfly (op : α → α → Zq → α × α) (f : Vector α n) (j len : Nat) (z : Zq) : Vector α n :=
-  let r := op f[j]! f[j + len]! z
-  (f.set! (j + len) r.2).set! j r.1
-
-/-- The first `t` butterflies `op` of the block from `start` of the layer with
-`len`, whose zeta is `zeta k`. -/
-def wBlockN (op : α → α → Zq → α × α) (f : Vector α n) (len k start t : Nat) : Vector α n :=
-  (List.range' start t).foldl (fun f j => wbfly op f j len (zeta k)) f
-
-theorem wbfly_get (op : α → α → Zq → α × α) (f : Vector α n) {j len : Nat} (_hlen : 0 < len)
-    (hj : j + len < n) (z : Zq) {i : Nat} (hi : i < n) :
-    (wbfly op f j len z)[i]! = if i = j then (op f[j]! f[j + len]! z).1
-      else if i = j + len then (op f[j]! f[j + len]! z).2 else f[i]! := by
-  simp only [wbfly]
-  by_cases h1 : i = j
-  · subst h1
-    rw [vget_set_self _ hi, ite_eq_left rfl]
-  · rw [vget_set_ne _ hi (Ne.symm h1), ite_eq_right h1]
-    by_cases h2 : i = j + len
-    · subst h2; rw [vget_set_self _ hi, ite_eq_left rfl]
-    · rw [vget_set_ne _ hi (Ne.symm h2), ite_eq_right h2]
-
-theorem wBlockN_get (op : α → α → Zq → α × α) (f : Vector α n) {len k start t : Nat} (hlen : 0 < len)
-    (ht : t ≤ len) (hs : start + len + t ≤ n) {i : Nat} (hi : i < n) :
-    (wBlockN op f len k start t)[i]! =
-      if start ≤ i ∧ i < start + t then (op f[i]! f[i + len]! (zeta k)).1
-      else if start + len ≤ i ∧ i < start + len + t then (op f[i - len]! f[i]! (zeta k)).2
-      else f[i]! := by
-  induction t generalizing i with
-  | zero => rw [wBlockN, List.range'_zero, List.foldl_nil, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
-  | succ t ih =>
-    rw [wBlockN, foldl_range'_succ, ← wBlockN, wbfly_get _ _ hlen (by omega_arith) _ hi,
-      ih (by omega_arith) (by omega_arith) (i := start + t) (by omega_arith), ih (by omega_arith) (by omega_arith) (i := start + t + len) (by omega_arith),
-      ih (by omega_arith) (by omega_arith) hi]
-    rcases (by omega_arith : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
-        (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
-        i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
-
-theorem wBlk_ok (op : α → α → Zq → α × α) : BlkOk (wBlockN op) op where
-  zero _ _ _ _ := rfl
-  add f len k st t t' := by simp only [wBlockN]; rw [← List.foldl_append, List.range'_append_1]
-  get f _ _ _ _ hl ht hs _ hi := wBlockN_get op f hl ht hs hi
-
-end
 
 /-! ## Words congruent to coefficients -/
 

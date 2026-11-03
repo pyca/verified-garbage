@@ -24,8 +24,9 @@ namespace VG.Proof.MlKem.X86_64.NttR
 
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.NttR
 open VG.Spec.MlKem
-open VG.Proof.MlKem.X86_64 (WPoly invW wBlockN wBlk_ok zw PolyRep Rep inv_hop layF_rep layF_get nttInvBlk_ok
+open VG.Proof.MlKem.X86_64 (WPoly invW zw PolyRep Rep inv_hop layF_rep
   nttInvLayer_eq red_rep cadd_rep mont_rep rW getElem!_map)
+open VG.Proof.MlKem (wBlockN wBlk_ok layF_get nttInvBlk_ok)
 
 /-- A layer of the words. -/
 def stepI (W : WPoly) : Op → WPoly
