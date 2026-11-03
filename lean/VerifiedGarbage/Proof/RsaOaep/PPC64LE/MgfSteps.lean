@@ -17,7 +17,10 @@ Untrusted: everything here is checked by Lean. The blocks of MGF1's round
 (`Impl.RsaOaep.PPC64LE.round`) between the calls: the counter written
 big-endian to `S + oCtr` (`ctr_ok`, as `ctrV`), the selection of how many
 digest bytes go into `dst` (`xorHead_ok`), their exclusive-or into it
-(`xorLoop_ok`), and the next counter (`nextCtr_ok`).
+(`xorLoop_ok`), and the next counter (`nextCtr_ok`). MGF1's hash function
+is that of the table that is our stack argument `j` (`TabS`: what the table
+holds on entry, where nothing we write reaches it), whose words a load
+through the stack argument reads (`wp_tword`).
 -/
 
 @[expose] public section
@@ -26,7 +29,66 @@ namespace VG.Proof.RsaOaep.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE VG.WriteBytes
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo wp_li wp_addi wp_subi wp_add wp_sub wp_and wp_xor wp_mov wp_lsr
-  wp_stb wp_lbz wp_nil wp_countdown ofNat_succ')
+  wp_stb wp_lbz wp_nil wp_countdown ofNat_succ' wp_addSp wp_ld)
+open VG.Impl.Hmac.Stream.PPC64LE (Hash)
+
+/-! ## The table -/
+
+/-- At `p` in `m`, the addresses `sy` gives `G`'s `init`, `update` and
+`finalize`. -/
+def TabMem (G : Hash) (sy : String → Addr) (p : Addr) (m : Mem) : Prop :=
+  m.readW p 64 = sy G.initN ∧ m.readW (p + BitVec.ofNat 64 8) 64 = sy G.updN ∧
+    m.readW (p + BitVec.ofNat 64 16) 64 = sy G.finN
+
+/-- An indirect call of `f`'s functions, at the addresses `sy` gives, to the
+address of one of `G`'s functions reaches it. -/
+structure TabOK (G : Hash) (f : Fns) (sy : String → Addr) : Prop where
+  i : f.init.find? (fun q => sy q.1 == sy G.initN) = some (G.initN, G.initC)
+  u : f.upd.find? (fun q => sy q.1 == sy G.updN) = some (G.updN, G.updC)
+  f : f.fin.find? (fun q => sy q.1 == sy G.finN) = some (G.finN, G.finC)
+
+/-- The table of `G` at `p` that is our stack argument `j`, as on entry `s`:
+the argument and the table readable, and apart from what we write (`kR s`,
+our part of the working space); the table holding `G`'s functions'
+addresses (an indirect call reaching them) and its digest length. -/
+structure TabS (G : Hash) (f : Fns) (j : Nat) (S : State → Addr) (s : State) (p : Addr) : Prop where
+  jo : arg j < 2 ^ 15 ∧ arg j % 4 = 0
+  arg : s.mem.readW (stackArgAddr s j) 64 = p
+  argR : InRegions s.rd (stackArgAddr s j) 8
+  argK : Region.Disjoint ⟨stackArgAddr s j, 8⟩ (kR s)
+  argS : Region.Disjoint ⟨stackArgAddr s j, 8⟩ (SC S s)
+  tR : ∀ k < 5, InRegions s.rd (p + BitVec.ofNat 64 (8 * k)) 8
+  tK : ∀ k < 5, Region.Disjoint ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (kR s)
+  tS : ∀ k < 5, Region.Disjoint ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (SC S s)
+  mem : TabMem G s.syms p s.mem
+  d : s.mem.readW (p + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D
+  ok : TabOK G f s.syms
+
+/-- A word of memory apart from what `Base` lets us write is as on entry. -/
+theorem Base.readW_apart {S : State → Addr} {vf : State → Reg → BitVec 64} {s t : State} (h : Base S vf s t)
+    {a : Addr} (hk : Region.Disjoint ⟨a, 8⟩ (kR s)) (hs : Region.Disjoint ⟨a, 8⟩ (SC S s)) :
+    t.mem.readW a 64 = s.mem.readW a 64 :=
+  (h.mem.readW (Region.contains_self _ _) (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hk
+    · exact hs) (by decide))
+
+/-- The table's word `k` into `d`, through our stack argument `j`. -/
+theorem wp_tword {G : Hash} {f : Fns} {j : Nat} {S : State → Addr} {vf : State → Reg → BitVec 64} {s t : State}
+    {p : Addr} (T : TabS G f j S s p) (h : Base S vf s t) {k : Nat} (hk : k < 5) {d : Reg} (hd : d ≠ .r0)
+    {is : List Instr} {Q : State → Prop}
+    (kk : ∀ t', Only [d] t t' → t'.gpr d = s.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 → WP isa (.block is) t' Q) :
+    WP isa (.block (tword d j k ++ is)) t Q := by
+  simp only [tword, List.cons_append, List.nil_append]
+  refine wp_addSp fun u₁ o₁ e₁ => wp_ld (a := stackArgAddr s j) (by rw [e₁, h.sp, BitVec.add_zero, stackArgAddr_fb])
+    (by rw [o₁.rd, h.rd]; exact let ⟨R, hR, hc⟩ := T.argR; ⟨R, List.mem_append_left _ hR, hc⟩)
+    (fun u₂ o₂ e₂ => wp_ld (a := p + BitVec.ofNat 64 (8 * k)) (by rw [e₂, o₁.mem, h.readW_apart T.argK T.argS, T.arg])
+      (by rw [o₂.rd, o₁.rd, h.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
+      (fun u₃ o₃ e₃ => kk u₃ ((o₁.trans (o₂.trans o₃)).mono fun r hr => by
+        simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr) (by
+        rw [e₃, o₂.mem, o₁.mem, h.readW_apart (T.tK k hk) (T.tS k hk)])) hd (by omega)) hd T.jo
+
 open VG.Proof.RsaPkcs1Sig (bytesAt_length writeBytes_out)
 open VG.Proof.Mgf1 (ifp ifn)
 
@@ -118,19 +180,25 @@ theorem ctr_ok {t : State} (h : Base S vf s t) {c : Nat} (h28 : t.gpr .r28 = Bit
 
 end
 
-/-- How many bytes of the digest go into `dst`: `min(hLen, dstLen - done)`. -/
-theorem xorHead_ok {G : Impl.Hmac.Stream.PPC64LE.Hash} {t : State} {S : Addr} {dst dstLen done : Nat}
+/-- How many bytes of the digest go into `dst`: `min(hLen, dstLen - done)`,
+`hLen` the table's word 4. -/
+theorem xorHead_ok {G : Hash} {f : Fns} {j : Nat} {S' : State → Addr} {vf : State → Reg → BitVec 64} {s₀ : State}
+    {p : Addr} (P : Fits S' s₀) (T : TabS G f j S' s₀ p) {t : State} (hb : Base S' vf s₀ t) {S : Addr}
+    {dst dstLen done : Nat}
     (hD : G.D < 2 ^ 15) (h14 : t.gpr .r14 = S) (h26 : t.gpr .r26 = off S dst) (h27 : t.gpr .r27 = BitVec.ofNat 64 dstLen)
     (h29 : t.gpr .r29 = BitVec.ofNat 64 done) (hlt : done < dstLen) (hdl : dstLen < 2 ^ 63) :
-    WP isa (.block (xorHead G)) t fun t' => Only [.r6, .r7, .r8, .r9, .r10, .r11, .r12] t t' ∧
+    WP isa (.block (xorHead j)) t fun t' => Only [.r6, .r7, .r8, .r9, .r10, .r11, .r12] t t' ∧
       t'.gpr .r11 = off S oDig ∧ t'.gpr .r12 = off S (dst + done) ∧
       t'.gpr .r9 = BitVec.ofNat 64 (min G.D (dstLen - done)) := by
-  simp only [xorHead]
-  refine wp_addi fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => wp_li hD fun u₄ o₄ e₄ =>
-    wp_sub fun u₅ o₅ e₅ => wp_lsr fun u₆ o₆ e₆ => wp_li (by decide) fun u₇ o₇ e₇ => wp_sub fun u₈ o₈ e₈ =>
+  simp only [xorHead, List.cons_append]
+  refine wp_addi fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => ?_
+  have k₃ : Only [.r11, .r12, .r8] t u₃ := (o₁.trans (o₂.trans o₃)).mono
+  refine wp_tword T (hb.only P k₃) (k := 4) (by decide) (by decide) fun u₄ o₄ e₄ => ?_
+  rw [show 8 * 4 = 32 from rfl, T.d] at e₄
+  refine wp_sub fun u₅ o₅ e₅ => wp_lsr fun u₆ o₆ e₆ => wp_li (by decide) fun u₇ o₇ e₇ => wp_sub fun u₈ o₈ e₈ =>
     wp_and fun u₉ o₉ e₉ => wp_add fun u₁₀ o₁₀ e₁₀ => wp_nil ?_
   have k : Only [.r6, .r7, .r8, .r9, .r10, .r11, .r12] t u₁₀ :=
-    (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans (o₉.trans o₁₀))))))))).mono
+    (k₃.trans (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans (o₉.trans o₁₀))))))).mono
   have r8 : u₃.gpr .r8 = BitVec.ofNat 64 (dstLen - done) := by
     rw [e₃, o₂.get .r27, o₂.get .r29, o₁.get .r27, o₁.get .r29, h27, h29, Offset.ofNat_sub_ofNat (by omega_arith)]
   have r10 : u₅.gpr .r10 = BitVec.ofNat 64 (dstLen - done) - BitVec.ofNat 64 G.D := by
@@ -146,18 +214,22 @@ theorem xorHead_ok {G : Impl.Hmac.Stream.PPC64LE.Hash} {t : State} {S : Addr} {d
 
 /-- `nextCtr`: the next counter and `done`, and in `r12` whether `done` is
 still below `dstLen`. -/
-theorem nextCtr_ok {G : Impl.Hmac.Stream.PPC64LE.Hash} {t : State} {c done dstLen : Nat}
+theorem nextCtr_ok {G : Hash} {f : Fns} {j : Nat} {S' : State → Addr} {vf : State → Reg → BitVec 64} {s₀ : State}
+    {p : Addr} (T : TabS G f j S' s₀ p) {t : State} (hb : Base S' vf s₀ t) {c done dstLen : Nat}
     (h28 : t.gpr .r28 = BitVec.ofNat 64 c) (h29 : t.gpr .r29 = BitVec.ofNat 64 done)
-    (h27 : t.gpr .r27 = BitVec.ofNat 64 dstLen) (hD : G.D < 2 ^ 15) (hd : done + G.D < 2 ^ 63) (hdl : dstLen < 2 ^ 63) :
-    WP isa (.block (nextCtr G)) t fun t' => Only [.r28, .r29, .r12] t t' ∧
+    (h27 : t.gpr .r27 = BitVec.ofNat 64 dstLen) (hd : done + G.D < 2 ^ 63) (hdl : dstLen < 2 ^ 63) :
+    WP isa (.block (nextCtr j)) t fun t' => Only [.r28, .r29, .r12] t t' ∧
       t'.gpr .r28 = BitVec.ofNat 64 (c + 1) ∧ t'.gpr .r29 = BitVec.ofNat 64 (done + G.D) ∧
       (t'.gpr .r12 != 0) = decide (done + G.D < dstLen) := by
   simp only [nextCtr]
-  refine wp_addi fun u₁ o₁ e₁ => wp_addi (h := hD) fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => wp_lsr fun u₄ o₄ e₄ =>
-    wp_nil ⟨(o₁.trans (o₂.trans (o₃.trans o₄))).mono, ?_, ?_, ?_⟩
-  · rw [o₄.get .r28, o₃.get .r28, o₂.get .r28, e₁, h28, BitVec.ofNat_add]
-  · rw [o₄.get .r29, o₃.get .r29, e₂, o₁.get .r29, h29, BitVec.ofNat_add]
-  · rw [e₄, e₃, o₂.get .r27, e₂, o₁.get .r29, o₁.get .r27, h29, h27, ← BitVec.ofNat_add]
+  refine wp_tword T hb (k := 4) (by decide) (by decide) fun u₀ o₀ e₀ => ?_
+  rw [show 8 * 4 = 32 from rfl, T.d] at e₀
+  refine wp_addi fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => wp_lsr fun u₄ o₄ e₄ =>
+    wp_nil ⟨(o₀.trans (o₁.trans (o₂.trans (o₃.trans o₄)))).mono, ?_, ?_, ?_⟩
+  · rw [o₄.get .r28, o₃.get .r28, o₂.get .r28, e₁, o₀.get .r28, h28, BitVec.ofNat_add]
+  · rw [o₄.get .r29, o₃.get .r29, e₂, o₁.get .r29, o₁.get .r12, o₀.get .r29, h29, e₀, BitVec.ofNat_add]
+  · rw [e₄, e₃, o₂.get .r27, e₂, o₁.get .r29, o₁.get .r27, o₁.get .r12, o₀.get .r29, o₀.get .r27, h29, h27, e₀,
+      ← BitVec.ofNat_add]
     exact ne_zero_ltBit hd hdl
 
 /-- The `n` bytes at `p` XORed with those at `q`. -/
