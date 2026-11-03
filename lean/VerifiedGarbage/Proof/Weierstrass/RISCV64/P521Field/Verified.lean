@@ -80,8 +80,8 @@ theorem fnWith_ct {k : Nat} {fast : Prog isa} {core : List Instr} {Pre : State �
     {Pub : State → State → Prop} (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂)
     (h : RelCT isa (VG.RISCV64.Taint.Agree (Taint.ofRegs [.a0, .a1, .a2, .a3]))
       (.seq (.block ptrs) (.ite (.zero .t0) fast
-        (.seq (.block ([.addi .t1 .t2 0] ++ unpack k .t4 (SA k) 0 ++ unpack k .t5 (SB k) 0 ++
-            [.addi .t4 .a3 (SA k), .addi .t5 .a3 (SB k), .addi .t2 .a3 (SO k)])) <|
+        (.seq (.block (([.addi .t1 .t2 0] : List Instr) ++ unpack k .t4 (SA k) 0 ++ unpack k .t5 (SB k) 0 ++
+            ([.addi .t4 .a3 (SA k), .addi .t5 .a3 (SB k), .addi .t2 .a3 (SO k)] : List Instr))) <|
           .seq (.block core) (.block (pack k .t1 (SO k) 0))))) fun _ _ => True) :
     ConstantTime isa Pre Pub (fnWith k fast core) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
