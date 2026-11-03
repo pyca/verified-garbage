@@ -28,8 +28,10 @@ and `a7`), then:
 * `shr`: `[o] = [a] / 2^30`, `n + 1` digits, for the new `f` and `g`;
 * `mred`: `[o] = (t + k m) / 2^32` reduced into `[0, m)` for the new `a`,
   `b`: `k = t₀ (-m⁻¹) mod 2^32` added (`mac`), the top digit fixed by the
-  carry, `m` added (the result is then in `(0, 3m)`) and subtracted twice
-  where it does not borrow (`csub`).
+  carry, which leaves the quotient `R` in `(-m, 2m)`; `m` added where `R` is
+  negative (its top digit's sign bit, the multiplier of a `mac`), which
+  leaves it in `[0, 2m)`, and subtracted where that does not borrow
+  (`csub`).
 
 `n` stays in `s8` and the count of the batches left in `s7`, so every loop's
 count and every address depends only on `w` and the base, all in
@@ -188,15 +190,18 @@ def csub (o x s : Nat) : Prog isa := seqs [
   countLoop .t3 selBody]
 
 /-- `[o] = (t + k m) / 2^32` into `[0, m)`, for `t = [t]` (`n + 2` digits,
-signed), `k = t₀ (-m⁻¹) mod 2^32`. -/
+signed), `k = t₀ (-m⁻¹) mod 2^32`: the quotient `R` (in `(-m, 2m)`), plus
+`m` where it is negative (`a5`, the top digit's bit 31), less `m` where that
+does not borrow. -/
 def mred (t o : Nat) : Prog isa := seqs [
   .block (ptr .t0 t ++ ldW .t6 wIv ++ [.load .w .t5 .t0 0, .mul .a5 .t5 .t6, .shift .sll .d .a5 .a5 32,
     .shift .srl .d .a5 .a5 32]),
   mac t t aMz cntN1,
-  .block [.load .w .t5 .t0 0, .add .t5 .t5 .t4, .store .w .t5 .t0 0],
-  .block (ptr .t0 aT3 ++ ptr .t1 t ++ ptr .t2 aMz ++ [.addi .t1 .t1 4, .li .a5 1] ++ cntN1 ++ [.li .t4 0]),
+  .block [.load .w .t5 .t0 0, .add .t5 .t5 .t4, .store .w .t5 .t0 0, .shift .srl .d .a5 .t5 31,
+    .logicImm .and .a5 .a5 1],
+  .block (ptr .t0 aT3 ++ ptr .t1 t ++ ptr .t2 aMz ++ [.addi .t1 .t1 4] ++ cntN1 ++ [.li .t4 0]),
   countLoop .t3 macBody,
-  csub aT3 aT3 t, csub o aT3 t]
+  csub o aT3 t]
 
 /-- The new `f` and `g`. -/
 def updateG : Prog isa := seqs [lin wU wV aT1 aF aG, lin wQ wR aT2 aF aG, shr aF aT1, shr aG aT2]

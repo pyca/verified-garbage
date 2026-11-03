@@ -47,13 +47,16 @@ theorem runBlock_ptr (B : Addr) (w : Nat) {s : State} {r : Reg} {j : Nat} (rest 
 
 /-- The arithmetic of the reduction: from the words the code leaves (see
 the module doc), `R + p`, and the low digit zero. -/
-theorem mred_arith {T V0 V2 V' X3 P A : Int} {p iv k C C2 d0 j0 j2 : Int} {D3 : Int}
+theorem mred_arith {T V0 V2 V' X3 P A : Int} {p iv k C C2 d0 j0 j2 : Int} {D3 L b : Int}
     (hA : A = 2 ^ 32 * P) (hpP : p < P) (hp0 : 0 < p) (hm : (p * iv + 1) % 2 ^ 32 = 0)
     (hk : k = (T * iv) % 2 ^ 32) (hT : T = V0 + A * d0) (hmac : V2 + A * C = V0 + k * p)
     (hD3 : D3 - d0 - C = 2 ^ 32 * j0) (hlow : V2 + A * D3 = j2 + 2 ^ 32 * V')
-    (hj2 : 0 ≤ j2) (hj2' : j2 < 2 ^ 32) (hR : X3 + A * C2 = V' + p) (hX0 : 0 ≤ X3) (hX1 : X3 < A)
+    (hj2 : 0 ≤ j2) (hj2' : j2 < 2 ^ 32) (hV' : V' = L + P * D3) (hL0 : 0 ≤ L) (hL1 : L < P)
+    (hD0 : 0 ≤ D3) (hD1 : D3 < 2 ^ 32) (hb : b = D3 / 2 ^ 31)
+    (hR : X3 + A * C2 = V' + b * p) (hX0 : 0 ≤ X3) (hX1 : X3 < A)
     (hTr : |T| ≤ 2 ^ 31 * p) :
-    X3 = Divstep.W32.mredRaw p iv T + p := by
+    X3 = if Divstep.W32.mredRaw p iv T < 0 then Divstep.W32.mredRaw p iv T + p
+      else Divstep.W32.mredRaw p iv T := by
   have spec := Divstep.W32.mredRaw_spec (t := T) hm
   have rng := Divstep.W32.mredRaw_range (t := T) hp0 hm hTr
   rw [← hk] at spec
@@ -67,22 +70,71 @@ theorem mred_arith {T V0 V2 V' X3 P A : Int} {p iv k C C2 d0 j0 j2 : Int} {D3 : 
   have e2 : j2 = 2 ^ 32 * (R + A * j0 - V') := by grind
   have z := mul_small (H := 2 ^ 32) (d := R + A * j0 - V') (by decide) (by omega) (by omega)
   have e3 : V' = R + A * j0 := by omega
-  have e4 : A * (j0 - C2) = X3 - (R + p) := by grind
+  -- `V'` is `R` modulo `A`, below `A`, so `j0` is whether `R` is negative.
   have bnd : 3 * p < A := by
     rw [hA]
     have : (3 : Int) * P ≤ 2 ^ 32 * P := Int.mul_le_mul_of_nonneg_right (by decide) (by omega)
     omega
-  have := mul_small (H := A) (d := j0 - C2) hA0 (by omega) (by omega)
-  rw [this, Int.mul_zero] at e4
-  omega
+  have hPD : P * D3 ≤ P * (2 ^ 32 - 1) := Int.mul_le_mul_of_nonneg_left (by omega) (by omega)
+  have hPD0 : 0 ≤ P * D3 := Int.mul_nonneg (by omega) hD0
+  have hV1 : V' < A := by rw [hV', hA]; omega
+  have hV0 : 0 ≤ V' := by rw [hV']; omega
+  have j01 : j0 = (if R < 0 then 1 else 0) := by
+    split
+    · have z1 := mul_small (H := A) (d := j0 - 1) hA0 (by grind) (by grind)
+      omega
+    · exact mul_small (H := A) (d := j0) hA0 (by omega) (by omega)
+  -- `D3`'s bit 31 is `b`, so `V'` is at least `2^31 P` exactly where `b` is 1.
+  have hdm := Int.mul_ediv_add_emod D3 (2 ^ 31)
+  have hr0 := Int.emod_nonneg D3 (show (2 : Int) ^ 31 ≠ 0 by decide)
+  have hr1 := Int.emod_lt_of_pos D3 (show (0 : Int) < 2 ^ 31 by decide)
+  rw [← hb] at hdm
+  have hb0 : 0 ≤ b := by rw [hb]; exact Int.ediv_nonneg hD0 (by decide)
+  have hb1 : b ≤ 1 := by rw [hb]; omega
+  have hPr : P * (D3 % 2 ^ 31) ≤ P * (2 ^ 31 - 1) :=
+    Int.mul_le_mul_of_nonneg_left (by omega) (by omega)
+  have hPr0 : 0 ≤ P * (D3 % 2 ^ 31) := Int.mul_nonneg (by omega) hr0
+  have eV : V' = L + P * (D3 % 2 ^ 31) + 2 ^ 31 * P * b := by
+    rw [hV']
+    have : P * D3 = P * (2 ^ 31 * b + D3 % 2 ^ 31) := by rw [hdm]
+    grind
+  have hP2 : p < 2 ^ 31 * P := by omega
+  rcases (show b = 0 ∨ b = 1 by omega) with b0 | b1
+  · subst b0
+    have hRn : ¬ R < 0 := by
+      intro hn
+      have : V' = R + A := by rw [e3, j01]; simp only [hn, ↓reduceIte, Int.mul_one]
+      rw [hA] at this
+      omega
+    simp only [hRn, ↓reduceIte]
+    rw [j01] at e3
+    simp only [hRn, ↓reduceIte, Int.mul_zero, Int.add_zero] at e3
+    have e4 : A * C2 = R - X3 := by rw [Int.zero_mul, Int.add_zero] at hR; omega
+    have := mul_small (H := A) (d := C2) hA0 (by omega) (by omega)
+    rw [this, Int.mul_zero] at e4
+    omega
+  · subst b1
+    have hRn : R < 0 := by
+      apply Classical.byContradiction
+      intro hn
+      rw [j01] at e3
+      simp only [hn, ↓reduceIte, Int.mul_zero, Int.add_zero] at e3
+      omega
+    simp only [hRn, ↓reduceIte]
+    rw [j01] at e3
+    simp only [hRn, ↓reduceIte, Int.mul_one] at e3
+    have e4 : A * (C2 - 1) = R + p - X3 := by rw [Int.one_mul] at hR; grind
+    have := mul_small (H := A) (d := C2 - 1) hA0 (by omega) (by omega)
+    rw [this, Int.mul_zero] at e4
+    omega
 
-/-- `norm p (R)` from `R + p` and two conditional subtractions. -/
-theorem norm_twice {p R : Int} (X0 : Nat) (hX0 : (X0 : Int) = R + p) (P : Nat)
+/-- `norm p (R)` from `R`, plus `p` where it is negative, and one conditional
+subtraction. -/
+theorem norm_once {p R : Int} (X0 : Nat) (hX0 : (X0 : Int) = if R < 0 then R + p else R) (P : Nat)
     (hP : (P : Int) = p) :
-    ((if P ≤ (if P ≤ X0 then X0 - P else X0) then (if P ≤ X0 then X0 - P else X0) - P
-      else (if P ≤ X0 then X0 - P else X0) : Nat) : Int) = Divstep.W32.norm p R := by
+    ((if P ≤ X0 then X0 - P else X0 : Nat) : Int) = Divstep.W32.norm p R := by
   unfold Divstep.W32.norm
-  split_ifs <;> omega
+  split_ifs at hX0 ⊢ <;> omega
 
 /-- `mred t o`: `[o] = mred p iv T` for `T` the signed number of `n + 2`
 digits in `[t]`. -/
@@ -132,42 +184,53 @@ theorem mred_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) {t 
   refine WP.mono (mac_ok h1 (fun u hu => cntN1_ok hu) (K := n + 1) (by omega) (by omega) ht ht hm hN
     (by rw [ka5]; exact Nat.mod_lt _ (by decide))) fun t2 ⟨h2, kp2, mac2, c2, p0, _, out2, k2⟩ => ?_
   rw [WP.seq_iff]
-  -- 3: the top digit plus the carry.
-  refine WP.mono (WP.keep [.t5] (Q := fun u => u.mem = t2.mem.writeW (off B (arr w t + 4 * (n + 1)))
-      (((t2.mem.readW (off B (arr w t + 4 * (n + 1))) 32).setWidth 64 + t2.gpr .t4).setWidth 32)) ?_
-      (by rfl) (by rfl)) fun t3 ⟨m3, k3⟩ => ?_
+  -- 3: the top digit plus the carry, and its bit 31 (the quotient's sign) into `a5`.
+  refine WP.mono (WP.keep [.t5, .a5] (Q := fun u => u.mem = t2.mem.writeW (off B (arr w t + 4 * (n + 1)))
+      (((t2.mem.readW (off B (arr w t + 4 * (n + 1))) 32).setWidth 64 + t2.gpr .t4).setWidth 32) ∧
+      (u.gpr .a5).toNat = (((t2.mem.readW (off B (arr w t + 4 * (n + 1))) 32).toNat +
+        (t2.gpr .t4).toNat) % 2 ^ 32) / 2 ^ 31) ?_
+      (by rfl) (by rfl)) fun t3 ⟨⟨m3, a53⟩, k3⟩ => ?_
   · have hs2 := h2.ws.scr
     brun [exec_li, p0, exec_load_w, exec_store_w, hs2.ld (show arr w t + 4 * (n + 1) + 4 ≤ Z by omega),
       hs2.st (show arr w t + 4 * (n + 1) + 4 ≤ Z by omega),
       Scr.al4 hs2 (show arr w t + 4 * (n + 1) + 4 ≤ Z by omega) (by omega)]
+    have hw := (t2.mem.readW (off B (arr w t + 4 * (n + 1))) 32).isLt
+    rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_add, toNat_ext32,
+      show (1#64 : BitVec 64).toNat = 1 from rfl, Nat.shiftRight_eq_div_pow]
+    generalize (t2.mem.readW (off B (arr w t + 4 * (n + 1))) 32).toNat = W at hw ⊢
+    generalize (t2.gpr .t4).toNat = C at c2 ⊢
+    rw [Nat.and_one_is_mod]
+    omega
   have h3' := h2.of_keep (k3.mono (by decide))
   rw [WP.seq_iff]
   -- 4: `[aT3] = R + p`.
   have hb4 : WP isa (.block (ptr .t0 aT3 ++ ptr .t1 t ++ ptr .t2 aMz ++
-      ([.addi .t1 .t1 4, .li .a5 1] : List Instr) ++ cntN1 ++ ([.li .t4 0] : List Instr))) t3 fun u =>
+      ([.addi .t1 .t1 4] : List Instr) ++ cntN1 ++ ([.li .t4 0] : List Instr))) t3 fun u =>
       Ctx u B Z w N n ∧ u.mem = t3.mem ∧ u.gpr .t0 = off B (arr w aT3) ∧ u.gpr .t1 = off B (arr w t + 4) ∧
       u.gpr .t2 = off B (arr w aMz) ∧ u.gpr .t3 = BitVec.ofNat 64 (n + 1) ∧ u.gpr .t4 = 0 ∧
-      u.gpr .a5 = 1#64 ∧ Keep kRegs t3 u := by
-    rw [show ptr .t0 aT3 ++ ptr .t1 t ++ ptr .t2 aMz ++ ([.addi .t1 .t1 4, .li .a5 1] : List Instr) ++ cntN1 ++
+      u.gpr .a5 = t3.gpr .a5 ∧ Keep kRegs t3 u := by
+    rw [show ptr .t0 aT3 ++ ptr .t1 t ++ ptr .t2 aMz ++ ([.addi .t1 .t1 4] : List Instr) ++ cntN1 ++
       ([.li .t4 0] : List Instr) = VG.Impl.Rsa.RISCV64.Keys.ptrs aT3 t aMz ++
-        (([.addi .t1 .t1 4, .li .a5 1] : List Instr) ++ cntN1 ++ ([.li .t4 0] : List Instr)) by
+        (([.addi .t1 .t1 4] : List Instr) ++ cntN1 ++ ([.li .t4 0] : List Instr)) by
           simp only [VG.Impl.Rsa.RISCV64.Keys.ptrs, List.append_assoc]]
     refine ptrs_ok h3'.ws (by omega) (by omega) (by omega) fun u q0 q1 q2 ku mu => ?_
     have hu := h3'.of_keep (ku.mono (by decide))
-    refine WP.mono (WP.keep [.t1, .t3, .t4, .a5] (Q := fun y => y.gpr .t1 = off B (arr w t + 4) ∧
-      y.gpr .t3 = BitVec.ofNat 64 (n + 1) ∧ y.gpr .t4 = 0 ∧ y.gpr .a5 = 1#64 ∧ y.mem = u.mem) ?_
-      (by rfl) (by rfl)) fun y ⟨⟨y1, y3, y4, y5, ym⟩, ky⟩ => ?_
+    refine WP.mono (WP.keep [.t1, .t3, .t4] (Q := fun y => y.gpr .t1 = off B (arr w t + 4) ∧
+      y.gpr .t3 = BitVec.ofNat 64 (n + 1) ∧ y.gpr .t4 = 0 ∧ y.mem = u.mem) ?_
+      (by rfl) (by rfl)) fun y ⟨⟨y1, y3, y4, ym⟩, ky⟩ => ?_
     · brun [exec_li, cntN1, hu.s8, ofNat_succ, q1, fin64_exec_li_zero]
       try rfl
     have k0 : Keep kRegs t3 y := (ku.trans ky).mono (by decide)
-    refine ⟨h3'.of_keep k0, ym.trans mu, ?_, y1, ?_, y3, y4, y5, k0⟩
+    refine ⟨h3'.of_keep k0, ym.trans mu, ?_, y1, ?_, y3, y4, ?_, k0⟩
     · rw [ky.gpr (by decide)]; exact q0
     · rw [ky.gpr (by decide)]; exact q2
+    · rw [ky.gpr (by decide), ku.gpr (by decide)]
   refine WP.mono hb4 fun t4 ⟨h4, m4, q0, q1, q2, q3, q4, q5, k4⟩ => ?_
   rw [WP.seq_iff]
   have dt3 := arr_disj (w := w) ht3
   have d3m := arr_disj (w := w) h3m
-  refine WP.mono (macLoop_ok h4.ws.scr q0 q1 q2 q3 (by rw [q4]; decide) (by rw [q5]; decide) (by omega)
+  have b1 : (t4.gpr .a5).toNat ≤ 1 := by rw [q5, a53]; omega
+  refine WP.mono (macLoop_ok h4.ws.scr q0 q1 q2 q3 (by rw [q4]; decide) (by omega) (by omega)
     (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
     (by unfold Ahead; omega) (by unfold Ahead; omega)) fun t5 ⟨c5, mac5, _, out5, k5⟩ => ?_
   have h5 := h4.of_keep (k5.mono (by decide))
@@ -183,14 +246,10 @@ theorem mred_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) {t 
         (by simp)))
   have pm5 : val32 t5.mem B (arr w aMz) (n + 1) = p := by
     rw [keep_val K5 (by omega) (by simp; omega) (by simp) (by omega), hp]
-  rw [WP.seq_iff]
-  refine WP.mono (csub_ok h5 h3 h3 ht hm hN ht3 htm ht3.symm pm5 rfl) fun t6 ⟨h6, K6, v6, k6⟩ => ?_
-  have pm6 : val32 t6.mem B (arr w aMz) (n + 1) = p := by
-    rw [keep_val K6 (by omega) (by simp; omega) (by simp) (by omega), pm5]
-  refine WP.mono (csub_ok h6 ho h3 ht hm hN ht3 htm hot pm6 v6) fun t7 ⟨h7, K7, v7, k7⟩ => ?_
-  have k : Keep kRegs s t7 := Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans'
-    (Keep.trans' k1 k2) (k3.mono (by decide))) k4) (k5.mono (by decide))) k6) k7
-  refine ⟨h.of_keep k, (K5.mono (by simp)).trans ((K6.mono (by simp)).trans (K7.mono (by simp))), ?_, k⟩
+  refine WP.mono (csub_ok h5 ho h3 ht hm hN ht3 htm hot pm5 rfl) fun t7 ⟨h7, K7, v7, k7⟩ => ?_
+  have k : Keep kRegs s t7 := Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans'
+    (Keep.trans' k1 k2) (k3.mono (by decide))) k4) (k5.mono (by decide))) k7
+  refine ⟨h.of_keep k, (K5.mono (by simp)).trans (K7.mono (by simp)), ?_, k⟩
   rw [v7]
   -- The arithmetic.
   have pm3 : val32 t3.mem B (arr w aMz) (n + 1) = p := by
@@ -210,8 +269,7 @@ theorem mred_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) {t 
   have v3' : val32 t3.mem B (arr w t) (n + 1 + 1) =
       w32 t3.mem B (arr w t) + 2 ^ 32 * val32 t3.mem B (arr w t + 4) (n + 1) := rfl
   rw [m1, ka5, hp] at mac2
-  rw [m4, pm3, q5, q4, show (1#64 : BitVec 64).toNat = 1 from rfl, show (0 : BitVec 64).toNat = 0 from rfl,
-    Nat.one_mul, Nat.add_zero] at mac5
+  rw [m4, pm3, q5, a53, q4, show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at mac5
   have hTs := hT
   unfold sv at hTs
   -- `k ≡ T iv`.
@@ -229,6 +287,12 @@ theorem mred_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) {t 
     rw [Int.natCast_emod, Int.natCast_mul, Int.mul_emod, Int.mul_emod T, hTmod]
     push_cast
     rw [Int.emod_eq_of_lt (a := (w32 s.mem B (arr w t) : Int)) (by omega) (by simp only [w32]; omega)]
+  -- `V'`'s top digit is the stored `D3`.
+  have hV'e : (val32 t3.mem B (arr w t + 4) (n + 1) : Int) = (val32 t3.mem B (arr w t + 4) n : Int) +
+      2 ^ (32 * n) * ((((s.mem.readW (off B (arr w t + 4 * (n + 1))) 32).toNat + (t2.gpr .t4).toNat) %
+        2 ^ 32 : Nat) : Int) := by
+    rw [val32_succ, show arr w t + 4 + 4 * n = arr w t + 4 * (n + 1) by omega, m3, w32_write_self, ← eD3]
+    push_cast; ring
   have hd0 := toInt_cond (s.mem.readW (off B (arr w t + 4 * (n + 1))) 32)
   have hdl := (s.mem.readW (off B (arr w t + 4 * (n + 1))) 32).isLt
   have X := mred_arith (T := T) (V0 := val32 s.mem B (arr w t) (n + 1)) (V2 := val32 t2.mem B (arr w t) (n + 1))
@@ -244,9 +308,14 @@ theorem mred_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) {t 
     (by exact_mod_cast hp0) (by exact_mod_cast hinv) hk hTs.symm (by exact_mod_cast mac2)
     (by rw [hd0]; split <;> omega)
     (by rw [← eD3]; exact_mod_cast (v3.symm.trans v3'))
-    (by omega) (by exact_mod_cast (t3.mem.readW (off B (arr w t)) 32).isLt) (by exact_mod_cast mac5) (by omega)
+    (by omega) (by exact_mod_cast (t3.mem.readW (off B (arr w t)) 32).isLt)
+    (L := val32 t3.mem B (arr w t + 4) n)
+    (b := (((((s.mem.readW (off B (arr w t + 4 * (n + 1))) 32).toNat + (t2.gpr .t4).toNat) % 2 ^ 32 : Nat) /
+      2 ^ 31 : Nat) : Int))
+    hV'e (by omega) (by exact_mod_cast val32_lt _ _ _ _) (by omega) (by omega) (by omega)
+    (by rw [← dd]; exact_mod_cast mac5) (by omega)
     (by exact_mod_cast val32_lt _ _ _ _) hTr
-  exact norm_twice _ X _ rfl
+  exact norm_once _ X _ rfl
 
 end VG.Proof.Rsa.RISCV64.InvBatch
 
