@@ -153,6 +153,31 @@ def fromBs : List Instr :=
   loadMasks bsBase bsMasks ++ (List.range 4).flatMap (fun w => orthoOut w (3 - w)) ++
   mixes.flatMap fun (g, h) => mixOut g h
 
+/-- Into `d`, through `tmp`: the state's word `w` of block 0, byte-reversed,
+from its planes. Bit `16 i` of plane `j` (block 0) is bit `j` of the word's
+byte `i` (from the most significant): the planes masked to those bits (by
+`t3`) and shifted by `j` put byte `i` in bits `16 i … 16 i + 7`, and two
+folds (the first masked by `t4`) put it in bits `8 i … 8 i + 7`. The bits
+combined are disjoint, so XOR combines them. -/
+def word0 (d tmp : Reg) (w : Nat) : List Instr :=
+  [ldS d (stateSlot w 0), andR d d .t3] ++
+  ((List.range 7).flatMap fun j =>
+    [ldS tmp (stateSlot w (j + 1)), andR tmp tmp .t3, shlI tmp tmp (j + 1), xorR d d tmp]) ++
+  [shrI tmp d 8, xorR d d tmp, andR d d .t4, shrI tmp d 16, xorR d d tmp]
+
+/-- The tail buffer's word `h` of block 0, through `t0`–`t2` (and `t5`, the
+low word's mask): the state's words `3 - 2 h` (low) and `2 - 2 h` (high)
+of block 0, as `fromBs` leaves it. -/
+def half0 (h : Nat) : List Instr :=
+  word0 t2 t1 (2 - 2 * h) ++ [shlI t2 t2 32] ++ word0 t0 t1 (3 - 2 * h) ++
+    [andR t0 t0 .t5, xorR t0 t0 t2, stS (tailAt 0 h) t0]
+
+/-- Block 0 alone of `fromBs`: the tail buffer's first block from the
+state's planes, with the masks of the bits of block 0 (`t3`), of the 16-bit
+groups (`t4`) and of the low word (`t5`). -/
+def fromBs0 : List Instr :=
+  [ldS .t3 oneSlot, ldS .t4 grpSlot, ldS .t5 lowSlot] ++ half0 0 ++ half0 1
+
 /-! ## A round -/
 
 /-- The register of the round key's entry. -/

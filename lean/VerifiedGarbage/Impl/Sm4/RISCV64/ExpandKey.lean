@@ -13,8 +13,9 @@ with its working space in the scratch buffer (`Layers.lean`, moved to
 `a5`), which the artifact allocates on the stack. As on PPC64LE
 (`Impl/Sm4/PPC64LE/ExpandKey.lean`): the bitsliced rounds of ECB, with `L'`
 for `L` and a table of `CK`'s planes for the round keys, run the key
-schedule on sixteen copies of `MK ⊕ FK`; after every four rounds `fromBs`
-puts the state's words in the tail buffer as a block, whose 64-bit words
+schedule on sixteen copies of `MK ⊕ FK`; after every four rounds `fromBs0`
+puts the state's words of the first copy in the tail buffer as a block (as
+`fromBs` does for all sixteen), whose 64-bit words
 stored byte-reversed are the schedule's next 16 bytes. The contracts state
 no alignment for the key or the schedule, so the key is read a byte at a
 time, and the schedule written a byte at a time (which reverses the bytes).
@@ -54,7 +55,7 @@ def extract : List Instr :=
 /-- Four rounds of the key schedule, and their round keys to the schedule;
 `t0` is zero when `kr` reaches the table's end. -/
 def keyBody : List Instr :=
-  rounds4 .key ++ [.addi kr kr 256] ++ fromBs ++ extract ++ [.addi .a1 .a1 16, .sub t0 kr .a4]
+  rounds4 .key ++ [.addi kr kr 256] ++ fromBs0 ++ extract ++ [.addi .a1 .a1 16, .sub t0 kr .a4]
 
 def expandKey : Prog isa :=
   .seq (.block ([movR sb .a2] ++ saveRegs ++ setSlots (keyMasks ++ bsKs) ++ ckTable ++ loadHalf 0 ++

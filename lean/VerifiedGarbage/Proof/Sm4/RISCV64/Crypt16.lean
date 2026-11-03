@@ -150,6 +150,55 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
     rw [addr_add, show 8 * tailSlot + 16 * b + k = 8 * (tailSlot + (2 * b + k / 8)) + k % 8 by omega_arith,
       hb', hmem, ← hbit, planes_eq]
 
+/-- The state's planes of block 0 back to the tail buffer's first block (`fromBs0`). -/
+theorem fromBs0_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E) (hc : Ctx s₀ s)
+    {X : Nat → Nat → Spec.Sm4.Word} (hX : StRel s X) :
+    ∃ s', runBlock isa fromBs0 s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kr = s.gpr kr ∧ StRel s' X ∧
+      tailBlock s' 0 = outBlock (X 0) := by
+  have hchk := fromBs0_check
+  unfold fromBsEnv at hchk
+  obtain ⟨s', h', -, hso, hkr, rd', wr', -, o', f', hb', -⟩ := linG_ok hchk (ok_bs hp hc)
+    (fun i => slotW s (64 + i))
+    (fun r i hri => by simp at hri)
+    (fun j i hji => by
+      obtain ⟨k, hk, rfl, rfl⟩ := stateIns_mem hji
+      exact ⟨by simp only [bsCfg, tableSlot_eq]; omega_arith, by omega_arith, by simp only [Nat.zero_add]; rfl⟩)
+    (fun kv hkv => ⟨by have := mask_lt hkv; simp only [bsCfg, tableSlot_eq]; omega_arith, hc.masks kv hkv⟩)
+    (fun j hj => by simp [bsCfg] at hj)
+  simp only [bsCfg] at hb' hso hkr
+  have hall : (restRegs.all fun r => fromBs0.all fun i => dst i != some r) = true := by
+    lit_decide
+  have hkeep : ∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r := fun r hr =>
+    o' r (List.all_eq_true.mp hall r (not_sboxWrites r hr))
+  have keep : ∀ k ∈ keyMaskSlots ++ stateSlots, slotW s' k = slotW s k := fun k hk => by
+    have hk' : k < 128 := (keep_range k hk).2
+    rw [slotW, hb', hkr k hk (by rw [tableSlot_eq]; exact hk')]
+  refine ⟨s', h', hc.bs rd' wr' hkeep f' (fun kv hkv => ?_), hkeep _ (by decide), ?_, ?_⟩
+  · rw [keep kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv))]; exact hc.masks kv hkv
+  · exact fun w hw => (hX w hw).congr fun j hj => by
+      show slotW s' (stateSlot w j) = slotW s (stateSlot w j)
+      exact keep _ (List.mem_append_right _ (by
+        simp only [stateSlots, List.mem_map, List.mem_range]
+        exact ⟨8 * w + j, by omega_arith, by simp only [stateSlot]; omega_arith⟩))
+  · apply Vector.ext
+    intro k hk
+    refine BitVec.eq_of_getLsbD_eq fun j hj => ?_
+    rw [getLsbD_outBlock' (X 0) hk hj]
+    have ht : 8 * (k % 8) + j < 64 := by omega_arith
+    have hmem := hso (tailSlot + (2 * 0 + k / 8)) (fromBsG (2 * 0 + k / 8)) (by
+        simp only [fromBs0Outs, List.mem_map, List.mem_range]; exact ⟨2 * 0 + k / 8, by omega_arith, rfl⟩)
+        (by rw [tableSlot_eq, tailSlot_eq]; omega_arith) _ ht
+    rw [readW64_bit _ _ (by omega_arith) hj, byte_addr _ rfl] at hmem
+    have e1 : 8 * (3 - (2 * ((2 * 0 + k / 8) % 2) + (8 * (k % 8) + j) / 32)) + (8 * (k % 8) + j) % 8 =
+        8 * (3 - k / 4) + j := by omega_arith
+    have e2 : 16 * ((8 * (k % 8) + j) / 8 % 4) + (2 * 0 + k / 8) / 2 = 16 * (k % 4) + 0 := by omega_arith
+    have hw : 3 - k / 4 < 4 := by omega_arith
+    have hbit := hX (3 - k / 4) hw 0 (by decide) (k % 4) (by omega_arith) j hj
+    rw [fromBsG, xorBits_cons, xorBits_nil, Bool.xor_false, e1, Nat.add_assoc, e2, bitOf_word _ _ _ (by omega_arith)] at hmem
+    simp only [Spec.Sm4.blockAt, Vector.getElem_ofFn]
+    rw [addr_add, show 8 * tailSlot + 16 * 0 + k = 8 * (tailSlot + (2 * 0 + k / 8)) + k % 8 by omega_arith,
+      hb', hmem, ← hbit, planes_eq]
+
 /-- `crypt16`: each block of the tail buffer becomes the output of SM4's 32
 rounds with the table's round keys. -/
 theorem crypt16_wp {s₀ : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E) (hm : MasksOk s₀)

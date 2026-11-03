@@ -11,7 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 /-!
 # SM4 on RISCV64: the layers every function shares, as literals
 
-The transposes and four rounds in each direction (`materialize_value`),
+The transposes (and the key schedule's `fromBs0`) and four rounds in each direction (`materialize_value`),
 evaluated once here: the literals of the functions (`Lit.lean`) and the
 checks of the transposes (`Linear.lean`) read them.
 -/
@@ -22,6 +22,7 @@ namespace VG.Proof.Sm4.RISCV64
 
 materialize_value Impl.Sm4.RISCV64.toBs
 materialize_value Impl.Sm4.RISCV64.fromBs
+materialize_value Impl.Sm4.RISCV64.fromBs0
 materialize_value encRounds := Impl.Sm4.RISCV64.rounds4 .enc
 materialize_value keyRounds := Impl.Sm4.RISCV64.rounds4 .key
 
