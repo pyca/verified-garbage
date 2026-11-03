@@ -143,7 +143,7 @@ def step (τ : T) : Instr → Option T
   | .strb t n off => storeStep τ n off 1 (pub τ t)
   | .ldrSp t off =>
     if off + 4 ≤ τ.argLen then some { τ with regs := set τ t true, bases := spBases τ t off } else none
-  | .push _ | .pop .. | .alloc _ | .free _ => none
+  | .push _ | .pop .. | .alloc _ | .free _ | .blx _ => none
 
 def meet (τ₁ τ₂ : T) : T where
   regs := τ₁.regs.inter τ₂.regs
