@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 public import VerifiedGarbage.Proof.Framework.ICall
 public import VerifiedGarbage.Impl.RsaOaep.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Syms
