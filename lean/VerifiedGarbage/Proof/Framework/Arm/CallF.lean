@@ -117,8 +117,16 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     (hd : armStack c ≤ s.sp.toNat) :
     Frame (s.wr ++ [belowA s.sp (armStack c)]) s.mem s'.mem := by
   induction h with
-  | icall hi => nomatch hi
-  | icallNext hi => nomatch hi
+  | icall _ hc _ hr ih =>
+    simp only [armStack] at hd ⊢
+    obtain ⟨-, w₁, p₁, m₁, -⟩ := call_eq hc
+    rw [ret_eq hr]
+    have := ih (by rw [p₁]; omega)
+    rw [w₁, p₁, m₁] at this
+    exact Frame.belowA_mono this (by omega) hd
+  | icallNext _ _ _ ih =>
+    simp only [armStack] at hd ⊢
+    exact Frame.belowA_mono (ih (by simp only [armStack]; omega)) (by simp only [armStack]; omega) hd
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [armStack] at hd ⊢

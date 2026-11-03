@@ -26,7 +26,7 @@ namespace VG.AArch64
 def storesAt (ok : Nat → Bool) : Instr → Bool
   | .str .x _ .x3 d => ok d
   | .strq _ .x3 d => ok d && ok (d + 8)
-  | .str .. | .strb .. | .strSp .. | .strq .. | .stp .. | .push _ | .pop _ | .alloc _ | .free _ => false
+  | .str .. | .strb .. | .strSp .. | .strq .. | .stp .. | .push _ | .pop _ | .alloc _ | .free _ | .blr _ => false
   | i => !clobbers i .x3
 
 /-- The byte at `a` is in no store at `base + d`, for `ok d`. -/
@@ -70,7 +70,7 @@ theorem exec_mem_of_noStore {i : Instr} {s s' : State} (h : exec i s = some s')
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     split <;> rfl
-  | push _ | pop _ | alloc _ | free _ => simp only [reduceExec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [reduceExec, reduceCtorEq] at h
   | _ =>
     simp only [reduceExec] at h
     first
