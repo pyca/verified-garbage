@@ -389,6 +389,9 @@ theorem sdepth_noFrames : ∀ c : Prog isa, c.noFrames = true → sdepth c = 0
   | .loop b _, h => sdepth_noFrames b h
   | .call _ b, h => sdepth_noFrames b h
   | .frame .., h => by cases h
+  | .icall _ _ b n, h => by
+    simp only [Code.noFrames, Bool.and_eq_true] at h
+    simp only [sdepth, sdepth_noFrames b h.1, sdepth_noFrames n h.2, Nat.max_self]
 
 theorem pbk_sdepth : sdepth pbkCode ≤ 992 := by
   have h1 := Proof.Pbkdf2.Whole.RISCV64.hi_sdepth Proof.Pbkdf2.Whole.RISCV64.Sha256.okF.hH
