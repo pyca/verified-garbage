@@ -11,6 +11,8 @@ vg_sha1_compress:
 	andi a3, a3, -8
 	beqz a2, 20f
 22:
+	andi t5, a0, 3
+	beqz t5, 23f
 	lbu t0, 0(a0)
 	lbu t5, 1(a0)
 	slli t5, t5, 8
@@ -61,6 +63,14 @@ vg_sha1_compress:
 	lbu t5, 19(a0)
 	slli t5, t5, 24
 	or t4, t4, t5
+	j 24f
+23:
+	lwu t0, 0(a0)
+	lwu t1, 4(a0)
+	lwu t2, 8(a0)
+	lwu t3, 12(a0)
+	lwu t4, 16(a0)
+24:
 	slli t6, t0, 32
 	or t0, t0, t6
 	slli t6, t1, 32
@@ -1893,6 +1903,8 @@ vg_sha1_compress:
 	slli t0, t0, 32
 	srli t6, t0, 32
 	or t0, t0, t6
+	andi t6, a0, 3
+	beqz t6, 25f
 	lbu t5, 0(a0)
 	lbu t6, 1(a0)
 	slli t6, t6, 8
@@ -1983,6 +1995,24 @@ vg_sha1_compress:
 	sb t5, 18(a0)
 	srli t5, t4, 24
 	sb t5, 19(a0)
+	j 26f
+25:
+	lwu t5, 0(a0)
+	add t0, t0, t5
+	sw t0, 0(a0)
+	lwu t5, 4(a0)
+	add t1, t1, t5
+	sw t1, 4(a0)
+	lwu t5, 8(a0)
+	add t2, t2, t5
+	sw t2, 8(a0)
+	lwu t5, 12(a0)
+	add t3, t3, t5
+	sw t3, 12(a0)
+	lwu t5, 16(a0)
+	add t4, t4, t5
+	sw t4, 16(a0)
+26:
 	addi a1, a1, 64
 	addi a2, a2, -1
 	bnez a2, 22b

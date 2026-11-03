@@ -12,6 +12,8 @@ vg_sha256_compress:
 	sd s0, 64(a3)
 	beqz a2, 20f
 22:
+	andi a5, a0, 3
+	beqz a5, 23f
 	lbu t0, 0(a0)
 	lbu a5, 1(a0)
 	slli a5, a5, 8
@@ -92,6 +94,17 @@ vg_sha256_compress:
 	lbu a5, 31(a0)
 	slli a5, a5, 24
 	or a4, a4, a5
+	j 24f
+23:
+	lwu t0, 0(a0)
+	lwu t1, 4(a0)
+	lwu t2, 8(a0)
+	lwu t3, 12(a0)
+	lwu t4, 16(a0)
+	lwu t5, 20(a0)
+	lwu t6, 24(a0)
+	lwu a4, 28(a0)
+24:
 	lbu a5, 0(a1)
 	slli a5, a5, 24
 	lbu a6, 1(a1)
@@ -3948,6 +3961,8 @@ vg_sha256_compress:
 	and a7, t1, t2
 	or a6, a6, a7
 	add t0, t0, a6
+	andi a6, a0, 3
+	beqz a6, 25f
 	lbu a5, 0(a0)
 	lbu a6, 1(a0)
 	slli a6, a6, 8
@@ -4092,6 +4107,33 @@ vg_sha256_compress:
 	sb a5, 30(a0)
 	srli a5, a4, 24
 	sb a5, 31(a0)
+	j 26f
+25:
+	lwu a5, 0(a0)
+	add t0, t0, a5
+	sw t0, 0(a0)
+	lwu a5, 4(a0)
+	add t1, t1, a5
+	sw t1, 4(a0)
+	lwu a5, 8(a0)
+	add t2, t2, a5
+	sw t2, 8(a0)
+	lwu a5, 12(a0)
+	add t3, t3, a5
+	sw t3, 12(a0)
+	lwu a5, 16(a0)
+	add t4, t4, a5
+	sw t4, 16(a0)
+	lwu a5, 20(a0)
+	add t5, t5, a5
+	sw t5, 20(a0)
+	lwu a5, 24(a0)
+	add t6, t6, a5
+	sw t6, 24(a0)
+	lwu a5, 28(a0)
+	add a4, a4, a5
+	sw a4, 28(a0)
+26:
 	addi a1, a1, 64
 	addi a2, a2, -1
 	bnez a2, 22b

@@ -17,6 +17,8 @@ pub(crate) unsafe extern "C" fn vg_sha1_compress() {
 .insn 2, 0x9ae1
 beqz a2, 20f
 22:
+.insn 4, 0x00357f13
+beqz t5, 23f
 .insn 4, 0x00054283
 .insn 4, 0x00154f03
 .insn 2, 0x0f22
@@ -67,6 +69,14 @@ beqz a2, 20f
 .insn 4, 0x01354f03
 .insn 2, 0x0f62
 .insn 4, 0x01eeeeb3
+j 24f
+23:
+.insn 4, 0x00056283
+.insn 4, 0x00456303
+.insn 4, 0x00856383
+.insn 4, 0x00c56e03
+.insn 4, 0x01056e83
+24:
 .insn 4, 0x02029f93
 .insn 4, 0x01f2e2b3
 .insn 4, 0x02031f93
@@ -1899,6 +1909,8 @@ beqz a2, 20f
 .insn 2, 0x1282
 .insn 4, 0x0202df93
 .insn 4, 0x01f2e2b3
+.insn 4, 0x00357f93
+beqz t6, 25f
 .insn 4, 0x00054f03
 .insn 4, 0x00154f83
 .insn 2, 0x0fa2
@@ -1989,6 +2001,24 @@ beqz a2, 20f
 .insn 4, 0x01e50923
 .insn 4, 0x018edf13
 .insn 4, 0x01e509a3
+j 26f
+25:
+.insn 4, 0x00056f03
+.insn 2, 0x92fa
+.insn 4, 0x00552023
+.insn 4, 0x00456f03
+.insn 2, 0x937a
+.insn 4, 0x00652223
+.insn 4, 0x00856f03
+.insn 2, 0x93fa
+.insn 4, 0x00752423
+.insn 4, 0x00c56f03
+.insn 2, 0x9e7a
+.insn 4, 0x01c52623
+.insn 4, 0x01056f03
+.insn 2, 0x9efa
+.insn 4, 0x01d52823
+26:
 .insn 4, 0x04058593
 .insn 2, 0x167d
 bnez a2, 22b
