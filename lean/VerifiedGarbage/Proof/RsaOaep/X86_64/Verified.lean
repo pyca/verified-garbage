@@ -182,13 +182,13 @@ theorem OK.mem {vs : List MdHash} (h : OK vs) : ∃ w, w ∈ vs := List.exists_m
 variable {Hl : Hash} (hH : HashOK Hl) (KH : Callees Hl) (mH : MgfLink Hl hH)
 
 include hH KH mH in
-/-- `vg_rsa_oaep_<H>_decrypt`, with the tables of `vs`. -/
+/-- `vg_rsa_oaep_<H>_mgf1_decrypt`, with the tables of `vs`. -/
 theorem dec_ok (vs : List MdHash) (h : OK vs) (v : PrivImpl) :
     Verified target (Impl.RsaOaep.X86_64.decrypt Hl.stream (fnsOf vs) v.name v.code) (decC mH.G (tables vs)) :=
   dec_verified hH KH mH h.1 v (let ⟨_, hw⟩ := h.mem; dec_sat mH.G hw h.2.1)
 
 include hH KH mH in
-/-- `vg_rsa_oaep_<H>_encrypt_precomputed`, with the tables of `vs`. -/
+/-- `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`, with the tables of `vs`. -/
 theorem enc_ok (vs : List MdHash) (h : OK vs) (v : PublicImpl) :
     Verified target (Impl.RsaOaep.X86_64.Precomputed.encrypt Hl.stream (fnsOf vs) v.name v.code)
       (Pc.encC mH.G (tables vs)) :=

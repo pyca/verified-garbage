@@ -249,7 +249,7 @@ theorem code_constantTime (v : PublicImpl) :
   exact (key _ _ _ _ _ _ ⟨h₁, h₂, hpub, hheld⟩ e₁ e₂).1
 
 include hH KH mH hc in
-/-- `vg_rsa_oaep_<H>_encrypt_precomputed`, calling the implementation `v` of
+/-- `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`, calling the implementation `v` of
 `vg_rsa_public_precomputed_checked`, meets the shared contract, with the
 tables of `vs`. -/
 theorem code_verified (v : PublicImpl) (hsat : ∃ s, (encC mH.G (tables vs)).pre s) :

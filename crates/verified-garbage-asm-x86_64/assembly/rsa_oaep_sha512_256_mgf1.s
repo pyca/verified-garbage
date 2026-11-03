@@ -1,10 +1,10 @@
-// The functions of `src/rsa_oaep_sha384.rs` of `verified-garbage-asm-x86_64`, as text: generated from
+// The functions of `src/rsa_oaep_sha512_256_mgf1.rs` of `verified-garbage-asm-x86_64`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_oaep_sha384_decrypt_crt_adx:
+vg_rsa_oaep_sha512_256_mgf1_decrypt_crt_adx:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+232], rdx
@@ -62,11 +62,11 @@ vg_rsa_oaep_sha384_decrypt_crt_adx:
 	mov eax, eax
 	mov QWORD PTR [rsp+240], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -85,11 +85,11 @@ vg_rsa_oaep_sha384_decrypt_crt_adx:
 	call {vg_sha512_finalize_scratch}
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -180,12 +180,12 @@ vg_rsa_oaep_sha384_decrypt_crt_adx:
 	cmp rax, QWORD PTR [rsp+144]
 	jb 22b
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -278,7 +278,7 @@ vg_rsa_oaep_sha384_decrypt_crt_adx:
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 3392
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 49
+	add rdi, 33
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 0
 	movzx edx, BYTE PTR [rsi]
@@ -289,13 +289,13 @@ vg_rsa_oaep_sha384_decrypt_crt_adx:
 	xor rax, r9
 	or rdx, rax
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 210b
 	mov QWORD PTR [rsp+248], rdx
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 97
+	add rdi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rdx, -1
 	mov esi, 0
 	mov rcx, QWORD PTR [rsp+248]
@@ -327,9 +327,9 @@ vg_rsa_oaep_sha384_decrypt_crt_adx:
 	mov QWORD PTR [rsp+248], rcx
 	mov QWORD PTR [rsp+256], rsi
 	mov rsi, QWORD PTR [rsp+112]
-	add rsi, 97
+	add rsi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1024
 	mov eax, 0
@@ -399,7 +399,7 @@ vg_rsa_oaep_sha384_decrypt_crt_adx:
 	jne 216b
 	mov r11, QWORD PTR [rsp+264]
 	mov rax, QWORD PTR [rsp+184]
-	sub rax, 98
+	sub rax, 66
 	sub rax, QWORD PTR [rsp+256]
 	and rax, r11
 	mov rdi, QWORD PTR [rsp+232]
@@ -434,7 +434,7 @@ vg_rsa_oaep_sha384_decrypt_crt_adx:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_decrypt:
+vg_rsa_oaep_sha512_256_mgf1_decrypt:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+232], rdx
@@ -492,11 +492,11 @@ vg_rsa_oaep_sha384_decrypt:
 	mov eax, eax
 	mov QWORD PTR [rsp+240], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -515,11 +515,11 @@ vg_rsa_oaep_sha384_decrypt:
 	call {vg_sha512_finalize_scratch}
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -610,12 +610,12 @@ vg_rsa_oaep_sha384_decrypt:
 	cmp rax, QWORD PTR [rsp+144]
 	jb 22b
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -708,7 +708,7 @@ vg_rsa_oaep_sha384_decrypt:
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 3392
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 49
+	add rdi, 33
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 0
 	movzx edx, BYTE PTR [rsi]
@@ -719,13 +719,13 @@ vg_rsa_oaep_sha384_decrypt:
 	xor rax, r9
 	or rdx, rax
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 210b
 	mov QWORD PTR [rsp+248], rdx
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 97
+	add rdi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rdx, -1
 	mov esi, 0
 	mov rcx, QWORD PTR [rsp+248]
@@ -757,9 +757,9 @@ vg_rsa_oaep_sha384_decrypt:
 	mov QWORD PTR [rsp+248], rcx
 	mov QWORD PTR [rsp+256], rsi
 	mov rsi, QWORD PTR [rsp+112]
-	add rsi, 97
+	add rsi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1024
 	mov eax, 0
@@ -829,7 +829,7 @@ vg_rsa_oaep_sha384_decrypt:
 	jne 216b
 	mov r11, QWORD PTR [rsp+264]
 	mov rax, QWORD PTR [rsp+184]
-	sub rax, 98
+	sub rax, 66
 	sub rax, QWORD PTR [rsp+256]
 	and rax, r11
 	mov rdi, QWORD PTR [rsp+232]
@@ -864,7 +864,7 @@ vg_rsa_oaep_sha384_decrypt:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_decrypt_crt_ifma:
+vg_rsa_oaep_sha512_256_mgf1_decrypt_crt_ifma:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+232], rdx
@@ -922,11 +922,11 @@ vg_rsa_oaep_sha384_decrypt_crt_ifma:
 	mov eax, eax
 	mov QWORD PTR [rsp+240], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -945,11 +945,11 @@ vg_rsa_oaep_sha384_decrypt_crt_ifma:
 	call {vg_sha512_finalize_scratch}
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -1040,12 +1040,12 @@ vg_rsa_oaep_sha384_decrypt_crt_ifma:
 	cmp rax, QWORD PTR [rsp+144]
 	jb 22b
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -1138,7 +1138,7 @@ vg_rsa_oaep_sha384_decrypt_crt_ifma:
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 3392
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 49
+	add rdi, 33
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 0
 	movzx edx, BYTE PTR [rsi]
@@ -1149,13 +1149,13 @@ vg_rsa_oaep_sha384_decrypt_crt_ifma:
 	xor rax, r9
 	or rdx, rax
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 210b
 	mov QWORD PTR [rsp+248], rdx
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 97
+	add rdi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rdx, -1
 	mov esi, 0
 	mov rcx, QWORD PTR [rsp+248]
@@ -1187,9 +1187,9 @@ vg_rsa_oaep_sha384_decrypt_crt_ifma:
 	mov QWORD PTR [rsp+248], rcx
 	mov QWORD PTR [rsp+256], rsi
 	mov rsi, QWORD PTR [rsp+112]
-	add rsi, 97
+	add rsi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1024
 	mov eax, 0
@@ -1259,7 +1259,7 @@ vg_rsa_oaep_sha384_decrypt_crt_ifma:
 	jne 216b
 	mov r11, QWORD PTR [rsp+264]
 	mov rax, QWORD PTR [rsp+184]
-	sub rax, 98
+	sub rax, 66
 	sub rax, QWORD PTR [rsp+256]
 	and rax, r11
 	mov rdi, QWORD PTR [rsp+232]
@@ -1294,7 +1294,7 @@ vg_rsa_oaep_sha384_decrypt_crt_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_adx:
+vg_rsa_oaep_sha512_256_mgf1_decrypt_sha512_256_avx2_crt_adx:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+232], rdx
@@ -1352,11 +1352,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_adx:
 	mov eax, eax
 	mov QWORD PTR [rsp+240], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -1375,11 +1375,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_adx:
 	call {vg_sha512_finalize_scratch_avx2}
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -1470,12 +1470,12 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_adx:
 	cmp rax, QWORD PTR [rsp+144]
 	jb 22b
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -1568,7 +1568,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_adx:
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 3392
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 49
+	add rdi, 33
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 0
 	movzx edx, BYTE PTR [rsi]
@@ -1579,13 +1579,13 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_adx:
 	xor rax, r9
 	or rdx, rax
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 210b
 	mov QWORD PTR [rsp+248], rdx
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 97
+	add rdi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rdx, -1
 	mov esi, 0
 	mov rcx, QWORD PTR [rsp+248]
@@ -1617,9 +1617,9 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_adx:
 	mov QWORD PTR [rsp+248], rcx
 	mov QWORD PTR [rsp+256], rsi
 	mov rsi, QWORD PTR [rsp+112]
-	add rsi, 97
+	add rsi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1024
 	mov eax, 0
@@ -1689,7 +1689,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_adx:
 	jne 216b
 	mov r11, QWORD PTR [rsp+264]
 	mov rax, QWORD PTR [rsp+184]
-	sub rax, 98
+	sub rax, 66
 	sub rax, QWORD PTR [rsp+256]
 	and rax, r11
 	mov rdi, QWORD PTR [rsp+232]
@@ -1724,7 +1724,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_adx:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_decrypt_sha384_avx2:
+vg_rsa_oaep_sha512_256_mgf1_decrypt_sha512_256_avx2:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+232], rdx
@@ -1782,11 +1782,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2:
 	mov eax, eax
 	mov QWORD PTR [rsp+240], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -1805,11 +1805,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2:
 	call {vg_sha512_finalize_scratch_avx2}
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -1900,12 +1900,12 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2:
 	cmp rax, QWORD PTR [rsp+144]
 	jb 22b
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -1998,7 +1998,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2:
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 3392
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 49
+	add rdi, 33
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 0
 	movzx edx, BYTE PTR [rsi]
@@ -2009,13 +2009,13 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2:
 	xor rax, r9
 	or rdx, rax
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 210b
 	mov QWORD PTR [rsp+248], rdx
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 97
+	add rdi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rdx, -1
 	mov esi, 0
 	mov rcx, QWORD PTR [rsp+248]
@@ -2047,9 +2047,9 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2:
 	mov QWORD PTR [rsp+248], rcx
 	mov QWORD PTR [rsp+256], rsi
 	mov rsi, QWORD PTR [rsp+112]
-	add rsi, 97
+	add rsi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1024
 	mov eax, 0
@@ -2119,7 +2119,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2:
 	jne 216b
 	mov r11, QWORD PTR [rsp+264]
 	mov rax, QWORD PTR [rsp+184]
-	sub rax, 98
+	sub rax, 66
 	sub rax, QWORD PTR [rsp+256]
 	and rax, r11
 	mov rdi, QWORD PTR [rsp+232]
@@ -2154,7 +2154,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_ifma:
+vg_rsa_oaep_sha512_256_mgf1_decrypt_sha512_256_avx2_crt_ifma:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+232], rdx
@@ -2212,11 +2212,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_ifma:
 	mov eax, eax
 	mov QWORD PTR [rsp+240], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -2235,11 +2235,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_ifma:
 	call {vg_sha512_finalize_scratch_avx2}
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -2330,12 +2330,12 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_ifma:
 	cmp rax, QWORD PTR [rsp+144]
 	jb 22b
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -2428,7 +2428,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_ifma:
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 3392
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 49
+	add rdi, 33
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 0
 	movzx edx, BYTE PTR [rsi]
@@ -2439,13 +2439,13 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_ifma:
 	xor rax, r9
 	or rdx, rax
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 210b
 	mov QWORD PTR [rsp+248], rdx
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 97
+	add rdi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rdx, -1
 	mov esi, 0
 	mov rcx, QWORD PTR [rsp+248]
@@ -2477,9 +2477,9 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_ifma:
 	mov QWORD PTR [rsp+248], rcx
 	mov QWORD PTR [rsp+256], rsi
 	mov rsi, QWORD PTR [rsp+112]
-	add rsi, 97
+	add rsi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1024
 	mov eax, 0
@@ -2549,7 +2549,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_ifma:
 	jne 216b
 	mov r11, QWORD PTR [rsp+264]
 	mov rax, QWORD PTR [rsp+184]
-	sub rax, 98
+	sub rax, 66
 	sub rax, QWORD PTR [rsp+256]
 	and rax, r11
 	mov rdi, QWORD PTR [rsp+232]
@@ -2584,7 +2584,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_avx2_crt_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_adx:
+vg_rsa_oaep_sha512_256_mgf1_decrypt_sha512_256_shani_crt_adx:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+232], rdx
@@ -2642,11 +2642,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_adx:
 	mov eax, eax
 	mov QWORD PTR [rsp+240], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -2665,11 +2665,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_adx:
 	call {vg_sha512_finalize_scratch_shani}
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -2760,12 +2760,12 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_adx:
 	cmp rax, QWORD PTR [rsp+144]
 	jb 22b
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -2858,7 +2858,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_adx:
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 3392
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 49
+	add rdi, 33
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 0
 	movzx edx, BYTE PTR [rsi]
@@ -2869,13 +2869,13 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_adx:
 	xor rax, r9
 	or rdx, rax
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 210b
 	mov QWORD PTR [rsp+248], rdx
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 97
+	add rdi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rdx, -1
 	mov esi, 0
 	mov rcx, QWORD PTR [rsp+248]
@@ -2907,9 +2907,9 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_adx:
 	mov QWORD PTR [rsp+248], rcx
 	mov QWORD PTR [rsp+256], rsi
 	mov rsi, QWORD PTR [rsp+112]
-	add rsi, 97
+	add rsi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1024
 	mov eax, 0
@@ -2979,7 +2979,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_adx:
 	jne 216b
 	mov r11, QWORD PTR [rsp+264]
 	mov rax, QWORD PTR [rsp+184]
-	sub rax, 98
+	sub rax, 66
 	sub rax, QWORD PTR [rsp+256]
 	and rax, r11
 	mov rdi, QWORD PTR [rsp+232]
@@ -3014,7 +3014,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_adx:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_decrypt_sha384_shani:
+vg_rsa_oaep_sha512_256_mgf1_decrypt_sha512_256_shani:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+232], rdx
@@ -3072,11 +3072,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani:
 	mov eax, eax
 	mov QWORD PTR [rsp+240], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -3095,11 +3095,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani:
 	call {vg_sha512_finalize_scratch_shani}
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -3190,12 +3190,12 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani:
 	cmp rax, QWORD PTR [rsp+144]
 	jb 22b
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -3288,7 +3288,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani:
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 3392
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 49
+	add rdi, 33
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 0
 	movzx edx, BYTE PTR [rsi]
@@ -3299,13 +3299,13 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani:
 	xor rax, r9
 	or rdx, rax
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 210b
 	mov QWORD PTR [rsp+248], rdx
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 97
+	add rdi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rdx, -1
 	mov esi, 0
 	mov rcx, QWORD PTR [rsp+248]
@@ -3337,9 +3337,9 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani:
 	mov QWORD PTR [rsp+248], rcx
 	mov QWORD PTR [rsp+256], rsi
 	mov rsi, QWORD PTR [rsp+112]
-	add rsi, 97
+	add rsi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1024
 	mov eax, 0
@@ -3409,7 +3409,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani:
 	jne 216b
 	mov r11, QWORD PTR [rsp+264]
 	mov rax, QWORD PTR [rsp+184]
-	sub rax, 98
+	sub rax, 66
 	sub rax, QWORD PTR [rsp+256]
 	and rax, r11
 	mov rdi, QWORD PTR [rsp+232]
@@ -3444,7 +3444,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_ifma:
+vg_rsa_oaep_sha512_256_mgf1_decrypt_sha512_256_shani_crt_ifma:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+232], rdx
@@ -3502,11 +3502,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_ifma:
 	mov eax, eax
 	mov QWORD PTR [rsp+240], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -3525,11 +3525,11 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_ifma:
 	call {vg_sha512_finalize_scratch_shani}
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -3620,12 +3620,12 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_ifma:
 	cmp rax, QWORD PTR [rsp+144]
 	jb 22b
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -3718,7 +3718,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_ifma:
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 3392
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 49
+	add rdi, 33
 	mov rsi, QWORD PTR [rsp+112]
 	add rsi, 0
 	movzx edx, BYTE PTR [rsi]
@@ -3729,13 +3729,13 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_ifma:
 	xor rax, r9
 	or rdx, rax
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 210b
 	mov QWORD PTR [rsp+248], rdx
 	mov rdi, QWORD PTR [rsp+112]
-	add rdi, 97
+	add rdi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rdx, -1
 	mov esi, 0
 	mov rcx, QWORD PTR [rsp+248]
@@ -3767,9 +3767,9 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_ifma:
 	mov QWORD PTR [rsp+248], rcx
 	mov QWORD PTR [rsp+256], rsi
 	mov rsi, QWORD PTR [rsp+112]
-	add rsi, 97
+	add rsi, 65
 	mov r10, QWORD PTR [rsp+184]
-	sub r10, 97
+	sub r10, 65
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1024
 	mov eax, 0
@@ -3839,7 +3839,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_ifma:
 	jne 216b
 	mov r11, QWORD PTR [rsp+264]
 	mov rax, QWORD PTR [rsp+184]
-	sub rax, 98
+	sub rax, 66
 	sub rax, QWORD PTR [rsp+256]
 	and rax, r11
 	mov rdi, QWORD PTR [rsp+232]
@@ -3874,7 +3874,7 @@ vg_rsa_oaep_sha384_decrypt_sha384_shani_crt_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_encrypt_precomputed_rsa_adx:
+vg_rsa_oaep_sha512_256_mgf1_encrypt_precomputed_rsa_adx:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+176], rdx
@@ -3896,9 +3896,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+352]
 	mov QWORD PTR [rsp+208], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
-	sub rax, 98
+	sub rax, 66
 	cmp rax, QWORD PTR [rsp+240]
 	jb 22f
 	mov rcx, QWORD PTR [rsp+112]
@@ -3918,11 +3918,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_adx:
 	movzx eax, BYTE PTR [rsi+r8*1]
 	mov BYTE PTR [rcx+r8*1+1], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 25b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -3946,9 +3946,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_adx:
 	mov r8d, 0
 26:
 	movzx eax, BYTE PTR [rsi+r8*1]
-	mov BYTE PTR [rcx+r8*1+49], al
+	mov BYTE PTR [rcx+r8*1+33], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 26b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 0
@@ -3974,12 +3974,12 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_adx:
 27:
 28:
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -4071,11 +4071,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_adx:
 	jb 210b
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -4213,7 +4213,7 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_adx:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_encrypt_precomputed:
+vg_rsa_oaep_sha512_256_mgf1_encrypt_precomputed:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+176], rdx
@@ -4235,9 +4235,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+352]
 	mov QWORD PTR [rsp+208], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
-	sub rax, 98
+	sub rax, 66
 	cmp rax, QWORD PTR [rsp+240]
 	jb 22f
 	mov rcx, QWORD PTR [rsp+112]
@@ -4257,11 +4257,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed:
 	movzx eax, BYTE PTR [rsi+r8*1]
 	mov BYTE PTR [rcx+r8*1+1], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 25b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -4285,9 +4285,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed:
 	mov r8d, 0
 26:
 	movzx eax, BYTE PTR [rsi+r8*1]
-	mov BYTE PTR [rcx+r8*1+49], al
+	mov BYTE PTR [rcx+r8*1+33], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 26b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 0
@@ -4313,12 +4313,12 @@ vg_rsa_oaep_sha384_encrypt_precomputed:
 27:
 28:
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -4410,11 +4410,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed:
 	jb 210b
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -4552,7 +4552,7 @@ vg_rsa_oaep_sha384_encrypt_precomputed:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_encrypt_precomputed_rsa_ifma:
+vg_rsa_oaep_sha512_256_mgf1_encrypt_precomputed_rsa_ifma:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+176], rdx
@@ -4574,9 +4574,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+352]
 	mov QWORD PTR [rsp+208], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
-	sub rax, 98
+	sub rax, 66
 	cmp rax, QWORD PTR [rsp+240]
 	jb 22f
 	mov rcx, QWORD PTR [rsp+112]
@@ -4596,11 +4596,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_ifma:
 	movzx eax, BYTE PTR [rsi+r8*1]
 	mov BYTE PTR [rcx+r8*1+1], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 25b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -4624,9 +4624,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_ifma:
 	mov r8d, 0
 26:
 	movzx eax, BYTE PTR [rsi+r8*1]
-	mov BYTE PTR [rcx+r8*1+49], al
+	mov BYTE PTR [rcx+r8*1+33], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 26b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 0
@@ -4652,12 +4652,12 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_ifma:
 27:
 28:
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -4749,11 +4749,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_ifma:
 	jb 210b
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -4891,7 +4891,7 @@ vg_rsa_oaep_sha384_encrypt_precomputed_rsa_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_adx:
+vg_rsa_oaep_sha512_256_mgf1_encrypt_precomputed_sha512_256_avx2_rsa_adx:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+176], rdx
@@ -4913,9 +4913,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_adx:
 	mov rax, QWORD PTR [rsp+352]
 	mov QWORD PTR [rsp+208], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
-	sub rax, 98
+	sub rax, 66
 	cmp rax, QWORD PTR [rsp+240]
 	jb 22f
 	mov rcx, QWORD PTR [rsp+112]
@@ -4935,11 +4935,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_adx:
 	movzx eax, BYTE PTR [rsi+r8*1]
 	mov BYTE PTR [rcx+r8*1+1], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 25b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -4963,9 +4963,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_adx:
 	mov r8d, 0
 26:
 	movzx eax, BYTE PTR [rsi+r8*1]
-	mov BYTE PTR [rcx+r8*1+49], al
+	mov BYTE PTR [rcx+r8*1+33], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 26b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 0
@@ -4991,12 +4991,12 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_adx:
 27:
 28:
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -5088,11 +5088,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_adx:
 	jb 210b
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -5230,7 +5230,7 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_adx:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2:
+vg_rsa_oaep_sha512_256_mgf1_encrypt_precomputed_sha512_256_avx2:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+176], rdx
@@ -5252,9 +5252,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2:
 	mov rax, QWORD PTR [rsp+352]
 	mov QWORD PTR [rsp+208], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
-	sub rax, 98
+	sub rax, 66
 	cmp rax, QWORD PTR [rsp+240]
 	jb 22f
 	mov rcx, QWORD PTR [rsp+112]
@@ -5274,11 +5274,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2:
 	movzx eax, BYTE PTR [rsi+r8*1]
 	mov BYTE PTR [rcx+r8*1+1], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 25b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -5302,9 +5302,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2:
 	mov r8d, 0
 26:
 	movzx eax, BYTE PTR [rsi+r8*1]
-	mov BYTE PTR [rcx+r8*1+49], al
+	mov BYTE PTR [rcx+r8*1+33], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 26b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 0
@@ -5330,12 +5330,12 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2:
 27:
 28:
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -5427,11 +5427,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2:
 	jb 210b
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -5569,7 +5569,7 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_ifma:
+vg_rsa_oaep_sha512_256_mgf1_encrypt_precomputed_sha512_256_avx2_rsa_ifma:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+176], rdx
@@ -5591,9 +5591,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_ifma:
 	mov rax, QWORD PTR [rsp+352]
 	mov QWORD PTR [rsp+208], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
-	sub rax, 98
+	sub rax, 66
 	cmp rax, QWORD PTR [rsp+240]
 	jb 22f
 	mov rcx, QWORD PTR [rsp+112]
@@ -5613,11 +5613,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_ifma:
 	movzx eax, BYTE PTR [rsi+r8*1]
 	mov BYTE PTR [rcx+r8*1+1], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 25b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -5641,9 +5641,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_ifma:
 	mov r8d, 0
 26:
 	movzx eax, BYTE PTR [rsi+r8*1]
-	mov BYTE PTR [rcx+r8*1+49], al
+	mov BYTE PTR [rcx+r8*1+33], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 26b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 0
@@ -5669,12 +5669,12 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_ifma:
 27:
 28:
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -5766,11 +5766,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_ifma:
 	jb 210b
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -5908,7 +5908,7 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_avx2_rsa_ifma:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_adx:
+vg_rsa_oaep_sha512_256_mgf1_encrypt_precomputed_sha512_256_shani_rsa_adx:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+176], rdx
@@ -5930,9 +5930,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_adx:
 	mov rax, QWORD PTR [rsp+352]
 	mov QWORD PTR [rsp+208], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
-	sub rax, 98
+	sub rax, 66
 	cmp rax, QWORD PTR [rsp+240]
 	jb 22f
 	mov rcx, QWORD PTR [rsp+112]
@@ -5952,11 +5952,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_adx:
 	movzx eax, BYTE PTR [rsi+r8*1]
 	mov BYTE PTR [rcx+r8*1+1], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 25b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -5980,9 +5980,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_adx:
 	mov r8d, 0
 26:
 	movzx eax, BYTE PTR [rsi+r8*1]
-	mov BYTE PTR [rcx+r8*1+49], al
+	mov BYTE PTR [rcx+r8*1+33], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 26b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 0
@@ -6008,12 +6008,12 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_adx:
 27:
 28:
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -6105,11 +6105,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_adx:
 	jb 210b
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -6247,7 +6247,7 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_adx:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani:
+vg_rsa_oaep_sha512_256_mgf1_encrypt_precomputed_sha512_256_shani:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+176], rdx
@@ -6269,9 +6269,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani:
 	mov rax, QWORD PTR [rsp+352]
 	mov QWORD PTR [rsp+208], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
-	sub rax, 98
+	sub rax, 66
 	cmp rax, QWORD PTR [rsp+240]
 	jb 22f
 	mov rcx, QWORD PTR [rsp+112]
@@ -6291,11 +6291,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani:
 	movzx eax, BYTE PTR [rsi+r8*1]
 	mov BYTE PTR [rcx+r8*1+1], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 25b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -6319,9 +6319,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani:
 	mov r8d, 0
 26:
 	movzx eax, BYTE PTR [rsi+r8*1]
-	mov BYTE PTR [rcx+r8*1+49], al
+	mov BYTE PTR [rcx+r8*1+33], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 26b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 0
@@ -6347,12 +6347,12 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani:
 27:
 28:
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -6444,11 +6444,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani:
 	jb 210b
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -6586,7 +6586,7 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani:
 	ret
 	.p2align 6
 
-vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_ifma:
+vg_rsa_oaep_sha512_256_mgf1_encrypt_precomputed_sha512_256_shani_rsa_ifma:
 	lea rsp, [rsp-296]
 	mov QWORD PTR [rsp+168], rdi
 	mov QWORD PTR [rsp+176], rdx
@@ -6608,9 +6608,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_ifma:
 	mov rax, QWORD PTR [rsp+352]
 	mov QWORD PTR [rsp+208], rax
 	mov rax, QWORD PTR [rsp+184]
-	cmp rax, 98
+	cmp rax, 66
 	jb 20f
-	sub rax, 98
+	sub rax, 66
 	cmp rax, QWORD PTR [rsp+240]
 	jb 22f
 	mov rcx, QWORD PTR [rsp+112]
@@ -6630,11 +6630,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_ifma:
 	movzx eax, BYTE PTR [rsi+r8*1]
 	mov BYTE PTR [rcx+r8*1+1], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 25b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
-	call {vg_sha384_init}
+	call {vg_sha512_256_init}
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 3072
 	mov esi, 0
@@ -6658,9 +6658,9 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_ifma:
 	mov r8d, 0
 26:
 	movzx eax, BYTE PTR [rsi+r8*1]
-	mov BYTE PTR [rcx+r8*1+49], al
+	mov BYTE PTR [rcx+r8*1+33], al
 	add r8, 1
-	cmp r8, 48
+	cmp r8, 32
 	jne 26b
 	mov rdi, QWORD PTR [rsp+112]
 	add rdi, 0
@@ -6686,12 +6686,12 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_ifma:
 27:
 28:
 	mov rax, QWORD PTR [rsp+112]
-	add rax, 49
+	add rax, 33
 	mov rdx, QWORD PTR [rsp+184]
-	sub rdx, 49
+	sub rdx, 33
 	mov rcx, QWORD PTR [rsp+112]
 	add rcx, 1
-	mov r9d, 48
+	mov r9d, 32
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
@@ -6783,11 +6783,11 @@ vg_rsa_oaep_sha384_encrypt_precomputed_sha384_shani_rsa_ifma:
 	jb 210b
 	mov rax, QWORD PTR [rsp+112]
 	add rax, 1
-	mov edx, 48
+	mov edx, 32
 	mov rcx, QWORD PTR [rsp+112]
-	add rcx, 49
+	add rcx, 33
 	mov r9, QWORD PTR [rsp+184]
-	sub r9, 49
+	sub r9, 33
 	mov QWORD PTR [rsp+136], rax
 	mov QWORD PTR [rsp+144], rdx
 	mov QWORD PTR [rsp+120], rcx
