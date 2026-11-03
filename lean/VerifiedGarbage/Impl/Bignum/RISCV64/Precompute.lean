@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.RISCV64.MontMul
+public import VerifiedGarbage.Impl.Bignum.RISCV64.MontSqr
 
 /-!
 # The precomputed values of an RSA modulus on RISC-V
@@ -15,19 +15,24 @@ for `R = 2^(64 w)` to `pre` and returns 1, or writes zeros and returns 0 if
 The working space (`scratch`) is laid out as `Impl/Bignum/Layout.lean`'s,
 with `n` in array 0, `x` in array 1, the accumulator in array 2 and the
 temporary in array 3; the callee-saved registers it uses are saved in its
-header's words 16–24. `R² mod n = 2^(128 w) mod n` is computed from `x =
-2^(64 (w - 1))`, which is below a valid `n`, by `64 + w` modular doublings to
-`2^w R mod n` (the double into the accumulator, then `MontMul.lean`'s
-`subMod64` and `selectAcc64` into `x`), then six Montgomery squares
-(`MontMul.tail`), with `-n⁻¹ mod 2⁶⁴` from `n`'s low word by Newton's
-iteration.
+header's words 16–24. `R² mod n = 2^(128 w) mod n` is computed (`lz`, then
+`r2Rest`) from `x = 2^(64 (w - 1) + 63 - z)`, `n`'s top bit, for `z` the leading zeros
+of its top word (`lz`): it is below a valid `n` (which is odd), and `w + 1 +
+z` modular doublings take it to `2^w R mod n` (the double into the
+accumulator, then `MontMul.lean`'s `subMod64` and `selectAcc64` into `x`).
+Then six Montgomery squares (`MontSqr.sqrTail`, its product in arrays 2–3
+and its temporary array 4) give `2^(64 w) R mod n = R² mod n`, with `-n⁻¹
+mod 2⁶⁴` from `n`'s low word by Newton's iteration. `r2`, which other
+functions use, starts from `2^(64 (w - 1))` (`64 + w` doublings) and squares
+by `MontMul.tail`.
 
 `n` is public: timing may depend on it, and the code branches on its
-validity.
+validity, and the number of doublings depends on its top word.
 
 Registers: `s5` `pre`, `s6` the working space, `s7` `n`'s bytes, `s8` `k`;
 `a7` `n`'s base (array 0), `a2` `x`'s, `a5` the accumulator's, `a6` the
-temporary's, `t0` `w`, `t1` `-n⁻¹ mod 2⁶⁴`, `a1` the doublings left.
+temporary's (array 4's during `r2SquaresS`), `t0` `w`, `t1` `-n⁻¹ mod 2⁶⁴`,
+`a1` the leading zeros, then the doublings left.
 -/
 
 @[expose] public section
@@ -140,6 +145,42 @@ def r2Squares : Prog isa := .seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2S
 its top word not zero: `r2HiDbl`, `minv`, then `r2Squares`. -/
 def r2 : Prog isa := .seq r2HiDbl (.seq (.block minv) r2Squares)
 
+/-- One step of `lz`: if `s0`'s top bit is clear, `s0 := 2 s0` and `a1 += 1`. -/
+def lzStep : List Instr :=
+  [.shift .srl .d .s1 .s0 63, .logicImm .xor .s1 .s1 1, .shiftReg .sll .d .s0 .s0 .s1, .add .a1 .a1 .s1]
+
+/-- `a1 := z`, the leading zeros of `n`'s top word (word `w - 1` of array 0),
+for a top word not zero: 63 steps of `lzStep`, counted by `t5`. -/
+def lz : Prog isa :=
+  .seq (.block [.shift .sll .d .t3 .t0 3, .add .t3 .t3 .a7, .addi .t3 .t3 (-8), .load .d .s0 .t3 0, .li .a1 0,
+      .li .t5 63])
+    (countLoop .t5 lzStep)
+
+/-- `x := 2^(64 (w - 1) + 63 - z)` in array 1 (`a2`), for `z` in `a1`, and
+`a1 := w + 1 + z`, the doublings to `2^w R mod n`. -/
+def r2TopBit : Prog isa :=
+  .seq (.block [.addi .t3 .a2 0]) (.seq zeroWords
+    (.block [.shift .sll .d .t3 .t0 3, .add .t3 .t3 .a2, .addi .t3 .t3 (-8), .li .s1 63,
+      .sub .s1 .s1 .a1, .li .s0 1, .shiftReg .sll .d .s0 .s0 .s1, .store .d .s0 .t3 0,
+      .add .a1 .a1 .t0, .addi .a1 .a1 1]))
+
+/-- `x := x² R⁻¹ mod n` in array 1: `MontSqr.sqrTail`, with `o` and `a` both
+`x`, `a6` at array 4. -/
+def r2SqS : Prog isa := .seq (.block [.addi .a3 .a2 0]) sqrTail
+
+/-- `a6` at array 4 (from array 3), then six `r2SqS`: from `2^w R mod n` to
+`R² mod n`. -/
+def r2SquaresS : Prog isa :=
+  .seq (.block [.shift .sll .d .s0 .t0 3, .addi .s0 .s0 16, .add .a6 .a6 .s0])
+    (.seq r2SqS (.seq r2SqS (.seq r2SqS (.seq r2SqS (.seq r2SqS r2SqS)))))
+
+/-- After `lz`: `x := R² mod n` in array 1, for an odd `n` of `w` words with
+its top word not zero and `z` in `a1`: `r2TopBit`, the `w + 1 + z` doublings
+to `2^w R mod n`, `minv`, then `r2SquaresS`. -/
+def r2Rest : Prog isa :=
+  .seq r2TopBit (.seq (.loop (.seq doubleMod64 (.block [.addi .a1 .a1 (-1)])) (.nonzero .a1))
+    (.seq (.block minv) r2SquaresS))
+
 /-- `w` words from `t4` to `t3`, both advanced past them. -/
 def copyWords : Prog isa :=
   .seq (.block [.addi .t5 .t0 0])
@@ -157,7 +198,7 @@ def zeroPre : Prog isa :=
 /-- Load and check `n`, then write `n` and `R² mod n` to `pre` and return 1,
 or zero `pre` and return 0. -/
 def core : Prog isa :=
-  .seq loadN (.seq check (.ite (.zero .s0) (.seq r2 (.seq write (.block [.li .a0 1])))
+  .seq loadN (.seq check (.ite (.zero .s0) (.seq lz (.seq r2Rest (.seq write (.block [.li .a0 1]))))
     (.seq zeroPre (.block [.li .a0 0]))))
 
 /-- `vg_rsa_public_precompute(pre, pre_len, n, n_len, scratch, scratch_len)`. -/

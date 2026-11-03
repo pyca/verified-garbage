@@ -50,7 +50,8 @@ namespace VG.Proof.Bignum.RISCV64.Pre
 
 open VG VG.RISCV64 VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Bignum.RISCV64.Precompute
 open VG.Proof.Bignum (slot)
-open VG.Proof.Bignum.RISCV64 (Scr r2_ok r2Regs loadN_ok check1_ok check2_ok write_ok zeroPre_ok)
+open VG.Proof.Bignum.RISCV64 (Scr lz_ok r2Rest_ok r2RestRegs topW topW_pos zOf loadN_ok check1_ok check2_ok
+  write_ok zeroPre_ok)
 
 /-! ## Relating two runs -/
 
@@ -107,6 +108,12 @@ def C4 (d : PD) (s : State) : Prop :=
 /-- After the branch. -/
 def C5 (d : PD) (s : State) : Prop := s.gpr .s6 = d.S
 
+/-- After `lz`, for a valid `n`: `a1` is the leading zeros of its top word. -/
+def C6 (d : PD) (s : State) : Prop :=
+  Base d s ∧ wordsVal s.mem d.S (slot d.w 0) d.w = Spec.Rsa.os2ip d.nb ∧
+    Spec.Rsa.modulusValid (Spec.Rsa.os2ip d.nb) d.k = true ∧
+    s.gpr .a1 = BitVec.ofNat 64 (zOf (Spec.Rsa.os2ip d.nb / 2 ^ (64 * (d.w - 1))))
+
 theorem base_pins {d : PD} {s₁ s₂ : State} (h₁ : Base d s₁) (h₂ : Base d s₂) :
     ∀ r ∈ baseRegs, s₁.gpr r = s₂.gpr r := by
   intro r hr
@@ -145,6 +152,14 @@ theorem pins_C3 : Pins C3 (baseRegs ++ ([.t4] : List Reg)) := by
 
 theorem pins_C4 {Φ : PD → State → Prop} (h : ∀ d s, Φ d s → C4 d s) : Pins Φ baseRegs :=
   fun _ _ _ h₁ h₂ => base_pins (h _ _ h₁).1 (h _ _ h₂).1
+
+theorem pins_C6 : Pins C6 (baseRegs ++ ([.a1] : List Reg)) := by
+  intro d s₁ s₂ h₁ h₂ r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact base_pins h₁.1 h₂.1 r hr
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr
+    rw [h₁.2.2.2, h₂.2.2.2]
 
 theorem pins_C5 : Pins C5 [.s6] := by
   rintro d s₁ s₂ h₁ h₂ r hr
@@ -193,10 +208,31 @@ theorem T34 {d : PD} {s : State} (h : C3 d s) : WP isa check2 s (C4 d) := by
     (by rw [h4, getD_of_lt (by omega)])) fun t ⟨a, m, k⟩ =>
     ⟨hb.keep k, by rw [m]; exact hv, a⟩
 
-theorem TA {d : PD} {s : State} (h : C4 d s ∧ s.gpr .s0 = 0) :
-    WP isa (.seq r2 (.seq write (.block [.li .a0 1]))) s (C5 d) := by
+/-- The top word is the number's quotient by `2^(64 (w - 1))`. -/
+theorem topW_eq {m : Mem} {B : Addr} {w : Nat} (hw : 1 ≤ w) :
+    topW m B w = wordsVal m B (slot w 0) w / 2 ^ (64 * (w - 1)) := by
+  rw [VG.Proof.Bignum.RISCV64.wordsVal_top _ _ _ hw, Nat.mul_comm, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _),
+    Nat.div_eq_of_lt (VG.Proof.Mont.wordsVal_lt _ _ _ _), Nat.zero_add]
+
+theorem TL {d : PD} {s : State} (h : C4 d s ∧ s.gpr .s0 = 0) : WP isa lz s (C6 d) := by
   obtain ⟨⟨hb, hv, h0⟩, hz⟩ := h
   have hval := h0.mp hz
+  have hf := VG.Proof.Bignum.valid_facts hval hb.k64
+  have hwd : d.w = (d.k + 7) / 8 := rfl
+  have hw1 : 8 ≤ d.w := by have := hb.k64; omega
+  have e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
+  have e0 := e 0; have e8 := e 8
+  have hZ := hb.hZ
+  rw [← hwd] at hf
+  have hN : 2 ^ (64 * (d.w - 1)) ≤ wordsVal s.mem d.S (slot d.w 0) d.w := by rw [hv]; exact hf.2.2
+  refine WP.mono (lz_ok hb.scr hb.a7 hb.t0 (by omega) (by omega) (topW_pos (by omega) hN))
+    fun t ⟨⟨ha, _, _, hm⟩, k⟩ => ⟨hb.keep k, by rw [hm]; exact hv, hval, ?_⟩
+  rw [ha, show (Mont.word s.mem d.S (slot d.w 0 + 8 * (d.w - 1))).toNat = topW s.mem d.S d.w from rfl,
+    topW_eq (by omega), hv]
+
+theorem TA {d : PD} {s : State} (h : C6 d s) :
+    WP isa (.seq r2Rest (.seq write (.block [.li .a0 1]))) s (C5 d) := by
+  obtain ⟨hb, hv, hval, hz⟩ := h
   have hf := VG.Proof.Bignum.valid_facts hval hb.k64
   have hnw := hb.scr.nowrap
   have hwd : d.w = (d.k + 7) / 8 := rfl
@@ -207,7 +243,8 @@ theorem TA {d : PD} {s : State} (h : C4 d s ∧ s.gpr .s0 = 0) :
   have hh : hdrBytes = 256 := rfl
   have hZ := hb.hZ
   rw [← hwd] at hf
-  refine WP.seq (WP.mono (r2_ok hb.scr hb.a2 hb.a5 hb.a6 hb.a7 hb.t0 (by omega) hw' hZ
+  refine WP.seq (WP.mono (r2Rest_ok hb.scr hb.a2 hb.a5 hb.a6 hb.a7 hb.t0
+    (by rw [hz, topW_eq (by omega), hv]) (by omega) hw' hZ
     (by rw [hv]; exact hf.2.2) (by rw [hv]; exact hf.1)) fun s₃ ⟨_, _, k₃⟩ => ?_)
   have g : ∀ r ∈ [Reg.s5, .a7, .a2, .t0, .s6], s₃.gpr r = s.gpr r := fun r hr =>
     k₃.gpr (by revert r hr; decide)
@@ -247,8 +284,9 @@ theorem fn_rel : RelCT isa (Two C0) precompute fun _ _ => True := by
     exact RelCT.seq (two_post (two_taint _ pins_C2 (by taint_decide)) fun _ _ h => T23 h)
       (two_post (two_taint _ pins_C3 (by taint_decide)) fun _ _ h => T34 h)
   · refine RelCT.ite (fun s₁ s₂ ⟨d, h₁, h₂, _⟩ => ?_)
-      (RelCT.mono (two_post (Φ := fun d s => C4 d s ∧ s.gpr .s0 = 0)
-        (two_taint _ (pins_C4 fun _ _ h => h.1) (by taint_decide)) fun _ _ h => TA h)
+      (RelCT.mono (RelCT.seq (two_post (Φ := fun d s => C4 d s ∧ s.gpr .s0 = 0)
+        (two_taint _ (pins_C4 fun _ _ h => h.1) (by taint_decide)) fun _ _ h => TL h)
+        (two_post (two_taint _ pins_C6 (by taint_decide)) fun _ _ h => TA h))
         (fun s₁ s₂ ⟨⟨d, h₁, h₂, hsp⟩, hc⟩ => ?_) fun _ _ h => h)
       (RelCT.mono (two_post (Φ := fun d s => C4 d s ∧ s.gpr .s0 ≠ 0)
         (two_taint _ (pins_C4 fun _ _ h => h.1) (by taint_decide)) fun _ _ h => TB h)
