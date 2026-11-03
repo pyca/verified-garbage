@@ -4298,3 +4298,27 @@ pub(crate) mod vg_p521_mul_mod_p;
 #[rustfmt::skip]
 #[path = "internal/vg_p521_sub_mod_p.rs"]
 pub(crate) mod vg_p521_sub_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521u_mul_mod_p.rs"]
+pub(crate) mod vg_p521u_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521u_add_mod_p.rs"]
+pub(crate) mod vg_p521u_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521u_sub_mod_p.rs"]
+pub(crate) mod vg_p521u_sub_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521u_in_mod_p.rs"]
+pub(crate) mod vg_p521u_in_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521u_out_mod_p.rs"]
+pub(crate) mod vg_p521u_out_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521u_canon_mod_p.rs"]
+pub(crate) mod vg_p521u_canon_mod_p;

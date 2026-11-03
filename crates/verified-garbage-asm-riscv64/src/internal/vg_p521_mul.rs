@@ -23,6 +23,31 @@ pub(crate) unsafe extern "C" fn vg_p521_mul() {
 .insn 4, 0x4e153ca3
 .insn 4, 0x80150513
 .insn 2, 0x842a
+.insn 2, 0x8522
+.insn 4, 0x43000593
+.insn 4, 0x43000613
+.insn 2, 0x4681
+call {vg_p521u_in_mod_p}
+.insn 2, 0x8522
+.insn 4, 0x47800593
+.insn 4, 0x47800613
+.insn 2, 0x4681
+call {vg_p521u_in_mod_p}
+.insn 2, 0x8522
+.insn 4, 0x1a800593
+.insn 4, 0x1a800613
+.insn 2, 0x4681
+call {vg_p521u_in_mod_p}
+.insn 2, 0x8522
+.insn 4, 0x1f000593
+.insn 4, 0x1f000613
+.insn 2, 0x4681
+call {vg_p521u_in_mod_p}
+.insn 2, 0x8522
+.insn 4, 0x23800593
+.insn 4, 0x23800613
+.insn 2, 0x4681
+call {vg_p521u_in_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -195,213 +220,213 @@ pub(crate) unsafe extern "C" fn vg_p521_mul() {
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -517,213 +542,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -839,213 +864,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -1161,213 +1186,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -1483,213 +1508,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -1805,213 +1830,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -2127,213 +2152,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -2449,213 +2474,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -2799,213 +2824,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -3175,213 +3200,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -3551,213 +3576,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -3927,213 +3952,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -4303,213 +4328,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -4679,213 +4704,213 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b800593
 .insn 4, 0x50800613
 .insn 4, 0x43000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x47800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x59800613
 .insn 4, 0x1a800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x55000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x43000613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x47800613
 .insn 4, 0x1a800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x7ff40813
 .insn 4, 0x7ff80813
 .insn 2, 0x0809
@@ -7035,522 +7060,527 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x50800593
 .insn 4, 0x43000613
 .insn 4, 0x4c000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x4c000613
 .insn 4, 0x4c000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x55000593
 .insn 4, 0x47800613
 .insn 4, 0x6b800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x59800593
 .insn 4, 0x4c000613
 .insn 4, 0x11800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x59800613
 .insn 4, 0x59800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x55000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x50800613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x50800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x79000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x5e000613
 .insn 4, 0x79000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x74800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x74800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x70000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x79000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x74800613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x79000613
 .insn 4, 0x62800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x70000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x67000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x62800613
 .insn 4, 0x62800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x5e000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x50800593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x50800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x50800593
 .insn 4, 0x79000613
 .insn 4, 0x79000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x79000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x74800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x74800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x59800593
 .insn 4, 0x62800613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x59800593
 .insn 4, 0x59800613
 .insn 4, 0x59800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x59800593
 .insn 4, 0x59800613
 .insn 4, 0x70000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x59800593
 .insn 4, 0x59800613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x50800593
 .insn 4, 0x79000613
 .insn 4, 0x79000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x50800593
 .insn 4, 0x50800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x50800593
 .insn 4, 0x50800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x55000593
 .insn 4, 0x74800613
 .insn 4, 0x50800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x55000593
 .insn 4, 0x79000613
 .insn 4, 0x55000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x55000593
 .insn 4, 0x55000613
 .insn 4, 0x70000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x59800613
 .insn 4, 0x59800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x55000613
 .insn 4, 0x55000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x50800613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x50800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x79000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x5e000613
 .insn 4, 0x79000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x74800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x74800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x55000613
 .insn 4, 0x59800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x70000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x79000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x74800613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x79000613
 .insn 4, 0x62800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x70000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x67000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x62800613
 .insn 4, 0x62800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x5e000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x50800593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x50800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x50800593
 .insn 4, 0x79000613
 .insn 4, 0x79000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x50800613
 .insn 4, 0x79000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x74800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x74800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x59800593
 .insn 4, 0x62800613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x59800593
 .insn 4, 0x59800613
 .insn 4, 0x59800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x59800593
 .insn 4, 0x59800613
 .insn 4, 0x70000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x59800593
 .insn 4, 0x59800613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x50800593
 .insn 4, 0x79000613
 .insn 4, 0x79000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x50800593
 .insn 4, 0x50800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x50800593
 .insn 4, 0x50800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x55000593
 .insn 4, 0x74800613
 .insn 4, 0x50800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x55000593
 .insn 4, 0x79000613
 .insn 4, 0x55000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x55000593
 .insn 4, 0x55000613
 .insn 4, 0x70000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x43000593
 .insn 4, 0x50800613
 .insn 4, 0x59800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x59800613
 .insn 4, 0x59800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x4c000593
 .insn 4, 0x6b800613
 .insn 4, 0x59800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x47800593
 .insn 4, 0x55000613
 .insn 4, 0x11800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
+.insn 2, 0x8522
+.insn 4, 0x4c000593
+.insn 4, 0x4c000613
+.insn 2, 0x4681
+call {vg_p521u_canon_mod_p}
 .insn 2, 0x4e01
 .insn 4, 0x4c043e83
 .insn 4, 0x01de6e33
@@ -7634,51 +7664,51 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x43000613
 .insn 4, 0x7ff00693
 .insn 4, 0x53168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x47800613
 .insn 4, 0x7ff00693
 .insn 4, 0x57968693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x4c000613
 .insn 4, 0x7ff00693
 .insn 4, 0x5c168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x43000613
 .insn 4, 0x47800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7ff00613
 .insn 4, 0x53160613
 .insn 4, 0x7ff00693
 .insn 4, 0x57968693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x6b800613
 .insn 4, 0x70000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x79000593
 .insn 4, 0x79000613
 .insn 4, 0x7d800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x43000613
 .insn 4, 0x4c000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
@@ -7686,169 +7716,169 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x53160613
 .insn 4, 0x7ff00693
 .insn 4, 0x5c168693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x7ff00693
 .insn 4, 0x02168693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x47800613
 .insn 4, 0x4c000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x7ff00613
 .insn 4, 0x57960613
 .insn 4, 0x7ff00693
 .insn 4, 0x5c168693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x02158593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x5e000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x1f000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x23800613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x70000613
 .insn 4, 0x67000693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x5e000613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x6b800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x23800613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x70000593
 .insn 4, 0x70000613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x6b800613
 .insn 4, 0x74800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x74800593
 .insn 4, 0x1f000613
 .insn 4, 0x74800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x7d800593
 .insn 4, 0x7d800613
 .insn 4, 0x74800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x70000613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x62800593
 .insn 4, 0x62800613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x7d800693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x79000613
 .insn 4, 0x5e000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x5e000593
 .insn 4, 0x5e000613
 .insn 4, 0x6b800693
-call {vg_p521_sub_mod_p}
+call {vg_p521u_sub_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x6b800593
 .insn 4, 0x79000613
 .insn 4, 0x70000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x7ff00613
 .insn 4, 0x02160613
 .insn 4, 0x67000693
-call {vg_p521_mul_mod_p}
+call {vg_p521u_mul_mod_p}
 .insn 2, 0x8522
 .insn 4, 0x67000593
 .insn 4, 0x67000613
 .insn 4, 0x6b800693
-call {vg_p521_add_mod_p}
+call {vg_p521u_add_mod_p}
 .insn 4, 0x5e043283
 .insn 4, 0x42543823
 .insn 4, 0x5e843283
@@ -7904,6 +7934,36 @@ call {vg_p521_add_mod_p}
 .insn 4, 0x6b043283
 .insn 4, 0x50543023
 bnez s1, 20b
+.insn 2, 0x8522
+.insn 4, 0x43000593
+.insn 4, 0x43000613
+.insn 2, 0x4681
+call {vg_p521u_out_mod_p}
+.insn 2, 0x8522
+.insn 4, 0x47800593
+.insn 4, 0x47800613
+.insn 2, 0x4681
+call {vg_p521u_out_mod_p}
+.insn 2, 0x8522
+.insn 4, 0x4c000593
+.insn 4, 0x4c000613
+.insn 2, 0x4681
+call {vg_p521u_out_mod_p}
+.insn 2, 0x8522
+.insn 4, 0x1a800593
+.insn 4, 0x1a800613
+.insn 2, 0x4681
+call {vg_p521u_out_mod_p}
+.insn 2, 0x8522
+.insn 4, 0x1f000593
+.insn 4, 0x1f000613
+.insn 2, 0x4681
+call {vg_p521u_out_mod_p}
+.insn 2, 0x8522
+.insn 4, 0x23800593
+.insn 4, 0x23800613
+.insn 2, 0x4681
+call {vg_p521u_out_mod_p}
 .insn 4, 0x7ff40093
 .insn 4, 0x4f90b083
 .insn 4, 0x7ff40493
@@ -7912,8 +7972,11 @@ bnez s1, 20b
 .insn 4, 0x4e943403
 .insn 2, 0x8082
 .option pop",
-        vg_p521_mul_mod_p = sym crate::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
-        vg_p521_add_mod_p = sym crate::ec_p521::vg_p521_add_mod_p::vg_p521_add_mod_p,
-        vg_p521_sub_mod_p = sym crate::ec_p521::vg_p521_sub_mod_p::vg_p521_sub_mod_p,
+        vg_p521u_mul_mod_p = sym crate::ec_p521::vg_p521u_mul_mod_p::vg_p521u_mul_mod_p,
+        vg_p521u_add_mod_p = sym crate::ec_p521::vg_p521u_add_mod_p::vg_p521u_add_mod_p,
+        vg_p521u_sub_mod_p = sym crate::ec_p521::vg_p521u_sub_mod_p::vg_p521u_sub_mod_p,
+        vg_p521u_in_mod_p = sym crate::ec_p521::vg_p521u_in_mod_p::vg_p521u_in_mod_p,
+        vg_p521u_out_mod_p = sym crate::ec_p521::vg_p521u_out_mod_p::vg_p521u_out_mod_p,
+        vg_p521u_canon_mod_p = sym crate::ec_p521::vg_p521u_canon_mod_p::vg_p521u_canon_mod_p,
     )
 }
