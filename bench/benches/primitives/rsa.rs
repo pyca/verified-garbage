@@ -385,7 +385,7 @@ pub fn bench(c: &mut Criterion) {
                 let qi = pad(key.iqmp().unwrap().to_vec(), pl);
                 let mut s = vec![0u64; 16 * k + 64];
                 let (mut odp, mut odq, mut oqi) = (vec![0u8; pl], vec![0u8; ql], vec![0u8; pl]);
-                // The outputs are compared with OpenSSL's under qemu (tests/p14.rs), not here: a
+                // The outputs are compared with main's under qemu (tests/p14.rs), not here: a
                 // run that skips this group leaves them untouched.
                 g.bench_function(BenchmarkId::new(VG, bits), |b| {
                     if which < 4 {
@@ -1169,7 +1169,7 @@ pub fn bench(c: &mut Criterion) {
                 let qi = pad(key.iqmp().unwrap().to_vec(), pl);
                 let mut scratch = vec![0u64; 16 * k + 64];
                 let (mut odp, mut odq, mut oqi) = (vec![0u8; pl], vec![0u8; ql], vec![0u8; pl]);
-                // The outputs are compared with OpenSSL's under qemu (tests/p14.rs), not here: a
+                // The outputs are compared with main's under qemu (tests/p14.rs), not here: a
                 // run that skips this group leaves them untouched.
                 g.bench_function(BenchmarkId::new(VG, bits), |b| match kind {
                     0 => b.iter(|| unsafe {
