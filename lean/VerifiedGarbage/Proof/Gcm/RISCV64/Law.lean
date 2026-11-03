@@ -240,7 +240,7 @@ theorem pm_ok (s : State) {X : Reg} (hX : X ∉ pmRegs) (off : Nat) (hK : Masks 
     not_or] at hX'
   have mk : ∀ (rs : List Reg), Reg.s0 ∉ rs → Reg.s1 ∉ rs → Reg.s2 ∉ rs → Reg.s3 ∉ rs →
       ∀ i < 4, Impl.Gcm.RISCV64.K i ∉ rs := by
-    intro rs a b c d i hi; interval_cases i <;> with_reducible assumption
+    intro rs a b c d i hi; interval_cases i; exacts [a, b, c, d]
   have fp : ∀ (rs : List Reg), Reg.s9 ∉ rs → FP ∉ rs := fun _ h => h
   rw [pmCode_eq]
   refine WP.block_append_iff.mpr (WP.mono (g1_ok s hX'.2.2.2.2.2.2.2.2.2.2.2.1) fun u1 ⟨e1, e2, k1, m1, p1⟩ => ?_)
@@ -477,7 +477,7 @@ theorem block_ok (s : State) (hp : BlkPre s) :
   obtain ⟨hK, hR, hW, hD⟩ := hp
   have mk : ∀ (rs : List Reg), Reg.s0 ∉ rs → Reg.s1 ∉ rs → Reg.s2 ∉ rs → Reg.s3 ∉ rs →
       ∀ i < 4, Impl.Gcm.RISCV64.K i ∉ rs := by
-    intro rs a b c d i hi; interval_cases i <;> with_reducible assumption
+    intro rs a b c d i hi; interval_cases i; exacts [a, b, c, d]
   have mk' : ∀ (rs : List Reg), Reg.s0 ∉ rs → Reg.s1 ∉ rs → Reg.s2 ∉ rs → Reg.s3 ∉ rs → Reg.s9 ∉ rs →
       ∀ {u v : State}, Keep rs u v → v.mem = u.mem → Masks u → (∀ k < 40, Rd8 u (8 * k)) →
         (∀ k, 36 ≤ k → k < 40 → Wr8 u (8 * k)) →

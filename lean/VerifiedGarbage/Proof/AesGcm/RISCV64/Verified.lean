@@ -287,7 +287,7 @@ theorem streamInitFrameSat_pre : ∃ s, (Spec.Gcm.streamInitContract RISCV64.abi
   implies_sat [Spec.Gcm.streamInitContract, Spec.Gcm.streamInitSig, Spec.Gcm.streamInitPost,
     RISCV64.abi, RISCV64.argRegs] [streamInitFrameSat, streamInitSat] using streamInitFrameSat
 
-theorem streamInit_framed :
+theorem streamInit_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 streamInit)
       (Spec.Gcm.streamInitContract RISCV64.abi 4608) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
@@ -302,7 +302,7 @@ theorem streamAadFrameSat_pre : ∃ s, (Spec.Gcm.streamAadContract RISCV64.abi 4
   implies_sat [Spec.Gcm.streamAadContract, Spec.Gcm.streamAadSig, Spec.Gcm.streamAadPost,
     RISCV64.abi, RISCV64.argRegs] [streamAadFrameSat, streamAadSat] using streamAadFrameSat
 
-theorem streamAad_framed :
+theorem streamAad_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 streamAad)
       (Spec.Gcm.streamAadContract RISCV64.abi 4608) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
@@ -318,7 +318,7 @@ theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Gcm.streamEncryptContract RISCV
     Spec.Gcm.streamEncryptPost, RISCV64.abi, RISCV64.argRegs] [streamCryptFrameSat, streamCryptSat]
     using streamCryptFrameSat
 
-theorem streamEncrypt_framed :
+theorem streamEncrypt_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 streamEncrypt)
       (Spec.Gcm.streamEncryptContract RISCV64.abi 4608) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
@@ -331,7 +331,7 @@ theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Gcm.streamDecryptContract RISCV
     Spec.Gcm.streamDecryptPost, RISCV64.abi, RISCV64.argRegs] [streamCryptFrameSat, streamCryptSat]
     using streamCryptFrameSat
 
-theorem streamDecrypt_framed :
+theorem streamDecrypt_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 streamDecrypt)
       (Spec.Gcm.streamDecryptContract RISCV64.abi 4608) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
@@ -347,7 +347,7 @@ theorem finFrameSat_pre : ∃ s, (Spec.Gcm.streamFinishContract RISCV64.abi 4608
   implies_sat [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
     Spec.Gcm.streamFinishPost, RISCV64.abi, RISCV64.argRegs] [finFrameSat, finSat] using finFrameSat
 
-theorem streamFinish_framed :
+theorem streamFinish_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 streamFinish)
       (Spec.Gcm.streamFinishContract RISCV64.abi 4608) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
@@ -363,7 +363,7 @@ theorem verFrameSat_pre : ∃ s, (Spec.Gcm.streamVerifyContract RISCV64.abi 4608
   implies_sat [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
     Spec.Gcm.streamVerifyPost, RISCV64.abi, RISCV64.argRegs] [verFrameSat, verSat] using verFrameSat
 
-theorem streamVerify_framed :
+theorem streamVerify_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 streamVerify)
       (Spec.Gcm.streamVerifyContract RISCV64.abi 4608) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
@@ -384,7 +384,7 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract RISCV64.abi 4624).pre s
 
 /-- `seal`, whose `tag` arrives on the stack: the frame copies it, then the
 working space's address, above its stack pointer (`Verified.stackScratchArgs`). -/
-theorem seal_framed :
+theorem seal_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 «seal»)
       (Spec.Gcm.sealContract RISCV64.abi 4624) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
@@ -404,7 +404,7 @@ theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract RISCV64.abi 4640).pre s
     [openFrameSat, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openFrameSat
 
 /-- `open`, whose `tag` and `tag_len` arrive on the stack, as `seal`'s `tag` does. -/
-theorem open_framed :
+theorem open_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 «open»)
       (Spec.Gcm.openContract RISCV64.abi 4640) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 320)

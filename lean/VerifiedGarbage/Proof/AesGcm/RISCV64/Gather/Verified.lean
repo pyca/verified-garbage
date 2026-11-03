@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
@@ -81,11 +82,11 @@ theorem gatherSat_pre : ∃ s, (Spec.Gcm.sealGatherContract RISCV64.abi 4640).pr
 theorem gather_implies : gatherRISCV64.Implies (Spec.Gcm.sealGatherContract RISCV64.abi 4640) :=
   ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
-theorem sealGather_correct (s : State) (hs : gatherRISCV64.pre s) :
+theorem sealGather_correct [VG.Proof.Gcm.RISCV64.GhashLaw] (s : State) (hs : gatherRISCV64.pre s) :
     ∃ t s', Exec isa sealGather s t s' ∧ abiPreserved s s' ∧ gatherRISCV64.post s s' :=
   sealGather_wp seal_framed.1 hs
 
-theorem sealGather_verified :
+theorem sealGather_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target sealGather (Spec.Gcm.sealGatherContract RISCV64.abi 4640) :=
   Verified.of_correct (k := gatherRISCV64) sealGather_correct (sealGather_ct seal_framed.1 seal_framed.2.1)
     gather_implies
