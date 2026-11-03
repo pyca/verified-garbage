@@ -44,7 +44,9 @@ theorem ctr32_wp (hbw : c.bw = 4) (hp : SeqPre c Mode.ctr32 s₀) (hk : cs.KeyAr
   have e : xs0 Mode.ctr32 s₀ = blocks0 (c := c) s₀ := by simp [xs0, blocks0, Mode.ctr32, hbw]
   have es : Mode.ctr32.step = 4 * c.bw := by simp [Mode.ctr32, hbw]
   refine WP.mono (seq_wp cs hp (copyBlk_inBounds (by simpa [hbw] using b _) (by simpa [hbw] using b _))
-    (fun o ho => ?_) hcomp hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
+    (fun o ho => ?_) (copyBlk_wordAl _ _ _) (append_ok (xorBlk_wordAl _ _ _ _) fun o ho => by
+      simp only [List.mem_singleton] at ho; subst ho; exact fun _ => ⟨by decide, by decide, fun _ _ h => by cases h⟩)
+    hcomp hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · simp only [Mode.ctr32, List.mem_append, List.mem_singleton] at ho
     rcases ho with ho | rfl
     · exact xorBlk_inBounds (by simpa [hbw] using b _) (by simpa [hbw] using b _)

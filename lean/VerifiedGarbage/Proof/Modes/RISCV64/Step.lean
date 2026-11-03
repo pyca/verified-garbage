@@ -326,6 +326,24 @@ theorem mem_kept {r : Reg} (h : r = .a0 ∨ r = .s1 ∨ r = .s3 ∨ r = .s2) : r
 /-- The operations' registers are not kept. -/
 theorem kept_ne : ∀ r ∈ kept, r ≠ .t0 ∧ r ≠ .t1 ∧ r ≠ .t2 := by decide
 
+/-- What the operations' words need, when the areas `Core.wordAt w` names
+are accessed a word at a time: the mode's words at multiples of 4
+(`WordAl`), the frame's base a multiple of 4, and when `w`, the data's
+address and its step too. -/
+structure WordOk (c : Core) (w : Bool) (M : Mode) (B D : Addr) (st : Nat) : Prop where
+  pre : ∀ o ∈ M.pre, WordAl o
+  post : ∀ o ∈ M.post, WordAl o
+  base : B.toNat % 4 = 0
+  dat : w = true → D.toNat % 4 = 0 ∧ st % 4 = 0
+
+theorem areas_al {w : Bool} {M : Mode} {B D : Addr} {st : Nat} (h : WordOk c w M B D st) (j : Nat) :
+    ∀ l, Core.wordAt w l = true → (areas c B D st j l).toNat % 4 = 0
+  | .dat, hw => by
+    obtain ⟨hD, hs⟩ := h.dat (by simpa [Core.wordAt] using hw)
+    exact al4 hD (by rw [Nat.mul_mod, hs, Nat.zero_mul, Nat.zero_mod])
+  | .chn, _ => al4 h.base (by simp [Core.chnSlot])
+  | .buf, _ => al4 h.base (by omega)
+
 /-- The operations' hypotheses, for `opsCode_wp`. -/
 theorem ops_ok {len : Loc → Nat} {os : List Op} (h : ∀ o ∈ os, o.InBounds len) :
     ∀ o ∈ os, o.InBounds len ∧ o.dst ∈ allLocs :=
@@ -333,17 +351,17 @@ theorem ops_ok {len : Loc → Nat} {os : List Op} (h : ∀ o ∈ os, o.InBounds 
 
 section
 variable (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st bl : Nat}
-  {W : List Region} {n₀ d : Nat} {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)}
+  {W : List Region} {n₀ d : Nat} {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} {w : Bool}
 
-theorem pre_wp (hF : Fixed c s₀ B D n st bl W n₀ d)
+theorem pre_wp (hF : Fixed c s₀ B D n st bl W n₀ d) (hw : WordOk c w M B D st)
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st bl)) {j : Nat} (hj : j < n) {s : State}
     (hI : Inv cs s₀ B D n st W n₀ d k F c0 xs j s) :
-    WP isa (.block (c.opsCode M.pre)) s
+    WP isa (.block (c.opsCode w M.pre)) s
       (Mid cs s₀ B D st bl W j k s (applyOps M.pre (cont (areas c B D st j) s.mem))) := by
   have hR := regs hF hj
   have hA : AreasOk c s (lens c st bl) (areas c B D st j) allLocs := areasOk hF hj hI.b hI.dp hI.wr
-  rw [← List.append_nil (c.opsCode M.pre)]
-  refine WP.of_syms (opsCode_wp c (ops_ok hpre) hA fun s₂ a₂ f₂ g₂ rd₂ wr₂ => WP.block_nil fun sy₂ => ?_)
+  rw [← List.append_nil (c.opsCode w M.pre)]
+  refine WP.of_syms (opsCode_wp c w (areas_al hw j) (ops_ok hpre) hw.pre hA fun s₂ a₂ f₂ g₂ rd₂ wr₂ => WP.block_nil fun sy₂ => ?_)
   exact ⟨by rw [g₂ _ (by decide) (by decide) (by decide)]; exact hI.b,
     fun r hr => g₂ r (kept_ne r hr).1 (kept_ne r hr).2.1 (kept_ne r hr).2.2,
     by rw [rd₂, hI.rd], by rw [wr₂, hI.wr],
@@ -373,7 +391,7 @@ theorem bufCipher_one (hG : 0 < c.G) (ciph : Spec.Cbc.Cipher) : BufCipher c ciph
 
 section
 variable (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st bl : Nat}
-  {W : List Region} {n₀ d : Nat} {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)}
+  {W : List Region} {n₀ d : Nat} {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} {w : Bool}
 
 theorem crypt_step (hF : Fixed c s₀ B D n st bl W n₀ d) {ciphB : Spec.Cbc.Cipher}
     (hB : BufCipher c (cs.cipher k) ciphB bl) {j : Nat} (hj : j < n) {s s₂ : State} {a : Areas}
@@ -446,15 +464,16 @@ theorem exOk_nil : ExOk [] fun _ => True := fun _ => WP.block_nil ⟨fun _ _ => 
 
 section
 variable (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st bl : Nat}
-  {W : List Region} {n₀ d : Nat} {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)}
+  {W : List Region} {n₀ d : Nat} {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} {w : Bool}
 
-theorem post_wp (hF : Fixed c s₀ B D n st bl W n₀ d) (hM : M.step = st) {ciphB : Spec.Cbc.Cipher}
+theorem post_wp (hF : Fixed c s₀ B D n st bl W n₀ d) (hw : WordOk c w M B D st) (hM : M.step = st)
+    {ciphB : Spec.Cbc.Cipher}
     (hpost : ∀ o ∈ M.post, o.InBounds (lens c st bl)) (hcomp : ComputesB M (4 * c.bw) bl ciphB F)
     {ex : List Instr} {X : State → Prop} (hex : ExOk ex X)
     (hxs : xs.length = n) {j : Nat} (hj : j < n) {s s₃ : State} (hI : Inv cs s₀ B D n st W n₀ d k F c0 xs j s)
     (hm : Mid cs s₀ B D st bl W j k s (cryptBuf bl ciphB
       (applyOps M.pre (cont (areas c B D st j) s.mem))) s₃) :
-    WP isa (.block (c.opsCode M.post ++ (.addi .s2 .s2 (M.step : Int) :: .addi .s3 .s3 (-(d : Int)) :: ex))) s₃
+    WP isa (.block (c.opsCode w M.post ++ (.addi .s2 .s2 (M.step : Int) :: .addi .s3 .s3 (-(d : Int)) :: ex))) s₃
       fun s' => Inv cs s₀ B D n st W n₀ d k F c0 xs (j + 1) s' ∧ X s' := by
   have hR := regs hF hj
   have hL := hF.layout
@@ -468,7 +487,7 @@ theorem post_wp (hF : Fixed c s₀ B D n st bl W n₀ d) (hM : M.step = st) {cip
   have dp₃ : s₃.gpr .s2 = D + BitVec.ofNat 64 (st * j) := by rw [k₃ _ (by simp), hI.dp]
   have np₃ : s₃.gpr .s3 = BitVec.ofNat 64 (n₀ - d * j) := by rw [k₃ _ (by simp), hI.np]
   have hA : AreasOk c s₃ (lens c st bl) (areas c B D st j) allLocs := areasOk hF hj hm.b dp₃ hm.wr
-  refine WP.of_syms (opsCode_wp c (ops_ok hpost) hA fun s₅ a₅ f₅ g₅ rd₅ wr₅ => ?_)
+  refine WP.of_syms (opsCode_wp c w (areas_al hw j) (ops_ok hpost) hw.post hA fun s₅ a₅ f₅ g₅ rd₅ wr₅ => ?_)
   refine wp_addi (by omega_using [hM, hst]) fun s₆ u₆ =>
     wp_subi hF.dec fun s₇ u₇ => WP.mono (hex s₇) fun s₈ ⟨g₈, m₈, rd₈, wr₈, sy₈', x₈⟩ sy₈ => ⟨?_, x₈⟩
   have g₇ : ∀ r, r ≠ .t0 → r ≠ .t1 → r ≠ .t2 → r ≠ .s3 → r ≠ .s2 → s₈.gpr r = s₃.gpr r :=
@@ -524,32 +543,33 @@ theorem post_wp (hF : Fixed c s₀ B D n st bl W n₀ d) (hM : M.step = st) {cip
 /-! ## The step and the loop -/
 
 /-- A step: `pre`, the core, `post`, the count, and `ex`. -/
-theorem step_wp (hF : Fixed c s₀ B D n st bl W n₀ d) (hM : M.step = st) {ciphB : Spec.Cbc.Cipher}
+theorem step_wp (hF : Fixed c s₀ B D n st bl W n₀ d) (hw : WordOk c w M B D st) (hM : M.step = st)
+    {ciphB : Spec.Cbc.Cipher}
     (hB : BufCipher c (cs.cipher k) ciphB bl)
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st bl)) (hpost : ∀ o ∈ M.post, o.InBounds (lens c st bl))
     (hcomp : ComputesB M (4 * c.bw) bl ciphB F) {ex : List Instr} {X : State → Prop} (hex : ExOk ex X)
     (hxs : xs.length = n) {j : Nat} (hj : j < n) {s : State}
     (hI : Inv cs s₀ B D n st W n₀ d k F c0 xs j s) :
-    WP isa (.seq (.block (c.opsCode M.pre)) (.seq c.crypt
-      (.block (c.opsCode M.post ++ (.addi .s2 .s2 (M.step : Int) :: .addi .s3 .s3 (-(d : Int)) :: ex))))) s
+    WP isa (.seq (.block (c.opsCode w M.pre)) (.seq c.crypt
+      (.block (c.opsCode w M.post ++ (.addi .s2 .s2 (M.step : Int) :: .addi .s3 .s3 (-(d : Int)) :: ex))))) s
       fun s' => Inv cs s₀ B D n st W n₀ d k F c0 xs (j + 1) s' ∧ X s' :=
-  WP.seq (WP.mono (pre_wp cs hF hpre hj hI) fun _ h₂ =>
-    WP.seq (WP.mono (crypt_step cs hF hB hj h₂) fun _ h₃ => post_wp cs hF hM hpost hcomp hex hxs hj hI h₃))
+  WP.seq (WP.mono (pre_wp cs hF hw hpre hj hI) fun _ h₂ =>
+    WP.seq (WP.mono (crypt_step cs hF hB hj h₂) fun _ h₃ => post_wp cs hF hw hM hpost hcomp hex hxs hj hI h₃))
 
-theorem body_wp (hF : Fixed c s₀ B D n st (4 * c.bw) W n₀ 1) (hM : M.step = st)
+theorem body_wp (hF : Fixed c s₀ B D n st (4 * c.bw) W n₀ 1) (hw : WordOk c w M B D st) (hM : M.step = st)
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st (4 * c.bw)))
     (hpost : ∀ o ∈ M.post, o.InBounds (lens c st (4 * c.bw)))
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hxs : xs.length = n) {j : Nat} (hj : j < n) {s : State}
     (hI : Inv cs s₀ B D n st W n₀ 1 k F c0 xs j s) :
-    WP isa (c.body M) s (Inv cs s₀ B D n st W n₀ 1 k F c0 xs (j + 1)) :=
-  WP.mono (step_wp cs hF hM (bufCipher_one hF.layout.G_pos _) hpre hpost hcomp exOk_nil hxs hj hI) fun _ h => h.1
+    WP isa (c.body w M) s (Inv cs s₀ B D n st W n₀ 1 k F c0 xs (j + 1)) :=
+  WP.mono (step_wp cs hF hw hM (bufCipher_one hF.layout.G_pos _) hpre hpost hcomp exOk_nil hxs hj hI) fun _ h => h.1
 
-theorem loop_wp (hF : Fixed c s₀ B D n st (4 * c.bw) W n 1) (hM : M.step = st)
+theorem loop_wp (hF : Fixed c s₀ B D n st (4 * c.bw) W n 1) (hw : WordOk c w M B D st) (hM : M.step = st)
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st (4 * c.bw)))
     (hpost : ∀ o ∈ M.post, o.InBounds (lens c st (4 * c.bw)))
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hxs : xs.length = n) {s : State}
     (hI : Inv cs s₀ B D n st W n 1 k F c0 xs 0 s) :
-    WP isa (.ite (.zero .s3) (.block []) (.loop (c.body M) (.nonzero .s3))) s
+    WP isa (.ite (.zero .s3) (.block []) (.loop (c.body w M) (.nonzero .s3))) s
       (Inv cs s₀ B D n st W n 1 k F c0 xs n) := by
   have hn64 := hF.nFit
   have ev : ∀ {j t}, j ≤ n → t.gpr .s3 = BitVec.ofNat 64 (n - 1 * j) →
@@ -561,11 +581,11 @@ theorem loop_wp (hF : Fixed c s₀ B D n st (4 * c.bw) W n 1) (hM : M.step = st)
       (fun h => by cases h)
   refine WP.ite false (by rw [eval_zero_ofNat s .s3 (by omega_using [hn64]) hI.np]; simp [hn])
     (fun h => by cases h) fun _ => ?_
-  refine WP.loop (M := isa) (body := c.body M) (c := .nonzero .s3) (Q := Inv cs s₀ B D n st W n 1 k F c0 xs n)
+  refine WP.loop (M := isa) (body := c.body w M) (c := .nonzero .s3) (Q := Inv cs s₀ B D n st W n 1 k F c0 xs n)
     (fun (m : Nat) (t : State) => ∃ j, m = n - j ∧ j < n ∧ Inv cs s₀ B D n st W n 1 k F c0 xs j t)
     ?_ n s ⟨0, by omega_using [], by omega_using [hn], hI⟩
   rintro _ t ⟨j, rfl, hj, h⟩
-  refine WP.mono (body_wp cs hF hM hpre hpost hcomp hxs hj h) fun t' h' => ?_
+  refine WP.mono (body_wp cs hF hw hM hpre hpost hcomp hxs hj h) fun t' h' => ?_
   have e := ev (j := j + 1) (by omega_using [hj]) h'.np
   by_cases he : j + 1 = n
   · left; exact ⟨by rw [e]; simp [he], he ▸ h'⟩
@@ -592,16 +612,17 @@ theorem ushiftRight_ofNat {x lg : Nat} (hx : x < 2 ^ 64) :
 
 section
 variable (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {n st bl : Nat}
-  {W : List Region} {n₀ : Nat} {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)}
+  {W : List Region} {n₀ : Nat} {k : cs.Key} {c0 : List Byte} {xs : List (List Byte)} {w : Bool}
 
 /-- The steps of `2 ^ lg` blocks, `n = n₀ / 2 ^ lg` of them. -/
 theorem loopWide_wp {lg : Nat} (hlg : lg < 64) (hF : Fixed c s₀ B D n st bl W n₀ (2 ^ lg))
+    (hw : WordOk c w M B D st)
     (hn : n = n₀ / 2 ^ lg) (hM : M.step = st) {ciphB : Spec.Cbc.Cipher}
     (hB : BufCipher c (cs.cipher k) ciphB bl)
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c st bl)) (hpost : ∀ o ∈ M.post, o.InBounds (lens c st bl))
     (hcomp : ComputesB M (4 * c.bw) bl ciphB F) (hxs : xs.length = n) {s : State}
     (hI : Inv cs s₀ B D n st W n₀ (2 ^ lg) k F c0 xs 0 s) :
-    WP isa (c.loopWide M lg) s (Inv cs s₀ B D n st W n₀ (2 ^ lg) k F c0 xs n) := by
+    WP isa (c.loopWide w M lg) s (Inv cs s₀ B D n st W n₀ (2 ^ lg) k F c0 xs n) := by
   have hn64 := hF.nFit
   have hp : 0 < 2 ^ lg := Nat.two_pow_pos lg
   -- After `j` steps, `t0` says whether `j < n`.
@@ -633,12 +654,12 @@ theorem loopWide_wp {lg : Nat} (hlg : lg < 64) (hF : Fixed c s₀ B D n st bl W 
   · subst hn0
     exact WP.ite true (by rw [ez]; rfl) (fun _ => WP.block_nil hI₁) (fun h => by cases h)
   refine WP.ite false (by rw [ez]; simp; omega_using [hn0]) (fun h => by cases h) fun _ => ?_
-  refine WP.loop (M := isa) (body := c.bodyWide M lg) (c := .nonzero .t0)
+  refine WP.loop (M := isa) (body := c.bodyWide w M lg) (c := .nonzero .t0)
     (Q := Inv cs s₀ B D n st W n₀ (2 ^ lg) k F c0 xs n)
     (fun (m : Nat) (t : State) => ∃ j, m = n - j ∧ j < n ∧ Inv cs s₀ B D n st W n₀ (2 ^ lg) k F c0 xs j t)
     ?_ n s₁ ⟨0, by omega_using [], by omega_using [hn0], hI₁⟩
   rintro _ t ⟨j, rfl, hj, h⟩
-  refine WP.mono (step_wp cs hF hM hB hpre hpost hcomp (exOk_groupsLeft hlg) hxs hj h) fun t' ⟨h', g'⟩ => ?_
+  refine WP.mono (step_wp cs hF hw hM hB hpre hpost hcomp (exOk_groupsLeft hlg) hxs hj h) fun t' ⟨h', g'⟩ => ?_
   obtain ⟨e, -⟩ := ev (j := j + 1) (by omega_using [hj]) h'.np g'
   by_cases he : j + 1 = n
   · left; exact ⟨by rw [e]; simp [he], he ▸ h'⟩
