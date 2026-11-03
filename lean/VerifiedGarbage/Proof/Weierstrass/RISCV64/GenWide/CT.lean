@@ -34,7 +34,7 @@ theorem fn_ct {k : Nat} {core : List Instr} {Pre : State → Prop} {Pub : State 
     (h : RelCT isa (VG.RISCV64.Taint.Agree (Taint.ofRegs [.a0, .a1, .a2, .a3])) (fnBody k core) fun _ _ => True) :
     ConstantTime isa Pre Pub (fn k core) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  unfold fn
+  unfold fn fnWith
   refine RelCT.seq (mulZext_rel.mono (fun _ _ ⟨h₁, h₂, hp⟩ => hpub _ _ h₁ h₂ hp) fun _ _ h => h) ?_
   exact h.mono (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (by simpa using h)⟩) fun _ _ h => h
 

@@ -2152,6 +2152,33 @@ theorem subCore_spec {k m : Nat} (hm : m < 2 ^ (64 * k)) :
     CoreSpec k (subCore k m) (fun A B => A < m ∧ B < m) (fun A B r => r = (A + m - B) % m) :=
   fun hC hAB => WP.mono (subCore_ok hC hm hAB.1 hAB.2) fun _ ⟨g, rd, wr, sp, f, v⟩ => ⟨v, f, g, rd, wr, sp⟩
 
+/-- The whole own working space. -/
+abbrev ownA (k : Nat) (b : Addr) : Region := ⟨b + BitVec.ofNat 64 (T k), 64 * k⟩
+
+/-- What an operation on the pointers does for operands and a result apart
+from the whole own working space: as `CoreSpec`, writing any of it. -/
+def FastSpec (k : Nat) (fast : Prog isa) (pre : Nat → Nat → Prop) (res : Nat → Nat → Nat → Prop) : Prop :=
+  ∀ {b A B O : Addr} {s : State}, CoreOk k b A B O s →
+    (∀ i < k, Region.Disjoint ⟨A + BitVec.ofNat 64 (8 * i), 8⟩ (ownA k b)) →
+    (∀ i < k, Region.Disjoint ⟨B + BitVec.ofNat 64 (8 * i), 8⟩ (ownA k b)) →
+    Region.Disjoint ⟨O, 8 * k⟩ (ownA k b) → pre (xv s.mem A k) (xv s.mem B k) →
+    WP isa fast s fun s' => res (xv s.mem A k) (xv s.mem B k) (ov s'.mem O k) ∧
+      Frame [ownA k b, ⟨O, 8 * k⟩] s.mem s'.mem ∧ (∀ r, r ∉ clobW → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp
+
+theorem ownR_sub (k : Nat) (h₁ : 1 ≤ k) (b : Addr) {O : Addr} :
+    ∀ r ∈ [ownR k b, ⟨O, 8 * k⟩], ∃ r' ∈ [ownA k b, ⟨O, 8 * k⟩], Region.Sub r r' := fun r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact ⟨_, List.mem_cons_self .., Offset.sub b (Nat.le_refl _) (by omega)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+
+/-- An operation on the pointers as a fast path. -/
+theorem CoreSpec.fast {k : Nat} {core : List Instr} {pre : Nat → Nat → Prop} {res : Nat → Nat → Nat → Prop}
+    (h : CoreSpec k core pre res) : FastSpec k (.block core) pre res :=
+  fun hC _ _ _ hp => WP.mono (h hC hp) fun _ ⟨v, f, g, rd, wr, sp⟩ =>
+    ⟨v, f.sub (ownR_sub k (by have := hC.k7; omega) _), g, rd, wr, sp⟩
+
 /-! ## The byte-wise copies -/
 
 theorem layout_facts (k : Nat) (h₁ : 1 ≤ k) (h : k ≤ 30) :
@@ -2290,15 +2317,28 @@ theorem core_fnW {k : Nat} (hk : 1 ≤ k) (hk' : k ≤ 30) (W : Addr) {o : Nat} 
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
     · exact ⟨_, List.mem_cons_self .., Offset.sub W he (by omega)⟩
 
-/-- `fn k core`, from the working space at `W` and offsets below the own working space. -/
-theorem fn_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : List Instr} {pre : Nat → Nat → Prop}
-    {res : Nat → Nat → Nat → Prop} (hcore : CoreSpec k core pre res) {W : Addr} {s : State}
+/-- The fast path's regions within the function's. -/
+theorem fast_fnW {k : Nat} (hk : 1 ≤ k) (hk' : k ≤ 30) (W : Addr) (o : Nat) :
+    ∀ r ∈ [ownA k (W + BitVec.ofNat 64 6144), ⟨W + BitVec.ofNat 64 o, 8 * k⟩], ∃ r' ∈ fnW k W o,
+      Region.Sub r r' := fun r hr => by
+  obtain ⟨e6, -, -, -, -, -⟩ := layout_facts k hk hk'
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · refine ⟨_, List.mem_cons_self .., ?_⟩
+    rw [ownA, off_add]
+    exact Offset.sub W (by omega) (by unfold T at *; omega)
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+
+/-- `fnWith k fast core`, from the working space at `W` and offsets below the own working space. -/
+theorem fnWith_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {fast : Prog isa} {core : List Instr}
+    {pre : Nat → Nat → Prop} {res : Nat → Nat → Nat → Prop} (hfast : FastSpec k fast pre res)
+    (hcore : CoreSpec k core pre res) {W : Addr} {s : State}
     (h0 : s.gpr .a0 = W) (hal : W.toNat % 8 = 0)
     (hwr : (⟨W, 8192⟩ : Region) ∈ s.wr) (hfit : W.toNat + 8192 ≤ 2 ^ 64)
     (ho : lo s .a1 + 8 * k ≤ 8192 - 64 * k) (ha : lo s .a2 + 8 * k ≤ 8192 - 64 * k)
     (hb : lo s .a3 + 8 * k ≤ 8192 - 64 * k)
     (hpre : pre (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)) :
-    WP isa (fn k core) s fun s' =>
+    WP isa (fnWith k fast core) s fun s' =>
       res (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)
         (xv s'.mem (W + BitVec.ofNat 64 (lo s .a1)) k) ∧
       Frame (fnW k W (lo s .a1)) s.mem s'.mem ∧ (∀ r, r ∉ clobF → s'.gpr r = s.gpr r) ∧
@@ -2306,7 +2346,7 @@ theorem fn_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : List Instr} {pre
   obtain ⟨e6, eA, eB, eO, otop, onk⟩ := layout_facts k (by omega) hk'
   obtain ⟨hNT, -, -⟩ := N_facts k (by omega) hk'
   obtain ⟨t8, -⟩ := T_facts k (by omega) hk'
-  unfold fn
+  unfold fnWith
   refine WP.seq (WP.mono (zext_ok s) fun s0 ⟨z0, r0, m0⟩ => ?_)
   refine WP.seq (WP.mono (ptrs_ok z0 h0) fun s1 ⟨p2, p4, p5, p3, p0, r1', m1'⟩ => ?_)
   have r1 : Rest [.a1, .a2, .a3, .t0, .t2, .t4, .t5] s s1 := (r0.mono (by decide)).trans (r1'.mono (by decide))
@@ -2351,9 +2391,15 @@ theorem fn_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : List Instr} {pre
           rw [ownR, off_add]; exact Offset.disjoint W (.inl (by unfold T at *; omega)) (by omega) (by omega)
         k7 := hk
         k30 := hk' }
-    refine WP.mono (hcore hC (by rw [m1]; exact hpre)) fun s2 ⟨v2, f2, g2, rd2, wr2, sp2⟩ =>
-      ⟨by rw [← m1]; exact v2, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [← m1]; exact f2.sub (core_fnW (by omega) hk' W _ (.inl rfl))
+    have adis : ∀ x, x + 8 * k ≤ 8192 - 64 * k → ∀ i < k,
+        Region.Disjoint ⟨W + BitVec.ofNat 64 x + BitVec.ofNat 64 (8 * i), 8⟩ (ownA k (W + BitVec.ofNat 64 6144)) :=
+      fun x hx i hi => by
+        rw [ownA, off_add, off_add]; exact Offset.disjoint W (.inl (by unfold T at *; omega)) (by omega) (by omega)
+    have odis : Region.Disjoint ⟨W + BitVec.ofNat 64 (lo s .a1), 8 * k⟩ (ownA k (W + BitVec.ofNat 64 6144)) := by
+      rw [ownA, off_add]; exact Offset.disjoint W (.inl (by unfold T at *; omega)) (by omega) (by omega)
+    refine WP.mono (hfast hC (adis _ ha) (adis _ hb) odis (by rw [m1]; exact hpre))
+      fun s2 ⟨v2, f2, g2, rd2, wr2, sp2⟩ => ⟨by rw [← m1]; exact v2, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [← m1]; exact f2.sub (fast_fnW (by omega) hk' W _)
     · intro r hr
       rw [g2 r (fun h => hr (subW r h)), r1.gpr r (fun h => hr (sub1 r h))]
     · rw [rd2, r1.rd]
@@ -2408,6 +2454,22 @@ theorem fn_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : List Instr} {pre
     · rw [r4.rd, rd3, r2.rd, r1.rd]
     · rw [r4.wr, wr3, r2.wr, r1.wr]
     · rw [r4.sp, sp3, r2.sp, r1.sp]
+
+
+/-- `fn k core`, from the working space at `W` and offsets below the own working space. -/
+theorem fn_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : List Instr} {pre : Nat → Nat → Prop}
+    {res : Nat → Nat → Nat → Prop} (hcore : CoreSpec k core pre res) {W : Addr} {s : State}
+    (h0 : s.gpr .a0 = W) (hal : W.toNat % 8 = 0)
+    (hwr : (⟨W, 8192⟩ : Region) ∈ s.wr) (hfit : W.toNat + 8192 ≤ 2 ^ 64)
+    (ho : lo s .a1 + 8 * k ≤ 8192 - 64 * k) (ha : lo s .a2 + 8 * k ≤ 8192 - 64 * k)
+    (hb : lo s .a3 + 8 * k ≤ 8192 - 64 * k)
+    (hpre : pre (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)) :
+    WP isa (fn k core) s fun s' =>
+      res (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)
+        (xv s'.mem (W + BitVec.ofNat 64 (lo s .a1)) k) ∧
+      Frame (fnW k W (lo s .a1)) s.mem s'.mem ∧ (∀ r, r ∉ clobF → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp :=
+  fnWith_ok hk hk' hcore.fast hcore h0 hal hwr hfit ho ha hb hpre
 
 end VG.Proof.Weierstrass.RISCV64.GenWide
 
