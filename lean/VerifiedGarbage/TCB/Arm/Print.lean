@@ -56,6 +56,7 @@ def Instr.asm : Instr → List String
   | .alloc bytes => [s!"sub sp, sp, #{bytes}"]
   | .free bytes => [s!"add sp, sp, #{bytes}"]
   | .ldrSp t off => [s!"ldr {t.name}, [sp, #{off}]"]
+  | .blx m => [s!"blx {m.name}"]
   | .push rs => [s!"push \{{", ".intercalate (rs.map Reg.name)}}"]
   | .pop t n => [s!"ldr {t.name}, [sp], #{n}"]
 
