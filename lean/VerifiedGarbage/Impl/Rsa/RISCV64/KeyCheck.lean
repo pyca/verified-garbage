@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.RISCV64.MulMod
 public import VerifiedGarbage.Impl.Rsa.RISCV64.Div
 public import VerifiedGarbage.Impl.Bignum.RISCV64.PublicChecked
+public import VerifiedGarbage.Impl.Rsa.RISCV64.RecoverDet
 
 /-! # The checks of an RSA private key on RISC-V
 
@@ -24,13 +25,24 @@ from the register.
 Then every check is computed whatever its outcome, and and'ed into the
 header's `sMask`, which is returned:
 
-* `p q = n`: `p` odd, `n / p = q` and `n mod p = 0`, by the fixed-iteration
-  division (`Impl/Rsa/RISCV64/Div.lean`). Then `p` and `q` are odd, and
-  clearing their low bits gives `p - 1` and `q - 1`.
+* `p q = n`: `p` odd, `p` divides `n` and `p q ≡ n (mod 2^(64 w))`, which
+  with `p` odd and `n, q < 2^(64 w)` give `p q = n`. Whether `p` divides `n`
+  is whether the Montgomery product `n · 1 · R⁻¹ mod m` (`MontMul.tail`,
+  `R = 2^(64 w)`) is 0, for the modulus `m = p | 1 | 2 [p | 1 = 1]`, which
+  is odd and at least 3, and is `p` when `p` is odd and at least 3 (as the
+  mask needs: `dP < p - 1` fails for `p = 1`); `p q mod 2^(64 w)` is
+  `RecoverDet.mulLow`'s. Then `p` and `q` are odd, and clearing their low
+  bits gives `p - 1` and `q - 1`.
 * `dP < p - 1`, `dQ < q - 1` and `qInv < p`: the borrow of a subtraction.
+* `q qInv ≡ 1 (mod p)`: the Montgomery products `q qInv' R⁻¹ mod m` and
+  `1 · 1 · R⁻¹ mod m` equal, `qInv'` being `qInv` if `qInv < p` and 0
+  otherwise, so that it is below `m`, as `tail` needs.
 * `e dP ≡ 1 (mod p - 1)`, `e dQ ≡ 1 (mod q - 1)`: `mulMod` over the 33 bits
-  of `e`, compared with 1; `q qInv ≡ 1 (mod p)`: `mulMod` over the
-  `8 q_len` bits of `q`.
+  of `e`, compared with 1.
+
+`tail` runs on the arrays 16–23, which it sees as its own arrays 0–7 (the
+key working space's arrays and header are laid out as `tail`'s, with a
+base `16` arrays further), before `mulMod` uses them.
 
 `vg_rsa_check_key` then checks `d < n` (a borrow), and `d ≡ 1/e` modulo
 `p - 1` and `q - 1` by comparing `d mod (p - 1)` and `d mod (q - 1)` (two
@@ -122,19 +134,53 @@ def mulA (y x m : Nat) (cnt : List Instr) : List (Prog isa) :=
 /-- `33` steps, for `e < 2^33`. -/
 def cnt33 : List Instr := [.li .s7 33]
 
-/-- `8 q_len` steps, for `q < 2^(8 q_len)`. -/
-def cntQ : List Instr := [.shift .sll .d .s7 .s6 3]
+/-! ## The Montgomery products -/
 
-/-- `1`, the mask `p` odd, and `n` divided by `p`. -/
-def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP)] ++ divA aN aP
+/-- `tail`'s modulus, its operands and its results: arrays 16, 17, 20, 21 and
+22 (its arrays 0, 1, 4, 5 and 6); its accumulator and temporary are arrays
+18 and 19. -/
+def mM : Nat := 16
+def mA : Nat := 17
+def mB : Nat := 20
+def mO : Nat := 21
+def mO2 : Nat := 22
 
-/-- After the division: `n / p = q`, `n mod p = 0`, `p - 1` and `q - 1`, and
-the checks of `dP`, `dQ` and `qInv`. -/
-def crtChecks : List (Prog isa) := eqA aVQ aQ ++ eqA aVR aZ ++
+/-- `[o] := [a] [b] R⁻¹ mod [mM]`: `-[mM]⁻¹ mod 2⁶⁴` into `t1`
+(`Precompute.minv`), `w` into `t0`, the arrays' addresses, then `tail`. -/
+def mont (o a b : Nat) : Prog isa :=
+  .seq (.block (ptr .a7 mM ++ Precompute.minv ++ [mov .t0 .s9] ++ ptr .a5 (mM + 2) ++ ptr .a6 (mM + 3) ++
+    ptr .a2 o ++ ptr .a3 a ++ ptr .a4 b)) tail
+
+/-- The low word of `[j]` or'ed with the slot `sl` shifted left by one. -/
+def orSlot2 (j sl : Nat) : List Instr :=
+  ptr .t0 j ++ [.load .d .t5 .t0 0, .load .d .t6 .s11 sl, .shift .sll .d .t6 .t6 1,
+    .logic .or .t5 .t5 .t6, .store .d .t5 .t0 0]
+
+/-- `[mM] := p | 1 | 2 [p | 1 = 1]`: odd and at least 3, and `p` if `p` is
+odd and at least 3. -/
+def setM : List (Prog isa) :=
+  [copy mM aP, .block (orOne mM), eqS sF mM aOne, .block (orSlot2 mM sF)]
+
+/-- `p` divides `n` (`n · 1 · R⁻¹ mod m = 0`) and `p q ≡ n (mod 2^(64 w))`. -/
+def pqChecks : List (Prog isa) :=
+  setM ++ [copy mA aN, copy mB aOne, mont mO mA mB] ++ eqA mO aZ ++
+    [copy mO2 aZ, RecoverDet.mulLow mO2 aP aQ] ++ eqA mO2 aN
+
+/-- `qInv < p`, then `q qInv' R⁻¹ ≡ 1 · 1 · R⁻¹ (mod m)`, for `qInv'` :=
+`qInv` if `qInv < p`, else 0. -/
+def qiChecks : List (Prog isa) :=
+  ltA aQI aP ++ [sel mB aZ aQI sF, copy mA aQ, mont mO mA mB, copy mA aOne, mont mO2 mA mA] ++
+    eqA mO mO2
+
+/-- `1`, and the mask `p` odd. -/
+def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP)]
+
+/-- The checks of `p q = n`, of `qInv`, then `p - 1` and `q - 1` and the
+checks of `dP` and `dQ`. -/
+def crtChecks : List (Prog isa) := pqChecks ++ qiChecks ++
   [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
   ltA aDP aM1 ++ mulA aE aDP aM1 cnt33 ++ eqA aA aOne ++
-  ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++
-  ltA aQI aP ++ mulA aQ aQI aP cntQ ++ eqA aA aOne
+  ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne
 
 /-- The checks of `d`: `d < n`, `d mod (p - 1) = dP` and `d mod (q - 1) = dQ`. -/
 def dChecks : List (Prog isa) :=
