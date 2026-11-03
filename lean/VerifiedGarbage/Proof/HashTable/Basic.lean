@@ -20,6 +20,10 @@ namespace VG.Proof.HashTable
 
 open VG
 
+-- Code's equality, for the registrations' checks that the variants'
+-- functions of the same name have the same code.
+deriving instance DecidableEq for VG.Code
+
 /-- Distinct names at distinct addresses, for any two of a list. -/
 theorem pw_ne {sy : String → Addr} : ∀ {l : List String}, l.Pairwise (fun f g => f ≠ g → sy f ≠ sy g) →
     ∀ x ∈ l, ∀ y ∈ l, x ≠ y → sy x ≠ sy y

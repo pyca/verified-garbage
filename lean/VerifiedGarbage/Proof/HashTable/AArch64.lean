@@ -37,8 +37,6 @@ open VG.Proof.RsaOaep.AArch64.Table (TabOK TabMem)
 open VG.Proof.Bignum (off)
 open VG.Proof.HashTable (pw_ne find_name)
 
-deriving instance DecidableEq for VG.Code
-
 /-- The table of `w`'s streaming functions, `VG_HASH_<HASH><SUFFIX>`. -/
 def tableOf (w : MdHash) : FnTable where
   name := s!"VG_HASH_{w.mgf.G.rust.toUpper}{w.suffix.toUpper}"
