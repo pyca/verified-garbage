@@ -14,23 +14,23 @@ open VG VG.X86 VG.Impl.RsaOaep.X86
 open VG.Proof.RsaPss.X86 (PssHash)
 
 theorem certs20 : OCerts (dShape 20) := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
     exact ⟨_, by taint_decide⟩
 
 theorem certs28 : OCerts (dShape 28) := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
     exact ⟨_, by taint_decide⟩
 
 theorem certs32 : OCerts (dShape 32) := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
     exact ⟨_, by taint_decide⟩
 
 theorem certs48 : OCerts (dShape 48) := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
     exact ⟨_, by taint_decide⟩
 
 theorem certs64 : OCerts (dShape 64) := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
     exact ⟨_, by taint_decide⟩
 
 /-- The certificates of a digest length the library's hash functions have. -/

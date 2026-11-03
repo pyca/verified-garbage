@@ -7,9 +7,9 @@ import VerifiedGarbage.Proof.RsaPss.X86.NoSp
 /-!
 # RSAES-OAEP on x86: the calls write `esp` only through their frames
 
-The calls of the streaming functions (`callInit_noSp`, …), MGF1's mask
-(`mgfX_noSp`) and the label's hash (`hashLabel_noSp`), for both functions'
-bodies.
+The direct calls of the streaming functions (`hInit_noSp`, …) and the
+label's hash (`hashLabel_noSp`), for both functions' bodies; MGF1's mask
+with its table's indirect calls in `Proof/RsaOaep/X86/MgfT.lean`.
 -/
 
 @[expose] public section
@@ -22,29 +22,18 @@ open VG.Impl.RsaPss.X86 (seqs countLoop)
 
 variable (h g : OHash)
 
-theorem callInit_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
-    NoSp (callInit G) := noSp_pushCall hG.initSp
-theorem callUpd_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
-    NoSp (callUpd G) := noSp_pushCall hG.updSp
-theorem callFin_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
-    NoSp (callFin G) := noSp_pushCall hG.finSp
-
-theorem mgfX_noSp : NoSp (mgfXor g.H) := by
-  obtain ⟨p1, p2, -⟩ := g.certs.parts
-  have i := callInit_noSp g.H g.ok
-  have u := callUpd_noSp g.H g.ok
-  have f := callFin_noSp g.H g.ok
-  simp only [mgfXor, mgfRound, seqs, countLoop]
-  repeat' (first
-    | with_reducible apply noSp_seq | with_reducible apply noSp_loop
-    | exact i | exact u | exact f | exact p1 | exact p2
-    | exact NoSp.of_all (by decide +kernel))
+theorem hInit_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
+    NoSp (hInit G) := noSp_pushCall hG.initSp
+theorem hUpd_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
+    NoSp (hUpd G) := noSp_pushCall hG.updSp
+theorem hFin_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
+    NoSp (hFin G) := noSp_pushCall hG.finSp
 
 theorem hashLabel_noSp {j o : Nat} (hj : NoSp (.block (updLabArgs j) : Prog isa))
     (ho : NoSp (.block (finLabArgs j o) : Prog isa)) : NoSp (hashLabel h.H j o) := by
-  have i := callInit_noSp h.H h.ok
-  have u := callUpd_noSp h.H h.ok
-  have f := callFin_noSp h.H h.ok
+  have i := hInit_noSp h.H h.ok
+  have u := hUpd_noSp h.H h.ok
+  have f := hFin_noSp h.H h.ok
   simp only [hashLabel, seqs]
   repeat' (first
     | with_reducible apply noSp_seq

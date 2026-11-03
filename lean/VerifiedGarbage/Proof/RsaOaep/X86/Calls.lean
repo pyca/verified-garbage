@@ -96,15 +96,12 @@ theorem rbufCov {p : BitVec 32} {n : Nat} (hb : RBuf L p n) {σ s : State} (hs :
 
 /-! ## `init` -/
 
-theorem init_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem → Prop}
+/-- `init`'s frame, with the state's address in `ebx`. -/
+theorem initCall_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem → Prop}
     (hI : ∀ σ m m', Inv σ m → Frame [sR scr oSt G.S, L.LOW] m m' → Inv σ m') :
-    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem) (.seq (.block initArgs) (callInit G))
+    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ s.gpr .ebx = scr + BitVec.ofNat 32 oSt) (hInit G)
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) []) := by
   have hS := hG.hSB
-  refine VP.seq (G := fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ s.gpr .ebx = scr + BitVec.ofNat 32 oSt)
-    (VP.taint [.esp, .ebp] initArgs_taint (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hi⟩ => ?_) ?_
-  · refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => WP.block_nil ⟨(hc.upd u1 (by decide) (by decide)).upd u2
-      (by decide) (by decide), by rw [u2.mem, u1.mem]; exact hi, by rw [u2.gpr, u1.gpr, hc.ebp]⟩
   have args : ∀ σ s, Ctx L scr σ s → s.gpr .ebx = scr + BitVec.ofNat 32 oSt →
       InitArgs (H := G) s .ebx (scr + BitVec.ofNat 32 oSt) := fun σ s hc bx =>
     ⟨bx, by decide, sp48 hg hc, covS hg hc.st (by oomega) (by oomega), stkS hg hc (by oomega) (by oomega),
@@ -127,6 +124,20 @@ theorem init_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem
   · exact .inl ⟨oSt, G.S, by oomega, rfl⟩
   · exact .inr rfl
 
+/-- The state's address to `ebx`, for `init`. -/
+theorem initArgs_vp {Inv : State → Mem → Prop} :
+    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem) (.block initArgs)
+      (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ s.gpr .ebx = scr + BitVec.ofNat 32 oSt) := by
+  refine VP.taint [.esp, .ebp] initArgs_taint (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hi⟩ => ?_
+  exact wp_mov fun t1 u1 => wp_addi fun t2 u2 => WP.block_nil ⟨(hc.upd u1 (by decide) (by decide)).upd u2
+    (by decide) (by decide), by rw [u2.mem, u1.mem]; exact hi, by rw [u2.gpr, u1.gpr, hc.ebp]⟩
+
+theorem init_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem → Prop}
+    (hI : ∀ σ m m', Inv σ m → Frame [sR scr oSt G.S, L.LOW] m m' → Inv σ m') :
+    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem) (.seq (.block initArgs) (hInit G))
+      (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) []) :=
+  VP.seq initArgs_vp (initCall_vp hg G hG hI)
+
 /-! ## `update`, in its frame -/
 
 /-- What `update`'s frame needs: the state (`ebx`), the data `[d, d + len)`
@@ -147,7 +158,7 @@ theorem upd_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {d : BitVec 32} {len 
     {msg dat : State → List Byte} :
     VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) (msg σ) ∧ (msg σ).length = c ∧
         Spec.Sha256.bytesAt s.mem (d.setWidth 64) len = dat σ ∧ UArgs scr d len c s)
-      (callUpd G)
+      (hUpd G)
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) (msg σ ++ dat σ)) := by
   have hS := hG.hSB
   have hWb : hG.Wb ≤ 512 := by have := hG.hWb; have := hG.hW; omega
@@ -199,7 +210,7 @@ theorem fin_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {o c : Nat} (ho1 : o 
     {msg : State → List Byte} :
     VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) (msg σ) ∧ (msg σ).length = c ∧
         FArgs scr o c s)
-      (callFin G)
+      (hFin G)
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧
         (Spec.Sha256.bytesAt s.mem (sa scr o) G.F).take G.D = hG.SH.H.hash (msg σ)) := by
   have hS := hG.hSB
