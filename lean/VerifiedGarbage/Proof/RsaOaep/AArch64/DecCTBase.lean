@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.HashTable.AArch64
 
 /-!
 # RSAES-OAEP decryption on AArch64: two runs
@@ -30,38 +31,12 @@ part dereferences fixed by its first part.
 namespace VG.Proof.RsaOaep.AArch64.Dec
 
 open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
+open VG.Proof.HashTable.AArch64 (TabAgree)
 
 /-- `n` and `e` agree in the two runs' memories. -/
 def LeakEq (L : DLay) (m₁ m₂ : Mem) : Prop :=
   Spec.Rsa.bytesAt m₁ L.n L.k.toNat = Spec.Rsa.bytesAt m₂ L.n L.k.toNat ∧
     Spec.Rsa.bytesAt m₁ L.e L.el.toNat = Spec.Rsa.bytesAt m₂ L.e L.el.toNat
-
-/-- The words of a table, in a state naming its functions' addresses as `t`
-does. -/
-theorem words_congr {s t : State} (h : s.syms = t.syms) (T : FnTable) :
-    FnTable.words isa s T = FnTable.words isa t T := by
-  simp only [FnTable.words, h]
-
-/-- The functions of the tables `ts`. -/
-def tabFns (ts : List FnTable) : List String := (ts.map (·.fns)).flatten
-
-/-- What the contract says of MGF1's table in two runs, with the memories
-`m₁` and `m₂` on entry: in each, one of `ts` at `L.tab` with the functions'
-addresses distinct; and the same in both, with their functions at the same
-addresses. -/
-def TabAgree (ts : List FnTable) (L : DLay) (m₁ m₂ : Mem) (a b : State) : Prop :=
-  ((∃ T ∈ ts, Abi.tableHeld 64 m₁ L.tab (T.words isa a)) ∧
-      (tabFns ts).Pairwise fun f g => f ≠ g → a.syms f ≠ a.syms g) ∧
-    ((∃ T ∈ ts, Abi.tableHeld 64 m₂ L.tab (T.words isa b)) ∧
-      (tabFns ts).Pairwise fun f g => f ≠ g → b.syms f ≠ b.syms g) ∧
-    (∀ f ∈ tabFns ts, a.syms f = b.syms f) ∧
-    ∀ T ∈ ts, (Abi.tableHeld 64 m₁ L.tab (T.words isa a) ↔ Abi.tableHeld 64 m₂ L.tab (T.words isa b))
-
-theorem TabAgree.congr {ts : List FnTable} {L : DLay} {m₁ m₂ : Mem} {a b a' b' : State}
-    (h : TabAgree ts L m₁ m₂ a b) (ha : a'.syms = a.syms) (hb : b'.syms = b.syms) :
-    TabAgree ts L m₁ m₂ a' b' := by
-  simp only [TabAgree, words_congr ha, words_congr hb, ha, hb]
-  exact h
 
 /-- The layout of two runs, and what each has on entry. -/
 structure Env where
@@ -79,7 +54,7 @@ abbrev Inv := DLay → (Reg → BitVec 64) → (VReg → BitVec 128) → Mem →
 /-- Two runs in the layout of `e`, each satisfying `Φ`, with MGF1's table one
 of `ts`. -/
 def TwoE (S : Nat) (ts : List FnTable) (Φ : Inv) (e : Env) (a b : State) : Prop :=
-  e.L.Ok ∧ e.L.P = S + 1 ∧ (LeakEq e.L e.m₁ e.m₂ ∧ TabAgree ts e.L e.m₁ e.m₂ a b) ∧ Φ e.L e.g₁ e.v₁ e.m₁ a ∧
+  e.L.Ok ∧ e.L.P = S + 1 ∧ (LeakEq e.L e.m₁ e.m₂ ∧ TabAgree ts e.L.tab e.m₁ e.m₂ a b) ∧ Φ e.L e.g₁ e.v₁ e.m₁ a ∧
     Φ e.L e.g₂ e.v₂ e.m₂ b
 
 /-- Two runs with the same layout, each satisfying `Φ`. -/
