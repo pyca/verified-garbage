@@ -42,7 +42,7 @@ open VG.Impl.Scrypt.RISCV64 (mov roMix roMixName)
 /-! ## The frame -/
 
 /-- The size of the frame. -/
-def locals : Nat := 256
+def locals : Nat := 272
 
 def raOff : Nat := 0
 def s3Off : Nat := 8

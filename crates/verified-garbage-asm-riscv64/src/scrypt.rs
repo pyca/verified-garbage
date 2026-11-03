@@ -24,7 +24,7 @@ pub unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, sal
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 2, 0x7111
+.insn 2, 0x716d
 .insn 2, 0x828a
 .insn 4, 0x0012b023
 .insn 4, 0x0132b423
@@ -43,7 +43,7 @@ call {vg_pbkdf2_hmac_sha256}
 .insn 4, 0x0289b283
 .insn 4, 0x0389b303
 .insn 4, 0x0062e2b3
-.insn 4, 0x1089b303
+.insn 4, 0x1189b303
 .insn 4, 0x0062e2b3
 .insn 4, 0x0072f293
 beqz t0, 20f
@@ -51,8 +51,8 @@ beqz t0, 20f
 .insn 4, 0x0409b503
 .insn 4, 0x0209b583
 .insn 4, 0x0389b603
-.insn 4, 0x1009b683
-.insn 4, 0x1089b703
+.insn 4, 0x1109b683
+.insn 4, 0x1189b703
 .insn 4, 0x05098793
 call {vg_scrypt_romix_bytes}
 .insn 4, 0x0409b503
@@ -72,8 +72,8 @@ j 21f
 .insn 4, 0x0409b503
 .insn 4, 0x0209b583
 .insn 4, 0x0389b603
-.insn 4, 0x1009b683
-.insn 4, 0x1089b703
+.insn 4, 0x1109b683
+.insn 4, 0x1189b703
 .insn 4, 0x05098793
 call {vg_scrypt_romix}
 .insn 4, 0x0409b503
@@ -94,12 +94,12 @@ bnez t0, 23b
 .insn 4, 0x0309b683
 .insn 2, 0x069e
 .insn 2, 0x4705
-.insn 4, 0x1189b783
-.insn 4, 0x1209b803
+.insn 4, 0x1289b783
+.insn 4, 0x1309b803
 call {vg_pbkdf2_hmac_sha256}
 .insn 4, 0x0009b083
 .insn 4, 0x0089b983
-.insn 2, 0x6111
+.insn 2, 0x6151
 .insn 2, 0x8082
 .option pop",
         vg_pbkdf2_hmac_sha256 = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256,

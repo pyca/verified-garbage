@@ -39,13 +39,13 @@ def wreg (k : Nat) : Reg :=
   [.a2, .a3, .a4, .a5, .a6, .a7, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4].getD k .a2
 
 /-- The callee-saved registers used, in the order they are saved. -/
-def saved (i : Nat) : Reg := [.s0, .s1, .s2, .s3, .s4].getD i .s0
+def saved (i : Nat) : Reg := [.s0, .s1, .s2, .s3, .s4, .s5, .s6].getD i .s0
 
 /-- Save them in `save`. -/
-def save : List Instr := (List.range 5).flatMap fun i => [.store .d (saved i) .a1 (8 * i)]
+def save : List Instr := (List.range 7).flatMap fun i => [.store .d (saved i) .a1 (8 * i)]
 
 /-- Restore them. -/
-def restore : List Instr := (List.range 5).flatMap fun i => [.load .d (saved i) .a1 (8 * i)]
+def restore : List Instr := (List.range 7).flatMap fun i => [.load .d (saved i) .a1 (8 * i)]
 
 /-- `x[i] ^= R(x[j] + x[k], n)`. -/
 def line (i j k n : Nat) : List Instr :=
@@ -67,7 +67,19 @@ def lines : List (Nat × Nat × Nat × Nat) := [
   (3, 2, 1, 13), (4, 7, 6, 13), (9, 8, 11, 13), (14, 13, 12, 13),
   (0, 3, 2, 18), (5, 4, 7, 18), (10, 9, 8, 18), (15, 14, 13, 18)]
 
-def doubleRound : Prog isa := .block (lines.flatMap fun (i, j, k, n) => line i j k n)
+/-- Two lines side by side, the second through `s5` and `s6`. -/
+def pair (a b : Nat × Nat × Nat × Nat) : List Instr :=
+  [.addw .t0 (wreg a.2.1) (wreg a.2.2.1), .addw .s5 (wreg b.2.1) (wreg b.2.2.1),
+   .shift .sll .w .t1 .t0 a.2.2.2, .shift .sll .w .s6 .s5 b.2.2.2,
+   .shift .srl .w .t0 .t0 (32 - a.2.2.2), .shift .srl .w .s5 .s5 (32 - b.2.2.2),
+   .logic .xor (wreg a.1) (wreg a.1) .t1, .logic .xor (wreg b.1) (wreg b.1) .s6,
+   .logic .xor (wreg a.1) (wreg a.1) .t0, .logic .xor (wreg b.1) (wreg b.1) .s5]
+
+def pairs : List (Nat × Nat × Nat × Nat) → List Instr
+  | a :: b :: r => pair a b ++ pairs r
+  | _ => []
+
+def doubleRound : Prog isa := .block (pairs lines)
 
 /-- `n` double rounds. -/
 def rounds : Nat → Prog isa
