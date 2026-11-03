@@ -43,42 +43,23 @@ pub(crate) unsafe extern "C" fn vg_brainpoolp256r1_add_mod_p() {
 .insn 2, 0x9f32
 .insn 4, 0x00cf3633
 .insn 2, 0x963e
-.insn 4, 0xdfecb2b7
-.insn 4, 0x7e32829b
-.insn 2, 0x1282
-.insn 4, 0xe091b537
-.insn 4, 0xc895051b
-.insn 2, 0x92aa
+lla t1, {VG_BP256_P}
+.insn 4, 0x02833283
 .insn 4, 0x00558fb3
 .insn 4, 0x005fb8b3
-.insn 4, 0x91c412b7
-.insn 4, 0x9dc2829b
-.insn 2, 0x1282
-.insn 4, 0x2ad9e537
-.insn 4, 0xfd75051b
-.insn 2, 0x92aa
+.insn 4, 0x03033283
 .insn 4, 0x005e0733
 .insn 4, 0x00573533
 .insn 2, 0x9746
 .insn 4, 0x011738b3
 .insn 2, 0x98aa
-.insn 4, 0xc199f2b7
-.insn 4, 0x56f2829b
-.insn 2, 0x1282
-.insn 4, 0x627c7537
-.insn 4, 0x28d5051b
-.insn 2, 0x92aa
+.insn 4, 0x03833283
 .insn 4, 0x005e87b3
 .insn 4, 0x0057b533
 .insn 2, 0x97c6
 .insn 4, 0x0117b8b3
 .insn 2, 0x98aa
-.insn 4, 0x5604b2b7
-.insn 4, 0x8242829b
-.insn 2, 0x1282
-.insn 4, 0x5e115537
-.insn 4, 0x6435051b
-.insn 2, 0x92aa
+.insn 4, 0x04033283
 .insn 4, 0x005f0833
 .insn 4, 0x00583533
 .insn 2, 0x9846
@@ -105,5 +86,6 @@ pub(crate) unsafe extern "C" fn vg_brainpoolp256r1_add_mod_p() {
 .insn 4, 0x0103bc23
 .insn 2, 0x8082
 .option pop",
+        VG_BP256_P = sym crate::consts::VG_BP256_P,
     )
 }
