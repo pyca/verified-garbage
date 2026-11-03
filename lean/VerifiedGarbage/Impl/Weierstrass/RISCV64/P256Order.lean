@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.P256Field
 public import VerifiedGarbage.Impl.Words.RISCV64.Word64
+public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Gen4
 
 /-!
 # Arithmetic modulo P-256's order, as functions, on RISC-V
@@ -26,8 +27,10 @@ modulus's words differ.
   `n₁ ∧ m`, `m` and `m << 32`.
 
 The words `n'`, `n₀`, `n₁`, `c₀` and `c₁` are built by `li64` where they are
-used, from immediates. The functions are otherwise as those modulo `p`:
-constant time, caller-saved registers only, and writes only to `[o]` and
+used, from immediates, but for aligned offsets the multiplication builds
+`n'`, `n₀` and `n₁` once, in `s7`–`s9` (`mulCoreR`). The functions are
+otherwise as those modulo `p`: constant time, caller-saved registers only
+(but `s7`–`s11`, as they were on return), and writes only to `[o]` and
 their own working space.
 -/
 
@@ -116,8 +119,44 @@ def addFn : Prog isa := fn (.block addCore)
 /-- `vg_p256_sub_mod_n`. -/
 def subFn : Prog isa := fn (.block subCore)
 
+/-! ## The multiplication for aligned offsets, with the constants in registers
+
+`mulCoreR` is `mulCore` with its reduction (`reduceR`) reading `n'`, `n₀`
+and `n₁` from `s7`–`s9`, which it builds once (`constsR`) rather than in
+each round: it keeps `s7`–`s11` in the copies (Gen4's `saveM`) and loads
+them back after the rounds (Gen4's `restoreM`). -/
+
+/-- `qprod` with `n'`, `n₀` and `n₁` in `s7`–`s9`. -/
+def qprodR (i : Nat) : List Instr :=
+  [.mul (rw i) (rw i) .s7, .mulhu .a4 (rw i) .s8, .mulhu .a6 (rw i) .s9, .mul .a5 (rw i) .s9] ++
+  [.li .a0 0, .sltu .a0 .a0 (rw i), .add .a4 .a4 .a0] ++
+  [.add .a5 .a5 .a4, .sltu .a7 .a5 .a4, .add .a6 .a6 .a7]
+
+/-- `round` with the constants in registers. -/
+def roundR (i : Nat) : List Instr :=
+  [.load .d (rw (i + 4)) .a3 (ACC + 8 * (i + 4))] ++ qprodR i ++
+  [.add (rw (i + 1)) (rw (i + 1)) .a5, .sltu .a0 (rw (i + 1)) .a5] ++
+  [.add (rw (i + 2)) (rw (i + 2)) .a6, .sltu .a7 (rw (i + 2)) .a6, .add (rw (i + 2)) (rw (i + 2)) .a0,
+    .sltu .a0 (rw (i + 2)) .a0, .add .a0 .a0 .a7] ++
+  quot i ++ qk i ++
+  [.add (rw (i + 2)) (rw (i + 2)) .a4, .sltu .t0 (rw (i + 2)) .a4, .add .t0 .t0 .a0] ++
+  [.add (rw (i + 3)) (rw (i + 3)) .t0, .sltu .a0 (rw (i + 3)) .t0] ++
+  [.add (rw (i + 3)) (rw (i + 3)) .a6, .sltu .a5 (rw (i + 3)) .a6, .add .a0 .a0 .a5] ++
+  [.add .a7 .a7 .a0, .add .a7 .a7 .a2, .add (rw (i + 4)) (rw (i + 4)) .a7, .sltu .a2 (rw (i + 4)) .a7]
+
+/-- `n'`, `n₀` and `n₁` to `s7`–`s9`. -/
+def constsR : List Instr := li64 .s7 .a0 NINV ++ (li64 .s8 .a0 N0 ++ li64 .s9 .a0 N1)
+
+/-- `reduce` with the constants in registers. -/
+def reduceR : List Instr :=
+  Gen4.saveM ++ (constsR ++ ((List.range 4).map (fun j => .load .d (rw j) .a3 (ACC + 8 * j)) ++ [.li .a2 0] ++
+    (List.range 4).flatMap roundR ++ Gen4.restoreM))
+
+/-- `[t2] = [t4] [t5] R⁻¹ mod n`, with the constants in registers. -/
+def mulCoreR : Prog isa := mulWith reduceR sumN
+
 /-- `vg_p256_mul_mod_n`, for aligned offsets. -/
-def mulFnA : Prog isa := fnA mulCore
+def mulFnA : Prog isa := fnA mulCoreR
 
 /-- `vg_p256_add_mod_n`, for aligned offsets. -/
 def addFnA : Prog isa := fnA (.block addCore)

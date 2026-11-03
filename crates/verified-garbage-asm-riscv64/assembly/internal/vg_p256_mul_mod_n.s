@@ -372,34 +372,39 @@ vg_p256_mul_mod_n:
 	add a4, a7, t0
 	sd a6, 1912(a3)
 21:
+	sd s7, 1792(a3)
+	sd s8, 1800(a3)
+	sd s9, 1808(a3)
+	sd s10, 1816(a3)
+	sd s11, 1824(a3)
+	lui s7, 838941
+	addiw s7, s7, -1877
+	slli s7, s7, 32
+	lui a0, 974860
+	addiw a0, a0, -945
+	add s7, s7, a0
+	lui s8, 998301
+	addiw s8, s8, -1341
+	slli s8, s8, 32
+	lui a0, 1033778
+	addiw a0, a0, 1361
+	add s8, s8, a0
+	lui s9, 773744
+	addiw s9, s9, -1362
+	slli s9, s9, 32
+	lui a0, 684410
+	addiw a0, a0, -380
+	add s9, s9, a0
 	ld t3, 1856(a3)
 	ld t4, 1864(a3)
 	ld t5, 1872(a3)
 	ld t6, 1880(a3)
 	addi a2, zero, 0
 	ld a1, 1888(a3)
-	lui t0, 838941
-	addiw t0, t0, -1877
-	slli t0, t0, 32
-	lui a0, 974860
-	addiw a0, a0, -945
-	add t0, t0, a0
-	mul t3, t3, t0
-	lui a4, 998301
-	addiw a4, a4, -1341
-	slli a4, a4, 32
-	lui a0, 1033778
-	addiw a0, a0, 1361
-	add a4, a4, a0
-	mulhu a4, t3, a4
-	lui a5, 773744
-	addiw a5, a5, -1362
-	slli a5, a5, 32
-	lui a0, 684410
-	addiw a0, a0, -380
-	add a5, a5, a0
-	mulhu a6, t3, a5
-	mul a5, t3, a5
+	mul t3, t3, s7
+	mulhu a4, t3, s8
+	mulhu a6, t3, s9
+	mul a5, t3, s9
 	addi a0, zero, 0
 	sltu a0, a0, t3
 	add a4, a4, a0
@@ -438,28 +443,10 @@ vg_p256_mul_mod_n:
 	add a1, a1, a7
 	sltu a2, a1, a7
 	ld t3, 1896(a3)
-	lui t0, 838941
-	addiw t0, t0, -1877
-	slli t0, t0, 32
-	lui a0, 974860
-	addiw a0, a0, -945
-	add t0, t0, a0
-	mul t4, t4, t0
-	lui a4, 998301
-	addiw a4, a4, -1341
-	slli a4, a4, 32
-	lui a0, 1033778
-	addiw a0, a0, 1361
-	add a4, a4, a0
-	mulhu a4, t4, a4
-	lui a5, 773744
-	addiw a5, a5, -1362
-	slli a5, a5, 32
-	lui a0, 684410
-	addiw a0, a0, -380
-	add a5, a5, a0
-	mulhu a6, t4, a5
-	mul a5, t4, a5
+	mul t4, t4, s7
+	mulhu a4, t4, s8
+	mulhu a6, t4, s9
+	mul a5, t4, s9
 	addi a0, zero, 0
 	sltu a0, a0, t4
 	add a4, a4, a0
@@ -498,28 +485,10 @@ vg_p256_mul_mod_n:
 	add t3, t3, a7
 	sltu a2, t3, a7
 	ld t4, 1904(a3)
-	lui t0, 838941
-	addiw t0, t0, -1877
-	slli t0, t0, 32
-	lui a0, 974860
-	addiw a0, a0, -945
-	add t0, t0, a0
-	mul t5, t5, t0
-	lui a4, 998301
-	addiw a4, a4, -1341
-	slli a4, a4, 32
-	lui a0, 1033778
-	addiw a0, a0, 1361
-	add a4, a4, a0
-	mulhu a4, t5, a4
-	lui a5, 773744
-	addiw a5, a5, -1362
-	slli a5, a5, 32
-	lui a0, 684410
-	addiw a0, a0, -380
-	add a5, a5, a0
-	mulhu a6, t5, a5
-	mul a5, t5, a5
+	mul t5, t5, s7
+	mulhu a4, t5, s8
+	mulhu a6, t5, s9
+	mul a5, t5, s9
 	addi a0, zero, 0
 	sltu a0, a0, t5
 	add a4, a4, a0
@@ -558,28 +527,10 @@ vg_p256_mul_mod_n:
 	add t4, t4, a7
 	sltu a2, t4, a7
 	ld t5, 1912(a3)
-	lui t0, 838941
-	addiw t0, t0, -1877
-	slli t0, t0, 32
-	lui a0, 974860
-	addiw a0, a0, -945
-	add t0, t0, a0
-	mul t6, t6, t0
-	lui a4, 998301
-	addiw a4, a4, -1341
-	slli a4, a4, 32
-	lui a0, 1033778
-	addiw a0, a0, 1361
-	add a4, a4, a0
-	mulhu a4, t6, a4
-	lui a5, 773744
-	addiw a5, a5, -1362
-	slli a5, a5, 32
-	lui a0, 684410
-	addiw a0, a0, -380
-	add a5, a5, a0
-	mulhu a6, t6, a5
-	mul a5, t6, a5
+	mul t6, t6, s7
+	mulhu a4, t6, s8
+	mulhu a6, t6, s9
+	mul a5, t6, s9
 	addi a0, zero, 0
 	sltu a0, a0, t6
 	add a4, a4, a0
@@ -617,6 +568,11 @@ vg_p256_mul_mod_n:
 	add a7, a7, a2
 	add t5, t5, a7
 	sltu a2, t5, a7
+	ld s7, 1792(a3)
+	ld s8, 1800(a3)
+	ld s9, 1808(a3)
+	ld s10, 1816(a3)
+	ld s11, 1824(a3)
 	lui t0, 50275
 	addiw t0, t0, 1341
 	slli t0, t0, 32
