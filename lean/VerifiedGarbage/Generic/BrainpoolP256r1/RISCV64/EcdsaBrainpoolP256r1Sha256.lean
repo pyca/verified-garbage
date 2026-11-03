@@ -16,6 +16,7 @@ open VG.Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP256r1Sha256 (pack sign_verified)
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.signApi.artifact RISCV64.target {
     code := (pack h.law).c.sign
+    consts := Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombConsts
     stack := 544
     verified := sign_verified h.law }]
 

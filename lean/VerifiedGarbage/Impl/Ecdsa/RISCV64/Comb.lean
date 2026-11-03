@@ -200,6 +200,33 @@ def combFn (sym : String) (start : Nat × Nat) : Prog isa :=
   .seq (body c start) (.block (ldAt .ra .s0 (c.mulSave + 16) ++ ldAt .s4 .s0 (c.mulSave + 24) ++
     ldAt .s1 .s0 (c.mulSave + 8) ++ ldAt .s0 .s0 c.mulSave))
 
+/-! ### For any `a`
+
+The steps with the complete addition for any `a` (`rcb`, with `a` and `3 b`
+at `AP` and `B3P`), for curves whose `a` is not `-3`. -/
+
+/-- One step, with the complete addition for any `a`. -/
+def stepA : Prog isa :=
+  .seq (.block (decCounter :: select c)) <|
+  .seq (negate c) <|
+  .seq (fprog c.FP (rcb c.rcbSlots (c.pt RX RY RZ) (c.pt DX DY DZ) (c.pt TX TY TZ)))
+    (.block (copy c.n (c.sl RX) (c.sl TX) ++ copy c.n (c.sl RY) (c.sl TY) ++ copy c.n (c.sl RZ) (c.sl TZ)))
+
+/-- `body`, with `stepA`. -/
+def bodyA (start : Nat × Nat) : Prog isa :=
+  .seq (.block (copy c.n (c.sl KC) (c.sl K) ++ [.li .t0 0] ++ sdAt .t0 wb (c.sl KC + 8 * c.n) ++
+    Ecdh.RISCV64.setConst c.n (c.sl RX) (Ecdh.RISCV64.Cfg.mont c start.1) ++
+    Ecdh.RISCV64.setConst c.n (c.sl RY) (Ecdh.RISCV64.Cfg.mont c start.2) ++ copy c.n (c.sl RZ) (c.sl ONEP) ++
+    [.li ctr (nwin c.n)]))
+    (.loop (stepA c) more)
+
+/-- `combFn`, with `bodyA`. -/
+def combFnA (sym : String) (start : Nat × Nat) : Prog isa :=
+  .seq (.block ([.lla .t0 sym] ++ sdAt .s0 .a0 c.mulSave ++ sdAt .s1 .a0 (c.mulSave + 8) ++
+    sdAt .ra .a0 (c.mulSave + 16) ++ sdAt .s4 .a0 (c.mulSave + 24) ++ [.addi .s0 .a0 0, .addi .s4 .t0 0])) <|
+  .seq (bodyA c start) (.block (ldAt .ra .s0 (c.mulSave + 16) ++ ldAt .s4 .s0 (c.mulSave + 24) ++
+    ldAt .s1 .s0 (c.mulSave + 8) ++ ldAt .s0 .s0 c.mulSave))
+
 end Cfg
 
 /-! ## P-256 -/
