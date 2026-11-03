@@ -25,7 +25,8 @@ which the shared contracts of `Proof/Weierstrass/MontContract.lean` imply with
 their own working space the top 576 bytes of `ws`, from 7616 to 8192. They are
 constant time: the zero-extension is related by its results, after which only
 `a0`–`a3` are public, and the taint analysis finds every branch and address
-depends on them alone (`GenWide.fn_ct`).
+depends on them alone (`GenWide.fn_ct`, `GenWide.fnP_ct` for the product's branch on the
+pointers).
 -/
 
 -- Checking the facts of the modulus (`WideOk`) evaluates `2⁵²¹` and `2⁵⁷⁶`.
@@ -62,7 +63,7 @@ open VG.Proof.Ed25519.RISCV64 (mulAgreeLo)
 theorem mulFn_ct {Pre : State → Prop} {Pub : State → State → Prop}
     (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂) :
     ConstantTime isa Pre Pub mulFn :=
-  GenWide.fn_ct hpub (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide))
+  GenWide.fnP_ct hpub (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide))
 
 theorem addFn_ct {Pre : State → Prop} {Pub : State → State → Prop}
     (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂) :

@@ -195,12 +195,15 @@ def unpack (p : Reg) (o src : Nat) : List Instr :=
 /-- The operation `core` on operands at any offsets: on the pointers if they
 are multiples of 8 (`t0` zero), else on byte-wise copies in the own working
 space, the result copied back a byte at a time to `[o]`, kept in `t1`. -/
-def fn (core : List Instr) : Prog isa :=
+def fnP (core : Prog isa) : Prog isa :=
   .seq (.block P256Field.zext) <| .seq (.block ptrs) <|
-    .ite (.zero .t0) (.block core)
+    .ite (.zero .t0) core
       (.seq (.block ([.addi .t1 .t2 0] ++ unpack k .t4 (SA k) 0 ++ unpack k .t5 (SB k) 0 ++
           [.addi .t4 .a3 (SA k), .addi .t5 .a3 (SB k), .addi .t2 .a3 (SO k)])) <|
-        .seq (.block core) (.block (pack k .t1 (SO k) 0)))
+        .seq core (.block (pack k .t1 (SO k) 0)))
+
+/-- `fnP` of a straight-line operation. -/
+def fn (core : List Instr) : Prog isa := fnP k (.block core)
 
 /-- The function multiplying modulo `m`. -/
 def mulFn : Prog isa := fn k (mulCore k m)

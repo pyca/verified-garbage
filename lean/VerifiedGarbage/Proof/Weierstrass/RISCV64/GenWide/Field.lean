@@ -2133,11 +2133,15 @@ theorem ptrs_ok {W : Addr} {σ s : State} (hz : VG.Proof.Ed25519.RISCV64.zextF �
 
 /-- What an operation on the pointers `t4`, `t5` and `t2` does, for operands
 satisfying `pre`: its result `res`, written at `[t2]`. -/
-def CoreSpec (k : Nat) (core : List Instr) (pre : Nat → Nat → Prop) (res : Nat → Nat → Nat → Prop) : Prop :=
+def CoreSpecP (k : Nat) (core : Prog isa) (pre : Nat → Nat → Prop) (res : Nat → Nat → Nat → Prop) : Prop :=
   ∀ {b A B O : Addr} {s : State}, CoreOk k b A B O s → pre (xv s.mem A k) (xv s.mem B k) →
-    WP isa (.block core) s fun s' => res (xv s.mem A k) (xv s.mem B k) (ov s'.mem O k) ∧
+    WP isa core s fun s' => res (xv s.mem A k) (xv s.mem B k) (ov s'.mem O k) ∧
       Frame [ownR k b, ⟨O, 8 * k⟩] s.mem s'.mem ∧ (∀ r, r ∉ clobW → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp
+
+/-- `CoreSpecP` of a straight-line operation. -/
+def CoreSpec (k : Nat) (core : List Instr) (pre : Nat → Nat → Prop) (res : Nat → Nat → Nat → Prop) : Prop :=
+  CoreSpecP k (.block core) pre res
 
 theorem mulCore_spec {k m : Nat} (hm : m < 2 ^ (64 * k))
     (hinv : (wordOf m 0).toNat * negInv m % 2 ^ 64 = 2 ^ 64 - 1) :
@@ -2290,15 +2294,15 @@ theorem core_fnW {k : Nat} (hk : 1 ≤ k) (hk' : k ≤ 30) (W : Addr) {o : Nat} 
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
     · exact ⟨_, List.mem_cons_self .., Offset.sub W he (by omega)⟩
 
-/-- `fn k core`, from the working space at `W` and offsets below the own working space. -/
-theorem fn_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : List Instr} {pre : Nat → Nat → Prop}
-    {res : Nat → Nat → Nat → Prop} (hcore : CoreSpec k core pre res) {W : Addr} {s : State}
+/-- `fnP k core`, from the working space at `W` and offsets below the own working space. -/
+theorem fnP_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : Prog isa} {pre : Nat → Nat → Prop}
+    {res : Nat → Nat → Nat → Prop} (hcore : CoreSpecP k core pre res) {W : Addr} {s : State}
     (h0 : s.gpr .a0 = W) (hal : W.toNat % 8 = 0)
     (hwr : (⟨W, 8192⟩ : Region) ∈ s.wr) (hfit : W.toNat + 8192 ≤ 2 ^ 64)
     (ho : lo s .a1 + 8 * k ≤ 8192 - 64 * k) (ha : lo s .a2 + 8 * k ≤ 8192 - 64 * k)
     (hb : lo s .a3 + 8 * k ≤ 8192 - 64 * k)
     (hpre : pre (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)) :
-    WP isa (fn k core) s fun s' =>
+    WP isa (fnP k core) s fun s' =>
       res (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)
         (xv s'.mem (W + BitVec.ofNat 64 (lo s .a1)) k) ∧
       Frame (fnW k W (lo s .a1)) s.mem s'.mem ∧ (∀ r, r ∉ clobF → s'.gpr r = s.gpr r) ∧
@@ -2306,7 +2310,7 @@ theorem fn_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : List Instr} {pre
   obtain ⟨e6, eA, eB, eO, otop, onk⟩ := layout_facts k (by omega) hk'
   obtain ⟨hNT, -, -⟩ := N_facts k (by omega) hk'
   obtain ⟨t8, -⟩ := T_facts k (by omega) hk'
-  unfold fn
+  unfold fnP
   refine WP.seq (WP.mono (zext_ok s) fun s0 ⟨z0, r0, m0⟩ => ?_)
   refine WP.seq (WP.mono (ptrs_ok z0 h0) fun s1 ⟨p2, p4, p5, p3, p0, r1', m1'⟩ => ?_)
   have r1 : Rest [.a1, .a2, .a3, .t0, .t2, .t4, .t5] s s1 := (r0.mono (by decide)).trans (r1'.mono (by decide))
@@ -2470,19 +2474,43 @@ theorem keeps_of_frame {k : Nat} (hk : 6 < k) (hk' : k ≤ 30) {W : Addr} {o : B
   · exact byte_out (by omega) (by omega) (by omega)
   · exact byte_out (by omega) (by omega) hoi
 
-/-- `fn k core` meets a contract by register, from `fn_ok`. -/
-theorem fn_rv {S : Modulus} (hk : 7 ≤ S.k) (hk' : S.k ≤ 30) {core : List Instr} {pre : Nat → Nat → Prop}
-    {res : Nat → Nat → Nat → Prop} (hcore : CoreSpec S.k core pre res) {s : State} (hs : rvPre S s)
+/-- `fn k core`, from `fnP_ok`. -/
+theorem fn_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : List Instr} {pre : Nat → Nat → Prop}
+    {res : Nat → Nat → Nat → Prop} (hcore : CoreSpec k core pre res) {W : Addr} {s : State}
+    (h0 : s.gpr .a0 = W) (hal : W.toNat % 8 = 0)
+    (hwr : (⟨W, 8192⟩ : Region) ∈ s.wr) (hfit : W.toNat + 8192 ≤ 2 ^ 64)
+    (ho : lo s .a1 + 8 * k ≤ 8192 - 64 * k) (ha : lo s .a2 + 8 * k ≤ 8192 - 64 * k)
+    (hb : lo s .a3 + 8 * k ≤ 8192 - 64 * k)
+    (hpre : pre (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)) :
+    WP isa (fn k core) s fun s' =>
+      res (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)
+        (xv s'.mem (W + BitVec.ofNat 64 (lo s .a1)) k) ∧
+      Frame (fnW k W (lo s .a1)) s.mem s'.mem ∧ (∀ r, r ∉ clobF → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp :=
+  fnP_ok hk hk' hcore h0 hal hwr hfit ho ha hb hpre
+
+/-- `fnP k core` meets a contract by register, from `fnP_ok`. -/
+theorem fnP_rv {S : Modulus} (hk : 7 ≤ S.k) (hk' : S.k ≤ 30) {core : Prog isa} {pre : Nat → Nat → Prop}
+    {res : Nat → Nat → Nat → Prop} (hcore : CoreSpecP S.k core pre res) {s : State} (hs : rvPre S s)
     (hp : pre (arg S s .a2) (arg S s .a3)) :
-    ∃ t s', Exec isa (fn S.k core) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (fnP S.k core) s t s' ∧ abiPreserved s s' ∧
       res (arg S s .a2) (arg S s .a3) (numAt s'.mem (s.gpr .a0) (offArg s .a1) S.k) ∧
       Keeps S.k (s.gpr .a0) (offArg s .a1) s.mem s'.mem (rvOwn S.k) (rvOwnEnd S.k) := by
   obtain ⟨-, hwr, hfit, ⟨fo, fa, fb⟩, hal⟩ := hs
   simp only [Fits, rvOwn_gt (show 6 < S.k by omega)] at fo fa fb
   simp only [arg, numAt_xv] at hp ⊢
-  obtain ⟨t, s', he, v, f, g, -, -, sp⟩ := fn_ok hk hk' hcore rfl hal (by rw [hwr]; simp) hfit fo fa fb hp
+  obtain ⟨t, s', he, v, f, g, -, -, sp⟩ := fnP_ok hk hk' hcore rfl hal (by rw [hwr]; simp) hfit fo fa fb hp
   refine ⟨t, s', he, ⟨fun r hr => g r (by revert hr; revert r; decide), sp, g _ (by decide)⟩, v,
     keeps_of_frame (by omega) hk' fo f⟩
+
+/-- `fn k core` meets a contract by register, from `fnP_rv`. -/
+theorem fn_rv {S : Modulus} (hk : 7 ≤ S.k) (hk' : S.k ≤ 30) {core : List Instr} {pre : Nat → Nat → Prop}
+    {res : Nat → Nat → Nat → Prop} (hcore : CoreSpec S.k core pre res) {s : State} (hs : rvPre S s)
+    (hp : pre (arg S s .a2) (arg S s .a3)) :
+    ∃ t s', Exec isa (fn S.k core) s t s' ∧ abiPreserved s s' ∧
+      res (arg S s .a2) (arg S s .a3) (numAt s'.mem (s.gpr .a0) (offArg s .a1) S.k) ∧
+      Keeps S.k (s.gpr .a0) (offArg s .a1) s.mem s'.mem (rvOwn S.k) (rvOwnEnd S.k) :=
+  fnP_rv hk hk' hcore hs hp
 
 /-- What a wide modulus needs: its words, and `m'`. -/
 structure WideOk (S : Modulus) : Prop where

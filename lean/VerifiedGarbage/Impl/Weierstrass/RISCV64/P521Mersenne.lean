@@ -18,7 +18,9 @@ public import VerifiedGarbage.Impl.Words.RISCV64.Wide
    registers (rotating through `a4`–`a6`, as X448's `rr`), then its low word
    stored as `T[k]`; each term's product is computed, and the next one's
    operands loaded, a term ahead of its sums, so that an in-order processor
-   does not wait for them;
+   does not wait for them; if the two pointers are equal, `T = [a]²`
+   (`squareC`): the 36 cross products `a_i a_j` (`i > j`) the same way, then
+   each word doubled with the squares `a_i²` added (`dblStep`);
 2. `s = (T mod 2⁵²¹) + (T >> 521)`, nine words and the carry `c` (`fold`),
    in place;
 3. `s₂ = (s mod 2⁵²¹) + (s >> 521)` (`fold2`), below `2⁵²¹ + 2⁵⁶`;
@@ -27,8 +29,8 @@ public import VerifiedGarbage.Impl.Words.RISCV64.Wide
 5. `[o] = r 2⁴⁶⁶ mod p`, the rotation of `r`'s 521 bits right by 55
    (`rot`).
 
-Every multiplication is `mul` or `mulhu`, and there is no branch but
-GenWide's on the pointers.
+Every multiplication is `mul` or `mulhu`, and the only branches are on the
+pointers: GenWide's, and whether they are equal.
 -/
 
 @[expose] public section
@@ -36,7 +38,7 @@ GenWide's on the pointers.
 namespace VG.Impl.Weierstrass.RISCV64.P521Mersenne
 
 open VG.RISCV64
-open VG.Impl.Weierstrass.RISCV64.GenWide (T adcCore fn)
+open VG.Impl.Weierstrass.RISCV64.GenWide (T adcCore fnP)
 open VG.Impl.X448.RISCV64.R64 (rr)
 
 /-- The base of the eighteen words of the product, from `a3`. -/
@@ -104,27 +106,27 @@ def rot : List Instr := (List.range 7).flatMap rotStep ++ rotTop
 def colPairs (k : Nat) : List (Nat × Nat) :=
   ((List.range 9).reverse.filter fun i => i ≤ k ∧ k - i < 9).map fun i => (i, k - i)
 
-/-- The product's 81 terms `(k, i, j)`, column by column. -/
-def terms : List (Nat × Nat × Nat) :=
-  (List.range 18).flatMap fun k => (colPairs k).map fun p => (k, p.1, p.2)
+/-- A product's terms `(k, i, j)`, column by column, from each column's pairs `ps k`. -/
+def terms (ps : Nat → List (Nat × Nat)) : List (Nat × Nat × Nat) :=
+  (List.range 18).flatMap fun k => (ps k).map fun p => (k, p.1, p.2)
 
-/-- Term `n`. -/
-def term (n : Nat) : Nat × Nat × Nat := terms.getD n (0, 0, 0)
+/-- Term `n` of `ts`. -/
+def tm (ts : List (Nat × Nat × Nat)) (n : Nat) : Nat × Nat × Nat := ts.getD n (0, 0, 0)
 
-/-- The index of column `k`'s first term. -/
-def start (k : Nat) : Nat := ((List.range k).map fun c => (colPairs c).length).sum
+/-- The index of column `k`'s first term, for `cs c` terms in column `c`. -/
+def pstart (cs : Nat → Nat) (k : Nat) : Nat := ((List.range k).map cs).sum
 
 /-- The registers of term `n`'s product, low and high: `a7`, `t0` and `t3`,
 `t6` in turn. -/
 def PR (n : Nat) : Reg × Reg := if n % 2 = 0 then (.a7, .t0) else (.t3, .t6)
 
 /-- Term `n`'s operands, `a_i` into `a1` and `b_j` into `a2`, if it is one. -/
-def ldNext (n : Nat) : List Instr :=
-  if n < 81 then [.load .d .a1 .t4 (8 * (term n).2.1), .load .d .a2 .t5 (8 * (term n).2.2)] else []
+def ldN (ts : List (Nat × Nat × Nat)) (n : Nat) : List Instr :=
+  if n < ts.length then [.load .d .a1 .t4 (8 * (tm ts n).2.1), .load .d .a2 .t5 (8 * (tm ts n).2.2)] else []
 
 /-- Term `n`'s product, from `a1` and `a2`, if it is one. -/
-def mulNext (n : Nat) : List Instr :=
-  if n < 81 then VG.Impl.Words.RISCV64.mulWide (PR n).1 (PR n).2 .a1 .a2 else []
+def mulN (ts : List (Nat × Nat × Nat)) (n : Nat) : List Instr :=
+  if n < ts.length then VG.Impl.Words.RISCV64.mulWide (PR n).1 (PR n).2 .a1 .a2 else []
 
 /-- Term `n`'s product added to column `k`'s three-word accumulator. -/
 def accum (k n : Nat) : List Instr :=
@@ -134,21 +136,52 @@ def accum (k n : Nat) : List Instr :=
 
 /-- Term `n`, of column `k`: the next term's product and the operands of the
 one after it, issued before this one's sums, which they do not depend on. -/
-def step (k n : Nat) : List Instr := mulNext (n + 1) ++ ldNext (n + 2) ++ accum k n
+def pstep (ts : List (Nat × Nat × Nat)) (k n : Nat) : List Instr := mulN ts (n + 1) ++ ldN ts (n + 2) ++ accum k n
 
-/-- Column `k`: its terms, its low word stored as `T[k]`, and the register zeroed. -/
-def mulCol (k : Nat) : List Instr :=
-  (List.range' (start k) (colPairs k).length).flatMap (step k) ++ [.store .d (rr k) .a3 (P + 8 * k), .li (rr k) 0]
+/-- Column `k`: its `cs k` terms, its low word stored as `T[k]`, and the register zeroed. -/
+def pcol (ts : List (Nat × Nat × Nat)) (cs : Nat → Nat) (k : Nat) : List Instr :=
+  (List.range' (pstart cs k) (cs k)).flatMap (pstep ts k) ++ [.store .d (rr k) .a3 (P + 8 * k), .li (rr k) 0]
 
-/-- `T = [t4] [t5]`, eighteen words, by columns, the first term's product and
-the second's operands ahead. -/
-def productC : List Instr :=
-  [.li .a4 0, .li .a5 0, .li .a6 0] ++ ldNext 0 ++ mulNext 0 ++ ldNext 1 ++ (List.range 18).flatMap mulCol
+/-- The terms `ts` of `[t4]` and `[t5]` into the eighteen columns at `T`, the
+first term's product and the second's operands ahead. -/
+def pipe (ts : List (Nat × Nat × Nat)) (cs : Nat → Nat) : List Instr :=
+  [.li .a4 0, .li .a5 0, .li .a6 0] ++ ldN ts 0 ++ mulN ts 0 ++ ldN ts 1 ++ (List.range 18).flatMap (pcol ts cs)
+
+/-- `T = [t4] [t5]`, eighteen words. -/
+def productC : List Instr := pipe (terms colPairs) fun k => (colPairs k).length
+
+/-- The cross terms `(i, j)` (`j < i`) of a square's column `k`. -/
+def sqPairs (k : Nat) : List (Nat × Nat) := (colPairs k).filter fun p => p.2 < p.1
+
+/-- Word `k` of `2 X + Σ a_i² 2¹²⁸ⁱ`, for the cross products' sum `X` at `T`,
+into `T[k]`, `a_i` from `[t4]`: `a5` holds `X`'s word `k - 1` (then `k`),
+`a4` the carry, and `t3` the high word of the last square (X25519's `dblStep`,
+from `t4`). -/
+def dblStep (k : Nat) : List Instr :=
+  [.shift .srl .d .a7 .a5 63, .load .d .a5 .a3 (P + 8 * k), .shift .sll .d .a6 .a5 1, .logic .or .a6 .a6 .a7] ++
+  (if k % 2 = 0 then
+    [.load .d .t3 .t4 (8 * (k / 2)), .mul .t0 .t3 .t3, .mulhu .t3 .t3 .t3, .add .a6 .a6 .t0, .sltu .a7 .a6 .t0]
+   else [.add .a6 .a6 .t3, .sltu .a7 .a6 .t3]) ++
+  [.add .a6 .a6 .a4, .sltu .t0 .a6 .a4, .add .a4 .a7 .t0, .store .d .a6 .a3 (P + 8 * k)]
+
+/-- `T = [t4]²`, for `[t4] = [t5]`: the cross products, then twice their sum
+plus the squares. -/
+def squareC : List Instr :=
+  pipe (terms sqPairs) (fun k => (sqPairs k).length) ++ [.li .a5 0, .li .a4 0] ++ (List.range 18).flatMap dblStep
+
+/-- The reduction of `T`, into `[t2]`. -/
+def tail : List Instr := fold ++ fold2 ++ canon ++ rot
 
 /-- `[t2] = [t4] [t5] R⁻¹ mod p`. -/
-def mulCore : List Instr := productC ++ fold ++ fold2 ++ canon ++ rot
+def mulCore : List Instr := productC ++ tail
+
+/-- `[t2] = [t4]² R⁻¹ mod p`. -/
+def sqCore : List Instr := squareC ++ tail
+
+/-- The product, a square if the pointers are equal. -/
+def core : Prog isa := .ite (.eq .t4 .t5) (.block sqCore) (.block mulCore)
 
 /-- The function multiplying modulo `p`. -/
-def mulFn : Prog isa := fn 9 mulCore
+def mulFn : Prog isa := fnP 9 core
 
 end VG.Impl.Weierstrass.RISCV64.P521Mersenne
