@@ -35,7 +35,7 @@ theorem sound (pub : List Reg) {τ τ' : VG.Arm.Taint.T} {i : Instr}
     addrs i s₁ = addrs i s₂ ∧ VG.Arm.Taint.Agree τ' s₁' s₂' := by
   cases i with
   | mov | mvn | dp | adds | adc | subs | cmp | movw | movt | adrSym | rev | mul | mla | ldr | str | ldrb
-    | strb | ldrSp | addSp | alloc | free | push | pop =>
+    | strb | ldrSp | addSp | alloc | free | push | pop | blx =>
     exact taint.step_sound ha hs e₁ e₂
   | umaal lo hi n m =>
     change (if lo ∉ pub ∧ hi ∉ pub ∧ (RegSet.ofList pub).subset τ.regs = true then
