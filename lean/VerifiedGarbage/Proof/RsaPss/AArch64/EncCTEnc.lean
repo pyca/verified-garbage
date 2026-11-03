@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPss.AArch64.EncCTBase
 public import VerifiedGarbage.Proof.RsaPss.AArch64.EncCorrect
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import VerifiedGarbage.Proof.Framework.RelSplit
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.EncCTBase
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.EncCorrect
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+meta import VerifiedGarbage.Proof.Framework.RelSplit
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT

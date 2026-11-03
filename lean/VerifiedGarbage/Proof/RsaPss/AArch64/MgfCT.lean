@@ -4,13 +4,13 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+meta import VerifiedGarbage.Proof.Framework.RelSplit
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
