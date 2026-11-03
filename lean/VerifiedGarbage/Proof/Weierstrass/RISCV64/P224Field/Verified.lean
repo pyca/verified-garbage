@@ -56,6 +56,25 @@ theorem add_rv_n (s : State) (hs : (addRV p224n).pre s) :
 theorem sub_rv_n (s : State) (hs : (subRV p224n).pre s) :
     ∃ t s', Exec isa p224SubN s t s' ∧ abiPreserved s s' ∧ (subRV p224n).post s s' := Gen4.sub_rv rfl ok_n s hs
 
+theorem mulA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV p224p)).pre s) :
+    ∃ t s', Exec isa Impl.Ecdsa.RISCV64.p224MulPA s t s' ∧ abiPreserved s s' ∧ (mulRV p224p).post s s' :=
+  Gen4.mulA_rv rfl ok_p s hs
+theorem addA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addRV p224p)).pre s) :
+    ∃ t s', Exec isa Impl.Ecdsa.RISCV64.p224AddPA s t s' ∧ abiPreserved s s' ∧ (addRV p224p).post s s' :=
+  Gen4.addA_rv rfl ok_p s hs
+theorem subA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV p224p)).pre s) :
+    ∃ t s', Exec isa Impl.Ecdsa.RISCV64.p224SubPA s t s' ∧ abiPreserved s s' ∧ (subRV p224p).post s s' :=
+  Gen4.subA_rv rfl ok_p s hs
+theorem mulA_rv_n (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV p224n)).pre s) :
+    ∃ t s', Exec isa Impl.Ecdsa.RISCV64.p224MulNA s t s' ∧ abiPreserved s s' ∧ (mulRV p224n).post s s' :=
+  Gen4.mulA_rv rfl ok_n s hs
+theorem addA_rv_n (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addRV p224n)).pre s) :
+    ∃ t s', Exec isa Impl.Ecdsa.RISCV64.p224AddNA s t s' ∧ abiPreserved s s' ∧ (addRV p224n).post s s' :=
+  Gen4.addA_rv rfl ok_n s hs
+theorem subA_rv_n (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV p224n)).pre s) :
+    ∃ t s', Exec isa Impl.Ecdsa.RISCV64.p224SubNA s t s' ∧ abiPreserved s s' ∧ (subRV p224n).post s s' :=
+  Gen4.subA_rv rfl ok_n s hs
+
 theorem mul_verified : Verified RISCV64.target p224MulP (p224p.mulContract RISCV64.abi) :=
   Gen4.mul_verified rfl ok_p ct_mulP
 theorem add_verified : Verified RISCV64.target p224AddP (p224p.addContract RISCV64.abi) :=

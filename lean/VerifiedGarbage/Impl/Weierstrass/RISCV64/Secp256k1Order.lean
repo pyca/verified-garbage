@@ -20,4 +20,13 @@ def addFn : Prog isa := Gen4.addFn Spec.Secp256k1.n
 /-- `vg_secp256k1_sub_mod_n`. -/
 def subFn : Prog isa := Gen4.subFn Spec.Secp256k1.n
 
+/-- `vg_secp256k1_mul_mod_n`, for aligned offsets. -/
+def mulFnA : Prog isa := Gen4.mulFnA Spec.Secp256k1.n
+
+/-- `vg_secp256k1_add_mod_n`, for aligned offsets. -/
+def addFnA : Prog isa := Gen4.addFnA Spec.Secp256k1.n
+
+/-- `vg_secp256k1_sub_mod_n`, for aligned offsets. -/
+def subFnA : Prog isa := Gen4.subFnA Spec.Secp256k1.n
+
 end VG.Impl.Weierstrass.RISCV64.Secp256k1Order

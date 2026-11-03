@@ -35,6 +35,11 @@ public import VerifiedGarbage.Impl.Ed25519.RISCV64.MulFn
    `x`'s top bit carries out of 256 bits, whose mask selects the sum's
    low words or `x`, stored at `[t2]`.
 
+Calls whose offsets are multiples of 8, as the slots' are, take the code
+without the zero-extension, the alignment test and the copies (`fnA`): the
+offsets' registers are zero-extended already (`liAt` sets them), and the
+operation runs on the pointers.
+
 Every multiplication is `mul` or `mulhu`, every selection a mask, and the
 only branches are on the pointers, which are public, as every address is a
 pointer plus a constant. The functions use only caller-saved registers and
@@ -72,6 +77,11 @@ the low three bits of the pointers or'ed. -/
 def ptrs : List Instr :=
   [.add .t2 .a0 .a1, .add .t4 .a0 .a2, .add .t5 .a0 .a3, .addi .a3 .a0 2047, .addi .a3 .a3 1,
     .logic .or .t0 .t2 .t4, .logic .or .t0 .t0 .t5, .logicImm .and .t0 .t0 7]
+
+/-- `t2 = ws + o`, `t4 = ws + a`, `t5 = ws + b` and `a3 = ws + 2048`, for
+offsets that are zero-extended multiples of 8 (`fnA`). -/
+def ptrsA : List Instr :=
+  [.add .t2 .a0 .a1, .add .t4 .a0 .a2, .add .t5 .a0 .a3, .addi .a3 .a0 2047, .addi .a3 .a3 1]
 
 /-! ## The final subtraction -/
 
@@ -304,6 +314,10 @@ def fn (core : Prog isa) : Prog isa :=
           [.addi .t4 .a3 SA, .addi .t5 .a3 SB, .addi .t2 .a3 SO])) <|
         .seq core (.block (Ed25519.RISCV64.packField .t1 SO 0)))
 
+/-- The operation `core` on operands whose offsets are zero-extended
+multiples of 8, as the calls pass them: `core` on the pointers. -/
+def fnA (core : Prog isa) : Prog isa := .seq (.block ptrsA) core
+
 /-- `vg_p256_mul_mod_p`. -/
 def mulFn : Prog isa := fn mulCore
 
@@ -312,5 +326,14 @@ def addFn : Prog isa := fn (.block addCore)
 
 /-- `vg_p256_sub_mod_p`. -/
 def subFn : Prog isa := fn (.block subCore)
+
+/-- `vg_p256_mul_mod_p`, for aligned offsets. -/
+def mulFnA : Prog isa := fnA mulCore
+
+/-- `vg_p256_add_mod_p`, for aligned offsets. -/
+def addFnA : Prog isa := fnA (.block addCore)
+
+/-- `vg_p256_sub_mod_p`, for aligned offsets. -/
+def subFnA : Prog isa := fnA (.block subCore)
 
 end VG.Impl.Weierstrass.RISCV64.P256Field

@@ -15,13 +15,17 @@ open VG.RISCV64
 
 /-- The functions of P-384's `p`. -/
 def p384Field : Weierstrass.RISCV64.Field :=
-  ⟨Impl.Weierstrass.Mont.p384p, Weierstrass.RISCV64.P384Field.mulFn, Weierstrass.RISCV64.P384Field.addFn,
-    Weierstrass.RISCV64.P384Field.subFn⟩
+  ⟨Impl.Weierstrass.Mont.p384p, Weierstrass.RISCV64.P384Field.mulFn,
+    Weierstrass.RISCV64.P384Field.addFn, Weierstrass.RISCV64.P384Field.subFn,
+    Weierstrass.RISCV64.P384Field.mulFnA, Weierstrass.RISCV64.P384Field.addFnA,
+    Weierstrass.RISCV64.P384Field.subFnA⟩
 
 /-- The functions of P-384's `n`. -/
 def p384Order : Weierstrass.RISCV64.Field :=
-  ⟨Impl.Weierstrass.Mont.p384n, Weierstrass.RISCV64.P384Order.mulFn, Weierstrass.RISCV64.P384Order.addFn,
-    Weierstrass.RISCV64.P384Order.subFn⟩
+  ⟨Impl.Weierstrass.Mont.p384n, Weierstrass.RISCV64.P384Order.mulFn,
+    Weierstrass.RISCV64.P384Order.addFn, Weierstrass.RISCV64.P384Order.subFn,
+    Weierstrass.RISCV64.P384Order.mulFnA, Weierstrass.RISCV64.P384Order.addFnA,
+    Weierstrass.RISCV64.P384Order.subFnA⟩
 
 /-- P-384 as the code has it. -/
 def p384 : Cfg := { n := 6, C := Spec.P384.curve, FP := p384Field, jt := 4096 }

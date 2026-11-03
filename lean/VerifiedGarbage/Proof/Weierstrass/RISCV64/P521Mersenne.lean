@@ -1351,4 +1351,14 @@ theorem mul_rv (s : State) (hs : (mulRV p521p).pre s) :
   obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fn_rv (S := p521p) (by decide) (by decide) @mulCore_spec hs.1 hs.2
   exact ⟨t, s', he, a, v1, v2, k⟩
 
+open VG.Impl.Weierstrass.Mont (p521p) in
+open VG.Proof.Weierstrass.RISCV64 (mulRV alignedC) in
+open VG.Proof.Weierstrass.RISCV64.GenWide (fnA_rv CoreSpec.fast) in
+/-- `vg_p521_mul_mod_p` for aligned offsets meets the contract by register for them. -/
+theorem mulA_rv (s : State) (hs : (alignedC (mulRV p521p)).pre s) :
+    ∃ t s', Exec isa mulFnA s t s' ∧ abiPreserved s s' ∧ (mulRV p521p).post s s' := by
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnA_rv (S := p521p) (by decide) (by decide)
+    (@CoreSpec.fast _ _ _ _ @mulCore_spec) hs.1.1 hs.2 (by exact hs.1.2)
+  exact ⟨t, s', he, a, v1, v2, k⟩
+
 end VG.Proof.Weierstrass.RISCV64.P521Mersenne

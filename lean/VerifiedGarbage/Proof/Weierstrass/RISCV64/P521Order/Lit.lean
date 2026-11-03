@@ -23,6 +23,9 @@ namespace VG
 materialize_code Impl.Weierstrass.RISCV64.P521Order.mulFn
 materialize_code Impl.Weierstrass.RISCV64.P521Order.addFn
 materialize_code Impl.Weierstrass.RISCV64.P521Order.subFn
+materialize_code Impl.Weierstrass.RISCV64.P521Order.mulFnA
+materialize_code Impl.Weierstrass.RISCV64.P521Order.addFnA
+materialize_code Impl.Weierstrass.RISCV64.P521Order.subFnA
 
 theorem Impl.Weierstrass.RISCV64.P521Order.mulFn_noFrames :
     Impl.Weierstrass.RISCV64.P521Order.mulFn.noFrames = true := by lit_decide
@@ -30,5 +33,12 @@ theorem Impl.Weierstrass.RISCV64.P521Order.addFn_noFrames :
     Impl.Weierstrass.RISCV64.P521Order.addFn.noFrames = true := by lit_decide
 theorem Impl.Weierstrass.RISCV64.P521Order.subFn_noFrames :
     Impl.Weierstrass.RISCV64.P521Order.subFn.noFrames = true := by lit_decide
+
+theorem Impl.Weierstrass.RISCV64.P521Order.mulFnA_noFrames :
+    Impl.Weierstrass.RISCV64.P521Order.mulFnA.noFrames = true := by lit_decide
+theorem Impl.Weierstrass.RISCV64.P521Order.addFnA_noFrames :
+    Impl.Weierstrass.RISCV64.P521Order.addFnA.noFrames = true := by lit_decide
+theorem Impl.Weierstrass.RISCV64.P521Order.subFnA_noFrames :
+    Impl.Weierstrass.RISCV64.P521Order.subFnA.noFrames = true := by lit_decide
 
 end VG

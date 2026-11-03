@@ -74,6 +74,38 @@ theorem fn_rv {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat 
   refine ⟨t, s', he, ⟨fun r hr => g r (by revert hr; revert r; decide), sp, g _ (by decide)⟩, v,
     keeps_of_frame fo f⟩
 
+/-- `fnA core` meets a contract by register for offsets as the calls set
+them, from `fnA_ok`, for any four-word modulus. -/
+theorem fnA_rv {S : Impl.Weierstrass.Mont.Modulus} (hk : S.k = 4) {core : Prog isa} {pre : Nat → Nat → Prop}
+    {res : Nat → Nat → Nat → Prop} (hcore : CoreOk core pre res) {s : State} (hs : rvPre S s)
+    (hoff : VG.Proof.Weierstrass.RISCV64.OffsOk s) (hp : pre (arg S s .a2) (arg S s .a3)) :
+    ∃ t s', Exec isa (fnA core) s t s' ∧ abiPreserved s s' ∧
+      res (arg S s .a2) (arg S s .a3) (numAt s'.mem (s.gpr .a0) (offArg s .a1) 4) ∧
+      Keeps 4 (s.gpr .a0) (offArg s .a1) s.mem s'.mem := by
+  obtain ⟨-, hwr, hfit, ⟨fo, fa, fb⟩, hal⟩ := hs
+  simp only [Fits, hk, VG.Proof.Weierstrass.RISCV64.rvOwn_le (show 4 ≤ 6 by decide), Impl.Weierstrass.Mont.ownAt,
+    Impl.Weierstrass.Mont.ownBytes] at fo fa fb
+  simp only [arg, hk, numAt_d4] at hp ⊢
+  obtain ⟨t, s', he, v, f, g, -, -, sp⟩ := fnA_ok hcore rfl hal (by rw [hwr]; simp) hfit fo fa fb
+    (hoff _ (by simp)) (hoff _ (by simp)) (hoff _ (by simp)) hp
+  refine ⟨t, s', he, ⟨fun r hr => g r (by revert hr; revert r; decide), sp, g _ (by decide)⟩, v,
+    keeps_of_frame fo f⟩
+
+theorem mulA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV p256p)).pre s) :
+    ∃ t s', Exec isa mulFnA s t s' ∧ abiPreserved s s' ∧ (mulRV p256p).post s s' := by
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnA_rv rfl (@mulCore_core) hs.1.1 hs.2 (by rw [← p_eq]; exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [p_eq]; exact v1, by rw [p_eq]; exact v2, k⟩
+
+theorem addA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addRV p256p)).pre s) :
+    ∃ t s', Exec isa addFnA s t s' ∧ abiPreserved s s' ∧ (addRV p256p).post s s' := by
+  obtain ⟨t, s', he, a, v, k⟩ := fnA_rv rfl (@addCore_core) hs.1.1 hs.2 (by rw [← p_eq]; exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [p_eq]; exact v, k⟩
+
+theorem subA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV p256p)).pre s) :
+    ∃ t s', Exec isa subFnA s t s' ∧ abiPreserved s s' ∧ (subRV p256p).post s s' := by
+  obtain ⟨t, s', he, a, v, k⟩ := fnA_rv rfl (@subCore_core) hs.1.1 hs.2 (by rw [← p_eq]; exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [p_eq]; exact v, k⟩
+
 theorem mul_rv (s : State) (hs : (mulRV p256p).pre s) :
     ∃ t s', Exec isa mulFn s t s' ∧ abiPreserved s s' ∧ (mulRV p256p).post s s' := by
   obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fn_rv (@mulCore_core) hs.1 (by rw [← p_eq]; exact hs.2)

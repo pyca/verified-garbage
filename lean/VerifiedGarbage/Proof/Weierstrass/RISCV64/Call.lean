@@ -38,7 +38,8 @@ structure WsReg (s : State) (base : Addr) : Prop where
   nowrap : base.toNat + 8192 ≤ 2 ^ 64
   al : base.toNat % 8 = 0
 
-/-- A field whose code meets the contracts by register, without frames. -/
+/-- A field whose code meets the contracts by register, without frames, and
+whose code for aligned offsets meets them for those (`alignedC`). -/
 structure FieldOk (F : Field) : Prop where
   mul : Meets F.mul (mulRV F.S)
   add : Meets F.add (addRV F.S)
@@ -46,6 +47,12 @@ structure FieldOk (F : Field) : Prop where
   nmul : F.mul.noFrames = true
   nadd : F.add.noFrames = true
   nsub : F.sub.noFrames = true
+  mulA : Meets F.mulA (alignedC (mulRV F.S))
+  addA : Meets F.addA (alignedC (addRV F.S))
+  subA : Meets F.subA (alignedC (subRV F.S))
+  nmulA : F.mulA.noFrames = true
+  naddA : F.addA.noFrames = true
+  nsubA : F.subA.noFrames = true
 
 /-- The registers, regions and stack pointer a call keeps. -/
 structure Kp (s s' : State) : Prop where
@@ -185,22 +192,20 @@ theorem outs_of_keeps {k : Nat} {base : Addr} {o : Nat} (ho : o < 2 ^ 32)
     simp only [ofs] at hi; omega
 
 /-- A call of `body`, which meets the contract `K` by register, from the
-working space in `s0` and the offsets `o`, `a`, `b`. -/
-theorem callOp_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFrames = true)
+working space in `s0` and the offsets `o`, `a`, `b`, as `callOp` sets them. -/
+theorem call_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFrames = true)
     {K : Contract isa} (hK : Meets body K) {s : State} {base : Addr} (hw : WsReg s base)
     {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k) (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
     (ho' : o < 4095) (ha' : a < 4095) (hb' : b < 4095)
-    (hpre : ∀ t : State, rvPre S t → t.gpr .a0 = base → offArg t .a1 = (BitVec.ofNat 64 o).setWidth 32 →
-      offArg t .a2 = (BitVec.ofNat 64 a).setWidth 32 → offArg t .a3 = (BitVec.ofNat 64 b).setWidth 32 →
-      t.mem = s.mem → K.pre t)
+    (hpre : ∀ t : State, rvPre S t → t.gpr .a0 = base → t.gpr .a1 = BitVec.ofNat 64 o →
+      t.gpr .a2 = BitVec.ofNat 64 a → t.gpr .a3 = BitVec.ofNat 64 b → t.mem = s.mem → K.pre t)
     {Q : State → Prop}
     (hQ : ∀ s', Kp s s' → Frame [⟨base, 8192⟩] s.mem s'.mem →
       ∀ t : State, t.gpr .a0 = base → offArg t .a1 = (BitVec.ofNat 64 o).setWidth 32 →
         offArg t .a2 = (BitVec.ofNat 64 a).setWidth 32 → offArg t .a3 = (BitVec.ofNat 64 b).setWidth 32 →
         t.mem = s.mem → K.post t (s'.withRegions [] [⟨base, 8192⟩]) → Q s') :
-    WP isa (callOp f body o a b) s Q := by
-  have hk : 64 * S.k ≤ 8192 := by have := rvOwn_cases S.k; simp only [own] at ho; omega
-  rw [callOp, ← List.append_nil (liAt .a3 b)]
+    WP isa (.seq (.block (.addi .a0 wb 0 :: (liAt .a1 o ++ (liAt .a2 a ++ liAt .a3 b)))) (.call f body)) s Q := by
+  rw [← List.append_nil (liAt .a3 b)]
   refine WP.seq (wp_mv fun s₁ u₁ => wp_liAt ho' fun s₂ u₂ => wp_liAt ha' fun s₃ u₃ => wp_liAt hb' fun s₄ u₄ =>
     WP.block_nil ?_)
   have K₄ : Kp s s₄ := (Kp.of_upd u₁).trans ((Kp.of_upd u₂).trans ((Kp.of_upd u₃).trans (Kp.of_upd u₄)))
@@ -216,12 +221,15 @@ theorem callOp_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFram
   let e := s₄.callEntry.withRegions [] [⟨base, 8192⟩]
   have e0 : e.gpr .a0 = base := by
     simp only [e, State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), g0]
-  have e1 : offArg e .a1 = (BitVec.ofNat 64 o).setWidth 32 := by
-    simp only [e, offArg, State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), g1]
-  have e2 : offArg e .a2 = (BitVec.ofNat 64 a).setWidth 32 := by
-    simp only [e, offArg, State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), g2]
-  have e3 : offArg e .a3 = (BitVec.ofNat 64 b).setWidth 32 := by
-    simp only [e, offArg, State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), g3]
+  have f1 : e.gpr .a1 = BitVec.ofNat 64 o := by
+    simp only [e, State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), g1]
+  have f2 : e.gpr .a2 = BitVec.ofNat 64 a := by
+    simp only [e, State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), g2]
+  have f3 : e.gpr .a3 = BitVec.ofNat 64 b := by
+    simp only [e, State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), g3]
+  have e1 : offArg e .a1 = (BitVec.ofNat 64 o).setWidth 32 := by simp only [offArg, f1]
+  have e2 : offArg e .a2 = (BitVec.ofNat 64 a).setWidth 32 := by simp only [offArg, f2]
+  have e3 : offArg e .a3 = (BitVec.ofNat 64 b).setWidth 32 := by simp only [offArg, f3]
   have em : e.mem = s.mem := by simp only [e, State.withRegions_mem, State.callEntry_mem, m₄]
   have fit : ∀ x, x + 8 * S.k ≤ own S.k → Impl.Weierstrass.Mont.Fits S.k ((BitVec.ofNat 64 x).setWidth 32) (rvOwn S.k) :=
     fun x hx => by
@@ -231,10 +239,46 @@ theorem callOp_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFram
   have hpe : rvPre S e := ⟨rfl, by simp only [e, State.withRegions_wr, e0], by rw [e0]; exact hw.nowrap,
     ⟨by rw [e1]; exact fit o ho, by rw [e2]; exact fit a ha, by rw [e3]; exact fit b hb⟩,
     by rw [e0]; exact hw.al⟩
-  refine WP.call hK (rd := []) (wr := [⟨base, 8192⟩]) (hpre e hpe e0 e1 e2 e3 em) (Covers.right hcov) hcov
+  refine WP.call hK (rd := []) (wr := [⟨base, 8192⟩]) (hpre e hpe e0 f1 f2 f3 em) (Covers.right hcov) hcov
     (fun s' r' w' p' F G _ hp => ?_) hn
   have K' : Kp s s' := K₄.trans ⟨G, r', w', p'⟩
   exact hQ s' K' (by rw [← m₄]; exact F) e e0 e1 e2 e3 em hp
+
+/-- A call by `callOp` of `body`, which meets the contract `K` by register,
+or of `bodyA`, which meets it for offsets as the calls set them, from the
+working space in `s0` and the offsets `o`, `a`, `b`. -/
+theorem callOp_ok {S : Modulus} {f : String} {body bodyA : Prog isa} (hn : body.noFrames = true)
+    (hnA : bodyA.noFrames = true) {K : Contract isa} (hK : Meets body K) (hKA : Meets bodyA (alignedC K))
+    {s : State} {base : Addr} (hw : WsReg s base)
+    {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k) (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
+    (ho' : o < 4095) (ha' : a < 4095) (hb' : b < 4095)
+    (hpre : ∀ t : State, rvPre S t → t.gpr .a0 = base → offArg t .a1 = (BitVec.ofNat 64 o).setWidth 32 →
+      offArg t .a2 = (BitVec.ofNat 64 a).setWidth 32 → offArg t .a3 = (BitVec.ofNat 64 b).setWidth 32 →
+      t.mem = s.mem → K.pre t)
+    {Q : State → Prop}
+    (hQ : ∀ s', Kp s s' → Frame [⟨base, 8192⟩] s.mem s'.mem →
+      ∀ t : State, t.gpr .a0 = base → offArg t .a1 = (BitVec.ofNat 64 o).setWidth 32 →
+        offArg t .a2 = (BitVec.ofNat 64 a).setWidth 32 → offArg t .a3 = (BitVec.ofNat 64 b).setWidth 32 →
+        t.mem = s.mem → K.post t (s'.withRegions [] [⟨base, 8192⟩]) → Q s') :
+    WP isa (callOp f body bodyA o a b) s Q := by
+  have hpre' : ∀ t : State, rvPre S t → t.gpr .a0 = base → t.gpr .a1 = BitVec.ofNat 64 o →
+      t.gpr .a2 = BitVec.ofNat 64 a → t.gpr .a3 = BitVec.ofNat 64 b → t.mem = s.mem → K.pre t :=
+    fun t ht h0 h1 h2 h3 hm => hpre t ht h0 (by simp only [offArg, h1]) (by simp only [offArg, h2])
+      (by simp only [offArg, h3]) hm
+  unfold callOp
+  by_cases hal : o % 8 = 0 ∧ a % 8 = 0 ∧ b % 8 = 0
+  · rw [ite_eq_left hal]
+    refine call_ok (S := S) hnA hKA hw ho ha hb ho' ha' hb' (fun t ht h0 h1 h2 h3 hm => ⟨hpre' t ht h0 h1 h2 h3 hm,
+      fun r hr => ?_⟩) hQ
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    have l : ∀ x, x < 4095 → (BitVec.ofNat 64 x).toNat = x := fun x hx => by
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rcases hr with rfl | rfl | rfl
+    · rw [h1, l o ho']; omega
+    · rw [h2, l a ha']; omega
+    · rw [h3, l b hb']; omega
+  · rw [ite_eq_right hal]
+    exact call_ok (S := S) hn hK hw ho ha hb ho' ha' hb' hpre' hQ
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call. -/
 theorem mulCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : WsReg s base) {o a b : Nat}
@@ -248,7 +292,7 @@ theorem mulCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
   have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega
   have h32 : ∀ x, x + 8 * F.S.k ≤ own F.S.k → x < 2 ^ 32 := fun x hx => by
     have := rvOwn_cases F.S.k; simp only [own] at hx; omega
-  refine callOp_ok (S := F.S) hF.nmul hF.mul hw ho ha hb ho' ha' hb'
+  refine callOp_ok (S := F.S) hF.nmul hF.nmulA hF.mul hF.mulA hw ho ha hb ho' ha' hb'
     (fun t ht h0 h1 h2 h3 hm => ⟨ht, by simp only [arg]; rw [h3, h0, hm, numAt_ofNat _ _ (h32 b hb)]; exact hB⟩)
     fun s' K Fr t h0 h1 h2 h3 hm ⟨v1, v2, v3⟩ => ?_
   simp only [res, arg, State.withRegions_mem, h0, h1, h2, h3, hm, numAt_ofNat _ _ (h32 _ ho),
@@ -265,7 +309,7 @@ theorem addCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
   have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega
   have h32 : ∀ x, x + 8 * F.S.k ≤ own F.S.k → x < 2 ^ 32 := fun x hx => by
     have := rvOwn_cases F.S.k; simp only [own] at hx; omega
-  refine callOp_ok (S := F.S) hF.nadd hF.add hw ho ha hb ho' ha' hb'
+  refine callOp_ok (S := F.S) hF.nadd hF.naddA hF.add hF.addA hw ho ha hb ho' ha' hb'
     (fun t ht h0 h1 h2 h3 hm => ⟨ht, by
       simp only [arg]; rw [h2, h3, h0, hm, numAt_ofNat _ _ (h32 a ha), numAt_ofNat _ _ (h32 b hb)]; exact hAB⟩)
     fun s' K Fr t h0 h1 h2 h3 hm ⟨v1, v3⟩ => ?_
@@ -283,7 +327,7 @@ theorem subCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
   have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega
   have h32 : ∀ x, x + 8 * F.S.k ≤ own F.S.k → x < 2 ^ 32 := fun x hx => by
     have := rvOwn_cases F.S.k; simp only [own] at hx; omega
-  refine callOp_ok (S := F.S) hF.nsub hF.sub hw ho ha hb ho' ha' hb'
+  refine callOp_ok (S := F.S) hF.nsub hF.nsubA hF.sub hF.subA hw ho ha hb ho' ha' hb'
     (fun t ht h0 h1 h2 h3 hm => ⟨ht, by simp only [arg]; rw [h2, h0, hm, numAt_ofNat _ _ (h32 a ha)]; exact hA,
       by simp only [arg]; rw [h3, h0, hm, numAt_ofNat _ _ (h32 b hb)]; exact hB⟩)
     fun s' K Fr t h0 h1 h2 h3 hm ⟨v1, v3⟩ => ?_

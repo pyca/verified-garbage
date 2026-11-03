@@ -557,6 +557,25 @@ theorem sub_rv (hk : S.k = 4) (hm : Ok S.m) (s : State) (hs : (subRV S).pre s) :
   obtain ⟨t, s', he, a, v, k⟩ := fn_rv hk (@subCore_core S.m hm) hs.1 (by exact hs.2)
   exact ⟨t, s', he, a, by rw [res, hk]; exact v, by rw [hk]; exact k⟩
 
+theorem mulA_rv (hk : S.k = 4) (hm : Ok S.m) (s : State)
+    (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV S)).pre s) :
+    ∃ t s', Exec isa (Impl.Weierstrass.RISCV64.Gen4.mulFnA S.m) s t s' ∧ abiPreserved s s' ∧ (mulRV S).post s s' := by
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := P256Field.fnA_rv hk (@mulCore_core S.m hm) hs.1.1 hs.2 (by exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [res, hk]; exact v1,
+    by rw [res, Impl.Weierstrass.Mont.Modulus.R, hk]; exact v2, by rw [hk]; exact k⟩
+
+theorem addA_rv (hk : S.k = 4) (hm : Ok S.m) (s : State)
+    (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addRV S)).pre s) :
+    ∃ t s', Exec isa (Impl.Weierstrass.RISCV64.Gen4.addFnA S.m) s t s' ∧ abiPreserved s s' ∧ (addRV S).post s s' := by
+  obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv hk (@addCore_core S.m hm) hs.1.1 hs.2 (by exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [res, hk]; exact v, by rw [hk]; exact k⟩
+
+theorem subA_rv (hk : S.k = 4) (hm : Ok S.m) (s : State)
+    (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV S)).pre s) :
+    ∃ t s', Exec isa (Impl.Weierstrass.RISCV64.Gen4.subFnA S.m) s t s' ∧ abiPreserved s s' ∧ (subRV S).post s s' := by
+  obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv hk (@subCore_core S.m hm) hs.1.1 hs.2 (by exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [res, hk]; exact v, by rw [hk]; exact k⟩
+
 /-! ## The shared contracts -/
 
 theorem rvPub_agree' : ∀ s₁ s₂ : State, rvPre S s₁ → rvPre S s₂ → rvPub s₁ s₂ → mulAgreeLo s₁ s₂ :=

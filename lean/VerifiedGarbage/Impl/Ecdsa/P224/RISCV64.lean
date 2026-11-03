@@ -31,11 +31,26 @@ def p224AddN : Prog isa := Weierstrass.RISCV64.Gen4.addFn Impl.Weierstrass.Mont.
 /-- `vg_p224_sub_mod_n`. -/
 def p224SubN : Prog isa := Weierstrass.RISCV64.Gen4.subFn Impl.Weierstrass.Mont.p224n.m
 
+/-- `vg_p224_mul_mod_p`, for aligned offsets. -/
+def p224MulPA : Prog isa := Weierstrass.RISCV64.Gen4.mulFnA Impl.Weierstrass.Mont.p224p.m
+/-- `vg_p224_add_mod_p`, for aligned offsets. -/
+def p224AddPA : Prog isa := Weierstrass.RISCV64.Gen4.addFnA Impl.Weierstrass.Mont.p224p.m
+/-- `vg_p224_sub_mod_p`, for aligned offsets. -/
+def p224SubPA : Prog isa := Weierstrass.RISCV64.Gen4.subFnA Impl.Weierstrass.Mont.p224p.m
+/-- `vg_p224_mul_mod_n`, for aligned offsets. -/
+def p224MulNA : Prog isa := Weierstrass.RISCV64.Gen4.mulFnA Impl.Weierstrass.Mont.p224n.m
+/-- `vg_p224_add_mod_n`, for aligned offsets. -/
+def p224AddNA : Prog isa := Weierstrass.RISCV64.Gen4.addFnA Impl.Weierstrass.Mont.p224n.m
+/-- `vg_p224_sub_mod_n`, for aligned offsets. -/
+def p224SubNA : Prog isa := Weierstrass.RISCV64.Gen4.subFnA Impl.Weierstrass.Mont.p224n.m
+
 /-- The functions of P-224's `p`. -/
-def p224Field : Weierstrass.RISCV64.Field := ⟨Impl.Weierstrass.Mont.p224p, p224MulP, p224AddP, p224SubP⟩
+def p224Field : Weierstrass.RISCV64.Field :=
+  ⟨Impl.Weierstrass.Mont.p224p, p224MulP, p224AddP, p224SubP, p224MulPA, p224AddPA, p224SubPA⟩
 
 /-- The functions of P-224's `n`. -/
-def p224Order : Weierstrass.RISCV64.Field := ⟨Impl.Weierstrass.Mont.p224n, p224MulN, p224AddN, p224SubN⟩
+def p224Order : Weierstrass.RISCV64.Field :=
+  ⟨Impl.Weierstrass.Mont.p224n, p224MulN, p224AddN, p224SubN, p224MulNA, p224AddNA, p224SubNA⟩
 
 /-- P-224 as the code has it. -/
 def p224 : Cfg := { n := 4, C := Spec.P224.curve, FP := p224Field }

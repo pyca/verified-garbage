@@ -391,6 +391,33 @@ theorem sub_rv (hk : S.k = 4) (hp : S.m = P) (s : State) (hs : (subRV S).pre s) 
   obtain ⟨t, s', he, a, v, k⟩ := Gen4.fn_rv hk @hc hs.1 (by exact hs.2)
   exact ⟨t, s', he, a, by rw [res, hk]; exact v, by rw [hk]; exact k⟩
 
+theorem mulA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
+    (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV S)).pre s) :
+    ∃ t s', Exec isa Impl.Weierstrass.RISCV64.Secp256k1Field.mulFnA s t s' ∧ abiPreserved s s' ∧ (mulRV S).post s s' := by
+  have hc : CoreOk Impl.Weierstrass.RISCV64.Secp256k1Field.mulCore (fun _ B => B < S.m) (Gen4.mulRes S.m) := by
+    rw [hp]; exact mulCore_core
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := P256Field.fnA_rv hk @hc hs.1.1 hs.2 (by exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [res, hk]; exact v1,
+    by rw [res, Impl.Weierstrass.Mont.Modulus.R, hk]; exact v2, by rw [hk]; exact k⟩
+
+theorem addA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
+    (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addRV S)).pre s) :
+    ∃ t s', Exec isa Impl.Weierstrass.RISCV64.Secp256k1Field.addFnA s t s' ∧ abiPreserved s s' ∧ (addRV S).post s s' := by
+  have hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.addCore) (fun A B => A + B < 2 * S.m)
+      (fun A B r => r = (A + B) % S.m) := by
+    rw [hp]; exact addCore_core
+  obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv hk @hc hs.1.1 hs.2 (by exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [res, hk]; exact v, by rw [hk]; exact k⟩
+
+theorem subA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
+    (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV S)).pre s) :
+    ∃ t s', Exec isa Impl.Weierstrass.RISCV64.Secp256k1Field.subFnA s t s' ∧ abiPreserved s s' ∧ (subRV S).post s s' := by
+  have hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.subCore) (fun A B => A < S.m ∧ B < S.m)
+      (fun A B r => r = (A + S.m - B) % S.m) := by
+    rw [hp]; exact subCore_core
+  obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv hk @hc hs.1.1 hs.2 (by exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [res, hk]; exact v, by rw [hk]; exact k⟩
+
 end VG.Proof.Weierstrass.RISCV64.Secp256k1Field
 
 namespace VG.Proof.Ecdsa.RISCV64.Secp256k1
@@ -403,11 +430,12 @@ open VG.Spec.Weierstrass (Curve Fe Point)
 abbrev W : Curve := Spec.Secp256k1.curve
 
 theorem field_ok : FieldOk secp256k1Field :=
-  ⟨VG.Proof.Weierstrass.RISCV64.Secp256k1Field.mul_rv rfl rfl,
-    VG.Proof.Weierstrass.RISCV64.Secp256k1Field.add_rv rfl rfl,
-    VG.Proof.Weierstrass.RISCV64.Secp256k1Field.sub_rv rfl rfl,
+  ⟨VG.Proof.Weierstrass.RISCV64.Secp256k1Field.mul_rv rfl rfl, VG.Proof.Weierstrass.RISCV64.Secp256k1Field.add_rv rfl rfl, VG.Proof.Weierstrass.RISCV64.Secp256k1Field.sub_rv rfl rfl,
     Impl.Weierstrass.RISCV64.Secp256k1Field.mulFn_noFrames,
-    Impl.Weierstrass.RISCV64.Secp256k1Field.addFn_noFrames, Impl.Weierstrass.RISCV64.Secp256k1Field.subFn_noFrames⟩
+    Impl.Weierstrass.RISCV64.Secp256k1Field.addFn_noFrames, Impl.Weierstrass.RISCV64.Secp256k1Field.subFn_noFrames,
+    VG.Proof.Weierstrass.RISCV64.Secp256k1Field.mulA_rv rfl rfl, VG.Proof.Weierstrass.RISCV64.Secp256k1Field.addA_rv rfl rfl, VG.Proof.Weierstrass.RISCV64.Secp256k1Field.subA_rv rfl rfl,
+    Impl.Weierstrass.RISCV64.Secp256k1Field.mulFnA_noFrames,
+    Impl.Weierstrass.RISCV64.Secp256k1Field.addFnA_noFrames, Impl.Weierstrass.RISCV64.Secp256k1Field.subFnA_noFrames⟩
 
 instance : NeZero secp256k1Field.S.m := ⟨by decide⟩
 

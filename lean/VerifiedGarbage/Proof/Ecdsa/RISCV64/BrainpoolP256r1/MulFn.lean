@@ -30,8 +30,12 @@ abbrev W : Curve := Spec.BrainpoolP256r1.curve
 private theorem p_ok : Gen4.Ok Impl.Weierstrass.Mont.brainpoolp256r1p.m := ⟨by decide, by decide, by decide⟩
 
 theorem field_ok : FieldOk brainpoolp256r1Field :=
-  ⟨Gen4.mul_rv rfl p_ok, Gen4.add_rv rfl p_ok, Gen4.sub_rv rfl p_ok, Impl.Weierstrass.RISCV64.BrainpoolP256r1Field.mulFn_noFrames,
-    Impl.Weierstrass.RISCV64.BrainpoolP256r1Field.addFn_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP256r1Field.subFn_noFrames⟩
+  ⟨Gen4.mul_rv rfl p_ok, Gen4.add_rv rfl p_ok, Gen4.sub_rv rfl p_ok,
+    Impl.Weierstrass.RISCV64.BrainpoolP256r1Field.mulFn_noFrames,
+    Impl.Weierstrass.RISCV64.BrainpoolP256r1Field.addFn_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP256r1Field.subFn_noFrames,
+    Gen4.mulA_rv rfl p_ok, Gen4.addA_rv rfl p_ok, Gen4.subA_rv rfl p_ok,
+    Impl.Weierstrass.RISCV64.BrainpoolP256r1Field.mulFnA_noFrames,
+    Impl.Weierstrass.RISCV64.BrainpoolP256r1Field.addFnA_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP256r1Field.subFnA_noFrames⟩
 
 instance : NeZero brainpoolp256r1Field.S.m := ⟨by decide⟩
 

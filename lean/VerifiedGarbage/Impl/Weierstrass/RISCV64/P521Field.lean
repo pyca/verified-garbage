@@ -30,4 +30,13 @@ def addFn : Prog isa := GenWide.addFn 9 Spec.P521.p
 /-- The function subtracting modulo `p`. -/
 def subFn : Prog isa := GenWide.subFn 9 Spec.P521.p
 
+/-- The function multiplying modulo `p`, for aligned offsets. -/
+def mulFnA : Prog isa := P521Mersenne.mulFnA
+
+/-- The function adding modulo `p`, for aligned offsets. -/
+def addFnA : Prog isa := GenWide.addFnA 9 Spec.P521.p
+
+/-- The function subtracting modulo `p`, for aligned offsets. -/
+def subFnA : Prog isa := GenWide.subFnA 9 Spec.P521.p
+
 end VG.Impl.Weierstrass.RISCV64.P521Field

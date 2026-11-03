@@ -36,7 +36,7 @@ GenWide's on the pointers.
 namespace VG.Impl.Weierstrass.RISCV64.P521Mersenne
 
 open VG.RISCV64
-open VG.Impl.Weierstrass.RISCV64.GenWide (T adcCore fn)
+open VG.Impl.Weierstrass.RISCV64.GenWide (T adcCore fn fnA)
 open VG.Impl.X448.RISCV64.R64 (rr)
 
 /-- The base of the eighteen words of the product, from `a3`. -/
@@ -150,5 +150,8 @@ def mulCore : List Instr := productC ++ fold ++ fold2 ++ canon ++ rot
 
 /-- The function multiplying modulo `p`. -/
 def mulFn : Prog isa := fn 9 mulCore
+
+/-- `vg_p521_mul_mod_p`, for aligned offsets. -/
+def mulFnA : Prog isa := fnA (.block mulCore)
 
 end VG.Impl.Weierstrass.RISCV64.P521Mersenne

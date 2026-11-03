@@ -20,4 +20,13 @@ def addFn : Prog isa := Gen6.addFn Impl.Weierstrass.Mont.brainpoolp384r1p.m
 /-- `vg_brainpoolp384r1_sub_mod_p`. -/
 def subFn : Prog isa := Gen6.subFn Impl.Weierstrass.Mont.brainpoolp384r1p.m
 
+/-- `vg_brainpoolp384r1_mul_mod_p`, for aligned offsets. -/
+def mulFnA : Prog isa := Gen6.mulFnA Impl.Weierstrass.Mont.brainpoolp384r1p.m
+
+/-- `vg_brainpoolp384r1_add_mod_p`, for aligned offsets. -/
+def addFnA : Prog isa := Gen6.addFnA Impl.Weierstrass.Mont.brainpoolp384r1p.m
+
+/-- `vg_brainpoolp384r1_sub_mod_p`, for aligned offsets. -/
+def subFnA : Prog isa := Gen6.subFnA Impl.Weierstrass.Mont.brainpoolp384r1p.m
+
 end VG.Impl.Weierstrass.RISCV64.BrainpoolP384r1Field

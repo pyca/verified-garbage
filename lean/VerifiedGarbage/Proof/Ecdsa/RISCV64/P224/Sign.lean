@@ -41,8 +41,12 @@ open VG.WriteBytes (writeBytes)
 
 /-- The functions of `n` meet the contracts by register. -/
 theorem order_ok : FieldOk p224Order :=
-  ⟨P224Field.mul_rv_n, P224Field.add_rv_n, P224Field.sub_rv_n, Impl.Ecdsa.RISCV64.p224MulN_noFrames,
-    Impl.Ecdsa.RISCV64.p224AddN_noFrames, Impl.Ecdsa.RISCV64.p224SubN_noFrames⟩
+  ⟨P224Field.mul_rv_n, P224Field.add_rv_n, P224Field.sub_rv_n,
+    Impl.Ecdsa.RISCV64.p224MulN_noFrames,
+    Impl.Ecdsa.RISCV64.p224AddN_noFrames, Impl.Ecdsa.RISCV64.p224SubN_noFrames,
+    P224Field.mulA_rv_n, P224Field.addA_rv_n, P224Field.subA_rv_n,
+    Impl.Ecdsa.RISCV64.p224MulNA_noFrames,
+    Impl.Ecdsa.RISCV64.p224AddNA_noFrames, Impl.Ecdsa.RISCV64.p224SubNA_noFrames⟩
 
 instance : NeZero p224Order.S.m := ⟨by decide⟩
 

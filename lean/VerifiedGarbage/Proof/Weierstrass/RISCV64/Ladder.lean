@@ -268,14 +268,14 @@ theorem ladAdds_ok {L : LadderCfg} {C : Curve} {base : Addr} (hL : LadLayR L)
     {Q : State → Prop} (h : ∀ s', AddsPost L C base E s s' → WP isa rest s' Q) :
     WP isa (.seq (fprog F (rcb L.S L.R L.R L.D)) (.seq (fprog F (rcb L.S L.D L.G L.T)) rest))
       s Q := by
-  obtain ⟨⟨c, w, m', k', d⟩, fm, fa, fs⟩ := F
+  obtain ⟨⟨c, w, m', k', d⟩, fm, fa, fs, fmA, faA, fsA⟩ := F
   dsimp only at hkS hmS hF ⊢
   subst hkS hmS
   have hL' := hL.lay
   have hS2 := hL.short'
-  refine WP.seq (WP.mono (rcb_ok (F := ⟨⟨c, w, C.p, L.M.n, d⟩, fm, fa, fs⟩) hF rfl hL'.lay hS2 hp hL'.a1
+  refine WP.seq (WP.mono (rcb_ok (F := ⟨⟨c, w, C.p, L.M.n, d⟩, fm, fa, fs, fmA, faA, fsA⟩) hF rfl hL'.lay hS2 hp hL'.a1
     (ladR_S₁ L) hI (ladR_V₁ L)) fun s₂ ⟨k₂, I₂, t₂, n₂⟩ => ?_)
-  refine WP.seq (WP.mono (rcb_ok (F := ⟨⟨c, w, C.p, L.M.n, d⟩, fm, fa, fs⟩) hF rfl hL'.lay hS2 hp hL'.a2
+  refine WP.seq (WP.mono (rcb_ok (F := ⟨⟨c, w, C.p, L.M.n, d⟩, fm, fa, fs, fmA, faA, fsA⟩) hF rfl hL'.lay hS2 hp hL'.a2
     (ladR_S₂ L) I₂ (ladR_V₂ L)) fun s₃ ⟨k₃, I₃, t₃, n₃⟩ => h s₃ ?_)
   have hro : ∀ x ∈ ladRo L, x ∉ rcbW L.S L.D := fun x hx h =>
     hL'.ro x hx (by simp only [ladWs, List.mem_append]; exact Or.inl (Or.inr h))

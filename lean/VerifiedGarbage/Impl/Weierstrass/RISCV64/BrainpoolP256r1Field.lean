@@ -20,4 +20,13 @@ def addFn : Prog isa := Gen4.addFn Spec.BrainpoolP256r1.p
 /-- `vg_brainpoolp256r1_sub_mod_p`. -/
 def subFn : Prog isa := Gen4.subFn Spec.BrainpoolP256r1.p
 
+/-- `vg_brainpoolp256r1_mul_mod_p`, for aligned offsets. -/
+def mulFnA : Prog isa := Gen4.mulFnA Spec.BrainpoolP256r1.p
+
+/-- `vg_brainpoolp256r1_add_mod_p`, for aligned offsets. -/
+def addFnA : Prog isa := Gen4.addFnA Spec.BrainpoolP256r1.p
+
+/-- `vg_brainpoolp256r1_sub_mod_p`, for aligned offsets. -/
+def subFnA : Prog isa := Gen4.subFnA Spec.BrainpoolP256r1.p
+
 end VG.Impl.Weierstrass.RISCV64.BrainpoolP256r1Field

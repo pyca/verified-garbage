@@ -43,6 +43,11 @@ public import VerifiedGarbage.Impl.Words.RISCV64.Wide
    `x ≥ p` if and only if that or `x`'s top bit carries out of 384 bits,
    whose mask selects, word by word, the stored sum or `x`.
 
+Calls whose offsets are multiples of 8, as the slots' are, take the code
+without the zero-extension, the alignment test and the copies (`fnA`): the
+offsets' registers are zero-extended already (`liAt` sets them), and the
+operation runs on the pointers.
+
 Every multiplication is `mul` or `mulhu`, every selection a mask, and the
 only branches are on the pointers, which are public, as every address is a
 pointer plus a constant. The functions use only caller-saved registers and
@@ -326,6 +331,11 @@ def fn (core : Prog isa) : Prog isa :=
           [.addi .t4 .a3 SA, .addi .t5 .a3 SB, .addi .t2 .a3 SO])) <|
         .seq core (.block (pack .t1 SO 0)))
 
+/-- The operation `core` on operands whose offsets are zero-extended
+multiples of 8, as the calls pass them: `core` on the pointers (P-256's
+`ptrsA`). -/
+def fnA (core : Prog isa) : Prog isa := .seq (.block P256Field.ptrsA) core
+
 /-- `vg_p384_mul_mod_p`. -/
 def mulFn : Prog isa := fn mulCore
 
@@ -334,5 +344,14 @@ def addFn : Prog isa := fn (.block addCore)
 
 /-- `vg_p384_sub_mod_p`. -/
 def subFn : Prog isa := fn (.block subCore)
+
+/-- `vg_p384_mul_mod_p`, for aligned offsets. -/
+def mulFnA : Prog isa := fnA mulCore
+
+/-- `vg_p384_add_mod_p`, for aligned offsets. -/
+def addFnA : Prog isa := fnA (.block addCore)
+
+/-- `vg_p384_sub_mod_p`, for aligned offsets. -/
+def subFnA : Prog isa := fnA (.block subCore)
 
 end VG.Impl.Weierstrass.RISCV64.P384Field

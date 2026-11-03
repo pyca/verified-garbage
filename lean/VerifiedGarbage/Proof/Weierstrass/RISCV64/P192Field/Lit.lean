@@ -26,6 +26,12 @@ materialize_code Impl.Ecdsa.RISCV64.p192SubP
 materialize_code Impl.Ecdsa.RISCV64.p192MulN
 materialize_code Impl.Ecdsa.RISCV64.p192AddN
 materialize_code Impl.Ecdsa.RISCV64.p192SubN
+materialize_code Impl.Ecdsa.RISCV64.p192MulPA
+materialize_code Impl.Ecdsa.RISCV64.p192AddPA
+materialize_code Impl.Ecdsa.RISCV64.p192SubPA
+materialize_code Impl.Ecdsa.RISCV64.p192MulNA
+materialize_code Impl.Ecdsa.RISCV64.p192AddNA
+materialize_code Impl.Ecdsa.RISCV64.p192SubNA
 
 theorem Impl.Ecdsa.RISCV64.p192MulP_noFrames : Impl.Ecdsa.RISCV64.p192MulP.noFrames = true := by lit_decide
 theorem Impl.Ecdsa.RISCV64.p192AddP_noFrames : Impl.Ecdsa.RISCV64.p192AddP.noFrames = true := by lit_decide
@@ -33,5 +39,18 @@ theorem Impl.Ecdsa.RISCV64.p192SubP_noFrames : Impl.Ecdsa.RISCV64.p192SubP.noFra
 theorem Impl.Ecdsa.RISCV64.p192MulN_noFrames : Impl.Ecdsa.RISCV64.p192MulN.noFrames = true := by lit_decide
 theorem Impl.Ecdsa.RISCV64.p192AddN_noFrames : Impl.Ecdsa.RISCV64.p192AddN.noFrames = true := by lit_decide
 theorem Impl.Ecdsa.RISCV64.p192SubN_noFrames : Impl.Ecdsa.RISCV64.p192SubN.noFrames = true := by lit_decide
+
+theorem Impl.Ecdsa.RISCV64.p192MulPA_noFrames :
+    Impl.Ecdsa.RISCV64.p192MulPA.noFrames = true := by lit_decide
+theorem Impl.Ecdsa.RISCV64.p192AddPA_noFrames :
+    Impl.Ecdsa.RISCV64.p192AddPA.noFrames = true := by lit_decide
+theorem Impl.Ecdsa.RISCV64.p192SubPA_noFrames :
+    Impl.Ecdsa.RISCV64.p192SubPA.noFrames = true := by lit_decide
+theorem Impl.Ecdsa.RISCV64.p192MulNA_noFrames :
+    Impl.Ecdsa.RISCV64.p192MulNA.noFrames = true := by lit_decide
+theorem Impl.Ecdsa.RISCV64.p192AddNA_noFrames :
+    Impl.Ecdsa.RISCV64.p192AddNA.noFrames = true := by lit_decide
+theorem Impl.Ecdsa.RISCV64.p192SubNA_noFrames :
+    Impl.Ecdsa.RISCV64.p192SubNA.noFrames = true := by lit_decide
 
 end VG

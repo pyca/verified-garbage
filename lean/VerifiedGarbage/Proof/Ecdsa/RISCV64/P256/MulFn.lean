@@ -31,8 +31,12 @@ open VG.Spec.Weierstrass (Curve Fe Point)
 abbrev W : Curve := Spec.P256.curve
 
 theorem field_ok : FieldOk p256Field :=
-  ⟨P256Field.mul_rv, P256Field.add_rv, P256Field.sub_rv, Impl.Weierstrass.RISCV64.P256Field.mulFn_noFrames,
-    Impl.Weierstrass.RISCV64.P256Field.addFn_noFrames, Impl.Weierstrass.RISCV64.P256Field.subFn_noFrames⟩
+  ⟨P256Field.mul_rv, P256Field.add_rv, P256Field.sub_rv,
+    Impl.Weierstrass.RISCV64.P256Field.mulFn_noFrames,
+    Impl.Weierstrass.RISCV64.P256Field.addFn_noFrames, Impl.Weierstrass.RISCV64.P256Field.subFn_noFrames,
+    P256Field.mulA_rv, P256Field.addA_rv, P256Field.subA_rv,
+    Impl.Weierstrass.RISCV64.P256Field.mulFnA_noFrames,
+    Impl.Weierstrass.RISCV64.P256Field.addFnA_noFrames, Impl.Weierstrass.RISCV64.P256Field.subFnA_noFrames⟩
 
 instance : NeZero p256Field.S.m := ⟨by decide⟩
 

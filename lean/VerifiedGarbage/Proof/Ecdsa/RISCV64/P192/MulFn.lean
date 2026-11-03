@@ -28,8 +28,12 @@ open VG.Spec.Weierstrass (Curve Fe Point)
 abbrev W : Curve := Spec.P192.curve
 
 theorem field_ok : FieldOk p192Field :=
-  ⟨P192Field.mul_rv, P192Field.add_rv, P192Field.sub_rv, Impl.Ecdsa.RISCV64.p192MulP_noFrames,
-    Impl.Ecdsa.RISCV64.p192AddP_noFrames, Impl.Ecdsa.RISCV64.p192SubP_noFrames⟩
+  ⟨P192Field.mul_rv, P192Field.add_rv, P192Field.sub_rv,
+    Impl.Ecdsa.RISCV64.p192MulP_noFrames,
+    Impl.Ecdsa.RISCV64.p192AddP_noFrames, Impl.Ecdsa.RISCV64.p192SubP_noFrames,
+    P192Field.mulA_rv, P192Field.addA_rv, P192Field.subA_rv,
+    Impl.Ecdsa.RISCV64.p192MulPA_noFrames,
+    Impl.Ecdsa.RISCV64.p192AddPA_noFrames, Impl.Ecdsa.RISCV64.p192SubPA_noFrames⟩
 
 instance : NeZero p192Field.S.m := ⟨by decide⟩
 

@@ -31,8 +31,12 @@ open VG.Spec.Weierstrass (Curve Fe Point)
 abbrev W : Curve := Spec.P521.curve
 
 theorem field_ok : FieldOk p521Field :=
-  ⟨P521Field.mul_rv, P521Field.add_rv, P521Field.sub_rv, Impl.Weierstrass.RISCV64.P521Field.mulFn_noFrames,
-    Impl.Weierstrass.RISCV64.P521Field.addFn_noFrames, Impl.Weierstrass.RISCV64.P521Field.subFn_noFrames⟩
+  ⟨P521Field.mul_rv, P521Field.add_rv, P521Field.sub_rv,
+    Impl.Weierstrass.RISCV64.P521Field.mulFn_noFrames,
+    Impl.Weierstrass.RISCV64.P521Field.addFn_noFrames, Impl.Weierstrass.RISCV64.P521Field.subFn_noFrames,
+    P521Field.mulA_rv, P521Field.addA_rv, P521Field.subA_rv,
+    Impl.Weierstrass.RISCV64.P521Field.mulFnA_noFrames,
+    Impl.Weierstrass.RISCV64.P521Field.addFnA_noFrames, Impl.Weierstrass.RISCV64.P521Field.subFnA_noFrames⟩
 
 instance : NeZero p521Field.S.m := ⟨by decide⟩
 
