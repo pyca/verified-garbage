@@ -226,7 +226,7 @@ theorem seal_wp' [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   simp only [hti]
 
 /-- `vg_aes_gcm_siv_seal`. -/
-theorem seal_wp (hti : TagInputEq) {s : State} (h : sealRISCV64.pre s) :
+theorem seal_wp [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) {s : State} (h : sealRISCV64.pre s) :
     WP isa «seal» s fun s' => abiPreserved s s' ∧ sealRISCV64.post s s' := by
   have A := args_of_seal h
   refine WP.mono (seal_wp' hti A.1 A.2) fun s' ⟨ga, hp⟩ => ⟨ga, ?_⟩

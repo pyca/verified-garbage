@@ -146,7 +146,7 @@ theorem slot_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW (V .s2) (V .s1
 
 /-- `oneAad`: `J₀` of the `n`-byte nonce at `Np`, then the additional data
 (`aad_len`, `s10`, bytes at `A`, in `W + aadO`) absorbed and padded. -/
-theorem oneAad_ok {H : Block} {Np A : Addr} {n : Nat} {s : State} (he : Env V sp s)
+theorem oneAad_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np A : Addr} {n : Nat} {s : State} (he : Env V sp s)
     (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (h24 : s.gpr .s4 = Np)
     (h25 : s.gpr .s5 = BitVec.ofNat 64 n) (h18 : V .s7 = BitVec.ofNat 64 n) (hN : DataOk (V .s1) (V .s0) s Np n)
     (hA : DataOk (V .s1) (V .s0) s A (V .s10).toNat)
@@ -315,7 +315,7 @@ section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0))
 include L
 
-theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a : List Byte} {D : Addr} {s : State}
+theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a : List Byte} {D : Addr} {s : State}
     (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hl : (V .s10).toNat = a.length)
     (hab : Absorbed s.mem (V .s1 + BitVec.ofNat 64 16) (V .s1 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)))

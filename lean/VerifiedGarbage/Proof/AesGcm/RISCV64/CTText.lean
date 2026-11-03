@@ -46,7 +46,7 @@ section
 variable {c st w sp : Addr} (L : Lay c st w)
 include L
 
-theorem textAbsorb_ct {D : Addr} {N A T : BitVec 64} : CT (TA c st w sp D N A T) textAbsorb := by
+theorem textAbsorb_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {D : Addr} {N A T : BitVec 64} : CT (TA c st w sp D N A T) textAbsorb := by
   refine CT.ite (decide (N.toNat = 0)) (fun s ⟨_, _, _, _, _, h19, _, _, he, _⟩ =>
     eval_zero (by rw [he.ofNat (r := .s8) (by decide), h19]) N.isLt) (fun _ => CT.skip) fun _ => ?_
   -- the additional data padded, before the first text

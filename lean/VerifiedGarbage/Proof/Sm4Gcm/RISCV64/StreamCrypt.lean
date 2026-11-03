@@ -177,7 +177,7 @@ structure EncOut (s₀ : State) (icb : Block) (a ct : List Byte) (dec : Bool) (s
         xorKs (ctxCiph s₀.mem (s₀.gpr .a0)) icb ct.length (bytesAt s₀.mem (s₀.gpr .a4) (s₀.gpr .a5).toNat)))
   j : blockAt s.mem (s₀.gpr .a1) = blockAt s₀.mem (s₀.gpr .a1)
 
-theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
+theorem enc_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .a2).toNat % 16) (hP : (s₀.gpr .a3).toNat = ct.length) :
     WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct false s' := by
   have L₀ := scLay h
@@ -256,7 +256,7 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
       blockAt_frame cf (by simpa using stp_crFrame bs₀ hd₂₀ (d := 0) (k := 16) (by decide)),
       blockAt_frame f₂ (by simpa using stp_saved L₀ (d := 0) (k := 16) (by decide))]
 
-theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
+theorem dec_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .a2).toNat % 16) (hP : (s₀.gpr .a3).toNat = ct.length) :
     WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct true s' := by
   have L₀ := scLay h

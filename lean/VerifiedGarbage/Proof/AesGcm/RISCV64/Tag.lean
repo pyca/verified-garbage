@@ -221,7 +221,7 @@ theorem tagCall_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cL
       · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- `tag o`, for `o` of 0 or 112. -/
-theorem tag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env V sp s)
+theorem tag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env V sp s)
     (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (V .s1) = J) :
     WP isa (tag o) s (TagOut V sp o R H (blockAt s.mem (V .s1 + BitVec.ofNat 64 16)) J
