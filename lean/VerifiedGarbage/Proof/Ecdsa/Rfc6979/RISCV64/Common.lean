@@ -128,9 +128,9 @@ structure After (s : State) (ws : List Region) (s' : State) : Prop where
   frame : Frame ws s.mem s'.mem
 
 /-- What a call of the signature with a given `k`, of `Q` bytes scalars,
-needs: `out` at `o`, `d`, the digest and `k` at `d`, `g` and `k`, the working
-space at `w`, and the tables `K` apart from what it writes. -/
-structure CoreArgs (Q : Nat) (K : List (String × List (BitVec 64))) (s : State) (o d g k w : Addr) : Prop where
+needs: `out` at `o`, `d`, the digest (`G` bytes) and `k` at `d`, `g` and
+`k`, the working space at `w`, and the tables `K` apart from what it writes. -/
+structure CoreArgsG (Q G : Nat) (K : List (String × List (BitVec 64))) (s : State) (o d g k w : Addr) : Prop where
   a0 : s.gpr .a0 = o
   a1 : s.gpr .a1 = d
   a2 : s.gpr .a2 = g
@@ -138,11 +138,11 @@ structure CoreArgs (Q : Nat) (K : List (String × List (BitVec 64))) (s : State)
   a4 : s.gpr .a4 = w
   d_ow : Region.Disjoint ⟨o, 2 * Q⟩ ⟨w, 8192⟩
   d_dw : Region.Disjoint ⟨d, Q⟩ ⟨w, 8192⟩
-  d_gw : Region.Disjoint ⟨g, Q⟩ ⟨w, 8192⟩
+  d_gw : Region.Disjoint ⟨g, G⟩ ⟨w, 8192⟩
   d_kw : Region.Disjoint ⟨k, Q⟩ ⟨w, 8192⟩
   no : o.toNat + 2 * Q ≤ 2 ^ 64
   nd : d.toNat + Q ≤ 2 ^ 64
-  ng : g.toNat + Q ≤ 2 ^ 64
+  ng : g.toNat + G ≤ 2 ^ 64
   nk : k.toNat + Q ≤ 2 ^ 64
   nw : w.toNat + 8192 ≤ 2 ^ 64
   wa : w.toNat % 8 = 0
@@ -151,14 +151,18 @@ structure CoreArgs (Q : Nat) (K : List (String × List (BitVec 64))) (s : State)
   tal : ∀ t ∈ constRegs K s, t.base.toNat % 64 = 0
   t_o : ∀ t ∈ constRegs K s, t.Disjoint ⟨o, 2 * Q⟩
   t_w : ∀ t ∈ constRegs K s, t.Disjoint ⟨w, 8192⟩
-  hc : RISCV64.Covers ([⟨d, Q⟩, ⟨g, Q⟩, ⟨k, Q⟩] ++ constRegs K s ++ [⟨o, 2 * Q⟩, ⟨w, 8192⟩]) (s.rd ++ s.wr)
+  hc : RISCV64.Covers ([⟨d, Q⟩, ⟨g, G⟩, ⟨k, Q⟩] ++ constRegs K s ++ [⟨o, 2 * Q⟩, ⟨w, 8192⟩]) (s.rd ++ s.wr)
   hw : RISCV64.Covers [⟨o, 2 * Q⟩, ⟨w, 8192⟩] s.wr
 
-/-- The signature of the digest at `g` with the key at `d` and the secret
-number at `k`, of `Q` bytes each, as the specification computes it. -/
-abbrev sgOf (E : Spec.Ecdsa.Instance) (Q : Nat) (m : Mem) (d g k : Addr) : Option (Nat × Nat) :=
+/-- `CoreArgsG` for a digest of `Q` bytes. -/
+abbrev CoreArgs (Q : Nat) := CoreArgsG Q Q
+
+/-- The signature of the digest at `g` (`G` bytes) with the key at `d` and
+the secret number at `k`, of `Q` bytes each, as the specification computes
+it: the secret number the `Q` bytes' number shifted right by `sh` bits. -/
+abbrev sgOf (E : Spec.Ecdsa.Instance) (Q G sh : Nat) (m : Mem) (d g k : Addr) : Option (Nat × Nat) :=
   Spec.Ecdsa.signWith E.curve (Spec.Weierstrass.ofBytes (bytesAt m d Q))
-    (Spec.Ecdsa.hashToInt E.curve (bytesAt m g Q)) (Spec.Weierstrass.ofBytes (bytesAt m k Q))
+    (Spec.Ecdsa.hashToInt E.curve (bytesAt m g G)) (Spec.Weierstrass.ofBytes (bytesAt m k Q) >>> sh)
 
 /-- What the proof needs of the curve: its scalars' 64-bit words, its ECDSA
 instance, the functions of its order `n` (whose addition `bits2octets`
@@ -173,20 +177,25 @@ structure Kit where
   FNk : FN.S.k = nw
   FNm : FN.S.m = E.curve.n
   len : E.curve.len = Q
-  nbits : Spec.Ecdsa.nBits E.curve = 8 * Q
-  two : 2 ^ (8 * Q) < 2 * E.curve.n
+  /-- The bits of a scalar's `Q` bytes that are not its number's. -/
+  sh : Nat := 0
+  nbits : Spec.Ecdsa.nBits E.curve + sh = 8 * Q
+  sh8 : sh < 8
+  two : sh = 0 → 2 ^ (8 * Q) < 2 * E.curve.n
   nw9 : 4 ≤ nw ∧ nw ≤ 9
-  Qw : Q = 8 * nw ∨ (nw = 4 ∧ Q = 28) ∨ (nw = 4 ∧ Q = 24)
+  Qw : Q = 8 * nw ∨ (nw = 4 ∧ Q = 28) ∨ (nw = 4 ∧ Q = 24) ∨ (nw = 9 ∧ Q = 66)
+  /-- The bytes of the digest the signature reads. -/
+  G : Nat := Q
   coreC : Prog isa
   K : List (String × List (BitVec 64))
-  core_call : ∀ {nm : String} {s : State} {o d g k w : Addr}, CoreArgs Q K s o d g k w →
+  core_call : ∀ {nm : String} {s : State} {o d g k w : Addr}, CoreArgsG Q G K s o d g k w →
     ∀ {R : State → Prop}, (∀ s', After s [⟨o, 2 * Q⟩, ⟨w, 8192⟩] s' →
-      (match sgOf E Q s.mem d g k with
+      (match sgOf E Q G sh s.mem d g k with
         | some rs => s'.gpr .a0 = 1 ∧ bytesAt s'.mem o (2 * Q) = Spec.Ecdsa.encode E.curve rs
         | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem o (2 * Q) = List.replicate (2 * Q) 0) → R s') →
     WP isa (.call nm coreC) s R
   core_rel : ∀ {nm : String} {R : State → State → Prop} {o d g k w : Addr} {f : String → BitVec 64},
-    (∀ s s', R s s' → CoreArgs Q K s o d g k w ∧ CoreArgs Q K s' o d g k w ∧ s.sp = s'.sp ∧
+    (∀ s s', R s s' → CoreArgsG Q G K s o d g k w ∧ CoreArgsG Q G K s' o d g k w ∧ s.sp = s'.sp ∧
       ∀ c ∈ K, s.syms c.1 = f c.1 ∧ s'.syms c.1 = f c.1) →
     RelCT isa R (.call nm coreC) fun _ _ => True
 
@@ -203,7 +212,11 @@ structure Rfc where
   hD : I.hashLen = c.H.D
   hnw : c.nw = kit.nw
   hQ : c.Q = kit.Q
-  hDQ : kit.Q ≤ c.H.D
+  /-- The signature reads the digest's `D` bytes if the scalars are longer
+  (`wide`), else their `Q` bytes, with their whole bytes as `k`. -/
+  hG : kit.G = if c.wide then c.H.D else kit.Q
+  hsh : c.wide = false → kit.sh = 0
+  hQD : kit.Q ≤ c.H.D + 8
   hD64 : c.H.D ≤ 64
   hS : c.H.S ≤ 192
   hct : c.tries = I.tries
@@ -299,13 +312,34 @@ structure Sz (P : Rfc) : Prop where
   B : P.c.H.B = 64 ∨ P.c.H.B = 128
   S : P.c.H.S = P.c.H.N + P.c.H.B
   S192 : P.c.H.S ≤ 192
-  D : P.Q ≤ P.c.H.D ∧ P.c.H.D ≤ 64
+  D : P.Q ≤ P.c.H.D + 8 ∧ P.c.H.D ≤ 64
+  /-- The scalars are longer than the hash's output exactly if `wide`. -/
+  W : P.c.wide = false ↔ P.Q ≤ P.c.H.D
   Q : 24 ≤ P.Q ∧ P.Q ≤ 72 ∧ P.c.Q = P.Q ∧
-    (P.c.fH + 8 * P.kit.nw ≤ P.c.frB ∧ P.c.frB ≤ P.c.fH + 8 * P.kit.nw + 15 ∧ P.c.frB % 16 = 0) ∧
+    (P.c.fH + 8 * P.kit.nw * P.c.nums ≤ P.c.frB ∧ P.c.fH + 8 * P.kit.nw ≤ P.c.frB ∧
+      P.c.frB ≤ P.c.fH + 16 * P.kit.nw + 15 ∧ P.c.frB % 16 = 0) ∧
     P.Q ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ P.Q + 8 ∧ (32 ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ 72)
+  nums : P.c.nums = if P.c.wide then 2 else 1
   H : 128 + P.c.H.D + 1 ≤ P.c.fH ∧ 192 ≤ P.c.fH ∧ P.c.fH ≤ 208 ∧ P.c.fH % 8 = 0
   HF : P.c.H.F ≤ 1024
   X : P.c.H.ibytes + P.c.H.F ≤ P.X ∧ P.c.H.fbytes + P.c.H.F ≤ P.X ∧ P.c.H.F ≤ P.X ∧ P.X ≤ 4096
+
+/-- The scalars are no longer than the hash's output exactly if not `wide`. -/
+theorem Rfc.wide_iff (P : Rfc) : P.c.wide = false ↔ P.kit.Q ≤ P.c.H.D := by
+  simp only [Cfg.wide, P.hQ, decide_eq_false_iff_not, Nat.not_lt]
+
+/-- If not `wide`, the scalars' bytes are all their number's. -/
+theorem Rfc.nbits0 (P : Rfc) (hw : P.c.wide = false) : Spec.Ecdsa.nBits P.kit.E.curve = 8 * P.kit.Q := by
+  have := P.kit.nbits
+  rw [P.hsh hw] at this
+  omega
+
+/-- The digest's bytes the signature reads. -/
+theorem Rfc.G0 (P : Rfc) (hw : P.c.wide = false) : P.kit.G = P.kit.Q := by
+  rw [P.hG, hw]; rfl
+
+theorem Rfc.GW (P : Rfc) (hw : P.c.wide = true) : P.kit.G = P.c.H.D := by
+  rw [P.hG, hw]; rfl
 
 theorem sizes (P : Rfc) : Sz P := by
   have hl := P.hH.lay
@@ -313,14 +347,16 @@ theorem sizes (P : Rfc) : Sz P := by
   have := P.kit.nw9
   have := P.kit.Qw
   have hD := P.hD64
-  have hDQ := P.hDQ
+  have hDQ := P.hQD
   have hnw := P.hnw
   have hfH : (P.c.fH = 192 ∧ P.c.H.D < 64) ∨ (P.c.fH = 208 ∧ ¬ P.c.H.D < 64) := by
     unfold Cfg.fH; split <;> simp_all
-  refine ⟨P.hH.hN, hB, rfl, P.hS, ⟨hDQ, hD⟩, ⟨by simp only [Rfc.Q]; omega, by simp only [Rfc.Q]; omega,
-    by simp only [Rfc.Q, P.hQ], ?_, by simp only [Rfc.Q]; omega,
-    by simp only [Rfc.Q]; omega, by omega⟩, by omega, P.hH.hF, ?_⟩
-  · simp only [Cfg.frB, hnw]; omega
+  have hnu : P.c.nums = 1 ∨ P.c.nums = 2 := by unfold Cfg.nums; split <;> simp
+  refine ⟨P.hH.hN, hB, rfl, P.hS, ⟨hDQ, hD⟩, P.wide_iff, ⟨by simp only [Rfc.Q]; omega,
+    by simp only [Rfc.Q]; omega, by simp only [Rfc.Q, P.hQ], ?_, by simp only [Rfc.Q]; omega,
+    by simp only [Rfc.Q]; omega, by omega⟩, rfl, by omega, P.hH.hF, ?_⟩
+  · simp only [Cfg.frB, hnw]
+    rcases hnu with h | h <;> rw [h] <;> omega
   have := hl.ibytes; have := hl.fbytes; have := P.hH.hF
   simp only [Rfc.X]
   omega

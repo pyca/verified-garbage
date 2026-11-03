@@ -88,10 +88,13 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve) : Kit where
   FNk := rfl
   FNm := rfl
   len := rfl
-  nbits := nBits_brainpoolp256r1
-  two := by decide
+  sh := 0
+  nbits := (Nat.add_zero _).trans nBits_brainpoolp256r1
+  sh8 := by decide
+  two := fun _ => by decide
   nw9 := ⟨by decide, by decide⟩
   Qw := .inl rfl
+  G := 32
   coreC := Impl.Ecdsa.RISCV64.signBrainpoolP256r1
   K := []
   core_call h _ hQ := core_call hL h hQ
