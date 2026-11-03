@@ -64,6 +64,30 @@ structure TabS (G : Hash) (f : Fns) (j : Nat) (S : State → Addr) (s : State) (
   d : s.mem.readW (p + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D
   ok : TabOK G f s.syms
 
+/-- `TabS` of a state with `s`'s stack pointer, regions, statics' addresses
+and working space, and memory as `s`'s apart from regions disjoint from the
+stack argument and the table. -/
+theorem TabS.transfer {G : Hash} {f : Fns} {j : Nat} {S S' : State → Addr} {s s' : State} {p : Addr}
+    (T : TabS G f j S s p) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms)
+    (hS : SC S' s' = SC S s) {rs : List Region} (hm : Frame rs s.mem s'.mem)
+    (ha : ∀ r ∈ rs, Region.Disjoint ⟨stackArgAddr s j, 8⟩ r)
+    (ht : ∀ k < 5, ∀ r ∈ rs, Region.Disjoint ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ r) : TabS G f j S' s' p := by
+  have eA : stackArgAddr s' j = stackArgAddr s j := by simp only [stackArgAddr, hsp]
+  have eK : kR s' = kR s := by simp only [kR, hsp]
+  have rd : ∀ k < 5, s'.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 = s.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 :=
+    fun k hk => hm.readW (w := 64) (Region.contains_self _ _) (ht k hk) (by decide)
+  obtain ⟨m0, m1, m2⟩ := T.mem
+  have r0 := rd 0 (by decide)
+  rw [show p + BitVec.ofNat 64 (8 * 0) = p by simp] at r0
+  refine ⟨T.jo, ?_, by rw [hrd, eA]; exact T.argR, by rw [eA, eK]; exact T.argK, by rw [eA, hS]; exact T.argS,
+    fun k hk => by rw [hrd]; exact T.tR k hk, fun k hk => by rw [eK]; exact T.tK k hk,
+    fun k hk => by rw [hS]; exact T.tS k hk, ⟨?_, ?_, ?_⟩, ?_, by rw [hsy]; exact T.ok⟩
+  · rw [eA, hm.readW (w := 64) (Region.contains_self _ _) ha (by decide)]; exact T.arg
+  · rw [hsy, r0]; exact m0
+  · rw [hsy, rd 1 (by decide)]; exact m1
+  · rw [hsy, rd 2 (by decide)]; exact m2
+  · rw [rd 4 (by decide)]; exact T.d
+
 /-- A word of memory apart from what `Base` lets us write is as on entry. -/
 theorem Base.readW_apart {S : State → Addr} {vf : State → Reg → BitVec 64} {s t : State} (h : Base S vf s t)
     {a : Addr} (hk : Region.Disjoint ⟨a, 8⟩ (kR s)) (hs : Region.Disjoint ⟨a, 8⟩ (SC S s)) :

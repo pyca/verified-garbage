@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Mgf
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 public import VerifiedGarbage.Proof.Mgf1.Basic
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.PrivCall
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfSteps
 
 /-!
 # RSAES-OAEP decryption on PPC64LE: the decoding
@@ -60,8 +61,9 @@ theorem labB_eq {m : Mem} (hm : Frame [kD s, scR s] s.mem m) :
 theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mgf1.Hash}
     (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D) (hHv : Proof.Mgf1.Valid Hs)
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs)
-    {v : State} (A : AfterPriv s v) (hk : 2 * H.D + 2 ≤ kk s) :
-    WP isa (decMain H G) v fun u => Saves s u ∧ u.rd = s.rd ∧
+    {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15)) {v : State} (A : AfterPriv s v) (hsy : v.syms = s.syms)
+    (hk : 2 * H.D + 2 ≤ kk s) :
+    WP isa (decMain H f) v fun u => Saves s u ∧ u.rd = s.rd ∧
       Spec.RsaOaep.writtenDecrypt u.mem (s.gpr .r3) (s.gpr .r5) (kk s) ((u.gpr .r3).setWidth 32)
         (decOut Hs Gs (labB s) (privO s)) := by
   have hD0 := hH.hD0
@@ -78,7 +80,7 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
   rw [hO, hRC] at b0
   unfold decMain
   -- `EM` unmasked.
-  refine unmask_ok P hG hGh hGl hGv hD hD0 (by omega) (by omega) b0 fun t₁ b₁ v₁ => ?_
+  refine unmask_ok P hG (tabS_wm P T A.mem) hGh hGl hGv hD hD0 (by omega) (by omega) b0 hsy fun t₁ b₁ _ v₁ => ?_
   -- The label's hash.
   refine WP.seq (WP.mono (hashLabel_ok P hH b₁) fun t₂ ⟨b₂, _, s₂, h₂⟩ => ?_)
   -- `lHash'` against `lHash`.

@@ -91,7 +91,7 @@ variable {s : State} (P : PreD s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) (
 include P hm
 
 /-- The stack arguments, in the base state. -/
-theorem stackArg_bx {i : Nat} (hi : i < 15) : stackArg (bx s m rc) i = stackArg s i := by
+theorem stackArg_bx {i : Nat} (hi : i < 16) : stackArg (bx s m rc) i = stackArg s i := by
   show m.readW (stackArgAddr s i) 64 = s.mem.readW (stackArgAddr s i) 64
   exact hm.readW (in_aR hi) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -99,7 +99,7 @@ theorem stackArg_bx {i : Nat} (hi : i < 15) : stackArg (bx s m rc) i = stackArg 
     · exact P.ka.symm
     · exact P.sa.symm) (by decide)
 
-theorem stackArg_wm {i : Nat} (hi : i < 15) : stackArg (withMem s m) i = stackArg s i :=
+theorem stackArg_wm {i : Nat} (hi : i < 16) : stackArg (withMem s m) i = stackArg s i :=
   stackArg_bx P hm 0 hi
 
 /-- `Base` for the shared code, from the decoding's. -/
