@@ -14,7 +14,7 @@ public import VerifiedGarbage.Spec.Ofb
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Modes.RISCV64.Modes
 import VerifiedGarbage.Proof.Modes.RISCV64.Wide
-import VerifiedGarbage.Proof.Modes.RISCV64.Ctr
+import VerifiedGarbage.Proof.Modes.RISCV64.WideCtr
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
@@ -297,9 +297,11 @@ theorem cfbDecrypt_correct (s : State) (hs : (modeContract cfbDecPost).pre s) :
 
 theorem ctr_correct (s : State) (hs : (modeContract ctrPost).pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract ctrPost).post s s' := by
-  refine modeFn_wp (rounds_of hs) fun s₁ h₁ => WP.mono (Proof.Modes.RISCV64.ctr_wp
-    (dirCoreSpec .encrypt _ (rounds_of hs)) rfl (seqPre_of hs h₁ .encrypt _ (M := Mode.ctr) rfl)
-    (keyArgs_of hs h₁ .encrypt _ (M := Mode.ctr) rfl)) fun s' ⟨h1, h2, h3⟩ => ⟨h₁.abi h1, fun _ => ?_⟩
+  refine modeFn_wp (rounds_of hs) fun s₁ h₁ => WP.mono (Proof.Modes.RISCV64.ctrWide_wp (lg := 3)
+    (dirCoreSpec .encrypt _ (rounds_of hs)) rfl (by decide) (by exact (by decide : 2 ^ 3 ≤ 8)) (by decide)
+    (seqPre_of hs h₁ .encrypt _ (M := Mode.ctrEarly) rfl)
+    (keyArgs_of hs h₁ .encrypt _ (M := Mode.ctrEarly) rfl)) fun s' ⟨h1, h2, h3, _⟩ =>
+      ⟨h₁.abi h1, fun _ => ?_⟩
   obtain ⟨d0, i0, n0⟩ := post_eq h₁ (m := s₁.mem)
   obtain ⟨d', i', -⟩ := post_eq h₁ (m := s'.mem)
   simp only [Proof.Modes.RISCV64.iv0, Proof.Modes.RISCV64.blocks0, bw_eq, cipher_enc] at h2 h3
