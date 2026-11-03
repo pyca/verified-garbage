@@ -51,7 +51,7 @@ contract (`ghashX`) in the frame of 2048 bytes below the stack pointer, and
 its constant-time proof (`ghash_ct`). As on PPC64LE
 (`Proof/Gcm/PPC64LE/Ghash.lean`), callers take its correctness as a
 hypothesis (`GhashLaw`): its proof (`Law.lean`) imports the polynomial algebra
-of `Holes.lean`, which the AES-GCM, AES-GCM-SIV and SM4-GCM proofs then need
+of `Proof/Gcm/Poly.lean`, which the AES-GCM, AES-GCM-SIV and SM4-GCM proofs then need
 not import, and the registration files supply it.
 -/
 
