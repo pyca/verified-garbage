@@ -582,6 +582,8 @@ pub mod rsa_pss_sha512_mgf1_sha512;
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod scrypt;
+#[doc(hidden)]
+pub mod scrypt_proto22;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]

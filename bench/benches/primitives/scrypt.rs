@@ -18,6 +18,44 @@ pub const USES: &[&str] = &["scrypt", "pbkdf2_sha256", "hmac_sha256", "sha256"];
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
+    // Proto22 (bench branch only): main's ROMix next to it with its copy and XOR four
+    // doublewords a step, r = 8.
+    #[cfg(target_arch = "riscv64")]
+    {
+        use verified_garbage_asm_riscv64::scrypt_proto22 as p22;
+        type RoMix = unsafe extern "C" fn(*mut u8, usize, *mut u8, usize, *mut u8, *mut u64);
+        let fs: [(&str, RoMix); 2] = [
+            ("base", p22::vg_p22_romix_base),
+            ("u4", p22::vg_p22_romix_u4),
+        ];
+        let r = 8usize;
+        for (name, f) in fs {
+            let mut g = c.benchmark_group(format!("scrypt_p22_romix_{name}"));
+            g.sample_size(10);
+            for n in [1024usize, 16384] {
+                let mut b = vec![0u64; 16 * r];
+                for (i, w) in b.iter_mut().enumerate() {
+                    *w = (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+                }
+                let mut v = vec![0u64; 16 * r * n];
+                let mut t = vec![0u64; 16 * r];
+                let mut save = vec![0u64; 32];
+                g.bench_with_input(criterion::BenchmarkId::new(crate::VG, n), &n, |bch, &n| {
+                    bch.iter(|| unsafe {
+                        f(
+                            b.as_mut_ptr().cast(),
+                            r,
+                            v.as_mut_ptr().cast(),
+                            n * r,
+                            t.as_mut_ptr().cast(),
+                            save.as_mut_ptr(),
+                        )
+                    })
+                });
+            }
+            g.finish();
+        }
+    }
 
     use criterion::BenchmarkId;
     use verified_garbage::scrypt::{scrypt, verify};
