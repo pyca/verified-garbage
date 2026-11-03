@@ -14,10 +14,12 @@ The structure of the PPC64LE proof (`VG.Proof.Blake2.PPC64LE`), written once
 for both word sizes, over the operand size `z` (`.d` for BLAKE2b, `.w` for
 BLAKE2s, words of `z.bits` bits). The registers are 64 bits and `add` and
 `xor` act on all of them, so a word of the work vector is the low `z.bits`
-bits of its register (`Vars`): the rotations (`rot_ok`) and the stores of
-words read only those. Each `G` is three kinds of pieces (`addx_ok`, `rot_ok`,
-`cx_ok`), each symbolically executed once, for any registers; the message
-words are read from the copy of the block in the scratch space (`Msg`).
+bits of its register (`Vars`): the word shifts and the stores of words read
+only those. The code runs a round's four column `G`s side by side, then its
+four diagonal ones: the round is proven on lines, half a `G` each, and then
+on single operations, each reordered by a checker (see "Lines" below); each
+kind of operation is symbolically executed once (`op_ok`). The message words
+are read from the copy of the block in the scratch space (`Msg`).
 -/
 
 @[expose] public section
@@ -73,6 +75,26 @@ theorem lo_xor (z : Size) (x y : BitVec 64) :
     (x ^^^ y).setWidth z.bits = x.setWidth z.bits ^^^ y.setWidth z.bits := by
   ext i hi; simp
 
+theorem lo_or (z : Size) (x y : BitVec 64) :
+    (x ||| y).setWidth z.bits = x.setWidth z.bits ||| y.setWidth z.bits := by
+  ext i hi; simp
+
+/-- A right shift of words of `z.bits` bits: its low word is the shifted low word. -/
+theorem exec_srl_z {z : Size} {s : State} {d n : Reg} {sh : Nat} (h : sh < z.bits) :
+    ∃ v : BitVec 64, exec (.shift .srl (sz z.bits) d n sh) s = some (s.write d v) ∧
+      v.setWidth z.bits = (s.gpr n).setWidth z.bits >>> sh := by
+  cases z
+  · exact ⟨_, exec_shift_w h, lo32_sext _⟩
+  · exact ⟨_, exec_shift_d h, by simp only [Size.bits, BitVec.setWidth_eq]⟩
+
+/-- A left shift of words of `z.bits` bits: its low word is the shifted low word. -/
+theorem exec_sll_z {z : Size} {s : State} {d n : Reg} {sh : Nat} (h : sh < z.bits) :
+    ∃ v : BitVec 64, exec (.shift .sll (sz z.bits) d n sh) s = some (s.write d v) ∧
+      v.setWidth z.bits = (s.gpr n).setWidth z.bits <<< sh := by
+  cases z
+  · exact ⟨_, exec_shift_w h, lo32_sext _⟩
+  · exact ⟨_, exec_shift_d h, by simp only [Size.bits, BitVec.setWidth_eq]⟩
+
 /-- An offset `d` of an address that is a multiple of 8 is aligned for words
 if `d` is. -/
 theorem al (z : Size) {p : Addr} (hp : p.toNat % 8 = 0) {d : Nat} (hd : d % zB z = 0) :
@@ -117,138 +139,20 @@ def ROk : Prop :=
   0 < P.R1 ∧ P.R1 < z.bits ∧ 0 < P.R2 ∧ P.R2 < z.bits ∧ 0 < P.R3 ∧ P.R3 < z.bits ∧
     0 < P.R4 ∧ P.R4 < z.bits
 
-/-- What a piece of `G` leaves: the other registers, the memory and the
-regions. -/
-def Keeps (s s' : State) (a b : Reg) : Prop :=
-  (∀ q, q ≠ a → q ≠ b → s'.gpr q = s.gpr q) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr
+/-- Rotation `k` of `P`: `R1`–`R4` for `k = 0 … 3`. -/
+def rotOf : Nat → Nat
+  | 0 => P.R1
+  | 1 => P.R2
+  | 2 => P.R3
+  | _ => P.R4
 
-theorem rot_ok {d : Reg} (hd : d ≠ RT) {r : Nat} (h0 : 0 < r) (hr : r < z.bits) (s : State) :
-    WP isa (.block (Impl.Blake2.RISCV64.rot (w := z.bits) d r)) s fun s' =>
-      (s'.gpr d).setWidth z.bits = ((s.gpr d).setWidth z.bits).rotateRight r ∧ Keeps s s' d RT := by
-  apply WP.of_runBlock
-  cases z
-  · simp only [Impl.Blake2.RISCV64.rot, sz, Size.bits, show (32 : Nat) ≠ 64 by decide, ite_false,
-      runBlock_cons, runStep_some, runBlock_nil, exec_shift_w hr,
-      exec_shift_w (show 32 - r < 32 by omega), exec_logic, RegUpd.gpr_write, hd, Ne.symm hd,
-      ite_true, ite_false, Option.some.injEq, exists_eq_left']
-    refine ⟨?_, fun q h1 h2 => by simp only [RegUpd.gpr_write, h1, h2, ite_false], rfl, rfl, rfl⟩
-    rw [lo32_or, lo32_sext, lo32_sext, BitVec.rotateRight_def, Nat.mod_eq_of_lt hr, BitVec.or_comm]
-  · simp only [Impl.Blake2.RISCV64.rot, sz, Size.bits, ite_true,
-      runBlock_cons, runStep_some, runBlock_nil, exec_shift_d hr,
-      exec_shift_d (show 64 - r < 64 by omega), exec_logic, RegUpd.gpr_write, hd, Ne.symm hd,
-      ite_true, ite_false, Option.some.injEq, exists_eq_left', BitVec.setWidth_eq]
-    refine ⟨?_, fun q h1 h2 => by simp only [RegUpd.gpr_write, h1, h2, ite_false], rfl, rfl, rfl⟩
-    rw [BitVec.rotateRight_def, Nat.mod_eq_of_lt hr, BitVec.or_comm]
-
-/-- `a := a + b + x; d := d ^ a`, with `x` the word at `off` of the scratch space. -/
-theorem addx_ok {a b d : Reg} (had : a ≠ d) (haT : a ≠ T) (hbT : b ≠ T)
-    (hdT : d ≠ T) {off : Nat} (ho : off < 2048) (s : State) (va vb vd x : BitVec z.bits)
-    (ha : (s.gpr a).setWidth z.bits = va) (hb : (s.gpr b).setWidth z.bits = vb)
-    (hd : (s.gpr d).setWidth z.bits = vd)
-    (hal : (s.gpr SB + BitVec.ofNat 64 off).toNat % zB z = 0)
-    (hin : InRegions (s.rd ++ s.wr) (s.gpr SB + BitVec.ofNat 64 off) (zB z))
-    (hx : s.mem.readW (s.gpr SB + BitVec.ofNat 64 off) z.bits = x) :
-    WP isa (.block [.load (wd z.bits) T SB off, .add a a b, .add a a T, .logic .xor d d a]) s
-      fun s' => (s'.gpr a).setWidth z.bits = va + vb + x ∧
-        (s'.gpr d).setWidth z.bits = vd ^^^ (va + vb + x) ∧
-        (∀ q, q ≠ a → q ≠ d → q ≠ T → s'.gpr q = s.gpr q) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
-        s'.wr = s.wr := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_ld ho hal hin, exec_add, exec_logic,
-    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, had, Ne.symm had,
-    haT, Ne.symm haT, hdT, hbT, ite_true, ite_false, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ?_, fun q h1 h2 h3 => by simp only [h1, h2, h3, ite_false], trivial, trivial,
-    trivial⟩
-  · rw [lo_add, lo_add, ha, hb, ext_trunc, hx]
-  · rw [lo_xor, lo_add, lo_add, ha, hb, hd, ext_trunc, hx]
-
-/-- `c := c + d; b := b ^ c`. -/
-theorem cx_ok {b c d : Reg} (hbc : b ≠ c) (s : State) (vb vc vd : BitVec z.bits)
-    (hb : (s.gpr b).setWidth z.bits = vb) (hc : (s.gpr c).setWidth z.bits = vc)
-    (hd : (s.gpr d).setWidth z.bits = vd) :
-    WP isa (.block [.add c c d, .logic .xor b b c]) s fun s' =>
-      (s'.gpr c).setWidth z.bits = vc + vd ∧ (s'.gpr b).setWidth z.bits = vb ^^^ (vc + vd) ∧
-      Keeps s s' b c := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_add, exec_logic,
-    RegUpd.gpr_write, hbc, Ne.symm hbc, ite_true, ite_false, Option.some.injEq,
-    exists_eq_left']
-  refine ⟨?_, ?_, fun q h1 h2 => by simp only [RegUpd.gpr_write, h1, h2, ite_false], rfl, rfl,
-    rfl⟩
-  · rw [lo_add, hc, hd]
-  · rw [lo_xor, lo_add, hb, hc, hd]
-
-/-- `G` on the registers `a, b, c, d` (all different, and different from `T`,
-`RT` and `SB`), with the message words at `mOff + ws · j` and `mOff + ws · k`
-of the scratch space at `p`. -/
-theorem g_ok (hR : ROk P) {a b c d : Reg} (hs : [a, b, c, d, T, RT, SB].Nodup) {j k : Nat}
-    (hoj : mOff + ws z.bits * j < 2048) (hok : mOff + ws z.bits * k < 2048)
-    (s : State) (va vb vc vd x y : BitVec z.bits) (p : Addr)
-    (ha : (s.gpr a).setWidth z.bits = va) (hb : (s.gpr b).setWidth z.bits = vb)
-    (hc : (s.gpr c).setWidth z.bits = vc) (hd : (s.gpr d).setWidth z.bits = vd)
-    (hp : s.gpr SB = p)
-    (halj : (p + BitVec.ofNat 64 (mOff + ws z.bits * j)).toNat % zB z = 0)
-    (halk : (p + BitVec.ofNat 64 (mOff + ws z.bits * k)).toNat % zB z = 0)
-    (hij : InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (mOff + ws z.bits * j)) (zB z))
-    (hik : InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (mOff + ws z.bits * k)) (zB z))
-    (hx : s.mem.readW (p + BitVec.ofNat 64 (mOff + ws z.bits * j)) z.bits = x)
-    (hy : s.mem.readW (p + BitVec.ofNat 64 (mOff + ws z.bits * k)) z.bits = y) :
-    WP isa (.block (Impl.Blake2.RISCV64.g P a b c d j k)) s fun s' =>
-      (s'.gpr a).setWidth z.bits = (mix P va vb vc vd x y).1 ∧
-      (s'.gpr b).setWidth z.bits = (mix P va vb vc vd x y).2.1 ∧
-      (s'.gpr c).setWidth z.bits = (mix P va vb vc vd x y).2.2.1 ∧
-      (s'.gpr d).setWidth z.bits = (mix P va vb vc vd x y).2.2.2 ∧
-      (∀ r, r ≠ a → r ≠ b → r ≠ c → r ≠ d → r ≠ T → r ≠ RT → s'.gpr r = s.gpr r) ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+theorem rotOf_ok (hR : ROk P) {k : Nat} (hk : k < 4) : 0 < rotOf P k ∧ rotOf P k < z.bits := by
   obtain ⟨p1, h1, p2, h2, p3, h3, p4, h4⟩ := hR
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
-    List.nodup_nil, not_false_eq_true, and_true] at hs
-  obtain ⟨⟨hab, hac, had, haT, haR, haS⟩, ⟨hbc, hbd, hbT, hbR, hbS⟩, ⟨hcd, hcT, hcR, hcS⟩,
-    ⟨hdT, hdR, hdS⟩, ⟨hTR, hTS⟩, hRS⟩ := hs
-  simp only [Impl.Blake2.RISCV64.g, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (addx_ok had haT hbT hdT hoj s va vb vd x ha hb hd (by rw [hp]; exact halj)
-    (by rw [hp]; exact hij) (by rw [hp]; exact hx)) fun s₁ ⟨a₁, d₁, o₁, m₁, r₁, w₁⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (rot_ok hdR p1 h1 s₁) fun s₂ ⟨d₂, o₂, m₂, r₂, w₂⟩ => ?_
-  rw [d₁] at d₂
-  have b₂ : (s₂.gpr b).setWidth z.bits = vb := by rw [o₂ b hbd hbR, o₁ b (Ne.symm hab) hbd hbT, hb]
-  have c₂ : (s₂.gpr c).setWidth z.bits = vc := by rw [o₂ c hcd hcR, o₁ c (Ne.symm hac) hcd hcT, hc]
-  rw [WP.block_append_iff]
-  refine WP.mono (cx_ok hbc s₂ _ _ _ b₂ c₂ d₂) fun s₃ ⟨c₃, b₃, o₃, m₃, r₃, w₃⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (rot_ok hbR p2 h2 s₃) fun s₄ ⟨b₄, o₄, m₄, r₄, w₄⟩ => ?_
-  rw [b₃] at b₄
-  have a₄ : (s₄.gpr a).setWidth z.bits = va + vb + x := by
-    rw [o₄ a hab haR, o₃ a hab hac, o₂ a had haR, a₁]
-  have d₄ : (s₄.gpr d).setWidth z.bits = (vd ^^^ (va + vb + x)).rotateRight P.R1 := by
-    rw [o₄ d (Ne.symm hbd) hdR, o₃ d (Ne.symm hbd) (Ne.symm hcd), d₂]
-  have S₄ : s₄.gpr SB = p := by
-    rw [o₄ SB (Ne.symm hbS) (Ne.symm hRS), o₃ SB (Ne.symm hbS) (Ne.symm hcS), o₂ SB (Ne.symm hdS) (Ne.symm hRS),
-      o₁ SB (Ne.symm haS) (Ne.symm hdS) (Ne.symm hTS), hp]
-  have M₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
-  have I₄ : s₄.rd ++ s₄.wr = s.rd ++ s.wr := by rw [r₄, r₃, r₂, r₁, w₄, w₃, w₂, w₁]
-  rw [WP.block_append_iff]
-  refine WP.mono (addx_ok had haT hbT hdT hok s₄ _ _ _ y a₄ b₄ d₄ (by rw [S₄]; exact halk)
-    (by rw [S₄, I₄]; exact hik) (by rw [S₄, M₄]; exact hy)) fun s₅ ⟨a₅, d₅, o₅, m₅, r₅, w₅⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (rot_ok hdR p3 h3 s₅) fun s₆ ⟨d₆, o₆, m₆, r₆, w₆⟩ => ?_
-  rw [d₅] at d₆
-  have b₆ : (s₆.gpr b).setWidth z.bits = (vb ^^^ (vc + (vd ^^^ (va + vb + x)).rotateRight P.R1)).rotateRight P.R2 := by
-    rw [o₆ b hbd hbR, o₅ b (Ne.symm hab) hbd hbT, b₄]
-  have c₆ : (s₆.gpr c).setWidth z.bits = vc + (vd ^^^ (va + vb + x)).rotateRight P.R1 := by
-    rw [o₆ c hcd hcR, o₅ c (Ne.symm hac) hcd hcT, o₄ c (Ne.symm hbc) hcR, c₃]
-  rw [WP.block_append_iff]
-  refine WP.mono (cx_ok hbc s₆ _ _ _ b₆ c₆ d₆) fun s₇ ⟨c₇, b₇, o₇, m₇, r₇, w₇⟩ => ?_
-  refine WP.mono (rot_ok hbR p4 h4 s₇) fun s₈ ⟨b₈, o₈, m₈, r₈, w₈⟩ => ?_
-  rw [b₇] at b₈
-  refine ⟨?_, b₈, ?_, ?_, fun r ra rb rc rd rT rR => ?_, by rw [m₈, m₇, m₆, m₅, M₄],
-    by rw [r₈, r₇, r₆, r₅, r₄, r₃, r₂, r₁], by rw [w₈, w₇, w₆, w₅, w₄, w₃, w₂, w₁]⟩
-  · rw [o₈ a hab haR, o₇ a hab hac, o₆ a had haR, a₅]; rfl
-  · rw [o₈ c (Ne.symm hbc) hcR, c₇]; rfl
-  · rw [o₈ d (Ne.symm hbd) hdR, o₇ d (Ne.symm hbd) (Ne.symm hcd), d₆]; rfl
-  · rw [o₈ r rb rR, o₇ r rb rc, o₆ r rd rR, o₅ r ra rd rT, o₄ r rb rR, o₃ r rb rc, o₂ r rd rR,
-      o₁ r ra rd rT]
+  match k, hk with
+  | 0, _ => exact ⟨p1, h1⟩
+  | 1, _ => exact ⟨p2, h2⟩
+  | 2, _ => exact ⟨p3, h3⟩
+  | 3, _ => exact ⟨p4, h4⟩
 
 end G
 
@@ -309,79 +213,522 @@ theorem Msg.of_RI {M : Block z.bits} {p : Addr} {sB s : State} {v : Work z.bits}
 theorem mOff_al (z : Size) (j : Nat) : (mOff + zB z * j) % zB z = 0 := by
   cases z <;> simp only [mOff, zB, Width.bytes] <;> omega
 
-theorem gAt_ok (hR : ROk P) {x y c d : Nat} (hx : x < 16) (hy : y < 16) (hc : c < 16) (hd : d < 16)
-    (hq : [x, y, c, d].Nodup) (r i : Nat) {M : Block z.bits} {p : Addr} {sB s : State}
-    {v : Work z.bits} (hM : Msg M p sB) (h : RI sB v s) :
-    WP isa (Impl.Blake2.RISCV64.gAt P r i x y c d) s (RI sB (Spec.Blake2.G P v ⟨x, hx⟩ ⟨y, hy⟩
-      ⟨c, hc⟩ ⟨d, hd⟩ (M (Spec.Blake2.sigmaAt r (2 * i))) (M (Spec.Blake2.sigmaAt r (2 * i + 1))))) := by
-  have hm := hM.of_RI h
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
-    List.nodup_nil, and_true] at hq
-  obtain ⟨⟨nxy, nxc, nxd⟩, ⟨nyc, nyd⟩, ncd, -⟩ := hq
-  have hs : [wreg x, wreg y, wreg c, wreg d, T, RT, SB].Nodup := by
-    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
-      List.nodup_nil, and_true]
-    exact ⟨⟨wreg_ne hx hy nxy, wreg_ne hx hc nxc, wreg_ne hx hd nxd, wreg_ne_of T_not_mem hx,
-        wreg_ne_of RT_not_mem hx, wreg_ne_of SB_not_mem hx⟩,
-      ⟨wreg_ne hy hc nyc, wreg_ne hy hd nyd, wreg_ne_of T_not_mem hy, wreg_ne_of RT_not_mem hy,
-        wreg_ne_of SB_not_mem hy⟩,
-      ⟨wreg_ne hc hd ncd, wreg_ne_of T_not_mem hc, wreg_ne_of RT_not_mem hc,
-        wreg_ne_of SB_not_mem hc⟩,
-      ⟨wreg_ne_of T_not_mem hd, wreg_ne_of RT_not_mem hd, wreg_ne_of SB_not_mem hd⟩, by decide⟩
-  have sj := (Spec.Blake2.sigmaAt r (2 * i)).isLt
-  have sk := (Spec.Blake2.sigmaAt r (2 * i + 1)).isLt
-  have ob : ∀ j < 16, mOff + ws z.bits * j < 2048 := fun j hj => by
-    rw [ws_bits]; have := zB_le z
-    have := Nat.mul_le_mul this (Nat.le_of_lt_succ hj)
-    simp only [mOff]; omega
-  refine WP.mono (g_ok P hR hs (ob _ sj) (ob _ sk) s (v[x]'(by omega)) (v[y]'(by omega))
-    (v[c]'(by omega)) (v[d]'(by omega)) (M (Spec.Blake2.sigmaAt r (2 * i)))
-    (M (Spec.Blake2.sigmaAt r (2 * i + 1))) p (h.vars x hx) (h.vars y hy)
-    (h.vars c hc) (h.vars d hd) hm.sb (by rw [ws_bits]; exact al z hm.al (mOff_al z _))
-    (by rw [ws_bits]; exact al z hm.al (mOff_al z _)) (by rw [ws_bits]; exact hm.inr _ sj)
-    (by rw [ws_bits]; exact hm.inr _ sk) (by rw [ws_bits]; exact hm.word _ sj)
-    (by rw [ws_bits]; exact hm.word _ sk))
-    fun s' ⟨ha, hb, hc', hd', ho, hmem, hrd, hwr⟩ => ⟨fun k hk => ?_, fun q hq hT hRT => ?_,
-      hmem.trans h.mem, hrd.trans h.rd, hwr.trans h.wr⟩
-  · rw [G_get P v (a := ⟨x, hx⟩) (b := ⟨y, hy⟩) (c := ⟨c, hc⟩) (d := ⟨d, hd⟩) nxy nxc nxd nyc nyd
-      ncd _ _ k hk]
-    simp only
-    by_cases ey : y = k
-    · subst ey; simp only [ite_true]; exact hb
-    by_cases ec : c = k
-    · subst ec; simp only [ey, ite_true, ite_false]; exact hc'
-    by_cases ed : d = k
-    · subst ed; simp only [ey, ec, ite_true, ite_false]; exact hd'
-    by_cases ex : x = k
-    · subst ex; simp only [ey, ec, ed, ite_true, ite_false]; exact ha
-    simp only [ey, ec, ed, ex, ite_false]
-    rw [ho _ (wreg_ne hk hx (Ne.symm ex)) (wreg_ne hk hy (Ne.symm ey)) (wreg_ne hk hc (Ne.symm ec))
-      (wreg_ne hk hd (Ne.symm ed)) (wreg_ne_of T_not_mem hk) (wreg_ne_of RT_not_mem hk)]
-    exact h.vars k hk
-  · rw [ho q (ne_wreg hq hx) (ne_wreg hq hy) (ne_wreg hq hc) (ne_wreg hq hd) hT hRT]
-    exact h.other q hq hT hRT
+/-! ## Lines: half of a `G` on the work vector
+
+The code runs a round's four column `G`s side by side, then its four diagonal
+ones (`Impl.Blake2.RISCV64.half`). The round is proven on *lines*, half of a
+`G` each (`bline`): the spec's order of lines is the code's after moving lines
+only past lines on other words (`LSame`, decided); then on single operations
+(`Op`), each proven once (`op_ok`), whose order in the code is that of the
+lines after moving operations only past operations on other registers
+(`OSame`, decided). Both checkers see only the slots, the message selector
+and the rotation number of each line or operation: the rotations of `P`, the
+round's permutation of the message and the word size stay symbolic. -/
+
+/-- An index `i < 16` as a `Fin 16`. -/
+def fin16 (i : Nat) : Fin 16 := ⟨i % 16, Nat.mod_lt _ (by decide)⟩
+
+/-- The message word of selector `n` of round `r`: none (`0`) for `n = 0`, else
+word `s[n - 1]` of the round's permutation `s`. -/
+def msgOf (r : Nat) (M : Block z.bits) (n : Nat) : BitVec z.bits :=
+  if n = 0 then 0 else M (Spec.Blake2.sigmaAt r (n - 1))
+
+theorem msgOf_zero (r : Nat) (M : Block z.bits) : msgOf r M 0 = 0 := rfl
+
+theorem add_msgOf_zero (r : Nat) (M : Block z.bits) (y : BitVec z.bits) : y + msgOf r M 0 = y := by
+  simp [msgOf]
+
+theorem msgOf_succ (r : Nat) (M : Block z.bits) (n : Nat) :
+    msgOf r M (n + 1) = M (Spec.Blake2.sigmaAt r n) := rfl
+
+/-- Half of a `G`: `x[a] += x[b] + m; x[d] = (x[d] ^ x[a]) ⋙ R`, with the message
+word `m` of selector `n` and the rotation `R` number `k`. -/
+def bline (r : Nat) (M : Block z.bits) (x : Work z.bits) (a b d n k : Nat) : Work z.bits :=
+  let y := x.set (fin16 a) (x[fin16 a] + x[fin16 b] + msgOf r M n)
+  y.set (fin16 d) ((y[fin16 d] ^^^ y[fin16 a]).rotateRight (rotOf P k))
+
+/-- A line: `(a, b, d, n, k)`. -/
+abbrev Line := Nat × Nat × Nat × Nat × Nat
+
+/-- The lines of a list in turn. -/
+abbrev blines (r : Nat) (M : Block z.bits) (l : List Line) (v : Work z.bits) : Work z.bits :=
+  l.foldl (fun x (a, b, d, n, k) => bline P r M x a b d n k) v
+
+theorem bline_get (r : Nat) (M : Block z.bits) (x : Work z.bits) {a b d : Nat} (n k : Nat) (ha : a < 16)
+    (hb : b < 16) (hd : d < 16) (had : a ≠ d) (m : Nat) (hm : m < 16) :
+    (bline P r M x a b d n k)[m] =
+      if d = m then (x[d] ^^^ (x[a] + x[b] + msgOf r M n)).rotateRight (rotOf P k)
+      else if a = m then x[a] + x[b] + msgOf r M n else x[m] := by
+  simp only [bline, fin16, Vector.getElem_set, Fin.getElem_fin, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb,
+    Nat.mod_eq_of_lt hd, had, ite_false, ite_true]
+
+/-- A `G`'s lines, with the message words of selectors `n₁` and `n₂`. -/
+def gLines (a b c d n₁ n₂ : Nat) : List Line :=
+  [(a, b, d, n₁, 0), (c, d, b, 0, 1), (a, b, d, n₂, 2), (c, d, b, 0, 3)]
+
+/-- A `G` is its four lines. -/
+theorem G_blines (r : Nat) (M : Block z.bits) (v : Work z.bits) (a b c d : Fin 16) (hab : a.1 ≠ b.1)
+    (hac : a.1 ≠ c.1) (had : a.1 ≠ d.1) (hbc : b.1 ≠ c.1) (hbd : b.1 ≠ d.1) (hcd : c.1 ≠ d.1) (j k : Nat) :
+    Spec.Blake2.G P v a b c d (M (Spec.Blake2.sigmaAt r j)) (M (Spec.Blake2.sigmaAt r k)) =
+      blines P r M (gLines a.1 b.1 c.1 d.1 (j + 1) (k + 1)) v := by
+  apply Vector.ext
+  intro m hm
+  have ha := a.2; have hb := b.2; have hc := c.2; have hd := d.2
+  rw [G_get P v hab hac had hbc hbd hcd _ _ m hm]
+  have ncb := Ne.symm hbc
+  simp only [blines, gLines, List.foldl_cons, List.foldl_nil, bline_get, ha, hb, hc, hd, had, ncb, ne_eq,
+    not_false_eq_true, msgOf_succ, msgOf_zero]
+  have := Ne.symm hab; have := Ne.symm hac; have := Ne.symm had; have := Ne.symm hbd; have := Ne.symm hcd
+  by_cases eb : b.1 = m
+  · subst eb; simp [mix, rotOf, *]
+  by_cases ec : c.1 = m
+  · subst ec; simp [mix, rotOf, *]
+  by_cases ed : d.1 = m
+  · subst ed; simp [mix, rotOf, *]
+  by_cases ea : a.1 = m
+  · subst ea; simp [mix, rotOf, *]
+  simp [*]
+
+/-- A round's lines in the spec's order. -/
+def specLines : List Line :=
+  gLines 0 4 8 12 1 2 ++ gLines 1 5 9 13 3 4 ++ gLines 2 6 10 14 5 6 ++ gLines 3 7 11 15 7 8 ++
+  gLines 0 5 10 15 9 10 ++ gLines 1 6 11 12 11 12 ++ gLines 2 7 8 13 13 14 ++ gLines 3 4 9 14 15 16
+
+theorem round_spec (r : Nat) (M : Block z.bits) (v : Work z.bits) :
+    Spec.Blake2.round P M v r = blines P r M specLines v := by
+  simp only [Spec.Blake2.round, specLines, blines, List.foldl_append]
+  rw [G_blines P r M _ 0 4 8 12 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 0 1,
+    G_blines P r M _ 1 5 9 13 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 2 3,
+    G_blines P r M _ 2 6 10 14 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 4 5,
+    G_blines P r M _ 3 7 11 15 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 6 7,
+    G_blines P r M _ 0 5 10 15 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 8 9,
+    G_blines P r M _ 1 6 11 12 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 10 11,
+    G_blines P r M _ 2 7 8 13 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 12 13,
+    G_blines P r M _ 3 4 9 14 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 14 15]
+  rfl
+
+/-- Lines `l` and `l'` touch disjoint words. -/
+def LIndep : Line → Line → Bool
+  | (a, b, d, _, _), (a', b', d', _, _) =>
+    decide (a < 16 ∧ b < 16 ∧ d < 16 ∧ a' < 16 ∧ b' < 16 ∧ d' < 16 ∧ a ≠ d ∧ a' ≠ d' ∧
+      a ≠ a' ∧ a ≠ b' ∧ a ≠ d' ∧ b ≠ a' ∧ b ≠ d' ∧ d ≠ a' ∧ d ≠ b' ∧ d ≠ d')
+
+theorem bline_comm {r : Nat} {M : Block z.bits} {x : Work z.bits} {a b d n k a' b' d' n' k' : Nat}
+    (h : LIndep (a, b, d, n, k) (a', b', d', n', k') = true) :
+    bline P r M (bline P r M x a b d n k) a' b' d' n' k' = bline P r M (bline P r M x a' b' d' n' k') a b d n k := by
+  simp only [LIndep, decide_eq_true_eq] at h
+  obtain ⟨ha, hb, hd, ha', hb', hd', h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := h
+  apply Vector.ext
+  intro m hm
+  have := Ne.symm h3; have := Ne.symm h4; have := Ne.symm h5; have := Ne.symm h6; have := Ne.symm h7
+  have := Ne.symm h8; have := Ne.symm h9; have := Ne.symm h10
+  simp only [bline_get, ha, hb, hd, ha', hb', hd', h1, h2, ne_eq, not_false_eq_true]
+  by_cases e1 : d = m
+  · subst e1; simp [*]
+  by_cases e2 : a = m
+  · subst e2; simp [*]
+  by_cases e3 : d' = m
+  · subst e3; simp [*]
+  by_cases e4 : a' = m
+  · subst e4; simp [*]
+  simp [*]
+
+/-- `l` without its first `p`, if every line before it touches other words. -/
+def lpull (p : Line) : List Line → Option (List Line)
+  | [] => none
+  | q :: l => if q = p then some l else if LIndep q p then (lpull p l).map (q :: ·) else none
+
+/-- `l'` runs the lines of `l`, each moved only past lines on other words. -/
+def LSame : List Line → List Line → Bool
+  | [], [] => true
+  | p :: l', l => match lpull p l with
+    | some r => LSame l' r
+    | none => false
+  | [], _ :: _ => false
+
+theorem blines_cons (r : Nat) (M : Block z.bits) (p : Line) (l : List Line) (v : Work z.bits) :
+    blines P r M (p :: l) v = blines P r M l (bline P r M v p.1 p.2.1 p.2.2.1 p.2.2.2.1 p.2.2.2.2) := by
+  obtain ⟨a, b, d, n, k⟩ := p; rfl
+
+theorem lpull_ok {r : Nat} {M : Block z.bits} {p : Line} :
+    ∀ {l l₁ : List Line}, lpull p l = some l₁ →
+      ∀ v, blines P r M l v = blines P r M l₁ (bline P r M v p.1 p.2.1 p.2.2.1 p.2.2.2.1 p.2.2.2.2)
+  | [], _, h, _ => by simp [lpull] at h
+  | q :: l, l₁, h, v => by
+    unfold lpull at h
+    by_cases e : q = p
+    · subst e; simp only [ite_true, Option.some.injEq] at h; subst h; exact blines_cons _ _ _ _ _ _
+    · simp only [e, ite_false] at h
+      by_cases hq : LIndep q p = true
+      · simp only [hq, ite_true] at h
+        obtain ⟨l', hl', rfl⟩ := Option.map_eq_some_iff.mp h
+        rw [blines_cons, lpull_ok hl', blines_cons]
+        obtain ⟨a, b, d, n, k⟩ := q; obtain ⟨a', b', d', n', k'⟩ := p
+        exact congrArg _ (bline_comm P hq)
+      · simp only [hq, Bool.false_eq_true, ite_false, reduceCtorEq] at h
+
+theorem lsame_ok {r : Nat} {M : Block z.bits} : ∀ {l' l : List Line}, LSame l' l = true →
+    ∀ v, blines P r M l' v = blines P r M l v
+  | [], [], _, _ => rfl
+  | [], _ :: _, h, _ => by simp [LSame] at h
+  | p :: l', l, h, v => by
+    unfold LSame at h
+    split at h
+    · rename_i l₁ hl
+      rw [blines_cons, lpull_ok P hl, lsame_ok h]
+    · simp at h
+
+/-- Half `h` of the four `G`s `(i, x, y, c, d)` of `qs`, as lines in the code's order. -/
+def halfLines (qs : List (Nat × Nat × Nat × Nat × Nat)) (h : Nat) : List Line :=
+  qs.map (fun (i, x, y, _, d) => (x, y, d, 2 * i + h + 1, 2 * h)) ++
+  qs.map (fun (_, _, y, c, d) => (c, d, y, 0, 2 * h + 1))
+
+/-- A round's lines in the code's order. -/
+def codeLines : List Line :=
+  halfLines Impl.Blake2.RISCV64.columns 0 ++ halfLines Impl.Blake2.RISCV64.columns 1 ++
+    halfLines Impl.Blake2.RISCV64.diagonals 0 ++ halfLines Impl.Blake2.RISCV64.diagonals 1
+
+theorem round_lines (r : Nat) (M : Block z.bits) (v : Work z.bits) :
+    Spec.Blake2.round P M v r = blines P r M codeLines v := by
+  rw [round_spec, lsame_ok P (l' := specLines) (l := codeLines) (by decide)]
+
+/-! ## The rounds as operations on eighteen slots
+
+The sixteen words of the work vector (slots 0–15), `T` (16) and `RT` (17). -/
+
+/-- The register of slot `i`. -/
+def sreg (i : Nat) : Reg := if i < 16 then wreg i else if i = 16 then T else RT
+
+theorem sreg_inj {i j : Nat} (hi : i < 18) (hj : j < 18) (h : sreg i = sreg j) : i = j := by
+  have key : ∀ i < 18, ∀ j < 18, sreg i = sreg j → i = j := by decide
+  exact key i hi j hj h
+
+theorem sreg_word {k : Nat} (hk : k < 16) : sreg k = wreg k := by simp [sreg, hk]
+
+/-- One instruction of a round, on slots: `ld n` loads the message word of selector
+`n` into `T`; `shr d k` shifts slot `d` right by rotation `k` into `RT`, and
+`shl d k` shifts it left by the rest of the word; `or d` puts `RT` back. -/
+inductive Op
+  | add (a b : Nat)
+  | ld (n : Nat)
+  | xor (d a : Nat)
+  | shr (d k : Nat)
+  | shl (d k : Nat)
+  | or (d : Nat)
+  deriving DecidableEq
+
+def Op.code (r : Nat) : Op → Instr
+  | .add a b => .add (sreg a) (sreg a) (sreg b)
+  | .ld n => .load (wd z.bits) T SB (mOff + ws z.bits * Spec.Blake2.sigmaAt r (n - 1))
+  | .xor d a => .logic .xor (sreg d) (sreg d) (sreg a)
+  | .shr d k => .shift .srl (sz z.bits) RT (sreg d) (rotOf P k)
+  | .shl d k => .shift .sll (sz z.bits) (sreg d) (sreg d) (z.bits - rotOf P k)
+  | .or d => .logic .or (sreg d) (sreg d) RT
+
+/-- The slot an operation writes, and those it reads. -/
+def Op.dst : Op → Nat
+  | .add a _ | .xor a _ | .shl a _ | .or a => a
+  | .ld _ => 16
+  | .shr _ _ => 17
+def Op.srcs : Op → List Nat
+  | .add a b | .xor a b => [a, b]
+  | .ld _ => []
+  | .shr d _ | .shl d _ => [d]
+  | .or d => [d, 17]
+
+/-- The value an operation writes. -/
+def Op.val (r : Nat) (M : Block z.bits) (x : Nat → BitVec z.bits) : Op → BitVec z.bits
+  | .add a b => x a + x b
+  | .ld n => msgOf r M n
+  | .xor d a => x d ^^^ x a
+  | .shr d k => x d >>> rotOf P k
+  | .shl d k => x d <<< (z.bits - rotOf P k)
+  | .or d => x d ||| x 17
+
+def Op.step (r : Nat) (M : Block z.bits) (x : Nat → BitVec z.bits) (op : Op) : Nat → BitVec z.bits :=
+  fun j => if j = op.dst then op.val P r M x else x j
+
+/-- The slots exist (the words are below 16), the message selectors are not `0`,
+and the rotation numbers are below 4. -/
+def Op.Valid : Op → Bool
+  | .add a b => decide (a < 16 ∧ b < 17)
+  | .ld n => decide (0 < n)
+  | .xor d a => decide (d < 16 ∧ a < 16)
+  | .shr d k | .shl d k => decide (d < 16 ∧ k < 4)
+  | .or d => decide (d < 16)
+
+theorem Op.val_congr {r : Nat} {M : Block z.bits} {x y : Nat → BitVec z.bits} (op : Op)
+    (h : ∀ i ∈ op.srcs, x i = y i) : op.val P r M x = op.val P r M y := by
+  cases op <;> simp only [Op.srcs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h <;>
+    simp only [Op.val, h]
+
+/-- The slots hold `x`. -/
+def Holds18 (x : Nat → BitVec z.bits) (s : State) : Prop := ∀ i < 18, (s.gpr (sreg i)).setWidth z.bits = x i
+
+/-- What an operation leaves. -/
+structure OpPost (x : Nat → BitVec z.bits) (s s' : State) : Prop where
+  holds : Holds18 x s'
+  keep : ∀ q, (∀ i < 18, q ≠ sreg i) → s'.gpr q = s.gpr q
+  mem : s'.mem = s.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+
+theorem SB_ne_sreg : ∀ i < 18, SB ≠ sreg i := by decide
+
+theorem ob (z : Size) {j : Nat} (hj : j < 16) : mOff + ws z.bits * j < 2048 := by
+  rw [ws_bits]; have := zB_le z
+  have := Nat.mul_le_mul this (Nat.le_of_lt_succ hj)
+  simp only [mOff]; omega
+
+theorem op_ok (hR : ROk P) (r : Nat) {M : Block z.bits} {p : Addr} (op : Op) (hv : op.Valid = true)
+    {x : Nat → BitVec z.bits} {s : State} (hm : Msg M p s) (h : Holds18 x s) :
+    WP isa (.block [op.code P r]) s (OpPost (op.step P r M x) s) := by
+  have hd : op.dst < 18 := by cases op <;> simp_all [Op.Valid, Op.dst] <;> omega
+  have hs : ∀ i ∈ op.srcs, i < 18 := by
+    cases op <;> simp_all [Op.Valid, Op.srcs] <;> omega
+  -- The instruction writes the value of `op` into its slot's register, and nothing else.
+  have hw : ∃ v : BitVec 64, exec (op.code P r) s = some (s.write (sreg op.dst) v) ∧
+      v.setWidth z.bits = op.val P r M x := by
+    cases op with
+    | add a b =>
+      exact ⟨_, exec_add, by
+        simp only [lo_add, h a (hs a (by simp [Op.srcs])), h b (hs b (by simp [Op.srcs])), Op.val]⟩
+    | ld n =>
+      have hn : n ≠ 0 := by simp only [Op.Valid, decide_eq_true_eq] at hv; omega
+      have sj := (Spec.Blake2.sigmaAt r (n - 1)).isLt
+      refine ⟨_, exec_ld (ob z sj) (by rw [hm.sb, ws_bits]; exact al z hm.al (mOff_al z _))
+        (by rw [hm.sb, ws_bits]; exact hm.inr _ sj), ?_⟩
+      rw [ext_trunc, hm.sb, ws_bits, hm.word _ sj]
+      simp only [Op.val, msgOf, hn, ite_false]
+    | xor d a =>
+      exact ⟨_, exec_logic, by
+        simp only [lo_xor, h d (hs d (by simp [Op.srcs])), h a (hs a (by simp [Op.srcs])), Op.val]⟩
+    | shr d k =>
+      have hk : k < 4 := by simp only [Op.Valid, decide_eq_true_eq] at hv; exact hv.2
+      obtain ⟨v, he, hv'⟩ := exec_srl_z (z := z) (s := s) (d := RT) (n := sreg d) (rotOf_ok P hR hk).2
+      exact ⟨v, he, by rw [hv', h d (hs d (by simp [Op.srcs]))]; rfl⟩
+    | shl d k =>
+      have hk : k < 4 := by simp only [Op.Valid, decide_eq_true_eq] at hv; exact hv.2
+      have := rotOf_ok P hR hk
+      obtain ⟨v, he, hv'⟩ := exec_sll_z (z := z) (s := s) (d := sreg d) (n := sreg d)
+        (show z.bits - rotOf P k < z.bits by omega)
+      exact ⟨v, he, by rw [hv', h d (hs d (by simp [Op.srcs]))]; rfl⟩
+    | or d =>
+      exact ⟨_, exec_logic, by
+        simp only [lo_or, h d (hs d (by simp [Op.srcs])), Op.val]
+        rw [show RT = sreg 17 from rfl, h 17 (by decide)]⟩
+  obtain ⟨v, he, hv'⟩ := hw
+  apply WP.of_runBlock
+  refine ⟨s.write (sreg op.dst) v, by rw [runBlock_cons, he]; rfl, ⟨fun i hi => ?_, fun q hq => ?_, rfl, rfl, rfl⟩⟩
+  · by_cases e : i = op.dst
+    · subst e; rw [RegUpd.gpr_write_self, hv']; simp only [Op.step, ↓reduceIte]
+    · rw [RegUpd.gpr_write_of_ne _ _ (show sreg i ≠ sreg op.dst from fun e' => e (sreg_inj hi hd e')), h i hi]
+      simp only [Op.step, e, ↓reduceIte]
+  · exact RegUpd.gpr_write_of_ne _ _ fun e => hq _ hd e
+
+/-- The operations of `ops` in turn. -/
+def stepAll (r : Nat) (M : Block z.bits) (x : Nat → BitVec z.bits) (ops : List Op) : Nat → BitVec z.bits :=
+  ops.foldl (Op.step P r M) x
+
+theorem ops_ok (hR : ROk P) (r : Nat) {M : Block z.bits} {p : Addr} :
+    ∀ (ops : List Op), (ops.all Op.Valid) = true → ∀ {x : Nat → BitVec z.bits} {s : State}, Msg M p s →
+      Holds18 x s → WP isa (.block (ops.map (Op.code P r))) s (OpPost (stepAll P r M x ops) s)
+  | [], _, _, s, _, h => WP.block_nil ⟨h, fun _ _ => rfl, rfl, rfl, rfl⟩
+  | op :: ops, hv, x, s, hm, h => by
+    simp only [List.all_cons, Bool.and_eq_true] at hv
+    rw [List.map_cons, show op.code P r :: ops.map (Op.code P r) = [op.code P r] ++ ops.map (Op.code P r) from rfl,
+      WP.block_append_iff]
+    refine WP.mono (op_ok P hR r op hv.1 hm h) fun s₁ h₁ => ?_
+    have hm₁ : Msg M p s₁ :=
+      ⟨(h₁.keep SB SB_ne_sreg).trans hm.sb, hm.al, by rw [h₁.rd, h₁.wr]; exact hm.inr,
+        by rw [h₁.mem]; exact hm.word⟩
+    exact WP.mono (ops_ok hR r ops hv.2 hm₁ h₁.holds) fun s₂ h₂ =>
+      ⟨h₂.holds, fun q hq => (h₂.keep q hq).trans (h₁.keep q hq), h₂.mem.trans h₁.mem, h₂.rd.trans h₁.rd,
+        h₂.wr.trans h₁.wr⟩
+
+/-! ### Reordering operations -/
+
+/-- Two operations on separate slots: neither writes what the other reads or writes. -/
+def OIndep (o o' : Op) : Bool :=
+  decide (o.dst ≠ o'.dst ∧ o.dst ∉ o'.srcs ∧ o'.dst ∉ o.srcs)
+
+theorem op_comm {r : Nat} {M : Block z.bits} {x : Nat → BitVec z.bits} {o o' : Op} (h : OIndep o o' = true) :
+    Op.step P r M (Op.step P r M x o) o' = Op.step P r M (Op.step P r M x o') o := by
+  simp only [OIndep, decide_eq_true_eq] at h
+  obtain ⟨h1, h2, h3⟩ := h
+  have v1 : o'.val P r M (Op.step P r M x o) = o'.val P r M x :=
+    o'.val_congr P fun i hi => by
+      have : i ≠ o.dst := fun e => h2 (e ▸ hi)
+      simp only [Op.step, this, ↓reduceIte]
+  have v2 : o.val P r M (Op.step P r M x o') = o.val P r M x :=
+    o.val_congr P fun i hi => by
+      have : i ≠ o'.dst := fun e => h3 (e ▸ hi)
+      simp only [Op.step, this, ↓reduceIte]
+  funext j
+  show (if j = o'.dst then o'.val P r M (Op.step P r M x o) else Op.step P r M x o j) =
+    (if j = o.dst then o.val P r M (Op.step P r M x o') else Op.step P r M x o' j)
+  rw [v1, v2]
+  simp only [Op.step]
+  by_cases e1 : j = o'.dst <;> by_cases e2 : j = o.dst
+  · exact absurd (e2.symm.trans e1) h1
+  all_goals simp_all
+
+/-- `l` without its first `o`, if every operation before it is on other slots. -/
+def opull (o : Op) : List Op → Option (List Op)
+  | [] => none
+  | p :: l => if p = o then some l else if OIndep p o then (opull o l).map (p :: ·) else none
+
+/-- `l'` runs the operations of `l`, each moved only past operations on other slots. -/
+def OSame : List Op → List Op → Bool
+  | [], [] => true
+  | o :: l', l => match opull o l with
+    | some r => OSame l' r
+    | none => false
+  | [], _ :: _ => false
+
+theorem opull_ok {r : Nat} {M : Block z.bits} {o : Op} : ∀ {l l₁ : List Op}, opull o l = some l₁ →
+    ∀ x, stepAll P r M x l = stepAll P r M (Op.step P r M x o) l₁
+  | [], _, h, _ => by simp [opull] at h
+  | p :: l, l₁, h, x => by
+    unfold opull at h
+    by_cases e : p = o
+    · subst e; simp only [ite_true, Option.some.injEq] at h; subst h; rfl
+    · simp only [e, ite_false] at h
+      by_cases hp : OIndep p o = true
+      · simp only [hp, ite_true] at h
+        obtain ⟨l', hl', rfl⟩ := Option.map_eq_some_iff.mp h
+        show stepAll P r M (Op.step P r M x p) l = stepAll P r M (Op.step P r M (Op.step P r M x o) p) l'
+        rw [opull_ok hl', op_comm P hp]
+      · simp only [hp, Bool.false_eq_true, ite_false, reduceCtorEq] at h
+
+theorem osame_ok {r : Nat} {M : Block z.bits} : ∀ {l' l : List Op}, OSame l' l = true →
+    ∀ x, stepAll P r M x l' = stepAll P r M x l
+  | [], [], _, _ => rfl
+  | [], _ :: _, h, _ => by simp [OSame] at h
+  | o :: l', l, h, x => by
+    unfold OSame at h
+    split at h
+    · rename_i l₁ hl
+      show stepAll P r M (Op.step P r M x o) l' = stepAll P r M x l
+      rw [opull_ok P hl, osame_ok h]
+    · simp at h
+
+/-! ### Lines as operations -/
+
+/-- A line's operations. -/
+def lineOps : Line → List Op
+  | (a, b, d, n, k) => ([.add a b] : List Op) ++ (if n = 0 then [] else ([.ld n, .add a 16] : List Op)) ++
+    ([.xor d a, .shr d k, .shl d k, .or d] : List Op)
+
+/-- The words of the slots. -/
+def words (x : Nat → BitVec z.bits) : Work z.bits := Vector.ofFn fun i => x i.1
+
+theorem rotr_shifts {y : BitVec z.bits} {R : Nat} (hr : R < z.bits) :
+    y <<< (z.bits - R) ||| y >>> R = y.rotateRight R := by
+  rw [BitVec.rotateRight_def, Nat.mod_eq_of_lt hr, BitVec.or_comm]
+
+theorem lineOps_words (hR : ROk P) (r : Nat) (M : Block z.bits) (x : Nat → BitVec z.bits) {a b d n k : Nat}
+    (ha : a < 16) (hb : b < 16) (hd : d < 16) (had : a ≠ d) (hk : k < 4) :
+    words (stepAll P r M x (lineOps (a, b, d, n, k))) = bline P r M (words x) a b d n k := by
+  have hrk := (rotOf_ok P hR hk).2
+  apply Vector.ext
+  intro m hm
+  have hda : d ≠ a := Ne.symm had
+  have h16a : (16 : Nat) ≠ a := by omega
+  have h16d : (16 : Nat) ≠ d := by omega
+  have h17d : (17 : Nat) ≠ d := by omega
+  have h17a : (17 : Nat) ≠ a := by omega
+  have hm16 : m ≠ 16 := by omega
+  have hm17 : m ≠ 17 := by omega
+  rw [bline_get P r M _ n k ha hb hd had m hm]
+  by_cases hn : n = 0
+  · subst hn
+    simp only [words, stepAll, lineOps, List.foldl_cons, List.foldl_nil, List.nil_append, List.cons_append,
+      ↓reduceIte, Op.step, Op.dst, Op.val, Vector.getElem_ofFn, add_msgOf_zero]
+    by_cases e1 : m = d
+    · subst e1; simp only [hda, h17d, ↓reduceIte, Ne.symm h17d]; rw [rotr_shifts hrk]
+    · by_cases e2 : m = a
+      · subst e2; simp only [e1, hm17, ↓reduceIte, Ne.symm e1]
+      · simp only [e1, e2, hm17, ↓reduceIte, Ne.symm e1, Ne.symm e2]
+  · simp only [words, stepAll, lineOps, List.foldl_cons, List.foldl_nil, List.cons_append, List.nil_append, hn,
+      ↓reduceIte, Op.step, Op.dst, Op.val, Vector.getElem_ofFn]
+    by_cases e1 : m = d
+    · subst e1; simp only [hda, h17d, ↓reduceIte, Ne.symm h17d, Ne.symm h16a, Ne.symm h16d]
+      rw [rotr_shifts hrk]
+    · by_cases e2 : m = a
+      · subst e2; simp only [e1, hm17, hm16, ↓reduceIte, Ne.symm e1]
+      · simp only [e1, e2, hm17, hm16, ↓reduceIte, Ne.symm e1, Ne.symm e2]
+
+/-- The lines in turn, as operations. -/
+def linesOps (l : List Line) : List Op := l.flatMap lineOps
+
+theorem linesOps_words (hR : ROk P) (r : Nat) (M : Block z.bits) : ∀ (l : List Line) (x : Nat → BitVec z.bits),
+    (l.all fun (a, b, d, _, k) => decide (a < 16 ∧ b < 16 ∧ d < 16 ∧ a ≠ d ∧ k < 4)) = true →
+    words (stepAll P r M x (linesOps l)) = blines P r M l (words x)
+  | [], _, _ => rfl
+  | (a, b, d, n, k) :: l, x, h => by
+    simp only [List.all_cons, Bool.and_eq_true, decide_eq_true_eq] at h
+    obtain ⟨⟨ha, hb, hd, had, hk⟩, hl⟩ := h
+    rw [linesOps, List.flatMap_cons, stepAll, List.foldl_append, ← stepAll, ← stepAll, ← linesOps,
+      linesOps_words hR r M l _ hl, lineOps_words P hR r M _ ha hb hd had hk]
+    rfl
+
+/-- Half `h` of the four `G`s `(i, x, y, c, d)` of `qs`, as the code's operations. -/
+def halfOps (qs : List (Nat × Nat × Nat × Nat × Nat)) (h : Nat) : List Op :=
+  qs.map (fun (_, x, y, _, _) => .add x y) ++
+  qs.flatMap (fun (i, x, _, _, _) => [.ld (2 * i + h + 1), .add x 16]) ++
+  qs.map (fun (_, x, _, _, d) => .xor d x) ++
+  qs.flatMap (fun (_, _, _, _, d) => [.shr d (2 * h), .shl d (2 * h), .or d]) ++
+  qs.map (fun (_, _, _, c, d) => .add c d) ++
+  qs.map (fun (_, _, y, c, _) => .xor y c) ++
+  qs.flatMap (fun (_, _, y, _, _) => [.shr y (2 * h + 1), .shl y (2 * h + 1), .or y])
+
+/-- A round's operations as the code runs them. -/
+def roundOps : List Op :=
+  halfOps Impl.Blake2.RISCV64.columns 0 ++ halfOps Impl.Blake2.RISCV64.columns 1 ++
+    halfOps Impl.Blake2.RISCV64.diagonals 0 ++ halfOps Impl.Blake2.RISCV64.diagonals 1
+
+/-- The code of a round is its operations. -/
+theorem round_code (r : Nat) : Impl.Blake2.RISCV64.round P r = .block (roundOps.map (Op.code P r)) := by
+  have h1 : Impl.Blake2.RISCV64.half (w := z.bits) Impl.Blake2.RISCV64.columns r 0 P.R1 P.R2 =
+      (halfOps Impl.Blake2.RISCV64.columns 0).map (Op.code P r) := rfl
+  have h2 : Impl.Blake2.RISCV64.half (w := z.bits) Impl.Blake2.RISCV64.columns r 1 P.R3 P.R4 =
+      (halfOps Impl.Blake2.RISCV64.columns 1).map (Op.code P r) := rfl
+  have h3 : Impl.Blake2.RISCV64.half (w := z.bits) Impl.Blake2.RISCV64.diagonals r 0 P.R1 P.R2 =
+      (halfOps Impl.Blake2.RISCV64.diagonals 0).map (Op.code P r) := rfl
+  have h4 : Impl.Blake2.RISCV64.half (w := z.bits) Impl.Blake2.RISCV64.diagonals r 1 P.R3 P.R4 =
+      (halfOps Impl.Blake2.RISCV64.diagonals 1).map (Op.code P r) := rfl
+  rw [Impl.Blake2.RISCV64.round, roundOps, List.map_append, List.map_append, List.map_append, h1, h2, h3, h4]
+
+theorem roundOps_fold (hR : ROk P) (r : Nat) (M : Block z.bits) (x : Nat → BitVec z.bits) :
+    words (stepAll P r M x roundOps) = blines P r M codeLines (words x) := by
+  rw [osame_ok P (l := linesOps codeLines) (by decide) x]
+  exact linesOps_words P hR r M _ x (by decide)
+
+/-- The slots of a state. -/
+def slots (s : State) (i : Nat) : BitVec z.bits := (s.gpr (sreg i)).setWidth z.bits
 
 theorem round_ok (hR : ROk P) (r : Nat) {M : Block z.bits} {p : Addr} {sB s : State}
     {v : Work z.bits} (hM : Msg M p sB) (h : RI sB v s) :
     WP isa (Impl.Blake2.RISCV64.round P r) s (RI sB (Spec.Blake2.round P M v r)) := by
-  unfold Impl.Blake2.RISCV64.round
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 0) (y := 4) (c := 8) (d := 12) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 0 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 1) (y := 5) (c := 9) (d := 13) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 1 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 2) (y := 6) (c := 10) (d := 14) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 2 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 3) (y := 7) (c := 11) (d := 15) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 3 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 0) (y := 5) (c := 10) (d := 15) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 4 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 1) (y := 6) (c := 11) (d := 12) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 5 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 2) (y := 7) (c := 8) (d := 13) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 6 hM h) fun s h => ?_)
-  refine WP.mono (gAt_ok P hR (x := 3) (y := 4) (c := 9) (d := 14) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 7 hM h) fun s h => ?_
-  exact h
+  have hw : words (slots s) = v := by
+    apply Vector.ext; intro k hk
+    simp only [words, Vector.getElem_ofFn, slots, sreg_word hk]
+    exact h.vars k hk
+  rw [round_code]
+  refine WP.mono (ops_ok P hR r _ (by decide) (hM.of_RI h) (x := slots s) fun i _ => rfl) fun s' h' =>
+    ⟨fun k hk => ?_, fun q hq hT hRT => ?_, h'.mem.trans h.mem, h'.rd.trans h.rd, h'.wr.trans h.wr⟩
+  · have e : stepAll P r M (slots s) roundOps k = (blines P r M codeLines (words (slots s)))[k] := by
+      have := congrArg (·[k]'hk) (roundOps_fold P hR r M (slots s))
+      simpa only [words, Vector.getElem_ofFn] using this
+    rw [round_lines, ← hw, ← e, ← sreg_word hk]
+    exact h'.holds k (by omega)
+  · refine (h'.keep q fun i hi e => ?_).trans (h.other q hq hT hRT)
+    by_cases hi16 : i < 16
+    · exact ne_wreg hq hi16 (by rw [e, sreg_word hi16])
+    · by_cases e16 : i = 16
+      · exact hT (by rw [e, e16]; rfl)
+      · exact hRT (by rw [e]; simp [sreg, hi16, e16])
 
 theorem rounds_ok (hR : ROk P) {M : Block z.bits} {p : Addr} {sB : State} {v : Work z.bits}
     (hM : Msg M p sB) (h : RI sB v sB) (n : Nat) :
