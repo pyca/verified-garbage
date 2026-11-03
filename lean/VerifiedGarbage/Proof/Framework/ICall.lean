@@ -122,4 +122,48 @@ theorem RelCT.icalls_of_call {i : M.Instr} {p : String × Prog M} {ts : List (St
   refine ⟨?_, hq⟩
   simp only [icallTrace, ha, ht]
 
+/-- An indirect call in a frame, that reaches `(n, c)` from the state the
+frame's push leaves, runs as the call of `c` in that frame. -/
+theorem WP.frame_icalls_of_call {i j ins : M.Instr} {ts : List (String × Prog M)} {s : M.State}
+    {n : String} {c : Prog M} {Q : M.State → Prop}
+    (hs : ∀ s₁, M.push i s = some s₁ → ∃ a, M.icall ins s₁ = some a ∧ icallTarget M s₁ a ts = some (n, c))
+    (h : WP M (.frame i (.call n c) j) s Q) : WP M (.frame i (Code.icalls ins ts) j) s Q := by
+  obtain ⟨t, s', e, hq⟩ := h
+  cases e with
+  | frame hp hb hj =>
+    cases hb with
+    | call hc hb hr =>
+      obtain ⟨a, hi, hf⟩ := hs _ hp
+      exact ⟨_, _, .frame hp (Exec.icalls hi hf hc hb hr) hj, hq⟩
+
+/-- Two runs of an indirect call in a frame, whose pushes access the same
+addresses and from whose pushed states the call reaches the same function
+at the same address, accessing the same addresses, are two runs of its call
+in that frame, with the address added to both traces. -/
+theorem RelCT.frame_icalls_of_call {i j ins : M.Instr} {p : String × Prog M} {ts : List (String × Prog M)}
+    {n : String} {c : Prog M} {P Q : M.State → M.State → Prop} (h : RelCT M P (.frame i (.call n c) j) Q)
+    (hs : ∀ s₁ s₂, P s₁ s₂ → M.addrs i s₁ = M.addrs i s₂ ∧ ∀ u₁ u₂, M.push i s₁ = some u₁ →
+      M.push i s₂ = some u₂ → ∃ a, M.icall ins u₁ = some a ∧ M.icall ins u₂ = some a ∧
+        icallTarget M u₁ a (p :: ts) = some (n, c) ∧ icallTarget M u₂ a (p :: ts) = some (n, c) ∧
+        M.addrs ins u₁ = M.addrs ins u₂) :
+    RelCT M P (.frame i (Code.icalls ins (p :: ts)) j) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  obtain ⟨hpa, hs'⟩ := hs _ _ hp
+  cases e₁ with
+  | frame hp₁ hb₁ hj₁ =>
+  cases e₂ with
+  | frame hp₂ hb₂ hj₂ =>
+  obtain ⟨a, hi₁, hi₂, hf₁, hf₂, ha⟩ := hs' _ _ hp₁ hp₂
+  obtain ⟨a₁, n₁, b₁, x₁, y₁, u₁, hj₁', hg₁, hc₁, hb₁', hr₁, rfl⟩ := Exec.icalls_inv hb₁
+  obtain ⟨a₂, n₂, b₂, x₂, y₂, u₂, hj₂', hg₂, hc₂, hb₂', hr₂, rfl⟩ := Exec.icalls_inv hb₂
+  obtain rfl := Option.some.inj (hj₁'.symm.trans hi₁)
+  obtain rfl := Option.some.inj (hj₂'.symm.trans hi₂)
+  obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj (hg₁.symm.trans hf₁))
+  obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj (hg₂.symm.trans hf₂))
+  obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.frame hp₁ (.call hc₁ hb₁' hr₁) hj₁) (.frame hp₂ (.call hc₂ hb₂' hr₂) hj₂)
+  refine ⟨?_, hq⟩
+  rw [hpa] at ht ⊢
+  simp only [List.append_assoc, List.append_cancel_left_eq] at ht
+  simp only [icallTrace, ha, List.append_assoc, List.cons_append, ht]
+
 end VG

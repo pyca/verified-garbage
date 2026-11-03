@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -62,31 +64,33 @@ theorem lr_tcall {F S p a : Addr} {X : (Nat → BitVec 64) → State → Prop} (
     fun t V W L R hx => ?_).seq ?_
   · have h256 : InRegions (t.rd ++ t.wr) (F + BitVec.ofNat 64 256) 8 := L.ld (d := 256) (by decide)
     have r32 := R.rd8 (d := 256) (k := 32) rfl (by decide) (hv W t hx).1
-    refine WP.mono (Q := fun u => u.mem = t.mem ∧ u.syms = t.syms ∧ u.rd = t.rd ∧ u.wr = t.wr ∧
+    refine WP.mono (Q := fun (u : State) => u.mem = t.mem ∧ u.syms = t.syms ∧ u.rd = t.rd ∧ u.wr = t.wr ∧
         u.sp = t.sp ∧ u.v = t.v ∧ (∀ r, r ≠ .x16 → u.gpr r = t.gpr r) ∧ u.gpr .x16 = p) ?_
       fun u ⟨hm, hs, hrd, hwr, hsp, hvv, hg, h16⟩ =>
         ⟨V, W, L.congr hsp hwr (by rw [hm]), hm ▸ R, hk W t u hx hm hs hrd hwr hsp hvv hg, h16⟩
     oaep_run [sTab, h256, L.sp, r32]
-    exact ⟨trivial, fun r hr => by simp [hr]⟩
+    and_intros <;> first | trivial | rfl | (intro r hr; simp [hr])
   refine (lr_wp (X' := fun W t => X W t ∧ t.gpr .x16 = a)
     (lr_taint [.x16] t₂ fun _ _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2])
-    fun t V W L R ⟨hx, h16⟩ => ?_).seq ?_
-  · obtain ⟨-, hrd, hw, -⟩ := hv W t hx
-    refine WP.mono (Q := fun u => u.mem = t.mem ∧ u.syms = t.syms ∧ u.rd = t.rd ∧ u.wr = t.wr ∧
+    fun t V W L R hx16 => ?_).seq ?_
+  · obtain ⟨hx, h16⟩ := hx16
+    obtain ⟨-, hrd, hw, -⟩ := hv W t hx
+    refine WP.mono (Q := fun (u : State) => u.mem = t.mem ∧ u.syms = t.syms ∧ u.rd = t.rd ∧ u.wr = t.wr ∧
         u.sp = t.sp ∧ u.v = t.v ∧ (∀ r, r ≠ .x16 → u.gpr r = t.gpr r) ∧ u.gpr .x16 = a) ?_
       fun u ⟨hm, hs, hrd', hwr, hsp, hvv, hg, h16'⟩ =>
         ⟨V, W, L.congr hsp hwr (by rw [hm]), hm ▸ R, hk W t u hx hm hs hrd' hwr hsp hvv hg, h16'⟩
-    oaep_run [h16, hrd, hw, hj]
-    exact ⟨trivial, fun r hr => by simp [hr]⟩
+    have hw' : t.mem.read (p + BitVec.ofNat 64 (8 * j)) 8 = a := by simpa [Mem.readW] using hw
+    oaep_run [h16, hrd, hw', hj, Nat.mul_mod_right]
+    and_intros <;> first | trivial | rfl | (intro r hr; simp [hr])
   cases ts with
   | nil =>
-    exact RelCT.of_false fun s₁ s₂ ⟨⟨_, W, _, _, hx, _⟩, _⟩ => by simp at hv; exact absurd (hv W s₁ hx).2.2.2 (by simp)
+    exact RelCT.of_false fun s₁ s₂ ⟨⟨_, W, _, _, hx, _⟩, _⟩ => by simpa using (hv W s₁ hx).2.2.2
   | cons q ts =>
     refine RelCT.icalls_of_call (hcall.mono (fun _ _ ⟨⟨V₁, W₁, L₁, R₁, x₁, _⟩, ⟨V₂, W₂, L₂, R₂, x₂, _⟩⟩ =>
       ⟨⟨V₁, W₁, L₁, R₁, x₁⟩, ⟨V₂, W₂, L₂, R₂, x₂⟩⟩) fun _ _ h => h) ?_
     rintro s₁ s₂ ⟨⟨V₁, W₁, L₁, R₁, x₁, a₁⟩, ⟨V₂, W₂, L₂, R₂, x₂, a₂⟩⟩
-    exact ⟨a, by simp only [isa, icall, a₁], by simp only [isa, icall, a₂], (hv W₁ s₁ x₁).2.2.2,
+    exact ⟨a, by simp only [icall, a₁], by simp only [icall, a₂], (hv W₁ s₁ x₁).2.2.2,
       (hv W₂ s₂ x₂).2.2.2, rfl⟩
 
 /-! ## The points of a round -/
@@ -192,7 +196,9 @@ theorem roundT_tr {F S p ai au af : Addr} {src srcLen dst dstLen c : Nat} (hf : 
       t.gpr .x4 = off S oW) (lr_taint [] (by taint_decide) nopin)
     fun t V W L R hx => WP.mono (wp_sy (updSrc_ok L R hx.1.1 [])) fun u ⟨⟨Su, hm, x0, x1, x2, x3, x4⟩, sy⟩ =>
       ⟨V, W, L.congr Su.sp Su.wr (by rw [hm]), hm ▸ R, hx.step Su sy, x0, x1, x2, x3, x4⟩).seq ?_
-  refine (lr_wp (X' := X) (lr_tcall 1 (mxt_hv (by decide) huN)
+  refine (lr_wp (X' := X) (lr_tcall 1 (X := fun W t => X W t ∧ t.gpr .x0 = off S oSt ∧
+      t.gpr .x1 = BitVec.ofNat 64 0 ∧ t.gpr .x2 = off S src ∧ t.gpr .x3 = BitVec.ofNat 64 srcLen ∧
+      t.gpr .x4 = off S oW) (mxt_hv (by decide) huN)
       (fun W t u ⟨hx, x0, x1, x2, x3, x4⟩ hm hs hrd hwr hsp hv hg => ⟨hx.congr hm hs hrd hwr hsp hv hg,
         (hg _ (by decide)).trans x0, (hg _ (by decide)).trans x1, (hg _ (by decide)).trans x2,
         (hg _ (by decide)).trans x3, (hg _ (by decide)).trans x4⟩)
@@ -210,7 +216,9 @@ theorem roundT_tr {F S p ai au af : Addr} {src srcLen dst dstLen c : Nat} (hf : 
             ⟨hs, fun r hr => by rw [List.mem_singleton.mp hr]; exact x2⟩))
     fun t V W L R hx => WP.mono (wp_sy (updCtr_ok L R hx.1.1.hsl hx.1.2.1 (by omega) []))
       fun u ⟨⟨Lu, Su, Ru, x0, x1, x2, x3, x4⟩, sy⟩ => ⟨_, W, Lu, Ru, hx.step Su sy, x0, x1, x2, x3, x4⟩).seq ?_
-  refine (lr_wp (X' := X) (lr_tcall 1 (mxt_hv (by decide) huN)
+  refine (lr_wp (X' := X) (lr_tcall 1 (X := fun W t => X W t ∧ t.gpr .x0 = off S oSt ∧
+      t.gpr .x1 = BitVec.ofNat 64 srcLen ∧ t.gpr .x2 = off S oCtr ∧ t.gpr .x3 = BitVec.ofNat 64 4 ∧
+      t.gpr .x4 = off S oW) (mxt_hv (by decide) huN)
       (fun W t u ⟨hx, x0, x1, x2, x3, x4⟩ hm hs hrd hwr hsp hv hg => ⟨hx.congr hm hs hrd hwr hsp hv hg,
         (hg _ (by decide)).trans x0, (hg _ (by decide)).trans x1, (hg _ (by decide)).trans x2,
         (hg _ (by decide)).trans x3, (hg _ (by decide)).trans x4⟩)
@@ -225,7 +233,9 @@ theorem roundT_tr {F S p ai au af : Addr} {src srcLen dst dstLen c : Nat} (hf : 
     (lr_taint [] (by taint_decide) nopin)
     fun t V W L R hx => WP.mono (wp_sy (finA_ok L R hx.1.1.hsl [])) fun u ⟨⟨Su, hm, x0, x1, x2, x3⟩, sy⟩ =>
       ⟨V, W, L.congr Su.sp Su.wr (by rw [hm]), hm ▸ R, hx.step Su sy, x0, x1, x2, x3⟩).seq ?_
-  refine (lr_wp (X' := X) (lr_tcall 2 (mxt_hv (by decide) hfN)
+  refine (lr_wp (X' := X) (lr_tcall 2 (X := fun W t => X W t ∧ t.gpr .x0 = off S oSt ∧
+      t.gpr .x1 = BitVec.ofNat 64 (srcLen + 4) ∧ t.gpr .x2 = off S oDig ∧ t.gpr .x3 = off S oW)
+      (mxt_hv (by decide) hfN)
       (fun W t u ⟨hx, x0, x1, x2, x3⟩ hm hs hrd hwr hsp hv hg => ⟨hx.congr hm hs hrd hwr hsp hv hg,
         (hg _ (by decide)).trans x0, (hg _ (by decide)).trans x1, (hg _ (by decide)).trans x2,
         (hg _ (by decide)).trans x3⟩)
@@ -277,8 +287,9 @@ theorem mgfXorT_tr {F S p ai au af : Addr} {sArg : Nat} (hsa : sArg < 32768 ∧ 
   refine (lr_wp (X' := MXT G f S p ai au af F src srcLen dst dstLen 0)
     (lr_taint [.x10] (by taint_decide) fun _ _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.2.2, h₂.2.2.2])
-    fun t V W L R ⟨hA, h32, hT, x10⟩ => ?_).seq ?_
-  · obtain ⟨u₀, _, T, st, sy⟩ := hT.tab
+    fun t V W L R hx => ?_).seq ?_
+  · obtain ⟨hA, h32, hT, x10⟩ := hx
+    obtain ⟨u₀, _, T, st, sy⟩ := hT.tab
     have hrd : InRegions (t.rd ++ t.wr) (off p 32) 8 := by rw [st.rd, st.wr]; exact T.rdD
     have hD := (T.mem _ st.frame).2.1
     refine WP.mono (wp_sy (tabHead_ok (G := G) L R x10 hrd hD [] dst dstLen)) fun v ⟨I, syv⟩ => ?_

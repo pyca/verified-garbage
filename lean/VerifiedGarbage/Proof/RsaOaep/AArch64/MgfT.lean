@@ -94,13 +94,14 @@ theorem tcall_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W 
   have h256 : InRegions (t.rd ++ t.wr) (F + BitVec.ofNat 64 256) 8 := L.ld (d := 256) (by decide)
   have r32 := R.rd8 (d := 256) (k := 32) rfl (by decide) hp
   have hj' : 8 * j < 32768 := by omega
-  refine WP.seq (WP.mono (Q := fun t' => Step F S [] t t' ∧ t'.mem = t.mem ∧ t'.syms = t.syms ∧
+  refine WP.seq (WP.mono (Q := fun (t' : State) => Step F S [] t t' ∧ t'.mem = t.mem ∧ t'.syms = t.syms ∧
       t'.gpr .x0 = t.gpr .x0 ∧ t'.gpr .x1 = t.gpr .x1 ∧ t'.gpr .x2 = t.gpr .x2 ∧ t'.gpr .x3 = t.gpr .x3 ∧
       t'.gpr .x4 = t.gpr .x4 ∧ t'.gpr .x16 = t.syms n) ?_
     fun t' ⟨st, hm, hs, h0, h1, h2, h3, h4, h16⟩ => ?_)
-  · oaep_run [tcall, sTab, h256, L.sp, r32, hrd, hw, hj']
+  · have hw' : t.mem.read (p + BitVec.ofNat 64 (8 * j)) 8 = t.syms n := by simpa [Mem.readW] using hw
+    oaep_run [tcall, sTab, h256, L.sp, r32, hrd, hw', hj', Nat.mul_mod_right]
     oaep_fin
-  · refine WP.icalls_of_call (a := t.syms n) (by simp only [isa, icall, h16]) ?_
+  · refine WP.icalls_of_call (a := t.syms n) (by simp only [icall, h16]) ?_
       (h t' st hm hs h0 h1 h2 h3 h4)
     show ts.find? (fun q => isa.fnAddr t' q.1 == t.syms n) = _
     simp only [isa]; rw [hs]; exact hf
@@ -400,7 +401,7 @@ theorem tabArg_ok {sArg : Nat} (hsa : sArg < 32768 ∧ sArg % 8 = 0) {u : State}
   have G' := L.geo
   have R1 : Rep (u.mem.write (off F 256) 8 p) F S V (upd W 32 p) := R.wq G' (k := 32) (by decide) _
   have w256 : InRegions u.wr (F + BitVec.ofNat 64 256) 8 := L.st (d := 256) (by decide)
-  have ha := (T.mem _ (Frame.refl _ _)).2.2
+  have ha : u.mem.read (F + BitVec.ofNat 64 sArg) 8 = p := by simpa [Mem.readW] using (T.mem _ (Frame.refl _ _)).2.2
   refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem.write (off F 256) 8 p ∧ u'.rd = u.rd ∧
       u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧
       u'.gpr .x10 = p) ?_
@@ -421,23 +422,27 @@ theorem tabHead_ok {u : State} {F S p : Addr} (L : Lay u F S) {V : Nat → Byte}
     WP isa (.block (tabHead lay sD)) u
       (MgfI u F S V (upd W 33 (BitVec.ofNat 64 G.D)) mk dst dstLen G.D 0) := by
   have G' := L.geo
-  have R1 : Rep (u.mem.write (off F 264) 8 (BitVec.ofNat 64 G.D)) F S V (upd W 33 (BitVec.ofNat 64 G.D)) :=
-    R.wq G' (k := 33) (by decide) _
+  have R3 : Rep (((u.mem.write (off F 264) 8 (BitVec.ofNat 64 G.D)).write (off F 136) 8 (0 : BitVec 64)).write
+      (off F 144) 8 (0 : BitVec 64)) F S V (upd (upd (upd W 33 (BitVec.ofNat 64 G.D)) 17 0) 18 0) :=
+    ((R.wq G' (k := 33) (by decide) _).wq G' (k := 17) (by decide) 0).wq G' (k := 18) (by decide) 0
   have w264 : InRegions u.wr (F + BitVec.ofNat 64 264) 8 := L.st (d := 264) (by decide)
-  rw [show tabHead lay sD = [.ldr .x .x10 .x10 32, .addSp .x9 0, .str .x .x10 .x9 sD] ++
-    [.addSp .x9 0, .movz .x .x10 0 0, .str .x .x10 .x9 lay.sCtr, .str .x .x10 .x9 lay.sDone] from rfl,
-    WP.block_append_iff]
-  refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem.write (off F 264) 8 (BitVec.ofNat 64 G.D) ∧
-      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.v = u.v ∧
-      (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r)) ?_ fun u1 ⟨hm, hrd1, hwr, hsp, hv, hcs⟩ => ?_
-  · oaep_run [sD, h10, hrd, hD, w264, L.sp, BitVec.add_zero]
+  have w136 : InRegions u.wr (F + BitVec.ofNat 64 136) 8 := L.st (d := 136) (by decide)
+  have w144 : InRegions u.wr (F + BitVec.ofNat 64 144) 8 := L.st (d := 144) (by decide)
+  have hD' : u.mem.read (p + BitVec.ofNat 64 32) 8 = BitVec.ofNat 64 G.D := by simpa [Mem.readW] using hD
+  refine WP.mono (Q := fun (v : State) => v.mem = ((u.mem.write (off F 264) 8 (BitVec.ofNat 64 G.D)).write
+      (off F 136) 8 (0 : BitVec 64)).write (off F 144) 8 (0 : BitVec 64) ∧ v.rd = u.rd ∧ v.wr = u.wr ∧
+      v.sp = u.sp ∧ v.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → v.gpr r = u.gpr r)) ?_
+    fun v ⟨hm, hrd', hwr, hsp, hv, hcs⟩ => ?_
+  · oaep_run [tabHead, lay, sD, sCtr, sDone, h10, hrd, hD', w264, w136, w144, L.sp, BitVec.add_zero]
     oaep_fin
-  have R1' : Rep u1.mem F S V (upd W 33 (BitVec.ofNat 64 G.D)) := by rw [hm]; exact R1
-  have L1 : Lay u1 F S := L.congr hsp hwr (by
-    rw [show sScr = 8 * 12 from rfl, R1'.fr 12 (by decide), R.fr 12 (by decide)]; rfl)
-  have S1 : Step F S [] u u1 := ⟨hrd1, hwr, hsp, hcs, fun r _ => by rw [hv], by
-    rw [hm]; exact Frame.write (Frame.refl _ _) (List.mem_cons_self ..) _ (cF F (by decide))⟩
-  refine WP.mono (mgfHead_ok L1 R1' mk dst dstLen G.D) fun v I => ⟨I.L, S1.trans I.st, I.rep⟩
+  have R' : Rep v.mem F S V (upd (upd (upd W 33 (BitVec.ofNat 64 G.D)) 17 0) 18 0) := by rw [hm]; exact R3
+  refine ⟨L.congr hsp hwr ?_, ⟨hrd', hwr, hsp, hcs, fun r _ => by rw [hv], ?_⟩, _, _, R', by simp [upd],
+    by simp [upd], fun k _ h1 h2 => by simp only [upd, ifn h2, ifn h1],
+    fun o _ _ => by simp only [mixV, Nat.zero_mul, Nat.zero_min, Nat.add_zero]; rw [ifn (by omega_using [])]⟩
+  · rw [show sScr = 8 * 12 from rfl, R'.fr 12 (by decide), R.fr 12 (by decide)]; rfl
+  · rw [hm]
+    exact Frame.write (Frame.write (Frame.write (Frame.refl _ _) (List.mem_cons_self ..) _ (cF F (by decide)))
+      (List.mem_cons_self ..) _ (cF F (by decide))) (List.mem_cons_self ..) _ (cF F (by decide))
 
 include hG in
 /-- `dst ⊕= MGF1(src, dstLen)`, with the hash function of the table at
