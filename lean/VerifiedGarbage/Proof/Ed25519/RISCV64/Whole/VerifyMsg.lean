@@ -42,7 +42,8 @@ theorem verCall_pre {s t : State} (hp : VerPre s) (ha : VerArgs s t) (sy : t.sym
     by rw [ce _ (by decide), ce _ (by decide), ha.a0, ha.a3]; exact hp.cF.symm.sub_left (Offset.sub_base _ (by decide)),
     by rw [ce _ (by decide), ce _ (by decide), ha.a1, ha.a3]; exact hp.cF.symm.sub_left (Offset.sub_base _ (by decide)),
     by rw [ce _ (by decide), ce _ (by decide), ha.a2, ha.a3]; exact hp.cF.symm.sub_left (Region.sub_prefix (by decide)),
-    by rw [cy]; exact hp.tfit, fun q hq => ?_, by rw [cy, ce _ (by decide), ha.a3]; exact hp.tC⟩
+    by rw [cy]; exact hp.tfit, fun q hq => ?_, by rw [cy, ce _ (by decide), ha.a3]; exact hp.tC,
+    by rw [cy]; exact hp.tal⟩
   rw [cy, cm, ← hp.twords q hq]
   refine ha.inv.frame.readW (r := vtbR s) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
   simp only [verW, List.mem_cons, List.not_mem_nil, or_false] at hr

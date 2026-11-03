@@ -62,6 +62,7 @@ structure VerPre (s : State) : Prop where
   tC : (vtbR s).Disjoint ⟨s.gpr .a4, 8192⟩
   tF : (vtbR s).Disjoint ⟨s.gpr .a5, 272⟩
   tB : (vtbR s).Disjoint (below s.sp 208)
+  tal : (s.syms Impl.Ed25519.RISCV64.bSym).toNat % 8 = 0
 
 /-- What the body may write. -/
 abbrev verW (s : State) : List Region := [⟨s.gpr .a4, 8192⟩, ⟨s.gpr .a5, 272⟩, below s.sp 208]

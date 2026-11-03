@@ -231,6 +231,7 @@ structure BStat (b T : Addr) (s : State) : Prop where
   fit : T.toNat + 1920 ≤ 2 ^ 64
   words : ∀ q < 240, s.mem.readW (T + BitVec.ofNat 64 (8 * q)) 64 = bWord q
   ws : (⟨T, 1920⟩ : Region).Disjoint ⟨b, 8192⟩
+  al : T.toNat % 8 = 0
 
 /-- The static's facts through a frame within the working space. -/
 theorem BStat.of_frame {T : Addr} {s t : State} (h : BStat b T s) (hrd : t.rd = s.rd) {rs : List Region}
@@ -242,6 +243,7 @@ theorem BStat.of_frame {T : Addr} {s t : State} (h : BStat b T s) (hrd : t.rd = 
     exact hf.readW (r := ⟨T, 1920⟩) (Offset.contains_base T (by omega) (by omega))
       (fun r hr x h₁ h₂ => h.ws x h₁ (hs r hr x h₂)) (by decide)
   ws := h.ws
+  al := h.al
 
 /-- **`[k] A - [S] B` compared with `-R`**, for the decoded `A` and `R` in the tables at 7776 and
 7904 and the static at `s.syms bSym`, as the equation `[S] B = R + [k] A`: what the windows'
