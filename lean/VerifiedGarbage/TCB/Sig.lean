@@ -371,7 +371,11 @@ def Sig.bufs : List (String × Param) → List (BitVec 64) → List (Region × B
 /-- The addresses of the buffers of `u16`, `u32` or `u64` (or of arrays of
 them) that the arrays and slices among the parameters refer to, given the
 arguments' values, each with its element's alignment, in the order of
-`Sig.bufs`. -/
+`Sig.bufs`; and those of the tables of functions, each with the alignment of
+its words, pointers: 8 bytes on RISC-V (`long` and pointers in the RISC-V
+ELF psABI's "C/C++ type details", as Rust's `usize` and its statics of
+`[usize; n]` are laid out), the only target whose contracts state
+alignments (`Abi.alignsBufs`). -/
 def Sig.alignedBufs : List (String × Param) → List (BitVec 64) → List (Addr × Nat)
   | [], _ => []
   | (_, .int ..) :: ps, _ :: vs => Sig.alignedBufs ps vs
@@ -380,7 +384,7 @@ def Sig.alignedBufs : List (String × Param) → List (BitVec 64) → List (Addr
   | (_, .slice _ e _) :: ps, p :: _ :: vs =>
     if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs
   | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.alignedBufs ps vs
-  | (_, .table _) :: ps, _ :: vs => Sig.alignedBufs ps vs
+  | (_, .table _) :: ps, p :: vs => (p, 8) :: Sig.alignedBufs ps vs
   | _, _ => []
 
 /-- The buffers of the arrays among the parameters, given the arguments'
