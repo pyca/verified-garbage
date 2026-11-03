@@ -5633,7 +5633,24 @@ bnez t3, 282b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p15_crt_values_proven(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p15_crt_values_proven(
+    dp: *mut u8,
+    dp_len: usize,
+    dq: *mut u8,
+    dq_len: usize,
+    qinv: *mut u8,
+    qinv_len: usize,
+    n: *const u8,
+    n_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    d: *const u8,
+    d_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c

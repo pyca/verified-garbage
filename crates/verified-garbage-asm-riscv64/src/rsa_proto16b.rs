@@ -1,7 +1,14 @@
 //! The proven precompute, for a local check only.
 #![allow(clippy::missing_safety_doc)]
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p16_precompute_proven(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p16_precompute_proven(
+    pre: *mut u64,
+    pre_len: usize,
+    n: *const u8,
+    n_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c

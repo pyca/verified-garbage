@@ -1,7 +1,26 @@
 //! Unproven prototype, for timing only.
 #![allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p14_check_key_base(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p14_check_key_base(
+    n: *const u8,
+    n_len: usize,
+    e: *const u8,
+    e_len: usize,
+    d: *const u8,
+    d_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    dp: *const u8,
+    dp_len: usize,
+    dq: *const u8,
+    dq_len: usize,
+    qinv: *const u8,
+    qinv_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -2487,7 +2506,26 @@ bnez t3, 2107b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p14_check_key_a(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p14_check_key_a(
+    n: *const u8,
+    n_len: usize,
+    e: *const u8,
+    e_len: usize,
+    d: *const u8,
+    d_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    dp: *const u8,
+    dp_len: usize,
+    dq: *const u8,
+    dq_len: usize,
+    qinv: *const u8,
+    qinv_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -4977,7 +5015,26 @@ bnez t3, 2107b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p14_check_key_b(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p14_check_key_b(
+    n: *const u8,
+    n_len: usize,
+    e: *const u8,
+    e_len: usize,
+    d: *const u8,
+    d_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    dp: *const u8,
+    dp_len: usize,
+    dq: *const u8,
+    dq_len: usize,
+    qinv: *const u8,
+    qinv_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -7465,7 +7522,26 @@ bnez t3, 2107b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p14_check_key_c(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p14_check_key_c(
+    n: *const u8,
+    n_len: usize,
+    e: *const u8,
+    e_len: usize,
+    d: *const u8,
+    d_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    dp: *const u8,
+    dp_len: usize,
+    dq: *const u8,
+    dq_len: usize,
+    qinv: *const u8,
+    qinv_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -9955,7 +10031,24 @@ bnez t3, 2107b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p14_crt_values_base(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p14_crt_values_base(
+    dp: *mut u8,
+    dp_len: usize,
+    dq: *mut u8,
+    dq_len: usize,
+    qinv: *mut u8,
+    qinv_len: usize,
+    n: *const u8,
+    n_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    d: *const u8,
+    d_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -12706,7 +12799,24 @@ bnez t3, 277b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p14_crt_values_a(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p14_crt_values_a(
+    dp: *mut u8,
+    dp_len: usize,
+    dq: *mut u8,
+    dq_len: usize,
+    qinv: *mut u8,
+    qinv_len: usize,
+    n: *const u8,
+    n_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    d: *const u8,
+    d_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -15463,7 +15573,24 @@ bnez t3, 277b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p14_crt_values_b(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p14_crt_values_b(
+    dp: *mut u8,
+    dp_len: usize,
+    dq: *mut u8,
+    dq_len: usize,
+    qinv: *mut u8,
+    qinv_len: usize,
+    n: *const u8,
+    n_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    d: *const u8,
+    d_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -18214,7 +18341,24 @@ bnez t3, 277b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p14_crt_values_c(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p14_crt_values_c(
+    dp: *mut u8,
+    dp_len: usize,
+    dq: *mut u8,
+    dq_len: usize,
+    qinv: *mut u8,
+    qinv_len: usize,
+    n: *const u8,
+    n_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    d: *const u8,
+    d_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c

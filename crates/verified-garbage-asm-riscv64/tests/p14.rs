@@ -22,21 +22,66 @@ fn cases() -> Vec<Vec<Vec<u8>>> {
 }
 
 type Key = unsafe extern "C" fn(
-    *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize,
-    *const u8, usize, *const u8, usize, *const u8, usize, *mut u64, usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
 ) -> u32;
 type Crt = unsafe extern "C" fn(
-    *mut u8, usize, *mut u8, usize, *mut u8, usize, *const u8, usize, *const u8, usize,
-    *const u8, usize, *const u8, usize, *mut u64, usize,
+    *mut u8,
+    usize,
+    *mut u8,
+    usize,
+    *mut u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
 ) -> u32;
 
 fn key(f: Key, g: &[Vec<u8>]) -> u32 {
     let mut s = vec![0x5a5a5a5a5a5a5a5au64; 16 * g[0].len() + 32];
     unsafe {
         f(
-            g[0].as_ptr(), g[0].len(), g[1].as_ptr(), g[1].len(), g[2].as_ptr(), g[2].len(),
-            g[3].as_ptr(), g[3].len(), g[4].as_ptr(), g[4].len(), g[5].as_ptr(), g[5].len(),
-            g[6].as_ptr(), g[6].len(), g[7].as_ptr(), g[7].len(), s.as_mut_ptr(), s.len(),
+            g[0].as_ptr(),
+            g[0].len(),
+            g[1].as_ptr(),
+            g[1].len(),
+            g[2].as_ptr(),
+            g[2].len(),
+            g[3].as_ptr(),
+            g[3].len(),
+            g[4].as_ptr(),
+            g[4].len(),
+            g[5].as_ptr(),
+            g[5].len(),
+            g[6].as_ptr(),
+            g[6].len(),
+            g[7].as_ptr(),
+            g[7].len(),
+            s.as_mut_ptr(),
+            s.len(),
         )
     }
 }
@@ -44,12 +89,29 @@ fn key(f: Key, g: &[Vec<u8>]) -> u32 {
 /// `(mask, dP, dQ, qInv)` from `n`, `p`, `q`, `d`.
 fn crt(f: Crt, n: &[u8], p: &[u8], q: &[u8], d: &[u8]) -> (u32, Vec<u8>, Vec<u8>, Vec<u8>) {
     let mut s = vec![0x5a5a5a5a5a5a5a5au64; 16 * n.len() + 32];
-    let (mut dp, mut dq, mut qi) = (vec![0x77; p.len()], vec![0x77; q.len()], vec![0x77; p.len()]);
+    let (mut dp, mut dq, mut qi) = (
+        vec![0x77; p.len()],
+        vec![0x77; q.len()],
+        vec![0x77; p.len()],
+    );
     let m = unsafe {
         f(
-            dp.as_mut_ptr(), dp.len(), dq.as_mut_ptr(), dq.len(), qi.as_mut_ptr(), qi.len(),
-            n.as_ptr(), n.len(), p.as_ptr(), p.len(), q.as_ptr(), q.len(), d.as_ptr(), d.len(),
-            s.as_mut_ptr(), s.len(),
+            dp.as_mut_ptr(),
+            dp.len(),
+            dq.as_mut_ptr(),
+            dq.len(),
+            qi.as_mut_ptr(),
+            qi.len(),
+            n.as_ptr(),
+            n.len(),
+            p.as_ptr(),
+            p.len(),
+            q.as_ptr(),
+            q.len(),
+            d.as_ptr(),
+            d.len(),
+            s.as_mut_ptr(),
+            s.len(),
         )
     };
     (m, dp, dq, qi)
@@ -177,7 +239,11 @@ fn crt_values_random() {
                         d[0] |= 1;
                         let base = crt(vg_p14_crt_values_base, &nn, &p, &q, &d);
                         for (v, c) in CRTS {
-                            assert_eq!(base, crt(c, &nn, &p, &q, &d), "{v}: pl {pl} ql {ql} dl {dl}");
+                            assert_eq!(
+                                base,
+                                crt(c, &nn, &p, &q, &d),
+                                "{v}: pl {pl} ql {ql} dl {dl}"
+                            );
                         }
                         n += 1;
                         ok += base.0;

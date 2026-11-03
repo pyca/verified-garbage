@@ -1,7 +1,26 @@
 //! Unproven prototype, for timing only.
 #![allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p23_base(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p23_base(
+    out: *mut u8,
+    out_len: usize,
+    n: *const u8,
+    n_len: usize,
+    input: *const u8,
+    input_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    dp: *const u8,
+    dp_len: usize,
+    dq: *const u8,
+    dq_len: usize,
+    qinv: *const u8,
+    qinv_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -14877,7 +14896,26 @@ bnez t5, 2660b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p23_same(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p23_same(
+    out: *mut u8,
+    out_len: usize,
+    n: *const u8,
+    n_len: usize,
+    input: *const u8,
+    input_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    dp: *const u8,
+    dp_len: usize,
+    dq: *const u8,
+    dq_len: usize,
+    qinv: *const u8,
+    qinv_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -29753,7 +29791,26 @@ bnez t5, 2660b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p23_nor2re(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p23_nor2re(
+    out: *mut u8,
+    out_len: usize,
+    n: *const u8,
+    n_len: usize,
+    input: *const u8,
+    input_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    dp: *const u8,
+    dp_len: usize,
+    dq: *const u8,
+    dq_len: usize,
+    qinv: *const u8,
+    qinv_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -44175,7 +44232,26 @@ bnez t5, 2636b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p23_nored64(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p23_nored64(
+    out: *mut u8,
+    out_len: usize,
+    n: *const u8,
+    n_len: usize,
+    input: *const u8,
+    input_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    dp: *const u8,
+    dp_len: usize,
+    dq: *const u8,
+    dq_len: usize,
+    qinv: *const u8,
+    qinv_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -58968,7 +59044,26 @@ bnez t5, 2654b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p23_nobitserial(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p23_nobitserial(
+    out: *mut u8,
+    out_len: usize,
+    n: *const u8,
+    n_len: usize,
+    input: *const u8,
+    input_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    dp: *const u8,
+    dp_len: usize,
+    dq: *const u8,
+    dq_len: usize,
+    qinv: *const u8,
+    qinv_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -72401,7 +72496,26 @@ bnez t5, 2582b
     )
 }
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_p23_nosel(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_p23_nosel(
+    out: *mut u8,
+    out_len: usize,
+    n: *const u8,
+    n_len: usize,
+    input: *const u8,
+    input_len: usize,
+    p: *const u8,
+    p_len: usize,
+    q: *const u8,
+    q_len: usize,
+    dp: *const u8,
+    dp_len: usize,
+    dq: *const u8,
+    dq_len: usize,
+    qinv: *const u8,
+    qinv_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
