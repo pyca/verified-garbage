@@ -26,8 +26,8 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink MdHash)
 open VG.Proof.RsaPkcs1Enc.X86_64 (PrivImpl)
 open VG.Proof.Rsa.X86_64 (PublicImpl)
-open VG.Proof.HashTable.X86_64 (tables fnsOf names Coh tableOf symsOf symsOf_distinct put5 put5_held
-  put5_below)
+open VG.Proof.HashTable.X86_64 (tables fnsOf names Coh tableOf)
+open VG.Proof.HashTable (symsOf symsOf_distinct put5 put5_held put5_below)
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaPkcs1Enc.X86_64 (privStack)
 
