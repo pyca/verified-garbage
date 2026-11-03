@@ -179,8 +179,9 @@ def imports(text: str):
 
 
 def main() -> int:
-    # Every check reads each file of the project once, from here.
-    mods = lean_shards.modules()
+    # Every check reads each file of the project once, from here: the modules
+    # under `LEAN`'s parent, which the other checks walk too.
+    mods = lean_shards.modules(LEAN.parent)
     texts = {f: f.read_text() for f in mods.values()}
     errors = tcb_lemmas(LEAN, texts)
     targets = {p.name for p in (LEAN / "TCB").iterdir() if p.is_dir()}
