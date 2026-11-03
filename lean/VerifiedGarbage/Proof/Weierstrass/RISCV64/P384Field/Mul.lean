@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.X448.RISCV64.R64.Macc
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Mul
 public import VerifiedGarbage.Proof.X25519.RISCV64.R64.Mul
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
 
@@ -23,10 +25,15 @@ words where those have four:
   rr (k + 2)` (`terms_ok`), and its end stores its low word at `acc + 8k`
   (`colEnd_ok`), so that after `k` columns the words below `acc + 8k` and the
   accumulator hold the sum of the first `k` (`ColInv`);
-* `product x y`: `b₀–b₅` in `w 0`–`w 5`, each term `a_i b_j` with `a_i`
-  loaded (`mulTerm_ok`); the columns sum to the product (`mulCols_sum`);
-* `square x`: the cross products `a_j a_i` (`j < i`) with `a₀–a₅` in
-  registers (`sqTerm_ok`), then each word doubled, with the top bit of the
+* `pipe acc x y ts` (`pipe_ok`), for a table of terms `ts` (`Tab`): each
+  term's sums into the column's accumulator, with the next term's product
+  and the one after's operands, which the pipeline (`Pipe`) carries from term
+  to term (`pstep_ok`), the terms of a column (`pterms_ok`) and the columns
+  (`columns_ok`) by induction;
+* `product x y`: `pipe` of every term; the columns sum to the product
+  (`mulCols_sum`);
+* `square x`: `pipe` of the cross products `a_j a_i` (`j < i`), then each
+  word doubled, with the top bit of the
   word below shifted in, plus the word of the squares and the carry
   (`dblStep_ok`); twice the cross products plus the squares are the square
   (`sqCols_sum`).
@@ -223,85 +230,340 @@ end
 section
 variable {acc : Nat} {b : Addr}
 
-/-- `b₀–b₅` in `w 0`–`w 5`. -/
-def WRegs (Y : Nat → Nat) (s : State) : Prop := ∀ j < 6, (s.gpr (w j)).toNat = Y j
-
-theorem w_ne' : ∀ i < 6, w i ≠ .a4 ∧ w i ≠ .a5 ∧ w i ≠ .a6 ∧ w i ≠ .a7 ∧ w i ≠ .t0 ∧ w i ∈ clob64 := by
-  decide
-
-theorem w_ne_rr (k : Nat) {i : Nat} (hi : i < 6) : w i ≠ rr k ∧ w i ≠ rr (k + 1) ∧
-    w i ≠ rr (k + 2) ∧ w i ≠ .a7 ∧ w i ≠ .t0 ∧ w i ∈ clob64 := by
-  obtain ⟨h4, h5, h6, h7, h0, hc⟩ := w_ne' i hi
-  refine ⟨?_, ?_, ?_, h7, h0, hc⟩ <;>
-  · rcases rr_cases (k := _) with e | e | e <;> rw [e] <;> with_reducible assumption
-
-theorem WRegs.of_gpr {Y : Nat → Nat} {s s' : State} (h : WRegs Y s)
-    (hg : ∀ j < 6, s'.gpr (w j) = s.gpr (w j)) : WRegs Y s' :=
-  fun j hj => by rw [hg j hj]; exact h j hj
-
 /-- The columns of a product: column `k` is the sum of `a_i b_j` with `i + j = k`. -/
 def mulF (X Y : Nat → Nat) (p : Nat × Nat) : Nat := X p.1 * Y p.2
 
 def mulCs (X Y : Nat → Nat) (k : Nat) : Nat := tsum (mulF X Y) (colPairs k)
 
-theorem keeps_clob {k : Nat} {s1 s2 : State}
-    (k2 : Keeps [rr k, rr (k + 1), rr (k + 2), .a7, .t0] s1 s2) : Rest clob64 s1 s2 :=
-  (Keeps.rest k2).mono fun r hr' => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-    rcases hr' with rfl | rfl | rfl | rfl | rfl
-    exacts [rr_clob _, rr_clob _, rr_clob _, by decide, by decide]
+/-- A cross term's value: `a_j a_i` for the term `(i, j)`. -/
+def sqF (X : Nat → Nat) (p : Nat × Nat) : Nat := X p.2 * X p.1
 
-/-- A term `a_i b_j` of column `k`. -/
-theorem mulTerm_ok {s0 : State} {x : Nat} (hx : x + 48 ≤ acc) (hA : acc + 96 ≤ 2048)
-    (hx8 : x % 8 = 0) {Y : Nat → Nat} {k i j : Nat} (hk : k < 12) (hi : i < 6) (hj : j < 6) :
-    TermOk acc b s0 k (WRegs Y) (mulF (fun i => dw s0.mem b (x + 8 * i)) Y) (mulTerm x k) (i, j) := by
-  intro s hB hc hr hf
-  obtain ⟨h01, h02, h12, h07, h00, h17, h10, h27, h20, -⟩ := rr_ne k (by omega)
-  obtain ⟨hb0, hb1, hb2, hb7, hbt, hbc⟩ := w_ne_rr k hj
-  simp only [mulTerm]
-  refine ld_ok hc (by omega) (by omega) fun s1 u1 => ?_
-  refine WP.mono (macc_ok h01 h02 h12 h07 h00 h17 h10 h27 h20 (by decide) hb7) fun s2 ⟨e2, k2⟩ => ?_
-  have hr2 : Rest clob64 s s2 := (u1.rest (ws := clob64) (by decide)).trans (keeps_clob k2)
-  have hm2 : s2.mem = s.mem := by rw [k2.2.1, u1.mem]
-  have hv1 : val3 s1 (rr k) (rr (k + 1)) (rr (k + 2)) = val3 s (rr k) (rr (k + 1)) (rr (k + 2)) := by
-    simp only [val3, u1.other _ h00, u1.other _ h10, u1.other _ h20]
-  have ex : (s1.gpr .t0).toNat = dw s0.mem b (x + 8 * i) := by
-    rw [u1.gpr]; exact dw_acc hA hf (by omega)
-  have ey : (s1.gpr (w j)).toNat = Y j := by
-    rw [u1.other _ hbt]; exact hB j hj
-  refine ⟨hB.of_gpr fun j' hj' => ?_, hc.of_rest hr2 (by decide), hr.trans hr2, by rw [hm2]; exact hf,
-    by rw [hm2], fun hb => ?_⟩
-  · obtain ⟨c0, c1, c2, c7, ct, -⟩ := w_ne_rr k hj'
-    rw [k2.1 _ (by simp [c0, c1, c2, c7, ct]), u1.other _ ct]
-  · rw [e2 (by rw [hv1, ex, ey]; exact hb), hv1, ex, ey]; rfl
+/-- The columns of the cross products. -/
+def sqCs (X : Nat → Nat) (k : Nat) : Nat := tsum (sqF X) (sqPairs k)
 
-theorem colPairs_ok : ∀ k < 12, ∀ p ∈ colPairs k, p.1 < 6 ∧ p.2 < 6 := by decide
-
-theorem colPairs_len : ∀ k < 12, (colPairs k).length ≤ 6 := by decide
+theorem sqCs_eq (X : Nat → Nat) : sqCs X = fun k => tsum (mulF X X) (sqPairs k) := by
+  funext k; unfold sqCs tsum; congr 1; exact List.map_congr_left fun p _ => Nat.mul_comm _ _
 
 theorem mulF_le (X Y : Nat → Nat) (hX : ∀ i, X i < 2 ^ 64) (hY : ∀ j, Y j < 2 ^ 64) (p : Nat × Nat) :
     mulF X Y p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) :=
   Nat.mul_le_mul (by have := hX p.1; omega) (by have := hY p.2; omega)
 
-theorem tsum_lt {f : Nat × Nat → Nat} (hf : ∀ p, f p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1))
-    {ps : List (Nat × Nat)} (hl : ps.length ≤ 6) : tsum f ps < 6 * 2 ^ 128 := by
-  have := tsum_le (ps := ps) fun p _ => hf p
+theorem tsum_mul_lt6 {X Y : Nat → Nat} (hX : ∀ i, X i < 2 ^ 64) (hY : ∀ j, Y j < 2 ^ 64)
+    {ps : List (Nat × Nat)} (hl : ps.length ≤ 6) : tsum (mulF X Y) ps < 6 * 2 ^ 128 := by
+  have := tsum_le (ps := ps) fun p _ => mulF_le X Y hX hY p
   have : ps.length * ((2 ^ 64 - 1) * (2 ^ 64 - 1)) ≤ 6 * ((2 ^ 64 - 1) * (2 ^ 64 - 1)) :=
     Nat.mul_le_mul_right _ hl
   omega
 
-/-- Column `k` of `product x y`. -/
-theorem mulCol_ok {x : Nat} (hx : x + 48 ≤ acc) (hA : acc + 96 ≤ 2048) (hA8 : acc % 8 = 0)
-    (hx8 : x % 8 = 0) {s0 : State} {Y : Nat → Nat} (hY : ∀ j, Y j < 2 ^ 64) {k : Nat} (hk : k < 12)
-    {s : State} (h : ColInv acc b s0 (mulCs (fun i => dw s0.mem b (x + 8 * i)) Y) k s)
-    (hB : WRegs Y s) :
-    WP isa (.block (mulCol acc x k)) s fun s' =>
-      ColInv acc b s0 (mulCs (fun i => dw s0.mem b (x + 8 * i)) Y) (k + 1) s' ∧ WRegs Y s' :=
-  column_ok hA hA8 hk (colPairs k) (fun p hp => by
-      obtain ⟨h1, h2⟩ := colPairs_ok k hk p hp
-      exact mulTerm_ok hx hA hx8 hk h1 h2) rfl
-    (tsum_lt (mulF_le _ _ (fun i => dw_lt _ _ _) hY) (colPairs_len k hk))
-    (fun _ _ hB' hg => hB'.of_gpr fun j hj => hg _ (w_ne_rr k hj).1) h hB
+/-! ### The pipeline -/
+
+theorem PR_mod (n : Nat) : PR (n % 2) = PR n := by
+  simp only [PR, Nat.mod_mod]
+
+theorem PR_mod1 (n : Nat) : PR (n % 2 + 1) = PR (n + 1) := by
+  simp only [PR]; rw [show (n % 2 + 1) % 2 = (n + 1) % 2 by omega]
+
+/-- The registers of a step's products, by the parity of the term. -/
+theorem regs_pr : ∀ e < 2,
+    (PR e).1 ≠ (PR e).2 ∧ (PR e).1 ≠ .a1 ∧ (PR e).1 ≠ .a2 ∧ (PR e).2 ≠ .a1 ∧ (PR e).2 ≠ .a2 ∧
+    (PR e).1 ∉ [(PR (e + 1)).1, (PR (e + 1)).2] ∧ (PR e).2 ∉ [(PR (e + 1)).1, (PR (e + 1)).2] ∧
+    (PR (e + 1)).1 ∉ [Reg.a1, .a2] ∧ (PR (e + 1)).2 ∉ [Reg.a1, .a2] ∧
+    (PR e).1 ∈ clob64 ∧ (PR e).2 ∈ clob64 := by decide
+
+/-- The accumulator's register `rr k` apart from a step's others. -/
+theorem regs_acc : ∀ k < 15, ∀ e < 2,
+    rr k ≠ (PR e).1 ∧ rr k ≠ (PR e).2 ∧ rr k ∉ [(PR (e + 1)).1, (PR (e + 1)).2] ∧ rr k ∉ [Reg.a1, .a2] := by
+  decide
+
+/-- The registers a step's sums write, apart from the next product's and the operands. -/
+theorem regs_sum : ∀ k < 12, ∀ e < 2,
+    (PR (e + 1)).1 ∉ [rr k, rr (k + 1), rr (k + 2), (PR e).1, (PR e).2] ∧
+    (PR (e + 1)).2 ∉ [rr k, rr (k + 1), rr (k + 2), (PR e).1, (PR e).2] ∧
+    Reg.a1 ∉ [rr k, rr (k + 1), rr (k + 2), (PR e).1, (PR e).2] ∧
+    Reg.a2 ∉ [rr k, rr (k + 1), rr (k + 2), (PR e).1, (PR e).2] := by decide
+
+theorem pstart_succ (cs : Nat → Nat) (k : Nat) : pstart cs (k + 1) = pstart cs k + cs k := by
+  simp [pstart, List.range_succ]
+
+/-- What the code of a table of terms `ts` needs: its terms are column `k`'s
+pairs `ps k` in order, from `pstart` on, with words below 7. -/
+structure Tab (ts : List (Nat × Nat × Nat)) (ps : Nat → List (Nat × Nat)) : Prop where
+  take : ∀ k < 12, ∀ m < (ps k).length,
+    (ps k).take (m + 1) = (ps k).take m ++ [(tm ts (pstart (fun c => (ps c).length) k + m)).2]
+  le : ∀ k < 12, pstart (fun c => (ps c).length) k + (ps k).length ≤ ts.length
+  lt : ∀ n < ts.length, (tm ts n).2.1 < 6 ∧ (tm ts n).2.2 < 6
+  len : ∀ k < 12, (ps k).length ≤ 6
+  all : pstart (fun c => (ps c).length) 12 = ts.length
+
+theorem tab_mul : Tab (terms colPairs) colPairs :=
+  ⟨by decide, by decide, by decide, by decide, by decide⟩
+
+theorem tab_sq : Tab (terms sqPairs) sqPairs :=
+  ⟨by decide, by decide, by decide, by decide, by decide⟩
+
+/-- The pipeline at term `n`: its product in `PR n`, the next term's operands in `a1` and `a2`. -/
+structure Pipe (X Y : Nat → Nat) (ts : List (Nat × Nat × Nat)) (n : Nat) (s : State) : Prop where
+  prod : n < ts.length →
+    (s.gpr (PR n).1).toNat + 2 ^ 64 * (s.gpr (PR n).2).toNat = X (tm ts n).2.1 * Y (tm ts n).2.2
+  ops : n + 1 < ts.length →
+    (s.gpr .a1).toNat = X (tm ts (n + 1)).2.1 ∧ (s.gpr .a2).toNat = Y (tm ts (n + 1)).2.2
+
+theorem Pipe.of {X Y : Nat → Nat} {ts : List (Nat × Nat × Nat)} {n : Nat} {s s' : State} (h : Pipe X Y ts n s)
+    (e1 : s'.gpr (PR n).1 = s.gpr (PR n).1) (e2 : s'.gpr (PR n).2 = s.gpr (PR n).2)
+    (e3 : s'.gpr .a1 = s.gpr .a1) (e4 : s'.gpr .a2 = s.gpr .a2) : Pipe X Y ts n s' :=
+  ⟨fun hn => by rw [e1, e2]; exact h.prod hn, fun hn => by rw [e3, e4]; exact h.ops hn⟩
+
+/-- Term `n`'s product, if it is one. -/
+theorem mulN_ok (ts : List (Nat × Nat × Nat)) (n : Nat) {s : State} :
+    WP isa (.block (mulN ts n)) s fun s' =>
+      (n < ts.length →
+        (s'.gpr (PR n).1).toNat + 2 ^ 64 * (s'.gpr (PR n).2).toNat = (s.gpr .a1).toNat * (s.gpr .a2).toNat) ∧
+      Keeps [(PR n).1, (PR n).2] s s' := by
+  unfold mulN
+  split
+  · obtain ⟨p12, p1a1, p1a2, -⟩ := regs_pr _ (Nat.mod_lt n (by decide))
+    rw [PR_mod] at p12 p1a1 p1a2
+    exact WP.mono (mulWide_ok p1a1 p1a2 p12) fun _ ⟨e, k⟩ => ⟨fun _ => e, k⟩
+  · exact WP.block_nil ⟨fun h => absurd h ‹_›, Keeps.refl _ _⟩
+
+/-- Term `n`'s operands, if it is one. -/
+theorem ldN_ok {s0 : State} {x y : Nat} (hx : x + 48 ≤ acc) (hx8 : x % 8 = 0) (hy : y + 48 ≤ acc)
+    (hy8 : y % 8 = 0) (hA : acc + 96 ≤ 2048) (hA8 : acc % 8 = 0) {ts : List (Nat × Nat × Nat)} (hlt : ∀ n < ts.length, (tm ts n).2.1 < 6 ∧ (tm ts n).2.2 < 6)
+    (n : Nat) {s : State} (hc : Ctx b s) (hf : Frame [AR acc b] s0.mem s.mem) :
+    WP isa (.block (ldN x y ts n)) s fun s' => Keeps [.a1, .a2] s s' ∧
+      (n < ts.length → (s'.gpr .a1).toNat = dw s0.mem b (x + 8 * (tm ts n).2.1) ∧
+        (s'.gpr .a2).toNat = dw s0.mem b (y + 8 * (tm ts n).2.2)) := by
+  unfold ldN
+  split
+  · rename_i hn
+    obtain ⟨hi, hj⟩ := hlt n hn
+    refine ld_ok hc (by omega) (by omega) fun s1 u1 => ?_
+    refine ld_ok (hc.of_rest (u1.rest (ws := [.a1]) (by simp)) (by decide)) (by omega) (by omega) fun s2 u2 =>
+      WP.block_nil ?_
+    refine ⟨⟨fun r hr => ?_, by rw [u2.mem, u1.mem], by rw [u2.rd, u1.rd], by rw [u2.wr, u1.wr],
+      by rw [u2.sp, u1.sp]⟩, fun _ => ⟨?_, ?_⟩⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      rw [u2.other _ hr.2, u1.other _ hr.1]
+    · rw [u2.other _ (by decide), u1.gpr]; exact dw_acc hA hf (by omega)
+    · rw [u2.gpr, u1.mem]; exact dw_acc hA hf (by omega)
+  · exact WP.block_nil ⟨Keeps.refl _ _, fun h => absurd h ‹_›⟩
+
+set_option linter.unusedSimpArgs false in
+/-- `l + 2⁶⁴ h + 2¹²⁸ t += p + 2⁶⁴ q`, for `q < 2⁶⁴ - 1`. -/
+theorem accG_ok {l h t p q : Reg} (hlh : l ≠ h) (hlt : l ≠ t) (hht : h ≠ t)
+    (hlp : l ≠ p) (hlq : l ≠ q) (hhp : h ≠ p) (hhq : h ≠ q) (htp : t ≠ p) (htq : t ≠ q) (hpq : p ≠ q) {s : State} :
+    WP isa (.block [.add l l p, .sltu p l p, .add q q p, .add h h q, .sltu q h q, .add t t q]) s fun s' =>
+      ((s.gpr q).toNat < 2 ^ 64 - 1 →
+        val3 s' l h t = (val3 s l h t + ((s.gpr p).toNat + 2 ^ 64 * (s.gpr q).toNat)) % 2 ^ 192) ∧
+      Keeps [l, h, t, p, q] s s' := by
+  apply WP.of_runBlock
+  simp only [val3, runBlock_cons, runStep_some, runBlock_nil, exec_add, exec_sltu,
+    RegUpd.gpr_write, hlh, hlt, hht, hlp, hlq, hhp, hhq, htp, htq, hpq, Ne.symm hlh, Ne.symm hlt,
+    Ne.symm hht, Ne.symm hlp, Ne.symm hlq, Ne.symm hhp, Ne.symm hhq, Ne.symm htp, Ne.symm htq, Ne.symm hpq,
+    ite_true, ite_false, Option.some.injEq, exists_eq_left']
+  refine ⟨fun hb => ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+  · have c₀ := Wide.carry (s.gpr l) (s.gpr p)
+    have l₀ := Wide.carry_le (s.gpr l + s.gpr p < s.gpr p)
+    generalize (if s.gpr l + s.gpr p < s.gpr p then (1 : BitVec 64) else 0) = k₀ at *
+    have e₁ : (s.gpr q + k₀).toNat = (s.gpr q).toNat + k₀.toNat := by
+      rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega)]
+    have c₁ := Wide.carry (s.gpr h) (s.gpr q + k₀)
+    have l₁ := Wide.carry_le (s.gpr h + (s.gpr q + k₀) < s.gpr q + k₀)
+    generalize (if s.gpr h + (s.gpr q + k₀) < s.gpr q + k₀ then (1 : BitVec 64) else 0) = k₁ at *
+    rw [BitVec.toNat_add (s.gpr t)]
+    rw [e₁] at c₁
+    have := (s.gpr t).isLt
+    have := (s.gpr l + s.gpr p).isLt
+    have := (s.gpr h + (s.gpr q + k₀)).isLt
+    omega_arith
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+
+/-- Term `n` of column `k`: the next product and operands, then this one's sums. -/
+theorem pstep_ok {s0 : State} {x y : Nat} (hx : x + 48 ≤ acc) (hx8 : x % 8 = 0) (hy : y + 48 ≤ acc)
+    (hy8 : y % 8 = 0) (hA : acc + 96 ≤ 2048) (hA8 : acc % 8 = 0) {ts : List (Nat × Nat × Nat)} (hlt : ∀ n < ts.length, (tm ts n).2.1 < 6 ∧ (tm ts n).2.2 < 6)
+    {k n : Nat} (hk : k < 12) (hn : n < ts.length) {s : State} (hc : Ctx b s) (hr : Rest clob64 s0 s)
+    (hf : Frame [AR acc b] s0.mem s.mem)
+    (hp : Pipe (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)) ts n s)
+    (hb : val3 s (rr k) (rr (k + 1)) (rr (k + 2)) +
+      dw s0.mem b (x + 8 * (tm ts n).2.1) * dw s0.mem b (y + 8 * (tm ts n).2.2) < 2 ^ 192) :
+    WP isa (.block (pstep x y ts k n)) s fun s' => Ctx b s' ∧ Rest clob64 s0 s' ∧
+      Frame [AR acc b] s0.mem s'.mem ∧ s'.mem = s.mem ∧
+      Pipe (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)) ts (n + 1) s' ∧
+      val3 s' (rr k) (rr (k + 1)) (rr (k + 2)) = val3 s (rr k) (rr (k + 1)) (rr (k + 2)) +
+        dw s0.mem b (x + 8 * (tm ts n).2.1) * dw s0.mem b (y + 8 * (tm ts n).2.2) := by
+  obtain ⟨h01, h02, h12, -⟩ := rr_ne k (by omega)
+  have he : n % 2 < 2 := Nat.mod_lt _ (by decide)
+  have h1 := regs_pr _ he
+  have h2 := regs_acc k (by omega) _ he
+  have h3 := regs_acc (k + 1) (by omega) _ he
+  have h4 := regs_acc (k + 2) (by omega) _ he
+  have h5 := regs_sum k hk _ he
+  have h6 := regs_pr _ (Nat.mod_lt (n + 1) (by decide))
+  rw [PR_mod, PR_mod1] at h1 h2 h3 h4 h5
+  rw [PR_mod] at h6
+  obtain ⟨p12, p1a1, p1a2, p2a1, p2a2, p1n, p2n, q1a, q2a, pc1, pc2⟩ := h1
+  obtain ⟨a1p, a2p, z0n, z0a⟩ := h2
+  obtain ⟨b1p, b2p, z1n, z1a⟩ := h3
+  obtain ⟨c1p, c2p, z2n, z2a⟩ := h4
+  obtain ⟨q1n, q2n, a1n, a2n⟩ := h5
+  obtain ⟨-, -, -, -, -, -, -, -, -, qc1, qc2⟩ := h6
+  have kr : ∀ {rs : List Reg} {s s' : State}, Keeps rs s s' → (∀ r ∈ rs, r ∈ clob64) → Rest clob64 s s' :=
+    fun k hs => (Keeps.rest k).mono hs
+  unfold pstep
+  rw [List.append_assoc]
+  refine WP.append (mulN_ok ts (n + 1)) fun s1 ⟨e1, k1⟩ => ?_
+  have r1 := kr k1 fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> with_reducible assumption
+  have hc1 : Ctx b s1 := hc.of_rest r1 (by decide)
+  have hf1 : Frame [AR acc b] s0.mem s1.mem := by rw [k1.2.1]; exact hf
+  refine WP.append (ldN_ok hx hx8 hy hy8 hA hA8 hlt (n + 2) hc1 hf1) fun s2 ⟨k2, e2⟩ => ?_
+  have r2 := kr k2 (by decide)
+  have g1 : ∀ r, r ∉ [(PR (n + 1)).1, (PR (n + 1)).2] → r ∉ [Reg.a1, .a2] → s2.gpr r = s.gpr r :=
+    fun r h1 h2 => (k2.1 r h2).trans (k1.1 r h1)
+  have pp := hp.prod hn
+  rw [← g1 _ p1n (by simp [p1a1, p1a2]), ← g1 _ p2n (by simp [p2a1, p2a2])] at pp
+  have hv2 : val3 s2 (rr k) (rr (k + 1)) (rr (k + 2)) = val3 s (rr k) (rr (k + 1)) (rr (k + 2)) := by
+    simp only [val3]
+    rw [g1 _ z0n z0a, g1 _ z1n z1a, g1 _ z2n z2a]
+  have hX := dw_lt s0.mem b (x + 8 * (tm ts n).2.1)
+  have hY := dw_lt s0.mem b (y + 8 * (tm ts n).2.2)
+  have hXY : dw s0.mem b (x + 8 * (tm ts n).2.1) * dw s0.mem b (y + 8 * (tm ts n).2.2) ≤
+      (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
+  have hq : (s2.gpr (PR n).2).toNat < 2 ^ 64 - 1 := by
+    have := (s2.gpr (PR n).1).isLt
+    omega
+  refine WP.mono (accG_ok h01 h02 h12 a1p a2p b1p b2p c1p c2p p12) fun s3 ⟨e3, k3⟩ => ?_
+  have r3 := kr k3 (by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> first | exact rr_clob _ | with_reducible assumption)
+  have r13 := r1.trans (r2.trans r3)
+  refine ⟨hc.of_rest r13 (by decide), hr.trans r13, by rw [k3.2.1, k2.2.1, k1.2.1]; exact hf,
+    by rw [k3.2.1, k2.2.1, k1.2.1], ⟨fun hn1 => ?_, fun hn2 => ?_⟩, ?_⟩
+  · rw [k3.1 _ q1n, k3.1 _ q2n, k2.1 _ q1a, k2.1 _ q2a, (e1 hn1)]
+    obtain ⟨o1, o2⟩ := hp.ops hn1
+    rw [o1, o2]
+  · rw [k3.1 _ a1n, k3.1 _ a2n]
+    exact e2 hn2
+  · rw [e3 hq, hv2, pp, Nat.mod_eq_of_lt hb]
+
+theorem tsum_snoc (f : Nat × Nat → Nat) (ps : List (Nat × Nat)) (p : Nat × Nat) :
+    tsum f (ps ++ [p]) = tsum f ps + f p := by simp [tsum]
+
+/-- Column `k`'s first `m` terms, by induction on them. -/
+theorem pterms_ok {s0 : State} {x y : Nat} (hx : x + 48 ≤ acc) (hx8 : x % 8 = 0) (hy : y + 48 ≤ acc)
+    (hy8 : y % 8 = 0) (hA : acc + 96 ≤ 2048) (hA8 : acc % 8 = 0) {ts : List (Nat × Nat × Nat)} {ps : Nat → List (Nat × Nat)} (ht : Tab ts ps)
+    {k : Nat} (hk : k < 12) :
+    ∀ m ≤ (ps k).length, ∀ s, Ctx b s → Rest clob64 s0 s → Frame [AR acc b] s0.mem s.mem →
+      Pipe (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)) ts
+        (pstart (fun c => (ps c).length) k) s →
+      val3 s (rr k) (rr (k + 1)) (rr (k + 2)) < 2 ^ 128 →
+      WP isa (.block ((List.range' (pstart (fun c => (ps c).length) k) m).flatMap (pstep x y ts k))) s fun s' =>
+        Ctx b s' ∧ Rest clob64 s0 s' ∧ Frame [AR acc b] s0.mem s'.mem ∧ s'.mem = s.mem ∧
+        Pipe (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)) ts
+          (pstart (fun c => (ps c).length) k + m) s' ∧
+        val3 s' (rr k) (rr (k + 1)) (rr (k + 2)) = val3 s (rr k) (rr (k + 1)) (rr (k + 2)) +
+          tsum (mulF (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j))) ((ps k).take m)
+  | 0, _, s, hc, hr, hf, hp, _ => WP.block_nil ⟨hc, hr, hf, rfl, hp, by simp [tsum]⟩
+  | m + 1, hm, s, hc, hr, hf, hp, hv => by
+    rw [List.range'_concat, Nat.one_mul, List.flatMap_append, List.flatMap_singleton]
+    refine WP.append (pterms_ok hx hx8 hy hy8 hA hA8 ht hk m (by omega) s hc hr hf hp hv)
+      fun s1 ⟨hc1, hr1, hf1, m1, hp1, hv1⟩ => ?_
+    have hX : ∀ i, dw s0.mem b (x + 8 * i) < 2 ^ 64 := fun i => dw_lt _ _ _
+    have hY : ∀ j, dw s0.mem b (y + 8 * j) < 2 ^ 64 := fun j => dw_lt _ _ _
+    have hts := tsum_mul_lt6 hX hY (ps := (ps k).take m)
+      (by rw [List.length_take]; exact Nat.le_trans (Nat.min_le_right _ _) (ht.len k hk))
+    have hxy : dw s0.mem b (x + 8 * (tm ts (pstart (fun c => (ps c).length) k + m)).2.1) *
+        dw s0.mem b (y + 8 * (tm ts (pstart (fun c => (ps c).length) k + m)).2.2) < 2 ^ 128 :=
+      Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt (hX _) (hY _)) (by decide)
+    refine WP.mono (pstep_ok hx hx8 hy hy8 hA hA8 ht.lt hk (by have := ht.le k hk; omega) hc1 hr1 hf1 hp1
+      (by rw [hv1]; omega)) fun s2 ⟨hc2, hr2, hf2, m2, hp2, hv2⟩ =>
+        ⟨hc2, hr2, hf2, m2.trans m1, by rw [← Nat.add_assoc]; exact hp2, ?_⟩
+    rw [hv2, hv1, ht.take k hk m (by omega), tsum_snoc]
+    simp only [mulF]; omega
+
+/-- Column `k`: its terms, then its end. -/
+theorem pcol_ok {s0 : State} {x y : Nat} (hx : x + 48 ≤ acc) (hx8 : x % 8 = 0) (hy : y + 48 ≤ acc)
+    (hy8 : y % 8 = 0) (hA : acc + 96 ≤ 2048) (hA8 : acc % 8 = 0) {ts : List (Nat × Nat × Nat)} {ps : Nat → List (Nat × Nat)} (ht : Tab ts ps)
+    {k : Nat} (hk : k < 12) {s : State}
+    (h : ColInv acc b s0 (fun c => tsum (mulF (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)))
+      (ps c)) k s)
+    (hp : Pipe (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)) ts
+      (pstart (fun c => (ps c).length) k) s) :
+    WP isa (.block (pcol acc x y ts (fun c => (ps c).length) k)) s fun s' =>
+      ColInv acc b s0 (fun c => tsum (mulF (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)))
+        (ps c)) (k + 1) s' ∧
+      Pipe (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)) ts
+        (pstart (fun c => (ps c).length) (k + 1)) s' := by
+  have hv0 : val3 s (rr k) (rr (k + 1)) (rr (k + 2)) =
+      (s.gpr (rr k)).toNat + 2 ^ 64 * (s.gpr (rr (k + 1))).toNat := by
+    simp only [val3, h.top]; rfl
+  have hl := (s.gpr (rr k)).isLt
+  have hh := (s.gpr (rr (k + 1))).isLt
+  have hX : ∀ i, dw s0.mem b (x + 8 * i) < 2 ^ 64 := fun i => dw_lt _ _ _
+  have hY : ∀ j, dw s0.mem b (y + 8 * j) < 2 ^ 64 := fun j => dw_lt _ _ _
+  have hbd := tsum_mul_lt6 hX hY (ht.len k hk)
+  obtain ⟨x1, x2, -, z0a⟩ := regs_acc k (by omega) _ (Nat.mod_lt (pstart (fun c => (ps c).length) (k + 1)) (by decide))
+  rw [PR_mod] at x1 x2
+  unfold pcol
+  refine WP.append (pterms_ok hx hx8 hy hy8 hA hA8 ht hk _ (Nat.le_refl _) s h.ctx h.rest h.frame hp
+    (by rw [hv0]; omega_arith)) fun s1 ⟨hc1, hr1, hf1, m1, hp1, hv1⟩ => ?_
+  rw [List.take_length] at hv1
+  rw [← pstart_succ] at hp1
+  have hwp := colEnd_ok hA hA8 (cs := fun c => tsum (mulF (fun i => dw s0.mem b (x + 8 * i))
+    (fun j => dw s0.mem b (y + 8 * j))) (ps c)) hk hc1 hr1 hf1 (by
+      rw [show accW acc s1.mem b k = accW acc s.mem b k by rw [m1], hv1, hv0, colsV, ← h.val, Nat.mul_add]; omega_arith)
+  exact WP.mono hwp fun s2 ⟨h2, g2⟩ => ⟨h2, hp1.of (g2 _ (Ne.symm x1)) (g2 _ (Ne.symm x2))
+    (g2 _ fun e => z0a (by rw [← e]; simp)) (g2 _ fun e => z0a (by rw [← e]; simp))⟩
+
+/-- `pipe acc x y ts`: the columns of the terms `ts` at `acc`. -/
+theorem pipe_ok {s0 : State} {x y : Nat} (hx : x + 48 ≤ acc) (hx8 : x % 8 = 0) (hy : y + 48 ≤ acc)
+    (hy8 : y % 8 = 0) (hA : acc + 96 ≤ 2048) (hA8 : acc % 8 = 0) {ts : List (Nat × Nat × Nat)} {ps : Nat → List (Nat × Nat)} (ht : Tab ts ps)
+    (hc : Ctx b s0) :
+    WP isa (.block (pipe acc x y ts fun c => (ps c).length)) s0
+      (ColInv acc b s0 (fun c => tsum (mulF (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)))
+        (ps c)) 12) := by
+  have kr : ∀ {rs : List Reg} {s s' : State}, Keeps rs s s' → (∀ r ∈ rs, r ∈ clob64) → Rest clob64 s s' :=
+    fun k hs => (Keeps.rest k).mono hs
+  unfold pipe
+  simp only [List.append_assoc]
+  refine WP.append zero3_ok fun s1 ⟨e4, e5, e6, hr1, hm1⟩ => ?_
+  have hr1' : Rest clob64 s0 s1 := hr1.mono (by decide)
+  have hc1 : Ctx b s1 := hc.of_rest hr1' (by decide)
+  have hf1 : Frame [AR acc b] s0.mem s1.mem := by rw [hm1]; exact Frame.refl _ _
+  refine WP.append (ldN_ok hx hx8 hy hy8 hA hA8 ht.lt 0 hc1 hf1) fun s2 ⟨k2, e2⟩ => ?_
+  have r2 := kr k2 (by decide)
+  refine WP.append (mulN_ok ts 0) fun s3 ⟨e3, k3⟩ => ?_
+  have r3 := kr k3 (by decide)
+  have hc3 : Ctx b s3 := hc1.of_rest (r2.trans r3) (by decide)
+  have hf3 : Frame [AR acc b] s0.mem s3.mem := by rw [k3.2.1, k2.2.1]; exact hf1
+  refine WP.append (ldN_ok hx hx8 hy hy8 hA hA8 ht.lt 1 hc3 hf3) fun s4 ⟨k4, e4'⟩ => ?_
+  have r4 := kr k4 (by decide)
+  have r14 := hr1'.trans (r2.trans (r3.trans r4))
+  have hacc : ∀ r ∈ [Reg.a4, .a5, .a6], s4.gpr r = s1.gpr r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rw [k4.1 _ (by rcases hr with rfl | rfl | rfl <;> decide), k3.1 _ (by rcases hr with rfl | rfl | rfl <;> decide),
+      k2.1 _ (by rcases hr with rfl | rfl | rfl <;> decide)]
+  have hm4 : s4.mem = s0.mem := by rw [k4.2.1, k3.2.1, k2.2.1, hm1]
+  have hinit : ColInv acc b s0 (fun c => tsum (mulF (fun i => dw s0.mem b (x + 8 * i))
+      (fun j => dw s0.mem b (y + 8 * j))) (ps c)) 0 s4 :=
+    ColInv.init (hc.of_rest r14 (by decide)) r14 hm4 (by rw [hacc .a4 (by simp), e4])
+      (by rw [hacc .a5 (by simp), e5]) (by rw [hacc .a6 (by simp), e6])
+  have hp0 : Pipe (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)) ts
+      (pstart (fun c => (ps c).length) 0) s4 := by
+    refine ⟨fun hn => ?_, fun hn => ?_⟩
+    · rw [show pstart (fun c => (ps c).length) 0 = 0 from rfl] at hn ⊢
+      have e3' := e3 hn
+      rw [show PR 0 = (Reg.a7, Reg.t0) from rfl] at e3' ⊢
+      rw [k4.1 .a7 (by decide), k4.1 .t0 (by decide), e3']
+      obtain ⟨o1, o2⟩ := e2 hn
+      rw [o1, o2]
+    · rw [show pstart (fun c => (ps c).length) 0 = 0 from rfl] at hn ⊢
+      exact e4' hn
+  exact WP.mono (columns_ok (Inv := fun k => Pipe (fun i => dw s0.mem b (x + 8 * i))
+      (fun j => dw s0.mem b (y + 8 * j)) ts (pstart (fun c => (ps c).length) k))
+    (fun k hk s h hi => pcol_ok hx hx8 hy hy8 hA hA8 ht hk h hi) 12 (Nat.le_refl _) s4 hinit hp0) fun _ h => h.1
 
 /-- The columns sum to the product. -/
 theorem mulCols_sum (X Y : Nat → Nat) : colsV (mulCs X Y) 12 = val6 X * val6 Y := by
@@ -314,31 +576,15 @@ theorem mulCols_sum (X Y : Nat → Nat) : colsV (mulCs X Y) 12 = val6 X * val6 Y
     Bool.false_eq_true, ↓reduceIte]
   grind
 
-/-- `ld6 o`. -/
-theorem ld6_ok {o : Nat} (ho : o + 56 ≤ 2048) (ho8 : o % 8 = 0) {s : State} (hc : Ctx b s) :
-    WP isa (.block (ld6 o)) s fun s' =>
-      (∀ i < 6, (s'.gpr (w i)).toNat = dw s.mem b (o + 8 * i)) ∧ Rest clob64 s s' ∧ s'.mem = s.mem :=
-  lds_ok ho ho8 6 (by decide) s hc
-
 /-- `product acc x y`: the twelve words of `[x] · [y]` at `acc`. -/
 theorem product_ok {x y : Nat} (hx : x + 48 ≤ acc) (hy : y + 48 ≤ acc) (hA : acc + 96 ≤ 2048)
     (hA8 : acc % 8 = 0) (hx8 : x % 8 = 0) (hy8 : y % 8 = 0) {s0 : State} (hc : Ctx b s0) :
     WP isa (.block (product acc x y)) s0 fun s' => Ctx b s' ∧ Rest clob64 s0 s' ∧
       Frame [AR acc b] s0.mem s'.mem ∧ accW acc s'.mem b 12 = E6 s0.mem b x * E6 s0.mem b y := by
-  unfold product
-  rw [List.append_assoc]
-  refine WP.append (ld6_ok (by omega) hy8 hc) fun s1 ⟨h1, hr1, hm1⟩ => ?_
-  refine WP.append zero3_ok fun s2 ⟨e4, e5, e6, hr2, hm2⟩ => ?_
-  have hr12 := hr1.trans (hr2.mono (by decide))
-  have hc2 : Ctx b s2 := hc.of_rest hr12 (by decide)
-  have hB : WRegs (fun j => dw s0.mem b (y + 8 * j)) s2 := fun j hj => by
-    rw [hr2.gpr _ (by revert hj; revert j; decide), h1 j hj]
-  refine WP.mono (columns_ok (cs := mulCs (fun i => dw s0.mem b (x + 8 * i)) fun j => dw s0.mem b (y + 8 * j))
-    (Inv := fun _ => WRegs fun j => dw s0.mem b (y + 8 * j)) (col := mulCol acc x)
-    (fun k hk s h hi => mulCol_ok (Y := fun j => dw s0.mem b (y + 8 * j)) hx hA hA8 hx8
-      (fun j => dw_lt _ _ _) hk h hi) 12 (Nat.le_refl _) s2
-    (ColInv.init hc2 hr12 (by rw [hm2, hm1]) e4 e5 e6) hB)
-    fun s3 ⟨h3, _⟩ => ⟨h3.ctx, h3.rest, h3.frame, ?_⟩
+  refine WP.mono (pipe_ok hx hx8 hy hy8 hA hA8 tab_mul hc) fun s3 h3 => ⟨h3.ctx, h3.rest, h3.frame, ?_⟩
+  have e : (fun c => tsum (mulF (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j))) (colPairs c)) =
+      mulCs (fun i => dw s0.mem b (x + 8 * i)) (fun j => dw s0.mem b (y + 8 * j)) := rfl
+  rw [e] at h3
   have hlt : val6 (fun i => dw s0.mem b (x + 8 * i)) * val6 (fun j => dw s0.mem b (y + 8 * j)) <
       (2 ^ 64) ^ 12 :=
     Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt (val6_lt fun i _ => dw_lt _ _ _)
@@ -352,48 +598,6 @@ end
 
 section
 variable {acc : Nat} {b : Addr}
-
-/-- A cross term's value: `a_j a_i` for the term `(i, j)`. -/
-def sqF (X : Nat → Nat) (p : Nat × Nat) : Nat := X p.2 * X p.1
-
-/-- The cross terms of column `k`. -/
-def sqPairs (k : Nat) : List (Nat × Nat) := (colPairs k).filter fun p => p.2 < p.1
-
-def sqCs (X : Nat → Nat) (k : Nat) : Nat := tsum (sqF X) (sqPairs k)
-
-theorem sqPairs_ok : ∀ k < 12, ∀ p ∈ sqPairs k, p.2 < 6 ∧ p.1 < 6 := by decide
-
-theorem sqPairs_len : ∀ k < 12, (sqPairs k).length ≤ 6 := by decide
-
-/-- A cross term `a_j a_i` of column `k`. -/
-theorem sqTerm_ok {s0 : State} {X : Nat → Nat} {k i j : Nat} (hk : k < 12) (hi : i < 6)
-    (hj : j < 6) :
-    TermOk acc b s0 k (WRegs X) (sqF X) (sqTerm k) (i, j) := by
-  intro s hX hc hr hf
-  obtain ⟨h01, h02, h12, h07, h00, h17, h10, h27, h20, -⟩ := rr_ne k (by omega)
-  obtain ⟨c0, c1, c2, c7, ct, -⟩ := w_ne_rr k hj
-  obtain ⟨d0, d1, d2, d7, dt, -⟩ := w_ne_rr k hi
-  simp only [sqTerm]
-  refine WP.mono (macc_ok h01 h02 h12 h07 h00 h17 h10 h27 h20 c7 d7) fun s2 ⟨e2, k2⟩ =>
-    ⟨hX.of_gpr fun i' hi' => ?_, hc.of_rest (keeps_clob k2) (by decide), hr.trans (keeps_clob k2),
-      by rw [k2.2.1]; exact hf, by rw [k2.2.1], fun hb => ?_⟩
-  · obtain ⟨e0, e1, e2', e7, et, -⟩ := w_ne_rr k hi'
-    exact k2.1 _ (by simp [e0, e1, e2', e7, et])
-  · have ex := hX j hj
-    have ey := hX i hi
-    rw [e2 (by rw [ex, ey]; exact hb), ex, ey]; rfl
-
-/-- Column `k` of the cross products. -/
-theorem sqCol_ok (hA : acc + 96 ≤ 2048) (hA8 : acc % 8 = 0) {s0 : State} {X : Nat → Nat}
-    (hX : ∀ i, X i < 2 ^ 64) {k : Nat} (hk : k < 12) {s : State} (h : ColInv acc b s0 (sqCs X) k s)
-    (hR : WRegs X s) :
-    WP isa (.block (sqCol acc k)) s fun s' => ColInv acc b s0 (sqCs X) (k + 1) s' ∧ WRegs X s' :=
-  column_ok hA hA8 hk (sqPairs k) (fun p hp => by
-      obtain ⟨h1, h2⟩ := sqPairs_ok k hk p hp
-      exact sqTerm_ok hk h2 h1) rfl
-    (tsum_lt (fun p => Nat.mul_le_mul (by have := hX p.2; omega) (by have := hX p.1; omega))
-      (sqPairs_len k hk))
-    (fun _ _ hR' hg => hR'.of_gpr fun j hj => hg _ (w_ne_rr k hj).1) h hR
 
 /-- The squares `a_i²` at `2¹²⁸ⁱ`. -/
 def dsq (X : Nat → Nat) : Nat :=
@@ -588,17 +792,8 @@ theorem square_ok {x : Nat} (hx : x + 48 ≤ acc) (hA : acc + 96 ≤ 2048) (hA8 
   have hX : ∀ i, dw s0.mem b (x + 8 * i) < 2 ^ 64 := fun i => dw_lt _ _ _
   unfold square
   simp only [List.append_assoc]
-  refine WP.append (ld6_ok (by omega) hx8 hc) fun s1 ⟨h1, hr1, hm1⟩ => ?_
-  refine WP.append zero3_ok fun s2 ⟨e4, e5, e6, hr2, hm2⟩ => ?_
-  have hr12 := hr1.trans (hr2.mono (by decide))
-  have hc2 : Ctx b s2 := hc.of_rest hr12 (by decide)
-  have hA2 : WRegs (fun i => dw s0.mem b (x + 8 * i)) s2 := fun i hi => by
-    rw [hr2.gpr _ (by revert hi; revert i; decide), h1 i hi]
-  refine WP.append (columns_ok (cs := sqCs fun i => dw s0.mem b (x + 8 * i))
-    (Inv := fun _ => WRegs fun i => dw s0.mem b (x + 8 * i)) (col := sqCol acc)
-    (fun k hk s h hi => sqCol_ok hA hA8 hX hk h hi) 12 (Nat.le_refl _) s2
-    (ColInv.init hc2 hr12 (by rw [hm2, hm1]) e4 e5 e6) hA2)
-    fun s3 ⟨h3, _⟩ => ?_
+  refine WP.append (pipe_ok hx hx8 hx hx8 hA hA8 tab_sq hc) fun s3 h3 => ?_
+  rw [← sqCs_eq] at h3
   have hsum := sqCols_sum fun i => dw s0.mem b (x + 8 * i)
   have hlt : val6 (fun i => dw s0.mem b (x + 8 * i)) * val6 (fun i => dw s0.mem b (x + 8 * i)) <
       (2 ^ 64) ^ 12 := by
