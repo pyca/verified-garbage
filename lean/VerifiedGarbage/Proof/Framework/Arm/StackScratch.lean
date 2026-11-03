@@ -66,6 +66,7 @@ theorem widths_mem (sig : Sig) : ∀ w ∈ widths sig, w = 32 ∨ w = 64 := by
     rw [h] at hp; cases ty <;> simp [Param.words, ArgWord.bits, IntTy.bits, abi_ptrBits] at hp <;>
       omega_using [hp]
   | array _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi_ptrBits] at hp; omega_using [hp]
+  | table _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi_ptrBits] at hp; omega_using [hp]
   | slice _ _ _ =>
     rw [h] at hp; simp [Param.words, ArgWord.bits, abi_ptrBits] at hp; omega_using [hp]
   | slices _ _ =>

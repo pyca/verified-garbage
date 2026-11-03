@@ -171,7 +171,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     subst h
     simp only [State.withRegions_mmx, State.withRegions_wr, State.withRegions_ea, hm, hw _ _ hi, ite_true]
     rfl
-  | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
+  | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | callr _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
     simp only [exec, reduceCtorEq] at h
 
 theorem addrs_withRegions (i : Instr) (s : State) (rd wr : List Region) :
@@ -243,7 +243,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     subst h
     obtain ⟨r, hr, hc⟩ := hi
     exact ⟨rfl, rfl, (Frame.refl _ _).writeW hr _ hc⟩
-  | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
+  | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | callr _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
     simp only [exec, reduceCtorEq] at h
 
 theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) (h : exec i s = some s') :
@@ -289,7 +289,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) (h : ex
       split at h <;> [skip; cases h]
       simp only [Option.some.injEq] at h
       subst h; rfl
-    | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
+    | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | callr _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
       simp only [exec, reduceCtorEq] at h
     | pmuludq d r =>
       simp only [exec] at h
@@ -525,6 +525,7 @@ def regionModel : RegionModel isa where
     exact ⟨rfl, rfl, fun _ _ => (ite_eq_left hc).trans rfl⟩
   push_widen := push_widen
   pop_widen h := ⟨(pop_eq h).1, (pop_eq h).2.1, (pop_eq h).2.2.1, fun _ _ hw => pop_widen h _ hw⟩
+  icall_with i _ _ _ := by cases i <;> rfl
 
 theorem execBlock_regions {is : List Instr} {s s' : State} {t : List Leak}
     (h : execBlock isa is s = some (s', t)) :
@@ -553,6 +554,8 @@ theorem Exec.widen {c : Prog isa} {s s' : State} {t : List Leak} {rd wr : List R
 theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, Taint.clobbers i r = false)
     {s s' : State} {t : List Leak} (h : Exec isa c s t s') : s'.gpr r = s.gpr r := by
   induction h with
+  | icall _ hp _ hq ih => exact call_ret_gpr hp hq (ih (fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))))
+  | icallNext _ _ _ ih => exact ih (fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi)))
   | block h => exact execBlock_keep (fun s : State => s.gpr r) (fun hi he => exec_gpr hi he) hc h
   | seq _ _ ih₁ ih₂ =>
     rw [ih₂ (fun i hi => hc i (List.mem_append_right _ hi)),

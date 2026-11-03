@@ -199,6 +199,8 @@ def Instr.encode : Instr → Option (List (List Nat))
   | .free bytes => (memSigned (reg .esp) .esp bytes).map fun b => [[0x8D] ++ b]
   -- "MUL" (`F7 /4`).
   | .mul r => some [[0xF7] ++ rr 4 (reg r)]
+  -- "CALL—Call Procedure": `FF /2`, "CALL r/m32", near absolute indirect.
+  | .callr r => some [[0xFF] ++ rr 2 (reg r)]
   -- "MOVDQU" (`F3 0F 6F /r`, `F3 0F 7F /r`), "MOVQ" (`F3 0F 7E /r`, a load;
   -- `66 0F D6 /r`, a store).
   | .movdquLoad d m => (mem (xreg d) m).map fun b => [[0xF3, 0x0F, 0x6F] ++ b]

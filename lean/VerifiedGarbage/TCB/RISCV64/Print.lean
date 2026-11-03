@@ -81,6 +81,7 @@ def Instr.asm : Instr → List String
     else [s!"addi sp, sp, {bytes - 2032}", "addi sp, sp, 2032"]
   | .addSp d imm => [s!"addi {d.name}, sp, {imm}"]
   | .lla d name => [s!"lla {d.name}, {name}"]
+  | .jalr n => [s!"jalr ra, 0({n.name})"]
 
 /-- The lines of an instruction: each of its base instructions' text
 (`asm`) as a comment, then that instruction's word (`encode`); its text if

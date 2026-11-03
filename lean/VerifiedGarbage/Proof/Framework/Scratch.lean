@@ -143,6 +143,11 @@ theorem Sig.bufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x :
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
     exact Sig.bufs_append_array pb nm e n x ps vs (by omega)
+  | (_, .table _) :: ps, v :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.bufs]
+    exact Sig.bufs_append_array pb nm e n x ps vs (by omega)
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -150,6 +155,7 @@ theorem Sig.bufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x :
   | (_, .slice ..) :: _, [_], h => by simp [Param.words.eq_3] at h
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
+  | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
 
 /-- The aligned buffers of the parameters followed by one more array, given
 values for the others and its address `x`: `x` too, with its element's
@@ -182,6 +188,11 @@ theorem Sig.alignedBufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Na
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
     exact Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)
+  | (_, .table _) :: ps, v :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.alignedBufs]
+    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)]
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -189,6 +200,7 @@ theorem Sig.alignedBufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Na
   | (_, .slice ..) :: _, [_], h => by simp [Param.words.eq_3] at h
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
+  | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
 
 /-- The lists of slices of the parameters followed by one more array: those
 of the others. -/
@@ -217,6 +229,11 @@ theorem Sig.lists_append_array (pb : Nat) (m : Mem) (nm : String) (e : Elem) (n 
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
     rw [Sig.lists_append_array pb m nm e n x ps vs (by omega)]
+  | (_, .table _) :: ps, v :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.lists]
+    rw [Sig.lists_append_array pb m nm e n x ps vs (by omega)]
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -224,6 +241,7 @@ theorem Sig.lists_append_array (pb : Nat) (m : Mem) (nm : String) (e : Elem) (n 
   | (_, .slice ..) :: _, [_], h => by simp [Param.words.eq_3] at h
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
+  | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
 
 /-- The descriptors of the parameters followed by one more array: those of
 the others. -/
@@ -252,6 +270,11 @@ theorem Sig.descs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x 
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
     rw [Sig.descs_append_array pb nm e n x ps vs (by omega)]
+  | (_, .table _) :: ps, v :: vs, h => by
+    simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
+      List.length_nil] at h
+    simp only [List.cons_append, Sig.descs]
+    exact Sig.descs_append_array pb nm e n x ps vs (by omega)
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -259,6 +282,7 @@ theorem Sig.descs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x 
   | (_, .slice ..) :: _, [_], h => by simp [Param.words.eq_3] at h
   | (_, .slices ..) :: _, [], h => by simp [Param.words.eq_4] at h
   | (_, .slices ..) :: _, [_], h => by simp [Param.words.eq_4] at h
+  | (_, .table _) :: _, [], h => by simp [Param.words.eq_5] at h
 
 /-! ## Lists of slices -/
 
@@ -309,12 +333,17 @@ theorem Sig.descs_sub_lists (pb : Nat) (m : Mem) :
     rcases h with h | h
     · exact Or.inl (Or.inl h)
     · exact Or.inr (Sig.descs_sub_lists pb m ps vs r h)
+  | (_, .table _) :: ps, _ :: vs, r, h => by
+    simp only [Sig.descs] at h
+    simp only [Sig.lists, List.mem_cons]
+    exact Or.inr (Sig.descs_sub_lists pb m ps vs r h)
   | (_, .int ..) :: _, [], _, h => by simp [Sig.descs] at h
   | (_, .array ..) :: _, [], _, h => by simp [Sig.descs] at h
   | (_, .slice ..) :: _, [], _, h => by simp [Sig.descs] at h
   | (_, .slice ..) :: _, [_], _, h => by simp [Sig.descs] at h
   | (_, .slices ..) :: _, [], _, h => by simp [Sig.descs] at h
   | (_, .slices ..) :: _, [_], _, h => by simp [Sig.descs] at h
+  | (_, .table _) :: _, [], _, h => by simp [Sig.descs] at h
 
 /-- Memories that agree on the descriptors of the lists of slices list the
 same slices. -/
@@ -330,12 +359,17 @@ theorem Sig.lists_congr (pb : Nat) {m₁ m₂ : Mem} :
     simp only [Sig.descs, List.mem_cons, forall_eq_or_imp] at h
     simp only [Sig.lists]
     rw [Sig.listed_congr pb e p n.toNat h.1, Sig.lists_congr pb ps vs h.2]
+  | (_, .table _) :: ps, _ :: vs, h => by
+    simp only [Sig.descs] at h
+    simp only [Sig.lists]
+    rw [Sig.lists_congr pb ps vs h]
   | (_, .int ..) :: _, [], _ => rfl
   | (_, .array ..) :: _, [], _ => rfl
   | (_, .slice ..) :: _, [], _ => rfl
   | (_, .slice ..) :: _, [_], _ => rfl
   | (_, .slices ..) :: _, [], _ => rfl
   | (_, .slices ..) :: _, [_], _ => rfl
+  | (_, .table _) :: _, [], _ => rfl
 
 /-- Memories that agree on the lists of slices one of them takes list the
 same slices: the other takes the same. -/
@@ -354,11 +388,12 @@ def Sig.Local (pb : Nat) (sig : Sig) {α : Type} (f : Curry (sig.words pb) (Mem 
     Curry.apply _ f vs m₁ = Curry.apply _ f vs m₂
 
 /-- No parameter is a list of slices (`Param.slices`), whose memory
-`Sig.contract` reads from the memory on entry: the frame of a stack scratch
-buffer is proved only for signatures without one. -/
+`Sig.contract` reads from the memory on entry, or a table of functions
+(`Param.table`), whose memory is among `Sig.lists` too: the frame of a
+stack scratch buffer is proved only for signatures without one. -/
 def Sig.noLists (ps : List (String × Param)) : Bool :=
   ps.all fun p => match p.2 with
-    | .slices .. => false
+    | .slices .. | .table _ => false
     | _ => true
 
 theorem Sig.lists_of_noLists (pb : Nat) (m : Mem) :
@@ -369,6 +404,7 @@ theorem Sig.lists_of_noLists (pb : Nat) (m : Mem) :
   | (_, .array ..) :: ps, _ :: vs, h => Sig.lists_of_noLists pb m ps vs (by simpa [Sig.noLists] using h)
   | (_, .slice ..) :: ps, _ :: _ :: vs, h => Sig.lists_of_noLists pb m ps vs (by simpa [Sig.noLists] using h)
   | (_, .slices ..) :: _, _, h => by simp [Sig.noLists] at h
+  | (_, .table _) :: _, _, h => by simp [Sig.noLists] at h
   | (_, .int ..) :: _, [], _ => rfl
   | (_, .array ..) :: _, [], _ => rfl
   | (_, .slice ..) :: _, [], _ => rfl
@@ -382,6 +418,7 @@ theorem Sig.descs_of_noLists (pb : Nat) :
   | (_, .array ..) :: ps, _ :: vs, h => Sig.descs_of_noLists pb ps vs (by simpa [Sig.noLists] using h)
   | (_, .slice ..) :: ps, _ :: _ :: vs, h => Sig.descs_of_noLists pb ps vs (by simpa [Sig.noLists] using h)
   | (_, .slices ..) :: _, _, h => by simp [Sig.noLists] at h
+  | (_, .table _) :: _, _, h => by simp [Sig.noLists] at h
   | (_, .int ..) :: _, [], _ => rfl
   | (_, .array ..) :: _, [], _ => rfl
   | (_, .slice ..) :: _, [], _ => rfl

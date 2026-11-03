@@ -8,8 +8,9 @@ public import VerifiedGarbage.TCB.Artifact
 **Trusted.** A registration file makes each function's `Artifact` from its
 `Api` with `Api.artifact`, stating only what the implementation chooses: the
 target, the code and its proof, the stack it uses, the constant tables it
-reads, the CPU features it needs, how much of its writable arrays it writes
-(`written`, with its proof), and the suffix of its name. Everything else
+reads, the tables of functions it takes, the CPU features it needs, how much
+of its writable arrays it writes (`written`, with its proof), and the suffix
+of its name. Everything else
 comes from the `Api` (`Spec/`): the Rust module, name, signature and
 documentation, `writeArgs`, and the contract on the target, which the proof
 is of. So of a registration, a reviewer reads `suffix` and
@@ -46,17 +47,23 @@ structure Registration (api : Api) (target : Target) where
   suffix : String := ""
   /-- `Artifact.consts`. -/
   consts : List (String × List (BitVec 64)) := []
+  /-- `Artifact.tables`. -/
+  tables : List (String × List FnTable) := []
   /-- `Artifact.stack`. -/
   stack : Nat := 0
   code : Prog target.isa
   /-- The contract `verified` proves, which is `api`'s on `target` for
-  `consts` and `stack` (`ofApi`); unification finds it in `verified`'s type. -/
-  contract : Contract target.isa := api.contract (target.abi.withConsts consts) stack
+  `consts`, `tables` and `stack` (`ofApi`); unification finds it in
+  `verified`'s type. -/
+  contract : Contract target.isa :=
+    api.contract ((target.abi.withConsts consts).withTables api.sig tables) stack
   verified : Verified target code contract
-  ofApi : contract = api.contract (target.abi.withConsts consts) stack := by exact rfl
+  ofApi : contract = api.contract ((target.abi.withConsts consts).withTables api.sig tables) stack := by
+    exact rfl
   /-- `Artifact.ofSig`. -/
   ofSig : ∃ pre post leak,
-      contract = api.sig.contract (target.abi.withConsts consts) pre post api.writeArgs stack leak := by
+      contract = api.sig.contract ((target.abi.withConsts consts).withTables api.sig tables) pre post
+        api.writeArgs stack leak := by
     of_sig
   /-- `Artifact.spSafe`. -/
   spSafe : code.all (fun i => !target.isa.writesSp i) = true := by sp_safe
@@ -72,7 +79,8 @@ structure Registration (api : Api) (target : Target) where
 /-- The artifact of the implementation `r` of `api` on `target`: its module,
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
 `r.suffix`, its documentation `api`'s (`Api.doc`), and its
-contract `api`'s on `target`, for `r.consts` and `r.stack` (`Api.contract`). -/
+contract `api`'s on `target`, for `r.consts`, `r.tables` and `r.stack`
+(`Api.contract`). -/
 def Api.artifact (api : Api) (target : Target) (r : Registration api target) : Artifact where
   target := target
   module := api.module
@@ -80,6 +88,7 @@ def Api.artifact (api : Api) (target : Target) (r : Registration api target) : A
   sig := api.sig
   doc := api.doc
   consts := r.consts
+  tables := r.tables
   code := r.code
   contract := r.contract
   verified := r.verified

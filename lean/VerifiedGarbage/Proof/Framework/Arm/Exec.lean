@@ -91,6 +91,10 @@ theorem pop_sp {j : Instr} {s₁ s₂ s' : State} (h : pop j s₁ s₂ = some s'
 theorem Exec.sp {c : Prog isa} {s s' : State} {t : List Leak} (h : VG.Exec isa c s t s') :
     s'.sp = s.sp := by
   induction h with
+  | icall _ hc _ hr ih =>
+    simp only [isa, call, ret, Option.some.injEq] at hc hr
+    subst hc; obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp hr; cases h; exact ih
+  | icallNext _ _ _ ih => exact ih
   | block h => exact execBlock_sp h
   | seq _ _ ih₁ ih₂ => exact ih₂.trans ih₁
   | iteT _ _ ih => exact ih

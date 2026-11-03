@@ -52,9 +52,12 @@ Modelling choices:
   (IA32_UARCH_MISC_CTL[0], MSR 1B01H) is set, which resets to 0 and only
   privileged software can set: user code runs with it clear unless the
   operating system sets it (see `TCB/X86_64/Isa.lean`).
-* Calls (`call`) and returns (`ret`) are near and direct (SDM Vol. 2, "CALL",
-  "RET"). The return addresses are the next of the state's `unknowns`,
-  which nothing constrains (see `TCB/Code.lean`).
+* Calls (`call`) and returns (`ret`) are near (SDM Vol. 2, "CALL", "RET"),
+  direct, or indirect through a register (`callr`, `icall`, the instruction
+  of an indirect call, `Code.icall`). The return addresses are the next of
+  the state's `unknowns`, which nothing constrains (see `TCB/Code.lean`).
+  The function of each name is at the address of its symbol,
+  `State.syms name`, as a static is (`ISA.fnAddr`).
 * `symPush` obtains a static's position-independent address with a near
   call to the next instruction, a load of that return address, and an ADD
   of the link-time difference to the static (`State.syms`). Its four-byte
@@ -188,6 +191,11 @@ inductive Instr
   | free (bytes : Nat)
   /-- `mul r32` (F7 /4): the unsigned product `EDX:EAX := EAX * r32`. -/
   | mul (src : Reg)
+  /-- `call r32` (`FF /2` with a register operand): the near, absolute
+  indirect call of the function at the address in `r` (see `icall`). It
+  only occurs as the instruction of an indirect call (`Code.icall`): as a
+  straight-line instruction it faults. -/
+  | callr (r : Reg)
   /-- Legacy SSE2 unaligned 128-bit load (F3 0F 6F /r). -/
   | movdquLoad (dst : XReg) (src : MemOp)
   /-- Legacy SSE2 unaligned 128-bit store (F3 0F 7F /r). -/
@@ -345,9 +353,10 @@ def exec : Instr → State → Option State
   | .mop op, s => op.exec s
   | .mmxStore m r, s => if s.mmx then s.store64 (s.ea m) (s.mm r) else none
   | .pmuludq d r, s => if 0 < s.mcdt then some (s.setXmm d (pmuludq (s.xmm d) (s.xmm r))) else none
-  -- Only the push and pop of a frame (`push`, `pop`).
+  -- Only the push and pop of a frame (`push`, `pop`), and the instruction
+  -- of an indirect call (`icall`).
   | .symPush .., _ | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .mmxEnter, _ | .emms, _
-  | .mcdtEnter _, _ | .mcdtLeave, _ => none
+  | .mcdtEnter _, _ | .mcdtLeave, _ | .callr _, _ => none
 
 def addrs : Instr → State → List Addr
   | .symPush .., s => [(s.gpr .esp - 4).setWidth 64, (s.gpr .esp - 4).setWidth 64]
@@ -359,6 +368,8 @@ def addrs : Instr → State → List Addr
   | .movzx8 _ m, s => [s.ea m]
   | .store8 m _, s => [s.ea m]
   | .mul _, _ | .xop _, _ => []
+  -- The address it calls is observed as the indirect call's (`Code.icall`).
+  | .callr _, _ => []
   | .mop op, s => op.addrs s
   | .mmxStore m _, s => [s.ea m]
   | .mmxEnter, _ | .emms, _ | .pmuludq .., _ => []
@@ -547,7 +558,17 @@ def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .xop _
   | .movqLoad .. | .movqStore .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave => none
+  | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave | .callr _ => none
+
+/-- The address an indirect call instruction calls: SDM Vol. 2, "CALL—Call
+Procedure", `FF /2`, "CALL r/m32": "Call near, absolute indirect, address
+given in r/m32"; for a near absolute call, `tempEIP := DEST; Push(EIP);
+EIP := tempEIP` (32-bit operand size). `Push(EIP)` and the rest of the
+call are the direct call's (`call`), the return `ret`. No flags are
+affected. -/
+def icall : Instr → State → Option Addr
+  | .callr r, s => some ((s.gpr r).setWidth 64)
+  | _, _ => none
 
 /-- Intel SDM Vol. 2's "CPUID Feature Flag" column: PSHUFB/PALIGNR need
 SSSE3, SHA256MSG1/MSG2/RNDS2 and SHA1MSG1/MSG2/NEXTE/RNDS4 need SHA,
@@ -586,5 +607,8 @@ abbrev isa : ISA where
   pop := pop
   -- SSE2 is baseline; the crypto and SSSE3 instructions require their CPUID features.
   requires := Instr.requires
+  icall := icall
+  -- A function's symbol, as a static's (`symPush`).
+  fnAddr s name := (s.syms name).setWidth 64
 
 end VG.X86

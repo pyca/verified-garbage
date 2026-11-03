@@ -48,6 +48,7 @@ theorem widths_le (sig : Sig) : ∀ w ∈ (sig.words abi.ptrBits).map (·.bits a
   | int ty _ =>
     rw [h] at hp; cases ty <;> simp [Param.words, ArgWord.bits, IntTy.bits, abi] at hp <;> omega
   | array _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
+  | table _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
   | slice _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
   | slices _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
 

@@ -766,6 +766,7 @@ theorem runP_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) (fuel : Nat) :
   | .ite .., _, _, _, _, hs => by simp [St.runP] at hs
   | .call .., _, _, _, _, hs => by simp [St.runP] at hs
   | .frame .., _, _, _, _, hs => by simp [St.runP] at hs
+  | .icall .., _, _, _, _, hs => by simp [St.runP] at hs
 
 end
 
