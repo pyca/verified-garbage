@@ -7,7 +7,10 @@ use std::collections::BTreeSet;
 use verified_garbage_asm_riscv64::rsa_proto4::vg_rsa_recover_primes_det;
 
 fn hex(s: &str) -> Vec<u8> {
-    (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+    (0..s.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+        .collect()
 }
 
 fn trim(x: &[u8]) -> Vec<u8> {
@@ -48,13 +51,22 @@ fn keys() -> Vec<[Vec<u8>; 5]> {
         while let Some(i) = s[at..].find("\"privateKey\"") {
             let start = at + i;
             let Some(o) = s[start..].find('{') else { break };
-            let Some(c) = s[start + o..].find('}') else { break };
+            let Some(c) = s[start + o..].find('}') else {
+                break;
+            };
             let obj = &s[start + o..start + o + c];
             at = start + o + c;
             if obj.contains("otherPrimeInfos") {
                 continue;
             }
-            let fs = ["modulus", "publicExponent", "privateExponent", "prime1", "prime2"].map(|f| field(obj, f));
+            let fs = [
+                "modulus",
+                "publicExponent",
+                "privateExponent",
+                "prime1",
+                "prime2",
+            ]
+            .map(|f| field(obj, f));
             if fs.iter().all(Option::is_some) {
                 set.insert(fs.map(|f| trim(&hex(&f.unwrap()))));
             }
@@ -68,8 +80,20 @@ fn recover(n: &[u8], e: &[u8], d: &[u8]) -> (u32, Vec<u8>, Vec<u8>) {
     let (mut p, mut q) = (vec![0xaa; k], vec![0xaa; k]);
     let mut s = vec![0x5a5a5a5a5a5a5a5au64; 16 * k + 32];
     let r = unsafe {
-        vg_rsa_recover_primes_det(p.as_mut_ptr(), k, q.as_mut_ptr(), k, n.as_ptr(), k, e.as_ptr(), e.len(),
-            d.as_ptr(), d.len(), s.as_mut_ptr(), s.len())
+        vg_rsa_recover_primes_det(
+            p.as_mut_ptr(),
+            k,
+            q.as_mut_ptr(),
+            k,
+            n.as_ptr(),
+            k,
+            e.as_ptr(),
+            e.len(),
+            d.as_ptr(),
+            d.len(),
+            s.as_mut_ptr(),
+            s.len(),
+        )
     };
     (r, p, q)
 }
@@ -88,9 +112,17 @@ fn recovers_every_key() {
     for f in &ks {
         let k = f[0].len();
         let (p, q) = primes(f);
-        assert_eq!(recover(&f[0], &f[1], &f[2]), (1, p.clone(), q.clone()), "k = {k}");
+        assert_eq!(
+            recover(&f[0], &f[1], &f[2]),
+            (1, p.clone(), q.clone()),
+            "k = {k}"
+        );
         // `d` with leading zeros, up to `n`'s length.
-        assert_eq!(recover(&f[0], &f[1], &pad(&f[2], k)), (1, p, q), "k = {k}, padded d");
+        assert_eq!(
+            recover(&f[0], &f[1], &pad(&f[2], k)),
+            (1, p, q),
+            "k = {k}, padded d"
+        );
     }
 }
 
@@ -108,18 +140,37 @@ fn refuses_or_factors() {
                 continue;
             }
             let r = recover(&f[0], &f[1], &d);
-            assert!(r == (0, zero.clone(), zero.clone()) || r == (1, p.clone(), q.clone()), "k = {k}, d bit");
+            assert!(
+                r == (0, zero.clone(), zero.clone()) || r == (1, p.clone(), q.clone()),
+                "k = {k}, d bit"
+            );
         }
         // `n` even or its first byte zero: not a modulus.
         let mut n = f[0].clone();
         n[k - 1] ^= 1;
-        assert_eq!(recover(&n, &f[1], &f[2]), (0, zero.clone(), zero.clone()), "k = {k}, n even");
+        assert_eq!(
+            recover(&n, &f[1], &f[2]),
+            (0, zero.clone(), zero.clone()),
+            "k = {k}, n even"
+        );
         let mut n = f[0].clone();
         n[0] = 0;
-        assert_eq!(recover(&n, &f[1], &f[2]), (0, zero.clone(), zero.clone()), "k = {k}, n's first byte");
+        assert_eq!(
+            recover(&n, &f[1], &f[2]),
+            (0, zero.clone(), zero.clone()),
+            "k = {k}, n's first byte"
+        );
         // `d e < 2`.
-        assert_eq!(recover(&f[0], &[1], &[1]), (0, zero.clone(), zero.clone()), "k = {k}, d e = 1");
-        assert_eq!(recover(&f[0], &[1], &[0]), (0, zero.clone(), zero.clone()), "k = {k}, d e = 0");
+        assert_eq!(
+            recover(&f[0], &[1], &[1]),
+            (0, zero.clone(), zero.clone()),
+            "k = {k}, d e = 1"
+        );
+        assert_eq!(
+            recover(&f[0], &[1], &[0]),
+            (0, zero.clone(), zero.clone()),
+            "k = {k}, d e = 0"
+        );
     }
 }
 

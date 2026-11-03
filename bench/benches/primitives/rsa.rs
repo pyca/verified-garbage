@@ -337,6 +337,52 @@ pub fn bench(c: &mut Criterion) {
     // Only the private operation's and key loading's pieces this run (the
     // key-generation and Miller–Rabin groups are skipped).
     const ONLY_PIECES: bool = true;
+    // Only Proto12 this run: #4083's `tail` and three other orders of its step, and the
+    // exponentiation proxy with #4083's `sqrTail`.
+    const ONLY_P12: bool = true;
+    if ONLY_P12 {
+        use verified_garbage_asm_riscv64::rsa_proto12 as p12;
+        type F = unsafe extern "C" fn(*mut u64, usize, usize);
+        let ws_of = |w: usize| {
+            let mut ws = vec![0u64; 32 + 8 * (w + 2) + 8];
+            for (i, x) in ws.iter_mut().enumerate().skip(32) {
+                *x = (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+            }
+            ws[32] |= 1;
+            ws
+        };
+        let muls: [(&str, F); 4] = [
+            ("base", p12::vg_p12_mul_base),
+            ("a", p12::vg_p12_mul_a),
+            ("b", p12::vg_p12_mul_b),
+            ("c", p12::vg_p12_mul_c),
+        ];
+        for (v, f) in muls {
+            let mut g = c.benchmark_group(format!("rsa_p12_mul_{v}"));
+            for w in [16usize, 24, 32] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe { f(black_box(ws.as_mut_ptr()), w, 1) })
+                });
+            }
+            g.finish();
+        }
+        // 64 w squarings and 16 w multiplications (a 4-bit-window modexp's, no table).
+        for (v, fm) in muls {
+            let mut g = c.benchmark_group(format!("rsa_p12_exp_{v}"));
+            for w in [16usize, 24, 32] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe {
+                        p12::vg_p12_sqr_base(black_box(ws.as_mut_ptr()), w, 64 * w);
+                        fm(black_box(ws.as_mut_ptr()), w, 16 * w);
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     // Only the Montgomery variants that keep `tail`'s registers but use `a6`, `a7` in the
     // rounds (Proto11), next to main's `tail` and `sqrTail`, this run.
     const ONLY_P11: bool = true;

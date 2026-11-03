@@ -1,7 +1,26 @@
 //! Unproven prototype, for local checks only.
 #![allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_keygen_key_proto(n: *mut u8, n_len: usize, d: *mut u8, d_len: usize, p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, e: *const u8, e_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_keygen_key_proto(
+    n: *mut u8,
+    n_len: usize,
+    d: *mut u8,
+    d_len: usize,
+    p: *mut u8,
+    p_len: usize,
+    q: *mut u8,
+    q_len: usize,
+    dp: *mut u8,
+    dp_len: usize,
+    dq: *mut u8,
+    dq_len: usize,
+    qinv: *mut u8,
+    qinv_len: usize,
+    e: *const u8,
+    e_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -7096,7 +7115,26 @@ bnez t3, 2277b
 }
 
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_keygen_key_odd_proto(n: *mut u8, n_len: usize, d: *mut u8, d_len: usize, p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, e: *const u8, e_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_keygen_key_odd_proto(
+    n: *mut u8,
+    n_len: usize,
+    d: *mut u8,
+    d_len: usize,
+    p: *mut u8,
+    p_len: usize,
+    q: *mut u8,
+    q_len: usize,
+    dp: *mut u8,
+    dp_len: usize,
+    dq: *mut u8,
+    dq_len: usize,
+    qinv: *mut u8,
+    qinv_len: usize,
+    e: *const u8,
+    e_len: usize,
+    scratch: *mut u64,
+    scratch_len: usize,
+) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c

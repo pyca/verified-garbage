@@ -2,15 +2,24 @@
 //! private keys of Wycheproof's `rsa_oaep_*_test.json` (`key_cases.txt`:
 //! `n e d p q dP dQ qInv`, padded to the contract's lengths).
 #![cfg(target_arch = "riscv64")]
-use verified_garbage_asm_riscv64::rsa_proto3::{vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values};
+use verified_garbage_asm_riscv64::rsa_proto3::{
+    vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values,
+};
 
 fn hex(s: &str) -> Vec<u8> {
-    (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+    (0..s.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+        .collect()
 }
 
 fn cases() -> Vec<Vec<Vec<u8>>> {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/key_cases.txt");
-    std::fs::read_to_string(path).unwrap().lines().map(|l| l.split(' ').map(hex).collect()).collect()
+    std::fs::read_to_string(path)
+        .unwrap()
+        .lines()
+        .map(|l| l.split(' ').map(hex).collect())
+        .collect()
 }
 
 fn scratch(k: usize) -> Vec<u64> {
@@ -19,12 +28,31 @@ fn scratch(k: usize) -> Vec<u64> {
 
 fn crt_values(f: &[Vec<u8>]) -> (u32, Vec<u8>, Vec<u8>, Vec<u8>) {
     let (n, d, p, q) = (&f[0], &f[2], &f[3], &f[4]);
-    let (mut dp, mut dq, mut qi) = (vec![0xaa; p.len()], vec![0xaa; q.len()], vec![0xaa; p.len()]);
+    let (mut dp, mut dq, mut qi) = (
+        vec![0xaa; p.len()],
+        vec![0xaa; q.len()],
+        vec![0xaa; p.len()],
+    );
     let mut s = scratch(n.len());
     let r = unsafe {
-        vg_rsa_crt_values(dp.as_mut_ptr(), dp.len(), dq.as_mut_ptr(), dq.len(), qi.as_mut_ptr(), qi.len(),
-            n.as_ptr(), n.len(), p.as_ptr(), p.len(), q.as_ptr(), q.len(), d.as_ptr(), d.len(), s.as_mut_ptr(),
-            s.len())
+        vg_rsa_crt_values(
+            dp.as_mut_ptr(),
+            dp.len(),
+            dq.as_mut_ptr(),
+            dq.len(),
+            qi.as_mut_ptr(),
+            qi.len(),
+            n.as_ptr(),
+            n.len(),
+            p.as_ptr(),
+            p.len(),
+            q.as_ptr(),
+            q.len(),
+            d.as_ptr(),
+            d.len(),
+            s.as_mut_ptr(),
+            s.len(),
+        )
     };
     (r, dp, dq, qi)
 }
@@ -32,18 +60,50 @@ fn crt_values(f: &[Vec<u8>]) -> (u32, Vec<u8>, Vec<u8>, Vec<u8>) {
 fn check_key(f: &[Vec<u8>]) -> u32 {
     let mut s = scratch(f[0].len());
     unsafe {
-        vg_rsa_check_key(f[0].as_ptr(), f[0].len(), f[1].as_ptr(), f[1].len(), f[2].as_ptr(), f[2].len(),
-            f[3].as_ptr(), f[3].len(), f[4].as_ptr(), f[4].len(), f[5].as_ptr(), f[5].len(), f[6].as_ptr(),
-            f[6].len(), f[7].as_ptr(), f[7].len(), s.as_mut_ptr(), s.len())
+        vg_rsa_check_key(
+            f[0].as_ptr(),
+            f[0].len(),
+            f[1].as_ptr(),
+            f[1].len(),
+            f[2].as_ptr(),
+            f[2].len(),
+            f[3].as_ptr(),
+            f[3].len(),
+            f[4].as_ptr(),
+            f[4].len(),
+            f[5].as_ptr(),
+            f[5].len(),
+            f[6].as_ptr(),
+            f[6].len(),
+            f[7].as_ptr(),
+            f[7].len(),
+            s.as_mut_ptr(),
+            s.len(),
+        )
     }
 }
 
 fn check_crt_key(f: &[Vec<u8>]) -> u32 {
     let mut s = scratch(f[0].len());
     unsafe {
-        vg_rsa_check_crt_key(f[0].as_ptr(), f[0].len(), f[1].as_ptr(), f[1].len(), f[3].as_ptr(), f[3].len(),
-            f[4].as_ptr(), f[4].len(), f[5].as_ptr(), f[5].len(), f[6].as_ptr(), f[6].len(), f[7].as_ptr(),
-            f[7].len(), s.as_mut_ptr(), s.len())
+        vg_rsa_check_crt_key(
+            f[0].as_ptr(),
+            f[0].len(),
+            f[1].as_ptr(),
+            f[1].len(),
+            f[3].as_ptr(),
+            f[3].len(),
+            f[4].as_ptr(),
+            f[4].len(),
+            f[5].as_ptr(),
+            f[5].len(),
+            f[6].as_ptr(),
+            f[6].len(),
+            f[7].as_ptr(),
+            f[7].len(),
+            s.as_mut_ptr(),
+            s.len(),
+        )
     }
 }
 
@@ -65,7 +125,11 @@ fn perturbed(f: &[Vec<u8>], i: usize) -> Vec<Vec<Vec<u8>>> {
 fn crt_values_match() {
     for f in cases() {
         let k = f[0].len();
-        assert_eq!(crt_values(&f), (1, f[5].clone(), f[6].clone(), f[7].clone()), "k = {k}");
+        assert_eq!(
+            crt_values(&f),
+            (1, f[5].clone(), f[6].clone(), f[7].clone()),
+            "k = {k}"
+        );
     }
 }
 
@@ -78,7 +142,10 @@ fn crt_values_refuse() {
             for g in perturbed(&f, i) {
                 let (r, dp, dq, qi) = crt_values(&g);
                 assert_eq!(r, 0, "k = {k}, field {i}");
-                assert!(dp.iter().chain(&dq).chain(&qi).all(|&b| b == 0), "k = {k}, field {i}");
+                assert!(
+                    dp.iter().chain(&dq).chain(&qi).all(|&b| b == 0),
+                    "k = {k}, field {i}"
+                );
             }
         }
     }
@@ -128,6 +195,10 @@ fn timing() {
         let b = t.elapsed();
         let t = std::time::Instant::now();
         check_crt_key(&f);
-        eprintln!("k = {}: crt_values {a:?}, check_key {b:?}, check_crt_key {:?}", f[0].len(), t.elapsed());
+        eprintln!(
+            "k = {}: crt_values {a:?}, check_key {b:?}, check_crt_key {:?}",
+            f[0].len(),
+            t.elapsed()
+        );
     }
 }

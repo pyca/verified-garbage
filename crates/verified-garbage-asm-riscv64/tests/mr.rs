@@ -3,10 +3,15 @@
 //! `primality_test.json`, read from the checkout at `WYCHEPROOF_ROOT`.
 #![cfg(target_arch = "riscv64")]
 
-use verified_garbage_asm_riscv64::rsa_proto5::{vg_mr_blinded_hi_proto, vg_mr_blinded_proto, vg_mr_search_proto};
+use verified_garbage_asm_riscv64::rsa_proto5::{
+    vg_mr_blinded_hi_proto, vg_mr_blinded_proto, vg_mr_search_proto,
+};
 
 fn hex(s: &str) -> Vec<u8> {
-    (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+    (0..s.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+        .collect()
 }
 
 fn field(obj: &str, name: &str) -> Option<String> {
@@ -30,7 +35,14 @@ fn cases() -> Vec<(u32, Vec<u8>, String)> {
         let end = s[start..].find('}').unwrap() + start;
         let obj = &s[start..end];
         at = end;
-        let id: u32 = obj["\"tcId\"".len()..].trim_start_matches([' ', ':']).split(',').next().unwrap().trim().parse().unwrap();
+        let id: u32 = obj["\"tcId\"".len()..]
+            .trim_start_matches([' ', ':'])
+            .split(',')
+            .next()
+            .unwrap()
+            .trim()
+            .parse()
+            .unwrap();
         let v = field(obj, "value").unwrap();
         let r = field(obj, "result").unwrap();
         out.push((id, hex(&v), r));
@@ -73,17 +85,33 @@ fn top_mask(c: &[u8]) -> u64 {
     for &b in hi {
         x = (x << 8) | u64::from(b);
     }
-    if x >> 63 == 1 { u64::MAX } else { (1u64 << (64 - x.leading_zeros())) - 1 }
+    if x >> 63 == 1 {
+        u64::MAX
+    } else {
+        (1u64 << (64 - x.leading_zeros())) - 1
+    }
 }
 
-type Fn8 = unsafe extern "C" fn(*const u8, usize, *const u8, usize, u64, usize, *mut u64, usize) -> u32;
+type Fn8 =
+    unsafe extern "C" fn(*const u8, usize, *const u8, usize, u64, usize, *mut u64, usize) -> u32;
 
 fn run(f: Fn8, c: &[u8], checks: usize, seed: u64, draws: usize) -> u32 {
     let w = c.len().div_ceil(8).max(4);
     let mut ws = vec![0u64; 32 + 30 * (w + 2)];
     let mut rng = Rng(seed | 1);
     let tape: Vec<u8> = (0..draws * c.len()).map(|_| rng.byte()).collect();
-    unsafe { f(c.as_ptr(), c.len(), tape.as_ptr(), tape.len(), top_mask(c), checks, ws.as_mut_ptr(), ws.len()) }
+    unsafe {
+        f(
+            c.as_ptr(),
+            c.len(),
+            tape.as_ptr(),
+            tape.len(),
+            top_mask(c),
+            checks,
+            ws.as_mut_ptr(),
+            ws.len(),
+        )
+    }
 }
 
 fn check(name: &str, f: Fn8, draws: usize) {
@@ -91,7 +119,10 @@ fn check(name: &str, f: Fn8, draws: usize) {
 }
 
 fn check_from(name: &str, f: Fn8, draws: usize, min_len: usize) {
-    let vs: Vec<_> = values().into_iter().filter(|v| v.1.len() >= min_len).collect();
+    let vs: Vec<_> = values()
+        .into_iter()
+        .filter(|v| v.1.len() >= min_len)
+        .collect();
     assert!(vs.len() > 100, "{}", vs.len());
     let (mut primes, mut comps, mut by_round, mut round_fails) = (0, 0, 0, 0);
     for (id, c, valid) in &vs {
@@ -100,7 +131,10 @@ fn check_from(name: &str, f: Fn8, draws: usize, min_len: usize) {
             assert_eq!(r, 1, "{name}: tcId {id} is prime");
             primes += 1;
         } else {
-            assert!(r & 16 != 0 || r & 15 == 2, "{name}: tcId {id} is composite, got {r}");
+            assert!(
+                r & 16 != 0 || r & 15 == 2,
+                "{name}: tcId {id} is composite, got {r}"
+            );
             comps += 1;
             if r & 16 == 0 {
                 by_round += 1;
@@ -110,7 +144,9 @@ fn check_from(name: &str, f: Fn8, draws: usize, min_len: usize) {
             }
         }
     }
-    eprintln!("{name}: {primes} primes, {comps} composites, {by_round} past the sieve, {round_fails} failing a round");
+    eprintln!(
+        "{name}: {primes} primes, {comps} composites, {by_round} past the sieve, {round_fails} failing a round"
+    );
     assert!(by_round > 20);
 }
 

@@ -5,17 +5,30 @@ use verified_garbage_asm_riscv64::rsa_proto::{vg_proto_mont_mul, vg_proto_mont_s
 fn setup(w: usize, seed: u64) -> Vec<u64> {
     let mut ws = vec![0u64; 32 + 8 * (w + 2)];
     let mut x = seed;
-    let mut r = || { x ^= x << 13; x ^= x >> 7; x ^= x << 17; x };
+    let mut r = || {
+        x ^= x << 13;
+        x ^= x >> 7;
+        x ^= x << 17;
+        x
+    };
     let st = w + 2;
-    for i in 0..w { ws[32 + i] = r(); }
+    for i in 0..w {
+        ws[32 + i] = r();
+    }
     ws[32] |= 1;
     ws[32 + w - 1] |= 1 << 63;
     let m0 = ws[32];
     let mut y = m0;
-    for _ in 0..6 { y = y.wrapping_mul(2u64.wrapping_sub(m0.wrapping_mul(y))); }
+    for _ in 0..6 {
+        y = y.wrapping_mul(2u64.wrapping_sub(m0.wrapping_mul(y)));
+    }
     ws[7] = y.wrapping_neg();
-    for i in 0..w { ws[32 + 5 * st + i] = r(); ws[32 + 6 * st + i] = ws[32 + 5 * st + i]; }
-    ws[32 + 5 * st + w - 1] >>= 1; ws[32 + 6 * st + w - 1] >>= 1;
+    for i in 0..w {
+        ws[32 + 5 * st + i] = r();
+        ws[32 + 6 * st + i] = ws[32 + 5 * st + i];
+    }
+    ws[32 + 5 * st + w - 1] >>= 1;
+    ws[32 + 6 * st + w - 1] >>= 1;
     ws
 }
 
@@ -28,14 +41,21 @@ fn sqr_matches_mul() {
         // mul: o=5 a=5 b=6 with array 6 = array 5: a square.
         unsafe { vg_proto_mont_mul(a.as_mut_ptr(), w, 1) };
         unsafe { vg_proto_mont_sqr(b.as_mut_ptr(), w, 1) };
-        assert_eq!(&a[32 + 5 * st..32 + 5 * st + w], &b[32 + 5 * st..32 + 5 * st + w], "w = {w}");
+        assert_eq!(
+            &a[32 + 5 * st..32 + 5 * st + w],
+            &b[32 + 5 * st..32 + 5 * st + w],
+            "w = {w}"
+        );
     }
 }
 
 #[test]
 fn repeated_calls_keep_registers() {
     let mut acc = 0u64;
-    let mut vs: Vec<Vec<u64>> = [16usize, 24, 48].iter().map(|&w| setup(w, w as u64)).collect();
+    let mut vs: Vec<Vec<u64>> = [16usize, 24, 48]
+        .iter()
+        .map(|&w| setup(w, w as u64))
+        .collect();
     for k in 0..200u64 {
         for (j, &w) in [16usize, 24, 48].iter().enumerate() {
             unsafe { vg_proto_mont_mul(vs[j].as_mut_ptr(), w, 2) };
