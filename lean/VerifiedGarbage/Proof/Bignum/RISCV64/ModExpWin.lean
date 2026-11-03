@@ -774,7 +774,8 @@ theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 :
           wordsVal t.mem B (slot w 4) w =
             wordsVal s.mem B (slot w 4) w ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) %
               wordsVal s.mem B (slot w 0) w) ∧
-        WinO B w s.mem t.mem) ∧ Keep powWRegs s t := by
+        WinO B w s.mem t.mem ∧ wordsVal t.mem B (slot w 1) w = wordsVal s.mem B (slot w 1) w) ∧
+      Keep powWRegs s t := by
   have h0 : WCtx s B Z w (A s.mem B w 0) := ⟨hs, hw2, hw', hZ, h7, h5, ht0, hinv, rfl⟩
   have hn := h0.nw
   generalize hNd : wordsVal s.mem B (slot w 0) w = N at hN hodd hRRlt ⊢
@@ -784,7 +785,7 @@ theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 :
   generalize hRRd : wordsVal s.mem B (slot w 1) w = RR at hRRlt ⊢
   unfold powWin
   refine WP.seq (WP.mono (table_ok h0 hN hodd (by rw [show A s.mem B w 1 = RR from hRRd]; exact hRRlt))
-    fun t₀ ⟨⟨c0, o0, _, _, t7, a6, htab⟩, k0⟩ => ?_)
+    fun t₀ ⟨⟨c0, o0, t01, _, t7, a6, htab⟩, k0⟩ => ?_)
   rw [show A s.mem B w 4 = X from hXd, show A s.mem B w 1 = RR from hRRd] at htab
   have r0 : Run s t₀ t₀ B Z w N X RR 0 := ⟨c0, o0, fun _ _ _ _ _ _ => rfl, by rw [a6]; exact (htab 0 (by decide)).1,
     fun hE => by rw [a6]; exact (htab 0 (by decide)).2 hE, k0.mono (by decide)⟩
@@ -813,10 +814,13 @@ theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 :
   -- Out of Montgomery form.
   have t7' : A u.mem B w 7 = 1 := by rw [hu.fix 7 (by decide) (by decide) (by decide) (by decide) (by decide), t7]
   refine WP.mono (hu.ctx.mont (o := 4) (a := 6) (b := 7) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by rw [t7']; omega_arith)) fun t ⟨⟨_, lt, e, _, o⟩, k⟩ =>
-    ⟨⟨fun hE => ?_, hu.out.trans o⟩, Keep.within hu.keep k fun _ h => win_pow (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ h)))⟩
-  rw [t7', Nat.mul_one] at e
-  refine (Nat.mod_eq_of_lt lt).symm.trans ?_
-  exact VG.Proof.Bignum.mont_cancel hR (by rw [e, hu.pw hE])
+    (by decide) (by decide) (by decide) (by decide) (by rw [t7']; omega_arith)) fun t ⟨⟨_, lt, e, v, o⟩, k⟩ =>
+    ⟨⟨fun hE => ?_, hu.out.trans o, ?_⟩, Keep.within hu.keep k fun _ h => win_pow (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ h)))⟩
+  · rw [t7', Nat.mul_one] at e
+    refine (Nat.mod_eq_of_lt lt).symm.trans ?_
+    exact VG.Proof.Bignum.mont_cancel hR (by rw [e, hu.pw hE])
+  · show A t.mem B w 1 = RR
+    rw [v 1 (by decide) (by decide) (by decide) (by decide),
+      hu.fix 1 (by decide) (by decide) (by decide) (by decide) (by decide), t01, ← hRRd]
 
 end VG.Proof.Bignum.RISCV64.Win

@@ -841,8 +841,8 @@ words (array 0's base in `a7` and `ra`, the arrays' size in `s5`, `w` in
 `w n` words of `X`'s array 6 (`n` chunks of the `⌈k / 8⌉` words, `k` in
 `X`'s header) and the exponent's `L ≥ 1` bytes at `D`, and `L`, in `X`'s
 header words `oD` and `oLen`: `c^d mod p` in array 4, as a number of the
-exponent's bytes, most significant first; nothing but the working space
-written. -/
+exponent's bytes, most significant first, and `R² mod p` left in array 1;
+nothing but the working space written. -/
 theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : Nat} (hs : Scr s B Z)
     (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
     (hra : s.gpr .ra = off B (slot w 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
@@ -858,7 +858,8 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
     (hDsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
     WP isa (Crt.power xj oD oLen) s fun t =>
       (wordsVal t.mem B (slot w 4) w = Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
-        wordsVal t.mem B (slot w 0) w = Pv ∧ PFr B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0)) ∧
+        wordsVal t.mem B (slot w 0) w = Pv ∧ PFr B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0) ∧
+        wordsVal t.mem B (slot w 1) w = 2 ^ (128 * w) % Pv) ∧
       Keep powerRegs s t := by
   have hn : B.toNat + slot w 24 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
   have hxn := hx.nowrap
@@ -891,7 +892,7 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
   refine WP.mono (powWin_ok c10.scr hw2 hw' hZ c10.a7 c10.s5 c10.t0 c10.inv
     (by rw [n10]; exact hP2) (by rw [n10]; exact hodd)
     (by rw [n10, show wordsVal s₁₀.mem B (slot w 1) w = _ from hR2]; exact Nat.mod_lt _ (by omega_arith)) a9 a10 hL hL'
-    (by rw [k110.2.1, k110.2.2]; exact hrd) hDsep) fun t ⟨⟨ht, ot⟩, kt⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
+    (by rw [k110.2.1, k110.2.2]; exact hrd) hDsep) fun t ⟨⟨ht, ot, t1⟩, kt⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [ht (by rw [n10]; exact hR2), n10, show wordsVal s₁₀.mem B (slot w 4) w = Cv % Pv by rw [m10]; exact r9,
       ← Nat.pow_mod, bytes_out (by rw [← m10] at F9; exact F9) hZ hDsep]
   · rw [← n10]
@@ -899,6 +900,7 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
   · rw [← m10] at F9
     exact F9.trans (PFr.of_win ot)
   · exact (kt.gpr (by decide)).trans c10.a7
+  · rw [t1, show wordsVal s₁₀.mem B (slot w 1) w = A s₁₀.mem B w 1 from rfl, m10, p9, r8]
   · exact Keep.within (Keep.within (Keep.within k18 k9 (by decide)) k10 (by decide)) kt (by decide)
 
 end VG.Proof.Bignum.RISCV64.Win
