@@ -3,6 +3,7 @@ module
 -- separate module: it builds in parallel with the constant-time proofs that do not need it (`CTBase`,
 -- `CTBlocks`).
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Pub
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Hashes
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
@@ -48,9 +49,6 @@ def Done (Hs Gs : Spec.Mgf1.Hash) (s t : State) : Prop :=
       (Spec.RsaOaep.encrypt Hs Gs (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (kk s))
         (Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat) (labB s) (msgB s) (seedB Hs.len s)))
 
-/-- What the proofs need of the hash functions' streaming functions: that
-their frames fit in the 208 bytes below ours. -/
-abbrev FitsF (H : Hash) : Prop := H.F ≤ 208
 
 section
 variable {H G : Hash} (hH : HashOK H) (hG : HashOK G) (fH : FitsF H) (fG : FitsF G) {Hs Gs : Spec.Mgf1.Hash}
