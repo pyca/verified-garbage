@@ -21,8 +21,11 @@ The mode runs in a frame of `total` 8-byte slots on the stack
 its first four slots hold the caller's `s1`–`s4` (`savedSlot`), the next
 two the mode's chaining value or input block (`chnSlot`, `bw` words), and
 the rest are the core's (from `coreSlot`; its buffer at slot `buf`). The
-core may access the frame a word or a doubleword at a time; the IV and the
-data may be anywhere, so the mode accesses them a byte at a time. The
+core may access the frame a word or a doubleword at a time, and the mode
+accesses its words a word at a time. The IV may be anywhere, so the mode
+accesses it a byte at a time; the data too, unless its address is a
+multiple of 4 and each step's is (`aligned`), when the steps' loops run in
+a copy that accesses its words a word at a time (`wordAt`). The
 analysis of constant time takes memory for secret, so the mode keeps what
 it addresses or counts in registers that the core keeps (`s1`–`s4`): the
 IV's address in `s1`, the data pointer in `s2`, the steps left in `s3`.
@@ -38,7 +41,8 @@ pointer and the steps left advanced.
 
 * The caller's `s1`–`s4` are saved in their slots, the IV is copied to the
   chaining value, and `core.prepare` makes the key ready.
-* Each step: `pre`, `crypt`, `post`, and on.
+* Each step: `pre`, `crypt`, `post`, and on, in the loops that `aligned`
+  chooses by the data's address (public).
 * If the mode returns its chaining value (`ivOut`), it is copied back to the
   IV; the caller's registers are restored, and the frame zeroed.
 
