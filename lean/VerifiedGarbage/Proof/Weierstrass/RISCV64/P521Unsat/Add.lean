@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Cols
+-- separate module: its proofs build in parallel with the other kernels'
+public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Basic
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
@@ -93,7 +94,7 @@ theorem mid_ok (sub : Bool) {i : Nat} (hi : i < 9) {s : State} (hc : Consts sub 
     simp only [↓reduceIte]
     refine wp_add fun s₁ u₁ => wp_sub fun s₂ u₂ => WP.block_nil ⟨?_, ?_⟩
     · have hc : (s.gpr (if i < 8 then .a7 else .t6)).toNat = p4 i := by
-        unfold p4; split <;> assumption
+        unfold p4; split <;> with_reducible assumption
       rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), BitVec.toNat_sub_of_le, BitVec.toNat_add, hc,
         Nat.mod_eq_of_lt (by unfold p4; split <;> omega)]
       · rw [BitVec.le_def, BitVec.toNat_add, hc, Nat.mod_eq_of_lt (by unfold p4; split <;> omega)]

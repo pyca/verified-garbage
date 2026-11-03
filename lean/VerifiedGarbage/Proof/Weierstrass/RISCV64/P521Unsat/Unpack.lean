@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Cols
+-- separate module: its proofs build in parallel with the other kernels'
+public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Basic
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range

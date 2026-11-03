@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Cols
+-- separate module: its proofs build in parallel with the other kernels'
+public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Basic
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
@@ -240,8 +241,8 @@ def ProbeInv (b : Addr) (s0 : State) (i : Nat) (s : State) : Prop :=
 /-- The probe: the carry of `v + 1` past `2⁵²¹`. -/
 theorem probe_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {s : State} (hz : ZKept b O s0 s)
     (hl : ∀ j < 8, zl s.mem b j < 2 ^ 58) (h8 : zl s.mem b 8 < 2 ^ 60) :
-    WP isa (.block ([.li .a4 1] ++ (List.range 8).flatMap probeStep ++
-        [.load .d .a1 .a3 (Z + 64), .add .a1 .a1 .a4, .shift .srl .d .a4 .a1 57])) s fun s' =>
+    WP isa (.block (([.li .a4 1] : List Instr) ++ (List.range 8).flatMap probeStep ++
+        ([.load .d .a1 .a3 (Z + 64), .add .a1 .a1 .a4, .shift .srl .d .a4 .a1 57] : List Instr))) s fun s' =>
       Keeps [.a1, .a4] s s' ∧ (s'.gpr .a4).toNat = (lv (zl s.mem b) 9 + 1) / 2 ^ 521 := by
   have hCs := hz.kept.core hC
   rw [List.append_assoc, List.singleton_append]
@@ -386,9 +387,9 @@ def shv (j : Nat) (l : Nat → Nat) (k : Nat) : Nat :=
 theorem packInner_ok {b : Addr} (j : Nat) :
     ∀ (ks : List Nat), (∀ k ∈ ks, k < 9 ∧ 58 * k < 64 * j + 64 ∧ 64 * j < 58 * k + 58) → ∀ {s : State}, Ctx b s →
       WP isa (.block (ks.flatMap fun k =>
-        [.load .d .a1 .a3 (Z + 8 * k)] ++
+        ([.load .d .a1 .a3 (Z + 8 * k)] : List Instr) ++
         (if 64 * j ≤ 58 * k then [.shift .sll .d .a1 .a1 (58 * k - 64 * j)]
-         else [.shift .srl .d .a1 .a1 (64 * j - 58 * k)]) ++ [.add .a2 .a2 .a1])) s fun s' =>
+         else [.shift .srl .d .a1 .a1 (64 * j - 58 * k)]) ++ ([.add .a2 .a2 .a1] : List Instr))) s fun s' =>
         Keeps [.a1, .a2] s s' ∧ (s'.gpr .a2).toNat = ((s.gpr .a2).toNat + tsum (shv j (zl s.mem b)) ks) % 2 ^ 64
   | [], _, s, _ => WP.block_nil ⟨Keeps.refl _ _, by rw [tsum_nil, Nat.add_zero, Nat.mod_eq_of_lt (s.gpr .a2).isLt]⟩
   | k :: ks, hks, s, hc => by
