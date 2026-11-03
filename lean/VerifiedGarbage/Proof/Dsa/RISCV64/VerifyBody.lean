@@ -165,7 +165,7 @@ theorem bodyQ_ok {s : State} {L : Lay} {key sig dig : Addr} {q qb d : Nat} {Q : 
     (hrest : ∀ t, (QS t L key sig ∧
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.ql) =
           Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d qb)) * (sOf s.mem L sig ^ (q - 2) % q) % q ∧
-        Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off L.Buf L.ql) L.ql) =
+        Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off L.Buf 32) L.ql) =
           rOf s.mem L sig * (sOf s.mem L sig ^ (q - 2) % q) % q ∧
         word t.mem L.S hMask = mask (decide ((0 < rOf s.mem L sig ∧ rOf s.mem L sig < q) ∧
           (0 < sOf s.mem L sig ∧ sOf s.mem L sig < q))) ∧

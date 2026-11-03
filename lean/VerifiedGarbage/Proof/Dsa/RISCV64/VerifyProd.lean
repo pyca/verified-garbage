@@ -194,7 +194,7 @@ theorem products_ok {s : State} {L : Lay} {key sig dig : Addr} {qb d W : Nat} (h
       (QS t L key sig ∧
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.ql) =
           Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d qb)) * W % arrQ s.mem L 0 ∧
-        Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off L.Buf L.ql) L.ql) = rOf s.mem L sig * W % arrQ s.mem L 0 ∧
+        Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off L.Buf 32) L.ql) = rOf s.mem L sig * W % arrQ s.mem L 0 ∧
         QBuf L s.mem t.mem) ∧ Keep prodRegs s t := by
   have hwq := hL.wq_ge
   have hqs := hL.qslot
@@ -290,17 +290,17 @@ theorem products_ok {s : State} {L : Lay} {key sig dig : Addr} {qb d W : Nat} (h
   have Q10 := Q8.step (k9.trans k10) (qb10.body hL)
   refine WP.seq (WP.mono (ptrBuf2_ok Q10.scr hL Q10.regs) fun s₁₁ ⟨⟨f7, f8, m11⟩, k11⟩ => ?_)
   have e11 := e9.keep (k10.trans k11)
-  have hso : ∀ x, ofs (off L.Buf L.ql) x < L.ql → 1600 ≤ ofs L.Q x := by
+  have hso : ∀ x, ofs (off L.Buf 32) x < L.ql → 1600 ≤ ofs L.Q x := by
     rw [buf_eq, off_off]
     exact sepQ_from L (by omega) (by have := hL.buf_end; have := hL.nowrap; simp only [Lay.bOff] at *; omega)
-  refine WP.mono (storeBE_ok (j := 5) (O := off L.Buf L.ql) (k := L.ql) e11 (by decide)
-    (ScrL.bufSt (Q10.scr.congr k11.2.2) hL (o := L.ql) (k := L.ql) (by omega))
-    (buf_nowrap hL (o := L.ql) (k := L.ql) (by omega) (by omega)) f7 f8 (by omega) (by omega) hso)
+  refine WP.mono (storeBE_ok (j := 5) (O := off L.Buf 32) (k := L.ql) e11 (by decide)
+    (ScrL.bufSt (Q10.scr.congr k11.2.2) hL (o := 32) (k := L.ql) (by omega))
+    (buf_nowrap hL (o := 32) (k := L.ql) (by omega) (by omega)) f7 f8 (by omega) (by omega) hso)
     fun t ⟨⟨vt2, ot2⟩, kt⟩ => ?_
   rw [m11] at vt2 ot2
-  have ot2b : Outside L.Buf (L.ql + 0) L.ql s₁₀.mem t.mem :=
+  have ot2b : Outside L.Buf (32 + 0) L.ql s₁₀.mem t.mem :=
     outside_shift ot2 (by have := hL.buf_end; have := hL.nowrap; simp only [Lay.bOff] at *; omega) (by omega)
-  have qbt : QBuf L s₁₀.mem t.mem := QBuf.ofBuf hL (n := 2 * L.ql) (ot2b.mono (Nat.zero_le _) (by omega))
+  have qbt : QBuf L s₁₀.mem t.mem := QBuf.ofBuf hL (n := 64) (ot2b.mono (Nat.zero_le _) (by omega))
     (by omega)
   have ot' : Outside (off L.Q 1600) 0 L.ql s₈.mem s₁₀.mem := by rw [← buf_eq]; exact ot
   have otq := outside_shift ot' (by have := hL.buf_end; have := hL.nowrap; simp only [Lay.bOff] at *; omega)

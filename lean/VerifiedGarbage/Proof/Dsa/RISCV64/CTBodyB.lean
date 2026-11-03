@@ -17,9 +17,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 The cuts of `body`'s list (`FB`) in `products`, `combine` and `compare`
 (`pinsB*`), from `body`'s phase `SB`, through the pieces' correctness: the
-Montgomery multiplications of `products` (`prod_pre`), the powers' loads
-(`powP_pre`) and the products of `combine` (`tail_pre`), and the P space's
-phase `CB` between them.
+Montgomery multiplications of `products` (`prod_pre`), `combine`'s loads, joint
+table and joint windows (`combG_ok`, `combT_ok`, `combL_ok`), and the P
+space's phase `CB` between them.
 -/
 
 @[expose] public section
@@ -119,7 +119,7 @@ theorem pinsB154 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
 
 theorem pinsB157 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
     Pins (At Φ FB 157) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
-  pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.L.Buf v.L.ql), (.s8, BitVec.ofNat 64 v.L.ql)])
+  pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.L.Buf 32), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun v _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
       (.seq scalar (.seq (.block ptrR) (.seq (loadArr 5) (.seq (copy 1 24) (.seq (montOp 6 6 4)
@@ -167,16 +167,13 @@ theorem fix_CB {v : VD} {t : State} (h : CB v t) : Fix (fixB v ++ envP v) t := h
 /-- `combine`'s first block. -/
 abbrev HEAD : List Instr := enterP ++ Precompute.minv ++ ptrBuf ++ ([.addi .s9 .s7 0] : List Instr) ++ ptrG
 
-/-- `combine`'s second block. -/
-abbrev MID : List Instr := ptrBuf2 ++ ([.addi .s9 .s7 0] : List Instr) ++ ptrY
-
 theorem head_QB {v : VD} {s : State} (h : QB v s) (hpo : v.p % 2 = 1) :
     WP isa (.block HEAD) s fun t => CB v t ∧ t.gpr .s7 = off v.key (v.L.pl + v.L.ql) ∧
       t.gpr .s8 = BitVec.ofNat 64 v.L.pl ∧ t.gpr .s9 = off v.L.Buf 0 :=
   WP.mono (combHead_ok h.base.ok h.base.scr h.base.regs h.p0 hpo) fun _ ⟨⟨ip, I, a7, a8, a9, m⟩, k⟩ =>
     ⟨⟨h.base.keepM k m, ip, I, by rw [arrP, m]; exact h.p0, by rw [arrP, m]; exact h.p24⟩, a7, a8, a9⟩
 
-/-- A power's loads: the base into array 4, `R² mod p` into array 1, and the
+/-- A power's loads (the signature's): the base into array 4, `R² mod p` into array 1, and the
 exponent's length. -/
 theorem powP_pre {v : VD} {s : State} {N X : Addr} (h : CB v s) (hN : Src s v.L N v.L.pl)
     (h7 : s.gpr .s7 = N) (h9 : s.gpr .s9 = X) :
@@ -210,20 +207,6 @@ theorem powP_pre {v : VD} {s : State} {N X : Addr} (h : CB v s) (hN : Src s v.L 
       ⟨(k4.gpr (r := .s9) (by decide)).trans ((k3.gpr (r := .s9) (by decide)).trans ((k2.gpr (r := .s9) (by decide)).trans
         ((k1.gpr (r := .s9) (by decide)).trans h9))), a10, trivial⟩
 
-/-- A power, in `combine`. -/
-theorem powP_CB {v : VD} {s : State} {N : Addr} {o : Nat} (h : CB v s) (hN : Src s v.L N v.L.pl)
-    (h7 : s.gpr .s7 = N) (h9 : s.gpr .s9 = off v.L.Buf o) (ho : o + v.L.ql ≤ 2 * v.L.pl) (hp : 2 ≤ v.p)
-    (hpo : v.p % 2 = 1) :
-    WP isa powP s fun t => CB v t ∧ Outside v.L.S (slot v.L.wp 1) (23 * (8 * (v.L.wp + 2))) s.mem t.mem ∧
-      Keep powPRegs s t := by
-  obtain ⟨B, ip, I, p0, p24⟩ := h
-  have hL := B.ok
-  have e := Lay.slot_eq v.L.wp
-  have e0 := e 0; have e1 := e 1; have e24 := e 24; have hw := hL.wp_ge
-  refine WP.mono (powP_ok hL B.scr B.regs ip I hN h7 h9 ho p0 hp hpo p24) fun t ⟨⟨_, ip', I', o⟩, k⟩ => ?_
-  exact ⟨⟨B.body k (p_arrays_body hL o), ip', I', by rw [arrP, o.wordsVal (by omega) (by omega_arith)]; exact p0,
-    by rw [arrP, o.wordsVal (by omega) (by omega_arith)]; exact p24⟩, o, k⟩
-
 theorem pinsB161 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
     Pins (At Φ FB 161) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8, .s9] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl),
@@ -235,119 +218,94 @@ theorem pinsB161 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
           exact ((c.1.keepM k m).fixB.app (fix_envP (c.2.1.keep k))).app
             ⟨(k.gpr (r := .s7) (by decide)).trans a7, a8, (k.gpr (r := .s9) (by decide)).trans a9, trivial⟩))
 
-theorem pinsB171 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 171) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
-  pins_at_fix (fun v => fixB v ++ envP v ++ [(.s9, off v.L.Buf 0), (.s10, BitVec.ofNat 64 v.L.ql)])
-    (fun _ => rfl) fun _ _ h =>
-    WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
-      (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (copy 1 24) (.block (getQ .s10))))))))))))
-      (by decide +kernel) (stQ6 (hsem _ _ h) fun _ B _ =>
-      WP.seq (WP.mono (head_QB B (hsem _ _ h).vals.2.2.2.2.2) fun _ ⟨c, a7, _, a9⟩ =>
-        powP_pre c (c.1.hk.sub (by have := c.1.kn; omega)) a7 a9))
-
-/-- `combine` up to its second power, then `c`. -/
-theorem stC2 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v s)
-    (hc : ∀ t, CB v t → t.gpr .s7 = off v.key (2 * v.L.pl + v.L.ql) → t.gpr .s9 = off v.L.Buf v.L.ql →
-      WP isa c t Q) :
-    WP isa (.seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
-      (.seq (.block HEAD) (.seq powP (.seq (copy 25 4) (.seq (.block MID) c)))))))))) s Q := by
-  obtain ⟨-, -, -, -, hp, hpo⟩ := h.vals
-  refine stQ6 h fun _ B _ => WP.seq (WP.mono (head_QB B hpo) fun _ ⟨c1, a7, _, a9⟩ => ?_)
-  have hL := c1.1.ok
-  have hpl := c1.1.pl; have hql := c1.1.ql
-  refine WP.seq (WP.mono (powP_CB (o := 0) c1 (c1.1.hk.sub (by have := c1.1.kn; omega)) a7 a9 (by omega) hp hpo)
-    fun _ ⟨c2, _, _⟩ => ?_)
-  have e := Lay.slot_eq v.L.wp
-  have e0 := e 0; have e1 := e 1; have e24 := e 24; have e25 := e 25; have e28 := e 28; have hw := hL.wp_ge
-  refine WP.seq (WP.mono (copy_ok c2.2.1.env (o := 25) (a := 4) (by decide) (by decide) (by decide))
-    fun s₃ ⟨⟨_, o3⟩, k3⟩ => ?_)
-  have c3 : CB v s₃ := ⟨c2.1.body k3 (Body.ofP hL o3 (by omega) (by simp only [Lay.qOff]; omega)), c2.2.1.keep k3,
-    by show ((word s₃.mem v.L.S (slot v.L.wp 0)).toNat * (s₃.gpr .t1).toNat + 1) % 2 ^ 64 = 0
-       rw [o3.word (by omega) (by omega_arith), k3.gpr (by decide)]; exact c2.2.2.1,
-    by rw [arrP, o3.wordsVal (by omega) (by omega_arith)]; exact c2.2.2.2.1,
-    by rw [arrP, o3.wordsVal (by omega) (by omega_arith)]; exact c2.2.2.2.2⟩
-  refine WP.seq (WP.mono (combMid_ok hL c3.1.scr c3.1.regs) fun t ⟨⟨b7, b9, m4⟩, k4⟩ => ?_)
-  exact hc t ⟨c3.1.keepM k4 m4, c3.2.1.keep k4,
-    by show ((word t.mem v.L.S (slot v.L.wp 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
-       rw [m4, k4.gpr (by decide)]; exact c3.2.2.1,
-    by rw [arrP, m4]; exact c3.2.2.2.1, by rw [arrP, m4]; exact c3.2.2.2.2⟩ b7 b9
-
-theorem pinsB215 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 215) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8, .s9] :=
-  pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (2 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl),
-      (.s9, off v.L.Buf v.L.ql)]) (fun _ => rfl) fun _ _ h =>
-    WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
-      (.seq (.block HEAD) (.seq powP (.seq (copy 25 4) (.seq (.block MID) (.block (getP .s8)))))))))))) (by decide +kernel)
-      (stC2 (hsem _ _ h) fun _ c a7 a9 => WP.mono (getP_ok c.1.scr c.1.ok c.1.regs .s8) fun _ ⟨⟨a8, m⟩, k⟩ => by
-        exact ((c.1.keepM k m).fixB.app (fix_envP (c.2.1.keep k))).app
-          ⟨(k.gpr (r := .s7) (by decide)).trans a7, a8, (k.gpr (r := .s9) (by decide)).trans a9, trivial⟩)
-
-theorem pinsB225 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 225) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
-  pins_at_fix (fun v => fixB v ++ envP v ++ [(.s9, off v.L.Buf v.L.ql), (.s10, BitVec.ofNat 64 v.L.ql)])
-    (fun _ => rfl) fun _ _ h =>
-    WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
-      (.seq (.block HEAD) (.seq powP (.seq (copy 25 4) (.seq (.block MID) (.seq (.block (getP .s8))
-      (.seq (loadArr 4) (.seq (copy 1 24) (.block (getQ .s10))))))))))))))) (by decide +kernel)
-      (stC2 (hsem _ _ h) fun _ c a7 a9 => powP_pre c (c.1.hk.sub (by have := (hsem _ _ h).1.2.2.2; omega)) a7 a9)
-
-/-- `combine`'s products, before the store. -/
-theorem tail_pre {v : VD} {s : State} (h : CB v s) (hp : 2 ≤ v.p) :
-    WP isa (.seq (copy 1 24) (.seq (montOp 5 4 1) (.seq (copy 6 25) (.seq (montOp 7 6 5)
-      (.block (bufBase .s7 .t2 ++ getP .s8)))))) s
-      (Fix (fixB v ++ envP v ++ [(.s7, v.L.Buf), (.s8, BitVec.ofNat 64 v.L.pl)])) := by
-  obtain ⟨B, ip, I, p0, p24⟩ := h
+/-- `CB` after `combG_ok`'s code. -/
+theorem g_CB {v : VD} {s t : State} (h : CB v s) (ip : InP t v.L)
+    (o : Outside v.L.S (slot v.L.wp 4) (8 * (v.L.wp + 1)) s.mem t.mem) (k : Keep gRegs s t) : CB v t := by
+  obtain ⟨B, -, I, p0, p24⟩ := h
   have hL := B.ok
   have hw := hL.wp_ge
   have e := Lay.slot_eq v.L.wp
-  have e0 := e 0; have e1 := e 1; have e5 := e 5; have e6 := e 6; have e24 := e 24; have e25 := e 25
-  have e28 := e 28
-  refine WP.seq (WP.mono (copy_ok ip.env (o := 1) (a := 24) (by decide) (by decide) (by decide))
-    fun s₁ ⟨⟨v1, o1⟩, k1⟩ => ?_)
-  have in1 := ip.keep k1
-  have I1 : PInv s₁ v.L := by
-    show ((word s₁.mem v.L.S (slot v.L.wp 0)).toNat * (s₁.gpr .t1).toNat + 1) % 2 ^ 64 = 0
-    rw [o1.word (by omega) (by omega_arith), k1.gpr (by decide)]; exact I
-  have B0 : arrP s₁.mem v.L 0 = v.p := by rw [arrP, o1.wordsVal (by omega) (by omega_arith)]; exact p0
-  have B1 : arrP s₁.mem v.L 1 = 2 ^ (128 * v.L.wp) % v.p := by
-    rw [arrP, wordsVal_congr (m := s.mem) (d := slot v.L.wp 24) fun i hi => v1 i (by omega)]; exact p24
-  have Bs1 := B.body k1 (Body.ofP hL o1 (by omega) (by simp only [Lay.qOff]; omega))
-  refine WP.seq (WP.mono (pmont_ok (o := 5) (a := 4) (b := 1) hL in1 I1 (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [B1, B0]; exact Nat.mod_lt _ (by omega)))
-    fun s₂ ⟨⟨in2, I2, lt5, _, k2a, pa2⟩, k2⟩ => ?_)
-  have Bs2 := Bs1.body k2 (pa2.pbody.body hL)
-  refine WP.seq (WP.mono (copy_ok in2.env (o := 6) (a := 25) (by decide) (by decide) (by decide))
-    fun s₃ ⟨⟨_, o3⟩, k3⟩ => ?_)
-  have in3 := in2.keep k3
-  have I3 : PInv s₃ v.L := by
-    show ((word s₃.mem v.L.S (slot v.L.wp 0)).toNat * (s₃.gpr .t1).toNat + 1) % 2 ^ 64 = 0
-    rw [o3.word (by omega) (by omega_arith), k3.gpr (by decide)]; exact I2
-  have C0 : arrP s₃.mem v.L 0 = arrP s₁.mem v.L 0 := by
-    rw [arrP, o3.wordsVal (by omega) (by omega_arith)]
-    exact k2a 0 (by decide) (by decide) (by decide) (by decide)
-  have C5 : arrP s₃.mem v.L 5 = arrP s₂.mem v.L 5 := by rw [arrP, o3.wordsVal (by omega) (by omega_arith)]
-  have Bs3 := Bs2.body k3 (Body.ofP hL o3 (by omega) (by simp only [Lay.qOff]; omega))
-  refine WP.seq (WP.mono (pmont_ok (o := 7) (a := 6) (b := 5) hL in3 I3 (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [C5, C0]; exact lt5)) fun s₄ ⟨⟨in4, _, _, _, _, pa4⟩, k4⟩ => ?_)
-  have Bs4 := Bs3.body k4 (pa4.pbody.body hL)
-  refine WP.block_append (WP.mono (bufBase_ok Bs4.scr hL Bs4.regs (rd := .s7) (t := .t2) (by decide) (by decide)
-    (by decide)) fun u ⟨⟨f7, mu⟩, ku⟩ => WP.mono (getP_ok (Bs4.keepM ku mu).scr hL (Bs4.keepM ku mu).regs .s8)
-    fun _ ⟨⟨f8, m5⟩, k5⟩ => ?_)
-  exact (((Bs4.keepM ku mu).keepM k5 m5).fixB.app (fix_envP ((in4.keep ku).keep k5))).app
-    ⟨(k5.gpr (r := .s7) (by decide)).trans f7, f8, trivial⟩
+  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e24 := e 24; have e28 := e 28
+  refine ⟨B.body k (Body.ofP hL o (by omega) (by simp only [Lay.qOff]; omega)), ip, ?_,
+    by rw [arrP, o.wordsVal (by omega) (by omega_arith)]; exact p0,
+    by rw [arrP, o.wordsVal (by omega) (by omega_arith)]; exact p24⟩
+  show ((word t.mem v.L.S (slot v.L.wp 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
+  rw [o.word (by omega) (by omega_arith), k.gpr (by decide)]; exact I
 
-theorem pinsB288 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 288) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+/-- `CB` after the joint table's or the joint windows' code. -/
+theorem w_CB {v : VD} {s t : State} {rs : List Reg} (h : CB v s) (ip : InP t v.L)
+    (o : Outside v.L.S (slot v.L.wp 1) (23 * (8 * (v.L.wp + 2))) s.mem t.mem) (k : Keep rs s t)
+    (ht1 : .t1 ∉ rs := by decide) (hr : ∀ r ∈ regsRegs, r ∉ rs := by decide) : CB v t := by
+  obtain ⟨B, -, I, p0, p24⟩ := h
+  have hL := B.ok
+  have hw := hL.wp_ge
+  have e := Lay.slot_eq v.L.wp
+  have e0 := e 0; have e1 := e 1; have e24 := e 24; have e28 := e 28
+  refine ⟨B.body k (Body.ofP hL o (by omega) (by simp only [Lay.qOff]; omega)) hr, ip, ?_,
+    by rw [arrP, o.wordsVal (by omega) (by omega_arith)]; exact p0,
+    by rw [arrP, o.wordsVal (by omega) (by omega_arith)]; exact p24⟩
+  show ((word t.mem v.L.S (slot v.L.wp 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
+  rw [o.word (by omega) (by omega_arith), k.gpr ht1]; exact I
+
+theorem pinsB169 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 169) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8, .s9] :=
+  pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (2 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl),
+      (.s9, off v.L.Buf 0)]) (fun _ => rfl) fun _ _ h =>
+    WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
+      (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.block ptrY)))))))))) (by decide +kernel)
+      (stQ6 (hsem _ _ h) fun _ B _ =>
+      WP.seq (WP.mono (head_QB B (hsem _ _ h).vals.2.2.2.2.2) fun _ ⟨c, a7, _, a9⟩ =>
+        WP.mono (combG_ok c.1.ok c.1.scr c.1.regs (c.1.hk.take B.ky) c.2.1 a7) fun _ ⟨⟨_, ip, o, b7, b8⟩, k⟩ =>
+          (fix_CB (g_CB c ip o k)).app ⟨b7, b8, (k.gpr (r := .s9) (by decide)).trans a9, trivial⟩))
+
+/-- `combine` up to y's octets, then `c`. -/
+theorem stC1 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v s)
+    (hc : ∀ t, CB v t → Src t v.L v.key (3 * v.L.pl + v.L.ql) → t.gpr .s7 = off v.key (2 * v.L.pl + v.L.ql) →
+      t.gpr .s8 = BitVec.ofNat 64 v.L.pl → t.gpr .s9 = off v.L.Buf 0 → WP isa c t Q) :
+    WP isa (.seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
+      (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (.block ptrY) c)))))))))) s Q :=
+  stQ6 h fun _ B _ => WP.seq (WP.mono (head_QB B h.vals.2.2.2.2.2) fun _ ⟨c1, a7, _, a9⟩ =>
+    wp_seq3 (combG_ok c1.1.ok c1.1.scr c1.1.regs (c1.1.hk.take B.ky) c1.2.1 a7) fun t ⟨⟨_, ip, o, b7, b8⟩, k⟩ =>
+      hc t (g_CB c1 ip o k) ((c1.1.hk.take B.ky).keep k.2.1 k.2.2) b7 b8 ((k.gpr (r := .s9) (by decide)).trans a9))
+
+theorem pinsB330 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 330) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
+  pins_at_fix (fun v => fixB v ++ envP v ++ [(.s9, off v.L.Buf 0), (.s10, BitVec.ofNat 64 v.L.ql)])
+    (fun _ => rfl) fun _ _ h =>
+    WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
+      (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (.block ptrY)
+      (.seq (loadArr 5) (.seq (copy 1 24) (.seq jointTable (.block (getQ .s10)))))))))))))))
+      (by decide +kernel) (stC1 (hsem _ _ h) fun _ c hk a7 a8 a9 => by
+      obtain ⟨-, -, -, -, hp, hpo⟩ := (hsem _ _ h).vals
+      exact WP.mono (combT_ok c.1.ok c.1.scr c.1.regs hk c.2.1 c.2.2.1 c.2.2.2.1 hp hpo c.2.2.2.2 a7 a8)
+        fun _ ⟨⟨_, _, ip, o, a10⟩, k⟩ =>
+          (fix_CB (w_CB c ip o k)).app ⟨(k.gpr (r := .s9) (by decide)).trans a9, a10, trivial⟩)
+
+/-- `combine` up to the joint windows, then `c`. -/
+theorem stC2 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v s)
+    (hc : ∀ t G Y, CB v t → JInv t.mem v.L.S v.L.wp v.p G Y (2 ^ (128 * v.L.wp) % v.p) jDone →
+      JRun t t t v.L.S v.L.qOff v.L.wp v.p G Y (2 ^ (128 * v.L.wp) % v.p) 0 0 →
+      t.gpr .s9 = off v.L.Buf 0 → t.gpr .s10 = BitVec.ofNat 64 v.L.ql → WP isa c t Q) :
+    WP isa (.seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
+      (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (.block ptrY)
+      (.seq (loadArr 5) (.seq (copy 1 24) (.seq jointTable (.seq (.block (getQ .s10)) c)))))))))))))) s Q := by
+  obtain ⟨-, -, -, -, hp, hpo⟩ := h.vals
+  exact stC1 h fun _ c hk a7 a8 a9 =>
+    wp_seq4 (combT_ok c.1.ok c.1.scr c.1.regs hk c.2.1 c.2.2.1 c.2.2.2.1 hp hpo c.2.2.2.2 a7 a8)
+      fun t ⟨⟨J, r, ip, o, a10⟩, k⟩ => hc t _ _ (w_CB c ip o k) J r ((k.gpr (r := .s9) (by decide)).trans a9) a10
+
+theorem pinsB341 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 341) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, v.L.Buf), (.s8, BitVec.ofNat 64 v.L.pl)]) (fun _ => rfl)
-    fun v _ h => WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
-      (.seq products (.seq (.block HEAD) (.seq powP (.seq (copy 25 4) (.seq (.block MID) (.seq powP
-      (.seq (copy 1 24) (.seq (montOp 5 4 1) (.seq (copy 6 25) (.seq (montOp 7 6 5)
-      (.block (bufBase .s7 .t2 ++ getP .s8))))))))))))))))) (by decide +kernel)
-      (stC2 (hsem _ _ h) fun _ c a7 a9 => by
+    fun _ _ h => WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
+      (.seq products (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (.block ptrY)
+      (.seq (loadArr 5) (.seq (copy 1 24) (.seq jointTable (.seq (.block (getQ .s10))
+      (.seq (.loop (.seq jointByte (.block [.addi .s10 .s10 (-1)])) (.nonzero .s10))
+      (.seq (montOp 4 6 7) (.block (bufBase .s7 .t2 ++ getP .s8)))))))))))))))))) (by decide +kernel)
+      (stC2 (hsem _ _ h) fun _ _ _ c J r a9 a10 => by
         obtain ⟨-, -, -, -, hp, hpo⟩ := (hsem _ _ h).vals
-        have hpl := c.1.pl; have hql := c.1.ql
-        exact WP.seq (WP.mono (powP_CB (o := v.L.ql) c (c.1.hk.sub (by have := (hsem _ _ h).1.2.2.2; omega)) a7 a9 (by omega) hp hpo)
-          fun _ ⟨c', _, _⟩ => tail_pre c' hp))
+        exact WP.mono (combL_ok c.1.ok c.1.scr c.1.regs c.2.1 hp hpo J r a9 a10)
+          fun _ ⟨⟨_, ip, o, f7, f8⟩, k⟩ => (fix_CB (w_CB c ip o k)).app ⟨f7, f8, trivial⟩)
 
 /-- Up to `combine`, then `c`. -/
 theorem stC4 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v s)
@@ -373,16 +331,16 @@ theorem cmp_pre {v : VD} {s : State} (B : Base v s) :
     ⟨⟨B2.keepM k3 m3, (q1.keep k2).keep k3, (k3.gpr (by decide)).trans a9, a10, by rw [m3, m2, m1]⟩,
       (k1.trans k2).trans k3⟩
 
-theorem pinsB291 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 291) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
+theorem pinsB344 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 344) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s9, v.L.Buf), (.s10, BitVec.ofNat 64 v.L.pl)]) (fun _ => rfl)
     fun _ _ h => WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
       (.seq products (.seq combine (.block CMP)))))))) (by decide +kernel)
       (stC4 (hsem _ _ h) fun _ B _ => (cmp_pre B).mono fun _ ⟨⟨B', iq, a9, a10, _⟩, _⟩ =>
         (B'.fixB.app (fix_envQ iq)).app ⟨a9, a10, trivial⟩)
 
-theorem pinsB297 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
-    Pins (At Φ FB 297) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
+theorem pinsB350 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 350) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.sig), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
     fun v _ h => WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
       (.seq products (.seq combine (.seq (.block CMP) (.seq ModArith.reduce64 (.block ptrR)))))))))) (by decide +kernel)
