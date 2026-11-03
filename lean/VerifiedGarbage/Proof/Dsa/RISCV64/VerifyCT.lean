@@ -91,13 +91,12 @@ theorem body_rel' {Φ : VD → State → Prop} (runB : ∀ v s, Φ v s → WP is
   refine chain_cons runB (m := 154) (by decide) (two_taint _ (pinsB108 hsem) (by taint_decide)) ?_
   refine chain_cons runB (m := 157) (by decide) (two_taint _ (pinsB154 hsem) (by taint_decide)) ?_
   refine chain_cons runB (m := 161) (by decide) (two_taint _ (pinsB157 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 171) (by decide) (two_taint _ (pinsB161 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 215) (by decide) (two_taint _ (pinsB171 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 225) (by decide) (two_taint _ (pinsB215 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 288) (by decide) (two_taint _ (pinsB225 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 291) (by decide) (two_taint _ (pinsB288 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 297) (by decide) (two_taint _ (pinsB291 hsem) (by taint_decide)) ?_
-  exact two_taint _ (pinsB297 hsem) (by taint_decide)
+  refine chain_cons runB (m := 169) (by decide) (two_taint _ (pinsB161 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 330) (by decide) (two_taint _ (pinsB169 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 341) (by decide) (two_taint _ (pinsB330 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 344) (by decide) (two_taint _ (pinsB341 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 350) (by decide) (two_taint _ (pinsB344 hsem) (by taint_decide)) ?_
+  exact two_taint _ (pinsB350 hsem) (by taint_decide)
 
 theorem body_rel : RelCT isa (Two ΦB) Verify.body fun _ _ => True := body_rel' runB onB
 

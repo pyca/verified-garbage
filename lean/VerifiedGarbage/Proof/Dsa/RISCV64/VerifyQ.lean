@@ -69,16 +69,16 @@ theorem ptrBuf_ok {s : State} {L : Lay} {key sig : Addr} (hs : ScrL s L) (hL : L
   refine WP.mono (getQ_ok (hs.congr ku.2.2) hL (hr.keepM ku mu) .s8) fun t ⟨⟨b8, mt⟩, kt⟩ =>
     ⟨⟨(kt.gpr (by decide)).trans a7, b8, by rw [mt, mu]⟩, (ku.trans kt).mono (by decide)⟩
 
-/-- `ptrBuf2`: the buffer plus `q_len`, `q_len`. -/
+/-- `ptrBuf2`: the buffer plus 32, `q_len`. -/
 theorem ptrBuf2_ok {s : State} {L : Lay} {key sig : Addr} (hs : ScrL s L) (hL : L.Ok) (hr : Regs s L key sig) :
     WP isa (.block ptrBuf2) s fun t =>
-      (t.gpr .s7 = off L.Buf L.ql ∧ t.gpr .s8 = BitVec.ofNat 64 L.ql ∧ t.mem = s.mem) ∧
+      (t.gpr .s7 = off L.Buf 32 ∧ t.gpr .s8 = BitVec.ofNat 64 L.ql ∧ t.mem = s.mem) ∧
         Keep [.s7, .t2, .s8] s t := by
   unfold ptrBuf2
   rw [WP.block_append_iff]
   refine WP.mono (ptrBuf_ok hs hL hr) fun u ⟨⟨a7, a8, mu⟩, ku⟩ => ?_
-  refine WP.mono (WP.keep [.s7] (Q := fun t => t.gpr .s7 = off L.Buf L.ql ∧ t.mem = u.mem)
-    (by brun [a7, a8, off]) (by rfl) (by rfl)) fun t ⟨⟨c7, mt⟩, kt⟩ =>
+  refine WP.mono (WP.keep [.s7] (Q := fun t => t.gpr .s7 = off L.Buf 32 ∧ t.mem = u.mem)
+    (by brun [a7, off]) (by rfl) (by rfl)) fun t ⟨⟨c7, mt⟩, kt⟩ =>
     ⟨⟨c7, by rw [kt.gpr (by decide), a8], by rw [mt, mu]⟩, (ku.trans kt).mono (by decide)⟩
 
 /-! ## The Q space -/
