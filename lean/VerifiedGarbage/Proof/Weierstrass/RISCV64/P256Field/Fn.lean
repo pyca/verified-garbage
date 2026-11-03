@@ -1521,6 +1521,39 @@ theorem ptrs_ok {W : Addr} {σ s : State} (hz : VG.Proof.Ed25519.RISCV64.zextF �
       ((u13.rest (by decide)).trans (u14.rest (by decide))))))))
   · rw [u14.mem, u13.mem, u12.mem, u11.mem, u10.mem, u9.mem, u8.mem, u7.mem]
 
+theorem lo_eq {s : State} {r : Reg} (h : (s.gpr r).toNat < 2 ^ 32) : lo s r = (s.gpr r).toNat := by
+  show ((s.gpr r).setWidth 32).toNat = _
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt h]
+
+/-- A register below `2³²` is its low word. -/
+theorem gpr_lo {s : State} {r : Reg} (h : (s.gpr r).toNat < 2 ^ 32) : s.gpr r = BitVec.ofNat 64 (lo s r) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ofNat, lo_eq h, Nat.mod_eq_of_lt (by omega)]
+
+/-- `t2`, `t4`, `t5` and `a3` from offsets below `2³²` (`ptrsA`). -/
+theorem ptrsA_ok {W : Addr} {s : State} (h0 : s.gpr .a0 = W) (h1 : (s.gpr .a1).toNat < 2 ^ 32)
+    (h2 : (s.gpr .a2).toNat < 2 ^ 32) (h3 : (s.gpr .a3).toNat < 2 ^ 32) :
+    WP isa (.block ptrsA) s fun t =>
+      t.gpr .t2 = W + BitVec.ofNat 64 (lo s .a1) ∧ t.gpr .t4 = W + BitVec.ofNat 64 (lo s .a2) ∧
+      t.gpr .t5 = W + BitVec.ofNat 64 (lo s .a3) ∧ t.gpr .a3 = W + BitVec.ofNat 64 2048 ∧
+      Rest [.a3, .t2, .t4, .t5] s t ∧ t.mem = s.mem := by
+  simp only [ptrsA]
+  refine wp_add fun s7 u7 => wp_add fun s8 u8 => wp_add fun s9 u9 => wp_addi (by decide) fun s10 u10 =>
+    wp_addi (by decide) fun s11 u11 => WP.block_nil ?_
+  have g : ∀ r, r ≠ .a3 → s11.gpr r = s9.gpr r := fun r h => by rw [u11.other _ h, u10.other _ h]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [g _ (by decide), u9.other _ (by decide), u8.other _ (by decide), u7.gpr, h0, ← gpr_lo h1]
+  · rw [g _ (by decide), u9.other _ (by decide), u8.gpr, u7.other _ (by decide), u7.other .a2 (by decide), h0,
+      ← gpr_lo h2]
+  · rw [g _ (by decide), u9.gpr, u8.other _ (by decide), u8.other .a3 (by decide), u7.other _ (by decide),
+      u7.other .a3 (by decide), h0, ← gpr_lo h3]
+  · rw [u11.gpr, u10.gpr, u9.other _ (by decide), u8.other _ (by decide), u7.other _ (by decide), h0,
+      BitVec.add_assoc]
+    rfl
+  · exact (u7.rest (by decide)).trans ((u8.rest (by decide)).trans ((u9.rest (by decide)).trans
+      ((u10.rest (by decide)).trans (u11.rest (by decide)))))
+  · rw [u11.mem, u10.mem, u9.mem, u8.mem, u7.mem]
+
 /-- The zero-extension, with what it keeps. -/
 theorem zext_ok (σ : State) : WP isa (.block zext) σ fun t =>
     VG.Proof.Ed25519.RISCV64.zextF σ t ∧ Rest [.a1, .a2, .a3] σ t ∧ t.mem = σ.mem := by
@@ -1561,6 +1594,38 @@ theorem mulW_fnW (W : Addr) (o : Nat) {m m' : Mem} (h : Frame (mulW W o) m m') :
     · exact ⟨_, List.mem_cons_self .., Offset.sub W (by omega) (by omega)⟩
     · exact ⟨_, List.mem_cons_self .., Offset.sub W (by omega) (by omega)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+
+/-- `fnA core`, from the working space at `W` and offsets below its own
+working space that are zero-extended multiples of 8. -/
+theorem fnA_ok {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat → Nat → Prop}
+    (hcore : CoreOk core pre res) {W : Addr} {s : State} (h0 : s.gpr .a0 = W) (hal : W.toNat % 8 = 0)
+    (hwr : (⟨W, 8192⟩ : Region) ∈ s.wr) (hfit : W.toNat + 8192 ≤ 2 ^ 64)
+    (ho : lo s .a1 + 32 ≤ 3840) (ha : lo s .a2 + 32 ≤ 3840) (hb : lo s .a3 + 32 ≤ 3840)
+    (h1 : (s.gpr .a1).toNat < 2 ^ 32 ∧ (s.gpr .a1).toNat % 8 = 0)
+    (h2 : (s.gpr .a2).toNat < 2 ^ 32 ∧ (s.gpr .a2).toNat % 8 = 0)
+    (h3 : (s.gpr .a3).toNat < 2 ^ 32 ∧ (s.gpr .a3).toNat % 8 = 0)
+    (hpre : pre (d4 s.mem (W + BitVec.ofNat 64 (lo s .a2))) (d4 s.mem (W + BitVec.ofNat 64 (lo s .a3)))) :
+    WP isa (fnA core) s fun s' =>
+      res (d4 s.mem (W + BitVec.ofNat 64 (lo s .a2))) (d4 s.mem (W + BitVec.ofNat 64 (lo s .a3)))
+        (d4 s'.mem (W + BitVec.ofNat 64 (lo s .a1))) ∧
+      Frame (fnW W (lo s .a1)) s.mem s'.mem ∧ (∀ r, r ∉ clobF → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  unfold fnA
+  refine WP.seq (WP.mono (ptrsA_ok h0 h1.1 h2.1 h3.1) fun s1 ⟨p2, p4, p5, p3, r1, m1⟩ => ?_)
+  have hw1 : WsAt W s1 := ⟨hal, by rw [r1.wr]; exact hwr, hfit, p3⟩
+  have sub1 : ∀ x ∈ [Reg.a3, .t2, .t4, .t5], x ∈ clobF := by decide
+  have subM : ∀ x ∈ clobM, x ∈ clobF := by decide
+  have al : ∀ r, (s.gpr r).toNat < 2 ^ 32 ∧ (s.gpr r).toNat % 8 = 0 → lo s r % 8 = 0 := fun r hr => by
+    rw [lo_eq hr.1]; exact hr.2
+  refine WP.mono (hcore hw1 p4 p5 p2 (al _ h2) (al _ h3) (al _ h1) (by omega) (by omega) (by omega)
+    (.inl (by omega)) (by rw [m1]; exact hpre)) fun s2 ⟨v2, f2, g2, rd2, wr2, sp2⟩ =>
+      ⟨by rw [← m1]; exact v2, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [← m1]; exact mulW_fnW W _ f2
+  · intro r hr
+    rw [g2 r (fun h => hr (subM r h)), r1.gpr r (fun h => hr (sub1 r h))]
+  · rw [rd2, r1.rd]
+  · rw [wr2, r1.wr]
+  · rw [sp2, r1.sp]
 
 /-- `fn core`, from the working space at `W` and offsets below its own working space. -/
 theorem fn_ok {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat → Nat → Prop}

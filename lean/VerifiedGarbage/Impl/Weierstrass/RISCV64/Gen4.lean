@@ -113,4 +113,13 @@ def addFn : Prog isa := fn (.block (addCore m))
 /-- The function subtracting modulo `m`. -/
 def subFn : Prog isa := fn (.block (subCore m))
 
+/-- The function multiplying modulo `m`, for aligned offsets. -/
+def mulFnA : Prog isa := fnA (mulCore m)
+
+/-- The function adding modulo `m`, for aligned offsets. -/
+def addFnA : Prog isa := fnA (.block (addCore m))
+
+/-- The function subtracting modulo `m`, for aligned offsets. -/
+def subFnA : Prog isa := fnA (.block (subCore m))
+
 end VG.Impl.Weierstrass.RISCV64.Gen4

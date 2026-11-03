@@ -58,12 +58,17 @@ abbrev wb : Reg := .s0
 /-- The loops' counter. -/
 abbrev ctr : Reg := .s1
 
-/-- The functions of a modulus: its contract's names (`S`), and their code. -/
+/-- The functions of a modulus: its contract's names (`S`), their code for
+offsets of any alignment, and their code for offsets that are multiples of 8
+(`mulA`, `addA`, `subA`), which the calls take when theirs are. -/
 structure Field where
   S : Impl.Weierstrass.Mont.Modulus
   mul : Prog isa
   add : Prog isa
   sub : Prog isa
+  mulA : Prog isa
+  addA : Prog isa
+  subA : Prog isa
 
 /-! ## Offsets past 2047 -/
 
@@ -91,19 +96,21 @@ def addAt (rd base : Reg) (v : Nat) : List Instr :=
 
 /-! ## Calls -/
 
-/-- `[o] = f([a], [b])` by a call of `f`, whose code is `body`, on the
-working space in `s0`. -/
-def callOp (f : String) (body : Prog isa) (o a b : Nat) : Prog isa :=
-  .seq (.block (.addi .a0 wb 0 :: (liAt .a1 o ++ (liAt .a2 a ++ liAt .a3 b)))) (.call f body)
+/-- `[o] = f([a], [b])` by a call on the working space in `s0`: of `f`,
+whose code is `bodyA`, when the offsets are multiples of 8, as the slots
+are, else of `f_any`, whose code is `body`. -/
+def callOp (f : String) (body bodyA : Prog isa) (o a b : Nat) : Prog isa :=
+  .seq (.block (.addi .a0 wb 0 :: (liAt .a1 o ++ (liAt .a2 a ++ liAt .a3 b))))
+    (if o % 8 = 0 ∧ a % 8 = 0 ∧ b % 8 = 0 then .call f bodyA else .call (f ++ "_any") body)
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
-def mulCall (F : Field) (o a b : Nat) : Prog isa := callOp (F.S.fn "mul") F.mul o a b
+def mulCall (F : Field) (o a b : Nat) : Prog isa := callOp (F.S.fn "mul") F.mul F.mulA o a b
 
 /-- `[o] = [a] + [b] mod m`. -/
-def addCall (F : Field) (o a b : Nat) : Prog isa := callOp (F.S.fn "add") F.add o a b
+def addCall (F : Field) (o a b : Nat) : Prog isa := callOp (F.S.fn "add") F.add F.addA o a b
 
 /-- `[o] = [a] - [b] mod m`. -/
-def subCall (F : Field) (o a b : Nat) : Prog isa := callOp (F.S.fn "sub") F.sub o a b
+def subCall (F : Field) (o a b : Nat) : Prog isa := callOp (F.S.fn "sub") F.sub F.subA o a b
 
 /-- The code of a field operation: a call of its function. -/
 def opCode (F : Field) : FOp → Prog isa

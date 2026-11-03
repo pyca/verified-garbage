@@ -42,8 +42,12 @@ open VG.WriteBytes (writeBytes)
 private theorem n_ok : Gen4.Ok Impl.Weierstrass.Mont.brainpoolp256r1n.m := ⟨by decide, by decide, by decide⟩
 
 theorem order_ok : FieldOk brainpoolp256r1Order :=
-  ⟨Gen4.mul_rv rfl n_ok, Gen4.add_rv rfl n_ok, Gen4.sub_rv rfl n_ok, Impl.Weierstrass.RISCV64.BrainpoolP256r1Order.mulFn_noFrames,
-    Impl.Weierstrass.RISCV64.BrainpoolP256r1Order.addFn_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP256r1Order.subFn_noFrames⟩
+  ⟨Gen4.mul_rv rfl n_ok, Gen4.add_rv rfl n_ok, Gen4.sub_rv rfl n_ok,
+    Impl.Weierstrass.RISCV64.BrainpoolP256r1Order.mulFn_noFrames,
+    Impl.Weierstrass.RISCV64.BrainpoolP256r1Order.addFn_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP256r1Order.subFn_noFrames,
+    Gen4.mulA_rv rfl n_ok, Gen4.addA_rv rfl n_ok, Gen4.subA_rv rfl n_ok,
+    Impl.Weierstrass.RISCV64.BrainpoolP256r1Order.mulFnA_noFrames,
+    Impl.Weierstrass.RISCV64.BrainpoolP256r1Order.addFnA_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP256r1Order.subFnA_noFrames⟩
 
 instance : NeZero brainpoolp256r1Order.S.m := ⟨by decide⟩
 

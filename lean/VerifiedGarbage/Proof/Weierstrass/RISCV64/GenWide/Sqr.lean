@@ -1234,4 +1234,12 @@ theorem mulSq_rv {S : Modulus} (hS : WideOk S) (s : State) (hs : (mulRV S).pre s
     (@mulCore_spec S.k S.m hS.lt hS.inv) hs.1 hs.2
   exact ⟨t, s', he, a, v1, v2, k⟩
 
+
+theorem mulSqA_rv {S : Modulus} (hS : WideOk S) (s : State)
+    (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV S)).pre s) :
+    ∃ t s', Exec isa (mulSqFnA S.k S.m) s t s' ∧ abiPreserved s s' ∧ (mulRV S).post s s' := by
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnA_rv hS.k7 hS.k30
+    (@mulSqFast_spec S.k S.m hS.lt hS.inv) hs.1.1 hs.2 (by exact hs.1.2)
+  exact ⟨t, s', he, a, v1, v2, k⟩
+
 end VG.Proof.Weierstrass.RISCV64.GenWide

@@ -88,4 +88,13 @@ def addFn : Prog isa := fn (.block addCore)
 /-- `vg_secp256k1_sub_mod_p`. -/
 def subFn : Prog isa := fn (.block subCore)
 
+/-- `vg_secp256k1_mul_mod_p`, for aligned offsets. -/
+def mulFnA : Prog isa := fnA mulCore
+
+/-- `vg_secp256k1_add_mod_p`, for aligned offsets. -/
+def addFnA : Prog isa := fnA (.block addCore)
+
+/-- `vg_secp256k1_sub_mod_p`, for aligned offsets. -/
+def subFnA : Prog isa := fnA (.block subCore)
+
 end VG.Impl.Weierstrass.RISCV64.Secp256k1Field

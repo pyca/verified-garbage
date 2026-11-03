@@ -23,6 +23,9 @@ namespace VG
 materialize_code Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.mulFn
 materialize_code Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.addFn
 materialize_code Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.subFn
+materialize_code Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.mulFnA
+materialize_code Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.addFnA
+materialize_code Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.subFnA
 
 theorem Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.mulFn_noFrames :
     Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.mulFn.noFrames = true := by lit_decide
@@ -30,5 +33,12 @@ theorem Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.addFn_noFrames :
     Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.addFn.noFrames = true := by lit_decide
 theorem Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.subFn_noFrames :
     Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.subFn.noFrames = true := by lit_decide
+
+theorem Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.mulFnA_noFrames :
+    Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.mulFnA.noFrames = true := by lit_decide
+theorem Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.addFnA_noFrames :
+    Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.addFnA.noFrames = true := by lit_decide
+theorem Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.subFnA_noFrames :
+    Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.subFnA.noFrames = true := by lit_decide
 
 end VG

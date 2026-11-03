@@ -45,8 +45,12 @@ open VG.WriteBytes (writeBytes)
 private theorem n_ok : GenWide.WideOk Impl.Weierstrass.Mont.brainpoolp512r1n := ⟨by decide, by decide, by decide, by decide⟩
 
 theorem order_ok : FieldOk brainpoolp512r1Order :=
-  ⟨GenWide.mul_rv n_ok, GenWide.add_rv n_ok, GenWide.sub_rv n_ok, Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.mulFn_noFrames,
-    Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.addFn_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.subFn_noFrames⟩
+  ⟨GenWide.mul_rv n_ok, GenWide.add_rv n_ok, GenWide.sub_rv n_ok,
+    Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.mulFn_noFrames,
+    Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.addFn_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.subFn_noFrames,
+    GenWide.mulA_rv n_ok, GenWide.addA_rv n_ok, GenWide.subA_rv n_ok,
+    Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.mulFnA_noFrames,
+    Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.addFnA_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.subFnA_noFrames⟩
 
 instance : NeZero brainpoolp512r1Order.S.m := ⟨by decide⟩
 

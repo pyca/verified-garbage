@@ -2129,6 +2129,35 @@ theorem ptrs_ok {W : Addr} {σ s : State} (hz : VG.Proof.Ed25519.RISCV64.zextF �
       (u16.rest (by decide))))))))))
   · rw [u16.mem, u15.mem, u14.mem, u13.mem, u12.mem, u11.mem, u10.mem, u9.mem, u8.mem, u7.mem]
 
+/-- `t2`, `t4`, `t5` and `a3` from offsets below `2³²` (`ptrsA`). -/
+theorem ptrsA_ok {W : Addr} {s : State} (h0 : s.gpr .a0 = W) (h1 : (s.gpr .a1).toNat < 2 ^ 32)
+    (h2 : (s.gpr .a2).toNat < 2 ^ 32) (h3 : (s.gpr .a3).toNat < 2 ^ 32) :
+    WP isa (.block ptrsA) s fun t =>
+      t.gpr .t2 = W + BitVec.ofNat 64 (lo s .a1) ∧ t.gpr .t4 = W + BitVec.ofNat 64 (lo s .a2) ∧
+      t.gpr .t5 = W + BitVec.ofNat 64 (lo s .a3) ∧ t.gpr .a3 = W + BitVec.ofNat 64 6144 ∧
+      Rest [.a3, .t2, .t4, .t5] s t ∧ t.mem = s.mem := by
+  have gl : ∀ r, (s.gpr r).toNat < 2 ^ 32 → s.gpr r = BitVec.ofNat 64 (lo s r) :=
+    fun _ h => VG.Proof.Weierstrass.RISCV64.P256Field.gpr_lo h
+  simp only [ptrsA]
+  refine wp_add fun s7 u7 => wp_add fun s8 u8 => wp_add fun s9 u9 => wp_addi (by decide) fun s10 u10 =>
+    wp_addi (by decide) fun s11 u11 => wp_addi (by decide) fun s12 u12 => wp_addi (by decide) fun s13 u13 =>
+    WP.block_nil ?_
+  have g : ∀ r, r ≠ .a3 → s13.gpr r = s9.gpr r := fun r h => by
+    rw [u13.other _ h, u12.other _ h, u11.other _ h, u10.other _ h]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [g _ (by decide), u9.other _ (by decide), u8.other _ (by decide), u7.gpr, h0, ← gl _ h1]
+  · rw [g _ (by decide), u9.other _ (by decide), u8.gpr, u7.other _ (by decide), u7.other .a2 (by decide), h0,
+      ← gl _ h2]
+  · rw [g _ (by decide), u9.gpr, u8.other _ (by decide), u8.other .a3 (by decide), u7.other _ (by decide),
+      u7.other .a3 (by decide), h0, ← gl _ h3]
+  · rw [u13.gpr, u12.gpr, u11.gpr, u10.gpr, u9.other _ (by decide), u8.other _ (by decide), u7.other _ (by decide),
+      h0, BitVec.add_assoc, BitVec.add_assoc, BitVec.add_assoc]
+    rfl
+  · exact (u7.rest (by decide)).trans ((u8.rest (by decide)).trans ((u9.rest (by decide)).trans
+      ((u10.rest (by decide)).trans ((u11.rest (by decide)).trans ((u12.rest (by decide)).trans
+      (u13.rest (by decide)))))))
+  · rw [u13.mem, u12.mem, u11.mem, u10.mem, u9.mem, u8.mem, u7.mem]
+
 /-! ## The operations as specifications -/
 
 /-- What an operation on the pointers `t4`, `t5` and `t2` does, for operands
@@ -2456,6 +2485,85 @@ theorem fnWith_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {fast : Prog isa} {c
     · rw [r4.sp, sp3, r2.sp, r1.sp]
 
 
+/-- `fnA k fast`, from the working space at `W` and offsets below the own working space that are
+zero-extended multiples of 8. -/
+theorem fnA_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {fast : Prog isa}
+    {pre : Nat → Nat → Prop} {res : Nat → Nat → Nat → Prop} (hfast : FastSpec k fast pre res) {W : Addr} {s : State}
+    (h0 : s.gpr .a0 = W) (hal : W.toNat % 8 = 0)
+    (hwr : (⟨W, 8192⟩ : Region) ∈ s.wr) (hfit : W.toNat + 8192 ≤ 2 ^ 64)
+    (ho : lo s .a1 + 8 * k ≤ 8192 - 64 * k) (ha : lo s .a2 + 8 * k ≤ 8192 - 64 * k)
+    (hb : lo s .a3 + 8 * k ≤ 8192 - 64 * k)
+    (h1 : (s.gpr .a1).toNat < 2 ^ 32 ∧ (s.gpr .a1).toNat % 8 = 0)
+    (h2 : (s.gpr .a2).toNat < 2 ^ 32 ∧ (s.gpr .a2).toNat % 8 = 0)
+    (h3 : (s.gpr .a3).toNat < 2 ^ 32 ∧ (s.gpr .a3).toNat % 8 = 0)
+    (hpre : pre (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)) :
+    WP isa (fnA fast) s fun s' =>
+      res (xv s.mem (W + BitVec.ofNat 64 (lo s .a2)) k) (xv s.mem (W + BitVec.ofNat 64 (lo s .a3)) k)
+        (xv s'.mem (W + BitVec.ofNat 64 (lo s .a1)) k) ∧
+      Frame (fnW k W (lo s .a1)) s.mem s'.mem ∧ (∀ r, r ∉ clobF → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  obtain ⟨e6, eA, eB, eO, otop, onk⟩ := layout_facts k (by omega) hk'
+  obtain ⟨hNT, -, -⟩ := N_facts k (by omega) hk'
+  obtain ⟨t8, -⟩ := T_facts k (by omega) hk'
+  unfold fnA
+  refine WP.seq (WP.mono (ptrsA_ok h0 h1.1 h2.1 h3.1) fun s1 ⟨p2, p4, p5, p3, r1, m1⟩ => ?_)
+  have hw1 : WsW W s1 := ⟨hal, by rw [r1.wr]; exact hwr, hfit, p3⟩
+  have sub1 : ∀ x ∈ [Reg.a3, .t2, .t4, .t5], x ∈ clobF := by decide
+  have subW : ∀ x ∈ clobW, x ∈ clobF := by decide
+  have hlt : ∀ x, x + 8 * k ≤ 8192 - 64 * k → (W + BitVec.ofNat 64 x).toNat = W.toNat + x := fun x hx => by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : x < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
+  have wdis : ∀ x, x + 8 * k ≤ 8192 - 64 * k → ∀ i < k,
+      Region.Disjoint ⟨W + BitVec.ofNat 64 x + BitVec.ofNat 64 (8 * i), 8⟩ (ownR k (W + BitVec.ofNat 64 6144)) :=
+    fun x hx i hi => by
+      rw [ownR, off_add, off_add]; exact Offset.disjoint W (.inl (by unfold T at *; omega)) (by omega) (by omega)
+  have al : ∀ r, (s.gpr r).toNat < 2 ^ 32 ∧ (s.gpr r).toNat % 8 = 0 → lo s r + 8 * k ≤ 8192 - 64 * k →
+      (W + BitVec.ofNat 64 (lo s r)).toNat % 8 = 0 := fun r hr hb => by
+    rw [hlt _ hb, show lo s r = (s.gpr r).toNat from VG.Proof.Weierstrass.RISCV64.P256Field.lo_eq hr.1]
+    omega
+  have al1 := al _ h1 ho
+  have al2 := al _ h2 ha
+  have al3 := al _ h3 hb
+  have hC : CoreOk k (W + BitVec.ofNat 64 6144) (W + BitVec.ofNat 64 (lo s .a2)) (W + BitVec.ofNat 64 (lo s .a3))
+      (W + BitVec.ofNat 64 (lo s .a1)) s1 :=
+    { ctx := hw1.ctx
+      nowrap := hw1.bnowrap
+      a := p4
+      b' := p5
+      o := p2
+      aal := al2
+      bal := al3
+      oal := al1
+      ain := fun i hi => by
+        rw [off_add]
+        obtain ⟨r, hr, hc⟩ := in_base (n := 8) hw1.wr (d := lo s .a2 + 8 * i) (by omega) (by omega)
+        exact ⟨r, List.mem_append_right _ hr, hc⟩
+      bin := fun i hi => by
+        rw [off_add]
+        obtain ⟨r, hr, hc⟩ := in_base (n := 8) hw1.wr (d := lo s .a3 + 8 * i) (by omega) (by omega)
+        exact ⟨r, List.mem_append_right _ hr, hc⟩
+      ow := fun i hi => by rw [off_add]; exact in_base (n := 8) hw1.wr (by omega) (by omega)
+      onw := by rw [hlt _ ho]; omega
+      adis := wdis _ ha
+      bdis := wdis _ hb
+      odis := by
+        rw [ownR, off_add]; exact Offset.disjoint W (.inl (by unfold T at *; omega)) (by omega) (by omega)
+      k7 := hk
+      k30 := hk' }
+  have adis : ∀ x, x + 8 * k ≤ 8192 - 64 * k → ∀ i < k,
+      Region.Disjoint ⟨W + BitVec.ofNat 64 x + BitVec.ofNat 64 (8 * i), 8⟩ (ownA k (W + BitVec.ofNat 64 6144)) :=
+    fun x hx i hi => by
+      rw [ownA, off_add, off_add]; exact Offset.disjoint W (.inl (by unfold T at *; omega)) (by omega) (by omega)
+  have odis : Region.Disjoint ⟨W + BitVec.ofNat 64 (lo s .a1), 8 * k⟩ (ownA k (W + BitVec.ofNat 64 6144)) := by
+    rw [ownA, off_add]; exact Offset.disjoint W (.inl (by unfold T at *; omega)) (by omega) (by omega)
+  refine WP.mono (hfast hC (adis _ ha) (adis _ hb) odis (by rw [m1]; exact hpre))
+    fun s2 ⟨v2, f2, g2, rd2, wr2, sp2⟩ => ⟨by rw [← m1]; exact v2, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [← m1]; exact f2.sub (fast_fnW (by omega) hk' W _)
+  · intro r hr
+    rw [g2 r (fun h => hr (subW r h)), r1.gpr r (fun h => hr (sub1 r h))]
+  · rw [rd2, r1.rd]
+  · rw [wr2, r1.wr]
+  · rw [sp2, r1.sp]
+
 /-- `fn k core`, from the working space at `W` and offsets below the own working space. -/
 theorem fn_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {core : List Instr} {pre : Nat → Nat → Prop}
     {res : Nat → Nat → Nat → Prop} (hcore : CoreSpec k core pre res) {W : Addr} {s : State}
@@ -2546,6 +2654,22 @@ theorem fn_rv {S : Modulus} (hk : 7 ≤ S.k) (hk' : S.k ≤ 30) {core : List Ins
   refine ⟨t, s', he, ⟨fun r hr => g r (by revert hr; revert r; decide), sp, g _ (by decide)⟩, v,
     keeps_of_frame (by omega) hk' fo f⟩
 
+/-- `fnA k fast` meets a contract by register for offsets as the calls set
+them, from `fnA_ok`. -/
+theorem fnA_rv {S : Modulus} (hk : 7 ≤ S.k) (hk' : S.k ≤ 30) {fast : Prog isa} {pre : Nat → Nat → Prop}
+    {res : Nat → Nat → Nat → Prop} (hfast : FastSpec S.k fast pre res) {s : State} (hs : rvPre S s)
+    (hoff : VG.Proof.Weierstrass.RISCV64.OffsOk s) (hp : pre (arg S s .a2) (arg S s .a3)) :
+    ∃ t s', Exec isa (fnA fast) s t s' ∧ abiPreserved s s' ∧
+      res (arg S s .a2) (arg S s .a3) (numAt s'.mem (s.gpr .a0) (offArg s .a1) S.k) ∧
+      Keeps S.k (s.gpr .a0) (offArg s .a1) s.mem s'.mem (rvOwn S.k) (rvOwnEnd S.k) := by
+  obtain ⟨-, hwr, hfit, ⟨fo, fa, fb⟩, hal⟩ := hs
+  simp only [Fits, rvOwn_gt (show 6 < S.k by omega)] at fo fa fb
+  simp only [arg, numAt_xv] at hp ⊢
+  obtain ⟨t, s', he, v, f, g, -, -, sp⟩ := fnA_ok hk hk' hfast rfl hal (by rw [hwr]; simp) hfit fo fa fb
+    (hoff _ (by simp)) (hoff _ (by simp)) (hoff _ (by simp)) hp
+  refine ⟨t, s', he, ⟨fun r hr => g r (by revert hr; revert r; decide), sp, g _ (by decide)⟩, v,
+    keeps_of_frame (by omega) hk' fo f⟩
+
 /-- What a wide modulus needs: its words, and `m'`. -/
 structure WideOk (S : Modulus) : Prop where
   k7 : 7 ≤ S.k
@@ -2566,6 +2690,27 @@ theorem add_rv {S : Modulus} (hS : WideOk S) (s : State) (hs : (addRV S).pre s) 
 theorem sub_rv {S : Modulus} (hS : WideOk S) (s : State) (hs : (subRV S).pre s) :
     ∃ t s', Exec isa (subFn S.k S.m) s t s' ∧ abiPreserved s s' ∧ (subRV S).post s s' := by
   obtain ⟨t, s', he, a, v, k⟩ := fn_rv hS.k7 hS.k30 (@subCore_spec S.k S.m hS.lt) hs.1 hs.2
+  exact ⟨t, s', he, a, v, k⟩
+
+theorem mulA_rv {S : Modulus} (hS : WideOk S) (s : State)
+    (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV S)).pre s) :
+    ∃ t s', Exec isa (mulFnA S.k S.m) s t s' ∧ abiPreserved s s' ∧ (mulRV S).post s s' := by
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnA_rv hS.k7 hS.k30
+    (@CoreSpec.fast _ _ _ _ (@mulCore_spec S.k S.m hS.lt hS.inv)) hs.1.1 hs.2 (by exact hs.1.2)
+  exact ⟨t, s', he, a, v1, v2, k⟩
+
+theorem addA_rv {S : Modulus} (hS : WideOk S) (s : State)
+    (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addRV S)).pre s) :
+    ∃ t s', Exec isa (addFnA S.k S.m) s t s' ∧ abiPreserved s s' ∧ (addRV S).post s s' := by
+  obtain ⟨t, s', he, a, v, k⟩ := fnA_rv hS.k7 hS.k30
+    (@CoreSpec.fast _ _ _ _ (@addCore_spec S.k S.m hS.lt)) hs.1.1 hs.2 (by exact hs.1.2)
+  exact ⟨t, s', he, a, v, k⟩
+
+theorem subA_rv {S : Modulus} (hS : WideOk S) (s : State)
+    (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV S)).pre s) :
+    ∃ t s', Exec isa (subFnA S.k S.m) s t s' ∧ abiPreserved s s' ∧ (subRV S).post s s' := by
+  obtain ⟨t, s', he, a, v, k⟩ := fnA_rv hS.k7 hS.k30
+    (@CoreSpec.fast _ _ _ _ (@subCore_spec S.k S.m hS.lt)) hs.1.1 hs.2 (by exact hs.1.2)
   exact ⟨t, s', he, a, v, k⟩
 
 end VG.Proof.Weierstrass.RISCV64.GenWide

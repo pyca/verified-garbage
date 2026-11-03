@@ -36,6 +36,11 @@ Too few registers hold `k` words, so the running value lives in memory, at
    and, word by word, that difference or `T` by the mask `T_k - borrow`
    (all ones exactly when `T < m`), into `[o]`.
 
+Calls whose offsets are multiples of 8, as the slots' are, take the code
+without the zero-extension, the alignment test and the copies (`fnA`): the
+offsets' registers are zero-extended already (`liAt` sets them), and the
+operation runs on the pointers.
+
 Every multiplication is `mul` or `mulhu`, every selection a mask, and the
 only branch is on the pointers, which are public, as every address is a
 pointer plus a constant. The functions use only caller-saved registers and
@@ -82,6 +87,12 @@ def ptrs : List Instr :=
   [.add .t2 .a0 .a1, .add .t4 .a0 .a2, .add .t5 .a0 .a3, .addi .a3 .a0 2047, .addi .a3 .a3 2047,
     .addi .a3 .a3 2047, .addi .a3 .a3 3, .logic .or .t0 .t2 .t4, .logic .or .t0 .t0 .t5,
     .logicImm .and .t0 .t0 7]
+
+/-- `t2 = ws + o`, `t4 = ws + a`, `t5 = ws + b` and `a3 = ws + 6144`, for
+offsets that are zero-extended multiples of 8 (`fnA`). -/
+def ptrsA : List Instr :=
+  [.add .t2 .a0 .a1, .add .t4 .a0 .a2, .add .t5 .a0 .a3, .addi .a3 .a0 2047, .addi .a3 .a3 2047,
+    .addi .a3 .a3 2047, .addi .a3 .a3 3]
 
 /-- `m`'s words at `N`, through `a6` and `a7`. -/
 def fillN : List Instr :=
@@ -202,6 +213,10 @@ def fnWith (fast : Prog isa) (core : List Instr) : Prog isa :=
           [.addi .t4 .a3 (SA k), .addi .t5 .a3 (SB k), .addi .t2 .a3 (SO k)])) <|
         .seq (.block core) (.block (pack k .t1 (SO k) 0)))
 
+/-- The operation `fast` on operands whose offsets are zero-extended
+multiples of 8, as the calls pass them: `fast` on the pointers. -/
+def fnA (fast : Prog isa) : Prog isa := .seq (.block ptrsA) fast
+
 /-- The operation `core` on operands at any offsets: on the pointers if they
 are multiples of 8, else on byte-wise copies (`fnWith`). -/
 def fn (core : List Instr) : Prog isa := fnWith k (.block core) core
@@ -284,5 +299,18 @@ def addFn : Prog isa := fn k (addCore k m)
 
 /-- The function subtracting modulo `m`. -/
 def subFn : Prog isa := fn k (subCore k m)
+
+/-- The function multiplying modulo `m`, for aligned offsets. -/
+def mulFnA : Prog isa := fnA (.block (mulCore k m))
+
+/-- The function multiplying modulo `m`, squaring when the operands are the
+same pointer, for aligned offsets. -/
+def mulSqFnA : Prog isa := fnA (.ite (.eq .t4 .t5) (.block (sqrCore k m)) (.block (mulCore k m)))
+
+/-- The function adding modulo `m`, for aligned offsets. -/
+def addFnA : Prog isa := fnA (.block (addCore k m))
+
+/-- The function subtracting modulo `m`, for aligned offsets. -/
+def subFnA : Prog isa := fnA (.block (subCore k m))
 
 end VG.Impl.Weierstrass.RISCV64.GenWide

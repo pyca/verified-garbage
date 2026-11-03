@@ -15,13 +15,17 @@ open VG.RISCV64
 
 /-- The functions of P-256's `p`. -/
 def p256Field : Weierstrass.RISCV64.Field :=
-  ⟨Impl.Weierstrass.Mont.p256p, Weierstrass.RISCV64.P256Field.mulFn, Weierstrass.RISCV64.P256Field.addFn,
-    Weierstrass.RISCV64.P256Field.subFn⟩
+  ⟨Impl.Weierstrass.Mont.p256p, Weierstrass.RISCV64.P256Field.mulFn,
+    Weierstrass.RISCV64.P256Field.addFn, Weierstrass.RISCV64.P256Field.subFn,
+    Weierstrass.RISCV64.P256Field.mulFnA, Weierstrass.RISCV64.P256Field.addFnA,
+    Weierstrass.RISCV64.P256Field.subFnA⟩
 
 /-- The functions of P-256's `n`. -/
 def p256Order : Weierstrass.RISCV64.Field :=
-  ⟨Impl.Weierstrass.Mont.p256n, Weierstrass.RISCV64.P256Order.mulFn, Weierstrass.RISCV64.P256Order.addFn,
-    Weierstrass.RISCV64.P256Order.subFn⟩
+  ⟨Impl.Weierstrass.Mont.p256n, Weierstrass.RISCV64.P256Order.mulFn,
+    Weierstrass.RISCV64.P256Order.addFn, Weierstrass.RISCV64.P256Order.subFn,
+    Weierstrass.RISCV64.P256Order.mulFnA, Weierstrass.RISCV64.P256Order.addFnA,
+    Weierstrass.RISCV64.P256Order.subFnA⟩
 
 /-- P-256 as the code has it. -/
 def p256 : Cfg := { n := 4, C := Spec.P256.curve, FP := p256Field }

@@ -38,11 +38,26 @@ def p192AddN : Prog isa := Weierstrass.RISCV64.Gen4.addFn p192n4.m
 /-- `vg_p192_sub_mod_n`. -/
 def p192SubN : Prog isa := Weierstrass.RISCV64.Gen4.subFn p192n4.m
 
+/-- `vg_p192_mul_mod_p`, for aligned offsets. -/
+def p192MulPA : Prog isa := Weierstrass.RISCV64.Gen4.mulFnA p192p4.m
+/-- `vg_p192_add_mod_p`, for aligned offsets. -/
+def p192AddPA : Prog isa := Weierstrass.RISCV64.Gen4.addFnA p192p4.m
+/-- `vg_p192_sub_mod_p`, for aligned offsets. -/
+def p192SubPA : Prog isa := Weierstrass.RISCV64.Gen4.subFnA p192p4.m
+/-- `vg_p192_mul_mod_n`, for aligned offsets. -/
+def p192MulNA : Prog isa := Weierstrass.RISCV64.Gen4.mulFnA p192n4.m
+/-- `vg_p192_add_mod_n`, for aligned offsets. -/
+def p192AddNA : Prog isa := Weierstrass.RISCV64.Gen4.addFnA p192n4.m
+/-- `vg_p192_sub_mod_n`, for aligned offsets. -/
+def p192SubNA : Prog isa := Weierstrass.RISCV64.Gen4.subFnA p192n4.m
+
 /-- The functions of P-192's `p`. -/
-def p192Field : Weierstrass.RISCV64.Field := ⟨p192p4, p192MulP, p192AddP, p192SubP⟩
+def p192Field : Weierstrass.RISCV64.Field :=
+  ⟨p192p4, p192MulP, p192AddP, p192SubP, p192MulPA, p192AddPA, p192SubPA⟩
 
 /-- The functions of P-192's `n`. -/
-def p192Order : Weierstrass.RISCV64.Field := ⟨p192n4, p192MulN, p192AddN, p192SubN⟩
+def p192Order : Weierstrass.RISCV64.Field :=
+  ⟨p192n4, p192MulN, p192AddN, p192SubN, p192MulNA, p192AddNA, p192SubNA⟩
 
 /-- P-192 as the code has it. -/
 def p192 : Cfg := { n := 4, C := Spec.P192.curve, FP := p192Field }

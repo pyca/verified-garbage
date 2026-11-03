@@ -15,7 +15,9 @@ the `64 k` bytes below byte 4096 (`Impl.Weierstrass.Mont.ownAt k`) for up
 to six words, and the top `64 k` bytes of the working space for more, so
 that a wider field's operands may take every byte below 4096. Each field's
 proof shows its code meets them, and the shared contracts follow; callers (`Proof/Weierstrass/RISCV64/Call.lean`)
-use them at their calls.
+use them at their calls. The calls' offsets are zero-extended multiples of 8
+(`OffsOk`), for which each function has code without its entry's
+zero-extension and copies, meeting the contracts for them (`alignedC`).
 -/
 
 @[expose] public section
@@ -79,6 +81,17 @@ def subRV (S : Modulus) : Contract isa where
   post s s' := res S s s' = (arg S s .a2 + S.m - arg S s .a3) % S.m ∧
     Keeps S.k (s.gpr .a0) (offArg s .a1) s.mem s'.mem (rvOwn S.k) (rvOwnEnd S.k)
   pub := rvPub
+
+/-- The offsets' registers as the calls set them: below `2³²`, multiples of 8. -/
+def OffsOk (s : State) : Prop :=
+  ∀ r ∈ [Reg.a1, .a2, .a3], (s.gpr r).toNat < 2 ^ 32 ∧ (s.gpr r).toNat % 8 = 0
+
+/-- `K` for offsets as the calls set them (`OffsOk`): the contracts of the
+functions without the entry's zero-extension and copies. -/
+def alignedC (K : Contract isa) : Contract isa where
+  pre s := K.pre s ∧ OffsOk s
+  post := K.post
+  pub := K.pub
 
 /-- Code meets a contract by register. -/
 abbrev Meets (c : Prog isa) (k : Contract isa) : Prop :=

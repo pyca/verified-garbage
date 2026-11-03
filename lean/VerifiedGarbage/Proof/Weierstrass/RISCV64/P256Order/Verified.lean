@@ -70,6 +70,22 @@ theorem sub_rv (s : State) (hs : (subRV p256n).pre s) :
   obtain ⟨t, s', he, a, v, k⟩ := fn_rv (@subCore_core) hs.1 (by rw [← n_eq]; exact hs.2)
   exact ⟨t, s', he, a, by rw [n_eq]; exact v, k⟩
 
+theorem mulA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV p256n)).pre s) :
+    ∃ t s', Exec isa Impl.Weierstrass.RISCV64.P256Order.mulFnA s t s' ∧ abiPreserved s s' ∧ (mulRV p256n).post s s' := by
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ :=
+    P256Field.fnA_rv rfl (@mulCore_core) hs.1.1 hs.2 (by rw [← n_eq]; exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [n_eq]; exact v1, by rw [n_eq]; exact v2, k⟩
+
+theorem addA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addRV p256n)).pre s) :
+    ∃ t s', Exec isa Impl.Weierstrass.RISCV64.P256Order.addFnA s t s' ∧ abiPreserved s s' ∧ (addRV p256n).post s s' := by
+  obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv rfl (@addCore_core) hs.1.1 hs.2 (by rw [← n_eq]; exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [n_eq]; exact v, k⟩
+
+theorem subA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV p256n)).pre s) :
+    ∃ t s', Exec isa Impl.Weierstrass.RISCV64.P256Order.subFnA s t s' ∧ abiPreserved s s' ∧ (subRV p256n).post s s' := by
+  obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv rfl (@subCore_core) hs.1.1 hs.2 (by rw [← n_eq]; exact hs.1.2)
+  exact ⟨t, s', he, a, by rw [n_eq]; exact v, k⟩
+
 /-! ## Constant time -/
 
 open VG.Proof.Ed25519.RISCV64 (mulAgreeLo mulZext_rel)

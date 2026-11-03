@@ -31,8 +31,12 @@ open VG.Spec.Weierstrass (Curve Fe Point)
 abbrev W : Curve := Spec.P384.curve
 
 theorem field_ok : FieldOk p384Field :=
-  ⟨P384Field.mul_rv, P384Field.add_rv, P384Field.sub_rv, Impl.Weierstrass.RISCV64.P384Field.mulFn_noFrames,
-    Impl.Weierstrass.RISCV64.P384Field.addFn_noFrames, Impl.Weierstrass.RISCV64.P384Field.subFn_noFrames⟩
+  ⟨P384Field.mul_rv, P384Field.add_rv, P384Field.sub_rv,
+    Impl.Weierstrass.RISCV64.P384Field.mulFn_noFrames,
+    Impl.Weierstrass.RISCV64.P384Field.addFn_noFrames, Impl.Weierstrass.RISCV64.P384Field.subFn_noFrames,
+    P384Field.mulA_rv, P384Field.addA_rv, P384Field.subA_rv,
+    Impl.Weierstrass.RISCV64.P384Field.mulFnA_noFrames,
+    Impl.Weierstrass.RISCV64.P384Field.addFnA_noFrames, Impl.Weierstrass.RISCV64.P384Field.subFnA_noFrames⟩
 
 instance : NeZero p384Field.S.m := ⟨by decide⟩
 

@@ -116,4 +116,13 @@ def addFn : Prog isa := fn (.block addCore)
 /-- `vg_p256_sub_mod_n`. -/
 def subFn : Prog isa := fn (.block subCore)
 
+/-- `vg_p256_mul_mod_n`, for aligned offsets. -/
+def mulFnA : Prog isa := fnA mulCore
+
+/-- `vg_p256_add_mod_n`, for aligned offsets. -/
+def addFnA : Prog isa := fnA (.block addCore)
+
+/-- `vg_p256_sub_mod_n`, for aligned offsets. -/
+def subFnA : Prog isa := fnA (.block subCore)
+
 end VG.Impl.Weierstrass.RISCV64.P256Order

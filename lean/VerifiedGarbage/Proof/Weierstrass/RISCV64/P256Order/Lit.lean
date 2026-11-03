@@ -23,6 +23,9 @@ namespace VG
 materialize_code Impl.Weierstrass.RISCV64.P256Order.mulFn
 materialize_code Impl.Weierstrass.RISCV64.P256Order.addFn
 materialize_code Impl.Weierstrass.RISCV64.P256Order.subFn
+materialize_code Impl.Weierstrass.RISCV64.P256Order.mulFnA
+materialize_code Impl.Weierstrass.RISCV64.P256Order.addFnA
+materialize_code Impl.Weierstrass.RISCV64.P256Order.subFnA
 
 theorem Impl.Weierstrass.RISCV64.P256Order.mulFn_noFrames :
     Impl.Weierstrass.RISCV64.P256Order.mulFn.noFrames = true := by lit_decide
@@ -30,5 +33,12 @@ theorem Impl.Weierstrass.RISCV64.P256Order.addFn_noFrames :
     Impl.Weierstrass.RISCV64.P256Order.addFn.noFrames = true := by lit_decide
 theorem Impl.Weierstrass.RISCV64.P256Order.subFn_noFrames :
     Impl.Weierstrass.RISCV64.P256Order.subFn.noFrames = true := by lit_decide
+
+theorem Impl.Weierstrass.RISCV64.P256Order.mulFnA_noFrames :
+    Impl.Weierstrass.RISCV64.P256Order.mulFnA.noFrames = true := by lit_decide
+theorem Impl.Weierstrass.RISCV64.P256Order.addFnA_noFrames :
+    Impl.Weierstrass.RISCV64.P256Order.addFnA.noFrames = true := by lit_decide
+theorem Impl.Weierstrass.RISCV64.P256Order.subFnA_noFrames :
+    Impl.Weierstrass.RISCV64.P256Order.subFnA.noFrames = true := by lit_decide
 
 end VG

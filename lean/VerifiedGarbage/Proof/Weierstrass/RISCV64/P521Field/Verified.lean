@@ -55,6 +55,18 @@ theorem sub_rv (s : State) (hs : (subRV p521p).pre s) :
     ∃ t s', Exec isa subFn s t s' ∧ abiPreserved s s' ∧ (subRV p521p).post s s' :=
   GenWide.sub_rv wide s hs
 
+theorem mulA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV p521p)).pre s) :
+    ∃ t s', Exec isa mulFnA s t s' ∧ abiPreserved s s' ∧ (mulRV p521p).post s s' :=
+  P521Mersenne.mulA_rv s hs
+
+theorem addA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addRV p521p)).pre s) :
+    ∃ t s', Exec isa addFnA s t s' ∧ abiPreserved s s' ∧ (addRV p521p).post s s' :=
+  GenWide.addA_rv wide s hs
+
+theorem subA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV p521p)).pre s) :
+    ∃ t s', Exec isa subFnA s t s' ∧ abiPreserved s s' ∧ (subRV p521p).post s s' :=
+  GenWide.subA_rv wide s hs
+
 /-! ## Constant time -/
 
 open VG.Proof.Ed25519.RISCV64 (mulAgreeLo)

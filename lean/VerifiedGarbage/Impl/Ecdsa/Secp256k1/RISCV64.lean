@@ -19,12 +19,16 @@ open VG.RISCV64
 /-- The functions of secp256k1's `p`. -/
 def secp256k1Field : Weierstrass.RISCV64.Field :=
   ⟨Impl.Weierstrass.Mont.secp256k1p, Weierstrass.RISCV64.Secp256k1Field.mulFn,
-    Weierstrass.RISCV64.Secp256k1Field.addFn, Weierstrass.RISCV64.Secp256k1Field.subFn⟩
+    Weierstrass.RISCV64.Secp256k1Field.addFn, Weierstrass.RISCV64.Secp256k1Field.subFn,
+    Weierstrass.RISCV64.Secp256k1Field.mulFnA, Weierstrass.RISCV64.Secp256k1Field.addFnA,
+    Weierstrass.RISCV64.Secp256k1Field.subFnA⟩
 
 /-- The functions of secp256k1's `n`. -/
 def secp256k1Order : Weierstrass.RISCV64.Field :=
   ⟨Impl.Weierstrass.Mont.secp256k1n, Weierstrass.RISCV64.Secp256k1Order.mulFn,
-    Weierstrass.RISCV64.Secp256k1Order.addFn, Weierstrass.RISCV64.Secp256k1Order.subFn⟩
+    Weierstrass.RISCV64.Secp256k1Order.addFn, Weierstrass.RISCV64.Secp256k1Order.subFn,
+    Weierstrass.RISCV64.Secp256k1Order.mulFnA, Weierstrass.RISCV64.Secp256k1Order.addFnA,
+    Weierstrass.RISCV64.Secp256k1Order.subFnA⟩
 
 /-- secp256k1 as the code has it: `a = 0`, so verification adds by the
 complete addition for any `a` (`am3 := false`). -/
