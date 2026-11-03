@@ -817,6 +817,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 257:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -827,13 +828,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -841,7 +844,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 259f
@@ -849,18 +851,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -881,18 +883,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -901,18 +903,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -921,18 +923,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -941,18 +943,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -974,8 +976,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 258b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -1043,6 +1053,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 267:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -1053,13 +1064,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -1067,7 +1080,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 269f
@@ -1075,18 +1087,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -1107,18 +1119,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -1127,18 +1139,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -1147,18 +1159,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -1167,18 +1179,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -1200,8 +1212,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 268b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -1322,6 +1342,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 279:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -1332,13 +1353,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -1346,7 +1369,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 281f
@@ -1354,18 +1376,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -1386,18 +1408,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -1406,18 +1428,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -1426,18 +1448,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -1446,18 +1468,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -1479,8 +1501,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 280b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -1646,12 +1676,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 294f
 296:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1660,9 +1691,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1671,9 +1702,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1682,9 +1713,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1693,9 +1724,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1704,9 +1735,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1715,9 +1746,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1726,9 +1757,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1746,9 +1777,9 @@ vg_dsa_verify:
 	beqz t6, 297f
 299:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1802,21 +1833,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2101:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2102f
 2104:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1825,9 +1860,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1836,9 +1871,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1847,9 +1882,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1858,9 +1893,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1869,9 +1904,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1880,9 +1915,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1891,9 +1926,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1911,9 +1946,9 @@ vg_dsa_verify:
 	beqz t6, 2105f
 2107:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -1937,7 +1972,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2101b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -2026,12 +2067,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2112f
 2114:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2040,9 +2082,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2051,9 +2093,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2062,9 +2104,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2073,9 +2115,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2084,9 +2126,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2095,9 +2137,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2106,9 +2148,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2126,9 +2168,9 @@ vg_dsa_verify:
 	beqz t6, 2115f
 2117:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2182,21 +2224,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2119:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2120f
 2122:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2205,9 +2251,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2216,9 +2262,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2227,9 +2273,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2238,9 +2284,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2249,9 +2295,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2260,9 +2306,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2271,9 +2317,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2291,9 +2337,9 @@ vg_dsa_verify:
 	beqz t6, 2123f
 2125:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2317,7 +2363,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2119b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -2406,12 +2458,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2130f
 2132:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2420,9 +2473,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2431,9 +2484,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2442,9 +2495,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2453,9 +2506,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2464,9 +2517,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2475,9 +2528,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2486,9 +2539,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2506,9 +2559,9 @@ vg_dsa_verify:
 	beqz t6, 2133f
 2135:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2562,21 +2615,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2137:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2138f
 2140:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2585,9 +2642,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2596,9 +2653,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2607,9 +2664,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2618,9 +2675,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2629,9 +2686,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2640,9 +2697,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2651,9 +2708,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2671,9 +2728,9 @@ vg_dsa_verify:
 	beqz t6, 2141f
 2143:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2697,7 +2754,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2137b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -2786,12 +2849,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2148f
 2150:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2800,9 +2864,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2811,9 +2875,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2822,9 +2886,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2833,9 +2897,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2844,9 +2908,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2855,9 +2919,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2866,9 +2930,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2886,9 +2950,9 @@ vg_dsa_verify:
 	beqz t6, 2151f
 2153:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2942,21 +3006,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2155:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2156f
 2158:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2965,9 +3033,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2976,9 +3044,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2987,9 +3055,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -2998,9 +3066,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3009,9 +3077,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3020,9 +3088,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3031,9 +3099,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3051,9 +3119,9 @@ vg_dsa_verify:
 	beqz t6, 2159f
 2161:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3077,7 +3145,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2155b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -3229,6 +3303,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2167:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -3239,13 +3314,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -3253,7 +3330,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2169f
@@ -3261,18 +3337,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -3293,18 +3369,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -3313,18 +3389,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -3333,18 +3409,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -3353,18 +3429,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -3386,8 +3462,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2168b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -3471,12 +3555,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2179f
 2181:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3485,9 +3570,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3496,9 +3581,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3507,9 +3592,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3518,9 +3603,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3529,9 +3614,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3540,9 +3625,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3551,9 +3636,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3571,9 +3656,9 @@ vg_dsa_verify:
 	beqz t6, 2182f
 2184:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3627,21 +3712,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2186:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2187f
 2189:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3650,9 +3739,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3661,9 +3750,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3672,9 +3761,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3683,9 +3772,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3694,9 +3783,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3705,9 +3794,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3716,9 +3805,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3736,9 +3825,9 @@ vg_dsa_verify:
 	beqz t6, 2190f
 2192:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3762,7 +3851,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2186b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -3851,12 +3946,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2197f
 2199:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3865,9 +3961,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3876,9 +3972,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3887,9 +3983,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3898,9 +3994,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3909,9 +4005,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3920,9 +4016,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3931,9 +4027,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -3951,9 +4047,9 @@ vg_dsa_verify:
 	beqz t6, 2200f
 2202:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4007,21 +4103,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2204:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2205f
 2207:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4030,9 +4130,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4041,9 +4141,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4052,9 +4152,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4063,9 +4163,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4074,9 +4174,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4085,9 +4185,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4096,9 +4196,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4116,9 +4216,9 @@ vg_dsa_verify:
 	beqz t6, 2208f
 2210:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4142,7 +4242,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2204b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -4231,12 +4337,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2215f
 2217:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4245,9 +4352,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4256,9 +4363,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4267,9 +4374,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4278,9 +4385,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4289,9 +4396,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4300,9 +4407,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4311,9 +4418,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4331,9 +4438,9 @@ vg_dsa_verify:
 	beqz t6, 2218f
 2220:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4387,21 +4494,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2222:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2223f
 2225:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4410,9 +4521,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4421,9 +4532,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4432,9 +4543,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4443,9 +4554,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4454,9 +4565,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4465,9 +4576,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4476,9 +4587,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4496,9 +4607,9 @@ vg_dsa_verify:
 	beqz t6, 2226f
 2228:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4522,7 +4633,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2222b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -4611,12 +4728,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2233f
 2235:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4625,9 +4743,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4636,9 +4754,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4647,9 +4765,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4658,9 +4776,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4669,9 +4787,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4680,9 +4798,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4691,9 +4809,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4711,9 +4829,9 @@ vg_dsa_verify:
 	beqz t6, 2236f
 2238:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4767,21 +4885,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2240:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2241f
 2243:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4790,9 +4912,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4801,9 +4923,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4812,9 +4934,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4823,9 +4945,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4834,9 +4956,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4845,9 +4967,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4856,9 +4978,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4876,9 +4998,9 @@ vg_dsa_verify:
 	beqz t6, 2244f
 2246:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -4902,7 +5024,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2240b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -5054,6 +5182,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2252:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -5064,13 +5193,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -5078,7 +5209,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2254f
@@ -5086,18 +5216,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5118,18 +5248,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5138,18 +5268,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5158,18 +5288,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5178,18 +5308,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5211,8 +5341,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2253b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -5286,6 +5424,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2262:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -5296,13 +5435,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -5310,7 +5451,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2264f
@@ -5318,18 +5458,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5350,18 +5490,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5370,18 +5510,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5390,18 +5530,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5410,18 +5550,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5443,8 +5583,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2263b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -5815,6 +5963,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2287:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -5825,13 +5974,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -5839,7 +5990,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2289f
@@ -5847,18 +5997,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5879,18 +6029,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5899,18 +6049,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5919,18 +6069,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5939,18 +6089,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -5972,8 +6122,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2288b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -6041,6 +6199,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2297:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -6051,13 +6210,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -6065,7 +6226,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2299f
@@ -6073,18 +6233,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -6105,18 +6265,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -6125,18 +6285,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -6145,18 +6305,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -6165,18 +6325,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -6198,8 +6358,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2298b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -6320,6 +6488,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2309:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -6330,13 +6499,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -6344,7 +6515,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2311f
@@ -6352,18 +6522,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -6384,18 +6554,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -6404,18 +6574,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -6424,18 +6594,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -6444,18 +6614,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -6477,8 +6647,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2310b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -6644,12 +6822,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2324f
 2326:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6658,9 +6837,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6669,9 +6848,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6680,9 +6859,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6691,9 +6870,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6702,9 +6881,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6713,9 +6892,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6724,9 +6903,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6744,9 +6923,9 @@ vg_dsa_verify:
 	beqz t6, 2327f
 2329:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6800,21 +6979,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2331:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2332f
 2334:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6823,9 +7006,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6834,9 +7017,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6845,9 +7028,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6856,9 +7039,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6867,9 +7050,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6878,9 +7061,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6889,9 +7072,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6909,9 +7092,9 @@ vg_dsa_verify:
 	beqz t6, 2335f
 2337:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -6935,7 +7118,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2331b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -7024,12 +7213,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2342f
 2344:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7038,9 +7228,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7049,9 +7239,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7060,9 +7250,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7071,9 +7261,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7082,9 +7272,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7093,9 +7283,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7104,9 +7294,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7124,9 +7314,9 @@ vg_dsa_verify:
 	beqz t6, 2345f
 2347:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7180,21 +7370,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2349:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2350f
 2352:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7203,9 +7397,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7214,9 +7408,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7225,9 +7419,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7236,9 +7430,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7247,9 +7441,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7258,9 +7452,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7269,9 +7463,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7289,9 +7483,9 @@ vg_dsa_verify:
 	beqz t6, 2353f
 2355:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7315,7 +7509,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2349b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -7404,12 +7604,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2360f
 2362:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7418,9 +7619,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7429,9 +7630,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7440,9 +7641,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7451,9 +7652,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7462,9 +7663,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7473,9 +7674,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7484,9 +7685,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7504,9 +7705,9 @@ vg_dsa_verify:
 	beqz t6, 2363f
 2365:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7560,21 +7761,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2367:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2368f
 2370:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7583,9 +7788,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7594,9 +7799,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7605,9 +7810,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7616,9 +7821,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7627,9 +7832,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7638,9 +7843,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7649,9 +7854,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7669,9 +7874,9 @@ vg_dsa_verify:
 	beqz t6, 2371f
 2373:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7695,7 +7900,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2367b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -7784,12 +7995,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2378f
 2380:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7798,9 +8010,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7809,9 +8021,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7820,9 +8032,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7831,9 +8043,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7842,9 +8054,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7853,9 +8065,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7864,9 +8076,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7884,9 +8096,9 @@ vg_dsa_verify:
 	beqz t6, 2381f
 2383:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7940,21 +8152,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2385:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2386f
 2388:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7963,9 +8179,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7974,9 +8190,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7985,9 +8201,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -7996,9 +8212,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8007,9 +8223,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8018,9 +8234,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8029,9 +8245,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8049,9 +8265,9 @@ vg_dsa_verify:
 	beqz t6, 2389f
 2391:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8075,7 +8291,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2385b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -8227,6 +8449,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2397:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -8237,13 +8460,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -8251,7 +8476,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2399f
@@ -8259,18 +8483,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -8291,18 +8515,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -8311,18 +8535,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -8331,18 +8555,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -8351,18 +8575,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -8384,8 +8608,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2398b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -8469,12 +8701,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2409f
 2411:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8483,9 +8716,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8494,9 +8727,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8505,9 +8738,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8516,9 +8749,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8527,9 +8760,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8538,9 +8771,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8549,9 +8782,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8569,9 +8802,9 @@ vg_dsa_verify:
 	beqz t6, 2412f
 2414:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8625,21 +8858,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2416:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2417f
 2419:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8648,9 +8885,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8659,9 +8896,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8670,9 +8907,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8681,9 +8918,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8692,9 +8929,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8703,9 +8940,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8714,9 +8951,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8734,9 +8971,9 @@ vg_dsa_verify:
 	beqz t6, 2420f
 2422:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8760,7 +8997,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2416b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -8849,12 +9092,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2427f
 2429:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8863,9 +9107,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8874,9 +9118,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8885,9 +9129,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8896,9 +9140,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8907,9 +9151,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8918,9 +9162,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8929,9 +9173,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -8949,9 +9193,9 @@ vg_dsa_verify:
 	beqz t6, 2430f
 2432:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9005,21 +9249,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2434:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2435f
 2437:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9028,9 +9276,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9039,9 +9287,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9050,9 +9298,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9061,9 +9309,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9072,9 +9320,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9083,9 +9331,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9094,9 +9342,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9114,9 +9362,9 @@ vg_dsa_verify:
 	beqz t6, 2438f
 2440:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9140,7 +9388,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2434b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -9229,12 +9483,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2445f
 2447:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9243,9 +9498,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9254,9 +9509,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9265,9 +9520,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9276,9 +9531,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9287,9 +9542,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9298,9 +9553,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9309,9 +9564,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9329,9 +9584,9 @@ vg_dsa_verify:
 	beqz t6, 2448f
 2450:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9385,21 +9640,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2452:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2453f
 2455:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9408,9 +9667,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9419,9 +9678,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9430,9 +9689,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9441,9 +9700,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9452,9 +9711,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9463,9 +9722,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9474,9 +9733,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9494,9 +9753,9 @@ vg_dsa_verify:
 	beqz t6, 2456f
 2458:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9520,7 +9779,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2452b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -9609,12 +9874,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2463f
 2465:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9623,9 +9889,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9634,9 +9900,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9645,9 +9911,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9656,9 +9922,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9667,9 +9933,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9678,9 +9944,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9689,9 +9955,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9709,9 +9975,9 @@ vg_dsa_verify:
 	beqz t6, 2466f
 2468:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9765,21 +10031,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2470:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2471f
 2473:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9788,9 +10058,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9799,9 +10069,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9810,9 +10080,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9821,9 +10091,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9832,9 +10102,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9843,9 +10113,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9854,9 +10124,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9874,9 +10144,9 @@ vg_dsa_verify:
 	beqz t6, 2474f
 2476:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -9900,7 +10170,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2470b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -10052,6 +10328,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2482:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -10062,13 +10339,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -10076,7 +10355,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2484f
@@ -10084,18 +10362,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -10116,18 +10394,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -10136,18 +10414,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -10156,18 +10434,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -10176,18 +10454,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -10209,8 +10487,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2483b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -10284,6 +10570,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2492:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -10294,13 +10581,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -10308,7 +10597,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2494f
@@ -10316,18 +10604,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -10348,18 +10636,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -10368,18 +10656,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -10388,18 +10676,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -10408,18 +10696,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -10441,8 +10729,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2493b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -11106,6 +11402,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2527:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -11116,13 +11413,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -11130,7 +11429,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2529f
@@ -11138,18 +11436,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11170,18 +11468,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11190,18 +11488,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11210,18 +11508,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11230,18 +11528,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11263,8 +11561,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2528b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -11332,6 +11638,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2537:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -11342,13 +11649,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -11356,7 +11665,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2539f
@@ -11364,18 +11672,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11396,18 +11704,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11416,18 +11724,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11436,18 +11744,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11456,18 +11764,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11489,8 +11797,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2538b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -11611,6 +11927,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2549:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -11621,13 +11938,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -11635,7 +11954,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2551f
@@ -11643,18 +11961,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11675,18 +11993,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11695,18 +12013,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11715,18 +12033,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11735,18 +12053,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11768,8 +12086,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2550b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -11935,12 +12261,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2564f
 2566:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -11949,9 +12276,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -11960,9 +12287,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -11971,9 +12298,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -11982,9 +12309,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -11993,9 +12320,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12004,9 +12331,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12015,9 +12342,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12035,9 +12362,9 @@ vg_dsa_verify:
 	beqz t6, 2567f
 2569:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12091,21 +12418,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2571:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2572f
 2574:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12114,9 +12445,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12125,9 +12456,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12136,9 +12467,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12147,9 +12478,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12158,9 +12489,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12169,9 +12500,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12180,9 +12511,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12200,9 +12531,9 @@ vg_dsa_verify:
 	beqz t6, 2575f
 2577:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12226,7 +12557,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2571b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -12315,12 +12652,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2582f
 2584:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12329,9 +12667,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12340,9 +12678,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12351,9 +12689,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12362,9 +12700,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12373,9 +12711,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12384,9 +12722,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12395,9 +12733,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12415,9 +12753,9 @@ vg_dsa_verify:
 	beqz t6, 2585f
 2587:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12471,21 +12809,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2589:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2590f
 2592:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12494,9 +12836,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12505,9 +12847,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12516,9 +12858,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12527,9 +12869,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12538,9 +12880,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12549,9 +12891,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12560,9 +12902,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12580,9 +12922,9 @@ vg_dsa_verify:
 	beqz t6, 2593f
 2595:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12606,7 +12948,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2589b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -12695,12 +13043,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2600f
 2602:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12709,9 +13058,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12720,9 +13069,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12731,9 +13080,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12742,9 +13091,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12753,9 +13102,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12764,9 +13113,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12775,9 +13124,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12795,9 +13144,9 @@ vg_dsa_verify:
 	beqz t6, 2603f
 2605:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12851,21 +13200,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2607:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2608f
 2610:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12874,9 +13227,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12885,9 +13238,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12896,9 +13249,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12907,9 +13260,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12918,9 +13271,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12929,9 +13282,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12940,9 +13293,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12960,9 +13313,9 @@ vg_dsa_verify:
 	beqz t6, 2611f
 2613:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -12986,7 +13339,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2607b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -13075,12 +13434,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2618f
 2620:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13089,9 +13449,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13100,9 +13460,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13111,9 +13471,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13122,9 +13482,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13133,9 +13493,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13144,9 +13504,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13155,9 +13515,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13175,9 +13535,9 @@ vg_dsa_verify:
 	beqz t6, 2621f
 2623:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13231,21 +13591,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2625:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2626f
 2628:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13254,9 +13618,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13265,9 +13629,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13276,9 +13640,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13287,9 +13651,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13298,9 +13662,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13309,9 +13673,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13320,9 +13684,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13340,9 +13704,9 @@ vg_dsa_verify:
 	beqz t6, 2629f
 2631:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13366,7 +13730,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2625b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -13518,6 +13888,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2637:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -13528,13 +13899,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -13542,7 +13915,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2639f
@@ -13550,18 +13922,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -13582,18 +13954,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -13602,18 +13974,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -13622,18 +13994,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -13642,18 +14014,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -13675,8 +14047,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2638b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -13760,12 +14140,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2649f
 2651:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13774,9 +14155,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13785,9 +14166,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13796,9 +14177,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13807,9 +14188,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13818,9 +14199,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13829,9 +14210,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13840,9 +14221,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13860,9 +14241,9 @@ vg_dsa_verify:
 	beqz t6, 2652f
 2654:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13916,21 +14297,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2656:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2657f
 2659:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13939,9 +14324,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13950,9 +14335,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13961,9 +14346,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13972,9 +14357,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13983,9 +14368,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -13994,9 +14379,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14005,9 +14390,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14025,9 +14410,9 @@ vg_dsa_verify:
 	beqz t6, 2660f
 2662:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14051,7 +14436,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2656b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -14140,12 +14531,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2667f
 2669:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14154,9 +14546,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14165,9 +14557,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14176,9 +14568,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14187,9 +14579,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14198,9 +14590,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14209,9 +14601,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14220,9 +14612,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14240,9 +14632,9 @@ vg_dsa_verify:
 	beqz t6, 2670f
 2672:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14296,21 +14688,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2674:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2675f
 2677:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14319,9 +14715,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14330,9 +14726,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14341,9 +14737,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14352,9 +14748,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14363,9 +14759,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14374,9 +14770,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14385,9 +14781,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14405,9 +14801,9 @@ vg_dsa_verify:
 	beqz t6, 2678f
 2680:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14431,7 +14827,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2674b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -14520,12 +14922,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2685f
 2687:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14534,9 +14937,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14545,9 +14948,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14556,9 +14959,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14567,9 +14970,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14578,9 +14981,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14589,9 +14992,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14600,9 +15003,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14620,9 +15023,9 @@ vg_dsa_verify:
 	beqz t6, 2688f
 2690:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14676,21 +15079,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2692:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2693f
 2695:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14699,9 +15106,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14710,9 +15117,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14721,9 +15128,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14732,9 +15139,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14743,9 +15150,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14754,9 +15161,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14765,9 +15172,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14785,9 +15192,9 @@ vg_dsa_verify:
 	beqz t6, 2696f
 2698:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14811,7 +15218,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2692b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -14900,12 +15313,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2703f
 2705:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14914,9 +15328,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14925,9 +15339,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14936,9 +15350,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14947,9 +15361,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14958,9 +15372,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14969,9 +15383,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -14980,9 +15394,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15000,9 +15414,9 @@ vg_dsa_verify:
 	beqz t6, 2706f
 2708:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15056,21 +15470,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2710:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2711f
 2713:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15079,9 +15497,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15090,9 +15508,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15101,9 +15519,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15112,9 +15530,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15123,9 +15541,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15134,9 +15552,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15145,9 +15563,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15165,9 +15583,9 @@ vg_dsa_verify:
 	beqz t6, 2714f
 2716:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -15191,7 +15609,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2710b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -15343,6 +15767,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2722:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -15353,13 +15778,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -15367,7 +15794,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2724f
@@ -15375,18 +15801,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -15407,18 +15833,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -15427,18 +15853,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -15447,18 +15873,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -15467,18 +15893,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -15500,8 +15926,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2723b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -15575,6 +16009,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2732:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -15585,13 +16020,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -15599,7 +16036,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2734f
@@ -15607,18 +16043,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -15639,18 +16075,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -15659,18 +16095,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -15679,18 +16115,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -15699,18 +16135,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -15732,8 +16168,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2733b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -15941,6 +16385,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2752:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -15951,13 +16396,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -15965,7 +16412,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2754f
@@ -15973,18 +16419,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16005,18 +16451,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16025,18 +16471,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16045,18 +16491,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16065,18 +16511,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16098,8 +16544,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2753b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -16166,6 +16620,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2762:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -16176,13 +16631,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -16190,7 +16647,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2764f
@@ -16198,18 +16654,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16230,18 +16686,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16250,18 +16706,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16270,18 +16726,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16290,18 +16746,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16323,8 +16779,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2763b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -16392,6 +16856,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2772:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -16402,13 +16867,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -16416,7 +16883,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2774f
@@ -16424,18 +16890,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16456,18 +16922,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16476,18 +16942,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16496,18 +16962,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16516,18 +16982,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16549,8 +17015,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2773b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -16615,6 +17089,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2782:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -16625,13 +17100,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -16639,7 +17116,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2784f
@@ -16647,18 +17123,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16679,18 +17155,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16699,18 +17175,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16719,18 +17195,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16739,18 +17215,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -16772,8 +17248,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2783b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -17049,6 +17533,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2798:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -17059,13 +17544,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -17073,7 +17560,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2800f
@@ -17081,18 +17567,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17113,18 +17599,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17133,18 +17619,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17153,18 +17639,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17173,18 +17659,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17206,8 +17692,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2799b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -17275,6 +17769,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2808:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -17285,13 +17780,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -17299,7 +17796,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2810f
@@ -17307,18 +17803,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17339,18 +17835,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17359,18 +17855,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17379,18 +17875,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17399,18 +17895,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17432,8 +17928,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2809b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -17554,6 +18058,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2820:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -17564,13 +18069,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -17578,7 +18085,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2822f
@@ -17586,18 +18092,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17618,18 +18124,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17638,18 +18144,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17658,18 +18164,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17678,18 +18184,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -17711,8 +18217,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2821b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -17878,12 +18392,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2835f
 2837:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -17892,9 +18407,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -17903,9 +18418,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -17914,9 +18429,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -17925,9 +18440,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -17936,9 +18451,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -17947,9 +18462,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -17958,9 +18473,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -17978,9 +18493,9 @@ vg_dsa_verify:
 	beqz t6, 2838f
 2840:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18034,21 +18549,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2842:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2843f
 2845:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18057,9 +18576,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18068,9 +18587,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18079,9 +18598,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18090,9 +18609,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18101,9 +18620,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18112,9 +18631,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18123,9 +18642,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18143,9 +18662,9 @@ vg_dsa_verify:
 	beqz t6, 2846f
 2848:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18169,7 +18688,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2842b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -18258,12 +18783,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2853f
 2855:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18272,9 +18798,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18283,9 +18809,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18294,9 +18820,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18305,9 +18831,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18316,9 +18842,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18327,9 +18853,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18338,9 +18864,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18358,9 +18884,9 @@ vg_dsa_verify:
 	beqz t6, 2856f
 2858:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18414,21 +18940,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2860:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2861f
 2863:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18437,9 +18967,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18448,9 +18978,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18459,9 +18989,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18470,9 +19000,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18481,9 +19011,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18492,9 +19022,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18503,9 +19033,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18523,9 +19053,9 @@ vg_dsa_verify:
 	beqz t6, 2864f
 2866:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18549,7 +19079,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2860b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -18638,12 +19174,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2871f
 2873:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18652,9 +19189,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18663,9 +19200,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18674,9 +19211,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18685,9 +19222,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18696,9 +19233,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18707,9 +19244,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18718,9 +19255,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18738,9 +19275,9 @@ vg_dsa_verify:
 	beqz t6, 2874f
 2876:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18794,21 +19331,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2878:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2879f
 2881:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18817,9 +19358,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18828,9 +19369,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18839,9 +19380,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18850,9 +19391,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18861,9 +19402,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18872,9 +19413,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18883,9 +19424,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18903,9 +19444,9 @@ vg_dsa_verify:
 	beqz t6, 2882f
 2884:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -18929,7 +19470,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2878b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -19018,12 +19565,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2889f
 2891:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19032,9 +19580,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19043,9 +19591,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19054,9 +19602,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19065,9 +19613,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19076,9 +19624,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19087,9 +19635,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19098,9 +19646,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19118,9 +19666,9 @@ vg_dsa_verify:
 	beqz t6, 2892f
 2894:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19174,21 +19722,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2896:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2897f
 2899:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19197,9 +19749,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19208,9 +19760,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19219,9 +19771,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19230,9 +19782,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19241,9 +19793,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19252,9 +19804,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19263,9 +19815,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19283,9 +19835,9 @@ vg_dsa_verify:
 	beqz t6, 2900f
 2902:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19309,7 +19861,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2896b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -19461,6 +20019,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2908:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -19471,13 +20030,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -19485,7 +20046,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2910f
@@ -19493,18 +20053,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -19525,18 +20085,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -19545,18 +20105,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -19565,18 +20125,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -19585,18 +20145,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -19618,8 +20178,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2909b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -19703,12 +20271,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2920f
 2922:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19717,9 +20286,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19728,9 +20297,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19739,9 +20308,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19750,9 +20319,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19761,9 +20330,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19772,9 +20341,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19783,9 +20352,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19803,9 +20372,9 @@ vg_dsa_verify:
 	beqz t6, 2923f
 2925:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19859,21 +20428,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2927:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2928f
 2930:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19882,9 +20455,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19893,9 +20466,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19904,9 +20477,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19915,9 +20488,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19926,9 +20499,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19937,9 +20510,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19948,9 +20521,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19968,9 +20541,9 @@ vg_dsa_verify:
 	beqz t6, 2931f
 2933:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -19994,7 +20567,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2927b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -20083,12 +20662,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2938f
 2940:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20097,9 +20677,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20108,9 +20688,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20119,9 +20699,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20130,9 +20710,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20141,9 +20721,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20152,9 +20732,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20163,9 +20743,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20183,9 +20763,9 @@ vg_dsa_verify:
 	beqz t6, 2941f
 2943:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20239,21 +20819,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2945:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2946f
 2948:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20262,9 +20846,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20273,9 +20857,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20284,9 +20868,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20295,9 +20879,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20306,9 +20890,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20317,9 +20901,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20328,9 +20912,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20348,9 +20932,9 @@ vg_dsa_verify:
 	beqz t6, 2949f
 2951:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20374,7 +20958,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2945b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -20463,12 +21053,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2956f
 2958:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20477,9 +21068,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20488,9 +21079,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20499,9 +21090,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20510,9 +21101,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20521,9 +21112,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20532,9 +21123,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20543,9 +21134,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20563,9 +21154,9 @@ vg_dsa_verify:
 	beqz t6, 2959f
 2961:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20619,21 +21210,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2963:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2964f
 2966:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20642,9 +21237,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20653,9 +21248,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20664,9 +21259,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20675,9 +21270,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20686,9 +21281,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20697,9 +21292,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20708,9 +21303,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20728,9 +21323,9 @@ vg_dsa_verify:
 	beqz t6, 2967f
 2969:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20754,7 +21349,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2963b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -20843,12 +21444,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2974f
 2976:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20857,9 +21459,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20868,9 +21470,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20879,9 +21481,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20890,9 +21492,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20901,9 +21503,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20912,9 +21514,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20923,9 +21525,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20943,9 +21545,9 @@ vg_dsa_verify:
 	beqz t6, 2977f
 2979:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -20999,21 +21601,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2981:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2982f
 2984:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -21022,9 +21628,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -21033,9 +21639,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -21044,9 +21650,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -21055,9 +21661,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -21066,9 +21672,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -21077,9 +21683,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -21088,9 +21694,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -21108,9 +21714,9 @@ vg_dsa_verify:
 	beqz t6, 2985f
 2987:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -21134,7 +21740,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2981b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -21286,6 +21898,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2993:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -21296,13 +21909,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -21310,7 +21925,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2995f
@@ -21318,18 +21932,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21350,18 +21964,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21370,18 +21984,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21390,18 +22004,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21410,18 +22024,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21443,8 +22057,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2994b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -21518,6 +22140,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 21003:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -21528,13 +22151,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -21542,7 +22167,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 21005f
@@ -21550,18 +22174,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21582,18 +22206,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21602,18 +22226,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21622,18 +22246,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21642,18 +22266,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21675,8 +22299,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 21004b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -21904,6 +22536,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 21018:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -21914,13 +22547,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -21928,7 +22563,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 21020f
@@ -21936,18 +22570,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21968,18 +22602,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -21988,18 +22622,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22008,18 +22642,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22028,18 +22662,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22061,8 +22695,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 21019b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -22130,6 +22772,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 21028:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -22140,13 +22783,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -22154,7 +22799,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 21030f
@@ -22162,18 +22806,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22194,18 +22838,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22214,18 +22858,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22234,18 +22878,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22254,18 +22898,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22287,8 +22931,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 21029b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -22409,6 +23061,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 21040:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -22419,13 +23072,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -22433,7 +23088,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 21042f
@@ -22441,18 +23095,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22473,18 +23127,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22493,18 +23147,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22513,18 +23167,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22533,18 +23187,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -22566,8 +23220,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 21041b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -22733,12 +23395,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21055f
 21057:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22747,9 +23410,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22758,9 +23421,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22769,9 +23432,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22780,9 +23443,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22791,9 +23454,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22802,9 +23465,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22813,9 +23476,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22833,9 +23496,9 @@ vg_dsa_verify:
 	beqz t6, 21058f
 21060:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22889,21 +23552,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 21062:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21063f
 21065:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22912,9 +23579,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22923,9 +23590,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22934,9 +23601,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22945,9 +23612,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22956,9 +23623,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22967,9 +23634,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22978,9 +23645,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -22998,9 +23665,9 @@ vg_dsa_verify:
 	beqz t6, 21066f
 21068:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23024,7 +23691,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 21062b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -23113,12 +23786,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21073f
 21075:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23127,9 +23801,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23138,9 +23812,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23149,9 +23823,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23160,9 +23834,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23171,9 +23845,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23182,9 +23856,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23193,9 +23867,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23213,9 +23887,9 @@ vg_dsa_verify:
 	beqz t6, 21076f
 21078:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23269,21 +23943,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 21080:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21081f
 21083:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23292,9 +23970,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23303,9 +23981,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23314,9 +23992,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23325,9 +24003,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23336,9 +24014,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23347,9 +24025,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23358,9 +24036,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23378,9 +24056,9 @@ vg_dsa_verify:
 	beqz t6, 21084f
 21086:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23404,7 +24082,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 21080b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -23493,12 +24177,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21091f
 21093:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23507,9 +24192,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23518,9 +24203,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23529,9 +24214,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23540,9 +24225,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23551,9 +24236,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23562,9 +24247,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23573,9 +24258,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23593,9 +24278,9 @@ vg_dsa_verify:
 	beqz t6, 21094f
 21096:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23649,21 +24334,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 21098:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21099f
 21101:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23672,9 +24361,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23683,9 +24372,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23694,9 +24383,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23705,9 +24394,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23716,9 +24405,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23727,9 +24416,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23738,9 +24427,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23758,9 +24447,9 @@ vg_dsa_verify:
 	beqz t6, 21102f
 21104:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23784,7 +24473,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 21098b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -23873,12 +24568,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21109f
 21111:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23887,9 +24583,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23898,9 +24594,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23909,9 +24605,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23920,9 +24616,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23931,9 +24627,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23942,9 +24638,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23953,9 +24649,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -23973,9 +24669,9 @@ vg_dsa_verify:
 	beqz t6, 21112f
 21114:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24029,21 +24725,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 21116:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21117f
 21119:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24052,9 +24752,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24063,9 +24763,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24074,9 +24774,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24085,9 +24785,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24096,9 +24796,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24107,9 +24807,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24118,9 +24818,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24138,9 +24838,9 @@ vg_dsa_verify:
 	beqz t6, 21120f
 21122:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24164,7 +24864,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 21116b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -24316,6 +25022,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 21128:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -24326,13 +25033,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -24340,7 +25049,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 21130f
@@ -24348,18 +25056,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -24380,18 +25088,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -24400,18 +25108,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -24420,18 +25128,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -24440,18 +25148,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -24473,8 +25181,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 21129b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -24558,12 +25274,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21140f
 21142:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24572,9 +25289,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24583,9 +25300,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24594,9 +25311,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24605,9 +25322,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24616,9 +25333,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24627,9 +25344,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24638,9 +25355,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24658,9 +25375,9 @@ vg_dsa_verify:
 	beqz t6, 21143f
 21145:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24714,21 +25431,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 21147:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21148f
 21150:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24737,9 +25458,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24748,9 +25469,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24759,9 +25480,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24770,9 +25491,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24781,9 +25502,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24792,9 +25513,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24803,9 +25524,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24823,9 +25544,9 @@ vg_dsa_verify:
 	beqz t6, 21151f
 21153:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24849,7 +25570,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 21147b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -24938,12 +25665,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21158f
 21160:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24952,9 +25680,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24963,9 +25691,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24974,9 +25702,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24985,9 +25713,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -24996,9 +25724,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25007,9 +25735,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25018,9 +25746,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25038,9 +25766,9 @@ vg_dsa_verify:
 	beqz t6, 21161f
 21163:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25094,21 +25822,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 21165:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21166f
 21168:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25117,9 +25849,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25128,9 +25860,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25139,9 +25871,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25150,9 +25882,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25161,9 +25893,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25172,9 +25904,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25183,9 +25915,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25203,9 +25935,9 @@ vg_dsa_verify:
 	beqz t6, 21169f
 21171:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25229,7 +25961,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 21165b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -25318,12 +26056,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21176f
 21178:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25332,9 +26071,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25343,9 +26082,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25354,9 +26093,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25365,9 +26104,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25376,9 +26115,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25387,9 +26126,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25398,9 +26137,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25418,9 +26157,9 @@ vg_dsa_verify:
 	beqz t6, 21179f
 21181:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25474,21 +26213,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 21183:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21184f
 21186:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25497,9 +26240,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25508,9 +26251,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25519,9 +26262,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25530,9 +26273,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25541,9 +26284,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25552,9 +26295,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25563,9 +26306,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25583,9 +26326,9 @@ vg_dsa_verify:
 	beqz t6, 21187f
 21189:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25609,7 +26352,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 21183b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -25698,12 +26447,13 @@ vg_dsa_verify:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21194f
 21196:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25712,9 +26462,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25723,9 +26473,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25734,9 +26484,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25745,9 +26495,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25756,9 +26506,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25767,9 +26517,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25778,9 +26528,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25798,9 +26548,9 @@ vg_dsa_verify:
 	beqz t6, 21197f
 21199:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25854,21 +26604,25 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 21201:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 21202f
 21204:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25877,9 +26631,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25888,9 +26642,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25899,9 +26653,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25910,9 +26664,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25921,9 +26675,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25932,9 +26686,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25943,9 +26697,9 @@ vg_dsa_verify:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25963,9 +26717,9 @@ vg_dsa_verify:
 	beqz t6, 21205f
 21207:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -25989,7 +26743,13 @@ vg_dsa_verify:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 21201b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -26141,6 +26901,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 21213:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -26151,13 +26912,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -26165,7 +26928,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 21215f
@@ -26173,18 +26935,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26205,18 +26967,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26225,18 +26987,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26245,18 +27007,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26265,18 +27027,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26298,8 +27060,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 21214b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -26373,6 +27143,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 21223:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -26383,13 +27154,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -26397,7 +27170,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 21225f
@@ -26405,18 +27177,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26437,18 +27209,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26457,18 +27229,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26477,18 +27249,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26497,18 +27269,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26530,8 +27302,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 21224b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -26630,6 +27410,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 21234:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -26640,13 +27421,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -26654,7 +27437,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 21236f
@@ -26662,18 +27444,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26694,18 +27476,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26714,18 +27496,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26734,18 +27516,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26754,18 +27536,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26787,8 +27569,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 21235b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -26901,6 +27691,7 @@ vg_dsa_verify:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 21245:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -26911,13 +27702,15 @@ vg_dsa_verify:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -26925,7 +27718,6 @@ vg_dsa_verify:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 21247f
@@ -26933,18 +27725,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26965,18 +27757,18 @@ vg_dsa_verify:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -26985,18 +27777,18 @@ vg_dsa_verify:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -27005,18 +27797,18 @@ vg_dsa_verify:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -27025,18 +27817,18 @@ vg_dsa_verify:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -27058,8 +27850,16 @@ vg_dsa_verify:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 21246b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -28221,6 +29021,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 263:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -28231,13 +29032,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -28245,7 +29048,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 265f
@@ -28253,18 +29055,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28285,18 +29087,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28305,18 +29107,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28325,18 +29127,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28345,18 +29147,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28378,8 +29180,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 264b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -28447,6 +29257,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 273:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -28457,13 +29268,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -28471,7 +29284,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 275f
@@ -28479,18 +29291,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28511,18 +29323,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28531,18 +29343,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28551,18 +29363,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28571,18 +29383,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28604,8 +29416,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 274b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -28726,6 +29546,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 285:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -28736,13 +29557,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -28750,7 +29573,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 287f
@@ -28758,18 +29580,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28790,18 +29612,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28810,18 +29632,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28830,18 +29652,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28850,18 +29672,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -28883,8 +29705,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 286b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -29050,12 +29880,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2100f
 2102:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29064,9 +29895,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29075,9 +29906,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29086,9 +29917,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29097,9 +29928,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29108,9 +29939,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29119,9 +29950,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29130,9 +29961,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29150,9 +29981,9 @@ vg_dsa_derive_key:
 	beqz t6, 2103f
 2105:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29206,21 +30037,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2107:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2108f
 2110:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29229,9 +30064,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29240,9 +30075,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29251,9 +30086,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29262,9 +30097,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29273,9 +30108,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29284,9 +30119,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29295,9 +30130,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29315,9 +30150,9 @@ vg_dsa_derive_key:
 	beqz t6, 2111f
 2113:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29341,7 +30176,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2107b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -29430,12 +30271,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2118f
 2120:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29444,9 +30286,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29455,9 +30297,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29466,9 +30308,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29477,9 +30319,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29488,9 +30330,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29499,9 +30341,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29510,9 +30352,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29530,9 +30372,9 @@ vg_dsa_derive_key:
 	beqz t6, 2121f
 2123:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29586,21 +30428,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2125:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2126f
 2128:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29609,9 +30455,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29620,9 +30466,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29631,9 +30477,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29642,9 +30488,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29653,9 +30499,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29664,9 +30510,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29675,9 +30521,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29695,9 +30541,9 @@ vg_dsa_derive_key:
 	beqz t6, 2129f
 2131:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29721,7 +30567,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2125b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -29810,12 +30662,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2136f
 2138:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29824,9 +30677,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29835,9 +30688,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29846,9 +30699,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29857,9 +30710,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29868,9 +30721,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29879,9 +30732,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29890,9 +30743,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29910,9 +30763,9 @@ vg_dsa_derive_key:
 	beqz t6, 2139f
 2141:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29966,21 +30819,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2143:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2144f
 2146:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -29989,9 +30846,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30000,9 +30857,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30011,9 +30868,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30022,9 +30879,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30033,9 +30890,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30044,9 +30901,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30055,9 +30912,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30075,9 +30932,9 @@ vg_dsa_derive_key:
 	beqz t6, 2147f
 2149:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30101,7 +30958,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2143b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -30190,12 +31053,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2154f
 2156:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30204,9 +31068,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30215,9 +31079,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30226,9 +31090,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30237,9 +31101,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30248,9 +31112,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30259,9 +31123,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30270,9 +31134,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30290,9 +31154,9 @@ vg_dsa_derive_key:
 	beqz t6, 2157f
 2159:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30346,21 +31210,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2161:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2162f
 2164:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30369,9 +31237,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30380,9 +31248,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30391,9 +31259,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30402,9 +31270,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30413,9 +31281,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30424,9 +31292,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30435,9 +31303,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30455,9 +31323,9 @@ vg_dsa_derive_key:
 	beqz t6, 2165f
 2167:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30481,7 +31349,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2161b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -30633,6 +31507,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2173:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -30643,13 +31518,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -30657,7 +31534,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2175f
@@ -30665,18 +31541,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -30697,18 +31573,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -30717,18 +31593,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -30737,18 +31613,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -30757,18 +31633,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -30790,8 +31666,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2174b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -30875,12 +31759,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2185f
 2187:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30889,9 +31774,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30900,9 +31785,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30911,9 +31796,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30922,9 +31807,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30933,9 +31818,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30944,9 +31829,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30955,9 +31840,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -30975,9 +31860,9 @@ vg_dsa_derive_key:
 	beqz t6, 2188f
 2190:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31031,21 +31916,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2192:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2193f
 2195:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31054,9 +31943,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31065,9 +31954,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31076,9 +31965,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31087,9 +31976,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31098,9 +31987,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31109,9 +31998,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31120,9 +32009,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31140,9 +32029,9 @@ vg_dsa_derive_key:
 	beqz t6, 2196f
 2198:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31166,7 +32055,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2192b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -31255,12 +32150,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2203f
 2205:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31269,9 +32165,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31280,9 +32176,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31291,9 +32187,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31302,9 +32198,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31313,9 +32209,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31324,9 +32220,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31335,9 +32231,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31355,9 +32251,9 @@ vg_dsa_derive_key:
 	beqz t6, 2206f
 2208:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31411,21 +32307,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2210:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2211f
 2213:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31434,9 +32334,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31445,9 +32345,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31456,9 +32356,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31467,9 +32367,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31478,9 +32378,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31489,9 +32389,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31500,9 +32400,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31520,9 +32420,9 @@ vg_dsa_derive_key:
 	beqz t6, 2214f
 2216:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31546,7 +32446,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2210b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -31635,12 +32541,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2221f
 2223:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31649,9 +32556,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31660,9 +32567,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31671,9 +32578,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31682,9 +32589,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31693,9 +32600,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31704,9 +32611,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31715,9 +32622,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31735,9 +32642,9 @@ vg_dsa_derive_key:
 	beqz t6, 2224f
 2226:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31791,21 +32698,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2228:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2229f
 2231:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31814,9 +32725,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31825,9 +32736,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31836,9 +32747,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31847,9 +32758,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31858,9 +32769,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31869,9 +32780,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31880,9 +32791,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31900,9 +32811,9 @@ vg_dsa_derive_key:
 	beqz t6, 2232f
 2234:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -31926,7 +32837,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2228b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -32015,12 +32932,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2239f
 2241:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32029,9 +32947,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32040,9 +32958,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32051,9 +32969,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32062,9 +32980,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32073,9 +32991,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32084,9 +33002,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32095,9 +33013,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32115,9 +33033,9 @@ vg_dsa_derive_key:
 	beqz t6, 2242f
 2244:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32171,21 +33089,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2246:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2247f
 2249:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32194,9 +33116,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32205,9 +33127,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32216,9 +33138,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32227,9 +33149,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32238,9 +33160,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32249,9 +33171,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32260,9 +33182,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32280,9 +33202,9 @@ vg_dsa_derive_key:
 	beqz t6, 2250f
 2252:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -32306,7 +33228,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2246b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -32458,6 +33386,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2258:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -32468,13 +33397,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -32482,7 +33413,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2260f
@@ -32490,18 +33420,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -32522,18 +33452,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -32542,18 +33472,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -32562,18 +33492,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -32582,18 +33512,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -32615,8 +33545,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2259b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -32690,6 +33628,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2268:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -32700,13 +33639,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -32714,7 +33655,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2270f
@@ -32722,18 +33662,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -32754,18 +33694,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -32774,18 +33714,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -32794,18 +33734,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -32814,18 +33754,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -32847,8 +33787,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2269b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -33099,6 +34047,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2287:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -33109,13 +34058,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -33123,7 +34074,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2289f
@@ -33131,18 +34081,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33163,18 +34113,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33183,18 +34133,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33203,18 +34153,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33223,18 +34173,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33256,8 +34206,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2288b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -33325,6 +34283,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2297:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -33335,13 +34294,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -33349,7 +34310,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2299f
@@ -33357,18 +34317,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33389,18 +34349,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33409,18 +34369,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33429,18 +34389,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33449,18 +34409,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33482,8 +34442,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2298b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -33604,6 +34572,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2309:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -33614,13 +34583,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -33628,7 +34599,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2311f
@@ -33636,18 +34606,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33668,18 +34638,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33688,18 +34658,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33708,18 +34678,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33728,18 +34698,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -33761,8 +34731,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2310b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -33928,12 +34906,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2324f
 2326:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -33942,9 +34921,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -33953,9 +34932,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -33964,9 +34943,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -33975,9 +34954,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -33986,9 +34965,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -33997,9 +34976,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34008,9 +34987,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34028,9 +35007,9 @@ vg_dsa_derive_key:
 	beqz t6, 2327f
 2329:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34084,21 +35063,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2331:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2332f
 2334:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34107,9 +35090,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34118,9 +35101,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34129,9 +35112,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34140,9 +35123,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34151,9 +35134,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34162,9 +35145,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34173,9 +35156,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34193,9 +35176,9 @@ vg_dsa_derive_key:
 	beqz t6, 2335f
 2337:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34219,7 +35202,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2331b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -34308,12 +35297,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2342f
 2344:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34322,9 +35312,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34333,9 +35323,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34344,9 +35334,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34355,9 +35345,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34366,9 +35356,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34377,9 +35367,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34388,9 +35378,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34408,9 +35398,9 @@ vg_dsa_derive_key:
 	beqz t6, 2345f
 2347:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34464,21 +35454,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2349:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2350f
 2352:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34487,9 +35481,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34498,9 +35492,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34509,9 +35503,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34520,9 +35514,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34531,9 +35525,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34542,9 +35536,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34553,9 +35547,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34573,9 +35567,9 @@ vg_dsa_derive_key:
 	beqz t6, 2353f
 2355:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34599,7 +35593,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2349b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -34688,12 +35688,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2360f
 2362:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34702,9 +35703,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34713,9 +35714,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34724,9 +35725,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34735,9 +35736,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34746,9 +35747,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34757,9 +35758,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34768,9 +35769,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34788,9 +35789,9 @@ vg_dsa_derive_key:
 	beqz t6, 2363f
 2365:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34844,21 +35845,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2367:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2368f
 2370:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34867,9 +35872,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34878,9 +35883,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34889,9 +35894,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34900,9 +35905,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34911,9 +35916,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34922,9 +35927,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34933,9 +35938,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34953,9 +35958,9 @@ vg_dsa_derive_key:
 	beqz t6, 2371f
 2373:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -34979,7 +35984,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2367b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -35068,12 +36079,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2378f
 2380:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35082,9 +36094,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35093,9 +36105,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35104,9 +36116,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35115,9 +36127,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35126,9 +36138,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35137,9 +36149,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35148,9 +36160,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35168,9 +36180,9 @@ vg_dsa_derive_key:
 	beqz t6, 2381f
 2383:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35224,21 +36236,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2385:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2386f
 2388:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35247,9 +36263,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35258,9 +36274,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35269,9 +36285,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35280,9 +36296,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35291,9 +36307,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35302,9 +36318,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35313,9 +36329,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35333,9 +36349,9 @@ vg_dsa_derive_key:
 	beqz t6, 2389f
 2391:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35359,7 +36375,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2385b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -35511,6 +36533,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2397:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -35521,13 +36544,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -35535,7 +36560,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2399f
@@ -35543,18 +36567,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -35575,18 +36599,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -35595,18 +36619,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -35615,18 +36639,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -35635,18 +36659,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -35668,8 +36692,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2398b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -35753,12 +36785,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2409f
 2411:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35767,9 +36800,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35778,9 +36811,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35789,9 +36822,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35800,9 +36833,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35811,9 +36844,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35822,9 +36855,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35833,9 +36866,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35853,9 +36886,9 @@ vg_dsa_derive_key:
 	beqz t6, 2412f
 2414:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35909,21 +36942,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2416:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2417f
 2419:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35932,9 +36969,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35943,9 +36980,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35954,9 +36991,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35965,9 +37002,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35976,9 +37013,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35987,9 +37024,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -35998,9 +37035,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36018,9 +37055,9 @@ vg_dsa_derive_key:
 	beqz t6, 2420f
 2422:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36044,7 +37081,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2416b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -36133,12 +37176,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2427f
 2429:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36147,9 +37191,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36158,9 +37202,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36169,9 +37213,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36180,9 +37224,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36191,9 +37235,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36202,9 +37246,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36213,9 +37257,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36233,9 +37277,9 @@ vg_dsa_derive_key:
 	beqz t6, 2430f
 2432:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36289,21 +37333,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2434:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2435f
 2437:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36312,9 +37360,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36323,9 +37371,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36334,9 +37382,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36345,9 +37393,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36356,9 +37404,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36367,9 +37415,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36378,9 +37426,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36398,9 +37446,9 @@ vg_dsa_derive_key:
 	beqz t6, 2438f
 2440:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36424,7 +37472,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2434b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -36513,12 +37567,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2445f
 2447:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36527,9 +37582,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36538,9 +37593,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36549,9 +37604,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36560,9 +37615,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36571,9 +37626,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36582,9 +37637,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36593,9 +37648,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36613,9 +37668,9 @@ vg_dsa_derive_key:
 	beqz t6, 2448f
 2450:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36669,21 +37724,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2452:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2453f
 2455:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36692,9 +37751,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36703,9 +37762,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36714,9 +37773,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36725,9 +37784,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36736,9 +37795,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36747,9 +37806,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36758,9 +37817,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36778,9 +37837,9 @@ vg_dsa_derive_key:
 	beqz t6, 2456f
 2458:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36804,7 +37863,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2452b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -36893,12 +37958,13 @@ vg_dsa_derive_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2463f
 2465:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36907,9 +37973,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36918,9 +37984,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36929,9 +37995,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36940,9 +38006,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36951,9 +38017,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36962,9 +38028,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36973,9 +38039,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -36993,9 +38059,9 @@ vg_dsa_derive_key:
 	beqz t6, 2466f
 2468:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -37049,21 +38115,25 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2470:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2471f
 2473:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -37072,9 +38142,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -37083,9 +38153,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -37094,9 +38164,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -37105,9 +38175,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -37116,9 +38186,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -37127,9 +38197,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -37138,9 +38208,9 @@ vg_dsa_derive_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -37158,9 +38228,9 @@ vg_dsa_derive_key:
 	beqz t6, 2474f
 2476:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -37184,7 +38254,13 @@ vg_dsa_derive_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2470b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -37336,6 +38412,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2482:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -37346,13 +38423,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -37360,7 +38439,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2484f
@@ -37368,18 +38446,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -37400,18 +38478,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -37420,18 +38498,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -37440,18 +38518,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -37460,18 +38538,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -37493,8 +38571,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2483b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -37568,6 +38654,7 @@ vg_dsa_derive_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2492:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -37578,13 +38665,15 @@ vg_dsa_derive_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -37592,7 +38681,6 @@ vg_dsa_derive_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2494f
@@ -37600,18 +38688,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -37632,18 +38720,18 @@ vg_dsa_derive_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -37652,18 +38740,18 @@ vg_dsa_derive_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -37672,18 +38760,18 @@ vg_dsa_derive_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -37692,18 +38780,18 @@ vg_dsa_derive_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -37725,8 +38813,16 @@ vg_dsa_derive_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2493b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -39361,6 +40457,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 257:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -39371,13 +40468,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -39385,7 +40484,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 259f
@@ -39393,18 +40491,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39425,18 +40523,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39445,18 +40543,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39465,18 +40563,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39485,18 +40583,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39518,8 +40616,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 258b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -39587,6 +40693,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 267:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -39597,13 +40704,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -39611,7 +40720,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 269f
@@ -39619,18 +40727,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39651,18 +40759,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39671,18 +40779,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39691,18 +40799,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39711,18 +40819,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39744,8 +40852,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 268b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -39866,6 +40982,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 279:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -39876,13 +40993,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -39890,7 +41009,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 281f
@@ -39898,18 +41016,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39930,18 +41048,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39950,18 +41068,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39970,18 +41088,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -39990,18 +41108,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -40023,8 +41141,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 280b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -40190,12 +41316,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 294f
 296:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40204,9 +41331,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40215,9 +41342,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40226,9 +41353,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40237,9 +41364,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40248,9 +41375,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40259,9 +41386,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40270,9 +41397,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40290,9 +41417,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 297f
 299:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40346,21 +41473,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2101:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2102f
 2104:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40369,9 +41500,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40380,9 +41511,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40391,9 +41522,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40402,9 +41533,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40413,9 +41544,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40424,9 +41555,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40435,9 +41566,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40455,9 +41586,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2105f
 2107:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40481,7 +41612,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2101b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -40570,12 +41707,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2112f
 2114:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40584,9 +41722,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40595,9 +41733,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40606,9 +41744,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40617,9 +41755,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40628,9 +41766,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40639,9 +41777,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40650,9 +41788,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40670,9 +41808,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2115f
 2117:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40726,21 +41864,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2119:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2120f
 2122:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40749,9 +41891,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40760,9 +41902,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40771,9 +41913,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40782,9 +41924,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40793,9 +41935,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40804,9 +41946,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40815,9 +41957,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40835,9 +41977,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2123f
 2125:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40861,7 +42003,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2119b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -40950,12 +42098,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2130f
 2132:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40964,9 +42113,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40975,9 +42124,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40986,9 +42135,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -40997,9 +42146,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41008,9 +42157,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41019,9 +42168,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41030,9 +42179,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41050,9 +42199,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2133f
 2135:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41106,21 +42255,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2137:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2138f
 2140:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41129,9 +42282,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41140,9 +42293,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41151,9 +42304,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41162,9 +42315,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41173,9 +42326,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41184,9 +42337,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41195,9 +42348,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41215,9 +42368,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2141f
 2143:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41241,7 +42394,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2137b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -41330,12 +42489,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2148f
 2150:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41344,9 +42504,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41355,9 +42515,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41366,9 +42526,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41377,9 +42537,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41388,9 +42548,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41399,9 +42559,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41410,9 +42570,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41430,9 +42590,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2151f
 2153:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41486,21 +42646,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2155:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2156f
 2158:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41509,9 +42673,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41520,9 +42684,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41531,9 +42695,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41542,9 +42706,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41553,9 +42717,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41564,9 +42728,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41575,9 +42739,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41595,9 +42759,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2159f
 2161:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -41621,7 +42785,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2155b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -41773,6 +42943,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2167:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -41783,13 +42954,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -41797,7 +42970,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2169f
@@ -41805,18 +42977,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -41837,18 +43009,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -41857,18 +43029,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -41877,18 +43049,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -41897,18 +43069,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -41930,8 +43102,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2168b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -42015,12 +43195,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2179f
 2181:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42029,9 +43210,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42040,9 +43221,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42051,9 +43232,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42062,9 +43243,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42073,9 +43254,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42084,9 +43265,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42095,9 +43276,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42115,9 +43296,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2182f
 2184:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42171,21 +43352,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2186:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2187f
 2189:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42194,9 +43379,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42205,9 +43390,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42216,9 +43401,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42227,9 +43412,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42238,9 +43423,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42249,9 +43434,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42260,9 +43445,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42280,9 +43465,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2190f
 2192:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42306,7 +43491,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2186b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -42395,12 +43586,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2197f
 2199:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42409,9 +43601,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42420,9 +43612,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42431,9 +43623,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42442,9 +43634,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42453,9 +43645,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42464,9 +43656,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42475,9 +43667,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42495,9 +43687,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2200f
 2202:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42551,21 +43743,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2204:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2205f
 2207:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42574,9 +43770,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42585,9 +43781,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42596,9 +43792,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42607,9 +43803,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42618,9 +43814,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42629,9 +43825,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42640,9 +43836,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42660,9 +43856,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2208f
 2210:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42686,7 +43882,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2204b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -42775,12 +43977,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2215f
 2217:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42789,9 +43992,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42800,9 +44003,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42811,9 +44014,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42822,9 +44025,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42833,9 +44036,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42844,9 +44047,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42855,9 +44058,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42875,9 +44078,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2218f
 2220:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42931,21 +44134,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2222:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2223f
 2225:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42954,9 +44161,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42965,9 +44172,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42976,9 +44183,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42987,9 +44194,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -42998,9 +44205,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43009,9 +44216,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43020,9 +44227,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43040,9 +44247,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2226f
 2228:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43066,7 +44273,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2222b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -43155,12 +44368,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2233f
 2235:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43169,9 +44383,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43180,9 +44394,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43191,9 +44405,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43202,9 +44416,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43213,9 +44427,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43224,9 +44438,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43235,9 +44449,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43255,9 +44469,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2236f
 2238:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43311,21 +44525,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2240:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2241f
 2243:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43334,9 +44552,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43345,9 +44563,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43356,9 +44574,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43367,9 +44585,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43378,9 +44596,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43389,9 +44607,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43400,9 +44618,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43420,9 +44638,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2244f
 2246:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -43446,7 +44664,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2240b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -43598,6 +44822,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2252:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -43608,13 +44833,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -43622,7 +44849,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2254f
@@ -43630,18 +44856,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -43662,18 +44888,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -43682,18 +44908,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -43702,18 +44928,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -43722,18 +44948,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -43755,8 +44981,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2253b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -43830,6 +45064,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2262:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -43840,13 +45075,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -43854,7 +45091,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2264f
@@ -43862,18 +45098,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -43894,18 +45130,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -43914,18 +45150,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -43934,18 +45170,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -43954,18 +45190,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -43987,8 +45223,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2263b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -44359,6 +45603,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2287:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -44369,13 +45614,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -44383,7 +45630,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2289f
@@ -44391,18 +45637,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44423,18 +45669,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44443,18 +45689,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44463,18 +45709,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44483,18 +45729,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44516,8 +45762,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2288b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -44585,6 +45839,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2297:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -44595,13 +45850,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -44609,7 +45866,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2299f
@@ -44617,18 +45873,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44649,18 +45905,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44669,18 +45925,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44689,18 +45945,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44709,18 +45965,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44742,8 +45998,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2298b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -44864,6 +46128,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2309:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -44874,13 +46139,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -44888,7 +46155,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2311f
@@ -44896,18 +46162,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44928,18 +46194,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44948,18 +46214,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44968,18 +46234,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -44988,18 +46254,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -45021,8 +46287,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2310b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -45188,12 +46462,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2324f
 2326:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45202,9 +46477,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45213,9 +46488,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45224,9 +46499,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45235,9 +46510,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45246,9 +46521,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45257,9 +46532,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45268,9 +46543,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45288,9 +46563,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2327f
 2329:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45344,21 +46619,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2331:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2332f
 2334:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45367,9 +46646,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45378,9 +46657,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45389,9 +46668,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45400,9 +46679,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45411,9 +46690,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45422,9 +46701,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45433,9 +46712,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45453,9 +46732,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2335f
 2337:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45479,7 +46758,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2331b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -45568,12 +46853,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2342f
 2344:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45582,9 +46868,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45593,9 +46879,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45604,9 +46890,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45615,9 +46901,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45626,9 +46912,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45637,9 +46923,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45648,9 +46934,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45668,9 +46954,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2345f
 2347:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45724,21 +47010,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2349:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2350f
 2352:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45747,9 +47037,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45758,9 +47048,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45769,9 +47059,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45780,9 +47070,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45791,9 +47081,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45802,9 +47092,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45813,9 +47103,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45833,9 +47123,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2353f
 2355:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45859,7 +47149,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2349b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -45948,12 +47244,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2360f
 2362:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45962,9 +47259,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45973,9 +47270,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45984,9 +47281,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -45995,9 +47292,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46006,9 +47303,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46017,9 +47314,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46028,9 +47325,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46048,9 +47345,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2363f
 2365:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46104,21 +47401,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2367:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2368f
 2370:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46127,9 +47428,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46138,9 +47439,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46149,9 +47450,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46160,9 +47461,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46171,9 +47472,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46182,9 +47483,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46193,9 +47494,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46213,9 +47514,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2371f
 2373:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46239,7 +47540,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2367b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -46328,12 +47635,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2378f
 2380:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46342,9 +47650,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46353,9 +47661,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46364,9 +47672,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46375,9 +47683,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46386,9 +47694,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46397,9 +47705,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46408,9 +47716,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46428,9 +47736,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2381f
 2383:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46484,21 +47792,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2385:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2386f
 2388:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46507,9 +47819,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46518,9 +47830,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46529,9 +47841,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46540,9 +47852,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46551,9 +47863,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46562,9 +47874,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46573,9 +47885,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46593,9 +47905,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2389f
 2391:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -46619,7 +47931,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2385b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -46771,6 +48089,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2397:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -46781,13 +48100,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -46795,7 +48116,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2399f
@@ -46803,18 +48123,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -46835,18 +48155,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -46855,18 +48175,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -46875,18 +48195,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -46895,18 +48215,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -46928,8 +48248,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2398b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -47013,12 +48341,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2409f
 2411:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47027,9 +48356,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47038,9 +48367,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47049,9 +48378,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47060,9 +48389,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47071,9 +48400,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47082,9 +48411,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47093,9 +48422,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47113,9 +48442,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2412f
 2414:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47169,21 +48498,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2416:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2417f
 2419:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47192,9 +48525,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47203,9 +48536,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47214,9 +48547,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47225,9 +48558,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47236,9 +48569,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47247,9 +48580,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47258,9 +48591,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47278,9 +48611,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2420f
 2422:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47304,7 +48637,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2416b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -47393,12 +48732,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2427f
 2429:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47407,9 +48747,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47418,9 +48758,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47429,9 +48769,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47440,9 +48780,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47451,9 +48791,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47462,9 +48802,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47473,9 +48813,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47493,9 +48833,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2430f
 2432:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47549,21 +48889,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2434:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2435f
 2437:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47572,9 +48916,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47583,9 +48927,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47594,9 +48938,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47605,9 +48949,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47616,9 +48960,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47627,9 +48971,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47638,9 +48982,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47658,9 +49002,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2438f
 2440:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47684,7 +49028,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2434b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -47773,12 +49123,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2445f
 2447:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47787,9 +49138,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47798,9 +49149,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47809,9 +49160,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47820,9 +49171,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47831,9 +49182,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47842,9 +49193,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47853,9 +49204,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47873,9 +49224,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2448f
 2450:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47929,21 +49280,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2452:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2453f
 2455:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47952,9 +49307,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47963,9 +49318,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47974,9 +49329,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47985,9 +49340,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -47996,9 +49351,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48007,9 +49362,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48018,9 +49373,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48038,9 +49393,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2456f
 2458:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48064,7 +49419,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2452b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -48153,12 +49514,13 @@ vg_dsa_validate_public_key:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2463f
 2465:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48167,9 +49529,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48178,9 +49540,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48189,9 +49551,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48200,9 +49562,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48211,9 +49573,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48222,9 +49584,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48233,9 +49595,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48253,9 +49615,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2466f
 2468:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48309,21 +49671,25 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2470:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2471f
 2473:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48332,9 +49698,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48343,9 +49709,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48354,9 +49720,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48365,9 +49731,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48376,9 +49742,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48387,9 +49753,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48398,9 +49764,9 @@ vg_dsa_validate_public_key:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48418,9 +49784,9 @@ vg_dsa_validate_public_key:
 	beqz t6, 2474f
 2476:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -48444,7 +49810,13 @@ vg_dsa_validate_public_key:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2470b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -48596,6 +49968,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2482:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -48606,13 +49979,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -48620,7 +49995,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2484f
@@ -48628,18 +50002,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -48660,18 +50034,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -48680,18 +50054,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -48700,18 +50074,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -48720,18 +50094,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -48753,8 +50127,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2483b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -48828,6 +50210,7 @@ vg_dsa_validate_public_key:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2492:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -48838,13 +50221,15 @@ vg_dsa_validate_public_key:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -48852,7 +50237,6 @@ vg_dsa_validate_public_key:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2494f
@@ -48860,18 +50244,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -48892,18 +50276,18 @@ vg_dsa_validate_public_key:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -48912,18 +50296,18 @@ vg_dsa_validate_public_key:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -48932,18 +50316,18 @@ vg_dsa_validate_public_key:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -48952,18 +50336,18 @@ vg_dsa_validate_public_key:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -48985,8 +50369,16 @@ vg_dsa_validate_public_key:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2493b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -50046,6 +51438,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 253:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -50056,13 +51449,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -50070,7 +51465,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 255f
@@ -50078,18 +51472,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50110,18 +51504,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50130,18 +51524,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50150,18 +51544,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50170,18 +51564,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50203,8 +51597,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 254b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -50272,6 +51674,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 263:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -50282,13 +51685,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -50296,7 +51701,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 265f
@@ -50304,18 +51708,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50336,18 +51740,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50356,18 +51760,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50376,18 +51780,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50396,18 +51800,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50429,8 +51833,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 264b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -50551,6 +51963,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 275:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -50561,13 +51974,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -50575,7 +51990,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 277f
@@ -50583,18 +51997,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50615,18 +52029,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50635,18 +52049,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50655,18 +52069,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50675,18 +52089,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -50708,8 +52122,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 276b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -50875,12 +52297,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 290f
 292:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -50889,9 +52312,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -50900,9 +52323,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -50911,9 +52334,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -50922,9 +52345,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -50933,9 +52356,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -50944,9 +52367,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -50955,9 +52378,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -50975,9 +52398,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 293f
 295:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51031,21 +52454,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 297:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 298f
 2100:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51054,9 +52481,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51065,9 +52492,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51076,9 +52503,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51087,9 +52514,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51098,9 +52525,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51109,9 +52536,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51120,9 +52547,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51140,9 +52567,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2101f
 2103:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51166,7 +52593,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 297b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -51255,12 +52688,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2108f
 2110:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51269,9 +52703,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51280,9 +52714,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51291,9 +52725,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51302,9 +52736,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51313,9 +52747,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51324,9 +52758,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51335,9 +52769,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51355,9 +52789,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2111f
 2113:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51411,21 +52845,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2115:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2116f
 2118:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51434,9 +52872,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51445,9 +52883,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51456,9 +52894,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51467,9 +52905,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51478,9 +52916,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51489,9 +52927,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51500,9 +52938,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51520,9 +52958,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2119f
 2121:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51546,7 +52984,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2115b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -51635,12 +53079,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2126f
 2128:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51649,9 +53094,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51660,9 +53105,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51671,9 +53116,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51682,9 +53127,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51693,9 +53138,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51704,9 +53149,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51715,9 +53160,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51735,9 +53180,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2129f
 2131:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51791,21 +53236,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2133:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2134f
 2136:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51814,9 +53263,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51825,9 +53274,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51836,9 +53285,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51847,9 +53296,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51858,9 +53307,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51869,9 +53318,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51880,9 +53329,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51900,9 +53349,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2137f
 2139:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -51926,7 +53375,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2133b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -52015,12 +53470,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2144f
 2146:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52029,9 +53485,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52040,9 +53496,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52051,9 +53507,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52062,9 +53518,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52073,9 +53529,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52084,9 +53540,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52095,9 +53551,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52115,9 +53571,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2147f
 2149:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52171,21 +53627,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2151:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2152f
 2154:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52194,9 +53654,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52205,9 +53665,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52216,9 +53676,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52227,9 +53687,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52238,9 +53698,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52249,9 +53709,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52260,9 +53720,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52280,9 +53740,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2155f
 2157:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52306,7 +53766,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2151b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -52458,6 +53924,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2163:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -52468,13 +53935,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -52482,7 +53951,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2165f
@@ -52490,18 +53958,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -52522,18 +53990,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -52542,18 +54010,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -52562,18 +54030,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -52582,18 +54050,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -52615,8 +54083,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2164b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -52700,12 +54176,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2175f
 2177:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52714,9 +54191,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52725,9 +54202,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52736,9 +54213,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52747,9 +54224,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52758,9 +54235,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52769,9 +54246,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52780,9 +54257,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52800,9 +54277,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2178f
 2180:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52856,21 +54333,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2182:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2183f
 2185:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52879,9 +54360,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52890,9 +54371,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52901,9 +54382,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52912,9 +54393,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52923,9 +54404,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52934,9 +54415,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52945,9 +54426,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52965,9 +54446,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2186f
 2188:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -52991,7 +54472,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2182b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -53080,12 +54567,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2193f
 2195:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53094,9 +54582,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53105,9 +54593,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53116,9 +54604,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53127,9 +54615,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53138,9 +54626,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53149,9 +54637,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53160,9 +54648,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53180,9 +54668,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2196f
 2198:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53236,21 +54724,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2200:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2201f
 2203:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53259,9 +54751,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53270,9 +54762,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53281,9 +54773,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53292,9 +54784,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53303,9 +54795,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53314,9 +54806,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53325,9 +54817,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53345,9 +54837,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2204f
 2206:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53371,7 +54863,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2200b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -53460,12 +54958,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2211f
 2213:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53474,9 +54973,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53485,9 +54984,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53496,9 +54995,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53507,9 +55006,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53518,9 +55017,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53529,9 +55028,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53540,9 +55039,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53560,9 +55059,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2214f
 2216:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53616,21 +55115,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2218:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2219f
 2221:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53639,9 +55142,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53650,9 +55153,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53661,9 +55164,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53672,9 +55175,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53683,9 +55186,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53694,9 +55197,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53705,9 +55208,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53725,9 +55228,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2222f
 2224:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53751,7 +55254,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2218b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -53840,12 +55349,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2229f
 2231:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53854,9 +55364,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53865,9 +55375,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53876,9 +55386,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53887,9 +55397,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53898,9 +55408,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53909,9 +55419,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53920,9 +55430,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53940,9 +55450,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2232f
 2234:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -53996,21 +55506,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2236:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2237f
 2239:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -54019,9 +55533,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -54030,9 +55544,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -54041,9 +55555,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -54052,9 +55566,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -54063,9 +55577,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -54074,9 +55588,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -54085,9 +55599,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -54105,9 +55619,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2240f
 2242:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -54131,7 +55645,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2236b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -54283,6 +55803,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2248:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -54293,13 +55814,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -54307,7 +55830,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2250f
@@ -54315,18 +55837,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54347,18 +55869,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54367,18 +55889,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54387,18 +55909,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54407,18 +55929,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54440,8 +55962,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2249b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -54515,6 +56045,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2258:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -54525,13 +56056,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -54539,7 +56072,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2260f
@@ -54547,18 +56079,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54579,18 +56111,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54599,18 +56131,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54619,18 +56151,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54639,18 +56171,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54672,8 +56204,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2259b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -54881,6 +56421,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2278:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -54891,13 +56432,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -54905,7 +56448,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2280f
@@ -54913,18 +56455,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54945,18 +56487,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54965,18 +56507,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -54985,18 +56527,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55005,18 +56547,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55038,8 +56580,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2279b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -55106,6 +56656,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2288:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -55116,13 +56667,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -55130,7 +56683,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2290f
@@ -55138,18 +56690,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55170,18 +56722,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55190,18 +56742,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55210,18 +56762,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55230,18 +56782,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55263,8 +56815,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2289b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -55332,6 +56892,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2298:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -55342,13 +56903,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -55356,7 +56919,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2300f
@@ -55364,18 +56926,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55396,18 +56958,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55416,18 +56978,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55436,18 +56998,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55456,18 +57018,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55489,8 +57051,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2299b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -55555,6 +57125,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2308:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -55565,13 +57136,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -55579,7 +57152,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2310f
@@ -55587,18 +57159,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55619,18 +57191,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55639,18 +57211,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55659,18 +57231,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55679,18 +57251,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -55712,8 +57284,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2309b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -55989,6 +57569,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2324:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -55999,13 +57580,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -56013,7 +57596,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2326f
@@ -56021,18 +57603,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56053,18 +57635,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56073,18 +57655,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56093,18 +57675,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56113,18 +57695,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56146,8 +57728,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2325b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -56215,6 +57805,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2334:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -56225,13 +57816,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -56239,7 +57832,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2336f
@@ -56247,18 +57839,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56279,18 +57871,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56299,18 +57891,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56319,18 +57911,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56339,18 +57931,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56372,8 +57964,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2335b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -56494,6 +58094,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2346:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -56504,13 +58105,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -56518,7 +58121,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2348f
@@ -56526,18 +58128,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56558,18 +58160,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56578,18 +58180,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56598,18 +58200,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56618,18 +58220,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -56651,8 +58253,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2347b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -56818,12 +58428,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2361f
 2363:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -56832,9 +58443,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -56843,9 +58454,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -56854,9 +58465,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -56865,9 +58476,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -56876,9 +58487,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -56887,9 +58498,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -56898,9 +58509,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -56918,9 +58529,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2364f
 2366:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -56974,21 +58585,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2368:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2369f
 2371:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -56997,9 +58612,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57008,9 +58623,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57019,9 +58634,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57030,9 +58645,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57041,9 +58656,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57052,9 +58667,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57063,9 +58678,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57083,9 +58698,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2372f
 2374:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57109,7 +58724,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2368b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -57198,12 +58819,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2379f
 2381:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57212,9 +58834,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57223,9 +58845,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57234,9 +58856,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57245,9 +58867,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57256,9 +58878,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57267,9 +58889,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57278,9 +58900,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57298,9 +58920,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2382f
 2384:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57354,21 +58976,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2386:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2387f
 2389:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57377,9 +59003,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57388,9 +59014,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57399,9 +59025,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57410,9 +59036,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57421,9 +59047,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57432,9 +59058,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57443,9 +59069,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57463,9 +59089,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2390f
 2392:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57489,7 +59115,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2386b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -57578,12 +59210,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2397f
 2399:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57592,9 +59225,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57603,9 +59236,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57614,9 +59247,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57625,9 +59258,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57636,9 +59269,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57647,9 +59280,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57658,9 +59291,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57678,9 +59311,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2400f
 2402:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57734,21 +59367,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2404:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2405f
 2407:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57757,9 +59394,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57768,9 +59405,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57779,9 +59416,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57790,9 +59427,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57801,9 +59438,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57812,9 +59449,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57823,9 +59460,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57843,9 +59480,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2408f
 2410:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57869,7 +59506,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2404b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -57958,12 +59601,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2415f
 2417:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57972,9 +59616,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57983,9 +59627,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -57994,9 +59638,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58005,9 +59649,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58016,9 +59660,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58027,9 +59671,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58038,9 +59682,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58058,9 +59702,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2418f
 2420:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58114,21 +59758,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2422:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2423f
 2425:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58137,9 +59785,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58148,9 +59796,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58159,9 +59807,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58170,9 +59818,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58181,9 +59829,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58192,9 +59840,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58203,9 +59851,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58223,9 +59871,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2426f
 2428:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58249,7 +59897,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2422b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -58401,6 +60055,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2434:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -58411,13 +60066,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -58425,7 +60082,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2436f
@@ -58433,18 +60089,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -58465,18 +60121,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -58485,18 +60141,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -58505,18 +60161,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -58525,18 +60181,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -58558,8 +60214,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2435b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -58643,12 +60307,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2446f
 2448:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58657,9 +60322,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58668,9 +60333,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58679,9 +60344,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58690,9 +60355,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58701,9 +60366,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58712,9 +60377,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58723,9 +60388,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58743,9 +60408,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2449f
 2451:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58799,21 +60464,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2453:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2454f
 2456:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58822,9 +60491,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58833,9 +60502,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58844,9 +60513,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58855,9 +60524,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58866,9 +60535,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58877,9 +60546,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58888,9 +60557,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58908,9 +60577,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2457f
 2459:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -58934,7 +60603,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2453b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -59023,12 +60698,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2464f
 2466:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59037,9 +60713,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59048,9 +60724,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59059,9 +60735,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59070,9 +60746,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59081,9 +60757,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59092,9 +60768,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59103,9 +60779,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59123,9 +60799,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2467f
 2469:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59179,21 +60855,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2471:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2472f
 2474:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59202,9 +60882,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59213,9 +60893,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59224,9 +60904,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59235,9 +60915,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59246,9 +60926,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59257,9 +60937,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59268,9 +60948,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59288,9 +60968,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2475f
 2477:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59314,7 +60994,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2471b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -59403,12 +61089,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2482f
 2484:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59417,9 +61104,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59428,9 +61115,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59439,9 +61126,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59450,9 +61137,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59461,9 +61148,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59472,9 +61159,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59483,9 +61170,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59503,9 +61190,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2485f
 2487:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59559,21 +61246,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2489:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2490f
 2492:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59582,9 +61273,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59593,9 +61284,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59604,9 +61295,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59615,9 +61306,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59626,9 +61317,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59637,9 +61328,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59648,9 +61339,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59668,9 +61359,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2493f
 2495:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59694,7 +61385,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2489b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -59783,12 +61480,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2500f
 2502:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59797,9 +61495,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59808,9 +61506,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59819,9 +61517,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59830,9 +61528,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59841,9 +61539,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59852,9 +61550,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59863,9 +61561,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59883,9 +61581,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2503f
 2505:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59939,21 +61637,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2507:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2508f
 2510:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59962,9 +61664,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59973,9 +61675,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59984,9 +61686,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -59995,9 +61697,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -60006,9 +61708,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -60017,9 +61719,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -60028,9 +61730,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -60048,9 +61750,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2511f
 2513:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -60074,7 +61776,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2507b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -60226,6 +61934,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2519:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -60236,13 +61945,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -60250,7 +61961,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2521f
@@ -60258,18 +61968,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60290,18 +62000,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60310,18 +62020,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60330,18 +62040,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60350,18 +62060,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60383,8 +62093,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2520b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -60458,6 +62176,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2529:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -60468,13 +62187,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -60482,7 +62203,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2531f
@@ -60490,18 +62210,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60522,18 +62242,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60542,18 +62262,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60562,18 +62282,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60582,18 +62302,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60615,8 +62335,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2530b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -60844,6 +62572,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2544:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -60854,13 +62583,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -60868,7 +62599,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2546f
@@ -60876,18 +62606,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60908,18 +62638,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60928,18 +62658,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60948,18 +62678,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -60968,18 +62698,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61001,8 +62731,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2545b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -61070,6 +62808,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2554:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -61080,13 +62819,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -61094,7 +62835,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2556f
@@ -61102,18 +62842,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61134,18 +62874,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61154,18 +62894,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61174,18 +62914,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61194,18 +62934,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61227,8 +62967,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2555b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -61349,6 +63097,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2566:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -61359,13 +63108,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -61373,7 +63124,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2568f
@@ -61381,18 +63131,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61413,18 +63163,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61433,18 +63183,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61453,18 +63203,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61473,18 +63223,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -61506,8 +63256,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2567b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -61673,12 +63431,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2581f
 2583:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61687,9 +63446,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61698,9 +63457,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61709,9 +63468,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61720,9 +63479,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61731,9 +63490,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61742,9 +63501,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61753,9 +63512,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61773,9 +63532,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2584f
 2586:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61829,21 +63588,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2588:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2589f
 2591:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61852,9 +63615,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61863,9 +63626,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61874,9 +63637,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61885,9 +63648,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61896,9 +63659,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61907,9 +63670,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61918,9 +63681,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61938,9 +63701,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2592f
 2594:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -61964,7 +63727,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2588b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -62053,12 +63822,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2599f
 2601:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62067,9 +63837,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62078,9 +63848,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62089,9 +63859,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62100,9 +63870,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62111,9 +63881,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62122,9 +63892,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62133,9 +63903,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62153,9 +63923,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2602f
 2604:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62209,21 +63979,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2606:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2607f
 2609:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62232,9 +64006,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62243,9 +64017,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62254,9 +64028,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62265,9 +64039,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62276,9 +64050,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62287,9 +64061,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62298,9 +64072,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62318,9 +64092,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2610f
 2612:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62344,7 +64118,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2606b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -62433,12 +64213,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2617f
 2619:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62447,9 +64228,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62458,9 +64239,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62469,9 +64250,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62480,9 +64261,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62491,9 +64272,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62502,9 +64283,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62513,9 +64294,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62533,9 +64314,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2620f
 2622:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62589,21 +64370,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2624:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2625f
 2627:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62612,9 +64397,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62623,9 +64408,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62634,9 +64419,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62645,9 +64430,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62656,9 +64441,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62667,9 +64452,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62678,9 +64463,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62698,9 +64483,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2628f
 2630:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62724,7 +64509,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2624b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -62813,12 +64604,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2635f
 2637:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62827,9 +64619,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62838,9 +64630,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62849,9 +64641,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62860,9 +64652,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62871,9 +64663,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62882,9 +64674,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62893,9 +64685,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62913,9 +64705,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2638f
 2640:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62969,21 +64761,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2642:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2643f
 2645:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -62992,9 +64788,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63003,9 +64799,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63014,9 +64810,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63025,9 +64821,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63036,9 +64832,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63047,9 +64843,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63058,9 +64854,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63078,9 +64874,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2646f
 2648:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63104,7 +64900,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2642b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -63256,6 +65058,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2654:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -63266,13 +65069,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -63280,7 +65085,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2656f
@@ -63288,18 +65092,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -63320,18 +65124,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -63340,18 +65144,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -63360,18 +65164,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -63380,18 +65184,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -63413,8 +65217,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2655b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -63498,12 +65310,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2666f
 2668:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63512,9 +65325,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63523,9 +65336,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63534,9 +65347,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63545,9 +65358,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63556,9 +65369,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63567,9 +65380,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63578,9 +65391,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63598,9 +65411,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2669f
 2671:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63654,21 +65467,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2673:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2674f
 2676:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63677,9 +65494,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63688,9 +65505,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63699,9 +65516,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63710,9 +65527,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63721,9 +65538,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63732,9 +65549,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63743,9 +65560,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63763,9 +65580,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2677f
 2679:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63789,7 +65606,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2673b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -63878,12 +65701,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2684f
 2686:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63892,9 +65716,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63903,9 +65727,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63914,9 +65738,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63925,9 +65749,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63936,9 +65760,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63947,9 +65771,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63958,9 +65782,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -63978,9 +65802,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2687f
 2689:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64034,21 +65858,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2691:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2692f
 2694:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64057,9 +65885,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64068,9 +65896,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64079,9 +65907,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64090,9 +65918,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64101,9 +65929,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64112,9 +65940,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64123,9 +65951,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64143,9 +65971,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2695f
 2697:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64169,7 +65997,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2691b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -64258,12 +66092,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2702f
 2704:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64272,9 +66107,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64283,9 +66118,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64294,9 +66129,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64305,9 +66140,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64316,9 +66151,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64327,9 +66162,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64338,9 +66173,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64358,9 +66193,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2705f
 2707:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64414,21 +66249,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2709:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2710f
 2712:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64437,9 +66276,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64448,9 +66287,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64459,9 +66298,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64470,9 +66309,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64481,9 +66320,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64492,9 +66331,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64503,9 +66342,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64523,9 +66362,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2713f
 2715:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64549,7 +66388,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2709b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -64638,12 +66483,13 @@ vg_dsa_verify_prevalidated:
 	addi t5, a1, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2720f
 2722:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64652,9 +66498,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64663,9 +66509,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64674,9 +66520,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64685,9 +66531,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64696,9 +66542,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64707,9 +66553,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64718,9 +66564,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64738,9 +66584,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2723f
 2725:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64794,21 +66640,25 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
 2727:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
-	addi a0, a7, 0
 	addi t4, t3, 0
 	addi t5, t0, 0
 	andi t6, t5, 7
 	srli t5, t5, 3
+	ld a7, 0(a0)
 	beqz t5, 2728f
 2730:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64817,9 +66667,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 0(t4)
 	ld s4, 8(t4)
-	ld s2, 8(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64828,9 +66678,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 8(t4)
 	ld s4, 16(t4)
-	ld s2, 16(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64839,9 +66689,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 16(t4)
 	ld s4, 24(t4)
-	ld s2, 24(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64850,9 +66700,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 24(t4)
 	ld s4, 32(t4)
-	ld s2, 32(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64861,9 +66711,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 32(t4)
 	ld s4, 40(t4)
-	ld s2, 40(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64872,9 +66722,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 40(t4)
 	ld s4, 48(t4)
-	ld s2, 48(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64883,9 +66733,9 @@ vg_dsa_verify_prevalidated:
 	add s1, s2, s4
 	sd s3, 48(t4)
 	ld s4, 56(t4)
-	ld s2, 56(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64903,9 +66753,9 @@ vg_dsa_verify_prevalidated:
 	beqz t6, 2731f
 2733:
 	ld s4, 0(t4)
-	ld s2, 0(a0)
-	mul s3, s0, s2
-	mulhu s2, s0, s2
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
 	add s3, s3, s4
 	sltu s4, s3, s4
 	add s2, s2, s4
@@ -64929,7 +66779,13 @@ vg_dsa_verify_prevalidated:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
 	bnez t2, 2727b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
 	slli t3, t0, 3
 	add a5, a5, t3
 	add t4, a5, t3
@@ -65081,6 +66937,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2739:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -65091,13 +66948,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -65105,7 +66964,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2741f
@@ -65113,18 +66971,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65145,18 +67003,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65165,18 +67023,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65185,18 +67043,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65205,18 +67063,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65238,8 +67096,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2740b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -65313,6 +67179,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2749:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -65323,13 +67190,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -65337,7 +67206,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2751f
@@ -65345,18 +67213,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65377,18 +67245,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65397,18 +67265,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65417,18 +67285,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65437,18 +67305,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65470,8 +67338,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2750b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -65570,6 +67446,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2760:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -65580,13 +67457,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -65594,7 +67473,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2762f
@@ -65602,18 +67480,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65634,18 +67512,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65654,18 +67532,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65674,18 +67552,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65694,18 +67572,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65727,8 +67605,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2761b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -65841,6 +67727,7 @@ vg_dsa_verify_prevalidated:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2771:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -65851,13 +67738,15 @@ vg_dsa_verify_prevalidated:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -65865,7 +67754,6 @@ vg_dsa_verify_prevalidated:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2773f
@@ -65873,18 +67761,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65905,18 +67793,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65925,18 +67813,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65945,18 +67833,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65965,18 +67853,18 @@ vg_dsa_verify_prevalidated:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -65998,8 +67886,16 @@ vg_dsa_verify_prevalidated:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2772b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0

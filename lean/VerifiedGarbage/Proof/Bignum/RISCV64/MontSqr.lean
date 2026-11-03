@@ -22,11 +22,6 @@ namespace VG.Proof.Bignum.RISCV64
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum.RISCV64 VG.Impl.Bignum
 open VG.Proof.Bignum (slot slot_sep Arrays)
 
-theorem sqr_shl3 (a : Nat) : BitVec.ofNat 64 a <<< 3 = BitVec.ofNat 64 (8 * a) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega_arith
-
 /-- Memory that changed only in arrays 2 and 3 (`T`) changed only in those
 arrays. -/
 theorem arrays23_of_outside {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h2 : 2 ∈ js) (h3 : 3 ∈ js)
@@ -75,6 +70,7 @@ theorem sqrTailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
       slot w k + 8 * (w + 2) ≤ slot w j := fun h => slot_sep h
   have e3 : slot w 3 = slot w 2 + 8 * (w + 2) := by
     unfold slot; rw [Nat.add_mul (2 : Nat) 1, Nat.one_mul, Nat.add_assoc]
+  have e02 : slot w 0 + 16 * (w + 2) = slot w 2 := by unfold slot; omega_arith
   generalize hdT : slot w 2 = dT at *
   generalize hdA : slot w a = dA at *
   generalize hdM : slot w 0 = dM at *
@@ -113,13 +109,13 @@ theorem sqrTailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   refine WP.seq (WP.mono (cross_ok (dA := dA) (dT := dT) (w := w) (hs.congr k1.2.2) aA aT
     (by rw [g1 .a3 (by decide), i3]) (by rw [g1 .a5 (by decide), i5]) (by rw [g1 .t0 (by decide), it0]) hw2 hw'
     (by omega_arith) (by omega_arith) (by omega_arith) z1) fun s₂ ⟨⟨c2, o2⟩, k2⟩ => ?_)
-  have g2 : ∀ r ∈ [Reg.a2, .a3, .a5, .a6, .a7, .t0, .t1], s₂.gpr r = s.gpr r := fun r hr => by
-    rw [k2.gpr (by revert r hr; decide), g1 r hr]
+  have g2 : ∀ r ∈ [Reg.a2, .a3, .a5, .a6, .t0, .t1], s₂.gpr r = s.gpr r := fun r hr => by
+    rw [k2.gpr (by revert r hr; decide), g1 r (by revert r hr; decide)]
   -- The doubling and the squares.
   refine WP.seq (WP.mono (diag_ok (dA := dA) (dT := dT) (w := w) (hs.congr (k1.trans k2).2.2) aA aT
     (by rw [g2 .a3 (by decide), i3]) (by rw [g2 .a5 (by decide), i5]) (by rw [g2 .t0 (by decide), it0])
     (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith)) fun s₃ ⟨⟨e, d3⟩, o3, k3⟩ => ?_)
-  have g3 : ∀ r ∈ [Reg.a2, .a3, .a5, .a6, .a7, .t0, .t1], s₃.gpr r = s.gpr r := fun r hr => by
+  have g3 : ∀ r ∈ [Reg.a2, .a3, .a5, .a6, .t0, .t1], s₃.gpr r = s.gpr r := fun r hr => by
     rw [k3.gpr (by revert r hr; decide), g2 r hr]
   -- `T` is `A²`.
   have o12 : Mont.Outside B dT (8 * (2 * w + 2)) s.mem s₂.mem := o1.trans o2
@@ -154,31 +150,36 @@ theorem sqrTailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have w3 : Mont.word s₃.mem B dM = Mont.word s.mem B dM := o13.word (by omega_arith) (by omega_arith)
   have k13 := (k1.trans k2).trans k3
   refine WP.seq (WP.mono (reduce_ok (dT := dT) (dM := dM) (w := w) (hs.congr k13.2.2) aT aM
-    (by rw [g3 .a5 (by decide), i5]) (by rw [g3 .a7 (by decide), i7]) (by rw [g3 .t0 (by decide), it0])
-    (by rw [w3, g3 .t1 (by decide)]; exact hinv) (by omega_arith) hw' (by omega_arith) (by omega_arith)
-    (by omega_arith)) fun s₄ ⟨⟨z4, U, hU, r4⟩, o4, k4⟩ => ?_)
+    (by rw [g3 .a5 (by decide), i5]) e02 (by rw [g3 .t0 (by decide), it0])
+    (by rw [w3, g3 .t1 (by decide)]; exact hinv) (by omega_arith) hw' (by omega_arith))
+    fun s₄ ⟨⟨z4, U, hU, r4⟩, o4, k4⟩ => ?_)
   rw [d3, m3] at r4
   have k14 := k13.trans k4
   have hs₄ := hs.congr k14.2.2
-  have g4 : ∀ r ∈ [Reg.a2, .a3, .a5, .a6, .a7, .t0, .t1], s₄.gpr r = s.gpr r := fun r hr => by
-    rw [k4.gpr (by revert r hr; decide), g3 r hr]
-  -- The last carry at word `2 w`, `a5` at word `w`.
-  have hpre : WP isa (.block finishPre) s₄ fun s₅ =>
-      (s₅.gpr .a5 = off B (dT + 8 * w) ∧ s₅.mem = s₄.mem.writeW (off B (dT + 16 * w)) (s₄.gpr .a1)) ∧
-        Keep [.a5, .t3, .t4] s₄ s₅ := by
+  have g4 : ∀ r ∈ [Reg.a2, .a3, .a5, .a6, .t0, .t1], s₄.gpr r = s.gpr r := fun r hr => by
+    rw [k4.gpr (by revert r hr; decide), g3 r (by revert r hr; decide)]
+  -- `a7` back at `m`, the last carry at word `2 w`, `a5` at word `w`.
+  have hpre : WP isa (.block (restoreA7 ++ finishPre)) s₄ fun s₅ =>
+      (s₅.gpr .a5 = off B (dT + 8 * w) ∧ s₅.gpr .a7 = off B dM ∧
+        s₅.mem = s₄.mem.writeW (off B (dT + 16 * w)) (s₄.gpr .a1)) ∧
+        Keep [.s2, .a7, .a5, .t3, .t4] s₄ s₅ := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
-    unfold finishPre
+    unfold restoreA7 finishPre
     have e5 := g4 .a5 (by decide)
     have e0 := g4 .t0 (by decide)
     rw [i5] at e5; rw [it0] at e0
-    brun [e5, e0, sqr_shl3, show dT + 8 * w + 8 * w = dT + 16 * w by omega_arith, hs₄.st (show dT + 16 * w + 8 ≤ Z by omega_arith),
+    brun [e5, e0, sqr_shl3, sqr_mdist w, off_sub B (show 16 * (w + 2) ≤ dT by omega_arith),
+      show dT - 16 * (w + 2) = dM by omega_arith,
+      show dT + 8 * w + 8 * w = dT + 16 * w by omega_arith, hs₄.st (show dT + 16 * w + 8 ≤ Z by omega_arith),
       hs₄.al8 (show dT + 16 * w + 8 ≤ Z by omega_arith) (by omega_arith)]
     done
-  refine WP.seq (WP.mono hpre fun s₅ ⟨⟨j5, m5⟩, k5⟩ => ?_)
+  refine WP.seq (WP.mono hpre fun s₅ ⟨⟨j5, j7, m5⟩, k5⟩ => ?_)
   have k15 := k14.trans k5
   have hs₅ := hs.congr k15.2.2
   have g5 : ∀ r ∈ [Reg.a2, .a6, .a7, .t0], s₅.gpr r = s.gpr r := fun r hr => by
-    rw [k5.gpr (by revert r hr; decide), g4 r (by revert r hr; decide)]
+    by_cases h7 : r = .a7
+    · subst h7; rw [j7, i7]
+    · rw [k5.gpr (by revert r hr h7; decide), g4 r (by revert r hr h7; decide)]
   have o45 : Mont.Outside B (dT + 16 * w) 8 s₄.mem s₅.mem := by
     rw [m5]; exact writeW_outside _ _ _ (by omega_arith)
   have tl5 : wordsVal s₅.mem B (dT + 8 * w) w = wordsVal s₄.mem B (dT + 8 * w) w :=
@@ -256,11 +257,15 @@ theorem sqrTailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
         ((o4.mono (Nat.le_refl _) (by omega_arith)).trans (o45.mono (by omega_arith) (by omega_arith)))
     refine Arrays.trans (m₂ := s₆.mem) (Arrays.of_outside (j := p) (by simp) o6 (by omega_arith) (by omega_arith)) ?_
     exact Arrays.of_outside (j := o) (by simp) o7 (by omega_arith) (by omega_arith)
-  · have k := k18.mono (rs' := sqrRegs ++ [.a5]) (by decide)
+  · have k := k18.mono (rs' := sqrRegs ++ [.a5, .a7]) (by decide)
+    have k58 := (k6.trans k7).trans k8
     refine ⟨fun r hr => ?_, k.2⟩
     by_cases h5 : r = .a5
     · subst h5; rw [j8, i5]
-    · exact k.1 r fun h => (List.mem_append.mp h).elim hr fun h' => h5 (List.mem_singleton.mp h')
+    by_cases h7 : r = .a7
+    · subst h7; rw [k58.gpr (by decide), j7, i7]
+    · exact k.1 r fun h => (List.mem_append.mp h).elim hr fun h' => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at h'; exact h'.elim h5 h7
 
 /-- `sqrTailN_ok` for arrays below 8: the drop-in for `tail_ok` on squares,
 the temporary at `a6` in any array but 0, 2, 3 and `o`. -/

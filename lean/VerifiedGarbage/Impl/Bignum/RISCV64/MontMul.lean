@@ -10,7 +10,8 @@ The arithmetic of `[o] = [a] [b] R⁻¹ mod m` for `R = 2^(64 w)`, on numbers of
 `w` words of 64 bits, least significant first, in the working space of
 `Impl/Bignum/Layout.lean`: the modulus `m` at `a7`, the accumulator `T`
 (`w + 1` words) at `a5` and a temporary (`w` words) at `a6`, with `o`, `a`
-and `b` at `a2`, `a3` and `a4`, `w` in `t0` and `-m⁻¹ mod 2⁶⁴` in `t1`.
+and `b` at `a2`, `a3` and `a4`, `w` in `t0` and `-m⁻¹ mod 2⁶⁴` in `t1`;
+`m`, the accumulator and the temporary are the layout's arrays 0, 2 and 3.
 
 The multiplication is finely integrated operand scanning (FIOS) in radix
 `2⁶⁴`, as on PPC64LE (`Impl/Bignum/PPC64LE/MontMul.lean`), with the carries
@@ -41,10 +42,14 @@ bases advanced by 8 per word, so only the bases and `w` affect timing.
 Registers: in the rounds, `a1` the rounds left, `t3`, `t4`, `a0` the
 pointers into the accumulator, `b` and `m`, `t5` the words (or groups of
 four) left, `t6` `aᵢ`, `t2` `u`, `s0` and `s1` the carries `c` and `d`,
-`s2`, `s3` temporaries and `s4` the carry bit of an addition; in the final
-subtraction, `t3`, `t4`, `a0` the pointers, `t5` the words left, `s4` the
-borrow, then the mask. The code writes `a0`, `a1`, `a3`, `t2`–`t6` and
-`s0`–`s4`, and the memory of `[o]`, the accumulator and the temporary.
+`a6` and `a7` the words `bⱼ` and `mⱼ` of the step, each loaded a step ahead
+(so word `w` of each is read, within its slot), `s2`, `s3` temporaries and
+`s4` the carry bit of an addition; `a0` points at `m` between the rounds,
+rewound after each, and `a6`, `a7` are recomputed from `a5` and `w` after
+them, as their slots are laid out. In the final subtraction, `t3`, `t4`,
+`a0` the pointers, `t5` the words left, `s4` the borrow, then the mask. The
+code writes `a0`, `a1`, `a3`, `t2`–`t6` and `s0`–`s4` (and `a6`, `a7`, which
+it restores), and the memory of `[o]`, the accumulator and the temporary.
 -/
 
 @[expose] public section
@@ -63,10 +68,10 @@ def countLoop (cnt : Reg) (body : List Instr) : Prog isa :=
 def countLoop? (body : List Instr) : Prog isa :=
   .ite (.zero .t5) (.block []) (countLoop .t5 body)
 
-/-- The accumulator's first `w + 1` words := 0, and the rounds' count `w`
-into `a1`. -/
+/-- The accumulator's first `w + 1` words := 0, the rounds' count `w` into
+`a1` and their pointer at `m` into `a0`. -/
 def zeroAcc : Prog isa :=
-  .seq (.block [.addi .a1 .t0 0, .addi .t3 .a5 0, .addi .t5 .t0 1, .li .s0 0])
+  .seq (.block [.addi .a1 .t0 0, .addi .t3 .a5 0, .addi .t5 .t0 1, .li .s0 0, .addi .a0 .a7 0])
     (countLoop .t5 [.store .d .s0 .t3 0, .addi .t3 .t3 8])
 
 /-! ## A round -/
@@ -75,26 +80,28 @@ def zeroAcc : Prog isa :=
 `s₀ = t₀ + aᵢ b₀ mod 2⁶⁴` into `s2` and the high word of `t₀ + aᵢ b₀` (the
 first carry, `c`) into `s0`; `u = s₀ (-m⁻¹) mod 2⁶⁴` into `t2`; `(s₀ + u m₀) /
 2⁶⁴` (the second carry, `d`: the low word is 0) into `s1`; the pointers `t3`,
-`t4`, `a0` at word 0 of `T`, `b` and `m`. -/
+`t4` at word 0 of `T` and `b` (`a0` is at word 0 of `m`); `b₁` and `m₁`
+into `a6` and `a7`, for word 1. -/
 def fiosHead : List Instr :=
   [.load .d .t6 .a3 0, .addi .a3 .a3 8, .load .d .s3 .a4 0, .load .d .s2 .a5 0,
+    .load .d .a6 .a4 8, .load .d .a7 .a0 8,
     .mul .s0 .t6 .s3, .mulhu .s3 .t6 .s3, .add .s2 .s2 .s0, .sltu .s4 .s2 .s0, .add .s0 .s3 .s4,
     .mul .t2 .s2 .t1,
-    .load .d .s3 .a7 0, .mul .s1 .t2 .s3, .mulhu .s3 .t2 .s3, .add .s1 .s1 .s2, .sltu .s4 .s1 .s2,
+    .load .d .s3 .a0 0, .mul .s1 .t2 .s3, .mulhu .s3 .t2 .s3, .add .s1 .s1 .s2, .sltu .s4 .s1 .s2,
     .add .s1 .s3 .s4,
-    .addi .t3 .a5 0, .addi .t4 .a4 0, .addi .a0 .a7 0]
+    .addi .t3 .a5 0, .addi .t4 .a4 0]
 
 /-- Word `j` of a round, the pointers at word `j - 1` less `k`: `x = tⱼ + aᵢ
-bⱼ + c` (the words at `t3 + k + 8` and `t4 + k + 8`), `c` := its high word
-and `y = x mod 2⁶⁴ + u mⱼ + d` (`mⱼ` at `a0 + k + 8`), `d` := its high word,
-and its low word stored at `t3 + k`: word `j - 1` of `(T + aᵢ b + u m) /
-2⁶⁴`. -/
+bⱼ + c` (`tⱼ` at `t3 + k + 8`, `bⱼ` in `a6`), `c` := its high word and `y = x
+mod 2⁶⁴ + u mⱼ + d` (`mⱼ` in `a7`), `d` := its high word, and its low word
+stored at `t3 + k`: word `j - 1` of `(T + aᵢ b + u m) / 2⁶⁴`; `bⱼ₊₁` and
+`mⱼ₊₁` (at `t4 + k + 16` and `a0 + k + 16`) into `a6` and `a7`. -/
 def fiosStep (k : Nat) : List Instr :=
   [.load .d .s2 .t3 (k + 8), .add .s0 .s0 .s2, .sltu .s4 .s0 .s2,
-    .load .d .s3 .t4 (k + 8), .mul .s2 .t6 .s3, .mulhu .s3 .t6 .s3, .add .s3 .s3 .s4,
+    .mul .s2 .t6 .a6, .mulhu .s3 .t6 .a6, .load .d .a6 .t4 (k + 16), .add .s3 .s3 .s4,
     .add .s2 .s2 .s0, .sltu .s4 .s2 .s0, .add .s0 .s3 .s4,
-    .load .d .s3 .a0 (k + 8), .add .s1 .s1 .s2, .sltu .s4 .s1 .s2,
-    .mul .s2 .t2 .s3, .mulhu .s3 .t2 .s3, .add .s3 .s3 .s4,
+    .add .s1 .s1 .s2, .sltu .s4 .s1 .s2,
+    .mul .s2 .t2 .a7, .mulhu .s3 .t2 .a7, .load .d .a7 .a0 (k + 16), .add .s3 .s3 .s4,
     .add .s2 .s2 .s1, .sltu .s4 .s2 .s1, .add .s1 .s3 .s4, .store .d .s2 .t3 k]
 
 /-- `U` words of a round, and the pointers advanced past them. -/
@@ -117,28 +124,36 @@ def fiosTop : List Instr :=
   [.load .d .s2 .t3 8, .add .s0 .s0 .s2, .sltu .s4 .s0 .s2, .add .s0 .s0 .s1, .sltu .s3 .s0 .s1,
     .add .s4 .s4 .s3, .store .d .s0 .t3 0, .store .d .s4 .t3 8]
 
+/-- `a0` back from word `w - 1` of `m` to word 0. -/
+def fiosRewind : List Instr := [.shift .sll .d .s2 .t0 3, .sub .a0 .a0 .s2, .addi .a0 .a0 8]
+
 /-- One round: `T := (T + aᵢ b + u m) / 2⁶⁴`, finely integrated (FIOS): words
 `1` to `w - 1` one at a time (`(w - 1) mod 4` of them), then four at a
-time. -/
+time; then `a0` rewound. -/
 def round : Prog isa :=
   .seq (.block (fiosHead ++ fiosRem))
     (.seq (countLoop? (fiosGroup 1)) (.seq (.block fiosQuot) (.seq (countLoop? (fiosGroup unroll))
-      (.block fiosTop))))
+      (.seq (.block fiosTop) (.block fiosRewind)))))
 
-/-- The `w` rounds, counted by `a1`. -/
+/-- The `w` rounds, counted by `a1`, `a0` at `m`. -/
 def rounds : Prog isa :=
   .loop (.seq round (.block [.addi .a1 .a1 (-1)])) (.nonzero .a1)
 
 /-! ## The final subtraction -/
 
+/-- The first block of `subMod64`: its pointers, count and borrow. -/
+def subMod64Init : List Instr := [.addi .t3 .a5 0, .addi .t4 .a6 0, .addi .a0 .a7 0, .addi .t5 .t0 0, .li .s4 0]
+
+/-- `subMod64` after its first block: the words, then the top word. -/
+def subMod64Rest : Prog isa :=
+  .seq (countLoop .t5 [.load .d .s2 .t3 0, .load .d .s3 .a0 0, .sltu .s0 .s2 .s3,
+      .sub .s2 .s2 .s3, .sltu .s1 .s2 .s4, .sub .s2 .s2 .s4, .logic .or .s4 .s0 .s1,
+      .store .d .s2 .t4 0, .addi .t3 .t3 8, .addi .t4 .t4 8, .addi .a0 .a0 8])
+    (.block [.load .d .s2 .t3 0, .sltu .s0 .s2 .s4, .li .s1 0, .sub .s4 .s1 .s0])
+
 /-- `[tmp] = T - m` over `w` words, the borrow in `s4`, then `s4` := all
 ones if `T < m` (the top word `t_w` is below the borrow), else 0. -/
-def subMod64 : Prog isa :=
-  .seq (.block [.addi .t3 .a5 0, .addi .t4 .a6 0, .addi .a0 .a7 0, .addi .t5 .t0 0, .li .s4 0])
-    (.seq (countLoop .t5 [.load .d .s2 .t3 0, .load .d .s3 .a0 0, .sltu .s0 .s2 .s3,
-        .sub .s2 .s2 .s3, .sltu .s1 .s2 .s4, .sub .s2 .s2 .s4, .logic .or .s4 .s0 .s1,
-        .store .d .s2 .t4 0, .addi .t3 .t3 8, .addi .t4 .t4 8, .addi .a0 .a0 8])
-      (.block [.load .d .s2 .t3 0, .sltu .s0 .s2 .s4, .li .s1 0, .sub .s4 .s1 .s0]))
+def subMod64 : Prog isa := .seq (.block subMod64Init) subMod64Rest
 
 /-- `[o] = mask ? T : [tmp]`, word by word, the mask in `s4`. -/
 def selectAcc64 : Prog isa :=
@@ -147,8 +162,16 @@ def selectAcc64 : Prog isa :=
       .logic .and .s3 .s3 .s4, .logic .xor .s3 .s3 .s2, .store .d .s3 .a0 0,
       .addi .t3 .t3 8, .addi .t4 .t4 8, .addi .a0 .a0 8])
 
+/-- `a6` and `a7` back at the temporary and `m`, the slots after and two
+before the accumulator's (`a5`), of `8 (w + 2)` bytes each. -/
+def restoreBases : List Instr :=
+  [.shift .sll .d .s2 .t0 3, .addi .s2 .s2 16, .add .a6 .a5 .s2, .shift .sll .d .s3 .s2 1, .sub .a7 .a5 .s3]
+
+/-- `subMod64` after `restoreBases`, in its first block. -/
+def restoreSubMod64 : Prog isa := .seq (.block (restoreBases ++ subMod64Init)) subMod64Rest
+
 /-- `[o] = [a] [b] R⁻¹ mod m`, for `R = 2^(64 w)`, the bases in the
 registers. -/
-def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq subMod64 selectAcc64))
+def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq restoreSubMod64 selectAcc64))
 
 end VG.Impl.Bignum.RISCV64
