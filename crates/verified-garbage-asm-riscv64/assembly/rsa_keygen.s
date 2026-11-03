@@ -11690,6 +11690,7 @@ vg_rsa_keygen_candidate:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 236:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -11700,13 +11701,15 @@ vg_rsa_keygen_candidate:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -11714,7 +11717,6 @@ vg_rsa_keygen_candidate:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 238f
@@ -11722,18 +11724,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11754,18 +11756,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11774,18 +11776,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11794,18 +11796,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11814,18 +11816,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11847,8 +11849,16 @@ vg_rsa_keygen_candidate:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 237b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -11894,6 +11904,7 @@ vg_rsa_keygen_candidate:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 246:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -11904,13 +11915,15 @@ vg_rsa_keygen_candidate:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -11918,7 +11931,6 @@ vg_rsa_keygen_candidate:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 248f
@@ -11926,18 +11938,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11958,18 +11970,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11978,18 +11990,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -11998,18 +12010,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12018,18 +12030,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12051,8 +12063,16 @@ vg_rsa_keygen_candidate:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 247b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -12098,6 +12118,7 @@ vg_rsa_keygen_candidate:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 256:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -12108,13 +12129,15 @@ vg_rsa_keygen_candidate:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -12122,7 +12145,6 @@ vg_rsa_keygen_candidate:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 258f
@@ -12130,18 +12152,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12162,18 +12184,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12182,18 +12204,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12202,18 +12224,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12222,18 +12244,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12255,8 +12277,16 @@ vg_rsa_keygen_candidate:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 257b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -12302,6 +12332,7 @@ vg_rsa_keygen_candidate:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 266:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -12312,13 +12343,15 @@ vg_rsa_keygen_candidate:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -12326,7 +12359,6 @@ vg_rsa_keygen_candidate:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 268f
@@ -12334,18 +12366,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12366,18 +12398,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12386,18 +12418,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12406,18 +12438,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12426,18 +12458,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12459,8 +12491,16 @@ vg_rsa_keygen_candidate:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 267b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -12506,6 +12546,7 @@ vg_rsa_keygen_candidate:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 276:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -12516,13 +12557,15 @@ vg_rsa_keygen_candidate:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -12530,7 +12573,6 @@ vg_rsa_keygen_candidate:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 278f
@@ -12538,18 +12580,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12570,18 +12612,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12590,18 +12632,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12610,18 +12652,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12630,18 +12672,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12663,8 +12705,16 @@ vg_rsa_keygen_candidate:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 277b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -12710,6 +12760,7 @@ vg_rsa_keygen_candidate:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 286:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -12720,13 +12771,15 @@ vg_rsa_keygen_candidate:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -12734,7 +12787,6 @@ vg_rsa_keygen_candidate:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 288f
@@ -12742,18 +12794,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12774,18 +12826,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12794,18 +12846,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12814,18 +12866,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12834,18 +12886,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -12867,8 +12919,16 @@ vg_rsa_keygen_candidate:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 287b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -12962,6 +13022,7 @@ vg_rsa_keygen_candidate:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 297:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -12972,13 +13033,15 @@ vg_rsa_keygen_candidate:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -12986,7 +13049,6 @@ vg_rsa_keygen_candidate:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 299f
@@ -12994,18 +13056,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -13026,18 +13088,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -13046,18 +13108,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -13066,18 +13128,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -13086,18 +13148,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -13119,8 +13181,16 @@ vg_rsa_keygen_candidate:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 298b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
@@ -13957,6 +14027,7 @@ vg_rsa_keygen_candidate:
 	addi t3, a5, 0
 	addi t5, t0, 1
 	addi s0, zero, 0
+	addi a0, a7, 0
 2125:
 	sd s0, 0(t3)
 	addi t3, t3, 8
@@ -13967,13 +14038,15 @@ vg_rsa_keygen_candidate:
 	addi a3, a3, 8
 	ld s3, 0(a4)
 	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
 	mul s0, t6, s3
 	mulhu s3, t6, s3
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
 	mul t2, s2, t1
-	ld s3, 0(a7)
+	ld s3, 0(a0)
 	mul s1, t2, s3
 	mulhu s3, t2, s3
 	add s1, s1, s2
@@ -13981,7 +14054,6 @@ vg_rsa_keygen_candidate:
 	add s1, s3, s4
 	addi t3, a5, 0
 	addi t4, a4, 0
-	addi a0, a7, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
 	beqz t5, 2127f
@@ -13989,18 +14061,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -14021,18 +14093,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 8(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 8(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -14041,18 +14113,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 16(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 16(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 16(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -14061,18 +14133,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 24(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 24(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 24(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -14081,18 +14153,18 @@ vg_rsa_keygen_candidate:
 	ld s2, 32(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
-	ld s3, 32(t4)
-	mul s2, t6, s3
-	mulhu s3, t6, s3
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
 	add s3, s3, s4
 	add s2, s2, s0
 	sltu s4, s2, s0
 	add s0, s3, s4
-	ld s3, 32(a0)
 	add s1, s1, s2
 	sltu s4, s1, s2
-	mul s2, t2, s3
-	mulhu s3, t2, s3
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
 	add s3, s3, s4
 	add s2, s2, s1
 	sltu s4, s2, s1
@@ -14114,8 +14186,16 @@ vg_rsa_keygen_candidate:
 	add s4, s4, s3
 	sd s0, 0(t3)
 	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
 	addi a1, a1, -1
 	bnez a1, 2126b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
 	addi t3, a5, 0
 	addi t4, a6, 0
 	addi a0, a7, 0
