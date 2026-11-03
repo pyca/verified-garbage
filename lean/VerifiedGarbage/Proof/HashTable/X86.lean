@@ -90,16 +90,9 @@ theorem mem_names {vs : List TVar} {w : TVar} (hw : w ∈ vs) :
 
 /-- An indirect call of `fnsOf vs`'s functions reaches `w`'s. -/
 theorem tabOK_of {vs : List TVar} (hc : Coh vs) {sy : String → BitVec 32}
-    (hd : (names vs).Pairwise fun f g => f ≠ g → sy f ≠ sy g) {w : TVar} (hw : w ∈ vs) :
-    TabOK w.g.H (fnsOf vs) sy := by
+    (hd64 : (names vs).Pairwise fun f g => f ≠ g → (sy f).setWidth 64 ≠ (sy g).setWidth 64) {w : TVar}
+    (hw : w ∈ vs) : TabOK w.g.H (fnsOf vs) sy := by
   have hn := mem_names hw
-  have hd64 : (names vs).Pairwise fun f g => f ≠ g → (sy f).setWidth 64 ≠ (sy g).setWidth 64 :=
-    hd.imp fun {a b} h hne e => h hne (by
-      have := congrArg (fun x : BitVec 64 => x.toNat) e
-      have ha := (sy a).isLt
-      have hb := (sy b).isLt
-      simp only [BitVec.toNat_setWidth] at this
-      exact BitVec.eq_of_toNat_eq (by rwa [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this))
   refine ⟨find_name (sy := fun n => (sy n).setWidth 64) (List.mem_map_of_mem hw) ?_ ?_,
     find_name (sy := fun n => (sy n).setWidth 64) (List.mem_map_of_mem hw) ?_ ?_,
     find_name (sy := fun n => (sy n).setWidth 64) (List.mem_map_of_mem hw) ?_ ?_⟩
