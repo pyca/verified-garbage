@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.RISCV64.Key.Verified
-public import VerifiedGarbage.Proof.TripleDes.RISCV64.EcbVerified
+public import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.TripleDes.RISCV64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.Lit
 
 /-! # Triple DES on RISC-V -/
 
@@ -16,12 +17,12 @@ def artifacts : List Artifact := [
     code := Impl.TripleDes.RISCV64.Key.expandKey
     verified := Proof.TripleDes.RISCV64.Key.verified },
   Spec.TripleDes.ecbEncryptApi.artifact RISCV64.target {
-    code := Impl.TripleDes.RISCV64.Ecb.encrypt
-    stack := 944
-    verified := Proof.TripleDes.RISCV64.Ecb.encrypt_verified },
+    code := Impl.TripleDes.RISCV64.Bitslice.encrypt
+    stack := 1056
+    verified := Proof.TripleDes.RISCV64.Bitsliced.encrypt_verified },
   Spec.TripleDes.ecbDecryptApi.artifact RISCV64.target {
-    code := Impl.TripleDes.RISCV64.Ecb.decrypt
-    stack := 944
-    verified := Proof.TripleDes.RISCV64.Ecb.decrypt_verified }]
+    code := Impl.TripleDes.RISCV64.Bitslice.decrypt
+    stack := 1056
+    verified := Proof.TripleDes.RISCV64.Bitsliced.decrypt_verified }]
 
 end VG.Artifacts.TripleDes.RISCV64

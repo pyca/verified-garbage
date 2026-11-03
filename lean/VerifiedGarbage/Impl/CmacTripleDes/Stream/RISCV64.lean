@@ -11,8 +11,9 @@ public import VerifiedGarbage.Impl.Cmac.RISCV64
 # Streaming TDEA-CMAC on RISC-V
 
 The streaming functions over the verified Triple DES key expansion
-(`vg_triple_des_expand_key`) and ECB encryption (`vg_triple_des_ecb_encrypt`,
-on one block in place), which they call, with the streaming state's layout
+(`vg_triple_des_expand_key`) and the serial ECB encryption of
+`Impl/TripleDes/RISCV64/Ecb.lean` (`vg_triple_des_ecb_encrypt_serial`, an
+internal function, on one block in place), which they call, with the streaming state's layout
 of `Spec.Cmac.tdesRepr`: the key schedule at 0, the subkeys at 384 and 392,
 the chaining value at 400 and the bytes held back at 408. The state is the
 schedule ECB reads, and ECB enciphers the chaining value in place in the
@@ -67,8 +68,9 @@ the schedule's address in `a2`. -/
 def keyCall : Prog isa := .call "vg_triple_des_expand_key" Impl.TripleDes.RISCV64.Key.expandKey
 
 /-- ECB's call, with the schedule at `a0`, the block at `a1` and one block in
-`a2`. -/
-def ecbCall : Prog isa := .call "vg_triple_des_ecb_encrypt" Impl.TripleDes.RISCV64.Ecb.encrypt
+`a2`: the serial code, a block at a time, as `vg_triple_des_ecb_encrypt`
+(bitsliced, `Bitsliced.lean`) is faster only on many blocks. -/
+def ecbCall : Prog isa := .call "vg_triple_des_ecb_encrypt_serial" Impl.TripleDes.RISCV64.Ecb.encrypt
 
 /-- ECB's arguments: the state (`s1`), as the schedule, and its block at
 `off`. -/

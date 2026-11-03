@@ -68,7 +68,6 @@ def ecb (d : Direction) : Prog isa :=
           (.seq (.block Modes.RISCV64.Core.restore) (dirCore d).wipe)))))
 
 def encrypt : Prog isa := ecb .encrypt
-def decrypt : Prog isa := ecb .decrypt
 
 end Ecb
 

@@ -16,9 +16,9 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Streaming TDEA-CMAC on RISC-V: the calls
 
 The calls of the verified key expansion (`keyCall`, by `Key.contract`,
-with `WP.call`: it uses no stack) and ECB encryption (`ecbCall`, by
-`Ecb.ecbC`, with `WP.callAny`: it uses the 944 bytes below the stack
-pointer, `ecb_sdepth`), as the streaming functions make them: the key
+with `WP.call`: it uses no stack) and serial ECB encryption (`ecbCall`, of
+`vg_triple_des_ecb_encrypt_serial`, by `Ecb.ecbC`, with `WP.callAny`: it
+uses the 944 bytes below the stack pointer, `ecb_sdepth`), as the streaming functions make them: the key
 expansion writes the schedule at the start of the state `S`, and ECB
 enciphers the block at `S + off` in place, a block of the state past the
 schedule, with the state as the schedule. What each needs (`KArgs`,
