@@ -24,9 +24,11 @@ memory, and no register but `t0`, `t1` and `t2`. It needs each area's
 address (`AreasOk.ea`: the base register and displacement of the area give
 the address `A l` plus the offset, with an encodable displacement),
 readable and writable bytes, and areas apart from each other. The
-operations are copies and XORs (`opCode_wp_plain`), of bytes or of words a
-byte at a time (`loadLE32`, `storeLE32`), and the counters' increments
-(`Proof/Modes/RISCV64/Counter.lean`).
+operations are copies and XORs (`opCode_wp_plain`), of bytes or of words
+(`Core.loadW`, `Core.storeW`: a word at a time in an area that
+`Core.wordAt w` names, whose address is then a multiple of 4, as the
+offsets of a word are, `WordAl`; else a byte at a time), and the counters'
+increments (`Proof/Modes/RISCV64/Counter.lean`).
 -/
 
 @[expose] public section
@@ -143,13 +145,65 @@ theorem wp_storeLE32 {s : State} {v tmp n : Reg} {off : Nat} {a : Addr} {is : Li
   subst e
   refine k _ (by rw [ha]; rfl) (fun r h1 => by rw [RegUpd.gpr_write_of_ne _ _ h1]) rfl rfl
 
+/-- A word's offsets are multiples of 4. -/
+def WordAl (o : Op) : Prop :=
+  o.wide = true → o.dOff % 4 = 0 ∧ o.sOff % 4 = 0 ∧ ∀ l off, o.xr = some (l, off) → off % 4 = 0
+
+theorem al4 {p : Addr} (hp : p.toNat % 4 = 0) {d : Nat} (hd : d % 4 = 0) :
+    (p + BitVec.ofNat 64 d).toNat % 4 = 0 := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+
+/-- A word of area `l`, as `Core.loadW` loads it. -/
+theorem wp_loadW (c : Core) {w : Bool} {l : Loc} {s : State} {d tmp : Reg} {off : Nat} {a : Addr}
+    {is : List Instr} {Q : State → Prop}
+    (hdn : d ≠ (c.loc l).1) (htn : tmp ≠ (c.loc l).1) (hdt : d ≠ tmp) (ho : (c.loc l).2 + off + 3 < 2048)
+    (ha : s.gpr (c.loc l).1 + BitVec.ofNat 64 ((c.loc l).2 + off) = a)
+    (hal : Core.wordAt w l = true → a.toNat % 4 = 0) (hin : InRegions (s.rd ++ s.wr) a 4)
+    (k : ∀ s', s'.gpr d = (s.mem.readW a 32).setWidth 64 → (∀ r, r ≠ d → r ≠ tmp → s'.gpr r = s.gpr r) →
+      s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → WP isa (.block is) s' Q) :
+    WP isa (.block (c.loadW w l d tmp off ++ is)) s Q := by
+  unfold Core.loadW
+  split
+  · rename_i hw
+    exact wp_lwu (by omega) ha (hal hw) hin fun s' u => k s' u.gpr (fun r h _ => u.other r h) u.mem u.rd u.wr
+  · exact wp_loadLE32 hdn htn hdt ho ha hin k
+
+/-- A word of area `l`, as `Core.storeW` stores it. -/
+theorem wp_storeW (c : Core) {w : Bool} {l : Loc} {s : State} {v tmp : Reg} {off : Nat} {a : Addr}
+    {is : List Instr} {Q : State → Prop}
+    (htv : tmp ≠ v) (htn : tmp ≠ (c.loc l).1) (ho : (c.loc l).2 + off + 3 < 2048)
+    (ha : s.gpr (c.loc l).1 + BitVec.ofNat 64 ((c.loc l).2 + off) = a)
+    (hal : Core.wordAt w l = true → a.toNat % 4 = 0) (hout : InRegions s.wr a 4)
+    (k : ∀ s', s'.mem = s.mem.writeW a ((s.gpr v).setWidth 32) → (∀ r, r ≠ tmp → s'.gpr r = s.gpr r) →
+      s'.rd = s.rd → s'.wr = s.wr → WP isa (.block is) s' Q) :
+    WP isa (.block (c.storeW w l v tmp off ++ is)) s Q := by
+  unfold Core.storeW
+  split
+  · rename_i hw
+    exact wp_sw (by omega) ha (hal hw) hout fun s' u => k s' u.mem (fun r _ => by rw [u.gpr]) u.rd u.wr
+  · exact wp_storeLE32 htv htn ho ha hout k
+
+theorem copyBlk_wordAl (bw : Nat) (dst src : Loc) : ∀ o ∈ copyBlk bw dst src, WordAl o := by
+  intro o ho
+  simp only [copyBlk, List.mem_map, List.mem_range] at ho
+  obtain ⟨i, -, rfl⟩ := ho
+  exact fun _ => ⟨Nat.mul_mod_right 4 i, Nat.mul_mod_right 4 i, fun _ _ h => by cases h⟩
+
+theorem xorBlk_wordAl (bw : Nat) (dst a b : Loc) : ∀ o ∈ xorBlk bw dst a b, WordAl o := by
+  intro o ho
+  simp only [xorBlk, List.mem_map, List.mem_range] at ho
+  obtain ⟨i, -, rfl⟩ := ho
+  exact fun _ => ⟨Nat.mul_mod_right 4 i, Nat.mul_mod_right 4 i, fun _ _ h => by
+    cases h; exact Nat.mul_mod_right 4 i⟩
+
 /-! ## One operation -/
 
-theorem opCode_wp_plain (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} {o : Op}
-    (hpl : Plain o) (ho : o.InBounds len)
+theorem opCode_wp_plain (c : Core) (w : Bool) {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} {o : Op}
+    (hpl : Plain o) (ho : o.InBounds len) (hwa : WordAl o)
+    (hal : ∀ l, Core.wordAt w l = true → (A l).toNat % 4 = 0)
     (hdst : o.dst ∈ ws) {s : State} (h : AreasOk c s len A ws) {is : List Instr} {Q : State → Prop}
     (k : ∀ s', s'.mem = opMem A o s.mem → Tmp s s' → s'.rd = s.rd → s'.wr = s.wr → WP isa (.block is) s' Q) :
-    WP isa (.block (c.opCode o ++ is)) s Q := by
+    WP isa (.block (c.opCode w o ++ is)) s Q := by
   obtain ⟨hd, hs, hx⟩ := ho
   obtain ⟨hinc, hi32⟩ := hpl
   have hw0 := width_pos o
@@ -205,8 +259,11 @@ theorem opCode_wp_plain (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : 
       · rename_i hlt; rw [show (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat = 0 by omega_arith,
           Nat.add_zero, Nat.add_zero]
       · rfl
-  · -- A word, a byte at a time.
+  · -- A word.
     have hW : o.width = 4 := by simp [Op.width, hinc, hi32, hwd]
+    obtain ⟨aD, aS, aX⟩ := hwa hwd
+    have alA : ∀ l off, off % 4 = 0 → Core.wordAt w l = true → (A l + BitVec.ofNat 64 off).toNat % 4 = 0 :=
+      fun l off ho hw => al4 (hal l hw) ho
     rw [hW] at hd hs hx
     have dD := h.disp o.dst (o.dOff + 3) (by omega_arith)
     have dS := h.disp o.src (o.sOff + 3) (by omega_arith)
@@ -214,10 +271,10 @@ theorem opCode_wp_plain (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : 
     cases hxr : o.xr with
     | none =>
       simp only [List.nil_append, List.append_assoc]
-      refine wp_loadLE32 nS.1.symm nS.2.2.symm (by decide) (by omega_arith) eaS (h.rd _ _ _ (by decide) hs)
-        fun s₁ g₁ o₁ m₁ rd₁ wr₁ => ?_
-      refine wp_storeLE32 (a := A o.dst + BitVec.ofNat 64 o.dOff) (by decide) nD.2.2.symm (by omega_arith)
-        (by rw [o₁ _ nD.1 nD.2.2]; exact eaD) (by rw [wr₁]; exact h.wr _ hdst _ _ (by decide) hd)
+      refine wp_loadW c nS.1.symm nS.2.2.symm (by decide) (by omega_arith) eaS (alA _ _ aS)
+        (h.rd _ _ _ (by decide) hs) fun s₁ g₁ o₁ m₁ rd₁ wr₁ => ?_
+      refine wp_storeW c (a := A o.dst + BitVec.ofNat 64 o.dOff) (by decide) nD.2.2.symm (by omega_arith)
+        (by rw [o₁ _ nD.1 nD.2.2]; exact eaD) (alA _ _ aD) (by rw [wr₁]; exact h.wr _ hdst _ _ (by decide) hd)
         fun s₂ m₂ g₂ rd₂ wr₂ => ?_
       refine k s₂ ?_ (fun r h1 _ h3 => by rw [g₂ r h3, o₁ r h1 h3]) (by rw [rd₂, rd₁])
         (by rw [wr₂, wr₁])
@@ -234,14 +291,14 @@ theorem opCode_wp_plain (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : 
       have dX := h.disp l (off + 3) (by omega_arith)
       have nX := loc_ne c l
       simp only [List.append_assoc, List.singleton_append]
-      refine wp_loadLE32 nS.1.symm nS.2.2.symm (by decide) (by omega_arith) eaS (h.rd _ _ _ (by decide) hs)
-        fun s₁ g₁ o₁ m₁ rd₁ wr₁ => ?_
-      refine wp_loadLE32 (a := A l + BitVec.ofNat 64 off) nX.2.1.symm nX.2.2.symm (by decide) (by omega_arith)
-        (by rw [o₁ _ nX.1 nX.2.2]; exact eaX) (by rw [rd₁, wr₁]; exact h.rd _ _ _ (by decide) hx')
-        fun s₂ g₂ o₂ m₂ rd₂ wr₂ => ?_
+      refine wp_loadW c nS.1.symm nS.2.2.symm (by decide) (by omega_arith) eaS (alA _ _ aS)
+        (h.rd _ _ _ (by decide) hs) fun s₁ g₁ o₁ m₁ rd₁ wr₁ => ?_
+      refine wp_loadW c (a := A l + BitVec.ofNat 64 off) nX.2.1.symm nX.2.2.symm (by decide) (by omega_arith)
+        (by rw [o₁ _ nX.1 nX.2.2]; exact eaX) (alA _ _ (aX l off hxr))
+        (by rw [rd₁, wr₁]; exact h.rd _ _ _ (by decide) hx') fun s₂ g₂ o₂ m₂ rd₂ wr₂ => ?_
       refine wp_xor fun s₃ u₃ => ?_
-      refine wp_storeLE32 (a := A o.dst + BitVec.ofNat 64 o.dOff) (by decide) nD.2.2.symm (by omega_arith)
-        (by rw [u₃.other _ nD.1, o₂ _ nD.2.1 nD.2.2, o₁ _ nD.1 nD.2.2]; exact eaD)
+      refine wp_storeW c (a := A o.dst + BitVec.ofNat 64 o.dOff) (by decide) nD.2.2.symm (by omega_arith)
+        (by rw [u₃.other _ nD.1, o₂ _ nD.2.1 nD.2.2, o₁ _ nD.1 nD.2.2]; exact eaD) (alA _ _ aD)
         (by rw [u₃.wr, wr₂, wr₁]; exact h.wr _ hdst _ _ (by decide) hd) fun s₄ m₄ g₄ rd₄ wr₄ => ?_
       refine k s₄ ?_ (fun r h1 h2 h3 => by rw [g₄ r h3, u₃.other r h1, o₂ r h2 h3, o₁ r h1 h3])
         (by rw [rd₄, u₃.rd, rd₂, rd₁]) (by rw [wr₄, u₃.wr, wr₂, wr₁])
@@ -255,11 +312,11 @@ theorem opCode_wp_plain (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : 
 
 /-- Any operation: a copy or an XOR (`opCode_wp_plain`), or an increment
 (`Counter.incBE_wp`). -/
-theorem opCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} {o : Op}
-    (ho : o.InBounds len)
+theorem opCode_wp (c : Core) (w : Bool) {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} {o : Op}
+    (ho : o.InBounds len) (hwa : WordAl o) (hal : ∀ l, Core.wordAt w l = true → (A l).toNat % 4 = 0)
     (hdst : o.dst ∈ ws) {s : State} (h : AreasOk c s len A ws) {is : List Instr} {Q : State → Prop}
     (k : ∀ s', s'.mem = opMem A o s.mem → Tmp s s' → s'.rd = s.rd → s'.wr = s.wr → WP isa (.block is) s' Q) :
-    WP isa (.block (c.opCode o ++ is)) s Q := by
+    WP isa (.block (c.opCode w o ++ is)) s Q := by
   have hd := ho.1
   have nD := loc_ne c o.dst
   have eb (n : Nat) : bytesAt s.mem (A o.dst + BitVec.ofNat 64 o.dOff) n =
@@ -280,7 +337,7 @@ theorem opCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List L
     simp only [Counter.incBEMem, opMem, hW, hval]
   cases hinc : o.inc
   · cases hi32 : o.inc32
-    · exact opCode_wp_plain c ⟨hinc, hi32⟩ ho hdst h k
+    · exact opCode_wp_plain c w ⟨hinc, hi32⟩ ho hwa hal hdst h k
     · -- GCM's `inc₃₂`.
       simp only [Core.opCode, hinc, hi32, Bool.false_eq_true, ite_false, ite_true, inc32At]
       exact inc 4 (by decide) (by decide) (by simp [Op.width, hinc, hi32]) fun t => by
@@ -338,23 +395,25 @@ theorem opMem_cont {c : Core} {s : State} {len : Loc → Nat} {A : Loc → Addr}
 
 /-! ## Lists of operations -/
 
-theorem opsCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} :
-    ∀ {os : List Op}, (∀ o ∈ os, o.InBounds len ∧ o.dst ∈ ws) → ∀ {s : State},
+theorem opsCode_wp (c : Core) (w : Bool) {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc}
+    (hal : ∀ l, Core.wordAt w l = true → (A l).toNat % 4 = 0) :
+    ∀ {os : List Op}, (∀ o ∈ os, o.InBounds len ∧ o.dst ∈ ws) → (∀ o ∈ os, WordAl o) → ∀ {s : State},
     AreasOk c s len A ws → ∀ {is : List Instr} {Q : State → Prop},
     (∀ s', Agree len (cont A s'.mem) (applyOps os (cont A s.mem)) →
       Frame (areaRegions len A ws) s.mem s'.mem → Tmp s s' → s'.rd = s.rd → s'.wr = s.wr →
       WP isa (.block is) s' Q) →
-    WP isa (.block (c.opsCode os ++ is)) s Q
-  | [], _, s, _, is, Q, k => by
+    WP isa (.block (c.opsCode w os ++ is)) s Q
+  | [], _, _, s, _, is, Q, k => by
     simpa [Core.opsCode] using k s (fun _ _ _ => rfl) (Frame.refl _ _) (fun _ _ _ _ => rfl) rfl rfl
-  | o :: os, hb, s, h, is, Q, k => by
+  | o :: os, hb, ha, s, h, is, Q, k => by
     have ho := (hb o List.mem_cons_self)
-    rw [show c.opsCode (o :: os) ++ is = c.opCode o ++ (c.opsCode os ++ is) by
+    rw [show c.opsCode w (o :: os) ++ is = c.opCode w o ++ (c.opsCode w os ++ is) by
       simp [Core.opsCode, List.append_assoc]]
-    refine opCode_wp c ho.1 ho.2 h fun s₁ m₁ g₁ rd₁ wr₁ => ?_
+    refine opCode_wp c w ho.1 (ha o List.mem_cons_self) hal ho.2 h fun s₁ m₁ g₁ rd₁ wr₁ => ?_
     have h₁ : AreasOk c s₁ len A ws :=
       h.congr (fun l => g₁ _ (loc_ne c l).1 (loc_ne c l).2.1 (loc_ne c l).2.2) rd₁ wr₁
-    refine opsCode_wp c (fun o' ho' => hb o' (List.mem_cons_of_mem _ ho')) h₁
+    refine opsCode_wp c w hal (fun o' ho' => hb o' (List.mem_cons_of_mem _ ho'))
+      (fun o' ho' => ha o' (List.mem_cons_of_mem _ ho')) h₁
       fun s' a' f' g' rd' wr' => ?_
     refine k s' (fun l i hi => ?_) ?_ (fun r h1 h2 h3 => by rw [g' r h1 h2 h3, g₁ r h1 h2 h3])
       (by rw [rd', rd₁]) (by rw [wr', wr₁])

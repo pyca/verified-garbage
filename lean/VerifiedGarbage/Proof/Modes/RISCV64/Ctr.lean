@@ -31,7 +31,9 @@ theorem ctr_wp (hbw : c.bw = 4) (hp : SeqPre c Mode.ctr s₀) (hk : cs.KeyArgs s
   have hcomp : Computes Mode.ctr (4 * c.bw) (cs.cipher k) (ctrF (cs.cipher k)) := by
     simpa [hbw] using ctr_computes hc
   refine WP.mono (seq_wp cs hp (copyBlk_inBounds (by simpa [hbw] using b _) (by simpa [hbw] using b _))
-    (fun o ho => ?_) hcomp hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
+    (fun o ho => ?_) (copyBlk_wordAl _ _ _) (append_ok (xorBlk_wordAl _ _ _ _) fun o ho => by
+      simp only [List.mem_singleton] at ho; subst ho; exact fun _ => ⟨by decide, by decide, fun _ _ h => by cases h⟩)
+    hcomp hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · simp only [Mode.ctr, List.mem_append, List.mem_singleton] at ho
     rcases ho with ho | rfl
     · exact xorBlk_inBounds (by simpa [hbw] using b _) (by simpa [hbw] using b _)
@@ -47,7 +49,9 @@ theorem ctr_changes (hbw : c.bw = 4) (hp : SeqPre c Mode.ctr s₀) (hk : cs.KeyA
   have hcomp : Computes Mode.ctr (4 * c.bw) (cs.cipher k) (ctrF (cs.cipher k)) := by
     simpa [hbw] using ctr_computes hc
   refine WP.mono (seq_changes_wp cs hp (copyBlk_inBounds (by simpa [hbw] using b _) (by simpa [hbw] using b _))
-    (fun o ho => ?_) hcomp hk) fun _ h => h.2.2.2
+    (fun o ho => ?_) (copyBlk_wordAl _ _ _) (append_ok (xorBlk_wordAl _ _ _ _) fun o ho => by
+      simp only [List.mem_singleton] at ho; subst ho; exact fun _ => ⟨by decide, by decide, fun _ _ h => by cases h⟩)
+    hcomp hk) fun _ h => h.2.2.2
   simp only [Mode.ctr, List.mem_append, List.mem_singleton] at ho
   rcases ho with ho | rfl
   · exact xorBlk_inBounds (by simpa [hbw] using b _) (by simpa [hbw] using b _)
