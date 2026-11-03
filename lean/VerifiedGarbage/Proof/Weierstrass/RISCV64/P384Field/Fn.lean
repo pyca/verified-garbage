@@ -1226,11 +1226,14 @@ abbrev Apart (x : Nat) : Prop := x + 48 ≤ 3712 ∨ 3904 ≤ x
 theorem P_pos : 0 < P := by unfold P Spec.P384.p; omega
 
 /-- `mulWith red (sumWith ks)`: `[t2] = [t4] [t5] 2⁻³⁸⁴ mod m`, for a reduction
-`red` as `reduce_ok`'s and the words of `2³⁸⁴ - m` put into `t0` by `ks`. -/
-theorem mulWith_ok {red : List Instr} {ks : List (List Instr)} {N : Nat → Nat} {M : Nat} (hM0 : 0 < M)
+`red` that may write the product and the copy `MA` (as Gen6's `reduceR`,
+which keeps registers there) and the words of `2³⁸⁴ - m` put into `t0` by
+`ks`. -/
+theorem mulWithF_ok {red : List Instr} {ks : List (List Instr)} {N : Nat → Nat} {M : Nat} (hM0 : 0 < M)
     (hN : ∀ j, N j < 2 ^ 64) (hk : ∀ j < 6, KOk (ks.getD j []) j N) (hNv : colsV N 6 + M = 2 ^ 384)
     (hred : ∀ {b : Addr} {s : State}, Ctx b s → WP isa (.block red) s fun s' =>
-      Ctx b s' ∧ Rest clobM s s' ∧ Frame [AR ACC b] s.mem s'.mem ∧ (s'.gpr XC).toNat ≤ 1 ∧
+      Ctx b s' ∧ Rest clobM s s' ∧ Frame [AR ACC b, ⟨b + BitVec.ofNat 64 MA, 48⟩] s.mem s'.mem ∧
+      (s'.gpr XC).toNat ≤ 1 ∧
       ∃ Q, Q < 2 ^ 384 ∧ (xv s' + 2 ^ 384 * (s'.gpr XC).toNat) * 2 ^ 384 = prodV s.mem b + Q * M)
     {W : Addr} {s : State} (hw : WsAt W s) {a bb o : Nat}
     (h4 : s.gpr .t4 = W + BitVec.ofNat 64 a) (h5 : s.gpr .t5 = W + BitVec.ofNat 64 bb)
@@ -1301,13 +1304,34 @@ theorem mulWith_ok {red : List Instr} {ks : List (List Instr)} {N : Nat → Nat}
     (al8 hw.al ho8) (hw2.inW ho) x2 hx) fun s3 ⟨v3, f3, g3, rd3, wr3, sp3⟩ => ?_
   refine ⟨by rw [v3]; exact Nat.mod_lt _ hM0, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · rw [v3, Nat.mod_mul_mod, hv2, Nat.add_mul_mod_self_right, v1]
-  · simp only [AR, eAC] at f2
+  · simp only [AR, eAC, eMA] at f2
     exact f1.trans ((f2.mono (by simp)).trans (f3.mono (by simp)))
   · have sC : ∀ x ∈ clobC, x ∈ clobM := by decide
     rw [g3 r (fun h => hr (sC r h)), r12.gpr r hr]
   · rw [rd3, r2.rd, r1.rd]
   · rw [wr3, r2.wr, r1.wr]
   · rw [sp3, r2.sp, r1.sp]
+
+/-- `mulWith red (sumWith ks)` for a reduction `red` as `reduce_ok`'s, which
+writes only the product. -/
+theorem mulWith_ok {red : List Instr} {ks : List (List Instr)} {N : Nat → Nat} {M : Nat} (hM0 : 0 < M)
+    (hN : ∀ j, N j < 2 ^ 64) (hk : ∀ j < 6, KOk (ks.getD j []) j N) (hNv : colsV N 6 + M = 2 ^ 384)
+    (hred : ∀ {b : Addr} {s : State}, Ctx b s → WP isa (.block red) s fun s' =>
+      Ctx b s' ∧ Rest clobM s s' ∧ Frame [AR ACC b] s.mem s'.mem ∧ (s'.gpr XC).toNat ≤ 1 ∧
+      ∃ Q, Q < 2 ^ 384 ∧ (xv s' + 2 ^ 384 * (s'.gpr XC).toNat) * 2 ^ 384 = prodV s.mem b + Q * M)
+    {W : Addr} {s : State} (hw : WsAt W s) {a bb o : Nat}
+    (h4 : s.gpr .t4 = W + BitVec.ofNat 64 a) (h5 : s.gpr .t5 = W + BitVec.ofNat 64 bb)
+    (h2 : s.gpr .t2 = W + BitVec.ofNat 64 o) (ha8 : a % 8 = 0) (hb8 : bb % 8 = 0) (ho8 : o % 8 = 0)
+    (ha : a + 48 ≤ 8192) (hb : bb + 48 ≤ 8192) (ho : o + 48 ≤ 8192) (hdb : Apart bb)
+    (hB : d6 s.mem (W + BitVec.ofNat 64 bb) < M) :
+    WP isa (mulWith red (sumWith ks)) s fun s' =>
+      d6 s'.mem (W + BitVec.ofNat 64 o) < M ∧
+      d6 s'.mem (W + BitVec.ofNat 64 o) * 2 ^ 384 % M =
+        d6 s.mem (W + BitVec.ofNat 64 a) * d6 s.mem (W + BitVec.ofNat 64 bb) % M ∧
+      Frame (mulW W o) s.mem s'.mem ∧ (∀ r, r ∉ clobM → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp :=
+  mulWithF_ok hM0 hN hk hNv (fun hc => WP.mono (hred hc) fun _ ⟨c, r, f, x, v⟩ =>
+    ⟨c, r, f.mono (by simp), x, v⟩) hw h4 h5 h2 ha8 hb8 ho8 ha hb ho hdb hB
 
 /-- `mulCore`: `[t2] = [t4] [t5] 2⁻³⁸⁴ mod p`. -/
 theorem mulCore_ok {W : Addr} {s : State} (hw : WsAt W s) {a bb o : Nat}
