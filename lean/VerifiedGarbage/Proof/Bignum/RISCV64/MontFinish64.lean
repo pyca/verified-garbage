@@ -41,24 +41,24 @@ theorem fin64_exec_li_zero {s : State} {d : Reg} : exec (.li d 0) s = some (s.wr
 /-! ## Zeroing the accumulator -/
 
 /-- `zeroAcc`, with `w` in `t0` and the accumulator at `dA` (`a5`): its
-first `w + 1` words 0 and `w` in `a1`. -/
+first `w + 1` words 0, `w` in `a1` and `a7` in `a0`. -/
 theorem zeroAcc_ok {s : State} {B : Addr} {Z dA w : Nat} (hs : Scr s B Z)
     (h5 : s.gpr .a5 = off B dA) (h0 : s.gpr .t0 = BitVec.ofNat 64 w) (hA8 : dA % 8 = 0)
     (hw : w < 2 ^ 31) (hA : dA + 8 * (w + 1) ≤ Z) :
     WP isa zeroAcc s fun s' =>
       wordsVal s'.mem B dA (w + 1) = 0 ∧ Outside B dA (8 * (w + 1)) s.mem s'.mem ∧
-        s'.gpr .a1 = BitVec.ofNat 64 w ∧ Keep [.a1, .t3, .t5, .s0] s s' := by
+        s'.gpr .a1 = BitVec.ofNat 64 w ∧ s'.gpr .a0 = s.gpr .a7 ∧ Keep [.a0, .a1, .t3, .t5, .s0] s s' := by
   have hnw := hs.nowrap
   unfold zeroAcc
   refine WP.seq ?_
-  have hpre : WP isa (.block [.addi .a1 .t0 0, .addi .t3 .a5 0, .addi .t5 .t0 1, .li .s0 0]) s
+  have hpre : WP isa (.block [.addi .a1 .t0 0, .addi .t3 .a5 0, .addi .t5 .t0 1, .li .s0 0, .addi .a0 .a7 0]) s
       fun s₁ => (s₁.gpr .a1 = BitVec.ofNat 64 w ∧ s₁.gpr .t3 = off B dA ∧
-        s₁.gpr .t5 = BitVec.ofNat 64 (w + 1) ∧ s₁.gpr .s0 = 0 ∧ s₁.mem = s.mem) ∧
-        Keep [.a1, .t3, .t5, .s0] s s₁ := by
+        s₁.gpr .t5 = BitVec.ofNat 64 (w + 1) ∧ s₁.gpr .s0 = 0 ∧ s₁.gpr .a0 = s.gpr .a7 ∧ s₁.mem = s.mem) ∧
+        Keep [.a0, .a1, .t3, .t5, .s0] s s₁ := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
     brun [fin64_exec_li_zero, h5, h0, BitVec.add_zero]
     exact (BitVec.ofNat_add _ _).symm
-  refine WP.mono hpre fun s₁ ⟨⟨i1, i3, i5, i0, im⟩, k₁⟩ => ?_
+  refine WP.mono hpre fun s₁ ⟨⟨i1, i3, i5, i0, ia0, im⟩, k₁⟩ => ?_
   let Inv : Nat → State → Prop := fun i t =>
     t.gpr .t3 = off B (dA + 8 * i) ∧ t.gpr .s0 = 0 ∧ Outside B dA (8 * i) s.mem t.mem ∧
       wordsVal t.mem B dA i = 0 ∧ Keep [.t3, .t5] s₁ t
@@ -67,7 +67,7 @@ theorem zeroAcc_ok {s : State} {B : Addr} {Z dA w : Nat} (hs : Scr s B Z)
     (fun i hi t ⟨j3, j0, jout, jz, jk⟩ hc => ?_)
     ⟨by rw [i3]; rfl, i0, by rw [← im]; exact Outside.refl _ _ _ _, rfl, Keep.refl _ _⟩ i5)
     fun t ⟨_, _, tout, tz, tk⟩ => ⟨tz, tout, by rw [tk.gpr (by decide)]; exact i1,
-      (k₁.trans tk).mono (by decide)⟩
+      by rw [tk.gpr (by decide)]; exact ia0, (k₁.trans tk).mono (by decide)⟩
   have hs' := hs.congr (k₁.trans jk).2.2
   have hst : WP isa (.block [.store .d .s0 .t3 0, .addi .t3 .t3 8, .addi .t5 .t5 (-1)]) t
       fun t' => t' = ((({ t with mem := t.mem.writeW (off B (dA + 8 * i)) (0 : BitVec 64) } : State).write
@@ -133,7 +133,7 @@ theorem subMod64_ok {s : State} {B : Addr} {Z dA dT dM w : Nat} (hs : Scr s B Z)
         s'.gpr .s4 = if (word s.mem B (dA + 8 * w)).toNat < c then BitVec.allOnes 64 else 0) ∧
       Outside B dT (8 * w) s.mem s'.mem ∧ Keep [.a0, .t3, .t4, .t5, .s0, .s1, .s2, .s3, .s4] s s' := by
   have hnw := hs.nowrap
-  unfold subMod64
+  unfold subMod64 subMod64Init subMod64Rest
   refine WP.seq ?_
   have hpre : WP isa (.block [.addi .t3 .a5 0, .addi .t4 .a6 0, .addi .a0 .a7 0, .addi .t5 .t0 0, .li .s4 0]) s
       fun s₁ => (s₁.gpr .t3 = off B dA ∧ s₁.gpr .t4 = off B dT ∧

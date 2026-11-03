@@ -68,10 +68,10 @@ def countLoop (cnt : Reg) (body : List Instr) : Prog isa :=
 def countLoop? (body : List Instr) : Prog isa :=
   .ite (.zero .t5) (.block []) (countLoop .t5 body)
 
-/-- The accumulator's first `w + 1` words := 0, and the rounds' count `w`
-into `a1`. -/
+/-- The accumulator's first `w + 1` words := 0, the rounds' count `w` into
+`a1` and their pointer at `m` into `a0`. -/
 def zeroAcc : Prog isa :=
-  .seq (.block [.addi .a1 .t0 0, .addi .t3 .a5 0, .addi .t5 .t0 1, .li .s0 0])
+  .seq (.block [.addi .a1 .t0 0, .addi .t3 .a5 0, .addi .t5 .t0 1, .li .s0 0, .addi .a0 .a7 0])
     (countLoop .t5 [.store .d .s0 .t3 0, .addi .t3 .t3 8])
 
 /-! ## A round -/
@@ -141,14 +141,19 @@ def rounds : Prog isa :=
 
 /-! ## The final subtraction -/
 
+/-- The first block of `subMod64`: its pointers, count and borrow. -/
+def subMod64Init : List Instr := [.addi .t3 .a5 0, .addi .t4 .a6 0, .addi .a0 .a7 0, .addi .t5 .t0 0, .li .s4 0]
+
+/-- `subMod64` after its first block: the words, then the top word. -/
+def subMod64Rest : Prog isa :=
+  .seq (countLoop .t5 [.load .d .s2 .t3 0, .load .d .s3 .a0 0, .sltu .s0 .s2 .s3,
+      .sub .s2 .s2 .s3, .sltu .s1 .s2 .s4, .sub .s2 .s2 .s4, .logic .or .s4 .s0 .s1,
+      .store .d .s2 .t4 0, .addi .t3 .t3 8, .addi .t4 .t4 8, .addi .a0 .a0 8])
+    (.block [.load .d .s2 .t3 0, .sltu .s0 .s2 .s4, .li .s1 0, .sub .s4 .s1 .s0])
+
 /-- `[tmp] = T - m` over `w` words, the borrow in `s4`, then `s4` := all
 ones if `T < m` (the top word `t_w` is below the borrow), else 0. -/
-def subMod64 : Prog isa :=
-  .seq (.block [.addi .t3 .a5 0, .addi .t4 .a6 0, .addi .a0 .a7 0, .addi .t5 .t0 0, .li .s4 0])
-    (.seq (countLoop .t5 [.load .d .s2 .t3 0, .load .d .s3 .a0 0, .sltu .s0 .s2 .s3,
-        .sub .s2 .s2 .s3, .sltu .s1 .s2 .s4, .sub .s2 .s2 .s4, .logic .or .s4 .s0 .s1,
-        .store .d .s2 .t4 0, .addi .t3 .t3 8, .addi .t4 .t4 8, .addi .a0 .a0 8])
-      (.block [.load .d .s2 .t3 0, .sltu .s0 .s2 .s4, .li .s1 0, .sub .s4 .s1 .s0]))
+def subMod64 : Prog isa := .seq (.block subMod64Init) subMod64Rest
 
 /-- `[o] = mask ? T : [tmp]`, word by word, the mask in `s4`. -/
 def selectAcc64 : Prog isa :=
@@ -162,10 +167,11 @@ before the accumulator's (`a5`), of `8 (w + 2)` bytes each. -/
 def restoreBases : List Instr :=
   [.shift .sll .d .s2 .t0 3, .addi .s2 .s2 16, .add .a6 .a5 .s2, .shift .sll .d .s3 .s2 1, .sub .a7 .a5 .s3]
 
+/-- `subMod64` after `restoreBases`, in its first block. -/
+def restoreSubMod64 : Prog isa := .seq (.block (restoreBases ++ subMod64Init)) subMod64Rest
+
 /-- `[o] = [a] [b] R⁻¹ mod m`, for `R = 2^(64 w)`, the bases in the
 registers. -/
-def tail : Prog isa :=
-  .seq zeroAcc (.seq (.block [.addi .a0 .a7 0])
-    (.seq rounds (.seq (.block restoreBases) (.seq subMod64 selectAcc64))))
+def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq restoreSubMod64 selectAcc64))
 
 end VG.Impl.Bignum.RISCV64

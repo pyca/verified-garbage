@@ -31,11 +31,12 @@ def tailRegs : List Reg :=
 theorem slot_al (w j : Nat) : slot w j % 8 = 0 := by
   unfold slot hdrBytes; rw [Nat.mul_left_comm]; omega_arith
 
-/-- `a0 := a7`: the rounds' pointer at `m`. -/
-theorem copyM_ok (s : State) :
-    WP isa (.block [.addi .a0 .a7 0]) s fun s' => (s'.gpr .a0 = s.gpr .a7 ∧ s'.mem = s.mem) ∧ Keep [.a0] s s' := by
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  brun [BitVec.add_zero]
+/-- A sequence's first program, then its second. -/
+theorem wp_seq_inv {c₁ c₂ : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq c₁ c₂) s Q) :
+    WP isa c₁ s fun s₁ => WP isa c₂ s₁ Q := by
+  obtain ⟨_, _, he, hq⟩ := h
+  cases he with
+  | seq h₁ h₂ => exact ⟨_, _, h₁, _, _, h₂, hq⟩
 
 /-- The temporary's slot, after the accumulator's, and `m`'s, two before, from
 the accumulator's and `w`. -/
@@ -110,13 +111,10 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   unfold tail
   -- The accumulator := 0, and the rounds' count.
   refine WP.seq (WP.mono (zeroAcc_ok (w := w) (dA := slot w 2) hs i5 it0 (al 2) hw' (by omega_arith))
-    fun s₂' ⟨hz, out₂, j1, k₂'⟩ => ?_)
-  -- The rounds' pointer at `m`.
-  refine WP.seq (WP.mono (copyM_ok s₂') fun s₂ ⟨⟨c0, cm⟩, kc⟩ => ?_)
-  rw [← cm] at hz out₂
-  have hs₂' := hs.congr (k₂'.trans kc).2.2
-  have g₂' : ∀ r ∈ [Reg.a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1], s₂.gpr r = s.gpr r := fun r hr => by
-    rw [kc.gpr (by revert r hr; decide), k₂'.gpr (by revert r hr; decide)]
+    fun s₂ ⟨hz, out₂, j1, c0, k₂'⟩ => ?_)
+  have hs₂' := hs.congr k₂'.2.2
+  have g₂' : ∀ r ∈ [Reg.a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1], s₂.gpr r = s.gpr r := fun r hr =>
+    k₂'.gpr (by revert r hr; decide)
   have v₂ : ∀ {j}, j < n → j ≠ 2 → wordsVal s₂.mem B (slot w j) w = wordsVal s.mem B (slot w j) w :=
     fun hj hne => out₂.wordsVal (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)
   have m0₂ : Mont.word s₂.mem B (slot w 0) = Mont.word s.mem B (slot w 0) :=
@@ -125,7 +123,7 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   refine WP.seq (WP.mono (rounds_ok (w := w) (da := slot w a) (dA := slot w 2) (dB := slot w b) (dM := slot w 0) hs₂'
     (al a) (al 2) (al b) (al 0)
     (by rw [g₂' .a3 (by decide), i3]) (by rw [g₂' .a5 (by decide), i5]) (by rw [g₂' .a4 (by decide), i4])
-    (by rw [c0, k₂'.gpr (by decide), i7]) (by rw [g₂' .t0 (by decide), it0]) (by rw [kc.gpr (by decide), j1])
+    (by rw [c0, i7]) (by rw [g₂' .t0 (by decide), it0]) j1
     (by rw [m0₂, g₂' .t1 (by decide)]; exact hinv) hw2 hw' (by omega_arith)
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hz
     (by rw [v₂ hb hb2, v₂ (by omega) (by decide)]; exact hB))
@@ -136,8 +134,10 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   -- `a6` and `a7` back at the temporary and `m`.
   have g₃' : ∀ r ∈ [Reg.a2, .a5, .t0], s₃'.gpr r = s.gpr r := fun r hr => by
     rw [k₃.gpr (by revert r hr; decide), g₂' r (by revert r hr; decide)]
-  refine WP.seq (WP.mono (restoreBases_ok (s := s₃') (B := B) (w := w) (by rw [g₃' .a5 (by decide), i5])
-    (by rw [g₃' .t0 (by decide), it0])) fun s₃ ⟨⟨r6, r7, rm⟩, kr⟩ => ?_)
+  refine WP.seq ?_
+  unfold restoreSubMod64
+  refine WP.seq (WP.block_append (WP.mono (restoreBases_ok (s := s₃') (B := B) (w := w)
+    (by rw [g₃' .a5 (by decide), i5]) (by rw [g₃' .t0 (by decide), it0])) fun s₃ ⟨⟨r6, r7, rm⟩, kr⟩ => ?_))
   rw [← rm] at tlt teq out₃
   have hs₃ := hs₂'.congr (k₃.trans kr).2.2
   have g₃ : ∀ r ∈ [Reg.a2, .a5, .a6, .a7, .t0], s₃.gpr r = s.gpr r := fun r hr => by
@@ -152,7 +152,7 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     fun hj hne => (out₃.wordsVal (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)).trans
       (v₂ hj hne)
   -- `T - m`.
-  refine WP.seq (WP.mono (subMod64_ok (w := w) (dA := slot w 2) (dT := slot w 3) (dM := slot w 0) hs₃
+  refine wp_seq_inv (WP.mono (subMod64_ok (w := w) (dA := slot w 2) (dT := slot w 3) (dM := slot w 0) hs₃
     (by rw [g₃ .a5 (by decide), i5]) (by rw [g₃ .a6 (by decide), i6]) (by rw [g₃ .a7 (by decide), i7])
     (by rw [g₃ .t0 (by decide), it0]) (by omega_arith) hw' (al 2) (al 3) (al 0) (by omega_arith)
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
@@ -187,7 +187,7 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     refine Arrays.trans (Arrays.of_outside (j := 2) (by simp) out₃ (Nat.le_refl _) (by omega_arith)) ?_
     refine Arrays.trans (Arrays.of_outside (j := 3) (by simp) out₄ (Nat.le_refl _) (by omega_arith)) ?_
     exact Arrays.of_outside (j := o) (by simp) out₅ (Nat.le_refl _) (by omega_arith)
-  · have k := ((((((k₂'.trans kc).trans k₃).trans kr).trans k₄).trans k₅).mono
+  · have k := (((((k₂'.trans k₃).trans kr).trans k₄).trans k₅).mono
       (rs' := .a6 :: .a7 :: tailRegs) (by decide))
     have e6 : t.gpr .a6 = s.gpr .a6 := by rw [k₅.gpr (by decide), g₄ .a6 (by decide)]
     have e7 : t.gpr .a7 = s.gpr .a7 := by
