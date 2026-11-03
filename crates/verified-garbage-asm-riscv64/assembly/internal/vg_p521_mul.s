@@ -17,6 +17,110 @@ vg_p521_mul:
 	sd ra, 1273(a0)
 	addi a0, a0, -2047
 	addi s0, a0, 0
+	ld t0, 280(s0)
+	addi s0, s0, 2047
+	sd t0, 1761(s0)
+	addi s0, s0, -2047
+	ld t0, 288(s0)
+	addi s0, s0, 2047
+	sd t0, 1769(s0)
+	addi s0, s0, -2047
+	ld t0, 296(s0)
+	addi s0, s0, 2047
+	sd t0, 1777(s0)
+	addi s0, s0, -2047
+	ld t0, 304(s0)
+	addi s0, s0, 2047
+	sd t0, 1785(s0)
+	addi s0, s0, -2047
+	ld t0, 312(s0)
+	addi s0, s0, 2047
+	sd t0, 1793(s0)
+	addi s0, s0, -2047
+	ld t0, 320(s0)
+	addi s0, s0, 2047
+	sd t0, 1801(s0)
+	addi s0, s0, -2047
+	ld t0, 328(s0)
+	addi s0, s0, 2047
+	sd t0, 1809(s0)
+	addi s0, s0, -2047
+	ld t0, 336(s0)
+	addi s0, s0, 2047
+	sd t0, 1817(s0)
+	addi s0, s0, -2047
+	ld t0, 344(s0)
+	addi s0, s0, 2047
+	sd t0, 1825(s0)
+	addi s0, s0, -2047
+	addi t0, zero, 4
+	addi s0, s0, 2047
+	sd t0, 1825(s0)
+	addi s0, s0, -2047
+	addi a0, s0, 0
+	addi a1, zero, 1072
+	addi a2, zero, 1072
+	addi a3, zero, 0
+	call {vg_p521u_unpack_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1072
+	addi a2, zero, 1072
+	addi a3, zero, 2047
+	addi a3, a3, 1761
+	call {vg_p521u_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1144
+	addi a2, zero, 1144
+	addi a3, zero, 0
+	call {vg_p521u_unpack_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1144
+	addi a2, zero, 1144
+	addi a3, zero, 2047
+	addi a3, a3, 1761
+	call {vg_p521u_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 1689
+	addi a2, zero, 424
+	addi a3, zero, 0
+	call {vg_p521u_unpack_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 1689
+	addi a2, zero, 2047
+	addi a2, a2, 1689
+	addi a3, zero, 2047
+	addi a3, a3, 1761
+	call {vg_p521u_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 1545
+	addi a2, zero, 496
+	addi a3, zero, 0
+	call {vg_p521u_unpack_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 1545
+	addi a2, zero, 2047
+	addi a2, a2, 1545
+	addi a3, zero, 2047
+	addi a3, a3, 1761
+	call {vg_p521u_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 1617
+	addi a2, zero, 568
+	addi a3, zero, 0
+	call {vg_p521u_unpack_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 1617
+	addi a2, zero, 2047
+	addi a2, a2, 1617
+	addi a3, zero, 2047
+	addi a3, a3, 1761
+	call {vg_p521u_mul_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -38,23 +142,32 @@ vg_p521_mul:
 	sd t0, 56(a6)
 	ld t0, 344(s0)
 	sd t0, 64(a6)
-	ld t0, 424(s0)
+	addi t0, s0, 2047
+	ld t0, 1689(t0)
 	sd t0, 72(a6)
-	ld t0, 432(s0)
+	addi t0, s0, 2047
+	ld t0, 1697(t0)
 	sd t0, 80(a6)
-	ld t0, 440(s0)
+	addi t0, s0, 2047
+	ld t0, 1705(t0)
 	sd t0, 88(a6)
-	ld t0, 448(s0)
+	addi t0, s0, 2047
+	ld t0, 1713(t0)
 	sd t0, 96(a6)
-	ld t0, 456(s0)
+	addi t0, s0, 2047
+	ld t0, 1721(t0)
 	sd t0, 104(a6)
-	ld t0, 464(s0)
+	addi t0, s0, 2047
+	ld t0, 1729(t0)
 	sd t0, 112(a6)
-	ld t0, 472(s0)
+	addi t0, s0, 2047
+	ld t0, 1737(t0)
 	sd t0, 120(a6)
-	ld t0, 480(s0)
+	addi t0, s0, 2047
+	ld t0, 1745(t0)
 	sd t0, 128(a6)
-	ld t0, 488(s0)
+	addi t0, s0, 2047
+	ld t0, 1753(t0)
 	sd t0, 136(a6)
 	ld t0, 280(s0)
 	sd t0, 144(a6)
@@ -113,23 +226,32 @@ vg_p521_mul:
 	sd t0, 344(a6)
 	ld t0, 1208(s0)
 	sd t0, 352(a6)
-	ld t0, 424(s0)
+	addi t0, s0, 2047
+	ld t0, 1689(t0)
 	sd t0, 360(a6)
-	ld t0, 432(s0)
+	addi t0, s0, 2047
+	ld t0, 1697(t0)
 	sd t0, 368(a6)
-	ld t0, 440(s0)
+	addi t0, s0, 2047
+	ld t0, 1705(t0)
 	sd t0, 376(a6)
-	ld t0, 448(s0)
+	addi t0, s0, 2047
+	ld t0, 1713(t0)
 	sd t0, 384(a6)
-	ld t0, 456(s0)
+	addi t0, s0, 2047
+	ld t0, 1721(t0)
 	sd t0, 392(a6)
-	ld t0, 464(s0)
+	addi t0, s0, 2047
+	ld t0, 1729(t0)
 	sd t0, 400(a6)
-	ld t0, 472(s0)
+	addi t0, s0, 2047
+	ld t0, 1737(t0)
 	sd t0, 408(a6)
-	ld t0, 480(s0)
+	addi t0, s0, 2047
+	ld t0, 1745(t0)
 	sd t0, 416(a6)
-	ld t0, 488(s0)
+	addi t0, s0, 2047
+	ld t0, 1753(t0)
 	sd t0, 424(a6)
 	ld t0, 1072(s0)
 	sd t0, 1288(s0)
@@ -167,235 +289,252 @@ vg_p521_mul:
 	sd t0, 1416(s0)
 	ld t0, 1208(s0)
 	sd t0, 1424(s0)
-	ld t0, 424(s0)
+	addi t0, s0, 2047
+	ld t0, 1689(t0)
 	sd t0, 1432(s0)
-	ld t0, 432(s0)
+	addi t0, s0, 2047
+	ld t0, 1697(t0)
 	sd t0, 1440(s0)
-	ld t0, 440(s0)
+	addi t0, s0, 2047
+	ld t0, 1705(t0)
 	sd t0, 1448(s0)
-	ld t0, 448(s0)
+	addi t0, s0, 2047
+	ld t0, 1713(t0)
 	sd t0, 1456(s0)
-	ld t0, 456(s0)
+	addi t0, s0, 2047
+	ld t0, 1721(t0)
 	sd t0, 1464(s0)
-	ld t0, 464(s0)
+	addi t0, s0, 2047
+	ld t0, 1729(t0)
 	sd t0, 1472(s0)
-	ld t0, 472(s0)
+	addi t0, s0, 2047
+	ld t0, 1737(t0)
 	sd t0, 1480(s0)
-	ld t0, 480(s0)
+	addi t0, s0, 2047
+	ld t0, 1745(t0)
 	sd t0, 1488(s0)
-	ld t0, 488(s0)
+	addi t0, s0, 2047
+	ld t0, 1753(t0)
 	sd t0, 1496(s0)
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -511,213 +650,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -833,213 +980,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -1155,213 +1310,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -1477,213 +1640,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -1799,213 +1970,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -2121,213 +2300,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -2443,213 +2630,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -2793,213 +2988,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -3169,213 +3372,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -3545,213 +3756,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -3921,213 +4140,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -4297,213 +4524,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -4673,213 +4908,221 @@ vg_p521_mul:
 	addi a1, zero, 1720
 	addi a2, zero, 1288
 	addi a3, zero, 1072
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1144
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1432
-	addi a3, zero, 424
-	call {vg_p521_mul_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1360
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1072
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1144
-	addi a3, zero, 424
-	call {vg_p521_add_mod_p}
+	addi a3, zero, 2047
+	addi a3, a3, 1689
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a6, s0, 2047
 	addi a6, a6, 2047
 	addi a6, a6, 2
@@ -5063,23 +5306,32 @@ vg_p521_mul:
 	sd t0, 1128(s0)
 	ld t0, 344(s0)
 	sd t0, 1136(s0)
-	ld t0, 424(s0)
+	addi t0, s0, 2047
+	ld t0, 1689(t0)
 	sd t0, 1144(s0)
-	ld t0, 432(s0)
+	addi t0, s0, 2047
+	ld t0, 1697(t0)
 	sd t0, 1152(s0)
-	ld t0, 440(s0)
+	addi t0, s0, 2047
+	ld t0, 1705(t0)
 	sd t0, 1160(s0)
-	ld t0, 448(s0)
+	addi t0, s0, 2047
+	ld t0, 1713(t0)
 	sd t0, 1168(s0)
-	ld t0, 456(s0)
+	addi t0, s0, 2047
+	ld t0, 1721(t0)
 	sd t0, 1176(s0)
-	ld t0, 464(s0)
+	addi t0, s0, 2047
+	ld t0, 1729(t0)
 	sd t0, 1184(s0)
-	ld t0, 472(s0)
+	addi t0, s0, 2047
+	ld t0, 1737(t0)
 	sd t0, 1192(s0)
-	ld t0, 480(s0)
+	addi t0, s0, 2047
+	ld t0, 1745(t0)
 	sd t0, 1200(s0)
-	ld t0, 488(s0)
+	addi t0, s0, 2047
+	ld t0, 1753(t0)
 	sd t0, 1208(s0)
 	ld t0, 280(s0)
 	sd t0, 1216(s0)
@@ -7029,540 +7281,545 @@ vg_p521_mul:
 	addi a1, zero, 1288
 	addi a2, zero, 1072
 	addi a3, zero, 1216
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1216
 	addi a3, zero, 1216
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1360
 	addi a2, zero, 1144
 	addi a3, zero, 1720
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1432
 	addi a2, zero, 1216
 	addi a3, zero, 280
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1432
 	addi a3, zero, 1432
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1360
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1288
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1288
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1936
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1504
 	addi a3, zero, 1936
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1864
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1864
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1792
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1936
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1864
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1936
 	addi a3, zero, 1576
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1792
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1648
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1576
 	addi a3, zero, 1576
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1504
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1288
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 1288
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1288
 	addi a2, zero, 1936
 	addi a3, zero, 1936
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1936
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1864
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1864
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1432
 	addi a2, zero, 1576
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1432
 	addi a2, zero, 1432
 	addi a3, zero, 1432
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1432
 	addi a2, zero, 1432
 	addi a3, zero, 1792
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1432
 	addi a2, zero, 1432
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1288
 	addi a2, zero, 1936
 	addi a3, zero, 1936
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1288
 	addi a2, zero, 1288
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1288
 	addi a2, zero, 1288
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1360
 	addi a2, zero, 1864
 	addi a3, zero, 1288
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1360
 	addi a2, zero, 1936
 	addi a3, zero, 1360
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1360
 	addi a2, zero, 1360
 	addi a3, zero, 1792
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1432
 	addi a3, zero, 1432
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1360
 	addi a3, zero, 1360
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1288
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1288
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1936
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1504
 	addi a3, zero, 1936
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1864
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1864
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1360
 	addi a3, zero, 1432
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1792
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1936
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1864
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1936
 	addi a3, zero, 1576
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1792
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1648
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1576
 	addi a3, zero, 1576
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1504
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1288
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 1288
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1288
 	addi a2, zero, 1936
 	addi a3, zero, 1936
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1288
 	addi a3, zero, 1936
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1864
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1864
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1432
 	addi a2, zero, 1576
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1432
 	addi a2, zero, 1432
 	addi a3, zero, 1432
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1432
 	addi a2, zero, 1432
 	addi a3, zero, 1792
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1432
 	addi a2, zero, 1432
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1288
 	addi a2, zero, 1936
 	addi a3, zero, 1936
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1288
 	addi a2, zero, 1288
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1288
 	addi a2, zero, 1288
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1360
 	addi a2, zero, 1864
 	addi a3, zero, 1288
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1360
 	addi a2, zero, 1936
 	addi a3, zero, 1360
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1360
 	addi a2, zero, 1360
 	addi a3, zero, 1792
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1072
 	addi a2, zero, 1288
 	addi a3, zero, 1432
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1432
 	addi a3, zero, 1432
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1216
 	addi a2, zero, 1720
 	addi a3, zero, 1432
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1144
 	addi a2, zero, 1360
 	addi a3, zero, 280
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1720
+	addi a2, zero, 1216
+	addi a3, zero, 0
+	call {vg_p521u_pack_mod_p}
 	addi t3, zero, 0
-	ld t4, 1216(s0)
+	ld t4, 1720(s0)
 	or t3, t3, t4
-	ld t4, 1224(s0)
+	ld t4, 1728(s0)
 	or t3, t3, t4
-	ld t4, 1232(s0)
+	ld t4, 1736(s0)
 	or t3, t3, t4
-	ld t4, 1240(s0)
+	ld t4, 1744(s0)
 	or t3, t3, t4
-	ld t4, 1248(s0)
+	ld t4, 1752(s0)
 	or t3, t3, t4
-	ld t4, 1256(s0)
+	ld t4, 1760(s0)
 	or t3, t3, t4
-	ld t4, 1264(s0)
+	ld t4, 1768(s0)
 	or t3, t3, t4
-	ld t4, 1272(s0)
+	ld t4, 1776(s0)
 	or t3, t3, t4
-	ld t4, 1280(s0)
+	ld t4, 1784(s0)
 	or t3, t3, t4
 	addi t4, zero, 0
 	sub t4, t4, t3
@@ -7570,55 +7827,64 @@ vg_p521_mul:
 	srli t4, t4, 63
 	addi a7, t4, -1
 	ld t0, 1144(s0)
-	ld t1, 424(s0)
+	addi t1, s0, 2047
+	ld t1, 1689(t1)
 	xor t1, t1, t0
 	and t1, t1, a7
 	xor t0, t0, t1
 	sd t0, 1144(s0)
 	ld t0, 1152(s0)
-	ld t1, 432(s0)
+	addi t1, s0, 2047
+	ld t1, 1697(t1)
 	xor t1, t1, t0
 	and t1, t1, a7
 	xor t0, t0, t1
 	sd t0, 1152(s0)
 	ld t0, 1160(s0)
-	ld t1, 440(s0)
+	addi t1, s0, 2047
+	ld t1, 1705(t1)
 	xor t1, t1, t0
 	and t1, t1, a7
 	xor t0, t0, t1
 	sd t0, 1160(s0)
 	ld t0, 1168(s0)
-	ld t1, 448(s0)
+	addi t1, s0, 2047
+	ld t1, 1713(t1)
 	xor t1, t1, t0
 	and t1, t1, a7
 	xor t0, t0, t1
 	sd t0, 1168(s0)
 	ld t0, 1176(s0)
-	ld t1, 456(s0)
+	addi t1, s0, 2047
+	ld t1, 1721(t1)
 	xor t1, t1, t0
 	and t1, t1, a7
 	xor t0, t0, t1
 	sd t0, 1176(s0)
 	ld t0, 1184(s0)
-	ld t1, 464(s0)
+	addi t1, s0, 2047
+	ld t1, 1729(t1)
 	xor t1, t1, t0
 	and t1, t1, a7
 	xor t0, t0, t1
 	sd t0, 1184(s0)
 	ld t0, 1192(s0)
-	ld t1, 472(s0)
+	addi t1, s0, 2047
+	ld t1, 1737(t1)
 	xor t1, t1, t0
 	and t1, t1, a7
 	xor t0, t0, t1
 	sd t0, 1192(s0)
 	ld t0, 1200(s0)
-	ld t1, 480(s0)
+	addi t1, s0, 2047
+	ld t1, 1745(t1)
 	xor t1, t1, t0
 	and t1, t1, a7
 	xor t0, t0, t1
 	sd t0, 1200(s0)
 	ld t0, 1208(s0)
-	ld t1, 488(s0)
+	addi t1, s0, 2047
+	ld t1, 1753(t1)
 	xor t1, t1, t0
 	and t1, t1, a7
 	xor t0, t0, t1
@@ -7628,51 +7894,51 @@ vg_p521_mul:
 	addi a2, zero, 1072
 	addi a3, zero, 2047
 	addi a3, a3, 1329
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1144
 	addi a3, zero, 2047
 	addi a3, a3, 1401
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1216
 	addi a3, zero, 2047
 	addi a3, a3, 1473
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1072
 	addi a3, zero, 1144
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2047
 	addi a2, a2, 1329
 	addi a3, zero, 2047
 	addi a3, a3, 1401
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1720
 	addi a3, zero, 1792
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1936
 	addi a2, zero, 1936
 	addi a3, zero, 2008
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 1072
 	addi a3, zero, 1216
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
@@ -7680,169 +7946,174 @@ vg_p521_mul:
 	addi a2, a2, 1329
 	addi a3, zero, 2047
 	addi a3, a3, 1473
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 2047
 	addi a3, a3, 33
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 1144
 	addi a3, zero, 1216
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 2047
 	addi a2, a2, 1401
 	addi a3, zero, 2047
 	addi a3, a3, 1473
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 33
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1504
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1792
 	addi a3, zero, 1648
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1504
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1720
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
-	addi a2, zero, 568
+	addi a2, zero, 2047
+	addi a2, a2, 1617
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1792
 	addi a2, zero, 1792
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
 	addi a2, zero, 1720
 	addi a3, zero, 1864
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1864
-	addi a2, zero, 496
+	addi a2, zero, 2047
+	addi a2, a2, 1545
 	addi a3, zero, 1864
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 2008
 	addi a2, zero, 2008
 	addi a3, zero, 1864
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1792
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1576
 	addi a2, zero, 1576
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 2008
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1936
 	addi a3, zero, 1504
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1504
 	addi a2, zero, 1504
 	addi a3, zero, 1720
-	call {vg_p521_sub_mod_p}
+	call {vg_p521u_sub_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1720
 	addi a2, zero, 1936
 	addi a3, zero, 1792
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 2047
 	addi a2, a2, 33
 	addi a3, zero, 1648
-	call {vg_p521_mul_mod_p}
+	call {vg_p521u_mul_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 1648
 	addi a2, zero, 1648
 	addi a3, zero, 1720
-	call {vg_p521_add_mod_p}
+	call {vg_p521u_add_mod_p}
 	ld t0, 1504(s0)
 	sd t0, 1072(s0)
 	ld t0, 1512(s0)
@@ -7898,6 +8169,80 @@ vg_p521_mul:
 	ld t0, 1712(s0)
 	sd t0, 1280(s0)
 	bnez s1, 20b
+	ld t0, 280(s0)
+	addi s0, s0, 2047
+	sd t0, 1761(s0)
+	addi s0, s0, -2047
+	ld t0, 288(s0)
+	addi s0, s0, 2047
+	sd t0, 1769(s0)
+	addi s0, s0, -2047
+	ld t0, 296(s0)
+	addi s0, s0, 2047
+	sd t0, 1777(s0)
+	addi s0, s0, -2047
+	ld t0, 304(s0)
+	addi s0, s0, 2047
+	sd t0, 1785(s0)
+	addi s0, s0, -2047
+	ld t0, 312(s0)
+	addi s0, s0, 2047
+	sd t0, 1793(s0)
+	addi s0, s0, -2047
+	ld t0, 320(s0)
+	addi s0, s0, 2047
+	sd t0, 1801(s0)
+	addi s0, s0, -2047
+	ld t0, 328(s0)
+	addi s0, s0, 2047
+	sd t0, 1809(s0)
+	addi s0, s0, -2047
+	ld t0, 336(s0)
+	addi s0, s0, 2047
+	sd t0, 1817(s0)
+	addi s0, s0, -2047
+	ld t0, 344(s0)
+	addi s0, s0, 2047
+	sd t0, 1825(s0)
+	addi s0, s0, -2047
+	addi t0, zero, 1
+	slli t0, t0, 55
+	addi s0, s0, 2047
+	sd t0, 1761(s0)
+	addi s0, s0, -2047
+	addi a0, s0, 0
+	addi a1, zero, 1072
+	addi a2, zero, 1072
+	addi a3, zero, 2047
+	addi a3, a3, 1761
+	call {vg_p521u_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1072
+	addi a2, zero, 1072
+	addi a3, zero, 0
+	call {vg_p521u_pack_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1144
+	addi a2, zero, 1144
+	addi a3, zero, 2047
+	addi a3, a3, 1761
+	call {vg_p521u_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1144
+	addi a2, zero, 1144
+	addi a3, zero, 0
+	call {vg_p521u_pack_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1216
+	addi a2, zero, 1216
+	addi a3, zero, 2047
+	addi a3, a3, 1761
+	call {vg_p521u_mul_mod_p}
+	addi a0, s0, 0
+	addi a1, zero, 1216
+	addi a2, zero, 1216
+	addi a3, zero, 0
+	call {vg_p521u_pack_mod_p}
 	addi ra, s0, 2047
 	ld ra, 1273(ra)
 	addi s1, s0, 2047
