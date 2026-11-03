@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.RISCV64
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
-import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.Field
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.Sqr
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP512r1Field.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -13,8 +13,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 The facts the proofs of `vg_brainpoolp512r1_mul` (`Proof/Ecdsa/RISCV64/BrainpoolP512r1/Window.lean`)
 and its callers share: brainpoolP512r1's field functions, those modulo any wide
-modulus (`Proof/Weierstrass/RISCV64/GenWide/Field.lean`) for its `p` (`p_ok`), meet the
-contracts by register (`field_ok`), and `R = 2⁵¹²` is a unit modulo `p` (`unit`).
+modulus (`Proof/Weierstrass/RISCV64/GenWide/Field.lean`) for its `p` (`p_ok`), the
+product squaring when its operands are the same (`Proof/Weierstrass/RISCV64/GenWide/Sqr.lean`),
+meet the contracts by register (`field_ok`), and `R = 2⁵¹²` is a unit modulo `p` (`unit`).
 -/
 
 -- `p`, below `2^512`, is evaluated.
@@ -34,7 +35,7 @@ abbrev W : Curve := Spec.BrainpoolP512r1.curve
 private theorem p_ok : GenWide.WideOk Impl.Weierstrass.Mont.brainpoolp512r1p := ⟨by decide, by decide, by decide, by decide⟩
 
 theorem field_ok : FieldOk brainpoolp512r1Field :=
-  ⟨GenWide.mul_rv p_ok, GenWide.add_rv p_ok, GenWide.sub_rv p_ok, Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.mulFn_noFrames,
+  ⟨GenWide.mulSq_rv p_ok, GenWide.add_rv p_ok, GenWide.sub_rv p_ok, Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.mulFn_noFrames,
     Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.addFn_noFrames, Impl.Weierstrass.RISCV64.BrainpoolP512r1Field.subFn_noFrames⟩
 
 instance : NeZero brainpoolp512r1Field.S.m := ⟨by decide⟩
