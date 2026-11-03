@@ -405,10 +405,29 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
         if m := LACKING.search(proc.stderr):
             raise Lacking(m[1])
         raise subprocess.CalledProcessError(proc.returncode, binary)
+    return read_times(home, library)
+
+
+def bench_size(size):
+    """A benchmark's parameter, from its directory name: the number for a
+    size (`1024`), the name itself for anything else (`mul_acc4`)."""
+    return int(size) if size.isdecimal() else size
+
+
+def bench_key(key):
+    """The sort key of a `(primitive, size)` pair: numeric sizes in order,
+    before named ones, so that a group mixing the two still sorts."""
+    primitive, size = key
+    return (primitive, 1, 0, size) if isinstance(size, str) else (primitive, 0, size, "")
+
+
+def read_times(home, library):
+    """The median time (ns) of each of `library`'s benchmarks under the
+    Criterion home `home`, by `(primitive, size)`."""
     times = {}
     for est in home.glob(f"*/{library}/*/new/estimates.json"):
         primitive, _, size = est.relative_to(home).parts[:3]
-        times[primitive, int(size)] = json.loads(est.read_text())["median"]["point_estimate"]
+        times[primitive, bench_size(size)] = json.loads(est.read_text())["median"]["point_estimate"]
     return times
 
 
@@ -644,7 +663,7 @@ def main():
         "|---|--:|--:|--:|" + "--:|--:|" * len(references),
     ]
     regressions = []
-    for primitive, size in sorted(best["head"]):
+    for primitive, size in sorted(best["head"], key=bench_key):
         bench_id = f"{primitive}/{size}"
         b, h = best["base"].get((primitive, size)), best["head"][primitive, size]
         if b is None:
@@ -662,7 +681,7 @@ def main():
         lines.append(row)
     if copied:
         lines += ["", "| Benchmark | Base copies | Head copies |", "|---|--:|--:|"]
-        for bench_id in sorted(spread["head"]):
+        for bench_id in sorted(spread["head"], key=bench_key):
             cells = []
             for side in ("base", "head"):
                 ts = spread[side].get(bench_id)
