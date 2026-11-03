@@ -260,7 +260,3 @@ j 21f
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_keccak_f1600.rs"]
-pub(crate) mod vg_keccak_f1600;
