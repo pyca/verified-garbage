@@ -92,6 +92,7 @@ def Instr.asm : Instr → List String
   | .storeRev .w t a b => [s!"stwbrx {t.name}, {a.name}, {b.name}"]
   | .storeRev .d t a b => [s!"stdbrx {t.name}, {a.name}, {b.name}"]
   | .mflr d => [s!"mflr {d.name}"]
+  | .bctrl => [s!"mtctr {Reg.r12.name}", "bctrl"]
   | .mtlr r => [s!"mtlr {r.name}"]
   | .adrSym d name => ["bcl 20, 31, 2f", "2:", s!"mflr {d.name}",
       s!"addis {d.name}, {d.name}, ({name} - 2b)@ha", s!"addi {d.name}, {d.name}, ({name} - 2b)@l"]
