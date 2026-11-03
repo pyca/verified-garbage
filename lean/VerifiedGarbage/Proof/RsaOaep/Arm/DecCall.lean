@@ -73,7 +73,7 @@ abbrev Res (H G : Spec.Mgf1.Hash) (P : EP) (σ : State) (m : Mem) (r : BitVec 32
 abbrev Fin (H G : Spec.Mgf1.Hash) (P : EP) (σ s : State) : Prop := S P σ s ∧ Res H G P σ s.mem (s.gpr .r0)
 
 /-- The arguments' places are immediates. -/
-theorem arg_lt {j : Nat} (hj : j < 23) : arg j < 4096 := by
+theorem arg_lt {j : Nat} (hj : j < 24) : arg j < 4096 := by
   unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega
 
 /-- An argument: its place, readable, and its value. -/
@@ -83,13 +83,13 @@ theorem argAt {P : EP} {σ s : State} (hi : In P σ) (hs : P.lay.St σ s) {j : N
     s.mem.readW (P.lay.fr (arg j)) 32 = P.argv.getD j 0 := by
   have hl : j < P.lay.argv.length := by simp only [EP.argv, List.length_cons, List.length_nil]; omega
   exact ⟨hi.ok.addrB (by
-      show arg j < frameBytes + 56 + 76; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega),
+      show arg j < frameBytes + 56 + 80; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega),
     by rw [hs.rd, hs.wr]; exact hi.ok.arg_read hl, hs.arg hl⟩
 
 /-- A slot, written with `r12 = sp`. -/
 theorem slotAt {P : EP} {σ : State} (hi : In P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     State.addr (P.B + BitVec.ofNat 32 d) = P.lay.fr d :=
-  hi.ok.addrB (by show d < frameBytes + 56 + 76; unfold frameBytes at hd ⊢; omega)
+  hi.ok.addrB (by show d < frameBytes + 56 + 80; unfold frameBytes at hd ⊢; omega)
 
 /-! ## `scratch` to its slot -/
 
