@@ -15,6 +15,10 @@ import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha512.RISCV64.Compress
 meta import VerifiedGarbage.Proof.Sha512.RISCV64.Compress
+import VerifiedGarbage.Proof.Framework.Cold
+meta import VerifiedGarbage.Proof.Framework.Cold
+import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 
 /-!
 # Streaming SHA-512 on RISC-V: `update`
@@ -753,12 +757,238 @@ theorem correctMain {s₀ : State} (hp : Pre s₀) :
     · obtain ⟨p, hp', rfl⟩ := List.mem_map.mp hr'
       exact hsv p hp'
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa update s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha512.updateRISCV64.post s₀ s' := by
+/-- The long path, in its frame. -/
+theorem correctLong {s₀ : State} (hp : Pre s₀) :
+    WP isa updateLong s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha512.updateRISCV64.post s₀ s' := by
   refine WP.alloc (by decide) (by simp only [frameBytes]; exact hp.sp208)
     (WP.mono (correctMain hp) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ => ?_)
   rw [freed_eq (by rw [hwr]; rfl) (by rw [hsp]; rfl)]
   exact ⟨⟨hk, rfl, hra⟩, hpost⟩
+
+/-! ## The short path
+
+When no block can complete, `short` copies the data into the buffer, after
+`rr s₀ 0` bytes, with no frame. -/
+
+/-- The state while copying: `j` bytes copied. -/
+structure SCopy (s₀ : State) (j : Nat) (s : State) : Prop where
+  j_le : j ≤ len s₀
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  a2 : s.gpr .a2 = dp s₀ + BitVec.ofNat 64 j
+  t3 : s.gpr .t3 = st s₀ + BitVec.ofNat 64 (rr s₀ 0) + BitVec.ofNat 64 j
+  t4 : s.gpr .t4 = dp s₀ + BitVec.ofNat 64 (len s₀)
+  mem : s.mem = writeBytes s₀.mem (q s₀ 0) ((xs s₀ 0).take j)
+
+theorem add_ofNat_bne (x : Addr) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
+    (x + BitVec.ofNat 64 a != x + BitVec.ofNat 64 b) = decide (a ≠ b) := by
+  by_cases h : a = b
+  · subst h; simp
+  · have e : x + BitVec.ofNat 64 a ≠ x + BitVec.ofNat 64 b := by
+      intro e
+      have e' := congrArg BitVec.toNat ((BitVec.add_right_inj x).mp e)
+      rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] at e'
+      exact h e'
+    simp [e, h]
+
+theorem short_step {s₀ : State} (hp : Pre s₀) (hs : rr s₀ 0 + len s₀ < 128) {j : Nat} (hj : j < len s₀)
+    {s : State} (h : SCopy s₀ j s) :
+    WP isa (.block shortBody) s fun s' =>
+      SCopy s₀ (j + 1) s' ∧ VG.RISCV64.eval (.ne .a2 .t4) s' = some (decide (j + 1 ≠ len s₀)) := by
+  have hr := rr_lt s₀ 0
+  have htt : tt s₀ 0 = len s₀ := by simp only [tt_eq]; omega_arith
+  have hxs := xs_length s₀ 0
+  -- The byte read.
+  have hin : InRegions (s.rd ++ s.wr) (dp s₀ + BitVec.ofNat 64 j) 1 :=
+    ⟨dR s₀, by simp [h.rd, hp.rd], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  have hbyte : s.mem (dp s₀ + BitVec.ofNat 64 j) = (D s₀).getD j 0 := by
+    rw [h.mem, D_getD s₀ hj]
+    exact Frame.bytes (write_frame s₀ 0 s₀.mem j (by omega_arith)) (R := dR s₀) (by simpa using hp.d_st)
+      (by show len s₀ ≤ 2 ^ 64; have := len_lt s₀; omega_arith) hj
+  -- The byte written.
+  have hout : InRegions s.wr (q s₀ 0 + BitVec.ofNat 64 j) 1 :=
+    ⟨stR s₀, by simp [h.wr, hp.wr], by
+      rw [q_eq, BitVec.add_assoc, ← BitVec.ofNat_add]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  unfold shortBody
+  refine wp_lbu (a := dp s₀ + BitVec.ofNat 64 j) (by decide) (by rw [h.a2]; simp) hin fun s₁ u₁ => ?_
+  refine wp_sb (a := q s₀ 0 + BitVec.ofNat 64 j) (by decide) ?_ (by rw [u₁.wr]; exact hout) fun s₂ g₂ => ?_
+  · rw [u₁.other _ (by decide), h.t3, q]
+    simp only [show BitVec.ofNat 64 64 = (64 : BitVec 64) from rfl]
+    ac_rfl
+  refine wp_addi (imm := 1) (by decide) fun s₃ u₃ => wp_addi (imm := 1) (by decide) fun s₄ u₄ => WP.block_nil ?_
+  have ha2 : s₄.gpr .a2 = dp s₀ + BitVec.ofNat 64 (j + 1) := by
+    rw [u₄.other _ (by decide), u₃.gpr, g₂.gpr, u₁.other _ (by decide), h.a2, BitVec.add_assoc,
+      ← BitVec.ofNat_add]
+  have ht4 : s₄.gpr .t4 = dp s₀ + BitVec.ofNat 64 (len s₀) := by
+    rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), h.t4]
+  refine ⟨⟨by omega_arith, ?_, ?_, ?_, ha2, ?_, ht4, ?_⟩, ?_⟩
+  · rw [u₄.rd, u₃.rd, g₂.rd, u₁.rd, h.rd]
+  · rw [u₄.wr, u₃.wr, g₂.wr, u₁.wr, h.wr]
+  · rw [u₄.sp, u₃.sp, g₂.sp, u₁.sp, h.sp]
+  · rw [u₄.gpr, u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), h.t3, BitVec.add_assoc,
+      ← BitVec.ofNat_add]
+  · have hj' : j < (xs s₀ 0).length := by omega_arith
+    rw [u₄.mem, u₃.mem, g₂.mem, u₁.mem, u₁.gpr, hbyte, h.mem,
+      List.take_add_one, List.getElem?_eq_getElem hj', Option.toList_some,
+      writeBytes_snoc _ _ _ _ (by simp only [List.length_take]; omega_arith)]
+    have hl : (List.take j (xs s₀ 0)).length = j := by
+      rw [List.length_take, Nat.min_eq_left (Nat.le_of_lt hj')]
+    rw [hl]
+    have e : ((List.getD (D s₀) j 0).setWidth 64).setWidth 8 = List.getD (D s₀) j 0 := by
+      ext i hi; simp
+    rw [e]
+    congr 1
+    simp only [xs, List.getElem_take, List.getElem_drop, Nat.zero_add, List.getD_eq_getElem?_getD,
+      List.getElem?_eq_getElem (show j < (D s₀).length by rw [D_length]; omega_arith), Option.getD_some]
+  · show some (s₄.gpr .a2 != s₄.gpr .t4) = _
+    have := len_lt s₀
+    rw [ha2, ht4, add_ofNat_bne _ (by omega_arith) (by omega_arith)]
+
+/-- The state after the short path represents the message followed by the data. -/
+theorem short_repr {s₀ : State} (hs : rr s₀ 0 + len s₀ < 128) {iv : HashValue} {m : List Byte}
+    (hm : R₀ s₀ iv m) : Spec.Sha512.Repr iv (writeBytes s₀.mem (q s₀ 0) (xs s₀ 0)) (st s₀) (m ++ D s₀) := by
+  have hr := rr_lt s₀ 0
+  have htt : tt s₀ 0 = len s₀ := by simp only [tt_eq]; omega_arith
+  have hxs := xs_length s₀ 0
+  have hxD : xs s₀ 0 = D s₀ := by
+    simp only [xs, List.drop_zero]
+    exact List.take_of_length_le (by rw [D_length]; omega_arith)
+  have hml : m.length % 128 = rr s₀ 0 := by rw [rr_eq, Nat.add_zero, hm.length]
+  have hb := hm.1.2
+  rw [hml] at hb
+  rw [← hxD]
+  refine repr_append_buf hm.1 (by rw [hml, hxs]; omega_arith) ?_ ?_
+  · apply stateAt_congr
+    intro i hi
+    simp only [q_eq]
+    exact writeBytes_before _ _ _ (by omega_arith) (by omega_arith)
+  · rw [hml, ← hb]
+    exact bytesAt_writeBytes _ _ _ _ (by omega_arith)
+
+theorem short_eq : short =
+    Code.iteCold (.zero .a3) (.block [])
+      (.seq (.block [.add .t3 .a0 .t0, .add .t4 .a2 .a3]) (.loop (.block shortBody) (.ne .a2 .t4))) := rfl
+
+/-- The short path, from the state `s` the first block leaves: the
+registers it reads as on entry, `t0 = r`. -/
+theorem short_ok {s₀ : State} (hp : Pre s₀) (hs : rr s₀ 0 + len s₀ < 128) {s : State}
+    (hm : s.mem = s₀.mem) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hsp : s.sp = s₀.sp)
+    (h0 : s.gpr .a0 = st s₀) (h2 : s.gpr .a2 = dp s₀) (h3 : s.gpr .a3 = s₀.gpr .a3)
+    (ht0 : s.gpr .t0 = BitVec.ofNat 64 (rr s₀ 0)) :
+    WP isa short s fun s' => s'.sp = s₀.sp ∧ Proof.Sha512.updateRISCV64.post s₀ s' := by
+  have hlen := len_lt s₀
+  have e3 : s₀.gpr .a3 = BitVec.ofNat 64 (len s₀) := by simp
+  rw [short_eq, WP.iteCold_iff]
+  refine WP.ite (decide (len s₀ = 0))
+    (by show VG.RISCV64.eval (.zero .a3) s = _; rw [eval_zero, h3, e3, ofNat_beq_zero (by omega_arith)])
+    (fun hb => ?_) (fun hb => ?_)
+  · simp only [decide_eq_true_eq] at hb
+    refine WP.block_nil ⟨hsp, fun iv m hr _ => ?_⟩
+    show Spec.Sha512.Repr iv s.mem (st s₀) (m ++ D s₀)
+    rw [hm, show D s₀ = [] from List.eq_nil_of_length_eq_zero (by rw [D_length]; exact hb), List.append_nil]
+    exact hr
+  · simp only [decide_eq_false_iff_not] at hb
+    refine WP.seq (wp_add fun s₁ u₁ => wp_add fun s₂ u₂ => WP.block_nil ?_)
+    have hC₀ : SCopy s₀ 0 s₂ := by
+      refine ⟨Nat.zero_le _, by rw [u₂.rd, u₁.rd, hrd], by rw [u₂.wr, u₁.wr, hwr],
+        by rw [u₂.sp, u₁.sp, hsp], ?_, ?_, ?_, ?_⟩
+      · rw [u₂.other _ (by decide), u₁.other _ (by decide), h2, BitVec.add_zero]
+      · rw [u₂.other _ (by decide), u₁.gpr, h0, ht0, BitVec.add_zero]
+      · rw [u₂.gpr, u₁.other _ (by decide), u₁.other _ (by decide), h2, h3, ← e3]
+      · rw [u₂.mem, u₁.mem, hm, List.take_zero, writeBytes_nil]
+    refine WP.loop (M := isa) (fun n s => ∃ j, n = len s₀ - j ∧ j < len s₀ ∧ SCopy s₀ j s)
+      ?_ (len s₀) s₂ ⟨0, by omega_arith, by omega_arith, hC₀⟩
+    rintro n s ⟨j, rfl, hj, hc⟩
+    refine WP.mono (short_step hp hs hj hc) fun s' ⟨hc', hz⟩ => ?_
+    by_cases hl : j + 1 = len s₀
+    · refine .inl ⟨by show VG.RISCV64.eval (.ne .a2 .t4) s' = _; rw [hz]; simp [hl], hc'.sp, fun iv m hr hl' => ?_⟩
+      have hmem : s'.mem = writeBytes s₀.mem (q s₀ 0) (xs s₀ 0) := by
+        rw [hc'.mem, hl, List.take_of_length_le (by rw [xs_length]; simp only [tt_eq]; omega_arith)]
+      show Spec.Sha512.Repr iv s'.mem (st s₀) (m ++ D s₀)
+      rw [hmem]
+      exact short_repr hs ⟨hr, hl'⟩
+    · exact .inr ⟨by show VG.RISCV64.eval (.ne .a2 .t4) s' = _; rw [hz]; simp [hl], _, by omega_arith, j + 1, rfl, by omega_arith, hc'⟩
+
+/-- No instruction of `short` writes a callee-saved register or `ra`. -/
+theorem short_keeps : ∀ r ∈ (.ra :: preserved : List Reg), ∀ i ∈ instrs short, dstOf i ≠ some r := by
+  decide
+
+/-! ## `update` -/
+
+theorem update_eq' : update = .seq (.block [.logicImm .and .t0 .a1 127, .logicImm .xor .t2 .t0 127])
+    (Code.iteCold (.ltu .t2 .a3) updateLong short) := rfl
+
+theorem xor127 {r : Nat} (h : r < 128) :
+    BitVec.ofNat 64 r ^^^ BitVec.ofInt 64 127 = BitVec.ofNat 64 (127 - r) := by
+  apply BitVec.eq_of_toNat_eq
+  have e : ∀ r < 128, r ^^^ 127 = 127 - r := by decide
+  rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+    Nat.mod_eq_of_lt (by omega), show (BitVec.ofInt 64 127).toNat = 127 from rfl, e r h]
+
+theorem wp_xori127 {is : List Instr} {s : State} {Q : State → Prop} {d n : Reg} {r : Nat} (hr : r < 128)
+    (hn : s.gpr n = BitVec.ofNat 64 r)
+    (k : ∀ s', Upd s s' d (BitVec.ofNat 64 (127 - r)) → WP isa (.block is) s' Q) :
+    WP isa (.block (.logicImm .xor d n 127 :: is)) s Q := by
+  refine WP.cons (exec_logicImm (by decide)) ?_
+  simp only
+  rw [hn, xor127 hr]; exact k _ (Upd.write _ _ _)
+
+/-- A precondition `Pre` of a state is one of another with the same
+arguments, regions and stack pointer. -/
+theorem Pre.of_eq {s s' : State} (hp : Pre s) (h0 : s'.gpr .a0 = s.gpr .a0) (h2 : s'.gpr .a2 = s.gpr .a2)
+    (h3 : s'.gpr .a3 = s.gpr .a3) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp) :
+    Pre s' := by
+  obtain ⟨p1, p2, p3, p4, p5, p6, p7⟩ := hp
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [dR, stR, scR, scr, st, dp, len, h0, h2, h3, hrd, hwr, hsp]
+  exacts [p1, p2, p3, p4, p5, p6, p7]
+
+theorem correct {s₀ : State} (hp : Pre s₀) :
+    WP isa update s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha512.updateRISCV64.post s₀ s' := by
+  have hlen := len_lt s₀
+  have hr := rr_lt s₀ 0
+  rw [update_eq']
+  refine WP.seq (wp_andi127 fun s₁ u₁ => wp_xori127 (r := rr s₀ 0) hr
+    (by rw [u₁.gpr, rr_eq, Nat.add_zero]) fun s₂ u₂ => WP.block_nil ?_)
+  have ht0 : s₂.gpr .t0 = BitVec.ofNat 64 (rr s₀ 0) := by
+    rw [u₂.other _ (by decide), u₁.gpr, rr_eq, Nat.add_zero]
+  have ht2 : s₂.gpr .t2 = BitVec.ofNat 64 (127 - rr s₀ 0) := u₂.gpr
+  have g : ∀ r, r ≠ .t0 → r ≠ .t2 → s₂.gpr r = s₀.gpr r := fun r h h' => by
+    rw [u₂.other r h', u₁.other r h]
+  have hm : s₂.mem = s₀.mem := by rw [u₂.mem, u₁.mem]
+  have hrd : s₂.rd = s₀.rd := by rw [u₂.rd, u₁.rd]
+  have hwr : s₂.wr = s₀.wr := by rw [u₂.wr, u₁.wr]
+  have hsp : s₂.sp = s₀.sp := by rw [u₂.sp, u₁.sp]
+  have g0 := g .a0 (by decide) (by decide)
+  have g1 := g .a1 (by decide) (by decide)
+  have g2 := g .a2 (by decide) (by decide)
+  have g3 := g .a3 (by decide) (by decide)
+  -- The callee-saved registers and `ra` are as on entry.
+  have abi : ∀ s', (∀ r ∈ (.ra :: preserved : List Reg), s'.gpr r = s₂.gpr r) → s'.sp = s₀.sp →
+      abiPreserved s₀ s' := fun s' hk hs =>
+    ⟨fun r hr => (hk r (List.mem_cons_of_mem _ hr)).trans
+      (g r (by revert r hr; decide) (by revert r hr; decide)), hs,
+      (hk .ra List.mem_cons_self).trans (g .ra (by decide) (by decide))⟩
+  rw [WP.iteCold_iff]
+  refine WP.ite (decide (127 - rr s₀ 0 < len s₀))
+    (by show some (decide (s₂.gpr .t2 < s₂.gpr .a3)) = _
+        exact congrArg some (decide_eq_decide.mpr (by
+          rw [ht2, g3, BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)])))
+    (fun _ => ?_) (fun hb => ?_)
+  · refine WP.mono (correctLong (hp.of_eq g0 g2 g3 hrd hwr hsp)) fun s' ⟨ha, hq⟩ => ⟨?_, ?_⟩
+    · exact abi s' (fun r hr => by
+        rcases List.mem_cons.mp hr with rfl | hr
+        · exact ha.2.2
+        · exact ha.1 r hr) (ha.2.1.trans hsp)
+    · intro iv m hr' hc
+      have := hq iv m (by rw [hm, g0]; exact hr') (by rw [g1]; exact hc)
+      rwa [hm, g0, g2, g3] at this
+  · simp only [decide_eq_false_iff_not] at hb
+    refine WP.mono (WP.gprs (rs := .ra :: preserved)
+      (short_ok hp (by omega_arith) hm hrd hwr hsp g0 g2 g3 ht0) short_keeps)
+      fun s' ⟨⟨hs, hq⟩, hk⟩ => ⟨abi s' hk hs, hq⟩
 
 theorem agree₀ {s₁ s₂ : State} (hpub : Proof.Sha512.updateRISCV64.pub s₁ s₂) :
     VG.RISCV64.Taint.Agree (VG.RISCV64.Taint.ofRegs [.a0, .a1, .a2, .a3]) s₁ s₂ := by
