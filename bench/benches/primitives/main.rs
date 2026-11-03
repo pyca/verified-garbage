@@ -32,6 +32,7 @@ mod aes_ctr;
 mod aes_ecb;
 mod aes_gcm;
 mod aes_gcm_siv;
+mod ghash_proto;
 mod aes_ocb;
 mod aes_ofb;
 mod aes_siv;
@@ -627,6 +628,7 @@ benches! {
     (aes_ecb::USES, aes_ecb::bench),
     (aes_gcm::USES, aes_gcm::bench),
     (aes_gcm_siv::USES, aes_gcm_siv::bench),
+    (ghash_proto::USES, ghash_proto::bench),
     (aes_ocb::USES, aes_ocb::bench),
     (aes_ofb::USES, aes_ofb::bench),
     (aes_siv::USES, aes_siv::bench),
