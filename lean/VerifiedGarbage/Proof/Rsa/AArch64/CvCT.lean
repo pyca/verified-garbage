@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Rsa.AArch64.NCalc
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+meta import VerifiedGarbage.Proof.Rsa.AArch64.NCalc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -244,21 +246,55 @@ theorem decA_ct {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
     rw [← e]
     exact WP.mono (decA_ok h.ws hj) fun _ ⟨hm, k⟩ => h.word hj hm k (by decide)
 
-/-- `GA` with `inverse`'s start. -/
-def GI (p : CvP) (s : State) : Prop :=
-  GA p s ∧ word s.mem p.B (slot (wk p.k) aU + 8 * wk p.k) = 0 ∧
-    wv s.mem p.B (slot (wk p.k) aV) (wk p.k) = wv s.mem p.B (slot (wk p.k) aP) (wk p.k) ∧
-    wv s.mem p.B (slot (wk p.k) aX₁) (wk p.k) = 1 ∧ wv s.mem p.B (slot (wk p.k) aX₂) (wk p.k) = 0
+/-- `GA` with `p` and `q` loaded: their arrays fit in their lengths. -/
+def GB (p : CvP) (s : State) : Prop :=
+  GA p s ∧ wv s.mem p.B (slot (wk p.k) aP) (wk p.k) < 256 ^ p.pl ∧
+    wv s.mem p.B (slot (wk p.k) aQ) (wk p.k) < 256 ^ p.ql
 
-theorem inverse_ct [InvLaw] {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block ([.lsr .x .x3 .x12 21] : List Instr))
-      (.ite (.zero .x .x3) (VG.Impl.Rsa.AArch64.Keys.inverseB aU aV aX₁ aX₂ aP aT) (VG.Impl.Rsa.AArch64.Keys.inverseBits aU aV aX₁ aX₂ aP aT))) hc).isSome = true) :
-    RelCT isa (Two GI) (inverse aU aV aX₁ aX₂ aP aT) (Two GA) :=
-  ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.1.ws) ht fun _ _ ⟨h, u0, vm, x1, x2⟩ =>
-    WP.mono (InvLaw.inverse_ok h.ws (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide)
+/-- `GA` with `inverseAt`'s start: `[v] = [p]`, and `[u]` and `[p]` fit in
+`q`'s and `p`'s lengths. -/
+def GI (p : CvP) (s : State) : Prop :=
+  GA p s ∧ wv s.mem p.B (slot (wk p.k) aV) (wk p.k) = wv s.mem p.B (slot (wk p.k) aP) (wk p.k) ∧
+    wv s.mem p.B (slot (wk p.k) aU) (wk p.k) < 256 ^ p.ql ∧ wv s.mem p.B (slot (wk p.k) aP) (wk p.k) < 256 ^ p.pl
+
+/-- The registers `inverseAt`'s body needs pinned: `x0`, the primes' width
+`⌈max(p_len, q_len) / 8⌉` in `x12` (`nCalc`, from the header) and the
+stride in `x11`. -/
+def niVal (p : CvP) : Reg → BitVec 64
+  | .x0 => p.B
+  | .x12 => BitVec.ofNat 64 ((max p.pl p.ql + 7) / 8)
+  | .x11 => BitVec.ofNat 64 (8 * (wk p.k + 2))
+  | _ => 0
+
+theorem inverseAt_ct [InvLaw] {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11])
+      (seqs ([VG.Impl.Rsa.AArch64.Keys.inverseB aU aV aX₁ aX₂ aP aT] ++ tailZ aV ++ tailZ aX₂)) hc).isSome = true) :
+    RelCT isa (Two GI) (inverseAt (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT) (Two GA) := by
+  unfold inverseAt
+  refine pin_ct [.x0] [.x0, .x12, .x11] niVal (fun a s₁ s₂ h₁ h₂ => pins_GA a s₁ s₂ h₁.1 h₂.1) (by taint_decide)
+    (fun p s h => ?_) ht fun p s h => ?_
+  all_goals
+    obtain ⟨⟨I, m₀, c, rfl, h', L, O, hm⟩, vm, bU, bP⟩ := id h
+    have hL1 := L.pl1; have hL2 := L.pl2; have hL3 := L.ql1; have hL4 := L.ql2; have hk2 := L.k2
+    dsimp only [CvIn.pub] at vm bU bP
+  · refine WP.block_append_iff.mpr (WP.mono h'.ws.ws_ok fun t ⟨⟨_, t11, tm, _⟩, k⟩ => WP.mono
+      (nCalc_ok (h'.ws.scr.congr k.wr) ((k.gpr .x0 (by decide)).trans h'.ws.x0) h'.ws.h256 (la := I.pl) (lb := I.ql)
+        (by omega) (by omega) (by rw [tm]; exact h'.args.pl) (by rw [tm]; exact h'.args.ql))
+      fun u ⟨⟨u12, _, _⟩, ku⟩ => ?_)
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ((ku.gpr .x0 (by decide)).trans (k.gpr .x0 (by decide))).trans h'.ws.x0
+    · exact u12
+    · exact (ku.gpr .x11 (by decide)).trans t11
+  · exact WP.mono (InvLaw.inverseAt_ok h'.ws (n := (max I.pl I.ql + 7) / 8) (nb := nCalc sPl sQl)
+      (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) u0 vm x1 x2) fun _ ⟨_, f, k, _⟩ => h.frm f (fun r hr => by
+      (by decide) (by decide) (by omega) (by show _ ≤ (I.k + 7) / 8; omega) (by omega)
+      (fun t ht h0 _ _ hm => nCalc_ok ht h0 h'.ws.h256 (by omega) (by omega) (by rw [hm]; exact h'.args.pl)
+        (by rw [hm]; exact h'.args.ql))
+      (fits_nmax bU (by omega)) (fits_nmax bP (by omega)) vm) fun _ ⟨_, f, k, _⟩ => h.1.frm f (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl
         · exact ⟨aU, by decide, .inl rfl⟩

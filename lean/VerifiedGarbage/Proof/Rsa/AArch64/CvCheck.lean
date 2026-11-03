@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
+import VerifiedGarbage.Proof.Rsa.AArch64.NCalc
 
 /-!
 # `vg_rsa_crt_values` on AArch64: the loads and the check of `p q = n`
@@ -133,10 +134,11 @@ theorem mask_check {c : Bool} {A B1 B2 PQ : Prop} [Decidable A] [Decidable B1] [
 
 /-- `pqCheck`: the mask of `p q = n` and'ed into `sMask`, for an odd `n`. -/
 theorem cvCheck_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
-    (hc : mword s.mem I.B = mask c) (hN : wv s.mem I.B (slot (wk I.k) aN) (wk I.k) % 2 = 1) :
+    (hc : mword s.mem I.B = mask c) :
     WP isa (seqs pqCheck) s fun t =>
-      CvS I m₀ t ∧ mword t.mem I.B = mask (c && decide (wv s.mem I.B (slot (wk I.k) aP) (wk I.k) *
-        wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) = wv s.mem I.B (slot (wk I.k) aN) (wk I.k))) ∧
+      CvS I m₀ t ∧ (∃ c', mword t.mem I.B = mask c' ∧ (wv s.mem I.B (slot (wk I.k) aN) (wk I.k) % 2 = 1 →
+        c' = (c && decide (wv s.mem I.B (slot (wk I.k) aP) (wk I.k) *
+        wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) = wv s.mem I.B (slot (wk I.k) aN) (wk I.k))))) ∧
       ∀ j, j = aP ∨ j = aQ ∨ j = aD → wv t.mem I.B (slot (wk I.k) j) (wk I.k) = wv s.mem I.B (slot (wk I.k) j) (wk I.k) := by
   have hn := h.ws.scr.nowrap
   have hZ := h.ws.hZ
@@ -224,9 +226,8 @@ theorem cvCheck_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : C
   have eV₆ : wv s₆.mem I.B (slot (wk I.k) aV) (wk I.k) = wv s₃.mem I.B (slot (wk I.k) aV) (wk I.k) := by
     rw [outside_arr o₆ (Nat.le_refl _) (by decide) (by omega_arith) (by decide) hZ hn, wvw (by decide) (a₅ aV (by decide)), m₄]
   rw [g₃ aQ (by decide) (by decide) (by decide) (by decide), g₂ aQ (by decide) (by decide)] at hz₄
-  refine ⟨ht, ?_, fun j hj => ?_⟩
-  · rw [hmt, eP₈]
-    congr 1
+  refine ⟨ht, ⟨_, hmt, fun hN => ?_⟩, fun j hj => ?_⟩
+  · rw [eP₈]
     rw [eV₆, eC, g₃ aQ (by decide) (by decide) (by decide) (by decide), g₂ aQ (by decide) (by decide)]
     apply mask_check
     · intro hp
@@ -358,7 +359,9 @@ theorem invSetup_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : 
 for a mask that is set only if `p` is odd and above 1. -/
 theorem cvInv_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
     (hc : mword s.mem I.B = mask c)
-    (hcP : c = true → wv s.mem I.B (slot (wk I.k) aP) (wk I.k) % 2 = 1 ∧ 1 < wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) :
+    (hcP : c = true → wv s.mem I.B (slot (wk I.k) aP) (wk I.k) % 2 = 1 ∧ 1 < wv s.mem I.B (slot (wk I.k) aP) (wk I.k))
+    (hPl : wv s.mem I.B (slot (wk I.k) aP) (wk I.k) < 256 ^ I.pl)
+    (hQl : wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) < 256 ^ I.ql) :
     WP isa (seqs invPart) s fun t =>
       CvS I m₀ t ∧ mword t.mem I.B = mask (c && decide (Nat.gcd (wv s.mem I.B (slot (wk I.k) aQ) (wk I.k))
         (wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) = 1)) ∧
@@ -398,11 +401,16 @@ theorem cvInv_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s)
   have vQ₇ := p₇ aQ (.inr (.inl rfl))
   have vD₇ := p₇ aD (.inr (.inr rfl))
   simp only [List.cons_append, List.nil_append]
-  -- The inverse.
-  refine WP.seq (WP.mono (InvLaw.inverse_ok h₇.ws
+  -- The inverse, at the primes' width.
+  have hL1 := L.pl1; have hL2 := L.pl2; have hL3 := L.ql1; have hL4 := L.ql2; have hk2 := L.k2
+  refine WP.seq (WP.mono (InvLaw.inverseAt_ok h₇.ws (n := (max I.pl I.ql + 7) / 8)
     (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) vU0 vV₇ vX₁ vX₂)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by omega)
+    (by show _ ≤ (I.k + 7) / 8; omega) (by omega)
+    (fun t ht h0 _ _ hm => nCalc_ok ht h0 h₇.ws.h256 (by omega) (by omega) (by rw [hm]; exact h₇.args.pl)
+      (by rw [hm]; exact h₇.args.ql))
+    (by rw [vU₇]; exact fits_nmax hQl (by omega)) (by rw [vP₇]; exact fits_nmax hPl (by omega)) vV₇)
     fun s₈ ⟨_, f₈, k₈, hv₈⟩ => ?_)
   have h₈ := h₇.step f₈ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

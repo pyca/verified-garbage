@@ -370,4 +370,28 @@ theorem inverse_ct [VG.Proof.Rsa.AArch64.InvLaw] {F : KIn → State → Prop} {i
     exact ⟨h.step f (all_mut_arrs (js := [iU, iV, iX₁, iX₂, iT]) (by simp [hU, hV, hX₁, hX₂, hT])) k,
       hF I s t h.hZ hf f k⟩
 
+/-- Array `j` fits in the primes' `w = W / 2` words. -/
+abbrev Fits (j : Nat) : KIn → State → Prop := fun I t => av I t.mem j < 2 ^ (64 * (I.pl / 8))
+
+theorem inverseHalf_eq (iU iV iX₁ iX₂ iM iT : Nat) : inverseAt halfW iU iV iX₁ iX₂ iM iT =
+    .seq (.block (ws ++ halfW)) (seqs ([VG.Impl.Rsa.AArch64.Keys.inverseB iU iV iX₁ iX₂ iM iT] ++ tailZ iV ++
+      tailZ iX₂)) := rfl
+
+/-- `inverseAt halfW`, from `[v] = [m]` and `[u]`, `[m]` of the primes'
+width, for facts `F` that its changes keep. -/
+theorem inverseHalf_ct [VG.Proof.Rsa.AArch64.InvLaw] {F : KIn → State → Prop} {iU iV iX₁ iX₂ iM iT : Nat}
+    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
+    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
+    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
+    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT)
+    (hF : Stab F [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT] dvRegs)
+    {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block halfW)
+      (seqs ([VG.Impl.Rsa.AArch64.Keys.inverseB iU iV iX₁ iX₂ iM iT] ++ tailZ iV ++ tailZ iX₂))) hc).isSome = true) :
+    RelCT isa (Two (KG fun I t => F I t ∧ AvEq iV iM I t ∧ Fits iU I t ∧ Fits iM I t))
+      (inverseAt halfW iU iV iX₁ iX₂ iM iT) (Two (KG F)) :=
+  kg_ct (by rw [inverseHalf_eq]; exact kg_ws0 ht) fun I _ s h L ⟨hf, hVM, bU, bM⟩ =>
+    WP.mono (inverseHalf_k h L hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M dX₂T dMT
+      bU bM hVM) fun t ⟨ht, f, k, _⟩ => ⟨ht, hF I s t h.hZ hf f k⟩
+
 end VG.Proof.RsaKeyGen.AArch64.Key

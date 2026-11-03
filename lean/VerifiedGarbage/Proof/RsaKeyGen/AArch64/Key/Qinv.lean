@@ -27,11 +27,15 @@ open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKe
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Impl.RsaKeyGen.AArch64.Candidate (loadE kE kElen)
 
-theorem qinvPart_eq : qinvPart = [zeroA aU, copyA aU aQa] ++ (constA 3 ++ (ltA aPa aC ++
+/-- `qinvPart` before the inverse: `[aU] := q`, `[aM] := ` and `[aV] := ` the
+modulus. -/
+abbrev qinvPre : List (Prog isa) := [zeroA aU, copyA aU aQa] ++ (constA 3 ++ (ltA aPa aC ++
     (([.block (([mov .x10 .x15] : List Instr) ++ (evenMaskOf aPa ++ ([.logic .orr .x .x15 .x15 .x10] : List Instr))),
-      zeroA aM, copyA aM aPa] : List (Prog isa)) ++
-    (selC aM ++ (invFrom aM ++ (([inverse aU aV aX₁ aX₂ aM aT] : List (Prog isa)) ++ gcdIsOne)))))) := by
-  simp only [qinvPart, List.append_assoc]
+      zeroA aM, copyA aM aPa] : List (Prog isa)) ++ (selC aM ++ invFrom aM))))
+
+theorem qinvPart_eq : qinvPart = qinvPre ++
+    (([inverseAt halfW aU aV aX₁ aX₂ aM aT] : List (Prog isa)) ++ gcdIsOne) := by
+  simp only [qinvPart, qinvPre, List.append_assoc]
 
 /-- The modulus of `qInv`: `p` if it is odd and at least 3, else 3. -/
 abbrev qMod (P : Nat) : Nat := if (decide (P % 2 = 1) && !decide (P < 3)) = true then P else 3
@@ -47,17 +51,34 @@ theorem qMod_bad (P : Nat) : (if (decide (P % 2 = 0) || decide (P < 3)) = true t
   by_cases h1 : P % 2 = 0 <;> by_cases h2 : P < 3 <;>
     simp [h1, h2, show P % 2 = 1 ↔ ¬ P % 2 = 0 by omega_arith]
 
-/-- `qinvPart`, for `[aPa] = P` and `[aQa] = Q`. -/
-theorem qinvPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) {P Q : Nat} {ok : Bool}
-    (hP : av I s.mem aPa = P) (hQ : av I s.mem aQa = Q) (hok : word s.mem I.B (8 * kOk) = mask ok) :
-    WP isa (seqs qinvPart) s fun t => KS I s₀ t ∧ KF I.B I.W csQ s.mem t.mem ∧
-      word t.mem I.B (8 * kOk) = mask (decide (Nat.gcd Q (qMod P) = 1) && ok) ∧
-      ((qMod P : Nat) : Int) ∣ (av I t.mem aX₂ : Int) * Q - Nat.gcd Q (qMod P) ∧ av I t.mem aX₂ < qMod P := by
+theorem qMod_odd (P : Nat) : qMod P % 2 = 1 ∧ 1 < qMod P := by
+  unfold qMod
+  by_cases hc : (decide (P % 2 = 1) && !decide (P < 3)) = true
+  · rw [ite_eq_left hc]
+    simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not] at hc
+    omega_arith
+  · rw [ite_eq_right hc]; decide
+
+theorem qMod_lt {P K : Nat} (hP : P < 2 ^ K) (hK : 2 ≤ K) : qMod P < 2 ^ K := by
+  unfold qMod
+  split
+  · exact hP
+  · exact Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (by decide) hK)
+
+/-- The parts `qinvPre` changes. -/
+abbrev csQp : List Rc := [.arr aU, .arr aC, .arr aM, .arr aV, .arr aX₁, .arr aX₂]
+
+/-- `qinvPre`, for `[aPa] = P` and `[aQa] = Q`: `[aU] = Q` and
+`[aV] = [aM] = qMod P`. -/
+theorem qinvPre_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {P Q : Nat}
+    (hP : av I s.mem aPa = P) (hQ : av I s.mem aQa = Q) :
+    WP isa (seqs qinvPre) s fun t => KS I s₀ t ∧ KF I.B I.W csQp s.mem t.mem ∧
+      av I t.mem aU = Q ∧ av I t.mem aV = qMod P ∧ av I t.mem aM = qMod P := by
   have hZ := h.hZ
-  rw [qinvPart_eq]
+  simp only [qinvPre]
   -- `[aU] := q`.
   refine wp_seqs_append (by simp) (by simp [constA]) (WP.mono (zc_k h (o := aU) (a := aQa) (by decide) (by decide)
-    (by decide)) fun s₁ ⟨h₁, f₁, v₁, t₁⟩ => ?_)
+    (by decide)) fun s₁ ⟨h₁, f₁, v₁, _⟩ => ?_)
   rw [hQ] at v₁
   refine wp_seqs_append (by simp [constA]) (by simp [ltA, cmpA]) (WP.mono (constA_k h₁ (x := 3) (by decide))
     fun s₂ ⟨h₂, f₂, c₂, _⟩ => ?_)
@@ -97,48 +118,48 @@ theorem qinvPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h :
   rw [v₈, vC₈] at v₉
   have hM : (if pv = true then 3 else P) = qMod P := by rw [← hpv]; exact qMod_bad P
   rw [hM] at v₉
-  have hMo : qMod P % 2 = 1 ∧ 1 < qMod P := by
-    unfold qMod
-    by_cases hc : (decide (P % 2 = 1) && !decide (P < 3)) = true
-    · rw [ite_eq_left hc]
-      simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not] at hc
-      omega_arith
-    · rw [ite_eq_right hc]; decide
-  -- The inverse.
-  refine wp_seqs_append (by simp [invFrom]) (by simp) (WP.mono (invFrom_k h₉ (j := aM) (by decide) (by decide))
-    fun s₁₀ ⟨h₁₀, f₁₀, vV₁₀, vX₁₁₀, vX₂₁₀⟩ => ?_)
+  -- `[aV] := [aM]`.
+  refine WP.mono (invFrom_k h₉ (j := aM) (by decide) (by decide)) fun s₁₀ ⟨h₁₀, f₁₀, vV₁₀, _, _⟩ => ?_
   have hok10 : [Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂].all Rc.ok = true := by decide
   have vM₁₀ : av I s₁₀.mem aM = qMod P := by rw [f₁₀.av hok10 (by decide) (by decide) hZ, v₉]
-  have pU : av I s₁₀.mem aU = Q ∧ atop I s₁₀.mem aU = 0 := by
-    have hK : ∀ {m m' : Mem} {cs : List Rc}, KF I.B I.W cs m m' → cs.all Rc.ok = true → .arr aU ∉ cs →
-        av I m' aU = av I m aU ∧ atop I m' aU = atop I m aU := fun f ok hn =>
-      ⟨f.av ok (by decide) hn hZ, f.at ok (by decide) hn hZ⟩
-    obtain ⟨a1, b1⟩ := hK f₁₀ hok10 (by decide)
-    obtain ⟨a2, b2⟩ := hK f₉ (by decide) (by decide)
-    obtain ⟨a3, b3⟩ := hK f₈ (by decide) (by decide)
-    obtain ⟨a4, b4⟩ := hK f₇ (by decide) (by decide)
-    obtain ⟨a5, b5⟩ := hK f₂ (by decide) (by decide)
-    rw [hm₆] at a4 b4
-    exact ⟨by rw [a1, a2, a3, a4, a5, v₁], by rw [b1, b2, b3, b4, b5, t₁]⟩
+  have vU₁₀ : av I s₁₀.mem aU = Q := by
+    rw [f₁₀.av hok10 (by decide) (by decide) hZ, f₉.av (by decide) (by decide) (by decide) hZ,
+      f₈.av (by decide) (by decide) (by decide) hZ, f₇.av (by decide) (by decide) (by decide) hZ, hm₆,
+      f₂.av (by decide) (by decide) (by decide) hZ, v₁]
+  have f₂₆ : KF I.B I.W [.arr aC] s₁.mem s₆.mem := by rw [hm₆]; exact f₂
+  exact ⟨h₁₀, ((((f₁.trans f₂₆).trans f₇).trans f₈).trans f₉).trans f₁₀ |>.mono (by decide), vU₁₀,
+    by rw [vV₁₀, v₉], vM₁₀⟩
+
+/-- `qinvPart`, for `[aPa] = P` and `[aQa] = Q` of the primes' `w` words. -/
+theorem qinvPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) (L : KLens I) {P Q : Nat}
+    {ok : Bool} (hP : av I s.mem aPa = P) (hQ : av I s.mem aQa = Q) (hPw : P < 2 ^ (64 * (I.pl / 8)))
+    (hQw : Q < 2 ^ (64 * (I.pl / 8))) (hok : word s.mem I.B (8 * kOk) = mask ok) :
+    WP isa (seqs qinvPart) s fun t => KS I s₀ t ∧ KF I.B I.W csQ s.mem t.mem ∧
+      word t.mem I.B (8 * kOk) = mask (decide (Nat.gcd Q (qMod P) = 1) && ok) ∧
+      ((qMod P : Nat) : Int) ∣ (av I t.mem aX₂ : Int) * Q - Nat.gcd Q (qMod P) ∧ av I t.mem aX₂ < qMod P := by
+  have hZ := h.hZ
+  have hl1 := L.pl1
+  rw [qinvPart_eq]
+  refine wp_seqs_append (by simp [qinvPre]) (by simp) (WP.mono (qinvPre_k h hP hQ)
+    fun s₁₀ ⟨h₁₀, f₁₀, vU₁₀, vV₁₀, vM₁₀⟩ => ?_)
+  have hMo := qMod_odd P
+  -- The inverse, at the primes' width.
   refine wp_seqs_append (by simp) (by simp [gcdIsOne, constA]) ?_
   simp only [seqs]
-  refine WP.mono (inverse_k h₁₀ (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aM) (iT := aT)
+  refine WP.mono (inverseHalf_k h₁₀ L (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aM) (iT := aT)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) pU.2 (by rw [vV₁₀, v₉, vM₁₀]) vX₁₁₀ vX₂₁₀) fun s₁₁ ⟨h₁₁, f₁₁, hinv⟩ => ?_
-  rw [vM₁₀, pU.1] at hinv
+    (by decide) (by decide) (by decide) (by rw [vU₁₀]; exact hQw)
+    (by rw [vM₁₀]; exact qMod_lt hPw (by omega_arith)) (by rw [vV₁₀, vM₁₀])) fun s₁₁ ⟨h₁₁, f₁₁, _, hinv⟩ => ?_
+  rw [vM₁₀, vU₁₀] at hinv
   obtain ⟨hg₁₁, hdv₁₁, hx₁₁⟩ := hinv hMo.1 hMo.2
   have hokI : [Rc.arr aU, Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT].all Rc.ok = true := by decide
   have ok₁₁ : word s₁₁.mem I.B (8 * kOk) = mask ok := by
-    rw [f₁₁.word hokI (by decide) (by decide), f₁₀.word hok10 (by decide) (by decide),
-      f₉.word (by decide) (by decide) (by decide), f₈.word (by decide) (by decide) (by decide),
-      f₇.word (by decide) (by decide) (by decide), hm₆, f₂.word (by decide) (by decide) (by decide),
-      f₁.word (by decide) (by decide) (by decide), hok]
+    rw [f₁₁.word hokI (by decide) (by decide), f₁₀.word (by decide) (by decide) (by decide), hok]
   refine WP.mono (gcdIsOne_k h₁₁ ok₁₁) fun t ⟨ht, f₁₂, ok₁₂⟩ => ?_
   rw [hg₁₁] at ok₁₂ hdv₁₁
   have vX : av I t.mem aX₂ = av I s₁₁.mem aX₂ := f₁₂.av (by decide) (by decide) (by decide) hZ
-  have f₂₆ : KF I.B I.W [.arr aC] s₁.mem s₆.mem := by rw [hm₆]; exact f₂
   refine ⟨ht, ?_, ok₁₂, by rw [vX]; exact hdv₁₁, by rw [vX]; exact hx₁₁⟩
-  exact ((((((((f₁.trans f₂₆).trans f₇).trans f₈).trans f₉).trans f₁₀).trans f₁₁).trans f₁₂)).mono (by decide)
+  exact ((f₁₀.trans f₁₁).trans f₁₂).mono (by decide)
 
 end VG.Proof.RsaKeyGen.AArch64.Key

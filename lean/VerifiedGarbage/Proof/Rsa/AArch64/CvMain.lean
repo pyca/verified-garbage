@@ -148,7 +148,8 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
     fun s₂ ⟨h₂, m₂, vN, vP, vQ, vD⟩ => ?_)
   -- `p q = n`.
   refine wp_seqs_append (by simp [pqCheck]) (by simp [invPart]) (WP.mono (cvCheck_ok h₂ L (c := true)
-    (by rw [m₂]; exact hm₁) (by rw [vN]; exact hNo)) fun s₃ ⟨h₃, m₃, p₃⟩ => ?_)
+    (by rw [m₂]; exact hm₁)) fun s₃ ⟨h₃, ⟨c₃, m₃, e₃⟩, p₃⟩ => ?_)
+  rw [e₃ (by rw [vN]; exact hNo)] at m₃
   rw [vP, vQ, vN, Bool.true_and] at m₃
   have vP₃ : wv s₃.mem I.B (slot (wk I.k) aP) (wk I.k) = I.P := by rw [p₃ aP (.inl rfl), vP]
   have vQ₃ : wv s₃.mem I.B (slot (wk I.k) aQ) (wk I.k) = I.Q := by rw [p₃ aQ (.inr (.inl rfl)), vQ]
@@ -157,7 +158,8 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
     factors_of hNo hlo hPl hQl L.pl2 L.ql2
   -- `qInv` and `gcd(q, p) = 1`.
   refine wp_seqs_append (by simp [invPart]) (by simp [divisor]) (WP.mono (cvInv_ok h₃ L m₃ (fun hc => by
-    rw [vP₃]; have := hf (of_decide_eq_true hc); exact ⟨this.1, this.2.1⟩)) fun s₄ ⟨h₄, m₄, i₄, p₄⟩ => ?_)
+    rw [vP₃]; have := hf (of_decide_eq_true hc); exact ⟨this.1, this.2.1⟩) (by rw [vP₃]; exact hPl)
+    (by rw [vQ₃]; exact hQl)) fun s₄ ⟨h₄, m₄, i₄, p₄⟩ => ?_)
   rw [vP₃, vQ₃] at m₄ i₄
   have vP₄ : wv s₄.mem I.B (slot (wk I.k) aP) (wk I.k) = I.P := by rw [p₄ aP (.inl rfl), vP₃]
   have vQ₄ : wv s₄.mem I.B (slot (wk I.k) aQ) (wk I.k) = I.Q := by rw [p₄ aQ (.inr (.inl rfl)), vQ₃]

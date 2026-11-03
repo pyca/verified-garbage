@@ -38,8 +38,8 @@ nothing else but the lengths and the status returned.
    * `e` even: `d = (e mod L)⁻¹ mod L` by `inverse`, for an odd `L ≥ 3`
      (the modulus 3 otherwise).
 5. If `kOk` and `d ≤ 2^(64 w)`: zeros to all seven outputs, and 2.
-6. Otherwise `qInv` by `inverse` (modulo `p`, or 3 for a `p` even or below
-   3), `dP = d mod (p − 1)` and `dQ = d mod (q − 1)` by `divmod`, and
+6. Otherwise `qInv` by `inverseAt` at the primes' `w` words (`halfW`;
+   modulo `p`, or 3 for a `p` even or below 3), `dP = d mod (p − 1)` and `dQ = d mod (q − 1)` by `divmod`, and
    `n = p q`; the mask of `kOk`, `gcd(q, p) = 1`, `n`'s top bit, `p` and `q`
    odd and `e` valid (`Rsa.exponentValid`); the seven outputs stored under
    it, and its low bit returned.
@@ -302,13 +302,17 @@ def smallMask : List (Prog isa) :=
       st .x3 .x16] : List Instr))] : List (Prog isa)) ++
   ltA aDd aC ++ ([.block [ldh .x3 kOk, .logic .and .x .x15 .x15 .x3]] : List (Prog isa))
 
-/-- `qInv` into `aX₂` (modulo `p`, or 3 for a `p` even or below 3) and
-`kOk &= ` the mask of `gcd(q, p) = 1`. -/
+/-- `x12 := W / 2` after `ws`: the primes' `w` words, at which `qinvPart`
+inverts. -/
+def halfW : List Instr := [.lsr .x .x12 .x12 1]
+
+/-- `qInv` into `aX₂` (modulo `p`, or 3 for a `p` even or below 3), at the
+primes' width, and `kOk &= ` the mask of `gcd(q, p) = 1`. -/
 def qinvPart : List (Prog isa) :=
   [zeroA aU, copyA aU aQa] ++ constA 3 ++ ltA aPa aC ++
   ([.block ([mov .x10 .x15] ++ evenMaskOf aPa ++ ([.logic .orr .x .x15 .x15 .x10] : List Instr)), zeroA aM,
       copyA aM aPa] : List (Prog isa)) ++
-  selC aM ++ invFrom aM ++ [inverse aU aV aX₁ aX₂ aM aT] ++ gcdIsOne
+  selC aM ++ invFrom aM ++ [inverseAt halfW aU aV aX₁ aX₂ aM aT] ++ gcdIsOne
 
 /-- `dP` into `aX₁` and `dQ` into `aV`. -/
 def crtPart : List (Prog isa) :=

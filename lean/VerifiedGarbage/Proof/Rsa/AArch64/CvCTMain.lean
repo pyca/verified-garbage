@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -14,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -59,7 +61,7 @@ theorem ct_app {α : Type} {Φ Ψ Ξ : α → State → Prop} {a b : List (Prog 
 /-! ## The loads -/
 
 /-- The four loads. -/
-theorem loads_ct : RelCT isa (Two GA) (seqs (loadA aN Public.sN Public.sK ++
+theorem loads_ct0 : RelCT isa (Two GA) (seqs (loadA aN Public.sN Public.sK ++
     (loadA aP sP sPl ++ (loadA aQ sQ sQl ++ loadA aD sD sDl)))) (Two GA) := by
   have k8 : ∀ {k : Nat}, k ≤ 8 * wk k := fun {k} => by unfold wk; omega
   refine ct_app (by simp [loadA]) (by simp [loadA]) (loadA_ct (by decide) (by decide) (by decide) CvP.pN CvP.k
@@ -80,9 +82,18 @@ theorem loads_ct : RelCT isa (Two GA) (seqs (loadA aN Public.sN Public.sK ++
   · exact ⟨h.args.q, h.args.ql, ⟨_, h.q, L.qbl⟩, L.ql1, by have := L.ql2; have := @k8 I.k; omega⟩
   · exact ⟨h.args.d, h.args.dl, ⟨_, h.d, L.dbl⟩, L.dl1, by have := L.dl2; have := @k8 I.k; omega⟩
 
+/-- The four loads, which leave `p` and `q` within their lengths. -/
+theorem loads_ct : RelCT isa (Two GA) (seqs (loadA aN Public.sN Public.sK ++
+    (loadA aP sP sPl ++ (loadA aQ sQ sQl ++ loadA aD sD sDl)))) (Two GB) :=
+  two_post (loads_ct0.mono (fun _ _ h => h) fun _ _ _ => trivial) fun _ _ h => by
+    obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
+    exact WP.mono (cvLoads_ok h' L) fun t ⟨ht, mt, _, vP, vQ, _⟩ => ⟨⟨I, m₀, c, rfl, ht, L, O, mt.trans hm⟩,
+      by have := os2ip_lt I.pb; rw [L.pbl] at this; dsimp only [CvIn.pub]; rw [vP]; exact this,
+      by have := os2ip_lt I.qb; rw [L.qbl] at this; dsimp only [CvIn.pub]; rw [vQ]; exact this⟩
+
 /-! ## The arithmetic -/
 
-theorem pqCheck_ct : RelCT isa (Two GA) (seqs pqCheck) (Two GA) := by
+theorem pqCheck_ct0 : RelCT isa (Two GA) (seqs pqCheck) (Two GA) := by
   unfold pqCheck
   exact ct_app (by simp) (by simp)
     (ct_app (by simp) (by simp [eqA])
@@ -97,9 +108,18 @@ theorem pqCheck_ct : RelCT isa (Two GA) (seqs pqCheck) (Two GA) := by
       (eqA_ct (by decide) (by decide) (by taint_decide)))
     (ct_cons (by simp) andZero_ct (ct_one (andOdd_ct (by decide) (by taint_decide))))
 
-theorem invSetup_ct : RelCT isa (Two GA) (seqs invSetup) (Two GI) := by
-  refine two_post ((?_ : RelCT isa (Two GA) (seqs invSetup) (Two GA)).mono (fun _ _ h => h) fun _ _ _ => trivial)
-    fun p s h => ?_
+/-- `p q = n`, which leaves `p` and `q`. -/
+theorem pqCheck_ct : RelCT isa (Two GB) (seqs pqCheck) (Two GB) :=
+  two_post (pqCheck_ct0.mono (fun _ _ h => two_mono (fun _ _ h => h.1) h) fun _ _ _ => trivial)
+    fun _ _ ⟨h, bP, bQ⟩ => by
+      obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
+      exact WP.mono (cvCheck_ok h' L hm) fun t ⟨ht, ⟨c', mt, _⟩, pt⟩ => ⟨⟨I, m₀, c', rfl, ht, L, O, mt⟩,
+        by dsimp only [CvIn.pub] at bP ⊢; rw [pt aP (.inl rfl)]; exact bP,
+        by dsimp only [CvIn.pub] at bQ ⊢; rw [pt aQ (.inr (.inl rfl))]; exact bQ⟩
+
+theorem invSetup_ct : RelCT isa (Two GB) (seqs invSetup) (Two GI) := by
+  refine two_post ((?_ : RelCT isa (Two GA) (seqs invSetup) (Two GA)).mono (fun _ _ h => two_mono
+    (fun _ _ h => h.1) h) fun _ _ _ => trivial) fun p s ⟨h, bP, bQ⟩ => ?_
   · unfold invSetup
     exact ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
       (ct_cons (by simp) (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))
@@ -109,14 +129,15 @@ theorem invSetup_ct : RelCT isa (Two GA) (seqs invSetup) (Two GI) := by
       (ct_cons (by simp) (setOneA_ct (by decide) (by taint_decide))
       (ct_one (zeroA_ct (by decide) (by taint_decide))))))))
   · obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
-    exact WP.mono (invSetup_ok h' L) fun t ⟨ht, mt, u0, _, vm, x1, x2, _⟩ =>
-      ⟨⟨I, m₀, c, rfl, ht, L, O, mt.trans hm⟩, u0, vm, x1, x2⟩
+    exact WP.mono (invSetup_ok h' L) fun t ⟨ht, mt, _, vU, vm, _, _, pt⟩ =>
+      ⟨⟨I, m₀, c, rfl, ht, L, O, mt.trans hm⟩, vm, by dsimp only [CvIn.pub] at bQ ⊢; rw [vU]; exact bQ,
+        by dsimp only [CvIn.pub] at bP ⊢; rw [pt aP (.inl rfl)]; exact bP⟩
 
-theorem invPart_ct [InvLaw] : RelCT isa (Two GA) (seqs invPart) (Two GA) := by
+theorem invPart_ct [InvLaw] : RelCT isa (Two GB) (seqs invPart) (Two GA) := by
   unfold invPart
   exact ct_app (by simp [invSetup]) (by simp) invSetup_ct
     (ct_app (by simp) (by simp [eqA])
-      (ct_cons (by simp) (inverse_ct (by taint_decide))
+      (ct_cons (by simp) (inverseAt_ct (by taint_decide))
         (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
           (ct_one (setOneA_ct (by decide) (by taint_decide)))))
       (ct_app (by simp [eqA]) (by simp) (eqA_ct (by decide) (by decide) (by taint_decide)) (ct_one andZero_ct)))

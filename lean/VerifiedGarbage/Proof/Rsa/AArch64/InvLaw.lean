@@ -9,7 +9,8 @@ public import VerifiedGarbage.Proof.Rsa.Ranges
 
 `InvLaw`: what `Keys.inverse` does (`InvFinish.lean`'s `inverse_ok`), for
 its callers to use without importing the algebra of its proof; the
-registrations supply the instance (`Instances.lean`).
+registrations supply the instance (`InvBatch.lean`). `inverseAt_ok`: the
+same at a narrower width, where the values fit.
 
 For `[u] = a` and `[v] = [m]` odd and above 1, `w` words each, it leaves
 `gcd(a, m)` in `[v]` and `y < m` with `m ∣ y a - gcd(a, m)` in `[x₂]`;
@@ -34,6 +35,29 @@ class InvLaw : Prop where
     (hVM : wv s.mem B (slot w iV) w = wv s.mem B (slot w iM) w) (hX1 : wv s.mem B (slot w iX₁) w = 1)
     (hX2 : wv s.mem B (slot w iX₂) w = 0) :
     WP isa (inverse iU iV iX₁ iX₂ iM iT) s fun t =>
+      t.gpr .x0 = B ∧ Frm B [ar w iU, ar w iV, ar w iX₁, ar w iX₂, ar w iT] s.mem t.mem ∧
+      Keep (.x11 :: .x12 :: stepRegs) s t ∧
+      (wv s.mem B (slot w iM) w % 2 = 1 → 1 < wv s.mem B (slot w iM) w →
+        wv t.mem B (slot w iV) w = Nat.gcd (wv s.mem B (slot w iU) w) (wv s.mem B (slot w iM) w) ∧
+        ((wv s.mem B (slot w iM) w : Nat) : Int) ∣
+          (wv t.mem B (slot w iX₂) w : Int) * wv s.mem B (slot w iU) w - wv t.mem B (slot w iV) w ∧
+        wv t.mem B (slot w iX₂) w < wv s.mem B (slot w iM) w)
+
+  /-- `inverseAt nb`: the same at a width `n ≤ w` (`n < 2^21`) at which `[u]`
+  and `[m]` fit, which `nb` puts in `x12` after `ws`. -/
+  inverseAt_ok {s : State} {B : Addr} {Z w n : Nat} {nb : List Instr} {iU iV iX₁ iX₂ iM iT : Nat}
+    (h : Ws s B Z w)
+    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
+    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
+    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
+    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT) (hn1 : 1 ≤ n) (hnw : n ≤ w) (hn21 : n < 2 ^ 21)
+    (hnb : ∀ t : State, Scr t B Z → t.gpr .x0 = B → t.gpr .x12 = BitVec.ofNat 64 w →
+      t.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2)) → t.mem = s.mem →
+      WP isa (.block nb) t fun t' => (t'.gpr .x12 = BitVec.ofNat 64 n ∧ t'.mem = t.mem ∧ t'.v = t.v) ∧
+        Keep [.x3, .x4, .x5, .x6, .x7, .x12] t t')
+    (hUn : wv s.mem B (slot w iU) w < 2 ^ (64 * n)) (hMn : wv s.mem B (slot w iM) w < 2 ^ (64 * n))
+    (hVM : wv s.mem B (slot w iV) w = wv s.mem B (slot w iM) w) :
+    WP isa (inverseAt nb iU iV iX₁ iX₂ iM iT) s fun t =>
       t.gpr .x0 = B ∧ Frm B [ar w iU, ar w iV, ar w iX₁, ar w iX₂, ar w iT] s.mem t.mem ∧
       Keep (.x11 :: .x12 :: stepRegs) s t ∧
       (wv s.mem B (slot w iM) w % 2 = 1 → 1 < wv s.mem B (slot w iM) w →

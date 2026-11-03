@@ -42,8 +42,9 @@ whose proofs they share: a subtraction into `x13`, a masked addition of
 p_len, q, q_len, d, d_len, scratch, scratch_len)`: the first eight
 arguments in `x0`–`x7`, the others on the stack. `n` is checked as
 `vg_rsa_public` checks it (it is public); then `p q = n` gives a mask,
-`qInv` is computed by `inverse` (and'ing `gcd(q, p) = 1` into the mask),
-and `dP` and `dQ` by `divmod` (with the divisor `p` or `q` with its low bit
+`qInv` is computed by `inverseAt` at the primes' width
+`⌈max(p_len, q_len) / 8⌉` (and'ing `gcd(q, p) = 1` into the mask), and
+`dP` and `dQ` by `divmod` (with the divisor `p` or `q` with its low bit
 cleared: `p - 1` for an odd `p`, which `p q = n` implies). Each result is
 written out masked. `p q = n` is checked by `divmod` too, as
 `n mod p = 0`, `n / p = q` and `p` odd.
@@ -369,6 +370,27 @@ def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
   .seq (.block (ws ++ [.lsr .x .x3 .x12 21]))
     (.ite (.zero .x .x3) (inverseB iU iV iX₁ iX₂ iM iT) (inverseBits iU iV iX₁ iX₂ iM iT))
 
+/-- `x12 := ⌈max(a, b) / 8⌉` for the byte lengths `a`, `b` in the header
+slots `sA`, `sB`, without a branch: `a - ((a - b) & mask)`, the mask all ones
+where `a < b`. -/
+def nCalc (sA sB : Nat) : List Instr :=
+  [ldh .x3 sA, ldh .x4 sB, .sub .x .x5 .x3 .x4, .lsr .x .x6 .x5 63, movi .x7 0, .sub .x .x6 .x7 .x6,
+    .logic .and .x .x5 .x5 .x6, .sub .x .x12 .x3 .x5, .addImm .x .x12 .x12 7, .lsr .x .x12 .x12 3]
+
+/-- Words `n` to `w + 1` of array `j` cleared, for `n` in `x12` (kept) and
+the stride `8 (w + 2)` in `x11`. -/
+def tailZ (j : Nat) : List (Prog isa) := [
+  .block (base j .x8 ++ ([.lsl .x .x3 .x12 3, .add .x .x8 .x8 .x3, .lsr .x .x13 .x11 3, .subImm .x .x13 .x13 2,
+    .sub .x .x13 .x13 .x12, mov .x3 .x12, mov .x12 .x13, movi .x7 0] : List Instr)),
+  zeroAcc, .block [mov .x12 .x3]]
+
+/-- `inverse` at a narrower width: `nb` sets `x12` to a width `n ≤ w` at
+which `[u]` and `[m]` fit (from the header, after `ws`), the batches of
+divsteps run at it, and the words of `[v]` and `[x₂]` above it are cleared,
+so that their `w` words are the result. -/
+def inverseAt (nb : List Instr) (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+  .seq (.block (ws ++ nb)) (seqs ([inverseB iU iV iX₁ iX₂ iM iT] ++ tailZ iV ++ tailZ iX₂))
+
 /-! ## Masks -/
 
 /-- `x9 = 0` iff `[a] = [b]` over `w` words. -/
@@ -470,9 +492,12 @@ def pqCheck : List (Prog isa) :=
 def invSetup : List (Prog isa) :=
   [zeroA aU, copyA aU aQ, zeroA aV, copyA aV aP, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂]
 
-/-- `qInv = q⁻¹ mod p` into `aX₂`, and `gcd(q, p) = 1` and'ed into `sMask`. -/
+/-- `qInv = q⁻¹ mod p` into `aX₂`, at the primes' width
+`⌈max(p_len, q_len) / 8⌉` (`nCalc`), and `gcd(q, p) = 1` and'ed into
+`sMask`. -/
 def invPart : List (Prog isa) :=
-  invSetup ++ ([inverse aU aV aX₁ aX₂ aP aT, zeroA aC, .block (setOneA aC)] ++ (eqA aV aC ++ [.block andZero]))
+  invSetup ++ ([inverseAt (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT, zeroA aC, .block (setOneA aC)] ++
+    (eqA aV aC ++ [.block andZero]))
 
 /-- `[aC] := [j] - 1` (for an odd `[j]`, whose low word is not zero), then
 `[aU] := d`. -/

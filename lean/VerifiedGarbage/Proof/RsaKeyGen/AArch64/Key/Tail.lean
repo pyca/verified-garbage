@@ -112,7 +112,7 @@ theorem keyPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : 
   have hQw := L.Q_lt
   rw [keyPart_eq I]
   -- `qInv`.
-  refine wp_seqs_append (by simp [qinvPart]) (by simp [crtPart, divisorOf]) (WP.mono (qinvPart_k hk h.vP h.vQ hok)
+  refine wp_seqs_append (by simp [qinvPart]) (by simp [crtPart, divisorOf]) (WP.mono (qinvPart_k hk L h.vP h.vQ hPw hQw hok)
     fun s₁ ⟨h₁, f₁, ok₁, hdv₁, hx₁⟩ => ?_)
   generalize hx : av I s₁.mem aX₂ = x at hdv₁ hx₁
   have hokQ : csQ.all Rc.ok = true := by decide
