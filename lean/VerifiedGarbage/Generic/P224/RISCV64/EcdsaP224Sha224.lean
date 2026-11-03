@@ -16,6 +16,7 @@ open VG.Proof.Ecdsa.Rfc6979.RISCV64.P224Sha224 (pack sign_verified)
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.P224Sha224.signApi.artifact RISCV64.target {
     code := (pack h.law).c.sign
+    consts := Impl.Ecdsa.RISCV64.Comb.p224CombConsts
     stack := 544
     verified := sign_verified h.law }]
 

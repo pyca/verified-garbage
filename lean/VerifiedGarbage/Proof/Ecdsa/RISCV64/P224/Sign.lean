@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.Tail
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.P224
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.CombVerified
+public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P224Field.Verified
@@ -18,10 +21,11 @@ import VerifiedGarbage.Proof.P224.Point
 /-!
 # ECDSA signatures over P-224 on RISC-V: correctness
 
-`vg_ecdsa_p224_sign` meets its contract by register (`signRV`), given the
-group law (`sign_rv`): the setup (`setupS_ok`: the saves, `k`, `d` and the
-digest, the flag, the constants, `d`'s range and `G` to `R`), ECDH's `tail`
-(`tail_ok`: `k`'s range, `R = [k]G`, `x`), the values modulo `n`
+`vg_ecdsa_p224_sign` meets its contract by register (`signRV`), with the
+comb's table (`signRVC`), given the group law (`sign_rv`): the setup
+(`setupS_ok`: the saves, `k`, `d` and the digest, the flag, the constants,
+`d`'s range and `G` to `R`), ECDH's `tail` with the comb (`tailG_ok`: `k`'s
+range, `R = [k]G` by `vg_p224_mul_g`, `x`), the values modulo `n`
 (`scalars_ok`), and the end (`finish_ok`: the checks of `r` and `s`, and
 the signature under the flag); the specification's signature is
 `signWith_eq`'s (`Proof/Ecdsa/Sign.lean`).
@@ -96,6 +100,14 @@ def signRV : Contract isa where
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧
     s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4
 
+/-- `signRV` with the comb's table (`abi.withConsts`): `signRV` for the state
+without it, and what the table adds. -/
+def signRVC : Contract isa where
+  pre s := signRV.pre (stripConsts Impl.Ecdsa.RISCV64.Comb.p224CombConsts s) ∧
+    ConstsOk Impl.Ecdsa.RISCV64.Comb.p224CombConsts 0 s
+  post := signRV.post
+  pub s₁ s₂ := signRV.pub s₁ s₂ ∧ s₁.syms Impl.Ecdsa.RISCV64.Comb.p224Sym = s₂.syms Impl.Ecdsa.RISCV64.Comb.p224Sym
+
 /-! ## The setup -/
 
 /-- The slots `nConsts` sets. -/
@@ -126,6 +138,7 @@ structure SetupS (base : Addr) (s s' : State) : Prop where
   r2n : sv base s' R2N = 2 ^ 256 * 2 ^ 256 % W.n
   onen : sv base s' ONEN = 2 ^ 256 % W.n
   expn : sv base s' EXPN = W.n - 2
+  bp : sv base s' BP = W.b * 2 ^ 256 % W.p
   rx : sv base s' RX = W.gx * 2 ^ 256 % W.p
   ry : sv base s' RY = W.gy * 2 ^ 256 % W.p
   flag : word s'.mem base FL = maskOf ((true && decide (ofBytes (bytesAt s.mem (s.gpr .a1) 28) < W.n)) &&
@@ -133,9 +146,10 @@ structure SetupS (base : Addr) (s s' : State) : Prop where
 
 /-- `setup`: the saves, `k`, `d` and the digest, the flag set, the
 constants, the mask of `d` in `[1, n-1]`, and `G` to `R`'s first two slots. -/
-theorem setupS_ok {s : State} (hs : signRV.pre s) :
+theorem setupS_ok {s : State} (hs : signRV.pre (stripConsts Impl.Ecdsa.RISCV64.Comb.p224CombConsts s)) :
     WP isa (.block Impl.Ecdsa.RISCV64.P224.signSetup) s (SetupS (s.gpr .a4) s) := by
   obtain ⟨hrd, hwr, hod, hdd, hed, hkd, hfo, hfd, hfe, hfk, hfs, hal⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hod hdd hed hkd hfo hfd hfe hfk hfs hal
   rw [Impl.Ecdsa.RISCV64.P224.signSetup]
   simp only [List.append_assoc]
   generalize hb : s.gpr .a4 = base at hwr hod hdd hed hkd hfs hal
@@ -145,9 +159,12 @@ theorem setupS_ok {s : State} (hs : signRV.pre s) :
   have a1 : s₁.gpr .a1 = s.gpr .a1 := g₁ _ (by decide) (by decide) (by decide)
   have a2 : s₁.gpr .a2 = s.gpr .a2 := g₁ _ (by decide) (by decide) (by decide)
   have a3 : s₁.gpr .a3 = s.gpr .a3 := g₁ _ (by decide) (by decide) (by decide)
-  have rdd : (⟨s.gpr .a1, 28⟩ : Region) ∈ s₁.rd ++ s₁.wr := by rw [rd₁, hrd]; simp
-  have rde : (⟨s.gpr .a2, 28⟩ : Region) ∈ s₁.rd ++ s₁.wr := by rw [rd₁, hrd]; simp
-  have rdk : (⟨s.gpr .a3, 28⟩ : Region) ∈ s₁.rd ++ s₁.wr := by rw [rd₁, hrd]; simp
+  have rdd : (⟨s.gpr .a1, 28⟩ : Region) ∈ s₁.rd ++ s₁.wr := by
+    rw [rd₁]; exact List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp))
+  have rde : (⟨s.gpr .a2, 28⟩ : Region) ∈ s₁.rd ++ s₁.wr := by
+    rw [rd₁]; exact List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp))
+  have rdk : (⟨s.gpr .a3, 28⟩ : Region) ∈ s₁.rd ++ s₁.wr := by
+    rw [rd₁]; exact List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp))
   -- `k`, `d` and the digest.
   refine WP.block_append (WP.mono (loadNum4_ok 3 hw₁ (o := p224.sl K) (p := .a3) (off := 0) (by decide) (by decide)
     (by decide) (by decide) (by rw [a3]; exact in_rd4 rdk (by omega)) (fun j hj => by rw [a3]; exact in_rd8 rdk (by omega))
@@ -240,7 +257,7 @@ theorem setupS_ok {s : State} (hs : signRV.pre s) :
     fun x h0 h2 h3 hx => by rw [K₁₀ x hx, g₁ x h0 h2 h3], ?_, ?_, ?_,
     by rw [U₂₁₀.word (by decide) (by decide), w0], by rw [U₂₁₀.word (by decide) (by decide), w1],
     by rw [U₂₁₀.word (by decide) (by decide), w2], by rw [U₂₁₀.word (by decide) (by decide), w3],
-    by rw [U₂₁₀.word (by decide) (by decide), w4], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    by rw [U₂₁₀.word (by decide) (by decide), w4], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [r₁₀.rd, r₉.rd, K₈.rd, r₇.rd, r₆.rd, u₅.rd, u₄b.rd, u₄a.rd, r₂₄.rd, rd₁]
   · rw [r₁₀.wr, r₉.wr, K₈.wr, r₇.wr, r₆.wr, u₅.wr, u₄b.wr, u₄a.wr, r₂₄.wr, wr₁]
   · rw [r₁₀.sp, r₉.sp, K₈.sp, r₇.sp, r₆.sp, u₅.sp, u₄b.sp, u₄a.sp, r₂₄.sp, sp₁]
@@ -257,6 +274,9 @@ theorem setupS_ok {s : State} (hs : signRV.pre s) :
   · rw [sv₁₀ R2N (by decide) (by decide) (by decide), sv₈ R2N (by decide)]; exact cs₇ (R2N, _) (by decide)
   · rw [sv₁₀ ONEN (by decide) (by decide) (by decide), sv₈ ONEN (by decide)]; exact cs₇ (ONEN, _) (by decide)
   · rw [sv₁₀ EXPN (by decide) (by decide) (by decide), sv₈ EXPN (by decide)]; exact cs₇ (EXPN, _) (by decide)
+  · rw [sv₁₀ BP (by decide) (by decide) (by decide), sv₈ BP (by decide),
+      show sv base s₇ BP = sv base s₆ BP from sv_unch U₇ BP (by decide)]
+    exact const_at cs₆ 11
   · show wordsVal _ _ _ _ = _
     rw [O₁₀.wordsVal (by decide) (by decide), v₉, show wordsVal s₈.mem base (p224.sl GX) 4 = sv base s₈ GX from rfl,
       sv₈ GX (by decide),
@@ -639,20 +659,21 @@ theorem signWith_none {C : Curve} {d e k : Nat} (h : ¬ (1 ≤ k ∧ k < C.n)) :
   intro h'; exact absurd ⟨h'.2.2.1, h'.2.2.2⟩ h
 
 /-- `vg_ecdsa_p224_sign` by register. -/
-theorem sign_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : signRV.pre s) :
+theorem sign_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : signRVC.pre s) :
     WP isa Impl.Ecdsa.RISCV64.P224.signP224 s fun s' => abiPreserved s s' ∧ signRV.post s s' := by
-  have hs' := hs
+  obtain ⟨hs₀, hk⟩ := hs
+  have hs' := hs₀
   obtain ⟨hrd, hwr, hod, hdd, hed, hkd, hfo, hfd, hfe, hfk, hfs, hal⟩ := hs'
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hod hdd hed hkd hfo hfd hfe hfk hfs hal
   have hp0 : 0 < W.p := by decide
   rw [Impl.Ecdsa.RISCV64.P224.signP224]
-  refine WP.seq (WP.mono (setupS_ok hs) fun s₁ S => ?_)
+  refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.wp_syms_frame (WP.mono (setupS_ok hs₀) fun s₁ S sy₁ F₁ => ?_))
   generalize hb : s.gpr .a4 = base at S hwr hod hdd hed hkd hfs hal
-  have hon : Spec.Weierstrass.onCurve W (.affine (toM W.p (2 ^ 256) (sv base s₁ RX))
-      (toM W.p (2 ^ 256) (sv base s₁ RY))) = true := by
-    rw [S.rx, S.ry, toM_mont unit, toM_mont unit]; exact VG.Proof.P224.onCurve_G
+  have hT₁ : Comb.TabAt base s₁ :=
+    (Comb.tabAt_of_consts hk (by rw [hwr]; simp)).of_frame sy₁ S.rd F₁ (Comb.tab_wr_of_consts hk)
   -- `k`'s range, `[k]G` and `x`.
-  refine WP.seq (WP.mono (tail_ok hL S.ws S.s3 S.tc (by rw [S.rx]; exact Nat.mod_lt _ hp0)
-    (by rw [S.ry]; exact Nat.mod_lt _ hp0) hon) fun s₂ ⟨Kc₂, U₂, f₂, rep₂, xolt, xoeq, acclt, acceq⟩ => ?_)
+  refine WP.seq (WP.mono (Comb.tailG_ok hL S.ws S.s3 S.tc S.rx S.ry S.bp hT₁)
+    fun s₂ ⟨Kc₂, U₂, f₂, rep₂, xolt, xoeq, acclt, acceq⟩ => ?_)
   have hw₂ := S.ws.of_kc Kc₂
   have e₂ : ∀ i ∈ [ZERO, ONE, K, DD, EE, R2N, ONEN, EXPN], sv base s₂ i = sv base s₁ i := fun i hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -743,8 +764,8 @@ theorem sign_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : signRV.pre s
     rw [hB] at a0' bytes'
     exact ⟨by rw [a0']; rfl, bytes'.trans z64⟩
 
-theorem sign_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : signRV.pre s) :
-    ∃ t s', Exec isa Impl.Ecdsa.RISCV64.P224.signP224 s t s' ∧ abiPreserved s s' ∧ signRV.post s s' := by
+theorem sign_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : signRVC.pre s) :
+    ∃ t s', Exec isa Impl.Ecdsa.RISCV64.P224.signP224 s t s' ∧ abiPreserved s s' ∧ signRVC.post s s' := by
   obtain ⟨t, s', he, h⟩ := sign_ok hL hs
   exact ⟨t, s', he, h⟩
 
