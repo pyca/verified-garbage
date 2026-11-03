@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
+import VerifiedGarbage.Proof.Bignum.RISCV64.PubE
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -505,6 +506,130 @@ theorem lbu2_ok {u : State} {D : Addr} {i : Nat} (h9 : u.gpr .s9 = off D i)
         t.gpr .s9 = off D (i + 1) ∧ t.mem = u.mem) ∧ Keep [.s7, .t3, .s9] u t := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
   brun [h9, hrd1, hrd2, read_byte64, add_ofNat_zero]
+
+/-- The table's entries, from what the windows keep of it. -/
+theorem jtab_of {t₀ : State} {m : Mem} {B : Addr} {w N G Y RR : Nat} (htab : JInv t₀.mem B w N G Y RR jDone)
+    (hf : Fix B w t₀.mem m) :
+    (∀ k < 16, A m B w (8 + k) < N) ∧ (RR = 2 ^ (64 * w) * 2 ^ (64 * w) % N →
+      ∀ i < 4, ∀ j < 4, A m B w (8 + (i + 4 * j)) % N = G ^ i * Y ^ j * 2 ^ (64 * w) % N) := by
+  refine ⟨fun k hk => ?_, fun hE i hi j hj => ?_⟩
+  · rw [hf (8 + k) (by omega) (by omega) (by omega) (by omega) (by omega)]; exact jDone_lt htab k hk
+  · rw [hf (8 + (i + 4 * j)) (by omega) (by omega) (by omega) (by omega) (by omega)]
+    exact (htab.good _ (jDone_mem hi hj)).2 hE
+
+theorem jw_jrun {r : Reg} (h : r ∈ jwRegs) : r ∈ jtRegs ++ jwRegs ++ [.s9, .s10] :=
+  List.mem_append_left _ (List.mem_append_right _ h)
+
+/-- `jointByte`: the four joint windows of the bytes `b1` at `s9` and `b2` 32
+bytes on, `c1 := 256 c1 + b1` and `c2 := 256 c2 + b2`. -/
+theorem jointByte_ok {s₀ t₀ u : State} {B D : Addr} {Z w N G Y RR c1 c2 i : Nat} (hodd : N % 2 = 1)
+    (htab : JInv t₀.mem B w N G Y RR jDone) (h : JRun s₀ t₀ u B Z w N G Y RR c1 c2) (h9 : u.gpr .s9 = off D i)
+    (hrd1 : InRegions (u.rd ++ u.wr) (off D i) 1) (hrd2 : InRegions (u.rd ++ u.wr) (off D (i + 32)) 1) :
+    WP isa jointByte u fun t =>
+      JRun s₀ t₀ t B Z w N G Y RR (256 * c1 + (u.mem (off D i)).toNat) (256 * c2 + (u.mem (off D (i + 32))).toNat) ∧
+        WinO B w u.mem t.mem ∧ t.gpr .s9 = off D (i + 1) ∧ t.gpr .s10 = u.gpr .s10 := by
+  generalize hb1 : (u.mem (off D i)).toNat = b1
+  generalize hb2 : (u.mem (off D (i + 32))).toNat = b2
+  have h1 : b1 < 256 := by rw [← hb1]; exact (u.mem (off D i)).isLt
+  have h2 : b2 < 256 := by rw [← hb2]; exact (u.mem (off D (i + 32))).isLt
+  unfold jointByte
+  refine WP.seq (WP.mono (lbu2_ok h9 hrd1 hrd2) fun u₁ ⟨⟨a7, a9, m1⟩, k1⟩ => ?_)
+  rw [hb1, hb2] at a7
+  have hv : (u₁.gpr .s7).toNat = b1 * 2 ^ 56 + b2 * 2 ^ 48 := by rw [a7]; exact pair_eq h1 h2
+  have c1' := h.ctx.regs k1 (by decide) m1
+  have f1 : Fix B w t₀.mem u₁.mem := by rw [m1]; exact h.fix
+  have d0 := digits0 hv h2
+  refine WP.seq (WP.mono (jointWindow_ok c1' hodd (by rw [m1]; exact h.lt) (jtab_of htab f1).1
+    (G := G) (Y := Y) (c1 := c1) (c2 := c2)) fun u₂ ⟨⟨c2', o2, f2, l2, s2, e2⟩, k2⟩ => ?_)
+  rw [d0.1, d0.2] at e2
+  have d1 := digits1 hv h2
+  rw [← s2] at d1
+  refine WP.seq (WP.mono (jointWindow_ok c2' hodd l2 (jtab_of htab (f1.trans f2)).1
+    (G := G) (Y := Y) (c1 := 4 * c1 + b1 / 64) (c2 := 4 * c2 + b2 / 64)) fun u₃ ⟨⟨c3', o3, f3, l3, s3, e3⟩, k3⟩ => ?_)
+  rw [d1.1, d1.2] at e3
+  have d2 := digits2 hv h2
+  rw [← s2, ← s3] at d2
+  refine WP.seq (WP.mono (jointWindow_ok c3' hodd l3 (jtab_of htab ((f1.trans f2).trans f3)).1
+    (G := G) (Y := Y) (c1 := 4 * (4 * c1 + b1 / 64) + b1 / 16 % 4) (c2 := 4 * (4 * c2 + b2 / 64) + b2 / 16 % 4))
+    fun u₄ ⟨⟨c4', o4, f4, l4, s4, e4⟩, k4⟩ => ?_)
+  rw [d2.1, d2.2] at e4
+  have d3 := digits3 hv h2
+  rw [← s2, ← s3, ← s4] at d3
+  refine WP.mono (jointWindow_ok c4' hodd l4 (jtab_of htab (((f1.trans f2).trans f3).trans f4)).1
+    (G := G) (Y := Y) (c1 := 4 * (4 * (4 * c1 + b1 / 64) + b1 / 16 % 4) + b1 / 4 % 4)
+    (c2 := 4 * (4 * (4 * c2 + b2 / 64) + b2 / 16 % 4) + b2 / 4 % 4))
+    fun t ⟨⟨c5', o5, f5, l5, _, e5⟩, k5⟩ => ⟨⟨c5', ?_, ?_, l5, fun hE => ?_, ?_⟩, ?_, ?_, ?_⟩
+  · rw [m1] at o2; exact (((h.out.trans o2).trans o3).trans o4).trans o5
+  · exact f1.trans (f2.trans (f3.trans (f4.trans f5)))
+  · rw [d3.1, d3.2] at e5
+    have T : ∀ {m : Mem}, Fix B w t₀.mem m →
+        ∀ i < 4, ∀ j < 4, A m B w (8 + (i + 4 * j)) % N = G ^ i * Y ^ j * 2 ^ (64 * w) % N :=
+      fun hf => (jtab_of htab hf).2 hE
+    have p1 := e2 (by rw [m1]; exact h.pw hE) (T f1)
+    have p2 := e3 p1 (T (f1.trans f2))
+    have p3 := e4 p2 (T ((f1.trans f2).trans f3))
+    have p4 := e5 p3 (T (((f1.trans f2).trans f3).trans f4))
+    rw [p4, show 4 * (4 * (4 * (4 * c1 + b1 / 64) + b1 / 16 % 4) + b1 / 4 % 4) + b1 % 4 = 256 * c1 + b1 by omega,
+      show 4 * (4 * (4 * (4 * c2 + b2 / 64) + b2 / 16 % 4) + b2 / 4 % 4) + b2 % 4 = 256 * c2 + b2 by omega]
+  · exact Keep.within (Keep.within (Keep.within (Keep.within (Keep.within h.keep k1 (by decide)) k2
+      fun _ => jw_jrun) k3 fun _ => jw_jrun) k4 fun _ => jw_jrun) k5 fun _ => jw_jrun
+  · rw [m1] at o2; exact ((o2.trans o3).trans o4).trans o5
+  · rw [k5.gpr (by decide), k4.gpr (by decide), k3.gpr (by decide), k2.gpr (by decide), a9]
+  · rw [k5.gpr (by decide), k4.gpr (by decide), k3.gpr (by decide), k2.gpr (by decide), k1.gpr (by decide)]
+
+/-- The joint loop and the conversion out of Montgomery form: `G^U1 Y^U2 mod N`
+into array 4, for `U1` the `L ≥ 1` bytes at `D` (`s9`, `s10`) and `U2` those
+32 bytes on, apart from the working space. -/
+theorem jointLoop_ok {s t₀ : State} {B D : Addr} {Z w N G Y RR L : Nat} (hN : 2 ≤ N) (hodd : N % 2 = 1)
+    (htab : JInv t₀.mem B w N G Y RR jDone) (h : JRun s t₀ t₀ B Z w N G Y RR 0 0)
+    (h9 : t₀.gpr .s9 = off D 0) (h10 : t₀.gpr .s10 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L < 2 ^ 63)
+    (hrd : ∀ i < L + 32, InRegions (t₀.rd ++ t₀.wr) (off D i) 1)
+    (hsep : ∀ i < L + 32, ∀ x, VG.Proof.Bignum.ofs B x < slot w 24 → off D i ≠ x) :
+    WP isa (.seq (.loop (.seq jointByte (.block [.addi .s10 .s10 (-1)])) (.nonzero .s10)) (montOp 4 6 7)) t₀
+      fun t =>
+      ((RR = 2 ^ (64 * w) * 2 ^ (64 * w) % N →
+          A t.mem B w 4 = G ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt t₀.mem D L) *
+            Y ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt t₀.mem (off D 32) L) % N) ∧
+        WinO B w s.mem t.mem) ∧ Keep (jtRegs ++ jwRegs ++ [.s9, .s10]) s t := by
+  have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
+  have hn := h.ctx.nw
+  have hmem : ∀ {u : State}, WinO B w t₀.mem u.mem → ∀ i < L + 32, u.mem (off D i) = t₀.mem (off D i) :=
+    fun hu i hi => by
+      refine hu _ ?_
+      have := slot_lt (w := w) (show 1 < 24 by decide)
+      have e24 := slot24 w
+      right
+      by_contra hc
+      exact hsep i hi (off D i) (by simp only [VG.Proof.Bignum.ofs] at hc ⊢; omega_arith) rfl
+  let Inv : Nat → State → Prop := fun i u =>
+    JRun s t₀ u B Z w N G Y RR (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t₀.mem D i))
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t₀.mem (off D 32) i)) ∧ WinO B w t₀.mem u.mem ∧ u.gpr .s9 = off D i
+  refine WP.seq (WP.mono (wp_countdown (cnt := .s10) (N := L) (by omega_arith) (by omega_arith) Inv
+    (fun i hi u ⟨hu, ou, u9⟩ _ => ?_) ⟨by simpa [Spec.Rsa.bytesAt, Spec.Rsa.os2ip] using h,
+      Outside.refl _ _ _ _, h9⟩ h10) fun u ⟨hu, _, _⟩ => ?_)
+  · have hrd' : ∀ j < L + 32, InRegions (u.rd ++ u.wr) (off D j) 1 := fun j hj => by
+      rw [hu.keep.2.1, hu.keep.2.2, ← h.keep.2.1, ← h.keep.2.2]; exact hrd j hj
+    refine WP.seq (WP.mono (jointByte_ok hodd htab hu u9 (hrd' i (by omega)) (hrd' (i + 32) (by omega)))
+      fun u₁ ⟨hu₁, o₁, a9, a10⟩ => ?_)
+    refine WP.mono (dec_ok u₁ .s10) fun u₂ e => ?_
+    subst e
+    have ou₁ : WinO B w t₀.mem u₁.mem := ou.trans o₁
+    refine ⟨⟨⟨hu₁.ctx.regs (Keep.write _ _ _) (by decide) (by rw [mem_write]), by rw [mem_write]; exact hu₁.out,
+        by rw [mem_write]; exact hu₁.fix, by rw [mem_write]; exact hu₁.lt, fun hE => ?_,
+        Keep.within hu₁.keep (Keep.write _ _ _) (by decide)⟩, by rw [mem_write]; exact ou₁, by gsimp; exact a9⟩,
+      by gsimp; rw [a10]⟩
+    rw [mem_write, hu₁.pw hE, hmem ou i (by omega), hmem ou (i + 32) (by omega), Pub.bytesAt_succ, Pub.bytesAt_succ,
+      VG.Proof.Rsa.os2ip_snoc, VG.Proof.Rsa.os2ip_snoc, off_off, Nat.add_comm 32 i]
+  -- Out of Montgomery form.
+  have t7 : A u.mem B w 7 = 1 := by
+    rw [hu.fix 7 (by decide) (by decide) (by decide) (by decide) (by decide)]; exact htab.one
+  refine WP.mono (hu.ctx.mont (o := 4) (a := 6) (b := 7) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [t7]; omega_arith)) fun t ⟨⟨_, lt, e, _, o⟩, k⟩ =>
+    ⟨⟨fun hE => ?_, hu.out.trans o⟩, Keep.within hu.keep k fun _ h => jw_jrun (List.mem_append_left _
+      (List.mem_append_left _ (List.mem_append_left _ h)))⟩
+  rw [t7, Nat.mul_one] at e
+  refine (Nat.mod_eq_of_lt lt).symm.trans ?_
+  exact VG.Proof.Bignum.mont_cancel hR (by rw [e, hu.pw hE])
 
 end Joint
 
