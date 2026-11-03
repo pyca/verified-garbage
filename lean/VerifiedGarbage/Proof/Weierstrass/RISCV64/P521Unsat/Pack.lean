@@ -448,29 +448,67 @@ theorem packStep_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {j 
   rw [u₃.mem, k₂.2.1, u₁.mem]
   congr 1
   apply BitVec.eq_of_toNat_eq
-  rw [e₂, u₁.gpr, u₁.mem, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_add]
-  rfl
+  rw [e₂, u₁.gpr, u₁.mem, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_add, pw, Nat.mod_mod]
 
-set_option linter.unusedSimpArgs false in
+theorem lv9 (l : Nat → Nat) : lv l 9 = l 0 + 2 ^ 58 * l 1 + 2 ^ 116 * l 2 + 2 ^ 174 * l 3 + 2 ^ 232 * l 4 +
+    2 ^ 290 * l 5 + 2 ^ 348 * l 6 + 2 ^ 406 * l 7 + 2 ^ 464 * l 8 := by
+  simp only [lv, Nat.reduceMul, Nat.pow_zero, Nat.one_mul, Nat.zero_add]
+
+theorem tsum1 (f : Nat → Nat) (a : Nat) : tsum f [a] = f a := by simp [tsum]
+theorem tsum2 (f : Nat → Nat) (a b : Nat) : tsum f [a, b] = f a + f b := by simp [tsum]
+theorem tsum3 (f : Nat → Nat) (a b c : Nat) : tsum f [a, b, c] = f a + f b + f c := by simp [tsum]; omega
+
+theorem packLimbs0 : packLimbs 0 = [0, 1] := by decide
+theorem shv0_0 (l : Nat → Nat) : shv 0 l 0 = l 0 * 2 ^ 0 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]
+theorem shv0_1 (l : Nat → Nat) : shv 0 l 1 = l 1 * 2 ^ 58 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]
+theorem packLimbs1 : packLimbs 1 = [1, 2] := by decide
+theorem shv1_1 (l : Nat → Nat) : shv 1 l 1 = l 1 / 2 ^ 6 := by unfold shv; rw [ite_eq_right (by decide)]
+theorem shv1_2 (l : Nat → Nat) : shv 1 l 2 = l 2 * 2 ^ 52 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]
+theorem packLimbs2 : packLimbs 2 = [2, 3] := by decide
+theorem shv2_2 (l : Nat → Nat) : shv 2 l 2 = l 2 / 2 ^ 12 := by unfold shv; rw [ite_eq_right (by decide)]
+theorem shv2_3 (l : Nat → Nat) : shv 2 l 3 = l 3 * 2 ^ 46 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]
+theorem packLimbs3 : packLimbs 3 = [3, 4] := by decide
+theorem shv3_3 (l : Nat → Nat) : shv 3 l 3 = l 3 / 2 ^ 18 := by unfold shv; rw [ite_eq_right (by decide)]
+theorem shv3_4 (l : Nat → Nat) : shv 3 l 4 = l 4 * 2 ^ 40 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]
+theorem packLimbs4 : packLimbs 4 = [4, 5] := by decide
+theorem shv4_4 (l : Nat → Nat) : shv 4 l 4 = l 4 / 2 ^ 24 := by unfold shv; rw [ite_eq_right (by decide)]
+theorem shv4_5 (l : Nat → Nat) : shv 4 l 5 = l 5 * 2 ^ 34 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]
+theorem packLimbs5 : packLimbs 5 = [5, 6] := by decide
+theorem shv5_5 (l : Nat → Nat) : shv 5 l 5 = l 5 / 2 ^ 30 := by unfold shv; rw [ite_eq_right (by decide)]
+theorem shv5_6 (l : Nat → Nat) : shv 5 l 6 = l 6 * 2 ^ 28 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]
+theorem packLimbs6 : packLimbs 6 = [6, 7] := by decide
+theorem shv6_6 (l : Nat → Nat) : shv 6 l 6 = l 6 / 2 ^ 36 := by unfold shv; rw [ite_eq_right (by decide)]
+theorem shv6_7 (l : Nat → Nat) : shv 6 l 7 = l 7 * 2 ^ 22 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]
+theorem packLimbs7 : packLimbs 7 = [7, 8] := by decide
+theorem shv7_7 (l : Nat → Nat) : shv 7 l 7 = l 7 / 2 ^ 42 := by unfold shv; rw [ite_eq_right (by decide)]
+theorem shv7_8 (l : Nat → Nat) : shv 7 l 8 = l 8 * 2 ^ 16 % 2 ^ 64 := by unfold shv; rw [ite_eq_left (by decide)]
+theorem packLimbs8 : packLimbs 8 = [8] := by decide
+theorem shv8_8 (l : Nat → Nat) : shv 8 l 8 = l 8 / 2 ^ 48 := by unfold shv; rw [ite_eq_right (by decide)]
+
 /-- The words gathered from canonical limbs are the residue's. -/
-theorem pack_word {l : Nat → Nat} (hl : ∀ j < 8, l j < 2 ^ 58) (h8 : l 8 < 2 ^ 57) :
+theorem pack_word {l : Nat → Nat} (hl : ∀ j < 8, l j < 2 ^ 58) :
     ∀ j < 9, pw l j = lw (lv l 9) j := by
   have h0 := hl 0 (by decide); have h1 := hl 1 (by decide); have h2 := hl 2 (by decide)
   have h3 := hl 3 (by decide); have h4 := hl 4 (by decide); have h5 := hl 5 (by decide)
   have h6 := hl 6 (by decide); have h7 := hl 7 (by decide)
   intro j hj
   rcases j with _ | _ | _ | _ | _ | _ | _ | _ | _ | j
-  all_goals simp only [pw, shv, packLimbs, tsum, lw, lv, List.range_succ, List.range_zero, List.nil_append,
-    List.filter_cons, List.filter_nil, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.reduceMul,
-    Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, Nat.reduceLeDiff, decide_true, decide_false, Bool.false_eq_true,
-    ↓reduceIte, and_self, and_true, and_false, true_and, false_and, Nat.pow_zero, Nat.one_mul, Nat.mul_one,
-    Nat.div_one, Nat.zero_add, Nat.add_zero, List.cons_append]
-  all_goals omega
+  · rw [pw, packLimbs0, tsum2, shv0_0, shv0_1, lv9, lw]; omega
+  · rw [pw, packLimbs1, tsum2, shv1_1, shv1_2, lv9, lw]; omega
+  · rw [pw, packLimbs2, tsum2, shv2_2, shv2_3, lv9, lw]; omega
+  · rw [pw, packLimbs3, tsum2, shv3_3, shv3_4, lv9, lw]; omega
+  · rw [pw, packLimbs4, tsum2, shv4_4, shv4_5, lv9, lw]; omega
+  · rw [pw, packLimbs5, tsum2, shv5_5, shv5_6, lv9, lw]; omega
+  · rw [pw, packLimbs6, tsum2, shv6_6, shv6_7, lv9, lw]; omega
+  · rw [pw, packLimbs7, tsum2, shv7_7, shv7_8, lv9, lw]; omega
+  · rw [pw, packLimbs8, tsum1, shv8_8, lv9, lw]; omega
+  · omega
 
 theorem colsV_lw (X : Nat) : ∀ n, colsV (lw X) n = X % (2 ^ 64) ^ n
   | 0 => by simp [colsV, Nat.mod_one]
   | n + 1 => by
-    rw [colsV, colsV_lw X n, Nat.pow_succ, Nat.mod_mul, lw, Nat.pow_mul]
+    rw [colsV, colsV_lw X n, show ((2 : Nat) ^ 64) ^ (n + 1) = (2 ^ 64) ^ n * 2 ^ 64 from Nat.pow_succ .., Nat.mod_mul,
+      lw, Nat.pow_mul]
 
 /-- After `j` words of the packing from `sc`. -/
 structure PackInv (b O : Addr) (s0 sc : State) (j : Nat) (s : State) : Prop where
@@ -503,11 +541,12 @@ theorem pack_spec : CoreSpecP 9 (.block packC) (fun A _ => Tight A) (fun A _ r =
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
       · rw [dw_write_other _ _ _ (by omega) (by have := hC.onw; omega) (by have := hC.onw; omega)]
         exact h.outs i hi
-      · rw [dw_write_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.mod_lt _ (by decide)), hpw]
+      · rw [dw_write_self, BitVec.toNat_ofNat, hpw, pw, Nat.mod_mod]
   · have hw : ∀ i < 9, dw s'.mem O (8 * i) = lw (lv (zl s₂.mem b) 9) i := fun i hi => by
-      rw [h'.outs i hi, pack_word c₂.1 c₂.2 i hi]
+      rw [h'.outs i hi, pack_word c₂.1 i hi]
+    dsimp only
     rw [show ov s'.mem O 9 = colsV (lw (lv (zl s₂.mem b) 9)) 9 from
       GenWide.colsV_congr fun i hi => hw i hi, colsV_lw, uv_xv, ← k₁.2.1, ← v₂]
-    exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (by rw [v₂, ← k₁.2.1]; exact Nat.mod_lt _ (by decide)) (by decide))
+    exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (by rw [v₂]; exact Nat.mod_lt _ (by decide)) (by decide))
 
 end VG.Proof.Weierstrass.RISCV64.P521Unsat
