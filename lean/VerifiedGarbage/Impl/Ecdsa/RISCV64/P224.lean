@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
 (`Impl/Ecdsa/RISCV64/Sign.lean`, `Impl/Ecdsa/RISCV64/Verify.lean`) on
 P-224's slots and functions, with its numbers of 28 bytes read and written
 by `loadNum4` and `storeNum4` (`Impl/Ecdh/RISCV64/Num4.lean`), and `[k]G` by
-the ladder, `vg_p224_mul`. The hash's integer `e` is the digest's 28 bytes,
+the comb, `vg_p224_mul_g`. The hash's integer `e` is the digest's 28 bytes,
 as `n` has 224 bits.
 -/
 
@@ -34,10 +34,10 @@ def signFinish : List Instr :=
     storeNum4 3 (p224.sl RR) .s2 0 ++ storeNum4 3 (p224.sl SS) .s2 28 ++ Cfg.retCode p224
 
 /-- `vg_ecdsa_p224_sign(out = a0, d = a1, digest = a2, k = a3, scratch = a4)`,
-with `[k]G` by the ladder, `vg_p224_mul`. -/
+with `[k]G` by the comb, `vg_p224_mul_g`. -/
 def signP224 : Prog isa :=
   .seq (.block signSetup) <|
-  .seq (Cfg.tail p224 "vg_p224_mul" mulP224) <|
+  .seq (Cfg.tail p224 Comb.mulGP224Name Comb.mulGP224) <|
   .seq (.seq (addCall p224Order (p224.sl RR) (p224.sl XO) (p224.sl ZERO)) (Sign.Cfg.scalars p224 p224Order))
     (.block signFinish)
 
