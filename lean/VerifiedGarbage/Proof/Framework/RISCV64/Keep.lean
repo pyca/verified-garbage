@@ -54,8 +54,7 @@ theorem Exec.gpr_callFree {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, dst
     {s s' : State} {t : List Leak} (h : Exec isa c s t s') (hn : callFree c = true) :
     s'.gpr r = s.gpr r := by
   induction h with
-  | icall hi => nomatch hi
-  | icallNext hi => nomatch hi
+  | icall | icallNext => simp [callFree] at hn
   | block h => exact execBlock_gpr hc h
   | seq _ _ ih₁ ih₂ =>
     simp only [callFree, Bool.and_eq_true] at hn
