@@ -136,7 +136,7 @@ fn variants(f: &[Vec<u8>]) -> Vec<(String, Vec<Vec<u8>>)> {
     v
 }
 
-const CRTS: [(&str, Crt); 1] = [("f", vg_p15_crt_values_f)];
+const CRTS: [(&str, Crt); 2] = [("f", vg_p15_crt_values_f), ("proven", vg_p15_crt_values_proven)];
 
 /// Whether the fast path runs: `p_len + q_len <= 8 ceil(n_len / 8)`.
 fn fast(n: &[u8], p: &[u8], q: &[u8]) -> bool {
