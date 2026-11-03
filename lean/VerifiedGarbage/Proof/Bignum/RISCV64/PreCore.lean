@@ -25,7 +25,7 @@ data of a run; `Base`, what holds from `setup` on, and `C1`, the state after
 
 `core_ok`: from the state after `setup`, `core` loads and checks `n`, then
 writes `n` and `R² mod n` to `pre` and returns 1, or zeros and returns 0
-(`preOut`), changing only the arrays 0–3 and `pre`.
+(`preOut`), changing only the arrays 0–4 and `pre`.
 -/
 
 @[expose] public section
@@ -42,8 +42,8 @@ def preOut (nb : List Byte) (P : Addr) (pl : Nat) (r : BitVec 64) (m : Mem) : Pr
   | some ws => r.setWidth 32 = 1 ∧ Spec.Rsa.wordsAt m P pl = ws
   | none => r.setWidth 32 = 0 ∧ Spec.Rsa.wordsAt m P pl = List.replicate pl 0
 
-/-- The arrays 0–3 of a working space at `S`. -/
-abbrev arrR (S : Addr) (w : Nat) : Region := ⟨off S hdrBytes, 32 * (w + 2)⟩
+/-- The arrays 0–4 of a working space at `S`. -/
+abbrev arrR (S : Addr) (w : Nat) : Region := ⟨off S hdrBytes, 40 * (w + 2)⟩
 
 /-- `pre`, `pre_len` words at `a0`. -/
 abbrev preR (s : State) : Region := ⟨s.gpr .a0, (s.gpr .a1).toNat * 8⟩
@@ -177,7 +177,7 @@ theorem wordsVal_eq_wv (m : Mem) (P : Addr) (d W : Nat) : wordsVal m P d W = VG.
 
 /-- The registers the arithmetic writes. -/
 def coreRegs : List Reg :=
-  [.a0, .a1, .a3, .a4, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
+  [.a0, .a1, .a3, .a4, .a6, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
 
 /-- From the state after `setup`: `pre` and the return value, with only the
 arrays and `pre` changed. -/
@@ -217,7 +217,7 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
   have hs₂ := hs.congr k12.2.2
   have hp₂ := hp.congr k12.2.2
   have fr₁ : Frame [arrR S w] s.mem s₂.mem := by
-    rw [m₂]; exact frame_of_outside (d := hdrBytes) (L := 32 * (w + 2)) (Z := Z) (fun x hx => out₁ x hx)
+    rw [m₂]; exact frame_of_outside (d := hdrBytes) (L := 40 * (w + 2)) (Z := Z) (fun x hx => out₁ x hx)
       (by omega_arith) (by omega_arith) (by omega_arith) hnw
   have g : ∀ r ∈ [Reg.s5, .a2, .a5, .a6, .a7, .t0], s₂.gpr r = s.gpr r := fun r hr =>
     k12.gpr (by revert r hr; decide)
@@ -226,11 +226,19 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
       hc₂.mp (by simpa using hb)
     have hf := VG.Proof.Bignum.valid_facts hv hk
     rw [← hw] at hf
-    refine WP.seq (WP.mono (r2_ok hs₂ (by rw [g .a2 (by decide), ha2]) (by rw [g .a5 (by decide), ha5])
-      (by rw [g .a6 (by decide), ha6]) (by rw [g .a7 (by decide), ha7]) (by rw [g .t0 (by decide), ht0])
-      (by omega_arith) hw' (by omega_arith) (by rw [m₂, hv₁]; exact hf.2.2)
-      (by rw [m₂, hv₁]; exact hf.1)) fun s₃ ⟨hx₃, out₃, k₃⟩ => ?_)
-    have k13 := k12.trans k₃
+    have hN₂ : 2 ^ (64 * (w - 1)) ≤ wordsVal s₂.mem S (slot w 0) w := by rw [m₂, hv₁]; exact hf.2.2
+    refine WP.seq (WP.mono (lz_ok hs₂ (by rw [g .a7 (by decide), ha7]) (by rw [g .t0 (by decide), ht0])
+      (by omega_arith) (by omega_arith) (topW_pos (by omega_arith) hN₂)) fun s₂' ⟨⟨hz, _, _, mz⟩, kz⟩ => ?_)
+    have gz : ∀ r ∈ [Reg.a2, .a5, .a6, .a7, .t0], s₂'.gpr r = s₂.gpr r := fun r hr =>
+      kz.gpr (by revert r hr; decide)
+    rw [← mz] at hN₂
+    refine WP.seq (WP.mono (r2Rest_ok (hs₂.congr kz.2.2) (by rw [gz .a2 (by decide), g .a2 (by decide), ha2])
+      (by rw [gz .a5 (by decide), g .a5 (by decide), ha5]) (by rw [gz .a6 (by decide), g .a6 (by decide), ha6])
+      (by rw [gz .a7 (by decide), g .a7 (by decide), ha7]) (by rw [gz .t0 (by decide), g .t0 (by decide), ht0])
+      (by rw [hz, mz]) (by omega_arith) hw' (by omega_arith) hN₂
+      (by rw [mz, m₂, hv₁]; exact hf.1)) fun s₃ ⟨hx₃, out₃, k₃⟩ => ?_)
+    rw [mz] at hx₃ out₃
+    have k13 := (k12.trans kz).trans k₃
     refine WP.seq (WP.mono (write_ok (P := P) (dN := slot w 0) (dX := slot w 1) (hs.congr k13.2.2)
       (hp.congr k13.2.2) (by rw [k13.gpr (r := .s5) (by decide) |>.trans h5]; simp)
       (by rw [k13.gpr (r := .a7) (by decide), ha7]) (by rw [k13.gpr (r := .a2) (by decide), ha2])
@@ -255,7 +263,7 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
           rw [VG.Proof.Bignum.word_eq_ofNat _ _ _ w hi, ← wordsVal_eq_wv, hX])
     · rw [tm]
       refine ((fr₁.mono (by simp)).trans ?_).trans ((frame_of_outside0 out₄ (Nat.le_refl _)).mono (by simp))
-      exact (frame_of_outside (d := hdrBytes) (L := 32 * (w + 2)) (Z := Z) (fun x hx => out₃ x hx)
+      exact (frame_of_outside (d := hdrBytes) (L := 40 * (w + 2)) (Z := Z) (fun x hx => out₃ x hx)
         (by omega_arith) (by omega_arith) (by omega_arith) hnw).mono (by simp)
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem N k)) k = false := by
       cases h : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem N k)) k
