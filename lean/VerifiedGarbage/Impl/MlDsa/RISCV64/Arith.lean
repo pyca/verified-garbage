@@ -11,16 +11,21 @@ As ML-KEM's on RISC-V (`Impl/MlKem/RISCV64/Ntt.lean`), for
 zero-extended (`lwu`) and stored as the low word (`sw`), and the arithmetic
 is on all 64 bits.
 
-Multiplications are what the code counts, as ML-KEM's does. A product of two
-reduced values (or that plus a reduced value) `x` is reduced by Barrett's
-method with `mulhu`: `t = ⌊x · m / 2⁶⁴⌋` for `m = ⌊2⁶⁴ / q⌋` is `⌊x / q⌋` or
-one less, so `x - t·q` is less than `2q` and congruent to `x`; as
-`q = 2²³ − 2¹³ + 1`, the product `t·q` is two shifts, an addition and two
-subtractions, and a subtraction of `q` and a `fixup`
-(`Impl/MlKem/RISCV64/Poly.lean`) finish it (`reduce`). A reduction thus
-multiplies once (against three folds of `x` by `2²³ ≡ 2¹³ − 1`, multiplying
-none, but with ten more instructions), so a butterfly multiplies twice, and a
-coefficient of `multiplyNTT` twice.
+A product of two words (or that plus a reduced value) `x` is reduced by
+Barrett's method with `mulhu`: `t = ⌊x · m / 2⁶⁴⌋` for `m = ⌊2⁶⁴ / q⌋` is
+`⌊x / q⌋` or one less, so `x - t·q` (`barrett`, the product `t·q` by `mul`)
+is less than `2q` and congruent to `x`; a subtraction of `q` and a `fixup`
+(`Impl/MlKem/RISCV64/Poly.lean`) finish it (`reduce`).
+
+The butterflies are lazy, as x86-64's (`Impl/MlDsa/X86_64/Arith/Lazy.lean`):
+each reduces only its product, to `barrett`'s value in `[0, 2q)`, and stores
+the sum and the difference as they are, the difference plus `2q` (in `t5`)
+so that it is not negative; each of the eight layers of `ntt` thus adds less
+than `2q` to the coefficients, which stay less than `17 q`, and a last loop
+reduces them (`canonBody`). Those of `nttInv` add the two coefficients and
+reduce the product of the zeta and their difference plus `128 q` (in `t5`),
+so each layer at most doubles the bound, which stays less than `256 q < 2³¹`;
+the multiplication by `256⁻¹` reduces them.
 `a5 = m` and `a6 = q` throughout (`consts`).
 
 The tables of the 256 zetas `ζ^BitRev8(m) mod q` (`zetaTab`) and of their
@@ -32,7 +37,8 @@ no stack.
 
 * `vg_mldsa_ntt(f = a0, scratch = a1)`: the eight layers of Algorithm 41 as
   ML-KEM's seven, with `a0 = f + 1024`, `a7 = 4 len` (from 512, halved,
-  until it is 4) and the zetas read from `m = 1` up.
+  until it is 4) and the zetas read from `m = 1` up; then every coefficient
+  reduced.
 * `vg_mldsa_inv_ntt(f = a0, scratch = a1)`: the eight layers of Algorithm
   42, with `a7` from 4 (doubled, until it is 1024), the negated zetas read
   from `m = 255` down, and the inverse butterflies; then every coefficient
@@ -74,11 +80,12 @@ def loadM (r : Reg) : List Instr := loadImm r 537395648 ++ [.shift .sll .d r r 1
 /-- `a5 = m`, `a6 = q`. -/
 def consts : List Instr := loadM .a5 ++ loadImm .a6 8380417
 
-/-- `d ← d mod q`, with `m` in `a5`, `q` in `a6` and `t` a temporary:
-`t = ⌊d · m / 2⁶⁴⌋`, then `d - t + 2¹³ t - 2²³ t - q`, fixed up. -/
-def reduce (d t : Reg) : List Instr :=
-  [.mulhu t d .a5, .sub d d t, .shift .sll .d t t 13, .add d d t, .shift .sll .d t t 10, .sub d d t,
-    .sub d d .a6] ++ fixup d t .a6
+/-- `d - ⌊d · m / 2⁶⁴⌋ · q`, in `[0, 2q)`, with `m` in `a5`, `q` in `a6` and
+`t` a temporary. -/
+def barrett (d t : Reg) : List Instr := [.mulhu t d .a5, .mul t t .a6, .sub d d t]
+
+/-- `d ← d mod q`: `barrett`, then `- q`, fixed up. -/
+def reduce (d t : Reg) : List Instr := barrett d t ++ [.sub d d .a6] ++ fixup d t .a6
 
 /-- Entry `k` of the table `T`, through `t2`, at `[b + 4k]`. -/
 def tabStep (T : Nat → Nat) (b : Reg) (k : Nat) : List Instr :=
@@ -89,13 +96,13 @@ def table (T : Nat → Nat) (b : Reg) : List Instr := (List.range 256).flatMap (
 
 /-! ## `ntt` -/
 
-/-- The butterfly on `[a2]` and `[a3]` with the zeta `a4`: `t = ζ·f[j + len]`
-in `t0`, then `f[j + len] = f[j] - t` and `f[j] = f[j] + t`. -/
+/-- The lazy butterfly on `[a2]` and `[a3]` with the zeta `a4`: `t = ζ·f[j + len]`
+less a multiple of `q`, in `[0, 2q)` (`barrett`), in `t0`, then
+`f[j + len] = f[j] - t + 2q` (`2q` in `t5`) and `f[j] = f[j] + t`. -/
 def bflyBody : List Instr :=
-  [.load .w .t2 .a2 0, .load .w .t0 .a3 0, .mul .t0 .a4 .t0] ++ reduce .t0 .t3 ++
-  [.sub .t3 .t2 .t0] ++ fixup .t3 .t4 .a6 ++ [.store .w .t3 .a3 0, .add .t2 .t2 .t0,
-    .sub .t2 .t2 .a6] ++ fixup .t2 .t4 .a6 ++
-  [.store .w .t2 .a2 0, .addi .a2 .a2 4, .addi .a3 .a3 4, .addi .t1 .t1 (-1)]
+  [.load .w .t2 .a2 0, .load .w .t0 .a3 0, .mul .t0 .a4 .t0] ++ barrett .t0 .t3 ++
+  [.sub .t3 .t2 .t0, .add .t3 .t3 .t5, .store .w .t3 .a3 0, .add .t2 .t2 .t0,
+    .store .w .t2 .a2 0, .addi .a2 .a2 4, .addi .a3 .a3 4, .addi .t1 .t1 (-1)]
 
 /-- A block: its zeta, then `len` butterflies. -/
 def nttBlockCode : Prog isa :=
@@ -109,19 +116,24 @@ def nttLayerCode : Prog isa :=
     (.seq (.loop nttBlockCode (.nonzero .t0))
       (.block [.shift .srl .d .a7 .a7 1, .addi .t0 .a7 (-2)]))
 
+/-- `[a2] ← [a2] mod q`, and on to the next coefficient. -/
+def canonBody : List Instr :=
+  [.load .w .t2 .a2 0] ++ reduce .t2 .t3 ++ [.store .w .t2 .a2 0, .addi .a2 .a2 4, .addi .t1 .t1 (-1)]
+
 def ntt : Prog isa :=
   .seq (.block (table zetaTab .a1 ++ consts ++
-      ([.addi .a0 .a0 1024, .addi .a1 .a1 4, .li .a7 512] : List Instr)))
-    (.loop nttLayerCode (.nonzero .t0))
+      ([.add .t5 .a6 .a6, .addi .a0 .a0 1024, .addi .a1 .a1 4, .li .a7 512] : List Instr)))
+    (.seq (.loop nttLayerCode (.nonzero .t0))
+      (.seq (.block [.addi .a2 .a0 (-1024), .li .t1 256]) (.loop (.block canonBody) (.nonzero .t1))))
 
 /-! ## `nttInv` -/
 
-/-- The inverse butterfly on `[a2]` and `[a3]` with the zeta `a4`:
-`f[j] = f[j] + f[j + len]`, then `f[j + len] = z·(f[j] - f[j + len])`. -/
+/-- The lazy inverse butterfly on `[a2]` and `[a3]` with the zeta `a4`:
+`f[j] = f[j] + f[j + len]`, then `f[j + len] = z·(f[j] - f[j + len] + 128 q)`
+less a multiple of `q`, in `[0, 2q)` (`barrett`; `128 q` in `t5`). -/
 def ibflyBody : List Instr :=
-  [.load .w .t2 .a2 0, .load .w .t0 .a3 0, .add .t3 .t2 .t0, .sub .t3 .t3 .a6] ++
-  fixup .t3 .t4 .a6 ++ [.store .w .t3 .a2 0, .sub .t0 .t2 .t0] ++ fixup .t0 .t4 .a6 ++
-  [.mul .t0 .a4 .t0] ++ reduce .t0 .t3 ++
+  [.load .w .t2 .a2 0, .load .w .t0 .a3 0, .add .t3 .t2 .t0, .store .w .t3 .a2 0, .sub .t0 .t2 .t0,
+    .add .t0 .t0 .t5, .mul .t0 .a4 .t0] ++ barrett .t0 .t3 ++
   [.store .w .t0 .a3 0, .addi .a2 .a2 4, .addi .a3 .a3 4, .addi .t1 .t1 (-1)]
 
 /-- A block: its zeta, then `len` inverse butterflies. -/
@@ -142,7 +154,7 @@ def scaleBody : List Instr :=
   [.store .w .t2 .a2 0, .addi .a2 .a2 4, .addi .t1 .t1 (-1)]
 
 def nttInv : Prog isa :=
-  .seq (.block (table negZetaTab .a1 ++ consts ++
+  .seq (.block (table negZetaTab .a1 ++ consts ++ loadImm .t5 1072693376 ++
       ([.addi .a0 .a0 1024, .addi .a1 .a1 1020, .li .a7 4] : List Instr)))
     (.seq (.loop nttInvLayerCode (.nonzero .t0))
     (.seq (.block (loadImm .a4 8347681 ++ ([.addi .a2 .a0 (-1024), .li .t1 256] : List Instr)))

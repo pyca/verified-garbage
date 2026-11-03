@@ -25,10 +25,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_multiply_ntt() {
 .insn 4, 0x00066383
 .insn 4, 0x027282b3
 .insn 4, 0x02f2b3b3
-.insn 4, 0x407282b3
-.insn 2, 0x03b6
-.insn 2, 0x929e
-.insn 2, 0x03aa
+.insn 4, 0x030383b3
 .insn 4, 0x407282b3
 .insn 4, 0x410282b3
 .insn 4, 0x43f2d393
