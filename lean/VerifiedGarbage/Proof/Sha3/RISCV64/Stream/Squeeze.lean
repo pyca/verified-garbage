@@ -275,46 +275,47 @@ theorem store_lane {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (
     (h8 : pos % 8 = 0) (hlt : pos < rate s₀) (hi : i + 8 ≤ outn s₀)
     (ht2 : s.gpr .t2 = stp s₀ + BitVec.ofNat 64 pos)
     (hal : (stp s₀ + BitVec.ofNat 64 pos).toNat % 8 = 0)
-    (hoal : (outp s₀ + BitVec.ofNat 64 i).toNat % 8 = 0) :
-    WP isa (.block squeezeLane) s (Inv s₀ (i + 8) k (pos + 8)) := by
+    {al : Bool} (hoal : al = true → (outp s₀ + BitVec.ofNat 64 i).toNat % 8 = 0) :
+    WP isa (.block (squeezeLane al)) s (Inv s₀ (i + 8) k (pos + 8)) := by
   have ⟨hr0, hr200⟩ := hp.rate_pos
   have hn := outn_lt s₀
   have hr8 := rate_mod8 hp.rate_mem
   have hfit : pos + 8 ≤ rate s₀ := by omega
   unfold squeezeLane
+  rw [List.singleton_append]
   refine wp_ld (t := .t1) (a := stp s₀ + BitVec.ofNat 64 pos) (by decide) (by rw [ht2]; simp) hal
     ⟨SR s₀, by simp [hI.rd, hI.wr], Offset.contains_base _ (by omega) (by omega)⟩ fun s₁ u₁ => ?_
-  refine wp_sd (a := outp s₀ + BitVec.ofNat 64 i) (by decide)
-    (by rw [u₁.other _ (by decide), hI.s5]; simp) hoal
+  refine storeData_ok (a := outp s₀ + BitVec.ofNat 64 i)
+    (by rw [u₁.other _ (by decide), hI.s5]) hoal
     (by rw [u₁.wr, hI.wr]; exact ⟨OR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
-    fun s₂ g₂ => ?_
+    fun s₂ g₂ m₂ rd₂ wr₂ sp₂ => ?_
   refine wp_addi (by decide) fun s₃ u₃ => wp_addi (by decide) fun s₄ u₄ =>
     wp_subi (imm := 8) (by decide) fun s₅ u₅ => WP.block_nil ?_
-  have g : ∀ r, r ≠ .t1 → r ≠ .s5 → r ≠ .s4 → r ≠ .s6 → s₅.gpr r = s.gpr r :=
-    fun r h1 h3 h4 h5 => by
-      rw [u₅.other r h5, u₄.other r h4, u₃.other r h3, g₂.gpr, u₁.other r h1]
+  have g : ∀ r, r ≠ .t1 → r ≠ .s5 → r ≠ .s4 → r ≠ .s6 → r ≠ .t3 → r ≠ .t4 → s₅.gpr r = s.gpr r :=
+    fun r h1 h3 h4 h5 h6 h7 => by
+      rw [u₅.other r h5, u₄.other r h4, u₃.other r h3, g₂ r h6 h7, u₁.other r h1]
   have hm : s₅.mem = s.mem.writeW (outp s₀ + BitVec.ofNat 64 i)
       (s.mem.readW (stp s₀ + BitVec.ofNat 64 pos) 64) := by
-    rw [u₅.mem, u₄.mem, u₃.mem, g₂.mem, u₁.gpr, u₁.mem]
+    rw [u₅.mem, u₄.mem, u₃.mem, m₂, u₁.gpr, u₁.mem]
   have hfw : Frame [OR s₀] s.mem s₅.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (by omega) (by omega))
   refine ⟨by omega, by have := hI.hi; omega, by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     hI.frame.trans (hfw.mono (by simp)), ?_, (fun r hr => by
-      have : r ≠ .t1 ∧ r ≠ .s5 ∧ r ≠ .s4 ∧ r ≠ .s6 := by revert r; decide
-      rw [g r this.1 this.2.1 this.2.2.1 this.2.2.2]
+      have : r ≠ .t1 ∧ r ≠ .s5 ∧ r ≠ .s4 ∧ r ≠ .s6 ∧ r ≠ .t3 ∧ r ≠ .t4 := by revert r; decide
+      rw [g r this.1 this.2.1 this.2.2.1 this.2.2.2.1 this.2.2.2.2.1 this.2.2.2.2.2]
       exact hI.untouched r hr), ?_, fun j hj => ?_⟩
-  · rw [u₅.rd, u₄.rd, u₃.rd, g₂.rd, u₁.rd, hI.rd]
-  · rw [u₅.wr, u₄.wr, u₃.wr, g₂.wr, u₁.wr, hI.wr]
-  · rw [g .s2 (by decide) (by decide) (by decide) (by decide), hI.s2]
-  · rw [g .s3 (by decide) (by decide) (by decide) (by decide), hI.s3]
-  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide),
+  · rw [u₅.rd, u₄.rd, u₃.rd, rd₂, u₁.rd, hI.rd]
+  · rw [u₅.wr, u₄.wr, u₃.wr, wr₂, u₁.wr, hI.wr]
+  · rw [g .s2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hI.s2]
+  · rw [g .s3 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hI.s3]
+  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂ _ (by decide) (by decide), u₁.other _ (by decide),
       hI.s4, ← BitVec.ofNat_add]
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂.gpr, u₁.other _ (by decide),
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂ _ (by decide) (by decide), u₁.other _ (by decide),
       hI.s5, BitVec.add_assoc, ← BitVec.ofNat_add]
-  · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide),
+  · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide) (by decide), u₁.other _ (by decide),
       hI.s6, sub_ofNat (by omega), Nat.sub_sub]
-  · rw [u₅.sp, u₄.sp, u₃.sp, g₂.sp, u₁.sp, hI.sp]
+  · rw [u₅.sp, u₄.sp, u₃.sp, sp₂, u₁.sp, hI.sp]
   · exact hI.saved.frame (fun d h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.k_o.sub_left (hp.stk.slot_sub h₁ h₂)) hfw
@@ -337,19 +338,25 @@ theorem store_lane {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (
 /-- After the permutation if one is due: a lane or a byte. -/
 theorem tail_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI : Inv s₀ i k pos s)
     (hlt : pos < rate s₀) (hi : i < outn s₀) :
-    WP isa (.seq (.block laneCheck) (.ite (.zero .t1) (.block squeezeLane) (.block squeezeByte))) s
+    WP isa (.seq (.block laneCheck) (step squeezeLane squeezeByte)) s
       fun s' => ∃ i' k' pos', i < i' ∧ Inv s₀ i' k' pos' s' := by
   have hn := outn_lt s₀
   have ⟨hr0, hr200⟩ := hp.rate_pos
   refine WP.seq (WP.mono (laneCheck_ok hI.s2 hI.s4 hI.s6 (by omega) (by omega))
-    fun s₇ ⟨oth, ht2, m₇, rd₇, wr₇, sp₇, hz⟩ => ?_)
+    fun s₇ ⟨oth, ht2, m₇, rd₇, wr₇, sp₇, hz, hd⟩ => ?_)
   have hI₇ := hI.congr (fun r hr => oth r (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide)) m₇ rd₇ wr₇ sp₇
+  unfold step
   refine WP.ite (s₇.gpr .t1 == 0) (by show eval (.zero .t1) s₇ = _; rw [eval_zero])
     (fun hb => ?_) (fun _ => ?_)
-  · obtain ⟨m8, al, oal, l8⟩ := hz (by simpa using hb)
-    exact WP.mono (store_lane hp hI₇ m8 hlt (by omega) ht2 al (by rw [← hI.s5]; exact oal))
-      fun s' h => ⟨i + 8, k, pos + 8, by omega, h⟩
+  · obtain ⟨m8, al, l8⟩ := hz (by simpa using hb)
+    have lane : ∀ b : Bool, (b = true → (outp s₀ + BitVec.ofNat 64 i).toNat % 8 = 0) →
+        WP isa (.block (squeezeLane b)) s₇ fun s' => ∃ i' k' pos', i < i' ∧ Inv s₀ i' k' pos' s' :=
+      fun b hb => WP.mono (store_lane hp hI₇ m8 hlt (by omega) ht2 al hb)
+        fun s' h => ⟨i + 8, k, pos + 8, by omega, h⟩
+    refine WP.ite (s₇.gpr .t4 == 0) (by show eval (.zero .t4) s₇ = _; rw [eval_zero])
+      (fun hb4 => lane true fun _ => ?_) (fun _ => lane false fun h => absurd h (by decide))
+    rw [← hI.s5]; exact hd (by simpa using hb4)
   · exact WP.mono (store_ok hp hI₇ hlt hi) fun s' h => ⟨i + 1, k, pos + 1, by omega, h⟩
 
 theorem body_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI : Inv s₀ i k pos s)

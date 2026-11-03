@@ -35,12 +35,12 @@ pub unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: usize, po
 beqz s6, 20f
 22:
 .insn 4, 0x014903b3
-.insn 4, 0x0153e333
-.insn 4, 0x01436333
+.insn 4, 0x0143e333
 .insn 4, 0x00737313
 .insn 2, 0x4ea1
 .insn 4, 0x01db3e33
 .insn 4, 0x01c36333
+.insn 4, 0x007afe93
 beqz t1, 23f
 .insn 4, 0x000ac303
 .insn 4, 0x014903b3
@@ -52,6 +52,37 @@ beqz t1, 23f
 .insn 2, 0x1b7d
 j 24f
 23:
+beqz t4, 25f
+.insn 4, 0x000ac303
+.insn 4, 0x001ace03
+.insn 2, 0x0e22
+.insn 4, 0x01c36333
+.insn 4, 0x002ace03
+.insn 2, 0x0e42
+.insn 4, 0x01c36333
+.insn 4, 0x003ace03
+.insn 2, 0x0e62
+.insn 4, 0x01c36333
+.insn 4, 0x004ace83
+.insn 4, 0x005ace03
+.insn 2, 0x0e22
+.insn 4, 0x01ceeeb3
+.insn 4, 0x006ace03
+.insn 2, 0x0e42
+.insn 4, 0x01ceeeb3
+.insn 4, 0x007ace03
+.insn 2, 0x0e62
+.insn 4, 0x01ceeeb3
+.insn 2, 0x1e82
+.insn 4, 0x01d36333
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+j 26f
+25:
 .insn 4, 0x000ab303
 .insn 4, 0x0003be03
 .insn 4, 0x01c34333
@@ -59,16 +90,17 @@ j 24f
 .insn 2, 0x0aa1
 .insn 2, 0x0a21
 .insn 2, 0x1b61
+26:
 24:
 .insn 4, 0x413a0333
-beqz t1, 25f
-j 26f
-25:
+beqz t1, 27f
+j 28f
+27:
 .insn 2, 0x4a01
 .insn 2, 0x854a
 .insn 2, 0x858a
 call {vg_keccak_f1600}
-26:
+28:
 bnez s6, 22b
 j 21f
 20:
@@ -166,12 +198,12 @@ j 24f
 call {vg_keccak_f1600}
 24:
 .insn 4, 0x014903b3
-.insn 4, 0x0153e333
-.insn 4, 0x01436333
+.insn 4, 0x0143e333
 .insn 4, 0x00737313
 .insn 2, 0x4ea1
 .insn 4, 0x01db3e33
 .insn 4, 0x01c36333
+.insn 4, 0x007afe93
 beqz t1, 25f
 .insn 4, 0x014903b3
 .insn 4, 0x0003c303
@@ -181,11 +213,34 @@ beqz t1, 25f
 .insn 2, 0x1b7d
 j 26f
 25:
+beqz t4, 27f
+.insn 4, 0x0003b303
+.insn 4, 0x006a8023
+.insn 4, 0x00835e13
+.insn 4, 0x01ca80a3
+.insn 4, 0x01035e13
+.insn 4, 0x01ca8123
+.insn 4, 0x01835e13
+.insn 4, 0x01ca81a3
+.insn 4, 0x02035e13
+.insn 4, 0x01ca8223
+.insn 4, 0x008e5e93
+.insn 4, 0x01da82a3
+.insn 4, 0x010e5e93
+.insn 4, 0x01da8323
+.insn 4, 0x018e5e93
+.insn 4, 0x01da83a3
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+j 28f
+27:
 .insn 4, 0x0003b303
 .insn 4, 0x006ab023
 .insn 2, 0x0aa1
 .insn 2, 0x0a21
 .insn 2, 0x1b61
+28:
 26:
 bnez s6, 22b
 j 21f

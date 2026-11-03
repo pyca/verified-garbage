@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.RISCV64
+public import VerifiedGarbage.Impl.Words64.RISCV64
 
 /-!
 # The SHA-3 sponge: RISC-V implementation
@@ -22,10 +23,13 @@ block is kept by the caller.
 
 The contracts do not state the alignment of the state, the data or the
 output, and the model faults on a misaligned access, so each step first
-tests (`laneCheck`) whether the position, its address in the state and the
-data or output pointer are all multiples of 8 and at least 8 bytes are
-left. If so it moves a lane (`ld`, `sd`): every rate being a whole number of
-lanes, the lane is then within the block. Otherwise it moves a byte (`lbu`,
+tests (`laneCheck`) whether the position and its address in the state are
+multiples of 8 and at least 8 bytes are left. If so it moves a lane (`ld`,
+`sd` in the state): every rate being a whole number of lanes, the lane is
+then within the block; the data or output is read or written as a
+doubleword if its pointer is a multiple of 8 too, and a byte at a time
+(`loadLE64`, `storeLE64`) if not, so that data at any offset from the
+position still moves a lane at a time. Otherwise it moves a byte (`lbu`,
 `sb`). Byte `pos` of the state is addressed as `0(t2)` with `t2 = state +
 pos` computed just before the access.
 
@@ -50,6 +54,7 @@ depends only on the pointers, `rate`, `pos` and the lengths.
 namespace VG.Impl.Sha3.RISCV64.Stream
 
 open VG.RISCV64
+open VG.Impl.Words64.RISCV64 (loadLE64 storeLE64)
 
 /-- `mv d, n` (`addi d, n, 0`). -/
 def mov (d n : Reg) : Instr := .addi d n 0
@@ -97,20 +102,29 @@ def absorbByte : List Instr :=
     .store .b .t1 .t2 0, .addi .s5 .s5 1, .addi .s4 .s4 1, .addi .s6 .s6 (-1)]
 
 /-- `t1 := 0` exactly when a lane can be taken: the position `s4` (so that
-the lane is within the block, every rate being a whole number of lanes), its
-address `t2 = state + pos` and the pointer `s5` are multiples of 8, and at
-least 8 bytes are left. -/
+the lane is within the block, every rate being a whole number of lanes) and
+its address `t2 = state + pos` are multiples of 8, and at least 8 bytes are
+left; and `t4 := 0` exactly when the pointer `s5` is a multiple of 8 too. -/
 def laneCheck : List Instr :=
-  [.add .t2 .s2 .s4, .logic .or .t1 .t2 .s5, .logic .or .t1 .t1 .s4, .logicImm .and .t1 .t1 7,
-    .li .t4 8, .sltu .t3 .s6 .t4, .logic .or .t1 .t1 .t3]
+  [.add .t2 .s2 .s4, .logic .or .t1 .t2 .s4, .logicImm .and .t1 .t1 7, .li .t4 8,
+    .sltu .t3 .s6 .t4, .logic .or .t1 .t1 .t3, .logicImm .and .t4 .s5 7]
+
+/-- A lane of data into `t1`: a doubleword if `s5` is aligned (`al`), else
+a byte at a time. -/
+def loadData (al : Bool) : List Instr :=
+  if al then [.load .d .t1 .s5 0] else loadLE64 .t1 .t3 .t4 .s5 0
 
 /-- A lane of data XORed into the state at `t2`. -/
-def absorbLane : List Instr :=
-  [.load .d .t1 .s5 0, .load .d .t3 .t2 0, .logic .xor .t1 .t1 .t3, .store .d .t1 .t2 0,
+def absorbLane (al : Bool) : List Instr :=
+  loadData al ++ [.load .d .t3 .t2 0, .logic .xor .t1 .t1 .t3, .store .d .t1 .t2 0,
     .addi .s5 .s5 8, .addi .s4 .s4 8, .addi .s6 .s6 (-8)]
 
+/-- A lane if `t1 = 0` (aligned data if `t4 = 0` too), else a byte. -/
+def step (lane : Bool → List Instr) (byte : List Instr) : Prog isa :=
+  .ite (.zero .t1) (.ite (.zero .t4) (.block (lane true)) (.block (lane false))) (.block byte)
+
 def absorbBody : Prog isa :=
-  .seq (.block laneCheck) (.seq (.ite (.zero .t1) (.block absorbLane) (.block absorbByte)) permuteIfFull)
+  .seq (.block laneCheck) (.seq (step absorbLane absorbByte) permuteIfFull)
 
 def absorb : Prog isa := withLoop absorbBody
 
@@ -140,12 +154,17 @@ def squeezeByte : List Instr :=
   [.add .t2 .s2 .s4, .load .b .t1 .t2 0, .store .b .t1 .s5 0, .addi .s5 .s5 1,
     .addi .s4 .s4 1, .addi .s6 .s6 (-1)]
 
+/-- `t1` to `out`: a doubleword if `s5` is aligned (`al`), else a byte at a
+time. -/
+def storeData (al : Bool) : List Instr :=
+  if al then [.store .d .t1 .s5 0] else storeLE64 .t1 .t3 .t4 .s5 0
+
 /-- A lane of the state at `t2` to `out`. -/
-def squeezeLane : List Instr :=
-  [.load .d .t1 .t2 0, .store .d .t1 .s5 0, .addi .s5 .s5 8, .addi .s4 .s4 8, .addi .s6 .s6 (-8)]
+def squeezeLane (al : Bool) : List Instr :=
+  [.load .d .t1 .t2 0] ++ storeData al ++ [.addi .s5 .s5 8, .addi .s4 .s4 8, .addi .s6 .s6 (-8)]
 
 def squeezeBody : Prog isa :=
-  .seq permuteIfFull (.seq (.block laneCheck) (.ite (.zero .t1) (.block squeezeLane) (.block squeezeByte)))
+  .seq permuteIfFull (.seq (.block laneCheck) (step squeezeLane squeezeByte))
 
 def squeeze : Prog isa := withLoop squeezeBody
 

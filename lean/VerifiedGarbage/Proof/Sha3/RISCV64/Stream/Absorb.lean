@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 import VerifiedGarbage.Proof.Sha3.RISCV64.Call
+import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
 public import VerifiedGarbage.Spec.Sha3.Contract
@@ -263,8 +264,8 @@ theorem body_word {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c + 8 ≤ len s
     (hI : Inv s₀ c s) (hj8 : (pos s₀ + c) % rt s₀ % 8 = 0)
     (ht2 : s.gpr .t2 = st s₀ + BitVec.ofNat 64 ((pos s₀ + c) % rt s₀))
     (hal : (st s₀ + BitVec.ofNat 64 ((pos s₀ + c) % rt s₀)).toNat % 8 = 0)
-    (hdal : (dp s₀ + BitVec.ofNat 64 c).toNat % 8 = 0) :
-    WP isa (.block absorbLane) s fun s' =>
+    {al : Bool} (hdal : al = true → (dp s₀ + BitVec.ofNat 64 c).toNat % 8 = 0) :
+    WP isa (.block (absorbLane al)) s fun s' =>
       Common s₀ (c + 8) s' ∧ s'.gpr .s4 = BitVec.ofNat 64 ((pos s₀ + c) % rt s₀ + 8) ∧
       stateAt s'.mem (st s₀) = xorAt (stateAt s.mem (st s₀)) ((pos s₀ + c) % rt s₀)
         (bytesAt s₀.mem (dp s₀ + BitVec.ofNat 64 c) 8) := by
@@ -278,14 +279,14 @@ theorem body_word {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c + 8 ≤ len s
   have hsin : ∀ rs : List Region, stR s₀ ∈ rs → InRegions rs (st s₀ + BitVec.ofNat 64 j) 8 :=
     fun rs h => ⟨stR s₀, h, Offset.contains_base _ (by omega) (by omega)⟩
   unfold absorbLane
-  refine wp_ld (t := .t1) (a := dp s₀ + BitVec.ofNat 64 c) (by decide) (by rw [hI.s5]; simp) hdal
+  refine loadData_ok (a := dp s₀ + BitVec.ofNat 64 c) (by rw [hI.s5]) hdal
     ⟨dR s₀, by simp [hI.rd], Offset.contains_base _ (by omega) (by omega)⟩ fun s₁ u₁ => ?_
   refine wp_ld (t := .t3) (a := st s₀ + BitVec.ofNat 64 j) (by decide)
-    (by rw [u₁.other _ (by decide), ht2]; simp) hal
+    (by rw [u₁.other _ (by decide) (by decide) (by decide), ht2]; simp) hal
     (hsin _ (by simp [u₁.rd, u₁.wr, hI.rd, hI.wr])) fun s₂ u₂ => ?_
   refine wp_xor fun s₃ u₃ => ?_
   refine wp_sd (a := st s₀ + BitVec.ofNat 64 j) (by decide)
-    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), ht2]; simp) hal
+    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide) (by decide) (by decide), ht2]; simp) hal
     (hsin _ (by simp [u₃.wr, u₂.wr, u₁.wr, hI.wr])) fun s₄ g₄ => ?_
   refine wp_addi (by decide) fun s₅ u₅ => wp_addi (by decide) fun s₆ u₆ =>
     wp_subi (imm := 8) (by decide) fun s₇ u₇ => WP.block_nil ?_
@@ -298,32 +299,32 @@ theorem body_word {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c + 8 ≤ len s
     rw [hm₇]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (by omega) (by omega))
-  have g : ∀ r, r ≠ .t1 → r ≠ .t3 → r ≠ .s5 → r ≠ .s4 → r ≠ .s6 →
-      s₇.gpr r = s.gpr r := fun r h1 h3 h4 h33 h5 => by
+  have g : ∀ r, r ≠ .t1 → r ≠ .t3 → r ≠ .s5 → r ≠ .s4 → r ≠ .s6 → r ≠ .t4 →
+      s₇.gpr r = s.gpr r := fun r h1 h3 h4 h33 h5 h6 => by
     rw [u₇.other r h5, u₆.other r h33, u₅.other r h4, g₄.gpr, u₃.other r h1, u₂.other r h3,
-      u₁.other r h1]
+      u₁.other r h1 h3 h6]
   have h3 : s₇.gpr .s4 = BitVec.ofNat 64 (j + 8) := by
     rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), g₄.gpr,
-      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hr3,
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide) (by decide) (by decide), hr3,
       ← BitVec.ofNat_add]
   refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩, h3, ?_⟩
   · rw [u₇.rd, u₆.rd, u₅.rd, g₄.rd, u₃.rd, u₂.rd, u₁.rd, hI.rd]
   · rw [u₇.wr, u₆.wr, u₅.wr, g₄.wr, u₃.wr, u₂.wr, u₁.wr, hI.wr]
   · rw [u₇.sp, u₆.sp, u₅.sp, g₄.sp, u₃.sp, u₂.sp, u₁.sp, hI.sp]
-  · rw [g .s2 (by decide) (by decide) (by decide) (by decide) (by decide), hI.s2]
-  · rw [g .s3 (by decide) (by decide) (by decide) (by decide) (by decide), hI.s3]
+  · rw [g .s2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hI.s2]
+  · rw [g .s3 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hI.s3]
   · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, g₄.gpr,
-      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hI.s5,
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide) (by decide) (by decide), hI.s5,
       BitVec.add_assoc, ← BitVec.ofNat_add]
   · rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), g₄.gpr,
-      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hI.s6,
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide) (by decide) (by decide), hI.s6,
       sub_ofNat (by omega), Nat.sub_sub]
   · exact hI.frame.trans (hf.mono (by simp))
   · exact hI.saved.frame (fun d h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.k_st.sub_left (hp.stk.slot_sub h₁ h₂)) hf
-  · have hne : r ≠ .t1 ∧ r ≠ .t3 ∧ r ≠ .s5 ∧ r ≠ .s4 ∧ r ≠ .s6 := by revert r; decide
-    rw [g r hne.1 hne.2.1 hne.2.2.1 hne.2.2.2.1 hne.2.2.2.2]
+  · have hne : r ≠ .t1 ∧ r ≠ .t3 ∧ r ≠ .s5 ∧ r ≠ .s4 ∧ r ≠ .s6 ∧ r ≠ .t4 := by revert r; decide
+    rw [g r hne.1 hne.2.1 hne.2.2.1 hne.2.2.2.1 hne.2.2.2.2.1 hne.2.2.2.2.2]
     exact hI.untouched r hr
   · rw [hm₇]
     refine stateAt_write_lane (by omega) (bytesAt_length _ _ _) fun d hd => ?_
@@ -434,7 +435,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < len s₀) {s 
   have hl := len_lt s₀
   unfold absorbBody
   refine WP.seq (WP.mono (laneCheck_ok hI.s2 hI.s4 hI.s6 (by omega) (by omega))
-    fun s₇ ⟨oth, ht2, m₇, rd₇, wr₇, sp₇, hz⟩ => ?_)
+    fun s₇ ⟨oth, ht2, m₇, rd₇, wr₇, sp₇, hz, hd⟩ => ?_)
   have o : ∀ r, r ≠ .t1 ∧ r ≠ .t2 ∧ r ≠ .t3 ∧ r ≠ .t4 → s₇.gpr r = s.gpr r :=
     fun r h => oth r h.1 h.2.1 h.2.2.1 h.2.2.2
   have hI₇ : Inv s₀ c s₇ :=
@@ -452,11 +453,21 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < len s₀) {s 
         (bytesAt s₀.mem (dp s₀ + BitVec.ofNat 64 c) n)) ?_
     fun s₁ ⟨n, hn, hfit, hcn, hC, h3, hst⟩ => WP.mono (full_ok hp hn hfit hI₇ hC h3 hst)
       fun s' h => ⟨c + n, by omega, hcn, h⟩)
+  unfold step
   refine WP.ite (s₇.gpr .t1 == 0) (by show eval (.zero .t1) s₇ = _; rw [eval_zero])
     (fun hb => ?_) (fun _ => ?_)
-  · obtain ⟨m8, al, dal, l8⟩ := hz (by simpa using hb)
-    exact WP.mono (body_word hp (by omega) hI₇ m8 ht2 al (by rw [← hI.s5]; exact dal))
-      fun s₁ ⟨hC, h3, hst⟩ => ⟨8, by decide, by omega, by omega, hC, h3, hst⟩
+  · obtain ⟨m8, al, l8⟩ := hz (by simpa using hb)
+    have lane : ∀ b : Bool, (b = true → (dp s₀ + BitVec.ofNat 64 c).toNat % 8 = 0) →
+        WP isa (.block (absorbLane b)) s₇ fun s₁ => ∃ n, 0 < n ∧ (pos s₀ + c) % rt s₀ + n ≤ rt s₀ ∧
+          c + n ≤ len s₀ ∧ Common s₀ (c + n) s₁ ∧
+          s₁.gpr .s4 = BitVec.ofNat 64 ((pos s₀ + c) % rt s₀ + n) ∧
+          stateAt s₁.mem (st s₀) = xorAt (stateAt s₇.mem (st s₀)) ((pos s₀ + c) % rt s₀)
+            (bytesAt s₀.mem (dp s₀ + BitVec.ofNat 64 c) n) := fun b hb =>
+      WP.mono (body_word hp (by omega) hI₇ m8 ht2 al hb)
+        fun s₁ ⟨hC, h3, hst⟩ => ⟨8, by decide, by omega, by omega, hC, h3, hst⟩
+    refine WP.ite (s₇.gpr .t4 == 0) (by show eval (.zero .t4) s₇ = _; rw [eval_zero])
+      (fun hb4 => lane true fun _ => ?_) (fun _ => lane false fun h => absurd h (by decide))
+    rw [← hI.s5]; exact hd (by simpa using hb4)
   · refine WP.mono (body_byte hp hc hI₇) fun s₁ ⟨hC, h3, hst⟩ =>
       ⟨1, by decide, by omega, by omega, hC, h3, ?_⟩
     rw [hst]
