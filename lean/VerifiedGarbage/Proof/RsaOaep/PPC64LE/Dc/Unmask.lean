@@ -37,15 +37,17 @@ section
 variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
 include P
 
-/-- MGF1's table, for `Base` after the private operation: as on entry, which
-wrote only the stack and the working space. -/
-theorem tabS_wm {G : Hash} {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15))
-    (hm : Frame [kD s, scR s] s.mem m) : TabS G f 15 (SD s) (withMem s m) (stackArg s 15) := by
+/-- MGF1's table, in a state with the entry's stack pointer, regions,
+statics' addresses and working space, and memory as on entry but for the
+stack and the working space. -/
+theorem tabS_to {G : Hash} {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15)) {S' : State → Addr} {s' : State}
+    (hm : Frame [kD s, scR s] s.mem s'.mem) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms)
+    (hS : SC S' s' = SC (SD s) s) : TabS G f 15 S' s' (stackArg s 15) := by
   have hA : Region.Sub ⟨stackArgAddr s 15, 8⟩ (aR s) := by
     rw [stackArgAddr_eq]; exact Offset.sub_base _ (by omega)
   have hT : ∀ k < 5, Region.Sub ⟨stackArg s 15 + BitVec.ofNat 64 (8 * k), 8⟩ (tR s) := fun k hk =>
     Offset.sub_base _ (by show 8 * k + 8 ≤ 5 * (64 / 8); omega)
-  refine T.transfer rfl rfl rfl rfl hm (fun r hr => ?_) (fun k hk r hr => ?_)
+  refine T.transfer hsp hrd hsy hS hm (fun r hr => ?_) (fun k hk r hr => ?_)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact (P.ka.sub_right hA).symm
@@ -54,6 +56,12 @@ theorem tabS_wm {G : Hash} {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15))
     rcases hr with rfl | rfl
     · exact (P.kt.sub_right (hT k hk)).symm
     · exact (P.st.sub_right (hT k hk)).symm
+
+/-- MGF1's table, for `Base` after the private operation: as on entry, which
+wrote only the stack and the working space. -/
+theorem tabS_wm {G : Hash} {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15))
+    (hm : Frame [kD s, scR s] s.mem m) : TabS G f 15 (SD s) (withMem s m) (stackArg s 15) :=
+  tabS_to P T hm rfl rfl rfl rfl
 
 /-- EME-OAEP's unmasking, in place. -/
 theorem unmask_ok {H G : Hash} (hG : HashOK G) {f : Fns} (T : TabS G f 15 (SD s) (withMem s m) (stackArg s 15))
