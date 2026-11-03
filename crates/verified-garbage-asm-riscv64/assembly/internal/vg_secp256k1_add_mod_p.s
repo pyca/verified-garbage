@@ -235,39 +235,12 @@ vg_secp256k1_add_mod_p:
 	add t0, t0, a0
 	add t6, a1, t0
 	sltu a7, t6, t0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a4, t3, t0
-	sltu a0, a4, t0
-	add a4, a4, a7
+	add a4, t3, a7
 	sltu a7, a4, a7
-	add a7, a7, a0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a5, t4, t0
-	sltu a0, a5, t0
-	add a5, a5, a7
+	add a5, t4, a7
 	sltu a7, a5, a7
-	add a7, a7, a0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a6, t5, t0
-	sltu a0, a6, t0
-	add a6, a6, a7
+	add a6, t5, a7
 	sltu a7, a6, a7
-	add a7, a7, a0
 	or a7, a7, a2
 	addi t0, zero, 0
 	sub t0, t0, a7
@@ -386,39 +359,12 @@ vg_secp256k1_add_mod_p:
 	add t0, t0, a0
 	add t6, a1, t0
 	sltu a7, t6, t0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a4, t3, t0
-	sltu a0, a4, t0
-	add a4, a4, a7
+	add a4, t3, a7
 	sltu a7, a4, a7
-	add a7, a7, a0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a5, t4, t0
-	sltu a0, a5, t0
-	add a5, a5, a7
+	add a5, t4, a7
 	sltu a7, a5, a7
-	add a7, a7, a0
-	lui t0, 0
-	addiw t0, t0, 0
-	slli t0, t0, 32
-	lui a0, 0
-	addiw a0, a0, 0
-	add t0, t0, a0
-	add a6, t5, t0
-	sltu a0, a6, t0
-	add a6, a6, a7
+	add a6, t5, a7
 	sltu a7, a6, a7
-	add a7, a7, a0
 	or a7, a7, a2
 	addi t0, zero, 0
 	sub t0, t0, a7
