@@ -18,7 +18,9 @@ quotient bit. At the end, a negative remainder has the divisor added back
 (`fix`). The quotient ends in array `q` and the remainder in `r`; a divisor
 of 0 still runs the same steps. `divK` passes over a register's count `k`
 of the divisor's words and one more instead of `w + 1`, for a divisor below
-`2^(64 k)`; `divL` takes `k` from a length in bytes.
+`2^(64 k)`; `divL` takes `k` from a length in bytes. A pass takes its words
+`(k + 1) mod 4` at a time, then four at a time (`passes`), their offsets
+from the pointers constants.
 
 The steps count down in `s7`, and the new quotient bit is in `a5`; every
 address is computed from the working space's base (`ptr`) and `s7`, so the
@@ -49,14 +51,31 @@ def passBody : List Instr :=
     .add .t6 .t6 .t5, .sltu .t4 .t6 .t5, .logic .or .t4 .t4 .a5, .store .d .t6 .t0 0,
     .addi .t0 .t0 8, .addi .t1 .t1 8]
 
+/-- `passBody` at the offset `o` from the pointers, which it does not advance. -/
+def passAt (o : Nat) : List Instr :=
+  [.load .d .t5 .t0 o, .shift .sll .d .t6 .t5 1, .logic .or .t6 .t6 .t3, .shift .srl .d .t3 .t5 63,
+    .load .d .t5 .t1 o, .logic .xor .t5 .t5 .a4, .add .t6 .t6 .t4, .sltu .a5 .t6 .t4,
+    .add .t6 .t6 .t5, .sltu .t4 .t6 .t5, .logic .or .t4 .t4 .a5, .store .d .t6 .t0 o]
+
+/-- Four words of a pass, and the pointers advanced past them. -/
+def pass4 : List Instr := passAt 0 ++ passAt 8 ++ passAt 16 ++ passAt 24 ++ [.addi .t0 .t0 32, .addi .t1 .t1 32]
+
+/-- A step's pass over `[k] + 1` words: `([k] + 1) mod 4` of them one at a time, then
+the others four at a time. -/
+def passes (k : Reg) : Prog isa :=
+  .seq (.block [.addi .t2 k 1, .logicImm .and .t2 .t2 3])
+    (.seq (.ite (.zero .t2) (.block []) (countLoop .t2 passBody))
+      (.seq (.block [.addi .t2 k 1, .shift .srl .d .t2 .t2 2])
+        (.ite (.zero .t2) (.block []) (countLoop .t2 pass4))))
+
 /-- One step of non-restoring division: the dividend's next bit shifted into
 the remainder, which then has the divisor subtracted (a mask `a4` of all
 ones, while it is not negative) or added (`a4 = 0`); the new mask and
 quotient bit from its sign, the bit shifted into the dividend's word. -/
 def stepK (q r d : Nat) (k : Reg) : Prog isa :=
   .seq (.block (qword q ++ [.load .d .t5 .t2 0, .shift .srl .d .t3 .t5 63] ++ ptr .t0 r ++ ptr .t1 d ++
-      [.logicImm .and .t4 .a4 1, .addi .t2 k 1]))
-    (.seq (countLoop .t2 passBody)
+      [.logicImm .and .t4 .a4 1]))
+    (.seq (passes k)
       (.block ([.shift .srl .d .t5 .t6 63, .addi .a4 .t5 (-1), .logicImm .and .a5 .a4 1] ++ qword q ++
         [.load .d .t5 .t2 0, .shift .sll .d .t5 .t5 1, .logic .or .t5 .t5 .a5, .store .d .t5 .t2 0,
           .addi .s7 .s7 (-1)])))
