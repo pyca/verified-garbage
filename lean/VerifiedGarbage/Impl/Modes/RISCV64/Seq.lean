@@ -96,18 +96,34 @@ def loc : Loc → Reg × Nat
   | .chn => (sb, 8 * chnSlot)
   | .buf => (sb, 8 * c.buf)
 
+/-- Whether an area's words are read and written a word at a time: the
+frame's always (its slots are aligned), the data's when `w` (the data's
+address is then a multiple of 4), else a byte at a time. -/
+def wordAt (w : Bool) : Loc → Bool
+  | .dat => w
+  | _ => true
+
+/-- Load the word at `off` into `d` (through `tmp` when a byte at a time). -/
+def loadW (w : Bool) (l : Loc) (d tmp : Reg) (off : Nat) : List Instr :=
+  if wordAt w l then [.load .w d (c.loc l).1 ((c.loc l).2 + off)]
+  else loadLE32 d tmp (c.loc l).1 ((c.loc l).2 + off)
+
+/-- Store the low word of `v` at `off` (through `tmp` when a byte at a time). -/
+def storeW (w : Bool) (l : Loc) (v tmp : Reg) (off : Nat) : List Instr :=
+  if wordAt w l then [.store .w v (c.loc l).1 ((c.loc l).2 + off)]
+  else storeLE32 v tmp (c.loc l).1 ((c.loc l).2 + off)
+
 /-- An operation's code, through `t0`, `t1` and `t2`: a word is read and
-written a byte at a time (`loadLE32`, `storeLE32`), its sources before its
-destination. -/
-def opCode (o : Op) : List Instr :=
+written as `loadW` and `storeW` do, its sources before its destination. -/
+def opCode (w : Bool) (o : Op) : List Instr :=
   if o.inc then incAt (c.loc o.dst).1 ((c.loc o.dst).2 + o.dOff)
   else if o.inc32 then inc32At (c.loc o.dst).1 ((c.loc o.dst).2 + o.dOff)
   else if o.wide then
-    loadLE32 .t0 .t2 (c.loc o.src).1 ((c.loc o.src).2 + o.sOff) ++
+    c.loadW w o.src .t0 .t2 o.sOff ++
       (match o.xr with
        | none => []
-       | some (l, off) => loadLE32 .t1 .t2 (c.loc l).1 ((c.loc l).2 + off) ++ [.logic .xor .t0 .t0 .t1]) ++
-      storeLE32 .t0 .t2 (c.loc o.dst).1 ((c.loc o.dst).2 + o.dOff)
+       | some (l, off) => c.loadW w l .t1 .t2 off ++ [.logic .xor .t0 .t0 .t1]) ++
+      c.storeW w o.dst .t0 .t2 o.dOff
   else
     ([.load .b .t0 (c.loc o.src).1 ((c.loc o.src).2 + o.sOff)] : List Instr) ++
       (match o.xr with
@@ -115,7 +131,7 @@ def opCode (o : Op) : List Instr :=
        | some (l, off) => [.load .b .t1 (c.loc l).1 ((c.loc l).2 + off), .logic .xor .t0 .t0 .t1]) ++
       [.store .b .t0 (c.loc o.dst).1 ((c.loc o.dst).2 + o.dOff)]
 
-def opsCode (os : List Op) : List Instr := os.flatMap c.opCode
+def opsCode (w : Bool) (os : List Op) : List Instr := os.flatMap (c.opCode w)
 
 /-! ## The function -/
 
@@ -128,18 +144,18 @@ def entry : List Instr :=
 
 /-- The IV (at `s2`, as the data area) to the chaining value, and the
 data's address (in `a2`) to `s2`. -/
-def ivIn : List Instr := c.opsCode (copyBlk c.bw .chn .dat) ++ [mov .s2 .a2]
+def ivIn : List Instr := c.opsCode false (copyBlk c.bw .chn .dat) ++ [mov .s2 .a2]
 
 /-- On by `step` bytes, one step fewer. -/
 def advance (step : Nat) : List Instr := [.addi .s2 .s2 step, .addi .s3 .s3 (-1)]
 
 /-- One step. -/
-def body (m : Mode) : Prog isa :=
-  .seq (.block (c.opsCode m.pre)) (.seq c.crypt (.block (c.opsCode m.post ++ advance m.step)))
+def body (w : Bool) (m : Mode) : Prog isa :=
+  .seq (.block (c.opsCode w m.pre)) (.seq c.crypt (.block (c.opsCode w m.post ++ advance m.step)))
 
 /-- The chaining value back to the IV (at `s1`, moved to `s2` as the data
 area). -/
-def ivBack : List Instr := mov .s2 .s1 :: c.opsCode (copyBlk c.bw .dat .chn)
+def ivBack : List Instr := mov .s2 .s1 :: c.opsCode false (copyBlk c.bw .dat .chn)
 
 /-- The caller's `s1`–`s4` restored, through `t3`. -/
 def restore : List Instr :=
@@ -157,10 +173,15 @@ def seqWith (loops : Prog isa) (ivOut : Bool) : Prog isa :=
     (.seq loops (.seq (.block ((if ivOut then c.ivBack else []) ++ restore)) c.wipe))))
 
 /-- The steps, while any are left. -/
-def steps (m : Mode) : Prog isa := .ite (.zero .s3) (.block []) (.loop (c.body m) (.nonzero .s3))
+def steps (w : Bool) (m : Mode) : Prog isa := .ite (.zero .s3) (.block []) (.loop (c.body w m) (.nonzero .s3))
+
+/-- `loops w`, with `w` whether the data's address (in `s2`, public) is a
+multiple of 4: its steps all keep that, as each is a multiple of 4 bytes. -/
+def aligned (loops : Bool → Prog isa) : Prog isa :=
+  .seq (.block [.logicImm .and .t0 .s2 3]) (.ite (.zero .t0) (loops true) (loops false))
 
 /-- The whole function. -/
-def seq (m : Mode) : Prog isa := c.seqWith (c.steps m) m.ivOut
+def seq (m : Mode) : Prog isa := c.seqWith (aligned fun w => c.steps w m) m.ivOut
 
 end Core
 

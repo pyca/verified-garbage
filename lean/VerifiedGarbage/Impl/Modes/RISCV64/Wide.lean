@@ -34,17 +34,17 @@ def groupsLeft (lg : Nat) : Instr := .shift .srl .d .t0 .s3 lg
 
 /-- One wide step: `pre`, the core, `post`, on by `step` bytes and `2 ^ lg`
 blocks fewer, and whether another group is left. -/
-def bodyWide (m : Mode) (lg : Nat) : Prog isa :=
-  .seq (.block (c.opsCode m.pre)) (.seq c.crypt
-    (.block (c.opsCode m.post ++ [.addi .s2 .s2 m.step, .addi .s3 .s3 (-((2 ^ lg : Nat) : Int)), groupsLeft lg])))
+def bodyWide (w : Bool) (m : Mode) (lg : Nat) : Prog isa :=
+  .seq (.block (c.opsCode w m.pre)) (.seq c.crypt
+    (.block (c.opsCode w m.post ++ [.addi .s2 .s2 m.step, .addi .s3 .s3 (-((2 ^ lg : Nat) : Int)), groupsLeft lg])))
 
 /-- The wide steps, while a group is left. -/
-def loopWide (m : Mode) (lg : Nat) : Prog isa :=
-  .seq (.block [groupsLeft lg]) (.ite (.zero .t0) (.block []) (.loop (c.bodyWide m lg) (.nonzero .t0)))
+def loopWide (w : Bool) (m : Mode) (lg : Nat) : Prog isa :=
+  .seq (.block [groupsLeft lg]) (.ite (.zero .t0) (.block []) (.loop (c.bodyWide w m lg) (.nonzero .t0)))
 
 /-- The whole function: the wide steps, then the narrow ones. -/
 def seq2 (wide narrow : Mode) (lg : Nat) : Prog isa :=
-  c.seqWith (.seq (c.loopWide wide lg) (c.steps narrow)) narrow.ivOut
+  c.seqWith (aligned fun w => .seq (c.loopWide w wide lg) (c.steps w narrow)) narrow.ivOut
 
 end Core
 
