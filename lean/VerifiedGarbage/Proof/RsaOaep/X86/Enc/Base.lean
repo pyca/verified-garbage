@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Impl.RsaOaep.X86
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
 public import VerifiedGarbage.Spec.RsaOaep.Precomputed
+public import VerifiedGarbage.Spec.RsaOaep.Table
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaPss.X86.Base
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
@@ -18,8 +19,8 @@ As on ARMv7 (`Proof/RsaOaep/Arm/EncBase.lean`): `EP`, what two runs share
 and precomputed words), and its layout (`EP.lay`, with the seed's `D`
 bytes), with the 100 bytes below the frame that the call of
 `vg_rsa_public_precomputed_checked` (100) and the frames of the streaming
-functions (48) use. `In D P σ`: the state `σ` the body starts from
-(`in_of_pre`).
+functions (48) use, and MGF1's table, the argument 15 (`EP.TAB`). `In D P σ`:
+the state `σ` the body starts from (`in_of_pre`).
 -/
 
 @[expose] public section
@@ -29,7 +30,9 @@ namespace VG.Proof.RsaOaep.X86.Enc
 open VG VG.Impl.RsaPss.X86 VG.Proof.RsaPkcs1Sig.X86 VG.Proof.RsaPss.X86
 open VG.X86 hiding frameBytes
 
-/-- What two runs share. -/
+/-- What two runs share: MGF1's table (`tab`) among them, its hash
+function's functions at `ai`, `au` and `af`, and what each run's entry
+state holds of it (`T`). -/
 structure EP where
   B : BitVec 32
   out : BitVec 32
@@ -49,6 +52,11 @@ structure EP where
   nB : List Byte
   eB : List Byte
   pw : List (BitVec 64)
+  tab : BitVec 32
+  ai : BitVec 32
+  au : BitVec 32
+  af : BitVec 32
+  T : State → Prop
 
 namespace EP
 
@@ -62,13 +70,14 @@ abbrev MSG : Region := ⟨P.msg.setWidth 64, P.ml⟩
 abbrev SEED : Region := ⟨P.seed.setWidth 64, D⟩
 abbrev SCR : Region := ⟨P.scr.setWidth 64, P.scl * 8⟩
 abbrev PRE : Region := ⟨P.pre.setWidth 64, P.rl * 8⟩
+abbrev TAB : Region := Sig.tableRegion 32 (P.tab.setWidth 64) 5
 
 /-- The arguments, in order. -/
 abbrev argv : List (BitVec 32) :=
   [P.out, BitVec.ofNat 32 P.K, P.n, BitVec.ofNat 32 P.K, P.e, BitVec.ofNat 32 P.el, P.lab, BitVec.ofNat 32 P.ll,
-    P.msg, BitVec.ofNat 32 P.ml, P.seed, P.scr, BitVec.ofNat 32 P.scl, P.pre, BitVec.ofNat 32 P.rl]
+    P.msg, BitVec.ofNat 32 P.ml, P.seed, P.scr, BitVec.ofNat 32 P.scl, P.pre, BitVec.ofNat 32 P.rl, P.tab]
 
-abbrev ro : List Region := [P.N, P.E, P.LAB, P.MSG, P.SEED D, P.PRE]
+abbrev ro : List Region := [P.N, P.E, P.LAB, P.MSG, P.SEED D, P.PRE, P.TAB]
 abbrev rw : List Region := [P.OUT, P.SCR]
 
 abbrev lay : Lay where
@@ -95,6 +104,7 @@ structure In (D : Nat) (P : EP) (σ : State) : Prop where
   nB : Spec.Rsa.bytesAt σ.mem (P.n.setWidth 64) P.K = P.nB
   eB : Spec.Rsa.bytesAt σ.mem (P.e.setWidth 64) P.el = P.eB
   pw : Spec.Rsa.wordsAt σ.mem (P.pre.setWidth 64) P.rl = P.pw
+  tabT : P.T σ
 
 namespace In
 
@@ -127,11 +137,25 @@ end In
 /-- The stack the function uses: the push, the inner frame and the calls'. -/
 abbrev stackBytes : Nat := 16 + frameBytes + 100
 
-/-- The shared contract, with that stack. -/
-abbrev spec (H G : Spec.Mgf1.Hash) : Contract isa := Spec.RsaOaep.encryptPrecomputedContract H G abi stackBytes
+/-- The shared contract, with MGF1's hash function one of the tables `ts` and
+that stack. -/
+abbrev spec (H : Spec.Mgf1.Hash) (ts : List FnTable) : Contract isa :=
+  Spec.RsaOaep.encryptTableContract H (abi.withTables (Spec.RsaOaep.encryptTableSig H) [("mgf1", ts)]) stackBytes
 
-/-- The public parameters of an entry state. -/
-def ep (s : State) : EP where
+/-- Unfolds the contract's precondition at `h`. -/
+macro "enc_pre" " at " h:ident : tactic => `(tactic| (
+  sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
+      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+      abi, argSlots, argVal, argBytes, stackBelow] at $h:ident
+  sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
+      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+      abi, argSlots, argVal, argBytes, stackBelow] at $h:ident
+  simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
+    exists_eq_left'] at $h:ident))
+
+/-- The public parameters of an entry state, with MGF1's hash function's
+functions at `ai`, `au` and `af`, and `T` of the entry. -/
+def ep (s : State) (ai au af : BitVec 32) (T : State → Prop) : EP where
   B := s.gpr .esp - BitVec.ofNat 32 16 - BitVec.ofNat 32 frameBytes
   out := arg s 0
   n := arg s 2
@@ -150,22 +174,43 @@ def ep (s : State) : EP where
   nB := Spec.Rsa.bytesAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat
   eB := Spec.Rsa.bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat
   pw := Spec.Rsa.wordsAt s.mem ((arg s 13).setWidth 64) (arg s 14).toNat
+  tab := arg s 15
+  ai := ai
+  au := au
+  af := af
+  T := T
+
+variable {ai au af : BitVec 32} {T : State → Prop}
 
 theorem ep_lay (D : Nat) (s : State) :
-    (ep s).lay D = layOf frameBytes (ep s).argv ((ep s).ro D) (ep s).rw s 100 := rfl
+    (ep s ai au af T).lay D = layOf frameBytes (ep s ai au af T).argv ((ep s ai au af T).ro D) (ep s ai au af T).rw s
+      100 := rfl
 
-theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
-    In H.len (ep s) (entered frameBytes s) := by
-  sig_pre [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, abi, argSlots, argVal,
-    argBytes, stackBelow] at h
+/-- MGF1's table, as the contract gives it: one of `ts`, at the argument 15,
+with the functions of distinct names at distinct addresses. -/
+theorem spec_tab {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (spec H ts).pre s) :
+    (∃ T ∈ ts, Abi.tableHeld 32 s.mem ((arg s 15).setWidth 64) (FnTable.words isa s T)) ∧
+      ((ts.map (fun T : FnTable => T.fns)).flatten ++ []).Pairwise
+        (fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) ∧
+      (arg s 15).toNat + 20 ≤ 2 ^ 32 := by
+  enc_pre at h
   sig_split h
-  rename_i hsp hsa hrd hwr oN oE oL oM oS oC oP oA nC nA eC eA lC lA mC mA sC sA cP cA pA rO rN rE rL rM rS
-    rC rP rA kO kN kE kL kM kS kC kP kA fO fN fE fL fM fS fC fP kv olk el1 elK scrK
+  rename_i hsp hsa hheld hpw hrd hwr oN oE oL oM oS oC oP oT oA nC nA eC eA lC lA mC mA sC sA cP cT cA pA tA rO rN
+    rE rL rM rS rC rP rT rA kO kN kE kL kM kS kC kP kT kA fO fN fE fL fM fS fC fP fT kv olk el1 elK scrK
+  exact ⟨hheld, hpw, fT⟩
+
+theorem in_of_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (spec H ts).pre s)
+    (hT : T (entered frameBytes s)) :
+    In H.len (ep s ai au af T) (entered frameBytes s) := by
+  enc_pre at h
+  sig_split h
+  rename_i hsp hsa hheld hpw hrd hwr oN oE oL oM oS oC oP oT oA nC nA eC eA lC lA mC mA sC sA cP cT cA pA tA rO rN
+    rE rL rM rS rC rP rT rA kO kN kE kL kM kS kC kP kT kA fO fN fE fL fM fS fC fP fT kv olk el1 elK scrK
   have rlK := h
-  simp only [stackBytes, frameBytes, Nat.reduceAdd] at hsp kO kN kE kL kM kS kC kP kA
+  simp only [stackBytes, frameBytes, Nat.reduceAdd] at hsp kO kN kE kL kM kS kC kP kT kA
   have a1 : arg s 1 = BitVec.ofNat 32 (arg s 3).toNat := by
     apply BitVec.eq_of_toNat_eq; rw [olk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (arg s 3).isLt]
-  rw [olk] at hwr oN oE oL oM oS oC oP oA rO kO fO
+  rw [olk] at hwr oN oE oL oM oS oC oP oT oA rO kO fO
   have h16 : 4 * Impl.RsaPkcs1Sig.X86.savedRegs.length ≤ (s.gpr .esp).toNat := by
     simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_arith
   have hpush : Frame [below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length)] s.mem
@@ -190,14 +235,15 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
         (by show (arg s 5).toNat ≤ 2 ^ 64; omega_arith)
       pw := Proof.RsaPkcs1Sig.wordsAt_frame' hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kP.sub_left below16).symm)
-        (by show (arg s 14).toNat * 8 ≤ 2 ^ 64; have := (arg s 14).isLt; omega_arith) }
+        (by show (arg s 14).toNat * 8 ≤ 2 ^ 64; have := (arg s 14).isLt; omega_arith)
+      tabT := hT }
   rw [ep_lay]
   refine ok_entered (S := 260) rfl (by decide) hsp (by simp) (by simp; omega_arith) hrd
     (by rw [hwr]; rfl) ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    exacts [kN, kE, kL, kM, kS, kP, kO, kC]
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [kN, kE, kL, kM, kS, kP, kT, kO, kC]
   · intro r hr
     simp only [EP.rw, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -205,13 +251,13 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
   · intro w hw r hr
     simp only [EP.rw, List.mem_cons, List.not_mem_nil, or_false] at hw
     simp only [EP.ro, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hw with rfl | rfl <;> rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    exacts [oN, oE, oL, oM, oS, oP, oA, nC.symm, eC.symm, lC.symm, mC.symm, sC.symm, cP, cA]
+    rcases hw with rfl | rfl <;> rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [oN, oE, oL, oM, oS, oP, oT, oA, nC.symm, eC.symm, lC.symm, mC.symm, sC.symm, cP, cT, cA]
   · exact List.pairwise_pair.mpr oC
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    all_goals simp only [ep, BitVec.toNat_setWidth]
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    all_goals simp only [ep, BitVec.toNat_setWidth, Sig.tableRegion]
     all_goals first
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega_arith)]; omega_arith)
@@ -221,10 +267,11 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 10).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 11).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 13).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 15).isLt; omega_arith)]; omega_arith)
   · intro j hj
-    have : j < 15 := hj
+    have : j < 16 := hj
     rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
-        j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1]
+        j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1]
 
 end VG.Proof.RsaOaep.X86.Enc

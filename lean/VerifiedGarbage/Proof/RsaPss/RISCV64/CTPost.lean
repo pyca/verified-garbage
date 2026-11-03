@@ -4,7 +4,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.CTHash
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Post
-public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Verified
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTMgf
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Hashes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaPss.RISCV64.CTBlocks

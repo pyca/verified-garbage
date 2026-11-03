@@ -23,7 +23,7 @@ open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE VG.Impl.RsaOaep.PPC64LE.Dec
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep wp_ld wp_mov wp_nil)
 
 /-- The stack arguments are in `aR`. -/
-theorem in_aR {s : State} {j : Nat} (hj : j < 15) : (aR s).Contains (stackArgAddr s j) 8 := by
+theorem in_aR {s : State} {j : Nat} (hj : j < 16) : (aR s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
 
 /-- After the saves and the prologue. -/
@@ -49,7 +49,7 @@ theorem toD {m m' : Mem} (h : Frame [kR s] m m') : Frame [kD s] m m' :=
   h.sub fun r hr => ⟨kD s, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact kR_sub⟩
 
 /-- A load of our stack argument `j` through `r`, which holds `fb s + o`. -/
-theorem wp_argD {t : State} {r b : Reg} {j o : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 15)
+theorem wp_argD {t : State} {r b : Reg} {j o : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 16)
     (hb : t.gpr b = fb s - BitVec.ofNat 64 o) (hrd : t.rd = s.rd) (hm : Frame [kD s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : o + arg j < 2 ^ 15 ∧ (o + arg j) % 4 = 0 := by decide) (hb0 : b ≠ .r0 := by decide) :

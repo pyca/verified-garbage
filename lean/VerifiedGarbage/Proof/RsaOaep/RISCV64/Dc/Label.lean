@@ -38,7 +38,7 @@ include P
 /-- A load of our stack argument `j` through `t6`, the entry stack pointer,
 in the decoding, whose memory is that after the private operation, `m`. -/
 theorem wp_argB (hm : Frame [kD s, scR s] s.mem m) {u : State} {r : Reg} {j : Nat} {is : List Instr}
-    {Q : State → Prop} (hj : j < 15) (h6 : u.gpr .t6 = s.sp) (hrd : u.rd = s.rd)
+    {Q : State → Prop} (hj : j < 16) (h6 : u.gpr .t6 = s.sp) (hrd : u.rd = s.rd)
     (hmu : Frame [Proof.RsaOaep.RISCV64.kR s, SC (SD s) s] m u.mem)
     (k : ∀ u', Only [r] u u' → u'.gpr r = stackArg s j → WP isa (.block is) u' Q)
     (ho : 8 * j < 2048 := by decide) :

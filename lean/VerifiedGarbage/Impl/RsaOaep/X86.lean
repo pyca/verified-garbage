@@ -2,13 +2,15 @@ module
 
 public import VerifiedGarbage.Impl.RsaPss.X86
 public import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
+public import VerifiedGarbage.Impl.ICall
 
 /-!
 # RSAES-OAEP (RFC 8017 §7.1) on x86 (32-bit)
 
-`encryptPrecomputed` and `decrypt`, for a hash function `H` (the label's)
-and MGF1's hash function `G`, each a streaming hash function
-(`Impl.Pbkdf2.Stream.X86.Hash`: its `init`, `update` and `finalize`), with
+`encryptPrecomputed` and `decrypt`, for a hash function `H` (the label's),
+a streaming hash function (`Impl.Pbkdf2.Stream.X86.Hash`: its `init`,
+`update` and `finalize`), with MGF1 over the hash function of a table of the
+interface `Hash` (`Spec/HashTable.lean`) that is the last argument, with
 the steps of ARMv7 (`Impl/RsaOaep/Arm.lean`) and the frame, slots, byte loops
 and RSA calls of the x86 RSASSA-PSS functions (`Impl/RsaPss/X86.lean`),
 whose definitions this file reuses: the public-key operation with the
@@ -29,8 +31,14 @@ working space is the first 512 bytes of `scratch`, at `ebp`.
 
 ## MGF1
 
-`mgfXor`: `dst ⊕= MGF1(src, dstLen)` with `G`, the addresses and lengths in
-the slots `sSrc`, `sSrcLen`, `sDst`, `sDstLen`, as on ARMv7: for each counter
+`mgfXor`: `dst ⊕= MGF1(src, dstLen)` with the hash function of the table
+that is our argument `j`, the addresses and lengths in the slots `sSrc`,
+`sSrcLen`, `sDst`, `sDstLen`, as on ARMv7. The table's address is copied to
+the slot `sTab`, and its digest length `hLen` (its word 4) to `sHl`; the
+hash function's `init`, `update` and `finalize` are the table's functions
+0, 1 and 2, which it calls indirectly (`tcall`: their address, the table's
+word `j`, into `esi`, then the frame of their arguments around `call esi`,
+of whichever of the functions `Fns` lists is at that address). For each counter
 `c` from 0, while `done = c hLen` is below `dstLen`, the state at
 `scratch + oSt` is set by `init`, `update` absorbs `src` and `I2OSP(c, 4)` (at
 `scratch + oCtr`), `finalize` writes the digest to `scratch + oDig`, and its
@@ -40,23 +48,24 @@ first `min(hLen, dstLen - done)` bytes are XORed into `dst + done`
 ## Encryption
 
 `encryptPrecomputed(out, out_len, n, n_len, e, e_len, label, label_len, msg,
-msg_len, seed, scratch, scratch_len, pre, pre_len)`, all on the stack. If
+msg_len, seed, scratch, scratch_len, pre, pre_len, mgf1)`, all on the stack. If
 `k < 2 hLen + 2` or `msg_len > k - 2 hLen - 2` (public), it writes zeros to
 `out` and returns 0. Otherwise it writes `EM = 0x00 ‖ seed ‖ DB` to
 `scratch` (`DB = lHash ‖ 0… ‖ 0x01 ‖ M`, the label hashed with `H`), masks
 `DB` with MGF1 of the seed and then the seed with MGF1 of `maskedDB` (`G`),
-and returns the precomputed public operation of `EM` into `out`.
+and returns the precomputed public operation of `EM` into `out`, MGF1's
+hash function being that of the table `mgf1`.
 
 ## Decryption
 
 `decrypt(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp,
 dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch,
-scratch_len)`, all on the stack, as on ARMv7: `vg_rsa_private_checked`
+scratch_len, mgf1)`, all on the stack, as on ARMv7: `vg_rsa_private_checked`
 writes `EM` (or zeros) to `scratch` and returns `r` (1, 0 or 2), which only
 selects values without a branch. If `k < 2 hLen + 2` (public), the result is
 `r = 2 ? 2 : 0`, with zeros to `out` and `*msg_len`. Otherwise, without a
 branch on anything secret: the label is hashed (`H`) to `scratch + oLh`, the
-seed and `DB` unmasked in place (`G`); the accumulator `acc` ORs `EM`'s
+seed and `DB` unmasked in place (MGF1 over the hash function of `mgf1`); the accumulator `acc` ORs `EM`'s
 first byte into the comparison of `lHash'` with `lHash`
 (`Impl.RsaPss.X86.cmpBody`); the scan of `T = DB[hLen..]`
 (`t = k - 2 hLen - 1` bytes, `Impl.RsaPss.X86.scanBody`) finds the index
@@ -98,6 +107,10 @@ def sDstLen : Nat := 92
 def sRes : Nat := 96
 /-- The mask `ok`. -/
 def sOk : Nat := 100
+/-- MGF1's slots of its hash function's table: the table's address, and its
+digest length. -/
+def sTab : Nat := 132
+def sHl : Nat := 136
 
 /-! ## Our part of `scratch`
 
@@ -125,11 +138,31 @@ abbrev upd6 : List Reg := [.ebp, .ecx, .edx, .eax, .edi, .ebx]
 space (`ebp`). -/
 abbrev fin5 : List Reg := [.ebp, .edx, .ecx, .eax, .ebx]
 
-variable (G : Hash)
+/-- The functions an indirect call of each of a table's functions may
+reach: for each of `init`, `update` and `finalize`, that function of every
+table of the interface, by name. -/
+structure Fns where
+  init : List (String × Prog isa)
+  upd : List (String × Prog isa)
+  fin : List (String × Prog isa)
 
-def callInit : Prog isa := G.callInit .ebx
-def callUpd : Prog isa := .frame (.push upd6) (.call G.updN G.updC) (.pop .eax 6)
-def callFin : Prog isa := .frame (.push fin5) (.call G.finN G.finC) (.pop .eax 5)
+/-- The call of the table's function `j`, among `ts`, in a frame pushing
+`rs` (its arguments): its address (the table's word `j`) into `esi`, then
+`call esi`. -/
+def tcall (j : Nat) (ts : List (String × Prog isa)) (rs : List Reg) : Prog isa :=
+  .seq (.block [ld .esi sTab, .mov .esi (.mem (at_ .esi (4 * j)))])
+    (.frame (.push rs) (Code.icalls (.callr .esi) ts) (.pop .eax rs.length))
+
+/-- The direct calls of `H`'s functions, for the label's hash. -/
+def hInit (H : Hash) : Prog isa := H.callInit .ebx
+def hUpd (H : Hash) : Prog isa := .frame (.push upd6) (.call H.updN H.updC) (.pop .eax 6)
+def hFin (H : Hash) : Prog isa := .frame (.push fin5) (.call H.finN H.finC) (.pop .eax 5)
+
+variable (f : Fns)
+
+def callInit : Prog isa := tcall 0 f.init [.ebx]
+def callUpd : Prog isa := tcall 1 f.upd upd6
+def callFin : Prog isa := tcall 2 f.fin fin5
 
 /-! ## MGF1 -/
 
@@ -154,22 +187,27 @@ the difference. -/
 def xorSet : List Instr :=
   [ld .edi sDst, addSlot .edi sDone] ++ atS .esi oDig ++
     [ld .ecx sDstLen, .alu .sub .ecx (.mem (stk sDone)), .mov .eax (.reg .ecx),
-      .alu .sub .eax (.imm (BitVec.ofNat 32 G.D)), .alu .sbb .edx (.reg .edx), .alu .and .eax (.reg .edx),
-      addi .eax G.D, .mov .ecx (.reg .eax)]
+      .alu .sub .eax (.mem (stk sHl)), .alu .sbb .edx (.reg .edx), .alu .and .eax (.reg .edx),
+      .alu .add .eax (.mem (stk sHl)), .mov .ecx (.reg .eax)]
 
 /-- The next counter, and the flags of `done < dstLen`. -/
 def mgfNext : List Instr :=
-  [ld .eax sCtr, addi .eax 1, st .eax sCtr, ld .eax sDone, addi .eax G.D, st .eax sDone,
+  [ld .eax sCtr, addi .eax 1, st .eax sCtr, ld .eax sDone, .alu .add .eax (.mem (stk sHl)), st .eax sDone,
     .alu .cmp .eax (.mem (stk sDstLen))]
 
 /-- One block of the mask: the digest of `src ‖ I2OSP(c, 4)`, XORed into
 `dst`. -/
 def mgfRound : Prog isa :=
-  seqs [.block initArgs, callInit G, .block updSrcArgs, callUpd G, .block ctrSet, .block updCtrArgs, callUpd G,
-    .block finArgs, callFin G, .block (xorSet G), countLoop Impl.RsaPss.X86.xorBody, .block (mgfNext G)]
+  seqs [.block initArgs, callInit f, .block updSrcArgs, callUpd f, .block ctrSet, .block updCtrArgs, callUpd f,
+    .block finArgs, callFin f, .block xorSet, countLoop Impl.RsaPss.X86.xorBody, .block mgfNext]
 
-/-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`. -/
-def mgfXor : Prog isa := .seq (.block Impl.RsaPss.X86.mgfInit) (.loop (mgfRound G) .b)
+/-- The table that is our argument `j` to `sTab`, and its digest length (its
+word 4) to `sHl`. -/
+def tabArgs (j : Nat) : List Instr := [ld .eax (arg j), st .eax sTab, .mov .eax (.mem (at_ .eax 16)), st .eax sHl]
+
+/-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`, with the hash function of
+the table that is our argument `j`. -/
+def mgfXor (j : Nat) : Prog isa := .seq (.block (tabArgs j ++ Impl.RsaPss.X86.mgfInit)) (.loop (mgfRound f) .b)
 
 /-! ## Common pieces -/
 
@@ -187,7 +225,7 @@ def finLabArgs (j o : Nat) : List Instr := atS .ebx oSt ++ [ld .eax (arg (j + 1)
 /-- The label's hash, `H(label)`, to `scratch + o`, the label being
 argument `j`. -/
 def hashLabel (j o : Nat) : Prog isa :=
-  seqs [.block initArgs, callInit H, .block (updLabArgs j), callUpd H, .block (finLabArgs j o), callFin H]
+  seqs [.block initArgs, hInit H, .block (updLabArgs j), hUpd H, .block (finLabArgs j o), hFin H]
 
 /-- MGF1's slots for masking `DB` (`k - hLen - 1` bytes at `EM + 1 + hLen`)
 with the seed (`hLen` bytes at `EM + 1`), `k` being argument `j`. -/
@@ -206,7 +244,7 @@ end Common
 
 section Enc
 
-variable (H G : Hash)
+variable (H : Hash) (f : Fns)
 
 /-- `scratch` into `ebp`; `ebx` nonzero if `k < 2 hLen + 2` (the borrow of
 `k - 2 hLen - 2`) or `msg_len > k - 2 hLen - 2` (the borrow of their
@@ -254,14 +292,16 @@ variable (pubN : String) (pubC : Prog isa)
 
 /-- After the checks. -/
 def encMain : Prog isa :=
-  seqs [encEm H, .block (dbArgs H 3), mgfXor G, .block (seedArgs H 3), mgfXor G, .block pubArgs, .call pubN pubC]
+  seqs [encEm H, .block (dbArgs H 3), mgfXor f 15, .block (seedArgs H 3), mgfXor f 15, .block pubArgs,
+    .call pubN pubC]
 
 /-- The inner frame's body. -/
-def encBody : Prog isa := seqs [.block (encChk H), .ite .ne encFail (encMain H G pubN pubC)]
+def encBody : Prog isa := seqs [.block (encChk H), .ite .ne encFail (encMain H f pubN pubC)]
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, calling a precomputed
-public operation by its name. -/
-def encryptPrecomputed : Prog isa := wrap frameBytes (encBody H G pubN pubC)
+/-- `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`, calling a precomputed public
+operation by its name, with MGF1's hash function the table that is its
+argument 15 (`mgf1`). -/
+def encryptPrecomputed : Prog isa := wrap frameBytes (encBody H f pubN pubC)
 
 end Enc
 
@@ -269,7 +309,7 @@ end Enc
 
 section Dec
 
-variable (H G : Hash)
+variable (H : Hash) (f : Fns)
 
 /-- `scratch` into `ebp`. -/
 def decStart : List Instr := [ld .ebp (arg 21)]
@@ -364,7 +404,7 @@ def decRet : List Instr := faultBit ++ [ld .edx sOk, .alu .and .edx (.imm 1), .a
 
 /-- After the private operation and the check of `k`: the decoding. -/
 def decMain : Prog isa :=
-  seqs [hashLabel H 17 oLh, .block (seedArgs H 4), mgfXor G, .block (dbArgs H 4), mgfXor G, .block (cmpSet H),
+  seqs [hashLabel H 17 oLh, .block (seedArgs H 4), mgfXor f 23, .block (dbArgs H 4), mgfXor f 23, .block (cmpSet H),
     countLoop Impl.RsaPss.X86.cmpBody, .block accPut, .block (scanSet H), countLoop Impl.RsaPss.X86.scanBody,
     .block scanEnd, .block (clrArgs oBuf 2048), zeroLoop, .block (tSet H), Impl.Bignum.X86.copyBytes, shift,
     .block okMask, .block outSet, countLoop outBody, .block (mlSet H), .block decRet]
@@ -373,11 +413,12 @@ variable (privN : String) (privC : Prog isa)
 
 /-- The inner frame's body. -/
 def decBody : Prog isa :=
-  seqs [.block (decStart ++ privArgs), .call privN privC, .block (decChk H), .ite .b decFail (decMain H G)]
+  seqs [.block (decStart ++ privArgs), .call privN privC, .block (decChk H), .ite .b decFail (decMain H f)]
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`, calling a checked private operation
-by its name. -/
-def decrypt : Prog isa := wrap frameBytes (decBody H G privN privC)
+/-- `vg_rsa_oaep_<H>_mgf1_decrypt`, calling a checked private operation by
+its name, with MGF1's hash function the table that is its argument 23
+(`mgf1`). -/
+def decrypt : Prog isa := wrap frameBytes (decBody H f privN privC)
 
 end Dec
 

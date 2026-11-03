@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
 `Sl`: the slots of `mgfXor`'s parameters (`src`, `dst` and their lengths),
 which `dbArgs` and `seedArgs` set; what `mgfXor` writes misses them
 (`mgfW_slot`, `sl_keep`) and the bytes of `EM` outside `dst` (`mgfW_byte`);
-and `mgf_vp`'s parameters from them (`mpOf`).
+and `mgf_vp`'s parameters from them and the table (`mpOf`).
 -/
 
 @[expose] public section
@@ -30,13 +30,14 @@ abbrev Sl (L : Lay) (scr : BitVec 32) (so sl dOff dl : Nat) (m : Mem) : Prop :=
 /-- A slot other than the counter's and the bytes masked misses what
 `mgfXor` writes. -/
 theorem mgfW_slot (hg : Geo L scr) {dOff dl d : Nat} (hfd : dOff + dl ≤ oBuf) (hd : d + 4 ≤ frameBytes)
-    (h₁ : d + 4 ≤ sCtr ∨ sDone + 4 ≤ d) : ∀ r ∈ mgfW g L scr dOff dl, (slotR L d).Disjoint r := by
+    (h₁ : d + 4 ≤ sCtr ∨ sDone + 4 ≤ d) (h₂ : d + 4 ≤ sTab ∨ sHl + 4 ≤ d) :
+    ∀ r ∈ mgfW g L scr dOff dl, (slotR L d).Disjoint r := by
   have := g.S_le; have := g.Wb_le; have := g.F_le
   obtain ⟨σ', ok⟩ := hg.ok
   have hF : d + 4 ≤ L.F + 56 := by rw [hg.F]; unfold frameBytes at hd ⊢; omega
   intro r hr
   simp only [mgfW, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact hg.slot ok (by oomega) hF
   · exact hg.slot ok (by oomega) hF
   · exact hg.slot ok (by oomega) hF
@@ -45,6 +46,8 @@ theorem mgfW_slot (hg : Geo L scr) {dOff dl d : Nat} (hfd : dOff + dl ≤ oBuf) 
   · exact hg.slot ok (by oomega) hF
   · exact slotSep hd (by decide) (by unfold sCtr sDone at *; omega)
   · exact slotSep hd (by decide) (by unfold sCtr sDone at *; omega)
+  · exact slotSep hd (by decide) (by unfold sTab sHl at *; omega)
+  · exact slotSep hd (by decide) (by unfold sTab sHl at *; omega)
 
 /-- A byte of our part of `scratch` before `oBuf`, outside `dst`, misses what
 `mgfXor` writes. -/
@@ -54,7 +57,7 @@ theorem mgfW_byte (hg : Geo L scr) {dOff dl o : Nat} (hfd : dOff + dl ≤ oBuf) 
   obtain ⟨σ', ok⟩ := hg.ok
   intro r hr
   simp only [mgfW, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact Geo.sep (by oomega) (by oomega) (by oomega)
   · exact Geo.sep (by oomega) (by oomega) (by oomega)
   · exact Geo.sep (by oomega) (by oomega) (by oomega)
@@ -63,22 +66,28 @@ theorem mgfW_byte (hg : Geo L scr) {dOff dl o : Nat} (hfd : dOff + dl ≤ oBuf) 
   · exact Geo.sep hx (by oomega) (by oomega)
   · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
   · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
+  · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
+  · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
 
 theorem sl_keep (hg : Geo L scr) {so sl dOff dl : Nat} (hfd : dOff + dl ≤ oBuf) {m m' : Mem}
     (hf : Frame (mgfW g L scr dOff dl) m m') (hs : Sl L scr so sl dOff dl m) : Sl L scr so sl dOff dl m' :=
-  ⟨slot_keep hf (mgfW_slot g hg hfd (by decide) (by decide)) hs.1,
-    slot_keep hf (mgfW_slot g hg hfd (by decide) (by decide)) hs.2.1,
-    slot_keep hf (mgfW_slot g hg hfd (by decide) (by decide)) hs.2.2.1,
-    slot_keep hf (mgfW_slot g hg hfd (by decide) (by decide)) hs.2.2.2⟩
+  ⟨slot_keep hf (mgfW_slot g hg hfd (by decide) (by decide) (by decide)) hs.1,
+    slot_keep hf (mgfW_slot g hg hfd (by decide) (by decide) (by decide)) hs.2.1,
+    slot_keep hf (mgfW_slot g hg hfd (by decide) (by decide) (by decide)) hs.2.2.1,
+    slot_keep hf (mgfW_slot g hg hfd (by decide) (by decide) (by decide)) hs.2.2.2⟩
 
 /-- `mgfXor`'s parameters, from the slots and what the caller keeps. -/
 theorem mpOf (hg : Geo L scr) {so sl dOff dl : Nat} (sl0 : 0 < sl) (dl0 : 0 < dl) (fs : so + sl ≤ oBuf)
     (fd : dOff + dl ≤ oBuf) (sep : so + sl ≤ dOff ∨ dOff + dl ≤ so) {seed : State → List Byte}
     (sd : ∀ σ, (seed σ).length = sl) {X : State → Mem → Prop}
-    (hX : ∀ σ m m', X σ m → Frame (mgfW g L scr dOff dl) m m' → X σ m') :
-    MP g L scr so sl dOff dl seed (fun σ m => X σ m ∧ Sl L scr so sl dOff dl m) :=
+    (hX : ∀ σ m m', X σ m → Frame (mgfW g L scr dOff dl) m m' → X σ m') {f : Fns} {j : Nat}
+    {ai au af : BitVec 32} (hj : j < L.argv.length)
+    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA (L.argv.getD j 0) o) 4)
+    (tab : ∀ σ m, X σ m → TabFacts g.H f (L.argv.getD j 0) ai au af σ) (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :
+    MP g L scr so sl dOff dl seed (fun σ m => X σ m ∧ Sl L scr so sl dOff dl m) f j ai au af :=
   ⟨hg, sl0, dl0, fs, fd, sep, sd, fun σ m m' ⟨hx, hs⟩ hf => ⟨hX σ m m' hx hf, sl_keep g hg fd hf hs⟩,
-    fun _ _ h => h.2.1, fun _ _ h => h.2.2.1, fun _ _ h => h.2.2.2.1, fun _ _ h => h.2.2.2.2⟩
+    fun _ _ h => h.2.1, fun _ _ h => h.2.2.1, fun _ _ h => h.2.2.2.1, fun _ _ h => h.2.2.2.2, hj, tbl,
+    fun σ m h => tab σ m h.1, fne⟩
 
 end
 

@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Mgf
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.MgfT
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Label
 public import VerifiedGarbage.Proof.RsaOaep.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 
 /-!
 # RSAES-OAEP encryption on RISC-V: `EM`
@@ -51,16 +52,17 @@ include P
 theorem em_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) {Hs : Spec.Mgf1.Hash}
     (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hD : H.D = D) {t : State} (E : Entered s t)
     (hk : 2 * D + 2 + mLen s ≤ kk s) {rest : Prog isa} {Q : State → Prop}
-    (k : ∀ t', Base S vO s t' → EmAt (view t'.mem (S s)) (kk s) D (seedB D s) (Hs.hash (labB s)) (msgB s) (mLen s) →
-      WP isa rest t' Q) :
+    (k : ∀ t', Base S vO s t' → t'.syms = t.syms →
+      EmAt (view t'.mem (S s)) (kk s) D (seedB D s) (Hs.hash (labB s)) (msgB s) (mLen s) → WP isa rest t' Q) :
     WP isa (.seq (encEm H) (.seq (hashLabel H) (.seq (copyLh H) rest))) t Q := by
   have hD0 := hH.hD0
   have hD64 := hH.hD64
   have F := hfits hH
   obtain ⟨_, hSt, hDg, hCt, hRs⟩ := offs
-  refine WP.seq (WP.mono (encEm_ok P hD (by omega) (by omega) E hk) fun t₁ ⟨b₁, g6, g7, hp⟩ => ?_)
-  refine WP.seq (WP.mono (hashLabel_ok P hH hF b₁ g6 g7) fun t₂ ⟨b₂, _, s₂, d₂⟩ => ?_)
-  refine WP.seq (WP.mono (copyLh_ok P hH hD b₂) fun t₃ ⟨b₃, _, m₃⟩ => k t₃ b₃ ?_)
+  refine WP.seq (WP.mono_syms (encEm_ok P hD (by omega) (by omega) E hk) fun t₁ ⟨b₁, g6, g7, hp⟩ y₁ => ?_)
+  refine WP.seq (WP.mono_syms (hashLabel_ok P hH hF b₁ g6 g7) fun t₂ ⟨b₂, _, s₂, d₂⟩ y₂ => ?_)
+  refine WP.seq (WP.mono_syms (copyLh_ok P hH hD b₂) fun t₃ ⟨b₃, _, m₃⟩ y₃ =>
+    k t₃ b₃ (y₃.trans (y₂.trans y₁)) ?_)
   have hlh : Spec.Rsa.bytesAt t₂.mem (off (S s) oDig) D = Hs.hash (labB s) := by
     rw [hHh, ← d₂, ← hD]
   refine emAt_of hp hk P.k2 fun o ho => ?_
@@ -75,44 +77,46 @@ theorem bytesAt_S (m : Mem) (S : Addr) (n : Nat) :
 
 /-- `DB` masked with MGF1 of the seed, then the seed with MGF1 of `maskedDB`:
 EME-OAEP's encoding at `S`. -/
-theorem mask_ok {H G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {Gs : Spec.Mgf1.Hash}
+theorem mask_ok {H G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns}
+    (T : TabS G f 7 S s (stackArg s 7)) {Gs : Spec.Mgf1.Hash}
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) (hD : H.D = D)
     (hD0 : 0 < D) (hD64 : D ≤ 64) {sd lh m : List Byte} (hsd : sd.length = D) (hlh : lh.length = D)
     (hm : m.length = mLen s) (hk : 2 * D + 2 + mLen s ≤ kk s) {t : State} (h : Base S vO s t)
-    (he : EmAt (view t.mem (S s)) (kk s) D sd lh m (mLen s)) {rest : Prog isa} {Q : State → Prop}
+    (hsy : t.syms = s.syms) (he : EmAt (view t.mem (S s)) (kk s) D sd lh m (mLen s)) {rest : Prog isa} {Q : State → Prop}
     (k : ∀ t', Base S vO s t' → Spec.Rsa.bytesAt t'.mem (off (S s) 0) (kk s) = emOf Gs D (kk s) (mLen s) sd lh m →
       WP isa rest t' Q) :
-    WP isa (.seq (.block (dbArgs H)) (.seq (mgfXor G) (.seq (.block (seedArgs H)) (.seq (mgfXor G) rest)))) t Q := by
+    WP isa (.seq (.block (dbArgs H)) (.seq (mgfXorT f 7) (.seq (.block (seedArgs H)) (.seq (mgfXorT f 7) rest)))) t Q :=
+    by
   obtain ⟨hE, hSt, hDg, hCt, hRs⟩ := offs
   have hk2 := P.k2
   have ek : kk s = (s.gpr .a3).toNat := rfl
   subst hD
   -- `DB` with MGF1 of the seed.
-  refine WP.seq (wp_addi (imm := oEm + 1) (h := by omega) fun t₁ o₁ e₁ => wp_li (imm := H.D) (by omega)
+  refine WP.seq (WP.of_syms (wp_addi (imm := oEm + 1) (h := by omega) fun t₁ o₁ e₁ => wp_li (imm := H.D) (by omega)
     fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1 + H.D) (h := by omega) fun t₃ o₃ e₃ =>
-    wp_subi (imm := H.D + 1) (h := by omega) fun t₄ o₄ e₄ => wp_nil ?_)
+    wp_subi (imm := H.D + 1) (h := by omega) fun t₄ o₄ e₄ => wp_nil fun y₄ => ?_))
   have k₄ : Only [.s6, .s7, .s8, .s9] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
   have b₄ := h.only P.fits k₄
-  refine WP.seq (WP.mono (mgfXor_ok P.fits hG hF hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
-    (dstLen := kk s - H.D - 1) ⟨by omega, by omega, .inl (by omega), by omega⟩ b₄
+  refine WP.seq (WP.mono (mgfXorT_ok P.fits hG hF T hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
+    (dstLen := kk s - H.D - 1) ⟨by omega, by omega, .inl (by omega), by omega⟩ b₄ (y₄.trans hsy)
     (by rw [o₄.get .s6, o₃.get .s6, o₂.get .s6, e₁, h.s0, hE])
     (by rw [o₄.get .s7, o₃.get .s7, e₂])
     (by rw [o₄.get .s8, e₃, o₂.get .s0, o₁.get .s0, h.s0, hE, Nat.zero_add])
     (by rw [e₄, o₃.get .s1, o₂.get .s1, o₁.get .s1, h.s1, sub_k (by omega)]; congr 1))
-    fun t₅ ⟨b₅, v₅⟩ => ?_)
+    fun t₅ ⟨⟨b₅, v₅⟩, y₅⟩ => ?_)
   -- The seed with MGF1 of `maskedDB`.
-  refine WP.seq (wp_addi (imm := oEm + 1 + H.D) (h := by omega) fun t₆ o₆ e₆ =>
+  refine WP.seq (WP.of_syms (wp_addi (imm := oEm + 1 + H.D) (h := by omega) fun t₆ o₆ e₆ =>
     wp_subi (imm := H.D + 1) (h := by omega) fun t₇ o₇ e₇ => wp_addi (imm := oEm + 1) (h := by omega)
-    fun t₈ o₈ e₈ => wp_li (imm := H.D) (by omega) fun t₉ o₉ e₉ => wp_nil ?_)
+    fun t₈ o₈ e₈ => wp_li (imm := H.D) (by omega) fun t₉ o₉ e₉ => wp_nil fun y₉ => ?_))
   have k₉ : Only [.s6, .s7, .s8, .s9] t₅ t₉ := (o₆.trans (o₇.trans (o₈.trans o₉))).mono
   have b₉ := b₅.only P.fits k₉
-  refine WP.seq (WP.mono (mgfXor_ok P.fits hG hF hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1)
-    (dst := 1) (dstLen := H.D) ⟨by omega, by omega, .inr (by omega), by omega⟩ b₉
+  refine WP.seq (WP.mono (mgfXorT_ok P.fits hG hF T hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1)
+    (dst := 1) (dstLen := H.D) ⟨by omega, by omega, .inr (by omega), by omega⟩ b₉ (y₉.trans y₅)
     (by rw [o₉.get .s6, o₈.get .s6, o₇.get .s6, e₆, b₅.s0, hE, Nat.zero_add])
     (by rw [o₉.get .s7, o₈.get .s7, e₇, o₆.get .s1, b₅.s1, sub_k (by omega)]; congr 1)
     (by rw [o₉.get .s8, e₈, o₇.get .s0, o₆.get .s0, b₅.s0, hE])
     (by rw [e₉]))
-    fun t₁₀ ⟨b₁₀, v₁₀⟩ => k t₁₀ b₁₀ ?_)
+    fun t₁₀ ⟨⟨b₁₀, v₁₀⟩, _⟩ => k t₁₀ b₁₀ ?_)
   -- `EM`.
   have hdb := he.db hlh hm hk
   generalize hDB : lh ++ Spec.RsaOaep.zeros (kk s - mLen s - 2 * H.D - 2) ++ 0x01 :: m = db at hdb

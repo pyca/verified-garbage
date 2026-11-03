@@ -6,16 +6,17 @@ public import VerifiedGarbage.Impl.Rsa.PPC64LE.Priv
 /-!
 # RSAES-OAEP decryption (RFC 8017 §7.1.2) on PPC64LE
 
-`vg_rsa_oaep_<H>_mgf1_<G>_decrypt(out = r3, out_len = r4, msg_len = r5,
-n = r6, n_len = r7, e = r8, e_len = r9, p = r10, p_len, q, q_len, dp,
-dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch,
-scratch_len)`, the last fifteen on the stack, for a hash function `H` (the
-label's) and MGF1's hash function `G`, each an `Impl.Hmac.Stream.PPC64LE.Hash`
-(its streaming functions), which it calls, with `vg_rsa_private_checked`.
+`vg_rsa_oaep_<H>_mgf1_decrypt(out = r3, out_len = r4, msg_len = r5, n = r6,
+n_len = r7, e = r8, e_len = r9, p = r10, p_len, q, q_len, dp, dp_len, dq,
+dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len,
+mgf1)`, the last sixteen on the stack, for a hash function `H` (the label's),
+an `Impl.Hmac.Stream.PPC64LE.Hash` (its streaming functions), and MGF1 over
+the hash function of the table `mgf1` (its stack argument 15), which it
+calls, with `vg_rsa_private_checked`.
 The steps are those of AArch64 (`Impl/RsaOaep/AArch64.lean`).
 
 It runs in the frame of encryption (`Impl/RsaOaep/PPC64LE.lean`, `save` and
-`restore`), with the same part of `scratch` and its MGF1 (`mgfXor`,
+`restore`), with the same part of `scratch` and its MGF1 (`mgfXorT`,
 `seedArgs`, `dbArgs`). The values the code keeps across the calls are in
 `r14`–`r20`: `r14` = `scratch`, `r15` = `k = n_len`, `r16` = `out`, `r17` =
 `msg_len`, `r18` = `label`, `r19` = `label_len`, and, after the private
@@ -29,7 +30,7 @@ Area holds them, and writes `EM` (or zeros) to `EM`'s place in `scratch`,
 with the rest of `scratch` from `oRsa` as its working space. Its result only
 selects values without a branch. If `k < 2 hLen + 2` (public), the result is
 `r = 2 ? 2 : 0`, with zeros to `out` and `*msg_len`. Otherwise, without a
-branch on anything secret: the seed and `DB` are unmasked in place (`G`),
+branch on anything secret: the seed and `DB` are unmasked in place,
 and the label is hashed (`H`) to `scratch + oDig`; an accumulator `acc` (`r24`) ORs
 together `EM`'s first byte and `lHash' ⊕ lHash`; the scan over
 `T = DB[hLen..]` (`t = k - 2 hLen - 1` bytes) finds the index `idx` (`r25`)
@@ -55,8 +56,8 @@ namespace VG.Impl.RsaOaep.PPC64LE.Dec
 open VG VG.PPC64LE
 open VG.Impl.AesGcm.PPC64LE (mov)
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
-open VG.Impl.RsaOaep.PPC64LE (frameBytes arg save restore copyLoop zeroLoop zeroOut oEm oSt oDig oW oRsa mgfXor
-  seedArgs dbArgs)
+open VG.Impl.RsaOaep.PPC64LE (frameBytes arg save restore copyLoop zeroLoop zeroOut oEm oSt oDig oW oRsa mgfXorT
+  seedArgs dbArgs Fns)
 
 /-! ## More of our part of `scratch` -/
 
@@ -98,7 +99,7 @@ zero-extended. -/
 def priv : Prog isa :=
   .seq (.frame (.alloc privBytes) (.seq (.block privArgs) privCall) (.free privBytes)) (.block [.lsr .w .r20 .r3 0])
 
-variable (H G : Hash)
+variable (H : Hash)
 
 /-! ## Failing -/
 
@@ -184,19 +185,20 @@ def decRet : List Instr :=
     faultBit ++ [.li .r4 1, .logic .and .r4 .r26 .r4, .logic .or .r3 .r3 .r4]
 
 /-- After the private operation and the check of `k`: the decoding. -/
-def decMain : Prog isa :=
-  .seq (.block (seedArgs H)) (.seq (mgfXor G) (.seq (.block (dbArgs H)) (.seq (mgfXor G) (.seq (hashLabel H)
+def decMain (f : Fns) : Prog isa :=
+  .seq (.block (seedArgs H)) (.seq (mgfXorT f 15) (.seq (.block (dbArgs H)) (.seq (mgfXorT f 15) (.seq (hashLabel H)
   (.seq (accLh H) (.seq (scan H) (.seq clearBuf (.seq (copyT H) (.seq shift (.seq (.block okMask) (.seq outLoop
   (.block (decRet H)))))))))))))
 
 /-! ## The function -/
 
 /-- The frame's body. -/
-def body : Prog isa :=
+def body (f : Fns) : Prog isa :=
   .seq (.block (save ++ prologue)) (.seq priv (.seq (.block (chkK H))
-    (.seq (.ite (.nonzero .d .r3) (decFail) (decMain H G)) (.block restore))))
+    (.seq (.ite (.nonzero .d .r3) (decFail) (decMain H f)) (.block restore))))
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`. -/
-def decrypt : Prog isa := .frame (.alloc frameBytes) (body H G) (.free frameBytes)
+/-- `vg_rsa_oaep_<H>_mgf1_decrypt`, with MGF1's hash function the table that
+is its stack argument 15 (`mgf1`). -/
+def decrypt (f : Fns) : Prog isa := .frame (.alloc frameBytes) (body H f) (.free frameBytes)
 
 end VG.Impl.RsaOaep.PPC64LE.Dec

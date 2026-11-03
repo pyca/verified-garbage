@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaOaep.Decode
 import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
@@ -133,15 +134,17 @@ theorem x1_keep {P : EP} (hg : Geo P.lay P.scr) {dOff dl : Nat} (hfd : dOff + dl
   intro σ m m' ⟨hk, hl, h0'⟩ hf
   have := g.S_le; have := g.Wb_le; have := g.F_le; have := h.D_le
   obtain ⟨σ', ok⟩ := hg.ok
-  refine ⟨hk.keep h hf (mgfW_slot g hg hfd (by decide) (by decide)), hl.keep h hf fun r hr => ?_, ?_⟩
+  refine ⟨hk.keep h hf (mgfW_slot g hg hfd (by decide) (by decide) (by decide)), hl.keep h hf fun r hr => ?_, ?_⟩
   · simp only [mgfW, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact Geo.sep (by oomega) (by oomega) (by oomega)
     · exact Geo.sep (by oomega) (by oomega) (by oomega)
     · exact Geo.sep (by oomega) (by oomega) (by oomega)
     · exact Geo.sep (by oomega) (by oomega) (by oomega)
     · exact hg.low ok (by oomega)
     · exact Geo.sep (by oomega) (by oomega) (by oomega)
+    · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
+    · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
     · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
     · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
   · rw [← h0']
@@ -283,27 +286,42 @@ theorem db_vp (P : EP) :
 abbrev U5 (P : EP) (σ s : State) : Prop :=
   Ctx P.lay P.scr σ s ∧ X1 h P σ s.mem ∧ ∀ x < P.K, s.mem (sa P.scr x) = V5 h g P σ x
 
-theorem unmask_vp (P : EP) :
-    VP (U1 h P) (.seq (.block (seedArgs h.H 4)) (.seq (mgfXor g.H) (.seq (.block (dbArgs h.H 4)) (mgfXor g.H))))
-      (U5 h g P) := by
+/-- MGF1's table, the argument 23, in a buffer only read. -/
+theorem tbl_of {P : EP} {σ : State} (hi : In P σ) :
+    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA (P.lay.argv.getD 23 0) o) 4 := by
+  have hf := hi.ok.fits P.TAB (by simp)
+  simp only [Sig.tableRegion, Proof.X25519.Arm.addr_toNat] at hf
+  refine ⟨P.TAB, by simp, fun o ho => ?_⟩
+  show (⟨State.addr P.tab, 5 * (32 / 8)⟩ : Region).Contains (State.addr (P.tab + BitVec.ofNat 32 o)) 4
+  rw [VG.Arm.addr_add (by omega)]
+  exact Offset.contains_base _ (by omega) (by omega)
+
+theorem unmask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab P.ai P.au P.af σ)
+    (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :
+    VP (fun σ s => U1 h P σ s ∧ s.syms = σ.syms)
+      (.seq (.block (seedArgs h.H 4)) (.seq (mgfXor f 23) (.seq (.block (dbArgs h.H 4)) (mgfXor f 23))))
+      (fun σ s => U5 h g P σ s ∧ s.syms = σ.syms) := by
   by_cases hP : ∃ σ, In P σ ∧ 2 * h.H.D + 2 ≤ P.K
   swap
-  · exact VP.empty fun σ s hs => hP ⟨σ, hs.2.1.1.1, hs.2.1.1.2.1⟩
+  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1.2.1.1.1, hs.1.2.1.1.2.1⟩
   obtain ⟨σ₀, hi₀, hfit⟩ := hP
   have hg := hi₀.geo
   have hK := hi₀.k1024
   have hD := h.D_le
   have hD0 := h.D_pos
+  have tab : ∀ σ m, X1 h P σ m → TabFacts g.H f (P.lay.argv.getD 23 0) P.ai P.au P.af σ :=
+    fun σ m hx => hT σ hx.1.1.tabT
   have P1 := mpOf g hg (so := oEm + 1 + h.H.D) (sl := P.K - h.H.D - 1) (dOff := oEm + 1) (dl := h.H.D)
     (by omega_arith) hD0 (by oomega) (by oomega) (.inr (Nat.le_refl _))
     (seed := fun σ => srcB (V P σ) (1 + h.H.D) (P.K - h.H.D - 1)) (fun σ => srcB_length _ _ _)
-    (x1_keep h g hg (by oomega) (by oomega))
+    (x1_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tab fne
   have P2 := mpOf g hg (so := oEm + 1) (sl := h.H.D) (dOff := oEm + 1 + h.H.D) (dl := P.K - h.H.D - 1) hD0
     (by omega_arith) (by oomega) (by oomega) (.inl (Nat.le_refl _)) (seed := fun σ => srcB (V3 h g P σ) 1 h.H.D)
-    (fun σ => srcB_length _ _ _) (x1_keep h g hg (by oomega) (by oomega))
-  refine VP.seq (seed_vp h P) (VP.seq (mgf_vp g P1 (dstv := fun σ i => V P σ (1 + i)))
-    (VP.seq (db_vp h g P) ((mgf_vp g P2 (dstv := fun σ i => V3 h g P σ (1 + h.H.D + i))).mono
-      (fun _ _ hh => hh) fun σ s ⟨hc, ⟨hx, _⟩, hdb, hsd⟩ => ⟨hc, hx, fun x hx' => ?_⟩)))
+    (fun σ => srcB_length _ _ _) (x1_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tab fne
+  refine VP.seq (VP.syms (seed_vp h P)) (VP.seq (mgf_vp g P1 (dstv := fun σ i => V P σ (1 + i)) (arg_lt (by decide)))
+    (VP.seq (VP.syms (db_vp h g P)) ((mgf_vp g P2 (dstv := fun σ i => V3 h g P σ (1 + h.H.D + i))
+      (arg_lt (by decide))).mono
+      (fun _ _ hh => hh) fun σ s ⟨⟨hc, ⟨hx, _⟩, hdb, hsd⟩, sy⟩ => ⟨⟨hc, hx, fun x hx' => ?_⟩, sy⟩)))
   by_cases h0 : x = 0
   · subst h0
     rw [hx.2.2, V5, mix_out (by omega_arith), V3, mix_out (by omega_arith)]
