@@ -358,6 +358,50 @@ pub fn bench(c: &mut Criterion) {
         }
         return;
     }
+    // Only Proto26 this run: main's vg_rsa_private_crt next to R² kept and m₂ reduced by Montgomery products,
+    // on Wycheproof's keys of 2048, 4096 and 8192 bits (bench branch only).
+    const ONLY_P26: bool = true;
+    if ONLY_P26 {
+        use verified_garbage_asm_riscv64::rsa_proto26 as p26;
+        type Crt = unsafe extern "C" fn(
+            *mut u8, usize, *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize,
+            *const u8, usize, *const u8, usize, *const u8, usize, *mut u64, usize,
+        ) -> u32;
+        let hex = |s: &str| -> Vec<u8> {
+            (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+        };
+        let all: Vec<Vec<Vec<u8>>> = include_str!("../../../crates/verified-garbage-asm-riscv64/tests/key_cases.txt")
+            .lines()
+            .map(|l| l.split(' ').map(hex).collect())
+            .collect();
+        let keys: Vec<(usize, Vec<Vec<u8>>)> = [256usize, 512, 1024]
+            .iter()
+            .map(|&k| (k * 8, all.iter().find(|g| g[0].len() == k).unwrap().clone()))
+            .collect();
+        let cs: [(&str, Crt); 2] = [("base", p26::vg_p26_base), ("re", p26::vg_p26_re)];
+        for (v, f) in cs {
+            let mut g = c.benchmark_group(format!("rsa_p26_crt_{v}"));
+            for (bits, key) in &keys {
+                let k = key[0].len();
+                let mut input: Vec<u8> = (0..k).map(|i| (i as u8).wrapping_mul(37)).collect();
+                input[0] = 0;
+                let mut out = vec![0u8; k];
+                let mut s = vec![0u64; 16 * k + 32];
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    b.iter(|| unsafe {
+                        f(
+                            out.as_mut_ptr(), k, key[0].as_ptr(), k, input.as_ptr(), k,
+                            key[3].as_ptr(), key[3].len(), key[4].as_ptr(), key[4].len(),
+                            key[5].as_ptr(), key[5].len(), key[6].as_ptr(), key[6].len(),
+                            key[7].as_ptr(), key[7].len(), s.as_mut_ptr(), s.len(),
+                        )
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     // Only Proto24 this run: main's vg_rsa_private_crt next to windows of 4 (re-expressed), 5 and 6 bits,
     // on Wycheproof's keys of 2048, 4096 and 8192 bits (bench branch only).
     const ONLY_P24: bool = true;
