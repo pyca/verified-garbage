@@ -829,12 +829,14 @@ theorem tabD_cert :
 theorem UArgs.r4 {d : BitVec 32} {len c : Nat} {s : State} (h : UArgs scr d len c s) (v : BitVec 32) :
     UArgs scr d len c (s.setReg .r4 v) := by
   obtain ⟨a, b, e, f, g, i⟩ := h
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte] <;> assumption
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte] <;>
+    with_reducible assumption
 
 theorem FArgs.r4 {o c : Nat} {s : State} (h : FArgs scr o c s) (v : BitVec 32) :
     FArgs scr o c (s.setReg .r4 v) := by
   obtain ⟨a, b, e, f, g⟩ := h
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte] <;> assumption
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte] <;>
+    with_reducible assumption
 
 /-! ## `r12 := r10` -/
 

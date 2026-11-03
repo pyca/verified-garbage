@@ -24,7 +24,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_DECRYPT_CRT_ADX_FEATURES: verified_garbage_cpu::
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -38,7 +38,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_DECRYPT_CRT_ADX_FEATURES: verified_garbage_cpu::
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCToAAAASImMJLAAAABMiYQkuAAAAEyJjCTAAAAASIuEJDABAABIiYQkyAAAAEiLhCSIAQAASImEJNgAAABIi4QkkAEAAEiJhCTgAAAASIuEJKgBAABIiUQkcEiLhCSwAQAASImEJNAAAABIi4QkmAEAAEiJBCRIi4QkuAAAAEiJRCQISIuEJDgBAABIiUQkEEiLhCRAAQAASIlEJBhIi4QkSAEAAEiJRCQgSIuEJFABAABIiUQkKEiLhCRYAQAASIlEJDBIi4QkYAEAAEiJRCQ4SIuEJGgBAABIiUQkQEiLhCRwAQAASIlEJEhIi4QkeAEAAEiJRCRQSIuEJIABAABIiUQkWEiLRCRwSAUAIAAASIlEJGBIi4Qk0AAAAEgtAAQAAEiJRCRoSIt8JHBIg8cASIu0JLgAAABIi5QksAAAAEiLjCS4AAAATIuEJMAAAABMi4wkyAAAAA=="
 call {vg_rsa_private_checked_adx}
@@ -142,7 +142,7 @@ jne 217b
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -155,7 +155,7 @@ jne 217b
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch` and `mgf1` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCToAAAASImMJLAAAABMiYQkuAAAAEyJjCTAAAAASIuEJDABAABIiYQkyAAAAEiLhCSIAQAASImEJNgAAABIi4QkkAEAAEiJhCTgAAAASIuEJKgBAABIiUQkcEiLhCSwAQAASImEJNAAAABIi4QkmAEAAEiJBCRIi4QkuAAAAEiJRCQISIuEJDgBAABIiUQkEEiLhCRAAQAASIlEJBhIi4QkSAEAAEiJRCQgSIuEJFABAABIiUQkKEiLhCRYAQAASIlEJDBIi4QkYAEAAEiJRCQ4SIuEJGgBAABIiUQkQEiLhCRwAQAASIlEJEhIi4QkeAEAAEiJRCRQSIuEJIABAABIiUQkWEiLRCRwSAUAIAAASIlEJGBIi4Qk0AAAAEgtAAQAAEiJRCRoSIt8JHBIg8cASIu0JLgAAABIi5QksAAAAEiLjCS4AAAATIuEJMAAAABMi4wkyAAAAA=="
 call {vg_rsa_private_checked}
@@ -262,7 +262,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_DECRYPT_CRT_IFMA_FEATURES: verified_garbage_cpu:
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -276,7 +276,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_DECRYPT_CRT_IFMA_FEATURES: verified_garbage_cpu:
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCToAAAASImMJLAAAABMiYQkuAAAAEyJjCTAAAAASIuEJDABAABIiYQkyAAAAEiLhCSIAQAASImEJNgAAABIi4QkkAEAAEiJhCTgAAAASIuEJKgBAABIiUQkcEiLhCSwAQAASImEJNAAAABIi4QkmAEAAEiJBCRIi4QkuAAAAEiJRCQISIuEJDgBAABIiUQkEEiLhCRAAQAASIlEJBhIi4QkSAEAAEiJRCQgSIuEJFABAABIiUQkKEiLhCRYAQAASIlEJDBIi4QkYAEAAEiJRCQ4SIuEJGgBAABIiUQkQEiLhCRwAQAASIlEJEhIi4QkeAEAAEiJRCRQSIuEJIABAABIiUQkWEiLRCRwSAUAIAAASIlEJGBIi4Qk0AAAAEgtAAQAAEiJRCRoSIt8JHBIg8cASIu0JLgAAABIi5QksAAAAEiLjCS4AAAATIuEJMAAAABMi4wkyAAAAA=="
 call {vg_rsa_private_checked_ifma}
@@ -383,7 +383,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_DECRYPT_SHA1_SHANI_CRT_ADX_FEATURES: verified_ga
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -397,7 +397,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_DECRYPT_SHA1_SHANI_CRT_ADX_FEATURES: verified_ga
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt_sha1_shani_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt_sha1_shani_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCToAAAASImMJLAAAABMiYQkuAAAAEyJjCTAAAAASIuEJDABAABIiYQkyAAAAEiLhCSIAQAASImEJNgAAABIi4QkkAEAAEiJhCTgAAAASIuEJKgBAABIiUQkcEiLhCSwAQAASImEJNAAAABIi4QkmAEAAEiJBCRIi4QkuAAAAEiJRCQISIuEJDgBAABIiUQkEEiLhCRAAQAASIlEJBhIi4QkSAEAAEiJRCQgSIuEJFABAABIiUQkKEiLhCRYAQAASIlEJDBIi4QkYAEAAEiJRCQ4SIuEJGgBAABIiUQkQEiLhCRwAQAASIlEJEhIi4QkeAEAAEiJRCRQSIuEJIABAABIiUQkWEiLRCRwSAUAIAAASIlEJGBIi4Qk0AAAAEgtAAQAAEiJRCRoSIt8JHBIg8cASIu0JLgAAABIi5QksAAAAEiLjCS4AAAATIuEJMAAAABMi4wkyAAAAA=="
 call {vg_rsa_private_checked_adx}
@@ -504,7 +504,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_DECRYPT_SHA1_SHANI_FEATURES: verified_garbage_cp
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -518,7 +518,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_DECRYPT_SHA1_SHANI_FEATURES: verified_garbage_cp
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt_sha1_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt_sha1_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCToAAAASImMJLAAAABMiYQkuAAAAEyJjCTAAAAASIuEJDABAABIiYQkyAAAAEiLhCSIAQAASImEJNgAAABIi4QkkAEAAEiJhCTgAAAASIuEJKgBAABIiUQkcEiLhCSwAQAASImEJNAAAABIi4QkmAEAAEiJBCRIi4QkuAAAAEiJRCQISIuEJDgBAABIiUQkEEiLhCRAAQAASIlEJBhIi4QkSAEAAEiJRCQgSIuEJFABAABIiUQkKEiLhCRYAQAASIlEJDBIi4QkYAEAAEiJRCQ4SIuEJGgBAABIiUQkQEiLhCRwAQAASIlEJEhIi4QkeAEAAEiJRCRQSIuEJIABAABIiUQkWEiLRCRwSAUAIAAASIlEJGBIi4Qk0AAAAEgtAAQAAEiJRCRoSIt8JHBIg8cASIu0JLgAAABIi5QksAAAAEiLjCS4AAAATIuEJMAAAABMi4wkyAAAAA=="
 call {vg_rsa_private_checked}
@@ -625,7 +625,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_DECRYPT_SHA1_SHANI_CRT_IFMA_FEATURES: verified_g
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -639,7 +639,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_DECRYPT_SHA1_SHANI_CRT_IFMA_FEATURES: verified_g
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt_sha1_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_decrypt_sha1_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCToAAAASImMJLAAAABMiYQkuAAAAEyJjCTAAAAASIuEJDABAABIiYQkyAAAAEiLhCSIAQAASImEJNgAAABIi4QkkAEAAEiJhCTgAAAASIuEJKgBAABIiUQkcEiLhCSwAQAASImEJNAAAABIi4QkmAEAAEiJBCRIi4QkuAAAAEiJRCQISIuEJDgBAABIiUQkEEiLhCRAAQAASIlEJBhIi4QkSAEAAEiJRCQgSIuEJFABAABIiUQkKEiLhCRYAQAASIlEJDBIi4QkYAEAAEiJRCQ4SIuEJGgBAABIiUQkQEiLhCRwAQAASIlEJEhIi4QkeAEAAEiJRCRQSIuEJIABAABIiUQkWEiLRCRwSAUAIAAASIlEJGBIi4Qk0AAAAEgtAAQAAEiJRCRoSIt8JHBIg8cASIu0JLgAAABIi5QksAAAAEiLjCS4AAAATIuEJMAAAABMi4wkyAAAAA=="
 call {vg_rsa_private_checked_ifma}
@@ -742,7 +742,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES: verified_g
 /// * `seed` must be valid for reads of 20 bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -756,7 +756,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES: verified_g
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCSwAAAASImMJLgAAABMiYQkwAAAAEyJjCTIAAAASIuEJDABAABIiYQk2AAAAEiLhCQ4AQAASImEJOAAAABIi4QkQAEAAEiJhCToAAAASIuEJEgBAABIiYQk8AAAAEiLhCRQAQAASImEJPgAAABIi4QkWAEAAEiJRCRwSIuEJGABAABIiYQk0AAAAEiLhCS4AAAASIP4Kg=="
 jb 20f
@@ -855,7 +855,7 @@ jne 219b
 /// * `seed` must be valid for reads of 20 bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -868,7 +868,7 @@ jne 219b
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre` and `mgf1` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCSwAAAASImMJLgAAABMiYQkwAAAAEyJjCTIAAAASIuEJDABAABIiYQk2AAAAEiLhCQ4AQAASImEJOAAAABIi4QkQAEAAEiJhCToAAAASIuEJEgBAABIiYQk8AAAAEiLhCRQAQAASImEJPgAAABIi4QkWAEAAEiJRCRwSIuEJGABAABIiYQk0AAAAEiLhCS4AAAASIP4Kg=="
 jb 20f
@@ -970,7 +970,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES: verified_
 /// * `seed` must be valid for reads of 20 bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -984,7 +984,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES: verified_
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCSwAAAASImMJLgAAABMiYQkwAAAAEyJjCTIAAAASIuEJDABAABIiYQk2AAAAEiLhCQ4AQAASImEJOAAAABIi4QkQAEAAEiJhCToAAAASIuEJEgBAABIiYQk8AAAAEiLhCRQAQAASImEJPgAAABIi4QkWAEAAEiJRCRwSIuEJGABAABIiYQk0AAAAEiLhCS4AAAASIP4Kg=="
 jb 20f
@@ -1086,7 +1086,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_ENCRYPT_PRECOMPUTED_SHA1_SHANI_RSA_ADX_FEATURES:
 /// * `seed` must be valid for reads of 20 bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -1100,7 +1100,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_ENCRYPT_PRECOMPUTED_SHA1_SHANI_RSA_ADX_FEATURES:
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed_sha1_shani_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed_sha1_shani_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCSwAAAASImMJLgAAABMiYQkwAAAAEyJjCTIAAAASIuEJDABAABIiYQk2AAAAEiLhCQ4AQAASImEJOAAAABIi4QkQAEAAEiJhCToAAAASIuEJEgBAABIiYQk8AAAAEiLhCRQAQAASImEJPgAAABIi4QkWAEAAEiJRCRwSIuEJGABAABIiYQk0AAAAEiLhCS4AAAASIP4Kg=="
 jb 20f
@@ -1202,7 +1202,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_ENCRYPT_PRECOMPUTED_SHA1_SHANI_FEATURES: verifie
 /// * `seed` must be valid for reads of 20 bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -1216,7 +1216,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_ENCRYPT_PRECOMPUTED_SHA1_SHANI_FEATURES: verifie
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed_sha1_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed_sha1_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCSwAAAASImMJLgAAABMiYQkwAAAAEyJjCTIAAAASIuEJDABAABIiYQk2AAAAEiLhCQ4AQAASImEJOAAAABIi4QkQAEAAEiJhCToAAAASIuEJEgBAABIiYQk8AAAAEiLhCRQAQAASImEJPgAAABIi4QkWAEAAEiJRCRwSIuEJGABAABIiYQk0AAAAEiLhCS4AAAASIP4Kg=="
 jb 20f
@@ -1318,7 +1318,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_ENCRYPT_PRECOMPUTED_SHA1_SHANI_RSA_IFMA_FEATURES
 /// * `seed` must be valid for reads of 20 bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `mgf1` must be valid for reads of 40 bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -1332,7 +1332,7 @@ pub const VG_RSA_OAEP_SHA1_MGF1_ENCRYPT_PRECOMPUTED_SHA1_SHANI_RSA_IFMA_FEATURES
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed_sha1_shani_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [u64; 5]) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha1_mgf1_encrypt_precomputed_sha1_shani_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 20], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCSwAAAASImMJLgAAABMiYQkwAAAAEyJjCTIAAAASIuEJDABAABIiYQk2AAAAEiLhCQ4AQAASImEJOAAAABIi4QkQAEAAEiJhCToAAAASIuEJEgBAABIiYQk8AAAAEiLhCRQAQAASImEJPgAAABIi4QkWAEAAEiJRCRwSIuEJGABAABIiYQk0AAAAEiLhCS4AAAASIP4Kg=="
 jb 20f

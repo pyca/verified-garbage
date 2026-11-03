@@ -6,7 +6,7 @@
 #[repr(C)]
 pub struct Hash {
     fns: [*const (); 3],
-    data: [u64; 2],
+    data: [usize; 2],
 }
 
 // SAFETY: a `Hash` is immutable, and the functions it holds the addresses of may be called from any thread.
@@ -14,7 +14,7 @@ unsafe impl Sync for Hash {}
 
 impl Hash {
     /// A pointer to the table's words, as the verified functions that take it read them.
-    pub const fn as_ptr(&'static self) -> *const [u64; 5] {
+    pub const fn as_ptr(&'static self) -> *const [usize; 5] {
         core::ptr::from_ref(self).cast()
     }
 }

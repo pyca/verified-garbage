@@ -11,9 +11,9 @@ import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import VerifiedGarbage.Proof.Framework.RelSplit
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+meta import VerifiedGarbage.Proof.Framework.RelSplit
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTBase
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTop
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect

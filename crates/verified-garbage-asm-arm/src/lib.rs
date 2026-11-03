@@ -373,6 +373,10 @@ pub mod ffdh;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
+pub mod fn_tables;
+
+#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
+#[rustfmt::skip]
 pub mod gcm;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
@@ -501,55 +505,31 @@ pub mod rsa_keygen;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
-pub mod rsa_oaep_sha1_mgf1_sha1;
+pub mod rsa_oaep_sha1_mgf1;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
-pub mod rsa_oaep_sha224_mgf1_sha1;
+pub mod rsa_oaep_sha224_mgf1;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
-pub mod rsa_oaep_sha224_mgf1_sha224;
+pub mod rsa_oaep_sha256_mgf1;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
-pub mod rsa_oaep_sha256_mgf1_sha1;
+pub mod rsa_oaep_sha384_mgf1;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
-pub mod rsa_oaep_sha256_mgf1_sha256;
+pub mod rsa_oaep_sha512_224_mgf1;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
-pub mod rsa_oaep_sha384_mgf1_sha1;
+pub mod rsa_oaep_sha512_256_mgf1;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
-pub mod rsa_oaep_sha384_mgf1_sha384;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
-pub mod rsa_oaep_sha512_224_mgf1_sha1;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
-pub mod rsa_oaep_sha512_224_mgf1_sha512_224;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
-pub mod rsa_oaep_sha512_256_mgf1_sha1;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
-pub mod rsa_oaep_sha512_256_mgf1_sha512_256;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
-pub mod rsa_oaep_sha512_mgf1_sha1;
-
-#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
-#[rustfmt::skip]
-pub mod rsa_oaep_sha512_mgf1_sha512;
+pub mod rsa_oaep_sha512_mgf1;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]

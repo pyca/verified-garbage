@@ -57,7 +57,7 @@ theorem tabArg15_taint : TaintOk [.esp, .ebp] (.block [ld .eax (arg 15), Impl.Rs
 theorem tabArg23_taint : TaintOk [.esp, .ebp] (.block [ld .eax (arg 23), Impl.RsaPss.X86.st .eax sTab]) :=
   ⟨_, by taint_decide⟩
 theorem tabHead_taint : TaintOk [.esp, .ebp, .eax]
-    (.block ([.mov .eax (.mem (Impl.RsaPkcs1Sig.X86.at_ .eax 16)), Impl.RsaPss.X86.st .eax sHl] ++
+    (.block (([.mov .eax (.mem (Impl.RsaPkcs1Sig.X86.at_ .eax 16)), Impl.RsaPss.X86.st .eax sHl] : List Instr) ++
       Impl.RsaPss.X86.mgfInit)) := ⟨_, by taint_decide⟩
 theorem tload_taint : TaintOk [.esp, .ebp] (.block [ld .esi sTab]) := ⟨_, by taint_decide⟩
 theorem tword_taint {k : Nat} (hk : k < 3) :

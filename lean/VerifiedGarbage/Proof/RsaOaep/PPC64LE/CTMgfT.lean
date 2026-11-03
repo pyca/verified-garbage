@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgf
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.View
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-!
