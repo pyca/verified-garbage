@@ -177,76 +177,76 @@ vg_salsa20_8_bytes:
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a6, a6, t0
-	addw t0, a6, a2
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t4, t4, t0
-	addw t0, t4, a6
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor s1, s1, t0
-	addw t0, s1, t4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a2, a2, t0
 	addw t0, a7, a3
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor t5, t5, t0
-	addw t0, t5, a7
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor s2, s2, t0
-	addw t0, s2, t5
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a3, a3, t0
-	addw t0, a3, s2
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a7, a7, t0
 	addw t0, t6, t2
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s3, s3, t0
-	addw t0, s3, t6
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor a4, a4, t0
-	addw t0, a4, s3
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor t2, t2, t0
-	addw t0, t2, a4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor t6, t6, t0
 	addw t0, s4, s0
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a5, a5, t0
+	addw t0, a6, a2
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t4, t4, t0
+	addw t0, t5, a7
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor s2, s2, t0
+	addw t0, s3, t6
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor a4, a4, t0
 	addw t0, a5, s4
 	slliw t1, t0, 9
 	srliw t0, t0, 23
 	or t0, t0, t1
 	xor t3, t3, t0
+	addw t0, t4, a6
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor s1, s1, t0
+	addw t0, s2, t5
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a3, a3, t0
+	addw t0, a4, s3
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor t2, t2, t0
 	addw t0, t3, a5
 	slliw t1, t0, 13
 	srliw t0, t0, 19
 	or t0, t0, t1
 	xor s0, s0, t0
+	addw t0, s1, t4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a2, a2, t0
+	addw t0, a3, s2
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a7, a7, t0
+	addw t0, t2, a4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor t6, t6, t0
 	addw t0, s0, t3
 	slliw t1, t0, 18
 	srliw t0, t0, 14
@@ -257,76 +257,76 @@ vg_salsa20_8_bytes:
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a3, a3, t0
-	addw t0, a3, a2
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor a4, a4, t0
-	addw t0, a4, a3
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a5, a5, t0
-	addw t0, a5, a4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a2, a2, t0
 	addw t0, a7, a6
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor t2, t2, t0
-	addw t0, t2, a7
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t3, t3, t0
-	addw t0, t3, t2
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a6, a6, t0
-	addw t0, a6, t3
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a7, a7, t0
 	addw t0, t6, t5
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s0, s0, t0
-	addw t0, s0, t6
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t4, t4, t0
-	addw t0, t4, s0
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor t5, t5, t0
-	addw t0, t5, t4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor t6, t6, t0
 	addw t0, s4, s3
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s1, s1, t0
+	addw t0, a3, a2
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor a4, a4, t0
+	addw t0, t2, a7
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t3, t3, t0
+	addw t0, s0, t6
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t4, t4, t0
 	addw t0, s1, s4
 	slliw t1, t0, 9
 	srliw t0, t0, 23
 	or t0, t0, t1
 	xor s2, s2, t0
+	addw t0, a4, a3
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a5, a5, t0
+	addw t0, t3, t2
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a6, a6, t0
+	addw t0, t4, s0
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor t5, t5, t0
 	addw t0, s2, s1
 	slliw t1, t0, 13
 	srliw t0, t0, 19
 	or t0, t0, t1
 	xor s3, s3, t0
+	addw t0, a5, a4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a2, a2, t0
+	addw t0, a6, t3
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a7, a7, t0
+	addw t0, t5, t4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor t6, t6, t0
 	addw t0, s3, s2
 	slliw t1, t0, 18
 	srliw t0, t0, 14
@@ -337,76 +337,76 @@ vg_salsa20_8_bytes:
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a6, a6, t0
-	addw t0, a6, a2
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t4, t4, t0
-	addw t0, t4, a6
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor s1, s1, t0
-	addw t0, s1, t4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a2, a2, t0
 	addw t0, a7, a3
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor t5, t5, t0
-	addw t0, t5, a7
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor s2, s2, t0
-	addw t0, s2, t5
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a3, a3, t0
-	addw t0, a3, s2
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a7, a7, t0
 	addw t0, t6, t2
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s3, s3, t0
-	addw t0, s3, t6
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor a4, a4, t0
-	addw t0, a4, s3
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor t2, t2, t0
-	addw t0, t2, a4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor t6, t6, t0
 	addw t0, s4, s0
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a5, a5, t0
+	addw t0, a6, a2
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t4, t4, t0
+	addw t0, t5, a7
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor s2, s2, t0
+	addw t0, s3, t6
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor a4, a4, t0
 	addw t0, a5, s4
 	slliw t1, t0, 9
 	srliw t0, t0, 23
 	or t0, t0, t1
 	xor t3, t3, t0
+	addw t0, t4, a6
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor s1, s1, t0
+	addw t0, s2, t5
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a3, a3, t0
+	addw t0, a4, s3
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor t2, t2, t0
 	addw t0, t3, a5
 	slliw t1, t0, 13
 	srliw t0, t0, 19
 	or t0, t0, t1
 	xor s0, s0, t0
+	addw t0, s1, t4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a2, a2, t0
+	addw t0, a3, s2
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a7, a7, t0
+	addw t0, t2, a4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor t6, t6, t0
 	addw t0, s0, t3
 	slliw t1, t0, 18
 	srliw t0, t0, 14
@@ -417,76 +417,76 @@ vg_salsa20_8_bytes:
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a3, a3, t0
-	addw t0, a3, a2
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor a4, a4, t0
-	addw t0, a4, a3
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a5, a5, t0
-	addw t0, a5, a4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a2, a2, t0
 	addw t0, a7, a6
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor t2, t2, t0
-	addw t0, t2, a7
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t3, t3, t0
-	addw t0, t3, t2
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a6, a6, t0
-	addw t0, a6, t3
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a7, a7, t0
 	addw t0, t6, t5
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s0, s0, t0
-	addw t0, s0, t6
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t4, t4, t0
-	addw t0, t4, s0
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor t5, t5, t0
-	addw t0, t5, t4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor t6, t6, t0
 	addw t0, s4, s3
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s1, s1, t0
+	addw t0, a3, a2
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor a4, a4, t0
+	addw t0, t2, a7
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t3, t3, t0
+	addw t0, s0, t6
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t4, t4, t0
 	addw t0, s1, s4
 	slliw t1, t0, 9
 	srliw t0, t0, 23
 	or t0, t0, t1
 	xor s2, s2, t0
+	addw t0, a4, a3
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a5, a5, t0
+	addw t0, t3, t2
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a6, a6, t0
+	addw t0, t4, s0
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor t5, t5, t0
 	addw t0, s2, s1
 	slliw t1, t0, 13
 	srliw t0, t0, 19
 	or t0, t0, t1
 	xor s3, s3, t0
+	addw t0, a5, a4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a2, a2, t0
+	addw t0, a6, t3
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a7, a7, t0
+	addw t0, t5, t4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor t6, t6, t0
 	addw t0, s3, s2
 	slliw t1, t0, 18
 	srliw t0, t0, 14
@@ -497,76 +497,76 @@ vg_salsa20_8_bytes:
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a6, a6, t0
-	addw t0, a6, a2
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t4, t4, t0
-	addw t0, t4, a6
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor s1, s1, t0
-	addw t0, s1, t4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a2, a2, t0
 	addw t0, a7, a3
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor t5, t5, t0
-	addw t0, t5, a7
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor s2, s2, t0
-	addw t0, s2, t5
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a3, a3, t0
-	addw t0, a3, s2
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a7, a7, t0
 	addw t0, t6, t2
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s3, s3, t0
-	addw t0, s3, t6
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor a4, a4, t0
-	addw t0, a4, s3
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor t2, t2, t0
-	addw t0, t2, a4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor t6, t6, t0
 	addw t0, s4, s0
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a5, a5, t0
+	addw t0, a6, a2
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t4, t4, t0
+	addw t0, t5, a7
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor s2, s2, t0
+	addw t0, s3, t6
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor a4, a4, t0
 	addw t0, a5, s4
 	slliw t1, t0, 9
 	srliw t0, t0, 23
 	or t0, t0, t1
 	xor t3, t3, t0
+	addw t0, t4, a6
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor s1, s1, t0
+	addw t0, s2, t5
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a3, a3, t0
+	addw t0, a4, s3
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor t2, t2, t0
 	addw t0, t3, a5
 	slliw t1, t0, 13
 	srliw t0, t0, 19
 	or t0, t0, t1
 	xor s0, s0, t0
+	addw t0, s1, t4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a2, a2, t0
+	addw t0, a3, s2
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a7, a7, t0
+	addw t0, t2, a4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor t6, t6, t0
 	addw t0, s0, t3
 	slliw t1, t0, 18
 	srliw t0, t0, 14
@@ -577,76 +577,76 @@ vg_salsa20_8_bytes:
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a3, a3, t0
-	addw t0, a3, a2
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor a4, a4, t0
-	addw t0, a4, a3
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a5, a5, t0
-	addw t0, a5, a4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a2, a2, t0
 	addw t0, a7, a6
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor t2, t2, t0
-	addw t0, t2, a7
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t3, t3, t0
-	addw t0, t3, t2
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a6, a6, t0
-	addw t0, a6, t3
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a7, a7, t0
 	addw t0, t6, t5
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s0, s0, t0
-	addw t0, s0, t6
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t4, t4, t0
-	addw t0, t4, s0
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor t5, t5, t0
-	addw t0, t5, t4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor t6, t6, t0
 	addw t0, s4, s3
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s1, s1, t0
+	addw t0, a3, a2
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor a4, a4, t0
+	addw t0, t2, a7
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t3, t3, t0
+	addw t0, s0, t6
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t4, t4, t0
 	addw t0, s1, s4
 	slliw t1, t0, 9
 	srliw t0, t0, 23
 	or t0, t0, t1
 	xor s2, s2, t0
+	addw t0, a4, a3
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a5, a5, t0
+	addw t0, t3, t2
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a6, a6, t0
+	addw t0, t4, s0
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor t5, t5, t0
 	addw t0, s2, s1
 	slliw t1, t0, 13
 	srliw t0, t0, 19
 	or t0, t0, t1
 	xor s3, s3, t0
+	addw t0, a5, a4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a2, a2, t0
+	addw t0, a6, t3
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a7, a7, t0
+	addw t0, t5, t4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor t6, t6, t0
 	addw t0, s3, s2
 	slliw t1, t0, 18
 	srliw t0, t0, 14
@@ -657,76 +657,76 @@ vg_salsa20_8_bytes:
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a6, a6, t0
-	addw t0, a6, a2
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t4, t4, t0
-	addw t0, t4, a6
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor s1, s1, t0
-	addw t0, s1, t4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a2, a2, t0
 	addw t0, a7, a3
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor t5, t5, t0
-	addw t0, t5, a7
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor s2, s2, t0
-	addw t0, s2, t5
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a3, a3, t0
-	addw t0, a3, s2
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a7, a7, t0
 	addw t0, t6, t2
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s3, s3, t0
-	addw t0, s3, t6
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor a4, a4, t0
-	addw t0, a4, s3
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor t2, t2, t0
-	addw t0, t2, a4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor t6, t6, t0
 	addw t0, s4, s0
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a5, a5, t0
+	addw t0, a6, a2
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t4, t4, t0
+	addw t0, t5, a7
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor s2, s2, t0
+	addw t0, s3, t6
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor a4, a4, t0
 	addw t0, a5, s4
 	slliw t1, t0, 9
 	srliw t0, t0, 23
 	or t0, t0, t1
 	xor t3, t3, t0
+	addw t0, t4, a6
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor s1, s1, t0
+	addw t0, s2, t5
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a3, a3, t0
+	addw t0, a4, s3
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor t2, t2, t0
 	addw t0, t3, a5
 	slliw t1, t0, 13
 	srliw t0, t0, 19
 	or t0, t0, t1
 	xor s0, s0, t0
+	addw t0, s1, t4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a2, a2, t0
+	addw t0, a3, s2
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a7, a7, t0
+	addw t0, t2, a4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor t6, t6, t0
 	addw t0, s0, t3
 	slliw t1, t0, 18
 	srliw t0, t0, 14
@@ -737,76 +737,76 @@ vg_salsa20_8_bytes:
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor a3, a3, t0
-	addw t0, a3, a2
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor a4, a4, t0
-	addw t0, a4, a3
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a5, a5, t0
-	addw t0, a5, a4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a2, a2, t0
 	addw t0, a7, a6
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor t2, t2, t0
-	addw t0, t2, a7
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t3, t3, t0
-	addw t0, t3, t2
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor a6, a6, t0
-	addw t0, a6, t3
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor a7, a7, t0
 	addw t0, t6, t5
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s0, s0, t0
-	addw t0, s0, t6
-	slliw t1, t0, 9
-	srliw t0, t0, 23
-	or t0, t0, t1
-	xor t4, t4, t0
-	addw t0, t4, s0
-	slliw t1, t0, 13
-	srliw t0, t0, 19
-	or t0, t0, t1
-	xor t5, t5, t0
-	addw t0, t5, t4
-	slliw t1, t0, 18
-	srliw t0, t0, 14
-	or t0, t0, t1
-	xor t6, t6, t0
 	addw t0, s4, s3
 	slliw t1, t0, 7
 	srliw t0, t0, 25
 	or t0, t0, t1
 	xor s1, s1, t0
+	addw t0, a3, a2
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor a4, a4, t0
+	addw t0, t2, a7
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t3, t3, t0
+	addw t0, s0, t6
+	slliw t1, t0, 9
+	srliw t0, t0, 23
+	or t0, t0, t1
+	xor t4, t4, t0
 	addw t0, s1, s4
 	slliw t1, t0, 9
 	srliw t0, t0, 23
 	or t0, t0, t1
 	xor s2, s2, t0
+	addw t0, a4, a3
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a5, a5, t0
+	addw t0, t3, t2
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor a6, a6, t0
+	addw t0, t4, s0
+	slliw t1, t0, 13
+	srliw t0, t0, 19
+	or t0, t0, t1
+	xor t5, t5, t0
 	addw t0, s2, s1
 	slliw t1, t0, 13
 	srliw t0, t0, 19
 	or t0, t0, t1
 	xor s3, s3, t0
+	addw t0, a5, a4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a2, a2, t0
+	addw t0, a6, t3
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor a7, a7, t0
+	addw t0, t5, t4
+	slliw t1, t0, 18
+	srliw t0, t0, 14
+	or t0, t0, t1
+	xor t6, t6, t0
 	addw t0, s3, s2
 	slliw t1, t0, 18
 	srliw t0, t0, 14

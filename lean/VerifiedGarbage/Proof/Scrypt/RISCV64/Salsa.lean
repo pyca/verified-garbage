@@ -187,8 +187,90 @@ theorem lines_ok {s₀ : State} :
     rw [List.flatMap_cons, WP.block_append_iff, List.foldl_cons]
     exact WP.mono (line_ok hl.1 h) fun s' h' => lines_ok l hl.2 _ s' h'
 
+/-- The lines of a double round in the RFC's order: each quarter-round's four
+lines in turn (`lines` takes a line of each in turn). -/
+def rfcLines : List (Nat × Nat × Nat × Nat) :=
+  [(4, 0, 12, 7), (8, 4, 0, 9), (12, 8, 4, 13), (0, 12, 8, 18), (9, 5, 1, 7), (13, 9, 5, 9), (1, 13, 9, 13), (5, 1, 13, 18), (14, 10, 6, 7), (2, 14, 10, 9), (6, 2, 14, 13), (10, 6, 2, 18), (3, 15, 11, 7), (7, 3, 15, 9), (11, 7, 3, 13), (15, 11, 7, 18)] ++
+  [(1, 0, 3, 7), (2, 1, 0, 9), (3, 2, 1, 13), (0, 3, 2, 18), (6, 5, 4, 7), (7, 6, 5, 9), (4, 7, 6, 13), (5, 4, 7, 18), (11, 10, 9, 7), (8, 11, 10, 9), (9, 8, 11, 13), (10, 9, 8, 18), (12, 15, 14, 7), (13, 12, 15, 9), (14, 13, 12, 13), (15, 14, 13, 18)]
+
+/-- The steps of a list of lines. -/
+abbrev steps (l : List (Nat × Nat × Nat × Nat)) (v : Vector Word 16) : Vector Word 16 :=
+  l.foldl (fun x (i, j, k, n) => stepN x i j k n) v
+
+theorem doubleRound_rfc (v : Vector Word 16) : Spec.Scrypt.doubleRound v = steps rfcLines v := rfl
+
+/-- Lines `a` and `b` touch disjoint words: neither writes a word the other
+reads or writes. -/
+def Indep : Nat × Nat × Nat × Nat → Nat × Nat × Nat × Nat → Bool
+  | (i, j, k, _), (i', j', k', _) =>
+    decide (i < 16 ∧ j < 16 ∧ k < 16 ∧ i' < 16 ∧ j' < 16 ∧ k' < 16 ∧
+      i ≠ i' ∧ i ≠ j' ∧ i ≠ k' ∧ i' ≠ j ∧ i' ≠ k)
+
+theorem stepN_comm {x : Vector Word 16} {i j k n i' j' k' n' : Nat}
+    (h : Indep (i, j, k, n) (i', j', k', n') = true) :
+    stepN (stepN x i j k n) i' j' k' n' = stepN (stepN x i' j' k' n') i j k n := by
+  simp only [Indep, decide_eq_true_eq] at h
+  obtain ⟨hi, hj, hk, hi', hj', hk', h1, h2, h3, h4, h5⟩ := h
+  apply Vector.ext
+  intro m hm
+  simp only [stepN_get _ _ hi' hj' hk' _ hm, stepN_get _ _ hi hj hk _ hm, stepN_get _ _ hi hj hk _ hi',
+    stepN_get _ _ hi hj hk _ hj', stepN_get _ _ hi hj hk _ hk', stepN_get _ _ hi' hj' hk' _ hi,
+    stepN_get _ _ hi' hj' hk' _ hj, stepN_get _ _ hi' hj' hk' _ hk]
+  have g1 : i' ≠ i := Ne.symm h1
+  by_cases e : i = m
+  · subst e; simp [g1, h4, h5]
+  · by_cases e' : i' = m
+    · subst e'; simp [e, h2, h3]
+    · simp [e, e']
+
+/-- `l` without its first `a`, if every line before it is independent of it. -/
+def pull (a : Nat × Nat × Nat × Nat) : List (Nat × Nat × Nat × Nat) → Option (List (Nat × Nat × Nat × Nat))
+  | [] => none
+  | b :: l => if b = a then some l else if Indep b a then (pull a l).map (b :: ·) else none
+
+/-- `l'` runs the lines of `l`, each moved only past lines independent of it. -/
+def SameSteps : List (Nat × Nat × Nat × Nat) → List (Nat × Nat × Nat × Nat) → Bool
+  | [], [] => true
+  | a :: l', l => match pull a l with
+    | some r => SameSteps l' r
+    | none => false
+  | [], _ :: _ => false
+
+theorem steps_cons (a : Nat × Nat × Nat × Nat) (l : List (Nat × Nat × Nat × Nat)) (v : Vector Word 16) :
+    steps (a :: l) v = steps l (stepN v a.1 a.2.1 a.2.2.1 a.2.2.2) := by
+  obtain ⟨i, j, k, n⟩ := a; rfl
+
+theorem pull_ok {a : Nat × Nat × Nat × Nat} :
+    ∀ {l r : List (Nat × Nat × Nat × Nat)}, pull a l = some r →
+      ∀ v, steps l v = steps r (stepN v a.1 a.2.1 a.2.2.1 a.2.2.2)
+  | [], _, h, _ => by simp [pull] at h
+  | b :: l, r, h, v => by
+    unfold pull at h
+    by_cases e : b = a
+    · subst e; simp only [ite_true, Option.some.injEq] at h; subst h; exact steps_cons _ _ _
+    · simp only [e, ite_false] at h
+      by_cases hb : Indep b a = true
+      · simp only [hb, ite_true] at h
+        obtain ⟨r', hr', rfl⟩ := Option.map_eq_some_iff.mp h
+        rw [steps_cons, pull_ok hr', steps_cons]
+        obtain ⟨i, j, k, n⟩ := b; obtain ⟨i', j', k', n'⟩ := a
+        exact congrArg _ (stepN_comm hb)
+      · simp only [hb, Bool.false_eq_true, ite_false, reduceCtorEq] at h
+
+theorem sameSteps_ok : ∀ {l' l : List (Nat × Nat × Nat × Nat)}, SameSteps l' l = true →
+    ∀ v, steps l' v = steps l v
+  | [], [], _, _ => rfl
+  | [], _ :: _, h, _ => by simp [SameSteps] at h
+  | a :: l', l, h, v => by
+    unfold SameSteps at h
+    split at h
+    · rename_i r hr
+      rw [steps_cons, pull_ok hr, sameSteps_ok h]
+    · simp at h
+
 theorem doubleRound_eq (v : Vector Word 16) : Spec.Scrypt.doubleRound v =
-    lines.foldl (fun x (i, j, k, n) => stepN x i j k n) v := rfl
+    lines.foldl (fun x (i, j, k, n) => stepN x i j k n) v :=
+  (doubleRound_rfc v).trans (sameSteps_ok (l' := lines) (l := rfcLines) (by decide) v).symm
 
 theorem doubleRound_ok {v : Vector Word 16} {s₀ s : State} (h : RI v s₀ s) :
     WP isa doubleRound s (RI (Spec.Scrypt.doubleRound v) s₀) := by
