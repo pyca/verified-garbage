@@ -22,9 +22,10 @@ masks set) and builds the table of bitsliced subkeys once (`keys d`);
 `crypt` saves the registers the same way, sets `a4` at the postwhitening's
 entry for `R` rounds and transforms the eight blocks of the tail buffer
 (`crypt8`), the core's `G = 8` blocks. Both restore the registers after.
-CBC and CFB decryption take eight blocks a step while eight are left
-(`Core.seq2`, `Mode.cbcDecWide`, `Mode.cfbDecWide`), then one a step; the
-other modes, which cannot, take one a step, the core's first block.
+CBC and CFB decryption and CTR take eight blocks a step while eight are
+left (`Core.seq2`, `Mode.cbcDecWide`, `Mode.cfbDecWide`, `Mode.ctrWide`),
+then one a step; the other modes, which cannot, take one a step, the
+core's first block.
 
 The key setup and the rounds write neither `a2`, `a3`, `a5` nor `ra`, and
 memory is secret to the analysis of constant time, so the modes' state
@@ -117,6 +118,7 @@ def cfbDecrypt : Prog isa :=
   modeFn fun R => (dirCore .encrypt R).seq2 (Modes.Mode.cfbDecWide 4 8) (Modes.Mode.cfbDecEarly 4) 3
 
 /-- `vg_camellia_ctr`. -/
-def ctr : Prog isa := modeFn fun R => (dirCore .encrypt R).seq Modes.Mode.ctr
+def ctr : Prog isa :=
+  modeFn fun R => (dirCore .encrypt R).seq2 (Modes.Mode.ctrWide 8) Modes.Mode.ctrEarly 3
 
 end VG.Impl.Camellia.RISCV64
