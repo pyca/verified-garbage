@@ -450,7 +450,7 @@ theorem open_tail {s₀ s₄ s₉ : State} (h : openPre s₀) (h4 : SO1 (stackAr
   · exact openPost_none (hres.trans (ite_eq_right_of_eq_false _ _ (eq_false hx)))
       (r3₁₁.trans (ite_eq_right_of_eq_false _ _ (eq_false hx))) (by rw [u₁₁.mem]; exact hd₂ hx)
 
-theorem open_good {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s₀ 1) s₀ s₄)
+theorem open_good [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s₀ 1) s₀ s₄)
     (h19 : s₄.gpr .s8 = stackArg s₀ 0) (hok : Spec.Gcm.tagLenOk (stackArg s₀ 0).toNat = true) :
     WP isa (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112) (.seq (.block [mov .s8 .a0])
       (.seq (.ite (.zero .s8) (.block []) oneCrypt) (.block [mov .a0 .s8]))))))) s₄ (OpenOut s₀) :=
