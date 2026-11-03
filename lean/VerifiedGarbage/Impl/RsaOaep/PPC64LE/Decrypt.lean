@@ -16,7 +16,7 @@ calls, with `vg_rsa_private_checked`.
 The steps are those of AArch64 (`Impl/RsaOaep/AArch64.lean`).
 
 It runs in the frame of encryption (`Impl/RsaOaep/PPC64LE.lean`, `save` and
-`restore`), with the same part of `scratch` and its MGF1 (`mgfXor`,
+`restore`), with the same part of `scratch` and its MGF1 (`mgfXorT`,
 `seedArgs`, `dbArgs`). The values the code keeps across the calls are in
 `r14`–`r20`: `r14` = `scratch`, `r15` = `k = n_len`, `r16` = `out`, `r17` =
 `msg_len`, `r18` = `label`, `r19` = `label_len`, and, after the private
@@ -56,7 +56,7 @@ namespace VG.Impl.RsaOaep.PPC64LE.Dec
 open VG VG.PPC64LE
 open VG.Impl.AesGcm.PPC64LE (mov)
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
-open VG.Impl.RsaOaep.PPC64LE (frameBytes arg save restore copyLoop zeroLoop zeroOut oEm oSt oDig oW oRsa mgfXor
+open VG.Impl.RsaOaep.PPC64LE (frameBytes arg save restore copyLoop zeroLoop zeroOut oEm oSt oDig oW oRsa mgfXorT
   seedArgs dbArgs Fns)
 
 /-! ## More of our part of `scratch` -/
@@ -186,7 +186,7 @@ def decRet : List Instr :=
 
 /-- After the private operation and the check of `k`: the decoding. -/
 def decMain (f : Fns) : Prog isa :=
-  .seq (.block (seedArgs H)) (.seq (mgfXor f 15) (.seq (.block (dbArgs H)) (.seq (mgfXor f 15) (.seq (hashLabel H)
+  .seq (.block (seedArgs H)) (.seq (mgfXorT f 15) (.seq (.block (dbArgs H)) (.seq (mgfXorT f 15) (.seq (hashLabel H)
   (.seq (accLh H) (.seq (scan H) (.seq clearBuf (.seq (copyT H) (.seq shift (.seq (.block okMask) (.seq outLoop
   (.block (decRet H)))))))))))))
 

@@ -198,7 +198,7 @@ def updCtrArgs : List Instr :=
 /-- The digest in `r11`, `dst + done` in `r12`, and in `r9`
 `min(hLen, dstLen - done)`: `hLen` (the table's word 4) `+ ((rem - hLen) ∧
 -(rem < hLen))` for `rem = dstLen - done`. -/
-def xorHead : List Instr :=
+def xorHeadT : List Instr :=
   tword .r9 j 4 ++ [.addi .r11 .r14 oDig, .add .r12 .r26 .r29, .sub .r8 .r27 .r29, .sub .r10 .r8 .r9,
     .lsr .d .r6 .r10 63, .li .r7 0, .sub .r6 .r7 .r6, .logic .and .r10 .r10 .r6, .add .r9 .r9 .r10]
 
@@ -209,24 +209,58 @@ def xorBody : List Instr :=
 
 /-- The first `min(hLen, dstLen - done)` bytes of the digest XORed into
 `dst + done`. -/
-def xorOut : Prog isa := .seq (.block (xorHead j)) (.loop (.block xorBody) (.nonzero .d .r9))
+def xorOutT : Prog isa := .seq (.block (xorHeadT j)) (.loop (.block xorBody) (.nonzero .d .r9))
 
 /-- The next counter and `done`, and in `r12` 1 while `done < dstLen`, 0
 after. -/
-def nextCtr : List Instr :=
+def nextCtrT : List Instr :=
   tword .r12 j 4 ++ [.addi .r28 .r28 1, .add .r29 .r29 .r12, .sub .r12 .r29 .r27, .lsr .d .r12 .r12 63]
 
 /-- One block: the digest of `src ‖ I2OSP(c, 4)`, XORed into `dst`. -/
-def round : Prog isa :=
+def roundT : Prog isa :=
   .seq (.block [.addi .r3 .r14 oSt]) (.seq (tcall j 0 f.init)
   (.seq (.block [.addi .r3 .r14 oSt, .li .r4 0, mov .r5 .r24, mov .r6 .r25, .addi .r7 .r14 oW]) (.seq (tcall j 1 f.upd)
   (.seq (.block updCtrArgs) (.seq (tcall j 1 f.upd)
   (.seq (.block [.addi .r3 .r14 oSt, .addi .r4 .r25 4, .addi .r5 .r14 oDig, .addi .r6 .r14 oW]) (.seq (tcall j 2 f.fin)
-  (.seq (xorOut j) (.block (nextCtr j))))))))))
+  (.seq (xorOutT j) (.block (nextCtrT j))))))))))
 
 /-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`, with the hash function of
 the table that is our stack argument `j`. -/
-def mgfXor : Prog isa := .seq (.block [.li .r28 0, .li .r29 0]) (.loop (round f j) (.nonzero .d .r12))
+def mgfXorT : Prog isa := .seq (.block [.li .r28 0, .li .r29 0]) (.loop (roundT f j) (.nonzero .d .r12))
+
+/-! MGF1 with a hash function `G` given at compile time, as RSASSA-PSS
+(`Impl/RsaPss/PPC64LE.lean`) calls it. -/
+
+section Fixed
+variable (G : Hash)
+
+/-- The digest in `r11`, `dst + done` in `r12`, and in `r9`
+`min(hLen, dstLen - done)`: `hLen + ((rem - hLen) ∧ -(rem < hLen))` for
+`rem = dstLen - done`. -/
+def xorHead : List Instr :=
+  [.addi .r11 .r14 oDig, .add .r12 .r26 .r29, .sub .r8 .r27 .r29, .li .r9 G.D, .sub .r10 .r8 .r9,
+    .lsr .d .r6 .r10 63, .li .r7 0, .sub .r6 .r7 .r6, .logic .and .r10 .r10 .r6, .add .r9 .r9 .r10]
+
+/-- The first `min(hLen, dstLen - done)` bytes of the digest XORed into
+`dst + done`. -/
+def xorOut : Prog isa := .seq (.block (xorHead G)) (.loop (.block xorBody) (.nonzero .d .r9))
+
+/-- The next counter and `done`, and in `r12` 1 while `done < dstLen`, 0
+after. -/
+def nextCtr : List Instr := [.addi .r28 .r28 1, .addi .r29 .r29 G.D, .sub .r12 .r29 .r27, .lsr .d .r12 .r12 63]
+
+/-- One block: the digest of `src ‖ I2OSP(c, 4)`, XORed into `dst`. -/
+def round : Prog isa :=
+  .seq (.block [.addi .r3 .r14 oSt]) (.seq G.callInit
+  (.seq (.block [.addi .r3 .r14 oSt, .li .r4 0, mov .r5 .r24, mov .r6 .r25, .addi .r7 .r14 oW]) (.seq G.callUpd
+  (.seq (.block updCtrArgs) (.seq G.callUpd
+  (.seq (.block [.addi .r3 .r14 oSt, .addi .r4 .r25 4, .addi .r5 .r14 oDig, .addi .r6 .r14 oW]) (.seq G.callFin
+  (.seq (xorOut G) (.block (nextCtr G))))))))))
+
+/-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`. -/
+def mgfXor : Prog isa := .seq (.block [.li .r28 0, .li .r29 0]) (.loop (round G) (.nonzero .d .r12))
+
+end Fixed
 
 /-- MGF1's registers for masking `DB` (`k - hLen - 1` bytes at
 `EM + 1 + hLen`) with the seed (`hLen` bytes at `EM + 1`). -/
@@ -257,8 +291,8 @@ variable (f : Fns)
 /-- After the checks. -/
 def encMain : Prog isa :=
   .seq (encEm H) (.seq (hashLabel H) (.seq (copyLh H)
-  (.seq (.block (dbArgs H)) (.seq (mgfXor f 7)
-  (.seq (.block (seedArgs H)) (.seq (mgfXor f 7)
+  (.seq (.block (dbArgs H)) (.seq (mgfXorT f 7)
+  (.seq (.block (seedArgs H)) (.seq (mgfXorT f 7)
   (.seq (.block pubArgs) Impl.RsaPkcs1Sig.PPC64LE.pubCall)))))))
 
 /-- The checks, then `encMain`. -/

@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.CTLabel
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.CTPriv
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Correct
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgf
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgfT
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Unmask
 public import VerifiedGarbage.Proof.RsaOaep.Scan
 import VerifiedGarbage.Proof.Framework.Offset
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.ShiftV
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.CTBase
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.PrivCall
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Mgf
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-!
@@ -28,7 +28,7 @@ Untrusted: everything here is checked by Lean. Two runs from entry states
 with the anchor's public data leak alike: the code between the calls by the
 taint analysis (`Dc/CTBlocks`), the private operation by its constant time
 (`priv_ct`), the hash functions' calls by their contracts (`hashLabel_ct`,
-MGF1's `mgfXor_ctS`, with the table at the same address and its functions
+MGF1's `mgfXorT_ctS`, with the table at the same address and its functions
 at the same addresses: `DXT`), and the branch on the public `k` (`two_ite`); what
 each run satisfies between them follows from correctness. The scan's index,
 the shift's count and the private operation's result differ between the
@@ -90,7 +90,7 @@ def MgfD (G : Hash) (f : Fns) (src srcLen dst dstLen : Nat) (a t : State) : Prop
     t.gpr .r26 = off (stackArg a 13) dst ∧ t.gpr .r27 = BitVec.ofNat 64 dstLen
 
 theorem MgfD.toA {G : Hash} {f : Fns} {src srcLen dst dstLen : Nat} {a t : State}
-    (h : MgfD G f src srcLen dst dstLen a t) : MgfA SX VX (PreXT G f) (PubXT G) src srcLen dst dstLen a t := by
+    (h : MgfD G f src srcLen dst dstLen a t) : MgfAT SX VX (PreXT G f) (PubXT G) src srcLen dst dstLen a t := by
   obtain ⟨⟨s, m, P, T, p, y, hm, b, sy⟩, h24, h25, h26, h27⟩ := h
   obtain ⟨pX, bX⟩ := toX P hm _ (rcOf_le _) b
   have a15 : stackArg (bx s m (rcOf (privO s))) 15 = stackArg s 15 := stackArg_bx P hm _ (by decide)
@@ -104,20 +104,20 @@ variable {G : Hash} (hG : HashOK G) (cG : HashCT hG) {Gs : Spec.Mgf1.Hash}
   (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) {f : Fns}
 
 include cG hGh hGl hGv in
-/-- `mgfXor`, with its lengths and offsets the anchor's. -/
+/-- `mgfXorT`, with its lengths and offsets the anchor's. -/
 theorem mgf_anyD (q : State → Nat × Nat × Nat × Nat) :
     RelCT isa (Two fun a t => MgfD G f (q a).1 (q a).2.1 (q a).2.2.1 (q a).2.2.2 a t ∧
-      MFit (q a).1 (q a).2.1 (q a).2.2.1 (q a).2.2.2) (mgfXor f 15) fun _ _ => True :=
+      MFit (q a).1 (q a).2.1 (q a).2.2.1 (q a).2.2.2) (mgfXorT f 15) fun _ _ => True :=
   (RelCT.exists_ (P := fun (x : {x : Nat × Nat × Nat × Nat // MFit x.1 x.2.1 x.2.2.1 x.2.2.2}) =>
-      Two (MgfA SX VX (PreXT G f) (PubXT G) x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2))
-    fun x => mgfXor_ctS (okXT G f) hG cG x.2 hGh hGl hGv (tabXT G f)).mono
+      Two (MgfAT SX VX (PreXT G f) (PubXT G) x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2))
+    fun x => mgfXorT_ctS (okXT G f) hG cG x.2 hGh hGl hGv (tabXT G f)).mono
     (fun _ _ ⟨a, h₁, h₂⟩ => ⟨⟨q a, h₁.2⟩, a, h₁.1.toA, h₂.1.toA⟩) fun _ _ h => h
 
 include hGh hGl hGv in
 theorem mgf_dx {src srcLen dst dstLen : Nat} (hf : MFit src srcLen dst dstLen) {a t : State}
-    (h : MgfD G f src srcLen dst dstLen a t) : WP isa (mgfXor f 15) t (DXT G f a) := by
+    (h : MgfD G f src srcLen dst dstLen a t) : WP isa (mgfXorT f 15) t (DXT G f a) := by
   obtain ⟨⟨s, m, P, T, p, y, hm, b, sy⟩, h24, h25, h26, h27⟩ := h
-  exact WP.mono (mgfXor_ok (fitsM P) hG (tabS_wm P T hm) hGh hGl hGv hf b sy (h24.trans (off13 p _)) h25
+  exact WP.mono (mgfXorT_ok (fitsM P) hG (tabS_wm P T hm) hGh hGl hGv hf b sy (h24.trans (off13 p _)) h25
     (h26.trans (off13 p _)) h27) fun _ h' => ⟨s, m, P, T, p, y, hm, h'.1.1, h'.2⟩
 
 end

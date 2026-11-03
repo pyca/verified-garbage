@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Mgf
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Label
 public import VerifiedGarbage.Proof.RsaOaep.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
@@ -90,7 +90,7 @@ theorem mask_ok {H G : Hash} (hG : HashOK G) {f : Impl.RsaOaep.PPC64LE.Fns} {j :
     (he : EmAt (view t.mem (S s)) (kk s) D sd lh m (mLen s)) {rest : Prog isa} {Q : State → Prop}
     (k : ∀ t', Base S vO s t' → Spec.Rsa.bytesAt t'.mem (off (S s) 0) (kk s) = emOf Gs D (kk s) (mLen s) sd lh m →
       WP isa rest t' Q) :
-    WP isa (.seq (.block (dbArgs H)) (.seq (mgfXor f j) (.seq (.block (seedArgs H)) (.seq (mgfXor f j) rest)))) t Q := by
+    WP isa (.seq (.block (dbArgs H)) (.seq (mgfXorT f j) (.seq (.block (seedArgs H)) (.seq (mgfXorT f j) rest)))) t Q := by
   obtain ⟨hE, hSt, hDg, hCt, hW, hRs⟩ := offs
   have hk2 := P.k2
   have ek : kk s = (s.gpr .r6).toNat := rfl
@@ -100,7 +100,7 @@ theorem mask_ok {H G : Hash} (hG : HashOK G) {f : Impl.RsaOaep.PPC64LE.Fns} {j :
     wp_addi (h := by omega_arith) fun t₃ o₃ e₃ => wp_subi (h := by omega_arith) fun t₄ o₄ e₄ => wp_nil fun sy₄ => ?_))
   have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
   have b₄ := h.only P.fits k₄
-  refine WP.seq (WP.mono (mgfXor_ok P.fits hG T hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
+  refine WP.seq (WP.mono (mgfXorT_ok P.fits hG T hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
     (dstLen := kk s - H.D - 1) ⟨by omega_arith, by omega_arith, .inl (by omega_arith), by omega_arith⟩ b₄
     (sy₄.trans hsy)
     (by rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, h.r14, hE])
@@ -113,7 +113,7 @@ theorem mask_ok {H G : Hash} (hG : HashOK G) {f : Impl.RsaOaep.PPC64LE.Fns} {j :
     wp_addi (h := by omega_arith) fun t₈ o₈ e₈ => wp_li (by omega_arith) fun t₉ o₉ e₉ => wp_nil fun sy₉ => ?_))
   have k₉ : Only [.r24, .r25, .r26, .r27] t₅ t₉ := (o₆.trans (o₇.trans (o₈.trans o₉))).mono
   have b₉ := b₅.only P.fits k₉
-  refine WP.seq (WP.mono (mgfXor_ok P.fits hG T hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1) (dst := 1)
+  refine WP.seq (WP.mono (mgfXorT_ok P.fits hG T hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1) (dst := 1)
     (dstLen := H.D) ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩ b₉ (sy₉.trans sy₅)
     (by rw [o₉.get .r24, o₈.get .r24, o₇.get .r24, e₆, b₅.r14, hE, Nat.zero_add])
     (by rw [o₉.get .r25, o₈.get .r25, e₇, o₆.get .r15, b₅.r15, sub_k (by omega_arith)]; congr 1)
