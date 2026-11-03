@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
+public import VerifiedGarbage.Proof.HashTable.AArch64
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
@@ -33,26 +34,28 @@ import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 
-/-! # RSAES-OAEP decryption on AArch64 -/
+/-! # RSAES-OAEP encryption with a precomputed public key on AArch64, with MGF1's hash function as a table -/
 
 @[expose] public section
 
-namespace VG.Generic.MdHash.MdHash.RsaPrivateCrt.AArch64.RsaOaep
+namespace VG.Generic.MdHash.RsaPublicPrecomputed.AllMdHash.AArch64.RsaOaep
 
-open VG.Proof.RsaOaep.AArch64 (mgf_valid dec_sat)
-open VG.Proof.RsaOaep.AArch64.Inst (emitted parts features)
-open VG.Proof.RsaOaep.AArch64.Dec (decStack dec_verified)
-open VG.Proof.RsaPkcs1Enc.AArch64 (privOf)
+open VG.Proof.RsaOaep.AArch64 (enc_ok OK)
+open VG.Proof.RsaOaep.AArch64.Inst (emitted parts)
+open VG.Proof.RsaOaep.AArch64.Enc (encStack)
+open VG.Proof.RsaPkcs1Sig.AArch64 (pdOf)
+open VG.Proof.HashTable.AArch64 (tables fnsOf)
 
-def artifacts (v v2 : Proof.Pbkdf2.Md.AArch64.MdHash) (c : Proof.Rsa.AArch64.CrtImpl) : List Artifact :=
-  if emitted v v2 then [
-    (Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G).artifact AArch64.target {
-      suffix := Emit.qualifiedName "" (parts v v2 ++ [("crt", c.suffix)])
-      code := Impl.RsaOaep.AArch64.decrypt v.H v2.H (privOf c).name (privOf c).code
-      stack := decStack (privOf c)
-      verified := dec_verified v.ok.stream v2.ok.stream v.mgf.hash v.mgf.len (mgf_valid v.mgf) v2.mgf.hash
-        v2.mgf.len (mgf_valid v2.mgf) (privOf c) (dec_sat v.mgf.G v2.mgf.G c)
-      features := features v v2 ++ c.features.filter (!(features v v2).contains ·) }]
+def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (c : Proof.Rsa.AArch64.PublicImpl)
+    (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
+  if h : emitted v = true ∧ OK vs then [
+    (Spec.RsaOaep.encryptTableApi v.mgf.G).artifact AArch64.target {
+      suffix := Emit.qualifiedName "" (parts v ++ [("rsa", c.suffix)])
+      tables := [("mgf1", tables vs)]
+      code := Impl.RsaOaep.AArch64.Precomputed.encrypt v.H (fnsOf vs) (pdOf c).name (pdOf c).code
+      stack := encStack (pdOf c)
+      verified := enc_ok v vs h.2 c
+      features := v.features ++ c.features.filter (!v.features.contains ·) }]
   else []
 
-end VG.Generic.MdHash.MdHash.RsaPrivateCrt.AArch64.RsaOaep
+end VG.Generic.MdHash.RsaPublicPrecomputed.AllMdHash.AArch64.RsaOaep
