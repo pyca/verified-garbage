@@ -33,8 +33,8 @@ Algorithm 1, `Spec.Gcm.mul`), as the product of polynomials modulo
   frame, written once (`prep`), and read by every product.
 * The frame holds them, the two products a block keeps while it computes
   the third (`spill`), and `s0`–`s9`; it is the 2048 bytes below the stack
-  pointer that the contract gives. The prepared key and the spills are
-  zeroed before the frame is popped.
+  pointer that the contract gives. The prepared key, the spills and the
+  saved registers (the caller's) are zeroed before the frame is popped.
 * The pointers and the block count are public, and so is everything
   computed from them; no address and no branch depends on anything else.
   The multiplications take secret operands: the M extension's `mul` has no
@@ -193,11 +193,12 @@ def loadY : List Instr := loadBE64 Y0 .t2 YP 0 ++ loadBE64 Y1 .t2 YP 8
 def storeY : List Instr := storeBE 8 Y0 .t2 YP 0 ++ storeBE 8 Y1 .t2 YP 8
 
 /-- The frame's body: the registers saved, the key prepared, `Y` in, the
-blocks, `Y` out, the key and the spills zeroed, the registers restored. -/
+blocks, `Y` out, the registers restored, and the prepared key, the spills and
+the saved registers zeroed. -/
 def body : Prog isa :=
   .seq (.block (.addSp .t0 0 :: saveRegs ++ [.addSp FP 0] ++ prep ++ loadY))
     (.seq (.loop (.block blockCode) (.nonzero N))
-      (.block (storeY ++ Impl.StackScratch.RISCV64.wipe 40 ++ .addSp .t0 0 :: restoreRegs)))
+      (.block (storeY ++ (.addSp .t0 0 :: restoreRegs) ++ Impl.StackScratch.RISCV64.wipe 50)))
 
 def ghash : Prog isa :=
   .ite (.zero N) (.block []) (.frame (.alloc frameBytes) body (.free frameBytes))
