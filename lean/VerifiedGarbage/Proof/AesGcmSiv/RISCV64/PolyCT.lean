@@ -59,7 +59,7 @@ variable {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ :
 include L E₁ E₂ hsp
 
 /-- A chunk of the `m` bytes at `Q`. -/
-theorem chunk_rel {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (h16 : 16 ≤ m) (hQ₁ : Src c σ₁ Q (16 * (m / 16)))
+theorem chunk_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (h16 : 16 ≤ m) (hQ₁ : Src c σ₁ Q (16 * (m / 16)))
     (hQ₂ : Src c σ₂ Q (16 * (m / 16))) (h9₁ : σ₁.gpr .s9 = Q) (h9₂ : σ₂.gpr .s9 = Q)
     (h10₁ : σ₁.gpr .s10 = BitVec.ofNat 64 m) (h10₂ : σ₂.gpr .s10 = BitVec.ofNat 64 m) :
     RelCT isa (Eq2 σ₁ σ₂) chunk TT := by
@@ -82,7 +82,7 @@ theorem chunk_rel {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (h16 : 16 ≤ m) (hQ₁
 end
 
 /-- The chunks of the `m` bytes at `Q`, in two runs from `σ₁` and `σ₂`. -/
-theorem chunks_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂) (hsp : σ₁.sp = σ₂.sp)
+theorem chunks_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂) (hsp : σ₁.sp = σ₂.sp)
     {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (h16 : 16 ≤ m) (hQ₁ : Src c σ₁ Q (16 * (m / 16)))
     (hQ₂ : Src c σ₂ Q (16 * (m / 16))) (h9₁ : σ₁.gpr .s9 = Q) (h9₂ : σ₂.gpr .s9 = Q)
     (h10₁ : σ₁.gpr .s10 = BitVec.ofNat 64 m) (h10₂ : σ₂.gpr .s10 = BitVec.ofNat 64 m) :
@@ -123,7 +123,7 @@ variable {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ :
 include L E₁ E₂ hsp
 
 /-- `absTail`: the last `r` bytes at `P`. -/
-theorem absTail_rel {P : Addr} {r : Nat} (hr1 : 1 ≤ r) (hr : r < 16) (hc₁ : Covers [⟨P, r⟩] (σ₁.rd ++ σ₁.wr))
+theorem absTail_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {P : Addr} {r : Nat} (hr1 : 1 ≤ r) (hr : r < 16) (hc₁ : Covers [⟨P, r⟩] (σ₁.rd ++ σ₁.wr))
     (hc₂ : Covers [⟨P, r⟩] (σ₂.rd ++ σ₂.wr)) (hd : (⟨P, r⟩ : Region).Disjoint ⟨c.W, 3840⟩)
     (h9₁ : σ₁.gpr .s9 = P) (h9₂ : σ₂.gpr .s9 = P) (h10₁ : σ₁.gpr .s10 = BitVec.ofNat 64 r)
     (h10₂ : σ₂.gpr .s10 = BitVec.ofNat 64 r) : RelCT isa (Eq2 σ₁ σ₂) absTail TT := by
@@ -139,7 +139,7 @@ theorem absTail_rel {P : Addr} {r : Nat} (hr1 : 1 ≤ r) (hr : r < 16) (hc₁ : 
     (by decide) (srcB L (E₁.of_pk T₁.pk).perm) (srcB L (E₂.of_pk T₂.pk).perm) T₁.s9 T₂.s9 T₁.s10 T₂.s10
 
 /-- `absorb`: the `m` bytes at `Q`. -/
-theorem absorb_rel {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (hQ₁ : Src c σ₁ Q m) (hQ₂ : Src c σ₂ Q m)
+theorem absorb_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (hQ₁ : Src c σ₁ Q m) (hQ₂ : Src c σ₂ Q m)
     (hd : (⟨Q, m⟩ : Region).Disjoint ⟨c.W, 3840⟩) (h9₁ : σ₁.gpr .s9 = Q) (h9₂ : σ₂.gpr .s9 = Q)
     (h10₁ : σ₁.gpr .s10 = BitVec.ofNat 64 m) (h10₂ : σ₂.gpr .s10 = BitVec.ofNat 64 m) :
     RelCT isa (Eq2 σ₁ σ₂) absorb TT := by
@@ -178,7 +178,7 @@ theorem absorb_rel {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (hQ₁ : Src c σ₁ Q
         (by rw [P₂.pk.rd, P₂.pk.wr]; exact hs₂.rd) (hd.sub_left (Offset.sub_base Q (by omega_arith))) s9₁ s9₂ s10₁ s10₂
 
 /-- `lens`. -/
-theorem lens_rel : RelCT isa (Eq2 σ₁ σ₂) lens TT := by
+theorem lens_rel [VG.Proof.Gcm.RISCV64.GhashLaw] : RelCT isa (Eq2 σ₁ σ₂) lens TT := by
   unfold lens
   refine rel_seqR (rel_env [] E₁ E₂ hsp (by simp) ⟨_, by taint_decide⟩) (Runs.of_wp (lensBlk_wp L E₁))
     (Runs.of_wp (lensBlk_wp L E₂)) fun ρ₁ ρ₂ ⟨pk₁, _, s9₁, s10₁⟩ ⟨pk₂, _, s9₂, s10₂⟩ => ?_
@@ -186,7 +186,7 @@ theorem lens_rel : RelCT isa (Eq2 σ₁ σ₂) lens TT := by
     (srcB L (E₁.of_pk pk₁).perm) (srcB L (E₂.of_pk pk₂).perm) s9₁ s9₂ s10₁ s10₂
 
 /-- `polyval`. -/
-theorem polyval_rel : RelCT isa (Eq2 σ₁ σ₂) polyval TT := by
+theorem polyval_rel [VG.Proof.Gcm.RISCV64.GhashLaw] : RelCT isa (Eq2 σ₁ σ₂) polyval TT := by
   unfold polyval
   refine rel_seqR (rel_env [] E₁ E₂ hsp (by simp) ⟨_, by taint_decide⟩) (Runs.of_wp (movA_wp E₁))
     (Runs.of_wp (movA_wp E₂)) fun τ₁ τ₂ ⟨pk₁, m₁, a₁, l₁⟩ ⟨pk₂, m₂, a₂, l₂⟩ => ?_

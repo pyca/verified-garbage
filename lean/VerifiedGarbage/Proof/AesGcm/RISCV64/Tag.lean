@@ -81,7 +81,7 @@ theorem j_tFrame (hk : StkOk (V .s2) (V .s1) (V .s0) sp) :
   · exact hk.st.sub_left (Region.sub_prefix (by decide))
 
 /-- The lengths block absorbed, before the copy. -/
-theorem tagLens_ok {R : Nat} {H J : Block} {s : State} (he : Env V sp s) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+theorem tagLens_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {R : Nat} {H J : Block} {s : State} (he : Env V sp s) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (V .s1) = J) :
     WP isa (lens 16) s (TagMid V sp R H (blockAt s.mem (V .s1 + BitVec.ofNat 64 16)) J
       (s.gpr .s4).toNat (s.gpr .s6).toNat s.mem) := by

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration

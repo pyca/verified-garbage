@@ -133,7 +133,7 @@ theorem exit_covers {c : Cx} {s : State} (E : Env c s) : Covers [⟨c.W, 2560⟩
   covers_prefix (Covers.right E.perm.w) (by decide)
 
 /-- `vg_aes_gcm_siv_seal`, for its arguments. -/
-theorem seal_wp' (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) (hTw : Covers [⟨c.T, 16⟩] s.wr) :
+theorem seal_wp' [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) (hTw : Covers [⟨c.T, 16⟩] s.wr) :
     WP isa «seal» s fun s' => abiPreserved s s' ∧
       Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem c.K c.R) (Spec.GcmSiv.keyLen c.R) (bytesAt s.mem c.N 12)
         (bytesAt s.mem c.D c.n) (bytesAt s.mem c.A c.al) = (bytesAt s'.mem c.D c.n, bytesAt s'.mem c.T 16) := by
