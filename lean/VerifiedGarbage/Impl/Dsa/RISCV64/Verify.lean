@@ -115,12 +115,43 @@ def powP : Prog isa :=
   .seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (copy 1 24)
     (.seq (.block (getQ .s10)) ModExp.powWin)))
 
-/-- `v = g^u1 y^u2 mod p` into array 7, then to the buffer (`p_len` octets). -/
+/-- The joint table `T_(i + 4 j) = g^i y^j R mod p` for `i, j < 4`, in arrays
+`8 + i + 4 j`, from g in array 4, y in array 25 and `R² mod p` in array 1;
+then `a := T_0` in array 6. -/
+def jointTable : Prog isa :=
+  .seq one (.seq (montOp 8 1 7) (.seq (montOp 9 4 1) (.seq (montOp 12 25 1)
+  (.seq (montOp 10 9 9) (.seq (montOp 11 10 9)
+  (.seq (montOp 13 12 9) (.seq (montOp 14 12 10) (.seq (montOp 15 12 11)
+  (.seq (montOp 16 12 12) (.seq (montOp 17 16 9) (.seq (montOp 18 16 10) (.seq (montOp 19 16 11)
+  (.seq (montOp 20 16 12) (.seq (montOp 21 20 9) (.seq (montOp 22 20 10) (.seq (montOp 23 20 11)
+    (ModExp.copy 6 8)))))))))))))))))
+
+/-- One joint window, u1's two bits at the top of `s7` and u2's at bits 54–55:
+two squares, `a := a T_(d1 + 4 d2)`, then `s7 := s7 << 2`. -/
+def jointWindow : Prog isa :=
+  .seq (ModExp.sqrOp 6 6 5) (.seq (ModExp.sqrOp 6 6 5)
+    (.seq (.block [.shift .srl .d .a1 .s7 62, .shift .srl .d .t3 .s7 54, .logicImm .and .t3 .t3 3,
+      .shift .sll .d .t3 .t3 2, .logic .or .a1 .a1 .t3])
+    (.seq ModExp.select (.seq (montOp 6 6 5) (.block [.shift .sll .d .s7 .s7 2])))))
+
+/-- The four joint windows of u1's byte at `s9` and u2's `q_len` bytes on,
+`s9` advanced. -/
+def jointByte : Prog isa :=
+  .seq (.block ([.load .b .s7 .s9 0, .shift .sll .d .s7 .s7 56] ++ getQ .t3 ++
+      [.add .t3 .s9 .t3, .load .b .t3 .t3 0, .shift .sll .d .t3 .t3 56, .shift .srl .d .t3 .t3 8,
+       .logic .or .s7 .s7 .t3, .addi .s9 .s9 1]))
+    (.seq jointWindow (.seq jointWindow (.seq jointWindow jointWindow)))
+
+/-- `v = g^u1 y^u2 mod p` into array 4, then to the buffer (`p_len` octets):
+g into array 4 and y into array 25, the joint table, the joint windows of
+u1's and u2's `q_len` bytes, then out of Montgomery form. -/
 def combine : Prog isa :=
-  .seq (.block (enterP ++ Precompute.minv ++ ptrBuf ++ [.addi .s9 .s7 0] ++ ptrG)) (.seq powP
-    (.seq (copy 25 4) (.seq (.block (ptrBuf2 ++ [.addi .s9 .s7 0] ++ ptrY)) (.seq powP (.seq (copy 1 24)
-      (.seq (montOp 5 4 1) (.seq (copy 6 25) (.seq (montOp 7 6 5)
-        (.seq (.block (bufBase .s7 .t2 ++ getP .s8)) (storeBE 7))))))))))
+  .seq (.block (enterP ++ Precompute.minv ++ ptrG ++ getP .s8)) (.seq (loadArr 4)
+    (.seq (.block (ptrY ++ getP .s8)) (.seq (loadArr 25) (.seq (copy 1 24) (.seq jointTable
+    (.seq (.block (ptrBuf ++ [.addi .s9 .s7 0, .addi .s10 .s8 0]))
+    (.seq (.loop (.seq jointByte (.block [.addi .s10 .s10 (-1)])) (.nonzero .s10))
+    (.seq (montOp 4 6 7)
+      (.seq (.block (bufBase .s7 .t2 ++ getP .s8)) (storeBE 4))))))))))
 
 /-- In the Q space, `v mod q` (`reduce64` of the buffer's `p_len` octets)
 into array 1, r into array 5, and `a0 :=` 1 if they are equal and the mask
