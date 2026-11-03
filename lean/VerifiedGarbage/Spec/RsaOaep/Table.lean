@@ -7,15 +7,15 @@ public import VerifiedGarbage.Spec.HashTable
 # RSAES-OAEP with MGF1's hash function given as a table
 
 **Trusted** (as every file in `Spec/`). For the hash function `H` (any of
-`Mgf1.hashes`), in the module `rsa_oaep_<H>`, the functions of
+`Mgf1.hashes`), in the module `rsa_oaep_<H>_mgf1`, the functions of
 `Spec/RsaOaep/Contract.lean` and `Spec/RsaOaep/Precomputed.lean` with MGF1's
 hash function not fixed but given at run time: a last parameter `mgf1`, a
 table of the interface `Hash` (`Spec/HashTable.lean`), and MGF1 with the
 hash function it names (`HashTable.hashAt`):
 
-* `vg_rsa_oaep_<H>_encrypt_precomputed`: as
+* `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`: as
   `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`;
-* `vg_rsa_oaep_<H>_decrypt`: as `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`;
+* `vg_rsa_oaep_<H>_mgf1_decrypt`: as `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`;
 
 for `G` the hash function `mgf1` names. So one function serves every MGF1
 hash function, with every implementation of it, rather than a function for
@@ -41,7 +41,7 @@ def mgf1Safety : String :=
     first word of data (the hash functions' tables of this crate, `fn_tables`, say which they \
     name)."
 
-/-! ## `vg_rsa_oaep_<H>_encrypt_precomputed` -/
+/-! ## `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` -/
 
 /-- `encryptPrecomputedSig` with a last parameter `mgf1: *const [u64; 5]`,
 a table of `Hash`. -/
@@ -70,10 +70,10 @@ def encryptTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
         (Rsa.wordsAt m pre preLen.toNat).map (·.toNat))
 
-/-- `vg_rsa_oaep_<H>_encrypt_precomputed` on every target. -/
+/-- `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` on every target. -/
 def encryptTableApi : Api where
-  module := s!"rsa_oaep_{H.rust}"
-  name := s!"vg_rsa_oaep_{H.rust}_encrypt_precomputed"
+  module := s!"rsa_oaep_{H.rust}_mgf1"
+  name := s!"vg_rsa_oaep_{H.rust}_mgf1_encrypt_precomputed"
   sig := encryptTableSig H
   writeArgs := true
   contracts := some fun A stack => encryptTableContract H A stack
@@ -96,7 +96,7 @@ def encryptTableApi : Api where
       "For the result to be encryption's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1).", mgf1Safety]
 
-/-! ## `vg_rsa_oaep_<H>_decrypt` -/
+/-! ## `vg_rsa_oaep_<H>_mgf1_decrypt` -/
 
 /-- `decryptSig` with a last parameter `mgf1: *const [u64; 5]`, a table of
 `Hash`. -/
@@ -127,10 +127,10 @@ def decryptTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :
         _dqLen _qinv _qinvLen _label _labelLen _ct _ctLen _scratch _scratchLen _mgf1 m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
-/-- `vg_rsa_oaep_<H>_decrypt` on every target. -/
+/-- `vg_rsa_oaep_<H>_mgf1_decrypt` on every target. -/
 def decryptTableApi : Api where
-  module := s!"rsa_oaep_{H.rust}"
-  name := s!"vg_rsa_oaep_{H.rust}_decrypt"
+  module := s!"rsa_oaep_{H.rust}_mgf1"
+  name := s!"vg_rsa_oaep_{H.rust}_mgf1_decrypt"
   sig := decryptTableSig
   writeArgs := true
   contracts := some fun A stack => decryptTableContract H A stack
