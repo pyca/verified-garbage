@@ -320,7 +320,7 @@ fn keys(c: &mut Criterion) {
 pub fn bench(c: &mut Criterion) {
     // Only Proto25 this run: main's sqrTail next to a one-level Karatsuba squaring, alone and in
     // the 4-bit-window exponentiation's mix (64 w squarings, 16 w multiplications by main's tail).
-    const ONLY_P25: bool = true;
+    const ONLY_P25: bool = false;
     if ONLY_P25 {
         use verified_garbage_asm_riscv64::rsa_proto25 as p25;
         type F = unsafe extern "C" fn(*mut u64, usize, usize);
