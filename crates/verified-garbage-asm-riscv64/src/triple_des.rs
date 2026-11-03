@@ -16945,3 +16945,7 @@ j 21f
 .option pop",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_triple_des_ecb_encrypt_serial.rs"]
+pub(crate) mod vg_triple_des_ecb_encrypt_serial;

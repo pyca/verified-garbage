@@ -51,7 +51,7 @@ call {vg_triple_des_expand_key}
 .insn 2, 0x8526
 .insn 4, 0x18048593
 .insn 2, 0x4605
-call {vg_triple_des_ecb_encrypt}
+call {vg_triple_des_ecb_encrypt_serial}
 .insn 4, 0x1804c303
 .insn 4, 0x00735393
 .insn 2, 0x13fd
@@ -177,7 +177,7 @@ call {vg_triple_des_ecb_encrypt}
 .insn 2, 0x8082
 .option pop",
         vg_triple_des_expand_key = sym super::triple_des::vg_triple_des_expand_key,
-        vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
+        vg_triple_des_ecb_encrypt_serial = sym super::triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
     )
 }
 
@@ -296,7 +296,7 @@ j 28f
 .insn 2, 0x8526
 .insn 4, 0x19048593
 .insn 2, 0x4605
-call {vg_triple_des_ecb_encrypt}
+call {vg_triple_des_ecb_encrypt_serial}
 beqz s5, 210f
 212:
 .insn 4, 0x19048e13
@@ -337,7 +337,7 @@ beqz s5, 210f
 .insn 2, 0x8526
 .insn 4, 0x19048593
 .insn 2, 0x4605
-call {vg_triple_des_ecb_encrypt}
+call {vg_triple_des_ecb_encrypt_serial}
 bnez s5, 212b
 j 211f
 210:
@@ -368,7 +368,7 @@ j 214f
 .insn 4, 0x2b010113
 .insn 2, 0x8082
 .option pop",
-        vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
+        vg_triple_des_ecb_encrypt_serial = sym super::triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
     )
 }
 
@@ -518,7 +518,7 @@ j 23f
 .insn 2, 0x8526
 .insn 4, 0x19048593
 .insn 2, 0x4605
-call {vg_triple_des_ecb_encrypt}
+call {vg_triple_des_ecb_encrypt_serial}
 .insn 4, 0x1904c283
 .insn 4, 0x00598023
 .insn 4, 0x1914c283
@@ -544,6 +544,6 @@ call {vg_triple_des_ecb_encrypt}
 .insn 4, 0x28010113
 .insn 2, 0x8082
 .option pop",
-        vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
+        vg_triple_des_ecb_encrypt_serial = sym super::triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
     )
 }

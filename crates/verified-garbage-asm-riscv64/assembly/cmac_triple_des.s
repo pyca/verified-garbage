@@ -39,7 +39,7 @@ vg_cmac_triple_des_stream_init:
 	addi a0, s1, 0
 	addi a1, s1, 384
 	addi a2, zero, 1
-	call {vg_triple_des_ecb_encrypt}
+	call {vg_triple_des_ecb_encrypt_serial}
 	lbu t1, 384(s1)
 	srli t2, t1, 7
 	addi t2, t2, -1
@@ -268,7 +268,7 @@ vg_cmac_triple_des_absorb:
 	addi a0, s1, 0
 	addi a1, s1, 400
 	addi a2, zero, 1
-	call {vg_triple_des_ecb_encrypt}
+	call {vg_triple_des_ecb_encrypt_serial}
 	beqz s5, 210f
 212:
 	addi t3, s1, 400
@@ -309,7 +309,7 @@ vg_cmac_triple_des_absorb:
 	addi a0, s1, 0
 	addi a1, s1, 400
 	addi a2, zero, 1
-	call {vg_triple_des_ecb_encrypt}
+	call {vg_triple_des_ecb_encrypt_serial}
 	bnez s5, 212b
 	j 211f
 210:
@@ -474,7 +474,7 @@ vg_cmac_triple_des_finish:
 	addi a0, s1, 0
 	addi a1, s1, 400
 	addi a2, zero, 1
-	call {vg_triple_des_ecb_encrypt}
+	call {vg_triple_des_ecb_encrypt_serial}
 	lbu t0, 400(s1)
 	sb t0, 0(s3)
 	lbu t0, 401(s1)
