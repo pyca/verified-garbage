@@ -218,6 +218,7 @@ def Instr.asm : Instr → List String
   | .strb t n off => [s!"strb {t.name .w}, [{n.name .x}, #{off}]"]
   | .ldp t1 t2 n off => [s!"ldp {t1.name .x}, {t2.name .x}, [{n.name .x}, #{off}]"]
   | .stp t1 t2 n off => [s!"stp {t1.name .x}, {t2.name .x}, [{n.name .x}, #{off}]"]
+  | .blr n => [s!"blr {n.name .x}"]
   | .push r => [s!"str {r.name .x}, [sp, #-16]!"]
   | .pop r => [s!"ldr {r.name .x}, [sp], #16"]
   | .addSp d imm => [s!"add {d.name .x}, sp, #{imm}"]

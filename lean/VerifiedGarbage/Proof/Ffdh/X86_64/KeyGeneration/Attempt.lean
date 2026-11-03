@@ -107,6 +107,7 @@ theorem depth_noCalls : ∀ {c : Prog isa}, c.noCalls = true → c.x86_64Depth =
     simp only [Code.x86_64Depth, depth_noCalls h]
   | .call _ _, h => by simp only [Code.noCalls] at h; cases h
   | .frame .., h => by simp only [Code.noCalls] at h; cases h
+  | .icall .., h => by simp only [Code.noCalls] at h; cases h
 
 /-- Code whose calls can be inlined uses at most their return addresses. -/
 theorem depth_inlineOk : ∀ {c : Prog isa}, c.InlineOk = true → c.x86_64Depth ≤ 8
@@ -127,6 +128,7 @@ theorem depth_inlineOk : ∀ {c : Prog isa}, c.InlineOk = true → c.x86_64Depth
     simp only [Code.InlineOk, Bool.and_eq_true] at h
     simp only [Code.x86_64Depth, depth_noCalls h.1, Nat.zero_add, Nat.le_refl]
   | .frame .., h => by simp only [Code.InlineOk] at h; cases h
+  | .icall .., h => by simp only [Code.InlineOk] at h; cases h
 
 theorem generateCode_depth (v : RoundImpl) : (generateCode v).x86_64Depth ≤ 8 :=
   depth_inlineOk (generateCode_inlineOk v)

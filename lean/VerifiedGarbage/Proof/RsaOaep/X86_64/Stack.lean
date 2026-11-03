@@ -40,6 +40,10 @@ theorem xdepth_le : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth ≤ 8 * c.depth
     have hb := xdepth_le (c := b) (fun x hx => h x (List.mem_cons_of_mem _ (List.mem_append_left _ hx)))
     have h0 : i.frameBytes = 0 := by cases i <;> simp_all [Taint.clobbers, Taint.dstOf, Instr.frameBytes]
     simp only [Code.x86_64Depth, Code.depth, h0]; omega
+  | .icall _ _ b n, h => by
+    have hb := xdepth_le (c := b) (fun x hx => h x (List.mem_append_left _ (List.mem_cons_of_mem _ hx)))
+    have hn := xdepth_le (c := n) (fun x hx => h x (List.mem_append_right _ hx))
+    simp only [Code.x86_64Depth, Code.depth]; omega
 
 /-- What code that writes `rsp` only in its frames leaves of memory. -/
 theorem wp_frame {c : Prog isa} (hc : SpSafe c) (hd : c.x86_64Depth < 2 ^ 64) {s : State}

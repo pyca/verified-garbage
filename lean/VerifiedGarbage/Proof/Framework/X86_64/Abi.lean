@@ -95,7 +95,7 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
       obtain ⟨_, _, _, _, rfl⟩ := h; rfl
   | cmov =>
     obtain ⟨_, c, -, -, rfl⟩ := Taint.execCmov_some h; cases c <;> rfl
-  | push | pop | alloc | free => simp only [reduceExec, reduceCtorEq] at h
+  | push | pop | alloc | free | callr => simp only [reduceExec, reduceCtorEq] at h
 
 theorem pushRegs_mxcsr (s : State) (rs : List Reg) : (pushRegs s rs).mxcsr = s.mxcsr := by
   induction rs generalizing s with
@@ -155,6 +155,13 @@ theorem Exec.mxcsr {c : Prog isa} (hc : ∀ i ∈ instrs c, loadsMxcsr i = false
     split at hr <;> cases hr
     subst hc₁
     exact ih hc
+  | icall _ hc₁ _ hr ih =>
+    simp only [isa, call, Option.some.injEq] at hc₁
+    simp only [isa, ret] at hr
+    split at hr <;> cases hr
+    subst hc₁
+    exact ih fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))
+  | icallNext _ _ _ ih => exact ih fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi))
 
 /-- The calling-convention obligations other than MXCSR's: the callee-saved
 registers and the return address. -/

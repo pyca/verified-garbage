@@ -63,11 +63,20 @@ Modelling choices:
   data-independent-time instruction as described in About PSTATE.DIT": DDI
   0602, A64 ISA XML 2025-12, `umaddl.xml`). The code does not set PSTATE.DIT,
   for these as for the others.
-* Calls are `bl` and returns `ret` (DDI 0487, C6.2 "BL", "RET"). The return
-  addresses are the next of the state's `unknowns`, which nothing constrains
-  (see `TCB/Code.lean`). A linker veneer between a `bl` and its target may
-  change `x16` and `x17` (IP0, IP1: AAPCS64 §6.1.1, "Use of IP0 and IP1 by
-  the linker"), so a call leaves unknown values in them too.
+* Calls are `bl`, or indirect through a register, `blr` (`icall`, the
+  instruction of an indirect call, `Code.icall`), and returns `ret` (DDI
+  0487, C6.2 "BL", "BLR", "RET"). The return addresses are the next of the
+  state's `unknowns`, which nothing constrains (see `TCB/Code.lean`). A
+  linker veneer between a `bl` and its target may change `x16` and `x17`
+  (IP0, IP1: AAPCS64 §6.1.1, "Use of IP0 and IP1 by the linker"), so a call
+  leaves unknown values in them too (and the model's indirect call, which
+  takes no veneer, does as well: a superset of what it changes). The
+  function of each name is at the address of its symbol, `State.syms name`,
+  as a static is (`ISA.fnAddr`). No function the emitter writes begins with
+  a `bti c` landing pad, so code calling them indirectly must not run with
+  branch target enforcement (FEAT_BTI, guarded pages): the emitted objects
+  carry no `GNU_PROPERTY_AARCH64_FEATURE_1_BTI` note, without which the
+  linker and loader leave it off.
 * A `static` the code reads (`Artifact.consts`) is at the address
   `State.syms name`, where `name` is its name, which `adrSym` (`adrp` and
   `add`, resolved by the linker) puts in a register. No instruction changes
@@ -479,6 +488,10 @@ inductive Instr
   | mul (sz : Size) (d n m : Reg)
   /-- UMULH: bits 127:64 of the unsigned 64-by-64-bit product. -/
   | umulh (d n m : Reg)
+  /-- `blr xn` (BLR): the indirect call of the function at the address in
+  `n` (see `icall`). It only occurs as the instruction of an indirect call
+  (`Code.icall`): as a straight-line instruction it faults. -/
+  | blr (n : Reg)
   /-- `umaddl xd, wn, wm, xa` (UMADDL): `a + n<31:0> * m<31:0>`, the
   product of the low 32 bits of `n` and `m`, zero-extended, modulo `2 ^ 64` -/
   | umaddl (d n m a : Reg)
@@ -1257,8 +1270,9 @@ def exec : Instr → State → Option State
   -- DDI 0487 C6.2, "NOP": no effect but on the PC, which the model does not
   -- have.
   | .align _, s => some s
-  -- Frame delimiters execute only through `push` and `pop`.
-  | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ => none
+  -- Frame delimiters execute only through `push` and `pop`, and the
+  -- instruction of an indirect call only through `icall`.
+  | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ | .blr _, _ => none
 
 def addrs : Instr → State → List Addr
   | .ldr _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
@@ -1397,6 +1411,16 @@ def Instr.requires : Instr → List String
   | .vop (.xarS ..) => ["sve2"]
   | _ => []
 
+/-- The address an indirect call instruction calls: DDI 0487, C6.2 "BLR":
+"Branch with Link to Register calls a subroutine at an address in a
+register, setting register X30 to PC+4": `target = X[n, 64]; X[30, 64] =
+PC64 + 4; BranchTo(target, BranchType_INDCALL)`. Setting `x30` and the
+rest of the call are the direct call's (`call`), the return `ret`. The
+flags are not affected. -/
+def icall : Instr → State → Option Addr
+  | .blr n, s => some (s.gpr n)
+  | _, _ => none
+
 abbrev isa : ISA where
   State := State
   Instr := Instr
@@ -1414,5 +1438,8 @@ abbrev isa : ISA where
   push := push
   pop := pop
   requires := Instr.requires
+  icall := icall
+  -- A function's symbol, as a static's (`adrSym`).
+  fnAddr s name := s.syms name
 
 end VG.AArch64

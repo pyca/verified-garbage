@@ -93,7 +93,11 @@ Modelling choices:
   which the linker may relax to `jal ra, …`; psABI, "Procedure Calls")
   and returns `ret` (`jalr x0, 0(ra)`; RV32I, "Unconditional Jumps"). The
   return addresses are the next of the state's `unknowns`, which nothing
-  constrains (see `TCB/Code.lean`). The call may go through a PLT entry
+  constrains (see `TCB/Code.lean`). An indirect call is `jalr ra, 0(rs1)`
+  (`icall`, the instruction of an indirect call, `Code.icall`): it calls
+  the function at the address in `rs1`, and is otherwise the direct call's.
+  The function of each name is at the address of its symbol,
+  `State.syms name`, as a static is (`ISA.fnAddr`). The call may go through a PLT entry
   (psABI, "Procedure Linkage Table"), whose code uses `t1` and `t3` (and
   whose header, run by lazy binding, `t0`–`t3`, before it runs the dynamic
   linker's resolver, which the psABI does not constrain beyond the calling
@@ -238,6 +242,10 @@ inductive Instr
   %pcrel_lo(…)`), where `symbol` is the `static` named `name`: `rd ←` its
   address (see `exec`) -/
   | lla (d : Reg) (name : String)
+  /-- `jalr ra, 0(rs1)`: the indirect call of the function at the address in
+  `rs1` (see `icall`). It only occurs as the instruction of an indirect call
+  (`Code.icall`): as a straight-line instruction it faults. -/
+  | jalr (n : Reg)
   deriving DecidableEq, Repr
 
 /-- Branch conditions: the comparison of a conditional branch. -/
@@ -430,8 +438,9 @@ def exec : Instr → State → Option State
       (s.load a wd.bytes).map fun v => s.write t (v.setWidth 64)
   | .store wd t n off, s =>
     (addr s wd.bytes n off).bind fun a => s.store a wd.bytes ((s.gpr t).setWidth (8 * wd.bytes))
-  -- Only the push and pop of a frame (`push`, `pop`).
-  | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ => none
+  -- Only the push and pop of a frame (`push`, `pop`), and the instruction
+  -- of an indirect call (`icall`).
+  | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ | .jalr _, _ => none
 
 def addrs : Instr → State → List Addr
   | .load _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
@@ -530,6 +539,17 @@ def pop : Instr → State → State → Option State
     else none
   | _, _, _ => none
 
+/-- The address an indirect call instruction calls: RV32I, "Unconditional
+Jumps" (`jalr ra, 0(rs1)`: "The target address is obtained by adding the
+sign-extended 12-bit I-immediate to the register rs1, then setting the
+least-significant bit of the result to zero", and it writes `pc + 4` to
+`rd`, `ra`). Writing `ra` and the rest of the call are the direct call's
+(`call`), the return `ret`. The callee's address is a function's, a
+multiple of 2, so clearing its low bit leaves it. -/
+def icall : Instr → State → Option Addr
+  | .jalr n, s => some (s.gpr n)
+  | _, _ => none
+
 abbrev isa : ISA where
   State := State
   Instr := Instr
@@ -549,5 +569,8 @@ abbrev isa : ISA where
   -- Every modelled instruction is in RV64IM: RV64I, the base of every RV64
   -- target, and the M extension, which `rustCfg` requires.
   requires _ := []
+  icall := icall
+  -- A function's symbol, as a static's (`lla`).
+  fnAddr s name := s.syms name
 
 end VG.RISCV64

@@ -358,6 +358,8 @@ def Instr.encode : Instr → Option (List Nat)
   -- "STR (immediate)", 64-bit, pre-index, `#-16`: `11 111 0 00 00 0 imm9 11
   -- Rn Rt`; "LDR (immediate)", 64-bit, post-index, `#16`: `… 01 0 imm9 01 Rn
   -- Rt`.
+  -- C6.2 "BLR": `1101011 0 0 01 11111 0000 0 0 Rn 00000`.
+  | .blr n => some [0xD63F0000 ||| n.index <<< 5]
   | .push r => some [0xF8000C00 ||| (512 - 16) <<< 12 ||| r31 <<< 5 ||| r.index]
   | .pop r => some [0xF8400400 ||| 16 <<< 12 ||| r31 <<< 5 ||| r.index]
   | .vop op => op.encode.map ([·])

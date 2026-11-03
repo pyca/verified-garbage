@@ -187,6 +187,8 @@ def Instr.encode : Instr → Option (List Nat)
       return [a, b]
   | .addSp d imm => if imm < 2048 then (Enc.addi d.num Enc.sp imm).map ([·]) else none
   | .lla _ _ => none
+  -- "Unconditional Jumps": `JALR`, `funct3` 0, `rd = ra`, offset 0.
+  | .jalr n => (Enc.i 0 0 Enc.opJalr Reg.ra.num n.num).map ([·])
 
 /-- `ret`, `jalr x0, 0(ra)` ("Unconditional Jumps": `JALR`, `funct3` 0). -/
 def retWord : Nat :=

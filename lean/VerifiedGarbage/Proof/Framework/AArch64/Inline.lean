@@ -41,7 +41,7 @@ def dstOf : Instr → Option Reg
   | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. => some d
   | .cselc _ d .. | .csneg _ d .. => some d
   | .str .. | .strb .. | .strSp .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .ldrqTbl .. | .strq .. | .tst .. | .ccmp ..
-  | .ldp .. | .stp .. | .align _ => none
+  | .ldp .. | .stp .. | .align _ | .blr _ => none
 
 /-- The general-purpose registers instruction `i` writes. -/
 def dsts (i : Instr) : List Reg :=
@@ -186,7 +186,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     obtain ⟨v, hv, rfl⟩ := Option.map_eq_some_iff.mp h
     simp only [ho, and_self, ite_true, State.withRegions_sp, load_widen hc hv, Option.map_some]
     rfl
-  | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [exec, reduceCtorEq] at h
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
   | umov _ _ _ _ =>
@@ -268,7 +268,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     split <;> exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
-  | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [exec, reduceCtorEq] at h
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
   | umov _ _ _ _ =>
@@ -342,7 +342,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     split <;> rfl
-  | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [exec, reduceCtorEq] at h
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
   | umov _ _ _ _ =>
@@ -445,6 +445,7 @@ def regionModel : RegionModel isa where
     exact ⟨rfl, rfl, fun _ _ => (ite_eq_left hc).trans rfl⟩
   push_widen := push_widen
   pop_widen h := ⟨(pop_eq h).1, (pop_eq h).2.1, (pop_eq h).2.2.1, fun _ _ hw => pop_widen h _ hw⟩
+  icall_with i _ _ _ := by cases i <;> rfl
 /-- Calls change no memory, and returns nothing. -/
 theorem callsKeepMem : regionModel.CallsKeepMem := fun _ _ _ _ hc hr =>
   ⟨(call_eq hc).2.2.2.1, by rw [ret_eq hr]⟩

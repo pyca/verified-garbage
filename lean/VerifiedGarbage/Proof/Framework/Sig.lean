@@ -344,6 +344,8 @@ theorem Sig.alignedBufs_slice {m : Bool} {e : Elem} {len : String} :
       if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs := rfl
 theorem Sig.alignedBufs_slices {e : Elem} {c : String} :
     Sig.alignedBufs ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.alignedBufs ps vs := rfl
+theorem Sig.alignedBufs_table {k : Nat} :
+    Sig.alignedBufs ((n, .table k) :: ps) (p :: vs) = (p, 8) :: Sig.alignedBufs ps vs := rfl
 
 theorem Sig.lists_nil {pb : Nat} {m : Mem} : Sig.lists pb m [] vs = [] := rfl
 theorem Sig.lists_int {pb : Nat} {m : Mem} {t : IntTy} {b : Bool} :
@@ -438,8 +440,8 @@ macro_rules
       -- seconds for some contracts.
       sig_simp [$ls,*] [Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, Sig.bufs_slices,
         Sig.alignedBufs_nil, Sig.alignedBufs_int, Sig.alignedBufs_array, Sig.alignedBufs_slice,
-        Sig.alignedBufs_slices, Elem.align_u8, Elem.align_u16, Elem.align_u32, Elem.align_u64,
-        Elem.align_array, Nat.reduceLT,
+        Sig.alignedBufs_slices, Sig.alignedBufs_table, Elem.align_u8, Elem.align_u16, Elem.align_u32,
+        Elem.align_u64, Elem.align_array, Nat.reduceLT,
         Sig.lists_nil, Sig.lists_int, Sig.lists_array, Sig.lists_slice, Sig.lists_slices,
         Sig.descs_nil, Sig.descs_int, Sig.descs_array, Sig.descs_slice, Sig.descs_slices,
         Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons,

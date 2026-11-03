@@ -70,7 +70,16 @@ Modelling choices:
   successor; it does not cover POWER10 or later. The 32-bit `mullw` is left
   out: the survey notes that older cores may terminate it early depending
   on its operands.
-* Calls are `bl` and returns `blr` (Book I §2.4, "Branch Instructions"). The
+* Calls are `bl`, or indirect through `r12` (`bctrl`, `mtctr r12` then
+  `bctrl`: `icall`, the instruction of an indirect call, `Code.icall`), and
+  returns `blr` (Book I §2.4, "Branch Instructions"). An indirect call puts
+  the callee's address in `r12`, where the ELFv2 ABI has a caller put it for
+  a call to a function's global entry point (so that a function that
+  derives its TOC pointer from it may be called; the emitter's functions
+  derive none), and in `CTR`, which is volatile (ELFv2 ABI §2.2.2.1,
+  "Register Roles") and which the model does not have: nothing it runs
+  reads it. The function of each name is at the address of
+  its symbol, `State.syms name`, as a static is (`ISA.fnAddr`). The
   return addresses are the next of the state's `unknowns`, which nothing
   constrains (see `TCB/Code.lean`). Linkage code the linker may put between
   a `bl` and its target (a long-branch stub) may change `r0`, `r11` and
@@ -172,6 +181,10 @@ inductive Instr
   | mul (d n m : Reg)
   /-- `mulhdu RT, RA, RB`: the high 64 bits of the unsigned product -/
   | mulhu (d n m : Reg)
+  /-- `mtctr r12` then `bctrl`: the indirect call of the function at the
+  address in `r12` (see `icall`). It only occurs as the instruction of an
+  indirect call (`Code.icall`): as a straight-line instruction it faults. -/
+  | bctrl
   /-- `addc RT, RA, RB`: `d := n + m`, CA the carry out -/
   | addc (d n m : Reg)
   /-- `adde RT, RA, RB`: `d := n + m + CA`, CA the carry out -/
@@ -474,8 +487,9 @@ def exec : Instr → State → Option State
     if d ≠ .r0 then
       some { s.write d (s.syms name) with lr := s.unknowns 0, unknowns := fun n => s.unknowns (n + 1) }
     else none
-  -- Only the push and pop of a frame (`push`, `pop`).
-  | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ => none
+  -- Only the push and pop of a frame (`push`, `pop`), and the instruction
+  -- of an indirect call (`icall`).
+  | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ | .bctrl, _ => none
 
 def addrs : Instr → State → List Addr
   | .lxvd2xTbl _ _ b .., s => [s.gpr b]
@@ -572,6 +586,18 @@ def pop : Instr → State → State → Option State
     else none
   | _, _, _ => none
 
+/-- The address an indirect call instruction calls: Book I §3.3.17, "Move To
+Special Purpose Register" (`mtctr RS` is `mtspr 9, RS`: `CTR ← (RS)`), then
+§2.4, "Branch Conditional to Count Register" (`bctrl` is `bcctrl 20, 0`
+with `LK = 1`: branch always, `NIA ← CTR0:61 || 0b00`, `LR ← CIA + 4`).
+Setting `LR` and the rest of the call are the direct call's (`call`), the
+return `ret`. Neither instruction changes a modelled register but `LR`
+(`CTR` is not modelled). The callee's address is a function's, a multiple
+of 4, so the branch goes to it. -/
+def icall : Instr → State → Option Addr
+  | .bctrl, s => some (s.gpr .r12)
+  | _, _ => none
+
 abbrev isa : ISA where
   State := State
   Instr := Instr
@@ -591,5 +617,8 @@ abbrev isa : ISA where
   -- Every modelled instruction is in Power ISA 2.07 (POWER8), the baseline of
   -- `powerpc64le-unknown-linux-gnu`.
   requires _ := []
+  icall := icall
+  -- A function's symbol, as a static's (`adrSym`).
+  fnAddr s name := s.syms name
 
 end VG.PPC64LE

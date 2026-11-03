@@ -16,5 +16,6 @@ def Code.substLocal {I C : Type} [DecidableEq I] [DecidableEq C]
   | .loop x k => if .loop x k = a then b else .loop (Code.substLocal a b x) k
   | .call n x => .call n x
   | .frame i x j => if .frame i x j = a then b else .frame i (Code.substLocal a b x) j
+  | .icall i n x y => .icall i n x y
 
 end VG

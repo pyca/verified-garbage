@@ -71,7 +71,7 @@ def dstOf : Instr → Option Reg
   | .addiw d .. | .logicImm _ d .. | .li d _ | .lui d _ | .shift _ _ d .. | .shiftReg _ _ d ..
   | .load _ d ..
   | .pop d | .addSp d _ | .lla d _ => some d
-  | .store .. | .push _ | .alloc _ | .free _ => none
+  | .store .. | .push _ | .alloc _ | .free _ | .jalr _ => none
 
 section
 variable {s s' : State} {rd wr : List Region}
@@ -105,7 +105,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [exec, Option.bind_eq_some_iff] at h ⊢
     obtain ⟨a, ha, hs⟩ := h
     exact ⟨a, ha, store_widen hw hs⟩
-  | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | jalr _ => simp only [exec, reduceCtorEq] at h
   | shift op sz d n sh =>
     cases sz <;>
     · simp only [exec] at h ⊢
@@ -144,7 +144,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
-  | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | jalr _ => simp only [exec, reduceCtorEq] at h
   | shift op sz d n sh =>
     cases sz <;>
     · simp only [exec] at h
@@ -178,7 +178,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     exact hw _ _ _ fun e => hi (by simp [dstOf, e])
-  | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | jalr _ => simp only [exec, reduceCtorEq] at h
   | shift op sz d n sh =>
     cases sz <;>
     · simp only [exec] at h
@@ -289,6 +289,10 @@ theorem pop_widen {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = 
 theorem Exec.rdwr {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s') :
     s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   induction h with
+  | icall _ hc _ hr ih =>
+    obtain ⟨r₁, w₁, p₁, -⟩ := call_eq hc
+    rw [ret_eq hr, ih.1, ih.2.1, ih.2.2, r₁, w₁, p₁]; exact ⟨rfl, rfl, rfl⟩
+  | icallNext _ _ _ ih => exact ih
   | block h => obtain ⟨r, w, p, -⟩ := execBlock_regions h; exact ⟨r, w, p⟩
   | seq _ _ ih₁ ih₂ => exact ⟨ih₂.1.trans ih₁.1, ih₂.2.1.trans ih₁.2.1, ih₂.2.2.trans ih₁.2.2⟩
   | iteT _ _ ih => exact ih
@@ -310,6 +314,13 @@ theorem Exec.rdwr {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c 
 theorem Exec.regions {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s')
     (hn : c.noFrames = true) : s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame s.wr s.mem s'.mem := by
   induction h with
+  | icall _ hc _ hr ih =>
+    obtain ⟨r₁, w₁, p₁, m₁, -⟩ := call_eq hc
+    obtain ⟨r₂, w₂, p₂, f₂⟩ := ih (by simp only [Code.noFrames, Bool.and_eq_true] at hn; exact hn.1)
+    rw [ret_eq hr, r₂, w₂, p₂, r₁, w₁, p₁]
+    exact ⟨rfl, rfl, rfl, m₁ ▸ w₁ ▸ f₂⟩
+  | icallNext _ _ _ ih =>
+    exact ih (by simp only [Code.noFrames, Bool.and_eq_true] at hn ⊢; exact hn.2)
   | block h => exact execBlock_regions h
   | seq _ _ ih₁ ih₂ =>
     simp only [Code.noFrames, Bool.and_eq_true] at hn
@@ -350,11 +361,32 @@ theorem execBlock_widen {is : List Instr} {s s' : State} {t : List Leak} {rd wr 
     rw [exec_widen hc hw he]
     simp only [this, Option.map_some, addrs_withRegions]
 
+/-- An indirect call calls the same address with other permissions. -/
+theorem icall_withRegions (i : Instr) (s : State) (rd wr : List Region) :
+    isa.icall i (s.withRegions rd wr) = isa.icall i s := by
+  cases i <;> rfl
+
 /-- Running from a state that permits more memory. -/
 theorem Exec.widen {c : Prog isa} {s s' : State} {t : List Leak} {rd wr : List Region}
     (h : Exec isa c s t s') (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr) :
     Exec isa c (s.withRegions rd wr) t (s'.withRegions rd wr) := by
   induction h generalizing rd wr with
+  | @icall i n _ nx s₀ s₁ s₂ s₃ _ hi hc₁ _ hr ih =>
+    obtain ⟨r₁, w₁, -⟩ := call_eq hc₁
+    have hc' : isa.call (s₀.withRegions rd wr) = some (s₁.withRegions rd wr) := by
+      simp only [isa, call, Option.some.injEq] at hc₁ ⊢; subst hc₁; rfl
+    have hr' : isa.ret (s₁.withRegions rd wr) (s₂.withRegions rd wr) = some (s₃.withRegions rd wr) := by
+      simp only [isa, ret] at hr ⊢
+      split at hr <;> cases hr
+      rename_i h
+      exact (ite_eq_left h).trans rfl
+    have hi' : isa.icall i (s₀.withRegions rd wr) = some (isa.fnAddr (s₀.withRegions rd wr) n) := by
+      rw [icall_withRegions]; exact hi
+    have := Exec.icall (next := nx) hi' hc' (ih (by rwa [r₁, w₁]) (by rwa [w₁])) hr'
+    have ha : isa.addrs i (s₀.withRegions rd wr) = isa.addrs i s₀ := addrs_withRegions i s₀ rd wr
+    rwa [ha] at this
+  | icallNext hi hne _ ih =>
+    exact .icallNext (by rw [icall_withRegions]; exact hi) hne (ih hc hw)
   | block h => exact .block (execBlock_widen hc hw h)
   | seq h₁ _ ih₁ ih₂ =>
     obtain ⟨r₁, w₁, -⟩ := Exec.rdwr h₁
@@ -413,6 +445,15 @@ theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, dstOf i ≠ 
       by first | exact .inr (by decide) | exact .inl (by decide +kernel)) :
     s'.gpr r = s.gpr r := by
   induction h with
+  | icall _ hc₁ _ hr ih =>
+    rcases hn with hn | hn
+    · simp [Code.noCalls] at hn
+    · rw [ret_eq hr, ih (fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))) (.inr hn),
+        (call_eq hc₁).2.2.2.2 r hn]
+  | icallNext _ _ _ ih =>
+    rcases hn with hn | hn
+    · simp [Code.noCalls] at hn
+    · exact ih (fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi))) (.inr hn)
   | block h => exact execBlock_gpr hc h
   | seq _ _ ih₁ ih₂ =>
     simp only [Code.noCalls, Bool.and_eq_true] at hn
