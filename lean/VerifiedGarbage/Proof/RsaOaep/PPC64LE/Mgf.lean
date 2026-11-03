@@ -244,7 +244,7 @@ theorem round_ok {G : Hash} (hG : HashOK G) {f : Fns} {j : Nat} {p : Addr} (T : 
   -- Into `dst`.
   have hdc := Nat.min_le_left G.D (dstLen - c * G.D)
   have hn0 : 0 < min G.D (dstLen - c * G.D) := by omega_arith
-  refine WP.seq (WP.seq (WP.mono (xorHead_ok P T b₁₅ (G := G) (S := S s) (dst := dst) (dstLen := dstLen) (done := c * G.D)
+  refine WP.seq (WP.seq (WP.mono (xorHead_ok T b₁₅ (G := G) (S := S s) (dst := dst) (dstLen := dstLen) (done := c * G.D)
     (by omega_arith) b₁₅.r14 (by rw [m₁₅ _ (by decide), I.r26]) (by rw [m₁₅ _ (by decide), I.r27])
     (by rw [m₁₅ _ (by decide), I.r29]) hc (by omega_arith)) fun t₁₆ ⟨k₁₆, x11, x12, x9⟩ => ?_))
   have b₁₆ := b₁₅.only P k₁₆

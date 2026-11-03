@@ -183,32 +183,33 @@ end
 /-- How many bytes of the digest go into `dst`: `min(hLen, dstLen - done)`,
 `hLen` the table's word 4. -/
 theorem xorHead_ok {G : Hash} {f : Fns} {j : Nat} {S' : State → Addr} {vf : State → Reg → BitVec 64} {s₀ : State}
-    {p : Addr} (P : Fits S' s₀) (T : TabS G f j S' s₀ p) {t : State} (hb : Base S' vf s₀ t) {S : Addr}
+    {p : Addr} (T : TabS G f j S' s₀ p) {t : State} (hb : Base S' vf s₀ t) {S : Addr}
     {dst dstLen done : Nat}
     (hD : G.D < 2 ^ 15) (h14 : t.gpr .r14 = S) (h26 : t.gpr .r26 = off S dst) (h27 : t.gpr .r27 = BitVec.ofNat 64 dstLen)
     (h29 : t.gpr .r29 = BitVec.ofNat 64 done) (hlt : done < dstLen) (hdl : dstLen < 2 ^ 63) :
     WP isa (.block (xorHead j)) t fun t' => Only [.r6, .r7, .r8, .r9, .r10, .r11, .r12] t t' ∧
       t'.gpr .r11 = off S oDig ∧ t'.gpr .r12 = off S (dst + done) ∧
       t'.gpr .r9 = BitVec.ofNat 64 (min G.D (dstLen - done)) := by
-  simp only [xorHead, List.cons_append]
+  simp only [xorHead]
+  refine wp_tword T hb (k := 4) (by decide) (by decide) fun u₀ o₀ e₀ => ?_
+  rw [show 8 * 4 = 32 from rfl, T.d] at e₀
   refine wp_addi fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => ?_
-  have k₃ : Only [.r11, .r12, .r8] t u₃ := (o₁.trans (o₂.trans o₃)).mono
-  refine wp_tword T (hb.only P k₃) (k := 4) (by decide) (by decide) fun u₄ o₄ e₄ => ?_
-  rw [show 8 * 4 = 32 from rfl, T.d] at e₄
   refine wp_sub fun u₅ o₅ e₅ => wp_lsr fun u₆ o₆ e₆ => wp_li (by decide) fun u₇ o₇ e₇ => wp_sub fun u₈ o₈ e₈ =>
     wp_and fun u₉ o₉ e₉ => wp_add fun u₁₀ o₁₀ e₁₀ => wp_nil ?_
   have k : Only [.r6, .r7, .r8, .r9, .r10, .r11, .r12] t u₁₀ :=
-    (k₃.trans (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans (o₉.trans o₁₀))))))).mono
+    (o₀.trans (o₁.trans (o₂.trans (o₃.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans (o₉.trans o₁₀))))))))).mono
   have r8 : u₃.gpr .r8 = BitVec.ofNat 64 (dstLen - done) := by
-    rw [e₃, o₂.get .r27, o₂.get .r29, o₁.get .r27, o₁.get .r29, h27, h29, Offset.ofNat_sub_ofNat (by omega_arith)]
+    rw [e₃, o₂.get .r27, o₂.get .r29, o₁.get .r27, o₁.get .r29, o₀.get .r27, o₀.get .r29, h27, h29,
+      Offset.ofNat_sub_ofNat (by omega_arith)]
+  have r9 : u₃.gpr .r9 = BitVec.ofNat 64 G.D := by rw [o₃.get .r9, o₂.get .r9, o₁.get .r9, e₀]
   have r10 : u₅.gpr .r10 = BitVec.ofNat 64 (dstLen - done) - BitVec.ofNat 64 G.D := by
-    rw [e₅, o₄.get .r8, r8, e₄]
+    rw [e₅, r8, r9]
   refine ⟨k, ?_, ?_, ?_⟩
-  · rw [o₁₀.get .r11, o₉.get .r11, o₈.get .r11, o₇.get .r11, o₆.get .r11, o₅.get .r11, o₄.get .r11, o₃.get .r11,
-      o₂.get .r11, e₁, h14]
-  · rw [o₁₀.get .r12, o₉.get .r12, o₈.get .r12, o₇.get .r12, o₆.get .r12, o₅.get .r12, o₄.get .r12, o₃.get .r12, e₂,
-      o₁.get .r26, o₁.get .r29, h26, h29, off_add]
-  · rw [e₁₀, o₉.get .r9, o₈.get .r9, o₇.get .r9, o₆.get .r9, o₅.get .r9, e₄, e₉, o₈.get .r10, o₇.get .r10,
+  · rw [o₁₀.get .r11, o₉.get .r11, o₈.get .r11, o₇.get .r11, o₆.get .r11, o₅.get .r11, o₃.get .r11,
+      o₂.get .r11, e₁, o₀.get .r14, h14]
+  · rw [o₁₀.get .r12, o₉.get .r12, o₈.get .r12, o₇.get .r12, o₆.get .r12, o₅.get .r12, o₃.get .r12, e₂,
+      o₁.get .r26, o₁.get .r29, o₀.get .r26, o₀.get .r29, h26, h29, off_add]
+  · rw [e₁₀, o₉.get .r9, o₈.get .r9, o₇.get .r9, o₆.get .r9, o₅.get .r9, r9, e₉, o₈.get .r10, o₇.get .r10,
       o₆.get .r10, r10, e₈, e₇, o₇.get .r6, e₆, r10]
     exact minSel (by omega_arith) (by omega_arith)
 
