@@ -146,6 +146,14 @@ theorem sqCols_sum (a : Nat → Nat) :
 
 /-! ## Modulo `p` -/
 
+theorem lv_fold (f g : Nat → Nat) {C : Nat} (h01 : f 0 + 2 ^ 58 * f 1 = g 0 + 2 ^ 58 * g 1 + 2 * C)
+    (h : ∀ j, 2 ≤ j → j < 9 → f j = g j) : lv f 9 = lv g 9 + 2 * C := by
+  simp only [lv, Nat.reduceMul, Nat.pow_zero, Nat.one_mul, Nat.zero_add]
+  rw [h 2 (by decide) (by decide), h 3 (by decide) (by decide), h 4 (by decide) (by decide), h 5 (by decide) (by decide),
+    h 6 (by decide) (by decide), h 7 (by decide) (by decide), h 8 (by decide) (by decide)]
+  omega
+
+
 theorem mod_cancel {x y K : Nat} (h : x + 2 ^ 522 * K = y + 2 * K) : x % p = y % p := by
   have e : (2 : Nat) ^ 522 = 2 * p + 2 := by
     have h1 : (2 : Nat) ^ 522 = 2 ^ 521 * 2 := Nat.pow_succ ..

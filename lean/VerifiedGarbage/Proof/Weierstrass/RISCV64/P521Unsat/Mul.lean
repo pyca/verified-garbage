@@ -95,13 +95,6 @@ theorem shl1_and (x : BitVec 64) : ((x <<< 1) &&& M58).toNat = 2 * x.toNat % 2 ^
   have : (2 : Nat) ^ 64 = 2 ^ 58 * 2 ^ 6 := by decide
   rw [this, Nat.mod_mul_right_mod, Nat.pow_one, Nat.mul_comm]
 
-theorem lv_fold (f g : Nat → Nat) {C : Nat} (h01 : f 0 + 2 ^ 58 * f 1 = g 0 + 2 ^ 58 * g 1 + 2 * C)
-    (h : ∀ j, 2 ≤ j → j < 9 → f j = g j) : lv f 9 = lv g 9 + 2 * C := by
-  simp only [lv, Nat.reduceMul, Nat.pow_zero, Nat.one_mul, Nat.zero_add]
-  rw [h 2 (by decide) (by decide), h 3 (by decide) (by decide), h 4 (by decide) (by decide), h 5 (by decide) (by decide),
-    h 6 (by decide) (by decide), h 7 (by decide) (by decide), h 8 (by decide) (by decide)]
-  omega
-
 set_option linter.unusedSimpArgs false in
 /-- `fold`: twice what is left in the accumulator into limbs 0 and 1, then
 the limbs to `[O]`. -/
