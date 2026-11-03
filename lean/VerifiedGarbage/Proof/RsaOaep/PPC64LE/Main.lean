@@ -55,17 +55,17 @@ include P
 theorem em_ok {H : Hash} (hH : HashOK H) {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
     (hD : H.D = D) {t : State} (E : Entered s t) (hk : 2 * D + 2 + mLen s ≤ kk s) {rest : Prog isa}
     {Q : State → Prop}
-    (k : ∀ t', Base S vO s t' → EmAt (view t'.mem (S s)) (kk s) D (seedB D s) (Hs.hash (labB s)) (msgB s) (mLen s) →
-      WP isa rest t' Q) :
+    (k : ∀ t', Base S vO s t' → t'.syms = t.syms →
+      EmAt (view t'.mem (S s)) (kk s) D (seedB D s) (Hs.hash (labB s)) (msgB s) (mLen s) → WP isa rest t' Q) :
     WP isa (.seq (encEm H) (.seq (hashLabel H) (.seq (copyLh H) rest))) t Q := by
   have hD0 := hH.hD0
   have hD64 := hH.hD64
   have hDF := hH.hDF
   have F := hfits hH
   obtain ⟨_, hSt, hDg, hCt, hW, hRs⟩ := offs
-  refine WP.seq (WP.mono (encEm_ok P hD (by omega_arith) (by omega_arith) E hk) fun t₁ ⟨b₁, hp⟩ => ?_)
-  refine WP.seq (WP.mono (hashLabel_ok P hH b₁) fun t₂ ⟨b₂, _, s₂, d₂⟩ => ?_)
-  refine WP.seq (WP.mono (copyLh_ok P hH hD b₂) fun t₃ ⟨b₃, _, m₃⟩ => k t₃ b₃ ?_)
+  refine WP.seq (WP.mono_syms (encEm_ok P hD (by omega_arith) (by omega_arith) E hk) fun t₁ ⟨b₁, hp⟩ y₁ => ?_)
+  refine WP.seq (WP.mono_syms (hashLabel_ok P hH b₁) fun t₂ ⟨b₂, _, s₂, d₂⟩ y₂ => ?_)
+  refine WP.seq (WP.mono_syms (copyLh_ok P hH hD b₂) fun t₃ ⟨b₃, _, m₃⟩ y₃ => k t₃ b₃ (y₃.trans (y₂.trans y₁)) ?_)
   have hlh : Spec.Rsa.bytesAt t₂.mem (off (S s) oDig) D = Hs.hash (labB s) := by
     rw [hHh, hH.hashTake, ← d₂, ← hD]
     simp only [Spec.Rsa.bytesAt]
