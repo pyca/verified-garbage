@@ -569,4 +569,177 @@ theorem block_ok (s : State) (hp : BlkPre s) :
       List.mem_cons_self _ (c (36 + 1) (by decide) (by decide))).writeW List.mem_cons_self _ (c 38 (by decide) (by decide))
       |>.writeW List.mem_cons_self _ (c (38 + 1) (by decide) (by decide))
 
+/-! ## The key -/
+
+/-- The arithmetic of `keyCode` after the loads. -/
+def keyArith : List Instr :=
+  [.shift .sll .d .t3 .t0 1, .shift .srl .d .t4 .t1 63, .logic .xor .t3 .t3 .t4,
+   .shift .srl .d .t4 .t0 63, .li .t2 0, .sub .t4 .t2 .t4,
+   .li .t5 (-62), .shift .sll .d .t5 .t5 56, .logic .and .t5 .t4 .t5, .logic .xor .t3 .t3 .t5,
+   .shift .sll .d .t5 .t1 1, .logicImm .and .t6 .t4 1, .logic .xor .t5 .t5 .t6]
+
+theorem keyCode_eq : keyCode = Impl.Words.RISCV64.loadBE64 .t0 .t2 HP 0 ++
+    Impl.Words.RISCV64.loadBE64 .t1 .t2 HP 8 ++ keyArith := by
+  simp only [keyCode, keyArith, List.append_assoc]
+
+theorem poly_eq : (BitVec.ofInt 64 (-62)) <<< 56 = VG.Impl.Gcm.Clmul.poly := by decide
+
+theorem keyArith_ok (s : State) :
+    WP isa (.block keyArith) s fun t => t.gpr .t3 = Holes.key0 (s.gpr .t0) (s.gpr .t1) ∧
+      t.gpr .t5 = Holes.key1 (s.gpr .t0) (s.gpr .t1) ∧ Keep [.t2, .t3, .t4, .t5, .t6] s t ∧ t.mem = s.mem ∧
+      t.sp = s.sp := by
+  unfold keyArith
+  mrun
+  simp only [Holes.key0, Holes.key1, ← poly_eq]
+  glue_close
+
+theorem maskCode_ok (s : State) :
+    WP isa (.block maskCode) s fun t => Masks t ∧ Keep [.s0, .s1, .s2, .s3, .a7] s t ∧ t.mem = s.mem ∧
+      t.sp = s.sp := by
+  unfold maskCode
+  simp only [Impl.Gcm.RISCV64.K, T]
+  mrun
+  refine ⟨fun i hi => ?_, ?_⟩
+  · interval_cases i <;> simp only [Impl.Gcm.RISCV64.K, Holes.K, reduceCtorEq, ite_false, ite_true] <;> decide
+  · glue_close
+
+/-- A store to the frame keeps a doubleword at another offset. -/
+theorem readW_wr_ne (m : Mem) (b : Addr) (v : BitVec 64) {a c : Nat} (ha : a % 8 = 0) (hc : c % 8 = 0)
+    (hac : a ≠ c) (ha' : a < 2048) (hc' : c < 2048) :
+    (m.writeW (b + BitVec.ofNat 64 a) v).readW (b + BitVec.ofNat 64 c) 64 = m.readW (b + BitVec.ofNat 64 c) 64 := by
+  obtain ⟨i, rfl⟩ : ∃ i, a = 8 * i := ⟨a / 8, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, c = 8 * j := ⟨c / 8, by omega⟩
+  exact Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) (by omega)) (by decide)
+
+theorem readW_wr_ne0 (m : Mem) (b : Addr) (v : BitVec 64) {c : Nat} (hc : c % 8 = 0) (hac : 0 ≠ c)
+    (hc' : c < 2048) : (m.writeW b v).readW (b + BitVec.ofNat 64 c) 64 = m.readW (b + BitVec.ofNat 64 c) 64 := by
+  have := readW_wr_ne m b v (a := 0) (c := c) (by decide) hc hac (by decide) hc'
+  simpa using this
+
+theorem readW_wr_ne0' (m : Mem) (b : Addr) (v : BitVec 64) {a : Nat} (ha : a % 8 = 0) (hac : a ≠ 0)
+    (ha' : a < 2048) : (m.writeW (b + BitVec.ofNat 64 a) v).readW b 64 = m.readW b 64 := by
+  have := readW_wr_ne m b v (a := a) (c := 0) ha (by decide) hac ha' (by decide)
+  simpa using this
+
+/-- Operand `i` (of 9) of the prepared key `k₀, k₁`: of the word `k₀`, `k₁`
+or `k₀ ⊕ k₁` (`i / 3`), its low half, high half or their sum (`i % 3`). -/
+def opK (k0 k1 : BitVec 64) (i : Nat) : BitVec 64 :=
+  let w := if i / 3 = 0 then k0 else if i / 3 = 1 then k1 else k0 ^^^ k1
+  if i % 3 = 0 then Holes.lo32 w else if i % 3 = 1 then Holes.hi32 w else Holes.lo32 w ^^^ Holes.hi32 w
+
+/-- The words of `prepWord w p`, for the word `W` in `w`. -/
+def opW (W : BitVec 64) (q : Nat) : BitVec 64 :=
+  if q = 0 then Holes.lo32 W else if q = 1 then Holes.hi32 W else Holes.lo32 W ^^^ Holes.hi32 W
+
+theorem splitStore_eq (v : Reg) (i : Nat) : splitStore v i =
+    [.logic .and T v (Impl.Gcm.RISCV64.K 0), .store .d T FP (slot (4 * i + 0)),
+     .logic .and T v (Impl.Gcm.RISCV64.K 1), .store .d T FP (slot (4 * i + 1)),
+     .logic .and T v (Impl.Gcm.RISCV64.K 2), .store .d T FP (slot (4 * i + 2)),
+     .logic .and T v (Impl.Gcm.RISCV64.K 3), .store .d T FP (slot (4 * i + 3))] := rfl
+
+set_option hygiene false in
+macro "prep_word_tac" : tactic => `(tactic| (
+  have W0 := W 0 (by decide); have W1 := W 1 (by decide); have W2 := W 2 (by decide); have W3 := W 3 (by decide)
+  have W4 := W 4 (by decide); have W5 := W 5 (by decide); have W6 := W 6 (by decide); have W7 := W 7 (by decide)
+  have W8 := W 8 (by decide); have W9 := W 9 (by decide); have W10 := W 10 (by decide); have W11 := W 11 (by decide)
+  simp only [Nat.reduceMul, Nat.reduceAdd, Nat.mul_zero, Nat.zero_add, BitVec.ofNat_eq_ofNat, BitVec.add_zero]
+    at W0 W1 W2 W3 W4 W5 W6 W7 W8 W9 W10 W11
+  simp only [prepWord, splitStore_eq, slot, List.cons_append, List.nil_append, Impl.Gcm.RISCV64.K, B, HA, T, FP,
+    Nat.reduceMul, Nat.reduceAdd]
+  mrun [k0, k1, k2, k3, w6, wa6, ws4, wa7, Ne.symm w6, Ne.symm wa6, Ne.symm ws4, Ne.symm wa7,
+    W0.1, W1.1, W2.1, W3.1, W4.1, W5.1, W6.1, W7.1, W8.1, W9.1, W10.1, W11.1,
+    W0.2, W1.2, W2.2, W3.2, W4.2, W5.2, W6.2, W7.2, W8.2, W9.2, W10.2, W11.2]
+  refine ⟨fun q hq j hj => ?_, fun k hk hk' => ?_, ?_, ?_⟩
+  · interval_cases q <;> interval_cases j <;>
+      simp (disch := omega) only [fw, FP, opW, Holes.lo32, Holes.hi32, reduceCtorEq, ite_false, ite_true,
+        Nat.reduceMul, Nat.reduceAdd, Nat.mul_zero, Nat.zero_add, Nat.add_zero, BitVec.ofNat_eq_ofNat,
+        BitVec.add_zero, readW_wr_ne, readW_wr_ne0, readW_wr_ne0', Mem.readW_writeW_self64, Nat.reduceEqDiff]
+  · simp (disch := omega) only [fw, FP, reduceCtorEq, ite_false, ite_true, Nat.mul_zero, Nat.zero_add,
+      readW_wr_ne, readW_wr_ne0]
+  · glue_close
+  · repeat (first
+      | exact Frame.refl _ _
+      | refine Frame.writeW ?_ List.mem_cons_self _ (cn _ (by decide))
+      | refine Frame.writeW ?_ List.mem_cons_self _ cn0)))
+
+set_option linter.unusedSimpArgs false in
+theorem prepWord0_ok (s : State) {w : Reg} (hw : w ∉ [.t6, .a6, .s4, .a7])  (hK : Masks s)
+    (hW : ∀ k < 12, Wr8 s (8 * (12 * 0 + k))) :
+    WP isa (.block (prepWord w 0)) s fun t =>
+      (∀ q < 3, ∀ j < 4, fw t (8 * (4 * (3 * 0 + q) + j)) = opW (s.gpr w) q &&& Holes.K j) ∧
+      (∀ k < 256, (k < 12 * 0 ∨ 12 * 0 + 12 ≤ k) → fw t (8 * k) = fw s (8 * k)) ∧
+      Keep [.t6, .a6, .s4, .a7] s t ∧ t.sp = s.sp ∧ Frame [⟨s.gpr FP, 288⟩] s.mem t.mem := by
+  obtain ⟨k0, k1, k2, k3⟩ : s.gpr .s0 = Holes.K 0 ∧ s.gpr .s1 = Holes.K 1 ∧ s.gpr .s2 = Holes.K 2 ∧
+    s.gpr .s3 = Holes.K 3 := ⟨hK 0 (by decide), hK 1 (by decide), hK 2 (by decide), hK 3 (by decide)⟩
+  have cn : ∀ a, a + 8 ≤ 288 → (⟨s.gpr FP, 288⟩ : Region).Contains (s.gpr FP + BitVec.ofNat 64 a) (64 / 8) :=
+    fun a ha => by
+      simp only [Region.Contains]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+  have cn0 : (⟨s.gpr FP, 288⟩ : Region).Contains (s.gpr FP) (64 / 8) := by
+    simpa using cn 0 (by decide)
+  simp only [FP] at cn cn0
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  obtain ⟨w6, wa6, ws4, wa7⟩ := hw
+  have W : ∀ k < 12, (8 * (12 * 0 + k) < 2048 ∧ (s.gpr .s9 + BitVec.ofNat 64 (8 * (12 * 0 + k))).toNat % 8 = 0) ∧
+      InRegions s.wr (s.gpr .s9 + BitVec.ofNat 64 (8 * (12 * 0 + k))) 8 :=
+    fun k hk => ⟨⟨(hW k hk).1, (hW k hk).2.1⟩, (hW k hk).2.2⟩
+  prep_word_tac
+
+set_option linter.unusedSimpArgs false in
+theorem prepWord1_ok (s : State) {w : Reg} (hw : w ∉ [.t6, .a6, .s4, .a7])  (hK : Masks s)
+    (hW : ∀ k < 12, Wr8 s (8 * (12 * 1 + k))) :
+    WP isa (.block (prepWord w 1)) s fun t =>
+      (∀ q < 3, ∀ j < 4, fw t (8 * (4 * (3 * 1 + q) + j)) = opW (s.gpr w) q &&& Holes.K j) ∧
+      (∀ k < 256, (k < 12 * 1 ∨ 12 * 1 + 12 ≤ k) → fw t (8 * k) = fw s (8 * k)) ∧
+      Keep [.t6, .a6, .s4, .a7] s t ∧ t.sp = s.sp ∧ Frame [⟨s.gpr FP, 288⟩] s.mem t.mem := by
+  obtain ⟨k0, k1, k2, k3⟩ : s.gpr .s0 = Holes.K 0 ∧ s.gpr .s1 = Holes.K 1 ∧ s.gpr .s2 = Holes.K 2 ∧
+    s.gpr .s3 = Holes.K 3 := ⟨hK 0 (by decide), hK 1 (by decide), hK 2 (by decide), hK 3 (by decide)⟩
+  have cn : ∀ a, a + 8 ≤ 288 → (⟨s.gpr FP, 288⟩ : Region).Contains (s.gpr FP + BitVec.ofNat 64 a) (64 / 8) :=
+    fun a ha => by
+      simp only [Region.Contains]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+  have cn0 : (⟨s.gpr FP, 288⟩ : Region).Contains (s.gpr FP) (64 / 8) := by
+    simpa using cn 0 (by decide)
+  simp only [FP] at cn cn0
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  obtain ⟨w6, wa6, ws4, wa7⟩ := hw
+  have W : ∀ k < 12, (8 * (12 * 1 + k) < 2048 ∧ (s.gpr .s9 + BitVec.ofNat 64 (8 * (12 * 1 + k))).toNat % 8 = 0) ∧
+      InRegions s.wr (s.gpr .s9 + BitVec.ofNat 64 (8 * (12 * 1 + k))) 8 :=
+    fun k hk => ⟨⟨(hW k hk).1, (hW k hk).2.1⟩, (hW k hk).2.2⟩
+  prep_word_tac
+
+set_option linter.unusedSimpArgs false in
+theorem prepWord2_ok (s : State) {w : Reg} (hw : w ∉ [.t6, .a6, .s4, .a7])  (hK : Masks s)
+    (hW : ∀ k < 12, Wr8 s (8 * (12 * 2 + k))) :
+    WP isa (.block (prepWord w 2)) s fun t =>
+      (∀ q < 3, ∀ j < 4, fw t (8 * (4 * (3 * 2 + q) + j)) = opW (s.gpr w) q &&& Holes.K j) ∧
+      (∀ k < 256, (k < 12 * 2 ∨ 12 * 2 + 12 ≤ k) → fw t (8 * k) = fw s (8 * k)) ∧
+      Keep [.t6, .a6, .s4, .a7] s t ∧ t.sp = s.sp ∧ Frame [⟨s.gpr FP, 288⟩] s.mem t.mem := by
+  obtain ⟨k0, k1, k2, k3⟩ : s.gpr .s0 = Holes.K 0 ∧ s.gpr .s1 = Holes.K 1 ∧ s.gpr .s2 = Holes.K 2 ∧
+    s.gpr .s3 = Holes.K 3 := ⟨hK 0 (by decide), hK 1 (by decide), hK 2 (by decide), hK 3 (by decide)⟩
+  have cn : ∀ a, a + 8 ≤ 288 → (⟨s.gpr FP, 288⟩ : Region).Contains (s.gpr FP + BitVec.ofNat 64 a) (64 / 8) :=
+    fun a ha => by
+      simp only [Region.Contains]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+  have cn0 : (⟨s.gpr FP, 288⟩ : Region).Contains (s.gpr FP) (64 / 8) := by
+    simpa using cn 0 (by decide)
+  simp only [FP] at cn cn0
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  obtain ⟨w6, wa6, ws4, wa7⟩ := hw
+  have W : ∀ k < 12, (8 * (12 * 2 + k) < 2048 ∧ (s.gpr .s9 + BitVec.ofNat 64 (8 * (12 * 2 + k))).toNat % 8 = 0) ∧
+      InRegions s.wr (s.gpr .s9 + BitVec.ofNat 64 (8 * (12 * 2 + k))) 8 :=
+    fun k hk => ⟨⟨(hW k hk).1, (hW k hk).2.1⟩, (hW k hk).2.2⟩
+  prep_word_tac
+
+theorem prepWord_ok (s : State) {w : Reg} (hw : w ∉ [.t6, .a6, .s4, .a7]) {p : Nat} (hp : p < 3) (hK : Masks s)
+    (hW : ∀ k < 12, Wr8 s (8 * (12 * p + k))) :
+    WP isa (.block (prepWord w p)) s fun t =>
+      (∀ q < 3, ∀ j < 4, fw t (8 * (4 * (3 * p + q) + j)) = opW (s.gpr w) q &&& Holes.K j) ∧
+      (∀ k < 256, (k < 12 * p ∨ 12 * p + 12 ≤ k) → fw t (8 * k) = fw s (8 * k)) ∧
+      Keep [.t6, .a6, .s4, .a7] s t ∧ t.sp = s.sp ∧ Frame [⟨s.gpr FP, 288⟩] s.mem t.mem := by
+  interval_cases p
+  · exact prepWord0_ok s hw hK hW
+  · exact prepWord1_ok s hw hK hW
+  · exact prepWord2_ok s hw hK hW
+
 end VG.Proof.Gcm.RISCV64
