@@ -19,8 +19,10 @@ whole 64-bit registers:
 * `Kₜ` is built by `li64` (`Impl/Words/RISCV64/Word64.lean`), from two 32-bit
   halves.
 * The hash value (`state`, an array of `u64`) and the blocks are argument
-  buffers, whose alignment the contract does not state, so they are read
-  and written a byte at a time; the words of a block are big-endian.
+  buffers, whose alignment the contract does not state. The hash value is
+  read and written a doubleword at a time if `state` is a multiple of 8
+  (`loadP`, `updateP`), else a byte at a time; the words of a block, which
+  are big-endian, are read a byte at a time.
 * `scratch` is rounded up to a multiple of 8 (it has room to spare), so the
   16-word message schedule window in its first 128 bytes, and `s0`, the one
   callee-saved register used, saved at offset 128, take naturally aligned
@@ -120,12 +122,27 @@ result. -/
 def updateW (k : Nat) : List Instr :=
   loadLE64 T0 T1 T2 .a0 (8 * k) ++ [.add (var 0 k) (var 0 k) T0] ++ storeLE64 (var 0 k) T0 T1 .a0 (8 * k)
 
+/-- Load the hash value from `state`, a multiple of 8. -/
+def loadA : List Instr := (List.range 8).flatMap fun k => [.load .d (var 0 k) .a0 (8 * k)]
+
+/-- `updateW k` for `state` a multiple of 8. -/
+def updA (k : Nat) : List Instr :=
+  [.load .d T0 .a0 (8 * k), .add (var 0 k) (var 0 k) T0, .store .d (var 0 k) .a0 (8 * k)]
+
+/-- `load`, or `loadA` if `state` is a multiple of 8 (its low bits in `T0`). -/
+def loadP : Prog isa :=
+  .seq (.block [.logicImm .and T0 .a0 7]) (.ite (.zero T0) (.block loadA) (.block load))
+
+/-- The updates, by `updA` if `state` is a multiple of 8 (its low bits in `T1`). -/
+def updateP : Prog isa :=
+  .seq (.block [.logicImm .and T1 .a0 7])
+    (.ite (.zero T1) (.block ((List.range 8).flatMap updA)) (.block ((List.range 8).flatMap updateW)))
+
 /-- Advance to the next block and decrement the count. -/
 def advance : List Instr := [.addi .a1 .a1 128, .addi .a2 .a2 (-1)]
 
 /-- One block. -/
-def body : Prog isa :=
-  .seq (.block load) (.seq (rounds 80) (.block ((List.range 8).flatMap updateW ++ advance)))
+def body : Prog isa := .seq loadP (.seq (rounds 80) (.seq updateP (.block advance)))
 
 /-- The blocks. -/
 def blocks : Prog isa := .ite (.zero .a2) (.block []) (.loop body (.nonzero .a2))
