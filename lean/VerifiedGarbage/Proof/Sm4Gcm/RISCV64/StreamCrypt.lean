@@ -337,7 +337,7 @@ theorem dec_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptP
   · rw [hm, blockAt_frame cf (by simpa using stp_crFrame bs₀ hd₅₀ (d := 0) (k := 16) (by decide))]
     simpa using blk₅ (d := 0) (.inl (by decide))
 
-theorem streamEncrypt_wp {s₀ : State} (h : streamEncryptRISCV64.pre s₀) :
+theorem streamEncrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamEncryptRISCV64.pre s₀) :
     WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamEncryptRISCV64.post s₀ s' := by
   have h' : streamCryptPre s₀ := h
   have h₀ := enc_run h' 0 (a := List.replicate ((s₀.gpr .a2).toNat % 16) 0)
@@ -369,7 +369,7 @@ theorem streamEncrypt_wp {s₀ : State} (h : streamEncryptRISCV64.pre s₀) :
     rw [Proof.Gcm.length_gctr, List.length_append, length_bytesAt]; exact eo₁
   · rw [eo₂, Proof.Gcm.gctr_append, List.drop_left' hl']
 
-theorem streamDecrypt_wp {s₀ : State} (h : streamDecryptRISCV64.pre s₀) :
+theorem streamDecrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamDecryptRISCV64.pre s₀) :
     WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamDecryptRISCV64.post s₀ s' := by
   have h' : streamCryptPre s₀ := h
   have h₀ := dec_run h' 0 (a := List.replicate ((s₀.gpr .a2).toNat % 16) 0)

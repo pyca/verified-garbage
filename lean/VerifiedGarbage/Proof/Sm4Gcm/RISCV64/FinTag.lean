@@ -58,7 +58,7 @@ section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0))
 include L
 
-theorem finTag_ok (hb : Big V sp) {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a ct : List Byte}
+theorem finTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] (hb : Big V sp) {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a ct : List Byte}
     {s : State} (he : Env V sp s)
     (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H)
     (ha : a.length % 16 = (V .s10).toNat % 16) (hP : (V .s11).toNat = ct.length) :

@@ -116,7 +116,7 @@ theorem nP_keys {c : Cx} {s s₁ s₂ : State} (Ar : Args c s) (En : Entered c s
     bytesAt_keep fK (buf_keep L.n_w (by decide)) (by decide), En.nonce, entry_buf En.frame L.n_w (by decide)]
 
 /-- `vg_aes_gcm_siv_seal` in two runs. -/
-theorem seal_rel {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Args c σ₂) (hsp : σ₁.sp = σ₂.sp) :
+theorem seal_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Args c σ₂) (hsp : σ₁.sp = σ₂.sp) :
     RelCT isa (Eq2 σ₁ σ₂) «seal» TT := by
   have L := A₁.lay
   unfold «seal»
@@ -143,7 +143,7 @@ theorem seal_rel {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Ar
   exact rel_env [] (E₄.of_pk C.pk) (E₄'.of_pk C'.pk) (by rw [C.pk.sp, C'.pk.sp, h₄]) (by simp) ⟨_, by taint_decide⟩
 
 /-- `vg_aes_gcm_siv_open` in two runs. -/
-theorem open_rel {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Args c σ₂) (hsp : σ₁.sp = σ₂.sp) :
+theorem open_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Args c σ₂) (hsp : σ₁.sp = σ₂.sp) :
     RelCT isa (Eq2 σ₁ σ₂) «open» TT := by
   have L := A₁.lay
   unfold «open»
