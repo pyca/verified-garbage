@@ -17,8 +17,8 @@ open VG.Proof.Bignum.Arm
 theorem exec {c : Prog isa} {s s' : State} {trace : List Leak}
     (h : Exec isa c s trace s') : Exec isa (callerRows c) s trace s' := by
   induction h with
-  | icall hi => nomatch hi
-  | icallNext hi => nomatch hi
+  | icall hi hc h hr _ => simp only [callerRows]; exact .icall hi hc h hr
+  | icallNext hi hne h _ => simp only [callerRows]; exact .icallNext hi hne h
   | block h =>
     simp only [callerRows]
     split

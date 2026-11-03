@@ -79,8 +79,18 @@ theorem gpr_top {r : Reg} (hr : r ∉ linkRegs) {c : Prog isa} {s s' : State} {t
     (hb : (c.calls.all fun nb => (straight nb.2).any (restores r) || nb.2.allInstrs (keepsReg r)) = true) :
     s'.gpr r = s.gpr r := by
   induction h with
-  | icall hi => nomatch hi
-  | icallNext hi => nomatch hi
+  | icall _ hc₁ e hr' _ =>
+    simp only [Code.calls, List.all_append, List.all_cons, Bool.and_eq_true, Bool.or_eq_true] at hb
+    rcases hb.1.1 with hb | hb
+    · obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp hb
+      obtain ⟨_, eb⟩ := straight_exec his e
+      rw [ret_eq hr', restores_ok hres eb, (call_eq hc₁).2.2.2.2 r hr]
+    · rw [ret_eq hr', Exec.gpr (fun i hi => by
+          have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hb) i hi
+          simpa [keepsReg] using this) e (.inr hr), (call_eq hc₁).2.2.2.2 r hr]
+  | icallNext _ _ _ ih =>
+    exact ih (by simp only [topAll, Bool.and_eq_true] at hc ⊢; exact hc.2)
+      (by simp only [Code.calls, List.all_append, List.all_cons, Bool.and_eq_true] at hb ⊢; exact hb.2)
   | block h =>
     exact execBlock_keep (fun s : State => s.gpr r) (ok := fun i => keepsReg r i = true)
       (fun hi he => exec_gpr (by simpa [keepsReg] using hi) he)

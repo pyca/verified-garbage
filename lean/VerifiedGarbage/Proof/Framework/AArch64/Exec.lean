@@ -223,7 +223,7 @@ theorem exec_sp {i : Instr} {s s' : State} (h : exec i s = some s') : s'.sp = s.
   | ccmp sz n imm nzcv cond =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
     split <;> rfl
-  | push _ | pop _ | alloc _ | free _ => simp only [reduceExec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | blr _ => simp only [reduceExec, reduceCtorEq] at h
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
   | umov _ _ _ _ =>
@@ -270,8 +270,10 @@ theorem pop_sp {j : Instr} {s₁ s₂ s' : State} (h : pop j s₁ s₂ = some s'
 theorem Exec.sp {c : Prog isa} {s s' : State} {t : List Leak} (h : VG.Exec isa c s t s') :
     s'.sp = s.sp := by
   induction h with
-  | icall hi => nomatch hi
-  | icallNext hi => nomatch hi
+  | icall _ hc _ hr ih =>
+    simp only [isa, call, ret, Option.some.injEq] at hc hr
+    subst hc; obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp hr; cases h; exact ih
+  | icallNext _ _ _ ih => exact ih
   | block h => exact execBlock_sp h
   | seq _ _ ih₁ ih₂ => exact ih₂.trans ih₁
   | iteT _ _ ih => exact ih
