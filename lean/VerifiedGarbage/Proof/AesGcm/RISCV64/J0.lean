@@ -403,7 +403,7 @@ theorem j0zero_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H
 
 /-- `J₀` of a nonce of any length but 12: GHASH of the nonce padded and of
 the lengths block. -/
-theorem j0hash_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H Np n s) (hn : n ≠ 12) :
+theorem j0hash_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H Np n s) (hn : n ≠ 12) :
     WP isa j0hash s (J0Mid V sp H (bytesAt s.mem Np n) s.mem) := by
   have hd := h.data
   have hlt := hd.lt
@@ -469,7 +469,7 @@ theorem eval_subk {s : State} {r : Reg} {a k : Nat}
     simp only [hak, decide_false, beq_eq_false_iff_ne.mpr this]
 
 /-- `j0`: the streaming state's `J₀`, accumulator and first counter block. -/
-theorem j0_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H Np n s) :
+theorem j0_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H Np n s) :
     WP isa j0 s (J0Out V sp H (bytesAt s.mem Np n) s.mem) := by
   have hlt := h.data.lt
   have h₁ : WP isa (.block [.addi .a2 .s5 (-12)]) s fun s₁ =>

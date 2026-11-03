@@ -62,7 +62,7 @@ variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0))
 include L
 
 /-- The lengths block absorbed, before the copy. -/
-theorem tagLens_ok {H J : Block} {s : State} (he : Env V sp s)
+theorem tagLens_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H J : Block} {s : State} (he : Env V sp s)
     (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (V .s1) = J) :
     WP isa (lens 16) s (TagMid V sp H (blockAt s.mem (V .s1 + BitVec.ofNat 64 16)) J
       (s.gpr .s4).toNat (s.gpr .s6).toNat s.mem) := by
@@ -194,7 +194,7 @@ theorem tagCall_ok (hb : Big V sp) {o : Nat} (ho : o = 0 ∨ o = 112) {H Y J : B
       · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- `tag o`, for `o` of 0 or 112. -/
-theorem tag_ok (hb : Big V sp) {o : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env V sp s)
+theorem tag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] (hb : Big V sp) {o : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env V sp s)
     (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (V .s1) = J) :
     WP isa (tag o) s (TagOut V sp o H (blockAt s.mem (V .s1 + BitVec.ofNat 64 16)) J
       (s.gpr .s4).toNat (s.gpr .s6).toNat s.mem) :=

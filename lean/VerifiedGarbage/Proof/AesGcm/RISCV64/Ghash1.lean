@@ -76,7 +76,7 @@ theorem ghCall_mk {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (
 
 /-- The call itself, from a state whose registers are its arguments, for `n`
 blocks at `P`. -/
-theorem ghCall_ok {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0)) {yo : Nat}
+theorem ghCall_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0)) {yo : Nat}
     (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env V sp s) {P : Addr} {n : Nat}
     (h3 : s.gpr .a0 = V .s2 + BitVec.ofNat 64 240) (h4 : s.gpr .a1 = V .s1 + BitVec.ofNat 64 yo)
     (h5 : s.gpr .a2 = P) (h6 : s.gpr .a3 = BitVec.ofNat 64 n) (h7 : s.gpr .a4 = V .s0 + BitVec.ofNat 64 512)
@@ -120,7 +120,7 @@ theorem ghArgs_ok {V : Reg → BitVec 64} {sp : Addr} {yo : Nat}
   · rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
 
 /-- `ghash1 yo b o`, for the block at `P = b + o`. -/
-theorem ghash1_ok {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0)) {yo : Nat}
+theorem ghash1_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0)) {yo : Nat}
     (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env V sp s) (b : Reg) (o : Nat)
     (hb : b = .s1 ∨ b = .s0) (ho : o < 2048) {P : Addr} (hP : s.gpr b + BitVec.ofNat 64 o = P)
     (hpy : (⟨V .s1 + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨P, 16⟩)
