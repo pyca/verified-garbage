@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.GenWide
 public import VerifiedGarbage.Impl.Words.RISCV64.Wide
+public import VerifiedGarbage.Impl.Weierstrass.RISCV64
+public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
 /-!
 # Arithmetic modulo P-521's prime in 58-bit limbs, on RISC-V
@@ -42,7 +44,7 @@ branches are on the pointers: GenWide's, and whether they are equal.
 namespace VG.Impl.Weierstrass.RISCV64.P521Unsat
 
 open VG.RISCV64
-open VG.Impl.Weierstrass.RISCV64.GenWide (T fnWith fn)
+open VG.Impl.Weierstrass.RISCV64.GenWide (T fnWith fn fnA)
 open VG.Impl.Words.RISCV64 (mulWide add2)
 
 /-- The nine limbs of a result, from `a3`. -/
@@ -241,5 +243,17 @@ def unpackFn : Prog isa := fn 9 unpackC
 
 /-- The function packing an element's residue into words. -/
 def packFn : Prog isa := fn 9 packC
+
+/-- The function multiplying, for aligned offsets (`GenWide.fnA`): `core`
+on the operands where they are. -/
+def mulFnA : Prog isa := fnA core
+
+/-- Their names: `vg_p521u_<op>_mod_p`. -/
+def S : Impl.Weierstrass.Mont.Modulus := { Impl.Weierstrass.Mont.p521p with curve := "p521u" }
+
+/-- The product, sum and difference as a field's functions, for the calls of
+field programs (`Impl/Weierstrass/RISCV64.lean`'s `fprog`); the calls'
+offsets, multiples of 8, take `mulFnA`. -/
+def field : Field := ⟨S, mulFn, addFn, subFn, mulFnA, addFn, subFn⟩
 
 end VG.Impl.Weierstrass.RISCV64.P521Unsat

@@ -4284,10 +4284,6 @@ call {vg_p521_mul_mod_p}
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_p521_add_mod_p.rs"]
-pub(crate) mod vg_p521_add_mod_p;
-
-#[rustfmt::skip]
 #[path = "internal/vg_p521_mul.rs"]
 pub(crate) mod vg_p521_mul;
 
@@ -4296,5 +4292,21 @@ pub(crate) mod vg_p521_mul;
 pub(crate) mod vg_p521_mul_mod_p;
 
 #[rustfmt::skip]
-#[path = "internal/vg_p521_sub_mod_p.rs"]
-pub(crate) mod vg_p521_sub_mod_p;
+#[path = "internal/vg_p521u_add_mod_p.rs"]
+pub(crate) mod vg_p521u_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521u_mul_mod_p.rs"]
+pub(crate) mod vg_p521u_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521u_pack_mod_p.rs"]
+pub(crate) mod vg_p521u_pack_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521u_sub_mod_p.rs"]
+pub(crate) mod vg_p521u_sub_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521u_unpack_mod_p.rs"]
+pub(crate) mod vg_p521u_unpack_mod_p;

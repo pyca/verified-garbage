@@ -457,7 +457,7 @@ call {vg_p521_sub_mod_p}
 .insn 2, 0x8082
 .option pop",
         vg_p521_mul_mod_p = sym crate::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
-        vg_p521_add_mod_p = sym crate::ec_p521::vg_p521_add_mod_p::vg_p521_add_mod_p,
-        vg_p521_sub_mod_p = sym crate::ec_p521::vg_p521_sub_mod_p::vg_p521_sub_mod_p,
+        vg_p521_add_mod_p = sym crate::ec_p521_compressed::vg_p521_add_mod_p::vg_p521_add_mod_p,
+        vg_p521_sub_mod_p = sym crate::ec_p521_compressed::vg_p521_sub_mod_p::vg_p521_sub_mod_p,
     )
 }
