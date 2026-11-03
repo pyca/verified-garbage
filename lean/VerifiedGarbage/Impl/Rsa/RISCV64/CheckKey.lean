@@ -30,6 +30,6 @@ def loads : List (Prog isa) :=
     load aDQ .a3 .s6, load aQI .a6 .s4]
 
 /-- `vg_rsa_check_key`. -/
-def code : Prog isa := fn 64 moves loads (start ++ crtChecks ++ dChecks)
+def code : Prog isa := fn 64 moves loads (.block keepLen :: start ++ crtChecks ++ dChecks)
 
 end VG.Impl.Rsa.RISCV64.CheckKey

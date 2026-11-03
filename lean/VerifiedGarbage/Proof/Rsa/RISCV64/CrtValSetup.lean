@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyDiv
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.Octets
 
 /-!
 # `vg_rsa_crt_values` on RISC-V: the set-up, the reads and the checks of `p q = n`
@@ -40,6 +41,17 @@ abbrev Nv (s0 : State) : Nat := Spec.Rsa.os2ip (nB s0)
 abbrev Pv (s0 : State) : Nat := Spec.Rsa.os2ip (pB s0)
 abbrev Qv (s0 : State) : Nat := Spec.Rsa.os2ip (qB s0)
 abbrev Dv (s0 : State) : Nat := Spec.Rsa.os2ip (dB s0)
+
+/-- `p` and `q` are below `2^(8 p_len)` and `2^(8 q_len)`. -/
+theorem pv_lt (s0 : State) : Pv s0 < 2 ^ (8 * pL s0) := by
+  have h := VG.Proof.Rsa.lt_of_os2ip (pB s0)
+  have hl : (pB s0).length = pL s0 := by simp [Spec.Rsa.bytesAt]
+  rw [hl] at h; rw [Nat.pow_mul]; exact h
+
+theorem qv_lt (s0 : State) : Qv s0 < 2 ^ (8 * qL s0) := by
+  have h := VG.Proof.Rsa.lt_of_os2ip (qB s0)
+  have hl : (qB s0).length = qL s0 := by simp [Spec.Rsa.bytesAt]
+  rw [hl] at h; rw [Nat.pow_mul]; exact h
 
 /-- Index side conditions. -/
 macro "cvx" : tactic => `(tactic| ((try simp only [nArr, aOne, aQ, aP, aDQ, aDR, aDD, aDT, aDR2, aDR3, aD,
@@ -219,8 +231,10 @@ theorem checks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
     rw [f2.num (by simp) (by cvx) (fit _ (by cvx)), f1.num (by cvx) (by simp) (fit _ (by cvx)), l.n]
   have z2 : word t2.mem (bOf s0) (arr (wOf s0) aDD + 8 * wOf s0) = 0 := by
     rw [f2.word (i := wOf s0) (by omega_arith) (by simp) (by cvx) (fit _ (by cvx))]; exact z1
-  refine WP.mono (div_ok w2' (q := aDQ) (r := aDR) (d := aDD) (t := aDT) (by cvx) (by cvx) (by cvx) (by cvx)
-    (by decide) (by cvx) (by cvx) (by cvx) (by cvx) (by cvx) (by cvx) z2)
+  have hl : t2.gpr .s4 = BitVec.ofNat 64 (pL s0) := c2.s4.trans (toNat_ofNat_eq _)
+  refine WP.mono (divL_ok w2' (q := aDQ) (r := aDR) (d := aDD) (by cvx) (by cvx) (by cvx) (by decide)
+    (by cvx) (by cvx) (by cvx) hl h.p1 (by have := h.p2; simp only [wOf, kOf, pL] at *; omega) z2
+    (by rw [dd2]; exact pv_lt s0))
     fun t3 ⟨w3, f3, k3, _, v3⟩ => ?_
   have c3 := c2.step h f3 (by cvx) (by simp) k3
   rw [dd2, n2] at v3
@@ -235,7 +249,7 @@ theorem checks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
   have keepA : ∀ j < nArr, j ≠ aDD → j ≠ aDQ → j ≠ aDR → j ≠ aDT →
       num t.mem (bOf s0) (wOf s0) j = num s.mem (bOf s0) (wOf s0) j := fun j hj a1 a2 a3 a4 => by
     rw [f5.num (by simp) (by cvx) (fit _ hj), f4.num (by simp) (by cvx) (fit _ hj),
-      f3.num (by simp [Ne.symm a2, Ne.symm a3, Ne.symm a4]) (by simp) (fit _ hj),
+      f3.num (by simp [Ne.symm a2, Ne.symm a3]) (by simp) (fit _ hj),
       f2.num (by simp) (by cvx) (fit _ hj), f1.num (by simp [Ne.symm a1]) (by simp) (fit _ hj)]
   refine ⟨num t3.mem (bOf s0) (wOf s0) aDQ, num t3.mem (bOf s0) (wOf s0) aDR, c5, w5,
     by rw [keepA _ (by cvx) (by cvx) (by cvx) (by cvx) (by cvx), l.p],

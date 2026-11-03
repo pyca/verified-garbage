@@ -219,8 +219,12 @@ theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals}
   rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-- The checks of `d`: `d < n`, and its remainders modulo `p - 1` and `q - 1`
-compared with `dP` and `dQ`. -/
-theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 (aFin v) liveFin c s) :
+compared with `dP` and `dQ`, the divisions over `p`'s and `q`'s words
+(their lengths in `s5` and `s6` from the start). -/
+theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 (aFin v) liveFin c s)
+    {pl ql : Nat} (h5 : s0.gpr .s5 = BitVec.ofNat 64 pl) (h6 : s0.gpr .s6 = BitVec.ofNat 64 ql)
+    (hp1 : 1 ≤ pl) (hpw : pl ≤ 8 * g.w) (hpv : v.p < 2 ^ (8 * pl))
+    (hq1 : 1 ≤ ql) (hqw : ql ≤ 8 * g.w) (hqv : v.q < 2 ^ (8 * ql)) :
     WP isa (seqs dChecks) s fun t => ∃ Y₁ Y₂,
       (0 < 2 * (v.p / 2) → Y₁ = v.d % (2 * (v.p / 2))) ∧ (0 < 2 * (v.q / 2) → Y₂ = v.d % (2 * (v.q / 2))) ∧
       ∃ A live, Stg g s0 A live (c && decide (v.d < v.n) && decide (Y₁ = v.dP) && decide (Y₂ = v.dQ)) t := by
@@ -230,7 +234,8 @@ theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 
   refine WP.mono (h.ltA_ok (a := aD) (b := aN) (by decide) (by decide) (by decide)) fun t1 h1 => ?_
   rw [show aFin v aD = v.d from rfl, show aFin v aN = v.n from rfl] at h1
   rw [kc_seqs_append (by simp [divA]) (by simp [eqA])]
-  refine WP.mono (h1.divA_ok (a := aD) (d := aM1) (by decide) (by decide) (by decide))
+  refine WP.mono (h1.divA_ok (a := aD) (d := aM1) (by decide) (by decide) (by decide) h5 (by decide) hp1 hpw
+    (show 2 * (v.p / 2) < _ by omega))
     fun t2 ⟨Xq, Y₁, hv1, h2⟩ => ?_
   rw [show aFin v aD = v.d from rfl, show aFin v aM1 = 2 * (v.p / 2) from rfl] at hv1
   rw [kc_seqs_append (by simp [eqA]) (by simp [divA])]
@@ -243,7 +248,8 @@ theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 
       simp only [liveFin, List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   rw [kc_seqs_append (by simp [divA]) (by simp [eqA])]
-  refine WP.mono (h3'.divA_ok (a := aD) (d := aM2) (by decide) (by decide) (by decide))
+  refine WP.mono (h3'.divA_ok (a := aD) (d := aM2) (by decide) (by decide) (by decide) h6 (by decide) hq1 hqw
+    (show 2 * (v.q / 2) < _ by omega))
     fun t4 ⟨Xq', Y₂, hv2, h4⟩ => ?_
   rw [show aFin v aD = v.d from rfl, show aFin v aM2 = 2 * (v.q / 2) from rfl] at hv2
   refine WP.mono (h4.eqA_ok (a := aVR) (b := aDQ) (by decide) (by decide)) fun t h5 => ?_
@@ -518,7 +524,7 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
     (hmv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a0) (s0.gpr .a1).toNat))
       (s0.gpr .a1).toNat = true) :
     WP isa (seqs (([setup, .block eArr] : List (Prog isa)) ++ VG.Impl.Rsa.RISCV64.CheckKey.loads ++
-        (start ++ crtChecks ++ dChecks) ++ ([.block ret] : List (Prog isa)))) t fun u =>
+        (.block keepLen :: start ++ crtChecks ++ dChecks) ++ ([.block ret] : List (Prog isa)))) t fun u =>
       KBase (stackArg s0 8) ((stackArg s0 9).toNat * 8) s0 u ∧
         u.gpr .a0 = BitVec.ofNat 64 (if ckOk s0 then 1 else 0) := by
   have hp := ck_kpre h0
@@ -585,6 +591,15 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
   refine WP.mono (ldStep_ok l8 (j := aQI) (by decide) rfl (by decide) R8.a6 (R8.s4.trans (ofNat_toNat' _))
     p1 (by omega) (by rw [h0.hrd, ← h0.hqi]; simp) dqi wqi) fun t9 ⟨l9, k9⟩ => ?_
   have R9 := R8.of_keep k9
+  -- `p_len` into `s5`.
+  rw [List.nil_append, kc_seqs_cons (by simp [start])]
+  have hb5 : WP isa (.block keepLen) t9 fun x => (x.gpr .s5 = t9.gpr .s4 ∧ x.mem = t9.mem) ∧ Keep [.s5] t9 x := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [keepLen, VG.Impl.Rsa.RISCV64.Keys.mov, BitVec.add_zero]
+  refine WP.mono hb5 fun t9' ⟨⟨e5, m9⟩, k9'⟩ => ?_
+  have h5 : t9'.gpr .s5 = BitVec.ofNat 64 (s0.gpr .a7).toNat := e5.trans (R9.s4.trans (ofNat_toNat' _))
+  have h6 : t9'.gpr .s6 = BitVec.ofNat 64 (stackArg s0 1).toNat :=
+    (k9'.gpr (by decide)).trans (R9.s6.trans (ofNat_toNat' _))
   -- The checks.
   let g : Geo := ⟨stackArg s0 8, (stackArg s0 9).toNat * 8, (s0.gpr .a1).toNat⟩
   let v : Vals := ⟨Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a0) (s0.gpr .a1).toNat),
@@ -595,16 +610,25 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
     Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (stackArg s0 4) (stackArg s0 1).toNat),
     Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (stackArg s0 6) (s0.gpr .a7).toNat),
     Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a4) (s0.gpr .a5).toNat)⟩
-  have a9 : Arrs t9.mem g.B g.w (vals v) live0 := l9.arrs.sub (by decide)
+  have a9 : Arrs t9'.mem g.B g.w (vals v) live0 := by rw [m9]; exact l9.arrs.sub (by decide)
   have hw2 : 2 ≤ g.w := by have := hp.k64; show 2 ≤ ((s0.gpr .a1).toNat + 7) / 8; omega
-  rw [List.nil_append, kc_seqs_append (l₁ := start) (by simp [start]) (by simp [crtChecks, pqChecks, setM])]
-  refine WP.mono (start_ok (g := g) (v := v) l9.ws a9 (l9.top _ (by decide))) fun t10 g10 => ?_
+  rw [kc_seqs_append (l₁ := start) (by simp [start]) (by simp [crtChecks, pqChecks, setM])]
+  refine WP.mono (start_ok (g := g) (v := v) (l9.ws.of_keep k9') a9 (by rw [m9]; exact l9.top _ (by decide)))
+    fun t10 g10 => ?_
   rw [kc_seqs_append (l₁ := crtChecks) (by simp [crtChecks, pqChecks, setM]) (by simp [dChecks, ltA])]
   refine WP.mono (crtChecks_ok g10 hw2) fun t11 ⟨Z, L, M₁, M₂, R₁, R₂, hZ, hL, hM₁, hM₂, hR₁, hR₂, g11⟩ => ?_
   rw [kc_seqs_append (l₁ := dChecks) (by simp [dChecks, ltA]) (by simp)]
-  refine WP.mono (dChecks_ok g11) fun t12 ⟨Y₁, Y₂, hY₁, hY₂, A, live, g12⟩ => ?_
+  have hpv : v.p < 2 ^ (8 * (s0.gpr .a7).toNat) := by
+    have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a6) (s0.gpr .a7).toNat)
+    rw [len_bytes] at this; rw [Nat.pow_mul]; exact this
+  have hqv : v.q < 2 ^ (8 * (stackArg s0 1).toNat) := by
+    have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (stackArg s0 0) (stackArg s0 1).toNat)
+    rw [len_bytes] at this; rw [Nat.pow_mul]; exact this
+  refine WP.mono (dChecks_ok g11 h5 h6 p1 (show _ ≤ 8 * (((s0.gpr .a1).toNat + 7) / 8) by omega) hpv
+    q1 (show _ ≤ 8 * (((s0.gpr .a1).toNat + 7) / 8) by omega) hqv)
+    fun t12 ⟨Y₁, Y₂, hY₁, hY₂, A, live, g12⟩ => ?_
   rw [show seqs [.block ret] = .block ret from rfl]
-  refine WP.mono (ret_ok g12) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨(g12.base l9.base).of_regs kt tm, ?_⟩
+  refine WP.mono (ret_ok g12) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨(g12.base (l9.base.of_regs k9' m9)).of_regs kt tm, ?_⟩
   rw [t3]
   congr 2
   have hnk : v.n < 256 ^ (s0.gpr .a1).toNat := by

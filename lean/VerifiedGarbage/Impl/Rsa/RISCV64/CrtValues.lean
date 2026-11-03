@@ -16,7 +16,8 @@ scratch_len)`, the last eight on the stack. As on PPC64LE
   (`Precompute.check`), the only branch on data; an invalid modulus writes
   zeros to the three outputs and returns 0.
 * `p q = n`: `p` odd, `n / p = q` and `n mod p = 0`, by the fixed-iteration
-  division (`Impl/Rsa/RISCV64/Div.lean`).
+  division (`Impl/Rsa/RISCV64/Div.lean`), whose steps pass over the
+  divisor's `⌈p_len / 8⌉` words (`Div.divL`).
 * `qInv` is the inverse of `q` modulo `p | 1` (`Impl/Rsa/RISCV64/InvBatch.lean`,
   by batches of divsteps), which exists if the gcd it computes is 1, on
   numbers of the primes' digits of 32 bits `⌈max(p_len, q_len) / 4⌉` (`s8`,
@@ -24,14 +25,15 @@ scratch_len)`, the last eight on the stack. As on PPC64LE
   needs by then.
 * `dP` and `dQ` are the remainders of `d` divided by `p` and by `q` with
   their low bits cleared: `p - 1` and `q - 1` for odd primes, which `p q = n`
-  makes them.
+  makes them; the divisions pass over `⌈p_len / 8⌉` and `⌈q_len / 8⌉` words.
 
 The results are written under the mask of the checks, which is returned.
 
 Registers kept throughout: `s1` `n`, `s2` `n_len`, `s3` `p`, `s4` `p_len`,
 `s5` `q`, `s6` `q_len`, `a0` `d`, `a1` `d_len`, `a2` `dp`, `a3` `dq`, `a6`
 `qinv`; `s9`–`s11` the working space's (`Impl/Rsa/RISCV64/KeyWs.lean`), `s7`
-the count of the divisions and the inverse, and `s8` the inverse's digits.
+the count of the divisions and the inverse, and `s8` the inverse's digits,
+then each division's words.
 -/
 
 @[expose] public section
@@ -100,7 +102,7 @@ def loads : Prog isa := seqs [load aDQ .s1 .s2, load aP .s3 .s4, load aQ .s5 .s6
 
 /-- `p` odd, `n` divided by `p`, and the checks `n / p = q` and `n mod p = 0`. -/
 def checks : Prog isa := seqs [
-  copy aDD aP, .block (bitOf sPodd aP), div aDQ aDR aDD aDT, eqS sE1 aDQ aQ, eqS sE2 aDR aZero]
+  copy aDD aP, .block (bitOf sPodd aP), divL aDQ aDR aDD .s4, eqS sE1 aDQ aQ, eqS sE2 aDR aZero]
 
 /-- `s8 := ⌈max(p_len, q_len) / 4⌉`, the primes' digits, without a branch:
 `p_len - ((p_len - q_len) & mask)`, the mask all ones where `p_len < q_len`. -/
@@ -125,8 +127,8 @@ def invPart : Prog isa := seqs (invSetup ++ [
 
 /-- `d` divided by `p - 1` and by `q - 1`. -/
 def dParts : Prog isa := seqs [
-  copy aDQ aD, copy aDD aP, .block (clrLow aDD), div aDQ aDR2 aDD aDT,
-  copy aDQ aD, copy aDD aQ, .block (clrLow aDD), div aDQ aDR3 aDD aDT]
+  copy aDQ aD, copy aDD aP, .block (clrLow aDD), divL aDQ aDR2 aDD .s4,
+  copy aDQ aD, copy aDD aQ, .block (clrLow aDD), divL aDQ aDR3 aDD .s6]
 
 def arith : Prog isa := seqs [checks, invPart, dParts]
 
