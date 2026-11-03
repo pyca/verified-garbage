@@ -20,11 +20,13 @@ namespace VG.Proof.RsaOaep.PPC64LE
 
 open VG VG.PPC64LE
 
-/-- The instruction with the immediate of an `li`, `addi` or `subi` zeroed. -/
+/-- The instruction with the immediate of an `li`, `addi` or `subi`, or the
+offset of a load, zeroed. -/
 def Instr.zImm : Instr → Instr
   | .li d _ => .li d 0
   | .addi d n _ => .addi d n 0
   | .subi d n _ => .subi d n 0
+  | .load sz t n _ => .load sz t n 0
   | i => i
 
 /-- The code with those immediates zeroed. -/

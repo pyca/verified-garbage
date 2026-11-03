@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.Framework.Mem
 `RelCT.seq_block_append`: a sequence whose first block is `l₁ ++ l₂` runs as
 `l₁` followed by `l₂` and the rest, and leaks the same trace, so a relational
 proof may relate `l₁` alone (e.g. a load of a value public by correctness)
-and check `l₂` with the rest by the taint analysis.
+and check `l₂` with the rest by the taint analysis; `RelCT.block_append`,
+the same for a block alone.
 -/
 
 @[expose] public section
@@ -37,5 +38,18 @@ theorem RelCT.seq_block_append {P Q : M.State → M.State → Prop} {l₁ l₂ :
         (.seq (.block hx₂) (.seq (.block hz₂) c₂))
       simp only [List.append_assoc]
       exact ⟨ht, hq⟩
+
+theorem RelCT.block_append {P Q : M.State → M.State → Prop} {l₁ l₂ : List M.Instr}
+    (h : RelCT M P (.seq (.block l₁) (.block l₂)) Q) : RelCT M P (.block (l₁ ++ l₂)) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  rw [Exec.block_iff, execBlock_append] at e₁ e₂
+  obtain ⟨⟨x₁, u₁⟩, hx₁, hy₁⟩ := Option.bind_eq_some_iff.mp e₁
+  obtain ⟨⟨y₁, w₁⟩, hz₁, he₁⟩ := Option.map_eq_some_iff.mp hy₁
+  obtain ⟨⟨x₂, u₂⟩, hx₂, hy₂⟩ := Option.bind_eq_some_iff.mp e₂
+  obtain ⟨⟨y₂, w₂⟩, hz₂, he₂⟩ := Option.map_eq_some_iff.mp hy₂
+  simp only [Prod.mk.injEq] at he₁ he₂
+  obtain ⟨rfl, rfl⟩ := he₁
+  obtain ⟨rfl, rfl⟩ := he₂
+  exact h _ _ _ _ _ _ hp (.seq (.block hx₁) (.block hz₁)) (.seq (.block hx₂) (.block hz₂))
 
 end VG

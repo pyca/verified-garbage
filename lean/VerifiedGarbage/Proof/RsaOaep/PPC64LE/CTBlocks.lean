@@ -96,15 +96,40 @@ theorem r4_taint (h : Pins Φ []) : RelCT isa (Two Φ)
     (.block [.addi .r3 .r14 oSt, .addi .r4 .r25 4, .addi .r5 .r14 oDig, .addi .r6 .r14 oW]) fun _ _ => True :=
   two_taint [] h (by taint_decide)
 
-theorem xorOut_taint (h : Pins Φ [.r14, .r26, .r27, .r29]) : RelCT isa (Two Φ) (xorOut G) fun _ _ => True :=
-  two_taint [.r14, .r26, .r27, .r29] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [.r14, .r26, .r27, .r29])
-    (c := xorOut G) (c' := xorOut Hd)
-    (by rfl) (by taint_decide))
+/-- The first two loads of a table's word, through our stack argument `j`. -/
+theorem twA_taint {d : Reg} (j : Nat) (hd : d = .r9 ∨ d = .r12) (h : Pins Φ []) :
+    RelCT isa (Two Φ) (.block [.addSp d 0, .load .d d d (arg j)]) fun _ _ => True := by
+  rcases hd with rfl | rfl
+  · exact two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
+      (c := .block [.addSp .r9 0, .load .d .r9 .r9 (arg j)]) (c' := .block [.addSp .r9 0, .load .d .r9 .r9 0])
+      (by rfl) (by taint_decide))
+  · exact two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
+      (c := .block [.addSp .r12 0, .load .d .r12 .r12 (arg j)]) (c' := .block [.addSp .r12 0, .load .d .r12 .r12 0])
+      (by rfl) (by taint_decide))
 
-theorem nextCtr_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (nextCtr G)) fun _ _ => True :=
-  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
-    (c := .block (nextCtr G)) (c' := .block (nextCtr Hd))
-    (by rfl) (by taint_decide))
+/-- The load of the table's word, through its address in `d`. -/
+theorem twB_taint {d : Reg} (o : Nat) (hd : d = .r9 ∨ d = .r12) (h : Pins Φ [d]) :
+    RelCT isa (Two Φ) (.block [.load .d d d o]) fun _ _ => True := by
+  rcases hd with rfl | rfl
+  · exact two_taint [.r9] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [.r9])
+      (c := .block [.load .d .r9 .r9 o]) (c' := .block [.load .d .r9 .r9 0]) (by rfl) (by taint_decide))
+  · exact two_taint [.r12] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [.r12])
+      (c := .block [.load .d .r12 .r12 o]) (c' := .block [.load .d .r12 .r12 0]) (by rfl) (by taint_decide))
+
+/-- `xorOut` after the load of `hLen` into `r9`. -/
+abbrev xorRest : List Instr :=
+  [.addi .r11 .r14 oDig, .add .r12 .r26 .r29, .sub .r8 .r27 .r29, .sub .r10 .r8 .r9,
+    .lsr .d .r6 .r10 63, .li .r7 0, .sub .r6 .r7 .r6, .logic .and .r10 .r10 .r6, .add .r9 .r9 .r10]
+
+theorem xorRest_taint (h : Pins Φ [.r9, .r14, .r26, .r27, .r29]) :
+    RelCT isa (Two Φ) (.seq (.block xorRest) (.loop (.block xorBody) (.nonzero .d .r9))) fun _ _ => True :=
+  two_taint [.r9, .r14, .r26, .r27, .r29] h (by taint_decide)
+
+/-- `nextCtr` after the load of `hLen` into `r12`. -/
+abbrev nextRest : List Instr := [.addi .r28 .r28 1, .add .r29 .r29 .r12, .sub .r12 .r29 .r27, .lsr .d .r12 .r12 63]
+
+theorem nextRest_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block nextRest) fun _ _ => True :=
+  two_taint [] h (by taint_decide)
 
 theorem pubArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block pubArgs) fun _ _ => True :=
   two_taint [] h (by taint_decide)
