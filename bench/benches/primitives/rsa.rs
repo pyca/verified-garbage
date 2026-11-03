@@ -339,6 +339,59 @@ pub fn bench(c: &mut Criterion) {
     const ONLY_PIECES: bool = true;
     // Only Proto12 this run: #4083's `tail` and three other orders of its step, and the
     // exponentiation proxy with #4083's `sqrTail`.
+    // Only Proto17 this run: main's `tail` and `sqrTail` next to the two-row multiplication
+    // (`two`), the squaring with a two-row reduction (`two`) and the square by the two-row
+    // multiplication (`bymul`), and exponentiation proxies of each pairing.
+    const ONLY_P17: bool = true;
+    if ONLY_P17 {
+        use verified_garbage_asm_riscv64::rsa_proto17 as p17;
+        type F = unsafe extern "C" fn(*mut u64, usize, usize);
+        let ws_of = |w: usize| {
+            let mut ws = vec![0u64; 32 + 8 * (w + 2) + 8];
+            for (i, x) in ws.iter_mut().enumerate().skip(32) {
+                *x = (i as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+            }
+            ws[32] |= 1;
+            ws
+        };
+        let fs: [(&str, F); 5] = [
+            ("mul_base", p17::vg_p17_mul_base),
+            ("mul_two", p17::vg_p17_mul_two),
+            ("sqr_base", p17::vg_p17_sqr_base),
+            ("sqr_two", p17::vg_p17_sqr_two),
+            ("sqr_bymul", p17::vg_p17_sqr_bymul),
+        ];
+        for (v, f) in fs {
+            let mut g = c.benchmark_group(format!("rsa_p17_{v}"));
+            for w in [16usize, 24, 32] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe { f(black_box(ws.as_mut_ptr()), w, 1) })
+                });
+            }
+            g.finish();
+        }
+        // 64 w squarings and 16 w multiplications (a 4-bit-window modexp's, no table).
+        let pairs: [(&str, F, F); 3] = [
+            ("base", p17::vg_p17_sqr_base, p17::vg_p17_mul_base),
+            ("two", p17::vg_p17_sqr_two, p17::vg_p17_mul_two),
+            ("bymul", p17::vg_p17_sqr_bymul, p17::vg_p17_mul_two),
+        ];
+        for (v, fs_, fm) in pairs {
+            let mut g = c.benchmark_group(format!("rsa_p17_exp_{v}"));
+            for w in [16usize, 24, 32] {
+                let mut ws = ws_of(w);
+                g.bench_function(BenchmarkId::new(VG, 64 * w), |b| {
+                    b.iter(|| unsafe {
+                        fs_(black_box(ws.as_mut_ptr()), w, 64 * w);
+                        fm(black_box(ws.as_mut_ptr()), w, 16 * w);
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     // Only Proto16 this run: main's public precompute next to the doublings started at
     // n's top bit (top), the squares by sqrTail (sqr), and both.
     const ONLY_P16: bool = true;
