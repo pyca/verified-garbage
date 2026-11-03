@@ -124,6 +124,7 @@ def Instr.asm : Instr → List String
   | .alloc bytes => [s!"lea esp, [esp-{bytes}]"]
   | .free bytes => [s!"lea esp, [esp+{bytes}]"]
   | .mul r => [s!"mul {r.name}"]
+  | .callr r => [s!"call {r.name}"]
   | .movdquLoad d m => [s!"movdqu {d.name}, {m.str128}"]
   | .movdquStore m r => [s!"movdqu {m.str128}, {r.name}"]
   | .movqLoad d m => [s!"movq {d.name}, {m.str64}"]
