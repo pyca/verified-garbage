@@ -48,8 +48,9 @@ mask in `t3`, a temporary in `t4` and the accumulators of planes 0 to 3 in
 `t2` (`acc`, which ends with the entry), `t5`, `t6` and `t0`; at the end,
 the lane's shift `8L` in `t3`. ECB keeps the data pointer in `a1` and the blocks left
 in `a2`; key expansion, the schedule's pointer in `a2`, the pointer to the
-next entries in `a1` and the encryptions left in `a0`. Only temporaries and
-argument registers are used.
+next entries in `a1` and the encryptions left in `a0`. Key expansion uses
+only temporaries and argument registers; ECB enciphers two blocks at a time,
+the second in callee-saved registers (see "Two blocks at a time").
 -/
 
 @[expose] public section
@@ -200,9 +201,111 @@ def wipe : Prog isa :=
   .seq (.block [.li .t1 0, .addi rowPtr sch 0, .li tmp 522])
     (fillLoop .t1 rowPtr tmp)
 
+/-! ## Two blocks at a time
+
+ECB enciphers two blocks at a time, the second (block B) in the
+callee-saved registers `s1`–`s10`, which it saves in a frame of its own:
+its halves in `s1` (xL) and `s2` (xR), F in `s3`, and, during a lookup,
+the index's row in `s4`, the row's mask in `s5`, the accumulators of planes
+0 to 3 in `s6`–`s9`; `s10` is a temporary. A row's lookups share each
+plane's load: the doubleword is loaded once into `tmp` and masked by each
+block's mask. -/
+
+def xL2 : Reg := .s1
+def xR2 : Reg := .s2
+def fReg2 : Reg := .s3
+def qReg2 : Reg := .s4
+def mReg2 : Reg := .s5
+def tmp2 : Reg := .s10
+
+/-- Block B's accumulator of plane `b`. -/
+def accOf2 : Nat → Reg
+  | 0 => .s6
+  | 1 => .s7
+  | 2 => .s8
+  | _ => .s9
+
+/-- `index j` for block B. -/
+def index2 (j : Nat) : List Instr :=
+  [.shift .sll .d qReg2 xL2 (32 + 8 * j), .shift .srl .d qReg2 qReg2 59, .li mReg2 1,
+   .shiftReg .sll .d qReg2 mReg2 qReg2]
+
+/-- Both blocks' masks of row `k`. -/
+def rowMask2 (k : Nat) : List Instr :=
+  rowMask k ++ [.shift .sll .d mReg2 qReg2 (63 - k), .shift .sra .d mReg2 mReg2 63]
+
+/-- Plane `b`'s doubleword of row 0, masked by each block's mask, into its
+accumulators. -/
+def firstPlane2 (b : Nat) : List Instr :=
+  [.load .d tmp sch (256 * b), .logic .and (accOf b) tmp mReg, .logic .and (accOf2 b) tmp mReg2]
+
+/-- Plane `b`'s doubleword of row `k`, masked by each block's mask, ORed
+into its accumulators. -/
+def plane2 (k b : Nat) : List Instr :=
+  [.load .d tmp sch (256 * b + 8 * k), .logic .and tmp2 tmp mReg, .logic .or (accOf b) (accOf b) tmp2,
+   .logic .and tmp tmp mReg2, .logic .or (accOf2 b) (accOf2 b) tmp]
+
+/-- Row 0 for both blocks. -/
+def row20 : List Instr :=
+  rowMask2 0 ++ firstPlane2 0 ++ firstPlane2 1 ++ firstPlane2 2 ++ firstPlane2 3
+
+/-- Row `k > 0` for both blocks. -/
+def row2 (k : Nat) : List Instr := rowMask2 k ++ plane2 k 0 ++ plane2 k 1 ++ plane2 k 2 ++ plane2 k 3
+
+/-- Rows `0, …, n` for both blocks. -/
+def rows2 (n : Nat) : List Instr := row20 ++ (List.range n).flatMap fun i => row2 (i + 1)
+
+/-- `pick b` for block B. -/
+def pick2 (b : Nat) : List Instr :=
+  [.shiftReg .srl .d (accOf2 b) (accOf2 b) mReg2, .logicImm .and (accOf2 b) (accOf2 b) 255] ++
+    if b = 0 then [] else [.shift .sll .d (accOf2 b) (accOf2 b) (8 * b)]
+
+/-- `extract j` for block B, into the low word of `s6`. -/
+def extractB (j : Nat) : List Instr :=
+  [.shift .srl .d mReg2 xL2 (24 - 8 * j), .logicImm .and mReg2 mReg2 7, .shift .sll .d mReg2 mReg2 3] ++
+    pick2 0 ++ pick2 1 ++ pick2 2 ++ pick2 3 ++
+    [.logic .or (accOf2 0) (accOf2 0) (accOf2 1), .logic .or (accOf2 2) (accOf2 2) (accOf2 3),
+     .logic .or (accOf2 0) (accOf2 0) (accOf2 2)]
+
+/-- S-box `j`'s lookups for both blocks. -/
+def lookup2 (j : Nat) : Prog isa := .block (index j ++ index2 j ++ rows2 31 ++ extract j ++ extractB j)
+
+/-- `combine j` for both blocks. -/
+def combine2 (j : Nat) : List Instr :=
+  [combine j, if j = 0 then .logic .or fReg2 (accOf2 0) (accOf2 0)
+    else if j = 2 then .logic .xor fReg2 fReg2 (accOf2 0) else .add fReg2 fReg2 (accOf2 0)]
+
+/-- F of both blocks' xL. -/
+def f2 : Prog isa :=
+  .seq (lookup2 0) (.seq (.block (combine2 0)) (.seq (.block [nextBox])
+    (.seq (lookup2 1) (.seq (.block (combine2 1)) (.seq (.block [nextBox])
+      (.seq (lookup2 2) (.seq (.block (combine2 2)) (.seq (.block [nextBox])
+        (.seq (lookup2 3) (.seq (.block (combine2 3))
+          (.block [.addi sch sch (-2048), .addi sch sch (-1024)])))))))))))
+
+/-- `round up` for both blocks. -/
+def round2 (up : Bool) : Prog isa :=
+  .seq (.block [.load .w tmp pPtr (pAt up), .logic .xor xL xL tmp, .logic .xor xL2 xL2 tmp])
+    (.seq f2
+      (.block [.logic .xor xR xR fReg, .logic .or tmp xL xL, .logic .or xL xR xR, .logic .or xR tmp tmp,
+        .logic .xor xR2 xR2 fReg2, .logic .or tmp xL2 xL2, .logic .or xL2 xR2 xR2, .logic .or xR2 tmp tmp,
+        .addi pPtr pPtr (if up then 4 else -4),
+        .sub tmp pPtr sch, .addi tmp tmp (-2047), .addi tmp tmp (-2047),
+        .addi tmp tmp (-(pEnd up - 4094 : Nat))]))
+
+/-- `cipher up` for both blocks. -/
+def cipher2 (up : Bool) : Prog isa :=
+  .seq (.block [.addi pPtr sch 2047, .addi pPtr pPtr 2047,
+      .addi pPtr pPtr ((if up then pOff else pOff + 64) - 4094 : Nat)])
+    (.seq (.loop (round2 up) (.nonzero tmp))
+      (.block [.load .w tmp pPtr (pAt up), .logic .xor fReg xL tmp, .logic .xor fReg2 xL2 tmp,
+        .load .w tmp pPtr (4 - pAt up), .logic .xor xL tmp xR, .logic .xor xL2 tmp xR2,
+        .logic .or xR fReg fReg, .logic .or xR2 fReg2 fReg2]))
+
 /-! ## ECB
 
-`vg_blowfish_ecb_{en,de}crypt(schedule = a0, data = a1, n = a2)`. -/
+`vg_blowfish_ecb_{en,de}crypt(schedule = a0, data = a1, n = a2)`: two
+blocks at a time, and the last one alone if `n` is odd. -/
 
 /-- The block at the data pointer into the halves, as big-endian words. -/
 def loadBlock : List Instr := loadBE32 xL tmp ptr 0 ++ loadBE32 xR tmp ptr 4
@@ -211,13 +314,43 @@ def loadBlock : List Instr := loadBE32 xL tmp ptr 0 ++ loadBE32 xR tmp ptr 4
 def storeBlock : List Instr :=
   storeBE 4 xL tmp ptr 0 ++ storeBE 4 xR tmp ptr 4 ++ [.addi ptr ptr 8, .addi cnt cnt (-1)]
 
-/-- In the frame: the schedule copied there, the blocks, and the frame zeroed. -/
+/-- The two blocks at the data pointer into the halves. -/
+def loadBlock2 : List Instr := loadBlock ++ loadBE32 xL2 tmp ptr 8 ++ loadBE32 xR2 tmp ptr 12
+
+/-- The halves to the two blocks, and the next two. -/
+def storeBlock2 : List Instr :=
+  storeBE 4 xL tmp ptr 0 ++ storeBE 4 xR tmp ptr 4 ++ storeBE 4 xL2 tmp ptr 8 ++ storeBE 4 xR2 tmp ptr 12 ++
+    [.addi ptr ptr 16, .addi cnt cnt (-2)]
+
+/-- The pairs of blocks left, into `t1`. -/
+def pairsLeft : Instr := .shift .srl .d .t1 cnt 1
+
+/-- In the frame: the schedule copied there, the pairs of blocks, the last
+block if one is left, and the frame zeroed. -/
 def ecbMain (up : Bool) : Prog isa :=
   .seq (.block ([.addSp sch 0, .addi rowPtr sch 0] ++ li4168)) (.seq (copyLoop .t1 .a0 rowPtr tmp)
-    (.seq (.loop (.seq (.block loadBlock) (.seq (cipher up) (.block storeBlock))) (.nonzero cnt))
-      wipe))
+    (.seq (.block [pairsLeft])
+      (.seq (.ite (.zero .t1) (.block [])
+          (.loop (.seq (.block loadBlock2) (.seq (cipher2 up) (.block (storeBlock2 ++ [pairsLeft]))))
+            (.nonzero .t1)))
+        (.seq (.ite (.zero cnt) (.block []) (.seq (.block loadBlock) (.seq (cipher up) (.block storeBlock))))
+          wipe))))
 
-def ecb (up : Bool) : Prog isa := .ite (.zero cnt) (.block []) (inFrame (ecbMain up))
+/-- The callee-saved registers block B uses, and their offsets in their frame. -/
+def saved : List (Reg × Nat) :=
+  [(.s1, 0), (.s2, 8), (.s3, 16), (.s4, 24), (.s5, 32), (.s6, 40), (.s7, 48), (.s8, 56), (.s9, 64),
+   (.s10, 72)]
+
+/-- Their frame's bytes. -/
+def savedBytes : Nat := 80
+
+def ecb (up : Bool) : Prog isa :=
+  .ite (.zero cnt) (.block [])
+    (.frame (.alloc savedBytes)
+      (.seq (.block (.addSp rowPtr 0 :: saved.map fun (r, d) => .store .d r rowPtr d))
+        (.seq (inFrame (ecbMain up))
+          (.block (.addSp rowPtr 0 :: saved.map fun (r, d) => .load .d r rowPtr d))))
+      (.free savedBytes))
 
 def encrypt : Prog isa := ecb true
 def decrypt : Prog isa := ecb false
