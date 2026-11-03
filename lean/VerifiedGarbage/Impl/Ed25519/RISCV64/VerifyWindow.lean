@@ -35,6 +35,12 @@ def dblOps : List FieldOp :=
   [.mul 8 0 0, .mul 9 1 1, .mul 10 2 2, .add 10 10 10, .mul 11 0 1, .add 11 11 11,
     .sub 12 9 8, .sub 13 10 12, .add 14 8 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12, .mul 3 11 14]
 
+/-- `dblOps` without `T = EH`: doubling reads only `X`, `Y` and `Z`, so a
+doubling another doubling follows need not compute `T`. -/
+def dblOpsXYZ : List FieldOp :=
+  [.mul 8 0 0, .mul 9 1 1, .mul 10 2 2, .add 10 10 10, .mul 11 0 1, .add 11 11 11,
+    .sub 12 9 8, .sub 13 10 12, .add 14 8 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12]
+
 /-- Adds the cached point in slots 4–7 (`[Y - X, Y + X, 2dT, 2Z]`) to slots 0–3. -/
 def pointAddCachedOps : List FieldOp := [
   .sub 8 1 0, .mul 8 8 4,
@@ -47,7 +53,8 @@ def pointAddCachedOps : List FieldOp := [
 def cacheOps : List FieldOp := [.sub 0 18 17, .add 1 18 17, .add 2 20 20, .mul 2 2 16, .add 3 19 19]
 
 /-- The 128 bytes at `s0` to slots 4–7. -/
-def pointFromTableQ : List Instr := (List.range 4).flatMap fun j => unpackField .s0 (64 + 32 * (4 + j)) (32 * j)
+def pointFromTableQ : List Instr :=
+  (List.range 16).flatMap fun i => [.load .d .a4 .s0 (8 * i), .store .d .a4 .a3 (192 + 8 * i)]
 
 /-- The point in slots 0–3, cached, to entry `s2` of the table at `TA`; slots 0–3 are kept. -/
 def storeCached : Prog isa :=
@@ -112,7 +119,7 @@ def windowB : Prog isa :=
 /-- One window: the counter down, four doublings, `k`'s digit, then `S`'s. -/
 def windowStep : Prog isa :=
   .seq (.block [.addi .s1 .s1 (-1)])
-    (.seq (fieldCode (dblOps ++ dblOps ++ dblOps ++ dblOps))
+    (.seq (fieldCode (dblOpsXYZ ++ dblOpsXYZ ++ dblOpsXYZ ++ dblOps))
       (.seq (.block (nibble .s11 0)) (.seq addA windowB)))
 
 /-- Before the windows, for `A` in slots 0–3: `d`, the table of `A`, the static's address and
