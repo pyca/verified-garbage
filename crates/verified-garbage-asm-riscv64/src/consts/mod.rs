@@ -15,6 +15,10 @@ mod vg_cast5_s5678;
 pub use vg_cast5_s5678::VG_CAST5_S5678;
 
 #[rustfmt::skip]
+mod vg_brainpoolp256r1_comb;
+pub use vg_brainpoolp256r1_comb::VG_BRAINPOOLP256R1_COMB;
+
+#[rustfmt::skip]
 mod vg_ed25519_comb;
 pub use vg_ed25519_comb::VG_ED25519_COMB;
 
