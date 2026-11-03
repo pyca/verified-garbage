@@ -344,6 +344,76 @@ pub fn bench(c: &mut Criterion) {
     // multiplication (`bymul`), and exponentiation proxies of each pairing.
     // Only Proto18 this run: the multiplier's throughput and latency, 64 instructions per
     // iteration, 1000 iterations per call.
+    // Only Proto21 this run: crt_values (with #4115's divisions) next to it with the
+    // inverse's mred adding m only where the quotient is negative and one csub (inv1).
+    const ONLY_P21: bool = true;
+    if ONLY_P21 {
+        use openssl::rsa::Rsa;
+        use verified_garbage_asm_riscv64::rsa_proto21 as p21;
+        type Crt = unsafe extern "C" fn(
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *mut u64,
+            usize,
+        ) -> u32;
+        let keys: Vec<_> = [2048u32, 3072, 4096]
+            .iter()
+            .map(|&b| (b, Rsa::generate(b).unwrap()))
+            .collect();
+        let cs: [(&str, Crt); 2] = [("base", p21::vg_p21_crt_base), ("inv1", p21::vg_p21_crt_inv1)];
+        let pad = |b: Vec<u8>, l: usize| {
+            let mut v = vec![0u8; l - b.len()];
+            v.extend(b);
+            v
+        };
+        for (v, f) in cs {
+            let mut g = c.benchmark_group(format!("rsa_p21_crt_{v}"));
+            for (bits, key) in &keys {
+                let k = key.size() as usize;
+                let (n, d) = (key.n().to_vec(), pad(key.d().to_vec(), k));
+                let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
+                let (pl, ql) = (p.len(), q.len());
+                let mut s = vec![0u64; 16 * k + 64];
+                let (mut odp, mut odq, mut oqi) = (vec![0u8; pl], vec![0u8; ql], vec![0u8; pl]);
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    b.iter(|| unsafe {
+                        f(
+                            odp.as_mut_ptr(),
+                            pl,
+                            odq.as_mut_ptr(),
+                            ql,
+                            oqi.as_mut_ptr(),
+                            pl,
+                            n.as_ptr(),
+                            k,
+                            black_box(p.as_ptr()),
+                            pl,
+                            q.as_ptr(),
+                            ql,
+                            d.as_ptr(),
+                            k,
+                            s.as_mut_ptr(),
+                            s.len(),
+                        )
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     // Only Proto20 this run: main's crt_values next to it with its divisions' passes four
     // words at a time (u4).
     const ONLY_P20: bool = true;
