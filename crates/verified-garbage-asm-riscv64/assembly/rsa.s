@@ -3684,6 +3684,8 @@ vg_rsa_crt_values:
 	ld t5, 0(t0)
 	andi t5, t5, 1
 	sd t5, 152(s11)
+	addi s8, s4, 7
+	srli s8, s8, 3
 	addi t0, zero, 19
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3717,7 +3719,7 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	andi t4, a4, 1
-	addi t2, s9, 1
+	addi t2, s8, 1
 217:
 	ld t5, 0(t0)
 	slli t6, t5, 1
@@ -3762,7 +3764,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 256
 	xori a4, a4, -1
 	addi t4, zero, 0
-	addi t3, s9, 1
+	addi t3, s8, 1
 218:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
@@ -5979,6 +5981,8 @@ vg_rsa_crt_values:
 	ld t5, 0(t0)
 	andi t5, t5, -2
 	sd t5, 0(t0)
+	addi s8, s4, 7
+	srli s8, s8, 3
 	addi t0, zero, 22
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6012,7 +6016,7 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	andi t4, a4, 1
-	addi t2, s9, 1
+	addi t2, s8, 1
 268:
 	ld t5, 0(t0)
 	slli t6, t5, 1
@@ -6057,7 +6061,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 256
 	xori a4, a4, -1
 	addi t4, zero, 0
-	addi t3, s9, 1
+	addi t3, s8, 1
 269:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
@@ -6111,6 +6115,8 @@ vg_rsa_crt_values:
 	ld t5, 0(t0)
 	andi t5, t5, -2
 	sd t5, 0(t0)
+	addi s8, s6, 7
+	srli s8, s8, 3
 	addi t0, zero, 23
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6144,7 +6150,7 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	andi t4, a4, 1
-	addi t2, s9, 1
+	addi t2, s8, 1
 274:
 	ld t5, 0(t0)
 	slli t6, t5, 1
@@ -6189,7 +6195,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 256
 	xori a4, a4, -1
 	addi t4, zero, 0
-	addi t3, s9, 1
+	addi t3, s8, 1
 275:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
@@ -6473,6 +6479,7 @@ vg_rsa_check_key:
 	addi t0, t0, -1
 	addi t3, t3, -1
 	bnez t3, 214b
+	addi s5, s4, 0
 	addi t0, zero, 1
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -8450,6 +8457,8 @@ vg_rsa_check_key:
 	addi t1, t1, 8
 	addi t3, t3, -1
 	bnez t3, 295b
+	addi s8, s5, 7
+	srli s8, s8, 3
 	addi t0, zero, 13
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -8483,7 +8492,7 @@ vg_rsa_check_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	andi t4, a4, 1
-	addi t2, s9, 1
+	addi t2, s8, 1
 298:
 	ld t5, 0(t0)
 	slli t6, t5, 1
@@ -8528,7 +8537,7 @@ vg_rsa_check_key:
 	addi t1, t1, 256
 	xori a4, a4, -1
 	addi t4, zero, 0
-	addi t3, s9, 1
+	addi t3, s8, 1
 299:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
@@ -8602,6 +8611,8 @@ vg_rsa_check_key:
 	addi t1, t1, 8
 	addi t3, t3, -1
 	bnez t3, 2102b
+	addi s8, s6, 7
+	srli s8, s8, 3
 	addi t0, zero, 13
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -8635,7 +8646,7 @@ vg_rsa_check_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	andi t4, a4, 1
-	addi t2, s9, 1
+	addi t2, s8, 1
 2105:
 	ld t5, 0(t0)
 	slli t6, t5, 1
@@ -8680,7 +8691,7 @@ vg_rsa_check_key:
 	addi t1, t1, 256
 	xori a4, a4, -1
 	addi t4, zero, 0
-	addi t3, s9, 1
+	addi t3, s8, 1
 2106:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
