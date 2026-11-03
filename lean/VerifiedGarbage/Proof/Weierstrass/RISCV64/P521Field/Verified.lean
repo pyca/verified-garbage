@@ -25,7 +25,8 @@ which the shared contracts of `Proof/Weierstrass/MontContract.lean` imply with
 their own working space the top 576 bytes of `ws`, from 7616 to 8192. They are
 constant time: the zero-extension is related by its results, after which only
 `a0`–`a3` are public, and the taint analysis finds every branch and address
-depends on them alone (`GenWide.fn_ct`).
+depends on them alone (`GenWide.fn_ct`, and `fnWith_ct` for the product's branch on the
+pointers).
 -/
 
 -- Checking the facts of the modulus (`WideOk`) evaluates `2⁵²¹` and `2⁵⁷⁶`.
@@ -71,10 +72,27 @@ theorem subA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV 
 
 open VG.Proof.Ed25519.RISCV64 (mulAgreeLo)
 
+open VG.Proof.Ed25519.RISCV64 (mulZext_rel) in
+open VG.Impl.Weierstrass.RISCV64.GenWide (fnWith ptrs unpack pack SA SB SO) in
+/-- `fnWith k fast core` is constant time if the taint analysis finds the
+rest of it so after the zero-extension, as `GenWide.fn_ct`. -/
+theorem fnWith_ct {k : Nat} {fast : Prog isa} {core : List Instr} {Pre : State → Prop}
+    {Pub : State → State → Prop} (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂)
+    (h : RelCT isa (VG.RISCV64.Taint.Agree (Taint.ofRegs [.a0, .a1, .a2, .a3]))
+      (.seq (.block ptrs) (.ite (.zero .t0) fast
+        (.seq (.block (([.addi .t1 .t2 0] : List Instr) ++ unpack k .t4 (SA k) 0 ++ unpack k .t5 (SB k) 0 ++
+            ([.addi .t4 .a3 (SA k), .addi .t5 .a3 (SB k), .addi .t2 .a3 (SO k)] : List Instr))) <|
+          .seq (.block core) (.block (pack k .t1 (SO k) 0))))) fun _ _ => True) :
+    ConstantTime isa Pre Pub (fnWith k fast core) := by
+  refine RelCT.constantTime (Q := fun _ _ => True) ?_
+  unfold fnWith
+  refine RelCT.seq (mulZext_rel.mono (fun _ _ ⟨h₁, h₂, hp⟩ => hpub _ _ h₁ h₂ hp) fun _ _ h => h) ?_
+  exact h.mono (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (by simpa using h)⟩) fun _ _ h => h
+
 theorem mulFn_ct {Pre : State → Prop} {Pub : State → State → Prop}
     (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂) :
     ConstantTime isa Pre Pub mulFn :=
-  GenWide.fn_ct hpub (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide))
+  fnWith_ct hpub (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide))
 
 theorem addFn_ct {Pre : State → Prop} {Pub : State → State → Prop}
     (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂) :
